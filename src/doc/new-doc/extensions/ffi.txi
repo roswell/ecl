@@ -49,13 +49,13 @@ sections.
 
 @node Two kinds of FFI
 @subsection Two kinds of FFI
+@cindex Two kinds of FFI
 ECL allows for two different appraoches when building a FFI. Both
 approaches have a different implementation philosophy and affect the
 places where you can use the FFI and how.
 
 @table @dfn
 @item Static FFI (SFFI)
-@cindex Static FFI
 For every foreign function and variable you might need to use, a wrapper
 is automatically written in C with the help of ffi:c-inline. These
 wrappers are compiled using an ordinary C compiler and linked against
@@ -68,7 +68,6 @@ user may directly invoked.
 @c @item Library FFI (LFFI)
 
 @item Dynamic FFI (DFFI)
-@cindex Dynamic FFI
 First of all, the foreign libraries are loaded in memory using the
 facilities of the operating system. Similar routines are used to find
 out and register the memory location of all the functions and variables

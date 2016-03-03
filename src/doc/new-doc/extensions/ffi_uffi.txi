@@ -1,12 +1,13 @@
 @node UFFI Reference
 @subsection UFFI Reference
+@cindex Universal foreign function interface
 
 @menu
 * Primitive Types ::
 * Aggregate Types ::
-* UFFI Objects ::
-@c * Strings
-@c * Functions and Libraries
+* Foreign Objects ::
+* Foreign Strings ::
+* Functions and Libraries
 @end menu
 
 @node Primitive Types
@@ -89,6 +90,7 @@ Points to a generic object.
 Used to declare a pointer to an object.
 @end table
 
+@subsubheading Reference
 
 @lspindex ffi:def-constant
 @defmac ffi:def-constant name value &key (export nil)
@@ -192,7 +194,8 @@ return a integer whence dereferencing a C character pointer.
 @subsubheading Overview
 Aggregate types are comprised of one or more primitive types.
 
-
+@subsubheading Reference
+
 @lspindex ffi:def-enum
 @defmac ffi:def-enum name fields &key separator-key
 
@@ -422,17 +425,15 @@ Defines a foreign union type.
 Defines a new foreign type.
 @end defmac
 
-
-
-@node UFFI Objects
-@subsubsection Objects
+@node Foreign Objects
+@subsubsection Foreign Objects
 @cindex Foreign objects
 
 @subsubheading Overview
 Objects are entities that can allocated, referred to by pointers, and
 can be freed.
 
-
+@subsubheading Reference
 
 @lspindex ffi:allocate-foreign-object
 @defun ffi:allocate-foreign-object type &optional size
@@ -464,8 +465,6 @@ object.
 @end lisp
 @end defun
 
-
-
 @lspindex ffi:free-foreign-object
 @defun ffi:free-foreign-object ptr
 
@@ -479,8 +478,6 @@ A pointer to the allocated foreign object to free.
 @subsubheading Description
 Frees memory that was allocated for a foreign object.
 @end defun
-
-
 
 @lspindex ffi:with-foreign-object
 @defmac ffi:with-foreign-object (var type) &body body
@@ -515,8 +512,6 @@ foreign object around the body of code.
 @end lisp
 @end defmac
 
-
-
 @lspindex ffi:size-of-foreign-type
 @defmac ffi:size-of-foreign-type ftype
 
@@ -543,8 +538,6 @@ does not include any Lisp storage overhead.
 @end lisp
 @end defmac
 
-
-
 @lspindex ffi:pointer-address
 @defun ffi:pointer-address ptr
 
@@ -560,8 +553,6 @@ An integer representing the pointer's address.
 @subsubheading Description
 Returns the address as an integer of a pointer.
 @end defun
-
-
 
 @lspindex ffi:deref-pointer
 @defun ffi:deref-pointer ptr ftype
@@ -595,7 +586,6 @@ together with the @code{DEREF-POINTER}/@code{DEREF-ARRAY}.
 ;; => 10
 @end lisp
 @end defun
-
 
 @lspindex ffi:ensure-char-character
 @defun ffi:ensure-char-character object
@@ -627,7 +617,6 @@ Ensures that an objects obtained by dereferencing @code{:char} and
 Depending upon the implementation and what UFFI expects, this macro may
 signal an error if the object is not a character or integer.
 @end defun
-
 
 @lspindex ffi:ensure-char-integer
 @defun ffi:ensure-char-integer object
@@ -659,7 +648,6 @@ Ensures that an objects obtained by dereferencing @code{:char} and
 Depending upon the implementation and what UFFI expects, this macro may
 signal an error if the object is not a character or integer.
 @end defun
-
 
 @lspindex ffi:make-null-pointer
 @defun ffi:make-null-pointer ftype
@@ -674,8 +662,6 @@ The NULL pointer of type @var{ftype}.
 @end table
 @end defun
 
-
-
 @lspindex ffi:null-pointer-p
 @defun ffi:null-pointer-p ptr
 
@@ -689,15 +675,11 @@ The boolean flag.
 @end table
 @end defun
 
-
-
 @lspindex ffi:+null-cstring-pointer+
 @defvr {FFI} {+null-cstring-pointer+}
 A NULL cstring pointer. This can be used for testing if a cstring
 returned by a function is NULL.
 @end defvr
-
-
 
 @lspindex ffi:with-cast-pointer
 @defmac ffi:with-cast-pointer (var ptr ftype) &body body
@@ -736,8 +718,6 @@ execution of @var{BODY}.
 @end lisp
 @end defmac
 
-
-
 @lspindex ffi:def-foreign-var
 @defmac ffi:def-foreign-var name type module
 
@@ -764,8 +744,9 @@ Defines a symbol macro which can be used to access (get and set) the
 value of a variable in foreign code.
 
 @subsubheading Examples
-@exindex @code{ffi:def-foreign-var}
+@exindex @code{ffi:def-foreign-var} places in foreign world
 
+C code defining foreign structure, standalone integer and the accessor:
 @example
 @verbatim
 int baz = 3;
@@ -783,8 +764,10 @@ int foo () {
 @end verbatim
 @end example
 
+Lisp code defining C structure, function and a variable:
 @lisp
-(ffi:def-struct foo-struct (x :int)
+(ffi:def-struct foo-struct
+  (x :int)
   (y :double))
 
 (ffi:def-function ("foo" foo) ()
@@ -800,59 +783,299 @@ int foo () {
 @end lisp
 @end defmac
 
-
+@node Foreign Strings
+@subsubsection Foreign Strings
+@cindex Foreign strings
 
-@lspindex ffi:
-@defmac ffi:
+@subsubheading Overview
+@cindex @code{cstring} and @code{foreign string} differences
 
-desc
+UFFI has functions to two types of C-compatible strings: @code{cstring}
+and foreign strings. @code{cstrings} are used only as parameters to and
+from functions. In some implementations a @code{cstring} is not a
+foreign type but rather the Lisp string itself. On other platforms a
+cstring is a newly allocated foreign vector for storing characters. The
+following is an example of using cstrings to both send and return a
+value.
 
+@exindex @code{cstring} used to send and return a value
+@lisp
+(ffi:def-function ("getenv" c-getenv) 
+    ((name :cstring))
+  :returning :cstring)
+
+(defun my-getenv (key)
+  "Returns an environment variable, or NIL if it does not exist"
+  (check-type key string)
+  (ffi:with-cstring (key-native key)
+    (ffi:convert-from-cstring (c-getenv key-native))))
+@end lisp
+
+In contrast, foreign strings are always a foreign vector of characters
+which have memory allocated. Thus, if you need to allocate memory to
+hold the return value of a string, you must use a foreign string and not
+a cstring. The following is an example of using a foreign string for a
+return value.
+
+@exindex @code{foreign string} used to send and return a value
+@lisp
+(ffi:def-function ("gethostname" c-gethostname)
+    ((name (* :unsigned-char))
+     (len :int))
+  :returning :int)
+
+(defun gethostname ()
+  "Returns the hostname"
+  (let* ((name (ffi:allocate-foreign-string 256))
+         (result-code (c-gethostname name 256))
+         (hostname (when (zerop result-code)
+                     (ffi:convert-from-foreign-string name))))
+    ;; UFFI does not yet provide a universal way to free
+    ;; memory allocated by C's malloc. At this point, a program
+    ;; needs to call C's free function to free such memory.
+    (unless (zerop result-code)
+      (error "gethostname() failed."))))
+@end lisp
+
+Foreign functions that return pointers to freshly allocated strings
+should in general not return @code{cstring}s, but @code{foreign
+strings}. (There is no portable way to release such @code{cstring}s from
+Lisp.) The following is an example of handling such a function.
+
+@exindex Conversion between @code{foreign string} and @code {cstring}
+@lisp
+(ffi:def-function ("readline" c-readline)
+    ((prompt :cstring))
+  :returning (* :char))
+
+(defun readline (prompt)
+  "Reads a string from console with line-editing."
+  (ffi:with-cstring (c-prompt prompt)
+    (let* ((c-str (c-readline c-prompt))
+           (str (ffi:convert-from-foreign-string c-str)))
+      (ffi:free-foreign-object c-str)
+      str)))
+@end lisp
+
+@subsubheading Reference
+
+@lspindex ffi:convert-from-cstring
+@defmac ffi:convert-from-cstring object
+Converts a @code{cstring} to a Lisp string
 @table @var
-@item arg-1
-description
-@item arg-2
-description
+@item object
+@code{cstring}
 @item returns
-One value? More?
+Lisp string
 @end table
 
 @subsubheading Description
-Description here
-
-@subsubheading Examples
-@exindex @code{ffi:} sample run
-@lisp
-
-@end lisp
-
-@subsubheading Side effects
-foo bar
+Converts a Lisp string to a cstring. This is most often used when
+processing the results of a foreign function that returns a cstring.
 @end defmac
-
 
-@lspindex ffi:
-@defmac ffi:
-
-desc
-
+@lspindex ffi:convert-to-cstring
+@defmac ffi:convert-to-cstring object
+Converts a Lisp string to a @code{cstring}
 @table @var
-@item arg-1
-description
-@item arg-2
-description
+@item object
+Lisp string
 @item returns
-One value? More?
+@code{cstring}
 @end table
 
 @subsubheading Description
-Description here
-
-@subsubheading Examples
-@exindex @code{ffi:} sample run
-@lisp
-
-@end lisp
-
-@subsubheading Side effects
-foo bar
+Converts a Lisp string to a cstring. The cstring should be freed with
+free-cstring.
+@subsubheading Side Effects
+This function allocates memory.
 @end defmac
+
+
+@lspindex ffi:free-cstring
+@defmac ffi:convert-from-cstring cstring
+Free memory used by @var{cstring}
+@table @var
+@item cstring
+@code{cstring} to be freed.
+@end table
+@subsubheading Description
+Frees any memory possibly allocated by convert-to-cstring. On ECL, a
+cstring is just the Lisp string itself.
+@end defmac
+
+
+@lspindex ffi:with-cstring
+@defmac ffi:with-cstring (cstring string) &body body
+Binds a newly created @code{cstring}
+@table @var
+@item cstring
+A symbol naming the @code{cstring} to be created.
+@item string
+A Lisp string that will be translated to a @code{cstring}.
+@item body
+The body of where the @var{cstring} will be bound.
+@item returns
+Result of evaluating the @var{body}.
+@end table
+@subsubheading Description
+Binds a symbol to a @code{cstring} created from conversion of a
+@var{string}. Automatically frees the @var{cstring}.
+@subsubheading Examples
+@exindex @code{with-cstring}
+@lisp
+(ffi:def-function ("getenv" c-getenv) 
+    ((name :cstring))
+  :returning :cstring)
+
+(defun getenv (key)
+  "Returns an environment variable, or NIL if it does not exist"
+  (check-type key string)
+  (ffi:with-cstring (key-cstring key)
+    (ffi:convert-from-cstring (c-getenv key-cstring))))
+@end lisp
+@end defmac
+
+@lspindex ffi:with-cstrings
+@defmac ffi:with-cstrings bindings &body body
+Binds a newly created @code{cstrings}
+@table @var
+@item bindings
+List of pairs @var{(cstring string)}, where @var{cstring} is a name
+for a @code{cstring} translated from Lisp string @var{string}.
+@item body
+The body of where the @var{bindings} will be bound.
+@item returns
+Result of evaluating the @var{body}.
+@end table
+@subsubheading Description
+Binds a symbols to a @code{cstring}s created from conversion of a
+@var{string}s. Automatically frees the @var{cstring}s. This macro works
+similar to @code{LET*}. Based on @code{with-cstring}.
+@end defmac
+
+@lspindex ffi:convert-from-foreign-string
+@defmac ffi:convert-from-foreign-string foreign-string &key length (null-terminated-p t)
+Converts a foreign string into a Lisp string
+@table @var
+@item foreign-string
+A foreign string.
+@item length
+The length of the foreign string to convert. The default is the length
+of the string until a NULL character is reached.
+@item null-terminated-p
+A boolean flag with a default value of T When true, the string is
+converted until the first NULL character is reached.
+@item returns
+A Lisp string.
+@end table
+@subsubheading Description
+Returns a Lisp string from a foreign string. Can translated ASCII and
+binary strings.
+@end defmac
+
+@lspindex ffi:convert-to-foreign-string
+@defmac ffi:convert-to-foreign-string
+Converts a Lisp string to a foreign string
+@table @var
+@item string
+A Lisp string.
+@item returns
+A foreign string.
+@end table
+@subsubheading Description
+Converts a Lisp string to a foreign string. Memory should be freed with
+free-foreign-object.
+@end defmac
+
+@lspindex ffi:allocate-foreign-string
+@defmac ffi:allocate-foreign-string size &key unsigned
+Allocates space for a foreign string
+@table @var
+@item size
+The size of the space to be allocated in bytes.
+@item unsigned
+A boolean flag with a default value of T. When true, marks the pointer
+as an :unsigned-char.
+@item returns
+A foreign string which has undefined contents.
+@end table
+@subsubheading Description
+Allocates space for a foreign string. Memory should be freed with
+free-foreign-object.
+@end defmac
+
+@lspindex ffi:with-foreign-string
+@defmac ffi:with-foreign-string (foreign-string string) &body body
+Binds a newly allocated @code{foreign-string}
+@table @var
+@item foreign-string
+A symbol naming the @code{foreign string} to be created.
+@item string
+A Lisp string that will be translated to a @code{foreign string}.
+@item body
+The body of where the @var{foreign-string} will be bound.
+@item returns
+Result of evaluating the @var{body}.
+@end table
+@subsubheading Description
+Binds a symbol to a @code{foreign-string} created from conversion of a
+@var{string}. Automatically deallocates the @var{foreign-string}.
+@subsubheading Examples
+@end defmac
+
+@lspindex ffi:with-foreign-strings
+@defmac ffi:with-foreign-strings bindings &body body
+Binds a newly created @code{foreign string}
+@table @var
+@item bindings
+List of pairs @var{(foreign-string string)}, where @var{foreign-string}
+is a name for a @code{foreign string} translated from Lisp string
+@var{string}.
+@item body
+The body of where the @var{bindings} will be bound.
+@item returns
+Result of evaluating the @var{body}.
+@end table
+@subsubheading Description
+Binds a symbols to a @code{foreign-string}s created from conversion of a
+@var{string}s. Automatically frees the @var{foreign-string}s. This macro
+works similar to @code{LET*}. Based on @code{with-foreign-string}.
+@end defmac
+
+@node Functions and Libraries
+@subsubsection Functions and Libraries
+@cindex Foreign functions and libraries
+
+@c def-function
+@c load-foreign-library
+@c find-foreign-library
+
+
+
+@c @lspindex ffi:
+@c @defmac ffi:
+
+@c desc
+
+@c @table @var
+@c @item arg-1
+@c description
+@c @item arg-2
+@c description
+@c @item returns
+@c One value? More?
+@c @end table
+
+@c @subsubheading Description
+@c Description here
+
+@c @subsubheading Examples
+@c @exindex @code{ffi:} sample run
+@c @lisp
+
+@c @end lisp
+
+@c @subsubheading Side effects
+@c foo bar
+@c @end defmac

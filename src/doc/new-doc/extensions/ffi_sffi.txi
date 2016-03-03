@@ -1,6 +1,9 @@
 @node SFFI Reference
 @subsection SFFI Reference
 @cindex C/C++ code inlining
+@cindex Static foreign function interface
+
+@subsubheading Reference
 
 @lspindex ffi:clines
 @defspec ffi:clines c/c++-code*

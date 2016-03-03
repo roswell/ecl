@@ -407,21 +407,38 @@ Ensures that a dereferenced char or integer is a lisp integer."
   (si::foreign-data-pointer obj 0 1 '(* :unsigned-char)))
 
 (defmacro convert-from-cstring (object)
+  "Syntax: (convert-from-cstring object)
+
+Converts a Lisp string to a cstring. This is most often used when
+processing the results of a foreign function that returns a cstring."
   object)
 
 (defmacro convert-to-cstring (object)
+  "Syntax: (convert-to-cstring object)
+
+Converts cstring OBJECT to a Lisp string. Allocates memory."
   ;; This enforces that the string contains only as many characters as the
   ;; fill-pointer determines Since ECL always sets a 0 character after the
   ;; last element of a string, this way, the string is always zero-terminated
   `(si:copy-to-simple-base-string ,object))
 
-(defmacro free-cstring (object)
-  object)
+(defmacro free-cstring (cstring)
+  "Syntax: (free-cstring cstring)
+
+Free memory used by CSTRING."
+  cstring)
 
 (defmacro with-cstring ((cstring string) &body body)
+  "Syntax: (with-cstring (cstring string) &body body)
+
+Binds CSTRING to a cstring created from conversion of a STRING and
+evaluated the BODY. Automatically frees the CSTRING."
   `(let ((,cstring (convert-to-cstring ,string))) ,@body))
 
 (defmacro with-cstrings (bindings &rest body)
+  "Syntax: (with-cstrings ((cstring string)*) &body body)
+
+See: WITH-CSTRING. Works similar to LET*."
   (if bindings
     `(with-cstring ,(car bindings)
       (with-cstrings ,(cdr bindings)
@@ -436,6 +453,11 @@ Ensures that a dereferenced char or integer is a lisp integer."
 
 (defun convert-from-foreign-string (foreign-string
                                     &key length (null-terminated-p t))
+  "Syntax: (convert-from-foreign-string
+         foreign-string &key length (null-terminated-p t)
+
+Returns a Lisp string from a foreign string FOREIGN-STRING. Can
+translated ASCII and binary strings."
   (cond ((and (not length) null-terminated-p)
          (setf length (foreign-string-length foreign-string)))
         ((not (integerp length))
@@ -451,6 +473,10 @@ Ensures that a dereferenced char or integer is a lisp integer."
        :side-effects t))
 
 (defun convert-to-foreign-string (string-designator)
+  "Syntax: (convert-to-foreign-string string-designator)
+
+Converts a Lisp string to a foreign string. Memory should be freed
+with free-foreign-object."
   (let ((lisp-string (string string-designator)))
     (c-inline (lisp-string) (t) t
        "{
@@ -465,11 +491,19 @@ Ensures that a dereferenced char or integer is a lisp integer."
         :side-effects t)
     ))
 
-(defun allocate-foreign-string (size &key unsigned)
+(defun allocate-foreign-string (size &key (unsigned T))
+  "Syntax: (allocate-foreign-string size &key (unsigned t))
+
+Allocates space for a foreign string. Memory should be freed with
+FREE-FOREIGN-OBJECT. Initial contents of the string are undefined."
   (si::allocate-foreign-data `(* ,(if unsigned :unsigned-char :char))
                              (1+ size)))
 
 (defmacro with-foreign-string ((foreign-string lisp-string) &rest body)
+  "Syntax: (with-foreign-string ((foreign-string lisp-string) &rest body)
+
+Binds FOREIGN-STRING to a foreign string created from conversion of a
+STRING and evaluated the BODY. Automatically frees the FOREIGN-STRING."
   (let ((result (gensym)))
     `(let* ((,foreign-string (convert-to-foreign-string ,lisp-string))
             (,result (progn ,@body)))
@@ -477,6 +511,9 @@ Ensures that a dereferenced char or integer is a lisp integer."
        ,result)))
 
 (defmacro with-foreign-strings (bindings &rest body)
+  "Syntax: (with-foreign-strings ((foreign-string string)*) &body body)
+
+See: WITH-FOREIGN-STRING. Works similar to LET*."
   (if bindings
     `(with-foreign-string ,(car bindings)
       (with-foreign-strings ,(cdr bindings)
