@@ -58,11 +58,7 @@ book.
 @node C Reference (Overview)
 @subsection C Reference (Overview)
 @subsubsection One type for everything: @code{cl_object}
-@cppindex cl_object
-@deftp {@cind} cl_object
-Pointer to the @code{cl_lispunion} union which represents all
-first-class types defined in @ecl{}.
-@end deftp
+@cindex One type for everything: @code{cl_object}
 
 ECL is designed around the basic principle that Common Lisp already
 provides everything that a programmer could need, orienting itself
@@ -107,8 +103,8 @@ Global variables or pointers that have been registered with the garbage
 collector.
 @end itemize
 
-Further details will be provided in the section [[#ext.memory][Memory
-Management]].
+For memory allocation details @xref{Memory Management}.
+For object implementation details @xref{Manipulating Lisp objects}.
 
 @subsubsection Naming conventions
 As explained in the introduction, each of the chapters in the Common

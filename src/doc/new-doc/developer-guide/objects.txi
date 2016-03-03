@@ -1,7 +1,237 @@
 @node Manipulating Lisp objects
 @section Manipulating Lisp objects
+
+If you want to extend, fix or simply customize ECL for your own needs,
+you should understand how the implementation works.
+
 @cppindex cl_lispunion
 @deftp {C/C++ index} cl_lispunion cons big ratio SF DF longfloat complex symbol pack hash array vector base_string string stream random readtable pathname bytecodes bclosure cfun cfunfixed cclosure d instance process queue lock rwlock condition_variable semaphore barrier mailbox cblock foreign frame weak sse
 
 Union containing all first-class ECL types.
 @end deftp
+
+@subsection Objects representation
+In ECL a lisp object is represented by a type called
+@code{cl_object}. This type is a word which is long enough to host both
+an integer and a pointer. The least significant bits of this word, also
+called the tag bits, determine whether it is a pointer to a C structure
+representing a complex object, or whether it is an immediate data, such
+as a fixnum or a character.
+
+@float Figure,fig:immediate_types
+@caption{Immediate types}
+@image{figures/immediate-types,,1in}
+@end float
+
+The topic of the immediate values and bit fiddling is nicely described
+in
+@url{http://www.more-magic.net/posts/internals-data-representation.html,
+Peter Bex's blog} describing @url{http://www.call-cc.org/,Chicken
+Scheme} internal data representation. We could borrow some ideas from it
+(like improving @code{fixnum} bitness and providing more immediate
+values). All changes to code related to immediate values should be
+carefully @strong{benchmarked}.
+
+The @code{fixnums} and characters are called immediate data types,
+because they require no more than the @code{cl_object} datatype to store
+all information. All other ECL objects are non-immediate and they are
+represented by a pointer to a cell that is allocated on the heap. Each
+cell consists of several words of memory and contains all the
+information related to that object. By storing data in multiples of a
+word size, we make sure that the least significant bits of a pointer are
+zero, which distinguishes pointers from immediate data.
+
+In an immediate datatype, the tag bits determine the type of the
+object. In non-immediate datatypes, the first byte in the cell contains
+the secondary type indicator, and distinguishes between different types
+of non immediate data. The use of the remaining bytes differs for each
+type of object. For instance, a cons cell consists of three words:
+
+@verbatim
++---------+----------+
+| CONS    |          |
++---------+----------+
+|     car-pointer    |
++--------------------+
+|     cdr-pointer    |
++--------------------+
+@end verbatim
+
+@cfindex --enable-small-cons [YES|no]
+
+Note, that this is on of the possible implementations of
+@code{cons}. The second one (currently default) uses the immediate value
+for the @code{list} and consumes two words instead of three. Such
+implementation is more memory and speed efficient (according to the
+comments in the source code):
+
+@verbatim
+/*
+ * CONSES
+ *
+ * We implement two variants. The "small cons" type carries the type
+ * information in the least significant bits of the pointer. We have
+ * to do some pointer arithmetics to find out the CAR / CDR of the
+ * cons but the overall result is faster and memory efficient, only
+ * using two words per cons.
+ *
+ * The other scheme stores conses as three-words objects, the first
+ * word carrying the type information. This is kept for backward
+ * compatibility and also because the oldest garbage collector does
+ * not yet support the smaller datatype.
+ *
+ * To make code portable and independent of the representation, only
+ * access the objects using the common macros below (that is all
+ * except ECL_CONS_PTR or ECL_PTR_CONS).
+ */
+@end verbatim
+
+@cppindex cl_object
+@deftp {@cind} cl_object
+This is the type of a lisp object. For your C/C++ program, a cl_object
+can be either a fixnum, a character, or a pointer to a union of
+structures (See @code{cl_lispunion} in the header object.h). The actual
+interpretation of that object can be guessed with the macro
+@code{ecl_t_of}.
+
+@subsubheading Example
+@exindex @code{cl_object} checking the type with @code{ecl_t_of}
+
+For example, if x is of type cl_object, and it is of type fixnum, we may
+retrieve its value:
+
+@example
+if (ecl_t_of(x) == t_fixnum)
+    printf("Integer value: %d\n", fix(x));
+@end example
+
+@subsubheading Example
+@exindex Accessing underlying @code{cl_object} structure
+
+If @code{x} is of type cl_object and it does not contain an immediate
+datatype, you may inspect the cell associated to the lisp object using
+@code{x} as a pointer. For example:
+
+@example
+if (ecl_t_of(x) == t_vector)
+    printf("Vector's dimension is: %d\n", x->dim);
+@end example
+
+You should see the following sections and the header object.h to learn
+how to use the different fields of a cl_object pointer.
+@end deftp
+
+@deftp {@cind} cl_type
+Enumeration type which distinguishes the different types of lisp
+objects. The most important values are:
+
+@cppindex t_start
+@cppindex t_list
+@cppindex t_character
+@cppindex t_fixnum
+@cppindex t_bignum
+@cppindex t_ratio
+@c @cppindex t_shortfloat
+@cppindex t_singlefloat
+@c #ifdef ECL_LONG_FLOAT
+@cppindex t_longfloat
+@c #endif
+@cppindex t_complex
+@cppindex t_symbol
+@cppindex t_package
+@cppindex t_hashtable
+@cppindex t_array
+@cppindex t_vector
+@c #ifdef ECL_UNICODE
+@cppindex t_string
+@c #endif
+@cppindex t_base_string
+@cppindex t_bitvector
+@cppindex t_stream
+@cppindex t_random
+@cppindex t_readtable
+@cppindex t_pathname
+@cppindex t_bytecodes
+@cppindex t_bclosure
+@cppindex t_cfun
+@cppindex t_cfunfixed
+@cppindex t_cclosure
+@cppindex t_instance
+@cppindex t_structure = t_instance
+@c #ifdef ECL_THREADS
+@cppindex t_process
+@cppindex t_lock
+@cppindex t_rwlock
+@cppindex t_condition_variable
+@cppindex t_semaphore
+@cppindex t_barrier
+@cppindex t_mailbox
+@c #endif
+@cppindex t_codeblock
+@cppindex t_foreign
+@cppindex t_frame
+@cppindex t_weak_pointer
+@c #ifdef ECL_SSE2
+@cppindex t_sse_pack
+@c #endif
+@cppindex t_end
+@cppindex t_other
+@cppindex t_contiguous – contiguous block
+
+@code{t_cons} @code{t_fixnum}, @code{t_character}, @code{t_bignum},
+@code{t_ratio}, @code{t_singlefloat}, @code{t_doublefloat},
+@code{t_complex}, @code{t_symbol}, @code{t_package}, @code{t_hashtable},
+@code{t_array}, @code{t_vector}, @code{t_string}, @code{t_bitvector},
+@code{t_stream}, @code{t_random}, @code{t_readtable}, @code{t_pathname},
+@code{t_bytecodes}, @code{t_cfun}, @code{t_cclosure}, @code{t_gfun},
+@code{t_instance}, @code{t_foreign} and @code{t_thread}.
+@end deftp
+
+@cppindex ecl_t_of
+@deftypefun cl_type ecl_t_of (cl_object x)
+If @var{x} is a valid lisp object, @code{ecl_t_of(x)} returns an integer
+denoting the type that lisp object. That integer is one of the values of
+the enumeration type @code{cl_type}.
+@end deftypefun
+
+@cppindex ECL_FIXNUMP
+@cppindex ECL_CHARACTERP
+@cppindex ECL_BASE_CHAR_P
+@cppindex ECL_NUMBER_TYPE_P
+@cppindex ECL_REAL_TYPE_P
+@cppindex ECL_REAL_TYPE_P
+@cppindex ECL_CONSP
+@cppindex ECL_LISTP
+@cppindex ECL_ATOM
+@cppindex ECL_SYMBOLP
+@cppindex ECL_ARRAYP
+@cppindex ECL_VECTORP
+@cppindex ECL_BIT_VECTOR_P
+@cppindex ECL_STRINGP
+
+@deftypefun  bool ECL_FIXNUMP (cl_object o)
+@deftypefunx bool ECL_CHARACTERP (cl_object o)
+@deftypefunx bool ECL_BASE_CHAR_P (cl_object o)
+@deftypefunx bool ECL_NUMBER_TYPE_P (cl_object o)
+@deftypefunx bool ECL_REAL_TYPE_P (cl_object o)
+@deftypefunx bool ECL_CONSP (cl_object o)
+@deftypefunx bool ECL_LISTP (cl_object o)
+@deftypefunx bool ECL_ATOM (cl_object o)
+@deftypefunx bool ECL_SYMBOLP (cl_object o)
+@deftypefunx bool ECL_ARRAYP (cl_object o)
+@deftypefunx bool ECL_VECTORP (cl_object o)
+@deftypefunx bool ECL_BIT_VECTOR_P (cl_object o)
+@deftypefunx bool ECL_STRINGP (cl_object o)
+
+Different macros that check whether @var{o} belongs to the specified
+type. These checks have been optimized, and are preferred over several
+calls to @code{ecl_t_of}.
+@end deftypefun
+
+@deftypefun bool ECL_IMMEDIATE (cl_object o)
+Tells whether @var{x} is an immediate datatype.
+@end deftypefun
+
+@deftp {@cind} cl_objectxx
+@end deftp
+@subsection Constructing objects
