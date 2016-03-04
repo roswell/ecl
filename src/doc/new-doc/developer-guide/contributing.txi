@@ -100,5 +100,45 @@ For instance: if the user has some privigiles on the system
 @deftypefun return-type name (type arg)*
 description
 @end deftypefun
-
 @end verbatim
+
+@subsubsection Variables
+
+Examples:
+@verbatim
+@defvr {Constant} MOST_NEGATIVE_FIXNUM
+@defvrx {Constant} MOST_POSITIVE_FIXNUM
+These constants mark the limits of a fixnum.
+@end defvr
+@defvr {FFI} *use-dffi*
+Description.
+@end defvr
+@end verbatim
+
+@subsubsection Deprecated, obsolete and unused functions/variables
+
+These shouldn't appear in the function index nor the variable index, but
+should be listed in the C/C++ symbol index or/and Lisp index. Their
+status should be marked with the @strong{keyword}.
+
+Example:
+@verbatim
+@cppindex ecl_fix
+@cppindex ecl_unfix
+@cppindex ecl_make_fixnum
+@cppindex ecl_fixnum
+
+@deftypefun cl_object ecl_fix (cl_fixnum n)
+@deftypefunx cl_fixnum ecl_unfix (cl_object o)
+@code{ecl_fix} converts from an integer to a lisp object, while the
+@code{ecl_unfix} does the opposite (converts lisp object fixnum to integer).
+
+@itemize @bullet
+@item @strong{DEPRECATED} @code{cl_make_fixnum} – equivalent to @code{cl_fix}
+@item @strong{DEPRECATED} @code{cl_fixnum} – equivalent to @code{cl_unfix}
+@end itemize
+@end deftypefun
+@end verbatim
+
+If symbol is deprecated, it will be marked as obsolete in the next
+release, while obsolete symbols will be removed.
