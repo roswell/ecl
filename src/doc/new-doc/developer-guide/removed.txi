@@ -6,6 +6,8 @@
 @c * In-house GC:: ECL's own GC
 @c * Green threads:: Lightweight processes
 @c * Compiler newcmp:: Experimental compiler architecture
+@c * In-house bignum implementation::
+@c * Possibility to build without bignums::
 @c @end menu
 
 @c @node In-house DFFI
