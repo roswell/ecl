@@ -643,15 +643,6 @@ returned as the value of COMPILE.  In any case, COMPILE creates temporary
 files, whose filenames begin with \"gazonk\", which are automatically deleted
 after compilation."
   (unless (symbolp name) (error "~s is not a symbol." name))
-
-  ;; Deprecated, to be removed in next release
-  (when *suppress-compiler-notes*
-    (setf *suppress-compiler-messages*
-          `(or ,*suppress-compiler-messages* compiler-note)))
-  (when *suppress-compiler-warnings*
-    (setf *suppress-compiler-messages*
-          `(or ,*suppress-compiler-messages* compiler-warning)))
-
   (cond ((and supplied-p def)
          (when (functionp def)
            (unless (function-lambda-expression def)
