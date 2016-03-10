@@ -1150,3 +1150,20 @@
       (compile 'check-single-wildcard)
       (check-single-wildcard "dan*" 3))
   T)
+
+;;; Date: 2016-02-10
+;;; Fixed: Daniel Kochmański
+;;; Description
+;;;     Aux closures created by C compiler weren't handled correctly
+;;;     in respect of the environment and declarations of the
+;;;     variables
+(deftest compiler.0050.cmptop/call.1
+    (funcall (compile nil '(lambda ()
+                            (labels
+                                ((fun-2 () (fun-3 'cool))
+                                 (fun-3 (clause-var)
+                                   (flet ((fun-4 () clause-var))
+                                     (fun-4))))
+                              (let ((fun-1 (lambda () (fun-2))))
+                                (funcall fun-1))))))
+  cool)
