@@ -40,3 +40,8 @@ alternative interface.
 This was abandoned effort of changing the compiler architecture. Sources
 reside in @code{src/newcmp} directory, but they doesn't build nor were
 updated for a long time. This interface will be probably removed soon.
+
+@subsection Old MIT loop
+Commit @code{5042589043a7be853b7f85fd7a996747412de6b4}. This old loop
+implementation has got superseeded by the one incorporated from
+Symbolics LOOP in 2001.
