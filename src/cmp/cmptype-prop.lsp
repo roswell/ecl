@@ -14,7 +14,7 @@
 ;;;; CMPTYPE-PROP -- Type propagation basic routines and database
 ;;;;
 
-(in-package #-new-cmp "COMPILER" #+new-cmp "C-TYPES")
+(in-package "COMPILER")
 
 (defun infer-arg-and-return-types (fname forms &optional (env *cmp-env*))
   (let ((found (gethash fname *p0-dispatch-table*))
@@ -56,7 +56,6 @@
                (unless intersection
                  (cmpwarn-style "The argument ~d of function ~a has type~&~4T~A~&instead of expected~&~4T~A"
                           i fname actual-type expected-type))
-               #-new-cmp
                (when (zerop (cmp-env-optimization 'safety))
                  (setf (c1form-type value) intersection))))))))
 

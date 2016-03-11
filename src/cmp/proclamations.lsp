@@ -48,7 +48,7 @@
     (name arg-types return-type &rest properties)
   (when (sys:get-sysprop name 'proclaimed-arg-types)
     (warn "Duplicate proclamation for ~A" name))
-  (#-new-cmp proclaim-function #+new-cmp c-env::proclaim-function
+  (proclaim-function
    name (list arg-types return-type))
   (loop for p in properties
      do (case p
