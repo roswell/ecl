@@ -335,7 +335,7 @@ Returns the address as an integer of a pointer."
 Returns the object to which a pointer points."
   ;; FIXME! No checking!
   (setf ftype (%convert-to-ffi-type ftype))
-  (cond ((foreign-elt-type-p type)
+  (cond ((foreign-elt-type-p ftype)
          (si::foreign-data-ref-elt ptr 0 ftype))
         ((atom ftype)
          (error "Unknown foreign primitive type: ~A" ftype))
