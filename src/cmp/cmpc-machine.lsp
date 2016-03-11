@@ -14,7 +14,7 @@
 ;;;; CMPC-MACHINE -- Abstract target machine details
 ;;;;
 
-(in-package #-new-cmp "COMPILER" #+new-cmp "C-BACKEND")
+(in-package "COMPILER")
 
 (defconstant +representation-types+
   '(;; These types can be used by ECL to unbox data

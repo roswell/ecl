@@ -14,7 +14,7 @@
 ;;;; CMPENVAPI -- API for creating and manipulating environments
 ;;;;
 
-(in-package #-new-cmp "COMPILER" #+new-cmp "C-ENV")
+(in-package "COMPILER")
 
 (defun cmp-env-root (&optional (env *cmp-env-root*))
   "Provide a root environment for toplevel forms storing all declarations
@@ -31,7 +31,6 @@ that are susceptible to be changed by PROCLAIM."
 (defmacro cmp-env-functions (&optional (env '*cmp-env*))
   `(cdr ,env))
 
-#-new-cmp
 (defun cmp-env-cleanups (env)
   (loop with specials = '()
         with end = (cmp-env-variables env)

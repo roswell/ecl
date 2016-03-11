@@ -23,11 +23,7 @@ RM	= @RM@
 
 HDIR	= @HDIR@
 
-#ifdef MSDOS
-UTILS	= dpp.exe rsym.exe
-#else
 UTILS	= dpp rsym
-#endif
 
 all:	$(UTILS)
 

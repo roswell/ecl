@@ -135,9 +135,9 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
 ;;; Thus their names need not be exported.
 
 (let ()
-  ;; We enclose the macro in a LET form so that it is no longer
-  ;; a toplevel form. This solves the problem of this simple LOOP
-  ;; replacing the more complex form in loop2.lsp when evalmacros.lsp
+  ;; We enclose the macro in a LET form so that it is no longer a
+  ;; toplevel form. This solves the problem of this simple LOOP
+  ;; replacing the more complex form in loop.lsp when evalmacros.lsp
   ;; gets compiled.
 (defmacro loop (&rest body &aux (tag (gensym)))
   "Syntax: (loop {form}*)

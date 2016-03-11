@@ -14,7 +14,7 @@
 ;;;; CMPTYPE-PROP -- Type propagation basic routines and database
 ;;;;
 
-(in-package #-new-cmp "COMPILER" #+new-cmp "C-ENV")
+(in-package "COMPILER")
 
 (defun function-arg-types (arg-types &aux (types nil))
   (do ((al arg-types (cdr al)))

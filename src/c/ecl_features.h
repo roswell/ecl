@@ -38,9 +38,6 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ENABLE_DLOPEN
         ecl_def_string_array_elt("DLOPEN"),
 #endif
-#ifdef ECL_OLD_LOOP
-        ecl_def_string_array_elt("OLD-LOOP"),
-#endif
         ecl_def_string_array_elt("ECL-PDE"),
 #if defined(unix) || defined(netbsd) || defined(openbsd) || defined(linux) || defined(darwin) || \
         defined(freebsd) || defined(dragonfly) || defined(kfreebsd) || defined(gnu) || defined(nsk)
@@ -51,9 +48,6 @@ ecl_def_string_array(feature_names,static,const) = {
 #endif
 #ifdef SYSV
         ecl_def_string_array_elt("SYSTEM-V"),
-#endif
-#ifdef MSDOS
-        ecl_def_string_array_elt("MS-DOS"),
 #endif
 #if defined(__MINGW32__)
         ecl_def_string_array_elt("MINGW32"),

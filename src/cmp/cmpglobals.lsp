@@ -14,7 +14,7 @@
 ;;;;  CMPGLOBALS -- Global variables and flag definitions
 ;;;;
 
-(in-package #-new-cmp "COMPILER" #+new-cmp "C-DATA")
+(in-package "COMPILER")
 
 ;;;
 ;;; VARIABLES
@@ -24,7 +24,6 @@
 ;;;
 ;;; Empty info struct
 ;;;
-#-new-cmp
 (defvar *info* (make-info))
 (defvar *inline-blocks* 0)
 (defvar *opened-c-braces* 0)
@@ -110,9 +109,7 @@ running the compiler. It may be updated by running ")
 
 (defvar *lcl* 0)                ; number of local variables
 
-#-new-cmp
 (defvar *temp* 0)               ; number of temporary variables
-#-new-cmp
 (defvar *max-temp* 0)           ; maximum *temp* reached
 
 (defvar *level* 0)              ; nesting level for local functions
@@ -123,12 +120,9 @@ running the compiler. It may be updated by running ")
 (defvar *env* 0)                ; number of variables in current form
 (defvar *max-env* 0)            ; maximum *env* in whole function
 (defvar *env-lvl* 0)            ; number of levels of environments
-#-new-cmp
 (defvar *aux-closure* nil)      ; stack allocated closure needed for indirect calls
-#-new-cmp
 (defvar *ihs-used-p* nil)       ; function must be registered in IHS?
 
-#-new-cmp
 (defvar *next-cmacro* 0)        ; holds the last cmacro number used.
 (defvar *next-cfun* 0)          ; holds the last cfun used.
 
@@ -229,7 +223,6 @@ slashes before special characters.")
 (defvar *compiler-phase* nil)
 
 (defvar *volatile*)
-#-new-cmp
 (defvar *setjmps* 0)
 
 (defvar *compile-toplevel* T
@@ -241,7 +234,6 @@ in the translated C/C++ file. Notice that it is unspecified where these
 lines are inserted, but the order is preserved")
 
 (defvar *compile-time-too* nil)
-#-new-cmp
 (defvar *not-compile-time* nil)
 
 (defvar *permanent-data* nil)           ; detemines whether we use *permanent-objects*
@@ -310,11 +302,8 @@ be deleted if they have been opened with LoadLibrary.")
     (*callbacks* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* nil)
-    #-new-cmp
     (*max-temp* 0)
-    #-new-cmp
     (*temp* 0)
-    #-new-cmp
     (*next-cmacro* 0)
     (*next-cfun* 0)
     (*last-label* 0)
@@ -336,18 +325,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*clines-string-list* '())
     (*inline-blocks* 0)
     (*open-c-braces* 0)
-    #+new-cmp
-    (*type-and-cache* (type-and-empty-cache))
-    #+new-cmp
-    (*type-or-cache* (type-or-empty-cache))
-    #+new-cmp
-    (*values-type-or-cache* (values-type-or-empty-cache))
-    #+new-cmp
-    (*values-type-and-cache* (values-type-and-empty-cache))
-    #+new-cmp
-    (*values-type-primary-type-cache* (values-type-primary-type-empty-cache))
-    #+new-cmp
-    (*values-type-to-n-types-cache* (values-type-to-n-types-empty-cache))
     (si::*defun-inline-hook* 'maybe-install-inline-function)
     (*machine* (or *machine* +default-machine+))
     (*optimizable-constants* (make-optimizable-constants *machine*))
