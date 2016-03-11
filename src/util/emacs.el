@@ -97,7 +97,6 @@
 		(concat (subseq (buffer-file-name (current-buffer)) 0 -13) x))
 	      '(
 "c/all_symbols.d"
-"c/alloc.d"
 "c/alloc_2.d"
 "c/apply.d"
 "c/array.d"
@@ -127,7 +126,6 @@
 "c/ffi.d"
 "c/file.d"
 "c/format.d"
-"c/gbc-new.d"
 "c/gbc.d"
 "c/gfun.d"
 "c/hash.d"
