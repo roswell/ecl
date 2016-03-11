@@ -118,7 +118,6 @@
 "c/disassembler.d"
 "c/dosdummy.d"
 "c/dostimes.d"
-"c/earith.d"
 "c/ecl_constants.h"
 "c/ecl_features.h"
 "c/error.d"
