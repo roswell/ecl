@@ -283,7 +283,6 @@
 "lsp/top.lsp"
 "lsp/trace.lsp"
 "lsp/unicode.lsp"
-"lsp/util.lsp"
 "clos/boot.lsp"
 "clos/builtin.lsp"
 "clos/change.lsp"
