@@ -26,7 +26,7 @@
   PLEASE NOTE THAT:
 
   This license covers all of the ECL program except for the files
-	src/lsp/loop2.lsp	; Symbolic's LOOP macro
+	src/lsp/loop.lsp	; Symbolic's LOOP macro
 	src/lsp/pprint.lsp	; CMUCL's pretty printer
 	src/lsp/format.lsp	; CMUCL's format
   and the directories

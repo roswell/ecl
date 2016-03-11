@@ -266,7 +266,7 @@
 "lsp/iolib.lsp"
 "lsp/listlib.lsp"
 "lsp/load.lsp.in"
-"lsp/loop2.lsp"
+"lsp/loop.lsp"
 "lsp/mislib.lsp"
 "lsp/module.lsp"
 "lsp/mp.lsp"
