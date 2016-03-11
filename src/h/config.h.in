@@ -271,8 +271,6 @@ typedef unsigned char ecl_base_char;
 #undef CLX
 /* Locatives                                                            */
 #undef LOCATIVE
-/* Use old MIT LOOP macro system                                        */
-#undef ECL_OLD_LOOP
 
 /* Define this if you want a runtime version only without compiler      */
 #undef RUNTIME

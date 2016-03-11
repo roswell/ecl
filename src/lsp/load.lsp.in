@@ -38,9 +38,6 @@
   "src:lsp;packlib.lsp"
   "src:lsp;seqlib.lsp"
   "src:lsp;trace.lsp"
-#+old-loop
-  "src:lsp;loop.lsp"
-#-old-loop
   "src:lsp;loop2.lsp"
 #+cmu-format
   "src:lsp;format.lsp"

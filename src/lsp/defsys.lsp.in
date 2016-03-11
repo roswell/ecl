@@ -31,9 +31,6 @@
     (seqlib     ()              ()                      ())
     (iolib      ()              ()                      ())
     (ansi       ()              ()                      ())
-#+old-loop
-    (loop       ()              ()                      ())
-#-old-loop
     (loop2      ()              ()                      ())
 #+cmu-format
     (format     ()              ()                      ())
