@@ -30,6 +30,7 @@
 * Pending changes since 16.1.2
 ** Enhancements
 - Removed 15000 lines of obsolete code
+
 Files not included in the buildsystem but lingering in the codebase or
 options failing to build. All info is added in the new documentation in
 section "Removed interfaces".
