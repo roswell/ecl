@@ -84,9 +84,6 @@
 #include <ecl/cons.h>
 #include <ecl/stacks.h>
 #include <ecl/number.h>
-#ifdef LOCATIVE
-#include <ecl/unify.h>
-#endif
 #include <ecl/legacy.h>
 
 typedef void (*ecl_init_function_t)(cl_object block);

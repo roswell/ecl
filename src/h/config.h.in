@@ -269,8 +269,6 @@ typedef unsigned char ecl_base_char;
 
 /* CLX                                                                  */
 #undef CLX
-/* Locatives                                                            */
-#undef LOCATIVE
 
 /* Define this if you want a runtime version only without compiler      */
 #undef RUNTIME
