@@ -116,8 +116,6 @@
 "c/compiler.d"
 "c/cons.d"
 "c/disassembler.d"
-"c/dosdummy.d"
-"c/dostimes.d"
 "c/ecl_constants.h"
 "c/ecl_features.h"
 "c/error.d"

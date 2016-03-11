@@ -49,9 +49,6 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef SYSV
         ecl_def_string_array_elt("SYSTEM-V"),
 #endif
-#ifdef MSDOS
-        ecl_def_string_array_elt("MS-DOS"),
-#endif
 #if defined(__MINGW32__)
         ecl_def_string_array_elt("MINGW32"),
         ecl_def_string_array_elt("WIN32"),

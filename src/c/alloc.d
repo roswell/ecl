@@ -675,7 +675,7 @@ init_alloc(void)
 
 #ifdef USE_MMAP
         real_maxpage = MAXPAGE;
-#elif defined(MSDOS) || defined(__CYGWIN__)
+#elif defined(__CYGWIN__)
         real_maxpage = MAXPAGE;
 #elif !defined(HAVE_ULIMIT_H)
         {
@@ -697,7 +697,7 @@ init_alloc(void)
 #else /* HAVE_ULIMIT */
         real_maxpage= ulimit(UL_GMEMLIM)/LISP_PAGESIZE;
         if (real_maxpage > MAXPAGE) real_maxpage = MAXPAGE;
-#endif /* USE_MMAP, MSDOS, or HAVE_ULIMIT */
+#endif /* USE_MMAP or HAVE_ULIMIT */
 
 #ifdef USE_MMAP
         heap_start = NULL;
