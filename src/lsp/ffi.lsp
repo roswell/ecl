@@ -830,7 +830,7 @@ the defined Lisp function and RESULT-TYPE is its return type."
   (let ((args (mapcar #'(lambda (x) (gensym)) arg-types)))
   `(defun ,name ,args
      (c-inline ,args ,arg-types ,result-type
-               ,C-expr :one-liner t))))
+               ,c-expression :one-liner t))))
 
 (defmacro defentry (name arg-types c-name &key no-interrupts)
   "Syntax: (defentry name arg-types (result-type function-name)
