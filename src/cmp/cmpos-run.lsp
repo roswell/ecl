@@ -54,7 +54,10 @@
   (cmpnote "Invoking external command:~%  ~A ~{~A ~}" program args)
   (multiple-value-bind (stream result process)
       (let* ((*standard-output* ext:+process-standard-output+)
-             (*error-output* ext:+process-error-output+))
+             (*error-output* ext:+process-error-output+)
+             (program (split-program-options program))
+             (args `(,@(cdr program) ,@args))
+             (program (car program)))
         (with-current-directory
             #-(and cygwin (not ecl-min))
             (ext:run-program program args :input nil :output t :error t :wait t)
