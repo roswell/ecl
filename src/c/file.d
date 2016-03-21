@@ -56,7 +56,7 @@
 # define STDOUT_FILENO 1
 # define STDERR_FILENO 2
 # define HAVE_SELECT
-#elif defined(HAVE_SYS_IOCTL_H) && !defined(MSDOS) && !defined(cygwin)
+#elif defined(HAVE_SYS_IOCTL_H) && !defined(cygwin)
 # include <sys/ioctl.h>
 #endif
 

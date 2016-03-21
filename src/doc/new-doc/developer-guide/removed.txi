@@ -20,15 +20,12 @@ real use it has been removed in 2016.
 
 @c @node In-house GC
 @subsection In-house GC
-
-Currently broken GC is present in files @code{src/c/alloc.d} and
-@code{src/c/gbc.d}. Native GC is replaced by a @code{boehm gc}.It is
-planned in an indefinite future to add the native GC back as a fallback
-for unsupported platforms.
+Commit @code{61500316b7ea17d0e42f5ca127f2f9fa3e6596a8}.  Broken GC is
+replaced by BoehmGC library. This may be added back as a fallback in
+the near future.
 
 @c @node Green threads
 @subsection Green threads
-
 Commit @code{41923d5927f31f4dd702f546b9caee74e98a2080}. Green threads
 (aka light weight processes) has been replaced with native threads
 implementation. There is an ongoing effort to bring them back as an
@@ -36,7 +33,22 @@ alternative interface.
 
 @c @node Compiler newcmp
 @subsection Compiler newcmp
+Commit @code{9b8258388487df8243e2ced9c784e569c0b34c4f} This was
+abandoned effort of changing the compiler architecture. Some clever
+ideas and a compiler package hierarchy. Some of these things should be
+incorporated during the evolution of the primary compiler.
 
-This was abandoned effort of changing the compiler architecture. Sources
-reside in @code{src/newcmp} directory, but they doesn't build nor were
-updated for a long time. This interface will be probably removed soon.
+@subsection Old MIT loop
+Commit @code{5042589043a7be853b7f85fd7a996747412de6b4}. This old loop
+implementation has got superseeded by the one incorporated from
+Symbolics LOOP in 2001.
+
+@subsection Support for bignum arithmetic (earith.d)
+Commit @code{edfc2ba785d6a64667e89c869ef0a872d7b9704b}. Removes
+pre-gmp bignum code. Name comes probably from ``extended arithmetic'',
+contains multiplication and division routines (assembler and a
+portable implementation).
+
+@subsection Unification module
+Commit @code{6ff5d20417a21a76846c4b28e532aac097f03109}. Old unifiction
+module (logic programming) from EcoLisp times.

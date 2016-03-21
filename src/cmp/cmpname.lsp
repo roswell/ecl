@@ -18,10 +18,7 @@
 ;;;; functions. This initialization function has a C name which needs
 ;;;; to be unique. This file has functions to create such names.
 
-#-new-cmp
 (in-package "COMPILER")
-#+new-cmp
-(in-package "C-TAGS")
 
 (defun encode-number-in-name (number)
   ;; Encode a number in an alphanumeric identifier which is a valid C name.

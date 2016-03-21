@@ -335,7 +335,7 @@ Returns the address as an integer of a pointer."
 Returns the object to which a pointer points."
   ;; FIXME! No checking!
   (setf ftype (%convert-to-ffi-type ftype))
-  (cond ((foreign-elt-type-p type)
+  (cond ((foreign-elt-type-p ftype)
          (si::foreign-data-ref-elt ptr 0 ftype))
         ((atom ftype)
          (error "Unknown foreign primitive type: ~A" ftype))
@@ -830,7 +830,7 @@ the defined Lisp function and RESULT-TYPE is its return type."
   (let ((args (mapcar #'(lambda (x) (gensym)) arg-types)))
   `(defun ,name ,args
      (c-inline ,args ,arg-types ,result-type
-               ,C-expr :one-liner t))))
+               ,c-expression :one-liner t))))
 
 (defmacro defentry (name arg-types c-name &key no-interrupts)
   "Syntax: (defentry name arg-types (result-type function-name)

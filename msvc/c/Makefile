@@ -66,7 +66,7 @@ HDIR	= $(top_srcdir)\h
 HFILES	= ..\ecl\config.h ..\ecl\atomic_ops.h $(HDIR)\ecl.h $(HDIR)\ecl-cmp.h\
 	$(HDIR)\object.h $(HDIR)\cs.h $(HDIR)\stacks.h\
 	$(HDIR)\external.h $(HDIR)\cons.h $(HDIR)\legacy.h\
-	$(HDIR)\number.h $(HDIR)\page.h $(HDIR)\unify.h\
+	$(HDIR)\number.h $(HDIR)\page.h
 	$(HDIR)\internal.h $(HDIR)\ecl-inl.h $(HDIR)\bytecodes.h \
 	$(HDIR)\impl\math_dispatch.h
 

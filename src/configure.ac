@@ -274,11 +274,6 @@ AC_ARG_WITH(profile-cflags,
                   [(yes,no,actual flags,default=NO)]),
   [],[with_profile_cflags="no"])
 
-AC_ARG_WITH(newcmp,
-  AS_HELP_STRING( [--with-newcmp],
-                  [new compiler (yes|no, default=NO)]),
-  [], [with_newcmp=no])
-
 AC_ARG_WITH(extra-files,
   AS_HELP_STRING( [--with-extra-files],
                   [list of additional source files (default="")]),
@@ -507,11 +502,7 @@ fi
 
 dnl ----------------------------------------------------------------------
 dnl Version of the compiler
-if test "${with_newcmp}" = "yes"; then
-  ECL_CMPDIR=new-cmp
-else
-  ECL_CMPDIR=cmp
-fi
+ECL_CMPDIR=cmp
 AC_SUBST(ECL_CMPDIR)
 
 dnl ----------------------------------------------------------------------
@@ -918,7 +909,7 @@ if test "${enable_hpack}" = "yes"; then
 fi
 
 AC_CONFIG_FILES([
-  bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp new-cmp/load.lsp
+  bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp
   ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man
   ecl/configpre.h:h/config.h.in bin/ecl-config.pre:util/ecl-config
   lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in

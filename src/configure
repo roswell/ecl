@@ -805,7 +805,6 @@ enable_precisegc
 enable_debug
 with_debug_cflags
 with_profile_cflags
-with_newcmp
 with_extra_files
 with_init_form
 with_unicode_names
@@ -1523,7 +1522,6 @@ Optional Packages:
                           (yes,no,actual flags,default=YES)
   --with-profile-cflags   add profiling flags to the compiler invocation
                           (yes,no,actual flags,default=NO)
-  --with-newcmp           new compiler (yes|no, default=NO)
   --with-extra-files      list of additional source files (default="")
   --with-init-form        lisp forms to execute at startup
                           (default="(si::top-level t)")
@@ -2962,15 +2960,6 @@ if test "${with_profile_cflags+set}" = set; then :
   withval=$with_profile_cflags;
 else
   with_profile_cflags="no"
-fi
-
-
-
-# Check whether --with-newcmp was given.
-if test "${with_newcmp+set}" = set; then :
-  withval=$with_newcmp;
-else
-  with_newcmp=no
 fi
 
 
@@ -5817,11 +5806,7 @@ if test "$with_profile_cflags" != "no"; then
   LDFLAGS="$with_profile_cflags $LDFLAGS"
 fi
 
-if test "${with_newcmp}" = "yes"; then
-  ECL_CMPDIR=new-cmp
-else
-  ECL_CMPDIR=cmp
-fi
+ECL_CMPDIR=cmp
 
 
 if test "${enable_threads}" = "auto"; then
@@ -9703,7 +9688,7 @@ $as_echo "#define ECL_RELATIVE_PACKAGE_NAMES 1" >>confdefs.h
 
 fi
 
-ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp new-cmp/load.lsp ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in bin/ecl-config.pre:util/ecl-config lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp tests/config.lsp tests/Makefile"
+ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in bin/ecl-config.pre:util/ecl-config lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp tests/config.lsp tests/Makefile"
 
 ac_config_headers="$ac_config_headers ecl/config.h:ecl/configpre.h"
 
@@ -10402,7 +10387,6 @@ do
     "lsp/load.lsp") CONFIG_FILES="$CONFIG_FILES lsp/load.lsp" ;;
     "clos/load.lsp") CONFIG_FILES="$CONFIG_FILES clos/load.lsp" ;;
     "cmp/load.lsp") CONFIG_FILES="$CONFIG_FILES cmp/load.lsp" ;;
-    "new-cmp/load.lsp") CONFIG_FILES="$CONFIG_FILES new-cmp/load.lsp" ;;
     "../Makefile") CONFIG_FILES="$CONFIG_FILES ../Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "c/Makefile") CONFIG_FILES="$CONFIG_FILES c/Makefile" ;;
