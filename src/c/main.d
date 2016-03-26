@@ -93,11 +93,11 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
         1,              /* ECL_OPT_SIGNAL_HANDLING_THREAD */
         16,             /* ECL_OPT_SIGNAL_QUEUE_SIZE */
         0,              /* ECL_OPT_BOOTED */
-        8192,           /* ECL_OPT_BIND_STACK_SIZE */
+        8 * 1024,       /* ECL_OPT_BIND_STACK_SIZE */
         1024,           /* ECL_OPT_BIND_STACK_SAFETY_AREA */
-        2048,           /* ECL_OPT_FRAME_STACK_SIZE */
+        2 * 1024,       /* ECL_OPT_FRAME_STACK_SIZE */
         128,            /* ECL_OPT_FRAME_STACK_SAFETY_AREA */
-        32768,          /* ECL_OPT_LISP_STACK_SIZE */
+        32 * 1024,      /* ECL_OPT_LISP_STACK_SIZE */
         128,            /* ECL_OPT_LISP_STACK_SAFETY_AREA */
         128*sizeof(cl_index)*1024, /* ECL_OPT_C_STACK_SIZE */
         4*sizeof(cl_index)*1024, /* ECL_OPT_C_STACK_SAFETY_AREA */

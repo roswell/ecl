@@ -105,8 +105,8 @@ typedef enum {
 typedef union cl_lispunion *cl_object;
 typedef cl_object cl_return;
 typedef cl_fixnum cl_narg;
+typedef cl_object (*cl_cfunptr)();
 typedef cl_object (*cl_objectfn)(cl_narg narg, ...);
-typedef cl_object (*cl_objectfn_fixed)();
 
 /*
         OBJect NULL value.
@@ -711,31 +711,31 @@ struct ecl_bclosure {
 };
 
 struct ecl_cfun {               /*  compiled function header  */
-        _ECL_HDR1(narg);
+        _ECL_HDR1(narg_fixed);
         cl_object name;         /*  compiled function name  */
         cl_object block;        /*  descriptor of C code block for GC  */
         cl_objectfn entry;      /*  entry address  */
+        cl_cfunptr  cfunptr;    /*  the c fucntion (casted) pointer */
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };
 
 struct ecl_cfunfixed {          /*  compiled function header  */
-        _ECL_HDR1(narg);
+        _ECL_HDR1(narg_fixed);
         cl_object name;         /*  compiled function name  */
         cl_object block;        /*  descriptor of C code block for GC  */
-        cl_objectfn entry;      /*  entry address (must match the position of
-                                 *  the equivalent field in cfun) */
-        cl_objectfn_fixed entry_fixed;  /*  entry address  */
+        cl_objectfn entry;      /*  entry address  */
+        cl_cfunptr  cfunptr;    /*  the c fucntion (casted) pointer */
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };
 
 struct ecl_cclosure {           /*  compiled closure header  */
-        _ECL_HDR;
+        _ECL_HDR1(narg_fixed);
         cl_object env;          /*  environment  */
         cl_object block;        /*  descriptor of C code block for GC  */
-        cl_objectfn entry;      /*  entry address (must match the position of
-                                 *  the equivalent field in cfun) */
+        cl_objectfn entry;      /*  entry address  */
+        cl_cfunptr  cfunptr;    /*  the c fucntion (casted) pointer */
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };

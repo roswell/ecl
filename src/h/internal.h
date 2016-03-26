@@ -315,8 +315,8 @@ extern cl_object ecl_extend_hashtable(cl_object hashtable);
 #define GFUN_COMB(x) ((x)->instance.slots[2])
 
 extern cl_object FEnot_funcallable_vararg(cl_narg narg, ...);
-extern cl_object ecl_slot_reader_dispatch(cl_narg narg, cl_object instance);
-extern cl_object ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_object instance);
+extern cl_object ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */);
+extern cl_object ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instance */);
 
 /* load.d */
 

@@ -1281,7 +1281,7 @@ install_signal_handling_thread()
         ecl_process_env()->default_sigmask = &main_thread_sigmask;
         if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {
                 cl_object fun =
-                        ecl_make_cfun((cl_objectfn_fixed)
+                        ecl_make_cfun((cl_cfunptr)
                                       asynchronous_signal_servicing_thread,
                                       @'si::signal-servicing',
                                       ECL_NIL,

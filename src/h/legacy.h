@@ -53,9 +53,9 @@
                         ecl_def_c_macro_va((sym),(function));   \
                 else                                            \
                         ecl_def_c_macro((sym),(function),n); }
-#define cl_make_cfun(fun,name,block,narg) ecl_make_cfun(fun,name,block,narg)
-#define cl_make_cfun_va(fun,name,block) ecl_make_cfun_va(fun,name,block)
-#define cl_make_cclosure_va(fun,name,block) ecl_make_cclosure_va(fun,name,block)
+#define cl_make_cfun(fun,name,block,narg_fixed) ecl_make_cfun(fun,name,block,narg_fixed)
+#define cl_make_cfun_va(fun,name,block,narg_fixed) ecl_make_cfun_va(fun,name,block,narg_fixed)
+#define cl_make_cclosure_va(fun,name,block,narg_fixed) ecl_make_cclosure_va(fun,name,block,narg_fixed)
 #define si_bc_file(o) si_compiled_function_file(o)
 #define ARRAYP ECL_ARRAYP
 #define VECTORP ECL_VECTORP

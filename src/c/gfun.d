@@ -42,15 +42,18 @@ static cl_object
 user_function_dispatch(cl_narg narg, ...)
 {
         int i;
+        ecl_va_list args;
         cl_object output;
         cl_env_ptr env = ecl_process_env();
         cl_object fun = env->function;
         struct ecl_stack_frame frame_aux;
         const cl_object frame = ecl_stack_frame_open(env, (cl_object)&frame_aux, narg);
-        ecl_va_list args; ecl_va_start(args, narg, narg, 0);
+
+        ecl_va_start(args, narg, narg, 0);
         for (i = 0; i < narg; i++) {
                 ECL_STACK_FRAME_SET(frame, i, ecl_va_arg(args));
         }
+        ecl_va_end(args);
         fun = fun->instance.slots[fun->instance.length - 1];
         output = ecl_apply_from_stack_frame(frame, fun);
         ecl_stack_frame_close(frame);
@@ -92,11 +95,11 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
         } else if (function_or_t == @'clos::standard-optimized-reader-method') {
                 /* WARNING: We assume that f(a,...) behaves as f(a,b) */
                 x->instance.isgf = ECL_READER_DISPATCH;
-                x->instance.entry = (cl_objectfn)ecl_slot_reader_dispatch;
+                x->instance.entry = ecl_slot_reader_dispatch;
         } else if (function_or_t == @'clos::standard-optimized-writer-method') {
                 /* WARNING: We assume that f(a,...) behaves as f(a,b) */
                 x->instance.isgf = ECL_WRITER_DISPATCH;
-                x->instance.entry = (cl_objectfn)ecl_slot_writer_dispatch;
+                x->instance.entry = ecl_slot_writer_dispatch;
         } else if (Null(cl_functionp(function_or_t))) {
                 FEwrong_type_argument(@'function', function_or_t);
         } else {

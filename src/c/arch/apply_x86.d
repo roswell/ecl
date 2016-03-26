@@ -19,7 +19,7 @@
 #include <ecl/ecl.h>
 
 cl_object
-APPLY(cl_narg n, cl_objectfn fn, cl_object *x)
+APPLY_variadic(cl_narg n, cl_cfunptr fn, cl_object *x)
 {
         cl_object output;
         asm volatile (
@@ -49,7 +49,7 @@ APPLY(cl_narg n, cl_objectfn fn, cl_object *x)
 }
 
 cl_object
-APPLY_fixed(cl_narg n, cl_object (*fn)(), cl_object *x)
+APPLY_fixed(cl_narg n, cl_cfunptr fn, cl_object *x)
 {
         cl_object output;
         asm volatile (
@@ -78,7 +78,7 @@ APPLY_fixed(cl_narg n, cl_object (*fn)(), cl_object *x)
 }
 
 cl_object
-APPLY_closure(cl_narg n, cl_objectfn fn, cl_object cl, cl_object *x)
+APPLY_closure(cl_narg n, cl_cfunptr fn, cl_object cl, cl_object *x)
 {
         cl_object output;
         asm volatile (

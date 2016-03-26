@@ -76,8 +76,7 @@ ecl_register_root(cl_object *p)
         gc_root[gc_roots++] = p;
 }
 
-cl_object
-si_gc(cl_object area)
+@(defun si::gc (area)
 {
         if (!GC_enabled())
                 ecl_internal_error("GC is not enabled");

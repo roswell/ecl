@@ -113,12 +113,23 @@ ensure_up_to_date_instance(cl_object instance)
 }
 
 cl_object
-ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
+ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */)
 {
+        cl_object instance;
         const cl_env_ptr env = ecl_process_env();
         cl_object gfun = env->function;
         cl_object index, value;
         ecl_cache_record_ptr e;
+
+        if (ecl_unlikely(narg != 1))
+            FEprogram_error("Wrong number of arguments for ecl_slot_reader_dispatch.", 0);
+
+        {
+            ecl_va_list args;
+            ecl_va_start(args, narg, narg, 0);
+            instance = ecl_va_arg(args);
+            ecl_va_end(args);
+        }
 
         unlikely_if (narg != 1)
                 FEwrong_num_arguments(gfun);
@@ -158,12 +169,24 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 }
 
 cl_object
-ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_object instance)
+ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instance */)
 {
+        cl_object value, instance;
         const cl_env_ptr env = ecl_process_env();
         cl_object gfun = env->function;
         ecl_cache_record_ptr e;
         cl_object index;
+
+        if (ecl_unlikely(narg != 2))
+            FEprogram_error("Wrong number of arguments for ecl_slot_writer_dispatch.", 0);
+
+        {
+            ecl_va_list args;
+            ecl_va_start(args, narg, narg, 0);
+            value = ecl_va_arg(args);
+            instance = ecl_va_arg(args);
+            ecl_va_end(args);
+        }
 
         unlikely_if (narg != 2) {
                 FEwrong_num_arguments(gfun);

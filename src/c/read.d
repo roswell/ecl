@@ -2431,11 +2431,11 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
                         cl_object fname = VV[fname_location];
                         cl_index location = ecl_fixnum(prototype->name);
                         cl_object position = prototype->file_position;
-                        int narg = prototype->narg;
-                        VV[location] = narg<0?
-                                ecl_make_cfun_va((cl_objectfn)prototype->entry,
-                                                 fname, block) :
-                                ecl_make_cfun((cl_objectfn_fixed)prototype->entry,
+                        int narg = prototype->narg_fixed;
+                        VV[location] = narg < 0 ?
+                                ecl_make_cfun_va((cl_cfunptr)prototype->cfunptr,
+                                                 fname, block, - narg - 1) :
+                                ecl_make_cfun((cl_cfunptr)prototype->cfunptr,
                                               fname, block, narg);
                         /* Add source file info */
                         if (position != ecl_make_fixnum(-1)) {

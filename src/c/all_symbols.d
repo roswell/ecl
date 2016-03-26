@@ -116,9 +116,13 @@ mangle_name(cl_object output, unsigned char *source, int l)
                                 if (fun == ECL_SYM_FUN(s)) {
                                         symbol = s;
                                         found = ECL_T;
-                                        if (fun->cfun.narg >= 0) {
+                                        int narg = fun->cfun.narg_fixed;
+                                        if (t == t_cfun) {
+                                            minarg = ecl_make_fixnum(narg);
+                                        }
+                                        else {
                                             minarg =
-                                            maxarg = ecl_make_fixnum(fun->cfun.narg);
+                                            maxarg = ecl_make_fixnum(narg);
                                         }
                                         break;
                                 }
@@ -173,7 +177,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 
 static void
 make_this_symbol(int i, cl_object s, int code, const char *name,
-                 cl_objectfn fun, int narg, cl_object value)
+                 cl_cfunptr cfun, int narg, cl_object value)
 {
         enum ecl_stype stp;
         cl_object package;
@@ -231,12 +235,12 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
         }
         if (form) {
                 s->symbol.stype |= ecl_stp_special_form;
-        } else if (fun) {
+        } else if (cfun) {
                 cl_object f;
-                if (narg >= 0) {
-                        f = ecl_make_cfun((cl_objectfn_fixed)fun, s, NULL, narg);
+                if (narg < 0) {
+                        f = ecl_make_cfun_va(cfun, s, NULL, -narg - 1);
                 } else {
-                        f = ecl_make_cfun_va(fun, s, NULL);
+                        f = ecl_make_cfun(cfun, s, NULL, narg);
                 }
                 ECL_SYM_FUN(s) = f;
         }
@@ -249,16 +253,16 @@ init_all_symbols(void)
         int i, code, narg;
         const char *name;
         cl_object s, value;
-        cl_objectfn fun;
+        cl_cfunptr cfun;
 
         /* We skip NIL and T */
         for (i = 2; cl_symbols[i].init.name != NULL; i++) {
                 s = (cl_object)(cl_symbols + i);
                 code = cl_symbols[i].init.type;
                 name = cl_symbols[i].init.name;
-                fun = (cl_objectfn)cl_symbols[i].init.fun;
-                narg = cl_symbols[i].init.narg;
+                cfun = (cl_cfunptr)cl_symbols[i].init.fun;
+                narg = cl_symbols[i].init.narg_fixed;
                 value = cl_symbols[i].init.value;
-                make_this_symbol(i, s, code, name, fun, narg, value);
+                make_this_symbol(i, s, code, name, cfun, narg, value);
         }
 }
