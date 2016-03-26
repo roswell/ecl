@@ -211,6 +211,7 @@
 ; (proclamation type-error-expected-type (condition) t)
 
 ;; ECL EXTENSIONS
+(proclamation si::coerce-to-list (t) list :no-side-effects)
 (proclamation si::coerce-to-vector (t type-specifier t gen-bool) vector :no-side-effects)
 (proclamation si::coerce-to-function (function-designator) function :no-side-effects)
 
@@ -271,6 +272,9 @@
 
 (proclamation si::dm-too-many-arguments (t) t)
 (proclamation si::dm-too-few-arguments (t) t)
+
+(proclamation si::search-keyword (t t) t)
+(proclamation si::check-keyword (t t &optional t) t)
 
 ;;;
 ;;; 7. OBJECTS
@@ -340,6 +344,8 @@
 (proclamation si:structure-set (structure-object t fixnum t) t)
 (proclamation si:structurep (t) gen-bool :predicate)
 (proclamation si:structure-subtype-p (t t) gen-bool :predicate)
+(proclamation si::structure-type-error (t t t t) t)
+(proclamation si::define-structure (t t t t t t t t t t t t t t t) t)
 
 #+threads (proclamation mp:compare-and-swap-structure (structure-object t fixnum t t) t)
 
@@ -474,6 +480,7 @@
  (string-designator package-designator &optional package-designator) package)
 (proclamation ext:remove-package-local-nickname
  (string-designator &optional package-designator) list)
+(proclamation si::packages-iterator (t t t) t)
 
 ;;;
 ;;; 12. NUMBERS
@@ -1227,6 +1234,39 @@
                       format-control &rest t)
               (or null string))
 
+;; ECL extensions:
+#+formatter
+(proclamation si::format-princ (t t t t t t t t) t)
+#+formatter
+(proclamation si::format-prin1 (t t t t t t t t) t)
+#+formatter
+(proclamation si::format-print-named-character (character stream) t)
+#+formatter
+(proclamation si::format-print-cardinal (stream integer) t)
+#+formatter
+(proclamation si::format-print-ordinal (stream integer) t)
+#+formatter
+(proclamation si::format-print-roman (stream integer) t)
+#+formatter
+(proclamation si::format-print-old-roman (stream integer) t)
+#+formatter
+(proclamation si::format-fixed (stream number t t t t t t) t)
+#+formatter
+(proclamation si::format-exponential (stream number t t t t t t t t) t)
+#+formatter
+(proclamation si::format-general (stream number t t t t t t t t) t)
+#+formatter
+(proclamation si::format-dollars (stream number t t t t t t) t)
+#+formatter
+(proclamation si::format-relative-tab (stream integer integer) t)
+#+formatter
+(proclamation si::format-absolute-tab (stream integer integer) t)
+#+formatter
+(proclamation si::format-justification (stream t t t t t t t t t t) t)
+
+(proclamation si::pprint-logical-block-helper (t t t t t t) t)
+(proclamation si::pprint-pop-helper (t t t &optional t) t)
+
 ;; Slot accessor:
 ;; (proclamation print-not-readable-object (condition) t)
 
@@ -1390,6 +1430,13 @@
 
 (proclamation si:unbound () t :pure)
 (proclamation si:traced-old-definition (t) t :no-side-effects)
+
+(proclamation si::find-documentation (t) t)
+(proclamation si::remove-documentation (t) t)
+(proclamation si::get-documentation (t t) t)
+(proclamation si::set-documentation (t t t) t)
+(proclamation si::expand-set-documentation (t t t) t)
+(proclamation si::find-declarations (t &optional t) t)
 
 #+clos
 (proclamation si:allocate-raw-instance (t t fixnum) ext:instance)

@@ -1090,10 +1090,10 @@
      clos::ensure-class
      clos::find-slot-definition
      ;; combin.lsp
-     clos::simple-code-walker
+     ;; clos::simple-code-walker
      ;; kernel.lsp
      clos::install-method
-     clos::default-initargs-of
+     ;; clos::default-initargs-of
      ;; clos::generic-function-lambda-list
      ;; clos::generic-function-argument-precedence-order
      ;; clos::generic-function-method-combination
@@ -1107,6 +1107,6 @@
      ;; clos::method-plist
      clos::associate-methods-to-gfun
      ;; method.lsp
-     clos::pop-next-method
+     ;; clos::pop-next-method
      )))
 
