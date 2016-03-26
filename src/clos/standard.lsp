@@ -163,33 +163,38 @@
   (unless (find-if #'has-forward-referenced-parents (class-direct-superclasses class))
     (finalize-inheritance class)))
 
-(defmethod initialize-instance ((class class) &rest initargs &key direct-slots)
+(defmethod initialize-instance ((class class) &rest initargs &key direct-slots direct-superclasses)
   (declare (ignore sealedp))
   ;; convert the slots from lists to direct slots
   (apply #'call-next-method class
          :direct-slots
          (loop for s in direct-slots
             collect (canonical-slot-to-direct-slot class s))
+         :direct-superclasses
+         direct-superclasses
          initargs)
   (finalize-unless-forward class)
   class)
 
-(defmethod shared-initialize ((class class) slot-names &rest initargs &key direct-superclasses)
-  ;; verify that the inheritance list makes sense
-  (let* ((class (apply #'call-next-method class slot-names
-                       :direct-superclasses
-                       (if (slot-boundp class 'direct-superclasses)
-                           (slot-value class 'direct-superclasses)
-                           nil)
-                       initargs))
-         (direct-superclasses (check-direct-superclasses class direct-superclasses)))
-    (loop for c in (class-direct-superclasses class)
-       unless (member c direct-superclasses :test #'eq)
-       do (remove-direct-subclass c class))
-    (setf (class-direct-superclasses class) direct-superclasses)
-    (loop for c in direct-superclasses
-       do (add-direct-subclass c class))
-    class))
+(defmethod shared-initialize ((class class) slot-names &rest initargs
+                              &key (direct-superclasses nil direct-superclasses-p))
+  (if direct-superclasses-p
+      ;; verify that the inheritance list makes sense
+      (let* ((class (apply #'call-next-method class slot-names
+                           :direct-superclasses
+                           (if (slot-boundp class 'direct-superclasses)
+                               (slot-value class 'direct-superclasses)
+                               nil)
+                           initargs))
+             (direct-superclasses (check-direct-superclasses class direct-superclasses)))
+        (loop for c in (class-direct-superclasses class)
+           unless (member c direct-superclasses :test #'eq)
+           do (remove-direct-subclass c class))
+        (setf (class-direct-superclasses class) direct-superclasses)
+        (loop for c in direct-superclasses
+           do (add-direct-subclass c class))
+        class)
+      (apply #'call-next-method class slot-names initargs)))
 
 (defun precompute-valid-initarg-keywords (class)
   (setf (class-valid-initargs class)
