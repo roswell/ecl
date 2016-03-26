@@ -294,6 +294,14 @@
 #+clos
 (proclamation class-of (t) class :no-side-effects)
 
+;; ECL extensions
+#+clos
+(proclamation clos::ensure-class (t &rest t) t)
+#+clos
+(proclamation clos::find-slot-definition (t t) t)
+#+clos
+(proclamation clos::install-method (t t t t t &rest t) t)
+
 ;; Slot accessors:
 ; (proclamation unbound-slot-instance (condition) si::instance :predicate)
 

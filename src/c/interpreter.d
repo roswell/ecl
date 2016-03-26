@@ -517,12 +517,15 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         FEundefined_function(x);
       switch (ecl_t_of(reg0)) {
       case t_cfunfixed:
-        if (ecl_unlikely(narg != (cl_index)reg0->cfunfixed.narg))
+        the_env->function = reg0;
+        if (ecl_unlikely(narg != (cl_index)reg0->cfunfixed.narg_fixed))
           FEwrong_num_arguments(reg0);
-        reg0 = APPLY_fixed(narg, reg0->cfunfixed.entry_fixed,
-                           frame_aux.base);
+        reg0 = APPLY(narg, reg0->cfunfixed.entry, frame_aux.base);
         break;
       case t_cfun:
+        the_env->function = reg0;
+        if (ecl_unlikely(narg < (cl_index)reg0->cfun.narg_fixed))
+          FEwrong_num_arguments(reg0);
         reg0 = APPLY(narg, reg0->cfun.entry, frame_aux.base);
         break;
       case t_cclosure:

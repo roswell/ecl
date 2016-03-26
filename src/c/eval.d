@@ -45,11 +45,13 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
     FEundefined_function(x);
   switch (ecl_t_of(fun)) {
   case t_cfunfixed:
-    if (ecl_unlikely(narg != (cl_index)fun->cfun.narg))
+    if (ecl_unlikely(narg != (cl_index)fun->cfunfixed.narg_fixed))
       FEwrong_num_arguments(fun);
-    ret = APPLY_fixed(narg, fun->cfunfixed.entry_fixed, sp);
+    ret = APPLY(narg, fun->cfunfixed.entry, sp);
     break;
   case t_cfun:
+    if (ecl_unlikely(narg < (cl_index)fun->cfun.narg_fixed))
+      FEwrong_num_arguments(fun);
     ret = APPLY(narg, fun->cfun.entry, sp);
     break;
   case t_cclosure:

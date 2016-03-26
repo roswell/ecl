@@ -18,80 +18,99 @@
 #include "cfun_dispatch.d"
 
 cl_object
-ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, int narg)
+ecl_make_cfun(cl_cfunptr c_function, cl_object name, cl_object cblock, int narg_fixed)
 {
   cl_object cf;
 
+  if (ecl_unlikely(narg_fixed < 0 || narg_fixed > ECL_C_ARGUMENTS_LIMIT))
+    FEprogram_error("ecl_make_cfun: function ~A requires "
+                    "too many arguments: ~A.",
+                    2, name, ecl_make_fixnum(narg_fixed));
+
   cf = ecl_alloc_object(t_cfunfixed);
-  cf->cfunfixed.entry = dispatch_table[narg];
-  cf->cfunfixed.entry_fixed = c_function;
+  cf->cfunfixed.entry = cfun_fixed_dispatch_table[narg_fixed];
+  cf->cfunfixed.cfunptr = c_function;
+  cf->cfunfixed.narg_fixed = narg_fixed;
   cf->cfunfixed.name = name;
   cf->cfunfixed.block = cblock;
   cf->cfunfixed.file = ECL_NIL;
   cf->cfunfixed.file_position = ecl_make_fixnum(-1);
-  cf->cfunfixed.narg = narg;
-  if (ecl_unlikely(narg < 0 || narg > ECL_C_ARGUMENTS_LIMIT))
-    FEprogram_error("ecl_make_cfun: function requires too many arguments.", 0);
+
   return cf;
 }
 
 cl_object
-ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
+ecl_make_cfun_va(cl_cfunptr c_function, cl_object name, cl_object cblock, int narg_fixed)
 {
   cl_object cf;
 
+  if (ecl_unlikely(narg_fixed < 0 || narg_fixed > ECL_C_ARGUMENTS_LIMIT))
+    FEprogram_error("ecl_make_cfun_va: function ~A requires "
+                    "too many arguments: ~A.",
+                    2, name, ecl_make_fixnum(narg_fixed));
+
   cf = ecl_alloc_object(t_cfun);
-  cf->cfun.entry = c_function;
+  cf->cfun.entry = cfun_variadic_dispatch_table[narg_fixed];
+  cf->cfun.cfunptr = c_function;
+  cf->cfun.narg_fixed = narg_fixed;
   cf->cfun.name = name;
   cf->cfun.block = cblock;
-  cf->cfun.narg = -1;
   cf->cfun.file = ECL_NIL;
   cf->cfun.file_position = ecl_make_fixnum(-1);
+
   return cf;
 }
 
 cl_object
-ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
+ecl_make_cclosure_va(cl_cfunptr c_function, cl_object env, cl_object block, int narg_fixed)
 {
   cl_object cc;
 
+  if (ecl_unlikely(narg_fixed < 0 || narg_fixed > ECL_C_ARGUMENTS_LIMIT))
+    FEprogram_error("ecl_make_cclosure_va: function requires "
+                    "too many arguments: ~A.",
+                    1, ecl_make_fixnum(narg_fixed));
+
   cc = ecl_alloc_object(t_cclosure);
-  cc->cclosure.entry = c_function;
+  cc->cclosure.entry = cfun_variadic_dispatch_table[narg_fixed];
+  cc->cclosure.cfunptr = c_function;
+  cc->cclosure.narg_fixed = narg_fixed;
   cc->cclosure.env = env;
   cc->cclosure.block = block;
   cc->cclosure.file = ECL_NIL;
   cc->cclosure.file_position = ecl_make_fixnum(-1);
+
   return cc;
 }
 
 void
-ecl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg)
+ecl_def_c_function(cl_object sym, cl_cfunptr c_function, int narg_fixed)
 {
   si_fset(2, sym,
-          ecl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg));
+          ecl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg_fixed));
 }
 
 void
-ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg)
+ecl_def_c_macro(cl_object sym, cl_cfunptr c_function, int narg_fixed)
 {
   si_fset(3, sym,
-          ecl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), 2),
+          ecl_make_cfun(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg_fixed),
           ECL_T);
 }
 
 void
-ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function)
+ecl_def_c_macro_va(cl_object sym, cl_cfunptr c_function, int narg_fixed)
 {
   si_fset(3, sym,
-          ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')),
+          ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg_fixed),
           ECL_T);
 }
 
 void
-ecl_def_c_function_va(cl_object sym, cl_objectfn c_function)
+ecl_def_c_function_va(cl_object sym, cl_cfunptr c_function, int narg_fixed)
 {
   si_fset(2, sym,
-          ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')));
+          ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg_fixed));
 }
 
 cl_object

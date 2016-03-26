@@ -1284,7 +1284,7 @@ cl_hash_table_count(cl_object ht)
 }
 
 static cl_object
-si_hash_table_iterate(cl_narg narg)
+si_hash_table_iterate(cl_narg narg, ...)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object env = the_env->function->cclosure.env;
@@ -1313,10 +1313,10 @@ cl_object
 si_hash_table_iterator(cl_object ht)
 {
   assert_type_hash_table(@[si::hash-table-iterator], 1, ht);
-  @(return ecl_make_cclosure_va((cl_objectfn)si_hash_table_iterate,
+  @(return ecl_make_cclosure_va((cl_cfunptr)si_hash_table_iterate,
                                 cl_list(2, ecl_make_fixnum(-1), ht),
-                                @'si::hash-table-iterator'));
-}
+                                @'si::hash-table-iterator', 0))
+    }
 
 cl_object
 cl_hash_table_rehash_size(cl_object ht)

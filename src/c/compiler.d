@@ -915,11 +915,11 @@ c_call(cl_env_ptr env, cl_object args, int flags) {
       cl_type t = (f == OBJNULL)? t_other : ecl_t_of(f);
       if (t == t_cfunfixed) {
         cl_index n = ecl_length(args);
-        if (f->cfun.narg == 1 && n == 1) {
+        if (f->cfun.narg_fixed == 1 && n == 1) {
           compile_form(env, ECL_CONS_CAR(args), FLAG_REG0);
           asm_op2c(env, OP_CALLG1, name);
           return FLAG_VALUES;
-        } else if (f->cfun.narg == 2 && n == 2) {
+        } else if (f->cfun.narg_fixed == 2 && n == 2) {
           compile_form(env, ECL_CONS_CAR(args), FLAG_PUSH);
           args = ECL_CONS_CDR(args);
           compile_form(env, ECL_CONS_CAR(args), FLAG_REG0);

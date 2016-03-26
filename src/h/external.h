@@ -283,14 +283,14 @@ extern ECL_API cl_object si_make_weak_pointer(cl_object o);
 extern ECL_API cl_object si_weak_pointer_value(cl_object o);
 #else
 extern ECL_API cl_object si_allocate _ECL_ARGS((cl_narg narg, cl_object type, cl_object qty, ...));
-extern ECL_API cl_object si_maximum_allocatable_pages _ECL_ARGS((cl_narg narg, cl_object type));
-extern ECL_API cl_object si_allocated_pages _ECL_ARGS((cl_narg narg, cl_object type));
+extern ECL_API cl_object si_maximum_allocatable_pages _ECL_ARGS((cl_narg, cl_object type, ...));
+extern ECL_API cl_object si_allocated_pages _ECL_ARGS((cl_narg, cl_object type, ...));
 extern ECL_API cl_object si_alloc_contpage _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_allocated_contiguous_pages _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_maximum_contiguous_pages _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_allocated_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_maximum_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_allocate_contiguous_pages _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_get_hole_size _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_set_hole_size _ECL_ARGS((cl_narg narg, cl_object size));
+extern ECL_API cl_object si_get_hole_size _ECL_ARGS((cl_narg, ...));
+extern ECL_API cl_object si_set_hole_size _ECL_ARGS((cl_narg, cl_object size, ...));
 extern ECL_API cl_object si_ignore_maximum_pages _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API void *ecl_alloc(cl_index n);
 extern ECL_API void *ecl_alloc_align(cl_index size, cl_index align);
@@ -311,7 +311,7 @@ typedef union {
                 const char *name;
                 int type;
                 void *fun;
-                short narg;
+                short narg_fixed;
                 cl_object value;
         } init;
         struct ecl_symbol data;
@@ -323,8 +323,7 @@ extern ECL_API cl_index cl_num_symbols_in_core;
 
 /* apply.c */
 
-extern ECL_API cl_object APPLY_fixed(cl_narg n, cl_object (*f)(), cl_object *x);
-extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn, cl_object *x);
+extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn fn, cl_object *x);
 
 
 /* array.c */
@@ -430,13 +429,13 @@ extern ECL_API cl_object si_compiled_function_block(cl_object fun);
 extern ECL_API cl_object cl_function_lambda_expression(cl_object fun);
 extern ECL_API cl_object si_compiled_function_file(cl_object fun);
 
-extern ECL_API cl_object ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object block, int narg);
-extern ECL_API cl_object ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block);
-extern ECL_API cl_object ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block);
-extern ECL_API void ecl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg);
-extern ECL_API void ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg);
-extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function);
-extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_objectfn c_function);
+extern ECL_API cl_object ecl_make_cfun(cl_cfunptr c_function, cl_object name, cl_object block, int narg_fixed);
+extern ECL_API cl_object ecl_make_cfun_va(cl_cfunptr c_function, cl_object name, cl_object block, int narg_fixed);
+extern ECL_API cl_object ecl_make_cclosure_va(cl_cfunptr c_function, cl_object env, cl_object block, int narg_fixed);
+extern ECL_API void ecl_def_c_function(cl_object sym, cl_cfunptr c_function, int narg_fixed);
+extern ECL_API void ecl_def_c_macro(cl_object sym, cl_cfunptr c_function, int narg_fixed);
+extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_cfunptr c_function, int narg_fixed);
+extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_cfunptr c_function, int narg_fixed);
 extern ECL_API void ecl_set_function_source_file_info(cl_object fun, cl_object source, cl_object position);
 extern ECL_API void ecl_cmp_defmacro(cl_object data);
 extern ECL_API void ecl_cmp_defun(cl_object data);
@@ -533,7 +532,7 @@ extern ECL_API cl_object si_eval_with_env _ECL_ARGS((cl_narg narg, cl_object for
 
 /* interpreter.c */
 
-extern ECL_API cl_object si_interpreter_stack _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_interpreter_stack _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size);
 extern ECL_API void ecl_stack_frame_push(cl_object f, cl_object o);
 extern ECL_API void ecl_stack_frame_push_values(cl_object f);
@@ -613,7 +612,6 @@ extern ECL_API cl_object cl_eval(cl_object form);
 extern ECL_API cl_object cl_constantp _ECL_ARGS((cl_narg narg, cl_object arg, ...));
 
 #define funcall cl_funcall
-extern ECL_API cl_object cl_apply_from_stack(cl_index narg, cl_object fun);
 extern ECL_API cl_object ecl_apply_from_stack_frame(cl_object f, cl_object o);
 extern ECL_API cl_objectfn ecl_function_dispatch(cl_env_ptr env, cl_object f);
 extern ECL_API cl_object _ecl_link_call(cl_object sym, cl_objectfn *pLK, cl_object cblock, int narg, ecl_va_list args);
@@ -762,10 +760,10 @@ extern ECL_API cl_object cl_format _ECL_ARGS((cl_narg narg, cl_object stream, cl
 /* gbc.c */
 
 #if !defined(GBC_BOEHM)
-extern ECL_API cl_object si_room_report _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_reset_gc_count _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_gc_time _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_gc(cl_object area);
+extern ECL_API cl_object si_room_report _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_reset_gc_count _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_gc_time _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_gc(cl_narg narg, cl_object area, ...);
 #define GC_enabled() GC_enable
 #define GC_enable() GC_enable = TRUE;
 #define GC_disable() GC_enable = FALSE;
@@ -1383,7 +1381,6 @@ extern ECL_API cl_object cl_pathname_match_p(cl_object path, cl_object mask);
 extern ECL_API cl_object cl_translate_pathname _ECL_ARGS((cl_narg narg, cl_object source, cl_object from, cl_object to, ...));
 extern ECL_API cl_object cl_translate_logical_pathname _ECL_ARGS((cl_narg narg, cl_object source, ...));
 extern ECL_API cl_object cl_parse_namestring _ECL_ARGS((cl_narg narg, cl_object thing, ...));
-extern ECL_API cl_object cl_parse_logical_namestring _ECL_ARGS((cl_narg narg, cl_object thing, ...));
 extern ECL_API cl_object cl_merge_pathnames _ECL_ARGS((cl_narg narg, cl_object path, ...));
 extern ECL_API cl_object cl_make_pathname _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_enough_namestring _ECL_ARGS((cl_narg narg, cl_object path, ...));
@@ -1501,9 +1498,9 @@ extern ECL_API cl_object si_print_unreadable_object_function(cl_object o, cl_obj
 
 /* profile.c */
 #ifdef PROFILE
-extern ECL_API cl_object si_profile _ECL_ARGS((cl_narg narg, cl_object scale, cl_object start_address));
-extern ECL_API cl_object si_clear_profile _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_display_profile _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_profile _ECL_ARGS((cl_narg narg, cl_object scale, cl_object start_address, ...));
+extern ECL_API cl_object si_clear_profile _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_display_profile _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API int total_ticks(unsigned short *aar, unsigned int dim);
 extern ECL_API int init_profile(void);
 #endif
@@ -2234,7 +2231,7 @@ extern ECL_API cl_object clos_method_specializers _ECL_ARGS((cl_narg narg, cl_ob
 extern ECL_API cl_object cl_method_qualifiers _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_method_function _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_method_plist _ECL_ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object clos_install_method _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, cl_object V4, cl_object V5, cl_object V6, cl_object V7, ...));
+extern ECL_API cl_object clos_install_method _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, cl_object V4, cl_object V5, cl_object V6, ...));
 
 #endif
 
