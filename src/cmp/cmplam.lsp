@@ -131,17 +131,18 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     #+ecl-min
     (when (member name c::*in-all-symbols-functions*)
       (setf no-entry t))
-    (if exported
+    (multiple-value-setq (minarg maxarg)
+      (lambda-form-allowed-nargs lambda-expr))
+    (when exported
         ;; Check whether the function was proclaimed to have a certain
         ;; number of arguments, and otherwise produce a function with
         ;; a flexible signature.
-        (progn
-          (multiple-value-setq (minarg maxarg) (get-proclaimed-narg name))
-          (format t "~&;;; Function ~A proclaimed (~A,~A)" name minarg maxarg)
-          (unless minarg
-            (setf minarg 0 maxarg call-arguments-limit)))
-        (multiple-value-setq (minarg maxarg)
-          (lambda-form-allowed-nargs lambda-expr)))
+        (multiple-value-bind (n-minarg n-maxarg found) (get-proclaimed-narg name)
+          (if found
+            (setf minarg n-minarg maxarg n-maxarg)
+            ;; TODO Reset maxarg to conform to what already is,
+            ;; that fixed-arg lisp functions generates variadic c functions.
+            (setf maxarg call-arguments-limit))))
     (setf (fun-cfun fun) cfun
           (fun-exported fun) exported
           (fun-closure fun) nil
@@ -297,9 +298,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
         (maxarg call-arguments-limit))
     (destructuring-bind (requireds optionals rest key-flag keywords a-o-k)
         (c1form-arg 0 lambda)
+      (setf minarg (length requireds))
       (when (and (null rest) (not key-flag) (not a-o-k))
-        (setf minarg (length requireds)
-              maxarg (+ minarg (/ (length optionals) 3)))))
+        (setf maxarg (+ minarg (/ (length optionals) 3)))))
     (values minarg maxarg)))
 
 #| Steps:
