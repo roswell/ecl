@@ -163,13 +163,15 @@
   (unless (find-if #'has-forward-referenced-parents (class-direct-superclasses class))
     (finalize-inheritance class)))
 
-(defmethod initialize-instance ((class class) &rest initargs &key direct-slots)
+(defmethod initialize-instance ((class class) &rest initargs &key direct-slots direct-superclasses)
   (declare (ignore sealedp))
   ;; convert the slots from lists to direct slots
   (apply #'call-next-method class
          :direct-slots
          (loop for s in direct-slots
             collect (canonical-slot-to-direct-slot class s))
+         :direct-superclasses
+         direct-superclasses
          initargs)
   (finalize-unless-forward class)
   class)
