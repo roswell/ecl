@@ -528,6 +528,7 @@ case $host in
     path="arm"
     gcc_cflags="$gcc_cflags $fomit_frame_pointer"
     gcc_testlist="gcc-arm-umodsi"
+    abilist="long longlong"
     GMP_INCLUDE_MPN(arm/arm-defs.m4)
     ;;
 
