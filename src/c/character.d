@@ -207,9 +207,13 @@ ecl_char_eq(cl_object x, cl_object y)
                 ecl_va_list ds;
                 ecl_va_start(ds, narg, narg, 0);
                 c = ecl_va_arg(cs);
-                for (j = 1; j<i; j++)
-                        if (ecl_char_eq(ecl_va_arg(ds), c))
+                for (j = 1; j<i; j++) {
+                        if (ecl_char_eq(ecl_va_arg(ds), c)) {
+                                ecl_va_end(ds);
                                 @(return ECL_NIL)
+                        }
+                }
+                ecl_va_end(ds);
         }
         @(return ECL_T)
 @)
@@ -241,22 +245,26 @@ ecl_char_cmp(cl_object x, cl_object y)
 
 @(defun char< (&rest args)
 @
-        return Lchar_cmp(the_env, narg, 1, 1, args);
+        cl_object result = Lchar_cmp(the_env, narg, 1, 1, args);
+        @(return result)
 @)
 
 @(defun char> (&rest args)
 @
-        return Lchar_cmp(the_env, narg,-1, 1, args);
+        cl_object result = Lchar_cmp(the_env, narg,-1, 1, args);
+        @(return result)
 @)
 
 @(defun char<= (&rest args)
 @
-        return Lchar_cmp(the_env, narg, 1, 0, args);
+        cl_object result = Lchar_cmp(the_env, narg, 1, 0, args);
+        @(return result)
 @)
 
 @(defun char>= (&rest args)
 @
-        return Lchar_cmp(the_env, narg,-1, 0, args);
+        cl_object result = Lchar_cmp(the_env, narg,-1, 0, args);
+        @(return result)
 @)
 
 @(defun char_equal (c &rest cs)
@@ -290,9 +298,13 @@ ecl_char_equal(cl_object x, cl_object y)
                 ecl_va_list ds;
                 ecl_va_start(ds, narg, narg, 0);
                 c = ecl_va_arg(cs);
-                for (j=1;  j<i;  j++)
-                        if (ecl_char_equal(c, ecl_va_arg(ds)))
+                for (j=1;  j<i;  j++) {
+                        if (ecl_char_equal(c, ecl_va_arg(ds))) {
+                                ecl_va_end(ds);
                                 @(return ECL_NIL)
+                        }
+                }
+                ecl_va_end(ds);
         }
         @(return ECL_T)
 @)
@@ -330,22 +342,26 @@ ecl_char_compare(cl_object x, cl_object y)
 
 @(defun char-lessp (&rest args)
 @
-        return Lchar_compare(the_env, narg, 1, 1, args);
+        cl_object result = Lchar_compare(the_env, narg, 1, 1, args);
+        @(return result)
 @)
 
 @(defun char-greaterp (&rest args)
 @
-        return Lchar_compare(the_env, narg,-1, 1, args);
+        cl_object result = Lchar_compare(the_env, narg,-1, 1, args);
+        @(return result)
 @)
 
 @(defun char-not-greaterp (&rest args)
 @
-        return Lchar_compare(the_env, narg, 1, 0, args);
+        cl_object result = Lchar_compare(the_env, narg, 1, 0, args);
+        @(return result)
 @)
 
 @(defun char-not-lessp (&rest args)
 @
-        return Lchar_compare(the_env, narg,-1, 0, args);
+        cl_object result = Lchar_compare(the_env, narg,-1, 0, args);
+        @(return result)
 @)
 
 

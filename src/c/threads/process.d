@@ -432,12 +432,15 @@ cl_object
 mp_process_preset(cl_narg narg, cl_object process, cl_object function, ...)
 {
         ecl_va_list args;
-        ecl_va_start(args, function, narg, 2);
+        cl_object real_args;
         if (narg < 2)
                 FEwrong_num_arguments(@[mp::process-preset]);
+        ecl_va_start(args, function, narg, 2);
+        real_args = cl_grab_rest_args(args);
+        ecl_va_end(args);
         assert_type_process(process);
         process->process.function = function;
-        process->process.args = cl_grab_rest_args(args);
+        process->process.args = real_args;
         @(return process)
 }
 
@@ -642,29 +645,35 @@ mp_process_join(cl_object process)
 cl_object
 mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 {
-        cl_object process;
         ecl_va_list args;
-        ecl_va_start(args, function, narg, 2);
+        cl_object process, real_args;
         if (narg < 2)
                 FEwrong_num_arguments(@[mp::process-run-function]);
+
+        ecl_va_start(args, function, narg, 2);
+        real_args = cl_grab_rest_args(args);
+        ecl_va_end(args);
+
         if (CONSP(name)) {
                 process = cl_apply(2, @'mp::make-process', name);
         } else {
                 process = mp_make_process(2, @':name', name);
         }
-        cl_apply(4, @'mp::process-preset', process, function,
-                 cl_grab_rest_args(args));
+        cl_apply(4, @'mp::process-preset', process, function, real_args);
         return mp_process_enable(process);
 }
 
 cl_object
 mp_process_run_function_wait(cl_narg narg, ...)
 {
-        cl_object process;
         ecl_va_list args;
+        cl_object process, real_args;
+
         ecl_va_start(args, narg, narg, 0);
-        process = cl_apply(2, @'mp::process-run-function',
-                           cl_grab_rest_args(args));
+        real_args = cl_grab_rest_args(args);
+        ecl_va_end(args);
+
+        process = cl_apply(2, @'mp::process-run-function', real_args);
         if (!Null(process)) {
                 ecl_def_ct_single_float(wait, 0.001, static, const);
                 while (process->process.phase < ECL_PROCESS_ACTIVE) {

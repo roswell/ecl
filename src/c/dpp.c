@@ -90,6 +90,8 @@
 #define TRUE            1
 #define FALSE           0
 
+#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
+
 #ifndef __cplusplus
 typedef int bool;
 #endif
@@ -122,7 +124,7 @@ struct optional {
 int nopt;
 
 bool rest_flag;
-char *rest_var;
+char rest_var[64] = {'\0',};  /* save to use in print_va_end() */
 
 bool key_flag;
 struct keyword {
@@ -448,7 +450,7 @@ reset(void)
                 = optional[i].o_svar
                 = NULL;
         rest_flag = FALSE;
-        rest_var = "ARGS";
+        strncpy(rest_var, "ARGS", ARRAY_SIZE(rest_var));
         key_flag = FALSE;
         nkey = 0;
         for (i = 0;  i < MAXKEY;  i++)
@@ -537,7 +539,7 @@ _REST:
         if ((c = nextc()) == ')' || c == '&')
                 error("&rest var missing");
         unreadc(c);
-        rest_var = read_token();
+        strncpy(rest_var, read_token(), ARRAY_SIZE(rest_var));
         if ((c = nextc()) == ')')
                 return;
         if (c != '&')
@@ -646,10 +648,13 @@ put_fhead(void)
 
         put_lineno();
         fprintf(out, "cl_object %s(cl_narg narg", function_c_name);
+
         for (i = 0; i < nreq; i++)
                 fprintf(out, ", cl_object %s", required[i]);
-        if (nopt > 0 || rest_flag || key_flag)
-                fprintf(out, ", ...");
+
+        /* @(defun is always variadic, same as the lisp->c compiler */
+        fprintf(out, ", ...");
+
         fprintf(out, ")\n{\n");
 }
 
@@ -784,20 +789,39 @@ put_declaration(void)
   }
 }
 
+void print_va_end(void)
+{
+  if (nopt == 0 && !rest_flag && !key_flag) {
+  } else {
+    int simple_varargs = !rest_flag && !key_flag && ((nreq + nopt) < 32);
+    if (simple_varargs)
+      fprintf(out,"va_end(%s);\n", rest_var);
+    else
+      fprintf(out,"ecl_va_end(%s);\n", rest_var);
+  }
+}
+
 void
 put_return(void)
 {
         int i, t;
 
         t = tab_save+1;
-        
+
         fprintf(out, "{\n");
         if (!the_env_defined) {
           put_tabs(t);
           fprintf(out, "const cl_env_ptr the_env = ecl_process_env();\n");
         }
         if (nres == 0) {
-          fprintf(out, "the_env->nvalues = 0; return ECL_NIL;\n");
+          put_tabs(t);
+          fprintf(out, "the_env->nvalues = 0;\n");
+
+          put_tabs(t);
+          print_va_end();
+
+          put_tabs(t);
+          fprintf(out, "return ECL_NIL;\n");
         } else {
           put_tabs(t);
           for (i = 0;  i < nres;  i++) {
@@ -810,6 +834,10 @@ put_return(void)
                 put_tabs(t);
                 fprintf(out, "the_env->values[%d] = __value%d;\n", i, i);
           }
+
+          put_tabs(t);
+          print_va_end();
+
           put_tabs(t);
           fprintf(out, "return __value0;\n");
         }

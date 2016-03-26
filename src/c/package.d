@@ -42,12 +42,15 @@ static void
 FEpackage_error(const char *message, cl_object package, int narg, ...)
 {
         ecl_va_list args;
+        cl_object format_args;
         ecl_va_start(args, narg, narg, 0);
+        format_args = narg ? cl_grab_rest_args(args) : cl_list(1, package);
+        ecl_va_end(args);
         si_signal_simple_error(6,
                                @'package-error',
                                ECL_NIL, /* not correctable */
                                make_constant_base_string(message), /* format control */
-                               narg? cl_grab_rest_args(args) : cl_list(1,package), /* format args */
+                               format_args , /* format args */
                                @':package', package); /* extra arguments */
 }
 
@@ -55,12 +58,15 @@ void
 CEpackage_error(const char *message, const char *continue_message, cl_object package, int narg, ...)
 {
         ecl_va_list args;
+        cl_object format_args;
         ecl_va_start(args, narg, narg, 0);
+        format_args = narg ? cl_grab_rest_args(args) : cl_list(1,package);
+        ecl_va_end(args);
         si_signal_simple_error(6,
                                @'package-error',
                                make_constant_base_string(continue_message),
                                make_constant_base_string(message), /* format control */
-                               narg? cl_grab_rest_args(args) : cl_list(1,package),
+                               format_args,
                                @':package', package);
 }
 
