@@ -35,6 +35,11 @@ Files not included in the buildsystem but lingering in the codebase or
 options failing to build. All info is added in the new documentation in
 section "Removed interfaces".
 
+** Issues fixed
+- MOP: fix problemes when redefining non-standard and anonymous classes
+
+Bugs identified and fixed by Pascal Costanza.
+
 * 16.1.2 changes since 16.0.0
 
 ** API changes
