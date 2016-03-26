@@ -112,8 +112,11 @@
         (write-string " ..." stream)
         (return))
       (setq sv (si:instance-ref obj i))
-      (write-string " :" stream)
-      (prin1 (slot-definition-name (car scan)) stream)
+      (write-string " " stream)
+      ;; 2.4.8.13 Sharpsign S: slots are keywords
+      (prin1 (intern (symbol-name (slot-definition-name (car scan)))
+                     (find-package 'keyword))
+             stream)
       (write-string " " stream)
       (prin1 sv stream))
     (write-string ")" stream)
