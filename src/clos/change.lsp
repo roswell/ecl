@@ -223,42 +223,41 @@
   (declare (class class)
            (optimize (safety 0))
            (si::c-local))
-  (let ((class-name (class-name class)))
-    (dolist (slotd (class-slots class))
-      ;; remove previous defined reader methods
-      (dolist (reader (slot-definition-readers slotd))
-        (let* ((gf-object (fdefinition reader))
-               found)
-          ;; primary method
-          (when (setq found
-                      (find-method gf-object nil (list class-name) nil))
-            (remove-method gf-object found))
-          ;; before method
-          (when (setq found
-                      (find-method gf-object ':before (list class-name) nil))
-            (remove-method gf-object found))
-          ;; after method
-          (when (setq found
-                      (find-method gf-object ':after (list class-name) nil))
-            (remove-method gf-object found))
+  (dolist (slotd (class-slots class))
+    ;; remove previous defined reader methods
+    (dolist (reader (slot-definition-readers slotd))
+      (let* ((gf-object (fdefinition reader))
+             found)
+        ;; primary method
+        (when (setq found
+                    (find-method gf-object nil (list class) nil))
+          (remove-method gf-object found))
+        ;; before method
+        (when (setq found
+                    (find-method gf-object ':before (list class) nil))
+          (remove-method gf-object found))
+        ;; after method
+        (when (setq found
+                    (find-method gf-object ':after (list class) nil))
+          (remove-method gf-object found))
         (when (null (generic-function-methods gf-object))
           (fmakunbound reader))))
 
-      ;; remove previous defined writer methods
-      (dolist (writer (slot-definition-writers slotd))
-        (let* ((gf-object (fdefinition writer))
-               found)
-          ;; primary method
-          (when (setq found
-                      (find-method gf-object nil (list 'T class-name) nil))
-            (remove-method gf-object found))
-          ;; before method
-          (when (setq found
-                      (find-method gf-object ':before (list 'T class-name) nil))
-            (remove-method gf-object found))
-          ;; after method
-          (when (setq found
-                      (find-method gf-object ':after (list 'T class-name) nil))
-            (remove-method gf-object found))
+    ;; remove previous defined writer methods
+    (dolist (writer (slot-definition-writers slotd))
+      (let* ((gf-object (fdefinition writer))
+             found)
+        ;; primary method
+        (when (setq found
+                    (find-method gf-object nil (list 'T class) nil))
+          (remove-method gf-object found))
+        ;; before method
+        (when (setq found
+                    (find-method gf-object ':before (list 'T class) nil))
+          (remove-method gf-object found))
+        ;; after method
+        (when (setq found
+                    (find-method gf-object ':after (list 'T class) nil))
+          (remove-method gf-object found))
         (when (null (generic-function-methods gf-object))
-          (fmakunbound writer)))))))
+          (fmakunbound writer))))))
