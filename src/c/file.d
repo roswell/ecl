@@ -5672,6 +5672,7 @@ file_libc_error(cl_object error_type, cl_object stream,
 
   ecl_va_start(args, narg, narg, 0);
   rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
 
   si_signal_simple_error(4, (cl_object)(cl_symbols + ecl_fixnum(error_type)), Cnil,
                          ecl_make_constant_base_string("~?~%C library explanation: ~A.",-1),

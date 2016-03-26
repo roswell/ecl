@@ -142,12 +142,15 @@ cl_object
 CEerror(cl_object c, const char *err, int narg, ...)
 {
   ecl_va_list args;
+  cl_object real_args;
   ecl_va_start(args, narg, narg, 0);
+  real_args = cl_grab_rest_args(args);
+  ecl_va_end(args);
   ecl_enable_interrupts();
   return funcall(4, @'si::universal-error-handler',
                  c,                       /*  correctable  */
                  ecl_make_constant_base_string(err,-1),  /*  continue-format-string  */
-                 cl_grab_rest_args(args));
+                 real_args);
 }
 
 /***********************
@@ -157,11 +160,12 @@ CEerror(cl_object c, const char *err, int narg, ...)
 void
 FEprogram_error(const char *s, int narg, ...)
 {
-  cl_object real_args, text;
   ecl_va_list args;
-  ecl_va_start(args, narg, narg, 0);
+  cl_object real_args, text;
   text = ecl_make_constant_base_string(s,-1);
+  ecl_va_start(args, narg, narg, 0);
   real_args = cl_grab_rest_args(args);
+  ecl_va_end(args);
   if (cl_boundp(@'si::*current-form*') != ECL_NIL) {
     /* When FEprogram_error is invoked from the compiler, we can
      * provide information about the offending form.
@@ -184,23 +188,27 @@ void
 FEcontrol_error(const char *s, int narg, ...)
 {
   ecl_va_list args;
+  cl_object real_args;
   ecl_va_start(args, narg, narg, 0);
+  real_args = cl_grab_rest_args(args);
+  ecl_va_end(args);
   si_signal_simple_error(4,
                          @'control-error', /* condition name */
                          ECL_NIL, /* not correctable */
                          ecl_make_constant_base_string(s,-1), /* format control */
-                         cl_grab_rest_args(args)); /* format args */
+                         real_args); /* format args */
   _ecl_unexpected_return();
 }
 
 void
 FEreader_error(const char *s, cl_object stream, int narg, ...)
 {
-  cl_object message = ecl_make_constant_base_string(s,-1);
-  cl_object args_list;
   ecl_va_list args;
+  cl_object message, args_list;
+  message = ecl_make_constant_base_string(s,-1);
   ecl_va_start(args, narg, narg, 0);
   args_list = cl_grab_rest_args(args);
+  ecl_va_end(args);
   if (Null(stream)) {
     /* Parser error */
     si_signal_simple_error(4,
@@ -504,6 +512,7 @@ FElibc_error(const char *msg, int narg, ...)
 
   ecl_va_start(args, narg, narg, 0);
   rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
 
   FEerror("~?~%C library explanation: ~A.", 3,
           ecl_make_constant_base_string(msg,-1), rest,
@@ -530,6 +539,7 @@ FEwin32_error(const char *msg, int narg, ...)
 
   ecl_va_start(args, narg, narg, 0);
   rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
   FEerror("~?~%Windows library explanation: ~A.", 3,
           ecl_make_constant_base_string(msg,-1), rest,
           win_msg_obj);
@@ -550,22 +560,26 @@ FEwin32_error(const char *msg, int narg, ...)
 
 @(defun cerror (cformat eformat &rest args)
 @ {
+  cl_object result;
   ecl_enable_interrupts();
-  return funcall(4, @'si::universal-error-handler', cformat, eformat,
-                 cl_grab_rest_args(args));
+  result = funcall(4, @'si::universal-error-handler', cformat, eformat,
+                   cl_grab_rest_args(args));
+  @(return result)
 } @)
 
 @(defun si::serror (cformat eformat &rest args)
 @ {
+  cl_object result;
   ecl_enable_interrupts();
-  return funcall(4, @'si::stack-error-handler', cformat, eformat,
-                 cl_grab_rest_args(args));
+  result = funcall(4, @'si::stack-error-handler', cformat, eformat,
+                   cl_grab_rest_args(args));
+  @(return result)
 } @)
 
 void
 init_error(void)
 {
   ecl_def_c_function(@'si::universal-error-handler',
-                     (cl_objectfn_fixed)universal_error_handler,
+                     (cl_cfunptr)universal_error_handler,
                      3);
 }

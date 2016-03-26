@@ -375,15 +375,16 @@ void
 print_lock(char *prefix, cl_object l, ...)
 {
   static cl_object lock = ECL_NIL;
-  va_list args;
-  va_start(args, l);
   if (l == ECL_NIL
       || ecl_t_of(l) == t_condition_variable
       || ECL_FIXNUMP(l->lock.name)) {
+    va_list args;
+    va_start(args, l);
     cl_env_ptr env = ecl_process_env();
     ecl_get_spinlock(env, &lock);
     printf("\n%ld\t", ecl_fixnum(env->own_process->process.name));
     vprintf(prefix, args);
+    va_end(args);
     if (l != ECL_NIL) {
       cl_object p = l->lock.queue_list;
       while (p != ECL_NIL) {
