@@ -174,22 +174,25 @@
   (finalize-unless-forward class)
   class)
 
-(defmethod shared-initialize ((class class) slot-names &rest initargs &key direct-superclasses)
-  ;; verify that the inheritance list makes sense
-  (let* ((class (apply #'call-next-method class slot-names
-                       :direct-superclasses
-                       (if (slot-boundp class 'direct-superclasses)
-                           (slot-value class 'direct-superclasses)
-                           nil)
-                       initargs))
-         (direct-superclasses (check-direct-superclasses class direct-superclasses)))
-    (loop for c in (class-direct-superclasses class)
-       unless (member c direct-superclasses :test #'eq)
-       do (remove-direct-subclass c class))
-    (setf (class-direct-superclasses class) direct-superclasses)
-    (loop for c in direct-superclasses
-       do (add-direct-subclass c class))
-    class))
+(defmethod shared-initialize ((class class) slot-names &rest initargs
+                              &key (direct-superclasses nil direct-superclasses-p))
+  (if direct-superclasses-p
+      ;; verify that the inheritance list makes sense
+      (let* ((class (apply #'call-next-method class slot-names
+                           :direct-superclasses
+                           (if (slot-boundp class 'direct-superclasses)
+                               (slot-value class 'direct-superclasses)
+                               nil)
+                           initargs))
+             (direct-superclasses (check-direct-superclasses class direct-superclasses)))
+        (loop for c in (class-direct-superclasses class)
+           unless (member c direct-superclasses :test #'eq)
+           do (remove-direct-subclass c class))
+        (setf (class-direct-superclasses class) direct-superclasses)
+        (loop for c in direct-superclasses
+           do (add-direct-subclass c class))
+        class)
+      (apply #'call-next-method class slot-names initargs)))
 
 (defun precompute-valid-initarg-keywords (class)
   (setf (class-valid-initargs class)
