@@ -357,6 +357,48 @@ handle_signal_now(cl_object signal_code, cl_object process)
         }
 }
 
+static void
+handle_signal_now_safe(cl_object signal_code, cl_object process)
+{
+    /* cl_env_ptr env = ecl_process_env(); */
+    cl_env_ptr env = process->process.env;
+    ECL_RESTART_CASE_BEGIN(env, @':abort-signal-handling') {
+        switch (ecl_t_of(signal_code)) {
+        case t_fixnum:
+                cl_cerror(4, str_ignore_signal, @'ext::unix-signal-received',
+                          @':code', signal_code);
+                break;
+        case t_symbol:
+                /*
+                 * When we bind a handler to a signal, it may either
+                 * be a function, a symbol denoting a function or
+                 * a symbol denoting a condition.
+                 */
+                if (cl_find_class(2, signal_code, ECL_NIL) != ECL_NIL)
+                        cl_cerror(2, str_ignore_signal, signal_code);
+#ifdef ECL_THREADS
+                else if (!Null(process))
+                        _ecl_funcall3(signal_code, @':process', process);
+#endif
+                else
+                        _ecl_funcall1(signal_code);
+                break;
+        case t_cfun:
+        case t_cfunfixed:
+        case t_cclosure:
+        case t_bytecodes:
+        case t_bclosure:
+                _ecl_funcall1(signal_code);
+        default:
+                break;
+        }
+    } ECL_RESTART_CASE(1,args) {
+        /* ABORT signal handling. */
+    } ECL_RESTART_CASE_END;
+}
+
+#define handle_signal_now handle_signal_now_safe
+
 cl_object
 si_handle_signal(cl_object signal_code, cl_object process)
 {
