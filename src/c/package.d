@@ -383,7 +383,7 @@ cl_object
 _ecl_intern(const char *s, cl_object p)
 {
   int intern_flag;
-  cl_object str = ecl_make_constant_base_string(s,-1);
+  cl_object str = ecl_make_simple_base_string(s,-1);
   return ecl_intern(str, p, &intern_flag);
 }
 
