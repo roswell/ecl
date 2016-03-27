@@ -47,7 +47,11 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
   case t_cfunfixed:
     if (ecl_unlikely(narg != (cl_index)fun->cfunfixed.narg_fixed))
       FEwrong_num_arguments(fun);
+#if defined (USE_C_COMPATIBLE_VARIADIC_DISPATCH)
     ret = APPLY(narg, fun->cfunfixed.entry, sp);
+#else
+    return APPLY_fixed(narg, fun->cfunfixed.cfunptr, sp);
+#endif
     break;
   case t_cfun:
     if (ecl_unlikely(narg < (cl_index)fun->cfun.narg_fixed))

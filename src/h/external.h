@@ -324,6 +324,7 @@ extern ECL_API cl_index cl_num_symbols_in_core;
 /* apply.c */
 
 extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn fn, cl_object *x);
+extern ECL_API cl_object APPLY_fixed(cl_narg n, cl_object (*fn)(), cl_object *x);
 
 
 /* array.c */

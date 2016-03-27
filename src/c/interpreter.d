@@ -520,7 +520,11 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         the_env->function = reg0;
         if (ecl_unlikely(narg != (cl_index)reg0->cfunfixed.narg_fixed))
           FEwrong_num_arguments(reg0);
+#if defined (USE_C_COMPATIBLE_VARIADIC_DISPATCH)
         reg0 = APPLY(narg, reg0->cfunfixed.entry, frame_aux.base);
+#else
+        reg0 = APPLY_fixed(narg, reg0->cfunfixed.cfunptr, frame_aux.base);
+#endif
         break;
       case t_cfun:
         the_env->function = reg0;
