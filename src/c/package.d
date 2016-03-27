@@ -362,7 +362,7 @@ cl_object
 _ecl_intern(const char *s, cl_object p)
 {
         int intern_flag;
-        cl_object str = make_constant_base_string(s);
+        cl_object str = make_base_string_copy(s);
         return ecl_intern(str, p, &intern_flag);
 }
 
