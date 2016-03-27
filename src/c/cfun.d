@@ -55,7 +55,11 @@ ecl_make_cfun_va(cl_cfunptr c_function, cl_object name, cl_object cblock, int na
                                          2, name, ecl_make_fixnum(narg_fixed));
 
         cf = ecl_alloc_object(t_cfun);
+#if defined (USE_C_COMPATIBLE_VARIADIC_DISPATCH)
         cf->cfun.entry = cfun_variadic_dispatch_table[narg_fixed];
+#else
+        cf->cfun.entry = (cl_objectfn) c_function;
+#endif
         cf->cfun.cfunptr = c_function;
         cf->cfun.narg_fixed = narg_fixed;
         cf->cfun.name = name;
@@ -77,7 +81,11 @@ ecl_make_cclosure_va(cl_cfunptr c_function, cl_object env, cl_object block, int 
                                          1, ecl_make_fixnum(narg_fixed));
 
         cc = ecl_alloc_object(t_cclosure);
+#if defined (USE_C_COMPATIBLE_VARIADIC_DISPATCH)
         cc->cclosure.entry = cfun_variadic_dispatch_table[narg_fixed];
+#else
+        cc->cclosure.entry = (cl_objectfn) c_function;
+#endif
         cc->cclosure.cfunptr = c_function;
         cc->cclosure.narg_fixed = narg_fixed;
         cc->cclosure.env = env;

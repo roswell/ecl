@@ -22,6 +22,12 @@
 extern "C" {
 #endif
 
+#if defined (__arm__) || defined (__arm64__)
+#define USE_UNIFIED_ARGS_PASSING_APPLY
+#define USE_C_COMPATIBLE_VARIADIC_DISPATCH
+#endif
+
+
 /* -------------------------------------------------------------------- *
  *      FUNCTIONS, VARIABLES AND TYPES NOT FOR GENERAL USE              *
  * -------------------------------------------------------------------- */
