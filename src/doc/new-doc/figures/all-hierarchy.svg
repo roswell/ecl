@@ -15,13 +15,111 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="hierarchy.svg"
-   inkscape:export-filename="/home/jack/linki/repo/ecl-doc/figures/all-hierarchy.png"
-   inkscape:export-xdpi="44.259998"
-   inkscape:export-ydpi="44.259998"
+   sodipodi:docname="all-hierarchy.svg"
+   inkscape:export-filename="/tmp/all-hierarchy.png"
+   inkscape:export-xdpi="33.639999"
+   inkscape:export-ydpi="33.639999"
    enable-background="new">
   <defs
      id="defs4">
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="marker6017"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path6019"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow2Lend"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path5760"
+         style="fill-rule:evenodd;stroke-width:0.625;stroke-linejoin:round;stroke:#000000;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
+         transform="scale(1.1) rotate(180) translate(1,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="marker6011"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path6013"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lstart"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         id="path5739"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="marker6003"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path6005"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="marker5999"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path6001"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lend"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path5742"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
     <marker
        inkscape:stockid="Arrow1Lend"
        orient="auto"
@@ -974,6 +1072,26 @@
          in2="BackgroundImage"
          id="feBlend8455" />
     </filter>
+    <filter
+       inkscape:collect="always"
+       style="color-interpolation-filters:sRGB"
+       id="filter8453-2">
+      <feBlend
+         inkscape:collect="always"
+         mode="lighten"
+         in2="BackgroundImage"
+         id="feBlend8455-9" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       style="color-interpolation-filters:sRGB"
+       id="filter8453-4">
+      <feBlend
+         inkscape:collect="always"
+         mode="lighten"
+         in2="BackgroundImage"
+         id="feBlend8455-4" />
+    </filter>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -982,15 +1100,15 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.87030031"
-     inkscape:cx="359.53495"
-     inkscape:cy="940.93392"
+     inkscape:zoom="0.24606401"
+     inkscape:cx="564.63557"
+     inkscape:cy="1039.7987"
      inkscape:document-units="px"
-     inkscape:current-layer="layer2"
+     inkscape:current-layer="layer3"
      showgrid="false"
-     inkscape:window-width="1596"
-     inkscape:window-height="865"
-     inkscape:window-x="0"
+     inkscape:window-width="1278"
+     inkscape:window-height="880"
+     inkscape:window-x="318"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
      showguides="true"
@@ -1335,7 +1453,7 @@
            id="flowPara3352-6">MKCL</flowPara></flowRoot>    </g>
     <g
        id="g6935"
-       transform="translate(67.196725,72.677185)">
+       transform="translate(68.345767,72.677185)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -1628,7 +1746,7 @@
            id="flowPara3352-14-4-9-5-4-8">Butterfly</flowPara></flowRoot>    </g>
     <g
        id="g16342"
-       transform="translate(243.06841,-668.74864)">
+       transform="translate(30.10442,-772.59924)">
       <ellipse
          ry="41.688072"
          rx="71.023682"
@@ -1651,7 +1769,7 @@
            id="flowPara3352-14-4-9-5-4-35">Utah</flowPara></flowRoot>    </g>
     <g
        id="g16270"
-       transform="translate(228.56391,-771.78193)">
+       transform="translate(654.49188,-564.08081)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -2004,7 +2122,7 @@ http://www.lispworks.com/documentation/lcl50/rin/relnotes-1.html
            id="flowPara3352-14-4-9-73-2-5">Liquid</flowPara></flowRoot>    </g>
     <g
        id="g8882"
-       transform="translate(413.35637,228.19473)">
+       transform="translate(414.50541,228.26374)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -2152,7 +2270,7 @@ https://www.scieneer.com/scl/
            id="flowPara3352-14-4-9-5-4-0">CLOE</flowPara></flowRoot>    </g>
     <g
        id="g6928"
-       transform="translate(280.16072,139.58827)">
+       transform="translate(282.45878,139.58827)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -2196,7 +2314,7 @@ https://www.scieneer.com/scl/
            id="flowPara3352-14-4">MCL</flowPara></flowRoot>    </g>
     <g
        id="g5524"
-       transform="translate(-167.92333,-327.24269)">
+       transform="translate(-380.88732,-431.09335)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -2285,7 +2403,7 @@ https://www.scieneer.com/scl/
            id="flowPara3352-14-4-9-73-7-6">Poplog</flowPara></flowRoot>    </g>
     <g
        id="g5205"
-       transform="translate(429.49049,988.25743)">
+       transform="translate(431.78855,261.3034)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -2307,7 +2425,7 @@ https://www.scieneer.com/scl/
            id="flowPara3352-14-4-9-9">JSCL</flowPara></flowRoot>    </g>
     <g
        id="g5226"
-       transform="translate(-377.89082,256.46634)">
+       transform="translate(263.29923,152.61577)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -2329,7 +2447,7 @@ https://www.scieneer.com/scl/
            id="flowPara3352-14-4-9-68-7">Movitz</flowPara></flowRoot>    </g>
     <g
        id="g5212"
-       transform="translate(-209.4015,360.31694)">
+       transform="translate(217.67554,152.61577)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -2352,7 +2470,7 @@ https://www.scieneer.com/scl/
            id="flowPara3352-14-4-9-68-3">Mezzano</flowPara></flowRoot>    </g>
     <g
        id="g5191"
-       transform="translate(-293.64613,251.62932)">
+       transform="translate(-506.61012,251.62928)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -2375,7 +2493,7 @@ https://www.scieneer.com/scl/
            id="flowPara3352-14-4-9-68-7-3">emacs-cl</flowPara></flowRoot>    </g>
     <g
        id="g5219"
-       transform="translate(261.00123,884.40684)">
+       transform="translate(49.18628,-50.248353)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -3140,7 +3258,7 @@ https://www.scieneer.com/scl/
        inkscape:connection-end="#g8903" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#marker6026)"
-       d="M 875.84186,927.68725 770.20663,979.19961"
+       d="m 878.01567,927.60708 -106.53575,51.6727"
        id="path6018"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3172,7 +3290,7 @@ https://www.scieneer.com/scl/
        inkscape:connection-end="#g5538" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker5820)"
-       d="m 574.60193,278.41467 70.91664,0"
+       d="m 574.60168,278.43756 72.06618,0.0232"
        id="path5812"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3186,6 +3304,59 @@ https://www.scieneer.com/scl/
        inkscape:connector-curvature="0"
        inkscape:connection-start="#g16221"
        inkscape:connection-end="#g8863" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#marker6017)"
+       d="M 478.08894,241.12556 316.10356,4.1520309"
+       id="path5997"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g6915"
+       inkscape:connection-end="#g16270" />
+    <g
+       id="g5024"
+       transform="translate(-11.03982,95.963903)">
+      <ellipse
+         ry="39.950821"
+         rx="71.023682"
+         cy="286.30136"
+         cx="942.84412"
+         id="path3344-2-6-4-4-7"
+         style="display:inline;fill:#aa8800;fill-opacity:0.96078431;stroke:#000000;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:4, 16;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter8453-2)" />
+      <flowRoot
+         transform="translate(771.48865,46.790001)"
+         style="font-style:normal;font-weight:normal;font-size:30px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         id="flowRoot3346-36-1-3-2-1"
+         xml:space="preserve"><flowRegion
+           id="flowRegion3348-88-3-6-40-0"><rect
+             y="220.79324"
+             x="110.9745"
+             height="54.996868"
+             width="136.53804"
+             id="rect3350-93-4-2-5-8" /></flowRegion><flowPara
+           id="flowPara3352-14-4-9-9-7">Acheron</flowPara></flowRoot>    </g>
+    <g
+       id="g5017"
+       transform="translate(-155.31118,32.534128)">
+      <ellipse
+         ry="39.950821"
+         rx="71.023682"
+         cy="142.02995"
+         cx="1087.1155"
+         id="path3344-2-6-4-4-0"
+         style="display:inline;fill:#44aa00;fill-opacity:0.96078431;stroke:#000000;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:4, 16;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter8453-4)" />
+      <flowRoot
+         transform="translate(912.29383,-94.982595)"
+         style="font-style:normal;font-weight:normal;font-size:22.5px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         id="flowRoot3346-36-1-3-2-4"
+         xml:space="preserve"><flowRegion
+           id="flowRegion3348-88-3-6-40-8"><rect
+             style="font-size:22.5px"
+             y="220.79324"
+             x="110.9745"
+             height="54.996868"
+             width="136.53804"
+             id="rect3350-93-4-2-5-89" /></flowRegion><flowPara
+           id="flowPara3352-14-4-9-9-5">Parenscript</flowPara></flowRoot>    </g>
   </g>
   <g
      inkscape:groupmode="layer"
@@ -3258,7 +3429,7 @@ https://www.scieneer.com/scl/
        inkscape:connection-end="#path3344-8" />
     <path
        style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1;marker-start:url(#marker7577);marker-end:url(#marker9836)"
-       d="M 450.76063,875.76195 662.87787,979.19961"
+       d="M 450.84363,875.70849 663.9439,979.25307"
        id="path11274"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3338,7 +3509,7 @@ https://www.scieneer.com/scl/
        inkscape:connection-start="#path3344-2-6" />
     <path
        style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker17691)"
-       d="m 574.60194,-240.83821 70.91662,0"
+       d="m 503.57826,-280.78903 0,-23.94902"
        id="path14652"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3360,28 +3531,31 @@ https://www.scieneer.com/scl/
        inkscape:connector-curvature="0"
        inkscape:connection-end="#path3344-2-6-4-5-21-9-3"
        inkscape:connection-start="#path3344-2-6-4-5-21-9" />
-    <ellipse
-       style="display:inline;fill:#44aa00;fill-opacity:0.96078431;stroke:#000000;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter8453)"
-       id="path3344-2-6-4-9"
-       cx="716.54224"
-       cy="70.713509"
-       rx="71.023682"
-       ry="39.950821" />
-    <flowRoot
-       xml:space="preserve"
-       id="flowRoot3346-36-1-3-4"
-       style="font-style:normal;font-weight:normal;font-size:30px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       transform="translate(566.41233,-169.06153)"><flowRegion
-         id="flowRegion3348-88-3-6-4"><rect
-           id="rect3350-93-4-2-6"
-           width="136.53804"
-           height="54.996868"
-           x="110.9745"
-           y="220.79324" /></flowRegion><flowPara
-         id="flowPara3352-14-4-9-73">ABCL</flowPara></flowRoot>    <g
+    <g
+       id="g5724">
+      <ellipse
+         ry="39.950821"
+         rx="71.023682"
+         cy="763.12372"
+         cx="717.69128"
+         id="path3344-2-6-4-9"
+         style="display:inline;fill:#44aa00;fill-opacity:0.96078431;stroke:#000000;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter8453)" />
+      <flowRoot
+         transform="translate(571.00844,523.34869)"
+         style="font-style:normal;font-weight:normal;font-size:30px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         id="flowRoot3346-36-1-3-4"
+         xml:space="preserve"><flowRegion
+           id="flowRegion3348-88-3-6-4"><rect
+             y="220.79324"
+             x="110.9745"
+             height="54.996868"
+             width="136.53804"
+             id="rect3350-93-4-2-6" /></flowRegion><flowPara
+           id="flowPara3352-14-4-9-73">ABCL</flowPara></flowRoot>    </g>
+    <g
        style="display:inline"
        id="g5347"
-       transform="translate(45.040721,-456.07923)">
+       transform="translate(47.338785,-871.4816)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -3411,28 +3585,32 @@ https://github.com/gnooth/xcl
              width="136.53804"
              id="rect3350-93-4-2-62-31-3" /></flowRegion><flowPara
            id="flowPara3352-14-4-9-68-7-4">XCL</flowPara></flowRoot>    </g>
-    <ellipse
-       style="display:inline;fill:#ff5454;fill-opacity:0.96078431;stroke:#000000;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter8453)"
-       id="path3344-2-6-4-9-2"
-       cx="929.50623"
-       cy="70.713509"
-       rx="71.023682"
-       ry="39.950821" />
-    <flowRoot
-       xml:space="preserve"
-       id="flowRoot3346-36-1-3-4-1"
-       style="font-style:normal;font-weight:normal;font-size:30px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       transform="translate(767.2035,-169.06153)"><flowRegion
-         id="flowRegion3348-88-3-6-4-4"><rect
-           id="rect3350-93-4-2-6-2"
-           width="136.53804"
-           height="54.996868"
-           x="110.9745"
-           y="220.79324" /></flowRegion><flowPara
-         id="flowPara3352-14-4-9-73-0">UABCL</flowPara></flowRoot>    <g
+    <g
+       id="g5717"
+       transform="translate(0,19.079407)">
+      <ellipse
+         ry="39.950821"
+         rx="71.023682"
+         cy="744.04431"
+         cx="931.80432"
+         id="path3344-2-6-4-9-2"
+         style="display:inline;fill:#ff5454;fill-opacity:0.96078431;stroke:#000000;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter8453)" />
+      <flowRoot
+         transform="translate(769.50157,504.26926)"
+         style="font-style:normal;font-weight:normal;font-size:30px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         id="flowRoot3346-36-1-3-4-1"
+         xml:space="preserve"><flowRegion
+           id="flowRegion3348-88-3-6-4-4"><rect
+             y="220.79324"
+             x="110.9745"
+             height="54.996868"
+             width="136.53804"
+             id="rect3350-93-4-2-6-2" /></flowRegion><flowPara
+           id="flowPara3352-14-4-9-73-0">UABCL</flowPara></flowRoot>    </g>
+    <g
        style="display:inline"
        id="g5365"
-       transform="translate(-167.92327,-544.56385)">
+       transform="translate(-162.17812,-1060.6622)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -3463,7 +3641,7 @@ http://clisp.org/
            id="flowPara3352-14-4-9-36">CLISP</flowPara></flowRoot>    </g>
     <g
        id="g6016"
-       transform="translate(55.99995,-434.46235)">
+       transform="translate(58.298014,-950.56072)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -3495,7 +3673,7 @@ https://github.com/ufasoft/lisp
     <g
        style="display:inline"
        id="g5356"
-       transform="translate(67.196725,-489.28086)">
+       transform="translate(282.45878,-696.98198)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -3535,7 +3713,7 @@ https://github.com/ufasoft/lisp
     <g
        style="display:inline"
        id="g8365"
-       transform="translate(847.27709,570.0564)">
+       transform="translate(849.57515,674.12598)">
       <ellipse
          ry="39.950821"
          rx="71.023682"
@@ -3557,7 +3735,7 @@ https://github.com/ufasoft/lisp
            id="flowPara3352-14-4-9-68">CLiCC</flowPara></flowRoot>    </g>
     <g
        id="g5296"
-       transform="translate(8.818374,-8.6257924)">
+       transform="translate(11.116437,27.61789)">
       <ellipse
          ry="41.688072"
          rx="71.023682"
@@ -3579,7 +3757,7 @@ https://github.com/ufasoft/lisp
            id="flowPara3352-14-4-9-68-1">mocl</flowPara></flowRoot>    </g>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker7506)"
-       d="m 787.56593,174.56408 70.91663,0"
+       d="m 793.31108,-341.53428 67.46954,0"
        id="path7504"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3587,7 +3765,7 @@ https://github.com/ufasoft/lisp
        inkscape:connection-end="#g6016" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker5836)"
-       d="m 787.56592,70.71351 70.91662,0"
+       d="m 788.71497,763.12372 72.06567,0"
        id="path5828"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3595,7 +3773,7 @@ https://github.com/ufasoft/lisp
        inkscape:connection-end="#path3344-2-6-4-9-2" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker6841)"
-       d="m 929.50625,422.21608 -10e-6,124.58144"
+       d="m 932.38162,526.28367 0.82036,56.76636"
        id="path6833"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3603,7 +3781,7 @@ https://github.com/ufasoft/lisp
        inkscape:connection-end="#g5296" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#marker7243)"
-       d="m 681.08393,588.4856 177.39863,0"
+       d="m 679.71768,596.28386 182.39265,20.41916"
        id="path7235"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3611,11 +3789,19 @@ https://github.com/ufasoft/lisp
        inkscape:connection-end="#g5296" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#marker7651)"
-       d="m 547.00293,310.02737 337.9246,246.00541"
+       d="M 544.25983,311.1617 891.276,590.49571"
        id="path7643"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
        inkscape:connection-start="#g6915"
        inkscape:connection-end="#g5296" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#Arrow1Lend)"
+       d="m 633.32373,626.23205 61.10408,99.14521"
+       id="path5733"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g8635"
+       inkscape:connection-end="#g5724" />
   </g>
 </svg>
