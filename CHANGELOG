@@ -37,8 +37,11 @@ section "Removed interfaces".
 
 ** Issues fixed
 - MOP: fix problemes when redefining non-standard and anonymous classes
-
 Bugs identified and fixed by Pascal Costanza.
+
+- getcwd: fix issue with too long pathname
+This fixes the regression, which crashed ECL at start when pathname
+exceeded 128 characters limit.
 
 * 16.1.2 changes since 16.0.0
 
