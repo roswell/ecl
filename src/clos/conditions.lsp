@@ -403,7 +403,7 @@
 
 (defun signal (datum &rest arguments)
   (let* ((condition
-          (coerce-to-condition datum arguments 'SIMPLE-CONDITION 'SIGNAL))
+           (coerce-to-condition datum arguments 'SIMPLE-CONDITION 'SIGNAL))
          (*handler-clusters* *handler-clusters*))
     (if (typep condition *break-on-signals*)
         (break "~A~%Break entered because of *BREAK-ON-SIGNALS*."
@@ -411,9 +411,8 @@
     (loop (unless *handler-clusters* (return))
           (let ((cluster (pop *handler-clusters*)))
             (dolist (handler cluster)
-<             (when (typep condition (car handler))
-                (funcall (cdr handler) condition)
-                ))))
+              (when (typep condition (car handler))
+                (funcall (cdr handler) condition)))))
     nil))
 
 
