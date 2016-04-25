@@ -47,7 +47,7 @@ Builds a new function which accepts any number of arguments but always outputs N
 
 (defun do-deftype (name form function)
   (unless (symbolp name)
-    (error "~s is not a valid type specifier" name))
+    (error-type-specifier name))
   (create-type-name name)
   (put-sysprop name 'DEFTYPE-FORM form)
   (put-sysprop name 'DEFTYPE-DEFINITION
