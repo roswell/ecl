@@ -127,11 +127,6 @@ $(srcdir)/symbols_list2.h: $(srcdir)/symbols_list.h Makefile
 	mv tmp.h $@
 
 #
-# GCC might break this code
-#
-gbc.o: gbc.c $(HFILES)
-	$(CC) $(CFLAGS) -O0 gbc.c -o $@
-#
 # This reduces the overhead of jumping to other functions
 #
 apply.c: $(DPP)
