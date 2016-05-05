@@ -97,3 +97,60 @@ file interface (implementation dependent)
 @item format.d
 format (this isn't ANSI compliant, we need it for bootstrapping though)
 
+@item gfun.d
+dispatch for generic functions
+
+@item hash.d
+hash tables
+
+@item instance.d
+CLOS interface
+
+@item interpreter.d
+bytecode interpreter
+
+@item iso_latin_names.h
+character names in ISO-LATIN-1
+
+@item list.d
+list manipulating routines
+
+@item load.d
+binary loader (contains also open_fasl_data)
+
+@item macros.d
+macros and environment
+
+@item main.d
+ecl boot proccess
+
+@item Makefile.in
+Makefile for ECL core library
+
+@item mapfun.d
+mapping
+
+@item newhash.d
+hashing routines
+
+@item num_arith.d
+arithmetic operations
+
+@item number.d
+constructing numbers
+
+@c these files need to be cleaned
+@item numbers/*.d
+arithmetic operations (abs, atan, plusp etc)
+
+@item num_co.d
+operations on floating-point numbers (implementation dependent)
+
+@item num_log.d
+logical operations on numbers
+
+@item num_pred.d
+predicates on numbers
+
+@item num_rand.d
+random numbers
