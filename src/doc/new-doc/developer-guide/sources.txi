@@ -57,3 +57,43 @@ auxiliaries used in compiled Lisp code
 
 @item compiler.d
 bytecode compiler
+
+@item disassembler.d
+bytecodes disassembler utilities
+
+@item dpp.c
+defun preprocessor
+
+@item ecl_constants.h
+contstant values for all_symbols.d
+
+@item features.h
+names of features compiled into ECL
+
+@item error.d
+error handling
+
+@item eval.d
+evaluation
+
+@item ffi/backtrace.d
+C backtraces
+
+@item ffi/cdata.d
+data for compiled files
+
+@item ffi/libraries.d
+shared library and bundle opening / copying / closing
+
+@item ffi/mmap.d
+mapping of binary files
+
+@item ffi.d
+user defined data types and foreign functions interface
+
+@item file.d
+file interface (implementation dependent)
+
+@item format.d
+format (this isn't ANSI compliant, we need it for bootstrapping though)
+

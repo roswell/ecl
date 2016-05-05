@@ -131,19 +131,18 @@ static int c_listA(cl_env_ptr env, cl_object args, int push);
 static cl_object ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda);
 
 static void FEillegal_variable_name(cl_object) ecl_attr_noreturn;
-                                               static void FEill_formed_input(void) ecl_attr_noreturn;
+static void FEill_formed_input(void) ecl_attr_noreturn;
 
-                                               /* -------------------- SAFE LIST HANDLING -------------------- */
-
-                                               static cl_object
-                                               pop(cl_object *l) {
-                                                 cl_object head, list = *l;
-                                                 unlikely_if (ECL_ATOM(list))
-                                                   FEill_formed_input();
-                                                 head = ECL_CONS_CAR(list);
-                                                 *l = ECL_CONS_CDR(list);
-                                                 return head;
-                                               }
+/* -------------------- SAFE LIST HANDLING -------------------- */
+static cl_object
+pop(cl_object *l) {
+  cl_object head, list = *l;
+  unlikely_if (ECL_ATOM(list))
+    FEill_formed_input();
+  head = ECL_CONS_CAR(list);
+  *l = ECL_CONS_CDR(list);
+  return head;
+}
 
 static cl_object
 pop_maybe_nil(cl_object *l) {
