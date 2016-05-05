@@ -1,22 +1,17 @@
-/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
-/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+/* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
-    num_rand.c  -- Random numbers.
-n*/
-/*
-    Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-    Copyright (c) 1990, Giuseppe Attardi.
-    Copyright (c) 2001, Juan Jose Garcia Ripoll.
-    Copyright (c) 2015, Daniel Kochmański.
-
-    ECL is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../Copyright' for full details.
-*/
+ * num_rand.d - random numbers
+ *
+ * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
+ * Copyright (c) 1990 Giuseppe Attardi
+ * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ * Copyright (c) 2016 Daniel Kochmański
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
 #include <ecl/ecl.h>
 #include <time.h>
@@ -69,7 +64,7 @@ init_genrand(ulong seed)
 static ulong
 generate_int64(cl_object state)
 {
-        static  mag01[2]={0x0UL, MATRIX_A};
+        static ulong mag01[2]={0x0UL, MATRIX_A};
         ulong y;
         ulong *mt = state->vector.self.b64;
 
@@ -151,7 +146,7 @@ init_genrand(ulong seed)
 static ulong
 generate_int32(cl_object state)
 {
-        static  mag01[2]={0x0UL, MATRIX_A};
+        static ulong mag01[2]={0x0UL, MATRIX_A};
         ulong y;
         ulong *mt = state->vector.self.b32;
         if (mt[MT_N] >= MT_N) {
