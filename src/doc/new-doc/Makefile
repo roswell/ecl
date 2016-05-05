@@ -1,8 +1,20 @@
-new-doc.pdf: *.txi */*.txi figures/*
+FILES= *.txi */*.txi figures/*
+
+.PHONY: all pdf info html
+
+all: pdf info html
+
+pdf: new-doc.pdf
+info: ecldoc.info
+html: new-doc.html
+
+new-doc.pdf: $(FILES)
 	texi2pdf new-doc.txi
 
-ecldoc.info: *.txi */*.txi figures/*
+ecldoc.info: $(FILES)
 	makeinfo new-doc.txi
 
+new-doc.html: $(FILES)
+
 clean:
-	rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info}
+	rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info,html}
