@@ -24,6 +24,9 @@ Commit @code{61500316b7ea17d0e42f5ca127f2f9fa3e6596a8}.  Broken GC is
 replaced by BoehmGC library. This may be added back as a fallback in
 the near future.
 
+@code{3bd9799a2fef21cc309472e604a46be236b155c7} removes a leftover
+(apparently gbc.d wasn't bdwgc glue).
+
 @c @node Green threads
 @subsection Green threads
 Commit @code{41923d5927f31f4dd702f546b9caee74e98a2080}. Green threads
