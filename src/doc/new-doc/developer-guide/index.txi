@@ -2,7 +2,7 @@
 @chapter Developer's guide
 
 @menu
-@c * Sources structure:: Overview of the source code structure
+* Sources structure:: Overview of the source code structure
 * Contributing:: How to contribute to the ECL project
 @c * Modules hierarchy::
 @c * Testing and benchmarking::
@@ -16,6 +16,7 @@
 @c * Current roadmap::
 @end menu
 
+@include developer-guide/sources.txi
 @include developer-guide/contributing.txi
 @include developer-guide/objects.txi
 @include developer-guide/environment.txi

@@ -2,143 +2,14 @@
 @section Contributing
 
 @menu
-* Documentation conventions:: Documentation conventions
-@c * Coding standards:: Lisp and C/C++ code conventions
+* Documentation:: Documentation
+* Coding standards:: Lisp and C/C++ code conventions
 @c * Providing tests::
 @c * Submitting patches::
 @c * Reporting issues::
-@c * Money contributions::
+@c * Financial contributions::
 @c * Other ways to contribute::
 @end menu
 
-@node Documentation conventions
-@subsection Documentation conventions
-
-@subsubsection Indexes
-For the purpose of this manual we maintain a few indexes:
-@itemize @bullet
-@item Concept index – concept covered by a documentation
-
-@verb{|@cindex User extensible streams|}
-
-@item Configure option index – options available in configure script
-
-Mark the default option with capital letters:
-
-@verb{$--enable-clos-streams [YES|builtin|no]$}
-
-@item Feature index – description of an item in @code{*FEATURES*}
-
-@verb{|@ftindex GRAY-STREAMS|}
-
-@item Example index – example illustrating some use-case
-
-@verb{|@exindex @code{gray:close} specializing function on @code{T}|}
-
-@item Function index – covers both Lisp and C/C++ functions
-
-Implicitly added by @verb{|@defun|}, @verb{|@defmac|} etc.
-
-@item Variable index – covers both Lisp and C/C++ variables
-
-Implicitly added by @verb{|@defvar|} etc.
-
-@item Type index – both C/C++ and Lisp
-
-Adding C/C++ type:
-@verb{|@deftp {@cind} cl_env_struct|}
-
-Adding Lisp type:
-@verb{|@deftp {@lind} trivial-process|}
-
-@item Common Lisp symbols – list of defined CL symbols (functions, variables etc.)
-
-@verb{|@lspindex gray:close|}
-@verb{|@lspindex ffi:*has-dffi*|}
-
-@item C/C++ index
-
-@verb{|@cppindex cl_env_struct|}
-
-@end itemize
-
-@subsubsection Functions, macros and special forms
-
-If function is from the Lisp ``world'', then we add it to the
-@verb{|@lspindex|}, if from C/C++, then to the @verb{|@cppindex|}.
-
-@verbatim
-@lspindex ext:run-program
-@defun ext:run-program ...
-Short description
-@table @var
-@item arg-1
-description
-@item arg-2
-description
-@item returns
-One value? More?
-@end table
-@subsubheading Description
-Description here
-@subsubheading Examples         @c Omit section if none
-Comment on the example if necessary.
-@exindex @code{package:function} short summary
-@lisp
-(some-code-demonstrating-the-functionality)
-@end lisp
-@subsubheading Side effects     @c Omit section if none
-Side effects listed
-@subsubheading Affected by      @c Omit section if none
-For instance: if the user has some privigiles on the system
-@end defun
-@end verbatim
-
-@subsubsection Typed functions
-
-@verbatim
-@deftypefun return-type name (type arg)*
-description
-@end deftypefun
-@end verbatim
-
-@subsubsection Variables
-
-Examples:
-@verbatim
-@defvr {Constant} MOST_NEGATIVE_FIXNUM
-@defvrx {Constant} MOST_POSITIVE_FIXNUM
-These constants mark the limits of a fixnum.
-@end defvr
-@defvr {FFI} *use-dffi*
-Description.
-@end defvr
-@end verbatim
-
-@subsubsection Deprecated, obsolete and unused functions/variables
-
-These shouldn't appear in the function index nor the variable index, but
-should be listed in the C/C++ symbol index or/and Lisp index. Their
-status should be marked with the @strong{keyword}.
-
-Example:
-@verbatim
-@cppindex ecl_fix
-@cppindex ecl_unfix
-@cppindex ecl_make_fixnum
-@cppindex ecl_fixnum
-
-@deftypefun cl_object ecl_fix (cl_fixnum n)
-@deftypefunx cl_fixnum ecl_unfix (cl_object o)
-@code{ecl_fix} converts from an integer to a lisp object, while the
-@code{ecl_unfix} does the opposite (converts lisp object fixnum to integer).
-
-@itemize @bullet
-@item @strong{DEPRECATED} @code{cl_make_fixnum} – equivalent to @code{cl_fix}
-@item @strong{DEPRECATED} @code{cl_fixnum} – equivalent to @code{cl_unfix}
-@end itemize
-@end deftypefun
-@end verbatim
-
-If symbol is deprecated, it will be marked as obsolete in the next
-release, while obsolete symbols will be removed.
+@include developer-guide/contributing-documentation.txi
+@include developer-guide/contributing-code-standards.txi

@@ -1,0 +1,59 @@
+@node Sources structure
+@section Sources structure
+
+@subsection src/c
+
+@itemize
+@item alloc_2.d
+memory allocation based on the Boehm GC
+
+@item all_symbols.d
+name mangler and symbol initialization
+
+@item apply.d
+interface to C call mechanism
+
+@item arch/*
+architecture dependant code
+
+@item array.d
+array routines
+
+@item assignment.c
+assignment
+
+@item backq.d
+backquote mechanism
+
+@item big.d
+bignum routines based on the GMP
+
+@item big_ll.d
+bignum emulation with long long
+
+@item cfun.d
+compiled functions
+
+@item cfun_dispatch.d
+trampolines for functions
+
+@item character.d
+character routines
+
+@item char_ctype.d
+character properties.
+
+@item cinit.d
+lisp initialization
+
+@item clos/accessor.d
+dispatch for slots
+
+@item clos/cache.d
+thread-local cache for a variety of operations
+
+@item cmpaux.d
+auxiliaries used in compiled Lisp code
+
+@item compiler.d
+bytecode compiler

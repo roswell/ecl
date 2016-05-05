@@ -1,0 +1,185 @@
+@node Documentation
+@subsection Documentation
+
+It is not an accident, that the documentation is the first chapter on
+contributing to the @ecl – we believe that writing good documentation is
+a cornerstone of any reliable software.
+
+The second assumption is that people learn most from the examples, so
+each concept should have illustration in code with a special entry in
+the examples index.
+
+@subsubsection Indexes
+For the purpose of this manual we maintain a few indexes listed
+below. They are meant to help navigate and search for information by the
+reader.
+
+@itemize @bullet
+@item Concept index – concept covered by a documentation
+@exindex Concept index
+@verb{|@cindex User extensible streams|}
+
+@item Configure option index – options available in configure script
+
+Mark the default option with capital letters:
+@exindex Configure option index
+@verb{$--enable-clos-streams [YES|builtin|no]$}
+
+@item Feature index – description of an item in @code{*FEATURES*}
+
+@exindex Feature index
+@verb{|@ftindex GRAY-STREAMS|}
+
+@item Example index – example illustrating some use-case
+
+@exindex Example index
+@verb{|@exindex @code{gray:close} specializing function on @code{T}|}
+
+@item Function index – covers both Lisp and C/C++ functions
+
+Implicitly added by @verb{|@defun|}, @verb{|@defmac|} etc.
+
+@item Variable index – covers both Lisp and C/C++ variables
+
+Implicitly added by @verb{|@defvar|} etc.
+
+@item Type index – both C/C++ and Lisp
+
+@exindex Type indexes
+
+Adding C/C++ type:
+@verb{|@deftp {@cind} cl_env_struct|}
+
+Adding Lisp type:
+@verb{|@deftp {@lind} trivial-process|}
+
+@item Common Lisp symbols – list of defined CL symbols (functions, variables etc.)
+
+@exindex Common Lisp symbol index
+@verb{|@lspindex gray:close|}
+@verb{|@lspindex ffi:*has-dffi*|}
+
+@item C/C++ index
+
+@exindex C/C++ name index
+@verb{|@cppindex cl_env_struct|}
+
+@end itemize
+
+@subsubheading Functions, macros and special forms
+
+If function is from the Lisp ``world'', then we add it to the
+@verb{|@lspindex|}, if from C/C++, then to the @verb{|@cppindex|}.
+
+@exindex Documenting lisp operator
+@verbatim
+@lspindex ext:run-program
+@defun ext:run-program ...
+Short description
+@table @var
+@item arg-1
+description
+@item arg-2
+description
+@item returns
+One value? More?
+@end table
+@subsubheading Description
+Description here
+@subsubheading Examples         @c Omit section if none
+Comment on the example if necessary.
+@exindex @code{package:function} short summary
+@lisp
+(some-code-demonstrating-the-functionality)
+@end lisp
+@subsubheading Side effects     @c Omit section if none
+Side effects listed
+@subsubheading Affected by      @c Omit section if none
+For instance: if the user has some privigiles on the system
+@end defun
+@end verbatim
+
+@subsubheading Typed functions
+
+@exindex Documenting typed function
+@verbatim
+@deftypefun return-type name (type arg)*
+description
+@end deftypefun
+@end verbatim
+
+@subsubheading Variables
+
+@exindex Documenting variables
+@verbatim
+@defvr {Constant} MOST_NEGATIVE_FIXNUM
+@defvrx {Constant} MOST_POSITIVE_FIXNUM
+These constants mark the limits of a fixnum.
+@end defvr
+@defvr {FFI} *use-dffi*
+Description.
+@end defvr
+@end verbatim
+
+@subsubheading Deprecated, obsolete and unused functions/variables
+
+These shouldn't appear in the function index nor the variable index, but
+should be listed in the C/C++ symbol index or/and Lisp index. Their
+status should be marked with the @strong{keyword}.
+
+@exindex Documenting deprecation and obsolescence
+Example:
+@verbatim
+@cppindex ecl_fix
+@cppindex ecl_unfix
+@cppindex ecl_make_fixnum
+@cppindex ecl_fixnum
+
+@deftypefun cl_object ecl_fix (cl_fixnum n)
+@deftypefunx cl_fixnum ecl_unfix (cl_object o)
+@code{ecl_fix} converts from an integer to a lisp object, while the
+@code{ecl_unfix} does the opposite (converts lisp object fixnum to integer).
+
+@itemize @bullet
+@item @strong{DEPRECATED} @code{cl_make_fixnum} – equivalent to @code{cl_fix}
+@item @strong{DEPRECATED} @code{cl_fixnum} – equivalent to @code{cl_unfix}
+@end itemize
+@end deftypefun
+@end verbatim
+
+@cindex Deprecation and obsolescence
+If symbol is deprecated, it will be marked as obsolete in the next
+release, while obsolete symbols will be removed.
+
+@subsubsection Examples
+People learn by examples. New functions should have a usage example
+listed in the examples index. When we want to illustrate some lisp code,
+we should put it inside the @verb{|@lisp|} and @verb{|@end lisp|}
+block, while if the code is in C/C++ put it in @verb{|@example|} and
+@verb{|@end example|}.
+
+Sometimes code contains invalid characters which confuse the texinfo. If
+that's a case, then ode should be put additionally inside the
+@verb{|@verbatim|} and @verb{|@end verbatim|} pair.
+
+@exindex Examples in documentation
+@verbatim
+@lisp
+(lambda () T)
+@end lisp
+
+@example
+int i = 3;
+@end example
+@end verbatim
+
+@subsubsection Concepts
+Concepts are arguably the most important topic covered in any
+documentation. They reflect the ideas behind the software with the
+underlying implementation decisions motivation.
+
+The main questions answered by the ``concepts'' are:
+@itemize
+@item What is a purpose of this interface?
+@item Why it has been implemented that way?
+@end itemize

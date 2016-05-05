@@ -1,0 +1,30 @@
+@node Coding standards
+@subsection Coding standards
+@cindex Coding standards
+
+@subsubheading Lisp conventions
+Lisp code should follow the standard conventions used in the
+community.
+
+If the function is local to the file it's used in, then it should be
+declared as c-local:
+
+@exindex Lisp convention: local functions
+@lisp
+(defun command-arg-error (str &rest fmt-args)
+  ;; Format an error message and quit
+  (declare (si::c-local))
+  (apply #'format *error-output* str fmt-args)
+  (princ *help-message* *error-output*)
+  (quit 1))
+@end lisp
+
+@subsubheading C/C++ conventions
+
+@cindex Defun preprocessor
+ECL internal C files are preprocessed with the @verb{Defun preprocessor}
+(source is available in the src/c/dpp.c file). This results in the
+ability to use somewhat unusual syntax in the C source files enabling
+constructs @verb{defun} and @verb{return}, to simply defining C
+functions with @verb{&optional, &rest, &key and &aux} arguments as well
+as returning multiple values from the funcitons.

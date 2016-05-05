@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
-/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+/* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
-    cfun_dispatch.c -- Trampolines for functions
+  cfun_dispatch.c - trampolines for functions
 */
 
 static cl_object dispatch0 (cl_narg narg) {

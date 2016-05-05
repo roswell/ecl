@@ -24,6 +24,7 @@
 * Developer's guide
 - [ ] Source code structure
 - [ ] Contributing
+  - Source documentation
 - [ ] Modules hierarchy
 - [ ] Testing and benchmarking
 - [ ] Manipulating Lisp objects
