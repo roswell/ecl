@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * abs.d  -- absolute value
+ * abs.d - absolute value
  *
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
