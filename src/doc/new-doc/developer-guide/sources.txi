@@ -154,3 +154,105 @@ predicates on numbers
 
 @item num_rand.d
 random numbers
+
+@item package.d
+packages (OS dependent)
+
+@item pathname.d
+pathnames
+
+@item predicate.d
+predicates
+
+@item print.d
+print
+
+@item printer/*.d
+printer utilities and object representations
+
+@item read.d
+read.d - reader
+
+@item reader/parse_integer.d
+@item reader/parse_number.d
+
+@item reference.d
+reference in Constants and Variables
+
+@item sequence.d
+sequence routines
+
+@item serialize.d
+serialize a bunch of lisp data
+
+@item sse2.d
+SSE2 vector type support
+
+@item stacks.d
+binding/history/frame stacks
+
+@item string.d
+string routines
+
+@item structure.d
+structure interface
+
+@item symbol.d
+symbols
+
+@item symbols_list.h
+@item symbols_list2.h
+The latter is generated from the first. The first has to contain all
+symbols on the system which aren't local.
+
+@item tcp.d
+stream interface to TCP
+
+@item threads/atomic.d
+atomic operations
+
+@item threads/barrier.d
+wait barriers
+
+@item threads/condition_variable.d
+condition variables for native threads
+implement me: @code{mp_condition_variable_timedwait}
+
+@item threads/ecl_atomics.h
+alternative definitions for atomic operations
+
+@item threads/mailbox.d
+thread communication queue
+
+@item threads/mutex.d
+mutually exclusive locks.
+
+@item threads/process.d
+native threads
+
+@item threads/queue.d
+waiting queue for threads
+
+@item threads/rwlock.d
+POSIX read-write locks
+
+@item threads/semaphore.d
+POSIX-like semaphores
+
+@item time.d
+time routines
+
+@item typespec.d
+type specifier routines
+
+@item unicode/*
+unicode definitions
+
+@item unixfsys.d
+Unix file system interface
+
+@item unixsys.d
+Unix shell interface
+
+@item vector_push.d
+vector optimizations
