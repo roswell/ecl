@@ -741,6 +741,28 @@ string_match(const char *s, cl_object pattern)
   }
 }
 
+/*XXX:*/
+#define PARSE_DIRECTORY_ENTRY                                           \
+  {                                                                     \
+    cl_object component, component_path, kind;                          \
+    if (text[0] == '.' &&                                               \
+        (text[1] == '\0' ||                                             \
+         (text[1] == '.' && text[2] == '\0')))                          \
+      continue;                                                         \
+    if (!string_match(text, text_mask))                                 \
+      continue;                                                         \
+    component = make_constant_base_string(text);                        \
+    component = si_base_string_concatenate(2, prefix, component);       \
+    component_path = cl_pathname(component);                            \
+    if (!Null(pathname_mask)) {                                         \
+      if (Null(cl_pathname_match_p(component, pathname_mask)))          \
+        continue;                                                       \
+    }                                                                   \
+    component_path = file_truename(component_path, component, flags);   \
+    kind = ecl_nth_value(the_env, 1);                                   \
+    out = CONS(CONS(component_path, kind), out);                        \
+  }
+
 /*
  * list_current_directory() lists the files and directories which are contained
  * in the current working directory (as given by current_dir()). If ONLY_DIR is
@@ -754,7 +776,7 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
   const cl_env_ptr the_env = ecl_process_env();
   cl_object out = ECL_NIL;
   cl_object prefix = ecl_namestring(base_dir, ECL_NAMESTRING_FORCE_BASE_STRING);
-  cl_object component, component_path, kind;
+
   char *text;
 #if defined(HAVE_DIRENT_H)
   DIR *dir;
@@ -769,79 +791,68 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
 
   while ((entry = readdir(dir))) {
     text = entry->d_name;
-#else
-# ifdef ECL_MS_WINDOWS_HOST
-    WIN32_FIND_DATA fd;
-    HANDLE hFind = NULL;
-    BOOL found = FALSE;
-
-    ecl_disable_interrupts();
-    for (;;) {
-      if (hFind == NULL) {
-        cl_object aux = make_constant_base_string(".\\*");
-        cl_object mask = si_base_string_concatenate(2, prefix, aux);
-        hFind = FindFirstFile((char*)mask->base_string.self, &fd);
-        if (hFind == INVALID_HANDLE_VALUE) {
-          out = ECL_NIL;
-          goto OUTPUT;
-        }
-        found = TRUE;
-      } else {
-        found = FindNextFile(hFind, &fd);
-      }
-      if (!found)
-        break;
-      text = fd.cFileName;
-# else /* sys/dir.h as in SYSV */
-      FILE *fp;
-      char iobuffer[BUFSIZ];
-      DIRECTORY dir;
-
-      ecl_disable_interrupts();
-      fp = fopen((char*)prefix->base_string.self, OPEN_R);
-      if (fp == NULL) {
-        out = ECL_NIL;
-        goto OUTPUT;
-      }
-      setbuf(fp, iobuffer);
-      for (;;) {
-        if (fread(&dir, sizeof(DIRECTORY), 1, fp) <= 0)
-          break;
-        if (dir.d_ino == 0)
-          continue;
-        text = dir.d_name;
-# endif /* !ECL_MS_WINDOWS_HOST */
-#endif /* !HAVE_DIRENT_H */
-        if (text[0] == '.' &&
-            (text[1] == '\0' ||
-             (text[1] == '.' && text[2] == '\0')))
-          continue;
-        if (!string_match(text, text_mask))
-          continue;
-        component = make_constant_base_string(text);
-        component = si_base_string_concatenate(2, prefix, component);
-        component_path = cl_pathname(component);
-        if (!Null(pathname_mask)) {
-          if (Null(cl_pathname_match_p(component, pathname_mask)))
-            continue;
-        }
-        component_path = file_truename(component_path, component, flags);
-        kind = ecl_nth_value(the_env, 1);
-        out = CONS(CONS(component_path, kind), out);
-      }
-#ifdef HAVE_DIRENT_H
+    PARSE_DIRECTORY_ENTRY;
+  }
   closedir(dir);
 #else
 # ifdef ECL_MS_WINDOWS_HOST
+  WIN32_FIND_DATA fd;
+  HANDLE hFind = NULL;
+  BOOL found = FALSE;
+
+  ecl_disable_interrupts();
+  for (;;) {
+    if (hFind == NULL) {
+      cl_object aux = make_constant_base_string(".\\*");
+      cl_object mask = si_base_string_concatenate(2, prefix, aux);
+      hFind = FindFirstFile((char*)mask->base_string.self, &fd);
+      if (hFind == INVALID_HANDLE_VALUE) {
+        out = ECL_NIL;
+        goto OUTPUT;
+      }
+      found = TRUE;
+    } else {
+      found = FindNextFile(hFind, &fd);
+    }
+
+    if (!found)
+      break;
+
+    text = fd.cFileName;
+    PARSE_DIRECTORY_ENTRY;
+  }
   FindClose(hFind);
-# else
+# else /* sys/dir.h as in SYSV */
+  FILE *fp;
+  char iobuffer[BUFSIZ];
+  DIRECTORY dir;
+
+  ecl_disable_interrupts();
+  fp = fopen((char*)prefix->base_string.self, OPEN_R);
+  if (fp == NULL) {
+    out = ECL_NIL;
+    goto OUTPUT;
+  }
+  setbuf(fp, iobuffer);
+  for (;;) {
+    if (fread(&dir, sizeof(DIRECTORY), 1, fp) <= 0)
+      break;
+    if (dir.d_ino == 0)
+      continue;
+
+    text=dir.d_name;
+    PARSE_DIRECTORY_ENTRY;
+  }
   fclose(fp);
 # endif /* !ECL_MS_WINDOWS_HOST */
 #endif /* !HAVE_DIRENT_H */
+
   ecl_enable_interrupts();
  OUTPUT:
   return cl_nreverse(out);
 }
+
+#undef PARSE_DIRECTORY_ENTRY
 
 /*
  * dir_files() lists all files which are contained in the current directory and
@@ -1063,7 +1074,7 @@ si_get_library_pathname(void)
   } else if (change_d_p_d != ECL_NIL) {
     ECL_SETQ(the_env, @'*default-pathname-defaults*', directory);
   }
-  @(return previous)
+  @(return previous);
   @)
 
 cl_object
