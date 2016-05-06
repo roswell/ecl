@@ -1100,15 +1100,15 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.24606401"
-     inkscape:cx="564.63557"
+     inkscape:zoom="0.62765546"
+     inkscape:cx="172.7008"
      inkscape:cy="1039.7987"
      inkscape:document-units="px"
-     inkscape:current-layer="layer3"
+     inkscape:current-layer="layer2"
      showgrid="false"
-     inkscape:window-width="1278"
-     inkscape:window-height="880"
-     inkscape:window-x="318"
+     inkscape:window-width="1598"
+     inkscape:window-height="865"
+     inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
      showguides="true"
@@ -3357,6 +3357,37 @@ https://www.scieneer.com/scl/
              width="136.53804"
              id="rect3350-93-4-2-5-89" /></flowRegion><flowPara
            id="flowPara3352-14-4-9-9-5">Parenscript</flowPara></flowRoot>    </g>
+    <g
+       id="g5404">
+      <title
+         id="title5430">Data General Common Lisp</title>
+      <desc
+         id="desc5412">Data General Common Lisp debuted (Mary Poppins ed.) 1984. Dev'd in RTP, derived from a Dybvig Scheme at UNC.
+
+Kent Dybvig was a PhD student at UNC and did some of the initial development.
+
+Source: Patrick Logan</desc>
+      <ellipse
+         ry="41.688072"
+         rx="71.023682"
+         cy="-136.98769"
+         cx="290.61426"
+         id="path3344-2-6-4-5-5-5"
+         style="display:inline;fill:#b3b3b3;fill-opacity:0.96078431" />
+      <flowRoot
+         transform="matrix(1,0,0,1.0434847,88.534663,-402.89868)"
+         style="font-style:normal;font-weight:normal;font-size:26.92090416px;line-height:125%;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         id="flowRoot3346-36-1-3-1-7-9"
+         xml:space="preserve"><flowRegion
+           id="flowRegion3348-88-3-6-72-9-6"><rect
+             style="font-size:26.92090416px;text-align:center;text-anchor:middle"
+             y="220.79324"
+             x="110.9745"
+             height="71.968163"
+             width="183.20912"
+             id="rect3350-93-4-2-9-3-2" /></flowRegion><flowPara
+           id="flowPara3352-14-4-9-5-7-0">Data</flowPara><flowPara
+           id="flowPara5402">General</flowPara></flowRoot>    </g>
   </g>
   <g
      inkscape:groupmode="layer"
@@ -3773,7 +3804,7 @@ https://github.com/ufasoft/lisp
        inkscape:connection-end="#path3344-2-6-4-9-2" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker6841)"
-       d="m 932.38162,526.28367 0.82036,56.76636"
+       d="m 931.80431,526.28566 -10e-6,56.75555"
        id="path6833"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3781,7 +3812,7 @@ https://github.com/ufasoft/lisp
        inkscape:connection-end="#g5296" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#marker7243)"
-       d="m 679.71768,596.28386 182.39265,20.41916"
+       d="m 679.70068,596.33042 182.35416,20.54175"
        id="path7235"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -3789,7 +3820,7 @@ https://github.com/ufasoft/lisp
        inkscape:connection-end="#g5296" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#marker7651)"
-       d="M 544.25983,311.1617 891.276,590.49571"
+       d="M 544.13235,311.21155 890.08637,590.99119"
        id="path7643"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
