@@ -14,9 +14,11 @@
 @c * Continuations::
 @c * Extensible Sequences::
 * Gray Streams::
+@c * TCP Streams::
 @c * Series::
 * Tree walker::
 @c * Local package nicknames::
+@c * Hierarchical packages::
 * CDR Extensions::
 @end menu
 
