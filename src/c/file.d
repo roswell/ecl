@@ -74,7 +74,7 @@ static cl_object alloc_stream();
 
 static void cannot_close(cl_object stream) ecl_attr_noreturn;
 static void file_libc_error(cl_object error_type, cl_object stream, const char *msg, int narg, ...) ecl_attr_noreturn;
-static cl_object not_a_file_stream(cl_object fn) ecl_attr_noreturn;
+static void not_a_file_stream(cl_object fn) ecl_attr_noreturn;
 static void not_an_input_stream(cl_object fn) ecl_attr_noreturn;
 static void not_an_output_stream(cl_object fn) ecl_attr_noreturn;
 static void not_a_character_stream(cl_object s) ecl_attr_noreturn;
@@ -5417,14 +5417,14 @@ alloc_stream()
  * ERROR MESSAGES
  */
 
-static cl_object
+static void
 not_a_file_stream(cl_object strm)
 {
-  return cl_error(9, @'simple-type-error', @':format-control',
-                  make_constant_base_string("~A is not an file stream"),
-                  @':format-arguments', cl_list(1, strm),
-                  @':expected-type', @'file-stream',
-                  @':datum', strm);
+  cl_error(9, @'simple-type-error', @':format-control',
+           make_constant_base_string("~A is not an file stream"),
+           @':format-arguments', cl_list(1, strm),
+           @':expected-type', @'file-stream',
+           @':datum', strm);
 }
 
 static void
