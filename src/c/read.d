@@ -1383,7 +1383,31 @@ sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
   if (d != ECL_NIL && !read_suppress)
     extra_argument('$', in, d);
   c = ecl_read_object(in);
-  rs = ecl_make_random_state(c);
+
+  switch (ecl_t_of(c)) {
+  case t_vector:
+#if ECL_FIXNUM_BITS > 32
+    if (c->vector.dim == 313 && c->vector.elttype == ecl_aet_b64) {
+      rs = ecl_alloc_object(t_random);
+      rs->random.value = cl_copy_seq(c);
+      break;
+    }
+#else  /* 32 bit version */
+    if (c->vector.dim == 625 && c->vector.elttype == ecl_aet_b32) {
+      rs = ecl_alloc_object(t_random);
+      rs->random.value = cl_copy_seq(c);
+      break;
+    }
+#endif
+  case t_fixnum:
+    rs = ecl_alloc_object(t_random);
+    rs->random.value = init_genrand(ecl_fixnum(c));
+    break;
+  default:
+    rs = ecl_make_random_state(c);
+    break;
+  }
+
   @(return rs);
 }
 

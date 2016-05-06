@@ -47,14 +47,13 @@
 #define LOWER_MASK 0x7FFFFFFFULL         /* least significant 31 bits */
 #define ulong uint64_t
 
-static cl_object
+cl_object
 init_genrand(ulong seed)
 {
   cl_object array = ecl_alloc_simple_vector((MT_N + 1), ecl_aet_b64);
   ulong *mt = array->vector.self.b64;
-  int j;
   mt[0] = seed;
-  for (j=1; j<MT_N; j++)
+  for (int j=1; j<MT_N; j++)
     mt[j] =  (6364136223846793005ULL * (mt[j-1] ^ (mt[j-1] >> 62)) + j);
 
   mt[MT_N] = MT_N+1;
@@ -129,14 +128,13 @@ generate_limb(cl_object state)
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 #define ulong uint32_t
 
-static cl_object
+cl_object
 init_genrand(ulong seed)
 {
   cl_object array = ecl_alloc_simple_vector((MT_N + 1), ecl_aet_b32);
   ulong *mt = array->vector.self.b32;
-  int j;
   mt[0] = seed;
-  for (j=1; j < MT_N; j++)
+  for (int j=1; j < MT_N; j++)
     mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j);
 
   mt[MT_N] = MT_N+1;
@@ -289,30 +287,15 @@ ecl_make_random_state(cl_object rs)
   if (Null(rs))
     rs = ecl_symbol_value(@'*random-state*');
 
-  switch (ecl_t_of(rs)) {
-  case t_random:
+  if (ecl_t_of(rs) == t_random) {
     z->random.value = cl_copy_seq(rs->random.value);
-    break;
-  case t_vector:
-    z->random.value = cl_copy_seq(rs);
-    break;
-  case t_fixnum:
-    /* XXX: If we'll decide to use 64-bit algorithm for
-       appropriate platforms then this will be replaced
-       with ecl_to_ulong_long from number.d, which takes
-       widest available type (32 or 64 bit)
-       automatically. */
-    z->random.value = init_genrand(ecl_fixnum(rs));
-    break;
-  default: {
-    const char *type
-      = "(OR RANDOM-STATE (SIMPLE-VECTOR *) (INTEGER 0 *))";
-    FEwrong_type_only_arg(@[make-random-state], rs,
-                          ecl_read_from_cstring(type));
-  }
+    return z;
   }
 
-  return(z);
+  const char *type
+    = "(OR RANDOM-STATE FIXNUM (MEMBER T NIL))";
+  FEwrong_type_only_arg(@[make-random-state], rs,
+                        ecl_read_from_cstring(type));
 }
 
 @(defun random (x &optional (rs ecl_symbol_value(@'*random-state*')))
