@@ -30,6 +30,7 @@ Usage: ecl [-? | --help]
            [[-o ofile] -link file+]
            [--input-encoding external-format] [--output-encoding external-format]
            [--error-encoding external-format] [--encoding external-format]
+           [--trap-fpe | --no-trap-fpe]
 "
  "Prints a help message about command line arguments of ECL")
 
