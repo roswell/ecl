@@ -201,7 +201,7 @@ _ecl_dealloc_env(cl_env_ptr env)
     ecl_internal_error("Unable to deallocate environment structure.");
 #else
 # if defined(ECL_USE_GUARD_PAGE)
-  if (VirtualFree(env, sizeof(*env), MEM_RELEASE))
+  if (!VirtualFree(env, sizeof(*env), MEM_RELEASE))
     ecl_internal_error("Unable to deallocate environment structure.");
 # endif
 #endif
