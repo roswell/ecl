@@ -339,14 +339,16 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 #ifdef ECL_WINDOWS_THREADS
   {
     HANDLE aux = GetCurrentThread();
-    DuplicateHandle(GetCurrentProcess(),
-                    aux,
-                    GetCurrentProcess(),
-                    &current,
-                    0,
-                    FALSE,
-                    DUPLICATE_SAME_ACCESS);
-    CloseHandle(current);
+    if ( !DuplicateHandle(GetCurrentProcess(),
+                          aux,
+                          GetCurrentProcess(),
+                          &current,
+                          0,
+                          FALSE,
+                          DUPLICATE_SAME_ACCESS) )
+    {
+	   return 0;
+    }
   }
 #else
   current = pthread_self();
@@ -407,12 +409,19 @@ void
 ecl_release_current_thread(void)
 {
   cl_env_ptr env = ecl_process_env();
+#ifdef ECL_WINDOWS_THREADS
+  HANDLE to_close = env->own_process->process.thread;
+#endif
+
   int cleanup = env->cleanup;
   thread_cleanup(env->own_process);
 #ifdef GBC_BOEHM
   if (cleanup) {
     GC_unregister_my_thread();
   }
+#endif
+#ifdef ECL_WINDOWS_THREADS
+  CloseHandle(to_close);
 #endif
 }
 
