@@ -369,7 +369,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   {
     cl_object processes = cl_core.processes;
     cl_index i, size;
-    for (i = 0, size = processes->vector.dim; i < size; i++) {
+    for (i = 0, size = processes->vector.fillp; i < size; i++) {
       cl_object p = processes->vector.self.t[i];
       if (!Null(p) && p->process.thread == current)
         return 0;
