@@ -64,6 +64,12 @@ Until now #$ reader macro accepted simple vectors as an argument, what lead
 to bugs if vector didn't match specific requirements like the element type
 or the arity. Now we sanitize this.
 
+- thread fix on msvc: on windows importing thread was closing the thread
+handler so the thread wakeup wasn't working because the handler is not more valid.
+
+- import thread wasn't set upping a proper environment: on some case
+the thread was mistakenly thinking that the thread was already registered.
+
 * 16.1.2 changes since 16.0.0
 
 ** API changes
