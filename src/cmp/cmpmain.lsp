@@ -73,7 +73,7 @@ the environment variable TMPDIR to a different value." template))
 
 #+msvc
 (defun delete-msvc-generated-files (output-pathname)
-  (loop for i in '("implib" "exp" "ilk" "pdb")
+  (loop for i in '("implib" "exp" "ilk" )
         for full = (make-pathname :type i :defaults output-pathname)
         for truename = (probe-file full)
         when truename
