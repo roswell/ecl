@@ -183,3 +183,10 @@ The main questions answered by the ``concepts'' are:
 @item What is a purpose of this interface?
 @item Why it has been implemented that way?
 @end itemize
+
+@subsubsection Cross-references
+
+References should be added like as follows:
+@verbatim
+[@ref{Standards}]
+@end verbatim

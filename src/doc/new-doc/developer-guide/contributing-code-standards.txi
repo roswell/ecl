@@ -1,6 +1,7 @@
 @node Coding standards
 @subsection Coding standards
-@cindex Coding standards
+
+@cindex Coding conventions
 
 @subsubheading Lisp conventions
 Lisp code should follow the standard conventions used in the
@@ -21,10 +22,86 @@ declared as c-local:
 
 @subsubheading C/C++ conventions
 
-@cindex Defun preprocessor
-ECL internal C files are preprocessed with the @verb{Defun preprocessor}
-(source is available in the src/c/dpp.c file). This results in the
-ability to use somewhat unusual syntax in the C source files enabling
-constructs @verb{defun} and @verb{return}, to simply defining C
-functions with @verb{&optional, &rest, &key and &aux} arguments as well
-as returning multiple values from the funcitons.
+ECL internal C files are preprocessed with the [@ref{Defun
+preprocessor}]. This results in the ability to use somewhat unusual
+syntax in the C source files like @verb{|defun|} with the
+@verb{|&optional|}, @verb{|&rest|}, @verb{|&key|} and @verb{|&aux|}
+arguments as well as returning multiple values from the funciton using
+@verb{|@(return)|}..
+
+Style used in C/C++ files is 2 space indent, no tabs, similar to
+@url{https://gcc.gnu.org/codingconventions.html}. Programmer may depend
+on emacs default indentation (C-. gnu). Lines should be wrapped to 78
+lines.
+
+Important note: @verb{|@(return foo bar)|} is expanded to the code
+block, so if put inside the if statement it should be enclosed in
+braces:
+
+@exindex C/C++ convention: sample function
+@verbatim
+static cl_object
+file_truename(cl_object pathname, cl_object filename, int flags)
+{
+  cl_object kind;
+  if (Null(pathname)) {
+    if (Null(filename)) {
+      ecl_internal_error("file_truename:"
+                         " both FILENAME and PATHNAME are null!");
+    }
+    pathname = cl_pathname(filename);
+  } else if (Null(filename)) {
+    filename = ecl_namestring(pathname, ECL_NAMESTRING_FORCE_BASE_STRING);
+    if (Null(filename)) {
+      FEerror("Unprintable pathname ~S found in TRUENAME", 1, pathname);
+    }
+  }
+  kind = file_kind((char*)filename->base_string.self, FALSE);
+  if (kind == ECL_NIL) {
+    FEcannot_open(filename);
+#ifdef HAVE_LSTAT
+  } else if (kind == @':link' && (flags & FOLLOW_SYMLINKS)) {
+    /* The link might be a relative pathname. In that case
+     * we have to merge with the original pathname.  On
+     * the other hand, if the link is broken – return file
+     * truename "as is". */
+    struct stat filestatus;
+    if (safe_stat(filename->base_string.self, &filestatus) < 0) {
+      @(return pathname kind);
+    }
+    filename = si_readlink(filename);
+    pathname = ecl_make_pathname(pathname->pathname.host,
+                                 pathname->pathname.device,
+                                 pathname->pathname.directory,
+                                 ECL_NIL, ECL_NIL, ECL_NIL, @':local');
+    pathname = ecl_merge_pathnames(filename, pathname, @':default');
+    return cl_truename(pathname);
+#endif
+  } else if (kind == @':directory'){
+    /* If the pathname is a directory but we have supplied
+       a file name, correct the type by appending a directory
+       separator and re-parsing again the namestring */
+    if (pathname->pathname.name != ECL_NIL ||
+        pathname->pathname.type != ECL_NIL) {
+      pathname = si_base_string_concatenate
+        (2, filename,
+         make_constant_base_string("/"));
+      pathname = cl_truename(pathname);
+    }
+  }
+  /* ECL does not contemplate version numbers
+     in directory pathnames */
+  if (pathname->pathname.name == ECL_NIL &&
+      pathname->pathname.type == ECL_NIL) {
+    /* We have to destructively change the
+     * pathname version here. Otherwise
+     * merge_pathnames will not do it. It is
+     * safe because coerce_to_file_pathname
+     * created a copy. */
+    pathname->pathname.version = ECL_NIL;
+  } else {
+    pathname->pathname.version = @':newest';
+  }
+  @(return pathname kind);
+}
+@end verbatim

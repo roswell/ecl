@@ -256,3 +256,5 @@ Unix shell interface
 
 @item vector_push.d
 vector optimizations
+
+@end itemize

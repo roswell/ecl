@@ -6,6 +6,7 @@
 * Contributing:: How to contribute to the ECL project
 @c * Modules hierarchy::
 @c * Testing and benchmarking::
+* Defun preprocessor:: Preprocessor for the Lisp constructs in C
 * Manipulating Lisp objects::
 * Environment implementation::
 @c * The interpreter::
@@ -18,6 +19,7 @@
 
 @include developer-guide/sources.txi
 @include developer-guide/contributing.txi
+@include developer-guide/dpp.txi
 @include developer-guide/objects.txi
 @include developer-guide/environment.txi
 @include developer-guide/removed.txi

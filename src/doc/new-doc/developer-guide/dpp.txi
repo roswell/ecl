@@ -1,0 +1,61 @@
+@node Defun preprocessor
+@section Defun preprocessor
+
+@cindex Defun preprocessor
+
+Usage:
+        dpp [in-file [out-file]]
+
+The file named in-file is preprocessed and the output will be
+written to the file whose name is out-file. If in-file is "-"
+program is read from standard input, while if out-file is "-"
+C-program is written to standard output.
+
+The function definition:
+
+@exindex dpp: function definition
+@lisp
+@(defun name ({var}*
+              [&optional {var | (var [initform [svar]])}*]
+              [&rest var]
+              [&key {var |
+                     ({var | (keyword var)} [initform [svar]])}*
+                    [&allow_other_keys]]
+              [&aux {var | (var [initform])}*])
+
+        C-declaration
+
+@ {
+
+        C-body
+
+} @)
+@end lisp
+
+     name can be either an identifier or a full C procedure header
+     enclosed in quotes (').
+
+     &optional may be abbreviated as &o.
+     &rest may be abbreviated as &r.
+     &key may be abbreviated as &k.
+     &allow_other_keys may be abbreviated as &aok.
+     &aux may be abbreviated as &a.
+
+     Each variable becomes a C variable.
+
+     Each supplied-p parameter becomes a boolean C variable.
+
+     Initforms are C expressions.
+     If an expression contains non-alphanumeric characters,
+     it should be surrounded by backquotes (`).
+
+
+     Function return:
+
+             @(return {form}*);
+
+     Return function expands into a lexical block {}, so if it's
+     used inside IF/ELSE, then it should be enclosed, even if we
+     use sole @(return);, because ";" will be treated as the next
+     instruction.
+
