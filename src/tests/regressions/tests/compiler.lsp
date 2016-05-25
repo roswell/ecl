@@ -1170,7 +1170,10 @@
 
 
 ;;; Date 2016-04-21
+;;; Fixed: Daniel Kochmański
 ;;; Description
+;;;    typep didn't recognize * as a t abberv
+;;;
 (deftest compiler.0051.ftype-args*
     (progn
       (declaim (ftype (function (*) (values T)) ce))
