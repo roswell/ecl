@@ -52,6 +52,9 @@ appropraite documentation section (new-doc).
 Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
 
 ** Issues fixed
+- typep: accept * type specifier as abbreviation of t as described in
+'2.4.3 Type Specifiers' of the specification.
+
 - MOP: fix problemes when redefining non-standard and anonymous classes
 Bugs identified and fixed by Pascal Costanza.
 
