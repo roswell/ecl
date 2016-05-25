@@ -5620,6 +5620,8 @@ $as_echo "$as_me: Configuring included GMP library:" >&6;}
   else
     GMP_ABI="ABI=$ABI"
   fi
+  # Crosscompilation for Android on Darwin requires replacing 'NM=nm'
+  # below with 'NM=$PLATFORM_PREFIX/bin/arm-linux-androideabi-nm'.
   mkdir gmp
     (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
      NM=nm $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
