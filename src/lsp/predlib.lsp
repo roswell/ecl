@@ -539,7 +539,7 @@ Returns T if X belongs to TYPE; NIL otherwise."
     (AND (dolist (e i t)
            (unless (typep object e) (return nil))))
     (SATISFIES (funcall (car i) object))
-    ((T) t)
+    ((T *) t)
     ((NIL) nil)
     (BIGNUM (and (integerp object) (not (si::fixnump object))))
     (STANDARD-CHAR
