@@ -443,9 +443,14 @@ case "${host_os}" in
                 clibs="-Wld=-lrld"
                 ;;
 	aix*)
-		PICFLAG=''
+		PICFLAG='-DPIC'
 		thehost="aix"
-		shared="no"
+		THREAD_LIBS='-lpthread'
+                SHARED_LDFLAGS="-G -bsvr4 -brtl ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-G -bsvr4 -brtl ${LDFLAGS}"
+                ECL_LDRPATH="-Wl,-R~A"
+                #SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                #SONAME_LDFLAGS="-Wl,-soname,SONAME"
 		;;
         *)
                 thehost="$host_os"
