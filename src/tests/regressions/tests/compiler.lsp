@@ -1167,3 +1167,14 @@
                               (let ((fun-1 (lambda () (fun-2))))
                                 (funcall fun-1))))))
   cool)
+
+
+;;; Date 2016-04-21
+;;; Description
+(deftest compiler.0051.ftype-args*
+    (progn
+      (declaim (ftype (function (*) (values T)) ce))
+      (defun ce (expression) nil)
+      (compile 'ce)
+      (ce nil))
+  nil)

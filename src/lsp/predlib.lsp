@@ -47,7 +47,7 @@ Builds a new function which accepts any number of arguments but always outputs N
 
 (defun do-deftype (name form function)
   (unless (symbolp name)
-    (error "~s is not a valid type specifier" name))
+    (error-type-specifier name))
   (create-type-name name)
   (put-sysprop name 'DEFTYPE-FORM form)
   (put-sysprop name 'DEFTYPE-DEFINITION
@@ -539,7 +539,7 @@ Returns T if X belongs to TYPE; NIL otherwise."
     (AND (dolist (e i t)
            (unless (typep object e) (return nil))))
     (SATISFIES (funcall (car i) object))
-    ((T) t)
+    ((T *) t)
     ((NIL) nil)
     (BIGNUM (and (integerp object) (not (si::fixnump object))))
     (STANDARD-CHAR

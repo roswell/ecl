@@ -60,3 +60,5 @@ regressions/eformat-tests/*.txt
 /src/doc/new-doc/new-doc.exs
 /src/doc/new-doc/new-doc.ft
 /src/doc/new-doc/new-doc.fts
+/src/doc/new-doc/new-doc.cf
+/src/doc/new-doc/new-doc.cfs

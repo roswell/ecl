@@ -28,9 +28,17 @@
     parameter given to configure script).
 
 * Pending changes since 16.1.2
+** API changes
+- make-random-state: fix problem with simple-vectors
+
+The correct initialization types for =make-random-state= are:
+=(OR RANDOM-STATE (MEMBER T NIL))=
+
+Initializing a random state with an appropriate array (element type and
+arity) or with a fixnum is now possible only with the #$ reader macro.
+
 ** Enhancements
 - Removed 15000 lines of obsolete code
-
 Files not included in the buildsystem but lingering in the codebase or
 options failing to build. All info is added in the new documentation in
 section "Removed interfaces".
@@ -40,13 +48,35 @@ section "Removed interfaces".
 Man page now contains up-to-date list of flags, as well
 as explanation of flag's behavior.
 
+- Indented C/C++ code to follow emacs's gnu C style
+This is a first step towards coding standards in the
+documentation. Additionally all in the src/c/ directory are listed in the
+appropraite documentation section (new-doc).
+
+- Refactored =list_current_directory in unixfsys.d=
+Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
+
 ** Issues fixed
+- typep: accept * type specifier as abbreviation of t as described in
+'2.4.3 Type Specifiers' of the specification.
+
 - MOP: fix problemes when redefining non-standard and anonymous classes
 Bugs identified and fixed by Pascal Costanza.
 
 - getcwd: fix issue with too long pathname
 This fixes the regression, which crashed ECL at start when pathname
 exceeded 128 characters limit.
+
+- make-random-state: fix problem with simple-vectors
+Until now #$ reader macro accepted simple vectors as an argument, what lead
+to bugs if vector didn't match specific requirements like the element type
+or the arity. Now we sanitize this.
+
+- thread fix on msvc: on windows importing thread was closing the thread
+handler so the thread wakeup wasn't working because the handler is not more valid.
+
+- import thread wasn't set upping a proper environment: on some case
+the thread was mistakenly thinking that the thread was already registered.
 
 * 16.1.2 changes since 16.0.0
 
