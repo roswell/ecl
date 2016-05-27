@@ -62,6 +62,7 @@ int main (int argc, char **argv) {
   (:shutdown))
 
 ;;; Date: 2016-05-25 (Vadim Penzin)
+;;; Date: 2016-05-27 (Vadim Penzin)
 ;;; Description:
 ;;;
 ;;;     ECL_HANDLER_CASE C macro misses condition handlers because the

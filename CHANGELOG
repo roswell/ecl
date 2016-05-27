@@ -73,6 +73,9 @@ handler so the thread wakeup wasn't working because the handler is not more vali
 - import thread wasn't set upping a proper environment: on some case
 the thread was mistakenly thinking that the thread was already registered.
 
+- ECL_HANDLER_CASE and ECL_RESTART_CASE didn't work as expected
+Bug identified and fixed by Vadim Penzin.
+
 * 16.1.2 changes since 16.0.0
 
 ** API changes
