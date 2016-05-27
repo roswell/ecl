@@ -30,14 +30,14 @@
       <para>The following example shows how to establish a handler for <symbol>ERROR</symbol> conditions. Note how the first value to <function>ECL_HANDLER_CASE</function> matches the position of the restart name in the list:</para>
       <programlisting>
 cl_object error = ecl_make_symbol("ERROR","CL");
-ECL_RESTART_BEGIN(the_env, ecl_list1(error)) {
+ECL_RESTART_CASE_BEGIN(the_env, ecl_list1(error)) {
    /* This form is evaluated with bound handlers */
    output = cl_eval(1, form);
 } ECL_HANDLER_CASE(1, condition) {
    /* This code is executed when an error happens */
    /* We just return the error that took place */
    output = condition;
-} ECL_RESTART_END;
+} ECL_RESTART_CASE_END;
       </programlisting>
     </refsect1>
   </refentry>
@@ -65,7 +65,7 @@ ECL_RESTART_BEGIN(the_env, ecl_list1(error)) {
       <programlisting>
 cl_object abort = ecl_make_symbol("ABORT","CL");
 cl_object use_value = ecl_make_symbol("USE-VALUE","CL");
-ECL_RESTART_BEGIN(the_env, cl_list(2, abort, use_value)) {
+ECL_RESTART_CASE_BEGIN(the_env, cl_list(2, abort, use_value)) {
    /* This form is evaluated with bound restarts */
    output = cl_eval(1, form);
 } ECL_RESTART_CASE(1, args) {
@@ -74,7 +74,7 @@ ECL_RESTART_BEGIN(the_env, cl_list(2, abort, use_value)) {
 } ECL_RESTART_CASE(2, args) {
    /* This code is executed when the 2nd restart (ABORT) is invoked */
    output = ECL_CAR(args);
-} ECL_RESTART_END;
+} ECL_RESTART_CASE_END;
       </programlisting>
     </refsect1>
   </refentry>
