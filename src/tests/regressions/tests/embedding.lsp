@@ -14,10 +14,10 @@
     (princ c-code s))
   (c::compiler-cc "tmp/aux.c" "tmp/aux.o")
   (c::linker-cc "tmp/aux.exe" '("tmp/aux.o"))
-  (case capture-output
-    (nil
+  (ecase capture-output
+    ((nil)
      (return-from test-C-program (zerop (si::system "tmp/aux.exe"))))
-    (STRING
+    ((string :string)
      (with-output-to-string (s)
        (let ((in (si::run-program "tmp/aux.exe" '() :output :stream))
              line)
@@ -25,7 +25,7 @@
           (setf line (read-line in nil))
           (unless line (return))
           (write-line line s)))))
-    (T
+    ((t forms :forms)
      (do* ((all '())
            (x t)
            (in (si::run-program "tmp/aux.exe" '() :output :stream)))
@@ -57,7 +57,7 @@ int main (int argc, char **argv) {
 }")
            (form '(push (lambda () (print :shutdown)) si::*exit-hooks*))
            (c-code (format nil skeleton (format nil "~S" form)))
-           (data (test-C-program (print c-code) :capture-output t)))
+           (data (test-C-program c-code :capture-output t)))
       data)
   (:shutdown))
 
