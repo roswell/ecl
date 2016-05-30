@@ -35,7 +35,7 @@ ecl_def_string_array(feature_names,static,const) = {
 #endif
   ecl_def_string_array_elt("ECL-PDE"),
 #if defined(unix) || defined(netbsd) || defined(openbsd) || defined(linux) || defined(darwin) || \
-  defined(freebsd) || defined(dragonfly) || defined(kfreebsd) || defined(gnu) || defined(nsk)
+  defined(freebsd) || defined(dragonfly) || defined(kfreebsd) || defined(gnu) || defined(nsk) || defined(aix)
   ecl_def_string_array_elt("UNIX"),
 #endif
 #ifdef BSD
