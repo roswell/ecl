@@ -428,6 +428,8 @@ if test "x${with_system_gmp}" = "xno" ; then
   else
     GMP_ABI="ABI=$ABI"
   fi
+  # Crosscompilation for Android on Darwin requires replacing 'NM=nm'
+  # below with 'NM=$PLATFORM_PREFIX/bin/arm-linux-androideabi-nm'.
   mkdir gmp
   dnl Notice we need -DPIC to force the assembler to generate PIC code
   (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \

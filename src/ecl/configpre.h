@@ -150,6 +150,9 @@
 /* Define to 1 if you have the `frexpf' function. */
 #undef HAVE_FREXPF
 
+/* Define to 1 if you have the `frexpl' function. */
+#undef HAVE_FREXPL
+
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
 
@@ -182,6 +185,9 @@
 
 /* Define to 1 if you have the `ldexpf' function. */
 #undef HAVE_LDEXPF
+
+/* Define to 1 if you have the `ldexpl' function. */
+#undef HAVE_LDEXPL
 
 /* HAVE_LIBFFI */
 #undef HAVE_LIBFFI
