@@ -449,8 +449,8 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-G -bsvr4 -brtl ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-G -bsvr4 -brtl ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,-R~A"
-                #SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-                #SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-bsvr4 -brtl"
 		;;
         *)
                 thehost="$host_os"
