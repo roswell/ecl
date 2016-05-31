@@ -28,16 +28,16 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
-  env->cs_limit_size = new_size - 2*margin;
+  env->cs_limit_size = new_size - (2*margin);
 #ifdef ECL_DOWN_STACK
-  if (&foo > env->cs_org - new_size + 16) {
-    env->cs_limit = env->cs_org - new_size + 2*margin;
+  if (&foo > (env->cs_org - new_size) + 16) {
+    env->cs_limit = (env->cs_org - new_size) + (2*margin);
     if (env->cs_limit < env->cs_barrier)
       env->cs_barrier = env->cs_limit;
   }
 #else
-  if (&foo < env->cs_org + new_size - 16) {
-    env->cs_limit = env->cs_org + new_size - 2*margin;
+  if (&foo < (env->cs_org + new_size) - 16) {
+    env->cs_limit = (env->cs_org + new_size) - (2*margin);
     if (env->cs_limit > env->cs_barrier)
       env->cs_barrier = env->cs_limit;
   }
@@ -96,16 +96,19 @@ ecl_cs_set_org(cl_env_ptr env)
   {
     struct rlimit rl;
     cl_index size;
-    getrlimit(RLIMIT_STACK, &rl);
-    if (rl.rlim_cur != RLIM_INFINITY) {
+
+    if (!getrlimit(RLIMIT_STACK, &rl) &&
+        ( rl.rlim_cur != RLIM_INFINITY
+          || rl.rlim_cur !=RLIM_SAVED_MAX
+          || rl.rlim_cur != RLIM_SAVED_CUR) ) {
       env->cs_max_size = rl.rlim_cur;
       size = rl.rlim_cur / 2;
-      if (size > (cl_index)ecl_option_values[ECL_OPT_C_STACK_SIZE])
+      if (size < (cl_index)ecl_option_values[ECL_OPT_C_STACK_SIZE])
         ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
 #ifdef ECL_DOWN_STACK
-      env->cs_barrier = env->cs_org - rl.rlim_cur - 1024;
+      env->cs_barrier = (env->cs_org - rl.rlim_cur) - 1024;
 #else
-      env->cs_barrier = env->cs_org + rl.rlim_cur + 1024;
+      env->cs_barrier = (env->cs_org + rl.rlim_cur) + 1024;
 #endif
     }
   }
