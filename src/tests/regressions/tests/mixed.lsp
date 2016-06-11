@@ -106,3 +106,20 @@
   nil)
 
 
+
+;;; Date: 2016-05-21 (Masataro Asai)
+;;; Description:
+;;;
+;;;     RESTART-CASE investigates the body in an incorrect manner,
+;;;     then remove the arguments to SIGNAL, which cause the slots of
+;;;     the conditions to be not set properly.
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/247
+;;;
+(ext:with-clean-symbols (x)
+  (define-condition x () ((y :initarg :y)))
+  (deftest mixed.0009.restart-case-body
+      (handler-bind ((x (lambda (c) (slot-value c 'y))))
+        (restart-case
+            (signal 'x :y 1)))
+    nil))

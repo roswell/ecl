@@ -488,7 +488,7 @@ extern cl_fixnum ecl_runtime(void);
 #ifdef ECL_THREADS
 extern void ecl_process_yield(void);
 extern void print_lock(char *s, cl_object lock, ...);
-#define print_lock(a,b,...) ((void)0)
+#define print_lock(...) ((void)0)
 extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
 extern void ecl_giveup_spinlock(cl_object *lock);
 extern cl_object ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);

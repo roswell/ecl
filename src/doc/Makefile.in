@@ -6,6 +6,7 @@ exec_prefix=@exec_prefix@
 infodir = @infodir@
 mandir=@mandir@
 docdir=@docdir@
+datarootdir = @datarootdir@
 manext=1
 
 INFOEXT = @INFOEXT@

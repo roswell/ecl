@@ -423,9 +423,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         if (ecl_frs_push(__the_env,__ecl_tag) == 0) {
 
 #define ECL_RESTART_CASE(code, args)                                    \
-        } else if (__the_env->values[1] == ecl_make_fixnum(code)) {     \
-        const cl_object args = __the_env->values[0];
-        
+        } else if (__the_env->values[0] == ecl_make_fixnum(code)) {     \
+        const cl_object args = __the_env->values[1];
 
 #define ECL_RESTART_CASE_END }                  \
                 ecl_frs_pop(__the_env);         \
@@ -440,9 +439,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         if (ecl_frs_push(__the_env,__ecl_tag) == 0) {
 
 #define ECL_HANDLER_CASE(code, args)                                    \
-        } else if (__the_env->values[1] == ecl_make_fixnum(code)) {     \
-        const cl_object args = __the_env->values[0];
-        
+        } else if (__the_env->values[0] == ecl_make_fixnum(code)) {     \
+        const cl_object args = __the_env->values[1];
 
 #define ECL_HANDLER_CASE_END }                  \
                 ecl_frs_pop(__the_env);         \
