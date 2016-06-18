@@ -9,7 +9,7 @@ ecl \- Embeddable Common Lisp
 .br
 [\fB-dir\fP \fIdir\fP] [\fB-load\fP \fIfile\fP] [\fB-shell\fP \fIfile\fP] [\fB-eval\fP \fIexpr\fP]
 .br
-[\fB-norc\fP] [\fB-hp\fP | \fB-nohp\fP]
+[\fB-norc\fP]
 .br
 [\fB--c-stack\fP \fIsize\fP] [\fB--lisp-stack\fP \fIsize\fP]
 .br
@@ -27,37 +27,23 @@ ecl \- Embeddable Common Lisp
 
 .SH DESCRIPTION
 .sp
-ECL stands for Embeddable Common Lisp.
-The ECL project is an effort to modernize
-Giuseppe Attardi's ECL environment to
-produce an implementation of the Common Lisp
-language which complies to the ANSI X3J13
-definition of the language.
+ECL (Embeddable Common-Lisp) is an interpreter of the Common-Lisp language as described in the X3J13 Ansi specification, featuring CLOS (Common-Lisp Object System), conditions, loops, etc, plus a translator to C, which can produce standalone executables.
+
+ECL supports the operating systems Linux, FreeBSD, NetBSD, OpenBSD, OS X, Solaris and Windows, running on top of the Intel, Sparc, Alpha, PowerPC and ARM processors.
 .PP
 The current ECL implementation features:
 .IP \(bu
 A bytecode compiler and interpreter.
 .IP \(bu
-A translator to C.
+Compiles Lisp also with any C/C++ compiler
 .IP \(bu
-An interface to foreign functions.
+Can build standalone executables and libraries
 .IP \(bu
-A dynamic loader.
+ASDF, Sockets, Gray streams, MOP, and other useful components
 .IP \(bu
-The possibility to build standalone executables.
+Extremely portable
 .IP \(bu
-The Common Lisp Object System (CLOS).
-.IP \(bu
-Conditions and restarts for handling errors.
-.IP \(bu
-Sockets as ordinary streams.
-.IP \(bu
-The Gnu Multiprecision library for fast bignum operations.
-.IP \(bu
-A simple conservative mark & sweep garbage collector.
-.IP \(bu
-The Boehm-Weiser garbage collector.
-
+A reasonable license
 .PP
 \fBecl\fP without any argument gives you the
 interactive lisp.
@@ -84,7 +70,7 @@ Run without debugging setup phase, meaning that errors prevent ECL from starting
 .BI \-eval " file"
 Evaluate the
 .I file
-before starting the ECL, or loading the \.rc files.
+before loading the .rc file and starting the Top Level
 .TP
 .BI \-shell " file"
 Executes the given
@@ -123,7 +109,7 @@ in kilobytes.
 .BI \-\-c-stack " size"
 Specify stack
 .I size
- in kilobytes for C compiler.
+in kilobytes for C compiler.
 .TP
 .BI \-\-trap-fpe
 Make ECL debugger catch floating point exception.
@@ -144,12 +130,12 @@ for standard input.
 .BI \-\-output-encoding " encoding"
 Specify the external
 .I encoding
- for standard output.
+for standard output.
 .TP
 .BI \-\-error-encoding " encoding"
 Specify the external
 .I encoding
- for standard error.
+for standard error.
 .TP
 
 .BI \-o " file"
@@ -181,12 +167,6 @@ native code program.
 .BI \-q
 Short for quiet - produce less notes.
 .TP
-.BI \-hp
-This option is deprecated and doesn't do anything.
-.TP
-.BI \-nodp
-This option is deprecated and doesn't do anything.
-.TP
 .BI \-s
 Produce a linkable object file. It cannot be loaded
 with load, but it can be used to build libraries
@@ -195,10 +175,7 @@ or standalone executable programs.
 
 .SH AUTHORS
 
-The original version was developed by Giuseppe Attardi starting from the Kyoto
-Common Lisp implementation by Taiichi Yuasa, Masami Hagiya and Juan Jose Garcia
-Ripoll. The current maintainer of ECL is Dawid Kochmański,
-who can be reached at the ECL mailing list.
+The original version was developed by Giuseppe Attardi starting from the Kyoto Common Lisp implementation by Taiichi Yuasa, Masami Hagiya and Juan Jose Garcia Ripoll. The current maintainer of ECL is Daniel Kochmański, who can be reached at the ECL mailing list.
 
 .SH FILES
 .TP
