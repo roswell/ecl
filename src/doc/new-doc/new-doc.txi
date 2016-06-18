@@ -9,6 +9,7 @@
 @defcodeindex cf
 @defcodeindex ft
 @defindex ex
+@documentencoding UTF-8
 @c %**end of header
 
 @c Entries for @command{install-info} to use

@@ -49,7 +49,7 @@ with agreement of Prof. Attardi, took over the original ECL
 implementation and it became what it is nowadays, a community project.
 
 In 2013 once again project got unmaintained. In 2015 Daniel Kochmański
-took position of maintainer with consent of Juanjo García-Ripoll.
+took the position of a maintainer with consent of Juanjo García-Ripoll.
 
 The ECL project owes a lot to different people who have contributed in
 many different aspects, from pointing out bugs and incompatibilities of

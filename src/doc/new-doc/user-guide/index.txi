@@ -8,7 +8,7 @@
 @c * The tracer::
 @c * The stepper::
 @c * Errors::
-@c * The break loop::
+* The break loop::
 @c * Describe and inspect::
 @c * The profiler::
 @c * Online help::
@@ -19,4 +19,5 @@
 
 @include user-guide/building.txi
 @include user-guide/invoking.txi
+@include user-guide/break-loop.txi
 @include user-guide/embedding.txi

@@ -56,7 +56,7 @@ concepts are explained in a different (@ref{Embedding ECL}) part of the
 book.
 
 @node C Reference (Overview)
-@subsection C Reference (Overview)
+@subsection C Reference
 @subsubsection One type for everything: @code{cl_object}
 @cindex One type for everything: @code{cl_object}
 

@@ -2,6 +2,7 @@
 @unnumbered Introduction
 
 @menu
+* About this book::
 * What is ECL::
 * History::
 * Credits::
@@ -9,6 +10,7 @@
 * Sandbox::
 @end menu
 
+@include introduction/about_man.txi
 @include introduction/about_ecl.txi
 @include introduction/history.txi
 @include introduction/credits.txi
