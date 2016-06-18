@@ -1,13 +1,6 @@
 @node Evaluation and compilation
 @section Evaluation and compilation
 
-@menu
-* Compiler declaration @code{OPTIMIZE}::
-* C Reference (Evaluation and compilation)::
-* ANSI Dictionary (Evaluation and compilation)::
-@end menu
-
-@node Compiler declaration @code{OPTIMIZE}
 @subsection Compiler declaration @code{OPTIMIZE}
 @cindex Compiler declarations
 @lspindex optimize
