@@ -38,9 +38,8 @@
 
 @include standards/evaluation.txi
 @include standards/types_and_classes.txi
+@include standards/data_and_control_flow.txi
 
-@node Data and control flow
-@section Data and control flow
 @node Iteration
 @section Iteration
 @node Objects

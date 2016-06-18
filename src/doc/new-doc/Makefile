@@ -15,7 +15,7 @@ ecldoc.info: $(FILES)
 	makeinfo new-doc.txi
 
 new-doc.html: $(FILES)
-	makeinfo --html --css-include=ecl.css --no-split new-doc.txi
+	makeinfo --html --css-include=ecl.css --split=chapter new-doc.txi
 
 clean:
 	rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info,html}

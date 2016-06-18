@@ -2,15 +2,8 @@
 @section Manipulating Lisp objects
 
 @menu
-* Integers (dev)::
-* Characters (dev)::
-* Arrays (dev)::
-* Strings (dev)::
-* Bit-vectors (dev)::
-* Streams (dev)::
-* Structures (dev)::
-* Instances (dev)::
-* Bytecodes (dev)::
+* Objects representation::
+* Constructing objects::
 @end menu
 
 If you want to extend, fix or simply customize ECL for your own needs,
@@ -22,6 +15,7 @@ you should understand how the implementation works.
 Union containing all first-class ECL types.
 @end deftp
 
+@node Objects representation
 @subsection Objects representation
 In ECL a lisp object is represented by a type called
 @code{cl_object}. This type is a word which is long enough to host both
@@ -250,7 +244,7 @@ calls to @code{ecl_t_of}.
 Tells whether @var{x} is an immediate datatype.
 @end deftypefun
 
-
+@node Constructing objects
 @subsection Constructing objects
 
 On each of the following sections we will document the standard
@@ -290,8 +284,7 @@ cl_object array2 = string_to_object(string);
 @end example
 @end deftypefun
 
-@node Integers (dev)
-@subsection Integers
+@subheading Integers
 Common-Lisp distinguishes two types of integer types: @code{bignum}s and
 @code{fixnum}s. A fixnum is a small integer, which ideally occupies only
 a word of memory and which is between the values
@@ -372,8 +365,7 @@ appropriate size. Signals an error if @var{o} is not of fixnum type.
 @code{fixnint} additionally ensure that @var{o} is not negative.
 @end deftypefun
 
-@node Characters (dev)
-@subsection Characters
+@subheading Characters
 
 @cfindex --enable-unicode (YES|no|32)
 
@@ -450,8 +442,7 @@ of case and @code{char_compare} converts all characters to uppercase
 before comparing them.
 @end deftypefun
 
-@node Arrays (dev)
-@subsection Arrays
+@subheading Arrays
 
 An array is an aggregate of data of a common type, which can be accessed
 with one or more non-negative indices. ECL stores arrays as a C structure
@@ -594,8 +585,7 @@ cl_print(1, array); /* Outputs #(1 2 3 5) */
 @end example
 @end deftypefun
 
-@node Strings (dev)
-@subsection Strings
+@subheading Strings
 
 A string, both in Common-Lisp and in ECL is nothing but a vector of
 characters. Therefore, almost everything mentioned in the section of
@@ -632,16 +622,14 @@ Verifies if an objects is an extended or base string. If Unicode isn't
 supported, then @code{ECL_EXTENDED_STRING_P} always returns 0.
 @end deftypefun
 
-@node Bit-vectors (dev)
-@subsection Bit-vectors
+@subheading Bit-vectors
 
 Bit-vector operations are implemented in file
 @code{src/c/array.d}. Bit-vector shares the structure with a vector,
 therefore, almost everything mentioned in the section of arrays remains
 valid here.
 
-@node Streams (dev)
-@subsection Streams
+@subheading Streams
 
 Streams implementation is a broad topic. Most of the implementation is
 done in the file @code{src/c/file.d}. Stream handling may have different
@@ -712,8 +700,7 @@ Predicate determining if @code{o} is a first-class stream
 object of type @code{m}.
 @end deftypefun
 
-@node Structures (dev)
-@subsection Structures
+@subheading Structures
 
 Structures and instances share the same datatype @code{t_instance} (
 with a few exceptions. Structure implementation details are the file
@@ -732,8 +719,7 @@ with a few exceptions. Structure implementation details are the file
 Convenience functions for the structures.
 @end deftypefun
 
-@node Instances (dev)
-@subsection Instances
+@subheading Instances
 
 @cppindex ECL_CLASS_OF
 @cppindex ECL_SPEC_FLAG
@@ -757,8 +743,7 @@ Convenience functions for the structures.
 Convenience functions for the structures.
 @end deftypefun
 
-@node Bytecodes (dev)
-@subsection Bytecodes
+@subheading Bytecodes
 
 A bytecodes object is a lisp object with a piece of code that can be
 interpreted. The objects of type t_bytecode are implicitly constructed

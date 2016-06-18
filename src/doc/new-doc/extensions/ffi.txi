@@ -195,7 +195,7 @@ UFFI and the CFFI library.
 @c XXX: we should describe here, how to use SFFI for interactive C/C++ development
 @c @node Lower level interfaces
 
-@subsubsection UFFI example
+@subsubheading UFFI example
 @exindex UFFI usage
 
 The example below shows how to use UFFI in an application. There are several important
@@ -235,7 +235,7 @@ Build and load this module with (compile-file "uffi.lsp" :load t)
 	(sin 1.0d0) (c-sin 1.0d0) (- (sin 1.0d0) (c-sin 1.0d0)))
 @end lisp
 
-@subsubsection CFFI example
+@subsubheading CFFI example
 @exindex CFFI usage
 
 The CFFI library is an independent project and it is not shipped with
@@ -275,7 +275,7 @@ Build and load this module with (compile-file "cffi.lsp" :load t)
 	(cos 1.0d0) c-cos (- (cos 1.0d0) c-cos)))
 @end lisp
 
-@subsubsection SFFI example (low level inlining)
+@subsubheading SFFI example (low level inlining)
 @exindex SFFI usage
 
 To compare with the previous pieces of code, we show how the previous programs would be
