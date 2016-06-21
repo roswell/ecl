@@ -203,30 +203,6 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 You should have received a copy of the GNU Library General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-.B PLEASE NOTE THAT:
-
-This license covers all of the ECL program except for the files:
-.br
-src/lsp/loop.lsp ; Symbolic's LOOP macro
-.br
-src/lsp/pprint.lsp ; CMUCL's pretty printer
-.br
-src/lsp/format.lsp ; CMUCL's format
-.br
-
-and the directories:
-
-
-contrib/ ; User contributed extensions
-.br
-examples/ ; Examples for the ECL usage
-.br
-src/clx/ ; portable CLX library from Telent
-.br
-Look the precise copyright of these extensions in the corresponding files.
-
-Examples are licensed under: (SPDX-License-Identifier) BSD-2-Clause
-
-Report bugs, comments, suggestions to the ecl mailing list:
+Please report bugs, comments, suggestions to the ecl mailing list:
 .B ecl-devel@common-lisp.net
 (or use gitlab).
