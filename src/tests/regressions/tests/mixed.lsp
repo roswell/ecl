@@ -123,3 +123,24 @@
         (restart-case
             (signal 'x :y 1)))
     nil))
+
+
+;;; Date: 2016-04-21 (Juraj)
+;;; Fixed: 2016-06-21 (Daniel Kochmański)
+;;; Description:
+;;;
+;;; Trace did not respect *TRACE-OUTPUT*.
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/236
+;;;
+(ext:with-clean-symbols (fact)
+  (deftest mixed.0010.*trace-output*
+      (progn
+        (defun fact (n) (if (zerop n) :boom (fact (1- n))))
+        (zerop (length
+                (with-output-to-string (*trace-output*)
+                  (trace fact)
+                  (fact 3)
+                  (untrace fact)
+                  *trace-output*))))
+    nil))
