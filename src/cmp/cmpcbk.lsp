@@ -96,7 +96,7 @@
                  return-type)))
   (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))
         (fmod (case call-type
-                (:cdecl "")
+                ((:cdecl :default) "")
                 (:stdcall "__stdcall ")
                 (t (cmperr "DEFCALLBACK does not support ~A as calling convention"
                            call-type)))))
