@@ -477,7 +477,6 @@ LDFLAGS="$LDFLAGS $LIBFFI_LDFLAGS"
 dnl =====================================================================
 dnl Checks for libraries
 
-LIBS="${LIBS} -lm"
 AC_CHECK_LIB(sun, getpwnam)         # on IRIX adds -lsun
 AC_SEARCH_LIBS([strerror],[cposix])
 
