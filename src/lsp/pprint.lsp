@@ -1169,7 +1169,7 @@
            #.+ecl-safe-declarations+)
   (when (pprint-dispatch-table-read-only-p table)
     (cerror "Ignore and continue"
-            "Tried to modified a read-only pprint dispatch table: ~A"
+            "Tried to modify a read-only pprint dispatch table: ~A"
             table))
   ;; FIXME! This check should be automatically generated when compiling
   ;; with high enough safety mode.
