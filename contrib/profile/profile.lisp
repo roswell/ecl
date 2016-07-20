@@ -256,7 +256,7 @@ extern ECL_API size_t GC_get_total_bytes();
                     (let ((setf-name `(setf ,symbol)))
                       (when (fboundp setf-name)
                         (funcall function setf-name)))))))
-      (t (warn "ignoring invalid argument to PROFILE: ~S" name))))
+      (t (warn "ignoring invalid argument: ~S" name))))
   (values))
 
 ;;; Profile the named function, which should exist and not be profiled
