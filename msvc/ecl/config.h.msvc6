@@ -417,14 +417,14 @@ typedef unsigned int uint32_t;
 #  define	stack_align(n)	(((n) + 03) & ~03)
 #endif
 
-/* #undef FILE_CNT */
+#undef FILE_CNT
 #if 0 == 1
 #  define FILE_CNT(fp)	((fp)->_IO_read_end - (fp)->_IO_read_ptr)
 #endif
 #if 0 == 2
 #  define FILE_CNT(fp)	((fp)->_r)
 #endif
-#if 3 == 3
+#if ( defined(_MSC_VER) && (_MSC_VER < 1900) ) && 3 == 3
 #  define FILE_CNT(fp)	((fp)->_cnt)
 #endif
 
@@ -447,7 +447,9 @@ typedef unsigned int uint32_t;
 #endif
 
 #define strcasecmp _stricmp
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
 #define isnan _isnan
+#endif
 #define finite _finite
 #define sleep _sleep
 

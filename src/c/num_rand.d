@@ -50,10 +50,10 @@
 cl_object
 init_genrand(ulong seed)
 {
+  int j;
   cl_object array = ecl_alloc_simple_vector((MT_N + 1), ecl_aet_b64);
   ulong *mt = array->vector.self.b64;
   mt[0] = seed;
-  int j;
   for (j=1; j<MT_N; j++)
     mt[j] =  (6364136223846793005ULL * (mt[j-1] ^ (mt[j-1] >> 62)) + j);
 
@@ -281,6 +281,9 @@ cl_object
 ecl_make_random_state(cl_object rs)
 {
   cl_object z = ecl_alloc_object(t_random);
+  const char *type
+    = "(OR RANDOM-STATE FIXNUM (MEMBER T NIL))";
+
   if (rs == ECL_T) {
     z->random.value = init_random_state();
     return z;
@@ -294,8 +297,6 @@ ecl_make_random_state(cl_object rs)
     return z;
   }
 
-  const char *type
-    = "(OR RANDOM-STATE FIXNUM (MEMBER T NIL))";
   FEwrong_type_only_arg(@[make-random-state], rs,
                         ecl_read_from_cstring(type));
 }
