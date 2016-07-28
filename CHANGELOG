@@ -57,6 +57,9 @@ appropraite documentation section (new-doc).
 Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
 
 ** Issues fixed
+- stable-sort bugfix and improvement in speed
+Adapted from SBCL by Diogo Franco.
+
 - typep: accept * type specifier as abbreviation of t as described in
 '2.4.3 Type Specifiers' of the specification.
 
