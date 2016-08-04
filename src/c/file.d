@@ -4201,8 +4201,9 @@ si_file_stream_fd(cl_object s)
 {
   cl_object ret;
 
-  unlikely_if (!ECL_ANSI_STREAM_P(s))
-    FEerror("file_stream_fd: not a stream", 0);
+  unlikely_if (!ECL_FILE_STREAM_P(s)) {
+    not_a_file_stream(s);
+  }
 
   switch ((enum ecl_smmode)s->stream.mode) {
   case ecl_smm_input:
@@ -4218,7 +4219,7 @@ si_file_stream_fd(cl_object s)
   default:
     ecl_internal_error("not a file stream");
   }
-  @(return ret);;
+  @(return ret);
 }
 
 /**********************************************************************

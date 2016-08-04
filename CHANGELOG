@@ -57,6 +57,10 @@ appropraite documentation section (new-doc).
 Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
 
 ** Issues fixed
+- ext:file-stream-fd
+Doesn't cause an internal-error if fed with not a file-stream (signals a
+SIMPLE-TYPE-ERROR condtition).
+
 - stable-sort bugfix and improvement in speed
 Adapted from SBCL by Diogo Franco.
 
