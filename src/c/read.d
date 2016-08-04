@@ -1399,10 +1399,6 @@ sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
       break;
     }
 #endif
-  case t_fixnum:
-    rs = ecl_alloc_object(t_random);
-    rs->random.value = init_genrand(ecl_fixnum(c));
-    break;
   default:
     rs = ecl_make_random_state(c);
     break;

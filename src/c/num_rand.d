@@ -287,18 +287,25 @@ ecl_make_random_state(cl_object rs)
   if (rs == ECL_T) {
     z->random.value = init_random_state();
     return z;
-  }
-
-  if (Null(rs))
+  } else if (Null(rs)) {
     rs = ecl_symbol_value(@'*random-state*');
-
-  if (ecl_t_of(rs) == t_random) {
     z->random.value = cl_copy_seq(rs->random.value);
     return z;
   }
 
-  FEwrong_type_only_arg(@[make-random-state], rs,
-                        ecl_read_from_cstring(type));
+  switch (ecl_t_of(rs)) {
+  case t_random:
+    z->random.value = cl_copy_seq(rs->random.value);
+    break;
+  case t_fixnum:
+    z->random.value = init_genrand(ecl_fixnum(rs));
+    break;
+  default:
+    FEwrong_type_only_arg(@[make-random-state], rs,
+                          ecl_read_from_cstring(type));
+  }
+
+  return z;
 }
 
 @(defun random (x &optional (rs ecl_symbol_value(@'*random-state*')))

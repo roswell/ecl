@@ -32,15 +32,15 @@
 - make-random-state: fix problem with simple-vectors
 
 The correct initialization types for =make-random-state= are:
-=(OR RANDOM-STATE (MEMBER T NIL))=
+=(OR RANDOM-STATE FIXNUM (MEMBER T NIL))=
 
 Initializing a random state with an appropriate array (element type and
-arity) or with a fixnum is now possible only with the #$ reader macro.
+arity) is now possible only with the #$ reader macro.
 
 ** Enhancements
 - Removed 15000 lines of obsolete code
 Files not included in the buildsystem but lingering in the codebase or
-options failing to build. All info is added in the new documentation in
+options failing to build. All info is added in the new documentation in the
 section "Removed interfaces".
 
 - Improved man page and help output.
