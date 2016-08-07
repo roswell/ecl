@@ -8,12 +8,9 @@
 ;;;; Based on the code and files from FLEXI-STREAMS 1.0.7
 ;;;;
 
-#+(or)
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (find-package :cl-test)
-    (make-package :cl-test)))
-
 (in-package :cl-test)
+
+(suite 'features/eformat)
 
 
 ;;; eformat-001
@@ -135,11 +132,10 @@ about each individual comparison if VERBOSE is true."
                                         :external-format external-format-out)
                      (funcall *copy-function* in out))))
        (one-comparison (path-in external-format-in path-out external-format-out)
-         (format t "~%;;; ~A -> ~A" path-in path-out)
-         (loop with full-path-in = (merge-pathnames path-in "./eformat-tests/")
+         (loop with full-path-in = (merge-pathnames path-in "features/eformat-tests/")
             and full-path-out = (ensure-directories-exist
-                                 (merge-pathnames path-out "./eformat-tmp/"))
-            and full-path-orig = (merge-pathnames path-out "./eformat-tests/")
+                                 (merge-pathnames path-out "sandbox/eformat-tmp/"))
+            and full-path-orig = (merge-pathnames path-out "features/eformat-tests/")
             for direction-out in '(:output :io)
             nconc (loop for direction-in in '(:input :io)
                        for args = (list path-in external-format-in direction-in
@@ -150,8 +146,9 @@ about each individual comparison if VERBOSE is true."
                               (copy-file full-path-in external-format-in
                                          full-path-out external-format-out
                                          direction-out direction-in)
-                              (multiple-value-setq (ok pos)
-                                (file-equal full-path-out full-path-orig)))
+                              (is (multiple-value-setq (ok pos)
+                                    (file-equal full-path-out full-path-orig))
+                                  "~%~A -> ~A" path-in path-out))
                      collect (progn
                                  (format t "~%;;; Discordance at pos ~D~%between ~A~% and ~A~%"
                                          pos full-path-out full-path-orig)
@@ -171,9 +168,8 @@ about each individual comparison if VERBOSE is true."
 ;;;     supported formats and checking against the expected results. This
 ;;;     test uses READ/WRITE-CHAR via READ/WRITE-LINE.
 ;;;
-(deftest external-format.0001-transcode-read-char
-    (do-eformat-test-001 'copy-stream)
-  nil)
+(test external-format.0001-transcode-read-char
+  (is-false (do-eformat-test-001 'copy-stream)))
 
 ;;; Date: 02/01/2007
 ;;; From: Juanjo
@@ -184,9 +180,8 @@ about each individual comparison if VERBOSE is true."
 ;;;     supported formats and checking against the expected results. This
 ;;;     test uses READ/WRITE-CHAR via READ/WRITE-LINE.
 ;;;
-(deftest external-format.0002-transcode-read-char
-    (do-eformat-test-001 'copy-stream*)
-  nil)
+(test external-format.0002-transcode-read-char
+  (is-false (do-eformat-test-001 'copy-stream*)))
 
 
 ;;; eformat-002
@@ -259,9 +254,9 @@ about each individual comparison if VERBOSE is true."
                       do (setf format-name table)
                       finally (return (or table format-name))))
          (char-bags (all-valid-unicode-chars mappings))
-         (encoded-filename (format nil "eformat-tmp/iconv-~A.txt" format-name))
-         (decoded-filename (format nil "eformat-tmp/iconv-~A-utf32.txt" format-name))
-         (iconv-filename (format nil "eformat-tmp/iconv-~A-iconv-utf32.txt" format-name))
+         (encoded-filename (format nil "sandbox/eformat-tmp/iconv-~A.txt" format-name))
+         (decoded-filename (format nil "sandbox/eformat-tmp/iconv-~A-utf32.txt" format-name))
+         (iconv-filename (format nil "sandbox/eformat-tmp/iconv-~A-iconv-utf32.txt" format-name))
          (random-lines (loop for line from 1 to nlines
                           collect (random-strings char-bags nchars)))
          (all-chars (apply #'concatenate 'string
@@ -293,7 +288,7 @@ about each individual comparison if VERBOSE is true."
              (si::system command))
             (compare-files decoded-filename iconv-filename all-chars)
             (prog1 T
-              (format t "~&;;; iconv command failed:~A" command)))))))
+              (format t "~&;;; iconv command failed:~A~%" command)))))))
 
 ;;; Date: 09/01/2007
 ;;; From: Juanjo
@@ -308,37 +303,37 @@ about each individual comparison if VERBOSE is true."
 ;; fails to execute a command. Hence in that case we assume
 ;; we simply can not run these tests
 (when (zerop (si::system "iconv -l >/dev/null 2>&1"))
-  (deftest external-format.simple-iconv-check
-      (loop for name in '(:ISO-8859-1 :ISO-8859-2 :ISO-8859-3 :ISO-8859-4
-                          :ISO-8859-5 :ISO-8859-6 :ISO-8859-7 :ISO-8859-8
-                          :ISO-8859-9 :ISO-8859-10 :ISO-8859-11 :ISO-8859-13
-                          :ISO-8859-14 :ISO-8859-15 :ISO-8859-16
+  (test external-format.simple-iconv-check
+    (is-false
+     (loop for name in '(:ISO-8859-1 :ISO-8859-2 :ISO-8859-3 :ISO-8859-4
+                         :ISO-8859-5 :ISO-8859-6 :ISO-8859-7 :ISO-8859-8
+                         :ISO-8859-9 :ISO-8859-10 :ISO-8859-11 :ISO-8859-13
+                         :ISO-8859-14 :ISO-8859-15 :ISO-8859-16
 
-                          :KOI8-R :KOI8-U
+                         :KOI8-R :KOI8-U
 
-                          :IBM437 :IBM850 :IBM852 :IBM855 :IBM857 :IBM860
-                          :IBM861 :IBM862 :IBM863 :IBM864 :IBM865 :IBM866
-                          :IBM869
+                         :IBM437 :IBM850 :IBM852 :IBM855 :IBM857 :IBM860
+                         :IBM861 :IBM862 :IBM863 :IBM864 :IBM865 :IBM866
+                         :IBM869
 
-                          :CP936 :CP949 :CP950
+                         :CP936 :CP949 :CP950
 
-                          :WINDOWS-1250 :WINDOWS-1251 :WINDOWS-1252 :WINDOWS-1253
-                          :WINDOWS-1254 :WINDOWS-1256 :WINDOWS-1257
+                         :WINDOWS-1250 :WINDOWS-1251 :WINDOWS-1252 :WINDOWS-1253
+                         :WINDOWS-1254 :WINDOWS-1256 :WINDOWS-1257
 
-                          ;; :CP932 :WINDOWS-1255 :WINDOWS-1258 with
-                          ;; iconv may output combined characters, when ECL would
-                          ;; output the base and the comibining one. Hence, no simple
-                          ;; comparison is possible.
+                         ;; :CP932 :WINDOWS-1255 :WINDOWS-1258 with
+                         ;; iconv may output combined characters, when ECL would
+                         ;; output the base and the comibining one. Hence, no simple
+                         ;; comparison is possible.
 
-                          :ISO-2022-JP
-                          ;; :ISO-2022-JP-1
-                          ;; iconv doesn't support ISO-2022-JP-1 (hue hue hue)
-                          )
-         unless (progn
-                  (format t "~%;;; Testing ~A " name)
-                  (loop for i from 1 to 10
-                     always (test-output name (symbol-name name))))
-         collect name)
-    nil))
+                         :ISO-2022-JP
+                         ;; :ISO-2022-JP-1
+                         ;; iconv doesn't support ISO-2022-JP-1 (hue hue hue)
+                         )
+        unless (progn
+                 (loop for i from 1 to 10
+                    always (is (test-output name (symbol-name name))
+                               "iconv test ~s failed" name)))
+        collect name))))
 
 

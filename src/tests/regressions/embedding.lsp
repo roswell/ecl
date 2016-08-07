@@ -7,6 +7,8 @@
 
 (in-package :cl-test)
 
+(suite 'regressions/emb)
+
 (defun test-C-program (c-code &key capture-output)
   (ensure-directories-exist "tmp/")
   (with-open-file (s "tmp/aux.c" :direction :output :if-exists :supersede
@@ -44,8 +46,9 @@
 ;;;
 ;;; Fixed: 03/2006 (juanjo)
 ;;;
-(deftest embedding.0001.shutdown
-    (let* ((skeleton "
+(test emb.0001.shutdown
+  (is (equal
+       (let* ((skeleton "
 #include <ecl/ecl.h>
 #include <stdlib.h>
 int main (int argc, char **argv) {
@@ -55,11 +58,11 @@ int main (int argc, char **argv) {
   cl_shutdown();
   exit(0);
 }")
-           (form '(push (lambda () (print :shutdown)) si::*exit-hooks*))
-           (c-code (format nil skeleton (format nil "~S" form)))
-           (data (test-C-program c-code :capture-output t)))
-      data)
-  (:shutdown))
+              (form '(push (lambda () (print :shutdown)) si::*exit-hooks*))
+              (c-code (format nil skeleton (format nil "~S" form)))
+              (data (test-C-program c-code :capture-output t)))
+         data)
+       '(:shutdown))))
 
 ;;; Date: 2016-05-25 (Vadim Penzin)
 ;;; Date: 2016-05-27 (Vadim Penzin)
@@ -78,8 +81,9 @@ int main (int argc, char **argv) {
 ;;;     user interaction (ie picking the restart), hence we only test
 ;;;     the ECL_HANDLER_CASE.
 ;;;
-(deftest embedding.0002.handlers
-    (let* ((c-code "
+(test emb.0002.handlers
+  (is-true
+   (let* ((c-code "
 #include <stdio.h>
 #include <ecl/ecl.h>
 
@@ -102,5 +106,4 @@ main ( const int argc, const char * const argv [] )
     return result;
 }
 "))
-      (test-C-program c-code))
-  T)
+     (test-C-program c-code))))

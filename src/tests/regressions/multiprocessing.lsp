@@ -7,6 +7,8 @@
 
 (in-package :cl-test)
 
+(suite 'regressions/mp)
+
 
 ;; Auxiliary routines for multithreaded tests
 
@@ -39,9 +41,10 @@ creating stray processes."
   (let ((all-processes (gensym))
         (output (gensym))
         (leftover (gensym)))
-    `(deftest ,name
-         (mp-test-run #'(lambda () ,body))
-       ,expected-value)))
+    `(test ,name
+       (is-equal
+        (mp-test-run #'(lambda () ,body))
+        ,expected-value))))
 
 
 ;; Locks
@@ -54,7 +57,7 @@ creating stray processes."
 ;;;     When a WITH-LOCK is interrupted, it is not able to release
 ;;;     the resulting lock and an error is signaled.
 ;;;
-(def-mp-test mp-0001-with-lock
+(test mp-0001-with-lock
     (let ((flag t)
           (lock (mp:make-lock :name "mp-0001-with-lock" :recursive nil)))
       (mp:with-lock (lock)
@@ -76,38 +79,35 @@ creating stray processes."
           ;; and the process should gracefully quit, without
           ;; signalling any serious condition
           (and (progn (sleep 1)
-                      (mp:process-kill background-process))
+                      (is (mp:process-kill background-process)))
                (progn (sleep 1)
-                      (not (mp:process-active-p background-process)))
-               (eq flag 1)
-               t))))
-  t)
+                      (is (not (mp:process-active-p background-process))))
+               (is (eq flag 1)))))))
 
 
 ;; Semaphores
 
 ;;; Date: 14/04/2012
 ;;;     Ensure that at creation name and counter are set
-(deftest sem-make-and-counter
-    (loop with name = "sem-make-and-counter"
-       for count from 0 to 10
-       for sem = (mp:make-semaphore :name name :count count)
-       always (and (eq (mp:semaphore-name sem) name)
-                   (= (mp:semaphore-count sem) count)
-                   (zerop (mp:semaphore-wait-count sem))))
-  t)
+(test sem-make-and-counter
+  (is (loop with name = "sem-make-and-counter"
+         for count from 0 to 10
+         for sem = (mp:make-semaphore :name name :count count)
+         always (and (eq (mp:semaphore-name sem) name)
+                     (= (mp:semaphore-count sem) count)
+                     (zerop (mp:semaphore-wait-count sem))))))
 
 ;;; Date: 14/04/2012
 ;;;     Ensure that signal changes the counter by the specified amount
-(deftest sem-signal-semaphore-count
-    (loop with name = "sem-signal-semaphore-count"
-       for count from 0 to 10
-       always (loop for delta from 0 to 10
-                 for sem = (mp:make-semaphore :name name :count count)
-                 always (and (= (mp:semaphore-count sem) count)
-                             (null (mp:signal-semaphore sem delta))
-                             (= (mp:semaphore-count sem ) (+ count delta)))))
-  t)
+(test sem-signal-semaphore-count
+  (is
+   (loop with name = "sem-signal-semaphore-count"
+      for count from 0 to 10
+      always (loop for delta from 0 to 10
+                for sem = (mp:make-semaphore :name name :count count)
+                always (and (= (mp:semaphore-count sem) count)
+                            (null (mp:signal-semaphore sem delta))
+                            (= (mp:semaphore-count sem ) (+ count delta)))))))
 
 ;;; Date: 14/04/2012
 ;;;     A semaphore with a count of zero blocks a process
@@ -127,51 +127,51 @@ creating stray processes."
 
 ;;; Date: 14/04/2012
 ;;;     We can signal multiple processes
-(def-mp-test sem-signal-n-processes
-    (loop for count from 1 upto 10 always
-         (let* ((counter 0)
-                (lock (mp:make-lock :name "sem-signal-n-processes"))
-                (sem (mp:make-semaphore :name "sem-signal-n-processs"))
-                (all-process
-                 (loop for i from 1 upto count
-                    collect (mp:process-run-function
-                             "sem-signal-n-processes"
-                             #'(lambda ()
-                                 (mp:wait-on-semaphore sem)
-                                 (mp:with-lock (lock) (incf counter)))))))
-           (and (zerop counter)
-                (every #'mp:process-active-p all-process)
-                (= (mp:semaphore-wait-count sem) count)
-                (progn (mp:signal-semaphore sem count) (sleep 0.2)
-                       (= counter count))
-                (= (mp:semaphore-count sem) 0))))
-  t)
+(test sem-signal-n-processes
+  (loop for count from 1 upto 10 always
+       (let* ((counter 0)
+              (lock (mp:make-lock :name "sem-signal-n-processes"))
+              (sem (mp:make-semaphore :name "sem-signal-n-processs"))
+              (all-process
+               (loop for i from 1 upto count
+                  collect (mp:process-run-function
+                           "sem-signal-n-processes"
+                           #'(lambda ()
+                               (mp:wait-on-semaphore sem)
+                               (mp:with-lock (lock) (incf counter)))))))
+         (and (is (zerop counter))
+              (is (every #'mp:process-active-p all-process))
+              (is (= (mp:semaphore-wait-count sem) count))
+              (is (progn (mp:signal-semaphore sem count)
+                         (sleep 0.2)
+                         (= counter count)))
+              (is (= (mp:semaphore-count sem) 0))))))
 
 ;;; Date: 14/04/2012
 ;;;     When we signal N processes and N+M are waiting, only N awake
-(def-mp-test sem-signal-only-n-processes
-    (loop for m from 1 upto 3 always
-      (loop for n from 1 upto 4 always
-         (let* ((counter 0)
-                (lock (mp:make-lock :name "sem-signal-n-processes"))
-                (sem (mp:make-semaphore :name "sem-signal-n-processs"))
-                (all-process
-                 (loop for i from 1 upto (+ n m)
-                    collect (mp:process-run-function
-                             "sem-signal-n-processes"
-                             #'(lambda ()
-                                 (mp:wait-on-semaphore sem)
-                                 (mp:with-lock (lock) (incf counter)))))))
-           (and (zerop counter)
-                (every #'mp:process-active-p all-process)
-                (= (mp:semaphore-wait-count sem) (+ m n))
-                (progn (mp:signal-semaphore sem n) (sleep 0.02)
-                       (= counter n))
-                (= (mp:semaphore-wait-count sem) m)
-                (progn (mp:signal-semaphore sem m) (sleep 0.02)
-                              (= counter (+ n m)))
-                ))))
-  t)
+(test sem-signal-only-n-processes
+  (loop for m from 1 upto 3 always
+       (loop for n from 1 upto 4 always
+            (let* ((counter 0)
+                   (lock (mp:make-lock :name "sem-signal-n-processes"))
+                   (sem (mp:make-semaphore :name "sem-signal-n-processs"))
+                   (all-process
+                    (loop for i from 1 upto (+ n m)
+                       collect (mp:process-run-function
+                                "sem-signal-n-processes"
+                                #'(lambda ()
+                                    (mp:wait-on-semaphore sem)
+                                    (mp:with-lock (lock) (incf counter)))))))
+              (and (is (zerop counter))
+                   (is (every #'mp:process-active-p all-process))
+                   (is (= (mp:semaphore-wait-count sem) (+ m n)))
+                   (is (progn (mp:signal-semaphore sem n)
+                              (sleep 0.02)
+                              (= counter n)))
+                   (is (= (mp:semaphore-wait-count sem) m))
+                   (is (progn (mp:signal-semaphore sem m)
+                              (sleep 0.02)
+                              (= counter (+ n m)))))))))
 
 ;;; Date: 14/04/2012
 ;;;     It is possible to kill processes waiting for a semaphore.
@@ -220,41 +220,39 @@ creating stray processes."
 ;;;     killed, but the process must still be in the queue for the semaphore
 ;;;     to awake it. The way we solve this is by intercepting the kill signal.
 ;;;
-(def-mp-test sem-interrupted-resignals
-    (let* ((sem (mp:make-semaphore :name "sem-interrupted-resignals"))
-           (flag1 nil)
-           (flag2 nil)
-           (process1 (mp:process-run-function
-                      "sem-interrupted-resignals"
-                      #'(lambda ()
-                          (unwind-protect
-                               (mp:wait-on-semaphore sem)
-                            (sleep 4)
-                            (setf flag1 t)
-                            ))))
-           (process2 (mp:process-run-function
-                      "sem-interrupted-resignals"
-                      #'(lambda ()
-                          (mp:wait-on-semaphore sem)
-                          (setf flag2 t)))))
-      (sleep 0.2)
-      (and (= (mp:semaphore-wait-count sem) 2)
-           (mp:process-active-p process1)
-           (mp:process-active-p process2)
-           ;; We kill the process but ensure it is still running
-           (progn (mp:process-kill process1)
-                  (mp:process-active-p process1))
-           (null flag1)
-           ;; ... and in the queue
-           (= (mp:semaphore-wait-count sem) 2)
-           ;; We awake it and it should awake the other one
-           (progn (format t "~%;;; Signaling semaphore")
-                  (mp:signal-semaphore sem)
-                  (sleep 1)
-                  (zerop (mp:semaphore-wait-count sem)))
-           flag2
-           t))
-  t)
+(test sem-interrupted-resignals
+  (let* ((sem (mp:make-semaphore :name "sem-interrupted-resignals"))
+         (flag1 nil)
+         (flag2 nil)
+         (process1 (mp:process-run-function
+                    "sem-interrupted-resignals"
+                    #'(lambda ()
+                        (unwind-protect
+                             (mp:wait-on-semaphore sem)
+                          (sleep 4)
+                          (setf flag1 t)
+                          ))))
+         (process2 (mp:process-run-function
+                    "sem-interrupted-resignals"
+                    #'(lambda ()
+                        (mp:wait-on-semaphore sem)
+                        (setf flag2 t)))))
+    (sleep 0.2)
+    (and (is (= (mp:semaphore-wait-count sem) 2))
+         (is (mp:process-active-p process1))
+         (is (mp:process-active-p process2))
+         ;; We kill the process but ensure it is still running
+         (is (progn (mp:process-kill process1)
+                    (mp:process-active-p process1)))
+         (is (null flag1))
+         ;; ... and in the queue
+         (is (= (mp:semaphore-wait-count sem) 2))
+         ;; We awake it and it should awake the other one
+         (is (progn (format t "~%;;; Signaling semaphore")
+                    (mp:signal-semaphore sem)
+                    (sleep 1)
+                    (zerop (mp:semaphore-wait-count sem))))
+         (is flag2))))
 
 ;;; Date: 14/04/2012
 ;;;     1 producer and N consumers, non-blocking, because the initial count
@@ -310,37 +308,35 @@ creating stray processes."
 ;;; Date: 12/04/2012
 ;;;     Non-recursive mutexes should signal an error when they
 ;;;     cannot be relocked.
-(deftest mutex-001-recursive-error
-    (let* ((mutex (mp:make-lock :name 'mutex-001-recursive-error)))
-      (and
-       (mp:get-lock mutex)
-       (eq (mp:lock-owner mutex) mp:*current-process*)
-       (handler-case
-           (progn (mp:get-lock mutex) nil)
-         (error (c) t))
-       (mp:giveup-lock mutex)
-       (null (mp:lock-owner mutex))
-       (zerop (mp:lock-count mutex))
-       t))
-  t)
+(test mutex-001-recursive-error
+  (is-true
+   (let* ((mutex (mp:make-lock :name 'mutex-001-recursive-error)))
+     (and
+      (mp:get-lock mutex)
+      (eq (mp:lock-owner mutex) mp:*current-process*)
+      (handler-case
+          (progn (mp:get-lock mutex) nil)
+        (error (c) t))
+      (mp:giveup-lock mutex)
+      (null (mp:lock-owner mutex))
+      (zerop (mp:lock-count mutex))))))
 
 ;;; Date: 12/04/2012
 ;;;     Recursive locks increase the counter.
-(deftest mutex-002-recursive-count
-    (let* ((mutex (mp:make-lock :name 'mutex-002-recursive-count :recursive t)))
-      (and
-       (loop for i from 1 upto 10
-          always (and (mp:get-lock mutex)
-                      (= (mp:lock-count mutex) i)
-                      (eq (mp:lock-owner mutex) mp:*current-process*)))
-       (loop for i from 9 downto 0
-          always (and (eq (mp:lock-owner mutex) mp:*current-process*)
-                      (mp:giveup-lock mutex)
-                      (= (mp:lock-count mutex) i)))
-       (null (mp:lock-owner mutex))
-       (zerop (mp:lock-count mutex))
-       t))
-  t)
+(test mutex-002-recursive-count
+  (is-true
+   (let* ((mutex (mp:make-lock :name 'mutex-002-recursive-count :recursive t)))
+     (and
+      (loop for i from 1 upto 10
+         always (and (mp:get-lock mutex)
+                     (= (mp:lock-count mutex) i)
+                     (eq (mp:lock-owner mutex) mp:*current-process*)))
+      (loop for i from 9 downto 0
+         always (and (eq (mp:lock-owner mutex) mp:*current-process*)
+                     (mp:giveup-lock mutex)
+                     (= (mp:lock-count mutex) i)))
+      (null (mp:lock-owner mutex))
+      (zerop (mp:lock-count mutex))))))
 
 
 ;;; Date: 12/04/2012
@@ -415,36 +411,34 @@ creating stray processes."
 
 ;;; Date: 14/04/2012
 ;;;     Ensure that at creation name and counter are set, and mailbox is empty.
-(deftest mailbox-make-and-counter
-    (loop with name = "mbox-make-and-counter"
-       for count from 4 to 63
-       for mbox = (mp:make-mailbox :name name :count count)
-       always (and (eq (mp:mailbox-name mbox) name)
-                   (>= (mp:mailbox-count mbox) count)
-                   (mp:mailbox-empty-p mbox)
-                   t))
-  t)
+(test mailbox-make-and-counter
+  (is
+   (loop with name = "mbox-make-and-counter"
+      for count from 4 to 63
+      for mbox = (mp:make-mailbox :name name :count count)
+      always (and (eq (mp:mailbox-name mbox) name)
+                  (>= (mp:mailbox-count mbox) count)
+                  (mp:mailbox-empty-p mbox)))))
 
 ;;; Date: 14/04/2012
 ;;;     Ensure that the mailbox works in a nonblocking fashion (when the
 ;;;     number of messages < mailbox size in a single producer and single
 ;;;     consumer  setting. We do not need to create new threads for this.
-(deftest mbox-mailbox-nonblocking-io-1-to-1
-    (loop with count = 30
-       with name = "mbox-mailbox-nonblocking-io-1-to-1"
-       with mbox = (mp:make-mailbox :name name :count count)
-       for l from 1 to 10
-       for messages = (loop for i from 1 to l
-                         do (mp:mailbox-send mbox i)
-                         collect i)
-       always 
-         (and (not (mp:mailbox-empty-p mbox))
-              (equalp (loop for i from 1 to l
-                         collect (mp:mailbox-read mbox))
-                      messages)
-              (mp:mailbox-empty-p mbox)
-              t))
-  t)
+(test mbox-mailbox-nonblocking-io-1-to-1
+  (is
+   (loop with count = 30
+      with name = "mbox-mailbox-nonblocking-io-1-to-1"
+      with mbox = (mp:make-mailbox :name name :count count)
+      for l from 1 to 10
+      for messages = (loop for i from 1 to l
+                        do (mp:mailbox-send mbox i)
+                        collect i)
+      always 
+        (and (not (mp:mailbox-empty-p mbox))
+             (equalp (loop for i from 1 to l
+                        collect (mp:mailbox-read mbox))
+                     messages)
+             (mp:mailbox-empty-p mbox)))))
 
 ;;; Date: 14/04/2012
 ;;;     The mailbox blocks a process when it saturates the write queue.
@@ -501,48 +495,46 @@ creating stray processes."
 ;;; Date: 14/04/2012
 ;;;     1 producer and N consumer, but they do not block, because the
 ;;;     queue is large enough and pre-filled with messages
-(def-mp-test mbox-1-to-n-non-blocking
-    (loop with lock = (mp:make-lock :name "mbox-1-to-n-communication")
-       for n from 1 to 10
-       for m = (round 128 n)
-       for length = (* n m)
-       for mbox = (mp:make-mailbox :name "mbox-1-to-n-communication" :count length)
-       for flags = (make-array length :initial-element nil)
-       for aux = (loop for i from 0 below length
-                    do (mp:mailbox-send mbox i))
-       for producers = (loop for i from 0 below n
-                          do (mp:process-run-function
-                              "mbox-1-to-n-consumer"
-                              #'(lambda ()
-                                  (loop for i from 0 below m
-                                     for msg = (mp:mailbox-read mbox)
-                                     do (setf (aref flags msg) t)))))
-       do (sleep 0.1)
-       always (and (every #'identity flags)
-                   (mp:mailbox-empty-p mbox)))
-  t)
+(test mbox-1-to-n-non-blocking
+  (loop with lock = (mp:make-lock :name "mbox-1-to-n-communication")
+     for n from 1 to 10
+     for m = (round 128 n)
+     for length = (* n m)
+     for mbox = (mp:make-mailbox :name "mbox-1-to-n-communication" :count length)
+     for flags = (make-array length :initial-element nil)
+     for aux = (loop for i from 0 below length
+                  do (mp:mailbox-send mbox i))
+     for producers = (loop for i from 0 below n
+                        do (mp:process-run-function
+                            "mbox-1-to-n-consumer"
+                            #'(lambda ()
+                                (loop for i from 0 below m
+                                   for msg = (mp:mailbox-read mbox)
+                                   do (setf (aref flags msg) t)))))
+     do (sleep 0.1)
+     always (and (is (every #'identity flags))
+                 (is (mp:mailbox-empty-p mbox)))))
 
 ;;; Date: 14/04/2012
 ;;;     1 producer and N consumers, which block, because the producer
 ;;;     is started _after_ them and is slower.
-(def-mp-test mbox-1-to-n-blocking
-    (loop for n from 1 to 10
-       for m = (round 10000 n)
-       for length = (* n m)
-       for mbox = (mp:make-mailbox :name "mbox-1-to-n-communication" :count length)
-       for flags = (make-array length :initial-element nil)
-       for producers = (loop for i from 0 below n
-                          do (mp:process-run-function
-                              "mbox-1-to-n-consumer"
-                              #'(lambda ()
-                                  (loop for i from 0 below m
-                                     for msg = (mp:mailbox-read mbox)
-                                     do (setf (aref flags msg) t)))))
-       do (loop for i from 0 below length
-             do (mp:mailbox-send mbox i))
-       do (sleep 0.1)
-       always (and (every #'identity flags)
-                   (mp:mailbox-empty-p mbox)))
-  t)
+(test mbox-1-to-n-blocking
+  (loop for n from 1 to 10
+     for m = (round 10000 n)
+     for length = (* n m)
+     for mbox = (mp:make-mailbox :name "mbox-1-to-n-communication" :count length)
+     for flags = (make-array length :initial-element nil)
+     for producers = (loop for i from 0 below n
+                        do (mp:process-run-function
+                            "mbox-1-to-n-consumer"
+                            #'(lambda ()
+                                (loop for i from 0 below m
+                                   for msg = (mp:mailbox-read mbox)
+                                   do (setf (aref flags msg) t)))))
+     do (loop for i from 0 below length
+           do (mp:mailbox-send mbox i))
+     do (sleep 0.1)
+     always (and (is (every #'identity flags))
+                 (is (mp:mailbox-empty-p mbox)))))
 
 
