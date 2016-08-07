@@ -113,13 +113,14 @@
 (ext:with-clean-symbols (fact)
   (defun fact (n) (if (zerop n) :boom (fact (1- n))))
   (test mix.0008.trace-output
-    (is-eql 0
-            (length
-             (with-output-to-string (*trace-output*)
-               (trace fact)
-               (fact 3)
-               (untrace fact)
-               *trace-output*)))))
+    (is
+     (not (zerop
+           (length
+            (with-output-to-string (*trace-output*)
+              (trace fact)
+              (fact 3)
+              (untrace fact)
+              *trace-output*)))))))
 
 
 ;;;; Author:   Daniel Kochmański
