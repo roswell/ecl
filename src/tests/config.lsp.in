@@ -3,6 +3,7 @@
 
 ;;;
 ;;; (c) 2011, Juan Jose Garcia-Ripoll
+;;; (c) 2016, Daniel Kochmański
 ;;;
 ;;; Set up the test environment.
 ;;;
@@ -23,32 +24,26 @@
 (defvar *test-sources* (merge-pathnames "tests/" *ecl-sources*))
 
 (defvar *here* (merge-pathnames "@builddir@/"))
-
 (defvar *cache* (merge-pathnames "./cache/" *here*))
 
-(defvar *test-image* (or (ext:getenv "TEST_IMAGE")
-                         #+windows
-                         (namestring (truename #+windows "sys:ecl.exe"))
-                         #-windows
-                         "@prefix@/bin/ecl"))
+(defvar *test-image*
+  (or (ext:getenv "TEST_IMAGE")
+      #+windows (namestring (truename "sys:ecl.exe"))
+      #-windows "@prefix@/bin/ecl"))
 
 (defvar *test-image-args*
-  (cond ((search "ecl" *test-image*)
-         '("-norc" "-eval" "(print (ext:getenv \"ECLDIR\"))"
-           ;#+windows "-eval" #+windows "(require :cmp)"
-           ))
-        ((search "sbcl" *test-image*)
-         '("--no-userinit" "--no-sysinit"))
-        (t
-         '())))
+  `("-norc"
+    "-eval" "(print (ext:getenv \"ECLDIR\"))"
+    "-eval" "(ignore-errors (require :cmp))"
+    "-load" ,(namestring (merge-pathnames "doit.lsp" *test-sources*))
+    "-eval" "(quit)"))
 
 #+ecl
 (ext:setenv "ECLDIR" (namestring (truename "SYS:")))
 
 (defvar *test-name* (or (ext:getenv "TEST_NAME") "ecl"))
-(defvar *output-directory* *here*)
-(defvar *regressions-sources* (merge-pathnames "regressions/" *test-sources*))
-(defvar *regressions-sandbox* (merge-pathnames "regressions/" *here*))
+(defvar *regressions-sources* *test-sources*)
+(defvar *regressions-sandbox* *here*)
 (defvar *wild-inferiors* (make-pathname :name :wild
                                         :type :wild
                                         :version :wild
@@ -68,18 +63,9 @@
                   (merge-pathnames "**/*.*"
                                    (lisp-system-directory)))))
 
-(require :cmp)
-
 ;;;
 ;;; PREPARATION OF DIRECTORIES AND FILES
 ;;;
-
-(defun setup-asdf ()
-  (require :asdf)
-  (ensure-directories-exist *cache*)
-  (setf (symbol-value (read-from-string "asdf::*user-cache*"))
-        (list *cache* :implementation)))
-                      
 
 (defun delete-everything (path)
   ;; Recursively run through children
@@ -116,7 +102,6 @@
   (unless (probe-file *regressions-sandbox*)
     (copy-directory *regressions-sources* *regressions-sandbox*)))
 
-
 (defun cleanup-directory (path)
   (loop for i in (directory (merge-pathnames *wild-inferiors*
                                              path))
@@ -136,7 +121,7 @@
          (ext:chdir *regressions-sandbox*)
          (ext:run-program *test-image*
                           *test-image-args*
-                          :input (merge-pathnames "doit.lsp" *regressions-sandbox*)
+                          :input nil ; (merge-pathnames "doit.lsp" *regressions-sources*)
                           :output t
                           :error :output))
     (ext:chdir *here*)))
