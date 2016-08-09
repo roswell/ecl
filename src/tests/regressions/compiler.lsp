@@ -1150,3 +1150,11 @@
   (declaim (ftype (function (*) (values T)) ce))
   (defun ce (expression) expression)
   (is-false (ce nil)))
+
+
+;;; Date 2016-08-09 (jd)
+;;; Description
+;;;    No adequate specialization of MAKE-LOAD-FORM for an object of
+;;;    type RANDOM-TYPE
+(test cmp.0051.make-load-form.random-state
+  (finishes (make-load-form (make-random-state))))
