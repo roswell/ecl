@@ -126,27 +126,24 @@
 ;;;; Author:   Daniel Kochmański
 ;;;; Created:  2015-09-21
 ;;;; Contains: Random state tests
-#+ (or)
-(def-test mix.0009.random-states (:compile-at :definition-time)
-  (is (numberp (random 18)) "Trivial case")
+(test mix.0009.random-states
+  (is (numberp (random 18)) "Can't generate trivial random number")
   (is (numberp (random 18 #$1))
-      "Check if we can generate random number from a read random ~
-      state")
+      "Can't generate a number from read (#$1) random state")
   (is (numberp (random 18 (make-random-state)))
-      "Check if we can generate random number from a new random ~
-      state")
+      "Can't generate a number from a new random state")
   (is (numberp (random 18 (make-random-state #$1)))
-      "Check if we can copy use copied random state from reader")
+      "Can't generate a number from a new random state from reader")
   (is (= (random 18 #$1)
          (random 18 #$1)
          (random 18 #$1))
-      "Check if the same seed produces the same result")
+      "Same seed produces different results")
   (is (let ((*print-readably* t)
             (rs (make-random-state #$1)))
         (equalp
          (format nil "~S" #$1)
          (format nil "~S" rs)))
-      "Check if we get the same table from the same seed")
+      "The same seed gives different random states")
   (is (let* ((*print-readably* t)
              (rs (make-random-state #$1))
              (rs-read (read-from-string
@@ -154,7 +151,7 @@
         (equalp
          (format nil "~S" rs-read)
          (format nil "~S" rs)))
-      "Check if we can read back the random state"))
+      "Can't read back a random state"))
 
 
 ;;; Date: 2016-08-04 (jd)
