@@ -27,10 +27,15 @@ see for example COPY-FILE below.")
     ("kafka" (:utf8 :latin1 :cp1252))
     ("hebrew" (:utf8 :latin8))
     ("russian" (:utf8 :koi8r))
-    ("tilton" (:utf8 :ascii))
-    )
+    ("tilton" (:utf8 :ascii)))
   "A list of test files where each entry consists of the name
 prefix and a list of encodings.")
+
+(defparameter *eformat-tests-directory*
+  (merge-pathnames "eformat-tests/" *aux-dir*))
+
+(defparameter *eformat-sandbox-directory*
+  (merge-pathnames "eformat-tests/" *tmp-dir*))
 
 (defun create-file-variants (file-name symbol)
   "For a name suffix FILE-NAME and a symbol SYMBOL denoting an
@@ -132,10 +137,10 @@ about each individual comparison if VERBOSE is true."
                                         :external-format external-format-out)
                      (funcall *copy-function* in out))))
        (one-comparison (path-in external-format-in path-out external-format-out)
-         (loop with full-path-in = (merge-pathnames path-in "features/eformat-tests/")
+         (loop with full-path-in = (merge-pathnames path-in *eformat-tests-directory*)
             and full-path-out = (ensure-directories-exist
-                                 (merge-pathnames path-out "sandbox/eformat-tmp/"))
-            and full-path-orig = (merge-pathnames path-out "features/eformat-tests/")
+                                 (merge-pathnames path-out *eformat-sandbox-directory*))
+            and full-path-orig = (merge-pathnames path-out *eformat-tests-directory*)
             for direction-out in '(:output :io)
             nconc (loop for direction-in in '(:input :io)
                        for args = (list path-in external-format-in direction-in

@@ -1,3 +1,5 @@
+(in-package #:common-lisp-user)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require :asdf))
 

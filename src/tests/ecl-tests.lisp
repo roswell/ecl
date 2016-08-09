@@ -6,28 +6,34 @@
 (in-package #:cl-test)
 
 
-(suite 'ecl '(regressions features))
+;;; Set pathnames
+(defparameter *aux-dir*
+  (merge-pathnames
+   "auxiliary/"
+   (make-pathname :directory (pathname-directory
+                              (asdf:system-definition-pathname 'ecl-tests)))))
 
-;;;; Declare top-level suite
-(suite 'regressions '(regressions/ansi+
-                      regressions/mixed
-                      regressions/cmp
-                      regressions/emb
-                      regressions/ffi
-                      regressions/mop
-                      regressions/mp))
-
-(suite 'features '(features/eformat))
+(defparameter *tmp-dir*
+  (merge-pathnames
+   "temporary/"
+   (make-pathname :directory (pathname-directory *default-pathname-defaults*))))
 
 
-#+asdf
-(setf *default-pathname-defaults*
-      #+asdf
-      (asdf:system-source-directory 'ecl-tests)
-      #-asdf
-      *load-pathname*)
+;;;; Declare the suites
+(suite 'ecl-tests
+       '(regressions features))
 
-(ext:chdir *default-pathname-defaults*)
+(suite 'regressions
+       '(regressions/ansi+
+         regressions/mixed
+         regressions/cmp
+         regressions/emb
+         regressions/ffi
+         regressions/mop
+         regressions/mp))
+
+(suite 'features
+       '(features/eformat))
 
 
 ;;; Some syntactic sugar for 2am
