@@ -4,35 +4,33 @@
 ;; Author: Daniel Kochmański
 ;; Contains: Multiprocessing stress tests
 
+(defparameter *runs* 1000)
+
 
 ;; Submitted by James M. Lawrence
 ;; 
 ;; Notes: couldn't reproduce on 64-bit machine, but author uses 32-bit
 ;; This test uses infinite loop, this should be fixed.
-(defun test (message-count worker-count)
-  (let ((to-workers (mp:make-semaphore))
+(1am-ecl:test semaphore.wait/signal
+  (let ((message-count 10000)
+        (worker-count 64)
+        (to-workers (mp:make-semaphore))
         (from-workers (mp:make-semaphore)))
     (loop repeat worker-count
-          do (mp:process-run-function
-              "test"
-              (lambda ()
-                (loop
-                   (mp:wait-on-semaphore to-workers)
-                   (mp:signal-semaphore from-workers)))))
-    (loop
-       (loop repeat message-count
-             do (mp:signal-semaphore to-workers))
-       (loop repeat message-count
-             do (mp:wait-on-semaphore from-workers))
-       (assert (zerop (mp:semaphore-count to-workers)))
-       (assert (zerop (mp:semaphore-count from-workers)))
-       (format t ".")
-       (finish-output))))
-
-(defun run ()
-  (test 10000 64))
-
-(run)
+       do (mp:process-run-function
+           "test"
+           (lambda ()
+             (loop
+                (mp:wait-on-semaphore to-workers)
+                (mp:signal-semaphore from-workers)))))
+    (dotimes (i *runs*)
+      (loop repeat message-count
+         do (mp:signal-semaphore to-workers))
+      (loop repeat message-count
+         do (mp:wait-on-semaphore from-workers))
+      (1am-ecl:is (zerop (mp:semaphore-count to-workers)))
+      (1am-ecl:is (zerop (mp:semaphore-count from-workers)))
+      (finish-output))))
 
 
 ;; Submitted by James M. Lawrence
@@ -58,8 +56,10 @@
                  (mp:condition-variable-wait
                   (sema-cvar sema) (sema-lock sema)))))))
 
-(defun test (message-count worker-count)
-  (let ((to-workers (make-sema))
+(1am-ecl:test semaphore/condition-wait
+  (let ((message-count 10000)
+        (worker-count 64)
+        (to-workers (make-sema))
         (from-workers (make-sema)))
     (loop repeat worker-count
           do (mp:process-run-function
@@ -68,20 +68,14 @@
                 (loop
                    (dec-sema to-workers)
                    (inc-sema from-workers)))))
-    (loop
-       (loop repeat message-count
-             do (inc-sema to-workers))
-       (loop repeat message-count
-             do (dec-sema from-workers))
-       (assert (zerop (sema-count to-workers)))
-       (assert (zerop (sema-count from-workers)))
-       (format t ".")
-       (finish-output))))
-
-(defun run ()
-  (test 10000 64))
-
-(run)
+    (dotimes (i *runs*)
+      (loop repeat message-count
+         do (inc-sema to-workers))
+      (loop repeat message-count
+         do (dec-sema from-workers))
+      (1am-ecl:is (zerop (sema-count to-workers)))
+      (1am-ecl:is (zerop (sema-count from-workers)))
+      (finish-output))))
 
 
 ;; Submitted by James M. Lawrence
@@ -137,12 +131,13 @@
   (loop (let ((to-workers (make-queue))
               (from-workers (make-queue)))
           (loop repeat worker-count
-                do (mp:process-run-function
-                    "test"
-                    (lambda ()
-                      (loop (let ((message (pop-queue to-workers)))
-                              (push-queue message from-workers)
-                              (unless message (return)))))))
+             do (mp:process-run-function
+                 "test"
+                 (lambda ()
+                   (dotimes (i *runs*)
+                     (let ((message (pop-queue to-workers)))
+                       (push-queue message from-workers)
+                       (unless message (return)))))))
           (loop repeat message-count do (push-queue t to-workers))
           (loop repeat message-count do (pop-queue from-workers))
           (loop repeat worker-count do (push-queue nil to-workers))
@@ -150,8 +145,8 @@
           (format t ".")
           (finish-output))))
 
-(qtest 0 64)             ; => segfault
-(qtest 1 64)             ; => hang
-(qtest 10000 64)         ; => error "Attempted to recursively lock..."
+(1am-ecl:test qtest.1 (qtest 0 64))     ; => segfault
+(1am-ecl:test qtest.2 (qtest 1 64))     ; => hang
+(1am-ecl:test qtest.3 (qtest 10000 64)) ; => error "Attempted to recursively lock..."
 
 

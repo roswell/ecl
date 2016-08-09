@@ -5,7 +5,7 @@
   :author "Daniel Kochmański <daniel@turtleware.eu>"
   :license "LGPL-2.1+"
   :serial t
-  :components ((:file "2am")
+  :components ((:file "2am")            ; continuous integration
                (:file "ecl-tests")
                (:file "universe")
                (:module regressions
@@ -21,10 +21,16 @@
                (:module features
                         :default-component-class asdf:cl-source-file.lsp
                         :components
-                        ((:file "external-formats"    :if-feature :unicode)))
-               (:module stress
-                        :default-component-class asdf:cl-source-file.lsp
-                        :components ())))
+                        ((:file "external-formats"    :if-feature :unicode)))))
+
+(asdf:defsystem #:ecl-tests/stress
+  :serial t
+  :components
+  ((:file "1am")            ; for stress tests
+   (:module stress
+            :default-component-class asdf:cl-source-file.lsp
+            :components
+            ((:file "multiprocessing" :if-feature :threads)))))
 
 ;;; General tests
 (asdf:defsystem #:ecl-tests/ansi)
