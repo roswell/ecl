@@ -9,7 +9,7 @@ all: check
 
 check: config.lsp
 	$(ECL) -norc -load config.lsp \
-                -eval '(ecl-tests::run-regressions-tests)' \
+                -eval '(ecl-tests::run-tests)' \
                 -eval '(ext:quit)' \
                 2>&1 | tee check.log
 
