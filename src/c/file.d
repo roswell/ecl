@@ -4593,7 +4593,7 @@ ecl_unread_char(ecl_character c, cl_object strm)
   stream_dispatch_table(strm)->unread_char(strm, c);
 }
 
-int
+bool
 ecl_listen_stream(cl_object strm)
 {
   return stream_dispatch_table(strm)->listen(strm);
@@ -4665,7 +4665,7 @@ ecl_stream_element_type(cl_object strm)
   return stream_dispatch_table(strm)->element_type(strm);
 }
 
-int
+bool
 ecl_interactive_stream_p(cl_object strm)
 {
   return stream_dispatch_table(strm)->interactive_p(strm);
