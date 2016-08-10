@@ -2207,6 +2207,8 @@ cl_symbols[] = {
 {EXT_ "HASH-TABLE-CONTENT","si_hash_table_content"},
 {EXT_ "HASH-TABLE-FILL","si_hash_table_fill"},
 
+{EXT_ "RANDOM-STATE-ARRAY","si_random_state_array"},
+
 {SYS_ "REPORT-FUNCTION",NULL},
 
 {SYS_ "DO-DEFSETF","ECL_NAME(si_do_defsetf)"},

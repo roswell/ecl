@@ -338,3 +338,9 @@ cl_random_state_p(cl_object x)
 {
   @(return (ECL_RANDOM_STATE_P(x) ? ECL_T : ECL_NIL));
 }
+
+cl_object
+si_random_state_array(cl_object rs) {
+  ecl_check_cl_type(@'ext::random-state-array', rs, t_random);
+  return rs->random.value;
+}

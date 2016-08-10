@@ -1237,7 +1237,7 @@ extern ECL_API cl_object cl_random_state_p(cl_object x);
 extern ECL_API cl_object cl_random _ECL_ARGS((cl_narg narg, cl_object x, ...));
 extern ECL_API cl_object cl_make_random_state _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object ecl_make_random_state(cl_object rs);
-
+extern ECL_API cl_object si_random_state_array(cl_object rs);
 
 /* num_sfun.c */
 
