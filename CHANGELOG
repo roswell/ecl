@@ -30,12 +30,14 @@
 * Pending changes since 16.1.2
 ** API changes
 - make-random-state: fix problem with simple-vectors
-
 The correct initialization types for =make-random-state= are:
-=(OR RANDOM-STATE FIXNUM (MEMBER T NIL))=
+=(OR RANDOM-STATE FIXNUM (MEMBER T NIL))=.
 
 Initializing a random state with an appropriate array (element type and
-arity) is now possible only with the #$ reader macro.
+arity dependent on platform) is also possible.
+
+- ext:random-state-array: new extension for random-states. Usage:
+=(ext:random-state-array random-state)=.
 
 ** Enhancements
 - Refactored ECL internal tests framework
@@ -82,6 +84,8 @@ exceeded 128 characters limit.
 Until now #$ reader macro accepted simple vectors as an argument, what lead
 to bugs if vector didn't match specific requirements like the element type
 or the arity. Now we sanitize this.
+
+- make-load-form: provide implementation for random-state objects
 
 - thread fix on msvc: on windows importing thread was closing the thread
 handler so the thread wakeup wasn't working because the handler is not more valid.
