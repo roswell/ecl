@@ -136,6 +136,9 @@ printer and we should rather use MAKE-LOAD-FORM."
              (values
               `(ext:hash-table-fill ,make-form ',content)
               nil))))
+      (random-state
+       (let ((state (ext:random-state-array object)))
+         (values `(make-random-state ,state) nil)))
       (t
        (no-make-load-form object)))))
 
