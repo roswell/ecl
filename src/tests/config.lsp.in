@@ -3,6 +3,7 @@
 
 ;;;
 ;;; (c) 2011, Juan Jose Garcia-Ripoll
+;;; (c) 2016, Daniel Kochmański
 ;;;
 ;;; Set up the test environment.
 ;;;
@@ -23,37 +24,25 @@
 (defvar *test-sources* (merge-pathnames "tests/" *ecl-sources*))
 
 (defvar *here* (merge-pathnames "@builddir@/"))
-
 (defvar *cache* (merge-pathnames "./cache/" *here*))
 
-(defvar *test-image* (or (ext:getenv "TEST_IMAGE")
-                         #+windows
-                         (namestring (truename #+windows "sys:ecl.exe"))
-                         #-windows
-                         "@prefix@/bin/ecl"))
+(defvar *test-image*
+  (or (ext:getenv "TEST_IMAGE")
+      #+windows (namestring (truename "sys:ecl.exe"))
+      #-windows "@prefix@/bin/ecl"))
 
 (defvar *test-image-args*
-  (cond ((search "ecl" *test-image*)
-         '("-norc" "-eval" "(print (ext:getenv \"ECLDIR\"))"
-           ;#+windows "-eval" #+windows "(require :cmp)"
-           ))
-        ((search "sbcl" *test-image*)
-         '("--no-userinit" "--no-sysinit"))
-        (t
-         '())))
+  `("-norc"
+    "-eval" "(print (ext:getenv \"ECLDIR\"))"
+    "-eval" "(ignore-errors (require :cmp))"
+    "-load" ,(namestring (merge-pathnames "doit.lsp" *test-sources*))
+    "-eval" "(quit)"))
 
 #+ecl
 (ext:setenv "ECLDIR" (namestring (truename "SYS:")))
 
 (defvar *test-name* (or (ext:getenv "TEST_NAME") "ecl"))
-(defvar *output-directory* *here*)
-(defvar *regressions-sources* (merge-pathnames "regressions/" *test-sources*))
-(defvar *regressions-sandbox* (merge-pathnames "regressions/" *here*))
-(defvar *wild-inferiors* (make-pathname :name :wild
-                                        :type :wild
-                                        :version :wild
-                                        :directory '(:relative :wild-inferiors)))
-(defvar *cleanup-extensions* '("fasl" "fasb" "c" "h" "obj" "o" "a" "lib" "dll" "dylib" "data"))
+(defvar *sandbox* (merge-pathnames "temporary/" *here*))
 
 (defun lisp-system-directory ()
   (loop with root = (si::get-library-pathname)
@@ -68,19 +57,9 @@
                   (merge-pathnames "**/*.*"
                                    (lisp-system-directory)))))
 
-(require :cmp)
-
 ;;;
 ;;; PREPARATION OF DIRECTORIES AND FILES
 ;;;
-
-(defun setup-asdf ()
-  (require :asdf)
-  (ensure-directories-exist *cache*)
-  (setf (symbol-value (read-from-string "asdf::*user-cache*"))
-        (list *cache* :implementation)))
-                      
-
 (defun delete-everything (path)
   ;; Recursively run through children
   (labels ((recursive-deletion (path)
@@ -100,43 +79,20 @@
     (and (probe-file path)
          (recursive-deletion path))))
 
-(defun copy-directory (orig dest)
-  (setf orig (truename orig))
-  (print dest)
-  (loop for f in (directory (merge-pathnames *wild-inferiors* orig))
-     for f2 = (enough-namestring f orig)
-     for f3 = (merge-pathnames f2 dest)
-     unless (and (probe-file f3)
-                 (>= (file-write-date f3)
-                     (file-write-date f2)))
-     do (ensure-directories-exist f3)
-     do (ext:copy-file f f3)))
-
-(defun ensure-regressions ()
-  (unless (probe-file *regressions-sandbox*)
-    (copy-directory *regressions-sources* *regressions-sandbox*)))
-
-
-(defun cleanup-directory (path)
-  (loop for i in (directory (merge-pathnames *wild-inferiors*
-                                             path))
-     when (member (pathname-type i) *cleanup-extensions* :test #'string-equal)
-     do (delete-file i)))
-
 ;;;
 ;;; RUNNING TESTS
 ;;;
 
-(defun run-regressions-tests ()
-  (ensure-regressions)
+(defun run-tests ()
   ;; Cleanup stray files
-  (cleanup-directory *regressions-sandbox*)
+  (delete-everything *sandbox*)
+  (ensure-directories-exist *sandbox*)
   (unwind-protect 
        (progn
-         (ext:chdir *regressions-sandbox*)
+         (ext:chdir *sandbox*)
          (ext:run-program *test-image*
                           *test-image-args*
-                          :input (merge-pathnames "doit.lsp" *regressions-sandbox*)
+                          :input nil
                           :output t
                           :error :output))
     (ext:chdir *here*)))

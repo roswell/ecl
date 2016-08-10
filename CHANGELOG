@@ -23,7 +23,7 @@
     have a C compiler accessible to ECL, you may use
     (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
 
-  - Before issuing make check on the package package developer has to
+  - Before issuing =make check= on the package package developer has to
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
@@ -38,15 +38,19 @@ Initializing a random state with an appropriate array (element type and
 arity) is now possible only with the #$ reader macro.
 
 ** Enhancements
+- Refactored ECL internal tests framework
+Tests in =src/tests= are now asdf-loadable (with =load-source-op=) and
+divided into test suites. =make check= target runs all regression and
+feature tests which aren't supposed to fail.
+
 - Removed 15000 lines of obsolete code
 Files not included in the buildsystem but lingering in the codebase or
 options failing to build. All info is added in the new documentation in the
 section "Removed interfaces".
 
 - Improved man page and help output.
-
-Man page now contains up-to-date list of flags, as well
-as explanation of flag's behavior.
+Man page now contains up-to-date list of flags, as well as explanation of
+flag's behavior.
 
 - Indented C/C++ code to follow emacs's gnu C style
 This is a first step towards coding standards in the
