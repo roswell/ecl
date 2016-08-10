@@ -21,7 +21,19 @@
 
 ;;;; Declare the suites
 (suite 'ecl-tests
-       '(regressions features))
+       '(regressions
+         features))
+
+(suite 'make-check
+       '(features/eformat
+         regressions/ansi+
+         regressions/mixed
+         regressions/cmp
+         regressions/emb
+         regressions/ffi
+         regressions/mop
+         ;; disable regressions/mp due to fails
+         #+ (or) regressions/mp))
 
 (suite 'regressions
        '(regressions/ansi+

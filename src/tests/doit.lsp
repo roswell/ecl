@@ -9,4 +9,4 @@
   (asdf:load-asd (merge-pathnames "ecl-tests.asd" *load-pathname*)))
 
 (asdf:operate 'asdf:load-source-op 'ecl-tests)
-(2am-ecl:run 'cl-test::ecl-tests)
+(2am-ecl:run 'cl-test::make-check)

@@ -137,20 +137,20 @@
   (is (= (random 18 #$1)
          (random 18 #$1)
          (random 18 #$1))
-      "Same seed produces different results")
+      "The same seed produces different results")
   (is (let ((*print-readably* t)
             (rs (make-random-state #$1)))
         (equalp
-         (format nil "~S" #$1)
-         (format nil "~S" rs)))
+         (prin1-to-string #$1)
+         (prin1-to-string rs)))
       "The same seed gives different random states")
   (is (let* ((*print-readably* t)
              (rs (make-random-state #$1))
              (rs-read (read-from-string
-                       (format nil "~S" rs))))
+                       (prin1-to-string rs))))
         (equalp
-         (format nil "~S" rs-read)
-         (format nil "~S" rs)))
+         (prin1-to-string rs-read)
+         (prin1-to-string rs)))
       "Can't read back a random state"))
 
 
