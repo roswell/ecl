@@ -60,6 +60,7 @@
 
 @node Numbers
 @section Numbers
+@c build option --with-ieee-fp={yes|no}
 
 @c ext:{short,single,double,long}-float-{positive,negative}-infinity
 @c ext:float-nan-p
