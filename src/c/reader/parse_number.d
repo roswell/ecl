@@ -43,6 +43,7 @@ infinity(cl_index exp_char, int sign)
 {
   cl_object var;
   switch (exp_char) {
+#ifdef ECL_IEEE_FP
   case 'e': case 'E':
     return infinity(ecl_current_read_default_float_format(), sign);
   case 's':  case 'S':
@@ -52,17 +53,18 @@ infinity(cl_index exp_char, int sign)
       @'ext::single-float-positive-infinity';
       break;
   case 'l':  case 'L':
-#ifdef ECL_LONG_FLOAT
+# ifdef ECL_LONG_FLOAT
     var = (sign<0)?
       @'ext::long-float-negative-infinity' :
         @'ext::long-float-positive-infinity';
         break;
-#endif
+# endif
   case 'd':  case 'D':
     var = (sign<0)?
       @'ext::double-float-negative-infinity' :
           @'ext::double-float-positive-infinity';
           break;
+#endif /* ECL_IEEE_FP */
   default:
     return OBJNULL;
   }

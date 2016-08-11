@@ -60,6 +60,13 @@
 
 @node Numbers
 @section Numbers
+
+@c ext:{short,single,double,long}-float-{positive,negative}-infinity
+@c ext:float-nan-p
+@c ext:float-infinity-p
+@c ext:float-nan-string
+@c ext:float-infinity-string
+
 @c make-random-state fixnum|array
 @c ext:random-state-array
 @c #$ macro

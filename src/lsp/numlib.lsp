@@ -73,7 +73,7 @@
         (not (= (float 1 E) (- (float 1 E) E)))")
     ))
 
-#+IEEE-FLOATING-POINT
+#+ieee-floating-point
 (locally
  (declare (notinline -))
  (let* ((bits (si::trap-fpe 'last nil)))
