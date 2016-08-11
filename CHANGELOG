@@ -40,6 +40,9 @@ arity dependent on platform) is also possible.
 =(ext:random-state-array random-state)=.
 
 ** Enhancements
+- Initial port for the Haiku platform
+The port is done by Kacper Kasper's work, one of Haiku developers.
+
 - Refactored ECL internal tests framework
 Tests in =src/tests= are now asdf-loadable (with =load-source-op=) and
 divided into test suites. =make check= target runs all regression and
@@ -63,6 +66,8 @@ appropraite documentation section (new-doc).
 Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
 
 ** Issues fixed
+- ECL builds now succesfully with `--with-ieee-fp=no' option
+
 - ext:file-stream-fd
 Doesn't cause an internal-error if fed with not a file-stream (signals a
 SIMPLE-TYPE-ERROR condtition).
