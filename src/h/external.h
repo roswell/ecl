@@ -1117,6 +1117,10 @@ extern ECL_API double ecl_to_double(cl_object x);
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_long_float(long double f);
 #endif
+#ifdef ECL_IEEE_FP
+extern cl_object si_nan();
+extern cl_object si_infinity();
+#endif /* ECL_IEEE_FP */
 
 /* num_co.c */
 
