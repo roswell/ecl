@@ -208,13 +208,24 @@ printer and we should rather use MAKE-LOAD-FORM."
   m)
 
 (defun ext::float-nan-string (x)
-  (when *print-readably*
-    (error 'print-not-readable :object x))
-   (cdr (assoc (type-of x)
-               '((single-float . "#<single-float quiet NaN>")
-                 (double-float . "#<double-float quiet NaN>")
-                 (long-float . "#<long-float quiet NaN>")
-                 (short-float . "#<short-float quiet NaN>")))))
+  (unless (ext:float-nan-p x)
+    (signal 'type-error :datum x :expected-type 'float-nan))
+
+  (cond
+    ((null *print-readably*)
+     (etypecase x
+       (single-float "#<single-float quiet NaN>")
+       (double-float "#<double-float quiet NaN>")
+       (long-float   "#<long-float quiet NaN>")
+       (short-float  "#<short-float quiet NaN>")))
+    #+ieee-floating-point
+    (*read-eval*
+     (etypecase x
+       (single-float "#.(coerce (si:nan) 'single-float)")
+       (double-float "#.(coerce (si:nan) 'double-float)")
+       (long-float   "#.(coerce (si:nan) 'long-float)")
+       (short-float  "#.(coerce (si:nan) 'short-float)")))
+    (t (error 'print-not-readable :object x))))
 
 (defun ext::float-infinity-string (x)
   (unless (ext:float-infinity-p x)
