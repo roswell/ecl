@@ -21,7 +21,8 @@
                (:module features
                         :default-component-class asdf:cl-source-file.lsp
                         :components
-                        ((:file "external-formats"    :if-feature :unicode)))))
+                        ((:file "external-formats" :if-feature :unicode)
+                         (:file "ieee-fp"          :if-feature :ieee-floating-point)))))
 
 (asdf:defsystem #:ecl-tests/stress
   :serial t
