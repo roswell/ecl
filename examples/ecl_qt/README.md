@@ -17,8 +17,9 @@ that package in advance using `(ql:quickload :lparallel)`.
 
 ## Build CL Library and FASB
 
-Run `make` in current directory and you get two files, if
-successful. `lisp-envi.a` and `hello-lisp-system--all-systems.fasb`.
+Run `make` in current directory and you get two files in the directory
+`qt/` (if successful). `lisp-envi.a` and
+`hello-lisp-system--all-systems.fasb`.
 
 ## Configure and build your Qt Project
 

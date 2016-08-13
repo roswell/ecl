@@ -2,7 +2,7 @@
 #include <QApplication>
 #include "cl_bridge_utils.hpp"
 
-string  CL_MAIN_FASB = "\"../hello-lisp-system--all-systems.fasb\"";
+string  CL_MAIN_FASB = "\"hello-lisp-system--all-systems.fasb\"";
 string  CL_MAIN_PACKAGE_NAME = "hello-lisp";
 
 /* Initialization.

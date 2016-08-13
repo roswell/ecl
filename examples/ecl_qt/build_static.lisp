@@ -3,6 +3,6 @@
 
 (asdf:make-build :lisp-envi
                  :type :static-library
-                 :move-here "./")
+                 :move-here "qt/")
 (quit)
 

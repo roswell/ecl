@@ -29,7 +29,7 @@ QMAKE_CFLAGS += `ecl-config --cflags`
 QMAKE_LFLAGS += `ecl-config --ldflags` -lecl
 
 # Lisp library written by a user
-LIBS += $$_PRO_FILE_PWD_/../lisp-envi.a
+LIBS += $$_PRO_FILE_PWD_/lisp-envi.a
 
 
 RESOURCES += \

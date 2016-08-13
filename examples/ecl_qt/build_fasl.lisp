@@ -4,5 +4,5 @@
 (asdf:make-build :hello-lisp-system
                  :type :fasl
                  :monolithic t
-                 :move-here "./")
+                 :move-here "qt/")
 (quit)
