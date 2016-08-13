@@ -1,4 +1,4 @@
-all:lisp-envi.a hello-lisp-system--all-systems.fasb
+all: qt/lisp-envi.a qt/hello-lisp-system--all-systems.fasb
 
 #lisp environment.
 qt/lisp-envi.a: lisp-envi.asd lisp-envi.lisp build_static.lisp
