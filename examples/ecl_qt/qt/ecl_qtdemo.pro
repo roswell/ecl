@@ -24,6 +24,7 @@ FORMS    += hybrid_main.ui
 
 # The include path that contains ecl/ecl.h
 QMAKE_CFLAGS += `ecl-config --cflags`
+QMAKE_CXXFLAGS += `ecl-config --cflags`
 
 # The ECL shared library directory.
 QMAKE_LFLAGS += `ecl-config --ldflags` -lecl
