@@ -41,9 +41,11 @@ working with make).
 After you go through the steps above, go for the executable file and
 try that demo.
 
-Notice: For OSX users, you should manually move the .fasb file into the 
-directory where your executable file is in. So run the command:
-`mv hello-lisp-system--all-systems.fasb ecl_qtdemo.app/Contents/MacOS/`
+Notice: For OSX users, you should manually move the .fasb file into
+the directory where your executable file is in. So run the command:
+```
+mv hello-lisp-system--all-systems.fasb ecl_qtdemo.app/Contents/MacOS/
+```
 
 Happy hacking with ECL!
 
