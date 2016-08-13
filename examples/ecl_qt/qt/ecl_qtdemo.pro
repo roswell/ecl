@@ -22,11 +22,13 @@ HEADERS  += hybrid_main.h \
 
 FORMS    += hybrid_main.ui
 
-#The include path that contains ecl/ecl.h
-INCLUDEPATH += /usr/local/include
-#The ECL shared library directory.
-LIBS  += /usr/local/lib/libecl.dylib
+# The include path that contains ecl/ecl.h
+QMAKE_CFLAGS += `ecl-config --cflags`
 
+# The ECL shared library directory.
+QMAKE_LFLAGS += `ecl-config --ldflags` -lecl
+
+# Lisp library written by a user
 LIBS += $$_PRO_FILE_PWD_/../lisp-envi.a
 
 
