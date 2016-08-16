@@ -27,11 +27,11 @@ QMAKE_CFLAGS += `ecl-config --cflags`
 QMAKE_CXXFLAGS += `ecl-config --cflags`
 
 # The ECL shared library directory.
-QMAKE_LFLAGS += `ecl-config --ldflags` -lecl
+QMAKE_LFLAGS += `ecl-config --ldflags` 
 
 # Lisp library written by a user
 LIBS += $$_PRO_FILE_PWD_/lisp-envi.a
-
+LIBS += -lecl
 
 RESOURCES += \
     resource.qrc
