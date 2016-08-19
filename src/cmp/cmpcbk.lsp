@@ -43,7 +43,7 @@
          (si::put-sysprop ',name :callback
           (list
           (ffi:c-inline () () :object
-           ,(format nil "ecl_make_foreign_data(@':pointer-void,0,~a)" c-name)
+           ,(format nil "ecl_make_foreign_data(@':pointer-void,0,(void*)~a)" c-name)
            :one-liner t)))))
       )))
 
@@ -126,7 +126,7 @@
               (wt-nl "ecl_stack_frame_push(frame,ecl_foreign_data_ref_elt(&var"
                      n "," ct "));")
               (wt-nl "ecl_stack_frame_push(frame,ecl_make_foreign_data(&var"
-                     n "," ct "," (ffi:size-of-foreign-type type) "));")))
+                     n "," ct ", (void*)" (ffi:size-of-foreign-type type) "));")))
     (wt-nl "aux = ecl_apply_from_stack_frame(frame,"
            "ecl_fdefinition(" c-name-constant "));")
     (wt-nl "ecl_stack_frame_close(frame);")

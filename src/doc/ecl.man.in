@@ -62,8 +62,8 @@ Do not load configuration files at startup.
 Prints the current version of ECL, without running the ECL.
 .TP
 .BI \-debug
-Turned on by default, this enables the debugging in the setup phase, so that you can debug your
-\.rc files.
+Turned on by default, this enables the debugging in the setup phase,
+so that you can debug your files.
 .TP
 .BI \-nodebug
 Run without debugging setup phase, meaning that errors prevent ECL from starting up.
@@ -176,9 +176,11 @@ or standalone executable programs.
 
 .SH AUTHORS
 
-The original version was developed by Giuseppe Attardi starting from the Kyoto Common Lisp implementation
-by Taiichi Yuasa, Masami Hagiya and Juan Jose Garcia Ripoll.
-The current maintainer of ECL is Daniel Kochmański, who can be reached at the ECL mailing list.
+The original version was developed by Giuseppe Attardi starting from
+the Kyoto Common Lisp implementation by Taiichi Yuasa, Masami
+Hagiya. Further development was lead by Juan Jose Garcia Ripoll.  The
+current maintainer of ECL is Daniel Kochmański, who can be reached at
+the ECL mailing list.
 
 .SH FILES
 .TP
