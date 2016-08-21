@@ -152,31 +152,36 @@ rt.lisp:
 build-stamp: config.status
 	echo "#" `uname -a` > $@
 	head -8 config.log | tail -6 >> $@
+
 install:
-	# Here we would use the option -s but the install program in sourceforge-solaris
-	# is broken.
+        # Here we would use the option -s but the install program in
+        # sourceforge-solaris is broken.
 	$(mkinstalldirs) $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) \
-	  $(DESTDIR)$(ecldir) $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/ecl
+	  $(DESTDIR)$(ecldir) $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)ecl
+        # Install ecl bins into something like: /usr/local/bin/ Note
+        # all directories should have trailing slash.  Don't add
+        # an aditional one or you'll get something like:
+        # /usr/local/bin//ecl.
 	for i in $(TARGETS); do \
 	  $(INSTALL_PROGRAM) $$i $(DESTDIR)$(bindir); \
 	done
 	if [ -d encodings ]; then \
-	  $(mkinstalldirs) $(DESTDIR)$(ecldir)/encodings; \
+	  $(mkinstalldirs) $(DESTDIR)$(ecldir)encodings; \
 	  for i in ./encodings/*; do \
-	    $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir)/encodings; \
+	    $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir)encodings; \
 	  done \
 	fi
 	sed '/-CUT-/,$$d' ./ecl/config.h > ./ecl/config-install.h
-	$(mkinstalldirs) $(DESTDIR)$(includedir)/ecl
+	$(mkinstalldirs) $(DESTDIR)$(includedir)ecl
 	for i in `(cd ecl && find . -type d)`; do \
-	  k="$(DESTDIR)$(includedir)/ecl/$$i"; \
+	  k="$(DESTDIR)$(includedir)ecl/$$i"; \
 	  test -d "$$k" || $(mkinstalldirs) $$k; \
 	done
 	for i in `(cd ecl && find . -name '*.h')`; do echo $$i; \
-	  $(INSTALL_DATA) ecl/$$i $(DESTDIR)$(includedir)/ecl/$$i; \
+	  $(INSTALL_DATA) ecl/$$i $(DESTDIR)$(includedir)ecl/$$i; \
 	done
-	$(RM) -f $(DESTDIR)$(includedir)/ecl/config.h
-	mv $(DESTDIR)$(includedir)/ecl/config-install.h $(DESTDIR)$(includedir)/ecl/config.h
+	$(RM) -f $(DESTDIR)$(includedir)ecl/config.h
+	mv $(DESTDIR)$(includedir)ecl/config-install.h $(DESTDIR)$(includedir)ecl/config.h
 	$(INSTALL_SCRIPT) bin/ecl-config $(DESTDIR)$(bindir)
 	for i in build-stamp help.doc TAGS ; do \
 	  $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir); \
@@ -199,13 +204,13 @@ install:
 	$(INSTALL_PROGRAM) c/dpp$(EXE) $(DESTDIR)$(ecldir)
 	$(INSTALL_PROGRAM) ecl_min$(EXE) $(DESTDIR)$(ecldir)
 	for i in `cat modules`; do \
-	  case $$i in \
-	    *.fas) $(INSTALL_PROGRAM) $$i $(DESTDIR)$(ecldir);; \
-	    *) $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir);; \
-	  esac \
+	   case $$i in \
+	   *.fas) $(INSTALL_PROGRAM) $$i $(DESTDIR)$(ecldir);; \
+	   *) $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir);; \
+	   esac \
 	done
 	for i in LICENSE LGPL; do \
-	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(ecldir); \
+	   $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(ecldir); \
 	done
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
 	$(INSTALL_DATA) doc/ecl.man $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
@@ -215,14 +220,29 @@ flatinstall: build-stamp
 	$(MAKE) DESTDIR=$(DESTDIR) bindir=$(prefix) libdir=$(prefix) \
 	  includedir=$(prefix) ecldir=$(prefix) install
 
+# Review install: target  for items you have to uninstall.
 uninstall:
-	for i in $(TARGETS) ecl-config; do $(RM) $(DESTDIR)$(bindir)/$$i; done
-	$(RM) -r $(DESTDIR)$(includedir)/ecl $(DESTDIR)$(ecldir)
-	for i in $(LSP_LIBRARIES) $(LIBRARIES) LICENSE LGPL; do \
-	  $(RM) $(DESTDIR)$(libdir)/$$i || : ; \
-	done
-	$(RM) -f $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
-	$(RM) -f $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
+        # Delete files individually from bin folder, e.g.
+        # rm /usr/local/bin/ecl
+	for i in $(TARGETS); do \
+	  TARGET_STRIP=$$(basename $$i) && \
+	  echo $(DESTDIR)$(bindir)$$TARGET_STRIP && \
+	  $(RM) $(DESTDIR)$(bindir)$$TARGET_STRIP; \
+        done
+        # Delete the ecldir if that part of the destination is non-null.
+	if [ -n "$(ecldir)" ]; then \
+	  $(RM_RF) $(DESTDIR)$(ecldir); \
+	fi
+        # Delete ecl, e.g. rm -f /usr/local/bin/ecl
+	$(RM) $(DESTDIR)$(includedir)ecl
+        # Delete ecl-config, e.g. rm -f /usr/local/bin/ecl-config
+	$(RM) $(DESTDIR)$(includedir)ecl-config
+        # Delete libecl.so for all versions, e.g. rm -f  /usr/local/lib/libecl.so*
+	$(RM) $(DESTDIR)$(libdir)libecl.so*
+        # Delete the ecl man page, e.g. rm -f  /usr/local/man1/ecl.1
+	$(RM) $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
+        # Delete the ecl man page, e.g. rm -f  /usr/local/man1/ecl-config.1
+	$(RM) $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
 
 clean: mostlyclean
 	$(RM) -r *
