@@ -62,3 +62,8 @@ regressions/eformat-tests/*.txt
 /src/doc/new-doc/new-doc.fts
 /src/doc/new-doc/new-doc.cf
 /src/doc/new-doc/new-doc.cfs
+/examples/ecl_qt/qt/ecl_qtdemo
+/examples/ecl_qt/hello-lisp-system--all-systems.fasb
+/examples/ecl_qt/lisp-envi.a
+/examples/ecl_qt/qt/.qmake.stash
+/examples/ecl_qt/qt/Makefile

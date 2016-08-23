@@ -23,30 +23,39 @@
     have a C compiler accessible to ECL, you may use
     (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
 
-  - Before issuing make check on the package package developer has to
+  - Before issuing =make check= on the package package developer has to
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
 * Pending changes since 16.1.2
 ** API changes
 - make-random-state: fix problem with simple-vectors
-
 The correct initialization types for =make-random-state= are:
-=(OR RANDOM-STATE FIXNUM (MEMBER T NIL))=
+=(OR RANDOM-STATE FIXNUM (MEMBER T NIL))=.
 
 Initializing a random state with an appropriate array (element type and
-arity) is now possible only with the #$ reader macro.
+arity dependent on platform) is also possible.
+
+- ext:random-state-array: new extension for random-states. Usage:
+=(ext:random-state-array random-state)=.
 
 ** Enhancements
+- Initial port for the Haiku platform
+The port is done by Kacper Kasper's work, one of Haiku developers.
+
+- Refactored ECL internal tests framework
+Tests in =src/tests= are now asdf-loadable (with =load-source-op=) and
+divided into test suites. =make check= target runs all regression and
+feature tests which aren't supposed to fail.
+
 - Removed 15000 lines of obsolete code
 Files not included in the buildsystem but lingering in the codebase or
 options failing to build. All info is added in the new documentation in the
 section "Removed interfaces".
 
 - Improved man page and help output.
-
-Man page now contains up-to-date list of flags, as well
-as explanation of flag's behavior.
+Man page now contains up-to-date list of flags, as well as explanation of
+flag's behavior.
 
 - Indented C/C++ code to follow emacs's gnu C style
 This is a first step towards coding standards in the
@@ -57,6 +66,8 @@ appropraite documentation section (new-doc).
 Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
 
 ** Issues fixed
+- ECL builds now succesfully with `--with-ieee-fp=no' option
+
 - ext:file-stream-fd
 Doesn't cause an internal-error if fed with not a file-stream (signals a
 SIMPLE-TYPE-ERROR condtition).
@@ -78,6 +89,8 @@ exceeded 128 characters limit.
 Until now #$ reader macro accepted simple vectors as an argument, what lead
 to bugs if vector didn't match specific requirements like the element type
 or the arity. Now we sanitize this.
+
+- make-load-form: provide implementation for random-state objects
 
 - thread fix on msvc: on windows importing thread was closing the thread
 handler so the thread wakeup wasn't working because the handler is not more valid.

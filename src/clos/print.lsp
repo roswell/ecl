@@ -136,6 +136,9 @@ printer and we should rather use MAKE-LOAD-FORM."
              (values
               `(ext:hash-table-fill ,make-form ',content)
               nil))))
+      (random-state
+       (let ((state (ext:random-state-array object)))
+         (values `(make-random-state ,state) nil)))
       (t
        (no-make-load-form object)))))
 
@@ -150,7 +153,7 @@ printer and we should rather use MAKE-LOAD-FORM."
 
 (defun no-make-load-form (object)
   (declare (si::c-local))
-  (error "No adequate specialization of MAKE-LOAD-FORM for an object of type"
+  (error "No adequate specialization of MAKE-LOAD-FORM for an object type ~A"
          (type-of object)))
 
 (defmethod make-load-form ((class class) &optional environment)
@@ -205,38 +208,52 @@ printer and we should rather use MAKE-LOAD-FORM."
   m)
 
 (defun ext::float-nan-string (x)
-  (when *print-readably*
-    (error 'print-not-readable :object x))
-   (cdr (assoc (type-of x)
-               '((single-float . "#<single-float quiet NaN>")
-                 (double-float . "#<double-float quiet NaN>")
-                 (long-float . "#<long-float quiet NaN>")
-                 (short-float . "#<short-float quiet NaN>")))))
+  (unless (ext:float-nan-p x)
+    (signal 'type-error :datum x :expected-type 'float-nan))
+
+  (cond
+    ((null *print-readably*)
+     (etypecase x
+       (single-float "#<single-float quiet NaN>")
+       (double-float "#<double-float quiet NaN>")
+       (long-float   "#<long-float quiet NaN>")
+       (short-float  "#<short-float quiet NaN>")))
+    #+ieee-floating-point
+    (*read-eval*
+     (etypecase x
+       (single-float "#.(coerce (si:nan) 'single-float)")
+       (double-float "#.(coerce (si:nan) 'double-float)")
+       (long-float   "#.(coerce (si:nan) 'long-float)")
+       (short-float  "#.(coerce (si:nan) 'short-float)")))
+    (t (error 'print-not-readable :object x))))
 
 (defun ext::float-infinity-string (x)
-  (when (and *print-readably* (null *read-eval*))
-    (error 'print-not-readable :object x))
-  (let* ((negative-infinities '((single-float .
-                                 "#.ext::single-float-negative-infinity")
-                                (double-float .
-                                 "#.ext::double-float-negative-infinity")
-                                (long-float .
-                                 "#.ext::long-float-negative-infinity")
-                                (short-float .
-                                 "#.ext::short-float-negative-infinity")))
-         (positive-infinities '((single-float .
-                                 "#.ext::single-float-positive-infinity")
-                                (double-float .
-                                 "#.ext::double-float-positive-infinity")
-                                (long-float .
-                                 "#.ext::long-float-positive-infinity")
-                                (short-float .
-                                 "#.ext::short-float-positive-infinity")))
-         (record (assoc (type-of x)
-                        (if (plusp x) positive-infinities negative-infinities))))
-    (unless record
-      (error "Not an infinity"))
-    (cdr record)))
+  (unless (ext:float-infinity-p x)
+    (signal 'type-error :datum x :expected-type 'float-infinity))
+
+  (cond
+    ((null *print-readably*)
+     (etypecase x
+       (ext:negative-single-float "#<single-float negative infinity>")
+       (ext:positive-single-float "#<single-float positive infinity>")
+       (ext:negative-double-float "#<double-float negative infinity>")
+       (ext:positive-double-float "#<double-float positive infinity>")
+       (ext:negative-long-float   "#<long-float negative infinity>")
+       (ext:positive-long-float   "#<long-float positive infinity>")
+       (ext:negative-short-float  "#<short-float negative infinity>")
+       (ext:positive-short-float  "#<short-float positive infinity>")))
+    #+ieee-floating-point
+    (*read-eval*
+     (etypecase x
+       (ext:negative-single-float "#.ext::single-float-negative-infinity")
+       (ext:positive-single-float "#.ext::single-float-positive-infinity")
+       (ext:negative-double-float "#.ext::double-float-negative-infinity")
+       (ext:positive-double-float "#.ext::double-float-positive-infinity")
+       (ext:negative-long-float   "#.ext::long-float-negative-infinity")
+       (ext:positive-long-float   "#.ext::long-float-positive-infinity")
+       (ext:negative-short-float  "#.ext::short-float-negative-infinity")
+       (ext:positive-short-float  "#.ext::short-float-positive-infinity")))
+    (t (error 'print-not-readable :object x))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Describe

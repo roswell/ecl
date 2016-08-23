@@ -249,7 +249,7 @@ THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
 THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox"
-clibs=''
+clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
 case "${host_os}" in
@@ -260,7 +260,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,--rpath,~A'
-                clibs="-ldl"
+                clibs="-ldl ${clibs}"
                 # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
                 CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DAO_REQUIRE_CAS ${CFLAGS}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
@@ -276,7 +276,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,--rpath,~A'
-                clibs="-ldl"
+                clibs="-ldl ${clibs}"
                 # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
                 CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
@@ -289,7 +289,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,--rpath,~A'
-                clibs="-ldl"
+                clibs="-ldl ${clibs}"
                 CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -301,7 +301,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,--rpath,~A'
-                clibs="-ldl"
+                clibs="-ldl ${clibs}"
                 CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -312,7 +312,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-                clibs=""
+                clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
@@ -322,7 +322,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-                clibs=""
+                clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
@@ -332,7 +332,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-                clibs=""
+                clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
@@ -343,7 +343,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-                clibs="-lpthread -lm"
+                clibs="-lpthread ${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
@@ -354,9 +354,9 @@ case "${host_os}" in
                 BUNDLE_LDFLAGS="-dy -G ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,-R,~A'
                 TCPLIBS='-lsocket -lnsl -lintl'
-                clibs='-ldl'
-		SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-		SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                clibs='${clibs} -ldl'
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 if test "x$GCC" = "xyes"; then
                   CFLAGS="${CFLAGS} -std=gnu99 -D_XOPEN_SOURCE=600 -D__EXTENSIONS__"
                   SHARED_LDFLAGS="-shared $SHARED_LDFLAGS"
@@ -440,7 +440,17 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
-                clibs="-Wld=-lrld"
+                clibs="-Wld=-lrld ${clibs}"
+                ;;
+        haiku*)
+                thehost='haiku'
+                THREAD_LIBS=''
+                SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                ECL_LDRPATH="-Wl,--rpath,~A"
+                clibs="-lnetwork"
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
 	aix*)
 		PICFLAG='-DPIC'

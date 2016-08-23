@@ -477,7 +477,6 @@ LDFLAGS="$LDFLAGS $LIBFFI_LDFLAGS"
 dnl =====================================================================
 dnl Checks for libraries
 
-LIBS="${LIBS} -lm"
 AC_CHECK_LIB(sun, getpwnam)         # on IRIX adds -lsun
 AC_SEARCH_LIBS([strerror],[cposix])
 
@@ -920,4 +919,4 @@ AC_CONFIG_FILES([
  ])
 AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h])
 AC_OUTPUT
-for i in $srcdir/c/*/; do mkdir c/`basename $i`; done
+for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done

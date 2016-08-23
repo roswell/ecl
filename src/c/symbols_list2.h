@@ -1900,21 +1900,27 @@ cl_symbols[] = {
 
 {EXT_ "*BYTECODES-COMPILER*",NULL},
 
+#ifdef ECL_IEEE_FP
+{SYS_ "NAN","si_nan"},
+{SYS_ "INFINITY","si_infinity"},
+
 {EXT_ "SHORT-FLOAT-POSITIVE-INFINITY",NULL},
 {EXT_ "SINGLE-FLOAT-POSITIVE-INFINITY",NULL},
 {EXT_ "DOUBLE-FLOAT-POSITIVE-INFINITY",NULL},
 {EXT_ "LONG-FLOAT-POSITIVE-INFINITY",NULL},
+
 {EXT_ "SHORT-FLOAT-NEGATIVE-INFINITY",NULL},
 {EXT_ "SINGLE-FLOAT-NEGATIVE-INFINITY",NULL},
 {EXT_ "DOUBLE-FLOAT-NEGATIVE-INFINITY",NULL},
 {EXT_ "LONG-FLOAT-NEGATIVE-INFINITY",NULL},
+#endif /* ECL_IEEE_FP */
+
 {EXT_ "FLOAT-NAN-P","si_float_nan_p"},
 {EXT_ "FLOAT-INFINITY-P","si_float_infinity_p"},
-
-{SYS_ "READ-OBJECT-OR-IGNORE","si_read_object_or_ignore"},
-
 {EXT_ "FLOAT-NAN-STRING",NULL},
 {EXT_ "FLOAT-INFINITY-STRING",NULL},
+
+{SYS_ "READ-OBJECT-OR-IGNORE","si_read_object_or_ignore"},
 
 {EXT_ "READTABLE-LOCK","si_readtable_lock"},
 
@@ -2206,6 +2212,8 @@ cl_symbols[] = {
 
 {EXT_ "HASH-TABLE-CONTENT","si_hash_table_content"},
 {EXT_ "HASH-TABLE-FILL","si_hash_table_fill"},
+
+{EXT_ "RANDOM-STATE-ARRAY","si_random_state_array"},
 
 {SYS_ "REPORT-FUNCTION",NULL},
 

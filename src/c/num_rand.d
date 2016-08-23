@@ -300,6 +300,20 @@ ecl_make_random_state(cl_object rs)
   case t_fixnum:
     z->random.value = init_genrand(ecl_fixnum(rs));
     break;
+  case t_vector: /* intentionaly undocumented (only for internal use) */
+#if ECL_FIXNUM_BITS > 32
+    if (rs->vector.dim == 313 && rs->vector.elttype == ecl_aet_b64) {
+      z = ecl_alloc_object(t_random);
+      z->random.value = cl_copy_seq(rs);
+      break;
+    }
+#else  /* 32 bit version */
+    if (rs->vector.dim == 625 && rs->vector.elttype == ecl_aet_b32) {
+      z = ecl_alloc_object(t_random);
+      z->random.value = cl_copy_seq(rs);
+      break;
+    }
+#endif
   default:
     FEwrong_type_only_arg(@[make-random-state], rs,
                           ecl_read_from_cstring(type));
@@ -323,4 +337,10 @@ cl_object
 cl_random_state_p(cl_object x)
 {
   @(return (ECL_RANDOM_STATE_P(x) ? ECL_T : ECL_NIL));
+}
+
+cl_object
+si_random_state_array(cl_object rs) {
+  ecl_check_cl_type(@'ext::random-state-array', rs, t_random);
+  return rs->random.value;
 }

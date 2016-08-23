@@ -320,7 +320,8 @@ ecl_waitpid(cl_object pid, cl_object wait)
           update_process_status(p, status, code);
         }
         if (status != @':running') {
-          remove_external_process(env, p);                                        ecl_delete_eq(p, cl_core.external_processes);
+          remove_external_process(env, p);
+          ecl_delete_eq(p, cl_core.external_processes);
         }
       }
     } while (1);
