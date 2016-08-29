@@ -382,7 +382,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   ecl_set_process_env(env_aux);
   env = _ecl_alloc_env(0);
   ecl_set_process_env(env);
-  env->cleanup = registered;
 
   /* Link environment and process together */
   env->own_process = process = alloc_process(name, bindings);
@@ -392,6 +391,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   ecl_list_process(process);
 
   ecl_init_env(env);
+  env->cleanup = registered;
   env->bindings_array = process->process.initial_bindings;
   env->thread_local_bindings_size = env->bindings_array->vector.dim;
   env->thread_local_bindings = env->bindings_array->vector.self.t;
