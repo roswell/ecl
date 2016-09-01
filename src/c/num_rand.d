@@ -134,8 +134,8 @@ init_genrand(ulong seed)
 {
   cl_object array = ecl_alloc_simple_vector((MT_N + 1), ecl_aet_b32);
   ulong *mt = array->vector.self.b32;
-  mt[0] = seed;
   int j;
+  mt[0] = seed;
   for (j=1; j < MT_N; j++)
     mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j);
 
