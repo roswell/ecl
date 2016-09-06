@@ -920,19 +920,13 @@ _ecl_float_to_integer(float d)
 #ifdef ECL_IEEE_FP
 cl_object
 si_nan() {
-#ifdef ECL_LONG_FLOAT
-  ecl_make_long_float(NAN);
-#else
-  ecl_make_double_float(NAN);
-#endif
+  cl_object x = ecl_alloc_object(t_doublefloat);
+  ecl_double_float(x) = NAN;
 }
 
 cl_object
 si_infinity() {
-#ifdef ECL_LONG_FLOAT
-  ecl_make_long_float(INFINITY);
-#else
-  ecl_make_double_float(INFINITY);
-#endif
+  cl_object x = ecl_alloc_object(t_doublefloat);
+  ecl_double_float(x) = INFINITY;
 }
 #endif /* ECL_IEEE_FP */
