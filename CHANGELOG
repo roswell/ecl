@@ -39,6 +39,9 @@ arity dependent on platform) is also possible.
 - ext:random-state-array: new extension for random-states. Usage:
 =(ext:random-state-array random-state)=.
 
+- ext:terminate-process: new extension for external processes. Usage:
+=(ext:terminate-process process)= with a second, optional argument.
+
 ** Enhancements
 - Initial port for the Haiku platform
 The port is done by Kacper Kasper's work, one of Haiku developers.
