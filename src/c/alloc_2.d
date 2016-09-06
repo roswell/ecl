@@ -1136,6 +1136,7 @@ void
 wrapped_finalizer(cl_object o, cl_object finalizer)
 {
   if (finalizer != ECL_NIL && finalizer != NULL) {
+#ifdef ECL_THREADS
     const cl_env_ptr the_env = ecl_process_env();
     if (!the_env
         || !the_env->own_process
@@ -1161,6 +1162,7 @@ wrapped_finalizer(cl_object o, cl_object finalizer)
                                       &ofn, &odata);
        return;
     }
+#endif /* ECL_THREADS */
     CL_NEWENV_BEGIN {
       if (finalizer != ECL_T) {
         funcall(2, finalizer, o);
