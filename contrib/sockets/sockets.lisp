@@ -1430,6 +1430,10 @@ ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
   "#define NETDB_SUCCESS 0"
 )
 
+#+:haiku
+(clines
+ "#define ESOCKTNOSUPPORT ENOTSUP")
+
 (Clines
   "#ifndef NETDB_INTERNAL"
   "#define NETDB_INTERNAL 0"
