@@ -74,15 +74,19 @@
     ))
 
 #+ieee-floating-point
-(let ((inf (si::infinity)))
-  (defconstant short-float-positive-infinity  (coerce inf     'short-float))
-  (defconstant short-float-negative-infinity  (coerce (- inf) 'short-float))
-  (defconstant single-float-positive-infinity (coerce inf     'single-float))
-  (defconstant single-float-negative-infinity (coerce (- inf) 'single-float))
-  (defconstant double-float-positive-infinity (coerce inf     'double-float))
-  (defconstant double-float-negative-infinity (coerce (- inf) 'double-float))
-  (defconstant long-float-positive-infinity   (coerce inf     'long-float))
-  (defconstant long-float-negative-infinity   (coerce (- inf) 'long-float)))
+(let ((bits (si:trap-fpe 'last nil)))
+  (unwind-protect
+       (locally (declare (notinline -))
+         (let ((inf (si:infinity)))
+           (defconstant short-float-positive-infinity (coerce inf 'short-float))
+           (defconstant short-float-negative-infinity (coerce (- inf) 'short-float))
+           (defconstant single-float-positive-infinity (coerce inf 'single-float))
+           (defconstant single-float-negative-infinity (coerce (- inf) 'single-float))
+           (defconstant double-float-positive-infinity (coerce inf 'double-float))
+           (defconstant double-float-negative-infinity (coerce (- inf) 'double-float))
+           (defconstant long-float-positive-infinity (coerce inf 'long-float))
+           (defconstant long-float-negative-infinity (coerce (- inf) 'long-float))))
+    (si:trap-fpe bits t)))
 
 (defconstant imag-one #C(0.0 1.0))
 
