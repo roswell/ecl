@@ -1329,6 +1329,7 @@
               (values (or null two-way-stream)
                       (or null integer)
                       ext:external-process))
+(proclamation ext:terminate-process (t &optional gen-bool) null)
 
 (proclamation ext:make-weak-pointer (t) ext:weak-pointer :no-side-effects)
 (proclamation ext:weak-pointer-value (ext:weak-pointer) t)
