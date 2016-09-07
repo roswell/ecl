@@ -27,6 +27,7 @@
 (suite 'make-check
        '(features/eformat
          features/ieee-fp
+         features/eprocess
          regressions/ansi+
          regressions/mixed
          regressions/cmp
@@ -47,7 +48,8 @@
 
 (suite 'features
        '(features/eformat
-         features/ieee-fp))
+         features/ieee-fp
+         features/eprocess))
 
 
 ;;; Some syntactic sugar for 2am
