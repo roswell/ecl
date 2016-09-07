@@ -517,8 +517,9 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
 
 /*
- * Fake several ISO C99 mathematical functions
+ * Fake several ISO C99 mathematical functions if not available
  */
+#include <math.h>
 
 #ifndef HAVE_EXPF
 # ifdef expf

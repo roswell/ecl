@@ -30,7 +30,7 @@
  *   - Activate explicitely signaling of exceptions
  *   - Insert explicit checks for exceptions
  *
- * The first taks is achieved using feenableexcept() or an equivalent
+ * The first task is achieved using feenableexcept() or an equivalent
  * function. The second task is only needed on some platforms where
  * exceptions are activated by one floating point computation but are
  * only signaled with the _next_ floating point instruction (Read x86

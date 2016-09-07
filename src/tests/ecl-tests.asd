@@ -14,15 +14,21 @@
                         ((:file "ansi")
                          (:file "mixed")
                          (:file "compiler")
-                         (:file "embedding"           :if-feature (:not :ecl-bytecmp))
-                         (:file "foreign-interface"   :if-feature :ffi)
-                         (:file "metaobject-protocol" :if-feature :clos)
-                         (:file "multiprocessing"     :if-feature :threads)))
+                         #-ecl-bytecmp
+                         (:file "embedding")
+                         #+ffi
+                         (:file "foreign-interface")
+                         #+clos
+                         (:file "metaobject-protocol")
+                         #+threads
+                         (:file "multiprocessing")))
                (:module features
                         :default-component-class asdf:cl-source-file.lsp
                         :components
-                        ((:file "external-formats" :if-feature :unicode)
-                         (:file "ieee-fp"          :if-feature :ieee-floating-point)
+                        (#+unicode
+                         (:file "external-formats")
+                         #+ieee-floating-point
+                         (:file "ieee-fp")
                          (:file "external-process")))))
 
 (asdf:defsystem #:ecl-tests/stress
@@ -32,7 +38,8 @@
    (:module stress
             :default-component-class asdf:cl-source-file.lsp
             :components
-            ((:file "multiprocessing" :if-feature :threads)))))
+            (#+threads
+             (:file "multiprocessing")))))
 
 ;;; General tests
 (asdf:defsystem #:ecl-tests/ansi)
