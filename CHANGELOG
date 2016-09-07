@@ -40,11 +40,13 @@ arity dependent on platform) is also possible.
 =(ext:random-state-array random-state)=.
 
 - ext:terminate-process: new extension for external processes. Usage:
-=(ext:terminate-process process)= with a second, optional argument.
+=(ext:terminate-process process)= with a second, optional boolean argument
+whenever termination should be forced or not.
 
 ** Enhancements
 - Initial port for the Haiku platform
-The port is done by Kacper Kasper's work, one of Haiku developers.
+The port is done by Kacper Kasper's work, one of Haiku developers. Threads
+are not supported yet.
 
 - Refactored ECL internal tests framework
 Tests in =src/tests= are now asdf-loadable (with =load-source-op=) and
