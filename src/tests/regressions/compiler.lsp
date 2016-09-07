@@ -526,18 +526,25 @@
 (ext:with-clean-symbols (foo)
   (test cmp.0025.paths
     (let* ((output (compile-file-pathname "tmp/aux" :type :fasl))
+           #-ecl-bytecmp
            (h-file (compile-file-pathname output :type :h))
+           #-ecl-bytecmp
            (c-file (compile-file-pathname output :type :c))
+           #-ecl-bytecmp
            (data-file (compile-file-pathname output :type :data)))
       (is-true
        (and 
         (zerop (si::system "rm -rf tmp; mkdir -p tmp"))
-        (with-compiler ("aux-compiler.0103-paths.lsp" :output-file output :c-file t
-                                                      :h-file t :data-file t)
+        (with-compiler ("aux-compiler.0103-paths.lsp"
+                        :output-file output
+                        :c-file t :h-file t :data-file t)
           '(defun foo (x) (1+ x)))
         (probe-file output)
+        #-ecl-bytecmp
         (probe-file c-file)
+        #-ecl-bytecmp
         (probe-file h-file)
+        #-ecl-bytecmp
         (probe-file data-file)
         (zerop (si::system "rm -rf tmp; mkdir -p tmp"))
         (delete-file "aux-compiler.0103-paths.lsp"))))))
@@ -955,7 +962,7 @@
 ;;;     of a mismatch between the position of the fields bytecodes.entry
 ;;;     and cfun.entry
 ;;;
-#-ecl-bytcmp
+#-ecl-bytecmp
 (test cmp.0040.bytecodes-entry-position
   (let ((indices (funcall (compile nil
                                    '(lambda ()
@@ -1017,10 +1024,12 @@
                    *compiler.0122*))
     (is-eql :bytecodes
             (compiler.0122a))
+    #-ecl-bytecmp
     (is-eql :c/c++
             (progn (compile 'compiler.0122a)
                    (compiler.0122a)
                    *compiler.0122*))
+    #-ecl-bytecmp
     (is-eql :c/c++
             (compiler.0122a))))
 
@@ -1099,15 +1108,16 @@
 #+ieee-floating-point
 (ext:with-clean-symbols (infty-test)
   (test cmp.0047.infinity-test
-    (finishes (compile nil
-                       (lambda ()
-                         (> 0.0 ext:single-float-negative-infinity))))
+    (finishes
+     (compile nil
+              (lambda ()
+                (> 0.0 ext:single-float-negative-infinity))))
     (is-true
-     (progn
-       (with-compiler ("aux-compiler-0048.infty-test.2.lsp" :load t)
-         '(defun doit () (> 0.0 ext:single-float-negative-infinity)))
+     (let ((ofile
+            (with-compiler ("aux-compiler-0048.infty-test.2.lsp" :load t)
+              '(defun doit () (> 0.0 ext:single-float-negative-infinity)))))
        (delete-file "aux-compiler-0048.infty-test.2.lsp")
-       (delete-file "aux-compiler-0048.infty-test.2.fas")
+       (delete-file ofile)
        (doit)))))
 
 

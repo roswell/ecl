@@ -22,7 +22,7 @@
 ;;;
 ;;;     Header <internal.h> should be included as <ecl/internal.h>
 ;;;
-
+#-ecl-bytecmp
 (test ffi.0001.callback
   (is
    (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
@@ -47,6 +47,7 @@
 ;;; Description:
 ;;;     Callback examples based on the C compiler
 ;;;
+#-ecl-bytecmp
 (test ffi.0002.callback-sffi-example
   (is
    (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
@@ -75,7 +76,7 @@ int (*foo)(int) = #0;
 ;;;     Callback examples based on the DFFI. Only work if this feature
 ;;;     has been linked in.
 ;;;
-#+dffi
+#+(and dffi (not ecl-bytecmp))
 (test ffi.0003.callback-dffi-example
   (is
    (and (zerop (si::system "rm -rf tmp; mkdir tmp"))

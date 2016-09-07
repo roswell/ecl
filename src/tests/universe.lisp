@@ -454,13 +454,12 @@
   (list (+ x 1) (+ y 2) (+ z 3)))
 
 (defgeneric meaningless-user-generic-function-for-universe (x y z)
-  #+(or (not :gcl) :ansi-cl) (:method ((x integer) (y integer) (z integer)) (+ x y z)))
+  (:method ((x integer) (y integer) (z integer)) (+ x y z)))
 
+#+ (or)
 (eval-when (:load-toplevel :execute)
   (compile 'meaningless-user-function-for-universe)
-  ;; Conditionalize to avoid a cmucl bug
-  #-(or cmu gcl ecl) (compile 'meaningless-user-generic-function-for-universe)
-  )
+  (compile 'meaningless-user-generic-function-for-universe))
 
 (defparameter *functions*
   (list #'cons #'car #'append #'values

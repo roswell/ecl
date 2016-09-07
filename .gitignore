@@ -67,3 +67,5 @@ regressions/eformat-tests/*.txt
 /examples/ecl_qt/lisp-envi.a
 /examples/ecl_qt/qt/.qmake.stash
 /examples/ecl_qt/qt/Makefile
+*fasc
+*.orig
