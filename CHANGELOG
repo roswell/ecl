@@ -44,6 +44,10 @@ arity dependent on platform) is also possible.
 whenever termination should be forced or not.
 
 ** Enhancements
+- Bundled CLX has been purged
+Lately I've fixed ECL support on portable CLX maintained by sharplispers on
+https://github.com/sharplispers/clx (available via QuickLisp).
+
 - Initial port for the Haiku platform
 The port is done by Kacper Kasper's work, one of Haiku developers. Threads
 are not supported yet.
