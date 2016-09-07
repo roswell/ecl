@@ -267,9 +267,6 @@ typedef unsigned char ecl_base_char;
  * FEATURES LINKED IN:
  */
 
-/* CLX                                                                  */
-#undef CLX
-
 /* Define this if you want a runtime version only without compiler      */
 #undef RUNTIME
 /* Profile tool                                                         */

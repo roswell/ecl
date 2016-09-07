@@ -626,7 +626,6 @@ ECL_INIT_FORM
 ECL_EXTRA_LISP_FILES
 CHAR_CODE_LIMIT
 ECL_CHARACTER
-CLX_INFO
 CC_IS_CXX
 ECL_CC
 POW_LIB
@@ -780,7 +779,6 @@ enable_opcode8
 with_cxx
 with_tcp
 with_serve_event
-with_clx
 with_clos_streams
 with_cmuformat
 with_asdf
@@ -1492,7 +1490,6 @@ Optional Packages:
                           default=YES)
   --with-serve-event      include serve-event module (yes|builtin|no,
                           default=YES)
-  --with-clx              include CLX library (yes|builtin|no, default=NO)
   --with-clos-streams     user defined stream objects (yes|builtin|no,
                           default=YES)
   --with-cmuformat        use CMUCL's FORMAT routine (default=YES)
@@ -2746,15 +2743,6 @@ if test "${with_serve_event+set}" = set; then :
   withval=$with_serve_event;
 else
   with_serve_event=${enable_shared}
-fi
-
-
-
-# Check whether --with-clx was given.
-if test "${with_clx+set}" = set; then :
-  withval=$with_clx;
-else
-  with_clx=no
 fi
 
 
@@ -9516,32 +9504,6 @@ if test "${with_cmp}" = "yes"; then
 LSP_FEATURES="(cons :wants-cmp ${LSP_FEATURES})"
 
 
-fi
-
-
-if test "${with_clx}" = "builtin"; then
-
-
-LSP_FEATURES="(cons :builtin-clx ${LSP_FEATURES})"
-
-
-
-
-LSP_FEATURES="(cons :builtin-sockets ${LSP_FEATURES})"
-
-
-  with_clx=yes
-fi
-if test ${with_clx} = "yes"; then
-  tcp="yes"
-
-
-LSP_FEATURES="(cons :wants-clx ${LSP_FEATURES})"
-
-
-  CLX_INFO="clx.${INFOEXT}"
-else
-  CLX_INFO=""
 fi
 
 if test "${with_tcp}" = "builtin"; then

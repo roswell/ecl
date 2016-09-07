@@ -131,11 +131,6 @@ AC_ARG_WITH(serve_event,
                   [include serve-event module (yes|builtin|no, default=YES)]),
   [], [with_serve_event=${enable_shared}])
 
-AC_ARG_WITH(clx,
-  AS_HELP_STRING( [--with-clx],
-                  [include CLX library (yes|builtin|no, default=NO)]),
-  [], [with_clx=no])
-
 AC_ARG_WITH(clos-streams,
   AS_HELP_STRING( [--with-clos-streams],
                   [user defined stream objects (yes|builtin|no, default=YES)]),
@@ -787,20 +782,6 @@ if test "${with_cmp}" = "builtin"; then
 fi
 if test "${with_cmp}" = "yes"; then
   ECL_ADD_LISP_MODULE([cmp])
-fi
-
-AC_SUBST(CLX_INFO)
-if test "${with_clx}" = "builtin"; then
-  ECL_ADD_BUILTIN_MODULE([clx])
-  ECL_ADD_BUILTIN_MODULE([sockets])
-  with_clx=yes
-fi
-if test ${with_clx} = "yes"; then
-  tcp="yes"
-  ECL_ADD_LISP_MODULE([clx])
-  CLX_INFO="clx.${INFOEXT}"
-else
-  CLX_INFO=""
 fi
 
 if test "${with_tcp}" = "builtin"; then

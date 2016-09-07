@@ -16,7 +16,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_INFO = @INSTALL_INFO@
 mkinstalldirs = $(top_srcdir)/bdwgc/install-sh -d
-INFO_FILES = ecl.$(INFOEXT) ecldev.$(INFOEXT) @CLX_INFO@
+INFO_FILES = ecl.$(INFOEXT) ecldev.$(INFOEXT)
 HTML_FILES = index.html license.html lgpl.html news.html benchmark.html \
 	install.html download.html cvs.html
 
@@ -34,15 +34,11 @@ ecl.dvi: $(srcdir)/user.txi $(srcdir)/macros.txi clisp.sty ecl.sty
 	tex $(srcdir)/user.txi
 ecldev.dvi: $(srcdir)/devel.txi $(srcdir)/macros.txi clisp.sty ecl.sty
 	tex $(srcdir)/devel.txi
-clx.dvi: clx.texinfo
-	tex clx.texinfo
 
 ecl.ps: ecl.dvi $(srcdir)/macros.txi
 	dvips -o $@ ecl.dvi
 ecldev.ps: ecldev.dvi $(srcdir)/macros.txi
 	dvips -o $@ ecldev.dvi
-clx.ps: clx.dvi
-	dvips -o $@ clx.dvi
 
 install: all
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
@@ -100,16 +96,10 @@ ecl.info.gz: ecl.info
 	gzip < ecl.info > ecl.info.gz
 ecldev.info.gz: ecldev.info
 	gzip < ecldev.info > ecldev.info.gz
-clx.info.gz: clx.info
-	gzip < clx.info > clx.info.gz
 ecl.info: $(srcdir)/user.txi $(srcdir)/macros.txi
 	makeinfo -I $(srcdir) --no-split $(srcdir)/user.txi
 ecldev.info: $(srcdir)/devel.txi $(srcdir)/macros.txi
 	makeinfo -I $(srcdir) --no-split $(srcdir)/devel.txi
-clx.info: clx.texinfo
-	-makeinfo --no-split clx.texinfo
-clx.texinfo: $(top_srcdir)/clx/manual/clx.texinfo
-	cp $(top_srcdir)/clx/manual/clx.texinfo .
 
 download.html: $(srcdir)/download.in.html head
 	cat head $(srcdir)/download.in.html $(srcdir)/end | $(FILTER) > $@
