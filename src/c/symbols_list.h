@@ -1225,7 +1225,7 @@ cl_symbols[] = {
 {SYS_ "REPLACE-ARRAY", SI_ORDINARY, si_replace_array, 2, OBJNULL},
 {SYS_ "ROW-MAJOR-ASET", SI_ORDINARY, si_row_major_aset, 3, OBJNULL},
 {EXT_ "RUN-PROGRAM", EXT_ORDINARY, si_run_program, -1, OBJNULL},
-{EXT_ "TERMINATE-PROCESS", EXT_ORDINARY, ext_terminate_process, -1, OBJNULL},
+{EXT_ "TERMINATE-PROCESS", EXT_ORDINARY, si_terminate_process, -1, OBJNULL},
 {SYS_ "WAIT-FOR-ALL-PROCESSES", SI_ORDINARY, si_wait_for_all_processes, -1, OBJNULL},
 {EXT_ "SAFE-EVAL", EXT_ORDINARY, ECL_NAME(si_safe_eval), -1, OBJNULL},
 {SYS_ "SCH-FRS-BASE", SI_ORDINARY, si_sch_frs_base, 2, OBJNULL},
