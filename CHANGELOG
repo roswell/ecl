@@ -44,6 +44,8 @@ arity dependent on platform) is also possible.
 whenever termination should be forced or not.
 
 ** Enhancements
+- ASDF has been upgraded to version 3.1.7
+
 - Bundled CLX has been purged
 Lately I've fixed ECL support on portable CLX maintained by sharplispers on
 https://github.com/sharplispers/clx (available via QuickLisp).
