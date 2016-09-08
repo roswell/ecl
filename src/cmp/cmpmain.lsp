@@ -132,7 +132,9 @@ the environment variable TMPDIR to a different value." template))
      ,@object-files
      ,@(split-program-options *ld-rpath*)
      ,@(split-program-options *user-ld-flags*)
-     ,@ld-flags))
+     ,@ld-flags
+     ,(if (eq type :program)
+           (concatenate 'string "/IMPLIB:prog" (file-namestring o-pathname) ".lib") "" )))
   (embed-manifest-file o-pathname type)
   (delete-msvc-generated-files o-pathname))
 
