@@ -23,11 +23,11 @@
 
 (defparameter *help-message* "
 Usage: ecl [-? | --help]
-           [-dir dir] [-load file] [-shell file] [-eval expr] [-rc | -norc] [-hp | -nohp]
+           [--dir dir] [--load file] [--shell file] [--eval expr] [--rc | --norc] [--hp | --nohp]
            [--c-stack size] [--lisp-stack size] [--heap-size size] [--frame-stack size]
-           [[-o ofile] [-c [cfile]] [-h [hfile]] [-data [datafile]] [-s] [-q]
-            -compile file]
-           [[-o ofile] -link file+]
+           [[-o ofile] [-c [cfile]] [-h [hfile]] [--data [datafile]] [-s] [-q]
+            --compile file]
+           [[-o ofile] --link file+]
            [--input-encoding external-format] [--output-encoding external-format]
            [--error-encoding external-format] [--encoding external-format]
            [--trap-fpe | --no-trap-fpe]
@@ -59,19 +59,30 @@ appeared after a '--'.")
   '(("--help" 0 #0=(progn (princ *help-message* *standard-output*) (quit)) :noloadrc)
     ("-?" 0 #0# :noloadrc)
     ("-norc" 0 nil :noloadrc)
+    ("--norc" 0 nil :noloadrc)
     ("--version" 0
      (progn (setf quit 0)
             (format *standard-output* "ECL ~A~%" (lisp-implementation-version)))
      :noloadrc)
     ("-debug" 0 (setf *command-break-enable* t))
+    ("--debug" 0 (setf *command-break-enable* t))
     ("-nodebug" 0 (setf *command-break-enable* nil))
+    ("--nodebug" 0 (setf *command-break-enable* nil))
     ("-eval" 1 (eval (read-from-string 1)))
+    ("--eval" 1 (eval (read-from-string 1)))
     ("-shell" 1 (progn (setq quit 0)
                        (setq ext:*unprocessed-ecl-command-args* (rest 1))
                        (load (first (rest 1)) :verbose nil))
      :stop)
+    ("--shell" 1 (progn (setq quit 0)
+                       (setq ext:*unprocessed-ecl-command-args* (rest 1))
+                       (load (first (rest 1)) :verbose nil))
+     :stop)
     ("-load" 1 (load 1 :verbose verbose))
+    ("--load" 1 (load 1 :verbose verbose))
     ("-dir" 1 (setf (logical-pathname-translations "SYS")
+               `(("**;*.*" ,(merge-pathnames "**/*.*" (truename 1))))))
+    ("--dir" 1 (setf (logical-pathname-translations "SYS")
                `(("**;*.*" ,(merge-pathnames "**/*.*" (truename 1))))))
     ("--heap-size" 1 (ext:set-limit 'ext:heap-size (read-from-string 1)))
     ("--lisp-stack" 1 (ext:set-limit 'ext:lisp-stack (read-from-string 1)))
@@ -92,9 +103,23 @@ appeared after a '--'.")
      (progn
        (setq quit
              (if (nth-value 3
-                     (compile-file 1 :output-file output-file :c-file c-file
-                                   :h-file h-file :data-file data-file
-                                   :verbose verbose :system-p system-p))
+                            (compile-file 1 :output-file output-file :c-file c-file
+                                          :h-file h-file :data-file data-file
+                                          :verbose verbose :system-p system-p))
+                 1
+                 0)
+             output-file t
+             c-file nil
+             h-file nil
+             data-file nil
+             system-p nil)))
+    ("--compile" 1
+     (progn
+       (setq quit
+             (if (nth-value 3
+                            (compile-file 1 :output-file output-file :c-file c-file
+                                          :h-file h-file :data-file data-file
+                                          :verbose verbose :system-p system-p))
                  1
                  0)
              output-file t
@@ -108,13 +133,22 @@ appeared after a '--'.")
        (funcall (read-from-string "c::build-program")
                 (or output-file "lisp.exe") :lisp-files '&rest)
        (setq output-file t quit t)))
+    ("--link" &rest
+     (progn
+       (require 'cmp)
+       (funcall (read-from-string "c::build-program")
+                (or output-file "lisp.exe") :lisp-files '&rest)
+       (setq output-file t quit t)))
     ("-o" &optional (setq output-file 1))
     ("-c" &optional (setq c-file 1))
     ("-h" &optional (setq h-file 1))
     ("-data" 1 (setq data-file 1))
+    ("--data" 1 (setq data-file 1))
     ("-q" 0 (setq verbose nil))
     ("-hp" 0 (setf *relative-package-names* t))
+    ("--hp" 0 (setf *relative-package-names* t))
     ("-nohp" 0 (setf *relative-package-names* nil))
+    ("--nohp" 0 (setf *relative-package-names* nil))
     ("-s" 0 (setq system-p t))
     ("--" 1 (setf ext:*unprocessed-ecl-command-args* (rest 1)) :stop)))
 

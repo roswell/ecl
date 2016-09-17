@@ -1,4 +1,4 @@
-.TH ECL 1 2016-05-10
+.TH ECL 1 2016-09-17
 .UC 4
 .SH NAME
 ecl \- Embeddable Common Lisp
@@ -7,23 +7,28 @@ ecl \- Embeddable Common Lisp
 \fBecl\fP
 [\fB-?\fP | \fB--help\fP]
 .br
-[\fB-dir\fP \fIdir\fP] [\fB-load\fP \fIfile\fP] [\fB-shell\fP \fIfile\fP] [\fB-eval\fP \fIexpr\fP]
+[\fB--dir\fP \fIdir\fP] [\fB--load\fP \fIfile\fP] [\fB--shell\fP \fIfile\fP] [\fB--eval\fP \fIexpr\fP]
 .br
-[\fB-norc\fP] [\fB-hp\fP | \fB-nohp\fP]
+[\fB--norc\fP] [\fB--hp\fP | \fB--nohp\fP]
+.br
+[\fB--debug\fP | \fB--nodevbug\fP]
 .br
 [\fB--c-stack\fP \fIsize\fP] [\fB--lisp-stack\fP \fIsize\fP]
 .br
 [\fB--heap-size\fP \fIsize\fP] [\fB--frame-stack\fP \fIsize\fP]
 .br
-[[\fB-o\fP \fIofile\fP] [\fB-c\fP [\fIcfile\fP]] [\fB-h\fP [\fIhfile\fP]] [\fB-data\fP [\fIdatafile\fP]]
+[[\fB-o\fP \fIofile\fP] [\fB-c\fP [\fIcfile\fP]] [\fB-h\fP [\fIhfile\fP]] [\fB--data\fP [\fIdatafile\fP]]
 .br
- [\fB-s\fP] [\fB-q\fP] \fB-compile\fP \fIfile\fP]
+ [\fB-s\fP] [\fB-q\fP] \fB--compile\fP \fIfile\fP]
 .br
-[[\fB-o\fP \fIofile\fP] \fB-link\fP \fIfile\fP+]
+[[\fB-o\fP \fIofile\fP] \fB--link\fP \fIfile\fP+]
 .br
 [\fB--input-encoding\fP \fIexternal-format\fP] [\fB--output-encoding\fP \fIexternal-format\fP]
 .br
 [\fB--error-encoding\fP \fIexternal-format\fP] [\fB--encoding\fP \fIexternal-format\fP]
+.br
+\fBDEPRECATION NOTE:\fP one-dash versions of long flags(e.g. \fB-eval\fP or \fB-data\fP) are deprecated; you should use two-dash versions (e.g. \fB--eval\fP or \fB--data\fP) now.
+
 
 .SH DESCRIPTION
 .sp
@@ -68,7 +73,7 @@ interactive lisp.
 .B \-?, \-\-help
 Shows the help prompt without running the ECL.
 .TP
-.BI \-norc
+.BI \-\-norc
 Do not load configuration files at startup.
 .TP
 .BI \-\-version
@@ -78,29 +83,29 @@ Prints the current version of ECL, without running the ECL.
 Turned on by default, this enables the debugging in the setup phase, so that you can debug your
 \.rc files.
 .TP
-.BI \-nodebug
+.BI \-\-nodebug
 Run without debugging setup phase, meaning that errors prevent ECL from starting up.
 .TP
-.BI \-eval " file"
+.BI \-\-eval " file"
 Evaluate the
 .I file
 before starting the ECL, or loading the \.rc files.
 .TP
-.BI \-shell " file"
+.BI \-\-shell " file"
 Executes the given
 .I file
 and exits, without providing a read-eval-print loop.
 If you want to use lisp as a scripting language, you can write
-.BR "#!usr/bin/env ecl -shell"
+.BR "#!usr/bin/env ecl --shell"
 on the first line of the file to be executed, and then ECL will be
 automatically invoked.
 .TP
-.BI \-load " file"
+.BI \-\-load " file"
 Load source
 .I file
 before starting ECL.
 .TP
-.BI \-dir " directory"
+.BI \-\-dir " directory"
 Use
 .I directory
 as a system directory.
@@ -167,12 +172,12 @@ When compiling name the intermediary C file
 .I cfile
 and do not delete it afterwards.
 .TP
-.BI \-data " [datafile]"
+.BI \-\-data " [datafile]"
 Dumps compiler data into \fIdatafile\fP or, if not
 supplied, into a file named after the source file, but
 with .data as extension.
 .TP
-.BI \-compile " file"
+.BI \-\-compile " file"
 Translates
 .I file
 to C and invokes the local C compiler to produce a
@@ -181,10 +186,10 @@ native code program.
 .BI \-q
 Short for quiet - produce less notes.
 .TP
-.BI \-hp
+.BI \-\-hp
 This option is deprecated and doesn't do anything.
 .TP
-.BI \-nodp
+.BI \-\-nodp
 This option is deprecated and doesn't do anything.
 .TP
 .BI \-s
@@ -204,7 +209,7 @@ who can be reached at the ECL mailing list.
 .TP
 .BR "~/.ecl, ~/.eclrc"
 Default initialization files loaded at startup unless the option
-.BR \-norc
+.BR \-\-norc
 is provided.
 (if they exist).
 .SH SEE ALSO
