@@ -31,7 +31,6 @@
 	src/lsp/format.lsp	; CMUCL's format
   and the directories
 	contrib/		; User contributed extensions
-	src/clx/		; portable CLX library from Telent
   Look the precise copyright of these extensions in the corresponding
   files.
 

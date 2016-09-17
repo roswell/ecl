@@ -1,8 +1,8 @@
 @node Building ECL
 @section Building ECL
 
-Due to it's portable nature ECL works on every (at least) 32-bit
-architecture which provides the proper C99 compliant compiler.
+Due to its portable nature ECL works on every (at least) 32-bit
+architecture which provides a proper C99 compliant compiler.
 
 Operating systems on which ECL is reported to work: Linux, Darwin (Mac
 OS X), Solaris, FreeBSD, NetBSD, OpenBSD, DragonFly BSD, Windows and
@@ -15,14 +15,6 @@ however each release is tested by volunteers with an excellent package
 @uref{https://common-lisp.net/project/cl-test-grid,cl-test-grid} created
 and maintained by Anton Vodonosov.
 
-@menu
-@c * Supported platforms::
-* Autoconf based configuration::
-@c * Cross-compiling ECL::
-* Platform specific instructions::
-@end menu
-
-@node Autoconf based configuration
 @subsection Autoconf based configuration
 
 ECL, like many other FOSS programs, can be built and installed with a
@@ -73,16 +65,7 @@ Top level in: #<process TOP-LEVEL>.
 @end example
 @end enumerate
 
-@node Platform specific instructions
 @subsection Platform specific instructions
-
-@menu
-* MSVC based configuration::
-@c * BSD systems::
-@c * Android::
-@end menu
-
-@node MSVC based configuration
 @subsubsection MSVC based configuration
 
 If you have a commercial version of Microsoft Visual Studio, the steps

@@ -629,7 +629,7 @@ libraries or custom C code.
 
 However, if the argument is a symbol, it is interpreted as the name of a lisp
 library of FASL code. You should use symbols to call in optional parts of the
-interpreter, such as the compiler 'CMP or the 'CLX library (not yet available)
+interpreter, such as the compiler 'CMP (not yet available)
 
 For example:
         (compile-file \"my-code.lsp\" :system-p)

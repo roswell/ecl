@@ -517,8 +517,9 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
 
 /*
- * Fake several ISO C99 mathematical functions
+ * Fake several ISO C99 mathematical functions if not available
  */
+#include <math.h>
 
 #ifndef HAVE_EXPF
 # ifdef expf
@@ -596,12 +597,32 @@ extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
  */
 
 #ifndef INFINITY
-# define INFINITY (1.0/0.0)
-#endif
+# if _MSC_VER == 1600
+union {
+    uint8_t bytes [ sizeof ( float ) ];
+    float inf;
+} __ecl_inf = {
+    { 0, 0, 0xf0, 0x7f }
+};
+#  define INFINITY (__ecl_inf.inf)
+# else
+#  define INFINITY (1.0/0.0)
+# endif  /* _MSC_VER == 1600 */
+#endif /* INFINITY */
 
 #ifndef NAN
-# define NAN (0.0/0.0)
-#endif
+# if _MSC_VER == 1600
+union {
+    uint8_t bytes [ sizeof ( float ) ];
+    float nan;
+} __ecl_nan = {
+    { 0, 0, 0xc0, 0x7f }
+};
+#  define NAN (__ecl_nan.nan)
+# else
+#  define NAN (0.0/0.0)
+# endif  /* _MSC_VER == 1600 */
+#endif /* ~NAN */
 
 #ifdef __cplusplus
 }

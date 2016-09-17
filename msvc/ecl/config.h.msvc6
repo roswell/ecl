@@ -218,12 +218,16 @@ typedef unsigned char ecl_base_char;
 /* #undef HAVE_FLOAT_COMPLEX */
 
 /* Missing integer types */
+#if _MSC_VER < 1900
 typedef char int8_t;
 typedef short int16_t;
 typedef int int32_t;
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
+#else
+#include <stdint.h>
+#endif
 
 /* We can use small, two-words conses, without type information		*/
 /* #undef ECL_SMALL_CONS */
@@ -249,8 +253,6 @@ typedef unsigned int uint32_t;
  * FEATURES LINKED IN:
  */
 
-/* CLX									*/
-#define CLX 1
 /* Locatives								*/
 /* #undef LOCATIVE */
 /* Use old MIT LOOP macro system					*/
@@ -417,14 +419,14 @@ typedef unsigned int uint32_t;
 #  define	stack_align(n)	(((n) + 03) & ~03)
 #endif
 
-/* #undef FILE_CNT */
+#undef FILE_CNT
 #if 0 == 1
 #  define FILE_CNT(fp)	((fp)->_IO_read_end - (fp)->_IO_read_ptr)
 #endif
 #if 0 == 2
 #  define FILE_CNT(fp)	((fp)->_r)
 #endif
-#if 3 == 3
+#if ( defined(_MSC_VER) && (_MSC_VER < 1900) ) && 3 == 3
 #  define FILE_CNT(fp)	((fp)->_cnt)
 #endif
 
@@ -447,7 +449,9 @@ typedef unsigned int uint32_t;
 #endif
 
 #define strcasecmp _stricmp
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
 #define isnan _isnan
+#endif
 #define finite _finite
 #define sleep _sleep
 

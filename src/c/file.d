@@ -4201,8 +4201,9 @@ si_file_stream_fd(cl_object s)
 {
   cl_object ret;
 
-  unlikely_if (!ECL_ANSI_STREAM_P(s))
-    FEerror("file_stream_fd: not a stream", 0);
+  unlikely_if (!ECL_FILE_STREAM_P(s)) {
+    not_a_file_stream(s);
+  }
 
   switch ((enum ecl_smmode)s->stream.mode) {
   case ecl_smm_input:
@@ -4218,7 +4219,7 @@ si_file_stream_fd(cl_object s)
   default:
     ecl_internal_error("not a file stream");
   }
-  @(return ret);;
+  @(return ret);
 }
 
 /**********************************************************************
@@ -4592,7 +4593,7 @@ ecl_unread_char(ecl_character c, cl_object strm)
   stream_dispatch_table(strm)->unread_char(strm, c);
 }
 
-int
+bool
 ecl_listen_stream(cl_object strm)
 {
   return stream_dispatch_table(strm)->listen(strm);
@@ -4664,7 +4665,7 @@ ecl_stream_element_type(cl_object strm)
   return stream_dispatch_table(strm)->element_type(strm);
 }
 
-int
+bool
 ecl_interactive_stream_p(cl_object strm)
 {
   return stream_dispatch_table(strm)->interactive_p(strm);

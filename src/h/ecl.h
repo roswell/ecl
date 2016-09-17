@@ -28,7 +28,7 @@
 #include <setjmp.h>             /* setjmp and buffers */
 #include <stdio.h>              /* FILE */
 /* Microsoft VC++ does not have va_copy() */
-#if defined(_MSC_VER) || !defined(va_copy)
+#if ( defined(_MSC_VER) && (_MSC_VER < 1900) ) || !defined(va_copy)
 #define va_copy(dst, src) \
    ((void) memcpy(&(dst), &(src), sizeof(va_list)))
 #endif

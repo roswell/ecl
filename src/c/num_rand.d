@@ -50,10 +50,10 @@
 cl_object
 init_genrand(ulong seed)
 {
+  int j;
   cl_object array = ecl_alloc_simple_vector((MT_N + 1), ecl_aet_b64);
   ulong *mt = array->vector.self.b64;
   mt[0] = seed;
-  int j;
   for (j=1; j<MT_N; j++)
     mt[j] =  (6364136223846793005ULL * (mt[j-1] ^ (mt[j-1] >> 62)) + j);
 
@@ -134,8 +134,8 @@ init_genrand(ulong seed)
 {
   cl_object array = ecl_alloc_simple_vector((MT_N + 1), ecl_aet_b32);
   ulong *mt = array->vector.self.b32;
-  mt[0] = seed;
   int j;
+  mt[0] = seed;
   for (j=1; j < MT_N; j++)
     mt[j] = (1812433253UL * (mt[j-1] ^ (mt[j-1] >> 30)) + j);
 
@@ -281,23 +281,45 @@ cl_object
 ecl_make_random_state(cl_object rs)
 {
   cl_object z = ecl_alloc_object(t_random);
+  const char *type
+    = "(OR RANDOM-STATE FIXNUM (MEMBER T NIL))";
+
   if (rs == ECL_T) {
     z->random.value = init_random_state();
     return z;
-  }
-
-  if (Null(rs))
+  } else if (Null(rs)) {
     rs = ecl_symbol_value(@'*random-state*');
-
-  if (ecl_t_of(rs) == t_random) {
     z->random.value = cl_copy_seq(rs->random.value);
     return z;
   }
 
-  const char *type
-    = "(OR RANDOM-STATE FIXNUM (MEMBER T NIL))";
-  FEwrong_type_only_arg(@[make-random-state], rs,
-                        ecl_read_from_cstring(type));
+  switch (ecl_t_of(rs)) {
+  case t_random:
+    z->random.value = cl_copy_seq(rs->random.value);
+    break;
+  case t_fixnum:
+    z->random.value = init_genrand(ecl_fixnum(rs));
+    break;
+  case t_vector: /* intentionaly undocumented (only for internal use) */
+#if ECL_FIXNUM_BITS > 32
+    if (rs->vector.dim == 313 && rs->vector.elttype == ecl_aet_b64) {
+      z = ecl_alloc_object(t_random);
+      z->random.value = cl_copy_seq(rs);
+      break;
+    }
+#else  /* 32 bit version */
+    if (rs->vector.dim == 625 && rs->vector.elttype == ecl_aet_b32) {
+      z = ecl_alloc_object(t_random);
+      z->random.value = cl_copy_seq(rs);
+      break;
+    }
+#endif
+  default:
+    FEwrong_type_only_arg(@[make-random-state], rs,
+                          ecl_read_from_cstring(type));
+  }
+
+  return z;
 }
 
 @(defun random (x &optional (rs ecl_symbol_value(@'*random-state*')))
@@ -315,4 +337,10 @@ cl_object
 cl_random_state_p(cl_object x)
 {
   @(return (ECL_RANDOM_STATE_P(x) ? ECL_T : ECL_NIL));
+}
+
+cl_object
+si_random_state_array(cl_object rs) {
+  ecl_check_cl_type(@'ext::random-state-array', rs, t_random);
+  return rs->random.value;
 }

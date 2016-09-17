@@ -5,10 +5,8 @@ top_srcdir = ..\..\src
 srcdir	= ..\..\src\c
 
 !if "$(ECL_WIN64)" != ""
-ECL_FFI_OBJ=
 ECL_FPE_CODE=fpe_none.c
 !else
-ECL_FFI_OBJ=ffi_x86.obj
 ECL_FPE_CODE=fpe_x86.c
 !endif
 
@@ -103,7 +101,7 @@ OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
 	structure.obj load.obj unixfsys.obj unixsys.obj \
 	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) serialize.obj \
-	$(ECL_FFI_OBJ) $(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
+	$(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 

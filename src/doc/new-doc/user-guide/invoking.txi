@@ -58,7 +58,7 @@ SI>
 To exit from @ecl{}, call the function @code{quit}.
 
 @example
->(quit)
+> (quit)
 %
 @end example
 
@@ -66,7 +66,8 @@ Alternatively, you may type @myctrl{D} , i.e. press the key @key{D}
 while pressing down the control key (@key{Ctrl}).
 
 @example
->@myctrl{D}
+> @myctrl{D}
+
 %
 @end example
 
@@ -77,23 +78,23 @@ If more than one value is returned by the evaluation of the top-level
 form, the values will be printed successively.  If no value is returned,
 then nothing will be printed.
 @example
->(values 1 2)
+> (values 1 2)
 1
 2
->(values)
+> (values)
 
 >
 @end example
 
 When an error is signalled, control will enter the break loop.
 @example
->(defun foo (x) (bar x))
+> (defun foo (x) (bar x))
 foo
 
->(defun bar (y) (bee y y))
+> (defun bar (y) (bee y y))
 
 bar
->(foo 'lish)
+> (foo 'lish)
 Condition of type: UNDEFINED-FUNCTION
 The function BAR is undefined.
 
@@ -104,8 +105,6 @@ Available restarts:
 Broken at FOO. In: #<process TOP-LEVEL>.
 >>
 @end example
-
-To pick the first restart user has too type 
 
 @c @vskip 1em
 
@@ -126,20 +125,18 @@ If more restarts are present, user may invoke them with by typing
 @code{:rN}, where @key{N} is the restart number. For instance to pick
 the restart number two, type @code{:r2}.
 
-@c @vskip 1em
+See [@ref{The break loop}] for the details of the break loop.
 
-See Section 5.4 for the details of the break loop.
-
-The terminal interrupt (usually caused by typing @myctrl{C}
+The terminal interrupt (usually caused by typing @myctrl{C} 
 (Control-@code{C})) is a kind of error.  It breaks the running program
 and calls the break level loop.
 
 Example:
 @example
->(defun foo () (do () (nil)))
+> (defun foo () (do () (nil)))
 foo
 
->(foo)
+> (foo)
 @myctrl{C}
 
 Condition of type: INTERACTIVE-INTERRUPT

@@ -1122,16 +1122,11 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 static cl_object
 W32_handle_in_new_thread(cl_object signal_code)
 {
-        /* XXX: there is some bug present only on windows platform
-           with importing the current thread. Don't know how to track
-           it though. */
-#if 0
         int outside_ecl = ecl_import_current_thread(@'si::handle-signal', ECL_NIL);
         mp_process_run_function(4, @'si::handle-signal',
                                 @'si::handle-signal',
                                 signal_code, ECL_NIL);
         if (outside_ecl) ecl_release_current_thread();
-#endif  /* 0 */
 }
 
 BOOL WINAPI W32_console_ctrl_handler(DWORD type)
@@ -1139,20 +1134,21 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
         switch (type) {
         case CTRL_C_EVENT:
         case CTRL_BREAK_EVENT: {
-                /* cl_object function = */
-                /*         ECL_SYM_FUN(@'si::terminal-interrupt'); */
-                /* if (function) */
-                /*         W32_handle_in_new_thread(function); */
+                cl_object function =
+                        ECL_SYM_FUN(@'si::terminal-interrupt');
+                if (function)
+                        W32_handle_in_new_thread(function);
                 return TRUE;
         }
         case CTRL_CLOSE_EVENT:
         case CTRL_LOGOFF_EVENT:
-        case CTRL_SHUTDOWN_EVENT:
-                /* Doing nothing is arguably the most
-                   reasonable. Calling (quit) causes process to exit
-                   and Windows has problems, because "process has
-                   unexpectably died.*/
+	     case CTRL_SHUTDOWN_EVENT: {
+                cl_object function =
+	                     ECL_SYM_FUN(@'ext::quit');
+                if (function)
+	                     W32_handle_in_new_thread(function);
                 return TRUE;
+        }
         default:
                 return FALSE;
         }

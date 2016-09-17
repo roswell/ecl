@@ -190,3 +190,9 @@ References should be added like as follows:
 @verbatim
 [@ref{Standards}]
 @end verbatim
+
+Links:
+@verbatim
+@uref{http://example.org}
+@uref{http://example.org, Example website}
+@end verbatim

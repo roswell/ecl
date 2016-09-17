@@ -84,7 +84,7 @@
 @r{ANSI Common-Lisp}
 @end macro
 @macro ecl
-@b{@r{Embeddable Common-Lisp}}
+@b{@r{Embeddable Common Lisp}}
 @end macro
 @macro clisp
 @r{Common-Lisp}

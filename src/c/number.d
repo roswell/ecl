@@ -916,3 +916,17 @@ _ecl_float_to_integer(float d)
     return _ecl_big_register_copy(z);
   }
 }
+
+#ifdef ECL_IEEE_FP
+cl_object
+si_nan() {
+  cl_object x = ecl_alloc_object(t_doublefloat);
+  ecl_double_float(x) = NAN;
+}
+
+cl_object
+si_infinity() {
+  cl_object x = ecl_alloc_object(t_doublefloat);
+  ecl_double_float(x) = INFINITY;
+}
+#endif /* ECL_IEEE_FP */

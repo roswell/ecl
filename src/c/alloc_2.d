@@ -1124,9 +1124,45 @@ standard_finalizer(cl_object o)
 }
 
 static void
+wrapped_finalizer(cl_object o, cl_object finalizer);
+
+static void
+deferred_finalizer(cl_object o)
+{
+	wrapped_finalizer(cl_first(o), cl_second(o));
+}
+
+void
 wrapped_finalizer(cl_object o, cl_object finalizer)
 {
   if (finalizer != ECL_NIL && finalizer != NULL) {
+#ifdef ECL_THREADS
+    const cl_env_ptr the_env = ecl_process_env();
+    if (!the_env
+        || !the_env->own_process
+        || the_env->own_process->process.phase < ECL_PROCESS_ACTIVE)
+    {
+       /*
+        * The finalizer is invoked while we are registering or setup a
+        * new lisp process.  As example that may happen when we are
+        * doing ecl_import_current_thread.  That mean the finalizer
+        * can not be executed right now, so in some way we need to
+        * queue the finalization.  When we return from this function
+        * the original finalizer is no more registered to o, and if o
+        * is not anymore reachable it will be colleted.  To prevent
+        * this we need to make this object reachable again after that
+        * roundtrip and postpone the finalization to the next garbace
+        * colletion.  Given that this is a rare condition one way to
+        * do that is:
+        */
+       GC_finalization_proc ofn;
+       void *odata;
+       GC_register_finalizer_no_order(cl_list(2,o,finalizer),
+                                      (GC_finalization_proc)deferred_finalizer, 0,
+                                      &ofn, &odata);
+       return;
+    }
+#endif /* ECL_THREADS */
     CL_NEWENV_BEGIN {
       if (finalizer != ECL_T) {
         funcall(2, finalizer, o);

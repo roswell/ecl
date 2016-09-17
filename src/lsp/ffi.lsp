@@ -594,7 +594,7 @@ bound to this value during the execution of body."
 
 ;;; FIXME! We should turn this into a closure generator that produces no code.
 #+DFFI
-(defmacro def-lib-function (name args &key returning module (call :cdecl))
+(defmacro def-lib-function (name args &key returning module (call :default))
   (multiple-value-bind (c-name lisp-name) (lisp-to-c-name name)
     (let* ((return-type (ffi::%convert-to-return-type returning))
            (return-required (not (eq return-type :void)))
@@ -603,9 +603,9 @@ bound to this value during the execution of body."
         (defun ,lisp-name ,(mapcar #'first args)
           (si::call-cfun c-fun ',return-type ',argtypes (list ,@(mapcar #'first args)) ,call))))))
 
-(defmacro def-function (name args &key module (returning :void) (call :cdecl))
+(defmacro def-function (name args &key module (returning :void) (call :default))
   "Syntax: (def-function name args
-                         &key module (returning :void) (call :cdecl)
+                         &key module (returning :void) (call :default)
 
 Declares a foreign function."
   (declare (ignorable call))
@@ -758,7 +758,7 @@ Loads a foreign library."
   (if *use-dffi*
       (multiple-value-bind (name call-type) (if (consp name)
                                                 (values-list name)
-                                                (values name :cdecl))
+                                                (values name :default))
         (let ((arg-types (mapcar #'second arg-desc))
               (arg-names (mapcar #'first arg-desc)))
           `(si::make-dynamic-callback

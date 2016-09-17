@@ -201,7 +201,7 @@ _ecl_dealloc_env(cl_env_ptr env)
     ecl_internal_error("Unable to deallocate environment structure.");
 #else
 # if defined(ECL_USE_GUARD_PAGE)
-  if (!VirtualFree(env, sizeof(*env), MEM_RELEASE))
+  if (!VirtualFree(env, 0, MEM_RELEASE))
     ecl_internal_error("Unable to deallocate environment structure.");
 # endif
 #endif
@@ -714,23 +714,29 @@ cl_boot(int argc, char **argv)
   ECL_SET(@'mp::+load-compile-lock+',
           ecl_make_lock(@'mp::+load-compile-lock+', 1));
 #endif
-  aux = cl_list(
 #ifdef ENABLE_DLOPEN
-                11,
+  aux = cl_list(11,
+                CONS(ECL_NIL, @'si::load-source'),
                 CONS(str_fas, @'si::load-binary'),
                 CONS(str_fasl, @'si::load-binary'),
                 CONS(str_fasb, @'si::load-binary'),
                 CONS(str_FASB, @'si::load-binary'),
-#else
-                7,
-#endif
                 CONS(str_lsp, @'si::load-source'),
                 CONS(str_lisp, @'si::load-source'),
                 CONS(str_LSP, @'si::load-source'),
                 CONS(str_LISP, @'si::load-source'),
                 CONS(str_fasc, @'si::load-bytecodes'),
-                CONS(str_FASC, @'si::load-bytecodes'),
-                CONS(ECL_NIL, @'si::load-source'));
+                CONS(str_FASC, @'si::load-bytecodes'));
+#else
+  aux = cl_list(7,
+                CONS(ECL_NIL, @'si::load-source'),
+                CONS(str_lsp, @'si::load-source'),
+                CONS(str_lisp, @'si::load-source'),
+                CONS(str_LSP, @'si::load-source'),
+                CONS(str_LISP, @'si::load-source'),
+                CONS(str_fasc, @'si::load-bytecodes'),
+                CONS(str_FASC, @'si::load-bytecodes'));
+#endif
   ECL_SET(@'ext::*load-hooks*', aux);
   init_error();
   init_macros();

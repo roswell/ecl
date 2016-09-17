@@ -301,6 +301,33 @@ ecl_waitpid(cl_object pid, cl_object wait)
   @(return status code pid);
 }
 
+@(defun ext::terminate-process (process &optional (force ECL_NIL))
+  @
+  {
+    cl_env_ptr env = ecl_process_env();
+    bool error_encountered = FALSE;
+    ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
+    {
+      cl_object pid = external_process_pid(process);
+      if (!Null(pid)) {
+        int ret;
+#if defined(ECL_MS_WINDOWS_HOST)
+        ret = TerminateProcess(ecl_fixnum(pid), -1);
+        error_encountered = (ret == 0);
+#else
+        ret = kill(ecl_fixnum(pid), Null(force) ? SIGTERM : SIGKILL);
+        error_encountered = (ret != 0);
+#endif
+      }
+    }
+    ECL_WITH_SPINLOCK_END;
+    if (error_encountered)
+      FEerror("Cannot terminate the process ~A", 1, process);
+    return ECL_NIL;
+  }
+  @)
+
+
 @(defun si::wait-for-all-processes (&key (process ECL_NIL))
   @
   {
@@ -320,7 +347,8 @@ ecl_waitpid(cl_object pid, cl_object wait)
           update_process_status(p, status, code);
         }
         if (status != @':running') {
-          remove_external_process(env, p);                                        ecl_delete_eq(p, cl_core.external_processes);
+          remove_external_process(env, p);
+          ecl_delete_eq(p, cl_core.external_processes);
         }
       }
     } while (1);

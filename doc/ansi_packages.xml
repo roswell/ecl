@@ -56,12 +56,6 @@
      <entry>The compiler</entry>
     </row>
     <row>
-     <entry><package>XLIB</package></entry>
-     <entry><package>CLX</package></entry>
-     <entry><package>XLIB</package></entry>
-     <entry>CLX library for X-Windows</entry>
-    </row>
-    <row>
      <entry><package>SB-BSD-SOCKETS</package></entry>
      <entry></entry>
      <entry><package>SOCKETS</package></entry>
@@ -86,12 +80,11 @@
  <para>In <xref linkend="table.all-packages"/> we list all packages
  available in &ECL;. The nicknames are aliases for a package. Thus,
  <symbol>system:symbol</symbol> may be written as
- <symbol>sys:symbol</symbol> or <symbol>si:symbol</symbol>. The module field
- explains which library provides what package. For instance, the
+ <symbol>sys:symbol</symbol> or <symbol>si:symbol</symbol>. The module
+ field explains which library provides what package. For instance, the
  <package>ASDF</package> is obtained when loading the
- <package>ASDF</package> library with <code>(require 'asdf)</code>; and the
- <package>XLIB</package> package when configuring and loading the
- <package>CLX</package> library.</para>
+ <package>ASDF</package> library with <code>(require
+ 'asdf)</code>.</para>
 
  <xi:include href="ref_c_packages.xml" xpointer="ansi.packages.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 

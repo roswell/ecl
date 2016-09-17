@@ -1,15 +1,9 @@
 @node Overview
 @section Overview
 
-@menu
-* Reading this manual::
-* C Reference (Overview)::
-@end menu
-
-@node Reading this manual
 @subsection Reading this manual
 
-@subsubsection Common Lisp users
+@subsubheading Common Lisp users
 @ecl{} supports all Common-Lisp data types exactly as defined in the
 @bibcite{ANSI}. All functions and macros are expected to behave as
 described in that document and in the HyperSpec @bibcite{HyperSpec}
@@ -35,7 +29,7 @@ the manual copies the structure of the @ansi{} standard, having
 the same number of chapters, each one with a set of sections
 documenting the implementation-specific details.
 
-@subsubsection C/C++ programmers
+@subsubheading C/C++ programmers
 The second goal of this document is to provide a reference for C
 programmers that want to create, manipulate and operate with Common Lisp
 programs at a lower level, or simply embedding @ecl{} as a library.
@@ -45,7 +39,7 @@ form of one section with the name "C Reference" for each chapter of the
 @ansi{} standard. Much of what is presented in those sections is
 redundant with the Common Lisp specification. In particular, there is a
 one-to-one mapping between types and functions which should be obvious
-given the rules explained in C Reference (@ref{C Reference (Overview)}]).
+given the rules explained in the next section @emph{C Reference}.
 
 We must remark that the reference in this part of the manual is not
 enough to know how to embed @ecl{} in a program. In practice the user or
@@ -55,9 +49,8 @@ Interface}), manage memory (@ref{Memory Management}), etc. These
 concepts are explained in a different (@ref{Embedding ECL}) part of the
 book.
 
-@node C Reference (Overview)
-@subsection C Reference (Overview)
-@subsubsection One type for everything: @code{cl_object}
+@subsection C Reference
+@subsubheading One type for everything: @code{cl_object}
 @cindex One type for everything: @code{cl_object}
 
 ECL is designed around the basic principle that Common Lisp already
@@ -106,7 +99,7 @@ collector.
 For memory allocation details @xref{Memory Management}.
 For object implementation details @xref{Manipulating Lisp objects}.
 
-@subsubsection Naming conventions
+@subsubheading Naming conventions
 As explained in the introduction, each of the chapters in the Common
 Lisp standard can also be implemented using C functions and types. The
 mapping between both languages is done using a small set of rules
@@ -150,7 +143,7 @@ Most (if not all) Common Lisp functions and constructs available from
 C/C++ are available in ``ANSI Dictionary'' sections which are part of
 the [@ref{Standards}] entries.
 
-@subsubsection Only in Common Lisp
+@subsubheading Only in Common Lisp
 @cindex Only in Common Lisp
 
 Some parts of the language are not available as C functions, even though

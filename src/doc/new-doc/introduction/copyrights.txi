@@ -39,7 +39,6 @@ src/lsp/format.lsp      ; CMUCL's format
 and the directories
 contrib/                ; User contributed extensions
 examples/               ; Examples for the ECL usage
-src/clx/                ; portable CLX library from Telent
 Look the precise copyright of these extensions in the corresponding
 files.
 

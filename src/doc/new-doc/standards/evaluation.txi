@@ -1,13 +1,6 @@
 @node Evaluation and compilation
 @section Evaluation and compilation
 
-@menu
-* Compiler declaration @code{OPTIMIZE}::
-* C Reference (Evaluation and compilation)::
-* ANSI Dictionary (Evaluation and compilation)::
-@end menu
-
-@node Compiler declaration @code{OPTIMIZE}
 @subsection Compiler declaration @code{OPTIMIZE}
 @cindex Compiler declarations
 @lspindex optimize
@@ -114,8 +107,7 @@ instance, if you compile with a low value of @code{SAFETY}, and invoke
 @end multitable
 @end float
 
-@node C Reference (Evaluation and compilation)
-@subsection C Reference (Evaluation and compilation)
+@subsection C Reference
 
 @cppindex ecl_process_env
 @deftypefn {@cind{}} cl_object cl_env_ptr ()
@@ -126,7 +118,6 @@ variety of tasks, such as defining special variable bindings,
 controlling interrupts, retrieving function output values, etc.
 @end deftypefn
 
-@node ANSI Dictionary (Evaluation and compilation)
 @subsection ANSI Dictionary
 
 @multitable @columnfractions 0.4 0.6

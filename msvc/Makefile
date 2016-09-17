@@ -53,8 +53,6 @@ ECL_CMP     =
 ECL_ASDF    =
 # TCP support
 ECL_SOCKETS =
-# X Windows support
-# ECL_CLX     = 1
 # Regression Tests support
 ECL_RT      =
 # Defsystem support
@@ -180,10 +178,6 @@ ECL_FEATURES = (cons :wants-asdf $(ECL_FEATURES))
 !ifdef ECL_SOCKETS
 ECL_MODULES  = $(ECL_MODULES) sockets
 ECL_FEATURES = (cons :wants-sockets $(ECL_FEATURES))
-!endif
-!ifdef ECL_CLX
-ECL_MODULES  = $(ECL_MODULES) clx
-ECL_FEATURES = (cons :wants-clx $(ECL_FEATURES))
 !endif
 !ifdef ECL_RT
 ECL_MODULES  = $(ECL_MODULES) rt
@@ -473,10 +467,10 @@ test2:
 test3:
 	-mkdir stage2
 	cp -rf lsp clos cmp stage2
-	-for i in lsp cmp clos clx tk; do test -f lib$$i.a && mv lib$$i.a stage2; done
+	-for i in lsp cmp clos tk; do test -f lib$$i.a && mv lib$$i.a stage2; done
 	$(MAKE) clean_lisp
 	./ecl < compile.lsp
-	-for i in lsp clos cmp clx tk; do test -d $$i && diff --exclude=\*.o $$i stage2/$$i; done | less
+	-for i in lsp clos cmp tk; do test -d $$i && diff --exclude=\*.o $$i stage2/$$i; done | less
 test:
 	$(MAKE) -C tests
 	$(MAKE) -C ansi-tests > ansi-tests/log

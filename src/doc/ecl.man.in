@@ -32,40 +32,27 @@ ecl \- Embeddable Common Lisp
 
 .SH DESCRIPTION
 .sp
-ECL stands for Embeddable Common Lisp.
-The ECL project is an effort to modernize
-Giuseppe Attardi's ECL environment to
-produce an implementation of the Common Lisp
-language which complies to the ANSI X3J13
-definition of the language.
+ECL (Embeddable Common-Lisp) is an interpreter of the Common-Lisp language as described in the X3J13 Ansi specification,
+featuring CLOS (Common-Lisp Object System), conditions, loops,
+etc. plus a translator to C, which can produce standalone executables.
+
+ECL supports the operating systems Linux, FreeBSD, NetBSD, OpenBSD, OS X, Solaris and Windows, running on top of the Intel, Sparc, Alpha, PowerPC and ARM processors.
 .PP
 The current ECL implementation features:
 .IP \(bu
 A bytecode compiler and interpreter.
 .IP \(bu
-A translator to C.
+Compiles Lisp also with any C/C++ compiler
 .IP \(bu
-An interface to foreign functions.
+Can build standalone executables and libraries
 .IP \(bu
-A dynamic loader.
+ASDF, Sockets, Gray streams, MOP, and other useful components
 .IP \(bu
-The possibility to build standalone executables.
+Extremely portable
 .IP \(bu
-The Common Lisp Object System (CLOS).
-.IP \(bu
-Conditions and restarts for handling errors.
-.IP \(bu
-Sockets as ordinary streams.
-.IP \(bu
-The Gnu Multiprecision library for fast bignum operations.
-.IP \(bu
-A simple conservative mark & sweep garbage collector.
-.IP \(bu
-The Boehm-Weiser garbage collector.
-
+A reasonable license
 .PP
-\fBecl\fP without any argument gives you the
-interactive lisp.
+\fBecl\fP without any argument starts the interactive lisp session.
 
 .SH OPTIONS
 .TP 1i
@@ -80,8 +67,8 @@ Do not load configuration files at startup.
 Prints the current version of ECL, without running the ECL.
 .TP
 .BI \-debug
-Turned on by default, this enables the debugging in the setup phase, so that you can debug your
-\.rc files.
+Turned on by default, this enables the debugging in the setup phase,
+so that you can debug your files.
 .TP
 .BI \-\-nodebug
 Run without debugging setup phase, meaning that errors prevent ECL from starting up.
@@ -89,21 +76,21 @@ Run without debugging setup phase, meaning that errors prevent ECL from starting
 .BI \-\-eval " file"
 Evaluate the
 .I file
-before starting the ECL, or loading the \.rc files.
+before loading the .rc file and starting the Top Level.
 .TP
 .BI \-\-shell " file"
 Executes the given
 .I file
 and exits, without providing a read-eval-print loop.
 If you want to use lisp as a scripting language, you can write
-.BR "#!usr/bin/env ecl --shell"
+.BR "#!@bindir@/ecl --shell"
 on the first line of the file to be executed, and then ECL will be
 automatically invoked.
 .TP
 .BI \-\-load " file"
 Load source
 .I file
-before starting ECL.
+before loading the .rc file and starting the Top Level.
 .TP
 .BI \-\-dir " directory"
 Use
@@ -128,7 +115,7 @@ in kilobytes.
 .BI \-\-c-stack " size"
 Specify stack
 .I size
- in kilobytes for C compiler.
+in kilobytes for C compiler.
 .TP
 .BI \-\-trap-fpe
 Make ECL debugger catch floating point exception.
@@ -149,12 +136,12 @@ for standard input.
 .BI \-\-output-encoding " encoding"
 Specify the external
 .I encoding
- for standard output.
+for standard output.
 .TP
 .BI \-\-error-encoding " encoding"
 Specify the external
 .I encoding
- for standard error.
+for standard error.
 .TP
 
 .BI \-o " file"
@@ -200,10 +187,11 @@ or standalone executable programs.
 
 .SH AUTHORS
 
-The original version was developed by Giuseppe Attardi starting from the Kyoto
-Common Lisp implementation by Taiichi Yuasa, Masami Hagiya and Juan Jose Garcia
-Ripoll.The current maintainer of ECL is Dawid Kochmański,
-who can be reached at the ECL mailing list.
+The original version was developed by Giuseppe Attardi starting from
+the Kyoto Common Lisp implementation by Taiichi Yuasa, Masami
+Hagiya. Further development was lead by Juan Jose Garcia Ripoll.  The
+current maintainer of ECL is Daniel Kochmański, who can be reached at
+the ECL mailing list.
 
 .SH FILES
 .TP
@@ -212,54 +200,22 @@ Default initialization files loaded at startup unless the option
 .BR \-\-norc
 is provided.
 (if they exist).
+
 .SH SEE ALSO
-.IP ""
-ANSI Common Lisp standard X3.226-1994
-.IP ""
-The Common Lisp HyperSpec
+.IP ANSI Common Lisp standard X3.226-1994
+.IP The Common Lisp HyperSpec
+
 .SH "BUGS"
-Unfortunately it is possible that there are some bugs in the program.In case you find any bug,
-please report it as an issue(after making sure that it hasn't been reported or fixed)
-to official gitlab repository: https://gitlab.com/embeddable-common-lisp/ecl/issues
+Unfortunately it is possible that there are some bugs in the program.
+In case you find any bug, please report it as an issue (after making sure that it hasn't been reported or fixed)
+to official gitlab repository: https://gitlab.com/embeddable-common-lisp/ecl/issues .
+
 .SH "LICENSE"
-  ECL is free software; you can redistribute it and/or modify it
-  under the terms of the GNU Library General Public License as published
-  by the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version; see file 'Copying'.
+ECL is free software; you can redistribute it and/or modify it under the terms of the GNU Library General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version; see file 'Copying'.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-  You should have received a copy of the GNU Library General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-  PLEASE NOTE THAT:
-
-  This license covers all of the ECL program except for the files
-.br
-	src/lsp/loop.lsp	; Symbolic's LOOP macro
-.br
-	src/lsp/pprint.lsp	; CMUCL's pretty printer
-.br
-	src/lsp/format.lsp	; CMUCL's format
-.br
-
-  and the directories
-
-
-	contrib/		; User contributed extensions
-.br
-        examples/               ; Examples for the ECL usage
-.br
-	src/clx/		; portable CLX library from Telent
-.br
-  Look the precise copyright of these extensions in the corresponding
-  files.
-
-  Examples are licensed under: (SPDX-License-Identifier) BSD-2-Clause
-
-  Report bugs, comments, suggestions to the ecl mailing list:
-  ecl-devel@common-lisp.net (or use gitlab).
+Please report bugs, comments, suggestions to the ecl mailing list:
+.B ecl-devel@common-lisp.net
+(or use gitlab).

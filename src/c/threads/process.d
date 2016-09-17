@@ -31,16 +31,6 @@
 #include "threads/ecl_atomics.h"
 
 #ifdef ECL_WINDOWS_THREADS
-/*
- * We have to put this explicit definition here because Boehm GC
- * is designed to produce a DLL and we rather want a static
- * reference
- */
-# include <gc.h>
-extern HANDLE WINAPI GC_CreateThread(
-                                     LPSECURITY_ATTRIBUTES lpThreadAttributes, 
-                                     DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, 
-                                     LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId );
 # ifndef WITH___THREAD
 DWORD cl_env_key;
 # endif
@@ -382,7 +372,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   ecl_set_process_env(env_aux);
   env = _ecl_alloc_env(0);
   ecl_set_process_env(env);
-  env->cleanup = registered;
 
   /* Link environment and process together */
   env->own_process = process = alloc_process(name, bindings);
@@ -392,6 +381,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   ecl_list_process(process);
 
   ecl_init_env(env);
+  env->cleanup = registered;
   env->bindings_array = process->process.initial_bindings;
   env->thread_local_bindings_size = env->bindings_array->vector.dim;
   env->thread_local_bindings = env->bindings_array->vector.self.t;

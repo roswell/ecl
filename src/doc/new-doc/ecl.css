@@ -1,0 +1,55 @@
+html {	background: #FFF; }
+body {
+	margin: 1em 125px 0 10%;
+        line-height: 1.5em;
+        padding: 0 2em 1em 2em;
+	background: #FFF;
+	font: 12px Verdana,Arial, sans-serif
+}
+ul, dd, dl, dt { margin-top: 0; margin-bottom: 0; }
+p, code, td, dl, dt {
+	line-height: 1.5em;
+}
+table {
+	font: inherit;
+}
+th, td {
+	vertical-align: top;
+}
+h1, h2, h3, h4, h5 { background: #EEE; }
+code, pre {
+	font-size: 1em;
+	font-family: fixed;
+}
+pre {
+	line-height: 1em;
+	overflow: auto;
+}
+pre.screen {
+	font-weight: bold;
+	background: #EEE;
+	border: 1px solid black;
+	padding: 0.5em;
+}
+pre.programlisting {
+	background: #EEEEEE;
+	border-left: 1px solid black;
+	border-top: 1px solid black;
+	padding: 0.5em;
+}
+a { color: #000; font-weight: bold; }
+div p { padding: 0 2em }
+li p { padding: 0; margin: 0 }
+hr { display: none; }
+div.funcsynopsis p  {
+	text-indent: -2em;
+}
+div.variablelist {
+	padding: 0 2em;
+}
+.type, .funcsynopsis, .symbol {
+	font-family: fixed;
+}
+.type, .symbol, .replaceable {
+	white-space: nowrap;
+}
