@@ -598,7 +598,7 @@ extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
 
 #ifndef INFINITY
 # if _MSC_VER == 1600
-union {
+static union {
     uint8_t bytes [ sizeof ( float ) ];
     float inf;
 } __ecl_inf = {
@@ -612,7 +612,7 @@ union {
 
 #ifndef NAN
 # if _MSC_VER == 1600
-union {
+static union {
     uint8_t bytes [ sizeof ( float ) ];
     float nan;
 } __ecl_nan = {
