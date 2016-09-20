@@ -69,8 +69,8 @@ Man page now contains up-to-date list of flags, as well as explanation of
 flag's behavior.
 
 - Deprecated long flags with one dash, added two-dash version
-Flags that aren't one-character, but start with one dash(e.g. -eval)
-are now deprecated; long version(--eval) was added instead.
+Flags that aren't one-character, but start with one dash (e.g. =-eval=) are
+now deprecated; long version =--eval= was added instead.
 
 - Indented C/C++ code to follow emacs's gnu C style
 This is a first step towards coding standards in the
