@@ -268,6 +268,9 @@
 /* HAVE_POSIX_RWLOCK */
 #undef HAVE_POSIX_RWLOCK
 
+/* Define to 1 if the system has the type `pthread_rwlock_t'. */
+#undef HAVE_PTHREAD_RWLOCK_T
+
 /* Define to 1 if the system has the type `ptrdiff_t'. */
 #undef HAVE_PTRDIFF_T
 

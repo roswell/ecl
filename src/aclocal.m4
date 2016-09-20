@@ -918,8 +918,10 @@ dnl ----------------------------------------------------------------------
 dnl Check whether we have POSIX read/write locks are available
 AC_DEFUN([ECL_POSIX_RWLOCK],[
 AC_CHECK_FUNC( [pthread_rwlock_init], [
-  AC_DEFINE([ECL_RWLOCK], [], [ECL_RWLOCK])
-  AC_DEFINE([HAVE_POSIX_RWLOCK], [], [HAVE_POSIX_RWLOCK])
+  AC_CHECK_TYPES([pthread_rwlock_t], [
+    AC_DEFINE([ECL_RWLOCK], [], [ECL_RWLOCK])
+    AC_DEFINE([HAVE_POSIX_RWLOCK], [], [HAVE_POSIX_RWLOCK])
+  ], [])
 ], [])
 THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 ])

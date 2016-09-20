@@ -5836,11 +5836,22 @@ if test "${enable_threads}" = "yes" ; then
 ac_fn_c_check_func "$LINENO" "pthread_rwlock_init" "ac_cv_func_pthread_rwlock_init"
 if test "x$ac_cv_func_pthread_rwlock_init" = xyes; then :
 
+  ac_fn_c_check_type "$LINENO" "pthread_rwlock_t" "ac_cv_type_pthread_rwlock_t" "$ac_includes_default"
+if test "x$ac_cv_type_pthread_rwlock_t" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_PTHREAD_RWLOCK_T 1
+_ACEOF
+
+
 
 $as_echo "#define ECL_RWLOCK /**/" >>confdefs.h
 
 
 $as_echo "#define HAVE_POSIX_RWLOCK /**/" >>confdefs.h
+
+
+fi
 
 
 fi
