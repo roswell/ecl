@@ -1776,6 +1776,7 @@ extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
 
 extern ECL_API cl_object mp_make_lock _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object mp_recursive_lock_p(cl_object lock);
+extern ECL_API cl_object mp_holding_lock_p(cl_object lock);
 extern ECL_API cl_object mp_lock_name(cl_object lock);
 extern ECL_API cl_object mp_lock_owner(cl_object lock);
 extern ECL_API cl_object mp_lock_count(cl_object lock);

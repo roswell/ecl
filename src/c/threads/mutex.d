@@ -68,6 +68,16 @@ mp_recursive_lock_p(cl_object lock)
 }
 
 cl_object
+mp_holding_lock_p(cl_object lock)
+{
+  cl_env_ptr env = ecl_process_env();
+  cl_object own_process = env->own_process;
+  unlikely_if (ecl_t_of(lock) != t_lock)
+    FEerror_not_a_lock(lock);
+  ecl_return1(env, (lock->lock.owner == own_process) ? ECL_T : ECL_NIL);
+}
+
+cl_object
 mp_lock_name(cl_object lock)
 {
   cl_env_ptr env = ecl_process_env();

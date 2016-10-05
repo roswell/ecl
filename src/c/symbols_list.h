@@ -1550,6 +1550,7 @@ cl_symbols[] = {
 {MP_ "MAKE-LOCK", MP_ORDINARY, IF_MP(mp_make_lock), -1, OBJNULL},
 {KEY_ "RECURSIVE", KEYWORD, NULL, -1, OBJNULL},
 {MP_ "RECURSIVE-LOCK-P", MP_ORDINARY, IF_MP(mp_recursive_lock_p), 1, OBJNULL},
+{MP_ "HOLDING-LOCK-P", MP_ORDINARY, IF_MP(mp_holding_lock_p), 1, OBJNULL},
 {MP_ "LOCK-NAME", MP_ORDINARY, IF_MP(mp_lock_name), 1, OBJNULL},
 {MP_ "LOCK-OWNER", MP_ORDINARY, IF_MP(mp_lock_owner), 1, OBJNULL},
 {MP_ "LOCK-COUNT", MP_ORDINARY, IF_MP(mp_lock_count), 1, OBJNULL},
