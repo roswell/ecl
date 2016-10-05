@@ -1,0 +1,768 @@
+@node Native threads
+@section Native threads
+@cindex Native threads
+@ftindex THREADS
+
+@menu
+* Introduction to native threads::
+* Native threads reference::
+@end menu
+
+@node Introduction to native threads
+@subsection Tasks, threads or processes
+
+On most platforms, ECL supports native multithreading. That means there
+can be several tasks executing lisp code on parallel and sharing memory,
+variables and files. The interface for multitasking in ECL, like those
+of most other implementations, is based on a set of functions and types
+that resemble the multiprocessing capabilities of old Lisp Machines.
+
+This backward compatibility is why tasks or threads are called
+"processes". However, they should not be confused with operating system
+processes, which are made of programs running in separate contexts and
+without access to each other's memory.
+
+The implementation of threads in ECL is purely native and based on Posix
+Threads wherever avaiable. The use of native threads has
+advantanges. For instance, they allow for non-blocking file operations,
+so that while one task is reading a file, a different one is performing
+a computation.
+
+As mentioned above, tasks share the same memory, as well as the set of
+open files and sockets. This manifests on two features. First of all,
+different tasks can operate on the same lisp objects, reading and
+writing their slots, or manipulating the same arrays. Second, while
+threads share global variables, constants and function definitions they
+can also have thread-local bindings to special variables that are not
+seen by other tasks.
+
+The fact that different tasks have access to the same set of data allows
+both for flexibility and a greater risk. In order to control access to
+different resources, ECL provides the user with locks, as explained in
+the next section.
+
+@node Native threads reference
+@subsection Native threads reference
+
+@node Processes
+@subsubsection Processes
+@lspindex mp:all-processes
+@cppindex mp_all_processes
+@defun mp:all-processes
+
+Returns the list of processes associated to running tasks. The list is a
+fresh new one and can be destructively modified. However, it may happen
+that the output list is not up to date, because some of the tasks has
+expired before this copy is returned.
+
+@table @var
+@item returns
+Return the list of active processes.
+@item C/C++ signature
+@code {cl_object mp_all_processes(void);}
+@end table
+@end defun
+
+@lspindex mp:exit-process
+@cppindex mp_exit_process
+@defun mp:exit_process
+
+When called from a running task, this function immediately causes the
+task to finish. When invoked from the main thread, it is equivalent to
+invoking @code{ext:quit} with exit code 0.
+
+@table @var
+@item C/C++ signature
+cl_object mp_exit_process(void) ecl_attr_noreturn;
+@end table
+@end defun
+
+@lspindex mp:interrupt-process
+@cppindex mp_interrupt_process
+@defun mp:interrupt_process
+
+Interrupt a task. This function sends a signal to a running task. When
+the task is free to process that signal, it will stop whatever it is
+doing and execute the given function.
+
+@table @var
+@item process
+An object of type @code{mp:process}.
+@item function
+A function, which is to be executed in the interrupted process.
+@item C/C++ signature
+cl_object mp_interrupt_process(cl_object process, cl_object function);
+@end table
+
+@subsubheading Example
+@exindex Process interruption
+Kill a task that is doing nothing (See @code{mp:process-kill}).
+@lisp
+(flet ((task-to-be-killed ()
+         ;; Infinite loop
+         (loop (sleep 1))))
+  (let ((task (mp:process-run-function 'background #'task-to-be-killed)))
+    (sleep 10)
+    (mp:interrupt-process task 'mp:exit-process)))
+@end lisp
+@end defun
+
+@lspindex mp:make-process
+@cppindex mp_make_process
+@defun mp:make-process &key name initial-bindings
+Create a new thread. This function creates a separate task, with a name,
+set of variable bindings and no function to run. See also
+@code{mp:process-run-function}.
+@table @var
+@item name
+A symbol to name the process. Processes can be unnamed and names need
+not be unique.
+@item initial-bindings
+The list of special variables which will be local to the new process. It
+defaults to T, which means copying all variables which are local to this
+process.
+@item returns
+Newly created process.
+@item C/C++ signature
+cl_object mp_make_process _ECL_ARGS((cl_narg narg, ...));
+@end table
+@end defun
+
+@lspindex mp:process_active_p
+@cppindex mp_process_active_p
+@defun mp:process_active_p
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_active_p(cl_object process);
+@end table
+@end defun
+
+@lspindex mp:process_enable
+@cppindex mp_process_enable
+@defun mp:process_enable
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_enable(cl_object process);
+@end table
+@end defun
+
+@lspindex mp:process_yield
+@cppindex mp_process_yield
+@defun mp:process_yield
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_yield(void);
+@end table
+@end defun
+
+@lspindex mp:process_join
+@cppindex mp_process_join
+@defun mp:process_join
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_join(cl_object process);
+@end table
+@end defun
+
+@lspindex mp:process_kill
+@cppindex mp_process_kill
+@defun mp:process_kill
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_kill(cl_object process);
+@end table
+@end defun
+
+@lspindex mp:process_suspend
+@cppindex mp_process_suspend
+@defun mp:process_suspend
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_suspend(cl_object process);
+@end table
+@end defun
+
+@lspindex mp:process_resume
+@cppindex mp_process_resume
+@defun mp:process_resume
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_resume(cl_object process);
+@end table
+@end defun
+
+@lspindex mp:process_name
+@cppindex mp_process_name
+@defun mp:process_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_name(cl_object process);
+@end table
+@end defun
+
+@lspindex mp:process_preset
+@cppindex mp_process_preset
+@defun mp:process_preset
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_preset _ECL_ARGS((cl_narg narg, cl_object process, cl_object function, ...));
+@end table
+@end defun
+
+@lspindex mp:process_run_function
+@cppindex mp_process_run_function
+@defun mp:process_run_function
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_run_function _ECL_ARGS((cl_narg narg, cl_object name, cl_object function, ...));
+@end table
+@end defun
+
+@lspindex mp:process_run_function_wait
+@cppindex mp_process_run_function_wait
+@defun mp:process_run_function_wait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_run_function_wait _ECL_ARGS((cl_narg narg, ...));
+@end table
+@end defun
+
+@lspindex mp:process_whostate
+@cppindex mp_process_whostate
+@defun mp:process_whostate
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_process_whostate(cl_object process);
+@end table
+@end defun
+
+@lspindex mp:make_condition_variable
+@cppindex mp_make_condition_variable
+@defun mp:make_condition_variable
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_condition_variable(void);
+@end table
+@end defun
+
+@lspindex mp:condition_variable_wait
+@cppindex mp_condition_variable_wait
+@defun mp:condition_variable_wait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_condition_variable_wait(cl_object cv, cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:condition_variable_timedwait
+@cppindex mp_condition_variable_timedwait
+@defun mp:condition_variable_timedwait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_condition_variable_timedwait(cl_object cv, cl_object lock, cl_object seconds);
+@end table
+@end defun
+
+@lspindex mp:condition_variable_signal
+@cppindex mp_condition_variable_signal
+@defun mp:condition_variable_signal
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_condition_variable_signal(cl_object cv);
+@end table
+@end defun
+
+@lspindex mp:condition_variable_broadcast
+@cppindex mp_condition_variable_broadcast
+@defun mp:condition_variable_broadcast
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_condition_variable_broadcast(cl_object cv);
+@end table
+@end defun
+
+@lspindex mp:current_process
+@cppindex mp_current_process
+@defun mp:current_process
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_current_process(void);
+@end table
+@end defun
+
+@lspindex mp:block_signals
+@cppindex mp_block_signals
+@defun mp:block_signals
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_block_signals(void);
+@end table
+@end defun
+
+@lspindex mp:restore_signals
+@lspindex mp_restore_signals
+@defun mp:restore_signals
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_restore_signals(cl_object sigmask);
+@end table
+@end defun
+
+bool ecl_import_current_thread(cl_object process_name, cl_object process_binding);
+void ecl_release_current_thread(void);
+
+@node Locks
+@subsubsection Locks (mutexes)
+/* threads/process.d */
+
+@lspindex mp:make_lock
+@cppindex mp_make_lock
+@defun mp:make_lock
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_lock _ECL_ARGS((cl_narg narg, ...));
+@end table
+@end defun
+
+@lspindex mp:recursive_lock_p
+@lspindex mp_recursive_lock_p
+@defun mp:recursive_lock_p
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_recursive_lock_p(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:holding_lock_p
+@lspindex mp_holding_lock_p
+@defun mp:holding_lock_p
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_holding_lock_p(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:lock_name
+@lspindex mp_lock_name
+@defun mp:lock_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_lock_name(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:lock_owner
+@lspindex mp_lock_owner
+@defun mp:lock_owner
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_lock_owner(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:lock_count
+@lspindex mp_lock_count
+@defun mp:lock_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_lock_count(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:get_lock
+@lspindex mp_get_lock
+@defun mp:get_lock
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_lock _ECL_ARGS((cl_narg narg, cl_object lock, ...));
+@end table
+@end defun
+
+@lspindex mp:get_lock_wait
+@lspindex mp_get_lock_wait
+@defun mp:get_lock_wait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_lock_wait(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:get_lock_nowait
+@lspindex mp_get_lock_nowait
+@defun mp:get_lock_nowait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_lock_nowait(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:giveup_lock
+@lspindex mp_giveup_lock
+@defun mp:giveup_lock
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_giveup_lock(cl_object lock);
+@end table
+@end defun
+
+cl_object ecl_make_lock(cl_object lock, bool recursive);
+
+@node Read-Write locks
+@subsubsection Read-Write locks
+/* threads/rwlock.d */
+
+@lspindex mp:make_rwlock
+@lspindex mp_make_rwlock
+@defun mp:make_rwlock
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_rwlock _ECL_ARGS((cl_narg narg, ...));
+@end table
+@end defun
+
+@lspindex mp:rwlock_name
+@lspindex mp_rwlock_name
+@defun mp:rwlock_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_rwlock_name(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:get_rwlock_read
+@lspindex mp_get_rwlock_read
+@defun mp:get_rwlock_read
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_rwlock_read _ECL_ARGS((cl_narg narg, cl_object lock, ...));
+@end table
+@end defun
+
+@lspindex mp:get_rwlock_write
+@lspindex mp_get_rwlock_write
+@defun mp:get_rwlock_write
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_rwlock_write _ECL_ARGS((cl_narg narg, cl_object lock, ...));
+@end table
+@end defun
+
+@lspindex mp:giveup_rwlock_read
+@lspindex mp_giveup_rwlock_read
+@defun mp:giveup_rwlock_read
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_giveup_rwlock_read(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:giveup_rwlock_write
+@lspindex mp_giveup_rwlock_write
+@defun mp:giveup_rwlock_write
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_giveup_rwlock_write(cl_object lock);
+@end table
+@end defun
+
+cl_object ecl_make_rwlock(cl_object lock);
+
+@node Semaphores
+@subsubsection Semaphores
+/* threads/semaphore.d */
+
+@lspindex mp:make_semaphore
+@lspindex mp_make_semaphore
+@defun mp:make_semaphore
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_semaphore _ECL_ARGS((cl_narg, ...));
+@end table
+@end defun
+
+@lspindex mp:semaphore_count
+@lspindex mp_semaphore_count
+@defun mp:semaphore_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_semaphore_count(cl_object);
+@end table
+@end defun
+
+@lspindex mp:semaphore_name
+@lspindex mp_semaphore_name
+@defun mp:semaphore_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_semaphore_name(cl_object);
+@end table
+@end defun
+
+@lspindex mp:semaphore_wait_count
+@lspindex mp_semaphore_wait_count
+@defun mp:semaphore_wait_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_semaphore_wait_count(cl_object);
+@end table
+@end defun
+
+@lspindex mp:wait_on_semaphore
+@lspindex mp_wait_on_semaphore
+@defun mp:wait_on_semaphore
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_wait_on_semaphore(cl_object);
+@end table
+@end defun
+
+@lspindex mp:try_get_semaphore
+@lspindex mp_try_get_semaphore
+@defun mp:try_get_semaphore
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_try_get_semaphore(cl_object);
+@end table
+@end defun
+
+@lspindex mp:signal_semaphore
+@lspindex mp_signal_semaphore
+@defun mp:signal_semaphore
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_signal_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
+@end table
+@end defun
+
+cl_object ecl_make_semaphore(cl_object name, cl_fixnum count);
+
+@node Barriers
+@subsubsection Barriers
+/* threads/barrier.d */
+
+@lspindex ecl_make_barrier
+cl_object ecl_make_barrier(cl_object name, cl_index count);
+cl_object mp:make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
+cl_object mp_make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
+@defun mp:make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_barrier_count(cl_object);
+@end table
+@end defun
+
+@lspindex mp:barrier_name
+@lspindex mp_barrier_name
+@defun mp:barrier_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_barrier_name(cl_object);
+@end table
+@end defun
+
+@lspindex mp:barrier_arrivers_count
+@lspindex mp_barrier_arrivers_count
+@defun mp:barrier_arrivers_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_barrier_arrivers_count(cl_object);
+@end table
+@end defun
+
+@lspindex mp:barrier_wait
+@lspindex mp_barrier_wait
+@defun mp:barrier_wait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_barrier_wait _ECL_ARGS((cl_narg, cl_object, ...));
+@end table
+@end defun
+
+cl_object mp_barrier_unblock _ECL_ARGS((cl_narg, cl_object, ...));
+
+@node Mailboxes
+@subsubsection Mailboxes
+/* threads/mailbox.d */
+
+@lspindex mp:make_mailbox
+@lspindex mp_make_mailbox
+@defun mp:make_mailbox
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_mailbox _ECL_ARGS((cl_narg, ...));
+@end table
+@end defun
+
+@lspindex mp:mailbox_name
+@lspindex mp_mailbox_name
+@defun mp:mailbox_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_name(cl_object mailbox);
+@end table
+@end defun
+
+@lspindex mp:mailbox_count
+@lspindex mp_mailbox_count
+@defun mp:mailbox_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_count(cl_object mailbox);
+@end table
+@end defun
+
+@lspindex mp:mailbox_empty_p
+@lspindex mp_mailbox_empty_p
+@defun mp:mailbox_empty_p
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_empty_p(cl_object);
+@end table
+@end defun
+
+@lspindex mp:mailbox_read
+@lspindex mp_mailbox_read
+@defun mp:mailbox_read
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_read(cl_object mailbox);
+@end table
+@end defun
+
+@lspindex mp:mailbox_try_read
+@lspindex mp_mailbox_try_read
+@defun mp:mailbox_try_read
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_try_read(cl_object mailbox);
+@end table
+@end defun
+
+@lspindex mp:mailbox_send
+@lspindex mp_mailbox_send
+@defun mp:mailbox_send
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_send(cl_object mailbox, cl_object msg);
+@end table
+@end defun
+
+cl_object mp_mailbox_try_send(cl_object mailbox, cl_object msg);
+
+@node Atomic operations
+@subsubsection Atomic operations
+/* threads/atomic.c */
+
+cl_object ecl_atomic_get(cl_object *slot);
+void ecl_atomic_push(cl_object *slot, cl_object o);
+void ecl_atomic_nconc(cl_object l, cl_object *slot);
+cl_object ecl_atomic_pop(cl_object *slot);
+cl_index ecl_atomic_index_incf(cl_index *slot);

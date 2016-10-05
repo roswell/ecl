@@ -5,12 +5,12 @@
 * System building::
 * Operating System Interface::
 * Foreign Function Interface::
-* Multithreading::
+* Native threads::
+@c * Green Threads::
 * Signals and Interrupts::
 @c Networking::
 * Memory Management::
 * Meta-Object Protocol (MOP)::
-@c * Green Threads::
 @c * Continuations::
 @c * Extensible Sequences::
 * Gray Streams::
@@ -28,10 +28,14 @@
 @node Operating System Interface
 @section Operating System Interface
 
+@c Foreign function interface
 @include extensions/ffi.txi
 
-@node Multithreading
-@section Multithreading
+@c Native threads
+@include extensions/mp.txi
+
+@c @node Green Threads
+@c @section Green Threads
 
 @node Signals and Interrupts
 @section Signals and Interrupts
@@ -41,9 +45,6 @@
 
 @node Meta-Object Protocol (MOP)
 @section Meta-Object Protocol (MOP)
-
-@c @node Green Threads
-@c @section Green Threads
 
 @c @node Continuations
 @c @section Continuations
