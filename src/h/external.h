@@ -1711,7 +1711,6 @@ extern ECL_API cl_object mp_process_active_p(cl_object process);
 extern ECL_API cl_object mp_process_enable(cl_object process);
 extern ECL_API cl_object mp_process_yield(void);
 extern ECL_API cl_object mp_process_join(cl_object process);
-extern ECL_API cl_object mp_process_interrupt(cl_object process, cl_object function);
 extern ECL_API cl_object mp_process_kill(cl_object process);
 extern ECL_API cl_object mp_process_suspend(cl_object process);
 extern ECL_API cl_object mp_process_resume(cl_object process);
