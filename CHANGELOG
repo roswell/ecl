@@ -30,7 +30,7 @@
 * Pending changes since 16.1.2
 ** API changes
 - mp:holding-lock-p: introduce new function for multiprocessing.
-Function verifies, if lock is hold by the thread which calls the
+Function verifies if lock is hold by the thread which calls the
 function. Usage: =(mp:holding-lock-p my-lock)=.
 
 - make-random-state: fix problem with simple-vectors
