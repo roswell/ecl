@@ -29,7 +29,8 @@
                          (:file "external-formats")
                          #+ieee-floating-point
                          (:file "ieee-fp")
-                         (:file "external-process")))))
+                         (:file "external-process")
+                         (:file "multiprocessing")))))
 
 (asdf:defsystem #:ecl-tests/stress
   :serial t

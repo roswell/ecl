@@ -49,7 +49,8 @@
 (suite 'features
        '(features/eformat
          features/ieee-fp
-         features/eprocess))
+         features/eprocess
+         features/mp))
 
 
 ;;; Some syntactic sugar for 2am
