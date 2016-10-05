@@ -73,6 +73,39 @@
 </refentry>
 
 <!-- ====================================================================== -->
+<!-- MP:HOLDING-LOCK-P                                                      -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.holding-lock-p">
+ <refnamediv>
+  <refname><function>mp:holding-lock-p</function></refname>
+  <refpurpose>Determine whether current process holds the lock.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:holding-lock-p</funcdef>
+    <paramdef><parameter>lock</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>lock</replaceable></term>
+    <listitem><para>An object of type <replaceable>mp:lock</replaceable>.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>Returns true if the current process holds the lock.</para>
+ </refsect1>
+
+</refentry>
+
+<!-- ====================================================================== -->
 <!-- MP:INTERRUPT-PROCESS                                                   -->
 <!-- ====================================================================== -->
 
@@ -453,7 +486,7 @@
   <title>Function</title>
   <funcsynopsis>
    <funcprototype>
-    <funcdef>mp:process-active-p</funcdef>
+    <funcdef>mp:process-name</funcdef>
     <paramdef><parameter>process</parameter></paramdef>
    </funcprototype>
   </funcsynopsis>
@@ -586,6 +619,39 @@
   (mp:process-run-function 'counter #'count-numbers 10))
 </programlisting>
  </refsect1>
+</refentry>
+
+<!-- ====================================================================== -->
+<!-- MP:RECURSIVE-LOCK-P                                                    -->
+<!-- ====================================================================== -->
+
+<refentry xml:id="ref.mp.recursive-lock-p">
+ <refnamediv>
+  <refname><function>mp:recursive-lock-p</function></refname>
+  <refpurpose>Determine whether lock is recursive or not.</refpurpose>
+ </refnamediv>
+
+ <refsynopsisdiv>
+  <title>Function</title>
+  <funcsynopsis>
+   <funcprototype>
+    <funcdef>mp:recursive-lock-p</funcdef>
+    <paramdef><parameter>lock</parameter></paramdef>
+   </funcprototype>
+  </funcsynopsis>
+  <variablelist>
+   <varlistentry>
+    <term><replaceable>lock</replaceable></term>
+    <listitem><para>An object of type <replaceable>mp:lock</replaceable>.</para></listitem>
+   </varlistentry>
+  </variablelist>
+ </refsynopsisdiv>
+
+ <refsect1>
+  <title>Description</title>
+  <para>Returns true if the lock is recursive.</para>
+ </refsect1>
+
 </refentry>
 
 <!-- ====================================================================== -->
