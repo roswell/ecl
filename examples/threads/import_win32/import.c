@@ -59,7 +59,7 @@ thread_entry_point(void *data)
          * in this thread.
          */
 
-        ecl_import_current_thread(Cnil, Cnil);
+        ecl_import_current_thread(ECL_NIL, ECL_NIL);
 
         /*
          * Here we execute some lisp code code.
