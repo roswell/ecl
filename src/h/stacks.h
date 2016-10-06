@@ -191,7 +191,7 @@ typedef struct ecl_ihs_frame {
 
 #define ecl_ihs_push(env,rec,fun,lisp_env) do { \
         const cl_env_ptr __the_env = (env);     \
-        ecl_ihs_ptr  const r = (rec);   \
+        ecl_ihs_ptr const r = (ecl_ihs_ptr const)(rec); \
         r->next=__the_env->ihs_top;             \
         r->function=(fun);                      \
         r->lex_env=(lisp_env);                  \
