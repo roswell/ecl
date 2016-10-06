@@ -244,8 +244,8 @@ FEclosed_stream(cl_object strm)
 cl_object
 si_signal_type_error(cl_object value, cl_object type)
 {
-  return cl_error(5, @'type-error', @':expected-type', type,
-                  @':datum', value);
+  cl_error(5, @'type-error', @':expected-type', type,
+           @':datum', value);
 }
 
 void
@@ -528,7 +528,6 @@ FEwin32_error(const char *msg, int narg, ...)
   funcall(4, @'si::universal-error-handler', ECL_NIL, eformat,
           cl_grab_rest_args(args));
   _ecl_unexpected_return();
-  @(return);
 } @)
 
 @(defun cerror (cformat eformat &rest args)

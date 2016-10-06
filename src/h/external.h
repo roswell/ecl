@@ -1591,7 +1591,7 @@ extern ECL_API cl_object si_get_limit(cl_object type);
 
 extern ECL_API cl_index ecl_progv(cl_env_ptr env, cl_object vars, cl_object values);
 extern ECL_API void ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index);
-extern ECL_API void ecl_unwind(cl_env_ptr env, struct ecl_frame *fr) /*ecl_attr_noreturn*/;
+extern ECL_API void ecl_unwind(cl_env_ptr env, struct ecl_frame *fr) ecl_attr_noreturn;
 extern ECL_API struct ecl_frame *frs_sch(cl_object frame_id);
 
 /* string.c */
@@ -2009,7 +2009,7 @@ extern ECL_API cl_object cl_encode_universal_time _ECL_ARGS((cl_narg narg, cl_ob
 extern ECL_API cl_object cl_get_decoded_time();
 extern ECL_API cl_object cl_ensure_directories_exist _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object si_simple_program_error _ECL_ARGS((cl_narg narg, cl_object format, ...)) ecl_attr_noreturn;
-extern ECL_API cl_object si_signal_simple_error _ECL_ARGS((cl_narg narg, cl_object condition, cl_object continuable, cl_object format, cl_object args, ...));
+extern ECL_API cl_object si_signal_simple_error _ECL_ARGS((cl_narg narg, cl_object condition, cl_object continuable, cl_object format, cl_object args, ...)) ecl_attr_noreturn;
 
 /* module.lsp */
 
