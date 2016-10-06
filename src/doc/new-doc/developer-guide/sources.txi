@@ -3,7 +3,7 @@
 
 @subsection src/c
 
-@multitable {a}{aaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaa}{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item alloc_2.d
 @tab memory allocation based on the Boehm GC
 
@@ -208,37 +208,6 @@ symbols on the system which aren't local.
 @item tcp.d
 @tab stream interface to TCP
 
-@item threads/atomic.d
-@tab atomic operations
-
-@item threads/barrier.d
-@tab wait barriers
-
-@item threads/condition_variable.d
-@tab condition variables for native threads
-implement me: @code{mp_condition_variable_timedwait}
-
-@item threads/ecl_atomics.h
-@tab alternative definitions for atomic operations
-
-@item threads/mailbox.d
-@tab thread communication queue
-
-@item threads/mutex.d
-@tab mutually exclusive locks.
-
-@item threads/process.d
-@tab native threads
-
-@item threads/queue.d
-@tab waiting queue for threads
-
-@item threads/rwlock.d
-@tab POSIX read-write locks
-
-@item threads/semaphore.d
-@tab POSIX-like semaphores
-
 @item time.d
 @tab time routines
 
@@ -256,5 +225,38 @@ implement me: @code{mp_condition_variable_timedwait}
 
 @item vector_push.d
 @tab vector optimizations
+
+@headitem threads/
+
+@item atomic.d
+@tab atomic operations
+
+@item barrier.d
+@tab wait barriers
+
+@item condition_variable.d
+@tab condition variables for native threads
+@c implement me: @code{mp_condition_variable_timedwait}
+
+@item ecl_atomics.h
+@tab alternative definitions for atomic operations
+
+@item mailbox.d
+@tab thread communication queue
+
+@item mutex.d
+@tab mutually exclusive locks.
+
+@item process.d
+@tab native threads
+
+@item queue.d
+@tab waiting queue for threads
+
+@item rwlock.d
+@tab POSIX read-write locks
+
+@item semaphore.d
+@tab POSIX-like semaphores
 
 @end multitable

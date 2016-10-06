@@ -367,7 +367,7 @@ appropriate size. Signals an error if @var{o} is not of fixnum type.
 
 @subheading Characters
 
-@cfindex --enable-unicode (YES|no|32)
+@cfindex --enable-unicode [YES|no|32]
 
 ECL has two types of characters – one fits in the C type char, while the
 other is used when ECL is built with a configure option
