@@ -303,8 +303,8 @@ serialize_one(pool_t pool, cl_object what)
     buffer->bytecodes.data = enqueue(pool, buffer->bytecodes.data);
     buffer->bytecodes.file = enqueue(pool, buffer->bytecodes.file);
     buffer->bytecodes.file_position = enqueue(pool, buffer->bytecodes.file_position);
-    buffer->bytecodes.code = serialize_bits(pool, buffer->bytecodes.code,
-                                            buffer->bytecodes.code_size);
+    buffer->bytecodes.code_size = serialize_bits(pool, buffer->bytecodes.code,
+                                                 buffer->bytecodes.code_size);
   }
   default:
     FEerror("Unable to serialize object ~A", 1, what);
