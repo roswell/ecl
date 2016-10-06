@@ -689,13 +689,13 @@ Character table, flags, etc
 @end deftp
 
 @cppindex ECL_ANSI_STREAM_P
-@deftypefun ECL_ANSI_STREAM_P (cl_object o)
+@deftypefun bool ECL_ANSI_STREAM_P (cl_object o)
 Predicate determining if @code{o} is a first-class stream
 object. Doesn't check type of it's argument.
 @end deftypefun
 
 @cppindex ECL_ANSI_STREAM_TYPE_P
-@deftypefun ECL_ANSI_STREAM_TYPE_P (cl_object o, ecl_smmode m)
+@deftypefun bool ECL_ANSI_STREAM_TYPE_P (cl_object o, ecl_smmode m)
 Predicate determining if @code{o} is a first-class stream
 object of type @code{m}.
 @end deftypefun
