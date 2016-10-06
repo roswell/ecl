@@ -732,9 +732,9 @@ create_descriptor(cl_object stream, cl_object direction,
         char **pstrings;
         cl_object buffer = from_list_to_execve_argument(environ,
                                                         &pstrings);
-        execve((char*)command->base_string.self, argv_ptr, pstrings);
+        execve((char*)command->base_string.self, (char **)argv_ptr, pstrings);
       } else {
-        execvp((char*)command->base_string.self, argv_ptr);
+        execvp((char*)command->base_string.self, (char **)argv_ptr);
       }
       /* at this point exec has failed */
       perror("exec");
