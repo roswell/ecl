@@ -12,16 +12,12 @@ VPATH	= @srcdir@
 #
 CC	= @CC@
 TRUE_CC = $(CC)
-CFLAGS	= -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_API -DECL_NO_LEGACY  @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
+CFLAGS	= -Werror -Wno-error=shift-count-overflow -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_API -DECL_NO_LEGACY  @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
 
 # The following flags could be added and used by GCC
 #  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
 #  -Wwrite-strings -Wconversion -Wsign-compare -Wmissing-prototypes \
 #  -Wredundant-decls -Wunreachable-code -Winline
-
-# ECL should build without problems when we error on all warning
-# except shift-count-overflow
-#  -Werror -Wno-error=shift-count-overflow
 
 SHELL	= /bin/sh
 RM	= @RM@
