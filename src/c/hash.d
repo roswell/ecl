@@ -506,19 +506,19 @@ copy_entry(struct ecl_hashtable_entry *e, cl_object h)
     struct ecl_hashtable_entry output = *e;
     switch (h->hash.weak) {
     case ecl_htt_weak_key:
-      if (GC_call_with_alloc_lock(normalize_weak_key_entry,
+      if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_key_entry,
                                   &output)) {
         return output;
       }
       break;
     case ecl_htt_weak_value:
-      if (GC_call_with_alloc_lock(normalize_weak_value_entry,
+      if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_value_entry,
                                   &output)) {
         return output;
       }
       break;
     case ecl_htt_weak_key_and_value:
-      if (GC_call_with_alloc_lock(normalize_weak_key_and_value_entry,
+      if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_key_and_value_entry,
                                   &output)) {
         return output;
       }
