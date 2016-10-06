@@ -3,258 +3,258 @@
 
 @subsection src/c
 
-@itemize
+@multitable {a}{aaaaaaaaaaaaaa}
 @item alloc_2.d
-memory allocation based on the Boehm GC
+@tab memory allocation based on the Boehm GC
 
 @item all_symbols.d
-name mangler and symbol initialization
+@tab name mangler and symbol initialization
 
 @item apply.d
-interface to C call mechanism
+@tab interface to C call mechanism
 
 @item arch/*
-architecture dependant code
+@tab architecture dependant code
 
 @item array.d
-array routines
+@tab array routines
 
 @item assignment.c
-assignment
+@tab assignment
 
 @item backq.d
-backquote mechanism
+@tab backquote mechanism
 
 @item big.d
-bignum routines based on the GMP
+@tab bignum routines based on the GMP
 
 @item big_ll.d
-bignum emulation with long long
+@tab bignum emulation with long long
 
 @item cfun.d
-compiled functions
+@tab compiled functions
 
 @item cfun_dispatch.d
-trampolines for functions
+@tab trampolines for functions
 
 @item character.d
-character routines
+@tab character routines
 
 @item char_ctype.d
-character properties.
+@tab character properties.
 
 @item cinit.d
-lisp initialization
+@tab lisp initialization
 
 @item clos/accessor.d
-dispatch for slots
+@tab dispatch for slots
 
 @item clos/cache.d
-thread-local cache for a variety of operations
+@tab thread-local cache for a variety of operations
 
 @item cmpaux.d
-auxiliaries used in compiled Lisp code
+@tab auxiliaries used in compiled Lisp code
 
 @item compiler.d
-bytecode compiler
+@tab bytecode compiler
 
 @item disassembler.d
-bytecodes disassembler utilities
+@tab bytecodes disassembler utilities
 
 @item dpp.c
-defun preprocessor
+@tab defun preprocessor
 
 @item ecl_constants.h
-contstant values for all_symbols.d
+@tab contstant values for all_symbols.d
 
 @item features.h
-names of features compiled into ECL
+@tab names of features compiled into ECL
 
 @item error.d
-error handling
+@tab error handling
 
 @item eval.d
-evaluation
+@tab evaluation
 
 @item ffi/backtrace.d
-C backtraces
+@tab C backtraces
 
 @item ffi/cdata.d
-data for compiled files
+@tab data for compiled files
 
 @item ffi/libraries.d
-shared library and bundle opening / copying / closing
+@tab shared library and bundle opening / copying / closing
 
 @item ffi/mmap.d
-mapping of binary files
+@tab mapping of binary files
 
 @item ffi.d
-user defined data types and foreign functions interface
+@tab user defined data types and foreign functions interface
 
 @item file.d
-file interface (implementation dependent)
+@tab file interface (implementation dependent)
 
 @item format.d
-format (this isn't ANSI compliant, we need it for bootstrapping though)
+@tab format (this isn't ANSI compliant, we need it for bootstrapping though)
 
 @item gfun.d
-dispatch for generic functions
+@tab dispatch for generic functions
 
 @item hash.d
-hash tables
+@tab hash tables
 
 @item instance.d
-CLOS interface
+@tab CLOS interface
 
 @item interpreter.d
-bytecode interpreter
+@tab bytecode interpreter
 
 @item iso_latin_names.h
-character names in ISO-LATIN-1
+@tab character names in ISO-LATIN-1
 
 @item list.d
-list manipulating routines
+@tab list manipulating routines
 
 @item load.d
-binary loader (contains also open_fasl_data)
+@tab binary loader (contains also open_fasl_data)
 
 @item macros.d
-macros and environment
+@tab macros and environment
 
 @item main.d
-ecl boot proccess
+@tab ecl boot proccess
 
 @item Makefile.in
-Makefile for ECL core library
+@tab Makefile for ECL core library
 
 @item mapfun.d
-mapping
+@tab mapping
 
 @item newhash.d
-hashing routines
+@tab hashing routines
 
 @item num_arith.d
-arithmetic operations
+@tab arithmetic operations
 
 @item number.d
-constructing numbers
+@tab constructing numbers
 
 @c these files need to be cleaned
 @item numbers/*.d
-arithmetic operations (abs, atan, plusp etc)
+@tab arithmetic operations (abs, atan, plusp etc)
 
 @item num_co.d
-operations on floating-point numbers (implementation dependent)
+@tab operations on floating-point numbers (implementation dependent)
 
 @item num_log.d
-logical operations on numbers
+@tab logical operations on numbers
 
 @item num_pred.d
-predicates on numbers
+@tab predicates on numbers
 
 @item num_rand.d
-random numbers
+@tab random numbers
 
 @item package.d
-packages (OS dependent)
+@tab packages (OS dependent)
 
 @item pathname.d
-pathnames
+@tab pathnames
 
 @item predicate.d
-predicates
+@tab predicates
 
 @item print.d
-print
+@tab print
 
 @item printer/*.d
-printer utilities and object representations
+@tab printer utilities and object representations
 
 @item read.d
-read.d - reader
+@tab read.d - reader
 
 @item reader/parse_integer.d
 @item reader/parse_number.d
 
 @item reference.d
-reference in Constants and Variables
+@tab reference in Constants and Variables
 
 @item sequence.d
-sequence routines
+@tab sequence routines
 
 @item serialize.d
-serialize a bunch of lisp data
+@tab serialize a bunch of lisp data
 
 @item sse2.d
-SSE2 vector type support
+@tab SSE2 vector type support
 
 @item stacks.d
-binding/history/frame stacks
+@tab binding/history/frame stacks
 
 @item string.d
-string routines
+@tab string routines
 
 @item structure.d
-structure interface
+@tab structure interface
 
 @item symbol.d
-symbols
+@tab symbols
 
 @item symbols_list.h
 @item symbols_list2.h
-The latter is generated from the first. The first has to contain all
+@tab The latter is generated from the first. The first has to contain all
 symbols on the system which aren't local.
 
 @item tcp.d
-stream interface to TCP
+@tab stream interface to TCP
 
 @item threads/atomic.d
-atomic operations
+@tab atomic operations
 
 @item threads/barrier.d
-wait barriers
+@tab wait barriers
 
 @item threads/condition_variable.d
-condition variables for native threads
+@tab condition variables for native threads
 implement me: @code{mp_condition_variable_timedwait}
 
 @item threads/ecl_atomics.h
-alternative definitions for atomic operations
+@tab alternative definitions for atomic operations
 
 @item threads/mailbox.d
-thread communication queue
+@tab thread communication queue
 
 @item threads/mutex.d
-mutually exclusive locks.
+@tab mutually exclusive locks.
 
 @item threads/process.d
-native threads
+@tab native threads
 
 @item threads/queue.d
-waiting queue for threads
+@tab waiting queue for threads
 
 @item threads/rwlock.d
-POSIX read-write locks
+@tab POSIX read-write locks
 
 @item threads/semaphore.d
-POSIX-like semaphores
+@tab POSIX-like semaphores
 
 @item time.d
-time routines
+@tab time routines
 
 @item typespec.d
-type specifier routines
+@tab type specifier routines
 
 @item unicode/*
-unicode definitions
+@tab unicode definitions
 
 @item unixfsys.d
-Unix file system interface
+@tab Unix file system interface
 
 @item unixsys.d
-Unix shell interface
+@tab Unix shell interface
 
 @item vector_push.d
-vector optimizations
+@tab vector optimizations
 
-@end itemize
+@end multitable
