@@ -247,7 +247,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
     sigset_t empty;
     sigemptyset(&empty);
     sigaddset(&empty, code);
-    pthread_sigmask(SIG_BLOCK, &empty, &original);
+    pthread_sigmask(SIG_BLOCK, &empty, (sigset_t *)&original);
   }
 
   /* 2) Now we add ourselves to the queue. */
@@ -268,7 +268,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
          * as a consequence we might throw / return
          * which is why need to protect it all with
          * UNWIND-PROTECT. */
-        sigsuspend(&original);
+        sigsuspend((sigset_t *)&original);
       }
   } ECL_UNWIND_PROTECT_EXIT {
     /* 4) At this point we wrap up. We remove ourselves
@@ -291,7 +291,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 
     /* 6) Restoring signals is done last, to ensure that
      * all cleanup steps are performed. */
-    pthread_sigmask(SIG_SETMASK, &original, NULL);
+    pthread_sigmask(SIG_SETMASK, (sigset_t *)&original, NULL);
   } ECL_UNWIND_PROTECT_END;
   return output;
 #else
