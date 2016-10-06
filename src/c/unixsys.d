@@ -782,7 +782,8 @@ create_descriptor(cl_object stream, cl_object direction,
   if (parent_write > 0) {
     stream_write = ecl_make_stream_from_fd(command, parent_write,
                                            ecl_smm_output, 8,
-                                           external_format, ECL_T);
+                                           ECL_STREAM_DEFAULT_FORMAT,
+                                           external_format);
   } else {
     parent_write = 0;
     stream_write = cl_core.null_stream;
@@ -790,7 +791,8 @@ create_descriptor(cl_object stream, cl_object direction,
   if (parent_read > 0) {
     stream_read = ecl_make_stream_from_fd(command, parent_read,
                                           ecl_smm_input, 8,
-                                          external_format, ECL_T);
+                                          ECL_STREAM_DEFAULT_FORMAT,
+                                          external_format);
   } else {
     parent_read = 0;
     stream_read = cl_core.null_stream;
@@ -798,7 +800,8 @@ create_descriptor(cl_object stream, cl_object direction,
   if (parent_error > 0) {
     stream_error = ecl_make_stream_from_fd(command, parent_error,
                                            ecl_smm_input, 8,
-                                           external_format, ECL_T);
+                                           ECL_STREAM_DEFAULT_FORMAT,
+                                           external_format);
   } else {
     parent_error = 0;
     stream_error = cl_core.null_stream;
