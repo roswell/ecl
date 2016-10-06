@@ -730,8 +730,7 @@ create_descriptor(cl_object stream, cl_object direction,
       }
       if (!Null(environ)) {
         char **pstrings;
-        cl_object buffer = from_list_to_execve_argument(environ,
-                                                        &pstrings);
+        cl_object buffer = from_list_to_execve_argument(environ, &pstrings);
         execve((char*)command->base_string.self, (char **)argv_ptr, pstrings);
       } else {
         execvp((char*)command->base_string.self, (char **)argv_ptr);
