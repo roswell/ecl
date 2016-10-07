@@ -154,12 +154,3 @@ windows-nsi: all
 	`pwd`/src/util/ecl_nsi.sh `pwd`/src/util/ecl.nsi build/$(TAR_DIR)
 	makensis.exe build/$(TAR_DIR)/ecl.nsi
 	mv build/$(TAR_DIR)/Setup.exe ecl-$(VERSION).exe
-
-upload-frs:
-	ecldir=`echo $(VERSION) | sed -e 's,\([0-9]*\.[0-9]*\)\.[0-9]*,\1,'` && \
-	destdir=jjgarcia,ecls@frs.sourceforge.net:/home/frs/project/e/ec/ecls/ecls/ && \
-	test -d frs || mkdir frs && \
-	test -d frs/$$ecldir || mkdir frs/$$ecldir && \
-	cp $(TAR_DIR).tgz src/CHANGELOG frs/$$ecldir && \
-	cd frs && scp -rC $$ecldir $$destdir
-	rm -rf frs
