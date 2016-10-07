@@ -49,7 +49,9 @@ whenever termination should be forced or not.
 
 ** Enhancements
 - deprecated configure option =--with-local-gmp= has been removed - use
-  =--with-system-gmp= (defaults to auto)
+  =--enable-gmp= (defaults to auto)
+
+- configure options has been revised
 
 - ASDF has been upgraded to version 3.1.7
 
