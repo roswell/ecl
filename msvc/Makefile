@@ -357,11 +357,9 @@ eclgmp.lib:
 	$(CP) gmp.lib ..\eclgmp.lib
 	$(CP) gmp.h ..\ecl\gmp.h
 	cd ..
+
 sysfun.lsp:
 	$(CP) $(srcdir)\cmp\sysfun.lsp .\
-
-rt.lisp:
-	$(CP) $(srcdir)\..\contrib\rt\rt.lisp .\
 
 install:
 	IF NOT EXIST "$(prefix)" $(MKDIR) "$(prefix)"

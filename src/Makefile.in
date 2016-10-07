@@ -146,9 +146,6 @@ bin/ecl-config: bin/ecl-config.pre
 	  mv ./@LIBPREFIX@gmp.@LIBEXT@ ./@LIBPREFIX@eclgmp.@LIBEXT@; \
 	fi
 
-rt.lisp:
-	cp $(srcdir)/../contrib/rt/rt.lisp ./
-
 build-stamp: config.status
 	echo "#" `uname -a` > $@
 	head -8 config.log | tail -6 >> $@
