@@ -766,13 +766,17 @@ enable_threads
 enable_boehm
 enable_libatomic
 enable_soname
-with_gmp
+enable_gmp
 with_C_gmp
 with_system_gmp
+with_gmp
+with_gmp_args
 with_gmp_prefix
 with_gmp_incdir
 with_gmp_libdir
 with_libffi_prefix
+with_libffi_incdir
+with_libffi_libdir
 with___thread
 enable_opcode8
 with_cxx
@@ -1450,8 +1454,10 @@ Optional Features:
                           (auto|included|system, default=auto)
   --enable-soname         link and install the library using version numbers
                           (no|yes, default=yes)
-  --enable-opcode8        interpreter uses 8-bit codes (default=NO, only works
-                          on Intel)
+  --enable-gmp            version of the GMP library
+                          (portable|included|system|auto, default=auto)
+  --enable-opcode8        Deprecated! interpreter uses 8-bit codes
+                          (default=NO, only works on Intel)
   --enable-unicode={yes|no|32}
                           enable support for unicode (default=YES)
   --enable-longdouble     include support for long double (yes|no|auto,
@@ -1473,14 +1479,19 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-cross-config=f   supply configuration for a cross compiler
-  --with-gmp=args         supply arguments for configuring GMP library
-  --with-C-gmp=args       configure GMP to build using portable C
-  --with-system-gmp       use already installed GMP library (default=auto)
+  --with-C-gmp            Deperecated! See --enable-gmp
+  --with-system-gmp       Deperecated! See --enable-gmp
+  --with-gmp=args         Deprecated! See --with-gmp-args
+  --with-gmp-args=args    supply arguments for configuring GMP library
   --with-gmp-prefix=path  prefix for system GMP includes and libraries
   --with-gmp-incdir=path  path to system GMP includes (overrides prefix)
   --with-gmp-libdir=path  path to system GMP libraries (overrides prefix)
   --with-libffi-prefix=path
                           prefix for system LIBFFI includes and libraries
+  --with-libffi-incdir=path
+                          path to system LIBFFI includes (overrides prefix)
+  --with-libffi-libdir=path
+                          path to system LIBFFI libraries (overrides prefix)
   --with-__thread         Enable __thread thread-local variables (yes|NO|auto)
                           (supported by NPTL-aware glibc and maybe Windows)
   --with-cxx              build ECL using C++ compiler (default=NO)
@@ -2637,12 +2648,11 @@ else
 fi
 
 
-
-# Check whether --with-gmp was given.
-if test "${with_gmp+set}" = set; then :
-  withval=$with_gmp;
+# Check whether --enable-gmp was given.
+if test "${enable_gmp+set}" = set; then :
+  enableval=$enable_gmp;
 else
-  with_gmp=""
+  enable_libatomic=auto
 fi
 
 
@@ -2661,6 +2671,24 @@ if test "${with_system_gmp+set}" = set; then :
   withval=$with_system_gmp;
 else
   with_system_gmp="auto"
+fi
+
+
+
+# Check whether --with-gmp was given.
+if test "${with_gmp+set}" = set; then :
+  withval=$with_gmp;
+else
+  with_gmp_args=""
+fi
+
+
+
+# Check whether --with-gmp-args was given.
+if test "${with_gmp_args+set}" = set; then :
+  withval=$with_gmp_args;
+else
+  with_gmp_args=""
 fi
 
 
@@ -2689,6 +2717,20 @@ fi
 # Check whether --with-libffi-prefix was given.
 if test "${with_libffi_prefix+set}" = set; then :
   withval=$with_libffi_prefix; LIBFFI_INCDIR="$withval/include"; LIBFFI_LIBDIR="$withval/lib"
+fi
+
+
+
+# Check whether --with-libffi-incdir was given.
+if test "${with_libffi_incdir+set}" = set; then :
+  withval=$with_libffi_incdir; LIBFFI_INCDIR="$withval"
+fi
+
+
+
+# Check whether --with-libffi-libdir was given.
+if test "${with_libffi_libdir+set}" = set; then :
+  withval=$with_libffi_libdir; LIBFFI_LIBDIR="$withval"
 fi
 
 
@@ -5219,8 +5261,15 @@ fi
 CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
 LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
 
-if test ${with_system_gmp} = "auto"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __gmpz_init in -lgmp" >&5
+case ${enable_gmp} in #(
+  portable) :
+    with_system_gmp=no; with_c_gmp=yes ;; #(
+  included) :
+    with_system_gmp=no ;; #(
+  system) :
+    with_system_gmp=yes ;; #(
+  auto) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __gmpz_init in -lgmp" >&5
 $as_echo_n "checking for __gmpz_init in -lgmp... " >&6; }
 if ${ac_cv_lib_gmp___gmpz_init+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -5261,8 +5310,10 @@ if test "x$ac_cv_lib_gmp___gmpz_init" = xyes; then :
 else
   with_system_gmp=no
 fi
-
-fi
+ ;; #(
+  *) :
+     ;;
+esac
 
 ECL_GMP_HEADER=
 if test "${with_system_gmp}" = "yes"; then
@@ -5621,7 +5672,7 @@ $as_echo "$as_me: Configuring included GMP library:" >&6;}
      -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
      --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
      CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
-     "$GMP_ABI" $with_gmp)
+     "$GMP_ABI" $with_gmp_args)
   if test ! -f gmp/config.status; then
     as_fn_error $? "Failed to configure the GMP library." "$LINENO" 5
   fi

@@ -62,20 +62,32 @@ AC_ARG_ENABLE(soname,
 		  [(no|yes, default=yes)]),
   [], [enable_soname=yes] )
 
-AC_ARG_WITH(gmp,
-  AS_HELP_STRING( [--with-gmp=args],
-                  [supply arguments for configuring GMP library]),
-  [], [with_gmp=""])
+AC_ARG_ENABLE(gmp,
+  AS_HELP_STRING( [--enable-gmp],
+                  [version of the GMP library]
+                  [(portable|included|system|auto, default=auto)] ),
+  [], [enable_libatomic=auto] )
 
+dnl GMP library options
 AC_ARG_WITH(C-gmp,
-  AS_HELP_STRING( [--with-C-gmp=args],
-                  [configure GMP to build using portable C]),
+  AS_HELP_STRING( [--with-C-gmp],
+                  [Deperecated! See --enable-gmp]),
   [with_c_gmp=yes; with_system_gmp=no], [with_c_gmp=no])
 
 AC_ARG_WITH(system-gmp,
   AS_HELP_STRING( [--with-system-gmp],
-                  [use already installed GMP library (default=auto)]),
+                  [Deperecated! See --enable-gmp]),
   [], [with_system_gmp="auto"])
+
+AC_ARG_WITH(gmp,
+  AS_HELP_STRING( [--with-gmp=args],
+                  [Deprecated! See --with-gmp-args]),
+  [], [with_gmp_args=""])
+
+AC_ARG_WITH(gmp-args,
+  AS_HELP_STRING( [--with-gmp-args=args],
+                  [supply arguments for configuring GMP library]),
+  [], [with_gmp_args=""])
 
 AC_ARG_WITH(gmp-prefix,
   AS_HELP_STRING( [--with-gmp-prefix=path],
@@ -92,11 +104,23 @@ AC_ARG_WITH(gmp-libdir,
 		  [path to system GMP libraries (overrides prefix)] ),
   [GMP_LIBDIR="$withval"], [])
 
+dnl LIBFFI library options
 AC_ARG_WITH(libffi-prefix,
   AS_HELP_STRING( [--with-libffi-prefix=path],
                   [prefix for system LIBFFI includes and libraries] ),
   [LIBFFI_INCDIR="$withval/include"; LIBFFI_LIBDIR="$withval/lib"], [])
 
+AC_ARG_WITH(libffi-incdir,
+  AS_HELP_STRING( [--with-libffi-incdir=path],
+		  [path to system LIBFFI includes (overrides prefix)] ),
+  [LIBFFI_INCDIR="$withval"], [])
+
+AC_ARG_WITH(libffi-libdir,
+  AS_HELP_STRING( [--with-libffi-libdir=path],
+		  [path to system LIBFFI libraries (overrides prefix)] ),
+  [LIBFFI_LIBDIR="$withval"], [])
+
+dnl
 AC_ARG_WITH(__thread,
   AS_HELP_STRING( [--with-__thread],
                   [Enable __thread thread-local variables (yes|NO|auto)]
@@ -105,8 +129,7 @@ AC_ARG_WITH(__thread,
 
 AC_ARG_ENABLE(opcode8,
   AS_HELP_STRING( [--enable-opcode8],
-                  [interpreter uses 8-bit codes]
-                  [(default=NO, only works on Intel)]),
+                  [Deprecated! interpreter uses 8-bit codes (default=NO, only works on Intel)]),
   [opcode8=${enableval}], [opcode8=no])
 
 AC_ARG_WITH(cxx,
@@ -370,10 +393,13 @@ fi
 CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
 LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
 
-if test ${with_system_gmp} = "auto"; then
-  AC_CHECK_LIB( [gmp], [__gmpz_init],
-                [with_system_gmp=yes], [with_system_gmp=no] )
-fi
+AS_CASE([${enable_gmp}],
+        [portable], [with_system_gmp=no; with_c_gmp=yes],
+        [included], [with_system_gmp=no],
+        [system],   [with_system_gmp=yes],
+        [auto],     [AC_CHECK_LIB( [gmp], [__gmpz_init],
+                       [with_system_gmp=yes],
+                       [with_system_gmp=no] )])
 
 ECL_GMP_HEADER=
 if test "${with_system_gmp}" = "yes"; then
@@ -425,7 +451,7 @@ if test "x${with_system_gmp}" = "xno" ; then
      -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
      --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
      CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
-     "$GMP_ABI" $with_gmp)
+     "$GMP_ABI" $with_gmp_args)
   if test ! -f gmp/config.status; then
     AC_MSG_ERROR([Failed to configure the GMP library.])
   fi
