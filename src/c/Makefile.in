@@ -130,7 +130,7 @@ $(srcdir)/symbols_list2.h: $(srcdir)/symbols_list.h Makefile
 # This reduces the overhead of jumping to other functions
 #
 apply.c: $(DPP)
-apply.o: apply.c $(HFILES) $(HDIR)/cs.h
+apply.o: apply.c $(HFILES)
 	$(CC) $(CFLAGS) apply.c -o $@
 #
 # These files are interrelated
