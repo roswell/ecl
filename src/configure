@@ -5268,7 +5268,7 @@ case ${enable_gmp} in #(
     with_system_gmp=no ;; #(
   system) :
     with_system_gmp=yes ;; #(
-  auto) :
+  *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __gmpz_init in -lgmp" >&5
 $as_echo_n "checking for __gmpz_init in -lgmp... " >&6; }
 if ${ac_cv_lib_gmp___gmpz_init+:} false; then :
@@ -5310,9 +5310,7 @@ if test "x$ac_cv_lib_gmp___gmpz_init" = xyes; then :
 else
   with_system_gmp=no
 fi
- ;; #(
-  *) :
-     ;;
+ ;;
 esac
 
 ECL_GMP_HEADER=

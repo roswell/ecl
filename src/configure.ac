@@ -397,9 +397,9 @@ AS_CASE([${enable_gmp}],
         [portable], [with_system_gmp=no; with_c_gmp=yes],
         [included], [with_system_gmp=no],
         [system],   [with_system_gmp=yes],
-        [auto],     [AC_CHECK_LIB( [gmp], [__gmpz_init],
-                       [with_system_gmp=yes],
-                       [with_system_gmp=no] )])
+        [AC_CHECK_LIB( [gmp], [__gmpz_init],
+           [with_system_gmp=yes],
+           [with_system_gmp=no] )])
 
 ECL_GMP_HEADER=
 if test "${with_system_gmp}" = "yes"; then
