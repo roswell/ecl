@@ -891,13 +891,28 @@ if test "${enable_hpack}" = "yes"; then
 fi
 
 AC_CONFIG_FILES([
-  bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp
-  ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man
-  ecl/configpre.h:h/config.h.in bin/ecl-config.pre:util/ecl-config
-  lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in
+  bare.lsp
+  lsp/load.lsp
+  clos/load.lsp
+  cmp/load.lsp
+  ../Makefile
+  Makefile
+  c/Makefile
+  doc/Makefile
+  doc/ecl.man
+  doc/ecl-config.man
+  ecl/configpre.h:h/config.h.in
+  ecl/configpre-int.h:h/config-internal.h.in
+  bin/ecl-config.pre:util/ecl-config
+  lsp/config.pre:lsp/config.lsp.in
+  compile.pre:compile.lsp.in
   cmp/cmpdefs.pre:cmp/cmpdefs.lsp
-  tests/config.lsp tests/Makefile
+  tests/config.lsp
+  tests/Makefile
  ])
-AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h])
+AC_CONFIG_HEADERS([
+  ecl/config.h:ecl/configpre.h
+  ecl/config-internal.h:ecl/configpre-int.h
+])
 AC_OUTPUT
 for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done

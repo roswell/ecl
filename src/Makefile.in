@@ -163,7 +163,6 @@ install:
 	    $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir)/encodings; \
 	  done \
 	fi
-	sed '/-CUT-/,$$d' ./ecl/config.h > ./ecl/config-install.h
 	$(mkinstalldirs) $(DESTDIR)$(includedir)/ecl
 	for i in `(cd ecl && find . -type d)`; do \
 	  k="$(DESTDIR)$(includedir)/ecl/$$i"; \

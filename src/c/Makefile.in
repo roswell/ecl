@@ -12,7 +12,7 @@ VPATH	= @srcdir@
 #
 CC	= @CC@
 TRUE_CC = $(CC)
-CFLAGS	= -Werror -Wno-error=shift-count-overflow -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_API -DECL_NO_LEGACY  @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
+CFLAGS	= -Werror -Wno-error=shift-count-overflow -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_BUILD -DECL_API -DECL_NO_LEGACY  @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
 
 # The following flags could be added and used by GCC
 #  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \

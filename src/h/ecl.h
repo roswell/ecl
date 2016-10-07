@@ -37,6 +37,10 @@
 #include <ecl/config.h>
 #endif
 
+#ifdef ECL_BUILD
+#include <ecl/config-internal.h>
+#endif
+
 /*
  * The Boehm-Demers-Weiser garbage collector contains wrappers for
  * dlopen and similar functions. These wrappers explicitely deactivate
