@@ -772,7 +772,6 @@ with_system_gmp
 with_gmp_prefix
 with_gmp_incdir
 with_gmp_libdir
-enable_local_gmp
 with_libffi_prefix
 with___thread
 enable_opcode8
@@ -1451,7 +1450,6 @@ Optional Features:
                           (auto|included|system, default=auto)
   --enable-soname         link and install the library using version numbers
                           (no|yes, default=yes)
-  --enable-local-gmp      Deprecated! See --with-system-gmp
   --enable-opcode8        interpreter uses 8-bit codes (default=NO, only works
                           on Intel)
   --enable-unicode={yes|no|32}
@@ -2684,14 +2682,6 @@ fi
 # Check whether --with-gmp-libdir was given.
 if test "${with_gmp_libdir+set}" = set; then :
   withval=$with_gmp_libdir; GMP_LIBDIR="$withval"
-fi
-
-
-# Check whether --enable-local-gmp was given.
-if test "${enable_local_gmp+set}" = set; then :
-  enableval=$enable_local_gmp; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-local-gmp is deprecated, use --with-system-gmp instead!" >&5
-$as_echo "$as_me: WARNING: --with-local-gmp is deprecated, use --with-system-gmp instead!" >&2;}
-   with_system_gmp="${enableval}"
 fi
 
 

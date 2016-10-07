@@ -92,13 +92,6 @@ AC_ARG_WITH(gmp-libdir,
 		  [path to system GMP libraries (overrides prefix)] ),
   [GMP_LIBDIR="$withval"], [])
 
-AC_ARG_ENABLE(local-gmp,
-  AS_HELP_STRING( [--enable-local-gmp],
-                  [Deprecated! See --with-system-gmp]),
-  [AC_MSG_WARN(
-    [--with-local-gmp is deprecated, use --with-system-gmp instead!])
-   with_system_gmp="${enableval}"])
-
 AC_ARG_WITH(libffi-prefix,
   AS_HELP_STRING( [--with-libffi-prefix=path],
                   [prefix for system LIBFFI includes and libraries] ),

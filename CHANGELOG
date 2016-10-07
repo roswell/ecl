@@ -48,6 +48,9 @@ arity dependent on platform) is also possible.
 whenever termination should be forced or not.
 
 ** Enhancements
+- deprecated configure option =--with-local-gmp= has been removed - use
+  =--with-system-gmp= (defaults to auto)
+
 - ASDF has been upgraded to version 3.1.7
 
 - Bundled CLX has been purged
