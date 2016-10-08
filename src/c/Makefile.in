@@ -112,7 +112,6 @@ $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h
 	fi
 
 $(OBJS): $(DPP)
-#
 # symbols_list2.h is built this way to allow for an atomic replacement of
 # the file. Otherwise we have problem when doing concurrent builds with
 # rsync updates of the source tree.

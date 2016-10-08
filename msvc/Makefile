@@ -291,7 +291,6 @@ cmp/load.lsp: $(srcdir)/cmp/load.lsp.in
 	$(CP) $(srcdir)\cmp\load.lsp.in cmp\load.lsp
 cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	c\cut "@ECL_CC@" "$(CC)" \
-	    "@CC_IS_CXX@" "nil" \
 	    "@CFLAGS@" "$(CFLAGS)" \
 	    "@CFLAGS_OPTIMIZE@" "$(CFLAGS_OPTIMIZE)" \
 	    "@ECL_CFLAGS@" "" \

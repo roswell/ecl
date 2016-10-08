@@ -752,10 +752,10 @@ dnl ----------------------------------------------------------------------
 dnl Do we use C or C++ compiler to compile ecl?
 if test ${with_cxx} = "no" ; then
   AC_SUBST([ECL_CC], [${CC}])
-  AC_SUBST([CC_IS_CXX], ["nil"])
 else
   AC_SUBST([ECL_CC], [${CXX}])
-  AC_SUBST([CC_IS_CXX], ["t"])
+  AC_DEFINE([ECL_CXX_CORE], [1],
+            [Do we use C or C++ compiler to compile ecl?])
   boehm_configure_flags="${boehm_configure_flags} --enable-cplusplus"
 fi
 
@@ -929,9 +929,7 @@ AC_CONFIG_FILES([
   tests/config.lsp
   tests/Makefile
  ])
-AC_CONFIG_HEADERS([
-  ecl/config.h:ecl/configpre.h
-  ecl/config-internal.h:ecl/configpre-int.h
-])
+AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h])
+AC_CONFIG_HEADERS([ecl/config-internal.h:ecl/configpre-int.h])
 AC_OUTPUT
 for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done

@@ -15,6 +15,9 @@
 /* Use CMU Common-Lisp's FORMAT routine */
 #undef ECL_CMU_FORMAT
 
+/* Do we use C or C++ compiler to compile ecl? */
+#undef ECL_CXX_CORE
+
 /* Stack grows downwards */
 #undef ECL_DOWN_STACK
 

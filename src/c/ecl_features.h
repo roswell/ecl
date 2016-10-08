@@ -90,8 +90,8 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_EXTERNALIZABLE
   ecl_def_string_array_elt("EXTERNALIZABLE"),
 #endif
-#ifdef __cplusplus
-  ecl_def_string_array_elt("C++"),
+#ifdef ECL_CXX_CORE
+  ecl_def_string_array_elt("CXX-CORE"),
 #endif
 #ifdef ECL_SSE2
   ecl_def_string_array_elt("SSE2"),
