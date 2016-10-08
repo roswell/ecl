@@ -48,12 +48,15 @@ arity dependent on platform) is also possible.
 whenever termination should be forced or not.
 
 ** Enhancements
+- if ECL is build with =--with-cxx= option, =:CXX-CORE= is present in
+  =*features*=.
+
 - deprecated configure option =--with-local-gmp= has been removed - use
-  =--enable-gmp= (defaults to auto)
+  =--enable-gmp= (defaults to auto).
 
-- configure options has been revised
+- configure options has been revised.
 
-- ASDF has been upgraded to version 3.1.7
+- ASDF has been upgraded to version 3.1.7.
 
 - Bundled CLX has been purged
 Lately I've fixed ECL support on portable CLX maintained by sharplispers on
