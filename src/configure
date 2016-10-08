@@ -9728,6 +9728,7 @@ fi
 
 ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in ecl/configpre-int.h:h/config-internal.h.in bin/ecl-config.pre:util/ecl-config lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp tests/config.lsp tests/Makefile"
 
+
 ac_config_headers="$ac_config_headers ecl/config.h:ecl/configpre.h"
 
 ac_config_headers="$ac_config_headers ecl/config-internal.h:ecl/configpre-int.h"
@@ -11028,5 +11029,6 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
+
 
 for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done

@@ -222,6 +222,9 @@ typedef unsigned char ecl_base_char;
 /* We can use small, two-words conses, without type information         */
 #undef ECL_SMALL_CONS
 
+/* Do we use C or C++ compiler to compile ecl? */
+#undef ECL_CXX_CORE
+
 /* Use CMU Common-Lisp's FORMAT routine                                 */
 #undef ECL_CMU_FORMAT
 

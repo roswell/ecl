@@ -929,7 +929,9 @@ AC_CONFIG_FILES([
   tests/config.lsp
   tests/Makefile
  ])
+
 AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h])
 AC_CONFIG_HEADERS([ecl/config-internal.h:ecl/configpre-int.h])
 AC_OUTPUT
+
 for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done
