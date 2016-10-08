@@ -2,7 +2,7 @@
 # vim: set filetype=makefile tabstop=8 shiftwidth=4 expandtab:
 
 #
-#		Makefile for ECoLisp
+# Makefile for ECoLisp
 #
 top_srcdir= @top_srcdir@
 srcdir	= @srcdir@
@@ -15,6 +15,11 @@ manext=1
 
 @SET_MAKE@
 CC	= @ECL_CC@
+TRUE_CC = $(CC)
+CFLAGS	= -Werror -Wno-error=shift-count-overflow       \
+	-I. -I@true_builddir@ -I$(srcdir)/c -Iecl/gc    \
+	-DECL_BUILD -DECL_API -DECL_NO_LEGACY           \
+	@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
 LIBS	= @LIBS@
 FASL_LIBS = @FASL_LIBS@
 CORE_LIBS = @CORE_LIBS@
@@ -23,6 +28,15 @@ RM	= @RM@
 LN_S	= @LN_S@
 EXE	= @EXEEXT@
 ETAGS	= @ETAGS@
+DPP	= ./dpp$(EXE)
+RANLIB	= @RANLIB@
+AR	= @AR@
+
+# The following flags could be added and used by GCC
+#  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
+#  -Wwrite-strings -Wconversion -Wsign-compare -Wmissing-prototypes \
+#  -Wredundant-decls -Wunreachable-code -Winline
+
 
 # ==================== Where To Install Things ====================
 
@@ -41,6 +55,7 @@ ecldir=@ecldir@/
 #
 SHELL = @SHELL@
 INSTALL	= @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_LIBRARY = $(INSTALL_SCRIPT)
@@ -55,22 +70,166 @@ LSP_LIBRARIES = @LSP_LIBRARIES@
 TARGETS = @TARGETS@
 ECL_CMPDIR = @ECL_CMPDIR@
 
-all:	$(TARGETS) bin/ecl-config .git/tags TAGS
-.PHONY:	all
+all: $(TARGETS) bin/ecl-config .git/tags TAGS
+.PHONY: all
+.SUFFIXES: .c .o .d .s
+
+ifndef VERBOSE
+.SILENT:
+endif
 
 %Makefile: $(srcdir)/%Makefile.in config.status
 	./config.status
 
-#
+
+# ECL core library (ecl_min)
+HDIR	= ecl
+HFILES	= $(HDIR)/config.h \
+	$(HDIR)/ecl.h \
+	$(HDIR)/ecl-cmp.h \
+	$(HDIR)/object.h \
+	$(HDIR)/cs.h \
+	$(HDIR)/stacks.h \
+	$(HDIR)/external.h \
+	$(HDIR)/cons.h \
+	$(HDIR)/legacy.h \
+	$(HDIR)/number.h \
+	$(HDIR)/page.h
+
+DFILES = $(addprefix $(srcdir)/c/,main.d symbol.d package.d cons.d list.d apply.d eval.d interpreter.d compiler.d disassembler.d instance.d gfun.d clos/cache.d clos/accessor.d reference.d character.d file.d read.d print.d error.d string.d cfun.d reader/parse_integer.d reader/parse_number.d printer/float_to_digits.d printer/float_to_string.d printer/integer_to_string.d printer/write_ugly.d printer/write_object.d printer/write_symbol.d printer/write_array.d printer/write_list.d printer/write_code.d printer/write_sse.d printer/print_unreadable.d ffi/libraries.d ffi/backtrace.d ffi/mmap.d ffi/cdata.d numbers/cos.d numbers/sin.d numbers/tan.d numbers/atan.d numbers/cosh.d numbers/sinh.d numbers/tanh.d numbers/exp.d numbers/expt.d numbers/log.d numbers/sqrt.d numbers/abs.d numbers/zerop.d numbers/plusp.d numbers/minusp.d numbers/negate.d numbers/conjugate.d numbers/one_plus.d numbers/one_minus.d numbers/plus.d numbers/minus.d numbers/times.d numbers/divide.d numbers/number_compare.d numbers/number_equalp.d numbers/minmax.d numbers/floor.d numbers/ceiling.d numbers/round.d numbers/truncate.d typespec.d assignment.d predicate.d number.d num_pred.d num_arith.d num_co.d num_log.d num_rand.d array.d vector_push.d sequence.d cmpaux.d macros.d backq.d stacks.d time.d unixint.d mapfun.d multival.d hash.d format.d pathname.d structure.d load.d unixfsys.d unixsys.d serialize.d ffi.d sse2.d threads/atomic.d)
+
+CFILES = $(DFILES:$(srcdir)/c/%.d=c/%.c)
+OFILES = $(CFILES:%.c=%.o)
+
+# Build rules
+
+$(DPP): $(srcdir)/c/dpp.c $(srcdir)/c/symbols_list2.h
+	if test -f CROSS-DPP; then touch $@; else \
+	$(TRUE_CC) -I$(srcdir)/c/ -I@true_builddir@ -I./ \
+		$(srcdir)/c/dpp.c \
+		@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ \
+		-o $@ ; \
+	fi
+
+$(HFILES):
+	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
+
+$(OFILES): $(DPP) c/ecl/external.h $(HFILES) $(srcdir)/c/* $(CFILES)
+
 # When compiling the library itself, we have to remove the dllimport
 # declarations, because the variables that they mark are in the
 # in the library and can be referenced without indirection.
-#
 c/ecl/external.h: $(top_srcdir)/h/external.h
 	test -d c/ecl || mkdir c/ecl
 	sed 's,__declspec(dllimport),,g' $(top_srcdir)/h/external.h > $@
-ecl/external.h: c/ecl/external.h c/ecl/external.h
-	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
+
+# symbols_list2.h is built this way to allow for an atomic replacement of
+# the file. Otherwise we have problem when doing concurrent builds with
+# rsync updates of the source tree.
+$(srcdir)/c/symbols_list2.h: $(srcdir)/c/symbols_list.h Makefile
+	cat $(srcdir)/c/symbols_list.h | \
+	sed -e 's%{\([A-Z ]*.*".*"\),[^,]*,[ ]*NULL,.*}%{\1,NULL}%g' \
+	    -e 's%{\([A-Z ]*.*".*"\),[^,]*,[ ]*\([^,]*\),.*}%{\1,"\2"}%g' \
+	    -e 's%{NULL.*%{NULL,NULL}};%' | \
+	sed -e 's%"\(IF_[A-Z0-9]*\)(\([^)]*\))"%\1("\2")%g' > tmp.h
+	mv tmp.h $@
+
+# These files are interrelated
+c/all_symbols.c: $(DPP)
+c/all_symbols.o: c/all_symbols.c ecl/external.h
+	$(CC)  -I./c/ $(CFLAGS) c/all_symbols.c -o $@
+c/all_symbols2.o: c/all_symbols.c
+	$(CC) $(CFLAGS) -DECL_FINAL -I./c/ c/all_symbols.c -o $@
+
+# reduces the overhead of jumping to other functions
+# c/apply.c: $(DPP)
+# c/apply.o: c/apply.c $(HFILES)
+# 	$(CC) $(CFLAGS) c/apply.c -o $@
+
+# experimental apply (why isn't referenced anywhere?)
+# apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
+#	if test -f CROSS-DPP ; then \
+#		CROSS-DPP $(srcdir)/arch/apply_x86.d $@ \
+#	else $(DPP) $(srcdir)/arch/apply_x86.d  $@ ; fi
+
+# lisp initialization
+c/cinit.c: $(DPP)
+c/cinit.o: c/cinit.c $(HFILES)
+	$(CC) $(CFLAGS) -I./ c/cinit.c -o $@
+
+# general file extension rules
+
+c/%.c: $(srcdir)/c/%.d $(DPP) $(HFILES)
+	if test -f CROSS-DPP ; then CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
+
+c/%.o: c/%.c
+	@echo "Compiling $@..."
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+
+c/%.o: $(srcdir)/c/%.c
+	@echo "Compiling $@..."
+	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+
+# c/%.o: $(srcdir)/c/%.d $(DPP) $(HFILES)
+# 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
+
+# .d.s: $(HFILES)
+# 	if test -f CROSS-DPP ; then CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
+# 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
+
+# prerequisite libraries
+libeclgc.a: libeclatomic.a
+	test -d ecl/gc || mkdir ecl/gc
+	test -d ecl/gc/private || mkdir ecl/gc/private
+	if (echo $(SUBDIRS) | grep gc); then \
+	  cd gc && $(MAKE) install && cd .. && \
+	  cp -rf $(srcdir)/@ECL_GC_DIR@/include/private/*.h ecl/gc/private/ && \
+	  mv libgc.a libeclgc.a; \
+	fi
+libeclffi.a:
+	if (echo $(SUBDIRS) | grep libffi); then \
+	  cd libffi && $(MAKE) install && cd .. && \
+	  sed -e 's,<ffitarget,<ecl/ffitarget,' ecl/ffi.h > ecl/foo.h && \
+	  rm ecl/ffi.h && mv ecl/foo.h ecl/ffi.h && \
+	  mv libffi.a libeclffi.a; \
+	fi
+libeclatomic.a:
+	if (echo $(SUBDIRS) | grep atomic); then \
+	  cd atomic && $(MAKE) && $(MAKE) install && cd .. && \
+	  $(RM) -rf share ecl/atomic_ops_stack.h ecl/atomic_ops_malloc.h *atomic*gpl* && \
+	  mv libatomic_ops.a libeclatomic.a; \
+	fi
+libeclgmp.a:
+	if (echo $(SUBDIRS) | grep gmp); then \
+	  cd gmp && $(MAKE) install && \
+	  cd .. && mv include/gmp.h ecl/ && rmdir include &&  \
+	  mv ./libgmp.a ./libeclgmp.a; \
+	fi
+
+# final objects archive
+libeclmin.a: libeclgmp.a libeclatomic.a libeclgc.a libeclffi.a $(OFILES) @EXTRA_OBJS@ c/all_symbols.o c/all_symbols2.o lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h
+	@echo "Building $@..."
+	$(RM) $@
+	$(AR) cr $@ $(OFILES) @EXTRA_OBJS@
+	$(RANLIB) $@
+
+ecl_min$(EXE): $(LIBRARIES) .gdbinit libeclmin.a c/cinit.o
+	@echo "Building $@..."
+	if [ -f CROSS-COMPILER ]; then \
+		touch $@; \
+	else \
+		$(CC) $(LDFLAGS) -o $@ \
+		c/cinit.o c/all_symbols.o \
+		-L./ libeclmin.a \
+		$(CORE_LIBS) $(FASL_LIBS) $(LIBS);\
+	fi
+
+clean-ecl_min:
+	$(RM) -rf $(DPP) ecl_min$(EXE) libecl*.a c/
+	for i in $(srcdir)/c/*/; do mkdir -p c/`basename $$i`; done
+
+
+# Common Lisp
 
 bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
@@ -86,12 +245,6 @@ bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir
 	    $(LN_S) @SONAME3@ @SONAME@ ) \
 	fi
 
-ecl_min$(EXE): $(LIBRARIES) .gdbinit @LIBPREFIX@eclmin.@LIBEXT@
-	if [ -f CROSS-COMPILER ]; then \
-		touch $@; \
-	else \
-		$(CC) $(LDFLAGS) -o $@ cinit.o c/all_symbols.o -L./ @LIBPREFIX@eclmin.@LIBEXT@ $(CORE_LIBS) $(FASL_LIBS) $(LIBS);\
-	fi
 mini_ecl: ecl_min$(EXE) bare2.lsp
 	(echo '#!/bin/sh'; echo './ecl_min bare2.lsp') > $@
 	chmod +x $@
@@ -114,37 +267,6 @@ bin/ecl-config: bin/ecl-config.pre
 	sed -e 's,@libdir\\@,$(libdir),' \
 	    -e 's,@includedir\\@,$(includedir),' \
 	    -e 's,~A,$(libdir),' bin/ecl-config.pre > bin/ecl-config
-
-
-@LIBPREFIX@eclmin.@LIBEXT@: @LIBPREFIX@eclgmp.@LIBEXT@ @LIBPREFIX@eclatomic.@LIBEXT@ @LIBPREFIX@eclgc.@LIBEXT@ @LIBPREFIX@eclffi.@LIBEXT@ lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h $(top_srcdir)/c/*.d
-	cd c; $(MAKE)
-@LIBPREFIX@eclgc.@LIBEXT@: @LIBPREFIX@eclatomic.@LIBEXT@
-	test -d ecl/gc || mkdir ecl/gc
-	test -d ecl/gc/private || mkdir ecl/gc/private
-	if (echo $(SUBDIRS) | grep gc); then \
-	  cd gc && $(MAKE) install && cd .. && \
-	  cp -rf $(srcdir)/@ECL_GC_DIR@/include/private/*.h ecl/gc/private/ && \
-	  mv @LIBPREFIX@gc.@LIBEXT@ @LIBPREFIX@eclgc.@LIBEXT@; \
-	fi
-@LIBPREFIX@eclffi.@LIBEXT@:
-	if (echo $(SUBDIRS) | grep libffi); then \
-	  cd libffi && $(MAKE) install && cd .. && \
-	  sed -e 's,<ffitarget,<ecl/ffitarget,' ecl/ffi.h > ecl/foo.h && \
-	  rm ecl/ffi.h && mv ecl/foo.h ecl/ffi.h && \
-	  mv @LIBPREFIX@ffi.@LIBEXT@ @LIBPREFIX@eclffi.@LIBEXT@; \
-	fi
-@LIBPREFIX@eclatomic.@LIBEXT@:
-	if (echo $(SUBDIRS) | grep atomic); then \
-	  cd atomic && $(MAKE) && $(MAKE) install && cd .. && \
-	  $(RM) -rf share ecl/atomic_ops_stack.h ecl/atomic_ops_malloc.h *atomic*gpl* && \
-	  mv @LIBPREFIX@atomic_ops.@LIBEXT@ @LIBPREFIX@eclatomic.@LIBEXT@; \
-	fi
-@LIBPREFIX@eclgmp.@LIBEXT@:
-	if (echo $(SUBDIRS) | grep gmp); then \
-	  cd gmp && $(MAKE) install && \
-	  cd .. && mv include/gmp.h ecl/ && rmdir include &&  \
-	  mv ./@LIBPREFIX@gmp.@LIBEXT@ ./@LIBPREFIX@eclgmp.@LIBEXT@; \
-	fi
 
 build-stamp: config.status
 	echo "#" `uname -a` > $@
@@ -190,7 +312,7 @@ install:
 	    $(LN_S) @SONAME3@ @SONAME1@ && \
 	    $(LN_S) @SONAME3@ @SONAME@ ) \
 	fi
-	$(INSTALL_PROGRAM) c/dpp$(EXE) $(DESTDIR)$(ecldir)
+	$(INSTALL_PROGRAM) dpp$(EXE) $(DESTDIR)$(ecldir)
 	$(INSTALL_PROGRAM) ecl_min$(EXE) $(DESTDIR)$(ecldir)
 	for i in `cat modules`; do \
 	  case $$i in \
@@ -198,7 +320,7 @@ install:
 	    *) $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir);; \
 	  esac \
 	done
-	for i in LICENSE LGPL; do \
+	for i in LICENSE COPYING; do \
 	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(ecldir); \
 	done
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
@@ -220,9 +342,9 @@ uninstall:
 
 clean: mostlyclean
 	$(RM) -r *
-mostlyclean: clean_lisp
+mostlyclean: clean-ecl_min clean_lisp
 	(cd tests && $(MAKE) clean)
-	for i in $(SUBDIRS); do (test -d $$i && cd $$i && $(MAKE) clean); done
+	-for i in $(SUBDIRS); do (test -d $$i && cd $$i && $(MAKE) clean); done
 	$(RM) ecl_min$(EXE) bin/ecl$(EXE) help.doc core a.out TAGS
 	$(RM) config.version config.log config.cache
 	$(RM) *.c *.o *.a *.eclh *.h *.data *.fas *.dat *.la *.so *.dylib
