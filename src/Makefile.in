@@ -171,8 +171,6 @@ install:
 	for i in `(cd ecl && find . -name '*.h')`; do echo $$i; \
 	  $(INSTALL_DATA) ecl/$$i $(DESTDIR)$(includedir)/ecl/$$i; \
 	done
-	$(RM) -f $(DESTDIR)$(includedir)/ecl/config.h
-	mv $(DESTDIR)$(includedir)/ecl/config-install.h $(DESTDIR)$(includedir)/ecl/config.h
 	$(INSTALL_SCRIPT) bin/ecl-config $(DESTDIR)$(bindir)
 	for i in build-stamp help.doc TAGS ; do \
 	  $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir); \
