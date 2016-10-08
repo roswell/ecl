@@ -121,8 +121,6 @@
 #undef ECL_AVOID_FPE_H
 /* do we want to have signed zeros                                      */
 #undef ECL_SIGNED_ZERO
-/* do we want NaNs and Infs                                             */
-#undef ECL_IEEE_FP
 /* has support for large files                                          */
 #undef HAVE_FSEEKO
 /* the tzset() function gets the current time zone                      */

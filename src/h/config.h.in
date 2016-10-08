@@ -216,6 +216,9 @@ typedef unsigned char ecl_base_char;
 #undef HAVE_DOUBLE_COMPLEX
 #undef HAVE_FLOAT_COMPLEX
 
+/* do we want NaNs and Infs                                             */
+#undef ECL_IEEE_FP
+
 /* We can use small, two-words conses, without type information         */
 #undef ECL_SMALL_CONS
 
