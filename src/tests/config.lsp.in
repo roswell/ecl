@@ -49,7 +49,7 @@
         with lib-name = (format nil "../lib/ecl-~A/" (lisp-implementation-version))
         for base in (list root (merge-pathnames lib-name root))
         when (or (probe-file (merge-pathnames "./BUILD-STAMP" base))
-                 (probe-file (merge-pathnames "./LGPL" base)))
+                 (probe-file (merge-pathnames "./COPYING" base)))
         do (return base)))
 
 (setf (logical-pathname-translations "SYS")
