@@ -28,9 +28,11 @@ RM	= @RM@
 LN_S	= @LN_S@
 EXE	= @EXEEXT@
 ETAGS	= @ETAGS@
-DPP	= ./dpp$(EXE)
 RANLIB	= @RANLIB@
 AR	= @AR@
+DPP	= dpp$(EXE)
+ECL_MIN = ecl_min$(EXE)
+ECL_BIN = ecl$(EXE)
 
 # The following flags could be added and used by GCC
 #  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
@@ -148,8 +150,8 @@ c/all_symbols2.o: c/all_symbols.c
 # experimental apply (why isn't referenced anywhere?)
 # apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
 #	if test -f CROSS-DPP ; then \
-#		CROSS-DPP $(srcdir)/arch/apply_x86.d $@ \
-#	else $(DPP) $(srcdir)/arch/apply_x86.d  $@ ; fi
+#		./CROSS-DPP $(srcdir)/arch/apply_x86.d $@ \
+#	else ./$(DPP) $(srcdir)/arch/apply_x86.d  $@ ; fi
 
 # lisp initialization
 c/cinit.c: $(DPP)
@@ -159,7 +161,7 @@ c/cinit.o: c/cinit.c $(HFILES)
 # general file extension rules
 
 c/%.c: $(srcdir)/c/%.d $(DPP) $(HFILES)
-	if test -f CROSS-DPP ; then CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
+	if test -f CROSS-DPP ; then ./CROSS-DPP $< $@ ; else ./$(DPP) $< $@ ; fi
 
 c/%.o: c/%.c
 	@echo "Compiling $@..."
@@ -173,7 +175,7 @@ c/%.o: $(srcdir)/c/%.c
 # 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
 
 # .d.s: $(HFILES)
-# 	if test -f CROSS-DPP ; then CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
+# 	if test -f CROSS-DPP ; then ./CROSS-DPP $< $@.c ; else ./$(DPP) $< $@.c ; fi
 # 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
 
 # prerequisite libraries
@@ -212,7 +214,7 @@ libeclmin.a: libeclgmp.a libeclatomic.a libeclgc.a libeclffi.a $(OFILES) @EXTRA_
 	$(AR) cr $@ $(OFILES) @EXTRA_OBJS@
 	$(RANLIB) $@
 
-ecl_min$(EXE): $(LIBRARIES) .gdbinit libeclmin.a c/cinit.o
+$(ECL_MIN): $(LIBRARIES) .gdbinit libeclmin.a c/cinit.o
 	@echo "Building $@..."
 	if [ -f CROSS-COMPILER ]; then \
 		touch $@; \
@@ -224,17 +226,17 @@ ecl_min$(EXE): $(LIBRARIES) .gdbinit libeclmin.a c/cinit.o
 	fi
 
 clean-ecl_min:
-	$(RM) -rf $(DPP) ecl_min$(EXE) libecl*.a c/
+	$(RM) -rf $(DPP) $(ECL_MIN) libecl*.a c/
 	for i in $(srcdir)/c/*/; do mkdir -p c/`basename $$i`; done
 
 
 # Common Lisp
 
-bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
+bin/ecl$(EXE): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
-		ECLDIR=`pwd`/ ./ecl_min$(EXE) compile; \
+		ECLDIR=`pwd`/ ./$(ECL_MIN) compile; \
 	fi
 	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
 	  ( mv @SONAME@ @SONAME3@ && \
@@ -244,8 +246,8 @@ bin/ecl$(EXE): ecl_min$(EXE) compile.lsp ecl/external.h build-stamp $(top_srcdir
 	    $(LN_S) @SONAME3@ @SONAME@ ) \
 	fi
 
-mini_ecl: ecl_min$(EXE) bare2.lsp
-	(echo '#!/bin/sh'; echo './ecl_min bare2.lsp') > $@
+mini_ecl: $(ECL_MIN) bare2.lsp
+	(echo '#!/bin/sh'; echo './$(ECL_MIN) bare2.lsp') > $@
 	chmod +x $@
 bare2.lsp:
 	echo '(load "bare")(si::top-level)' > $@
@@ -311,8 +313,8 @@ install:
 	    $(LN_S) @SONAME3@ @SONAME1@ && \
 	    $(LN_S) @SONAME3@ @SONAME@ ) \
 	fi
-	$(INSTALL_PROGRAM) dpp$(EXE) $(DESTDIR)$(ecldir)
-	$(INSTALL_PROGRAM) ecl_min$(EXE) $(DESTDIR)$(ecldir)
+	$(INSTALL_PROGRAM) $(DPP) $(DESTDIR)$(ecldir)
+	$(INSTALL_PROGRAM) $(ECL_MIN) $(DESTDIR)$(ecldir)
 	for i in `cat modules`; do \
 	  case $$i in \
 	    *.fas) $(INSTALL_PROGRAM) $$i $(DESTDIR)$(ecldir);; \
@@ -344,7 +346,7 @@ clean: mostlyclean
 mostlyclean: clean-ecl_min clean_lisp
 	(cd tests && $(MAKE) clean)
 	-for i in $(SUBDIRS); do (test -d $$i && cd $$i && $(MAKE) clean); done
-	$(RM) ecl_min$(EXE) bin/ecl$(EXE) help.doc core a.out TAGS
+	$(RM) $(ECL_MIN) bin/ecl$(EXE) help.doc core a.out TAGS
 	$(RM) config.version config.log config.cache
 	$(RM) *.c *.o *.a *.eclh *.h *.data *.fas *.dat *.la *.so *.dylib
 clean_lisp:
