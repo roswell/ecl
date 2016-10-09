@@ -32,7 +32,7 @@ RANLIB	= @RANLIB@
 AR	= @AR@
 DPP	= dpp$(EXE)
 ECL_MIN = ecl_min$(EXE)
-ECL_BIN = ecl$(EXE)
+ECL     = bin/ecl$(EXE)
 
 # The following flags could be added and used by GCC
 #  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
@@ -232,7 +232,7 @@ clean-ecl_min:
 
 # Common Lisp
 
-bin/ecl$(EXE): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
+$(ECL): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
@@ -346,7 +346,7 @@ clean: mostlyclean
 mostlyclean: clean-ecl_min clean_lisp
 	(cd tests && $(MAKE) clean)
 	-for i in $(SUBDIRS); do (test -d $$i && cd $$i && $(MAKE) clean); done
-	$(RM) $(ECL_MIN) bin/ecl$(EXE) help.doc core a.out TAGS
+	$(RM) $(ECL_MIN) $(ECL) help.doc core a.out TAGS
 	$(RM) config.version config.log config.cache
 	$(RM) *.c *.o *.a *.eclh *.h *.data *.fas *.dat *.la *.so *.dylib
 clean_lisp:
@@ -360,7 +360,7 @@ realclean: distclean
 test_changes:
 	test -d old || mkdir old
 	cp -rf lsp clos cmp old/
-	$(MAKE) clean_lisp; $(MAKE) -C c clean; $(RM) -f bin/ecl$(EXE)
+	$(MAKE) clean_lisp; $(MAKE) -C c clean; $(RM) -f $(ECL)
 	$(MAKE)
 	for i in lsp clos cmp; do diff --exclude=\*.o $$i old/$$i; done
 #
