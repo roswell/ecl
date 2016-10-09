@@ -273,8 +273,8 @@ build-stamp: config.status
 	echo "#" `uname -a` > $@
 	head -8 config.log | tail -6 >> $@
 install:
-	# Here we would use the option -s but the install program in sourceforge-solaris
-	# is broken.
+# Here we would use the option -s but the install program in sourceforge-solaris
+# is broken.
 	$(mkinstalldirs) $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) \
 	  $(DESTDIR)$(ecldir) $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/ecl
 	for i in $(TARGETS); do \
