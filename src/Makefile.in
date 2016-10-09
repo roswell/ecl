@@ -32,7 +32,7 @@ RANLIB	= @RANLIB@
 AR	= @AR@
 DPP	= dpp$(EXE)
 ECL_MIN = ecl_min$(EXE)
-ECL     = bin/ecl$(EXE)
+ECL     = ecl$(EXE)
 
 # The following flags could be added and used by GCC
 #  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
@@ -48,10 +48,10 @@ ECL     = bin/ecl$(EXE)
 # not need to change them.  This defaults to /usr/local.
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-bindir=@bindir@/
-libdir=@libdir@/
-includedir=@includedir@/
-ecldir=@ecldir@/
+bindir=@bindir@
+libdir=@libdir@
+includedir=@includedir@
+ecldir=@ecldir@
 
 # Programs used by "make install":
 #
@@ -113,7 +113,7 @@ $(DPP): $(srcdir)/c/dpp.c $(srcdir)/c/symbols_list2.h
 	fi
 
 $(HFILES):
-	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
+	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl $(HDIR)
 
 $(OFILES): $(DPP) c/ecl/external.h $(HFILES) $(srcdir)/c/* $(CFILES)
 
@@ -232,7 +232,7 @@ clean-ecl_min:
 
 # Common Lisp
 
-$(ECL): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
+bin/$(ECL): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
@@ -333,13 +333,14 @@ flatinstall: build-stamp
 	  includedir=$(prefix) ecldir=$(prefix) install
 
 uninstall:
-	for i in $(TARGETS) ecl-config; do $(RM) $(DESTDIR)$(bindir)/$$i; done
-	$(RM) -r $(DESTDIR)$(includedir)/ecl $(DESTDIR)$(ecldir)
-	for i in $(LSP_LIBRARIES) $(LIBRARIES) LICENSE LGPL; do \
+	for i in $(ECL) ecl-config; do $(RM) $(DESTDIR)$(bindir)/$$i; done
+	for i in $(LSP_LIBRARIES) $(LIBRARIES) LICENSE LGPL \
+			@SONAME@ @SONAME1@ @SONAME2@ @SONAME3@; do \
 	  $(RM) $(DESTDIR)$(libdir)/$$i || : ; \
 	done
-	$(RM) -f $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
-	$(RM) -f $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
+	$(RM) $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
+	$(RM) $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
+	$(RM) -r $(DESTDIR)$(includedir)/ecl $(DESTDIR)$(ecldir)
 
 clean: mostlyclean
 	$(RM) -r *
