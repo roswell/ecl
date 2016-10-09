@@ -12,7 +12,7 @@
 #include <sys/utsname.h>
 ")
 
-#+(and (not ecl-min) (not nacl) (not :mingw32) (not :msvc) (not :cygwin) uname)
+#+(and (not ecl-min) (not nacl) (not :windows) uname)
 (defun uname ()
  (ffi:c-inline () () :object "{
         cl_object output;

@@ -336,7 +336,7 @@ AC_SUBST(LSP_FEATURES, ['*features*']) dnl Symbols to add to *FEATURES* for cond
 
 
 dnl -----------------------------------------------------------------------
-dnl Guess operating system of host. We do not allow cross-compiling.
+dnl Guess operating system of host.
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 
@@ -916,7 +916,6 @@ AC_CONFIG_FILES([
   cmp/load.lsp
   ../Makefile
   Makefile
-  c/Makefile
   doc/Makefile
   doc/ecl.man
   doc/ecl-config.man

@@ -106,9 +106,8 @@ OFILES = $(CFILES:%.c=%.o)
 $(DPP): $(srcdir)/c/dpp.c $(srcdir)/c/symbols_list2.h
 	if test -f CROSS-DPP; then touch $@; else \
 	$(TRUE_CC) -I$(srcdir)/c/ -I@true_builddir@ -I./ \
-		$(srcdir)/c/dpp.c \
 		@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ \
-		-o $@ ; \
+		-o $@ $<; \
 	fi
 
 $(HFILES):
