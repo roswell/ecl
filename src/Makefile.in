@@ -16,8 +16,7 @@ manext=1
 @SET_MAKE@
 CC	= @ECL_CC@
 TRUE_CC = $(CC)
-CFLAGS	= -Werror -Wno-error=shift-count-overflow       \
-	-I. -I@true_builddir@ -I$(srcdir)/c -Iecl/gc    \
+CFLAGS	= -I. -I@true_builddir@ -I$(srcdir)/c -Iecl/gc    \
 	-DECL_BUILD -DECL_API -DECL_NO_LEGACY           \
 	@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
 LIBS	= @LIBS@
