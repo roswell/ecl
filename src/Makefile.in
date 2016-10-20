@@ -254,8 +254,6 @@ bare2.lsp:
 .gdbinit: $(srcdir)/util/gdbinit
 	cp $(srcdir)/util/gdbinit $@
 
-lsp/config.lsp: lsp/config.pre
-	sed -e 's,@ecldir\\@,$(ecldir),g' < lsp/config.pre > lsp/config.lsp
 $(ECL_CMPDIR)/cmpdefs.lsp: $(ECL_CMPDIR)/cmpdefs.pre
 	sed -e 's,@ecldir\\@,"$(ecldir)",g' \
 	    -e 's,@libdir\\@,"$(libdir)",g' \

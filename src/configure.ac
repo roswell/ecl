@@ -922,7 +922,7 @@ AC_CONFIG_FILES([
   ecl/configpre.h:h/config.h.in
   ecl/configpre-int.h:h/config-internal.h.in
   bin/ecl-config.pre:util/ecl-config
-  lsp/config.pre:lsp/config.lsp.in
+  lsp/config.lsp:lsp/config.lsp.in
   compile.pre:compile.lsp.in
   cmp/cmpdefs.pre:cmp/cmpdefs.lsp
   tests/config.lsp

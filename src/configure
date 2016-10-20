@@ -9725,7 +9725,7 @@ $as_echo "#define ECL_RELATIVE_PACKAGE_NAMES 1" >>confdefs.h
 
 fi
 
-ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp ../Makefile Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in ecl/configpre-int.h:h/config-internal.h.in bin/ecl-config.pre:util/ecl-config lsp/config.pre:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp tests/config.lsp tests/Makefile"
+ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp ../Makefile Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in ecl/configpre-int.h:h/config-internal.h.in bin/ecl-config.pre:util/ecl-config lsp/config.lsp:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp tests/config.lsp tests/Makefile"
 
 
 ac_config_headers="$ac_config_headers ecl/config.h:ecl/configpre.h"
@@ -10435,7 +10435,7 @@ do
     "ecl/configpre.h") CONFIG_FILES="$CONFIG_FILES ecl/configpre.h:h/config.h.in" ;;
     "ecl/configpre-int.h") CONFIG_FILES="$CONFIG_FILES ecl/configpre-int.h:h/config-internal.h.in" ;;
     "bin/ecl-config.pre") CONFIG_FILES="$CONFIG_FILES bin/ecl-config.pre:util/ecl-config" ;;
-    "lsp/config.pre") CONFIG_FILES="$CONFIG_FILES lsp/config.pre:lsp/config.lsp.in" ;;
+    "lsp/config.lsp") CONFIG_FILES="$CONFIG_FILES lsp/config.lsp:lsp/config.lsp.in" ;;
     "compile.pre") CONFIG_FILES="$CONFIG_FILES compile.pre:compile.lsp.in" ;;
     "cmp/cmpdefs.pre") CONFIG_FILES="$CONFIG_FILES cmp/cmpdefs.pre:cmp/cmpdefs.lsp" ;;
     "tests/config.lsp") CONFIG_FILES="$CONFIG_FILES tests/config.lsp" ;;
