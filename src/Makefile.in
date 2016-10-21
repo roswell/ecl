@@ -255,12 +255,11 @@ bare2.lsp:
 	cp $(srcdir)/util/gdbinit $@
 
 $(ECL_CMPDIR)/cmpdefs.lsp: $(ECL_CMPDIR)/cmpdefs.pre
-	sed -e 's,@ecldir\\@,"$(ecldir)",g' \
-	    -e 's,@libdir\\@,"$(libdir)",g' \
-	    -e 's,@includedir\\@,"$(includedir)",g' < $(ECL_CMPDIR)/cmpdefs.pre > $@
-compile.lsp: compile.pre
 	sed -e 's,@ecldir\\@,$(ecldir),g' \
-	    -e 's,@libdir\\@,$(libdir),g' < compile.pre > compile.lsp
+	    -e 's,@libdir\\@,$(libdir),g' \
+	    -e 's,@includedir\\@,$(includedir),g' < $(ECL_CMPDIR)/cmpdefs.pre > $@
+compile.lsp: compile.pre
+	sed -e 's,@ecldir\\@,$(ecldir),g' < compile.pre > compile.lsp
 bin/ecl-config: bin/ecl-config.pre
 	sed -e 's,@libdir\\@,$(libdir),' \
 	    -e 's,@includedir\\@,$(includedir),' \

@@ -73,8 +73,9 @@ coprocessor).")
 (defvar +object-file-extension+ "@OBJEXT@")
 (defvar +executable-file-format+ "~a@EXEEXT@")
 
-(defvar *ecl-include-directory* @includedir\@)
-(defvar *ecl-library-directory* @libdir\@)
+(defvar *ecl-include-directory* "@includedir\@/")
+(defvar *ecl-library-directory* "@libdir\@/")
+(defvar *ecl-data-directory* "@ecldir\@/")
 
 (defvar *ld-rpath*
   (let ((x "@ECL_LDRPATH@"))
