@@ -217,8 +217,8 @@ _ecl_alloc_env(cl_env_ptr parent)
    */
   cl_env_ptr output;
 #if defined(ECL_USE_MPROTECT)
-  output = mmap(0, sizeof(*output), PROT_READ | PROT_WRITE,
-                MAP_ANON | MAP_PRIVATE, -1, 0);
+  output = (cl_env_ptr) mmap(0, sizeof(*output), PROT_READ | PROT_WRITE,
+                             MAP_ANON | MAP_PRIVATE, -1, 0);
   if (output == MAP_FAILED)
     ecl_internal_error("Unable to allocate environment structure.");
 #else
@@ -793,16 +793,16 @@ cl_boot(int argc, char **argv)
 @ {
 #ifdef ECL_THREADS
     if (!Null(kill_all_threads)) {
-      cl_object this = the_env->own_process;
+      cl_object this_process = the_env->own_process;
       cl_object p, all_threads = mp_all_processes();
       for (p = all_threads; !Null(p); p = ECL_CONS_CDR(p)) {
         cl_object process = ECL_CONS_CAR(p);
-        if (process != this)
+        if (process != this_process)
           mp_process_kill(process);
       }
       for (p = all_threads; !Null(p); p = ECL_CONS_CDR(p)) {
         cl_object process = ECL_CONS_CAR(p);
-        if (process != this)
+        if (process != this_process)
           mp_process_join(process);
       }
       /* FIXME! We need to do this because of a problem in GC
