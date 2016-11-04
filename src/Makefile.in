@@ -343,7 +343,7 @@ clean: mostlyclean
 mostlyclean: clean-ecl_min clean_lisp
 	(cd tests && $(MAKE) clean)
 	-for i in $(SUBDIRS); do (test -d $$i && cd $$i && $(MAKE) clean); done
-	$(RM) $(ECL_MIN) $(ECL) help.doc core a.out TAGS
+	$(RM) -r $(ECL_MIN) $(ECL) help.doc core a.out TAGS
 	$(RM) config.version config.log config.cache
 	$(RM) *.c *.o *.a *.eclh *.h *.data *.fas *.dat *.la *.so *.dylib
 clean_lisp:
