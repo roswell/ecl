@@ -80,6 +80,10 @@ ecl_number_compare(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
     case t_longfloat:
 #endif
+#ifdef ECL_IEEE_FP
+      if (si_float_infinity_p(y))
+        return(ecl_number_compare(ecl_make_fixnum(0), y));
+#endif
       y = cl_rational(y);
       goto BEGIN;
     default:
@@ -102,6 +106,10 @@ ecl_number_compare(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
     case t_longfloat:
 #endif
+#ifdef ECL_IEEE_FP
+      if (si_float_infinity_p(y))
+        return(ecl_number_compare(ecl_make_fixnum(0), y));
+#endif
       y = cl_rational(y);
       goto BEGIN;
     default:
@@ -118,6 +126,10 @@ ecl_number_compare(cl_object x, cl_object y)
       return -double_fix_compare(ecl_fixnum(y), dx);
     case t_bignum:
     case t_ratio:
+#ifdef ECL_IEEE_FP
+      if (si_float_infinity_p(x))
+        return(ecl_number_compare(x, ecl_make_fixnum(0)));
+#endif
       x = cl_rational(x);
       goto BEGIN;
     case t_singlefloat:
