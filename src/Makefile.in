@@ -14,8 +14,13 @@ manext=1
 #
 
 @SET_MAKE@
+# CC may be either C or CXX compiler (depending on --with-cxx
+# option). This compiler is used for building all contribs, modules
+# and anything what goes through CMP module.
 CC	= @ECL_CC@
-TRUE_CC = $(CC)
+# TRUE_CC is always C compiler. ECL core files (src/c/*) doesn't build
+# with CXX compiler.
+TRUE_CC = @CC@
 CFLAGS	= -I. -I@true_builddir@ -I$(srcdir)/c -Iecl/gc    \
 	-DECL_BUILD -DECL_API -DECL_NO_LEGACY           \
 	@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
@@ -137,14 +142,14 @@ $(srcdir)/c/symbols_list2.h: $(srcdir)/c/symbols_list.h Makefile
 # These files are interrelated
 c/all_symbols.c: $(DPP)
 c/all_symbols.o: c/all_symbols.c ecl/external.h
-	$(CC)  -I./c/ $(CFLAGS) c/all_symbols.c -o $@
+	$(TRUE_CC)  -I./c/ $(CFLAGS) c/all_symbols.c -o $@
 c/all_symbols2.o: c/all_symbols.c
-	$(CC) $(CFLAGS) -DECL_FINAL -I./c/ c/all_symbols.c -o $@
+	$(TRUE_CC) $(CFLAGS) -DECL_FINAL -I./c/ c/all_symbols.c -o $@
 
 # reduces the overhead of jumping to other functions
 # c/apply.c: $(DPP)
 # c/apply.o: c/apply.c $(HFILES)
-# 	$(CC) $(CFLAGS) c/apply.c -o $@
+# 	$(TRUE_CC) $(CFLAGS) c/apply.c -o $@
 
 # experimental apply (why isn't referenced anywhere?)
 # apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
@@ -155,7 +160,7 @@ c/all_symbols2.o: c/all_symbols.c
 # lisp initialization
 c/cinit.c: $(DPP)
 c/cinit.o: c/cinit.c $(HFILES)
-	$(CC) $(CFLAGS) -I./ c/cinit.c -o $@
+	$(TRUE_CC) $(CFLAGS) -I./ c/cinit.c -o $@
 
 # general file extension rules
 
@@ -164,18 +169,18 @@ c/%.c: $(srcdir)/c/%.d $(DPP) $(HFILES)
 
 c/%.o: c/%.c
 	@echo "Compiling $@..."
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+	$(TRUE_CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
 
 c/%.o: $(srcdir)/c/%.c
 	@echo "Compiling $@..."
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+	$(TRUE_CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
 
 # c/%.o: $(srcdir)/c/%.d $(DPP) $(HFILES)
-# 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
+# 	$(TRUE_CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
 
 # .d.s: $(HFILES)
 # 	if test -f CROSS-DPP ; then ./CROSS-DPP $< $@.c ; else ./$(DPP) $< $@.c ; fi
-# 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
+# 	$(TRUE_CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
 
 # prerequisite libraries
 libeclgc.a: libeclatomic.a
