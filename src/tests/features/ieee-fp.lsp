@@ -50,4 +50,5 @@
 ;;; Reported by: Robert Dodier
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/299
 (test ieee-fp.0003.b299
-  (finishes (< ext:double-float-negative-infinity 1/3)))
+  (finishes (< ext:double-float-negative-infinity 1/3))
+  (finishes (< ext:double-float-negative-infinity (1+ most-positive-fixnum))))
