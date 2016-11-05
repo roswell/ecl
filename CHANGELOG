@@ -48,6 +48,11 @@ arity dependent on platform) is also possible.
 whenever termination should be forced or not.
 
 ** Enhancements
+- Implemented CDRs: CDR-1, CDR-5, CDR-14
+Both CDR-1 and CDR-5 were already implemented, CDR-14 made us to list them
+in =*features*=
+(https://common-lisp.net/project/cdr/document/14/index.html).
+
 - if ECL is build with =--with-cxx= option, =:CXX-CORE= is present in
   =*features*=.
 

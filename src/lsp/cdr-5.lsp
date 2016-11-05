@@ -11,6 +11,9 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
+;;; Include CDR-5 in features
+(pushnew :cdr-5 *features*)
+
 (in-package "EXT")
 
 ;;;

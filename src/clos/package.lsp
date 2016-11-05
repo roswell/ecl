@@ -12,6 +12,8 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
+(pushnew :cdr-1 *features*)
+
 (defpackage "CLOS"
   (:use "CL" "EXT")
   (:import-from "SI" "UNBOUND" "GET-SYSPROP" "PUT-SYSPROP" "REM-SYSPROP"
