@@ -61,7 +61,36 @@
        "/tmp/prog/documentation.lisp")))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 22.* Format tests   ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun fmt (stream argument colonp atsignp &rest params)
+  (declare (ignore argument colonp atsignp))
+  (format stream "~S~%" params))
 
+;;; Tests for CDR 7
+;;; See: https://common-lisp.net/project/cdr/document/7/index.html
+(test ansi.22.cdr-7
+  ;; trailing commas
+  (let ((expected (format nil "(1 2)~%")))
+    (is-equal expected (format nil "~1,2/fmt/" t))
+    (is-equal expected (format nil "~1,2,/fmt/" t))
+    (is-equal expected (format nil "~1,2:/fmt/" t))
+    (is-equal expected (format nil "~1,2,:/fmt/" t)))
+  ;; final V parameters
+  (let ((expected-1 (format nil "(1 T)~%"))
+        (expected-2 (format nil "(1 NIL)~%")))
+    (is-equal expected-1 (format nil "~1,v/fmt/" t t))
+    (is-equal expected-1 (format nil "~1,v,/fmt/" t t))
+    (is-equal expected-1 (format nil "~1,v:/fmt/" t t))
+    (is-equal expected-1 (format nil "~1,v,:/fmt/" t t))
+
+    (is-equal expected-2 (format nil "~1,v/fmt/" nil t))
+    (is-equal expected-2 (format nil "~1,v,/fmt/" nil t))
+    (is-equal expected-2 (format nil "~1,v:/fmt/" nil t))
+    (is-equal expected-2 (format nil "~1,v,:/fmt/" nil t))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; 23.* Reader tests ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
