@@ -161,8 +161,8 @@ current_dir(void) {
     size += 256;
   } while (ok == NULL);
   size = strlen((char*)output->base_string.self);
-  if ((size + 1 /* / */ + 1 /* 0 */) >= output->base_string.dim) {
-    /* Too large to host the trailing '/' */
+  if ((size + 2) >= output->base_string.dim) {
+    /* Too small to host the trailing '/' and '\0' */
     cl_object other = ecl_alloc_adjustable_base_string(size+2);
     strcpy((char*)other->base_string.self, (char*)output->base_string.self);
     output = other;
@@ -240,7 +240,13 @@ si_readlink(cl_object filename) {
                        (char*)output->base_string.self, size);
     ecl_enable_interrupts();
     size += 256;
-  } while (written == size);
+  } while (written == size-256);
+  if ((written + 2) > output->base_string.self) {
+    /* Too small to host the trailing '/' and '\0' */
+    cl_object other = ecl_alloc_adjustable_base_string(written+2);
+    strcpy((char*)other->base_string.self, (char*)output->base_string.self);
+    output = other;
+  }
   output->base_string.self[written] = '\0';
   kind = file_kind((char*)output->base_string.self, FALSE);
   if (kind == @':directory') {
