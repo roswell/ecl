@@ -391,12 +391,8 @@
                   (incf posn)
                   (push (cons posn (get-char)) params)
                   (incf posn)
-                  (case (get-char)
-                    (#\,)
-                    ((#\: #\@)
-                     (decf posn))
-                    (t
-                     (return))))
+                  (unless (char= (get-char) #\,)
+		   (decf posn)))
                  ((char= char #\,)
                   (push (cons posn nil) params))
                  ((char= char #\:)
@@ -414,8 +410,6 @@
                              :offset posn)
                       (setf atsignp t)))
                  (t
-                  (when (char= (schar string (1- posn)) #\,)
-                    (push (cons (1- posn) nil) params))
                   (return))))
          (incf posn))
       (let ((char (get-char)))
