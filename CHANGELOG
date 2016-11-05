@@ -48,6 +48,9 @@ arity dependent on platform) is also possible.
 whenever termination should be forced or not.
 
 ** Enhancements
+- Implemented CDR-7
+https://common-lisp.net/project/cdr/document/7/index.html
+
 - Implemented CDRs: CDR-1, CDR-5, CDR-14
 Both CDR-1 and CDR-5 were already implemented, CDR-14 made us to list them
 in =*features*=

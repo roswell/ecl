@@ -22,7 +22,8 @@
 
 (in-package "SYS")
 
-(push :formatter *features*)
+(pushnew :cdr-7 *features*)
+(pushnew :formatter *features*)
 
 ;;;; Float printing.
 
@@ -2819,13 +2820,13 @@
 (def-format-interpreter #\/ (string start end colonp atsignp params)
   (let ((symbol (extract-user-function-name string start end)))
     (collect ((args))
-             (dolist (param-and-offset params)
-               (let ((param (cdr param-and-offset)))
-                 (case param
-                   (:arg (let ((x (next-arg))) (when x (args x))))
-                   (:remaining (args (length args)))
-                   (t (args param)))))
-             (apply (fdefinition symbol) stream (next-arg) colonp atsignp (args)))))
+      (dolist (param-and-offset params)
+	(let ((param (cdr param-and-offset)))
+	  (case param
+	    (:arg (args (next-arg)))
+	    (:remaining (args (length args)))
+	    (t (args param)))))
+      (apply (fdefinition symbol) stream (next-arg) colonp atsignp (args)))))
 
 (defun extract-user-function-name (string start end)
   (declare (si::c-local))
