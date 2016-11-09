@@ -40,7 +40,7 @@ ECL_SSE_OBJ=
 #
 TRUE_CC = cl
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private
+CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private
 
 SHELL	= /bin/sh
 RM	= del
@@ -162,7 +162,13 @@ $(HFILES): ../ecl/config.h.msvc6 Makefile
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
-	        < ..\ecl\config.h.msvc6 > $@
+	        < ..\ecl\config.h.msvc6 > ..\ecl\config.h
+	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
+		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
+		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
+		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
+		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
+	        < ..\ecl\config-internal.h.msvc6 > ..\ecl\config-internal.h
 	xcopy /SYI $(top_srcdir)\h\* ..\ecl
 	-mkdir ..\ecl\atomic_ops
 	-mkdir ..\ecl\atomic_ops\sysdeps
