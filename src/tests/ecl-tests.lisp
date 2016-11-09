@@ -28,6 +28,7 @@
        '(features/eformat
          features/ieee-fp
          features/eprocess
+         features/package-locks
          regressions/ansi+
          regressions/mixed
          regressions/cmp

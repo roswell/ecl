@@ -14,21 +14,16 @@
                         ((:file "ansi")
                          (:file "mixed")
                          (:file "compiler")
-                         #-ecl-bytecmp
-                         (:file "embedding")
-                         #+ffi
-                         (:file "foreign-interface")
-                         #+clos
-                         (:file "metaobject-protocol")
-                         #+threads
-                         (:file "multiprocessing")))
+                         (:file "embedding" :if-feature (:not :ecl-bytecmp))
+                         (:file "foreign-interface" :if-feature :ffi)
+                         (:file "metaobject-protocol" :if-feature :clos)
+                         (:file "multiprocessing" :if-feature :threads)))
                (:module features
                         :default-component-class asdf:cl-source-file.lsp
                         :components
-                        (#+unicode
-                         (:file "external-formats")
-                         #+ieee-floating-point
-                         (:file "ieee-fp")
+                        ((:file "external-formats" :if-feature :unicode)
+                         (:file "ieee-fp" :if-feature :ieee-floating-point)
+                         (:file "package-locks" :if-feature :package-locks)
                          (:file "external-process")
                          (:file "multiprocessing")))))
 
