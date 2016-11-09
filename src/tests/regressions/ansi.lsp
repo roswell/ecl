@@ -64,7 +64,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 22.* Format tests   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun fmt (stream argument colonp atsignp &rest params)
+(defun cl-user::fmt (stream argument colonp atsignp &rest params)
   (declare (ignore argument colonp atsignp))
   (format stream "~S~%" params))
 
