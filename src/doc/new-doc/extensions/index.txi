@@ -19,6 +19,7 @@
 * Tree walker::
 @c * Local package nicknames::
 @c * Hierarchical packages::
+* Package locks::
 * CDR Extensions::
 @end menu
 
@@ -61,8 +62,8 @@
 @node Tree walker
 @section Tree walker
 
-@c @node Local package nicknames
-@c @section Local package nicknames
+@c Package extensions
+@include extensions/packages.txi
 
 @node CDR Extensions
 @section CDR Extensions
