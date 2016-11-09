@@ -293,13 +293,15 @@ If PACKAGE is non-NIL, then only the specified PACKAGE is searched."
   (ffi:c-inline (package) (:object) :void
                 "(#0)->pack.locked = 1"
                 :side-effects t
-                :one-liner t))
+                :one-liner t)
+  T)
 
 (defun unlock-package (package &aux (package (si:coerce-to-package package)))
   (ffi:c-inline (package) (:object) :void
                 "(#0)->pack.locked = 0"
                 :side-effects t
-                :one-liner t))
+                :one-liner t)
+  T)
 
 (defun package-locked-p (package &aux (package (si:coerce-to-package package)))
   "Returns T when PACKAGE is locked, NIL otherwise. Signals an error
