@@ -1207,7 +1207,15 @@ cl_symbols[] = {
 {EXT_ "MKSTEMP","si_mkstemp"},
 {SYS_ "RMDIR","si_rmdir"},
 {EXT_ "MAKE-PIPE","si_make_pipe"},
+/* PACKAGE_LOCKS */
+{SYS_ "*IGNORE-PACKAGE-LOCKS*",NULL},
 {EXT_ "PACKAGE-LOCK","si_package_lock"},
+{SYS_ "LOCK-PACKAGE",NULL},
+{SYS_ "UNLOCK-PACKAGE",NULL},
+{SYS_ "PACKAGE-LOCKED-P",NULL},
+{SYS_ "WITHOUT-PACKAGE-LOCKS",NULL},
+{SYS_ "WITH-UNLOCKED-PACKAGES",NULL},
+/* ~PACKAGE_LOCKS */
 {SYS_ "PACKAGE-HASH-TABLES","si_package_hash_tables"},
 {SYS_ "PATHNAME-TRANSLATIONS","si_pathname_translations"},
 {SYS_ "POINTER","si_pointer"},

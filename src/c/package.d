@@ -245,7 +245,9 @@ ecl_rename_package(cl_object x, cl_object name, cl_object nicknames)
   name = cl_string(name);
   nicknames = process_nicknames(nicknames);
   x = si_coerce_to_package(x);
-  if (x->pack.locked) {
+  if (x->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Cannot rename locked package ~S.",
                     "Ignore lock and proceed", x, 0);
   }
@@ -369,7 +371,10 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
     s = find_symbol_inner(name, p, intern_flag);
     if (*intern_flag) {
       error = 0;
-    } else if (p->pack.locked && !ignore_error) {
+    } else if (p->pack.locked
+               && !ignore_error
+               && ECL_SYM_VAL(ecl_process_env(),
+                              @'si::*ignore-package-locks*') == ECL_NIL) {
       error = 1;
     } else {
       s = cl_make_symbol(name);
@@ -472,7 +477,9 @@ ecl_unintern(cl_object s, cl_object p)
   cl_object name = ecl_symbol_name(s);
 
   p = si_coerce_to_package(p);
-  if (p->pack.locked) {
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Cannot unintern symbol ~S from locked package ~S.",
                     "Ignore lock and proceed", p, 2, s, p);
   }
@@ -531,7 +538,9 @@ cl_export2(cl_object s, cl_object p)
   int intern_flag, error;
   cl_object other_p, name = ecl_symbol_name(s);
   p = si_coerce_to_package(p);
-  if (p->pack.locked)
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot export symbol ~S from locked package ~S.",
                     "Ignore lock and proceed", p, 2, s, p);
  AGAIN:
@@ -584,7 +593,9 @@ cl_delete_package(cl_object p)
                     "Ignore error and continue", p, 0);
     @(return ECL_NIL);
   }
-  if (p->pack.locked)
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot delete locked package ~S.",
                     "Ignore lock and proceed", p, 0);
   if (p == cl_core.lisp_package || p == cl_core.keyword_package) {
@@ -635,7 +646,9 @@ cl_unexport2(cl_object s, cl_object p)
     FEpackage_error("Cannot unexport a symbol from the keyword package.",
                     cl_core.keyword_package, 0);
   }
-  if (p->pack.locked) {
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Cannot unexport symbol ~S from locked package ~S.",
                     "Ignore lock and proceed", p, 2, s, p);
   }
@@ -667,7 +680,9 @@ cl_import2(cl_object s, cl_object p)
   int intern_flag, error, ignore_error = 0;
   cl_object name = ecl_symbol_name(s);
   p = si_coerce_to_package(p);
-  if (p->pack.locked) {
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Cannot import symbol ~S into locked package ~S.",
                     "Ignore lock and proceed", p, 2, s, p);
   }
@@ -706,7 +721,9 @@ ecl_shadowing_import(cl_object s, cl_object p)
   cl_object x;
   cl_object name = ecl_symbol_name(s);
   p = si_coerce_to_package(p);
-  if (p->pack.locked)
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot shadowing-import symbol ~S into "
                     "locked package ~S.",
                     "Ignore lock and proceed", p, 2, s, p);
@@ -745,7 +762,9 @@ ecl_shadow(cl_object s, cl_object p)
   /* Contrary to CLTL, in ANSI CL, SHADOW operates on strings. */
   s = cl_string(s);
   p = si_coerce_to_package(p);
-  if (p->pack.locked)
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot shadow symbol ~S in locked package ~S.",
                     "Ignore lock and proceed", p, 2, s, p);
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
@@ -779,7 +798,9 @@ ecl_use_package(cl_object x, cl_object p)
   if (p == cl_core.keyword_package)
     FEpackage_error("Cannot apply USE-PACKAGE on keyword package.",
                     cl_core.keyword_package, 0);
-  if (p->pack.locked)
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot use package ~S in locked package ~S.",
                     "Ignore lock and proceed",
                     p, 2, x, p);
@@ -817,7 +838,9 @@ ecl_unuse_package(cl_object x, cl_object p)
 {
   x = si_coerce_to_package(x);
   p = si_coerce_to_package(p);
-  if (p->pack.locked)
+  if (p->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot unuse package ~S from locked package ~S.",
                     "Ignore lock and proceed",
                     p, 2, x, p);

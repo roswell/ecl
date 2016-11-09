@@ -116,7 +116,10 @@ ecl_rem_setf_definition(cl_object sym)
   if (Null(cl_functionp(def)))
   FEinvalid_function(def);
   pack = ecl_symbol_package(sym);
-  if (pack != ECL_NIL && pack->pack.locked) {
+  if (pack != ECL_NIL
+      && pack->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Attempt to redefine function ~S in locked package.",
                     "Ignore lock and proceed", pack, 1, fname);
   }
@@ -167,7 +170,10 @@ cl_fmakunbound(cl_object fname)
 {
   cl_object sym = si_function_block_name(fname);
   cl_object pack = ecl_symbol_package(sym);
-  if (pack != ECL_NIL && pack->pack.locked) {
+  if (pack != ECL_NIL
+      && pack->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Attempt to redefine function ~S in locked package.",
                     "Ignore lock and proceed", pack, 1, fname);
   }
