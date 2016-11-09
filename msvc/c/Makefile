@@ -149,7 +149,8 @@ clean:
 	     do $(RM) %f
 	-for %f in (..\ecl\*.h) do $(RM) %f
 	-for %f in (cut.exe cut.obj dpp.exe dpp.obj) do $(RM) %f
-	-del /S /Q ..\ecl\atomic*
+	-del /S /Q ..\ecl\atomic_ops
+	-del /S /Q ..\ecl\impl
 
 # Build rules
 
@@ -169,7 +170,7 @@ $(HFILES): ../ecl/config.h.msvc6 Makefile
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
 	        < ..\ecl\config-internal.h.msvc6 > ..\ecl\config-internal.h
-	xcopy /SYI $(top_srcdir)\h\* ..\ecl
+	xcopy /SYI $(top_srcdir)\h\*.h ..\ecl
 	-mkdir ..\ecl\atomic_ops
 	-mkdir ..\ecl\atomic_ops\sysdeps
 	xcopy /SYI $(top_srcdir)\bdwgc\libatomic_ops\src\atomic_ops.h ..\ecl
