@@ -88,29 +88,34 @@ Removing an existing package local nickname to a package.
 @node Package Lock Dictionary
 @subsection Package Lock Dictionary
 
+@lspindex ext:package-locked-p
 @defun ext:package-locked-p package
 Returns @code{t} when @code{package} is locked, @code{nil}
 otherwise. Signals an error if @code{package} doesn’t designate a valid
 package.
 @end defun
 
+@lspindex ext:lock-package
 @defun ext:lock-package package
 Locks @code{package} and returns @code{t}. Has no effect if package was
 already locked. Signals an error if package is not a valid
 @code{package} designator
 @end defun
 
+@lspindex ext:unlock-package
 @defun ext:unlock-package package
 Unlocks @code{package} and returns @code{t}. Has no effect if
 @code{package} was already unlocked. Signals an error if @code{package}
 is not a valid package designator.
 @end defun
 
+@lspindex ext:without-package-locks
 @defmac ext:without-package-locks &body body
 Ignores all runtime package lock violations during the execution of
 body. Body can begin with declarations.
 @end defmac
 
+@lspindex ext:with-unlocked-packages
 @defmac ext:with-unlocked-packages (&rest packages) &body body
 Unlocks @code{packages} for the dynamic scope of the
 @code{body}. Signals an error if any of @code{packages} is not a valid
