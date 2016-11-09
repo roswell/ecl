@@ -78,3 +78,15 @@
         (is-true (ext:package-locked-p 'test-pack))
         (is-true (ext:package-locked-p 'test-pack2))
         (is-false (ext:package-locked-p 'test-pack3))))))
+
+(test package-locks.defpackage
+  (defpackage test-pack1 (:lock t))
+  (defpackage test-pack2 (:lock nil))
+  (defpackage test-pack3)
+  (is-true (ext:package-locked-p :test-pack1))
+  (is-false (ext:package-locked-p :test-pack2))
+  (is-false (ext:package-locked-p :test-pack3))
+  (ext:unlock-package :test-pack1)
+  (delete-package :test-pack1)
+  (delete-package :test-pack2)
+  (delete-package :test-pack3))
