@@ -135,6 +135,7 @@ locked. If @code{:lock} is not provided it defaults to @code{nil}.
 
 @end itemize
 
+@exindex Defpackage @code{:lock} option
 Example:
 
 @lisp
