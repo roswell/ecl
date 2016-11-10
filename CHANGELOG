@@ -29,6 +29,21 @@
 
 * Pending changes since 16.1.2
 ** API changes
+- Added better interface for package-locks
+Introduced functions:
+=ext:package-locked-p package=
+=ext:lock-package package=
+=ext:unlock-package package=
+=ext:without-package-locks=
+=ext:with-unlocked-package=
+
+=defpackage= accepts new option =lock= to allow locking package on
+creation:
+
+#+BEGIN_SRC lisp
+  (defpackage foo (:lock t))
+#+END_SRC
+
 - mp:holding-lock-p: introduce new function for multiprocessing.
 Function verifies if lock is hold by the thread which calls the
 function. Usage: =(mp:holding-lock-p my-lock)=.
@@ -101,6 +116,9 @@ appropraite documentation section (new-doc).
 Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
 
 ** Issues fixed
+- =mp:rwlock= is treated as built-in class (previously process crashed if
+  =class-of= was called on such object)
+
 - ECL builds now succesfully with `--with-ieee-fp=no' option
 
 - ext:file-stream-fd
