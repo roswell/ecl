@@ -1,19 +1,20 @@
-
 @node Locks
-@subsubsection Locks (mutexes)
-/* threads/process.d */
 
-@lspindex mp:make_lock
-@cppindex mp_make_lock
-@defun mp:make_lock
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_make_lock _ECL_ARGS((cl_narg narg, ...));
-@end table
+@node Locks dictionary
+@subsubsection Locks dictionary
+
+
+@cppindex ecl_make_lock
+@deftypefun ecl_make_lock (cl_object name, bool recursive)
+@end deftypefun
+
+
+@lspindex mp:make-lock
+
+@defun mp:make-lock &key name ((:recursive recursive) ECL_NIL)
 @end defun
 
+
 @lspindex mp:recursive_lock_p
 @lspindex mp_recursive_lock_p
 @defun mp:recursive_lock_p
