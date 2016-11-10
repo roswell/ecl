@@ -1,0 +1,82 @@
+@node Mailboxes
+@subsubsection Mailboxes
+/* threads/mailbox.d */
+
+@lspindex mp:make_mailbox
+@lspindex mp_make_mailbox
+@defun mp:make_mailbox
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_mailbox _ECL_ARGS((cl_narg, ...));
+@end table
+@end defun
+
+@lspindex mp:mailbox_name
+@lspindex mp_mailbox_name
+@defun mp:mailbox_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_name(cl_object mailbox);
+@end table
+@end defun
+
+@lspindex mp:mailbox_count
+@lspindex mp_mailbox_count
+@defun mp:mailbox_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_count(cl_object mailbox);
+@end table
+@end defun
+
+@lspindex mp:mailbox_empty_p
+@lspindex mp_mailbox_empty_p
+@defun mp:mailbox_empty_p
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_empty_p(cl_object);
+@end table
+@end defun
+
+@lspindex mp:mailbox_read
+@lspindex mp_mailbox_read
+@defun mp:mailbox_read
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_read(cl_object mailbox);
+@end table
+@end defun
+
+@lspindex mp:mailbox_try_read
+@lspindex mp_mailbox_try_read
+@defun mp:mailbox_try_read
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_try_read(cl_object mailbox);
+@end table
+@end defun
+
+@lspindex mp:mailbox_send
+@lspindex mp_mailbox_send
+@defun mp:mailbox_send
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_mailbox_send(cl_object mailbox, cl_object msg);
+@end table
+@end defun
+
+cl_object mp_mailbox_try_send(cl_object mailbox, cl_object msg);

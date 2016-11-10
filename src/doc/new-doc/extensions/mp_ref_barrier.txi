@@ -1,0 +1,51 @@
+@node Barriers
+@subsubsection Barriers
+/* threads/barrier.d */
+
+@lspindex ecl_make_barrier
+cl_object ecl_make_barrier(cl_object name, cl_index count);
+cl_object mp:make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
+cl_object mp_make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
+@defun mp:make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_barrier_count(cl_object);
+@end table
+@end defun
+
+@lspindex mp:barrier_name
+@lspindex mp_barrier_name
+@defun mp:barrier_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_barrier_name(cl_object);
+@end table
+@end defun
+
+@lspindex mp:barrier_arrivers_count
+@lspindex mp_barrier_arrivers_count
+@defun mp:barrier_arrivers_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_barrier_arrivers_count(cl_object);
+@end table
+@end defun
+
+@lspindex mp:barrier_wait
+@lspindex mp_barrier_wait
+@defun mp:barrier_wait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_barrier_wait _ECL_ARGS((cl_narg, cl_object, ...));
+@end table
+@end defun
+
+cl_object mp_barrier_unblock _ECL_ARGS((cl_narg, cl_object, ...));

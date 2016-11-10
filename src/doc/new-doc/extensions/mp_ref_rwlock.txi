@@ -1,0 +1,74 @@
+@node Read-Write locks
+@subsubsection Read-Write locks
+/* threads/rwlock.d */
+
+@lspindex mp:make_rwlock
+@lspindex mp_make_rwlock
+@defun mp:make_rwlock
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_rwlock _ECL_ARGS((cl_narg narg, ...));
+@end table
+@end defun
+
+@lspindex mp:rwlock_name
+@lspindex mp_rwlock_name
+@defun mp:rwlock_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_rwlock_name(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:get_rwlock_read
+@lspindex mp_get_rwlock_read
+@defun mp:get_rwlock_read
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_rwlock_read _ECL_ARGS((cl_narg narg, cl_object lock, ...));
+@end table
+@end defun
+
+@lspindex mp:get_rwlock_write
+@lspindex mp_get_rwlock_write
+@defun mp:get_rwlock_write
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_rwlock_write _ECL_ARGS((cl_narg narg, cl_object lock, ...));
+@end table
+@end defun
+
+@lspindex mp:giveup_rwlock_read
+@lspindex mp_giveup_rwlock_read
+@defun mp:giveup_rwlock_read
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_giveup_rwlock_read(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:giveup_rwlock_write
+@lspindex mp_giveup_rwlock_write
+@defun mp:giveup_rwlock_write
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_giveup_rwlock_write(cl_object lock);
+@end table
+@end defun
+
+
+@lspindex mp:with-rwlock
+@defmac mp:with-rwlock
+@end defmac

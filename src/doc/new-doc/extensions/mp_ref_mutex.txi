@@ -1,0 +1,118 @@
+
+@node Locks
+@subsubsection Locks (mutexes)
+/* threads/process.d */
+
+@lspindex mp:make_lock
+@cppindex mp_make_lock
+@defun mp:make_lock
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_lock _ECL_ARGS((cl_narg narg, ...));
+@end table
+@end defun
+
+@lspindex mp:recursive_lock_p
+@lspindex mp_recursive_lock_p
+@defun mp:recursive_lock_p
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_recursive_lock_p(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:holding_lock_p
+@lspindex mp_holding_lock_p
+@defun mp:holding_lock_p
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_holding_lock_p(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:lock_name
+@lspindex mp_lock_name
+@defun mp:lock_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_lock_name(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:lock_owner
+@lspindex mp_lock_owner
+@defun mp:lock_owner
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_lock_owner(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:lock_count
+@lspindex mp_lock_count
+@defun mp:lock_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_lock_count(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:get_lock
+@lspindex mp_get_lock
+@defun mp:get_lock
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_lock _ECL_ARGS((cl_narg narg, cl_object lock, ...));
+@end table
+@end defun
+
+@lspindex mp:get_lock_wait
+@lspindex mp_get_lock_wait
+@defun mp:get_lock_wait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_lock_wait(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:get_lock_nowait
+@lspindex mp_get_lock_nowait
+@defun mp:get_lock_nowait
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_get_lock_nowait(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:giveup_lock
+@lspindex mp_giveup_lock
+@defun mp:giveup_lock
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_giveup_lock(cl_object lock);
+@end table
+@end defun
+
+@lspindex mp:with-lock
+@defmac mp:with-lock
+@end defmac

@@ -1,0 +1,82 @@
+@node Semaphores
+@subsubsection Semaphores
+/* threads/semaphore.d */
+
+@lspindex mp:make_semaphore
+@lspindex mp_make_semaphore
+@defun mp:make_semaphore
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_make_semaphore _ECL_ARGS((cl_narg, ...));
+@end table
+@end defun
+
+@lspindex mp:semaphore_count
+@lspindex mp_semaphore_count
+@defun mp:semaphore_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_semaphore_count(cl_object);
+@end table
+@end defun
+
+@lspindex mp:semaphore_name
+@lspindex mp_semaphore_name
+@defun mp:semaphore_name
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_semaphore_name(cl_object);
+@end table
+@end defun
+
+@lspindex mp:semaphore_wait_count
+@lspindex mp_semaphore_wait_count
+@defun mp:semaphore_wait_count
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_semaphore_wait_count(cl_object);
+@end table
+@end defun
+
+@lspindex mp:wait_on_semaphore
+@lspindex mp_wait_on_semaphore
+@defun mp:wait_on_semaphore
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_wait_on_semaphore(cl_object);
+@end table
+@end defun
+
+@lspindex mp:try_get_semaphore
+@lspindex mp_try_get_semaphore
+@defun mp:try_get_semaphore
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_try_get_semaphore(cl_object);
+@end table
+@end defun
+
+@lspindex mp:signal_semaphore
+@lspindex mp_signal_semaphore
+@defun mp:signal_semaphore
+@table @var
+@item returns
+???
+@item C/C++ signature
+cl_object mp_signal_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
+@end table
+@end defun
+
+cl_object ecl_make_semaphore(cl_object name, cl_fixnum count);

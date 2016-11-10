@@ -42,4 +42,14 @@ both for flexibility and a greater risk. In order to control access to
 different resources, ECL provides the user with locks, as explained in
 the next section.
 
-@include extensions/mp_ref.txi
+@node Native threads reference
+@subsection Native threads reference
+
+@include extensions/mp_ref_process.txi
+@include extensions/mp_ref_mutex.txi
+@include extensions/mp_ref_rwlock.txi
+@include extensions/mp_ref_cv.txi
+@include extensions/mp_ref_sem.txi
+@include extensions/mp_ref_barrier.txi
+@include extensions/mp_ref_mailbox.txi
+@include extensions/mp_ref_atomic.txi
