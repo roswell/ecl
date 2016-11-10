@@ -538,3 +538,7 @@ creating stray processes."
                  (is (mp:mailbox-empty-p mbox)))))
 
 
+;;; Date: 2016-11-10
+;;; Description: CLASS-OF called on rwlock crashed lisp process
+(test rwlock
+  (finishes (class-of (mp:make-rwlock))))
