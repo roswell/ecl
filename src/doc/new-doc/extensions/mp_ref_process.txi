@@ -274,3 +274,41 @@ Example:
 @defun mp:current-process
 Returns the current process of a caller.
 @end defun
+
+
+@cppindex mp_block_signals
+@lspindex mp:block-signals
+
+@deftypefun cl_object mp_block_signals ()
+@end deftypefun
+
+@defun mp:block-signals
+Blocks process for interrupts and returns the previous sigmask.
+
+See @code{mp:interrupt-process}.
+@end defun
+
+
+@cppindex mp_restore_signals
+@lspindex mp:restore-signals
+
+@deftypefun cl_object mp_restore_signals (cl_object sigmask)
+@end deftypefun
+
+@defun mp:restor-signals sigmask
+Enables the interrupts from @code{sigmask}.
+
+See @code{mp:interrupt-process}.
+@end defun
+
+
+@c INTERNAL (?)
+
+@c @cppindex ecl_import_current_thread
+@c @deftypefun bool ecl_import_current_thread (cl_object process_name, cl_object process_binding)
+@c @end deftypefun
+
+
+@c @cppindex ecl_release_current_thread
+@c @deftypefun void ecl_release_current_thread ()
+@c @end deftypefun

@@ -63,31 +63,7 @@ cl_object mp_condition_variable_broadcast(cl_object cv);
 @end table
 @end defun
 
-@lspindex mp:block_signals
-@cppindex mp_block_signals
-@defun mp:block_signals
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_block_signals(void);
-@end table
-@end defun
-
-@lspindex mp:restore_signals
-@lspindex mp_restore_signals
-@defun mp:restore_signals
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_restore_signals(cl_object sigmask);
-@end table
-@end defun
-
-bool ecl_import_current_thread(cl_object process_name, cl_object process_binding);
-void ecl_release_current_thread(void);
-
+
 @node Locks
 @subsubsection Locks (mutexes)
 /* threads/process.d */
