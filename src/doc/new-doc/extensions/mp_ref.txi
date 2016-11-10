@@ -3,8 +3,14 @@
 
 @node Processes
 @subsubsection Processes
-@lspindex mp:all-processes
+@c src/c/threads/process.d
+
 @cppindex mp_all_processes
+@lspindex mp:all-processes
+
+@deftypefun cl_object mp_all_processes ()
+@end deftypefun
+
 @defun mp:all-processes
 
 Returns the list of processes associated to running tasks. The list is a
@@ -12,48 +18,41 @@ fresh new one and can be destructively modified. However, it may happen
 that the output list is not up to date, because some of the tasks has
 expired before this copy is returned.
 
-@table @var
-@item returns
-Return the list of active processes.
-@item C/C++ signature
-@code {cl_object mp_all_processes(void);}
-@end table
 @end defun
 
-@lspindex mp:exit-process
+
 @cppindex mp_exit_process
+@lspindex mp:exit-process
+
+@deftypefun cl_object mp_all_processes () ecl_attr_noreturn
+@end deftypefun
+
 @defun mp:exit_process
 
 When called from a running task, this function immediately causes the
 task to finish. When invoked from the main thread, it is equivalent to
 invoking @code{ext:quit} with exit code 0.
 
-@table @var
-@item C/C++ signature
-cl_object mp_exit_process(void) ecl_attr_noreturn;
-@end table
 @end defun
 
-@lspindex mp:interrupt-process
+
 @cppindex mp_interrupt_process
-@defun mp:interrupt_process
+@lspindex mp:interrupt-process
 
-Interrupt a task. This function sends a signal to a running task. When
-the task is free to process that signal, it will stop whatever it is
-doing and execute the given function.
+@deftypefun cl_object mp_interrupt_process (cl_object process, cl_object function)
+@end deftypefun
 
-@table @var
-@item process
-An object of type @code{mp:process}.
-@item function
-A function, which is to be executed in the interrupted process.
-@item C/C++ signature
-cl_object mp_interrupt_process(cl_object process, cl_object function);
-@end table
+@defun mp:interrupt_process process function
 
-@subsubheading Example
+Interrupt a task. This @code{function} sends a signal to a running
+@code{process}. When the task is free to process that signal, it will
+stop whatever it is doing and execute the given function.
+
 @exindex Process interruption
+Example:
+
 Kill a task that is doing nothing (See @code{mp:process-kill}).
+
 @lisp
 (flet ((task-to-be-killed ()
          ;; Infinite loop
@@ -62,170 +61,237 @@ Kill a task that is doing nothing (See @code{mp:process-kill}).
     (sleep 10)
     (mp:interrupt-process task 'mp:exit-process)))
 @end lisp
+
 @end defun
 
-@lspindex mp:make-process
+
 @cppindex mp_make_process
+@lspindex mp:make-process
+
+@deftypefun cl_object mp_make_process (cl_narg narg, ...)
+@end deftypefun
+
 @defun mp:make-process &key name initial-bindings
-Create a new thread. This function creates a separate task, with a name,
-set of variable bindings and no function to run. See also
-@code{mp:process-run-function}.
-@table @var
-@item name
-A symbol to name the process. Processes can be unnamed and names need
-not be unique.
-@item initial-bindings
-The list of special variables which will be local to the new process. It
-defaults to T, which means copying all variables which are local to this
-process.
-@item returns
-Newly created process.
-@item C/C++ signature
-cl_object mp_make_process _ECL_ARGS((cl_narg narg, ...));
-@end table
+
+Create a new thread. This function creates a separate task with a name
+set to @code {name}, set of variable bindings @code{initial-bindings}
+and no function to run. See also @code{mp:process-run-function}. Returns
+newly created process.
+
 @end defun
 
-@lspindex mp:process_active_p
+
 @cppindex mp_process_active_p
-@defun mp:process_active_p
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_active_p(cl_object process);
-@end table
+@lspindex mp:process-active-p
+
+@deftypefun cl_object mp_make_process (cl_object process)
+@end deftypefun
+
+@defun mp:process-active-p process
+
+Returns @code{t} when @code{process} is active, @code {nil}
+otherwise. Signals an error if @code{process} doesn't designate a valid
+process.
+
 @end defun
 
-@lspindex mp:process_enable
+
 @cppindex mp_process_enable
-@defun mp:process_enable
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_enable(cl_object process);
-@end table
+@lspindex mp:process-enable
+
+@deftypefun cl_object mp_process_enable (cl_object process)
+@end deftypefun
+
+@defun mp:process-enable process
+
+The argument to this function should be a process created by
+@code{mp:make-process}, which has a function associated as per
+@code{mp:process-preset} but which is not yet running.  After invoking
+this function a new thread will be created in which the associated
+function will be executed.
+
+@exindex Possible implementation of @code{mp:process-run-function}:
+
+@lisp
+(defun process-run-function (process-name process-function &rest args)
+  (let ((process (mp:make-process name)))
+    (apply #'mp:process-preset process function args)
+    (mp:process-enable process)))
+@end lisp
 @end defun
 
-@lspindex mp:process_yield
+
 @cppindex mp_process_yield
-@defun mp:process_yield
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_yield(void);
-@end table
+@lspindex mp:process_yield
+
+@deftypefun cl_object mp_process_yield ()
+@end deftypefun
+
+@defun mp:process-yield
+Yield the processor to other threads.
 @end defun
 
+
+@cppindex mp_process-join
 @lspindex mp:process_join
-@cppindex mp_process_join
-@defun mp:process_join
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_join(cl_object process);
-@end table
+
+@deftypefun cl_object mp_process_join (cl_object process)
+@end deftypefun
+
+@defun mp:process-join process
+Suspend current thread until @code{process} exits. Return the result
+values of the @code{process} function. If @code{process} is the current
+thread, signal an error with.
 @end defun
 
-@lspindex mp:process_kill
+
 @cppindex mp_process_kill
-@defun mp:process_kill
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_kill(cl_object process);
-@end table
+@lspindex mp:process-kill
+
+@deftypefun cl_object mp_process_kill (cl_object process)
+@end deftypefun
+
+@defun mp:process-kill process
+Try to stop a running task. Killing a process may fail if the task has
+disabled interrupts.
+
+@exindex Killing process
+Example:
+
+Kill a task that is doing nothing
+@lisp
+(flet ((task-to-be-killed ()
+         ;; Infinite loop
+         (loop (sleep 1))))
+  (let ((task (mp:process-run-function 'background #'task-to-be-killed)))
+    (sleep 10)
+    (mp:process-kill task)))
+@end lisp
 @end defun
 
-@lspindex mp:process_suspend
+
 @cppindex mp_process_suspend
-@defun mp:process_suspend
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_suspend(cl_object process);
-@end table
+@lspindex mp:process-suspend
+
+@deftypefun cl_object mp_process_suspend (cl_object process)
+@end deftypefun
+
+@defun mp:process-suspend process
+Suspend a running @code{process}. May be resumed with
+@code{mp:process-resume}.
+
+@exindex Suspend and resume process
+Example:
+
+@lisp
+(flet ((ticking-task ()
+         ;; Infinite loop
+         (loop
+            (sleep 1)
+            (print :tick))))
+  (print "Running task (one tick per second)")
+  (let ((task (mp:process-run-function 'background #'ticking-task)))
+    (sleep 5)
+    (print "Suspending task for 5 seconds")
+    (mp:process-suspend task)
+    (sleep 5)
+    (print "Resuming task for 5 seconds")
+    (mp:process-resume task)
+    (sleep 5)
+    (print "Killing task")
+    (mp:process-kill task)))
+@end lisp
 @end defun
 
-@lspindex mp:process_resume
+
 @cppindex mp_process_resume
-@defun mp:process_resume
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_resume(cl_object process);
-@end table
+@lspindex mp:process-resume
+
+@deftypefun cl_object mp_process_resume (cl_object process)
+@end deftypefun
+
+@defun mp:process-resume process
+Resumes a suspended @code{process}. See example in
+@code{mp:process-suspend}.
 @end defun
 
-@lspindex mp:process_name
+
 @cppindex mp_process_name
-@defun mp:process_name
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_name(cl_object process);
-@end table
+@lspindex mp:process-name
+
+@deftypefun cl_object mp_process_name (cl_object process)
+@end deftypefun
+
+@defun mp:process-name process
+Returns the name of a @code{process} (if any).
 @end defun
 
-@lspindex mp:process_preset
+
 @cppindex mp_process_preset
-@defun mp:process_preset
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_preset _ECL_ARGS((cl_narg narg, cl_object process, cl_object function, ...));
-@end table
+@lspindex mp:process-preset
+
+@deftypefun cl_object mp_process_preset (cl_narg narg, cl_object process, cl_object function, ...)
+@end deftypefun
+
+@defun mp:process-preset process function &rest function-args
+
+Associates a @code{function} to call with the arguments
+@code{function-args}, with a stopped @code{process}. The function will
+be the entry point when the task is enabled in the future.
+
+See @code{mp:enable-process} and @code{mp:process-run-function}.
+
 @end defun
 
-@lspindex mp:process_run_function
+
 @cppindex mp_process_run_function
-@defun mp:process_run_function
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_run_function _ECL_ARGS((cl_narg narg, cl_object name, cl_object function, ...));
-@end table
+@lspindex mp:process-run-function
+
+@deftypefun cl_object mp_process_run_function (cl_narg narg, cl_object name, cl_object function, ...)
+@end deftypefun
+
+@defun mp:process_run_function name function &rest funciton-args
+Create a new process using @code{mp:make-process}, associate a function
+to it and start it using @code{mp:process-preset}.
+
+@exindex mp:process-run-funciton usage
+Example:
+
+@lisp
+(flet ((count-numbers (end-number)
+         (dotimes (i end-number)
+	   (format t "~%;;; Counting: ~i" i)
+	   (terpri)
+	   (sleep 1))))
+  (mp:process-run-function 'counter #'count-numbers 10))
+@end lisp
 @end defun
 
-@lspindex mp:process_run_function_wait
-@cppindex mp_process_run_function_wait
-@defun mp:process_run_function_wait
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_run_function_wait _ECL_ARGS((cl_narg narg, ...));
-@end table
+
+@cppindex mp_current_process
+@lspindex mp:current_process
+
+@deftypefun cl_object mp_current_process ()
+@end deftypefun
+
+@defun mp:current-process
+Returns the current process of a caller.
 @end defun
 
-@lspindex mp:process_whostate
-@cppindex mp_process_whostate
-@defun mp:process_whostate
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_process_whostate(cl_object process);
-@end table
-@end defun
+
+@c condition variables
+@node Condition variables
+@subsubsection Condition variables
 
-@lspindex mp:make_condition_variable
+
 @cppindex mp_make_condition_variable
-@defun mp:make_condition_variable
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_make_condition_variable(void);
-@end table
+@lspindex mp:make-condition-variable
+
+@deftypefun cl_object mp_make_condition_variable ()
+@end deftypefun
+
+@defun mp:make-condition-variable
+
 @end defun
 
 @lspindex mp:condition_variable_wait
@@ -269,17 +335,6 @@ cl_object mp_condition_variable_signal(cl_object cv);
 ???
 @item C/C++ signature
 cl_object mp_condition_variable_broadcast(cl_object cv);
-@end table
-@end defun
-
-@lspindex mp:current_process
-@cppindex mp_current_process
-@defun mp:current_process
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_current_process(void);
 @end table
 @end defun
 
