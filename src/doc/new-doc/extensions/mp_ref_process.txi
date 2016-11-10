@@ -302,13 +302,71 @@ See @code{mp:interrupt-process}.
 @end defun
 
 
-@c INTERNAL (?)
+@lspindex mp:without-interrupts
+@lspindex allow-with-interrupts
+@lspindex with-local-interrupts
+@lspindex with-restored-interrupts
 
-@c @cppindex ecl_import_current_thread
-@c @deftypefun bool ecl_import_current_thread (cl_object process_name, cl_object process_binding)
-@c @end deftypefun
+@defmac mp:without-interrupts &body body
+
+Executes @code{body} with all deferrable interrupts disabled. Deferrable
+interrupts arriving during execution of the @code{body} take effect
+after @code{body} has been executed.
+
+Deferrable interrupts include most blockable POSIX signals, and
+@code{mp:interrupt-thread}. Does not interfere with garbage collection,
+and unlike in many traditional Lisps using userspace threads, in ECL
+@code{mp:without-interrupts} does not inhibit scheduling of other
+threads.
+
+Binds @code{allow-with-interrupts}, @code{with-local-interrupts} and
+@code{with-restored-interrupts} as a local macros.
+
+@code{with-restored-interrupts} executes the body with interrupts enabled if
+and only if the @code{without-interrupts} was in an environment in which
+interrupts were allowed.
+
+@code{allow-with-interrupts} allows the @code{with-interrupts} to take
+effect during the dynamic scope of its body, unless there is an outer
+@code{without-interrupts} without a corresponding
+@code{allow-with-interrupts}.
+
+@code{with-local-interrupts} executes its body with interrupts enabled
+provided that for there is an @code{allow-with-interrupts} for every
+@code{without-interrupts} surrounding the current
+one. @code{with-local-interrupts} is equivalent to:
+
+@lisp
+(allow-with-interrupts (with-interrupts ...))
+@end lisp
+
+Care must be taken not to let either @code{allow-with-interrupts} or
+@code{with-local-interrupts} appear in a function that escapes from
+inside the @code{without-interrupts} in:
+
+@lisp
+(without-interrupts
+  ;; The body of the lambda would be executed with WITH-INTERRUPTS allowed
+  ;; regardless of the interrupt policy in effect when it is called.
+  (lambda () (allow-with-interrupts ...)))
+
+(without-interrupts
+  ;; The body of the lambda would be executed with interrupts enabled
+  ;; regardless of the interrupt policy in effect when it is called.
+  (lambda () (with-local-interrupts ...)))
+@end lisp
+@end defmac
 
 
-@c @cppindex ecl_release_current_thread
-@c @deftypefun void ecl_release_current_thread ()
-@c @end deftypefun
+@lspindex mp:with-interrupts
+@defmac mp:with-interrupts &body body
+Executes @code{body} with deferrable interrupts conditionally
+enabled. If there are pending interrupts they take effect prior to
+executing @code{body}.
+
+As interrupts are normally allowed @code{with-interrupts} only makes
+sense if there is an outer @code{without-interrupts} with a
+corresponding @code{allow-with-interrupts}: interrupts are not enabled
+if any outer @code{without-interrupts} is not accompanied by
+@code{allow-with-interrupts}.
+@end defmac
