@@ -1,119 +1,137 @@
-@node Locks
+@node Locks (mutexes)
+@subsection Locks (mutexes)
+
+Locks are used to synchronize access to the shared data. Lock may be
+owned only by a single thread at any given time. Recursive locks may be
+re-acquired by the same thread multiple times (and non-recursive locks
+can't).
 
 @node Locks dictionary
-@subsubsection Locks dictionary
+@subsection Locks dictionary
 
 
 @cppindex ecl_make_lock
+
 @deftypefun ecl_make_lock (cl_object name, bool recursive)
+C/C++ equivalent of @code{mp:make-lock} without @code{key} arguments.
+
+See @code{mp:make-lock}.
 @end deftypefun
 
 
 @lspindex mp:make-lock
 
-@defun mp:make-lock &key name ((:recursive recursive) ECL_NIL)
+@defun mp:make-lock &key name (recursive nil)
+Creates a lock @code{name}. If @code{recursive} isn't @code{nil}, then
+the created lock is recursive.
 @end defun
 
 
-@lspindex mp:recursive_lock_p
-@lspindex mp_recursive_lock_p
-@defun mp:recursive_lock_p
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_recursive_lock_p(cl_object lock);
-@end table
+@cppindex mp_recursive_lock_p
+@lspindex mp:recursive-lock-p
+
+@deftypefun cl_object mp_recursive_lock_p (cl_object lock)
+@end deftypefun
+
+@defun mp:recursive-lock-p lock
+Predicate verifying if @code{lock} is recursive.
 @end defun
 
-@lspindex mp:holding_lock_p
-@lspindex mp_holding_lock_p
-@defun mp:holding_lock_p
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_holding_lock_p(cl_object lock);
-@end table
+
+@cppindex mp_holding_lock_p
+@lspindex mp:holding-lock-p
+
+@deftypefun cl_object mp_holding_lock_p (cl_object lock)
+@end deftypefun
+
+@defun mp:holding-lock-p lock
+Predicate verifying if the current thread holds @code{lock}.
 @end defun
 
-@lspindex mp:lock_name
-@lspindex mp_lock_name
-@defun mp:lock_name
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_lock_name(cl_object lock);
-@end table
+
+@cppindex mp_lock_name
+@lspindex mp:lock-name
+
+@deftypefun cl_object mp_lock_name (cl_object lock)
+@end deftypefun
+
+@defun mp:lock_name lock
+Returns @code{lock} name.
 @end defun
 
-@lspindex mp:lock_owner
+
 @lspindex mp_lock_owner
-@defun mp:lock_owner
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_lock_owner(cl_object lock);
-@end table
+@lspindex mp:lock-owner
+
+@deftypefun cl_object mp_lock_owner (cl_object lock)
+@end deftypefun
+
+@defun mp:lock_owner lock
+Returns process owning @code{lock} (or @code{nil} if it is free). For
+testing whether the current thread is holding a lock see
+@code{holding-lock-p}.
 @end defun
 
-@lspindex mp:lock_count
-@lspindex mp_lock_count
-@defun mp:lock_count
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_lock_count(cl_object lock);
-@end table
+
+@cppindex mp_lock_count
+@lspindex mp:lock-count
+
+@deftypefun cl_object mp_lock_count (cl_object lock)
+@end deftypefun
+
+@defun mp:lock-count lock
+Returns number of processes waiting for @code{lock}.
 @end defun
 
-@lspindex mp:get_lock
-@lspindex mp_get_lock
-@defun mp:get_lock
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_get_lock _ECL_ARGS((cl_narg narg, cl_object lock, ...));
-@end table
+
+@cppindex mp_get_lock_wait
+@cppindex mp_get_lock_nowait
+@lspindex mp:get-lock
+
+@deftypefun cl_object mp_get_lock_wait (cl_object lock)
+Grabs a lock (blocking if @code{lock} is already takene). Returns
+@code{ECL_T}.
+@end deftypefun
+
+@deftypefun cl_object mp_get_lock_nowait
+Grabs a lock if free (non-blocking). If @code{lock} is already taken
+returns @code{ECL_NIL}, otherwise @code{ECL_T}.
+@end deftypefun
+
+@defun mp:get-lock lock &optional (wait t)
+Tries to acquire a lock. @code{wait} indicates whenever function should
+block or give up if @code{lock} is already taken. If @code{wait} is
+@code{nil} and @code{lock} can't be acquired returns
+@code{nil}. Succesful operation returns @code{t}.
 @end defun
 
-@lspindex mp:get_lock_wait
-@lspindex mp_get_lock_wait
-@defun mp:get_lock_wait
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_get_lock_wait(cl_object lock);
-@end table
-@end defun
+
+@cppindex mp_giveup_lock
+@lspindex mp:giveup-lock
 
-@lspindex mp:get_lock_nowait
-@lspindex mp_get_lock_nowait
-@defun mp:get_lock_nowait
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_get_lock_nowait(cl_object lock);
-@end table
-@end defun
+@deftypefun cl_object mp_giveup_lock (cl_object lock)
+@end deftypefun
 
-@lspindex mp:giveup_lock
-@lspindex mp_giveup_lock
 @defun mp:giveup_lock
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_giveup_lock(cl_object lock);
-@end table
+Releases @code{lock}.
 @end defun
 
+
 @lspindex mp:with-lock
-@defmac mp:with-lock
+
+@defmac mp:with-lock (lock-form) &body body
+Acquire lock for the dynamic scope of @code{body}, which is executed
+with the lock held by current thread, and @code{with-lock} returns the
+values of body.
+
+@c (lock-form &key wait-p timeout)
+
+@c If wait-p is true (the default), and the mutex is not immediately
+@c available, sleep until it is available.
+
+@c If timeout is given, it specifies a relative timeout, in seconds, on how
+@c long the system should try to acquire the lock in the contested case.
+
+@c If the mutex isn’t acquired successfully due to either wait-p or
+@c timeout, the body is not executed, and with-mutex returns nil.
 @end defmac

@@ -6,7 +6,16 @@
 
 @menu
 * Introduction to native threads::
-* Native threads reference::
+* Processes (native threads)::
+* Processes dictionary::
+* Locks (mutexes)::
+* Locks dictionary::
+* Readers-writer locks::
+* Readers-writer locks dictionary::
+* Condition variables::
+* Condition variables dictionary::
+* Semaphores::
+* Semaphores dictionary::
 @end menu
 
 @node Introduction to native threads
@@ -42,37 +51,12 @@ both for flexibility and a greater risk. In order to control access to
 different resources, ECL provides the user with locks, as explained in
 the next section.
 
-@node Locks (mutexes)
-@subsection Locks and readers-writer locks
-
-Locks are used to synchronize access to the shared data. Lock may be
-owned only by a single thread at any given time. Recursive locks may be
-re-acquired by the same thread multiple times (and non-recursive locks
-can't).
-
-Readers-writer (or shared-exclusive ) lock allows concurrent access for
-read-only operations and write operations require exclusive access.
-
-@node Condition variables
-@subsection Condition variables
-
-Condition variables are used to wait for a particular condition becoming
-true (e.g new client connects to the server).
-
-@node Synchronization primitives
-@subsection Semaphores
-@subsection Barriers
-@subsection Mailboxes
-@subsection Atomic operations
-
-@node Native threads dictionary
-@subsection Native threads reference
-
 @include extensions/mp_ref_process.txi
 @include extensions/mp_ref_mutex.txi
 @include extensions/mp_ref_rwlock.txi
 @include extensions/mp_ref_cv.txi
 @include extensions/mp_ref_sem.txi
-@include extensions/mp_ref_barrier.txi
-@include extensions/mp_ref_mailbox.txi
-@include extensions/mp_ref_atomic.txi
+
+@c @include extensions/mp_ref_barrier.txi
+@c @include extensions/mp_ref_mailbox.txi
+@c @include extensions/mp_ref_atomic.txi

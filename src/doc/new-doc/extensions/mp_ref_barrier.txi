@@ -1,51 +1,45 @@
 @node Barriers
 @subsubsection Barriers
-/* threads/barrier.d */
 
-@lspindex ecl_make_barrier
-cl_object ecl_make_barrier(cl_object name, cl_index count);
-cl_object mp:make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
-cl_object mp_make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
-@defun mp:make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_barrier_count(cl_object);
-@end table
-@end defun
+@cindex Barriers (synchronization)
 
-@lspindex mp:barrier_name
-@lspindex mp_barrier_name
-@defun mp:barrier_name
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_barrier_name(cl_object);
-@end table
-@end defun
+
+@cppindex ecl_make_barrier
+cl_object ecl_make_barrier (cl_object name, cl_index count)
 
-@lspindex mp:barrier_arrivers_count
-@lspindex mp_barrier_arrivers_count
-@defun mp:barrier_arrivers_count
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_barrier_arrivers_count(cl_object);
-@end table
-@end defun
+
+@lspindex mp:make-barrier
+mp:make-barrier count &key name
 
-@lspindex mp:barrier_wait
-@lspindex mp_barrier_wait
-@defun mp:barrier_wait
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_barrier_wait _ECL_ARGS((cl_narg, cl_object, ...));
-@end table
-@end defun
+
+@cppindex mp_barrier_count
+@lspindex mp:barrier-count
 
-cl_object mp_barrier_unblock _ECL_ARGS((cl_narg, cl_object, ...));
+cl_object mp_barrier_count (cl_object barrier)
+mp:barrier-count
+
+
+@cppindex mp_barrier_name
+@lspindex mp:barrier-name
+
+cl_object mp_barrier_name (cl_object)
+mp:barrier_name
+
+
+@cppindex mp_barrier_arrivers_count
+n@lspindex mp:barrier-arrivers-count
+
+cl_object mp_barrier_arrivers_count(cl_object barrier);
+mp:barrier_arrivers_count barrier
+
+
+@cppindex mp_barrier_wait
+@lspindex mp:barrier-wait
+
+mp:barrier_wait barrier
+cl_object mp_barrier_wait (cl_object barrier);
+
+
+@lspindex mp:barrier-unblock
+mp:barrier-unblock barrier &key reset_count disable kill-waiting
+

@@ -138,6 +138,12 @@ by ALLOW-WITH-INTERRUPTS."
 
 #+ecl-read-write-lock
 (defmacro with-rwlock ((lock op) &body body)
+  "Acquire rwlock for the dynamic scope of BODY for operation OP,
+which is executed with the lock held by current thread, and
+WITH-RWLOCK returns the values of body.
+
+Valid values of argument OP are :READ or :WRITE
+(for reader and writer access accordingly)."
   (assert (member op '(:read :write) :test #'eq))
   (let ((s-lock (gensym)))
     `(let ((,s-lock ,lock))

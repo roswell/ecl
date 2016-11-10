@@ -1,5 +1,11 @@
 @node Condition variables
-@subsubsection Condition variables
+@subsection Condition variables
+
+Condition variables are used to wait for a particular condition becoming
+true (e.g new client connects to the server).
+
+@node Condition variables dictionary
+@subsection Condition variables dictionary
 
 
 @cppindex mp_make_condition_variable

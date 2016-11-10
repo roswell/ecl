@@ -1,6 +1,10 @@
-@node Processes
-@subsubsection Processes
-@c src/c/threads/process.d
+@node Processes (native threads)
+@subsection Processes (native threads)
+
+Process is a primitive representing native thread.
+
+@node Processes dictionary
+@subsection Processes dictionary
 
 @cppindex mp_all_processes
 @lspindex mp:all-processes

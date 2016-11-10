@@ -1,82 +1,96 @@
 @node Semaphores
-@subsubsection Semaphores
-/* threads/semaphore.d */
+@subsection Semaphores
 
+Semaphores are objects which allow an arbitrary resource
+count. Semaphores are used for shared access to resources where number
+of concurrent threads allowed to access it is limited.
+
+@node Semaphores dictionary
+@subsection Semaphores dictionary
+
+
+@cppindex ecl_make_semaphore
+@deftypefun cl_object ecl_make_semaphore (cl_object name, cl_fixnum count)
+C/C++ equivalent of @code{mp:make-sempahore} without @code{key}
+arguments.
+
+See @code{mp:make-sempahore}.
+@end deftypefun
+
+
+@cppindex mp_make_semaphore
 @lspindex mp:make_semaphore
-@lspindex mp_make_semaphore
-@defun mp:make_semaphore
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_make_semaphore _ECL_ARGS((cl_narg, ...));
-@end table
+
+@defun mp:make-semaphore &key name count
+Creates a counting semaphore @code{name} with a resource count
+@code{count}.
 @end defun
 
-@lspindex mp:semaphore_count
-@lspindex mp_semaphore_count
-@defun mp:semaphore_count
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_semaphore_count(cl_object);
-@end table
+
+@cppindex mp_semaphore_name
+@lspindex mp:semaphore-name
+
+@deftypefun cl_object mp_semaphore_name (cl_object semaphore)
+@end deftypefun
+
+@defun mp:semaphore-name semaphore
+Returns @code{semaphore} name.
 @end defun
 
-@lspindex mp:semaphore_name
-@lspindex mp_semaphore_name
-@defun mp:semaphore_name
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_semaphore_name(cl_object);
-@end table
+
+@cppindex mp_semaphore_count
+@lspindex mp:semaphore-count
+
+@deftypefun cl_object mp_semaphore_count (cl_object semaphore)
+@end deftypefun
+
+@defun mp:semaphore-count semaphore
+Returns @code{semaphore} count of resources.
 @end defun
 
-@lspindex mp:semaphore_wait_count
-@lspindex mp_semaphore_wait_count
-@defun mp:semaphore_wait_count
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_semaphore_wait_count(cl_object);
-@end table
+
+@cppindex mp_semaphore_wait_count
+@lspindex mp:semaphore-wait-count
+
+@deftypefun cl_object mp_semaphore_wait_count (cl_object semaphore)
+@end deftypefun
+
+@defun mp:semaphore-wait-count semaphore
+Returns number of threads waiting on @code{semaphore}.
 @end defun
 
-@lspindex mp:wait_on_semaphore
-@lspindex mp_wait_on_semaphore
-@defun mp:wait_on_semaphore
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_wait_on_semaphore(cl_object);
-@end table
+
+@cppindex mp_wait_on_semaphore
+@lspindex mp:wait-on-semaphore
+
+@deftypefun cl_object mp_wait_on_semaphore (cl_object semaphore)
+@end deftypefun
+
+@defun mp:wait-on-semaphore semaphore
+Waits on semaphore until it can grab the resource (blocking). Returns
+resource count before semaphore was acquired.
 @end defun
 
-@lspindex mp:try_get_semaphore
-@lspindex mp_try_get_semaphore
-@defun mp:try_get_semaphore
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_try_get_semaphore(cl_object);
-@end table
+
+@cppindex mp_try_get_semaphore
+@lspindex mp:try-get-semaphore
+
+@deftypefun cl_object mp_try_get_semaphore (cl_object semaphore)
+@end deftypefun
+
+@defun mp:try_get_semaphore semaphore
+Tries to get a semaphore (non-blocking). If there is no resource left
+returns @code{NIL}, otherwise returns resource count before semaphore
+was acquired.
 @end defun
 
-@lspindex mp:signal_semaphore
+
 @lspindex mp_signal_semaphore
-@defun mp:signal_semaphore
-@table @var
-@item returns
-???
-@item C/C++ signature
-cl_object mp_signal_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
-@end table
-@end defun
+@lspindex mp:signal-semaphore
 
-cl_object ecl_make_semaphore(cl_object name, cl_fixnum count);
+@deftypefun cl_object mp_signal_semaphore (cl_narg n, cl_object sem, ...);
+@end deftypefun
+
+@defun mp:signal-semaphore semaphore &optional (count 1)
+Releases @code{count} units of a resource on @code{semaphore}.
+@end defun
