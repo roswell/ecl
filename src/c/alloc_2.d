@@ -864,7 +864,7 @@ init_alloc(void)
 #ifdef ECL_THREADS
   init_tm(t_process, "PROCESS", sizeof(struct ecl_process), 8);
   init_tm(t_lock, "LOCK", sizeof(struct ecl_lock), 2);
-  init_tm(t_rwlock, "LOCK", sizeof(struct ecl_rwlock), 0);
+  init_tm(t_rwlock, "RWLOCK", sizeof(struct ecl_rwlock), 0);
   init_tm(t_condition_variable, "CONDITION-VARIABLE",
           sizeof(struct ecl_condition_variable), 0);
   init_tm(t_semaphore, "SEMAPHORES", sizeof(struct ecl_semaphore), 0);

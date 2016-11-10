@@ -368,6 +368,8 @@ cl_class_of(cl_object x)
     index = ECL_BUILTIN_PROCESS; break;
   case t_lock:
     index = ECL_BUILTIN_LOCK; break;
+  case t_rwlock:
+    index = ECL_BUILTIN_RWLOCK; break;
   case t_condition_variable:
     index = ECL_BUILTIN_CONDITION_VARIABLE; break;
   case t_semaphore:

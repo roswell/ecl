@@ -158,6 +158,8 @@ ecl_type_to_symbol(cl_type t)
     return @'mp::process';
   case t_lock:
     return @'mp::lock';
+  case t_rwlock:
+    return @'mp::rwlock';
   case t_condition_variable:
     return @'mp::condition-variable';
   case t_semaphore:

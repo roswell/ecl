@@ -360,6 +360,12 @@ write_lock(cl_object x, cl_object stream)
 }
 
 static void
+write_rwlock(cl_object x, cl_object stream)
+{
+  _ecl_write_unreadable(x, "rwlock", x->rwlock.name, stream);
+}
+
+static void
 write_condition_variable(cl_object x, cl_object stream)
 {
   _ecl_write_unreadable(x, "semaphore", ECL_NIL, stream);
@@ -430,7 +436,7 @@ static printer dispatch[FREE+1] = {
 #ifdef ECL_THREADS
   write_process, /* t_process */
   write_lock, /* t_lock */
-  write_lock, /* t_rwlock */
+  write_rwlock, /* t_rwlock */
   write_condition_variable, /* t_condition_variable */
   write_semaphore, /* t_semaphore */
   write_barrier, /* t_barrier */
