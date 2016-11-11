@@ -37,6 +37,11 @@ Introduced functions:
 =ext:without-package-locks=
 =ext:with-unlocked-package=
 
+To use these functions user has to require the module
+#+BEGIN_SRC lisp
+  (require '#:package-locks)
+#+END_SRC
+
 =defpackage= accepts new option =lock= to allow locking package on
 creation:
 

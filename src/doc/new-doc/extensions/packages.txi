@@ -22,7 +22,12 @@
 ECL borrows parts of the protocol and documentation from SBCL for
 compatibility. Interface is the same except that the home package for
 locking is ext and that ECL doesn't implement Implementation Packages
-and a few constructs.
+and a few constructs. To load the extension you need to require
+@code{package-locks}:
+
+@lisp
+(require '#:package-locks)
+@end lisp
 
 Package locks protect against unintentional modifications of a package:
 they provide similar protection to user packages as is mandated to

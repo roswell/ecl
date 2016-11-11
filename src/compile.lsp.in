@@ -316,6 +316,15 @@
 #+UNICODE
 (load "ext:encodings;generate.lisp")
 
+;;;
+;;; * Package locks
+;;;
+(build-module "package-locks"
+              '("ext:package-locks;package-locks.lisp")
+              :dir "build:ext;"
+              :prefix "EXT"
+              :builtin nil)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; THE FINAL EXECUTABLE
