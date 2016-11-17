@@ -36,7 +36,7 @@ mp:barrier_arrivers_count barrier
 @cppindex mp_barrier_wait
 @lspindex mp:barrier-wait
 
-mp:barrier_wait barrier
+mp:barrier-wait barrier
 cl_object mp_barrier_wait (cl_object barrier);
 
 
