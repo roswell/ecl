@@ -21,8 +21,6 @@
         when (probe-file "configure.ac")
         return *default-pathname-defaults*))
 
-(defvar *test-sources* (merge-pathnames "tests/" *ecl-sources*))
-
 (defvar *here* (merge-pathnames "@builddir@/"))
 (defvar *cache* (merge-pathnames "./cache/" *here*))
 
@@ -30,13 +28,6 @@
   (or (ext:getenv "TEST_IMAGE")
       #+windows (namestring (truename "sys:ecl.exe"))
       #-windows "@prefix@/bin/ecl"))
-
-(defvar *test-image-args*
-  `("-norc"
-    "-eval" "(print (ext:getenv \"ECLDIR\"))"
-    "-eval" "(ignore-errors (require :cmp))"
-    "-load" ,(namestring (merge-pathnames "doit.lsp" *test-sources*))
-    "-eval" "(quit)"))
 
 #+ecl
 (ext:setenv "ECLDIR" (namestring (truename "SYS:")))
@@ -82,8 +73,11 @@
 ;;;
 ;;; RUNNING TESTS
 ;;;
-
-(defun run-tests ()
+(defun run-tests (suites
+                  &aux (suites (cond
+                                 ((null suites) "make-check")
+                                 ((null (cdr suites)) (car suites))
+                                 (T suites))))
   ;; Cleanup stray files
   (delete-everything *sandbox*)
   (ensure-directories-exist *sandbox*)
@@ -91,8 +85,20 @@
        (progn
          (ext:chdir *sandbox*)
          (ext:run-program *test-image*
-                          *test-image-args*
+                          `("-norc"
+                            "-eval" "(print (ext:getenv \"ECLDIR\"))"
+                            "-eval" "(ignore-errors (require :cmp))"
+                            "-load" ,(namestring
+                                      (merge-pathnames
+                                       "tests/doit.lsp" *ecl-sources*))
+                            "-eval" "(in-package cl-test)"
+                            "-eval" ,(format nil "(2am-ecl:run '~a)" suites)
+                            "-eval" "(ext:exit)")
                           :input nil
                           :output t
                           :error :output))
-    (ext:chdir *here*)))
+    (ext:chdir *here*)
+    #+ (or)
+    (format t "~%Known fails: ~%~{~a~%~}~%"
+            '(SEM-SIGNAL-N-PROCESSES
+              SEM-SIGNAL-ONLY-N-PROCESSES))))

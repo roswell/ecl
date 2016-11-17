@@ -7,7 +7,7 @@
 
 (in-package :cl-test)
 
-(suite 'regressions/mp)
+(suite 'mp)
 
 
 ;; Auxiliary routines for multithreaded tests
@@ -542,3 +542,24 @@ creating stray processes."
 ;;; Description: CLASS-OF called on rwlock crashed lisp process
 (test rwlock
   (finishes (class-of (mp:make-rwlock))))
+
+
+;;; Date: 2016-10-05
+;;; From: Daniel Kochmański
+;;; Description:
+;;;
+;;;     HOLDING-LOCK-P verifies, if the current process holds the
+;;;     lock.
+;;;
+(test mp-holding-lock-p
+  (let ((lock (mp:make-lock :name "mp-holding-lock-p" :recursive nil)))
+    (is-false (mp:holding-lock-p lock))
+    (mp:with-lock (lock)
+      (is-true (mp:holding-lock-p lock))
+      (mp:process-run-function
+       "mp-holding-lock-p"
+       #'(lambda () (is-false (mp:holding-lock-p lock)))))
+    (is-false (mp:holding-lock-p lock))
+    (mp:process-run-function
+     "mp-holding-lock-p"
+     #'(lambda () (is-false (mp:holding-lock-p lock))))))

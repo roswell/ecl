@@ -369,9 +369,8 @@ test_changes:
 # Run test suite
 #
 check:
-	cd tests && $(MAKE)
-recheck:
-	cd tests && $(MAKE) clean && $(MAKE)
+	cd tests && $(MAKE) clean && $(MAKE) check TESTS="$(TESTS)"
+
 #
 # Rebuild ECL using its own image and compare. Does not work
 # right now.

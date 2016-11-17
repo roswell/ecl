@@ -7,7 +7,7 @@
 
 (in-package :cl-test)
 
-(suite 'regressions/emb)
+(suite 'emb)
 
 (defun test-C-program (c-code &key capture-output)
   (ensure-directories-exist "tmp/")

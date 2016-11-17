@@ -8,7 +8,7 @@
 
 (in-package :cl-test)
 
-(suite 'features/ieee-fp)
+(suite 'ieee-fp)
 
 (test ieee-fp.0001.infinity-eql
   (let ((sfni ext:single-float-negative-infinity)

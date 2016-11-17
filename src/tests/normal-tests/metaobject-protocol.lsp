@@ -8,7 +8,7 @@
 
 (in-package #:cl-test)
 
-(suite 'regressions/mop)
+(suite 'mop)
 
 
 ;; mop-001

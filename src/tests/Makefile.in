@@ -8,9 +8,10 @@ ECL=@prefix@/@bindir@/ecl@EXEEXT@
 all: check
 
 check: config.lsp
-	$(ECL) -norc -load config.lsp \
-                -eval '(ecl-tests::run-tests)' \
-                -eval '(ext:quit)' \
+	$(ECL) -norc \
+                -load config.lsp \
+                -eval "(ecl-tests::run-tests '($(TESTS)))" \
+                -eval "(ext:quit)" \
                 2>&1 | tee check.log
 
 clean:

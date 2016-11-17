@@ -10,7 +10,7 @@
 
 (in-package :cl-test)
 
-(suite 'features/eformat)
+(suite 'eformat)
 
 
 ;;; eformat-001

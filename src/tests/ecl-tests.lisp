@@ -21,37 +21,10 @@
 
 ;;;; Declare the suites
 (suite 'ecl-tests
-       '(regressions
-         features))
+       '(eformat ieee-fp eprocess package-locks ansi+ mixed cmp emb ffi mop mp))
 
 (suite 'make-check
-       '(features/eformat
-         features/ieee-fp
-         features/eprocess
-         features/package-locks
-         regressions/ansi+
-         regressions/mixed
-         regressions/cmp
-         regressions/emb
-         regressions/ffi
-         regressions/mop
-         ;; disable regressions/mp due to fails
-         #+ (or) regressions/mp))
-
-(suite 'regressions
-       '(regressions/ansi+
-         regressions/mixed
-         regressions/cmp
-         regressions/emb
-         regressions/ffi
-         regressions/mop
-         regressions/mp))
-
-(suite 'features
-       '(features/eformat
-         features/ieee-fp
-         features/eprocess
-         features/mp))
+       '(ieee-fp eprocess package-locks ansi+ mixed cmp emb ffi mop))
 
 
 ;;; Some syntactic sugar for 2am

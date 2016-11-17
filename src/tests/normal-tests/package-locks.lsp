@@ -8,7 +8,7 @@
 
 (in-package :cl-test)
 
-(suite 'features/package-locks)
+(suite 'package-locks)
 
 (defmacro with-fresh-package (name &body body)
   `(progn

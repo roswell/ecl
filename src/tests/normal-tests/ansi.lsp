@@ -3,7 +3,7 @@
 
 (in-package :cl-test)
 
-(suite 'regressions/ansi+)
+(suite 'ansi+)
 
 
 ;; HyperSpec – 3.*

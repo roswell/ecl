@@ -7,7 +7,7 @@
 ;;;; Contains: Foreign Function Interface regression tests
 
 (in-package :cl-test)
-(suite 'regressions/ffi)
+(suite 'ffi)
 
 ;;; Date: 23/03/2006
 ;;; From: Klaus Falb

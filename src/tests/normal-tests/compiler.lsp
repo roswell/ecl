@@ -7,7 +7,7 @@
 
 (in-package :cl-test)
 
-(suite 'regressions/cmp)
+(suite 'cmp)
 
 
 ;; cl-001
