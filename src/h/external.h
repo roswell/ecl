@@ -1749,7 +1749,7 @@ extern ECL_API cl_object mp_make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
 extern ECL_API cl_object mp_barrier_count(cl_object);
 extern ECL_API cl_object mp_barrier_name(cl_object);
 extern ECL_API cl_object mp_barrier_arrivers_count(cl_object);
-extern ECL_API cl_object mp_barrier_wait _ECL_ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_barrier_wait (cl_object);
 extern ECL_API cl_object mp_barrier_unblock _ECL_ARGS((cl_narg, cl_object, ...));
 
 /* threads/mailbox.d */

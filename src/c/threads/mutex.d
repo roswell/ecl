@@ -53,7 +53,7 @@ ecl_make_lock(cl_object name, bool recursive)
   return output;
 }
 
-@(defun mp::make-lock (&key name ((:recursive recursive) ECL_NIL))
+@(defun mp::make-lock (&key name (recursive ECL_NIL))
   @
   @(return ecl_make_lock(name, !Null(recursive)));
   @)

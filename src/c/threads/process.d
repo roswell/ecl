@@ -628,7 +628,7 @@ mp_process_join(cl_object process)
   if (process->process.phase) {
     /* We try to acquire a lock that is only owned by the process
      * while it is active. */
-    mp_barrier_wait(1, process->process.exit_barrier);
+    mp_barrier_wait(process->process.exit_barrier);
   }
   return cl_values_list(process->process.exit_values);
 }

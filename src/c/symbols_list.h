@@ -1603,7 +1603,7 @@ cl_symbols[] = {
 {MP_ "BARRIER", MP_ORDINARY, NULL, -1, OBJNULL},
 {MP_ "MAKE-BARRIER", MP_ORDINARY, IF_MP(mp_make_barrier), -1, OBJNULL},
 {MP_ "BARRIER-UNBLOCK", MP_ORDINARY, IF_MP(mp_barrier_unblock), -1, OBJNULL},
-{MP_ "BARRIER-WAIT", MP_ORDINARY, IF_MP(mp_barrier_wait), -1, OBJNULL},
+{MP_ "BARRIER-WAIT", MP_ORDINARY, IF_MP(mp_barrier_wait), 1, OBJNULL},
 {MP_ "BARRIER-COUNT", MP_ORDINARY, IF_MP(mp_barrier_count), 1, OBJNULL},
 {MP_ "BARRIER-NAME", MP_ORDINARY, IF_MP(mp_barrier_name), 1, OBJNULL},
 {MP_ "BARRIER-ARRIVERS-COUNT", MP_ORDINARY, IF_MP(mp_barrier_arrivers_count), 1, OBJNULL},

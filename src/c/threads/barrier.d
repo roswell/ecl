@@ -131,34 +131,36 @@ decrement_counter(cl_fixnum *counter)
   } while (1);
 }
 
-@(defun mp::barrier-wait (barrier &key)
+cl_object
+mp_barrier_wait(cl_object barrier)
+{
   cl_object output;
   cl_fixnum counter;
-  @ {
-    cl_object own_process = the_env->own_process;
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object  own_process = the_env->own_process;
 
-    unlikely_if (ecl_t_of(barrier) != t_barrier) {
-      FEerror_not_a_barrier(barrier);
-    }
-    ecl_disable_interrupts_env(the_env);
-    counter = decrement_counter(&barrier->barrier.arrivers_count);
-    if (counter == 0) {
-      print_lock("barrier %p saturated", barrier, barrier);
-      /* There are (count-1) threads in the queue and we
-       * are the last one. We thus unblock all threads and
-       * proceed. */
-      mp_barrier_unblock(1, barrier);
-      ecl_enable_interrupts_env(the_env);
-      output = @':unblocked';
-    } else if (counter > 0) {
-      print_lock("barrier %p waiting", barrier, barrier);
-      ecl_enable_interrupts_env(the_env);
-      ecl_wait_on(the_env, barrier_wait_condition, barrier);
-      output = ECL_T;
-    } else {
-      print_lock("barrier %p pass-through", barrier, barrier);
-      /* Barrier disabled */
-      output = ECL_NIL;
-    }
-    @(return output);
-  } @)
+  unlikely_if (ecl_t_of(barrier) != t_barrier) {
+    FEerror_not_a_barrier(barrier);
+  }
+  ecl_disable_interrupts_env(the_env);
+  counter = decrement_counter(&barrier->barrier.arrivers_count);
+  if (counter == 0) {
+    print_lock("barrier %p saturated", barrier, barrier);
+    /* There are (count-1) threads in the queue and we
+     * are the last one. We thus unblock all threads and
+     * proceed. */
+    mp_barrier_unblock(1, barrier);
+    ecl_enable_interrupts_env(the_env);
+    output = @':unblocked';
+  } else if (counter > 0) {
+    print_lock("barrier %p waiting", barrier, barrier);
+    ecl_enable_interrupts_env(the_env);
+    ecl_wait_on(the_env, barrier_wait_condition, barrier);
+    output = ECL_T;
+  } else {
+    print_lock("barrier %p pass-through", barrier, barrier);
+    /* Barrier disabled */
+    output = ECL_NIL;
+  }
+  return output;
+}
