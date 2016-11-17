@@ -73,6 +73,9 @@ all: build/Makefile
 Makefile: Makefile.in build/config.status
 	(cd build; ./config.status)
 
+ecl_min: build/Makefile
+	cd build; $(MAKE) ecl_min
+
 # ==================== Installation ====================
 
 INSTALL_TARGET = @INSTALL_TARGET@
