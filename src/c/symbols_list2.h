@@ -1912,7 +1912,6 @@ cl_symbols[] = {
 
 #ifdef ECL_IEEE_FP
 {SYS_ "NAN","si_nan"},
-{SYS_ "INFINITY","si_infinity"},
 
 {EXT_ "SHORT-FLOAT-POSITIVE-INFINITY",NULL},
 {EXT_ "SINGLE-FLOAT-POSITIVE-INFINITY",NULL},

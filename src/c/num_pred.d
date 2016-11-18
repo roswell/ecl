@@ -65,6 +65,18 @@ bool
 ecl_float_nan_p(cl_object x)
 {
   return !ecl_number_equalp(x,x);
+/*   switch (ecl_t_of(x)) { */
+/*   case t_singlefloat: */
+/*     return !isnan(ecl_single_float(x)); */
+/*   case t_doublefloat: */
+/*     return !isnan(ecl_double_float(x)); */
+/* #ifdef ECL_LONG_FLOAT */
+/*   case t_longfloat: */
+/*     return !isnan(ecl_long_float(x)); */
+/* #endif */
+/*   default: */
+/*     return 0; */
+/*   } */
 }
 
 bool

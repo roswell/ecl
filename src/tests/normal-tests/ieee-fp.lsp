@@ -25,8 +25,7 @@
                     ext:single-float-positive-infinity
                     ext:double-float-negative-infinity
                     ext:double-float-positive-infinity
-                    (si:nan)
-                    (si:infinity)))
+                    (si:nan)))
         (*standard-output* (make-string-output-stream)))
     (dolist (i nums)
       (finishes
