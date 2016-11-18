@@ -5489,6 +5489,7 @@ file_libc_error(cl_object error_type, cl_object stream,
                          make_constant_base_string("~?~%C library explanation: ~A."),
                          cl_list(3, make_constant_base_string(msg), rest,
                                  error));
+  _ecl_unexpected_return();
 }
 
 static void

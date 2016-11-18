@@ -152,6 +152,7 @@ FEprogram_error(const char *s, int narg, ...)
                          ECL_NIL, /* not correctable */
                          text,
                          real_args);
+  _ecl_unexpected_return();
 }
 
 void
@@ -177,6 +178,7 @@ FEprogram_error_noreturn(const char *s, int narg, ...)
                          ECL_NIL, /* not correctable */
                          text,
                          real_args);
+  _ecl_unexpected_return();
 }
 
 void
@@ -189,6 +191,7 @@ FEcontrol_error(const char *s, int narg, ...)
                          ECL_NIL, /* not correctable */
                          make_constant_base_string(s), /* format control */
                          cl_grab_rest_args(args)); /* format args */
+  _ecl_unexpected_return();
 }
 
 void
@@ -220,6 +223,7 @@ FEreader_error(const char *s, cl_object stream, int narg, ...)
                            args_list, /* format args */
                            @':stream', stream);
   }
+  _ecl_unexpected_return();
 }
 
 
@@ -275,6 +279,7 @@ FEwrong_type_only_arg(cl_object function, cl_object value, cl_object type)
                          cl_list(3, function, value, type),
                          @':expected-type', type,
                          @':datum', value);
+  _ecl_unexpected_return();
 }
 
 void
@@ -299,6 +304,7 @@ FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_objec
                                  value, type),
                          @':expected-type', type,
                          @':datum', value);
+  _ecl_unexpected_return();
 }
 
 void
@@ -323,6 +329,7 @@ FEwrong_type_key_arg(cl_object function, cl_object key, cl_object value, cl_obje
                          cl_list(4, function, key, value, type),
                          @':expected-type', type,
                          @':datum', value);
+  _ecl_unexpected_return();
 }
 
 void
