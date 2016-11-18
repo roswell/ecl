@@ -922,6 +922,6 @@ cl_object
 si_nan() {
   cl_object x = ecl_alloc_object(t_doublefloat);
   ecl_double_float(x) = NAN;
-  return NAN;
+  return x;
 }
 #endif /* ECL_IEEE_FP */
