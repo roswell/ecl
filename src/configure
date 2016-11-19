@@ -7327,6 +7327,7 @@ $as_echo "#define ecl_ulong_long_t unsigned long long" >>confdefs.h
 cat >>confdefs.h <<_ACEOF
 #define ECL_LONG_LONG_BITS $ECL_LONG_LONG_BITS
 _ACEOF
+
 fi
 
 

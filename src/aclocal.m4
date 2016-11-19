@@ -55,8 +55,7 @@ else
   AC_MSG_RESULT([$ECL_LONG_LONG_BITS])
   AC_DEFINE([ecl_long_long_t], [long long], [compiler understands long long])
   AC_DEFINE([ecl_ulong_long_t], [unsigned long long], [compiler understands long long])
-  AC_DEFINE_UNQUOTED([ECL_LONG_LONG_BITS],[$ECL_LONG_LONG_BITS],
-   [ECL_LOING_LONG_BITS])dnl last param needs to be on a new line. -evrim.
+  AC_DEFINE_UNQUOTED([ECL_LONG_LONG_BITS],[$ECL_LONG_LONG_BITS], [ECL_LONG_LONG_BITS])
 fi
 ])
 

@@ -30,7 +30,7 @@
 /* ECL_LONG_FLOAT */
 #undef ECL_LONG_FLOAT
 
-/* ECL_LOING_LONG_BITS */
+/* ECL_LONG_LONG_BITS */
 #undef ECL_LONG_LONG_BITS
 
 /* Define if your newline is CR */
