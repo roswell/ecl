@@ -1453,9 +1453,13 @@ package."
       ;; Like in SBCL, the error message is output through *error-output*
       ;; The rest of the interaction is performed through *debug-io*
       (finish-output)
-      (fresh-line *error-output*)
-      (terpri *error-output*)
-      (princ *break-message* *error-output*)
+      ;; We wrap the following in `ignore-errors' because error may be
+      ;; caused by writing to the `*error-output*', what leads to
+      ;; infinite recursion!
+      (ignore-errors
+        (fresh-line *error-output*)
+        (terpri *error-output*)
+        (princ *break-message* *error-output*))
       (loop
          ;; Here we show a list of restarts and invoke the toplevel with
          ;; an extended set of commands which includes invoking the associated
