@@ -241,7 +241,7 @@ si_readlink(cl_object filename) {
     ecl_enable_interrupts();
     size += 256;
   } while (written == size-256);
-  if ((written + 2) > output->base_string.self) {
+  if ((written + 2) > (cl_index)(output->base_string.self)) {
     /* Too small to host the trailing '/' and '\0' */
     cl_object other = ecl_alloc_adjustable_base_string(written+2);
     strcpy((char*)other->base_string.self, (char*)output->base_string.self);
