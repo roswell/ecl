@@ -133,5 +133,5 @@ as a second value."
       `(let ((,var (ext:mkstemp "ecl-tests")))
          (with-open-file (,stream ,var :direction :output)
            (format ,stream ,string))
-         ,@body
-         (delete-file ,var)))))
+         (multiple-value-prog1 (progn ,@body)
+           (delete-file ,var))))))
