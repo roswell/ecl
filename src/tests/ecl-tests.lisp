@@ -21,10 +21,12 @@
 
 ;;;; Declare the suites
 (suite 'ecl-tests
-       '(eformat ieee-fp eprocess package-locks ansi+ mixed cmp emb ffi mop mp))
+       '(executable eformat ieee-fp eprocess package-locks ansi+ mixed
+         cmp emb ffi mop mp))
 
 (suite 'make-check
-       '(ieee-fp eprocess package-locks ansi+ mixed cmp emb ffi mop))
+       '(executable ieee-fp eprocess package-locks ansi+ mixed cmp emb
+         ffi mop))
 
 
 ;;; Some syntactic sugar for 2am
@@ -124,3 +126,12 @@ as a second value."
                      (*compile-print* t))
                  (setf compiled-file (compile-file ,filename ,@compiler-args))))))
        (values compiled-file output))))
+
+(defmacro with-temporary-file ((var string) &body body)
+  (ext:with-unique-names (stream)
+    (ext:once-only (string)
+      `(let ((,var (ext:mkstemp "ecl-tests")))
+         (with-open-file (,stream ,var :direction :output)
+           (format ,stream ,string))
+         ,@body
+         (delete-file ,var)))))

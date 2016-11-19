@@ -84,6 +84,7 @@
   (unwind-protect 
        (progn
          (ext:chdir *sandbox*)
+         (ext:setenv "TEST_IMAGE" *test-image*)
          (ext:run-program *test-image*
                           `("-norc"
                             "-eval" "(print (ext:getenv \"ECLDIR\"))"
