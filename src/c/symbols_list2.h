@@ -1949,7 +1949,11 @@ cl_symbols[] = {
 
 {SYS_ "*ALLOW-WITH-INTERRUPTS*",NULL},
 
+/* conveniance macros from CMU util */
+{EXT_ "ONCE-ONLY",NULL},
+{EXT_ "COLLECT",NULL},
 {EXT_ "WITH-UNIQUE-NAMES",NULL},
+{EXT_ "WITH-GENSYMS",NULL},
 {EXT_ "WITH-CLEAN-SYMBOLS",NULL},
 
 {SYS_ "HANDLE-SIGNAL","si_handle_signal"},

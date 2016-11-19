@@ -10,41 +10,12 @@
 
 (in-package "SI")
 
-(eval-when (:compile-toplevel :execute)
 
 #+ecl-min
 (defmacro handler-bind (bindings &body body)
   `(progn ,@body))
+
 
-;;;; The Once-Only macro:
-
-;;; Once-Only  --  Interface
-;;;
-;;;    Once-Only is a utility useful in writing source transforms and
-;;;    macros.  It provides an easy way to wrap a let around some code
-;;;    to ensure that some forms are only evaluated once.
-;;;
-(defmacro once-only (specs &body body)
-  "Once-Only ({(Var Value-Expression)}*) Form*
-
-  Create a Let* which evaluates each Value-Expression, binding a
-  temporary variable to the result, and wrapping the Let* around the
-  result of the evaluation of Body.  Within the body, each Var is
-  bound to the corresponding temporary variable."
-  (labels ((frob (specs body)
-             (if (null specs)
-                 `(progn ,@body)
-                 (let ((spec (first specs)))
-                   (when (/= (length spec) 2)
-                     (error "Malformed Once-Only binding spec: ~S." spec))
-                   (let ((name (first spec))
-                         (exp-temp (gensym)))
-                     `(let ((,exp-temp ,(second spec))
-                            (,name (gensym "OO-")))
-                       `(let ((,,name ,,exp-temp))
-                         ,,(frob (rest specs) body))))))))
-    (frob specs body)))
-
 ;;;; The Collect macro:
 
 ;;; Collect-Normal-Expander  --  Internal
@@ -87,31 +58,46 @@
 (defmacro collect (collections &body body)
   "Collect ({(Name [Initial-Value] [Function])}*) {Form}*
 
-  Collect some values somehow.  Each of the collections specifies a
-  bunch of things which collected during the evaluation of the body of
-  the form.  The name of the collection is used to define a local
-  macro, a la MACROLET.  Within the body, this macro will evaluate
-  each of its arguments and collect the result, returning the current
-  value after the collection is done.  The body is evaluated as a
-  PROGN; to get the final values when you are done, just call the
-  collection macro with no arguments.
+Collect some values somehow.  Each of the collections specifies a
+bunch of things which collected during the evaluation of the body of
+the form.  The name of the collection is used to define a local macro,
+a la MACROLET.  Within the body, this macro will evaluate each of its
+arguments and collect the result, returning the current value after
+the collection is done.  The body is evaluated as a PROGN; to get the
+final values when you are done, just call the collection macro with no
+arguments.
 
-  Initial-Value is the value that the collection starts out with,
-  which defaults to NIL.  Function is the function which does the
-  collection.  It is a function which will accept two arguments: the
-  value to be collected and the current collection.  The result of the
-  function is made the new value for the collection.  As a totally
-  magical special-case, the Function may be Collect, which tells us to
-  build a list in forward order; this is the default.  If an
-  Initial-Value is supplied for Collect, the stuff will be rplacd'd
-  onto the end.  Note that Function may be anything that can appear in
-  the functional position, including macros and lambdas."
+Initial-Value is the value that the collection starts out with, which
+defaults to NIL.  Function is the function which does the collection.
+It is a function which will accept two arguments: the value to be
+collected and the current collection.  The result of the function is
+made the new value for the collection.  As a totally magical
+special-case, the Function may be Collect, which tells us to build a
+list in forward order; this is the default.  If an Initial-Value is
+supplied for Collect, the stuff will be rplacd'd onto the end.  Note
+that Function may be anything that can appear in the functional
+position, including macros and lambdas.
 
-  (let ((macros ())
-        (binds ()))
+Bare symbols in `specs' are equivalent to:
+
+(symbol nil 'collect)
+
+Example:
+
+  (collect (a b)
+    (a 3)
+    (a 4)
+    (b 5)
+    (list (a) (b)))
+  ; => ((3 4) (5))
+"
+
+  (let (macros binds)
     (dolist (spec collections)
-      (unless (<= 1 (length spec) 3)
-        (error "Malformed collection specifier: ~S." spec))
+      (cond ((atom spec)
+             (setf spec (list spec)))
+            ((not (<= 1 (length spec) 3))
+             (error "Malformed collection specifier: ~S." spec)))
       (let ((n-value (gensym))
             (name (first spec))
             (default (second spec))
@@ -130,8 +116,52 @@
                   macros))))
     `(macrolet ,macros (let* ,(nreverse binds) ,@body))))
 
-); eval-when
+
+;;;; The Once-Only macro:
 
+;;; Once-Only  --  Interface
+;;;
+;;;    Once-Only is a utility useful in writing source transforms and
+;;;    macros.  It provides an easy way to wrap a let around some code
+;;;    to ensure that some forms are only evaluated once.
+;;;
+(defmacro once-only (specs &body body)
+  "Once-Only ({(Var Value-Expression)}*) Form*
+
+Create a Let* which evaluates each Value-Expression, binding a
+temporary variable to the result, and wrapping the Let* around the
+result of the evaluation of Body.  Within the body, each Var is bound
+to the corresponding temporary variable.
+
+Bare symbols in `specs' are equivalent to:
+
+  (symbol symbol)
+
+Example:
+
+  (defmacro cons1 (x)
+    (once-only (x) `(cons ,x ,x)))
+  (let ((y 0))
+    (cons1 (incf y)))
+  ; => (1 . 1)
+"
+  (labels ((frob (specs body)
+             (if (null specs)
+                 `(progn ,@body)
+                 (let ((spec (first specs)))
+                   (cond ((atom spec)
+                          (setf spec (list spec spec)))
+                         ((/= (length spec) 2)
+                          (error "Malformed Once-Only binding spec: ~S." spec)))
+                   (let ((name (first spec))
+                         (exp-temp (gensym)))
+                     `(let ((,exp-temp ,(second spec))
+                            (,name (gensym "OO-")))
+                        `(let ((,,name ,,exp-temp))
+                           ,,(frob (rest specs) body))))))))
+    (frob specs body)))
+
+
 ;;; Automate an idiom often found in macros:
 ;;;   (LET ((FOO (GENSYM "FOO"))
 ;;;         (MAX-INDEX (GENSYM "MAX-INDEX-")))
@@ -142,6 +172,8 @@
 ;;; Incidentally, this is essentially the same operator which
 ;;; _On Lisp_ calls WITH-GENSYMS.
 (defmacro with-unique-names (symbols &body body)
+  "Binds each variable named by a symbol in `symbols' to a unique
+symbol around `body'."
   `(let* ,(mapcar (lambda (symbol)
                     (let* ((symbol-name (symbol-name symbol))
                            (stem symbol-name))
@@ -149,6 +181,11 @@
                   symbols)
      ,@body))
 
+(defmacro with-gensyms (symbols &body body)
+  "Alias for `with-unique-names'."
+  `(with-unique-names ,symbols ,@body))
+
+
 (defmacro with-clean-symbols (symbols &body body)
   "Rewrites the given forms replacing the given symbols with uninterned
 ones, which is useful for creating hygienic macros."
