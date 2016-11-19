@@ -5338,6 +5338,11 @@ flisten(cl_object stream, FILE *fp)
   return !ECL_LISTEN_AVAILABLE;
 }
 
+/* Compilation of this function on some platforms may give a warning:
+   "right shift count >= width of type [-Werror=shift-count-overflow]"
+   but on these platforms this branch is never encountered.
+
+   FIXME: this can probably be conditionaly defined in #if … #endif */
 cl_object
 ecl_off_t_to_integer(ecl_off_t offset)
 {
@@ -5362,6 +5367,11 @@ ecl_off_t_to_integer(ecl_off_t offset)
   return output;
 }
 
+/* Compilation of this function on some platforms may give a warning:
+   "left shift count >= width of type [-Werror=shift-count-overflow]"
+   but on these platforms this branch is never encountered.
+
+   FIXME: this can probably be conditionaly defined in #if … #endif */
 ecl_off_t
 ecl_integer_to_off_t(cl_object offset)
 {
