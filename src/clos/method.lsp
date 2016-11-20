@@ -198,6 +198,7 @@
   (multiple-value-bind (declarations real-body documentation)
       (si::find-declarations (cddr method-lambda))
     `(lambda ,(second method-lambda)
+       ,@declarations
        (let* ((.closed-combined-method-args.
                (if (listp .combined-method-args.)
                    .combined-method-args.
