@@ -622,3 +622,18 @@ the metaclass")
        #'f (list (find-class 'c))))))
 
 
+;;; Bug #46
+;;;
+;;; Reported 2016-05-30
+;;;
+;;; Description: DEFGENERIC doesn't create methods on same pass as
+;;;  creating generics.
+
+(test mop.0021.ensure-generic
+  (is (progn (fmakunbound 'mop.0021.ensure-generic.fun)
+             (defun mop.0021.ensure-generic.fun () 'hi)
+             (with-temporary-file (input-file "
+(fmakunbound 'mop.0021.ensure-generic.fun)
+(defmethod mop.0021.ensure-generic.fun () (print 'bye))
+")
+               (compile-file input-file)))))
