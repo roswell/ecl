@@ -61,18 +61,13 @@
               (make-method-lambda generic-function method lambda-form env)
             (when documentation
               (setf options (list* :documentation documentation options)))
-            (multiple-value-bind (wrapped-lambda wrapped-p)
-                (simplify-lambda name fn-form)
-              (unless wrapped-p
-                (error "Unable to unwrap function"))
-              (ext:register-with-pde
-               whole
-               `(install-method ',name ',qualifiers
-                                ,(specializers-expression specializers)
-                                ',lambda-list
-                                ,(maybe-remove-block wrapped-lambda)
-                                ,wrapped-p
-                                ,@(mapcar #'si::maybe-quote options))))))))))
+            (ext:register-with-pde
+             whole
+             `(install-method ',name ',qualifiers
+                              ,(specializers-expression specializers)
+                              ',lambda-list
+                              ,(maybe-remove-block (simplify-lambda fn-form))
+                              ,@(mapcar #'si::maybe-quote options)))))))))
 
 (defun specializers-expression (specializers)
   (declare (si::c-local))
@@ -108,7 +103,7 @@
           ))))
   method-lambda)
 
-(defun simplify-lambda (method-name fn-form)
+(defun simplify-lambda (fn-form)
   (let ((aux fn-form))
     (if (and (eq (pop aux) 'lambda)
              (equalp (pop aux) '(.combined-method-args. *next-methods*))
@@ -119,8 +114,8 @@
              (eq (third aux) '.combined-method-args.)
              (listp (setf aux (second aux)))
              (eq (first aux) 'lambda))
-        (values aux t)
-        (values fn-form nil))))
+        aux
+        (error "Unable to unwrap function"))))
 
 (defun make-raw-lambda (name lambda-list required-parameters specializers body env)
   (declare (si::c-local)
