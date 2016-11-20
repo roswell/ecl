@@ -601,11 +601,15 @@ the metaclass")
 ;;; From: Pascal Costanza
 ;;; Description:
 ;;;
-;;;     sort-applicable-methods is invoked by two methods and one
-;;;     invocation triggers a disambiguation error:
+;;;  sort-applicable-methods is invoked by two methods and one
+;;;  invocation triggers a disambiguation error:
 ;;;
-;;;       Condition of type: SIMPLE-ERROR
-;;;       The type specifiers #<The STANDARD-CLASS COMMON-LISP-USER::B> and #<The STANDARD-CLASS COMMON-LISP-USER::A> can not be disambiguated with respect to the argument specializer: #<The STANDARD-CLASS STANDARD-CLASS>
+;;;   Condition of type: SIMPLE-ERROR
+;;;
+;;;    The type specifiers #<The STANDARD-CLASS COMMON-LISP-USER::B>
+;;;    and #<The STANDARD-CLASS COMMON-LISP-USER::A> can not be
+;;;    disambiguated with respect to the argument specializer:
+;;;    #<The STANDARD-CLASS STANDARD-CLASS>
 (ext:with-clean-symbols (a b c f)
   (defclass a () ())
   (defclass b () ())
