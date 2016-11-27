@@ -84,7 +84,7 @@ in =*features*=
 
 - configure options has been revised.
 
-- ASDF has been upgraded to version 3.1.7.
+- ASDF has been upgraded to version 3.1.7.26.
 
 - Bundled CLX has been purged
 Lately I've fixed ECL support on portable CLX maintained by sharplispers on
