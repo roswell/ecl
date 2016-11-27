@@ -52,6 +52,6 @@ For the ANSI-compliant LOOP macro.
 @end table
 
 The @ecl{} project also owes a lot to the people who have tested this
-program and contributed with suggestions and error messages: Eric
-Marsden, Hannu Koivisto and Jeff Bowden, and others whose name we may
-have omitted.
+program and contributed with suggestions, error messages and
+documentation: Eric Marsden, Hannu Koivisto, Jeff Bowden and Yuto
+Hayamizu, and others whose name we may have omitted.
