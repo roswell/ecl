@@ -487,8 +487,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                      (pathname item)
                      (string (parse-namestring item))))
              (kind (guess-kind path)))
-        (unless (member kind '(:shared-library :dll :static-library :lib
-                                               :object :c))
+        (unless (member kind '(:shared-library :static-library :object :c))
           (error "C::BUILDER does not accept a file ~s of kind ~s" item kind))
         (let* ((init-fn (guess-init-name path (guess-kind path)))
                (flags (guess-ld-flags path)))
