@@ -489,7 +489,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
              (kind (guess-kind path)))
         (unless (member kind '(:shared-library :static-library :object :c))
           (error "C::BUILDER does not accept a file ~s of kind ~s" item kind))
-        (let* ((init-fn (guess-init-name path (guess-kind path)))
+        (let* ((init-fn (guess-init-name path kind))
                (flags (guess-ld-flags path)))
           ;; We should give a warning that we cannot link this module in
           (when flags (push flags ld-flags))
