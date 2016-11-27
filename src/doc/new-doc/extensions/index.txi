@@ -23,8 +23,8 @@
 * CDR Extensions::
 @end menu
 
-@node System building
-@section System building
+@ System building
+@include extensions/building.txi
 
 @node Operating System Interface
 @section Operating System Interface
