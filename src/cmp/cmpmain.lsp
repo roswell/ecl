@@ -506,8 +506,10 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (format c-file +lisp-program-init+ init-name
                  init-tag
                  "" submodules "")
-         (format c-file #+:win32 (ecase system (:console +lisp-program-main+)
-                                        (:windows +lisp-program-winmain+))
+         (format c-file
+                 #+:win32 (ecase system
+                            (:console +lisp-program-main+)
+                            (:windows +lisp-program-winmain+))
                  #-:win32 +lisp-program-main+
                  prologue-code init-name epilogue-code)
          (close c-file)
