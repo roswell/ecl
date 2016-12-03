@@ -2611,6 +2611,8 @@ safe_fclose(FILE *stream)
 {
   const cl_env_ptr the_env = ecl_process_env();
   int output;
+  /* If someone have closed our fd, do nothing. See #267. */
+  unlikely_if (fileno(stream) == -1) return 0;
   ecl_disable_interrupts_env(the_env);
   output = fclose(stream);
   ecl_enable_interrupts_env(the_env);
