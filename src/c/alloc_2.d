@@ -1289,11 +1289,15 @@ gather_statistics()
       mpz_add_ui(cl_core.bytes_consed->big.big_num,
                  cl_core.bytes_consed->big.big_num,
                  wrapped);
-      bytes = new_bytes;
+      mpz_add_ui(cl_core.bytes_consed->big.big_num,
+                 cl_core.bytes_consed->big.big_num,
+                 new_bytes);
+    } else {
+      mpz_add_ui(cl_core.bytes_consed->big.big_num,
+                 cl_core.bytes_consed->big.big_num,
+                 new_bytes - bytes);
     }
-    mpz_add_ui(cl_core.bytes_consed->big.big_num,
-               cl_core.bytes_consed->big.big_num,
-               new_bytes - bytes);
+    bytes = new_bytes;
 #endif
     mpz_add_ui(cl_core.gc_counter->big.big_num,
                cl_core.gc_counter->big.big_num,
