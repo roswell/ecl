@@ -1263,14 +1263,13 @@ si_gc_stats(cl_object enable)
   @(return size1 size2 old_status);
 }
 
-/*
- * This procedure is invoked after garbage collection. Note that we
+/* This procedure is invoked after garbage collection. Note that we
  * cannot cons because this procedure is invoked with the garbage
- * collection lock on.
- */
+ * collection lock on. */
 static void
 gather_statistics()
 {
+  /* GC stats rely on bignums */
   if (cl_core.gc_stats) {
     /* Sorry, no gc stats if you do not use bignums */
 #if GBC_BOEHM == 0
