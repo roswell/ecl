@@ -36,6 +36,7 @@ extern void *GC_get_start_callback();
 extern void (*GC_start_call_back)(void);
 #endif
 static void gather_statistics(void);
+static void update_bytes_consed(void);
 static void ecl_mark_env(struct cl_env_struct *env);
 
 /* We need these prototypes because private/gc.h is not available
@@ -1231,8 +1232,8 @@ cl_object
 si_gc_stats(cl_object enable)
 {
   cl_object old_status;
-  cl_object size1 = ecl_make_fixnum(0);
-  cl_object size2 = ecl_make_fixnum(0);
+  cl_object size1;
+  cl_object size2;
   if (cl_core.gc_stats == 0) {
     old_status = ECL_NIL;
   } else if (GC_print_stats) {
@@ -1245,11 +1246,13 @@ si_gc_stats(cl_object enable)
     mpz_init2(cl_core.bytes_consed->big.big_num, 128);
     cl_core.gc_counter = ecl_alloc_object(t_bignum);
     mpz_init2(cl_core.gc_counter->big.big_num, 128);
-  } else {
-    /* We need fresh copies of the bignums */
-    size1 = _ecl_big_plus_fix(cl_core.bytes_consed, 1);
-    size2 = _ecl_big_plus_fix(cl_core.gc_counter, 1);
   }
+
+  update_bytes_consed();
+  /* We need fresh copies of the bignums */
+  size1 = _ecl_big_register_copy(cl_core.bytes_consed);
+  size2 = _ecl_big_register_copy(cl_core.gc_counter);
+
   if (enable == ECL_NIL) {
     GC_print_stats = 0;
     cl_core.gc_stats = 0;
@@ -1271,33 +1274,7 @@ gather_statistics()
 {
   /* GC stats rely on bignums */
   if (cl_core.gc_stats) {
-    /* Sorry, no gc stats if you do not use bignums */
-#if GBC_BOEHM == 0
-    mpz_add_ui(cl_core.bytes_consed->big.big_num,
-               cl_core.bytes_consed->big.big_num,
-               GC_get_bytes_since_gc());
-#else
-    /* This is not accurate and may wrap around. We try to detect this
-       assuming that an overflow in an unsigned integer will produce
-       a smaller integer.*/
-    static cl_index bytes = 0;
-    cl_index new_bytes = GC_get_total_bytes();
-    if (bytes > new_bytes) {
-      cl_index wrapped;
-      wrapped = ~((cl_index)0) - bytes;
-      mpz_add_ui(cl_core.bytes_consed->big.big_num,
-                 cl_core.bytes_consed->big.big_num,
-                 wrapped);
-      mpz_add_ui(cl_core.bytes_consed->big.big_num,
-                 cl_core.bytes_consed->big.big_num,
-                 new_bytes);
-    } else {
-      mpz_add_ui(cl_core.bytes_consed->big.big_num,
-                 cl_core.bytes_consed->big.big_num,
-                 new_bytes - bytes);
-    }
-    bytes = new_bytes;
-#endif
+    update_bytes_consed();
     mpz_add_ui(cl_core.gc_counter->big.big_num,
                cl_core.gc_counter->big.big_num,
                1);
@@ -1306,6 +1283,35 @@ gather_statistics()
     GC_old_start_callback();
 }
 
+static void
+update_bytes_consed () {
+#if GBC_BOEHM == 0
+  mpz_add_ui(cl_core.bytes_consed->big.big_num,
+             cl_core.bytes_consed->big.big_num,
+             GC_get_bytes_since_gc());
+#else
+  /* This is not accurate and may wrap around. We try to detect this
+     assuming that an overflow in an unsigned integer will produce
+     a smaller integer.*/
+  static cl_index bytes = 0;
+  cl_index new_bytes = GC_get_total_bytes();
+  if (bytes > new_bytes) {
+    cl_index wrapped;
+    wrapped = ~((cl_index)0) - bytes;
+    mpz_add_ui(cl_core.bytes_consed->big.big_num,
+               cl_core.bytes_consed->big.big_num,
+               wrapped);
+    mpz_add_ui(cl_core.bytes_consed->big.big_num,
+               cl_core.bytes_consed->big.big_num,
+               new_bytes);
+  } else {
+    mpz_add_ui(cl_core.bytes_consed->big.big_num,
+               cl_core.bytes_consed->big.big_num,
+               new_bytes - bytes);
+  }
+  bytes = new_bytes;
+#endif
+}
 
 /**********************************************************
  *              GARBAGE COLLECTOR                         *
