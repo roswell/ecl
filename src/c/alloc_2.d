@@ -1220,8 +1220,7 @@ si_set_finalizer(cl_object o, cl_object finalizer)
 }
 
 /* If we do not build our own version of the library, we do not have
- * control over the existence of this variable.
- */
+ * control over the existence of this variable. */
 #if GBC_BOEHM == 0
 extern int GC_print_stats;
 #else
@@ -1279,10 +1278,9 @@ gather_statistics()
                cl_core.bytes_consed->big.big_num,
                GC_get_bytes_since_gc());
 #else
-    /* This is not accurate and may wrap around. We try
-       to detect this assuming that an overflow in an
-       unsigned integer will produce an smaller
-       integer.*/
+    /* This is not accurate and may wrap around. We try to detect this
+       assuming that an overflow in an unsigned integer will produce
+       a smaller integer.*/
     static cl_index bytes = 0;
     cl_index new_bytes = GC_get_total_bytes();
     if (bytes > new_bytes) {
