@@ -8116,8 +8116,8 @@ contact maintainers if you need a stable API to do more than that.")
 but not even registered as defined"
                    :format-arguments (list name))))))
 
-(defun register-immutable-system (system-name &rest keys)
-  "Register SYSTEM-NAME as preloaded and immutable.
+  (defun register-immutable-system (system-name &rest keys)
+    "Register SYSTEM-NAME as preloaded and immutable.
 It will automatically be considered as passed to FORCE-NOT in a plan."
     (let ((system-name (coerce-name system-name)))
       (apply 'register-preloaded-system system-name keys)
@@ -9083,12 +9083,13 @@ using the JUST-DONE flag."))
   (defgeneric compute-action-stamp (plan operation component &key just-done)
     (:documentation "Has this action been successfully done already,
 and at what known timestamp has it been done at or will it be done at?
-Takes two keywords JUST-DONE and PLAN:
+* PLAN is a plan object modelling future effects of actions,
+  or NIL to denote what actually happened.
+* OPERATION and COMPONENT denote the action.
+Takes keyword JUST-DONE:
 * JUST-DONE is a boolean that is true if the action was just successfully performed,
   at which point we want compute the actual stamp and warn if files are missing;
   otherwise we are making plans, anticipating the effects of the action.
-* PLAN is a plan object modelling future effects of actions,
-  or NIL to denote what actually happened.
 Returns two values:
 * a STAMP saying when it was done or will be done,
   or T if the action involves files that need to be recomputed.
@@ -11349,19 +11350,20 @@ itself."))
   (defun operation-monolithic-p (op)
     (typep op 'monolithic-op))
 
-  ;; Dependencies of a gather-op are the actions of the dependent operation
-  ;; for all the (sorted) required components for loading the system.
-  ;; Monolithic operations typically use lib-op as the dependent operation,
-  ;; and all system-level dependencies as required components.
-  ;; Non-monolithic operations typically use compile-op as the dependent operation,
-  ;; and all transitive sub-components as required components (excluding other systems).
+  ;; Dependencies of a gather-op are the actions of the dependent
+  ;; operation for all the (sorted) required components for loading
+  ;; the system.  Monolithic operations typically use lib-op as the
+  ;; dependent operation, and all system-level dependencies as
+  ;; required components.  Non-monolithic operations typically use
+  ;; basic-compile-op as the dependent operation, and all transitive
+  ;; sub-components as required components (excluding other systems).
   (defmethod component-depends-on ((o gather-op) (s system))
     (let* ((mono (operation-monolithic-p o))
            (deps
              (required-components
               s :other-systems mono :component-type (if mono 'system '(not system))
                 :goal-operation (find-operation o 'load-op)
-                :keep-operation 'compile-op)))
+                :keep-operation 'basic-compile-op)))
       ;; NB: the explicit make-operation on ECL and MKCL
       ;; ensures that we drop the original-initargs and its magic flags when recursing.
       `((,(make-operation (or (gather-op o) (if mono 'lib-op 'compile-op))) ,@deps)
@@ -11393,6 +11395,9 @@ On CLASP, ECL, MKCL, these object files _also_ include the contents of Lisp file
 themselves. In any case, this operation will produce what you need to further build
 a static runtime for your system, or a dynamic library to load in an existing runtime."))
 
+  ;; What works: On ECL (and CLASP?), we link the .a output of lib-op into a .so;
+  ;; on MKCL, we link the many .o files from the system directly into the .so;
+  ;; on other implementations, we combine the .fasl files into one.
   (defclass compile-bundle-op (basic-compile-bundle-op selfward-operation
                                #+(or clasp ecl mkcl) link-op #-(or clasp ecl) gather-op)
     ((selfward-operation :initform '(prepare-bundle-op #+(or clasp ecl) lib-op)
@@ -11743,9 +11748,13 @@ or of opaque libraries shipped along the source code."))
            (version (component-version s))
            (dependencies
              (if (operation-monolithic-p o)
+                 ;; We want only dependencies, and we use
+                 ;; basic-load-op rather than load-op so that this
+                 ;; will keep working on systems when
+                 ;; *load-system-operation* is load-bundle-op
                  (remove-if-not 'builtin-system-p
                                 (required-components s :component-type 'system
-                                                       :keep-operation 'load-op))
+                                                       :keep-operation 'basic-load-op))
                  (while-collecting (x) ;; resolve the sideway-dependencies of s
                    (map-direct-dependencies
                     t 'load-op s
@@ -11938,7 +11947,7 @@ into a single file"))
           :with other-around-compile = '()
           :for c :in (required-components
                       s :goal-operation 'compile-op
-                        :keep-operation 'compile-op
+                        :keep-operation 'basic-compile-op
                         :other-systems (operation-monolithic-p operation))
           :append
           (when (typep c 'cl-source-file)
