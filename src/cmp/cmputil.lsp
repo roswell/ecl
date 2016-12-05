@@ -43,9 +43,10 @@
   (enough-namestring (si::coerce-to-filename path)))
 
 (defun normalize-build-target-name (target)
-  ((:shared-library :dll :standalone-shared-library :standalone-dll) :shared-library)
-  ((:static-library :lib :standalone-static-library :standalone-lib) :static-library)
-  ((:fasl :program) target))
+  (ecase target
+    ((:shared-library :dll :standalone-shared-library :standalone-dll) :shared-library)
+    ((:static-library :lib :standalone-static-library :standalone-lib) :static-library)
+    ((:fasl :program) target)))
 
 (defun innermost-non-expanded-form (form)
   (when (listp form)
