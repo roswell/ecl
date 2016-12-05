@@ -43,17 +43,9 @@
   (enough-namestring (si::coerce-to-filename path)))
 
 (defun normalize-build-target-name (target)
-  (flet ((maybe-warn (expected-name)
-           (unless (eql target expected-name)
-             (cmpwarn-style "External use of internal interface C::BUILDER. Use one of:~%
-C:BUILD-FASL, C:BUILD-PROGRAM, C:BUILD-STATIC-LIBRARY, C:BUILD-SHARED-LIBRARY~%"))
-           expected-name))
-    (ecase target
-      ((:shared-library :dll :standalone-shared-library :standalone-dll)
-       (maybe-warn :shared-library))
-      ((:static-library :lib :standalone-static-library :standalone-lib)
-       (maybe-warn :static-library))
-      ((:fasl :program) target))))
+  ((:shared-library :dll :standalone-shared-library :standalone-dll) :shared-library)
+  ((:static-library :lib :standalone-static-library :standalone-lib) :static-library)
+  ((:fasl :program) target))
 
 (defun innermost-non-expanded-form (form)
   (when (listp form)
