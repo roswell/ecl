@@ -366,9 +366,9 @@ or a loadable module."
      (brief-namestring pathname))
     ((:fasl :fas)
      nil)
-    ((:static-library :lib :standalone-static-library :standalone-lib)
+    ((:static-library :lib)
      (brief-namestring pathname))
-    ((:shared-library :dll :standalone-shared-library :standalone-dll)
+    ((:shared-library :dll)
      (brief-namestring pathname))
     ((:program)
      nil)
@@ -415,6 +415,7 @@ filesystem or in the database of ASDF modules."
                 &aux
                   (*suppress-compiler-messages* (or *suppress-compiler-messages*
                                                     (not *compile-verbose*)))
+                  (target (normalize-build-target-name target))
                   (output-name (if (or (symbolp output-name) (stringp output-name))
                                    (compile-file-pathname output-name :type target)
                                    output-name))
@@ -523,7 +524,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (close c-file)
          (compiler-cc c-name o-name)
          (linker-cc output-name (list* (namestring o-name) ld-flags)))
-        ((:library :static-library :lib)
+        (:static-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
          (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
@@ -534,7 +535,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (when (probe-file output-name) (delete-file output-name))
          (linker-ar output-name o-name ld-flags))
         #+dlopen
-        ((:shared-library :dll)
+        (:shared-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
          (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
