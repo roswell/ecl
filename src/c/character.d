@@ -182,10 +182,8 @@ cl_alphanumericp(cl_object c)
     if (!ecl_char_eq(c, ecl_va_arg(cs))) {
       @(return ECL_NIL);
     }
-    else {
-      @(return ECL_T);
-    }
   }
+  @(return ECL_T);
 } @)
 
 bool
