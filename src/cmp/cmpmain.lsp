@@ -487,8 +487,16 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                      (pathname item)
                      (string (parse-namestring item))))
              (kind (guess-kind path)))
-        (unless (member kind '(:shared-library :static-library :object :c))
-          (error "C::BUILDER does not accept a file ~s of kind ~s" item kind))
+
+        ;; Shared and static libraries may be linked in a program or
+        ;; fasl, but if we try to create a `static-library' from two
+        ;; static libraries we will end with broken binary because
+        ;; `ar' works fine only with object files. See #274.
+        (unless (member kind `(,@(unless (eql target :static-library)
+                                   '(:shared-library :static-library))
+                                 :object :c))
+          (error "C::BUILDER does not accept a file ~s of kind ~s for target ~s" item kind target))
+
         (let* ((init-fn (guess-init-name path kind))
                (flags (guess-ld-flags path)))
           ;; We should give a warning that we cannot link this module in
