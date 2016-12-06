@@ -36,7 +36,7 @@
 ;;;  nothing extraordinary happens (even if we have debugger invoked),
 ;;;  then EOF is encountered and ECL returns with 0 exit code.
 
-#+unix                                 ; Windows doesn't have /dev/...
+#+linux                                ; Windows and OSX don't have /dev/...
 (test executable.1.infinite-loop
   (is-eql 0 (nth-value 1 (simple-run "(print 'hi *error-output*"
                                      "/dev/null"

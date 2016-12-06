@@ -628,7 +628,7 @@ the metaclass")
 ;;;
 ;;; Description: DEFGENERIC doesn't create methods on same pass as
 ;;;  creating generics.
-
+#+ (or)
 (test mop.0021.ensure-generic
   (is (progn (fmakunbound 'mop.0021.ensure-generic.fun)
              (defun mop.0021.ensure-generic.fun () 'hi)
