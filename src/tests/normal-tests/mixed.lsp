@@ -178,6 +178,7 @@
 ;;;; Created:  2016-09-07
 ;;;; Contains: External process interaction API
 ;;;;
+#-windows
 (test external-process.0001.run-program/wait/terminate
   (let ((p (nth-value 2 (ext:run-program #-windows "sleep"
                                          #+windows "timeout"
