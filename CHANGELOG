@@ -121,8 +121,10 @@ appropraite documentation section (new-doc).
 Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
 
 ** Issues fixed
+- ECL signals floating point exceptions in top-level console.
+
 - =mp:rwlock= is treated as built-in class (previously process crashed if
-  =class-of= was called on such object)
+  =class-of= was called on such object).
 
 - ECL builds now succesfully with `--with-ieee-fp=no' option
 
