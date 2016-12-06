@@ -1037,6 +1037,7 @@
    the ~/.../ format directive."
   (declare (ignore atsign?)
            (type (or stream (member t nil)) stream)
+           (type (or unsigned-byte null) tabsize)
            (ext:check-arguments-type)
            #.+ecl-safe-declarations+)
   (pprint-logical-block (stream list
