@@ -11,14 +11,17 @@
 (suite 'ieee-fp)
 
 (test ieee-fp.0001.infinity-eql
-  (let ((sfni ext:single-float-negative-infinity)
-        (sfpi ext:single-float-positive-infinity)
-        (dfni ext:double-float-negative-infinity)
-        (dfpi ext:double-float-positive-infinity))
-    (is (eql sfni (- sfpi)))
-    (is (eql dfni (- dfpi)))
-    (is (not (eql sfni (- dfpi))))
-    (is (= sfni (- dfpi)))))
+  (let ((bits (si:trap-fpe :last nil)))
+    (si:trap-fpe bits nil)
+    (let ((sfni ext:single-float-negative-infinity)
+          (sfpi ext:single-float-positive-infinity)
+          (dfni ext:double-float-negative-infinity)
+          (dfpi ext:double-float-positive-infinity))
+      (is (eql sfni (- sfpi)))
+      (is (eql dfni (- dfpi)))
+      (is (not (eql sfni (- dfpi))))
+      (is (= sfni (- dfpi))))
+    (si:trap-fpe bits t)))
 
 (test ieee-fp.0002.printing
   (let ((nums (list ext:single-float-negative-infinity
