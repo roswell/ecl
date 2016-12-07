@@ -94,7 +94,7 @@ main ( const int argc, const char * const argv [] )
     int result = 1;
 
     cl_env_ptr const environment = ecl_process_env ();
-    const cl_object const conditions =
+    const cl_object conditions =
         ecl_list1 ( ecl_make_symbol ( \"DIVISION-BY-ZERO\", \"CL\" ) );
 
     ECL_HANDLER_CASE_BEGIN ( environment, conditions ) {
