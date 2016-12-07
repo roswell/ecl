@@ -466,6 +466,14 @@ extern cl_object ecl_deserialize(uint8_t *data);
 
 extern void ecl_cs_set_org(cl_env_ptr env);
 
+#ifndef RLIM_SAVED_MAX
+# define RLIM_SAVED_MAX RLIM_INFINITY
+#endif
+
+#ifndef RLIM_SAVED_CUR
+# define RLIM_SAVED_CUR RLIM_INFINITY
+#endif
+
 /* threads.d */
 
 #ifdef ECL_THREADS

@@ -99,7 +99,7 @@ ecl_cs_set_org(cl_env_ptr env)
 
     if (!getrlimit(RLIMIT_STACK, &rl) &&
         ( rl.rlim_cur != RLIM_INFINITY
-          || rl.rlim_cur !=RLIM_SAVED_MAX
+          || rl.rlim_cur != RLIM_SAVED_MAX
           || rl.rlim_cur != RLIM_SAVED_CUR) ) {
       env->cs_max_size = rl.rlim_cur;
       size = rl.rlim_cur / 2;
