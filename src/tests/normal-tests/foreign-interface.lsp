@@ -57,7 +57,7 @@
           (print
            '(defun callback-user (callback arg)
              (ffi:c-inline (callback arg) (:pointer-void :int) :int "
-int (*foo)(int) = #0;
+int (*foo)(int) = (int (*)(int))#0;
 @(return) = foo(#1);
 "
               :one-liner nil :side-effects nil))
@@ -86,7 +86,7 @@ int (*foo)(int) = #0;
           (print
            '(defun callback-user (callback arg)
              (ffi:c-inline (callback arg) (:pointer-void :int) :int "
-int (*foo)(int) = #0;
+int (*foo)(int) = (int (*)(int))#0;
 @(return) = foo(#1);
 "
               :one-liner nil :side-effects nil))
