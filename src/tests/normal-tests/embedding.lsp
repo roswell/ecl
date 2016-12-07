@@ -32,7 +32,7 @@
            (x t)
            (in (si::run-program "tmp/aux.exe" '() :output :stream)))
        ((null in) all)
-       (setf x (read in nil nil))
+       (setf x (ignore-errors (read in nil nil)))
        (unless x (return all))
        (push x all)))))
 
@@ -47,8 +47,8 @@
 ;;; Fixed: 03/2006 (juanjo)
 ;;;
 (test emb.0001.shutdown
-  (is (equal
-       (let* ((skeleton "
+  (is-equal
+   (let* ((skeleton "
 #include <ecl/ecl.h>
 #include <stdlib.h>
 int main (int argc, char **argv) {
@@ -58,11 +58,11 @@ int main (int argc, char **argv) {
   cl_shutdown();
   exit(0);
 }")
-              (form '(push (lambda () (print :shutdown)) si::*exit-hooks*))
-              (c-code (format nil skeleton (format nil "~S" form)))
-              (data (test-C-program c-code :capture-output t)))
-         data)
-       '(:shutdown))))
+          (form '(push (lambda () (print :shutdown)) si::*exit-hooks*))
+          (c-code (format nil skeleton (format nil "~S" form)))
+          (data (test-C-program c-code :capture-output t)))
+     data)
+   '(:shutdown)))
 
 ;;; Date: 2016-05-25 (Vadim Penzin)
 ;;; Date: 2016-05-27 (Vadim Penzin)
