@@ -62,7 +62,7 @@
 (defmacro is-equal (what form)
   (once-only ((what what)
               (form form))
-    `(is (equal ,what ,form) "EQUAL: ~s to ~s" ',form ,what ,form)))
+    `(is (equal ,what ,form) "EQUAL: ~s to ~s" ,form ,what)))
 
 (defmacro is-eql (what form)
   (once-only ((what what)
