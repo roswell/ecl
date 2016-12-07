@@ -300,7 +300,7 @@
 ;;;     (truename #p"/tmp/foo") signals an error because //usr is
 ;;;     parsed as a hostname.
 ;;;
-#-(or windows haiku)
+#-(or cygwin haiku windows)
 (test cmp.0013.truename
     (si:system "rm -rf foo; ln -sf //usr/ foo")
     (is (equal (namestring (truename "./foo")) "/usr/"))
