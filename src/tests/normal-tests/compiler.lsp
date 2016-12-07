@@ -192,27 +192,25 @@
 ;;;     The following code tests that at least three objects are finalized.
 ;;;
 ;;; Note: this test fails in multithreaded mode. GC takes too long!
-(ext:with-clean-symbols (*all-tags*)
-  (test cmp.0009.finalization
-    (is-equal '(0 1 2 3 4)
-              (let ((*all-tags* '()))
-                (declare (special *all-tags*))
-                (flet ((custom-finalizer (tag)
-                         #'(lambda (o)
-                             (declare (ignore o))
-                             ;; XXX
-                             (push tag *all-tags*))))
-                  (let ((a '()))
-                    (dotimes (i 5)
-                      (let ((x (cons i i)))
-                        (si::set-finalizer x (custom-finalizer i))
-                        (push x a))))
-                  (sleep 1)             ; mitigate gc being slow
-                  (dotimes (j 100)
-                    (dotimes (i 10000)
-                      (cons 1.0 1.0))
-                    (si::gc t)))
-                (sort *all-tags* #'<)))))
+(test cmp.0009.finalization
+  (is-equal '(0 1 2 3 4)
+            (let ((all-tags))
+              (flet ((custom-finalizer (tag)
+                       #'(lambda (o)
+                           (declare (ignore o))
+                           (push tag all-tags))))
+                (let ((a '()))
+                  (dotimes (i 5)
+                    (let ((x (cons i i)))
+                      (si::set-finalizer x (custom-finalizer i))
+                      (push x a))))
+                ;; mitigate GC slowness
+                (sleep 1)
+                (dotimes (j 100)
+                  (dotimes (i 10000)
+                    (cons 1.0 1.0))
+                  (ext:gc t)))
+              (sort all-tags #'<))))
 
 ;;; Date: 8/10/2006 (Dustin Long)
 ;;; Fixed: 10/10/2006 (Dustin Long)
