@@ -523,7 +523,7 @@
 ;;;
 (ext:with-clean-symbols (foo)
   (test cmp.0025.paths
-    (let* ((output (compile-file-pathname "tmp/aux" :type :fasl))
+    (let* ((output (compile-file-pathname "tmp/ecl-aux" :type :fasl))
            #-ecl-bytecmp
            (h-file (compile-file-pathname output :type :h))
            #-ecl-bytecmp
@@ -1104,19 +1104,18 @@
 ;;;     and NaN float values (part of ieee floating point extensions).
 
 #+ieee-floating-point
-(ext:with-clean-symbols (infty-test)
-  (test cmp.0047.infinity-test
-    (finishes
-     (compile nil
-              (lambda ()
-                (> 0.0 ext:single-float-negative-infinity))))
-    (is-true
-     (let ((ofile
-            (with-compiler ("aux-compiler-0048.infty-test.2.lsp" :load t)
-              '(defun doit () (> 0.0 ext:single-float-negative-infinity)))))
-       (delete-file "aux-compiler-0048.infty-test.2.lsp")
-       (delete-file ofile)
-       (doit)))))
+(test cmp.0047.infinity-test
+  (finishes
+   (compile nil
+            (lambda ()
+              (> 0.0 ext:single-float-negative-infinity))))
+  (is-true
+   (let ((ofile
+          (with-compiler ("aux-compiler-0048.infty-test.2.lsp" :load t)
+            '(defun doit () (> 0.0 ext:single-float-negative-infinity)))))
+     (delete-file "aux-compiler-0048.infty-test.2.lsp")
+     (delete-file ofile)
+     (doit))))
 
 
 
