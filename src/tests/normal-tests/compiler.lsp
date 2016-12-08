@@ -530,22 +530,24 @@
            (c-file (compile-file-pathname output :type :c))
            #-ecl-bytecmp
            (data-file (compile-file-pathname output :type :data)))
-      (is-true
-       (and 
-        (zerop (si::system "rm -rf tmp; mkdir -p tmp"))
-        (with-compiler ("aux-compiler.0103-paths.lsp"
-                        :output-file output
-                        :c-file t :h-file t :data-file t)
-          '(defun foo (x) (1+ x)))
-        (probe-file output)
-        #-ecl-bytecmp
-        (probe-file c-file)
-        #-ecl-bytecmp
-        (probe-file h-file)
-        #-ecl-bytecmp
-        (probe-file data-file)
-        (zerop (si::system "rm -rf tmp; mkdir -p tmp"))
-        (delete-file "aux-compiler.0103-paths.lsp"))))))
+      (and
+       (zerop (si::system "rm -rf tmp; mkdir -p tmp"))
+       (null (nth-value 2 (ext:run-program "rm" '("-rf" "tmp"))))
+       (null (nth-value 2 (ext:run-program "mkdir" '("-p" "tmp"))))
+       (is (with-compiler ("aux-compiler.0103-paths.lsp"
+                           :output-file output
+                           :c-file t :h-file t :data-file t)
+             '(defun foo (x) (1+ x))))
+       (is (probe-file output))
+       #-ecl-bytecmp
+       (is (probe-file c-file))
+       #-ecl-bytecmp
+       (is (probe-file h-file))
+       #-ecl-bytecmp
+       (is (probe-file data-file))
+       (null (nth-value 2 (ext:run-program "rm" '("-rf" "tmp"))))
+       (null (nth-value 2 (ext:run-program "mkdir" '("-p" "tmp"))))
+       (delete-file "aux-compiler.0103-paths.lsp")))))
 
 ;;; Date: 08/03/2006
 ;;; From: Dan Corkill
