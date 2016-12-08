@@ -382,7 +382,7 @@
 ;;;
 (test cmp.0017.load-special
   (finishes
-   (load #+(or windows mingw32) "NULL"
+   (load #+(or windows mingw32) "NUL"
          #-(or windows mingw32) "/dev/null")))
 
 ;;; Date: 16/11/2009 (Gabriel)
