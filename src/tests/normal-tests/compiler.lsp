@@ -682,7 +682,7 @@
     (load output)
     (delete-file "make-load-form.lsp")
     (delete-file output))
-  (is-equal "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS> #1#)" (foo))
+  (is-equal "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS> #1#)" (foo)))
 
 ;;; Date: 9/06/2006 (Pascal Costanza)
 ;;; Fixed: 13/06/2006 (juanjo)
@@ -698,22 +698,22 @@
 ;;;             (compile 'bar)
 ;;;             (bar) => 2
 ;;;
-  (ext:with-clean-symbols (bar)
-    (test cmp.0031.macrolet
-      (is (= 2 (progn
-                 (defun bar ()
-                   (macrolet ((x () 2))
-                     (macrolet ((m () (x)))
-                       (m))))
-                 (compile 'bar)
-                 (bar))))
-      (is (= 2 (progn
-                 (defun bar ()
-                   (symbol-macrolet ((x 2))
-                     (macrolet ((m () x))
-                       (m))))
-                 (compile 'bar)
-                 (bar)))))))
+(ext:with-clean-symbols (bar)
+  (test cmp.0031.macrolet
+    (is (= 2 (progn
+               (defun bar ()
+                 (macrolet ((x () 2))
+                   (macrolet ((m () (x)))
+                     (m))))
+               (compile 'bar)
+               (bar))))
+    (is (= 2 (progn
+               (defun bar ()
+                 (symbol-macrolet ((x 2))
+                   (macrolet ((m () x))
+                     (m))))
+               (compile 'bar)
+               (bar))))))
 
 ;;; Fixed: 13/06/2006 (juanjo)
 ;;; Description:
