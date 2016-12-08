@@ -312,7 +312,8 @@ ecl_waitpid(cl_object pid, cl_object wait)
       if (!Null(pid)) {
         int ret;
 #if defined(ECL_MS_WINDOWS_HOST)
-        ret = TerminateProcess(ecl_fixnum(pid), -1);
+        HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(pid);
+        ret = TerminateProcess(ph, -1);
         error_encountered = (ret == 0);
 #else
         ret = kill(ecl_fixnum(pid), Null(force) ? SIGTERM : SIGKILL);
