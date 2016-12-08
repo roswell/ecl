@@ -11,17 +11,17 @@
 
 (defun test-C-program (c-code &key capture-output)
   (ensure-directories-exist "tmp/")
-  (with-open-file (s "tmp/aux.c" :direction :output :if-exists :supersede
+  (with-open-file (s "tmp/ecl-aux.c" :direction :output :if-exists :supersede
                      :if-does-not-exist :create)
     (princ c-code s))
-  (c::compiler-cc "tmp/aux.c" "tmp/aux.o")
-  (c::linker-cc "tmp/aux.exe" '("tmp/aux.o"))
+  (c::compiler-cc "tmp/ecl-aux.c" "tmp/ecl-aux.o")
+  (c::linker-cc "tmp/ecl-aux.exe" '("tmp/ecl-aux.o"))
   (ecase capture-output
     ((nil)
-     (return-from test-C-program (zerop (si::system "tmp/aux.exe"))))
+     (return-from test-C-program (zerop (si::system "tmp/ecl-aux.exe"))))
     ((string :string)
      (with-output-to-string (s)
-       (let ((in (si::run-program "tmp/aux.exe" '() :output :stream))
+       (let ((in (si::run-program "tmp/ecl-aux.exe" '() :output :stream))
              line)
          (loop
           (setf line (read-line in nil))
@@ -30,7 +30,7 @@
     ((t forms :forms)
      (do* ((all '())
            (x t)
-           (in (si::run-program "tmp/aux.exe" '() :output :stream)))
+           (in (si::run-program "tmp/ecl-aux.exe" '() :output :stream)))
        ((null in) all)
        (setf x (ignore-errors (read in nil nil)))
        (unless x (return all))
