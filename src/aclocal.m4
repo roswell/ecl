@@ -363,8 +363,8 @@ case "${host_os}" in
                 fi
                 ;;
         cygwin*)
-                enable_threads='no'
                 thehost='cygwin'
+                #enable_threads='no'
                 shared='yes'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
                 THREAD_LIBS='-lpthread'
@@ -381,6 +381,8 @@ case "${host_os}" in
                 ;;
         mingw*)
                 thehost='mingw32'
+                dnl We disable fpe because ECL/MinGW has problems with FE_INEXACT
+                with_fpe='no'
                 clibs=''
                 shared='yes'
                 enable_threads='yes'

@@ -4993,8 +4993,8 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 fi
                 ;;
         cygwin*)
-                enable_threads='no'
                 thehost='cygwin'
+                #enable_threads='no'
                 shared='yes'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
                 THREAD_LIBS='-lpthread'
@@ -5011,6 +5011,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 ;;
         mingw*)
                 thehost='mingw32'
+                                with_fpe='no'
                 clibs=''
                 shared='yes'
                 enable_threads='yes'
