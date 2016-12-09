@@ -219,7 +219,7 @@
     <listitem>
      <para>Prepare a directory (hereafter called <firstterm>ECL directory</firstterm>) for
      ECL.  In the following examples, we suppose that the <emphasis>ECL
-     directory</emphasis> is <filename>/usr/local/ecl</filename>.</para>
+     directory</emphasis> is <filename>/usr/local/bin/ecl</filename>.</para>
     </listitem>
     <listitem>
      <para>Extract the content from the compressed tar file.<screen>
@@ -232,7 +232,7 @@
      $ ./configure
      </screen>This example will prepare to install executable files, manual pages and
      info files in standard directories like <filename>/usr/local/bin</filename>,
-     <filename>/usr/local/man/man1</filename>, <filename>/usr/local/info</filename>.</para>
+     <filename>/usr/local/share/man/man1</filename>.</para>
     </listitem>
     <listitem>
      <para>If you don't have access rights to these directories, you should

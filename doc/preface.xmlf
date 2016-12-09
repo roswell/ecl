@@ -399,7 +399,7 @@
     </step>
     <step>
      <para>Make sure the program is installed and ready to run
-     <screen>$ /usr/local/ecl
+     <screen>$ /usr/local/bin/ecl
      ECL (Embeddable Common-Lisp) 16.0.0
      Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya
      Copyright (C) 1993 Giuseppe Attardi
