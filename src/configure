@@ -5011,7 +5011,8 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 ;;
         mingw*)
                 thehost='mingw32'
-                                with_fpe='no'
+                                with_ieee_fp='no'
+                with_fpe='no'
                 clibs=''
                 shared='yes'
                 enable_threads='yes'
