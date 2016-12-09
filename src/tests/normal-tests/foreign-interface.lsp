@@ -76,7 +76,7 @@ int (*foo)(int) = (int (*)(int))#0;
 ;;;     Callback examples based on the DFFI. Only work if this feature
 ;;;     has been linked in.
 ;;;
-#+(and dffi (not ecl-bytecmp))
+#+(and (or) dffi (not ecl-bytecmp))
 (test ffi.0003.callback-dffi-example
   (is
    (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
