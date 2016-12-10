@@ -66,7 +66,7 @@ AC_ARG_ENABLE(gmp,
   AS_HELP_STRING( [--enable-gmp],
                   [version of the GMP library]
                   [(portable|included|system|auto, default=auto)] ),
-  [], [enable_libatomic=auto] )
+  [], [enable_gmp=auto] )
 
 dnl GMP library options
 AC_ARG_WITH(C-gmp,

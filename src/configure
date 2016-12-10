@@ -2651,7 +2651,7 @@ fi
 if test "${enable_gmp+set}" = set; then :
   enableval=$enable_gmp;
 else
-  enable_libatomic=auto
+  enable_gmp=auto
 fi
 
 
