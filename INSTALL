@@ -24,37 +24,29 @@ If you do not have access to the online version, follow the following recipies.
 * Cross-compile for the android platform (from the UNIX machine)
 1. Build the host ECL
    #+BEGIN_SRC shell-script
-     ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2" \
-            --prefix=`pwd`/ecl-android-host \
-            --disable-longdouble \
-            --enable-libatomic=included
+     ./configure --prefix=`pwd`/ecl-android-host --disable-longdouble
      make -j9
      make install
      rm -r build
      export ECL_TO_RUN=`pwd`/ecl-android-host/bin/ecl
    #+END_SRC
-2. Build the toolchain (requires android-ndk) and export the necessary
-   paths - if you have a toolchain for the android just export it's
-   bin/ directory
+2. Configure the toolchain (requires android-ndk) and export the
+   necessary paths:
    #+BEGIN_SRC shell-script
-     export PLATFORM_PREFIX=/opt/toolchains/android-ndk/
-     export NDK_PATH=/opt/android-ndk/
-     export NDK_PLATFORM=android-4
-
-     mkdir ${PLATFORM_PREFIX}
-     ${NDK_PATH}/build/tools/make-standalone-toolchain.sh \
-                --platform=${NDK_PLATFORM} \
-                --install-dir=${PLATFORM_PREFIX} \
-                --arch=arm
-
-     export PATH=${PLATFORM_PREFIX}/bin:${PATH}
+     # android-ndk r13b is known to be broken, tested with r9b available at:
+     # http://dl.google.com/android/ndk/android-ndk-r9b-linux-x86_64.tar.bz2
+     # http://dl.google.com/android/ndk/android-ndk-r9b-darwin-x86_64.tar.bz2
+     export NDK_PATH=/opt/android-ndk
+     export SYSROOT=${NDK_PATH}/platforms/android-9/arch-arm
+     export PATH=${NDK_PATH}/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin:$PATH
   #+END_SRC
 3. Build and install the target library
    #+BEGIN_SRC shell-script
+     export LDFLAGS="--sysroot=${SYSROOT}"
+     export CPPFLAGS="--sysroot=${SYSROOT}"
      ./configure --host=arm-linux-androideabi \
                  --prefix=`pwd`/ecl-android \
-                 --with-cross-config=`pwd`/src/util/android.cross_config \
-                 --disable-soname
+                 --with-cross-config=`pwd`/src/util/android.cross_config
      make -j9
      make install
    #+END_SRC
@@ -68,9 +60,5 @@ MacPort command:
 #+BEGIN_SRC shell-script
   sudo port select --set gcc none
 #+END_SRC
-   
-Also there is a problem with `NM` binary – please consult 
-https://gitlab.com/embeddable-common-lisp/ecl/issues/228 . 
-for temporary fix. This should be fixed soon.
    
 Hint provided by Pascal J. Bourguignon.
