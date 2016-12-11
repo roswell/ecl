@@ -261,9 +261,7 @@ case "${host_os}" in
                 ECL_LDRPATH='-Wl,--rpath,~A'
                 clibs="-ldl ${clibs}"
                 # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
-                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DAO_REQUIRE_CAS ${CFLAGS}"
-                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
                 ECL_ADD_FEATURE([android])
                 ;;
 

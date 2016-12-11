@@ -1478,8 +1478,8 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-cross-config=f   supply configuration for a cross compiler
-  --with-C-gmp            Deperecated! See --enable-gmp
-  --with-system-gmp       Deperecated! See --enable-gmp
+  --with-C-gmp            Deprecated! See --enable-gmp
+  --with-system-gmp       Derpecated! See --enable-gmp
   --with-gmp=args         Deprecated! See --with-gmp-args
   --with-gmp-args=args    supply arguments for configuring GMP library
   --with-gmp-prefix=path  prefix for system GMP includes and libraries
@@ -4889,9 +4889,7 @@ case "${host_os}" in
                 ECL_LDRPATH='-Wl,--rpath,~A'
                 clibs="-ldl ${clibs}"
                 # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
-                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DAO_REQUIRE_CAS ${CFLAGS}"
-                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
-                SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
 
 LSP_FEATURES="(cons :android ${LSP_FEATURES})"
 
@@ -5666,7 +5664,7 @@ $as_echo "$as_me: Configuring included GMP library:" >&6;}
   # below with 'NM=$PLATFORM_PREFIX/bin/arm-linux-androideabi-nm'.
   mkdir gmp
     (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
-     NM=nm $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
+     $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
      -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
      --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
      CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \

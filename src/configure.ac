@@ -71,12 +71,12 @@ AC_ARG_ENABLE(gmp,
 dnl GMP library options
 AC_ARG_WITH(C-gmp,
   AS_HELP_STRING( [--with-C-gmp],
-                  [Deperecated! See --enable-gmp]),
+                  [Deprecated! See --enable-gmp]),
   [with_c_gmp=yes; with_system_gmp=no], [with_c_gmp=no])
 
 AC_ARG_WITH(system-gmp,
   AS_HELP_STRING( [--with-system-gmp],
-                  [Deperecated! See --enable-gmp]),
+                  [Derpecated! See --enable-gmp]),
   [], [with_system_gmp="auto"])
 
 AC_ARG_WITH(gmp,
@@ -447,7 +447,7 @@ if test "x${with_system_gmp}" = "xno" ; then
   mkdir gmp
   dnl Notice we need -DPIC to force the assembler to generate PIC code
   (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
-     NM=nm $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
+     $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
      -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
      --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
      CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
