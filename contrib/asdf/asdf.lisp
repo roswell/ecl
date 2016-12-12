@@ -1,5 +1,5 @@
 ;;; -*- mode: Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp ; buffer-read-only: t; -*-
-;;; This is ASDF 3.1.8: Another System Definition Facility.
+;;; This is ASDF 3.1.8.1: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -7249,7 +7249,7 @@ previously-loaded version of ASDF."
          ;; "3.4.5.67" would be a development version in the official branch, on top of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "3.1.8")
+         (asdf-version "3.1.8.1")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
@@ -11399,8 +11399,7 @@ On CLASP, ECL, MKCL, these object files _also_ include the contents of Lisp file
 themselves. In any case, this operation will produce what you need to further build
 a static runtime for your system, or a dynamic library to load in an existing runtime."))
 
-  ;; What works: On ECL (and CLASP?), we link the .a output of lib-op into a .so;
-  ;; on MKCL, we link the many .o files from the system directly into the .so;
+  ;; What works: on ECL, CLASP(?), MKCL, we link many .o files from the system into the .so;
   ;; on other implementations, we combine the .fasl files into one.
   (defclass compile-bundle-op (basic-compile-bundle-op selfward-operation gather-op
                                #+(or clasp ecl mkcl) link-op)
@@ -11824,9 +11823,11 @@ or of opaque libraries shipped along the source code."))
 #+(or clasp ecl mkcl)
 (with-upgradability ()
 
-  #+ecl ;; doesn't work on clasp or mkcl (yet?).
-  (unless (use-ecl-byte-compiler-p)
-    (setf *load-system-operation* 'load-bundle-op))
+  ;; *load-system-operation* can't be determined at load time, because
+  ;; bytecodes compiler may be installed after loading asdf.
+  ;;
+  ;; (unless (use-ecl-byte-compiler-p)
+  ;;   (setf *load-system-operation* 'load-bundle-op))
 
   (defun system-module-pathname (module)
     (let ((name (coerce-name module)))
