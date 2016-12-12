@@ -24,7 +24,8 @@ If you do not have access to the online version, follow the following recipies.
 * Cross-compile for the android platform (from the UNIX machine)
 1. Build the host ECL
    #+BEGIN_SRC shell-script
-     ./configure --prefix=`pwd`/ecl-android-host --disable-longdouble
+     ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2"\
+                 --prefix=`pwd`/ecl-android-host --disable-longdouble
      make -j9
      make install
      rm -r build
