@@ -37,6 +37,10 @@ ECL tagged with version =16.1.3=. All changes are backward compatible
 fixing bugs and other issues, implementing new interfaces and cleaning up
 the code base.
 
+ECL manual has been updated in a few places. Work on a new documentation is
+still pending. It is still incomplete, but you may check see it here:
+https://common-lisp.net/project/ecl/static/ecldoc/.
+
 Before this release we have performed extensive tests on various platforms
 (Linux, FreeBSD, OpenBSD, NetBSD, OSX, Windows MSVC, Windows MinGW, Windows
 Cygwin, Android and Haiku). For details please consult
