@@ -1,5 +1,5 @@
 ;;; -*- mode: Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp ; buffer-read-only: t; -*-
-;;; This is ASDF 3.1.8.1: Another System Definition Facility.
+;;; This is ASDF 3.1.8.2: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -784,6 +784,19 @@ UNINTERN -- Remove symbols here from PACKAGE."
        #+(or clasp ecl gcl mkcl) (defpackage ,package (:use))
        (eval-when (:compile-toplevel :load-toplevel :execute)
          ,ensure-form))))
+
+;;;; Final tricks to keep various implementations happy.
+;; We want most such tricks in common-lisp.lisp,
+;; but these need to be done before the define-package form there,
+;; that we nevertheless want to be the very first form.
+(eval-when (:load-toplevel :compile-toplevel :execute)
+  #+allegro ;; We need to disable autoloading BEFORE any mention of package ASDF.
+  (setf excl::*autoload-package-name-alist*
+        (remove "asdf" excl::*autoload-package-name-alist*
+                :test 'equalp :key 'car)))
+
+;; Compatibility with whoever calls asdf/package
+(define-package :asdf/package (:use :cl :uiop/package) (:reexport :uiop/package))
 ;;;; -------------------------------------------------------------------------
 ;;;; Handle compatibility with multiple implementations.
 ;;; This file is for papering over the deficiencies and peculiarities
@@ -793,9 +806,10 @@ UNINTERN -- Remove symbols here from PACKAGE."
 ;;; from this package only common-lisp symbols are exported.
 
 (uiop/package:define-package :uiop/common-lisp
-  (:nicknames :uoip/cl)
+  (:nicknames :uoip/cl :asdf/common-lisp :asdf/cl)
   (:use :uiop/package)
   (:use-reexport #-genera :common-lisp #+genera :future-common-lisp)
+  (:recycle :uiop/common-lisp :uoip/cl :asdf/common-lisp :asdf/cl :asdf)
   #+allegro (:intern #:*acl-warn-save*)
   #+cormanlisp (:shadow #:user-homedir-pathname)
   #+cormanlisp
@@ -827,12 +841,6 @@ UNINTERN -- Remove symbols here from PACKAGE."
 
 #+allegro
 (eval-when (:load-toplevel :compile-toplevel :execute)
-  ;; We need to disable autoloading BEFORE any mention of package ASDF.
-  ;; In particular, there must NOT be a mention of package ASDF in the defpackage of this file
-  ;; or any previous file.
-  (setf excl::*autoload-package-name-alist*
-        (remove "asdf" excl::*autoload-package-name-alist*
-                :test 'equalp :key 'car))
   (defparameter *acl-warn-save*
     (when (boundp 'excl:*warn-on-nested-reader-conditionals*)
       excl:*warn-on-nested-reader-conditionals*))
@@ -1007,6 +1015,8 @@ Return a string made of the parts not omitted or emitted by FROB."
 ;;;; General Purpose Utilities for ASDF
 
 (uiop/package:define-package :uiop/utility
+  (:nicknames :asdf/utility)
+  (:recycle :uiop/utility :asdf/utility :asdf)
   (:use :uiop/common-lisp :uiop/package)
   ;; import and reexport a few things defined in :uiop/common-lisp
   (:import-from :uiop/common-lisp #:compatfmt #:loop* #:frob-substrings
@@ -1681,6 +1691,8 @@ message, that takes the functionality as its first argument (that can be skipped
 ;;;; Access to the Operating System
 
 (uiop/package:define-package :uiop/os
+  (:nicknames :asdf/os)
+  (:recycle :uiop/os :asdf/os :asdf)
   (:use :uiop/common-lisp :uiop/package :uiop/utility)
   (:export
    #:featurep #:os-unix-p #:os-macosx-p #:os-windows-p #:os-genera-p #:detect-os ;; features
@@ -2077,7 +2089,8 @@ the number having BYTES octets (defaulting to 4)."
 ;; which all is necessary prior to any access the filesystem or environment.
 
 (uiop/package:define-package :uiop/pathname
-  (:nicknames :asdf/pathname) ;; deprecated. Used by ceramic
+  (:nicknames :asdf/pathname)
+  (:recycle :uiop/pathname :asdf/pathname :asdf)
   (:use :uiop/common-lisp :uiop/package :uiop/utility :uiop/os)
   (:export
    ;; Making and merging pathnames, portably
@@ -2814,6 +2827,8 @@ you need to still be able to use compile-op on that lisp file."))
 ;;;; Portability layer around Common Lisp filesystem access
 
 (uiop/package:define-package :uiop/filesystem
+  (:nicknames :asdf/filesystem)
+  (:recycle :uiop/filesystem :asdf/pathname :asdf)
   (:use :uiop/common-lisp :uiop/package :uiop/utility :uiop/os :uiop/pathname)
   (:export
    ;; Native namestrings
@@ -3494,6 +3509,8 @@ If you're suicidal or extremely confident, just use :VALIDATE T."
 ;;;; Utilities related to streams
 
 (uiop/package:define-package :uiop/stream
+  (:nicknames :asdf/stream)
+  (:recycle :uiop/stream :asdf/stream :asdf)
   (:use :uiop/common-lisp :uiop/package :uiop/utility :uiop/os :uiop/pathname :uiop/filesystem)
   (:export
    #:*default-stream-element-type*
@@ -4212,6 +4229,8 @@ For the latter case, we ought pick a random suffix and atomically open it."
 ;;;; Starting, Stopping, Dumping a Lisp image
 
 (uiop/package:define-package :uiop/image
+  (:nicknames :asdf/image)
+  (:recycle :uiop/image :asdf/image :xcvb-driver)
   (:use :uiop/common-lisp :uiop/package :uiop/utility :uiop/pathname :uiop/stream :uiop/os)
   (:export
    #:*image-dumped-p* #:raw-command-line-arguments #:*command-line-arguments*
@@ -4681,7 +4700,8 @@ or COMPRESSION on SBCL, and APPLICATION-TYPE on SBCL/Windows."
 ;;;; run-program initially from xcvb-driver.
 
 (uiop/package:define-package :uiop/run-program
-  (:nicknames :asdf/run-program) ; OBSOLETE. Used by cl-sane, printv.
+  (:nicknames :asdf/run-program)
+  (:recycle :uiop/run-program :asdf/run-program :xcvb-driver)
   (:use :uiop/common-lisp :uiop/package :uiop/utility
    :uiop/pathname :uiop/os :uiop/filesystem :uiop/stream)
   (:export
@@ -5876,7 +5896,8 @@ or an indication of failure via the EXIT-CODE of the process"
 ;;;; Support to build (compile and load) Lisp files
 
 (uiop/package:define-package :uiop/lisp-build
-  (:nicknames :asdf/lisp-build) ;; OBSOLETE, used by slime/contrib/swank-asdf.lisp
+  (:nicknames :asdf/lisp-build)
+  (:recycle :uiop/lisp-build :asdf/lisp-build :asdf)
   (:use :uiop/common-lisp :uiop/package :uiop/utility
    :uiop/os :uiop/pathname :uiop/filesystem :uiop/stream :uiop/image)
   (:export
@@ -6673,7 +6694,8 @@ it will filter them appropriately."
 ;;;; Generic support for configuration files
 
 (uiop/package:define-package :uiop/configuration
-  (:recycle :uiop/configuration :asdf/configuration) ;; necessary to upgrade from 2.27.
+  (:nicknames :asdf/configuration)
+  (:recycle :uiop/configuration :asdf/configuration :asdf)
   (:use :uiop/common-lisp :uiop/utility
    :uiop/os :uiop/pathname :uiop/filesystem :uiop/stream :uiop/image :uiop/lisp-build)
   (:export
@@ -7086,6 +7108,8 @@ objects. Side-effects for cached file location computation."
 ;;; Hacks for backward-compatibility of the driver
 
 (uiop/package:define-package :uiop/backward-driver
+  (:nicknames :asdf/backward-driver)
+  (:recycle :uiop/backward-driver :asdf/backward-driver :asdf)
   (:use :uiop/common-lisp :uiop/package :uiop/utility
    :uiop/pathname :uiop/stream :uiop/os :uiop/image
    :uiop/run-program :uiop/lisp-build :uiop/configuration)
@@ -7138,8 +7162,7 @@ for common-lisp. DEPRECATED."
 ;;;; Re-export all the functionality in UIOP
 
 (uiop/package:define-package :uiop/driver
-  (:nicknames :uiop :asdf/driver) ;; asdf/driver is obsolete (uiop isn't);
-  ;; but asdf/driver is still used by swap-bytes, static-vectors.
+  (:nicknames :uiop :asdf/driver :asdf-driver :asdf-utils)
   (:use :uiop/common-lisp)
    ;; NB: not reexporting uiop/common-lisp
    ;; which include all of CL with compatibility modifications on select platforms,
@@ -7147,8 +7170,9 @@ for common-lisp. DEPRECATED."
    ;; or :use (closer-common-lisp uiop), etc.
   (:use-reexport
    :uiop/package :uiop/utility
-   :uiop/os :uiop/pathname :uiop/filesystem :uiop/stream :uiop/image
-   :uiop/run-program :uiop/lisp-build :uiop/configuration :uiop/backward-driver))
+   :uiop/os :uiop/pathname :uiop/stream :uiop/filesystem :uiop/image
+   :uiop/run-program :uiop/lisp-build
+   :uiop/configuration :uiop/backward-driver))
 
 ;; Provide both lowercase and uppercase, to satisfy more people.
 (provide "uiop") (provide "UIOP")
@@ -7249,7 +7273,7 @@ previously-loaded version of ASDF."
          ;; "3.4.5.67" would be a development version in the official branch, on top of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "3.1.8.1")
+         (asdf-version "3.1.8.2")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
