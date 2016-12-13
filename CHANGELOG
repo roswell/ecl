@@ -39,9 +39,9 @@ the code base.
 
 Before this release we have performed extensive tests on various platforms
 (Linux, FreeBSD, OpenBSD, NetBSD, OSX, Windows MSVC, Windows MinGW, Windows
-Cygwin, Android and Haiku). For details regarding the testing please
-consult https://gitlab.com/embeddable-common-lisp/ecl/issues/307. The have
-shown no serious regressions (but revealed various bugs and kludges). Extra
+Cygwin, Android and Haiku). For details please consult
+https://gitlab.com/embeddable-common-lisp/ecl/issues/307. The have shown no
+serious regressions (but revealed various bugs and kludges). Extra
 attention has been paid to Windows testing to improve that platform
 support.
 
