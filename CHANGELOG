@@ -52,51 +52,58 @@ ECL Development Team
 
 ** API changes
 - Added better interface for package-locks
-Introduced functions:
-=ext:package-locked-p package=
-=ext:lock-package package=
-=ext:unlock-package package=
-=ext:without-package-locks=
-=ext:with-unlocked-package=
 
-To use these functions user has to require the module
-#+BEGIN_SRC lisp
-  (require '#:package-locks)
-#+END_SRC
+  Introduced functions:
+  =ext:package-locked-p package=
+  =ext:lock-package package=
+  =ext:unlock-package package=
+  =ext:without-package-locks=
+  =ext:with-unlocked-package=
 
-=defpackage= accepts new option =lock= to allow locking package on
-creation:
+  To use these functions user has to require the module
+  #+BEGIN_SRC lisp
+    (require '#:package-locks)
+  #+END_SRC
 
-#+BEGIN_SRC lisp
-  (defpackage foo (:lock t))
-#+END_SRC
+  =defpackage= accepts new option =lock= to allow locking package on
+  creation:
+
+  #+BEGIN_SRC lisp
+    (defpackage foo (:lock t))
+  #+END_SRC
 
 - mp:holding-lock-p: introduce new function for multiprocessing.
-Function verifies if lock is hold by the thread which calls the
-function. Usage: =(mp:holding-lock-p my-lock)=.
+
+  Function verifies if lock is hold by the thread which calls the
+  function. Usage: =(mp:holding-lock-p my-lock)=.
 
 - make-random-state: fix problem with simple-vectors
-The correct initialization types for =make-random-state= are:
-=(OR RANDOM-STATE FIXNUM (MEMBER T NIL))=.
 
-Initializing a random state with an appropriate array (element type and
-arity dependent on platform) is also possible.
+  The correct initialization types for =make-random-state= are:
+  =(OR RANDOM-STATE FIXNUM (MEMBER T NIL))=.
+
+  Initializing a random state with an appropriate array (element type and
+  arity dependent on platform) is also possible.
 
 - ext:random-state-array: new extension for random-states. Usage:
-=(ext:random-state-array random-state)=.
+
+  =(ext:random-state-array random-state)=.
 
 - ext:terminate-process: new extension for external processes. Usage:
-=(ext:terminate-process process)= with a second, optional boolean argument
-whenever termination should be forced or not.
+
+  =(ext:terminate-process process)= with a second, optional boolean argument
+  whenever termination should be forced or not.
 
 ** Enhancements
 - Implemented CDR-7
-https://common-lisp.net/project/cdr/document/7/index.html
+
+  https://common-lisp.net/project/cdr/document/7/index.html
 
 - Implemented CDRs: CDR-1, CDR-5, CDR-14
-Both CDR-1 and CDR-5 were already implemented, CDR-14 made us to list them
-in =*features*=
-(https://common-lisp.net/project/cdr/document/14/index.html).
+
+  Both CDR-1 and CDR-5 were already implemented, CDR-14 made us to list
+  them in =*features*=
+  (https://common-lisp.net/project/cdr/document/14/index.html).
 
 - if ECL is build with =--with-cxx= option, =:CXX-CORE= is present in
   =*features*=.
@@ -110,38 +117,47 @@ in =*features*=
   for 3.2.0).
 
 - Bundled CLX has been purged
-Lately I've fixed ECL support on portable CLX maintained by sharplispers on
-https://github.com/sharplispers/clx (available via QuickLisp).
+
+  Lately I've fixed ECL support on portable CLX maintained by sharplispers
+  on https://github.com/sharplispers/clx (available via QuickLisp).
 
 - Initial port for the Haiku platform
-The port is done by Kacper Kasper's work, one of Haiku developers. Threads
-are not supported yet.
+
+  The port is done by Kacper Kasper's work, one of Haiku
+  developers. Threads are not supported yet.
 
 - Refactored ECL internal tests framework
-Tests in =src/tests= are now asdf-loadable (with =load-source-op=) and
-divided into test suites. =make check= target runs all regression and
-feature tests which aren't supposed to fail.
+
+  Tests in =src/tests= are now asdf-loadable (with =load-source-op=) and
+  divided into test suites. =make check= target runs all regression and
+  feature tests which aren't supposed to fail.
 
 - Removed 15000 lines of obsolete code
-Files not included in the buildsystem but lingering in the codebase or
-options failing to build. All info is added in the new documentation in the
-section "Removed interfaces".
+
+  Files not included in the buildsystem but lingering in the codebase or
+  options failing to build. All info is added in the new documentation in the
+  section "Removed interfaces".
 
 - Improved man page and help output.
-Man page now contains up-to-date list of flags, as well as explanation of
-flag's behavior.
+
+  Man page now contains up-to-date list of flags, as well as explanation of
+  flag's behavior.
 
 - Deprecated long flags with one dash, added two-dash version
-Flags that aren't one-character, but start with one dash (e.g. =-eval=) are
-now deprecated; long version =--eval= was added instead.
+
+  Flags that aren't one-character, but start with one dash (e.g. =-eval=)
+  are now deprecated; long version =--eval= was added instead.
 
 - Indented C/C++ code to follow emacs's gnu C style
-This is a first step towards coding standards in the
-documentation. Additionally all in the src/c/ directory are listed in the
-appropraite documentation section (new-doc).
+
+  This is a first step towards coding standards in the
+  documentation. Additionally all in the src/c/ directory are listed in the
+  appropraite documentation section (new-doc).
 
 - Refactored =list_current_directory in unixfsys.d=
-Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
+
+  Function was obfuscated with ifdefs with non-even pairs of =#\{= and
+  =#\}=.
 
 ** Issues fixed
 - ECL signals floating point exceptions in top-level console.
@@ -152,37 +168,47 @@ Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
 - ECL builds now succesfully with `--with-ieee-fp=no' option
 
 - ext:file-stream-fd
-Doesn't cause an internal-error if fed with not a file-stream (signals a
-SIMPLE-TYPE-ERROR condtition).
+
+  Doesn't cause an internal-error if fed with not a file-stream (signals a
+  =SIMPLE-TYPE-ERROR= condtition).
 
 - stable-sort bugfix and improvement in speed
-Adapted from SBCL by Diogo Franco.
+
+  Adapted from SBCL by Diogo Franco.
 
 - typep: accept * type specifier as abbreviation of t as described in
-'2.4.3 Type Specifiers' of the specification.
+  '2.4.3 Type Specifiers' of the specification.
 
 - MOP: fix problemes when redefining non-standard and anonymous classes
-Bugs identified and fixed by Pascal Costanza.
+
+  Bugs identified and fixed by Pascal Costanza.
 
 - getcwd: fix issue with too long pathname
-This fixes the regression, which crashed ECL at start when pathname
-exceeded 128 characters limit.
+
+  This fixes the regression, which crashed ECL at start when pathname
+  exceeded 128 characters limit.
 
 - make-random-state: fix problem with simple-vectors
-Until now #$ reader macro accepted simple vectors as an argument, what lead
-to bugs if vector didn't match specific requirements like the element type
-or the arity. Now we sanitize this.
+
+  Until now #$ reader macro accepted simple vectors as an argument, what
+  lead to bugs if vector didn't match specific requirements like the
+  element type or the arity. Now we sanitize this.
 
 - make-load-form: provide implementation for random-state objects
 
 - thread fix on msvc: on windows importing thread was closing the thread
-handler so the thread wakeup wasn't working because the handler is not more valid.
+
+  handler so the thread wakeup wasn't working because the handler is not
+  more valid.
 
 - import thread wasn't set upping a proper environment: on some case
-the thread was mistakenly thinking that the thread was already registered.
 
-- ECL_HANDLER_CASE and ECL_RESTART_CASE didn't work as expected
-Bug identified and fixed by Vadim Penzin.
+  the thread was mistakenly thinking that the thread was already
+  registered.
+
+- =ECL_HANDLER_CASE= and =ECL_RESTART_CASE= didn't work as expected
+
+  Bug identified and fixed by Vadim Penzin.
 
 * 16.1.2 changes since 16.0.0
 
