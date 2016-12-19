@@ -1,0 +1,44 @@
+@node Types and classes
+@section Types and classes
+
+ECL defines the following additional built-in classes in the @code{CL} package:
+
+@itemize
+@item @code{single-float}
+@item @code{double-float}
+@end itemize
+
+@subsection C Reference
+
+@subsection ANSI Dictionary
+@multitable @columnfractions 0.3 0.7
+@headitem Lisp symbol
+@tab C/C++ function
+
+@lspindex coerce
+@cppindex cl_coerce
+@ansidict{@clhs{f_coerce.htm,coerce},
+@code{cl_object cl_coerce (cl_object object, cl_object result-type)}}
+
+@lspindex subtypep
+@cppindex cl_subtypep
+@ansidict{@clhs{f_subtpp.htm,subtypep},
+@code{cl_object cl_subtypep (cl_narg narg, cl_object type1, cl_object type2, ...)}}
+
+@lspindex type-of
+@cppindex cl_type-of
+@ansidict{@clhs{f_tp_of.htm,type-of},
+@code{cl_object cl_type-of (cl_object object)}}
+
+@lspindex typep
+@cppindex cl_typep
+@ansidict{@clhs{f_typep.htm,typep},
+@code{cl_object cl_typep (cl_narg narg, cl_object object, cl_object type_specifier, ...)}}
+
+@lspindex type-error-datum
+@ansidict{@clhs{f_tp_err.htm,type-error-datum}, @ocl{}}
+
+@lspindex type-error-expected-type
+@ansidict{@clhs{f_tp_err.htm,type-error-expected-type}, @ocl{}}
+
+@end multitable

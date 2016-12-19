@@ -1,0 +1,71 @@
+@node Condition variables
+@subsection Condition variables
+
+Condition variables are used to wait for a particular condition becoming
+true (e.g new client connects to the server).
+
+@node Condition variables dictionary
+@subsection Condition variables dictionary
+
+
+@cppindex mp_make_condition_variable
+@lspindex mp:make-condition-variable
+
+@deftypefun cl_object mp_make_condition_variable ()
+@end deftypefun
+
+@defun mp:make-condition-variable
+Creates a condition variable.
+@end defun
+
+
+@cppindex mp_condition_variable_wait
+@lspindex mp:condition-variable-wait
+
+@deftypefun cl_object mp_condition_variable_wait (cl_object cv, cl_object lock)
+@end deftypefun
+
+@defun mp:condition-variable-wait cv lock
+Release @code{lock} and suspend thread until condition
+@code{mp:condition-variable-signal} is called on @code{cv}. When thread
+resumes re-aquire @code{lock}.
+@end defun
+
+
+@cppindex mp_condition_variable_timedwait
+@lspindex mp:condition-variable-timedwait
+
+@deftypefun cl_object mp_condition_variable_timedwait (cl_object cv, cl_object lock, cl_object seconds)
+@end deftypefun
+
+@defun mp:condition-variable-timedwait cv lock seconds
+@code{mp:condition-variable-wait} which timeouts after @code{seconds}
+seconds.
+@end defun
+
+
+@cppindex mp_condition_variable_signal
+@lspindex mp:condition-variable-signal
+
+@deftypefun cl_object mp_condition_variable_signal (cl_object cv)
+@end deftypefun
+
+@defun mp:condition-variable-signal cv
+Signal @code{cv} (wakes up only one waiter). After signal, signaling
+thread keeps lock, waking thread goes on the queue waiting for the lock.
+
+See @code{mp:condition-variable-wait}.
+@end defun
+
+
+@cppindex mp_condition_variable-broadcast
+@lspindex mp:condition-variable-broadcast
+
+@deftypefun cl_object mp_condition_variable_broadcast (cl_object cv)
+@end deftypefun
+
+@defun mp:condition-variable-broadcast cv
+Signal @code{cv} (wakes up all waiters).
+
+See @code{mp:condition-variable-wait}.  
+@end defun

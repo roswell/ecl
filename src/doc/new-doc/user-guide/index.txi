@@ -1,0 +1,23 @@
+@node User's guide
+@chapter User's guide
+
+@menu
+* Building ECL:: Building @ecl{} from sources.
+* Invoking ECL:: Basic skills.
+@c * The top-level loop::
+@c * The tracer::
+@c * The stepper::
+@c * Errors::
+* The break loop::
+@c * Describe and inspect::
+@c * The profiler::
+@c * Online help::
+@c * Building programs::
+@c * User-accessible hooks::
+* Embedding ECL::
+@end menu
+
+@include user-guide/building.txi
+@include user-guide/invoking.txi
+@include user-guide/break-loop.txi
+@include user-guide/embedding.txi

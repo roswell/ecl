@@ -1,0 +1,16 @@
+@node Introduction
+@unnumbered Introduction
+
+@menu
+* About this book:: Information about the manual
+* What is ECL:: Information about the implementation
+* History:: ECL from the history perspective
+* Credits:: Non-exhaustive list of contributors
+* Copyrights:: Copyright of the manual and implementation
+@end menu
+
+@include introduction/about_man.txi
+@include introduction/about_ecl.txi
+@include introduction/history.txi
+@include introduction/credits.txi
+@include introduction/copyrights.txi

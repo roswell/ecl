@@ -476,7 +476,7 @@ into STORES.  Finally inside bindings it expands STORE-FORMS."
 
 ;;; SHIFTF macro.
 (defmacro shiftf (&environment env &rest args)
-  "Syntax: (shiftf {place}+ form)
+    "Syntax: (shiftf {place}+ form)
 Saves the values of PLACE and FORM, and then assigns the value of each PLACE
 to the PLACE on its left.  The rightmost PLACE gets the value of FORM.
 Returns the original value of the leftmost PLACE."
@@ -484,7 +484,7 @@ Returns the original value of the leftmost PLACE."
       ((butlast args) env)
     (with-expansion-setter (thunk store-forms)
       `(let* ,(reduce #'append pairs)
-         (prog1 ,(car access-forms)
+         (multiple-value-prog1 ,(car access-forms)
            ,@(thunk stores
                     (append (cdr access-forms)
                             (last args))))))))
@@ -499,10 +499,10 @@ PLACE.  Returns NIL."
       (args env)
     (with-expansion-setter (thunk store-forms)
       `(let* ,(reduce #'append pairs)
-         (prog1 nil
-           ,@(thunk stores
-                    (append (cdr access-forms)
-                            (list (car access-forms)))))))))
+         ,@(thunk stores
+                  (append (cdr access-forms)
+                          (list (car access-forms))))
+         nil))))
 
 ;;; DEFINE-MODIFY-MACRO macro, by Bruno Haible.
 (defmacro define-modify-macro (name lambdalist function &optional docstring)

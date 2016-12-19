@@ -83,6 +83,7 @@
   Valid Options:
         (:documentation         string)
         (:size                  integer)
+        (:lock                  boolean)
         (:nicknames             {package-name}*)
         (:shadow                {symbol-name}*)
         (:shadowing-import-from package-name {symbol-name}*)
@@ -100,11 +101,13 @@
 
          :DOCUMENTATION is an extension to DEFPACKAGE.
 
-         :SIZE is used only in Genera and Allegro.]"
+         :SIZE is used only in Genera and Allegro.
+
+         :LOCK is an extension to DEFPACKAGE.]"
 
   (dolist (option options)
     (unless (member (first option)
-                    '(:DOCUMENTATION :SIZE :NICKNAMES :SHADOW
+                    '(:DOCUMENTATION :SIZE :LOCK :NICKNAMES :SHADOW
                       :SHADOWING-IMPORT-FROM :USE :IMPORT-FROM :INTERN :EXPORT
                       :EXPORT-FROM) :test #'eq)
       (cerror "Proceed, ignoring this option."
@@ -120,8 +123,8 @@
                                             (cdr former-symbols)
                                             :test #'equal)))
                      (if former-symbols
-                       (setf (cdr former-symbols) o-symbols)
-                       (setq output (acons o-package o-symbols output)))))))
+                         (setf (cdr former-symbols) o-symbols)
+                         (setq output (acons o-package o-symbols output)))))))
              output)
            (option-values (option options &aux output)
              (dolist (o options)
@@ -130,7 +133,7 @@
                  (when (string= o-option option)
                    (setq output (union o-symbols output :test #'equal)))))
              output))
-    (dolist (option '(:SIZE :DOCUMENTATION))
+    (dolist (option '(:SIZE :LOCK :DOCUMENTATION))
       (when (<= 2 (count option options ':key #'car))
         (si::simple-program-error "DEFPACKAGE option ~s specified more than once."
                                   option)))
@@ -153,51 +156,54 @@
          "The symbol ~s cannot coexist in these lists:~{ ~s~}"
          (first duplicate)
          (loop for num in (rest duplicate)
-               collect (case num
-                         (1 ':SHADOW)
-                         (2 ':INTERN)
-                         (3 ':SHADOWING-IMPORT-FROM)
-                         (4 ':IMPORT-FROM)))))
+            collect (case num
+                      (1 ':SHADOW)
+                      (2 ':INTERN)
+                      (3 ':SHADOWING-IMPORT-FROM)
+                      (4 ':IMPORT-FROM)))))
       (dolist (duplicate (find-duplicates exported-symbol-names
                                           interned-symbol-names))
         (si::simple-program-error
          "The symbol ~s cannot coexist in these lists:~{ ~s~}"
          (first duplicate)
          (loop for num in (rest duplicate) collect
-               (case num
-                 (1 ':EXPORT)
-                 (2 ':INTERN)))))
+              (case num
+                (1 ':EXPORT)
+                (2 ':INTERN)))))
       `(eval-when (eval compile load)
-        (si::dodefpackage
-        ,name
-        ',nicknames
-        ,(car documentation)
-        ',(if (assoc ':use options) (option-values ':use options) "CL")
-        ',shadowed-symbol-names
-        ',interned-symbol-names
-        ',exported-symbol-names
-        ',shadowing-imported-from-symbol-names-list
-        ',imported-from-symbol-names-list
-        ',exported-from-package-names)))))
+         (si::dodefpackage
+          ,name
+          ',nicknames
+          ,(car documentation)
+          ,(cadr (assoc ':lock options))
+          ',(if (assoc ':use options) (option-values ':use options) "CL")
+          ',shadowed-symbol-names
+          ',interned-symbol-names
+          ',exported-symbol-names
+          ',shadowing-imported-from-symbol-names-list
+          ',imported-from-symbol-names-list
+          ',exported-from-package-names)))))
 
 
-(defun dodefpackage (name
-                    nicknames
-                    documentation
-                    use
-                    shadowed-symbol-names
-                    interned-symbol-names
-                    exported-symbol-names
-                    shadowing-imported-from-symbol-names-list
-                    imported-from-symbol-names-list
-                    exported-from-package-names)
+(defun dodefpackage
+    (name
+     nicknames
+     documentation
+     lock
+     use
+     shadowed-symbol-names
+     interned-symbol-names
+     exported-symbol-names
+     shadowing-imported-from-symbol-names-list
+     imported-from-symbol-names-list
+     exported-from-package-names)
   (if (find-package name)
-    (progn ; (rename-package name name)
-      (when nicknames
-        (rename-package name name nicknames))
-      (when use
-        (unuse-package (package-use-list (find-package name)) name)))
-    (make-package name :use nil :nicknames nicknames))
+      (progn ; (rename-package name name)
+        (when nicknames
+          (rename-package name name nicknames))
+        (when use
+          (unuse-package (package-use-list (find-package name)) name)))
+      (make-package name :use nil :nicknames nicknames))
   (let ((*package* (find-package name)))
     (when documentation
       (setf (documentation *package* t) documentation))
@@ -220,6 +226,7 @@
         (when (nth 1 (multiple-value-list
                       (find-symbol (string symbol))))
           (export (list (intern (string symbol))))))))
+  (when lock (lock-package name))
   (find-package name))
 
 (defun find-or-make-symbol (name package)

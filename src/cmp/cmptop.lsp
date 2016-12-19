@@ -436,14 +436,17 @@
   ;; should definitely keep this in memory.
   (when (plusp *max-lex*)
     (wt-nl "volatile cl_object lex" *level* "[" *max-lex* "];"))
-  (when (plusp *max-env*)
-    (unless (eq closure-type 'CLOSURE)
-      (wt-nl "cl_object " *volatile* "env0;"))
-    ;; Note that the closure structure has to be marked volatile
-    ;; or else GCC may optimize away writes into it because it
-    ;; does not know it shared with the rest of the world.
+
+  (unless (eq closure-type 'CLOSURE)
+    (wt-nl "cl_object " *volatile* "env0;"))
+
+  (when  (plusp *max-env*)
+    ;; Closure structure has to be marked volatile or else GCC may
+    ;; optimize away writes into it because it does not know it shared
+    ;; with the rest of the world.
     (when *aux-closure*
       (wt-nl "volatile struct ecl_cclosure aux_closure;"))
+
     (wt-nl "cl_object " *volatile*)
     (loop for i from 0 below *max-env*
        for comma = "" then ", "

@@ -244,19 +244,6 @@ struct ecl_fficall {
 };
 
 extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
-#ifdef ECL_DYNAMIC_FFI
-extern enum ecl_ffi_calling_convention ecl_foreign_cc_code(cl_object cc_type);
-extern void ecl_fficall_prepare(cl_object return_type, cl_object arg_types, cl_object cc_type);
-extern void ecl_fficall_push_bytes(void *data, size_t bytes);
-extern void ecl_fficall_push_int(int word);
-extern void ecl_fficall_align(int data);
-
-extern struct ecl_fficall_reg *ecl_fficall_prepare_extra(struct ecl_fficall_reg *registers);
-extern void ecl_fficall_push_arg(union ecl_ffi_values *data, enum ecl_ffi_tag type);
-extern void ecl_fficall_execute(void *f_ptr, struct ecl_fficall *fficall, enum ecl_ffi_tag return_type);
-extern void ecl_dynamic_callback_call(cl_object callback_info, char* buffer);
-extern void* ecl_dynamic_callback_make(cl_object data, enum ecl_ffi_calling_convention cc_type);
-#endif
 
 /* file.d */
 
@@ -380,20 +367,6 @@ extern void cl_write_object(cl_object x, cl_object stream);
         ECL_WITH_LOCK_BEGIN(the_env, cl_core.global_lock)
 # define ECL_WITH_GLOBAL_LOCK_END               \
         ECL_WITH_LOCK_END
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {            \
-        const cl_env_ptr __ecl_pack_env = the_env;              \
-        ecl_disable_interrupts_env(__ecl_pack_env);             \
-        mp_get_rwlock_read_wait(cl_core.global_env_lock);
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_END                   \
-        mp_giveup_rwlock_read(cl_core.global_env_lock);   \
-        ecl_enable_interrupts_env(__ecl_pack_env); }
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {            \
-        const cl_env_ptr __ecl_pack_env = the_env;              \
-        ecl_disable_interrupts_env(__ecl_pack_env);             \
-        mp_get_rwlock_write_wait(cl_core.global_env_lock);
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_END                    \
-        mp_giveup_rwlock_write(cl_core.global_env_lock);   \
-        ecl_enable_interrupts_env(__ecl_pack_env); }
 # define ECL_WITH_LOCK_BEGIN(the_env,lock) {            \
         const cl_env_ptr __ecl_the_env = the_env;       \
         const cl_object __ecl_the_lock = lock;          \
@@ -414,15 +387,33 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #else
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
 # define ECL_WITH_GLOBAL_LOCK_END
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_END
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_END
 # define ECL_WITH_LOCK_BEGIN(the_env,lock)
 # define ECL_WITH_LOCK_END
 # define ECL_WITH_SPINLOCK_BEGIN(the_env,lock)
 # define ECL_WITH_SPINLOCK_END
 #endif /* ECL_THREADS */
+
+#ifdef ECL_RWLOCK
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {            \
+        const cl_env_ptr __ecl_pack_env = the_env;              \
+        ecl_disable_interrupts_env(__ecl_pack_env);             \
+        mp_get_rwlock_read_wait(cl_core.global_env_lock);
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_END                   \
+        mp_giveup_rwlock_read(cl_core.global_env_lock);   \
+        ecl_enable_interrupts_env(__ecl_pack_env); }
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {            \
+        const cl_env_ptr __ecl_pack_env = the_env;              \
+        ecl_disable_interrupts_env(__ecl_pack_env);             \
+        mp_get_rwlock_write_wait(cl_core.global_env_lock);
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_END                    \
+        mp_giveup_rwlock_write(cl_core.global_env_lock);   \
+        ecl_enable_interrupts_env(__ecl_pack_env); }
+#else
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_END
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_END
+#endif /* ECL_RWLOCK */
 
 #ifdef ECL_THREADS
 # define AO_REQUIRE_CAS
@@ -475,6 +466,14 @@ extern cl_object ecl_deserialize(uint8_t *data);
 
 extern void ecl_cs_set_org(cl_env_ptr env);
 
+#ifndef RLIM_SAVED_MAX
+# define RLIM_SAVED_MAX RLIM_INFINITY
+#endif
+
+#ifndef RLIM_SAVED_CUR
+# define RLIM_SAVED_CUR RLIM_INFINITY
+#endif
+
 /* threads.d */
 
 #ifdef ECL_THREADS
@@ -501,7 +500,7 @@ extern cl_fixnum ecl_runtime(void);
 #ifdef ECL_THREADS
 extern void ecl_process_yield(void);
 extern void print_lock(char *s, cl_object lock, ...);
-#define print_lock(a,b,...) ((void)0)
+#define print_lock(...) ((void)0)
 extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
 extern void ecl_giveup_spinlock(cl_object *lock);
 extern cl_object ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
@@ -530,8 +529,9 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
 
 /*
- * Fake several ISO C99 mathematical functions
+ * Fake several ISO C99 mathematical functions if not available
  */
+#include <math.h>
 
 #ifndef HAVE_EXPF
 # ifdef expf
@@ -609,12 +609,32 @@ extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
  */
 
 #ifndef INFINITY
-# define INFINITY (1.0/0.0)
-#endif
+# if _MSC_VER == 1600
+static union {
+    uint8_t bytes [ sizeof ( float ) ];
+    float inf;
+} __ecl_inf = {
+    { 0, 0, 0xf0, 0x7f }
+};
+#  define INFINITY (__ecl_inf.inf)
+# else
+#  define INFINITY (1.0/0.0)
+# endif  /* _MSC_VER == 1600 */
+#endif /* INFINITY */
 
 #ifndef NAN
-# define NAN (0.0/0.0)
-#endif
+# if _MSC_VER == 1600
+static union {
+    uint8_t bytes [ sizeof ( float ) ];
+    float nan;
+} __ecl_nan = {
+    { 0, 0, 0xc0, 0x7f }
+};
+#  define NAN (__ecl_nan.nan)
+# else
+#  define NAN (0.0/0.0)
+# endif  /* _MSC_VER == 1600 */
+#endif /* ~NAN */
 
 #ifdef __cplusplus
 }

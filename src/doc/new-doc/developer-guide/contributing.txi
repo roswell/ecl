@@ -1,0 +1,15 @@
+@node Contributing
+@section Contributing
+
+@menu
+@c * Documentation:: Documentation
+@c * Coding standards:: Lisp and C/C++ code conventions
+@c * Providing tests::
+@c * Submitting patches::
+@c * Reporting issues::
+@c * Financial contributions::
+@c * Other ways to contribute::
+@end menu
+
+@c @include developer-guide/contributing-documentation.txi
+@c @include developer-guide/contributing-code-standards.txi

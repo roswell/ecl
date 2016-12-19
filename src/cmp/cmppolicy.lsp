@@ -14,7 +14,7 @@
 ;;;; CMPPOLICY -- Code generation choices
 ;;;;
 
-(in-package #-new-cmp "COMPILER" #+new-cmp "C-ENV")
+(in-package "COMPILER")
 
 (eval-when (:compile-toplevel :execute)
   (defconstant +optimization-quality-orders+ '(debug safety speed space)))

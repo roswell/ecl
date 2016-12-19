@@ -1,20 +1,20 @@
 * Announcement of ECL
-  
+
   ECL stands for Embeddable Common-Lisp. The ECL project aims to
   produce an implementation of the Common-Lisp language which complies
   to the ANSI X3J13 definition of the language.
-  
+
   The term embeddable refers to the fact that ECL includes a lisp to C
   compiler, which produces libraries (static or dynamic) that can be
   called from C programs. Furthermore, ECL can produce standalone
   executables from your lisp code and can itself be linked to your
   programs as a shared library.
-  
+
   ECL supports the operating systems Linux, FreeBSD, NetBSD, OpenBSD,
   Solaris (at least v. 9), Microsoft Windows and OSX, running on top of
   the Intel, Sparc, Alpha, ARM and PowerPC processors.  Porting to other
   architectures should be rather easy.
-  
+
 * Known issues
 
   - In Windows ECL comes with bytecodes compiler by default, because C
@@ -23,11 +23,167 @@
     have a C compiler accessible to ECL, you may use
     (ext:install-c-compiler) to switch back to the Lisp-to-C compiler.
 
-  - Before issuing make check on the package package developer has to
+  - Before issuing =make check= on the package package developer has to
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 16.1.2
+* Pending changes since 16.1.3
+* 16.1.3 changes since 16.1.2
+** Announcement
+Dear Community,
+
+After almost a year of development we are proud to present a new release of
+ECL tagged with version =16.1.3=. All changes are backward compatible
+fixing bugs and other issues, implementing new interfaces and cleaning up
+the code base.
+
+ECL manual has been updated in a few places. Work on a new documentation is
+still pending. It is still incomplete, but you may check see it here:
+https://common-lisp.net/project/ecl/static/ecldoc/.
+
+Before this release we have performed extensive tests on various platforms
+(Linux, FreeBSD, OpenBSD, NetBSD, OSX, Windows MSVC, Windows MinGW, Windows
+Cygwin, Android and Haiku). For details please consult
+https://gitlab.com/embeddable-common-lisp/ecl/issues/307. Extra attention
+has been paid to Windows testing to improve that platform support.
+
+Best regards,
+ECL Development Team
+
+** API changes
+- Added better interface for package-locks
+Introduced functions:
+=ext:package-locked-p package=
+=ext:lock-package package=
+=ext:unlock-package package=
+=ext:without-package-locks=
+=ext:with-unlocked-package=
+
+To use these functions user has to require the module
+#+BEGIN_SRC lisp
+  (require '#:package-locks)
+#+END_SRC
+
+=defpackage= accepts new option =lock= to allow locking package on
+creation:
+
+#+BEGIN_SRC lisp
+  (defpackage foo (:lock t))
+#+END_SRC
+
+- mp:holding-lock-p: introduce new function for multiprocessing.
+Function verifies if lock is hold by the thread which calls the
+function. Usage: =(mp:holding-lock-p my-lock)=.
+
+- make-random-state: fix problem with simple-vectors
+The correct initialization types for =make-random-state= are:
+=(OR RANDOM-STATE FIXNUM (MEMBER T NIL))=.
+
+Initializing a random state with an appropriate array (element type and
+arity dependent on platform) is also possible.
+
+- ext:random-state-array: new extension for random-states. Usage:
+=(ext:random-state-array random-state)=.
+
+- ext:terminate-process: new extension for external processes. Usage:
+=(ext:terminate-process process)= with a second, optional boolean argument
+whenever termination should be forced or not.
+
+** Enhancements
+- Implemented CDR-7
+https://common-lisp.net/project/cdr/document/7/index.html
+
+- Implemented CDRs: CDR-1, CDR-5, CDR-14
+Both CDR-1 and CDR-5 were already implemented, CDR-14 made us to list them
+in =*features*=
+(https://common-lisp.net/project/cdr/document/14/index.html).
+
+- if ECL is build with =--with-cxx= option, =:CXX-CORE= is present in
+  =*features*=.
+
+- deprecated configure option =--with-local-gmp= has been removed - use
+  =--enable-gmp= (defaults to auto).
+
+- configure options has been revised.
+
+- ASDF has been upgraded to version 3.1.7.26 (with a few patches scheduled
+  for 3.2.0).
+
+- Bundled CLX has been purged
+Lately I've fixed ECL support on portable CLX maintained by sharplispers on
+https://github.com/sharplispers/clx (available via QuickLisp).
+
+- Initial port for the Haiku platform
+The port is done by Kacper Kasper's work, one of Haiku developers. Threads
+are not supported yet.
+
+- Refactored ECL internal tests framework
+Tests in =src/tests= are now asdf-loadable (with =load-source-op=) and
+divided into test suites. =make check= target runs all regression and
+feature tests which aren't supposed to fail.
+
+- Removed 15000 lines of obsolete code
+Files not included in the buildsystem but lingering in the codebase or
+options failing to build. All info is added in the new documentation in the
+section "Removed interfaces".
+
+- Improved man page and help output.
+Man page now contains up-to-date list of flags, as well as explanation of
+flag's behavior.
+
+- Deprecated long flags with one dash, added two-dash version
+Flags that aren't one-character, but start with one dash (e.g. =-eval=) are
+now deprecated; long version =--eval= was added instead.
+
+- Indented C/C++ code to follow emacs's gnu C style
+This is a first step towards coding standards in the
+documentation. Additionally all in the src/c/ directory are listed in the
+appropraite documentation section (new-doc).
+
+- Refactored =list_current_directory in unixfsys.d=
+Function was obfuscated with ifdefs with non-even pairs of =#\{= and =#\}=.
+
+** Issues fixed
+- ECL signals floating point exceptions in top-level console.
+
+- =mp:rwlock= is treated as built-in class (previously process crashed if
+  =class-of= was called on such object).
+
+- ECL builds now succesfully with `--with-ieee-fp=no' option
+
+- ext:file-stream-fd
+Doesn't cause an internal-error if fed with not a file-stream (signals a
+SIMPLE-TYPE-ERROR condtition).
+
+- stable-sort bugfix and improvement in speed
+Adapted from SBCL by Diogo Franco.
+
+- typep: accept * type specifier as abbreviation of t as described in
+'2.4.3 Type Specifiers' of the specification.
+
+- MOP: fix problemes when redefining non-standard and anonymous classes
+Bugs identified and fixed by Pascal Costanza.
+
+- getcwd: fix issue with too long pathname
+This fixes the regression, which crashed ECL at start when pathname
+exceeded 128 characters limit.
+
+- make-random-state: fix problem with simple-vectors
+Until now #$ reader macro accepted simple vectors as an argument, what lead
+to bugs if vector didn't match specific requirements like the element type
+or the arity. Now we sanitize this.
+
+- make-load-form: provide implementation for random-state objects
+
+- thread fix on msvc: on windows importing thread was closing the thread
+handler so the thread wakeup wasn't working because the handler is not more valid.
+
+- import thread wasn't set upping a proper environment: on some case
+the thread was mistakenly thinking that the thread was already registered.
+
+- ECL_HANDLER_CASE and ECL_RESTART_CASE didn't work as expected
+Bug identified and fixed by Vadim Penzin.
+
 * 16.1.2 changes since 16.0.0
 
 ** API changes
@@ -52,7 +208,7 @@
 
    - Deprecated variables has been removed
      =c::*suppress-compiler-warnings*=, =c::*suppress-compiler-notes*=
-     
+
    - Random state might be initialized by a random seed (truncated to
      32bit value) or by a precomputed array.
 
@@ -196,7 +352,7 @@
    - Dead code removal, tabulators were replaced by spaces
 
    - Better quality of generated code (explicit casting when necessary)
-  
+
 ** Issues fixed:
 
    - Various fixes of bogus declarations
@@ -242,30 +398,30 @@
 
    - Other minor tweaks
 
-* 15.3.7 changes since 15.2.21  
+* 15.3.7 changes since 15.2.21
 ** Issues fixed:
-   
+
    - DEFUN functions not defined as toplevel forms were also directly
      referenced by other code in the same file.
-     
+
    - STABLE-SORT works as desired (bogus optimization for strings
      fixed).
-     
+
    - broken --with-sse=yes configure flag works once again.
-     
+
 ** Enhancements:
-   
+
    - autoconf scripts are rewritten to support version 2.69 stack.
-     
+
    - stack direction is now correctly determined, fixing gcc 5.x builds.
-     
+
    - compilation of ECL under MSVC (2008/2010/2012) even with custom
      code pages.
-     
+
    - In compiled code it is possible to declare variables to have a C
      type such as in (declare (:double a)) and then the variable is
      enforced to be unboxed to such type.
-     
+
    - New form FFI:C-PROGN used to interleave C statements with lisp
      code, where the lisp code may refer to any number of
      variables. Example:
@@ -279,18 +435,18 @@
                         (print iterator)
                         "}")))
      #+END_SRC
-     
+
 * 15.2.21 changes since 13.5.1
-  
+
   - Features coverity scan model, ffi-unload-module implementation,
     probably more.
-    
+
   - Build system enhancements, parallel builds, fixes,
     simplifications, cleanups, maintenance.  minor cleanup,
     maintenance.
-    
+
   - Numerous fixes.
-    
+
 * 13.5.1 changes since 12.7.1
 
 ** Visible changes:
@@ -387,19 +543,19 @@
    structures as well.
 
 * 12.7.1 changes
-  
+
   Some highlights of this release are:
-  
+
   - ECL now ships with the whole of the Unicode names database,
     optimally compressed using constant C tables. This means ECL now
     recognizes all valid Unicode (and ASCII) names for the whole range
     of characters, and can print them as well.
-    
+
   - ECL has changed the way it stores compiled data in the C files, so
     that it works around the limit of 65k characters per string.
-    
+
   - ECL now builds with Microsoft Visual Studio C++ 2012.
-    
+
   - We bend the knee and accepted WHILE/IF statements intertwined with
     FOR/AS, though this is still not valid ANSI Common Lisp.
 

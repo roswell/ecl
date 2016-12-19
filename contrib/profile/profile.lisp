@@ -246,10 +246,6 @@ extern ECL_API size_t GC_get_total_bytes();
   (dolist (name names)
     (etypecase name
       (symbol (funcall function name))
-      (list
-       (legal-fun-name-or-type-error name)
-       ;; Then we map onto it.
-       (funcall function name))
       (string (let ((package (si:coerce-to-package name)))
                 (do-symbols (symbol package)
                   (when (eq (symbol-package symbol) package)
@@ -259,7 +255,8 @@ extern ECL_API size_t GC_get_total_bytes();
                       (funcall function symbol))
                     (let ((setf-name `(setf ,symbol)))
                       (when (fboundp setf-name)
-                        (funcall function setf-name)))))))))
+                        (funcall function setf-name)))))))
+      (t (warn "ignoring invalid argument: ~S" name))))
   (values))
 
 ;;; Profile the named function, which should exist and not be profiled

@@ -381,22 +381,25 @@ struct ecl_hashtable {          /*  hash table header  */
 
 typedef enum {                  /*  array element type  */
         ecl_aet_object,         /*  t                */
-        ecl_aet_sf,                     /*  single-float     */
-        ecl_aet_df,                     /*  double-float     */
+        ecl_aet_sf,             /*  single-float     */
+        ecl_aet_df,             /*  double-float     */
         ecl_aet_bit,            /*  bit              */
         ecl_aet_fix,            /*  cl_fixnum        */
         ecl_aet_index,          /*  cl_index         */
         /* Below here, list types accepted by streams (i.e. OPEN) */
-        ecl_aet_b8,                     /*  byte8            */
-        ecl_aet_i8,                     /*  integer8         */
+        ecl_aet_b8,             /*  byte8            */
+        ecl_aet_i8,             /*  integer8         */
 #ifdef ecl_uint16_t
-        ecl_aet_b16, ecl_aet_i16,
+        ecl_aet_b16,
+        ecl_aet_i16,
 #endif
 #ifdef ecl_uint32_t
-        ecl_aet_b32, ecl_aet_i32,
+        ecl_aet_b32,
+        ecl_aet_i32,
 #endif
 #ifdef ecl_uint64_t
-        ecl_aet_b64, ecl_aet_i64,
+        ecl_aet_b64,
+        ecl_aet_i64,
 #endif
 #ifdef ECL_UNICODE
         ecl_aet_ch,                     /*  character        */
@@ -440,7 +443,7 @@ union ecl_array_data {
 struct ecl_array {              /*  array header  */
                                 /*  adjustable flag  */
                                 /*  has-fill-pointer flag  */
-        _ECL_HDR2(elttype,flags);       /*  array element type, has fill ptr, adjustable-p */
+        _ECL_HDR2(elttype,flags); /*  array element type, has fill ptr, adjustable-p */
         cl_object displaced;    /*  displaced  */
         cl_index dim;           /*  dimension  */
         cl_index *dims;         /*  table of dimensions  */

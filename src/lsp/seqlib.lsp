@@ -1,6 +1,5 @@
 ;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM -*-
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
-
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
 ;;;;  Copyright (c) 1990, Giuseppe Attardi.
@@ -871,6 +870,95 @@ evaluates to NIL.  See STABLE-SORT."
       seq))
 
 
+(defun stable-sort-merge-vectors (source target start-1
+                                  end-1 end-2 pred key)
+  (declare (si::c-local))
+  (let ((i start-1)
+        (j end-1) ; start-2
+        (target-i start-1))
+    (declare (fixnum i j target-i))
+    (loop
+      (cond ((= i end-1)
+        (loop (if (= j end-2) (return))
+                  (setf (aref target target-i)
+                        (aref source j))
+                  (incf target-i)
+                  (incf j))
+            (return))
+            ((= j end-2)
+             (loop (if (= i end-1) (return))
+                  (setf (aref target target-i)
+                        (aref source i))
+                  (incf target-i)
+                  (incf i))
+             (return))
+            ((if key
+                 (funcall pred (funcall key (aref source j))
+                               (funcall key (aref source i)))
+                 (funcall pred (aref source j) (aref source i)))
+             (setf (aref target target-i)
+                   (aref source j))
+             (incf j))
+            (t (setf (aref target target-i)
+                     (aref source i))
+               (incf i)))
+     (incf target-i))))
+
+
+(defun vector-merge-sort (vector pred key)
+  (declare (si::c-local))
+  (let* ((vector-len (length (the vector vector)))
+         (n 1)            ; bottom-up size of contiguous runs to be merged
+         (direction t)    ; t vector --> temp    nil temp --> vector
+         (temp (make-array vector-len))
+         (unsorted 0)   ; unsorted..vector-len are the elements that need
+                                    ; to be merged for a given n
+         (start-1 0))   ; one n-len subsequence to be merged with the next
+    (declare (fixnum vector-len n unsorted start-1))
+    (loop
+       ;; for each n we start taking n-runs from the start of the vector
+      (setf unsorted 0)
+      (loop
+        (setf start-1 unsorted)
+        (let ((end-1 (+ start-1 n)))
+          (declare (fixnum end-1))
+          (cond ((< end-1 vector-len)
+                 ;; there are enough elements for a second run
+                 (let ((end-2 (+ end-1 n)))
+                   (declare (fixnum end-2))
+                   (if (> end-2 vector-len) (setf end-2 vector-len))
+                   (setf unsorted end-2)
+                   (if direction
+                       (stable-sort-merge-vectors
+                          vector temp start-1 end-1 end-2 pred key)
+                       (stable-sort-merge-vectors
+                          temp vector start-1 end-1 end-2 pred key))
+                   (if (= unsorted vector-len) (return))))
+                ;; if there is only one run copy those elements to the end
+                (t (if direction
+                       (do ((i start-1 (1+ i)))
+                           ((= i vector-len))
+                         (declare (fixnum i))
+                         (setf (aref temp i) (aref vector i)))
+                       (do ((i start-1 (1+ i)))
+                           ((= i vector-len))
+                         (declare (fixnum i))
+                         (setf (aref vector i) (aref temp i))))
+                   (return)))))
+      ;; If the inner loop only executed once then there were only enough
+      ;; elements for two subsequences given n so all the elements have
+      ;; been merged into one list. Start-1 will have remained 0 upon exit.
+      (when (zerop start-1)
+        (when direction
+          ;; if we just merged into the temporary copy it all back
+          ;; to the given vector.
+          (dotimes (i vector-len)
+            (setf (aref vector i) (aref temp i))))
+        (return vector))
+      (setf n (ash n 1))           ; (* 2 n)
+      (setf direction (not direction)))))
+
+
 (defun stable-sort (sequence predicate &key key)
   "Args: (sequence test &key key)
 Destructively sorts SEQUENCE and returns the result.  TEST should return non-
@@ -886,10 +974,7 @@ SEQUENCE.  See SORT."
       (list-merge-sort sequence predicate key)
       (if (bit-vector-p sequence)
           (sort sequence predicate :key key)
-          (coerce (list-merge-sort (coerce sequence 'list)
-                                   predicate
-                                   key)
-                  (seqtype sequence)))))
+          (vector-merge-sort sequence predicate key))))
 
 
 (defun merge (result-type sequence1 sequence2 predicate &key key

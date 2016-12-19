@@ -14,7 +14,7 @@
 
 ;;;; CMPTYPE-ARITH -- Operations upon and among types
 
-(in-package #-new-cmp "COMPILER" #+new-cmp "C-TYPES")
+(in-package "COMPILER")
 
 ;;; CL-TYPE is any valid type specification of Common Lisp.
 ;;;
@@ -49,7 +49,6 @@
 ;;; Check if THING is an object of the type TYPE.
 ;;; Depends on the implementation of TYPE-OF.
 ;;; (only used for saving constants?)
-#-new-cmp
 (defun object-type (thing)
   (let ((type (if thing (type-of thing) 'SYMBOL)))
     (case type

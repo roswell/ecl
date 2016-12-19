@@ -284,3 +284,4 @@ If PACKAGE is non-NIL, then only the specified PACKAGE is searched."
                (prefix (string-prefix-p parent-prefix package-name)))
           (when (and prefix (or recurse (not (find #\. package-name :start prefix))))
             (pushnew package res)))))))
+

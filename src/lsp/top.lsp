@@ -398,6 +398,7 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
       (in-package "CL-USER")
 
       (unless (or *lisp-initialized* (null process-command-line))
+        (si:trap-fpe :last t)
         (process-command-args)
         (format t "ECL (Embeddable Common-Lisp) ~A (git:~D)"
                 (lisp-implementation-version)
@@ -405,7 +406,7 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
         (format t "~%Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya~@
 Copyright (C) 1993 Giuseppe Attardi~@
 Copyright (C) 2000 Juan J. Garcia-Ripoll~@
-Copyright (C) 2015 Daniel Kochmanski~@
+Copyright (C) 2016 Daniel Kochmanski~@
 ECL is free software, and you are welcome to redistribute it~@
 under certain conditions; see file 'Copyright' for details.")
         (format *standard-output* "~%Type :h for Help.  "))
@@ -1453,9 +1454,13 @@ package."
       ;; Like in SBCL, the error message is output through *error-output*
       ;; The rest of the interaction is performed through *debug-io*
       (finish-output)
-      (fresh-line *error-output*)
-      (terpri *error-output*)
-      (princ *break-message* *error-output*)
+      ;; We wrap the following in `ignore-errors' because error may be
+      ;; caused by writing to the `*error-output*', what leads to
+      ;; infinite recursion!
+      (ignore-errors
+        (fresh-line *error-output*)
+        (terpri *error-output*)
+        (princ *break-message* *error-output*))
       (loop
          ;; Here we show a list of restarts and invoke the toplevel with
          ;; an extended set of commands which includes invoking the associated

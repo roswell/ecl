@@ -47,7 +47,9 @@
                     output)
               (setf word nil))
             (push c word))
-     finally (return output)))
+     finally (return (push (make-array (length word) :element-type 'base-char
+                                       :initial-contents (nreverse word))
+                           output))))
 
 (defconstant +known-keywords+
   '("sparc*" "x86*" "*-bit" "32*" "64*" "*32" "*64"
@@ -131,13 +133,16 @@ we are currently using with ECL."
   (gather-keywords (apply #'run-and-collect args) +known-keywords+))
 
 (defun gather-system-features (&key (executable
-                                     #+(or windows cygwin) "sys:ecl_min.exe"
-                                     #-(or windows cygwin) "sys:ecl_min"))
+                                     #+(or windows cygwin mingw32) "sys:ecl_min.exe"
+                                     #-(or windows cygwin mingw32) "sys:ecl_min"))
   (let* ((ecl-binary (namestring (truename executable)))
          (executable-features
           #-windows
            (run-and-collect-keywords "file" (list ecl-binary)))
-         (compiler-version (run-and-collect-keywords c::*cc* '("--version")))
+         (compiler-version (run-and-collect-keywords c::*cc*
+                                                     (if (search "xlc" c::*cc*)
+                                                         '("-qversion")
+                                                         '("--version"))))
          (compiler-features (reduce #'append
                                     (mapcar #'rest
                                             (compiler-defines +compiler-macros+)))))
@@ -152,8 +157,8 @@ we are currently using with ECL."
 #+ecl-min
 (update-compiler-features
  :executable
- #+(or windows cygwin) "build:ecl_min.exe"
- #-(or windows cygwin) "build:ecl_min")
+ #+(or windows cygwin mingw32) "build:ecl_min.exe"
+ #-(or windows cygwin mingw32) "build:ecl_min")
 
 #+ecl-min
 (format t ";;; System features: ~A~%" *compiler-features*)

@@ -61,6 +61,9 @@
 ;;; will need to call define-walker-template, they will have to figure that
 ;;; out for themselves.
 ;;; 
+
+(pushnew :walker *features*)
+
 (defpackage "WALKER"
   (:export define-walker-template
            walk-form
@@ -77,7 +80,6 @@
 (in-package "WALKER")
 (declaim (notinline note-lexical-binding walk-bindings-1 walk-let/let*
                     walk-form-internal))
-(push :walker *features*)
 
 
 ;;;

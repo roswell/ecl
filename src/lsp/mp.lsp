@@ -27,8 +27,8 @@ interrupts arriving during execution of the BODY take effect after BODY has
 been executed.
 
 Deferrable interrupts include most blockable POSIX signals, and
-SB-THREAD:INTERRUPT-THREAD. Does not interfere with garbage collection, and
-unlike in many traditional Lisps using userspace threads, in SBCL
+MP:INTERRUPT-THREAD. Does not interfere with garbage collection, and
+unlike in many traditional Lisps using userspace threads, in ECL
 WITHOUT-INTERRUPTS does not inhibit scheduling of other threads.
 
 Binds ALLOW-WITH-INTERRUPTS, WITH-LOCAL-INTERRUPTS and WITH-RESTORED-INTERRUPTS
@@ -138,6 +138,12 @@ by ALLOW-WITH-INTERRUPTS."
 
 #+ecl-read-write-lock
 (defmacro with-rwlock ((lock op) &body body)
+  "Acquire rwlock for the dynamic scope of BODY for operation OP,
+which is executed with the lock held by current thread, and
+WITH-RWLOCK returns the values of body.
+
+Valid values of argument OP are :READ or :WRITE
+(for reader and writer access accordingly)."
   (assert (member op '(:read :write) :test #'eq))
   (let ((s-lock (gensym)))
     `(let ((,s-lock ,lock))

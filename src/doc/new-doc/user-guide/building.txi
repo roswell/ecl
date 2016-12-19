@@ -1,0 +1,105 @@
+@node Building ECL
+@section Building ECL
+
+Due to its portable nature ECL works on every (at least) 32-bit
+architecture which provides a proper C99 compliant compiler.
+
+Operating systems on which ECL is reported to work: Linux, Darwin (Mac
+OS X), Solaris, FreeBSD, NetBSD, OpenBSD, DragonFly BSD, Windows and
+Android. On each of them ECL supports native threads.
+
+In the past Juanjo José García-Ripoll maintained test farm which
+performed ECL tests for each release on number of platforms and
+architectures. Due to lack of the resources we can't afford such doing,
+however each release is tested by volunteers with an excellent package
+@uref{https://common-lisp.net/project/cl-test-grid,cl-test-grid} created
+and maintained by Anton Vodonosov.
+
+@subsection Autoconf based configuration
+
+ECL, like many other FOSS programs, can be built and installed with a
+GNU tool called Autoconf. This is a set of automatically generated
+scripts that detect the features of your machine, such as the compiler
+type, existing libraries, desired installation path, and configures ECL
+accordingly. The following procedure describes how to build ECL using
+this procedure and it applies to all platforms except for the Windows
+ports using Microsoft Visual Studio compilers (however you may build ECL
+with cygwin or mingw using the autoconf as described here).
+
+To build @ecl{} you need to
+
+@enumerate
+@item
+Extract the source code and enter it's directory
+
+@example
+$ tar -xf ecl-xx.x.x.tgz
+$ cd ecl-xx.x.x
+@end example
+
+@item
+Run the configuration file, build the program and install it
+
+@example
+$ ./configure --prefix=/usr/local
+$ make                          # -jX if you have X cores
+$ make install
+@end example
+
+@item
+Make sure the program is installed and ready to run:
+
+@example
+$ /usr/local/bin/ecl
+
+ECL (Embeddable Common-Lisp) 16.0.0
+Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya
+Copyright (C) 1993 Giuseppe Attardi
+Copyright (C) 2000 Juan J. Garcia-Ripoll
+Copyright (C) 2015 Daniel Kochmanski
+ECL is free software, and you are welcome to redistribute it
+under certain conditions; see file 'Copyright' for details.
+Type :h for Help.
+Top level in: #<process TOP-LEVEL>.
+> 
+@end example
+@end enumerate
+
+@subsection Platform specific instructions
+@subsubsection MSVC based configuration
+
+If you have a commercial version of Microsoft Visual Studio, the steps
+are simple:
+
+@enumerate
+@item
+Change to the msvc directory.
+@item
+Run nmake to build ECL.
+@item
+Run nmake install prefix=d:\Software\ECL where the prefix is the
+directory where you want to install ECL.
+@item
+Optionally, if you want to build a self-installing executable, you can
+install NSIS and run nmake windows-nsi.
+@end enumerate
+
+If you want to build ECL using the free Microsoft Visual Studio Express
+2013 or better, you should follow these before building ECL as sketched
+before:
+
+@enumerate
+@item
+Download and install Microsoft Visual Studio C++ Compiler.
+@item
+Download and install the Windows SDK
+@item
+Open the Windows SDK terminal, which will set up the appropriate paths
+and environment variables.
+@end enumerate
+
+@c @node BSD systems
+@c @subsubsection BSD systems
+
+@c @node Android
+@c @subsubsection Android

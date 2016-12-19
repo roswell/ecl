@@ -30,42 +30,34 @@ FILTER = ..\c\cut$(EXE) "@PACKAGE_VERSION@" "$(ECL_VERSION)"
 
 ECL = ../ecl
 
-all: $(INFO_FILES) $(HTML_FILES) developers_manual user_manual clx_manual
+all: $(INFO_FILES) $(HTML_FILES) developers_manual user_manual_manual
 
 ecl.dvi: $(srcdir)/user.txi $(srcdir)/macros.txi clisp.sty ecl.sty
 	tex $(srcdir)/user.txi
 ecldev.dvi: $(srcdir)/devel.txi $(srcdir)/macros.txi clisp.sty ecl.sty
 	tex $(srcdir)/devel.txi
-clx.dvi: clx.texinfo
-	tex clx.texinfo
 
 ecl.ps: ecl.dvi $(srcdir)/macros.txi
 	dvips -o $@ ecl.dvi
 ecldev.ps: ecldev.dvi $(srcdir)/macros.txi
 	dvips -o $@ ecldev.dvi
-clx.ps: clx.dvi
-	dvips -o $@ clx.dvi
 
 install: all
 	IF NOT EXIST $(docdir) $(MKDIR) $(docdir)
-	for %i in (Copyright LGPL) do $(CP) $(top_srcdir)\..\%i $(docdir)
+	for %i in (LICENSE LGPL) do $(CP) $(top_srcdir)\..\%i $(docdir)
 	for %i in ($(HTML_FILES)) do $(CP) %i $(docdir)
 	IF NOT EXIST $(docdir)\ecldev $(MKDIR) $(docdir)\ecldev
 	for %i in (ecldev\*) do $(CP) %i $(docdir)\ecldev
 	IF NOT EXIST $(docdir)\ecl $(MKDIR) $(docdir)\ecl
 	for %i in (ecl\*) do $(CP) %i $(docdir)\ecl
-	IF NOT EXIST $(docdir)\clx $(MKDIR) $(docdir)\clx
-	for %i in (clx\*) do $(CP) %i $(docdir)\clx
 flatinstall: all
 	IF NOT EXIST $(docdir) $(MKDIR) $(docdir)
-	for %i in (Copyright LGPL) do $(CP) $(top_srcdir)\..\%i $(docdir)
+	for %i in (LICENSE LGPL) do $(CP) $(top_srcdir)\..\%i $(docdir)
 	for %i in ($(HTML_FILES)) do $(CP) %i $(docdir)
 	IF NOT EXIST $(docdir)\ecldev $(MKDIR) $(docdir)\ecldev
 	for %i in (ecldev\*) do $(CP) %i $(docdir)\ecldev
 	IF NOT EXIST $(docdir)\ecl $(MKDIR) $(docdir)\ecl
 	for %i in (ecl\*) do $(CP) %i $(docdir)\ecl
-	IF NOT EXIST $(docdir)\clx $(MKDIR) $(docdir)\clx
-	for %i in (clx\*) do $(CP) %i $(docdir)\clx
 
 uninstall:
 	for k in $(INFO_FILES); do \
@@ -77,7 +69,7 @@ uninstall:
 	rm -r $(infodir)/ecl.$(INFOEXT) $(infodir)/ecldev.$(INFOEXT); \
 	rm $(mandir)/man$(manext)/ecl.$(manext)
 
-head2: developers_manual user_manual clx_manual $(srcdir)/head Makefile
+head2: developers_manual user_manual manual $(srcdir)/head Makefile
 	IF EXIST ecl\index.html ( \
 	  ..\c\cut.exe "ecl/user.html" "ecl/index.html" \
 	      "ecldev/devel.html" "ecldev/index.html" \
@@ -89,16 +81,10 @@ ecl.info.gz: ecl.info
 	gzip < ecl.info > ecl.info.gz
 ecldev.info.gz: ecldev.info
 	gzip < ecldev.info > ecldev.info.gz
-clx.info.gz: clx.info
-	gzip < clx.info > clx.info.gz
 ecl.info: $(srcdir)/user.txi $(srcdir)/macros.txi
 	makeinfo -I $(srcdir) --no-split $(srcdir)/user.txi
 ecldev.info: $(srcdir)/devel.txi $(srcdir)/macros.txi
 	makeinfo -I $(srcdir) --no-split $(srcdir)/devel.txi
-clx.info: clx.texinfo
-	makeinfo --no-split clx.texinfo
-clx.texinfo: $(top_srcdir)/clx/manual/clx.texinfo
-	cp $(top_srcdir)/clx/manual/clx.texinfo .
 
 download.html: $(srcdir)/download.in.html head2
 	( type head2 $(srcdir)\download.in.html $(srcdir)\end ) | $(FILTER) > $@
@@ -126,10 +112,10 @@ benchmark.html: $(srcdir)/benchmark.in.html ../gabriel/BENCHMARK head2
 ../gabriel/BENCHMARK:
 	if not exist ..\gabriel $(MKDIR) ..\gabriel
 	echo No benchmarks available > ..\gabriel\BENCHMARK
-license.html: $(top_srcdir)/../Copyright head2
+license.html: $(top_srcdir)/../LICENSE head2
 	type head2 > html_tmp
 	echo "<pre>" >> html_tmp
-	type $(top_srcdir)\..\Copyright >> html_tmp
+	type $(top_srcdir)\..\LICENSE >> html_tmp
 	echo "</pre>" >> html_tmp
 	type $(srcdir)\end >> html_tmp
 	$(FILTER) < html_tmp > $@
@@ -152,11 +138,6 @@ developers_manual: $(srcdir)/devel.txi $(srcdir)/macros.txi
 	IF NOT EXIST ecldev MKDIR ecldev
 	makeinfo -v -I $(srcdir) --html $(srcdir)/devel.txi
 	echo > developers_manual
-clx_manual: $(srcdir)/../clx/manual/clx.texinfo
-	echo "Producing clx.html; ignore error messages."
-	IF NOT EXIST clx MKDIR clx
-	makeinfo -v --html $(srcdir)\..\clx\manual\clx.texinfo
-	echo > clx_manual
 clean:
-	-for %i in (ecl ecldev clx ..\gabriel) do $(RMDIR) %i
-	-for %i in (ecl.info* ecldev.info* $(HTML_FILES) head2 user_manual developers_manual clx_manual ..\gabriel\BENCHMARK) do $(RM) %i
+	-for %i in (ecl ecldev ..\gabriel) do $(RMDIR) %i
+	-for %i in (ecl.info* ecldev.info* $(HTML_FILES) head2 user_manual developers_manual_manual ..\gabriel\BENCHMARK) do $(RM) %i

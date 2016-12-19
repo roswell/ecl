@@ -65,7 +65,6 @@ fi
         --with-clos-stream   \
         --with-tcp	     \
         --with-cmuformat     \
-	--with-clx
         # --enable-local-boehm \          # broken
         # --enable-threads                # non-supported still.
 %{__make}
@@ -139,7 +138,7 @@ gen_filelist $RPM_BUILD_ROOT %{_filelist}
 
 # add info files to info dir in %post
 %post
-for _n in ecl ecldev clx; do
+for _n in ecl ecldev; do
     _d=%{_infodir}
     _f=$_d/$_n.info.gz
     if [ -f $_f ]; then
@@ -150,7 +149,7 @@ done
 
 # remove info files from info dir in %postun
 %postun
-for _n in ecl ecldev clx; do
+for _n in ecl ecldev; do
     _d=%{_infodir}
     _f=$_d/$_n.info.gz
     if [ -f $_f ]; then

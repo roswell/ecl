@@ -1,0 +1,123 @@
+
+* Common Lisp implementations
+** Free implementations
+*** CLISP Common Lisp
+:PROPERTIES:
+:last-check: [2016-05-06 Fri]
+:END:
+
+- Homepage  :: http://clisp.org/
+- Repository :: http://hg.code.sf.net/p/clisp/clisp
+- History   :: [[http://clisp.org/summary.html][CLISP Common Lisp Summary]]
+- License   :: GPL-2.0+ (readline is GPL-3.0 now, so the combined work
+     with the upstream version is GPLv3, but CLISP may be built with
+     the older version I suppose).
+- Author(s) :: Bruno Haible, Michael Stoll, Marcus Daniels, Pierpaolo
+     Bernardi, Sam Steingold
+- Initial release date :: April 1987
+- Last release :: 2.49 / July 7, 2010
+- Last activity :: 2015-05-31
+*** 
+Armed Bead Common Lisp
+UABCL
+Carnegie Mellon University Common Lisp
+Clozure Common Lisp
+Corman Lisp
+Poplog
+Steel Bank Common Lisp
+Ufasoft
+Embeddable Common-Lisp
+
+** Commercial implementations
+Allegro
+HCL
+LispWorks
+Liquid
+mocl
+Open Genera
+Scieneer
+
+** Incomplete implementations
+XCL
+Movitz
+Mezzano
+JSCL
+SICL
+CLASP
+CLforJava
+GNU Common Lisp
+*** WCL
+:PROPERTIES:
+:last-check: [2016-05-06 Fri]
+:END:
+
+- Homepage  :: [[http://pgc.com/commonlisp/]]
+- Repository :: [[https://github.com/wadehennessey/wcl]]
+- Author(s) :: Wade L. Hennessey
+- License   :: Apache-2.0
+- Initial release :: 1990
+- Last release :: 3.0 / ???
+- Last activity :: 2016-04-15
+
+
+** Subset implementations
+Lisp800
+XLISP-PLUS
+Parenscript
+Acheron
+emacs-cl
+
+** Obsolete implementations
+*** partials
+- Lisp500
+- XLISP
+- SubL
+- Software Engineer Common Lisp
+- LinkLisp
+- L
+- ThinLisp
+- Lisp-to-C
+- Exper
+- NanoLISP
+- muLISP-90
+- RefLisp
+- CLiCC
+
+*** full (?)
+- TI Explorer
+- CLOE
+- Utah
+- Codemist
+- Top Level
+- Procyon
+- FreeLisp
+- Ibuki
+- Delphi
+- Star Sapphire
+- Golden
+- Eclipse
+- Butterfly
+- Medley 2.0
+- Lucid
+- Genera
+- MACL
+- Kyoto Common Lisp
+- AKCL
+- ECoLisp
+- ECL Spain
+- Coral
+- VAX Common Lisp
+- PowerLisp
+- RMCL
+- MCL
+- OpenMCL
+
+*** Data General Common Lisp
+
+Data General Common Lisp debuted (Mary Poppins ed.) 1984. Dev'd in
+RTP, derived from a Dybvig Scheme at UNC.
+
+Kent Dybvig was a PhD student at UNC and did some of the initial
+development.
+
+Source: Patrick Logan

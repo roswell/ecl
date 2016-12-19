@@ -1,0 +1,152 @@
+@node Invoking ECL
+@section Entering and leaving @ecl{}
+
+@ecl{} is invoked by the command @code{ecl}.
+
+@example
+% ecl
+ECL (Embeddable Common-Lisp) 0.0e
+Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya
+Copyright (C) 1993 Giuseppe Attardi
+Copyright (C) 2000 Juan J. Garcia-Ripoll
+Copyright (C) 2015 Daniel Kochmanski
+ECL is free software, and you are welcome to redistribute it
+under certain conditions; see file 'Copyright' for details.
+Type :h for Help.  Top level.
+Top level in: #<process TOP-LEVEL>.
+> 
+@end example
+
+When invoked, @ecl{} will print the banner and initialize the system.
+The number in the @ecl{} banner identifies the revision of
+@ecl{}. @code{0.0e} is the value of the function
+@code{lisp-implementation-version}.
+
+Unless user specifies @code{-norc} flag when invoking the @ecl{}, it
+will look for the initialization files @file{~/.ecl} and
+@file{~/.eclrc}. If he wants to load his own file from the current
+directory, then he should pass the file path to the @code{-load}
+parameter:
+@example
+% ecl -norc -load init.lisp
+@end example
+
+After the initialization, @ecl{} enters the @dfn{top-level loop} and
+prints the prompt `@code{>}'.
+
+@example
+Type :h for Help.  Top level.
+>
+@end example
+
+The prompt indicates that @ecl{} is now ready to receive a form from the
+terminal and to evaluate it.
+
+Usually, the current package (i.e., the value of @var{*package*}) is the
+user package, and the prompt appears as above.  If, however, the current
+package is other than the user package, then the prompt will be prefixed
+with the package name.
+
+@example
+> (in-package "CL")
+#<"COMMON-LISP" package>
+COMMON-LISP> (in-package "SYSTEM")
+#<"SI" package>
+SI>
+@end example
+
+To exit from @ecl{}, call the function @code{quit}.
+
+@example
+> (quit)
+%
+@end example
+
+Alternatively, you may type @myctrl{D} , i.e. press the key @key{D}
+while pressing down the control key (@key{Ctrl}).
+
+@example
+> @myctrl{D}
+
+%
+@end example
+
+The top-level loop of @ecl{} is almost the same as that defined in
+Section 20.2 of @bibcite{Steele:84}.  Since the input from the terminal
+is in line mode, each top-level form should be followed by a newline.
+If more than one value is returned by the evaluation of the top-level
+form, the values will be printed successively.  If no value is returned,
+then nothing will be printed.
+@example
+> (values 1 2)
+1
+2
+> (values)
+
+>
+@end example
+
+When an error is signalled, control will enter the break loop.
+@example
+> (defun foo (x) (bar x))
+foo
+
+> (defun bar (y) (bee y y))
+
+bar
+> (foo 'lish)
+Condition of type: UNDEFINED-FUNCTION
+The function BAR is undefined.
+
+Available restarts:
+
+1. (RESTART-TOPLEVEL) Go back to Top-Level REPL.
+
+Broken at FOO. In: #<process TOP-LEVEL>.
+>>
+@end example
+
+@c @vskip 1em
+
+`@code{>>}' in the last line is the prompt of the break loop.  Like in
+the top-level loop, the prompt will be prefixed by the current package
+name, if the current package is other than the @code{user} package.
+
+To go back to the top-level loop, type @code{:q}
+
+@example
+>>:q
+
+Top level in: #<process TOP-LEVEL>.
+>
+@end example
+
+If more restarts are present, user may invoke them with by typing
+@code{:rN}, where @key{N} is the restart number. For instance to pick
+the restart number two, type @code{:r2}.
+
+See [@ref{The break loop}] for the details of the break loop.
+
+The terminal interrupt (usually caused by typing @myctrl{C} 
+(Control-@code{C})) is a kind of error.  It breaks the running program
+and calls the break level loop.
+
+Example:
+@example
+> (defun foo () (do () (nil)))
+foo
+
+> (foo)
+@myctrl{C}
+
+Condition of type: INTERACTIVE-INTERRUPT
+Console interrupt.
+
+Available restarts:
+
+1. (CONTINUE) CONTINUE
+2. (RESTART-TOPLEVEL) Go back to Top-Level REPL.
+
+Broken at FOO. In: #<process TOP-LEVEL>.
+>>
+@end example

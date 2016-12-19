@@ -1,0 +1,123 @@
+@macro myctrl {a}
+^\a\@c
+@end macro
+@c @rmacro mopt {a}
+@c [\a\]@c
+@c @end rmacro
+@macro mchoice {a}
+<\a\>@c
+@end macro
+@c @rmacro mstar {a}
+@c @{\a\@}*@c
+@c @end rmacro
+@c @rmacro mplus {a}
+@c @{\a\@}+@c
+@c @end rmacro
+@c @rmacro mgroup {a} 
+@c @{\a\@},@c
+@c @end rmacro
+
+@macro kwd{a}
+@var{:\a\}@c
+@end macro
+
+@macro pxlref{a}
+\a\@c
+@end macro
+
+@macro defec{a}
+@defun \a\ 
+@end macro
+
+@macro aux
+&aux@c
+@end macro
+@macro keys
+&key@c
+@end macro
+@macro rest
+&rest@c
+@end macro
+@macro optional
+&optional@c
+@end macro
+@macro allow
+&allow-other-keys@c
+@end macro
+
+@macro macref{foo}
+\foo\@c
+@end macro
+@macro tindexed{foo}
+\foo\@c
+@end macro
+@macro cindexed{foo}
+\foo\@c
+@end macro
+@macro vindexed{foo}
+\foo\@c
+@end macro
+@ifhtml
+@macro bibcite{foo}
+[@pxref{Bibliography, \foo\}]
+@end macro
+@end ifhtml
+@ifnothtml
+@macro bibcite{foo}
+[\foo\, @pxref{Bibliography}]
+@end macro
+@end ifnothtml
+
+@macro back
+\\
+@end macro
+
+@macro nil
+()
+@end macro
+
+@macro true 
+@var{T}
+@end macro
+
+@macro ansi
+@r{ANSI Common-Lisp}
+@end macro
+@macro ecl
+@b{@r{Embeddable Common Lisp}}
+@end macro
+@macro clisp
+@r{Common-Lisp}
+@end macro
+@macro llisp
+@b{@r{Lisp}}
+@end macro
+@macro cltl
+@emph{@clisp{}: The Language}
+@end macro
+@macro cltl2
+@emph{@clisp{}: The Language II}
+@end macro
+
+@c --- TAGS --- @
+
+@macro cind
+C/C++ identifier
+@end macro
+@macro lind
+Common Lisp symbol
+@end macro
+@macro ocl
+@emph{Only in Common Lisp}
+@end macro
+
+@c --- Helpers --- @
+@macro clhs{end,name}
+@url{http://www.lispworks.com/documentation/HyperSpec/Body/\end\,,\name\}
+@end macro
+
+@macro ansidict{left,right}
+@item
+\left\
+@tab \right\
+@end macro

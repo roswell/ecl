@@ -48,7 +48,7 @@
     (name arg-types return-type &rest properties)
   (when (sys:get-sysprop name 'proclaimed-arg-types)
     (warn "Duplicate proclamation for ~A" name))
-  (#-new-cmp proclaim-function #+new-cmp c-env::proclaim-function
+  (proclaim-function
    name (list arg-types return-type))
   (loop for p in properties
      do (case p
@@ -1329,6 +1329,7 @@
               (values (or null two-way-stream)
                       (or null integer)
                       ext:external-process))
+(proclamation ext:terminate-process (t &optional gen-bool) null)
 
 (proclamation ext:make-weak-pointer (t) ext:weak-pointer :no-side-effects)
 (proclamation ext:weak-pointer-value (ext:weak-pointer) t)

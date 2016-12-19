@@ -1,0 +1,69 @@
+@node Extensions
+@chapter Extensions
+
+@menu
+* System building::
+* Operating System Interface::
+* Foreign Function Interface::
+* Native threads::
+@c * Green Threads::
+* Signals and Interrupts::
+@c Networking::
+* Memory Management::
+* Meta-Object Protocol (MOP)::
+@c * Continuations::
+@c * Extensible Sequences::
+* Gray Streams::
+@c * TCP Streams::
+@c * Series::
+* Tree walker::
+@c * Local package nicknames::
+@c * Hierarchical packages::
+* Package locks::
+* CDR Extensions::
+@end menu
+
+@ System building
+@include extensions/building.txi
+
+@node Operating System Interface
+@section Operating System Interface
+
+@c Foreign function interface
+@include extensions/ffi.txi
+
+@c Native threads
+@include extensions/mp.txi
+
+@c @node Green Threads
+@c @section Green Threads
+
+@node Signals and Interrupts
+@section Signals and Interrupts
+
+@node Memory Management
+@section Memory Management
+
+@node Meta-Object Protocol (MOP)
+@section Meta-Object Protocol (MOP)
+
+@c @node Continuations
+@c @section Continuations
+
+@c @node Extensible Sequences
+@c @section Extensible Sequences
+
+@node Gray Streams
+@section Gray Streams
+
+@c @node Series
+@c @section Series
+
+@node Tree walker
+@section Tree walker
+
+@c Package extensions
+@include extensions/packages.txi
+
+@node CDR Extensions
+@section CDR Extensions

@@ -44,16 +44,18 @@ srcdir=@srcdir@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
+datarootdir=@datarootdir@
+datadir=@datadir@
 bindir=@bindir@
 infodir=@infodir@
 mandir=@mandir@
 libdir=@libdir@
 
 #  What to release
-TAR_CONTENTS=Makefile.in README.1st LGPL ANNOUNCEMENT Copyright doc \
+TAR_CONTENTS=Makefile.in README.md LGPL ANNOUNCEMENT LICENSE doc \
 	configure src/c src/cmp src/clos src/CHANGELOG src/lsp src/doc \
 	src/h  src/gmp src/config* src/install.sh src/Makefile.in \
-	src/util contrib/ src/clx src/gc src/*.in src/*.m4 src/gabriel \
+	src/util contrib/ src/gc src/*.in src/*.m4 src/gabriel \
 	src/tests/Makefile.in msvc examples
 
 # ==================== Utility Programs for the Build ====================
@@ -72,6 +74,9 @@ all: build/Makefile
 
 Makefile: Makefile.in build/config.status
 	(cd build; ./config.status)
+
+ecl_min: build/Makefile
+	cd build; $(MAKE) ecl_min
 
 # ==================== Installation ====================
 
@@ -115,9 +120,7 @@ distclean: clean
 realclean: distclean
 
 check:
-	cd build && $(MAKE) check
-recheck:
-	cd build && $(MAKE) recheck
+	cd build && $(MAKE) check TESTS="$(TESTS)"
 
 # ==================== Various means of distribution ====================
 
@@ -130,9 +133,6 @@ build/doc/index.html:
 	cd build/doc; $(MAKE)
 
 source-dist: $(TAR_DIR).tgz
-
-rpmdir=$(shell rpm --showrc | grep '^-[0-9]*:.*[^{]_topdir' | sed 's,^.*topdir[ 	]*\(.*\)[ 	]*,\1,')
-rpmbuild=$(shell if [ -z `which rpmbuild` ]; then echo "rpm"; else echo "rpmbuild"; fi)
 
 $(TAR_DIR).tgz:
 	git archive --format=tar.gz --prefix=$(TAR_DIR)/ HEAD > $@
@@ -157,12 +157,3 @@ windows-nsi: all
 	`pwd`/src/util/ecl_nsi.sh `pwd`/src/util/ecl.nsi build/$(TAR_DIR)
 	makensis.exe build/$(TAR_DIR)/ecl.nsi
 	mv build/$(TAR_DIR)/Setup.exe ecl-$(VERSION).exe
-
-upload-frs:
-	ecldir=`echo $(VERSION) | sed -e 's,\([0-9]*\.[0-9]*\)\.[0-9]*,\1,'` && \
-	destdir=jjgarcia,ecls@frs.sourceforge.net:/home/frs/project/e/ec/ecls/ecls/ && \
-	test -d frs || mkdir frs && \
-	test -d frs/$$ecldir || mkdir frs/$$ecldir && \
-	cp $(TAR_DIR).tgz src/CHANGELOG frs/$$ecldir && \
-	cd frs && scp -rC $$ecldir $$destdir
-	rm -rf frs

@@ -5,10 +5,8 @@ top_srcdir = ..\..\src
 srcdir	= ..\..\src\c
 
 !if "$(ECL_WIN64)" != ""
-ECL_FFI_OBJ=
 ECL_FPE_CODE=fpe_none.c
 !else
-ECL_FFI_OBJ=ffi_x86.obj
 ECL_FPE_CODE=fpe_x86.c
 !endif
 
@@ -42,7 +40,7 @@ ECL_SSE_OBJ=
 #
 TRUE_CC = cl
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private
+CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private
 
 SHELL	= /bin/sh
 RM	= del
@@ -66,7 +64,7 @@ HDIR	= $(top_srcdir)\h
 HFILES	= ..\ecl\config.h ..\ecl\atomic_ops.h $(HDIR)\ecl.h $(HDIR)\ecl-cmp.h\
 	$(HDIR)\object.h $(HDIR)\cs.h $(HDIR)\stacks.h\
 	$(HDIR)\external.h $(HDIR)\cons.h $(HDIR)\legacy.h\
-	$(HDIR)\number.h $(HDIR)\page.h $(HDIR)\unify.h\
+	$(HDIR)\number.h $(HDIR)\page.h \
 	$(HDIR)\internal.h $(HDIR)\ecl-inl.h $(HDIR)\bytecodes.h \
 	$(HDIR)\impl\math_dispatch.h
 
@@ -103,7 +101,7 @@ OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
 	structure.obj load.obj unixfsys.obj unixsys.obj \
 	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) serialize.obj \
-	$(ECL_FFI_OBJ) $(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
+	$(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 
@@ -151,7 +149,8 @@ clean:
 	     do $(RM) %f
 	-for %f in (..\ecl\*.h) do $(RM) %f
 	-for %f in (cut.exe cut.obj dpp.exe dpp.obj) do $(RM) %f
-	-del /S /Q ..\ecl\atomic*
+	-del /S /Q ..\ecl\atomic_ops
+	-del /S /Q ..\ecl\impl
 
 # Build rules
 
@@ -164,8 +163,14 @@ $(HFILES): ../ecl/config.h.msvc6 Makefile
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
-	        < ..\ecl\config.h.msvc6 > $@
-	xcopy /SYI $(top_srcdir)\h\* ..\ecl
+	        < ..\ecl\config.h.msvc6 > ..\ecl\config.h
+	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
+		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
+		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
+		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
+		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
+	        < ..\ecl\config-internal.h.msvc6 > ..\ecl\config-internal.h
+	xcopy /SYI $(top_srcdir)\h\*.h ..\ecl
 	-mkdir ..\ecl\atomic_ops
 	-mkdir ..\ecl\atomic_ops\sysdeps
 	xcopy /SYI $(top_srcdir)\bdwgc\libatomic_ops\src\atomic_ops.h ..\ecl

@@ -43,47 +43,31 @@
       (slot-value generic-function 'method-class)
       (find-class 'standard-method)))
 
+(defun method-prototype-for-gf (generic-function)
+  (when *clos-booted*
+    (class-prototype (generic-function-method-class generic-function))))
+
 (defmacro defmethod (&whole whole name &rest args &environment env)
   (declare (notinline make-method-lambda))
-  (let* ((*print-length* 3)
-         (*print-depth* 2)
-         (qualifiers (loop while (and args (not (listp (first args))))
-                        collect (pop args)))
-         (specialized-lambda-list
-          (if args
-              (pop args)
-              (error "Illegal defmethod form: missing lambda list")))
-         (body args))
+  (multiple-value-bind (qualifiers specialized-lambda-list body)
+      (parse-defmethod args)
     (multiple-value-bind (lambda-list required-parameters specializers)
         (parse-specialized-lambda-list specialized-lambda-list)
       (multiple-value-bind (lambda-form declarations documentation)
           (make-raw-lambda name lambda-list required-parameters specializers body env)
         (let* ((generic-function (ensure-generic-function name))
-               (method-class (generic-function-method-class generic-function))
-               method)
-          (when *clos-booted*
-            (when (symbolp method-class)
-              (setf method-class (find-class method-class nil)))
-            (if method-class
-                (setf method (class-prototype method-class))
-                (error "Cannot determine the method class for generic functions of type ~A"
-                       (type-of generic-function))))
+               (method (method-prototype-for-gf generic-function)))
           (multiple-value-bind (fn-form options)
               (make-method-lambda generic-function method lambda-form env)
             (when documentation
               (setf options (list* :documentation documentation options)))
-            (multiple-value-bind (wrapped-lambda wrapped-p)
-                (simplify-lambda name fn-form)
-              (unless wrapped-p
-                (error "Unable to unwrap function"))
-              (ext:register-with-pde
-               whole
-               `(install-method ',name ',qualifiers
-                                ,(specializers-expression specializers)
-                                ',lambda-list
-                                ,(maybe-remove-block wrapped-lambda)
-                                ,wrapped-p
-                                ,@(mapcar #'si::maybe-quote options))))))))))
+            (ext:register-with-pde
+             whole
+             `(install-method ',name ',qualifiers
+                              ,(specializers-expression specializers)
+                              ',lambda-list
+                              ,(maybe-remove-block (simplify-lambda fn-form))
+                              ,@(mapcar #'si::maybe-quote options)))))))))
 
 (defun specializers-expression (specializers)
   (declare (si::c-local))
@@ -119,7 +103,7 @@
           ))))
   method-lambda)
 
-(defun simplify-lambda (method-name fn-form)
+(defun simplify-lambda (fn-form)
   (let ((aux fn-form))
     (if (and (eq (pop aux) 'lambda)
              (equalp (pop aux) '(.combined-method-args. *next-methods*))
@@ -130,8 +114,8 @@
              (eq (third aux) '.combined-method-args.)
              (listp (setf aux (second aux)))
              (eq (first aux) 'lambda))
-        (values aux t)
-        (values fn-form nil))))
+        aux
+        (error "Unable to unwrap function"))))
 
 (defun make-raw-lambda (name lambda-list required-parameters specializers body env)
   (declare (si::c-local)
@@ -198,6 +182,7 @@
   (multiple-value-bind (declarations real-body documentation)
       (si::find-declarations (cddr method-lambda))
     `(lambda ,(second method-lambda)
+       ,@declarations
        (let* ((.closed-combined-method-args.
                (if (listp .combined-method-args.)
                    .combined-method-args.
@@ -269,28 +254,19 @@
 (defun legal-generic-function-name-p (name)
   (si::valid-function-name-p name))
 
-(defun parse-defmethod (args)
-  (declare (si::c-local))
-  ;; This function has to extract the name of the method, a list of
-  ;; possible qualifiers (identified by not being lists), the lambda
-  ;; list of the method (which might be empty!) and the body of the
-  ;; function.
-  (let* (name)
-    (unless args
-      (error "Illegal defmethod form: missing method name"))
-    (setq name (pop args))
-    (unless (legal-generic-function-name-p name)
-      (error "~A cannot be a generic function specifier.~%~
-             It must be either a non-nil symbol or ~%~
-             a list whose car is setf and whose second is a non-nil symbol."
-             name))
-    (do ((qualifiers '()))
-        ((progn
-           (when (endp args)
-             (error "Illegal defmethod form: missing lambda-list"))
-           (listp (first args)))
-         (values name (nreverse qualifiers) (first args) (rest args)))
-      (push (pop args) qualifiers))))
+;;; PARSE-DEFMETHOD is used by DEFMETHOD to parse the &REST argument
+;;; into the 'real' arguments. This is where the syntax of DEFMETHOD
+;;; is really implemented.
+(defun parse-defmethod (cdr-of-form)
+  (declare (si::c-local)
+           (list cdr-of-form))
+  (let ((qualifiers ())
+        (spec-ll ()))
+    (loop (if (and (car cdr-of-form) (atom (car cdr-of-form)))
+              (push (pop cdr-of-form) qualifiers)
+              (return (setq qualifiers (nreverse qualifiers)))))
+    (setq spec-ll (pop cdr-of-form))
+    (values qualifiers spec-ll cdr-of-form)))
 
 (defun implicit-generic-lambda (lambda-list)
   "Implicit defgeneric declaration removes all &key arguments (preserving &key)"

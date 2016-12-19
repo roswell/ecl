@@ -42,7 +42,7 @@ extern ECL_API long double _ecl_big_to_long_double(cl_object x);
 typedef void (*_ecl_big_binary_op)(cl_object out, cl_object o1, cl_object o2);
 extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 
-#if ECL_LONG_BITS >= FIXNUM_BITS
+#if ECL_LONG_BITS >= ECL_FIXNUM_BITS
 #define _ecl_big_set_fixnum(x, f) mpz_set_si((x)->big.big_num,(f))
 #define _ecl_big_set_index(x, f) mpz_set_ui((x)->big.big_num,(f))
 #endif

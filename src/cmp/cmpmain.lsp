@@ -57,7 +57,7 @@ the environment variable TMPDIR to a different value." template))
       ((:static-library :library :lib) (setf format +static-library-format+))
       (:data (setf extension "data"))
       (:sdata (setf extension "sdat"))
-      (:c (setf extension (if (not *cc-is-cxx*) "c" "cxx")))
+      (:c (setf extension (if (member :cxx-core *features*) "cxx" "c")))
       (:h (setf extension "eclh"))
       (:object (setf extension +object-file-extension+))
       (:program (setf format +executable-file-format+))
@@ -73,7 +73,7 @@ the environment variable TMPDIR to a different value." template))
 
 #+msvc
 (defun delete-msvc-generated-files (output-pathname)
-  (loop for i in '("implib" "exp" "ilk" "pdb")
+  (loop for i in '("implib" "exp" "ilk" )
         for full = (make-pathname :type i :defaults output-pathname)
         for truename = (probe-file full)
         when truename
@@ -132,7 +132,9 @@ the environment variable TMPDIR to a different value." template))
      ,@object-files
      ,@(split-program-options *ld-rpath*)
      ,@(split-program-options *user-ld-flags*)
-     ,@ld-flags))
+     ,@ld-flags
+     ,(if (eq type :program)
+           (concatenate 'string "/IMPLIB:prog" (file-namestring o-pathname) ".lib") "" )))
   (embed-manifest-file o-pathname type)
   (delete-msvc-generated-files o-pathname))
 
@@ -234,6 +236,7 @@ the environment variable TMPDIR to a different value." template))
 extern \"C\"
 #endif
 
+ECL_DLLEXPORT
 void ~A(cl_object cblock)
 {
         /*
@@ -363,9 +366,9 @@ or a loadable module."
      (brief-namestring pathname))
     ((:fasl :fas)
      nil)
-    ((:static-library :lib :standalone-static-library :standalone-lib)
+    ((:static-library :lib)
      (brief-namestring pathname))
-    ((:shared-library :dll :standalone-shared-library :standalone-dll)
+    ((:shared-library :dll)
      (brief-namestring pathname))
     ((:program)
      nil)
@@ -412,6 +415,7 @@ filesystem or in the database of ASDF modules."
                 &aux
                   (*suppress-compiler-messages* (or *suppress-compiler-messages*
                                                     (not *compile-verbose*)))
+                  (target (normalize-build-target-name target))
                   (output-name (if (or (symbolp output-name) (stringp output-name))
                                    (compile-file-pathname output-name :type target)
                                    output-name))
@@ -484,10 +488,17 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                      (pathname item)
                      (string (parse-namestring item))))
              (kind (guess-kind path)))
-        (unless (member kind '(:shared-library :dll :static-library :lib
-                                               :object :c))
-          (error "C::BUILDER does not accept a file ~s of kind ~s" item kind))
-        (let* ((init-fn (guess-init-name path (guess-kind path)))
+
+        ;; Shared and static libraries may be linked in a program or
+        ;; fasl, but if we try to create a `static-library' from two
+        ;; static libraries we will end with broken binary because
+        ;; `ar' works fine only with object files. See #274.
+        (unless (member kind `(,@(unless (eql target :static-library)
+                                   '(:shared-library :static-library))
+                                 :object :c))
+          (error "C::BUILDER does not accept a file ~s of kind ~s for target ~s" item kind target))
+
+        (let* ((init-fn (guess-init-name path kind))
                (flags (guess-ld-flags path)))
           ;; We should give a warning that we cannot link this module in
           (when flags (push flags ld-flags))
@@ -504,14 +515,16 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (format c-file +lisp-program-init+ init-name
                  init-tag
                  "" submodules "")
-         (format c-file #+:win32 (ecase system (:console +lisp-program-main+)
-                                        (:windows +lisp-program-winmain+))
+         (format c-file
+                 #+:win32 (ecase system
+                            (:console +lisp-program-main+)
+                            (:windows +lisp-program-winmain+))
                  #-:win32 +lisp-program-main+
                  prologue-code init-name epilogue-code)
          (close c-file)
          (compiler-cc c-name o-name)
          (linker-cc output-name (list* (namestring o-name) ld-flags)))
-        ((:library :static-library :lib)
+        (:static-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
          (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
@@ -522,7 +535,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (when (probe-file output-name) (delete-file output-name))
          (linker-ar output-name o-name ld-flags))
         #+dlopen
-        ((:shared-library :dll)
+        (:shared-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
          (format c-file +lisp-init-wrapper+ wrap-init-name init-name)

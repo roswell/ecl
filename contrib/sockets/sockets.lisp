@@ -107,7 +107,7 @@
 
 (define-c-constants
   +af-inet+ "AF_INET"
-  +af-local+ #-sun4sol2 "AF_LOCAL" #+sun4sol2 "AF_UNIX"
+  +af-local+ #-(or sun4sol2 aix) "AF_LOCAL" #+(or sun4sol2 aix) "AF_UNIX"
   +eagain+ "EAGAIN"
   +eintr+ "EINTR")
 
@@ -1429,6 +1429,19 @@ ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
   "#define NETDB_INTERNAL WSAEAFNOSUPPORT"
   "#define NETDB_SUCCESS 0"
 )
+
+#+:haiku
+(clines
+ "#define ESOCKTNOSUPPORT ENOTSUP")
+
+(Clines
+  "#ifndef NETDB_INTERNAL"
+  "#define NETDB_INTERNAL 0"
+  "#endif"
+  "#ifndef NETDB_SUCCESS"
+  "#define NETDB_SUCCESS 0"
+  "#endif")
+
 (define-socket-condition EADDRINUSE address-in-use-error)
 (define-socket-condition EAGAIN interrupted-error)
 (define-socket-condition EBADF bad-file-descriptor-error)

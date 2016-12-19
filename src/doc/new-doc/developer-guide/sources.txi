@@ -1,0 +1,262 @@
+@node Sources structure
+@section Sources structure
+
+@subsection src/c
+
+@multitable {aaaaaaaaaaaaaaa}{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item alloc_2.d
+@tab memory allocation based on the Boehm GC
+
+@item all_symbols.d
+@tab name mangler and symbol initialization
+
+@item apply.d
+@tab interface to C call mechanism
+
+@item arch/*
+@tab architecture dependant code
+
+@item array.d
+@tab array routines
+
+@item assignment.c
+@tab assignment
+
+@item backq.d
+@tab backquote mechanism
+
+@item big.d
+@tab bignum routines based on the GMP
+
+@item big_ll.d
+@tab bignum emulation with long long
+
+@item cfun.d
+@tab compiled functions
+
+@item cfun_dispatch.d
+@tab trampolines for functions
+
+@item character.d
+@tab character routines
+
+@item char_ctype.d
+@tab character properties.
+
+@item cinit.d
+@tab lisp initialization
+
+@item clos/accessor.d
+@tab dispatch for slots
+
+@item clos/cache.d
+@tab thread-local cache for a variety of operations
+
+@item cmpaux.d
+@tab auxiliaries used in compiled Lisp code
+
+@item compiler.d
+@tab bytecode compiler
+
+@item disassembler.d
+@tab bytecodes disassembler utilities
+
+@item dpp.c
+@tab defun preprocessor
+
+@item ecl_constants.h
+@tab contstant values for all_symbols.d
+
+@item features.h
+@tab names of features compiled into ECL
+
+@item error.d
+@tab error handling
+
+@item eval.d
+@tab evaluation
+
+@item ffi/backtrace.d
+@tab C backtraces
+
+@item ffi/cdata.d
+@tab data for compiled files
+
+@item ffi/libraries.d
+@tab shared library and bundle opening / copying / closing
+
+@item ffi/mmap.d
+@tab mapping of binary files
+
+@item ffi.d
+@tab user defined data types and foreign functions interface
+
+@item file.d
+@tab file interface (implementation dependent)
+
+@item format.d
+@tab format (this isn't ANSI compliant, we need it for bootstrapping though)
+
+@item gfun.d
+@tab dispatch for generic functions
+
+@item hash.d
+@tab hash tables
+
+@item instance.d
+@tab CLOS interface
+
+@item interpreter.d
+@tab bytecode interpreter
+
+@item iso_latin_names.h
+@tab character names in ISO-LATIN-1
+
+@item list.d
+@tab list manipulating routines
+
+@item load.d
+@tab binary loader (contains also open_fasl_data)
+
+@item macros.d
+@tab macros and environment
+
+@item main.d
+@tab ecl boot proccess
+
+@item Makefile.in
+@tab Makefile for ECL core library
+
+@item mapfun.d
+@tab mapping
+
+@item newhash.d
+@tab hashing routines
+
+@item num_arith.d
+@tab arithmetic operations
+
+@item number.d
+@tab constructing numbers
+
+@c these files need to be cleaned
+@item numbers/*.d
+@tab arithmetic operations (abs, atan, plusp etc)
+
+@item num_co.d
+@tab operations on floating-point numbers (implementation dependent)
+
+@item num_log.d
+@tab logical operations on numbers
+
+@item num_pred.d
+@tab predicates on numbers
+
+@item num_rand.d
+@tab random numbers
+
+@item package.d
+@tab packages (OS dependent)
+
+@item pathname.d
+@tab pathnames
+
+@item predicate.d
+@tab predicates
+
+@item print.d
+@tab print
+
+@item printer/*.d
+@tab printer utilities and object representations
+
+@item read.d
+@tab read.d - reader
+
+@item reader/parse_integer.d
+@item reader/parse_number.d
+
+@item reference.d
+@tab reference in Constants and Variables
+
+@item sequence.d
+@tab sequence routines
+
+@item serialize.d
+@tab serialize a bunch of lisp data
+
+@item sse2.d
+@tab SSE2 vector type support
+
+@item stacks.d
+@tab binding/history/frame stacks
+
+@item string.d
+@tab string routines
+
+@item structure.d
+@tab structure interface
+
+@item symbol.d
+@tab symbols
+
+@item symbols_list.h
+@item symbols_list2.h
+@tab The latter is generated from the first. The first has to contain all
+symbols on the system which aren't local.
+
+@item tcp.d
+@tab stream interface to TCP
+
+@item time.d
+@tab time routines
+
+@item typespec.d
+@tab type specifier routines
+
+@item unicode/*
+@tab unicode definitions
+
+@item unixfsys.d
+@tab Unix file system interface
+
+@item unixsys.d
+@tab Unix shell interface
+
+@item vector_push.d
+@tab vector optimizations
+
+@headitem threads/
+
+@item atomic.d
+@tab atomic operations
+
+@item barrier.d
+@tab wait barriers
+
+@item condition_variable.d
+@tab condition variables for native threads
+@c implement me: @code{mp_condition_variable_timedwait}
+
+@item ecl_atomics.h
+@tab alternative definitions for atomic operations
+
+@item mailbox.d
+@tab thread communication queue
+
+@item mutex.d
+@tab mutually exclusive locks.
+
+@item process.d
+@tab native threads
+
+@item queue.d
+@tab waiting queue for threads
+
+@item rwlock.d
+@tab POSIX read-write locks
+
+@item semaphore.d
+@tab POSIX-like semaphores
+
+@end multitable

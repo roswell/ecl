@@ -38,15 +38,15 @@
  * or CreateThread (in unix and Windows respectively) with the
  * GC_pthread_create and GC_CreateThread functions.
  */
+
 /* Unfortunately, the Bohem-Weiser garbage collector does not keep track
  * of its configuration. We have to add the following flags by hand in
  * order to force pthread_create being redefined.
  */
 #define GC_THREADS
 #define _REENTRANT
-#include <ecl/gc/gc.h>
-#include <ecl/ecl.h>
 
+#include <ecl/ecl.h>
 
 static void *
 thread_entry_point(void *data)
@@ -59,7 +59,7 @@ thread_entry_point(void *data)
          * routine initializes the lisp and makes it ready for working
          * in this thread.
          */
-        ecl_import_current_thread(Cnil, Cnil);
+        ecl_import_current_thread(ECL_NIL, ECL_NIL);
 
         /*
          * Here we execute some lisp code code.

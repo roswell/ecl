@@ -181,7 +181,8 @@ all functions."
           (format *trace-output*
                   "~0,4@T\\\\ ~{ ~S~}~%"
                   extras))
-        *trace-output*))))
+        *trace-output*)
+      *trace-output*)))
 
 (defun trace-record (fname)
   (declare (si::c-local))

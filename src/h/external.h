@@ -121,9 +121,6 @@ struct cl_env_struct {
         union ecl_ffi_values *ffi_values;
         union ecl_ffi_values **ffi_values_ptrs;
 #endif
-#ifdef ECL_DYNAMIC_FFI
-        void *fficall;
-#endif
 
         /* Alternative stack for processing signals */
         void *altstack;
@@ -1120,6 +1117,9 @@ extern ECL_API double ecl_to_double(cl_object x);
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_long_float(long double f);
 #endif
+#ifdef ECL_IEEE_FP
+extern ECL_API cl_object si_nan();
+#endif /* ECL_IEEE_FP */
 
 /* num_co.c */
 
@@ -1240,7 +1240,7 @@ extern ECL_API cl_object cl_random_state_p(cl_object x);
 extern ECL_API cl_object cl_random _ECL_ARGS((cl_narg narg, cl_object x, ...));
 extern ECL_API cl_object cl_make_random_state _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object ecl_make_random_state(cl_object rs);
-
+extern ECL_API cl_object si_random_state_array(cl_object rs);
 
 /* num_sfun.c */
 
@@ -1590,7 +1590,7 @@ extern ECL_API cl_object si_get_limit(cl_object type);
 
 extern ECL_API cl_index ecl_progv(cl_env_ptr env, cl_object vars, cl_object values);
 extern ECL_API void ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index);
-extern ECL_API void ecl_unwind(cl_env_ptr env, struct ecl_frame *fr) /*ecl_attr_noreturn*/;
+extern ECL_API void ecl_unwind(cl_env_ptr env, struct ecl_frame *fr) ecl_attr_noreturn;
 extern ECL_API struct ecl_frame *frs_sch(cl_object frame_id);
 
 /* string.c */
@@ -1710,7 +1710,6 @@ extern ECL_API cl_object mp_process_active_p(cl_object process);
 extern ECL_API cl_object mp_process_enable(cl_object process);
 extern ECL_API cl_object mp_process_yield(void);
 extern ECL_API cl_object mp_process_join(cl_object process);
-extern ECL_API cl_object mp_process_interrupt(cl_object process, cl_object function);
 extern ECL_API cl_object mp_process_kill(cl_object process);
 extern ECL_API cl_object mp_process_suspend(cl_object process);
 extern ECL_API cl_object mp_process_resume(cl_object process);
@@ -1749,7 +1748,7 @@ extern ECL_API cl_object mp_make_barrier _ECL_ARGS((cl_narg, cl_object, ...));
 extern ECL_API cl_object mp_barrier_count(cl_object);
 extern ECL_API cl_object mp_barrier_name(cl_object);
 extern ECL_API cl_object mp_barrier_arrivers_count(cl_object);
-extern ECL_API cl_object mp_barrier_wait _ECL_ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_barrier_wait (cl_object);
 extern ECL_API cl_object mp_barrier_unblock _ECL_ARGS((cl_narg, cl_object, ...));
 
 /* threads/mailbox.d */
@@ -1775,6 +1774,7 @@ extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
 
 extern ECL_API cl_object mp_make_lock _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object mp_recursive_lock_p(cl_object lock);
+extern ECL_API cl_object mp_holding_lock_p(cl_object lock);
 extern ECL_API cl_object mp_lock_name(cl_object lock);
 extern ECL_API cl_object mp_lock_owner(cl_object lock);
 extern ECL_API cl_object mp_lock_count(cl_object lock);
@@ -1890,7 +1890,7 @@ extern ECL_API cl_object si_make_pipe();
 extern ECL_API cl_object si_run_program _ECL_ARGS((cl_narg narg, cl_object command, cl_object args, ...));
 extern ECL_API cl_object si_external_process_wait _ECL_ARGS((cl_narg narg, cl_object h, ...));
 extern ECL_API cl_object si_close_windows_handle(cl_object h);
-
+extern ECL_API cl_object si_terminate_process _ECL_ARGS((cl_narg narg, cl_object process, ...));
 
 /* unicode -- no particular file, but we group these changes here */
 

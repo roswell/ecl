@@ -10,8 +10,8 @@ srcdir	= ..\src
 
 SHORT_SITE_NAME   =
 LONG_SITE_NAME    =
-ECL_VERSION       = 16.1.2
-ECL_VERSION_NUMBER= 161002
+ECL_VERSION       = 16.1.3
+ECL_VERSION_NUMBER= 160103
 ARCHITECTURE      = PENTIUM4
 SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
@@ -53,8 +53,6 @@ ECL_CMP     =
 ECL_ASDF    =
 # TCP support
 ECL_SOCKETS =
-# X Windows support
-# ECL_CLX     = 1
 # Regression Tests support
 ECL_RT      =
 # Defsystem support
@@ -181,10 +179,6 @@ ECL_FEATURES = (cons :wants-asdf $(ECL_FEATURES))
 ECL_MODULES  = $(ECL_MODULES) sockets
 ECL_FEATURES = (cons :wants-sockets $(ECL_FEATURES))
 !endif
-!ifdef ECL_CLX
-ECL_MODULES  = $(ECL_MODULES) clx
-ECL_FEATURES = (cons :wants-clx $(ECL_FEATURES))
-!endif
 !ifdef ECL_RT
 ECL_MODULES  = $(ECL_MODULES) rt
 ECL_FEATURES = (cons :wants-rt $(ECL_FEATURES))
@@ -297,7 +291,6 @@ cmp/load.lsp: $(srcdir)/cmp/load.lsp.in
 	$(CP) $(srcdir)\cmp\load.lsp.in cmp\load.lsp
 cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	c\cut "@ECL_CC@" "$(CC)" \
-	    "@CC_IS_CXX@" "nil" \
 	    "@CFLAGS@" "$(CFLAGS)" \
 	    "@CFLAGS_OPTIMIZE@" "$(CFLAGS_OPTIMIZE)" \
 	    "@ECL_CFLAGS@" "" \
@@ -363,11 +356,9 @@ eclgmp.lib:
 	$(CP) gmp.lib ..\eclgmp.lib
 	$(CP) gmp.h ..\ecl\gmp.h
 	cd ..
+
 sysfun.lsp:
 	$(CP) $(srcdir)\cmp\sysfun.lsp .\
-
-rt.lisp:
-	$(CP) $(srcdir)\..\contrib\rt\rt.lisp .\
 
 install:
 	IF NOT EXIST "$(prefix)" $(MKDIR) "$(prefix)"
@@ -394,7 +385,7 @@ install:
 	for /f %i in ('type MODULES') do $(CP) %i "$(libdir)"
 	for %i in (ecl-static.lib) do IF EXIST %i $(CP) %i "$(libdir)"
 	IF NOT EXIST "$(docdir)" $(MKDIR) "$(docdir)"
-	for %i in (..\Copyright ..\LGPL ..\README.1st ..\CHANGELOG) do $(CP) %i "$(docdir)"
+	for %i in (..\LICENSE ..\LGPL ..\README.md ..\CHANGELOG) do $(CP) %i "$(docdir)"
 !if "$(ECL_UNICODE)" != ""
 	IF NOT EXIST "$(libdir)\encodings" $(MKDIR) "$(libdir)\encodings"
 	$(CP) encodings\*.* "$(libdir)\encodings"
@@ -473,10 +464,10 @@ test2:
 test3:
 	-mkdir stage2
 	cp -rf lsp clos cmp stage2
-	-for i in lsp cmp clos clx tk; do test -f lib$$i.a && mv lib$$i.a stage2; done
+	-for i in lsp cmp clos tk; do test -f lib$$i.a && mv lib$$i.a stage2; done
 	$(MAKE) clean_lisp
 	./ecl < compile.lsp
-	-for i in lsp clos cmp clx tk; do test -d $$i && diff --exclude=\*.o $$i stage2/$$i; done | less
+	-for i in lsp clos cmp tk; do test -d $$i && diff --exclude=\*.o $$i stage2/$$i; done | less
 test:
 	$(MAKE) -C tests
 	$(MAKE) -C ansi-tests > ansi-tests/log

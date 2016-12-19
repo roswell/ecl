@@ -14,10 +14,7 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 
-#-new-cmp
 (in-package "COMPILER")
-#+new-cmp
-(in-package "C-LOG")
 
 #+cmu-format
 (progn
@@ -44,6 +41,12 @@
   (namestring (si::coerce-to-filename path))
   #-windows
   (enough-namestring (si::coerce-to-filename path)))
+
+(defun normalize-build-target-name (target)
+  (ecase target
+    ((:shared-library :dll :standalone-shared-library :standalone-dll) :shared-library)
+    ((:static-library :lib :standalone-static-library :standalone-lib) :static-library)
+    ((:fasl :program) target)))
 
 (defun innermost-non-expanded-form (form)
   (when (listp form)
@@ -306,7 +309,6 @@
 (defun cmpnote (string &rest args)
   (do-cmpwarn 'compiler-note :format-control string :format-arguments args))
 
-#-new-cmp
 (defun cmpdebug (string &rest args)
   (do-cmpwarn 'compiler-debug-note :format-control string :format-arguments args))
 
@@ -383,12 +385,8 @@
   (rem-sysprop symbol 't1)
   (rem-sysprop symbol 't2)
   (rem-sysprop symbol 't3)
-  #-new-cmp(rem-sysprop symbol 'c1)
-  #-new-cmp(rem-sysprop symbol 'c2)
-  #-new-cmp(rem-sysprop symbol 'c1conditional)
   (rem-sysprop symbol 'lfun))
 
-#-new-cmp
 (defun lisp-to-c-name (obj)
   "Translate Lisp object prin1 representation to valid C identifier name"
   (and obj 

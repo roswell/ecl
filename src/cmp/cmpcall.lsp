@@ -268,7 +268,8 @@
          (env nil))
     (case (fun-closure fun)
       (CLOSURE
-       (setf env (environment-accessor fun)))
+       (when (plusp *max-env*)
+         (setf env (environment-accessor fun))))
       (LEXICAL
        (let ((lex-lvl (fun-level fun)))
          (dotimes (n lex-lvl)

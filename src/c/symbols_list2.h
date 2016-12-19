@@ -71,15 +71,10 @@ typedef struct {
 #else
 # define IF_SSE2(x) NULL
 #endif
-#if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI)
+#if defined(HAVE_LIBFFI)
 # define IF_DFFI(x) x
 #else
 # define IF_DFFI(x) NULL
-#endif
-#if defined(HAVE_LIBFFI)
-# define IF_LIBFFI(x) x
-#else
-# define IF_LIBFFI(x) NULL
 #endif
 
 cl_symbol_initializer
@@ -1212,7 +1207,15 @@ cl_symbols[] = {
 {EXT_ "MKSTEMP","si_mkstemp"},
 {SYS_ "RMDIR","si_rmdir"},
 {EXT_ "MAKE-PIPE","si_make_pipe"},
+/* PACKAGE_LOCKS */
+{SYS_ "*IGNORE-PACKAGE-LOCKS*",NULL},
 {EXT_ "PACKAGE-LOCK","si_package_lock"},
+{SYS_ "LOCK-PACKAGE",NULL},
+{SYS_ "UNLOCK-PACKAGE",NULL},
+{SYS_ "PACKAGE-LOCKED-P",NULL},
+{SYS_ "WITHOUT-PACKAGE-LOCKS",NULL},
+{SYS_ "WITH-UNLOCKED-PACKAGES",NULL},
+/* ~PACKAGE_LOCKS */
 {SYS_ "PACKAGE-HASH-TABLES","si_package_hash_tables"},
 {SYS_ "PATHNAME-TRANSLATIONS","si_pathname_translations"},
 {SYS_ "POINTER","si_pointer"},
@@ -1230,6 +1233,7 @@ cl_symbols[] = {
 {SYS_ "REPLACE-ARRAY","si_replace_array"},
 {SYS_ "ROW-MAJOR-ASET","si_row_major_aset"},
 {EXT_ "RUN-PROGRAM","si_run_program"},
+{EXT_ "TERMINATE-PROCESS","si_terminate_process"},
 {SYS_ "WAIT-FOR-ALL-PROCESSES","si_wait_for_all_processes"},
 {EXT_ "SAFE-EVAL","ECL_NAME(si_safe_eval)"},
 {SYS_ "SCH-FRS-BASE","si_sch_frs_base"},
@@ -1554,6 +1558,7 @@ cl_symbols[] = {
 {MP_ "MAKE-LOCK",IF_MP("mp_make_lock")},
 {KEY_ "RECURSIVE",NULL},
 {MP_ "RECURSIVE-LOCK-P",IF_MP("mp_recursive_lock_p")},
+{MP_ "HOLDING-LOCK-P",IF_MP("mp_holding_lock_p")},
 {MP_ "LOCK-NAME",IF_MP("mp_lock_name")},
 {MP_ "LOCK-OWNER",IF_MP("mp_lock_owner")},
 {MP_ "LOCK-COUNT",IF_MP("mp_lock_count")},
@@ -1749,12 +1754,12 @@ cl_symbols[] = {
 
 {SYS_ "*CODE-WALKER*",NULL},
 
-/* #if defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI) */
+/* #if defined(HAVE_LIBFFI) */
 {SYS_ "CALL-CFUN",IF_DFFI("si_call_cfun")},
 {KEY_ "CALLBACK",NULL},
 {SYS_ "MAKE-DYNAMIC-CALLBACK",IF_DFFI("si_make_dynamic_callback")},
-{SYS_ "FREE-FFI-CLOSURE",IF_LIBFFI("si_free_ffi_closure")},
-/* #endif defined(HAVE_LIBFFI) || defined(ECL_DYNAMIC_FFI) */
+{SYS_ "FREE-FFI-CLOSURE",IF_DFFI("si_free_ffi_closure")},
+/* #endif defined(HAVE_LIBFFI) */
 {KEY_ "CDECL",NULL},
 {KEY_ "STDCALL",NULL},
 
@@ -1905,21 +1910,26 @@ cl_symbols[] = {
 
 {EXT_ "*BYTECODES-COMPILER*",NULL},
 
+#ifdef ECL_IEEE_FP
+{SYS_ "NAN","si_nan"},
+
 {EXT_ "SHORT-FLOAT-POSITIVE-INFINITY",NULL},
 {EXT_ "SINGLE-FLOAT-POSITIVE-INFINITY",NULL},
 {EXT_ "DOUBLE-FLOAT-POSITIVE-INFINITY",NULL},
 {EXT_ "LONG-FLOAT-POSITIVE-INFINITY",NULL},
+
 {EXT_ "SHORT-FLOAT-NEGATIVE-INFINITY",NULL},
 {EXT_ "SINGLE-FLOAT-NEGATIVE-INFINITY",NULL},
 {EXT_ "DOUBLE-FLOAT-NEGATIVE-INFINITY",NULL},
 {EXT_ "LONG-FLOAT-NEGATIVE-INFINITY",NULL},
+#endif /* ECL_IEEE_FP */
+
 {EXT_ "FLOAT-NAN-P","si_float_nan_p"},
 {EXT_ "FLOAT-INFINITY-P","si_float_infinity_p"},
-
-{SYS_ "READ-OBJECT-OR-IGNORE","si_read_object_or_ignore"},
-
 {EXT_ "FLOAT-NAN-STRING",NULL},
 {EXT_ "FLOAT-INFINITY-STRING",NULL},
+
+{SYS_ "READ-OBJECT-OR-IGNORE","si_read_object_or_ignore"},
 
 {EXT_ "READTABLE-LOCK","si_readtable_lock"},
 
@@ -1939,7 +1949,11 @@ cl_symbols[] = {
 
 {SYS_ "*ALLOW-WITH-INTERRUPTS*",NULL},
 
+/* conveniance macros from CMU util */
+{EXT_ "ONCE-ONLY",NULL},
+{EXT_ "COLLECT",NULL},
 {EXT_ "WITH-UNIQUE-NAMES",NULL},
+{EXT_ "WITH-GENSYMS",NULL},
 {EXT_ "WITH-CLEAN-SYMBOLS",NULL},
 
 {SYS_ "HANDLE-SIGNAL","si_handle_signal"},
@@ -2211,6 +2225,8 @@ cl_symbols[] = {
 
 {EXT_ "HASH-TABLE-CONTENT","si_hash_table_content"},
 {EXT_ "HASH-TABLE-FILL","si_hash_table_fill"},
+
+{EXT_ "RANDOM-STATE-ARRAY","si_random_state_array"},
 
 {SYS_ "REPORT-FUNCTION",NULL},
 

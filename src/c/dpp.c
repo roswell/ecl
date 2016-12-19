@@ -1,82 +1,86 @@
-/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
-/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+/* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
-    dpp.c -- Defun preprocessor.
-*/
-/*
-    Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-    Copyright (c) 1990, Giuseppe Attardi.
-    Copyright (c) 2001, Juan Jose Garcia Ripoll.
-
-    ECL is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../Copyright' for full details.
-*/
-
+ * dpp.c - defun preprocessor
+ *
+ * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
+ * Copyright (c) 1990 Giuseppe Attardi
+ * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
 /*
-        Usage:
-                dpp [in-file [out-file]]
-
-        The file named in-file is preprocessed and the output will be
-        written to the file whose name is out-file. If in-file is "-"
-        program is read from standard input, while if out-file is "-"
-        C-program is written to standard output.
-
-
-        The function definition:
-
-        @(defun name ({var}*
-                      [&optional {var | (var [initform [svar]])}*]
-                      [&rest var]
-                      [&key {var |
-                             ({var | (keyword var)} [initform [svar]])}*
-                            [&allow_other_keys]]
-                      [&aux {var | (var [initform])}*])
-
-                C-declaration
-
-        @
-
-                C-body
-
-        @)
-
-        name can be either an identifier or a full C procedure header
-        enclosed in quotes (').
-
-        &optional may be abbreviated as &o.
-        &rest may be abbreviated as &r.
-        &key may be abbreviated as &k.
-        &allow_other_keys may be abbreviated as &aok.
-        &aux may be abbreviated as &a.
-
-        Each variable becomes a C variable.
-
-        Each supplied-p parameter becomes a boolean C variable.
-
-        Initforms are C expressions.
-        If an expression contains non-alphanumeric characters,
-        it should be surrounded by backquotes (`).
-
-
-        Function return:
-
-                @(return {form}*)
-
-*/
+ *      Usage:
+ *              dpp [in-file [out-file]]
+ *
+ *      The file named in-file is preprocessed and the output will be
+ *      written to the file whose name is out-file. If in-file is "-"
+ *      program is read from standard input, while if out-file is "-"
+ *      C-program is written to standard output.
+ *
+ *
+ *      The function definition:
+ *
+ *      @(defun name ({var}*
+ *                    [&optional {var | (var [initform [svar]])}*]
+ *                    [&rest var]
+ *                    [&key {var |
+ *                           ({var | (keyword var)} [initform [svar]])}*
+ *                          [&allow_other_keys]]
+ *                    [&aux {var | (var [initform])}*])
+ *
+ *              C-declaration
+ *
+ *      @ {
+ *
+ *              C-body
+ *
+ *      } @)
+ *
+ *      name can be either an identifier or a full C procedure header
+ *      enclosed in quotes (').
+ *
+ *      &optional may be abbreviated as &o.
+ *      &rest may be abbreviated as &r.
+ *      &key may be abbreviated as &k.
+ *      &allow_other_keys may be abbreviated as &aok.
+ *      &aux may be abbreviated as &a.
+ *
+ *      Each variable becomes a C variable.
+ *
+ *      Each supplied-p parameter becomes a boolean C variable.
+ *
+ *      Initforms are C expressions.
+ *      If an expression contains non-alphanumeric characters,
+ *      it should be surrounded by backquotes (`).
+ *
+ *
+ *      Function return:
+ *
+ *              @(return {form}*);
+ *
+ *      Return function expands into a lexical block {}, so if it's
+ *      used inside IF/ELSE, then it should be enclosed, even if we
+ *      use sole @(return);, because ";" will be treated as the next
+ *      instruction.
+ *
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1800)
+#include <stdbool.h> 
+#endif
+
 #define DPP
 #include <ecl/config.h>
+#include <ecl/config-internal.h>
 #include "symbols_list2.h"
 
 /* #define POOLSIZE        2048 */
@@ -91,7 +95,10 @@
 #define FALSE           0
 
 #ifndef __cplusplus
+#if ! ( defined(__bool_true_false_are_defined) \
+        &&__bool_true_false_are_defined )
 typedef int bool;
+#endif
 #endif
 
 FILE *in, *out;
@@ -115,9 +122,9 @@ int nreq;
 int the_env_defined = 0;
 
 struct optional {
-        char *o_var;
-        char *o_init;
-        char *o_svar;
+  char *o_var;
+  char *o_init;
+  char *o_svar;
 } optional[MAXOPT];
 int nopt;
 
@@ -126,17 +133,17 @@ char *rest_var;
 
 bool key_flag;
 struct keyword {
-        char *k_key;
-        char *k_var;
-        char *k_init;
-        char *k_svar;
+  char *k_key;
+  char *k_var;
+  char *k_init;
+  char *k_svar;
 } keyword[MAXKEY];
 int nkey;
 bool allow_other_keys_flag;
 
 struct aux {
-        char *a_var;
-        char *a_init;
+  char *a_var;
+  char *a_init;
 } aux[MAXAUX];
 int naux;
 
@@ -146,511 +153,511 @@ int nres;
 void
 put_lineno(void)
 {
-        static int flag = 0;
-        if (flag)
-                fprintf(out, "#line %d\n", lineno);
-        else {
-                flag++;
-                fprintf(out, "#line %d \"%s\"\n", lineno, filename);
-        }
+  static int flag = 0;
+  if (flag)
+    fprintf(out, "#line %d\n", lineno);
+  else {
+    flag++;
+    fprintf(out, "#line %d \"%s\"\n", lineno, filename);
+  }
 }
 
 void
 error(char *s)
 {
-        printf("Error in line %d: %s.\n", lineno, s);
-        exit(1);
+  printf("Error in line %d: %s.\n", lineno, s);
+  exit(1);
 }
 
 void
 error_symbol(char *s)
 {
-        printf("Error in line %d: illegal symbol %s.\n", lineno, s);
-        exit(1);
+  printf("Error in line %d: illegal symbol %s.\n", lineno, s);
+  exit(1);
 }
 
 int
 readc(void)
 {
-        int c;
+  int c;
 
-        c = getc(in);
-        if (feof(in)) {
-                if (function != NULL)
-                        error("unexpected end of file");
-                exit(0);
-        }
-        if (c == '\n') {
-                lineno++;
-                tab = 0;
-        } else if (c == '\t')
-                tab++;
-        return(c);
+  c = getc(in);
+  if (feof(in)) {
+    if (function != NULL)
+      error("unexpected end of file");
+    exit(0);
+  }
+  if (c == '\n') {
+    lineno++;
+    tab = 0;
+  } else if (c == '\t')
+    tab++;
+  return(c);
 }
 
 int
 nextc(void)
 {
-        int c;
+  int c;
 
-        while (isspace(c = readc()))
-                ;
-        return(c);
+  while (isspace(c = readc()))
+    ;
+  return(c);
 }
 
 void
 unreadc(int c)
 {
-        if (c == '\n')
-                --lineno;
-        else if (c == '\t')
-                --tab;
-        ungetc(c, in);
+  if (c == '\n')
+    --lineno;
+  else if (c == '\t')
+    --tab;
+  ungetc(c, in);
 }
 
 void
 put_tabs(int n)
 {
-        put_lineno();
-        while (n--)
-                putc('\t', out);
+  put_lineno();
+  while (n--)
+    putc('\t', out);
 }
 
 void
 pushc(int c)
 {
-        if (poolp >= &pool[POOLSIZE])
-                error("buffer pool overflow");
-        *poolp++ = c;
+  if (poolp >= &pool[POOLSIZE])
+    error("buffer pool overflow");
+  *poolp++ = c;
 }
 
 void
 pushstr(const char *s)
 {
-        while (*s)
-                pushc(*(s++));
+  while (*s)
+    pushc(*(s++));
 }
 
 int
 search_keyword(const char *name)
 {
-        int i;
-        char c[256];
+  int i;
+  char c[256];
 
-        for (i=0; name[i] && i<255; i++)
-                if (name[i] == '_')
-                        c[i] = '-';
-                else
-                        c[i] = name[i];
-        if (i == 255)
-                error("Too long keyword");
-        c[i] = 0;
-        for (i = 0; cl_symbols[i].name != NULL; i++) {
-                if (cl_symbols[i].name[0] == ':')
-                        if (!strcasecmp(c, cl_symbols[i].name+1))
-                                return i;
-        }
-        printf("Keyword not found: %s.\n", c);
-        return 0;
+  for (i=0; name[i] && i<255; i++)
+    if (name[i] == '_')
+      c[i] = '-';
+    else
+      c[i] = name[i];
+  if (i == 255)
+    error("Too long keyword");
+  c[i] = 0;
+  for (i = 0; cl_symbols[i].name != NULL; i++) {
+    if (cl_symbols[i].name[0] == ':')
+      if (!strcasecmp(c, cl_symbols[i].name+1))
+        return i;
+  }
+  printf("Keyword not found: %s.\n", c);
+  return 0;
 }
 
 char *
 search_symbol(char *name, int *symbol_code, int code)
 {
-        int i;
-        for (i = 0; cl_symbols[i].name != NULL; i++) {
-                if (!strcasecmp(name, cl_symbols[i].name)) {
-                        name = poolp;
-                        if (code) {
-                                pushstr("ecl_make_fixnum(/*");
-                                pushstr(cl_symbols[i].name);
-                                pushstr("*/");
-                                if (i >= 1000)
-                                        pushc((i / 1000) % 10 + '0');
-                                if (i >= 100)
-                                        pushc((i / 100) % 10 + '0');
-                                if (i >= 10)
-                                        pushc((i / 10) % 10 + '0');
-                                pushc(i % 10 + '0');
-                                pushstr(")");
-                                pushc(0);
-                        } else if (i == 0) {
-                                pushstr("ECL_NIL");
-                                pushc(0);
-                        } else {
-                                pushstr("ECL_SYM(\"");
-                                pushstr(cl_symbols[i].name);
-                                pushstr("\",");
-                                if (i >= 1000)
-                                        pushc((i / 1000) % 10 + '0');
-                                if (i >= 100)
-                                        pushc((i / 100) % 10 + '0');
-                                if (i >= 10)
-                                        pushc((i / 10) % 10 + '0');
-                                pushc(i % 10 + '0');
-                                pushstr(")");
-                                pushc(0);
-                        }
-                        if (symbol_code)
-                                *symbol_code = i;
-                        return name;
-                }
-        }
-        return NULL;
+  int i;
+  for (i = 0; cl_symbols[i].name != NULL; i++) {
+    if (!strcasecmp(name, cl_symbols[i].name)) {
+      name = poolp;
+      if (code) {
+        pushstr("ecl_make_fixnum(/*");
+        pushstr(cl_symbols[i].name);
+        pushstr("*/");
+        if (i >= 1000)
+          pushc((i / 1000) % 10 + '0');
+        if (i >= 100)
+          pushc((i / 100) % 10 + '0');
+        if (i >= 10)
+          pushc((i / 10) % 10 + '0');
+        pushc(i % 10 + '0');
+        pushstr(")");
+        pushc(0);
+      } else if (i == 0) {
+        pushstr("ECL_NIL");
+        pushc(0);
+      } else {
+        pushstr("ECL_SYM(\"");
+        pushstr(cl_symbols[i].name);
+        pushstr("\",");
+        if (i >= 1000)
+          pushc((i / 1000) % 10 + '0');
+        if (i >= 100)
+          pushc((i / 100) % 10 + '0');
+        if (i >= 10)
+          pushc((i / 10) % 10 + '0');
+        pushc(i % 10 + '0');
+        pushstr(")");
+        pushc(0);
+      }
+      if (symbol_code)
+        *symbol_code = i;
+      return name;
+    }
+  }
+  return NULL;
 }
 
 char *
 read_symbol(int code)
 {
-        char c, *name = poolp;
-        char end = code? ']' : '\'';
+  char c, *name = poolp;
+  char end = code? ']' : '\'';
 
-        c = readc();
-        while (c != end) {
-                if (c == '_') c = '-';
-                pushc(c); 
-                c = readc();
-        }
-        pushc(0);
+  c = readc();
+  while (c != end) {
+    if (c == '_') c = '-';
+    pushc(c); 
+    c = readc();
+  }
+  pushc(0);
 
-        name = search_symbol(poolp = name, 0, code);
-        if (name == NULL) {
-                name = poolp;
-                printf("\nUnknown symbol: %s\n", name);
-                pushstr("unknown");
-        }
-        return name;
+  name = search_symbol(poolp = name, 0, code);
+  if (name == NULL) {
+    name = poolp;
+    printf("\nUnknown symbol: %s\n", name);
+    pushstr("unknown");
+  }
+  return name;
 }
 
 char *
 search_function(char *name)
 {
-        int i;
-        for (i = 0; cl_symbols[i].name != NULL; i++) {
-                if (cl_symbols[i].translation != NULL &&
-                    !strcasecmp(name, cl_symbols[i].name)) {
-                        name = poolp;
-                        pushstr(cl_symbols[i].translation);
-                        pushc(0);
-                        return name;
-                }
-        }
-        return name;
+  int i;
+  for (i = 0; cl_symbols[i].name != NULL; i++) {
+    if (cl_symbols[i].translation != NULL &&
+        !strcasecmp(name, cl_symbols[i].name)) {
+      name = poolp;
+      pushstr(cl_symbols[i].translation);
+      pushc(0);
+      return name;
+    }
+  }
+  return name;
 }
 
 char *
 read_function()
 {
-        char c, *name = poolp;
+  char c, *name = poolp;
 
-        c = readc();
-        if (c == '"') {
-                c = readc();
-                while (c != '"') {
-                        pushc(c);
-                        c = readc();
-                }
-                pushc(0);
-                return name;
-        }
-        while (c != '(' && !isspace(c) && c != ')' && c != ',') {
-                if (c == '_') c = '-';
-                pushc(c); 
-                c = readc();
-        }
-        unreadc(c);
-        pushc(0);
-        return name;
+  c = readc();
+  if (c == '"') {
+    c = readc();
+    while (c != '"') {
+      pushc(c);
+      c = readc();
+    }
+    pushc(0);
+    return name;
+  }
+  while (c != '(' && !isspace(c) && c != ')' && c != ',') {
+    if (c == '_') c = '-';
+    pushc(c); 
+    c = readc();
+  }
+  unreadc(c);
+  pushc(0);
+  return name;
 }
 
 char *
 translate_function(char *name)
 {
-        char *output = search_function(name);
-        if (output == NULL) {
-                printf("\nUnknown function: %s\n", name);
-                pushstr("unknown");
-                output = poolp;
-        }
-        return output;
+  char *output = search_function(name);
+  if (output == NULL) {
+    printf("\nUnknown function: %s\n", name);
+    pushstr("unknown");
+    output = poolp;
+  }
+  return output;
 }
 
 char *
 read_token(void)
 {
-        int c;
-        int left_paren = 0;
-        char *p;
+  int c;
+  int left_paren = 0;
+  char *p;
 
-        p = poolp;
+  p = poolp;
+  c = readc();
+  while (isspace(c))
+    c = readc();
+  do {
+    if (c == '(') {
+      left_paren++;
+      pushc(c);
+    } else if (c == ')') {
+      if (left_paren == 0) {
+        break;
+      } else {
+        left_paren--;
+        pushc(c);
+      }
+    } else if (isspace(c) && left_paren == 0) {
+      do
         c = readc();
-        while (isspace(c))
-                c = readc();
-        do {
-                if (c == '(') {
-                        left_paren++;
-                        pushc(c);
-                } else if (c == ')') {
-                        if (left_paren == 0) {
-                                break;
-                        } else {
-                                left_paren--;
-                                pushc(c);
-                        }
-                } else if (isspace(c) && left_paren == 0) {
-                        do
-                                c = readc();
-                        while (isspace(c));
-                        break;
-                } else if (c == '@') {
-                        c = readc();
-                        if (c == '\'') {
-                                (void)read_symbol(0);
-                                poolp--;
-                        } else if (c == '[') {
-                                (void)read_symbol(1);
-                                poolp--;
-                        } else if (c == '@') {
-                                pushc(c);
-                        } else {
-                                char *name;
-                                unreadc(c);
-                                poolp = name = read_function();
-                                (void)translate_function(poolp);
-                        }
-                } else {
-                        pushc(c);
-                }
-                c = readc();
-        } while (1);
+      while (isspace(c));
+      break;
+    } else if (c == '@') {
+      c = readc();
+      if (c == '\'') {
+        (void)read_symbol(0);
+        poolp--;
+      } else if (c == '[') {
+        (void)read_symbol(1);
+        poolp--;
+      } else if (c == '@') {
+        pushc(c);
+      } else {
+        char *name;
         unreadc(c);
-        pushc('\0');
-        return(p);
+        poolp = name = read_function();
+        (void)translate_function(poolp);
+      }
+    } else {
+      pushc(c);
+    }
+    c = readc();
+  } while (1);
+  unreadc(c);
+  pushc('\0');
+  return(p);
 }
 
 void
 reset(void)
 {
-        int i;
+  int i;
 
-        the_env_defined = 0;
-        poolp = pool;
-        function = NULL;
-        function_symbol = "";
-        function_c_name = "";
-        nreq = 0;
-        for (i = 0;  i < MAXREQ;  i++)
-                required[i] = NULL;
-        nopt = 0;
-        for (i = 0;  i < MAXOPT;  i++)
-                optional[i].o_var
-                = optional[i].o_init
-                = optional[i].o_svar
-                = NULL;
-        rest_flag = FALSE;
-        rest_var = "ARGS";
-        key_flag = FALSE;
-        nkey = 0;
-        for (i = 0;  i < MAXKEY;  i++)
-                keyword[i].k_key
-                = keyword[i].k_var
-                = keyword[i].k_init
-                = keyword[i].k_svar
-                = NULL;
-        allow_other_keys_flag = FALSE;
-        naux = 0;
-        for (i = 0;  i < MAXAUX;  i++)
-                aux[i].a_var
-                = aux[i].a_init
-                = NULL;
+  the_env_defined = 0;
+  poolp = pool;
+  function = NULL;
+  function_symbol = "";
+  function_c_name = "";
+  nreq = 0;
+  for (i = 0;  i < MAXREQ;  i++)
+    required[i] = NULL;
+  nopt = 0;
+  for (i = 0;  i < MAXOPT;  i++)
+    optional[i].o_var
+      = optional[i].o_init
+      = optional[i].o_svar
+      = NULL;
+  rest_flag = FALSE;
+  rest_var = "ARGS";
+  key_flag = FALSE;
+  nkey = 0;
+  for (i = 0;  i < MAXKEY;  i++)
+    keyword[i].k_key
+      = keyword[i].k_var
+      = keyword[i].k_init
+      = keyword[i].k_svar
+      = NULL;
+  allow_other_keys_flag = FALSE;
+  naux = 0;
+  for (i = 0;  i < MAXAUX;  i++)
+    aux[i].a_var
+      = aux[i].a_init
+      = NULL;
 }
 
 void
 get_function(void)
 {
-        function = read_function();
-        function_symbol = search_symbol(function, &function_code, 0);
-        if (function_symbol == NULL) {
-                function_symbol = poolp;
-                pushstr("ECL_NIL");
-                pushc('\0');
-        }
-        function_c_name = translate_function(function);
+  function = read_function();
+  function_symbol = search_symbol(function, &function_code, 0);
+  if (function_symbol == NULL) {
+    function_symbol = poolp;
+    pushstr("ECL_NIL");
+    pushc('\0');
+  }
+  function_c_name = translate_function(function);
 }
 
 void
 get_lambda_list(void)
 {
-        int c;
-        char *p;
+  int c;
+  char *p;
 
-        if ((c = nextc()) != '(')
-                error("( expected");
-        for (;;) {
-                if ((c = nextc()) == ')')
-                        return;
-                if (c == '&') {
-                        p = read_token();
-                        goto _OPT;
-                }
-                unreadc(c);
-                p = read_token();
-                if (nreq >= MAXREQ)
-                        error("too many required variables");
-                required[nreq++] = p;
-        }
+  if ((c = nextc()) != '(')
+    error("( expected");
+  for (;;) {
+    if ((c = nextc()) == ')')
+      return;
+    if (c == '&') {
+      p = read_token();
+      goto _OPT;
+    }
+    unreadc(c);
+    p = read_token();
+    if (nreq >= MAXREQ)
+      error("too many required variables");
+    required[nreq++] = p;
+  }
 
-_OPT:
-        if (strcmp(p, "optional") != 0 && strcmp(p, "o") != 0)
-                goto _REST;
-        for (;;  nopt++) {
-                if ((c = nextc()) == ')')
-                        return;
-                if (c == '&') {
-                        p = read_token();
-                        goto _REST;
-                }
-                if (nopt >= MAXOPT)
-                        error("too many optional argument");
-                if (c == '(') {
-                        optional[nopt].o_var = read_token();
-                        if ((c = nextc()) == ')')
-                                continue;
-                        unreadc(c);
-                        optional[nopt].o_init = read_token();
-                        if ((c = nextc()) == ')')
-                                continue;
-                        unreadc(c);
-                        optional[nopt].o_svar = read_token();
-                        if (nextc() != ')')
-                                error(") expected");
-                } else {
-                        unreadc(c);
-                        optional[nopt].o_var = read_token();
-                }
-        }
+ _OPT:
+  if (strcmp(p, "optional") != 0 && strcmp(p, "o") != 0)
+    goto _REST;
+  for (;;  nopt++) {
+    if ((c = nextc()) == ')')
+      return;
+    if (c == '&') {
+      p = read_token();
+      goto _REST;
+    }
+    if (nopt >= MAXOPT)
+      error("too many optional argument");
+    if (c == '(') {
+      optional[nopt].o_var = read_token();
+      if ((c = nextc()) == ')')
+        continue;
+      unreadc(c);
+      optional[nopt].o_init = read_token();
+      if ((c = nextc()) == ')')
+        continue;
+      unreadc(c);
+      optional[nopt].o_svar = read_token();
+      if (nextc() != ')')
+        error(") expected");
+    } else {
+      unreadc(c);
+      optional[nopt].o_var = read_token();
+    }
+  }
 
-_REST:
-        if (strcmp(p, "rest") != 0 && strcmp(p, "r") != 0)
-                goto _KEY;
-        rest_flag = TRUE;
-        if ((c = nextc()) == ')' || c == '&')
-                error("&rest var missing");
-        unreadc(c);
-        rest_var = read_token();
+ _REST:
+  if (strcmp(p, "rest") != 0 && strcmp(p, "r") != 0)
+    goto _KEY;
+  rest_flag = TRUE;
+  if ((c = nextc()) == ')' || c == '&')
+    error("&rest var missing");
+  unreadc(c);
+  rest_var = read_token();
+  if ((c = nextc()) == ')')
+    return;
+  if (c != '&')
+    error("& expected");
+  p = read_token();
+
+ _KEY:
+  if (strcmp(p, "key") != 0 && strcmp(p, "k") != 0)
+    goto _AUX;
+  key_flag = TRUE;
+  for (;;  nkey++) {
+    if ((c = nextc()) == ')')
+      return;
+    if (c == '&') {
+      p = read_token();
+      if (strcmp(p, "allow_other_keys") == 0 ||
+          strcmp(p, "aok") == 0) {
+        allow_other_keys_flag = TRUE;
         if ((c = nextc()) == ')')
-                return;
+          return;
         if (c != '&')
-                error("& expected");
+          error("& expected");
         p = read_token();
+      }
+      goto _AUX;
+    }
+    if (nkey >= MAXKEY)
+      error("too many optional argument");
+    if (c == '(') {
+      if ((c = nextc()) == '(') {
+        p = read_token();
+        if (p[0] != ':' || p[1] == '\0')
+          error("keyword expected");
+        keyword[nkey].k_key = p + 1;
+        keyword[nkey].k_var = read_token();
+        if (nextc() != ')')
+          error(") expected");
+      } else {
+        unreadc(c);
+        keyword[nkey].k_key
+          = keyword[nkey].k_var
+          = read_token();
+      }
+      if ((c = nextc()) == ')')
+        continue;
+      unreadc(c);
+      keyword[nkey].k_init = read_token();
+      if ((c = nextc()) == ')')
+        continue;
+      unreadc(c);
+      keyword[nkey].k_svar = read_token();
+      if (nextc() != ')')
+        error(") expected");
+    } else {
+      unreadc(c);
+      keyword[nkey].k_key
+        = keyword[nkey].k_var
+        = read_token();
+    }
+  }
 
-_KEY:
-        if (strcmp(p, "key") != 0 && strcmp(p, "k") != 0)
-                goto _AUX;
-        key_flag = TRUE;
-        for (;;  nkey++) {
-                if ((c = nextc()) == ')')
-                        return;
-                if (c == '&') {
-                        p = read_token();
-                        if (strcmp(p, "allow_other_keys") == 0 ||
-                            strcmp(p, "aok") == 0) {
-                                allow_other_keys_flag = TRUE;
-                                if ((c = nextc()) == ')')
-                                        return;
-                                if (c != '&')
-                                        error("& expected");
-                                p = read_token();
-                        }
-                        goto _AUX;
-                }
-                if (nkey >= MAXKEY)
-                        error("too many optional argument");
-                if (c == '(') {
-                        if ((c = nextc()) == '(') {
-                                p = read_token();
-                                if (p[0] != ':' || p[1] == '\0')
-                                        error("keyword expected");
-                                keyword[nkey].k_key = p + 1;
-                                keyword[nkey].k_var = read_token();
-                                if (nextc() != ')')
-                                        error(") expected");
-                        } else {
-                                unreadc(c);
-                                keyword[nkey].k_key
-                                = keyword[nkey].k_var
-                                = read_token();
-                        }
-                        if ((c = nextc()) == ')')
-                                continue;
-                        unreadc(c);
-                        keyword[nkey].k_init = read_token();
-                        if ((c = nextc()) == ')')
-                                continue;
-                        unreadc(c);
-                        keyword[nkey].k_svar = read_token();
-                        if (nextc() != ')')
-                                error(") expected");
-                } else {
-                        unreadc(c);
-                        keyword[nkey].k_key
-                        = keyword[nkey].k_var
-                        = read_token();
-                }
-        }
-
-_AUX:
-        if (strcmp(p, "aux") != 0 && strcmp(p, "a") != 0)
-                error("illegal lambda-list keyword");
-        for (;;) {
-                if ((c = nextc()) == ')')
-                        return;
-                if (c == '&')
-                        error("illegal lambda-list keyword");
-                if (naux >= MAXAUX)
-                        error("too many auxiliary variable");
-                if (c == '(') {
-                        aux[naux].a_var = read_token();
-                        if ((c = nextc()) == ')')
-                                continue;
-                        unreadc(c);
-                        aux[naux].a_init = read_token();
-                        if (nextc() != ')')
-                                error(") expected");
-                } else {
-                        unreadc(c);
-                        aux[naux].a_var = read_token();
-                }
-                naux++;
-        }
+ _AUX:
+  if (strcmp(p, "aux") != 0 && strcmp(p, "a") != 0)
+    error("illegal lambda-list keyword");
+  for (;;) {
+    if ((c = nextc()) == ')')
+      return;
+    if (c == '&')
+      error("illegal lambda-list keyword");
+    if (naux >= MAXAUX)
+      error("too many auxiliary variable");
+    if (c == '(') {
+      aux[naux].a_var = read_token();
+      if ((c = nextc()) == ')')
+        continue;
+      unreadc(c);
+      aux[naux].a_init = read_token();
+      if (nextc() != ')')
+        error(") expected");
+    } else {
+      unreadc(c);
+      aux[naux].a_var = read_token();
+    }
+    naux++;
+  }
 }
 
 void
 get_return(void)
 {
-        int c;
+  int c;
 
-        nres = 0;
-        for (;;) {
-                if ((c = nextc()) == ')')
-                        return;
-                unreadc(c);
-                result[nres++] = read_token();
-        }
+  nres = 0;
+  for (;;) {
+    if ((c = nextc()) == ')')
+      return;
+    unreadc(c);
+    result[nres++] = read_token();
+  }
 }
 
 void
 put_fhead(void)
 {
-        int i;
+  int i;
 
-        put_lineno();
-        fprintf(out, "cl_object %s(cl_narg narg", function_c_name);
-        for (i = 0; i < nreq; i++)
-                fprintf(out, ", cl_object %s", required[i]);
-        if (nopt > 0 || rest_flag || key_flag)
-                fprintf(out, ", ...");
-        fprintf(out, ")\n{\n");
+  put_lineno();
+  fprintf(out, "cl_object %s(cl_narg narg", function_c_name);
+  for (i = 0; i < nreq; i++)
+    fprintf(out, ", cl_object %s", required[i]);
+  if (nopt > 0 || rest_flag || key_flag)
+    fprintf(out, ", ...");
+  fprintf(out, ")\n{\n");
 }
 
 void
@@ -712,12 +719,12 @@ put_declaration(void)
     }
     put_lineno();
     if (simple_varargs)
-        fprintf(out,"\tva_list %s;\n\tva_start(%s, %s);\n",
-                rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"));
+      fprintf(out,"\tva_list %s;\n\tva_start(%s, %s);\n",
+              rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"));
     else
-        fprintf(out,"\tecl_va_list %s;\n\tecl_va_start(%s, %s, narg, %d);\n",
-                rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"),
-                nreq);
+      fprintf(out,"\tecl_va_list %s;\n\tecl_va_start(%s, %s, narg, %d);\n",
+              rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"),
+              nreq);
     put_lineno();
     fprintf(out, "\tif (ecl_unlikely(narg < %d", nreq);
     if (nopt > 0 && !rest_flag && !key_flag) {
@@ -787,149 +794,149 @@ put_declaration(void)
 void
 put_return(void)
 {
-        int i, t;
+  int i, t;
 
-        t = tab_save+1;
+  t = tab_save+1;
         
-        fprintf(out, "{\n");
-        if (!the_env_defined) {
-          put_tabs(t);
-          fprintf(out, "const cl_env_ptr the_env = ecl_process_env();\n");
-        }
-        if (nres == 0) {
-          fprintf(out, "the_env->nvalues = 0; return ECL_NIL;\n");
-        } else {
-          put_tabs(t);
-          for (i = 0;  i < nres;  i++) {
-                put_tabs(t);
-                fprintf(out, "cl_object __value%d = %s;\n", i, result[i]);
-          }
-          put_tabs(t);
-          fprintf(out, "the_env->nvalues = %d;\n", nres);
-          for (i = nres-1;  i > 0;  i--) {
-                put_tabs(t);
-                fprintf(out, "the_env->values[%d] = __value%d;\n", i, i);
-          }
-          put_tabs(t);
-          fprintf(out, "return __value0;\n");
-        }
-        put_tabs(tab_save);
-        fprintf(out, "}\n");
+  fprintf(out, "{\n");
+  if (!the_env_defined) {
+    put_tabs(t);
+    fprintf(out, "const cl_env_ptr the_env = ecl_process_env();\n");
+  }
+  if (nres == 0) {
+    fprintf(out, "the_env->nvalues = 0; return ECL_NIL;\n");
+  } else {
+    put_tabs(t);
+    for (i = 0;  i < nres;  i++) {
+      put_tabs(t);
+      fprintf(out, "cl_object __value%d = %s;\n", i, result[i]);
+    }
+    put_tabs(t);
+    fprintf(out, "the_env->nvalues = %d;\n", nres);
+    for (i = nres-1;  i > 0;  i--) {
+      put_tabs(t);
+      fprintf(out, "the_env->values[%d] = __value%d;\n", i, i);
+    }
+    put_tabs(t);
+    fprintf(out, "return __value0;\n");
+  }
+  put_tabs(tab_save);
+  fprintf(out, "}\n");
 }
 
 int
 jump_to_at(void)
 {
-        int c;
+  int c;
  GO_ON:
-        while ((c = readc()) != '@')
-                putc(c, out);
-        if ((c = readc()) == '@') {
-                putc(c, out);
-                goto GO_ON;
-        }
-        return c;
+  while ((c = readc()) != '@')
+    putc(c, out);
+  if ((c = readc()) == '@') {
+    putc(c, out);
+    goto GO_ON;
+  }
+  return c;
 }
 
 void
 main_loop(void)
 {
-        int c;
-        int in_defun=0;
-        char *p;
+  int c;
+  int in_defun=0;
+  char *p;
 
-        lineno = 1;
+  lineno = 1;
 
-        reset();
-        put_lineno();
-LOOP:
-        c = jump_to_at();
-        if (c == ')') {
-                if (!in_defun)
-                        error("unmatched @) found");
-                in_defun = 0;
-                putc('}',out);
-                reset();
-                goto LOOP;
-        } else if (c == '\'') {
-                char *p;
-                poolp = pool;
-                p = read_symbol(0);
-                pushc('\0');
-                fprintf(out,"%s",p);
-                goto LOOP;
-        }  else if (c == '[') {
-                char *p;
-                poolp = pool;
-                p = read_symbol(1);
-                pushc('\0');
-                fprintf(out,"%s",p);
-                goto LOOP;
-        } else if (c != '(') {
-                char *p;
-                unreadc(c);
-                poolp = pool;
-                poolp = p = read_function();
-                fprintf(out,"%s",translate_function(poolp));
-                goto LOOP;
-        }
-        p = read_token();
-        if (strcmp(p, "defun") == 0) {
-                if (in_defun)
-                        error("@) expected before new function definition");
-                in_defun = 1;
-                get_function();
-                get_lambda_list();
-                put_fhead();
-                put_lineno();
-                c = jump_to_at();
-                put_declaration();
-                put_lineno();
-        } else if (strcmp(p, "return") == 0) {
-                tab_save = tab;
-                get_return();
-                put_return();
-        } else
-                error_symbol(p);
-        goto LOOP;
+  reset();
+  put_lineno();
+ LOOP:
+  c = jump_to_at();
+  if (c == ')') {
+    if (!in_defun)
+      error("unmatched @) found");
+    in_defun = 0;
+    putc('}',out);
+    reset();
+    goto LOOP;
+  } else if (c == '\'') {
+    char *p;
+    poolp = pool;
+    p = read_symbol(0);
+    pushc('\0');
+    fprintf(out,"%s",p);
+    goto LOOP;
+  }  else if (c == '[') {
+    char *p;
+    poolp = pool;
+    p = read_symbol(1);
+    pushc('\0');
+    fprintf(out,"%s",p);
+    goto LOOP;
+  } else if (c != '(') {
+    char *p;
+    unreadc(c);
+    poolp = pool;
+    poolp = p = read_function();
+    fprintf(out,"%s",translate_function(poolp));
+    goto LOOP;
+  }
+  p = read_token();
+  if (strcmp(p, "defun") == 0) {
+    if (in_defun)
+      error("@) expected before new function definition");
+    in_defun = 1;
+    get_function();
+    get_lambda_list();
+    put_fhead();
+    put_lineno();
+    c = jump_to_at();
+    put_declaration();
+    put_lineno();
+  } else if (strcmp(p, "return") == 0) {
+    tab_save = tab;
+    get_return();
+    put_return();
+  } else
+    error_symbol(p);
+  goto LOOP;
 }
 
 int
 main(int argc, char **argv)
 {
-        char outfile[BUFSIZ];
+  char outfile[BUFSIZ];
 #ifdef _MSC_VER
-        char *p;
+  char *p;
 #endif
-        if (argc < 2 || !strcmp(argv[1],"-")) {
-          in = stdin;
-          strcpy(filename, "-");
-        } else {
-          in = fopen(argv[1],"r");
-          strncpy(filename, argv[1], BUFSIZ-1);
-          filename[BUFSIZ-1] = '\0';
-        }
+  if (argc < 2 || !strcmp(argv[1],"-")) {
+    in = stdin;
+    strcpy(filename, "-");
+  } else {
+    in = fopen(argv[1],"r");
+    strncpy(filename, argv[1], BUFSIZ-1);
+    filename[BUFSIZ-1] = '\0';
+  }
 #ifdef _MSC_VER
-        /* Convert all backslashes in filename into slashes,
-         * to avoid warnings when compiling with MSVC
-         */
-        for ( p=filename; *p; p++ )
-                if ( *p == '\\' )
-                        *p = '/';
+  /* Convert all backslashes in filename into slashes,
+   * to avoid warnings when compiling with MSVC
+   */
+  for ( p=filename; *p; p++ )
+    if ( *p == '\\' )
+      *p = '/';
 #endif
-        if (argc < 3 || !strcmp(argv[2],"-")) {
-          out = stdout;
-          strcpy(outfile, "-");
-        } else {
-          out = fopen(argv[2],"w");
-          strncpy(outfile, argv[2], BUFSIZ-1);
-          outfile[BUFSIZ-1] = '\0';
-        }
-        if (in == NULL)
-                error("can't open input file");
-        if (out == NULL)
-                error("can't open output file");
-        printf("dpp: %s -> %s\n", filename, outfile);
-        main_loop();
-        return 0;
+  if (argc < 3 || !strcmp(argv[2],"-")) {
+    out = stdout;
+    strcpy(outfile, "-");
+  } else {
+    out = fopen(argv[2],"w");
+    strncpy(outfile, argv[2], BUFSIZ-1);
+    outfile[BUFSIZ-1] = '\0';
+  }
+  if (in == NULL)
+    error("can't open input file");
+  if (out == NULL)
+    error("can't open output file");
+  printf("dpp: %s -> %s\n", filename, outfile);
+  main_loop();
+  return 0;
 }
