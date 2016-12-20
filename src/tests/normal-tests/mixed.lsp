@@ -178,7 +178,7 @@
 ;;;; Created:  2016-09-07
 ;;;; Contains: External process interaction API
 ;;;;
-(test external-process.0001.run-program
+(test mix.0011.run-program
   (let ((p (nth-value 2 (ext:run-program #-windows "sleep"
                                          #+windows "timeout"
                                          (list "3") :wait nil))))
@@ -195,3 +195,19 @@
     (finishes (ext:terminate-process p))))
 
 
+;;; Date: 2016-12-20
+;;; Reported by: Kris Katterjohn
+;;; Fixed: Daniel Kochmański
+;;; Description:
+;;;
+;;;   atan signalled `division-by-zero' exception when the second
+;;;   argument was signed zero. Also inconsistent behavior on invalid
+;;;   operation (atan 0.0 0.0).
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/329
+(test mix.0012.atan-signed-zero
+  (finishes (atan 1.0 -0.0))
+  (signals floating-point-invalid-operation (atan -0.0 -0.0))
+  (signals floating-point-invalid-operation (atan +0.0 -0.0))
+  (signals floating-point-invalid-operation (atan -0.0 +0.0))
+  (signals floating-point-invalid-operation (atan +0.0 +0.0)))
