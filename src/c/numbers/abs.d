@@ -43,6 +43,15 @@ ecl_abs_rational(cl_object x)
     ecl_make_ratio(ecl_negate(x->ratio.num), x->ratio.den) : x;
 }
 
+/* In ecl_abs_*_float it would be conformant to use signbit or
+   fabs/fabsf/fabsl what would result in rendering:
+
+   (abs -0.0) ; -> 0.0
+
+   Example in CLHS for ABS function says the contrary, but CLHS 1.4.3
+   states that the examples are not normative. We keep the current
+   behavior for now though. */
+
 static cl_object
 ecl_abs_single_float(cl_object x)
 {
