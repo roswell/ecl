@@ -1167,3 +1167,18 @@
 ;;;    type RANDOM-TYPE
 (test cmp.0051.make-load-form.random-state
   (finishes (make-load-form (make-random-state))))
+
+
+;;; Date 2016-12-20
+;;; Reported by Paul F. Dietz
+;;; Description
+;;;
+;;;    Order of VALUES evaluation in compiled code is wrong.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/330
+(ext:with-clean-symbols (f2)
+  (test cmp.0052.values-evaluation-order
+    (defun f2 (a) (lcm (values a (setq a 1))))
+    (is-eql 10 (f2 10))
+    (compile 'f2)
+    (is-eql 10 (f2 10))))
