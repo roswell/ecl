@@ -22,23 +22,21 @@
 static double
 ecl_atan2_double(double y, double x)
 {
-  if (x == 0) {
-    if (signbit(y)) {
-      return -ECL_PI2_D;
-    } else if (y == 0) {
-      /* Signals floating-point-invalid-operation. If not trapped,
-         produces NaN. */
-      return x / y;
-    } else {
-      return ECL_PI2_D;
-    }
-  } else if (signbit(x)) {
+  if (signbit(x)) {
     if (signbit(y)) {
       return -ECL_PI_D + atan(-y / -x);
     } else if (y == 0) {
       return ECL_PI_D;
     } else {
       return ECL_PI_D - atan(y / -x);
+    }
+  } else if (x == 0) {
+    if (signbit(y)) {
+      return -ECL_PI2_D;
+    } else if (y == 0) {
+      return x / y;  /* Produces a NaN */
+    } else {
+      return ECL_PI2_D;
     }
   } else {
     if (signbit(y)) {
@@ -55,24 +53,21 @@ ecl_atan2_double(double y, double x)
 static long double
 ecl_atan2_long_double(long double y, long double x)
 {
-  if (x == 0) {
-    if (signbit(y)) {
-      return -ECL_PI2_L;
-    } else if (y == 0) {
-      /* Signals floating-point-invalid-operation. If not trapped,
-         produces NaN. */
-      return x / y;
-    } else {
-      return ECL_PI2_L;
-    }
-  }
-  else if (signbit(x)) {
+  if (signbit(x)) {
     if (signbit(y)) {
       return -ECL_PI_L + atanl(-y / -x);
     } else if (y == 0) {
       return ECL_PI_L;
     } else {
       return ECL_PI_L - atanl(y / -x);
+    }
+  } else if (x == 0) {
+    if (signbit(y)) {
+      return -ECL_PI2_L;
+    } else if (y == 0) {
+      return x / y;  /* Produces a NaN */
+    } else {
+      return ECL_PI2_L;
     }
   } else {
     if (signbit(y)) {
