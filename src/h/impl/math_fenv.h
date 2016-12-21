@@ -54,7 +54,7 @@
 
 #ifdef HAVE_FENV_H
 # define ECL_WITHOUT_FPE_BEGIN do { fenv_t env; feholdexcept(&env);
-# define ECL_WITHOUT_FPE_END } while (0)
+# define ECL_WITHOUT_FPE_END        fesetenv(&env); } while (0)
 #else
 # define FE_INVALID 1
 # define FE_DIVBYZERO 2

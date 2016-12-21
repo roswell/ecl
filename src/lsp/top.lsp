@@ -398,7 +398,6 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
       (in-package "CL-USER")
 
       (unless (or *lisp-initialized* (null process-command-line))
-        (si:trap-fpe :last t)
         (process-command-args)
         (format t "ECL (Embeddable Common-Lisp) ~A (git:~D)"
                 (lisp-implementation-version)
