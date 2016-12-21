@@ -10,17 +10,23 @@
 
 (suite 'ieee-fp)
 
+(defmacro without-fpe-traps (&body body)
+  `(unwind-protect
+        (progn
+          (si:trap-fpe 'last nil)
+          ,@body)
+     (si:trap-fpe 'last t)))
+
 (test ieee-fp.0001.infinity-eql
-  (si:trap-fpe 'last nil)
-  (let ((sfni ext:single-float-negative-infinity)
-        (sfpi ext:single-float-positive-infinity)
-        (dfni ext:double-float-negative-infinity)
-        (dfpi ext:double-float-positive-infinity))
-    (is (eql sfni (- sfpi)))
-    (is (eql dfni (- dfpi)))
-    (is (not (eql sfni (- dfpi))))
-    (is (= sfni (- dfpi))))
-  (si:trap-fpe 'last t))
+  (without-fpe-traps
+    (let ((sfni ext:single-float-negative-infinity)
+          (sfpi ext:single-float-positive-infinity)
+          (dfni ext:double-float-negative-infinity)
+          (dfpi ext:double-float-positive-infinity))
+      (is (eql sfni (- sfpi)))
+      (is (eql dfni (- dfpi)))
+      (is (not (eql sfni (- dfpi))))
+      (is (= sfni (- dfpi))))))
 
 (test ieee-fp.0002.printing
   (let ((nums (list ext:single-float-negative-infinity
