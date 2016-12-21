@@ -205,6 +205,7 @@
 ;;;   operation (atan 0.0 0.0).
 ;;;
 ;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/329
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/317
 (test mix.0012.atan-signed-zero
   (finishes (atan 1.0 -0.0))
   (signals floating-point-invalid-operation (atan -0.0 -0.0))
