@@ -205,13 +205,10 @@
 ;;;   operation (atan 0.0 0.0).
 ;;;
 ;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/329
-;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/317
 (test mix.0012.atan-signed-zero
   (finishes (atan 1.0 -0.0))
-  (signals floating-point-invalid-operation (atan -0.0 -0.0))
-  (signals floating-point-invalid-operation (atan +0.0 -0.0))
-  (signals floating-point-invalid-operation (atan -0.0 +0.0))
-  (signals floating-point-invalid-operation (atan +0.0 +0.0)))
+  (signals floating-point-invalid-operation (atan -0.0 (si:nan)))
+  (signals floating-point-invalid-operation (atan +0.0 (si:nan))))
 
 
 ;;; Date: 2016-12-21
@@ -223,4 +220,6 @@
 ;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/317
 (test mix.0013.sleep-without-fpe
   (sleep 0.1)
-  (signals division-by-zero (/ 1.0 0.0)))
+  (let ((a 1.0)
+        (b 0.0))
+    (signals division-by-zero (/ a b))))
