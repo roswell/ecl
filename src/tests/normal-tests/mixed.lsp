@@ -212,3 +212,15 @@
   (signals floating-point-invalid-operation (atan +0.0 -0.0))
   (signals floating-point-invalid-operation (atan -0.0 +0.0))
   (signals floating-point-invalid-operation (atan +0.0 +0.0)))
+
+
+;;; Date: 2016-12-21
+;;; Description:
+;;;
+;;;   `sleep' sues `ECL_WITHOUT_FPE_BEGIN' which didn't restore fpe
+;;;   correctly.
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/317
+(test mix.0013.sleep-without-fpe
+  (sleep 0.1)
+  (signals division-by-zero (/ 1.0 0.0)))
