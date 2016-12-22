@@ -47,7 +47,7 @@ ecl_atan2(cl_object y, cl_object x)
 #else
     double dy = ecl_to_double(y);
     double dx = ecl_to_double(x);
-    double dz = ecl_atan2_double(dy, dx);
+    double dz = atan2(dy, dx);
     if (ECL_DOUBLE_FLOAT_P(x) || ECL_DOUBLE_FLOAT_P(y)) {
       output = ecl_make_double_float(dz);
     } else {
