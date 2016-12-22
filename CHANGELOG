@@ -28,6 +28,9 @@
     parameter given to configure script).
 
 * Pending changes since 16.1.3
+** Enhancements
+- simplified =atan2= implementation by using c99 equivalent ::
+     Now we produce correct output for signed zeros, infinities and nans.
 * 16.1.3 changes since 16.1.2
 ** Announcement
 Dear Community,
