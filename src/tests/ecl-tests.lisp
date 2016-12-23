@@ -128,3 +128,17 @@ as a second value."
          (format ,stream ,string ,@args))
        (multiple-value-prog1 (progn ,@body)
          (delete-file ,var)))))
+
+
+;;; Approximate equality function
+(defun approx= (x y &optional (eps (epsilon x)))
+  (<= (abs (/ (- x y) (max (abs x) 1))) eps))
+
+(defun epsilon (number)
+  (etypecase number
+    (complex (* 2 (epsilon (realpart number)))) ;; crude
+    (short-float short-float-epsilon)
+    (single-float single-float-epsilon)
+    (double-float double-float-epsilon)
+    (long-float long-float-epsilon)
+    (rational 0)))
