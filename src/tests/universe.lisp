@@ -118,6 +118,17 @@
       1.31273s3 12361.12S-7
       6124.124l0 13123.1L-23)))
 
+#+ieee-floating-point
+(defparameter *ieee-fp.inf*
+  (list ext:short-float-negative-infinity
+        ext:single-float-negative-infinity
+        ext:double-float-negative-infinity
+        ext:long-float-negative-infinity
+        ext:short-float-positive-infinity
+        ext:single-float-positive-infinity
+        ext:double-float-positive-infinity
+        ext:long-float-positive-infinity))
+
 (defparameter *ratios*
     '(1/3 1/1000 1/1000000000000000 -10/3 -1000/7 -987129387912381/13612986912361
       189729874978126783786123/1234678123487612347896123467851234671234))

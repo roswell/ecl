@@ -71,103 +71,55 @@
 ;;; Test corner-cases of calculating atan2
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/332
 
-(defparameter *ieee-fp.negative-inf*
-  (list ext:short-float-negative-infinity
-        ext:single-float-negative-infinity
-        ext:double-float-negative-infinity
-        ext:long-float-negative-infinity))
+(flet((+pi-p (elt) (= (coerce pi (type-of elt)) elt))
+      (-pi-p (elt) (= (coerce pi (type-of elt)) (- elt)))
+      (+pi/2-p (elt) (approx= (coerce (/ pi +2) (type-of elt)) elt))
+      (-pi/2-p (elt) (approx= (coerce (/ pi -2) (type-of elt)) elt))
+      (+zerop (elt) (and (zerop elt) (plusp (float-sign elt))))
+      (-zerop (elt) (and (zerop elt) (minusp (float-sign elt)))))
 
-(defparameter *ieee-fp.positive-inf*
-  (list ext:short-float-positive-infinity
-        ext:single-float-positive-infinity
-        ext:double-float-positive-infinity
-        ext:long-float-positive-infinity))
+  (test ieee-fp.0004.atan2-special-cases.nan-arg
+        (without-fpe-traps
+            ;; (atan (anything) nan) -> nan
+            ;; (atan nan (anything)) -> nan
+            (map () (lambda (n)
+                      (is (si:float-nan-p (atan n (si:nan))))
+                      (is (si:float-nan-p (atan (si:nan) n))))
+                 (append *floats* *ieee-fp.inf* (list (si:nan))))))
 
-(defparameter *ieee-fp.inf*
-  (list ext:short-float-negative-infinity
-        ext:single-float-negative-infinity
-        ext:double-float-negative-infinity
-        ext:long-float-negative-infinity
-        ext:short-float-positive-infinity
-        ext:single-float-positive-infinity
-        ext:double-float-positive-infinity
-        ext:long-float-positive-infinity))
+  (test ieee-fp.0005.atan2-special-case.zero-arg
+        (+zerop (atan +0.0 +0.0))
+        (-zerop (atan -0.0 +0.0))
+        (+pi-p  (atan +0.0 -0.0))
+        (-pi-p  (atan -0.0 -0.0))
+        (map () (lambda (n)
+                  ;; (atan +-0 +(anything-but/nan))  -> +-0
+                  (is (+zerop (atan +0.0 n)))
+                  (is (-zerop (atan -0.0 n)))
+                  ;; (atan +-0 -(anything-but/nan))  -> +-pi
+                  (is (+pi-p (atan +0.0 (- n))))
+                  (is (-pi-p (atan -0.0 (- n))))
+                  ;; (atan +-(anything-but/0+nan) 0) -> +-pi/2
+                  (is (+pi/2-p (atan n +0.0)))
+                  (is (+pi/2-p (atan n -0.0)))
+                  (is (-pi/2-p (atan (- n) +0.0)))
+                  (is (-pi/2-p (atan (- n) -0.0))))
+             (remove-if-not #'plusp (append *floats* *ieee-fp.inf*))))
 
-(defparameter *ieee-fp.anything*
-  (append *floats*
-          (list -0.0 +0.0 (si:nan))
-          *ieee-fp.inf*))
-
-(defparameter *ieee-fp.anything/but-nan*
-  (remove-if #'si::float-nan-p *ieee-fp.anything*))
-
-(defparameter *ieee-fp.anything/but-0+nan*
-  (remove-if (lambda (x)
-               (or (si::float-nan-p x)
-                   (si::zerop x)))
-             *ieee-fp.anything*))
-
-(defparameter *ieee-fp.anything/but-inf+nan*
-  (remove-if (lambda (x)
-               (or (si::float-nan-p x)
-                   (si::float-infinity-p x)))
-             *ieee-fp.anything*))
-
-(defparameter *ieee-fp.anything/but-0+inf+nan*
-  (remove-if (lambda (x)
-               (or (si::float-nan-p x)
-                   (si::float-infinity-p x)
-                   (zerop x)))
-             *ieee-fp.anything*))
-
-(defun pip (my-pi number)
-  (<= (abs (- (abs my-pi) (abs number))) 0.01))
-
-(test ieee-fp.0004.atan2-special-cases.nan-arg
-  (without-fpe-traps
-    ;; (atan (anything) nan) -> nan
-    ;; (atan nan (anything)) -> nan
-    (map () (lambda (n)
-              (is (si:float-nan-p (atan n (si:nan))))
-              (is (si:float-nan-p (atan (si:nan) n))))
-         *ieee-fp.anything*)))
-
-(test ieee-fp.0005.atan2-special-case.zero-arg
-  ;; (atan +-0 +(anything-but-nan))  -> +-0
-  ;; (atan +-0 -(anything-but-nan))  -> +-pi
-  (map () (lambda (n)
-            (is (zerop (atan -0.0 n)))
-            (is (zerop (atan +0.0 n)))
-            (is (pip pi (atan +0.0 (- n))))
-            (is (pip pi (atan -0.0 (- n)))))
-       (remove-if-not #'plusp *ieee-fp.anything/but-nan*))
-  ;; (atan +-(anything-but-0/nan) 0) -> +-pi/2
-  (map () (lambda (n)
-            (is (pip (* +1/2 pi) (atan n +0.0)))
-            (is (pip (* -1/2 pi) (atan n -0.0))))
-       *ieee-fp.anything/but-0+nan*))
-
-(test ieee-fp.0006.atan2-special-case.inf-arg
-  ;; (atan +-inf +inf) -> +-pi/4
-  (map () (lambda (n)
-            (map () (lambda (m) (is (pip (/ pi 4) (atan n m))))
-                 *ieee-fp.positive-inf*))
-       *ieee-fp.inf*)
-  ;; (atan +-inf -inf) -> +-3pi/4
-  (map () (lambda (n)
-            (map () (lambda (m) (is (pip (* 3/4 pi) (atan n m))))
-                 *ieee-fp.negative-inf*))
-       *ieee-fp.inf*)
-  (map () (lambda (n)
-            ;; (atan +-(anything-but-inf/nan), +inf) -> +-0
-            (map () (lambda (m) (is (zerop (atan n m))))
-                 *ieee-fp.positive-inf*)
-            ;; (atan +-(anything-but-inf/nan), -inf) -> +-pi
-            (map () (lambda (m) (is (pip pi (atan n m))))
-                 *ieee-fp.negative-inf*))
-       *ieee-fp.anything/but-inf+nan*)
-  ;; (atan +-inf (anything-but-0/nan/inf)) -> +-pi/2
-  (map () (lambda (n)
-            (map () (lambda (m) (is (pip (/ pi 2) (atan m n))))
-                 *ieee-fp.inf*))
-       *ieee-fp.anything/but-0+inf+nan*))
+  (test ieee-fp.0006.atan2-special-case.inf-arg
+        ;; (atan +-inf +inf) -> +-pi/4
+        (let ((+inf ext:single-float-positive-infinity)
+              (-inf ext:single-float-negative-infinity))
+          (is (approx= (atan +inf +inf) (* +1/4 pi)))
+          (is (approx= (atan -inf +inf) (* -1/4 pi)))
+          (is (approx= (atan +inf -inf) (* +3/4 pi)))
+          (is (approx= (atan -inf -inf) (* -3/4 pi)))
+          (map () (lambda (n)
+                    (is (+zerop (atan n +inf)))
+                    (is (-zerop (atan (- n) +inf)))
+                    (is (+pi-p (atan n -inf)))
+                    (is (-pi-p (atan (- n) -inf)))
+                    (unless (zerop n)
+                      (+pi/2-p (atan +inf n))
+                      (-pi/2-p (atan -inf n))))
+               (remove-if-not #'plusp *floats*)))))
