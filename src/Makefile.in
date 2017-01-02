@@ -39,12 +39,6 @@ DPP	= dpp$(EXE)
 ECL_MIN = ecl_min$(EXE)
 ECL     = ecl$(EXE)
 
-# The following flags could be added and used by GCC
-#  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
-#  -Wwrite-strings -Wconversion -Wsign-compare -Wmissing-prototypes \
-#  -Wredundant-decls -Wunreachable-code -Winline
-
-
 # ==================== Where To Install Things ====================
 
 # The default location for installation.  Everything is placed in
@@ -88,100 +82,28 @@ endif
 %Makefile: $(srcdir)/%Makefile.in config.status
 	./config.status
 
-
-# ECL core library (ecl_min)
-HDIR	= ecl
-HFILES	= $(HDIR)/config.h \
-	$(HDIR)/ecl.h \
-	$(HDIR)/ecl-cmp.h \
-	$(HDIR)/object.h \
-	$(HDIR)/cs.h \
-	$(HDIR)/stacks.h \
-	$(HDIR)/external.h \
-	$(HDIR)/cons.h \
-	$(HDIR)/legacy.h \
-	$(HDIR)/number.h \
-	$(HDIR)/page.h
-
-DFILES = $(addprefix $(srcdir)/c/,main.d symbol.d package.d cons.d list.d apply.d eval.d interpreter.d compiler.d disassembler.d instance.d gfun.d clos/cache.d clos/accessor.d reference.d character.d file.d read.d print.d error.d string.d cfun.d reader/parse_integer.d reader/parse_number.d printer/float_to_digits.d printer/float_to_string.d printer/integer_to_string.d printer/write_ugly.d printer/write_object.d printer/write_symbol.d printer/write_array.d printer/write_list.d printer/write_code.d printer/write_sse.d printer/print_unreadable.d ffi/libraries.d ffi/backtrace.d ffi/mmap.d ffi/cdata.d numbers/cos.d numbers/sin.d numbers/tan.d numbers/atan.d numbers/cosh.d numbers/sinh.d numbers/tanh.d numbers/exp.d numbers/expt.d numbers/log.d numbers/sqrt.d numbers/abs.d numbers/zerop.d numbers/plusp.d numbers/minusp.d numbers/negate.d numbers/conjugate.d numbers/one_plus.d numbers/one_minus.d numbers/plus.d numbers/minus.d numbers/times.d numbers/divide.d numbers/number_compare.d numbers/number_equalp.d numbers/minmax.d numbers/floor.d numbers/ceiling.d numbers/round.d numbers/truncate.d typespec.d assignment.d predicate.d number.d num_pred.d num_arith.d num_co.d num_log.d num_rand.d array.d vector_push.d sequence.d cmpaux.d macros.d backq.d stacks.d time.d unixint.d mapfun.d multival.d hash.d format.d pathname.d structure.d load.d unixfsys.d unixsys.d serialize.d ffi.d sse2.d threads/atomic.d)
-
-CFILES = $(DFILES:$(srcdir)/c/%.d=c/%.c)
-OFILES = $(CFILES:%.c=%.o)
-
-# Build rules
-
-$(DPP): $(srcdir)/c/dpp.c $(srcdir)/c/symbols_list2.h
-	if test -f CROSS-DPP; then touch $@; else \
-	$(TRUE_CC) -I$(srcdir)/c/ -I@true_builddir@ -I./ \
-		@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ \
-		-o $@ $<; \
-	fi
-
-$(HFILES):
-	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl $(HDIR)
-
-$(OFILES): $(DPP) c/ecl/external.h $(HFILES) $(srcdir)/c/* $(CFILES)
-
+#
 # When compiling the library itself, we have to remove the dllimport
 # declarations, because the variables that they mark are in the
 # in the library and can be referenced without indirection.
+#
 c/ecl/external.h: $(top_srcdir)/h/external.h
 	test -d c/ecl || mkdir c/ecl
 	sed 's,__declspec(dllimport),,g' $(top_srcdir)/h/external.h > $@
 
-# symbols_list2.h is built this way to allow for an atomic replacement of
-# the file. Otherwise we have problem when doing concurrent builds with
-# rsync updates of the source tree.
-$(srcdir)/c/symbols_list2.h: $(srcdir)/c/symbols_list.h Makefile
-	cat $(srcdir)/c/symbols_list.h | \
-	sed -e 's%{\([A-Z ]*.*".*"\),[^,]*,[ ]*NULL,.*}%{\1,NULL}%g' \
-	    -e 's%{\([A-Z ]*.*".*"\),[^,]*,[ ]*\([^,]*\),.*}%{\1,"\2"}%g' \
-	    -e 's%{NULL.*%{NULL,NULL}};%' | \
-	sed -e 's%"\(IF_[A-Z0-9]*\)(\([^)]*\))"%\1("\2")%g' > tmp.h
-	mv tmp.h $@
-
-# These files are interrelated
-c/all_symbols.c: $(DPP)
-c/all_symbols.o: c/all_symbols.c ecl/external.h
-	$(TRUE_CC)  -I./c/ $(CFLAGS) c/all_symbols.c -o $@
-c/all_symbols2.o: c/all_symbols.c
-	$(TRUE_CC) $(CFLAGS) -DECL_FINAL -I./c/ c/all_symbols.c -o $@
-
-# reduces the overhead of jumping to other functions
-# c/apply.c: $(DPP)
-# c/apply.o: c/apply.c $(HFILES)
-# 	$(TRUE_CC) $(CFLAGS) c/apply.c -o $@
-
-# experimental apply (why isn't referenced anywhere?)
-# apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
-#	if test -f CROSS-DPP ; then \
-#		./CROSS-DPP $(srcdir)/arch/apply_x86.d $@ \
-#	else ./$(DPP) $(srcdir)/arch/apply_x86.d  $@ ; fi
-
-# lisp initialization
-c/cinit.c: $(DPP)
-c/cinit.o: c/cinit.c $(HFILES)
-	$(TRUE_CC) $(CFLAGS) -I./ c/cinit.c -o $@
-
-# general file extension rules
-
-c/%.c: $(srcdir)/c/%.d $(DPP) $(HFILES)
-	if test -f CROSS-DPP ; then ./CROSS-DPP $< $@ ; else ./$(DPP) $< $@ ; fi
-
-c/%.o: c/%.c
-	@echo "Compiling $@..."
-	$(TRUE_CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
-
-c/%.o: $(srcdir)/c/%.c
-	@echo "Compiling $@..."
-	$(TRUE_CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
-
-# c/%.o: $(srcdir)/c/%.d $(DPP) $(HFILES)
-# 	$(TRUE_CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
-
-# .d.s: $(HFILES)
-# 	if test -f CROSS-DPP ; then ./CROSS-DPP $< $@.c ; else ./$(DPP) $< $@.c ; fi
-# 	$(TRUE_CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
+bin/$(ECL): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
+	if [ -f CROSS-COMPILER ]; then \
+		./CROSS-COMPILER compile; \
+	else \
+		ECLDIR=`pwd`/ ./$(ECL_MIN) compile; \
+	fi
+	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
+	  ( mv @SONAME@ @SONAME3@ && \
+	    $(RM) -f @SONAME2@ @SONAME1@ @SONAME@ && \
+	    $(LN_S) @SONAME3@ @SONAME2@ && \
+	    $(LN_S) @SONAME3@ @SONAME1@ && \
+	    $(LN_S) @SONAME3@ @SONAME@ ) \
+	fi
 
 # prerequisite libraries
 libeclgc.a: libeclatomic.a
@@ -215,9 +137,7 @@ libeclgmp.a:
 # final objects archive
 libeclmin.a: libeclgmp.a libeclatomic.a libeclgc.a libeclffi.a $(OFILES) @EXTRA_OBJS@ c/all_symbols.o c/all_symbols2.o lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h
 	@echo "Building $@..."
-	$(RM) $@
-	$(AR) cr $@ $(OFILES) @EXTRA_OBJS@
-	$(RANLIB) $@
+	cd c; $(MAKE)
 
 $(ECL_MIN): $(LIBRARIES) .gdbinit libeclmin.a c/cinit.o
 	@echo "Building $@..."
@@ -229,31 +149,14 @@ $(ECL_MIN): $(LIBRARIES) .gdbinit libeclmin.a c/cinit.o
 		-L./ libeclmin.a \
 		$(CORE_LIBS) $(FASL_LIBS) $(LIBS);\
 	fi
+mini_ecl: $(ECL_MIN) bare2.lsp
+	(echo '#!/bin/sh'; echo './$(ECL_MIN) bare2.lsp') > $@
+	chmod +x $@
 
 clean-ecl_min:
 	$(RM) -rf $(DPP) $(ECL_MIN) libecl*.a c/
 	for i in $(srcdir)/c/*/; do mkdir -p c/`basename $$i`; done
 
-
-# Common Lisp
-
-bin/$(ECL): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
-	if [ -f CROSS-COMPILER ]; then \
-		./CROSS-COMPILER compile; \
-	else \
-		ECLDIR=`pwd`/ ./$(ECL_MIN) compile; \
-	fi
-	if [ "x@SONAME@" != "x" -a -f "@SONAME@" ]; then \
-	  ( mv @SONAME@ @SONAME3@ && \
-	    $(RM) -f @SONAME2@ @SONAME1@ @SONAME@ && \
-	    $(LN_S) @SONAME3@ @SONAME2@ && \
-	    $(LN_S) @SONAME3@ @SONAME1@ && \
-	    $(LN_S) @SONAME3@ @SONAME@ ) \
-	fi
-
-mini_ecl: $(ECL_MIN) bare2.lsp
-	(echo '#!/bin/sh'; echo './$(ECL_MIN) bare2.lsp') > $@
-	chmod +x $@
 bare2.lsp:
 	echo '(load "bare")(si::top-level)' > $@
 
@@ -274,6 +177,7 @@ bin/ecl-config: bin/ecl-config.pre
 build-stamp: config.status
 	echo "#" `uname -a` > $@
 	head -8 config.log | tail -6 >> $@
+
 install:
 # Here we would use the option -s but the install program in sourceforge-solaris
 # is broken.
