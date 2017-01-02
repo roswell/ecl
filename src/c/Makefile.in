@@ -12,8 +12,8 @@ VPATH	= @srcdir@
 #
 CC	= @CC@
 TRUE_CC = $(CC)
-CFLAGS = -Wall -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc    \
--DECL_BUILD -DECL_API -DECL_NO_LEGACY @CPPFLAGS@ @CFLAGS@       \
+CFLAGS = -Wall -Wno-missing-braces -I. -I@true_builddir@ -I$(srcdir)    \
+-I../ecl/gc -DECL_BUILD -DECL_API -DECL_NO_LEGACY @CPPFLAGS@ @CFLAGS@   \
 @ECL_CFLAGS@ -c
 
 # The following flags could be added and used by GCC
@@ -73,6 +73,10 @@ OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o           \
 
 .SUFFIXES: .c .o .d .s
 .PHONY: all
+
+ifndef VERBOSE
+.SILENT:
+endif
 
 all: $(DPP) ../libeclmin.a ../cinit.o
 

@@ -222,7 +222,7 @@ install:
 	    $(LN_S) @SONAME3@ @SONAME1@ && \
 	    $(LN_S) @SONAME3@ @SONAME@ ) \
 	fi
-	$(INSTALL_PROGRAM) $(DPP) $(DESTDIR)$(ecldir)
+	$(INSTALL_PROGRAM) c/$(DPP) $(DESTDIR)$(ecldir)
 	$(INSTALL_PROGRAM) $(ECL_MIN) $(DESTDIR)$(ecldir)
 	for i in `cat modules`; do \
 	  case $$i in \
