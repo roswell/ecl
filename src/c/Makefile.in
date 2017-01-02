@@ -12,9 +12,9 @@ VPATH	= @srcdir@
 #
 CC	= @CC@
 TRUE_CC = $(CC)
-CFLAGS = -Werror -Wno-error=shift-count-overflow                        \
--I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc -DECL_BUILD -DECL_API     \
--DECL_NO_LEGACY @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -c
+CFLAGS = -Wall -I. -I@true_builddir@ -I$(srcdir) -I../ecl/gc    \
+-DECL_BUILD -DECL_API -DECL_NO_LEGACY @CPPFLAGS@ @CFLAGS@       \
+@ECL_CFLAGS@ -c
 
 # The following flags could be added and used by GCC
 #  -Wall -W -Wfloat-equal -Wundef -Wendif-labels -Wpointer-arith -Wcast-align \
@@ -40,9 +40,9 @@ includedir=@includedir@
 # Files
 
 HDIR	= ../ecl
-HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h       \
-	$(HDIR)/object.h $(HDIR)/cs.h $(HDIR)/stacks.h          \
-	$(HDIR)/external.h $(HDIR)/cons.h $(HDIR)/legacy.h      \
+HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h               \
+	$(HDIR)/object.h $(HDIR)/cs.h $(HDIR)/stacks.h                  \
+	$(HDIR)/external.h $(HDIR)/cons.h $(HDIR)/legacy.h              \
 	$(HDIR)/number.h $(HDIR)/page.h
 OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o           \
 	interpreter.o compiler.o disassembler.o instance.o gfun.o       \
@@ -74,20 +74,18 @@ OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o           \
 .SUFFIXES: .c .o .d .s
 .PHONY: all
 
-all:	$(DPP) ../libeclmin.a ../cinit.o
+all: $(DPP) ../libeclmin.a ../cinit.o
 
 .d.c: $(DPP)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
 .d.o: $(DPP)
-	@echo "Compiling $@..."
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
 .c.o: $(HFILES)
-	@echo "Compiling $@..."
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
-.d.s: $(HFILES)
-	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
+# .d.s: $(HFILES)
+# 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
+# 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
 
 ../libeclmin.a: $(OBJS) all_symbols.o all_symbols2.o
 	$(RM) $@
@@ -95,7 +93,7 @@ all:	$(DPP) ../libeclmin.a ../cinit.o
 	$(RANLIB) $@
 
 clean:
-	$(RM) $(DPP) *.c *.h $(OBJS) all_symbols.o all_symbols2.o ../libecl.a cinit.o core a.out tmp.c
+	$(RM) $(DPP) *.c *.h $(OBJS) all_symbols.o all_symbols2.o ../libecl.a ../cinit.o core a.out tmp.c
 
 # Build rules
 

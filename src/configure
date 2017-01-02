@@ -3020,7 +3020,8 @@ boehm_configure_flags=""
 
 
 						                                                                                                                  TARGETS='bin/ecl$(EXE)'
-                             LSP_FEATURES='*features*'
+SUBDIRS=c
+                            LSP_FEATURES='*features*'
 
 
 # Make sure we can run config.sub.
@@ -4875,7 +4876,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ c/threads/process c/threads/queue c/threads/mutex c/threads/condition_variable c/threads/semaphore c/threads/barrier c/threads/mailbox"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox"
 clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
@@ -5638,7 +5639,7 @@ else
 fi
 
 
-EXTRA_OBJS="${EXTRA_OBJS} c/big.o"
+EXTRA_OBJS="${EXTRA_OBJS} big.o"
 if test "x${with_system_gmp}" = "xno" ; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: Configuring included GMP library:" >&5
 $as_echo "$as_me: Configuring included GMP library:" >&6;}
@@ -5893,7 +5894,7 @@ fi
 
 fi
 
-THREAD_OBJ="$THREAD_OBJ c/threads/rwlock"
+THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
     for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
@@ -6160,7 +6161,7 @@ $as_echo "${system_boehm} " >&6; }
    fi
  else
    FASL_LIBS="${FASL_LIBS} -lgc"
-   EXTRA_OBJS="${EXTRA_OBJS} c/alloc_2.${OBJEXT}"
+   EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
 
 $as_echo "#define GBC_BOEHM 1" >>confdefs.h
 
@@ -6189,7 +6190,7 @@ $as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
      SUBDIRS="${SUBDIRS} gc"
      CORE_LIBS="-leclgc ${CORE_LIBS}"
-     EXTRA_OBJS="${EXTRA_OBJS} c/alloc_2.${OBJEXT}"
+     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
      if test "${enable_shared}" = "no"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
      fi
@@ -6323,7 +6324,7 @@ $as_echo "$as_me: Configuring included libffi library:" >&6;}
      ECL_LIBFFI_HEADER='ecl/ffi.h'
      SUBDIRS="${SUBDIRS} libffi"
      CORE_LIBS="-leclffi ${CORE_LIBS}"
-     EXTRA_OBJS="${EXTRA_OBJS} c/alloc_2.${OBJEXT}"
+     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
      if test "${enable_shared}" = "no"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclffi.${LIBEXT}"
      fi
@@ -9566,7 +9567,7 @@ if test "${with_tcp}" = "yes"; then
 
 $as_echo "#define TCP 1" >>confdefs.h
 
-  EXTRA_OBJS="${EXTRA_OBJS} c/tcp.${OBJEXT}"
+  EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"
 
 
 LSP_FEATURES="(cons :wants-sockets ${LSP_FEATURES})"
@@ -9692,13 +9693,13 @@ $as_echo "#define ECL_UNICODE 21" >>confdefs.h
 
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
-      EXTRA_OBJS="$EXTRA_OBJS c/unicode/ucd.o c/unicode/ucd-0000.o c/unicode/ucd-0016.o c/unicode/ucd-0032.o c/unicode/ucd-0048.o c/unicode/ucd-0064.o c/unicode/ucd-0080.o c/unicode/ucd-0096.o"
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
    fi
    if test "${with_unicode_names}" = "yes"; then
 
 $as_echo "#define ECL_UNICODE_NAMES 1" >>confdefs.h
 
-      EXTRA_OBJS="$EXTRA_OBJS c/unicode/ucd_names_char.o c/unicode/ucd_names_codes.o c/unicode/ucd_names_pair.o c/unicode/ucd_names_str.o"
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
    fi
 else
    CHAR_CODE_LIMIT=256
@@ -9726,7 +9727,7 @@ $as_echo "#define ECL_RELATIVE_PACKAGE_NAMES 1" >>confdefs.h
 
 fi
 
-ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp ../Makefile Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in ecl/configpre-int.h:h/config-internal.h.in bin/ecl-config.pre:util/ecl-config lsp/config.lsp:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp tests/config.lsp tests/Makefile"
+ac_config_files="$ac_config_files bare.lsp lsp/load.lsp clos/load.lsp cmp/load.lsp ../Makefile Makefile c/Makefile doc/Makefile doc/ecl.man doc/ecl-config.man ecl/configpre.h:h/config.h.in ecl/configpre-int.h:h/config-internal.h.in bin/ecl-config.pre:util/ecl-config lsp/config.lsp:lsp/config.lsp.in compile.pre:compile.lsp.in cmp/cmpdefs.pre:cmp/cmpdefs.lsp tests/config.lsp tests/Makefile"
 
 
 ac_config_headers="$ac_config_headers ecl/config.h:ecl/configpre.h"
@@ -10430,6 +10431,7 @@ do
     "cmp/load.lsp") CONFIG_FILES="$CONFIG_FILES cmp/load.lsp" ;;
     "../Makefile") CONFIG_FILES="$CONFIG_FILES ../Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "c/Makefile") CONFIG_FILES="$CONFIG_FILES c/Makefile" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "doc/ecl.man") CONFIG_FILES="$CONFIG_FILES doc/ecl.man" ;;
     "doc/ecl-config.man") CONFIG_FILES="$CONFIG_FILES doc/ecl-config.man" ;;

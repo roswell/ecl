@@ -91,6 +91,9 @@ c/ecl/external.h: $(top_srcdir)/h/external.h
 	test -d c/ecl || mkdir c/ecl
 	sed 's,__declspec(dllimport),,g' $(top_srcdir)/h/external.h > $@
 
+ecl/external.h: c/ecl/external.h c/ecl/external.h
+	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
+
 bin/$(ECL): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
@@ -135,17 +138,17 @@ libeclgmp.a:
 	fi
 
 # final objects archive
-libeclmin.a: libeclgmp.a libeclatomic.a libeclgc.a libeclffi.a $(OFILES) @EXTRA_OBJS@ c/all_symbols.o c/all_symbols2.o lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h
+libeclmin.a: libeclgmp.a libeclatomic.a libeclgc.a libeclffi.a lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h
 	@echo "Building $@..."
 	cd c; $(MAKE)
 
-$(ECL_MIN): $(LIBRARIES) .gdbinit libeclmin.a c/cinit.o
+$(ECL_MIN): $(LIBRARIES) .gdbinit libeclmin.a
 	@echo "Building $@..."
 	if [ -f CROSS-COMPILER ]; then \
 		touch $@; \
 	else \
 		$(CC) $(LDFLAGS) -o $@ \
-		c/cinit.o c/all_symbols.o \
+		cinit.o c/all_symbols.o \
 		-L./ libeclmin.a \
 		$(CORE_LIBS) $(FASL_LIBS) $(LIBS);\
 	fi

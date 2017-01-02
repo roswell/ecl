@@ -329,7 +329,7 @@ AC_SUBST(SHARED_LDFLAGS)        dnl Flags for shared libraries linker
 AC_SUBST(BUNDLE_LDFLAGS)        dnl Flags for FASL files linker
 AC_SUBST(EXTRA_OBJS)            dnl Extra *.o files to be compiled into libecl.a
 AC_SUBST(TARGETS, ['bin/ecl$(EXE)'])dnl Versions of ECL to be built 
-AC_SUBST(SUBDIRS, [])           dnl Subdirectories that make should process
+AC_SUBST(SUBDIRS, [c])          dnl Subdirectories that make should process
 AC_SUBST(LIBRARIES, [])         dnl GMP, Boehm's GC, etc
 AC_SUBST(LSP_LIBRARIES)         dnl Libraries produced by lisp translator
 AC_SUBST(LSP_FEATURES, ['*features*']) dnl Symbols to add to *FEATURES* for conditional compilation
@@ -421,7 +421,7 @@ fi
 dnl ----------------------------------------------------------------------
 dnl Configure local GMP if needed
 AC_SUBST(ECL_GMP_HEADER)
-EXTRA_OBJS="${EXTRA_OBJS} c/big.o"
+EXTRA_OBJS="${EXTRA_OBJS} big.o"
 if test "x${with_system_gmp}" = "xno" ; then
   AC_MSG_NOTICE(Configuring included GMP library:)
   test -d gmp && rm -rf gmp
@@ -809,7 +809,7 @@ if test "${with_tcp}" = "builtin"; then
 fi
 if test "${with_tcp}" = "yes"; then
   AC_DEFINE(TCP, [1], [Network streams])
-  EXTRA_OBJS="${EXTRA_OBJS} c/tcp.${OBJEXT}"
+  EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"
   ECL_ADD_LISP_MODULE([sockets])
   LIBS="${LIBS} ${TCPLIBS}"
 fi
@@ -879,11 +879,11 @@ if test "x${enable_unicode}" != "xno"; then
       AC_DEFINE([ECL_UNICODE], [21], [Support for Unicode])
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
-      EXTRA_OBJS="$EXTRA_OBJS c/unicode/ucd.o c/unicode/ucd-0000.o c/unicode/ucd-0016.o c/unicode/ucd-0032.o c/unicode/ucd-0048.o c/unicode/ucd-0064.o c/unicode/ucd-0080.o c/unicode/ucd-0096.o"
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
    fi
    if test "${with_unicode_names}" = "yes"; then
       AC_DEFINE([ECL_UNICODE_NAMES], [1], [Link in the database of Unicode names])
-      EXTRA_OBJS="$EXTRA_OBJS c/unicode/ucd_names_char.o c/unicode/ucd_names_codes.o c/unicode/ucd_names_pair.o c/unicode/ucd_names_str.o"
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
    fi
 else
    CHAR_CODE_LIMIT=256
@@ -916,6 +916,7 @@ AC_CONFIG_FILES([
   cmp/load.lsp
   ../Makefile
   Makefile
+  c/Makefile
   doc/Makefile
   doc/ecl.man
   doc/ecl-config.man
