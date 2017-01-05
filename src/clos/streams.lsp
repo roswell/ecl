@@ -512,7 +512,10 @@
     (loop
      (let ((ch (stream-read-char stream)))
        (cond ((eq ch :eof)
-              (return (values (si::shrink-vector res index) t)))
+              (return (values (if (zerop index)
+                                  nil
+                                  (si::shrink-vector res index))
+                              t)))
              (t
               (when (char= ch #\newline)
                 (return (values (si::shrink-vector res index) nil)))
