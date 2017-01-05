@@ -1630,7 +1630,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
   if (!ECL_ANSI_STREAM_P(strm)) {
     value0 = _ecl_funcall2(@'gray::stream-read-line', strm);
     value1 = ecl_nth_value(the_env, 1);
-    if (!Null(value1)) {
+    if (Null(value0) && !Null(value1)) {
       if (!Null(eof_errorp))
         FEend_of_file(strm);
       value0 = eof_value;
