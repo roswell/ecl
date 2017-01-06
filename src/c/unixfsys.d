@@ -150,7 +150,7 @@ current_dir(void) {
   cl_index size = 128;
 
   do {
-    output = ecl_alloc_adjustable_base_string(size);
+    output = ecl_alloc_adjustable_base_string(size+2);
     ecl_disable_interrupts();
     ok = getcwd((char*)output->base_string.self, size);
     if (ok == NULL && errno != ERANGE) {
@@ -161,20 +161,14 @@ current_dir(void) {
     size += 256;
   } while (ok == NULL);
   size = strlen((char*)output->base_string.self);
-  if ((size + 2) >= output->base_string.dim) {
-    /* Too small to host the trailing '/' and '\0' */
-    cl_object other = ecl_alloc_adjustable_base_string(size+2);
-    strcpy((char*)other->base_string.self, (char*)output->base_string.self);
-    output = other;
-  }
 #ifdef _MSC_VER
-  for (c = output->base_string.self; *c; c++)
-    if (*c == '\\')
-      *c = '/';
+  for (c = output->base_string.self; *c; c++) {
+    if (*c == '\\') *c = '/';
+  }
 #endif
   if (output->base_string.self[size-1] != '/') {
     output->base_string.self[size++] = '/';
-    output->base_string.self[size] = 0;
+    output->base_string.self[size] = '\0';
   }
   output->base_string.fillp = size;
   return output;
@@ -234,19 +228,14 @@ si_readlink(cl_object filename) {
   cl_index size = 128, written;
   cl_object output, kind;
   do {
-    output = ecl_alloc_adjustable_base_string(size);
+    /* We reserve 2 characters for trailing '/' and '\0' */
+    output = ecl_alloc_adjustable_base_string(size+2);
     ecl_disable_interrupts();
     written = readlink((char*)filename->base_string.self,
                        (char*)output->base_string.self, size);
     ecl_enable_interrupts();
     size += 256;
   } while (written == size-256);
-  if ((written + 2) > (cl_index)(output->base_string.self)) {
-    /* Too small to host the trailing '/' and '\0' */
-    cl_object other = ecl_alloc_adjustable_base_string(written+2);
-    strcpy((char*)other->base_string.self, (char*)output->base_string.self);
-    output = other;
-  }
   output->base_string.self[written] = '\0';
   kind = file_kind((char*)output->base_string.self, FALSE);
   if (kind == @':directory') {
