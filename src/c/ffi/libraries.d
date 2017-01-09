@@ -147,10 +147,7 @@ set_library_error(cl_object block) {
   cl_object output;
   ecl_disable_interrupts();
 #ifdef HAVE_DLFCN_H
-  {
-    const char * const error = dlerror ();
-    output = error == NULL ? ECL_NIL : make_base_string_copy(error);
-  }
+  output = ecl_cstring_to_base_string_or_nil(dlerror());
 #endif
 #ifdef HAVE_MACH_O_DYLD_H
   {
