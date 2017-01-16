@@ -294,9 +294,9 @@
         (execute-flag nil))
     (dolist (situation (car args))
       (case situation
-        ((LOAD :LOAD-TOPLEVEL) (setq load-flag t))
-        ((COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
-        ((EVAL :EXECUTE)
+        ((CL:LOAD :LOAD-TOPLEVEL) (setq load-flag t))
+        ((CL:COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
+        ((CL:EVAL :EXECUTE)
          (if *compile-toplevel*
              (setq compile-flag (or *compile-time-too* compile-flag))
              (setq execute-flag t)))
