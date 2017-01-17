@@ -776,6 +776,9 @@ with_gmp_libdir
 with_libffi_prefix
 with_libffi_incdir
 with_libffi_libdir
+with_libgc_prefix
+with_libgc_incdir
+with_libgc_libdir
 with___thread
 enable_opcode8
 with_cxx
@@ -1491,6 +1494,12 @@ Optional Packages:
                           path to system LIBFFI includes (overrides prefix)
   --with-libffi-libdir=path
                           path to system LIBFFI libraries (overrides prefix)
+  --with-libgc-prefix=path
+                          prefix for system LIBGC includes and libraries
+  --with-libgc-incdir=path
+                          path to system LIBGC includes (overrides prefix)
+  --with-libgc-libdir=path
+                          path to system LIBGC libraries (overrides prefix)
   --with-__thread         Enable __thread thread-local variables (yes|NO|auto)
                           (supported by NPTL-aware glibc and maybe Windows)
   --with-cxx              build ECL using C++ compiler (default=NO)
@@ -2730,6 +2739,27 @@ fi
 # Check whether --with-libffi-libdir was given.
 if test "${with_libffi_libdir+set}" = set; then :
   withval=$with_libffi_libdir; LIBFFI_LIBDIR="$withval"
+fi
+
+
+
+# Check whether --with-libgc-prefix was given.
+if test "${with_libgc_prefix+set}" = set; then :
+  withval=$with_libgc_prefix; LIBGC_INCDIR="$withval/include"; LIBGC_LIBDIR="$withval/lib"
+fi
+
+
+
+# Check whether --with-libgc-incdir was given.
+if test "${with_libgc_incdir+set}" = set; then :
+  withval=$with_libgc_incdir; LIBGC_INCDIR="$withval"
+fi
+
+
+
+# Check whether --with-libgc-libdir was given.
+if test "${with_libgc_libdir+set}" = set; then :
+  withval=$with_libgc_libdir; LIBGC_LIBDIR="$withval"
 fi
 
 
@@ -5726,6 +5756,20 @@ if test "x$LIBFFI_LIBDIR" != "x"; then
 fi
 CPPFLAGS="$CPPFLAGS $LIBFFI_CPPFLAGS"
 LDFLAGS="$LDFLAGS $LIBFFI_LDFLAGS"
+
+if test "x$LIBGC_INCDIR" != "x"; then
+  LIBGC_CPPFLAGS="-I$LIBGC_INCDIR"
+fi
+if test "x$LIBGC_LIBDIR" != "x"; then
+  LIBGC_LDFLAGS="-L$LIBGC_LIBDIR"
+  if test "$enable_rpath" = "yes"; then
+    if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
+      LIBGC_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$LIBGC_LIBDIR,"`" $LIBGC_LDFLAGS"
+    fi
+  fi
+fi
+CPPFLAGS="$CPPFLAGS $LIBGC_CPPFLAGS"
+LDFLAGS="$LDFLAGS $LIBGC_LDFLAGS"
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getpwnam in -lsun" >&5
