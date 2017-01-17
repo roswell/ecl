@@ -120,6 +120,22 @@ AC_ARG_WITH(libffi-libdir,
 		  [path to system LIBFFI libraries (overrides prefix)] ),
   [LIBFFI_LIBDIR="$withval"], [])
 
+dnl LIBGC library options
+AC_ARG_WITH(libgc-prefix,
+  AS_HELP_STRING( [--with-libgc-prefix=path],
+                  [prefix for system LIBGC includes and libraries] ),
+  [LIBGC_INCDIR="$withval/include"; LIBGC_LIBDIR="$withval/lib"], [])
+
+AC_ARG_WITH(libgc-incdir,
+  AS_HELP_STRING( [--with-libgc-incdir=path],
+		  [path to system LIBGC includes (overrides prefix)] ),
+  [LIBGC_INCDIR="$withval"], [])
+
+AC_ARG_WITH(libgc-libdir,
+  AS_HELP_STRING( [--with-libgc-libdir=path],
+		  [path to system LIBGC libraries (overrides prefix)] ),
+  [LIBGC_LIBDIR="$withval"], [])
+
 dnl
 AC_ARG_WITH(__thread,
   AS_HELP_STRING( [--with-__thread],
@@ -487,6 +503,22 @@ if test "x$LIBFFI_LIBDIR" != "x"; then
 fi
 CPPFLAGS="$CPPFLAGS $LIBFFI_CPPFLAGS"
 LDFLAGS="$LDFLAGS $LIBFFI_LDFLAGS"
+
+dnl ======================================================================
+dnl LIBGC library
+if test "x$LIBGC_INCDIR" != "x"; then
+  LIBGC_CPPFLAGS="-I$LIBGC_INCDIR"
+fi
+if test "x$LIBGC_LIBDIR" != "x"; then
+  LIBGC_LDFLAGS="-L$LIBGC_LIBDIR"
+  if test "$enable_rpath" = "yes"; then
+    if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
+      LIBGC_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$LIBGC_LIBDIR,"`" $LIBGC_LDFLAGS"
+    fi
+  fi
+fi
+CPPFLAGS="$CPPFLAGS $LIBGC_CPPFLAGS"
+LDFLAGS="$LDFLAGS $LIBGC_LDFLAGS"
 
 dnl =====================================================================
 dnl Checks for libraries
