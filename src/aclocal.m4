@@ -402,7 +402,7 @@ case "${host_os}" in
                 PICFLAG='-fPIC -fno-common'
                 SHARED_LDFLAGS="-dynamiclib -flat_namespace -undefined suppress ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
-                ECL_LDRPATH=''
+                ECL_LDRPATH='-Wl,-rpath,~A'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
                 THREAD_LIBS='-lpthread'
                 # The GMP library has not yet been ported to Intel-OSX
@@ -429,7 +429,7 @@ case "${host_os}" in
                   ECL_GC_DIR=bdwgc
                 fi
                 SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
-                SONAME_LDFLAGS="-Wl,-install_name,@libdir\@/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
+                SONAME_LDFLAGS="-Wl,-install_name,@rpath/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
                 ;;
         nsk*)
                 # HP Non-Stop platform
