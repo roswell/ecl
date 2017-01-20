@@ -187,8 +187,7 @@
            (si::while ,list-var
              (let ((,var (first ,typed-var)))
                (declare ,@declarations)
-               (tagbody
-                  ,@body))
+               (tagbody ,@body))
              (setq ,list-var (rest ,typed-var)))
            ,(when output-form
               `(let ((,var nil))
