@@ -58,30 +58,30 @@
 ;; defmacro.lsp.
 ;;
 (let ((f #'(ext::lambda-block dolist (whole env)
-           (declare (ignore env))
-           (let (body pop finished control var expr exit)
-             (setq body (rest whole))
-             (when (endp body)
-               (simple-program-error "Syntax error in ~A:~%~A" 'DOLIST whole))
-             (setq control (first body) body (rest body))
-             (when (endp control)
-               (simple-program-error "Syntax error in ~A:~%~A" 'DOLIST whole))
-             (setq var (first control) control (rest control))
-             (if (<= 1 (length control) 2)
-                 (setq expr (first control) exit (rest control))
+             (declare (ignore env))
+             (let (body pop finished control var expr exit)
+               (setq body (rest whole))
+               (when (endp body)
                  (simple-program-error "Syntax error in ~A:~%~A" 'DOLIST whole))
-             (multiple-value-bind (declarations body)
-                 (process-declarations body nil)
-               `(block nil
-                 (let* ((%dolist-var ,expr)
-                        ,var)
-                   (declare ,@declarations)
-                   (si::while %dolist-var
-                      (setq ,var (first %dolist-var))
-                      ,@body
-                      (setq %dolist-var (cons-cdr %dolist-var)))
-                   ,(when exit `(setq ,var nil))
-                   ,@exit)))))))
+               (setq control (first body) body (rest body))
+               (when (endp control)
+                 (simple-program-error "Syntax error in ~A:~%~A" 'DOLIST whole))
+               (setq var (first control) control (rest control))
+               (if (<= 1 (length control) 2)
+                   (setq expr (first control) exit (rest control))
+                   (simple-program-error "Syntax error in ~A:~%~A" 'DOLIST whole))
+               (multiple-value-bind (declarations body)
+                   (process-declarations body nil)
+                 `(block nil
+                    (let* ((%dolist-var ,expr)
+                           ,var)
+                      (declare ,@declarations)
+                      (si::while %dolist-var
+                        (setq ,var (first %dolist-var))
+                        ,@body
+                        (setq %dolist-var (cons-cdr %dolist-var)))
+                      ,(when exit `(setq ,var nil))
+                      ,@exit)))))))
   (si::fset 'dolist f t))
 
 (let ((f #'(ext::lambda-block dotimes (whole env)
