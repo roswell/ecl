@@ -239,4 +239,5 @@
               (lambda ()
                 (dolist (s '("foo" "bar" "baz") s)
                   (declare (type string s))
-                  (check-type s string)))))))
+                  (check-type s string)
+                  (format nil "~s" s)))))))
