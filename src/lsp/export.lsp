@@ -57,6 +57,17 @@
 ;; This is also needed for booting ECL. In particular it is required in
 ;; defmacro.lsp.
 ;;
+(defun filter-dolist-declarations (declarations)
+  (declare (si::c-local))
+  (let ((a nil))
+    (mapc #'(lambda (clause)
+              (when (not (and (consp clause)
+                              (or (eq (car clause) 'type)
+                                  (eq (car clause) 'ignore))))
+                (setq a (cons clause a))))
+          declarations)
+    (nreverse a)))
+
 (let ((f #'(ext::lambda-block dolist (whole env)
              (declare (ignore env))
              (let (body pop finished control var expr exit)
@@ -73,15 +84,17 @@
                (multiple-value-bind (declarations body)
                    (process-declarations body nil)
                  `(block nil
-                    (let* ((%dolist-var ,expr)
-                           ,var)
-                      (declare ,@declarations)
+                    (let* ((%dolist-var ,expr))
                       (si::while %dolist-var
-                        (setq ,var (first %dolist-var))
-                        ,@body
-                        (setq %dolist-var (cons-cdr %dolist-var)))
-                      ,(when exit `(setq ,var nil))
-                      ,@exit)))))))
+                        (let ((,var (car %dolist-var)))
+                          (declare ,@declarations)
+                          ,@body
+                          (setq %dolist-var (cons-cdr %dolist-var))))
+                      ,(when exit
+                         `(let ((,var nil))
+                            (declare (ignorable ,var)
+                                     ,@(filter-dolist-declarations declarations))
+                            ,@exit)))))))))
   (si::fset 'dolist f t))
 
 (let ((f #'(ext::lambda-block dotimes (whole env)

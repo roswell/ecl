@@ -167,7 +167,18 @@
     ((var expression &optional output-form) &body body &environment env)
   (multiple-value-bind (declarations body)
       (si:process-declarations body nil)
-    (let* ((list-var (gensym))
+    (let* ((filtered-declarations
+            ;; NB: we filter out `type' and `ignore' declarations from
+            ;; `dolist', because VAR may be used in the result form
+            ;; and its type changes to NIL. These will be placed in
+            ;; the output-form (if present).
+            (cons `(ignorable ,var)
+                  (remove-if (lambda (clause)
+                               (and (consp clause)
+                                    (or (eq (car clause) 'type)
+                                        (eq (car clause) 'ignore))))
+                             declarations)))
+           (list-var (gensym))
            (typed-var (if (policy-assume-no-errors env)
                           list-var
                           `(truly-the cons ,list-var))))
@@ -181,7 +192,7 @@
              (setq ,list-var (rest ,typed-var)))
            ,(when output-form
               `(let ((,var nil))
-                 (declare ,@declarations)
+                 (declare ,@filtered-declarations)
                  ,output-form)))))))
 
 ;;;
