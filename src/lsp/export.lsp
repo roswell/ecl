@@ -88,7 +88,7 @@
                       (si::while %dolist-var
                         (let ((,var (car %dolist-var)))
                           (declare ,@declarations)
-                          ,@body
+                          (tagbody ,@body)
                           (setq %dolist-var (cons-cdr %dolist-var))))
                       ,(when exit
                          `(let ((,var nil))
