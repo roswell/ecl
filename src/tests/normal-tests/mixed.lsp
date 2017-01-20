@@ -220,4 +220,6 @@
   (sleep 0.1)
   (let ((a 1.0)
         (b 0.0))
-    (signals division-by-zero (/ a b))))
+    ;; nb: normally operation signals `division-by-zero', but OSX
+    ;; signals `floating-point-overflow'. It's OK I suppose.
+    (signals arithmetic-error (/ a b))))
