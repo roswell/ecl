@@ -174,11 +174,11 @@
       `(block nil
          (let* ((,list-var ,expression))
            (si::while ,list-var
-              (let ((,var (first ,typed-var)))
-                (declare ,@declarations)
-                (tagbody
-                   ,@body))
-              (setq ,list-var (rest ,typed-var)))
+             (let ((,var (first ,typed-var)))
+               (declare ,@declarations)
+               (tagbody
+                  ,@body))
+             (setq ,list-var (rest ,typed-var)))
            ,(when output-form
               `(let ((,var nil))
                  (declare ,@declarations)
