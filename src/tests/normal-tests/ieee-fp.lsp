@@ -92,19 +92,20 @@
         (-zerop (atan -0.0 +0.0))
         (+pi-p  (atan +0.0 -0.0))
         (-pi-p  (atan -0.0 -0.0))
-        (map () (lambda (n)
-                  ;; (atan +-0 +(anything-but/nan))  -> +-0
-                  (is (+zerop (atan +0.0 n)))
-                  (is (-zerop (atan -0.0 n)))
-                  ;; (atan +-0 -(anything-but/nan))  -> +-pi
-                  (is (+pi-p (atan +0.0 (- n))))
-                  (is (-pi-p (atan -0.0 (- n))))
-                  ;; (atan +-(anything-but/0+nan) 0) -> +-pi/2
-                  (is (+pi/2-p (atan n +0.0)))
-                  (is (+pi/2-p (atan n -0.0)))
-                  (is (-pi/2-p (atan (- n) +0.0)))
-                  (is (-pi/2-p (atan (- n) -0.0))))
-             (remove-if-not #'plusp (append *floats* *ieee-fp.inf*))))
+        (without-fpe-traps
+          (map () (lambda (n)
+                    ;; (atan +-0 +(anything-but/nan))  -> +-0
+                    (is (+zerop (atan +0.0 n)))
+                    (is (-zerop (atan -0.0 n)))
+                    ;; (atan +-0 -(anything-but/nan))  -> +-pi
+                    (is (+pi-p (atan +0.0 (- n))))
+                    (is (-pi-p (atan -0.0 (- n))))
+                    ;; (atan +-(anything-but/0+nan) 0) -> +-pi/2
+                    (is (+pi/2-p (atan n +0.0)))
+                    (is (+pi/2-p (atan n -0.0)))
+                    (is (-pi/2-p (atan (- n) +0.0)))
+                    (is (-pi/2-p (atan (- n) -0.0))))
+               (remove-if-not #'plusp (append *floats* *ieee-fp.inf*)))))
 
   (test ieee-fp.0006.atan2-special-case.inf-arg
         ;; (atan +-inf +inf) -> +-pi/4
