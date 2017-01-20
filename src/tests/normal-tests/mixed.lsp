@@ -223,3 +223,20 @@
     ;; nb: normally operation signals `division-by-zero', but OSX
     ;; signals `floating-point-overflow'. It's OK I suppose.
     (signals arithmetic-error (/ a b))))
+
+
+;;; Data: 2017-01-20
+;;; Description:
+;;;
+;;;   `dolist' macroexpansion yields result which doesn't have a
+;;;   correct scope.
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/348
+(test mix.0014.dolist
+  (is-false
+   (nth-value 1
+     (compile nil
+              (lambda ()
+                (dolist (s '("foo" "bar" "baz") s)
+                  (declare (type string s))
+                  (check-type s string)))))))
