@@ -11,11 +11,12 @@
 (suite 'ieee-fp)
 
 (defmacro without-fpe-traps (&body body)
-  `(unwind-protect
-        (progn
-          (si:trap-fpe 'last nil)
-          ,@body)
-     (si:trap-fpe 'last t)))
+  `(let ((bits (si:trap-fpe 'cl:last t)))
+     (unwind-protect
+          (progn
+            (si:trap-fpe t nil)
+            ,@body)
+       (si:trap-fpe bits t))))
 
 (test ieee-fp.0001.infinity-eql
   (without-fpe-traps
