@@ -17,6 +17,7 @@
 (in-package "COMPILER")
 
 (defun printer-default-stream (stream env)
+  (declare (si::c-local))
   (if (constantp stream env)
       (let ((value (ext:constant-form-value stream env)))
         (case value

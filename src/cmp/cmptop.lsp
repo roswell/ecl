@@ -92,6 +92,7 @@
       (mapc #'t3local-fun (nreverse to-be-emitted)))))
 
 (defun emit-local-funs ()
+  (declare (si::c-local))
   ;; Local functions and closure functions
   (do ((*compile-time-too* nil)
        (*compile-toplevel* nil))
@@ -105,6 +106,7 @@
            ;; so disassemble can redefine it
            (t3local-fun (first lfs)))))))
 
+;;; XXX: referenced in main
 (defun ctop-write (name h-pathname data-pathname
                         &aux def top-output-string
                         (*volatile* "volatile "))
@@ -256,6 +258,7 @@
   (wt-nl top-output-string))
 
 (defun emit-toplevel-form (form c-output-file)
+  (declare (si::c-local))
   (let ((*ihs-used-p* nil)
         (*max-lex* 0)
         (*max-env* 0)
@@ -321,6 +324,7 @@
   (declare (ignore c1form))
   (mapc #'t2expr args))
 
+;;; used (only once) in cmp1lam.lsp
 (defun exported-fname (name)
   (let (cname)
     (if (and (symbolp name) (setf cname (get-sysprop name 'Lfun)))
@@ -329,6 +333,7 @@
 
 ;;; Mechanism for sharing code:
 ;;; FIXME! Revise this 'DEFUN stuff.
+;;; used (only once) in cmp1lam.lsp
 (defun new-defun (new &optional no-entry)
   #|
   (unless (fun-exported new)
@@ -351,6 +356,7 @@
           (fun-name x) (fun-closure x) (fun-level x) (fun-env x)))
 
 (defmacro and! (&body body)
+  (declare (si::c-local))
   `(let ((l (list ,@body)))
      (pprint (list* 'l? l))
      (every #'identity l)))
