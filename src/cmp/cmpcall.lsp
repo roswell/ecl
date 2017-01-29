@@ -221,13 +221,6 @@
 (defvar *text-for-lexical-level*
   '("lex0" "lex1" "lex2" "lex3" "lex4" "lex5" "lex6" "lex7" "lex8" "lex9"))
 
-(defvar *text-for-closure*
-  '("env0" "env1" "env2" "env3" "env4" "env5" "env6" "env7" "env8" "env9"))
-
-(defun env-var-name (n)
-  (or (nth n *text-for-closure*)
-      (format nil "env~D" n)))
-
 (defun wt-stack-pointer (narg)
   (wt "cl_env_copy->stack_top-" narg))
 
@@ -274,10 +267,7 @@
        (let ((lex-lvl (fun-level fun)))
          (dotimes (n lex-lvl)
            (let* ((j (- lex-lvl n 1))
-                  (x (nth j *text-for-lexical-level*)))
-             (unless x
-               (setf x (format nil "lex~d" j)
-                     (nth n *text-for-lexical-level*) x))
+                  (x (lex-env-var-name j)))
              (push x args))))))
     (unless (<= minarg narg maxarg)
       (cmperr "Wrong number of arguments for function ~S"
