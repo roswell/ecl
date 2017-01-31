@@ -233,7 +233,7 @@ is not given, ends the recording."
                                    *dribble-closure* nil))))
            (multiple-value-bind (sec min hour day month year)
                (get-decoded-time)
-             (format dribble-stream "~&Starts dribbling to ~A (~d/~d/~d, ~d:~d:~d)."
+             (format dribble-stream "~&Starts dribbling to ~A (~d/~d/~d, ~2,'0d:~2,'0d:~2,'0d)."
                      namestring year month day hour min sec)
              (setq *standard-input* dribble-stream
                    *standard-output* dribble-stream
