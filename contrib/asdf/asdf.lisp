@@ -1,5 +1,5 @@
 ;;; -*- mode: Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp ; buffer-read-only: t; -*-
-;;; This is ASDF 3.1.8.4: Another System Definition Facility.
+;;; This is ASDF 3.1.8.5: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -4672,6 +4672,7 @@ or COMPRESSION on SBCL, and APPLICATION-TYPE on SBCL/Windows."
                             (shell-boolean-exit
                              (restore-image))))))))
                  (when forms `(progn ,@forms))))))
+      #+(or clasp ecl) (when (eql kind :image) (setf kind :program)) ; for no-uiop ubilds
       #+(or clasp ecl) (check-type kind (member :dll :lib :static-library :program :object :fasl))
       (apply #+clasp 'cmp:builder #+clasp kind
              #+(and ecl (not clasp)) 'c::builder #+(and ecl (not clasp)) kind
@@ -7273,7 +7274,7 @@ previously-loaded version of ASDF."
          ;; "3.4.5.67" would be a development version in the official branch, on top of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "3.1.8.4")
+         (asdf-version "3.1.8.5")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
@@ -11344,7 +11345,7 @@ itself."))
     ;; New style (ASDF3.1) way of specifying prologue and epilogue on ECL: in the system
     ((prologue-code :initform nil :initarg :prologue-code :reader prologue-code)
      (epilogue-code :initform nil :initarg :epilogue-code :reader epilogue-code)
-     (no-uiop :initform t :initarg :no-uiop :reader no-uiop)
+     (no-uiop :initform nil :initarg :no-uiop :reader no-uiop)
      (prefix-lisp-object-files :initarg :prefix-lisp-object-files
                                :initform nil :accessor prefix-lisp-object-files)
      (postfix-lisp-object-files :initarg :postfix-lisp-object-files
