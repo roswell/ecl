@@ -1,5 +1,5 @@
 ;;; -*- mode: Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp ; buffer-read-only: t; -*-
-;;; This is ASDF 3.1.8.2: Another System Definition Facility.
+;;; This is ASDF 3.1.8.4: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -7273,7 +7273,7 @@ previously-loaded version of ASDF."
          ;; "3.4.5.67" would be a development version in the official branch, on top of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "3.1.8.2")
+         (asdf-version "3.1.8.4")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
@@ -11344,7 +11344,7 @@ itself."))
     ;; New style (ASDF3.1) way of specifying prologue and epilogue on ECL: in the system
     ((prologue-code :initform nil :initarg :prologue-code :reader prologue-code)
      (epilogue-code :initform nil :initarg :epilogue-code :reader epilogue-code)
-     (no-uiop :initform nil :initarg :no-uiop :reader no-uiop)
+     (no-uiop :initform t :initarg :no-uiop :reader no-uiop)
      (prefix-lisp-object-files :initarg :prefix-lisp-object-files
                                :initform nil :accessor prefix-lisp-object-files)
      (postfix-lisp-object-files :initarg :postfix-lisp-object-files
@@ -11356,7 +11356,7 @@ itself."))
 
   (defmethod prologue-code ((x t)) nil)
   (defmethod epilogue-code ((x t)) nil)
-  (defmethod no-uiop ((x t)) nil)
+  (defmethod no-uiop ((x t)) t)
   (defmethod prefix-lisp-object-files ((x t)) nil)
   (defmethod postfix-lisp-object-files ((x t)) nil)
   (defmethod extra-object-files ((x t)) nil)
@@ -11873,20 +11873,17 @@ or of opaque libraries shipped along the source code."))
 
   (defmethod component-depends-on :around ((o image-op) (c system))
     (destructuring-bind ((lib-op . deps)) (call-next-method)
-      (labels ((has-it-p (x) (find x deps :test 'equal :key 'coerce-name))
-               (ensure-linkable-system (x)
-		 (unless (has-it-p x)
-                   (or (if-let (s (find-system x))
-                         (and (system-source-directory x)
-                              (list s)))
-                       (if-let (p (system-module-pathname x))
-                         (list (make-prebuilt-system x p)))))))
+      (labels ((ensure-linkable-system (x)
+                 (or (if-let (s (find-system x))
+                       (and (system-source-directory x)
+                            s))
+                     (if-let (p (system-module-pathname x))
+                       (make-prebuilt-system x p)))))
         `((,lib-op
-           ,@(unless (no-uiop c)
-               (append (ensure-linkable-system "cmp")
-                       (or (ensure-linkable-system "uiop")
-                           (ensure-linkable-system "asdf"))))
-           ,@deps)))))
+           ,@(mapcar #'ensure-linkable-system
+                     (if (no-uiop c)
+                         deps
+                         (union deps '("cmp" "uiop" "asdf")))))))))
 
   (defmethod perform ((o link-op) (c system))
     (let* ((object-files (input-files o c))
