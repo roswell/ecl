@@ -60,6 +60,14 @@
        (namestring (translate-logical-pathname "prog:code;documentation.lisp"))
        "/tmp/prog/documentation.lisp")))
 
+;; Issue #351 ;; (probe-file #P"/") maybe shouldn't return nil
+;; https://gitlab.com/embeddable-common-lisp/ecl/issues/351
+#-windows
+(test ansi.19.probe-file
+  (is (probe-file #P"/"))
+  (is (probe-file #P"/tmp"))
+  (is (probe-file #P"/tmp/")))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 22.* Format tests   ;;
