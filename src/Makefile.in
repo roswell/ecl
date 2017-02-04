@@ -32,6 +32,7 @@ LDFLAGS	= @LDFLAGS@
 RM	= @RM@
 LN_S	= @LN_S@
 EXE	= @EXEEXT@
+CTAGS	= @CTAGS@
 ETAGS	= @ETAGS@
 RANLIB	= @RANLIB@
 AR	= @AR@
@@ -293,7 +294,7 @@ selfbuild:
 	-for i in lsp clos cmp tk; do test -d $$i && diff --exclude=\*.o $$i stage2/$$i; done | less
 
 .git/tags:
-	( cd $(srcdir)/../.git && which ctags && ctags -f tags -R --langmap=c:+.d ../src ) || echo "tags generation failed, but this does not break the build."
+	( cd $(srcdir)/../.git && test "x$(CTAGS)" != "x" && $(CTAGS) -f tags -R --langmap=c:+.d ../src ) || echo "tags generation failed, but this does not break the build."
 
 # Make sure to also include *.d files; and match DPP's idiosyncracies
 # like "@si::foo" and "@(defun si::foo".  This rule is allowed to fail
