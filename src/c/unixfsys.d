@@ -49,19 +49,6 @@ typedef int mode_t;
 #include <fcntl.h>
 #include <errno.h>
 
-ecl_def_ct_base_string(str_slash,"/",1,static,const);
-
-static cl_object
-coerce_to_posix_filename(cl_object filename)
-{
-  /* This converts a pathname designator into a namestring, with the
-   * particularity that directories do not end with a slash '/', because
-   * this is not supported on all POSIX platforms (most notably Windows)
-   */
-  filename = si_coerce_to_filename(filename);
-  return cl_string_right_trim(str_slash, filename);
-}
-
 static int
 safe_chdir(const char *path, cl_object prefix)
 {
@@ -216,7 +203,7 @@ file_kind(char *filename, bool follow_links) {
 
 cl_object
 si_file_kind(cl_object filename, cl_object follow_links) {
-  filename = coerce_to_posix_filename(filename);
+  filename = si_coerce_to_filename(filename);
   @(return file_kind((char*)filename->base_string.self, !Null(follow_links)));
 }
 
@@ -475,7 +462,7 @@ ecl_file_len(int f)
    *    is not the truename, because we might be renaming a symbolic link.
    */
   old_truename = cl_truename(oldn);
-  old_filename = coerce_to_posix_filename(old_truename);
+  old_filename = si_coerce_to_filename(old_truename);
 
   /* 2) Create the new file name. */
   newn = ecl_merge_pathnames(newn, oldn, @':newest');
@@ -591,7 +578,7 @@ cl_delete_file(cl_object file)
 {
   cl_object path = cl_pathname(file);
   int isdir = directory_pathname_p(path);
-  cl_object filename = coerce_to_posix_filename(path);
+  cl_object filename = si_coerce_to_filename(path);
   int ok, code;
 
   ecl_disable_interrupts();
@@ -625,7 +612,7 @@ cl_probe_file(cl_object file)
 cl_object
 cl_file_write_date(cl_object file)
 {
-  cl_object time, filename = coerce_to_posix_filename(file);
+  cl_object time, filename = si_coerce_to_filename(file);
   struct stat filestatus;
   if (safe_stat((char*)filename->base_string.self, &filestatus) < 0) {
     time = ECL_NIL;
@@ -638,7 +625,7 @@ cl_file_write_date(cl_object file)
 cl_object
 cl_file_author(cl_object file)
 {
-  cl_object output, filename = coerce_to_posix_filename(file);
+  cl_object output, filename = si_coerce_to_filename(file);
   struct stat filestatus;
   if (safe_stat((char*)filename->base_string.self, &filestatus) < 0) {
     const char *msg = "Unable to read file author for ~S."
@@ -1229,7 +1216,7 @@ cl_object
 si_chmod(cl_object file, cl_object mode)
 {
   mode_t code = ecl_to_uint32_t(mode);
-  cl_object filename = coerce_to_posix_filename(file);
+  cl_object filename = si_coerce_to_filename(file);
   unlikely_if (chmod((char*)filename->base_string.self, code)) {
     cl_object c_error = _ecl_strerror(errno);
     const char *msg = "Unable to change mode of file ~S to value ~O"
