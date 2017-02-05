@@ -277,7 +277,7 @@ si_open_client_stream(cl_object host, cl_object port)
 
   if (ecl_unlikely(!ECL_FIXNUMP(port) ||
                    ecl_fixnum_minusp(port) ||
-                   ecl_fixnum_greater(port,ecl_make_fixnum(65536)))) {
+                   ecl_fixnum_greater(port,ecl_make_fixnum(65535)))) {
     FEwrong_type_nth_arg(@[si::open-client-stream], 2, port,
                          ecl_read_from_cstring("(INTEGER 0 65535)"));
   }
@@ -311,8 +311,8 @@ si_open_server_stream(cl_object port)
 
   if (ecl_unlikely(!ECL_FIXNUMP(port) ||
                    ecl_fixnum_minusp(port) ||
-                   ecl_fixnum_greater(port,ecl_make_fixnum(65536)))) {
-    FEwrong_type_only_arg(@[si::open-client-stream], port,
+                   ecl_fixnum_greater(port,ecl_make_fixnum(65535)))) {
+    FEwrong_type_only_arg(@[si::open-server-stream], port,
                           ecl_read_from_cstring("(INTEGER 0 65535)"));
   }
   p = ecl_fixnum(port);

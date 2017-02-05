@@ -368,6 +368,7 @@ AC_PROG_LN_S          # sets variable LN_S
 AC_PROG_MAKE_SET      # set $(MAKE) if needed
 AC_PROG_RANLIB        # set variable RANLIB
 AC_CHECK_TOOL([AR],[ar]) # set variable AR to appropriate `ar' program
+AC_CHECK_PROGS([CTAGS],[exctags ectags ctags]) # set variable CTAGS to ctags program if found
 AC_CHECK_PROGS([ETAGS],[etags emacs-etags]) # set variable ETAGS to etags program if found
 
 dnl -----------------------------------------------------------------------
