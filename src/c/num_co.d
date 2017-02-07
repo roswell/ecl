@@ -91,7 +91,7 @@ cl_numerator(cl_object x)
   case t_bignum:
     break;
   default:
-    FEwrong_type_nth_arg(@[numerator],1,x,@[rational]);
+    FEwrong_type_only_arg(@[numerator],x,@[rational]);
   }
   @(return x)
     }
@@ -108,7 +108,7 @@ cl_denominator(cl_object x)
     x = ecl_make_fixnum(1);
     break;
   default:
-    FEwrong_type_nth_arg(@[denominator],1,x,@[rational]);
+    FEwrong_type_only_arg(@[denominator],x,@[rational]);
   }
   @(return x)
     }
@@ -178,7 +178,7 @@ cl_decode_float(cl_object x)
   }
 #endif
   default:
-    FEwrong_type_nth_arg(@[decode-float],1,x,@[float]);
+    FEwrong_type_only_arg(@[decode-float],x,@[float]);
   }
   ecl_return3(the_env, x, ecl_make_fixnum(e), ecl_make_single_float(s));
 }
@@ -217,7 +217,7 @@ cl_float_radix(cl_object x)
 {
   const cl_env_ptr the_env = ecl_process_env();
   if (ecl_unlikely(cl_floatp(x) != ECL_T)) {
-    FEwrong_type_nth_arg(@[float-radix],1,x,@[float]);
+    FEwrong_type_only_arg(@[float-radix],x,@[float]);
   }
   ecl_return1(the_env, ecl_make_fixnum(FLT_RADIX));
 }
@@ -287,7 +287,7 @@ cl_float_digits(cl_object x)
     break;
 #endif
   default:
-    FEwrong_type_nth_arg(@[float-digits],1,x,@[float]);
+    FEwrong_type_only_arg(@[float-digits],x,@[float]);
   }
   ecl_return1(the_env, x);
 }
@@ -346,7 +346,7 @@ cl_float_precision(cl_object x)
   }
 #endif
   default:
-    FEwrong_type_nth_arg(@[float-precision],1,x,@[float]);
+    FEwrong_type_only_arg(@[float-precision],x,@[float]);
   }
   ecl_return1(the_env, ecl_make_fixnum(precision));
 }
@@ -409,7 +409,7 @@ cl_integer_decode_float(cl_object x)
     break;
   }
   default:
-    FEwrong_type_nth_arg(@[integer-decode-float],1,x,@[float]);
+    FEwrong_type_only_arg(@[integer-decode-float],x,@[float]);
   }
   ecl_return3(the_env, x, ecl_make_fixnum(e), ecl_make_fixnum(s));
 }
@@ -437,7 +437,7 @@ cl_realpart(cl_object x)
     x = x->complex.real;
     break;
   default:
-    FEwrong_type_nth_arg(@[realpart],1,x,@[number]);
+    FEwrong_type_only_arg(@[realpart],x,@[number]);
   }
   @(return x);
 }
@@ -475,7 +475,7 @@ cl_imagpart(cl_object x)
     x = x->complex.imag;
     break;
   default:
-    FEwrong_type_nth_arg(@[imagpart],1,x,@[number]);
+    FEwrong_type_only_arg(@[imagpart],x,@[number]);
   }
   @(return x);
 }

@@ -23,7 +23,7 @@ ecl_symbol_package(cl_object s)
     return ECL_NIL_SYMBOL->symbol.hpack;
   if (ecl_t_of(s) == t_symbol)
     return s->symbol.hpack;
-  FEwrong_type_nth_arg(@[symbol-package], 1, s, @[symbol]);
+  FEwrong_type_only_arg(@[symbol-package], s, @[symbol]);
 }
 
 int
@@ -59,7 +59,7 @@ ecl_symbol_name(cl_object s)
   if (ecl_t_of(s) == t_symbol) {
     return s->symbol.name;
   }
-  FEwrong_type_nth_arg(@[symbol-name], 1, s, @[symbol]);
+  FEwrong_type_only_arg(@[symbol-name], s, @[symbol]);
 }
 
 static cl_object *
@@ -71,7 +71,7 @@ ecl_symbol_plist(cl_object s)
   if (ecl_t_of(s) == t_symbol) {
     return &s->symbol.plist;
   }
-  FEwrong_type_nth_arg(@[symbol-plist], 1, s, @[symbol]);
+  FEwrong_type_only_arg(@[symbol-plist], s, @[symbol]);
 }
 
 /**********************************************************************/
@@ -97,7 +97,7 @@ cl_make_symbol(cl_object str)
     str = si_copy_to_simple_base_string(str);
     break;
   default:
-    FEwrong_type_nth_arg(@[make-symbol],1,str,@[string]);
+    FEwrong_type_only_arg(@[make-symbol],str,@[string]);
   }
   x = ecl_alloc_object(t_symbol);
   x->symbol.name = str;
