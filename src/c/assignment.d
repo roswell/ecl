@@ -32,7 +32,7 @@ cl_set(cl_object var, cl_object value)
     FEconstant_assignment(var);
   }
   unlikely_if (ecl_t_of(var) != t_symbol) {
-    FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
+    FEwrong_type_nth_arg(@[set], 1, var, @[symbol]);
   }
   unlikely_if (var->symbol.stype & ecl_stp_constant)
     FEconstant_assignment(var);

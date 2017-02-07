@@ -876,7 +876,7 @@ ecl_array_rank(cl_object a)
   case t_bitvector:
     return 1;
   default:
-    FEwrong_type_only_arg(@[array-dimension], a, @[array]);
+    FEwrong_type_only_arg(@[array-rank], a, @[array]);
   }
 }
 

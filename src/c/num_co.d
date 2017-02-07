@@ -108,7 +108,7 @@ cl_denominator(cl_object x)
     x = ecl_make_fixnum(1);
     break;
   default:
-    FEwrong_type_nth_arg(@[numerator],1,x,@[rational]);
+    FEwrong_type_nth_arg(@[denominator],1,x,@[rational]);
   }
   @(return x)
     }
