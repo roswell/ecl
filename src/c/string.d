@@ -241,7 +241,7 @@ cl_string(cl_object x)
       break;
     }
   default:
-    FEwrong_type_nth_arg(@[string],1,x,@[string]);
+    FEwrong_type_only_arg(@[string],x,@[string]);
   }
   @(return x);
 }

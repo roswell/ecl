@@ -337,8 +337,7 @@ si_open_unix_socket_stream(cl_object path)
   struct sockaddr_un addr;
 
   if (ecl_unlikely(!ECL_STRINGP(path)))
-    FEwrong_type_nth_arg(@[si::open-unix-socket-stream], 1, path,
-                         @[string]);
+    FEwrong_type_only_arg(@[si::open-unix-socket-stream], path, @[string]);
 
   path = si_coerce_to_base_string(path);
   if (path->base_string.fillp > UNIX_MAX_PATH-1)
