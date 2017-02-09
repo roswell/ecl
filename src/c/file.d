@@ -5314,7 +5314,7 @@ static int
 flisten(cl_object stream, FILE *fp)
 {
   int aux;
-  if (feof(fp))
+  if (feof(fp) || ferror(fp))
     return ECL_LISTEN_EOF;
 #ifdef FILE_CNT
   if (FILE_CNT(fp) > 0)
