@@ -402,9 +402,9 @@ list of an ip address and a port). If no socket address is provided, send(2)
 will be called instead. Returns the number of octets written."))
 
 
-(defgeneric socket-close (socket)
+(defgeneric socket-close (socket &key abort)
   (:documentation "Close SOCKET.  May throw any kind of error that write(2) would have
-thrown.  If SOCKET-MAKE-STREAM has been called, calls CLOSE on that
+thrown.  If SOCKET-MAKE-STREAM has been called, calls CLOSE using ABORT on that
 stream instead"))
 
 (defgeneric socket-make-stream (socket  &rest args)
@@ -431,7 +431,7 @@ SB-SYS:MAKE-FD-STREAM."))
 (defmethod socket-close-low-level ((socket socket))
   (ff-close (socket-file-descriptor socket)))
 
-(defmethod socket-close ((socket socket))
+(defmethod socket-close ((socket socket) &key abort)
   ;; the close(2) manual page has all kinds of warning about not
   ;; checking the return value of close, on the grounds that an
   ;; earlier write(2) might have returned successfully w/o actually
@@ -450,11 +450,11 @@ SB-SYS:MAKE-FD-STREAM."))
       (cond ((slot-boundp socket 'stream)
              (let ((stream (slot-value socket 'stream)))
                #+threads
-               (close (two-way-stream-input-stream stream))
+               (close (two-way-stream-input-stream stream) :abort abort)
                #+threads
-               (close (two-way-stream-output-stream stream))
+               (close (two-way-stream-output-stream stream) :abort abort)
                #-threads
-               (close stream)) ;; closes fd indirectly
+               (close stream :abort abort)) ;; closes fd indirectly
              (slot-makunbound socket 'stream))
             ((= (socket-close-low-level socket) -1)
              (socket-error "close")))
@@ -1039,8 +1039,8 @@ also known as unix-domain sockets."))
     (socket-error "socket-peername"))
   (slot-value socket 'local-path))
 
-(defmethod socket-close ((socket local-socket))
-  (socket-close (slot-value socket 'proxy-socket))
+(defmethod socket-close ((socket local-socket) &key abort)
+  (socket-close (slot-value socket 'proxy-socket) :abort abort)
   (slot-makunbound socket 'local-path))
 
 (defmethod socket-make-stream ((socket local-socket) &rest args)
@@ -1170,7 +1170,8 @@ also known as unix-domain sockets."))
       (socket-error "SetNamedPipeHandleState")
       (setf (slot-value socket 'non-blocking-p) non-blocking-p))))
 
-(defmethod socket-close ((socket named-pipe-socket))
+(defmethod socket-close ((socket named-pipe-socket) &key abort)
+  (declare (ignore abort))
   (let ((fd (socket-file-descriptor socket)))
     (unless (c-inline (fd) (:int) t
                   "
