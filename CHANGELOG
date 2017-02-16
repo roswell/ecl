@@ -37,6 +37,7 @@
   same as flags for =libffi= and =libgmp=)
 ** Issues fixed
 - buildsystem parallel builds work (i.e make -j999)
+- ECL builds on consoles with unusual encodings on Windows (i.e cp936)
 * 16.1.3 changes since 16.1.2
 ** Announcement
 Dear Community,
