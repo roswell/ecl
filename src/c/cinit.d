@@ -138,12 +138,6 @@ si_wrong_type_argument(cl_narg narg, cl_object object, cl_object type, ...)
   return _ecl_funcall3(@'si::wrong-type-argument', object, type);
 }
 
-extern cl_object
-si_make_encoding(cl_object mapping)
-{
-  return _ecl_funcall2(@'ext::make-encoding', mapping);
-}
-
 static cl_object si_simple_toplevel ()
 {
   cl_env_ptr env = ecl_process_env();

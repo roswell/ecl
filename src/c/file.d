@@ -3075,7 +3075,7 @@ parse_external_format(cl_object stream, cl_object format, int flags)
     return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_USER_FORMAT;
   }
   if (ECL_SYMBOLP(format)) {
-    format = si_make_encoding(format);
+    format = _ecl_funcall2(@'ext::make-encoding', mapping);
     if (ECL_SYMBOLP(format))
       goto PARSE_SYMBOLS;
     stream->stream.format_table = format;

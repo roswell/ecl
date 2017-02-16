@@ -900,6 +900,7 @@
     ;; iolib.lsp
     read-from-string write-to-string prin1-to-string princ-to-string
     y-or-n-p yes-or-no-p string-to-object dribble ext:make-encoding
+    ext:make-encoding
     ext:load-encoding
     ;; listlib.lsp
     union nunion intersection nintersection set-difference nset-difference
