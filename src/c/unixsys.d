@@ -576,7 +576,7 @@ si_run_program_internal(cl_object command, cl_object argv,
 
     /* Command is passed as is from argv. It is responsibility of
        higher level interface to decide, whenever arguments should be
-       quoted or left as-is.*/
+       quoted or left as-is. */
     command = ecl_null_terminated_base_string(argv);
 
     if (!Null(environ)) {
