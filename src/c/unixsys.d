@@ -547,12 +547,13 @@ create_descriptor(cl_object stream, cl_object direction,
   }
 }
 #endif
-@(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
-                          (error @':output') (wait @'t') (environ ECL_NIL)
-                          (if_input_does_not_exist ECL_NIL)
-                          (if_output_exists @':error')
-                          (if_error_exists  @':error')
-                          (external_format  @':default'))
+
+cl_object
+si_run_program_internal(cl_object command, cl_object argv,
+                        cl_object input, cl_object output, cl_object error,
+                        cl_object wait, cl_object environ, cl_object external_format) {
+
+  cl_env_ptr the_env = ecl_process_env();
   int parent_write = 0, parent_read = 0, parent_error = 0;
   int child_pid;
   cl_object pid, process;
@@ -561,37 +562,7 @@ create_descriptor(cl_object stream, cl_object direction,
   cl_object stream_error;
   cl_object exit_status = ECL_NIL;
   @
-  command = si_copy_to_simple_base_string(command);
-  argv = cl_mapcar(2, @'si::copy-to-simple-base-string', argv);
   process = make_external_process();
-
-  {
-    if (input == @'t')
-      input = ecl_symbol_value(@'*standard-input*');
-    if (ECL_STRINGP(input) || ECL_PATHNAMEP(input))
-      input = cl_open(5, input,
-                      @':direction', @':input',
-                      @':if-does-not-exist', if_input_does_not_exist,
-                      @':external-format', external_format);
-
-    if (output == @'t')
-      output = ecl_symbol_value(@'*standard-output*');
-    if (ECL_STRINGP(output) || ECL_PATHNAMEP(output))
-      output = cl_open(7, output,
-                       @':direction', @':output',
-                       @':if-exists', if_output_exists,
-                       @':if-does-not-exist', @':create',
-                       @':external-format', external_format);
-
-    if (error == @'t')
-      error = ecl_symbol_value(@'*error-output*');
-    if (ECL_STRINGP(error) || ECL_PATHNAMEP(error))
-      error = cl_open(7, error,
-                      @':direction', @':output',
-                      @':if-exists', if_error_exists,
-                      @':if-does-not-exist', @':create',
-                      @':external-format', external_format);
-  }
 #if defined(ECL_MS_WINDOWS_HOST)
   {
     BOOL ok;
@@ -602,16 +573,6 @@ create_descriptor(cl_object stream, cl_object direction,
     HANDLE saved_stdout, saved_stdin, saved_stderr;
     cl_object env_buffer;
     char *env = NULL;
-
-    /* Enclose each argument, as well as the file name
-       in double quotes, to avoid problems when these
-       arguments or file names have spaces */
-    command =
-      cl_format(4, ECL_NIL,
-                ecl_make_simple_base_string("~S~{ ~S~}", -1),
-                command, argv);
-    command = si_copy_to_simple_base_string(command);
-    command = ecl_null_terminated_base_string(command);
 
     if (!Null(environ)) {
       env_buffer = from_list_to_execve_argument(environ, NULL);
@@ -639,7 +600,12 @@ create_descriptor(cl_object stream, cl_object direction,
     st_info.hStdOutput = child_stdout;
     st_info.hStdError = child_stderr;
     ZeroMemory(&pr_info, sizeof(PROCESS_INFORMATION));
-    ok = CreateProcess(NULL, command->base_string.self,
+    /* Command is passed as is from argv. It is responsibility of
+       higher level interface to decide, whenever arguments should be
+       quoted or left as-is. */
+    argv = si_copy_to_simple_base_string(argv);
+    argv = ecl_null_terminated_base_string(argv);
+    ok = CreateProcess(NULL, argv->base_string.self,
                        NULL, NULL, /* lpProcess/ThreadAttributes */
                        TRUE, /* Inherit handles (for files) */
                        /*CREATE_NEW_CONSOLE |*/
@@ -672,7 +638,7 @@ create_descriptor(cl_object stream, cl_object direction,
   {
     int child_stdin, child_stdout, child_stderr;
     int pipe_fd[2];
-    argv = CONS(command, ecl_nconc(argv, ecl_list1(ECL_NIL)));
+    argv = ecl_nconc(argv, ecl_list1(ECL_NIL));
     argv = _ecl_funcall3(@'coerce', argv, @'vector');
 
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
@@ -802,4 +768,4 @@ create_descriptor(cl_object stream, cl_object direction,
             ECL_NIL)
     exit_status
     process);
-  @)
+}
