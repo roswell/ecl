@@ -568,9 +568,9 @@ si_run_program_internal(cl_object command, cl_object argv,
     cl_object env_buffer;
     char *env = NULL;
 
-    /* Enclose each argument, as well as the file name
-       in double quotes, to avoid problems when these
-       arguments or file names have spaces */
+    /* Command is passed as is from argv. It is responsibility of
+       higher level interface to decide, whenever arguments should be
+       quoted or left as-is.*/
     command = ecl_null_terminated_base_string(argv);
 
     if (!Null(environ)) {
@@ -628,10 +628,11 @@ si_run_program_internal(cl_object command, cl_object argv,
     if (child_stdout) CloseHandle(child_stdout);
     if (child_stderr) CloseHandle(child_stderr);
   }
-#elif !defined(NACL) /* mingw */
+#elif !defined(NACL) /* All POSIX but NaCL/pNaCL */
   {
     int child_stdin, child_stdout, child_stderr;
     int pipe_fd[2];
+    argv = ecl_nconc(argv, ecl_list1(ECL_NIL));
     argv = _ecl_funcall3(@'coerce', argv, @'vector');
 
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
