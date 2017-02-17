@@ -742,12 +742,12 @@ create_descriptor(cl_object stream, cl_object direction,
     close(child_stdout);
     close(child_stderr);
   }
-#else
+#else  /* NACL */
   {
     FElibc_error("ext::run-program not implemented",1);
     @(return ECL_NIL);
   }
-#endif /* mingw */
+#endif
   if (Null(pid)) {
     if (parent_write) close(parent_write);
     if (parent_read) close(parent_read);
