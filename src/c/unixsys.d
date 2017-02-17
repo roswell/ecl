@@ -623,7 +623,7 @@ create_descriptor(cl_object stream, cl_object direction,
       create_descriptor(error, @':error', &child_stderr, &parent_error);
 
     add_external_process(the_env, process);
-#if 1
+
     ZeroMemory(&st_info, sizeof(STARTUPINFO));
     st_info.cb = sizeof(STARTUPINFO);
     st_info.lpTitle = NULL; /* No window title, just exec name */
