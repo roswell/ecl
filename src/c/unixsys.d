@@ -494,8 +494,11 @@ create_descriptor(cl_object stream, cl_object direction,
     HANDLE stream_handle = ecl_stream_to_HANDLE
       (stream, direction != @':input');
     if (stream_handle == INVALID_HANDLE_VALUE) {
-      FEerror("~S argument to RUN-PROGRAM does not "
-              "have a file handle:~%~S", 2, direction, stream);
+      CEerror(make_constant_base_string("Create a new stream."),
+              "~S argument to RUN-PROGRAM does not have a file handle:~%~S",
+              2, direction, stream);
+      create_descriptor(@':stream', direction, child, parent);
+      return;
     }
     DuplicateHandle(current, stream_handle,
                     current, child, 0, TRUE,
@@ -532,8 +535,11 @@ create_descriptor(cl_object stream, cl_object direction,
     if (*child >= 0) {
       *child = dup(*child);
     } else {
-      FEerror("~S argument to RUN-PROGRAM does not "
-              "have a file handle:~%~S", 2, direction, stream);
+      CEerror(make_constant_base_string("Create a new stream."),
+              "~S argument to RUN-PROGRAM does not have a file handle:~%~S",
+              2, direction, stream);
+      create_descriptor(@':stream', direction, child, parent);
+      return;
     }
   }
   else {
