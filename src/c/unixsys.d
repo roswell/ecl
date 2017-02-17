@@ -626,7 +626,7 @@ create_descriptor(cl_object stream, cl_object direction,
                       &child_stderr, 0, TRUE,
                       DUPLICATE_SAME_ACCESS);
     else
-      create_descriptor(error, @':error', &child_stderr, &parent_error);
+      create_descriptor(error, @':output', &child_stderr, &parent_error);
 
     add_external_process(the_env, process);
 
@@ -680,7 +680,7 @@ create_descriptor(cl_object stream, cl_object direction,
     if (error == @':output')
       child_stderr = child_stdout;
     else
-      create_descriptor(error,  @':error', &child_stderr, &parent_error);
+      create_descriptor(error,  @':output', &child_stderr, &parent_error);
 
     add_external_process(the_env, process);
     pipe(pipe_fd);
