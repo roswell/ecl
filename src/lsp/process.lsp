@@ -105,7 +105,7 @@
                                     :if-exists if-error-exists)))
 
     (let ((args (prepare-args (cons command argv))))
-      (si:run-program-internal (car args) (cdr args)
+      (si:run-program-internal (si:copy-to-simple-base-string command) args
                                input output error
                                wait environ external-format))))
 

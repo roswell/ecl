@@ -571,12 +571,7 @@ si_run_program_internal(cl_object command, cl_object argv,
     /* Enclose each argument, as well as the file name
        in double quotes, to avoid problems when these
        arguments or file names have spaces */
-    command =
-      cl_format(4, ECL_NIL,
-                ecl_make_simple_base_string("~A~{ ~A~}", -1),
-                command, argv);
-    command = si_copy_to_simple_base_string(command);
-    command = ecl_null_terminated_base_string(command);
+    command = ecl_null_terminated_base_string(argv);
 
     if (!Null(environ)) {
       env_buffer = from_list_to_execve_argument(environ, NULL);
@@ -637,7 +632,6 @@ si_run_program_internal(cl_object command, cl_object argv,
   {
     int child_stdin, child_stdout, child_stderr;
     int pipe_fd[2];
-    argv = CONS(command, ecl_nconc(argv, ecl_list1(ECL_NIL)));
     argv = _ecl_funcall3(@'coerce', argv, @'vector');
 
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
