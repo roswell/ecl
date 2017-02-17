@@ -603,6 +603,8 @@ si_run_program_internal(cl_object command, cl_object argv,
     /* Command is passed as is from argv. It is responsibility of
        higher level interface to decide, whenever arguments should be
        quoted or left as-is. */
+    argv = si_copy_to_simple_base_string(argv);
+    argv = ecl_null_terminated_base_string(argv);
     ok = CreateProcess(NULL, argv->base_string.self,
                        NULL, NULL, /* lpProcess/ThreadAttributes */
                        TRUE, /* Inherit handles (for files) */
