@@ -77,9 +77,7 @@
 
          (prepare-args (args)
            #-windows
-           (if (every #'simple-string-p args)
-               args
-               (mapcar #'si:copy-to-simple-base-string args))
+           (mapcar #'si:copy-to-simple-base-string args)
            #+windows
            (with-output-to-string (str)
              (loop for (arg . rest) on args
@@ -104,8 +102,8 @@
                                     :direction :output
                                     :if-exists if-error-exists)))
 
-    (let* ((args (prepare-args (cons command argv))))
-      (si:run-program-internal command args
+    (let ((args (prepare-args (cons command argv))))
+      (si:run-program-internal (car args) args
                                input output error
                                wait environ external-format))))
 
