@@ -628,3 +628,4 @@ clean:
 	-erase gmp.h
 	-erase msvc-build
 	-erase *.exe *.manifest
+	-erase *.ilk *.pdb

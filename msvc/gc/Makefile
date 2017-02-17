@@ -50,3 +50,8 @@ gc.lib: $(OBJS)
 
 gc_cpp.cpp: $(srcdir)\gc_cpp.cc
 	copy $? $@
+
+clean:
+	-erase $(OBJS)
+	-erase gc.lib
+	-erase *.pdb
