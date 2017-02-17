@@ -668,7 +668,7 @@ create_descriptor(cl_object stream, cl_object direction,
     if (child_stdout) CloseHandle(child_stdout);
     if (child_stderr) CloseHandle(child_stderr);
   }
-#elif !defined(NACL) /* mingw */
+#elif !defined(NACL) /* All POSIX but NaCL/pNaCL */
   {
     int child_stdin, child_stdout, child_stderr;
     int pipe_fd[2];
