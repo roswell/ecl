@@ -592,7 +592,7 @@ si_run_program_internal(cl_object command, cl_object argv,
                       &child_stderr, 0, TRUE,
                       DUPLICATE_SAME_ACCESS);
     else
-      create_descriptor(error, @':error', &child_stderr, &parent_error);
+      create_descriptor(error, @':output', &child_stderr, &parent_error);
 
     add_external_process(the_env, process);
 
@@ -646,7 +646,7 @@ si_run_program_internal(cl_object command, cl_object argv,
     if (error == @':output')
       child_stderr = child_stdout;
     else
-      create_descriptor(error,  @':error', &child_stderr, &parent_error);
+      create_descriptor(error,  @':output', &child_stderr, &parent_error);
 
     add_external_process(the_env, process);
     pipe(pipe_fd);
