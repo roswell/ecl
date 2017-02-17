@@ -1141,7 +1141,7 @@
 #+wants-sockets
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
 (proclamation si:copy-stream (stream stream) t)
-(proclamation si:make-encoding (t) t)
+(proclamation si:make-encoding (t) hash-table)
 (proclamation si:load-encoding (t) t)
 
 ;;;
