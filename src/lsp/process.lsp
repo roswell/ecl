@@ -61,7 +61,7 @@
                       (if-input-does-not-exist nil)
                       (if-output-exists :error)
                       (if-error-exists :error)
-                      (external-format () :default)
+                      (external-format :default)
                       #+windows (escape-arguments t))
 
   (flet ((process-stream (which default &rest args)
