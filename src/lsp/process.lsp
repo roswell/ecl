@@ -46,3 +46,98 @@
                               :wait t :output nil :input nil
                               :error nil))))
 
+;;;
+;;; Wrapper around si_run_program call. Thanks to that C interface
+;;; isn't clobbered with lispisms. Ultimately we'd want to have as
+;;; little as possible in unixsys.d.
+;;;
+(defun run-program (command argv
+                    &key
+                      (input :stream)
+                      (output :stream)
+                      (error :output)
+                      (wait t)
+                      (environ nil)
+                      (if-input-does-not-exist nil)
+                      (if-output-exists :error)
+                      (if-error-exists :error)
+                      (external-format () :default)
+                      #+windows (escape-arguments t))
+
+  (flet ((process-stream (which default &rest args)
+           (cond ((eql which t) default)
+                 ((or (stringp which) (pathnamep which))
+                  (apply #'open which :external-format external-format args))
+                 ;; this three cases are handled in create_descriptor (for now)
+                 ((eql which nil)     which)
+                 ((eql which :stream) which)
+                 ((streamp which)     which)
+                 ;; signal error as early as possible
+                 (T (error "Invalid ~S argument to EXT:RUN-PROGRAM" which))))
+
+         (prepare-args (args)
+           #-windows
+           (if (every #'simple-string-p args)
+               args
+               (mapcar #'si:copy-to-simple-base-string args))
+           #+windows
+           (with-output-to-string (str)
+             (loop for (arg . rest) on args
+                do (if (and escape-arguments
+                            (find-if (lambda (c)
+                                       (find c '(#\Space #\Tab #\")))
+                                     arg))
+                       (escape-arg arg str)
+                       (princ arg str))
+                  (when rest
+                    (write-char #\Space str))))))
+
+    (setf input (process-stream input *standard-input*
+                                :direction :input
+                                :if-does-not-exist if-input-does-not-exist)
+          output (process-stream output *standard-output*
+                                 :direction :output
+                                 :if-exists if-output-exists)
+          error (if (eql error :output)
+                    :output
+                    (process-stream error *error-output*
+                                    :direction :output
+                                    :if-exists if-error-exists)))
+
+    (let ((args (prepare-args (cons command argv))))
+      (si:run-program-internal (car args) (cdr args)
+                               input output error
+                               wait environ external-format))))
+
+
+
+#+windows
+(defun escape-arg (arg stream)
+  ;; Normally, #\\ doesn't have to be escaped But if #\"
+  ;; follows #\\, then they have to be escaped.  Do that by
+  ;; counting the number of consequent backslashes, and
+  ;; upon encoutering #\" immediately after them, output
+  ;; the same number of backslashes, plus one for #\"
+  (write-char #\" stream)
+  (loop with slashes = 0
+     for i below (length arg)
+     for previous-char = #\a then char
+     for char = (char arg i)
+     do
+       (case char
+         (#\"
+          (loop repeat slashes
+             do (write-char #\\ stream))
+          (write-string "\\\"" stream))
+         (t
+          (write-char char stream)))
+       (case char
+         (#\\
+          (incf slashes))
+         (t
+          (setf slashes 0)))
+     finally
+     ;; The final #\" counts too, but doesn't need to be escaped itself
+       (loop repeat slashes
+          do (write-char #\\ stream)))
+  (write-char #\" stream))

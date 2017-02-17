@@ -527,6 +527,10 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 
 /* unixsys.d */
 extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
+extern cl_object si_run_program_internal
+(cl_object command, cl_object argv,
+ cl_object input, cl_object output, cl_object error,
+ cl_object wait, cl_object environ, cl_object external_format);
 
 /*
  * Fake several ISO C99 mathematical functions if not available
