@@ -642,29 +642,7 @@ create_descriptor(cl_object stream, cl_object direction,
                        NULL, /* Current directory */
                        &st_info, /* Startup info */
                        &pr_info); /* Process info */
-#else /* 1 */
-    saved_stdin = GetStdHandle(STD_INPUT_HANDLE);
-    saved_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    saved_stderr = GetStdHandle(STD_ERROR_HANDLE);
-    SetStdHandle(STD_INPUT_HANDLE, child_stdin);
-    SetStdHandle(STD_OUTPUT_HANDLE, child_stdout);
-    SetStdHandle(STD_ERROR_HANDLE, child_stderr);
-    ZeroMemory(&st_info, sizeof(STARTUPINFO));
-    st_info.cb = sizeof(STARTUPINFO);
-    ZeroMemory(&pr_info, sizeof(PROCESS_INFORMATION));
-    ok = CreateProcess(NULL, command->base_string.self,
-                       NULL, NULL, /* lpProcess/ThreadAttributes */
-                       TRUE, /* Inherit handles (for files) */
-                       /*CREATE_NEW_CONSOLE |*/
-                       0,
-                       NULL, /* Inherit environment */
-                       NULL, /* Current directory */
-                       &st_info, /* Startup info */
-                       &pr_info); /* Process info */
-    SetStdHandle(STD_INPUT_HANDLE, saved_stdin);
-    SetStdHandle(STD_OUTPUT_HANDLE, saved_stdout);
-    SetStdHandle(STD_ERROR_HANDLE, saved_stderr);
-#endif /* 1 */
+
     /* Child handles must be closed in the parent process */
     /* otherwise the created pipes are never closed       */
     if (ok) {
