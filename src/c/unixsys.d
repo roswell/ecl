@@ -574,11 +574,6 @@ si_run_program_internal(cl_object command, cl_object argv,
     cl_object env_buffer;
     char *env = NULL;
 
-    /* Command is passed as is from argv. It is responsibility of
-       higher level interface to decide, whenever arguments should be
-       quoted or left as-is. */
-    command = ecl_null_terminated_base_string(argv);
-
     if (!Null(environ)) {
       env_buffer = from_list_to_execve_argument(environ, NULL);
       env = env_buffer->base_string.self;
@@ -605,7 +600,10 @@ si_run_program_internal(cl_object command, cl_object argv,
     st_info.hStdOutput = child_stdout;
     st_info.hStdError = child_stderr;
     ZeroMemory(&pr_info, sizeof(PROCESS_INFORMATION));
-    ok = CreateProcess(NULL, command->base_string.self,
+    /* Command is passed as is from argv. It is responsibility of
+       higher level interface to decide, whenever arguments should be
+       quoted or left as-is. */
+    ok = CreateProcess(NULL, argv->base_string.self,
                        NULL, NULL, /* lpProcess/ThreadAttributes */
                        TRUE, /* Inherit handles (for files) */
                        /*CREATE_NEW_CONSOLE |*/
