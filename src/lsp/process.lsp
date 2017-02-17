@@ -102,8 +102,9 @@
                                     :direction :output
                                     :if-exists if-error-exists)))
 
-    (let ((args (prepare-args (cons command argv))))
-      (si:run-program-internal (car args) args
+    (let ((progname (si:copy-to-simple-base-string command))
+          (args (prepare-args (cons command argv))))
+      (si:run-program-internal progname args
                                input output error
                                wait environ external-format))))
 
