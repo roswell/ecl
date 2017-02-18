@@ -34,6 +34,7 @@
 ;;; because we are consuming the process wait status using a SIGCHLD
 ;;; handler -- this breaks some C libraries out there (OS X 32 bit).
 ;;;
+#+ (or)
 (defun system (cmd-string)
   (let ((shell "/bin/sh")
         (option "-c"))
