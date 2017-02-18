@@ -1235,7 +1235,6 @@ cl_symbols[] = {
 {EXT_ "RUN-PROGRAM","ECL_NAME(si_run_program)"},
 {SYS_ "RUN-PROGRAM-INTERNAL","si_run_program_internal"},
 {EXT_ "TERMINATE-PROCESS","si_terminate_process"},
-{SYS_ "WAIT-FOR-ALL-PROCESSES","si_wait_for_all_processes"},
 {EXT_ "SAFE-EVAL","ECL_NAME(si_safe_eval)"},
 {SYS_ "SCH-FRS-BASE","si_sch_frs_base"},
 {SYS_ "SCHAR-SET","si_char_set"},

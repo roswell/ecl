@@ -83,7 +83,6 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
   1,              /* ECL_OPT_TRAP_SIGILL */
   1,              /* ECL_OPT_TRAP_SIGBUS */
   1,              /* ECL_OPT_TRAP_SIGPIPE */
-  1,              /* ECL_OPT_TRAP_SIGCHLD */
   1,              /* ECL_OPT_TRAP_INTERRUPT_SIGNAL */
   1,              /* ECL_OPT_SIGNAL_HANDLING_THREAD */
   16,             /* ECL_OPT_SIGNAL_QUEUE_SIZE */
@@ -431,8 +430,6 @@ struct cl_core_struct cl_core = {
   (cl_object)&default_rehash_size_data, /* rehash_size */
   (cl_object)&default_rehash_threshold_data, /* rehash_threshold */
 
-  ECL_NIL, /* external_processes */
-  ECL_NIL, /* external_processes_lock */
   ECL_NIL /* known_signals */
 };
 

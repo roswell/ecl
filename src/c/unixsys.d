@@ -167,77 +167,6 @@ set_external_process_pid(cl_object process, cl_object pid)
   ecl_structure_set(process, @'ext::external-process', 0, pid);
 }
 
-static void
-set_external_process_streams(cl_object process, cl_object input,
-                             cl_object  output, cl_object error)
-{
-  ecl_structure_set(process, @'ext::external-process', 1, input);
-  ecl_structure_set(process, @'ext::external-process', 2, output);
-  ecl_structure_set(process, @'ext::external-process', 3, error);
-}
-
-
-static void
-update_process_status(cl_object process, cl_object status, cl_object code)
-{
-  ecl_structure_set(process, @'ext::external-process', 0, ECL_NIL);
-  ecl_structure_set(process, @'ext::external-process', 4, status);
-  ecl_structure_set(process, @'ext::external-process', 5, code);
-}
-
-#if defined(SIGCHLD) && !defined(ECL_MS_WINDOWS_HOST)
-static void
-add_external_process(cl_env_ptr env, cl_object process)
-{
-  cl_object l = ecl_list1(process);
-  ecl_disable_interrupts_env(env);
-  ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
-  {
-    ECL_RPLACD(l, cl_core.external_processes);
-    cl_core.external_processes = l;
-  }
-  ECL_WITH_SPINLOCK_END;
-  ecl_enable_interrupts_env(env);
-}
-
-static void
-remove_external_process(cl_env_ptr env, cl_object process)
-{
-  ecl_disable_interrupts_env(env);
-  ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
-  {
-    cl_core.external_processes =
-      ecl_delete_eq(process, cl_core.external_processes);
-  }
-  ECL_WITH_SPINLOCK_END;
-  ecl_enable_interrupts_env(env);
-}
-
-static cl_object
-find_external_process(cl_env_ptr env, cl_object pid)
-{
-  cl_object output = ECL_NIL;
-  ecl_disable_interrupts_env(env);
-  ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
-  {
-    cl_object p;
-    for (p = cl_core.external_processes; p != ECL_NIL; p = ECL_CONS_CDR(p)) {
-      cl_object process = ECL_CONS_CAR(p);
-      if (external_process_pid(process) == pid) {
-        output = process;
-        break;
-      }
-    }
-  }
-  ECL_WITH_SPINLOCK_END(&cl_core.external_processes_lock);
-  ecl_enable_interrupts_env(env);
-  return output;
-}
-#else
-#define add_external_process(env,p)
-#define remove_external_process(env,p)
-#endif
-
 static cl_object
 ecl_waitpid(cl_object pid, cl_object wait)
 {
@@ -302,61 +231,29 @@ ecl_waitpid(cl_object pid, cl_object wait)
 }
 
 @(defun ext::terminate-process (process &optional (force ECL_NIL))
-  @
-  {
+@
+{
     cl_env_ptr env = ecl_process_env();
     bool error_encountered = FALSE;
-    ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
-    {
-      cl_object pid = external_process_pid(process);
-      if (!Null(pid)) {
-        int ret;
+
+    cl_object pid = external_process_pid(process);
+    if (!Null(pid)) {
+      int ret;
 #if defined(ECL_MS_WINDOWS_HOST)
-        HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(pid);
-        ret = TerminateProcess(*ph, -1);
-        error_encountered = (ret == 0);
+      HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(pid);
+      ret = TerminateProcess(*ph, -1);
+      error_encountered = (ret == 0);
 #else
-        ret = kill(ecl_fixnum(pid), Null(force) ? SIGTERM : SIGKILL);
-        error_encountered = (ret != 0);
+      ret = kill(ecl_fixnum(pid), Null(force) ? SIGTERM : SIGKILL);
+      error_encountered = (ret != 0);
 #endif
-      }
     }
-    ECL_WITH_SPINLOCK_END;
+
     if (error_encountered)
       FEerror("Cannot terminate the process ~A", 1, process);
     return ECL_NIL;
-  }
-  @)
-
-
-@(defun si::wait-for-all-processes (&key (process ECL_NIL))
-  @
-  {
-    const cl_env_ptr env = ecl_process_env();
-#if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
-    do {
-      cl_object status = ecl_waitpid(ecl_make_fixnum(-1), ECL_NIL);
-      cl_object code = env->values[1];
-      cl_object pid = env->values[2];
-      if (Null(pid)) {
-        if (status != @':abort')
-          break;
-      } else {
-        cl_object p = find_external_process(env, pid);
-        if (!Null(p)) {
-          set_external_process_pid(p, ECL_NIL);
-          update_process_status(p, status, code);
-        }
-        if (status != @':running') {
-          remove_external_process(env, p);
-          ecl_delete_eq(p, cl_core.external_processes);
-        }
-      }
-    } while (1);
-#endif
-    ecl_return0(env);
-  }
-  @)
+}
+@)
 
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 cl_object
@@ -386,11 +283,10 @@ make_windows_handle(HANDLE h)
   AGAIN:
     pid = external_process_pid(process);
     if (Null(pid)) {
-      /* If PID is NIL, it may be because the process failed,
-       * or because it is being updated by a separate thread,
-       * which is why we have to spin here. Note also the order
-       * here: status is updated _after_ code, and hence we
-       * check it _before_ code. */
+      /* If PID is NIL, it may be because the process failed, or
+       * because it is being updated by a separate thread, which is
+       * why we have to spin here. Note also the order here: status is
+       * updated _after_ code, and hence we check it _before_ code. */
       do {
         ecl_musleep(0.0, 1);
         status = external_process_status(process);
@@ -408,8 +304,9 @@ make_windows_handle(HANDLE h)
         status = external_process_status(process);
         code = external_process_code(process);
       } else {
-        update_process_status(process, status, code);
-        remove_external_process(the_env, process);
+        ecl_structure_set(process, @'ext::external-process', 0, ECL_NIL);
+        ecl_structure_set(process, @'ext::external-process', 4, status);
+        ecl_structure_set(process, @'ext::external-process', 5, code);
       }
     }
     @(return status code);
@@ -452,9 +349,9 @@ create_descriptor(cl_object stream, cl_object direction,
   attr.bInheritHandle = TRUE;
 
   if (stream == @':stream') {
-    /* Creates a pipe that we can write to and the
-       child reads from. We duplicate one extreme of the
-       pipe so that the child does not inherit it. */
+    /* Creates a pipe that we can write to and the child reads
+       from. We duplicate one extreme of the pipe so that the child
+       does not inherit it. */
     HANDLE tmp;
     if (CreatePipe(&tmp, child, &attr, 0) == 0)
       return;
@@ -589,8 +486,6 @@ si_run_program_internal(cl_object command, cl_object argv,
     else
       create_descriptor(error, @':output', &child_stderr, &parent_error);
 
-    add_external_process(the_env, process);
-
     ZeroMemory(&st_info, sizeof(STARTUPINFO));
     st_info.cb = sizeof(STARTUPINFO);
     st_info.lpTitle = NULL; /* No window title, just exec name */
@@ -648,7 +543,6 @@ si_run_program_internal(cl_object command, cl_object argv,
     else
       create_descriptor(error,  @':output', &child_stderr, &parent_error);
 
-    add_external_process(the_env, process);
     pipe(pipe_fd);
     child_pid = fork();
     if (child_pid == 0) {
@@ -727,7 +621,6 @@ si_run_program_internal(cl_object command, cl_object argv,
     parent_write = 0;
     parent_read = 0;
     parent_error = 0;
-    remove_external_process(the_env, process);
     FEerror("Could not spawn subprocess to run ~S.", 1, command);
   }
   if (parent_write > 0) {
@@ -757,8 +650,10 @@ si_run_program_internal(cl_object command, cl_object argv,
     parent_error = 0;
     stream_error = cl_core.null_stream;
   }
-  set_external_process_streams(process, stream_write, stream_read,
-                               stream_error);
+  ecl_structure_set(process, @'ext::external-process', 1, input);
+  ecl_structure_set(process, @'ext::external-process', 2, output);
+  ecl_structure_set(process, @'ext::external-process', 3, error);
+
   if (!Null(wait)) {
     exit_status = si_external_process_wait(2, process, ECL_T);
     exit_status = ecl_nth_value(the_env, 1);

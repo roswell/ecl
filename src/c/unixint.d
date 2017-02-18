@@ -161,7 +161,7 @@ static struct {
         { SIGCONT, "+SIGCONT+", ECL_NIL},
 #endif
 #ifdef SIGCHLD
-        { SIGCHLD, "+SIGCHLD+", @'si::wait-for-all-processes'},
+        { SIGCHLD, "+SIGCHLD+", ECL_NIL/* @'si::wait-for-all-processes' */},
 #endif
 #ifdef SIGTTIN
         { SIGTTIN, "+SIGTTIN+", ECL_NIL},
@@ -568,12 +568,6 @@ asynchronous_signal_servicing_thread()
                     signal_thread_msg.process == the_env->own_process) {
                         break;
                 }
-#ifdef SIGCHLD
-                if (signal_thread_msg.signo == SIGCHLD) {
-                        si_wait_for_all_processes(0);
-                        continue;
-                }
-#endif
                 signal_code = ecl_gethash_safe(ecl_make_fixnum(signal_thread_msg.signo),
                                                cl_core.known_signals,
                                                ECL_NIL);
@@ -1239,14 +1233,6 @@ install_asynchronous_signal_handlers()
 #ifdef SIGINT
         if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
                 async_handler(SIGINT, non_evil_signal_handler, sigmask);
-        }
-#endif
-#ifdef SIGCHLD
-        if (ecl_option_values[ECL_OPT_TRAP_SIGCHLD]) {
-                /* We have to set the process signal handler explicitly,
-                 * because on many platforms the default is SIG_IGN. */
-                mysignal(SIGCHLD, non_evil_signal_handler);
-                async_handler(SIGCHLD, non_evil_signal_handler, sigmask);
         }
 #endif
 #ifdef HAVE_SIGPROCMASK
