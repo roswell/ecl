@@ -40,6 +40,14 @@
 #endif
 
 cl_object
+si_system(cl_object cmd_string)
+{
+	cl_object cmd = si_copy_to_simple_base_string(cmd_string);
+	int code = system((const char *)(cmd->base_string.self));
+	return ecl_make_fixnum(code);
+}
+
+cl_object
 si_getpid(void)
 {
 #if defined(NACL)

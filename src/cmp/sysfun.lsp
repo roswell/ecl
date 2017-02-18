@@ -938,7 +938,6 @@
     ;; setf.lsp
     si::do-defsetf si::do-define-setf-method
     ;; process.lsp
-    ext:system
     ext:run-program
     ;; pprint.lsp
     pprint-fill copy-pprint-dispatch pprint-dispatch

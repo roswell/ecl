@@ -18,15 +18,6 @@
 #+(and cygwin (not ecl-min))
 (ffi:clines "#include <stdlib.h>")
 
-(defun safe-system (string)
-  (cmpnote "Invoking external command:~%  ~A~%" string)
-  (let ((result (ext:system string)))
-    (unless (zerop result)
-      (cerror "Continues anyway."
-              "(SYSTEM ~S) returned non-zero value ~D"
-              string result))
-    result))
-
 (defun save-directory (forms)
   (let ((directory
          (probe-file (make-pathname :name nil :type nil
@@ -42,28 +33,16 @@
 (defmacro with-current-directory (&body forms)
   `(save-directory #'(lambda () ,@forms)))
 
-#+(and cygwin (not ecl-min))
-(defun old-crappy-system (program args)
-  (let* ((command (format nil "~S~{ ~S~}" program args))
-         (base-string-command (si:copy-to-simple-base-string command))
-         (code (ffi:c-inline (base-string-command) (:object) :int
-                  "system((const char*)(#0->base_string.self))":one-liner t)))
-    (values nil code nil)))
-
 (defun safe-run-program (program args)
   (cmpnote "Invoking external command:~%  ~A ~{~A ~}" program args)
-  (multiple-value-bind (stream result process)
-      (let* ((*standard-output* ext:+process-standard-output+)
-             (*error-output* ext:+process-error-output+)
-             (program (split-program-options program))
-             (args `(,@(cdr program) ,@args))
-             (program (car program)))
-        (with-current-directory
-            #-(and cygwin (not ecl-min))
-            (ext:run-program program args :input nil :output t :error t :wait t)
-            #+(and cygwin (not ecl-min))
-            (old-crappy-system program args)
-            ))
+  (let ((result
+         (let* ((*standard-output* ext:+process-standard-output+)
+                (*error-output* ext:+process-error-output+)
+                (program (split-program-options program))
+                (args `(,@(cdr program) ,@args))
+                (program (car program)))
+           (with-current-directory
+             (ext:system (format nil "~S~{ ~S~}" program args))))))
     (cond ((null result)
            (cerror "Continues anyway."
                    "Unable to execute:~%(RUN-PROGRAM ~S ~S)"
