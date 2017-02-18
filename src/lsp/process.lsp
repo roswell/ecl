@@ -77,7 +77,7 @@
 
          (prepare-args (args)
            #-windows
-           (nconc (mapcar #'si:copy-to-simple-base-string args) (list nil))
+           (mapcar #'si:copy-to-simple-base-string args)
            #+windows
            (si:copy-to-simple-base-string
             (with-output-to-string (str)

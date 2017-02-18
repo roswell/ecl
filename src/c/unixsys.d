@@ -146,12 +146,6 @@ from_list_to_execve_argument(cl_object l, char ***environp)
 }
 
 static cl_object
-make_external_process()
-{
-  return _ecl_funcall1(@'ext::make-external-process');
-}
-
-static cl_object
 external_process_pid(cl_object p)
 {
   return ecl_structure_ref(p, @'ext::external-process', 0);
@@ -454,20 +448,56 @@ create_descriptor(cl_object stream, cl_object direction,
 #endif
 
 cl_object
-si_run_program_internal(cl_object command, cl_object argv,
-                        cl_object input, cl_object output, cl_object error,
-                        cl_object wait, cl_object environ, cl_object external_format) {
+si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
+  cl_env_ptr the_env = ecl_process_env();
+  int parent_write = 0, parent_read = 0, parent_error = 0;
+  cl_object pid, stream_write, stream_read, exit_status;
+
+  command = si_copy_to_simple_base_string(command);
+
+#if defined(ECL_MS_WINDOWS_HOST)
+  argv = cl_format(4, ECL_NIL,
+                   make_simple_base_string("~A~{ ~A~}"),
+                   command, argv);
+  argv = si_copy_to_simple_base_string(argv);
+#else
+  argv = cl_mapcar(2, @'si::copy-to-simple-base-string', argv);
+#endif
+
+  pid = si_spawn_subprocess(command, argv, environ, @':stream', @':stream', @':output');
+  parent_write = ecl_fixnum(ecl_nth_value(the_env, 1));
+  parent_read = ecl_fixnum(ecl_nth_value(the_env, 2));
+
+  if (Null(pid) || (parent_write <= 0) || (parent_read <= 0)) {
+    FEerror("Could not spawn subprocess to run ~S.", 1, command);
+  }
+
+  stream_write = ecl_make_stream_from_fd(command, parent_write,
+                                         ecl_smm_output, 8,
+                                         ECL_STREAM_DEFAULT_FORMAT,
+                                         @':default');
+
+  stream_read = ecl_make_stream_from_fd(command, parent_read,
+                                        ecl_smm_input, 8,
+                                        ECL_STREAM_DEFAULT_FORMAT,
+                                        @':default');
+
+  ecl_waitpid(pid, ECL_T);
+  exit_status = ecl_nth_value(the_env, 1);
+  @(return cl_make_two_way_stream(stream_read, stream_write) exit_status)
+}
+
+cl_object
+si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
+                    cl_object input, cl_object output, cl_object error) {
 
   cl_env_ptr the_env = ecl_process_env();
   int parent_write = 0, parent_read = 0, parent_error = 0;
   int child_pid;
-  cl_object pid, process;
-  cl_object stream_write;
-  cl_object stream_read;
-  cl_object stream_error;
-  cl_object exit_status = ECL_NIL;
-  @
-  process = make_external_process();
+  cl_object pid;
+
+  /* command = ecl_null_terminated_base_string(command); */
+  
 #if defined(ECL_MS_WINDOWS_HOST)
   {
     BOOL ok;
@@ -503,11 +533,11 @@ si_run_program_internal(cl_object command, cl_object argv,
     st_info.hStdOutput = child_stdout;
     st_info.hStdError = child_stderr;
     ZeroMemory(&pr_info, sizeof(PROCESS_INFORMATION));
+
     /* Command is passed as is from argv. It is responsibility of
        higher level interface to decide, whenever arguments should be
        quoted or left as-is. */
-    argv = si_copy_to_simple_base_string(argv);
-    argv = ecl_null_terminated_base_string(argv);
+    /* ecl_null_terminated_base_string(argv); */
     ok = CreateProcess(NULL, argv->base_string.self,
                        NULL, NULL, /* lpProcess/ThreadAttributes */
                        TRUE, /* Inherit handles (for files) */
@@ -532,7 +562,6 @@ si_run_program_internal(cl_object command, cl_object argv,
       LocalFree(message);
       pid = ECL_NIL;
     }
-    set_external_process_pid(process, pid);
     if (child_stdin) CloseHandle(child_stdin);
     if (child_stdout) CloseHandle(child_stdout);
     if (child_stderr) CloseHandle(child_stderr);
