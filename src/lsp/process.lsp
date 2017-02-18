@@ -104,12 +104,34 @@
                                     :if-exists if-error-exists)))
 
     (let ((progname (si:copy-to-simple-base-string command))
-          (args (prepare-args (cons command argv))))
-      (si:run-program-internal progname args
-                               input output error
-                               wait environ external-format))))
+          (args (prepare-args (cons command argv)))
+          (process (make-external-process)))
+      (multiple-value-bind (pid parent-write parent-read parent-error)
+          (si:spawn-subprocess progname args environ input output error)
+        (unless pid
+          (when parent-write (ff-close parent-write))
+          (when parent-read (ff-close parent-read))
+          (when parent-error (ff-close parent-error))
+          (error "Could not spawn subprocess to run ~S." progname))
 
+        (let ((stream-write
+               (when (< 0 parent-write)
+                 (make-output-stream-from-fd progname parent-write external-format)))
+              (stream-read
+               (when (< 0 parent-read)
+                 (make-input-stream-from-fd progname parent-read external-format)))
+              (stream-error
+               (when (< 0 parent-error)
+                 (make-input-stream-from-fd progname parent-error external-format))))
+          (setf (external-process-pid process) pid
+                (external-process-input process)         (or stream-write (null-stream))
+                (external-process-output process)        (or stream-read  (null-stream))
+                (external-process-error-stream process)  (or stream-error (null-stream)))
 
+          (values (make-two-way-stream (external-process-output process)
+                                       (external-process-input process))
+                  (when wait (nth-value 1 (si:external-process-wait process t)))
+                  process))))))
 
 #+windows
 (defun escape-arg (arg stream)
@@ -141,3 +163,21 @@
        (loop repeat slashes
           do (write-char #\\ stream)))
   (write-char #\" stream))
+
+
+;;; low level interface to descriptors
+(defun make-input-stream-from-fd (name fd external-format)
+  (ffi:c-inline (name fd external-format) (:string :int :object) :object
+                "ecl_make_stream_from_fd(#0, #1, ecl_smm_input, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
+                :one-liner t))
+
+(defun make-output-stream-from-fd (name fd external-format)
+  (ffi:c-inline (name fd external-format) (:string :int :object) :object
+      "ecl_make_stream_from_fd(#0, #1, ecl_smm_output, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
+      :one-liner t))
+
+(defun null-stream ()
+  (ffi:c-inline () () :object "cl_core.null_stream" :one-liner t :side-effects nil))
+
+(ffi:defentry ff-close (:int) (:int "close") :no-interrupts t)
+

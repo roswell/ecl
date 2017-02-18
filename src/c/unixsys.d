@@ -626,13 +626,9 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     } else {
       pid = ecl_make_fixnum(child_pid);
     }
-    set_external_process_pid(process, pid);
     {
-      /* This guarantees that the child process does not exit
-       * before we have created the process structure. If we do not
-       * do this, the SIGPIPE signal may arrive before
-       * set_external_process_pid() and our call to external-process-wait
-       * down there may block indefinitely. */
+      /* This guarantees that the child process does not exit before
+       * we have created the process structure. */
       char sync[1];
       close(pipe_fd[0]);
       while (write(pipe_fd[1], sync, 1) < 1) {
@@ -647,57 +643,12 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
   }
 #else  /* NACL */
   {
-    FElibc_error("ext::run-program not implemented",1);
+    FElibc_error("ext::run-program-inner not implemented",1);
     @(return ECL_NIL);
   }
 #endif
-  if (Null(pid)) {
-    if (parent_write) close(parent_write);
-    if (parent_read) close(parent_read);
-    if (parent_error) close(parent_error);
-    parent_write = 0;
-    parent_read = 0;
-    parent_error = 0;
-    FEerror("Could not spawn subprocess to run ~S.", 1, command);
-  }
-  if (parent_write > 0) {
-    stream_write = ecl_make_stream_from_fd(command, parent_write,
-                                           ecl_smm_output, 8,
-                                           ECL_STREAM_DEFAULT_FORMAT,
-                                           external_format);
-  } else {
-    parent_write = 0;
-    stream_write = cl_core.null_stream;
-  }
-  if (parent_read > 0) {
-    stream_read = ecl_make_stream_from_fd(command, parent_read,
-                                          ecl_smm_input, 8,
-                                          ECL_STREAM_DEFAULT_FORMAT,
-                                          external_format);
-  } else {
-    parent_read = 0;
-    stream_read = cl_core.null_stream;
-  }
-  if (parent_error > 0) {
-    stream_error = ecl_make_stream_from_fd(command, parent_error,
-                                           ecl_smm_input, 8,
-                                           ECL_STREAM_DEFAULT_FORMAT,
-                                           external_format);
-  } else {
-    parent_error = 0;
-    stream_error = cl_core.null_stream;
-  }
-  ecl_structure_set(process, @'ext::external-process', 1, input);
-  ecl_structure_set(process, @'ext::external-process', 2, output);
-  ecl_structure_set(process, @'ext::external-process', 3, error);
-
-  if (!Null(wait)) {
-    exit_status = si_external_process_wait(2, process, ECL_T);
-    exit_status = ecl_nth_value(the_env, 1);
-  }
-  @(return ((parent_read || parent_write)?
-            cl_make_two_way_stream(stream_read, stream_write) :
-            ECL_NIL)
-    exit_status
-    process);
+  @(return pid
+    ecl_make_fixnum(parent_write)
+    ecl_make_fixnum(parent_read)
+    ecl_make_fixnum(parent_error))
 }

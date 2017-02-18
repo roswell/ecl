@@ -1329,6 +1329,10 @@
               (values (or null two-way-stream)
                       (or null integer)
                       ext:external-process))
+(proclamation si:run-program-inner (string (or list string) list)
+              (values two-way-stream integer))
+(proclamation si:spawn-subprocess (string (or list string) list t t t)
+              (values (or null integer) fixnum fixnum fixnum))
 (proclamation ext:terminate-process (t &optional gen-bool) null)
 
 (proclamation ext:make-weak-pointer (t) ext:weak-pointer :no-side-effects)
