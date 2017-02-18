@@ -47,9 +47,8 @@
                               #+windows :escape-arguments nil))))
 
 ;;;
-;;; Wrapper around si_run_program call. Thanks to that C interface
-;;; isn't clobbered with lispisms. Ultimately we'd want to have as
-;;; little as possible in unixsys.d.
+;;; Almighty EXT:RUN-PROGRAM. Built on top of SI:SPAWN-SUBPROCESS. For
+;;; simpler alternative see SI:RUN-PROGRAM-INNER.
 ;;;
 (defun run-program (command argv
                     &key
@@ -79,16 +78,17 @@
            #-windows
            (mapcar #'si:copy-to-simple-base-string args)
            #+windows
-           (with-output-to-string (str)
-             (loop for (arg . rest) on args
-                do (if (and escape-arguments
-                            (find-if (lambda (c)
-                                       (find c '(#\Space #\Tab #\")))
-                                     arg))
-                       (escape-arg arg str)
-                       (princ arg str))
-                  (when rest
-                    (write-char #\Space str))))))
+           (si:copy-to-simple-base-string
+            (with-output-to-string (str)
+              (loop for (arg . rest) on args
+                 do (if (and escape-arguments
+                             (find-if (lambda (c)
+                                        (find c '(#\Space #\Tab #\")))
+                                      arg))
+                        (escape-arg arg str)
+                        (princ arg str))
+                   (when rest
+                     (write-char #\Space str)))))))
 
     (setf input (process-stream input *standard-input*
                                 :direction :input
