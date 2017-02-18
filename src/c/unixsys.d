@@ -461,7 +461,7 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
                    command, argv);
   argv = si_copy_to_simple_base_string(argv);
 #else
-  argv = cl_mapcar(2, @'si::copy-to-simple-base-string', argv);
+  argv = CONS(command, cl_mapcar(2, @'si::copy-to-simple-base-string', argv));
 #endif
 
   pid = si_spawn_subprocess(command, argv, environ, @':stream', @':stream', @':output');
