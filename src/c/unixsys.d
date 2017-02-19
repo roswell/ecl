@@ -432,7 +432,6 @@ cl_object
 si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
                     cl_object input, cl_object output, cl_object error) {
 
-  cl_env_ptr the_env = ecl_process_env();
   int parent_write = 0, parent_read = 0, parent_error = 0;
   int child_pid;
   cl_object pid;
@@ -553,7 +552,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
       }
       if (!Null(environ)) {
         char **pstrings;
-        cl_object buffer = from_list_to_execve_argument(environ, &pstrings);
+        from_list_to_execve_argument(environ, &pstrings);
         execve((char*)command->base_string.self, (char **)argv_ptr, pstrings);
       } else {
         execvp((char*)command->base_string.self, (char **)argv_ptr);
