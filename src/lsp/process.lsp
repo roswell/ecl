@@ -33,8 +33,6 @@
       (let ((hook (external-process-status-hook proc)))
         (when hook (funcall hook proc))))))
 
-;; (ext:set-signal-handler ext:+sigchld+ #'sigchld-handler)
-
 
 
 (defstruct (external-process (:constructor make-external-process ()))
@@ -124,6 +122,15 @@
                       status-hook
                       (external-format :default)
                       #+windows (escape-arguments t))
+
+  ;; XXX: we should install handler during loading of external-process
+  ;; module. Problem lies in fact, that handlers can't be installed
+  ;; before cl_boot finishes, so this form can't be top level in case
+  ;; when moudle is built-in. Good solution to that problem would be
+  ;; providing hook mechanism for functions to call after cl_boot.
+  ;; This way many modules may be easily untied from the core.
+  (unless (ext:get-signal-handler ext:+sigchld+)
+    (ext:set-signal-handler ext:+sigchld+ #'sigchld-handler))
 
   (flet ((process-stream (which default &rest args)
            (cond ((eql which t) default)

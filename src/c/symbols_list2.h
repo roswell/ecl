@@ -1972,6 +1972,8 @@ cl_symbols[] = {
 {KEY_ "ENVIRON",NULL},
 
 /* external-process extension */
+{EXT_ "RUN-PROGRAM","ECL_NAME(si_run_program)"},
+
 {EXT_ "MAKE-EXTERNAL-PROCESS",NULL},
 {EXT_ "EXTERNAL-PROCESS",NULL},
 {EXT_ "EXTERNAL-PROCESS-PID",NULL},
@@ -1981,7 +1983,6 @@ cl_symbols[] = {
 {EXT_ "EXTERNAL-PROCESS-STATUS",NULL},
 {EXT_ "EXTERNAL-PROCESS-WAIT",NULL},
 {EXT_ "TERMINATE-PROCESS","ECL_NAME(si_terminate_process)"},
-{EXT_ "RUN-PROGRAM","ECL_NAME(si_run_program)"},
 
 {KEY_ "RUNNING",NULL},
 {KEY_ "EXITED",NULL},
