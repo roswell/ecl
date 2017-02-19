@@ -34,10 +34,15 @@
   (let ((pid (external-process-pid process)))
     (when pid
       (multiple-value-bind (status code pid) (si:waitpid pid wait)
-        (unless (and wait (null status) (null code) (null pid))
-          (setf (external-process-pid process) pid
-                (external-process-%status process) status
-                (external-process-%code process) code)))))
+        (case status
+          ((:exitted :signalled :abort :error)
+           (setf (external-process-pid process) nil
+                 (external-process-%status process) status
+                 (external-process-%code process) code))
+          ((:stopped :running)
+           (setf (external-process-pid process) pid
+                 (external-process-%status process) status
+                 (external-process-%code process) code))))))
   (values (external-process-%status process)
           (external-process-%code process)))
 
