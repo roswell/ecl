@@ -43,9 +43,9 @@
         (unless (and wait (null status) (null code) (null pid))
           (setf (external-process-pid process) nil
                 (external-process-%status process) status
-                (external-process-code process) code)))))
+                (external-process-%code process) code)))))
   (values (external-process-%status process)
-          (external-process-code process) code))
+          (external-process-%code process)))
 
 ;;;
 ;;; Backwards compatible SI:SYSTEM call. We avoid ANSI C system()
