@@ -391,7 +391,7 @@ create_descriptor(cl_object stream, cl_object direction,
 cl_object
 si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   cl_env_ptr the_env = ecl_process_env();
-  int parent_write = 0, parent_read = 0, parent_error = 0;
+  int parent_write = 0, parent_read = 0;
   cl_object pid, stream_write, stream_read, exit_status;
 
   command = si_copy_to_simple_base_string(command);
