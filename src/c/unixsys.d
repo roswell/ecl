@@ -145,12 +145,6 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   return buffer;
 }
 
-static cl_object
-external_process_pid(cl_object p)
-{
-  return ecl_structure_ref(p, @'ext::external-process', 0);
-}
-
 cl_object
 si_waitpid(cl_object pid, cl_object wait)
 {
@@ -220,7 +214,7 @@ si_waitpid(cl_object pid, cl_object wait)
     cl_env_ptr env = ecl_process_env();
     bool error_encountered = FALSE;
 
-    cl_object pid = external_process_pid(process);
+    cl_object pid = ecl_structure_ref(process, @'ext::external-process', 0);
     if (!Null(pid)) {
       int ret;
 #if defined(ECL_MS_WINDOWS_HOST)

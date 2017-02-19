@@ -1233,6 +1233,7 @@ cl_symbols[] = {
 {SYS_ "REPLACE-ARRAY", SI_ORDINARY, si_replace_array, 2, OBJNULL},
 {SYS_ "ROW-MAJOR-ASET", SI_ORDINARY, si_row_major_aset, 3, OBJNULL},
 {EXT_ "RUN-PROGRAM", EXT_ORDINARY, ECL_NAME(si_run_program), -1, OBJNULL},
+{SYS_ "WAITPID", SI_ORDINARY, si_waitpid, 2, OBJNULL},
 {SYS_ "RUN-PROGRAM-INNER", SI_ORDINARY, si_run_program_inner, 3, OBJNULL},
 {SYS_ "SPAWN-SUBPROCESS", SI_ORDINARY, si_spawn_subprocess, 6, OBJNULL},
 {EXT_ "TERMINATE-PROCESS", EXT_ORDINARY, si_terminate_process, -1, OBJNULL},

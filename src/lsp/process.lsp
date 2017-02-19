@@ -30,7 +30,7 @@
         (values status (external-process-%code external-process)))))
 
 ;;; ---------------------------------------------------------------------------
-;;; ecl-waitpid -> (values                                   status  code  pid)
+;;; si:waitpid -> (values                                    status  code  pid)
 ;;; ---------------------------------------------------------------------------
 ;;;  nochg :: (values                                           nil   nil  nil)
 ;;;  error :: (values                        (member :abort :error)   nil  nil)
@@ -39,9 +39,9 @@
 (defun external-process-wait (process &optional wait)
   (let ((pid (external-process-pid process)))
     (when pid
-      (multiple-value-bind (status code pid) (ecl-waitpid pid wait)
+      (multiple-value-bind (status code pid) (si:waitpid pid wait)
         (unless (and wait (null status) (null code) (null pid))
-          (setf (external-process-pid process) nil
+          (setf (external-process-pid process) pid
                 (external-process-%status process) status
                 (external-process-%code process) code)))))
   (values (external-process-%status process)
@@ -195,11 +195,6 @@
    (name fd external-format) (:string :int :object) :object
    "ecl_make_stream_from_fd(#0, #1, ecl_smm_output, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
    :one-liner t))
-
-(defun ecl-waitpid (pid wait)
-  (ffi:c-inline
-   (pid wait) (:object :object) (values :object :object :object)
-   "si_waitpid(#0, #1)" :one-liner t))
 
 (defun null-stream ()
   (ffi:c-inline () () :object "cl_core.null_stream" :one-liner t :side-effects nil))

@@ -1884,9 +1884,17 @@ extern ECL_API void ecl_check_pending_interrupts(cl_env_ptr env);
 extern ECL_API cl_object si_system(cl_object cmd);
 extern ECL_API cl_object si_make_pipe();
 extern ECL_API cl_object si_run_program _ECL_ARGS((cl_narg narg, cl_object command, cl_object args, ...));
-extern ECL_API cl_object si_external_process_wait _ECL_ARGS((cl_narg narg, cl_object h, ...));
 extern ECL_API cl_object si_close_windows_handle(cl_object h);
 extern ECL_API cl_object si_terminate_process _ECL_ARGS((cl_narg narg, cl_object process, ...));
+extern ECL_API cl_object si_waitpid(cl_object pid, cl_object wait);
+
+extern ECL_API cl_object si_run_program_inner
+(cl_object command, cl_object argv, cl_object environ);
+
+extern ECL_API cl_object si_spawn_subprocess
+(cl_object command, cl_object argv, cl_object environ,
+ cl_object input, cl_object output, cl_object error);
+
 
 /* unicode -- no particular file, but we group these changes here */
 
