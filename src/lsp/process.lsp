@@ -29,6 +29,8 @@
         (ext:external-process-wait external-process nil)
         (values status (external-process-%code external-process)))))
 
+;;; XXX: we do not handle zombies yet
+
 ;;; ---------------------------------------------------------------------------
 ;;; si:waitpid -> (values                                    status  code  pid)
 ;;; ---------------------------------------------------------------------------
@@ -46,6 +48,19 @@
                 (external-process-%code process) code)))))
   (values (external-process-%status process)
           (external-process-%code process)))
+
+#+ (or)
+(defun terminate-process (process &optional force)
+  (let ((pid (external-process-pid process)))
+    #+windows
+    (ffi:c-inline
+     (process pid) (:object :object) :void
+     "HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(#1);
+      ret = TerminateProcess(*ph, -1);
+      if (ret == 0) FEerror(\"Cannot terminate the process ~A\", 1, #2);")
+    #-windows
+    (unless (zerop (si:signal pid (if force +sigkill+ +sigterm+)))
+      (error "Cannot terminate the process ~A" process))))
 
 ;;;
 ;;; Backwards compatible SI:SYSTEM call. We avoid ANSI C system()
