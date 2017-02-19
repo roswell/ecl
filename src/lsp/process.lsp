@@ -198,7 +198,7 @@
 
 (defun ecl-waitpid (pid wait)
   (ffi:c-inline
-   (pid wait) (:fixnum :bool) (values :object :object :object)
+   (pid wait) (:object :object) (values :object :object :object)
    "si_waitpid(#0, #1)" :one-liner t))
 
 (defun null-stream ()
