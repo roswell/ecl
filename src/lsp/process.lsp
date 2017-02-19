@@ -1,17 +1,9 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: SYSTEM -*-
-;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
-
-;;;;
-;;;;  PROCESS.LSP  -- External processes
+;;;;  process.lsp  -- External processes.
 
 ;;;;  Copyright (c) 2003, Juan Jose Garcia-Ripoll
+;;;;  Copyright (c) 2017, Daniel Kochmański
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See file 'LICENSE' for the copyright details.
 
 (in-package "EXT")
 
