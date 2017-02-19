@@ -526,6 +526,8 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 extern void ecl_interrupt_process(cl_object process, cl_object function);
 
 /* unixsys.d */
+extern cl_object si_waitpid(cl_object pid, cl_object wait);
+
 extern cl_object si_run_program_inner
 (cl_object command, cl_object argv, cl_object environ);
 

@@ -163,18 +163,12 @@ external_process_code(cl_object p)
   return ecl_structure_ref(p, @'ext::external-process', 5);
 }
 
-static void
-set_external_process_pid(cl_object process, cl_object pid)
-{
-  ecl_structure_set(process, @'ext::external-process', 0, pid);
-}
-
-static cl_object
-ecl_waitpid(cl_object pid, cl_object wait)
+cl_object
+si_waitpid(cl_object pid, cl_object wait)
 {
   cl_object status, code;
 #if defined(NACL)
-  FElibc_error("ecl_waitpid not implemented",1);
+  FElibc_error("si_waitpid not implemented",1);
   @(return ECL_NIL);
 #elif defined(ECL_MS_WINDOWS_HOST)
   cl_env_ptr the_env = ecl_process_env();
@@ -295,7 +289,7 @@ make_windows_handle(HANDLE h)
       } while (status == @':running');
       code = external_process_code(process);
     } else {
-      status = ecl_waitpid(pid, wait);
+      status = si_waitpid(pid, wait);
       code = ecl_nth_value(the_env, 1);
       pid = ecl_nth_value(the_env, 2);
       /* A SIGCHLD interrupt may abort waitpid. If this
@@ -482,7 +476,7 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
                                         ECL_STREAM_DEFAULT_FORMAT,
                                         @':default');
 
-  ecl_waitpid(pid, ECL_T);
+  si_waitpid(pid, ECL_T);
   exit_status = ecl_nth_value(the_env, 1);
   @(return cl_make_two_way_stream(stream_read, stream_write) exit_status)
 }
