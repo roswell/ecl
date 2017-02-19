@@ -813,7 +813,7 @@ put_return(void)
     }
     put_tabs(t);
     fprintf(out, "the_env->nvalues = %d;\n", nres);
-    for (i = nres-1;  i > 0;  i--) {
+    for (i = nres-1;  i >= 0;  i--) {
       put_tabs(t);
       fprintf(out, "the_env->values[%d] = __value%d;\n", i, i);
     }
