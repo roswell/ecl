@@ -161,7 +161,7 @@ static struct {
         { SIGCONT, "+SIGCONT+", ECL_NIL},
 #endif
 #ifdef SIGCHLD
-        { SIGCHLD, "+SIGCHLD+", ECL_NIL/* @'si::wait-for-all-processes' */},
+        { SIGCHLD, "+SIGCHLD+", ECL_NIL},
 #endif
 #ifdef SIGTTIN
         { SIGTTIN, "+SIGTTIN+", ECL_NIL},
@@ -852,12 +852,9 @@ do_catch_signal(int code, cl_object action, cl_object process)
                         mysignal(SIGILL, evil_signal_handler);
                 }
 #endif
-#if defined(SIGCHLD) && defined(ECL_THREADS)
-                else if (code == SIGCHLD &&
-                         ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD])
-                {
-                        /* Do nothing. This is taken care of in
-                         * the asynchronous signal handler. */
+#ifdef SIGCHLD
+                else if (code == SIGCHLD) {
+                        mysignal(SIGCHLD, evil_signal_handler);
                 }
 #endif
                 else {
