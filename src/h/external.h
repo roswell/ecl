@@ -1887,6 +1887,7 @@ extern ECL_API cl_object si_run_program _ECL_ARGS((cl_narg narg, cl_object comma
 extern ECL_API cl_object si_close_windows_handle(cl_object h);
 extern ECL_API cl_object si_terminate_process _ECL_ARGS((cl_narg narg, cl_object process, ...));
 extern ECL_API cl_object si_waitpid(cl_object pid, cl_object wait);
+extern ECL_API cl_object si_killpid(cl_object pid, cl_object signal);
 
 extern ECL_API cl_object si_run_program_inner
 (cl_object command, cl_object argv, cl_object environ);

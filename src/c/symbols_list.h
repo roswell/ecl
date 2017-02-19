@@ -1232,14 +1232,6 @@ cl_symbols[] = {
 {SYS_ "REM-SYSPROP", SI_ORDINARY, si_rem_sysprop, 2, OBJNULL},
 {SYS_ "REPLACE-ARRAY", SI_ORDINARY, si_replace_array, 2, OBJNULL},
 {SYS_ "ROW-MAJOR-ASET", SI_ORDINARY, si_row_major_aset, 3, OBJNULL},
-/* process.lsp */
-{EXT_ "RUN-PROGRAM", EXT_ORDINARY, ECL_NAME(si_run_program), -1, OBJNULL},
-{EXT_ "TERMINATE-PROCESS", EXT_ORDINARY, ECL_NAME(si_terminate_process), -1, OBJNULL},
-/* unixsys.d */
-{SYS_ "WAITPID", SI_ORDINARY, si_waitpid, 2, OBJNULL},
-{SYS_ "RUN-PROGRAM-INNER", SI_ORDINARY, si_run_program_inner, 3, OBJNULL},
-{SYS_ "SPAWN-SUBPROCESS", SI_ORDINARY, si_spawn_subprocess, 6, OBJNULL},
-/* ~ */
 {EXT_ "SAFE-EVAL", EXT_ORDINARY, ECL_NAME(si_safe_eval), -1, OBJNULL},
 {SYS_ "SCH-FRS-BASE", SI_ORDINARY, si_sch_frs_base, 2, OBJNULL},
 {SYS_ "SCHAR-SET", SI_ORDINARY, si_char_set, 3, OBJNULL},
@@ -1988,6 +1980,8 @@ cl_symbols[] = {
 {EXT_ "EXTERNAL-PROCESS-ERROR-STREAM", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "EXTERNAL-PROCESS-STATUS", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "EXTERNAL-PROCESS-WAIT", EXT_ORDINARY, NULL, -1, OBJNULL},
+{EXT_ "TERMINATE-PROCESS", EXT_ORDINARY, ECL_NAME(si_terminate_process), -1, OBJNULL},
+{EXT_ "RUN-PROGRAM", EXT_ORDINARY, ECL_NAME(si_run_program), -1, OBJNULL},
 
 {KEY_ "RUNNING", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "EXITED", KEYWORD, NULL, -1, OBJNULL},
@@ -1995,12 +1989,21 @@ cl_symbols[] = {
 {KEY_ "STOPPED", KEYWORD, NULL, -1, OBJNULL},
 /* ~ external-process extension */
 
-
+/* unixsys.d */
+{SYS_ "WAITPID", SI_ORDINARY, si_waitpid, 2, OBJNULL},
+#if !defined(ECL_MS_WINDOWS_HOST)
+{SYS_ "KILLPID", SI_ORDINARY, si_killpid, 2, OBJNULL},
+#else
+{SYS_ "KILLPID", SI_ORDINARY, NULL, 2, OBJNULL},
+#endif
+{SYS_ "RUN-PROGRAM-INNER", SI_ORDINARY, si_run_program_inner, 3, OBJNULL},
+{SYS_ "SPAWN-SUBPROCESS", SI_ORDINARY, si_spawn_subprocess, 6, OBJNULL},
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 {SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, si_close_windows_handle, 1, OBJNULL},
 #else
 {SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, NULL, -1, OBJNULL},
 #endif
+/* ~ */
 
 {EXT_ "*INVOKE-DEBUGGER-HOOK*", EXT_SPECIAL, NULL, -1, ECL_NIL},
 

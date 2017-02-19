@@ -1333,6 +1333,7 @@
                                             (or null keyword)
                                             (or null fixnum)
                                             (or null fixnum)))
+(proclamation si:killpid (fixnum fixnum) fixnum)
 (proclamation si:run-program-inner (string (or list string) list)
               (values two-way-stream integer))
 (proclamation si:spawn-subprocess (string (or list string) list t t t)

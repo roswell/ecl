@@ -208,6 +208,14 @@ si_waitpid(cl_object pid, cl_object wait)
   @(return status code pid);
 }
 
+#if !defined(ECL_MS_WINDOWS_HOST)
+cl_object
+si_killpid(cl_object pid, cl_object signal) {
+  int ret = kill(ecl_fixnum(pid), ecl_fixnum(signal));
+  return ecl_make_fixnum(ret);
+}
+#endif
+
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 cl_object
 si_close_windows_handle(cl_object h)

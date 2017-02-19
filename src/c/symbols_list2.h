@@ -1232,14 +1232,6 @@ cl_symbols[] = {
 {SYS_ "REM-SYSPROP","si_rem_sysprop"},
 {SYS_ "REPLACE-ARRAY","si_replace_array"},
 {SYS_ "ROW-MAJOR-ASET","si_row_major_aset"},
-/* process.lsp */
-{EXT_ "RUN-PROGRAM","ECL_NAME(si_run_program)"},
-{EXT_ "TERMINATE-PROCESS","ECL_NAME(si_terminate_process)"},
-/* unixsys.d */
-{SYS_ "WAITPID","si_waitpid"},
-{SYS_ "RUN-PROGRAM-INNER","si_run_program_inner"},
-{SYS_ "SPAWN-SUBPROCESS","si_spawn_subprocess"},
-/* ~ */
 {EXT_ "SAFE-EVAL","ECL_NAME(si_safe_eval)"},
 {SYS_ "SCH-FRS-BASE","si_sch_frs_base"},
 {SYS_ "SCHAR-SET","si_char_set"},
@@ -1988,6 +1980,8 @@ cl_symbols[] = {
 {EXT_ "EXTERNAL-PROCESS-ERROR-STREAM",NULL},
 {EXT_ "EXTERNAL-PROCESS-STATUS",NULL},
 {EXT_ "EXTERNAL-PROCESS-WAIT",NULL},
+{EXT_ "TERMINATE-PROCESS","ECL_NAME(si_terminate_process)"},
+{EXT_ "RUN-PROGRAM","ECL_NAME(si_run_program)"},
 
 {KEY_ "RUNNING",NULL},
 {KEY_ "EXITED",NULL},
@@ -1995,12 +1989,21 @@ cl_symbols[] = {
 {KEY_ "STOPPED",NULL},
 /* ~ external-process extension */
 
-
+/* unixsys.d */
+{SYS_ "WAITPID","si_waitpid"},
+#if !defined(ECL_MS_WINDOWS_HOST)
+{SYS_ "KILLPID","si_killpid"},
+#else
+{SYS_ "KILLPID",NULL},
+#endif
+{SYS_ "RUN-PROGRAM-INNER","si_run_program_inner"},
+{SYS_ "SPAWN-SUBPROCESS","si_spawn_subprocess"},
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 {SYS_ "CLOSE-WINDOWS-HANDLE","si_close_windows_handle"},
 #else
 {SYS_ "CLOSE-WINDOWS-HANDLE",NULL},
 #endif
+/* ~ */
 
 {EXT_ "*INVOKE-DEBUGGER-HOOK*",NULL},
 
