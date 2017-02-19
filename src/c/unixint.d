@@ -1136,7 +1136,7 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
         }
         case CTRL_CLOSE_EVENT:
         case CTRL_LOGOFF_EVENT:
-	     case CTRL_SHUTDOWN_EVENT: {
+        case CTRL_SHUTDOWN_EVENT: {
                 cl_object function =
 	                     ECL_SYM_FUN(@'ext::quit');
                 if (function)

@@ -50,10 +50,8 @@
       int ret = TerminateProcess(*ph, -1);
       if (ret == 0) FEerror(\"Cannot terminate the process ~A\", 1, #0);")
     #-windows
-    (ffi:c-inline
-     (process pid (if force +sigkill+ +sigterm+)) (:object :object :object) :void
-     "int ret = kill(ecl_fixnum(#1), ecl_fixnum(#2));
-      if (ret != 0) FEerror(\"Cannot terminate the process ~A\", 1, #0);")))
+    (unless (zerop (si:killpid pid (if force +sigkill+ +sigterm+)))
+      (error "Cannot terminate the process ~A" process))))
 
 ;;;
 ;;; Backwards compatible SI:SYSTEM call. We avoid ANSI C system()
