@@ -939,6 +939,7 @@
     si::do-defsetf si::do-define-setf-method
     ;; process.lsp
     ext:run-program
+    ext:terminate-process
     ;; pprint.lsp
     pprint-fill copy-pprint-dispatch pprint-dispatch
     pprint-linear pprint-newline pprint-tab pprint-tabular

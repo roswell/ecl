@@ -208,31 +208,6 @@ si_waitpid(cl_object pid, cl_object wait)
   @(return status code pid);
 }
 
-@(defun ext::terminate-process (process &optional (force ECL_NIL))
-@
-{
-    cl_env_ptr env = ecl_process_env();
-    bool error_encountered = FALSE;
-
-    cl_object pid = ecl_structure_ref(process, @'ext::external-process', 0);
-    if (!Null(pid)) {
-      int ret;
-#if defined(ECL_MS_WINDOWS_HOST)
-      HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(pid);
-      ret = TerminateProcess(*ph, -1);
-      error_encountered = (ret == 0);
-#else
-      ret = kill(ecl_fixnum(pid), Null(force) ? SIGTERM : SIGKILL);
-      error_encountered = (ret != 0);
-#endif
-    }
-
-    if (error_encountered)
-      FEerror("Cannot terminate the process ~A", 1, process);
-    return ECL_NIL;
-}
-@)
-
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 cl_object
 si_close_windows_handle(cl_object h)

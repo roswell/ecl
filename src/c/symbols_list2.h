@@ -1232,11 +1232,14 @@ cl_symbols[] = {
 {SYS_ "REM-SYSPROP","si_rem_sysprop"},
 {SYS_ "REPLACE-ARRAY","si_replace_array"},
 {SYS_ "ROW-MAJOR-ASET","si_row_major_aset"},
+/* process.lsp */
 {EXT_ "RUN-PROGRAM","ECL_NAME(si_run_program)"},
+{EXT_ "TERMINATE-PROCESS","ECL_NAME(si_terminate_process)"},
+/* unixsys.d */
 {SYS_ "WAITPID","si_waitpid"},
 {SYS_ "RUN-PROGRAM-INNER","si_run_program_inner"},
 {SYS_ "SPAWN-SUBPROCESS","si_spawn_subprocess"},
-{EXT_ "TERMINATE-PROCESS","si_terminate_process"},
+/* ~ */
 {EXT_ "SAFE-EVAL","ECL_NAME(si_safe_eval)"},
 {SYS_ "SCH-FRS-BASE","si_sch_frs_base"},
 {SYS_ "SCHAR-SET","si_char_set"},
