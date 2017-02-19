@@ -151,18 +151,6 @@ external_process_pid(cl_object p)
   return ecl_structure_ref(p, @'ext::external-process', 0);
 }
 
-static cl_object
-external_process_status(cl_object p)
-{
-  return ecl_structure_ref(p, @'ext::external-process', 4);
-}
-
-static cl_object
-external_process_code(cl_object p)
-{
-  return ecl_structure_ref(p, @'ext::external-process', 5);
-}
-
 cl_object
 si_waitpid(cl_object pid, cl_object wait)
 {
@@ -272,41 +260,6 @@ make_windows_handle(HANDLE h)
   return foreign;
 }
 #endif
-
-@(defun ext::external-process-wait (process &optional (wait ECL_NIL))
-  @ {
-    cl_object status, code, pid;
-  AGAIN:
-    pid = external_process_pid(process);
-    if (Null(pid)) {
-      /* If PID is NIL, it may be because the process failed, or
-       * because it is being updated by a separate thread, which is
-       * why we have to spin here. Note also the order here: status is
-       * updated _after_ code, and hence we check it _before_ code. */
-      do {
-        ecl_musleep(0.0, 1);
-        status = external_process_status(process);
-      } while (status == @':running');
-      code = external_process_code(process);
-    } else {
-      status = si_waitpid(pid, wait);
-      code = ecl_nth_value(the_env, 1);
-      pid = ecl_nth_value(the_env, 2);
-      /* A SIGCHLD interrupt may abort waitpid. If this
-       * is the case, the signal handler may have consumed
-       * the process status and we have to start over again */
-      if (Null(pid)) {
-        if (!Null(wait)) goto AGAIN;
-        status = external_process_status(process);
-        code = external_process_code(process);
-      } else {
-        ecl_structure_set(process, @'ext::external-process', 0, ECL_NIL);
-        ecl_structure_set(process, @'ext::external-process', 4, status);
-        ecl_structure_set(process, @'ext::external-process', 5, code);
-      }
-    }
-    @(return status code);
-  } @)
 
 #if defined(ECL_MS_WINDOWS_HOST)
 HANDLE

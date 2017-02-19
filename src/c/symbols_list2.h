@@ -1975,6 +1975,7 @@ cl_symbols[] = {
 
 {KEY_ "ENVIRON",NULL},
 
+/* external-process extension */
 {EXT_ "MAKE-EXTERNAL-PROCESS",NULL},
 {EXT_ "EXTERNAL-PROCESS",NULL},
 {EXT_ "EXTERNAL-PROCESS-PID",NULL},
@@ -1982,13 +1983,14 @@ cl_symbols[] = {
 {EXT_ "EXTERNAL-PROCESS-OUTPUT",NULL},
 {EXT_ "EXTERNAL-PROCESS-ERROR-STREAM",NULL},
 {EXT_ "EXTERNAL-PROCESS-STATUS",NULL},
+{EXT_ "EXTERNAL-PROCESS-WAIT",NULL},
 
 {KEY_ "RUNNING",NULL},
 {KEY_ "EXITED",NULL},
 {KEY_ "SIGNALED",NULL},
 {KEY_ "STOPPED",NULL},
+/* ~ external-process extension */
 
-{EXT_ "EXTERNAL-PROCESS-WAIT","si_external_process_wait"},
 
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 {SYS_ "CLOSE-WINDOWS-HANDLE","si_close_windows_handle"},

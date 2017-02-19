@@ -29,6 +29,24 @@
         (ext:external-process-wait external-process nil)
         (values status (external-process-%code external-process)))))
 
+;;; ---------------------------------------------------------------------------
+;;; ecl-waitpid -> (values                                   status  code  pid)
+;;; ---------------------------------------------------------------------------
+;;;  nochg :: (values                                           nil   nil  nil)
+;;;  error :: (values                        (member :abort :error)   nil  nil)
+;;;  chang :: (values (member :exited :signalled :stopped :running)  code  pid)
+;;; ---------------------------------------------------------------------------
+(defun external-process-wait (process &optional wait)
+  (let ((pid (external-process-pid process)))
+    (when pid
+      (multiple-value-bind (status code pid) (ecl-waitpid pid wait)
+        (unless (and wait (null status) (null code) (null pid))
+          (setf (external-process-pid process) nil
+                (external-process-%status process) status
+                (external-process-code process) code)))))
+  (values (external-process-%status process)
+          (external-process-code process) code))
+
 ;;;
 ;;; Backwards compatible SI:SYSTEM call. We avoid ANSI C system()
 ;;; because we are consuming the process wait status using a SIGCHLD
@@ -167,14 +185,21 @@
 
 ;;; low level interface to descriptors
 (defun make-input-stream-from-fd (name fd external-format)
-  (ffi:c-inline (name fd external-format) (:string :int :object) :object
-                "ecl_make_stream_from_fd(#0, #1, ecl_smm_input, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
-                :one-liner t))
+  (ffi:c-inline
+   (name fd external-format) (:string :int :object) :object
+   "ecl_make_stream_from_fd(#0, #1, ecl_smm_input, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
+   :one-liner t))
 
 (defun make-output-stream-from-fd (name fd external-format)
-  (ffi:c-inline (name fd external-format) (:string :int :object) :object
-      "ecl_make_stream_from_fd(#0, #1, ecl_smm_output, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
-      :one-liner t))
+  (ffi:c-inline
+   (name fd external-format) (:string :int :object) :object
+   "ecl_make_stream_from_fd(#0, #1, ecl_smm_output, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
+   :one-liner t))
+
+(defun ecl-waitpid (pid wait)
+  (ffi:c-inline
+   (pid wait) (:fixnum :bool) (values :object :object :object)
+   "si_waitpid(#0, #1)" :one-liner t))
 
 (defun null-stream ()
   (ffi:c-inline () () :object "cl_core.null_stream" :one-liner t :side-effects nil))
