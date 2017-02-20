@@ -54,20 +54,6 @@
      (let ((result (progn ,@body)))
        (cons result (multiple-value-list (ext:external-process-wait process t))))))
 
-(defmacro with-run-program2 ((name args &rest params) &body body)
-  `(multiple-value-bind (,name code process)
-       (ext:run-program *binary*
-                        '("--norc"
-                          "--eval" ,(format nil "(setf *args-number* ~a)" (+ 13 (length args)))
-                          "--eval" "(setf *load-verbose* nil)"
-                          "--load" ,*program*
-                          "--eval" ,(format nil "(~a)" name)
-                          "--eval" "(quit)"
-                          "--" ,@args)
-                        ,@params
-                        :wait nil)
-     (list ,name code process)))
-
 (defun slurp (stream)
   (do ((line #1=(read-line stream nil :eof) #1#)
        (last nil line))
@@ -120,8 +106,7 @@
               (is-eql :signaled (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process t)))))
 
-;;; We may want to craft it into an interface. Suspend/Resume *is*
-;;; possible on Windows:
+;;; We may want to craft it into an interface. Suspend/Resume *is* possible on Windows:
 ;;; http://stackoverflow.com/questions/11010165/how-to-suspend-resume-a-process-in-windows
 #-windows
 (test suspend-resume
