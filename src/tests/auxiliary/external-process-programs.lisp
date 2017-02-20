@@ -38,7 +38,7 @@
   (sleep 10)
   (quit 0))
 
-(define-function suspend
+(define-function heartbeat
   (do () (nil)
     (print "heartbit")
     (sleep 1)

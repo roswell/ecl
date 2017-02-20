@@ -2,34 +2,6 @@
 
 (suite 'run-program)
 
-;; 
-;; ;;;; Author:   Daniel Kochmański
-;; ;;;; Created:  2016-09-07
-;; ;;;; Contains: External process interaction API
-;; ;;;;
-;; (test run-program.0001
-;;   (let ((p (nth-value 2 (ext:run-program #-windows "sleep"
-;;                                          #+windows "timeout"
-;;                                          (list "3") :wait nil))))
-;;     (is (eql :running (ext:external-process-wait p nil))
-;;         "process doesn't run")
-;;     (ext:terminate-process p)
-;;     (sleep 1)
-;;     (multiple-value-bind (status code)
-;;         (ext:external-process-wait p nil)
-;;       (is (eql :signaled status)
-;;           "status is ~s, should be ~s" status :signalled)
-;;       (is (eql ext:+sigterm+ code)
-;;           "signal code is ~s, should be ~s" code ext:+sigterm+))
-;;     (finishes (ext:terminate-process p))))
-
-;; (test run-program.0002
-;;       (is (eql (nth-value 1 (ext:run-program "ip" '("/all"))) 0))
-;;       (multiple-value-bind (s c)
-          
-;;         (is)))
-
-
 ;;; I was wondering about the program which we could could use to test
 ;;; the interface (i.e both on Linux and Windows). Easy! ECL is a
 ;;; perfect program for that.
@@ -110,13 +82,27 @@
 ;;; http://stackoverflow.com/questions/11010165/how-to-suspend-resume-a-process-in-windows
 #-windows
 (test suspend-resume
-  (let ((process (nth-value 2 (ext:run-program "sleep" '("100") :wait nil))))
-    (let ((pid (ext:external-process-pid process)))
-      (is-eql :running (ext:external-process-wait process nil))
-      (si:killpid pid ext:+sigstop+)
-      (sleep 2)
-      (is-eql :stopped (ext:external-process-wait process nil))
-      (si:killpid pid ext:+sigcont+)
-      (sleep 2)
-      (is-eql :resumed (ext:external-process-wait process nil))
-      (finishes (ext:terminate-process process t)))))
+  (is-equal `(t :signaled ,ext:+sigkill+)
+            (with-run-program (heartbeat nil)
+              (let ((pid (ext:external-process-pid process)))
+                (is-eql :running (ext:external-process-wait process nil))
+                (si:killpid pid ext:+sigstop+)
+                (sleep 2)
+                (is-eql :stopped (ext:external-process-wait process nil))
+                (si:killpid pid ext:+sigcont+)
+                (sleep 2)
+                (is-eql :resumed (ext:external-process-wait process nil))
+                (finishes (ext:terminate-process process t))))))
+
+;;; This test is disabled because we don't support virtual streams in
+;;; run-program yet.
+#+ (or) (test no-fd-streams
+          (let ((output-stream (make-string-output-stream))
+                (error-stream (make-string-output-stream)))
+            (with-input-from-string (input-stream "42")
+              (with-run-program (io/err nil :input input-stream
+                                        :output output-stream
+                                        :error error-stream)))
+            (is-not (zerop (length (get-output-stream-string output-stream))))
+            (is-not (zerop (length (get-output-stream-string error-stream))))
+            (mapc #'close (list output-stream error-stream))))
