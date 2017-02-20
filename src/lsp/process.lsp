@@ -61,7 +61,7 @@
   (let ((pid (external-process-pid process)))
     (when pid
       (multiple-value-bind (status code pid) (si:waitpid pid wait)
-        (case status
+        (ecase status
           ((:exited :signaled :abort :error)
            (with-active-processes-lock
              (setf *active-processes* (delete process *active-processes*)
@@ -70,7 +70,8 @@
                    (external-process-%code process) code)))
           ((:stopped :running)
            (setf (external-process-%status process) status
-                 (external-process-%code process) code))))))
+                 (external-process-%code process) code))
+          ((nil) #| wait was nil and process didn't change |#)))))
   (values (external-process-%status process)
           (external-process-%code process)))
 
