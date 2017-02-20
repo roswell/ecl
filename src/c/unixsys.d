@@ -175,7 +175,12 @@ si_waitpid(cl_object pid, cl_object wait)
   ecl_enable_interrupts_env(the_env);
 #else
   int code_int, error;
-  error = waitpid(ecl_to_fix(pid), &code_int, Null(wait)? WNOHANG : 0);
+
+  if (Null(wait))
+    error = waitpid(ecl_to_fix(pid), &code_int, WNOHANG | WUNTRACED | WCONTINUED);
+  else
+    error = waitpid(ecl_to_fix(pid), &code_int, WUNTRACED | WCONTINUED);
+
   if (error < 0) {
     if (errno == EINTR) {
       status = @':abort';
@@ -199,6 +204,9 @@ si_waitpid(cl_object pid, cl_object wait)
     } else if (WIFSTOPPED(code_int)) {
       status = @':stopped';
       code = ecl_make_fixnum(WSTOPSIG(code_int));
+    } else if (WIFCONTINUED(code_int)) {
+      status = @':resumed';
+      code = ecl_make_fixnum(SIGCONT);
     } else {
       status = @':running';
       code = ECL_NIL;

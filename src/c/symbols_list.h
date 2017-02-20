@@ -1988,6 +1988,7 @@ cl_symbols[] = {
 {KEY_ "EXITED", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "SIGNALED", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "STOPPED", KEYWORD, NULL, -1, OBJNULL},
+{KEY_ "RESUMED", KEYWORD, NULL, -1, OBJNULL},
 /* ~ external-process extension */
 
 /* unixsys.d */

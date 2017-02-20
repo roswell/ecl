@@ -50,13 +50,14 @@
         (ext:external-process-wait external-process nil)
         (values status (external-process-%code external-process)))))
 
-;;; ---------------------------------------------------------------------------
-;;; si:waitpid -> (values                                    status  code  pid)
-;;; ---------------------------------------------------------------------------
-;;;  nochg :: (values                                           nil   nil  nil)
-;;;  error :: (values                        (member :abort :error)   nil  nil)
-;;;  chang :: (values (member :exited :signalled :stopped :running)  code  pid)
-;;; ---------------------------------------------------------------------------
+;;; ---------------------------------------------------------------------
+;;; si:waitpid -> (values                              status  code  pid)
+;;; ---------------------------------------------------------------------
+;;;  no change :: (values                                 nil   nil  nil)
+;;;  error     :: (values (member              :abort :error)   nil  nil)
+;;;  finished  :: (values (member         :exited :signalled)  code  pid)
+;;;  running   :: (values (member :stopped :resumed :running)  code  pid)
+;;; ---------------------------------------------------------------------
 (defun external-process-wait (process &optional wait)
   (let ((pid (external-process-pid process)))
     (when pid
@@ -68,7 +69,7 @@
                    (external-process-pid process) nil
                    (external-process-%status process) status
                    (external-process-%code process) code)))
-          ((:stopped :running)
+          ((:stopped :resumed :running)
            (setf (external-process-%status process) status
                  (external-process-%code process) code))
           ((nil) #| wait was nil and process didn't change |#)))))
