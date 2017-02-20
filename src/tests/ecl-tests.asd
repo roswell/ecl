@@ -16,6 +16,7 @@
                          (:file "mixed")
                          (:file "compiler")
                          (:file "executable-cli")
+                         (:file "run-program")
                          (:file "multiprocessing" :if-feature :threads)
                          (:file "embedding" :if-feature (:not :ecl-bytecmp))
                          (:file "foreign-interface" :if-feature :ffi)

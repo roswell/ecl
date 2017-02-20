@@ -22,11 +22,11 @@
 ;;;; Declare the suites
 (suite 'ecl-tests
        '(executable eformat ieee-fp eprocess package-locks ansi+ mixed
-         cmp emb ffi mop mp))
+         cmp emb ffi mop mp run-program))
 
 (suite 'make-check
        '(executable ieee-fp eprocess package-locks ansi+ mixed cmp emb
-         ffi mop))
+         ffi mop run-program))
 
 
 ;;; Some syntactic sugar for 2am
