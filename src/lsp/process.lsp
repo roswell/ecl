@@ -139,6 +139,7 @@
   ;; when moudle is built-in. Good solution to that problem would be
   ;; providing hook mechanism for functions to call after cl_boot.
   ;; This way many modules may be easily untied from the core.
+  #-msvc
   (unless (ext:get-signal-handler ext:+sigchld+)
     (ext:set-signal-handler ext:+sigchld+ #'sigchld-handler))
 
