@@ -77,15 +77,16 @@
 (defun terminate-process (process &optional force)
   (with-active-processes-lock
     (let ((pid (external-process-pid process)))
-      #+windows
-      (ffi:c-inline
-       (process pid) (:object :object) :void
-       "HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(#1);
-      int ret = TerminateProcess(*ph, -1);
-      if (ret == 0) FEerror(\"Cannot terminate the process ~A\", 1, #0);")
-      #-windows
-      (unless (zerop (si:killpid pid (if force +sigkill+ +sigterm+)))
-        (error "Cannot terminate the process ~A" process)))))
+      (when pid
+        #+windows
+        (ffi:c-inline
+         (process pid) (:object :object) :void
+         "HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(#1);
+         int ret = TerminateProcess(*ph, -1);
+         if (ret == 0) FEerror(\"Cannot terminate the process ~A\", 1, #0);")
+        #-windows
+        (unless (zerop (si:killpid pid (if force +sigkill+ +sigterm+)))
+          (error "Cannot terminate the process ~A" process))))))
 
 ;;;
 ;;; Backwards compatible SI:SYSTEM call. We avoid ANSI C system()
