@@ -438,12 +438,16 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     }
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
     create_descriptor(output, @':output', &child_stdout, &parent_read);
-    if (error == @':output')
-      /* The child inherits a duplicate of its own output
-         handle.*/
+    if (error == @':output') {
+      /* The child inherits a duplicate of its own output handle. */
       DuplicateHandle(current, child_stdout, current,
                       &child_stderr, 0, TRUE,
                       DUPLICATE_SAME_ACCESS);
+      /* Same for the parent_read and parent_error. */
+      DuplicateHandle(current, parent_read, current,
+                      &parent_error, 0, TRUE,
+                      DUPLICATE_SAME_ACCESS);
+    }
     else
       create_descriptor(error, @':output', &child_stderr, &parent_error);
 
@@ -498,8 +502,10 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
 
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
     create_descriptor(output, @':output', &child_stdout, &parent_read);
-    if (error == @':output')
+    if (error == @':output') {
       child_stderr = child_stdout;
+      parent_error = dup(parent_read);
+    }
     else
       create_descriptor(error,  @':output', &child_stderr, &parent_error);
 
