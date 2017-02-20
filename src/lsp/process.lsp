@@ -62,7 +62,7 @@
     (when pid
       (multiple-value-bind (status code pid) (si:waitpid pid wait)
         (case status
-          ((:exited :signalled :abort :error)
+          ((:exited :signaled :abort :error)
            (with-active-processes-lock
              (setf *active-processes* (delete process *active-processes*)
                    (external-process-pid process) nil
