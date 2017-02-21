@@ -187,15 +187,11 @@
           (process (make-external-process)))
       (with-active-processes-lock (push process *active-processes*))
       (multiple-value-bind (pid parent-write parent-read parent-error)
-          (si:spawn-subprocess progname args environ input output error)
-        (unless pid
-          (unless (zerop parent-write) (ff-close parent-write))
-          (unless (zerop parent-read)  (ff-close parent-read))
-          (unless (zerop parent-error) (ff-close parent-error))
-          (with-active-processes-lock
-            (setf *active-processes* (delete process *active-processes*)))
-          (error "Could not spawn subprocess to run ~S." progname))
-
+          (handler-case (si:spawn-subprocess progname args environ input output error)
+            (t (c)
+              (with-active-processes-lock
+                (setf *active-processes* (delete process *active-processes*)))
+              (signal c)))
         (let ((stream-write
                (when (< 0 parent-write)
                  (make-output-stream-from-fd progname parent-write external-format)))
@@ -263,6 +259,3 @@
 
 (defun null-stream ()
   (ffi:c-inline () () :object "cl_core.null_stream" :one-liner t :side-effects nil))
-
-(ffi:defentry ff-close (:int) (:int "close") :no-interrupts t)
-

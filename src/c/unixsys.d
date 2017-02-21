@@ -403,10 +403,6 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   parent_write = ecl_fixnum(ecl_nth_value(the_env, 1));
   parent_read = ecl_fixnum(ecl_nth_value(the_env, 2));
 
-  if (Null(pid) || (parent_write <= 0) || (parent_read <= 0)) {
-    FEerror("Could not spawn subprocess to run ~S.", 1, command);
-  }
-
   stream_write = ecl_make_stream_from_fd(command, parent_write,
                                          ecl_smm_output, 8,
                                          ECL_STREAM_DEFAULT_FORMAT,
@@ -587,6 +583,17 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     @(return ECL_NIL);
   }
 #endif
+
+  if (Null(pid)) {
+    if (parent_write) close(parent_write);
+    if (parent_read) close(parent_read);
+    if (parent_error) close(parent_error);
+    parent_write = 0;
+    parent_read = 0;
+    parent_error = 0;
+    FEerror("Could not spawn subprocess to run ~S.", 1, command);
+  }
+
   @(return pid
     ecl_make_fixnum(parent_write)
     ecl_make_fixnum(parent_read)
