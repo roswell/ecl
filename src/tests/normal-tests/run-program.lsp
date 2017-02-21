@@ -60,7 +60,6 @@
 
 
 (test terminate-process
-  #-msvc
   (is-equal `(t :signaled ,ext:+sigterm+)
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
@@ -69,7 +68,7 @@
               (sleep 1)
               (is-eql :signaled (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process))))
-  #-msvc
+
   (is-equal `(t :signaled ,ext:+sigkill+)
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
@@ -77,21 +76,11 @@
               (finishes (ext:terminate-process process t)) ; no-op
               (sleep 1)
               (is-eql :signaled (ext:external-process-wait process nil))
-              (finishes (ext:terminate-process process t))))
-
-  #+msvc
-  (is-equal `(t :error nil)
-            (with-run-program (terminate nil)
-              (is-eql :running (ext:external-process-wait process nil))
-              (finishes (ext:terminate-process process t))
-              (finishes (ext:terminate-process process t)) ; no-op
-              (sleep 1)
-              (is-eql :error (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process t)))))
 
 ;;; We may want to craft it into an interface. Suspend/Resume *is* possible on Windows:
 ;;; http://stackoverflow.com/questions/11010165/how-to-suspend-resume-a-process-in-windows
-#-msvc
+#-windows
 (test suspend-resume
   (is-equal `(t :signaled ,ext:+sigkill+)
             (with-run-program (heartbeat nil)
