@@ -42,8 +42,8 @@
                 (args `(,@(cdr program) ,@args))
                 (program (car program)))
            (with-current-directory
-             #-msvc(si:run-program-inner program args nil)
-             #+msvc(si:system (format nil "~A~{ ~A~}" program args))))))
+             #-windows(si:run-program-inner program args nil)
+             #+windows(si:system (format nil "~A~{ ~A~}" program args))))))
     (cond ((null result)
            (cerror "Continues anyway."
                    "Unable to execute:~%(RUN-PROGRAM ~S ~S)"
