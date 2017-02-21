@@ -319,7 +319,10 @@ create_descriptor(cl_object stream, cl_object direction,
       printf("open_osfhandle failed\n");
   }
   else if (Null(stream)) {
-    *child = NULL;
+    if (direction == @':input')
+      *child = open("nul", O_RDONLY);
+    else
+      *child = open("nul", O_WRONLY);
   }
   else if (!Null(cl_streamp(stream))) {
     HANDLE stream_handle = ecl_stream_to_HANDLE
