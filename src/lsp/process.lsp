@@ -189,9 +189,9 @@
       (multiple-value-bind (pid parent-write parent-read parent-error)
           (si:spawn-subprocess progname args environ input output error)
         (unless pid
-          (when parent-write (ff-close parent-write))
-          (when parent-read (ff-close parent-read))
-          (when parent-error (ff-close parent-error))
+          (unless (zerop parent-write) (ff-close parent-write))
+          (unless (zerop parent-read)  (ff-close parent-read))
+          (unless (zerop parent-error) (ff-close parent-error))
           (with-active-processes-lock
             (setf *active-processes* (delete process *active-processes*)))
           (error "Could not spawn subprocess to run ~S." progname))
