@@ -451,9 +451,9 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
                       &child_stderr, 0, TRUE,
                       DUPLICATE_SAME_ACCESS);
       /* Same for the parent_read and parent_error. */
-      DuplicateHandle(current, parent_read, current,
-                      &parent_error, 0, TRUE,
-                      DUPLICATE_SAME_ACCESS);
+      /* DuplicateHandle(current, parent_read, current, */
+      /*                 &parent_error, 0, TRUE, */
+      /*                 DUPLICATE_SAME_ACCESS); */
     }
     else
       create_descriptor(error, @':output', &child_stderr, &parent_error);
