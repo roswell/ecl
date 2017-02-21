@@ -184,33 +184,36 @@
 
     (let ((progname (si:copy-to-simple-base-string command))
           (args (prepare-args (cons command argv)))
-          (process (make-external-process)))
-      (with-active-processes-lock (push process *active-processes*))
-      (multiple-value-bind (pid parent-write parent-read parent-error)
-          (handler-case (si:spawn-subprocess progname args environ input output error)
-            (t (c)
-              (with-active-processes-lock
-                (setf *active-processes* (delete process *active-processes*)))
-              (signal c)))
-        (let ((stream-write
-               (when (< 0 parent-write)
-                 (make-output-stream-from-fd progname parent-write external-format)))
-              (stream-read
-               (when (< 0 parent-read)
-                 (make-input-stream-from-fd progname parent-read external-format)))
-              (stream-error
-               (when (< 0 parent-error)
-                 (make-input-stream-from-fd progname parent-error external-format))))
-          (setf (external-process-pid process) pid
-                (external-process-input process)         (or stream-write (null-stream))
-                (external-process-output process)        (or stream-read  (null-stream))
-                (external-process-error-stream process)  (or stream-error (null-stream))
-                (external-process-status-hook process)   status-hook)
+          (process (make-external-process))
+          pid parent-write parent-read parent-error)
 
-          (values (make-two-way-stream (external-process-output process)
-                                       (external-process-input process))
-                  (when wait (nth-value 1 (si:external-process-wait process t)))
-                  process))))))
+      (with-active-processes-lock (push process *active-processes*))
+      (handler-case (multiple-value-setq (pid parent-write parent-read parent-error)
+                      (si:spawn-subprocess progname args environ input output error))
+        (t (c)
+          (with-active-processes-lock
+            (setf *active-processes* (delete process *active-processes*)))
+          (signal c)))
+
+      (let ((stream-write
+             (when (< 0 parent-write)
+               (make-output-stream-from-fd progname parent-write external-format)))
+            (stream-read
+             (when (< 0 parent-read)
+               (make-input-stream-from-fd progname parent-read external-format)))
+            (stream-error
+             (when (< 0 parent-error)
+               (make-input-stream-from-fd progname parent-error external-format))))
+        (setf (external-process-pid process) pid
+              (external-process-input process)         (or stream-write (null-stream))
+              (external-process-output process)        (or stream-read  (null-stream))
+              (external-process-error-stream process)  (or stream-error (null-stream))
+              (external-process-status-hook process)   status-hook)
+
+        (values (make-two-way-stream (external-process-output process)
+                                     (external-process-input process))
+                (when wait (nth-value 1 (si:external-process-wait process t)))
+                process)))))
 
 #+windows
 (defun escape-arg (arg stream)
