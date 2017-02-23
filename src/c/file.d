@@ -1626,7 +1626,7 @@ ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend)
   strm->stream.flags = ECL_STREAM_DEFAULT_FORMAT;
   strm->stream.byte_size = 8;
 #else
-  if (ECL_BASE_STRING_P(strng) == t_base_string) {
+  if (ECL_BASE_STRING_P(strng)) {
     strm->stream.format = @':latin-1';
     strm->stream.flags = ECL_STREAM_LATIN_1;
     strm->stream.byte_size = 8;
