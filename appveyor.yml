@@ -1,0 +1,30 @@
+os: Visual Studio 2015
+
+platform:
+- amd64
+- x86
+
+configuration:
+- Debug
+- Release
+
+# clone directory
+clone_folder: c:\build
+
+build_script:
+  - echo build_script
+  - cd c:\build\msvc
+  - if "%configuration%" == "Debug" set DEBUGFLAGS="ECL_DEBUG=1"
+  - if "%platform%" == "amd64" set PLATFORMFLAGS="ECL_WIN64=1"
+  - call "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" %platform%
+  - nmake /f Makefile %DEBUGFLAGS% %PLATFORMFLAGS%
+  - nmake /f Makefile install %DEBUGFLAGS% %PLATFORMFLAGS%
+
+after_build:
+  - 7z a c:\build\ecl.zip c:\build\msvc\package
+
+artifacts:
+  - path: ecl.zip
+    name: ECL
+
+deploy: off
