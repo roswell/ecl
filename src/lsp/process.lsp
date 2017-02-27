@@ -44,7 +44,7 @@
               option "/c")))
     (nth-value 1 (run-program shell (list option cmd-string)
                               :wait t :output nil :input nil :error nil
-                              #+windows :escape-arguments nil))))
+                              #+windows :escape-arguments #+windows nil))))
 
 ;;;
 ;;; Wrapper around si_run_program call. Thanks to that C interface

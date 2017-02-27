@@ -1099,10 +1099,8 @@ utf_8_decoder(cl_object stream)
 static int
 utf_8_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
-  int nbytes;
-  if (c < 0) {
-    nbytes = 0;
-  } else if (c <= 0x7F) {
+  int nbytes = 0;
+  if (c <= 0x7F) {
     buffer[0] = c;
     nbytes = 1;
   } else if (c <= 0x7ff) {
@@ -2784,10 +2782,12 @@ io_file_get_position(cl_object strm)
   offset = lseek(f, 0, SEEK_CUR);
   ecl_enable_interrupts();
   unlikely_if (offset < 0)
+  {
     if (errno == ESPIPE)
       return(ECL_NIL);
     else
       io_error(strm);
+  }
   if (sizeof(ecl_off_t) == sizeof(long)) {
     output = ecl_make_integer(offset);
   } else {
@@ -5126,7 +5126,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
     FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
   }
   if (flags & ECL_STREAM_C_STREAM) {
-    FILE *fp;
+    FILE *fp = 0;
     safe_close(f);
     /* We do not use fdopen() because Windows seems to
      * have problems with the resulting streams. Furthermore, even for

@@ -668,7 +668,15 @@ put_declaration(void)
 
   put_lineno();
   the_env_defined = 1;
-  fprintf(out, "\tconst cl_env_ptr the_env = ecl_process_env();\n");
+  fprintf(out,
+          "#ifdef __clang__\n"
+          "#pragma clang diagnostic push\n"
+          "#pragma clang diagnostic ignored \"-Wunused-variable\"\n"
+          "#endif\n"
+          "\tconst cl_env_ptr the_env = ecl_process_env();\n"
+          "#ifdef __clang__\n"
+          "#pragma clang diagnostic pop\n"
+          "#endif\n" );
   for (i = 0;  i < nopt;  i++) {
     put_lineno();
     fprintf(out, "\tcl_object %s;\n", optional[i].o_var);
