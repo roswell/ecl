@@ -246,9 +246,9 @@ all functions."
       ":skip &optional arg                             [Stepper command]~@
        :s &optional arg                                [Abbreviation]~@
        ~@
-       Continue evaluation without stepping.  Without argument, resume
-       stepping after the current form.  With numeric argument (n),
-       resume stepping at the n-th level above.  With function name, resume
+       Continue evaluation without stepping.  Without argument, resume~@
+       stepping after the current form.  With numeric argument (n),~@
+       resume stepping at the n-th level above.  With function name, resume~@
        when given function is called.~%")
      ((:pr :print) (step-print) :constant
       ":pr(int)        Pretty print current form"
