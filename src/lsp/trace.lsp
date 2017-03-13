@@ -253,7 +253,7 @@ all functions."
      ((:pr :print) (step-print) :constant
       ":pr(int)        Pretty print current form"
       ":print                                          [Stepper command]~@
-       :p                                              [Abbreviation]~@
+       :pr                                             [Abbreviation]~@
        ~@
        Pretty print current form.~%")
      ((:form) *step-form* :constant
