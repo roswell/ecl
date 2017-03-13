@@ -140,10 +140,10 @@
       ((? :h :help) tpl-help-command nil
        ":h(elp) or ?    Help.  Type \":help help\" for more information"
        ":help &optional topic                           [Top level command]~@
-        :h &optional topic                              [Abbrevation]~@
+        :h &optional topic                              [Abbreviation]~@
         ~@
         Print information on specified topic.  With no arguments, print~@
-        quick summery of top level commands.~@
+        quick summary of top level commands.~@
         ~@
         Help information for top level commands follows the documentation~@
         style found in \"Common Lisp, the Language\"; and, in general, the~@
@@ -370,7 +370,7 @@
       ((:hs :help-stack) tpl-help-stack-command nil
        ":hs             Help stack"
        ":help-stack                                     [Break command]~@
-        :hs                                             [Abbrevation]~@
+        :hs                                             [Abbreviation]~@
         ~@
         Lists the functions to access the LISP system stacks.~%")
       ((:i :inspect) tpl-inspect-command nil
