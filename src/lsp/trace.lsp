@@ -237,12 +237,12 @@ all functions."
 (defconstant step-commands
   `("Stepper commands"
      ((:newline) (step-next) :constant
-      "newline          Advance to the next form"
+      "newline         Advance to the next form"
       "newline                                          [Stepper command]~@
         ~@
         Step to next form.~%")
      ((:s :skip) step-skip nil
-      ":s(kip)          Skip current form or until function"
+      ":s(kip)         Skip current form or until function"
       ":skip &optional arg                              [Stepper command]~@
         :s &optional arg                                [Abbreviation]~@
         ~@
@@ -251,13 +251,13 @@ all functions."
         resume stepping at the n-th level above.  With function name, resume
         when given function is called.~%")
      ((:pr :print) (step-print) :constant
-      ":pr(int) Pretty print current form"
+      ":pr(int)        Pretty print current form"
       ":print                                           [Stepper command]~@
         :p                                              [Abbreviation]~@
         ~@
         Pretty print current form.~%")
      ((:form) *step-form* :constant
-      ":form            Current form"
+      ":form           Current form"
       ":form                                            [Stepper command]~@
         ~@
         Return the current form.  Nothing is done, but the current form~@
@@ -266,7 +266,7 @@ all functions."
         the variable *.  The main purpose of this command is to allow~@
         the current form to be examined further by accessing *.~%")
      ((:x :exit) (step-quit) :constant
-      ":x or :exit      Finish evaluation and exit stepper"
+      ":x or :exit     Finish evaluation and exit stepper"
       ":exit                                            [Stepper command]~@
        :x                                               [Abbreviation]~@
        ~@
