@@ -114,7 +114,7 @@ fix_to_ptr(cl_object ptr)
 static cl_object
 enqueue(pool_t pool, cl_object what)
 {
-  cl_object record, index;
+  cl_object index;
   if (ECL_FIXNUMP(what) || ECL_CHARACTERP(what) || what == OBJNULL) {
     return what;
   }

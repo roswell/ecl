@@ -579,7 +579,7 @@ cl_delete_file(cl_object file)
   cl_object path = cl_pathname(file);
   int isdir = directory_pathname_p(path);
   cl_object filename = si_coerce_to_filename(path);
-  int ok, code;
+  int ok;
 
   ecl_disable_interrupts();
   ok = (isdir? rmdir : unlink)((char*)filename->base_string.self);
