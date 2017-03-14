@@ -206,7 +206,8 @@ create_server_port(int port)
 #endif
 
   /* Set up the socket data. */
-  memset((char *)&inaddr, 0, sizeof(inaddr));
+  addrlen = sizeof (struct sockaddr_in);
+  memset((char *)&inaddr, 0, addrlen);
   inaddr.sin_family = AF_INET;
 #if defined(ECL_MS_WINDOWS_HOST)
   inaddr.sin_port = htons((unsigned short)port);
@@ -215,7 +216,7 @@ create_server_port(int port)
 #endif
   inaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  if (bind(request, (struct sockaddr *)&inaddr, sizeof (inaddr)))
+  if (bind(request, (struct sockaddr *)&inaddr, addrlen))
     FElibc_error("Binding TCP socket", 0);
   if (listen(request, 1))
     FElibc_error("TCP listening", 0);

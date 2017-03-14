@@ -218,7 +218,7 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
       struct ecl_hashtable_entry *e = hashtable->hash.data + i;         \
       cl_object hkey = e->key, hvalue = e->value;                       \
       if (hkey == OBJNULL) {                                            \
-        if (e->value == OBJNULL) {                                      \
+        if (hvalue == OBJNULL) {                                        \
           if (j == hsize)                                               \
             return e;                                                   \
           else                                                          \
