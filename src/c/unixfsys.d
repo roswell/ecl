@@ -454,7 +454,9 @@ ecl_file_len(int f)
 
 @(defun rename-file (oldn newn &key (if_exists @':error'))
   cl_object old_filename, new_filename, old_truename, new_truename;
+#if defined(ECL_MS_WINDOWS_HOST)
   int error;
+#endif
   @
 
   /* 1) Get the old filename, and complain if it has wild components,
@@ -579,7 +581,7 @@ cl_delete_file(cl_object file)
   cl_object path = cl_pathname(file);
   int isdir = directory_pathname_p(path);
   cl_object filename = si_coerce_to_filename(path);
-  int ok, code;
+  int ok;
 
   ecl_disable_interrupts();
   ok = (isdir? rmdir : unlink)((char*)filename->base_string.self);
@@ -658,7 +660,10 @@ ecl_homedir_pathname(cl_object user)
 {
   cl_index i;
   cl_object namestring;
-  const char *h, *d;
+  const char *h;
+#if defined(ECL_MS_WINDOWS_HOST)
+  const char *d;
+#endif
   if (!Null(user)) {
 #ifdef HAVE_PWD_H
     struct passwd *pwent = NULL;

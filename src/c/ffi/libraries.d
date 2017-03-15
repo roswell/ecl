@@ -284,7 +284,6 @@ cl_object
 ecl_library_open(cl_object filename, bool force_reload) {
   cl_object block;
   bool self_destruct = 0;
-  char *filename_string;
 
   /* Coerces to a file name but does not merge with cwd */
   filename = coerce_to_physical_pathname(filename);

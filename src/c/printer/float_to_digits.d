@@ -176,7 +176,6 @@ change_precision(float_approx *approx, cl_object position, cl_object relativep)
     {
       cl_object e1 = cl_expt(PRINT_BASE, position);
       cl_object e2 = ecl_divide(e1, ecl_make_fixnum(2));
-      cl_object e3 = cl_expt(PRINT_BASE, k); 
       if (ecl_greatereq(ecl_plus(approx->r, ecl_times(approx->s, e1)),
                         ecl_times(approx->s, e2)))
         position = ecl_one_minus(position);

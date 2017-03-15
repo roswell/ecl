@@ -125,7 +125,6 @@ cl_object
 mp_try_get_semaphore(cl_object semaphore)
 {
   cl_env_ptr env = ecl_process_env();
-  cl_object output;
   unlikely_if (ecl_t_of(semaphore) != t_semaphore) {
     FEerror_not_a_semaphore(semaphore);
   }
