@@ -1,0 +1,160 @@
+#+TITLE: Build an asdf system with dependences
+#+AUTHOR: Bo Yao <icerove@gmail.com>
+
+Besides the simple situation that we write Lisp without depending on any other Lisp libraries, a more practical example is build a library depends on other asdf systems or Quicklisp projects. Thanks to the ECL's great extension on ~asdf:make-build~, it's almost as easy as build a library without dependences. Because Quicklisp also uses asdf to load systems with dependences, just make sure you have successfully load and run your library in ECL REPL (or ~*slime-repl*~). Don't worry Quicklisp, asdf, swank and other unused libraries are packed into the executable or library, ECL will only build and pack libraries your project depends on (that is, all dependences you put in your ~.asd~ file, and their dependences, nothing more even you are build in a image already load with lots of other libraries).
+
+** Example code to build
+We use a simple project depends on alexandria to demostrate the steps. Consists of ~example-with-dep.asd~, ~package.lisp~ and ~example.lisp~. For convinience, we list these files here:
+
+#+BEGIN_SRC common-lisp
+;;;; example-with-dep.asd
+(defsystem :example-with-dep
+  :serial t
+  :depends-on (:alexandria)
+  :components ((:file "package")
+               (:file "example")))
+
+#+END_SRC
+
+#+BEGIN_SRC common-lisp
+;;;; package.lisp
+(in-package :cl-user)
+
+(defpackage :example
+  (:use :cl)
+  (:export :test-function))
+#+END_SRC
+
+#+BEGIN_SRC common-lisp
+;;;; example.lisp
+(in-package :example)
+
+(defun test-function (n)
+  (format t "Factorial of ~a is: ~a~%" n (alexandria:factorial n)))
+#+END_SRC
+
+Before any kind you build, you need to push full path of this directory (~asdf_with_dependence/~) into ~asdf:*central-registry*~.
+
+** Build it as an single executable
+
+Use this in REPL to make a executable:
+
+#+BEGIN_SRC common-lisp
+(asdf:make-build :example-with-dep
+                 :type :program
+                 :move-here #P"./"
+                 :epilogue-code '(progn (example:test-function 5)
+                                        (si:exit)))
+#+END_SRC
+Here the ~:epilogue-code~ is what to do after loading our library, we can use arbitrary Lisp forms here. You can also write this code in your Lisp files and directly build them without this ~:epilogue-code~ option to have the same effect.
+Run the program in console will display the following and exit:
+
+#+BEGIN_SRC shell
+Factorial of 5 is: 120
+#+END_SRC
+
+** Build it as shared library and use in C
+Use this in REPL to make a shared library:
+#+BEGIN_SRC common-lisp
+(asdf:make-build :example-with-dep
+                 :type :shared-library
+                 :move-here #P"./"
+                 :monolithic t)
+#+END_SRC
+
+Here ~:monolithic t~ means to let ECL solve dependence and build all denpendence into one library named ~example-with-dep--all-systems.so~ in this directory.
+
+To use it, we use a simple C program:
+
+#+BEGIN_SRC c
+/* test.c */
+#include <ecl/ecl.h>
+
+int main (int argc, char **argv) {
+  extern void init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS(cl_object);
+  
+  cl_boot(argc, argv);
+  ecl_init_module(NULL, init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS);
+
+  /* do things with the Lisp library */
+  cl_eval(c_string_to_object("(example:test-function 5)"));
+
+  cl_shutdown();
+  return 0;
+}
+
+#+END_SRC
+
+Note the name convention here: an asdf system named ~example-with-dep~ will compiled to ~example-with-dep--all-systems.so~ and in the C code should be init with ~init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS~. Compile it using:
+
+#+BEGIN_SRC shell
+gcc test.c example-with-dep--all-systems.so -o test -lecl
+#+END_SRC
+
+ECL's library path and current directory may not be in your ~LD_LIBRARY_PATH~, so call ~./test~ using:
+
+#+BEGIN_SRC shell
+LD_LIBRARY_PATH=/usr/local/lib/:. ./test
+#+END_SRC
+
+This will show:
+
+#+BEGIN_SRC shell
+Factorial of 5 is: 120
+#+END_SRC
+
+You can also build all dependent libraries separately as several ~.so~ files and link them together. For example, if you are building a library called ~complex-example~, that depends on ~alexandria~ and ~cl-fad~, you can also do these in ECL REPL:
+
+#+BEGIN_SRC common-lisp
+(asdf:make-build :complex-example
+                 :type :shared-library
+                 :move-here #P"./")
+(asdf:make-build :alexandria
+                 :type :shared-library
+                 :move-here #P"./")
+(asdf:make-build :cl-fad
+                 :type :shared-library
+                 :move-here #P"./")
+(asdf:make-build :bordeaux-threads
+                 :type :shared-library
+                 :move-here #P"./")
+#+END_SRC
+
+Note here is no ~:monolithic t~ and we also need to build ~bordeaux-threads~ because ~cl-fad~ depends on it. The building sequence doesn't matter and the result ~.so~ files can also be used in your future program if these libraries are not modified.
+And We need to init all these modules using ~ecl_init_module~, the name convention is to init ~cl-fad~ you need:
+
+#+BEGIN_SRC c
+extern void init_dll_CL_FAD(cl_object);
+
+/* after cl_boot(argc, argv); 
+   and if B depends on A, you should first init A then B. */
+ecl_init_module(NULL, init_dll_CL_FAD);
+
+#+END_SRC
+
+You can easily figure out name conventions with other libraries.
+
+** Build it as static library and use in C
+To build a static library, use:
+
+#+BEGIN_SRC common-lisp
+(asdf:make-build :example-with-dep
+                 :type :static-library
+                 :move-here #P"./"
+                 :monolithic t)
+#+END_SRC
+
+That will generate a ~example-with-dep--all-systems.a~ in current directory and we need to replace ~init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS~ with ~init_lib_EXAMPLE_WITH_DEP__ALL_SYSTEMS~. (The code is given in test-static.c) And compile it using:
+
+#+BEGIN_SRC shell
+gcc test-static.c example-with-dep--all-systems.a -o test-static -lecl
+#+END_SRC
+
+Then run it:
+
+#+BEGIN_SRC shell
+LD_LIBRARY_PATH=/usr/local/lib/ ./test-static
+#+END_SRC
+
+Note we don't need to give current path in ~LD_LIBRARY_PATH~ here, since our Lisp library is statically bundled to the executable. 
+The result is same as the shared library example above. You can also build all dependent libraries separately to static libraries. To use them you also need replace names like ~init_dll_CL_FAD~ to ~init_lib_CL_FAD~.
