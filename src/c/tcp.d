@@ -166,7 +166,6 @@ int
 create_server_port(int port)
 {
   struct sockaddr_in inaddr;    /* INET socket address. */
-  struct sockaddr *addr;        /* address to connect to */
   int addrlen;                  /* length of address */
   int request, conn;            /* Network socket */
 
@@ -207,7 +206,8 @@ create_server_port(int port)
 #endif
 
   /* Set up the socket data. */
-  memset((char *)&inaddr, 0, sizeof(inaddr));
+  addrlen = sizeof (struct sockaddr_in);
+  memset((char *)&inaddr, 0, addrlen);
   inaddr.sin_family = AF_INET;
 #if defined(ECL_MS_WINDOWS_HOST)
   inaddr.sin_port = htons((unsigned short)port);
@@ -216,7 +216,7 @@ create_server_port(int port)
 #endif
   inaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  if (bind(request, (struct sockaddr *)&inaddr, sizeof (inaddr)))
+  if (bind(request, (struct sockaddr *)&inaddr, addrlen))
     FElibc_error("Binding TCP socket", 0);
   if (listen(request, 1))
     FElibc_error("TCP listening", 0);
@@ -269,7 +269,7 @@ create_server_port(int port)
 cl_object
 si_open_client_stream(cl_object host, cl_object port)
 {
-  int fd, p;                   /* file descriptor */
+  int fd;                   /* file descriptor */
   cl_object stream;
 
   /* Ensure "host" is a string that we can pass to a C function */
@@ -281,7 +281,6 @@ si_open_client_stream(cl_object host, cl_object port)
     FEwrong_type_nth_arg(@[si::open-client-stream], 2, port,
                          ecl_read_from_cstring("(INTEGER 0 65535)"));
   }
-  p = ecl_fixnum(port);
 
   if (host->base_string.fillp > BUFSIZ - 1)
     FEerror("~S is a too long file name.", 1, host);

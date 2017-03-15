@@ -21,7 +21,7 @@ si_load_binary(cl_object filename, cl_object verbose,
                cl_object print, cl_object external_format)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  cl_object block, map, array;
+  cl_object block;
   cl_object basename;
   cl_object init_prefix, prefix;
   cl_object output;

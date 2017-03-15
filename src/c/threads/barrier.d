@@ -137,7 +137,6 @@ mp_barrier_wait(cl_object barrier)
   cl_object output;
   cl_fixnum counter;
   cl_env_ptr the_env = ecl_process_env();
-  cl_object  own_process = the_env->own_process;
 
   unlikely_if (ecl_t_of(barrier) != t_barrier) {
     FEerror_not_a_barrier(barrier);

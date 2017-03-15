@@ -760,8 +760,10 @@ to_bitmap(void *x, void *y)
 void
 init_alloc(void)
 {
+#ifdef GBC_BOEHM_PRECISE
   union cl_lispunion o;
   struct ecl_cons c;
+#endif
   int i;
   if (alloc_initialized) return;
   alloc_initialized = TRUE;
