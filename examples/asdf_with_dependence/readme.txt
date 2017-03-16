@@ -1,8 +1,8 @@
-		━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-		 BUILD AN ASDF SYSTEM WITH DEPENDENCES
+		━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+		 BUILD AN ASDF SYSTEM WITH DEPENDENCIES
 
 		       Bo Yao <icerove@gmail.com>
-		━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+		━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
 Table of Contents
@@ -16,24 +16,24 @@ Table of Contents
 
 Besides the simple situation that we write Lisp without depending on any
 other Lisp libraries, a more practical example is build a library
-depends on other asdf systems or Quicklisp projects. Thanks to the ECL's
-great extension on `asdf:make-build', it's almost as easy as build a
-library without dependences. Because Quicklisp also uses asdf to load
-systems with dependences, just make sure you have successfully load and
-run your library in ECL REPL (or `*slime-repl*'). Don't worry Quicklisp,
-asdf, swank and other unused libraries are packed into the executable or
-library, ECL will only build and pack libraries your project depends on
-(that is, all dependences you put in your `.asd' file, and their
-dependences, nothing more even you are build in a image already load
-with lots of other libraries).
+depends on other asdf systems or Quicklisp projects. ECL provides a
+useful extension for asdf called `asdf:make-build', it's almost as easy
+as build a library without dependencies. Because Quicklisp also uses
+asdf to load systems with dependencies, just make sure you have
+successfully load and run your library in ECL REPL (or
+`*slime-repl*'). Don't worry Quicklisp, asdf, swank and other unused
+libraries are packed into the executable or library, ECL will only build
+and pack libraries your project depends on (that is, all dependence you
+put in your `.asd' file, and their dependencies, nothing more even you
+are build in a image already load with lots of other libraries).
 
 
 1 Example code to build
 ═══════════════════════
 
-  We use a simple project depends on alexandria to demostrate the
+  We use a simple project depends on alexandria to demonstrate the
   steps. Consists of `example-with-dep.asd', `package.lisp' and
-  `example.lisp'. For convinience, we list these files here:
+  `example.lisp'. For convenience, we list these files here:
 
   ┌────
   │ ;;;; example-with-dep.asd
@@ -41,7 +41,7 @@ with lots of other libraries).
   │   :serial t
   │   :depends-on (:alexandria)
   │   :components ((:file "package")
-  │                (:file "example")))
+  │ 	       (:file "example")))
   └────
 
   ┌────
@@ -100,7 +100,7 @@ with lots of other libraries).
   └────
 
   Here `:monolithic t' means to let ECL solve dependence and build all
-  denpendence into one library named `example-with-dep--all-systems.so'
+  dependence into one library named `example-with-dep--all-systems.so'
   in this directory.
 
   To use it, we use a simple C program:
@@ -169,8 +169,8 @@ with lots of other libraries).
   `bordeaux-threads' because `cl-fad' depends on it. The building
   sequence doesn't matter and the result `.so' files can also be used in
   your future program if these libraries are not modified.  And We need
-  to init all these modules using `ecl_init_module', the name convention
-  is to init `cl-fad' you need:
+  to initialize all these modules using `ecl_init_module', the name
+  convention is to initialize `cl-fad' you need:
 
   ┌────
   │ extern void init_dll_CL_FAD(cl_object);
