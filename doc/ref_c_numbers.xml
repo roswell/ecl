@@ -134,8 +134,8 @@
 
       <para>Many other types might also not exist on all platforms. This includes not only <type>long long</type> and <type>unsigned long long</type>, but also some of the <acronym>C99</acronym> integer types. There are two ways to detect which integer types are available in your system</para>
       <itemizedlist>
-	<listitem><para>Check for the definition of C macros with a similar name, shown in the fourth column above.</para></listitem>
-	<listitem><para>In Lisp code, check for the presence of the associated features, shown in the fifth column above.</para></listitem>
+	<listitem><para>Check for the definition of C macros with a similar name, shown in the fifth column above.</para></listitem>
+	<listitem><para>In Lisp code, check for the presence of the associated features, shown in the fourth column above.</para></listitem>
       </itemizedlist>
     </refsect1>
   </refentry>
