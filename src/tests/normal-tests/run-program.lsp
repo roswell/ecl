@@ -35,7 +35,11 @@
 (test arg-test
   (is (equal '(nil :exited 0)
              (with-run-program (arg-test ("a" "b c" "d \\" "e\ 4\\
-")))) "ext:run-program doesn't escape arguments properly"))
+")))) "ext:run-program doesn't escape arguments properly")
+  #+windows
+  (is-false (equal '(nil :exited 0)
+                   (with-run-program (arg-test ("a" "b c" "d \\" "e\ 4\\
+") :escape-arguments nil))) "ext:run-program doesn't escape arguments properly"))
 
 (test output-streams
   ;; error is a separate stream
