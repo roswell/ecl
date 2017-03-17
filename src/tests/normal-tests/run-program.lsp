@@ -37,9 +37,9 @@
              (with-run-program (arg-test ("a" "b c" "d \\" "e\ 4\\
 ")))) "ext:run-program doesn't escape arguments properly")
   #+windows
-  (is-false (equal '(nil :exited 0)
+  (is (null (equal '(nil :exited 0)
                    (with-run-program (arg-test ("a" "b c" "d \\" "e\ 4\\
-") :escape-arguments nil))) "ext:run-program doesn't escape arguments properly"))
+") :escape-arguments nil)))) "ext:run-program :ESCAPE-ARGUMENTS NIL doesn't work"))
 
 (test output-streams
   ;; error is a separate stream
@@ -61,19 +61,17 @@
             (with-run-program (io/err nil)
               (format io/err "42~%")))
   ;; process will have :eof on input and should quit with "1"
-  (is-equal '(nil :exited 1) (with-run-program (io/err nil :input nil))))
+  (is-equal '(nil :exited 1) (with-run-program (io/err nil :input nil)))
+  )
 
-(test stream-values
-  (is-equal '(nil :exited 0)
-            (with-run-program (print-test nil :output nil :error nil :input nil)))
-  (is-equal '(nil :exited 0)
-            (with-run-program (print-test nil :output nil :error :output :input nil)))
-  (is-equal '(nil :exited 0)
-            (with-run-program (print-test nil :output nil :error :output :input :stream)))
-  (is-equal '(nil :exited 0)
-            (with-run-program (print-test nil :output :stream :error :output :input :stream)))
-  (is-equal '(nil :exited 0)
-            (with-run-program (print-test nil :output :stream :error :stream :input :stream)))
+(test stream-values ()
+  (finishes (with-run-program (print-test nil :output nil :error nil :input nil)))
+  (finishes (with-run-program (print-test nil :output nil :error :output :input nil)))
+  (finishes (with-run-program (print-test nil :output nil :error :output :input :stream)))
+  (finishes (with-run-program
+	     (print-test nil :output :stream :error :output :input :stream)))
+  (finishes (with-run-program
+	     (print-test nil :output :stream :error :stream :input :stream)))
   (signals simple-error
     (with-run-program (print-test nil :output :bam :error :stream :input :stream))))
 
