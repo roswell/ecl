@@ -17,6 +17,7 @@ cov-int
 *.manifest
 *.obj
 *.pdb
+*.fasl
 
 
 msvc/help.doc
@@ -96,3 +97,4 @@ regressions/eformat-tests/*.txt
 /msvc/rt.asd
 /msvc/sb-bsd-sockets.asd
 /msvc/sockets.asd
+doc/tmp/
