@@ -168,7 +168,11 @@
                         (escape-arg arg str)
                         (princ arg str))
                    (when rest
-                     (write-char #\Space str)))))))
+                     (write-char #\Space str))))))
+         (null-stream (direction)
+           (open #-windows "/dev/null"
+                 #+windows "nul"
+                 :direction direction)))
 
     (setf input (process-stream input *standard-input*
                                 :direction :input
@@ -205,9 +209,9 @@
              (when (< 0 parent-error)
                (make-input-stream-from-fd progname parent-error external-format))))
         (setf (external-process-pid process) pid
-              (external-process-input process)         (or stream-write (null-stream))
-              (external-process-output process)        (or stream-read  (null-stream))
-              (external-process-error-stream process)  (or stream-error (null-stream))
+              (external-process-input process)         (or stream-write (null-stream :output))
+              (external-process-output process)        (or stream-read  (null-stream :input))
+              (external-process-error-stream process)  (or stream-error (null-stream :input))
               (external-process-status-hook process)   status-hook)
 
         (values (make-two-way-stream (external-process-output process)
@@ -259,6 +263,3 @@
    (name fd external-format) (:string :int :object) :object
    "ecl_make_stream_from_fd(#0, #1, ecl_smm_output, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
    :one-liner t))
-
-(defun null-stream ()
-  (ffi:c-inline () () :object "cl_core.null_stream" :one-liner t :side-effects nil))
