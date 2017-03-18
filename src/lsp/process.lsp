@@ -143,36 +143,36 @@
   (unless (ext:get-signal-handler ext:+sigchld+)
     (ext:set-signal-handler ext:+sigchld+ #'sigchld-handler))
 
-  (flet ((process-stream (which default &rest args)
-           (cond ((eql which t) default)
-                 ((or (stringp which) (pathnamep which))
-                  (apply #'open which :external-format external-format args))
-                 ;; this three cases are handled in create_descriptor (for now)
-                 ((eql which nil)     which)
-                 ((eql which :stream) which)
-                 ((streamp which)     which)
-                 ;; signal error as early as possible
-                 (T (error "Invalid ~S argument to EXT:RUN-PROGRAM" which))))
-
-         (prepare-args (args)
-           #-windows
-           (mapcar #'si:copy-to-simple-base-string args)
-           #+windows
-           (si:copy-to-simple-base-string
-            (with-output-to-string (str)
-              (loop for (arg . rest) on args
-                 do (if (and escape-arguments
-                             (find-if (lambda (c)
-                                        (find c '(#\Space #\Tab #\")))
-                                      arg))
-                        (escape-arg arg str)
-                        (princ arg str))
-                   (when rest
-                     (write-char #\Space str))))))
-         (null-stream (direction)
-           (open #-windows "/dev/null"
-                 #+windows "nul"
-                 :direction direction)))
+  (labels ((process-stream (which default &rest args)
+             (cond ((eql which t)
+                    default)
+                   ((or (stringp which) (pathnamep which))
+                    (apply #'open which :external-format external-format args))
+                   ((eql which nil)
+                    (null-stream (getf args :direction)))
+                   ((or (eql which :stream) (streamp which))
+                    which)
+                   ;; signal error as early as possible
+                   (T (error "Invalid ~S argument to EXT:RUN-PROGRAM" which))))
+           (prepare-args (args)
+             #-windows
+             (mapcar #'si:copy-to-simple-base-string args)
+             #+windows
+             (si:copy-to-simple-base-string
+              (with-output-to-string (str)
+                (loop for (arg . rest) on args
+                   do (if (and escape-arguments
+                               (find-if (lambda (c)
+                                          (find c '(#\Space #\Tab #\")))
+                                        arg))
+                          (escape-arg arg str)
+                          (princ arg str))
+                     (when rest
+                       (write-char #\Space str))))))
+           (null-stream (direction)
+             (open #-windows "/dev/null"
+                   #+windows "nul"
+                   :direction direction)))
 
     (setf input (process-stream input *standard-input*
                                 :direction :input
