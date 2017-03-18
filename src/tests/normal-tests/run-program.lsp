@@ -87,7 +87,7 @@
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
               #+windows(is-eql :exited (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process))))
-  (is-equal #-windows `(t :signaled ,ext:+sigterm+)
+  (is-equal #-windows `(t :signaled ,ext:+sigkill+)
 	    #+windows `(t :exited -1)
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
