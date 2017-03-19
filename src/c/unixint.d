@@ -715,7 +715,7 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
         static const char *segv_msg =
                 "\n;;;\n"
                 ";;; Detected access to protected memory, "
-                "also kwown as 'bus or segmentation fault'.\n"
+                "also known as 'bus or segmentation fault'.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
         cl_env_ptr the_env;
