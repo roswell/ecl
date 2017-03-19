@@ -287,16 +287,14 @@ create_descriptor(cl_object stream, cl_object direction,
        from. We duplicate one extreme of the pipe so that the child
        does not inherit it. */
     HANDLE tmp;
-    if (CreatePipe(&tmp, child, &attr, 0) == 0)
-      return;
-
-    if (DuplicateHandle(current, tmp, current,
-                        &tmp, 0, FALSE,
-                        DUPLICATE_CLOSE_SOURCE |
-                        DUPLICATE_SAME_ACCESS) == 0)
-      return;
-
     if (direction == @':input') {
+      if (CreatePipe(child, &tmp, &attr, 0) == 0)
+        return;
+      if (DuplicateHandle(current, tmp, current,
+                          &tmp, 0, FALSE,
+                          DUPLICATE_CLOSE_SOURCE |
+                          DUPLICATE_SAME_ACCESS) == 0)
+        return;
 #ifdef cygwin
       *parent = cygwin_attach_handle_to_fd
         (0, -1, tmp, S_IRWXU, GENERIC_WRITE);
@@ -305,7 +303,14 @@ create_descriptor(cl_object stream, cl_object direction,
         ((intptr_t)tmp, _O_WRONLY);
 #endif
     }
-    else {
+    else /* if (direction == @':output') */ {
+      if (CreatePipe(&tmp, child, &attr, 0) == 0)
+        return;
+      if (DuplicateHandle(current, tmp, current,
+                          &tmp, 0, FALSE,
+                          DUPLICATE_CLOSE_SOURCE |
+                          DUPLICATE_SAME_ACCESS) == 0)
+        return;
 #ifdef cygwin
       *parent = cygwin_attach_handle_to_fd
         (0, -1, tmp, S_IRWXU, GENERIC_READ);
