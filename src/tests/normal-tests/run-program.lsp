@@ -66,8 +66,16 @@
 
 (test stream-values ()
   (finishes (with-run-program (print-test nil :output nil :error nil :input nil)))
+  (finishes (with-run-program (print-test nil :output nil :error nil :input t)))
+  (finishes (with-run-program (print-test nil :output nil :error nil :input :stream)))
   (finishes (with-run-program (print-test nil :output nil :error :output :input nil)))
   (finishes (with-run-program (print-test nil :output nil :error :output :input :stream)))
+  (finishes (with-run-program (print-test nil :output t :error nil :input nil)))
+  (finishes (with-run-program (print-test nil :output t :error :output :input nil)))
+  (finishes (with-run-program (print-test nil :output t :error :stream :input nil)))
+  (finishes (with-run-program (print-test nil :output t :error nil :input nil)))
+  (finishes (with-run-program (print-test nil :output t :error :output :input nil)))
+  (finishes (with-run-program (print-test nil :output t :error :stream :input nil)))
   (finishes (with-run-program
 	     (print-test nil :output :stream :error :output :input :stream)))
   (finishes (with-run-program
