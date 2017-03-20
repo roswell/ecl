@@ -77,7 +77,7 @@
           (external-process-%code process)))
 
 ;;; This function isn't overly safe. Assuming `external-process-wait'
-;;; is called after getting PID bu before function sends signal,
+;;; is called after getting PID but before function sends signal,
 ;;; zombie may be already removed and we are shooting the
 ;;; air. Reasonable expectation here would be putting the burden on
 ;;; the user, that he can't call both functions in racy manner. We are
