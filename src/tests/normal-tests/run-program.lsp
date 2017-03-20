@@ -134,3 +134,18 @@
             (is-not (zerop (length (get-output-stream-string output-stream))))
             (is-not (zerop (length (get-output-stream-string error-stream))))
             (mapc #'close (list output-stream error-stream))))
+
+
+#-windows
+(test sigchld-handler
+  (let ((x 0))
+    (flet ((status-hook (process)
+             (incf x)))
+      (with-run-program (heartbeat nil :status-hook #'status-hook)
+        (si:killpid (ext:external-process-pid process) ext:+sigstop+)
+        (sleep 1)
+        (si:killpid (ext:external-process-pid process) ext:+sigcont+)
+        (sleep 1)
+        (ext:terminate-process process)
+        (sleep 1))
+      (is (= x 3) "X is ~s, should be 3." x))))
