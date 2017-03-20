@@ -2000,7 +2000,7 @@ cl_symbols[] = {
 #endif
 {SYS_ "RUN-PROGRAM-INNER","si_run_program_inner"},
 {SYS_ "SPAWN-SUBPROCESS","si_spawn_subprocess"},
-#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
+#if defined(ECL_MS_WINDOWS_HOST)
 {SYS_ "CLOSE-WINDOWS-HANDLE","si_close_windows_handle"},
 #else
 {SYS_ "CLOSE-WINDOWS-HANDLE",NULL},

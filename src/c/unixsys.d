@@ -23,10 +23,7 @@
 #endif
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-#ifdef cygwin
-# include <sys/cygwin.h> /* For cygwin_attach_handle_to_fd() */
-#endif
-#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
+#if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
 #endif
 #ifdef HAVE_SYS_WAIT_H
@@ -224,7 +221,7 @@ si_killpid(cl_object pid, cl_object signal) {
 }
 #endif
 
-#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
+#if defined(ECL_MS_WINDOWS_HOST)
 cl_object
 si_close_windows_handle(cl_object h)
 {
@@ -258,9 +255,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
   case ecl_smm_output_wsock:
   case ecl_smm_io_wsock:
 #endif
-#if defined(ECL_MS_WINDOWS_HOST)
   case ecl_smm_io_wcon:
-#endif
     return (HANDLE)IO_FILE_DESCRIPTOR(s);
   default: {
     int stream_descriptor = ecl_stream_to_handle(s, output);
@@ -295,13 +290,8 @@ create_descriptor(cl_object stream, cl_object direction,
                           DUPLICATE_CLOSE_SOURCE |
                           DUPLICATE_SAME_ACCESS) == 0)
         return;
-#ifdef cygwin
-      *parent = cygwin_attach_handle_to_fd
-        (0, -1, tmp, S_IRWXU, GENERIC_WRITE);
-#else
-      *parent = _open_osfhandle
-        ((intptr_t)tmp, _O_WRONLY);
-#endif
+
+      *parent = _open_osfhandle((intptr_t)tmp, _O_WRONLY);
     }
     else /* if (direction == @':output') */ {
       if (CreatePipe(&tmp, child, &attr, 0) == 0)
@@ -311,13 +301,8 @@ create_descriptor(cl_object stream, cl_object direction,
                           DUPLICATE_CLOSE_SOURCE |
                           DUPLICATE_SAME_ACCESS) == 0)
         return;
-#ifdef cygwin
-      *parent = cygwin_attach_handle_to_fd
-        (0, -1, tmp, S_IRWXU, GENERIC_READ);
-#else
-      *parent = _open_osfhandle
-        ((intptr_t)tmp, _O_RDONLY);
-#endif
+
+      *parent = _open_osfhandle((intptr_t)tmp, _O_RDONLY);
     }
 
     if (*parent < 0)
