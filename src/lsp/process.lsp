@@ -21,7 +21,8 @@
      (mp:with-lock (*active-processes-lock*)
        ,@body)))
 
-(defun sigchld-handler ()
+(defun sigchld-handler (&key process)
+  (declare (ignore process))
   (let (changed)
     (with-active-processes-lock
       (mapc (lambda (process)

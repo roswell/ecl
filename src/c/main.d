@@ -71,6 +71,7 @@ const char *ecl_self;
 
 static int ARGC;
 static char **ARGV;
+/* INV: see ecl_option enum in external.h */
 cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
 #ifdef GBC_BOEHM_GENGC
   1,              /* ECL_OPT_INCREMENTAL_GC */
