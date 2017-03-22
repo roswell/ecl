@@ -148,4 +148,9 @@
         (sleep 1)
         (ext:terminate-process process)
         (sleep 1))
-      (is (= x 3) "X is ~s, should be 3." x))))
+      #-cygwin
+      (is (= x 3) "X is ~s, should be 3." x)
+      ;; XXX: cygwin quirk: sigchld isn't called for suspend/resume on
+      ;; cygwin (but they work - process is suspended/resumed)
+      #+cygwin
+      (is (= x 1) "X is ~s, should be 1." x))))
