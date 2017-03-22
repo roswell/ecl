@@ -192,12 +192,15 @@
           (process (make-external-process))
           pid parent-write parent-read parent-error)
 
-      (with-active-processes-lock (push process *active-processes*))
+      (unless wait
+        (with-active-processes-lock (push process *active-processes*)))
+
       (handler-case (multiple-value-setq (pid parent-write parent-read parent-error)
                       (si:spawn-subprocess progname args environ input output error))
         (t (c)
-          (with-active-processes-lock
-            (setf *active-processes* (delete process *active-processes*)))
+          (unless wait
+            (with-active-processes-lock
+                (setf *active-processes* (delete process *active-processes*))))
           (signal c)))
 
       (let ((stream-write
