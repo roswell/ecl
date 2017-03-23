@@ -114,7 +114,6 @@
                     (null-stream (getf args :direction)))
                    ((or (stringp which) (pathnamep which))
                     (apply #'open which :external-format external-format args))
-
                    #+(and (or) clos-streams threads)
                    ((and (streamp which)
                          (null (typep which 'ext:ansi-stream)))
