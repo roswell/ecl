@@ -105,15 +105,6 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   char **environ;
   for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s;
-    if (!CONSP(p)) {
-      FEerror("In EXT:RUN-PROGRAM, environment "
-              "is not a list of strings", 0);
-    }
-    s = ECL_CONS_CAR(p);
-    if (!ECL_BASE_STRING_P(s)) {
-      FEerror("In EXT:RUN-PROGRAM, environment "
-              "is not a list of base strings", 0);
-    }
     total_size += s->base_string.fillp + 1;
     nstrings++;
   }
@@ -124,11 +115,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   for (j = i = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
     cl_index l = s->base_string.fillp;
-    if (i + l + 1 >= total_size) {
-      FEerror("In EXT:RUN-PROGRAM, environment list"
-              " changed during execution.", 0);
-      break;
-    }
+
     environ[j++] = (char*)(buffer->base_string.self + i);
     memcpy(buffer->base_string.self + i,
            s->base_string.self,
@@ -367,6 +354,7 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   cl_object pid, stream_write, stream_read, exit_status;
 
   command = si_copy_to_simple_base_string(command);
+  environ = cl_mapcar(2, @'si::copy-to-simple-base-string', environ);
 
 #if defined(ECL_MS_WINDOWS_HOST)
   argv = cl_format(4, ECL_NIL,

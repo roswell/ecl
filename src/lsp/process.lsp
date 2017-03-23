@@ -146,6 +146,7 @@
 
     (let ((progname (si:copy-to-simple-base-string command))
           (args (prepare-args (cons command argv)))
+          (environ (mapcar #'si:copy-to-simple-base-string environ))
           (process (make-external-process))
           (process-input (process-stream input *standard-input*
                                          :direction :input
