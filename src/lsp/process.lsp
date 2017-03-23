@@ -83,6 +83,13 @@
                               :wait t :output nil :input nil :error nil
                               #+windows :escape-arguments #+windows nil))))
 
+;;; We don't handle `sigchld' because we don't want races with
+;;; `external-process-wait'. Take care of forgotten processes.
+(defun finalize-external-process (process)
+  (unless (member (ext:external-process-wait process nil)
+                  (:exited :signaled :abort :error))
+    (ext:set-finalizer process #'finalize-external-process)))
+
 ;;;
 ;;; Almighty EXT:RUN-PROGRAM. Built on top of SI:SPAWN-SUBPROCESS. For
 ;;; simpler alternative see SI:RUN-PROGRAM-INNER.
@@ -173,7 +180,9 @@
 
         (values (make-two-way-stream (external-process-output process)
                                      (external-process-input process))
-                (when wait (nth-value 1 (si:external-process-wait process t)))
+                (if wait
+                    (nth-value 1 (si:external-process-wait process t))
+                    (ext:set-finalizer process #'finalize-external-process))
                 process)))))
 
 #+windows
