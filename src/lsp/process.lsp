@@ -7,43 +7,18 @@
 
 (in-package "EXT")
 
-(defvar *active-processes* nil
-  "List of process structures for all active processes.")
-
-(defvar *active-processes-lock*
-  (mp:make-lock :recursive t :name "Lock for active processes."))
-
-;;; *ACTIVE-PROCESSES* can be accessed from multiple threads so a
-;;; mutex is needed. More importantly the sigchld signal handler also
-;;; accesses it, that's why we need without-interrupts.
-(defmacro with-active-processes-lock (&body body)
-  `(mp:without-interrupts
-     (mp:with-lock (*active-processes-lock*)
-       ,@body)))
-
-(defun sigchld-handler (&key process)
-  (declare (ignore process))
-  (let (changed)
-    (with-active-processes-lock
-      (mapc (lambda (process)
-              (when (external-process-wait process nil)
-                (push process changed)))
-            ;; `external-process-wait' may modify `*active-processes*'.
-            (copy-list *active-processes*)))
-    (dolist (proc changed)
-      (let ((hook (external-process-status-hook proc)))
-        (when hook (funcall hook proc))))))
-
-
+(defmacro with-process-lock ((process) &body body)
+  `(mp:with-lock ((external-process-%lock process))
+     ,@body))
 
 (defstruct (external-process (:constructor make-external-process ()))
   pid
   input
   output
   error-stream
-  status-hook
   (%status :running)
-  (%code nil))
+  (%code nil)
+  (%lock (mp:make-lock)))
 
 (defun external-process-status (external-process)
   (let ((status (external-process-%status external-process)))
@@ -60,32 +35,24 @@
 ;;;  running   :: (values (member :stopped :resumed :running)  code  pid)
 ;;; ---------------------------------------------------------------------
 (defun external-process-wait (process &optional wait)
-  (let ((pid (external-process-pid process)))
-    (when pid
-      (multiple-value-bind (status code pid) (si:waitpid pid wait)
-        (ecase status
-          ((:exited :signaled :abort :error)
-           (with-active-processes-lock
-             (setf *active-processes* (delete process *active-processes*)
-                   (external-process-pid process) nil
+  (with-process-lock (process)
+    (let ((pid (external-process-pid process)))
+      (when pid
+        (multiple-value-bind (status code pid) (si:waitpid pid wait)
+          (ecase status
+            ((:exited :signaled :abort :error)
+             (setf (external-process-pid process) nil
                    (external-process-%status process) status
-                   (external-process-%code process) code)))
-          ((:stopped :resumed :running)
-           (setf (external-process-%status process) status
-                 (external-process-%code process) code))
-          ((nil) #| wait was nil and process didn't change |#)))))
+                   (external-process-%code process) code))
+            ((:stopped :resumed :running)
+             (setf (external-process-%status process) status
+                   (external-process-%code process) code))
+            ((nil) #| wait was nil and process didn't change |#))))))
   (values (external-process-%status process)
           (external-process-%code process)))
 
-;;; This function isn't overly safe. Assuming `external-process-wait'
-;;; is called after getting PID but before function sends signal,
-;;; zombie may be already removed and we are shooting the
-;;; air. Reasonable expectation here would be putting the burden on
-;;; the user, that he can't call both functions in racy manner. We are
-;;; protected from sigchld-handler here thanks to the global lock
-;;; active processes.
 (defun terminate-process (process &optional force)
-  (with-active-processes-lock
+  (with-process-lock (process)
     (let ((pid (external-process-pid process)))
       (when pid
         #+windows
@@ -130,19 +97,8 @@
                       (if-input-does-not-exist nil)
                       (if-output-exists :error)
                       (if-error-exists :error)
-                      status-hook
                       (external-format :default)
                       #+windows (escape-arguments t))
-
-  ;; XXX: we should install handler during loading of external-process
-  ;; module. Problem lies in fact, that handlers can't be installed
-  ;; before cl_boot finishes, so this form can't be top level in case
-  ;; when moudle is built-in. Good solution to that problem would be
-  ;; providing hook mechanism for functions to call after cl_boot.
-  ;; This way many modules may be easily untied from the core.
-  #-msvc
-  (unless (ext:get-signal-handler ext:+sigchld+)
-    (ext:set-signal-handler ext:+sigchld+ #'sigchld-handler))
 
   (labels ((process-stream (which default &rest args)
              (cond ((eql which t)
@@ -192,16 +148,8 @@
           (process (make-external-process))
           pid parent-write parent-read parent-error)
 
-      (unless wait
-        (with-active-processes-lock (push process *active-processes*)))
-
-      (handler-case (multiple-value-setq (pid parent-write parent-read parent-error)
-                      (si:spawn-subprocess progname args environ input output error))
-        (t (c)
-          (unless wait
-            (with-active-processes-lock
-                (setf *active-processes* (delete process *active-processes*))))
-          (signal c)))
+      (multiple-value-setq (pid parent-write parent-read parent-error)
+        (si:spawn-subprocess progname args environ input output error))
 
       (let ((stream-write
              (when (< 0 parent-write)
@@ -215,8 +163,7 @@
         (setf (external-process-pid process) pid
               (external-process-input process)         (or stream-write (null-stream :output))
               (external-process-output process)        (or stream-read  (null-stream :input))
-              (external-process-error-stream process)  (or stream-error (null-stream :input))
-              (external-process-status-hook process)   status-hook)
+              (external-process-error-stream process)  (or stream-error (null-stream :input)))
 
         (values (make-two-way-stream (external-process-output process)
                                      (external-process-input process))

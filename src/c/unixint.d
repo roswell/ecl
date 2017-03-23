@@ -852,11 +852,6 @@ do_catch_signal(int code, cl_object action, cl_object process)
                         mysignal(SIGILL, evil_signal_handler);
                 }
 #endif
-#ifdef SIGCHLD
-                else if (code == SIGCHLD) {
-                        mysignal(SIGCHLD, evil_signal_handler);
-                }
-#endif
                 else {
                         mysignal(code, non_evil_signal_handler);
                 }
