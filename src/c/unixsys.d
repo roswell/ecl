@@ -163,7 +163,7 @@ si_waitpid(cl_object pid, cl_object wait)
   if (Null(wait))
     error = waitpid(ecl_to_fix(pid), &code_int, WNOHANG | WUNTRACED | WCONTINUED);
   else
-    error = waitpid(ecl_to_fix(pid), &code_int, WUNTRACED | WCONTINUED);
+    error = waitpid(ecl_to_fix(pid), &code_int, 0);
 
   if (error < 0) {
     if (errno == EINTR) {
