@@ -87,7 +87,7 @@
 ;;; `external-process-wait'. Take care of forgotten processes.
 (defun finalize-external-process (process)
   (unless (member (ext:external-process-wait process nil)
-                  (:exited :signaled :abort :error))
+                  '(:exited :signaled :abort :error))
     (ext:set-finalizer process #'finalize-external-process)))
 
 ;;;
@@ -110,10 +110,11 @@
   (labels ((process-stream (which default &rest args)
              (cond ((eql which t)
                     default)
-                   ((or (stringp which) (pathnamep which))
-                    (apply #'open which :external-format external-format args))
                    ((eql which nil)
                     (null-stream (getf args :direction)))
+                   ((or (stringp which) (pathnamep which))
+                    (apply #'open which :external-format external-format args))
+
                    #+(and (or) clos-streams threads)
                    ((and (streamp which)
                          (null (typep which 'ext:ansi-stream)))
@@ -161,7 +162,7 @@
           pid parent-write parent-read parent-error)
 
       (multiple-value-setq (pid parent-write parent-read parent-error)
-        (si:spawn-subprocess progname args environ input output error))
+        (si:spawn-subprocess progname args environ process-input process-output process-error))
 
       (let ((stream-write
              (when (< 0 parent-write)
