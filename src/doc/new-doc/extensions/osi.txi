@@ -1,0 +1,188 @@
+@node Operating System Interface
+@section Operating System Interface
+
+@menu
+* External processes::
+@c * Command line arguments::
+@c * Signals and interrupts::
+* Operating System Interface Reference::
+@end menu
+
+@cindex External processes
+@node External processes
+@subsection External processes
+
+External process is a structure created with
+@code{ext:run-program}. It is programmer responsibility, to call
+@code{ext:external-process-wait} on finished processes, however during
+garbage collection object will be finalized.
+
+@defun ext:external-process-pid process
+@end defun
+
+@defun ext:external-process-input process
+@defunx ext:external-process-output process
+@defunx ext:external-process-error-stream process
+Process stream accessors (read-only).
+@end defun
+
+@defun ext:external-process-input process
+@end defun
+
+@node Operating System Interface Reference
+@subsection Operating System Interface Reference
+
+@lspindex ext:run-program
+@defun ext:run-program command argv @
+       &key input output error wait environ @
+       if-input-does-not-exist if-output-exists if-error-exists @
+       external-format #+windows escape-arguments
+
+@code{run-program} creates a new process specified by the
+@var{command} argument. @var{argv} are the standard arguments that can
+be passed to a program. For no arguments, use @code{nil} (which means
+that just the name of the program is passed as arg 0).
+
+@code{run-program} will return three values - two-way stream for
+communication, return code or @code{nil} (if process is called
+asynchronously), and @code{ext:external-process} object holding
+process state.
+
+It is programmer responsibility to call
+@code{ext:external-process-wait} on finished process, however ECL
+associates @ref{Finalization, finalizer} with the object calling it
+when the object is garbage collected. If process didn't finish but is
+not referenced, finalizer will be invoked once more during next
+garbage collection.
+
+The @code{&key} arguments have the following meanings:
+
+@defvr argument input
+Either @code{t}, @code{nil}, a pathname, a string, a stream or
+@code{:stream}. If @code{t} the standard input for the current process
+is inherited. If @code{nil}, @code{/dev/null} is used. If a pathname
+(or a string), the file so specified is used. If a stream, all the
+input is read from that stream and sent to the subprocess - stream
+must be ANSI stream (no in-memory virtual streams). If @code{:stream},
+the @code{external-process-input} slot is filled in with a stream that
+sends its output to the process. Defaults to @code{:stream}.
+@end defvr
+
+@defvr argument if-input-does-not-exist
+can be one of: @code{:error} to generate an error @code{:create} to
+create an empty file @code{nil} (the default) to return nil from
+@code{run-program}
+@end defvr
+
+@defvr argument output
+Either @code{t}, @code{nil}, a pathname, a string, a stream, or
+@code{:stream}. If @code{t}, the standard output for the current
+process is inherited. If @code{nil}, @code{/dev/null} is used. If a
+pathname (or as string), the file so specified is used. If a stream,
+all the output from the process is written to this stream - stream
+must be ANSI stream (no in-memory virtual streams). If @code{:stream},
+the @code{external-process-output} slot is filled in with a stream
+that can be read to get the output. Defaults to @code{stream}.
+@end defvr
+
+@defvr argument if-output-exists
+@end defvr
+
+@defvr argument error
+Same as @code{:output}, except that @code{:error} can also be
+specified as @code{:output} in which case all error output is routed
+to the same place as normal output. Defaults to @code{:output}.
+@end defvr
+
+@defvr argument if-error-exists
+Same as @code{:if-output-exists}.
+@end defvr
+
+@defvr argument wait
+If non-NIL (default), wait until the created process finishes. If
+@code{nil}, continue running Lisp until the program finishes.
+@end defvr
+
+@defvr argument environ
+A list of STRINGs describing the new Unix environment (as in "man
+environ"). The default is to copy the environment of the current
+process. To extend existing environment (instead of replacing it),
+use @code{:environ (append *my-env* (ext:environ))}.
+
+If non-NIL @code{environ} argument is supplied, then first argument to
+@code{ext:run-program} @code{command} must be full path to the file.
+@end defvr
+
+@defvr argument external-format
+The external-format to use for @code{:input}, @code{:output}, and
+@code{:error} STREAMs.
+@end defvr
+
+@emph{Windows specific options:}
+@defvr argument escape-arguments
+Controls escaping of the arguments passed to CreateProcess.
+@end defvr
+@end defun
+
+@c environment routines
+
+@defun ext:command-args
+Returns the original command line arguments as list. First argument is
+the ECL program itself.
+@end defun
+
+@c Don't advertise argc and argv, we have command-args
+
+@c @defun ext:argc
+@c @end defun
+
+@c @defun ext:argv
+@c @end defun
+
+@defun ext:quit &optional code kill-all-threads
+@end defun
+
+@defun ext:getenv variable
+@end defun
+
+@defun ext:setenv variable value
+@end defun
+
+@defun ext:environ
+@end defun
+
+@c UNIX shell interface
+
+@defun ext:system command
+@end defun
+
+@defun ext:make-pipe
+@end defun
+
+@defun ext:getpid
+@defunx ext:getuid
+@defunx ext:getcwd
+@defunx ext:chdir
+@defunx ext:file-kind
+@defunx ext:copy-file
+@defunx ext:chmod
+Common operating system functions.
+@end defun
+
+@c Internal UNIX shell interface
+
+@c @defun si:mkdir
+@c @defunx si:rmdir
+@c @defunx si:mkstemp
+@c @defunx si:copy-file
+@c @end defun
+
+@c @defun si:get-library-pathname
+@c @end defun
+
+@c @defun si:waitpid pid wait
+@c @defunx si:kill pid signal
+@c @end defun
+
+@c @defun si:run-program-inner command argv environ
+@c @end defun
