@@ -137,21 +137,20 @@
                    #+windows "nul"
                    :direction direction)))
 
-    (setf input (process-stream input *standard-input*
-                                :direction :input
-                                :if-does-not-exist if-input-does-not-exist)
-          output (process-stream output *standard-output*
-                                 :direction :output
-                                 :if-exists if-output-exists)
-          error (if (eql error :output)
-                    :output
-                    (process-stream error *error-output*
-                                    :direction :output
-                                    :if-exists if-error-exists)))
-
     (let ((progname (si:copy-to-simple-base-string command))
           (args (prepare-args (cons command argv)))
           (process (make-external-process))
+          (process-input (process-stream input *standard-input*
+                                         :direction :input
+                                         :if-does-not-exist if-input-does-not-exist))
+          (process-output (process-stream output *standard-output*
+                                          :direction :output
+                                          :if-exists if-output-exists))
+          (process-error (if (eql error :output)
+                             :output
+                             (process-stream error *error-output*
+                                             :direction :output
+                                             :if-exists if-error-exists)))
           pid parent-write parent-read parent-error)
 
       (multiple-value-setq (pid parent-write parent-read parent-error)
@@ -166,6 +165,7 @@
             (stream-error
              (when (< 0 parent-error)
                (make-input-stream-from-fd progname parent-error external-format))))
+
         (setf (external-process-pid process) pid
               (external-process-input process)         (or stream-write (null-stream :output))
               (external-process-output process)        (or stream-read  (null-stream :input))
