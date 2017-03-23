@@ -18,6 +18,21 @@ External process is a structure created with
 garbage collection object will be finalized.
 
 @defun ext:external-process-pid process
+Process PID.
+@end defun
+
+@defun ext:external-process-status process
+Updates process status. Returns two values:
+
+@code{status} - member of @code{(:abort :error :exited :signalled
+:stopped :resumed :running)}
+
+@code{code} - if process exited it is a returned value, if terminated
+it is a signal code. Otherwise NIL.
+@end defun
+
+@defun ext:terminate-process process &optional force
+Terminates external process.
 @end defun
 
 @defun ext:external-process-input process
@@ -25,12 +40,6 @@ garbage collection object will be finalized.
 @defunx ext:external-process-error-stream process
 Process stream accessors (read-only).
 @end defun
-
-@defun ext:external-process-input process
-@end defun
-
-@node Operating System Interface Reference
-@subsection Operating System Interface Reference
 
 @lspindex ext:run-program
 @defun ext:run-program command argv @
@@ -124,6 +133,9 @@ Controls escaping of the arguments passed to CreateProcess.
 @end defvr
 @end defun
 
+@node Operating System Interface Reference
+@subsection Operating System Interface Reference
+
 @c environment routines
 
 @defun ext:command-args
@@ -139,25 +151,27 @@ the ECL program itself.
 @c @defun ext:argv
 @c @end defun
 
-@defun ext:quit &optional code kill-all-threads
-@end defun
-
-@defun ext:getenv variable
-@end defun
-
-@defun ext:setenv variable value
-@end defun
-
-@defun ext:environ
-@end defun
-
-@c UNIX shell interface
-
 @defun ext:system command
+Run shell command ignoring its output. Uses fork.
 @end defun
 
 @defun ext:make-pipe
+Creates a pipe and wraps it in a two way stream.
 @end defun
+
+
+@defun ext:quit &optional code kill-all-threads
+Routine used to exit ECL in graceful manner.
+@end defun
+
+@defun ext:environ
+@defunx ext:getenv variable
+@defunx ext:setenv variable value
+Environment accessors.
+@end defun
+
+
+@c UNIX shell interface
 
 @defun ext:getpid
 @defunx ext:getuid
