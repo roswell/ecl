@@ -107,7 +107,13 @@
                     (apply #'open which :external-format external-format args))
                    ((eql which nil)
                     (null-stream (getf args :direction)))
-                   ((or (eql which :stream) (streamp which))
+                   #+(and (or) clos-streams threads)
+                   ((and (streamp which)
+                         (null (typep which 'ext:ansi-stream)))
+                    #| Here we may want to return `:stream' and spawn
+                    thread to handle data at runtime to fd. |#)
+                   ((or (eql which :stream)
+                        (streamp which))
                     which)
                    ;; signal error as early as possible
                    (T (error "Invalid ~S argument to EXT:RUN-PROGRAM" which))))
