@@ -46,11 +46,11 @@
              #+windows (si:system (format nil "~A~{ ~A~}" program args))))))
     (cond ((null result)
            (cerror "Continues anyway."
-                   "Unable to execute:~%(RUN-PROGRAM ~S ~S)"
+                   "Unable to execute:~%(SI:RUN-PROGRAM-INNER ~S ~S NIL)"
                    program args result))
           ((not (zerop result))
            (cerror "Continues anyway."
-                   "Error code ~D when executing~%(RUN-PROGRAM ~S ~S)"
+                   "Error code ~D when executing~%(SI:RUN-PROGRAM-INNER ~S ~S NIL)"
                    result program args)))
     result))
 
