@@ -29,6 +29,10 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- ext:run-program has been rewritten (almost) from scratch
+- improved documentation of operating system interface (newdoc)
+- example of parsing arguments in standalone executable (newdoc)
+- example of using shared libraries from C world (newdoc)
 - reduced =format= directive tables size
 - simplified =atan2= implementation by using c99 equivalent ::
      Now we produce correct output for signed zeros, infinities and nans.
@@ -36,8 +40,14 @@
   =--with-libgc-incdir= and =--with-libgc-libdir= (these flags work the
   same as flags for =libffi= and =libgmp=)
 ** Issues fixed
+- interactive input stream in ext:run-program on Windows
+- removed race condition between waitpid and sigchld handler on UNIX
 - buildsystem parallel builds work (i.e make -j999)
 - ECL builds on consoles with unusual encodings on Windows (i.e cp936)
+** API changes
+- No more explicit option in =main.d= to trap SIGCHLD asynchronously.
+- Zombie processes are cleaned in external-process finalizer. If process is
+  referenced in the memory, it's programmer duty to call wait on it.
 * 16.1.3 changes since 16.1.2
 ** Announcement
 Dear Community,

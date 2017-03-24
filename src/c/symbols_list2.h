@@ -1232,10 +1232,6 @@ cl_symbols[] = {
 {SYS_ "REM-SYSPROP","si_rem_sysprop"},
 {SYS_ "REPLACE-ARRAY","si_replace_array"},
 {SYS_ "ROW-MAJOR-ASET","si_row_major_aset"},
-{EXT_ "RUN-PROGRAM","ECL_NAME(si_run_program)"},
-{SYS_ "RUN-PROGRAM-INTERNAL","si_run_program_internal"},
-{EXT_ "TERMINATE-PROCESS","si_terminate_process"},
-{SYS_ "WAIT-FOR-ALL-PROCESSES","si_wait_for_all_processes"},
 {EXT_ "SAFE-EVAL","ECL_NAME(si_safe_eval)"},
 {SYS_ "SCH-FRS-BASE","si_sch_frs_base"},
 {SYS_ "SCHAR-SET","si_char_set"},
@@ -1268,7 +1264,7 @@ cl_symbols[] = {
 {SYS_ "STRUCTUREP","si_structurep"},
 {SYS_ "SVSET","si_svset"},
 {SYS_ "SYMBOL-MACRO",NULL},
-{EXT_ "SYSTEM","ECL_NAME(si_system)"},
+{EXT_ "SYSTEM","si_system"},
 {SYS_ "TERMINAL-INTERRUPT",NULL},
 {SYS_ "TOP-LEVEL",NULL},
 {SYS_ "UNIVERSAL-ERROR-HANDLER",NULL},
@@ -1975,6 +1971,9 @@ cl_symbols[] = {
 
 {KEY_ "ENVIRON",NULL},
 
+/* external-process extension */
+{EXT_ "RUN-PROGRAM","ECL_NAME(si_run_program)"},
+
 {EXT_ "MAKE-EXTERNAL-PROCESS",NULL},
 {EXT_ "EXTERNAL-PROCESS",NULL},
 {EXT_ "EXTERNAL-PROCESS-PID",NULL},
@@ -1982,19 +1981,31 @@ cl_symbols[] = {
 {EXT_ "EXTERNAL-PROCESS-OUTPUT",NULL},
 {EXT_ "EXTERNAL-PROCESS-ERROR-STREAM",NULL},
 {EXT_ "EXTERNAL-PROCESS-STATUS",NULL},
+{EXT_ "EXTERNAL-PROCESS-WAIT",NULL},
+{EXT_ "TERMINATE-PROCESS","ECL_NAME(si_terminate_process)"},
 
 {KEY_ "RUNNING",NULL},
 {KEY_ "EXITED",NULL},
 {KEY_ "SIGNALED",NULL},
 {KEY_ "STOPPED",NULL},
+{KEY_ "RESUMED",NULL},
+/* ~ external-process extension */
 
-{EXT_ "EXTERNAL-PROCESS-WAIT","si_external_process_wait"},
-
-#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
+/* unixsys.d */
+{SYS_ "WAITPID","si_waitpid"},
+#if !defined(ECL_MS_WINDOWS_HOST)
+{SYS_ "KILLPID","si_killpid"},
+#else
+{SYS_ "KILLPID",NULL},
+#endif
+{SYS_ "RUN-PROGRAM-INNER","si_run_program_inner"},
+{SYS_ "SPAWN-SUBPROCESS","si_spawn_subprocess"},
+#if defined(ECL_MS_WINDOWS_HOST)
 {SYS_ "CLOSE-WINDOWS-HANDLE","si_close_windows_handle"},
 #else
 {SYS_ "CLOSE-WINDOWS-HANDLE",NULL},
 #endif
+/* ~ */
 
 {EXT_ "*INVOKE-DEBUGGER-HOOK*",NULL},
 

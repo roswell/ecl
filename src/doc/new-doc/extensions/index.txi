@@ -23,11 +23,11 @@
 * CDR Extensions::
 @end menu
 
-@ System building
+@c System building
 @include extensions/building.txi
 
-@node Operating System Interface
-@section Operating System Interface
+@c Operating System Interface
+@include extensions/osi.txi
 
 @c Foreign function interface
 @include extensions/ffi.txi
@@ -41,8 +41,8 @@
 @node Signals and Interrupts
 @section Signals and Interrupts
 
-@node Memory Management
-@section Memory Management
+@c Memory Management
+@include extensions/memory.txi
 
 @node Meta-Object Protocol (MOP)
 @section Meta-Object Protocol (MOP)

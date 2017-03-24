@@ -21,6 +21,8 @@
         when (probe-file "configure.ac")
         return *default-pathname-defaults*))
 
+(setf *ecl-sources* (truename *ecl-sources*))
+
 (defvar *here* (merge-pathnames "@builddir@/"))
 (defvar *cache* (merge-pathnames "./cache/" *here*))
 

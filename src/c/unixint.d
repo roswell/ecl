@@ -161,7 +161,7 @@ static struct {
         { SIGCONT, "+SIGCONT+", ECL_NIL},
 #endif
 #ifdef SIGCHLD
-        { SIGCHLD, "+SIGCHLD+", @'si::wait-for-all-processes'},
+        { SIGCHLD, "+SIGCHLD+", ECL_NIL},
 #endif
 #ifdef SIGTTIN
         { SIGTTIN, "+SIGTTIN+", ECL_NIL},
@@ -568,12 +568,6 @@ asynchronous_signal_servicing_thread()
                     signal_thread_msg.process == the_env->own_process) {
                         break;
                 }
-#ifdef SIGCHLD
-                if (signal_thread_msg.signo == SIGCHLD) {
-                        si_wait_for_all_processes(0);
-                        continue;
-                }
-#endif
                 signal_code = ecl_gethash_safe(ecl_make_fixnum(signal_thread_msg.signo),
                                                cl_core.known_signals,
                                                ECL_NIL);
@@ -858,14 +852,6 @@ do_catch_signal(int code, cl_object action, cl_object process)
                         mysignal(SIGILL, evil_signal_handler);
                 }
 #endif
-#if defined(SIGCHLD) && defined(ECL_THREADS)
-                else if (code == SIGCHLD &&
-                         ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD])
-                {
-                        /* Do nothing. This is taken care of in
-                         * the asynchronous signal handler. */
-                }
-#endif
                 else {
                         mysignal(code, non_evil_signal_handler);
                 }
@@ -1142,7 +1128,7 @@ BOOL WINAPI W32_console_ctrl_handler(DWORD type)
         }
         case CTRL_CLOSE_EVENT:
         case CTRL_LOGOFF_EVENT:
-	     case CTRL_SHUTDOWN_EVENT: {
+        case CTRL_SHUTDOWN_EVENT: {
                 cl_object function =
 	                     ECL_SYM_FUN(@'ext::quit');
                 if (function)
@@ -1239,14 +1225,6 @@ install_asynchronous_signal_handlers()
 #ifdef SIGINT
         if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
                 async_handler(SIGINT, non_evil_signal_handler, sigmask);
-        }
-#endif
-#ifdef SIGCHLD
-        if (ecl_option_values[ECL_OPT_TRAP_SIGCHLD]) {
-                /* We have to set the process signal handler explicitly,
-                 * because on many platforms the default is SIG_IGN. */
-                mysignal(SIGCHLD, non_evil_signal_handler);
-                async_handler(SIGCHLD, non_evil_signal_handler, sigmask);
         }
 #endif
 #ifdef HAVE_SIGPROCMASK
