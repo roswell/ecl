@@ -12,23 +12,39 @@
 @node External processes
 @subsection External processes
 
-External process is a structure created with
-@code{ext:run-program}. It is programmer responsibility, to call
+ECL provides several facilities for invoking and communicating with
+@code{ext:external-process}. If one just wishes to execute some
+program, without caring for its output, then probably
+@code{ext:system} is the best function. In all other cases it is
+preferable to use @code{ext:run-program}, which opens pipes to
+communicate with the program and manipulate it while it runs on the
+background.
+
+External process is a structure created with @code{ext:run-program}
+(returned as third value). It is programmer responsibility, to call
 @code{ext:external-process-wait} on finished processes, however during
 garbage collection object will be finalized.
 
 @defun ext:external-process-pid process
-Process PID.
+Returns process PID or @code{nil} if already finished.
 @end defun
 
 @defun ext:external-process-status process
-Updates process status. Returns two values:
+Updates process status. @code{ext:external-process-status} calls
+@code{ext:external-process-wait} if proces has not finished yet
+(non-blocking call).  Returns two values:
 
 @code{status} - member of @code{(:abort :error :exited :signalled
 :stopped :resumed :running)}
 
 @code{code} - if process exited it is a returned value, if terminated
 it is a signal code. Otherwise NIL.
+@end defun
+
+@defunx ext:external-process-wait proces wait
+If the second argument is non-NIL, function blocks until external
+process is finished. Otherwise status is updated. Returns two values
+(see @code{ext:external-process-status}).
 @end defun
 
 @defun ext:terminate-process process &optional force
@@ -161,7 +177,15 @@ Creates a pipe and wraps it in a two way stream.
 
 
 @defun ext:quit &optional code kill-all-threads
-Routine used to exit ECL in graceful manner.
+This function abruptly stops the execution of the program in which ECL
+is embedded. Depending on the platform, several other functions will
+be invoked to free resources, close loaded modules, etc.
+
+The exit code is the code seen by the parent process that invoked this
+program. Normally a code other than zero denotes an error.
+
+If @code{kill-all-threads} is non-NIL, tries to gently kill and join
+with running threads.
 @end defun
 
 @defun ext:environ
