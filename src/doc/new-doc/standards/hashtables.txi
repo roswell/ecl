@@ -1,0 +1,72 @@
+@node Hash tables
+@section Hash tables
+
+@subheading Weakness in hash tables
+@cindex Weak hash tables
+@ftindex ECL-WEAK-HASH
+
+Weak hash tables allow the garbage collector to reclaim some of the
+entries if they are not strongly referenced elsewhere. ECL supports
+four kinds of weakness in hash tables: @t{:key}, @t{:value},
+@t{key-and-value} and @t{key-or-value}.
+
+To make hash table weak, programmer has to provide @t{:weakness}
+keyword argument to @t{cl:make-hash-table} with the desired kind of
+weakness value (@t{NIL} means that the hash table has only strong
+references).
+
+@deffn {ext} {hash-table-weakness} ht
+Returns type of the hash table weakness. Possible return values are:
+@t{:key}, @t{:value}, @t{:key-and-value}, @t{:key-or-value} or @t{NIL}.
+@end deffn
+
+@subheading Thread-safe hash tables
+@cindex Synchronized hash tables
+@cindex Thread-safe hash tables
+
+By default ECL doesn't protect hash tables from simultaneous access
+for performance reasons. Read and write access may is synchronized
+when @t{synchronized} keyword argument to @t{make-hash-table} is
+@t{T} - @code{(make-hash-table :synchronized t)}.
+
+@lspindex hash-table-synchronized-p
+@deffn {ext} {hash-table-synchronized-p} ht
+Predicate answering whenever hash table is synchronized or not.
+@end deffn
+
+@subheading Hash tables serialization
+@cindex Hash table serialization
+
+@lspindex hash-table-content
+@deffn {ext} {hash-table-content} ht
+Returns freshly consed list of pairs @code{(key . val)} being contents
+of the hash table.
+@end deffn
+
+@lspindex hash-table-fill
+@deffn {ext} {hash-table-fill} ht values
+Fills @t{ht} with @t{values} being list of @code{(key . val)}. Hash
+table may have some content already, but conflicting keys will be
+overwritten.
+@end deffn
+
+@subheading Example
+@exindex Hash table extensions example
+@lisp
+CL-USER> (defparameter *ht* (make-hash-table :synchronized t :weakness :key-or-value))
+*HT*
+
+CL-USER> (ext:hash-table-weakness *ht*)
+:KEY-OR-VALUE
+
+CL-USER> (ext:hash-table-synchronized-p *ht*)
+T
+
+CL-USER> (ext:hash-table-fill *ht* '((:foo 3) (:bar 4) (:quux 5)))
+#<hash-table 000055b1229e0b40>
+
+CL-USER> (ext:hash-table-content *ht*)
+((#<weak-pointer 000055b121866350> . #<weak-pointer 000055b121866320>)
+ (#<weak-pointer 000055b121866370> . #<weak-pointer 000055b121866360>)
+ (#<weak-pointer 000055b121866390> . #<weak-pointer 000055b121866380>))
+@end lisp
