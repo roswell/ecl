@@ -137,7 +137,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
         ;; a flexible signature.
         (progn
           (multiple-value-setq (minarg maxarg) (get-proclaimed-narg name))
-          (cmpnote "~&;;; Function ~A proclaimed (~A,~A)" name minarg maxarg)
+          (cmpdebug "~&;;; Function ~A proclaimed (~A,~A)" name minarg maxarg)
           (unless minarg
             (setf minarg 0 maxarg call-arguments-limit)))
         (multiple-value-setq (minarg maxarg)

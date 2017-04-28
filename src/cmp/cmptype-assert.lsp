@@ -119,7 +119,7 @@
            form)
           ;; Otherwise, emit a full test
           (t
-           (cmpnote "Checking type of ~S to be ~S" value type)
+           (cmpdebug "Checking type of ~S to be ~S" value type)
            (let ((full-check
                   (with-clean-symbols (%checked-value)
                     `(let* ((%checked-value ,value))
@@ -140,11 +140,11 @@
 expression, ensuring that it is satisfied."
   (when (and (policy-type-assertions env)
              (not (trivial-type-p type)))
-    (cmpnote "Checking type of ~A to be ~A" value type)
+    (cmpdebug "Checking type of ~A to be ~A" value type)
     `(checked-value ,type ,value)))
 
 (defmacro type-assertion (&whole whole value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
-  (cmpnote "Checking type of ~A to be ~A" value type)
+  (cmpdebug "Checking type of ~A to be ~A" value type)
   (unless (trivial-type-p type)
     (expand-type-assertion value type env t)))
