@@ -58,7 +58,9 @@ overwritten.
 @subheading Example
 @exindex Hash table extensions example
 @lisp
-CL-USER> (defparameter *ht* (make-hash-table :synchronized t :weakness :key-or-value))
+CL-USER> (defparameter *ht*
+           (make-hash-table :synchronized t
+                            :weakness :key-or-value))
 *HT*
 
 CL-USER> (ext:hash-table-weakness *ht*)
