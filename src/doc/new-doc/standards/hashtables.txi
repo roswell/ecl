@@ -15,6 +15,11 @@ keyword argument to @t{cl:make-hash-table} with the desired kind of
 weakness value (@t{NIL} means that the hash table has only strong
 references).
 
+For more information see
+@url{https://www.haible.de/bruno/papers/cs/weak/WeakDatastructures-writeup.html,Weak
+References - Data Types and Implementation} by Bruno Haible.
+
+@lspindex hash-table-weakness
 @deffn {ext} {hash-table-weakness} ht
 Returns type of the hash table weakness. Possible return values are:
 @t{:key}, @t{:value}, @t{:key-and-value}, @t{:key-or-value} or @t{NIL}.
