@@ -356,7 +356,6 @@
           (fun-name x) (fun-closure x) (fun-level x) (fun-env x)))
 
 (defmacro and! (&body body)
-  (declare (si::c-local))
   `(let ((l (list ,@body)))
      (pprint (list* 'l? l))
      (every #'identity l)))
