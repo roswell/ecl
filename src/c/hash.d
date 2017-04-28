@@ -746,6 +746,7 @@ ecl_extend_hashtable(cl_object hashtable)
 
 @(defun make_hash_table (&key (test @'eql')
                          (weakness ECL_NIL)
+                         (synchronized ECL_NIL)
                          (size ecl_make_fixnum(1024))
                          (rehash_size cl_core.rehash_size)
                          (rehash_threshold cl_core.rehash_threshold))
@@ -918,6 +919,17 @@ si_hash_table_weakness(cl_object ht)
   }
 #endif
   @(return output);
+}
+
+cl_object
+si_hash_table_synchronized_p(cl_object ht)
+{
+#if 0
+  if (ht->hash.sync) {
+    return ECL_T;
+  }
+#endif
+  return ECL_NIL;
 }
 
 @(defun gethash (key ht &optional (no_value ECL_NIL))

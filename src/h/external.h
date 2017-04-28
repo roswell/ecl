@@ -805,6 +805,7 @@ extern ECL_API cl_object si_hash_equalp _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_hash_table_content(cl_object ht);
 extern ECL_API cl_object si_hash_table_fill(cl_object ht, cl_object values);
 extern ECL_API cl_object si_hash_table_weakness(cl_object ht);
+extern ECL_API cl_object si_hash_table_synchronized_p(cl_object ht);
 
 extern ECL_API cl_object ecl_sethash(cl_object key, cl_object hashtable, cl_object value);
 extern ECL_API cl_object ecl_gethash(cl_object key, cl_object hash);
