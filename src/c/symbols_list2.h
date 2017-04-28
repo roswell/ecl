@@ -2259,6 +2259,7 @@ cl_symbols[] = {
 
 {KEY_ "VALUE",NULL},
 {KEY_ "KEY-AND-VALUE",NULL},
+{KEY_ "KEY-OR-VALUE",NULL},
 {KEY_ "WEAKNESS",NULL},
 {EXT_ "HASH-TABLE-WEAKNESS","si_hash_table_weakness"},
 

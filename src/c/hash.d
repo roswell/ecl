@@ -7,6 +7,7 @@
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ * Copyright (c) 2017 Daniel Kochmanski
  *
  * See file 'LICENSE' for the copyright details.
  *
@@ -497,6 +498,14 @@ normalize_weak_key_and_value_entry(struct ecl_hashtable_entry *e) {
     return 0;
 }
 
+static void *
+normalize_weak_key_or_value_entry(struct ecl_hashtable_entry *e) {
+  if ((e->key = e->key->weak.value) || (e->value = e->value->weak.value))
+    return (void*)e;
+  else
+    return 0;
+}
+
 static struct ecl_hashtable_entry
 copy_entry(struct ecl_hashtable_entry *e, cl_object h)
 {
@@ -519,6 +528,12 @@ copy_entry(struct ecl_hashtable_entry *e, cl_object h)
       break;
     case ecl_htt_weak_key_and_value:
       if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_key_and_value_entry,
+                                  &output)) {
+        return output;
+      }
+      break;
+    case ecl_htt_weak_key_or_value:
+      if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_key_or_value_entry,
                                   &output)) {
         return output;
       }
@@ -609,6 +624,7 @@ _ecl_sethash_weak(cl_object key, cl_object hashtable, cl_object value)
       value = si_make_weak_pointer(value);
       break;
     case ecl_htt_weak_key_and_value:
+    case ecl_htt_weak_key_or_value:
     default:
       key = si_make_weak_pointer(key);
       value = si_make_weak_pointer(value);
@@ -743,12 +759,14 @@ ecl_extend_hashtable(cl_object hashtable)
         hash->hash.weak = ecl_htt_weak_value;
       } else if (weakness == @':key-and-value') {
         hash->hash.weak = ecl_htt_weak_key_and_value;
+      } else if (weakness == @':key-or-value') {
+        hash->hash.weak = ecl_htt_weak_key_or_value;
       } else {
         FEwrong_type_key_arg(@[make-hash-table],
                              @[:weakness],
                              cl_list(5, @'member',
                                      ECL_NIL, @':key', @':value',
-                                     @':key-and-value'),
+                                     @':key-and-value', @':key-or-value'),
                              weakness);
       }
       hash->hash.get = _ecl_gethash_weak;
@@ -895,6 +913,7 @@ si_hash_table_weakness(cl_object ht)
   case ecl_htt_weak_key: output = @':key'; break;
   case ecl_htt_weak_value: output = @':value'; break;
   case ecl_htt_weak_key_and_value: output = @':key-and-value'; break;
+  case ecl_htt_weak_key_or_value: output = @':key-or-value'; break;
   case ecl_htt_not_weak: default: output = ECL_NIL; break;
   }
 #endif

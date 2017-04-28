@@ -357,7 +357,8 @@ enum ecl_htweak {
         ecl_htt_not_weak = 0,
         ecl_htt_weak_key,
         ecl_htt_weak_value,
-        ecl_htt_weak_key_and_value
+        ecl_htt_weak_key_and_value,
+        ecl_htt_weak_key_or_value
 };
 
 struct ecl_hashtable_entry {    /*  hash table entry  */
