@@ -346,7 +346,7 @@ struct ecl_cons {
 #endif
 
 enum ecl_httest {               /*  hash table key test function  */
-        ecl_htt_eq,                     /*  eq  */
+        ecl_htt_eq,             /*  eq  */
         ecl_htt_eql,            /*  eql  */
         ecl_htt_equal,          /*  equal  */
         ecl_htt_equalp,         /*  equalp  */
