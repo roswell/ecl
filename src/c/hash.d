@@ -7,6 +7,7 @@
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ * Copyright (c) 2017 Daniel Kochmanski
  *
  * See file 'LICENSE' for the copyright details.
  *
@@ -497,6 +498,14 @@ normalize_weak_key_and_value_entry(struct ecl_hashtable_entry *e) {
     return 0;
 }
 
+static void *
+normalize_weak_key_or_value_entry(struct ecl_hashtable_entry *e) {
+  if ((e->key = e->key->weak.value) || (e->value = e->value->weak.value))
+    return (void*)e;
+  else
+    return 0;
+}
+
 static struct ecl_hashtable_entry
 copy_entry(struct ecl_hashtable_entry *e, cl_object h)
 {
@@ -519,6 +528,12 @@ copy_entry(struct ecl_hashtable_entry *e, cl_object h)
       break;
     case ecl_htt_weak_key_and_value:
       if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_key_and_value_entry,
+                                  &output)) {
+        return output;
+      }
+      break;
+    case ecl_htt_weak_key_or_value:
+      if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_key_or_value_entry,
                                   &output)) {
         return output;
       }
@@ -609,6 +624,7 @@ _ecl_sethash_weak(cl_object key, cl_object hashtable, cl_object value)
       value = si_make_weak_pointer(value);
       break;
     case ecl_htt_weak_key_and_value:
+    case ecl_htt_weak_key_or_value:
     default:
       key = si_make_weak_pointer(key);
       value = si_make_weak_pointer(value);
@@ -637,7 +653,42 @@ _ecl_remhash_weak(cl_object key, cl_object hashtable)
     return 0;
   }
 }
+#endif
 
+/* SYNCHRONIZED HASH TABLES */
+#ifdef ECL_THREADS
+static cl_object
+_ecl_sethash_sync(cl_object key, cl_object hashtable, cl_object value)
+{
+  cl_object output = ECL_NIL;
+  cl_object sync_lock = hashtable->hash.sync_lock;
+  mp_get_rwlock_write_wait(sync_lock);
+  output = hashtable->hash.set_unsafe(key, hashtable, value);
+  mp_giveup_rwlock_write(sync_lock);
+  return output;
+}
+
+static cl_object
+_ecl_gethash_sync(cl_object key, cl_object hashtable, cl_object def)
+{
+  cl_object output = ECL_NIL;
+  cl_object sync_lock = hashtable->hash.sync_lock;
+  mp_get_rwlock_read_wait(sync_lock);
+  output = hashtable->hash.get_unsafe(key, hashtable, def);
+  mp_giveup_rwlock_read(sync_lock);
+  return output;
+}
+
+static bool
+_ecl_remhash_sync(cl_object key, cl_object hashtable)
+{
+  bool output = 0;
+  cl_object sync_lock = hashtable->hash.sync_lock;
+  mp_get_rwlock_write_wait(sync_lock);
+  output = hashtable->hash.rem_unsafe(key, hashtable);
+  mp_giveup_rwlock_write(sync_lock);
+  return output;
+}
 #endif
 
 /*
@@ -730,6 +781,7 @@ ecl_extend_hashtable(cl_object hashtable)
 
 @(defun make_hash_table (&key (test @'eql')
                          (weakness ECL_NIL)
+                         (synchronized ECL_NIL)
                          (size ecl_make_fixnum(1024))
                          (rehash_size cl_core.rehash_size)
                          (rehash_threshold cl_core.rehash_threshold))
@@ -743,12 +795,14 @@ ecl_extend_hashtable(cl_object hashtable)
         hash->hash.weak = ecl_htt_weak_value;
       } else if (weakness == @':key-and-value') {
         hash->hash.weak = ecl_htt_weak_key_and_value;
+      } else if (weakness == @':key-or-value') {
+        hash->hash.weak = ecl_htt_weak_key_or_value;
       } else {
         FEwrong_type_key_arg(@[make-hash-table],
                              @[:weakness],
                              cl_list(5, @'member',
                                      ECL_NIL, @':key', @':value',
-                                     @':key-and-value'),
+                                     @':key-and-value', @':key-or-value'),
                              weakness);
       }
       hash->hash.get = _ecl_gethash_weak;
@@ -756,6 +810,22 @@ ecl_extend_hashtable(cl_object hashtable)
       hash->hash.rem = _ecl_remhash_weak;
     }
 #endif
+
+    if (!Null(synchronized)) {
+#ifdef ECL_THREADS
+      hash->hash.sync_lock = ecl_make_rwlock(ECL_NIL);
+      hash->hash.get_unsafe = hash->hash.get;
+      hash->hash.set_unsafe = hash->hash.set;
+      hash->hash.rem_unsafe = hash->hash.rem;
+      hash->hash.get = _ecl_gethash_sync;
+      hash->hash.set = _ecl_sethash_sync;
+      hash->hash.rem = _ecl_remhash_sync;
+#else
+      /* for hash-table-synchronized-p predicate */
+      hash->hash.sync_lock = ECL_T;
+#endif
+    }
+
     @(return hash);
 } @)
 
@@ -895,10 +965,21 @@ si_hash_table_weakness(cl_object ht)
   case ecl_htt_weak_key: output = @':key'; break;
   case ecl_htt_weak_value: output = @':value'; break;
   case ecl_htt_weak_key_and_value: output = @':key-and-value'; break;
+  case ecl_htt_weak_key_or_value: output = @':key-or-value'; break;
   case ecl_htt_not_weak: default: output = ECL_NIL; break;
   }
 #endif
   @(return output);
+}
+
+cl_object
+si_hash_table_synchronized_p(cl_object ht)
+{
+
+  if (!Null(ht->hash.sync_lock)) {
+    return ECL_T;
+  }
+  return ECL_NIL;
 }
 
 @(defun gethash (key ht &optional (no_value ECL_NIL))

@@ -2259,8 +2259,11 @@ cl_symbols[] = {
 
 {KEY_ "VALUE",NULL},
 {KEY_ "KEY-AND-VALUE",NULL},
+{KEY_ "KEY-OR-VALUE",NULL},
 {KEY_ "WEAKNESS",NULL},
 {EXT_ "HASH-TABLE-WEAKNESS","si_hash_table_weakness"},
+{KEY_ "SYNCHRONIZED",NULL},
+{EXT_ "HASH-TABLE-SYNCHRONIZED-P","si_hash_table_synchronized_p"},
 
 {EXT_ "TRULY-THE",NULL},
 {EXT_ "CHECKED-VALUE",NULL},

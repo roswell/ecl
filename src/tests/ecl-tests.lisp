@@ -21,11 +21,11 @@
 
 ;;;; Declare the suites
 (suite 'ecl-tests
-       '(executable eformat ieee-fp eprocess package-locks ansi+ mixed
+       '(executable eformat ieee-fp eprocess package-locks hash-tables ansi+ mixed
          cmp emb ffi mop mp run-program))
 
 (suite 'make-check
-       '(executable ieee-fp eprocess package-locks ansi+ mixed cmp emb
+       '(executable ieee-fp eprocess package-locks hash-tables ansi+ mixed cmp emb
          ffi mop run-program))
 
 

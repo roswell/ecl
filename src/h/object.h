@@ -346,7 +346,7 @@ struct ecl_cons {
 #endif
 
 enum ecl_httest {               /*  hash table key test function  */
-        ecl_htt_eq,                     /*  eq  */
+        ecl_htt_eq,             /*  eq  */
         ecl_htt_eql,            /*  eql  */
         ecl_htt_equal,          /*  equal  */
         ecl_htt_equalp,         /*  equalp  */
@@ -357,7 +357,8 @@ enum ecl_htweak {
         ecl_htt_not_weak = 0,
         ecl_htt_weak_key,
         ecl_htt_weak_value,
-        ecl_htt_weak_key_and_value
+        ecl_htt_weak_key_and_value,
+        ecl_htt_weak_key_or_value
 };
 
 struct ecl_hashtable_entry {    /*  hash table entry  */
@@ -368,6 +369,7 @@ struct ecl_hashtable_entry {    /*  hash table entry  */
 struct ecl_hashtable {          /*  hash table header  */
         _ECL_HDR2(test,weak);
         struct ecl_hashtable_entry *data; /*  pointer to the hash table  */
+        cl_object sync_lock;              /*  synchronization lock  */
         cl_index entries;       /*  number of entries  */
         cl_index size;          /*  hash table size  */
         cl_index limit;         /*  hash table threshold (integer value)  */
@@ -377,6 +379,11 @@ struct ecl_hashtable {          /*  hash table header  */
         cl_object (*get)(cl_object, cl_object, cl_object);
         cl_object (*set)(cl_object, cl_object, cl_object);
         bool (*rem)(cl_object, cl_object);
+        /* Unsafe variants are used to store the real accessors when
+           the synchronized variant is bound to get/set/rem. */
+        cl_object (*get_unsafe)(cl_object, cl_object, cl_object);
+        cl_object (*set_unsafe)(cl_object, cl_object, cl_object);
+        bool (*rem_unsafe)(cl_object, cl_object);
 };
 
 typedef enum {                  /*  array element type  */
