@@ -29,6 +29,7 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- hash table extensions are documented in newdoc
 - various cleanups performed in the compiler
 - compiler is less verbose by default now
 - ext:run-program has been rewritten (almost) from scratch
@@ -47,9 +48,13 @@
 - buildsystem parallel builds work (i.e make -j999)
 - ECL builds on consoles with unusual encodings on Windows (i.e cp936)
 ** API changes
-- No more explicit option in =main.d= to trap SIGCHLD asynchronously.
+- make-hash-table accepts =:synchronize= flag for thread safe variant. New
+  predicate =ext:hash-table-synchronized-p= implemented
+- make-hash-table =:weakness= argument new variant =:key-or-value=
+  implemented
+- No more explicit option in =main.d= to trap SIGCHLD asynchronously
 - Zombie processes are cleaned in external-process finalizer. If process is
-  referenced in the memory, it's programmer duty to call wait on it.
+  referenced in the memory, it's programmer duty to call wait on it
 * 16.1.3 changes since 16.1.2
 ** Announcement
 Dear Community,
