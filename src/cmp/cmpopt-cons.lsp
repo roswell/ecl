@@ -16,6 +16,7 @@
 (in-package "COMPILER")
 
 (defun expand-simple-optimizer (values arg-types inline-form env)
+  (declare (si::c-local))
   `(ffi:c-inline ,(if (policy-assume-right-type env)
                       values
                       (loop for v in values
@@ -26,7 +27,8 @@
                  ,@inline-form))
 
 (defun simple-optimizer-function (name args inline-form)
-  (si::put-sysprop
+  (declare (si::c-local))
+  (si:put-sysprop
    name 'si::compiler-macro
    (if (every #'symbolp args)
        #'(lambda (whole env)

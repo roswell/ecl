@@ -382,10 +382,10 @@
       (values nil nil))))
 
 (defun si::compiler-clear-compiler-properties (symbol)
-  (rem-sysprop symbol 't1)
-  (rem-sysprop symbol 't2)
-  (rem-sysprop symbol 't3)
-  (rem-sysprop symbol 'lfun))
+  (si:rem-sysprop symbol 't1)
+  (si:rem-sysprop symbol 't2)
+  (si:rem-sysprop symbol 't3)
+  (si:rem-sysprop symbol 'lfun))
 
 (defun lisp-to-c-name (obj)
   "Translate Lisp object prin1 representation to valid C identifier name"

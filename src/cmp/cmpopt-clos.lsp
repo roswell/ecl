@@ -4,7 +4,7 @@
 ;;;;
 ;;;;  CMPOPT-CLOS. Optimization of CLOS related operations
 
-;;;;  Copyright (c) 201. Juan Jose Garcia-Ripol
+;;;;  Copyright (c) 2010. Juan Jose Garcia-Ripol
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -28,6 +28,7 @@
     (values output success)))
 
 (defun optimizable-slot-reader (method whole)
+  (declare (si::c-local))
   (when (typep method 'clos:standard-reader-method)
     (let ((class (first (clos:method-specializers method))))
       (when (clos::class-sealedp class)
@@ -50,6 +51,7 @@
                  (si::instance-ref ,object ,location)))))))))
 
 (defun optimizable-slot-writer (method whole)
+  (declare (si::c-local))
   (when (typep method 'clos:standard-writer-method)
     (let ((class (second (clos:method-specializers method))))
       (when (clos::class-sealedp class)
@@ -75,6 +77,7 @@
                  (si::instance-set ,object ,location ,value)))))))))
 
 (defun optimizable-slot-accessor (g whole)
+  (declare (si::c-local))
   (and (policy-inline-slot-access)
        (let ((methods (clos:generic-function-methods g)))
          (and methods

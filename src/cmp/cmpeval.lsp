@@ -141,7 +141,7 @@
                   )))
 
 (defun c1call-constant-fold (fname forms)
-  (when (and (get-sysprop fname 'pure)
+  (when (and (si:get-sysprop fname 'pure)
              (policy-evaluate-forms)
              (inline-possible fname))
     (handler-case

@@ -26,9 +26,9 @@
            (every test x))))
 
 (defun type-name-p (name)
-  (or (get-sysprop name 'SI::DEFTYPE-DEFINITION)
+  (or (si:get-sysprop name 'SI::DEFTYPE-DEFINITION)
       (find-class name nil)
-      (get-sysprop name 'SI::STRUCTURE-TYPE)))
+      (si:get-sysprop name 'SI::STRUCTURE-TYPE)))
 
 (defun validate-alien-declaration (names-list error)
   (dolist (new-declaration names-list)

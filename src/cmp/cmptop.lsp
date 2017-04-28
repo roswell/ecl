@@ -92,6 +92,7 @@
       (mapc #'t3local-fun (nreverse to-be-emitted)))))
 
 (defun emit-local-funs ()
+  (declare (si::c-local))
   ;; Local functions and closure functions
   (do ((*compile-time-too* nil)
        (*compile-toplevel* nil))
@@ -105,6 +106,7 @@
            ;; so disassemble can redefine it
            (t3local-fun (first lfs)))))))
 
+;;; XXX: referenced in main
 (defun ctop-write (name h-pathname data-pathname
                         &aux def top-output-string
                         (*volatile* "volatile "))
@@ -256,6 +258,7 @@
   (wt-nl top-output-string))
 
 (defun emit-toplevel-form (form c-output-file)
+  (declare (si::c-local))
   (let ((*ihs-used-p* nil)
         (*max-lex* 0)
         (*max-env* 0)
@@ -294,9 +297,9 @@
         (execute-flag nil))
     (dolist (situation (car args))
       (case situation
-        ((LOAD :LOAD-TOPLEVEL) (setq load-flag t))
-        ((COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
-        ((EVAL :EXECUTE)
+        ((CL:LOAD :LOAD-TOPLEVEL) (setq load-flag t))
+        ((CL:COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
+        ((CL:EVAL :EXECUTE)
          (if *compile-toplevel*
              (setq compile-flag (or *compile-time-too* compile-flag))
              (setq execute-flag t)))
@@ -321,14 +324,16 @@
   (declare (ignore c1form))
   (mapc #'t2expr args))
 
+;;; used (only once) in cmp1lam.lsp
 (defun exported-fname (name)
   (let (cname)
-    (if (and (symbolp name) (setf cname (get-sysprop name 'Lfun)))
+    (if (and (symbolp name) (setf cname (si:get-sysprop name 'Lfun)))
         (values cname t)
         (values (next-cfun "L~D~A" name) nil))))
 
 ;;; Mechanism for sharing code:
 ;;; FIXME! Revise this 'DEFUN stuff.
+;;; used (only once) in cmp1lam.lsp
 (defun new-defun (new &optional no-entry)
   #|
   (unless (fun-exported new)
@@ -454,7 +459,7 @@
        finally (wt ";"))))
 
 (defun wt-global-entry (fname cfun arg-types return-type)
-    (when (and (symbolp fname) (get-sysprop fname 'NO-GLOBAL-ENTRY))
+    (when (and (symbolp fname) (si:get-sysprop fname 'NO-GLOBAL-ENTRY))
       (return-from wt-global-entry nil))
     (wt-comment-nl "global entry for the function ~a" fname)
     (wt-nl "static cl_object L" cfun "(cl_narg narg")

@@ -15,6 +15,32 @@
 
 (in-package "COMPILER")
 
+;;----------------------------------------------------------------------
+;; We transform BOOLE into the individual operations, which have
+;; inliners
+;;
+
+(define-compiler-macro boole (&whole form op-code op1 op2)
+  (or (and (constantp op-code *cmp-env*)
+           (case (ext:constant-form-value op-code *cmp-env*)
+             (#. boole-clr `(progn ,op1 ,op2 0))
+             (#. boole-set `(progn ,op1 ,op2 -1))
+             (#. boole-1 `(prog1 ,op1 ,op2))
+             (#. boole-2 `(progn ,op1 ,op2))
+             (#. boole-c1 `(prog1 (lognot ,op1) ,op2))
+             (#. boole-c2 `(progn ,op1 (lognot ,op2)))
+             (#. boole-and `(logand ,op1 ,op2))
+             (#. boole-ior `(logior ,op1 ,op2))
+             (#. boole-xor `(logxor ,op1 ,op2))
+             (#. boole-eqv `(logeqv ,op1 ,op2))
+             (#. boole-nand `(lognand ,op1 ,op2))
+             (#. boole-nor `(lognor ,op1 ,op2))
+             (#. boole-andc1 `(logandc1 ,op1 ,op2))
+             (#. boole-andc2 `(logandc2 ,op1 ,op2))
+             (#. boole-orc1 `(logorc1 ,op1 ,op2))
+             (#. boole-orc2 `(logorc2 ,op1 ,op2))))
+      form))
+
 (defun simplify-arithmetic (operator args whole)
   (if (every #'numberp args)
       (apply operator args)

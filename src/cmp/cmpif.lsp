@@ -103,6 +103,7 @@
          (c2expr form2))))
 
 (defun negate-argument (inlined-arg dest-loc)
+  (declare (si::c-local))
   (let* ((loc (second inlined-arg))
          (rep-type (loc-representation-type loc)))
     (apply #'produce-inline-loc
@@ -135,9 +136,11 @@
              (close-inline-blocks))))))
 
 (defun jump-true-destination-p (dest)
+  (declare (si::c-local))
   (and (consp dest) (eq (si:cons-car dest) 'JUMP-TRUE)))
 
 (defun jump-false-destination-p (dest)
+  (declare (si::c-local))
   (and (consp dest) (eq (si:cons-car dest) 'JUMP-FALSE)))
 
 (defun c2fmla-and (c1form butlast last)

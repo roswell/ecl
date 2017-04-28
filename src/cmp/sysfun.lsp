@@ -849,7 +849,7 @@
                             :arg-types arg-types
                             :exact-return-type exact-return-type
                             :multiple-values multiple-values
-                            ;; :side-effects (not (get-sysprop name 'no-side-effects))
+                            ;; :side-effects (not (si:get-sysprop name 'no-side-effects))
                             :one-liner one-liner
                             :expansion expansion)))
     #+(or)

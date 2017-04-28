@@ -73,7 +73,7 @@
           (ash (read-byte stream) 24)))
 
 (defun write-word (byte stream)
-  (declare (type (unsigned-byte 32) byte)
+  (declare (type :uint32-t byte)
            (stream stream)
            (optimize speed (safety 0)))
   (write-byte (logand #xff byte) stream)

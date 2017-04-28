@@ -73,7 +73,7 @@
     (let ((*cmp-env* new-env))
       (multiple-value-bind (body ss ts is other-decl)
           (c1body (rest args) t)
-        (c1declare-specials ss)
+        (mapc #'cmp-env-declare-special ss)
         (check-vdecl nil ts is)
         (setq body-c1form (c1decl-body other-decl body))))
 
@@ -234,14 +234,14 @@
       (c1body args t)
     (if (or ss ts is other-decl)
         (let ((*cmp-env* (cmp-env-copy)))
-          (c1declare-specials ss)
+          (mapc #'cmp-env-declare-special ss)
           (check-vdecl nil ts is)
           (c1decl-body other-decl body))
         (c1progn body))))
 
 (defun c1macrolet (args)
   (check-args-number 'MACROLET args 1)
-  (let ((*cmp-env* (cmp-env-register-macrolet (first args) (cmp-env-copy))))
+  (let ((*cmp-env* (si:cmp-env-register-macrolet (first args) (cmp-env-copy))))
     (c1locally (cdr args))))
 
 (defun c1symbol-macrolet (args)

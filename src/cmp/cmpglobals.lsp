@@ -49,11 +49,11 @@
 (defvar *compiler-conditions* '()
   "This variable determines whether conditions are printed or just accumulated.")
 
-(defvar *compile-print* nil
+(defvar cl:*compile-print* nil
   "This variable controls whether the compiler displays messages about
 each form it processes. The default value is NIL.")
 
-(defvar *compile-verbose* nil
+(defvar cl:*compile-verbose* nil
   "This variable controls whether the compiler should display messages about its
 progress. The default value is T.")
 

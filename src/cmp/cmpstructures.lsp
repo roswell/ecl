@@ -22,7 +22,7 @@
 ;;;
 (defun get-slot-type (name index)
   ;; default is t
-  (or (third (nth index (get-sysprop name 'SYS::STRUCTURE-SLOT-DESCRIPTIONS))) 'T))
+  (or (third (nth index (si:get-sysprop name 'SYS::STRUCTURE-SLOT-DESCRIPTIONS))) 'T))
 
 ;;;
 ;;; STRUCTURE SLOT READING
@@ -34,7 +34,7 @@
 ;;;
 
 (defun maybe-optimize-structure-access (fname args)
-  (let* ((slot-description (get-sysprop fname 'SYS::STRUCTURE-ACCESS)))
+  (let* ((slot-description (si:get-sysprop fname 'SYS::STRUCTURE-ACCESS)))
     (when (and slot-description
                (inline-possible fname)
                (policy-inline-slot-access-p))

@@ -1,6 +1,9 @@
 
-* cmpdata, cmpdata-bk
-** Frontend
+** si:cmp-env-register-macrolet should be part of cmpenv-api
+** extract type propagation pass, see 7e8d0985155
+
+** cmpdata, cmpdata-bk
+*** Frontend
 vv structure is a single data section entry. We have two data stores –
 permanent and temporary.
 
@@ -23,14 +26,14 @@ permanent and temporary.
 
 - data-dump-array :: dumps data stores
 
-** Backend
+*** Backend
 - add-static-constant :: called from data frontend.
 - data-c-dump :: called from cmpmain, creates data section in a
      separate C file
 - wt-vv :: used by cmploc, accesses element in data section
 - set-vv :: used in cmploc, modifies element in data section
 
-* pass1 extract 1st attempt:
+** pass1 extract 1st attempt:
 #+BEGIN_SRC lisp
   (defpackage ecl-cmp/int
     (:use #:ffi #:ext #:cl)
@@ -218,22 +221,22 @@ permanent and temporary.
     (:import-from "SI" "GET-SYSPROP" "PUT-SYSPROP" "REM-SYSPROP" "MACRO"
                   "*COMPILER-CONSTANTS*" "COMPILER-LET"))
 #+END_SRC
-* TODO be explicit in dispatch symbol packages (i.e cl:progn)
-* TODO 'UNWIND-PROTECT tag should be made a keyword
-* TODO use package agnostic marks '(CB LB CLB CCB UNWIND-PROTECT CLOSURE)
-* TODO declared-inline-p, inline-possible and declared-notinline-p should have one common interface
-* cmpdata should be merged with cmpwt (which has only data accessors)
-* TODO wt-structure-ref doesn't exist!
+** TODO be explicit in dispatch symbol packages (i.e cl:progn)
+** TODO 'UNWIND-PROTECT tag should be made a keyword
+** TODO use package agnostic marks '(CB LB CLB CCB UNWIND-PROTECT CLOSURE)
+** TODO declared-inline-p, inline-possible and declared-notinline-p should have one common interface
+** cmpdata should be merged with cmpwt (which has only data accessors)
+** TODO wt-structure-ref doesn't exist!
 This is a removal from CLOS merge probably, fixme!
 
-* TODO some compiler macros belong to the backend!
+** TODO some compiler macros belong to the backend!
 
-* generic function potential optimizations
-** ecl has one dispatcher and one cache for *all* generic functions - many misses
-** each generic function needs to have its own cache and dispatcher (for instance if there is one method it may be way faster)
-** effective method may be compiled into one function unless one of the methods is a closure (or has eql specializer)
+** generic function potential optimizations
+*** ecl has one dispatcher and one cache for *all* generic functions - many misses
+*** each generic function needs to have its own cache and dispatcher (for instance if there is one method it may be way faster)
+*** effective method may be compiled into one function unless one of the methods is a closure (or has eql specializer)
 
-* Lambdas
+** Lambdas
 #+BEGIN_SRC lisp
 ;;; lambda expression
 
@@ -272,95 +275,95 @@ This is a removal from CLOS merge probably, fixme!
 ;;; supplied) and an implicit block.
 #+END_SRC
 
-* cmp-env- interface
+** cmp-env- interface
 
-** cmppolicy.lsp:cmp-env-policy                                       :local:
-** cmppolicy.lsp:cmp-env-add-optimizations                         :internal:
-** cmppolicy.lsp:cmp-env-optimization                              :external:
-** cmppolicy.lsp:add-default-optimizations                         :internal:
+*** cmppolicy.lsp:cmp-env-policy				      :local:
+*** cmppolicy.lsp:cmp-env-add-optimizations			   :internal:
+*** cmppolicy.lsp:cmp-env-optimization				   :external:
+*** cmppolicy.lsp:add-default-optimizations			   :internal:
 
-** cmpenv-api.lsp:cmp-env-root                                     :external:
-** cmpenv-api.lsp:cmp-env-copy                                     :external:
-** cmpenv-api.lsp:cmp-env-cleanups                                   :unused:
-** cmpenv-api.lsp:cmp-env-register-var                                 :used:
-** cmpenv-api.lsp:cmp-env-declare-special                              :used:
-** cmpenv-api.lsp:cmp-env-add-declaration                          :internal:
-** cmpenv-api.lsp:cmp-env-extend-declaration                       :internal:
+*** cmpenv-api.lsp:cmp-env-root					   :external:
+*** cmpenv-api.lsp:cmp-env-copy					   :external:
+*** cmpenv-api.lsp:cmp-env-cleanups				     :unused:
+*** cmpenv-api.lsp:cmp-env-register-var				       :used:
+*** cmpenv-api.lsp:cmp-env-declare-special			       :used:
+*** cmpenv-api.lsp:cmp-env-add-declaration			   :internal:
+*** cmpenv-api.lsp:cmp-env-extend-declaration			   :internal:
 
-** cmpenv-api.lsp:cmp-env-register-function                            :used:
-** cmpenv-api.lsp:cmp-env-register-global-macro                        :used:
-** cmpenv-api.lsp:cmp-env-register-macro                               :used:
-** cmpenv-api.lsp:cmp-env-register-ftype                           :internal:
-** cmpenv-api.lsp:cmp-env-register-symbol-macro                    :external:
-** cmpenv-api.lsp:cmp-env-register-block                               :used:
-** cmpenv-api.lsp:cmp-env-register-tag                                 :used:
-** cmpenv-api.lsp:cmp-env-register-cleanup                           :unused:
+*** cmpenv-api.lsp:cmp-env-register-function			       :used:
+*** cmpenv-api.lsp:cmp-env-register-global-macro		       :used:
+*** cmpenv-api.lsp:cmp-env-register-macro			       :used:
+*** cmpenv-api.lsp:cmp-env-register-ftype			   :internal:
+*** cmpenv-api.lsp:cmp-env-register-symbol-macro		   :external:
+*** cmpenv-api.lsp:cmp-env-register-block			       :used:
+*** cmpenv-api.lsp:cmp-env-register-tag				       :used:
+*** cmpenv-api.lsp:cmp-env-register-cleanup			     :unused:
 
-** cmpenv-api.lsp:cmp-env-search-function                          :external:
-** cmpenv-api.lsp:cmp-env-search-variables                            :local:
-** cmpenv-api.lsp:cmp-env-search-block                                 :used:
-** cmpenv-api.lsp:cmp-env-search-tag                                   :used:
-** cmpenv-api.lsp:cmp-env-search-symbol-macro                      :external:
-** cmpenv-api.lsp:cmp-env-search-var                               :external:
-** cmpenv-api.lsp:cmp-env-search-macro                                 :used:
-** cmpenv-api.lsp:cmp-env-search-ftype                             :internal:
+*** cmpenv-api.lsp:cmp-env-search-function			   :external:
+*** cmpenv-api.lsp:cmp-env-search-variables			      :local:
+*** cmpenv-api.lsp:cmp-env-search-block				       :used:
+*** cmpenv-api.lsp:cmp-env-search-tag				       :used:
+*** cmpenv-api.lsp:cmp-env-search-symbol-macro			   :external:
+*** cmpenv-api.lsp:cmp-env-search-var				   :external:
+*** cmpenv-api.lsp:cmp-env-search-macro				       :used:
+*** cmpenv-api.lsp:cmp-env-search-ftype				   :internal:
 
-** cmpenv-api.lsp:cmp-env-mark                                     :external:
-** cmpenv-api.lsp:cmp-env-new-variables                                :used:
-** cmpenv-api.lsp:cmp-env-search-declaration                       :internal:
+*** cmpenv-api.lsp:cmp-env-mark					   :external:
+*** cmpenv-api.lsp:cmp-env-new-variables			       :used:
+*** cmpenv-api.lsp:cmp-env-search-declaration			   :internal:
 
-* cmpenv-fun.lsp
-** proclaim-function                                               :external:
-** add-function-declaration                                        :internal:
-** get-arg-types                                                   :external:
-** get-return-type                                                 :external:
-** get-local-arg-types                                                 :used:
-** get-local-return-type                                               :used:
-** get-proclaimed-narg                                             :external:
-** declare-inline                                                  :internal:
-** declare-notinline                                               :internal:
-** proclaim-inline                                                 :internal:
-** proclaim-notinline                                              :internal:
-** declared-inline-p                                               :external:
-** declared-notinline-p                                               :local:
-** inline-possible                                                 :external:
-** maybe-install-inline-function                                       :hook:
+** cmpenv-fun.lsp
+*** proclaim-function						   :external:
+*** add-function-declaration					   :internal:
+*** get-arg-types						   :external:
+*** get-return-type						   :external:
+*** get-local-arg-types						       :used:
+*** get-local-return-type					       :used:
+*** get-proclaimed-narg						   :external:
+*** declare-inline						   :internal:
+*** declare-notinline						   :internal:
+*** proclaim-inline						   :internal:
+*** proclaim-notinline						   :internal:
+*** declared-inline-p						   :external:
+*** declared-notinline-p					      :local:
+*** inline-possible						   :external:
+*** maybe-install-inline-function				       :hook:
 
-* cmpform
-** c1form-local-type                                            :info:unused:
-** c1form-local-vars                                                   :info:
-** c1form-sp-change                                                    :info:
-** c1form-volatile                                                     :info:
+** cmpform
+*** c1form-local-type						:info:unused:
+*** c1form-local-vars						       :info:
+*** c1form-sp-change						       :info:
+*** c1form-volatile						       :info:
 
-** c1form-name
-** c1form-parents                                                     :local:
-** c1form-env
-** c1form-args
-** c1form-side-effects
-** c1form-form
-** c1form-toplevel-form
-** c1form-file
-** c1form-file-position
+*** c1form-name
+*** c1form-parents						      :local:
+*** c1form-env
+*** c1form-args
+*** c1form-side-effects
+*** c1form-form
+*** c1form-toplevel-form
+*** c1form-file
+*** c1form-file-position
 
-** print-c1form
-** make-c1form
-** make-c1form*
-** c1form-arg
-** c1form-volatile*                                                 :backend:
-** c1form-primary-type
-** location-primary-type (same as above)
+*** print-c1form
+*** make-c1form
+*** make-c1form*
+*** c1form-arg
+*** c1form-volatile* 						    :backend:
+*** c1form-primary-type
+*** location-primary-type (same as above)
 
-** find-form-in-node-list
-** add-form-to-node-list
-** delete-form-from-node-list
+*** find-form-in-node-list
+*** add-form-to-node-list
+*** delete-form-from-node-list
 used only in cmpvar
-** traverse-c1form-tree
-** c1form-movable-p
-** c1form-values-number
-** c1form-single-valued-p
-** with-c1form-env
-** relocate-parents-list                                              :local:
-** c1form-replace-with
-** delete-c1forms
-** c1form-constant-p
+*** traverse-c1form-tree
+*** c1form-movable-p
+*** c1form-values-number
+*** c1form-single-valued-p
+*** with-c1form-env
+*** relocate-parents-list					      :local:
+*** c1form-replace-with
+*** delete-c1forms
+*** c1form-constant-p
 

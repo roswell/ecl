@@ -156,6 +156,7 @@
             vars (make-c1form* 'MULTIPLE-VALUE-SETQ :args vars value))))))
 
 (defun bind-or-set (loc v use-bind)
+  (declare (si::c-local))
   (cond ((not use-bind)
          (set-var loc v))
         ((or (plusp (var-ref v))
@@ -163,6 +164,7 @@
          (bind loc v))))
 
 (defun values-loc-or-value0 (i)
+  (declare (si::c-local))
   (if (plusp i) (values-loc i) 'VALUE0))
 
 (defun do-m-v-setq (vars form use-bind &aux min-values max-values)
@@ -172,7 +174,7 @@
   ;; the values are to be created with BIND, then USED-BIND=T.  The output of
   ;; this routine is a location containing the first value (typically, the
   ;; name of the first variable).
-  ;;
+  (declare (si::c-local))
   (when (= (length vars) 1)
     (let ((*destination* (first vars)))
       (c2expr* form)
@@ -228,7 +230,7 @@
            ,@args)))
     (multiple-value-bind (body ss ts is other-decls)
         (c1body args nil)
-      (c1declare-specials ss)
+      (mapc #'cmp-env-declare-special ss)
       (let* ((vars (loop for name in variables
                       collect (c1make-var name ss is ts))))
         (setq init-form (c1expr init-form))

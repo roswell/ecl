@@ -29,6 +29,8 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- various cleanups performed in the compiler
+- compiler is less verbose by default now
 - ext:run-program has been rewritten (almost) from scratch
 - improved documentation of operating system interface (newdoc)
 - example of parsing arguments in standalone executable (newdoc)
