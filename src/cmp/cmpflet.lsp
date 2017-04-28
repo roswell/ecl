@@ -241,7 +241,7 @@
 
 (defun c1macrolet (args)
   (check-args-number 'MACROLET args 1)
-  (let ((*cmp-env* (cmp-env-register-macrolet (first args) (cmp-env-copy))))
+  (let ((*cmp-env* (si:cmp-env-register-macrolet (first args) (cmp-env-copy))))
     (c1locally (cdr args))))
 
 (defun c1symbol-macrolet (args)
