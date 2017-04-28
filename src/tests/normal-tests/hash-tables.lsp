@@ -69,4 +69,10 @@
 ;;; Synchronization
 (test hash-tables.sync
   (let ((ht (make-hash-table :synchronized t)))
-    (is-true (ext:hash-table-synchronized-p ht))))
+    (is-true (ext:hash-table-synchronized-p ht))
+    (setf (gethash :foo ht) 3)
+    (setf (gethash :bar ht) 4)
+    (is (= 2 (hash-table-count ht)))
+    (is (= 3 (gethash :foo ht)))
+    (is-true (remhash :bar ht))
+    (is (= 1 (hash-table-count ht)))))
