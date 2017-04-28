@@ -3,63 +3,63 @@
 
 @menu
 * Overview::
-* Syntax::
+@c * Syntax::
 * Evaluation and compilation::
 * Types and classes::
 * Data and control flow::
-* Iteration::
-* Objects::
-* Structures::
-* Conditions::
-* Symbols::
-* Packages::
-* Numbers::
-* Characters::
-* Conses::
-* Arrays::
-* Strings::
-* Sequences::
+@c * Iteration::
+@c * Objects::
+@c * Structures::
+@c * Conditions::
+@c * Symbols::
+@c * Packages::
+@c * Numbers::
+@c * Characters::
+@c * Conses::
+@c * Arrays::
+@c * Strings::
+@c * Sequences::
 * Hash tables::
-* Filenames::
-* Files::
-* Streams::
-* Printer::
-* Reader::
-* System construction::
-* Environment::
-* Glossary::
+@c * Filenames::
+@c * Files::
+@c * Streams::
+@c * Printer::
+@c * Reader::
+@c * System construction::
+@c * Environment::
+@c * Glossary::
 @end menu
 
 @include standards/overview.txi
 
 @c No changes regarding the standard
-@node Syntax
-@section Syntax
+@c @node Syntax
+@c @section Syntax
 
 @include standards/evaluation.txi
 @include standards/types_and_classes.txi
 @include standards/data_and_control_flow.txi
 
-@node Iteration
-@section Iteration
+@c @node Iteration
+@c @section Iteration
 
-@node Objects
-@section Objects
+@c @node Objects
+@c @section Objects
 
-@node Structures
-@section Structures
+@c @node Structures
+@c @section Structures
 
-@node Conditions
-@section Conditions
+@c @node Conditions
+@c @section Conditions
 
-@node Symbols
-@section Symbols
+@c @node Symbols
+@c @section Symbols
 
-@node Packages
-@section Packages
+@c @node Packages
+@c @section Packages
 
-@node Numbers
-@section Numbers
+@c @node Numbers
+@c @section Numbers
 @c build option --with-ieee-fp={yes|no}
 @c si::trap-fpe
 @c si::nan
@@ -73,46 +73,41 @@
 @c ext:random-state-array
 @c #$ macro
 
-@node Characters
-@section Characters
+@c @node Characters
+@c @section Characters
 
-@node Conses
-@section Conses
+@c @node Conses
+@c @section Conses
 
-@node Arrays
-@section Arrays
+@c @node Arrays
+@c @section Arrays
 
-@node Strings
-@section Strings
+@c @node Strings
+@c @section Strings
 
-@node Sequences
-@section Sequences
+@c @node Sequences
+@c @section Sequences
 
-@node Hash tables
-@section Hash tables
-@c weakness in hash tables
-@c ext:hash-table-content
-@c ext:hash-table-fill
-@c ext:hash-table-weakness
+@include standards/hashtables.txi
 
-@node Filenames
-@section Filenames
+@c @node Filenames
+@c @section Filenames
 
-@node Files
-@section Files
+@c @node Files
+@c @section Files
 
-@node Streams
-@section Streams
+@c @node Streams
+@c @section Streams
 
-@node Printer
-@section Printer
+@c @node Printer
+@c @section Printer
 
-@node Reader
-@section Reader
-@c #$ - random state
+@c @node Reader
+@c @section Reader
+@c @c #$ - random state
 
-@node System construction
-@section System construction
+@c @node System construction
+@c @section System construction
 @c ext:*load-hooks*, si::*load-search-list* variable:
 
 @c EXT:*LOAD-HOOKS* is an assoc array of form ((TYPE . LOAD-FUNCTION)),
@@ -142,8 +137,8 @@
 @c directory, it will be treated as a source code. Otherwise we'll try
 @c known extensions.
 
-@node Environment
-@section Environment
+@c @node Environment
+@c @section Environment
 
-@node Glossary
-@section Glossary
+@c @node Glossary
+@c @section Glossary
