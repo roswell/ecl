@@ -668,7 +668,7 @@ compiled successfully, returns the pathname of the compiled file"
                   (+ source-offset *compile-file-position*))
             (t1expr form))))
 
-      (cmpprogress "~&;;; End of Pass 1.")
+      (cmpdebug "~&;;; End of Pass 1.")
       (setf init-name (compute-init-name output-file :kind
                                          (if system-p :object :fasl)))
       (compiler-pass2 c-pathname h-pathname data-pathname init-name
@@ -944,8 +944,8 @@ from the C language code.  NIL means \"do not create the file\"."
 ;          (namestring s-pathname))
 
 (defun print-compiler-info ()
-  (cmpprogress "~&;;; OPTIMIZE levels: Safety=~d, Space=~d, Speed=~d, Debug=~d~%;;;~%"
-               *safety* *space* *speed* *debug*))
+  (cmpdebug "~&;;; OPTIMIZE levels: Safety=~d, Space=~d, Speed=~d, Debug=~d~%;;;~%"
+            *safety* *space* *speed* *debug*))
 
 (defmacro with-compilation-unit (options &rest body)
   `(progn ,@body))
