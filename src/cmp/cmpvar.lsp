@@ -343,9 +343,6 @@
         (push name *undefined-vars*)))
     var))
 
-(defun c1declare-specials (globals)
-  (mapc #'cmp-env-declare-special globals))
-
 (defun si::register-global (name)
   (pushnew name *global-vars*)
   (values))

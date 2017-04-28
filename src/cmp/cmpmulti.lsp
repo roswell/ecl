@@ -230,7 +230,7 @@
            ,@args)))
     (multiple-value-bind (body ss ts is other-decls)
         (c1body args nil)
-      (c1declare-specials ss)
+      (mapc #'cmp-env-declare-special ss)
       (let* ((vars (loop for name in variables
                       collect (c1make-var name ss is ts))))
         (setq init-form (c1expr init-form))
