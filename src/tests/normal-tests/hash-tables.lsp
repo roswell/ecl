@@ -64,3 +64,9 @@
 
 (test hash-tables.weak-err
   (signals simple-type-error (make-hash-table :weakness :whatever)))
+
+
+;;; Synchronization
+(test hash-tables.sync
+  (let ((ht (make-hash-table :synchronized t)))
+    (is-true (ext:hash-table-synchronized-p ht))))

@@ -653,7 +653,42 @@ _ecl_remhash_weak(cl_object key, cl_object hashtable)
     return 0;
   }
 }
+#endif
 
+/* SYNCHRONIZED HASH TABLES */
+#ifdef ECL_THREADS
+static cl_object
+_ecl_sethash_sync(cl_object key, cl_object hashtable, cl_object value)
+{
+  cl_object output = ECL_NIL;
+  cl_object sync_lock = hashtable->hash.sync_lock;
+  mp_get_rwlock_write_wait(sync_lock);
+  output = hashtable->hash.set_unsafe(key, hashtable, value);
+  mp_giveup_rwlock_write(sync_lock);
+  return output;
+}
+
+static cl_object
+_ecl_gethash_sync(cl_object key, cl_object hashtable, cl_object def)
+{
+  cl_object output = ECL_NIL;
+  cl_object sync_lock = hashtable->hash.sync_lock;
+  mp_get_rwlock_read_wait(sync_lock);
+  output = hashtable->hash.get_unsafe(key, hashtable, def);
+  mp_giveup_rwlock_read(sync_lock);
+  return output;
+}
+
+static bool
+_ecl_remhash_sync(cl_object key, cl_object hashtable)
+{
+  bool output = 0;
+  cl_object sync_lock = hashtable->hash.sync_lock;
+  mp_get_rwlock_write_wait(sync_lock);
+  output = hashtable->hash.rem_unsafe(key, hashtable);
+  mp_giveup_rwlock_write(sync_lock);
+  return output;
+}
 #endif
 
 /*
@@ -775,6 +810,22 @@ ecl_extend_hashtable(cl_object hashtable)
       hash->hash.rem = _ecl_remhash_weak;
     }
 #endif
+
+    if (!Null(synchronized)) {
+#ifdef ECL_THREADS
+      hash->hash.sync_lock = ecl_make_rwlock(ECL_NIL);
+      hash->hash.get_unsafe = hash->hash.get;
+      hash->hash.set_unsafe = hash->hash.set;
+      hash->hash.rem_unsafe = hash->hash.rem;
+      hash->hash.get = _ecl_gethash_sync;
+      hash->hash.set = _ecl_sethash_sync;
+      hash->hash.rem = _ecl_remhash_sync;
+#else
+      /* for hash-table-synchronized-p predicate */
+      hash->hash.sync_lock = ECL_T;
+#endif
+    }
+
     @(return hash);
 } @)
 
@@ -924,11 +975,10 @@ si_hash_table_weakness(cl_object ht)
 cl_object
 si_hash_table_synchronized_p(cl_object ht)
 {
-#if 0
-  if (ht->hash.sync) {
+
+  if (!Null(ht->hash.sync_lock)) {
     return ECL_T;
   }
-#endif
   return ECL_NIL;
 }
 
