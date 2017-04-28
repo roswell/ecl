@@ -28,7 +28,7 @@
 
 (defun simple-optimizer-function (name args inline-form)
   (declare (si::c-local))
-  (si::put-sysprop
+  (si:put-sysprop
    name 'si::compiler-macro
    (if (every #'symbolp args)
        #'(lambda (whole env)

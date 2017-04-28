@@ -156,7 +156,7 @@
       (cmp-env-search-var name)
     (cond ((var-p var)
            (var-type var))
-          ((get-sysprop name 'CMP-TYPE))
+          ((si:get-sysprop name 'CMP-TYPE))
           (t))))
 
 ;;;
@@ -187,7 +187,7 @@
              (cmperr "Special variable ~A cannot be declared to have C type ~A"
                      name type))
            (when (eq type 'T)
-             (setf type (or (get-sysprop name 'CMP-TYPE) 'T)))
+             (setf type (or (si:get-sysprop name 'CMP-TYPE) 'T)))
            (c1make-global-variable name :kind 'SPECIAL :type type))
           (t
            (make-var :name name :type type :loc 'OBJECT
@@ -232,7 +232,7 @@
       (cmp-env-search-var name)
     (cond ((null var)
            (c1make-global-variable name :warn t
-                                   :type (or (get-sysprop name 'CMP-TYPE) t)))
+                                   :type (or (si:get-sysprop name 'CMP-TYPE) t)))
           ((not (var-p var))
            ;; symbol-macrolet
            (baboon))
@@ -331,7 +331,7 @@
 ;;; ----------------------------------------------------------------------
 
 (defun c1make-global-variable (name &key
-                               (type (or (get-sysprop name 'CMP-TYPE) t))
+                               (type (or (si:get-sysprop name 'CMP-TYPE) t))
                                (kind 'GLOBAL)
                                (warn nil))
   (let* ((var (make-var :name name :kind kind :type type :loc (add-symbol name))))

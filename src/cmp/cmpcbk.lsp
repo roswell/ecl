@@ -40,7 +40,7 @@
       (c1expr
        `(progn
          (defun ,name ,(reverse arg-variables) ,@body)
-         (si::put-sysprop ',name :callback
+         (si:put-sysprop ',name :callback
           (list
           (ffi:c-inline () () :object
            ,(format nil "ecl_make_foreign_data(@':pointer-void,0,(void*)~a)" c-name)

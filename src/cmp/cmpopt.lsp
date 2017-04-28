@@ -70,7 +70,7 @@
            form)
           ;;
           ;; There exists a function which checks for this type?
-          ((setf function (get-sysprop type 'si::type-predicate))
+          ((setf function (si:get-sysprop type 'si::type-predicate))
            `(,function ,object))
           ;;
           ;; Similar as before, but we assume the user did not give us
@@ -81,7 +81,7 @@
           ;;
           ;; Complex types defined with DEFTYPE.
           ((and (atom type)
-                (setq function (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
+                (setq function (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
            (expand-typep form object `',(funcall function nil) env))
           ;;
           ;; No optimizations that take up too much space unless requested.
@@ -148,7 +148,7 @@
            `(,function ,object))
           ;;
           ;; Complex types with arguments.
-          ((setf function (get-sysprop first 'SI::DEFTYPE-DEFINITION))
+          ((setf function (si:get-sysprop first 'SI::DEFTYPE-DEFINITION))
            (expand-typep form object `',(funcall function rest) env))
           (t
            form))))
@@ -255,7 +255,7 @@
           ;;
           ;; Complex types defined with DEFTYPE.
           ((and (atom type)
-                (setq first (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
+                (setq first (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
            (expand-coerce form value `',(funcall first nil) env))
           ;;
           ;; CONS types are not coercible.

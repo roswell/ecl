@@ -139,7 +139,7 @@
   ;; either because it has been proclaimed so, or because it belongs
   ;; to the runtime.
   (when (policy-use-direct-C-call)
-    (let ((fd (get-sysprop fname 'Lfun)))
+    (let ((fd (si:get-sysprop fname 'Lfun)))
       (when fd
         (multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
           (return-from call-global-loc

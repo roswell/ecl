@@ -83,12 +83,12 @@
                   (si::mangle-name x t)
                 (if found
                     (warn "The function ~s is already in the runtime.~%C-EXPORT-FNAME declaration ignored." x)
-                    (put-sysprop x 'Lfun c-name))))
+                    (si:put-sysprop x 'Lfun c-name))))
              ((consp x)
               (destructuring-bind (c-name lisp-name) x
                 (if (si::mangle-name lisp-name)
                     (warn "The funciton ~s is already in the runtime.~%C-EXPORT-FNAME declaration ignored." lisp-name)
-                    (put-sysprop lisp-name 'Lfun c-name))))
+                    (si:put-sysprop lisp-name 'Lfun c-name))))
              (t
               (error "Syntax error in proclamation ~s" decl)))))
     ((ARRAY ATOM BASE-CHAR BIGNUM BIT BIT-VECTOR CHARACTER COMPILED-FUNCTION
@@ -106,7 +106,7 @@
                 (proclaim-var type (rest decl))
                 t)))
            ((maybe-add-policy decl *cmp-env-root*))            
-           ((let ((proclaimer (get-sysprop (car decl) :proclaim)))
+           ((let ((proclaimer (si:get-sysprop (car decl) :proclaim)))
               (when (functionp proclaimer)
                 (mapc proclaimer (rest decl))
                 t)))
@@ -116,13 +116,13 @@
 (defun proclaim-var (type vl)
   (dolist (var vl)
     (if (symbolp var)
-        (let ((type1 (get-sysprop var 'CMP-TYPE)))
+        (let ((type1 (si:get-sysprop var 'CMP-TYPE)))
           (setq type1 (if type1 (type-and type1 type) type))
           (unless type1
             (warn
              "Inconsistent type declaration was found for the variable ~s."
              var)
             (setq type1 T))
-          (put-sysprop var 'CMP-TYPE type1))
+          (si:put-sysprop var 'CMP-TYPE type1))
         (warn "The variable name ~s is not a symbol." var))))
 

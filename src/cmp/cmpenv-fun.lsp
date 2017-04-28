@@ -46,12 +46,12 @@
         (when (eq arg-types '())
           (setf arg-types '(&optional)))
         (if (eq arg-types '*)
-            (rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
-            (put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
+            (si:rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
+            (si:put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
         (if (member return-types '(* (VALUES &rest t))
                     :test #'equalp)
-            (rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
-            (put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
+            (si:rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
+            (si:put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
       (warn "The function proclamation ~s ~s is not valid." fname decl)))
 
 (defun add-function-declaration (fname ftype &optional (env *cmp-env*))
@@ -174,5 +174,5 @@
              (c::declare-inline ',fname *cmp-env-root* ',form)))
        ,(when proclaimed
           `(eval-when (:compile-toplevel :load-toplevel :execute)
-             (si::put-sysprop ',fname 'inline ',form))))))
+             (si:put-sysprop ',fname 'inline ',form))))))
 

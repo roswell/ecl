@@ -327,7 +327,7 @@
 ;;; used (only once) in cmp1lam.lsp
 (defun exported-fname (name)
   (let (cname)
-    (if (and (symbolp name) (setf cname (get-sysprop name 'Lfun)))
+    (if (and (symbolp name) (setf cname (si:get-sysprop name 'Lfun)))
         (values cname t)
         (values (next-cfun "L~D~A" name) nil))))
 
@@ -460,7 +460,7 @@
        finally (wt ";"))))
 
 (defun wt-global-entry (fname cfun arg-types return-type)
-    (when (and (symbolp fname) (get-sysprop fname 'NO-GLOBAL-ENTRY))
+    (when (and (symbolp fname) (si:get-sysprop fname 'NO-GLOBAL-ENTRY))
       (return-from wt-global-entry nil))
     (wt-comment-nl "global entry for the function ~a" fname)
     (wt-nl "static cl_object L" cfun "(cl_narg narg")
