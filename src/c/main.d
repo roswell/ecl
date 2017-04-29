@@ -744,9 +744,12 @@ cl_boot(int argc, char **argv)
    * Set up infrastructure for CLOS.
    */
   ECL_SET(@'si::*class-name-hash-table*',
-          cl__make_hash_table(@'eq', ecl_make_fixnum(1024), /* size */
-                              cl_core.rehash_size,
-                              cl_core.rehash_threshold));
+          cl_make_hash_table(10,
+                             @':test', @'eq',
+                             @':size', ecl_make_fixnum(1024),
+                             @':rehash_size', cl_core.rehash_size,
+                             @':rehash_threshold', cl_core.rehash_threshold,
+                             @':synchronized', ECL_T));
 
   /*
    * Features.
