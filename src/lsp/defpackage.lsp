@@ -148,8 +148,12 @@
 	   (local-nicknames nil))
       (dolist (duplicate (find-duplicates shadowed-symbol-names
                                           interned-symbol-names
-                                          (loop for list in shadowing-imported-from-symbol-names-list append (rest list))
-                                          (loop for list in imported-from-symbol-names-list append (rest list))))
+                                          (loop for list
+					     in shadowing-imported-from-symbol-names-list
+					     append (rest list))
+                                          (loop for list
+					     in imported-from-symbol-names-list
+					     append (rest list))))
         (si::simple-program-error
          "The symbol ~s cannot coexist in these lists:~{ ~s~}"
          (first duplicate)
