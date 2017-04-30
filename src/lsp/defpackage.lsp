@@ -94,15 +94,13 @@
         (:export                {symbol-name}*)
         (:export-from           {package-name}*)
 
-  [Note: :EXPORT-FROM is an extension to DEFPACKAGE.
-         If a symbol is interned in the package being created and
-         if a symbol with the same print name appears as an external
-         symbol of one of the packages in the :EXPORT-FROM option,
-         then the symbol is exported from the package being created.
+  [Note: :EXPORT-FROM, :DOCUMENTATION, :LOCK and :LOCAL-NICKNAMES are
+         extensions to DEFPACKAGE.
 
-         :DOCUMENTATION is an extension to DEFPACKAGE.
-
-         :LOCK is an extension to DEFPACKAGE.]"
+         If a symbol is interned in the package being created and if a
+         symbol with the same print name appears as an external symbol
+         of one of the packages in the :EXPORT-FROM option, then the
+         symbol is exported from the package being created.]"
 
   (dolist (option options)
     (unless (member (first option)
