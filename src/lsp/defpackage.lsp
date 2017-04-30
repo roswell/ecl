@@ -76,13 +76,13 @@
    modified package is returned as the value of the DEFPACKAGE form.
 
    Each standard OPTION is a list of keyword (the name of the option)
-   and associated arguments.  No part of a DEFPACKAGE form is evaluated.
-   Except for the :SIZE and :DOCUMENTATION options, more than one option 
-   of the same kind may occur within the same DEFPACKAGE form.
+   and associated arguments.  No part of a DEFPACKAGE form is
+   evaluated.  Except for the :LOCK and :DOCUMENTATION options, more
+   than one option of the same kind may occur within the same
+   DEFPACKAGE form.
 
   Valid Options:
         (:documentation         string)
-        (:size                  integer)
         (:lock                  boolean)
         (:nicknames             {package-name}*)
         (:shadow                {symbol-name}*)
@@ -100,8 +100,6 @@
          then the symbol is exported from the package being created.
 
          :DOCUMENTATION is an extension to DEFPACKAGE.
-
-         :SIZE is used only in Genera and Allegro.
 
          :LOCK is an extension to DEFPACKAGE.]"
 
