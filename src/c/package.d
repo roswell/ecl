@@ -900,17 +900,15 @@ cl_find_package(cl_object p)
 cl_object
 cl_package_name(cl_object p)
 {
-  /* FIXME: name should be a fresh one */
   p = si_coerce_to_package(p);
-  @(return p->pack.name);
+  return cl_copy_seq(p->pack.name);
 }
 
 cl_object
 cl_package_nicknames(cl_object p)
 {
-  /* FIXME: list should be a fresh one */
   p = si_coerce_to_package(p);
-  @(return p->pack.nicknames);
+  return cl_copy_list(p->pack.nicknames);
 }
 
 @(defun rename_package (pack new_name &o new_nicknames)
