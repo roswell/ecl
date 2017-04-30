@@ -110,7 +110,7 @@
       (cerror "Proceed, ignoring this option."
               "~s is not a valid DEFPACKAGE option." option)))
   (labels ((option-values-list (option options &aux output)
-             (dolist (o options)
+             (dolist (o options output)
                (let ((o-option (first o)))
                  (when (string= o-option option)
                    (let* ((o-package (string (second o)))
@@ -120,15 +120,13 @@
                                             :test #'equal)))
                      (if former-symbols
                          (setf (cdr former-symbols) o-symbols)
-                         (setq output (acons o-package o-symbols output)))))))
-             output)
+                         (setq output (acons o-package o-symbols output))))))))
            (option-values (option options &aux output)
-             (dolist (o options)
+             (dolist (o options output)
                (let* ((o-option (first o))
                       (o-symbols (mapcar #'string (cdr o))))
                  (when (string= o-option option)
-                   (setq output (union o-symbols output :test #'equal)))))
-             output))
+                   (setq output (union o-symbols output :test #'equal)))))))
     (dolist (option '(:SIZE :LOCK :DOCUMENTATION))
       (when (<= 2 (count option options ':key #'car))
         (si::simple-program-error "DEFPACKAGE option ~s specified more than once."
