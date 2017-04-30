@@ -95,11 +95,12 @@ symbol_add_package(cl_object s, cl_object p)
 }
 
 /*
-  ecl_make_package(n, ns, ul) makes a package with name n,
-  which must be a string or a symbol,
-  and nicknames ns, which must be a list of strings or symbols,
-  and uses packages in list ul, which must be a list of packages
-  or package names i.e. strings or symbols.
+  ecl_make_package(n, ns, ul, lns) makes a package with name n, which
+  must be a string or a symbol, and nicknames ns, which must be a list
+  of strings or symbols, and uses packages in list ul, which must be a
+  list of packages or package names i.e. strings or symbols. lns is an
+  alist (local-nickname . package) which is used for having private
+  nicknames for other packages.
 */
 static cl_object
 make_package_hashtable()
@@ -118,6 +119,7 @@ alloc_package(cl_object name)
   p->pack.external = make_package_hashtable();
   p->pack.name = name;
   p->pack.nicknames = ECL_NIL;
+  p->pack.local_nicknames = ECL_NIL;
   p->pack.shadowings = ECL_NIL;
   p->pack.uses = ECL_NIL;
   p->pack.usedby = ECL_NIL;
@@ -184,8 +186,21 @@ process_package_list(cl_object packages)
   return packages;
 }
 
+static cl_object
+process_local_nicknames_list(cl_object local_nicknames)
+{
+  cl_object l;
+  local_nicknames = cl_copy_list(local_nicknames);
+  for (l = local_nicknames; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
+    ECL_RPLACA(l, si_coerce_to_package(ECL_CONS_CAR(l)));
+    ECL_RPLACD(l, si_coerce_to_package(ECL_CONS_CDR(l)));
+  }
+  return local_nicknames;
+}
+
 cl_object
-ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
+ecl_make_package(cl_object name, cl_object nicknames,
+                 cl_object use_list, cl_object local_nicknames)
 {
   const cl_env_ptr env = ecl_process_env();
   cl_object x, other = ECL_NIL;
@@ -195,6 +210,7 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
   name = cl_string(name);
   nicknames = process_nicknames(nicknames);
   use_list = process_package_list(use_list);
+  local_nicknames = process_local_nicknames_list(local_nicknames);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(env) {
     /* Find a similarly named package in the list of
@@ -223,6 +239,7 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
       x->pack.uses = CONS(y, x->pack.uses);
       y->pack.usedby = CONS(x, y->pack.usedby);
     } end_loop_for_in;
+    x->pack.local_nicknames = local_nicknames;
     /* Finally, add it to the list of packages */
     cl_core.packages = CONS(x, cl_core.packages);
   OUTPUT:
@@ -850,10 +867,13 @@ ecl_unuse_package(cl_object x, cl_object p)
   } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
 }
 
-@(defun make_package (pack_name &key nicknames (use CONS(cl_core.lisp_package, ECL_NIL)))
+@(defun make_package (pack_name &key
+                      nicknames
+                      (use CONS(cl_core.lisp_package, ECL_NIL))
+                      local_nicknames)
 @
   /* INV: ecl_make_package() performs type checking */
-  @(return ecl_make_package(pack_name, nicknames, use));
+  @(return ecl_make_package(pack_name, nicknames, use, local_nicknames));
 @)
 
 cl_object

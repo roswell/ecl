@@ -1300,7 +1300,7 @@ extern ECL_API cl_object cl_shadow _ECL_ARGS((cl_narg narg, cl_object symbols, .
 extern ECL_API cl_object cl_use_package _ECL_ARGS((cl_narg narg, cl_object pack, ...));
 extern ECL_API cl_object cl_unuse_package _ECL_ARGS((cl_narg narg, cl_object pack, ...));
 
-extern ECL_API cl_object ecl_make_package(cl_object n, cl_object ns, cl_object ul);
+extern ECL_API cl_object ecl_make_package(cl_object n, cl_object ns, cl_object ul, cl_object lns);
 extern ECL_API cl_object ecl_rename_package(cl_object x, cl_object n, cl_object ns);
 extern ECL_API cl_object ecl_find_package_nolock(cl_object n);
 extern ECL_API cl_object ecl_find_package(const char *p);

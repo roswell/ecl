@@ -204,7 +204,7 @@
           (rename-package name name nicknames))
         (when use
           (unuse-package (package-use-list (find-package name)) name)))
-      (make-package name :use nil :nicknames nicknames))
+      (make-package name :use nil :nicknames nicknames :local-nicknames local-nicknames))
   (let ((*package* (find-package name)))
     (when documentation
       (setf (documentation *package* t) documentation))
