@@ -88,7 +88,7 @@
         (:shadow                {symbol-name}*)
         (:shadowing-import-from package-name {symbol-name}*)
         (:use                   {package-name}*)
-        (:local-nicknames       {local-nickname actual-package-name}*)
+        (:local-nicknames       (local-nickname actual-package-name)*)
         (:import-from           package-name {symbol-name}*)
         (:intern                {symbol-name}*)
         (:export                {symbol-name}*)
