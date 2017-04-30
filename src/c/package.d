@@ -312,6 +312,13 @@ ecl_find_package_nolock(cl_object name)
   if (ECL_PACKAGEP(name))
     return name;
   name = cl_string(name);
+
+  p = ecl_symbol_value(@'*package*');
+  if (ECL_PACKAGEP(p)) {
+    p = ecl_assoc(name, p->pack.local_nicknames);
+    if (!Null(p)) return p;
+  }
+
   l = cl_core.packages;
   loop_for_on_unsafe(l) {
     p = ECL_CONS_CAR(l);
