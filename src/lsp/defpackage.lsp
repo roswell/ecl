@@ -88,6 +88,7 @@
         (:shadow                {symbol-name}*)
         (:shadowing-import-from package-name {symbol-name}*)
         (:use                   {package-name}*)
+        (:local-nicknames       {local-nickname actual-package-name}*)
         (:import-from           package-name {symbol-name}*)
         (:intern                {symbol-name}*)
         (:export                {symbol-name}*)
@@ -145,7 +146,8 @@
             (option-values-list ':shadowing-import-from options))
            (imported-from-symbol-names-list
             (option-values-list ':import-from options))
-           (exported-from-package-names (option-values ':export-from options)))
+           (exported-from-package-names (option-values ':export-from options))
+	   (local-nicknames nil))
       (dolist (duplicate (find-duplicates shadowed-symbol-names
                                           interned-symbol-names
                                           (loop for list in shadowing-imported-from-symbol-names-list append (rest list))
@@ -175,6 +177,7 @@
           ,(car documentation)
           ,(cadr (assoc ':lock options))
           ',(if (assoc ':use options) (option-values ':use options) "CL")
+	  ',local-nicknames
           ',shadowed-symbol-names
           ',interned-symbol-names
           ',exported-symbol-names
@@ -189,6 +192,7 @@
      documentation
      lock
      use
+     local-nicknames
      shadowed-symbol-names
      interned-symbol-names
      exported-symbol-names
