@@ -189,11 +189,12 @@ process_package_list(cl_object packages)
 static cl_object
 process_local_nicknames_list(cl_object local_nicknames)
 {
-  cl_object l;
+  cl_object l, nl;
   local_nicknames = cl_copy_list(local_nicknames);
   for (l = local_nicknames; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
-    ECL_RPLACA(l, si_coerce_to_package(ECL_CONS_CAR(l)));
-    ECL_RPLACD(l, si_coerce_to_package(ECL_CONS_CDR(l)));
+    nl = ECL_CONS_CAR(l);
+    ECL_RPLACA(nl, cl_string(ECL_CONS_CAR(nl)));
+    ECL_RPLACD(nl, si_coerce_to_package(ECL_CONS_CDR(nl)));
   }
   return local_nicknames;
 }
@@ -316,7 +317,7 @@ ecl_find_package_nolock(cl_object name)
   p = ecl_symbol_value(@'*package*');
   if (ECL_PACKAGEP(p)) {
     p = ecl_assoc(name, p->pack.local_nicknames);
-    if (!Null(p)) return p;
+    if (!Null(p)) return ECL_CONS_CDR(p);
   }
 
   l = cl_core.packages;
