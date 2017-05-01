@@ -152,33 +152,14 @@
 	  (otherwise
 	   (cerror "Proceed, ignoring this option."
 		   "~s is not a valid DEFPACKAGE option." option))))
-
-      (dolist (duplicate (find-duplicates shadowed-symbol-names
-					  interned-symbol-names
-					  (loop for list
-					     in shadowing-imported-from-symbol-names-list
-					     append (rest list))
-					  (loop for list
-					     in imported-from-symbol-names-list
-					     append (rest list))))
-	(si:simple-program-error
-	 "The symbol ~s cannot coexist in these lists:~{ ~s~}"
-	 (first duplicate)
-	 (loop for num in (rest duplicate)
-	    collect (case num
-		      (1 ':SHADOW)
-		      (2 ':INTERN)
-		      (3 ':SHADOWING-IMPORT-FROM)
-		      (4 ':IMPORT-FROM)))))
-      (dolist (duplicate (find-duplicates exported-symbol-names
-					  interned-symbol-names))
-	(si:simple-program-error
-	 "The symbol ~s cannot coexist in these lists:~{ ~s~}"
-	 (first duplicate)
-	 (loop for num in (rest duplicate) collect
-	      (case num
-		(1 ':EXPORT)
-		(2 ':INTERN)))))
+      (check-disjoint `(:intern ,@interned-symbol-names)
+		      `(:export ,@exported-symbol-names))
+      (check-disjoint `(:intern ,@interned-symbol-names)
+		      `(:import-from
+			,@(apply #'append (mapcar #'rest imported-from-symbol-names-list)))
+		      `(:shadow ,@shadowed-symbol-names)
+		      `(:shadowing-import-from
+			,@(apply #'append (mapcar #'rest shadowing-imported-from-symbol-names-list))))
       `(eval-when (eval compile load)
 	 (si::dodefpackage
 	  ,(string name)
@@ -194,6 +175,18 @@
 	  ',imported-from-symbol-names-list
 	  ',exported-from-package-names)))))
 
+(defun check-disjoint (&rest args)
+  ;; An arg is (:key . set)
+  (do ((list args (cdr list)))
+      ((endp list))
+    (loop
+      with x = (car list)
+      for y in (rest list)
+      for z = (remove-duplicates (intersection (cdr x)(cdr y) :test #'string=))
+      when z do (error 'simple-program-error
+                       :format-control "Parameters ~S and ~S must be disjoint ~
+                                        but have common elements ~%   ~S"
+                       :format-arguments (list (car x)(car y) z)))))
 
 (defun dodefpackage
     (name
