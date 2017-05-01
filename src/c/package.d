@@ -953,6 +953,7 @@ si_package_lock(cl_object p, cl_object t)
   @(return (previous? ECL_T : ECL_NIL));
 }
 
+/* --- local nicknames ---------------------------------------------------- */
 cl_object
 si_package_local_nicknames(cl_object p)
 {
@@ -966,6 +967,78 @@ si_package_locally_nicknamed_by_list(cl_object p)
   p = si_coerce_to_package(p);
   return cl_copy_list(p->pack.nicknamedby);
 }
+
+cl_object
+si_add_package_local_nickname(cl_object local_nickname,
+                              cl_object actual_package,
+                              cl_object target_package) {
+
+  local_nickname = cl_string(local_nickname);
+  actual_package = si_coerce_to_package(actual_package);
+  target_package = si_coerce_to_package(target_package);
+
+  cl_object existing = target_package->pack.local_nicknames;
+  cl_object cell = ecl_assoc(local_nickname, existing);
+
+  if (target_package->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(), @'si::*ignore-package-locks*') == ECL_NIL) {
+    CEpackage_error("Cannot nickname package ~S from locked package ~S.",
+                    "Ignore lock and proceed.",
+                    target_package, 2, actual_package, target_package);
+  }
+
+  if (!Null(cell)) {
+    cl_object old_package = ECL_CONS_CDR(cell);
+    if (old_package != actual_package) {
+      FEpackage_error("Cannot add ~A as local nickname for ~A:~%"
+                      "already a nickname for ~A.",
+                      target_package, 3,
+                      local_nickname, actual_package, old_package);
+    }
+    return target_package;
+  }
+
+  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
+    cl_object nickname_cons = CONS(local_nickname, actual_package);
+
+    target_package->pack.local_nicknames
+      = CONS(nickname_cons, target_package->pack.local_nicknames);
+
+    actual_package->pack.nicknamedby
+      = CONS(target_package, actual_package->pack.nicknamedby);
+  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
+
+  return target_package;
+}
+
+cl_object
+si_remove_package_local_nickname(cl_object old_nickname,
+                                 cl_object target_package) {
+  old_nickname = cl_string(old_nickname);
+  target_package = si_coerce_to_package(target_package);
+
+  if (target_package->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL) {
+    CEpackage_error("Cannot remove local package nickname ~S from locked package ~S.",
+                    "Ignore lock and proceed.",
+                    target_package, 2, old_nickname, target_package);
+  }
+
+  cl_object actual_package = ECL_NIL;
+  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
+    cl_object cell = ecl_assoc(old_nickname, target_package->pack.local_nicknames);
+    if (!Null(cell)) {
+      actual_package = ECL_CONS_CDR(cell);
+      target_package->pack.local_nicknames
+        = ecl_delete_eq(cell, target_package->pack.local_nicknames);
+      actual_package->pack.nicknamedby
+        = ecl_delete_eq(target_package, actual_package->pack.nicknamedby);
+    }
+  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
+  return Null(actual_package) ? ECL_NIL : ECL_T;
+}
+/* ------------------------------------------------------------------------ */
 
 cl_object
 cl_list_all_packages()

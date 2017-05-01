@@ -443,6 +443,14 @@
 (proclamation si:package-hash-tables (package-designator)
                    (values hash-table hash-table list) :reader)
 (proclamation ext:package-lock (package-designator gen-bool) package)
+(proclamation ext:package-local-nicknames
+ (package-designator) list :no-side-effects)
+(proclamation ext:package-locally-nicknamed-by-list
+ (package-designator) list :no-side-effects)
+(proclamation ext:add-package-local-nickname
+ (string-designator package-designator package-designator) package)
+(proclamation ext:remove-package-local-nickname
+ (string-designator package-designator) list)
 
 ;;;
 ;;; 12. NUMBERS
