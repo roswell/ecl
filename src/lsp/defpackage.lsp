@@ -176,6 +176,7 @@
 	  ',exported-from-package-names)))))
 
 (defun check-disjoint (&rest args)
+  (declare (si::c-local))
   ;; An arg is (:key . set)
   (do ((list args (cdr list)))
       ((endp list))
