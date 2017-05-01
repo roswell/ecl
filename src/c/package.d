@@ -7,6 +7,7 @@
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ * Copyright (c) 2017 Daniel Kochmański
  *
  * See file 'LICENSE' for the copyright details.
  *
