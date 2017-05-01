@@ -939,7 +939,8 @@ cl_package_used_by_list(cl_object p)
 cl_object
 cl_package_shadowing_symbols(cl_object p)
 {
-  return cl_copy_list(si_coerce_to_package(p)->pack.shadowings);
+  p = si_coerce_to_package(p);
+  return cl_copy_list(p->pack.shadowings);
 }
 
 cl_object
