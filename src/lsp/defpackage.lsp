@@ -245,28 +245,6 @@
       (setq symbol (intern name package)))
     symbol))
 
-(defun find-duplicates (&rest lists)
-  (declare (si::c-local))
-  (let (results)
-    (loop for list in lists
-          for more on (cdr lists)
-          for i from 1
-          do
-          (loop for elt in list
-                as entry = (find elt results :key #'car
-                                 :test #'string=)
-                unless (member i entry)
-                do
-                (loop for l2 in more
-                      for j from (1+ i)
-                      do
-                      (if (member elt l2 :test #'string=)
-                        (if entry
-                          (nconc entry (list j))
-                          (setq entry (car (push (list elt i j)
-                                                 results))))))))
-    results))
-
 ;;;; ------------------------------------------------------------
 ;;;;    End of File
 ;;;; ------------------------------------------------------------
