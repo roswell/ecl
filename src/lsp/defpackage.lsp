@@ -131,7 +131,6 @@
       (when (<= 2 (count option options ':key #'car))
         (si::simple-program-error "DEFPACKAGE option ~s specified more than once."
                                   option)))
-    (setq name (string name))
     (let* ((nicknames (option-values ':nicknames options))
            (documentation (option-values ':documentation options))
            (shadowed-symbol-names (option-values ':shadow options))
@@ -171,7 +170,7 @@
                 (2 ':INTERN)))))
       `(eval-when (eval compile load)
          (si::dodefpackage
-          ,name
+          ,(string name)
           ',nicknames
           ,(car documentation)
           ,(cadr (assoc ':lock options))
