@@ -33,34 +33,10 @@
 ;;;
 ;;; -----------------------------------------------------------------
 ;;;
+;;;     Adapted for X3J13 by Stephen L Nicoud, 91/5/23
 ;;;     Adapted for ECL by Giuseppe Attardi, 6/6/1994.
+;;;     Partially rewritten by Daniel Kochmański, 2017-05-01
 ;;; 
-;;; -----------------------------------------------------------------
-
-;;; -----------------------------------------------------------------
-;;;
-;;;     DEFPACKAGE - This files attempts to define a portable
-;;;     implementation for DEFPACKAGE, as defined in "Common LISP, The
-;;;     Language", by Guy L. Steele, Jr., Second Edition, 1990, Digital
-;;;     Press.
-;;;
-;;;     Send comments, suggestions, and/or questions to:
-;;;
-;;;             Stephen L Nicoud <snicoud@boeing.com>
-;;;
-;;;     An early version of this file was tested in Symbolics Common
-;;;     Lisp (Genera 7.2 & 8.0 on a Symbolics 3650 Lisp Machine),
-;;;     Franz's Allegro Common Lisp (Release 3.1.13 on a Sun 4, SunOS
-;;;     4.1), and Sun Common Lisp (Lucid Common Lisp 3.0.2 on a Sun 3,
-;;;     SunOS 4.1).
-;;;
-;;;     91/5/23 (SLN) - Since the initial testing, modifications have
-;;;     been made to reflect new understandings of what DEFPACKAGE
-;;;     should do.  These new understandings are the result of
-;;;     discussions appearing on the X3J13 and Common Lisp mailing
-;;;     lists.  Cursory testing was done on the modified version only
-;;;     in Allegro Common Lisp (Release 3.1.13 on a Sun 4, SunOS 4.1).
-;;;
 ;;; -----------------------------------------------------------------
 
 (in-package "SYSTEM")
@@ -102,86 +78,121 @@
          of one of the packages in the :EXPORT-FROM option, then the
          symbol is exported from the package being created.]"
 
-  (dolist (option options)
-    (unless (member (first option)
-                    '(:DOCUMENTATION :SIZE :LOCK :NICKNAMES :SHADOW
-                      :SHADOWING-IMPORT-FROM :USE :IMPORT-FROM :INTERN :EXPORT
-                      :EXPORT-FROM) :test #'eq)
-      (cerror "Proceed, ignoring this option."
-              "~s is not a valid DEFPACKAGE option." option)))
-  (labels ((option-values-list (option options &aux output)
-             (dolist (o options output)
-               (let ((o-option (first o)))
-                 (when (string= o-option option)
-                   (let* ((o-package (string (second o)))
-                          (former-symbols (assoc o-package output))
-                          (o-symbols (union (mapcar #'string (cddr o))
-                                            (cdr former-symbols)
-                                            :test #'equal)))
-                     (if former-symbols
-                         (setf (cdr former-symbols) o-symbols)
-                         (setq output (acons o-package o-symbols output))))))))
-           (option-values (option options &aux output)
-             (dolist (o options output)
-               (let* ((o-option (first o))
-                      (o-symbols (mapcar #'string (cdr o))))
-                 (when (string= o-option option)
-                   (setq output (union o-symbols output :test #'equal)))))))
-    (dolist (option '(:SIZE :LOCK :DOCUMENTATION))
-      (when (<= 2 (count option options ':key #'car))
-        (si::simple-program-error "DEFPACKAGE option ~s specified more than once."
-                                  option)))
-    (let* ((nicknames (option-values ':nicknames options))
-           (documentation (option-values ':documentation options))
-           (shadowed-symbol-names (option-values ':shadow options))
-           (interned-symbol-names (option-values ':intern options))
-           (exported-symbol-names (option-values ':export options))
-           (shadowing-imported-from-symbol-names-list
-            (option-values-list ':shadowing-import-from options))
-           (imported-from-symbol-names-list
-            (option-values-list ':import-from options))
-           (exported-from-package-names (option-values ':export-from options))
-	   (local-nicknames nil))
+  (flet ((designators (values)
+	   (mapcar #'string values)))
+    (let ((nicknames nil)
+	  (documentation nil)
+	  (shadowed-symbol-names nil)
+	  (interned-symbol-names nil)
+	  (exported-symbol-names nil)
+	  (shadowing-imported-from-symbol-names-list nil)
+	  (imported-from-symbol-names-list nil)
+	  (exported-from-package-names nil)
+	  (use nil)
+	  (use-p nil)
+	  (lock nil)
+	  (local-nicknames nil))
+      (dolist (option options)
+	(case (car option)
+	  (:nicknames
+	   (setf nicknames (append nicknames (designators (rest option)))))
+	  (:documentation
+	   (when documentation
+	     (si:simple-program-error
+	      "DEFPACKAGE option :DOCUMENTATION specified more than once."))
+	   (setf documentation (second option)))
+	  (:use
+	   (setf use (append use (designators (rest option)))
+		 use-p t))
+	  (:shadow
+	   (setf shadowed-symbol-names
+		 (append shadowed-symbol-names (designators (rest option)))))
+	  (:intern
+	   (setf interned-symbol-names
+		 (append interned-symbol-names (designators (rest option)))))
+	  (:export
+	   (setf exported-symbol-names
+		 (append exported-symbol-names (designators (rest option)))))
+	  (:shadowing-import-from
+	   (destructuring-bind (package-name . names)
+	       (designators (rest option))
+	     (let ((assoc (assoc package-name shadowing-imported-from-symbol-names-list
+				 :test #'string=)))
+	       (if assoc
+		   (setf (cdr assoc) (append (cdr assoc) names))
+		   (setf shadowing-imported-from-symbol-names-list
+			 (acons package-name names shadowing-imported-from-symbol-names-list))))))
+	  (:import-from
+	   (destructuring-bind (package-name . names)
+	       (designators (rest option))
+	     (let ((assoc (assoc package-name imported-from-symbol-names-list
+				 :test #'string=)))
+	       (if assoc
+		   (setf (cdr assoc) (append (cdr assoc) names))
+		   (setf imported-from-symbol-names-list
+			 (acons package-name names imported-from-symbol-names-list))))))
+	  ;; extensions
+	  (:export-from
+	   (setf exported-from-package-names
+		 (append exported-from-package-names (designators (rest option)))))
+	  (:size #+ (or) "we silently ignore `:size' option")
+	  (:lock
+	   (when lock
+	     (si:simple-program-error
+	      "DEFPACKAGE option :LOCK specified more than once.")
+	     (setf lock (second option))))
+	  (:local-nicknames
+	   (setf local-nicknames
+		 (append local-nicknames
+			 (mapcar (lambda (spec)
+				   (destructuring-bind (nick name) spec
+				     (cons nick name)))
+				 (rest option)))))
+	  ;; unknown
+	  (otherwise
+	   (cerror "Proceed, ignoring this option."
+		   "~s is not a valid DEFPACKAGE option." option))))
+
       (dolist (duplicate (find-duplicates shadowed-symbol-names
-                                          interned-symbol-names
-                                          (loop for list
+					  interned-symbol-names
+					  (loop for list
 					     in shadowing-imported-from-symbol-names-list
 					     append (rest list))
-                                          (loop for list
+					  (loop for list
 					     in imported-from-symbol-names-list
 					     append (rest list))))
-        (si::simple-program-error
-         "The symbol ~s cannot coexist in these lists:~{ ~s~}"
-         (first duplicate)
-         (loop for num in (rest duplicate)
-            collect (case num
-                      (1 ':SHADOW)
-                      (2 ':INTERN)
-                      (3 ':SHADOWING-IMPORT-FROM)
-                      (4 ':IMPORT-FROM)))))
+	(si:simple-program-error
+	 "The symbol ~s cannot coexist in these lists:~{ ~s~}"
+	 (first duplicate)
+	 (loop for num in (rest duplicate)
+	    collect (case num
+		      (1 ':SHADOW)
+		      (2 ':INTERN)
+		      (3 ':SHADOWING-IMPORT-FROM)
+		      (4 ':IMPORT-FROM)))))
       (dolist (duplicate (find-duplicates exported-symbol-names
-                                          interned-symbol-names))
-        (si::simple-program-error
-         "The symbol ~s cannot coexist in these lists:~{ ~s~}"
-         (first duplicate)
-         (loop for num in (rest duplicate) collect
-              (case num
-                (1 ':EXPORT)
-                (2 ':INTERN)))))
+					  interned-symbol-names))
+	(si:simple-program-error
+	 "The symbol ~s cannot coexist in these lists:~{ ~s~}"
+	 (first duplicate)
+	 (loop for num in (rest duplicate) collect
+	      (case num
+		(1 ':EXPORT)
+		(2 ':INTERN)))))
       `(eval-when (eval compile load)
-         (si::dodefpackage
-          ,(string name)
-          ',nicknames
-          ,(car documentation)
-          ,(cadr (assoc ':lock options))
-          ',(if (assoc ':use options) (option-values ':use options) "CL")
+	 (si::dodefpackage
+	  ,(string name)
+	  ',nicknames
+	  ,documentation
+	  ,(cadr (assoc ':lock options))
+	  ',(if use-p use "CL")
 	  ',local-nicknames
-          ',shadowed-symbol-names
-          ',interned-symbol-names
-          ',exported-symbol-names
-          ',shadowing-imported-from-symbol-names-list
-          ',imported-from-symbol-names-list
-          ',exported-from-package-names)))))
+	  ',shadowed-symbol-names
+	  ',interned-symbol-names
+	  ',exported-symbol-names
+	  ',shadowing-imported-from-symbol-names-list
+	  ',imported-from-symbol-names-list
+	  ',exported-from-package-names)))))
 
 
 (defun dodefpackage
