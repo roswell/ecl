@@ -120,6 +120,7 @@ alloc_package(cl_object name)
   p->pack.name = name;
   p->pack.nicknames = ECL_NIL;
   p->pack.local_nicknames = ECL_NIL;
+  p->pack.nicknamedby = ECL_NIL;
   p->pack.shadowings = ECL_NIL;
   p->pack.uses = ECL_NIL;
   p->pack.usedby = ECL_NIL;
@@ -240,7 +241,12 @@ ecl_make_package(cl_object name, cl_object nicknames,
       x->pack.uses = CONS(y, x->pack.uses);
       y->pack.usedby = CONS(x, y->pack.usedby);
     } end_loop_for_in;
-    x->pack.local_nicknames = local_nicknames;
+    loop_for_in(local_nicknames) {
+      cl_object y = ECL_CONS_CAR(local_nicknames);
+      cl_object nicknamed = ECL_CONS_CDR(y);
+      x->pack.local_nicknames = CONS(y, x->pack.local_nicknames);
+      nicknamed->pack.nicknamedby = CONS(x, nicknamed->pack.nicknamedby);
+    } end_loop_for_in;
     /* Finally, add it to the list of packages */
     cl_core.packages = CONS(x, cl_core.packages);
   OUTPUT:
@@ -944,6 +950,20 @@ si_package_lock(cl_object p, cl_object t)
   previous = p->pack.locked;
   p->pack.locked = (t != ECL_NIL);
   @(return (previous? ECL_T : ECL_NIL));
+}
+
+cl_object
+si_package_local_nicknames(cl_object p)
+{
+  p = si_coerce_to_package(p);
+  return cl_copy_tree(p->pack.local_nicknames);
+}
+
+cl_object
+si_package_locally_nicknamed_by_list(cl_object p)
+{
+  p = si_coerce_to_package(p);
+  return cl_copy_list(p->pack.nicknamedby);
 }
 
 cl_object

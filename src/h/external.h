@@ -1283,6 +1283,8 @@ extern ECL_API cl_object cl_package_nicknames(cl_object p);
 extern ECL_API cl_object cl_package_use_list(cl_object p);
 extern ECL_API cl_object cl_package_used_by_list(cl_object p);
 extern ECL_API cl_object cl_package_shadowing_symbols(cl_object p);
+extern ECL_API cl_object si_package_local_nicknames(cl_object p);
+extern ECL_API cl_object si_package_locally_nicknamed_by_list(cl_object p);
 extern ECL_API cl_object cl_list_all_packages(void);
 extern ECL_API cl_object si_package_hash_tables(cl_object p);
 extern ECL_API cl_object si_package_lock(cl_object p, cl_object t);

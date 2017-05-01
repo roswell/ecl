@@ -275,9 +275,10 @@ struct ecl_package {
         cl_object name;            /*  package name, a string  */
         cl_object nicknames;       /*  nicknames, list of strings  */
         cl_object local_nicknames; /*  local nicknames, assoc list */
-        cl_object shadowings;      /*  shadowing symbol list  */
-        cl_object uses;            /*  use-list of packages  */
-        cl_object usedby;          /*  used-by-list of packages  */
+        cl_object nicknamedby;  /*  nicknamed-by-list of packages */
+        cl_object shadowings;   /*  shadowing symbol list  */
+        cl_object uses;         /*  use-list of packages  */
+        cl_object usedby;       /*  used-by-list of packages  */
         cl_object internal;     /*  hashtable for internal symbols  */
         cl_object external;     /*  hashtable for external symbols  */
 };
