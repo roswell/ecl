@@ -654,14 +654,14 @@ cl_delete_package(cl_object p)
 
   while (!Null(l = p->pack.nicknamedby)) {
     cl_object nicknaming = ECL_CONS_CAR(l);
-    cl_object nicklist;
-    while (!Null(nicklist = nicknaming->pack.local_nicknames)) {
+    cl_object nicklist = nicknaming->pack.local_nicknames;
+    loop_for_in(nicklist) {
       cl_object nickname = ECL_CONS_CAR(nicklist);
       if (ECL_CONS_CDR(nickname) == p) {
         si_remove_package_local_nickname(ECL_CONS_CAR(nickname), nicknaming);
         break;
       }
-    }
+    } end_loop_for_in;
   }
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
