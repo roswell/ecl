@@ -106,6 +106,7 @@
 
 ;; package local nicknames
 
+#+package-local-nicknames
 (test package-local-nicknames.interface
   (defpackage test-pack1 (:local-nicknames ("L" #:CL)))
   (defpackage test-pack2 (:local-nicknames ("L" #:TEST-PACK1)))
