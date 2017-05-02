@@ -143,16 +143,18 @@ which is executed with the lock held by current thread, and
 WITH-RWLOCK returns the values of body.
 
 Valid values of argument OP are :READ or :WRITE
-(for reader and writer access accordingly)."
+\(for reader and writer access accordingly)."
   (assert (member op '(:read :write) :test #'eq))
   (let ((s-lock (gensym)))
     `(let ((,s-lock ,lock))
        (,(if (eq :read op)
              'mp:get-rwlock-read
-             'mp:get-rwlock-write) ,s-lock t)
+             'mp:get-rwlock-write)
+         ,s-lock t)
        (unwind-protect
             (progn
               ,@body)
          (,(if (eq :read op)
                'mp:giveup-rwlock-read
-               'mp:giveup-rwlock-write) ,s-lock)))))
+               'mp:giveup-rwlock-write)
+           ,s-lock)))))
