@@ -29,6 +29,7 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- package local nicknames has been implemented (after SBCL)
 - hash table extensions are documented in newdoc
 - various cleanups performed in the compiler
 - compiler is less verbose by default now
@@ -48,6 +49,7 @@
 - buildsystem parallel builds work (i.e make -j999)
 - ECL builds on consoles with unusual encodings on Windows (i.e cp936)
 ** API changes
+- package local nicknames protocol (documented in newdoc)
 - make-hash-table accepts =:synchronize= flag for thread safe variant. New
   predicate =ext:hash-table-synchronized-p= implemented
 - make-hash-table =:weakness= argument new variant =:key-or-value=
