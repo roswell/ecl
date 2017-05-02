@@ -447,10 +447,14 @@
  (package-designator) list :no-side-effects)
 (proclamation ext:package-locally-nicknamed-by-list
  (package-designator) list :no-side-effects)
-(proclamation ext:add-package-local-nickname
+(proclamation si:%add-package-local-nickname
  (string-designator package-designator package-designator) package)
-(proclamation ext:remove-package-local-nickname
+(proclamation si:%remove-package-local-nickname
  (string-designator package-designator) list)
+(proclamation ext:add-package-local-nickname
+ (string-designator package-designator &optional package-designator) package)
+(proclamation ext:remove-package-local-nickname
+ (string-designator &optional package-designator) list)
 
 ;;;
 ;;; 12. NUMBERS

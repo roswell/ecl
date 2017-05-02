@@ -285,3 +285,12 @@ If PACKAGE is non-NIL, then only the specified PACKAGE is searched."
           (when (and prefix (or recurse (not (find #\. package-name :start prefix))))
             (pushnew package res)))))))
 
+
+;; Package local nicknames
+(defun add-package-local-nickname (local-nickname nicknamed-package
+                                   &optional (package *package*))
+  (si:%add-package-local-nickname local-nickname nicknamed-package package))
+
+(defun remove-package-local-nickname (old-nickname
+                                      &optional (package *package*))
+  (si:%remove-package-local-nickname old-nickname package))

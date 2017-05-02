@@ -1217,9 +1217,10 @@ cl_symbols[] = {
 {SYS_ "WITH-UNLOCKED-PACKAGES",NULL},
 {EXT_ "PACKAGE-LOCAL-NICKNAMES","si_package_local_nicknames"},
 {EXT_ "PACKAGE-LOCALLY-NICKNAMED-BY-LIST","si_package_locally_nicknamed_by_list"},
-{EXT_ "ADD-PACKAGE-LOCAL-NICKNAME","si_add_package_local_nickname"},
-{EXT_ "REMOVE-PACKAGE-LOCAL-NICKNAME","si_remove_package_local_nickname"},
-/* ~ */
+{EXT_ "ADD-PACKAGE-LOCAL-NICKNAME",NULL},
+{EXT_ "REMOVE-PACKAGE-LOCAL-NICKNAME",NULL},
+{SYS_ "%ADD-PACKAGE-LOCAL-NICKNAME","si_add_package_local_nickname"},
+{SYS_ "%REMOVE-PACKAGE-LOCAL-NICKNAME","si_remove_package_local_nickname"},
 {SYS_ "PACKAGE-HASH-TABLES","si_package_hash_tables"},
 {SYS_ "PATHNAME-TRANSLATIONS","si_pathname_translations"},
 {SYS_ "POINTER","si_pointer"},
