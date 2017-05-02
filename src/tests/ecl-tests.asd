@@ -22,7 +22,7 @@
                          (:file "foreign-interface" :if-feature :ffi)
                          (:file "metaobject-protocol" :if-feature :clos)
                          (:file "ieee-fp" :if-feature :ieee-floating-point)
-                         (:file "package-locks" :if-feature :package-locks)
+                         (:file "package-extensions")
 			 (:file "hash-tables")
                          (:file "external-formats" :if-feature :unicode)))
                (:module stress-tests
