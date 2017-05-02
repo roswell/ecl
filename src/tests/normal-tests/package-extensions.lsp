@@ -133,6 +133,11 @@
   (is (= 1 (length (ext:package-local-nicknames :test-pack2))))
   (is (= 1 (length (ext:package-locally-nicknamed-by-list :cl))))
 
+  ;; check if nicknaming works for real
+  (signals simple-error (eval (read-from-string "(L:cons 1 2)")))
+  (let ((*package* (find-package :test-pack1)))
+    (is-equal '(1 . 2) (eval (read-from-string "(L:cons 1 2)"))))
+
   ;; test-pack3 has a reference to test-pack1, but is locked
   (signals package-error (delete-package :test-pack1))
 
