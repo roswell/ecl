@@ -2275,6 +2275,28 @@ built-in packages:
         system   system internal symbols.  Has nicknames SYS and SI.
         compiler system internal symbols for the ECL compiler.")
 
+(docfun ext:package-local-nicknames function
+        (package-designator) "
+Returns an alist of (LOCAL-NICKNAME . ACTUAL-PACKAGE)
+describing the nicknames local to the designated package.")
+
+(docfun ext:package-locally-nicknamed-by-list function
+        (package-designator) "
+Returns a list of packages which have a local nickname for the
+designated package.")
+
+(docfun ext:add-package-local-nickname function
+        (local-nickname actul-package &optional package-designator) "
+Adds LOCAL-NICKNAME for ACTUAL-PACKAGE in the designated package,
+defaulting to current package. LOCAL-NICKNAME must be a string
+designator, and ACTUAL-PACKAGE must be a package designator.")
+
+(docfun ext:remove-package-local-nickname function
+        (old-nickname &optional package-designator) "
+If the designated package had OLD-NICKNAME as a local nickname
+for another package, it is removed. Returns true if the nickname
+existed and was removed, and NIL otherwise.")
+
 (docfun package-name function (package) "
 Returns the name of PACKAGE as a string.")
 
