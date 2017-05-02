@@ -556,43 +556,54 @@ cl_boot(int argc, char **argv)
   cl_core.lisp_package =
     ecl_make_package(str_common_lisp,
                      cl_list(2, str_cl, str_LISP),
+                     ECL_NIL,
                      ECL_NIL);
   cl_core.user_package =
     ecl_make_package(str_common_lisp_user,
                      cl_list(2, str_cl_user, str_user),
-                     ecl_list1(cl_core.lisp_package));
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.keyword_package =
-    ecl_make_package(str_keyword, ECL_NIL, ECL_NIL);
+    ecl_make_package(str_keyword, ECL_NIL, ECL_NIL, ECL_NIL);
   cl_core.ext_package =
-    ecl_make_package(str_ext, ECL_NIL,
-                     ecl_list1(cl_core.lisp_package));
+    ecl_make_package(str_ext,
+                     ECL_NIL,
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.system_package =
     ecl_make_package(str_si,
                      cl_list(2,str_system,str_sys),
                      cl_list(2,cl_core.ext_package,
-                             cl_core.lisp_package));
+                             cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.c_package =
     ecl_make_package(str_c,
                      ecl_list1(str_compiler),
-                     ecl_list1(cl_core.lisp_package));
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.clos_package =
     ecl_make_package(str_clos,
                      ecl_list1(str_mop),
-                     ecl_list1(cl_core.lisp_package));
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.mp_package =
     ecl_make_package(str_mp,
                      ecl_list1(str_multiprocessing),
-                     ecl_list1(cl_core.lisp_package));
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
 #ifdef ECL_CLOS_STREAMS
-  cl_core.gray_package = ecl_make_package(str_gray, ECL_NIL,
-                                          CONS(cl_core.lisp_package, ECL_NIL));
+  cl_core.gray_package = ecl_make_package(str_gray,
+                                          ECL_NIL,
+                                          ecl_list1(cl_core.lisp_package),
+                                          ECL_NIL);
 #endif
   cl_core.ffi_package =
     ecl_make_package(str_ffi,
                      ECL_NIL,
                      cl_list(3,cl_core.lisp_package,
                              cl_core.system_package,
-                             cl_core.ext_package));
+                             cl_core.ext_package),
+                     ECL_NIL);
 
   ECL_NIL_SYMBOL->symbol.hpack = cl_core.lisp_package;
   cl_import2(ECL_NIL, cl_core.lisp_package);

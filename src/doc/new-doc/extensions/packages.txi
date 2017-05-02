@@ -1,5 +1,111 @@
-@c @node Local package nicknames
-@c @section Local package nicknames
+@node Package local nicknames
+@section Local package nicknames
+
+@cindex Package local nicknames
+@ftindex PACKAGE-LOCAL-NICKNAMES
+
+@c @menu
+@c * Package local nicknames overview::
+@c * Package local nicknames dictionary::
+@c @end menu
+
+@subsection Overview
+
+ECL allows giving packages local nicknames: they allow short and
+easy-to-use names to be used without fear of name conflict associated
+with normal nicknames.
+
+A local nickname is valid only when inside the package for which it
+has been specified. Different packages can use same local nickname for
+different global names, or different local nickname for same global
+name.
+
+Symbol :package-local-nicknames in *features* denotes the support for
+this feature.
+
+@subsection Package local nicknames dictionary
+
+@deffn {macro} cl:defpackage name [[options]]*
+Options are extended to include
+
+    :local-nicknames (local-nickname actual-package-name)*
+
+    The package has the specified local nicknames for the
+    corresponding actual packages.
+
+@exindex defpackage and package local nicknames
+Example:
+
+@lisp
+(defpackage :bar (:intern "X"))
+(defpackage :foo (:intern "X"))
+(defpackage :quux (:use :cl) (:local-nicknames (:bar :foo) (:foo :bar)))
+(find-symbol "X" :foo) ; => FOO::X
+(find-symbol "X" :bar) ; => BAR::X
+(let ((*package* (find-package :quux)))
+(find-symbol "X" :foo))               ; => BAR::X
+(let ((*package* (find-package :quux)))
+(find-symbol "X" :bar))               ; => FOO::X
+@end lisp
+@end deffn
+
+@lspindex ext:package-local-nicknames
+@cppindex si_package_local_nicknames
+@deffn {ext} {package-local-nicknames} package-designator
+@deffnx {C/C++} {si_package_local_nicknames} package-designator
+Returns an alist of @code{(local-nickname . actual-package)}
+describing the nicknames local to the designated package.
+
+When in the designated package, calls to @t{FIND-PACKAGE} with the any
+of the local-nicknames will return the corresponding actual-package
+instead. This also affects all implied calls to @t{FIND-PACKAGE},
+including those performed by the reader.
+
+When printing a package prefix for a symbol with a package local nickname, the
+local nickname is used instead of the real name in order to preserve
+print-read consistency.
+@end deffn
+
+@lspindex ext:package-locally-nicknamed-by-list
+@cppindex si_package_locally_nicknamed_by_list
+@deffn {ext} {package-locally-nicknamed-by-list} package-designator
+@deffnx {C/C++} si_package_local_nicknames package-designator
+Returns a list of packages which have a local nickname for the
+designated package.
+@end deffn
+
+@lspindex ext:add-package-local-nickname
+@cppindex si_add_package_local_nickname
+@deffn {ext} {add-package-local-nickname} local-nickname actual-package &optional package-designator
+@deffnx {C/C++} {si_add_package_local_nickname} local-nickname actual-package package-designator
+Adds @var{local-nickname} for @var{actual-package} in the designated
+package, defaulting to current package. @var{local-nickname} must be a
+string designator, and @var{actual-package} must be a package
+designator.
+
+Returns the designated package.
+
+Signals a continuable error if @var{local-nickname} is already a
+package local nickname for a different package.
+
+When in the designated package, calls to @t{find-package} with the
+@var{local-nickname} will return the package the designated
+@var{actual-package} instead. This also affects all implied calls to
+@t{find-package}, including those performed by the reader.
+
+When printing a package prefix for a symbol with a package local
+nickname, local nickname is used instead of the real name in order to
+preserve print-read consistency.
+@end deffn
+
+@lspindex ext:remove-package-local-nickname
+@cppindex si_remove_package_local_nickname
+@deffn {ext} {remove-package-local-nickname} old-nickname &optional package-designator
+@deffnx {C/C++} {si_remove_package_local_nickname} old-nickname package-designator
+If the designated package had @var{old-nickname} as a local nickname
+for another package, it is removed. Returns true if the nickname
+existed and was removed, and @t{NIL} otherwise.
+@end deffn
 
 @c @node Hierarchical packages
 @c @section Hierarchical packages
@@ -7,16 +113,9 @@
 @node Package locks
 @section Package locks
 
-@menu
-* Package Locking Overview::       
-* Operations Violating Package Locks::  
-* Package Lock Dictionary::
-@end menu
-
 @cindex Package locks
 @ftindex PACKAGE-LOCKS
 
-@node Package Locking Overview
 @subsection Package Locking Overview
 
 ECL borrows parts of the protocol and documentation from SBCL for
@@ -44,7 +143,6 @@ It may be beneficial to lock @code{common-lisp-user} as well, to
 ensure that various libraries don't pollute it without asking,
 but this is not currently done by default.
 
-@node Operations Violating Package Locks
 @subsection Operations Violating Package Locks
 
 The following actions cause a package lock violation if the package
@@ -90,7 +188,6 @@ Removing an existing package local nickname to a package.
 
 @end enumerate
 
-@node Package Lock Dictionary
 @subsection Package Lock Dictionary
 
 @lspindex ext:package-locked-p

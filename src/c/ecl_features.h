@@ -19,6 +19,7 @@ ecl_def_string_array(feature_names,static,const) = {
   ecl_def_string_array_elt("FFI"),
   ecl_def_string_array_elt("PREFIXED-API"),
   ecl_def_string_array_elt("CDR-14"),
+  ecl_def_string_array_elt("PACKAGE-LOCAL-NICKNAMES"),
 #ifdef ECL_IEEE_FP
   ecl_def_string_array_elt("IEEE-FLOATING-POINT"),
 #endif

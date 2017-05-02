@@ -17,7 +17,7 @@
 @c * TCP Streams::
 @c * Series::
 * Tree walker::
-@c * Local package nicknames::
+* Package local nicknames::
 @c * Hierarchical packages::
 * Package locks::
 * CDR Extensions::

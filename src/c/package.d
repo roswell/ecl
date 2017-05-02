@@ -7,6 +7,7 @@
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ * Copyright (c) 2017 Daniel Kochmański
  *
  * See file 'LICENSE' for the copyright details.
  *
@@ -95,11 +96,12 @@ symbol_add_package(cl_object s, cl_object p)
 }
 
 /*
-  ecl_make_package(n, ns, ul) makes a package with name n,
-  which must be a string or a symbol,
-  and nicknames ns, which must be a list of strings or symbols,
-  and uses packages in list ul, which must be a list of packages
-  or package names i.e. strings or symbols.
+  ecl_make_package(n, ns, ul, lns) makes a package with name n, which
+  must be a string or a symbol, and nicknames ns, which must be a list
+  of strings or symbols, and uses packages in list ul, which must be a
+  list of packages or package names i.e. strings or symbols. lns is an
+  alist (local-nickname . package) which is used for having private
+  nicknames for other packages.
 */
 static cl_object
 make_package_hashtable()
@@ -118,6 +120,8 @@ alloc_package(cl_object name)
   p->pack.external = make_package_hashtable();
   p->pack.name = name;
   p->pack.nicknames = ECL_NIL;
+  p->pack.local_nicknames = ECL_NIL;
+  p->pack.nicknamedby = ECL_NIL;
   p->pack.shadowings = ECL_NIL;
   p->pack.uses = ECL_NIL;
   p->pack.usedby = ECL_NIL;
@@ -184,8 +188,22 @@ process_package_list(cl_object packages)
   return packages;
 }
 
+static cl_object
+process_local_nicknames_list(cl_object local_nicknames)
+{
+  cl_object l, nl;
+  local_nicknames = cl_copy_list(local_nicknames);
+  for (l = local_nicknames; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
+    nl = ECL_CONS_CAR(l);
+    ECL_RPLACA(nl, cl_string(ECL_CONS_CAR(nl)));
+    ECL_RPLACD(nl, si_coerce_to_package(ECL_CONS_CDR(nl)));
+  }
+  return local_nicknames;
+}
+
 cl_object
-ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
+ecl_make_package(cl_object name, cl_object nicknames,
+                 cl_object use_list, cl_object local_nicknames)
 {
   const cl_env_ptr env = ecl_process_env();
   cl_object x, other = ECL_NIL;
@@ -195,6 +213,7 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
   name = cl_string(name);
   nicknames = process_nicknames(nicknames);
   use_list = process_package_list(use_list);
+  local_nicknames = process_local_nicknames_list(local_nicknames);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(env) {
     /* Find a similarly named package in the list of
@@ -223,6 +242,12 @@ ecl_make_package(cl_object name, cl_object nicknames, cl_object use_list)
       x->pack.uses = CONS(y, x->pack.uses);
       y->pack.usedby = CONS(x, y->pack.usedby);
     } end_loop_for_in;
+    loop_for_in(local_nicknames) {
+      cl_object y = ECL_CONS_CAR(local_nicknames);
+      cl_object nicknamed = ECL_CONS_CDR(y);
+      x->pack.local_nicknames = CONS(y, x->pack.local_nicknames);
+      nicknamed->pack.nicknamedby = CONS(x, nicknamed->pack.nicknamedby);
+    } end_loop_for_in;
     /* Finally, add it to the list of packages */
     cl_core.packages = CONS(x, cl_core.packages);
   OUTPUT:
@@ -249,7 +274,7 @@ ecl_rename_package(cl_object x, cl_object name, cl_object nicknames)
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Cannot rename locked package ~S.",
-                    "Ignore lock and proceed", x, 0);
+                    "Ignore lock and proceed.", x, 0);
   }
   nicknames = ecl_cons(name, nicknames);
   error = 0;
@@ -295,6 +320,13 @@ ecl_find_package_nolock(cl_object name)
   if (ECL_PACKAGEP(name))
     return name;
   name = cl_string(name);
+
+  p = ecl_symbol_value(@'*package*');
+  if (ECL_PACKAGEP(p)) {
+    p = ecl_assoc(name, p->pack.local_nicknames);
+    if (!Null(p)) return ECL_CONS_CDR(p);
+  }
+
   l = cl_core.packages;
   loop_for_on_unsafe(l) {
     p = ECL_CONS_CAR(l);
@@ -394,7 +426,7 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
   } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
   if (error) {
     CEpackage_error("Cannot intern symbol ~S in locked package ~S.",
-                    "Ignore lock and proceed", p, 2, name, p);
+                    "Ignore lock and proceed.", p, 2, name, p);
     ignore_error = 1;
     goto AGAIN;
   }
@@ -481,7 +513,7 @@ ecl_unintern(cl_object s, cl_object p)
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Cannot unintern symbol ~S from locked package ~S.",
-                    "Ignore lock and proceed", p, 2, s, p);
+                    "Ignore lock and proceed.", p, 2, s, p);
   }
   conflict = ECL_NIL;
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
@@ -542,7 +574,7 @@ cl_export2(cl_object s, cl_object p)
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot export symbol ~S from locked package ~S.",
-                    "Ignore lock and proceed", p, 2, s, p);
+                    "Ignore lock and proceed.", p, 2, s, p);
  AGAIN:
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
     cl_object x = find_symbol_inner(name, p, &intern_flag);
@@ -590,21 +622,20 @@ cl_delete_package(cl_object p)
   p = ecl_find_package_nolock(p);
   if (Null(p)) {
     CEpackage_error("Package ~S not found. Cannot delete it.",
-                    "Ignore error and continue", p, 0);
+                    "Ignore error and continue.", p, 0);
     @(return ECL_NIL);
   }
   if (p->pack.locked
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot delete locked package ~S.",
-                    "Ignore lock and proceed", p, 0);
+                    "Ignore lock and proceed.", p, 0);
   if (p == cl_core.lisp_package || p == cl_core.keyword_package) {
     FEpackage_error("Cannot remove package ~S", p, 0);
   }
 
-  /* 2) Now remove the package from the other packages that use it
-   *    and empty the package.
-   */
+  /* 2) Now remove the package from the other packages that use it and
+     empty the package. */
   if (Null(p->pack.name)) {
     @(return ECL_NIL);
   }
@@ -613,6 +644,24 @@ cl_delete_package(cl_object p)
   }
   while (!Null(l = p->pack.usedby)) {
     ecl_unuse_package(p, ECL_CONS_CAR(l));
+  }
+
+  /* 3) Now remove local nickname related bits. */
+  while (!Null(l = p->pack.local_nicknames)) {
+    cl_object nickname = ECL_CONS_CAR(l);
+    si_remove_package_local_nickname(ECL_CONS_CAR(nickname), p);
+  }
+
+  while (!Null(l = p->pack.nicknamedby)) {
+    cl_object nicknaming = ECL_CONS_CAR(l);
+    cl_object nicklist = nicknaming->pack.local_nicknames;
+    loop_for_in(nicklist) {
+      cl_object nickname = ECL_CONS_CAR(nicklist);
+      if (ECL_CONS_CDR(nickname) == p) {
+        si_remove_package_local_nickname(ECL_CONS_CAR(nickname), nicknaming);
+        break;
+      }
+    } end_loop_for_in;
   }
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
@@ -630,7 +679,7 @@ cl_delete_package(cl_object p)
     cl_clrhash(p->pack.external);
     p->pack.shadowings = ECL_NIL;
     p->pack.name = ECL_NIL;
-    /* 2) Only at the end, remove the package from the list of packages. */
+    /* 4) Only at the end, remove the package from the list of packages. */
     cl_core.packages = ecl_remove_eq(p, cl_core.packages);
   } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
   @(return ECL_T);
@@ -650,7 +699,7 @@ cl_unexport2(cl_object s, cl_object p)
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Cannot unexport symbol ~S from locked package ~S.",
-                    "Ignore lock and proceed", p, 2, s, p);
+                    "Ignore lock and proceed.", p, 2, s, p);
   }
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
     int intern_flag;
@@ -684,7 +733,7 @@ cl_import2(cl_object s, cl_object p)
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL) {
     CEpackage_error("Cannot import symbol ~S into locked package ~S.",
-                    "Ignore lock and proceed", p, 2, s, p);
+                    "Ignore lock and proceed.", p, 2, s, p);
   }
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
     cl_object x = find_symbol_inner(name, p, &intern_flag);
@@ -709,7 +758,7 @@ cl_import2(cl_object s, cl_object p)
                     "from package ~A,~%"
                     "because there is already a symbol with the same name~%"
                     "in the package.",
-                    "Ignore conflict and proceed", p, 2, s, p);
+                    "Ignore conflict and proceed.", p, 2, s, p);
     ignore_error = 1;
   }
 }
@@ -726,7 +775,7 @@ ecl_shadowing_import(cl_object s, cl_object p)
                      @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot shadowing-import symbol ~S into "
                     "locked package ~S.",
-                    "Ignore lock and proceed", p, 2, s, p);
+                    "Ignore lock and proceed.", p, 2, s, p);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
     x = find_symbol_inner(name, p, &intern_flag);
@@ -766,7 +815,7 @@ ecl_shadow(cl_object s, cl_object p)
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot shadow symbol ~S in locked package ~S.",
-                    "Ignore lock and proceed", p, 2, s, p);
+                    "Ignore lock and proceed.", p, 2, s, p);
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
     x = find_symbol_inner(s, p, &intern_flag);
     if (intern_flag != ECL_INTERNAL && intern_flag != ECL_EXTERNAL) {
@@ -802,7 +851,7 @@ ecl_use_package(cl_object x, cl_object p)
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot use package ~S in locked package ~S.",
-                    "Ignore lock and proceed",
+                    "Ignore lock and proceed.",
                     p, 2, x, p);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
@@ -842,7 +891,7 @@ ecl_unuse_package(cl_object x, cl_object p)
       && ECL_SYM_VAL(ecl_process_env(),
                      @'si::*ignore-package-locks*') == ECL_NIL)
     CEpackage_error("Cannot unuse package ~S from locked package ~S.",
-                    "Ignore lock and proceed",
+                    "Ignore lock and proceed.",
                     p, 2, x, p);
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
     p->pack.uses = ecl_remove_eq(x, p->pack.uses);
@@ -850,10 +899,13 @@ ecl_unuse_package(cl_object x, cl_object p)
   } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
 }
 
-@(defun make_package (pack_name &key nicknames (use CONS(cl_core.lisp_package, ECL_NIL)))
+@(defun make_package (pack_name &key
+                      nicknames
+                      (use CONS(cl_core.lisp_package, ECL_NIL))
+                      local_nicknames)
 @
   /* INV: ecl_make_package() performs type checking */
-  @(return ecl_make_package(pack_name, nicknames, use));
+  @(return ecl_make_package(pack_name, nicknames, use, local_nicknames));
 @)
 
 cl_object
@@ -873,17 +925,15 @@ cl_find_package(cl_object p)
 cl_object
 cl_package_name(cl_object p)
 {
-  /* FIXME: name should be a fresh one */
   p = si_coerce_to_package(p);
-  @(return p->pack.name);
+  return cl_copy_seq(p->pack.name);
 }
 
 cl_object
 cl_package_nicknames(cl_object p)
 {
-  /* FIXME: list should be a fresh one */
   p = si_coerce_to_package(p);
-  @(return p->pack.nicknames);
+  return cl_copy_list(p->pack.nicknames);
 }
 
 @(defun rename_package (pack new_name &o new_nicknames)
@@ -907,7 +957,8 @@ cl_package_used_by_list(cl_object p)
 cl_object
 cl_package_shadowing_symbols(cl_object p)
 {
-  return cl_copy_list(si_coerce_to_package(p)->pack.shadowings);
+  p = si_coerce_to_package(p);
+  return cl_copy_list(p->pack.shadowings);
 }
 
 cl_object
@@ -919,6 +970,93 @@ si_package_lock(cl_object p, cl_object t)
   p->pack.locked = (t != ECL_NIL);
   @(return (previous? ECL_T : ECL_NIL));
 }
+
+/* --- local nicknames ---------------------------------------------------- */
+cl_object
+si_package_local_nicknames(cl_object p)
+{
+  p = si_coerce_to_package(p);
+  return cl_copy_tree(p->pack.local_nicknames);
+}
+
+cl_object
+si_package_locally_nicknamed_by_list(cl_object p)
+{
+  p = si_coerce_to_package(p);
+  return cl_copy_list(p->pack.nicknamedby);
+}
+
+cl_object
+si_add_package_local_nickname(cl_object local_nickname,
+                              cl_object actual_package,
+                              cl_object target_package) {
+
+  local_nickname = cl_string(local_nickname);
+  actual_package = si_coerce_to_package(actual_package);
+  target_package = si_coerce_to_package(target_package);
+
+  cl_object existing = target_package->pack.local_nicknames;
+  cl_object cell = ecl_assoc(local_nickname, existing);
+
+  if (target_package->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(), @'si::*ignore-package-locks*') == ECL_NIL) {
+    CEpackage_error("Cannot nickname package ~S from locked package ~S.",
+                    "Ignore lock and proceed.",
+                    target_package, 2, actual_package, target_package);
+  }
+
+  if (!Null(cell)) {
+    cl_object old_package = ECL_CONS_CDR(cell);
+    if (old_package != actual_package) {
+      FEpackage_error("Cannot add ~A as local nickname for ~A:~%"
+                      "already a nickname for ~A.",
+                      target_package, 3,
+                      local_nickname, actual_package, old_package);
+    }
+    return target_package;
+  }
+
+  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
+    cl_object nickname_cons = CONS(local_nickname, actual_package);
+
+    target_package->pack.local_nicknames
+      = CONS(nickname_cons, target_package->pack.local_nicknames);
+
+    actual_package->pack.nicknamedby
+      = CONS(target_package, actual_package->pack.nicknamedby);
+  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
+
+  return target_package;
+}
+
+cl_object
+si_remove_package_local_nickname(cl_object old_nickname,
+                                 cl_object target_package) {
+  old_nickname = cl_string(old_nickname);
+  target_package = si_coerce_to_package(target_package);
+
+  if (target_package->pack.locked
+      && ECL_SYM_VAL(ecl_process_env(),
+                     @'si::*ignore-package-locks*') == ECL_NIL) {
+    CEpackage_error("Cannot remove local package nickname ~S from locked package ~S.",
+                    "Ignore lock and proceed.",
+                    target_package, 2, old_nickname, target_package);
+  }
+
+  cl_object actual_package = ECL_NIL;
+  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
+    cl_object cell = ecl_assoc(old_nickname, target_package->pack.local_nicknames);
+    if (!Null(cell)) {
+      actual_package = ECL_CONS_CDR(cell);
+      target_package->pack.local_nicknames
+        = ecl_delete_eq(cell, target_package->pack.local_nicknames);
+      actual_package->pack.nicknamedby
+        = ecl_delete_eq(target_package, actual_package->pack.nicknamedby);
+    }
+  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
+  return Null(actual_package) ? ECL_NIL : ECL_T;
+}
+/* ------------------------------------------------------------------------ */
 
 cl_object
 cl_list_all_packages()
