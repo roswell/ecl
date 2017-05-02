@@ -646,6 +646,24 @@ cl_delete_package(cl_object p)
     ecl_unuse_package(p, ECL_CONS_CAR(l));
   }
 
+  /* 3) Now remove local nickname related bits. */
+  while (!Null(l = p->pack.local_nicknames)) {
+    cl_object nickname = ECL_CONS_CAR(l);
+    si_remove_package_local_nickname(ECL_CONS_CAR(nickname), p);
+  }
+
+  while (!Null(l = p->pack.nicknamedby)) {
+    cl_object nicknaming = ECL_CONS_CAR(l);
+    cl_object nicklist;
+    while (!Null(nicklist = nicknaming->pack.local_nicknames)) {
+      cl_object nickname = ECL_CONS_CAR(nicklist);
+      if (ECL_CONS_CDR(nickname) == p) {
+        si_remove_package_local_nickname(ECL_CONS_CAR(nickname), nicknaming);
+        break;
+      }
+    }
+  }
+
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
     for (hash = p->pack.internal, i = 0; i < hash->hash.size; i++)
       if (hash->hash.data[i].key != OBJNULL) {
