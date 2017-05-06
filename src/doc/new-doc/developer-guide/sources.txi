@@ -52,6 +52,12 @@
 @item clos/cache.d
 @tab thread-local cache for a variety of operations
 
+@item clos/gfun.d
+@tab dispatch for generic functions
+
+@item clos/instance.d
+@tab CLOS interface
+
 @item cmpaux.d
 @tab auxiliaries used in compiled Lisp code
 
@@ -97,14 +103,8 @@
 @item format.d
 @tab format (this isn't ANSI compliant, we need it for bootstrapping though)
 
-@item gfun.d
-@tab dispatch for generic functions
-
 @item hash.d
 @tab hash tables
-
-@item instance.d
-@tab CLOS interface
 
 @item interpreter.d
 @tab bytecode interpreter

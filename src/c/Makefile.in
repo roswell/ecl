@@ -44,15 +44,16 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h               \
 	$(HDIR)/object.h $(HDIR)/cs.h $(HDIR)/stacks.h                  \
 	$(HDIR)/external.h $(HDIR)/cons.h $(HDIR)/legacy.h              \
 	$(HDIR)/number.h $(HDIR)/page.h
+CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
 OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o           \
-	interpreter.o compiler.o disassembler.o instance.o gfun.o       \
-	clos/cache.o clos/accessor.o reference.o character.o file.o     \
-	read.o print.o error.o string.o cfun.o reader/parse_integer.o   \
-	reader/parse_number.o printer/float_to_digits.o                 \
-	printer/float_to_string.o printer/integer_to_string.o           \
-	printer/write_ugly.o printer/write_object.o                     \
-	printer/write_symbol.o printer/write_array.o                    \
-	printer/write_list.o printer/write_code.o printer/write_sse.o   \
+	interpreter.o compiler.o disassembler.o $(CLOS_OBJS)            \
+	reference.o character.o file.o read.o print.o error.o           \
+	string.o cfun.o reader/parse_integer.o reader/parse_number.o    \
+	printer/float_to_digits.o printer/float_to_string.o             \
+	printer/integer_to_string.o printer/write_ugly.o                \
+	printer/write_object.o printer/write_symbol.o                   \
+	printer/write_array.o printer/write_list.o                      \
+	printer/write_code.o printer/write_sse.o                        \
 	printer/print_unreadable.o ffi/libraries.o ffi/backtrace.o      \
 	ffi/mmap.o ffi/cdata.o numbers/cos.o numbers/sin.o              \
 	numbers/tan.o numbers/atan.o numbers/cosh.o numbers/sinh.o      \

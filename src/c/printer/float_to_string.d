@@ -77,6 +77,10 @@ print_float_exponent(cl_object buffer, cl_object number, cl_fixnum exp)
     e = (r == @'double-float' || r == @'long-float')? 'e' : 'd';
     break;
 #endif
+  default:
+    ecl_internal_error("*** \n"
+                       "*** print_float_exponent unexpected argument\n"
+                       "***\n");
   }
   if (e != 'e' || exp != 0) {
     ecl_string_push_extend(buffer, e);
