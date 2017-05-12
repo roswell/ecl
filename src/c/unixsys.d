@@ -370,11 +370,7 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   parent_read = ecl_fixnum(ecl_nth_value(the_env, 2));
   parent_error = ecl_fixnum(ecl_nth_value(the_env, 3));
 
-  stream_write = ecl_make_stream_from_fd(command, parent_write,
-                                         ecl_smm_output, 8,
-                                         ECL_STREAM_DEFAULT_FORMAT,
-                                         @':default');
-
+  /* descriptor is closed in the stream finalizer */
   stream_read = ecl_make_stream_from_fd(command, parent_read,
                                         ecl_smm_input, 8,
                                         ECL_STREAM_DEFAULT_FORMAT,
@@ -384,8 +380,10 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   exit_status = ecl_nth_value(the_env, 1);
 
   /* close unused descriptors */
+  close(parent_write);
   close(parent_error);
-  @(return cl_make_two_way_stream(stream_read, stream_write) exit_status)
+
+  @(return stream_read exit_status)
 }
 
 cl_object

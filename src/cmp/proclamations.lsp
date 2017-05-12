@@ -1347,7 +1347,7 @@
                                             (or null fixnum)))
 (proclamation si:killpid (fixnum fixnum) fixnum)
 (proclamation si:run-program-inner (string (or list string) list)
-              (values two-way-stream integer))
+              (values file-stream integer))
 (proclamation si:spawn-subprocess (string (or list string) list t t t)
               (values (or null integer) fixnum fixnum fixnum))
 (proclamation ext:terminate-process (t &optional gen-bool) null)
