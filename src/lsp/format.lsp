@@ -114,14 +114,11 @@
   (declare (type float x))
   (if (zerop x)
       ;; Zero is a special case which FLOAT-STRING cannot handle.
-      (cond ((null fdigits)
-             (values ".0" 2 t nil 0))
-            ((zerop fdigits)
-             (values "0." 2 nil t 1))
-            (T
-             (let ((s (make-string (1+ fdigits) :initial-element #\0)))
-               (setf (schar s 0) #\.)
-               (values s (length s) t nil 0))))
+      (cond ((null fdigits)  (values ".0" 2 t nil 0))
+            ((zerop fdigits) (values "0." 2 nil t 1))
+            (T (let ((s (make-string (1+ fdigits) :initial-element #\0)))
+                 (setf (schar s 0) #\.)
+                 (values s (length s) t nil 0))))
       (multiple-value-bind (e string zero?)
           (cond (fdigits
                  (float-to-digits* nil x
