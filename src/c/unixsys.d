@@ -470,7 +470,6 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
 #elif !defined(NACL) /* All POSIX but NaCL/pNaCL */
   {
     int child_stdin, child_stdout, child_stderr;
-    int pipe_fd[2];
     argv = ecl_nconc(argv, ecl_list1(ECL_NIL));
     argv = _ecl_funcall3(@'coerce', argv, @'vector');
 
@@ -483,22 +482,11 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     else
       create_descriptor(error,  @':output', &child_stderr, &parent_error);
 
-    pipe(pipe_fd);
     child_pid = fork();
     if (child_pid == 0) {
       /* Child */
       int j;
       void **argv_ptr = (void **)argv->vector.self.t;
-      {
-        /* Wait for the parent to set up its process structure */
-        char sync[1];
-        close(pipe_fd[1]);
-        while (read(pipe_fd[0], sync, 1) < 1) {
-          printf("\nError reading child pipe %d", errno);
-          fflush(stdout);
-        }
-        close(pipe_fd[0]);
-      }
       dup2(child_stdin, STDIN_FILENO);
       if (parent_write) close(parent_write);
       dup2(child_stdout, STDOUT_FILENO);
@@ -528,17 +516,6 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
       pid = ECL_NIL;
     } else {
       pid = ecl_make_fixnum(child_pid);
-    }
-    {
-      /* This guarantees that the child process does not exit before
-       * we have created the process structure. */
-      char sync[1];
-      close(pipe_fd[0]);
-      while (write(pipe_fd[1], sync, 1) < 1) {
-        printf("\nError writing child pipe %d", errno);
-        fflush(stdout);
-      }
-      close(pipe_fd[1]);
     }
     close(child_stdin);
     close(child_stdout);
