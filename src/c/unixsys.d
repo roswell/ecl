@@ -350,7 +350,7 @@ create_descriptor(cl_object stream, cl_object direction,
 cl_object
 si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   cl_env_ptr the_env = ecl_process_env();
-  int parent_write = 0, parent_read = 0;
+  int parent_write = 0, parent_read = 0, parent_error = 0;
   cl_object pid, stream_write, stream_read, exit_status;
 
   command = si_copy_to_simple_base_string(command);
@@ -368,6 +368,7 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   pid = si_spawn_subprocess(command, argv, environ, @':stream', @':stream', @':output');
   parent_write = ecl_fixnum(ecl_nth_value(the_env, 1));
   parent_read = ecl_fixnum(ecl_nth_value(the_env, 2));
+  parent_error = ecl_fixnum(ecl_nth_value(the_env, 3));
 
   stream_write = ecl_make_stream_from_fd(command, parent_write,
                                          ecl_smm_output, 8,
@@ -381,6 +382,9 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
 
   si_waitpid(pid, ECL_T);
   exit_status = ecl_nth_value(the_env, 1);
+
+  /* close unused descriptors */
+  close(parent_error);
   @(return cl_make_two_way_stream(stream_read, stream_write) exit_status)
 }
 
