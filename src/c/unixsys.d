@@ -418,9 +418,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
                       &child_stderr, 0, TRUE,
                       DUPLICATE_SAME_ACCESS);
       /* Same for the parent_read and parent_error. */
-      /* DuplicateHandle(current, parent_read, current, */
-      /*                 &parent_error, 0, TRUE, */
-      /*                 DUPLICATE_SAME_ACCESS); */
+      parent_error = _open_osfhandle((intptr_t)child_stderr, _O_RDONLY);
     }
     else
       create_descriptor(error, @':output', &child_stderr, &parent_error);
