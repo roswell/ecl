@@ -150,3 +150,51 @@
   (ignore-errors (delete-package :test-pack1))
   (ignore-errors (delete-package :test-pack2))
   (ignore-errors (delete-package :test-pack3)))
+
+
+;;; relative-package-names
+#+(and relative-package-names test-known-fails)
+(test relative-package-names
+  (defpackage eu)
+  (defpackage eu.turtleware)
+  (defpackage eu.turtleware.pack1)
+  (defpackage eu.turtleware.pack2)
+  (defpackage eu.turtle.pack1)
+  (defpackage eu.turtle.pack2)
+
+  (let ((*package*       (find-package :eu.turtleware))
+        (parent-package  (find-package :eu)))
+    (is-eql *package* (eval (read-from-string "(find-package :.)")))
+    (is (eval (read-from-string "(find-package :.pack1)")))
+    (is (eval (read-from-string "(find-package :.pack2)")))
+    (is (null (eval (read-from-string "(find-package :.pack3)"))))
+    (is (null (eval (read-from-string "(find-package :..)"))))
+    (is-eql parent-package (eval (read-from-string  "(find-package :..)")))
+    (is (null (eval (read-from-string  "(find-package :....)")))))
+
+  (let ((*package*       (find-package :eu.turtleware.pack1))
+        (sibling-package (find-package :eu.turtleware.pack2))
+        (parent-package  (find-package :eu.turtleware))
+        (grand-package   (find-package :eu)))
+    (is-eql *package* (eval (read-from-string "(find-package :.)")))
+    (is (null (eval (read-from-string "(find-package :.pack1)"))))
+    (is (null (eval (read-from-string "(find-package :.pack2)"))))
+    (is (null (eval (read-from-string "(find-package :.pack3)"))))
+    (is-eql parent-package  (eval (read-from-string "(find-package :..)")))
+    (is-eql sibling-package (eval (read-from-string "(find-package :..pack2)")))
+    (is-eql grand-package   (eval (read-from-string "(find-package :....)")))
+    (is-eql parent-package  (eval (read-from-string "(find-package :....turtleware)")))
+    (is-eql sibling-package (eval (read-from-string "(find-package :....turtleware.pack2)"))))
+
+  (let ((*package* (find-package :eu.turtle.pack1))
+        (sibling-package (find-package :eu.turtle.pack2)))
+    (is-eql *package* (eval (read-from-string "(find-package :.)")))
+    (is-eql nil (eval (read-from-string "(find-package :..)")))
+    (is-eql sibling-package (eval (read-from-string "(find-package :..pack2)"))))
+
+  (ignore-errors (delete-package :eu))
+  (ignore-errors (delete-package :eu.turtleware))
+  (ignore-errors (delete-package :eu.turtleware.pack1))
+  (ignore-errors (delete-package :eu.turtleware.pack2))
+  (ignore-errors (delete-package :eu.turtle.pack1))
+  (ignore-errors (delete-package :eu.turtle.pack2)))
