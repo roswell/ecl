@@ -487,12 +487,15 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
       /* Child */
       int j;
       void **argv_ptr = (void **)argv->vector.self.t;
-      dup2(child_stdin, STDIN_FILENO);
+
       if (parent_write) close(parent_write);
-      dup2(child_stdout, STDOUT_FILENO);
-      if (parent_read) close(parent_read);
-      dup2(child_stderr, STDERR_FILENO);
+      if (parent_read)  close(parent_read);
       if (parent_error) close(parent_error);
+
+      dup2(child_stdin,  STDIN_FILENO);
+      dup2(child_stdout, STDOUT_FILENO);
+      dup2(child_stderr, STDERR_FILENO);
+
       for (j = 0; j < argv->vector.fillp; j++) {
         cl_object arg = argv->vector.self.t[j];
         if (arg == ECL_NIL) {
@@ -512,14 +515,15 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
       perror("exec");
       abort();
     }
+    close(child_stdin);
+    close(child_stdout);
+    close(child_stderr);
+
     if (child_pid < 0) {
       pid = ECL_NIL;
     } else {
       pid = ecl_make_fixnum(child_pid);
     }
-    close(child_stdin);
-    close(child_stdout);
-    close(child_stderr);
   }
 #else  /* NACL */
   {
