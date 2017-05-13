@@ -152,7 +152,7 @@
   (ignore-errors (delete-package :test-pack3)))
 
 
-;;; relative-package-names
+;;; relative-package-names (interface has been removed)
 #+relative-package-names
 (test relative-package-names
   (defpackage eu)

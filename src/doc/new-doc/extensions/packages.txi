@@ -107,9 +107,6 @@ for another package, it is removed. Returns true if the nickname
 existed and was removed, and @t{NIL} otherwise.
 @end deffn
 
-@c @node Hierarchical packages
-@c @section Hierarchical packages
-
 @node Package locks
 @section Package locks
 

@@ -55,3 +55,7 @@ portable implementation).
 @subheading Unification module
 Commit @code{6ff5d20417a21a76846c4b28e532aac097f03109}. Old unifiction
 module (logic programming) from EcoLisp times.
+
+@subheading Hierarchical packages
+Commit @code{72e422f1b3c4b3c52fa273b961517db943749a8f}. Partially
+broken. Tests left in package-extensions.lsp.
