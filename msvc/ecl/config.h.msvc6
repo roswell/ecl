@@ -102,11 +102,6 @@
 /* We have libffi and can use it                                        */
 /*#undef HAVE_LIBFFI*/
 
-/* We have non-portable implementation of FFI calls			*/
-#ifndef _M_X64
-# define ECL_DYNAMIC_FFI 1
-#endif
-
 /* Use mprotect for fast interrupt dispatch				*/
 /* #undef ECL_USE_MPROTECT */
 #if defined(_MSC_VER) || defined(mingw32)
