@@ -153,7 +153,7 @@
 
 
 ;;; relative-package-names
-#+(and relative-package-names test-known-fails)
+#+relative-package-names
 (test relative-package-names
   (defpackage eu)
   (defpackage eu.turtleware)

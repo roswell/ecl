@@ -127,12 +127,6 @@ cl_array_dimensions(cl_object array)
 }
 
 extern cl_object
-si_find_relative_package(cl_narg narg, cl_object package, ...)
-{
-  @(return ECL_NIL);
-}
-
-extern cl_object
 si_wrong_type_argument(cl_narg narg, cl_object object, cl_object type, ...)
 {
   return _ecl_funcall3(@'si::wrong-type-argument', object, type);

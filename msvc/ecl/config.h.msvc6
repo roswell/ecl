@@ -107,9 +107,6 @@
 # define ECL_DYNAMIC_FFI 1
 #endif
 
-/* We use hierarchical package names, like in Allegro CL                */
-#define ECL_RELATIVE_PACKAGE_NAMES 1
-
 /* Use mprotect for fast interrupt dispatch				*/
 /* #undef ECL_USE_MPROTECT */
 #if defined(_MSC_VER) || defined(mingw32)

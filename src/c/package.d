@@ -335,14 +335,6 @@ ecl_find_package_nolock(cl_object name)
     if (member_string_eq(name, p->pack.nicknames))
       return p;
   } end_loop_for_on_unsafe(l);
-#ifdef ECL_RELATIVE_PACKAGE_NAMES
-  /* Note that this function may actually be called _before_ symbols are set up
-   * are bound! */
-  if (ecl_option_values[ECL_OPT_BOOTED] &&
-      ECL_SYM_VAL(ecl_process_env(), @'si::*relative-package-names*') != ECL_NIL) {
-    return si_find_relative_package(1, name);
-  }
-#endif
   return ECL_NIL;
 }
 

@@ -115,9 +115,6 @@
 /* We have libffi and can use it                                        */
 #undef HAVE_LIBFFI
 
-/* We use hierarchical package names, like in Allegro CL                */
-#undef ECL_RELATIVE_PACKAGE_NAMES
-
 /* Use mprotect for fast interrupt dispatch				*/
 #ifndef NACL
 #undef ECL_USE_MPROTECT

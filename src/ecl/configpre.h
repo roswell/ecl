@@ -39,9 +39,6 @@
 /* Define if your newline is CRLF */
 #undef ECL_NEWLINE_IS_CRLF
 
-/* Hierarchical package names */
-#undef ECL_RELATIVE_PACKAGE_NAMES
-
 /* ECL_RWLOCK */
 #undef ECL_RWLOCK
 

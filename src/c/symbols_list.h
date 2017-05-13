@@ -11,11 +11,6 @@
 #else
 # define ECL_NAME(x) NULL
 #endif
-#ifdef ECL_RELATIVE_PACKAGE_NAMES
-# define RELATIVE_PACKAGES_P ECL_T
-#else
-# define RELATIVE_PACKAGES_P ECL_NIL
-#endif
 #ifdef DPP
 #define CLOS_ "CLOS::"
 #define EXT_ "EXT::"
@@ -56,11 +51,6 @@ typedef struct {
 # define IF_PROFILE(x) x
 #else
 # define IF_PROFILE(x) NULL
-#endif
-#ifdef ECL_RELATIVE_PACKAGE_NAMES
-# define IF_RELPACK(x) x
-#else
-# define IF_RELPACK(x) NULL
 #endif
 #ifndef ECL_CLOS_STREAMS
 # undef GRAY_
@@ -1781,14 +1771,6 @@ cl_symbols[] = {
 
 {EXT_ "GET-FINALIZER", EXT_ORDINARY, si_get_finalizer, 1, OBJNULL},
 {EXT_ "SET-FINALIZER", EXT_ORDINARY, si_set_finalizer, 2, OBJNULL},
-
-/* #ifdef ECL_RELATIVE_PACKAGE_NAMES */
-{SYS_ "*RELATIVE-PACKAGE-NAMES*", SI_SPECIAL, NULL, -1, RELATIVE_PACKAGES_P},
-{KEY_ "RELATIVE-PACKAGE-NAMES", KEYWORD, NULL, -1, OBJNULL},
-{SYS_ "FIND-RELATIVE-PACKAGE", SI_ORDINARY, IF_RELPACK(si_find_relative_package), -1, OBJNULL},
-{SYS_ "PACKAGE-PARENT", SI_ORDINARY, NULL, -1, OBJNULL},
-{SYS_ "PACKAGE-CHILDREN", SI_ORDINARY, NULL, -1, OBJNULL},
-/* #endif ECL_RELATIVE_PACKAGE_NAMES */
 
 {SYS_ "WRONG-TYPE-ARGUMENT", SI_ORDINARY, si_wrong_type_argument, -1, OBJNULL},
 

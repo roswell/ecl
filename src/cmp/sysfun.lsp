@@ -920,7 +920,6 @@
     deposit-field
     ;; packlib.lsp
     find-all-symbols apropos apropos-list
-    find-relative-package package-parent package-children
     ;; predlib.lsp
     upgraded-array-element-type upgraded-complex-part-type typep subtypep coerce
     do-deftype si::ratiop si::single-float-p si::short-float-p si::double-float-p

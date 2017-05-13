@@ -2055,7 +2055,6 @@ extern ECL_API cl_object cl_deposit_field(cl_object V1, cl_object V2, cl_object 
 extern ECL_API cl_object cl_find_all_symbols(cl_object V1);
 extern ECL_API cl_object cl_apropos _ECL_ARGS((cl_narg arg, cl_object V1, ...));
 extern ECL_API cl_object cl_apropos_list _ECL_ARGS((cl_narg arg, cl_object V1, ...));
-extern ECL_API cl_object si_find_relative_package _ECL_ARGS((cl_narg narg, cl_object pack_name, ...));
 
 /* predlib.lsp */
 

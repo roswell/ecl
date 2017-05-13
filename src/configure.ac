@@ -253,12 +253,6 @@ AC_ARG_ENABLE(c99complex,
                   [(default=NO)]),
   [enable_c99complex=${enableval}], [enable_c99complex=no])
 
-AC_ARG_ENABLE(hpack,
-  AS_HELP_STRING( [--enable-hpack],
-                  [hierarchical package names]
-                  [(default=YES)]),
-  [enable_hpack=${enableval}], [enable_hpack=yes])
-
 AC_ARG_ENABLE(asmapply,
   AS_HELP_STRING( [--enable-asmapply],
                   [enable optimizations written in assembler, EXPERIMENTAL]
@@ -936,10 +930,6 @@ if test "x${with_init_form}" = "x"; then
   ECL_INIT_FORM='(SI::TOP-LEVEL T)'
 else
   ECL_INIT_FORM="${with_init_form}"
-fi
-
-if test "${enable_hpack}" = "yes"; then
-   AC_DEFINE([ECL_RELATIVE_PACKAGE_NAMES], [1], [Hierarchical package names])
 fi
 
 AC_CONFIG_FILES([
