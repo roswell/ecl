@@ -1364,7 +1364,9 @@
      (let ((spaceleft w))
        (when (and w (or atsign
                         (minusp number)
-                        #+ieee-floating-point (minusp (atan number -1))))
+                        #+ieee-floating-point
+                        (and (zerop number)
+                             (minusp (atan number -1)))))
          (decf spaceleft))
        (multiple-value-bind (str len lpoint tpoint)
            (sys::flonum-to-string (abs number) spaceleft d k)
@@ -1391,7 +1393,9 @@
                (t
                 (when w (dotimes (i spaceleft) (write-char pad stream)))
                 (if (or (minusp number)
-                        #+ieee-floating-point (minusp (atan number -1)))
+                        #+ieee-floating-point
+                        (and (zerop number)
+                             (minusp (atan number -1))))
                     (write-char #\- stream)
                     (if atsign (write-char #\+ stream)))
                 (when lpoint (write-char #\0 stream))
