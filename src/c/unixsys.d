@@ -104,7 +104,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   cl_object buffer;
   char **environ;
   for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
-    cl_object s;
+    cl_object s = ECL_CONS_CAR(p);
     total_size += s->base_string.fillp + 1;
     nstrings++;
   }
