@@ -110,8 +110,8 @@ si_signal_simple_error(cl_narg narg, cl_object condition, cl_object continuable,
   cl_object rest;
   ecl_va_start(args, format_args, narg, 4);
   rest = cl_grab_rest_args(args);
-  cl_apply(6, @'si::signal-simple-error', condition, continuable,
-           format, format_args, rest);
+  return cl_apply(6, @'si::signal-simple-error', condition, continuable,
+                  format, format_args, rest);
 }
 
 extern cl_object
