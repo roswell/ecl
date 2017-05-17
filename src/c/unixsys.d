@@ -515,7 +515,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     }
     close(child_stdin);
     close(child_stdout);
-    close(child_stderr);
+    if (!(error == @':output')) close(child_stderr);
 
     if (child_pid < 0) {
       pid = ECL_NIL;
