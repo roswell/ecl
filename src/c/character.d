@@ -208,6 +208,7 @@ ecl_char_eq(cl_object x, cl_object y)
       if (ecl_char_eq(ecl_va_arg(ds), c)) {
         @(return ECL_NIL);
       }
+    ecl_va_end(ds);
   }
   @(return ECL_T);
 } @)
