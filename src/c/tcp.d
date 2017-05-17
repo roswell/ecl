@@ -251,6 +251,7 @@ create_server_port(int port)
     FElibc_error("Accepting requests", 0);
 #endif  /* THREADS */
 
+  close(request);
   return(conn);
 }
 
