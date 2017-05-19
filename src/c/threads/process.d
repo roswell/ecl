@@ -189,7 +189,7 @@ thread_cleanup(void *aux)
   cl_env_ptr env = process->process.env;
   /* The following flags will disable all interrupts. */
   AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
-  ecl_disable_interrupts_env(env);
+  if (env) ecl_disable_interrupts_env(env);
 #ifdef HAVE_SIGPROCMASK
   /* ...but we might get stray signals. */
   {
@@ -439,6 +439,7 @@ mp_process_preset(cl_narg narg, cl_object process, cl_object function, ...)
   assert_type_process(process);
   process->process.function = function;
   process->process.args = cl_grab_rest_args(args);
+  ecl_va_end(args);
   @(return process);
 }
 
@@ -644,6 +645,7 @@ cl_object
 mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
 {
   cl_object process;
+  cl_object rest;
   ecl_va_list args;
   ecl_va_start(args, function, narg, 2);
   if (narg < 2)
@@ -653,8 +655,10 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
   } else {
     process = mp_make_process(2, @':name', name);
   }
+  rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
   cl_apply(4, @'mp::process-preset', process, function,
-           cl_grab_rest_args(args));
+           rest);
   return mp_process_enable(process);
 }
 
@@ -672,6 +676,7 @@ mp_process_run_function_wait(cl_narg narg, ...)
       cl_sleep(wait);
     }
   }
+  ecl_va_end(args);
   @(return process);
 }
 

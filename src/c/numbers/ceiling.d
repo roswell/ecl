@@ -77,6 +77,7 @@ ecl_ceiling2(cl_object x, cl_object y)
   const cl_env_ptr the_env = ecl_process_env();
   cl_object v0, v1;
   cl_type ty;
+  v0 = v1 = ECL_NIL;
   ty = ecl_t_of(y);
   if (ecl_unlikely(!ECL_REAL_TYPE_P(ty))) {
     FEwrong_type_nth_arg(@[ceiling],2, y, @[real]);
