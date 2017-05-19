@@ -527,7 +527,7 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 
 /* unixsys.d */
 
-/* Some old BSD systems doesn't have WCONTINUED / WIFCONTINUED */
+/* Some old BSD systems don't have WCONTINUED / WIFCONTINUED */
 
 #ifndef ECL_MS_WINDOWS_HOST
 # ifndef WCONTINUED
