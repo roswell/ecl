@@ -535,7 +535,7 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 # endif
 
 # ifndef WIFCONTINUED
-#  define WIFCONTINUED() 0
+#  define WIFCONTINUED(x) 0
 # endif
 #endif /* ECL_MS_WINDOWS_HOST */
 
