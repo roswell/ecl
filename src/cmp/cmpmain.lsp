@@ -262,7 +262,7 @@ void ~A(cl_object cblock)
          * circular chain. This disables the garbage collection of
          * the library until _ALL_ functions in all modules are unlinked.
          */
-        cl_object current = Cnil, next = Cblock;
+        cl_object current = OBJNULL, next = Cblock;
 ~:{
         current = ecl_make_codeblock();
         current->cblock.next = next;

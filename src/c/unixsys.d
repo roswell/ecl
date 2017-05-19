@@ -533,7 +533,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
   if (Null(pid)) {
     if (parent_write) close(parent_write);
     if (parent_read) close(parent_read);
-    if (parent_error >= 0) close(parent_error);
+    if (parent_error > 0) close(parent_error);
     parent_write = 0;
     parent_read = 0;
     parent_error = 0;
