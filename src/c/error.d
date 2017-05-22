@@ -61,6 +61,20 @@ ecl_internal_error(const char *s)
   abort();
 }
 
+#ifdef ECL_THREADS
+void
+ecl_thread_internal_error(const char *s)
+{
+  int saved_errno = errno;
+  fprintf(stderr, "\nInternal thread error in:\n%s\n", s);
+  if (saved_errno) {
+    fprintf(stderr, "  [%d: %s]\n", saved_errno,
+            strerror(saved_errno));
+  }
+  fflush(stderr);
+  pthread_exit(NULL);
+}
+#endif
 
 void
 ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
