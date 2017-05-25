@@ -72,7 +72,11 @@ ecl_thread_internal_error(const char *s)
             strerror(saved_errno));
   }
   fflush(stderr);
+#ifdef ECL_WINDOWS_THREADS
+  ExitThread(0);
+#else
   pthread_exit(NULL);
+#endif
 }
 #endif
 
