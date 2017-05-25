@@ -227,7 +227,7 @@
       ;; Note that we have to compute the exponential _every_ _time_ in the loop
       ;; because multiplying just by 10.0l0 every time would lead to a greater
       ;; loss of precission.
-      (let ((ex (round (* exponent #.(log 2l0 10)))))
+      (let ((ex (- (round (* exponent #.(log 2l0 10))) delta)))
         (declare (fixnum ex))
         (if (minusp ex)
             (loop for y of-type long-float
