@@ -104,7 +104,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   cl_object buffer;
   char **environ;
   for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
-    cl_object s = ECL_CONS_CAR(p);
+    cl_object s;
     total_size += s->base_string.fillp + 1;
     nstrings++;
   }
@@ -515,7 +515,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     }
     close(child_stdin);
     close(child_stdout);
-    if (!(error == @':output')) close(child_stderr);
+    close(child_stderr);
 
     if (child_pid < 0) {
       pid = ECL_NIL;
@@ -533,7 +533,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
   if (Null(pid)) {
     if (parent_write) close(parent_write);
     if (parent_read) close(parent_read);
-    if (parent_error > 0) close(parent_error);
+    if (parent_error) close(parent_error);
     parent_write = 0;
     parent_read = 0;
     parent_error = 0;

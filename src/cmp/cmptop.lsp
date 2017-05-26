@@ -443,7 +443,7 @@
     (wt-nl "volatile cl_object lex" *level* "[" *max-lex* "];"))
 
   (unless (eq closure-type 'CLOSURE)
-    (wt-nl "cl_object " *volatile* "env0 = ECL_NIL;"))
+    (wt-nl "cl_object " *volatile* "env0;"))
 
   (when  (plusp *max-env*)
     ;; Closure structure has to be marked volatile or else GCC may

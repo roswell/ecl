@@ -564,7 +564,6 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
   if (start == end) {
     host = device = path = name = type = aux = version = @'nil';
     logical = 0;
-    *ep = end;
     goto make_it;
   }
   /* We first try parsing as logical-pathname. In case of
