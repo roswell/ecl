@@ -38,7 +38,6 @@ si_safe_eval(cl_narg narg, cl_object form, cl_object env, ...)
     cl_object err_value;
     va_list args; va_start(args, env);
     err_value = va_arg(args, cl_object);
-    va_end(args);
     return _ecl_funcall4(@'ext::safe-eval', form, env, err_value);
   }
   return _ecl_funcall3(@'ext::safe-eval', form, env);
@@ -99,7 +98,6 @@ si_string_to_object(cl_narg narg, cl_object string, ...)
     cl_object err_value;
     va_list args; va_start(args, string);
     err_value = va_arg(args, cl_object);
-    va_end(args);
     return _ecl_funcall3(@'si::string-to-object', string, err_value);
   }
   return _ecl_funcall2(@'si::string-to-object', string);
@@ -112,9 +110,8 @@ si_signal_simple_error(cl_narg narg, cl_object condition, cl_object continuable,
   cl_object rest;
   ecl_va_start(args, format_args, narg, 4);
   rest = cl_grab_rest_args(args);
-  ecl_va_end(args);
-  return cl_apply(6, @'si::signal-simple-error', condition, continuable,
-                  format, format_args, rest);
+  cl_apply(6, @'si::signal-simple-error', condition, continuable,
+           format, format_args, rest);
 }
 
 extern cl_object

@@ -514,7 +514,7 @@ static void
 fill_pair_name(char *buffer, int pair)
 {
   if (pair < ECL_UCD_FIRST_PAIR) {
-    strncat(buffer, ecl_ucd_names_word[pair], ECL_UCD_LARGEST_CHAR_NAME);
+    strncat(buffer, ecl_ucd_names_word[pair], ECL_UCD_LARGEST_CHAR_NAME+1);
 /*
     printf("text=%s\n", ecl_ucd_names_word[pair]);
  */

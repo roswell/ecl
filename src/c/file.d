@@ -5328,8 +5328,7 @@ flisten(cl_object stream, FILE *fp)
   {
     /* regular file */
     ecl_off_t old_pos = ecl_ftello(fp), end_pos;
-    unlikely_if (old_pos == -1 ||
-                 ecl_fseeko(fp, 0, SEEK_END) != 0)
+    unlikely_if (ecl_fseeko(fp, 0, SEEK_END) != 0)
       file_libc_error(@[file-error], stream,
                       "Unable to check file position", 0);
     end_pos = ecl_ftello(fp);

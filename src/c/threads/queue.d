@@ -386,6 +386,5 @@ print_lock(char *prefix, cl_object l, ...)
     fflush(stdout);
     ecl_giveup_spinlock(&lock);
   }
-  va_end(args);
 }
 /*#define print_lock(a,b,c) (void)0*/

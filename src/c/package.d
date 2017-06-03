@@ -51,15 +51,12 @@ void
 CEpackage_error(const char *message, const char *continue_message, cl_object package, int narg, ...)
 {
   ecl_va_list args;
-  cl_object arg;
   ecl_va_start(args, narg, narg, 0);
-  arg = narg? cl_grab_rest_args(args) : cl_list(1,package);
-  ecl_va_end(args);
   si_signal_simple_error(6,
                          @'package-error',
                          make_constant_base_string(continue_message),
                          make_constant_base_string(message), /* format control */
-                         arg,
+                         narg? cl_grab_rest_args(args) : cl_list(1,package),
                          @':package', package);
 }
 
