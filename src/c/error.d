@@ -125,12 +125,15 @@ void
 FEerror(const char *s, int narg, ...)
 {
   ecl_va_list args;
+  cl_object rest;
   ecl_va_start(args, narg, narg, 0);
   ecl_enable_interrupts();
+  rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
   funcall(4, @'si::universal-error-handler',
           ECL_NIL,                    /*  not correctable  */
           make_constant_base_string(s),    /*  condition text  */
-          cl_grab_rest_args(args));
+          rest);
   _ecl_unexpected_return();
 }
 
