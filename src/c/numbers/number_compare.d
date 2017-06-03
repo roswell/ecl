@@ -208,7 +208,9 @@ monotonic(int s, int t, int narg, ecl_va_list nums)
 
 #define MONOTONIC(i, j) (cl_narg narg, ...)                     \
   { ecl_va_list nums; ecl_va_start(nums, narg, narg, 0);        \
-    return monotonic(i, j, narg, nums); }
+    cl_object result = monotonic(i, j, narg, nums);             \
+    ecl_va_end(nums);                                           \
+    return result; }
 
 cl_object @<= MONOTONIC( 1, 0)
   cl_object @>= MONOTONIC(-1, 0)

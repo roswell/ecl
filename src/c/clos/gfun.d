@@ -49,6 +49,7 @@ user_function_dispatch(cl_narg narg, ...)
   fun = fun->instance.slots[fun->instance.length - 1];
   output = ecl_apply_from_stack_frame(frame, fun);
   ecl_stack_frame_close(frame);
+  ecl_va_end(args);
   return output;
 }
 
