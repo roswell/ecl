@@ -764,6 +764,11 @@ put_declaration(void)
       put_lineno();
       fprintf(out, "\t}\n");
     }
+    if (simple_varargs) {
+	    fprintf(out,"\tva_end(%s);\n", rest_var);
+    } else {
+	    fprintf(out,"\tecl_va_end(%s);\n", rest_var);
+    }
     if (key_flag) {
       put_lineno();
       fprintf(out, "\tcl_parse_key(ARGS, %d, KEYS, KEY_VARS, NULL, %d);\n",

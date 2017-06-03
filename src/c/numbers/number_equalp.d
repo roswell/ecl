@@ -188,6 +188,7 @@ ecl_number_equalp(cl_object x, cl_object y)
       if (ecl_number_equalp(numi, ecl_va_arg(numb))) {
         @(return ECL_NIL);
       }
+    ecl_va_end(numb);
   }
   @(return ECL_T);
   @)
