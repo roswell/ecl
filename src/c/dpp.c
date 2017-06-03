@@ -120,6 +120,11 @@ char *required[MAXREQ];
 int nreq;
 
 int the_env_defined = 0;
+enum vararg_status_t {
+	VARARG_NOT_DEFINED,
+	VARARG_SIMPLE,
+	VARARG_ECL};
+enum vararg_status_t vararg_status = VARARG_NOT_DEFINED;
 
 struct optional {
   char *o_var;
@@ -470,6 +475,7 @@ reset(void)
     aux[i].a_var
       = aux[i].a_init
       = NULL;
+  vararg_status = VARARG_NOT_DEFINED;
 }
 
 void
@@ -726,13 +732,16 @@ put_declaration(void)
       }
     }
     put_lineno();
-    if (simple_varargs)
+    if (simple_varargs) {
+	   vararg_status = VARARG_SIMPLE;
       fprintf(out,"\tva_list %s;\n\tva_start(%s, %s);\n",
               rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"));
-    else
+    } else {
+	   vararg_status = VARARG_ECL;
       fprintf(out,"\tecl_va_list %s;\n\tecl_va_start(%s, %s, narg, %d);\n",
               rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"),
               nreq);
+    }
     put_lineno();
     fprintf(out, "\tif (ecl_unlikely(narg < %d", nreq);
     if (nopt > 0 && !rest_flag && !key_flag) {
@@ -763,11 +772,6 @@ put_declaration(void)
       }
       put_lineno();
       fprintf(out, "\t}\n");
-    }
-    if (simple_varargs) {
-	    fprintf(out,"\tva_end(%s);\n", rest_var);
-    } else {
-	    fprintf(out,"\tecl_va_end(%s);\n", rest_var);
     }
     if (key_flag) {
       put_lineno();
@@ -804,6 +808,16 @@ put_declaration(void)
   }
 }
 
+void unregister_varargs()
+{
+	if (vararg_status == VARARG_SIMPLE) {
+		fprintf(out, "va_end(%s);\n", rest_var);
+	}
+	else if (vararg_status == VARARG_ECL) {
+		fprintf(out, "ecl_va_end(%s);\n", rest_var);
+	}
+}
+
 void
 put_return(void)
 {
@@ -830,6 +844,8 @@ put_return(void)
       put_tabs(t);
       fprintf(out, "the_env->values[%d] = __value%d;\n", i, i);
     }
+    put_tabs(t);
+    unregister_varargs();
     put_tabs(t);
     fprintf(out, "return __value0;\n");
   }
@@ -873,24 +889,28 @@ main_loop(void)
     goto LOOP;
   } else if (c == '\'') {
     char *p;
-    poolp = pool;
+    char* tmp = poolp;
     p = read_symbol(0);
     pushc('\0');
     fprintf(out,"%s",p);
+    poolp = tmp;
     goto LOOP;
   }  else if (c == '[') {
     char *p;
-    poolp = pool;
+    char * tmp = poolp;
     p = read_symbol(1);
     pushc('\0');
     fprintf(out,"%s",p);
+    poolp = tmp;
     goto LOOP;
   } else if (c != '(') {
     char *p;
+    char * tmp = poolp;
     unreadc(c);
-    poolp = pool;
-    poolp = p = read_function();
-    fprintf(out,"%s",translate_function(poolp));
+    //poolp = pool;
+    p = read_function();
+    fprintf(out,"%s",translate_function(p));
+    poolp = tmp;
     goto LOOP;
   }
   p = read_token();
