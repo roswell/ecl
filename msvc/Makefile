@@ -26,6 +26,7 @@ THEHOST           = win32
 # 	p0 -> Pentium processor
 # 	p3 -> Pentium III processor
 # 	p4 -> Pentium IV processor
+#   amd64 -> X86_64 compatible processor
 !if "$(GMP_TYPE)" == ""
 GMP_TYPE = gc
 !endif
@@ -60,6 +61,14 @@ ECL_DEFSYS  =
 # Profiling
 ECL_PROFILE =
 
+!if "$(YASM)" == ""
+!if "$(ECL_WIN64)" != ""
+YASM=yasm-1.3.0-win64.exe
+!else
+YASM=yasm-1.3.0-win32.exe
+!endif
+!endif
+
 # <END> (ECL configuration)
 # =============================================================
 
@@ -79,9 +88,6 @@ MV      = move /Y
 MSDEV   = msdev
 MKNSI   = makensis.exe
 
-!if "$(YASM)" == ""
-YASM=yasm-1.2.0-win32.exe
-!endif
 
 # ==================== Flags ====================
 
@@ -417,7 +423,7 @@ clean: clean_ecl clean_lisp
 	-$(RM) .gdbinit cinit.lib ecl_min.lib
 	-$(RM) bdwgc\*.pdb
 	cd gc
-	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
+	-$(MAKE) $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" clean
 	cd ..
 	-for %h in (gc.h gc_local_alloc.h gc_pthread_redirects.h \
 	            gc_config_macros.h leak_detector.h gc_typed.h \
@@ -426,7 +432,8 @@ clean: clean_ecl clean_lisp
 	-$(RMDIR) ecl\gc\private
 	-$(RMDIR) ecl\gc
 	cd gmp
-	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
+	-$(MAKE) "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
+		"BITS=$(GMP_BITS)" "YASM=$(YASM)" clean
 	cd ..
 	-$(RM) ecl\gmp.h
 clean_ecl:
@@ -438,7 +445,10 @@ clean_ecl:
 		    ecl-cc.bat ecl.rc ecl.res) \
 	     do $(RM) %i
 	cd c
-	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
+	-$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
+	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
+		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
+		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD" clean
 	cd ..
 clean_lisp:
 	-for %i in (lsp clos $(ECL_MODULES)) do for %k in (%i.lib %i.fas %i.ilk %i.c %i.obj %i.pdb) do $(RM) %k
