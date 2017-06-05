@@ -3879,10 +3879,14 @@ wcon_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
     HANDLE h = (HANDLE)IO_FILE_DESCRIPTOR(strm);
     DWORD nchars;
     unsigned char aux[4];
+    WCHAR waux[1];
     for (len = 0; len < n; ) {
       int i, ok;
       ecl_disable_interrupts_env(the_env);
-      ok = ReadConsole(h, &aux, 1, &nchars, NULL);
+      ok = ReadConsoleW(h, waux, 1, &nchars, NULL);
+      if (ok) {
+        nchars = WideCharToMultiByte(GetConsoleCP(), 0, waux, 1, aux, 4, NULL, NULL);
+      }
       ecl_enable_interrupts_env(the_env);
       unlikely_if (!ok) {
         FEwin32_error("Cannot read from console", 0);
