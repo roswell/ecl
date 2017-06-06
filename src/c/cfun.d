@@ -127,6 +127,7 @@ cl_function_lambda_expression(cl_object fun)
   case t_bclosure:
     lex = fun->bclosure.lex;
     fun = fun->bclosure.code;
+    // fallthrough
   case t_bytecodes:
     name = fun->bytecodes.name;
     output = fun->bytecodes.definition;
