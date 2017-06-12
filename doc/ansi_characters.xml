@@ -48,8 +48,8 @@
      </row>
      <row>
       <entry><type>extended-char</type></entry>
-      <entry>-</entry>
       <entry>256-16777215</entry>
+      <entry>-</entry>
      </row>
     </tbody>
    </tgroup>
