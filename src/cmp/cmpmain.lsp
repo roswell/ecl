@@ -333,6 +333,10 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         ~A
         } ECL_CATCH_ALL_END;
         si_exit(0);
+        for (int i = 0; i < argc; i++) {
+          LocalFree(argv[i]);
+        }
+        LocalFree(argv);
 }
 ")
 

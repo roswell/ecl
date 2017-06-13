@@ -939,6 +939,7 @@ si_pointer(cl_object x)
 #if defined(ECL_MS_WINDOWS_HOST)
 void
 ecl_get_commandline_args(int* argc, char*** argv) {
+  /* the caller should use LocalFree to release the memory of strings in argv and argv itself */
   LPWSTR *wArgs;
   int i;
 
@@ -946,10 +947,10 @@ ecl_get_commandline_args(int* argc, char*** argv) {
     return;
 
   wArgs = CommandLineToArgvW(GetCommandLineW(), argc);
-  *argv = (char**)malloc(sizeof(char*)*(*argc));
+  *argv = (char**)LocalAlloc(0, sizeof(char*)*(*argc));
   for (i=0; i<*argc; i++) {
     int len = wcslen(wArgs[i]);
-    (*argv)[i] = (char*)malloc(2*(len+1));
+    (*argv)[i] = (char*)LocalAlloc(0, 2*(len+1));
     wcstombs((*argv)[i], wArgs[i], len+1);
   }
   LocalFree(wArgs);
