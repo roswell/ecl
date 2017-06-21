@@ -351,7 +351,7 @@ case "${host_os}" in
                 BUNDLE_LDFLAGS="-dy -G ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,-R,~A'
                 TCPLIBS='-lsocket -lnsl -lintl'
-                clibs='${clibs} -ldl'
+                clibs="${clibs} -ldl"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 if test "x$GCC" = "xyes"; then
