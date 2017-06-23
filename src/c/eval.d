@@ -224,12 +224,6 @@ cl_eval(cl_object form)
     if (ECL_CONS_CAR(form) == @'quote') {
       return cl_second(form);
     }
-    /* value = cl_macroexpand(2, form, env); */
-    /* if (value != form) { */
-    /*   form = value; */
-    /*   goto AGAIN; */
-    /* } */
-  ERROR:
     FEerror("EXT:CONSTANT-FORM-VALUE invoked with a non-constant form ~A",
             0, form);
     break;

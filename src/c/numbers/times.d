@@ -141,9 +141,13 @@ ecl_times(cl_object x, cl_object y)
       }
 #endif
       CASE_COMPLEX_FIXNUM;
+      // fallthrough
       CASE_COMPLEX_BIGNUM;
+      // fallthrough
       CASE_COMPLEX_RATIO;
+      // fallthrough
       CASE_COMPLEX_SINGLE_FLOAT;
+      // fallthrough
       CASE_COMPLEX_DOUBLE_FLOAT; COMPLEX_X: {
         cl_object aux = x;
         x = y; y = aux;
