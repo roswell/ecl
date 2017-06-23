@@ -18,6 +18,15 @@
 #+(and cygwin (not ecl-min))
 (ffi:clines "#include <stdlib.h>")
 
+;;; this is needed by compile.lsp.in
+(defun safe-system (string)
+  (cmpnote "Invoking external command:~%  ~A~%" string)
+  (let ((result (ext:system string)))
+    (unless (zerop result)
+      (cerror "Continues anyway."
+              "(SYSTEM ~S) returned non-zero value ~D"
+              string result))))
+
 (defun save-directory (forms)
   (let ((directory
          (probe-file (make-pathname :name nil :type nil
