@@ -133,11 +133,11 @@ int connect_to_server(char *host, int port)
 #ifdef TCP_NODELAY
   /* make sure to turn off TCP coalescence */
 #if defined(ECL_MS_WINDOWS_HOST)
-  { char mi;
+  { char mi = 1;
     setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof (char));
   }
 #else
-  { int mi;
+  { int mi = 1;
     setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof (int));
   }
 #endif
@@ -196,11 +196,11 @@ create_server_port(int port)
 #ifdef TCP_NODELAY
   /* make sure to turn off TCP coalescence */
 #if defined(ECL_MS_WINDOWS_HOST)
-  { char mi;
+  { char mi = 1;
     setsockopt(request, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof (char));
   }
 #else
-  { int mi;
+  { int mi = 1;
     setsockopt(request, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof (int));
   }
 #endif
