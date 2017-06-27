@@ -1566,7 +1566,7 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
       if (!Null(aux))
         FEprogram_error_noreturn("LET: Ill formed declaration.",0);
     }
-    if (!ECL_SYMBOLP(var))
+    if (!ECL_SYMBOLP(var) || (ecl_symbol_type(var) & ecl_stp_constant))
       FEillegal_variable_name(var);
     if (op == OP_PBIND) {
       compile_form(env, value, FLAG_PUSH);
