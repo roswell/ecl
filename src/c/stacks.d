@@ -198,7 +198,7 @@ ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
       return n;
     } else {
       cl_object var = ECL_CONS_CAR(vars);
-      if (!ECL_SYMBOLP(var))
+      if (!ECL_SYMBOLP(var) || (ecl_symbol_type(var) & ecl_stp_constant))
         FEerror("Not a valid variable name ~S.", 1, var);
       if (Null(values)) {
         ecl_bds_bind(env, var, OBJNULL);
