@@ -1702,7 +1702,7 @@ c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
     compile_form(env, value, FLAG_VALUES);
     for (vars=cl_reverse(vars); n--; ) {
       cl_object var = pop(&vars);
-      if (!ECL_SYMBOLP(var))
+      if (!ECL_SYMBOLP(var) || (ecl_symbol_type(var) & ecl_stp_constant))
         FEillegal_variable_name(var);
       c_vbind(env, var, n, specials);
     }
