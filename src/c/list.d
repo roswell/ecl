@@ -1018,6 +1018,10 @@ ecl_assq(cl_object x, cl_object l)
 {
   loop_for_in(l) {
     cl_object pair = ECL_CONS_CAR(l);
+    if (pair==ECL_NIL) continue;
+    if (ecl_unlikely(ECL_ATOM(pair))) {
+      FEtype_error_cons(pair);
+    }
     if (x == CAR(pair))
       return pair;
   } end_loop_for_in;
@@ -1029,6 +1033,10 @@ ecl_assql(cl_object x, cl_object l)
 {
   loop_for_in(l) {
     cl_object pair = ECL_CONS_CAR(l);
+    if (pair==ECL_NIL) continue;
+    if (ecl_unlikely(ECL_ATOM(pair))) {
+      FEtype_error_cons(pair);
+    }
     if (ecl_eql(x, CAR(pair)))
       return pair;
   } end_loop_for_in;
@@ -1040,6 +1048,10 @@ ecl_assoc(cl_object x, cl_object l)
 {
   loop_for_in(l) {
     cl_object pair = ECL_CONS_CAR(l);
+    if (pair==ECL_NIL) continue;
+    if (ecl_unlikely(ECL_ATOM(pair))) {
+      FEtype_error_cons(pair);
+    }
     if (ecl_equal(x, CAR(pair)))
       return pair;
   } end_loop_for_in;
@@ -1051,6 +1063,10 @@ ecl_assqlp(cl_object x, cl_object l)
 {
   loop_for_in(l) {
     cl_object pair = ECL_CONS_CAR(l);
+    if (pair==ECL_NIL) continue;
+    if (ecl_unlikely(ECL_ATOM(pair))) {
+      FEtype_error_cons(pair);
+    }
     if (ecl_equalp(x, CAR(pair)))
       return pair;
   } end_loop_for_in;

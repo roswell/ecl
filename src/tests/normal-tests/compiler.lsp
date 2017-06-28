@@ -1198,3 +1198,19 @@
         (simple-type-error () t)
         (error () nil)
         (:no-error (v) (declare (ignore v)) nil)))
+
+;;; Date 2017-06-28
+;;; Reported by Fabrizio Fabbri
+;;; Description
+;;;
+;;;    Compiled assoc does not check that alist argument
+;;;    is a valid association list.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
+(test cmp.0054.invalid-argument-type
+      (handler-case 
+          (funcall (compile nil
+                            '(lambda () (assoc 'z '((a . b) :bad (c . d))))))
+        (simple-type-error () t)
+        (error () nil)
+        (:no-error (v) (declare (ignore v)) nil)))
