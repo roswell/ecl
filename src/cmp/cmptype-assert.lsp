@@ -101,10 +101,17 @@
            (c1checked-value (list (values-type-primary-type type)
                                   value)))
           ((and (policy-evaluate-forms) (constantp value *cmp-env*))
-           (unless (typep (ext:constant-form-value value *cmp-env*) type)
-             (cmpwarn "Failed type assertion for value ~A and type ~A"
-                      value type))
-           value)
+           (if (typep (ext:constant-form-value value *cmp-env*) type)
+               value
+               (progn
+                 ;; warn and generate error.
+                 (cmpwarn "Failed type assertion for value ~A and type ~A"
+                          value type)
+                 (c1expr `(error 'simple-type-error
+                                 :datum ,value
+                                 :expected-type ',type
+                                 :format-control "The constant value ~S is not a ~S"
+                                 :format-arguments (list ,value ',type))))))
           ;; Is the form type contained in the test?
           ((progn
              (setf form (c1expr value)
