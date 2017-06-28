@@ -578,6 +578,7 @@ extern ECL_API void FEunbound_variable(cl_object sym) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_macro_call(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_variable(const char *s, cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEassignment_to_constant(cl_object v) ecl_attr_noreturn;
+extern ECL_API void FEbinding_a_constant(cl_object v) ecl_attr_noreturn;
 extern ECL_API void FEundefined_function(cl_object fname) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function_name(cl_object obj) ecl_attr_noreturn;

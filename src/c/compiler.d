@@ -1566,8 +1566,10 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
       if (!Null(aux))
         FEprogram_error_noreturn("LET: Ill formed declaration.",0);
     }
-    if (!ECL_SYMBOLP(var) || (ecl_symbol_type(var) & ecl_stp_constant))
+    if (!ECL_SYMBOLP(var))
       FEillegal_variable_name(var);
+    if (ecl_symbol_type(var) & ecl_stp_constant)
+      FEbinding_a_constant(var);
     if (op == OP_PBIND) {
       compile_form(env, value, FLAG_PUSH);
       if (ecl_member_eq(var, vars))
@@ -1702,8 +1704,10 @@ c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
     compile_form(env, value, FLAG_VALUES);
     for (vars=cl_reverse(vars); n--; ) {
       cl_object var = pop(&vars);
-      if (!ECL_SYMBOLP(var) || (ecl_symbol_type(var) & ecl_stp_constant))
+      if (!ECL_SYMBOLP(var))
         FEillegal_variable_name(var);
+      if (ecl_symbol_type(var) & ecl_stp_constant)
+        FEbinding_a_constant(var);
       c_vbind(env, var, n, specials);
     }
     c_declare_specials(env, specials);

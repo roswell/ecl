@@ -441,6 +441,12 @@ FEassignment_to_constant(cl_object v)
 }
 
 void
+FEbinding_a_constant(cl_object v)
+{
+  FEprogram_error("The constant ~S is being bound.", 1, v);
+}
+
+void
 FEinvalid_function(cl_object obj)
 {
   FEwrong_type_argument(@'function', obj);
