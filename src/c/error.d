@@ -435,6 +435,12 @@ FEinvalid_variable(const char *s, cl_object obj)
 }
 
 void
+FEillegal_variable_name(cl_object v)
+{
+  FEprogram_error("Not a valid variable name ~S.", 1, v);
+}
+
+void
 FEassignment_to_constant(cl_object v)
 {
   FEprogram_error("SETQ: Tried to assign a value to the constant ~S.", 1, v);

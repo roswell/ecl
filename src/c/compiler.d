@@ -130,7 +130,6 @@ static int c_listA(cl_env_ptr env, cl_object args, int push);
 
 static cl_object ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda);
 
-static void FEillegal_variable_name(cl_object) ecl_attr_noreturn;
 static void FEill_formed_input(void) ecl_attr_noreturn;
 
 /* -------------------- SAFE LIST HANDLING -------------------- */
@@ -341,12 +340,6 @@ assert_type_symbol(cl_object v)
 {
   if (ecl_t_of(v) != t_symbol)
     FEprogram_error_noreturn("Expected a symbol, found ~S.", 1, v);
-}
-
-static void
-FEillegal_variable_name(cl_object v)
-{
-  FEprogram_error_noreturn("Not a valid variable name ~S.", 1, v);
 }
 
 static void
