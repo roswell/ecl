@@ -1182,3 +1182,19 @@
     (is-eql 10 (f2 10))
     (compile 'f2)
     (is-eql 10 (f2 10))))
+
+;;; Date 2017-06-27
+;;; Reported by Fabrizio Fabbri
+;;; Description
+;;;
+;;;    Compiled function drop argument type checkin
+;;;    on constant.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
+(test cmp.0053.check-values-type-on-constant
+      (handler-case 
+          (funcall (compile nil
+                            '(lambda () (rplaca 'A 1))))
+        (simple-type-error () t)
+        (error () nil)
+        (:no-error (v) (declare (ignore v)) nil)))
