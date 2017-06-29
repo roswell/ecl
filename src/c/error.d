@@ -180,32 +180,6 @@ FEprogram_error(const char *s, int narg, ...)
 }
 
 void
-FEprogram_error_noreturn(const char *s, int narg, ...)
-{
-  cl_object real_args, text;
-  ecl_va_list args;
-  ecl_va_start(args, narg, narg, 0);
-  text = make_constant_base_string(s);
-  real_args = cl_grab_rest_args(args);
-  if (cl_boundp(@'si::*current-form*') != ECL_NIL) {
-    /* When FEprogram_error is invoked from the compiler, we can
-     * provide information about the offending form.
-     */
-    cl_object stmt = ecl_symbol_value(@'si::*current-form*');
-    if (stmt != ECL_NIL) {
-      real_args = @list(3, stmt, text, real_args);
-      text = make_constant_base_string("In form~%~S~%~?");
-    }
-  }
-  si_signal_simple_error(4, 
-                         @'program-error', /* condition name */
-                         ECL_NIL, /* not correctable */
-                         text,
-                         real_args);
-  _ecl_unexpected_return();
-}
-
-void
 FEcontrol_error(const char *s, int narg, ...)
 {
   ecl_va_list args;

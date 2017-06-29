@@ -661,7 +661,7 @@ APPLY_fixed(cl_narg n, cl_object (*fn)(), cl_object *x)
                         x[50],x[51],x[52],x[53],x[54],x[55],x[56],
                         x[57],x[58],x[59],x[60],x[61],x[62],x[63]);
   default:
-    FEprogram_error_noreturn("Too many arguments", 0);
+    FEprogram_error("Too many arguments", 0);
   }
 }
 #endif

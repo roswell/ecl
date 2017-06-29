@@ -219,7 +219,7 @@ asm_clear(cl_env_ptr env, cl_index h) {
 static void
 asm_op2(cl_env_ptr env, int code, int n) {
   if (ecl_unlikely(n < -MAX_OPARG || MAX_OPARG < n))
-    FEprogram_error_noreturn("Argument to bytecode is too large", 0);
+    FEprogram_error("Argument to bytecode is too large", 0);
   asm_op(env, code);
   asm_arg(env, n);
 }
@@ -246,9 +246,9 @@ static void
 asm_complete(cl_env_ptr env, int op, cl_index pc) {
   cl_fixnum delta = current_pc(env) - pc;  /* [1] */
   if (ecl_unlikely(op && (asm_ref(env, pc-1) != op)))
-    FEprogram_error_noreturn("Non matching codes in ASM-COMPLETE2", 0);
+    FEprogram_error("Non matching codes in ASM-COMPLETE2", 0);
   else if (ecl_unlikely(delta < -MAX_OPARG || delta > MAX_OPARG))
-    FEprogram_error_noreturn("Too large jump", 0);
+    FEprogram_error("Too large jump", 0);
   else {
 #ifdef ECL_SMALL_BYTECODES
     unsigned char low = delta & 0xFF;
@@ -339,13 +339,13 @@ static void
 assert_type_symbol(cl_object v)
 {
   if (ecl_t_of(v) != t_symbol)
-    FEprogram_error_noreturn("Expected a symbol, found ~S.", 1, v);
+    FEprogram_error("Expected a symbol, found ~S.", 1, v);
 }
 
 static void
 FEill_formed_input()
 {
-  FEprogram_error_noreturn("Syntax error: list with too few elements or improperly terminated.", 0);
+  FEprogram_error("Syntax error: list with too few elements or improperly terminated.", 0);
 }
 
 static int
@@ -640,8 +640,7 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
          symbol macro */
       if (allow_symbol_macro)
         return -1;
-      FEprogram_error_noreturn("Internal error: symbol macro ~S"
-                               " used as variable",
+      FEprogram_error("Internal error: symbol macro ~S used as variable",
                                1, var);
     } else if (Null(special)) {
       return n;
@@ -853,7 +852,7 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
   int flags;
 
   if (!ECL_SYMBOLP(name))
-    FEprogram_error_noreturn("BLOCK: Not a valid block name, ~S", 1, name);
+    FEprogram_error("BLOCK: Not a valid block name, ~S", 1, name);
 
   old_env = *(env->c_env);
   constants = old_env.constants->vector.fillp;
@@ -971,14 +970,12 @@ c_funcall(cl_env_ptr env, cl_object args, int flags) {
     cl_object kind = ECL_CONS_CAR(name);
     if (kind == @'function') {
       if (cl_list_length(name) != ecl_make_fixnum(2))
-        FEprogram_error_noreturn("FUNCALL: Invalid function name ~S",
-                                 1, name);
+        FEprogram_error("FUNCALL: Invalid function name ~S", 1, name);
       return c_call(env, CONS(CADR(name), args), flags);
     }
     if (kind == @'quote') {
       if (cl_list_length(name) != ecl_make_fixnum(2))
-        FEprogram_error_noreturn("FUNCALL: Invalid function name ~S",
-                                 1, name);
+        FEprogram_error("FUNCALL: Invalid function name ~S", 1, name);
       return c_call(env, CONS(CADR(name), args), flags | FLAG_GLOBAL);
     }
   }
@@ -1004,13 +1001,13 @@ perform_c_case(cl_env_ptr env, cl_object args, int flags) {
       return compile_body(env, ECL_NIL, flags);
     clause = pop(&args);
     if (ECL_ATOM(clause))
-      FEprogram_error_noreturn("CASE: Illegal clause ~S.",1,clause);
+      FEprogram_error("CASE: Illegal clause ~S.",1,clause);
     test = pop(&clause);
   } while (test == ECL_NIL);
 
   if (@'otherwise' == test || test == ECL_T) {
     unlikely_if (args != ECL_NIL) {
-      FEprogram_error_noreturn("CASE: The selector ~A can only appear at the last position.",
+      FEprogram_error("CASE: The selector ~A can only appear at the last position.",
                                1, test);
     }
     compile_body(env, clause, flags);
@@ -1135,7 +1132,7 @@ c_cond(cl_env_ptr env, cl_object args, int flags) {
     return compile_form(env, ECL_NIL, flags);
   clause = pop(&args);
   if (ECL_ATOM(clause))
-    FEprogram_error_noreturn("COND: Illegal clause ~S.",1,clause);
+    FEprogram_error("COND: Illegal clause ~S.",1,clause);
   test = pop(&clause);
   flags = maybe_values_or_reg0(flags);
   if (ECL_T == test) {
@@ -1352,7 +1349,7 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
   for (l = def_list, nfun = 0; !Null(l); nfun++) {
     v = CAR(pop(&l));
     if (ecl_member_eq(v, fnames))
-      FEprogram_error_noreturn
+      FEprogram_error
         ("~s: The function ~s was already defined.",
          2, (op == OP_LABELS ? @'LABELS' : @'FLET'), v);
     push(v, f);
@@ -1413,7 +1410,7 @@ static int
 c_function(cl_env_ptr env, cl_object args, int flags) {
   cl_object function = pop(&args);
   if (!Null(args))
-    FEprogram_error_noreturn("FUNCTION: Too many arguments.", 0);
+    FEprogram_error("FUNCTION: Too many arguments.", 0);
   return asm_function(env, function, flags);
 }
 
@@ -1454,7 +1451,7 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
     return FLAG_REG0;
   }
  ERROR:
-  FEprogram_error_noreturn("FUNCTION: Not a valid argument ~S.", 1, function);
+  FEprogram_error("FUNCTION: Not a valid argument ~S.", 1, function);
   return FLAG_REG0;
 }
 
@@ -1464,9 +1461,9 @@ c_go(cl_env_ptr env, cl_object args, int flags) {
   cl_object tag = pop(&args);
   cl_object info = c_tag_ref(env, tag, @':tag');
   if (Null(info))
-    FEprogram_error_noreturn("GO: Unknown tag ~S.", 1, tag);
+    FEprogram_error("GO: Unknown tag ~S.", 1, tag);
   if (!Null(args))
-    FEprogram_error_noreturn("GO: Too many arguments.",0);
+    FEprogram_error("GO: Too many arguments.",0);
   asm_op2(env, OP_GO, ecl_fixnum(CAR(info)));
   asm_arg(env, ecl_fixnum(CDR(info)));
   return flags;
@@ -1557,7 +1554,7 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
       var = pop(&aux);
       value = pop_maybe_nil(&aux);
       if (!Null(aux))
-        FEprogram_error_noreturn("LET: Ill formed declaration.",0);
+        FEprogram_error("LET: Ill formed declaration.",0);
     }
     if (!ECL_SYMBOLP(var))
       FEillegal_variable_name(var);
@@ -1566,7 +1563,7 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
     if (op == OP_PBIND) {
       compile_form(env, value, FLAG_PUSH);
       if (ecl_member_eq(var, vars))
-        FEprogram_error_noreturn
+        FEprogram_error
           ("LET: The variable ~s occurs more than "
            "once in the LET.", 1, var);
       vars = CONS(var, vars);
@@ -1605,7 +1602,7 @@ c_load_time_value(cl_env_ptr env, cl_object args, int flags)
   const cl_compiler_ptr c_env = env->c_env;
   cl_object value;
   unlikely_if (Null(args) || cl_cddr(args) != ECL_NIL)
-    FEprogram_error_noreturn("LOAD-TIME-VALUE: Wrong number of arguments.", 0);
+    FEprogram_error("LOAD-TIME-VALUE: Wrong number of arguments.", 0);
   value = ECL_CONS_CAR(args);
   if (c_env->mode != FLAG_LOAD && c_env->mode != FLAG_ONLY_LOAD) {
     value = si_eval_with_env(1, value);
@@ -1777,7 +1774,7 @@ c_multiple_value_setq(cl_env_ptr env, cl_object orig_args, int flags) {
   /* Compile values */
   values = pop(&args);
   if (args != ECL_NIL)
-    FEprogram_error_noreturn("MULTIPLE-VALUE-SETQ: Too many arguments.", 0);
+    FEprogram_error("MULTIPLE-VALUE-SETQ: Too many arguments.", 0);
   if (nvars == 0) {
     /* No variables */
     return compile_form(env, cl_list(2, @'values', values), flags);
@@ -1814,7 +1811,7 @@ c_not(cl_env_ptr env, cl_object args, int flags) {
     flags = compile_form(env, pop(&args), flags);
   }
   if (!Null(args))
-    FEprogram_error_noreturn("NOT/NULL: Too many arguments.", 0);
+    FEprogram_error("NOT/NULL: Too many arguments.", 0);
   return flags;
 }
 
@@ -1829,7 +1826,7 @@ c_nth_value(cl_env_ptr env, cl_object args, int flags) {
   compile_form(env, pop(&args), FLAG_PUSH);       /* INDEX */
   compile_form(env, pop(&args), FLAG_VALUES);     /* VALUES */
   if (args != ECL_NIL)
-    FEprogram_error_noreturn("NTH-VALUE: Too many arguments.",0);
+    FEprogram_error("NTH-VALUE: Too many arguments.",0);
   asm_op(env, OP_NTHVAL);
   return FLAG_REG0;
 }
@@ -1960,9 +1957,9 @@ c_return_aux(cl_env_ptr env, cl_object name, cl_object stmt, int flags)
   cl_object output = pop_maybe_nil(&stmt);
 
   if (!ECL_SYMBOLP(name) || Null(ndx))
-    FEprogram_error_noreturn("RETURN-FROM: Unknown block name ~S.", 1, name);
+    FEprogram_error("RETURN-FROM: Unknown block name ~S.", 1, name);
   if (stmt != ECL_NIL)
-    FEprogram_error_noreturn("RETURN-FROM: Too many arguments.", 0);
+    FEprogram_error("RETURN-FROM: Too many arguments.", 0);
   compile_form(env, output, FLAG_VALUES);
   asm_op2(env, OP_RETURN, ecl_fixnum(ndx));
   return FLAG_VALUES;
@@ -2024,7 +2021,7 @@ c_symbol_macrolet(cl_env_ptr env, cl_object args, int flags)
     if ((ecl_symbol_type(name) & (ecl_stp_constant|ecl_stp_special)) ||
         ecl_member_eq(name, specials))
       {
-        FEprogram_error_noreturn("SYMBOL-MACROLET: Symbol ~A cannot be \
+        FEprogram_error("SYMBOL-MACROLET: Symbol ~A cannot be \
 declared special and appear in a symbol-macrolet.", 1, name);
       }
     definition = cl_list(2, arglist, cl_list(2, @'quote', expansion));
@@ -2088,7 +2085,7 @@ c_the(cl_env_ptr env, cl_object stmt, int flags) {
   pop(&stmt);
   cl_object value = pop(&stmt);
   if (stmt != ECL_NIL) {
-    FEprogram_error_noreturn("THE: Too many arguments",0);
+    FEprogram_error("THE: Too many arguments",0);
   }
   return compile_form(env, value, flags);
 }
@@ -2103,7 +2100,7 @@ c_throw(cl_env_ptr env, cl_object stmt, int flags) {
   cl_object tag = pop(&stmt);
   cl_object form = pop(&stmt);
   if (stmt != ECL_NIL)
-    FEprogram_error_noreturn("THROW: Too many arguments.",0);
+    FEprogram_error("THROW: Too many arguments.",0);
   compile_form(env, tag, FLAG_PUSH);
   compile_form(env, form, FLAG_VALUES);
   asm_op(env, OP_THROW);
@@ -2535,7 +2532,7 @@ static int
 c_cons(cl_env_ptr env, cl_object args, int flags)
 {
   if (ecl_length(args) != 2) {
-    FEprogram_error_noreturn("CONS: Wrong number of arguments", 0);
+    FEprogram_error("CONS: Wrong number of arguments", 0);
   }
   compile_form(env, cl_first(args), FLAG_PUSH);
   compile_form(env, cl_second(args), FLAG_REG0);
@@ -2548,7 +2545,7 @@ c_endp(cl_env_ptr env, cl_object args, int flags)
 {
   cl_object list = pop(&args);
   if (args != ECL_NIL) {
-    FEprogram_error_noreturn("ENDP: Too many arguments", 0);
+    FEprogram_error("ENDP: Too many arguments", 0);
   }
   compile_form(env, list, FLAG_REG0);
   asm_op(env, OP_ENDP);
@@ -2560,7 +2557,7 @@ c_car(cl_env_ptr env, cl_object args, int flags)
 {
   cl_object list = pop(&args);
   if (args != ECL_NIL) {
-    FEprogram_error_noreturn("CAR: Too many arguments", 0);
+    FEprogram_error("CAR: Too many arguments", 0);
   }
   compile_form(env, list, FLAG_REG0);
   asm_op(env, OP_CAR);
@@ -2572,7 +2569,7 @@ c_cdr(cl_env_ptr env, cl_object args, int flags)
 {
   cl_object list = pop(&args);
   if (args != ECL_NIL) {
-    FEprogram_error_noreturn("CDR: Too many arguments", 0);
+    FEprogram_error("CDR: Too many arguments", 0);
   }
   compile_form(env, list, FLAG_REG0);
   asm_op(env, OP_CDR);
@@ -2675,7 +2672,7 @@ si_process_lambda(cl_object lambda)
   cl_object lambda_list, body;
   const cl_env_ptr env = ecl_process_env();
   unlikely_if (ECL_ATOM(lambda))
-    FEprogram_error_noreturn("LAMBDA: No lambda list.", 0);
+    FEprogram_error("LAMBDA: No lambda list.", 0);
 
   lambda_list = ECL_CONS_CAR(lambda);
   body = ECL_CONS_CDR(lambda);
@@ -2805,7 +2802,7 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
     assert_var_name(v);
     if (context == @'function' && ecl_member_eq(v, lists[0]))
       /* note: ftype isn't valid context for this check */
-      FEprogram_error_noreturn
+      FEprogram_error
         ("The variable ~s occurs more than once as the "
          "required parameter in the lambda list.", 1, v);
     push(v, reqs);
@@ -2915,7 +2912,7 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 
  OUTPUT:
   if ((nreq+nopt+(!Null(rest))+nkey) >= ECL_CALL_ARGUMENTS_LIMIT)
-    FEprogram_error_noreturn("LAMBDA: Argument list ist too long, ~S.", 1,
+    FEprogram_error("LAMBDA: Argument list ist too long, ~S.", 1,
                              org_lambda_list);
   @(return CONS(ecl_make_fixnum(nreq), lists[0])
     CONS(ecl_make_fixnum(nopt), lists[1])
@@ -2926,7 +2923,7 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
     lists[3]);
 
  ILLEGAL_LAMBDA:
-  FEprogram_error_noreturn("LAMBDA: Illegal lambda list ~S.", 1, org_lambda_list);
+  FEprogram_error("LAMBDA: Illegal lambda list ~S.", 1, org_lambda_list);
 
 #undef push
 #undef assert_var_name
@@ -2979,7 +2976,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 
   /* Transform (SETF fname) => fname */
   if (!Null(name) && Null(si_valid_function_name_p(name)))
-    FEprogram_error_noreturn("LAMBDA: Not a valid function name ~S",1,name);
+    FEprogram_error("LAMBDA: Not a valid function name ~S",1,name);
 
   /* We register as special variable a symbol which is not
    * to be used. We use this to mark the boundary of a function
