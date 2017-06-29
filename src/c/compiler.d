@@ -2912,7 +2912,7 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 
  OUTPUT:
   if ((nreq+nopt+(!Null(rest))+nkey) >= ECL_CALL_ARGUMENTS_LIMIT)
-    FEprogram_error("LAMBDA: Argument list ist too long, ~S.", 1,
+    FEprogram_error("LAMBDA: Argument list is too long, ~S.", 1,
                              org_lambda_list);
   @(return CONS(ecl_make_fixnum(nreq), lists[0])
     CONS(ecl_make_fixnum(nopt), lists[1])
