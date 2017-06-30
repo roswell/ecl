@@ -23,7 +23,7 @@
   ECL_STACK_FRAME_COPY(cars_frame, cdrs_frame);                 \
   narg = cars_frame->frame.size;                                \
   if (ecl_unlikely(narg == 0)) {                                \
-    FEprogram_error_noreturn("MAP*: Too few arguments", 0);     \
+    FEprogram_error("MAP*: Too few arguments", 0);              \
   }
 
 @(defun mapcar (fun &rest lists)

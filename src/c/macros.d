@@ -173,7 +173,7 @@ when_macro(cl_object whole, cl_object env)
 {
   cl_object args = CDR(whole);
   if (ecl_unlikely(ecl_endp(args)))
-    FEprogram_error_noreturn("Syntax error: ~S.", 1, whole);
+    FEprogram_error("Syntax error: ~S.", 1, whole);
   return cl_list(3, @'if', CAR(args), CONS(@'progn', CDR(args)));
 }
 
