@@ -474,7 +474,7 @@ ecl_equalp(cl_object x, cl_object y)
     goto BEGIN;
   case t_instance: {
     cl_index i;
-    if ((ty != tx) || (ECL_CLASS_OF(x) != ECL_CLASS_OF(y)))
+    if ((ty != tx) || (ECL_CLASS_OF(x) != ECL_CLASS_OF(y)) || si_structurep(x) == ECL_NIL)
       return(FALSE);
     for (i = 0;  i < x->instance.length;  i++)
       if (!ecl_equalp(x->instance.slots[i], y->instance.slots[i]))
