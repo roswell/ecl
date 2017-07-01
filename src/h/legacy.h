@@ -79,6 +79,8 @@
 
 #define read_VV ecl_init_module
 
+#define FEprogram_error_noreturn FEprogram_error
+
 #endif /* !ECL_LEGACY_H && !ECL_NO_LEGACY */
 
 #define make_simple_base_string(s) ecl_make_simple_base_string((s),-1)
