@@ -52,16 +52,20 @@
     (frob specs body)))
 
 (defmacro is-true (form)
-  `(is (eql ,form t) "Expected T, but got ~s" ,form))
+  (ext:once-only (form)
+    `(is (eql ,form t) "Expected T, but got ~s" ,form)))
 
 (defmacro is-false (form)
-  `(is (null ,form) "Expected NIL, but got ~s" ,form))
+  (ext:once-only (form)
+    `(is (null ,form) "Expected NIL, but got ~s" ,form)))
 
 (defmacro is-equal (what form)
-  `(is (equal ,what ,form) "EQUAL: ~s to ~s" ,form ,what))
+  (ext:once-only (what form)
+    `(is (equal ,what ,form) "EQUAL: ~s to ~s" ,what ,form)))
 
 (defmacro is-eql (what form)
-  `(is (eql ,what ,form) "EQL: ~s to ~s" ,what ,form))
+  (ext:once-only (what form)
+    `(is (eql ,what ,form) "EQL: ~s to ~a" ,what ,form)))
 
 (defmacro pass (form &rest args)
   (declare (ignore form args))
