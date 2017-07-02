@@ -29,28 +29,6 @@
          ffi mop run-program))
 
 
-;;; Some syntactic sugar for 2am
-(defmacro once-only (specs &body body)
-  "Once-Only ({(Var Value-Expression)}*) Form*
-
-  Create a Let* which evaluates each Value-Expression, binding a
-  temporary variable to the result, and wrapping the Let* around the
-  result of the evaluation of Body.  Within the body, each Var is
-  bound to the corresponding temporary variable."
-  (labels ((frob (specs body)
-             (if (null specs)
-                 `(progn ,@body)
-                 (let ((spec (first specs)))
-                   (when (/= (length spec) 2)
-                     (error "Malformed Once-Only binding spec: ~S." spec))
-                   (let ((name (first spec))
-                         (exp-temp (gensym)))
-                     `(let ((,exp-temp ,(second spec))
-                            (,name (gensym "OO-")))
-                        `(let ((,,name ,,exp-temp))
-                           ,,(frob (rest specs) body))))))))
-    (frob specs body)))
-
 (defmacro is-true (form)
   (ext:once-only (form)
     `(is (eql ,form t) "Expected T, but got ~s" ,form)))
