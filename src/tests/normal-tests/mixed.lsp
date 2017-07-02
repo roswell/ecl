@@ -251,4 +251,3 @@
     (delete-file "aux-cl-0003.fas")
     (delete-file "aux-cl-0003.fasc"))
   (is-eql 2 (mix.0015.fun)))
-
