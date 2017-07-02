@@ -123,6 +123,10 @@ as a second value."
                      (*compile-verbose* t)
                      (*compile-print* t))
                  (setf compiled-file (compile-file ,filename ,@compiler-args))))))
+       ;; todo: add delete-files flag
+       ;; (when delete-files
+       ;;   (delete-file filename)
+       ;;   (delete-file compiled-file))
        (values compiled-file output))))
 
 (defmacro with-temporary-file ((var string &rest args) &body body)
