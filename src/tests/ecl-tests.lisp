@@ -29,39 +29,21 @@
          ffi mop run-program))
 
 
-;;; Some syntactic sugar for 2am
-(defmacro once-only (specs &body body)
-  "Once-Only ({(Var Value-Expression)}*) Form*
-
-  Create a Let* which evaluates each Value-Expression, binding a
-  temporary variable to the result, and wrapping the Let* around the
-  result of the evaluation of Body.  Within the body, each Var is
-  bound to the corresponding temporary variable."
-  (labels ((frob (specs body)
-             (if (null specs)
-                 `(progn ,@body)
-                 (let ((spec (first specs)))
-                   (when (/= (length spec) 2)
-                     (error "Malformed Once-Only binding spec: ~S." spec))
-                   (let ((name (first spec))
-                         (exp-temp (gensym)))
-                     `(let ((,exp-temp ,(second spec))
-                            (,name (gensym "OO-")))
-                        `(let ((,,name ,,exp-temp))
-                           ,,(frob (rest specs) body))))))))
-    (frob specs body)))
-
 (defmacro is-true (form)
-  `(is (eql ,form t) "Expected T, but got ~s" ,form))
+  (ext:once-only (form)
+    `(is (eql ,form t) "Expected T, but got ~s" ,form)))
 
 (defmacro is-false (form)
-  `(is (null ,form) "Expected NIL, but got ~s" ,form))
+  (ext:once-only (form)
+    `(is (null ,form) "Expected NIL, but got ~s" ,form)))
 
 (defmacro is-equal (what form)
-  `(is (equal ,what ,form) "EQUAL: ~s to ~s" ,form ,what))
+  (ext:once-only (what form)
+    `(is (equal ,what ,form) "EQUAL: ~s to ~s" ,what ,form)))
 
 (defmacro is-eql (what form)
-  `(is (eql ,what ,form) "EQL: ~s to ~s" ,what ,form))
+  (ext:once-only (what form)
+    `(is (eql ,what ,form) "EQL: ~s to ~a" ,what ,form)))
 
 (defmacro pass (form &rest args)
   (declare (ignore form args))
@@ -119,6 +101,10 @@ as a second value."
                      (*compile-verbose* t)
                      (*compile-print* t))
                  (setf compiled-file (compile-file ,filename ,@compiler-args))))))
+       ;; todo: add delete-files flag
+       ;; (when delete-files
+       ;;   (delete-file filename)
+       ;;   (delete-file compiled-file))
        (values compiled-file output))))
 
 (defmacro with-temporary-file ((var string &rest args) &body body)

@@ -225,3 +225,29 @@
                     (go :next)
                     (print 'skip)
                     :next))))
+
+
+;;; Data: 2017-07-02
+;;; Description:
+;;;
+;;;   Function `ecl_new_binding_index' called `si_set_finalizer',
+;;;   which resetted `env->nvalues' leading to invalid binding in mvb
+;;;   during the first function run.
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/233
+(test mix.0015.mvb
+  (with-compiler ("aux-cl-0003.lsp" :load t)
+    `(progn
+       (defvar mix.0015.v1 'booya)
+       (defun mix.0015.fun ()
+         (let ((share_t))
+           (multiple-value-bind (mix.0015.v1 woops)
+               (case share_t
+                 ((nil)
+                  (values 1 2)))
+             woops)))))
+  (ignore-errors
+    (delete-file "aux-cl-0003.lsp")
+    (delete-file "aux-cl-0003.fas")
+    (delete-file "aux-cl-0003.fasc"))
+  (is-eql 2 (mix.0015.fun)))
