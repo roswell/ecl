@@ -274,7 +274,7 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
     symbol->symbol.binding = new_index;
     symbol->symbol.dynamic |= 1;
   }
-  si_set_finalizer(symbol, ECL_T);
+  ecl_set_finalizer_unprotected(symbol, ECL_T);
   return new_index;
 }
 
