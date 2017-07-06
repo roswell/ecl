@@ -97,23 +97,40 @@
       (unless (or (eq (first args) 'value) ; No infinite recursion
                   (not (policy-open-code-aref/aset)))
         (setf whole
-              `(let* ((value ,(car args))
-                      (vector ,(second args)))
-                 (declare (:read-only value vector)
-                          (optimize (safety 0)))
-                 (optional-type-assertion vector vector)
-                 (let ((index (fill-pointer vector))
-                       (dimension (array-total-size vector)))
-                   (declare (fixnum index dimension)
-                            (:read-only index dimension))
-                   (cond ((< index dimension)
-                          (sys::fill-pointer-set vector (truly-the fixnum (+ 1 index)))
-                          (sys::aset vector index value)
-                          index)
-                         (t ,(if extend
-                               `(vector-push-extend value vector ,@(cddr args))
-                               nil)))))))))
-  whole)
+              (if (or (< (length args) 2)
+                      (and (not extend)
+                           (> (length args) 2))
+                      (and extend
+                           (> (length args) 3)))
+                  (progn
+                    (cmpwarn "Wrong number of arguments passed to function ~S"
+                             (symbol-function
+                              (if extend
+                                    'vector-push-extend
+                                    'vector-push)))
+                    `(si::simple-program-error
+                      "Wrong number of arguments passed to function ~S"
+                      (symbol-function
+                       ',(if extend
+                             'vector-push-extend
+                             'vector-push))))
+                    `(let* ((value ,(car args))
+                            (vector ,(second args)))
+                       (declare (:read-only value vector)
+                                (optimize (safety 0)))
+                       (optional-type-assertion vector vector)
+                       (let ((index (fill-pointer vector))
+                             (dimension (array-total-size vector)))
+                         (declare (fixnum index dimension)
+                                  (:read-only index dimension))
+                         (cond ((< index dimension)
+                                (sys::fill-pointer-set vector (truly-the fixnum (+ 1 index)))
+                                (sys::aset vector index value)
+                                index)
+                               (t ,(if extend
+                                       `(vector-push-extend value vector ,@(cddr args))
+                                       nil))))))))))
+    whole)
 
 (define-compiler-macro vector-push (&whole whole &rest args &environment env)
   (expand-vector-push whole env nil))
