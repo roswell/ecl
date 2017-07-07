@@ -1198,3 +1198,36 @@
         (simple-type-error () t)
         (error () nil)
         (:no-error (v) (declare (ignore v)) nil)))
+
+;;; Date 2017-06-28
+;;; Reported by Fabrizio Fabbri
+;;; Description
+;;;
+;;;    Compiled assoc does not check that alist argument
+;;;    is a valid association list.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
+(test cmp.0054.invalid-argument-type
+      (handler-case 
+          (funcall (compile nil
+                            '(lambda () (assoc 'z '((a . b) :bad (c . d))))))
+        (simple-type-error () t)
+        (error () nil)
+        (:no-error (v) (declare (ignore v)) nil)))
+
+;;; Date 2017-07-05
+;;; Reported by Fabrizio Fabbri
+;;; Description
+;;;
+;;;    Compiled vector-push and vector-push-extend
+;;;    does not check for invalid argument and
+;;;    SIGSEGV
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
+(test cmp.0055.invalid-argument-type
+      (handler-case
+          (funcall (compile nil
+                            '(lambda () (vector-push))))
+        (program-error () t)
+        (error () nil)
+        (:no-error (v) (declare (ignore v)) nil)))

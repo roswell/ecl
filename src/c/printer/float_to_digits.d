@@ -54,7 +54,10 @@ setup(cl_object number, float_approx *approx)
     min_e = LDBL_MIN_EXP;
     limit_f = (number->longfloat.value ==
                ldexpl(FLT_RADIX, LDBL_MANT_DIG-1));
+    break;
 #endif
+  default:
+	 break;
   }
   approx->low_ok = approx->high_ok = ecl_evenp(f);
   if (e > 0) {
