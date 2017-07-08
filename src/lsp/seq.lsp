@@ -230,6 +230,8 @@ default value of INITIAL-ELEMENT depends on TYPE."
                  (eq (array-element-type object) elt-type))
       (let* ((final-length (if (eq length '*) (length object) length)))
         (setf output (make-vector elt-type final-length nil nil nil 0))
+        (unless (eq length '*)
+          (check-type output `(vector ,elt-type (,length)) "coerced object"))
         (do ((i (make-seq-iterator object) (seq-iterator-next output i))
              (j 0 (truly-the index (1+ j))))
             ((= j final-length)
