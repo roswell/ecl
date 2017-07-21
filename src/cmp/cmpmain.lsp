@@ -485,7 +485,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (o-name (si::coerce-to-filename
                   (compile-file-pathname tmp-name :type :object)))
          submodules
-         (submodules-data ())
          c-file)
     (dolist (item (reverse lisp-files))
       (let* ((path (etypecase item
@@ -509,8 +508,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
           (when flags (push flags ld-flags))
           (when init-fn
             (push (list init-fn path) submodules)))))
-    (setf submodules-data (apply #'concatenate '(array base-char (*))
-                                 submodules-data))
     (setq c-file (open c-name :direction :output :external-format :default))
     (format c-file +lisp-program-header+ submodules)
 
