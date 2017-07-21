@@ -283,8 +283,7 @@ extern \"C\"
 ECL_DLLEXPORT
 void ~A(cl_object cblock)
 {
-        /* This function is a wrapper over the randomized init function
-         * name. */
+        /* This is a wrapper around the randomized init function name. */
         ~A(cblock);
 }
 ")
