@@ -699,8 +699,7 @@ compiled successfully, returns the pathname of the compiled file"
                      (list (si::coerce-to-filename o-pathname)))))
 
       (if (setf true-output-file (probe-file output-file))
-          (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%"
-                       (namestring input-pathname))
+          (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%" (namestring input-pathname))
           (cmperr "The C compiler failed to compile the intermediate file."))
 
       (mapc #'cmp-delete-file to-delete)
