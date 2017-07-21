@@ -44,11 +44,15 @@
   =--with-libgc-incdir= and =--with-libgc-libdir= (these flags work the
   same as flags for =libffi= and =libgmp=)
 ** Issues fixed
+- ASDF systems like foo/base and bar/base doesn't have conflicts in bundles
 - interactive input stream in ext:run-program on Windows
 - removed race condition between waitpid and sigchld handler on UNIX
 - buildsystem parallel builds work (i.e make -j999)
 - ECL builds on consoles with unusual encodings on Windows (i.e cp936)
 ** API changes
+- asdf:make-build accepts ~:init-name~ argument for libraries
+this allows specifying human-memorable initialization function name to call
+in C code
 - package local nicknames protocol (documented in newdoc)
 - make-hash-table accepts =:synchronize= flag for thread safe variant. New
   predicate =ext:hash-table-synchronized-p= implemented
