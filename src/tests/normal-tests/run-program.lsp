@@ -104,6 +104,7 @@
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
               #+windows(is-eql :exited (ext:external-process-wait process nil))
+              (finishes (ext:external-process-status process))
               (finishes (ext:terminate-process process t)))))
 
 ;;; We may want to craft it into an interface. Suspend/Resume *is* possible on Windows:
