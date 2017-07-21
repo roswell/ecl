@@ -534,7 +534,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:static-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
-         (format c-file +lisp-init-wrapper+ wrap-name init-name)
+         (when wrap-name
+           (format c-file +lisp-init-wrapper+ wrap-name init-name))
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
@@ -545,7 +546,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:shared-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
-         (format c-file +lisp-init-wrapper+ wrap-name init-name)
+         (when wrap-name
+           (format c-file +lisp-init-wrapper+ wrap-name init-name))
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
