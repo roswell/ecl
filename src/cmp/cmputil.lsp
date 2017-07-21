@@ -46,7 +46,8 @@
   (ecase target
     ((:shared-library :dll :standalone-shared-library :standalone-dll) :shared-library)
     ((:static-library :lib :standalone-static-library :standalone-lib) :static-library)
-    ((:fasl :program) target)))
+    ((:fasl :fasb) :fasl)
+    (:program :program)))
 
 (defun innermost-non-expanded-form (form)
   (when (listp form)
