@@ -397,3 +397,8 @@
                           (<= #.(char-code #\0) cc #.(char-code #\9)))
                       c #\_)))
             (string-downcase (prin1-to-string obj)))))
+
+(defun collect-lines (stream)
+  (loop for line = (read-line stream nil nil)
+     while line
+     collect line))
