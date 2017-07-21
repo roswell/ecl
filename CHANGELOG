@@ -29,6 +29,8 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- compiler: when gcc fails ecl prints the failing command output
+- ASDF has been updated to 3.1.8.6
 - package local nicknames has been implemented (after SBCL)
 - hash table extensions are documented in newdoc
 - various cleanups performed in the compiler
@@ -50,6 +52,7 @@
 - buildsystem parallel builds work (i.e make -j999)
 - ECL builds on consoles with unusual encodings on Windows (i.e cp936)
 ** API changes
+- mk-defsystem is not build by default (enable by ~--with-defsystem=yes~)
 - asdf:make-build accepts ~:init-name~ argument for libraries
 this allows specifying human-memorable initialization function name to call
 in C code
