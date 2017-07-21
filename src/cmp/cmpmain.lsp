@@ -440,7 +440,7 @@ filesystem or in the database of ASDF modules."
   (cond ((null epilogue-code)
          (setf epilogue-code ""))
         ((stringp epilogue-code)
-         )
+         nil)
         (t
          (with-standard-io-syntax
            (setq epilogue-code
