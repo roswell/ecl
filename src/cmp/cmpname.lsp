@@ -120,7 +120,7 @@ the function name it precedes."
      (or (and (probe-file pathname)
               (find-init-name pathname :tag (kind->tag kind)))
          (cmpnote "Cannot find out entry point for binary file ~A" pathname)))
-    (otherwise (compute-init-name pathname kind))))
+    (otherwise (compute-init-name pathname :kind kind))))
 
 (defun remove-prefix (prefix name)
   (if (equal 0 (search prefix name))
