@@ -318,8 +318,11 @@ static void
 create_descriptor(cl_object stream, cl_object direction,
                   int *child, int *parent) {
   if (stream == @':stream') {
-    int fd[2];
-    pipe(fd);
+    int fd[2], ret;
+    ret = pipe(fd);
+    if (ret != 0) {
+      FElibc_error("Unable to create pipe", 0);
+    }
     if (direction == @':input') {
       *parent = fd[1];
       *child = fd[0];
