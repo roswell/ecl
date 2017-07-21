@@ -351,7 +351,7 @@ cl_object
 si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   cl_env_ptr the_env = ecl_process_env();
   int parent_write = 0, parent_read = 0, parent_error = 0;
-  cl_object pid, stream_write, stream_read, exit_status;
+  cl_object pid, stream_read, exit_status;
 
   command = si_copy_to_simple_base_string(command);
   environ = cl_mapcar(2, @'si::copy-to-simple-base-string', environ);
