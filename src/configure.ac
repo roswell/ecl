@@ -183,7 +183,7 @@ AC_ARG_WITH(defsystem,
   AS_HELP_STRING( [--with-defsystem],
                   [include DEFSYSTEM building facility]
                   [(yes|builtin|no, default=YES)]),
-  [], [with_defsystem=yes])
+  [], [with_defsystem=no])
 
 AC_ARG_WITH(cmp,
   AS_HELP_STRING( [--with-cmp],
