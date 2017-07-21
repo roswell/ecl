@@ -423,11 +423,13 @@ filesystem or in the database of ASDF modules."
                   (output-name (if (or (symbolp output-name) (stringp output-name))
                                    (compile-file-pathname output-name :type target)
                                    output-name))
-                  (init-name (or init-name (compute-init-name output-name
-                                                              :kind target)))
-                  (wrap-init-name (compute-init-name output-name
-                                                     :kind target
-                                                     :wrapper t)))
+                  ;; wrap-name is the init function name defined by a programmer
+                  (wrap-name init-name))
+  ;; init-name should always be unique
+  (setf init-name (compute-init-name output-name :kind target))
+  (unless wrap-name
+    ;; eventually wrap-name is a human-readable func1tion name (not always unique!)
+    (setf wrap-name (init-function-name (pathname-name output-name) :kind target :prefix "wrap_")))
   (unless main-name
     (setf main-name (compute-init-name output-name :kind target :prefix "main_")))
   ;;
@@ -527,7 +529,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:static-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
-         (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
+         (format c-file +lisp-init-wrapper+ wrap-name init-name)
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
@@ -538,7 +540,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:shared-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
-         (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
+         (format c-file +lisp-init-wrapper+ wrap-name init-name)
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
