@@ -1,5 +1,5 @@
 ;;; -*- mode: Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp ; buffer-read-only: t; -*-
-;;; This is ASDF 3.1.8.5: Another System Definition Facility.
+;;; This is ASDF 3.1.8.6: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -4683,7 +4683,7 @@ or COMPRESSION on SBCL, and APPLICATION-TYPE on SBCL/Windows."
                       ((:program) 'compiler::build-program))
              (pathname destination)
              #+(or clasp ecl) :lisp-files #+mkcl :lisp-object-files (append lisp-object-files #+(or clasp ecl) extra-object-files)
-             #+(or clasp ecl) :init-name #+(or clasp ecl) (c::compute-init-name (or output-name destination) :kind kind)
+             #+(or clasp ecl) :init-name #+(or clasp ecl) (getf build-args :init-name)
              (append
               (when prologue-code `(:prologue-code ,prologue-code))
               (when epilogue-code `(:epilogue-code ,epilogue-code))
@@ -7274,7 +7274,7 @@ previously-loaded version of ASDF."
          ;; "3.4.5.67" would be a development version in the official branch, on top of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "3.1.8.5")
+         (asdf-version "3.1.8.6")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
@@ -11653,9 +11653,14 @@ or of opaque libraries shipped along the source code."))
        'program-op)))
 
   ;; SUPPORTED ALTERNATIVE: Use program-op and program-system
-  (defun make-build (system &rest args &key (monolithic nil) (type :fasl)
-                             (move-here nil move-here-p)
-                             &allow-other-keys)
+  (defun make-build (system &rest args
+                     &key
+                       (monolithic nil)
+                       (type :fasl)
+                       (move-here nil move-here-p)
+                       (init-name nil)
+                     &allow-other-keys)
+    (declare (ignore init-name))
     (let* ((operation-name (select-bundle-operation type monolithic))
            (move-here-path (if (and move-here
                                     (typep move-here '(or pathname string)))
