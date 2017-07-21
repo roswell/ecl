@@ -427,15 +427,15 @@ filesystem or in the database of ASDF modules."
                   (wrap-name init-name))
   ;; init-name should always be unique
   (setf init-name (compute-init-name output-name :kind target))
+  (cond ((null wrap-name) nil)
+        ((equal init-name wrap-name)        ; fixup for ASDF
+         (cmpwarn "Parameter `init-name' is the same as the result of an internal function `compute-init-name'. Ignoring.")
+         (setf wrap-name nil))
+        ((null (member target '(:static-library :shared-library)))
+         (cmpwarn "Supplying `init-name' is valid only for libraries. Ignoring.")))
   (unless main-name
     (setf main-name (compute-init-name output-name :kind target :prefix "main_")))
 
-  ;; fixup for ASDF
-  (when (equal init-name wrap-name)
-    (cmpwarn "It seems that you put result of the internal function ~
-`compute-init-name' as `init-name' key parameter. Wrapper won't be ~
-created.")
-    (setf wrap-name nil))
 
   ;;
   ;; The epilogue-code can be either a string made of C code, or a
