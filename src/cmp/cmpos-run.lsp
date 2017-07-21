@@ -42,26 +42,28 @@
 (defmacro with-current-directory (&body forms)
   `(save-directory #'(lambda () ,@forms)))
 
-(defun safe-run-program (program args)
+(defun safe-run-program (program args &aux result output)
   (cmpnote "Invoking external command:~%  ~A ~{~A ~}" program args)
-  (let ((result
-         (let* ((*standard-output* ext:+process-standard-output+)
-                (*error-output* ext:+process-error-output+)
-                (program (split-program-options program))
-                (args `(,@(cdr program) ,@args))
-                (program (car program)))
-           (with-current-directory
-             #-windows (nth-value 1 (si:run-program-inner program args nil))
-             #+windows (si:system (format nil "~A~{ ~A~}" program args))))))
-    (cond ((null result)
-           (cerror "Continues anyway."
-                   "Unable to execute:~%(SI:RUN-PROGRAM-INNER ~S ~S NIL)"
-                   program args result))
-          ((not (zerop result))
-           (cerror "Continues anyway."
-                   "Error code ~D when executing~%(SI:RUN-PROGRAM-INNER ~S ~S NIL)"
-                   result program args)))
-    result))
+  (let* ((*standard-output* ext:+process-standard-output+)
+         (*error-output* ext:+process-error-output+)
+         (program (split-program-options program))
+         (args `(,@(cdr program) ,@args))
+         (program (car program)))
+    (with-current-directory
+      #-windows (multiple-value-bind (output-stream return-code)
+                    (si:run-program-inner program args nil)
+                  (setf output (collect-lines output-stream)
+                        result return-code))
+      #+windows (setf result (si:system (format nil "~A~{ ~A~}" program args)))))
+  (cond ((null result)
+         (cerror "Continues anyway."
+                 "Unable to execute:~%(SI:RUN-PROGRAM-INNER ~S ~S NIL)"
+                 program args result))
+        ((not (zerop result))
+         (cerror "Continues anyway."
+                 "Error code ~D when executing~%(SI:RUN-PROGRAM-INNER ~S ~S NIL):~%~{~A~^~%~}"
+                 result program args output)))
+  result)
 
 (defun split-program-options (string)
   (labels ((maybe-push (options current)
