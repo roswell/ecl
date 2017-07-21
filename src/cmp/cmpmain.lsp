@@ -512,9 +512,9 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
     (let ((init-tag (init-name-tag init-name :kind target)))
       (ecase target
         (:program
-         (format c-file +lisp-program-init+ init-name
-                 init-tag
-                 "" submodules "")
+         (format c-file +lisp-program-init+ init-name init-tag "" submodules "")
+         ;; we don't need wrapper in the program, we have main for that
+         ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (format c-file
                  #+:win32 (ecase system
                             (:console +lisp-program-main+)
@@ -548,6 +548,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:fasl
          (format c-file +lisp-program-init+ init-name init-tag prologue-code
                  submodules epilogue-code)
+         ;; we don't need wrapper in the fasl, we scan for init function name
+         ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (close c-file)
          (compiler-cc c-name o-name)
          (bundle-cc output-name init-name (list* o-name ld-flags))))
