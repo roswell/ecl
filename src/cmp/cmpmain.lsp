@@ -427,10 +427,9 @@ filesystem or in the database of ASDF modules."
                                                               :kind target)))
                   (wrap-init-name (compute-init-name output-name
                                                      :kind target
-                                                     :wrapper t))
-                  (main-name (or main-name (compute-init-name output-name
-                                                              :kind target
-                                                              :prefix "main_"))))
+                                                     :wrapper t)))
+  (unless main-name
+    (setf main-name (compute-init-name output-name :kind target :prefix "main_")))
   ;;
   ;; The epilogue-code can be either a string made of C code, or a
   ;; lisp form.  In the latter case we add some additional C code to
