@@ -59,10 +59,13 @@ Use this in REPL to make a shared library:
 (asdf:make-build :example-with-dep
                  :type :shared-library
                  :move-here #P"./"
-                 :monolithic t)
+                 :monolithic t
+                 :init-name "init_dll_example")
 #+END_SRC
 
-Here ~:monolithic t~ means to let ECL solve dependence and build all dependence into one library named ~example-with-dep--all-systems.so~ in this directory.
+Here ~:monolithic t~ means to let ECL solve dependence and build all
+dependence into one library named ~example-with-dep--all-systems.so~
+in this directory.
 
 To use it, we use a simple C program:
 
@@ -71,10 +74,10 @@ To use it, we use a simple C program:
 #include <ecl/ecl.h>
 
 int main (int argc, char **argv) {
-  extern void init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS(cl_object);
+  extern void init_dll_example(cl_object);
   
   cl_boot(argc, argv);
-  ecl_init_module(NULL, init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS);
+  ecl_init_module(NULL, init_dll_example);
 
   /* do things with the Lisp library */
   cl_eval(c_string_to_object("(example:test-function 5)"));
@@ -85,7 +88,10 @@ int main (int argc, char **argv) {
 
 #+END_SRC
 
-Note the name convention here: an asdf system named ~example-with-dep~ will compiled to ~example-with-dep--all-systems.so~ and in the C code should be init with ~init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS~. Compile it using:
+Note the name convention here: an asdf system named ~example-with-dep~
+will compiled to ~example-with-dep--all-systems.so~ and in the C code
+should be init with the function passed as ~:init-name~
+parameter. Compile it using:
 
 #+BEGIN_SRC shell
 gcc test.c example-with-dep--all-systems.so -o test -lecl
@@ -108,31 +114,33 @@ You can also build all dependent libraries separately as several ~.so~ files and
 #+BEGIN_SRC common-lisp
 (asdf:make-build :complex-example
                  :type :shared-library
-                 :move-here #P"./")
+                 :move-here #P"./"
+                 :init-name "init_example")
 (asdf:make-build :alexandria
                  :type :shared-library
-                 :move-here #P"./")
+                 :move-here #P"./"
+                 :init-name "init_alexandria")
 (asdf:make-build :cl-fad
                  :type :shared-library
-                 :move-here #P"./")
+                 :move-here #P"./"
+                 :init-name "init_fad")
 (asdf:make-build :bordeaux-threads
                  :type :shared-library
-                 :move-here #P"./")
+                 :move-here #P"./"
+                 :init-name "init_bt")
 #+END_SRC
 
 Note here is no ~:monolithic t~ and we also need to build ~bordeaux-threads~ because ~cl-fad~ depends on it. The building sequence doesn't matter and the result ~.so~ files can also be used in your future program if these libraries are not modified.
 And We need to initialize all these modules using ~ecl_init_module~, the name convention is to initialize ~cl-fad~ you need:
 
 #+BEGIN_SRC c
-extern void init_dll_CL_FAD(cl_object);
+extern void init_fad(cl_object);
 
 /* after cl_boot(argc, argv); 
    and if B depends on A, you should first init A then B. */
-ecl_init_module(NULL, init_dll_CL_FAD);
+ecl_init_module(NULL, init_fad);
 
 #+END_SRC
-
-You can easily figure out name conventions with other libraries.
 
 ** Build it as static library and use in C
 To build a static library, use:
@@ -141,10 +149,14 @@ To build a static library, use:
 (asdf:make-build :example-with-dep
                  :type :static-library
                  :move-here #P"./"
-                 :monolithic t)
+                 :monolithic t
+                 :init-name "init_example_with_dep")
 #+END_SRC
 
-That will generate a ~example-with-dep--all-systems.a~ in current directory and we need to replace ~init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS~ with ~init_lib_EXAMPLE_WITH_DEP__ALL_SYSTEMS~. (The code is given in test-static.c) And compile it using:
+That will generate a ~example-with-dep--all-systems.a~ in current
+directory and we need to replace initialize it with
+~init_example_with_dep~ function. (The code is given in test-static.c)
+And compile it using:
 
 #+BEGIN_SRC shell
 gcc test-static.c example-with-dep--all-systems.a -o test-static -lecl
@@ -156,5 +168,7 @@ Then run it:
 LD_LIBRARY_PATH=/usr/local/lib/ ./test-static
 #+END_SRC
 
-Note we don't need to give current path in ~LD_LIBRARY_PATH~ here, since our Lisp library is statically bundled to the executable. 
-The result is same as the shared library example above. You can also build all dependent libraries separately to static libraries. To use them you also need replace names like ~init_dll_CL_FAD~ to ~init_lib_CL_FAD~.
+Note we don't need to give current path in ~LD_LIBRARY_PATH~ here,
+since our Lisp library is statically bundled to the executable.  The
+result is same as the shared library example above. You can also build
+all dependent libraries separately to static libraries.

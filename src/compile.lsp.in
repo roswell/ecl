@@ -125,7 +125,9 @@
                                                 :h-file t
                                                 ;;:shared-data-file "build:ecl.sdat"
                                                 )))))
-  (c::build-static-library "lsp" :lisp-files lsp-objects
+  (c::build-static-library "lsp"
+                           :lisp-files lsp-objects
+                           :init-name "init_lib_LSP"
                            ;;:shared-data-file "build:ecl.sdat"
                            ))
 

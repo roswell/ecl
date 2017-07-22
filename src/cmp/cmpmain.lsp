@@ -283,8 +283,7 @@ extern \"C\"
 ECL_DLLEXPORT
 void ~A(cl_object cblock)
 {
-        /* This function is a wrapper over the randomized init function
-         * name. */
+        /* This is a wrapper around the randomized init function name. */
         ~A(cblock);
 }
 ")
@@ -424,14 +423,20 @@ filesystem or in the database of ASDF modules."
                   (output-name (if (or (symbolp output-name) (stringp output-name))
                                    (compile-file-pathname output-name :type target)
                                    output-name))
-                  (init-name (or init-name (compute-init-name output-name
-                                                              :kind target)))
-                  (wrap-init-name (compute-init-name output-name
-                                                     :kind target
-                                                     :wrapper t))
-                  (main-name (or main-name (compute-init-name output-name
-                                                              :kind target
-                                                              :prefix "main_"))))
+                  ;; wrap-name is the init function name defined by a programmer
+                  (wrap-name init-name))
+  ;; init-name should always be unique
+  (setf init-name (compute-init-name output-name :kind target))
+  (cond ((null wrap-name) nil)
+        ((equal init-name wrap-name)        ; fixup for ASDF
+         (cmpwarn "Parameter `init-name' is the same as the result of an internal function `compute-init-name'. Ignoring.")
+         (setf wrap-name nil))
+        ((null (member target '(:static-library :shared-library)))
+         (cmpwarn "Supplying `init-name' is valid only for libraries. Ignoring.")))
+  (unless main-name
+    (setf main-name (compute-init-name output-name :kind target :prefix "main_")))
+
+
   ;;
   ;; The epilogue-code can be either a string made of C code, or a
   ;; lisp form.  In the latter case we add some additional C code to
@@ -441,7 +446,7 @@ filesystem or in the database of ASDF modules."
   (cond ((null epilogue-code)
          (setf epilogue-code ""))
         ((stringp epilogue-code)
-         )
+         nil)
         (t
          (with-standard-io-syntax
            (setq epilogue-code
@@ -485,7 +490,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (o-name (si::coerce-to-filename
                   (compile-file-pathname tmp-name :type :object)))
          submodules
-         (submodules-data ())
          c-file)
     (dolist (item (reverse lisp-files))
       (let* ((path (etypecase item
@@ -509,17 +513,15 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
           (when flags (push flags ld-flags))
           (when init-fn
             (push (list init-fn path) submodules)))))
-    (setf submodules-data (apply #'concatenate '(array base-char (*))
-                                 submodules-data))
     (setq c-file (open c-name :direction :output :external-format :default))
     (format c-file +lisp-program-header+ submodules)
 
     (let ((init-tag (init-name-tag init-name :kind target)))
       (ecase target
         (:program
-         (format c-file +lisp-program-init+ init-name
-                 init-tag
-                 "" submodules "")
+         (format c-file +lisp-program-init+ init-name init-tag "" submodules "")
+         ;; we don't need wrapper in the program, we have main for that
+         ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (format c-file
                  #+:win32 (ecase system
                             (:console +lisp-program-main+)
@@ -532,7 +534,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:static-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
-         (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
+         (when wrap-name
+           (format c-file +lisp-init-wrapper+ wrap-name init-name))
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
@@ -543,7 +546,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:shared-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
-         (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
+         (when wrap-name
+           (format c-file +lisp-init-wrapper+ wrap-name init-name))
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
@@ -553,6 +557,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:fasl
          (format c-file +lisp-program-init+ init-name init-tag prologue-code
                  submodules epilogue-code)
+         ;; we don't need wrapper in the fasl, we scan for init function name
+         ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (close c-file)
          (compiler-cc c-name o-name)
          (bundle-cc output-name init-name (list* o-name ld-flags))))
@@ -693,8 +699,7 @@ compiled successfully, returns the pathname of the compiled file"
                      (list (si::coerce-to-filename o-pathname)))))
 
       (if (setf true-output-file (probe-file output-file))
-          (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%"
-                       (namestring input-pathname))
+          (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%" (namestring input-pathname))
           (cmperr "The C compiler failed to compile the intermediate file."))
 
       (mapc #'cmp-delete-file to-delete)

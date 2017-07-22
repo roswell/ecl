@@ -46,7 +46,8 @@
   (ecase target
     ((:shared-library :dll :standalone-shared-library :standalone-dll) :shared-library)
     ((:static-library :lib :standalone-static-library :standalone-lib) :static-library)
-    ((:fasl :program) target)))
+    ((:fasl :fasb) :fasl)
+    (:program :program)))
 
 (defun innermost-non-expanded-form (form)
   (when (listp form)
@@ -397,3 +398,8 @@
                           (<= #.(char-code #\0) cc #.(char-code #\9)))
                       c #\_)))
             (string-downcase (prin1-to-string obj)))))
+
+(defun collect-lines (stream)
+  (loop for line = (read-line stream nil nil)
+     while line
+     collect line))

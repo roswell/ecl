@@ -22,7 +22,7 @@
 
 (defun external-process-status (external-process)
   (let ((status (external-process-%status external-process)))
-    (if (member status (:stopped :resumed :running))
+    (if (member status '(:stopped :resumed :running))
         (ext:external-process-wait external-process nil)
         (values status (external-process-%code external-process)))))
 

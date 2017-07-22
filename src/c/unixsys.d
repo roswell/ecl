@@ -318,8 +318,11 @@ static void
 create_descriptor(cl_object stream, cl_object direction,
                   int *child, int *parent) {
   if (stream == @':stream') {
-    int fd[2];
-    pipe(fd);
+    int fd[2], ret;
+    ret = pipe(fd);
+    if (ret != 0) {
+      FElibc_error("Unable to create pipe", 0);
+    }
     if (direction == @':input') {
       *parent = fd[1];
       *child = fd[0];
@@ -351,7 +354,7 @@ cl_object
 si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   cl_env_ptr the_env = ecl_process_env();
   int parent_write = 0, parent_read = 0, parent_error = 0;
-  cl_object pid, stream_write, stream_read, exit_status;
+  cl_object pid, stream_read, exit_status;
 
   command = si_copy_to_simple_base_string(command);
   environ = cl_mapcar(2, @'si::copy-to-simple-base-string', environ);
