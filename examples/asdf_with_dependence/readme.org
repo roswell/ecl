@@ -16,7 +16,10 @@ nothing more even you are build in a image already load with lots of
 other libraries).
 
 ** Example code to build
-We use a simple project depends on alexandria to demonstrate the steps. Consists of ~example-with-dep.asd~, ~package.lisp~ and ~example.lisp~. For convenience, we list these files here:
+
+We use a simple project depends on alexandria to demonstrate the
+steps. Consists of ~example-with-dep.asd~, ~package.lisp~ and
+~example.lisp~. For convenience, we list these files here:
 
 #+BEGIN_SRC common-lisp
 ;;;; example-with-dep.asd
@@ -45,7 +48,8 @@ We use a simple project depends on alexandria to demonstrate the steps. Consists
   (format t "Factorial of ~a is: ~a~%" n (alexandria:factorial n)))
 #+END_SRC
 
-Before any kind you build, you need to push full path of this directory (~asdf_with_dependence/~) into ~asdf:*central-registry*~.
+Before any kind you build, you need to push full path of this
+directory (~asdf_with_dependence/~) into ~asdf:*central-registry*~.
 
 ** Build it as an single executable
 
