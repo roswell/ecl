@@ -1,5 +1,5 @@
-(defsystem :example-with-dep
+(defsystem #:example-with-dep
   :serial t
-  :depends-on (:alexandria)
+  :depends-on (#:alexandria)
   :components ((:file "package")
 	       (:file "example")))
