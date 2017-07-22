@@ -1,7 +1,19 @@
 #+TITLE: Build an asdf system with dependencies
 #+AUTHOR: Bo Yao <icerove@gmail.com>
 
-Besides the simple situation that we write Lisp without depending on any other Lisp libraries, a more practical example is build a library depends on other asdf systems or Quicklisp projects. ECL provides a useful extension for asdf called ~asdf:make-build~, it's almost as easy as build a library without dependencies. Because Quicklisp also uses asdf to load systems with dependencies, just make sure you have successfully load and run your library in ECL REPL (or ~*slime-repl*~). Don't worry Quicklisp, asdf, swank and other unused libraries are packed into the executable or library, ECL will only build and pack libraries your project depends on (that is, all dependence you put in your ~.asd~ file, and their dependencies, nothing more even you are build in a image already load with lots of other libraries).
+Besides the simple situation that we write Lisp without depending on
+any other Lisp libraries, a more practical example is build a library
+depends on other asdf systems or Quicklisp projects. ECL provides a
+useful extension for asdf called ~asdf:make-build~, it's almost as
+easy as build a library without dependencies. Because Quicklisp also
+uses asdf to load systems with dependencies, just make sure you have
+successfully load and run your library in ECL REPL (or
+~*slime-repl*~). Don't worry Quicklisp, asdf, swank and other unused
+libraries are packed into the executable or library, ECL will only
+build and pack libraries your project depends on (that is, all
+dependence you put in your ~.asd~ file, and their dependencies,
+nothing more even you are build in a image already load with lots of
+other libraries).
 
 ** Example code to build
 We use a simple project depends on alexandria to demonstrate the steps. Consists of ~example-with-dep.asd~, ~package.lisp~ and ~example.lisp~. For convenience, we list these files here:
@@ -46,8 +58,12 @@ Use this in REPL to make a executable:
                  :epilogue-code '(progn (example:test-function 5)
                                         (si:exit)))
 #+END_SRC
-Here the ~:epilogue-code~ is what to do after loading our library, we can use arbitrary Lisp forms here. You can also write this code in your Lisp files and directly build them without this ~:epilogue-code~ option to have the same effect.
-Run the program in console will display the following and exit:
+
+Here the ~:epilogue-code~ is what to do after loading our library, we
+can use arbitrary Lisp forms here. You can also write this code in
+your Lisp files and directly build them without this ~:epilogue-code~
+option to have the same effect.  Run the program in console will
+display the following and exit:
 
 #+BEGIN_SRC shell
 Factorial of 5 is: 120
@@ -97,7 +113,8 @@ parameter. Compile it using:
 gcc test.c example-with-dep--all-systems.so -o test -lecl
 #+END_SRC
 
-ECL's library path and current directory may not be in your ~LD_LIBRARY_PATH~, so call ~./test~ using:
+ECL's library path and current directory may not be in your
+~LD_LIBRARY_PATH~, so call ~./test~ using:
 
 #+BEGIN_SRC shell
 LD_LIBRARY_PATH=/usr/local/lib/:. ./test
@@ -109,7 +126,10 @@ This will show:
 Factorial of 5 is: 120
 #+END_SRC
 
-You can also build all dependent libraries separately as several ~.so~ files and link them together. For example, if you are building a library called ~complex-example~, that depends on ~alexandria~ and ~cl-fad~, you can also do these in ECL REPL:
+You can also build all dependent libraries separately as several ~.so~
+files and link them together. For example, if you are building a
+library called ~complex-example~, that depends on ~alexandria~ and
+~cl-fad~, you can also do these in ECL REPL:
 
 #+BEGIN_SRC common-lisp
 (asdf:make-build :complex-example
@@ -130,8 +150,12 @@ You can also build all dependent libraries separately as several ~.so~ files and
                  :init-name "init_bt")
 #+END_SRC
 
-Note here is no ~:monolithic t~ and we also need to build ~bordeaux-threads~ because ~cl-fad~ depends on it. The building sequence doesn't matter and the result ~.so~ files can also be used in your future program if these libraries are not modified.
-And We need to initialize all these modules using ~ecl_init_module~, the name convention is to initialize ~cl-fad~ you need:
+Note here is no ~:monolithic t~ and we also need to build
+~bordeaux-threads~ because ~cl-fad~ depends on it. The building
+sequence doesn't matter and the result ~.so~ files can also be used in
+your future program if these libraries are not modified.  And We need
+to initialize all these modules using ~ecl_init_module~, the name
+convention is to initialize ~cl-fad~ you need:
 
 #+BEGIN_SRC c
 extern void init_fad(cl_object);
