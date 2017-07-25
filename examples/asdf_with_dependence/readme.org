@@ -1,33 +1,34 @@
 #+TITLE: Build an asdf system with dependencies
 #+AUTHOR: Bo Yao <icerove@gmail.com>
 
-Besides the simple situation that we write Lisp without depending on
-any other Lisp libraries. A more practical example is to build a
-library which depends on other asdf systems. ECL provides a useful
-extension for asdf called ~asdf:make-build~, which provides
-abstraction for building libraries direclty from system
+First, let's disregard the simple situation in which we write Lisp
+without depending on any other Lisp libraries. A more practical
+example is to build a library that depends on other asdf systems. ECL
+provides a useful extension for asdf called ~asdf:make-build~, which
+offers an abstraction for building libraries directly from system
 definitions.
 
 To download dependencies you may use Quicklisp to load your system
 (with dependencies defined). Make sure you can successfully load and
 run your library in ECL REPL (or ~*slime-repl*~). Don't worry about
 other libraries loaded in your image – ECL will only build and pack
-libraries your project depends on (that is, all dependence you put in
-your ~.asd~ file, and their dependencies - nothing more, despite the
-fact that other libraries may be loaded).
+libraries your project depends on (that is, all dependencies you put
+in your ~.asd~ file, and their dependencies - nothing more, despite
+the fact that other libraries may be loaded).
 
 ** Example code to build
 
-We use a simple project depends on ~alexandria~ to demonstrate the
-interface. Example consists of ~example-with-dep.asd~, ~package.lisp~
-and ~example.lisp~ (included in ~examples/asdf_with_dependence/~
-directory in ECL source tree). Before any kind of build you need to
-push full path of this directory to ~asdf:*central-registry*~ (or link
-it in the location already recognized by ASDF).
+We use a simple project that depends on ~alexandria~ to demonstrate
+the interface. The example consists of ~example-with-dep.asd~,
+~package.lisp~ and ~example.lisp~ (included in the
+~examples/asdf_with_dependence/~ directory in the ECL source tree).
+Before any kind of build you need to push the full path of this
+directory to ~asdf:*central-registry*~ (or link it in a location
+already recognized by ASDF).
 
-** Build it as an single executable
+** Build it as a single executable
 
-Use this in REPL to make a executable:
+Use this in REPL to make an executable:
 
 #+BEGIN_SRC common-lisp
 (asdf:make-build :example-with-dep
@@ -37,11 +38,11 @@ Use this in REPL to make a executable:
                                         (si:exit)))
 #+END_SRC
 
-Here the ~:epilogue-code~ is what to do after loading our library, we
-can use arbitrary Lisp forms here. You can also write this code in
+Here the ~:epilogue-code~ is executed after loading our library; we
+can use arbitrary Lisp forms here. You can also put this code in
 your Lisp files and directly build them without this ~:epilogue-code~
-option to have the same effect.  Run the program in console will
-display the following and exit:
+option to achieve the same result. Running the program in a console
+will display the following and exit:
 
 #+BEGIN_SRC shell
 Factorial of 5 is: 120
@@ -59,13 +60,13 @@ Use this in REPL to make a shared library:
 #+END_SRC
 
 Here ~:monolithic t~ means that ECL will compile the library and all
-its dependencies into one library named
-~example-with-dep--all-systems.so~. ~:move-here~ parameter is
-self-explanatory. ~:init-name~ gives the name for initialization
-function. Each library if linked from C/C++ code must be initialized
-and this is a mechanism to specify the initialization function name.
+its dependencies into a single library named
+~example-with-dep--all-systems.so~. The ~:move-here~ parameter is
+self-explanatory. ~:init-name~ sets the name of the initialization
+function. Each library linked from C/C++ code must be initialized,
+and this is a mechanism to specify the initialization function's name.
 
-To use it, we use a simple C program:
+To use it, we write a simple C program:
 
 #+BEGIN_SRC c
 /* test.c */
@@ -86,14 +87,14 @@ int main (int argc, char **argv) {
 
 #+END_SRC
 
-Compile file using standard C compiler (note linking to ~libecl.so~
-with ~-lecl~ which provides lisp runtime[fn:1]):
+Compile the file using a standard C compiler (note we're linking to
+~libecl.so~ with ~-lecl~, which provides the lisp runtime[fn:1]):
 
 #+BEGIN_SRC shell
 gcc test.c example-with-dep--all-systems.so -o test -lecl
 #+END_SRC
 
-If ECL is installed in non-standard location you may need to provide
+If ECL is installed in a non-standard location you may need to provide
 flags for the compiler and the linker. You may read them with:
 
 #+BEGIN_SRC shell
@@ -102,7 +103,7 @@ ecl-config --libs
 #+END_SRC
 
 Since our shared object is not in the standard location, you need to
-provice ~LD_LIBRARY_PATH~ pointing and the current directory to run
+provide ~LD_LIBRARY_PATH~ pointing to the current directory to run
 the application:
 
 #+BEGIN_SRC shell
@@ -142,14 +143,15 @@ library called ~complex-example~, that depends on ~alexandria~ and
                  :init-name "init_bt")
 #+END_SRC
 
-Note that we haven't specified ~:monolithic t~ so we need to build
-~bordeaux-threads~ as well, because ~cl-fad~ depends on it. The
-building sequence doesn't matter and the result ~.so~ files can also
-be used in your future program if these libraries are not modified.
+Note that we haven't specified ~:monolithic t~, so we need to build
+~bordeaux-threads~ as well because ~cl-fad~ depends on it. The
+building sequence doesn't matter and the resultant ~.so~ files can
+also be used in your future programs if these libraries are not
+modified.
 
 We need to initialize all these modules using ~ecl_init_module~ in the
-correct order (~bordeaux-threads~ must be initialized before ~cl-fad~,
-~cl-fad~ and ~alexandria~ must be initialized before ~complex-ecample~).
+correct order. (~bordeaux-threads~ must be initialized before ~cl-fad~;
+~cl-fad~ and ~alexandria~ must be initialized before ~complex-ecample~.)
 
 Here is a code snippet (not a full program):
 #+BEGIN_SRC c
@@ -166,7 +168,7 @@ ecl_init_module(NULL, init_alexandria);
 ecl_init_module(NULL, init_example);
 #+END_SRC
 
-** Build it as static library and use in C
+** Build it as a static library and use in C
 To build a static library, use:
 
 #+BEGIN_SRC common-lisp
@@ -177,9 +179,9 @@ To build a static library, use:
                  :init-name "init_example")
 #+END_SRC
 
-That will generate a ~example-with-dep--all-systems.a~ in current
-directory and we need to initialize it with ~init_example~
-function. And compile it using:
+This will generate ~example-with-dep--all-systems.a~ in the current
+directory which we need to initialize with the ~init_example~
+function. Compile it using:
 
 #+BEGIN_SRC shell
 gcc test.c example-with-dep--all-systems.a -o test-static -lecl
@@ -197,10 +199,10 @@ This will show:
 Factorial of 5 is: 120
 #+END_SRC
 
-Note we don't need to give current path in ~LD_LIBRARY_PATH~ here,
-since our Lisp library is statically bundled to the executable.  The
-result is same as the shared library example above. You can also build
-all dependent libraries separately to static libraries.
+Note we don't need to pass the current path in ~LD_LIBRARY_PATH~ here,
+since our Lisp library is statically bundled with the executable. The
+result is the same as the shared library example above. You can also
+build all dependent libraries separately as static libraries.
 
 * Footnotes
 
