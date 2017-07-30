@@ -289,56 +289,32 @@ format. In case of @emph{Portable FASL} bytecodes compiler is needed.
 @node Compiling with ASDF
 @subsection Compiling with ASDF
 
-Besides the simple situation that we write Lisp without depending on
-any other Lisp libraries, a more practical example is build a library
-depends on other asdf systems or Quicklisp projects. ECL provides a
-useful extension for asdf called @code{asdf:make-build}, it's almost
-as easy as build a library without dependencies. Because Quicklisp
-also uses asdf to load systems with dependencies, just make sure you
-have successfully load and run your library in ECL REPL (or
-@code{*slime-repl*}). Don't worry Quicklisp, asdf, swank and other
-unused libraries are packed into the executable or library, ECL will
-only build and pack libraries your project depends on (that is, all
-dependence you put in your @code{.asd} file, and their dependencies,
-nothing more even you are build in a image already load with lots of
-other libraries).
+First, let's disregard the simple situation in which we write Lisp
+without depending on any other Lisp libraries. A more practical
+example is to build a library that depends on other asdf systems. ECL
+provides a useful extension for asdf called @code{asdf:make-build},
+which offers an abstraction for building libraries directly from
+system definitions.
+
+To download dependencies you may use Quicklisp to load your system
+(with dependencies defined). Make sure you can successfully load and
+run your library in ECL REPL (or @code{*slime-repl*}). Don't worry
+about other libraries loaded in your image – ECL will only build and
+pack libraries your project depends on (that is, all dependencies you
+put in your @code{.asd} file, and their dependencies - nothing more,
+despite the fact that other libraries may be loaded).
 
 @node Example code to build
 @subsubsection Example code to build
 
-We use a simple project depends on alexandria to demonstrate the
-steps. Consists of @code{example-with-dep.asd}, @code{package.lisp}
-and @code{example.lisp}. For convenience, we list these files here:
-
-@lisp
-;;;; example-with-dep.asd
-(defsystem :example-with-dep
-  :serial t
-  :depends-on (:alexandria)
-  :components ((:file "package")
-	       (:file "example")))
-@end lisp
-
-@lisp
-;;;; package.lisp
-(in-package :cl-user)
-
-(defpackage :example
-  (:use :cl)
-  (:export :test-function))
-@end lisp
-
-@lisp
-;;;; example.lisp
-(in-package :example)
-
-(defun test-function (n)
-  (format t "Factorial of ~a is: ~a~%" n (alexandria:factorial n)))
-@end lisp
-
-Before any kind you build, you need to push full path of this
-directory (@code{asdf_with_dependence/}) into
-@code{asdf:*central-registry*}.
+We use a simple project that depends on @code{alexandria} to
+demonstrate the interface. The example consists of
+@code{example-with-dep.asd}, @code{package.lisp} and
+@code{example.lisp} (included in the
+@code{examples/asdf_with_dependence/} directory in the ECL source
+tree).  Before any kind of build you need to push the full path of
+this directory to @code{asdf:*central-registry*} (or link it in a
+location already recognized by ASDF).
 
 @node Build it as an single executable
 @subsubsection Build it as an single executable
@@ -347,18 +323,17 @@ Use this in REPL to make a executable:
 
 @lisp
 (asdf:make-build :example-with-dep
-		 :type :program
-		 :move-here #P"./"
-		 :epilogue-code '(progn (example:test-function 5)
-					(si:exit)))
+                 :type :program
+                 :move-here #P"./"
+                 :epilogue-code '(progn (example:test-function 5)
+                                        (si:exit)))
 @end lisp
 
-Here the @code{:epilogue-code} is what to do after loading our
-library, we can use arbitrary Lisp forms here. You can also write this
-code in your Lisp files and directly build them without this
-@code{:epilogue-code} option to have the same effect.
-
-Run the program in console will display the following and exit:
+Here the @code{:epilogue-code} is executed after loading our library;
+we can use arbitrary Lisp forms here. You can also put this code in
+your Lisp files and directly build them without this
+@code{:epilogue-code} option to achieve the same result. Running the
+program in a console will display the following and exit:
 
 @example
 Factorial of 5 is: 120
@@ -368,51 +343,68 @@ Factorial of 5 is: 120
 @subsubsection Build it as shared library and use in C
 
 Use this in REPL to make a shared library:
+
 @lisp
 (asdf:make-build :example-with-dep
-		 :type :shared-library
-		 :move-here #P"./"
-		 :monolithic t
-                 :init-name "init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS")
+                 :type :shared-library
+                 :move-here #P"./"
+                 :monolithic t
+                 :init-name "init_example")
 @end lisp
 
-Here @code{:monolithic t} means to let ECL solve dependence and build all dependence into one library named @code{example-with-dep--all-systems.so} in this directory.
+Here @code{:monolithic t} means that ECL will compile the library and
+all its dependencies into a single library named
+@code{example-with-dep--all-systems.so}. The @code{:move-here}
+parameter is self-explanatory. @code{:init-name} sets the name of the
+initialization function. Each library linked from C/C++ code must be
+initialized, and this is a mechanism to specify the initialization
+function's name.
 
-To use it, we use a simple C program:
+To use it, we write a simple C program:
 
 @example
+@verbatim
 /* test.c */
 #include <ecl/ecl.h>
 
-int main (int argc, char **argv) @{
-  extern void init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS(cl_object);
-
+int main (int argc, char **argv) {
+  extern void init_dll_example(cl_object);
+  
   cl_boot(argc, argv);
-  ecl_init_module(NULL, init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS);
+  ecl_init_module(NULL, init_dll_example);
 
   /* do things with the Lisp library */
   cl_eval(c_string_to_object("(example:test-function 5)"));
 
   cl_shutdown();
   return 0;
-@}
+}
+@end verbatim
 @end example
 
-Note the name convention here: an asdf system named
-@code{example-with-dep} will compiled to
-@code{example-with-dep--all-systems.so} and in the C code should be
-init with @code{init_dll_EXAMPLE_WITH_DEP__ALL_SYSTEMS} - as put in
-the @code{init-name} parameter. Compile it using:
+Compile the file using a standard C compiler (note we're linking to
+@code{libecl.so} with @code{-lecl}, which provides the lisp
+runtime@footnote{You may also link ECL runtime statically. That is not
+covered in this walkthrough.}):
 
 @example
 gcc test.c example-with-dep--all-systems.so -o test -lecl
 @end example
 
-ECL's library path and current directory may not be in your
-@code{LD_LIBRARY_PATH}, so call @code{./test} using:
+If ECL is installed in a non-standard location you may need to provide
+flags for the compiler and the linker. You may read them with:
 
 @example
-LD_LIBRARY_PATH=/usr/local/lib/:. ./test
+ecl-config --cflags
+ecl-config --libs
+@end example
+
+Since our shared object is not in the standard location, you need to
+provide @code{LD_LIBRARY_PATH} pointing to the current directory to
+run the application:
+
+@example
+LD_LIBRARY_PATH=`pwd` ./test
 @end example
 
 This will show:
@@ -421,47 +413,59 @@ This will show:
 Factorial of 5 is: 120
 @end example
 
-You can also build all dependent libraries separately as several
+You can also build all dependent libraries separately as a few
 @code{.so} files and link them together. For example, if you are
 building a library called @code{complex-example}, that depends on
-@code{alexandria} and @code{cl-fad}, you can also do these in ECL
-REPL:
+@code{alexandria} and @code{cl-fad}, you can do the following (in the
+REPL):
 
 @lisp
 (asdf:make-build :complex-example
-		 :type :shared-library
-		 :move-here #P"./"
-                 :init-name "init_my_program")
+                 :type :shared-library
+                 :move-here #P"./"
+                 :init-name "init_example")
+
 (asdf:make-build :alexandria
-		 :type :shared-library
-		 :move-here #P"./"
+                 :type :shared-library
+                 :move-here #P"./"
                  :init-name "init_alexandria")
+
 (asdf:make-build :cl-fad
-		 :type :shared-library
-		 :move-here #P"./"
+                 :type :shared-library
+                 :move-here #P"./"
                  :init-name "init_fad")
+
 (asdf:make-build :bordeaux-threads
-		 :type :shared-library
-		 :move-here #P"./"
+                 :type :shared-library
+                 :move-here #P"./"
                  :init-name "init_bt")
 @end lisp
 
-Note here is no @code{:monolithic t} and we also need to build
-@code{bordeaux-threads} because @code{cl-fad} depends on it. The
-building sequence doesn't matter and the result @code{.so} files can
-also be used in your future program if these libraries are not
+Note that we haven't specified @code{:monolithic t}, so we need to
+build @code{bordeaux-threads} as well because @code{cl-fad} depends on
+it. The building sequence doesn't matter and the resultant ~.so~ files
+can also be used in your future programs if these libraries are not
 modified.
 
-And We need to initialize all these modules using
-@code{ecl_init_module}. To initialize @code{cl-fad} you need to call
-function supplied as a @code{:init_name} parameter:
+We need to initialize all these modules using @code{ecl_init_module}
+in the correct order. (@code{bordeaux-threads} must be initialized
+before @code{cl-fad}; @code{cl-fad} and @code{alexandria} must be
+initialized before @code{complex-ecample}.)
+
+Here is a code snippet (not a full program):
 
 @example
 extern void init_fad(cl_object);
+extern void init_alexandria(cl_object);
+extern void init_bt(cl_object);
+extern void init_example(cl_object);
 
-/* after cl_boot(argc, argv); 
-   and if B depends on A, you should first init A then B. */
+/* call these *after* cl_boot(argc, argv); 
+   if B depends on A, you should first init A then B. */
+ecl_init_module(NULL, init_bt);
 ecl_init_module(NULL, init_fad);
+ecl_init_module(NULL, init_alexandria);
+ecl_init_module(NULL, init_example);
 @end example
 
 @node Build it as static library and use in C
@@ -471,27 +475,33 @@ To build a static library, use:
 
 @lisp
 (asdf:make-build :example-with-dep
-		 :type :static-library
-		 :move-here #P"./"
-		 :monolithic t
-                 :init-name "init_example_with_dep")
+                 :type :static-library
+                 :move-here #P"./"
+                 :monolithic t
+                 :init-name "init_example")
 @end lisp
 
-That will generate a @code{example-with-dep--all-systems.a} in current
-directory. C code is given in test-static.c - and compile it using:
+This will generate @code{example-with-dep--all-systems.a} in the
+current directory which we need to initialize with the
+@code{init_example} function. Compile it using:
 
 @example
-gcc test-static.c example-with-dep--all-systems.a -o test-static -lecl
+gcc test.c example-with-dep--all-systems.a -o test-static -lecl
 @end example
 
 Then run it:
 
 @example
-LD_LIBRARY_PATH=/usr/local/lib/ ./test-static
+./test-static
 @end example
 
-Note we don't need to give current path in @code{LD_LIBRARY_PATH}
-here, since our Lisp library is statically bundled to the executable.
+This will show:
 
-The result is same as the shared library example above. You can also
-build all dependent libraries separately to static libraries.
+@example
+Factorial of 5 is: 120
+@end example
+
+Note we don't need to pass the current path in ~LD_LIBRARY_PATH~ here,
+since our Lisp library is statically bundled with the executable. The
+result is the same as the shared library example above. You can also
+build all dependent libraries separately as static libraries.
