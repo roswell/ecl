@@ -527,6 +527,59 @@ ecl_make_long_float(long double f)
 #endif
 
 cl_object
+ecl_make_single_float_unchecked(float f)
+{
+  cl_object x;
+
+  if (f == (float)0.0) {
+#if defined(ECL_SIGNED_ZERO)
+    if (signbit(f))
+      return cl_core.singlefloat_minus_zero;
+#endif
+    return cl_core.singlefloat_zero;
+  }
+  x = ecl_alloc_object(t_singlefloat);
+  ecl_single_float(x) = f;
+  return(x);
+}
+
+cl_object
+ecl_make_double_float_unchecked(double f)
+{
+  cl_object x;
+
+  if (f == (double)0.0) {
+#if defined(ECL_SIGNED_ZERO)
+    if (signbit(f))
+      return cl_core.doublefloat_minus_zero;
+#endif
+    return cl_core.doublefloat_zero;
+  }
+  x = ecl_alloc_object(t_doublefloat);
+  ecl_double_float(x) = f;
+  return(x);
+}
+
+#ifdef ECL_LONG_FLOAT
+cl_object
+ecl_make_long_float_unchecked(long double f)
+{
+  cl_object x;
+
+  if (f == (long double)0.0) {
+#if defined(ECL_SIGNED_ZERO)
+    if (signbit(f))
+      return cl_core.longfloat_minus_zero;
+#endif
+    return cl_core.longfloat_zero;
+  }
+  x = ecl_alloc_object(t_longfloat);
+  x->longfloat.value = f;
+  return x;
+}
+#endif
+
+cl_object
 ecl_make_complex(cl_object r, cl_object i)
 {
   cl_object c;
