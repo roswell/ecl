@@ -198,7 +198,7 @@
 #endif
 
 #define strcasecmp _stricmp
-#if defined(_MSC_VER) && (_MSC_VER < 1900)
+#if defined(_MSC_VER) && (_MSC_VER < 1800)
 #define isnan _isnan
 #endif
 #define finite _finite

@@ -210,7 +210,7 @@ typedef unsigned char ecl_base_char;
 /* #undef HAVE_FLOAT_COMPLEX */
 
 /* Missing integer types */
-#if _MSC_VER < 1900
+#if _MSC_VER < 1600
 typedef signed char int8_t;
 typedef signed short int16_t;
 typedef signed int int32_t;
