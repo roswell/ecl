@@ -1225,9 +1225,10 @@
 ;;;
 ;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
 (test cmp.0055.invalid-argument-type
-      (handler-case
-          (funcall (compile nil
-                            '(lambda () (vector-push))))
-        (program-error () t)
-        (error () nil)
-        (:no-error (v) (declare (ignore v)) nil)))
+  (is-true
+   (handler-case
+       (funcall (compile nil
+                         '(lambda () (vector-push))))
+     (program-error () t)
+     (error () nil)
+     (:no-error (v) (declare (ignore v)) nil))))
