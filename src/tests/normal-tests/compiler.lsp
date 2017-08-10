@@ -1232,3 +1232,14 @@
      (program-error () t)
      (error () nil)
      (:no-error (v) (declare (ignore v)) nil))))
+
+;;; Date 2017-08-10
+;;; Description
+;;;
+;;;    On some platforms (without feenableexcept) compiling code with
+;;;    constants being infinity cause fpe-exception.
+(test cmp.0056.artificial-fpe
+  (finishes
+    (funcall (compile nil
+                      '(lambda ()
+                        (eql 10d0 ext:double-float-positive-infinity))))))
