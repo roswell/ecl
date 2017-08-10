@@ -21,7 +21,7 @@
     (cmpwarn "Too few arguments to function ~A in form: ~A" (first whole) whole)
     (return-from expand-mapcar
       `(si:simple-program-error
-        "Too few arguments to function ~A in form: ~A" ',(first whole) ,whole)))
+        "Too few arguments to function ~A in form: ~A" ',(first whole) ',whole)))
   (let ((which (first whole)))
     (when (eq which 'FUNCALL)
       (setf whole (rest whole)
