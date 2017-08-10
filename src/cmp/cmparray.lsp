@@ -97,13 +97,13 @@
               (not (policy-open-code-aref/aset)))
       (return-from expand-vector-push
         whole))
-    (let ((len (length args)))
-      (when (or (< len 2)
-                (> len (if extend 3 2)))
-        (cmpwarn "Wrong number of arguments passed to function ~A in form: ~A" (first whole) whole)
-        (return-from expand-vector-push
-          `(si::simple-program-error
-            "Wrong number of arguments passed to function ~A in form: ~A" ',(first whole) ',whole))))
+    (unless (<= 2
+                (length args)
+                (if extend 3 2))
+      (cmpwarn "Wrong number of arguments passed to function ~A in form: ~A" (first whole) whole)
+      (return-from expand-vector-push
+        `(si::simple-program-error
+          "Wrong number of arguments passed to function ~A in form: ~A" ',(first whole) ',whole)))
     `(let* ((value ,(car args))
             (vector ,(second args)))
        (declare (:read-only value vector)
