@@ -90,47 +90,36 @@
 ;;; VECTOR-PUSH and VECTOR-PUSH-EXTEND
 ;;;
 
-(defun expand-vector-push (whole env extend)
+(defun expand-vector-push (whole env extend &aux (args (rest whole)))
   (declare (si::c-local))
-  (let* ((args (rest whole)))
-    (with-clean-symbols (value vector index dimension)
-      (unless (or (eq (first args) 'value) ; No infinite recursion
-                  (not (policy-open-code-aref/aset)))
-        (setf whole
-              (if (or (< (length args) 2)
-                      (and (not extend)
-                           (> (length args) 2))
-                      (and extend
-                           (> (length args) 3)))
-                  (progn
-                    (cmpwarn "Wrong number of arguments passed to function ~S"
-                             (symbol-function
-                              (if extend
-                                    'vector-push-extend
-                                    'vector-push)))
-                    `(si::simple-program-error
-                      "Wrong number of arguments passed to function ~S"
-                      (symbol-function
-                       ',(if extend
-                             'vector-push-extend
-                             'vector-push))))
-                    `(let* ((value ,(car args))
-                            (vector ,(second args)))
-                       (declare (:read-only value vector)
-                                (optimize (safety 0)))
-                       (optional-type-assertion vector vector)
-                       (let ((index (fill-pointer vector))
-                             (dimension (array-total-size vector)))
-                         (declare (fixnum index dimension)
-                                  (:read-only index dimension))
-                         (cond ((< index dimension)
-                                (sys::fill-pointer-set vector (truly-the fixnum (+ 1 index)))
-                                (sys::aset vector index value)
-                                index)
-                               (t ,(if extend
-                                       `(vector-push-extend value vector ,@(cddr args))
-                                       nil))))))))))
-    whole)
+  (with-clean-symbols (value vector index dimension)
+    (when (or (eq (first args) 'value) ; No infinite recursion
+              (not (policy-open-code-aref/aset)))
+      (return-from expand-vector-push
+        whole))
+    (unless (<= 2
+                (length args)
+                (if extend 3 2))
+      (cmpwarn "Wrong number of arguments passed to function ~A in form: ~A" (first whole) whole)
+      (return-from expand-vector-push
+        `(si::simple-program-error
+          "Wrong number of arguments passed to function ~A in form: ~A" ',(first whole) ',whole)))
+    `(let* ((value ,(car args))
+            (vector ,(second args)))
+       (declare (:read-only value vector)
+                (optimize (safety 0)))
+       (optional-type-assertion vector vector)
+       (let ((index (fill-pointer vector))
+             (dimension (array-total-size vector)))
+         (declare (fixnum index dimension)
+                  (:read-only index dimension))
+         (cond ((< index dimension)
+                (sys::fill-pointer-set vector (truly-the fixnum (+ 1 index)))
+                (sys::aset vector index value)
+                index)
+               (t ,(if extend
+                       `(vector-push-extend value vector ,@(cddr args))
+                       nil)))))))
 
 (define-compiler-macro vector-push (&whole whole &rest args &environment env)
   (expand-vector-push whole env nil))

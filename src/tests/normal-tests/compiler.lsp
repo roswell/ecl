@@ -1243,3 +1243,17 @@
     (funcall (compile nil
                       '(lambda ()
                         (eql 10d0 ext:double-float-positive-infinity))))))
+
+;;; Date 2017-08-10
+;;; Description
+;;;
+;;;    Confirm, that malformed code compiles (errors should be issued
+;;;    at runtime).
+(test cmp.0057.expand
+  (let (fun)
+    ;; expand-mapcar
+    (is (setf fun (compile nil '(lambda () (mapcar)))))
+    (signals program-error (funcall fun))
+    ;; expand-vector-push
+    (is (setf fun (compile nil '(lambda () (vector-push)))))
+    (signals program-error (funcall fun))))
