@@ -1225,9 +1225,35 @@
 ;;;
 ;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
 (test cmp.0055.invalid-argument-type
-      (handler-case
-          (funcall (compile nil
-                            '(lambda () (vector-push))))
-        (program-error () t)
-        (error () nil)
-        (:no-error (v) (declare (ignore v)) nil)))
+  (is-true
+   (handler-case
+       (funcall (compile nil
+                         '(lambda () (vector-push))))
+     (program-error () t)
+     (error () nil)
+     (:no-error (v) (declare (ignore v)) nil))))
+
+;;; Date 2017-08-10
+;;; Description
+;;;
+;;;    On some platforms (without feenableexcept) compiling code with
+;;;    constants being infinity cause fpe-exception.
+(test cmp.0056.artificial-fpe
+  (finishes
+    (funcall (compile nil
+                      '(lambda ()
+                        (eql 10d0 ext:double-float-positive-infinity))))))
+
+;;; Date 2017-08-10
+;;; Description
+;;;
+;;;    Confirm, that malformed code compiles (errors should be issued
+;;;    at runtime).
+(test cmp.0057.expand
+  (let (fun)
+    ;; expand-mapcar
+    (is (setf fun (compile nil '(lambda () (mapcar)))))
+    (signals program-error (funcall fun))
+    ;; expand-vector-push
+    (is (setf fun (compile nil '(lambda () (vector-push)))))
+    (signals program-error (funcall fun))))
