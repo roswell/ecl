@@ -21,18 +21,22 @@
 #include <ecl/internal.h>
 #include <ecl/impl/math_fenv.h>
 
-#if defined(ECL_IEEE_FP) && defined(HAVE_FEENABLEEXCEPT)
+#if defined(ECL_IEEE_FP)
+# if defined(HAVE_FEENABLEEXCEPT)
 /*
  * We are using IEEE arithmetics and can rely on FPE exceptions
  * to be raised when invalid operations are performed.
  */
-# define DO_DETECT_FPE(f) ecl_detect_fpe()
+#  define DO_DETECT_FPE(f) ecl_detect_fpe()
+# else
+/*
+ * Floating point exceptions are disabled
+ */
+#  define DO_DETECT_FPE(f)
+# endif
 #else
 /*
- * Either we can not rely on C signals or we do not want IEEE NaNs and
- * infinities. The first case typically happens for instance under OS
- * X, where the status of the FPE control word is changed by
- * printf. We have two alternatives.
+ * We do not want IEEE NaNs and infinities
  */
 # define DO_DETECT_FPE(f) do {                                  \
     unlikely_if (isnan(f)) ecl_deliver_fpe(FE_INVALID);         \
