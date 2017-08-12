@@ -478,10 +478,10 @@
     (wt-nl "return " (case return-type
                             (FIXNUM "ecl_make_fixnum")
                             (CHARACTER "CODE_CHAR")
-                            (DOUBLE-FLOAT "ecl_make_double_float_unchecked")
-                            (SINGLE-FLOAT "ecl_make_single_float_unchecked")
+                            (DOUBLE-FLOAT "ecl_make_double_float")
+                            (SINGLE-FLOAT "ecl_make_single_float")
                             #+long-float
-                            (LONG-FLOAT "ecl_make_long_float_unchecked")
+                            (LONG-FLOAT "ecl_make_long_float")
                             (otherwise ""))
            "(LI" cfun "(")
     (do ((types arg-types (cdr types))

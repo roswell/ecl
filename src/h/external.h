@@ -1109,8 +1109,6 @@ extern ECL_API cl_object ecl_make_long_long(ecl_long_long_t i);
 extern ECL_API cl_object ecl_make_ratio(cl_object num, cl_object den);
 extern ECL_API cl_object ecl_make_single_float(float f);
 extern ECL_API cl_object ecl_make_double_float(double f);
-extern ECL_API cl_object ecl_make_single_float_unchecked(float f);
-extern ECL_API cl_object ecl_make_double_float_unchecked(double f);
 extern ECL_API cl_object ecl_make_complex(cl_object r, cl_object i);
 extern ECL_API cl_object cl_rational(cl_object x);
 #define cl_rationalize cl_rational
@@ -1119,7 +1117,6 @@ extern ECL_API double ecl_to_double(cl_object x);
 #ifdef ECL_LONG_FLOAT
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_long_float(long double f);
-extern ECL_API cl_object ecl_make_long_float_unchecked(long double f);
 #endif
 #ifdef ECL_IEEE_FP
 extern ECL_API cl_object si_nan();
