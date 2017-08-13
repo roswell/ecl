@@ -750,7 +750,7 @@ AC_CHECK_FUNCS( [nanosleep alarm times select setenv putenv] \
                 [lstat mkstemp sigprocmask isatty tzset] \
 		[gettimeofday getrusage] )
 
-AC_CHECK_FUNCS( [ feenableexcept ] )
+AC_CHECK_DECLS([feenableexcept], [AC_DEFINE(HAVE_FEENABLEEXCEPT)], [AC_MSG_WARN(feenableexcept not declared: disabling floating point exceptions)], [#include <fenv.h>])
 
 AC_CHECK_FUNCS( [expf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
 		[floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \
