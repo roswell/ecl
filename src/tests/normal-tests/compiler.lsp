@@ -1257,3 +1257,15 @@
     ;; expand-vector-push
     (is (setf fun (compile nil '(lambda () (vector-push)))))
     (signals program-error (funcall fun))))
+
+;;; Date 2017-08-16
+;;;
+;;; Description
+;;;
+;;;    `si:coerce-to-vector' (called from cmpopt) had invalid
+;;;    check-type statements preventing compilation of valid code.
+(test cmp.0058.coerce-expand
+  (finishes (load (with-compiler ("aux-compiler.0058-coerce.lsp")
+                    '(defun flesh-failures ()
+                      (load-time-value
+                       (coerce #(0) '(simple-array (unsigned-byte 8) (1)))))))))

@@ -98,3 +98,4 @@ regressions/eformat-tests/*.txt
 /msvc/sb-bsd-sockets.asd
 /msvc/sockets.asd
 doc/tmp/
+/src/tests/aux-compiler.0058-coerce.lsp
