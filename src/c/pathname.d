@@ -1410,7 +1410,7 @@ ecl_string_match(cl_object s, cl_index j, cl_index ls,
     }
     case '?':
       /* Match any character */
-      if (j > ls) return FALSE;
+      if (j >= ls) return FALSE;
       i++; j++;
       break;
     case '\\':
