@@ -2,7 +2,7 @@
 @section Memory Management
 
 @menu
-* Memory Managament Introduction::
+* Memory Management Introduction::
 * Boehm-Weiser garbage collector::
 * Memory limits::
 * Memory conditions::
@@ -10,9 +10,93 @@
 * Memory Managament Reference::
 @end menu
 
-@node Memory Managament Introduction
+@node Memory Management Introduction
+@subsection Introduction
+@cindex Memory management
+ECL relies on the Boehm-Weiser garbage collector for handling memory, creating and destroying objects, and handling finalization of objects that are no longer reachable. The use of a garbage collector, and in particular the use of a portable one, imposes certain restrictions that may appear odd for C/C++ programmers.
+
+In this section we will discuss garbage collection, how ECL configures and uses the memory management library, what users may expect, how to handle the memory and how to control the process by which objects are deleted.
+
 @node Boehm-Weiser garbage collector
+@subsection Boehm-Weiser garbage collector
+First of all, the garbage collector must be able to determine which objects are alive and which are not. In other words, the collector must able to find all references to an object. One possiblity would be to know where all variables of a program reside, and where is the stack of the program and its size, and parse all data there, discriminating references to lisp objects. To do this precisely one would need a very precise control of the data and stack segments, as well as how objects are laid out by the C compiler. This is beyond ECL's scope and wishes and it can make coexistence with other libraries (C++, Fortran, etc) difficult.
+
+The Boehm-Weiser garbage collector, on the other hand, is a conservative garbage collector. When scanning memory looking for references to live data, it guesses, conservatively, whether a word is a pointer or not. In case of doubt it will consider it to be a pointer and add it to the list of live objects. This may cause certain objects to be retained longer than what an user might expect but, in our experience, this is the best of both worlds and ECL uses certain strategies to minimize the amount of misinterpreted data.
+
+More precisely, ECL uses the garbage collector with the following settings:
+
+@itemize
+@item
+The collector will not scan the data sectors. If you embed ECL in another program, or link libraries with ECL, you will have to notify ECL which variables point to lisp objects.
+
+@item
+The collector is configured to ignore pointers that point to the middle of allocated objects. This minimizes the risk of misinterpreting integers as pointers to live obejcts.
+
+@item
+It is possible to register finalizers that are invoked when an object is destroyed, but for that you should use ECL's API and understand the restriction described later in @ref{Finalization}.
+@end itemize
+
+Except for finalization, which is a questionable feature, the previous settings are not very relevant for Common Lisp programmers, but are crucial for people interested in embedding in or cooperating with other C, C++ or Fortran libraries. Care should be taken when manipulating directly the GC library to avoid interfering with ECL's expectations.
+
 @node Memory limits
+@subsection Memory limits
+Beginning with version 9.2.1, ECL operates a tighter control of the resources it uses. In particular, it features explicit limits in the four stacks and in the amount of live data. These limits are optional, can be changed at run time, but they allow users to better control the evolution of a program, handling memory and stack overflow gracefully via the Common Lisp condition system.
+
+The customizable limits are listed in Table 5.1, but they need a careful description.
+
+@itemize
+@item
+    ext:heap-size limits the total amount of memory which is available for lisp objects. This is the memory used when you create conses, arrays, structures, etc.
+@item
+    ext:c-stack controls the size of the stack for compiled code, including ECL's library itself. This limit is less stringent than the others. For instance, when code is compiled with low safety settings, checks for this stack limit are usually omitted, for performance reasons.
+@item
+    ext:binding-stack controls the number of nested bindings for special variables. The current value is usually safe enough, unless you have deep recursive functions that bind special variables, which is not really a good idea.
+@item
+    ext:frame-stack controls the number of nested blocks, tagbody and other control structures. It affects both interpreted and compiled code, but quite often compiled code optimizes away these stack frames, saving memory and not being affected by this limit.
+@item
+    ext:lisp-stack controls the size of the interpreter stack. It only affects interpreted code.
+@end itemize
+
+If you look at Table 5.1, some of these limits may seem very stringent, but they exist to allow detecting and correcting both stack and memory overflow conditions. Larger values can be set systematically either in the ~/.eclrc initialization file, or using the command line options from the table.
+
 @node Memory conditions
+@subsection Memory conditions
+When ECL surpasses or approaches the memory limits it will signal a Common Lisp condition. There are two types of conditions, ext:stack-overflow and ext:storage-exhausted, for stack and heap overflows, respectively. Both errors are correctable, as the following session shows:
+@lisp
+> (defun foo (x) (foo x))
+
+FOO
+> (foo 1)
+C-STACK overflow at size 1654784. Stack can probably be resized.
+Broken at SI:BYTECODES.Available restarts:
+1. (CONTINUE) Extend stack size
+Broken at FOO.
+>> :r1
+C-STACK overflow at size 2514944. Stack can probably be resized.
+Broken at SI:BYTECODES.Available restarts:
+1. (CONTINUE) Extend stack size
+Broken at FOO.
+>> :q
+Top level.
+@end lisp
+
 @node Finalization
-@node Memory Managament Reference
+@subsection Finalization
+As we all know, Common-Lisp relies on garbage collection for deleting unreachable objects. However, it makes no provision for the equivalent of a C++ Destructor function that should be called when the object is eliminated by the garbage collector. The equivalent of such methods in a garbage collected environment is normally called a finalizer.
+
+ECL includes a simple implementation of finalizers which makes the following promises.
+
+@itemize
+@item
+The finalizer can be any lisp function, let it be compiled or interpreter.
+@item
+Finalizers are not invoked during garbage collection. Instead, if an unreachable object is found to have an associated finalizer, it is pushed into a list and before the next garbage collection cycle, the finalizer will be invoked.
+@item
+If the finalizer is invoked and it makes the object reachable, for instance, by assigning it to a variable, it will not be destroyed, but it will have no longer a finalizer associated to it.
+@item
+ECL will strive to call finalizers before the environment is closed and the program is finished, but this mechanism may fail when exiting in a non ordinary way.
+@end itemize
+
+The implementation is based on two functions, ext:set-finalizer and ext:get-finalizer, which allow setting and querying the finalizer functions for certain objects.
+
+@include extensions/memory_ref.txi
