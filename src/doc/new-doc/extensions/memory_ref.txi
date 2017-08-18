@@ -1,0 +1,30 @@
+@node Memory Management Reference
+@subsection Memory Management Reference
+
+@subsubheading Reference
+
+@deftp Condition ext:stack-overflow
+
+Stack overflow condition
+
+@subsubheading Class Precedence List
+ext:stack-overflow, storage-condition, serious-condition, condition, t
+
+@subsubheading Methods
+@defun ext:stack-overflow-size condition integer
+@end defun
+
+@defun ext:stack-overflow-type condition concept
+@end defun
+
+@table @var
+@item integer
+A non-negative integer.
+@item concept
+A symbol from Table 5.1, except ext:heap-size.
+@end table
+
+@subsubheading Description
+This condition is signaled when one of the stack limits in Table 5.1 are violated or dangerously approached. It can be handled by resetting the limits and continuing, or jumping to an outer control point.
+
+@end deftp
