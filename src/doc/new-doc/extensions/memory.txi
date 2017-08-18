@@ -7,7 +7,7 @@
 * Memory limits::
 * Memory conditions::
 * Finalization::
-* Memory Managament Reference::
+* Memory Management Reference::
 @end menu
 
 @node Memory Management Introduction
