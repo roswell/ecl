@@ -13,7 +13,7 @@
 @c * Conditions::
 @c * Symbols::
 @c * Packages::
-@c * Numbers::
+* Numbers::
 @c * Characters::
 @c * Conses::
 @c * Arrays::
@@ -58,6 +58,7 @@
 @c @node Packages
 @c @section Packages
 
+@include standards/numbers.txi
 @c @node Numbers
 @c @section Numbers
 @c build option --with-ieee-fp={yes|no}
