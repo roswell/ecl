@@ -1,0 +1,320 @@
+@node Numbers
+@section Numbers
+
+@subsection Numeric types
+ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:num-types}. The details, however, depend both on the platform on which ECL runs and on the configuration which was chosen when building ECL.
+
+@float Table, tab:num-types
+@caption{Numeric types in ECL}
+@multitable @columnfractions .18 .82
+@headitem Type @tab Description
+@item fixnum @tab Signed integer with a number of bits given by ext:fixnum-bits, fit in a machine word.
+@item bignum @tab Arbitrary size integers, only limited by amount of memory.
+@item ratio @tab Arbitrary size rational number, made up of two integers.
+@item short-float @tab Equivalent to single-float.
+@item single-float @tab 32-bits IEEE floating point number.
+@item double-float @tab 64-bits IEEE floating point number.
+@item long-float @tab Either equivalent to double-float, or a 96/128 bits IEEE floating point number (long double in C/C++).
+@item rational @tab An alias for (or integer ratio)
+@item float @tab An alias for (or single-float double-float short-float long-float)
+@item real @tab An alias for (or real integer float)
+@item complex @tab Complex number made of two real numbers of the above mentioned types.
+@end multitable
+@end float
+
+In general, the size of a @code{FIXNUM} is determined by the word size of a machine, which ranges from 32 to 64 bits. Integers larger than this are implemented using the @url{http://www.swox.com/gmp/, GNU Multiprecision library}. Rationals are implemented using two integers, without caring whether they are fixnum or not. Floating point numbers include at least the two IEEE types of 32 and 64 bits respectively. In machines where it is supported, it is possible to associate the lisp @code{LONG-FLOAT} with the machine type long double whose size ranges from 96 to 128 bits, and which are a bit slower.
+
+
+@subsection Random-States
+ECL relies internally on a 32-bit Mersenne-Twister random number generator, using a relatively large buffer to precompute about 5000 pseud-random bytes. This implies also that random states can be printed readably and also read, using the @code{#$} macro. There is no provision to create random states from user arrays, though. Random state is printed unreadably by default.
+
+The @code{#$} macro can be used to initialize the generator with a random seed (an integer), an array of random bytes (mainly used for reading back printed random-state) and another random-state (syntactic sugar for copying the random-state). 
+
+
+@subsection C Reference
+
+@subsubsection Number C types
+Numeric C types understood by ECL
+
+@subsubheading Type names
+@multitable @columnfractions .21 .40 .25 .14
+@item cl_fixnum @tab fixnum
+@item cl_index @tab (integer 0 most-positive-fixnum)
+@item float @tab short-float, single-float
+@item double @tab double-float
+@item long double (*) @tab long-float @tab ECL_LONG_FLOAT @tab :long-float
+@item uint8_t @tab (unsigned-byte 8)
+@item int8_t @tab (signed-byte 8)
+@item uint16_t @tab (unsigned-byte 16) @tab ecl_uint16_t @tab :uint16-t
+@item int16_t @tab (signed-byte 16) @tab ecl_int16_t @tab :int16-t
+@item uint32_t @tab (unsigned-byte 32) @tab ecl_uint32_t @tab :uint32-t
+@item int32_t @tab (signed-byte 32) @tab ecl_int32_t @tab :int32-t
+@item uint64_t @tab (unsigned-byte 64) @tab ecl_uint64_t @tab :uint64-t
+@item int64_t @tab (signed-byte 64) @tab ecl_int64_t @tab :int64-t
+@item short @tab (integer ffi:c-short-min ffi:c-short-max)
+@item unsigned short @tab (integer 0 ffi:c-ushort-max)
+@item int @tab (integer ffi:c-int-min ffi:c-int-max)
+@item unsigned int @tab (integer 0 ffi:c-uint-max)
+@item long @tab (integer ffi:c-long-min ffi:c-long-max)
+@item unsigned long @tab (integer 0 ffi:c-long-max)
+@item long long @tab (integer ffi:c-long-long-min ffi:c-long-long-max) @tab ecl_long_long_t @tab :long-long
+@item unsigned long long @tab (integer 0 ffi:c-ulong-long-max) @tab ecl_ulong_long_t @tab :ulong-long
+@end multitable
+
+@subsubheading Description
+The table above shows the relation between C types and the equivalent Common Lisp types. All types are standard C99 types, except for two. First, @code{cl_fixnum} is the smallest signed integer that can fit a fixnum. Second, @code{cl_index} is the smallest unsigned integer that fits a fixnum and is typically the unsigned counterpart of @code{cl_fixnum}.
+
+(*) The long double does not exist on all platforms. When it exists, the macro @code{ECL_LONG_DOUBLE} will be defined, and @code{long-double} will be equivalent to it.
+
+Many other types might also not exist on all platforms. This includes not only @code{long long} and @code{unsigned long long}, but also some of the C99 integer types. There are two ways to detect which integer types are available in your system:
+
+@itemize
+@item
+Check for the definition of C macros with a similar name, shown in the fifth column above.
+@item
+In Lisp code, check for the presence of the associated features, shown in the fourth column above.
+@end itemize
+
+@subsubsection Number constructors
+Creating Lisp types from C numbers
+
+@subsubheading Functions
+@deftypefun cl_object ecl_make_fixnum (cl_fixnum @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_integer (cl_fixnum @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_unsigned_integer (cl_index @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_single_float (float @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_double_float (double @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_long_float (long double @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_uint8_t (uint8_t @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_int8_t (int8_t @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_uint16_t (uint16_t @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_int16_t (int16_t @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_uint32_t (uint32_t @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_int32_t (int32_t @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_uint64_t (uint64_t @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_int64_t (int64_t @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_short_t (short @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_ushort_t (unsigned short @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_int (int @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_uint (unsigned int @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_long (long @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_ulong (unsigned long @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_long_long (long long @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_ulong_long (unsigned long long @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_ratio (cl_object @var{numerator}, cl_object @var{denominator})
+@end deftypefun
+@deftypefun cl_object ecl_make_complex (cl_object @var{real}, cl_object @var{imag})
+@end deftypefun
+
+@subsubheading Description
+These functions create a Lisp object from the corresponding C number. If the number is an integer type, the result will always be an integer, which may be a bignum. If on the other hand the C number is a float, double or long double, the result will be a float.
+
+There is some redundancy in the list of functions that convert from cl_fixnum and cl_index to lisp. On the one hand,@code{ ecl_make_fixnum()} always creates a fixnum, dropping bits if necessary. On the other hand, @code{ecl_make_integer} and @code{ecl_make_unsigned_integer} faithfully converts to a Lisp integer, which may a bignum.
+
+Note also that some of the constructors do not use C numbers. This is the case of @code{ecl_make_ratio} and @code{ecl_make_complex}, because they are composite Lisp types.
+
+These functions or macros signal no errors.
+
+@subsubsection Number accessors
+Unchecked conversion from Lisp types to C numbers
+
+@subsubheading Functions
+@deftypefun cl_fixnum ecl_fixnum (cl_object @var{n})
+@end deftypefun
+@deftypefun float ecl_fixnum (cl_object @var{n})
+@end deftypefun
+@deftypefun double ecl_fixnum (cl_object @var{n})
+@end deftypefun
+@deftypefun {long double} ecl_fixnum (cl_object @var{n})
+@end deftypefun
+
+@subsubheading Description
+These functions and macros extract a C number from a Lisp object. They do not check the type of the Lisp object as they typically just access directly the value from a C structure.
+
+@subsubsection Number coercion
+Checked conversion from Lisp types to C numbers
+
+@subsubheading Functions
+@deftypefun cl_fixnum ecl_to_fixnum (cl_object @var{n});
+@end deftypefun
+@deftypefun cl_index ecl_to_unsigned_integer (cl_object @var{n});
+@end deftypefun
+@deftypefun flaot ecl_to_float (cl_object @var{n});
+@end deftypefun
+@deftypefun double ecl_to_double (cl_object @var{n});
+@end deftypefun
+@deftypefun {long double} ecl_to_long_double (cl_object @var{n});
+@end deftypefun
+@deftypefun float ecl_to_float (cl_object @var{n});
+@end deftypefun
+@deftypefun int8_t ecl_to_uint8_t (cl_object @var{n});
+@end deftypefun
+@deftypefun int8_t ecl_to_int8_t (cl_object @var{n});
+@end deftypefun
+@deftypefun uint16_t ecl_to_uint16_t (cl_object @var{n});
+@end deftypefun
+@deftypefun int16_t ecl_to_int16_t (cl_object @var{n});
+@end deftypefun
+@deftypefun uint32_t ecl_to_uint32_t (cl_object @var{n});
+@end deftypefun
+@deftypefun int32_t ecl_to_int32_t (cl_object @var{n});
+@end deftypefun
+@deftypefun uint64_t ecl_to_uint64_t (cl_object @var{n});
+@end deftypefun
+@deftypefun int64_t ecl_to_int64_t (cl_object @var{n});
+@end deftypefun
+@deftypefun short ecl_to_short (cl_object @var{n});
+@end deftypefun
+@deftypefun {unsigned short} ecl_to_ushort (cl_object @var{n});
+@end deftypefun
+@deftypefun int ecl_to_int (cl_object @var{n});
+@end deftypefun
+@deftypefun {unsigned int} ecl_to_uint (cl_object @var{n});
+@end deftypefun
+@deftypefun long ecl_to_long (cl_object @var{n});
+@end deftypefun
+@deftypefun {unsigned long} ecl_to_ulong (cl_object @var{n});
+@end deftypefun
+@deftypefun long long ecl_to_long_long (cl_object @var{n});
+@end deftypefun
+@deftypefun {unsigned long} long ecl_to_ulong_long (cl_object @var{n});
+@end deftypefun
+
+@subsubheading Description
+These functions and macros convert a Lisp object to the corresponding C number type. The conversion is done through a coercion process which may signal an error if the argument does not fit the expected type.
+
+@subsubsection Numbers C dictionary
+Common Lisp and C equivalence
+
+@subsubheading Synopsis
+@multitable @columnfractions .22 .78
+@headitem Lisp symbol @tab C function
+@item = @tab cl_object cl_E()
+@item /= @tab cl_object cl_NE()
+@item < @tab cl_object cl_L()
+@item > @tab cl_object cl_G()
+@item <= @tab cl_object cl_LE()
+@item >= @tab cl_object cl_GE()
+@item max @tab cl_object cl_max(cl_narg narg, ...)
+@item min @tab cl_object cl_min(cl_narg narg, ...)
+@item minusp @tab cl_object cl_minusp(cl_object real)
+@item plusp @tab cl_object cl_plusp(cl_object real)
+@item zerop @tab cl_object cl_zerop(cl_object number)
+@item floor @tab cl_object cl_floor(cl_narg narg, cl_object number, ...)
+@item ffloor @tab cl_object cl_ffloor(cl_narg narg, cl_object number, ...)
+@item ceiling @tab cl_object cl_ceiling(cl_narg narg, cl_object number, ...)
+@item fceiling @tab cl_object cl_fceiling(cl_narg narg, cl_object number, ...)
+@item truncate @tab cl_object cl_truncate(cl_narg narg, cl_object number, ...)
+@item ftruncate @tab cl_object cl_ftruncate(cl_narg narg, cl_object number, ...)
+@item round @tab cl_object cl_round(cl_narg narg, cl_object number, ...)
+@item fround @tab cl_object cl_fround(cl_narg narg, cl_object number, ...)
+@item sin @tab cl_object cl_sin(cl_object radians)
+@item cos @tab cl_object cl_cos(cl_object radians)
+@item tan @tab cl_object cl_tan(cl_object radians)
+@item asin @tab cl_object cl_asin(cl_object number)
+@item acos @tab cl_object cl_acos(cl_object number)
+@item atan @tab cl_object cl_atan(cl_object number)
+@item sinh @tab cl_object cl_sinh(cl_object number)
+@item cosh @tab cl_object cl_cosh(cl_object number)
+@item tanh @tab cl_object cl_tanh(cl_object number)
+@item asinh @tab cl_object cl_asinh(cl_object number)
+@item acosh @tab cl_object cl_acosh(cl_object number)
+@item atanh @tab cl_object cl_atanh(cl_object number)
+@item * @tab cl_object cl_X(cl_narg narg, ...)
+@item + @tab cl_object cl_P(cl_narg narg, ...)
+@item - @tab cl_object cl_M(cl_narg narg, cl_object number, ...)
+@item / @tab cl_object cl_N(cl_narg narg, cl_object number, ...)
+@item 1+ @tab cl_object cl_1P()
+@item 1- @tab cl_object cl_1M()
+@item abs @tab cl_object cl_abs(cl_object number)
+@item evenp @tab cl_object cl_evenp(cl_object integer)
+@item oddp @tab cl_object cl_oddp(cl_object integer)
+@item exp @tab cl_object cl_exp(cl_object number)
+@item expt @tab cl_object cl_expt(cl_object base, cl_object power)
+@item gcd @tab cl_object cl_gcd(cl_narg narg, ...)
+@item lcm @tab cl_object cl_lcm(cl_narg narg, ...)
+@item log @tab cl_object cl_log(cl_narg narg, cl_object number, ...)
+@item mod @tab cl_object cl_mod(cl_object number, cl_object divisor)
+@item rem @tab cl_object cl_rem(cl_object number, cl_object divisor)
+@item signum @tab cl_object cl_signum(cl_object number)
+@item sqrt @tab cl_object cl_sqrt(cl_object number)
+@item isqrt @tab cl_object cl_isqrt(cl_object natural)
+@item make-random-state @tab cl_object cl_make_random_state(cl_narg narg, ...)
+@item ranom @tab cl_object cl_random(cl_narg narg, cl_object limit, ...)
+@item random-state-p @tab cl_object cl_random_state_p(cl_object object)
+@item numberp @tab cl_object cl_numberp(cl_object object)
+@item cis @tab cl_object cl_cis(cl_object radians)
+@item complex @tab cl_object cl_complex(cl_narg narg, cl_object realpart, ...)
+@item complexp @tab cl_object cl_complexp(cl_object object)
+@item conjugate @tab cl_object cl_conjugate(cl_object number)
+@item phase @tab cl_object cl_phase(cl_object number)
+@item realpart @tab cl_object cl_realpart(cl_object number)
+@item imagpart @tab cl_object cl_imagpart(cl_object number)
+@item upgraded-complex-part-type @tab cl_object cl_upgraded_complex_part_type(cl_narg narg, cl_object typespec, ...)
+@item realp @tab cl_object cl_realp(cl_object object)
+@item numerator @tab cl_object cl_numerator(cl_object rational)
+@item denominator @tab cl_object cl_denominator(cl_object rational)
+@item rational @tab cl_object cl_rational(cl_object number)
+@item rationalize @tab cl_object cl_rationalize(cl_object number)
+@item rationalp @tab cl_object cl_rationalp(cl_object object)
+@item ash @tab cl_object cl_ash(cl_object integer, cl_object count)
+@item integer-length @tab cl_object cl_integer_length(cl_object integer)
+@item integerp @tab cl_object cl_integerp(cl_object object)
+@item parse-integer @tab cl_object cl_parse_integer(cl_narg narg, cl_object string, ...)
+@item boole @tab cl_object cl_boole(cl_object op, cl_object integer1, cl_object integer2)
+@item logand @tab cl_object cl_logand(cl_narg narg, ...)
+@item logandc1 @tab cl_object cl_logandc1(cl_object integer1, cl_object integer2)
+@item logandc2 @tab cl_object cl_logandc2(cl_object integer1, cl_object integer2)
+@item logeqv @tab cl_object cl_logeqv(cl_narg narg, ...)
+@item logior @tab cl_object cl_logior(cl_narg narg, ...)
+@item lognand @tab cl_object cl_lognand(cl_object integer1, cl_object integer2)
+@item lognor @tab cl_object cl_lognor(cl_object integer1, cl_object integer2)
+@item lognot @tab cl_object cl_lognot(cl_object integer)
+@item logorc1 @tab cl_object cl_logorc1(cl_object integer1, cl_object integer2)
+@item logorc2 @tab cl_object cl_logorc2(cl_object integer1, cl_object integer2)
+@item logxor @tab cl_object cl_logxor(cl_narg narg, ...)
+@item logbitp @tab cl_object cl_logbitp(cl_object index, cl_object integer)
+@item logcount @tab cl_object cl_logcount(cl_object integer)
+@item logtest @tab cl_object cl_logtest(cl_object integer1, cl_object integer2)
+@item byte @tab cl_object cl_byte(cl_object size, cl_object position)
+@item bytes-size @tab cl_object cl_byte_size(cl_object bytespec)
+@item byte-position @tab cl_object cl_byte_position(cl_object bytespec)
+@item deposit-field @tab cl_object cl_deposit_field(cl_object newbyte, cl_object bytespec, cl_object integer)
+@item dpb @tab cl_object cl_dpb(cl_object newbyte, cl_object bytespec, cl_object integer)
+@item ldb @tab cl_object cl_ldb(cl_object bytespec, cl_object integer)
+@item ldb-test @tab cl_object cl_ldb_test(cl_object bytespec, cl_object integer)
+@item mask-field @tab cl_object cl_mask_field(cl_object bytespec, cl_object integer)
+@item decode-float @tab cl_object cl_decode_float(cl_object float)
+@item scale-float @tab cl_object cl_scale_float(cl_object float, cl_object integer)
+@item float-radix @tab cl_object cl_float_radix(cl_object float)
+@item float-sign @tab cl_object cl_float_sign(cl_narg narg, cl_object float1, ...)
+@item float-digits @tab cl_object cl_float_digits(cl_object float)
+@item float-precision @tab cl_object cl_float_precision(cl_object float)
+@item integer-decode-float @tab cl_object cl_integer_decode_float(cl_object float)
+@item float @tab cl_object cl_float(cl_narg narg, cl_object number)
+@item floatp @tab cl_object cl_floatp(cl_object object)
+@item arithmetic-error-operands @tab [Only in Common Lisp]
+@item arithmetic-error-operation @tab [Only in Common Lisp]
+@end multitable
