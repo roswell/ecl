@@ -63,7 +63,7 @@ Any lisp object.
 @end table
 
 @subsubheading Description
-This function returns the finalizer associated to an object, or NIL.
+This function returns the finalizer associated to an object, or @code{NIL}.
 @end defun
 
 
@@ -85,11 +85,11 @@ Associate a finalizer to an object.
 @item object
 Any lisp object.
 @item function
-A function or closure that takes one argument or NIL.
+A function or closure that takes one argument or @code{NIL}.
 @end table
 
 @subsubheading Description
-If @var{function} is NIL, no finalizer is associated to the object. Otherwise @var{function} must be a function or a closure of one argument, which will be invoked before the object is destroyed.
+If @var{function} is @code{NIL}, no finalizer is associated to the object. Otherwise @var{function} must be a function or a closure of one argument, which will be invoked before the object is destroyed.
 
 @subsubheading Example
 Close a file associated to an object.
