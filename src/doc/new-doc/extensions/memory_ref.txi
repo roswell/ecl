@@ -3,7 +3,7 @@
 
 @subsubheading Reference
 
-
+@lspindex ext:stack-overflow
 @deftp Condition ext:stack-overflow
 
 Stack overflow condition
@@ -12,6 +12,7 @@ Stack overflow condition
 @code{ext:stack-overflow, storage-condition, serious-condition, condition, t}
 
 @subsubheading Methods
+@lspindex ext:stack-overflow-size
 @defun ext:stack-overflow-size condition
 @table @var
 @item returns
@@ -19,6 +20,7 @@ A non-negative integer.
 @end table
 @end defun
 
+@lspindex ext:stack-overflow-type
 @defun ext:stack-overflow-type condition
 @table @var
 @item returns
@@ -32,6 +34,7 @@ This condition is signaled when one of the stack limits in @ref{tab:mem-limits} 
 @end deftp
 
 
+@lspindex ext:storage-exhausted
 @deftp Condition ext:storage-exhausted
 
 Memory overflow condition
@@ -52,6 +55,7 @@ This condition is signaled when ECL exhausts the @code{ext:heap-size} limit from
 @end deftp
 
 
+@lspindex ext:get-finalizer
 @defun ext:get-finalizer object
 @table @var
 @item object
@@ -63,6 +67,7 @@ This function returns the finalizer associated to an object, or NIL.
 @end defun
 
 
+@lspindex ext:get-limit
 @defun ext:get-limit concept
 @table @var
 @item concept
@@ -73,7 +78,7 @@ A symbol.
 Queries the different memory and stack limits that condition ECL's behavior. The value to be queried is denoted by the symbol @var{concept}, which should be one from the list: @ref{tab:mem-limits}
 @end defun
 
-
+@lspindex ext:set-finalizer
 @defun ext:set-finalizer object function
 Associate a finalizer to an object.
 @table @var
@@ -112,6 +117,7 @@ Close a file associated to an object.
 @end defun
 
 
+@lspindex ext:set-limit
 @defun ext:set-limit concept value
 Set a memory or stack limit.
 @table @var
