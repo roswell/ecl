@@ -42,7 +42,7 @@ Except for finalization, which is a questionable feature, the previous settings 
 @subsection Memory limits
 Beginning with version 9.2.1, ECL operates a tighter control of the resources it uses. In particular, it features explicit limits in the four stacks and in the amount of live data. These limits are optional, can be changed at run time, but they allow users to better control the evolution of a program, handling memory and stack overflow gracefully via the Common Lisp condition system.
 
-The customizable limits are listed in Table 5.1, but they need a careful description.
+The customizable limits are listed in @ref{tab:mem-limits}, but they need a careful description.
 
 @itemize
 @item
@@ -57,7 +57,7 @@ The customizable limits are listed in Table 5.1, but they need a careful descrip
     ext:lisp-stack controls the size of the interpreter stack. It only affects interpreted code.
 @end itemize
 
-If you look at Table 5.1, some of these limits may seem very stringent, but they exist to allow detecting and correcting both stack and memory overflow conditions. Larger values can be set systematically either in the ~/.eclrc initialization file, or using the command line options from the table.
+If you look at @ref{tab:mem-limits}, some of these limits may seem very stringent, but they exist to allow detecting and correcting both stack and memory overflow conditions. Larger values can be set systematically either in the ~/.eclrc initialization file, or using the command line options from the table.
 
 @node Memory conditions
 @subsection Memory conditions

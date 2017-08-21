@@ -21,12 +21,12 @@ A non-negative integer.
 @defun ext:stack-overflow-type condition
 @table @var
 @item returns
-A symbol from Table 5.1, except @code{ext:heap-size}.
+A symbol from @ref{tab:mem-limits}, except @code{ext:heap-size}.
 @end table
 @end defun
 
 @subsubheading Description
-This condition is signaled when one of the stack limits in Table 5.1 are violated or dangerously approached. It can be handled by resetting the limits and continuing, or jumping to an outer control point.
+This condition is signaled when one of the stack limits in @ref{tab:mem-limits} are violated or dangerously approached. It can be handled by resetting the limits and continuing, or jumping to an outer control point.
 
 @end deftp
 
@@ -39,7 +39,7 @@ Memory overflow condition
 @code{ext:storage-exhausted, storage-condition, serious-condition, condition, t}
 
 @subsubheading Description
-This condition is signaled when ECL exhausts the @code{ext:heap-size} limit from Table 5.1. In handling this condition ECL follows this logic:
+This condition is signaled when ECL exhausts the @code{ext:heap-size} limit from @ref{tab:mem-limits}. In handling this condition ECL follows this logic:
 @itemize
 @item
     If the heap size limit was set to 0 (that is no limit), but there is some free space in the safety region ECL frees this space and issues a non-restartable error. The user may jump to an outer point or quit.
@@ -69,7 +69,7 @@ A symbol.
 @end table
 
 @subsubheading Description
-Queries the different memory and stack limits that condition ECL's behavior. The value to be queried is denoted by the symbol @var{concept}, which should be one from the list Table 5.1
+Queries the different memory and stack limits that condition ECL's behavior. The value to be queried is denoted by the symbol @var{concept}, which should be one from the list: @ref{tab:mem-limits}
 @end defun
 
 
@@ -119,7 +119,7 @@ A symbol.
 @item value
 A positive integer.
 @end table
-Changes the different memory and stack limits that condition ECL's behavior. The value to be changed is denoted by the symbol @var{concept}, while the @code{value} is the new maximum size. The valid symbols and units are listed in Table 5.1.
+Changes the different memory and stack limits that condition ECL's behavior. The value to be changed is denoted by the symbol @var{concept}, while the @code{value} is the new maximum size. The valid symbols and units are listed in @ref{tab:mem-limits}.
 
 Note that the limit has to be positive, but it may be smaller than the previous value of the limit. However, if the supplied value is smaller than what ECL is using at the moment, the new value will be silently ignored.
 
