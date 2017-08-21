@@ -61,7 +61,7 @@ If you look at @ref{tab:mem-limits}, some of these limits may seem very stringen
 
 @node Memory conditions
 @subsection Memory conditions
-When ECL surpasses or approaches the memory limits it will signal a Common Lisp condition. There are two types of conditions, ext:stack-overflow and ext:storage-exhausted, for stack and heap overflows, respectively. Both errors are correctable, as the following session shows:
+When ECL surpasses or approaches the memory limits it will signal a Common Lisp condition. There are two types of conditions, @code{ext:stack-overflow} and @code{ext:storage-exhausted}, for stack and heap overflows, respectively. Both errors are correctable, as the following session shows:
 @lisp
 > (defun foo (x) (foo x))
 
@@ -97,6 +97,6 @@ If the finalizer is invoked and it makes the object reachable, for instance, by 
 ECL will strive to call finalizers before the environment is closed and the program is finished, but this mechanism may fail when exiting in a non ordinary way.
 @end itemize
 
-The implementation is based on two functions, ext:set-finalizer and ext:get-finalizer, which allow setting and querying the finalizer functions for certain objects.
+The implementation is based on two functions, @code{ext:set-finalizer} and @code{ext:get-finalizer}, which allow setting and querying the finalizer functions for certain objects.
 
 @include extensions/memory_ref.txi
