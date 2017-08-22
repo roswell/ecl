@@ -22,7 +22,7 @@ ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:nu
 @end multitable
 @end float
 
-In general, the size of a @code{FIXNUM} is determined by the word size of a machine, which ranges from 32 to 64 bits. Integers larger than this are implemented using the @url{http://www.swox.com/gmp/, GNU Multiprecision library}. Rationals are implemented using two integers, without caring whether they are fixnum or not. Floating point numbers include at least the two IEEE types of 32 and 64 bits respectively. In machines where it is supported, it is possible to associate the lisp @code{LONG-FLOAT} with the machine type long double whose size ranges from 96 to 128 bits, and which are a bit slower.
+In general, the size of a @code{FIXNUM} is determined by the word size of a machine, which ranges from 32 to 64 bits. Integers larger than this are implemented using the @url{http://www.swox.com/gmp/, GNU Multiprecision library}. Rationals are implemented using two integers, without caring whether they are fixnum or not. Floating point numbers include at least the two IEEE types of 32 and 64 bits respectively. In machines where it is supported, it is possible to associate the lisp @code{LONG-FLOAT} with the machine type @code{long double} whose size ranges from 96 to 128 bits, and which are a bit slower.
 
 
 @subsection Random-States
