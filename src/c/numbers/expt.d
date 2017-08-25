@@ -99,7 +99,7 @@ ecl_expt(cl_object x, cl_object y)
     FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
   }
   if (ecl_zerop(x)) {
-    z = ecl_times(x, y);
+    z = x;
     if (!ecl_plusp(ty==t_complex?y->complex.real:y))
       z = ecl_divide(ecl_make_fixnum(1), z);
   } else if (ty != t_fixnum && ty != t_bignum) {
