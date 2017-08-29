@@ -72,6 +72,10 @@ ecl_number_equalp(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
     case t_longfloat:
 #endif
+#ifdef ECL_IEEE_FP
+      if(ecl_float_nan_p(y) || ecl_float_infinity_p(y))
+        return 0;
+#endif
       y = cl_rational(y);
       goto BEGIN;
     case t_complex:
@@ -92,6 +96,10 @@ ecl_number_equalp(cl_object x, cl_object y)
 #ifdef ECL_LONG_FLOAT
     case t_longfloat:
 #endif
+#ifdef ECL_IEEE_FP
+      if(ecl_float_nan_p(y) || ecl_float_infinity_p(y))
+        return 0;
+#endif
       y = cl_rational(y);
       goto BEGIN;
     case t_complex:
@@ -110,6 +118,10 @@ ecl_number_equalp(cl_object x, cl_object y)
       return double_fix_compare(ecl_fixnum(y), dx) == 0;
     case t_bignum:
     case t_ratio:
+#ifdef ECL_IEEE_FP
+      if(ecl_float_nan_p(x) || ecl_float_infinity_p(x))
+        return 0;
+#endif
       x = cl_rational(x);
       goto BEGIN;
     case t_singlefloat:
@@ -133,6 +145,10 @@ ecl_number_equalp(cl_object x, cl_object y)
       return long_double_fix_compare(ecl_fixnum(y), dx) == 0;
     case t_bignum:
     case t_ratio:
+#ifdef ECL_IEEE_FP
+      if(ecl_float_nan_p(x) || ecl_float_infinity_p(x))
+        return 0;
+#endif
       x = cl_rational(x);
       goto BEGIN;
     case t_singlefloat:
