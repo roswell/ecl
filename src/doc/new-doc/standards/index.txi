@@ -16,7 +16,7 @@
 * Numbers::
 * Characters::
 * Conses::
-@c * Arrays::
+* Arrays::
 @c * Strings::
 @c * Sequences::
 * Hash tables::
@@ -78,8 +78,7 @@
 
 @include standards/conses.txi
 
-@c @node Arrays
-@c @section Arrays
+@include standards/arrays.txi
 
 @c @node Strings
 @c @section Strings
