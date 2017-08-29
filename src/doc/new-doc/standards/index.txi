@@ -15,7 +15,7 @@
 @c * Packages::
 * Numbers::
 * Characters::
-@c * Conses::
+* Conses::
 @c * Arrays::
 @c * Strings::
 @c * Sequences::
@@ -76,8 +76,7 @@
 
 @include standards/characters.txi
 
-@c @node Conses
-@c @section Conses
+@include standards/conses.txi
 
 @c @node Arrays
 @c @section Arrays
