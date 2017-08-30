@@ -22,7 +22,7 @@
 * Hash tables::
 * Filenames::
 * Files::
-@c * Streams::
+* Streams::
 @c * Printer::
 @c * Reader::
 @c * System construction::
@@ -82,9 +82,7 @@
 @include standards/hashtables.txi
 @include standards/filenames.txi
 @include standards/files.txi
-
-@c @node Streams
-@c @section Streams
+@include standards/streams.txi
 
 @c @node Printer
 @c @section Printer
