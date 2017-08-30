@@ -1,0 +1,100 @@
+@node Filenames
+@section Filenames
+
+@subsection Syntax
+A pathname in the file system of Common-Lisp consists of six elements: host, device, directory, name, type and version. Pathnames are read and printed using the @code{#P} reader macro followed by the namestring. A namestring is a string which represents a pathname. The syntax of namestrings for logical pathnames is well explained in the ANSI and it can be roughly summarized as follows:
+
+@verbatim
+[hostname:][;][directory-item;]0 or more[name][.type[.version]]
+  hostname = word
+  directory-item = wildcard-word
+  type, name = wildcard-word without dots
+@end verbatim
+
+Here, @var{wildcard-word} is a sequence of any character excluding @code{#\Null} and dots. @var{word} is like a @var{wildcard-word} but asterisks are excluded.
+
+The way ECL parses a namestring is by first looking for the @var{hostname} component in the previous template. If it is found and it corresponds to a previously defined logical hostname, it assumes that the namestring corresponds to a logical pathname. If @var{hostname} is not found or it is not a logical hostname, then ECL tries the physical pathname syntax
+
+@verbatim
+[device:][[//hostname]/][directory-item/]0 or more[name][.type]
+  device, hostname = word
+  directory-item = wildcard-word
+  type = wildcard-word without dots
+  name = [.]wildcard-word
+@end verbatim
+
+If this syntax also fails, then the namestring is not a valid pathname string and a @code{parse-error} will be signalled.
+
+It is important to remark that in ECL, all physical namestrings result into pathnames with a version equal to @code{:NEWEST}. Pathnames which are not logical and have any other version (i. e. @code{NIL} or a number), cannot be printed readably, but can produce a valid namestring which results of ignoring the version.
+
+Finally, an important rule applies to physical namestrings: if a namestring contains one or more periods `.', the last period separates the namestring into the file name and the filetype. However, a namestring with a single leading period results in a name with a period in it. This is for compatibility with Unix filenames such as @code{.bashrc}, where the leading period indicates that the file is hidden.
+
+The previous rule has in important consequence, because it means that if you want to create a pathname without a name, you have to do it explicitely. In other words, ".*" is equivalent to (@code{MAKE-PATHNAME :NAME ".*" :TYPE NIL}), while (@code{MAKE-PATHNAME :NAME NIL :TYPE :WILD}) creates a pathname whose type is a wildcard.
+
+The following table illustrates how the physical pathnames work with practical examples.
+
+@float Table, tab:example-physical-namestrings
+@caption{Examples of physical namestrings}
+@multitable @columnfractions .28 .12 .1 .3 .2
+@headitem Namestring @tab Name @tab Type @tab Directory @tab Device
+@item "foo.lsp" @tab "foo" @tab "lsp" @tab NIL @tab NIL
+@item ".bashrc" @tab ".bashrc" @tab NIL @tab NIL @tab NIL
+@item ".ecl.lsp" @tab ".ecl" @tab "lsp" @tab NIL @tab NIL
+@item "foo.*" @tab "foo" @tab :WILD @tab NIL @tab NIL
+@item "*.*" @tab :WILD @tab :WILD @tab NIL @tab NIL
+@item "ecl/build/bare.lsp" @tab "bare" @tab "lsp" @tab (:relative "ecl" "build") @tab NIL
+@item "ecl/build/" @tab NIL @tab NIL @tab (:relative "ecl" "build") @tab NIL
+@item "../../ecl/build/" @tab NIL @tab NIL @tab (:relative :up :up "ecl" "build") @tab NIL
+@item "/etc/" @tab NIL @tab NIL @tab (:absolute "etc") @tab NIL
+@item "C:/etc/" @tab NIL @tab NIL @tab (:absolute "etc") @tab "C"
+@item ".*" @tab ".*" @tab NIL @tab NIL @tab NIL
+@item #.(MAKE-PATHNAME :TYPE "*") @tab NIL @tab :WILD @tab NIL @tab NIL
+@end multitable
+@end float
+
+@subsection Wild pathnames and matching
+ECL accepts four kind of wildcards in pathnames.
+
+@itemize
+@item A single wildcard in a directory component, file name, type or version is parsed as the @code{:WILD} value. See for instance "@code{*.*}", "@code{/home/*/.bashrc}", etc
+
+@item A double wildcard in a directory component, such as in "@code{/home/**/}" is parsed as the @code{:WILD-INFERIORS}, and matches any number of directories, even nested ones, such as: @code{/home/}, @code{/home/jlr}, @code{/home/jlr/lib}, etc.
+
+@item An isolated wildcard "@code{log*.txt}" matches any number of characters: @code{log.txt}, @code{log_back.txt}, etc.
+
+@item A question mark "@code{log?.txt}" matches a single character: @code{log1.txt}, @code{log2.txt}...
+@end itemize
+
+The matching rules in Common Lisp and ECL are simple but have some unintuitive consequences when compared to Unix/DOS rules. The most important one is that directories must always end with a trailing slash @code{/}, as in @code{#p"/my/home/directory/"}. Second to that, @code{NIL} values can only be matched by @code{NIL} and @code{:WILD}. Hence, "@code{*}" can only match files without file type. For some examples see @ref{Files}.
+
+@subsection C Reference
+@subsubsection Filenames C dictionary
+Common Lisp and C equivalence
+
+@subsubheading Synopsis
+@multitable @columnfractions .30 .70
+@headitem Lisp symbol @tab C function
+@item @clhs{f_namest.htm,directory-namestring} @tab cl_object cl_directory_namestring(cl_object pathname)
+@item @clhs{f_namest.htm,enough-namestring} @tab cl_object cl_enough_namestring(cl_narg narg, cl_object pathname, ...)
+@item @clhs{f_namest.htm,file-namestring} @tab cl_object cl_file_namestring(cl_object pathname)
+@item @clhs{f_namest.htm,host-namestring} @tab cl_object cl_host_namestring(cl_object pathname)
+@item @clhs{f_ld_log.htm,load-logical-pathname-translations} @tab cl_object cl_load_logical_pathname_translations(cl_object host)
+@item @clhs{f_logica.htm,logical-pathname-translations} @tab cl_object cl_logical_pathname_translations(cl_object host)
+@item @clhs{f_logi_1.htm,logical-pathname} @tab cl_object cl_logical_pathname(cl_object pathspec)
+@item @clhs{f_pn.htm,make-pathname} @tab cl_object cl_make_pathname(cl_narg narg, ...)
+@item @clhs{f_merge_.htm,merge-pathnames} @tab cl_object cl_merge_pathnames(cl_narg narg, cl_object pathname,...)
+@item @clhs{f_namest.htm,namestring} @tab cl_object cl_namestring(cl_object pathname)
+@item @clhs{f_pars_1.htm,parse-namestring} @tab cl_object cl_parse_namestring(cl_narg narg, cl_object thing, ...)
+@item @clhs{pathname.htm,pathname} @tab cl_object cl_pathname(cl_object pathspec)
+@item @clhs{f_pn_hos.htm,pathname-device} @tab cl_object cl_pathname_device(cl_narg narg, cl_object pathname, ...)
+@item @clhs{f_pn_hos.htm,pathname-directory} @tab cl_object cl_pathname_directory(cl_narg narg, cl_object pathname, ...)
+@item @clhs{f_pn_hos.htm,pathname-host} @tab cl_object cl_pathname_host(cl_narg narg, cl_object pathname, ...)
+@item @clhs{f_pn_mat.htm,pathname-match-p} @tab cl_object cl_pathname_match_p(cl_object pathname, cl_object wildcard)
+@item @clhs{f_pn_hos.htm,pathname-name} @tab cl_object cl_pathname_name(cl_narg narg, cl_object pathname, ...)
+@item @clhs{f_pn_hos.htm,pathname-type} @tab cl_object cl_pathname_type(cl_narg narg, cl_object pathname, ...)
+@item @clhs{f_pn_hos.htm,pathname-version} @tab cl_object cl_pathname_version(cl_object pathname)
+@item @clhs{f_pnp.htm,pathnamep} @tab cl_object cl_pathnamep(cl_object object)
+@item @clhs{f_tr_log.htm,translate-logical-pathname} @tab cl_object cl_translate_logical_pathname(cl_narg narg, cl_object pathname, ...)
+@item @clhs{f_tr_pn.htm,translate-pathname} @tab cl_object cl_translate_pathname(cl_narg narg, cl_object source, cl_object from_wildcard, cl_object to_wildcard, ...)
+@item @clhs{f_wild_p.htm,wild-pathname-p} @tab cl_object cl_wild_pathname_p(cl_narg narg, cl_object pathname, ...)
+@end multitable

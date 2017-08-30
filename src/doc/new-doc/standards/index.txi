@@ -20,7 +20,7 @@
 * Strings::
 * Sequences::
 * Hash tables::
-@c * Filenames::
+* Filenames::
 @c * Files::
 @c * Streams::
 @c * Printer::
@@ -80,10 +80,7 @@
 @include standards/strings.txi
 @include standards/sequences.txi
 @include standards/hashtables.txi
-
-@c @node Filenames
-@c @section Filenames
-
+@include standards/filenames.txi
 @c @node Files
 @c @section Files
 
