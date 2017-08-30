@@ -67,7 +67,7 @@ ECL accepts four kind of wildcards in pathnames.
 @item A question mark "@code{log?.txt}" matches a single character: @code{log1.txt}, @code{log2.txt}...
 @end itemize
 
-The matching rules in Common Lisp and ECL are simple but have some unintuitive consequences when compared to Unix/DOS rules. The most important one is that directories must always end with a trailing slash @code{/}, as in @code{#p"/my/home/directory/"}. Second to that, @code{NIL} values can only be matched by @code{NIL} and @code{:WILD}. Hence, "@code{*}" can only match files without file type. For some examples see @ref{Files}.
+The matching rules in Common Lisp and ECL are simple but have some unintuitive consequences when compared to Unix/DOS rules. The most important one is that directories must always end with a trailing slash @code{/}, as in @code{#p"/my/home/directory/"}. Second to that, @code{NIL} values can only be matched by @code{NIL} and @code{:WILD}. Hence, "@code{*}" can only match files without file type. For some examples see @ref{Files - Dictionary}.
 
 @node Filenames - C Reference
 @subsection C Reference
