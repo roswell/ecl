@@ -1,0 +1,35 @@
+@node Files
+@section Files
+
+@subsection Dictionary
+@subsubsection @code{DIRECTORY}
+
+This function does not have any additional arguments other than the ones described in ANSI. To list files and directories, it follows the rules for matching pathnames described in @ref{Filenames}. In short, you have the following practical examples:
+
+@float Table, tab:examples-using-directory
+@caption{Examples of using @code{DIRECTORY}}
+@multitable @columnfractions .25 .75
+@headitem Argument @tab Meaning
+@item @code{"/home/jlr/*.*"} @tab List all files in directory @code{/home/jlr/} Note that it lists only files, not directories!
+@item @code{"/home/jlr/*"} @tab Same as before, but only files without type.
+@item @code{"/home/jlr/*/"} @tab List all directories contained in @code{/home/jlr/}. Nested directories are not navigated.
+@item @code{"/home/jlr/**/*.*"} @tab List all files in all directories contained in @code{/home/jlr/}, recursively. Nested directories are navigated.
+@end multitable
+@end float
+
+@subsection C Reference
+Common Lisp and C equivalence
+
+@subsubheading Synopsis
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_del_fi.htm,delete-file} @tab cl_object cl_delete_file(cl_object filespec)
+@item @clhs{f_dir.htm,directory} @tab cl_object cl_directory(cl_narg narg, cl_object pathspec, ...)
+@item @clhs{f_ensu_1.htm,ensure-directories-exist} @tab cl_object cl_ensure_directories_exist(cl_narg narg, cl_object pathspec, ...)
+@item @clhs{f_file_a.htm,file-author} @tab cl_object cl_file_author(cl_object pathspec)
+@item @clhs{f_file_e.htm,file-error-pathname} @tab [Only in Common Lisp]
+@item @clhs{f_file_w.htm,file-write-date} @tab cl_object cl_file_write_date(cl_object pathspec)
+@item @clhs{f_probe_.htm,probe-file} @tab cl_object cl_probe_file(cl_object pathspec)
+@item @clhs{f_rn_fil.htm,rename-file} @tab cl_object cl_rename_file(cl_object filespec, cl_object new_name)
+@item @clhs{f_tn.htm,truename} @tab cl_object cl_truename(cl_object filespec)
+@end multitable

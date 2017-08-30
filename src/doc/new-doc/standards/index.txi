@@ -21,7 +21,7 @@
 * Sequences::
 * Hash tables::
 * Filenames::
-@c * Files::
+* Files::
 @c * Streams::
 @c * Printer::
 @c * Reader::
@@ -81,8 +81,7 @@
 @include standards/sequences.txi
 @include standards/hashtables.txi
 @include standards/filenames.txi
-@c @node Files
-@c @section Files
+@include standards/files.txi
 
 @c @node Streams
 @c @section Streams
