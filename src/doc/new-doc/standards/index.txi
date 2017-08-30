@@ -18,7 +18,7 @@
 * Conses::
 * Arrays::
 * Strings::
-@c * Sequences::
+* Sequences::
 * Hash tables::
 @c * Filenames::
 @c * Files::
@@ -78,10 +78,7 @@
 @include standards/conses.txi
 @include standards/arrays.txi
 @include standards/strings.txi
-
-@c @node Sequences
-@c @section Sequences
-
+@include standards/sequences.txi
 @include standards/hashtables.txi
 
 @c @node Filenames
