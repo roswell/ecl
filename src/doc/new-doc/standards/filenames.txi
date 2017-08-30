@@ -1,6 +1,7 @@
 @node Filenames
 @section Filenames
 
+@node Filenames - Syntax
 @subsection Syntax
 A pathname in the file system of Common-Lisp consists of six elements: host, device, directory, name, type and version. Pathnames are read and printed using the @code{#P} reader macro followed by the namestring. A namestring is a string which represents a pathname. The syntax of namestrings for logical pathnames is well explained in the ANSI and it can be roughly summarized as follows:
 
@@ -52,6 +53,7 @@ The following table illustrates how the physical pathnames work with practical e
 @end multitable
 @end float
 
+@node Filenames - Wild pathnames and matching
 @subsection Wild pathnames and matching
 ECL accepts four kind of wildcards in pathnames.
 
@@ -67,6 +69,7 @@ ECL accepts four kind of wildcards in pathnames.
 
 The matching rules in Common Lisp and ECL are simple but have some unintuitive consequences when compared to Unix/DOS rules. The most important one is that directories must always end with a trailing slash @code{/}, as in @code{#p"/my/home/directory/"}. Second to that, @code{NIL} values can only be matched by @code{NIL} and @code{:WILD}. Hence, "@code{*}" can only match files without file type. For some examples see @ref{Files}.
 
+@node Filenames - C Reference
 @subsection C Reference
 @subsubsection Filenames C dictionary
 Common Lisp and C equivalence

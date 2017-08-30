@@ -78,6 +78,7 @@ CL-USER> (ext:hash-table-content *ht*)
  (#<weak-pointer 000055b121866390> . #<weak-pointer 000055b121866380>))
 @end lisp
 
+@node Hash tables - C Reference
 @subsection C Reference
 @subsubsection Hash tables C dictionary
 Common Lisp and C equivalence

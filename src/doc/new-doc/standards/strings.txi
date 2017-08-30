@@ -1,6 +1,7 @@
 @node Strings
 @section Strings
 
+@node Strings - String types & Unicode
 @subsection String types & Unicode
 The ECL implementation of strings is ANSI Common-Lisp compliant. There are basically four string types as shown in @ref{tab:cl-str-types}. As explained in @ref{Characters}, when Unicode support is disabled, @code{character} and @code{base-character} are the same type and the last two string types are equivalent to the first two.
 
@@ -17,6 +18,7 @@ The ECL implementation of strings is ANSI Common-Lisp compliant. There are basic
 
 It is important to remember that strings with unicode characters can only be printed readably when the external format supports those characters. If this is not the case, ECL will signal a @code{serious-condition}. This condition will abort your program if not properly handled.
 
+@node Strings - C reference
 @subsection C reference
 @subsubsection Base string constructors
 Building strings of C data

@@ -3,7 +3,7 @@
 
 ECL is fully ANSI Common-Lisp compliant in all aspects of the character data type, with the following peculiarities.
 
-
+@node Characters - Unicode vs. POSIX locale
 @subsection Unicode vs. POSIX locale
 There are two ways of building ECL: with C or with Unicode character codes. These build modes are accessed using the @code{--disable-unicode} and @code{--enable-unicode} configuration options, the last one being the default.
 
@@ -45,12 +45,13 @@ All characters have a name. For non-printing characters between 0 and 32, and fo
 Note that @code{#\Linefeed} is synonymous with @code{#\Newline} and thus is a member of @code{standard-char}.
 
 
+@node Characters - Newline characters
 @subsection @code{#\Newline} characters
 Internally, ECL represents the @code{#\Newline} character by a single code. However, when using external formats, ECL may parse character pairs as a single @code{#\Newline}, and viceversa, use multiple characters to represent a single @code{#\Newline}.
 @c TODO: add an @xref to Stream -> External formats once it's written
 
 
-
+@node Characters - C Reference
 @subsection C Reference
 
 @subsubsection C types

@@ -1,6 +1,7 @@
 @node Sequences
 @section Sequences
 
+@node Sequences - C Reference
 @subsection C Reference
 @subsubsection Sequences C dictionary
 Common Lisp and C equivalence

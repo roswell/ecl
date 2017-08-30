@@ -1,6 +1,7 @@
 @node Numbers
 @section Numbers
 
+@node Numbers - Numeric types
 @subsection Numeric types
 ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:num-types}. The details, however, depend both on the platform on which ECL runs and on the configuration which was chosen when building ECL.
 
@@ -24,13 +25,13 @@ ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:nu
 
 In general, the size of a @code{FIXNUM} is determined by the word size of a machine, which ranges from 32 to 64 bits. Integers larger than this are implemented using the @url{http://www.swox.com/gmp/, GNU Multiprecision library}. Rationals are implemented using two integers, without caring whether they are fixnum or not. Floating point numbers include at least the two IEEE types of 32 and 64 bits respectively. In machines where it is supported, it is possible to associate the lisp @code{LONG-FLOAT} with the machine type @code{long double} whose size ranges from 96 to 128 bits, and which are a bit slower.
 
-
+@node Numbers - Random-States
 @subsection Random-States
 ECL relies internally on a 32-bit Mersenne-Twister random number generator, using a relatively large buffer to precompute about 5000 pseud-random bytes. This implies also that random states can be printed readably and also read, using the @code{#$} macro. There is no provision to create random states from user arrays, though. Random state is printed unreadably by default.
 
 The @code{#$} macro can be used to initialize the generator with a random seed (an integer), an array of random bytes (mainly used for reading back printed random-state) and another random-state (syntactic sugar for copying the random-state). 
 
-
+@node Numbers - C Reference
 @subsection C Reference
 
 @subsubsection Number C types

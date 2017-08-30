@@ -1,6 +1,7 @@
 @node Arrays
 @section Arrays
 
+@node Arrays - Array limits
 @subsection Array limits
 ECL arrays can have up to 64 dimensions. Common-Lisp constants related to arrays have the following values in ECL.
 @multitable @columnfractions .5 .5
@@ -10,6 +11,7 @@ ECL arrays can have up to 64 dimensions. Common-Lisp constants related to arrays
 @item array-total-size-limit @tab array-dimension-limit
 @end multitable
 
+@node Arrays - Specializations
 @subsection Specializations
 When the elements of an array are declared to have some precise type, such as a small or large integer, a character or a floating point number, ECL has means to store those elements in a more compact form, known as a @emph{specialized array}. The list of types for which ECL specializes arrays is platform dependent, but is summarized in the following table, together with the C type which is used internally and the expected size.
 
@@ -35,6 +37,8 @@ When the elements of an array are declared to have some precise type, such as a 
 
 Let us remark that some of these specialized types might not exist in your platform. This is detected using conditional reading and features (@xref{Numbers}).
 
+
+@node Arrays - C Reference
 @subsection C Reference
 @subsubsection Types and constants
 C types, limits and enumerations
