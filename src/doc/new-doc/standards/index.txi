@@ -17,7 +17,7 @@
 * Characters::
 * Conses::
 * Arrays::
-@c * Strings::
+* Strings::
 @c * Sequences::
 * Hash tables::
 @c * Filenames::
@@ -75,13 +75,9 @@
 @c #$ macro
 
 @include standards/characters.txi
-
 @include standards/conses.txi
-
 @include standards/arrays.txi
-
-@c @node Strings
-@c @section Strings
+@include standards/strings.txi
 
 @c @node Sequences
 @c @section Sequences
