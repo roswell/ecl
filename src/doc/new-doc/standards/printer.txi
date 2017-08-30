@@ -1,0 +1,61 @@
+@node Printer
+@section Printer
+
+In all situations where the rules are well specified, ECL prints objects according to ANSI (@xref{Bibliography}). The specification leaves however a number of cases as implementation dependent behavior. The output of ECL in those cases is summarized in @ref{tab:impl-spec-print-rep}. Except for the types @code{character} and @code{random-state}, most of those examples regard non-standard written forms @code{#<...>} cannot be read back using @code{read}. These printed representations are just informative and should not be used to reconstruct or compare objects.
+
+@float Table, tab:impl-spec-print-rep
+@caption{Implementation-specific printed representation}
+@multitable @columnfractions .28 .35 .37
+@headitem Lisp type @tab Format @tab Remarks
+@item @code{package} @tab @code{#<package @var{name}>} @tab  
+@item @code{random-state} @tab @code{#<character @var{array}>} @tab  
+@item @code{bitvector} @tab @code{#<bit-vector @var{@var{unique-id}}>} @tab Only when @code{*print-array*} is false.
+@item @code{vector} @tab @code{#<vector @var{unique-id}>} @tab Only when @code{*print-array*} is false.
+@item @code{array} @tab @code{#<array @var{unique-id}>} @tab Only when @code{*print-array*} is false.
+@item @code{hash-table} @tab @code{#<hash-table @var{unique-id}>} @tab  
+@item @code{readtable} @tab @code{#<readtable @var{unique-id}>} @tab  
+@item @code{interpreted function} @tab @code{#<bytecompiled-function @var{name-or-id}>} @tab Name is a symbol.
+@item @code{machine compiled function} @tab @code{#<compiled-function @var{name}>} @tab Name is a symbol.
+@item @code{input-stream} @tab @code{#<input stream "@var{filename}">} @tab An stream that reads from @var{filename}.
+@item @code{output-stream} @tab @code{#<output stream "@var{filename}">} @tab An stream that writes to @var{filename}.
+@item @code{probe-stream} @tab @code{#<probe stream "@var{filename}">} @tab  
+@item @code{string-input-stream} @tab @code{#<string-input stream from "@var{string-piece}">} @tab The string is the text left to be read.
+@item @code{string-output-stream} @tab @code{#<string-output stream @var{unique-id}>} @tab  
+@item @code{two-way-stream} @tab @code{#<two-way stream @var{unique-id}>} @tab  
+@item @code{echo-stream} @tab @code{#<echo stream @var{unique-id}>} @tab  
+@item @code{synonym-stream} @tab @code{#<synonym stream to @var{symbol}>} @tab  
+@item @code{broadcast-stream} @tab @code{#<broadcast stream @var{unique-id}>} @tab  
+@item @code{concatenated-stream} @tab @code{#<concatenated stream @var{unique-id}>} @tab  
+@item @code{closed-stream} @tab @code{#<closed ...>} @tab The dots denote any of the above stream forms.
+@end multitable
+@end float
+
+@subsection C Reference
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@subsubheading Synopsis
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_cp_ppr.htm,copy-pprint-dispatch} @tab cl_object cl_copy_pprint_dispatch(cl_narg narg, ...)
+@item @clhs{f_ppr_di.htm,pprint-dispatch} @tab cl_object cl_pprint_dispatch(cl_narg narg, cl_object object, ...)
+@item @clhs{f_ppr_fi.htm,pprint-fill} @tab cl_object cl_pprint_fill(cl_narg narg, cl_object stream, cl_object object, ...)
+@item @clhs{f_ppr_fi.htm,pprint-linear} @tab cl_object cl_pprint_linear(cl_narg narg, cl_object stream, cl_object object, ...)
+@item @clhs{f_ppr_fi.htm,pprint-tabular} @tab cl_object cl_pprint_tabular(cl_narg narg, cl_object stream, cl_object object, ...)
+@item @clhs{f_ppr_in.htm,pprint-indent} @tab cl_object cl_pprint_indent(cl_narg narg, cl_object relative_to, cl_object n, ...)
+@item @clhs{f_ppr_nl.htm,pprint-newline} @tab cl_object cl_pprint_newline(cl_narg narg, cl_object kind, ...)
+@item @clhs{f_ppr_ta.htm,pprint-tab} @tab cl_object cl_pprint_tab(cl_narg narg, cl_object kind, cl_object colnum, cl_object colinc, ...)
+@item @clhs{f_pr_obj.htm,print-object} @tab [Only in Common Lisp]
+@item @clhs{f_set_pp.htm,set-pprint-dispatch} @tab cl_object cl_set_pprint_dispatch(cl_narg narg, cl_object ype_spec, cl_object function, ...)
+@item @clhs{f_wr_pr.htm,write} @tab cl_object cl_write(cl_narg narg, cl_object object, ...)
+@item @clhs{f_wr_pr.htm,prin1} @tab cl_object cl_prin1(cl_narg narg, cl_object object, ...)
+@item @clhs{f_wr_pr.htm,princ} @tab cl_object cl_princ(cl_narg narg, cl_object object, ...)
+@item @clhs{f_wr_pr.htm,print} @tab cl_object cl_print(cl_narg narg, cl_object object, ...)
+@item @clhs{f_wr_pr.htm,pprint} @tab cl_object cl_pprint(cl_narg narg, cl_object object, ...)
+@item @clhs{f_wr_to_.htm,write-to-string} @tab cl_object cl_write_to_string(cl_narg narg, cl_object object, ...)
+@item @clhs{f_wr_to_.htm,prin1-to-string} @tab cl_object cl_prin1_to_string(cl_object object)
+@item @clhs{f_wr_to_.htm,princ-to-string} @tab cl_object cl_princ_to_string(cl_object object)
+@item @clhs{f_pr_not.htm,print-not-readable-object} @tab [Only in Common Lisp]
+@item @clhs{f_format.htm,format} @tab cl_object cl_format(cl_narg narg, cl_object string, ...)
+@end multitable

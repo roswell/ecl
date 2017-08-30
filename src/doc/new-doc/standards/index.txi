@@ -23,7 +23,7 @@
 * Filenames::
 * Files::
 * Streams::
-@c * Printer::
+* Printer::
 @c * Reader::
 @c * System construction::
 @c * Environment::
@@ -83,9 +83,7 @@
 @include standards/filenames.txi
 @include standards/files.txi
 @include standards/streams.txi
-
-@c @node Printer
-@c @section Printer
+@include standards/printer.txi
 
 @c @node Reader
 @c @section Reader
