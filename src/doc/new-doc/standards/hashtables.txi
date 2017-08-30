@@ -77,3 +77,22 @@ CL-USER> (ext:hash-table-content *ht*)
  (#<weak-pointer 000055b121866370> . #<weak-pointer 000055b121866360>)
  (#<weak-pointer 000055b121866390> . #<weak-pointer 000055b121866380>))
 @end lisp
+
+@subsection C Reference
+@subsubsection Hash tables C dictionary
+Common Lisp and C equivalence
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_clrhas.htm,clrhash} @tab cl_object cl_clrhash(cl_object hash_table)
+@item @clhs{f_gethas.htm,gethash} @tab cl_object cl_gethash(cl_narg narg, cl_object key, cl_object hash_table, ...)
+@item @clhs{f_hash_1.htm,hash-table-count} @tab cl_object cl_hash_table_count(cl_object hash_table)
+@item @clhs{f_hash_t.htm,hash-table-p} @tab cl_object cl_hash_table_p(cl_object hash_table)
+@item @clhs{f_hash_2.htm,hash-table-rehash-size} @tab cl_object cl_hash_table_rehash_size(cl_object hash_table)
+@item @clhs{f_hash_3.htm,hash-table-rehash-threshold} @tab cl_object cl_hash_table_rehash_thresholdy(cl_object hash_table)
+@item @clhs{f_hash_4.htm,hash-table-size} @tab cl_object cl_hash_table_size(cl_object hash_table)
+@item @clhs{f_hash_5.htm,hash-table-test} @tab cl_object cl_hash_table_test(cl_object hash_table)
+@item @clhs{f_mk_has.htm,make-hash-table} @tab cl_object cl_make_hash_table(cl_narg narg, ...)
+@item @clhs{f_maphas.htm,maphash} @tab cl_object cl_maphash(cl_object function, cl_object hash_table)
+@item @clhs{f_remhas.htm,remhash} @tab cl_object cl_remhash(cl_object key, cl_object hash_table)
+@item @clhs{f_sxhash.htm,sxhash} @tab cl_object cl_sxhash(cl_object object)
+@end multitable
