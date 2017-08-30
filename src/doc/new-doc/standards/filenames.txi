@@ -3,7 +3,7 @@
 
 @node Filenames - Syntax
 @subsection Syntax
-A pathname in the file system of Common-Lisp consists of six elements: host, device, directory, name, type and version. Pathnames are read and printed using the @code{#P} reader macro followed by the namestring. A namestring is a string which represents a pathname. The syntax of namestrings for logical pathnames is well explained in the ANSI and it can be roughly summarized as follows:
+A pathname in the file system of Common-Lisp consists of six elements: host, device, directory, name, type and version. Pathnames are read and printed using the @code{#P} reader macro followed by the namestring. A namestring is a string which represents a pathname. The syntax of namestrings for logical pathnames is well explained in the ANSI (@xref{Bibliography}) and it can be roughly summarized as follows:
 
 @verbatim
 [hostname:][;][directory-item;]0 or more[name][.type[.version]]

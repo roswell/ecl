@@ -5,7 +5,7 @@
 @subsection Dictionary
 @subsubsection @code{DIRECTORY}
 
-This function does not have any additional arguments other than the ones described in ANSI. To list files and directories, it follows the rules for matching pathnames described in @ref{Filenames - Wild pathnames and matching}. In short, you have the following practical examples:
+This function does not have any additional arguments other than the ones described in ANSI (@xref{Bibliography}). To list files and directories, it follows the rules for matching pathnames described in @ref{Filenames - Wild pathnames and matching}. In short, you have the following practical examples:
 
 @float Table, tab:examples-using-directory
 @caption{Examples of using @code{DIRECTORY}}
