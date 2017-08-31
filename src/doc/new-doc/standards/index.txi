@@ -26,7 +26,7 @@
 * Printer::
 * Reader::
 * System construction::
-@c * Environment::
+* Environment::
 @c * Glossary::
 @end menu
 
@@ -118,8 +118,7 @@
 @c directory, it will be treated as a source code. Otherwise we'll try
 @c known extensions.
 
-@c @node Environment
-@c @section Environment
+@include standards/environment.txi
 
 @c @node Glossary
 @c @section Glossary
