@@ -8,7 +8,7 @@
 * Types and classes::
 * Data and control flow::
 @c * Iteration::
-@c * Objects::
+* Objects::
 @c * Structures::
 @c * Conditions::
 @c * Symbols::
@@ -43,8 +43,7 @@
 @c @node Iteration
 @c @section Iteration
 
-@c @node Objects
-@c @section Objects
+@include standards/objects.txi
 
 @c @node Structures
 @c @section Structures
