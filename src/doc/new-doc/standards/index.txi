@@ -11,7 +11,7 @@
 * Objects::
 * Structures::
 * Conditions::
-@c * Symbols::
+* Symbols::
 @c * Packages::
 * Numbers::
 * Characters::
@@ -46,9 +46,7 @@
 @include standards/objects.txi
 @include standards/structures.txi
 @include standards/conditions.txi
-
-@c @node Symbols
-@c @section Symbols
+@include standards/symbols.txi
 
 @c @node Packages
 @c @section Packages
