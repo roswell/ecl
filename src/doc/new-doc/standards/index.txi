@@ -24,7 +24,7 @@
 * Files::
 * Streams::
 * Printer::
-@c * Reader::
+* Reader::
 @c * System construction::
 @c * Environment::
 @c * Glossary::
@@ -84,9 +84,7 @@
 @include standards/files.txi
 @include standards/streams.txi
 @include standards/printer.txi
-
-@c @node Reader
-@c @section Reader
+@include standards/reader.txi
 @c @c #$ - random state
 
 @c @node System construction
