@@ -1,0 +1,151 @@
+@node Streams
+@section Streams
+
+@node Streams - ANSI Streams
+@subsection ANSI Streams
+
+@node Streams - Supported types
+@subsubsection Supported types
+ECL implements all stream types described in ANSI (@xref{Bibliography}). Additionally, when configured with option @code{--enable-clos-streams}, ECL includes a version of Gray streams where any object that implements the appropiate methods (@code{stream-input-p}, @code{stream-read-char}, etc) is a valid argument for the functions that expect streams, such as @code{read}, @code{print}, etc.
+
+@node Streams - Element types
+@subsubsection Element types
+ECL distinguishes between two kinds of streams: character streams and byte streams. @dfn{Character streams} only accept and produce characters, written or read one by one, with @code{write-char} or @code{read-char}, or in chunks, with @code{write-sequence} or any of the Lisp printer functions. Character operations are conditioned by the external format, as described in @ref{Streams - External formats}.
+
+ANSI Common Lisp also supports binary streams. Here input and output is performed in chunks of bits. Binary streams are created with the function open passing as argument a subtype of integer and the implementation is free to round up that integer type to the closest size it supports. In particular ECL rounds up the size to a multiple of a byte. For example, the form @code{(open "foo.bin" :direction :output :element-type '(unsigned-byte 13))}, will open the file @code{foo.bin} for writing, using 16-bit words as the element type.
+
+
+@node Streams - External formats
+@subsubsection External formats
+An @dfn{external format} is an encoding for characters that maps character codes to a sequence of bytes, in a one-to-one or one-to-many fashion. External formats are also known as "character encodings" in the programming world and are an essential ingredient to be able to read and write text in different languages and alphabets.
+
+ECL has one of the most complete supports for @emph{external formats}, covering all of the usual codepages from the Windows and Unix world, up to the more recent UTF-8, UCS-2 and UCS-4 formats, all of them with big and small endian variants, and considering different encodings for the newline character.
+
+However, the set of supported external formats depends on the size of the space of character codes. When ECL is built with Unicode support (the default option), it can represent all known characters from all known codepages, and thus all external formats are supported. However, when ECL is built with the restricted character set, it can only use one codepage (the one provided by the C library), with a few variants for the representation of end-of-line characters.
+
+In ECL, an external format designator is defined recursively as either a symbol or a list of symbols. The grammar is as follows
+
+@verbatim
+external-format-designator := 
+   symbol |
+   ( {symbol}+ )
+@end verbatim
+
+and the table of known symbols is shown below. Note how some symbols (@code{:cr}, @code{:little-endian}, etc.) just modify other external formats.
+
+@c@float Table, tab:stream-ext-formats
+@c@caption{Stream external formats}
+@multitable @columnfractions .4 .4 .2
+@headitem Symbols @tab Codepage or encoding @tab Unicode required
+@item @code{:cr} @tab @code{#\Newline} is @code{Carriage Return} @tab No
+@item @code{:crlf} @tab @code{#\Newline} is @code{Carriage Return} followed by @code{Linefeed} @tab No
+@item @code{:lf} @tab @code{#\Newline} is @code{Linefeed} @tab No
+@item @code{:little-endian} @tab Modify UCS to use little endian encoding. @tab No
+@item @code{:big-endian} @tab Modify UCS to use big endian encoding. @tab No
+@item @code{:utf-8 :utf8} @tab Unicode UTF-8 @tab Yes
+@item @code{:ucs-2 :ucs2 :utf-16 :utf16 :unicode} @tab UCS-2 encoding with BOM. @tab Yes
+@item @code{:ucs-2le :ucs2le :utf-16le} @tab UCS-2 with big-endian encoding @tab Yes
+@item @code{:ucs-2be :ucs2be :utf-16be} @tab UCS-2 with big-endian encoding @tab Yes
+@item @code{:ucs-4 :ucs4 :utf-32 :utf32} @tab UCS-4 encoding with BOM. @tab Yes
+@item @code{:ucs-4le :ucs4le :utf-32le} @tab UCS-4 with big-endian encoding @tab Yes
+@item @code{:ucs-4be :ucs4be :utf-32be} @tab UCS-4 with big-endian encoding @tab Yes
+@item @code{:iso-8859-1 :iso8859-1 :latin-1 :cp819 :ibm819} @tab Latin-1 encoding @tab Yes
+@item @code{:iso-8859-2 :iso8859-2 :latin-2 :latin2} @tab Latin-2 encoding @tab Yes
+@item @code{:iso-8859-3 :iso8859-3 :latin-3 :latin3} @tab Latin-3 encoding @tab Yes
+@item @code{:iso-8859-4 :iso8859-4 :latin-4 :latin4} @tab Latin-4 encoding @tab Yes
+@item @code{:iso-8859-5 :cyrillic} @tab Latin-5 encoding @tab Yes
+@item @code{:iso-8859-6 :arabic :asmo-708 :ecma-114} @tab Latin-6 encoding @tab Yes
+@item @code{:iso-8859-7 :greek8 :greek :ecma-118} @tab Greek encoding @tab Yes
+@item @code{:iso-8859-8 :hebrew} @tab Hebrew encoding @tab Yes
+@item @code{:iso-8859-9 :latin-5 :latin5} @tab Latin-5 encoding @tab Yes
+@item @code{:iso-8859-10 :iso8859-10 :latin-6 :latin6} @tab Latin-6 encoding @tab Yes
+@item @code{:iso-8859-13 :iso8859-13 :latin-7 :latin7} @tab Latin-7 encoding @tab Yes
+@item @code{:iso-8859-14 :iso8859-14 :latin-8 :latin8} @tab Latin-8 encoding @tab Yes
+@item @code{:iso-8859-15 :iso8859-15 :latin-9 :latin9} @tab Latin-7 encoding @tab Yes
+@item @code{:dos-cp437 :ibm-437} @tab IBM CP 437 @tab Yes
+@item @code{:dos-cp850 :ibm-850 :cp850} @tab Windows CP 850 @tab Yes
+@item @code{:dos-cp852 :ibm-852} @tab IBM CP 852 @tab Yes
+@item @code{:dos-cp855 :ibm-855} @tab IBM CP 855 @tab Yes
+@item @code{:dos-cp860 :ibm-860} @tab IBM CP 860 @tab Yes
+@item @code{:dos-cp861 :ibm-861} @tab IBM CP 861 @tab Yes
+@item @code{:dos-cp862 :ibm-862 :cp862} @tab Windows CP 862 @tab Yes
+@item @code{:dos-cp863 :ibm-863} @tab IBM CP 863 @tab Yes
+@item @code{:dos-cp864 :ibm-864} @tab IBM CP 864 @tab Yes
+@item @code{:dos-cp865 :ibm-865} @tab IBM CP 865 @tab Yes
+@item @code{:dos-cp866 :ibm-866 :cp866} @tab Windows CP 866 @tab Yes
+@item @code{:dos-cp869 :ibm-869} @tab IBM CP 869 @tab Yes
+@item @code{:windows-cp932 :windows-932 :cp932} @tab Windows CP 932 @tab Yes
+@item @code{:windows-cp936 :windows-936 :cp936} @tab Windows CP 936 @tab Yes
+@item @code{:windows-cp949 :windows-949 :cp949} @tab Windows CP 949 @tab Yes
+@item @code{:windows-cp950 :windows-950 :cp950} @tab Windows CP 950 @tab Yes
+@item @code{:windows-cp1250 :windows-1250 :ms-ee} @tab Windows CP 1250 @tab Yes
+@item @code{:windows-cp1251 :windows-1251 :ms-cyrl} @tab Windows CP 1251 @tab Yes
+@item @code{:windows-cp1252 :windows-1252 :ms-ansi} @tab Windows CP 1252 @tab Yes
+@item @code{:windows-cp1253 :windows-1253 :ms-greek} @tab Windows CP 1253 @tab Yes
+@item @code{:windows-cp1254 :windows-1254 :ms-turk} @tab Windows CP 1254 @tab Yes
+@item @code{:windows-cp1255 :windows-1255 :ms-hebr} @tab Windows CP 1255 @tab Yes
+@item @code{:windows-cp1256 :windows-1256 :ms-arab} @tab Windows CP 1256 @tab Yes
+@item @code{:windows-cp1257 :windows-1257 :winbaltrim} @tab Windows CP 1257 @tab Yes
+@item @code{:windows-cp1258 :windows-1258} @tab Windows CP 1258 @tab Yes
+@end multitable
+@c @end float
+
+@node Streams - C Reference
+@subsection C Reference
+
+@subsubsection Streams C dictionary
+Common Lisp and C equivalence
+
+@subsubheading Synopsis
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_broadc.htm,broadcast-stream-streams} @tab cl_object cl_broadcast_stream_streams(cl_object broadcast_stream)
+@item @clhs{f_clear_.htm,clear-input} @tab cl_object cl_clear_input(cl_narg narg, ...)
+@item @clhs{f_finish.htm,clear-output} @tab cl_object cl_clear_outputt(cl_narg narg, ...)
+@item @clhs{f_close.htm,close} @tab cl_object cl_close(cl_narg narg, cl_object stream, ...)
+@item @clhs{f_conc_1.htm,concatenated-stream-streams} @tab cl_object cl_concatenated_stream_streams(cl_object concatenated_stream)
+@item @clhs{f_echo_s.htm,echo-stream-input-stream} @tab cl_object cl_echo_stream_input_stream(cl_object echo_stream)
+@item @clhs{f_echo_s.htm,echo-stream-output-stream} @tab cl_object cl_echo_stream_output_stream(cl_object echo_stream)
+@item @clhs{f_file_p.htm,file-length} @tab cl_object cl_file_length(cl_object stream)
+@item @clhs{f_file_s.htm,file-position} @tab cl_object cl_file_position(cl_object stream)
+@item @clhs{f_finish.htm,file-string-length} @tab cl_object cl_file_string_length(cl_object stream, cl_object object)
+@item @clhs{f_finish.htm,finish-output} @tab cl_object cl_finish_outputt(cl_narg narg, ...)
+@item @clhs{f_finish.htm,force-output} @tab cl_object cl_force_outputt(cl_narg narg, ...)
+@item @clhs{f_terpri.htm,fresh-line} @tab cl_object cl_fresh_line(cl_narg narg, ...)
+@item @clhs{f_get_out.htm,get-output-stream-string} @tab cl_object cl_get_output_stream_string(cl_object string_output_stream)
+@item @clhs{f_in_stm.htm,input-stream-p} @tab cl_object cl_input_stream_p(cl_object stream)
+@item @clhs{f_intera.htm,interactive-stream-p} @tab cl_object cl_interactive_stream_p(cl_object stream)
+@item @clhs{f_listen.htm,listen} @tab cl_object cl_listen(cl_narg narg, cl_object stream, ...)
+@item @clhs{f_mk_bro.htm,make-broadcast-stream} @tab cl_object cl_make_broadcast_stream(cl_narg narg, ...)
+@item @clhs{f_mk_con.htm,make-concatenated-stream} @tab cl_object cl_make_concatenated_stream(cl_narg narg, ....)
+@item @clhs{f_mk_ech.htm,make-echo-stream} @tab cl_object cl_make_echo_stream(cl_object input, cl_object output)
+@item @clhs{f_mk_s_1.htm,make-string-input-stream} @tab cl_object cl_make_string_input_stream(cl_narg narg, cl_object string, ...)
+@item @clhs{f_mk_s_2.htm,make-string-output-stream} @tab cl_object cl_make_string_output_stream(cl_narg narg, ...)
+@item @clhs{f_mk_two.htm,make-two-way-stream} @tab cl_object cl_make_two_way_stream(cl_object input, cl_object output)
+@item @clhs{f_mk_syn.htm,make-synonym-stream} @tab cl_object cl_make_synonym_stream(cl_object symbol)
+@item @clhs{f_open.htm,open} @tab cl_object cl_open(cl_narg narg, cl_object filespec, ...)
+@item @clhs{f_open_s.htm,open-stream-p} @tab cl_object cl_open_stream_p(cl_object stream)
+@item @clhs{f_in_stm.htm,output-stream-p} @tab cl_object cl_output_stream_p(cl_object stream)
+@item @clhs{f_peek_c.htm,peek-char} @tab cl_object cl_peek_char(cl_narg narg, ...)
+@item @clhs{f_rd_by.htm,read-byte} @tab cl_object cl_read_byte(cl_narg narg, cl_object stream, ...)
+@item @clhs{f_rd_cha.htm,read-char} @tab cl_object cl_read_char(cl_narg narg, ...)
+@item @clhs{f_rd_c_1.htm,read-char-no-hang} @tab cl_object cl_read_char_no_hang(cl_narg narg, ...)
+@item @clhs{f_rd_lin.htm,read-line} @tab cl_object cl_read_line(cl_narg narg, ...)
+@item @clhs{f_rd_seq.htm,read-sequence} @tab cl_object cl_read_sequence(cl_narg narg, cl_object sequence, cl_object stream)
+@item @clhs{f_stm_el.htm,stream-element-type} @tab cl_object cl_stream_element_type(cl_object stream)
+@item @clhs{f_stm_er.htm,stream-error-stream} @tab [Only in Common Lisp]
+@item @clhs{f_stm_ex.htm,stream-external-format} @tab cl_object cl_stream_external_format(cl_object stream)
+@item @clhs{f_stmp.htm,streamp} @tab cl_object cl_streamp(cl_object object)
+@item @clhs{f_syn_st.htm,synonym-stream-symbol} @tab cl_object cl_synonym_stream_symbol(cl_object synonym_stream)
+@item @clhs{f_terpri.htm,terpri} @tab cl_object cl_terpri(cl_narg narg, ...)
+@item @clhs{f_two_wa.htm,two-way-stream-input-stream} @tab cl_object cl_two_way_stream_input_stream(cl_object two_way_stream)
+@item @clhs{f_two_wa.htm,two-way-stream-output-stream} @tab cl_object cl_two_way_stream_output_stream(cl_object two_way_stream)
+@item @clhs{f_unrd_c.htm,unread-char} @tab cl_object cl_unread_char(cl_narg narg, cl_object character, ...)
+@item @clhs{f_wr_by.htm,write-byte} @tab cl_object cl_write_byte(cl_object byte, cl_object stream)
+@item @clhs{f_wr_cha.htm,write-char} @tab cl_object cl_write_char(cl_narg narg, cl_object character, ...)
+@item @clhs{f_wr_stg.htm,write-line} @tab cl_object cl_write_line(cl_narg narg, cl_object string)
+@item @clhs{f_wr_stg.htm,write-string} @tab cl_object cl_write_string(cl_narg narg, cl_object string)
+@item @clhs{f_wr_seq.htm,write-sequence} @tab cl_object cl_write_sequence(cl_narg narg, cl_object sequence, cl_object stream)
+@item @clhs{f_y_or_n.htm,y-or-n-p} @tab cl_object cl_y_or_n_p(cl_narg narg, ...)
+@item @clhs{f_y_or_n.htm,yes-or-no-p} @tab cl_object cl_yes_or_no_p(cl_narg narg, ...)
+@end multitable

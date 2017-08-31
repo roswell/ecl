@@ -1,0 +1,43 @@
+@node Objects
+@section Objects
+
+@node Objects - C Reference
+@subsection C Reference
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_fn_kwd.htm,function-keywords} @tab [Only in Common Lisp]
+@item @clhs{f_ensure.htm,ensure-generic-function} @tab cl_object cl_ensure_generic_function(cl_narg narg, cl_object function_name, ...)
+@item @clhs{f_alloca.htm,allocate-instance} @tab [Only in Common Lisp]
+@item @clhs{f_reinit.htm,reinitialize-instance} @tab [Only in Common Lisp]
+@item @clhs{f_shared.htm,shared-initialize} @tab [Only in Common Lisp]
+@item @clhs{f_update.htm,update-instance-for-different-class} @tab [Only in Common Lisp]
+@item @clhs{f_upda_1.htm,update-instance-for-redefined-class} @tab [Only in Common Lisp]
+@item @clhs{f_chg_cl.htm,change-class} @tab [Only in Common Lisp]
+@item @clhs{f_slt_bo.htm,slot-boundp} @tab cl_object cl_slot_boundp(cl_object instance, cl_object slot_name)
+@item @clhs{f_slt_ex.htm,slot-exists-p} @tab cl_object cl_slot_exists_p(cl_object instance, cl_object slot_name)
+@item @clhs{f_slt_ma.htm,slot-makunbound} @tab cl_object cl_slot_makunbound(cl_object instance, cl_object slot_name)
+@item @clhs{f_slt_mi.htm,slot-missing} @tab [Only in Common Lisp]
+@item @clhs{f_slt_un.htm,slot-unbound} @tab [Only in Common Lisp]
+@item @clhs{f_slt_va.htm,slot-value} @tab cl_object cl_slot_value(cl_object instance, cl_object slot_name)
+@item @clhs{f_method.htm,method-qualifiers} @tab [Only in Common Lisp]
+@item @clhs{f_no_app.htm,no-applicable-method} @tab [Only in Common Lisp]
+@item @clhs{f_no_nex.htm,no-next-method} @tab [Only in Common Lisp]
+@item @clhs{f_rm_met.htm,remove-method} @tab [Only in Common Lisp]
+@item @clhs{f_mk_ins.htm,make-instance} @tab [Only in Common Lisp]
+@item @clhs{f_mk_i_1.htm,make-instances-obsolete} @tab [Only in Common Lisp]
+@item @clhs{f_mk_ld_.htm,make-load-form} @tab [Only in Common Lisp]
+@item @clhs{f_mk_l_1.htm,make-load-form-saving-slots} @tab cl_object cl_make_load_form_saving_slots(cl_narg narg, cl_object object, ...)
+@item @clhs{f_find_c.htm,find-class} @tab cl_object cl_find_class(cl_narg narg, cl_object symbol, ...)
+@item @clhs{f_comput.htm,compute-applicable-methods} @tab [Only in Common Lisp]
+@item @clhs{f_find_m.htm,find-method} @tab [Only in Common Lisp]
+@item @clhs{f_add_me.htm,add-method} @tab [Only in Common Lisp]
+@item @clhs{f_init_i.htm,initialize-instance} @tab [Only in Common Lisp]
+@item @clhs{f_class_.htm,class-name} @tab [Only in Common Lisp]
+@item @clhs{f_opsetf.htm,(setf class-name)} @tab [Only in Common Lisp]
+@item @clhs{f_clas_1.htm,class-of} @tab cl_object cl_class_of(cl_object object)
+@item @clhs{f_unboun.htm,unbound-slot-instance} @tab [Only in Common Lisp]
+@end multitable

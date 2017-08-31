@@ -1,0 +1,13 @@
+@node Structures
+@section Structures
+
+@node Structures - C Reference
+@subsection C Reference
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_cp_stu.htm,copy-structure} @tab cl_object cl_copy_structure(cl_object structure)
+@end multitable

@@ -1,0 +1,62 @@
+@node Symbols
+@section Symbols
+
+There are no implementation-specific limits on the size or content of symbol names. It is however not allowed to write on the strings which have been passed to @code{#'make-symbol} or returned from @code{#'symbol-name}.
+
+@subsection C Reference
+
+@deftypefun cl_object ecl_make_keyword (char * @var{name});
+Find a lisp keyword
+
+@subsubheading Description
+
+Many Lisp functions take keyword arguments. When invoking a function with keyword arguments we need keywords, which are a kind of symbols that live in the @code{KEYWORD} package. This function does the task of finding or creating those keywords from C strings.
+
+@itemize
+@item It is usually safe to store the resulting pointer, because keywords are always referenced by their package and will not be garbage collected (unless of course, you decide to delete it).
+@item Remember that the case of the string is significant. @code{ecl_make_keyword("TO")} with return @code{:TO}, while @code{ecl_make_keyword("to")} returns a completely different keywod, @code{:|to|}. In short, you usually want to use uppercase.
+@end itemize
+
+@subsubheading Example
+The following example converts a section of a string to uppercase characters:
+
+@verbatim
+cl_object start = ecl_make_keyword("START");
+cl_object end = ecl_make_keyword("END");
+...
+sup = cl_string_upcase(4, s, start, ecl_make_fixnum(2),
+                       end, ecl_make_fixnum(6));
+@end verbatim
+
+@end deftypefun
+
+@deftypefun cl_object ecl_make_symbol (const char * @var{name}, const char * @var{package_name}); 
+Find a lisp symbol
+
+@subsubheading Description
+This function finds or create a symbol in the given package. First of all, it tries to find the package named by @var{package_name}. If it does not exist, an error is signaled. Then, a symbol with the suppled @var{name} is searched in the given package. If the symbol exists, it is returned. If it does not exist, using @code{INTERN}.
+
+@end deftypefun
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_boundp.htm,boundp} @tab cl_object cl_boundp(cl_object symbolp)
+@item @clhs{f_cp_sym.htm,copy-symbol} @tab cl_object cl_copy_symbol(cl_narg narg, cl_object symbol, ...)
+@item @clhs{f_get.htm,get} @tab cl_object cl_get(cl_object symbol, cl_object indicator)
+@item @clhs{f_gensym.htm,gensym} @tab cl_object cl_gensym(cl_narg narg, ...)
+@item @clhs{f_gentem.htm,gentemp} @tab cl_object cl_gentemp(cl_narg narg, ...)
+@item @clhs{f_kwdp.htm,keywordp} @tab cl_object cl_keywordp(cl_object object)
+@item @clhs{f_mk_sym.htm,make-symbol} @tab cl_object cl_make_symbol(cl_object name)
+@item @clhs{f_makunb.htm,makunbound} @tab cl_object cl_makunbound(cl_object makunbound)
+@item @clhs{f_rempro.htm,remprop} @tab cl_object cl_remprop(cl_object symbol, cl_object indicator)
+@item @clhs{f_set.htm,set} @tab cl_object cl_set(cl_object symbol, cl_object value)
+@item @clhs{f_symbol.htm,symbolp} @tab cl_object cl_symbolp(cl_object object)
+@item @clhs{f_symb_1.htm,symbol-function} @tab cl_object cl_symbol_function(cl_object symbol)
+@item @clhs{f_symb_2.htm,symbol-name} @tab cl_object cl_symbol_name(cl_object symbol)
+@item @clhs{f_symb_3.htm,symbol-package} @tab cl_object cl_symbol_package(cl_object symbol)
+@item @clhs{f_symb_4.htm,symbol-plist} @tab cl_object cl_symbol_plist(cl_object symbol)
+@item @clhs{f_symb_5.htm,symbol-value} @tab cl_object cl_symbol_value(cl_object symbol)
+@end multitable

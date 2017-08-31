@@ -1,0 +1,237 @@
+@node Arrays
+@section Arrays
+
+@node Arrays - Array limits
+@subsection Array limits
+ECL arrays can have up to 64 dimensions. Common-Lisp constants related to arrays have the following values in ECL.
+@multitable @columnfractions .5 .5
+@headitem Constant @tab Value
+@item array-rank-limit @tab 64
+@item array-dimension-limit @tab most-positive-fixnum
+@item array-total-size-limit @tab array-dimension-limit
+@end multitable
+
+@node Arrays - Specializations
+@subsection Specializations
+When the elements of an array are declared to have some precise type, such as a small or large integer, a character or a floating point number, ECL has means to store those elements in a more compact form, known as a @emph{specialized array}. The list of types for which ECL specializes arrays is platform dependent, but is summarized in the following table, together with the C type which is used internally and the expected size.
+
+@multitable @columnfractions .33 .33 .33
+@headitem Specialized type @tab Element C type @tab Size
+@item bit @tab - @tab 1 bit
+@item character @tab unsigned char or uint32_t @tab Depends on character range
+@item base-char @tab unsigned char @tab  
+@item fixnum @tab cl_fixnum @tab Machine word (32 or 64 bits)
+@item (signed-byte 8) @tab int8_t @tab 8 bits
+@item (unsigned-byte 8) @tab uint8_t @tab 8 bits
+@item (signed-byte 16) @tab int16_t @tab 16 bits
+@item (unsigned-byte 16) @tab uint16_t @tab 16 bits
+@item (signed-byte 32) @tab int32_t @tab 32 bits
+@item (unsigned-byte 32) @tab uint32_t @tab 32 bits
+@item (signed-byte 64) @tab int64_t @tab 64 bits
+@item (unsigned-byte 64) @tab uint64_t @tab 64 bits
+@item single-float or short-float @tab float @tab 32-bits IEEE float
+@item double-float @tab double @tab 64-bits IEEE float
+@item long-float @tab long double @tab Between 96 and 128 bits.
+@item t @tab cl_object @tab Size of a pointer.
+@end multitable
+
+Let us remark that some of these specialized types might not exist in your platform. This is detected using conditional reading and features (@xref{Numbers}).
+
+
+@node Arrays - C Reference
+@subsection C Reference
+@subsubsection Types and constants
+C types, limits and enumerations
+
+@subsubheading Constants and types
+
+@defvr Constant ECL_ARRAY_RANK_LIMIT
+@end defvr
+@defvr Constant ECL_ARRAY_DIMENSION_LIMIT
+@end defvr
+@defvr Constant ECL_ARRAY_TOTAL_LIMIT
+@end defvr
+@deftp enum cl_elttype @{ecl_aet_object, ...@}
+@end deftp
+
+@multitable @columnfractions .25 .25 .25 .25
+@headitem Lisp or C type @tab Enumeration value @tab Lisp or C type @tab Enumeration value
+@item t @tab ecl_aet_object @tab (unsigned-byte 1) @tab ecl_aet_bit
+@item cl_fixnum @tab ecl_aet_fix @tab cl_index @tab ecl_aet_index
+@item (unsigned-byte 8) @tab ecl_aet_b8 @tab (signed-byte 8) @tab ecl_aet_i8
+@item (unsigned-byte 16) @tab ecl_aet_b16 @tab (signed-byte 16) @tab ecl_aet_i16
+@item (unsigned-byte 32) @tab ecl_aet_b32 @tab (signed-byte 32) @tab ecl_aet_i32
+@item (unsigned-byte 64) @tab ecl_aet_b64 @tab (signed-byte 64) @tab ecl_aet_i64
+@item ecl_character @tab ecl_aet_ch @tab ecl_base_char @tab ecl_aet_bc
+@item single-float @tab ecl_aet_sf @tab double-float @tab ecl_aet_df
+@end multitable
+
+@subsubheading Description
+This list contains the constants that limit the rank of an array (@code{ECL_ARRAY_RANK_LIMIT}), the maximum size of each dimension (@code{ECL_ARRAY_DIMENSION_LIMIT}) and the maximum number of elements in an array (@code{ECL_ARRAY_TOTAL_LIMIT}).
+
+ECL uses also internally a set of constants to describe the different specialized arrays. The constants form up the enumeration type cl_elttype. They are listed in the table above, which associates enumeration values with the corresponding Common Lisp element type.
+
+@subsubsection ecl_aet_to_symbol, ecl_symbol_to_aet
+To and from element types
+
+@subsubheading Functions
+
+@deftypefun cl_object ecl_aet_to_symbol (cl_elttype @var{param})
+@end deftypefun
+@deftypefun cl_elttype ecl_symbol_to_aet (cl_object @var{type})
+@end deftypefun
+
+@subsubheading Description
+@code{ecl_aet_to_symbol} returns the Lisp type associated to the elements of that specialized array class. @code{ecl_symbol_to_aet} does the converse, computing the C constant that is associated to a Lisp elment type.
+
+The functions may signal an error if any of the arguments is an invalid C or Lisp type.
+
+@subsubsection Constructors
+Creating array and vectors
+
+@subsubheading Functions
+@deftypefun cl_object ecl_alloc_simple_vector( cl_elttype element_type, cl_index length);
+@end deftypefun
+@deftypefun cl_object si_make_vector( cl_object element_type, cl_object length, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
+@end deftypefun
+@deftypefun cl_object si_make_array( cl_object element_type, cl_object dimensions, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
+@end deftypefun
+@subsubheading Description
+The function @code{ecl_alloc_simple_vector} is the simplest constructor, creating a simple vector (i.e. non-adjustable and without a fill pointer), of the given size, preallocating the memory for the array data. The first argument, @emph{element_type}, is a C constant that represents a valid array element type (See cl_elttype).
+
+The function @code{si_make_vector} does the same job but allows creating an array with fill pointer, which is adjustable or displaced to another array.
+@itemize
+@item element_type is now a Common Lisp type descriptor, which is a symbol or list denoting a valid element type
+@item dimension is a non-negative fixnum with the vector size.
+@item fill_pointerp is either Cnil or a non-negative fixnum denoting the fill pointer value.
+@item displaced_to is either Cnil or a valid array to which the new array is displaced.
+@item displacement is either Cnil or a non-negative value with the array displacement.
+@end itemize
+
+Finally, the function @code{si_make_array} does a similar job to @code{si_make_function} but its second argument, @emph{dimension}, can be a list of dimensions, to create a multidimensional array.
+@subsubheading Examples
+
+Create one-dimensional @code{base-string} with room for 11 characters:
+
+@verbatim
+cl_object s = ecl_alloc_simple_vector(ecl_aet_bc, 11);
+@end verbatim
+
+Create a one-dimensional @code{array} with a fill pointer
+
+@verbatim
+cl_object type = ecl_make_symbol("BYTE8","EXT");
+cl_object a = si_make_vector(ecl_make_fixnum(16), type, Cnil, /* adjustable */
+                             ecl_make_fixnum(0) /* fill-pointer */,
+                             Cnil /* displaced_to */,
+                             Cnil /* displacement */);
+@end verbatim
+
+An alternative formulation
+
+@verbatim
+cl_object type = ecl_make_symbol("BYTE8","EXT");
+cl_object a = si_make_array(ecl_make_fixnum(16), type, Cnil, /* adjustable */
+                            ecl_make_fixnum(0) /* fill-pointer */,
+                            Cnil /* displaced_to */,
+                            Cnil /* displacement */);
+@end verbatim
+
+Create a 2-by-3 two-dimensional @code{array}, specialized for an integer type:
+
+@verbatim
+cl_object dims = cl_list(2, ecl_make_fixnum(2), ecl_make_fixnum(3));
+cl_object type = ecl_make_symbol("BYTE8","EXT");
+cl_object a = si_make_array(dims, type, Cnil, /* adjustable */
+                            Cnil /* fill-pointer */,
+                            Cnil /* displaced_to */,
+                            Cnil /* displacement */);
+@end verbatim
+
+@subsubsection Accessors
+Reading and writing array elements
+
+@subsubheading Functions
+
+@deftypefun cl_object ecl_aref (cl_object @var{array}, cl_index @var{row_major_index});
+@end deftypefun
+@deftypefun cl_object ecl_aset (cl_object @var{array}, cl_index @var{row_major_index}, cl_object @var{new_value});
+@end deftypefun
+@deftypefun cl_object ecl_aref1 (cl_object @var{vector}, cl_index @var{row_major_index});
+@end deftypefun
+@deftypefun cl_object ecl_aset1 (cl_object @var{vector}, cl_index @var{row_major_index}, cl_object @var{new_value});
+@end deftypefun
+
+@subsubheading Description
+@code{ecl_aref} accesses an array using the supplied @emph{row_major_index}, checking the array bounds and returning a Lisp object for the value at that position. ecl_aset does the converse, storing a Lisp value at the given @emph{row_major_index}.
+
+The first argument to @code{ecl_aref} or @code{ecl_aset} is an array of any number of dimensions. For an array of rank @var{N} and dimensions @var{d1, d2 ...} up to @var{dN}, the row major index associated to the indices (@var{i1,i2,...iN}) is computed using the formula @code{i1+d1*(i2+d3*(i3+...))}.
+
+@code{ecl_aref1} and @code{ecl_aset1} are specialized versions that only work with one-dimensional arrays or vectors. They verify that the first argument is indeed a vector.
+
+All functions above check that the index does not exceed the array bounds, that the values match the array element type and that the argument is an array (or a vector). If these conditions are not met, a type error is signaled.
+
+@subsubsection Array properties
+Array size, fill pointer, etc.
+
+@subsubheading Synopsis
+@deftypefun cl_elttype ecl_array_elttype (cl_object @var{array});
+@end deftypefun
+@deftypefun cl_index ecl_array_rank (cl_object @var{array});
+@end deftypefun
+@deftypefun cl_index ecl_array_dimension (cl_object @var{array}, cl_index @var{index});
+@end deftypefun
+
+@subsubheading Description
+These functions query various properties of the arrays. Some of them belong to the list of functions in the Common Lisp package, without any need for specialized versions. More precisely
+
+@itemize
+@item @code{ecl_array_elttype} returns the array element type, with the encoding found in the enumeration cl_elttype.
+@item @code{ecl_array_rank} returns the number of dimensions of the vector or array.
+@item @code{ecl_array_dimension} queries the dimension of an array, where index is a non-negative integer between 0 and @code{ecl_array_dimension(array)-1}.
+@end itemize
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@subsubheading Synopsis
+@multitable @columnfractions .32 .68
+@headitem Lisp symbol @tab C function
+@item @clhs{f_mk_ar.htm,make-array} @tab cl_object cl_make_array(cl_narg narg, cl_object dimension...)
+@item @clhs{f_adjust.htm,adjust-array} @tab cl_object cl_adjust_array(cl_narg narg, cl_object array, cl_object dimensions, ...)
+@item @clhs{f_adju_1.htm,adjustable-array-p} @tab cl_object cl_adjustable_array_p(cl_object array)
+@item @clhs{f_aref.htm,aref} @tab cl_object cl_aref(cl_narg narg, cl_object array, ...)
+@item @clhs{f_ar_dim.htm,array-dimension} @tab cl_object cl_array_dimension(cl_object array, cl_object index)
+@item @clhs{f_ar_d_1.htm,array-dimensions} @tab cl_object cl_array_dimension(cl_object array)
+@item @clhs{f_ar_ele.htm,array-element-type} @tab cl_object cl_array_element_type(cl_object array)
+@item @clhs{f_ar_has.htm,array-has-fill-pointer-p} @tab cl_object cl_array_has_fill_pointer_p(cl_object array)
+@item @clhs{f_ar_dis.htm,array-displacement} @tab cl_object cl_array_displacement(cl_object array)
+@item @clhs{f_ar_in_.htm,array-in-bounds-p} @tab cl_object cl_array_in_bounds_p(cl_narg narg, cl_object array, ...)
+@item @clhs{f_ar_ran.htm,array-rank} @tab cl_object cl_array_rank(cl_object array)
+@item @clhs{f_ar_row.htm,array-row-major-index} @tab cl_object cl_array_row_major_index(cl_narg narg, cl_object array, ...)
+@item @clhs{f_ar_tot.htm,array-total-size} @tab cl_object cl_array_total_size(cl_object array)
+@item @clhs{f_arrayp.htm,arrayp} @tab cl_object cl_arrayp(cl_object array)
+@item @clhs{f_fill_p.htm,fill-pointer} @tab cl_object cl_fill_pointer(cl_object array)
+@item @clhs{f_row_ma.htm,row-major-aref} @tab cl_object cl_row_major_aref(cl_object array, cl_object index)
+@item @clhs{f_upgr_1.htm,upgraded-array-element-type} @tab cl_object cl_upgraded_array_element_type(cl_narg narg, cl_object typespec, ...)
+@item @clhs{f_smp_ve.htm,simple-vector-p} @tab cl_object cl_simple_vector_p(cl_object object)
+@item @clhs{f_svref.htm,svref} @tab cl_object cl_svref(cl_object simple_vector, cl_object index)
+@item @clhs{f_vector.htm,vector} @tab cl_object cl_vector(cl_narg narg, ...)
+@item @clhs{f_vec_po.htm,vector-pop} @tab cl_object cl_vector_pop(cl_object vector)
+@item @clhs{f_vec_ps.htm,vector-push} @tab cl_object cl_vector_push(cl_object new_element, cl_object vector)
+@item @clhs{f_vec_ps.htm,vector-push-extend} @tab cl_object cl_vector_push_extend(cl_narg narg, cl_object new_element, cl_object vector, ...)
+@item @clhs{f_vecp.htm,vectorp} @tab cl_object cl_vectorp(cl_object object)
+@item @clhs{f_bt_sb.htm,bit} @tab cl_object cl_bit(cl_narg narg, cl_object bit_array, ...)
+@item @clhs{f_bt_sb.htm,sbit} @tab cl_object cl_sbit(cl_narg narg, cl_object bit_array, ...)
+@item @clhs{f_bt_and.htm,bit-and} @tab cl_object cl_bit_and(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-andc1} @tab cl_object cl_bit_andc1(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-andc2} @tab cl_object cl_bit_andc2(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-eqv} @tab cl_object cl_bit_eqv(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-ior} @tab cl_object cl_bit_ior(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-nand} @tab cl_object cl_bit_nand(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-nor} @tab cl_object cl_bit_nor(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-orc1} @tab cl_object cl_bit_orc1(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-orc2} @tab cl_object cl_bit_orc1(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-xor} @tab cl_object cl_bit_xor(cl_narg narg, cl_object array1, cl_object array2, ...)
+@item @clhs{f_bt_and.htm,bit-not} @tab cl_object cl_bit_not(cl_narg narg, cl_object array, ...)
+@end multitable

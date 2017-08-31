@@ -1,0 +1,145 @@
+@node Memory Management Reference
+@subsection Memory Management Reference
+
+@subsubheading Reference
+
+@lspindex ext:stack-overflow
+@deftp Condition ext:stack-overflow
+
+Stack overflow condition
+
+@subsubheading Class Precedence List
+@code{ext:stack-overflow, storage-condition, serious-condition, condition, t}
+
+@subsubheading Methods
+@lspindex ext:stack-overflow-size
+@defun ext:stack-overflow-size condition
+@table @var
+@item returns
+A non-negative integer.
+@end table
+@end defun
+
+@lspindex ext:stack-overflow-type
+@defun ext:stack-overflow-type condition
+@table @var
+@item returns
+A symbol from @ref{tab:mem-limits}, except @code{ext:heap-size}.
+@end table
+@end defun
+
+@subsubheading Description
+This condition is signaled when one of the stack limits in @ref{tab:mem-limits} are violated or dangerously approached. It can be handled by resetting the limits and continuing, or jumping to an outer control point.
+
+@end deftp
+
+
+@lspindex ext:storage-exhausted
+@deftp Condition ext:storage-exhausted
+
+Memory overflow condition
+
+@subsubheading Class Precedence List
+@code{ext:storage-exhausted, storage-condition, serious-condition, condition, t}
+
+@subsubheading Description
+This condition is signaled when ECL exhausts the @code{ext:heap-size} limit from @ref{tab:mem-limits}. In handling this condition ECL follows this logic:
+@itemize
+@item
+    If the heap size limit was set to 0 (that is no limit), but there is some free space in the safety region ECL frees this space and issues a non-restartable error. The user may jump to an outer point or quit.
+@item
+    If the heap size had a finite limit, ECL offers the user the chance to resize it, issuing a restartable condition. The user may at this point use @code{(ext:set-limit 'ext:heap-size 0)} to remove the heap limit and avoid further messages, or use the @code{(continue)} restart to let ECL enlarge the heap by some amount.
+@item
+    Independently of the heap size limit, if ECL finds that ther is no space to free or to grow, ECL simply quits. There will be no chance to do some cleanup because there is no way to cons any additional data.
+@end itemize
+@end deftp
+
+
+@lspindex ext:get-finalizer
+@defun ext:get-finalizer object
+@table @var
+@item object
+Any lisp object.
+@end table
+
+@subsubheading Description
+This function returns the finalizer associated to an object, or @code{NIL}.
+@end defun
+
+
+@lspindex ext:get-limit
+@defun ext:get-limit concept
+@table @var
+@item concept
+A symbol.
+@end table
+
+@subsubheading Description
+Queries the different memory and stack limits that condition ECL's behavior. The value to be queried is denoted by the symbol @var{concept}, which should be one from the list: @ref{tab:mem-limits}
+@end defun
+
+@lspindex ext:set-finalizer
+@defun ext:set-finalizer object function
+Associate a finalizer to an object.
+@table @var
+@item object
+Any lisp object.
+@item function
+A function or closure that takes one argument or @code{NIL}.
+@end table
+
+@subsubheading Description
+If @var{function} is @code{NIL}, no finalizer is associated to the object. Otherwise @var{function} must be a function or a closure of one argument, which will be invoked before the object is destroyed.
+
+@subsubheading Example
+Close a file associated to an object.
+
+@lisp
+(defclass my-class () ((file :initarg :file :initform nil)))
+
+(defun finalize-my-class (x)
+ (let ((s (slot-value x 'file)))
+   (when s (format t "~%;;; Closing" s) (close s))))
+
+(defmethod initialize-instance :around ((my-instance my-class) &rest args)
+  (ext:set-finalizer my-instance #'finalize-my-class)
+  (call-next-method))
+
+(progn
+  (make-instance 'my-class :file (open "~/.ecl.old" :direction :input))
+  nil)
+
+(si::gc t)
+(si::gc t)
+
+;; Closing
+@end lisp
+@end defun
+
+
+@lspindex ext:set-limit
+@defun ext:set-limit concept value
+Set a memory or stack limit.
+@table @var
+@item concept
+A symbol.
+@item value
+A positive integer.
+@end table
+Changes the different memory and stack limits that condition ECL's behavior. The value to be changed is denoted by the symbol @var{concept}, while the @var{value} is the new maximum size. The valid symbols and units are listed in @ref{tab:mem-limits}.
+
+Note that the limit has to be positive, but it may be smaller than the previous value of the limit. However, if the supplied value is smaller than what ECL is using at the moment, the new value will be silently ignored.
+
+@float Table, tab:mem-limits
+@caption{Customizable memory limits}
+@multitable @columnfractions .25 .25 .25 .25
+@headitem Concept @tab Units @tab Default @tab Command line
+@item ext:frame-stack @tab Nested frames @tab 2048 @tab @code{--frame-stack}
+@item ext:binding-stack @tab Bindings @tab 8192 @tab
+@item ext:c-stack @tab Bytes @tab 128 kilobytes @tab @code{--c-stack}
+@item ext:heap-size @tab Bytes @tab 256 megabytes @tab @code{--heap-size}
+@item ext:lisp-stack @tab Bytes @tab 32 kilobyes @tab @code{--lisp-stack}
+@end multitable
+@end float
+
+@end defun
