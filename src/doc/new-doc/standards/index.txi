@@ -25,7 +25,7 @@
 * Streams::
 * Printer::
 * Reader::
-@c * System construction::
+* System construction::
 @c * Environment::
 @c * Glossary::
 @end menu
@@ -87,8 +87,8 @@
 @include standards/reader.txi
 @c @c #$ - random state
 
-@c @node System construction
-@c @section System construction
+@include standards/sys-constr.txi
+
 @c ext:*load-hooks*, si::*load-search-list* variable:
 
 @c EXT:*LOAD-HOOKS* is an assoc array of form ((TYPE . LOAD-FUNCTION)),
