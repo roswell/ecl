@@ -44,9 +44,7 @@
 @c @section Iteration
 
 @include standards/objects.txi
-
-@c @node Structures
-@c @section Structures
+@include standards/structures.txi
 
 @c @node Conditions
 @c @section Conditions
