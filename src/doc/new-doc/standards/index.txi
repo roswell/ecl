@@ -12,7 +12,7 @@
 * Structures::
 * Conditions::
 * Symbols::
-@c * Packages::
+* Packages::
 * Numbers::
 * Characters::
 * Conses::
@@ -47,10 +47,7 @@
 @include standards/structures.txi
 @include standards/conditions.txi
 @include standards/symbols.txi
-
-@c @node Packages
-@c @section Packages
-
+@include standards/packages.txi
 @include standards/numbers.txi
 @c @node Numbers
 @c @section Numbers
