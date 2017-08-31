@@ -9,8 +9,8 @@
 * Data and control flow::
 @c * Iteration::
 * Objects::
-@c * Structures::
-@c * Conditions::
+* Structures::
+* Conditions::
 @c * Symbols::
 @c * Packages::
 * Numbers::
@@ -45,9 +45,7 @@
 
 @include standards/objects.txi
 @include standards/structures.txi
-
-@c @node Conditions
-@c @section Conditions
+@include standards/conditions.txi
 
 @c @node Symbols
 @c @section Symbols
