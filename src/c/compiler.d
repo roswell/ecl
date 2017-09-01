@@ -2082,7 +2082,7 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 
 static int
 c_the(cl_env_ptr env, cl_object stmt, int flags) {
-  pop(&stmt);
+  cl_object type = pop(&stmt);
   cl_object value = pop(&stmt);
   if (stmt != ECL_NIL) {
     FEprogram_error("THE: Too many arguments",0);
@@ -3148,7 +3148,7 @@ si_make_lambda(cl_object name, cl_object rest)
     the_env->c_env = old_c_env;
     memset(&new_c_env, 0, sizeof(new_c_env));
   } ECL_UNWIND_PROTECT_END;
-  @(return the_env->values[0]);
+  return the_env->values[0];
 @)
 
 void

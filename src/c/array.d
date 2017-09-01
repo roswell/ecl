@@ -550,6 +550,7 @@ ecl_array_allocself(cl_object x)
   }
 #endif
   case ecl_aet_bc: {
+    cl_index elt_size = 1;
     x->vector.self.bc = (ecl_base_char *)ecl_alloc_atomic(d+1);
     /* Null terminate the string */
     x->vector.self.bc[d] = 0;
@@ -751,7 +752,7 @@ cl_array_element_type(cl_object a)
 void
 ecl_displace(cl_object from, cl_object to, cl_object offset)
 {
-  cl_fixnum j;
+  cl_index j;
   void *base;
   cl_elttype totype, fromtype;
   fromtype = from->array.elttype;
