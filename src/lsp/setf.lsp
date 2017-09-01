@@ -524,27 +524,21 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
       (cond ((eq next '&OPTIONAL))
             ((eq next '&REST)
              (if (symbolp (second lambdalistr))
-               (setq restvar (second lambdalistr))
-               (error "In the definition of ~S: &REST variable ~S should be a symbol."
-                      name (second lambdalistr)
-             ) )
+                 (setq restvar (second lambdalistr))
+                 (error "In the definition of ~S: &REST variable ~S should be a symbol."
+                        name (second lambdalistr)))
              (if (null (cddr lambdalistr))
-               (return)
-               (error "Only one variable is allowed after &REST, not ~S"
-                      lambdalistr
-            )) )
+                 (return)
+                 (error "Only one variable is allowed after &REST, not ~S"
+                        lambdalistr)))
             ((or (eq next '&KEY) (eq next '&ALLOW-OTHER-KEYS) (eq next '&AUX))
              (error "Illegal in a DEFINE-MODIFY-MACRO lambda list: ~S"
-                    next
-            ))
+                    next))
             ((symbolp next) (push next varlist))
             ((and (listp next) (symbolp (first next)))
-             (push (first next) varlist)
-            )
+             (push (first next) varlist))
             (t (error "lambda list may only contain symbols and lists, not ~S"
-                      next
-            )  )
-    ) )
+                      next))))
     (setq varlist (nreverse varlist))
     `(DEFMACRO ,name (&ENVIRONMENT ENV %REFERENCE ,@lambdalist)
        ,@(and docstring (list docstring))
@@ -552,31 +546,31 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
        (MULTIPLE-VALUE-BIND (VARS VALS STORES SETTER GETTER)
            (GET-SETF-EXPANSION %REFERENCE ENV)
          (LET ((ALL-VARS (MAPCAR #'(LAMBDA (V) (LIST (GENSYM) V)) (LIST* ,@varlist ,restvar))))
-         (IF (SYMBOLP GETTER)
-             (SUBST (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))
-                    (CAR STORES)
-                    `(LET* ,ALL-VARS
-                       (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)))
-                       ,SETTER))
-             (DO ((D VARS (CDR D))
-                  (V VALS (CDR V))
-                  (LET-LIST NIL (CONS (LIST (CAR D) (CAR V)) LET-LIST)))
-                 ((NULL D)
-                  (SETQ LET-LIST
-                        (LIST*
-                         (LIST
-                          (CAR STORES)
-                          (IF (AND (LISTP %REFERENCE) (EQ (CAR %REFERENCE) 'THE))
-                              (LIST 'THE (CADR %REFERENCE)
-                                    (LIST* (QUOTE ,function) GETTER ,@varlist ,restvar))
-                              (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))))
-                         (APPEND ALL-VARS LET-LIST)))
-                  `(LET* ,(NREVERSE LET-LIST)
-                     (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)
-                                          ,@vars))
-                     ,SETTER)))))))))
+           (IF (SYMBOLP GETTER)
+               (SUBST (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))
+                      (CAR STORES)
+                      `(LET* ,ALL-VARS
+                         (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)))
+                         ,SETTER))
+               (DO ((D VARS (CDR D))
+                    (V VALS (CDR V))
+                    (LET-LIST NIL (CONS (LIST (CAR D) (CAR V)) LET-LIST)))
+                   ((NULL D)
+                    (SETQ LET-LIST
+                          (LIST*
+                           (LIST
+                            (CAR STORES)
+                            (IF (AND (LISTP %REFERENCE) (EQ (CAR %REFERENCE) 'THE))
+                                (LIST 'THE (CADR %REFERENCE)
+                                      (LIST* (QUOTE ,function) GETTER ,@varlist ,restvar))
+                                (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))))
+                           (APPEND ALL-VARS LET-LIST)))
+                    `(LET* ,(NREVERSE LET-LIST)
+                       (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)
+                                            ,@vars))
+                       ,SETTER)))))))))
 
-#|
+#+(or)
 (defmacro define-modify-macro (name lambda-list function &optional doc-string)
   (let ((update-form
          (do ((l lambda-list (cdr l))
@@ -604,7 +598,6 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
                   (append vals (list ,update-form)))
            (declare (:read-only ,@stores)) ; Beppe
            ,store-form)))))
-|#
 
 ;;; Some macro definitions.
 
