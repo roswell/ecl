@@ -5,7 +5,7 @@
 @subsection Introduction
 The Meta-Object Protocol is an extension to Common Lisp which provides rules, functions and a type structure to handle the object system. It is a reflective system, where classes are also objects and can be created and manipulated using very well defined procedures.
 
-The Meta-Object Protocol associated to Common Lisp's object system was introduced in a famous book, The Art of the Metaobject Protocol AMOP (@xref{Bibliography}), which was probably intended for the ANSI ((@xref{Bibliography})) specification but was drop out because of its revolutionary and then not too well tested ideas.
+The Meta-Object Protocol associated to Common Lisp's object system was introduced in a famous book, The Art of the Metaobject Protocol AMOP (@xref{Bibliography}), which was probably intended for the ANSI (@xref{Bibliography}) specification but was drop out because of its revolutionary and then not too well tested ideas.
 
 The AMOP is present, in one way or another, in most Common Lisp implementations, eithr using proprietary systems or because their implementation of CLOS descended from PCL (Portable CommonLoops). It has thus become a de facto standard and ECL should not be without it.
 
