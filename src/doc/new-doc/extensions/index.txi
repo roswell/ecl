@@ -38,8 +38,8 @@
 @c @node Green Threads
 @c @section Green Threads
 
-@node Signals and Interrupts
-@section Signals and Interrupts
+@c Signals and Interrupts
+@include extensions/signals.txi
 
 @c Memory Management
 @include extensions/memory.txi
