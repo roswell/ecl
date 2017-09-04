@@ -44,8 +44,8 @@
 @c Memory Management
 @include extensions/memory.txi
 
-@node Meta-Object Protocol (MOP)
-@section Meta-Object Protocol (MOP)
+@c Meta-Object Protocol (MOP)
+@include extensions/mop.txi
 
 @c @node Continuations
 @c @section Continuations
