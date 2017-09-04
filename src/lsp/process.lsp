@@ -31,7 +31,7 @@
 ;;; ---------------------------------------------------------------------
 ;;;  no change :: (values                                 nil   nil  nil)
 ;;;  error     :: (values (member              :abort :error)   nil  nil)
-;;;  finished  :: (values (member         :exited :signalled)  code  pid)
+;;;  finished  :: (values (member          :exited :signaled)  code  pid)
 ;;;  running   :: (values (member :stopped :resumed :running)  code  pid)
 ;;; ---------------------------------------------------------------------
 (defun external-process-wait (process &optional wait)
