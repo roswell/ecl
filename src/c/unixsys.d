@@ -357,7 +357,6 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
   cl_object pid, stream_read, exit_status;
 
   command = si_copy_to_simple_base_string(command);
-  environ = cl_mapcar(2, @'si::copy-to-simple-base-string', environ);
 
 #if defined(ECL_MS_WINDOWS_HOST)
   argv = cl_format(4, ECL_NIL,
@@ -397,7 +396,12 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
   int child_pid;
   cl_object pid;
 
-  /* command = ecl_null_terminated_base_string(command); */
+  /* environ is either a list or `:default'. */
+  if (ECL_LISTP(environ)) {
+    environ = cl_mapcar(2, @'si::copy-to-simple-base-string', environ);
+  } else if (!ecl_eql(environ, @':default')) {
+    FEerror("Malformed :ENVIRON argument to EXT:RUN-PROGRAM.", 0);
+  }
   
 #if defined(ECL_MS_WINDOWS_HOST)
   {
@@ -409,7 +413,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     cl_object env_buffer;
     char *env = NULL;
 
-    if (!Null(environ)) {
+    if (ECL_LISTP(environ)) {
       env_buffer = from_list_to_execve_argument(environ, NULL);
       env = env_buffer->base_string.self;
     }
@@ -505,7 +509,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
           argv_ptr[j] = arg->base_string.self;
         }
       }
-      if (!Null(environ)) {
+      if (ECL_LISTP(environ)) {
         char **pstrings;
         from_list_to_execve_argument(environ, &pstrings);
         execve((char*)command->base_string.self, (char **)argv_ptr, pstrings);

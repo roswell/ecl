@@ -100,7 +100,7 @@
                       (output :stream)
                       (error :output)
                       (wait t)
-                      (environ nil)
+                      (environ :default)
                       (if-input-does-not-exist nil)
                       (if-output-exists :error)
                       (if-error-exists :error)
@@ -146,7 +146,6 @@
 
     (let ((progname (si:copy-to-simple-base-string command))
           (args (prepare-args (cons command argv)))
-          (environ (mapcar #'si:copy-to-simple-base-string environ))
           (process (make-external-process))
           (process-input (process-stream input *standard-input*
                                          :direction :input

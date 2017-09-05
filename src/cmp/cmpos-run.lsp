@@ -51,7 +51,7 @@
          (program (car program)))
     (with-current-directory
       #-windows (multiple-value-bind (output-stream return-code)
-                    (si:run-program-inner program args nil)
+                    (si:run-program-inner program args :default)
                   (setf output (collect-lines output-stream)
                         result return-code))
       #+windows (setf result (si:system (format nil "~A~{ ~A~}" program args)))))
