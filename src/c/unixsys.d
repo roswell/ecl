@@ -310,7 +310,7 @@ create_descriptor(cl_object stream, cl_object direction,
                     DUPLICATE_SAME_ACCESS);
   }
   else {
-    FEerror("Invalid ~S argument to EXT:RUN-PROGRAM", 1, stream);
+    FEerror("Invalid ~S argument to EXT:RUN-PROGRAM.", 1, stream);
   }
 }
 #else
@@ -345,7 +345,7 @@ create_descriptor(cl_object stream, cl_object direction,
     }
   }
   else {
-    FEerror("Invalid ~S argument to EXT:RUN-PROGRAM", 1, stream);
+    FEerror("Invalid ~S argument to EXT:RUN-PROGRAM.", 1, stream);
   }
 }
 #endif
