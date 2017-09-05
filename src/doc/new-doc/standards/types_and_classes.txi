@@ -7,3 +7,19 @@ ECL defines the following additional built-in classes in the @code{CL} package:
 @item @code{single-float}
 @item @code{double-float}
 @end itemize
+
+
+@subsection C Reference
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@subsubheading Synopsis
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_coerce.htm,coerce} @tab cl_object cl_coerce(cl_object object, cl_object result_type)
+@item @clhs{f_subtpp.htm,subtypep} @tab cl_object cl_subtypep(cl_narg narg, cl_object type1, cl_object type2, ...)
+@item @clhs{f_tp_of.htm,type-of} @tab cl_object cl_type_of(cl_object object)
+@item @clhs{f_typep.htm,typep} @tab cl_object cl_typep(cl_narg narg, cl_object object, cl_object type_specifier, ...)
+@item @clhs{f_tp_err.htm,type-error-datum} @tab [Only in Common Lisp]
+@item @clhs{f_tp_err.htm,type-error-expected-type} @tab [Only in Common Lisp]
+@end multitable
