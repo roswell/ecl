@@ -136,3 +136,17 @@
             (is-not (zerop (length (get-output-stream-string error-stream))))
             (mapc #'close (list output-stream error-stream))))
 
+#-windows
+(test process-environ
+  (is (read-line (ext:run-program "env" nil)                       nil nil))
+  (is (read-line (ext:run-program "env" nil :environ '("foo=bar")) nil nil))
+  (is (read-line (ext:run-program "env" nil :environ :default)     nil nil))
+  (signals simple-error (ext:run-program "env" nil :environ :bam)  nil nil)
+  (is (null (slurp (ext:run-program "/usr/bin/env" nil :environ nil)))))
+
+#+windows
+(test process-environ
+  ;; This tests need to be implemented when access to Windows platform
+  ;; is granted (before the release). Program to use is `set', not
+  ;; sure if it is part of Windows shell or something we can run.
+  (is (null "IMPLEMENT ME!")))
