@@ -59,11 +59,11 @@
 this allows specifying human-memorable initialization function name to call
 in C code
 - package local nicknames protocol (documented in newdoc)
-- make-hash-table accepts =:synchronize= flag for thread safe variant. New
-  predicate =ext:hash-table-synchronized-p= implemented
-- make-hash-table =:weakness= argument new variant =:key-or-value=
+- make-hash-table accepts ~:synchronize~ flag for thread safe variant. New
+  predicate ~ext:hash-table-synchronized-p~ implemented
+- make-hash-table ~:weakness~ argument new variant ~:key-or-value~
   implemented
-- No more explicit option in =main.d= to trap SIGCHLD asynchronously
+- No more explicit option in ~main.d~ to trap SIGCHLD asynchronously
 - Zombie processes are cleaned in external-process finalizer. If process is
   referenced in the memory, it's programmer duty to call wait on it
 * 16.1.3 changes since 16.1.2
