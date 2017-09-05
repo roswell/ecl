@@ -33,7 +33,7 @@ The @code{#$} macro can be used to initialize the generator with a random seed (
 
 @node Numbers - C Reference
 @subsection C Reference
-
+@node Numbers - Number C types
 @subsubsection Number C types
 Numeric C types understood by ECL
 
@@ -76,6 +76,7 @@ Check for the definition of C macros with a similar name, shown in the fifth col
 In Lisp code, check for the presence of the associated features, shown in the fourth column above.
 @end itemize
 
+@node Numbers - Number constructors
 @subsubsection Number constructors
 Creating Lisp types from C numbers
 
@@ -138,6 +139,7 @@ Note also that some of the constructors do not use C numbers. This is the case o
 
 These functions or macros signal no errors.
 
+@node Numbers - Number accessors
 @subsubsection Number accessors
 Unchecked conversion from Lisp types to C numbers
 
@@ -154,6 +156,7 @@ Unchecked conversion from Lisp types to C numbers
 @subsubheading Description
 These functions and macros extract a C number from a Lisp object. They do not check the type of the Lisp object as they typically just access directly the value from a C structure.
 
+@node Numbers - Number coercion
 @subsubsection Number coercion
 Checked conversion from Lisp types to C numbers
 
@@ -206,6 +209,7 @@ Checked conversion from Lisp types to C numbers
 @subsubheading Description
 These functions and macros convert a Lisp object to the corresponding C number type. The conversion is done through a coercion process which may signal an error if the argument does not fit the expected type.
 
+@node Numbers - Numbers C dictionary
 @subsubsection Numbers C dictionary
 Common Lisp and C equivalence
 
