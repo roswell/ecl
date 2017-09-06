@@ -3,6 +3,8 @@
 
 @node Conditions - C Reference
 @subsection C Reference
+@cppindex ECL_HANDLER_CASE
+@cppindex ECL_RESTART_CASE
 
 @deffn Macro ECL_HANDLER_CASE
 C macro for @clhs{m_hand_1.htm,handler-case}

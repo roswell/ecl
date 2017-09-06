@@ -1,5 +1,7 @@
 @node Types and classes
 @section Types and classes
+@lspindex single-float
+@lspindex double-float
 
 ECL defines the following additional built-in classes in the @code{CL} package:
 

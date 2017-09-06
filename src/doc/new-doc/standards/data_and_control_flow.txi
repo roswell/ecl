@@ -183,7 +183,8 @@ Another restriction of C and C++ is that functions can only take a limited numbe
 
 
 @subsection C Reference
-
+@cppindex ecl_bds_bind
+@cppindex ecl_bds_push
 @defun ecl_bds_bind (cl_env_ptr @var{cl_env}, cl_object @var{var}, cl_object @var{value});
 @end defun
 @defun ecl_bds_push (cl_env_ptr @var{cl_env}, cl_object @var{var});
@@ -199,6 +200,8 @@ This macro or function is the equivalent of @clhs{s_let_l.htm,LET*} and @clhs{s_
 Every variable binding must undone when no longer needed. It is best practice to match each call to @code{ecl_bds_bind} by another call to @code{ecl_bds_unwind} in the same function.
 @end defun
 
+@cppindex ecl_bds_unwind1
+@cppindex ecl_bds_unwind_n
 @defun ecl_bds_unwind1 (cl_env_ptr @var{cl_env});
 @end defun
 @defun ecl_bds_unwind_n (cl_env_ptr @var{cl_env}, int @var{n});
@@ -213,6 +216,7 @@ Every variable binding must undone when no longer needed. It is best practice to
 @end defun
 
 
+@cppindex ecl_setq
 @deffn Macro ecl_setq (cl_env_ptr @var{cl_env}, cl_object @var{var}, cl_object @var{value});
 C equivalent of setq
 
@@ -222,6 +226,8 @@ Assigns @var{value} to the special variable denoted by the symbol @var{var}, in 
 This function implements a variable assignment, not a variable binding. It is thus the equivalent of @clhs{s_setq.htm,setq}.
 @end deffn
 
+
+@cppindex ecl_symbol_value
 @defun ecl_symbol_value (cl_env_ptr @var{cl_env}, cl_object @var{var}); 
 @subsubheading Description
 Retrieves the value of the special variable or constant denoted by the symbol @var{var}, in the Common Lisp environment @var{cl_env}.
@@ -231,6 +237,11 @@ This function implements the equivalent of @clhs{f_symb_5.htm,symbol-value} and 
 If the symbol is not bound, an error is signaled.
 @end defun
 
+
+@cppindex ecl_va_list
+@cppindex ecl_va_start
+@cppindex ecl_va_arg
+@cppindex ecl_va_end
 @deffn Macro {typedef struct @{ ... @} ecl_va_list[1];}
 @end deffn
 
@@ -273,6 +284,8 @@ The last statement before returning the output of the function is @code{ecl_va_e
 @end deftypefn
 
 
+@cppindex ecl_nvalues
+@cppindex ecl_nth_value
 @deftypefun cl_object ecl_nvalues (cl_env_ptr @var{env}); 
 @end deftypefun
 @deftypefun cl_object ecl_nth_value (cl_env_ptr @var{env}, int @var{n}); 
@@ -309,6 +322,10 @@ The somewhat equivalent Common Lisp code:
 @end deftypefun
 
 
+@cppindex ecl_return0
+@cppindex ecl_return1
+@cppindex ecl_return2
+@cppindex ecl_return3
 @defun ecl_return0 (cl_env_ptr @var{cl_env});
 @end defun
 @defun ecl_return1 (cl_env_ptr @var{cl_env}, cl_object @var{value1});
@@ -323,6 +340,8 @@ Returns @var{N} values from a C/C++ function in a way that a Common Lisp functio
 
 @end defun
 
+
+@cppindex ECL_BLOCK_BEGIN
 @deffn Macro ECL_BLOCK_BEGIN
 @verbatim
 ECL_BLOCK_BEGIN(env,code) {
@@ -338,6 +357,8 @@ ECL_BLOCK_BEGIN(env,code) {
 The C/C++ program has to ensure that the code in @code{ECL_BLOCK_END} gets executed, avoiding a direct exit of the block via @code{goto} or a C/C++ return.
 @end deffn
 
+
+@cppindex ECL_CATCH_BEGIN
 @deffn Macro ECL_CATCH_BEGIN
 @verbatim
 ECL_CATCH_BEGIN(env,tag) {
@@ -353,6 +374,8 @@ ECL_CATCH_BEGIN(env,tag) {
 The C/C++ program has to ensure that the code in @code{ECL_CATCH_END} gets executed, avoiding a direct exit of the catch block via goto or a C/C++ return.
 @end deffn
 
+
+@cppindex ECL_UNWIND_PROTECT_BEGIN
 @deffn Macro ECL_UNWIND_PROTECT_BEGIN
 C macro for unwind-protect
 

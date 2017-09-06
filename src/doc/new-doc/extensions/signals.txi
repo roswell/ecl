@@ -90,6 +90,8 @@ The other option is to let ECL handle signals itself. This would be safer when t
 
 @node Signals and Interrupts - Signals Reference
 @subsection Signals Reference
+@lspindex ext:with-interrupts
+@lspindex ext:without-interrupts
 
 @defmac ext:with-interrupts &body body
 Execute code with interrupts optionally enabled.

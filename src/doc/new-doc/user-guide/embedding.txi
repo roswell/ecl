@@ -7,6 +7,7 @@
 @node Embedding ECL - Embedding Reference
 @subsection Embedding Reference
 
+@cppindex CL_CATCH_ALL
 @defmac CL_CATCH_ALL
 Create a protected region.
 
@@ -49,6 +50,8 @@ As explained in @code{CL_UNWIND_PROTECT},it is normally advisable to set up an u
 
 @end defmac
 
+
+@cppindex CL_UNWIND_PROTECT
 @defmac CL_UNWIND_PROTECT
 Create a protected region.
 
@@ -89,6 +92,7 @@ Besides this, normal mechanisms for exit, such as ext:quit, and uncaught excepti
 @end defmac
 
 
+@cppindex cl_boot
 @deftypefun int cl_boot (int @var{argc}, char **@var{argv});
 Setup the lisp environment.
 @table @var
@@ -104,6 +108,7 @@ This function must be called before any other function from the ECL library, inc
 @end deftypefun
 
 
+@cppindex cl_shutdown
 @deftypefun int cl_shutdown (void);
 Close the lisp environment.
 
@@ -154,6 +159,8 @@ The second set is related to the sizes of different stacks. Currently ECL uses f
 @end float
 @end deftypefun
 
+
+@cppindex ecl_get_option
 @deftypefun cl_fixnum ecl_get_option (int @var{option}); 
 Read the value of a boot option.
 @table @var
@@ -166,6 +173,7 @@ This functions reads the value of different options that have to be customized @
 @end deftypefun
 
 
+@cppindex ecl_clear_interrupts
 @defmac ecl_clear_interrupts(); 
 Clear all pending signals and exceptions.
 
@@ -176,6 +184,8 @@ This macro clears all pending interrupts.
 @code{ecl_disable_interrupts} and @code{ecl_enable_interrupts}.
 @end defmac
 
+
+@cppindex ecl_disable_interrupts
 @defmac ecl_disable_interrupts();
 Postpone handling of signals and exceptions.
 
@@ -186,6 +196,8 @@ This macro sets a thread-local flag indicating that all received signals should 
 @code{ecl_enable_interrupts} and @code{ecl_clear_interrupts}. 
 @end defmac
 
+
+@cppindex ecl_enable_interrupts
 @defmac ecl_enable_interrupts(); 
 Activate handling of signals and exceptions.
 

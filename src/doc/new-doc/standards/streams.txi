@@ -10,6 +10,9 @@ ECL implements all stream types described in ANSI @bibcite{ANSI}. Additionally, 
 
 @node Streams - Element types
 @subsubsection Element types
+@lspindex write-char
+@lspindex write-sequence
+@lspindex read-char
 ECL distinguishes between two kinds of streams: character streams and byte streams. @dfn{Character streams} only accept and produce characters, written or read one by one, with @code{write-char} or @code{read-char}, or in chunks, with @code{write-sequence} or any of the Lisp printer functions. Character operations are conditioned by the external format, as described in @ref{Streams - External formats}.
 
 ANSI Common Lisp also supports binary streams. Here input and output is performed in chunks of bits. Binary streams are created with the function open passing as argument a subtype of integer and the implementation is free to round up that integer type to the closest size it supports. In particular ECL rounds up the size to a multiple of a byte. For example, the form @code{(open "foo.bin" :direction :output :element-type '(unsigned-byte 13))}, will open the file @code{foo.bin} for writing, using 16-bit words as the element type.
