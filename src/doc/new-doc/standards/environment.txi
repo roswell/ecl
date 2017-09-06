@@ -12,7 +12,7 @@ Display the assembly code of a function
 A symbol which is bound to a function in the global environment, or a lambda form
 @end table
 @subsubheading Description
-As specified in ANSI (@xref{Bibliography}) this function outputs the internal represention of a compiled function, or of a lambda form, as it would look after being compiled.
+As specified in ANSI @bibcite{ANSI} this function outputs the internal represention of a compiled function, or of a lambda form, as it would look after being compiled.
 
 ECL only has a particular difference: it has two different compilers, one based on bytecodes and one based on the C language. The output will thus depend on the arguments and on which compiler is active at the moment in which this function is run.
 

@@ -146,7 +146,7 @@ ECL is implemented using either a C or a C++ compiler. This is not a limiting fa
 
 The previous conventions set some burden on the C programmer that calls ECL, for she must know the type of function that is being called and supply the right number of arguments. This burden disappears for Common Lisp programmers, though.
 
-As an example let us assume that the user wants to invoke two functions which are part of the ANSI (@xref{Bibliography}) standard and thus are exported with a C name. The first example is cl_cos, which takes just one argument and has a signature @code{cl_object cl_cos(cl_object)}.
+As an example let us assume that the user wants to invoke two functions which are part of the ANSI @bibcite{ANSI} standard and thus are exported with a C name. The first example is cl_cos, which takes just one argument and has a signature @code{cl_object cl_cos(cl_object)}.
 
 @verbatim
 #include <math.h>

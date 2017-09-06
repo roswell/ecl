@@ -6,7 +6,7 @@
 
 @node Streams - Supported types
 @subsubsection Supported types
-ECL implements all stream types described in ANSI (@xref{Bibliography}). Additionally, when configured with option @code{--enable-clos-streams}, ECL includes a version of Gray streams where any object that implements the appropiate methods (@code{stream-input-p}, @code{stream-read-char}, etc) is a valid argument for the functions that expect streams, such as @code{read}, @code{print}, etc.
+ECL implements all stream types described in ANSI @bibcite{ANSI}. Additionally, when configured with option @code{--enable-clos-streams}, ECL includes a version of Gray streams where any object that implements the appropiate methods (@code{stream-input-p}, @code{stream-read-char}, etc) is a valid argument for the functions that expect streams, such as @code{read}, @code{print}, etc.
 
 @node Streams - Element types
 @subsubsection Element types
