@@ -4,6 +4,8 @@
 There are no implementation-specific limits on the size or content of symbol names. It is however not allowed to write on the strings which have been passed to @code{#'make-symbol} or returned from @code{#'symbol-name}.
 
 @subsection C Reference
+@cppindex ecl_make_keyword
+@cppindex ecl_make_symbol
 
 @deftypefun cl_object ecl_make_keyword (char * @var{name});
 Find a lisp keyword

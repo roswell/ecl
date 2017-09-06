@@ -21,17 +21,22 @@ It is important to remember that strings with unicode characters can only be pri
 @node Strings - C reference
 @subsection C reference
 @subsubsection Base string constructors
+@cppindex ecl_alloc_adjustable_base_string
+@cppindex ecl_alloc_adjustable_simple_string
+@cppindex ecl_make_simple_base_string
+@cppindex ecl_make_constant_base_string
+
 Building strings of C data
 
 @subsubheading Functions
 
 @deftypefun cl_object ecl_alloc_adjustable_base_string (cl_index @var{length});
 @end deftypefun
-@deftypefun cl_object ecl_alloc_adjustable_simple_string( cl_index @var{length});
+@deftypefun cl_object ecl_alloc_adjustable_simple_string (cl_index @var{length});
 @end deftypefun
-@deftypefun cl_object ecl_make_simple_base_string( ecl_base_char* @var{data}, cl_index @var{length});
+@deftypefun cl_object ecl_make_simple_base_string (ecl_base_char* @var{data}, cl_index @var{length});
 @end deftypefun
-@deftypefun cl_object ecl_make_constant_base_string( ecl_base_char* @var{data}, cl_index @var{length});
+@deftypefun cl_object ecl_make_constant_base_string (ecl_base_char* @var{data}, cl_index @var{length});
 @end deftypefun
 
 @subsubheading Description
@@ -44,6 +49,8 @@ These are different ways to create a base string, which is a string that holds a
 The other constructors create strings but use some preexisting data. @code{ecl_make_simple_base_string} creates a string copying the data that the user supplies, and using freshly allocated memory. @code{ecl_make_constant_base_string} on the other hand, does not allocate memory, but simply uses the supplied pointer as buffer for the string. This last function should be used with care, ensuring that the supplied buffer is not deallocated.
 
 @subsubsection String accessors
+@cppindex ecl_char
+@cppindex ecl_char_set
 Reading and writing characters into a string
 
 @subsubheading Functions

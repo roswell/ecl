@@ -1,5 +1,6 @@
 @node Arrays
 @section Arrays
+@cindex Arrays
 
 @node Arrays - Array limits
 @subsection Array limits
@@ -44,7 +45,10 @@ Let us remark that some of these specialized types might not exist in your platf
 C types, limits and enumerations
 
 @subsubheading Constants and types
-
+@cppindex ECL_ARRAY_RANK_LIMIT
+@cppindex ECL_ARRAY_DIMENSION_LIMIT
+@cppindex ECL_ARRAY_TOTAL_LIMIT
+@cppindex cl_elttype
 @defvr Constant ECL_ARRAY_RANK_LIMIT
 @end defvr
 @defvr Constant ECL_ARRAY_DIMENSION_LIMIT
@@ -75,7 +79,8 @@ ECL uses also internally a set of constants to describe the different specialize
 To and from element types
 
 @subsubheading Functions
-
+@cppindex ecl_aet_to_symbol
+@cppindex ecl_symbol_to_aet
 @deftypefun cl_object ecl_aet_to_symbol (cl_elttype @var{param})
 @end deftypefun
 @deftypefun cl_elttype ecl_symbol_to_aet (cl_object @var{type})
@@ -90,6 +95,9 @@ The functions may signal an error if any of the arguments is an invalid C or Lis
 Creating array and vectors
 
 @subsubheading Functions
+@cppindex ecl_alloc_simple_vector
+@cppindex si_make_vector
+@cppindex si_make_array
 @deftypefun cl_object ecl_alloc_simple_vector( cl_elttype element_type, cl_index length);
 @end deftypefun
 @deftypefun cl_object si_make_vector( cl_object element_type, cl_object length, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
@@ -149,6 +157,10 @@ cl_object a = si_make_array(dims, type, Cnil, /* adjustable */
 @end verbatim
 
 @subsubsection Accessors
+@cppindex ecl_aref
+@cppindex ecl_aset
+@cppindex ecl_aref1
+@cppindex ecl_aset1
 Reading and writing array elements
 
 @subsubheading Functions
@@ -172,6 +184,9 @@ The first argument to @code{ecl_aref} or @code{ecl_aset} is an array of any numb
 All functions above check that the index does not exceed the array bounds, that the values match the array element type and that the argument is an array (or a vector). If these conditions are not met, a type error is signaled.
 
 @subsubsection Array properties
+@cppindex ecl_array_elttype
+@cppindex ecl_array_rank
+@cppindex ecl_array_dimension
 Array size, fill pointer, etc.
 
 @subsubheading Synopsis

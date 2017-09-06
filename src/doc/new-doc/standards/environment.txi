@@ -3,6 +3,8 @@
 
 @node Environment - Dictionary
 @subsection Dictionary
+@lspindex disassemble
+@lspindex trace
 
 @defun disassemble function-designator*
 Display the assembly code of a function 
@@ -12,7 +14,7 @@ Display the assembly code of a function
 A symbol which is bound to a function in the global environment, or a lambda form
 @end table
 @subsubheading Description
-As specified in ANSI (@xref{Bibliography}) this function outputs the internal represention of a compiled function, or of a lambda form, as it would look after being compiled.
+As specified in ANSI @bibcite{ANSI} this function outputs the internal represention of a compiled function, or of a lambda form, as it would look after being compiled.
 
 ECL only has a particular difference: it has two different compilers, one based on bytecodes and one based on the C language. The output will thus depend on the arguments and on which compiler is active at the moment in which this function is run.
 
@@ -23,7 +25,7 @@ ECL only has a particular difference: it has two different compilers, one based 
 @end itemize
 @end defun
 
-@deffn Macro trace function-name*
+@defmac trace function-name*
 Follow the execution of functions
 @subsubheading Synopsis
 (trace @var{function-name*})
@@ -60,7 +62,7 @@ If specified, and @var{form} evaluates to true, then the debugger is invoked at 
 @item :print, :print-after
 In addition to the usual printout, the result of evaluating @var{form} is printed at the start of the function or at the end of the function, depending on the option. Multiple print options cause multiple values to be output, in the order in which they were introduced.
 @end table
-@end deffn
+@end defmac
 
 @node Environment - C Reference
 @subsection C Reference

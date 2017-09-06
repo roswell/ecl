@@ -1,2 +1,209 @@
 @node Embedding ECL
 @section Embedding ECL
+
+@c @node Embedding ECL - Introduction
+@c @subsection Introduction
+
+@node Embedding ECL - Embedding Reference
+@subsection Embedding Reference
+
+@cppindex CL_CATCH_ALL
+@defmac CL_CATCH_ALL
+Create a protected region.
+
+@subsubheading C Macro
+@verbatim
+  cl_env_ptr env = ecl_process_env();
+  CL_CATCH_ALL_BEGIN(env) {
+    /*
+     * Code that is protected. Uncaught lisp conditions, THROW,
+     * signals such as SIGSEGV and SIGBUS may cause jump to
+     * this region.
+     */
+  } CL_CATCH_ALL_IF_CAUGHT {
+    /*
+     * If the exception, lisp condition or other control transfer
+     * is caught, this code is executed.
+     */
+  } CL_CATCH_ALL_END
+  /*
+   * In all cases we exit here.
+   */
+@end verbatim
+
+@subsubheading Description
+This is a set of three macros that create an @code{UNWIND-PROTECT} region that prevents any nonlocal transfer of control to outer loops. In the Lisp speak, the previous code is equivalent to
+
+@verbatim
+(block nil
+  (unwind-protect
+     (progn
+        ;; Code that is protected
+	)
+    (return nil)))
+@end verbatim
+
+As explained in @code{CL_UNWIND_PROTECT},it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitary transfers of control.
+
+@subsubheading See also
+@code{CL_UNWIND_PROTECT}
+
+@end defmac
+
+
+@cppindex CL_UNWIND_PROTECT
+@defmac CL_UNWIND_PROTECT
+Create a protected region.
+
+@subsubheading C Macro
+@verbatim
+  cl_env_ptr env = ecl_process_env();
+  CL_UNWIND_PROTECT_BEGIN(env) {
+    /*
+     * Code that is protected. Uncaught lisp conditions, THROW,
+     * signals such as SIGSEGV and SIGBUS may cause jump to
+     * this region.
+     */
+  } CL_UNWIND_PROTECT_EXIT {
+    /*
+     * If the exception, lisp condition or other control transfer
+     * is caught, this code is executed. After this code, the
+     * process will jump to the original destination of the
+     * THROW, GOTO or other control statement that was interrupted.
+     */
+  } CL_UNWIND_PROTECT_END
+  /*
+   * We only exit here if NO nonlocal jump was interrupted.
+   */
+@end verbatim
+
+@subsubheading Description
+When embedding ECL it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitary transfers of control. Furthermore, the unwind protect form will be used in at least in the following ocasions:
+
+@itemize
+@item In a normal program exit, caused by @code{ext:quit}, ECL unwinds up to the outermost frame, which may be an @code{CL_CATCH_ALL} or @code{CL_UNWIND_PROTECT} macro.
+@end itemize
+
+Besides this, normal mechanisms for exit, such as ext:quit, and uncaught exceptions, such as serious signals (@xref{Signals and Interrupts - Synchronous signals}), are best handled using unwind-protect blocks.
+
+@subsubheading See also
+@code{CL_CATCH_ALL}
+
+@end defmac
+
+
+@cppindex cl_boot
+@deftypefun int cl_boot (int @var{argc}, char **@var{argv});
+Setup the lisp environment.
+@table @var
+@item argc,
+An integer with the number of arguments to this program.
+@item argv
+A vector of strings with the arguments to this program.
+@end table
+
+@subsubheading Description
+This function must be called before any other function from the ECL library, including the creation of any lisp object or evaluating any lisp code. The only exception are @code{ecl_set_option} and @code{ecl_get_option}.
+
+@end deftypefun
+
+
+@cppindex cl_shutdown
+@deftypefun int cl_shutdown (void);
+Close the lisp environment.
+
+@subsubheading Description
+This function must be called before exiting a program that uses the ECL environment. It performs some cleaning, including the execution of any finalizers, unloading shared libraries and deleting temporary files that were created by the compiler. 
+@end deftypefun
+
+@deftypefun void ecl_set_option (int option, cl_fixnum value); 
+Set a boot option.
+
+@table @var
+@item option
+An integer from @ref{tab:boot-options}.
+@item value
+A @code{cl_index} value for this option
+@end table
+
+@subsubheading Description
+This functions sets the value of different options that have to be customized @emph{before} ECL boots. The table of options and default values [@ref{tab:boot-options}] shows that some of them are boolean, and some of them are unsigned integers.
+
+We distinguish three sets of values. The first set determines whether ECL handles certain exceptions, such as access to forbidden regions of memory, interrupts via , floating point exceptions, etc.
+
+The second set is related to the sizes of different stacks. Currently ECL uses four stacks: a bind stack for keeping assignments to special variables; a frame stack for implementing blocks, tagbodys and catch points; an interpreter stack for evaluating bytecodes, and finally the machine or C stack, of the computer we run in. We can set the expected size of these stacks, together with the size of a safety area which, if penetrated, will lead to the generation of a correctable error.
+
+@float Table,tab:boot-options
+@caption{Boot options for embedded ECL}
+@multitable @columnfractions .3 .15 .16 .39
+@headitem Name @code{(ECL_OPT_*)} @tab Type @tab Default @tab Description
+@item @code{INCREMENTAL_GC} @tab boolean @tab @code{TRUE} @tab Activate generational garbage collector.
+@item @code{TRAP_SIGSEGV} @tab boolean @tab @code{TRUE} @tab Capture @code{SIGSEGV} signals.
+@item @code{TRAP_SIGFPE} @tab boolean @tab @code{TRUE} @tab Capture floating point exceptions.
+@item @code{TRAP_SIGINT} @tab boolean @tab @code{TRUE} @tab Capture user interrupts.
+@item @code{TRAP_SIGILL} @tab boolean @tab @code{TRUE} @tab Capture @code{SIGILL} exception.
+@item @code{TRAP_INTERRUPT_SIGNAL} @tab boolean @tab @code{TRUE} @tab Capture the signal that implements @code{mp:interrupt-process}.
+@item @code{SIGNAL_HANDLING_THREAD} @tab boolean @tab @code{TRUE} @tab Create a signal to capture and process asynchronous threads (@xref{Signals and Interrupts - Asynchronous signals}).
+@item @code{BOOTED} @tab boolean @tab @code{TRUE}/@code{FALSE} @tab Has ECL booted (read only).
+@item @code{BIND_STACK_SIZE} @tab cl_index @tab 8192 @tab Size of stack for binding special variables.
+@item @code{BIND_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{FRAME_STACK_SIZE} @tab cl_index @tab 2048 @tab Size of stack for nonlocal jumps.
+@item @code{FRAME_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{LISP_STACK_SIZE} @tab cl_index @tab 32768 @tab Size of interpreter stack.
+@item @code{LISP_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{C_STACK_SIZE} @tab cl_index @tab 131072 @tab Size of C stack (not exact).
+@item @code{C_STACK_SAFETY_AREA} @tab cl_index @tab 4192 @tab  
+@item @code{SIGALTSTACK_SIZE} @tab cl_index @tab 1 @tab If nonzero, run C signal handler in an alternative signal. A small value is automatically incremented.
+@item @code{THREAD_INTERRUPT_SIGNAL} @tab unsigned int @tab 0 @tab If nonzero, specify the unix signal which is used to communicate different Lisp threads.
+@end multitable
+@end float
+@end deftypefun
+
+
+@cppindex ecl_get_option
+@deftypefun cl_fixnum ecl_get_option (int @var{option}); 
+Read the value of a boot option.
+@table @var
+@item option
+An integer from @ref{tab:boot-options}.
+@end table
+
+@subsubheading Description
+This functions reads the value of different options that have to be customized @emph{before} ECL boots. The table of options and default values is @ref{tab:boot-options}. 
+@end deftypefun
+
+
+@cppindex ecl_clear_interrupts
+@defmac ecl_clear_interrupts(); 
+Clear all pending signals and exceptions.
+
+@subsubheading Description
+This macro clears all pending interrupts.
+
+@subsubheading See also
+@code{ecl_disable_interrupts} and @code{ecl_enable_interrupts}.
+@end defmac
+
+
+@cppindex ecl_disable_interrupts
+@defmac ecl_disable_interrupts();
+Postpone handling of signals and exceptions.
+
+@subsubheading Description
+This macro sets a thread-local flag indicating that all received signals should be queued for later processing.
+
+@subsubheading See also
+@code{ecl_enable_interrupts} and @code{ecl_clear_interrupts}. 
+@end defmac
+
+
+@cppindex ecl_enable_interrupts
+@defmac ecl_enable_interrupts(); 
+Activate handling of signals and exceptions.
+
+@subsubheading Description
+This macro sets a thread-local flag indicating that all received signals can be handled. If there are any pending signals, they will be immediately processed.
+
+@subsubheading See also
+@code{ecl_disable_interrupts} and @code{ecl_clear_interrupts}. 
+@end defmac

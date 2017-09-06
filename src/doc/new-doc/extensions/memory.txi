@@ -44,6 +44,10 @@ Beginning with version 9.2.1, ECL operates a tighter control of the resources it
 
 The customizable limits are listed in @ref{tab:mem-limits}, but they need a careful description.
 
+@lspindex ext:heap-size
+@lspindex ext:c-stack
+@lspindex ext:binding-stack
+@lspindex ext:lisp-stack
 @itemize
 @item
     @code{ext:heap-size} limits the total amount of memory which is available for lisp objects. This is the memory used when you create conses, arrays, structures, etc.

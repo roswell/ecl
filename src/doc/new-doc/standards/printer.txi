@@ -1,7 +1,7 @@
 @node Printer
 @section Printer
 
-In all situations where the rules are well specified, ECL prints objects according to ANSI (@xref{Bibliography}). The specification leaves however a number of cases as implementation dependent behavior. The output of ECL in those cases is summarized in @ref{tab:impl-spec-print-rep}. Except for the types @code{character} and @code{random-state}, most of those examples regard non-standard written forms @code{#<...>} cannot be read back using @code{read}. These printed representations are just informative and should not be used to reconstruct or compare objects.
+In all situations where the rules are well specified, ECL prints objects according to ANSI @bibcite{ANSI}. The specification leaves however a number of cases as implementation dependent behavior. The output of ECL in those cases is summarized in @ref{tab:impl-spec-print-rep}. Except for the types @code{character} and @code{random-state}, most of those examples regard non-standard written forms @code{#<...>} cannot be read back using @code{read}. These printed representations are just informative and should not be used to reconstruct or compare objects.
 
 @float Table, tab:impl-spec-print-rep
 @caption{Implementation-specific printed representation}

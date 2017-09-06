@@ -48,10 +48,10 @@ Many nodes, moderate amount of content (deviations from the standard)
 # - [ ] DFFI :: Dynamic FFI
   - [X] UFFI
   - [ ] Multithreading
-  - [ ] Signals and Interrupts
+  - [X] Signals and Interrupts
   - [ ] Networking
   - [X] Memory managament
-  - [ ] MOP
+  - [X] MOP
   - [ ] Green threads
   - [ ] Continuations
   - [ ] Extensible Sequences

@@ -12,7 +12,8 @@ When using C characters we are actually relying on the char type of the C langua
 When no option is specified ECL builds with support for a larger character set, the Unicode 6.0 standard. This uses 24 bit large character codes, also known as @dfn{codepoints}, with a large database of character properties which include their nature (alphanumeric, numeric, etc), their case, their collation properties, whether they are standalone or composing characters, etc.
 
 @subsubsection Character types
-If compiled without Unicode support, ECL all characters are implemented using 8-bit codes and the type @code{extended-char} is empty. If compiled with Unicode support, characters are implemented using 24 bits and the @code{extended-char} type covers characters above code 255.
+@lspindex extended-char
+If ECL is compiled without Unicode support, all characters are implemented using 8-bit codes and the type @code{extended-char} is empty. If compiled with Unicode support, characters are implemented using 24 bits and the @code{extended-char} type covers characters above code 255.
 @multitable @columnfractions .33 .33 .33
 @headitem Type @tab With Unicode @tab Without Unicode
 @item standard-char @tab #\Newline,32-126 @tab #\Newline,32-126
@@ -21,6 +22,7 @@ If compiled without Unicode support, ECL all characters are implemented using 8-
 @end multitable
 
 @subsubsection Character names
+@lspindex standard-char
 All characters have a name. For non-printing characters between 0 and 32, and for 127 we use the ordinary ASCII names. Characters above 127 are printed and read using hexadecimal Unicode notation, with a U followed by 24 bit hexadecimal number, as in @code{U0126}.
 
 @float Table, tab:example-char-names
@@ -55,6 +57,8 @@ Internally, ECL represents the @code{#\Newline} character by a single code. Howe
 @subsection C Reference
 
 @subsubsection C types
+@cppindex ecl_base_char
+@cppindex ecl_character
 C character types
 @subsubheading Type names
 @multitable {aaaaaaaaaaaaa} {aaaaaaaaa}
@@ -62,15 +66,20 @@ C character types
 @item ecl_base_char @tab base-char
 @end multitable
 @subsubheading Description
+
 ECL defines two C types to hold its characters: @code{ecl_base_char} and @code{ecl_character}.
 
-    When ECL is built without Unicode, they both coincide and typically match @code{unsigned char}, to cover the 256 codes that are needed.
-
-    When ECL is built with Unicode, the two types are no longer equivalent, with @code{ecl_character} being larger.
+@itemize
+@item When ECL is built without Unicode, they both coincide and typically match @code{unsigned char}, to cover the 256 codes that are needed.
+@item When ECL is built with Unicode, the two types are no longer equivalent, with @code{ecl_character} being larger.
+@end itemize
 
 For your code to be portable and future proof, use both types to really express what you intend to do.
 
 @subsubsection Constructors
+@cppindex ECL_CODE_CHAR
+@cppindex ECL_CHAR_CODE
+@cppindex ecl_char_code
 Creating and extracting characters from Lisp objects
 @subsubheading Functions
 @deftypefun cl_object ECL_CODE_CHAR (ecl_character @var{code});
@@ -85,8 +94,15 @@ Creating and extracting characters from Lisp objects
 These functions and macros convert back and forth from C character types to Lisp. The macros @code{ECL_CHAR_CODE} and @code{ECL_CODE_CHAR} perform this coercion without checking the arguments. The functions @code{ecl_char_code} and @code{ecl_base_char_code}, on the other hand, verify that the argument has the right type and signal an error otherwise.
 
 @subsubsection Predicates
+@cppindex ecl_base_char_p
+@cppindex ecl_alpha_char_p
+@cppindex ecl_alphanumeric_p
+@cppindex ecl_graphic_char_p
+@cppindex ecl_digit_p
+@cppindex ecl_standard_char_p
 C predicates for Lisp characters
 @subsubheading Functions
+
 @deftypefun bool ecl_base_char_p (ecl_character @var{c});
 @end deftypefun
 @deftypefun bool ecl_alpha_char_p (ecl_character @var{c});
@@ -103,6 +119,11 @@ C predicates for Lisp characters
 These functions are equivalent to their Lisp equivalents but return C booleans.
 
 @subsubsection Character case
+@cppindex ecl_upper_case_p
+@cppindex ecl_lower_case_p
+@cppindex ecl_both_case_p
+@cppindex ecl_char_downcase
+@cppindex ecl_char_upcase
 C functions related to the character case
 @subsubheading Functions
 @deftypefun bool ecl_upper_case_p (ecl_character @var{c});
@@ -116,7 +137,7 @@ C functions related to the character case
 @deftypefun ecl_character ecl_char_upcase (ecl_character @var{c});
 @end deftypefun
 @subsubheading Description
-These functions check or change the case of a character. Note that in an Unicode context, the output of these functions might not be accurate (for instance when the uppercase character has two or more codepoints).
+These functions check or change the case of a character. Note that in a Unicode context, the output of these functions might not be accurate (for instance when the uppercase character has two or more codepoints).
 
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
