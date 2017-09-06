@@ -91,14 +91,14 @@ The other option is to let ECL handle signals itself. This would be safer when t
 @node Signals and Interrupts - Signals Reference
 @subsection Signals Reference
 
-@deffn Macro ext:with-interrupts &body body
+@defmac ext:with-interrupts &body body
 Execute code with interrupts optionally enabled.
 @subsubheading Description
 Executes the given body with all interrupts enabled. Since interrupts are normally enabled, this macro only makes sense if there is an outer @code{ext:without-interrupts} with a corresponding @code{ext:allow-with-interrupts}: interrupts are not enabled if any outer @code{mp:without-interrupts} is not accompanied by @code{mp:allow-with-interrupts}.
-@end deffn
+@end defmac
 
 
-@deffn Macro ext:without-interrupts &body body
+@defmac ext:without-interrupts &body body
 Execute code without being interrupted.
 @subsubheading Description
 Executes the given body with all interrupts disabled. This macro is compatible with the one in SBCL and as such it also defines three other local macros @code{ext:allow-with-interrupts}, @code{ext:with-local-interrupts} and @code{ext:with-restored-interrupts}.
@@ -131,4 +131,4 @@ Care must be taken not to let either ext:allow-with-interrupts or ext:with-local
     (lambda () (with-local-interrupts ...)))
 @end verbatim
 
-@end deffn
+@end defmac

@@ -25,7 +25,7 @@ this feature.
 
 @subsection Package local nicknames dictionary
 
-@deffn {macro} cl:defpackage name [[options]]*
+@defmac cl:defpackage name [[options]]*
 Options are extended to include
 
     :local-nicknames (local-nickname actual-package-name)*
@@ -47,7 +47,7 @@ Example:
 (let ((*package* (find-package :quux)))
 (find-symbol "X" :bar))               ; => FOO::X
 @end lisp
-@end deffn
+@end defmac
 
 @lspindex ext:package-local-nicknames
 @cppindex si_package_local_nicknames
