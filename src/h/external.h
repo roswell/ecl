@@ -1346,7 +1346,7 @@ extern ECL_API cl_object cl_directory_namestring(cl_object pname);
 extern ECL_API cl_object cl_host_namestring(cl_object pname);
 extern ECL_API cl_object si_logical_pathname_p(cl_object pname);
 extern ECL_API cl_object cl_pathname_match_p(cl_object path, cl_object mask);
-extern ECL_API cl_object cl_translate_pathname _ECL_ARGS((cl_narg narg, cl_object source, cl_object from, cl_object to, ...));
+extern ECL_API cl_object cl_translate_pathname _ECL_ARGS((cl_narg narg, cl_object source, cl_object from, cl_object to));
 extern ECL_API cl_object cl_translate_logical_pathname _ECL_ARGS((cl_narg narg, cl_object source, ...));
 extern ECL_API cl_object cl_parse_namestring _ECL_ARGS((cl_narg narg, cl_object thing, ...));
 extern ECL_API cl_object cl_parse_logical_namestring _ECL_ARGS((cl_narg narg, cl_object thing, ...));

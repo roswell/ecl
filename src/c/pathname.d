@@ -1709,7 +1709,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
   return l;
 }
 
-@(defun translate-pathname (source from to &key ((:case scase) @':local'))
+@(defun translate-pathname (source from to)
   cl_object wilds, d;
   cl_object host, device, directory, name, type, version;
   cl_object fromcase, tocase;
