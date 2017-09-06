@@ -523,9 +523,7 @@ parse_directories(cl_object s, int flags, cl_index start, cl_index end,
 bool
 ecl_logical_hostname_p(cl_object host)
 {
-  if (!ecl_stringp(host))
-    return FALSE;
-  return !Null(@assoc(4, host, cl_core.pathname_translations, @':test', @'string-equal'));
+  return ecl_stringp(host);
 }
 
 /*
