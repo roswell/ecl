@@ -659,6 +659,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
   if (!ecl_stringp(device)) {
     return ECL_NIL;
   }
+#if defined(ECL_MS_WINDOWS_HOST)
  maybe_parse_host:
   /* Files have no effective device. */
   if (@string-equal(2, device, @':file') == ECL_T)
@@ -682,6 +683,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
     }
   if (ecl_length(device) == 0)
     device = ECL_NIL;
+#endif
  done_device_and_host:
   path = parse_directories(s, 0, *ep, end, ep);
   if (CONSP(path)) {
