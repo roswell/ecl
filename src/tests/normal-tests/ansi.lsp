@@ -47,6 +47,16 @@
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 12.2.* Numbers tests ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+(test ansi.12.2.incf
+  (let ((foo 0)
+        (bar 0))
+    (flet ((inc () (incf foo)))
+      (incf (the fixnum bar) (inc)))
+    (is (= foo 1))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 19.* Pathname tests ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;

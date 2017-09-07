@@ -560,10 +560,7 @@ retrieved by (DOCUMENTATION 'SYMBOL 'FUNCTION)."
                           (LIST*
                            (LIST
                             (CAR STORES)
-                            (IF (AND (LISTP %REFERENCE) (EQ (CAR %REFERENCE) 'THE))
-                                (LIST 'THE (CADR %REFERENCE)
-                                      (LIST* (QUOTE ,function) GETTER ,@varlist ,restvar))
-                                (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS))))
+                            (LIST* (QUOTE ,function) GETTER (MAPCAR #'CAR ALL-VARS)))
                            (APPEND ALL-VARS LET-LIST)))
                     `(LET* ,(NREVERSE LET-LIST)
                        (DECLARE (:READ-ONLY ,@(mapcar #'first all-vars)
