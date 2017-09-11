@@ -883,7 +883,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
   cl_env_ptr env = ecl_process_env();
   cl_index sp = ECL_STACK_INDEX(env);
   cl_object last, elt, x;
-  cl_index dim, dimcount, i;
+  cl_fixnum dim, dimcount, i;
   cl_object rtbl = ecl_current_readtable();
   enum ecl_chattrib a;
 
@@ -1795,7 +1795,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
   return funcall(5, @'gray::stream-read-sequence', stream, sequence, start, end);
   else
 #endif
-    return si_do_read_sequence(sequence, stream, start, end);
+	  @(return si_do_read_sequence(sequence, stream, start, end));
   @)
 
 

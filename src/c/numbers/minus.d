@@ -68,6 +68,7 @@ ecl_minus(cl_object x, cl_object y)
         return ecl_make_double_float(ecl_to_double(x) - ecl_double_float(y));
       }
       CASE_RATIO_FIXNUM;
+      /* fallthrough */
       CASE_RATIO_BIGNUM {
         cl_object z = ecl_times(x->ratio.den, y);
         z = ecl_minus(x->ratio.num, z);

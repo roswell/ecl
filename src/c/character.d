@@ -206,6 +206,7 @@ ecl_char_eq(cl_object x, cl_object y)
     c = ecl_va_arg(cs);
     for (j = 1; j<i; j++)
       if (ecl_char_eq(ecl_va_arg(ds), c)) {
+        ecl_va_end(ds);
         @(return ECL_NIL);
       }
     ecl_va_end(ds);

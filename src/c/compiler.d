@@ -2082,8 +2082,10 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 
 static int
 c_the(cl_env_ptr env, cl_object stmt, int flags) {
-  cl_object type = pop(&stmt);
-  cl_object value = pop(&stmt);
+  cl_object value;
+  /* ignore first element */
+  pop(&stmt);
+  value = pop(&stmt);
   if (stmt != ECL_NIL) {
     FEprogram_error("THE: Too many arguments",0);
   }

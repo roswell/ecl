@@ -603,52 +603,52 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, ecl_va_li
 
 @(defun string< (&rest args)
   @
-  return string_compare(narg, -1, -1, 1, args);
+  @(return string_compare(narg, -1, -1, 1, args));
   @)
 
 @(defun string> (&rest args)
   @
-  return string_compare(narg, +1, +1, 1, args);
+  @(return string_compare(narg, +1, +1, 1, args));
   @)
 
 @(defun string<= (&rest args)
   @
-  return string_compare(narg, -1, 0, 1, args);
+  @(return string_compare(narg, -1, 0, 1, args));
   @)
 
 @(defun string>= (&rest args)
   @
-  return string_compare(narg, 0, +1, 1, args);
+  @(return string_compare(narg, 0, +1, 1, args));
   @)
 
 @(defun string/= (&rest args)
   @
-  return string_compare(narg, -1, +1, 1, args);
+  @(return string_compare(narg, -1, +1, 1, args));
   @)
 
 @(defun string-lessp (&rest args)
   @
-  return string_compare(narg, -1, -1, 0, args);
+  @(return string_compare(narg, -1, -1, 0, args));
   @)
 
 @(defun string-greaterp (&rest args)
   @
-  return string_compare(narg, +1, +1, 0, args);
+  @(return string_compare(narg, +1, +1, 0, args));
   @)
 
 @(defun string-not-greaterp (&rest args)
   @
-  return string_compare(narg, -1, 0, 0, args);
+  @(return string_compare(narg, -1, 0, 0, args));
   @)
 
 @(defun string-not-lessp (&rest args)
   @
-  return string_compare(narg, 0, +1, 0, args);
+  @(return string_compare(narg, 0, +1, 0, args));
   @)
 
 @(defun string-not-equal (&rest args)
   @
-  return string_compare(narg, -1, +1, 0, args);
+  @(return string_compare(narg, -1, +1, 0, args));
   @)
 
 bool
@@ -781,7 +781,7 @@ char_upcase(ecl_character c, bool *bp)
 
 @(defun string-upcase (&rest args)
   @
-  return string_case(narg, @[string-upcase], char_upcase, args);
+  @(return string_case(narg, @[string-upcase], char_upcase, args));
   @)
 
 static ecl_character
@@ -792,7 +792,7 @@ char_downcase(ecl_character c, bool *bp)
 
 @(defun string-downcase (&rest args)
   @
-  return string_case(narg, @[string-downcase], char_downcase, args);
+  @(return string_case(narg, @[string-downcase], char_downcase, args));
   @)
 
 static ecl_character
@@ -814,7 +814,7 @@ char_capitalize(ecl_character c, bool *bp)
 
 @(defun string-capitalize (&rest args)
   @
-  return string_case(narg, @[string-capitalize], char_capitalize, args);
+  @(return string_case(narg, @[string-capitalize], char_capitalize, args));
   @)
 
 
@@ -858,17 +858,17 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
 
 @(defun nstring-upcase (&rest args)
   @
-  return nstring_case(narg, @'nstring-upcase', char_upcase, args);
+  @(return nstring_case(narg, @'nstring-upcase', char_upcase, args));
   @)
 
 @(defun nstring-downcase (&rest args)
   @
-  return nstring_case(narg, @'nstring-downcase', char_downcase, args);
+  @(return nstring_case(narg, @'nstring-downcase', char_downcase, args));
   @)
 
 @(defun nstring-capitalize (&rest args)
   @
-  return nstring_case(narg, @'nstring-capitalize', char_capitalize, args);
+  @(return nstring_case(narg, @'nstring-capitalize', char_capitalize, args));
   @)
 
 @(defun si::base-string-concatenate (&rest args)
