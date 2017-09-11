@@ -2383,8 +2383,8 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
                                    new_c_env.lex_env,
                                    bytecodes);
 #ifdef GBC_BOEHM
-    GC_free(bytecodes->bytecodes.code);
-    GC_free(bytecodes);
+    GC_FREE(bytecodes->bytecodes.code);
+    GC_FREE(bytecodes);
 #endif
   }
   env->c_env = old_c_env;
