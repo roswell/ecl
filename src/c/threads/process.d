@@ -189,26 +189,26 @@ thread_cleanup(void *aux)
   cl_object process = (cl_object)aux;
   cl_env_ptr env = process->process.env;
   /* Block interrupts during the execution of this method */
-  ecl_get_spinlock(env, &process->process.start_stop_spinlock);
-  /* The following flags will disable all interrupts. */
-  AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
-  if (env) ecl_disable_interrupts_env(env);
+  ECL_WITH_SPINLOCK_BEGIN(env, &process->process.start_stop_spinlock) {
+    /* The following flags will disable all interrupts. */
+    AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
+    if (env) ecl_disable_interrupts_env(env);
 #ifdef HAVE_SIGPROCMASK
-  /* ...but we might get stray signals. */
-  {
-    sigset_t new[1];
-    sigemptyset(new);
-    sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
-    pthread_sigmask(SIG_BLOCK, new, NULL);
-  }
+    /* ...but we might get stray signals. */
+    {
+      sigset_t new[1];
+      sigemptyset(new);
+      sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
+      pthread_sigmask(SIG_BLOCK, new, NULL);
+    }
 #endif
-  process->process.env = NULL;
-  ecl_unlist_process(process);
-  mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
-  ecl_set_process_env(NULL);
-  if (env) _ecl_dealloc_env(env);
-  AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
-  ecl_giveup_spinlock(&process->process.start_stop_spinlock);
+    process->process.env = NULL;
+    ecl_unlist_process(process);
+    mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
+    ecl_set_process_env(NULL);
+    if (env) _ecl_dealloc_env(env);
+    AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
+  } ECL_WITH_SPINLOCK_END;
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -453,11 +453,11 @@ mp_interrupt_process(cl_object process, cl_object function)
 {
   cl_env_ptr env = ecl_process_env();
   /* Make sure we don't interrupt an exiting process */
-  ecl_get_spinlock(env, &process->process.start_stop_spinlock);
-  unlikely_if (mp_process_active_p(process) == ECL_NIL)
-    FEerror("Cannot interrupt the inactive process ~A", 1, process);
-  ecl_interrupt_process(process, function);
-  ecl_giveup_spinlock(&process->process.start_stop_spinlock);
+  ECL_WITH_SPINLOCK_BEGIN(env, &process->process.start_stop_spinlock) {
+    unlikely_if (mp_process_active_p(process) == ECL_NIL)
+      FEerror("Cannot interrupt the inactive process ~A", 1, process);
+    ecl_interrupt_process(process, function);
+  } ECL_WITH_SPINLOCK_END;
   @(return ECL_T);
 }
 
