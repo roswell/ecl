@@ -162,6 +162,7 @@ static cl_object si_simple_toplevel ()
       ecl_prin1(sentence, output);
     }
   } ECL_CATCH_ALL_END;
+  @(return);
 }
 
 int
