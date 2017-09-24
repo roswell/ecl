@@ -19,7 +19,7 @@ static bool
 potential_number_p(cl_object s, int base)
 {
   /* See ANSI 2.3.1.1 */
-  static cl_index i, l;
+  cl_index i, l;
   ecl_character c;
   /* A potential number must contain at least one digit */
   bool some_digit = FALSE;
