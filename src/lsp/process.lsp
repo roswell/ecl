@@ -158,29 +158,27 @@
                                              :if-exists if-error-exists)))
           pid parent-write parent-read parent-error)
 
-      (case #1=process-input
-        (null
-         (setf #1# (null-stream :output)))
-        (:gray-stream
-         (setf #1# :stream)
-         (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :INPUT argument.")))
-
-      (case #2=process-output
-        (null
-         (setf #2# (null-stream :input)))
-        (:gray-stream
-         (setf #2# :stream)
-         (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :OUTPUT argument.")))
-
-      (case #3=process-error
-        (null
-         (setf #3# (null-stream :input)))
-        (:gray-stream
-         (setf #3# :stream)
-         (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :ERROR argument.")))
-
       (multiple-value-setq (pid parent-write parent-read parent-error)
-        (si:spawn-subprocess progname args environ process-input process-output process-error))
+        (si:spawn-subprocess progname args environ
+                             (case process-input
+                               (null (null-stream :output))
+                               (:gray-stream :stream)
+                               (otherwise process-input))
+                             (case process-output
+                               (null (null-stream :input))
+                               (:gray-stream :stream)
+                               (otherwise process-output))
+                             (case process-error
+                               (null (null-stream :input))
+                               (:gray-stream :stream)
+                               (otherwise process-error))))
+
+      (when (eql process-input :gray-stream)
+        (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :INPUT argument."))
+      (when (eql process-output :gray-stream)
+        (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :OUTPUT argument."))
+      (when (eql process-error :gray-stream)
+        (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :ERROR argument."))
 
       (let ((stream-write
              (when (plusp parent-write)
