@@ -1269,3 +1269,13 @@
                     '(defun flesh-failures ()
                       (load-time-value
                        (coerce #(0) '(simple-array (unsigned-byte 8) (1)))))))))
+
+;;; Date 2017-09-29
+;;;
+;;; Description
+;;;
+;;;   `typep' compiler macroexpansion did treat
+;;;   `gray:fundamental-stream' as subtype of `ext:ansi-stream'.
+(test cmp.0059.gray-is-not-ansi
+  (let ((stream (make-instance 'gray:fundamental-stream)))
+    (is-false (typep stream 'ext:ansi-stream))))
