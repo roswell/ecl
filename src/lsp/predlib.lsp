@@ -1313,9 +1313,10 @@ if not possible."
                (EXT:SEQUENCE-STREAM)
                (EXT:ANSI-STREAM (OR BROADCAST-STREAM CONCATENATED-STREAM ECHO-STREAM
                                  FILE-STREAM STRING-STREAM SYNONYM-STREAM TWO-WAY-STREAM
-                                 EXT:SEQUENCE-STREAM
-                                 #+clos-streams GRAY:FUNDAMENTAL-STREAM))
-               (STREAM EXT:ANSI-STREAM)
+                                 EXT:SEQUENCE-STREAM))
+               #+clos-streams (GRAY:FUNDAMENTAL-STREAM)
+               (STREAM (OR EXT:ANSI-STREAM
+                        #+clos-streams GRAY:FUNDAMENTAL-STREAM))
 
                (READTABLE)
                #+threads (MP::PROCESS)
