@@ -197,8 +197,7 @@
               (external-process-output process) stream-read
               (external-process-error-stream process) stream-error)
 
-        (values (make-two-way-stream (external-process-output process)
-                                     (external-process-input process))
+        (values (make-two-way-stream stream-read stream-write)
                 (if wait
                     (nth-value 1 (si:external-process-wait process t))
                     (ext:set-finalizer process #'finalize-external-process))
