@@ -108,17 +108,16 @@
                       #+windows (escape-arguments t))
 
   (labels ((process-stream (which default &rest args)
-             (cond ((eql which t)
-                    default)
-                   ((eql which nil)
+             (when (eql which t)
+               (setf which default))
+             (cond ((null which)
                     (null-stream (getf args :direction)))
-                   ((or (stringp which) (pathnamep which))
+                   ((or (stringp which)
+                        (pathnamep which))
                     (apply #'open which :external-format external-format args))
-                   #+(and (or) clos-streams threads)
-                   ((and (streamp which)
-                         (null (typep which 'ext:ansi-stream)))
-                    #| Here we may want to return `:stream' and spawn
-                    thread to handle data at runtime to fd. |#)
+                   #+clos-streams
+                   ((typep which 'gray:fundamental-stream)
+                    :gray-stream)
                    ((or (eql which :stream)
                         (streamp which))
                     which)
@@ -143,7 +142,6 @@
              (open #-windows "/dev/null"
                    #+windows "nul"
                    :direction direction)))
-
     (let ((progname (si:copy-to-simple-base-string command))
           (args (prepare-args (cons command argv)))
           (process (make-external-process))
@@ -160,6 +158,27 @@
                                              :if-exists if-error-exists)))
           pid parent-write parent-read parent-error)
 
+      (case #1=process-input
+        (null
+         (setf #1# (null-stream :output)))
+        (:gray-stream
+         (setf #1# :stream)
+         (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :INPUT argument.")))
+
+      (case #2=process-output
+        (null
+         (setf #2# (null-stream :input)))
+        (:gray-stream
+         (setf #2# :stream)
+         (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :OUTPUT argument.")))
+
+      (case #3=process-error
+        (null
+         (setf #3# (null-stream :input)))
+        (:gray-stream
+         (setf #3# :stream)
+         (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :ERROR argument.")))
+
       (multiple-value-setq (pid parent-write parent-read parent-error)
         (si:spawn-subprocess progname args environ process-input process-output process-error))
 
@@ -174,9 +193,9 @@
                (make-input-stream-from-fd progname parent-error external-format))))
 
         (setf (external-process-pid process) pid
-              (external-process-input process)         (or stream-write (null-stream :output))
-              (external-process-output process)        (or stream-read  (null-stream :input))
-              (external-process-error-stream process)  (or stream-error (null-stream :input)))
+              (external-process-input process) stream-write
+              (external-process-output process) stream-read
+              (external-process-error-stream process) stream-error)
 
         (values (make-two-way-stream (external-process-output process)
                                      (external-process-input process))
