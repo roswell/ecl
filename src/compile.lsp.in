@@ -323,9 +323,7 @@
 ;;;
 (build-module "package-locks"
               '("ext:package-locks;package-locks.lisp")
-              :dir "build:ext;"
-              :prefix "EXT"
-              :builtin nil)
+              :dir "build:ext;" :prefix "EXT" :builtin nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
