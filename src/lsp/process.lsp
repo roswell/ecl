@@ -164,13 +164,13 @@
         (si:spawn-subprocess progname args environ process-input process-output process-error))
 
       (let ((stream-write
-             (when (< 0 parent-write)
+             (when (plusp parent-write)
                (make-output-stream-from-fd progname parent-write external-format)))
             (stream-read
-             (when (< 0 parent-read)
+             (when (plusp parent-read)
                (make-input-stream-from-fd progname parent-read external-format)))
             (stream-error
-             (when (< 0 parent-error)
+             (when (plusp parent-error)
                (make-input-stream-from-fd progname parent-error external-format))))
 
         (setf (external-process-pid process) pid
