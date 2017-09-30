@@ -903,7 +903,7 @@ si_free_ffi_closure(cl_object closure)
                                                      closure);
     si_set_finalizer(closure_object, @'si::free-ffi-closure');
 
-    cl_object data = cl_list(6, closure_object,
+    cl_object data = cl_list(5,
                              fun, return_type, arg_types, cc_type,
                              ecl_make_foreign_data(@':pointer-void',
                                                    sizeof(*cif), cif),
@@ -911,13 +911,13 @@ si_free_ffi_closure(cl_object closure)
                                                    (n + 1) * sizeof(ffi_type*),
                                                    types));
     int status = ffi_prep_closure_loc(closure, cif, callback_executor,
-                                      ECL_CONS_CDR(data), executable_region);
+                                      data, executable_region);
 
     if (status != FFI_OK) {
       FEerror("Unable to build callback. libffi returns ~D", 1,
               ecl_make_fixnum(status));
     }
-    si_put_sysprop(sym, @':callback', data);
+    si_put_sysprop(sym, @':callback', closure_object);
     @(return closure_object);
 } @)
 #endif /* HAVE_LIBFFI */

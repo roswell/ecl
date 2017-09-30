@@ -770,7 +770,7 @@ Loads a foreign library."
   (let ((x (si::get-sysprop name :callback)))
     (unless x
       (error "There is no callback with name ~a" name))
-    (first x)))
+    x))
 
 ;;;----------------------------------------------------------------------
 ;;; COMPATIBILITY WITH OLDER FFI
