@@ -161,24 +161,24 @@
       (multiple-value-setq (pid parent-write parent-read parent-error)
         (si:spawn-subprocess progname args environ
                              (case process-input
-                               (null (null-stream :output))
+                               ((nil) (null-stream :output))
                                (:gray-stream :stream)
                                (otherwise process-input))
                              (case process-output
-                               (null (null-stream :input))
+                               ((nil) (null-stream :input))
                                (:gray-stream :stream)
                                (otherwise process-output))
                              (case process-error
-                               (null (null-stream :input))
+                               ((nil) (null-stream :input))
                                (:gray-stream :stream)
                                (otherwise process-error))))
 
       (when (eql process-input :gray-stream)
-        (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :INPUT argument."))
+        (warn "EXT:RUN-PROGRAM: Ignoring gray stream as :INPUT argument."))
       (when (eql process-output :gray-stream)
-        (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :OUTPUT argument."))
+        (warn "EXT:RUN-PROGRAM: Ignoring gray stream as :OUTPUT argument."))
       (when (eql process-error :gray-stream)
-        (warn "EXT:RUN-PROGRAM: Ignorning gray stream as :ERROR argument."))
+        (warn "EXT:RUN-PROGRAM: Ignoring gray stream as :ERROR argument."))
 
       (let ((stream-write
              (when (plusp parent-write)
@@ -194,8 +194,9 @@
               (external-process-input process) stream-write
               (external-process-output process) stream-read
               (external-process-error-stream process) stream-error)
-
-        (values (make-two-way-stream stream-read stream-write)
+        (values (if (and stream-read stream-write)
+                    (make-two-way-stream stream-read stream-write)
+                    (or stream-read stream-write))
                 (if wait
                     (nth-value 1 (si:external-process-wait process t))
                     (ext:set-finalizer process #'finalize-external-process))
