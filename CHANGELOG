@@ -35,7 +35,7 @@
 - ~ext:run-program~: environ argument defaults to ~:default~, when NIL
   passed empty environment is used
 - compiler: when gcc fails ecl prints the failing command output
-- ASDF has been updated to 3.1.8.7
+- ASDF has been updated to 3.1.8.8
 - package local nicknames has been implemented (after SBCL)
 - hash table extensions are documented in newdoc
 - various cleanups performed in the compiler
