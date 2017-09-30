@@ -1,5 +1,5 @@
 ;;; -*- mode: Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp ; buffer-read-only: t; -*-
-;;; This is ASDF 3.1.8.6: Another System Definition Facility.
+;;; This is ASDF 3.1.8.7: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -7274,7 +7274,7 @@ previously-loaded version of ASDF."
          ;; "3.4.5.67" would be a development version in the official branch, on top of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "3.1.8.6")
+         (asdf-version "3.1.8.7")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
@@ -9618,17 +9618,12 @@ or predicate on system names, or NIL if none are forced, or :ALL if all are."
 
 ;;;; action-valid-p
 (with-upgradability ()
-  (defgeneric action-valid-p (plan operation component)
-    (:documentation "Is this action valid to include amongst dependencies?"))
-  ;; :if-feature will invalidate actions on components for which the features don't apply.
-  (defmethod action-valid-p ((plan t) (o operation) (c component))
-    (if-let (it (component-if-feature c)) (featurep it) t))
-  ;; If either the operation or component was resolved to nil, the action is invalid.
-  (defmethod action-valid-p ((plan t) (o null) (c t)) nil)
-  (defmethod action-valid-p ((plan t) (o t) (c null)) nil)
-  ;; If the plan is null, i.e., we're looking at reality,
-  ;; then any action with actual operation and component objects is valid.
-  (defmethod action-valid-p ((plan null) (o operation) (c component)) t))
+  (defun action-valid-p (operation component)
+    "Is this action valid to include amongst dependencies?"
+    ;; If either the operation or component was resolved to nil, the action is invalid.
+    ;; :if-feature will invalidate actions on components for which the features don't apply.
+    (and operation component
+         (if-let (it (component-if-feature component)) (featurep it) t))))
 
 ;;;; Is the action needed in this image?
 (with-upgradability ()
@@ -9646,29 +9641,29 @@ to be meaningful, or could it just as well have been done in another Lisp image?
 
 ;;;; Visiting dependencies of an action and computing action stamps
 (with-upgradability ()
-  (defun (map-direct-dependencies) (plan operation component fun)
+  (defun (map-direct-dependencies) (operation component fun)
     "Call FUN on all the valid dependencies of the given action in the given plan"
     (loop* :for (dep-o-spec . dep-c-specs) :in (component-depends-on operation component)
            :for dep-o = (find-operation operation dep-o-spec)
            :when dep-o
            :do (loop :for dep-c-spec :in dep-c-specs
                      :for dep-c = (and dep-c-spec (resolve-dependency-spec component dep-c-spec))
-                     :when (and dep-c (action-valid-p plan dep-o dep-c))
+                     :when (action-valid-p dep-o dep-c)
                        :do (funcall fun dep-o dep-c))))
 
-  (defun (reduce-direct-dependencies) (plan operation component combinator seed)
+  (defun (reduce-direct-dependencies) (operation component combinator seed)
     "Reduce the direct dependencies to a value computed by iteratively calling COMBINATOR
 for each dependency action on the dependency's operation and component and an accumulator
 initialized with SEED."
     (map-direct-dependencies
-     plan operation component
+     operation component
      #'(lambda (dep-o dep-c)
          (setf seed (funcall combinator dep-o dep-c seed))))
     seed)
 
-  (defun (direct-dependencies) (plan operation component)
+  (defun (direct-dependencies) (operation component)
     "Compute a list of the direct dependencies of the action within the plan"
-    (reduce-direct-dependencies plan operation component #'acons nil))
+    (reduce-direct-dependencies operation component #'acons nil))
 
   ;; In a distant future, get-file-stamp, component-operation-time and latest-stamp
   ;; shall also be parametrized by the plan, or by a second model object,
@@ -9692,7 +9687,7 @@ initialized with SEED."
      (block ())
      (let ((dep-stamp ; collect timestamp from dependencies (or T if forced or out-of-date)
              (reduce-direct-dependencies
-              plan o c
+              o c
               #'(lambda (o c stamp)
                   (if-let (it (plan-action-status plan o c))
                     (latest-stamp stamp (action-stamp it))
@@ -9767,9 +9762,6 @@ initialized with SEED."
     (or (and (action-forced-not-p p o c) (plan-action-status nil o c))
         (values (gethash (node-for o c) (plan-visited-actions p)))))
 
-  (defmethod action-valid-p ((p plan-traversal) (o operation) (s system))
-    (and (not (action-forced-not-p p o s)) (call-next-method)))
-
   (defgeneric plan-record-dependency (plan operation component)
     (:documentation "Record an action as a dependency in the current plan")))
 
@@ -9826,7 +9818,7 @@ initialized with SEED."
     (block nil
       ;; ACTION-VALID-P among other things, handles forcing logic, including FORCE-NOT,
       ;; and IF-FEATURE filtering.
-      (unless (action-valid-p plan operation component) (return nil))
+      (unless (action-valid-p operation component) (return nil))
       ;; the following hook is needed by POIU, which tracks a full dependency graph,
       ;; instead of just a dependency order as in vanilla ASDF
       (plan-record-dependency plan operation component)
@@ -9841,7 +9833,7 @@ initialized with SEED."
           (return (action-stamp status))) ; Already visited with sufficient need-in-image level!
         (labels ((visit-action (niip) ; We may visit the action twice, once with niip NIL, then T
                    (map-direct-dependencies ; recursively traverse dependencies
-                    plan operation component #'(lambda (o c) (traverse-action plan o c niip)))
+                    operation component #'(lambda (o c) (traverse-action plan o c niip)))
                    (multiple-value-bind (stamp done-p) ; AFTER dependencies have been traversed,
                        (compute-action-stamp plan operation component) ; compute action stamp
                      (let ((add-to-plan-p (or (eql stamp t) (and niip (not done-p)))))
@@ -9955,11 +9947,6 @@ initialized with SEED."
       (setf forced-not (normalize-forced-not-systems (if other-systems nil t) system))
       (setf action-filter (ensure-function action-filter))))
 
-  (defmethod action-valid-p ((plan filtered-sequential-plan) o c)
-    (and (funcall (plan-action-filter plan) o c)
-         (typep c (plan-component-type plan))
-         (call-next-method)))
-
   (defmethod traverse-actions (actions &rest keys &key plan-class &allow-other-keys)
     "Given a list of actions, build a plan with these actions as roots."
     (let ((plan (apply 'make-instance (or plan-class 'filtered-sequential-plan) keys)))
@@ -9969,7 +9956,7 @@ initialized with SEED."
   (define-convenience-action-methods traverse-sub-actions (operation component &key))
   (defmethod traverse-sub-actions ((operation operation) (component component)
                                    &rest keys &key &allow-other-keys)
-    (apply 'traverse-actions (direct-dependencies t operation component)
+    (apply 'traverse-actions (direct-dependencies operation component)
            :system (component-system component) keys))
 
   (defmethod plan-actions ((plan filtered-sequential-plan))
@@ -11625,9 +11612,9 @@ or of opaque libraries shipped along the source code."))
     ;; your component-depends-on method must gather the correct dependencies in the correct order.
     (while-collecting (collect)
       (map-direct-dependencies
-       t o c #'(lambda (sub-o sub-c)
-                 (loop :for f :in (funcall key sub-o sub-c)
-                       :when (funcall test f) :do (collect f))))))
+       o c #'(lambda (sub-o sub-c)
+               (loop :for f :in (funcall key sub-o sub-c)
+                  :when (funcall test f) :do (collect f))))))
 
   (defun pathname-type-equal-function (type)
     #'(lambda (p) (equalp (pathname-type p) type)))
@@ -11787,7 +11774,7 @@ or of opaque libraries shipped along the source code."))
                                                        :keep-operation 'basic-load-op))
                  (while-collecting (x) ;; resolve the sideway-dependencies of s
                    (map-direct-dependencies
-                    t 'load-op s
+                    'load-op s
                     #'(lambda (o c)
                         (when (and (typep o 'load-op) (typep c 'system))
                           (x c)))))))
