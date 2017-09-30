@@ -487,7 +487,7 @@ safe_buffer_pointer(cl_object x, cl_index size)
 
 ;; FIXME: How bad is manipulating fillp directly?
 (defmethod socket-receive ((socket socket) buffer length
-                           &key oob peek waitall element-type)
+                           &key oob peek waitall (element-type 'ext:byte8))
   (unless (or buffer length) (error "You have to supply either buffer or length!"))
   (let ((buffer (or buffer (make-array length :element-type element-type)))
         (length (or length (length buffer)))
