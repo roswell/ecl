@@ -429,7 +429,8 @@
             (wt-c-inline-loc output-rep-type c-expression coerced-arguments t nil)
             (when one-liner (wt ";")))
           (cmpnote "Ignoring form ~S" c-expression))
-      (return-from produce-inline-loc NIL))
+      (wt-nl "cl_env_copy->nvalues = 0;")
+      (return-from produce-inline-loc 'RETURN))
 
     ;; If the form is a one-liner, we can simply propagate this expression until the
     ;; place where the value is used.
@@ -460,7 +461,7 @@
                (loop for v in output-vars
                      for i from 0
                      do (let ((*destination* `(VALUE ,i))) (set-loc v)))
-               (wt "cl_env_copy->nvalues=" (length output-vars) ";")
+               (wt "cl_env_copy->nvalues = " (length output-vars) ";")
                'VALUES))))))
 
 (defun c2c-inline (c1form arguments &rest rest)

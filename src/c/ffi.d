@@ -849,7 +849,11 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
   object = ecl_foreign_data_ref_elt(the_env->ffi_values,
                                     ecl_foreign_type_code(return_type));
   ECL_STACK_SET_INDEX(the_env, sp);
-  @(return object);
+  if (object != ECL_NIL) {
+    @(return object);
+  } else {
+    @(return);
+  }
 } @)
 
 static void
