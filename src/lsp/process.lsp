@@ -116,8 +116,8 @@
                         (pathnamep which))
                     (apply #'open which :external-format external-format args))
                    #+clos-streams
-                   ((typep which 'gray:fundamental-stream)
-                    :gray-stream)
+                   ((typep which 'virtual-stream)
+                    :virtual-stream)
                    ((or (eql which :stream)
                         (streamp which))
                     which)
@@ -162,23 +162,23 @@
         (si:spawn-subprocess progname args environ
                              (case process-input
                                ((nil) (null-stream :output))
-                               (:gray-stream :stream)
+                               (:virtual-stream :stream)
                                (otherwise process-input))
                              (case process-output
                                ((nil) (null-stream :input))
-                               (:gray-stream :stream)
+                               (:virtual-stream :stream)
                                (otherwise process-output))
                              (case process-error
                                ((nil) (null-stream :input))
-                               (:gray-stream :stream)
+                               (:virtual-stream :stream)
                                (otherwise process-error))))
 
-      (when (eql process-input :gray-stream)
-        (warn "EXT:RUN-PROGRAM: Ignoring gray stream as :INPUT argument."))
-      (when (eql process-output :gray-stream)
-        (warn "EXT:RUN-PROGRAM: Ignoring gray stream as :OUTPUT argument."))
-      (when (eql process-error :gray-stream)
-        (warn "EXT:RUN-PROGRAM: Ignoring gray stream as :ERROR argument."))
+      (when (eql process-input :virtual-stream)
+        (warn "EXT:RUN-PROGRAM: Ignoring virtual stream as :INPUT argument."))
+      (when (eql process-output :virtual-stream)
+        (warn "EXT:RUN-PROGRAM: Ignoring virtual stream as :OUTPUT argument."))
+      (when (eql process-error :virtual-stream)
+        (warn "EXT:RUN-PROGRAM: Ignoring virtual stream as :ERROR argument."))
 
       (let ((stream-write
              (when (plusp parent-write)
