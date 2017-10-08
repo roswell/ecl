@@ -690,7 +690,7 @@ extern ECL_API cl_object cl_stream_external_format(cl_object strm);
 extern ECL_API cl_object cl_file_length(cl_object strm);
 extern ECL_API cl_object si_get_string_input_stream_index(cl_object strm);
 extern ECL_API cl_object si_make_string_output_stream_from_string(cl_object strng);
-extern ECL_API cl_object si_copy_stream(cl_object in, cl_object out);
+extern ECL_API cl_object si_copy_stream(cl_object in, cl_object out, cl_object wait);
 extern ECL_API cl_object cl_open_stream_p(cl_object strm);
 extern ECL_API cl_object cl_make_broadcast_stream _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_broadcast_stream_streams(cl_object strm);

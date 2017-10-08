@@ -1141,7 +1141,7 @@ cl_symbols[] = {
 {SYS_ "COPY-TO-SIMPLE-BASE-STRING", SI_ORDINARY, si_copy_to_simple_base_string, 1, OBJNULL},
 {SYS_ "COMPILED-FUNCTION-BLOCK", SI_ORDINARY, si_compiled_function_block, 1, OBJNULL},
 {EXT_ "COMPILED-FUNCTION-NAME", EXT_ORDINARY, si_compiled_function_name, 1, OBJNULL},
-{SYS_ "COPY-STREAM", SI_ORDINARY, si_copy_stream, 1, OBJNULL},
+{SYS_ "COPY-STREAM", SI_ORDINARY, si_copy_stream, 3, OBJNULL},
 {SYS_ "DESTRUCTURE", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "DO-READ-SEQUENCE", SI_ORDINARY, si_do_read_sequence, 4, OBJNULL},
 {SYS_ "DO-WRITE-SEQUENCE", SI_ORDINARY, si_do_write_sequence, 4, OBJNULL},

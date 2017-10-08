@@ -4993,14 +4993,20 @@ cl_streamp(cl_object strm)
  */
 
 cl_object
-si_copy_stream(cl_object in, cl_object out)
+si_copy_stream(cl_object in, cl_object out, cl_object wait)
 {
   ecl_character c;
+  if ((wait == ECL_NIL) && !ecl_listen_stream(in)) {
+    return ECL_NIL;
+  }
   for (c = ecl_read_char(in); c != EOF; c = ecl_read_char(in)) {
     ecl_write_char(c, out);
+    if ((wait == ECL_NIL) && !ecl_listen_stream(in)) {
+      break;
+    }
   }
   ecl_force_output(out);
-  @(return ECL_T);
+  @(return c==EOF);
 }
 
 
