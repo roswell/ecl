@@ -61,8 +61,7 @@
             (with-run-program (io/err nil)
               (format io/err "42~%")))
   ;; process will have :eof on input and should quit with "1"
-  (is-equal '(nil :exited 1) (with-run-program (io/err nil :input nil)))
-  )
+  (is-equal '(nil :exited 1) (with-run-program (io/err nil :input nil))))
 
 (test stream-values ()
   (finishes (with-run-program (print-test nil :output nil :error nil :input nil)))
@@ -125,16 +124,18 @@
 
 ;;; This test is disabled because we don't support virtual streams in
 ;;; run-program yet.
-#+ (or) (test no-fd-streams
-          (let ((output-stream (make-string-output-stream))
-                (error-stream (make-string-output-stream)))
-            (with-input-from-string (input-stream "42")
-              (with-run-program (io/err nil :input input-stream
-                                        :output output-stream
-                                        :error error-stream)))
-            (is-not (zerop (length (get-output-stream-string output-stream))))
-            (is-not (zerop (length (get-output-stream-string error-stream))))
-            (mapc #'close (list output-stream error-stream))))
+(test no-fd-streams
+  (with-output-to-string (output-stream)
+    (with-output-to-string (error-stream)
+      ;; note the space – otherwise reader waits for next character
+      (with-input-from-string (input-stream "42 ")
+        (with-run-program (io/err nil
+                                  :input input-stream
+                                  :output output-stream
+                                  :error error-stream)))
+      (is (null (zerop (length (get-output-stream-string output-stream)))))
+      (is (null (zerop (length (get-output-stream-string error-stream)))))
+      (mapc #'close (list output-stream error-stream)))))
 
 #-windows
 (test process-environ
