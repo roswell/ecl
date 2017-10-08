@@ -220,10 +220,10 @@ Either @code{t}, @code{nil}, a pathname, a string, a stream or
 @code{:stream}. If @code{t} the standard input for the current process
 is inherited. If @code{nil}, @code{/dev/null} is used. If a pathname
 (or a string), the file so specified is used. If a stream, all the
-input is read from that stream and sent to the subprocess - stream
-must be ANSI stream (no in-memory virtual streams). If @code{:stream},
-the @code{external-process-input} slot is filled in with a stream that
-sends its output to the process. Defaults to @code{:stream}.
+input is read from that stream and sent to the subprocess. If
+@code{:stream}, the @code{external-process-input} slot is filled in
+with a stream that sends its output to the process. Defaults to
+@code{:stream}.
 @end defvr
 
 @defvr argument if-input-does-not-exist
@@ -237,10 +237,10 @@ Either @code{t}, @code{nil}, a pathname, a string, a stream, or
 @code{:stream}. If @code{t}, the standard output for the current
 process is inherited. If @code{nil}, @code{/dev/null} is used. If a
 pathname (or as string), the file so specified is used. If a stream,
-all the output from the process is written to this stream - stream
-must be ANSI stream (no in-memory virtual streams). If @code{:stream},
-the @code{external-process-output} slot is filled in with a stream
-that can be read to get the output. Defaults to @code{stream}.
+all the output from the process is written to this stream. If
+@code{:stream}, the @code{external-process-output} slot is filled in
+with a stream that can be read to get the output. Defaults to
+@code{:stream}.
 @end defvr
 
 @defvr argument if-output-exists
