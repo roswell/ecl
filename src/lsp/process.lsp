@@ -18,7 +18,8 @@
   error-stream
   (%status :running)
   (%code nil)
-  (%lock (mp:make-lock)))
+  (%lock (mp:make-lock))
+  #+threads (%pipe (mp:make-process)))
 
 (defun external-process-status (external-process)
   (let ((status (external-process-%status external-process)))
@@ -43,7 +44,8 @@
             ((:exited :signaled :abort :error)
              (setf (external-process-pid process) nil
                    (external-process-%status process) status
-                   (external-process-%code process) code))
+                   (external-process-%code process) code)
+             #+threads (mp:process-join (external-process-%pipe process)))
             ((:stopped :resumed :running)
              (setf (external-process-%status process) status
                    (external-process-%code process) code))
@@ -173,13 +175,6 @@
                                (:virtual-stream :stream)
                                (otherwise process-error))))
 
-      (when (eql process-input :virtual-stream)
-        (warn "EXT:RUN-PROGRAM: Ignoring virtual stream as :INPUT argument."))
-      (when (eql process-output :virtual-stream)
-        (warn "EXT:RUN-PROGRAM: Ignoring virtual stream as :OUTPUT argument."))
-      (when (eql process-error :virtual-stream)
-        (warn "EXT:RUN-PROGRAM: Ignoring virtual stream as :ERROR argument."))
-
       (let ((stream-write
              (when (plusp parent-write)
                (make-output-stream-from-fd progname parent-write external-format)))
@@ -188,18 +183,39 @@
                (make-input-stream-from-fd progname parent-read external-format)))
             (stream-error
              (when (plusp parent-error)
-               (make-input-stream-from-fd progname parent-error external-format))))
+               (make-input-stream-from-fd progname parent-error external-format)))
+            (piped-pairs nil))
+
+        (when (eql process-input :virtual-stream)
+          (push (cons input stream-write) piped-pairs))
+        (when (eql process-output :virtual-stream)
+          (push (cons stream-read output) piped-pairs))
+        (when (eql process-error :virtual-stream)
+          (push (cons stream-error error) piped-pairs))
 
         (setf (external-process-pid process) pid
               (external-process-input process) stream-write
               (external-process-output process) stream-read
               (external-process-error-stream process) stream-error)
+
+        (when piped-pairs
+          #+threads
+          (let ((thread (external-process-%pipe process)))
+              (mp:process-preset thread #'pipe-streams process piped-pairs)
+              (mp:process-enable thread))
+          #-threads
+          (if wait
+              (pipe-streams process piped-pairs)
+              (warn "EXT:RUN-PROGRAM: Ignoring virtual stream I/O argument.")))
+
+        (if wait
+            (si:external-process-wait process t)
+            (ext:set-finalizer process #'finalize-external-process))
+
         (values (if (and stream-read stream-write)
                     (make-two-way-stream stream-read stream-write)
                     (or stream-read stream-write))
-                (if wait
-                    (nth-value 1 (si:external-process-wait process t))
-                    (ext:set-finalizer process #'finalize-external-process))
+                (external-process-%code process)
                 process)))))
 
 #+windows
@@ -246,3 +262,24 @@
    (name fd external-format) (:string :int :object) :object
    "ecl_make_stream_from_fd(#0, #1, ecl_smm_output, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
    :one-liner t))
+
+
+(defun pipe-streams (process pairs &aux to-remove)
+  ;; note we don't use serve-event here because process input may be a
+  ;; virtual stream and `select' won't catch this stream change.
+  (si:until (or (null pairs)
+                (member #-threads (external-process-wait process nil)
+                        #+threads (external-process-%status process)
+                        '(:exited :siognaled :abort :error)))
+    (dolist (pair pairs)
+      (destructuring-bind (input . output) pair
+        (when (or (null (open-stream-p output))
+                  (null (open-stream-p input))
+                  (and (listen input)
+                       (si:copy-stream input output nil)))
+          (push pair to-remove))))
+    ;; remove from the list exhausted streams
+    (when to-remove
+      (setf pairs (set-difference pairs to-remove)))
+    #+threads (mp:process-yield)
+    #-threads (sleep 0.0001)))
