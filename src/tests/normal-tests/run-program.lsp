@@ -122,8 +122,7 @@
                 (is-eql :resumed (ext:external-process-wait process nil))
                 (finishes (ext:terminate-process process t))))))
 
-;;; This test is disabled because we don't support virtual streams in
-;;; run-program yet.
+#+threads
 (test no-fd-streams
   (with-output-to-string (output-stream)
     (with-output-to-string (error-stream)
@@ -133,6 +132,24 @@
                                   :input input-stream
                                   :output output-stream
                                   :error error-stream)))
+      (is (null (zerop (length (get-output-stream-string output-stream)))))
+      (is (null (zerop (length (get-output-stream-string error-stream)))))
+      (mapc #'close (list output-stream error-stream)))))
+
+#-threads
+(test no-fd-streams
+  (with-output-to-string (output-stream)
+    (with-output-to-string (error-stream)
+      ;; note the space – otherwise reader waits for next character
+      (with-input-from-string (input-stream "42 ")
+        (ext:run-program *binary* `("--norc"
+                                    "--load" ,*program*
+                                    "--eval" ,(format nil "(~a)" 'io/err)
+                                    "--eval" "(quit)")
+                         :input input-stream
+                         :output output-stream
+                         :error  error-stream
+                         :wait t))
       (is (null (zerop (length (get-output-stream-string output-stream)))))
       (is (null (zerop (length (get-output-stream-string error-stream)))))
       (mapc #'close (list output-stream error-stream)))))
