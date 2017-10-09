@@ -109,9 +109,9 @@
                       (external-format :default)
                       #+windows (escape-arguments t))
 
-  (when (eql input t)  (setf input *standard-input*))
-  (when (eql output t) (setf input *standard-output*))
-  (when (eql error t)  (setf input *error-output*))
+  (when (eql input t) (setf input *standard-input*))
+  (when (eql output t) (setf output *standard-output*))
+  (when (eql error t) (setf error *error-output*))
 
   (labels ((process-stream (which &rest args)
              (cond ((null which)
