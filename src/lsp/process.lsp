@@ -109,9 +109,11 @@
                       (external-format :default)
                       #+windows (escape-arguments t))
 
-  (labels ((process-stream (which default &rest args)
-             (when (eql which t)
-               (setf which default))
+  (when (eql input t)  (setf input *standard-input*))
+  (when (eql output t) (setf input *standard-output*))
+  (when (eql error t)  (setf input *error-output*))
+
+  (labels ((process-stream (which &rest args)
              (cond ((null which)
                     (null-stream (getf args :direction)))
                    ((or (stringp which)
@@ -147,15 +149,15 @@
     (let ((progname (si:copy-to-simple-base-string command))
           (args (prepare-args (cons command argv)))
           (process (make-external-process))
-          (process-input (process-stream input *standard-input*
+          (process-input (process-stream input
                                          :direction :input
                                          :if-does-not-exist if-input-does-not-exist))
-          (process-output (process-stream output *standard-output*
+          (process-output (process-stream output
                                           :direction :output
                                           :if-exists if-output-exists))
           (process-error (if (eql error :output)
                              :output
-                             (process-stream error *error-output*
+                             (process-stream error
                                              :direction :output
                                              :if-exists if-error-exists)))
           pid parent-write parent-read parent-error)
