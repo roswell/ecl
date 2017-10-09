@@ -8,8 +8,8 @@
 (in-package "EXT")
 
 (defmacro with-process-lock ((process) &body body)
-  `(mp:with-lock ((external-process-%lock process))
-     ,@body))
+  #+threads `(mp:with-lock ((external-process-%lock process)) ,@body)
+  #-threads `(progn ,@body))
 
 (defstruct (external-process (:constructor make-external-process ()))
   pid
@@ -18,7 +18,7 @@
   error-stream
   (%status :running)
   (%code nil)
-  (%lock (mp:make-lock))
+  #+threads (%lock (mp:make-lock))
   #+threads (%pipe (mp:make-process)))
 
 (defun external-process-status (external-process)
