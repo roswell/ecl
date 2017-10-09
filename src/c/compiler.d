@@ -1443,10 +1443,8 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
     {
       const cl_compiler_ptr c_env = env->c_env;
       asm_op2c(env,
-               (Null(c_env->variables) &&
-                Null(c_env->macros))?
-               OP_QUOTE : OP_CLOSE,
-               ecl_make_lambda(env, name, body));
+               (Null(c_env->variables) && Null(c_env->macros)) ? OP_QUOTE : OP_CLOSE,
+               ecl_make_lambda(env, name, body, function));
     }
     return FLAG_REG0;
   }
