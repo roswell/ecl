@@ -716,18 +716,9 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   if (read_suppress) {
     @(return ECL_NIL);
   }
-  unlikely_if (!ECL_CONSP(x) || ecl_length(x) < 5) {
-    FEreader_error("Reader macro #Y should be followed by a list",
-                   in, 0);
-  }
 
-  if (ecl_length(x) == 2) {
-    rv = ecl_alloc_object(t_bclosure);
-    rv->bclosure.code = ECL_CONS_CAR(x);
-    x = ECL_CONS_CDR(x);
-    rv->bclosure.lex = ECL_CONS_CAR(x);
-    rv->bclosure.entry = _ecl_bclosure_dispatch_vararg;
-    @(return rv);
+  unlikely_if (!ECL_CONSP(x) || ecl_length(x) < 5) {
+    FEreader_error("Reader macro #Y should be followed by a list", in, 0);
   }
 
   rv = ecl_alloc_object(t_bytecodes);
