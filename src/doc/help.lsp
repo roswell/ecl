@@ -3257,6 +3257,60 @@ Outputs STRING to STREAM.  Returns STRING.")
 (docfun zerop function (number) "
 Returns T if the arg is zero; NIL otherwise.")
 
+;;; ----------------------------------------------------------------------
+;;; Multi Processing (POSIX Threads)
+
+#+threads
+(progn
+  (docfun mp:all-processes function () "
+Returns a list of all running processes.")
+
+  (docfun mp:make-process function (&key name) "
+Allocates new process.")
+
+  (docfun mp:process-yield function () "
+Causes current process to yield the control.")
+
+  (docfun mp:exit-process function () "
+Exits current process.")
+
+  (docfun mp:process-active-p function (process) "
+Returns T if the process is active; NIL otherwise.")
+
+  (docfun mp:process-enable function (process) "
+Starts a process. If process is already enabled signals error.")
+
+  (docfun mp:interrupt-process function (process function) "
+Interrupts active PROCESS to call FUNCTION. When FUNCTION
+finishes normal normal execution is resumed.")
+
+  (docfun mp:process-kill function (process) "
+Exits running PROCESS. If PROCESS is inactive signals error.")
+
+  (docfun mp:process-suspend function (process) "
+Stops running PROCESS. If PROCESS is inactive signals error.")
+
+  (docfun mp:process-suspend function (process) "
+Resumes running PROCESS. If PROCESS is inactive signals error.")
+
+  (docfun mp:process-name function (process) "
+Returns PROCESS name assigned on MP:MAKE-PROCESS call.")
+
+  (docfun mp:process-preset function (process function &rest args) "
+Initializes a process. When process is enabled it will call FUNCTION
+with ARGS.")
+
+  (docfun mp:process-whostate function (process) "
+Reserved for future use. Returns empty string.")
+
+  (docfun mp:process-join function (process) "
+Waits until process stops its execution.")
+
+  (docfun mp:process-run-function function (name function &rest args) "
+Equivalent to creating a process with MP:MAKE-PROCESS, presetting it
+with MP:PROCESS-PRESET and starting with MP:PROCESS-ENABLE. Returns
+created process."))
+
 #||
 ;;; ----------------------------------------------------------------------
 ;;; System Builder Tools
