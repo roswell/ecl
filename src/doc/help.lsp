@@ -2246,21 +2246,21 @@ Returns T if INTEGER is an odd number; NIL otherwise.")
 
 (docfun open function (filespec &key (direction :input) element-type
                      if-exists if-does-not-exist) "
-Opens the specified file and returns a file stream to/from the file.  FILESPEC
-may be a symbol, a string, a pathname, or a file stream.  DIRECTION may be
-:INPUT, :OUTPUT, :IO, or :PROBE.  ELEMENT-TYPE is simply ignored in ECL.  IF-
-EXISTS specifies what to do when DIRECTION is either :OUTPUT or :IO and the
-specified file exists already.  It may be :ERROR (the default), :NEW-VERSION,
-:RENAME, :RENAME-AND-DELETE, :OVERWRITE, :APPEND, :SUPERSEDE, or NIL.  IF-
-DOES-NOT-EXIST specifies what to do when the specified file does not exists.
-It may be :ERROR (the default when DIRECTION is :INPUT), :CREATE (the default
-when DIRECTION is either :OUTPUT or :IO), or NIL.
-File streams are notated in one of the following ways:
-        #<input stream f>
-        #<output stream f>
-        #<io stream f>
-        #<probe stream f>
-where F is the file name.")
+Opens the specified file and returns a file stream to/from the file.
+
+FILESPEC may be a symbol, a string, a pathname, or a file stream.
+
+DIRECTION may be :INPUT, :OUTPUT, :IO, or :PROBE.
+
+IF-EXISTS specifies what to do when DIRECTION is either :OUTPUT or :IO
+and the specified file exists already.  It may be :ERROR (the
+default), :NEW-VERSION, :RENAME, :RENAME-AND-DELETE, :OVERWRITE, :APPEND,
+:SUPERSEDE, or NIL.
+
+IF-DOES-NOT-EXIST specifies what to do when the specified file does
+not exists.  It may be :ERROR (the default when DIRECTION
+is :INPUT), :CREATE (the default when DIRECTION is either :OUTPUT
+or :IO), or NIL.")
 
 (docfun ext:make-pipe function ()
 "Creates a pipe in the form of a two-way stream that can be used for
