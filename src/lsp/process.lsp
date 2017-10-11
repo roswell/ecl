@@ -209,8 +209,8 @@
         (when piped-pairs
           #+threads
           (let ((thread (external-process-%pipe process)))
-              (mp:process-preset thread #'pipe-streams process piped-pairs)
-              (mp:process-enable thread))
+            (mp:process-preset thread #'pipe-streams process piped-pairs)
+            (mp:process-enable thread))
           #-threads
           (if wait
               (pipe-streams process piped-pairs)

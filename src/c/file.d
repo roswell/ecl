@@ -3099,7 +3099,9 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
     flags &= ~ECL_STREAM_SIGNED_BYTES;
     t = @'unsigned-byte';
   }
-  flags = parse_external_format(stream, external_format, flags);
+  if (external_format != ECL_NIL) {
+    flags = parse_external_format(stream, external_format, flags);
+  }
   stream->stream.ops->read_char = eformat_read_char;
   stream->stream.ops->write_char = eformat_write_char;
   switch (flags & ECL_STREAM_FORMAT) {
@@ -3264,12 +3266,10 @@ si_stream_external_format_set(cl_object stream, cl_object format)
 #endif
     {
       cl_object elt_type = ecl_stream_element_type(stream);
-      unlikely_if (elt_type != @'character' &&
-                   elt_type != @'base-char')
-        FEerror("Cannot change external format"
-                "of binary stream ~A", 1, stream);
-      set_stream_elt_type(stream, stream->stream.byte_size,
-                          stream->stream.flags, format);
+      unlikely_if (elt_type != @'character' && elt_type != @'base-char') {
+        FEerror("Cannot change external format of binary stream ~A", 1, stream);
+      }
+      set_stream_elt_type(stream, stream->stream.byte_size, stream->stream.flags, format);
     }
     break;
   default:
