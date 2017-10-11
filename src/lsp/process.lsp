@@ -179,13 +179,19 @@
 
       (let ((stream-write
              (when (plusp parent-write)
-               (make-output-stream-from-fd progname parent-write external-format)))
+               (ext:make-stream-from-fd parent-write :output
+                                        :element-type 'base-char
+                                        :external-format external-format)))
             (stream-read
              (when (plusp parent-read)
-               (make-input-stream-from-fd progname parent-read external-format)))
+               (ext:make-stream-from-fd parent-read :input
+                                        :element-type 'base-char
+                                        :external-format external-format)))
             (stream-error
              (when (plusp parent-error)
-               (make-input-stream-from-fd progname parent-error external-format)))
+               (ext:make-stream-from-fd parent-error :input
+                                        :element-type 'base-char
+                                        :external-format external-format)))
             (piped-pairs nil))
 
         (when (eql process-input :virtual-stream)
@@ -250,20 +256,6 @@
        (loop repeat slashes
           do (write-char #\\ stream)))
   (write-char #\" stream))
-
-
-;;; low level interface to descriptors
-(defun make-input-stream-from-fd (name fd external-format)
-  (ffi:c-inline
-   (name fd external-format) (:string :int :object) :object
-   "ecl_make_stream_from_fd(#0, #1, ecl_smm_input, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
-   :one-liner t))
-
-(defun make-output-stream-from-fd (name fd external-format)
-  (ffi:c-inline
-   (name fd external-format) (:string :int :object) :object
-   "ecl_make_stream_from_fd(#0, #1, ecl_smm_output, 8, ECL_STREAM_DEFAULT_FORMAT, #2)"
-   :one-liner t))
 
 
 (defun pipe-streams (process pairs &aux to-remove)
