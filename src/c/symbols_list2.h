@@ -1152,6 +1152,7 @@ cl_symbols[] = {
 {EXT_ "FILE-KIND","si_file_kind"},
 {SYS_ "FILL-POINTER-SET","si_fill_pointer_set"},
 {EXT_ "FILE-STREAM-FD","si_file_stream_fd"},
+{EXT_ "MAKE-STREAM-FROM-FD",NULL},
 {EXT_ "FIXNUMP","si_fixnump"},
 {SYS_ "FORMAT-ERROR",NULL},
 #ifdef ECL_CMU_FORMAT

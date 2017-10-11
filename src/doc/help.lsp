@@ -1989,6 +1989,15 @@ Creates and returns a random-state object.  If RANDOM-STATE is NIL, copies the
 value of *RANDOM-STATE*.  If RANDOM-STATE is a random-state, copies it.  If
 RANDOM-STATE is T, creates a random-state randomly.")
 
+(docfun ext:make-stream-from-fd function
+        (fd direction &key buffering element-type (external-format :default) (name "FD-STREAM")) "
+Creates and returns a new stream build on top of given FD file descriptor.
+
+DIRECTION may be :INPUT, :OUTPUT and :IO. On Windows it may be
+also :INPUT-WSOCK, :OUTPUT-WSOCK, :IO-WSOCK and :IO-WCON.
+
+BUFFERING may be :NONE, :LINE and :FULL.")
+
 (docfun make-string function (length &key (initial-element #\Space)) "
 Creates and returns a new string of the given LENGTH, whose elements are all
 INITIAL-ELEMENT.")

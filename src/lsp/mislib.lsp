@@ -320,3 +320,33 @@ hash table; otherwise it signals that we have reached the end of the hash table.
 
 (defun si::simple-program-error (message &rest datum)
   (signal-simple-error 'program-error nil message datum))
+
+#-ecl-min
+(defun make-stream-from-fd (fd direction &key buffering
+                                           element-type
+                                           (external-format :default)
+                                           (name "FD-STREAM"))
+  (check-type name string "name must be a string.")
+  (macrolet ((c-const (string) `(ffi:c-inline () () :int ,string :one-liner t)))
+    (let* ((smm-mode
+            (ecase direction
+              (:input                                   (c-const "ecl_smm_input"))
+              (:output                                  (c-const "ecl_smm_output"))
+              ((:io :input-output)                      (c-const "ecl_smm_io"))
+              #+:wsock (:input-wsock                    (c-const "ecl_smm_input_wsock"))
+              #+:wsock (:output-wsock                   (c-const "ecl_smm_output_wsock"))
+              #+:wsock ((:io-wsock :input-output-wsock) (c-const "ecl_smm_io_wsock"))
+              #+:wsock ((:io-wcon :input-output-wcon)   (c-const "ecl_smm_io_wcon"))))
+           ;; if external-format is not NIL, flags are ignored
+           (external-format (unless (subtypep element-type 'integer) external-format))
+           (stream (ffi:c-inline (name fd smm-mode element-type external-format)
+                                 (t :int :int t t) stream
+                                 "
+ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
+                        ecl_normalize_stream_element_type(#3),
+                        ECL_STREAM_BINARY,
+                        #4)"
+                                 :one-liner t)))
+      (when buffering
+        (si::set-buffering-mode stream buffering))
+      stream)))

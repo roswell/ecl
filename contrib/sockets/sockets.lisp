@@ -1246,33 +1246,6 @@ also known as unix-domain sockets."))
 (defun dup (fd)
   (ffi:c-inline (fd) (:int) :int "dup(#0)" :one-liner t))
 
-(defun make-stream-from-fd (fd mode &key buffering element-type (external-format :default)
-                            (name "FD-STREAM"))
-  (assert (stringp name) (name) "name must be a string.")
-  (let* ((smm-mode (ecase mode
-                       (:input (c-constant "ecl_smm_input"))
-                       (:output (c-constant "ecl_smm_output"))
-                       (:input-output (c-constant "ecl_smm_io"))
-                       #+:wsock
-                       (:input-wsock (c-constant "ecl_smm_input_wsock"))
-                       #+:wsock
-                       (:output-wsock (c-constant "ecl_smm_output_wsock"))
-                       #+:wsock
-                       (:input-output-wsock (c-constant "ecl_smm_io_wsock"))
-                       ))
-         (external-format (unless (subtypep element-type 'integer) external-format))
-         (stream (ffi:c-inline (name fd smm-mode element-type external-format)
-                               (t :int :int t t)
-                               t
-                               "
-ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
-                        ecl_normalize_stream_element_type(#3),
-                        0,#4)"
-                               :one-liner t)))
-    (when buffering
-      (si::set-buffering-mode stream buffering))
-    stream))
-
 (defun auto-close-two-way-stream (stream)
   (declare (si::c-local))
   (ffi:c-inline (stream) (t) :void

@@ -1341,6 +1341,9 @@
               (values (or null two-way-stream)
                       (or null integer)
                       ext:external-process))
+(proclamation ext:file-stream-fd (stream) fixnum)
+(proclamation ext:make-stream-from-fd (fixnum keyword &key) stream)
+
 (proclamation si:waitpid (fixnum gen-bool) (values
                                             (or null keyword)
                                             (or null fixnum)
