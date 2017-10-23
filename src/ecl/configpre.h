@@ -102,10 +102,6 @@
 /* Define to 1 if you have the `cosl' function. */
 #undef HAVE_COSL
 
-/* Define to 1 if you have the declaration of `feenableexcept', and to 0 if
-   you don't. */
-#undef HAVE_DECL_FEENABLEEXCEPT
-
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
 
@@ -133,7 +129,7 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
-/* Description */
+/* feenableexcept is available */
 #undef HAVE_FEENABLEEXCEPT
 
 /* Define to 1 if you have the <fenv.h> header file. */
