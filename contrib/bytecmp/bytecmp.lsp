@@ -79,7 +79,7 @@
 			(external-format :default)
 			(output-file nil output-file-p)
 			&allow-other-keys &aux foo)
-  (setf output-file (if output-file-p
+  (setf output-file (if (and output-file-p (not (eql output-file t)))
                         (pathname output-file)
                         (bc-compile-file-pathname input)))
   (when *compile-verbose*
