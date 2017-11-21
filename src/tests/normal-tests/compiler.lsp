@@ -1279,3 +1279,13 @@
 (test cmp.0059.gray-is-not-ansi
   (let ((stream (make-instance 'gray:fundamental-stream)))
     (is-false (typep stream 'ext:ansi-stream))))
+
+;;; Date 2017-11-21
+;;; Description
+;;;
+;;;   loop on dotted lists with destructuring bind gave a type error
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/418
+(test cmp.0060.loop-on-dotted-list
+  (finishes (funcall (compile nil
+                              '(lambda () (loop for (i) on '(1 2 . 3)))))))
