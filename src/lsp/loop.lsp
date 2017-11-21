@@ -1411,7 +1411,8 @@ Note that this is not a valid ANSI code."))
       (cond ((and var (symbolp var))
              (loop-make-iteration-variable var list data-type))
             (t
-             (loop-make-variable (setq listvar (gensym)) list 'list)
+             ;; using data type 'list for listvar can lead to errors for dotted lists
+             (loop-make-variable (setq listvar (gensym)) list nil)
              (loop-make-iteration-variable var nil data-type)))
       (let ((list-step (loop-list-step listvar)))
         (let* ((first-endtest
