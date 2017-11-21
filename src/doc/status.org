@@ -2,10 +2,10 @@
 - [X] Makefile
 
 * Introduction
-- [ ] About ECL
-- [ ] History
-- [ ] Credits
-- [ ] Copyrights
+- [X] About ECL
+- [X] History
+- [X] Credits
+- [X] Copyrights
 
 * User's guide
 - [-] Building ECL
@@ -27,10 +27,10 @@
   - Source documentation
 - [ ] Modules hierarchy
 - [ ] Testing and benchmarking
-- [ ] Manipulating Lisp objects
+- [X] Manipulating Lisp objects
 - [ ] Environment implementation
 - [ ] The interpreter
-- [ ] The compiler
+- [X] The compiler
 - [ ] Porting ECL
 - [ ] Experimental features
 - [ ] Current roadmap
@@ -39,27 +39,27 @@
 Many nodes, moderate amount of content (deviations from the standard)
 
 * Extensions
-- [ ] System building (ASDF, builder)
-- [ ] OS interface
+- [X] System building (ASDF, builder)
+- [X] OS interface
 - [X] FFI
   - [X] General info and examples
   - [X] SFFI :: Static FFI
 # - [ ] LFFI :: Library FFI :: (?) /dlopen etc./
 # - [ ] DFFI :: Dynamic FFI
   - [X] UFFI
-  - [ ] Multithreading
-  - [X] Signals and Interrupts
-  - [ ] Networking
-  - [X] Memory managament
-  - [X] MOP
-  - [ ] Green threads
-  - [ ] Continuations
-  - [ ] Extensible Sequences
-  - [ ] Gray streams
-  - [ ] Series
-  - [ ] Tree walker
-  - [ ] Local package nicknames
-  - [ ] CDR Extensions
+- [X] Multithreading
+- [X] Signals and Interrupts
+- [ ] Networking
+- [X] Memory managament
+- [-] MOP
+- [ ] Green threads
+- [ ] Continuations
+- [ ] Extensible Sequences
+- [ ] Gray streams
+- [ ] Series
+- [ ] Tree walker
+- [X] Local package nicknames
+- [ ] CDR Extensions
 
 * Not documented yet
 #+BEGIN_SRC lisp
