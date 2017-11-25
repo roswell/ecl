@@ -31,7 +31,7 @@
 - [ ] Environment implementation
 - [X] The interpreter
 - [X] The compiler
-- [ ] Porting ECL
+- [X] Porting ECL
 - [ ] Experimental features
 - [ ] Current roadmap
 
