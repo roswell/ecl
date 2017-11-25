@@ -29,7 +29,7 @@
 - [ ] Testing and benchmarking
 - [X] Manipulating Lisp objects
 - [ ] Environment implementation
-- [ ] The interpreter
+- [X] The interpreter
 - [X] The compiler
 - [ ] Porting ECL
 - [ ] Experimental features
