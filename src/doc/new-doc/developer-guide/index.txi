@@ -9,9 +9,9 @@
 @c * Defun preprocessor:: Preprocessor for the Lisp constructs in C
 * Manipulating Lisp objects::
 * Environment implementation::
-@c * The interpreter::
+* The interpreter::
 * The compiler::
-@c * Porting ECL::
+* Porting ECL::
 * Removed features::
 @c * Experimental features::
 @c * Current roadmap::
@@ -22,5 +22,7 @@
 @c @include developer-guide/dpp.txi
 @include developer-guide/objects.txi
 @include developer-guide/environment.txi
+@include developer-guide/interpreter.txi
 @include developer-guide/compiler.txi
+@include developer-guide/porting-ecl.txi
 @include developer-guide/removed.txi
