@@ -159,6 +159,8 @@
                         ;;; Top-level form number in source file
   (cmp-env (cmp-env-copy)) ;;; Environment
   required-lcls         ;;; Names of the function arguments
+  (optional-type-check-forms nil) ;;; Type check forms for optional arguments
+  (keyword-type-check-forms nil) ;;; Type check forms for keyword arguments
   )
 
 (defstruct (blk (:include ref))
