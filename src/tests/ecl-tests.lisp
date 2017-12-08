@@ -26,7 +26,7 @@
 
 (suite 'make-check
        '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed cmp emb
-         ffi mop run-program))
+         ffi mop run-program mp ieee-fp))
 
 
 (defmacro is-true (form)

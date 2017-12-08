@@ -79,7 +79,7 @@ mp_semaphore_wait_count(cl_object semaphore)
     }
     AO_fetch_and_add((AO_t*)&semaphore->semaphore.counter, n);
     if (semaphore->semaphore.queue_list != ECL_NIL) {
-      ecl_wakeup_waiters(env, semaphore, ECL_WAKEUP_ONE);
+      ecl_wakeup_waiters(env, semaphore, ECL_WAKEUP_ALL);
     }
     @(return);
   } @)
