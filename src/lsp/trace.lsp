@@ -322,6 +322,7 @@ for Stepper mode commands."
   (throw *step-tag* nil))
 
 (defun step-skip (&optional (when 0))
+  (declare (ignore when))
   (setf *step-action* 0)
   (throw *step-tag* nil))
 
