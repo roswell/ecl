@@ -706,7 +706,9 @@
                        (fun-name fun)
                        (fun-needs-narg fun)
                        (fun-required-lcls fun)
-                       (fun-closure fun))))
+                       (fun-closure fun)
+                       (fun-optional-type-check-forms fun)
+                       (fun-keyword-type-check-forms fun))))
     string))
 
 (defun t3local-fun-declaration (fun)

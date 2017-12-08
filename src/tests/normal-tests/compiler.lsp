@@ -1289,3 +1289,17 @@
 (test cmp.0060.loop-on-dotted-list
   (finishes (funcall (compile nil
                               '(lambda () (loop for (i) on '(1 2 . 3)))))))
+
+;;; Date 2017-12-02
+;;; Description
+;;;
+;;;   type declarations for optional and keyword function arguments
+;;;   resulted in an error, when the default values weren't of the
+;;;   specified type.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/292
+(test cmp.0061.optional-type-declaration
+  (declaim (ftype (function (real &optional real &key (:c symbol)) real) foo))
+  (defun foo (a &optional (b 'test) &key (c 1)) (if b c a))
+  (compile 'foo)
+  (finishes (foo 1)))
