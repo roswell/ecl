@@ -139,12 +139,16 @@ creating stray processes."
                            #'(lambda ()
                                (mp:wait-on-semaphore sem)
                                (mp:with-lock (lock) (incf counter)))))))
+         (sleep 0.1) ; let threads settle on semaphore
          (and (is (zerop counter))
               (is (every #'mp:process-active-p all-process))
-              (is (= (mp:semaphore-wait-count sem) count))
+              (is (= (mp:semaphore-wait-count sem) count)
+                  "Number of threads waitng on semaphore should be ~s (but is ~s)."
+                   count (mp:semaphore-wait-count sem))
               (is (progn (mp:signal-semaphore sem count)
                          (sleep 0.2)
-                         (= counter count)))
+                         (= counter count))
+                  "Counter should be ~s (but is ~s)." count counter)
               (is (= (mp:semaphore-count sem) 0))))))
 
 ;;; Date: 14/04/2012
@@ -162,16 +166,22 @@ creating stray processes."
                                 #'(lambda ()
                                     (mp:wait-on-semaphore sem)
                                     (mp:with-lock (lock) (incf counter)))))))
+              (sleep 0.1) ; let threads settle on semaphore
               (and (is (zerop counter))
                    (is (every #'mp:process-active-p all-process))
-                   (is (= (mp:semaphore-wait-count sem) (+ m n)))
+                   (is (= (mp:semaphore-wait-count sem) (+ m n))
+                       "Number of threads waiting on semaphore should be ~s (but is ~s)."
+                       (+ m n) (mp:semaphore-wait-count sem))
                    (is (progn (mp:signal-semaphore sem n)
                               (sleep 0.02)
                               (= counter n)))
-                   (is (= (mp:semaphore-wait-count sem) m))
+                   (is (= (mp:semaphore-wait-count sem) m)
+                       "Number of threads waitng on semaphore should be ~s (but is ~s)."
+                       m (mp:semaphore-wait-count sem))
                    (is (progn (mp:signal-semaphore sem m)
                               (sleep 0.02)
-                              (= counter (+ n m)))))))))
+                              (= counter (+ n m)))
+                       "Counter should be ~s (but is ~s)." (+ n m) counter))))))
 
 ;;; Date: 14/04/2012
 ;;;     It is possible to kill processes waiting for a semaphore.
@@ -496,7 +506,7 @@ creating stray processes."
 ;;;     1 producer and N consumer, but they do not block, because the
 ;;;     queue is large enough and pre-filled with messages
 (test mbox-1-to-n-non-blocking
-  (loop with lock = (mp:make-lock :name "mbox-1-to-n-communication")
+  (loop
      for n from 1 to 10
      for m = (round 128 n)
      for length = (* n m)

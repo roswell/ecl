@@ -38,6 +38,7 @@
 (defvar *pass-count* nil)
 (defvar *fail-count* nil)
 (defvar *running* nil)
+(defvar *last-fail* nil)
 
 (define-condition test-failure (simple-condition)
   ((test-name :initarg :name
@@ -165,7 +166,8 @@
     (incf *fail-count*))
   (when *failures*
     (push c (gethash *test-name* *failures*)))
-  NIL)
+  (setf *last-fail* c)
+  nil)
 
 (defmacro is (form &rest args
               &aux
