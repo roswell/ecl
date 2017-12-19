@@ -2457,7 +2457,8 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
    */
   if (c_env->load_time_forms != ECL_NIL) {
     cl_index *bytecodes = save_bytecodes(env, handle, current_pc(env));
-    cl_object p, forms_list = c_env->load_time_forms;
+    /* Make sure the forms are compiled in the right order */
+    cl_object p, forms_list = cl_nreverse(c_env->load_time_forms);
     c_env->load_time_forms = ECL_NIL;
     p = forms_list;
     do {
