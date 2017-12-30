@@ -97,7 +97,8 @@
     (GLOBAL
      (unwind-exit (list 'FDEFINITION fun)))
     (CLOSURE
-     (baboon)
+     ;; XXX: we have some code after baboon – is CLOSURE legal or not?
+     (baboon :format-control "c2function: c1form is of unexpected kind.")
      (new-local fun)
      (unwind-exit `(MAKE-CCLOSURE ,fun)))))
 
@@ -185,7 +186,7 @@
                (environment-accessor fun)
                ",Cblock)"))
           ((eq closure 'LEXICAL)
-           (baboon))
+           (baboon :format-control "wt-make-closure: lexical closure detected."))
           ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
            (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",ECL_NIL,Cblock," narg ")"))
           (t ; empty environment variable number of args

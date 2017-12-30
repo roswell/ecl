@@ -235,18 +235,19 @@
                                    :type (or (si:get-sysprop name 'CMP-TYPE) t)))
           ((not (var-p var))
            ;; symbol-macrolet
-           (baboon))
+           (baboon :format-control "c1vref: ~s is not a variable."
+                   :format-arguments (list name)))
           (t
            (case (var-kind var)
              ((SPECIAL GLOBAL))
              ((CLOSURE))
              ((LEXICAL)
               (cond (ccb (setf (var-ref-clb var) nil ; replace a previous 'CLB
-                              (var-ref-ccb var) t
-                              (var-kind var) 'CLOSURE
-                              (var-loc var) 'OBJECT))
-                   (clb (setf (var-ref-clb var) t
-                              (var-loc var) 'OBJECT))))
+                               (var-ref-ccb var) t
+                               (var-kind var) 'CLOSURE
+                               (var-loc var) 'OBJECT))
+                    (clb (setf (var-ref-clb var) t
+                               (var-loc var) 'OBJECT))))
              (t
               (when (or clb ccb)
                 (cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."
@@ -298,7 +299,8 @@
 
 (defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
   (unless (var-p var)
-    (baboon))
+    (baboon :format-control "set-var: ~s is not a vairable."
+            :format-arguments (list var)))
   (case (var-kind var)
     (CLOSURE
      (wt-nl)(wt-env var-loc)(wt " = ")

@@ -60,8 +60,7 @@
           (wt-nl "cl_object " blk-var ";"))
         (when (env-grows (blk-ref-ccb blk))
           (let ((env-lvl *env-lvl*))
-            (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*)
-                   " = env" env-lvl ";")))
+            (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
         (bind "ECL_NEW_FRAME_ID(cl_env_copy)" blk-var)
         (wt-nl "if (ecl_frs_push(cl_env_copy," blk-var ")!=0) {")
         (let ((*unwind-exit* (cons 'FRAME *unwind-exit*)))
@@ -74,14 +73,14 @@
       (progn
         (setf (blk-exit blk) *exit*)
         (setf (blk-destination blk) *destination*)
-        (c2expr body)))
-  )
+        (c2expr body))))
 
 (defun c1return-from (args)
   (check-args-number 'RETURN-FROM args 1 2)
   (let ((name (first args)))
     (unless (symbolp name)
       (cmperr "The block name ~s is not a symbol." name))
+    ;; XXX: fixme here
     (multiple-value-bind (blk ccb clb unw)
         (cmp-env-search-block name)
       (unless blk
@@ -117,5 +116,4 @@
      (wt-nl "cl_return_from(" (blk-var blk) ",ECL_NIL);"))
     (T (let ((*destination* (blk-destination blk))
              (*exit* (blk-exit blk)))
-         (c2expr val))))
-  )
+         (c2expr val)))))

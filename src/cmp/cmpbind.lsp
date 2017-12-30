@@ -46,7 +46,7 @@
        (wt-nl) (wt-lex var-loc) (wt " = ")
        (wt-coerce-loc :object loc)
        (wt ";"))
-       (wt-comment (var-name var)))
+     (wt-comment (var-name var)))
     ((SPECIAL GLOBAL)
      (bds-bind loc var))
     (t
@@ -61,8 +61,8 @@
             ;; set location for lambda list requireds
             (setf (var-loc var) loc))
            (t
-            (baboon)))
-         )))
+            (baboon :format-control "bind: unexpected var-kind (~s) and loc (~s)."
+                    :format-arguments (list (var-kind var) loc)))))))
 
 ;;; Used by let*, defmacro and lambda's &aux, &optional, &rest, &keyword
 (defun bind-init (form var)

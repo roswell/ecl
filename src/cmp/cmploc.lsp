@@ -162,11 +162,13 @@
             RETURN-DOUBLE-FLOAT RETURN-LONG-FLOAT RETURN-OBJECT)))
 
 (defun wt-lcl (lcl)
-  (unless (numberp lcl) (baboon))
+  (unless (numberp lcl) (baboon :format-control "wt-lcl: ~s NaN"
+                                :format-arguments (list lcl)))
   (wt "v" lcl))
 
 (defun wt-lcl-loc (lcl &optional type name)
-  (unless (numberp lcl) (baboon))
+  (unless (numberp lcl) (baboon :format-control "wt-lcl-loc: ~s NaN"
+                                :format-arguments (list lcl)))
   (wt "v" lcl name))
 
 (defun wt-temp (temp)

@@ -24,7 +24,8 @@
 ;;;
 ;;; Empty info struct
 ;;;
-(defvar *info* (make-info))
+;; (defvar *info* (make-info)) ;unused
+
 (defvar *inline-blocks* 0)
 (defvar *opened-c-braces* 0)
 ;;; *inline-blocks* holds the number of C blocks opened for declaring
