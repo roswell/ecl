@@ -162,10 +162,10 @@ ecl_init_env(cl_env_ptr env)
 
   env->method_cache = ecl_make_cache(64, 4096);
   env->slot_cache = ecl_make_cache(3, 4096);
-  env->pending_interrupt = ECL_NIL;
+  env->interrupt_struct->pending_interrupt = ECL_NIL;
   {
     int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
-    env->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
+    env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
   }
 
   init_stacks(env);
@@ -239,6 +239,7 @@ _ecl_alloc_env(cl_env_ptr parent)
   }
 # endif
 #endif
+  output->interrupt_struct = ecl_alloc_unprotected(sizeof(*output->interrupt_struct));
   {
     size_t bytes = cl_core.default_sigmask_bytes;
     if (bytes == 0) {
@@ -257,8 +258,8 @@ _ecl_alloc_env(cl_env_ptr parent)
    * are activated later on by the thread entry point or init_unixint().
    */
   output->disable_interrupts = 1;
-  output->pending_interrupt = ECL_NIL;
-  output->signal_queue_spinlock = ECL_NIL;
+  output->interrupt_struct->pending_interrupt = ECL_NIL;
+  output->interrupt_struct->signal_queue_spinlock = ECL_NIL;
   return output;
 }
 

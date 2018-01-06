@@ -102,9 +102,10 @@ struct cl_env_struct {
         cl_object big_register[3];
 
         cl_object own_process;
-        cl_object pending_interrupt;
-        cl_object signal_queue;
-        cl_object signal_queue_spinlock;
+        /* The objects in this struct need to be writeable from a
+           different thread, if environment is write-protected by
+           mprotect. Hence they have to be allocated seperately. */
+        struct ecl_interrupt_struct *interrupt_struct;
         void *default_sigmask;
 
         /* The following is a hash table for caching invocations of
@@ -143,6 +144,12 @@ struct cl_env_struct {
 #ifdef ECL_THREADS
         int cleanup;
 #endif
+};
+
+struct ecl_interrupt_struct {
+        cl_object pending_interrupt;
+        cl_object signal_queue;
+        cl_object signal_queue_spinlock;
 };
 
 #ifndef __GNUC__

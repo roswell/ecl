@@ -367,7 +367,7 @@ si_handle_signal(cl_object signal_code, cl_object process)
 static void
 handle_all_queued(cl_env_ptr env)
 {
-        while (env->pending_interrupt != ECL_NIL) {
+        while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
                 handle_signal_now(pop_signal(env), env->own_process);
         }
 }
@@ -375,20 +375,20 @@ handle_all_queued(cl_env_ptr env)
 static void
 queue_signal(cl_env_ptr env, cl_object code, int allocate)
 {
-        ECL_WITH_SPINLOCK_BEGIN(env, &env->signal_queue_spinlock) {
+        ECL_WITH_SPINLOCK_BEGIN(env, &env->interrupt_struct->signal_queue_spinlock) {
                 cl_object record;
                 if (allocate) {
                         record = ecl_list1(ECL_NIL);
                 } else {
-                        record = env->signal_queue;
+                        record = env->interrupt_struct->signal_queue;
                         if (record != ECL_NIL) {
-                                env->signal_queue = ECL_CONS_CDR(record);
+                                env->interrupt_struct->signal_queue = ECL_CONS_CDR(record);
                         }
                 }
                 if (record != ECL_NIL) {
                         ECL_RPLACA(record, code);
-                        env->pending_interrupt =
-                                ecl_nconc(env->pending_interrupt,
+                        env->interrupt_struct->pending_interrupt =
+                                ecl_nconc(env->interrupt_struct->pending_interrupt,
                                           record);
                 }
         } ECL_WITH_SPINLOCK_END;
@@ -398,17 +398,17 @@ static cl_object
 pop_signal(cl_env_ptr env)
 {
         cl_object record, value;
-        if (env->pending_interrupt == ECL_NIL) {
+        if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
                 return ECL_NIL;
         }
-        ECL_WITH_SPINLOCK_BEGIN(env, &env->signal_queue_spinlock) {
-                record = env->pending_interrupt;
+        ECL_WITH_SPINLOCK_BEGIN(env, &env->interrupt_struct->signal_queue_spinlock) {
+                record = env->interrupt_struct->pending_interrupt;
                 value = ECL_CONS_CAR(record);
-                env->pending_interrupt = ECL_CONS_CDR(record);
+                env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
                 /* Save some conses for future use, to avoid allocating */
                 if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
-                        ECL_RPLACD(record, env->signal_queue);
-                        env->signal_queue = record;
+                        ECL_RPLACD(record, env->interrupt_struct->signal_queue);
+                        env->interrupt_struct->signal_queue = record;
                 }
         } ECL_WITH_SPINLOCK_END;
         return value;
@@ -599,7 +599,7 @@ handler_fn_prototype(process_interrupt_handler, int sig, siginfo_t *siginfo, voi
         the_env = ecl_process_env();
         if (zombie_process(the_env))
                 return;
-        if (!Null(the_env->pending_interrupt)) {
+        if (!Null(the_env->interrupt_struct->pending_interrupt)) {
                 if (interrupts_disabled_by_C(the_env)) {
                         set_guard_page(the_env);
                 } else if (!interrupts_disabled_by_lisp(the_env)) {
@@ -726,7 +726,7 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
         /* We access the environment when it was protected. That
          * means there was a pending signal. */
         if (((char*)the_env <= (char*)info->si_addr) &&
-            ((char*)info->si_addr <= (char*)(the_env+1)))
+            ((char*)info->si_addr <= (char*)(the_env+sizeof(*the_env)+1)))
         {
                 mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
