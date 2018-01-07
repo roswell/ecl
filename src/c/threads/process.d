@@ -185,30 +185,30 @@ thread_cleanup(void *aux)
    * executed, never use pthread_cancel() to kill a process, but
    * rather use the lisp functions mp_interrupt_process() and
    * mp_process_kill().
+   *
+   * NOTE: to avoid race conditions, this method must be executed
+   * while process.start_stop_spinlock is held.
    */
   cl_object process = (cl_object)aux;
   cl_env_ptr env = process->process.env;
-  /* Block interrupts during the execution of this method */
-  ECL_WITH_SPINLOCK_BEGIN(env, &process->process.start_stop_spinlock) {
-    /* The following flags will disable all interrupts. */
-    AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
-    if (env) ecl_disable_interrupts_env(env);
+  /* The following flags will disable all interrupts. */
+  AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
+  if (env) ecl_disable_interrupts_env(env);
 #ifdef HAVE_SIGPROCMASK
-    /* ...but we might get stray signals. */
-    {
-      sigset_t new[1];
-      sigemptyset(new);
-      sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
-      pthread_sigmask(SIG_BLOCK, new, NULL);
-    }
+  /* ...but we might get stray signals. */
+  {
+	  sigset_t new[1];
+	  sigemptyset(new);
+	  sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
+	  pthread_sigmask(SIG_BLOCK, new, NULL);
+  }
 #endif
-    process->process.env = NULL;
-    ecl_unlist_process(process);
-    mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
-    ecl_set_process_env(NULL);
-    if (env) _ecl_dealloc_env(env);
-    AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
-  } ECL_WITH_SPINLOCK_END;
+  process->process.env = NULL;
+  ecl_unlist_process(process);
+  mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
+  ecl_set_process_env(NULL);
+  if (env) _ecl_dealloc_env(env);
+  AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -276,6 +276,7 @@ static DWORD WINAPI thread_entry_point(void *arg)
     } ECL_RESTART_CASE_END;
     /* This will disable interrupts during the exit
      * so that the unwinding is not interrupted. */
+    ecl_get_spinlock(env, &process->process.start_stop_spinlock);
     process->process.phase = ECL_PROCESS_EXITING;
     ecl_bds_unwind1(env);
   } ECL_CATCH_ALL_END;
@@ -286,9 +287,13 @@ static DWORD WINAPI thread_entry_point(void *arg)
    */
 #ifdef ECL_WINDOWS_THREADS
   thread_cleanup(process);
-  return 1;
 #else
   pthread_cleanup_pop(1);
+#endif
+  ecl_giveup_spinlock(&process->process.start_stop_spinlock);
+#ifdef ECL_WINDOWS_THREADS
+  return 1;
+#else
   return NULL;
 #endif
 }
@@ -416,7 +421,9 @@ ecl_release_current_thread(void)
 #endif
 
   int cleanup = env->cleanup;
-  thread_cleanup(env->own_process);
+  ECL_WITH_SPINLOCK_BEGIN(env, &env->own_process->process.start_stop_spinlock) {
+	  thread_cleanup(env->own_process);
+  } ECL_WITH_SPINLOCK_END;
 #ifdef GBC_BOEHM
   if (cleanup) {
     GC_unregister_my_thread();
