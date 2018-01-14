@@ -834,8 +834,8 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
 # endif /* !ECL_MS_WINDOWS_HOST */
 #endif /* !HAVE_DIRENT_H */
 
-  ecl_enable_interrupts();
  OUTPUT:
+  ecl_enable_interrupts();
   return cl_nreverse(out);
 }
 

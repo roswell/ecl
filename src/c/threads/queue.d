@@ -358,6 +358,7 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
     }
   }
   ecl_giveup_spinlock(&q->queue.spinlock);
+  ecl_enable_interrupts_env(the_env);
   ecl_process_yield();
 }
 
