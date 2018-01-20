@@ -1876,7 +1876,7 @@ extern ECL_API cl_object si_copy_file(cl_object orig, cl_object end);
 #define ecl_disable_interrupts_env(env) ((env)->disable_interrupts=1)
 #define ecl_enable_interrupts_env(env) (((env)->disable_interrupts^=1) && (ecl_check_pending_interrupts(env),0))
 #endif
-#define ecl_clear_interrupts_env(env) ((env)->pendinginterrupts=0)
+#define ecl_clear_interrupts_env(env) ((env)->interrupt_struct->pending_interrupt=ECL_NIL)
 #define ecl_clear_interrupts() ecl_clear_interrupts(&cl_env)
 #define ecl_disable_interrupts() ecl_disable_interrupts_env(&cl_env)
 #define ecl_enable_interrupts() ecl_enable_interrupts_env(&cl_env)
