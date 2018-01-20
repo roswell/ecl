@@ -712,6 +712,12 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 "also known as 'bus or segmentation fault'.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
+        static const char *interrupt_msg =
+                "\n;;;\n;;; Internal error:\n"
+                ";;; Detected write access to the environment while "
+                "interrupts were disabled. Usually this is caused by "
+                "a missing call to ecl_enable_interrupts.\n"
+                ";;;\n\n";
         cl_env_ptr the_env;
         reinstall_signal(sig, sigsegv_handler);
         /* The lisp environment might not be installed. */
@@ -723,15 +729,23 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 return;
 #if defined(SA_SIGINFO) && !defined(NACL)
 # if defined(ECL_USE_MPROTECT)
-        /* We access the environment when it was protected. That
-         * means there was a pending signal. */
-        if (((char*)the_env <= (char*)info->si_addr) &&
-            ((char*)info->si_addr <= (char*)(the_env+sizeof(*the_env)+1)))
+        /* We access disable_interrupts when the environment was
+         * protected. That means there was a pending signal. */
+        if (((char*)&the_env->disable_interrupts <= (char*)info->si_addr) &&
+            ((char*)info->si_addr < (char*)(&the_env->disable_interrupts+1)))
         {
                 mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
                 unblock_signal(the_env, sig);
                 handle_all_queued(the_env);
+                return;
+        } else if (the_env->disable_interrupts &&
+                   ((char*)(&the_env->disable_interrupts+1) <= (char*)info->si_addr) &&
+                   ((char*)info->si_addr < (char*)(the_env+1))) {
+                mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
+                the_env->disable_interrupts = 0;
+                unblock_signal(the_env, sig);
+                ecl_unrecoverable_error(the_env, interrupt_msg);
                 return;
         }
 # endif /* ECL_USE_MPROTECT */
