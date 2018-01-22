@@ -555,6 +555,7 @@ mp_process_enable(cl_object process)
     /* Block the thread with this spinlock until it is ready */
     process->process.start_stop_spinlock = ECL_T;
 
+    ecl_disable_interrupts_env(the_env);
 #ifdef ECL_WINDOWS_THREADS
     {
       HANDLE code;
@@ -591,6 +592,7 @@ mp_process_enable(cl_object process)
       ok = (code == 0);
     }
 #endif
+    ecl_enable_interrupts_env(the_env);
   } ECL_UNWIND_PROTECT_EXIT {
     if (!ok) {
       ecl_unlist_process(process);
