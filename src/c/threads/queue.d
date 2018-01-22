@@ -34,6 +34,8 @@ void ECL_INLINE
 ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 {
   cl_object own_process = the_env->own_process;
+  if(*lock == own_process)
+    return;
   while (!AO_compare_and_swap_full((AO_t*)lock, (AO_t)ECL_NIL,
                                    (AO_t)own_process)) {
     ecl_process_yield();
