@@ -375,7 +375,7 @@ handle_all_queued(cl_env_ptr env)
 static void
 queue_signal(cl_env_ptr env, cl_object code, int allocate)
 {
-        ECL_WITH_SPINLOCK_BEGIN(env, &env->interrupt_struct->signal_queue_spinlock) {
+        ECL_WITH_SPINLOCK_BEGIN(ecl_process_env(), &env->interrupt_struct->signal_queue_spinlock) {
                 cl_object record;
                 if (allocate) {
                         record = ecl_list1(ECL_NIL);
