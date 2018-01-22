@@ -197,10 +197,10 @@ thread_cleanup(void *aux)
 #ifdef HAVE_SIGPROCMASK
   /* ...but we might get stray signals. */
   {
-	  sigset_t new[1];
-	  sigemptyset(new);
-	  sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
-	  pthread_sigmask(SIG_BLOCK, new, NULL);
+    sigset_t new[1];
+    sigemptyset(new);
+    sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
+    pthread_sigmask(SIG_BLOCK, new, NULL);
   }
 #endif
   process->process.env = NULL;
@@ -518,88 +518,93 @@ mp_process_yield(void)
 cl_object
 mp_process_enable(cl_object process)
 {
-  cl_env_ptr process_env;
-  int ok;
-  /* Try to gain exclusive access to the process at the same
-   * time we ensure that it is inactive. This prevents two
-   * concurrent calls to process-enable from different threads
-   * on the same process */
-  unlikely_if (!AO_compare_and_swap_full((AO_t*)&process->process.phase,
-                                         ECL_PROCESS_INACTIVE,
-                                         ECL_PROCESS_BOOTING)) {
-    FEerror("Cannot enable the running process ~A.", 1, process);
-  }
-  process->process.parent = mp_current_process();
-  process->process.trap_fpe_bits =
-    process->process.parent->process.env->trap_fpe_bits;
-  ecl_list_process(process);
+  cl_env_ptr process_env = NULL;
+  cl_env_ptr the_env = ecl_process_env();
+  int ok = 0;
+  ECL_UNWIND_PROTECT_BEGIN(the_env) {
+    /* Try to gain exclusive access to the process at the same
+     * time we ensure that it is inactive. This prevents two
+     * concurrent calls to process-enable from different threads
+     * on the same process */
+    unlikely_if (!AO_compare_and_swap_full((AO_t*)&process->process.phase,
+                                           ECL_PROCESS_INACTIVE,
+                                           ECL_PROCESS_BOOTING)) {
+      FEerror("Cannot enable the running process ~A.", 1, process);
+    }
+    process->process.parent = mp_current_process();
+    process->process.trap_fpe_bits =
+      process->process.parent->process.env->trap_fpe_bits;
+    ecl_list_process(process);
 
-  /* Link environment and process together */
-  process_env = _ecl_alloc_env(ecl_process_env());
-  process_env->own_process = process;
-  process->process.env = process_env;
+    /* Link environment and process together */
+    process_env = _ecl_alloc_env(the_env);
+    process_env->own_process = process;
+    process->process.env = process_env;
 
-  ecl_init_env(process_env);
-  process_env->trap_fpe_bits = process->process.trap_fpe_bits;
-  process_env->bindings_array = process->process.initial_bindings;
-  process_env->thread_local_bindings_size = 
-    process_env->bindings_array->vector.dim;
-  process_env->thread_local_bindings =
-    process_env->bindings_array->vector.self.t;
+    ecl_init_env(process_env);
+    process_env->trap_fpe_bits = process->process.trap_fpe_bits;
+    process_env->bindings_array = process->process.initial_bindings;
+    process_env->thread_local_bindings_size = 
+      process_env->bindings_array->vector.dim;
+    process_env->thread_local_bindings =
+      process_env->bindings_array->vector.self.t;
 
-  /* Activate the barrier so that processes can immediately start waiting. */
-  mp_barrier_unblock(1, process->process.exit_barrier);
+    /* Activate the barrier so that processes can immediately start waiting. */
+    mp_barrier_unblock(1, process->process.exit_barrier);
 
-  /* Block the thread with this spinlock until it is ready */
-  process->process.start_stop_spinlock = ECL_T;
+    /* Block the thread with this spinlock until it is ready */
+    process->process.start_stop_spinlock = ECL_T;
 
 #ifdef ECL_WINDOWS_THREADS
-  {
-    HANDLE code;
-    DWORD threadId;
-
-    code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
-    ok = (process->process.thread = code) != NULL;
-  }
-#else
-  {
-    int code;
-    pthread_attr_t pthreadattr;
-
-    pthread_attr_init(&pthreadattr);
-    pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
-    /*
-     * We launch the thread with the signal mask specified in cl_core.
-     * The reason is that we might need to block certain signals
-     * to be processed by the signal handling thread in unixint.d
-     */
-#ifdef HAVE_SIGPROCMASK
     {
-      sigset_t new, previous;
-      sigfillset(&new);
-      pthread_sigmask(SIG_BLOCK, &new, &previous);
-      code = pthread_create(&process->process.thread, &pthreadattr,
-                            thread_entry_point, process);
-      pthread_sigmask(SIG_SETMASK, &previous, NULL);
+      HANDLE code;
+      DWORD threadId;
+
+      code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
+      ok = (process->process.thread = code) != NULL;
     }
 #else
-    code = pthread_create(&process->process.thread, &pthreadattr,
-                          thread_entry_point, process);
+    {
+      int code;
+      pthread_attr_t pthreadattr;
+
+      pthread_attr_init(&pthreadattr);
+      pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
+      /*
+       * We launch the thread with the signal mask specified in cl_core.
+       * The reason is that we might need to block certain signals
+       * to be processed by the signal handling thread in unixint.d
+       */
+#ifdef HAVE_SIGPROCMASK
+      {
+        sigset_t new, previous;
+        sigfillset(&new);
+        pthread_sigmask(SIG_BLOCK, &new, &previous);
+        code = pthread_create(&process->process.thread, &pthreadattr,
+                              thread_entry_point, process);
+        pthread_sigmask(SIG_SETMASK, &previous, NULL);
+      }
+#else
+      code = pthread_create(&process->process.thread, &pthreadattr,
+                            thread_entry_point, process);
 #endif
-    ok = (code == 0);
-  }
+      ok = (code == 0);
+    }
 #endif
-  if (!ok) {
-    ecl_unlist_process(process);
-    /* Disable the barrier and alert possible waiting processes. */
-    mp_barrier_unblock(3, process->process.exit_barrier,
-                       @':disable', ECL_T);
-    process->process.phase = ECL_PROCESS_INACTIVE;
-    process->process.env = NULL;
-    _ecl_dealloc_env(process_env);
-  }
-  /* Unleash the thread */
-  process->process.start_stop_spinlock = ECL_NIL;
+  } ECL_UNWIND_PROTECT_EXIT {
+    if (!ok) {
+      ecl_unlist_process(process);
+      /* Disable the barrier and alert possible waiting processes. */
+      mp_barrier_unblock(3, process->process.exit_barrier,
+                         @':disable', ECL_T);
+      process->process.phase = ECL_PROCESS_INACTIVE;
+      process->process.env = NULL;
+      if(process_env != NULL)
+        _ecl_dealloc_env(process_env);
+    }
+    /* Unleash the thread */
+    ecl_giveup_spinlock(&process->process.start_stop_spinlock);
+  } ECL_UNWIND_PROTECT_END;
 
   @(return (ok? process : ECL_NIL));
 }
