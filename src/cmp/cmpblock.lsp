@@ -48,11 +48,11 @@
 
 (defun c2block (c1form blk body)
   (declare (ignore c1form))
+  (setf (blk-exit blk) *exit*
+        (blk-destination blk) *destination*)
   (if (plusp (var-ref (blk-var blk)))
       (let* ((blk-var (blk-var blk))
              (*env-lvl* *env-lvl*))
-        (setf (blk-exit blk) *exit*
-              (blk-destination blk) *destination*)
         (wt-nl-open-brace)
         (unless (or (blk-ref-ccb blk) (blk-ref-clb blk))
           (setf (var-kind blk-var) :object
@@ -70,10 +70,7 @@
           (wt "}"))
         (when (blk-ref-ccb blk) (decf *env*))
         (wt-nl-close-brace))
-      (progn
-        (setf (blk-exit blk) *exit*)
-        (setf (blk-destination blk) *destination*)
-        (c2expr body))))
+      (c2expr body)))
 
 (defun c1return-from (args)
   (check-args-number 'RETURN-FROM args 1 2)

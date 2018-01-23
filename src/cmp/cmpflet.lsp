@@ -185,7 +185,7 @@
                  (*env* *env*)
                  (*inline-blocks* 0)
                  (*env-lvl* *env-lvl*))
-  (declare (ignore c1form))
+  (declare (ignore c1form labels))
   ;; create location for each function which is returned,
   ;; either in lexical:
   (loop with env-grows = nil
@@ -257,6 +257,7 @@
 (defun local-function-ref (fname &optional build-object)
   (multiple-value-bind (fun ccb clb unw)
       (cmp-env-search-function fname)
+    (declare (ignore unw))
     (when fun
       (when (functionp fun) 
         (when build-object
@@ -283,8 +284,7 @@
     fun))
 
 (defun c2call-local (c1form fun args)
-  (declare (type fun fun)
-           (ignore c1form))
+  (declare (type fun fun))
   (unless (c2try-tail-recursive-call fun args)
     (let ((*inline-blocks* 0)
           (*temp* *temp*))
