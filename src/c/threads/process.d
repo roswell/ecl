@@ -395,7 +395,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   process->process.env = env;
   process->process.phase = ECL_PROCESS_BOOTING;
   process->process.thread = current;
-  ecl_list_process(process);
 
   ecl_init_env(env);
   env->cleanup = registered;
@@ -404,6 +403,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   env->thread_local_bindings = env->bindings_array->vector.self.t;
   ecl_enable_interrupts_env(env);
 
+  ecl_list_process(process);
   /* Activate the barrier so that processes can immediately start waiting. */
   mp_barrier_unblock(1, process->process.exit_barrier);
   process->process.phase = ECL_PROCESS_ACTIVE;
@@ -421,9 +421,10 @@ ecl_release_current_thread(void)
 #endif
 
   int cleanup = env->cleanup;
-  ECL_WITH_SPINLOCK_BEGIN(env, &env->own_process->process.start_stop_spinlock) {
-	  thread_cleanup(env->own_process);
-  } ECL_WITH_SPINLOCK_END;
+  cl_object own_process = env->own_process;
+  ecl_get_spinlock(env, &own_process->process.start_stop_spinlock);
+  thread_cleanup(own_process);
+  ecl_giveup_spinlock(&own_process->process.start_stop_spinlock);
 #ifdef GBC_BOEHM
   if (cleanup) {
     GC_unregister_my_thread();
