@@ -367,9 +367,14 @@ si_handle_signal(cl_object signal_code, cl_object process)
 static void
 handle_all_queued(cl_env_ptr env)
 {
+        /* We have to save and later restore env->function for the
+         * case that we get interrupted directly after
+         * ecl_function_dispatch */
+        cl_object fun = env->function;
         while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
                 handle_signal_now(pop_signal(env), env->own_process);
         }
+        env->function = fun;
 }
 
 static void
