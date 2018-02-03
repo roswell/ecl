@@ -778,5 +778,5 @@ them so."
     (si::package-lock "COMMON-LISP" x)
     nil))
 
-(setf clos::*clos-booted* t)
+(setf *clos-booted* t)
 
