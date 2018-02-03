@@ -239,7 +239,10 @@ _ecl_alloc_env(cl_env_ptr parent)
   }
 # endif
 #endif
-  output->interrupt_struct = ecl_alloc_unprotected(sizeof(*output->interrupt_struct));
+  if (!ecl_option_values[ECL_OPT_BOOTED])
+    output->interrupt_struct = ecl_alloc_unprotected(sizeof(*output->interrupt_struct));
+  else
+    output->interrupt_struct = ecl_alloc(sizeof(*output->interrupt_struct));
   {
     size_t bytes = cl_core.default_sigmask_bytes;
     if (bytes == 0) {
