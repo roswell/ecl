@@ -334,8 +334,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
                 if (ecl_unlikely(__new_top >= __env->stack_limit)) {    \
                         __new_top = ecl_stack_grow(__env);              \
                 }                                                       \
-                *__new_top = (o);                                       \
-                __env->stack_top = __new_top+1; } while (0)
+                __env->stack_top = __new_top+1;                         \
+                *__new_top = (o); } while (0)
 
 #define ECL_STACK_POP_UNSAFE(env) *(--((env)->stack_top))
 

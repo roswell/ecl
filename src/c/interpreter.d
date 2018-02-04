@@ -124,8 +124,8 @@ ecl_stack_frame_push(cl_object f, cl_object o)
   if (top >= env->stack_limit) {
     top = ecl_stack_grow(env);
   }
-  *top = o;
   env->stack_top = ++top;
+  *(top-1) = o;
   f->frame.base = top - (++(f->frame.size));
   f->frame.stack = env->stack;
 }
