@@ -367,13 +367,23 @@ si_handle_signal(cl_object signal_code, cl_object process)
 static void
 handle_all_queued(cl_env_ptr env)
 {
-        /* We have to save and later restore env->function for the
-         * case that we get interrupted directly after
-         * ecl_function_dispatch */
+        /* We have to save and later restore env->function,
+         * env->nvalues and env->values to ensure that they don't get
+         * overwritten by the interrupting code */
         cl_object fun = env->function;
+        cl_index nvalues = env->nvalues;
+        cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
+        memcpy(values, env->values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+        /* We might have been interrupted while we push/pop in the
+         * stack. Increasing env->stack_top ensures that we don't
+         * overwrite the topmost stack value. */
+        env->stack_top++;
         while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
                 handle_signal_now(pop_signal(env), env->own_process);
         }
+        env->stack_top--;
+        memcpy(env->values, values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+        env->nvalues = nvalues;
         env->function = fun;
 }
 
