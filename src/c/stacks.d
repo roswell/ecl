@@ -532,6 +532,12 @@ frs_overflow(void)              /* used as condition in list.d */
 ecl_frame_ptr
 _ecl_frs_push(register cl_env_ptr env, register cl_object val)
 {
+  /* We store a dummy tag first, to make sure that it is safe to
+   * interrupt this method with a call to ecl_unwind. Otherwise, a
+   * stray ECL_PROTECT_TAG will lead to segfaults. AO_store_full is
+   * needed to ensure that the CPU doesn't reorder the memory
+   * stores. */
+  AO_store_full((AO_t*)&(env->frs_top+1)->frs_val,(AO_t)ECL_DUMMY_TAG);
   ecl_frame_ptr output = ++env->frs_top;
   if (output >= env->frs_limit) {
     frs_overflow();

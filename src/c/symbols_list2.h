@@ -74,6 +74,7 @@ cl_symbols[] = {
 {"T",NULL},
 {SYS_ "UNBOUND","si_unbound"},
 {SYS_ "PROTECT-TAG",NULL},
+{SYS_ "DUMMY-TAG",NULL},
 {SYS_ "*RESTART-CLUSTERS*",NULL},
 {SYS_ "*HANDLER-CLUSTERS*",NULL},
 
