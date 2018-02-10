@@ -33,14 +33,9 @@
 (defstruct (ref (:print-object print-ref))
   name                  ;;; Identifier of reference.
   (ref 0 :type fixnum)  ;;; Number of references.
-  ref-ccb               ;;; Cross closure reference.
-                        ;;; During Pass1, T or NIL.
-                        ;;; During Pass2, the index into the closure env
-  ref-clb               ;;; Cross local function reference.
-                        ;;; During Pass1, T or NIL.
-                        ;;; During Pass2, the lex-address for the
-                        ;;; block id, or NIL.
-  read-nodes            ;;; Nodes (c1forms) in which the reference occurs
+  ref-ccb               ;;; Cross closure reference: T or NIL.
+  ref-clb               ;;; Cross local function reference: T or NIL.
+  read-nodes            ;;; Nodes (c1forms) in which the reference occurs.
 )
 
 (deftype OBJECT () `(not (or fixnum character float)))
@@ -119,13 +114,9 @@
                         ;;; During Pass1, T or NIL.
                         ;;; During Pass2, the vs-address for the
                         ;;; function closure, or NIL.
-;  ref-ccb              ;;; Cross closure reference.
-                        ;;; During Pass1, T or NIL, depending on whether a
-                        ;;; function object will be built.
-                        ;;; During Pass2, the vs-address for the function
-                        ;;; closure, or NIL.
+;  ref-ccb              ;;; Cross closure reference: T or NIL.
 ;  ref-clb              ;;; Unused.
-;  read-nodes           ;;; Nodes (c1forms) in which the reference occurs
+;  read-nodes           ;;; Nodes (c1forms) in which the reference occurs.
   cfun                  ;;; The cfun for the function.
   (level 0)             ;;; Level of lexical nesting for a function.
   (env 0)               ;;; Size of env of closure.
