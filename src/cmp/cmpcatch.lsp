@@ -53,11 +53,16 @@
 
 (defun c1unwind-protect (args)
   (check-args-number 'UNWIND-PROTECT args 1)
-  (incf *setjmps*)
-  (let ((form (let ((*cmp-env* (cmp-env-mark 'UNWIND-PROTECT)))
-                (c1expr (first args)))))
-    (make-c1form* 'UNWIND-PROTECT :type (c1form-type form) :sp-change t
-                  :args form (c1progn (rest args)))))
+  (cond
+    ((null (rest args))
+     (cmpdebug "UNWIND-PROTECT without CLEANUP-FORMS was replaced by its FORM.")
+     (c1expr (first args)))
+    (T
+     (incf *setjmps*)
+     (let ((form (let ((*cmp-env* (cmp-env-mark 'UNWIND-PROTECT)))
+                   (c1expr (first args)))))
+       (make-c1form* 'UNWIND-PROTECT :type (c1form-type form) :sp-change t
+                     :args form (c1progn (rest args)))))))
 
 (defun c2unwind-protect (c1form form body)
   (declare (ignore c1form))
