@@ -103,7 +103,7 @@ of the occurrences in those lists."
       (values (if blk-type (values-type-or blk-type normal-type) normal-type)
               assumptions))))
 
-(defun p1return-from (c1form assumptions blk return-type value variable-or-nil)
+(defun p1return-from (c1form assumptions blk return-type value)
   (let* ((values-type (p1propagate value assumptions))
          (blk-type (blk-type blk)))
     (setf (blk-type blk) (if blk-type

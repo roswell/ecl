@@ -92,13 +92,13 @@
               (unw (setf type 'UNWIND-PROTECT)))
         (incf (blk-ref blk))
         (setf (blk-type blk) (values-type-or (blk-type blk) (c1form-type val)))
-        (let ((output (make-c1form* 'RETURN-FROM :type 'T :args blk type val var)))
+        (let ((output (make-c1form* 'RETURN-FROM :type 'T :args blk type val)))
           (when (or ccb clb unw)
             (add-to-read-nodes var output))
           output)))))
 
-(defun c2return-from (c1form blk type val var)
-  (declare (ignore var c1form))
+(defun c2return-from (c1form blk type val)
+  (declare (ignore c1form))
   (case type
     (CCB
      (let ((*destination* 'VALUES)) (c2expr* val))
