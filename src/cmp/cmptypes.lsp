@@ -165,19 +165,13 @@
 
 (defstruct (blk (:include ref))
 ;  name                 ;;; Block name.
-;  (ref 0 :type fixnum) ;;; Number of references.
-;  ref-ccb              ;;; Cross closure reference.
-                        ;;; During Pass1, T or NIL.
-                        ;;; During Pass2, the ccb-lex for the
-                        ;;; block id, or NIL.
-;  ref-clb              ;;; Cross local function reference.
-                        ;;; During Pass1, T or NIL.
-                        ;;; During Pass2, the lex-address for the
-                        ;;; block id, or NIL.
-;  read-nodes           ;;; Nodes (c1forms) in which the reference occurs
+;  (ref 0 :type fixnum) ;;; Total number of block references.
+;  ref-ccb              ;;; Unused (see blk-var).
+;  ref-clb              ;;; Unused (see blk-var).
+;  read-nodes           ;;; Unused (see blk-var).
   exit                  ;;; Where to return.  A label.
   destination           ;;; Where the value of the block to go.
-  var                   ;;; Variable containing the block ID.
+  var                   ;;; Variable containing the block id and its references.
   (type '(VALUES &REST T)) ;;; Estimated type.
   )
 

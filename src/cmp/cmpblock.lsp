@@ -35,7 +35,7 @@
            (body (let ((*cmp-env* (cmp-env-copy)))
                    (cmp-env-register-block blk)
                    (c1progn (rest args)))))
-      (when (or (blk-ref-ccb blk) (blk-ref-clb blk))
+      (when (or (var-ref-ccb blk-var) (var-ref-clb blk-var))
         (incf *setjmps*))
       (if (plusp (blk-ref blk))
           ;; FIXME! By simplifying the type of a BLOCK form so much (it is
@@ -53,12 +53,13 @@
   (if (plusp (var-ref (blk-var blk)))
       (let* ((blk-var (blk-var blk))
              (*env-lvl* *env-lvl*))
+        (check-vref blk-var)
         (wt-nl-open-brace)
-        (unless (or (blk-ref-ccb blk) (blk-ref-clb blk))
-          (setf (var-kind blk-var) :object
-                (var-loc blk-var) (next-lcl))
+        (when (eq :object (var-kind blk-var))
+          (setf (var-loc blk-var) (next-lcl))
           (wt-nl "cl_object " blk-var ";"))
-        (when (env-grows (blk-ref-ccb blk))
+        (when (env-grows (var-ref-ccb blk-var))
+          ;; var is referenced from a closure which may escape.
           (let ((env-lvl *env-lvl*))
             (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
         (bind "ECL_NEW_FRAME_ID(cl_env_copy)" blk-var)
@@ -68,7 +69,7 @@
           (wt-nl "} else {")
           (c2expr body)
           (wt "}"))
-        (when (blk-ref-ccb blk) (decf *env*))
+        (when (var-ref-ccb blk-var) (decf *env*))
         (wt-nl-close-brace))
       (c2expr body)))
 
@@ -77,29 +78,23 @@
   (let ((name (first args)))
     (unless (symbolp name)
       (cmperr "The block name ~s is not a symbol." name))
-    ;; XXX: fixme here
     (multiple-value-bind (blk ccb clb unw)
         (cmp-env-search-block name)
       (unless blk
         (cmperr "The block ~s is undefined." name))
       (let* ((val (c1expr (second args)))
-             (var nil)
+             (var (blk-var blk))
              (type T))
-        (cond (ccb (setf (blk-ref-ccb blk) t
-                         type 'CCB
-                         var (blk-var blk)
-                         (var-kind var) 'CLOSURE
+        (cond (ccb (setf type 'CCB
                          (var-ref-ccb var) T))
-              (clb (setf (blk-ref-clb blk) t
-                         type 'CLB
-                         var (blk-var blk)))
-              (unw (setf type 'UNWIND-PROTECT
-                         var (blk-var blk))))
+              (clb (setf type 'CLB
+                         (var-ref-clb var) T))
+              (unw (setf type 'UNWIND-PROTECT)))
         (incf (blk-ref blk))
         (setf (blk-type blk) (values-type-or (blk-type blk) (c1form-type val)))
-        (let ((output (make-c1form* 'RETURN-FROM :type 'T
-                                    :args blk type val var)))
-          (when var (add-to-read-nodes var output))
+        (let ((output (make-c1form* 'RETURN-FROM :type 'T :args blk type val var)))
+          (when (or ccb clb unw)
+            (add-to-read-nodes var output))
           output)))))
 
 (defun c2return-from (c1form blk type val var)
