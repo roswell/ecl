@@ -178,11 +178,9 @@
 (defstruct (tag (:include ref))
 ;  name                 ;;; Tag name.
 ;  (ref 0 :type fixnum) ;;; Number of references.
-;  ref-ccb              ;;; Cross closure reference.
-                        ;;; During Pass1, T or NIL.
-;  ref-clb              ;;; Cross local function reference.
-                        ;;; During Pass1, T or NIL.
-;  read-nodes           ;;; Nodes (c1forms) in which the reference occurs
+;  ref-ccb              ;;; Unused (see tag-var).
+;  ref-clb              ;;; Unused (see tag-var).
+;  read-nodes           ;;; Unused (see tag-var).
   label                 ;;; Where to jump: a label.
   unwind-exit           ;;; Where to unwind-no-exit.
   var                   ;;; Variable containing frame ID.

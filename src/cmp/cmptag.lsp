@@ -197,11 +197,9 @@
       (unless tag
         (cmperr "Undefined tag ~A" name))
       (let ((var (tag-var tag)))
-        (cond (ccb (setf (tag-ref-ccb tag) t
-                         (var-ref-ccb var) T
+        (cond (ccb (setf (var-ref-ccb var) t
                          (var-kind var) 'CLOSURE))
-              (clb (setf (tag-ref-clb tag) t
-                         (var-ref-clb var) t
+              (clb (setf (var-ref-clb var) t
                          (var-kind var) 'LEXICAL))
               (unw (unless (var-kind var)
                      (setf (var-kind var) :OBJECT))))
