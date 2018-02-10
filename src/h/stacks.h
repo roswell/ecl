@@ -117,14 +117,14 @@ static inline void ecl_bds_push_inl(cl_env_ptr env, cl_object s)
 
 static inline void ecl_bds_unwind1_inl(cl_env_ptr env)
 {
-        ecl_bds_ptr slot = env->bds_top--;
-        cl_object s = slot->symbol;
+        cl_object s = env->bds_top->symbol;
 # ifdef ECL_THREADS
         cl_object *location = env->thread_local_bindings + s->symbol.binding;
-        *location = slot->value;
+        *location = env->bds_top->value;
 # else
-        s->symbol.value = slot->value;
+        s->symbol.value = env->bds_top->value;
 # endif
+        --env->bds_top;
 }
 
 # ifdef ECL_THREADS

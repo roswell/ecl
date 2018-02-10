@@ -183,7 +183,7 @@ ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index)
 #ifdef ECL_THREADS
     ecl_bds_unwind1(env);
 #else
-  bds->symbol->symbol.value = bds->value;
+    bds->symbol->symbol.value = bds->value;
 #endif
   env->bds_top = new_bds_top;
 }
@@ -359,14 +359,14 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 void
 ecl_bds_unwind1(cl_env_ptr env)
 {
-  ecl_bds_ptr slot = env->bds_top--;
-  cl_object s = slot->symbol;
+  cl_object s = env->bds_top->symbol;
 #ifdef ECL_THREADS
   cl_object *location = env->thread_local_bindings + s->symbol.binding;
-  *location = slot->value;
+  *location = env->bds_top->value;
 #else
-  s->symbol.value = slot->value;
+  s->symbol.value = env->bds_top->value;
 #endif
+  --env->bds_top;
 }
 
 #ifdef ECL_THREADS
@@ -548,11 +548,13 @@ void
 ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
 {
   env->nlj_fr = fr;
-  while (env->frs_top != fr && env->frs_top->frs_val != ECL_PROTECT_TAG)
-    --env->frs_top;
-  env->ihs_top = env->frs_top->frs_ihs;
-  ecl_bds_unwind(env, env->frs_top->frs_bds_top_index);
-  ECL_STACK_SET_INDEX(env, env->frs_top->frs_sp);
+  ecl_frame_ptr top = env->frs_top;
+  while (top != fr && top->frs_val != ECL_PROTECT_TAG)
+    --top;
+  env->ihs_top = top->frs_ihs;
+  ecl_bds_unwind(env, top->frs_bds_top_index);
+  ECL_STACK_SET_INDEX(env, top->frs_sp);
+  env->frs_top = top;
   ecl_longjmp(env->frs_top->frs_jmpbuf, 1);
   /* never reached */
 }
