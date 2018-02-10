@@ -238,7 +238,13 @@ typedef struct ecl_frame {
 } *ecl_frame_ptr;
 
 extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_object);
-#define ecl_frs_push(env,val)  ecl_setjmp(_ecl_frs_push(env,val)->frs_jmpbuf)
+#define ecl_frs_push(env,val) \
+        ecl_frame_ptr __frame = _ecl_frs_push(env,val); \
+        ecl_disable_interrupts_env(env); \
+        int __ecl_frs_push_result = ecl_setjmp(__frame->frs_jmpbuf); \
+        __frame->frs_val = val; \
+        ecl_enable_interrupts_env(env)
+
 #define ecl_frs_pop(env) ((env)->frs_top--)
 
 /*******************
@@ -385,7 +391,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         bool __unwinding; ecl_frame_ptr __next_fr; \
         const cl_env_ptr __the_env = (the_env);    \
         cl_index __nr; \
-        if (ecl_frs_push(__the_env,ECL_PROTECT_TAG)) {  \
+        ecl_frs_push(__the_env,ECL_PROTECT_TAG);   \
+        if (__ecl_frs_push_result) {      \
                 __unwinding=1; __next_fr=__the_env->nlj_fr; \
         } else {
 
@@ -403,14 +410,16 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 #define ECL_BLOCK_BEGIN(the_env,id) do {                        \
         const cl_object __id = ECL_NEW_FRAME_ID(the_env);       \
         const cl_env_ptr __the_env = (the_env);                 \
-        if (ecl_frs_push(__the_env,__id) == 0)
+        ecl_frs_push(__the_env,__id);                           \
+        if (__ecl_frs_push_result == 0)
 
 #define ECL_BLOCK_END \
         ecl_frs_pop(__the_env); } while(0)
 
 #define ECL_CATCH_BEGIN(the_env,tag) do {       \
         const cl_env_ptr __the_env = (the_env); \
-        if (ecl_frs_push(__the_env,tag) == 0) {
+        ecl_frs_push(__the_env,tag);            \
+        if (__ecl_frs_push_result == 0) {
 
 #define ECL_CATCH_END } \
         ecl_frs_pop(__the_env); } while (0)
@@ -420,7 +429,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         const cl_object __ecl_tag = ecl_list1(names);                   \
         ecl_bds_bind(__the_env, ECL_RESTART_CLUSTERS,                   \
                      si_bind_simple_restarts(__ecl_tag, names));        \
-        if (ecl_frs_push(__the_env,__ecl_tag) == 0) {
+        ecl_frs_push(__the_env,__ecl_tag);                              \
+        if (__ecl_frs_push_result == 0) {
 
 #define ECL_RESTART_CASE(code, args)                                    \
         } else if (__the_env->values[0] == ecl_make_fixnum(code)) {     \
@@ -436,7 +446,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         const cl_object __ecl_tag = ecl_list1(names);                   \
         ecl_bds_bind(__the_env, ECL_HANDLER_CLUSTERS,                   \
                      si_bind_simple_handlers(__ecl_tag, names));        \
-        if (ecl_frs_push(__the_env,__ecl_tag) == 0) {
+        ecl_frs_push(__the_env,__ecl_tag);                              \
+        if (__ecl_frs_push_result == 0) {
 
 #define ECL_HANDLER_CASE(code, args)                                    \
         } else if (__the_env->values[0] == ecl_make_fixnum(code)) {     \
@@ -452,16 +463,18 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         const cl_env_ptr __the_env = (the_env);                 \
         _try {                                                  \
         const cl_env_ptr __the_env = (the_env);                 \
-        if (ecl_frs_push(__the_env,ECL_PROTECT_TAG) == 0) {
+        ecl_frs_push(__the_env,ECL_PROTECT_TAG);                \
+        if (__ecl_frs_push_result == 0) {
 # define ECL_CATCH_ALL_IF_CAUGHT } else {
 # define ECL_CATCH_ALL_END }}                                           \
         _except(_ecl_w32_exception_filter(GetExceptionInformation())) \
         { (void)0; }                                                    \
         ecl_frs_pop(__the_env); } while(0)
 #else
-# define ECL_CATCH_ALL_BEGIN(the_env) do {      \
-        const cl_env_ptr __the_env = (the_env); \
-        if (ecl_frs_push(__the_env,ECL_PROTECT_TAG) == 0) {
+# define ECL_CATCH_ALL_BEGIN(the_env) do {       \
+        const cl_env_ptr __the_env = (the_env);  \
+        ecl_frs_push(__the_env,ECL_PROTECT_TAG); \
+        if (__ecl_frs_push_result == 0) {
 # define ECL_CATCH_ALL_IF_CAUGHT } else {
 # define ECL_CATCH_ALL_END } \
         ecl_frs_pop(__the_env); } while(0)

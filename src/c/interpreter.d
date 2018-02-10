@@ -992,7 +992,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_LABEL(exit, vector);
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)exit);
-      if (ecl_frs_push(the_env,reg1) == 0) {
+      ecl_frs_push(the_env,reg1);
+      if (__ecl_frs_push_result == 0) {
         THREAD_NEXT;
       } else {
         reg0 = the_env->values[0];
@@ -1020,7 +1021,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)vector); /* FIXME! */
       vector += n * OPARG_SIZE;
-      if (ecl_frs_push(the_env,reg1) != 0) {
+      ecl_frs_push(the_env,reg1);
+      if (__ecl_frs_push_result != 0) {
         /* Wait here for gotos. Each goto sets
            VALUES(0) to an integer which ranges from 0
            to ntags-1, depending on the tag. These
@@ -1146,7 +1148,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_LABEL(exit, vector);
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)exit);
-      if (ecl_frs_push(the_env,ECL_PROTECT_TAG) != 0) {
+      ecl_frs_push(the_env,ECL_PROTECT_TAG);
+      if (__ecl_frs_push_result != 0) {
         ecl_frs_pop(the_env);
         vector = (cl_opcode *)ECL_STACK_POP_UNSAFE(the_env);
         lex_env = ECL_STACK_POP_UNSAFE(the_env);

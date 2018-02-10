@@ -544,7 +544,6 @@ _ecl_frs_push(register cl_env_ptr env, register cl_object val)
     output = env->frs_top;
   }
   output->frs_bds_top_index = env->bds_top - env->bds_org;
-  output->frs_val = val;
   output->frs_ihs = env->ihs_top;
   output->frs_sp = ECL_STACK_INDEX(env);
   return output;
