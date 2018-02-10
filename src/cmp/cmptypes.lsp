@@ -102,7 +102,7 @@
 ;;;   looking at the info-referenced-vars and info-local-referenced of its body.
 
 ;;; A LISP_CFUN or LISP_CLOSURE must be created when the function is returned.
-;;; The LISP funob may then be referenced locally or across LB or CB:
+;;; The LISP funob may then be referenced locally or across a function boundary:
 ;;;     (flet ((foo (z) (bar z))) (list #'foo)))
 ;;;     (flet ((foo (z) z)) (flet ((bar () #'foo)) (bar)))
 ;;;     (flet ((foo (z) (bar z))) #'(lambda () #'foo)))

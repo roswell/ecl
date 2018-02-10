@@ -192,19 +192,17 @@
   (let ((name (first args)))
     (unless (or (symbolp name) (integerp name))
       (cmperr "The tag name ~s is not a symbol nor an integer." name))
-    (multiple-value-bind (tag ccb clb unw)
+    (multiple-value-bind (tag cfb unw)
         (cmp-env-search-tag name)
       (unless tag
         (cmperr "Undefined tag ~A" name))
       (let ((var (tag-var tag)))
-        (cond (ccb (setf (var-ref-ccb var) t
-                         (var-kind var) 'CLOSURE))
-              (clb (setf (var-ref-clb var) t
+        (cond (cfb (setf (var-ref-clb var) t
                          (var-kind var) 'LEXICAL))
               (unw (unless (var-kind var)
                      (setf (var-kind var) :OBJECT))))
         (incf (tag-ref tag))
-        (add-to-read-nodes var (make-c1form* 'GO :args tag (or ccb clb unw)))))))
+        (add-to-read-nodes var (make-c1form* 'GO :args tag (or cfb unw)))))))
 
 (defun c2go (c1form tag nonlocal)
   (declare (ignore c1form))

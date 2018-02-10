@@ -152,8 +152,7 @@
     (and record (not (var-p record)))))
 
 (defun variable-type-in-env (name &optional (env *cmp-env*))
-  (multiple-value-bind (var ccb clb unw)
-      (cmp-env-search-var name)
+  (let ((var (cmp-env-search-var name)))
     (cond ((var-p var)
            (var-type var))
           ((si:get-sysprop name 'CMP-TYPE))
@@ -228,7 +227,7 @@
 ;;;     ( var-object ) Beppe(ccb) ccb-reference )
 
 (defun c1vref (name)
-  (multiple-value-bind (var ccb clb unw)
+  (multiple-value-bind (var cfb unw)
       (cmp-env-search-var name)
     (cond ((null var)
            (c1make-global-variable name :warn t
@@ -242,14 +241,10 @@
              ((SPECIAL GLOBAL))
              ((CLOSURE))
              ((LEXICAL)
-              (cond (ccb (setf (var-ref-clb var) nil ; replace a previous 'CLB
-                               (var-ref-ccb var) t
-                               (var-kind var) 'CLOSURE
-                               (var-loc var) 'OBJECT))
-                    (clb (setf (var-ref-clb var) t
-                               (var-loc var) 'OBJECT))))
+              (setf (var-ref-clb var) t
+                    (var-loc var) 'OBJECT))
              (t
-              (when (or clb ccb)
+              (when cfb
                 (cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."
                         (var-name var)))))
            var))))

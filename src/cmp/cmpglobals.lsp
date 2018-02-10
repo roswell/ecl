@@ -165,21 +165,22 @@ variable-record = (:block block-name) |
                   (:function function-name) |
                   (var-name {:special | nil} bound-p) |
                   (symbol si::symbol-macro macro-function) |
-                  CB | LB | UNWIND-PROTECT
-macro-record =  (function-name function) |
-                (macro-name si::macro macro-function)
-                CB | LB | UNWIND-PROTECT
+                  ECI:FUNCTION |
+                  ECI:UNWIND-PROTECT
 
-A *-NAME is a symbol. A TAG-ID is either a symbol or a number. A
-MACRO-FUNCTION is a function that provides us with the expansion
-for that local macro or symbol macro. BOUND-P is true when the
-variable has been bound by an enclosing form, while it is NIL if
-the variable-record corresponds just to a special declaration.
-CB, LB and UNWIND-PROTECT are only used by the C compiler and
-they denote closure, lexical environment and unwind-protect
-boundaries. Note that compared with the bytecodes compiler, these
-records contain an additional variable, block, tag or function
-object at the end.")
+macro-record    = (function-name function) |
+                  (macro-name si::macro macro-function)
+                  ECI:FUNCTION |
+                  ECI:UNWIND-PROTECT
+
+A *-NAME is a symbol. A TAG-ID is either a symbol or a number. A MACRO-FUNCTION
+is a function that provides us with the expansion for that local macro or symbol
+macro. BOUND-P is true when the variable has been bound by an enclosing form,
+while it is NIL if the variable-record corresponds just to a special
+declaration.  ECI:FUNCTION and ECI:UNWIND-PROTECT are only used by the C
+compiler and they denote function and unwind-protect boundaries. Note that
+compared with the bytecodes compiler, these records contain an additional
+variable, block, tag or function object at the end.")
 
 (defvar *cmp-env-root*
   (cons nil (list (list '#:no-macro 'si::macro (constantly nil))))

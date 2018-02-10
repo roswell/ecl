@@ -16,14 +16,13 @@
 
 (in-package "COMPILER")
 
-;;; A dummy variable is created to hold the block identifier.  When a
-;;; reference to the block (via return-from) is found, the var-ref
-;;; count for that variable is incremented only if the reference
-;;; appears across a boundary (CB, LB or UNWIND-PROTECT), while the
-;;; blk-ref is always incremented.  Therefore blk-ref represents
-;;; whether the block is used at all and var-ref for the dummy
-;;; variable represents whether a block identifier must be created and
-;;; stored in such variable.
+;;; A dummy variable is created to hold the block identifier.  When a reference
+;;; to the block (via `return-from') is found, the `var-ref' count for that
+;;; variable is incremented only if the reference appears across a boundary
+;;; (`ECI:FUNCTION' or `ECI:UNWIND-PROTECT'), while the `blk-ref' is always
+;;; incremented.  Therefore `blk-ref' represents whether the block is used at
+;;; all and `var-ref' for the dummy variable represents whether a block
+;;; identifier must be created and stored in such variable.
 
 (defun c1block (args)
   (check-args-number 'BLOCK args 1)
@@ -38,8 +37,6 @@
       (when (or (var-ref-ccb blk-var) (var-ref-clb blk-var))
         (incf *setjmps*))
       (if (plusp (blk-ref blk))
-          ;; FIXME! By simplifying the type of a BLOCK form so much (it is
-          ;; either NIL or T), we lose a lot of information.
           (make-c1form* 'BLOCK
                         :local-vars (list blk-var)
                         :type (values-type-or (blk-type blk) (c1form-type body))
@@ -78,22 +75,20 @@
   (let ((name (first args)))
     (unless (symbolp name)
       (cmperr "The block name ~s is not a symbol." name))
-    (multiple-value-bind (blk ccb clb unw)
+    (multiple-value-bind (blk cfb unw)
         (cmp-env-search-block name)
       (unless blk
         (cmperr "The block ~s is undefined." name))
       (let* ((val (c1expr (second args)))
              (var (blk-var blk))
              (type T))
-        (cond (ccb (setf type 'CCB
-                         (var-ref-ccb var) T))
-              (clb (setf type 'CLB
+        (cond (cfb (setf type 'CLB
                          (var-ref-clb var) T))
               (unw (setf type 'UNWIND-PROTECT)))
         (incf (blk-ref blk))
         (setf (blk-type blk) (values-type-or (blk-type blk) (c1form-type val)))
         (let ((output (make-c1form* 'RETURN-FROM :type 'T :args blk type val)))
-          (when (or ccb clb unw)
+          (when (or cfb unw)
             (add-to-read-nodes var output))
           output)))))
 

@@ -97,8 +97,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                (setf (fun-referenced-funs fun) new-funs)
                (return t))))
 
-(defun c1compile-function (lambda-list-and-body &key (fun (make-fun))
-                           (name (fun-name fun)) (CB/LB 'CB))
+(defun c1compile-function (lambda-list-and-body
+                           &key (fun (make-fun)) (name (fun-name fun)))
   (let ((lambda (if name
                     `(ext:lambda-block ,name ,@lambda-list-and-body)
                     `(lambda ,@lambda-list-and-body))))
@@ -108,7 +108,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (when *current-function*
     (push fun (fun-child-funs *current-function*)))
   (let* ((*current-function* fun)
-         (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark CB/LB)))
+         (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark 'ECI:FUNCTION)))
          (setjmps *setjmps*)
          (decl (si::process-declarations (rest lambda-list-and-body)))
          (global (and *use-c-global*

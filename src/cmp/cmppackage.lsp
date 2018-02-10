@@ -14,7 +14,9 @@
 ;;;;  CMPPACKAGE -- Package definitions and exported symbols
 ;;;;
 
-(ext:package-lock "CL" nil)
+(defpackage #:ecl-cmp-internals
+  (:export #:unwind-protect
+           #:function))
 
 (defpackage "C"
   (:nicknames "COMPILER")
@@ -50,3 +52,6 @@
   (:import-from "SI" "GET-SYSPROP" "PUT-SYSPROP" "REM-SYSPROP" "MACRO"
                 "*COMPILER-CONSTANTS*" "REGISTER-GLOBAL" "CMP-ENV-REGISTER-MACROLET"
                 "COMPILER-LET"))
+
+(ext:package-lock "CL" nil)
+(ext:add-package-local-nickname "ECI" '#:ecl-cmp-internals '#:compiler)
