@@ -99,6 +99,8 @@ struct cl_env_struct {
         /* ... arithmetics ... */
         /* Note: if you change the size of these registers, change also
            BIGNUM_REGISTER_SIZE in config.h */
+        /* FIXME: actually use BIGNUM_REGISTER_SIZE; Also fix
+           handle_all_queued_interrupt_safe in unixint.d */
         cl_object big_register[3];
 
         cl_object own_process;

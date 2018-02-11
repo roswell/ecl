@@ -367,21 +367,30 @@ si_handle_signal(cl_object signal_code, cl_object process)
 static void
 handle_all_queued(cl_env_ptr env)
 {
-        /* We have to save and later restore env->function,
-         * env->nvalues and env->values to ensure that they don't get
-         * overwritten by the interrupting code */
+        while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
+                handle_signal_now(pop_signal(env), env->own_process);
+        }
+}
+
+static void
+handle_all_queued_interrupt_safe(cl_env_ptr env)
+{
+        /* We have to save and later restore thread-local variables to
+         * ensure that they don't get overwritten by the interrupting
+         * code */
         cl_object fun = env->function;
         cl_index nvalues = env->nvalues;
-        cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
+        cl_object* values = ecl_alloc_atomic(ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
         memcpy(values, env->values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+        cl_object big_register[3];
+        memcpy(big_register, env->big_register, 3*sizeof(cl_object));
         /* We might have been interrupted while we push/pop in the
          * stack. Increasing env->stack_top ensures that we don't
          * overwrite the topmost stack value. */
         env->stack_top++;
-        while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
-                handle_signal_now(pop_signal(env), env->own_process);
-        }
+        handle_all_queued(env);
         env->stack_top--;
+        memcpy(env->big_register, big_register, 3*sizeof(cl_object));
         memcpy(env->values, values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
         env->nvalues = nvalues;
         env->function = fun;
@@ -619,7 +628,7 @@ handler_fn_prototype(process_interrupt_handler, int sig, siginfo_t *siginfo, voi
                         set_guard_page(the_env);
                 } else if (!interrupts_disabled_by_lisp(the_env)) {
                         unblock_signal(the_env, sig);
-                        handle_all_queued(the_env);
+                        handle_all_queued_interrupt_safe(the_env);
                 }
         }
         errno = old_errno;
@@ -752,7 +761,7 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
                 unblock_signal(the_env, sig);
-                handle_all_queued(the_env);
+                handle_all_queued_interrupt_safe(the_env);
                 return;
         } else if (the_env->disable_interrupts &&
                    ((char*)(&the_env->disable_interrupts+1) <= (char*)info->si_addr) &&
