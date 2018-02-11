@@ -322,14 +322,19 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
   location = env->thread_local_bindings + index;
   slot = ++env->bds_top;
   if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
   *location = v;
+  ecl_enable_interrupts_env(env);
 #else
   ecl_bds_check(env);
-  (++(env->bds_top))->symbol = s;
-  env->bds_top->value = s->symbol.value; \
+  ecl_bds_ptr slot = ++(env->bds_top);
+  ecl_disable_interrupts_env(env);
+  slot->symbol = s;
+  slot->value = s->symbol.value;
   s->symbol.value = v;
+  ecl_enable_interrupts_env(env);
 #endif
 }
 
@@ -346,13 +351,18 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
   location = env->thread_local_bindings + index;
   slot = ++env->bds_top;
   if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
   if (*location == ECL_NO_TL_BINDING) *location = s->symbol.value;
+  ecl_enable_interrupts_env(env);
 #else
   ecl_bds_check(env);
-  (++(env->bds_top))->symbol = s;
-  env->bds_top->value = s->symbol.value;
+  ecl_bds_ptr slot = ++(env->bds_top);
+  ecl_disable_interrupts_env(env);
+  slot->symbol = s;
+  slot->value = s->symbol.value;
+  ecl_enable_interrupts_env(env);
 #endif
 }
 

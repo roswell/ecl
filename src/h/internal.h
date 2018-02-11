@@ -420,17 +420,7 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define ECL_WITH_GLOBAL_ENV_WRLOCK_END
 #endif /* ECL_RWLOCK */
 
-#ifdef ECL_THREADS
-# define AO_REQUIRE_CAS
-# ifdef ECL_LIBATOMIC_OPS_H
-#  include <ecl/atomic_ops.h>
-# else
-#  include <atomic_ops.h>
-# endif
-#else
-# define AO_load(x) (x)
-# define AO_store(x,y) ((x)=(y))
-#endif
+#include <ecl/ecl-atomic-ops.h>
 
 /* read.d */
 #ifdef ECL_UNICODE
