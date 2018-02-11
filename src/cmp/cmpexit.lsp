@@ -214,12 +214,13 @@
 ;;;        enclosed in a closure, and CATCH),
 
 (defun tail-recursion-possible ()
-  (dolist (ue *unwind-exit* (baboon))
+  (dolist (ue *unwind-exit*
+           (baboon :format-control "tail-recursion-possible: should never return."))
     (cond ((eq ue 'TAIL-RECURSION-MARK) (return t))
           ((or (numberp ue) (eq ue 'BDS-BIND) (eq ue 'FRAME))
            (return nil))
           ((or (consp ue) (eq ue 'JUMP) (eq ue 'IHS-ENV)))
-          (t (baboon)))))
+          (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
 
 (defun c2try-tail-recursive-call (fun args)
   (when (and *tail-recursion-info*

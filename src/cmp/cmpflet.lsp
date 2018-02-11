@@ -51,7 +51,7 @@
       (dolist (def (nreverse defs))
         (let ((fun (first def)))
           ;; The closure type will be fixed later on by COMPUTE-...
-          (push (c1compile-function (rest def) :fun fun :CB/LB 'LB)
+          (push (c1compile-function (rest def) :fun fun)
                 local-funs))))
 
     ;; When we are in a LABELs form, we have to propagate the external
@@ -185,7 +185,7 @@
                  (*env* *env*)
                  (*inline-blocks* 0)
                  (*env-lvl* *env-lvl*))
-  (declare (ignore c1form))
+  (declare (ignore c1form labels))
   ;; create location for each function which is returned,
   ;; either in lexical:
   (loop with env-grows = nil
@@ -255,8 +255,9 @@
     (c1locally (cdr args))))
 
 (defun local-function-ref (fname &optional build-object)
-  (multiple-value-bind (fun ccb clb unw)
+  (multiple-value-bind (fun cfb unw)
       (cmp-env-search-function fname)
+    (declare (ignore unw))
     (when fun
       (when (functionp fun) 
         (when build-object
@@ -273,18 +274,13 @@
               (push caller (fun-referencing-funs fun)))))
       ;; we introduce a variable to hold the funob
       (let ((var (fun-var fun)))
-        (cond (ccb (when build-object
-                     (setf (var-ref-ccb var) t
-                           (var-kind var) 'CLOSURE))
-                   (setf (fun-ref-ccb fun) t))
-              (clb (when build-object 
-                     (setf (var-ref-clb var) t
-                           (var-kind var) 'LEXICAL))))))
+        (when (and cfb build-object)
+          (setf (var-ref-clb var) t
+                (var-kind var) 'LEXICAL))))
     fun))
 
 (defun c2call-local (c1form fun args)
-  (declare (type fun fun)
-           (ignore c1form))
+  (declare (type fun fun))
   (unless (c2try-tail-recursive-call fun args)
     (let ((*inline-blocks* 0)
           (*temp* *temp*))

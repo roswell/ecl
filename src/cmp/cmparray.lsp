@@ -56,6 +56,7 @@
                                           adjustable fill-pointer
                                           displaced-to (displaced-index-offset 0)
                                           &environment env)
+  (declare (ignore env))
   ;; This optimization is always done unless we provide content. There
   ;; is no speed, debug or space reason not to do it, unless the user
   ;; specifies not to inline MAKE-ARRAY, but in that case the compiler
@@ -91,7 +92,8 @@
 ;;;
 
 (defun expand-vector-push (whole env extend &aux (args (rest whole)))
-  (declare (si::c-local))
+  (declare (si::c-local)
+           (ignore env))
   (with-clean-symbols (value vector index dimension)
     (when (or (eq (first args) 'value) ; No infinite recursion
               (not (policy-open-code-aref/aset)))

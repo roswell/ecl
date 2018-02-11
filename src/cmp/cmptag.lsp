@@ -149,8 +149,7 @@
         (when (eq :OBJECT (var-kind tag-loc))
           (setf (var-loc tag-loc) (next-lcl))
           (maybe-open-inline-block)
-          (wt-nl "cl_object " tag-loc ";")
-          (setq env-grows t))           ; just to ensure closing the block
+          (wt-nl "cl_object " tag-loc ";"))
         (bind "ECL_NEW_FRAME_ID(cl_env_copy)" tag-loc)
         (wt-nl "if (ecl_frs_push(cl_env_copy," tag-loc ")) {")
         ;; Allocate labels.
@@ -193,21 +192,17 @@
   (let ((name (first args)))
     (unless (or (symbolp name) (integerp name))
       (cmperr "The tag name ~s is not a symbol nor an integer." name))
-    (multiple-value-bind (tag ccb clb unw)
+    (multiple-value-bind (tag cfb unw)
         (cmp-env-search-tag name)
       (unless tag
         (cmperr "Undefined tag ~A" name))
       (let ((var (tag-var tag)))
-        (cond (ccb (setf (tag-ref-ccb tag) t
-                         (var-ref-ccb var) T
-                         (var-kind var) 'CLOSURE))
-              (clb (setf (tag-ref-clb tag) t
-                         (var-ref-clb var) t
+        (cond (cfb (setf (var-ref-clb var) t
                          (var-kind var) 'LEXICAL))
               (unw (unless (var-kind var)
                      (setf (var-kind var) :OBJECT))))
         (incf (tag-ref tag))
-        (add-to-read-nodes var (make-c1form* 'GO :args tag (or ccb clb unw)))))))
+        (add-to-read-nodes var (make-c1form* 'GO :args tag (or cfb unw)))))))
 
 (defun c2go (c1form tag nonlocal)
   (declare (ignore c1form))

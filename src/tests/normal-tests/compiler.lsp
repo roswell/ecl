@@ -1303,3 +1303,31 @@
   (defun foo (a &optional (b 'test) &key (c 1)) (if b c a))
   (compile 'foo)
   (finishes (foo 1)))
+
+;;; Date 2018-01-23
+;;; Description
+;;;
+;;;   block referenced across closure boundries could lead to a local variable
+;;;   corruption due to the change of _when_ closure type is computed.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/374
+(test cmp.0062.ccb-block-variable-corruption
+  (defun fooman ()
+    (let ((foo-1 0)
+          (second-time nil))
+      (tagbody :G124
+         (block exitpoint
+           (handler-bind ((simple-error
+                           #'(lambda (c)
+                               (declare (ignore c))
+                               (if (= foo-1 0)
+                                   (format nil "all is fine folks~%")
+                                   (error "foo-1 is ~s should be 0" foo-1))
+                               ;; exitpoint is referenced across closure boundries
+                               (return-from exitpoint nil))))
+             (signal 'simple-error)))
+         (unless second-time
+           (setf second-time t)
+           (GO :G124)))))
+  (compile 'fooman)
+  (finishes (fooman)))

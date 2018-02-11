@@ -33,14 +33,9 @@
 (defstruct (ref (:print-object print-ref))
   name                  ;;; Identifier of reference.
   (ref 0 :type fixnum)  ;;; Number of references.
-  ref-ccb               ;;; Cross closure reference.
-                        ;;; During Pass1, T or NIL.
-                        ;;; During Pass2, the index into the closure env
-  ref-clb               ;;; Cross local function reference.
-                        ;;; During Pass1, T or NIL.
-                        ;;; During Pass2, the lex-address for the
-                        ;;; block id, or NIL.
-  read-nodes            ;;; Nodes (c1forms) in which the reference occurs
+  ref-ccb               ;;; Cross closure reference: T or NIL.
+  ref-clb               ;;; Cross local function reference: T or NIL.
+  read-nodes            ;;; Nodes (c1forms) in which the reference occurs.
 )
 
 (deftype OBJECT () `(not (or fixnum character float)))
@@ -107,7 +102,7 @@
 ;;;   looking at the info-referenced-vars and info-local-referenced of its body.
 
 ;;; A LISP_CFUN or LISP_CLOSURE must be created when the function is returned.
-;;; The LISP funob may then be referenced locally or across LB or CB:
+;;; The LISP funob may then be referenced locally or across a function boundary:
 ;;;     (flet ((foo (z) (bar z))) (list #'foo)))
 ;;;     (flet ((foo (z) z)) (flet ((bar () #'foo)) (bar)))
 ;;;     (flet ((foo (z) (bar z))) #'(lambda () #'foo)))
@@ -119,13 +114,9 @@
                         ;;; During Pass1, T or NIL.
                         ;;; During Pass2, the vs-address for the
                         ;;; function closure, or NIL.
-;  ref-ccb              ;;; Cross closure reference.
-                        ;;; During Pass1, T or NIL, depending on whether a
-                        ;;; function object will be built.
-                        ;;; During Pass2, the vs-address for the function
-                        ;;; closure, or NIL.
+;  ref-ccb              ;;; Cross closure reference: T or NIL.
 ;  ref-clb              ;;; Unused.
-;  read-nodes           ;;; Nodes (c1forms) in which the reference occurs
+;  read-nodes           ;;; Nodes (c1forms) in which the reference occurs.
   cfun                  ;;; The cfun for the function.
   (level 0)             ;;; Level of lexical nesting for a function.
   (env 0)               ;;; Size of env of closure.
@@ -165,30 +156,22 @@
 
 (defstruct (blk (:include ref))
 ;  name                 ;;; Block name.
-;  (ref 0 :type fixnum) ;;; Number of references.
-;  ref-ccb              ;;; Cross closure reference.
-                        ;;; During Pass1, T or NIL.
-                        ;;; During Pass2, the ccb-lex for the
-                        ;;; block id, or NIL.
-;  ref-clb              ;;; Cross local function reference.
-                        ;;; During Pass1, T or NIL.
-                        ;;; During Pass2, the lex-address for the
-                        ;;; block id, or NIL.
-;  read-nodes           ;;; Nodes (c1forms) in which the reference occurs
+;  (ref 0 :type fixnum) ;;; Total number of block references.
+;  ref-ccb              ;;; Unused (see blk-var).
+;  ref-clb              ;;; Unused (see blk-var).
+;  read-nodes           ;;; Unused (see blk-var).
   exit                  ;;; Where to return.  A label.
   destination           ;;; Where the value of the block to go.
-  var                   ;;; Variable containing the block ID.
+  var                   ;;; Variable containing the block id and its references.
   (type '(VALUES &REST T)) ;;; Estimated type.
   )
 
 (defstruct (tag (:include ref))
 ;  name                 ;;; Tag name.
 ;  (ref 0 :type fixnum) ;;; Number of references.
-;  ref-ccb              ;;; Cross closure reference.
-                        ;;; During Pass1, T or NIL.
-;  ref-clb              ;;; Cross local function reference.
-                        ;;; During Pass1, T or NIL.
-;  read-nodes           ;;; Nodes (c1forms) in which the reference occurs
+;  ref-ccb              ;;; Unused (see tag-var).
+;  ref-clb              ;;; Unused (see tag-var).
+;  read-nodes           ;;; Unused (see tag-var).
   label                 ;;; Where to jump: a label.
   unwind-exit           ;;; Where to unwind-no-exit.
   var                   ;;; Variable containing frame ID.

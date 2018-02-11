@@ -48,7 +48,8 @@
         ((endp l))
       (let ((key (first l)))
         (cond ((not (keywordp key))
-               (baboon))
+               (baboon :format-control "make-c1form*: ~s is not a keyword."
+                       :format-arguments (list key)))
               ((eq key ':args)
                (setf form-args (rest l))
                (return))

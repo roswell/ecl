@@ -25,7 +25,7 @@
     (PROGN              body :pure)
     (PROGV              symbols values form :side-effects)
     (TAGBODY            tag-var tag-body :pure)
-    (RETURN-FROM        blk-var return-type value variable-or-nil :side-effects)
+    (RETURN-FROM        blk-var return-type value :side-effects)
     (FUNCALL            fun-value (arg-value*) :side-effects)
     (CALL-LOCAL         obj-fun (arg-value*) :side-effects)
     (CALL-GLOBAL        fun-name (arg-value*))
