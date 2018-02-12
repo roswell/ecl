@@ -393,38 +393,35 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  *                      (:function function-name used-p [location]) |
  *                      (var-name {:special | nil} bound-p [location]) |
  *                      (symbol si::symbol-macro macro-function) |
- *                      CB | LB | UNWIND-PROTECT |
+ *                      ECI:FUNCTION | ECI:UNWIND-PROTECT |
  *                      (:declare declaration-arguments*)
  * macro-record =       (function-name FUNCTION [| function-object]) |
  *                      (macro-name si::macro macro-function)
- *                      CB | LB | UNWIND-PROTECT
+ *                      ECI:FUNCTION | ECI:UNWIND-PROTECT
  *
  * A *-NAME is a symbol. A TAG-ID is either a symbol or a number. A
- * MACRO-FUNCTION is a function that provides us with the expansion
- * for that local macro or symbol macro. BOUND-P is true when the
- * variable has been bound by an enclosing form, while it is NIL if
- * the variable-record corresponds just to a special declaration.
- * CB, LB and UNWIND-PROTECT are only used by the C compiler and they
- * denote closure, lexical environment and unwind-protect boundaries.
+ * MACRO-FUNCTION is a function that provides us with the expansion for that
+ * local macro or symbol macro. BOUND-P is true when the variable has been bound
+ * by an enclosing form, while it is NIL if the variable-record corresponds just
+ * to a special declaration.  ECI:FUNCTION and ECIUNWIND-PROTECT are only used
+ * by the C compiler and they denote function and unwind-protect boundaries.
  *
- * The brackets [] denote differences between the bytecodes and C
- * compiler environments, with the first option belonging to the
- * interpreter and the second alternative to the compiler.
+ * The brackets [] denote differences between the bytecodes and C compiler
+ * environments, with the first option belonging to the interpreter and the
+ * second alternative to the compiler.
  *
- * A LOCATION object is proper to the bytecodes compiler and denotes
- * the position of this variable, block, tag or function, in the
- * lexical environment. Currently, it is a CONS with two integers
- * (DEPTH . ORDER), denoting the depth of the nested environments and
- * the position in the environment (from the beginning, not from the
- * tail).
+ * A LOCATION object is proper to the bytecodes compiler and denotes the
+ * position of this variable, block, tag or function, in the lexical
+ * environment. Currently, it is a CONS with two integers (DEPTH . ORDER),
+ * denoting the depth of the nested environments and the position in the
+ * environment (from the beginning, not from the tail).
  *
- * The BLOCK-, TAG- and FUNCTION- objects are proper of the compiler
- * and carry further information.
+ * The BLOCK-, TAG- and FUNCTION- objects are proper of the compiler and carry
+ * further information.
  *
- * The last variable records are devoted to declarations and are only
- * used by the C compiler. Read cmpenv.lsp for more details on the
- * structure of these declaration forms, as they do not completely
- * match those of Common-Lisp.
+ * The last variable records are devoted to declarations and are only used by
+ * the C compiler. Read cmpenv.lsp for more details on the structure of these
+ * declaration forms, as they do not completely match those of Common-Lisp.
  */
 
 #if 0
@@ -1397,14 +1394,11 @@ c_flet(cl_env_ptr env, cl_object args, int flags) {
 
 
 /*
-  There are two operators that produce functions. The first one
-  is
-  [OP_FUNCTION + name]
-  which takes the function binding of SYMBOL. The second one is
-  OP_CLOSE
-  interpreted
-  which encloses the INTERPRETED function in the current lexical
-  environment.
+  There are two operators that produce functions. The first one is
+  [OP_FUNCTION + name] which takes the function binding of SYMBOL.
+
+  The second one is OP_CLOSE interpreted which encloses the INTERPRETED
+  function in the current lexical environment.
 */
 static int
 c_function(cl_env_ptr env, cl_object args, int flags) {
@@ -1440,12 +1434,12 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
     } else {
       goto ERROR;
     }
-    {
-      const cl_compiler_ptr c_env = env->c_env;
-      asm_op2c(env,
-               (Null(c_env->variables) && Null(c_env->macros)) ? OP_QUOTE : OP_CLOSE,
-               ecl_make_lambda(env, name, body));
-    }
+
+    const cl_compiler_ptr c_env = env->c_env;
+    asm_op2c(env,
+             (Null(c_env->variables) && Null(c_env->macros)) ? OP_QUOTE : OP_CLOSE,
+             ecl_make_lambda(env, name, body));
+
     return FLAG_REG0;
   }
  ERROR:
