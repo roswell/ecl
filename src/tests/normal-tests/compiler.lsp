@@ -1331,3 +1331,73 @@
            (GO :G124)))))
   (compile 'fooman)
   (finishes (fooman)))
+
+;;; Date 2018-02-10
+;;; Description
+;;;
+;;;   Compiler macros do not get shadowed by lexical function bindings.
+;;;
+;;; Spec: http://www.lispworks.com/documentation/HyperSpec/Body/03_bba.htm
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/83
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/237
+(test cmp.0063.lexical-macrolet
+  (defun foo () :function)
+  (define-compiler-macro foo () :compiler-macro)
+  (let ((result (funcall (compile nil '(lambda ()
+                                        (macrolet ((foo () :macrolet))
+                                          (foo)))))))
+    (is (eq :macrolet result) "Expected :MACROLET, got ~s." result)))
+
+;;; Date 2018-02-11
+;;; Description
+;;;
+;;;   ecl_bclosure lexenv is not used during complation (both bytecmp and ccmp).
+;;;   That leads to dangling references in compiled code.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/429
+(test cmp.0064.bytecmp-compile-bclosure
+  (let ((fun-1                                 (lambda () :fun-1-nil))
+        (fun-2 (let      ((fun-2-var    :var)) (lambda () fun-2-var)))
+        (fun-3 (flet     ((fun-3-fun () :fun)) (lambda () (fun-3-fun))))
+        (fun-4 (macrolet ((fun-4-mac () :mac)) (lambda () (fun-4-mac)))))
+    (is (eq :fun-1-nil (funcall fun-1)))
+    (is (eq :var (funcall fun-2)))
+    (is (eq :fun (funcall fun-3)))
+    (is (eq :mac (funcall fun-4)))
+    (let ((fun-1 (ext::bc-compile nil fun-1))
+          (fun-2 (ext::bc-compile nil fun-2))
+          (fun-3 (ext::bc-compile nil fun-3))
+          (fun-4 (ext::bc-compile nil fun-4)))
+      (is (eq :fun-1-nil (funcall fun-1)))
+      (is (eq :var (ignore-errors (funcall fun-2))) "fun-2-var from lexenv is not used.")
+      (is (eq :fun (ignore-errors (funcall fun-3))) "fun-3-fun from lexenv is not used.")
+      (is (eq :mac (ignore-errors (funcall fun-4))) "fun-4-mac from lexenv is not used."))))
+
+(test cmp.0065.cmp-compile-bclosure
+  (let ((fun-1                                 (lambda () :fun-1-nil))
+        (fun-2 (let      ((fun-2-var    :var)) (lambda () fun-2-var)))
+        (fun-3 (flet     ((fun-3-fun () :fun)) (lambda () (fun-3-fun))))
+        (fun-4 (macrolet ((fun-4-mac () :mac)) (lambda () (fun-4-mac)))))
+    (is (eq :fun-1-nil (funcall fun-1)))
+    (is (eq :var (funcall fun-2)))
+    (is (eq :fun (funcall fun-3)))
+    (is (eq :mac (funcall fun-4)))
+    (let ((fun-1 (compile nil fun-1))
+          (fun-2 (compile nil fun-2))
+          (fun-3 (compile nil fun-3))
+          (fun-4 (compile nil fun-4)))
+      (is (eq :fun-1-nil (funcall fun-1)))
+      (is (eq :var (ignore-errors (funcall fun-2))) "fun-2-var from lexenv is not used.")
+      (is (eq :fun (ignore-errors (funcall fun-3))) "fun-3-fun from lexenv is not used.")
+      (is (eq :mac (ignore-errors (funcall fun-4))) "fun-4-mac from lexenv is not used."))))
+
+;;; Date 2018-02-12
+;;; Description
+;;;
+;;;   bytecmp always makes flet functions closures even if lexenv is empty.
+(test cmp.0066.bytecodes-flet-closure
+  (let ((fun-1 (flet ((a () 1)) #'a))
+        (fun-2 (let ((b 3))    ; this make break if we replace B with a constant
+                 (flet ((a () b)) #'a))))
+    (is (null (nth-value 1 (function-lambda-expression fun-1))))
+    (is (nth-value 1 (function-lambda-expression fun-2)))))
