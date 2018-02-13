@@ -209,7 +209,7 @@ close_around(cl_object fun, cl_object lex) {
   cl_object v;
   if (Null(lex)) return fun;
   if (ecl_t_of(fun) != t_bytecodes)
-    FEerror("!!!", 0);
+    FEerror("Internal error: close_around should be called on t_bytecodes.", 0);
   v = ecl_alloc_object(t_bclosure);
   v->bclosure.code = fun;
   v->bclosure.lex = lex;

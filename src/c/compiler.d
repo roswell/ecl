@@ -967,12 +967,12 @@ c_funcall(cl_env_ptr env, cl_object args, int flags) {
     cl_object kind = ECL_CONS_CAR(name);
     if (kind == @'function') {
       if (cl_list_length(name) != ecl_make_fixnum(2))
-        FEprogram_error("FUNCALL: Invalid function name ~S", 1, name);
+        FEprogram_error("FUNCALL: Invalid function name ~S.", 1, name);
       return c_call(env, CONS(CADR(name), args), flags);
     }
     if (kind == @'quote') {
       if (cl_list_length(name) != ecl_make_fixnum(2))
-        FEprogram_error("FUNCALL: Invalid function name ~S", 1, name);
+        FEprogram_error("FUNCALL: Invalid function name ~S.", 1, name);
       return c_call(env, CONS(CADR(name), args), flags | FLAG_GLOBAL);
     }
   }
@@ -2971,7 +2971,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 
   /* Transform (SETF fname) => fname */
   if (!Null(name) && Null(si_valid_function_name_p(name)))
-    FEprogram_error("LAMBDA: Not a valid function name ~S",1,name);
+    FEprogram_error("LAMBDA: Not a valid function name ~S.",1,name);
 
   /* We register as special variable a symbol which is not
    * to be used. We use this to mark the boundary of a function

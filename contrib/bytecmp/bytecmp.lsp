@@ -35,31 +35,44 @@
 	 (error 'simple-type-error
 		:datum thing
 		:expected-type '(OR FUNCTION (SATISFIES SI:VALID-FUNCTION-NAME-P))
-		:format-control "DISASSEMBLE cannot accept ~A"
+		:format-control "DISASSEMBLE cannot accept ~A."
 		:format-arguments (list thing))))
   nil)
 
-(defun bc-compile (name &optional (def nil supplied-p) &aux form)
- (cond ((and supplied-p def)
-        (when (functionp def)
-	  (unless (function-lambda-expression def)
-            (return-from bc-compile (values def nil nil)))
-	  (setf def (function-lambda-expression def)))
-        (setq form (if name
-		     `(progn (setf (symbol-function ',name) #',def) ',name)
-		     `(setq GAZONK #',def))))
-       ((not (fboundp name))
-	(error "Symbol ~s is unbound." name))
-       ((typep (setf def (symbol-function name)) 'standard-generic-function)
-	(warn "COMPILE can not compile generic functions yet")
-	(return-from bc-compile (values def t nil)))
-       ((null (setq form (function-lambda-expression def)))
-	(warn "We have lost the original function definition for ~s. Compilation failed"
-              name)
-	(return-from bc-compile (values def t nil)))
-       (t
-	(setq form `(progn (setf (symbol-function ',name) #',form) ',name))))
- (values (eval form) nil nil))
+(defun bc-compile (name &optional (definition nil def-p) &aux (*print-pretty* nil))
+  (check-type name (or (satisfies si:valid-function-name-p) nil))
+  (when def-p (check-type definition (or function cons)))
+  (cond ((functionp definition)
+         (multiple-value-bind (form lexenv) (function-lambda-expression definition)
+           (when form
+             (if lexenv
+                 (setf definition (si:eval-with-env form lexenv))
+                 (setf definition (si:eval-with-env form nil nil nil t)))))
+         (when name (setf (fdefinition name) definition))
+         (return-from bc-compile (values (or name definition) nil nil)))
+        ((not (null definition))
+         (unless (member (car definition) '(LAMBDA EXT:LAMBDA-BLOCK))
+           (format t "~&;;; Error: Not a valid lambda expression: ~s." definition)
+           (return-from bc-compile (values nil t t)))
+         (setq definition (si:eval-with-env definition nil nil nil t))
+         (when name (setf (fdefinition name) definition))
+         (return-from bc-compile (values (or name definition) nil nil)))
+        ((not (fboundp name))
+         (error "Function name ~s is unbound." name))
+        ((typep (fdefinition name) 'standard-generic-function)
+         (warn "COMPILE can not compile generic functions yet.")
+         (return-from bc-compile (values name t nil)))
+        (T
+         (multiple-value-bind (form lexenv)
+             (function-lambda-expression (fdefinition name))
+           (when form
+             (if lexenv
+                 (setf definition (si:eval-with-env form lexenv))
+                 (setf definition (si:eval-with-env form nil nil nil t)))))
+         (when (null definition)
+           (warn "We have lost the original function definition for ~s." name)
+           (return-from bc-compile (values name t nil)))
+         (return-from bc-compile (values name nil nil)))))
 
 (defun bc-compile-file-pathname (name &key (output-file name) (type :fasl)
 				 verbose print c-file h-file data-file
@@ -83,7 +96,7 @@
                         (pathname output-file)
                         (bc-compile-file-pathname input)))
   (when *compile-verbose*
-    (format t "~&;;; Compiling ~A" input))
+    (format t "~&;;; Compiling ~A." input))
   (cond ((not (streamp input))
          (let* ((ext:*source-location* (cons (truename input) 0))
                 (*compile-file-pathname* (pathname (merge-pathnames input)))
@@ -129,11 +142,10 @@
 
 #-ecl-min
 (progn
-#+(and dlopen (not windows))
-(sys::autoload "SYS:cmp" 'compile-file 'compile 'compile-file-pathname 'disassemble)
-#-(and dlopen (not windows))
-(install-bytecodes-compiler)
-)
+  #+(and dlopen (not windows))
+  (sys::autoload "SYS:cmp" 'compile-file 'compile 'compile-file-pathname 'disassemble)
+  #-(and dlopen (not windows))
+  (install-bytecodes-compiler))
 
 (provide '#:BYTECMP)
 

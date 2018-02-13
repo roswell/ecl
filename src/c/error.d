@@ -436,7 +436,7 @@ void
 FEinvalid_function_name(cl_object fname)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("Not a valid function name ~D"),
+           make_constant_base_string("Not a valid function name ~D."),
            @':format-arguments', cl_list(1, fname),
            @':expected-type', cl_list(2, @'satisfies', @'si::valid-function-name-p'),
            @':datum', fname);
