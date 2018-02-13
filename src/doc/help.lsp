@@ -1256,9 +1256,17 @@ Evaluates FORM and returns all values.")
 (docfun eval-when special ((&rest situation) &body forms) "
 Specifies when to evaluate FORMs.  Each SITUATION must be one of the following
 symbols.
-        COMPILE (compile-time)
-        LOAD    (load-time of the fasl file)
-        EVAL    (load-time of the source file)")
+        :COMPILE-TOPLEVEL (compile-time)
+        :LOAD-TOPLEVEL    (load-time of the fasl file)
+        :EXECUTE          (load-time of the source file)")
+
+(docfun si::eval-with-env function
+        (form &optional env stepping compiler-env-p (execute t)) "
+Evaluates FORM in provided env. ENV is either lexical environment or compiler
+environment (depends on flag COMPILER-ENV-P).
+
+    STEPPING = T   augments all calls with OP_STEPCALL
+    EXECUTE  = NIL compiles form to bytecode without executing it.")
 
 (docfun evalhook function (form fun1 fun2 &optional (env nil)) "
 Evaluates FORM with *EVALHOOK* bound to FUN1 and *APPLYHOOK* bound to FUN2,
