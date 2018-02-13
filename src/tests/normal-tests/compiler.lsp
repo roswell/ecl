@@ -1401,3 +1401,31 @@
                  (flet ((a () b)) #'a))))
     (is (null (nth-value 1 (function-lambda-expression fun-1))))
     (is (nth-value 1 (function-lambda-expression fun-2)))))
+
+;;; Date 2018-02-13
+;;; Description
+;;;
+;;;   ext::bc-compile executed compiled form.
+(test cmp.0067.bytecodes-compile-exec
+  (multiple-value-bind (fun warn err)
+      (ext::bc-compile nil '(flet ((a () 3)) #'a))
+    (is (and (null fun) warn err)
+        "bc-compile: invalid lambda expression should signal error.")))
+
+;;; Date 2018-02-13
+;;; Description
+;;;
+;;; compile / ext::bc-compile doesn't accept (setf foo).
+(ext:with-clean-symbols (foo bar)
+  (test cmp.0068.bytecmp-setf-foo
+    (defun (setf foo) (x) x)
+    (multiple-value-bind (fun warn err)
+        (ext::bc-compile '(setf foo))
+      (is (and fun (null warn) (null err))
+          "bc-compile: (setf foo) is a valid function name.")))
+  (test cmp.0069.cmp-setf-foo
+    (defun (setf foo) (x) x)
+    (multiple-value-bind (fun warn err)
+        (compile '(setf foo))
+      (is (and fun (null warn) (null err))
+          "compile: (setf foo) is a valid function name."))))
