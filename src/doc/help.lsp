@@ -965,6 +965,9 @@ compiled function is notated in either of the following formats:
         #<compiled-closure nil>
 where S is actually the symbol that names the function.")
 
+(docfun si::compiled-function-file function (function) "
+Returns two values: a pathname and a position of the function definition.")
+
 (docfun si::compiled-function-name function (compiled-function) "
 ECL specific.
 Returns the function name associated with COMPILED-FUNCTION.")
