@@ -564,8 +564,10 @@ ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
 {
   env->nlj_fr = fr;
   ecl_frame_ptr top = env->frs_top;
-  while (top != fr && top->frs_val != ECL_PROTECT_TAG)
+  while (top != fr && top->frs_val != ECL_PROTECT_TAG){
+    top->frs_val = ECL_DUMMY_TAG;
     --top;
+  }
   env->ihs_top = top->frs_ihs;
   ecl_bds_unwind(env, top->frs_bds_top_index);
   ECL_STACK_SET_INDEX(env, top->frs_sp);
