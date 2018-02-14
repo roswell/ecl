@@ -58,9 +58,8 @@ search_macro_function(cl_object name, cl_object env)
 {
   int type = ecl_symbol_type(name);
   if (env != ECL_NIL) {
-    /* When the environment has been produced by the
-       compiler, there might be atoms/symbols signalling
-       closure and block boundaries. */
+    /* When the environment has been produced by the compiler, there might be
+       atoms/symbols signaling function and unwind-protect boundaries. */
     while (!Null(env = CDR(env))) {
       cl_object record = CAR(env);
       if (CONSP(record) && CAR(record) == name) {

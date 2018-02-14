@@ -22,13 +22,13 @@ The number in the @ecl{} banner identifies the revision of
 @ecl{}. @code{0.0e} is the value of the function
 @code{lisp-implementation-version}.
 
-Unless user specifies @code{-norc} flag when invoking the @ecl{}, it
+Unless user specifies @code{--norc} flag when invoking the @ecl{}, it
 will look for the initialization files @file{~/.ecl} and
 @file{~/.eclrc}. If he wants to load his own file from the current
 directory, then he should pass the file path to the @code{-load}
 parameter:
 @example
-% ecl -norc -load init.lisp
+% ecl --norc --load init.lisp
 @end example
 
 After the initialization, @ecl{} enters the @dfn{top-level loop} and
@@ -62,7 +62,7 @@ To exit from @ecl{}, call the function @code{quit}.
 %
 @end example
 
-Alternatively, you may type @myctrl{D} , i.e. press the key @key{D}
+Alternatively, you may type @code{^D} , i.e. press the key @key{D}
 while pressing down the control key (@key{Ctrl}).
 
 @example
@@ -96,7 +96,7 @@ foo
 bar
 > (foo 'lish)
 Condition of type: UNDEFINED-FUNCTION
-The function BAR is undefined.
+The function BEE is undefined.
 
 Available restarts:
 

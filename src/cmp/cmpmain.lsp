@@ -755,7 +755,7 @@ If NAME is NIL, then the compiled function is not installed but is simply
 returned as the value of COMPILE.  In any case, COMPILE creates temporary
 files, whose filenames begin with \"gazonk\", which are automatically deleted
 after compilation."
-  (unless (symbolp name) (error "~s is not a symbol." name))
+  (unless (si:valid-function-name-p name) (error "~s is not a valid function name." name))
 
   (cond ((and supplied-p def)
          (when (functionp def)
@@ -763,11 +763,11 @@ after compilation."
              (return-from compile def))
            (setf def (function-lambda-expression def)))
          (setq form (if name
-                        `(setf (symbol-function ',name) #',def)
+                        `(setf (fdefinition ',name) #',def)
                         `(set 'GAZONK #',def))))
         ((not (fboundp name))
          (error "Symbol ~s is unbound." name))
-        ((typep (setf def (symbol-function name)) 'standard-generic-function)
+        ((typep (setf def (fdefinition name)) 'standard-generic-function)
          (warn "COMPILE can not compile generic functions yet")
          (return-from compile (values def t nil)))
         ((null (setq form (function-lambda-expression def)))
@@ -775,7 +775,7 @@ after compilation."
                name)
          (return-from compile (values def t nil)))
         (t
-         (setq form `(setf (symbol-function ',name) #',form))))
+         (setq form `(setf (fdefinition ',name) #',form))))
 
   (let*((*load-time-values* 'values) ;; Only the value is kept
         (tmp-names (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))

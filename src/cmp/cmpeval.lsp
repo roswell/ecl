@@ -68,6 +68,9 @@
              (unoptimized-long-call `#',fname args)))
         ((setq fd (local-function-ref fname))
          (c1call-local fname fd args))
+        ((and macros-allowed            ; macrolet
+              (setq fd (cmp-env-search-macro fname)))
+         (cmp-expand-macro fd (list* fname args)))
         ((and (setq can-inline (inline-possible fname))
               (setq fd (compiler-macro-function fname))
               (progn
@@ -81,8 +84,8 @@
                   (clos-compiler-macro-expand fname args))
                 success))
          fd)
-        ((and macros-allowed
-              (setq fd (cmp-macro-function fname)))
+        ((and macros-allowed            ; global macro
+              (setq fd (macro-function fname)))
          (cmp-expand-macro fd (list* fname args)))
         ((and (setq can-inline (declared-inline-p fname))
               (consp can-inline)

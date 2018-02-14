@@ -91,9 +91,9 @@ Let us see an example. Suppose the following function has been compiled.
 
 @verbatim
 (defun foo (x)
-(let ((a #'(lambda () (incf x)))
-(y x))
-(values a #'(lambda () (incf x y)))))
+  (let ((a #'(lambda () (incf x)))
+        (y x))
+    (values a #'(lambda () (incf x y)))))
 @end verbatim
 
 @code{foo} returns two compiled closures. The first closure increments @var{x} by one, whereas the second closure increments @var{x} by the initial value of @var{x}. Both closures return the incremented value of @var{x}.
@@ -126,23 +126,22 @@ After this, the two compiled closures look like:
 
   * : address of the compiled code for #'(lambda () (incf x))
   ** : address of the compiled code for #'(lambda () (incf x y))
-  
 @end verbatim
 
 @subsection Use of Declarations to Improve Efficiency
 Declarations, especially type and function declarations, increase the efficiency of the compiled code. For example, for the following Lisp source file, with two Common-Lisp declarations added,
 
 @verbatim
-(eval-when (compile)
-(proclaim '(function tak (fixnum fixnum fixnum) fixnum))
+(eval-when (:compile-toplevel)
+  (proclaim '(function tak (fixnum fixnum fixnum) fixnum))
 
 (defun tak (x y z)
-(declare (fixnum x y z))
-(if (not (< y x))
-z
-(tak (tak (1- x) y z)
-(tak (1- y) z x)
-(tak (1- z) x y))))
+  (declare (fixnum x y z))
+  (if (not (< y x))
+    z
+    (tak (tak (1- x) y z)
+         (tak (1- y) z x)
+         (tak (1- z) x y))))
 @end verbatim
 
 
