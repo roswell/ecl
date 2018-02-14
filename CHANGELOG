@@ -29,6 +29,7 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- numerous bytecodes compiler enhancements
 - ~ext:run-program~: process streams may be virtual streams (for instance
   ~*standard-output*~ in slime, or a string-output-stream)
 - ~ext:run-program~: environ argument defaults to ~:default~, when NIL
@@ -39,17 +40,19 @@
 - hash table extensions are documented in newdoc
 - various cleanups performed in the compiler
 - compiler is less verbose by default now
-- ext:run-program has been rewritten (almost) from scratch
+- ~ext:run-program~ has been rewritten (almost) from scratch
 - improved documentation of operating system interface (newdoc)
 - example of parsing arguments in standalone executable (newdoc)
 - example of using shared libraries from C world (newdoc)
 - reduced =format= directive tables size
-- simplified =atan2= implementation by using c99 equivalent ::
-     Now we produce correct output for signed zeros, infinities and nans.
+- simplified ~atan2~ implementation by using c99 equivalent - now we
+  produce correct output for signed zeros, infinities and nans.
 - configure script supports new options =--with-libgc-prefix=,
   =--with-libgc-incdir= and =--with-libgc-libdir= (these flags work the
   same as flags for =libffi= and =libgmp=)
 ** Issues fixed
+- ~block/return-from~ fixed (didn't work across some closure boundaries)
+- ~mp:semaphore-signal~ fixed (race when count was > 1)
 - ASDF systems like foo/base and bar/base doesn't have conflicts in bundles
 - interactive input stream in ext:run-program on Windows
 - removed race condition between waitpid and sigchld handler on UNIX
@@ -66,8 +69,8 @@ in C code
 - make-hash-table ~:weakness~ argument new variant ~:key-or-value~
   implemented
 - No more explicit option in ~main.d~ to trap SIGCHLD asynchronously
-- Zombie processes are cleaned in external-process finalizer. If process is
-  referenced in the memory, it's programmer duty to call wait on it
+- Zombie processes are cleaned in ~external-process~ finalizer. If process
+  is still referenced in the memory, it's programmer duty to call wait.
 * 16.1.3 changes since 16.1.2
 ** Announcement
 Dear Community,

@@ -3320,7 +3320,28 @@ Waits until process stops its execution.")
   (docfun mp:process-run-function function (name function &rest args) "
 Equivalent to creating a process with MP:MAKE-PROCESS, presetting it
 with MP:PROCESS-PRESET and starting with MP:PROCESS-ENABLE. Returns
-created process."))
+created process.")
+
+  ;; Semaphore interface
+  (docfun mp:make-semaphore function (&key name count) "
+Creates a counting semaphore NAME with a resource count COUNT.")
+
+  (docfun mp:semaphore-name function (semaphore) "
+Returns SEMAPHORE name.")
+
+  (docfun mp:semaphore-count function (semaphore) "
+Returns SEMAPHORE count of resources.")
+
+  (docfun mp:wait-on-semaphore function (semaphore) "
+Waits on SEMAPHORE until it can grab the resource (blocking). Returns resource count
+before semaphore was acquired.")
+
+  (docfun mp:try-get-semaphore function (semaphore) "
+Tries to get a SEMAPHORE (non-blocking). If there is no resource left returns
+NIL, otherwise returns resource count before semaphore was acquired.")
+
+  (docfun mp:signal-semaphore function (semaphore &optional (count 1)) "
+Releases COUNT units of a resource on SEMAPHORE."))
 
 #||
 ;;; ----------------------------------------------------------------------
