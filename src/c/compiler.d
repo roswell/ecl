@@ -2318,19 +2318,18 @@ compile_form(cl_env_ptr env, cl_object stmt, int flags) {
     /*
      * Next try to macroexpand
      */
-    {
-      cl_object new_stmt = c_macro_expand1(env, stmt);
-      if (new_stmt != stmt){
-        stmt = new_stmt;
-        goto BEGIN;
-      }
+    cl_object new_stmt = c_macro_expand1(env, stmt);
+    if (new_stmt != stmt) {
+      stmt = new_stmt;
+      goto BEGIN;
     }
   }
   /*
    * Finally resort to ordinary function calls.
    */
-  if (c_env->stepping)
+  if (c_env->stepping) {
     asm_op2c(env, OP_STEPIN, stmt);
+  }
   c_env->lexical_level++;
   new_flags = c_call(env, stmt, flags);
   c_env->lexical_level--;
