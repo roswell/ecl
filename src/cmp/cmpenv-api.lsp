@@ -121,9 +121,9 @@ that are susceptible to be changed by PROCLAIM."
         (unw nil)
         (found nil))
     (dolist (record (cmp-env-functions env))
-      (cond ((eq record 'ECI:FUNCTION)
+      (cond ((eq record 'SI:FUNCTION-BOUNDARY)
              (setf cfb t))
-            ((eq record 'ECI:UNWIND-PROTECT)
+            ((eq record 'SI:UNWIND-PROTECT-BOUNDARY)
              (setf unw t))
             ((atom record)
              (baboon :format-control "Uknown record found in environment~%~S"
@@ -139,9 +139,9 @@ that are susceptible to be changed by PROCLAIM."
         (unw nil)
         (found nil))
     (dolist (record (cmp-env-variables env))
-      (cond ((eq record 'ECI:FUNCTION)
+      (cond ((eq record 'SI:FUNCTION-BOUNDARY)
              (setf cfb t))
-            ((eq record 'ECI:UNWIND-PROTECT)
+            ((eq record 'SI:UNWIND-PROTECT-BOUNDARY)
              (setf unw t))
             ((atom record)
              (baboon :format-control "Uknown record found in environment~%~S"

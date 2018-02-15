@@ -14,10 +14,6 @@
 ;;;;  CMPPACKAGE -- Package definitions and exported symbols
 ;;;;
 
-(defpackage #:ecl-cmp-internals
-  (:export #:unwind-protect
-           #:function))
-
 (defpackage "C"
   (:nicknames "COMPILER")
   (:use "FFI" "EXT" #+threads "MP" "CL")
@@ -54,4 +50,3 @@
                 "COMPILER-LET"))
 
 (ext:package-lock "CL" nil)
-(ext:add-package-local-nickname "ECI" '#:ecl-cmp-internals '#:compiler)

@@ -59,7 +59,7 @@
      (c1expr (first args)))
     (T
      (incf *setjmps*)
-     (let ((form (let ((*cmp-env* (cmp-env-mark 'ECI:UNWIND-PROTECT)))
+     (let ((form (let ((*cmp-env* (cmp-env-mark 'SI:UNWIND-PROTECT-BOUNDARY)))
                    (c1expr (first args)))))
        (make-c1form* 'UNWIND-PROTECT :type (c1form-type form) :sp-change t
                      :args form (c1progn (rest args)))))))

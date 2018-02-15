@@ -393,18 +393,21 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  *                      (:function function-name used-p [location]) |
  *                      (var-name {:special | nil} bound-p [location]) |
  *                      (symbol si::symbol-macro macro-function) |
- *                      ECI:FUNCTION | ECI:UNWIND-PROTECT |
+ *                      SI:FUNCTION-BOUNDARY |
+ *                      SI:UNWIND-PROTECT-BOUNDARY
  *                      (:declare declaration-arguments*)
  * macro-record =       (function-name FUNCTION [| function-object]) |
  *                      (macro-name si::macro macro-function)
- *                      ECI:FUNCTION | ECI:UNWIND-PROTECT
+ *                      SI:FUNCTION-BOUNDARY |
+ *                      SI:UNWIND-PROTECT-BOUNDARY
  *
  * A *-NAME is a symbol. A TAG-ID is either a symbol or a number. A
  * MACRO-FUNCTION is a function that provides us with the expansion for that
  * local macro or symbol macro. BOUND-P is true when the variable has been bound
  * by an enclosing form, while it is NIL if the variable-record corresponds just
- * to a special declaration.  ECI:FUNCTION and ECIUNWIND-PROTECT are only used
- * by the C compiler and they denote function and unwind-protect boundaries.
+ * to a special declaration. SI:FUNCTION-BOUNDARY and SI:UNWIND-PROTECT-BOUNDARY
+ * are only used by the C compiler and they denote function and unwind-protect
+ * boundaries.
  *
  * The brackets [] denote differences between the bytecodes and C compiler
  * environments, with the first option belonging to the interpreter and the
@@ -498,6 +501,14 @@ c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
                                   bound? ECL_T : ECL_NIL,
                                   new_location(c_env)),
                           c_env->variables);
+}
+
+static void
+c_register_boundary(cl_env_ptr env, cl_object type)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  c_env->variables = CONS(type, c_env->variables);
+  c_env->macros = CONS(type, c_env->macros);
 }
 
 static void
@@ -725,6 +736,8 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
     {
       cl_object record, name, special;
       record = ECL_CONS_CAR(env);
+      if (ECL_ATOM(record))
+        continue;
       name = ECL_CONS_CAR(record);
       record = ECL_CONS_CDR(record);
       special = ECL_CONS_CAR(record);
@@ -2106,6 +2119,10 @@ static int
 c_unwind_protect(cl_env_ptr env, cl_object args, int flags) {
   cl_index label = asm_jmp(env, OP_PROTECT);
 
+  /* We register unwind-protect boundary. This mark is not used in bytecode
+     compiler but we do it anyway to have better compilation environment. */
+  c_register_boundary(env, @'si::unwind-protect-boundary');
+
   flags = maybe_values(flags);
 
   /* Compile form to be protected */
@@ -2973,10 +2990,9 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   if (!Null(name) && Null(si_valid_function_name_p(name)))
     FEprogram_error("LAMBDA: Not a valid function name ~S.",1,name);
 
-  /* We register as special variable a symbol which is not
-   * to be used. We use this to mark the boundary of a function
-   * environment and when code-walking */
-  c_register_var(env, @'si::function-boundary', TRUE, FALSE);
+  /* We register the function boundary. We use this mark in both variables and
+   * macros for code-walking. */
+  c_register_boundary(env, @'si::function-boundary');
 
   reqs = ECL_CONS_CDR(reqs);              /* Required arguments */
   while (!Null(reqs)) {

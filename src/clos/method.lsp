@@ -208,9 +208,8 @@
   (let ((counter 0))
     (declare (fixnum counter))
     (dolist (item (car env))
-      (when (and (consp item)
-                 (eq (first (the cons item)) 'si::function-boundary)
-                 (> (incf counter) 1)) 
+      (when (and (eq item 'si::function-boundary)
+                 (> (incf counter) 1))
         (return t)))))
 
 (defun walk-method-lambda (method-lambda env)

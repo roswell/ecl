@@ -108,7 +108,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (when *current-function*
     (push fun (fun-child-funs *current-function*)))
   (let* ((*current-function* fun)
-         (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark 'ECI:FUNCTION)))
+         (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark 'SI:FUNCTION-BOUNDARY)))
          (setjmps *setjmps*)
          (decl (si::process-declarations (rest lambda-list-and-body)))
          (global (and *use-c-global*

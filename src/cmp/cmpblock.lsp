@@ -19,10 +19,10 @@
 ;;; A dummy variable is created to hold the block identifier.  When a reference
 ;;; to the block (via `return-from') is found, the `var-ref' count for that
 ;;; variable is incremented only if the reference appears across a boundary
-;;; (`ECI:FUNCTION' or `ECI:UNWIND-PROTECT'), while the `blk-ref' is always
-;;; incremented.  Therefore `blk-ref' represents whether the block is used at
-;;; all and `var-ref' for the dummy variable represents whether a block
-;;; identifier must be created and stored in such variable.
+;;; (`SI:FUNCTION-BOUNDARY' or `SI:UNWIND-PROTECT-BOUNDARY'), while the
+;;; `blk-ref' is always incremented.  Therefore `blk-ref' represents whether the
+;;; block is used at all and `var-ref' for the dummy variable represents whether
+;;; a block identifier must be created and stored in such variable.
 
 (defun c1block (args)
   (check-args-number 'BLOCK args 1)
