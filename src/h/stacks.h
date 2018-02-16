@@ -81,12 +81,19 @@ static inline void ecl_bds_bind_inl(cl_env_ptr env, cl_object s, cl_object v)
                 ecl_bds_bind(env,s,v);
         } else {
                 location = env->thread_local_bindings + index;
-                /* First, we push a dummy symbol in the stack to
-                 * prevent segfaults when we are interrupted with a
-                 * call to ecl_bds_unwind. */
-                AO_store_full((AO_t*)&(env->bds_top+1)->symbol,(AO_t)ECL_DUMMY_TAG);
-                slot = ++env->bds_top;
-                if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+                slot = env->bds_top+1;
+                if (slot >= env->bds_limit){
+                        slot = ecl_bds_overflow();
+                        slot->symbol = ECL_DUMMY_TAG;
+                } else {
+                        /* First, we push a dummy symbol in the stack to
+                         * prevent segfaults when we are interrupted with a
+                         * call to ecl_bds_unwind. */
+                        slot->symbol = ECL_DUMMY_TAG;
+                        AO_nop_full();
+                        ++env->bds_top;
+                }
+                AO_nop_full();
                 /* Then we disable interrupts to ensure that
                  * ecl_bds_unwind doesn't overwrite the symbol with
                  * some random value. */
@@ -117,9 +124,16 @@ static inline void ecl_bds_push_inl(cl_env_ptr env, cl_object s)
                 ecl_bds_push(env, s);
         } else {
                 location = env->thread_local_bindings + index;
-                AO_store_full((AO_t*)&(env->bds_top+1)->symbol,(AO_t)ECL_DUMMY_TAG);
-                slot = ++env->bds_top;
-                if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+                slot = env->bds_top+1;
+                if (slot >= env->bds_limit){
+                        slot = ecl_bds_overflow();
+                        slot->symbol = ECL_DUMMY_TAG;
+                } else {
+                        slot->symbol = ECL_DUMMY_TAG;
+                        AO_nop_full();
+                        ++env->bds_top;
+                }
+                AO_nop_full();
                 ecl_disable_interrupts_env(env);
                 slot->symbol = s;
                 slot->value = *location;

@@ -320,8 +320,16 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
     index = invalid_or_too_large_binding_index(env,s);
   }
   location = env->thread_local_bindings + index;
-  slot = ++env->bds_top;
-  if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  slot = env->bds_top+1;
+  if (slot >= env->bds_limit){
+    slot = ecl_bds_overflow();
+    slot->symbol = ECL_DUMMY_TAG;
+  } else {
+    slot->symbol = ECL_DUMMY_TAG;
+    AO_nop_full();
+    ++env->bds_top;
+  }
+  AO_nop_full();
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
@@ -349,8 +357,16 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
     index = invalid_or_too_large_binding_index(env,s);
   }
   location = env->thread_local_bindings + index;
-  slot = ++env->bds_top;
-  if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  slot = env->bds_top+1;
+  if (slot >= env->bds_limit){
+    slot = ecl_bds_overflow();
+    slot->symbol = ECL_DUMMY_TAG;
+  } else {
+    slot->symbol = ECL_DUMMY_TAG;
+    AO_nop_full();
+    ++env->bds_top;
+  }
+  AO_nop_full();
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
@@ -544,15 +560,20 @@ _ecl_frs_push(register cl_env_ptr env, register cl_object val)
 {
   /* We store a dummy tag first, to make sure that it is safe to
    * interrupt this method with a call to ecl_unwind. Otherwise, a
-   * stray ECL_PROTECT_TAG will lead to segfaults. AO_store_full is
+   * stray ECL_PROTECT_TAG will lead to segfaults. AO_nop_full is
    * needed to ensure that the CPU doesn't reorder the memory
    * stores. */
-  AO_store_full((AO_t*)&(env->frs_top+1)->frs_val,(AO_t)ECL_DUMMY_TAG);
-  ecl_frame_ptr output = ++env->frs_top;
-  if (output >= env->frs_limit) {
+  ecl_frame_ptr output = env->frs_top+1;
+  if (output >= env->frs_limit){
     frs_overflow();
     output = env->frs_top;
+    output->frs_val = ECL_DUMMY_TAG;
+  } else {
+    output->frs_val = ECL_DUMMY_TAG;
+    AO_nop_full();
+    ++env->frs_top;
   }
+  AO_nop_full();
   output->frs_bds_top_index = env->bds_top - env->bds_org;
   output->frs_ihs = env->ihs_top;
   output->frs_sp = ECL_STACK_INDEX(env);
