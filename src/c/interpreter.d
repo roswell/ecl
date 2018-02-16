@@ -38,14 +38,13 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   old_stack = env->stack;
   new_stack = (cl_object *)ecl_alloc_atomic(new_size * sizeof(cl_object));
 
-  ecl_disable_interrupts_env(env);
+  ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
   memcpy(new_stack, old_stack, env->stack_size * sizeof(cl_object));
   env->stack_size = new_size;
   env->stack_limit_size = new_size - 2*safety_area;
   env->stack = new_stack;
   env->stack_top = env->stack + top;
   env->stack_limit = env->stack + (new_size - 2*safety_area);
-  ecl_enable_interrupts_env(env);
 
   /* A stack always has at least one element. This is assumed by cl__va_start
    * and friends, which take a sp=0 to have no arguments.
@@ -53,6 +52,8 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   if (top == 0) {
     *(env->stack_top++) = ecl_make_fixnum(0);
   }
+  ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
+
   return env->stack_top;
 }
 
