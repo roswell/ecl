@@ -17,6 +17,7 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/bytecodes.h>
 #include <ecl/internal.h>
+#include <ecl/stack-resize.h>
 
 /* -------------------- INTERPRETER STACK -------------------- */
 

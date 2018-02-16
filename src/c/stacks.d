@@ -20,6 +20,7 @@
 # include <sys/resource.h>
 #endif
 #include <ecl/internal.h>
+#include <ecl/stack-resize.h>
 
 /************************ C STACK ***************************/
 
