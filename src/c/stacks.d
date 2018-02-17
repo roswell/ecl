@@ -522,13 +522,13 @@ frs_set_size(cl_env_ptr env, cl_index new_size)
     env->frs_limit_size = new_size - 2*margin;
     org = ecl_alloc_atomic(new_size * sizeof(*org));
 
-    ECL_STACK_RESIZE_DISABLE_INTERRUPTS(the_env);
+    ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
     memcpy(org, old_org, (limit + 1) * sizeof(*org));
     env->frs_top = org + limit;
     env->frs_org = org;
     env->frs_limit = org + (new_size - 2*margin);
     env->frs_size = new_size;
-    ECL_STACK_RESIZE_ENABLE_INTERRUPTS(the_env);
+    ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 
     ecl_dealloc(old_org);
   }
