@@ -38,6 +38,41 @@ extern "C" {
         if (ecl_unlikely((char*)(&var) >= (env)->cs_limit)) ecl_cs_overflow()
 #endif
 
+/*********************************************************
+ * INTERRUPT SAFE STACK MANIPULATIONS
+ *
+ * The requirement for interruptible threads puts major
+ * restrictions on the implementation of stack push/pop and unwind
+ * routines. There are two principle requirements to be fulfilled:
+ * The code which is executed during the interrupt must not
+ * overwrite stack values (1) and it must be able to safely call stack
+ * unwind functions (2).
+ * The first requirement can be met in two distinct ways:
+ * - Ordering the manipulations of the stack pointer and of the
+ *   stack itself in the right manner. This means, when pushing in
+ *   the stack first increase the stack pointer and then write the
+ *   value and the other way round for popping from the stack. This
+ *   method has the drawback that it requires insertions of
+ *   memory barriers on modern processors, possibly impacting
+ *   performance.
+ * - Avoid overwriting stack values in the interrupt signal
+ *   handler. This can be achieved by either increasing the stack
+ *   pointer temporarily during the execution of the interrupt code
+ *   or by saving/restoring the topmost stack value. However due to
+ *   the second requirement, this simple method is only possible
+ *   for the arguments stack.
+ * The second requirement requires the stack to be in a consistent
+ * state during the interrupt. The easiest solution would be to
+ * disable interrupts during stack manipulations. Because of the
+ * mprotect()-mechanism for fast interrupt dispatch, which does not
+ * allow writes in the thread-local environment while interrupts
+ * are disabled, this is unfortunately not possible. The solution
+ * adopted for this case (bindings and frame stack) is to push a
+ * dummy tag/symbol in the stack before any other manipulations are
+ * done. This dummy tag/symbol will then be ignored while
+ * unwinding.
+ */
+
 /**************
  * BIND STACK
  **************/
