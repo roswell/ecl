@@ -338,6 +338,7 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
     cl_object *tail, l;
     for (tail = &q->queue.list; (l = *tail) != ECL_NIL; ) {
       cl_object p = ECL_CONS_CAR(l);
+      ecl_get_spinlock(the_env, &p->process.start_stop_spinlock);
       if (p->process.phase == ECL_PROCESS_INACTIVE ||
           p->process.phase == ECL_PROCESS_EXITING) {
         print_lock("removing %p", q, p);
@@ -351,12 +352,15 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
           *tail = ECL_CONS_CDR(l);
         tail = &ECL_CONS_CDR(l);
         if (flags & ECL_WAKEUP_KILL)
-          mp_process_kill(p);
+          ecl_interrupt_process(p, @'mp::exit-process');
         else
           ecl_wakeup_process(p);
-        if (!(flags & ECL_WAKEUP_ALL))
+        if (!(flags & ECL_WAKEUP_ALL)) {
+          ecl_giveup_spinlock(&p->process.start_stop_spinlock);
           break;
+        }
       }
+      ecl_giveup_spinlock(&p->process.start_stop_spinlock);
     }
   }
   ecl_giveup_spinlock(&q->queue.spinlock);
