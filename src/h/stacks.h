@@ -474,11 +474,14 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 
 #define ECL_UNWIND_PROTECT_EXIT \
         __unwinding=0; } \
+        ecl_bds_bind(__the_env,ECL_INTERRUPTS_ENABLED,ECL_T); \
         ecl_frs_pop(__the_env); \
         __nr = ecl_stack_push_values(__the_env);
 
-#define ECL_UNWIND_PROTECT_END \
+#define ECL_UNWIND_PROTECT_END                  \
         ecl_stack_pop_values(__the_env,__nr);   \
+        ecl_bds_unwind1(__the_env); \
+        ecl_check_pending_interrupts(__the_env); \
         if (__unwinding) ecl_unwind(__the_env,__next_fr); } while(0)
 
 #define ECL_NEW_FRAME_ID(env) ecl_make_fixnum(env->frame_id++)
