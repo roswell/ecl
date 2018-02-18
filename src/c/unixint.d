@@ -422,17 +422,18 @@ static cl_object
 pop_signal(cl_env_ptr env)
 {
         cl_object record, value;
-        if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
-                return ECL_NIL;
-        }
         ECL_WITH_SPINLOCK_BEGIN(env, &env->interrupt_struct->signal_queue_spinlock) {
-                record = env->interrupt_struct->pending_interrupt;
-                value = ECL_CONS_CAR(record);
-                env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
-                /* Save some conses for future use, to avoid allocating */
-                if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
-                        ECL_RPLACD(record, env->interrupt_struct->signal_queue);
-                        env->interrupt_struct->signal_queue = record;
+                if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
+                        value = ECL_NIL;
+                } else {
+                        record = env->interrupt_struct->pending_interrupt;
+                        value = ECL_CONS_CAR(record);
+                        env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
+                        /* Save some conses for future use, to avoid allocating */
+                        if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
+                                ECL_RPLACD(record, env->interrupt_struct->signal_queue);
+                                env->interrupt_struct->signal_queue = record;
+                        }
                 }
         } ECL_WITH_SPINLOCK_END;
         return value;
