@@ -249,6 +249,7 @@ enum ecl_stype {                /*  symbol type  */
 #define ECL_DUMMY_TAG           ((cl_object)(cl_symbols+4))
 #define ECL_RESTART_CLUSTERS    ((cl_object)(cl_symbols+5))
 #define ECL_HANDLER_CLUSTERS    ((cl_object)(cl_symbols+6))
+#define ECL_INTERRUPTS_ENABLED  ((cl_object)(cl_symbols+7))
 #define ECL_NO_TL_BINDING       ((cl_object)(1 << ECL_TAG_BITS))
 
 struct ecl_symbol {

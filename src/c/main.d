@@ -557,6 +557,24 @@ cl_boot(int argc, char **argv)
 #endif
 
   env->packages_to_be_created = ECL_NIL;
+
+#ifdef ECL_THREADS
+  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
+                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
+  env->thread_local_bindings_size = env->bindings_array->vector.dim;
+  env->thread_local_bindings = env->bindings_array->vector.self.t;
+#endif
+
+  /*
+   * Initialize the per-thread data.
+   * This cannot come later, because we need to be able to bind
+   * ext::*interrupts-enabled while creating packages.
+   */
+  init_big();
+  ecl_init_env(env);
+  ecl_cs_set_org(env);
+
   cl_core.lisp_package =
     ecl_make_package(str_common_lisp,
                      cl_list(2, str_cl, str_LISP),
@@ -623,14 +641,6 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-  /*
-   * Initialize the per-thread data.
-   * This cannot come later, because some routines need the
-   * frame stack immediately (for instance SI:PATHNAME-TRANSLATIONS).
-   */
-  init_big();
-  ecl_init_env(env);
-  ecl_cs_set_org(env);
 #if !defined(GBC_BOEHM)
   /* We need this because a lot of stuff is to be created */
   init_GC();
@@ -648,11 +658,6 @@ cl_boot(int argc, char **argv)
 #endif
 
 #ifdef ECL_THREADS
-  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
-                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
   ECL_SET(@'mp::*current-process*', env->own_process);
 #endif
 
