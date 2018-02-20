@@ -522,6 +522,16 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 
 extern void ecl_interrupt_process(cl_object process, cl_object function);
 
+/* disabling interrupts on the lisp side */
+
+#define ECL_WITHOUT_INTERRUPTS_BEGIN(the_env) do {                \
+        cl_env_ptr __the_env = (the_env);                         \
+        ecl_bds_bind(__the_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);
+
+#define ECL_WITHOUT_INTERRUPTS_END                 \
+        ecl_bds_unwind1(__the_env);                \
+        ecl_check_pending_interrupts(__the_env); } while(0)
+
 /* unixsys.d */
 
 /* Some old BSD systems don't have WCONTINUED / WIFCONTINUED */

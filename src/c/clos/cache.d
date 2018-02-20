@@ -56,7 +56,6 @@ clear_one_from_cache(ecl_cache_ptr cache, cl_object target)
 static void
 clear_list_from_cache(ecl_cache_ptr cache)
 {
-  ecl_disable_interrupts();
   cl_object list = ecl_atomic_get(&cache->clear_list);
   cl_object table = cache->table;
   cl_index i, total_size = table->vector.dim;
@@ -69,7 +68,6 @@ clear_list_from_cache(ecl_cache_ptr cache)
       }
     }
   }
-  ecl_enable_interrupts();
 }
 #endif
 
@@ -128,6 +126,7 @@ vector_hash_key(cl_object keys)
 /*
  * variation of ecl_gethash from hash.d, which takes an array of objects as key
  * It also assumes that entries are never removed except by clrhash.
+ * This method must be called with interrupts disabled!
  */
 
 ecl_cache_record_ptr
@@ -139,7 +138,6 @@ ecl_search_cache(ecl_cache_ptr cache)
   }
 #endif
   {
-    ecl_disable_interrupts();
     cl_object table = cache->table;
     cl_object keys = cache->keys;
     cl_index argno = keys->vector.fillp;
@@ -216,7 +214,6 @@ ecl_search_cache(ecl_cache_ptr cache)
         RECORD_GEN_SET(e, g);
       }
     }
-    ecl_enable_interrupts();
     return (ecl_cache_record_ptr)min_e;
   }
 }
