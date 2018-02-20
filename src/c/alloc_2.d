@@ -1353,7 +1353,7 @@ ecl_mark_env(struct cl_env_struct *env)
 static void
 stacks_scanner()
 {
-  cl_env_ptr the_env = ecl_process_env();
+  cl_env_ptr the_env = ecl_process_env_unsafe();
   cl_object l;
   l = cl_core.libraries;
   if (l) {

@@ -44,6 +44,16 @@ extern void ecl_init_env(struct cl_env_struct *env);
 
 #if !defined(WITH___THREAD)
 cl_env_ptr
+ecl_process_env_unsafe(void)
+{
+#ifdef ECL_WINDOWS_THREADS
+  return TlsGetValue(cl_env_key);
+#else
+  return pthread_getspecific(cl_env_key);
+#endif
+}
+
+cl_env_ptr
 ecl_process_env(void)
 {
 #ifdef ECL_WINDOWS_THREADS
