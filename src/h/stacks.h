@@ -474,7 +474,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 
 #define ECL_UNWIND_PROTECT_EXIT \
         __unwinding=0; } \
-        ecl_bds_bind(__the_env,ECL_INTERRUPTS_ENABLED,ECL_T); \
+        ecl_bds_bind(__the_env,ECL_INTERRUPTS_ENABLED,ECL_NIL); \
         ecl_frs_pop(__the_env); \
         __nr = ecl_stack_push_values(__the_env);
 
