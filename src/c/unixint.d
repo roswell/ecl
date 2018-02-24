@@ -823,7 +823,8 @@ si_check_pending_interrupts(void)
 void
 ecl_check_pending_interrupts(cl_env_ptr env)
 {
-        handle_all_queued(env);
+        if(env->interrupt_struct->pending_interrupt != ECL_NIL)
+                handle_all_queued_interrupt_safe(env);
 }
 
 static cl_object
@@ -1084,14 +1085,10 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                 case STATUS_GUARD_PAGE_VIOLATION: {
                         cl_object process = the_env->own_process;
                         if (!Null(process->process.interrupt)) {
-                                cl_object signal = pop_signal(the_env);
                                 process->process.interrupt = ECL_NIL;
-                                while (signal != ECL_NIL && signal) {
-                                        handle_signal_now(signal, the_env->own_process);
-                                        signal = pop_signal(the_env);
-                                }
-                                return EXCEPTION_CONTINUE_EXECUTION;
+                                handle_all_queued_interrupt_safe(the_env);
                         }
+                        return EXCEPTION_CONTINUE_EXECUTION;
                 }
                 /* Catch all arithmetic exceptions */
                 case EXCEPTION_INT_DIVIDE_BY_ZERO:
