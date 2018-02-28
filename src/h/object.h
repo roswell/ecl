@@ -885,7 +885,11 @@ struct ecl_process {
         cl_object queue_record;
         cl_object start_stop_spinlock;
         cl_index phase;
+#ifdef ECL_WINDOWS_THREADS
+        HANDLE thread;
+#else
         pthread_t thread;
+#endif
         int trap_fpe_bits;
 };
 

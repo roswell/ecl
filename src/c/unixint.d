@@ -983,7 +983,7 @@ do_interrupt_thread(cl_object process)
 #  ifndef ECL_USE_GUARD_PAGE
 #   error "Cannot implement ecl_interrupt_process without guard pages"
 #  endif
-        HANDLE thread = (HANDLE)process->process.thread;
+        HANDLE thread = process->process.thread;
         CONTEXT context;
         void *trap_address = process->process.env;
         DWORD guard = PAGE_GUARD | PAGE_READWRITE;
@@ -1058,7 +1058,7 @@ void
 ecl_wakeup_process(cl_object process)
 {
 # ifdef ECL_WINDOWS_THREADS
-        HANDLE thread = (HANDLE)process->process.thread;
+        HANDLE thread = process->process.thread;
         if (!QueueUserAPC(wakeup_noop, thread, 0)) {
                 FEwin32_error("Unable to queue APC call to thread ~A",
                               1, process);
