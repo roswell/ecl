@@ -134,24 +134,26 @@ ecl_list_process(cl_object process)
   } while (1);
 }
 
+/* Must be called with disabled interrupts to prevent race conditions
+ * in thread_cleanup */
 static void
 ecl_unlist_process(cl_object process)
 {
   cl_env_ptr the_env = ecl_process_env();
-  ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
-    cl_object vector = cl_core.processes;
-    cl_index i;
-    for (i = 0; i < vector->vector.fillp; i++) {
-      if (vector->vector.self.t[i] == process) {
-        vector->vector.fillp--;
-        do {
-          vector->vector.self.t[i] =
-            vector->vector.self.t[i+1];
-        } while (++i < vector->vector.fillp);
-        break;
-      }
+  ecl_get_spinlock(the_env, &cl_core.processes_spinlock);
+  cl_object vector = cl_core.processes;
+  cl_index i;
+  for (i = 0; i < vector->vector.fillp; i++) {
+    if (vector->vector.self.t[i] == process) {
+      vector->vector.fillp--;
+      do {
+        vector->vector.self.t[i] =
+          vector->vector.self.t[i+1];
+      } while (++i < vector->vector.fillp);
+      break;
     }
-  } ECL_WITH_SPINLOCK_END;
+  }
+  ecl_giveup_spinlock(&cl_core.processes_spinlock);
 }
 
 static cl_object
@@ -606,6 +608,7 @@ mp_process_enable(cl_object process)
     ecl_enable_interrupts_env(the_env);
   } ECL_UNWIND_PROTECT_EXIT {
     if (!ok) {
+      /* INV: interrupts are already disabled through unwind-protect */
       ecl_unlist_process(process);
       /* Disable the barrier and alert possible waiting processes. */
       mp_barrier_unblock(3, process->process.exit_barrier,
