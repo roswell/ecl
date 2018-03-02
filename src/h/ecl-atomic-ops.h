@@ -28,7 +28,7 @@
 #else
 # define AO_load(x) (x)
 # define AO_store(x,y) ((x)=(y))
-# define AO_nop_full(x,y)
+# define AO_nop_full()
 #endif
 
 #endif /* ECL_ATOMIC_OPS_H */
