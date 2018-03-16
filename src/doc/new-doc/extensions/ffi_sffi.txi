@@ -39,7 +39,7 @@ the C function @code{cos}:
 @lisp
 (ffi:clines "#include <math.h>")
 (defun cos (x)
-  (ffi:c-inline (x) (:double) :double "cos(#0)" :on-liner t))
+  (ffi:c-inline (x) (:double) :double "cos(#0)" :one-liner t))
 @end lisp
 @end defspec
 
