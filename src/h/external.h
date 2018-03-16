@@ -99,12 +99,15 @@ struct cl_env_struct {
         /* ... arithmetics ... */
         /* Note: if you change the size of these registers, change also
            BIGNUM_REGISTER_SIZE in config.h */
+        /* FIXME: actually use BIGNUM_REGISTER_SIZE; Also fix
+           handle_all_queued_interrupt_safe in unixint.d */
         cl_object big_register[3];
 
         cl_object own_process;
-        cl_object pending_interrupt;
-        cl_object signal_queue;
-        cl_object signal_queue_spinlock;
+        /* The objects in this struct need to be writeable from a
+           different thread, if environment is write-protected by
+           mprotect. Hence they have to be allocated seperately. */
+        struct ecl_interrupt_struct *interrupt_struct;
         void *default_sigmask;
 
         /* The following is a hash table for caching invocations of
@@ -145,6 +148,12 @@ struct cl_env_struct {
 #endif
 };
 
+struct ecl_interrupt_struct {
+        cl_object pending_interrupt;
+        cl_object signal_queue;
+        cl_object signal_queue_spinlock;
+};
+
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
@@ -152,14 +161,17 @@ struct cl_env_struct {
 # ifdef WITH___THREAD
 #  define cl_env (*cl_env_p)
 #  define ecl_process_env() cl_env_p
+#  define ecl_process_env_unsafe() cl_env_p
    extern __thread cl_env_ptr cl_env_p;
 # else
 #  define cl_env (*ecl_process_env())
    extern ECL_API cl_env_ptr ecl_process_env(void) __attribute__((const));
+   extern ECL_API cl_env_ptr ecl_process_env_unsafe(void) __attribute__((const));
 # endif
 #else
 # define cl_env (*cl_env_p)
 # define ecl_process_env() cl_env_p
+# define ecl_process_env_unsafe() cl_env_p
   extern ECL_API cl_env_ptr cl_env_p;
 #endif
 
@@ -1869,7 +1881,7 @@ extern ECL_API cl_object si_copy_file(cl_object orig, cl_object end);
 #define ecl_disable_interrupts_env(env) ((env)->disable_interrupts=1)
 #define ecl_enable_interrupts_env(env) (((env)->disable_interrupts^=1) && (ecl_check_pending_interrupts(env),0))
 #endif
-#define ecl_clear_interrupts_env(env) ((env)->pendinginterrupts=0)
+#define ecl_clear_interrupts_env(env) ((env)->interrupt_struct->pending_interrupt=ECL_NIL)
 #define ecl_clear_interrupts() ecl_clear_interrupts(&cl_env)
 #define ecl_disable_interrupts() ecl_disable_interrupts_env(&cl_env)
 #define ecl_enable_interrupts() ecl_enable_interrupts_env(&cl_env)
@@ -1899,10 +1911,10 @@ extern ECL_API cl_object si_waitpid(cl_object pid, cl_object wait);
 extern ECL_API cl_object si_killpid(cl_object pid, cl_object signal);
 
 extern ECL_API cl_object si_run_program_inner
-(cl_object command, cl_object argv, cl_object environ);
+(cl_object command, cl_object argv, cl_object environment);
 
 extern ECL_API cl_object si_spawn_subprocess
-(cl_object command, cl_object argv, cl_object environ,
+(cl_object command, cl_object argv, cl_object environment,
  cl_object input, cl_object output, cl_object error);
 
 

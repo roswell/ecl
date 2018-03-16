@@ -143,21 +143,22 @@ mp_barrier_wait(cl_object barrier)
   }
   ecl_disable_interrupts_env(the_env);
   counter = decrement_counter(&barrier->barrier.arrivers_count);
-  if (counter == 0) {
+  if (counter == 1) {
     print_lock("barrier %p saturated", barrier, barrier);
     /* There are (count-1) threads in the queue and we
      * are the last one. We thus unblock all threads and
      * proceed. */
-    mp_barrier_unblock(1, barrier);
     ecl_enable_interrupts_env(the_env);
+    mp_barrier_unblock(1, barrier);
     output = @':unblocked';
-  } else if (counter > 0) {
+  } else if (counter > 1) {
     print_lock("barrier %p waiting", barrier, barrier);
     ecl_enable_interrupts_env(the_env);
     ecl_wait_on(the_env, barrier_wait_condition, barrier);
     output = ECL_T;
   } else {
     print_lock("barrier %p pass-through", barrier, barrier);
+    ecl_enable_interrupts_env(the_env);
     /* Barrier disabled */
     output = ECL_NIL;
   }

@@ -367,28 +367,52 @@ si_handle_signal(cl_object signal_code, cl_object process)
 static void
 handle_all_queued(cl_env_ptr env)
 {
-        while (env->pending_interrupt != ECL_NIL) {
+        while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
                 handle_signal_now(pop_signal(env), env->own_process);
         }
 }
 
 static void
+handle_all_queued_interrupt_safe(cl_env_ptr env)
+{
+        /* We have to save and later restore thread-local variables to
+         * ensure that they don't get overwritten by the interrupting
+         * code */
+        cl_object fun = env->function;
+        cl_index nvalues = env->nvalues;
+        cl_object* values = ecl_alloc_atomic(ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+        memcpy(values, env->values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+        cl_object big_register[3];
+        memcpy(big_register, env->big_register, 3*sizeof(cl_object));
+        /* We might have been interrupted while we push/pop in the
+         * stack. Increasing env->stack_top ensures that we don't
+         * overwrite the topmost stack value. */
+        env->stack_top++;
+        handle_all_queued(env);
+        env->stack_top--;
+        memcpy(env->big_register, big_register, 3*sizeof(cl_object));
+        memcpy(env->values, values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+        env->nvalues = nvalues;
+        env->function = fun;
+}
+
+static void
 queue_signal(cl_env_ptr env, cl_object code, int allocate)
 {
-        ECL_WITH_SPINLOCK_BEGIN(env, &env->signal_queue_spinlock) {
+        ECL_WITH_SPINLOCK_BEGIN(ecl_process_env(), &env->interrupt_struct->signal_queue_spinlock) {
                 cl_object record;
                 if (allocate) {
                         record = ecl_list1(ECL_NIL);
                 } else {
-                        record = env->signal_queue;
+                        record = env->interrupt_struct->signal_queue;
                         if (record != ECL_NIL) {
-                                env->signal_queue = ECL_CONS_CDR(record);
+                                env->interrupt_struct->signal_queue = ECL_CONS_CDR(record);
                         }
                 }
                 if (record != ECL_NIL) {
                         ECL_RPLACA(record, code);
-                        env->pending_interrupt =
-                                ecl_nconc(env->pending_interrupt,
+                        env->interrupt_struct->pending_interrupt =
+                                ecl_nconc(env->interrupt_struct->pending_interrupt,
                                           record);
                 }
         } ECL_WITH_SPINLOCK_END;
@@ -398,17 +422,18 @@ static cl_object
 pop_signal(cl_env_ptr env)
 {
         cl_object record, value;
-        if (env->pending_interrupt == ECL_NIL) {
-                return ECL_NIL;
-        }
-        ECL_WITH_SPINLOCK_BEGIN(env, &env->signal_queue_spinlock) {
-                record = env->pending_interrupt;
-                value = ECL_CONS_CAR(record);
-                env->pending_interrupt = ECL_CONS_CDR(record);
-                /* Save some conses for future use, to avoid allocating */
-                if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
-                        ECL_RPLACD(record, env->signal_queue);
-                        env->signal_queue = record;
+        ECL_WITH_SPINLOCK_BEGIN(env, &env->interrupt_struct->signal_queue_spinlock) {
+                if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
+                        value = ECL_NIL;
+                } else {
+                        record = env->interrupt_struct->pending_interrupt;
+                        value = ECL_CONS_CAR(record);
+                        env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
+                        /* Save some conses for future use, to avoid allocating */
+                        if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
+                                ECL_RPLACD(record, env->interrupt_struct->signal_queue);
+                                env->interrupt_struct->signal_queue = record;
+                        }
                 }
         } ECL_WITH_SPINLOCK_END;
         return value;
@@ -599,12 +624,12 @@ handler_fn_prototype(process_interrupt_handler, int sig, siginfo_t *siginfo, voi
         the_env = ecl_process_env();
         if (zombie_process(the_env))
                 return;
-        if (!Null(the_env->pending_interrupt)) {
+        if (!Null(the_env->interrupt_struct->pending_interrupt)) {
                 if (interrupts_disabled_by_C(the_env)) {
                         set_guard_page(the_env);
                 } else if (!interrupts_disabled_by_lisp(the_env)) {
                         unblock_signal(the_env, sig);
-                        handle_all_queued(the_env);
+                        handle_all_queued_interrupt_safe(the_env);
                 }
         }
         errno = old_errno;
@@ -712,6 +737,12 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 "also known as 'bus or segmentation fault'.\n"
                 ";;; Jumping to the outermost toplevel prompt\n"
                 ";;;\n\n";
+        static const char *interrupt_msg =
+                "\n;;;\n;;; Internal error:\n"
+                ";;; Detected write access to the environment while "
+                "interrupts were disabled. Usually this is caused by "
+                "a missing call to ecl_enable_interrupts.\n"
+                ";;;\n\n";
         cl_env_ptr the_env;
         reinstall_signal(sig, sigsegv_handler);
         /* The lisp environment might not be installed. */
@@ -723,15 +754,23 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
                 return;
 #if defined(SA_SIGINFO) && !defined(NACL)
 # if defined(ECL_USE_MPROTECT)
-        /* We access the environment when it was protected. That
-         * means there was a pending signal. */
-        if (((char*)the_env <= (char*)info->si_addr) &&
-            ((char*)info->si_addr <= (char*)(the_env+1)))
+        /* We access disable_interrupts when the environment was
+         * protected. That means there was a pending signal. */
+        if (((char*)&the_env->disable_interrupts <= (char*)info->si_addr) &&
+            ((char*)info->si_addr < (char*)(&the_env->disable_interrupts+1)))
         {
                 mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
                 unblock_signal(the_env, sig);
-                handle_all_queued(the_env);
+                handle_all_queued_interrupt_safe(the_env);
+                return;
+        } else if (the_env->disable_interrupts &&
+                   ((char*)(&the_env->disable_interrupts+1) <= (char*)info->si_addr) &&
+                   ((char*)info->si_addr < (char*)(the_env+1))) {
+                mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
+                the_env->disable_interrupts = 0;
+                unblock_signal(the_env, sig);
+                ecl_unrecoverable_error(the_env, interrupt_msg);
                 return;
         }
 # endif /* ECL_USE_MPROTECT */
@@ -784,7 +823,8 @@ si_check_pending_interrupts(void)
 void
 ecl_check_pending_interrupts(cl_env_ptr env)
 {
-        handle_all_queued(env);
+        if(env->interrupt_struct->pending_interrupt != ECL_NIL)
+                handle_all_queued_interrupt_safe(env);
 }
 
 static cl_object
@@ -943,7 +983,7 @@ do_interrupt_thread(cl_object process)
 #  ifndef ECL_USE_GUARD_PAGE
 #   error "Cannot implement ecl_interrupt_process without guard pages"
 #  endif
-        HANDLE thread = (HANDLE)process->process.thread;
+        HANDLE thread = process->process.thread;
         CONTEXT context;
         void *trap_address = process->process.env;
         DWORD guard = PAGE_GUARD | PAGE_READWRITE;
@@ -1018,7 +1058,7 @@ void
 ecl_wakeup_process(cl_object process)
 {
 # ifdef ECL_WINDOWS_THREADS
-        HANDLE thread = (HANDLE)process->process.thread;
+        HANDLE thread = process->process.thread;
         if (!QueueUserAPC(wakeup_noop, thread, 0)) {
                 FEwin32_error("Unable to queue APC call to thread ~A",
                               1, process);
@@ -1045,14 +1085,10 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                 case STATUS_GUARD_PAGE_VIOLATION: {
                         cl_object process = the_env->own_process;
                         if (!Null(process->process.interrupt)) {
-                                cl_object signal = pop_signal(the_env);
                                 process->process.interrupt = ECL_NIL;
-                                while (signal != ECL_NIL && signal) {
-                                        handle_signal_now(signal, the_env->own_process);
-                                        signal = pop_signal(the_env);
-                                }
-                                return EXCEPTION_CONTINUE_EXECUTION;
+                                handle_all_queued_interrupt_safe(the_env);
                         }
+                        return EXCEPTION_CONTINUE_EXECUTION;
                 }
                 /* Catch all arithmetic exceptions */
                 case EXCEPTION_INT_DIVIDE_BY_ZERO:

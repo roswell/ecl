@@ -43,7 +43,7 @@ This is a set of three macros that create an @code{UNWIND-PROTECT} region that p
     (return nil)))
 @end verbatim
 
-As explained in @code{CL_UNWIND_PROTECT},it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitary transfers of control.
+As explained in @code{CL_UNWIND_PROTECT},it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitrary transfers of control.
 
 @subsubheading See also
 @code{CL_UNWIND_PROTECT}
@@ -78,7 +78,7 @@ Create a protected region.
 @end verbatim
 
 @subsubheading Description
-When embedding ECL it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitary transfers of control. Furthermore, the unwind protect form will be used in at least in the following ocasions:
+When embedding ECL it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitrary transfers of control. Furthermore, the unwind protect form will be used in at least in the following occasions:
 
 @itemize
 @item In a normal program exit, caused by @code{ext:quit}, ECL unwinds up to the outermost frame, which may be an @code{CL_CATCH_ALL} or @code{CL_UNWIND_PROTECT} macro.
@@ -190,7 +190,7 @@ This macro clears all pending interrupts.
 Postpone handling of signals and exceptions.
 
 @subsubheading Description
-This macro sets a thread-local flag indicating that all received signals should be queued for later processing.
+This macro sets a thread-local flag indicating that all received signals should be queued for later processing. Note that it is not possible to execute lisp code while interrupts are disabled in this way. For this purpose, use the @code{ext:without-interrupts} macro. Every call to @code{ecl_disable_interrupts} must be followed by a corresponding call to @code{ecl_enable_interrupts}, else race conditions will appear.
 
 @subsubheading See also
 @code{ecl_enable_interrupts} and @code{ecl_clear_interrupts}. 

@@ -17,6 +17,7 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/bytecodes.h>
 #include <ecl/internal.h>
+#include <ecl/stack-resize.h>
 
 /* -------------------- INTERPRETER STACK -------------------- */
 
@@ -38,14 +39,13 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   old_stack = env->stack;
   new_stack = (cl_object *)ecl_alloc_atomic(new_size * sizeof(cl_object));
 
-  ecl_disable_interrupts_env(env);
+  ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
   memcpy(new_stack, old_stack, env->stack_size * sizeof(cl_object));
   env->stack_size = new_size;
   env->stack_limit_size = new_size - 2*safety_area;
   env->stack = new_stack;
   env->stack_top = env->stack + top;
   env->stack_limit = env->stack + (new_size - 2*safety_area);
-  ecl_enable_interrupts_env(env);
 
   /* A stack always has at least one element. This is assumed by cl__va_start
    * and friends, which take a sp=0 to have no arguments.
@@ -53,6 +53,8 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   if (top == 0) {
     *(env->stack_top++) = ecl_make_fixnum(0);
   }
+  ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
+
   return env->stack_top;
 }
 
@@ -124,8 +126,8 @@ ecl_stack_frame_push(cl_object f, cl_object o)
   if (top >= env->stack_limit) {
     top = ecl_stack_grow(env);
   }
-  *top = o;
   env->stack_top = ++top;
+  *(top-1) = o;
   f->frame.base = top - (++(f->frame.size));
   f->frame.stack = env->stack;
 }
@@ -994,7 +996,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_LABEL(exit, vector);
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)exit);
-      if (ecl_frs_push(the_env,reg1) == 0) {
+      ecl_frs_push(the_env,reg1);
+      if (__ecl_frs_push_result == 0) {
         THREAD_NEXT;
       } else {
         reg0 = the_env->values[0];
@@ -1022,7 +1025,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)vector); /* FIXME! */
       vector += n * OPARG_SIZE;
-      if (ecl_frs_push(the_env,reg1) != 0) {
+      ecl_frs_push(the_env,reg1);
+      if (__ecl_frs_push_result != 0) {
         /* Wait here for gotos. Each goto sets
            VALUES(0) to an integer which ranges from 0
            to ntags-1, depending on the tag. These
@@ -1148,7 +1152,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_LABEL(exit, vector);
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)exit);
-      if (ecl_frs_push(the_env,ECL_PROTECT_TAG) != 0) {
+      ecl_frs_push(the_env,ECL_PROTECT_TAG);
+      if (__ecl_frs_push_result != 0) {
         ecl_frs_pop(the_env);
         vector = (cl_opcode *)ECL_STACK_POP_UNSAFE(the_env);
         lex_env = ECL_STACK_POP_UNSAFE(the_env);

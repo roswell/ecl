@@ -17,6 +17,11 @@
     See file '../Copyright' for full details.
 */
 
+#ifndef ECL_STACKS_H
+#define ECL_STACKS_H
+
+#include <ecl/ecl-atomic-ops.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,6 +37,41 @@ extern "C" {
 #define ecl_cs_check(env,var) \
         if (ecl_unlikely((char*)(&var) >= (env)->cs_limit)) ecl_cs_overflow()
 #endif
+
+/*********************************************************
+ * INTERRUPT SAFE STACK MANIPULATIONS
+ *
+ * The requirement for interruptible threads puts major
+ * restrictions on the implementation of stack push/pop and unwind
+ * routines. There are two principle requirements to be fulfilled:
+ * The code which is executed during the interrupt must not
+ * overwrite stack values (1) and it must be able to safely call stack
+ * unwind functions (2).
+ * The first requirement can be met in two distinct ways:
+ * - Ordering the manipulations of the stack pointer and of the
+ *   stack itself in the right manner. This means, when pushing in
+ *   the stack first increase the stack pointer and then write the
+ *   value and the other way round for popping from the stack. This
+ *   method has the drawback that it requires insertions of
+ *   memory barriers on modern processors, possibly impacting
+ *   performance.
+ * - Avoid overwriting stack values in the interrupt signal
+ *   handler. This can be achieved by either increasing the stack
+ *   pointer temporarily during the execution of the interrupt code
+ *   or by saving/restoring the topmost stack value. However due to
+ *   the second requirement, this simple method is only possible
+ *   for the arguments stack.
+ * The second requirement requires the stack to be in a consistent
+ * state during the interrupt. The easiest solution would be to
+ * disable interrupts during stack manipulations. Because of the
+ * mprotect()-mechanism for fast interrupt dispatch, which does not
+ * allow writes in the thread-local environment while interrupts
+ * are disabled, this is unfortunately not possible. The solution
+ * adopted for this case (bindings and frame stack) is to push a
+ * dummy tag/symbol in the stack before any other manipulations are
+ * done. This dummy tag/symbol will then be ignored while
+ * unwinding.
+ */
 
 /**************
  * BIND STACK
@@ -76,18 +116,36 @@ static inline void ecl_bds_bind_inl(cl_env_ptr env, cl_object s, cl_object v)
                 ecl_bds_bind(env,s,v);
         } else {
                 location = env->thread_local_bindings + index;
-                slot = ++env->bds_top;
-                if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+                slot = env->bds_top+1;
+                if (slot >= env->bds_limit){
+                        slot = ecl_bds_overflow();
+                        slot->symbol = ECL_DUMMY_TAG;
+                } else {
+                        /* First, we push a dummy symbol in the stack to
+                         * prevent segfaults when we are interrupted with a
+                         * call to ecl_bds_unwind. */
+                        slot->symbol = ECL_DUMMY_TAG;
+                        AO_nop_full();
+                        ++env->bds_top;
+                }
+                AO_nop_full();
+                /* Then we disable interrupts to ensure that
+                 * ecl_bds_unwind doesn't overwrite the symbol with
+                 * some random value. */
+                ecl_disable_interrupts_env(env);
                 slot->symbol = s;
                 slot->value = *location;
                 *location = v;
+                ecl_enable_interrupts_env(env);
         }
 # else
         slot = ++env->bds_top;
         if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+        ecl_disable_interrupts_env(env);
         slot->symbol = s;
         slot->value = s->symbol.value;
         s->symbol.value = v;
+        ecl_enable_interrupts_env(env);
 # endif /* !ECL_THREADS */
 }
 
@@ -101,30 +159,42 @@ static inline void ecl_bds_push_inl(cl_env_ptr env, cl_object s)
                 ecl_bds_push(env, s);
         } else {
                 location = env->thread_local_bindings + index;
-                slot = ++env->bds_top;
-                if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+                slot = env->bds_top+1;
+                if (slot >= env->bds_limit){
+                        slot = ecl_bds_overflow();
+                        slot->symbol = ECL_DUMMY_TAG;
+                } else {
+                        slot->symbol = ECL_DUMMY_TAG;
+                        AO_nop_full();
+                        ++env->bds_top;
+                }
+                AO_nop_full();
+                ecl_disable_interrupts_env(env);
                 slot->symbol = s;
                 slot->value = *location;
                 if (*location == ECL_NO_TL_BINDING) *location = s->symbol.value;
+                ecl_enable_interrupts_env(env);
         }
 # else
         slot = ++env->bds_top;
         if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+        ecl_disable_interrupts_env(env);
         slot->symbol = s;
         slot->value = s->symbol.value;
+        ecl_enable_interrupts_env(env);
 # endif /* !ECL_THREADS */
 }
 
 static inline void ecl_bds_unwind1_inl(cl_env_ptr env)
 {
-        ecl_bds_ptr slot = env->bds_top--;
-        cl_object s = slot->symbol;
+        cl_object s = env->bds_top->symbol;
 # ifdef ECL_THREADS
         cl_object *location = env->thread_local_bindings + s->symbol.binding;
-        *location = slot->value;
+        *location = env->bds_top->value;
 # else
-        s->symbol.value = slot->value;
+        s->symbol.value = env->bds_top->value;
 # endif
+        --env->bds_top;
 }
 
 # ifdef ECL_THREADS
@@ -154,21 +224,27 @@ static inline cl_object *ecl_bds_ref_inl(cl_env_ptr env, cl_object s)
 # define ecl_bds_unwind1 ecl_bds_unwind1_inl
 #else /* !__GNUC__ */
 # ifndef ECL_THREADS
-#  define ecl_bds_bind(env,sym,val) do {        \
-        const cl_env_ptr env_copy = (env);      \
-        const cl_object s = (sym);              \
-        const cl_object v = (val);              \
-        ecl_bds_check(env_copy);                \
-        (++(env_copy->bds_top))->symbol = s,    \
-        env_copy->bds_top->value = s->symbol.value; \
-        s->symbol.value = v; } while (0)
+#  define ecl_bds_bind(env,sym,val) do {          \
+        const cl_env_ptr env_copy = (env);        \
+        const cl_object s = (sym);                \
+        const cl_object v = (val);                \
+        ecl_bds_check(env_copy);                  \
+        ecl_bds_ptr slot = ++(env_copy->bds_top); \
+        ecl_disable_interrupts_env(env_copy);     \
+        slot->symbol = s;                         \
+        slot->value = s->symbol.value;            \
+        s->symbol.value = v;                      \
+        ecl_enable_interrupts_env(env_copy); } while (0)
 #  define ecl_bds_push(env,sym) do {    \
-        const cl_env_ptr env_copy = (env);      \
-        const cl_object s = (sym);              \
-        const cl_object v = s->symbol.value;    \
-        ecl_bds_check(env_copy);                \
-        (++(env_copy->bds_top))->symbol = s,    \
-        env_copy->bds_top->value = s->symbol.value; } while (0);
+        const cl_env_ptr env_copy = (env);        \
+        const cl_object s = (sym);                \
+        const cl_object v = s->symbol.value;      \
+        ecl_bds_check(env_copy);                  \
+        ecl_bds_ptr slot = ++(env_copy->bds_top); \
+        ecl_disable_interrupts_env(env_copy);     \
+        slot->symbol = s;                         \
+        slot->value = s->symbol.value;            \
+        ecl_enable_interrupts_env(env_copy); } while (0);
 #  define ecl_bds_unwind1(env)  do {    \
         const cl_env_ptr env_copy = (env);              \
         const cl_object s = env_copy->bds_top->symbol;  \
@@ -238,7 +314,13 @@ typedef struct ecl_frame {
 } *ecl_frame_ptr;
 
 extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_object);
-#define ecl_frs_push(env,val)  ecl_setjmp(_ecl_frs_push(env,val)->frs_jmpbuf)
+#define ecl_frs_push(env,val) \
+        ecl_frame_ptr __frame = _ecl_frs_push(env,val); \
+        ecl_disable_interrupts_env(env); \
+        int __ecl_frs_push_result = ecl_setjmp(__frame->frs_jmpbuf); \
+        __frame->frs_val = val; \
+        ecl_enable_interrupts_env(env)
+
 #define ecl_frs_pop(env) ((env)->frs_top--)
 
 /*******************
@@ -334,8 +416,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
                 if (ecl_unlikely(__new_top >= __env->stack_limit)) {    \
                         __new_top = ecl_stack_grow(__env);              \
                 }                                                       \
-                *__new_top = (o);                                       \
-                __env->stack_top = __new_top+1; } while (0)
+                __env->stack_top = __new_top+1;                         \
+                *__new_top = (o); } while (0)
 
 #define ECL_STACK_POP_UNSAFE(env) *(--((env)->stack_top))
 
@@ -385,17 +467,21 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         bool __unwinding; ecl_frame_ptr __next_fr; \
         const cl_env_ptr __the_env = (the_env);    \
         cl_index __nr; \
-        if (ecl_frs_push(__the_env,ECL_PROTECT_TAG)) {  \
+        ecl_frs_push(__the_env,ECL_PROTECT_TAG);   \
+        if (__ecl_frs_push_result) {      \
                 __unwinding=1; __next_fr=__the_env->nlj_fr; \
         } else {
 
 #define ECL_UNWIND_PROTECT_EXIT \
         __unwinding=0; } \
+        ecl_bds_bind(__the_env,ECL_INTERRUPTS_ENABLED,ECL_NIL); \
         ecl_frs_pop(__the_env); \
         __nr = ecl_stack_push_values(__the_env);
 
-#define ECL_UNWIND_PROTECT_END \
+#define ECL_UNWIND_PROTECT_END                  \
         ecl_stack_pop_values(__the_env,__nr);   \
+        ecl_bds_unwind1(__the_env); \
+        ecl_check_pending_interrupts(__the_env); \
         if (__unwinding) ecl_unwind(__the_env,__next_fr); } while(0)
 
 #define ECL_NEW_FRAME_ID(env) ecl_make_fixnum(env->frame_id++)
@@ -403,14 +489,16 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 #define ECL_BLOCK_BEGIN(the_env,id) do {                        \
         const cl_object __id = ECL_NEW_FRAME_ID(the_env);       \
         const cl_env_ptr __the_env = (the_env);                 \
-        if (ecl_frs_push(__the_env,__id) == 0)
+        ecl_frs_push(__the_env,__id);                           \
+        if (__ecl_frs_push_result == 0)
 
 #define ECL_BLOCK_END \
         ecl_frs_pop(__the_env); } while(0)
 
 #define ECL_CATCH_BEGIN(the_env,tag) do {       \
         const cl_env_ptr __the_env = (the_env); \
-        if (ecl_frs_push(__the_env,tag) == 0) {
+        ecl_frs_push(__the_env,tag);            \
+        if (__ecl_frs_push_result == 0) {
 
 #define ECL_CATCH_END } \
         ecl_frs_pop(__the_env); } while (0)
@@ -420,7 +508,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         const cl_object __ecl_tag = ecl_list1(names);                   \
         ecl_bds_bind(__the_env, ECL_RESTART_CLUSTERS,                   \
                      si_bind_simple_restarts(__ecl_tag, names));        \
-        if (ecl_frs_push(__the_env,__ecl_tag) == 0) {
+        ecl_frs_push(__the_env,__ecl_tag);                              \
+        if (__ecl_frs_push_result == 0) {
 
 #define ECL_RESTART_CASE(code, args)                                    \
         } else if (__the_env->values[0] == ecl_make_fixnum(code)) {     \
@@ -436,7 +525,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         const cl_object __ecl_tag = ecl_list1(names);                   \
         ecl_bds_bind(__the_env, ECL_HANDLER_CLUSTERS,                   \
                      si_bind_simple_handlers(__ecl_tag, names));        \
-        if (ecl_frs_push(__the_env,__ecl_tag) == 0) {
+        ecl_frs_push(__the_env,__ecl_tag);                              \
+        if (__ecl_frs_push_result == 0) {
 
 #define ECL_HANDLER_CASE(code, args)                                    \
         } else if (__the_env->values[0] == ecl_make_fixnum(code)) {     \
@@ -452,16 +542,18 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
         const cl_env_ptr __the_env = (the_env);                 \
         _try {                                                  \
         const cl_env_ptr __the_env = (the_env);                 \
-        if (ecl_frs_push(__the_env,ECL_PROTECT_TAG) == 0) {
+        ecl_frs_push(__the_env,ECL_PROTECT_TAG);                \
+        if (__ecl_frs_push_result == 0) {
 # define ECL_CATCH_ALL_IF_CAUGHT } else {
 # define ECL_CATCH_ALL_END }}                                           \
         _except(_ecl_w32_exception_filter(GetExceptionInformation())) \
         { (void)0; }                                                    \
         ecl_frs_pop(__the_env); } while(0)
 #else
-# define ECL_CATCH_ALL_BEGIN(the_env) do {      \
-        const cl_env_ptr __the_env = (the_env); \
-        if (ecl_frs_push(__the_env,ECL_PROTECT_TAG) == 0) {
+# define ECL_CATCH_ALL_BEGIN(the_env) do {       \
+        const cl_env_ptr __the_env = (the_env);  \
+        ecl_frs_push(__the_env,ECL_PROTECT_TAG); \
+        if (__ecl_frs_push_result == 0) {
 # define ECL_CATCH_ALL_IF_CAUGHT } else {
 # define ECL_CATCH_ALL_END } \
         ecl_frs_pop(__the_env); } while(0)
@@ -471,3 +563,5 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* ECL_STACKS_H */

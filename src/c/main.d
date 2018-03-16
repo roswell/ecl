@@ -162,10 +162,10 @@ ecl_init_env(cl_env_ptr env)
 
   env->method_cache = ecl_make_cache(64, 4096);
   env->slot_cache = ecl_make_cache(3, 4096);
-  env->pending_interrupt = ECL_NIL;
+  env->interrupt_struct->pending_interrupt = ECL_NIL;
   {
     int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
-    env->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
+    env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
   }
 
   init_stacks(env);
@@ -239,6 +239,10 @@ _ecl_alloc_env(cl_env_ptr parent)
   }
 # endif
 #endif
+  if (!ecl_option_values[ECL_OPT_BOOTED])
+    output->interrupt_struct = ecl_alloc_unprotected(sizeof(*output->interrupt_struct));
+  else
+    output->interrupt_struct = ecl_alloc(sizeof(*output->interrupt_struct));
   {
     size_t bytes = cl_core.default_sigmask_bytes;
     if (bytes == 0) {
@@ -257,8 +261,8 @@ _ecl_alloc_env(cl_env_ptr parent)
    * are activated later on by the thread entry point or init_unixint().
    */
   output->disable_interrupts = 1;
-  output->pending_interrupt = ECL_NIL;
-  output->signal_queue_spinlock = ECL_NIL;
+  output->interrupt_struct->pending_interrupt = ECL_NIL;
+  output->interrupt_struct->signal_queue_spinlock = ECL_NIL;
   return output;
 }
 
@@ -553,6 +557,24 @@ cl_boot(int argc, char **argv)
 #endif
 
   env->packages_to_be_created = ECL_NIL;
+
+#ifdef ECL_THREADS
+  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
+                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
+  env->thread_local_bindings_size = env->bindings_array->vector.dim;
+  env->thread_local_bindings = env->bindings_array->vector.self.t;
+#endif
+
+  /*
+   * Initialize the per-thread data.
+   * This cannot come later, because we need to be able to bind
+   * ext::*interrupts-enabled while creating packages.
+   */
+  init_big();
+  ecl_init_env(env);
+  ecl_cs_set_org(env);
+
   cl_core.lisp_package =
     ecl_make_package(str_common_lisp,
                      cl_list(2, str_cl, str_LISP),
@@ -619,14 +641,6 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-  /*
-   * Initialize the per-thread data.
-   * This cannot come later, because some routines need the
-   * frame stack immediately (for instance SI:PATHNAME-TRANSLATIONS).
-   */
-  init_big();
-  ecl_init_env(env);
-  ecl_cs_set_org(env);
 #if !defined(GBC_BOEHM)
   /* We need this because a lot of stuff is to be created */
   init_GC();
@@ -644,11 +658,6 @@ cl_boot(int argc, char **argv)
 #endif
 
 #ifdef ECL_THREADS
-  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
-                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
   ECL_SET(@'mp::*current-process*', env->own_process);
 #endif
 

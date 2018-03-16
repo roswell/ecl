@@ -32,12 +32,14 @@
            (*unwind-exit* (cons 'FRAME *unwind-exit*)))
       (if (member new-destination '(TRASH VALUES))
           (progn
-            (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")==0) {")
+            (wt-nl "ecl_frs_push(cl_env_copy," 'VALUE0 ");")
+            (wt-nl "if (__ecl_frs_push_result==0) {")
             (wt-comment "BEGIN CATCH ~A" code)
             (with-indentation
                 (c2expr* body)))
           (progn
-            (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")) {")
+            (wt-nl "ecl_frs_push(cl_env_copy," 'VALUE0 ");")
+            (wt-nl "if (__ecl_frs_push_result) {")
             (wt-comment "BEGIN CATCH ~A" code)
             (with-indentation
                 (with-exit-label (label)
@@ -75,7 +77,8 @@
     (wt-nl "ecl_frame_ptr next_fr;")
     ;; Here we compile the form which is protected. When this form
     ;; is aborted, it continues at the ecl_frs_pop() with unwinding=TRUE.
-    (wt-nl "if (ecl_frs_push(cl_env_copy,ECL_PROTECT_TAG)) {")
+    (wt-nl "ecl_frs_push(cl_env_copy,ECL_PROTECT_TAG);")
+    (wt-nl "if (__ecl_frs_push_result) {")
     (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->nlj_fr;")
     (wt-nl "} else {")
     (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))

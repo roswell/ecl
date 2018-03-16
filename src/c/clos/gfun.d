@@ -232,25 +232,27 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   }
 #endif
 
-  vector = fill_spec_vector(cache->keys, frame, gf);
-  e = ecl_search_cache(cache);
-  if (e->key != OBJNULL) {
-    func = e->value;
-  } else {
-    /* The keys and the cache may change while we
-     * compute the applicable methods. We must save
-     * the keys and recompute the cache location if
-     * it was filled. */
-    cl_object keys = cl_copy_seq(vector);
-    func = compute_applicable_method(env, frame, gf);
-    if (env->values[1] != ECL_NIL) {
-      if (e->key != OBJNULL) {
-        e = ecl_search_cache(cache);
+  ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
+    vector = fill_spec_vector(cache->keys, frame, gf);
+    e = ecl_search_cache(cache);
+    if (e->key != OBJNULL) {
+      func = e->value;
+    } else {
+      /* The keys and the cache may change while we
+       * compute the applicable methods. We must save
+       * the keys and recompute the cache location if
+       * it was filled. */
+      cl_object keys = cl_copy_seq(vector);
+      func = compute_applicable_method(env, frame, gf);
+      if (env->values[1] != ECL_NIL) {
+        if (e->key != OBJNULL) {
+          e = ecl_search_cache(cache);
+        }
+        e->key = keys;
+        e->value = func;
       }
-      e->key = keys;
-      e->value = func;
     }
-  }
+  } ECL_WITHOUT_INTERRUPTS_END;
   if (func == ECL_NIL)
     func = cl_apply(3, @'no-applicable-method', gf, frame);
   else
