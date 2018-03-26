@@ -618,7 +618,7 @@ mp_process_enable(cl_object process)
                          @':disable', ECL_T);
       process->process.phase = ECL_PROCESS_INACTIVE;
       process->process.env = NULL;
-      if(process_env != NULL)
+      if (process_env != NULL)
         _ecl_dealloc_env(process_env);
     }
     /* Unleash the thread */

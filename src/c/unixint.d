@@ -823,7 +823,7 @@ si_check_pending_interrupts(void)
 void
 ecl_check_pending_interrupts(cl_env_ptr env)
 {
-        if(env->interrupt_struct->pending_interrupt != ECL_NIL)
+        if (env->interrupt_struct->pending_interrupt != ECL_NIL)
                 handle_all_queued_interrupt_safe(env);
 }
 

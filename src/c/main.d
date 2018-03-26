@@ -569,7 +569,7 @@ cl_boot(int argc, char **argv)
   /*
    * Initialize the per-thread data.
    * This cannot come later, because we need to be able to bind
-   * ext::*interrupts-enabled while creating packages.
+   * ext::*interrupts-enabled* while creating packages.
    */
   init_big();
   ecl_init_env(env);
