@@ -51,8 +51,14 @@
   =--with-libgc-incdir= and =--with-libgc-libdir= (these flags work the
   same as flags for =libffi= and =libgmp=)
 ** Issues fixed
+- ECL allocated too much space in lisp stack. Instead of the specified size
+  x in bytes, ECL allocated roughly x^2/p where p is defined in
+  LISP_PAGESIZE (2048 by default). If you're setting the value of
+  ECL_OPT_LISP_STACK_SIZE, please check whether you really have
+  set a high enough value.
 - ~block/return-from~ fixed (didn't work across some closure boundaries)
 - ~mp:semaphore-signal~ fixed (race when count was > 1)
+- Multiple native threads issues fixed by Marius Gerbershagen
 - ASDF systems like foo/base and bar/base doesn't have conflicts in bundles
 - interactive input stream in ext:run-program on Windows
 - removed race condition between waitpid and sigchld handler on UNIX
