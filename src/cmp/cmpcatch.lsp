@@ -30,6 +30,7 @@
       (c2expr* tag))
     (let* ((*destination* new-destination)
            (*unwind-exit* (cons 'FRAME *unwind-exit*)))
+      (wt-nl-open-brace)
       (if (member new-destination '(TRASH VALUES))
           (progn
             (wt-nl "ecl_frs_push(cl_env_copy," 'VALUE0 ");")
@@ -51,6 +52,7 @@
     (wt-nl "}")
     (wt-nl "ecl_frs_pop(cl_env_copy);")
     (wt-comment "END CATCH ~A" code)
+    (wt-nl-close-brace)
     (unwind-exit new-destination)))
 
 (defun c1unwind-protect (args)
