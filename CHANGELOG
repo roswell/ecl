@@ -77,6 +77,8 @@ in C code
 - No more explicit option in ~main.d~ to trap SIGCHLD asynchronously
 - Zombie processes are cleaned in ~external-process~ finalizer. If process
   is still referenced in the memory, it's programmer duty to call wait.
+- The cleanup forms of an unwind-protect are now executed with interrupts
+  disabled.
 * 16.1.3 changes since 16.1.2
 ** Announcement
 Dear Community,
