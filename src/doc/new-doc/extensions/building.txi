@@ -40,6 +40,16 @@ Relations among them are depicted below:
 @image{figures/file-types}
 @end float
 
+@menu
+* Portable FASL (fasc)::
+* Native FASL::
+* Object file::
+* Static library::
+* Shared library::
+* Executable::
+* Summary::
+@end menu
+
 @node Portable FASL (fasc)
 @subsubsection Portable FASL
 @cindex Portable FASL
@@ -302,6 +312,13 @@ about other libraries loaded in your image – ECL will only build and
 pack libraries your project depends on (that is, all dependencies you
 put in your @code{.asd} file, and their dependencies - nothing more,
 despite the fact that other libraries may be loaded).
+
+@menu
+* Example code to build::
+* Build it as an single executable::
+* Build it as shared library and use in C::
+* Build it as static library and use in C::
+@end menu
 
 @node Example code to build
 @subsubsection Example code to build

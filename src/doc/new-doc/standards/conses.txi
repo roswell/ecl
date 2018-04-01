@@ -1,6 +1,10 @@
 @node Conses
 @section Conses
 
+@menu
+* Conses - C Reference::
+@end menu
+
 @node Conses - C Reference
 @subsection C Reference
 

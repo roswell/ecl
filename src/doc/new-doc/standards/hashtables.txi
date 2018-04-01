@@ -1,6 +1,10 @@
 @node Hash tables
 @section Hash tables
 
+@menu
+* Hash tables - C Reference::
+@end menu
+
 @subheading Weakness in hash tables
 @cindex Weak hash tables
 @ftindex ECL-WEAK-HASH

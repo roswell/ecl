@@ -1,6 +1,10 @@
 @node Objects
 @section Objects
 
+@menu
+* Objects - C Reference::
+@end menu
+
 @node Objects - C Reference
 @subsection C Reference
 

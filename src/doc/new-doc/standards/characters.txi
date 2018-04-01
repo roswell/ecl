@@ -3,6 +3,12 @@
 
 ECL is fully ANSI Common-Lisp compliant in all aspects of the character data type, with the following peculiarities.
 
+@menu
+* Characters - Unicode vs. POSIX locale::
+* Characters - Newline characters::
+* Characters - C Reference::
+@end menu
+
 @node Characters - Unicode vs. POSIX locale
 @subsection Unicode vs. POSIX locale
 There are two ways of building ECL: with C or with Unicode character codes. These build modes are accessed using the @code{--disable-unicode} and @code{--enable-unicode} configuration options, the last one being the default.

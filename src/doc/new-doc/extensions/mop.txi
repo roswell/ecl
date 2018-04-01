@@ -1,6 +1,10 @@
 @node Meta-Object Protocol (MOP)
 @section Meta-Object Protocol (MOP)
 
+@menu
+* MOP - Introduction::
+@end menu
+
 @node MOP - Introduction
 @subsection Introduction
 The Meta-Object Protocol is an extension to Common Lisp which provides rules, functions and a type structure to handle the object system. It is a reflective system, where classes are also objects and can be created and manipulated using very well defined procedures.

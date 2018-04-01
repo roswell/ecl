@@ -1,6 +1,12 @@
 @node Numbers
 @section Numbers
 
+@menu
+* Numbers - Numeric types::
+* Numbers - Random-States::
+* Numbers - C Reference::
+@end menu
+
 @node Numbers - Numeric types
 @subsection Numeric types
 ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:num-types}. The details, however, depend both on the platform on which ECL runs and on the configuration which was chosen when building ECL.
@@ -33,6 +39,15 @@ The @code{#$} macro can be used to initialize the generator with a random seed (
 
 @node Numbers - C Reference
 @subsection C Reference
+
+@menu
+* Numbers - Number C types::
+* Numbers - Number constructors::
+* Numbers - Number accessors::
+* Numbers - Number coercion::
+* Numbers - Numbers C dictionary::
+@end menu
+
 @node Numbers - Number C types
 @subsubsection Number C types
 Numeric C types understood by ECL

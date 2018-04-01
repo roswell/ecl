@@ -10,7 +10,7 @@ If you want to extend, fix or simply customize ECL for your own needs,
 you should understand how the implementation works.
 
 @cppindex cl_lispunion
-@deftp {@cind} cl_lispunion cons big ratio SF DF longfloat complex symbol pack hash array vector base_string string stream random readtable pathname bytecodes bclosure cfun cfunfixed cclosure d instance process queue lock rwlock condition_variable semaphore barrier mailbox cblock foreign frame weak sse
+@deftp @cind{} cl_lispunion cons big ratio SF DF longfloat complex symbol pack hash array vector base_string string stream random readtable pathname bytecodes bclosure cfun cfunfixed cclosure d instance process queue lock rwlock condition_variable semaphore barrier mailbox cblock foreign frame weak sse
 
 Union containing all first-class ECL types.
 @end deftp
@@ -93,7 +93,7 @@ comments in the source code):
 @end verbatim
 
 @cppindex cl_object
-@deftp {@cind} cl_object
+@deftp @cind{} cl_object
 This is the type of a lisp object. For your C/C++ program, a cl_object
 can be either a fixnum, a character, or a pointer to a union of
 structures (See @code{cl_lispunion} in the header object.h). The actual
@@ -127,7 +127,7 @@ You should see the following sections and the header object.h to learn
 how to use the different fields of a cl_object pointer.
 @end deftp
 
-@deftp {@cind} cl_type
+@deftp @cind{} cl_type
 Enumeration type which distinguishes the different types of lisp
 objects. The most important values are:
 
@@ -302,7 +302,7 @@ amount of memory and the GNU Multiprecision Library is required to
 create, manipulate and calculate with them.
 
 @cppindex cl_fixnum
-@deftp {@cind} cl_fixnum
+@deftp @cind{} cl_fixnum
 This is a C signed integer type capable of holding a whole @code{fixnum}
 without any loss of precision. The opposite is not true, and you may
 create a @code{cl_fixnum} which exceeds the limits of a fixnum and
@@ -310,7 +310,7 @@ should be stored as a @code{bignum}.
 @end deftp
 
 @cppindex cl_index
-@deftp {@cind} cl_index
+@deftp @cind{} cl_index
 This is a C unsigned integer type capable of holding a non-negative
 @code{fixnum} without loss of precision. Typically, a @code{cl_index} is
 used as an index into an array, or into a proper list, etc.
@@ -375,7 +375,7 @@ other is used when ECL is built with a configure option
 
 @cppindex ecl_character
 @cppindex ecl_base_char
-@deftp {@cind} ecl_character
+@deftp @cind{} ecl_character
 Immediate type @code{t_character}. If ECL built with Unicode support,
 then may be either base or extended character, which may be
 distinguished with the predicate @code{ECL_BASE_CHAR_P}.
@@ -460,7 +460,7 @@ functions.
 @end deftypefun
 
 @cppindex ecl_vector
-@deftp {@cind} ecl_vector
+@deftp @cind{} ecl_vector
 If @code{x} contains a vector, you can access the following fields:
 
 @table @code
@@ -479,7 +479,7 @@ pointer depending on @var{x->vector.elttype}.
 @end deftp
 
 @cppindex ecl_array
-@deftp {@cind} ecl_array
+@deftp @cind{} ecl_array
 If @code{x} contains a multidimensional array, you can access the
 following fields:
 
@@ -504,7 +504,7 @@ pointer depending on @var{x->array.elttype}.
 @end deftp
 
 @cppindex cl_elttype
-@deftp {@cind} cl_elttype ecl_aet_object ecl_aet_sf ecl_aet_df ecl_aet_bit ecl_aet_fix ecl_aet_index ecl_aet_b8 ecl_aet_i8 ecl_aet_b16 ecl_aet_i16 ecl_aet_b32 ecl_aet_i32 ecl_aet_b64 ecl_aet_i64 ecl_aet_ch ecl_aet_bc
+@deftp @cind{} cl_elttype ecl_aet_object ecl_aet_sf ecl_aet_df ecl_aet_bit ecl_aet_fix ecl_aet_index ecl_aet_b8 ecl_aet_i8 ecl_aet_b16 ecl_aet_i16 ecl_aet_b32 ecl_aet_i32 ecl_aet_b64 ecl_aet_i64 ecl_aet_ch ecl_aet_bc
 
 Each array is of an specialized type which is the type of the elements
 of the array. ECL has arrays only a few following specialized types, and
@@ -599,8 +599,8 @@ base-string self pointer to any C routine.
 
 @cppindex ecl_string
 @cppindex ecl_base_string
-@deftp {@cind} ecl_string
-@deftpx {@cind} ecl_base_string
+@deftp @cind{} ecl_string
+@deftpx @cind{} ecl_base_string
 If @code{x} is a lisp object of type string or a base-string, we can
 access the following fields:
 @table @code
@@ -643,11 +643,11 @@ separate package @var{GRAY}. We may redefine functions in the
 at run-time.
 
 @cppindex ecl_file_pos
-@deftp {@cind} ecl_file_ops write_* read_* unread_* peek_* listen clear_input clear_output finish_output force_output input_p output_p interactive_p element_type length get_position set_position column close
+@deftp @cind{} ecl_file_ops write_* read_* unread_* peek_* listen clear_input clear_output finish_output force_output input_p output_p interactive_p element_type length get_position set_position column close
 @end deftp
 
 @cppindex ecl_stream
-@deftp {@cind} ecl_stream
+@deftp @cind{} ecl_stream
 @table @code
 @item ecl_smmode mode
 Stream mode (in example @code{ecl_smm_string_input}).

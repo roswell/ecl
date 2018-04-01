@@ -75,7 +75,7 @@ Kill a task that is doing nothing (See @code{mp:process-kill}).
 @defun mp:make-process &key name initial-bindings
 
 Create a new thread. This function creates a separate task with a name
-set to @code {name}, set of variable bindings @code{initial-bindings}
+set to @code{name}, set of variable bindings @code{initial-bindings}
 and no function to run. See also @code{mp:process-run-function}. Returns
 newly created process.
 
@@ -90,7 +90,7 @@ newly created process.
 
 @defun mp:process-active-p process
 
-Returns @code{t} when @code{process} is active, @code {nil}
+Returns @code{t} when @code{process} is active, @code{nil}
 otherwise. Signals an error if @code{process} doesn't designate a valid
 process.
 

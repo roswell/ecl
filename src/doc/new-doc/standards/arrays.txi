@@ -2,6 +2,12 @@
 @section Arrays
 @cindex Arrays
 
+@menu
+* Arrays - Array limits::
+* Arrays - Specializations::
+* Arrays - C Reference::
+@end menu
+
 @node Arrays - Array limits
 @subsection Array limits
 ECL arrays can have up to 64 dimensions. Common-Lisp constants related to arrays have the following values in ECL.

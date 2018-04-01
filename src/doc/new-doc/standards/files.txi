@@ -1,6 +1,11 @@
 @node Files
 @section Files
 
+@menu
+* Files - Dictionary::
+* Files - C Reference::
+@end menu
+
 @node Files - Dictionary
 @subsection Dictionary
 @subsubsection @code{DIRECTORY}

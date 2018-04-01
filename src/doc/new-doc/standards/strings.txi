@@ -1,6 +1,11 @@
 @node Strings
 @section Strings
 
+@menu
+* Strings - String types & Unicode::
+* Strings - C reference::
+@end menu
+
 @node Strings - String types & Unicode
 @subsection String types & Unicode
 The ECL implementation of strings is ANSI Common-Lisp compliant. There are basically four string types as shown in @ref{tab:cl-str-types}. As explained in @ref{Characters}, when Unicode support is disabled, @code{character} and @code{base-character} are the same type and the last two string types are equivalent to the first two.

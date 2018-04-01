@@ -1,6 +1,14 @@
 @node Signals and Interrupts
 @section Signals and Interrupts
 
+@menu
+* Signals and Interrupts - Problems associated to signals::
+* Signals and Interrupts - Kinds of signals::
+* Signals and Interrupts - Signals and interrupts in ECL::
+* Signals and Interrupts - Considerations when embedding ECL::
+* Signals and Interrupts - Signals Reference::
+@end menu
+
 @node Signals and Interrupts - Problems associated to signals
 @subsection Problems associated to signals
 POSIX contemplates the notion of "signals", which are events that cause a process or a thread to be interrupted. Windows uses the term "exception", which includes also a more general kind of errors.
@@ -13,6 +21,11 @@ Understanding this, POSIX restricts severely what functions can be called from a
 
 @node Signals and Interrupts - Kinds of signals
 @subsection Kinds of signals
+
+@menu
+* Signals and Interrupts - Synchronous signals::
+* Signals and Interrupts - Asynchronous signals::
+@end menu
 
 @node Signals and Interrupts - Synchronous signals
 @subsubsection Synchronous signals
@@ -51,6 +64,11 @@ The important difference with synchronous signals is that we have no thread that
 The signal handling facilities in ECL are constrained by two needs. First of all, we can not ignore the synchronous signals mentioned in @ref{Signals and Interrupts - Synchronous signals}. Second, all other signals should cause the least harm to the running threads. Third, when a signal is handled synchronously using a signal handler, the handler should do almost nothing unless we are completely sure that we are in an interruptible region, that is outside system calls, in code that ECL knows and controls.
 
 The way in which this is solved is based on the existence of both synchronous and asynchronous signal handling code, as explained in the following two sections.
+
+@menu
+* Signals and Interrupts - Handling of asynchronous signals::
+* Signals and Interrupts - Handling of synchronous signals::
+@end menu
 
 @node Signals and Interrupts - Handling of asynchronous signals
 @subsubsection Handling of asynchronous signals

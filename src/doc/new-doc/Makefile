@@ -6,7 +6,7 @@ all: pdf info html
 
 pdf: new-doc.pdf
 info: ecldoc.info
-html: new-doc.html
+html: ecldoc
 
 new-doc.pdf: $(FILES)
 	texi2pdf new-doc.txi
@@ -14,8 +14,9 @@ new-doc.pdf: $(FILES)
 ecldoc.info: $(FILES)
 	makeinfo new-doc.txi
 
-new-doc.html: $(FILES)
+ecldoc: $(FILES)
 	makeinfo --html --css-include=ecl.css --split=chapter new-doc.txi
+	cp -r figures ecldoc
 
 clean:
 	rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info,html}

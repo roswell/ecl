@@ -1,6 +1,10 @@
 @node Embedding ECL
 @section Embedding ECL
 
+@menu
+* Embedding ECL - Embedding Reference::
+@end menu
+
 @c @node Embedding ECL - Introduction
 @c @subsection Introduction
 

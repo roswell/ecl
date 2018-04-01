@@ -1,6 +1,10 @@
 @node Structures
 @section Structures
 
+@menu
+* Structures - C Reference::
+@end menu
+
 @node Structures - C Reference
 @subsection C Reference
 

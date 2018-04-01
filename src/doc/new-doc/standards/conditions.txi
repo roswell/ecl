@@ -1,6 +1,10 @@
 @node Conditions
 @section Conditions
 
+@menu
+* Conditions - C Reference::
+@end menu
+
 @node Conditions - C Reference
 @subsection C Reference
 @cppindex ECL_HANDLER_CASE

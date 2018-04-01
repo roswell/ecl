@@ -1,6 +1,10 @@
 @node Sequences
 @section Sequences
 
+@menu
+* Sequences - C Reference::
+@end menu
+
 @node Sequences - C Reference
 @subsection C Reference
 @subsubsection Sequences C dictionary

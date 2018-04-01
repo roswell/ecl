@@ -841,7 +841,7 @@ should in general not return @code{cstring}s, but @code{foreign
 strings}. (There is no portable way to release such @code{cstring}s from
 Lisp.) The following is an example of handling such a function.
 
-@exindex Conversion between @code{foreign string} and @code {cstring}
+@exindex Conversion between @code{foreign string} and @code{cstring}
 @lisp
 (ffi:def-function ("readline" c-readline)
     ((prompt :cstring))
@@ -1065,8 +1065,8 @@ does not take any arguments.
 A string specifying which module (or library) that the foreign function
 resides.
 @item call
-Function calling convention. May be one of @code{:default}, @code
-{:cdecl}, @code{:sysv}, @code{:stdcall}, @code{:win64} and
+Function calling convention. May be one of @code{:default}, @code{:cdecl},
+@code{:sysv}, @code{:stdcall}, @code{:win64} and
 @code{unix64}.
 
 This argument is used only when we're using the dynamic function

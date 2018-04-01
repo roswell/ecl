@@ -1,9 +1,17 @@
 @node Data and control flow
 @section Data and control flow
 
+@menu
+* Shadowed bindings::
+* Minimal compilation::
+* Function types::
+* C Calling conventions::
+* C Reference::
+@end menu
+
 @node Shadowed bindings
-@cindex Shadowed bindings in LET, FLET, LABELS and lambda-list
 @subsection Shadowed bindings
+@cindex Shadowed bindings in LET, FLET, LABELS and lambda-list
 ANSI doesn't specify what should happen if any of the @code{LET},
 @code{FLET} and @code{LABELS} special operators contain many bindings
 sharing the same name. Because the behavior varies between the
@@ -21,9 +29,9 @@ the @code{LET} operator were using first binding. Both @code{FLET} and
 the last binding as a visible one when the byte compiler was used.
 
 @node Minimal compilation
+@subsection Minimal compilation
 @cindex Bytecodes eager compilation
 @lspindex si::make-lambda
-@subsection Minimal compilation
 Former versions of ECL, as well as many other lisps, used linked lists
 to represent code. Executing code thus meant traversing these lists and
 performing code transformations, such as macro expansion, every time
@@ -181,7 +189,7 @@ printf("\n1 + 1 + 1 is %d\n", ecl_fixnum(three));
 Another restriction of C and C++ is that functions can only take a limited number of arguments. In order to cope with this problem, ECL uses an internal stack to pass any argument above a hardcoded limit, @code{ECL_C_CALL_ARGUMENTS_LIMIT}, which is as of this writing 63. The use of this stack is transparently handled by the Common Lisp functions, such as apply, funcall and their C equivalents, and also by a set of macros, @code{cl_va_arg}, which can be used for coding functions that take an arbitrary name of arguments.
 
 
-
+@node C Reference
 @subsection C Reference
 @cppindex ecl_bds_bind
 @cppindex ecl_bds_push

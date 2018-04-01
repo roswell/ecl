@@ -1,6 +1,11 @@
 @node Environment
 @section Environment
 
+@menu
+* Environment - Dictionary::
+* Environment - C Reference::
+@end menu
+
 @node Environment - Dictionary
 @subsection Dictionary
 @lspindex disassemble

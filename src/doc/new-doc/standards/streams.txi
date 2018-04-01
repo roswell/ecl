@@ -1,8 +1,19 @@
 @node Streams
 @section Streams
 
+@menu
+* Streams - ANSI Streams::
+* Streams - C Reference::
+@end menu
+
 @node Streams - ANSI Streams
 @subsection ANSI Streams
+
+@menu
+* Streams - Supported types::
+* Streams - Element types::
+* Streams - External formats::
+@end menu
 
 @node Streams - Supported types
 @subsubsection Supported types
@@ -36,8 +47,8 @@ external-format-designator :=
 
 and the table of known symbols is shown below. Note how some symbols (@code{:cr}, @code{:little-endian}, etc.) just modify other external formats.
 
-@c@float Table, tab:stream-ext-formats
-@c@caption{Stream external formats}
+@c @float Table, tab:stream-ext-formats
+@c @caption{Stream external formats}
 @multitable @columnfractions .4 .4 .2
 @headitem Symbols @tab Codepage or encoding @tab Unicode required
 @item @code{:cr} @tab @code{#\Newline} is @code{Carriage Return} @tab No
