@@ -278,7 +278,7 @@ the one used internally by ECL compiled files."
 
 (let* ((basic-encodings
         #+unicode
-         '(:UTF-8 :UCS-2 :UCS-2BE :UCS-2LE :UCS-4 :UCS-4BE
+         '(:UTF-8 :UCS-2 :UCS-2BE :UCS-2LE :UCS-4 :UCS-4BE :UCS-4LE
            :ISO-8859-1 :LATIN-1 :US-ASCII :DEFAULT)
          #-unicode
          '(:DEFAULT))
@@ -289,7 +289,7 @@ the one used internally by ECL compiled files."
           (setf all-encodings basic-encodings)
           #+unicode
           (dolist (i (directory "sys:encodings;*"))
-            (push (intern (pathname-name i) "KEYWORD") all-encodings))
+            (push (intern (string-upcase (pathname-name i)) "KEYWORD") all-encodings))
           all-encodings))))
 
 (defun ext:load-encoding (name)
