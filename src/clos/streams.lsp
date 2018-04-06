@@ -237,9 +237,10 @@
 ;;; generic functions.
 ;;;
 
-(defclass fundamental-stream (standard-object stream)
-  ((open-p :initform t :accessor open-stream-p))
-  (:documentation "the base class for all CLOS streams"))
+(let ((clos::*clos-booted* 'clos:map-dependents))
+  (defclass fundamental-stream (standard-object stream)
+    ((open-p :initform t :accessor open-stream-p))
+    (:documentation "the base class for all CLOS streams")))
 
 (defclass fundamental-input-stream (fundamental-stream) nil)
 
@@ -778,5 +779,4 @@ them so."
     (si::package-lock "COMMON-LISP" x)
     nil))
 
-(setf *clos-booted* t)
-
+(setf clos::*clos-booted* t)
