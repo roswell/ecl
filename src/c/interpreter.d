@@ -712,7 +712,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
        Calls the local or global function with N arguments
        which have been deposited in the stack.
     */
-    CASE(OP_LFUNCTION); {
+    CASE(OP_LFUNCTION); {       /* XXX: local function (fix comment) */
       int lex_env_index;
       GET_OPARG(lex_env_index, vector);
       reg0 = ecl_lex_env_get_fun(lex_env, lex_env_index);
@@ -724,7 +724,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
        may be defined in the global environment or in the local
        environment. This last value takes precedence.
     */
-    CASE(OP_FUNCTION); {
+    CASE(OP_FUNCTION); {        /* XXX: global function (fix comment) */
       GET_DATA(reg0, vector, data);
       reg0 = ecl_fdefinition(reg0);
       THREAD_NEXT;

@@ -1,0 +1,44 @@
+@node Bytecodes
+@section Bytecodes
+
+Bytecodes compiler and interpreter are integral part of ECL
+system. Call to @code{eval} invokes the bytecode compiler and then the
+bytecode interpreter.
+
+@itemize
+@item @code{src/c/compiler.d} - bytecode compiler 
+@item @code{src/c/interpreter.d} - bytecode interpreter
+@item @code{src/c/interpreter.d} - bytecode disassembler
+@end itemize
+
+Structure @code{ecl_bytecodes} has the following fields:
+
+@itemize
+@item @code{name}          - function name
+@item @code{definition}    - function definition in list form
+@item @code{entry}         - entry address (function @code{_ecl_bytecodes_dispatch_vararg})
+@item @code{code_size}     - number of bytecodes
+@item @code{code}          - stores actual bytecode
+@item @code{data}          - non-immediate constants used in the code
+@item @code{file}          - file where it was defined
+@item @code{file_position} - position in file where function was created
+@end itemize
+
+Moreover if bytecompiled function is a closure then its structure is
+@code{ecl_bclosure}:
+
+@itemize
+@item @code{code}  - closure function (@code{ecl_bytecodes})
+@item @code{lex}   - closure lexical environment
+@item @code{entry} - closure entry address (function _ecl_bclosure_dispatch_vararg)
+@end itemize
+
+@subsection Bytecode compiler
+
+@subsection Bytecode interpreter
+
+@subsection Bytecode disassembler
+
+@defun{si:bc-split} {@var{funciton}}
+Returns five values: lex, bytecodes, data and name.
+@end defun

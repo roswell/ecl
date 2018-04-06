@@ -1421,7 +1421,7 @@ c_function(cl_env_ptr env, cl_object args, int flags) {
   return asm_function(env, function, flags);
 }
 
-static int
+static int                      /* XXX: here we look for function in cmpenv */
 asm_function(cl_env_ptr env, cl_object function, int flags) {
   if (!Null(si_valid_function_name_p(function))) {
     cl_object ndx = c_tag_ref(env, function, @':function');
