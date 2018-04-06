@@ -21,12 +21,15 @@
 
 ;;;; Declare the suites
 (suite 'ecl-tests
-       '(executable eformat ieee-fp eprocess package-ext hash-tables ansi+ mixed
-         cmp emb ffi mop mp run-program))
+       '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed
+         cmp emb ffi mop mp run-program eformat))
 
 (suite 'make-check
-       '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed cmp emb
-         ffi mop run-program mp ieee-fp))
+       '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed
+         cmp emb ffi mop run-program mp))
+
+(suite 'stress)
+(test stress.all (finishes (1am-ecl:run)))
 
 
 (defmacro is-true (form)

@@ -273,13 +273,13 @@ _ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
 static void *
 mp_alloc(size_t size)
 {
-  return ecl_alloc_uncollectable(size);
+  return ecl_alloc_atomic(size);
 }
 
 static void
 mp_free(void *ptr, size_t size)
 {
-  ecl_free_uncollectable(ptr);
+  ecl_dealloc(ptr);
 }
 
 static void *

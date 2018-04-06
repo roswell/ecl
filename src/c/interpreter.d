@@ -30,7 +30,7 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   cl_index new_size = tentative_new_size + 2*safety_area;
 
   /* Round to page size */
-  new_size = (new_size + (LISP_PAGESIZE-1))/LISP_PAGESIZE * new_size;
+  new_size = ((new_size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
 
   if (ecl_unlikely(top > new_size)) {
     FEerror("Internal error: cannot shrink stack below stack top.",0);

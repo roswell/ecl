@@ -268,7 +268,7 @@ allocate_object_own(register struct ecl_type_information *type_info)
     if( (op = *opp) == 0 ) {
       UNLOCK();
       op = (ptr_t)GENERAL_MALLOC((word)lb, cl_object_kind);
-      if (0 == op){
+      if (0 == op) {
         ecl_enable_interrupts_env(the_env);
         return 0;
       }

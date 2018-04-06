@@ -534,9 +534,11 @@ mp_process_yield(void)
 cl_object
 mp_process_enable(cl_object process)
 {
-  cl_env_ptr process_env = NULL;
+  /* process_env and ok are changed after the setjmp call in
+   * ECL_UNWIND_PROTECT_BEGIN, so they need to be declared volatile */
+  volatile cl_env_ptr process_env = NULL;
   cl_env_ptr the_env = ecl_process_env();
-  int ok = 0;
+  volatile int ok = 0;
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
     /* Try to gain exclusive access to the process at the same
      * time we ensure that it is inactive. This prevents two
@@ -618,7 +620,7 @@ mp_process_enable(cl_object process)
                          @':disable', ECL_T);
       process->process.phase = ECL_PROCESS_INACTIVE;
       process->process.env = NULL;
-      if(process_env != NULL)
+      if (process_env != NULL)
         _ecl_dealloc_env(process_env);
     }
     /* Unleash the thread */
