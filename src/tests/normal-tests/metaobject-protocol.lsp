@@ -621,14 +621,12 @@ the metaclass")
       (clos:compute-applicable-methods-using-classes
        #'f (list (find-class 'c))))))
 
-
 ;;; Bug #46
 ;;;
 ;;; Reported 2016-05-30
 ;;;
 ;;; Description: DEFGENERIC doesn't create methods on same pass as
 ;;;  creating generics.
-#+ (or)
 (test mop.0021.ensure-generic
   (is (progn (fmakunbound 'mop.0021.ensure-generic.fun)
              (defun mop.0021.ensure-generic.fun () 'hi)
@@ -637,3 +635,24 @@ the metaclass")
 (defmethod mop.0021.ensure-generic.fun () (print 'bye))
 ")
                (compile-file input-file)))))
+
+;;; Bug #426
+;;;
+;;; CLOS::*CLOS-BOOTED* wasn't set correctly because of gray-streams bootstrap
+;;; (fundamental-stream subclasses stream).
+(ext:with-clean-symbols (foo)
+  (test mop.0022.subclass-builtin
+    (signals error (defclass foo (stream) ()))))
+
+;;; Bug #425
+;;;
+;;; update-dependent didn't invalidate initarg caches when new methods were
+;;; defined.
+(ext:with-clean-symbols (foo)
+  (test mop.0023.update-dependent
+    (defclass foo () ())
+    (finishes (make-instance 'foo))
+    (signals error (make-instance 'foo :test "hi"))
+    (defmethod initialize-instance :after ((obj foo) &key test) test)
+    (finishes (make-instance 'foo :test "hi"))
+    (signals error (make-instance 'foo :test "hi" :bam "bye"))))
