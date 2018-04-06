@@ -328,11 +328,21 @@ their lambda lists ~A and ~A are not congruent."
   (mapc #'recursively-update-classes
         (class-direct-subclasses a-class)))
 
-(defmethod update-dependent ((object generic-function)
-                             (dep initargs-updater)
-                             &rest initargs)
-  (declare (ignore dep initargs object))
-  (recursively-update-classes +the-class+))
+(defmethod update-dependent ((object generic-function) (dep initargs-updater)
+                             &rest initargs
+                             &key
+                               ((add-method added-method) nil am-p)
+                               ((remove-method removed-method) nil rm-p)
+                               &allow-other-keys)
+  (declare (ignore object dep initargs))
+  (let ((method (cond (am-p added-method)
+                      (rm-p removed-method))))
+    ;; update-dependent is also called when the gf itself is reinitialized,
+    ;; so make sure we actually have a method that's added or removed
+    (when method
+      (let ((spec (first (method-specializers method)))) ; the class being initialized or allocated
+        (when (classp spec) ; sanity check against eql specialization
+          (recursively-update-classes spec))))))
 
 (let ((x (make-instance 'initargs-updater)))
   (add-dependent #'shared-initialize x)
