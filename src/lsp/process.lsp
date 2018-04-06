@@ -7,8 +7,17 @@
 
 (in-package "EXT")
 
-(defmacro with-process-lock ((process) &body body)
-  #+threads `(mp:with-lock ((external-process-%lock process)) ,@body)
+(defmacro with-process-lock ((process &optional (wait t)) &body body)
+  #+threads
+  (ext:with-unique-names (lock wait-p)
+    `(let ((,lock (external-process-%lock ,process))
+           (,wait-p ,wait))
+       (mp:without-interrupts
+         (unwind-protect (mp::with-restored-interrupts
+                             (when (mp:get-lock ,lock ,wait-p)
+                               (locally ,@body)))
+           (when (mp:holding-lock-p ,lock)
+             (mp:giveup-lock ,lock))))))
   #-threads `(progn ,@body))
 
 (defstruct (external-process (:constructor make-external-process ()))
@@ -36,10 +45,11 @@
 ;;;  running   :: (values (member :stopped :resumed :running)  code  pid)
 ;;; ---------------------------------------------------------------------
 (defun external-process-wait (process &optional wait)
-  (with-process-lock (process)
+  (with-process-lock (process wait)
     (let ((pid (external-process-pid process)))
       (when pid
         (multiple-value-bind (status code pid) (si:waitpid pid wait)
+          (declare (ignore pid))
           (ecase status
             ((:exited :signaled :abort :error)
              (setf (external-process-pid process) nil
@@ -261,9 +271,8 @@
   ;; note we don't use serve-event here because process input may be a virtual
   ;; stream and `select' won't catch this stream change.
   (si:until (or (null pairs)
-                (member #-threads (external-process-wait process nil)
-                        #+threads (external-process-%status process)
-                        '(:exited :siognaled :abort :error)))
+                (member (external-process-wait process nil)
+                        '(:exited :signaled :abort :error)))
     #1=(dolist (pair pairs)
          (destructuring-bind (input . output) pair
            (when (or (null (open-stream-p output))
@@ -274,7 +283,6 @@
     ;; remove from the list exhausted streams
     (when to-remove
       (setf pairs (set-difference pairs to-remove)))
-    #+threads (mp:process-yield)
-    #-threads (sleep 0.001))
+    (sleep 0.001))
   ;; something may still be in pipes after child termination
   #1#)
