@@ -93,8 +93,8 @@
     (ext:set-finalizer process #'finalize-external-process)))
 
 ;;;
-;;; Almighty EXT:RUN-PROGRAM. Built on top of SI:SPAWN-SUBPROCESS. For
-;;; simpler alternative see SI:RUN-PROGRAM-INNER.
+;;; Almighty EXT:RUN-PROGRAM. Built on top of SI:SPAWN-SUBPROCESS. For simpler
+;;; alternative see SI:RUN-PROGRAM-INNER.
 ;;;
 (defun run-program (command argv
                     &key
@@ -228,11 +228,10 @@
 
 #+windows
 (defun escape-arg (arg stream)
-  ;; Normally, #\\ doesn't have to be escaped But if #\"
-  ;; follows #\\, then they have to be escaped.  Do that by
-  ;; counting the number of consequent backslashes, and
-  ;; upon encoutering #\" immediately after them, output
-  ;; the same number of backslashes, plus one for #\"
+  ;; Normally, #\\ doesn't have to be escaped But if #\" follows #\\, then they
+  ;; have to be escaped.  Do that by counting the number of consequent
+  ;; backslashes, and upon encoutering #\" immediately after them, output the
+  ;; same number of backslashes, plus one for #\"
   (write-char #\" stream)
   (loop with slashes = 0
      for i below (length arg)
@@ -259,21 +258,23 @@
 
 
 (defun pipe-streams (process pairs &aux to-remove)
-  ;; note we don't use serve-event here because process input may be a
-  ;; virtual stream and `select' won't catch this stream change.
+  ;; note we don't use serve-event here because process input may be a virtual
+  ;; stream and `select' won't catch this stream change.
   (si:until (or (null pairs)
                 (member #-threads (external-process-wait process nil)
                         #+threads (external-process-%status process)
                         '(:exited :siognaled :abort :error)))
-    (dolist (pair pairs)
-      (destructuring-bind (input . output) pair
-        (when (or (null (open-stream-p output))
-                  (null (open-stream-p input))
-                  (and (listen input)
-                       (si:copy-stream input output nil)))
-          (push pair to-remove))))
+    #1=(dolist (pair pairs)
+         (destructuring-bind (input . output) pair
+           (when (or (null (open-stream-p output))
+                     (null (open-stream-p input))
+                     (and (listen input)
+                          (si:copy-stream input output nil)))
+             (push pair to-remove))))
     ;; remove from the list exhausted streams
     (when to-remove
       (setf pairs (set-difference pairs to-remove)))
     #+threads (mp:process-yield)
-    #-threads (sleep 0.0001)))
+    #-threads (sleep 0.001))
+  ;; something may still be in pipes after child termination
+  #1#)
