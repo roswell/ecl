@@ -625,8 +625,8 @@ the metaclass")
 ;;;
 ;;; Reported 2016-05-30
 ;;;
-;;; Description: DEFGENERIC doesn't create methods on same pass as
-;;;  creating generics.
+;;; Description: DEFGENERIC doesn't create methods on same pass as creating
+;;; generics.
 (test mop.0021.ensure-generic
   (is (progn (fmakunbound 'mop.0021.ensure-generic.fun)
              (defun mop.0021.ensure-generic.fun () 'hi)
@@ -656,3 +656,11 @@ the metaclass")
     (defmethod initialize-instance :after ((obj foo) &key test) test)
     (finishes (make-instance 'foo :test "hi"))
     (signals error (make-instance 'foo :test "hi" :bam "bye"))))
+
+;;; Ensure that forward-referenced classes work as expected.
+(ext:with-clean-symbols (foo1 foo2)
+  (test mop.0024.frc
+    (finishes (defclass foo1 (foo2) ()))
+    (signals (make-instance 'foo1))
+    (finishes (defclass foo2 (foo) ()))
+    (finishes (make-instance 'foo1))))
