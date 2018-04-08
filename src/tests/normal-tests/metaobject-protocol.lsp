@@ -661,6 +661,6 @@ the metaclass")
 (ext:with-clean-symbols (foo1 foo2)
   (test mop.0024.frc
     (finishes (defclass foo1 (foo2) ()))
-    (signals (make-instance 'foo1))
-    (finishes (defclass foo2 (foo) ()))
+    (signals error (make-instance 'foo1))
+    (finishes (defclass foo2 () ()))
     (finishes (make-instance 'foo1))))

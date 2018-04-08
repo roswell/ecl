@@ -47,6 +47,19 @@
   (when *clos-booted*
     (class-prototype (generic-function-method-class generic-function))))
 
+(defun prototypes-for-make-method-lambda (name)
+  (if (not *clos-booted*)
+      (values nil nil)
+      (let ((gf? (and (fboundp name)
+                      (fdefinition name))))
+        (if (or (null gf?)
+                (not (si:instancep gf?)))
+            (values (class-prototype (find-class 'standard-generic-function))
+                    (class-prototype (find-class 'standard-method)))
+            (values gf?
+                    (class-prototype (or (generic-function-method-class gf?)
+                                         (find-class 'standard-method))))))))
+
 (defmacro defmethod (&whole whole name &rest args &environment env)
   (declare (notinline make-method-lambda))
   (multiple-value-bind (qualifiers specialized-lambda-list body)
@@ -55,10 +68,10 @@
         (parse-specialized-lambda-list specialized-lambda-list)
       (multiple-value-bind (lambda-form declarations documentation)
           (make-raw-lambda name lambda-list required-parameters specializers body env)
-        (let* ((generic-function (ensure-generic-function name))
-               (method (method-prototype-for-gf generic-function)))
+        (multiple-value-bind (proto-gf proto-method)
+            (prototypes-for-make-method-lambda name)
           (multiple-value-bind (fn-form options)
-              (make-method-lambda generic-function method lambda-form env)
+              (make-method-lambda proto-gf proto-method lambda-form env)
             (when documentation
               (setf options (list* :documentation documentation options)))
             (ext:register-with-pde
