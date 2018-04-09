@@ -4,7 +4,7 @@
 @menu
 * Compiling with ECL::
 * Compiling with ASDF::
-
+* C compiler configuration::
 @c * Compiling with Matroska::
 
 @end menu
@@ -521,3 +521,57 @@ Note we don't need to pass the current path in ~LD_LIBRARY_PATH~ here,
 since our Lisp library is statically bundled with the executable. The
 result is the same as the shared library example above. You can also
 build all dependent libraries separately as static libraries.
+
+@node C compiler configuration
+@subsection C compiler configuration
+
+ECL provides some global variables to customize which C compiler and
+compiler options to use:
+
+@subsubsection Compiler flags
+
+It is not required to surround the compiler flags with quotes or use
+slashes before special characters.
+
+@deftypevar string {c:*user-cc-flags*}
+Flags and options to be passed to the C compiler when building FASL,
+shared libraries and standalone programs.
+@end deftypevar
+
+@deftypevar string {c:*user-ld-flags*}
+Flags and options to be passed to the linker when building FASL,
+shared libraries and standalone programs.
+@end deftypevar
+
+@deftypevar string {c:*cc-optimize*}
+Optimize options to be passed to the C compiler.
+@end deftypevar
+
+@subsubsection Compiler & Linker programs
+
+@deftypevar string {c::*cc*}
+This variable controls how the C compiler is invoked by ECL. One can
+set the variable appropriately adding for instance flags which the C
+compiler may need to exploit special hardware features (e.g. a
+floating point coprocessor).
+@end deftypevar
+
+@deftypevar string {c::*ld*}
+This variable controls the linker which is used by ECL.
+@end deftypevar
+
+@deftypevar string {c::*ranlib*}
+Name of the `ranlib' program on the hosting platform.
+@end deftypevar
+
+@deftypevar string {c::*ar*}
+Name of the `ar' program on the hosting platform.
+@end deftypevar
+
+@deftypevar string {c::*ecl-include-directory*}
+Directory where the ECL header files for the target platform are located.
+@end deftypevar
+
+@deftypevar string {c::*ecl-library-directory*}
+Directory where the ECL library files for the target platform are located.
+@end deftypevar
