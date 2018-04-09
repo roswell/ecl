@@ -43,10 +43,6 @@
       (slot-value generic-function 'method-class)
       (find-class 'standard-method)))
 
-(defun method-prototype-for-gf (generic-function)
-  (when *clos-booted*
-    (class-prototype (generic-function-method-class generic-function))))
-
 (defun prototypes-for-make-method-lambda (name)
   (if (not *clos-booted*)
       (values nil nil)
