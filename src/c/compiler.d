@@ -50,7 +50,6 @@
 #define FLAG_EXECUTE            16
 #define FLAG_LOAD               32
 #define FLAG_COMPILE            64
-#define FLAG_ONLY_LOAD          128
 
 #define ENV_RECORD_LOCATION(r)  CADDDR(r)
 
@@ -1284,34 +1283,23 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
   int situation = eval_when_flags(situation_list);
   const cl_compiler_ptr c_env = env->c_env;
   int mode = c_env->mode;
-  if (mode == FLAG_EXECUTE) {
+  if (c_env->lexical_level || mode == FLAG_EXECUTE) {
     if (!when_execute_p(situation))
       args = ECL_NIL;
-  } else if (c_env->lexical_level) {
-    if (!when_execute_p(situation))
-      args = ECL_NIL;
-  } else if (mode == FLAG_LOAD) {
+  } else if (when_load_p(situation)) {
     if (when_compile_p(situation)) {
-      env->c_env->mode = FLAG_COMPILE;
+      int current_mode = c_env->mode;
+      c_env->mode = FLAG_EXECUTE;
       execute_each_form(env, args);
-      env->c_env->mode = FLAG_LOAD;
-      if (!when_load_p(situation))
-        args = ECL_NIL;
-    } else if (when_load_p(situation)) {
-      env->c_env->mode = FLAG_ONLY_LOAD;
-      flags = compile_toplevel_body(env, args, flags);
-      env->c_env->mode = FLAG_LOAD;
-      return flags;
-    } else {
-      args = ECL_NIL;
+      c_env->mode = current_mode;
     }
-  } else if (mode == FLAG_ONLY_LOAD) {
-    if (!when_load_p(situation))
-      args = ECL_NIL;
-  } else { /* FLAG_COMPILE */
-    if (when_execute_p(situation) || when_compile_p(situation)) {
-      execute_each_form(env, args);
-    }
+  } else if (when_compile_p(situation)) {
+    int current_mode = c_env->mode;
+    c_env->mode = FLAG_EXECUTE;
+    execute_each_form(env, args);
+    c_env->mode = current_mode;
+    args = ECL_NIL;
+  } else {
     args = ECL_NIL;
   }
   return compile_toplevel_body(env, args, flags);
@@ -1609,7 +1597,7 @@ c_load_time_value(cl_env_ptr env, cl_object args, int flags)
   unlikely_if (Null(args) || cl_cddr(args) != ECL_NIL)
     FEprogram_error("LOAD-TIME-VALUE: Wrong number of arguments.", 0);
   value = ECL_CONS_CAR(args);
-  if (c_env->mode != FLAG_LOAD && c_env->mode != FLAG_ONLY_LOAD) {
+  if (c_env->mode != FLAG_LOAD) {
     value = si_eval_with_env(1, value);
   } else if (ECL_SYMBOLP(value) || ECL_LISTP(value)) {
     /* Using the form as constant, we force the system to coalesce multiple
@@ -2207,7 +2195,7 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
 {
   const cl_compiler_ptr c_env = env->c_env;
   cl_object init, make;
-  if (c_env->mode != FLAG_LOAD && c_env->mode != FLAG_ONLY_LOAD)
+  if (c_env->mode != FLAG_LOAD)
     return;
   if (c_search_constant(env, constant) >= 0)
     return;
