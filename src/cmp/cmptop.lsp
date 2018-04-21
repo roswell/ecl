@@ -308,8 +308,9 @@
     (cond ((not *compile-toplevel*)
            (c1progn (and execute-flag (rest args))))
           (load-flag
-           (let ((*compile-time-too* compile-flag))
-             (c1progn (rest args))))
+           (if compile-flag
+               (cmp-eval (cons 'PROGN (rest args))))
+           (c1progn (rest args)))
           (compile-flag
            (cmp-eval (cons 'PROGN (rest args)))
            (c1progn 'NIL))
