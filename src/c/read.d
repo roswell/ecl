@@ -27,7 +27,7 @@
 
 #undef _complex
 
-static cl_object dispatch_macro_character(cl_object table, cl_object strm, int c);
+static cl_object dispatch_macro_character(cl_object table, cl_object strm, int c, bool signal_error);
 
 #define read_suppress (ecl_symbol_value(@'*read-suppress*') != ECL_NIL)
 
@@ -194,7 +194,13 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
       (flags != ECL_READ_ONLY_TOKEN)) {
     cl_object o;
     if (ECL_HASH_TABLE_P(x)) {
-      o = dispatch_macro_character(x, in, c);
+      if (suppress) {
+        o = dispatch_macro_character(x, in, c, FALSE);
+        if (o == OBJNULL)
+          goto BEGIN;
+      } else {
+        o = dispatch_macro_character(x, in, c, TRUE);
+      }
     } else {
       o = _ecl_funcall3(x, in, ECL_CODE_CHAR(c));
     }
@@ -556,11 +562,15 @@ dispatch_reader_fun(cl_object in, cl_object dc)
   unlikely_if (!ECL_HASH_TABLE_P(dispatch_table))
     FEreader_error("~C is not a dispatching macro character",
                    in, 1, dc);
-  return dispatch_macro_character(dispatch_table, in, c);
+  return dispatch_macro_character(dispatch_table, in, c, TRUE);
 }
 
+/*
+  Returns OBJNULL if no dispatch function is defined and signal_error
+  is false
+ */
 static cl_object
-dispatch_macro_character(cl_object table, cl_object in, int c)
+dispatch_macro_character(cl_object table, cl_object in, int c, bool signal_error)
 {
   cl_object arg;
   int d;
@@ -581,9 +591,13 @@ dispatch_macro_character(cl_object table, cl_object in, int c)
     cl_object dc = ECL_CODE_CHAR(c);
     cl_object fun = ecl_gethash_safe(dc, table, ECL_NIL);
     unlikely_if (Null(fun)) {
-      FEreader_error("No dispatch function defined "
-                     "for character ~S",
-                     in, 1, dc);
+      if (signal_error) {
+        FEreader_error("No dispatch function defined "
+                       "for character ~S",
+                       in, 1, dc);
+      } else {
+        return OBJNULL;
+      }
     }
     return _ecl_funcall4(fun, in, dc, arg);
   }
