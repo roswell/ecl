@@ -383,8 +383,8 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
   if (external_symbol) {
     x = ecl_find_symbol(token, p, &intern_flag);
     unlikely_if (intern_flag != ECL_EXTERNAL) {
-      FEerror("Cannot find the external symbol ~A in ~S.",
-              2, cl_copy_seq(token), p);
+      FEreader_error("Cannot find the external symbol ~A in ~S.", in,
+                     2, cl_copy_seq(token), p);
     }
   } else {
     if (p == ECL_NIL) {
