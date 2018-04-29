@@ -54,9 +54,7 @@ _ecl_write_unreadable(cl_object x, const char *prefix, cl_object name, cl_object
     si_write_ugly_object(name, stream);
     ecl_write_char(' ', stream);
   }
-  ecl_write_char('{', stream);
   _ecl_write_addr((void *)x, stream);
-  ecl_write_char('}', stream);
   ecl_write_char('>', stream);
 }
 
