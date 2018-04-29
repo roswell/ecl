@@ -189,20 +189,7 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
   return bytecodes;
 }
 
-#if defined(ECL_SMALL_BYTECODES)
-static void
-asm_arg(cl_env_ptr env, int n) {
-#ifdef WORDS_BIGENDIAN
-  asm_op(env, (n >> 8) & 0xFF);
-  asm_op(env, n & 0xFF);
-#else
-  asm_op(env, n & 0xFF);
-  asm_op(env, (n >> 8) & 0xFF);
-#endif
-}
-#else
 #define asm_arg(env,n) asm_op(env,n)
-#endif
 
 static void
 asm_op(cl_env_ptr env, cl_fixnum code) {
@@ -249,19 +236,7 @@ asm_complete(cl_env_ptr env, int op, cl_index pc) {
   else if (ecl_unlikely(delta < -MAX_OPARG || delta > MAX_OPARG))
     FEprogram_error("Too large jump", 0);
   else {
-#ifdef ECL_SMALL_BYTECODES
-    unsigned char low = delta & 0xFF;
-    char high = delta >> 8;
-# ifdef WORDS_BIGENDIAN
-    env->stack[pc] = (cl_object)(cl_fixnum)high;
-    env->stack[pc+1] = (cl_object)(cl_fixnum)low;
-# else
-    env->stack[pc] = (cl_object)(cl_fixnum)low;
-    env->stack[pc+1] = (cl_object)(cl_fixnum)high;
-# endif
-#else
     env->stack[pc] = (cl_object)(cl_fixnum)delta;
-#endif
   }
 }
 

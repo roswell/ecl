@@ -143,11 +143,6 @@ AC_ARG_WITH(__thread,
                   [(supported by NPTL-aware glibc and maybe Windows)] ),
   [], [with___thread=no])
 
-AC_ARG_ENABLE(opcode8,
-  AS_HELP_STRING( [--enable-opcode8],
-                  [Deprecated! interpreter uses 8-bit codes (default=NO, only works on Intel)]),
-  [opcode8=${enableval}], [opcode8=no])
-
 AC_ARG_WITH(cxx,
   AS_HELP_STRING( [--with-cxx],
                   [build ECL using C++ compiler (default=NO)]),
@@ -785,13 +780,6 @@ else
   AC_DEFINE([ECL_CXX_CORE], [1],
             [Do we use C or C++ compiler to compile ecl?])
   boehm_configure_flags="${boehm_configure_flags} --enable-cplusplus"
-fi
-
-dnl ----------------------------------------------------------------------
-dnl Do we need to have 8-bit opcodes?
-if test ! ${opcode8} = "no" ; then
-  AC_DEFINE( ECL_SMALL_BYTECODES, [1], 
-             [Bytecodes and arguments are 8 and 16 bits large, respectively])
 fi
 
 ECL_GCC_BACKTRACE

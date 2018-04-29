@@ -45,9 +45,6 @@
 /* ECL_SIGNED_ZERO */
 #undef ECL_SIGNED_ZERO
 
-/* Bytecodes and arguments are 8 and 16 bits large, respectively */
-#undef ECL_SMALL_BYTECODES
-
 /* ECL_SMALL_CONS */
 #undef ECL_SMALL_CONS
 

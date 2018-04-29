@@ -67,6 +67,7 @@
 - buildsystem parallel builds work (i.e make -j999)
 - ECL builds on consoles with unusual encodings on Windows (i.e cp936)
 ** API changes
+- deprecated configure option ~--enable-opcode8~ has been removed
 - mk-defsystem is not build by default (enable by ~--with-defsystem=yes~)
 - asdf:make-build accepts ~:init-name~ argument for libraries
 this allows specifying human-memorable initialization function name to call
