@@ -38,7 +38,7 @@ _ecl_write_bytecodes(cl_object x, cl_object stream)
     if (name != ECL_NIL)
       si_write_ugly_object(name, stream);
     else
-      _ecl_write_addr(x, stream);
+      _ecl_write_addr((void *)x, stream);
     ecl_write_char('>', stream);
   }
 }
@@ -58,10 +58,11 @@ _ecl_write_bclosure(cl_object x, cl_object stream)
   } else {
     cl_object name = x->bytecodes.name;
     writestr_stream("#<bytecompiled-closure ", stream);
-    if (name != ECL_NIL)
+    if (name != ECL_NIL) {
       si_write_ugly_object(name, stream);
-    else
-      _ecl_write_addr(x, stream);
+    } else {
+      _ecl_write_addr((void *)x, stream);
+    }
     ecl_write_char('>', stream);
   }
 }

@@ -340,7 +340,7 @@ extern cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1];
 /* print.d */
 
 extern cl_object _ecl_stream_or_default_output(cl_object stream);
-extern void _ecl_write_addr(cl_object x, cl_object stream);
+extern void _ecl_write_addr(void *x, cl_object stream);
 extern void _ecl_write_array(cl_object o, cl_object stream);
 extern void _ecl_write_vector(cl_object o, cl_object stream);
 extern void _ecl_write_bitvector(cl_object o, cl_object stream);

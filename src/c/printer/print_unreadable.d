@@ -14,7 +14,7 @@
 #include <ecl/internal.h>
 
 void
-_ecl_write_addr(cl_object x, cl_object stream)
+_ecl_write_addr(void *x, cl_object stream)
 {
   cl_fixnum i, j;
 
@@ -31,8 +31,9 @@ _ecl_write_addr(cl_object x, cl_object stream)
 void
 _ecl_write_unreadable(cl_object x, const char *prefix, cl_object name, cl_object stream)
 {
-  if (ecl_print_readably())
+  if (ecl_print_readably()) {
     FEprint_not_readable(x);
+  }
   ecl_write_char('#', stream);
   ecl_write_char('<', stream);
   writestr_stream(prefix, stream);
@@ -71,7 +72,7 @@ si_print_unreadable_object_function(cl_object o, cl_object stream, cl_object typ
     }
     if (!Null(id)) {
       ecl_write_char(' ', stream);
-      _ecl_write_addr(o, stream);
+      _ecl_write_addr((void *)o, stream);
     }
     ecl_write_char('>', stream);
   }

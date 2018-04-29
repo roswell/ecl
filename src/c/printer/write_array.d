@@ -39,7 +39,7 @@ write_array_inner(bool vector, cl_object x, cl_object stream)
   } else {
     if (!ecl_print_array()) {
       writestr_stream(vector? "#<vector " : "#<array ", stream);
-      _ecl_write_addr(x, stream);
+      _ecl_write_addr((void *)x, stream);
       ecl_write_char('>', stream);
       return;
     }
@@ -189,7 +189,7 @@ _ecl_write_bitvector(cl_object x, cl_object stream)
 {
   if (!ecl_print_array() && !ecl_print_readably()) {
     writestr_stream("#<bit-vector ", stream);
-    _ecl_write_addr(x, stream);
+    _ecl_write_addr((void *)x, stream);
     ecl_write_char('>', stream);
   } else {
     cl_index ndx;
