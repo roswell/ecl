@@ -17,14 +17,26 @@ void
 _ecl_write_addr(void *x, cl_object stream)
 {
   cl_fixnum i, j;
+  int print_zeros = 0;
 
   i = (cl_index)x;
+
+  if (i == 0) {
+    writestr_stream("0x0", stream);
+    return;
+  }
+  writestr_stream("0x", stream);
   for (j = sizeof(i)*8-4;  j >= 0;  j -= 4) {
     int k = (i>>j) & 0xf;
-    if (k < 10)
+    if (!print_zeros && k == 0) {
+      ;
+    } else if (k < 10) {
+      print_zeros = 1;
       ecl_write_char('0' + k, stream);
-    else
+    } else {
+      print_zeros = 1;
       ecl_write_char('a' + k - 10, stream);
+    }
   }
 }
 
