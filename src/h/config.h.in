@@ -68,11 +68,6 @@
 #undef ECL_RWLOCK
 #endif
 
-/* __thread thread-local variables?                                     */
-#ifndef openbsd
-#undef WITH___THREAD
-#endif
-
 /* Use Boehm's garbage collector                                        */
 #undef GBC_BOEHM
 #ifdef GBC_BOEHM
@@ -103,8 +98,6 @@
 
 /* Support for Unicode strings */
 #undef ECL_UNICODE
-/* Link in the Unicode names for all characters (takes ~0.5 Mb)         */
-#undef ECL_UNICODE_NAMES
 
 /* Allow STREAM operations to work on arbitrary objects                 */
 #undef ECL_CLOS_STREAMS

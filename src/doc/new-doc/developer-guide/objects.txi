@@ -367,11 +367,12 @@ appropriate size. Signals an error if @var{o} is not of fixnum type.
 
 @subheading Characters
 
-@cfindex --enable-unicode [YES|no|32]
+@cfindex --enable-unicode [32|16|no]
 
-ECL has two types of characters – one fits in the C type char, while the
-other is used when ECL is built with a configure option
-@code{--enable-unicode}.
+ECL has two types of characters – one fits in the C type char, while
+the other is used when ECL is built with a configure option
+@code{--enable-unicode} which defaults to 32 (characters are stored in
+32bit variable and codepoints have 21-bits).
 
 @cppindex ecl_character
 @cppindex ecl_base_char

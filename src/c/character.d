@@ -487,13 +487,9 @@ cl_char_name(cl_object c)
   cl_object output;
   if (code <= 127) {
     output = ecl_gethash_safe(ecl_make_fixnum(code), cl_core.char_names, ECL_NIL);
-  }
-#ifdef ECL_UNICODE_NAMES
-  else if (!Null(output = _ecl_ucd_code_to_name(code))) {
+  } else if (!Null(output = _ecl_ucd_code_to_name(code))) {
     (void)0;
-  }
-#endif
-  else {
+  } else {
     ecl_base_char name[8];
     ecl_base_char *start;
     name[7] = 0;
@@ -525,12 +521,10 @@ cl_name_char(cl_object name)
   if (c != ECL_NIL) {
     ecl_return1(the_env, ECL_CODE_CHAR(ecl_fixnum(c)));
   }
-#ifdef ECL_UNICODE_NAMES
   c = _ecl_ucd_name_to_code(name);
   if (c != ECL_NIL) {
     ecl_return1(the_env, cl_code_char(c));
   }
-#endif
   if (ecl_stringp(name) && (l = ecl_length(name))) {
     c = cl_char(name, ecl_make_fixnum(0));
     if (l == 1) {

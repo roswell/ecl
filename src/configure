@@ -781,7 +781,6 @@ with_libffi_libdir
 with_libgc_prefix
 with_libgc_incdir
 with_libgc_libdir
-with___thread
 with_cxx
 with_tcp
 with_serve_event
@@ -801,7 +800,6 @@ with_sse
 enable_unicode
 enable_longdouble
 enable_c99complex
-enable_asmapply
 enable_smallcons
 enable_gengc
 enable_precisegc
@@ -810,7 +808,6 @@ with_debug_cflags
 with_profile_cflags
 with_extra_files
 with_init_form
-with_unicode_names
 with_x
 '
       ac_precious_vars='build_alias
@@ -1469,13 +1466,11 @@ Optional Features:
                           (no|yes, default=yes)
   --enable-gmp            version of the GMP library
                           (portable|included|system|auto, default=auto)
-  --enable-unicode={yes|no|32}
-                          enable support for unicode (default=YES)
+  --enable-unicode={32|16|no}
+                          enable support for unicode (default=32)
   --enable-longdouble     include support for long double (yes|no|auto,
                           default=AUTO)
   --enable-c99complex     include support for C complex type (default=NO)
-  --enable-asmapply       enable optimizations written in assembler,
-                          EXPERIMENTAL (default=NO)
   --enable-smallcons      use small (2 words) cons types. Requires
                           Boehm-Weiser gc. (default=YES)
   --enable-gengc          use generational garbage collection. Requires
@@ -1508,8 +1503,6 @@ Optional Packages:
                           path to system LIBGC includes (overrides prefix)
   --with-libgc-libdir=path
                           path to system LIBGC libraries (overrides prefix)
-  --with-__thread         Enable __thread thread-local variables (yes|NO|auto)
-                          (supported by NPTL-aware glibc and maybe Windows)
   --with-cxx              build ECL using C++ compiler (default=NO)
   --with-tcp              include socket interface (yes|builtin|no,
                           default=YES)
@@ -1525,10 +1518,11 @@ Optional Packages:
   --with-cmp              build the compiler (yes|builtin|no, default=YES)
   --with-bytecmp          build the bytecodes compiler (yes|builtin|no,
                           default=YES)
-  --with-rt               include MIT-RT testing environment (yes|builtin|no,
-                          default=YES)
-  --with-profile          include CMUCL's simple profiler (yes|builtin|no,
-                          default=YES if Boehm-Weiser garbage collector used)
+  --with-rt               Deprecated! include MIT-RT testing environment
+                          (yes|builtin|no, default=NO)
+  --with-profile          Deprecated! include CMUCL's simple profiler
+                          (yes|builtin|no, default=YES if Boehm-Weiser garbage
+                          collector used)
   --with-dffi             dynamic foreign function interface
                           (system|included|auto|no, default=AUTO if libffi
                           available)
@@ -1547,7 +1541,6 @@ Optional Packages:
   --with-extra-files      list of additional source files (default="")
   --with-init-form        lisp forms to execute at startup
                           (default="(si::top-level t)")
-  --with-unicode-names    link in the database of Unicode names (YES,no)
   --with-x                use the X Window System
 
 Some influential environment variables:
@@ -2772,15 +2765,6 @@ fi
 
 
 
-# Check whether --with-__thread was given.
-if test "${with___thread+set}" = set; then :
-  withval=$with___thread;
-else
-  with___thread=no
-fi
-
-
-
 # Check whether --with-cxx was given.
 if test "${with_cxx+set}" = set; then :
   withval=$with_cxx;
@@ -2866,7 +2850,7 @@ fi
 if test "${with_rt+set}" = set; then :
   withval=$with_rt;
 else
-  with_rt=yes
+  with_rt=no
 fi
 
 
@@ -2875,7 +2859,7 @@ fi
 if test "${with_profile+set}" = set; then :
   withval=$with_profile;
 else
-  with_profile=yes
+  with_profile=NO
 fi
 
 
@@ -2928,7 +2912,7 @@ fi
 if test "${enable_unicode+set}" = set; then :
   enableval=$enable_unicode;
 else
-  enable_unicode=yes
+  enable_unicode=32
 fi
 
 
@@ -2945,14 +2929,6 @@ if test "${enable_c99complex+set}" = set; then :
   enableval=$enable_c99complex; enable_c99complex=${enableval}
 else
   enable_c99complex=no
-fi
-
-
-# Check whether --enable-asmapply was given.
-if test "${enable_asmapply+set}" = set; then :
-  enableval=$enable_asmapply; enable_asmapply=${enableval}
-else
-  enable_asmapply=no
 fi
 
 
@@ -3023,15 +2999,6 @@ fi
 
 
 
-# Check whether --with-unicode-names was given.
-if test "${with_unicode_names+set}" = set; then :
-  withval=$with_unicode_names;
-else
-  with_unicode_names="yes"
-fi
-
-
-
 test -z "${ecldir}" && ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
 
 
@@ -3041,7 +3008,7 @@ test -z "${docdir}" && docdir="${datadir}/doc/ecl-${PACKAGE_VERSION}"
 boehm_configure_flags=""
 
 
-						                                                                                                                  TARGETS='bin/ecl$(EXE)'
+					                                                                                                                  TARGETS='bin/ecl$(EXE)'
 SUBDIRS=c
                             LSP_FEATURES='*features*'
 
@@ -5232,34 +5199,6 @@ SOFTWARE_VERSION=""
 $as_echo "${SOFTWARE_TYPE} / ${SOFTWARE_VERSION}" >&6; }
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __thread local data" >&5
-$as_echo_n "checking for __thread local data... " >&6; }
-if ${ac_cv_ecl___thread+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-static __thread void *data;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_ecl___thread=yes
-else
-  ac_cv_ecl___thread=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ecl___thread" >&5
-$as_echo "$ac_cv_ecl___thread" >&6; }
-
-
 
 
 # Extract the first word of "install-info", so it can be a program name with args.
@@ -5323,6 +5262,7 @@ if test "x$GMP_LIBDIR" != "x"; then
 fi
 CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
 LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
+
 
 case ${enable_gmp} in #(
   portable) :
@@ -5983,21 +5923,6 @@ $as_echo "${THREAD_OBJ}" >&6; }
 
 $as_echo "#define ECL_THREADS 1" >>confdefs.h
 
-    if test "${with___thread}" = "auto"; then
-      with___thread=${ac_cv_ecl___thread}
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for use of __thread" >&5
-$as_echo_n "checking for use of __thread... " >&6; }
-    if test "${with___thread}" = "yes"; then
-
-$as_echo "#define WITH___THREAD 1" >>confdefs.h
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
   fi
 else
   boehm_configure_flags="${boehm_configure_flags} --disable-threads"
@@ -9766,12 +9691,10 @@ $as_echo "#define ECL_UNICODE 21" >>confdefs.h
       ECL_CHARACTER=$ECL_INT32_T
       EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
    fi
-   if test "${with_unicode_names}" = "yes"; then
 
 $as_echo "#define ECL_UNICODE_NAMES 1" >>confdefs.h
 
-      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
-   fi
+   EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
 else
    CHAR_CODE_LIMIT=256
    ECL_CHARACTER="int"

@@ -31,18 +31,13 @@
 #include "threads/ecl_atomics.h"
 
 #ifdef ECL_WINDOWS_THREADS
-# ifndef WITH___THREAD
 DWORD cl_env_key;
-# endif
 #else
-# ifndef WITH___THREAD
 static pthread_key_t cl_env_key;
-# endif
 #endif /* ECL_WINDOWS_THREADS */
 
 extern void ecl_init_env(struct cl_env_struct *env);
 
-#if !defined(WITH___THREAD)
 cl_env_ptr
 ecl_process_env_unsafe(void)
 {
@@ -66,21 +61,16 @@ ecl_process_env(void)
   return NULL;
 #endif
 }
-#endif
 
 static void
 ecl_set_process_env(cl_env_ptr env)
 {
-#ifdef WITH___THREAD
-  cl_env_p = env;
-#else
-# ifdef ECL_WINDOWS_THREADS
+#ifdef ECL_WINDOWS_THREADS
   TlsSetValue(cl_env_key, env);
-# else
+#else
   if (pthread_setspecific(cl_env_key, env)) {
     ecl_thread_internal_error("pthread_setspecific() failed.");
   }
-# endif
 #endif
 }
 
@@ -794,12 +784,10 @@ init_threads(cl_env_ptr env)
 
   /* We have to set the environment before any allocation takes place,
    * so that the interrupt handling code works. */
-#if !defined(WITH___THREAD)
-# if defined(ECL_WINDOWS_THREADS)
+#if defined(ECL_WINDOWS_THREADS)
   cl_env_key = TlsAlloc();
-# else
+#else
   pthread_key_create(&cl_env_key, NULL);
-# endif
 #endif
   ecl_set_process_env(env);
 

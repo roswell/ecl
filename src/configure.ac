@@ -136,13 +136,6 @@ AC_ARG_WITH(libgc-libdir,
 		  [path to system LIBGC libraries (overrides prefix)] ),
   [LIBGC_LIBDIR="$withval"], [])
 
-dnl
-AC_ARG_WITH(__thread,
-  AS_HELP_STRING( [--with-__thread],
-                  [Enable __thread thread-local variables (yes|NO|auto)]
-                  [(supported by NPTL-aware glibc and maybe Windows)] ),
-  [], [with___thread=no])
-
 AC_ARG_WITH(cxx,
   AS_HELP_STRING( [--with-cxx],
                   [build ECL using C++ compiler (default=NO)]),
@@ -192,15 +185,15 @@ AC_ARG_WITH(bytecmp,
 
 AC_ARG_WITH(rt,
   AS_HELP_STRING( [--with-rt],
-                  [include MIT-RT testing environment]
-                  [(yes|builtin|no, default=YES)]),
-  [], [with_rt=yes])
+                  [Deprecated! include MIT-RT testing environment]
+                  [(yes|builtin|no, default=NO)]),
+  [], [with_rt=no])
 
 AC_ARG_WITH(profile,
   AS_HELP_STRING( [--with-profile],
-                  [include CMUCL's simple profiler]
+                  [Deprecated! include CMUCL's simple profiler]
                   [(yes|builtin|no, default=YES if Boehm-Weiser garbage collector used)]),
-  [], [with_profile=yes])
+  [], [with_profile=NO])
 
 AC_ARG_WITH(dffi,
   AS_HELP_STRING( [--with-dffi],
@@ -232,9 +225,9 @@ AC_ARG_WITH(sse,
   [], [with_sse="no"])
 
 AC_ARG_ENABLE(unicode,
-  AS_HELP_STRING( [--enable-unicode={yes|no|32}],
-                  [enable support for unicode (default=YES)]),
-  [], [enable_unicode=yes])
+  AS_HELP_STRING( [--enable-unicode={32|16|no}],
+                  [enable support for unicode (default=32)]),
+  [], [enable_unicode=32])
 
 AC_ARG_ENABLE(longdouble,
   AS_HELP_STRING( [--enable-longdouble],
@@ -247,12 +240,6 @@ AC_ARG_ENABLE(c99complex,
                   [include support for C complex type]
                   [(default=NO)]),
   [enable_c99complex=${enableval}], [enable_c99complex=no])
-
-AC_ARG_ENABLE(asmapply,
-  AS_HELP_STRING( [--enable-asmapply],
-                  [enable optimizations written in assembler, EXPERIMENTAL]
-                  [(default=NO)]),
-  [enable_asmapply=${enableval}],[enable_asmapply=no])
 
 AC_ARG_ENABLE(smallcons,
   AS_HELP_STRING( [--enable-smallcons],
@@ -300,12 +287,6 @@ AC_ARG_WITH(init-form,
                   [lisp forms to execute at startup (default="(si::top-level t)")]),
   [with_init_form="${withval}"], [with_init_form=""])
 
-AC_ARG_WITH(unicode-names,
-  AS_HELP_STRING( [--with-unicode-names],
-                  [link in the database of Unicode names]
-                  [(YES,no)]),
-  [],[with_unicode_names="yes"])
-
 dnl -----------------------------------------------------------------------
 dnl Installation directories
 AC_ARG_VAR([ecldir], [the directory where *.fas files are installed])
@@ -325,7 +306,7 @@ AC_SUBST(ECL_CFLAGS)            dnl Similar, but specific to ECL (see src/util/e
 AC_SUBST(DEBUG_CFLAGS)
 AC_SUBST(GMP_CPPFLAGS)		dnl CFLAGS needed for compiling with system GMP library
 AC_SUBST(GMP_LDFLAGS)		dnl LDFLAGS needed for compiling with system GMP library
-AC_SUBST(LIBFFI_LDFLAGS)		dnl LDFLAGS needed for compiling with system LIBFFI library
+AC_SUBST(LIBFFI_LDFLAGS)	dnl LDFLAGS needed for compiling with system LIBFFI library
 AC_SUBST(FASL_LIBS)             dnl Libraries to link into all ecl code but not
                                 dnl into helper programs.
 AC_SUBST(CORE_LIBS, [])         dnl Locally compiled libs to link into
@@ -365,7 +346,6 @@ dnl Checks which do not come with autoconf (must be after AC_PROG_CC)
 ECL_MAKE_ABSOLUTE_SRCDIR
 ECL_CROSS_CONFIG
 ECL_GUESS_HOST_OS
-ECL___THREAD
 
 AC_SUBST(INFOEXT)
 AC_SUBST(INSTALL_INFO)
@@ -566,16 +546,6 @@ if test "${enable_threads}" = "yes" ; then
     AC_MSG_CHECKING([for thread object files])
     AC_MSG_RESULT([${THREAD_OBJ}])
     AC_DEFINE( [ECL_THREADS], [1], [Userland threads?])
-    if test "${with___thread}" = "auto"; then
-      with___thread=${ac_cv_ecl___thread}
-    fi
-    AC_MSG_CHECKING([for use of __thread])
-    if test "${with___thread}" = "yes"; then
-      AC_DEFINE( [WITH___THREAD], [1], [__thread thread-local variables?] )
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
   fi
 else
   boehm_configure_flags="${boehm_configure_flags} --disable-threads"
@@ -897,10 +867,8 @@ if test "x${enable_unicode}" != "xno"; then
       ECL_CHARACTER=$ECL_INT32_T
       EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
    fi
-   if test "${with_unicode_names}" = "yes"; then
-      AC_DEFINE([ECL_UNICODE_NAMES], [1], [Link in the database of Unicode names])
-      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
-   fi
+   AC_DEFINE([ECL_UNICODE_NAMES], [1], [Link in the database of Unicode names])
+   EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
 else
    CHAR_CODE_LIMIT=256
    ECL_CHARACTER="int"
