@@ -329,7 +329,18 @@ write_cclosure(cl_object x, cl_object stream)
 static void
 write_foreign(cl_object x, cl_object stream)
 {
-  _ecl_write_unreadable(x, "foreign", x->foreign.tag, stream);
+  if (ecl_print_readably()) {
+    FEprint_not_readable(x);
+  }
+  writestr_stream("#<foreign ", stream);
+  si_write_ugly_object(x->foreign.tag, stream);
+  ecl_write_char(' ', stream);
+  if (x->foreign.data == NULL) {
+    writestr_stream("NULL", stream);
+  } else {
+    _ecl_write_addr((void *)x->foreign.data, stream);
+  }
+  ecl_write_char('>', stream);
 }
 
 static void
