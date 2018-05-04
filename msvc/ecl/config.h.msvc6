@@ -62,9 +62,6 @@
 # undef ECL_THREADS
 #endif
 
-/* __thread thread-local variables?                                     */
-/* #undef WITH___THREAD */
-
 /* Use Windows's interlocked operations to define compare-and-swap      */
 #define AO_ASSUME_WINDOWS98
 

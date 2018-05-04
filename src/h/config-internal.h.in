@@ -31,9 +31,6 @@
 /* Undefine this if you do not want ECL to check for circular lists     */
 #define ECL_SAFE
 
-/* Bytecodes and arguments are 8 and 16 bits large, respectively        */
-#undef ECL_SMALL_BYTECODES
-
 /* Assembler implementation of APPLY and friends                        */
 #undef ECL_ASM_APPLY
 

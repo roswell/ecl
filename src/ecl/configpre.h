@@ -45,9 +45,6 @@
 /* ECL_SIGNED_ZERO */
 #undef ECL_SIGNED_ZERO
 
-/* Bytecodes and arguments are 8 and 16 bits large, respectively */
-#undef ECL_SMALL_BYTECODES
-
 /* ECL_SMALL_CONS */
 #undef ECL_SMALL_CONS
 
@@ -482,9 +479,6 @@
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
-
-/* __thread thread-local variables? */
-#undef WITH___THREAD
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */

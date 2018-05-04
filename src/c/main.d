@@ -50,8 +50,6 @@
 
 #if !defined(ECL_THREADS)
 cl_env_ptr cl_env_p = NULL;
-#elif defined(WITH___THREAD)
-__thread cl_env_ptr cl_env_p = NULL;
 #endif
 const char *ecl_self;
 

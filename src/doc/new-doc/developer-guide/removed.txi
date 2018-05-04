@@ -59,3 +59,11 @@ module (logic programming) from EcoLisp times.
 @subheading Hierarchical packages
 Commit @code{72e422f1b3c4b3c52fa273b961517db943749a8f}. Partially
 broken. Tests left in package-extensions.lsp.
+
+@subheading 8-bit opcodes in bytecodes interpreter
+Commit @code{c3244b0148ed352808779b07b25c3edddf9d7349}. Works fine but
+provides no real gain and is limited to intel.
+
+@subheading thread local variables
+Commit @code{618f6e92e8144f7b95bc36b42a337c212bacc8e7}. Disabled by
+default, practically not tested, works on limited number of platforms.
