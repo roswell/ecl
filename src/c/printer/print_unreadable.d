@@ -14,34 +14,47 @@
 #include <ecl/internal.h>
 
 void
-_ecl_write_addr(cl_object x, cl_object stream)
+_ecl_write_addr(void *x, cl_object stream)
 {
   cl_fixnum i, j;
+  int print_zeros = 0;
 
   i = (cl_index)x;
+
+  if (i == 0) {
+    writestr_stream("0x0", stream);
+    return;
+  }
+  writestr_stream("0x", stream);
   for (j = sizeof(i)*8-4;  j >= 0;  j -= 4) {
     int k = (i>>j) & 0xf;
-    if (k < 10)
+    if (!print_zeros && k == 0) {
+      ;
+    } else if (k < 10) {
+      print_zeros = 1;
       ecl_write_char('0' + k, stream);
-    else
+    } else {
+      print_zeros = 1;
       ecl_write_char('a' + k - 10, stream);
+    }
   }
 }
 
 void
 _ecl_write_unreadable(cl_object x, const char *prefix, cl_object name, cl_object stream)
 {
-  if (ecl_print_readably())
+  if (ecl_print_readably()) {
     FEprint_not_readable(x);
+  }
   ecl_write_char('#', stream);
   ecl_write_char('<', stream);
   writestr_stream(prefix, stream);
   ecl_write_char(' ', stream);
   if (!Null(name)) {
     si_write_ugly_object(name, stream);
-  } else {
-    _ecl_write_addr(x, stream);
+    ecl_write_char(' ', stream);
   }
+  _ecl_write_addr((void *)x, stream);
   ecl_write_char('>', stream);
 }
 
@@ -71,7 +84,7 @@ si_print_unreadable_object_function(cl_object o, cl_object stream, cl_object typ
     }
     if (!Null(id)) {
       ecl_write_char(' ', stream);
-      _ecl_write_addr(o, stream);
+      _ecl_write_addr((void *)o, stream);
     }
     ecl_write_char('>', stream);
   }
