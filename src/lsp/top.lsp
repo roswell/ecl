@@ -55,33 +55,33 @@
 (defconstant tpl-commands
    '(("Top level commands"
       ((:cf :compile-file) tpl-compile-command :string
-       ":cf             Compile file"
+       ":cf              Compile file"
        ":compile-file &string &rest files               [Top level command]~@
         :cf &string &rest files                         [Abbreviation]~@
         ~@
         Compile files.  With no arguments, uses values from latest :cf~@
         command.  File extensions are optional.~%")
       ((:exit :eof) quit :eval
-       ":exit           Exit Lisp"
+       ":exit            Exit Lisp"
        ":exit &eval &optional (status 0)                [Top level command]~@
         ~@
         Exit Lisp without further confirmation.~%")
       ((:ld :load) tpl-load-command :string
-       ":ld             Load file"
+       ":ld              Load file"
        ":load &string &rest files                       [Top level command]~@
         :ld &string &rest files                         [Abbreviation]~@
         ~@
         Load files.  With no arguments, uses values from latest :ld~@
         or :cf command. File extensions are optional.~%")
       ((:step) tpl-step-command nil
-       ":step           Single step form"
+       ":step            Single step form"
        ":step form                                      [Top level command]~@
         ~@
         Evaluate form in single step mode.  While stepping, a new break~@
         level is invoked before every evaluation.  Extra commands are~@
         available at this time to control stepping and form evaluation.~%")
       ((:tr :trace) tpl-trace-command nil
-       ":tr(ace)        Trace function"
+       ":tr(ace)         Trace function"
        ":trace &rest functions                          [Top level command]~@
         :tr &rest functions                             [Abbreviation]~@
         ~@
@@ -90,7 +90,7 @@
         ~@
         See also: :untrace.~%")
       ((:untr :untrace) tpl-untrace-command nil
-       ":untr(ace)      Untrace function"
+       ":untr(ace)       Untrace function"
        ":untrace &rest functions                        [Top level command]~@
         :untr &rest functions                           [Abbreviation]~@
         ~@
@@ -100,7 +100,7 @@
         See also: :trace.~%")
       #+threads
       ((:s :switch) tpl-switch-command nil
-       ":s(witch)       Switch to next process to debug"
+       ":s(witch)        Switch to next process to debug"
        ":switch process                                 [Break command]~@
         :s processs                                     [Abbreviation]~@
         ~@
@@ -109,7 +109,7 @@
         of the process in the debugger waiting list.~%")
       #+threads
       ((:br :break) tpl-interrupt-command nil
-       ":br(eak)        Stop a given process"
+       ":br(eak)         Stop a given process"
        ":break process                                  [Break command]~@
         :br processs                                    [Abbreviation]~@
         ~@
@@ -118,7 +118,7 @@
         of the process in the debugger waiting list (:waiting).~%")
       #+threads
       ((:w :waiting) tpl-waiting-command nil
-       ":w(aiting)      Display list of active toplevels"
+       ":w(aiting)       Display list of active toplevels"
        ":waiting                                        [Break command]~@
         :w                                              [Abbreviation]~@
         ~@
@@ -126,19 +126,19 @@
       )
      ("Help commands"
       ((:apropos) tpl-apropos-command nil
-       ":apropos        Apropos"
+       ":apropos         Apropos"
        ":apropos string &optional package               [Top level command]~@
         ~@
         Finds all available symbols whose print names contain string.~@
         If a non NIL package is specified, only symbols in that package are considered.~@
         ~%")
       ((:doc document) tpl-document-command nil
-       ":doc(ument)     Document"
+       ":doc(ument)      Document"
        ":document symbol                                [Top level command]~@
         ~@
         Displays documentation about function, print names contain string.~%")
       ((? :h :help) tpl-help-command nil
-       ":h(elp) or ?    Help.  Type \":help help\" for more information"
+       ":h(elp) or ?     Help.  Type \":help help\" for more information"
        ":help &optional topic                           [Top level command]~@
         :h &optional topic                              [Abbreviation]~@
         ~@
@@ -168,20 +168,20 @@
 (defconstant break-commands
   '("Break commands"
      ((:q :quit) tpl-quit-command nil
-       ":q(uit)         Return to some previous break level"
+       ":q(uit)          Return to some previous break level"
        ":quit &optional n                               [Break command]~@
         :q &optional n                                  [Abbreviation]~@
         ~@
         Without argument, return to top level;~@
         otherwise return to break level n.~%")
       ((:pop) (tpl-pop-command) :constant
-       ":pop            Pop to previous break level"
+       ":pop             Pop to previous break level"
        ":pop                                            [Break command]~@
         ~@
         Pop to previous break level, or if already in top level,~@
         exit Lisp after confirmation.~%")
       ((:c :continue) continue nil
-       ":c(ontinue)     Continue execution"
+       ":c(ontinue)      Continue execution"
        ":continue                                       [Break command]~@
         :c                                              [Abbreviation]~@
         ~@
@@ -189,7 +189,7 @@
         This command is only available when the break level is continuable~@
         (e.g., called from a correctable error or the function break).~%")
       ((:b :backtrace) tpl-backtrace nil
-       ":b(acktrace)    Print backtrace"
+       ":b(acktrace)     Print backtrace"
        ":backtrace &optional n                          [Break command]~@
         :b &optional n                                  [Abbreviation]~@
         ~@
@@ -202,7 +202,7 @@
         ~@
         See also: :function, :previous, :next.~%")
       ((:f :function) tpl-print-current nil
-       ":f(unction)     Show current function"
+       ":f(unction)      Show current function"
        ":function                                       [Break command]~@
         :f                                              [Abbreviation]~@
         ~@
@@ -213,7 +213,7 @@
         ~@
         See also: :backtrace, :next, previous, :disassemble, :variables.~%")
       ((:p :previous) tpl-previous nil
-       ":p(revious)     Go to previous function"
+       ":p(revious)      Go to previous function"
        ":previous &optional (n 1)                       [Break command]~@
         :p &optional (n 1)                              [Abbreviation]~@
         ~@
@@ -222,11 +222,11 @@
         ~@
         See also: :backtrace, :function, :go, :next.~%")
       ((:d :down) tpl-previous nil
-       ":d(own)         Alias to :previous"
+       ":d(own)          Alias to :previous"
        ""
        )
       ((:n :next) tpl-next nil
-       ":n(ext)         Go to next function"
+       ":n(ext)          Go to next function"
        ":next &optional (n 1)                           [Break command]~@
         :n &optional (n 1)                              [Abbreviation]~@
         ~@
@@ -235,18 +235,18 @@
         ~@
         See also: :backtrace, :function, :go, :previous.~%")
       ((:u :up) tpl-next nil
-       ":u(p)           Alias to :next"
+       ":u(p)            Alias to :next"
        ""
        )
       ((:g :go) tpl-go nil
-       ":g(o)           Go to next function"
+       ":g(o)            Go to next function"
        ":go &optional (n 1)                             [Break command]~@
         :g &optional (n 1)                              [Abbreviation]~@
         ~@
         Move to the function at IHS[i].~@
         See also: :backtrace, :function, :next, :previous.~%")
       ((:fs :forward-search) tpl-forward-search :string
-       ":fs             Search forward for function"
+       ":fs              Search forward for function"
        ":forward-search &string substring               [Break command]~@
         :fs &string substring                           [Abbreviation]~@
         ~@
@@ -255,7 +255,7 @@
         ~@
         See also: :backtrace, :function, :next.~%")
       ((:bs :backward-search) tpl-backward-search :string
-       ":bs             Search backward for function"
+       ":bs              Search backward for function"
        ":backward-search &string substring              [Break command]~@
         :bs &string substring                           [Abbreviation]~@
         ~@
@@ -264,7 +264,7 @@
         ~@
         See also: :backtrace, :function, :previous.~%")
       ((:disassemble) tpl-disassemble-command nil
-       ":disassemble    Disassemble current function"
+       ":disassemble     Disassemble current function"
        ":disassemble                                    [Break command]~@
         :disassemble                                    [Abbreviation]~@
         ~@
@@ -278,7 +278,7 @@
         Show the lisp code of the current function. Only works for interpreted~@
         functions.~%")
       ((:v :variables) tpl-variables-command nil
-       ":v(ariables)    Show local variables, functions, blocks, and tags"
+       ":v(ariables)     Show local variables, functions, blocks, and tags"
        ":variables &optional no-values                  [Break command]~@
         :v &optional no-values                          [Abbreviation]~@
         ~@
@@ -288,7 +288,7 @@
         unless the argument is non-null.~%")
 #|
       ((:l :local) tpl-local-command nil
-       ":l(ocal)        Return the nth local value on the stack"
+       ":l(ocal)         Return the nth local value on the stack"
        ":local &optional (n 0)                          [Break command]~@
         :l &optional (n 0)                              [Abbreviation]
         ~@
@@ -297,14 +297,14 @@
         level as well as saved in the variable *.~%")
 |#
       ((:hide) tpl-hide nil
-       ":hide           Hide function"
+       ":hide            Hide function"
        ":hide function                                  [Break command]~@
         ~@
         Hide function.  A hidden function is not displayed in a backtrace.~@
         ~@
         See also: :backtrace, :unhide, :hide-package.~%")
       ((:unhide) tpl-unhide nil
-       ":unhide         Unhide function"
+       ":unhide          Unhide function"
        ":unhide function                                [Break command]~@
         ~@
         Unhide function.  The specified function will be displayed in future~@
@@ -312,7 +312,7 @@
         ~@
         See also: :backtrace, :hide, :unhide-package.~%")
       ((:hp :hide-package) tpl-hide-package nil
-       ":hp             Hide package"
+       ":hp              Hide package"
        ":hide-package package                           [Break command]~@
         :hp package                                     [Abbreviation]~@
         ~@
@@ -321,7 +321,7 @@
         ~@
         See also: :backtrace, :unhide-package.~%")
       ((:unhp :unhide-package) tpl-unhide-package nil
-       ":unhp           Unhide package"
+       ":unhp            Unhide package"
        ":unhide-package package                         [Break command]~@
         :unhp package                                   [Abbreviation]~@
         ~@
@@ -330,7 +330,7 @@
         ~@
         See also: :backtrace, :hide-package, :hide, :unhide.~%")
       ((:unhide-all) tpl-unhide-all nil
-       ":unhide-all     Unhide all variables and packages"
+       ":unhide-all      Unhide all variables and packages"
        ":unhide-all                                     [Break command]~@
         ~@
         Unhide all variables and packages.  All functions will be displayed~@
@@ -339,7 +339,7 @@
         See also: :hide, :unhide, :hide-package, :unhide-package.~%")
 #|
       ((:vs :value-stack) tpl-vs-command nil
-       ":vs             Show value stack"
+       ":vs              Show value stack"
        ":value-stack &optional n                        [Break command]~@
         :vs &optional n                                 [Abbreviation]~@
         ~@
@@ -350,7 +350,7 @@
         See also: :local.~%")
 |#
       ((:bds :binding-stack) tpl-bds-command nil
-       ":bds            Show binding stack"
+       ":bds             Show binding stack"
        ":binding-stack &optional variable               [Break command]~@
         :bds &optional variable                         [Abbreviation]~@
         ~@
@@ -358,23 +358,23 @@
         break level.  With a variable name, print nothing, but return the~@
         value of the given variable on the binding stack.~%")
       ((:frs :frame-stack) tpl-frs-command nil
-       ":frs            Show frame stack"
+       ":frs             Show frame stack"
        ""
        )
       ((:m :message) tpl-print-message nil
-       ":m(essage)      Show error message"
+       ":m(essage)       Show error message"
        ":message                                        [Break command]~@
         :m                                              [Abbreviation]~@
         ~@
         Show current error message.~%")
       ((:hs :help-stack) tpl-help-stack-command nil
-       ":hs             Help stack"
+       ":hs              Help stack"
        ":help-stack                                     [Break command]~@
         :hs                                             [Abbreviation]~@
         ~@
         Lists the functions to access the LISP system stacks.~%")
       ((:i :inspect) tpl-inspect-command nil
-       ":i(nspect)      Inspect value of local variable"
+       ":i(nspect)       Inspect value of local variable"
        ":inspect var-name                               [Break command]~@
         :i var-name                                     [Abbreviation]~@
         ~@
@@ -383,6 +383,15 @@
         then be used regardless of of the symbol's package.~@
         ~@
         See also: :variables.~%")
+      ((:cb :c-backtrace) ext::dump-c-backtrace nil
+       ":c(-)b(acktrace) Print a raw C backtrace"
+       ":c-backtrace n                                  [Break command]~@
+        :cb n                                           [Abbreviation]~@
+        ~@
+        Show function call history of the n C functions above and~@
+        including the current one.~@
+        ~@
+        See also: :backtrace.~%")
   ))
 
 (defparameter *lisp-initialized* nil)
