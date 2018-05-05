@@ -632,7 +632,6 @@ extern ECL_API cl_object si_mmap_array(cl_object map);
 
 /* ffi/backtrace.d */
 extern ECL_API cl_object si_dump_c_backtrace(cl_object size);
-extern ECL_API cl_object si_backtrace(cl_object start, cl_object end);
 
 /* ffi.c */
 

@@ -54,7 +54,7 @@ ecl_internal_error(const char *s)
             strerror(saved_errno));
   }
   fflush(stderr);
-  si_dump_c_backtrace(ecl_make_fixnum(32));
+  _ecl_dump_c_backtrace();
 #ifdef SIGIOT
   signal(SIGIOT, SIG_DFL); /* avoid getting into a loop with abort */
 #endif
