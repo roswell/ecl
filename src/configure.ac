@@ -185,15 +185,15 @@ AC_ARG_WITH(bytecmp,
 
 AC_ARG_WITH(rt,
   AS_HELP_STRING( [--with-rt],
-                  [Deprecated! include MIT-RT testing environment]
-                  [(yes|builtin|no, default=NO)]),
-  [], [with_rt=no])
+                  [include MIT-RT testing environment]
+                  [(yes|builtin|no, default=YES)]),
+  [], [with_rt=yes])
 
 AC_ARG_WITH(profile,
   AS_HELP_STRING( [--with-profile],
-                  [Deprecated! include CMUCL's simple profiler]
+                  [include CMUCL's simple profiler]
                   [(yes|builtin|no, default=YES if Boehm-Weiser garbage collector used)]),
-  [], [with_profile=NO])
+  [], [with_profile=yes])
 
 AC_ARG_WITH(dffi,
   AS_HELP_STRING( [--with-dffi],
@@ -752,7 +752,6 @@ else
   boehm_configure_flags="${boehm_configure_flags} --enable-cplusplus"
 fi
 
-ECL_GCC_BACKTRACE
 ECL_LIBATOMIC_OPS
 
 dnl ----------------------------------------------------------------------

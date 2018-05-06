@@ -831,22 +831,6 @@ AC_MSG_CHECKING([Linker flags])
 AC_MSG_RESULT([${LDFLAGS}])
 ])
 
-dnl --------------------------------------------------------------
-dnl Determine whether GCC supports backtraces
-dnl
-AC_DEFUN([ECL_GCC_BACKTRACE],[
-if test "x${cross_compiling}" != "xyes"; then
-AC_RUN_IFELSE(
-  [AC_LANG_SOURCE([[
-    void *foo() { return __builtin_return_address(1); }
-    int main() {
-      return (foo() == 0);
-    }]])],
-  [AC_DEFINE([HAVE___BUILTIN_RETURN_ADDRESS], [], [HAVE___BUILTIN_RETURN_ADDRESS])],
-  [])
-fi
-])
-
 dnl ----------------------------------------------------------------------
 dnl Choose the type of code to detect floating point exceptions and
 dnl raise them.
