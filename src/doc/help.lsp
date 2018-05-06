@@ -2263,9 +2263,9 @@ FILESPEC may be a symbol, a string, a pathname, or a file stream.
 
 DIRECTION may be :INPUT, :OUTPUT, :IO, or :PROBE.
 
-IF-EXISTS specifies what to do when DIRECTION is either :OUTPUT or :IO
-and the specified file exists already.  It may be :ERROR (the
-default), :NEW-VERSION, :RENAME, :RENAME-AND-DELETE, :OVERWRITE, :APPEND,
+IF-EXISTS specifies what to do when DIRECTION is either :OUTPUT or :IO and the
+specified file exists already.  It may be :ERROR (the
+default), :NEW-VERSION, :RENAME, :RENAME-AND-DELETE, :OVERWRITE, :APPEND, :TRUNCATE
 :SUPERSEDE, or NIL.
 
 IF-DOES-NOT-EXIST specifies what to do when the specified file does

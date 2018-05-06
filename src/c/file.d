@@ -5107,7 +5107,12 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
         unlikely_if (f < 0) FEcannot_open(fn);
       } else if (if_exists == @':rename_and_delete' ||
                  if_exists == @':new_version' ||
-                 if_exists == @':supersede') {
+                 /* :SUPERSEDE could write to a new file and only upon succesful
+                    close it could replace the file in question. That way we'd
+                    assure a transaction-like behavior. We add :TRUNACTE for
+                    explicit truncate action. */
+                 if_exists == @':supersede' ||
+                 if_exists == @':truncate') {
         f = safe_open(fname, base|O_TRUNC, mode);
         unlikely_if (f < 0) FEcannot_open(fn);
       } else if (if_exists == @':overwrite' || if_exists == @':append') {
