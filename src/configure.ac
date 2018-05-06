@@ -757,7 +757,7 @@ AC_CHECK_FUNCS( [expf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
 		[floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \
                 [copysign] )
 
-AC_CHECK_FUNCS( [sched_yield uname fseeko dladdr backtrace backtrace_symbols] )
+AC_CHECK_FUNCS( [sched_yield uname fseeko backtrace backtrace_symbols] )
 
 AC_CHECK_HEADER( [sys/mman.h],
                  AC_DEFINE([ECL_USE_MPROTECT], [], [ECL_USE_MPROTECT])
@@ -794,7 +794,6 @@ if test ! ${opcode8} = "no" ; then
              [Bytecodes and arguments are 8 and 16 bits large, respectively])
 fi
 
-ECL_GCC_BACKTRACE
 ECL_LIBATOMIC_OPS
 
 dnl ----------------------------------------------------------------------

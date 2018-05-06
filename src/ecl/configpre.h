@@ -105,9 +105,6 @@
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
 
-/* Define to 1 if you have the `dladdr' function. */
-#undef HAVE_DLADDR
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -433,9 +430,6 @@
 
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
-
-/* HAVE___BUILTIN_RETURN_ADDRESS */
-#undef HAVE___BUILTIN_RETURN_ADDRESS
 
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
