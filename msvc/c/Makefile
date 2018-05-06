@@ -35,6 +35,12 @@ ECL_SSE_FLAG=0
 ECL_SSE_OBJ=
 !endif
 
+!if "$(ECL_USE_DBGHELP)" != ""
+ECL_USE_DBGHELP_FLAG=1
+!else
+ECL_USE_DBGHELP_FLAG=0
+!endif
+
 # Programs used by "make":
 #
 TRUE_CC = cl
@@ -60,12 +66,14 @@ libdir=$(prefix)\lib\ecl
 # Files
 
 HDIR	= $(top_srcdir)\h
-HFILES	= ..\ecl\config.h ..\ecl\atomic_ops.h $(HDIR)\ecl.h $(HDIR)\ecl-cmp.h\
-	$(HDIR)\object.h $(HDIR)\cs.h $(HDIR)\stacks.h\
-	$(HDIR)\external.h $(HDIR)\cons.h $(HDIR)\legacy.h\
+HFILES	= ..\ecl\config.h ..\ecl\config-internal.h ..\ecl\atomic_ops.h \
+	$(HDIR)\ecl.h $(HDIR)\ecl-cmp.h \
+	$(HDIR)\object.h $(HDIR)\cs.h $(HDIR)\stacks.h \
+	$(HDIR)\external.h $(HDIR)\cons.h $(HDIR)\legacy.h \
 	$(HDIR)\number.h $(HDIR)\page.h \
 	$(HDIR)\internal.h $(HDIR)\ecl-inl.h $(HDIR)\bytecodes.h \
-	$(HDIR)\impl\math_dispatch.h
+	$(HDIR)\impl\math_dispatch.h $(HDIR)\cache.h $(HDIR)\stack-resize.h \
+	$(HDIR)\ecl-atomic-ops.h
 
 OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	apply.obj eval.obj \
@@ -153,21 +161,23 @@ clean:
 
 # Build rules
 
-$(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h
+$(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h ../ecl/config-internal.h
 	$(TRUE_CC) -I.. -I./ $(srcdir)/dpp.c  -o $@
-$(HFILES): ../ecl/config.h.msvc6 Makefile
+$(HFILES): ../ecl/config.h.msvc6 ../ecl/config-internal.h.msvc6 Makefile
 	-mkdir ..\ecl\impl
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
+		"@ECL_USE_DBGHELP@" "$(ECL_USE_DBGHELP_FLAG)" \
 	        < ..\ecl\config.h.msvc6 > ..\ecl\config.h
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
+		"@ECL_USE_DBGHELP@" "$(ECL_USE_DBGHELP_FLAG)" \
 	        < ..\ecl\config-internal.h.msvc6 > ..\ecl\config-internal.h
 	xcopy /SYI $(top_srcdir)\h\*.h ..\ecl
 	-mkdir ..\ecl\atomic_ops
