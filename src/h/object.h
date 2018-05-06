@@ -466,13 +466,12 @@ struct ecl_array {              /*  array header  */
 struct ecl_vector {             /*  vector header  */
                                 /*  adjustable flag  */
                                 /*  has-fill-pointer flag  */
-        _ECL_HDR2(elttype,flags);       /*  array element type, has fill ptr, adjustable-p */
+        _ECL_HDR2(elttype,flags);        /*  array element type, has fill ptr, adjustable-p */
         cl_object displaced;    /*  displaced  */
         cl_index dim;           /*  dimension  */
         cl_index fillp;         /*  fill pointer  */
-                                /*  For simple vectors,  */
-                                /*  v_fillp is equal to v_dim.  */
-        union ecl_array_data self;      /*  pointer to the vector  */
+                                /*  For simple vectors, fillp is equal to dim. */
+        union ecl_array_data self; /*  pointer to the vector  */
         byte    offset;
 };
 
@@ -495,11 +494,9 @@ struct ecl_string {             /*  string header  */
                                 /*  has-fill-pointer flag  */
         _ECL_HDR2(elttype,flags);       /*  array element type, has fill ptr, adjustable-p */
         cl_object displaced;    /*  displaced  */
-        cl_index dim;           /*  dimension  */
-                                /*  string length  */
+        cl_index dim;           /*  dimension, string length  */
         cl_index fillp;         /*  fill pointer  */
-                                /*  For simple strings,  */
-                                /*  st_fillp is equal to st_dim-1.  */
+                                /*  For simple strings, fillp is equal to dim-1. */
         ecl_character *self;    /*  pointer to the string  */
 };
 #endif
@@ -513,15 +510,15 @@ struct ecl_string {             /*  string header  */
 
 enum ecl_smmode {               /*  stream mode  */
         ecl_smm_input,          /*  input  */
-        ecl_smm_input_file,             /*  input  */
+        ecl_smm_input_file,     /*  input  */
         ecl_smm_output,         /*  output  */
         ecl_smm_output_file,    /*  output  */
-        ecl_smm_io,                     /*  input-output  */
-        ecl_smm_io_file,                /*  input-output  */
-        ecl_smm_synonym,                /*  synonym  */
-        ecl_smm_broadcast,              /*  broadcast  */
+        ecl_smm_io,             /*  input-output  */
+        ecl_smm_io_file,        /*  input-output  */
+        ecl_smm_synonym,        /*  synonym  */
+        ecl_smm_broadcast,      /*  broadcast  */
         ecl_smm_concatenated,   /*  concatenated  */
-        ecl_smm_two_way,                /*  two way  */
+        ecl_smm_two_way,        /*  two way  */
         ecl_smm_echo,           /*  echo  */
         ecl_smm_string_input,   /*  string input  */
         ecl_smm_string_output,  /*  string output  */
@@ -529,10 +526,10 @@ enum ecl_smmode {               /*  stream mode  */
 #if defined(ECL_WSOCK)
         ecl_smm_input_wsock,    /*  input socket (Win32) */
         ecl_smm_output_wsock,   /*  output socket (Win32) */
-        ecl_smm_io_wsock,               /*  input/output socket (Win32) */
+        ecl_smm_io_wsock,       /*  input/output socket (Win32) */
 #endif
 #if defined(ECL_MS_WINDOWS_HOST)
-        ecl_smm_io_wcon,                /*  windows console (Win32) */
+        ecl_smm_io_wcon,        /*  windows console (Win32) */
 #endif
         ecl_smm_sequence_input, /*  sequence input  */
         ecl_smm_sequence_output /*  sequence output  */

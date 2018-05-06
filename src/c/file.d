@@ -5060,115 +5060,98 @@ FEinvalid_option(cl_object option, cl_object value)
 }
 
 cl_object
-ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
+ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
                 cl_object if_does_not_exist, cl_fixnum byte_size,
                 int flags, cl_object external_format)
 {
   cl_object output;
   int f;
+  char *fname;
+  bool appending = 0, exists;
 #if defined(ECL_MS_WINDOWS_HOST)
   ecl_mode_t mode = _S_IREAD | _S_IWRITE;
 #else
   ecl_mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 #endif
-  cl_object filename = si_coerce_to_filename(fn);
-  char *fname = (char*)filename->base_string.self;
-  bool appending = 0;
-  bool exists = si_file_kind(filename, ECL_T) != ECL_NIL;
-  if (smm == ecl_smm_input || smm == ecl_smm_probe) {
-    if (!exists) {
-      if (if_does_not_exist == @':error') {
-        FEcannot_open(fn);
-      } else if (if_does_not_exist == @':create') {
-        f = safe_open(fname, O_WRONLY|O_CREAT, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
-        safe_close(f);
-      } else if (Null(if_does_not_exist)) {
-        return ECL_NIL;
-      } else {
-        FEinvalid_option(@':if-does-not-exist',
-                         if_does_not_exist);
-      }
-    }
+  filename = si_coerce_to_filename(filename);
+  fname = (char*)filename->base_string.self;
+  exists = si_file_kind(filename, ECL_T) != ECL_NIL;
+  if (!exists) {
+    if (if_does_not_exist == ECL_NIL) return ECL_NIL;
+    if (if_does_not_exist == @':error') FEcannot_open(filename);
+    if (if_does_not_exist != @':create')
+      FEinvalid_option(@':if-does-not-exist', if_does_not_exist);
+    f = safe_open(fname, O_WRONLY|O_CREAT, mode);
+    unlikely_if (f < 0) FEcannot_open(filename);
+    safe_close(f);
+  }
+
+  switch (smm) {
+  case ecl_smm_probe:
+    output = ecl_make_file_stream_from_fd(filename, -1, smm, byte_size, flags, external_format);
+    generic_close(output);
+    return output;
+  case ecl_smm_input:
     f = safe_open(fname, O_RDONLY, mode);
-    unlikely_if (f < 0) FEcannot_open(fn);
-  } else if (smm == ecl_smm_output || smm == ecl_smm_io) {
+    unlikely_if (f < 0) FEcannot_open(filename);
+    break;
+  case ecl_smm_output:
+  case ecl_smm_io: {
     int base = (smm == ecl_smm_output)? O_WRONLY : O_RDWR;
-    if (if_exists == @':new_version' &&
-        if_does_not_exist == @':create') {
-      exists = 0;
-      if_does_not_exist = @':create';
-    }
     if (exists) {
-      if (if_exists == @':error') {
-        FEcannot_open(fn);
-      } else if (if_exists == @':rename') {
+      if (if_exists == ECL_NIL) return ECL_NIL;
+      if (if_exists == @':error') FEcannot_open(filename);
+      if (if_exists == @':rename') {
         f = ecl_backup_open(fname, base|O_CREAT, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
+        unlikely_if (f < 0) FEcannot_open(filename);
       } else if (if_exists == @':rename_and_delete' ||
                  if_exists == @':new_version' ||
-                 /* :SUPERSEDE could write to a new file and only upon succesful
-                    close it could replace the file in question. That way we'd
-                    assure a transaction-like behavior. We add :TRUNACTE for
-                    explicit truncate action. */
                  if_exists == @':supersede' ||
                  if_exists == @':truncate') {
         f = safe_open(fname, base|O_TRUNC, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
+        unlikely_if (f < 0) FEcannot_open(filename);
       } else if (if_exists == @':overwrite' || if_exists == @':append') {
         f = safe_open(fname, base, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
+        unlikely_if (f < 0) FEcannot_open(filename);
         appending = (if_exists == @':append');
-      } else if (Null(if_exists)) {
-        return ECL_NIL;
       } else {
         FEinvalid_option(@':if-exists', if_exists);
       }
-    } else {
-      if (if_does_not_exist == @':error') {
-        FEcannot_open(fn);
-      } else if (if_does_not_exist == @':create') {
-        f = safe_open(fname, base | O_CREAT | O_TRUNC, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
-      } else if (Null(if_does_not_exist)) {
-        return ECL_NIL;
-      } else {
-        FEinvalid_option(@':if-does-not-exist',
-                         if_does_not_exist);
-      }
     }
-  } else {
+    break;
+  }
+  default:
     FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
   }
   if (flags & ECL_STREAM_C_STREAM) {
     FILE *fp = 0;
     safe_close(f);
-    /* We do not use fdopen() because Windows seems to
-     * have problems with the resulting streams. Furthermore, even for
-     * output we open with w+ because we do not want to
-     * overwrite the file. */
+    /* We do not use fdopen() because Windows seems to have problems with the
+     * resulting streams. Furthermore, even for output we open with w+ because
+     * we do not want to overwrite the file. */
     switch (smm) {
     case ecl_smm_probe:
-    case ecl_smm_input: fp = safe_fopen(fname, OPEN_R); break;
+      /* never happens (returns earlier) */
+    case ecl_smm_input:
+      fp = safe_fopen(fname, OPEN_R);
+      break;
     case ecl_smm_output:
-    case ecl_smm_io: fp = safe_fopen(fname, OPEN_RW); break;
-    default:; /* never reached */
+    case ecl_smm_io:
+      fp = safe_fopen(fname, OPEN_RW);
+      break;
+    default:;
+      /* never reached (errors earlier) */
     }
-    output = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
-                                       external_format);
+    output = ecl_make_stream_from_FILE(filename, fp, smm, byte_size, flags, external_format);
     si_set_buffering_mode(output, byte_size? @':full' : @':line');
   } else {
-    output = ecl_make_file_stream_from_fd(fn, f, smm, byte_size, flags,
-                                          external_format);
+    output = ecl_make_file_stream_from_fd(filename, f, smm, byte_size, flags, external_format);
   }
-  if (smm == ecl_smm_probe) {
-    cl_close(1, output);
-  } else {
-    output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
-    si_set_finalizer(output, ECL_T);
-    /* Set file pointer to the correct position */
-    ecl_file_position_set(output, appending? ECL_NIL : ecl_make_fixnum(0));
-  }
+
+  output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
+  si_set_finalizer(output, ECL_T);
+  /* Set file pointer to the correct position */
+  ecl_file_position_set(output, appending? ECL_NIL : ecl_make_fixnum(0));
   return output;
 }
 
