@@ -22,7 +22,7 @@ THREADS_OBJ=
 !if "$(ECL_UNICODE)" != ""
 ECL_UNICODE_FLAG=16
 ECL_UCD_OBJ = ucd16.obj ucd16-0000.obj ucd16-0016.obj \
-	      ucd16-0032.obj ucd16-0048.obj ucd16-0064.obj
+	      ucd16-0032.obj ucd16-0048.obj ucd16-0064.obj ucd_names_char.obj ucd_names_codes.obj ucd_names_pair.obj ucd_names_str.obj
 !else
 ECL_UNICODE_FLAG=0
 !endif
@@ -39,7 +39,7 @@ ECL_SSE_OBJ=
 #
 TRUE_CC = cl
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private
+CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private -I$(srcdir)/unicode
 
 SHELL	= /bin/sh
 RM	= del
