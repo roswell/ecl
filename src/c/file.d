@@ -5064,7 +5064,7 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
                 cl_object if_does_not_exist, cl_fixnum byte_size,
                 int flags, cl_object external_format)
 {
-  cl_object output;
+  cl_object output, file_kind;
   int f;
   char *fname;
   bool appending = 0, exists;
@@ -5075,7 +5075,8 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
 #endif
   filename = si_coerce_to_filename(filename);
   fname = (char*)filename->base_string.self;
-  exists = si_file_kind(filename, ECL_T) != ECL_NIL;
+  file_kind = si_file_kind(filename, ECL_T);
+  exists = file_kind != ECL_NIL;
   if (!exists) {
     if (if_does_not_exist == ECL_NIL) return ECL_NIL;
     if (if_does_not_exist == @':error') FEcannot_open(filename);
@@ -5085,33 +5086,33 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
     unlikely_if (f < 0) FEcannot_open(filename);
     safe_close(f);
   }
-
   switch (smm) {
   case ecl_smm_probe:
     output = ecl_make_file_stream_from_fd(filename, -1, smm, byte_size, flags, external_format);
     generic_close(output);
     return output;
   case ecl_smm_input:
-    f = safe_open(fname, O_RDONLY, mode);
+    f = safe_open(fname, O_RDONLY|O_NONBLOCK, mode);
     unlikely_if (f < 0) FEcannot_open(filename);
     break;
   case ecl_smm_output:
+    /* For output we could have used O_WRONLY, but this doesn't matter because
+       we fopen with OPEN_RW later anyway. stream opts enforce things. */
   case ecl_smm_io: {
-    int base = (smm == ecl_smm_output)? O_WRONLY : O_RDWR;
     if (exists) {
       if (if_exists == ECL_NIL) return ECL_NIL;
       if (if_exists == @':error') FEcannot_open(filename);
       if (if_exists == @':rename') {
-        f = ecl_backup_open(fname, base|O_CREAT, mode);
+        f = ecl_backup_open(fname, O_RDWR|O_CREAT, mode);
         unlikely_if (f < 0) FEcannot_open(filename);
       } else if (if_exists == @':rename_and_delete' ||
                  if_exists == @':new_version' ||
                  if_exists == @':supersede' ||
                  if_exists == @':truncate') {
-        f = safe_open(fname, base|O_TRUNC, mode);
+        f = safe_open(fname, O_RDWR|O_TRUNC, mode);
         unlikely_if (f < 0) FEcannot_open(filename);
       } else if (if_exists == @':overwrite' || if_exists == @':append') {
-        f = safe_open(fname, base, mode);
+        f = safe_open(fname, O_RDWR|O_NONBLOCK, mode);
         unlikely_if (f < 0) FEcannot_open(filename);
         appending = (if_exists == @':append');
       } else {
@@ -5123,7 +5124,7 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
   default:
     FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
   }
-  if (flags & ECL_STREAM_C_STREAM) {
+  if ((flags & ECL_STREAM_C_STREAM) && (file_kind != @':fifo')) {
     FILE *fp = 0;
     safe_close(f);
     /* We do not use fdopen() because Windows seems to have problems with the
@@ -5147,7 +5148,6 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
   } else {
     output = ecl_make_file_stream_from_fd(filename, f, smm, byte_size, flags, external_format);
   }
-
   output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
   si_set_finalizer(output, ECL_T);
   /* Set file pointer to the correct position */
@@ -5242,7 +5242,7 @@ file_listen(cl_object stream, int fileno)
   retv = select(fileno + 1, &fds, NULL, NULL, &tv);
   if (ecl_unlikely(retv < 0))
     file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
-  else if (retv > 0)
+  else if ((retv > 0) && (generic_peek_char(stream) != EOF))
     return ECL_LISTEN_AVAILABLE;
   else
     return ECL_LISTEN_NO_CHAR;
@@ -5252,7 +5252,7 @@ file_listen(cl_object stream, int fileno)
     ioctl(fileno, FIONREAD, &c);
     return (c > 0)? ECL_LISTEN_AVAILABLE : ECL_LISTEN_NO_CHAR;
   }
-# endif /* FIONREAD */
+# endif
 #else
   HANDLE hnd = (HANDLE)_get_osfhandle(fileno);
   switch (GetFileType(hnd)) {
