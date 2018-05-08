@@ -102,6 +102,9 @@
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
 
+/* Define to 1 if you have the `dladdr' function. */
+#undef HAVE_DLADDR
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
