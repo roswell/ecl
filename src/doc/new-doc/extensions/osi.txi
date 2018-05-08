@@ -4,6 +4,7 @@
 @menu
 * Command line arguments::
 * External processes::
+* FIFO files (named pipes)::
 @c * Signals and interrupts::
 * Operating System Interface Reference::
 @end menu
@@ -282,6 +283,17 @@ Controls escaping of the arguments passed to CreateProcess.
 @end defvr
 @end defun
 
+@cindex FIFO files (named pipes)
+@node FIFO files (named pipes)
+@subsection FIFO files (named pipes)
+
+Named pipe (known as fifo) may be created on UNIX with a shell command
+mkfifo. ECL opens such files in non-blocking
+mode. @code{ext:file-kind} will return for such file
+@code{:FIFO}. Since it is impossible to guess how many characters are
+available in this special file @code{file-length} function will return
+NIL.
+
 @node Operating System Interface Reference
 @subsection Operating System Interface Reference
 
@@ -327,11 +339,11 @@ Environment accessors.
 
 @defun ext:getpid
 @defunx ext:getuid
-@defunx ext:getcwd
-@defunx ext:chdir
-@defunx ext:file-kind
-@defunx ext:copy-file
-@defunx ext:chmod
+@defunx ext:getcwd &optional (change-default-pathname-defaults NIL)
+@defunx ext:chdir directory (change-default-pathname-defaults T)
+@defunx ext:file-kind filename follow-symlinks-p
+@defunx ext:copy-file filename destination-filename
+@defunx ext:chmod filename mode
 Common operating system functions.
 @end defun
 
