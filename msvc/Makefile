@@ -60,6 +60,8 @@ ECL_RT      =
 ECL_DEFSYS  =
 # Profiling
 ECL_PROFILE =
+# Use the DbgHelp.lib shared library to provide C Backtrace support
+ECL_USE_DBGHELP = $(ECL_DEBUG)
 
 !if "$(YASM)" == ""
 !if "$(ECL_WIN64)" != ""
@@ -78,7 +80,9 @@ TAR_DIR = %CD%\ecl-$(ECL_VERSION)
 #
 
 CC	= cl
-LIBS	= eclgc.lib eclgmp.lib user32.lib ws2_32.lib shell32.lib
+CLIBS   = user32.lib ws2_32.lib shell32.lib
+STATICLIBS = eclgc.lib eclgmp.lib
+LIBS	= $(STATICLIBS) $(CLIBS)
 RM	= del
 RMDIR   = rmdir /Q /S
 MKDIR   = mkdir
@@ -121,6 +125,10 @@ CFLAGS_CONFIG = /DNDEBUG /MD $(CFLAGS_OPTIMIZE) $(CFLAGS_SSE)
 LDFLAGS_CONFIG = /nodefaultlib:msvcrtd.lib
 SHARED_LDFLAGS = /LD
 GCFLAGS = nodebug=1
+!endif
+
+!if "$(ECL_USE_DBGHELP)" != ""
+CLIBS = $(CLIBS) DbgHelp.lib
 !endif
 
 CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
@@ -263,9 +271,9 @@ compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
-	    "@CLIBS@" "user32.lib ws2_32.lib shell32.lib" \
-	    "@STATICLIBS@" "eclgmp.lib eclgc.lib" \
-	    "@LIBS@" "user32.lib ws2_32.lib shell32.lib" \
+	    "@CLIBS@" "$(CLIBS)" \
+	    "@STATICLIBS@" "$(STATICLIBS)" \
+	    "@LIBS@" "$(LIBS)" \
 	    "@CORE_LIBS@" "" \
 	    "@FASL_LIBS@" "" \
 	    "@OBJEXT@" "obj" \
@@ -305,8 +313,8 @@ cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
-	    "@CLIBS@" "user32.lib ws2_32.lib shell32.lib" \
-	    "@STATICLIBS@" "eclgmp.lib eclgc.lib" \
+	    "@CLIBS@" "$(CLIBS)" \
+	    "@STATICLIBS@" "$(STATICLIBS)" \
 	    "@OBJEXT@" "obj" \
 	    "@SHAREDPREFIX@" "" \
 	    "@SHAREDEXT@" "dll" \
@@ -340,6 +348,7 @@ eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
 		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
+		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
 		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
 	cd ..
 eclgc.lib:
@@ -448,6 +457,7 @@ clean_ecl:
 	-$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
 		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
+		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
 		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD" clean
 	cd ..
 clean_lisp:

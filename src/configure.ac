@@ -192,8 +192,8 @@ AC_ARG_WITH(rt,
 AC_ARG_WITH(profile,
   AS_HELP_STRING( [--with-profile],
                   [Deprecated! include CMUCL's simple profiler]
-                  [(yes|builtin|no, default=YES if Boehm-Weiser garbage collector used)]),
-  [], [with_profile=NO])
+                  [(yes|builtin|no, default=NO)]),
+  [], [with_profile=no])
 
 AC_ARG_WITH(dffi,
   AS_HELP_STRING( [--with-dffi],
@@ -752,7 +752,6 @@ else
   boehm_configure_flags="${boehm_configure_flags} --enable-cplusplus"
 fi
 
-ECL_GCC_BACKTRACE
 ECL_LIBATOMIC_OPS
 
 dnl ----------------------------------------------------------------------

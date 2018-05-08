@@ -29,6 +29,7 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- improvements to C backend interface by Marius Gerbershagen
 - better handling of fifo files (see man 7 fifo)
 - unicode names are always linked for unicode builds (~--with-unicode-names~ removed)
 - numerous bytecodes compiler enhancements

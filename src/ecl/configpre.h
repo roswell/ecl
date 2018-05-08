@@ -431,9 +431,6 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
-/* HAVE___BUILTIN_RETURN_ADDRESS */
-#undef HAVE___BUILTIN_RETURN_ADDRESS
-
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
