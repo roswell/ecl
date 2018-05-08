@@ -195,8 +195,10 @@ file_kind(char *filename, bool follow_links) {
       output = @':directory';
     else if (S_ISREG(buf.st_mode))
       output = @':file';
+# ifdef S_ISFIFO
     else if (S_ISFIFO(buf.st_mode))
       output = @':fifo';
+# endif
     else
       output = @':special';
 #endif
@@ -451,11 +453,15 @@ ecl_file_len(int f)
   ecl_disable_interrupts();
   fstat(f, &filestatus);
   ecl_enable_interrupts();
+#ifdef S_ISFIFO
   if (S_ISFIFO(filestatus.st_mode)) {
     return ECL_NIL;
   } else {
     return ecl_make_integer(filestatus.st_size);
   }
+#else
+  return ecl_make_integer(filestatus.st_size);
+#endif
 }
 
 @(defun rename-file (oldn newn &key (if_exists @':error'))
