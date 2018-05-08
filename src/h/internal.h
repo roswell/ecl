@@ -262,6 +262,11 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 #define OPEN_A  "ab"
 #define OPEN_RA "a+b"
 
+/* Windows does not have this flag (POSIX thing) */
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0
+#endif
+
 #define ECL_FILE_STREAM_P(strm) \
         (ECL_ANSI_STREAM_P(strm) && (strm)->stream.mode < ecl_smm_synonym)
 #define STRING_OUTPUT_STRING(strm) (strm)->stream.object0
