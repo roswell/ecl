@@ -5065,7 +5065,7 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
                 int flags, cl_object external_format)
 {
   cl_object output, file_kind;
-  int f;
+  int fd;
   char *fname;
   bool appending = 0, exists;
 #if defined(ECL_MS_WINDOWS_HOST)
@@ -5082,9 +5082,9 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
     if (if_does_not_exist == @':error') FEcannot_open(filename);
     if (if_does_not_exist != @':create')
       FEinvalid_option(@':if-does-not-exist', if_does_not_exist);
-    f = safe_open(fname, O_WRONLY|O_CREAT, mode);
-    unlikely_if (f < 0) FEcannot_open(filename);
-    safe_close(f);
+    fd = safe_open(fname, O_WRONLY|O_CREAT, mode);
+    unlikely_if (fd < 0) FEcannot_open(filename);
+    safe_close(fd);
   }
   switch (smm) {
   case ecl_smm_probe:
@@ -5092,8 +5092,8 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
     generic_close(output);
     return output;
   case ecl_smm_input:
-    f = safe_open(fname, O_RDONLY|O_NONBLOCK, mode);
-    unlikely_if (f < 0) FEcannot_open(filename);
+    fd = safe_open(fname, O_RDONLY|O_NONBLOCK, mode);
+    unlikely_if (fd < 0) FEcannot_open(filename);
     break;
   case ecl_smm_output:
     /* For output we could have used O_WRONLY, but this doesn't matter because
@@ -5103,17 +5103,17 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
       if (if_exists == ECL_NIL) return ECL_NIL;
       if (if_exists == @':error') FEcannot_open(filename);
       if (if_exists == @':rename') {
-        f = ecl_backup_open(fname, O_RDWR|O_CREAT, mode);
-        unlikely_if (f < 0) FEcannot_open(filename);
+        fd = ecl_backup_open(fname, O_RDWR|O_CREAT, mode);
+        unlikely_if (fd < 0) FEcannot_open(filename);
       } else if (if_exists == @':rename_and_delete' ||
                  if_exists == @':new_version' ||
                  if_exists == @':supersede' ||
                  if_exists == @':truncate') {
-        f = safe_open(fname, O_RDWR|O_TRUNC, mode);
-        unlikely_if (f < 0) FEcannot_open(filename);
+        fd = safe_open(fname, O_RDWR|O_TRUNC, mode);
+        unlikely_if (fd < 0) FEcannot_open(filename);
       } else if (if_exists == @':overwrite' || if_exists == @':append') {
-        f = safe_open(fname, O_RDWR|O_NONBLOCK, mode);
-        unlikely_if (f < 0) FEcannot_open(filename);
+        fd = safe_open(fname, O_RDWR, mode);
+        unlikely_if (fd < 0) FEcannot_open(filename);
         appending = (if_exists == @':append');
       } else {
         FEinvalid_option(@':if-exists', if_exists);
@@ -5124,9 +5124,8 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
   default:
     FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
   }
-  if ((flags & ECL_STREAM_C_STREAM) && (file_kind != @':fifo')) {
+  if (flags & ECL_STREAM_C_STREAM) {
     FILE *fp = 0;
-    safe_close(f);
     /* We do not use fdopen() because Windows seems to have problems with the
      * resulting streams. Furthermore, even for output we open with w+ because
      * we do not want to overwrite the file. */
@@ -5134,11 +5133,21 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
     case ecl_smm_probe:
       /* never happens (returns earlier) */
     case ecl_smm_input:
-      fp = safe_fopen(fname, OPEN_R);
+      if (file_kind == @':fifo') {
+        fp = safe_fdopen(fd, OPEN_R);
+      } else {
+        safe_close(fd);
+        fp = safe_fopen(fname, OPEN_R);
+      }
       break;
     case ecl_smm_output:
     case ecl_smm_io:
-      fp = safe_fopen(fname, OPEN_RW);
+      if (file_kind == @':fifo') {
+        fp = safe_fdopen(fd, OPEN_RW);
+      } else {
+        safe_close(fd);
+        fp = safe_fopen(fname, OPEN_RW);
+      }
       break;
     default:;
       /* never reached (errors earlier) */
@@ -5146,7 +5155,7 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
     output = ecl_make_stream_from_FILE(filename, fp, smm, byte_size, flags, external_format);
     si_set_buffering_mode(output, byte_size? @':full' : @':line');
   } else {
-    output = ecl_make_file_stream_from_fd(filename, f, smm, byte_size, flags, external_format);
+    output = ecl_make_file_stream_from_fd(filename, fd, smm, byte_size, flags, external_format);
   }
   output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
   si_set_finalizer(output, ECL_T);
@@ -5242,7 +5251,9 @@ file_listen(cl_object stream, int fileno)
   retv = select(fileno + 1, &fds, NULL, NULL, &tv);
   if (ecl_unlikely(retv < 0))
     file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
-  else if ((retv > 0) && (generic_peek_char(stream) != EOF))
+  /* XXX: for FIFO there should be also peek-byte (not implemented and peek-char
+     doesn't work for binary streams). */
+  else if ((retv > 0) /* && (generic_peek_byte(stream) != EOF) */)
     return ECL_LISTEN_AVAILABLE;
   else
     return ECL_LISTEN_NO_CHAR;
