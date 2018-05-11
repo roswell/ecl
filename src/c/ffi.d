@@ -213,8 +213,9 @@ char *
 ecl_base_string_pointer_safe(cl_object f)
 {
   unsigned char *s;
-  /* FIXME! Is there a better function name? */
-  f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
+  if (ecl_unlikely(!ECL_BASE_STRING_P(f))) {
+    FEwrong_type_argument(@[base-string], f);
+  }
   s = f->base_string.self;
   if (ecl_unlikely(ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
                    s[f->base_string.fillp] != 0)) {
@@ -226,13 +227,18 @@ ecl_base_string_pointer_safe(cl_object f)
 cl_object
 ecl_null_terminated_base_string(cl_object f)
 {
-  /* FIXME! Is there a better function name? */
-  f = ecl_check_cl_type(@'si::make-foreign-data-from-array', f, t_base_string);
-  if (ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
-      f->base_string.self[f->base_string.fillp] != 0) {
-    return cl_copy_seq(f);
+  if (ecl_unlikely(!ECL_STRINGP(f))) {
+    FEwrong_type_argument(@[string], f);
+  }
+  if (ecl_t_of(f) == t_base_string) {
+    if (ECL_ARRAY_HAS_FILL_POINTER_P(f) &&
+        f->base_string.self[f->base_string.fillp] != 0) {
+      return cl_copy_seq(f);
+    } else {
+      return f;
+    }
   } else {
-    return f;
+    return si_copy_to_simple_base_string(f);
   }
 }
 
