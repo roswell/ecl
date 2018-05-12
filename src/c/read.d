@@ -1136,34 +1136,41 @@ sharp_sharp_reader(cl_object in, cl_object c, cl_object d)
 
 static cl_object
 do_patch_sharp(cl_object x, cl_object table)
-#if 1
 {
   /* The hash table maintains an association as follows:
    *
    * [1] object -> itself
-   *      The object has been processed by patch_sharp, us as it is.
+   *      The object has been processed by patch_sharp, use as it is.
    * [2] object -> nothing
    *      The object has to be processed by do_patch_sharp.
    * [3] (# . object) -> object
-   *      This is the value of a #n# statement. The object migt
+   *      This is the value of a #n# statement. The object might
    *      or might not yet be processed by do_patch_sharp().
    */
+  /* If x is a list, it is processed iteratively. For this, we store
+   * the first and current cons cell */
+  cl_object first_cons = OBJNULL;
+  cl_object current_cons = OBJNULL;
  AGAIN:
   switch (ecl_t_of(x)) {
   case t_list: {
     cl_object y;
     if (Null(x))
-      return x;
+      return (first_cons ? first_cons : x);
     y = ecl_gethash_safe(x, table, table);
     if (y == table) {
       /* case [2] */
+      if (first_cons == OBJNULL)
+        first_cons = x;
       break;
     } else if (y == x) {
       /* case [1] */
-      return x;
+      return (first_cons ? first_cons : x);
     } else {
       /* case [3] */
       x = y;
+      if (current_cons != OBJNULL)
+        ECL_RPLACD(current_cons, x);
       goto AGAIN;
     }
   }
@@ -1180,15 +1187,22 @@ do_patch_sharp(cl_object x, cl_object table)
     /* it can only be case [1] */
   }
   default:
-    return x;
+    return (first_cons ? first_cons : x);
   }
   /* We eagerly mark the object as processed, to avoid infinite
    * recursion. */
   _ecl_sethash(x, table, x);
   switch (ecl_t_of(x)) {
   case t_list:
+    current_cons = x;
     ECL_RPLACA(x, do_patch_sharp(ECL_CONS_CAR(x), table));
-    ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
+    cl_object rest = ECL_CONS_CDR(x);
+    if (ecl_t_of(rest) == t_list) {
+      x = rest;
+      goto AGAIN;
+    } else {
+      ECL_RPLACD(x, do_patch_sharp(rest, table));
+    }
     break;
   case t_vector:
     if (x->vector.elttype == ecl_aet_object) {
@@ -1228,74 +1242,8 @@ do_patch_sharp(cl_object x, cl_object table)
   }
   default:;
   }
-  return x;
+  return (first_cons ? first_cons : x);
 }
-#else
-{
-  switch (ecl_t_of(x)) {
-  case t_list:
-    if (Null(x))
-      return x;
-  case t_vector:
-  case t_array:
-  case t_complex:
-  case t_bclosure:
-  case t_bytecodes: {
-    cl_object y = ecl_gethash_safe(x, table, table);
-    if (y == table)
-      break;
-    x = y;
-  }
-  default:
-    return x;
-  }
-  switch (ecl_t_of(x)) {
-  case t_list:
-    ECL_RPLACA(x, do_patch_sharp(ECL_CONS_CAR(x), table));
-    ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
-    break;
-  case t_vector:
-    if (x->vector.elttype == ecl_aet_object) {
-      cl_index i;
-      for (i = 0;  i < x->vector.fillp;  i++)
-        x->vector.self.t[i] =
-          do_patch_sharp(x->vector.self.t[i], table);
-    }
-    break;
-  case t_array:
-    if (x->vector.elttype == ecl_aet_object) {
-      cl_index i, j = x->array.dim;
-      for (i = 0;  i < j;  i++)
-        x->array.self.t[i] =
-          do_patch_sharp(x->array.self.t[i], table);
-    }
-    break;
-  case t_complex: {
-    cl_object r = do_patch_sharp(x->complex.real, table);
-    cl_object i = do_patch_sharp(x->complex.imag, table);
-    if (r != x->complex.real || i != x->complex.imag) {
-      cl_object c = ecl_make_complex(r, i);
-      x->complex = c->complex;
-    }
-    break;
-  }
-  case t_bclosure: {
-    x->bclosure.lex = do_patch_sharp(x->bclosure.lex, table);
-    x = x->bclosure.code = do_patch_sharp(x->bclosure.code, table);
-    break;
-  }
-  case t_bytecodes: {
-    x->bytecodes.name = do_patch_sharp(x->bytecodes.name, table);
-    x->bytecodes.definition = do_patch_sharp(x->bytecodes.definition, table);
-    x->bytecodes.data = do_patch_sharp(x->bytecodes.data, table);
-    break;
-  }
-  default:;
-  }
-  _ecl_sethash(x, table, x);
-  return x;
-}
-#endif
 
 static cl_object
 patch_sharp(const cl_env_ptr the_env, cl_object x)
