@@ -60,6 +60,8 @@
  * with 4 being the charset prefix, 2 for the character.
  */
 #define ENCODING_BUFFER_MAX_SIZE 6
+/* Size of the encoding buffer for vectors */
+#define VECTOR_ENCODING_BUFFER_SIZE 2048
 
 static cl_index ecl_read_byte8(cl_object stream, unsigned char *c, cl_index n);
 static cl_index ecl_write_byte8(cl_object stream, unsigned char *c, cl_index n);
@@ -583,6 +585,17 @@ eformat_read_char(cl_object strm)
   return c;
 }
 
+static inline void
+write_char_increment_column(cl_object strm, ecl_character c)
+{
+  if (c == '\n')
+    strm->stream.column = 0;
+  else if (c == '\t')
+    strm->stream.column = (strm->stream.column & ~((cl_index)07)) + 8;
+  else
+    strm->stream.column++;
+}
+
 static ecl_character
 eformat_write_char(cl_object strm, ecl_character c)
 {
@@ -590,13 +603,7 @@ eformat_write_char(cl_object strm, ecl_character c)
   ecl_character nbytes;
   nbytes = strm->stream.encoder(strm, buffer, c);
   strm->stream.ops->write_byte8(strm, buffer, nbytes);
-  if (c == '\n')
-    strm->stream.column = 0;
-  else if (c == '\t')
-    strm->stream.column = (strm->stream.column & ~((cl_index)07)) + 8;
-  else
-    strm->stream.column++;
-  fflush(stdout);
+  write_char_increment_column(strm, c);
   return c;
 }
 
@@ -1335,13 +1342,7 @@ const struct ecl_file_ops clos_stream_ops = {
 static ecl_character
 str_out_write_char(cl_object strm, ecl_character c)
 {
-  int column = strm->stream.column;
-  if (c == '\n')
-    strm->stream.column = 0;
-  else if (c == '\t')
-    strm->stream.column = (column&~(cl_index)7) + 8;
-  else
-    strm->stream.column++;
+  write_char_increment_column(strm, c);
   ecl_string_push_extend(STRING_OUTPUT_STRING(strm), c);
   return c;
 }
@@ -2892,7 +2893,40 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
       bytes = strm->stream.ops->write_byte8(strm, aux, bytes);
       return start + bytes / sizeof(cl_fixnum);
     }
+  } else if (t == ecl_aet_bc) {
+    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE];
+    cl_index nbytes = 0;
+    cl_index i;
+    for (i = start; i < end; i++) {
+      ecl_character c = *(data->vector.self.bc + i);
+      nbytes += strm->stream.encoder(strm, buffer + nbytes, c);
+      write_char_increment_column(strm, c);
+      if (nbytes >= VECTOR_ENCODING_BUFFER_SIZE) {
+        strm->stream.ops->write_byte8(strm, buffer, nbytes);
+        nbytes = 0;
+      }
+    }
+    strm->stream.ops->write_byte8(strm, buffer, nbytes);
+    return end;
   }
+#ifdef ECL_UNICODE
+  else if (t == ecl_aet_ch) {
+    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE];
+    cl_index nbytes = 0;
+    cl_index i;
+    for (i = start; i < end; i++) {
+      ecl_character c = *(data->vector.self.c + i);
+      nbytes += strm->stream.encoder(strm, buffer + nbytes, c);
+      write_char_increment_column(strm, c);
+      if (nbytes >= VECTOR_ENCODING_BUFFER_SIZE) {
+        strm->stream.ops->write_byte8(strm, buffer, nbytes);
+        nbytes = 0;
+      }
+    }
+    strm->stream.ops->write_byte8(strm, buffer, nbytes);
+    return end;
+  }
+#endif
   return generic_write_vector(strm, data, start, end);
 }
 
@@ -4696,6 +4730,7 @@ ecl_peek_char(cl_object strm)
  * SEQUENCES I/O
  */
 
+/* FIXME: We can optimize this to write the whole string at once */
 void
 writestr_stream(const char *s, cl_object strm)
 {

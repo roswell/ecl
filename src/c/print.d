@@ -220,7 +220,7 @@ ecl_print_circle(void)
 @(defun write-string (strng &o strm &k (start ecl_make_fixnum(0)) end)
   @
   unlikely_if (!ECL_STRINGP(strng))
-  FEwrong_type_nth_arg(@[write-string], 1, strng, @[string]);
+    FEwrong_type_nth_arg(@[write-string], 1, strng, @[string]);
   strm = _ecl_stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
   if (!ECL_ANSI_STREAM_P(strm))
@@ -234,7 +234,7 @@ ecl_print_circle(void)
 @(defun write-line (strng &o strm &k (start ecl_make_fixnum(0)) end)
   @
   unlikely_if (!ECL_STRINGP(strng))
-  FEwrong_type_nth_arg(@[write-line], 1, strng, @[string]);
+    FEwrong_type_nth_arg(@[write-line], 1, strng, @[string]);
   strm = _ecl_stream_or_default_output(strm);
 #ifdef ECL_CLOS_STREAMS
   if (!ECL_ANSI_STREAM_P(strm))
@@ -364,24 +364,7 @@ ecl_terpri(cl_object strm)
 void
 ecl_write_string(cl_object strng, cl_object strm)
 {
-  cl_index i;
-
-  strm = _ecl_stream_or_default_output(strm);
-  switch(ecl_t_of(strng)) {
-#ifdef ECL_UNICODE
-  case t_string:
-    for (i = 0;  i < strng->string.fillp;  i++)
-      ecl_write_char(strng->string.self[i], strm);
-    break;
-#endif
-  case t_base_string:
-    for (i = 0;  i < strng->base_string.fillp;  i++)
-      ecl_write_char(strng->base_string.self[i], strm);
-    break;
-  default:
-    FEwrong_type_nth_arg(@[write-string], 1, strng, @[string]);
-  }
-                
+  cl_write_string(2, strng, strm);
   ecl_force_output(strm);
 }
 
