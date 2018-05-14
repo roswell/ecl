@@ -148,18 +148,20 @@ _ecl_write_vector(cl_object x, cl_object stream)
 void
 _ecl_write_string(cl_object x, cl_object stream)
 {
-  cl_index ndx;
   if (!ecl_print_escape() && !ecl_print_readably()) {
-    for (ndx = 0;  ndx < x->string.fillp;  ndx++)
-      ecl_write_char(x->string.self[ndx], stream);
+    cl_write_string(2, x, stream);
   } else {
+    cl_index ndx, ndx_start;
     ecl_write_char('"', stream);
-    for (ndx = 0;  ndx < x->string.fillp;  ndx++) {
+    for (ndx = ndx_start = 0;  ndx < x->string.fillp;  ndx++) {
       ecl_character c = x->string.self[ndx];
-      if (c == '"' || c == '\\')
+      if (c == '"' || c == '\\') {
+        cl_write_string(6, x, stream, @':start', ecl_make_fixnum(ndx_start), @':end', ecl_make_fixnum(ndx));
         ecl_write_char('\\', stream);
-      ecl_write_char(c, stream);
+        ndx_start = ndx;
+      }
     }
+    cl_write_string(4, x, stream, @':start', ecl_make_fixnum(ndx_start));
     ecl_write_char('"', stream);
   }
 }
@@ -168,18 +170,20 @@ _ecl_write_string(cl_object x, cl_object stream)
 void
 _ecl_write_base_string(cl_object x, cl_object stream)
 {
-  cl_index ndx;
   if (!ecl_print_escape() && !ecl_print_readably()) {
-    for (ndx = 0;  ndx < x->base_string.fillp;  ndx++)
-      ecl_write_char(x->base_string.self[ndx], stream);
+    cl_write_string(2, x, stream);
   } else {
+    cl_index ndx, ndx_start;
     ecl_write_char('"', stream);
-    for (ndx = 0;  ndx < x->base_string.fillp;  ndx++) {
-      int c = x->base_string.self[ndx];
-      if (c == '"' || c == '\\')
+    for (ndx = ndx_start = 0;  ndx < x->base_string.fillp;  ndx++) {
+      ecl_character c = x->base_string.self[ndx];
+      if (c == '"' || c == '\\') {
+        cl_write_string(6, x, stream, @':start', ecl_make_fixnum(ndx_start), @':end', ecl_make_fixnum(ndx));
         ecl_write_char('\\', stream);
-      ecl_write_char(c, stream);
+        ndx_start = ndx;
+      }
     }
+    cl_write_string(4, x, stream, @':start', ecl_make_fixnum(ndx_start));
     ecl_write_char('"', stream);
   }
 }

@@ -26,18 +26,31 @@ _ecl_write_addr(void *x, cl_object stream)
     return;
   }
   writestr_stream("0x", stream);
+  cl_object buffer = si_get_buffer_string();
+  cl_index buffer_size = ecl_fixnum(cl_array_total_size(buffer));
+  cl_index buffer_ndx = 0;
   for (j = sizeof(i)*8-4;  j >= 0;  j -= 4) {
     int k = (i>>j) & 0xf;
     if (!print_zeros && k == 0) {
       ;
-    } else if (k < 10) {
-      print_zeros = 1;
-      ecl_write_char('0' + k, stream);
     } else {
-      print_zeros = 1;
-      ecl_write_char('a' + k - 10, stream);
+      if (k < 10) {
+        print_zeros = 1;
+        ecl_char_set(buffer, buffer_ndx++, '0' + k);
+      } else {
+        print_zeros = 1;
+        ecl_char_set(buffer, buffer_ndx++, 'a' + k - 10);
+      }
+      if (buffer_ndx >= buffer_size) {
+        si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_size));
+        cl_write_string(2, buffer, stream);
+        si_fill_pointer_set(buffer, ecl_make_fixnum(0));
+      }
     }
   }
+  si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_ndx));
+  cl_write_string(2, buffer, stream);
+  si_put_buffer_string(buffer);
 }
 
 void

@@ -4730,12 +4730,23 @@ ecl_peek_char(cl_object strm)
  * SEQUENCES I/O
  */
 
-/* FIXME: We can optimize this to write the whole string at once */
 void
 writestr_stream(const char *s, cl_object strm)
 {
-  while (*s != '\0')
-    ecl_write_char(*s++, strm);
+  cl_object buffer = si_get_buffer_string();
+  cl_index size = ecl_fixnum(cl_array_total_size(buffer));
+  cl_index i = 0;
+  while (*s != '\0') {
+    ecl_char_set(buffer, i++, (ecl_character) *s++);
+    if (i >= size) {
+      si_fill_pointer_set(buffer, ecl_make_fixnum(size));
+      cl_write_string(2, buffer, strm);
+      si_fill_pointer_set(buffer, ecl_make_fixnum(0));
+    }
+  }
+  si_fill_pointer_set(buffer, ecl_make_fixnum(i));
+  cl_write_string(2, buffer, strm);
+  si_put_buffer_string(buffer);
 }
 
 static cl_index
