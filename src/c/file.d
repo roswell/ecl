@@ -4741,7 +4741,7 @@ writestr_stream(const char *s, cl_object strm)
     if (i >= size) {
       si_fill_pointer_set(buffer, ecl_make_fixnum(size));
       cl_write_string(2, buffer, strm);
-      si_fill_pointer_set(buffer, ecl_make_fixnum(0));
+      i = 0;
     }
   }
   si_fill_pointer_set(buffer, ecl_make_fixnum(i));

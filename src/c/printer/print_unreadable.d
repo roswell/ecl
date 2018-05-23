@@ -44,7 +44,7 @@ _ecl_write_addr(void *x, cl_object stream)
       if (buffer_ndx >= buffer_size) {
         si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_size));
         cl_write_string(2, buffer, stream);
-        si_fill_pointer_set(buffer, ecl_make_fixnum(0));
+        buffer_ndx = 0;
       }
     }
   }
