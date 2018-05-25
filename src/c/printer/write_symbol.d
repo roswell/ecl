@@ -102,6 +102,14 @@ needs_to_be_escaped(cl_object s, cl_object readtable, cl_object print_case)
   return 0;
 }
 
+#define buffer_write_char(c, buffer, stream, buffer_ndx, buffer_size) \
+  ecl_char_set(buffer, buffer_ndx++, c);                              \
+  if (buffer_ndx >= buffer_size) {                                    \
+    si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_size));        \
+    cl_write_string(2, buffer, stream);                               \
+    buffer_ndx = 0;                                                   \
+  }
+
 static void
 write_symbol_string(cl_object s, int action, cl_object print_case,
                     cl_object stream, bool escape)
@@ -112,14 +120,17 @@ write_symbol_string(cl_object s, int action, cl_object print_case,
     if (!needs_to_be_inverted(s))
       action = ecl_case_preserve;
   }
+  cl_object buffer = si_get_buffer_string();
+  cl_index buffer_size = ecl_fixnum(cl_array_total_size(buffer));
+  cl_index buffer_ndx = 0;
   if (escape)
-    ecl_write_char('|', stream);
+    buffer_write_char('|', buffer, stream, buffer_ndx, buffer_size);
   capitalize = 1;
   for (i = 0;  i < s->base_string.fillp;  i++) {
-    int c = ecl_char(s, i);
+    ecl_character c = ecl_char(s, i);
     if (escape) {
       if (c == '|' || c == '\\') {
-        ecl_write_char('\\', stream);
+        buffer_write_char('\\', buffer, stream, buffer_ndx, buffer_size);
       }
     } else if (action != ecl_case_preserve) {
       if (ecl_upper_case_p(c)) {
@@ -144,10 +155,13 @@ write_symbol_string(cl_object s, int action, cl_object print_case,
         capitalize = !ecl_alphanumericp(c);
       }
     }
-    ecl_write_char(c, stream);
+    buffer_write_char(c, buffer, stream, buffer_ndx, buffer_size);
   }
   if (escape)
-    ecl_write_char('|', stream);
+    buffer_write_char('|', buffer, stream, buffer_ndx, buffer_size);
+  si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_ndx));
+  cl_write_string(2, buffer, stream);
+  si_put_buffer_string(buffer);
 }
 
 static bool
