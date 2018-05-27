@@ -125,15 +125,8 @@ struct cl_env_struct {
         union ecl_ffi_values **ffi_values_ptrs;
 #endif
 
-        /* Alternative stack for processing signals */
-        void *altstack;
-        cl_index altstack_size;
-
         /* Floating point interrupts which are trapped */
         int trap_fpe_bits;
-
-        /* Old exception filter. Needed by windows. */
-        void *old_exception_filter;
 
         /* List of packages interned when loading a FASL but which have
          * to be explicitely created by the compiled code itself. */
@@ -963,7 +956,6 @@ typedef enum {
         ECL_OPT_LISP_STACK_SAFETY_AREA,
         ECL_OPT_C_STACK_SIZE,
         ECL_OPT_C_STACK_SAFETY_AREA,
-        ECL_OPT_SIGALTSTACK_SIZE,
         ECL_OPT_HEAP_SIZE,
         ECL_OPT_HEAP_SAFETY_AREA,
         ECL_OPT_THREAD_INTERRUPT_SIGNAL,

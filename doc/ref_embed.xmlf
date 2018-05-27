@@ -368,13 +368,6 @@
        <entry></entry>
       </row>
       <row>
-       <entry><constant>SIGALTSTACK_SIZE</constant></entry>
-       <entry><type>cl_index</type></entry>
-       <entry><constant>1</constant></entry>
-       <entry>If nonzero, run C signal handler in an alternative
-       signal. A small value is automatically incremented.</entry>
-      </row>
-      <row>
        <entry><constant>THREAD_INTERRUPT_SIGNAL</constant></entry>
        <entry><type>unsigned int</type></entry>
        <entry><constant>0</constant></entry>

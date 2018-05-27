@@ -157,7 +157,6 @@ The second set is related to the sizes of different stacks. Currently ECL uses f
 @item @code{LISP_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
 @item @code{C_STACK_SIZE} @tab cl_index @tab 131072 @tab Size of C stack (not exact).
 @item @code{C_STACK_SAFETY_AREA} @tab cl_index @tab 4192 @tab  
-@item @code{SIGALTSTACK_SIZE} @tab cl_index @tab 1 @tab If nonzero, run C signal handler in an alternative signal. A small value is automatically incremented.
 @item @code{THREAD_INTERRUPT_SIGNAL} @tab unsigned int @tab 0 @tab If nonzero, specify the unix signal which is used to communicate different Lisp threads.
 @end multitable
 @end float
