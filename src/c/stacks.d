@@ -245,7 +245,7 @@ cl_object
 si_bds_val(cl_object arg)
 {
   cl_object v = get_bds_ptr(arg)->value;
-  @(return ((v == OBJNULL)? ECL_UNBOUND : v));
+  @(return ((v == OBJNULL || v == ECL_NO_TL_BINDING)? ECL_UNBOUND : v));
 }
 
 #ifdef ecl_bds_bind
