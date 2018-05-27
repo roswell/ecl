@@ -378,18 +378,31 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
         /* We have to save and later restore thread-local variables to
          * ensure that they don't get overwritten by the interrupting
          * code */
+        /* INV: - Frame, Binding and IHS stack manipulations are
+         *        interrupt safe
+         *      - The rest of the thread local variables are
+         *        guaranteed to be used in an interrupt safe way. This
+         *        is not true for the compiler environment and ffi
+         *        data, but it is unclear whether the DFFI or compiler
+         *        are thread safe anyway. */
         cl_object fun = env->function;
         cl_index nvalues = env->nvalues;
-        cl_object* values = ecl_alloc_atomic(ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+        cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
         memcpy(values, env->values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
         cl_object big_register[3];
         memcpy(big_register, env->big_register, 3*sizeof(cl_object));
+        cl_object packages_to_be_created = env->packages_to_be_created;
+        cl_object packages_to_be_created_p = env->packages_to_be_created_p;
         /* We might have been interrupted while we push/pop in the
          * stack. Increasing env->stack_top ensures that we don't
          * overwrite the topmost stack value. */
         env->stack_top++;
+        /* Finally we can handle the queued signals */
         handle_all_queued(env);
+        /* And restore thread local variables again */
         env->stack_top--;
+        env->packages_to_be_created_p = packages_to_be_created_p;
+        env->packages_to_be_created = packages_to_be_created;
         memcpy(env->big_register, big_register, 3*sizeof(cl_object));
         memcpy(env->values, values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
         env->nvalues = nvalues;

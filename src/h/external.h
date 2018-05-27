@@ -87,14 +87,16 @@ struct cl_env_struct {
         char *cs_barrier;
 
         /* Private variables used by different parts of ECL: */
-        /* ... the reader ... */
+        /* ... the reader and printer ... */
         cl_object string_pool;
 
         /* ... the compiler ... */
         struct cl_compiler_env *c_env;
 
         /* ... the formatter ... */
+#if !defined(ECL_CMU_FORMAT)
         cl_object fmt_aux_stream;
+#endif
 
         /* ... arithmetics ... */
         /* Note: if you change the size of these registers, change also

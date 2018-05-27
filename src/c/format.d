@@ -98,14 +98,14 @@ get_aux_stream(void)
   cl_env_ptr env = ecl_process_env();
   cl_object stream;
 
-  ecl_disable_interrupts_env(env);
-  if (env->fmt_aux_stream == ECL_NIL) {
-    stream = ecl_make_string_output_stream(64, 1);
-  } else {
-    stream = env->fmt_aux_stream;
-    env->fmt_aux_stream = ECL_NIL;
-  }
-  ecl_enable_interrupts_env(env);
+  ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
+    if (env->fmt_aux_stream == ECL_NIL) {
+      stream = ecl_make_string_output_stream(64, 1);
+    } else {
+      stream = env->fmt_aux_stream;
+      env->fmt_aux_stream = ECL_NIL;
+    }
+  } ECL_WITHOUT_INTERRUPTS_END;
   return stream;
 }
 
