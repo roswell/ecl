@@ -97,6 +97,13 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                (setf (fun-referenced-funs fun) new-funs)
                (return t))))
 
+;;; searches for a (FUNCTION-BLOCK-NAME ...) declaration
+(defun function-block-name-declaration (declarations)
+  (loop for i in declarations
+     if (and (consp i) (eql (car i) 'si::function-block-name)
+             (consp (cdr i))) return (cadr i)
+     finally (return nil)))
+
 (defun c1compile-function (lambda-list-and-body
                            &key (fun (make-fun)) (name (fun-name fun)))
   (let ((lambda (if name
@@ -147,7 +154,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
             (fun-closure fun) nil
             (fun-minarg fun) minarg
             (fun-maxarg fun) maxarg
-            (fun-description fun) name
+            (fun-description fun) (or (function-block-name-declaration decl) name)
             (fun-no-entry fun) no-entry
             (fun-optional-type-check-forms fun) optional-type-checks
             (fun-keyword-type-check-forms fun) keyword-type-checks)
@@ -324,7 +331,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 |#
 
 (defun c2lambda-expr
-    (lambda-list body cfun fname use-narg required-lcls closure-type
+    (lambda-list body cfun fname description use-narg required-lcls closure-type
                  optional-type-check-forms keyword-type-check-forms
                  &aux (requireds (first lambda-list))
                  (optionals (second lambda-list))
@@ -337,7 +344,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                  (varargs (or optionals rest keywords allow-other-keys))
                  (fname-in-ihs-p (or (policy-debug-variable-bindings)
                                      (and (policy-debug-ihs-frame)
-                                          fname)))
+                                          (or description fname))))
                  simple-varargs
                  (*permanent-data* t)
                  (*unwind-exit* *unwind-exit*)
@@ -439,7 +446,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (push 'IHS *unwind-exit*)
     (when (policy-debug-variable-bindings)
       (build-debug-lexical-env (reverse requireds) t))
-    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
+    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol (or description fname))
            ",_ecl_debug_env);"))
 
   ;; Bind optional parameters as long as there remain arguments.

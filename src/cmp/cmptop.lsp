@@ -705,6 +705,7 @@
                        (c1form-arg 2 lambda-expr)
                        (fun-cfun fun)
                        (fun-name fun)
+                       (fun-description fun)
                        (fun-needs-narg fun)
                        (fun-required-lcls fun)
                        (fun-closure fun)
