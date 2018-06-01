@@ -3,6 +3,7 @@
 
 @menu
 * Streams - ANSI Streams::
+* Streams - Dictionary::
 * Streams - C Reference::
 @end menu
 
@@ -103,6 +104,35 @@ and the table of known symbols is shown below. Note how some symbols (@code{:cr}
 @item @code{:windows-cp1258 :windows-1258} @tab Windows CP 1258 @tab Yes
 @end multitable
 @c @end float
+
+@node Streams - Dictionary
+@subsection Dictionary
+@lspindex open
+@lspindex si:set-buffering-mode
+
+@defun open filename &key (direction :input) (element-type character) if-exists if-does-not-exist (external-format :default) (cstream t)
+Open a file stream
+@subsubheading Synopsis
+@table @var
+@item cstream
+A generalized boolean; If true, internally use a C @code{FILE*} stream, else a POSIX file descriptor
+@end table
+@subsubheading Description
+All keyword arguments except @var{cstream} behave as specified by the ANSI standard @bibcite{ANSI}.
+@end defun
+
+@defun si:set-buffering-mode stream mode
+Control the buffering mode of a stream
+@subsubheading Synopsis
+@table @var
+@item stream
+an ANSI stream
+@item mode
+one of @code{nil}, @code{:none}, @code{:line}, @code{:line-buffered}, @code{:full} or @code{:full-buffered}
+@end table
+@subsubheading Description
+If @var{mode} is @code{nil} or @code{:none}, @var{stream} will not be buffered, if it is @code{:line} or @code{:line-buffered} resp. @code{:full} or @code{:full-buffered}, @var{stream} will be line resp. fully buffered. Streams created with the @code{:cstream} argument to @code{open} set to @code{nil} will never be buffered.
+@end defun
 
 @node Streams - C Reference
 @subsection C Reference
