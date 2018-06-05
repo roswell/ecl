@@ -149,19 +149,19 @@ void
 _ecl_write_string(cl_object x, cl_object stream)
 {
   if (!ecl_print_escape() && !ecl_print_readably()) {
-    cl_write_string(2, x, stream);
+    si_do_write_sequence(x, stream, ecl_make_fixnum(0), ECL_NIL);
   } else {
     cl_index ndx, ndx_start;
     ecl_write_char('"', stream);
     for (ndx = ndx_start = 0;  ndx < x->string.fillp;  ndx++) {
       ecl_character c = x->string.self[ndx];
       if (c == '"' || c == '\\') {
-        cl_write_string(6, x, stream, @':start', ecl_make_fixnum(ndx_start), @':end', ecl_make_fixnum(ndx));
+        si_do_write_sequence(x, stream, ecl_make_fixnum(ndx_start), ecl_make_fixnum(ndx));
         ecl_write_char('\\', stream);
         ndx_start = ndx;
       }
     }
-    cl_write_string(4, x, stream, @':start', ecl_make_fixnum(ndx_start));
+    si_do_write_sequence(x, stream, ecl_make_fixnum(ndx_start), ECL_NIL);
     ecl_write_char('"', stream);
   }
 }
@@ -171,19 +171,19 @@ void
 _ecl_write_base_string(cl_object x, cl_object stream)
 {
   if (!ecl_print_escape() && !ecl_print_readably()) {
-    cl_write_string(2, x, stream);
+    si_do_write_sequence(x, stream, ecl_make_fixnum(0), ECL_NIL);
   } else {
     cl_index ndx, ndx_start;
     ecl_write_char('"', stream);
     for (ndx = ndx_start = 0;  ndx < x->base_string.fillp;  ndx++) {
       ecl_character c = x->base_string.self[ndx];
       if (c == '"' || c == '\\') {
-        cl_write_string(6, x, stream, @':start', ecl_make_fixnum(ndx_start), @':end', ecl_make_fixnum(ndx));
+        si_do_write_sequence(x, stream, ecl_make_fixnum(ndx_start), ecl_make_fixnum(ndx));
         ecl_write_char('\\', stream);
         ndx_start = ndx;
       }
     }
-    cl_write_string(4, x, stream, @':start', ecl_make_fixnum(ndx_start));
+    si_do_write_sequence(x, stream, ecl_make_fixnum(ndx_start), ECL_NIL);
     ecl_write_char('"', stream);
   }
 }

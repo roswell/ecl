@@ -43,13 +43,13 @@ _ecl_write_addr(void *x, cl_object stream)
       }
       if (buffer_ndx >= buffer_size) {
         si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_size));
-        cl_write_string(2, buffer, stream);
+        si_do_write_sequence(buffer, stream, ecl_make_fixnum(0), ECL_NIL);
         buffer_ndx = 0;
       }
     }
   }
   si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_ndx));
-  cl_write_string(2, buffer, stream);
+  si_do_write_sequence(buffer, stream, ecl_make_fixnum(0), ECL_NIL);
   si_put_buffer_string(buffer);
 }
 

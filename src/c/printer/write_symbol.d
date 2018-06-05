@@ -106,7 +106,7 @@ needs_to_be_escaped(cl_object s, cl_object readtable, cl_object print_case)
   ecl_char_set(buffer, buffer_ndx++, c);                              \
   if (buffer_ndx >= buffer_size) {                                    \
     si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_size));        \
-    cl_write_string(2, buffer, stream);                               \
+    si_do_write_sequence(buffer, stream, ecl_make_fixnum(0), ECL_NIL);\
     buffer_ndx = 0;                                                   \
   }
 
@@ -160,7 +160,7 @@ write_symbol_string(cl_object s, int action, cl_object print_case,
   if (escape)
     buffer_write_char('|', buffer, stream, buffer_ndx, buffer_size);
   si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_ndx));
-  cl_write_string(2, buffer, stream);
+  si_do_write_sequence(buffer, stream, ecl_make_fixnum(0), ECL_NIL);
   si_put_buffer_string(buffer);
 }
 

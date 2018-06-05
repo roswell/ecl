@@ -4740,12 +4740,12 @@ writestr_stream(const char *s, cl_object strm)
     ecl_char_set(buffer, i++, (ecl_character) *s++);
     if (i >= size) {
       si_fill_pointer_set(buffer, ecl_make_fixnum(size));
-      cl_write_string(2, buffer, strm);
+      si_do_write_sequence(buffer, strm, ecl_make_fixnum(0), ECL_NIL);
       i = 0;
     }
   }
   si_fill_pointer_set(buffer, ecl_make_fixnum(i));
-  cl_write_string(2, buffer, strm);
+  si_do_write_sequence(buffer, strm, ecl_make_fixnum(0), ECL_NIL);
   si_put_buffer_string(buffer);
 }
 
