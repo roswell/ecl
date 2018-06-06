@@ -524,7 +524,7 @@ generic_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end
   expected_type = ecl_stream_element_type(strm);
   ops = stream_dispatch_table(strm);
   if (expected_type == @'base-char' || expected_type == @'character') {
-    ecl_character (*read_char)(cl_object) = ops->read_char;                 
+    ecl_character (*read_char)(cl_object) = ops->read_char;
     for (; start < end; start++) {
       cl_fixnum c = read_char(strm);
       if (c == EOF) break;
@@ -1215,6 +1215,21 @@ clos_stream_peek_char(cl_object strm)
   return ecl_char_code(out);
 }
 
+static cl_index
+clos_stream_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end)
+{
+  return fixnnint(_ecl_funcall5(@'gray::stream-read-sequence', strm, data, ecl_make_fixnum(start), ecl_make_fixnum(end)));
+}
+
+static cl_index
+clos_stream_write_vector(cl_object strm, cl_object data, cl_index start, cl_index end)
+{
+  _ecl_funcall5(@'gray::stream-write-sequence', strm, data, ecl_make_fixnum(start), ecl_make_fixnum(end));
+  if (start >= end)
+    return start;
+  return end;
+}
+
 static int
 clos_stream_listen(cl_object strm)
 {
@@ -1313,8 +1328,8 @@ const struct ecl_file_ops clos_stream_ops = {
   clos_stream_unread_char,
   clos_stream_peek_char,
 
-  generic_read_vector,
-  generic_write_vector,
+  clos_stream_read_vector,
+  clos_stream_write_vector,
 
   clos_stream_listen,
   clos_stream_clear_input,

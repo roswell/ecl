@@ -222,6 +222,7 @@ ecl_print_circle(void)
   unlikely_if (!ECL_STRINGP(strng))
     FEwrong_type_nth_arg(@[write-string], 1, strng, @[string]);
   strm = _ecl_stream_or_default_output(strm);
+  /* Optimization: directly call stream-write-string for CLOS streams */
 #ifdef ECL_CLOS_STREAMS
   if (!ECL_ANSI_STREAM_P(strm))
     _ecl_funcall5(@'gray::stream-write-string', strm, strng, start, end);
@@ -236,6 +237,7 @@ ecl_print_circle(void)
   unlikely_if (!ECL_STRINGP(strng))
     FEwrong_type_nth_arg(@[write-line], 1, strng, @[string]);
   strm = _ecl_stream_or_default_output(strm);
+  /* Optimization: directly call stream-write-string for CLOS streams */
 #ifdef ECL_CLOS_STREAMS
   if (!ECL_ANSI_STREAM_P(strm))
     _ecl_funcall5(@'gray::stream-write-string', strm, strng,

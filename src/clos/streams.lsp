@@ -537,13 +537,38 @@
 
 ;; READ-SEQUENCE
 
+;; Simple default stream-write-sequence method for CLOS streams. Note
+;; that we cannot use si:do-read-sequence for this purpose, since it
+;; will call stream-read-sequence again.
+(defun clos-default-read-sequence (stream sequence start end)
+  (declare (type t stream) ; check for c::stream-designator ignored
+           (type sequence sequence)
+           (fixnum start)
+           (ext:check-arguments-type))
+  (let ((end (or end (length sequence)))
+        (elttype (stream-element-type stream)))
+    (declare (fixnum end))
+    (if (or (eql elttype 'character) (eql elttype 'base-char))
+        (loop for pos from start below end
+           do (let ((c (stream-read-char stream)))
+                (if (eql c :eof)
+                    (return pos)
+                    (setf (elt sequence pos) c)))
+           finally (return pos))
+        (loop for pos from start below end
+           do (let ((b (stream-read-byte stream)))
+                (if (eql b :eof)
+                    (return pos)
+                    (setf (elt sequence pos) b)))
+           finally (return pos)))))
+
 (defmethod stream-read-sequence ((stream fundamental-character-input-stream)
                                  sequence &optional (start 0) (end nil))
-  (si::do-read-sequence sequence stream start end))
+  (clos-default-read-sequence stream sequence start end))
 
 (defmethod stream-read-sequence ((stream fundamental-binary-input-stream)
                                  sequence &optional (start 0) (end nil))
-  (si::do-read-sequence sequence stream start end))
+  (clos-default-read-sequence stream sequence start end))
 
 (defmethod stream-read-sequence ((stream ansi-stream) sequence
                                  &optional (start 0) (end nil))
@@ -601,13 +626,33 @@
 
 ;; WRITE-SEQUENCE
 
+;; Simple default stream-write-sequence method for CLOS streams. Note
+;; that we cannot use si:do-write-sequence for this purpose, since it
+;; will call stream-write-sequence again.
+(defun clos-default-write-sequence (stream sequence start end)
+  (declare (type t stream) ; check for c::stream-designator ignored
+           (type sequence sequence)
+           (fixnum start)
+           (ext:check-arguments-type))
+  (let ((end (or end (length sequence)))
+        (elttype (stream-element-type stream)))
+    (declare (fixnum end))
+    (if (or (eql elttype 'character) (eql elttype 'base-char))
+        (loop for pos from start below end
+           do (stream-write-char stream (elt sequence pos)))
+        (loop for pos from start below end
+           do (stream-write-byte stream (elt sequence pos)))))
+  sequence)
+
 (defmethod stream-write-sequence ((stream fundamental-character-output-stream) sequence
                                   &optional (start 0) end)
-  (si::do-write-sequence sequence stream start end))
+  (if (stringp sequence)
+      (stream-write-string stream sequence start end)
+      (clos-default-write-sequence stream sequence start end)))
 
 (defmethod stream-write-sequence ((stream fundamental-binary-output-stream) sequence
                                   &optional (start 0) end)
-  (si::do-write-sequence sequence stream start end))
+  (clos-default-write-sequence stream sequence start end))
 
 (defmethod stream-write-sequence ((stream ansi-stream) sequence
                                   &optional (start 0) end)
