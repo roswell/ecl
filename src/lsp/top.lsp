@@ -1334,20 +1334,20 @@ Use special code 0 to cancel this operation.")
 Use the following functions to directly access ECL stacks.
 
 Invocation History Stack:
-(sys:IHS-TOP)   Returns the index of the TOP of the IHS.
+(SYS:IHS-TOP)   Returns the index of the TOP of the IHS.
 (SYS:IHS-FUN i) Returns the function of the i-th entity in IHS.
 (SYS:IHS-ENV i)
 (SYS:IHS-PREV i)
 (SYS:IHS-NEXT i)
 
 Frame (catch, block) Stack:
-(sys:FRS-TOP)   Returns the index of the TOP of the FRS.
+(SYS:FRS-TOP)   Returns the index of the TOP of the FRS.
 (SYS:FRS-BDS i) Returns the BDS index of the i-th entity in FRS.
 (SYS:FRS-IHS i) Returns the IHS index of the i-th entity in FRS.
 (SYS:FRS-TAG i)
 
 Binding Stack:
-(sys:BDS-TOP)   Returns the index of the TOP of the BDS.
+(SYS:BDS-TOP)   Returns the index of the TOP of the BDS.
 (SYS:BDS-VAR i) Returns the symbol of the i-th entity in BDS.
 (SYS:BDS-VAL i) Returns the value of the i-th entity in BDS.
 

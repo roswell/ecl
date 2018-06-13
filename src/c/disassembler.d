@@ -429,7 +429,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
        Returns from the block whose record in the lexical environment
        occuppies the n-th position.
     */
-  case OP_RETURN:         string = "RETFROM";
+  case OP_RETURN:         string = "RETFROM\t";
     GET_OPARG(n, vector);
     goto OPARG;
 

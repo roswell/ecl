@@ -515,7 +515,9 @@ guess_compiler_environment(cl_env_ptr env, cl_object interpreter_env)
           else
             c_register_var(env, record0, FALSE, TRUE);
         } else if (record1 == ecl_make_fixnum(0)) {
-          c_register_tags(env, ECL_NIL);
+          /* We have lost the information, which tag corresponds to
+             the lex-env record. If we are compiling a closure over a
+             tag, we will get an error later on. */
         } else {
           c_register_block(env, record1);
         }
@@ -938,11 +940,11 @@ c_call(cl_env_ptr env, cl_object args, int flags) {
     flags = FLAG_VALUES;
   } else if (ECL_SYMBOLP(name) &&
              ((flags & FLAG_GLOBAL) || Null(c_tag_ref(env, name, @':function'))))
-    {
-      asm_op2(env, OP_CALLG, nargs);
-      asm_c(env, name);
-      flags = FLAG_VALUES;
-    } else {
+  {
+    asm_op2(env, OP_CALLG, nargs);
+    asm_c(env, name);
+    flags = FLAG_VALUES;
+  } else {
     /* Fixme!! We can optimize the case of global functions! */
     asm_function(env, name, (flags & FLAG_GLOBAL) | FLAG_REG0);
     asm_op2(env, OP_CALL, nargs);
@@ -2464,7 +2466,8 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
    */
   if (c_env->load_time_forms != ECL_NIL) {
     cl_index *bytecodes = save_bytecodes(env, handle, current_pc(env));
-    /* Make sure the forms are compiled in the right order */
+    /* reverse the load time forms list to make sure the forms are
+     * compiled in the right order */
     cl_object p, forms_list = cl_nreverse(c_env->load_time_forms);
     c_env->load_time_forms = ECL_NIL;
     p = forms_list;

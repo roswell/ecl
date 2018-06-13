@@ -45,8 +45,8 @@
         (cmp-env-register-function fun new-env)
         (push (cons fun (cdr def)) defs)))
 
-    ;; Now we compile the functions, either in an empty environment
-    ;; in which there are no new functions
+    ;; Now we compile the functions, either in the current environment
+    ;; or in an empty environment in which there are no new functions
     (let ((*cmp-env* (cmp-env-copy (if (eq origin 'FLET) *cmp-env* new-env))))
       (dolist (def (nreverse defs))
         (let ((fun (first def)))
