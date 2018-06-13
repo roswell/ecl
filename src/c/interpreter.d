@@ -164,6 +164,20 @@ ecl_stack_frame_close(cl_object f)
 }
 
 /* ------------------------------ LEXICAL ENV. ------------------------------ */
+/*
+ * A lexical environment is a list of pairs, each one containing
+ * either a variable definition, a tagbody or block tag, or a local
+ * function or macro definition.
+ *
+ *      lex_env ---> ( { record }* )
+ *      record = variable | function | block_tag | tagbody_tag | macro
+ *
+ *      variable = ( var_name[symbol] . value )
+ *      function = function[bytecodes]
+ *      block_tag = ( tag[fixnum] . block_name[symbol] )
+ *      tagbody_tag = ( tag[fixnum] . 0 )
+ *      macro = ( { si::macro | si::symbol-macro } macro_function[bytecodes] . macro_name )
+ */
 
 #define bind_var(env, var, val)         CONS(CONS(var, val), (env))
 #define bind_function(env, name, fun)   CONS(fun, (env))
@@ -206,16 +220,28 @@ _ecl_bclosure_dispatch_vararg(cl_narg narg, ...)
   return output;
 }
 
-static cl_object
-close_around(cl_object fun, cl_object lex) {
+cl_object
+ecl_close_around(cl_object fun, cl_object lex) {
   cl_object v;
   if (Null(lex)) return fun;
-  if (ecl_t_of(fun) != t_bytecodes)
-    FEerror("Internal error: close_around should be called on t_bytecodes.", 0);
-  v = ecl_alloc_object(t_bclosure);
-  v->bclosure.code = fun;
-  v->bclosure.lex = lex;
-  v->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+  switch (ecl_t_of(fun)) {
+  case t_bytecodes:
+    v = ecl_alloc_object(t_bclosure);
+    v->bclosure.code = fun;
+    v->bclosure.lex = lex;
+    v->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+    break;
+  case t_bclosure:
+    v = ecl_alloc_object(t_bclosure);
+    v->bclosure.code = fun->bclosure.code;
+    /* Put the predefined macros in fun->bclosure.lex at the end of
+       the lexenv so that lexenv indices are still valid */
+    v->bclosure.lex = ecl_append(lex, fun->bclosure.lex);
+    v->bclosure.entry = fun->bclosure.entry;
+    break;
+  default:
+    FEerror("Internal error: ecl_close_around should be called on t_bytecodes or t_bclosure.", 0);
+  }
   return v;
 }
 
@@ -671,7 +697,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       do {
         cl_object f;
         GET_DATA(f, vector, data);
-        f = close_around(f, old_lex);
+        f = ecl_close_around(f, old_lex);
         lex_env = bind_function(lex_env, f->bytecodes.name, f);
       } while (--nfun);
       THREAD_NEXT;
@@ -702,7 +728,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       {
         cl_object l = lex_env;
         do {
-          ECL_RPLACA(l, close_around(ECL_CONS_CAR(l), lex_env));
+          ECL_RPLACA(l, ecl_close_around(ECL_CONS_CAR(l), lex_env));
           l = ECL_CONS_CDR(l);
         } while (--nfun);
       }
@@ -730,14 +756,13 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       THREAD_NEXT;
     }
 
-    /* OP_CLOSE     name{symbol}
-       Extracts the function associated to a symbol. The function
-       may be defined in the global environment or in the local
-       environment. This last value takes precedence.
+    /* OP_CLOSE name{symbol}
+       Creates a closure around the current lexical environment for
+       the function associated to the given symbol.
     */
     CASE(OP_CLOSE); {
       GET_DATA(reg0, vector, data);
-      reg0 = close_around(reg0, lex_env);
+      reg0 = ecl_close_around(reg0, lex_env);
       THREAD_NEXT;
     }
     /* OP_GO        n{arg}, tag-ndx{arg}

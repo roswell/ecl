@@ -387,23 +387,6 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_obje
                 __ecl_env->nvalues = 3; return __aux1;                  \
         } while (0)
 
-/*****************************
- * LEXICAL ENVIRONMENT STACK
- *****************************/
-/*
- * A lexical environment is a list of pairs, each one containing either
- * a variable definition, a tagbody or block tag, or a local function
- * definition.
- *
- *      lex_env ---> ( { record }* )
- *      record = variable | function | block_tag | tagbody_tag
- *
- *      variable = ( var_name[symbol] . value )
- *      function = ( function[bytecodes] . fun_name[symbol] )
- *      block_tag = ( tag[fixnum] . block_name[symbol] )
- *      tagbody_tag = ( tag[fixnum] . 0 )
- */
-
 /*************
  * LISP STACK
  *************/
