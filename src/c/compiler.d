@@ -501,7 +501,9 @@ guess_environment(cl_env_ptr env, cl_object interpreter_env)
     {
       cl_object record = ECL_CONS_CAR(interpreter_env);
       if (!LISTP(record)) {
-        c_register_function(env, record);
+        if (ecl_t_of(record) == t_bclosure)
+          record = record->bclosure.code;
+        c_register_function(env, record->bytecodes.name);
       } else {
         cl_object record0 = ECL_CONS_CAR(record);
         cl_object record1 = ECL_CONS_CDR(record);
