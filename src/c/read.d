@@ -636,6 +636,13 @@ semicolon_reader(cl_object in, cl_object c)
 */
 
 static cl_object
+sharp_generic_error(cl_object in, cl_object c, cl_object n)
+{
+  FEreader_error("The character ~:C is not a valid dispatch macro character",
+                 in, 1, c);
+}
+
+static cl_object
 sharp_C_reader(cl_object in, cl_object c, cl_object d)
 {
   const cl_env_ptr the_env = ecl_process_env();
@@ -2110,6 +2117,24 @@ init_read(void)
                                   make_cf3(sharp_minus_reader), r);
   cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('|'),
                                   make_cf3(sharp_vertical_bar_reader), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\b'),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\t'),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_NEWLINE),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_LINEFEED),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\f'),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_RETURN),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(' '),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(')'),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('<'),
+                                  make_cf3(sharp_generic_error), r);
   /*  This is specific to this implementation  */
   cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('$'),
                                   make_cf3(sharp_dollar_reader), r);
