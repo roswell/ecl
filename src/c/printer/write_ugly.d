@@ -178,12 +178,7 @@ write_stream(cl_object x, cl_object stream)
 {
   const char *prefix;
   cl_object tag;
-  union cl_lispunion str;
-#ifdef ECL_UNICODE
-  ecl_character buffer[10];
-#else
-  ecl_base_char buffer[10];
-#endif
+  cl_object buffer = OBJNULL;
   switch ((enum ecl_smmode)x->stream.mode) {
   case ecl_smm_input_file:
     prefix = "closed input file";
@@ -252,28 +247,20 @@ write_stream(cl_object x, cl_object stream)
     tag = ECL_NIL;
     break;
   case ecl_smm_string_input: {
+    buffer = si_get_buffer_string();
     cl_object text = x->stream.object0;
     cl_index ndx, l = ecl_length(text);
     for (ndx = 0; (ndx < 8) && (ndx < l); ndx++) {
-      buffer[ndx] = ecl_char(text, ndx);
+      ecl_char_set(buffer, ndx, ecl_char(text, ndx));
     }
     if (l > ndx) {
-      buffer[ndx-1] = '.';
-      buffer[ndx-2] = '.';
-      buffer[ndx-3] = '.';
+      ecl_char_set(buffer, ndx-1, '.');
+      ecl_char_set(buffer, ndx-2, '.');
+      ecl_char_set(buffer, ndx-3, '.');
     }
-    buffer[ndx++] = 0;
+    si_fill_pointer_set(buffer, ecl_make_fixnum(ndx));
     prefix = "closed string-input stream from";
-    tag = &str;
-#ifdef ECL_UNICODE
-    tag->string.t = t_string;
-    tag->string.self = buffer;
-#else
-    tag->base_string.t = t_base_string;
-    tag->base_string.self = buffer;
-#endif
-    tag->base_string.dim = ndx;
-    tag->base_string.fillp = ndx-1;
+    tag = buffer;
     break;
   }
   case ecl_smm_string_output:
@@ -294,6 +281,8 @@ write_stream(cl_object x, cl_object stream)
   if (!x->stream.closed)
     prefix = prefix + 7;
   _ecl_write_unreadable(x, prefix, tag, stream);
+  if (buffer != OBJNULL)
+    si_put_buffer_string(buffer);
 }
 
 static void
