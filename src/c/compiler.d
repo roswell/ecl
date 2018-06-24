@@ -372,7 +372,6 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  *                      (:declare declaration-arguments*)
  * macro-record =       (function-name FUNCTION [| function-object]) |
  *                      (macro-name si::macro macro-function) |
- *                      (symbol si::symbol-macro macro-function) |
  *                      SI:FUNCTION-BOUNDARY |
  *                      SI:UNWIND-PROTECT-BOUNDARY
  *
@@ -454,9 +453,7 @@ static void
 c_register_symbol_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object record = cl_list(3, name, @'si::symbol-macro', exp_fun);
-  c_env->variables = CONS(record, c_env->variables);
-  c_env->macros = CONS(record, c_env->macros);
+  c_env->variables = CONS(cl_list(3, name, @'si::symbol-macro', exp_fun), c_env->variables);
 }
 
 static void
@@ -1394,17 +1391,25 @@ c_function(cl_env_ptr env, cl_object args, int flags) {
 }
 
 static cl_object
-create_macro_lexenv(cl_object macros)
+create_macro_lexenv(cl_compiler_ptr c_env)
 {
   /* Creates a new lexenv out of the macros in the current compiler
    * environment */
   cl_object lexenv = ECL_NIL;
-  for (; !Null(macros); macros = ECL_CONS_CDR(macros)) {
-    cl_object record = ECL_CONS_CAR(macros);
+  cl_object records;
+  for (records = c_env->macros; !Null(records); records = ECL_CONS_CDR(records)) {
+    cl_object record = ECL_CONS_CAR(records);
     if (ECL_ATOM(record))
       continue;
-    if (CADR(record) == @'si::macro' || CADR(record) == @'si::symbol-macro')
-      lexenv = CONS(CONS(CADR(record), CONS(CADDR(record), CAR(record))), lexenv);
+    if (CADR(record) == @'si::macro')
+      lexenv = CONS(CONS(@'si::macro', CONS(CADDR(record), CAR(record))), lexenv);
+  }
+  for (records = c_env->variables; !Null(records); records = ECL_CONS_CDR(records)) {
+    cl_object record = ECL_CONS_CAR(records);
+    if (ECL_ATOM(record))
+      continue;
+    if (CADR(record) == @'si::symbol-macro')
+      lexenv = CONS(CONS(@'si::symbol-macro', CONS(CADDR(record), CAR(record))), lexenv);
   }
   return lexenv;
 }
@@ -1438,9 +1443,8 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
 
     const cl_compiler_ptr c_env = env->c_env;
     cl_object lambda = ecl_make_lambda(env, name, body);
-    cl_object macro_lexenv;
-    if (Null(c_env->macros) ||
-        Null(macro_lexenv = create_macro_lexenv(c_env->macros))) {
+    cl_object macro_lexenv = create_macro_lexenv(c_env);
+    if (Null(macro_lexenv)) {
       if (Null(c_env->variables)) {
         /* No closure */
         asm_op2c(env, OP_QUOTE, lambda);
@@ -1449,8 +1453,14 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
         asm_op2c(env, OP_CLOSE, lambda);
       }
     } else {
-      /* Close around macros, functions and variables */
-      asm_op2c(env, OP_CLOSE, ecl_close_around(lambda, macro_lexenv));
+      lambda = ecl_close_around(lambda, macro_lexenv);
+      if (Null(c_env->variables)) {
+        /* Close only around macros */
+        asm_op2c(env, OP_QUOTE, lambda);
+      } else {
+        /* Close around macros, functions and variables */
+        asm_op2c(env, OP_CLOSE, lambda);
+      }
     }
     return FLAG_REG0;
   }
