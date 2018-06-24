@@ -756,7 +756,9 @@ make_lambda function.
 @cppindex cl_eval
 @deftypefun cl_object si_safe_eval (cl_object form, cl_object env, ...)
 
-@code{si_safe_eval} evaluates @code{form} in the lexical environment
+@code{si_safe_eval} evaluates @code{form} in the lexical
+environment@footnote{Note that @code{env} must be a lexical
+environment as used in the interpreter, @xref{The lexical environment}}
 @code{env}, which can be @var{ECL_NIL}. Before evaluating it, the
 expression form must be bytecompiled.
 
@@ -769,7 +771,7 @@ compatibility with previous versions.
 Equivalent of @code{si_safe_eval} (macro define).
 @end table
 
-@subheading Exmaple
+@subheading Example
 @exindex @code{cl_safe_eval}
 @example
 si_object form = c_string_to_object("(print 1)");
