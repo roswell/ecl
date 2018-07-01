@@ -109,6 +109,9 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_WEAK_HASH
   ecl_def_string_array_elt("ECL-WEAK-HASH"),
 #endif
+#ifdef ECL_WSOCK
+  ecl_def_string_array_elt("WSOCK"),
+#endif
   ecl_def_string_array_elt(0)
 };
 
