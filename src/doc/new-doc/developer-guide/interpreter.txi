@@ -1,6 +1,14 @@
 @node The interpreter
 @section The interpreter
 
+@menu
+* ECL stacks::
+* Procedure Call Conventions::
+* The lexical environment::
+* The interpreter stack::
+@end menu
+
+@node ECL stacks
 @subsection ECL stacks
 ECL uses the following stacks:
 @multitable @columnfractions .3 .7
@@ -14,6 +22,7 @@ ECL uses the following stacks:
 @tab used for arguments/values passing, typed lexical variables, temporary values, and function invocation.
 @end multitable
 
+@node Procedure Call Conventions
 @subsection Procedure Call Conventions
 ECL employs standard C calling conventions to achieve efficiency and
 interoperability with other languages. Each Lisp function is
@@ -69,20 +78,22 @@ instance, the actual source code for @code{cl_cons} in
 @)
 @end verbatim
 
+@node The lexical environment
 @subsection The lexical environment
-The ECL interpreter uses two A-lists (Association lists) to represent
-lexical environments.
-
-@itemize
-@item One for variable bindings
-@item One for local function/macro/tag/block bindings
-@end itemize
-
-When a function closure is created, the current two A-lists are saved
-in the closure along with the lambda expression. Later, when the
-closure is invoked, the saved A-lists are used to recover the lexical
+The ECL interpreter uses a list containing local functions and macros,
+variables, tags and blocks to represent the lexical environment. When
+a function closure is created, the current lexical environment is
+saved in the closure along with the lambda expression. Later, when the
+closure is invoked, this list is used to recover the lexical
 environment.
 
+Note that this list is different from what the Common Lisp standard
+calls a lexical environment, which is the content of a
+@code{&environment} parameter to @code{defmacro}. For the differences
+between this two environments see the comments in
+@code{src/c/compiler.d} and @code{src/c/interpreter.d}.
+
+@node The interpreter stack
 @subsection The interpreter stack
 
 The bytecodes interpreter uses a stack of its own to save and restore

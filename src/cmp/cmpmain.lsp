@@ -734,6 +734,7 @@ compiled successfully, returns the pathname of the compiled file"
 #+dlopen
 (defun compile (name &optional (def nil supplied-p)
                       &aux form data-pathname
+                      (lexenv nil)
                       (*suppress-compiler-messages* (or *suppress-compiler-messages*
                                                         (not *compile-verbose*)))
                       (*compiler-in-use* *compiler-in-use*)
@@ -761,7 +762,11 @@ after compilation."
          (when (functionp def)
            (unless (function-lambda-expression def)
              (return-from compile def))
-           (setf def (function-lambda-expression def)))
+           (multiple-value-setq (def lexenv)
+             (function-lambda-expression def))
+           (when (eq lexenv t)
+             (warn "COMPILE can not compile C closures")
+             (return-from compile (values def t nil))))
          (setq form (if name
                         `(setf (fdefinition ',name) #',def)
                         `(set 'GAZONK #',def))))
@@ -777,17 +782,20 @@ after compilation."
         (t
          (setq form `(setf (fdefinition ',name) #',form))))
 
-  (let*((*load-time-values* 'values) ;; Only the value is kept
-        (tmp-names (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
-        (data-pathname (first tmp-names))
-        (c-pathname (compile-file-pathname data-pathname :type :c))
-        (h-pathname (compile-file-pathname data-pathname :type :h))
-        (o-pathname (compile-file-pathname data-pathname :type :object))
-        (so-pathname (compile-file-pathname data-pathname))
-        (init-name (compute-init-name so-pathname :kind :fasl))
-        (compiler-conditions nil))
+  (let* ((*load-time-values* 'values) ;; Only the value is kept
+         (tmp-names (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
+         (data-pathname (first tmp-names))
+         (c-pathname (compile-file-pathname data-pathname :type :c))
+         (h-pathname (compile-file-pathname data-pathname :type :h))
+         (o-pathname (compile-file-pathname data-pathname :type :object))
+         (so-pathname (compile-file-pathname data-pathname))
+         (init-name (compute-init-name so-pathname :kind :fasl))
+         (compiler-conditions nil)
+         (*permanent-data* t)        ; needed for literal objects in closures
+         (*cmp-env-root* *cmp-env-root*))
 
     (with-compiler-env (compiler-conditions)
+      (setf form (set-closure-env form lexenv *cmp-env-root*))
       (print-compiler-info)
       (data-init)
       (t1expr form)

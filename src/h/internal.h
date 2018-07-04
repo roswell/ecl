@@ -228,6 +228,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
 
 extern cl_object _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...);
 extern cl_object _ecl_bclosure_dispatch_vararg(cl_narg narg, ...);
+extern cl_object ecl_close_around(cl_object fun, cl_object env);
 
 /* ffi/backtrace.d */
 

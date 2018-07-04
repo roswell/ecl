@@ -45,9 +45,11 @@
   (cond ((functionp definition)
          (multiple-value-bind (form lexenv) (function-lambda-expression definition)
            (when form
-             (if lexenv
-                 (setf definition (si:eval-with-env form lexenv))
-                 (setf definition (si:eval-with-env form nil nil nil t)))))
+             (cond ((eq lexenv t)
+                    (warn "COMPILE can not compile C closures")
+                    (return-from bc-compile (values definition t nil)))
+                   (lexenv (setf definition (si:eval-with-env form lexenv)))
+                   (t (setf definition (si:eval-with-env form nil nil nil t))))))
          (when name (setf (fdefinition name) definition))
          (return-from bc-compile (values (or name definition) nil nil)))
         ((not (null definition))
@@ -66,9 +68,11 @@
          (multiple-value-bind (form lexenv)
              (function-lambda-expression (fdefinition name))
            (when form
-             (if lexenv
-                 (setf definition (si:eval-with-env form lexenv))
-                 (setf definition (si:eval-with-env form nil nil nil t)))))
+             (cond ((eq lexenv t)
+                    (warn "The bytecodes compiler can not compile C closures")
+                    (return-from bc-compile (values definition t nil)))
+                   (lexenv (setf definition (si:eval-with-env form lexenv)))
+                   (t (setf definition (si:eval-with-env form nil nil nil t))))))
          (when (null definition)
            (warn "We have lost the original function definition for ~s." name)
            (return-from bc-compile (values name t nil)))

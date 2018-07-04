@@ -114,7 +114,7 @@ ecl_rem_setf_definition(cl_object sym)
   int type;
 @
   if (Null(cl_functionp(def)))
-  FEinvalid_function(def);
+    FEinvalid_function(def);
   pack = ecl_symbol_package(sym);
   if (pack != ECL_NIL
       && pack->pack.locked
