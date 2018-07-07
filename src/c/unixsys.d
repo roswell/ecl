@@ -152,7 +152,7 @@ si_waitpid(cl_object pid, cl_object wait)
     code = ECL_NIL;
   } else {
     status = @':exited';
-    code = ecl_make_fixnum(exitcode);
+    code = ecl_make_fixnum((int)exitcode);
     pid->foreign.data = NULL;
     CloseHandle(*hProcess);
   }
