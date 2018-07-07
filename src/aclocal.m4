@@ -197,7 +197,7 @@ case "${srcdir}" in
   /* | ?:/* ) ;;
   *  ) srcdir="`(cd ${srcdir}; ${PWDCMD})`";
 esac
-if uname -a | grep -i 'mingw32' > /dev/null; then
+if uname -a | grep -i 'mingw' > /dev/null; then
   true_srcdir=`(cd ${srcdir}; pwd -W)`
   true_builddir=`pwd -W`
 else
