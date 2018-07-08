@@ -981,8 +981,8 @@ from the C language code.  NIL means \"do not create the file\"."
     (setf *features* (delete :ecl-bytecmp *features*))
     (setf (fdefinition 'disassemble) disassemble
           (fdefinition 'compile) compile
-          (fdefinition 'compile-file) #'compile-file
-          (fdefinition 'compile-file-pathname) #'compile-file-pathname)
+          (fdefinition 'compile-file) compile-file
+          (fdefinition 'compile-file-pathname) compile-file-pathname)
     (ext::package-lock (find-package :cl) t)))
 
 (provide 'cmp)
