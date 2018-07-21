@@ -313,12 +313,12 @@ typedef struct ecl_frame {
         cl_index        frs_sp;
 } *ecl_frame_ptr;
 
-extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr, register cl_object);
+extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr);
 #define ecl_frs_push(env,val) \
-        ecl_frame_ptr __frame = _ecl_frs_push(env,val); \
+        ecl_frame_ptr __frame = _ecl_frs_push(env); \
         ecl_disable_interrupts_env(env); \
-        int __ecl_frs_push_result = ecl_setjmp(__frame->frs_jmpbuf); \
         __frame->frs_val = val; \
+        int __ecl_frs_push_result = ecl_setjmp(__frame->frs_jmpbuf); \
         ecl_enable_interrupts_env(env)
 
 #define ecl_frs_pop(env) ((env)->frs_top--)
