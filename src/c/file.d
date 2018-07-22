@@ -5146,6 +5146,7 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
     fd = safe_open(fname, O_WRONLY|O_CREAT, mode);
     unlikely_if (fd < 0) FEcannot_open(filename);
     safe_close(fd);
+    fd = -1;
   }
   switch (smm) {
   case ecl_smm_probe:
@@ -5197,7 +5198,8 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
       if (file_kind == @':fifo') {
         fp = safe_fdopen(fd, OPEN_R);
       } else {
-        safe_close(fd);
+        if (fd >= 0)
+          safe_close(fd);
         fp = safe_fopen(fname, OPEN_R);
       }
       break;
@@ -5206,7 +5208,8 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
       if (file_kind == @':fifo') {
         fp = safe_fdopen(fd, OPEN_RW);
       } else {
-        safe_close(fd);
+        if (fd >= 0)
+          safe_close(fd);
         fp = safe_fopen(fname, OPEN_RW);
       }
       break;
