@@ -35,11 +35,12 @@ and pointers. They are all symbols in the keyword package.
 @lspindex :uint64_t
 @lspindex :float
 @lspindex :double
-@c @lspindex :long-double
+@lspindex :long-double
 @lspindex :cstring
 @lspindex :void
 @lspindex :pointer-void
 @lspindex :*
+@lspindex :object
 
 @ftindex LONG-LONG
 @ftindex UINT16-T
@@ -72,11 +73,9 @@ Integer types with guaranteed bitness.
 @item :float
 @itemx :double
 Floating point numerals (32-bit and 64-bit).
-@c XXX>
-@c @item :long-double
-@c Floating point numeral (usually 80-bit, at least 64-bit, exact
-@c bitness is compiler/architecture/platform dependant).
-@c XXX<
+@item :long-double
+Floating point numeral (usually 80-bit, at least 64-bit, exact
+bitness is compiler/architecture/platform dependant).
 @item :cstring
 A @code{NULL} terminated string used for passing and returning
 characters strings with a C function.
@@ -87,6 +86,8 @@ a value.
 Points to a generic object.
 @item *
 Used to declare a pointer to an object.
+@item :object
+A generic lisp object (i.e. a @code{cl_object} in C)
 @end table
 
 @subsubheading Reference
