@@ -322,15 +322,10 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
   }
   location = env->thread_local_bindings + index;
   slot = env->bds_top+1;
-  if (slot >= env->bds_limit){
-    slot = ecl_bds_overflow();
-    slot->symbol = ECL_DUMMY_TAG;
-  } else {
-    slot->symbol = ECL_DUMMY_TAG;
-    AO_nop_full();
-    ++env->bds_top;
-  }
+  if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  slot->symbol = ECL_DUMMY_TAG;
   AO_nop_full();
+  ++env->bds_top;
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
@@ -359,15 +354,10 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
   }
   location = env->thread_local_bindings + index;
   slot = env->bds_top+1;
-  if (slot >= env->bds_limit){
-    slot = ecl_bds_overflow();
-    slot->symbol = ECL_DUMMY_TAG;
-  } else {
-    slot->symbol = ECL_DUMMY_TAG;
-    AO_nop_full();
-    ++env->bds_top;
-  }
+  if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  slot->symbol = ECL_DUMMY_TAG;
   AO_nop_full();
+  ++env->bds_top;
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
@@ -565,16 +555,13 @@ _ecl_frs_push(register cl_env_ptr env)
    * needed to ensure that the CPU doesn't reorder the memory
    * stores. */
   ecl_frame_ptr output = env->frs_top+1;
-  if (output >= env->frs_limit){
+  if (output >= env->frs_limit) {
     frs_overflow();
-    output = env->frs_top;
-    output->frs_val = ECL_DUMMY_TAG;
-  } else {
-    output->frs_val = ECL_DUMMY_TAG;
-    AO_nop_full();
-    ++env->frs_top;
+    output = env->frs_top+1;
   }
+  output->frs_val = ECL_DUMMY_TAG;
   AO_nop_full();
+  ++env->frs_top;
   output->frs_bds_top_index = env->bds_top - env->bds_org;
   output->frs_ihs = env->ihs_top;
   output->frs_sp = ECL_STACK_INDEX(env);

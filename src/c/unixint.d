@@ -378,8 +378,7 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
         /* We have to save and later restore thread-local variables to
          * ensure that they don't get overwritten by the interrupting
          * code */
-        /* INV: - Frame, Binding and IHS stack manipulations are
-         *        interrupt safe
+        /* INV: - IHS stack manipulations are interrupt safe
          *      - The rest of the thread local variables are
          *        guaranteed to be used in an interrupt safe way. This
          *        is not true for the compiler environment and ffi
@@ -397,9 +396,19 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
          * stack. Increasing env->stack_top ensures that we don't
          * overwrite the topmost stack value. */
         env->stack_top++;
-        /* Finally we can handle the queued signals */
+        /* We also need to save and restore the (top+1)'th frame and
+         * binding stack value to prevent overwriting it.
+         * INV: Due to the stack safety areas we don't need to check
+         * for env->frs/bds_limit */
+        struct ecl_frame top_frame;
+        memcpy(&top_frame, env->frs_top+1, sizeof(struct ecl_frame));
+        struct ecl_bds_frame top_binding;
+        memcpy(&top_binding, env->bds_top+1, sizeof(struct ecl_bds_frame));
+        /* Finally we can handle the queued signals ... */
         handle_all_queued(env);
-        /* And restore thread local variables again */
+        /* ... and restore everything again */
+        memcpy(env->bds_top+1, &top_binding, sizeof(struct ecl_bds_frame));
+        memcpy(env->frs_top+1, &top_frame, sizeof(struct ecl_frame));
         env->stack_top--;
         env->packages_to_be_created_p = packages_to_be_created_p;
         env->packages_to_be_created = packages_to_be_created;
