@@ -41,10 +41,13 @@ if(ECL_INCLUDE_DIR)
 
     # at this moment ${ECL_VERSION_STR_RAW} contain version number in format
     # 160103 for version 16.1.3. Let's convert it to period separated format.
-    set (version_helper_regex "^([0-9][0-9])([0-9][0-9])([0-9][0-9])$")
-    string(REGEX REPLACE ${version_helper_regex} "\\1" major_raw ${ECL_VERSION_STR_RAW})
-    string(REGEX REPLACE ${version_helper_regex} "\\2" minor_raw ${ECL_VERSION_STR_RAW})
-    string(REGEX REPLACE ${version_helper_regex} "\\3" patch_raw ${ECL_VERSION_STR_RAW})
+    set(version_helper_regex "^([0-9][0-9])([0-9][0-9])([0-9][0-9])$")
+    string(REGEX REPLACE ${version_helper_regex} "\\1" major_raw
+      ${ECL_VERSION_STR_RAW})
+    string(REGEX REPLACE ${version_helper_regex} "\\2" minor_raw
+      ${ECL_VERSION_STR_RAW})
+    string(REGEX REPLACE ${version_helper_regex} "\\3" patch_raw
+      ${ECL_VERSION_STR_RAW})
 
     string(REGEX REPLACE "^[0]*([0-9]+)" "\\1" ECL_VERSION_MAJOR ${major_raw})
     string(REGEX REPLACE "^[0]*([0-9]+)" "\\1" ECL_VERSION_MINOR ${minor_raw})
@@ -77,4 +80,3 @@ if(ECL_FOUND)
     set(ECL_CONFIG_BIN_PATH "${ECL_BIN_DIR}/ecl-config")
   endif()
 endif()
-
