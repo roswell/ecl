@@ -1,17 +1,4 @@
 #=============================================================================
-# Copyright (C) 2018 marcinkolenda419@gmail.com
-#
-# Permission to use, copy, modify, and/or distribute this software for
-# any purpose with or without fee is hereby granted.
-#
-# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
-# AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
-# OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
 # FindECL
 # --------
 #
@@ -33,15 +20,14 @@
 #   ECL_VERSION_MAJOR   - major version string e.g. "16"
 #   ECL_VERSION_MINOR   - minor version string e.g. "1"
 #   ECL_VERSION_PATCH   - patch version string e.g. "3"
-
-
+#=============================================================================
 find_path(ECL_INCLUDE_DIR NAMES ecl/ecl.h)
 mark_as_advanced(ECL_INCLUDE_DIR)
 
 find_library(ECL_LIBRARY NAMES
     ecl
     # TODO check how it's on windows
-)
+    )
 mark_as_advanced(ECL_LIBRARY)
 
 # Find the ECL_VERSION_STRING
