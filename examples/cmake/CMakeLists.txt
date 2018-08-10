@@ -25,7 +25,7 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/core-lisp.a
   --eval '(princ (asdf:asdf-version))'
   # remember to end path with / here. Notably ....src/lisp/, not ....src/lisp
   --eval '(push \"${CMAKE_CURRENT_SOURCE_DIR}/src/lisp/\" asdf:*central-registry*)'
-  --eval '(asdf:make-build :core-lisp :type :static-library :move-here \"${CMAKE_CURRENT_BINARY_DIR}\")'
+  --eval '(asdf:make-build :core-lisp :type :static-library :move-here \"${CMAKE_CURRENT_BINARY_DIR}\" :init-name \"init_lib_CORE_LISP\")'
   --eval '(quit)'
   DEPENDS ${CORE_LISP_SOURCES})
 
