@@ -68,7 +68,8 @@ ecl_number_compare(cl_object x, cl_object y)
   case t_bignum:
     switch (ty) {
     case t_fixnum:
-      return _ecl_big_sign(x) < 0 ? -1 : 1;
+      iy = ecl_fixnum(y);
+      return mpz_cmp_si(x->big.big_num, iy);
     case t_bignum:
       return(_ecl_big_compare(x, y));
     case t_ratio:
