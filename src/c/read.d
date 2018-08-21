@@ -988,8 +988,11 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
         ecl_string_push_extend(token, c);
       }
       goto K;
-    } else if (ecl_lower_case_p(c))
+    } else if (ecl_lower_case_p(c)) {
       c = ecl_char_upcase(c);
+    } else if (c == ':' && !read_suppress) {
+      FEreader_error("An uninterned symbol must not contain a package prefix", in, 0);
+    }
     if (a == cat_whitespace || a == cat_terminating)
       break;
   }
