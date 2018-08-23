@@ -212,11 +212,11 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
       return OBJNULL;
     }
   }
+  if (!some_digit) goto NOT_A_NUMBER;
+  *ep = i;
   /* If we have reached the end without decimals (for instance
    * 1., 2, 13., etc) we return an integer */
-  *ep = i;
   if (decimal < i) {
-    if (!some_digit) goto NOT_A_NUMBER;
     return make_float(_ecl_big_register_normalize(num),
                       ecl_make_fixnum(decimal - i), 'e', sign);
   } else {
