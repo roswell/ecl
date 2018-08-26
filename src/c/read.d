@@ -729,7 +729,7 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   cl_object x, rv, nth, lex;
 
   if (d != ECL_NIL && !read_suppress)
-    extra_argument('C', in, d);
+    extra_argument('Y', in, d);
   x = ecl_read_object(in);
   unlikely_if (x == OBJNULL) {
     FEend_of_file(in);
@@ -780,6 +780,14 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   rv->bytecodes.file_position = nth;
 
   rv->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
+
+  if (lex != ECL_NIL) {
+    cl_object x = ecl_alloc_object(t_bclosure);
+    x->bclosure.code = rv;
+    x->bclosure.lex = lex;
+    x->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+    rv = x;
+  }
   @(return rv);
 }
 
