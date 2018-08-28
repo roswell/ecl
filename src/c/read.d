@@ -1249,7 +1249,7 @@ do_patch_sharp(cl_object x, cl_object table)
   }
   case t_bclosure: {
     x->bclosure.lex = do_patch_sharp(x->bclosure.lex, table);
-    x = x->bclosure.code = do_patch_sharp(x->bclosure.code, table);
+    x->bclosure.code = do_patch_sharp(x->bclosure.code, table);
     break;
   }
   case t_bytecodes: {
