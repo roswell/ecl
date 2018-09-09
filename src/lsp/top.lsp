@@ -466,13 +466,14 @@ under certain conditions; see file 'Copyright' for details.")
   #-threads
   `(progn ,@body)
   #+threads
-  `(unwind-protect
-        (progn
-          (register-in-waiting-list mp:*current-process*)
-          (grab-console mp:*current-process*)
-          ,@body)
-     (delete-from-waiting-list mp:*current-process*)
-     (release-console mp:*current-process*)))
+  `(mp:without-interrupts
+     (unwind-protect
+          (mp:with-restored-interrupts
+            (register-in-waiting-list mp:*current-process*)
+            (grab-console mp:*current-process*)
+            ,@body)
+       (delete-from-waiting-list mp:*current-process*)
+       (release-console mp:*current-process*))))
 
 (defparameter *allow-recursive-debug* nil)
 (defparameter *debug-status* nil)
