@@ -111,14 +111,14 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
       }
     }
     ecl_bds_unwind1(the_env);
-  } ECL_UNWIND_PROTECT_EXIT {
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     /* We do not want to come back here if close_stream fails,
        therefore, first we frs_pop() current jump point, then
        try to close the stream, and then jump to next catch
        point */
     if (strm != source)
       cl_close(3, strm, @':abort', @'t');
-  } ECL_UNWIND_PROTECT_END;
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   @(return ECL_NIL);
 }
 
@@ -176,14 +176,14 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
                 2, x, source);
       }
     }
-  } ECL_UNWIND_PROTECT_EXIT {
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     /* We do not want to come back here if close_stream fails,
        therefore, first we frs_pop() current jump point, then
        try to close the stream, and then jump to next catch
        point */
     if (strm != source)
       cl_close(3, strm, @':abort', @'t');
-  } ECL_UNWIND_PROTECT_END;
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   @(return ECL_NIL);
 }
 

@@ -51,6 +51,7 @@ ecl_giveup_spinlock(cl_object *lock)
 static ECL_INLINE void
 wait_queue_nconc(cl_env_ptr the_env, cl_object q, cl_object new_tail)
 {
+  /* INV: interrupts are disabled */
   ecl_get_spinlock(the_env, &q->queue.spinlock);
   q->queue.list = ecl_nconc(q->queue.list, new_tail);
   ecl_giveup_spinlock(&q->queue.spinlock);
@@ -74,6 +75,7 @@ wait_queue_pop_all(cl_env_ptr the_env, cl_object q)
 static ECL_INLINE void
 wait_queue_delete(cl_env_ptr the_env, cl_object q, cl_object item)
 {
+  /* INV: interrupts are disabled */
   ecl_get_spinlock(the_env, &q->queue.spinlock);
   q->queue.list = ecl_delete_eq(item, q->queue.list);
   ecl_giveup_spinlock(&q->queue.spinlock);
