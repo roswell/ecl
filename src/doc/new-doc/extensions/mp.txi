@@ -33,8 +33,8 @@ processes, which are made of programs running in separate contexts and
 without access to each other's memory.
 
 The implementation of threads in ECL is purely native and based on Posix
-Threads wherever avaiable. The use of native threads has
-advantanges. For instance, they allow for non-blocking file operations,
+Threads wherever available. The use of native threads has
+advantages. For instance, they allow for non-blocking file operations,
 so that while one task is reading a file, a different one is performing
 a computation.
 

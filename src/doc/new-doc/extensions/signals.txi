@@ -108,36 +108,36 @@ The other option is to let ECL handle signals itself. This would be safer when t
 
 @node Signals and Interrupts - Signals Reference
 @subsection Signals Reference
-@lspindex ext:with-interrupts
-@lspindex ext:without-interrupts
+@lspindex mp:with-interrupts
+@lspindex mp:without-interrupts
 
-@defmac ext:with-interrupts &body body
+@defmac mp:with-interrupts &body body
 Execute code with interrupts optionally enabled.
 @subsubheading Description
-Executes the given body with all interrupts enabled. Since interrupts are normally enabled, this macro only makes sense if there is an outer @code{ext:without-interrupts} with a corresponding @code{ext:allow-with-interrupts}: interrupts are not enabled if any outer @code{mp:without-interrupts} is not accompanied by @code{mp:allow-with-interrupts}.
+Executes the given body with all interrupts enabled. Since interrupts are normally enabled, this macro only makes sense if there is an outer @code{mp:without-interrupts} with a corresponding @code{mp:allow-with-interrupts}: interrupts are not enabled if any outer @code{mp:without-interrupts} is not accompanied by @code{mp:allow-with-interrupts}.
 @end defmac
 
 
-@defmac ext:without-interrupts &body body
+@defmac mp:without-interrupts &body body
 Execute code without being interrupted.
 @subsubheading Description
-Executes the given body with all interrupts disabled. This macro is compatible with the one in SBCL and as such it also defines three other local macros @code{ext:allow-with-interrupts}, @code{ext:with-local-interrupts} and @code{ext:with-restored-interrupts}.
+Executes the given body with all deferrable interrupts disabled. Deferrable interrupts arriving during execution of the body take effect after the body has been executed.
 
 Deferrable interrupts include most blockable POSIX signals, and @code{mp:interrupt-process}. Does not interfere with garbage collection, and does not inhibit scheduling of other threads.
 
-This macro binds @code{allow-with-interrupts}, @code{with-local-interrupts} and @code{with-restored-interrupts} as a local macros.
+This macro is compatible with the one in SBCL and as such it also defines three other local macros @code{mp:allow-with-interrupts}, @code{mp:with-local-interrupts} and @code{mp:with-restored-interrupts}.
 
-@code{ext:with-restored-interrupts} executes the body with interrupts enabled if and only if the @code{ext:without-interrupts} was in an environment in which interrupts were allowed.
+@code{mp:with-restored-interrupts} executes the body with interrupts enabled if and only if the @code{mp:without-interrupts} was in an environment in which interrupts were allowed.
 
-@code{ext:allow-with-interrupts} allows the ext:with-interrupts to take effect during the dynamic scope of its body, unless there is an outer ext:without-interrupts without a corresponding @code{ext:allow-with-interrupts}.
+@code{mp:allow-with-interrupts} allows the @code{mp:with-interrupts} to take effect during the dynamic scope of its body, unless there is an outer @code{mp:without-interrupts} without a corresponding @code{mp:allow-with-interrupts}.
 
-@code{ext:with-local-interrupts} executes its body with interrupts enabled provided that for there is an @code{ext:allow-with-interrupts} for every @code{ext:without-interrupts} surrounding the current one. @code{ext:with-local-interrupts} is equivalent to:
+@code{mp:with-local-interrupts} executes its body with interrupts enabled provided that there is an @code{mp:allow-with-interrupts} for every @code{mp:without-interrupts} surrounding the current one. @code{mp:with-local-interrupts} is equivalent to:
 
 @verbatim
   (allow-with-interrupts (with-interrupts ...))
 @end verbatim
 
-Care must be taken not to let either ext:allow-with-interrupts or ext:with-local-interrupts appear in a function that escapes from inside the ext:without-interrupts in:
+Care must be taken not to let either @code{mp:allow-with-interrupts} or @code{mp:with-local-interrupts} appear in a function that escapes from inside the @code{mp:without-interrupts} in:
 
 @verbatim
   (without-interrupts
