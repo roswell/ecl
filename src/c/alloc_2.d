@@ -103,8 +103,11 @@ out_of_memory(size_t requested_bytes)
   int interrupts = the_env->disable_interrupts;
   int method = 0;
   void *output;
-  if (!interrupts)
-    ecl_disable_interrupts_env(the_env);
+  /* Disable interrupts only with the ext::*interrupts-enabled*
+   * mechanism to allow for writes in the thread local environment */
+  if (interrupts)
+    ecl_enable_interrupts_env(the_env);
+  ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
   /* Free the input / output buffers */
   the_env->string_pool = ECL_NIL;
 
@@ -151,11 +154,10 @@ out_of_memory(size_t requested_bytes)
 #ifdef ECL_THREADS
   ECL_UNWIND_PROTECT_EXIT {
     mp_giveup_lock(cl_core.error_lock);
-    ecl_enable_interrupts_env(the_env);
   } ECL_UNWIND_PROTECT_END;
-#else
-  ecl_enable_interrupts_env(the_env);
 #endif
+  ecl_bds_unwind1(the_env);
+  ecl_check_pending_interrupts(the_env);
   switch (method) {
   case 0: cl_error(1, @'ext::storage-exhausted');
     break;

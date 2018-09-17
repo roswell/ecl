@@ -601,9 +601,10 @@ mp_process_enable(cl_object process)
     }
 #endif
     ecl_enable_interrupts_env(the_env);
-  } ECL_UNWIND_PROTECT_EXIT {
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     if (!ok) {
-      /* INV: interrupts are already disabled through unwind-protect */
+      /* INV: interrupts are already disabled through thread safe
+       * unwind-protect */
       ecl_unlist_process(process);
       /* Disable the barrier and alert possible waiting processes. */
       mp_barrier_unblock(3, process->process.exit_barrier,
@@ -615,7 +616,7 @@ mp_process_enable(cl_object process)
     }
     /* Unleash the thread */
     ecl_giveup_spinlock(&process->process.start_stop_spinlock);
-  } ECL_UNWIND_PROTECT_END;
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
 
   @(return (ok? process : ECL_NIL));
 }

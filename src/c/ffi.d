@@ -696,9 +696,9 @@ si_load_foreign_module(cl_object filename)
     }
 # ifdef ECL_THREADS
     (void)0; /* MSVC complains about missing ';' before '}' */
-  } ECL_UNWIND_PROTECT_EXIT {
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
-  } ECL_UNWIND_PROTECT_END;
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
 # endif
   if (ecl_unlikely(ecl_t_of(output) != t_codeblock)) {
     FEerror("LOAD-FOREIGN-MODULE: Could not load "
@@ -728,9 +728,9 @@ si_unload_foreign_module(cl_object module)
     if (ecl_likely(ecl_library_close(module))) output = ECL_T;
 # ifdef ECL_THREADS
     (void)0; /* MSVC complains about missing ';' before '}' */
-  } ECL_UNWIND_PROTECT_EXIT {
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     mp_giveup_lock(ecl_symbol_value(@'mp::+load-compile-lock+'));
-  } ECL_UNWIND_PROTECT_END;
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
 # endif
   @(return output);
 #endif

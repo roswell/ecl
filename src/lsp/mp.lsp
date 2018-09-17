@@ -42,7 +42,7 @@ dynamic scope of its body, unless there is an outer WITHOUT-INTERRUPTS without
 a corresponding ALLOW-WITH-INTERRUPTS.
 
 WITH-LOCAL-INTERRUPTS executes its body with interrupts enabled provided that
-for there is an ALLOW-WITH-INTERRUPTS for every WITHOUT-INTERRUPTS surrounding
+there is an ALLOW-WITH-INTERRUPTS for every WITHOUT-INTERRUPTS surrounding
 the current one. WITH-LOCAL-INTERRUPTS is equivalent to:
 
   (allow-with-interrupts (with-interrupts ...))

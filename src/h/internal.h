@@ -383,18 +383,18 @@ extern void cl_write_object(cl_object x, cl_object stream);
         ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
         ecl_enable_interrupts_env(__ecl_the_env);
 # define ECL_WITH_LOCK_END                               \
-        ECL_UNWIND_PROTECT_EXIT {                        \
+        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
                 mp_giveup_lock(__ecl_the_lock);          \
-        } ECL_UNWIND_PROTECT_END; }
+        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
 # define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {         \
         const cl_env_ptr __ecl_the_env = (the_env);      \
         cl_object *__ecl_the_lock = (lock);              \
         ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
         ecl_get_spinlock(__ecl_the_env, __ecl_the_lock);
 # define ECL_WITH_SPINLOCK_END                           \
-        ECL_UNWIND_PROTECT_EXIT {                        \
+        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
                 ecl_giveup_spinlock(__ecl_the_lock);     \
-        } ECL_UNWIND_PROTECT_END; }
+        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
 #else
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
 # define ECL_WITH_GLOBAL_LOCK_END
