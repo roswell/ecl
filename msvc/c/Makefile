@@ -43,7 +43,6 @@ ECL_USE_DBGHELP_FLAG=0
 
 # Programs used by "make":
 #
-TRUE_CC = cl
 CC	= cl
 CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private -I$(srcdir)/unicode
 
@@ -145,7 +144,7 @@ cut.exe: $(top_srcdir)/util/cut.c
 
 ..\eclmin.lib: $(OBJS:.obj=.c) all_symbols.c $(OBJS) all_symbols.obj all_symbols2.obj
 	-$(RM) $@
-	$(LINK) -lib -out:$@ $(OBJS)
+	$(LINK) -lib -nologo -out:$@ $(OBJS)
 
 clean:
 	-for %f in ($(OBJS:.obj=.c) all_symbols.c) do $(RM) %f
@@ -162,7 +161,7 @@ clean:
 # Build rules
 
 $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h ../ecl/config-internal.h
-	$(TRUE_CC) -I.. -I./ $(srcdir)/dpp.c  -o $@
+	$(CC) /nologo -I.. -I./ $(srcdir)/dpp.c /Fe$@
 $(HFILES): ../ecl/config.h.msvc6 ../ecl/config-internal.h.msvc6 Makefile
 	-mkdir ..\ecl\impl
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \

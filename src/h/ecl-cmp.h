@@ -21,11 +21,15 @@
  * defined */
 #define _WINSOCKAPI_
 #endif /* __CYGWIN__ */
+#if defined(__clang__)
 /* Disable a couple of clang's more annoying diagnostics */
 #pragma clang diagnostic ignored "-Wreturn-type"
 #pragma clang diagnostic ignored "-Wunused-value"
 #pragma clang diagnostic ignored "-Wparentheses-equality"
-
+#elif defined(_MSC_VER)
+#pragma warning(disable:4715) //not all control paths return a value
+#pragma warning(disable:4716) //must return a value
+#endif
 #include <ecl/ecl.h>
 #include <math.h> /* for inline mathematics */
 #include <ecl/ecl-inl.h>
