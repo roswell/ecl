@@ -151,10 +151,11 @@ Valid values of argument OP are :READ or :WRITE
              'mp:get-rwlock-read
              'mp:get-rwlock-write)
          ,s-lock t)
-       (unwind-protect
-            (progn
-              ,@body)
-         (,(if (eq :read op)
-               'mp:giveup-rwlock-read
-               'mp:giveup-rwlock-write)
-           ,s-lock)))))
+       (mp:without-interrupts
+           (unwind-protect
+                (mp:with-restored-interrupts
+                    ,@body)
+             (,(if (eq :read op)
+                   'mp:giveup-rwlock-read
+                   'mp:giveup-rwlock-write)
+               ,s-lock))))))
