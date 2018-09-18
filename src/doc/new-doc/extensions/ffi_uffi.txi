@@ -75,7 +75,7 @@ Integer types with guaranteed bitness.
 Floating point numerals (32-bit and 64-bit).
 @item :long-double
 Floating point numeral (usually 80-bit, at least 64-bit, exact
-bitness is compiler/architecture/platform dependant).
+bitness is compiler/architecture/platform dependent).
 @item :cstring
 A @code{NULL} terminated string used for passing and returning
 characters strings with a C function.
@@ -121,7 +121,7 @@ compile-time and optionally exports the symbol from the package.
 @end lisp
 
 @subsubheading Side Effects
-Creats a new special variable.
+Creates a new special variable.
 @end defmac
 
 
@@ -146,9 +146,9 @@ Defines a new foreign type
 @subsubheading Examples
 @exindex @code{ffi:def-foreign-type} examples
 @lisp
-(def-foreign-type my-generic-pointer :pointer-void)
-(def-foreign-type a-double-float :double-float)
-(def-foreign-type char-ptr (* :char))
+(ffi:def-foreign-type my-generic-pointer :pointer-void)
+(ffi:def-foreign-type a-double-float :double-float)
+(ffi:def-foreign-type char-ptr (* :char))
 @end lisp
 
 @subsubheading Side effects
@@ -205,7 +205,7 @@ Defines a C enumeration
 @item name
 A symbol that names the enumeration.
 @item fields
-A list of field defintions. Each definition can be a symbol or a list of
+A list of field definitions. Each definition can be a symbol or a list of
 two elements. Symbols get assigned a value of the current counter which
 starts at 0 and increments by 1 for each subsequent symbol. It the field
 definition is a list, the first position is the symbol and the second
@@ -220,7 +220,7 @@ Declares a C enumeration. It generates constants with integer values for
 the elements of the enumeration. The symbols for the these constant
 values are created by the concatenation of the enumeration name,
 separator-string, and field symbol. Also creates a foreign type with the
-name name of type :int.
+name name of type @code{:int}.
 
 @subsubheading Examples
 @exindex @code{ffi:def-enum} sample enumerations
@@ -248,7 +248,7 @@ Defines a C structure
 @item name
 A symbol that names the structure. 
 @item fields
-A variable number of field defintions. Each definition is a list
+A variable number of field definitions. Each definition is a list
 consisting of a symbol naming the field followed by its foreign type.
 @end table
 
@@ -295,8 +295,8 @@ used with @code{SETF}-able.
 @subsubheading Examples
 @exindex @code{ffi:get-slot-value} manipulating a struct field
 @lisp
-(get-slot-value foo-ptr 'foo-structure 'field-name)
-(setf (get-slot-value foo-ptr 'foo-structure 'field-name) 10)
+(ffi:get-slot-value foo-ptr 'foo-structure 'field-name)
+(setf (ffi:get-slot-value foo-ptr 'foo-structure 'field-name) 10)
 @end lisp
 @end defun
 
@@ -325,7 +325,7 @@ is a pointer type.
 @subsubheading Examples
 @exindex @code{ffi:get-slot-value} usage
 @lisp
-(get-slot-pointer foo-ptr 'foo-structure 'my-char-ptr)
+(ffi:get-slot-pointer foo-ptr 'foo-structure 'my-char-ptr)
 @end lisp
 @end defun
 
@@ -349,7 +349,7 @@ Defines a type that is a pointer to an array of @var{type}.
 @subsubheading Examples
 @exindex @code{ffi:def-array-pointer} usage
 @lisp
-(def-array-pointer byte-array-pointer :unsigned-char)
+(ffi:def-array-pointer byte-array-pointer :unsigned-char)
 @end lisp
 
 @subsubheading Side effects
@@ -361,7 +361,7 @@ Defines a new foreign type.
 @lspindex ffi:deref-array
 @defun ffi:deref-array array type position
 
-Deference an array
+Dereference an array
 
 @table @var
 @item array
@@ -557,7 +557,7 @@ Returns the address as an integer of a pointer.
 @lspindex ffi:deref-pointer
 @defun ffi:deref-pointer ptr ftype
 
-Deferences a pointer
+Dereferences a pointer
 
 @table @var
 @item ptr
@@ -725,7 +725,7 @@ Defines a symbol macro to access a variable in foreign code
 
 @table @var
 @item name
-A string or list specificying the symbol macro's name. If it is a
+A string or list specifying the symbol macro's name. If it is a
 string, that names the foreign variable. A Lisp name is created by
 translating @code{#\_} to @code{#\-} and by converting to upper-case in
 case-insensitive Lisp implementations.
@@ -790,13 +790,13 @@ Lisp code defining C structure, function and a variable:
 @subsubheading Overview
 @cindex @code{cstring} and @code{foreign string} differences
 
-UFFI has functions to two types of C-compatible strings: @code{cstring}
-and foreign strings. @code{cstrings} are used only as parameters to and
-from functions. In some implementations a @code{cstring} is not a
-foreign type but rather the Lisp string itself. On other platforms a
-cstring is a newly allocated foreign vector for storing characters. The
-following is an example of using cstrings to both send and return a
-value.
+UFFI has functions to two types of C-compatible strings:
+@code{cstring} and foreign strings. @code{cstring}s are used only as
+parameters to and from functions. In some implementations a
+@code{cstring} is not a foreign type but rather the Lisp string
+itself. On other platforms a cstring is a newly allocated foreign
+vector for storing characters. The following is an example of using
+@code{cstring}s to both send and return a value.
 
 @exindex @code{cstring} used to send and return a value
 @lisp
@@ -885,8 +885,8 @@ Lisp string
 @end table
 
 @subsubheading Description
-Converts a Lisp string to a cstring. The cstring should be freed with
-free-cstring.
+Converts a Lisp string to a @code{cstring}. The @code{cstring} should
+be freed with @code{free-cstring}.
 @subsubheading Side Effects
 This function allocates memory.
 @end defmac
@@ -900,8 +900,8 @@ Free memory used by @var{cstring}
 @code{cstring} to be freed.
 @end table
 @subsubheading Description
-Frees any memory possibly allocated by convert-to-cstring. On ECL, a
-cstring is just the Lisp string itself.
+Frees any memory possibly allocated by @code{convert-to-cstring}. On ECL, a
+@code{cstring} is just the Lisp string itself.
 @end defmac
 
 
@@ -964,13 +964,13 @@ A foreign string.
 The length of the foreign string to convert. The default is the length
 of the string until a NULL character is reached.
 @item null-terminated-p
-A boolean flag with a default value of T When true, the string is
+A boolean flag with a default value of @code{T}. When true, the string is
 converted until the first NULL character is reached.
 @item returns
 A Lisp string.
 @end table
 @subsubheading Description
-Returns a Lisp string from a foreign string. Can translated ASCII and
+Returns a Lisp string from a foreign string. Can translate ASCII and
 binary strings.
 @end defmac
 
@@ -985,7 +985,7 @@ A foreign string.
 @end table
 @subsubheading Description
 Converts a Lisp string to a foreign string. Memory should be freed with
-free-foreign-object.
+@code{free-foreign-object}.
 @end defmac
 
 @lspindex ffi:allocate-foreign-string
@@ -995,14 +995,14 @@ Allocates space for a foreign string
 @item size
 The size of the space to be allocated in bytes.
 @item unsigned
-A boolean flag with a default value of T. When true, marks the pointer
-as an :unsigned-char.
+A boolean flag with a default value of @code{T}. When true, marks the pointer
+as an @code{:unsigned-char}.
 @item returns
 A foreign string which has undefined contents.
 @end table
 @subsubheading Description
 Allocates space for a foreign string. Memory should be freed with
-free-foreign-object.
+@code{free-foreign-object}.
 @end defmac
 
 @lspindex ffi:with-foreign-string
@@ -1053,7 +1053,7 @@ works similar to @code{LET*}. Based on @code{with-foreign-string}.
 @defmac ffi:def-function name args &key module (returning :void) (call :cdecl)
 @table @var
 @item name
-A string or list specificying the function name. If it is a string, that
+A string or list specifying the function name. If it is a string, that
 names the foreign function. A Lisp name is created by translating
 @code{#\_} to @code{#\-} and by converting to upper-case in
 case-insensitive Lisp implementations. If it is a list, the first item
@@ -1082,10 +1082,10 @@ Declares a foreign function.
 @subsubheading Examples
 @exindex @code{ffi:def-function}
 @lisp
-(def-function "gethostname"
+(ffi:def-function "gethostname"
     ((name (* :unsigned-char))
      (len :int))
-  :returning) :int)
+  :returning :int)
 @end lisp
 @end defmac
 
@@ -1111,7 +1111,7 @@ and DFFI are used, but SFFI only during the compilation.
 @item returns
 A generalized boolean @emph{true} if the library was able to be loaded
 successfully or if the library has been previously loaded, otherwise
-NIL.
+@code{NIL}.
 @end table
 @subsubheading Description
 Loads a foreign library. Ensures that a library is only loaded once
@@ -1142,11 +1142,11 @@ A string or list of strings containing the drive letters for the library
 file.
 @item types
 A string or list of strings containing the file type of the library
-file. Default is NIL. If NIL, will use a default type based on the
-currently running implementation.
+file. Default is @code{NIL}. If @code{NIL}, will use a default type
+based on the currently running implementation.
 @item returns
-A path containing the path to the @emph{first} file found, or NIL if the
-library file was not found.
+A path containing the path to the @emph{first} file found, or
+@code{NIL} if the library file was not found.
 @end table
 @subsubheading Description
 Finds a foreign library by searching through a number of possible

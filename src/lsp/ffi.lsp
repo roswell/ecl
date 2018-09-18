@@ -457,7 +457,7 @@ See: WITH-CSTRING. Works similar to LET*."
          foreign-string &key length (null-terminated-p t)
 
 Returns a Lisp string from a foreign string FOREIGN-STRING. Can
-translated ASCII and binary strings."
+translate ASCII and binary strings."
   (cond ((and (not length) null-terminated-p)
          (setf length (foreign-string-length foreign-string)))
         ((not (integerp length))
@@ -841,9 +841,8 @@ The compiler defines a Lisp function named by NAME whose body consists
 of a calling sequence to the C language function named by
 FUNCTION-NAME.
 
-The interpreter ignores this form.  ARG-TYPES are argument types of
-the C function and RESULT-TYPE is its return type. Symbols OBJECT,
-INT, CHAR, CHAR*, FLOAT, DOUBLE are allowed for these types."
+The interpreter ignores this form. ARG-TYPES are argument types of
+the C function and RESULT-TYPE is its return type."
   (let ((output-type :object)
         (args (mapcar #'(lambda (x) (gensym)) arg-types)))
     (if (consp c-name)

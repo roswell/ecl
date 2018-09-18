@@ -29,13 +29,14 @@ statements. All statements from @var{arguments} are grouped at the
 beginning of the produced header file.
 
 @code{FFI:CLINES} is a special form that can only be used in lisp
-compiled files as a toplevel form.  Other uses will lead to an error
-being signaled, either at the compilation time or when loading the file.
+compiled files as a toplevel form. Other uses will lead to an error
+being signaled, either at the compilation time or when loading the
+file.
 
 @subsubheading Examples
 @exindex @code{ffi:clines} adding c toplevel declarations
-In this example the FFI:CLINES statement is required to get access to
-the C function @code{cos}:
+In this example the @code{FFI:CLINES} statement is required to get
+access to the C function @code{cos}:
 @lisp
 (ffi:clines "#include <math.h>")
 (defun cos (x)
@@ -60,10 +61,10 @@ Valid FFI type or (VALUES ffi-type*).
 String containing valid C code plus some valid escape forms.
 @item one-liner
 Boolean indicating, if the expression is a valid R-value. Defaults to
-NIL.
+@code{NIL}.
 @item side-effects
 Boolean indicating, if the expression causes side effects. Defaults to
-T.
+@code{T}.
 @item returns
 One or more lisp values.
 @end table
@@ -233,9 +234,10 @@ Defined function name.
 @end table
 
 @subsubheading Description
-The compiler defines a Lisp function named by NAME whose body consists
-of the C code of the string C-EXPRESSION. In the C-EXPRESSION one can
-reference the arguments of the function as @code{#0}, @code{#1}, etc.
+The compiler defines a Lisp function named by @var{NAME} whose body
+consists of the C code of the string @var{C-EXPRESSION}. In the
+@var{C-EXPRESSION} one can reference the arguments of the function as
+@code{#0}, @code{#1}, etc.
 
 The interpreter ignores this form.
 @end defmac
@@ -248,14 +250,13 @@ The interpreter ignores this form.
 Lisp name for the function.
 
 @item arg-types
-Argument types of the C function (one of the symbols OBJECT, INT, CHAR,
-CHAR*, FLOAT, DOUBLE).
+Argument types of the C function.
 
 @item c-name 
 If @var{C-NAME} is a list, then C function result type is declared as
 @code{(CAR C-NAME)} and its name is @code{(STRING (CDR C-NAME))}.
 
-If it's an atom, then the result type is @code{OBJECT}, and function
+If it's an atom, then the result type is @code{:OBJECT}, and function
 name is @code{(STRING C-NAME)}.
 
 @item returns
@@ -263,12 +264,11 @@ Lisp function @code{NAME}.
 @end table
 
 @subsubheading Description
-The compiler defines a Lisp function named by NAME whose body consists
-of a calling sequence to the C language function named by FUNCTION-NAME.
+The compiler defines a Lisp function named by @var{NAME} whose body
+consists of a calling sequence to the C language function named by
+@var{C-NAME}.
 
-The interpreter ignores this form.  ARG-TYPES are argument types of the
-C function and RESULT-TYPE is its return type. Symbols OBJECT, INT,
-CHAR, CHAR*, FLOAT, DOUBLE are allowed for these types.
+The interpreter ignores this form.
 @end defmac
 
 @c XXX> note sure if this works
