@@ -504,11 +504,11 @@ FREE-FOREIGN-OBJECT. Initial contents of the string are undefined."
 
 Binds FOREIGN-STRING to a foreign string created from conversion of a
 STRING and evaluated the BODY. Automatically frees the FOREIGN-STRING."
-  (let ((result (gensym)))
-    `(let* ((,foreign-string (convert-to-foreign-string ,lisp-string))
-            (,result (progn ,@body)))
-       (free-foreign-object ,foreign-string)
-       ,result)))
+  `(let* ((,foreign-string (convert-to-foreign-string ,lisp-string)))
+     (mp:without-interrupts
+         (unwind-protect
+              (mp:with-restored-interrupts ,@body)
+           (free-foreign-object ,foreign-string)))))
 
 (defmacro with-foreign-strings (bindings &rest body)
   "Syntax: (with-foreign-strings ((foreign-string string)*) &body body)
@@ -530,9 +530,10 @@ See: WITH-FOREIGN-STRING. Works similar to LET*."
 Wraps the allocation, binding and destruction of a foreign object
 around a body of code"
   `(let ((,var (allocate-foreign-object ,type)))
-     (unwind-protect
-         (progn ,@body)
-       (free-foreign-object ,var))))
+     (mp:without-interrupts
+         (unwind-protect
+              (mp:with-restored-interrupts ,@body)
+           (free-foreign-object ,var)))))
 
 (defmacro with-foreign-objects (bindings &rest body)
   (if bindings
