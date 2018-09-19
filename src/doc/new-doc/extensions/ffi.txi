@@ -4,7 +4,7 @@
 @ftindex FFI
 
 @menu
-* What is a FFI?:: FFI introduciton
+* What is a FFI?:: FFI introduction
 * Two kinds of FFI:: ECL's FFI brief description
 * Foreign objects:: Handling the foreign objects
 * Higher level interfaces:: Usage examples
@@ -50,7 +50,7 @@ sections.
 @node Two kinds of FFI
 @subsection Two kinds of FFI
 @cindex Two kinds of FFI
-ECL allows for two different appraoches when building a FFI. Both
+ECL allows for two different approaches when building a FFI. Both
 approaches have a different implementation philosophy and affect the
 places where you can use the FFI and how.
 
@@ -90,7 +90,7 @@ foreign-function interface library.
 @image{figures/ffi,,1.5in}
 @end float
 
-As you see, the first approach uses rather portable technices based on a
+As you see, the first approach uses rather portable techniques based on a
 programming language (C, C++) which is strongly supported by the
 operating system. The conversion of data is performed by a calling
 routines in the ECL library and we need not care about the precise
@@ -143,27 +143,28 @@ The most important component of the object is the memory region where
 data is stored. By default ECL assumes that the user will perform
 automatic management of this memory, deleting the object when it is no
 longer needed. The first reason is that this block may have been
-allocated by a foreign routine using malloc(), or mmap(), or statically,
-by referring to a C constant. The second reason is that foreign
-functions may store references to this memory which ECL is not aware of
-and, in order to keep these references valid, ECL should not attempt to
-automatically destroy the object.
+allocated by a foreign routine using @code{malloc()}, or
+@code{mmap()}, or statically, by referring to a C constant. The second
+reason is that foreign functions may store references to this memory
+which ECL is not aware of and, in order to keep these references
+valid, ECL should not attempt to automatically destroy the object.
 
 In many cases, however, it is desirable to automatically destroy foreign
 objects once they have been used. The higher level interfaces UFFI and
 CFFI provide tools for doing this. For instance, in the following
-example adapted from the UFFI documentation, the string NAME is
+example adapted from the UFFI documentation, the string @var{NAME} is
 automatically deallocated
 
 @lisp
-(def-function "gethostname" 
+(ffi:def-function ("gethostname" c-gethostname)
   ((name (* :unsigned-char))
    (len :int))
   :returning :int)
 
-(if (zerop (c-gethostname (ffi:char-array-to-pointer name) 256))
-    (format t "Hostname: ~S" (ffi:convert-from-foreign-string name))
-    (error "gethostname() failed."))
+(ffi:with-foreign-object (name '(:array :unsigned-char 256))
+    (if (zerop (c-gethostname (ffi:char-array-to-pointer name) 256))
+        (format t "Hostname: ~S" (ffi:convert-from-foreign-string name))
+        (error "gethostname() failed.")))
 @end lisp
 
 @node Higher level interfaces
