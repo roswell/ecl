@@ -36,7 +36,7 @@
 ;;;     Adapted for X3J13 by Stephen L Nicoud, 91/5/23
 ;;;     Adapted for ECL by Giuseppe Attardi, 6/6/1994.
 ;;;     Partially rewritten by Daniel Kochmański, 2017-05-01
-;;; 
+;;;
 ;;; -----------------------------------------------------------------
 
 (in-package "SYSTEM")
@@ -46,9 +46,9 @@
   "DEFPACKAGE - DEFINED-PACKAGE-NAME {OPTION}*                  [Macro]
 
    This creates a new package, or modifies an existing one, whose name is
-   DEFINED-PACKAGE-NAME.  The DEFINED-PACKAGE-NAME may be a string or a 
+   DEFINED-PACKAGE-NAME.  The DEFINED-PACKAGE-NAME may be a string or a
    symbol; if it is a symbol, only its print name matters, and not what
-   package, if any, the symbol happens to be in.  The newly created or 
+   package, if any, the symbol happens to be in.  The newly created or
    modified package is returned as the value of the DEFPACKAGE form.
 
    Each standard OPTION is a list of keyword (the name of the option)
@@ -79,101 +79,108 @@
          symbol is exported from the package being created.]"
 
   (flet ((designators (values)
-	   (mapcar #'string values)))
+           (mapcar #'string values)))
     (let ((nicknames nil)
-	  (documentation nil)
-	  (shadowed-symbol-names nil)
-	  (interned-symbol-names nil)
-	  (exported-symbol-names nil)
-	  (shadowing-imported-from-symbol-names-list nil)
-	  (imported-from-symbol-names-list nil)
-	  (exported-from-package-names nil)
-	  (use nil)
-	  (use-p nil)
-	  (lock nil)
-	  (local-nicknames nil))
+          (documentation nil)
+          (size nil)
+          (shadowed-symbol-names nil)
+          (interned-symbol-names nil)
+          (exported-symbol-names nil)
+          (shadowing-imported-from-symbol-names-list nil)
+          (imported-from-symbol-names-list nil)
+          (exported-from-package-names nil)
+          (use nil)
+          (use-p nil)
+          (lock nil)
+          (local-nicknames nil))
       (dolist (option options)
-	(case (car option)
-	  (:nicknames
-	   (setf nicknames (append nicknames (designators (rest option)))))
-	  (:documentation
-	   (when documentation
-	     (si:simple-program-error
-	      "DEFPACKAGE option :DOCUMENTATION specified more than once."))
-	   (setf documentation (second option)))
-	  (:use
-	   (setf use (append use (designators (rest option)))
-		 use-p t))
-	  (:shadow
-	   (setf shadowed-symbol-names
-		 (append shadowed-symbol-names (designators (rest option)))))
-	  (:intern
-	   (setf interned-symbol-names
-		 (append interned-symbol-names (designators (rest option)))))
-	  (:export
-	   (setf exported-symbol-names
-		 (append exported-symbol-names (designators (rest option)))))
-	  (:shadowing-import-from
-	   (destructuring-bind (package-name . names)
-	       (designators (rest option))
-	     (let ((assoc (assoc package-name shadowing-imported-from-symbol-names-list
-				 :test #'string=)))
-	       (if assoc
-		   (setf (cdr assoc) (append (cdr assoc) names))
-		   (setf shadowing-imported-from-symbol-names-list
-			 (acons package-name names shadowing-imported-from-symbol-names-list))))))
-	  (:import-from
-	   (destructuring-bind (package-name . names)
-	       (designators (rest option))
-	     (let ((assoc (assoc package-name imported-from-symbol-names-list
-				 :test #'string=)))
-	       (if assoc
-		   (setf (cdr assoc) (append (cdr assoc) names))
-		   (setf imported-from-symbol-names-list
-			 (acons package-name names imported-from-symbol-names-list))))))
-	  ;; extensions
-	  (:export-from
-	   (setf exported-from-package-names
-		 (append exported-from-package-names (designators (rest option)))))
-	  (:size #+ (or) "we silently ignore `:size' option")
-	  (:lock
-	   (when lock
-	     (si:simple-program-error
-	      "DEFPACKAGE option :LOCK specified more than once.")
-	     (setf lock (second option))))
-	  (:local-nicknames
-	   (setf local-nicknames
-		 (append local-nicknames
-			 (mapcar (lambda (spec)
-				   (destructuring-bind (nick name) spec
-				     (cons nick name)))
-				 (rest option)))))
-	  ;; unknown
-	  (otherwise
-	   (cerror "Proceed, ignoring this option."
-		   "~s is not a valid DEFPACKAGE option." option))))
+        (case (car option)
+          (:nicknames
+           (setf nicknames (append nicknames (designators (rest option)))))
+          (:documentation
+           (when documentation
+             (si:simple-program-error
+              "DEFPACKAGE option :DOCUMENTATION specified more than once."))
+           (setf documentation (second option)))
+          (:use
+           (setf use (append use (designators (rest option)))
+                 use-p t))
+          (:shadow
+           (setf shadowed-symbol-names
+                 (append shadowed-symbol-names (designators (rest option)))))
+          (:intern
+           (setf interned-symbol-names
+                 (append interned-symbol-names (designators (rest option)))))
+          (:export
+           (setf exported-symbol-names
+                 (append exported-symbol-names (designators (rest option)))))
+          (:shadowing-import-from
+           (destructuring-bind (package-name . names)
+               (designators (rest option))
+             (let ((assoc (assoc package-name shadowing-imported-from-symbol-names-list
+                                 :test #'string=)))
+               (if assoc
+                   (setf (cdr assoc) (append (cdr assoc) names))
+                   (setf shadowing-imported-from-symbol-names-list
+                         (acons package-name names shadowing-imported-from-symbol-names-list))))))
+          (:import-from
+           (destructuring-bind (package-name . names)
+               (designators (rest option))
+             (let ((assoc (assoc package-name imported-from-symbol-names-list
+                                 :test #'string=)))
+               (if assoc
+                   (setf (cdr assoc) (append (cdr assoc) names))
+                   (setf imported-from-symbol-names-list
+                         (acons package-name names imported-from-symbol-names-list))))))
+          (:size
+           ;; Size is ignored for all we care, but standard mandates signalling
+           ;; error if size is passed twice in DEFPACKAGE.
+           (when size
+             (si:simple-program-error
+              "DEFPACKAGE option :SIZE specified more than once."))
+           (setf size (second option)))
+          ;; extensions
+          (:export-from
+           (setf exported-from-package-names
+                 (append exported-from-package-names (designators (rest option)))))
+          (:lock
+           (when lock
+             (si:simple-program-error
+              "DEFPACKAGE option :LOCK specified more than once.")
+             (setf lock (second option))))
+          (:local-nicknames
+           (setf local-nicknames
+                 (append local-nicknames
+                         (mapcar (lambda (spec)
+                                   (destructuring-bind (nick name) spec
+                                     (cons nick name)))
+                                 (rest option)))))
+          ;; unknown
+          (otherwise
+           (cerror "Proceed, ignoring this option."
+                   "~s is not a valid DEFPACKAGE option." option))))
       (check-disjoint `(:intern ,@interned-symbol-names)
-		      `(:export ,@exported-symbol-names))
+                      `(:export ,@exported-symbol-names))
       (check-disjoint `(:intern ,@interned-symbol-names)
-		      `(:import-from
-			,@(apply #'append (mapcar #'rest imported-from-symbol-names-list)))
-		      `(:shadow ,@shadowed-symbol-names)
-		      `(:shadowing-import-from
-			,@(apply #'append (mapcar #'rest shadowing-imported-from-symbol-names-list))))
+                      `(:import-from
+                        ,@(apply #'append (mapcar #'rest imported-from-symbol-names-list)))
+                      `(:shadow ,@shadowed-symbol-names)
+                      `(:shadowing-import-from
+                        ,@(apply #'append (mapcar #'rest shadowing-imported-from-symbol-names-list))))
       `(eval-when (eval compile load)
-	 (si::dodefpackage
-	  ,(string name)
-	  ',nicknames
-	  ,documentation
-	  ,(cadr (assoc ':lock options))
-	  ',(if use-p use "CL")
-	  ',local-nicknames
-	  ',shadowed-symbol-names
-	  ',interned-symbol-names
-	  ',exported-symbol-names
-	  ',shadowing-imported-from-symbol-names-list
-	  ',imported-from-symbol-names-list
-	  ',exported-from-package-names)))))
+         (si::dodefpackage
+          ,(string name)
+          ',nicknames
+          ,documentation
+          ,(cadr (assoc ':lock options))
+          ',(if use-p use "CL")
+          ',local-nicknames
+          ',shadowed-symbol-names
+          ',interned-symbol-names
+          ',exported-symbol-names
+          ',shadowing-imported-from-symbol-names-list
+          ',imported-from-symbol-names-list
+          ',exported-from-package-names)))))
 
 (defun check-disjoint (&rest args)
   (declare (si::c-local))
