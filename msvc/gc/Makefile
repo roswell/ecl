@@ -32,13 +32,13 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 all: gc.lib
 
 {$(srcdir)\extra}.c{}.obj:
-	$(CC) -c -DWIN32 -D_MT $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
+	$(CC) -nologo -c -DWIN32 -D_MT $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
 
 {$(srcdir)}.c{}.obj:
-	$(CC) -c -DWIN32 -D_MT $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
+	$(CC) -nologo -c -DWIN32 -D_MT $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
 
 {$(srcdir)}.cpp{}.obj:
-	$(CC) -c -DWIN32 -D_MT $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
+	$(CC) -nologo -c -DWIN32 -D_MT $(CFLAGS_CONFIG) -Iinclude -I$(AO_INCLUDE_DIR) $(THREADS_FLAGS) -I$(srcdir)\include $< /Fo$*.obj
 
 gc.lib: $(OBJS)
 !if "$(CPU)" == "i386"

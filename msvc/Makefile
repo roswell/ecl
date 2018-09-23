@@ -345,7 +345,7 @@ ecl-cc.bat: util\ecl-cc.bat Makefile
 
 eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd c
-	$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
+	$(MAKE) /nologo ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
 		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
 		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
@@ -353,7 +353,7 @@ eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd ..
 eclgc.lib:
 	cd gc
-	$(MAKE) $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" gc.lib
+	$(MAKE) /nologo $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" gc.lib
 	$(CP) gc.lib ..\eclgc.lib
 	cd ..
 	if not exist ecl\gc $(MKDIR) ecl\gc
@@ -366,7 +366,7 @@ eclgc.lib:
 
 eclgmp.lib:
 	cd gmp
-	$(MAKE) "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
+	$(MAKE) /nologo "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
 		"BITS=$(GMP_BITS)" "YASM=$(YASM)"
 	$(CP) gmp.lib ..\eclgmp.lib
 	$(CP) gmp.h ..\ecl\gmp.h
@@ -391,7 +391,7 @@ install:
 	IF EXIST "$(include)\ecl\atomic_ops" rmdir /S /Q "$(include)\ecl\atomic_ops"
 	IF EXIST "ecl\atomic_ops" xcopy /S /Y "ecl\atomic_ops" "$(includedir)\atomic_ops\"
 	cd c
-	$(MAKE) cut.exe
+	$(MAKE) /nologo cut.exe
 	cd ..
 	c\cut.exe < ecl\config.h > $(includedir)\ecl\config.h
 	IF NOT EXIST "$(libdir)" $(MKDIR) "$(libdir)"
@@ -408,15 +408,15 @@ install:
 
 check: package\ecl.exe
 	cd tests
-	$(MAKE)
+	$(MAKE) /nologo 
 
 recheck: package\ecl.exe
 	cd tests
-	$(MAKE) clean
-	$(MAKE)
+	$(MAKE) /nologo clean
+	$(MAKE) /nologo 
 
 package\ecl.exe: ecl2$(EXE)
-	$(MAKE) install ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) 
+	$(MAKE) /nologo install ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) 
 
 windows-nsi:
 	IF EXIST "$(TAR_DIR)" $(RMDIR) "$(TAR_DIR)"
@@ -432,7 +432,7 @@ clean: clean_ecl clean_lisp
 	-$(RM) .gdbinit cinit.lib ecl_min.lib
 	-$(RM) bdwgc\*.pdb
 	cd gc
-	-$(MAKE) $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" clean
+	-$(MAKE) /nologo $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" clean
 	cd ..
 	-for %h in (gc.h gc_local_alloc.h gc_pthread_redirects.h \
 	            gc_config_macros.h leak_detector.h gc_typed.h \
@@ -441,7 +441,7 @@ clean: clean_ecl clean_lisp
 	-$(RMDIR) ecl\gc\private
 	-$(RMDIR) ecl\gc
 	cd gmp
-	-$(MAKE) "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
+	-$(MAKE) /nologo "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
 		"BITS=$(GMP_BITS)" "YASM=$(YASM)" clean
 	cd ..
 	-$(RM) ecl\gmp.h
@@ -454,7 +454,7 @@ clean_ecl:
 		    ecl-cc.bat ecl.rc ecl.res) \
 	     do $(RM) %i
 	cd c
-	-$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
+	-$(MAKE) /nologo ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
 		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
 		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
