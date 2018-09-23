@@ -110,24 +110,20 @@
 ;;; file-* should be passed to the /last/ component.
 (test ansi.21-2.last-component
   (ensure-directories-exist *tmp-dir*)
-  (let ((p1 (merge-pathnames "s1.txt" *tmp-dir*))
-        (p2 (merge-pathnames "s2.txt" *tmp-dir*)))
-    (with-open-file (first-stream p2 :direction :output
-                                  :if-exists :supersede
-                                  :if-does-not-exist :create)
-      (with-open-file (last-stream p1 :direction :output
-                                   :if-exists :supersede
-                                   :if-does-not-exist :create)
-        (format last-stream "Hello world!~%")
-        (finish-output last-stream)     ; for buffered streams
-        (is (= (file-length first-stream) 0))
-        (is (= (file-length last-stream) 13))
-        (let ((broadcast (make-broadcast-stream first-stream last-stream)))
-          (is (= 13 (file-length broadcast) (file-length last-stream)))
-          (is (= 13 (file-position broadcast) (file-position last-stream)))
-          (is (= 2
-                 (file-string-length broadcast "jd")
-                 (file-string-length last-stream "jd"))))))))
+  (let ((first-stream (make-string-output-stream)))
+    (with-open-file (last-stream (merge-pathnames "ss.txt" *tmp-dir*)
+                                 :direction :output
+                                 :if-exists :supersede
+                                 :if-does-not-exist :create)
+      (format last-stream "Hello world!~%")
+      (finish-output last-stream)     ; for buffered streams
+      (is (= (file-length last-stream) 13))
+      (let ((broadcast (make-broadcast-stream first-stream last-stream)))
+        (is (= 13 (file-length broadcast) (file-length last-stream)))
+        (is (= 13 (file-position broadcast) (file-position last-stream)))
+        (is (= 2
+               (file-string-length broadcast "jd")
+               (file-string-length last-stream "jd")))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
