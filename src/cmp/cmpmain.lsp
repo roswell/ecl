@@ -160,9 +160,9 @@ the environment variable TMPDIR to a different value." template))
        (progn
          (with-open-file (f "static_lib.tmp" :direction :output
                             :if-does-not-exist :create :if-exists :supersede)
-           (format f "/DEBUGTYPE:CV /OUT:~A ~A ~{~&\"~A\"~}"
+           (format f "/OUT:~A ~A ~{~&\"~A\"~}"
                    output-name o-name ld-flags))
-         (safe-run-program "link" '("-lib" "@static_lib.tmp")))
+         (safe-run-program "link" '("-lib -nologo" "@static_lib.tmp")))
     (when (probe-file "static_lib.tmp")
       (cmp-delete-file "static_lib.tmp"))))
 
