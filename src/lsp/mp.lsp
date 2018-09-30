@@ -30,7 +30,7 @@ interrupts arriving during execution of the BODY take effect after BODY has
 been executed.
 
 Deferrable interrupts include most blockable POSIX signals, and
-MP:INTERRUPT-THREAD. Does not interfere with garbage collection, and
+MP:INTERRUPT-PROCESS. Does not interfere with garbage collection, and
 unlike in many traditional Lisps using userspace threads, in ECL
 WITHOUT-INTERRUPTS does not inhibit scheduling of other threads.
 
@@ -210,9 +210,9 @@ the resulting COMPARE-AND-SWAP expansions."
 #+threads
 (defmacro defcas (accessor cas-fun &optional documentation)
   "Define a COMPARE-AND-SWAP expansion similar to the short form of DEFSETF.
-Syntax: (defsetf symbol cas-fun)
+Syntax: (defsetf accessor cas-fun)
 Defines an expansion
-        (compare-and-swap (SYMBOL arg1 ... argn) old new)
+        (compare-and-swap (ACCESSOR arg1 ... argn) old new)
         => (CAS-FUN arg1 ... argn old new)
 Note that it is up to the user of this macro to ensure atomicity for
 the resulting COMPARE-AND-SWAP expansions."
@@ -225,8 +225,7 @@ the resulting COMPARE-AND-SWAP expansions."
 
 #+threads
 (defun get-cas-expansion (place &optional environment &aux f)
-  "Args: (form)
-Returns the COMPARE-AND-SWAP expansion forms and variables as defined
+  "Returns the COMPARE-AND-SWAP expansion forms and variables as defined
 in DEFINE-CAS-EXPANDER for PLACE as six values."
   (cond ((setq f (si:get-sysprop (first place) 'CAS-EXPANDER))
          (apply f environment (rest place)))
