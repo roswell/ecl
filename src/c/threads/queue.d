@@ -16,7 +16,6 @@
 #include <signal.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-#include "threads/ecl_atomics.h"
 
 void ECL_INLINE
 ecl_process_yield()

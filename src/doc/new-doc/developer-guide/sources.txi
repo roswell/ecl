@@ -238,9 +238,6 @@ symbols on the system which aren't local.
 @tab condition variables for native threads
 @c implement me: @code{mp_condition_variable_timedwait}
 
-@item ecl_atomics.h
-@tab alternative definitions for atomic operations
-
 @item mailbox.d
 @tab thread communication queue
 

@@ -26,7 +26,7 @@
 ;;;        number of local slots.
 ;;;     b) The new local slots are filled with the value of the old
 ;;;        slots. Only the name is used, so that a new local slot may
-;;;        get the value of old slots that were eithe local or shared.
+;;;        get the value of old slots that were either local or shared.
 ;;;     c) Finally, UPDATE-INSTANCE-FOR-DIFFERENT-CLASS is invoked
 ;;;        with a copy of the instance as it looked before the change,
 ;;;        the changed instance and enough information to perform any

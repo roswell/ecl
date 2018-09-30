@@ -1034,6 +1034,38 @@ si_svset(cl_object x, cl_object index, cl_object v)
   ecl_return1(the_env, x->vector.self.t[i] = v);
 }
 
+#ifdef ECL_THREADS
+cl_object
+mp_compare_and_swap_svref(cl_object x, cl_object index, cl_object old, cl_object new)
+{
+  cl_index i;
+  if (ecl_unlikely(ecl_t_of(x) != t_vector ||
+                   (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
+                   CAR(x->vector.displaced) != ECL_NIL ||
+                   (cl_elttype)x->vector.elttype != ecl_aet_object))
+    {
+      FEwrong_type_nth_arg(@[mp::compare-and-swap-svref], 1, x, @[simple-vector]);
+    }
+  i = checked_index(@[mp::compare-and-swap-svref], x, -1, index, x->vector.dim);
+  return ecl_compare_and_swap(x->vector.self.t + i, old, new);
+}
+
+cl_object
+mp_atomic_incf_svref(cl_object x, cl_object index, cl_object increment)
+{
+  cl_index i;
+  if (ecl_unlikely(ecl_t_of(x) != t_vector ||
+                   (x->vector.flags & (ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER)) ||
+                   CAR(x->vector.displaced) != ECL_NIL ||
+                   (cl_elttype)x->vector.elttype != ecl_aet_object))
+    {
+      FEwrong_type_nth_arg(@[mp::atomic-incf-svref], 1, x, @[simple-vector]);
+    }
+  i = checked_index(@[mp::atomic-incf-svref], x, -1, index, x->vector.dim);
+  return ecl_atomic_incf(x->vector.self.t + i, increment);
+}
+#endif /* ECL_THREADS */
+
 cl_object
 cl_array_has_fill_pointer_p(cl_object a)
 {

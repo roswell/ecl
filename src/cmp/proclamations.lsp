@@ -298,7 +298,7 @@
 ; (proclamation unbound-slot-instance (condition) si::instance :predicate)
 
 #+clos
-(proclamation clos::standard-instance-set (t ext:instance t) t)
+(proclamation clos::standard-instance-set (ext:instance t t) t)
 #+clos
 (proclamation clos:std-compute-applicable-methods (generic-function list) list)
 #+clos
@@ -314,6 +314,11 @@
 #+clos
 (proclamation clos:extract-specializer-names (list) list)
 
+#+(and threads clos) (proclamation mp::compare-and-swap-standard-instance (ext:instance t t t) t)
+#+(and threads clos) (proclamation mp::compare-and-swap-slot-value (ext:instance symbol t t) t)
+#+(and threads clos) (proclamation mp::atomic-incf-standard-instance (ext:instance t fixnum) fixnum)
+#+(and threads clos) (proclamation mp::atomic-incf-slot-value (ext:instance symbol fixnum) fixnum)
+
 ;;;
 ;;; 8. STRUCTURES
 ;;;
@@ -327,6 +332,8 @@
 (proclamation si:structure-set (structure-object t fixnum t) t)
 (proclamation si:structurep (t) gen-bool :predicate)
 (proclamation si:structure-subtype-p (t t) gen-bool :predicate)
+
+#+threads (proclamation mp:compare-and-swap-structure (structure-object t fixnum t t) t)
 
 ;;;
 ;;; 9. CONDITIONS
@@ -404,6 +411,9 @@
 (proclamation si:rem-sysprop (t t) boolean)
 (proclamation si:put-properties (symbol &rest t) symbol :no-sp-change)
 
+#+threads (proclamation mp:compare-and-swap-symbol-plist (symbol list list) list)
+#+threads (proclamation mp:compare-and-swap-symbol-value (symbol t t) t)
+#+threads (proclamation mp:atomic-incf-symbol-value (symbol fixnum) fixnum)
 
 ;;;
 ;;; 11. PACKAGES
@@ -763,6 +773,11 @@
 (proclamation si:cons-cdr (cons) t :reader)
 (proclamation si::proper-list-p (t) gen-bool :predicate)
 
+#+threads (proclamation mp:compare-and-swap-car (cons t t) t)
+#+threads (proclamation mp:atomic-incf-car (cons fixnum) fixnum)
+#+threads (proclamation mp:compare-and-swap-cdr (cons t t) t)
+#+threads (proclamation mp:atomic-incf-cdr (cons fixnum) fixnum)
+
 ;;;
 ;;; 15. ARRAYS
 ;;;
@@ -846,6 +861,9 @@
 (proclamation si:svset (simple-vector ext:array-index t) t)
 (proclamation si:fill-pointer-set (vector ext:array-index) ext:array-index)
 (proclamation si:replace-array (array array) array)
+
+#+threads (proclamation mp:compare-and-swap-svref (simple-vector ext:array-index t t) t)
+#+threads (proclamation mp:atomic-incf-svref (simple-vector ext:array-index fixnum) fixnum)
 
 ;;;
 ;;; 16. STRINGS
@@ -1395,6 +1413,9 @@
 
 #+clos
 (proclamation clos::load-defclass (t t t t) t)
+
+#+(and threads clos) (proclamation mp:compare-and-swap-instance (t fixnum t t) t)
+#+(and threads clos) (proclamation mp:atomic-incf-instance (t fixnum fixnum) fixnum)
 
 ;;;
 ;;; A. FFI

@@ -141,6 +141,58 @@ si_instance_set(cl_object x, cl_object index, cl_object value)
   @(return value);
 }
 
+#ifdef ECL_THREADS
+cl_object
+ecl_compare_and_swap_instance(cl_object x, cl_fixnum i, cl_object old, cl_object new)
+{
+  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-instance], 1, x, @[ext::instance]);
+  if (ecl_unlikely(i >= x->instance.length || i < 0))
+    FEtype_error_index(x, i);
+  return ecl_compare_and_swap(x->instance.slots + i, old, new);
+}
+
+cl_object
+mp_compare_and_swap_instance(cl_object x, cl_object index, cl_object old, cl_object new)
+{
+  cl_fixnum i;
+
+  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-instance], 1, x, @[ext::instance]);
+  if (ecl_unlikely(!ECL_FIXNUMP(index)))
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-instance], 2, index, @[fixnum]);
+  i = ecl_fixnum(index);
+  if (ecl_unlikely(i >= (cl_fixnum)x->instance.length || i < 0))
+    FEtype_error_index(x, i);
+  return ecl_compare_and_swap(x->instance.slots + i, old, new);
+}
+
+cl_object
+ecl_atomic_incf_instance(cl_object x, cl_fixnum i, cl_object increment)
+{
+  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+    FEwrong_type_nth_arg(@[mp::atomic-incf-instance], 1, x, @[ext::instance]);
+  if (ecl_unlikely(i >= x->instance.length || i < 0))
+    FEtype_error_index(x, i);
+  return ecl_atomic_incf(x->instance.slots + i, increment);
+}
+
+cl_object
+mp_atomic_incf_instance(cl_object x, cl_object index, cl_object increment)
+{
+  cl_fixnum i;
+
+  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+    FEwrong_type_nth_arg(@[mp::atomic-incf-instance], 1, x, @[ext::instance]);
+  if (ecl_unlikely(!ECL_FIXNUMP(index)))
+    FEwrong_type_nth_arg(@[mp::atomic-incf-instance], 2, index, @[fixnum]);
+  i = ecl_fixnum(index);
+  if (ecl_unlikely(i >= (cl_fixnum)x->instance.length || i < 0))
+    FEtype_error_index(x, i);
+  return ecl_atomic_incf(x->instance.slots + i, increment);
+}
+#endif /* ECL_THREADS */
+
 cl_object
 si_instancep(cl_object x)
 {
