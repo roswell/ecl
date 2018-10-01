@@ -80,6 +80,54 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 21.2 Stream tests   ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; Issue #452: broadcast-streams
+;;; FILE-STRING-LENGTH for broadcast-streams (non-empty) broken
+;;; https://gitlab.com/embeddable-common-lisp/ecl/issues/452
+;;;
+;;; We also fix the non-conformance where we pick the first (not the last)
+;;; component when we delegate question.
+(test ansi.21-2.broadcast-non-empty
+  (ensure-directories-exist *tmp-dir*)
+  (let ((path (merge-pathnames "sxx.txt" *tmp-dir*)))
+    (with-open-file (sxx path :direction :output :if-exists :supersede :if-does-not-exist :create)
+      (let ((broadcast (make-broadcast-stream sxx)))
+        (finishes (file-position broadcast))
+        (finishes (file-length broadcast))
+        (finishes (file-string-length broadcast "jd"))))))
+
+(test ansi.21-2.file-string-length=nil
+  (let ((stream (make-string-output-stream)))
+    (finishes (file-position stream))
+    (signals error (file-length stream))
+    ;; Undefined behavior, should either signal error (because stream is not
+    ;; file output character stream), return NIL (because can't be determined)
+    ;; or return integer (because progress can be determined).
+    #+ (or) (signals error (file-string-length stream "jd"))
+    #+ (or) (is (typep (file-string-length stream "jd") '(or null integer)))))
+
+;;; file-* should be passed to the /last/ component.
+(test ansi.21-2.last-component
+  (ensure-directories-exist *tmp-dir*)
+  (let ((first-stream (make-string-output-stream)))
+    (with-open-file (last-stream (merge-pathnames "ss.txt" *tmp-dir*)
+                                 :direction :output
+                                 :if-exists :supersede
+                                 :if-does-not-exist :create)
+      (format last-stream "Hello world!~%")
+      (finish-output last-stream)     ; for buffered streams
+      (is (= (file-length last-stream) 13))
+      (let ((broadcast (make-broadcast-stream first-stream last-stream)))
+        (is (= 13 (file-length broadcast) (file-length last-stream)))
+        (is (= 13 (file-position broadcast) (file-position last-stream)))
+        (is (= 2
+               (file-string-length broadcast "jd")
+               (file-string-length last-stream "jd")))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 22.* Format tests   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun cl-user::fmt (stream argument colonp atsignp &rest params)

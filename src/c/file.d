@@ -1932,7 +1932,7 @@ broadcast_length(cl_object strm)
   cl_object l = BROADCAST_STREAM_LIST(strm);
   if (Null(l))
     return ecl_make_fixnum(0);
-  return ecl_file_length(ECL_CONS_CAR(l));
+  return ecl_file_length(ECL_CONS_CAR(ecl_last(l, 1)));
 }
 
 static cl_object
@@ -1941,7 +1941,7 @@ broadcast_get_position(cl_object strm)
   cl_object l = BROADCAST_STREAM_LIST(strm);
   if (Null(l))
     return ecl_make_fixnum(0);
-  return ecl_file_position(ECL_CONS_CAR(l));
+  return ecl_file_position(ECL_CONS_CAR(ecl_last(l, 1)));
 }
 
 static cl_object
@@ -4807,6 +4807,7 @@ cl_file_string_length(cl_object stream, cl_object string)
     if (Null(stream)) {
       @(return ecl_make_fixnum(1));
     } else {
+      stream = ECL_CONS_CAR(ecl_last(stream, 1));
       goto BEGIN;
     }
   }
