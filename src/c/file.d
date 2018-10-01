@@ -4812,8 +4812,7 @@ cl_file_string_length(cl_object stream, cl_object string)
     }
   }
   unlikely_if (!ECL_FILE_STREAM_P(stream)) {
-    /* Spec says, that if cannot be determined we return NIL. */
-    return ECL_NIL;
+    not_a_file_stream(stream);
   }
   switch (ecl_t_of(string)) {
 #ifdef ECL_UNICODE

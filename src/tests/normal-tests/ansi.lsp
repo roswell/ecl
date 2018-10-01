@@ -98,14 +98,15 @@
         (finishes (file-length broadcast))
         (finishes (file-string-length broadcast "jd"))))))
 
-;;; FILE-STRING-LENGTH should work on all streams and if can't be determined -
-;;; return NIL.
 (test ansi.21-2.file-string-length=nil
   (let ((stream (make-string-output-stream)))
     (finishes (file-position stream))
     (signals error (file-length stream))
-    ;; this should either return NIL or a number > 0.
-    (finishes (file-string-length stream "jd"))))
+    ;; Undefined behavior, should either signal error (because stream is not
+    ;; file output character stream), return NIL (because can't be determined)
+    ;; or return integer (because progress can be determined).
+    #+ (or) (signals error (file-string-length stream "jd"))
+    #+ (or) (is (typep (file-string-length stream "jd") '(or null integer)))))
 
 ;;; file-* should be passed to the /last/ component.
 (test ansi.21-2.last-component
