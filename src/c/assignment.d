@@ -34,8 +34,9 @@ cl_set(cl_object var, cl_object value)
   unlikely_if (ecl_t_of(var) != t_symbol) {
     FEwrong_type_nth_arg(@[set], 1, var, @[symbol]);
   }
-  unlikely_if (var->symbol.stype & ecl_stp_constant)
+  unlikely_if (var->symbol.stype & ecl_stp_constant) {
     FEconstant_assignment(var);
+  }
   ecl_return1(env, ECL_SETQ(env, var, value));
 }
 
@@ -49,8 +50,9 @@ mp_compare_and_swap_symbol_value(cl_object var, cl_object old, cl_object new)
   unlikely_if (ecl_t_of(var) != t_symbol) {
     FEwrong_type_nth_arg(@[mp::compare-and-swap-symbol-value], 1, var, @[symbol]);
   }
-  unlikely_if (var->symbol.stype & ecl_stp_constant)
+  unlikely_if (var->symbol.stype & ecl_stp_constant) {
     FEconstant_assignment(var);
+  }
   return ecl_compare_and_swap(ecl_bds_ref(ecl_process_env(), var), old, new);
 }
 
@@ -63,8 +65,9 @@ mp_atomic_incf_symbol_value(cl_object var, cl_object increment)
   unlikely_if (ecl_t_of(var) != t_symbol) {
     FEwrong_type_nth_arg(@[mp::atomic-incf-symbol-value], 1, var, @[symbol]);
   }
-  unlikely_if (var->symbol.stype & ecl_stp_constant)
+  unlikely_if (var->symbol.stype & ecl_stp_constant) {
     FEconstant_assignment(var);
+  }
   return ecl_atomic_incf(ecl_bds_ref(ecl_process_env(), var), increment);
 }
 #endif /* ECL_THREADS */
