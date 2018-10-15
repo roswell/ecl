@@ -573,3 +573,134 @@ creating stray processes."
     (mp:process-run-function
      "mp-holding-lock-p"
      #'(lambda () (is-false (mp:holding-lock-p lock))))))
+
+(ext:with-clean-symbols (test-struct test-class *x*)
+ (defstruct (test-struct :atomic-accessors)
+   (slot1 0)
+   (slot2 1 :read-only t))
+ (defclass test-class ()
+   ((slot1 :initform 0)
+    (slot2)))
+ (defvar *x*)
+
+;;; Date: 2018-09-21
+;;; From: Marius Gerbershagen
+;;; Description:
+;;;
+;;;     Verifies that atomic-update works correctly.
+;;;
+ (test atomic-update
+       (let* ((n-threads 100)
+              (n-updates 1000)
+              (n-total (* n-threads n-updates)))
+         (let ((cons (cons 0 0))
+               (vector (make-array 3 :initial-element 0))
+               (object (make-instance 'test-class))
+               (struct (make-test-struct)))
+           (setf *x* 0)
+           (setf (get '*x* 'n) 0)
+           (mapc #'mp:process-join
+                 (loop repeat n-threads
+                    collect (mp:process-run-function
+                             ""
+                             (lambda ()
+                               (loop repeat n-updates do
+                                    (mp:atomic-update (cdr cons) #'1+)
+                                    (mp:atomic-update (car cons) #'1+)
+                                    (mp:atomic-update (svref vector 1) #'1+)
+                                    (mp:atomic-update (symbol-value '*x*) #'1+)
+                                    (mp:atomic-update (symbol-plist '*x*)
+                                                      #'(lambda (plist)
+                                                          (list (first plist)
+                                                                (1+ (second plist)))))
+                                    (mp:atomic-update (slot-value object 'slot1) #'1+)
+                                    (mp:atomic-update (test-struct-slot1 struct) #'1+)
+                                    (sleep 0.00001))))))
+           (is (car cons) n-total)
+           (is (cdr cons) n-total)
+           (is (svref vector 1) n-total)
+           (is *x* n-total)
+           (is (get '*x* 'n) n-total)
+           (is (slot-value object 'slot1) n-total)
+           (signals error (mp:compare-and-swap (slot-value object 'slot2) 0 1))
+           (is (and (eq (mp:compare-and-swap (slot-value object 'slot2) si:unbound 1) si:unbound)
+                    (eq (slot-value object 'slot2) 1)))
+           (signals error (eval '(mp:compare-and-swap (test-struct-slot2 struct) 1 2))))))
+
+ 
+;;; Date: 2018-09-22
+;;; From: Marius Gerbershagen
+;;; Description:
+;;;
+;;;     Verifies that atomic-push and atomic-pop work correctly.
+;;;
+ (test atomic-push/pop
+       (let* ((n-threads 100)
+              (n-updates 1000))
+         (setf *x* nil)
+         (mapc #'mp:process-join
+               (loop repeat n-threads
+                  collect (mp:process-run-function
+                           ""
+                           (lambda ()
+                             (loop for i below n-updates do
+                                  (mp:atomic-push i (symbol-value '*x*))
+                                  (sleep 0.00001))
+                             (loop repeat (1- n-updates) do
+                                  (mp:atomic-pop (symbol-value '*x*))
+                                  (sleep 0.00001))))))
+         (is (length *x*) n-threads)))
+
+ 
+;;; Date: 2018-09-29
+;;; From: Marius Gerbershagen
+;;; Description:
+;;;
+;;;     Verifies that atomic-incf and atomic-decf work correctly.
+;;;
+ (test atomic-incf/decf
+       (let* ((n-threads 100)
+              (n-updates 1000)
+              (increment (1+ (random most-positive-fixnum)))
+              (final-value (+ (mod (+ (* n-threads n-updates increment)
+                                      most-negative-fixnum)
+                                   (* -2 most-negative-fixnum))
+                              most-negative-fixnum)))
+         (let ((cons (cons 0 0))
+               (vector (make-array 3 :initial-element 0))
+               (object (make-instance 'test-class)))
+           (setf *x* 0)
+           (mapc #'mp:process-join
+                 (loop repeat n-threads
+                    collect (mp:process-run-function
+                             ""
+                             (lambda ()
+                               (loop repeat n-updates do
+                                    (mp:atomic-incf (cdr cons) increment)
+                                    (mp:atomic-incf (car cons) increment)
+                                    (mp:atomic-incf (svref vector 1) increment)
+                                    (mp:atomic-incf (symbol-value '*x*) increment)
+                                    (mp:atomic-incf (slot-value object 'slot1) increment)
+                                    (sleep 0.00001))))))
+           (is (car cons) final-value)
+           (is (cdr cons) final-value)
+           (is (svref vector 1) final-value)
+           (is *x* final-value)
+           (is (slot-value object 'slot1) final-value)
+           (mapc #'mp:process-join
+                 (loop repeat n-threads
+                    collect (mp:process-run-function
+                             ""
+                             (lambda ()
+                               (loop repeat n-updates do
+                                    (mp:atomic-decf (cdr cons) increment)
+                                    (mp:atomic-decf (car cons) increment)
+                                    (mp:atomic-decf (svref vector 1) increment)
+                                    (mp:atomic-decf (symbol-value '*x*) increment)
+                                    (mp:atomic-decf (slot-value object 'slot1) increment)
+                                    (sleep 0.00001))))))
+           (is (car cons) 0)
+           (is (cdr cons) 0)
+           (is (svref vector 1) 0)
+           (is *x* 0)
+           (is (slot-value object 'slot1) 0)))))

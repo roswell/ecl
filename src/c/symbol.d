@@ -419,6 +419,14 @@ si_set_symbol_plist(cl_object sym, cl_object plist)
   @(return plist);
 }
 
+#ifdef ECL_THREADS
+cl_object
+mp_compare_and_swap_symbol_plist(cl_object x, cl_object old, cl_object new)
+{
+  return ecl_compare_and_swap(ecl_symbol_plist(x), old, new);
+}
+#endif /* ECL_THREADS */
+
 cl_object
 si_putprop(cl_object sym, cl_object value, cl_object indicator)
 {

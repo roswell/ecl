@@ -428,7 +428,7 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define ECL_WITH_GLOBAL_ENV_WRLOCK_END
 #endif /* ECL_RWLOCK */
 
-#include <ecl/ecl-atomic-ops.h>
+#include <ecl/ecl_atomics.h>
 
 /* read.d */
 #ifdef ECL_UNICODE

@@ -16,6 +16,28 @@
 
 (in-package "SYSTEM")
 
+(defun slot-access-function (conc-name slot-name)
+  (if conc-name
+      (intern (base-string-concatenate conc-name slot-name))
+      slot-name))
+
+#+threads
+(defun make-atomic-accessors (name conc-name type slot-descriptions)
+  ;; If the structure is implemented as a CLOS instance, we can define
+  ;; atomic compare-and-swap expansions for its slots
+  (when (null type)
+    (let (accessors)
+      (dolist (slotd slot-descriptions accessors)
+        (unless (nth 3 slotd) ; don't create a CAS expansion if the slot is read-only
+          (let ((access-function (slot-access-function conc-name (nth 0 slotd)))
+                (offset (nth 4 slotd)))
+            (push `(mp::define-cas-expander ,access-function (x)
+                     (let ((old (gensym)) (new (gensym)))
+                       (values nil nil old new
+                               `(mp:compare-and-swap-structure ,x ',',name ,',offset ,old ,new)
+                               `(sys:structure-ref ,x ',',name ,',offset))))
+                  accessors)))))))
+
 (defun si::structure-type-error (value slot-type struct-name slot-name)
   (error 'simple-type-error
          :format-control "Slot ~A in structure ~A only admits values of type ~A."
@@ -31,9 +53,7 @@
          ;; (slot-type (nth 2 slot-descr))
          (read-only (nth 3 slot-descr))
          (offset (nth 4 slot-descr))
-         (access-function (if conc-name
-                              (intern (base-string-concatenate conc-name slot-name))
-                              slot-name)))
+         (access-function (slot-access-function conc-name slot-name)))
     (if (eql access-function (sixth slot-descr))
         (return-from make-access-function nil)
         (setf (sixth slot-descr) access-function))
@@ -371,7 +391,8 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
         include
         print-function print-object type named initial-offset
         offset name-offset
-        documentation)
+        documentation
+        atomic-accessors)
 
     ;; Parse the defstruct options.
     (do ((os options (cdr os)) (o) (v))
@@ -414,6 +435,7 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
                 (setq conc-name nil))
                ((:COPIER :PREDICATE :PRINT-FUNCTION :PRINT-OBJECT))
                (:NAMED (setq named t))
+               (:ATOMIC-ACCESSORS (setq atomic-accessors t))
                (t (error "~S is an illegal defstruct option." o))))))
 
     ;; Skip the documentation string.
@@ -526,4 +548,7 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
          (eval-when (:execute)
            (let ((.structure-constructor-class. ,core))
              ,@constructors))
+         ,(when atomic-accessors
+                `(eval-when (:compile-toplevel :load-toplevel :execute)
+                   #+threads ,@(make-atomic-accessors name conc-name type slot-descriptions)))
          ',name))))

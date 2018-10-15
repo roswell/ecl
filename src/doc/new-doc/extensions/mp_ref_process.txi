@@ -299,7 +299,7 @@ See @code{mp:interrupt-process}.
 @deftypefun cl_object mp_restore_signals (cl_object sigmask)
 @end deftypefun
 
-@defun mp:restor-signals sigmask
+@defun mp:restore-signals sigmask
 Enables the interrupts from @code{sigmask}.
 
 See @code{mp:interrupt-process}.
@@ -318,7 +318,7 @@ interrupts arriving during execution of the @code{body} take effect
 after @code{body} has been executed.
 
 Deferrable interrupts include most blockable POSIX signals, and
-@code{mp:interrupt-thread}. Does not interfere with garbage collection,
+@code{mp:interrupt-process}. Does not interfere with garbage collection,
 and unlike in many traditional Lisps using userspace threads, in ECL
 @code{mp:without-interrupts} does not inhibit scheduling of other
 threads.

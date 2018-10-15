@@ -10,10 +10,8 @@
  *
  */
 
-#define AO_ASSUME_WINDOWS98 /* We need this for CAS */
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-#include "threads/ecl_atomics.h"
 
 static ECL_INLINE void
 FEerror_not_a_barrier(cl_object barrier)

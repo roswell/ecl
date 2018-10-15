@@ -20,7 +20,7 @@
 #ifndef ECL_STACKS_H
 #define ECL_STACKS_H
 
-#include <ecl/ecl-atomic-ops.h>
+#include <ecl/ecl_atomics.h>
 
 #ifdef __cplusplus
 extern "C" {
