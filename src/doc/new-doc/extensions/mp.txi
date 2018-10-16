@@ -16,6 +16,8 @@
 * Condition variables dictionary::
 * Semaphores::
 * Semaphores dictionary::
+* Atomic operations::
+* Atomic operations dictionary::
 @end menu
 
 @node Introduction to native threads
@@ -56,7 +58,7 @@ the next section.
 @include extensions/mp_ref_rwlock.txi
 @include extensions/mp_ref_cv.txi
 @include extensions/mp_ref_sem.txi
+@include extensions/mp_ref_atomic.txi
 
 @c @include extensions/mp_ref_barrier.txi
 @c @include extensions/mp_ref_mailbox.txi
-@c @include extensions/mp_ref_atomic.txi

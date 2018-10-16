@@ -28,7 +28,6 @@
 #endif
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
-#include "threads/ecl_atomics.h"
 
 #ifdef ECL_WINDOWS_THREADS
 DWORD cl_env_key;

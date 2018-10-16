@@ -29,6 +29,16 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- support for atomic operations added with an interface similar to SBCL.
+  Currently (SBCL 1.4.12), it differs in the following points:
+  - the set of supported places is slightly different
+  - ~atomic-incf/decf~ always implement modular arithmetic with respect to
+    the width of a fixnum, instead of a width of 64 bits as for some places
+    in SBCL.
+  - Functions such as ~(cas foo)~ analogous to ~(setf foo)~ are not allowed
+    in ECL.
+  - The arguments of ~defcas~ are consistent with the short form of
+    ~defsetf~ in contrast to SBCL, where they are different.
 - improvements to C backtrace interface by Marius Gerbershagen. Compile
   with CFLAGS+="-rdynamic" ./configure ... (Unix) or nmake
   ECL_USE_DBGHELP=yes ... (MSVC) to take full advantage of this feature.

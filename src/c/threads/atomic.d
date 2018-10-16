@@ -16,7 +16,6 @@
 #include <ecl/internal.h>
 
 #ifdef ECL_THREADS
-#include "threads/ecl_atomics.h"
 
 cl_object
 ecl_atomic_get(cl_object *slot)

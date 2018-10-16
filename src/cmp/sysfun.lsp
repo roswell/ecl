@@ -752,6 +752,48 @@
 #+threads
 (def-inline mp:lock-count :unsafe (mp:lock) fixnum "((#0)->lock.count)")
 
+#+threads
+(def-inline mp:compare-and-swap-car :always (cons t t) t "ecl_compare_and_swap(&ECL_CONS_CAR(#0),(#1),(#2))")
+#+threads
+(def-inline mp:atomic-incf-car :always (cons t) t "ecl_atomic_incf(&ECL_CONS_CAR(#0),(#1))")
+#+threads
+(def-inline mp:atomic-incf-car :always (cons fixnum) t "ecl_atomic_incf_by_fixnum(&ECL_CONS_CAR(#0),(#1))")
+
+#+threads
+(def-inline mp:compare-and-swap-cdr :always (cons t t) t "ecl_compare_and_swap(&ECL_CONS_CDR(#0),(#1),(#2))")
+#+threads
+(def-inline mp:atomic-incf-cdr :always (cons t) t "ecl_atomic_incf(&ECL_CONS_CDR(#0),(#1))")
+#+threads
+(def-inline mp:atomic-incf-cdr :always (cons fixnum) t "ecl_atomic_incf_by_fixnum(&ECL_CONS_CDR(#0),(#1))")
+
+#+threads
+(def-inline mp:compare-and-swap-symbol-value :unsafe (symbol t t) t "ecl_compare_and_swap(ecl_bds_ref(ecl_process_env(),(#0)),(#1),(#2))")
+#+threads
+(def-inline mp:atomic-incf-symbol-value :always (t fixnum) t "ecl_atomic_incf_by_fixnum(ecl_bds_ref(ecl_process_env(),(#0)),(#1))")
+#+threads
+(def-inline mp:atomic-incf-symbol-value :unsafe (symbol t) t "ecl_atomic_incf(ecl_bds_ref(ecl_process_env(),(#0)),(#1))")
+#+threads
+(def-inline mp:atomic-incf-symbol-value :unsafe (symbol fixnum) t "ecl_atomic_incf_by_fixnum(ecl_bds_ref(ecl_process_env(),(#0)),(#1))")
+
+#+threads
+(def-inline mp:compare-and-swap-svref :unsafe (t t t t) t "ecl_compare_and_swap((#0)->vector.self.t + ecl_fixnum(#1),(#2),(#3))")
+#+threads
+(def-inline mp:compare-and-swap-svref :unsafe (t fixnum t t) t "ecl_compare_and_swap((#0)->vector.self.t + (#1),(#2),(#3))")
+
+#+(and threads clos)
+(def-inline mp:compare-and-swap-instance :always (t fixnum t t) t "ecl_compare_and_swap_instance((#0),(#1),(#2),(#3))")
+#+(and threads clos)
+(def-inline mp:compare-and-swap-instance :unsafe (standard-object fixnum t t) t "ecl_compare_and_swap((#0)->instance.slots+(#1),(#2),(#3))")
+#+(and threads clos)
+(def-inline mp:atomic-incf-instance :always (t fixnum t) t "ecl_atomic_incf_instance((#0),(#1),(#2))")
+#+(and threads clos)
+(def-inline mp:atomic-incf-instance :unsafe (standard-object fixnum t) t "ecl_atomic_incf((#0)->instance.slots+(#1),(#2))")
+#+(and threads clos)
+(def-inline mp:atomic-incf-instance :unsafe (standard-object fixnum fixnum) t "ecl_atomic_incf_by_fixnum((#0)->instance.slots+(#1),(#2))")
+
+#+threads
+(def-inline mp:compare-and-swap-structure :unsafe (structure-object t fixnum t t) t "ecl_compare_and_swap(&(ECL_STRUCT_SLOT((#0),(#2))),(#3),(#4))")
+
 ;; Functions only available with CLOS
 
 #+clos

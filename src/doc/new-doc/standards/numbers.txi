@@ -161,11 +161,11 @@ Unchecked conversion from Lisp types to C numbers
 @subsubheading Functions
 @deftypefun cl_fixnum ecl_fixnum (cl_object @var{n})
 @end deftypefun
-@deftypefun float ecl_fixnum (cl_object @var{n})
+@deftypefun float ecl_single_float (cl_object @var{n})
 @end deftypefun
-@deftypefun double ecl_fixnum (cl_object @var{n})
+@deftypefun double ecl_double_float (cl_object @var{n})
 @end deftypefun
-@deftypefun {long double} ecl_fixnum (cl_object @var{n})
+@deftypefun {long double} ecl_long_float (cl_object @var{n})
 @end deftypefun
 
 @subsubheading Description
@@ -180,15 +180,13 @@ Checked conversion from Lisp types to C numbers
 @end deftypefun
 @deftypefun cl_index ecl_to_unsigned_integer (cl_object @var{n});
 @end deftypefun
-@deftypefun flaot ecl_to_float (cl_object @var{n});
+@deftypefun float ecl_to_float (cl_object @var{n});
 @end deftypefun
 @deftypefun double ecl_to_double (cl_object @var{n});
 @end deftypefun
 @deftypefun {long double} ecl_to_long_double (cl_object @var{n});
 @end deftypefun
-@deftypefun float ecl_to_float (cl_object @var{n});
-@end deftypefun
-@deftypefun int8_t ecl_to_uint8_t (cl_object @var{n});
+@deftypefun uint8_t ecl_to_uint8_t (cl_object @var{n});
 @end deftypefun
 @deftypefun int8_t ecl_to_int8_t (cl_object @var{n});
 @end deftypefun

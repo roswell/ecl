@@ -55,18 +55,21 @@ si_instance_sig_set(cl_object x)
 cl_object
 si_instance_class(cl_object x)
 {
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_only_arg(@[class-of], x, @[ext::instance]);
+  }
   @(return ECL_CLASS_OF(x));
 }
 
 cl_object
 si_instance_class_set(cl_object x, cl_object y)
 {
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_nth_arg(@[si::instance-class-set], 1, x, @[ext::instance]);
-  if (ecl_unlikely(!ECL_INSTANCEP(y)))
+  }
+  unlikely_if (!ECL_INSTANCEP(y)) {
     FEwrong_type_nth_arg(@[si::instance-class-set], 2, y, @[ext::instance]);
+  }
   ECL_CLASS_OF(x) = y;
   @(return x);
 }
@@ -74,10 +77,12 @@ si_instance_class_set(cl_object x, cl_object y)
 cl_object
 ecl_instance_ref(cl_object x, cl_fixnum i)
 {
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_nth_arg(@[si::instance-ref], 1, x, @[ext::instance]);
-  if (ecl_unlikely(i < 0 || i >= (cl_fixnum)x->instance.length))
+  }
+  unlikely_if (i < 0 || i >= (cl_fixnum)x->instance.length) {
     FEtype_error_index(x, i);
+  }
   return(x->instance.slots[i]);
 }
 
@@ -86,13 +91,16 @@ si_instance_ref(cl_object x, cl_object index)
 {
   cl_fixnum i;
 
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_nth_arg(@[si::instance-ref], 1, x, @[ext::instance]);
-  if (ecl_unlikely(!ECL_FIXNUMP(index)))
+  }
+  unlikely_if (!ECL_FIXNUMP(index)) {
     FEwrong_type_nth_arg(@[si::instance-ref], 2, index, @[fixnum]);
+  }
   i = ecl_fixnum(index);
-  if (ecl_unlikely(i < 0 || i >= (cl_fixnum)x->instance.length))
+  unlikely_if (i < 0 || i >= (cl_fixnum)x->instance.length) {
     FEtype_error_index(x, i);
+  }
   @(return x->instance.slots[i]);
 }
 
@@ -101,26 +109,32 @@ clos_safe_instance_ref(cl_object x, cl_object index)
 {
   cl_fixnum i;
 
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_nth_arg(@[si::instance-ref], 1, x, @[ext::instance]);
-  if (ecl_unlikely(!ECL_FIXNUMP(index)))
+  }
+  unlikely_if (!ECL_FIXNUMP(index)) {
     FEwrong_type_nth_arg(@[si::instance-ref], 2, index, @[fixnum]);
+  }
   i = ecl_fixnum(index);
-  if (ecl_unlikely(i < 0 || i >= x->instance.length))
+  unlikely_if (i < 0 || i >= x->instance.length) {
     FEtype_error_index(x, i);
+  }
   x = x->instance.slots[i];
-  if (ecl_unlikely(x == ECL_UNBOUND))
+  unlikely_if (x == ECL_UNBOUND) {
     x = _ecl_funcall4(@'slot-unbound', ECL_NIL, x, index);
+  }
   @(return x);
 }
 
 cl_object
 ecl_instance_set(cl_object x, cl_fixnum i, cl_object v)
 {
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_nth_arg(@[si::instance-set], 1, x, @[ext::instance]);
-  if (ecl_unlikely(i >= x->instance.length || i < 0))
+  }
+  unlikely_if (i >= x->instance.length || i < 0) {
     FEtype_error_index(x, i);
+  }
   x->instance.slots[i] = v;
   return(v);
 }
@@ -130,16 +144,81 @@ si_instance_set(cl_object x, cl_object index, cl_object value)
 {
   cl_fixnum i;
 
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_nth_arg(@[si::instance-set], 1, x, @[ext::instance]);
-  if (ecl_unlikely(!ECL_FIXNUMP(index)))
+  }
+  unlikely_if (!ECL_FIXNUMP(index)) {
     FEwrong_type_nth_arg(@[si::instance-set], 2, index, @[fixnum]);
+  }
   i = ecl_fixnum(index);
-  if (ecl_unlikely(i >= (cl_fixnum)x->instance.length || i < 0))
+  unlikely_if (i >= (cl_fixnum)x->instance.length || i < 0) {
     FEtype_error_index(x, i);
+  }
   x->instance.slots[i] = value;
   @(return value);
 }
+
+#ifdef ECL_THREADS
+cl_object
+ecl_compare_and_swap_instance(cl_object x, cl_fixnum i, cl_object old, cl_object new)
+{
+  unlikely_if (!ECL_INSTANCEP(x)) {
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-instance], 1, x, @[ext::instance]);
+  }
+  unlikely_if (i >= x->instance.length || i < 0) {
+    FEtype_error_index(x, i);
+  }
+  return ecl_compare_and_swap(x->instance.slots + i, old, new);
+}
+
+cl_object
+mp_compare_and_swap_instance(cl_object x, cl_object index, cl_object old, cl_object new)
+{
+  cl_fixnum i;
+
+  unlikely_if (!ECL_INSTANCEP(x)) {
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-instance], 1, x, @[ext::instance]);
+  }
+  unlikely_if (!ECL_FIXNUMP(index)) {
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-instance], 2, index, @[fixnum]);
+  }
+  i = ecl_fixnum(index);
+  unlikely_if (i >= (cl_fixnum)x->instance.length || i < 0) {
+    FEtype_error_index(x, i);
+  }
+  return ecl_compare_and_swap(x->instance.slots + i, old, new);
+}
+
+cl_object
+ecl_atomic_incf_instance(cl_object x, cl_fixnum i, cl_object increment)
+{
+  unlikely_if (!ECL_INSTANCEP(x)) {
+    FEwrong_type_nth_arg(@[mp::atomic-incf-instance], 1, x, @[ext::instance]);
+  }
+  unlikely_if (i >= x->instance.length || i < 0) {
+    FEtype_error_index(x, i);
+  }
+  return ecl_atomic_incf(x->instance.slots + i, increment);
+}
+
+cl_object
+mp_atomic_incf_instance(cl_object x, cl_object index, cl_object increment)
+{
+  cl_fixnum i;
+
+  unlikely_if (!ECL_INSTANCEP(x)) {
+    FEwrong_type_nth_arg(@[mp::atomic-incf-instance], 1, x, @[ext::instance]);
+  }
+  unlikely_if (!ECL_FIXNUMP(index)) {
+    FEwrong_type_nth_arg(@[mp::atomic-incf-instance], 2, index, @[fixnum]);
+  }
+  i = ecl_fixnum(index);
+  unlikely_if (i >= (cl_fixnum)x->instance.length || i < 0) {
+    FEtype_error_index(x, i);
+  }
+  return ecl_atomic_incf(x->instance.slots + i, increment);
+}
+#endif /* ECL_THREADS */
 
 cl_object
 si_instancep(cl_object x)
@@ -166,13 +245,16 @@ si_sl_makunbound(cl_object x, cl_object index)
 {
   cl_fixnum i;
 
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_nth_arg(@[si::sl-makunbound], 1, x, @[ext::instance]);
-  if (ecl_unlikely(!ECL_FIXNUMP(index)))
+  }
+  unlikely_if (!ECL_FIXNUMP(index)) {
     FEwrong_type_nth_arg(@[si::sl-makunbound], 2, index, @[fixnum]);
+  }
   i = ecl_fixnum(index);
-  unlikely_if (i >= x->instance.length || i < 0)
+  unlikely_if (i >= x->instance.length || i < 0) {
     FEtype_error_index(x, i);
+  }
   x->instance.slots[i] = ECL_UNBOUND;
   @(return x);
 }
@@ -182,8 +264,9 @@ si_copy_instance(cl_object x)
 {
   cl_object y;
 
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  unlikely_if (!ECL_INSTANCEP(x)) {
     FEwrong_type_nth_arg(@[si::copy-instance], 1, x, @[ext::instance]);
+  }
   y = ecl_allocate_instance(x->instance.clas, x->instance.length);
   y->instance.sig = x->instance.sig;
   memcpy(y->instance.slots, x->instance.slots,
