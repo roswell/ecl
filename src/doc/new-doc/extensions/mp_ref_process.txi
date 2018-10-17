@@ -25,10 +25,10 @@ expired before this copy is returned.
 @cppindex mp_exit_process
 @lspindex mp:exit-process
 
-@deftypefun cl_object mp_all_processes () ecl_attr_noreturn
+@deftypefun cl_object mp_exit_process () ecl_attr_noreturn
 @end deftypefun
 
-@defun mp:exit_process
+@defun mp:exit-process
 
 When called from a running task, this function immediately causes the
 task to finish. When invoked from the main thread, it is equivalent to
@@ -43,7 +43,7 @@ invoking @code{ext:quit} with exit code 0.
 @deftypefun cl_object mp_interrupt_process (cl_object process, cl_object function)
 @end deftypefun
 
-@defun mp:interrupt_process process function
+@defun mp:interrupt-process process function
 
 Interrupt a task. This @code{function} sends a signal to a running
 @code{process}. When the task is free to process that signal, it will
@@ -85,7 +85,7 @@ newly created process.
 @cppindex mp_process_active_p
 @lspindex mp:process-active-p
 
-@deftypefun cl_object mp_make_process (cl_object process)
+@deftypefun cl_object mp_process_active_p (cl_object process)
 @end deftypefun
 
 @defun mp:process-active-p process
@@ -109,7 +109,8 @@ The argument to this function should be a process created by
 @code{mp:make-process}, which has a function associated as per
 @code{mp:process-preset} but which is not yet running.  After invoking
 this function a new thread will be created in which the associated
-function will be executed.
+function will be executed.  Returns @code{process} if the thread
+creation was successful and @code{nil} otherwise.
 
 @exindex Possible implementation of @code{mp:process-run-function}:
 
@@ -123,7 +124,7 @@ function will be executed.
 
 
 @cppindex mp_process_yield
-@lspindex mp:process_yield
+@lspindex mp:process-yield
 
 @deftypefun cl_object mp_process_yield ()
 @end deftypefun
@@ -134,15 +135,14 @@ Yield the processor to other threads.
 
 
 @cppindex mp_process-join
-@lspindex mp:process_join
+@lspindex mp:process-join
 
 @deftypefun cl_object mp_process_join (cl_object process)
 @end deftypefun
 
 @defun mp:process-join process
 Suspend current thread until @code{process} exits. Return the result
-values of the @code{process} function. If @code{process} is the current
-thread, signal an error with.
+values of the @code{process} function.
 @end defun
 
 
@@ -251,11 +251,11 @@ See @code{mp:enable-process} and @code{mp:process-run-function}.
 @deftypefun cl_object mp_process_run_function (cl_narg narg, cl_object name, cl_object function, ...)
 @end deftypefun
 
-@defun mp:process_run_function name function &rest funciton-args
+@defun mp:process-run-function name function &rest function-args
 Create a new process using @code{mp:make-process}, associate a function
 to it and start it using @code{mp:process-preset}.
 
-@exindex mp:process-run-funciton usage
+@exindex mp:process-run-function usage
 Example:
 
 @lisp
@@ -270,14 +270,14 @@ Example:
 
 
 @cppindex mp_current_process
-@lspindex mp:current_process
+@lspindex mp:*current-process*
 
 @deftypefun cl_object mp_current_process ()
 @end deftypefun
 
-@defun mp:current-process
-Returns the current process of a caller.
-@end defun
+@defvr {mp} {*current-process*}
+Returns/holds the current process of a caller.
+@end defvr
 
 
 @cppindex mp_block_signals

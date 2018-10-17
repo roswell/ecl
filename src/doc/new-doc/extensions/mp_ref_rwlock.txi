@@ -52,7 +52,7 @@ readers). Returns @code{ECL_T}.
 @end deftypefun
 
 @deftypefun cl_object mp_get_rwlock_read_nowait
-Tries to acquire @code{lock}. if @code{lock} is already taken with
+Tries to acquire @code{lock}. If @code{lock} is already taken with
 @code{mp:get-rwlock-write} returns @code{ECL_NIL}, otherwise
 @code{ECL_T}.
 @end deftypefun
@@ -96,9 +96,9 @@ should block or give up if @code{lock} is already taken.
 @deftypefun cl_object mp_giveup_rwlock_write (cl_object lock)
 @end deftypefun
 
-@defun mp:giveup_rwlock_read lock
+@defun mp:giveup-rwlock-read lock
 @end defun
-@defun mp:giveup_rwlock_write lock
+@defun mp:giveup-rwlock-write lock
 Release @code{lock}.
 @end defun
 

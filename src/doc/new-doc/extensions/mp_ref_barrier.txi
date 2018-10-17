@@ -23,7 +23,7 @@ mp:barrier-count
 @lspindex mp:barrier-name
 
 cl_object mp_barrier_name (cl_object)
-mp:barrier_name
+mp:barrier-name
 
 
 @cppindex mp_barrier_arrivers_count
