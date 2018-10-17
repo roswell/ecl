@@ -166,7 +166,7 @@ mp_get_rwlock_read_wait(cl_object lock)
 @(defun mp::get-rwlock-read (lock &optional (wait ECL_T))
   @
   if (Null(wait))
-  return mp_get_rwlock_read_nowait(lock);
+    return mp_get_rwlock_read_nowait(lock);
   else
     return mp_get_rwlock_read_wait(lock);
   @)
