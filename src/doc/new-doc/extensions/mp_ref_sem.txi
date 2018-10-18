@@ -19,7 +19,7 @@ See @code{mp:make-sempahore}.
 
 
 @cppindex mp_make_semaphore
-@lspindex mp:make_semaphore
+@lspindex mp:make-semaphore
 
 @defun mp:make-semaphore &key name count
 Creates a counting semaphore @code{name} with a resource count
@@ -78,9 +78,9 @@ resource count before semaphore was acquired.
 @deftypefun cl_object mp_try_get_semaphore (cl_object semaphore)
 @end deftypefun
 
-@defun mp:try_get_semaphore semaphore
+@defun mp:try-get-semaphore semaphore
 Tries to get a semaphore (non-blocking). If there is no resource left
-returns @code{NIL}, otherwise returns resource count before semaphore
+returns @code{nil}, otherwise returns resource count before semaphore
 was acquired.
 @end defun
 

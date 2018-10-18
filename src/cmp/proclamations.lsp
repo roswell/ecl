@@ -153,7 +153,7 @@
 (deftype tree ()
   't)
 (deftype type-specifier ()
-  "Name or object representing a time."
+  "Name or object representing a type."
   '(or symbol class list))
 (deftype universal-time ()
   "Time represented as a non-negative number of seconds measured from the beginning of 1900."
@@ -1423,6 +1423,58 @@
 
 (proclamation si:pointer (t) unsigned-byte)
 (proclamation si:foreign-data-p (t) gen-bool :pure)
+
+;;;
+;;; B. Multithreading
+;;;
+
+#+threads (proclamation mp:all-processes () list :no-side-effects)
+#+threads (proclamation mp:exit-process () t)
+#+threads (proclamation mp:interrupt-process (mp:process t) gen-bool)
+#+threads (proclamation mp:make-process (&key) mp:process :no-side-effects)
+#+threads (proclamation mp:process-active-p (mp:process) gen-bool :reader)
+#+threads (proclamation mp:process-enable (mp:process) t)
+#+threads (proclamation mp:process-yield () t)
+#+threads (proclamation mp:process-join (mp:process) (values &rest t))
+#+threads (proclamation mp:process-kill (mp:process) gen-bool)
+#+threads (proclamation mp:process-suspend (mp:process) gen-bool)
+#+threads (proclamation mp:process-resume (mp:process) gen-bool)
+#+threads (proclamation mp:process-name (mp:process) t :reader)
+#+threads (proclamation mp:process-preset (mp:process t &rest t) mp:process)
+#+threads (proclamation mp:process-run-function (t t &rest t) t)
+#+threads (proclamation mp:block-signals () t)
+#+threads (proclamation mp:restore-signals (t) t)
+
+#+threads (proclamation mp:make-lock (&key) mp:lock :no-side-effects)
+#+threads (proclamation mp:recursive-lock-p (mp:lock) gen-bool :reader)
+#+threads (proclamation mp:holding-lock-p (mp:lock) gen-bool)
+#+threads (proclamation mp:lock-name (mp:lock) t :reader)
+#+threads (proclamation mp:lock-owner (mp:lock) t :reader)
+#+threads (proclamation mp:lock-count (mp:lock) fixnum :reader)
+#+threads (proclamation mp:get-lock (mp:lock &optional gen-bool) gen-bool)
+#+threads (proclamation mp:giveup-lock (mp:lock) (eql t))
+
+#+threads (proclamation mp:make-rwlock (&key) mp:rwlock :no-side-effects)
+#+threads (proclamation mp:rwlock-name (mp:rwlock) t :reader)
+#+threads (proclamation mp:get-rwlock-read (mp:rwlock &optional gen-bool) gen-bool)
+#+threads (proclamation mp:get-rwlock-write (mp:rwlock &optional gen-bool) gen-bool)
+#+threads (proclamation mp:giveup-rwlock-read (mp:rwlock) (eql t))
+#+threads (proclamation mp:giveup-rwlock-write (mp:rwlock) (eql t))
+
+#+threads (proclamation mp:make-condition-variable () mp:condition-variable :no-side-effects)
+#+threads (proclamation mp:condition-variable-wait (mp:condition-variable mp:lock) (eql t))
+;; Currently not supported
+;; #+threads (proclamation mp:condition-variable-timedwait (mp:condition-variable mp:lock natural) (eql t))
+#+threads (proclamation mp:condition-variable-signal (mp:condition-variable) (eql t))
+#+threads (proclamation mp:condition-variable-broadcast (mp:condition-variable) (eql t))
+
+#+threads (proclamation mp:make-semaphore (&key) mp:semaphore :no-side-effects)
+#+threads (proclamation mp:semaphore-name (mp:semaphore) t :reader)
+#+threads (proclamation mp:semaphore-count (mp:semaphore) fixnum :reader)
+#+threads (proclamation mp:semaphore-wait-count (mp:semaphore) natural :reader)
+#+threads (proclamation mp:wait-on-semaphore (mp:semaphore) fixnum)
+#+threads (proclamation mp:try-get-semaphore (mp:semaphore) t)
+#+threads (proclamation mp:signal-semaphore (mp:semaphore &optional fixnum) t)
 
 ;;;
 ;;; CDR-5 http://cdr.eurolisp.org/document/5/extra-num-types.html

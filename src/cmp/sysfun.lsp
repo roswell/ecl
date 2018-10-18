@@ -750,7 +750,7 @@
 
 ;; Functions only available with threads
 #+threads
-(def-inline mp:lock-count :unsafe (mp:lock) fixnum "((#0)->lock.count)")
+(def-inline mp:lock-count :unsafe (mp:lock) fixnum "((#0)->lock.counter)")
 
 #+threads
 (def-inline mp:compare-and-swap-car :always (cons t t) t "ecl_compare_and_swap(&ECL_CONS_CAR(#0),(#1),(#2))")

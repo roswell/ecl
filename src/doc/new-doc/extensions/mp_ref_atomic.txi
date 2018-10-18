@@ -10,35 +10,37 @@ similar to @code{setf}.
 
 @subsubheading C Reference
 @cppindex ecl_compare_and_swap
-@deftypefun cl_object ecl_compare_and_swap(cl_object *slot, cl_object old, cl_object new)
+@deftypefun cl_object ecl_compare_and_swap (cl_object *slot, cl_object old, cl_object new)
 
 Perform an atomic compare and swap operation on @var{slot} and return
 the previous value stored in @var{slot}. If the return value is equal
 to @var{old} (comparison by @code{==}), the operation has succeeded.
+This is a inline-only function defined in ``ecl/ecl_atomics.h''.
 @end deftypefun
 
 @cppindex ecl_atomic_incf
-@deftypefun cl_object ecl_atomic_incf(cl_object *slot, cl_object increment)
+@deftypefun cl_object ecl_atomic_incf (cl_object *slot, cl_object increment)
 @end deftypefun
 @cppindex ecl_atomic_incf_by_fixnum
-@deftypefun cl_object ecl_atomic_incf_by_fixnum(cl_object *slot, cl_fixnum increment)
+@deftypefun cl_object ecl_atomic_incf_by_fixnum (cl_object *slot, cl_fixnum increment)
 
 Atomically increment @var{slot} by the given increment and return the
 previous value stored in @var{slot}. The consequences are undefined if
 the value of @var{slot} is not of type @code{fixnum}.
 @code{ecl_atomic_incf} signals an error if @var{increment} is not of
-type @code{fixnum}. .
+type @code{fixnum}. This is a inline-only function defined in
+``ecl/ecl_atomics.h''.
 @end deftypefun
 
 @cppindex ecl_atomic_index_incf
-@deftypefun cl_index ecl_atomic_index_incf(cl_index *slot);
+@deftypefun cl_index ecl_atomic_index_incf (cl_index *slot);
 
 Atomically increment @var{slot} by 1 and return the new value stored
 in @var{slot}.
 @end deftypefun
 
 @cppindex ecl_atomic_get
-@deftypefun cl_object ecl_atomic_get(cl_object *slot)
+@deftypefun cl_object ecl_atomic_get (cl_object *slot)
 
 Perform a volatile load of the object in @var{slot} and then
 atomically set @var{slot} to @code{ECL_NIL}. Returns the value
@@ -46,10 +48,10 @@ previously stored in @var{slot}.
 @end deftypefun
 
 @cppindex ecl_atomic_push
-@deftypefun void ecl_atomic_push(cl_object *slot, cl_object o)
+@deftypefun void ecl_atomic_push (cl_object *slot, cl_object o)
 @end deftypefun
 @cppindex ecl_atomic_pop
-@deftypefun cl_object ecl_atomic_pop(cl_object *slot)
+@deftypefun cl_object ecl_atomic_pop (cl_object *slot)
 
 Like push/pop but atomic.
 @end deftypefun

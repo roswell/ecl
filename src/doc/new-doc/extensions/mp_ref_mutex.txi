@@ -89,7 +89,7 @@ Returns number of processes waiting for @code{lock}.
 @lspindex mp:get-lock
 
 @deftypefun cl_object mp_get_lock_wait (cl_object lock)
-Grabs a lock (blocking if @code{lock} is already takene). Returns
+Grabs a lock (blocking if @code{lock} is already taken). Returns
 @code{ECL_T}.
 @end deftypefun
 
@@ -112,7 +112,7 @@ block or give up if @code{lock} is already taken. If @code{wait} is
 @deftypefun cl_object mp_giveup_lock (cl_object lock)
 @end deftypefun
 
-@defun mp:giveup_lock
+@defun mp:giveup_lock lock
 Releases @code{lock}.
 @end defun
 
