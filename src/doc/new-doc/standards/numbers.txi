@@ -3,7 +3,9 @@
 
 @menu
 * Numbers - Numeric types::
+* Numbers - Floating point exceptions::
 * Numbers - Random-States::
+* Numbers - Dictionary::
 * Numbers - C Reference::
 @end menu
 
@@ -31,11 +33,58 @@ ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:nu
 
 In general, the size of a @code{FIXNUM} is determined by the word size of a machine, which ranges from 32 to 64 bits. Integers larger than this are implemented using the @url{http://www.swox.com/gmp/, GNU Multiprecision library}. Rationals are implemented using two integers, without caring whether they are fixnum or not. Floating point numbers include at least the two IEEE types of 32 and 64 bits respectively. In machines where it is supported, it is possible to associate the lisp @code{LONG-FLOAT} with the machine type @code{long double} whose size ranges from 96 to 128 bits, and which are a bit slower.
 
+@node Numbers - Floating point exceptions
+@subsection Floating point exceptions
+ECL supports two ways of dealing with special floating point values, such as Not a Number (NaN), infinity or denormalized floats, which can occur in floating point computations. Either a condition is signaled or the value is silently used as it is. There are multiple options controlling which behaviour is selected: If ECL is built with the @code{--with-ieee-fp=no} configure option, then a condition is signaled for every inifinity or NaN encountered. If not, the behaviour can be controlled by @code{si:trap-fpe}. By default, a condition is signaled for invalid operation, division by zero and floating point overflows. If the @code{ECL_OPT_TRAP_SIGFPE} option is false, no conditions are signaled by default (Note that in this case, if you enable trapping of floating point exceptions with @code{si:trap-fpe}, then you have to install your own signal handler).
+
+@lspindex si:trap-fpe
+@defun si:trap-fpe condition flag
+Control the signaling of the floating point exceptions
+@subsubheading Synopsis
+@table @var
+@item condition
+one of @code{t}, @code{division-by-zero}, @code{floating-point-overflow}, @code{floating-point-underflow}, @code{floating-point-invalid-operation} or @code{floating-point-inexact}
+@item flag
+a generalized boolean
+@end table
+@subsubheading Description
+If flag is true, arranges for the current thread to signal a @var{condition} if the corresponding floating point exception is detected in the future. If @var{condition} is @code{t}, the exceptions which are signaled by default are disabled or enabled all at once.
+@end defun
+
 @node Numbers - Random-States
 @subsection Random-States
-ECL relies internally on a 32-bit Mersenne-Twister random number generator, using a relatively large buffer to precompute about 5000 pseud-random bytes. This implies also that random states can be printed readably and also read, using the @code{#$} macro. There is no provision to create random states from user arrays, though. Random state is printed unreadably by default.
+ECL relies internally on a 32-bit Mersenne-Twister random number generator, using a relatively large buffer to precompute about 5000 pseudo-random bytes. This implies also that random states can be printed readably and also read, using the @code{#$} macro. There is no provision to create random states from user arrays, though. Random state is printed unreadably by default.
 
 The @code{#$} macro can be used to initialize the generator with a random seed (an integer), an array of random bytes (mainly used for reading back printed random-state) and another random-state (syntactic sugar for copying the random-state). 
+
+@node Numbers - Dictionary
+@subsection Dictionary
+
+@lspindex ext:short-float-positive-infinity
+@lspindex ext:short-float-negative-infinity
+@lspindex ext:single-float-positive-infinity
+@lspindex ext:single-float-negative-infinity
+@lspindex ext:double-float-positive-infinity
+@lspindex ext:double-float-negative-infinity
+@lspindex ext:long-float-positive-infinity
+@lspindex ext:long-float-negative-infinity
+@defvr Constant {ext:@{short,single,double,long@}-float-@{positive,negative@}-infinity}
+Constant positive/negative infinity for the different floating point types.
+@end defvr
+
+
+@lspindex ext:nan
+@defun ext:nan
+Returns a double float NaN value. Coerce to other floating point types to get NaN values e.g. for single floats.
+@end defun
+
+@lspindex ext:float-infinity-p
+@defun ext:float-infinity-p x
+@end defun
+@lspindex ext:float-nan-p
+@defun ext:float-nan-p x
+Predicates to test if @var{x} is infinite or NaN.
+@end defun
 
 @node Numbers - C Reference
 @subsection C Reference
