@@ -116,7 +116,7 @@ description
 @defvrx {Constant} MOST_POSITIVE_FIXNUM
 These constants mark the limits of a fixnum.
 @end defvr
-@defvr {FFI} *use-dffi*
+@defvr Variable {ffi:*use-dffi*}
 Description.
 @end defvr
 @end verbatim

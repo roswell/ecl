@@ -676,7 +676,7 @@ The boolean flag.
 @end defun
 
 @lspindex ffi:+null-cstring-pointer+
-@defvr {FFI} {+null-cstring-pointer+}
+@defvr Variable {ffi:+null-cstring-pointer+}
 A NULL cstring pointer. This can be used for testing if a cstring
 returned by a function is NULL.
 @end defvr

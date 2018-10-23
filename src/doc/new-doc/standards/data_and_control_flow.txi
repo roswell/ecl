@@ -114,7 +114,7 @@ defined functions, you should issue @code{(setq si:*keep-definitions*
 t)} at the beginning of your session.
 
 @lspindex si:*keep-definitions*
-@defvr {SI} {*keep-definitions*}
+@defvr Variable {si:*keep-definitions*}
 If set to @code{T} ECL will preserve the compiled function source code
 for disassembly and recompilation.
 @end defvr
