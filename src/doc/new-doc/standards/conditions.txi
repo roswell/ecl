@@ -69,7 +69,7 @@ ECL_RESTART_CASE_BEGIN(the_env, cl_list(2, abort, use_value)) {
    output = cl_eval(1, form);
 } ECL_RESTART_CASE(1, args) {
    /* This code is executed when the 1st restart (ABORT) is invoked */
-   output = Cnil;
+   output = ECL_NIL;
 } ECL_RESTART_CASE(2, args) {
    /* This code is executed when the 2nd restart (ABORT) is invoked */
    output = ECL_CAR(args);

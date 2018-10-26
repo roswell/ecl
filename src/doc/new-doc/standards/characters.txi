@@ -55,7 +55,7 @@ Note that @code{#\Linefeed} is synonymous with @code{#\Newline} and thus is a me
 
 @node Characters - Newline characters
 @subsection @code{#\Newline} characters
-Internally, ECL represents the @code{#\Newline} character by a single code. However, when using external formats, ECL may parse character pairs as a single @code{#\Newline}, and viceversa, use multiple characters to represent a single @code{#\Newline}.
+Internally, ECL represents the @code{#\Newline} character by a single code. However, when using external formats, ECL may parse character pairs as a single @code{#\Newline}, and vice versa, use multiple characters to represent a single @code{#\Newline}.
 @c TODO: add an @xref to Stream -> External formats once it's written
 
 

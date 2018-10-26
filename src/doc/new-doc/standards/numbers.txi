@@ -35,7 +35,7 @@ In general, the size of a @code{FIXNUM} is determined by the word size of a mach
 
 @node Numbers - Floating point exceptions
 @subsection Floating point exceptions
-ECL supports two ways of dealing with special floating point values, such as Not a Number (NaN), infinity or denormalized floats, which can occur in floating point computations. Either a condition is signaled or the value is silently used as it is. There are multiple options controlling which behaviour is selected: If ECL is built with the @code{--with-ieee-fp=no} configure option, then a condition is signaled for every inifinity or NaN encountered. If not, the behaviour can be controlled by @code{si:trap-fpe}. By default, a condition is signaled for invalid operation, division by zero and floating point overflows. If the @code{ECL_OPT_TRAP_SIGFPE} option is false, no conditions are signaled by default (Note that in this case, if you enable trapping of floating point exceptions with @code{si:trap-fpe}, then you have to install your own signal handler).
+ECL supports two ways of dealing with special floating point values, such as Not a Number (NaN), infinity or denormalized floats, which can occur in floating point computations. Either a condition is signaled or the value is silently used as it is. There are multiple options controlling which behaviour is selected: If ECL is built with the @code{--with-ieee-fp=no} configure option, then a condition is signaled for every infinity or NaN encountered. If not, the behaviour can be controlled by @code{si:trap-fpe}. By default, a condition is signaled for invalid operation, division by zero and floating point overflows. If the @code{ECL_OPT_TRAP_SIGFPE} option is false, no conditions are signaled by default (Note that in this case, if you enable trapping of floating point exceptions with @code{si:trap-fpe}, then you have to install your own signal handler).
 
 @lspindex si:trap-fpe
 @defun si:trap-fpe condition flag
@@ -197,7 +197,7 @@ Creating Lisp types from C numbers
 @subsubheading Description
 These functions create a Lisp object from the corresponding C number. If the number is an integer type, the result will always be an integer, which may be a bignum. If on the other hand the C number is a float, double or long double, the result will be a float.
 
-There is some redundancy in the list of functions that convert from cl_fixnum and cl_index to lisp. On the one hand,@code{ ecl_make_fixnum()} always creates a fixnum, dropping bits if necessary. On the other hand, @code{ecl_make_integer} and @code{ecl_make_unsigned_integer} faithfully converts to a Lisp integer, which may a bignum.
+There is some redundancy in the list of functions that convert from cl_fixnum and cl_index to lisp. On the one hand, @code{ecl_make_fixnum} always creates a fixnum, dropping bits if necessary. On the other hand, @code{ecl_make_integer} and @code{ecl_make_unsigned_integer} faithfully convert to a Lisp integer, which may be a bignum.
 
 Note also that some of the constructors do not use C numbers. This is the case of @code{ecl_make_ratio} and @code{ecl_make_complex}, because they are composite Lisp types.
 

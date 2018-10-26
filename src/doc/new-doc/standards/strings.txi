@@ -47,9 +47,9 @@ Building strings of C data
 @subsubheading Description
 These are different ways to create a base string, which is a string that holds a small subset of characters, the @code{base-char}, with codes ranging from 0 to 255.
 
-@code{ecl_alloc_simple_base_string} creates an empty string with that much space for characters and a fixed lenght. The string does not have a fill pointer and cannot be resized, and the initial data is unspecified
+@code{ecl_alloc_simple_base_string} creates an empty string with that much space for characters and a fixed length. The string does not have a fill pointer and cannot be resized, and the initial data is unspecified
 
-@code{ecl_alloc_adjustable_base_string} is similar to the previous function, but creates an adjustable string with a fill pointer. This means that the lenght of the string can be changed and the string itself can be resized to accomodate more data.
+@code{ecl_alloc_adjustable_base_string} is similar to the previous function, but creates an adjustable string with a fill pointer. This means that the length of the string can be changed and the string itself can be resized to accommodate more data.
 
 The other constructors create strings but use some preexisting data. @code{ecl_make_simple_base_string} creates a string copying the data that the user supplies, and using freshly allocated memory. @code{ecl_make_constant_base_string} on the other hand, does not allocate memory, but simply uses the supplied pointer as buffer for the string. This last function should be used with care, ensuring that the supplied buffer is not deallocated.
 

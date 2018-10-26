@@ -4,7 +4,7 @@
 The @ecl{} project is an implementation of the @clisp{} language that
 aims to comply with the @ansi{} standard. The first ECL implementations
 were developed by Giuseppe Attardi's who produced an interpreter and
-compiler fully conformat with the Common-Lisp as reported in
+compiler fully conformant with the Common-Lisp as reported in
 @cite{Steele:84}. ECL derives itself mostly from Kyoto @clisp{}, an
 implementation developed at the Research Institute for Mathematical
 Sciences (RIMS), Kyoto University, with the cooperation of Nippon Data
@@ -35,7 +35,7 @@ incorporated in @ecl{}.
 
 The following is the partial list of contributors to ECL: Taiichi Yuasa
 and Masami Hagiya (KCL), William F. Schelter (Dynamic loader,
-conservative Gc), Giuseppe Attardi (Top-level, trace, stepper, compiler,
+conservative GC), Giuseppe Attardi (Top-level, trace, stepper, compiler,
 CLOS, multithread), Marcus Daniels (Linux port) Cornelis van der Laan
 (FreeBSD port) David Rudloff (NeXT port) Dan Stanger, Don Cohen, and
 Brian Spilsbury.

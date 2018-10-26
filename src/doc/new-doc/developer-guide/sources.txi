@@ -71,7 +71,7 @@
 @tab defun preprocessor
 
 @item ecl_constants.h
-@tab contstant values for all_symbols.d
+@tab constant values for all_symbols.d
 
 @item features.h
 @tab names of features compiled into ECL
@@ -122,7 +122,7 @@
 @tab macros and environment
 
 @item main.d
-@tab ecl boot proccess
+@tab ecl boot process
 
 @item Makefile.in
 @tab Makefile for ECL core library

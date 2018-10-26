@@ -19,7 +19,7 @@ In this section we will discuss garbage collection, how ECL configures and uses 
 
 @node Boehm-Weiser garbage collector
 @subsection Boehm-Weiser garbage collector
-First of all, the garbage collector must be able to determine which objects are alive and which are not. In other words, the collector must able to find all references to an object. One possiblity would be to know where all variables of a program reside, and where is the stack of the program and its size, and parse all data there, discriminating references to lisp objects. To do this precisely one would need a very precise control of the data and stack segments, as well as how objects are laid out by the C compiler. This is beyond ECL's scope and wishes and it can make coexistence with other libraries (C++, Fortran, etc) difficult.
+First of all, the garbage collector must be able to determine which objects are alive and which are not. In other words, the collector must able to find all references to an object. One possibility would be to know where all variables of a program reside, and where is the stack of the program and its size, and parse all data there, discriminating references to lisp objects. To do this precisely one would need a very precise control of the data and stack segments, as well as how objects are laid out by the C compiler. This is beyond ECL's scope and wishes and it can make coexistence with other libraries (C++, Fortran, etc) difficult.
 
 The Boehm-Weiser garbage collector, on the other hand, is a conservative garbage collector. When scanning memory looking for references to live data, it guesses, conservatively, whether a word is a pointer or not. In case of doubt it will consider it to be a pointer and add it to the list of live objects. This may cause certain objects to be retained longer than what an user might expect but, in our experience, this is the best of both worlds and ECL uses certain strategies to minimize the amount of misinterpreted data.
 
@@ -30,7 +30,7 @@ More precisely, ECL uses the garbage collector with the following settings:
 The collector will not scan the data sectors. If you embed ECL in another program, or link libraries with ECL, you will have to notify ECL which variables point to lisp objects.
 
 @item
-The collector is configured to ignore pointers that point to the middle of allocated objects. This minimizes the risk of misinterpreting integers as pointers to live obejcts.
+The collector is configured to ignore pointers that point to the middle of allocated objects. This minimizes the risk of misinterpreting integers as pointers to live objects.
 
 @item
 It is possible to register finalizers that are invoked when an object is destroyed, but for that you should use ECL's API and understand the restriction described later in @ref{Finalization}.

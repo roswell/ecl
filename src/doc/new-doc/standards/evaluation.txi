@@ -12,7 +12,7 @@
 The @code{OPTIMIZE} declaration includes three concepts: @code{DEBUG},
 @code{SPEED}, @code{SAFETY} and @code{SPACE}. Each of these declarations
 can take one of the integer values 0, 1, 2 and 3. According to these
-values, the implementation may decide how to compie or interpret a given
+values, the implementation may decide how to compile or interpret a given
 lisp form.
 
 ECL currently does not use all these declarations, but some of them

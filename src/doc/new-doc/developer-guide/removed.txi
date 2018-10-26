@@ -43,7 +43,7 @@ incorporated during the evolution of the primary compiler.
 
 @subheading Old MIT loop
 Commit @code{5042589043a7be853b7f85fd7a996747412de6b4}. This old loop
-implementation has got superseeded by the one incorporated from
+implementation has got superseded by the one incorporated from
 Symbolics LOOP in 2001.
 
 @subheading Support for bignum arithmetic (earith.d)
@@ -53,7 +53,7 @@ contains multiplication and division routines (assembler and a
 portable implementation).
 
 @subheading Unification module
-Commit @code{6ff5d20417a21a76846c4b28e532aac097f03109}. Old unifiction
+Commit @code{6ff5d20417a21a76846c4b28e532aac097f03109}. Old unification
 module (logic programming) from EcoLisp times.
 
 @subheading Hierarchical packages

@@ -16,7 +16,7 @@ Many Lisp functions take keyword arguments. When invoking a function with keywor
 
 @itemize
 @item It is usually safe to store the resulting pointer, because keywords are always referenced by their package and will not be garbage collected (unless of course, you decide to delete it).
-@item Remember that the case of the string is significant. @code{ecl_make_keyword("TO")} with return @code{:TO}, while @code{ecl_make_keyword("to")} returns a completely different keywod, @code{:|to|}. In short, you usually want to use uppercase.
+@item Remember that the case of the string is significant. @code{ecl_make_keyword("TO")} with return @code{:TO}, while @code{ecl_make_keyword("to")} returns a completely different keyword, @code{:|to|}. In short, you usually want to use uppercase.
 @end itemize
 
 @subsubheading Example

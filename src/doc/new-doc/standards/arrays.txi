@@ -93,7 +93,7 @@ To and from element types
 @end deftypefun
 
 @subsubheading Description
-@code{ecl_aet_to_symbol} returns the Lisp type associated to the elements of that specialized array class. @code{ecl_symbol_to_aet} does the converse, computing the C constant that is associated to a Lisp elment type.
+@code{ecl_aet_to_symbol} returns the Lisp type associated to the elements of that specialized array class. @code{ecl_symbol_to_aet} does the converse, computing the C constant that is associated to a Lisp element type.
 
 The functions may signal an error if any of the arguments is an invalid C or Lisp type.
 
@@ -104,11 +104,11 @@ Creating array and vectors
 @cppindex ecl_alloc_simple_vector
 @cppindex si_make_vector
 @cppindex si_make_array
-@deftypefun cl_object ecl_alloc_simple_vector( cl_elttype element_type, cl_index length);
+@deftypefun cl_object ecl_alloc_simple_vector (cl_elttype element_type, cl_index length);
 @end deftypefun
-@deftypefun cl_object si_make_vector( cl_object element_type, cl_object length, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
+@deftypefun cl_object si_make_vector (cl_object element_type, cl_object length, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
 @end deftypefun
-@deftypefun cl_object si_make_array( cl_object element_type, cl_object dimensions, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
+@deftypefun cl_object si_make_array (cl_object element_type, cl_object dimensions, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
 @end deftypefun
 @subsubheading Description
 The function @code{ecl_alloc_simple_vector} is the simplest constructor, creating a simple vector (i.e. non-adjustable and without a fill pointer), of the given size, preallocating the memory for the array data. The first argument, @emph{element_type}, is a C constant that represents a valid array element type (See cl_elttype).
@@ -117,9 +117,9 @@ The function @code{si_make_vector} does the same job but allows creating an arra
 @itemize
 @item element_type is now a Common Lisp type descriptor, which is a symbol or list denoting a valid element type
 @item dimension is a non-negative fixnum with the vector size.
-@item fill_pointerp is either Cnil or a non-negative fixnum denoting the fill pointer value.
-@item displaced_to is either Cnil or a valid array to which the new array is displaced.
-@item displacement is either Cnil or a non-negative value with the array displacement.
+@item fill_pointerp is either ECL_NIL or a non-negative fixnum denoting the fill pointer value.
+@item displaced_to is either ECL_NIL or a valid array to which the new array is displaced.
+@item displacement is either ECL_NIL or a non-negative value with the array displacement.
 @end itemize
 
 Finally, the function @code{si_make_array} does a similar job to @code{si_make_function} but its second argument, @emph{dimension}, can be a list of dimensions, to create a multidimensional array.
@@ -135,20 +135,20 @@ Create a one-dimensional @code{array} with a fill pointer
 
 @verbatim
 cl_object type = ecl_make_symbol("BYTE8","EXT");
-cl_object a = si_make_vector(ecl_make_fixnum(16), type, Cnil, /* adjustable */
+cl_object a = si_make_vector(ecl_make_fixnum(16), type, ECL_NIL, /* adjustable */
                              ecl_make_fixnum(0) /* fill-pointer */,
-                             Cnil /* displaced_to */,
-                             Cnil /* displacement */);
+                             ECL_NIL /* displaced_to */,
+                             ECL_NIL /* displacement */);
 @end verbatim
 
 An alternative formulation
 
 @verbatim
 cl_object type = ecl_make_symbol("BYTE8","EXT");
-cl_object a = si_make_array(ecl_make_fixnum(16), type, Cnil, /* adjustable */
+cl_object a = si_make_array(ecl_make_fixnum(16), type, ECL_NIL, /* adjustable */
                             ecl_make_fixnum(0) /* fill-pointer */,
-                            Cnil /* displaced_to */,
-                            Cnil /* displacement */);
+                            ECL_NIL /* displaced_to */,
+                            ECL_NIL /* displacement */);
 @end verbatim
 
 Create a 2-by-3 two-dimensional @code{array}, specialized for an integer type:
@@ -156,10 +156,10 @@ Create a 2-by-3 two-dimensional @code{array}, specialized for an integer type:
 @verbatim
 cl_object dims = cl_list(2, ecl_make_fixnum(2), ecl_make_fixnum(3));
 cl_object type = ecl_make_symbol("BYTE8","EXT");
-cl_object a = si_make_array(dims, type, Cnil, /* adjustable */
-                            Cnil /* fill-pointer */,
-                            Cnil /* displaced_to */,
-                            Cnil /* displacement */);
+cl_object a = si_make_array(dims, type, ECL_NIL, /* adjustable */
+                            ECL_NIL /* fill-pointer */,
+                            ECL_NIL /* displaced_to */,
+                            ECL_NIL /* displacement */);
 @end verbatim
 
 @subsubsection Accessors
@@ -181,9 +181,9 @@ Reading and writing array elements
 @end deftypefun
 
 @subsubheading Description
-@code{ecl_aref} accesses an array using the supplied @emph{row_major_index}, checking the array bounds and returning a Lisp object for the value at that position. ecl_aset does the converse, storing a Lisp value at the given @emph{row_major_index}.
+@code{ecl_aref} accesses an array using the supplied @emph{row_major_index}, checking the array bounds and returning a Lisp object for the value at that position. @code{ecl_aset} does the converse, storing a Lisp value at the given @emph{row_major_index}.
 
-The first argument to @code{ecl_aref} or @code{ecl_aset} is an array of any number of dimensions. For an array of rank @var{N} and dimensions @var{d1, d2 ...} up to @var{dN}, the row major index associated to the indices (@var{i1,i2,...iN}) is computed using the formula @code{i1+d1*(i2+d3*(i3+...))}.
+The first argument to @code{ecl_aref} or @code{ecl_aset} is an array of any number of dimensions. For an array of rank @code{N} and dimensions @code{d1, d2 ...} up to @code{dN}, the row major index associated to the indices (@code{i1,i2,...iN}) is computed using the formula @code{i1+d1*(i2+d3*(i3+...))}.
 
 @code{ecl_aref1} and @code{ecl_aset1} are specialized versions that only work with one-dimensional arrays or vectors. They verify that the first argument is indeed a vector.
 

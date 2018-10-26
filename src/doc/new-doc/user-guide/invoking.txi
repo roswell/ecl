@@ -86,7 +86,7 @@ then nothing will be printed.
 >
 @end example
 
-When an error is signalled, control will enter the break loop.
+When an error is signaled, control will enter the break loop.
 @example
 > (defun foo (x) (bar x))
 foo
