@@ -782,7 +782,7 @@ int main() {
   fclose(f);
   f = fopen("conftestval","w");
   if (f == NULL) exit(1);
-  fprintf(f, output);
+  fputs(output, f);
   fclose(f);
   exit(0);
 }
