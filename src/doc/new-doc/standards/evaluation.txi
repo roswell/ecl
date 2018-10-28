@@ -107,6 +107,16 @@ instance, if you compile with a low value of @code{SAFETY}, and invoke
 @end multitable
 @end float
 
+@subsection @code{declaim} and @code{proclaim}
+Declarations established with @code{proclaim} stay in force
+indefinitely. Declarations established with @code{declaim} in a file
+do not persist after the file has been compiled. However, they are
+established with @code{proclaim} at load time when the compiled file
+is loaded. This means that when compiling two files, @code{declaim}
+declarations in the first file will not be in force when compiling the
+second file unless the first file was loaded before the second one was
+compiled.
+
 @subsection C Reference
 
 @cppindex ecl_process_env
