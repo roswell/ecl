@@ -230,12 +230,13 @@ main(int argc, char **argv)
 @end verbatim
 @end example
 
-Because the program itself does not know the type of the init function,
-a prototype declaration is inserted. After booting up the lisp
-environment, it invokes @code{init_hello_goodbye} via
-@code{read_VV}. @code{init_hello_goodbye} takes an argument, and read_VV
-supplies an appropriate one. Now that the initialization is finished, we
-can use functions and other stuffs defined in the library.
+Because the program itself does not know the type of the init
+function, a prototype declaration is inserted. After booting up the
+lisp environment, it invokes @code{init_hello_goodbye} via
+@code{read_VV}. @code{init_hello_goodbye} takes an argument, and
+@code{read_VV} supplies an appropriate one. Now that the
+initialization is finished, we can use functions and other stuff
+defined in the library.
 
 @node Shared library
 @subsubsection Shared library

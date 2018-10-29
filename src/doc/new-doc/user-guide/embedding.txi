@@ -82,13 +82,13 @@ Create a protected region.
 @end verbatim
 
 @subsubheading Description
-When embedding ECL it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitrary transfers of control. Furthermore, the unwind protect form will be used in at least in the following occasions:
+When embedding ECL it is normally advisable to set up an @code{unwind-protect} frame to avoid the embedded lisp code to perform arbitrary transfers of control. Furthermore, the unwind protect form will be used in at least in the following occasions:
 
 @itemize
 @item In a normal program exit, caused by @code{ext:quit}, ECL unwinds up to the outermost frame, which may be an @code{CL_CATCH_ALL} or @code{CL_UNWIND_PROTECT} macro.
 @end itemize
 
-Besides this, normal mechanisms for exit, such as ext:quit, and uncaught exceptions, such as serious signals (@xref{Signals and Interrupts - Synchronous signals}), are best handled using unwind-protect blocks.
+Besides this, normal mechanisms for exit, such as @code{ext:quit}, and uncaught exceptions, such as serious signals (@xref{Signals and Interrupts - Synchronous signals}), are best handled using @code{unwind-protect} blocks.
 
 @subsubheading See also
 @code{CL_CATCH_ALL}
@@ -100,7 +100,7 @@ Besides this, normal mechanisms for exit, such as ext:quit, and uncaught excepti
 @deftypefun int cl_boot (int @var{argc}, char **@var{argv});
 Setup the lisp environment.
 @table @var
-@item argc,
+@item argc
 An integer with the number of arguments to this program.
 @item argv
 A vector of strings with the arguments to this program.
@@ -177,7 +177,7 @@ This functions reads the value of different options that have to be customized @
 
 
 @cppindex ecl_clear_interrupts
-@defmac ecl_clear_interrupts(); 
+@defmac ecl_clear_interrupts ()
 Clear all pending signals and exceptions.
 
 @subsubheading Description
@@ -189,7 +189,7 @@ This macro clears all pending interrupts.
 
 
 @cppindex ecl_disable_interrupts
-@defmac ecl_disable_interrupts();
+@defmac ecl_disable_interrupts ()
 Postpone handling of signals and exceptions.
 
 @subsubheading Description

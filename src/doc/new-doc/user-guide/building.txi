@@ -8,7 +8,7 @@ Operating systems on which ECL is reported to work: Linux, Darwin (Mac
 OS X), Solaris, FreeBSD, NetBSD, OpenBSD, DragonFly BSD, Windows and
 Android. On each of them ECL supports native threads.
 
-In the past Juanjo José García-Ripoll maintained test farm which
+In the past Juanjo José García-Ripoll maintained a test farm which
 performed ECL tests for each release on number of platforms and
 architectures. Due to lack of the resources we can't afford such doing,
 however each release is tested by volunteers with an excellent package

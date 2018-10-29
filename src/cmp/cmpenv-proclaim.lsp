@@ -87,7 +87,7 @@
              ((consp x)
               (destructuring-bind (c-name lisp-name) x
                 (if (si::mangle-name lisp-name)
-                    (warn "The funciton ~s is already in the runtime.~%C-EXPORT-FNAME declaration ignored." lisp-name)
+                    (warn "The function ~s is already in the runtime.~%C-EXPORT-FNAME declaration ignored." lisp-name)
                     (si:put-sysprop lisp-name 'Lfun c-name))))
              (t
               (error "Syntax error in proclamation ~s" decl)))))

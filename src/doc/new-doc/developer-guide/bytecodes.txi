@@ -39,6 +39,6 @@ Moreover if bytecompiled function is a closure then its structure is
 
 @subsection Bytecode disassembler
 
-@defun{si:bc-split} {@var{funciton}}
+@defun{si:bc-split} {@var{function}}
 Returns five values: lex, bytecodes, data and name.
 @end defun

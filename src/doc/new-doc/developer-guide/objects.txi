@@ -472,7 +472,7 @@ Boolean indicating if it is displaced.
 @item x->vector.dim
 The maximum number of elements.
 @item x->vector.fillp
-Actual numer of elements in the vector or @code{fill pointer}.
+Actual number of elements in the vector or @code{fill pointer}.
 @item x->vector.self
 Union of pointers of different types. You should choose the right
 pointer depending on @var{x->vector.elttype}.
@@ -497,7 +497,7 @@ The maximum number of elements.
 Array with the dimensions of the array. The elements range from
 @code{x->array.dim[0]} to @code{x->array.dim[x->array.rank-1]}.
 @item x->array.fillp
-Actual numer of elements in the array or @code{fill pointer}.
+Actual number of elements in the array or @code{fill pointer}.
 @item x->array.self
 Union of pointers of different types. You should choose the right
 pointer depending on @var{x->array.elttype}.
@@ -518,7 +518,7 @@ some of those types together with the C constant that denotes that type:
 @code{ecl_aet_object}
 @item BASE-CHAR
 @code{ecl_aet_object}
-@item SIGNLE-FLOAT
+@item SINGLE-FLOAT
 @code{ecl_aet_sf}
 @item DOUBLE-FLOAT
 @code{ecl_aet_df}
@@ -783,7 +783,7 @@ si_safe_eval(form, ECL_NIL, 3); /* on error function will return 3 */
 @cppindex si_make_lambda
 @deftypefun cl_object si_make_lambda (cl_object name, cl_object def)
 Builds an interpreted lisp function with name given by the symbol name
-and body given by def.
+and body given by @code{def}.
 
 @subheading Example
 @exindex @code{si_make_lambda} building functions

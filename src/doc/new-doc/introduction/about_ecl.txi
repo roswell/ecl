@@ -4,7 +4,7 @@
 @clisp{} is a general purpose programming language. It lays its roots in
 the @acronym{LISP} programming language @bibcite{LISP1.5} developed by
 John McCarthy in the 80s. @clisp{} as we know it @ansi{} is the result
-of an standarization process aimed at unifying the multiple lisp
+of an standardization process aimed at unifying the multiple lisp
 dialects that were born from that language.
 
 @ecl{} is an implementation of the @clisp{} language. As such it derives

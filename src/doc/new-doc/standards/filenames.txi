@@ -30,7 +30,7 @@ The way ECL parses a namestring is by first looking for the @var{hostname} compo
   name = [.]wildcard-word
 @end verbatim
 
-If this syntax also fails, then the namestring is not a valid pathname string and a @code{parse-error} will be signalled.
+If this syntax also fails, then the namestring is not a valid pathname string and a @code{parse-error} will be signaled.
 
 It is important to remark that in ECL, all physical namestrings result into pathnames with a version equal to @code{:NEWEST}. Pathnames which are not logical and have any other version (i. e. @code{NIL} or a number), cannot be printed readably, but can produce a valid namestring which results of ignoring the version.
 

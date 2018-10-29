@@ -14,15 +14,15 @@ featured a lisp to C translator.
 @image{figures/kcl-hierarchy,,4.5in}
 @end float
 
-The KCL implementation remained a propietary project for some
+The KCL implementation remained a proprietary project for some
 time. During this time, William F. Schelter improved KCL in several
 areas and developed Austin Kyoto Common-Lisp (AKCL). However, those
-changes had to be distributed as patches over the propietary KCL
+changes had to be distributed as patches over the proprietary KCL
 implementation and it was not until much later that both KCL and AKCL
 became freely available and gave rise to the GNU Common Lisp project,
 GCL.
 
-Around the 90's, Giusseppe Attardi worked on the KCL and AKCL code basis
+Around the 90's, Giuseppe Attardi worked on the KCL and AKCL code basis
 to produce an implementation of Common Lisp that could be embedded in
 other C programs @bibcite{Attardi:95}. The result was an implementation
 sometimes known as ECL and sometimes as ECoLisp, which achieved rather

@@ -95,7 +95,7 @@ Comment on the example if necessary.
 @subsubheading Side effects     @c Omit section if none
 Side effects listed
 @subsubheading Affected by      @c Omit section if none
-For instance: if the user has some privigiles on the system
+For instance: if the user has some privileges on the system
 @end defun
 @end verbatim
 
@@ -116,7 +116,7 @@ description
 @defvrx {Constant} MOST_POSITIVE_FIXNUM
 These constants mark the limits of a fixnum.
 @end defvr
-@defvr {FFI} *use-dffi*
+@defvr Variable {ffi:*use-dffi*}
 Description.
 @end defvr
 @end verbatim

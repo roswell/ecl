@@ -26,7 +26,7 @@ ECL internal C files are preprocessed with the [@ref{Defun
 preprocessor}]. This results in the ability to use somewhat unusual
 syntax in the C source files like @verb{|defun|} with the
 @verb{|&optional|}, @verb{|&rest|}, @verb{|&key|} and @verb{|&aux|}
-arguments as well as returning multiple values from the funciton using
+arguments as well as returning multiple values from the function using
 @verb{|@(return)|}..
 
 Style used in C/C++ files is 2 space indent, no tabs, similar to

@@ -3,7 +3,7 @@
 @cindex Dynamic foreign function interface
 
 @lspindex ffi:*use-dffi*
-@defvr {FFI} {*use-dffi*}
+@defvr Variable {ffi:*use-dffi*}
 This variable controls whether @code{DFFI} is used or not.
 @end defvr
 

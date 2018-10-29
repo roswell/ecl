@@ -41,7 +41,7 @@ Original list of command line arguments. This function returns the
 list of command line arguments passed to either ECL or the program it
 was embedded in. The output is a list of strings and it corresponds to
 the argv vector in a C program. Typically, the first argument is the
-name of the program as it was invoked. You should not count on ths
+name of the program as it was invoked. You should not count on the
 filename to be resolved.
 @end defun
 
@@ -86,7 +86,7 @@ remaining arguments.
 
 @defvr opt :NOLOADRC
 @defvrx opt :LOADRC
-Determine whether the lisp initalization file
+Determine whether the lisp initialization file
 @code{(ext:*lisp-init-file-list*)} will be loaded before processing
 all forms.
 @end defvr
@@ -95,15 +95,15 @@ all forms.
 parses all the command line arguments, except for the first one, which
 is assumed to contain the program name. Each of these arguments is
 matched against the rules, sequentially, until one of the patterns
-succeeeds.
+succeeds.
 
 A special name @code{*DEFAULT*}, matches any unknown command line
 option. If there is no @code{*DEFAULT*} rule and no match is found, an
-error is signalled. For each rule that succeeds, the function
+error is signaled. For each rule that succeeds, the function
 constructs a lisp statement using the template.
 
 After all arguments have been processed,
-@code{ext:process-command-args}, and there were no occurences of
+@code{ext:process-command-args}, and there were no occurrences of
 @code{:noloadrc}, one of the files listed in
 @code{ext:*lisp-init-file-list*} will be loaded. Finally, the list of
 lisp statements will be evaluated.
@@ -165,7 +165,7 @@ Returns process PID or @code{nil} if already finished.
 
 @defun ext:external-process-status process
 Updates process status. @code{ext:external-process-status} calls
-@code{ext:external-process-wait} if proces has not finished yet
+@code{ext:external-process-wait} if process has not finished yet
 (non-blocking call).  Returns two values:
 
 @code{status} - member of @code{(:abort :error :exited :signalled
@@ -175,7 +175,7 @@ Updates process status. @code{ext:external-process-status} calls
 it is a signal code. Otherwise NIL.
 @end defun
 
-@defun ext:external-process-wait proces wait
+@defun ext:external-process-wait process wait
 If the second argument is non-NIL, function blocks until external
 process is finished. Otherwise status is updated. Returns two values
 (see @code{ext:external-process-status}).

@@ -51,12 +51,6 @@
 @include standards/numbers.txi
 @c @node Numbers
 @c @section Numbers
-@c build option --with-ieee-fp={yes|no}
-@c si::trap-fpe
-@c si::nan
-@c ext:{short,single,double,long}-float-{positive,negative}-infinity
-@c ext:float-nan-p
-@c ext:float-infinity-p
 @c ext:float-nan-string
 @c ext:float-infinity-string
 

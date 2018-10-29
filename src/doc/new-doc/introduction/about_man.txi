@@ -23,7 +23,7 @@ suggested as an entry point for a new users who want to start using
 
 @subsection Developer's guide
 [@ref{Developer's guide}] documents @ecl{} implementation details. This
-part isn not meant for normal users but rather for the ECL developers
+part is not meant for normal users but rather for the ECL developers
 and other people who want to contribute to @ecl{}. This section is prone
 to change due to the dynamic nature of a software. Covered topics
 include source code structure, contributing guide, internal

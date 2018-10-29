@@ -11,9 +11,9 @@ The Meta-Object Protocol is an extension to Common Lisp which provides rules, fu
 
 The Meta-Object Protocol associated to Common Lisp's object system was introduced in a famous book, The Art of the Metaobject Protocol AMOP (@xref{Bibliography}), which was probably intended for the ANSI (@xref{Bibliography}) specification but was drop out because of its revolutionary and then not too well tested ideas.
 
-The AMOP is present, in one way or another, in most Common Lisp implementations, eithr using proprietary systems or because their implementation of CLOS descended from PCL (Portable CommonLoops). It has thus become a de facto standard and ECL should not be without it.
+The AMOP is present, in one way or another, in most Common Lisp implementations, either using proprietary systems or because their implementation of CLOS descended from PCL (Portable CommonLoops). It has thus become a de facto standard and ECL should not be without it.
 
-Unfortunately ECL's own implemention originally contained only a subset of the AMOP. This was a clever decision at the time, since the focus was on performance and on producing a stable and lean implementation of Common Lisp. Nowadays it is however not an option, specially given that most of the AMOP can be implemented with little cost for both the implementor and the user.
+Unfortunately ECL's own implementation originally contained only a subset of the AMOP. This was a clever decision at the time, since the focus was on performance and on producing a stable and lean implementation of Common Lisp. Nowadays it is however not an option, specially given that most of the AMOP can be implemented with little cost for both the implementor and the user.
 
 So ECL has an almost complete implementation of the AMOP. However, since it was written from scratch and progressed according to user's request and our own innovations, there might still be some missing functionality which we expect to correct in the near future. Please report any feature you miss as a bug through the appropriate channels.
 

@@ -275,7 +275,7 @@ Example:
 @deftypefun cl_object mp_current_process ()
 @end deftypefun
 
-@defvr {mp} {*current-process*}
+@defvr Variable {mp:*current-process*}
 Returns/holds the current process of a caller.
 @end defvr
 

@@ -159,10 +159,12 @@
 (defun inline-possible (fname &optional (env *cmp-env*))
   (not (declared-notinline-p fname env)))
 
-;;; Install inline expansion of function. If the function is DECLAIMED
-;;; inline, then we only keep the definition in the compiler environment.
-;;; If the function is PROCLAIMED inline, then we also keep a copy as
-;;; a symbol property.
+;;; Install inline expansion of function. If the function is
+;;; PROCLAIMED inline, then we keep a copy of the definition as a
+;;; symbol property. If the function is DECLAIMED inline, then we keep
+;;; the definition in the compiler environment during compilation and
+;;; install it as a symbol property during loading of the compiled
+;;; file.
 (defun maybe-install-inline-function (fname form env)
   (let* ((x (cmp-env-search-declaration 'inline env))
          (flag (assoc fname x :test #'same-fname-p))
@@ -170,8 +172,11 @@
          (proclaimed (sys:get-sysprop fname 'inline)))
     `(progn
        ,(when declared
-          `(eval-when (:compile-toplevel)
-             (c::declare-inline ',fname *cmp-env-root* ',form)))
+          `(progn
+             (eval-when (:compile-toplevel)
+               (c::declare-inline ',fname *cmp-env-root* ',form))
+             (eval-when (:load-toplevel :execute)
+               (si:put-sysprop ',fname 'inline ',form))))
        ,(when proclaimed
           `(eval-when (:compile-toplevel :load-toplevel :execute)
              (si:put-sysprop ',fname 'inline ',form))))))

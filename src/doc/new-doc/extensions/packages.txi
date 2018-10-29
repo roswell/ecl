@@ -190,7 +190,7 @@ Removing an existing package local nickname to a package.
 @lspindex ext:package-locked-p
 @defun ext:package-locked-p package
 Returns @code{t} when @code{package} is locked, @code{nil}
-otherwise. Signals an error if @code{package} doesn’t designate a valid
+otherwise. Signals an error if @code{package} doesn't designate a valid
 package.
 @end defun
 
