@@ -308,33 +308,36 @@
   (create-type-name name)
   ;; We are going to modify this list!!!
   (setf slot-descriptions (copy-tree slot-descriptions))
-  ;; FIXME! We could do the same with ENSURE-CLASS!
   #+clos
   (unless type
-    (eval `(defclass ,name ,(and include (list include))
-             ,(mapcar
-               #'(lambda (sd)
-                   (if sd
-                       (list* (first sd)
-                              :initform (second sd)
-                              :initarg 
-                              (intern (symbol-name (first sd))
-                                      (find-package 'KEYWORD))
-                              (when (third sd) (list :type (third sd))))
-                       nil))            ; for initial offset slots
-               slot-descriptions)
-             (:metaclass structure-class))))
-  ;; FIXME! We can do the same with INSTALL-METHOD!
+    (clos:ensure-class
+     name
+     :direct-superclasses (and include (list include))
+     :direct-slots (mapcar
+                    #'(lambda (sd)
+                        (if sd
+                            (list* :name (first sd)
+                                   :initform (second sd)
+                                   :initargs
+                                   (list
+                                    (intern (symbol-name (first sd))
+                                            (find-package 'KEYWORD)))
+                                   (when (third sd) (list :type (third sd))))
+                            nil))            ; for initial offset slots
+                    slot-descriptions)
+     :metaclass 'structure-class))
   #+clos
   (when print-function
-    (eval `(defmethod print-object ((obj ,name) stream)
-             (,print-function obj stream 0)
-             obj)))
+    (clos::install-method 'print-object nil (list name t) '(obj stream)
+                          #'(lambda (obj stream)
+                              (funcall print-function obj stream 0)
+                              obj)))
   #+clos
   (when print-object
-    (eval `(defmethod print-object ((obj ,name) stream)
-            (,print-object obj stream)
-            obj)))
+    (clos::install-method 'print-object nil (list name t) '(obj stream)
+                          #'(lambda (obj stream)
+                              (funcall print-object obj stream)
+                              obj)))
   (when predicate
     (fset predicate (make-predicate name type named name-offset)))
   (put-sysprop name 'DEFSTRUCT-FORM `(defstruct ,name ,@slots))
