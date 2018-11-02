@@ -40,7 +40,7 @@
 # endif
 
 static inline cl_object
-ecl_compare_and_swap(cl_object *slot, cl_object old, cl_object new)
+ecl_compare_and_swap(cl_object *slot, cl_object old_obj, cl_object new_obj)
 {
   return (cl_object)AO_fetch_compare_and_swap((AO_t*)slot, (AO_t)old, (AO_t)new);
 }

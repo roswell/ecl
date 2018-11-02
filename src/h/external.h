@@ -374,7 +374,7 @@ extern ECL_API void ecl_copy_subarray(cl_object dest, cl_index i0, cl_object ori
 extern ECL_API void ecl_reverse_subarray(cl_object dest, cl_index i0, cl_index i1);
 
 #ifdef ECL_THREADS
-extern ECL_API cl_object mp_compare_and_swap_svref(cl_object x, cl_object index, cl_object old, cl_object new);
+extern ECL_API cl_object mp_compare_and_swap_svref(cl_object x, cl_object index, cl_object old_obj, cl_object new_obj);
 extern ECL_API cl_object mp_atomic_incf_svref(cl_object x, cl_object index, cl_object increment);
 #endif
 
@@ -393,7 +393,7 @@ extern ECL_API cl_object si_setf_definition(cl_object fname, cl_object createp);
 extern ECL_API void ecl_clear_compiler_properties(cl_object sym);
 
 #ifdef ECL_THREADS
-extern ECL_API cl_object mp_compare_and_swap_symbol_value(cl_object x, cl_object old, cl_object new);
+extern ECL_API cl_object mp_compare_and_swap_symbol_value(cl_object x, cl_object old_obj, cl_object new_obj);
 extern ECL_API cl_object mp_atomic_incf_symbol_value(cl_object x, cl_object increment);
 #endif
 
@@ -850,8 +850,8 @@ extern ECL_API cl_object ecl_slot_value(cl_object x, const char *slot);
 extern ECL_API cl_object ecl_slot_value_set(cl_object x, const char *slot, cl_object y);
 
 #ifdef ECL_THREADS
-extern ECL_API cl_object ecl_compare_and_swap_instance(cl_object x, cl_fixnum i, cl_object old, cl_object new);
-extern ECL_API cl_object mp_compare_and_swap_instance(cl_object x, cl_object index, cl_object old, cl_object new);
+extern ECL_API cl_object ecl_compare_and_swap_instance(cl_object x, cl_fixnum i, cl_object old_obj, cl_object new_obj);
+extern ECL_API cl_object mp_compare_and_swap_instance(cl_object x, cl_object index, cl_object old_obj, cl_object new_obj);
 extern ECL_API cl_object ecl_atomic_incf_instance(cl_object x, cl_fixnum i, cl_object increment);
 extern ECL_API cl_object mp_atomic_incf_instance(cl_object x, cl_object index, cl_object increment);
 #endif
@@ -928,9 +928,9 @@ extern ECL_API cl_object ecl_delete_eq(cl_object x, cl_object l);
 #define si_cons_cdr cl_cdr
 
 #ifdef ECL_THREADS
-extern ECL_API cl_object mp_compare_and_swap_car(cl_object x, cl_object old, cl_object new);
+extern ECL_API cl_object mp_compare_and_swap_car(cl_object x, cl_object old_obj, cl_object new_obj);
 extern ECL_API cl_object mp_atomic_incf_car(cl_object x, cl_object increment);
-extern ECL_API cl_object mp_compare_and_swap_cdr(cl_object x, cl_object old, cl_object new);
+extern ECL_API cl_object mp_compare_and_swap_cdr(cl_object x, cl_object old_obj, cl_object new_obj);
 extern ECL_API cl_object mp_atomic_incf_cdr(cl_object x, cl_object increment);
 #endif
 
@@ -1674,7 +1674,7 @@ extern ECL_API cl_object ecl_structure_ref(cl_object x, cl_object name, cl_fixnu
 extern ECL_API cl_object ecl_structure_set(cl_object x, cl_object name, cl_fixnum n, cl_object v);
 
 #ifdef ECL_THREADS
-extern ECL_API cl_object mp_compare_and_swap_structure(cl_object x, cl_object type, cl_object index, cl_object old, cl_object new);
+extern ECL_API cl_object mp_compare_and_swap_structure(cl_object x, cl_object type, cl_object index, cl_object old_obj, cl_object new_obj);
 #endif
 
 /* symbol.c */
@@ -1714,7 +1714,7 @@ extern ECL_API cl_object ecl_get(cl_object s, cl_object p, cl_object d);
 extern ECL_API bool ecl_keywordp(cl_object s);
 
 #ifdef ECL_THREADS
-extern ECL_API cl_object mp_compare_and_swap_symbol_plist(cl_object x, cl_object old, cl_object new);
+extern ECL_API cl_object mp_compare_and_swap_symbol_plist(cl_object x, cl_object old_obj, cl_object new_obj);
 #endif
 
 /* tcp.c */
