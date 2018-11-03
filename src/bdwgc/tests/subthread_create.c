@@ -16,12 +16,16 @@
 
 #include <stdio.h>
 
-#ifdef AO_HAVE_fetch_and_add
+#ifdef AO_HAVE_fetch_and_add1
 
 #ifdef GC_PTHREADS
 # include <pthread.h>
 #else
 # include <windows.h>
+#endif
+
+#if defined(__HAIKU__)
+# include <errno.h>
 #endif
 
 #include <stdlib.h>
@@ -48,26 +52,34 @@ volatile AO_t thread_ended_cnt = 0;
   DWORD WINAPI entry(LPVOID arg)
 #endif
 {
-    int thread_num = AO_fetch_and_add(&thread_created_cnt, 1);
+    int thread_num = AO_fetch_and_add1(&thread_created_cnt);
     GC_word my_depth = (GC_word)arg + 1;
 
     if (my_depth <= MAX_SUBTHREAD_DEPTH
             && thread_num < MAX_SUBTHREAD_COUNT
             && (thread_num % DECAY_DENOM) < DECAY_NUMER
-            && (int)(thread_num - AO_load(&thread_ended_cnt))
+            && thread_num - (int)AO_load(&thread_ended_cnt)
                 <= MAX_ALIVE_THREAD_COUNT) {
 # ifdef GC_PTHREADS
         int err;
         pthread_t th;
+
         err = pthread_create(&th, NULL, entry, (void *)my_depth);
-        if (err) {
-            fprintf(stderr, "Thread #%d creation failed: %s", thread_num,
+        if (err != 0) {
+            fprintf(stderr, "Thread #%d creation failed: %s\n", thread_num,
+                    strerror(err));
+            exit(2);
+        }
+        err = pthread_detach(th);
+        if (err != 0) {
+            fprintf(stderr, "Thread #%d detach failed: %s\n", thread_num,
                     strerror(err));
             exit(2);
         }
 # else
         HANDLE th;
         DWORD thread_id;
+
         th = CreateThread(NULL, 0, entry, (LPVOID)my_depth, 0, &thread_id);
         if (th == NULL) {
             fprintf(stderr, "Thread #%d creation failed: %d\n", thread_num,
@@ -78,7 +90,7 @@ volatile AO_t thread_ended_cnt = 0;
 # endif
     }
 
-    AO_fetch_and_add(&thread_ended_cnt, 1);
+    (void)AO_fetch_and_add1(&thread_ended_cnt);
     return 0;
 }
 
@@ -97,7 +109,7 @@ int main(void)
 #     ifdef GC_PTHREADS
         err = pthread_create(&th[i], NULL, entry, 0);
         if (err) {
-            fprintf(stderr, "Thread creation failed: %s", strerror(err));
+            fprintf(stderr, "Thread creation failed: %s\n", strerror(err));
             exit(1);
         }
 #     else
@@ -116,7 +128,13 @@ int main(void)
         void *res;
         err = pthread_join(th[i], &res);
         if (err) {
-            fprintf(stderr, "Failed to join thread: %s", strerror(err));
+            fprintf(stderr, "Failed to join thread: %s\n", strerror(err));
+#           if defined(__HAIKU__)
+                /* The error is just ignored (and the test is ended) to */
+                /* workaround some bug in Haiku pthread_join.           */
+                /* TODO: The thread is not deleted from GC_threads.     */
+                if (ESRCH == err) break;
+#           endif
             exit(1);
         }
 #     else
@@ -142,4 +160,4 @@ int main(void)
   return 0;
 }
 
-#endif /* !AO_HAVE_fetch_and_add */
+#endif /* !AO_HAVE_fetch_and_add1 */

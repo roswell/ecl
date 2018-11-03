@@ -1,5 +1,4 @@
-/* FIXME.  This is only a placeholder for the AIX compiler.             */
-/* It doesn't work.  Please send a patch.                               */
+
 /* Memory model documented at http://www-106.ibm.com/developerworks/    */
 /* eserver/articles/archguide.html and (clearer)                        */
 /* http://www-106.ibm.com/developerworks/eserver/articles/powerpc.html. */
@@ -92,7 +91,6 @@ AO_test_and_set(volatile AO_TS_t *addr) {
   return (AO_TS_VAL_t)oldval;
 }
 #define AO_HAVE_test_and_set
-
 
 AO_INLINE AO_TS_VAL_t
 AO_test_and_set_acquire(volatile AO_TS_t *addr) {
