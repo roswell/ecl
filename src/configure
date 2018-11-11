@@ -4920,7 +4920,7 @@ case "${host_os}" in
                 ECL_LDRPATH='-Wl,--rpath,~A'
                 clibs="-ldl ${clibs}"
                 # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
-                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
+                CFLAGS="-D_GNU_SOURCE -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
 
 LSP_FEATURES="(cons :android ${LSP_FEATURES})"
 
