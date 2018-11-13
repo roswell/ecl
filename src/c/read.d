@@ -2171,7 +2171,7 @@ init_read(void)
 
   {
     cl_object var, val;
-    var = cl_list(24,
+    var = cl_list(25,
                   @'*print-pprint-dispatch*', /* See end of pprint.lsp */
                   @'*print-array*',
                   @'*print-base*',
@@ -2192,11 +2192,12 @@ init_read(void)
                   @'*read-eval*',
                   @'*read-suppress*',
                   @'*readtable*',
+                  @'*package*',
                   @'si::*print-package*',
                   @'si::*print-structure*',
                   @'si::*sharp-eq-context*',
                   @'si::*circle-counter*');
-    val = cl_list(24,
+    val = cl_list(25,
                   /**pprint-dispatch-table**/ ECL_NIL,
                   /**print-array**/ ECL_T,
                   /**print-base**/ ecl_make_fixnum(10),
@@ -2217,6 +2218,7 @@ init_read(void)
                   /**read-eval**/ ECL_T,
                   /**read-suppress**/ ECL_NIL,
                   /**readtable**/ cl_core.standard_readtable,
+                  /**package**/ cl_core.lisp_package,
                   /*si::*print-package**/ cl_core.lisp_package,
                   /*si::*print-structure**/ ECL_T,
                   /*si::*sharp-eq-context**/ ECL_NIL,
