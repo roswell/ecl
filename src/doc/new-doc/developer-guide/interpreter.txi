@@ -26,24 +26,36 @@ ECL uses the following stacks:
 @subsection Procedure Call Conventions
 ECL employs standard C calling conventions to achieve efficiency and
 interoperability with other languages. Each Lisp function is
-implemented as a C function which takes as many argument as the Lisp
-original plus one additional integer argument which holds the number
-of actual arguments. The function sets @code{NValues} to the number of
-Lisp values produced, it returns the first one and the remaining ones
-are kept in a global (per thread) array (@code{VALUES}).
+implemented as a C function which takes as many arguments as the Lisp
+original. If the function takes optional or keyword arguments, the
+corresponding C function takes one additional integer argument which
+holds the number of actual arguments. The function sets @code{nvalues}
+in the thread local environment to the number of Lisp values produced,
+it returns the first one and the remaining ones are kept in a global
+(per thread) array (@code{values}).
 
 To show the argument/value passing mechanism, here we list the actual
-code for the Common-Lisp function cons.
+code for the Common-Lisp function last.
 
 @verbatim
-cl_cons(int narg, object car, object cdr) {
-    object x;
-    check_arg(2);
-    x = alloc_object(t_cons);
-    CAR(x) = car;
-    CDR(x) = cdr;
-    NValues = 1;
-    return x;
+cl_object
+cl_last(cl_narg narg, cl_object l, ...)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	cl_object k;
+	va_list ARGS;
+	va_start(ARGS, l);
+	if (ecl_unlikely(narg < 1|| narg > 2)) FEwrong_num_arguments(/* ... */);
+	if (narg > 1) {
+		k = va_arg(ARGS,cl_object);
+	} else {
+		k = ecl_make_fixnum(1);
+	}
+	cl_object __value0 = ecl_last(l, ecl_to_size(k));
+	the_env->nvalues = 1;
+	the_env->values[0] = __value0;
+	va_end(ARGS);
+	return __value0;
 }
 @end verbatim
 
@@ -55,26 +67,26 @@ function. (Strictly speaking, `@code{-}' and `@code{*}' in the
 Common-Lisp function name are replaced by `@code{_}' and `@code{A}',
 respectively, to obey the syntax of C.)
 
-@code{check_arg(2)} in the code of @code{cl_cons} checks that exactly
-two arguments are supplied to @code{cons}. That is, it checks that
-@code{narg} is 2, and otherwise, it causes an
-error. @code{allocate_object(t_cons)} allocates a cons cell in the
-heap and returns the pointer to the cell. After the @code{CAR} and the
-@code{CDR} fields of the cell are set, the cell pointer is returned
-directly. The number assigned to @code{NValues} set by the function (1
-in this case) represents the number of values of the function.
+The code for the function @code{last} first checks that the right
+number of arguments are supplied to @code{cl_last}. That is, it checks
+that @code{narg} is 1 or 2, and otherwise, it causes an error.
+Following that, the optional variable @code{k} is initialized and the
+return value @code{__value0} is computed. The number assigned to
+@code{nvalues} set by the function (1 in this case) represents the
+number of values of the function. The return value of the function is
+copied in the @code{values} array as well as returned directly.
 
 In general, if one is to play with the C kernel of ECL there is no
 need to know about all these conventions. There is a preprocessor that
 takes care of the details, by using a lisp representation of the
 statements that output values, and of the function definitions. For
-instance, the actual source code for @code{cl_cons} in
-@code{src/c/lists.d}
+instance, the actual source code for @code{cl_last} in
+@code{src/c/list.d}
 
 @verbatim
-@(defun cons (car cdr)
+@(defun last (l &optional (k ecl_make_fixnum(1)))
 @
-  @(return CONS(car, cdr))
+  @(return ecl_last(l, ecl_to_size(k)));
 @)
 @end verbatim
 
