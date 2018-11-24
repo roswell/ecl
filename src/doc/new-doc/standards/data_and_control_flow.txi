@@ -105,13 +105,13 @@ The output of (symbol-function fun) is one of the following:
 @end itemize
 
 @cindex @code{disassemble} and @code{compile} on defined functions
-@exindex Keeping lambda definitions with @code{si:*keep-definitions}
+@exindex Keeping lambda definitions with @code{si:*keep-definitions*}
 
-ECL usually drops the source code of a function unless the global
-variable si:*keep-definitions* was true when the function was translated
-into bytecodes. Therefore, if you wish to use compile and disassemble on
-defined functions, you should issue @code{(setq si:*keep-definitions*
-t)} at the beginning of your session.
+ECL usually keeps the source code of a function unless the global
+variable @code{si:*keep-definitions*} was false when the function was
+translated into bytecodes. Therefore, if you don't need to use compile
+and disassemble on defined functions, you should issue @code{(setq
+si:*keep-definitions* nil)} at the beginning of your session.
 
 @lspindex si:*keep-definitions*
 @defvr Variable {si:*keep-definitions*}
