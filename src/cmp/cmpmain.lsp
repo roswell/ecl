@@ -829,7 +829,7 @@ after compilation."
     (cmp-delete-file h-pathname)
     (cmp-delete-file so-pathname)
     (mapc 'cmp-delete-file tmp-names)
-    (let ((output (or name (symbol-value 'GAZONK))))
+    (let ((output (or name (and (boundp 'GAZONK) (symbol-value 'GAZONK)))))
       ;; By unsetting GAZONK we avoid spurious references to the
       ;; loaded code.
       (set 'GAZONK nil)
