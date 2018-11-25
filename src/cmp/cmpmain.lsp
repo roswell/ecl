@@ -837,7 +837,7 @@ after compilation."
       (compiler-output-values output compiler-conditions))))
 
 (defun disassemble (thing &key (h-file nil) (data-file nil)
-                    &aux def disassembled-form
+                    &aux lexenv disassembled-form
                     (*compiler-in-use* *compiler-in-use*)
                     (*print-pretty* nil))
 "Compiles the form specified by THING and prints the intermediate C language
@@ -850,6 +850,12 @@ form.  H-FILE and DATA-FILE specify intermediate files to build a fasl file
 from the C language code.  NIL means \"do not create the file\"."
   (when (si::valid-function-name-p thing)
     (setq thing (fdefinition thing)))
+  (when (and (functionp thing) (function-lambda-expression thing))
+    (multiple-value-setq (thing lexenv)
+      (function-lambda-expression thing))
+    (when (eq lexenv t)
+      (warn "DISASSEMBLE can not disassemble C closures")
+      (return-from disassemble nil)))
   (cond ((null thing))
         ((functionp thing)
          (unless (si::bc-disassemble thing)
@@ -878,8 +884,10 @@ from the C language code.  NIL means \"do not create the file\"."
                                  (open h-file :direction :output :external-format :default)
                                  null-stream))
          (t3local-fun (symbol-function 'T3LOCAL-FUN))
-         (compiler-conditions nil))
+         (compiler-conditions nil)
+         (*cmp-env-root* *cmp-env-root*))
     (with-compiler-env (compiler-conditions)
+      (setf disassembled-form (set-closure-env disassembled-form lexenv *cmp-env-root*))
       (unwind-protect
            (progn
              (setf (symbol-function 'T3LOCAL-FUN)

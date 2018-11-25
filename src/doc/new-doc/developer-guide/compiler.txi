@@ -210,16 +210,23 @@ This is, however, @emph{useless} in our case, because we are not concerned with 
 
 @verbatim
 > (defun add1 (x) (1+ x))
+
 ADD1
 > (disassemble *)
-;;; Compiling (DEFUN ADD1 ...).
-;;; Emitting code for ADD1.
 
 /*      function definition for ADD1                                  */
-static L1(int narg, object V1)
-{ VT3 VLEX3 CLSR3
+/*      optimize speed 3, debug 0, space 0, safety 2                  */
+static cl_object L1add1(cl_object v1x)
+{
+ cl_object env0 = ECL_NIL;
+ const cl_env_ptr cl_env_copy = ecl_process_env();
+ cl_object value0;
+ ecl_cs_check(cl_env_copy,value0);
+ {
 TTL:
-VALUES(0) = one_plus((V1));
-RETURN(1);
+  value0 = ecl_one_plus(v1x);
+  cl_env_copy->nvalues = 1;
+  return value0;
+ }
 }
 @end verbatim
