@@ -186,6 +186,18 @@ not_character_write_char(cl_object strm, ecl_character c)
   return c;
 }
 
+static ecl_character
+not_character_decoder(cl_object stream) {
+  not_a_character_stream(stream);
+  return EOF;
+}
+
+static int
+not_character_encoder(cl_object stream, unsigned char *buffer, ecl_character c) {
+  not_a_character_stream(stream);
+  return 0;
+}
+
 static void
 not_input_clear_input(cl_object strm)
 {
@@ -3159,6 +3171,8 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
     stream->stream.format = t;
     stream->stream.ops->read_char = not_character_read_char;
     stream->stream.ops->write_char = not_character_write_char;
+    stream->stream.decoder = not_character_decoder;
+    stream->stream.encoder = not_character_encoder;
     break;
 #ifdef ECL_UNICODE
     /*case ECL_ISO_8859_1:*/
