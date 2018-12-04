@@ -1065,6 +1065,9 @@ if test "${enable_precisegc}" != "no" ; then
 else
   AC_MSG_RESULT([no])
 fi
+if test "${enable_serialization}" != "no" ; then
+  AC_DEFINE([ECL_EXTERNALIZABLE], [], [Use the serialization framework])
+fi
 ])
 
 dnl ----------------------------------------------------------------------

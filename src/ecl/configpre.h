@@ -21,6 +21,9 @@
 /* Stack grows downwards */
 #undef ECL_DOWN_STACK
 
+/* Use the serialization framework */
+#undef ECL_EXTERNALIZABLE
+
 /* ECL_IEEE_FP */
 #undef ECL_IEEE_FP
 

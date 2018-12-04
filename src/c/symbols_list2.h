@@ -56,6 +56,11 @@ typedef struct {
 # undef GRAY_
 # define GRAY_ SYS_
 #endif
+#ifdef ECL_EXTERNALIZABLE
+# define IF_EXTERNALIZABLE(x) x
+#else
+# define IF_EXTERNALIZABLE(x) NULL
+#endif
 #ifdef ECL_SSE2
 # define IF_SSE2(x) x
 #else
@@ -2066,8 +2071,10 @@ cl_symbols[] = {
 {SYS_ "CTYPECASE-ERROR","ECL_NAME(si_ctypecase_error)"},
 {SYS_ "DO-CHECK-TYPE","ECL_NAME(si_do_check_type)"},
 
-{SYS_ "SERIALIZE","si_serialize"},
-{SYS_ "DESERIALIZE","si_deserialize"},
+/* #ifdef ECL_EXTERNALIZABLE */
+{SYS_ "SERIALIZE",IF_EXTERNALIZABLE("si_serialize")},
+{SYS_ "DESERIALIZE",IF_EXTERNALIZABLE("si_deserialize")},
+/* #endif */
 
 {EXT_ "ARRAY-ELEMENT-TYPE-BYTE-SIZE","si_array_element_type_byte_size"},
 

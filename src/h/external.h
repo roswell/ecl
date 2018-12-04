@@ -1567,6 +1567,14 @@ extern ECL_API cl_fixnum ecl_length(cl_object x);
 extern ECL_API cl_object ecl_subseq(cl_object seq, cl_index start, cl_index limit);
 extern ECL_API cl_object ecl_copy_seq(cl_object seq);
 
+#ifdef ECL_EXTERNALIZABLE
+/* serialize.d */
+
+extern cl_object si_serialize(cl_object root);
+extern cl_object si_deserialize(cl_object root);
+
+#endif
+
 #ifdef ECL_SSE2
 /* sse2.c */
 

@@ -33,8 +33,6 @@ typedef int bool;
 #endif
 typedef unsigned char byte;
 
-        /* #define ECL_EXTERNALIZABLE */
-
 /*
         Implementation types.
         Verify that it matches printer/write_ugly.d

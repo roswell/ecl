@@ -2379,11 +2379,18 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
     /* Read all data for the library */
 #ifdef ECL_EXTERNALIZABLE
     {
-      cl_object v = ecl_deserialize(block->cblock.data_text);
-      unlikely_if (v->vector.dim < len)
-        FEreader_error("Not enough data while loading"
-                       "binary file", in, 0);
-      memcpy(VV, v->vector.self.t, len * sizeof(cl_object));
+      unlikely_if (block->cblock.data_text == NULL) {
+        unlikely_if (len > 0)
+          FEreader_error("Not enough data while loading"
+                         "binary file", in, 0);
+      } else {
+        cl_object v = si_deserialize(*(block->cblock.data_text));
+        unlikely_if (v->vector.dim < len)
+          FEreader_error("Not enough data while loading"
+                         "binary file", in, 0);
+        memcpy(VV, v->vector.self.t, perm_len * sizeof(cl_object));
+        memcpy(VVtemp, v->vector.self.t + perm_len, temp_len * sizeof(cl_object));
+      }
     }
 #else
     in = make_data_stream(block->cblock.data_text);

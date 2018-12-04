@@ -292,7 +292,7 @@
                  (new-read-only (fourth new-slot)))
             (cond ((and (null new-read-only)
                         old-read-only)
-                   (error "Tried to turn a read only slot ~A into writtable."
+                   (error "Tried to turn a read only slot ~A into writeable."
                           slot-name))
                   ((eq new-read-only :unknown)
                    (setf new-read-only old-read-only)))

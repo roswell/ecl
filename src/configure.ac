@@ -259,6 +259,12 @@ AC_ARG_ENABLE(precisegc,
 		  [(no|yes, default=NO)]),
   [enable_precisegc=${enableval}], [enable_precisegc=no] )
 
+AC_ARG_ENABLE(serialization,
+  AS_HELP_STRING( [--enable-serialization],
+		  [use serialization framework instead of the reader to save externalizable objects in compiled files (EXPERIMENTAL).]
+		  [(no|yes, default=NO)]),
+  [], [enable_serialization=no] )
+
 AC_ARG_ENABLE(debug,
   AS_HELP_STRING( [--enable-debug],
                  [enable various debugging features]

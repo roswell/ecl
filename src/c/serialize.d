@@ -15,6 +15,8 @@
 #define ECL_DEFINE_AET_SIZE
 #include <ecl/internal.h>
 
+#ifdef ECL_EXTERNALIZABLE
+
 struct fake_package {
   _ECL_HDR;
   cl_object name;
@@ -83,10 +85,10 @@ static cl_index object_size[] = {
 };
 
 typedef struct pool {
-  cl_object data;
-  cl_object hash;
-  cl_object queue;
-  cl_object last;
+  cl_object data; /* vector of bytes containing the serialized objects */
+  cl_object hash; /* hashtable mapping already serialized objects to indices in data */
+  cl_object queue; /* queue of objects to be serialized */
+  cl_object last; /* last cons cell of queue */
 } *pool_t;
 
 static cl_index
@@ -104,6 +106,8 @@ alloc(pool_t pool, cl_index size)
   return fillp;
 }
 
+/* Set the tag bits of an index into the array of serialized objects
+   to zero to make it distinguishable from an ordinary fixnum */
 static cl_object
 fix_to_ptr(cl_object ptr)
 {
@@ -118,10 +122,8 @@ enqueue(pool_t pool, cl_object what)
   if (ECL_FIXNUMP(what) || ECL_CHARACTERP(what) || what == OBJNULL) {
     return what;
   }
-#ifdef ECL_SMALL_CONS
   if (Null(what))
     return what;
-#endif
   index = ecl_gethash_safe(what, pool->hash, OBJNULL);
   if (index == OBJNULL) {
     cl_object cons;
@@ -134,13 +136,11 @@ enqueue(pool_t pool, cl_object what)
   return fix_to_ptr(index);
 }
 
-#ifdef ECL_SMALL_CONS
 typedef struct {
   _ECL_HDR;
   cl_object car, cdr;
 } large_cons;
 typedef large_cons *large_cons_ptr;
-#endif
 
 static cl_index
 serialize_bits(pool_t pool, void *data, cl_index size)
@@ -157,7 +157,6 @@ serialize_object_ptr(pool_t pool, cl_object *ptr, cl_index dim)
   for (; dim; dim--, index += sizeof(cl_object)) {
     cl_object *p = (cl_object *)(pool->data->vector.self.b8 + index);
     *p = enqueue(pool, *p);
-    p++;
   }
 }
 
@@ -172,9 +171,22 @@ serialize_displaced_vector(pool_t pool, cl_object v)
     v->vector.displaced = ECL_NIL;
     serialize_vector(pool, v);
   } else {
-    cl_index index = v->vector.self.b8 - to->vector.self.b8;
+    /* TODO: Implement serialization of displaced bit vectors */
+    if (v->vector.elttype == ecl_aet_bit) {
+      FEerror("ECL can not yet serialize displaced bitvectors", 0);
+    }
+    cl_index index = (v->vector.self.b8 - to->vector.self.b8) / ecl_aet_size[v->vector.elttype];
     v->vector.displaced = enqueue(pool, to);
     v->vector.self.b8 = (uint8_t*)index;
+  }
+}
+
+static size_t
+vector_self_size(cl_object v) {
+  if (v->vector.elttype == ecl_aet_bit) {
+    return ROUND_TO_WORD((v->vector.dim + (CHAR_BIT-1))/CHAR_BIT);
+  } else {
+    return ROUND_TO_WORD(v->vector.dim * ecl_aet_size[v->vector.elttype]);
   }
 }
 
@@ -186,16 +198,22 @@ serialize_vector(pool_t pool, cl_object v)
   } else if (v->vector.elttype == ecl_aet_object) {
     serialize_object_ptr(pool, v->vector.self.t, v->vector.dim);
   } else {
-    serialize_bits(pool, v->vector.self.b8,
-                   v->vector.dim * ecl_aet_size[v->vector.elttype]);
+    serialize_bits(pool, v->vector.self.b8, vector_self_size(v));
   }
 }
 
 static void
-serialize_array(pool_t pool, cl_object a)
+serialize_hashtable(pool_t pool, cl_object h)
 {
-  serialize_bits(pool, a->array.dims, sizeof(cl_index) * a->array.rank);
-  serialize_vector(pool, a);
+  /* FIXME: Serializing all of h->hash.data is a big waste if the
+     hashtable has only a small number of entries. */
+  cl_index size = h->hash.size;
+  cl_index index = serialize_bits(pool, h->hash.data, size*sizeof(struct ecl_hashtable_entry));
+  for (; size; size--, index += sizeof(struct ecl_hashtable_entry)) {
+    struct ecl_hashtable_entry *p = (struct ecl_hashtable_entry *)(pool->data->vector.self.b8 + index);
+    p->key = enqueue(pool, p->key);
+    p->value = enqueue(pool, p->value);
+  }
 }
 
 static void
@@ -203,7 +221,6 @@ serialize_one(pool_t pool, cl_object what)
 {
   cl_index bytes, index;
   cl_object buffer;
-#ifdef ECL_SMALL_CONS
   if (ECL_LISTP(what)) {
     cl_index bytes = ROUND_TO_WORD(sizeof(large_cons));
     cl_index index = alloc(pool, bytes);
@@ -211,33 +228,31 @@ serialize_one(pool_t pool, cl_object what)
       (large_cons_ptr)(pool->data->vector.self.b8 + index);
     memset(cons, 0, bytes);
     cons->t = t_list;
-    cons->car = enqueue(pool, ECL_CONS_CAR(what));
-    cons->cdr = enqueue(pool, ECL_CONS_CDR(what));
+    if (!Null(what)) {
+      cons->car = enqueue(pool, ECL_CONS_CAR(what));
+      cons->cdr = enqueue(pool, ECL_CONS_CDR(what));
+    }
     return;
   }
-#endif
-  bytes = object_size[what->d.t];
+  bytes = object_size[ecl_t_of(what)];
   index = alloc(pool, bytes);
   buffer = (cl_object)(pool->data->vector.self.b8 + index);
   memcpy(buffer, what, bytes);
-  switch (buffer->d.t) {
+  switch (ecl_t_of(what)) {
   case t_singlefloat:
   case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
   case t_longfloat:
 #endif
     break;
-#ifndef ECL_SMALL_CONS
-  case t_list:
-    buffer->cons.car = enqueue(pool, buffer->cons.car);
-    buffer->cons.cdr = enqueue(pool, buffer->cons.car);
-    break;
-#endif
   case t_bignum: {
-    cl_fixnum size = ECL_BIGNUM_SIZE(buffer);
-    cl_index dim = ((size < 0) ? (-size) : size);
-    cl_index bytes = dim * sizeof(mp_limb_t);
-    serialize_bits(pool, ECL_BIGNUM_LIMBS(buffer), bytes);
+    int8_t sign = mpz_sgn(buffer->big.big_num);
+    serialize_bits(pool, &sign, 1);
+    cl_index bytes = (mpz_sizeinbase(buffer->big.big_num, 2) + 7) / 8;
+    serialize_bits(pool, &bytes, sizeof(cl_index));
+    cl_index index = alloc(pool, bytes);
+    cl_index bytes_written;
+    mpz_export(pool->data->vector.self.b8 + index, &bytes_written, 1, 1, 1, 0, buffer->big.big_num);
     break;
   }
   case t_ratio: {
@@ -250,6 +265,12 @@ serialize_one(pool_t pool, cl_object what)
     buffer->complex.imag = enqueue(pool, buffer->complex.imag);
     break;
   }
+  case t_hashtable:
+    buffer->hash.sync_lock = enqueue(pool, buffer->hash.sync_lock);
+    buffer->hash.rehash_size = enqueue(pool, buffer->hash.rehash_size);
+    buffer->hash.threshold = enqueue(pool, buffer->hash.threshold);
+    serialize_hashtable(pool, buffer);
+    break;
 #ifdef ECL_UNICODE
   case t_string:
 #endif
@@ -260,9 +281,11 @@ serialize_one(pool_t pool, cl_object what)
     break;
   }
   case t_array: {
-    cl_index bytes = ROUND_TO_WORD(buffer->array.rank *
-                                   sizeof(cl_index));
-    serialize_bits(pool, buffer->array.dims, bytes);
+    serialize_bits(pool, buffer->array.dims, sizeof(cl_index) * buffer->array.rank);
+    /* We might have allocated memory in pool->data and thus the
+       adress of pool->data->vector.self might have changed, hence we
+       have to reload buffer. */
+    buffer = (cl_object)(pool->data->vector.self.b8 + index);
     serialize_vector(pool, buffer);
     break;
   }
@@ -296,6 +319,7 @@ serialize_one(pool_t pool, cl_object what)
   case t_bclosure: {
     buffer->bclosure.code = enqueue(pool, buffer->bclosure.code);
     buffer->bclosure.lex = enqueue(pool, buffer->bclosure.lex);
+    break;
   }
   case t_bytecodes: {
     buffer->bytecodes.name = enqueue(pool, buffer->bytecodes.name);
@@ -305,6 +329,7 @@ serialize_one(pool_t pool, cl_object what)
     buffer->bytecodes.file_position = enqueue(pool, buffer->bytecodes.file_position);
     buffer->bytecodes.code_size = serialize_bits(pool, buffer->bytecodes.code,
                                                  buffer->bytecodes.code_size);
+    break;
   }
   default:
     FEerror("Unable to serialize object ~A", 1, what);
@@ -352,7 +377,7 @@ si_serialize(cl_object root)
 static void *
 reconstruct_bits(uint8_t *data, cl_index bytes)
 {
-  void *output = ecl_alloc_atomic(bytes);
+  void *output = ecl_alloc_atomic(ROUND_TO_WORD(bytes));
   memcpy(output, data, bytes);
   return output;
 }
@@ -360,7 +385,7 @@ reconstruct_bits(uint8_t *data, cl_index bytes)
 static void *
 reconstruct_object_ptr(uint8_t *data, cl_index bytes)
 {
-  void *output = ecl_alloc(bytes);
+  void *output = ecl_alloc(ROUND_TO_WORD(bytes));
   memcpy(output, data, bytes);
   return output;
 }
@@ -377,13 +402,11 @@ static uint8_t *
 reconstruct_vector(cl_object v, uint8_t *data)
 {
   if (v->vector.displaced == ECL_NIL) {
-    cl_type t = v->vector.elttype;
-    cl_index size = v->vector.dim * ecl_aet_size[t];
-    cl_index bytes = ROUND_TO_WORD(size);
-    if (t == ecl_aet_object) {
+    cl_index bytes = vector_self_size(v);
+    if (v->vector.elttype == ecl_aet_object) {
       v->vector.self.t = reconstruct_object_ptr(data, bytes);
     } else {
-      v->vector.self.t = reconstruct_bits(data, size);
+      v->vector.self.t = reconstruct_bits(data, bytes);
     }
     data += bytes;
   }
@@ -399,9 +422,18 @@ reconstruct_array(cl_object a, uint8_t *data)
 }
 
 static uint8_t *
+reconstruct_hashtable(cl_object h, uint8_t *data)
+{
+  cl_index bytes = ROUND_TO_WORD(h->hash.size * sizeof(struct ecl_hashtable_entry));
+  h->hash.data = ecl_alloc(bytes);
+  memcpy(h->hash.data, data, bytes);
+  return data + bytes;
+}
+
+static uint8_t *
 duplicate_object(uint8_t *data, cl_object *output)
 {
-  cl_type t = ((cl_object)data)->d.t;
+  cl_type t = ecl_t_of((cl_object)data);
   cl_object o = ecl_alloc_object(t);
   cl_index bytes = object_size[t];
   memcpy(o, data, bytes);
@@ -413,15 +445,37 @@ static uint8_t *
 reconstruct_one(uint8_t *data, cl_object *output)
 {
   cl_object o = (cl_object)data;
-  switch (o->d.t) {
-#ifdef ECL_SMALL_CONS
+  switch (ecl_t_of(o)) {
   case t_list: {
     large_cons_ptr c = (large_cons_ptr)data;
-    *output = ecl_cons(c->car, c->cdr);
+    cl_object car = c->car;
+    cl_object cdr = c->cdr;
+    if (car == (cl_object) 0 && cdr == (cl_object) 0) {
+      *output = ECL_NIL;
+    } else {
+      *output = ecl_cons(car, cdr);
+    }
     data += ROUND_TO_WORD(sizeof(large_cons));
     break;
   }
-#endif
+  case t_bignum: {
+    data = duplicate_object(data, output);
+    int8_t sign = (int8_t) *data;
+    data += ROUND_TO_WORD(1);
+    cl_index bytes = (cl_index) *data;
+    data += ROUND_TO_WORD(sizeof(cl_index));
+    mpz_init((*output)->big.big_num);
+    mpz_import((*output)->big.big_num, bytes, 1, 1, 1, 0, data);
+    if (sign == -1) {
+      mpz_neg((*output)->big.big_num, (*output)->big.big_num);
+    }
+    data += ROUND_TO_WORD(bytes);
+    break;
+  }
+  case t_hashtable:
+    data = duplicate_object(data, output);
+    data = reconstruct_hashtable(*output, data);
+    break;
 #ifdef ECL_UNICODE
   case t_string:
 #endif
@@ -446,6 +500,7 @@ reconstruct_one(uint8_t *data, cl_object *output)
   case t_bytecodes:
     data = duplicate_object(data, output);
     data = reconstruct_bytecodes(*output, data);
+    break;
   default:
     data = duplicate_object(data, output);
   }
@@ -455,7 +510,7 @@ reconstruct_one(uint8_t *data, cl_object *output)
 static cl_object
 get_object(cl_object o_or_index, cl_object *o_list)
 {
-  if (ECL_IMMEDIATE(o_or_index)) {
+  if (ECL_IMMEDIATE(o_or_index) || o_or_index == OBJNULL) {
     return o_or_index;
   } else {
     cl_index i = (cl_index)o_or_index >> 2;
@@ -467,8 +522,7 @@ static void
 fixup_vector(cl_object v, cl_object *o_list)
 {
   if (!ECL_IMMEDIATE(v->vector.displaced)) {
-    cl_object disp = get_object(v->vector.displaced, o_list);
-    cl_object to = ECL_CONS_CAR(disp);
+    cl_object to = get_object(v->vector.displaced, o_list);
     if (to != ECL_NIL) {
       cl_index offset = (cl_index)v->vector.self.b8;
       v->vector.displaced = ECL_NIL;
@@ -486,16 +540,29 @@ fixup_vector(cl_object v, cl_object *o_list)
 }
 
 static void
+fixup_hashtable(cl_object h, cl_object *o_list)
+{
+  cl_index i;
+  for (i = 0; i < h->hash.size; i++) {
+    h->hash.data[i].key = get_object(h->hash.data[i].key, o_list);
+    h->hash.data[i].value = get_object(h->hash.data[i].value, o_list);
+  }
+  h->hash.rehash_size = get_object(h->hash.rehash_size, o_list);
+  h->hash.threshold = get_object(h->hash.threshold, o_list);
+  ecl_reconstruct_serialized_hashtable(h);
+}
+
+static void
 fixup(cl_object o, cl_object *o_list)
 {
-#ifdef ECL_SMALL_CONS
   if (ECL_LISTP(o)) {
-    ECL_RPLACA(o, get_object(ECL_CONS_CAR(o), o_list));
-    ECL_RPLACD(o, get_object(ECL_CONS_CDR(o), o_list));
+    if (!Null(o)) {
+      ECL_RPLACA(o, get_object(ECL_CONS_CAR(o), o_list));
+      ECL_RPLACD(o, get_object(ECL_CONS_CDR(o), o_list));
+    }
     return;
   }
-#endif
-  switch (o->d.t) {
+  switch (ecl_t_of(o)) {
   case t_ratio:
     o->ratio.den = get_object(o->ratio.den, o_list);
     o->ratio.num = get_object(o->ratio.num, o_list);
@@ -503,6 +570,9 @@ fixup(cl_object o, cl_object *o_list)
   case t_complex:
     o->complex.real = get_object(o->complex.real, o_list);
     o->complex.imag = get_object(o->complex.imag, o_list);
+    break;
+  case t_hashtable:
+    fixup_hashtable(o, o_list);
     break;
 #ifdef ECL_UNICODE
   case t_string:
@@ -548,6 +618,7 @@ fixup(cl_object o, cl_object *o_list)
 cl_object
 ecl_deserialize(uint8_t *raw)
 {
+  cl_env_ptr the_env = ecl_process_env();
   cl_index *data = (cl_index*)raw;
   cl_index i, num_el = data[1];
   cl_object *output = ecl_alloc(sizeof(cl_object) * num_el);
@@ -557,20 +628,31 @@ ecl_deserialize(uint8_t *raw)
   }
   for (i = 0; i < num_el; i++) {
     cl_object package = output[i];
-    if (!ECL_IMMEDIATE(package) && package->d.t == t_package) {
+    if (ecl_t_of(package) == t_package) {
       cl_object name = get_object(package->pack.name,
                                   output);
       output[i] = ecl_find_package_nolock(name);
+      if (Null(output[i])) {
+        unlikely_if (Null(the_env->packages_to_be_created_p)) {
+          FEerror("There is no package with the name ~A.",
+                  1, name);
+        }
+        output[i] = _ecl_package_to_be_created(the_env, name);
+      }
     }
   }
   for (i = 0; i < num_el; i++) {
     cl_object symbol = output[i];
-    if (!ECL_IMMEDIATE(symbol) && symbol->d.t == t_symbol) {
+    if (ecl_t_of(symbol) == t_symbol) {
       struct fake_symbol *s = (struct fake_symbol *)symbol;
       cl_object name = get_object(s->name, output);
       cl_object pack = get_object(s->pack, output);
-      int flag;
-      output[i] = ecl_intern(name, pack, &flag);
+      if (Null(pack)) {
+        output[i] = cl_make_symbol(name);
+      } else {
+        int flag;
+        output[i] = ecl_intern(name, pack, &flag);
+      }
     }
   }
   for (i = 0; i < num_el; i++) {
@@ -585,3 +667,5 @@ si_deserialize(cl_object data)
 {
   @(return ecl_deserialize(data->vector.self.b8));
 }
+
+#endif  /* ECL_EXTERNALIZABLE */
