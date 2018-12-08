@@ -227,7 +227,8 @@ the resulting COMPARE-AND-SWAP expansions."
 (defun get-cas-expansion (place &optional environment &aux f)
   "Returns the COMPARE-AND-SWAP expansion forms and variables as defined
 in DEFINE-CAS-EXPANDER for PLACE as six values."
-  (cond ((setq f (si:get-sysprop (first place) 'CAS-EXPANDER))
+  (cond ((and (listp place)
+              (setq f (si:get-sysprop (first place) 'CAS-EXPANDER)))
          (apply f environment (rest place)))
         ;; We try macro expansion with MACROEXPAND-1 as in SETF
         ((and (setq f (macroexpand-1 place environment)) (not (equal f place)))
