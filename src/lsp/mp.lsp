@@ -232,6 +232,17 @@ the resulting COMPARE-AND-SWAP expansions."
                `(,',cas-fun ,@args ,old ,new)
                `(,',accessor ,@args)))))
 
+;; XXX - Hacky way to determine at macroexpand time whether place is a
+;; special variable (works for both bytecodes and native compiler). To
+;; be replaced by a better way once the cltl2 environment access is
+;; implemented (see issue #63). -- mg 2019-10-31
+(defun special-variable-p (place)
+  (declare (si::c-local))
+  (and (symbolp place)
+       (or (and (fboundp 'c::special-variable-p)
+                (c::special-variable-p place))
+           (si:specialp place))))
+
 #+threads
 (defun remcas (symbol)
   "Remove a COMPARE-AND-SWAP expansion. It is a CAS operation equivalent of
@@ -251,6 +262,8 @@ the resulting COMPARE-AND-SWAP expansions."
 (defun get-cas-expansion (place &optional environment &aux f)
   "Returns the COMPARE-AND-SWAP expansion forms and variables as defined
 in DEFINE-CAS-EXPANDER for PLACE as six values."
+  (when (special-variable-p place)
+    (setf place `(symbol-value ',place)))
   (cond ((and (listp place)
               (setq f (si:get-sysprop (first place) 'CAS-EXPANDER)))
          (apply f environment (rest place)))
@@ -363,16 +376,21 @@ for slot-value-using-class or (setf slot-value-using-class).
 The consequences are undefined if the value of PLACE is not of type
 fixnum."
   #+threads
-  (let* ((place (macroexpand place))
-         (fun (case (first place)
-               ((car first) 'mp:atomic-incf-car)
-               ((cdr rest) 'mp:atomic-incf-cdr)
-               (symbol-value 'mp:atomic-incf-symbol-value)
-               (svref 'mp:atomic-incf-svref)
-               (slot-value 'mp::atomic-incf-slot-value)
-               ((clos:standard-instance-access clos:funcallable-standard-instance-access) 'mp::atomic-incf-standard-instance)
-               (t (error "No ATOMIC-INCF expansion defined for place ~S." place)))))
-    `(,fun ,@(rest place) ,increment))
+  (progn
+    (setf place (macroexpand place))
+    (when (special-variable-p place)
+      (setf place `(symbol-value ',place)))
+    (let ((fun (when (listp place)
+                   (case (first place)
+                     ((car first) 'mp:atomic-incf-car)
+                     ((cdr rest) 'mp:atomic-incf-cdr)
+                     (symbol-value 'mp:atomic-incf-symbol-value)
+                     (svref 'mp:atomic-incf-svref)
+                     (slot-value 'mp::atomic-incf-slot-value)
+                     ((clos:standard-instance-access clos:funcallable-standard-instance-access) 'mp::atomic-incf-standard-instance)))))
+      (unless fun
+        (error "No ATOMIC-INCF expansion defined for place ~S." place))
+      `(,fun ,@(rest place) ,increment)))
   #-threads
   (let ((value (gensym))
         (incr (gensym)))
