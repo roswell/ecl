@@ -742,7 +742,7 @@ cl_array_element_type(cl_object a)
 /*
   Displace(from, to, offset) displaces the from-array
   to the to-array (the original array) by the specified offset.
-  It changes the a_displaced field of both arrays.
+  It changes the displaced field of both arrays.
   The field is a cons; the car of the from-array points to
   the to-array and the cdr of the to-array is a list of arrays
   displaced to the to-array, so the from-array is pushed to the

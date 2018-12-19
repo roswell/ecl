@@ -15,6 +15,7 @@
 #include <string.h>
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
+#define ECL_DEFINE_AET_SIZE
 #include <ecl/internal.h>
 
 cl_object
@@ -455,6 +456,42 @@ ecl_equalp(cl_object x, cl_object y)
     j=x->array.dim;
   ARRAY: {
       cl_index i;
+      cl_elttype etx = x->array.elttype;
+      cl_elttype ety = y->array.elttype;
+      if (etx == ety
+          && (etx == ecl_aet_b8 || etx == ecl_aet_i8
+              || etx == ecl_aet_b16 || etx == ecl_aet_i16
+              || etx == ecl_aet_b32 || etx == ecl_aet_i32
+              || etx == ecl_aet_b64 || etx == ecl_aet_i64
+              || etx == ecl_aet_fix || etx == ecl_aet_index)) {
+        return memcmp(x->array.self.t, y->array.self.t, j * ecl_aet_size[etx]) == 0;
+      }
+      if (etx == ecl_aet_sf) {
+        if (ety == ecl_aet_sf) {
+          for (i = 0; i < j; i++)
+            if (x->array.self.sf[i] != y->array.self.sf[i])
+              return(FALSE);
+          return(TRUE);
+        } else if (ety == ecl_aet_df) {
+          for (i = 0; i < j; i++)
+            if (x->array.self.sf[i] != y->array.self.df[i])
+              return(FALSE);
+          return(TRUE);
+        }
+      }
+      if (etx == ecl_aet_df) {
+        if (ety == ecl_aet_sf) {
+          for (i = 0; i < j; i++)
+            if (x->array.self.df[i] != y->array.self.sf[i])
+              return(FALSE);
+          return(TRUE);
+        } else if (ety == ecl_aet_df) {
+          for (i = 0; i < j; i++)
+            if (x->array.self.df[i] != y->array.self.df[i])
+              return(FALSE);
+          return(TRUE);
+        }
+      }
       for (i = 0;  i < j;  i++)
         if (!ecl_equalp(ecl_aref_unsafe(x, i), ecl_aref_unsafe(y, i)))
           return(FALSE);
