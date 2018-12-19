@@ -950,6 +950,54 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
   return h;
 }
 
+#ifdef ECL_EXTERNALIZABLE
+void
+ecl_reconstruct_serialized_hashtable(cl_object h) {
+  switch (h->hash.test) {
+  case ecl_htt_eq:
+    h->hash.get = _ecl_gethash_eq;
+    h->hash.set = _ecl_sethash_eq;
+    h->hash.rem = _ecl_remhash_eq;
+    break;
+  case ecl_htt_eql:
+    h->hash.get = _ecl_gethash_eql;
+    h->hash.set = _ecl_sethash_eql;
+    h->hash.rem = _ecl_remhash_eql;
+    break;
+  case ecl_htt_equal:
+    h->hash.get = _ecl_gethash_equal;
+    h->hash.set = _ecl_sethash_equal;
+    h->hash.rem = _ecl_remhash_equal;
+    break;
+  case ecl_htt_equalp:
+    h->hash.get = _ecl_gethash_equalp;
+    h->hash.set = _ecl_sethash_equalp;
+    h->hash.rem = _ecl_remhash_equalp;
+    break;
+  case ecl_htt_pack:
+    h->hash.get = _ecl_gethash_pack;
+    h->hash.set = _ecl_sethash_pack;
+    h->hash.rem = _ecl_remhash_pack;
+    break;
+  }
+  if (h->hash.weak != ecl_htt_not_weak) {
+    h->hash.get = _ecl_gethash_weak;
+    h->hash.set = _ecl_sethash_weak;
+    h->hash.rem = _ecl_remhash_weak;
+  }
+  if (h->hash.sync_lock != OBJNULL
+      && (ecl_t_of(h->hash.sync_lock) == t_lock
+          || ecl_t_of(h->hash.sync_lock) == t_rwlock)) {
+    h->hash.get_unsafe = h->hash.get;
+    h->hash.set_unsafe = h->hash.set;
+    h->hash.rem_unsafe = h->hash.rem;
+    h->hash.get = _ecl_gethash_sync;
+    h->hash.set = _ecl_sethash_sync;
+    h->hash.rem = _ecl_remhash_sync;
+  }
+}
+#endif
+
 cl_object
 cl_hash_table_p(cl_object ht)
 {

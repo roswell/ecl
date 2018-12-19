@@ -22,7 +22,7 @@ static const cl_object ecl_aet_name[] = {
   ECL_T,                   /* ecl_aet_object */
   @'single-float',      /* ecl_aet_sf */
   @'double-float',      /* ecl_aet_df */
-  @'bit',               /* ecl_aet_bit: cannot be handled with this code */
+  @'bit',               /* ecl_aet_bit */
   @'ext::cl-fixnum',    /* ecl_aet_fix */
   @'ext::cl-index',     /* ecl_aet_index */
   @'ext::byte8',        /* ecl_aet_b8 */

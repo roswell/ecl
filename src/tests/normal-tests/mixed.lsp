@@ -204,7 +204,7 @@
     (signals arithmetic-error (/ a b))))
 
 
-;;; Data: 2017-01-20
+;;; Date: 2017-01-20
 ;;; Description:
 ;;;
 ;;;   `dolist' macroexpansion yields result which doesn't have a
@@ -227,7 +227,7 @@
                     :next))))
 
 
-;;; Data: 2017-07-02
+;;; Date: 2017-07-02
 ;;; Description:
 ;;;
 ;;;   Function `ecl_new_binding_index' called `si_set_finalizer',
@@ -252,7 +252,7 @@
     (delete-file "aux-cl-0003.fasc"))
   (is-eql 2 (mix.0015.fun)))
 
-;;; Data: 2018-05-08
+;;; Date: 2018-05-08
 ;;; Description:
 ;;;
 ;;;   Better handling of fifos. This test will most likely fail on Windows (this
@@ -291,3 +291,70 @@
       (is (equal "foobar" (read-line stream2 nil :foo)))))
   ;; clean up
   (ext:run-program "rm" '("-rf" "my-fifo") :output t))
+
+
+;;; Date: 2018-12-02
+;;; Description:
+;;;
+;;;   Serialization/Deserialization tests
+#+externalizable
+(test mix.0017.serialization
+  (let* ((vector (make-array 4 :element-type 'ext:byte16 :initial-contents #(1 2 3 4)))
+         (to-be-serialized
+          (vector nil  ; 1: empty list
+                  '(1 2)  ; 2: non-empty list
+                  #\q  ; 3: character
+                  42  ; 4: fixnum
+                  (+ 10 most-positive-fixnum)  ; 5: bignum
+                  2/3  ; 6: ratio
+                  12.3f4  ; 7-9: floats
+                  13.2d4
+                  #+long-float 14.2l3
+                  #C(4 7)  ; 10: complex
+                  #.(find-package "COMMON-LISP-USER")  ; 11: package
+                  'q  ; 12: symbol
+                  ;; 13: hash-table
+                  (let ((ht (make-hash-table)))
+                    (setf (gethash :foo ht) :abc)
+                    (setf (gethash :bar ht) :def)
+                    ht)
+                  ;; 14: array
+                  (let ((a (make-array '(2 2) :initial-element 0)))
+                    (setf (aref a 0 0) 'q)
+                    (setf (aref a 0 1) 1/5)
+                    a)
+                  vector  ; 15: non-displaced vector
+                  ;; 16: displaced vector
+                  (make-array 3 :element-type 'ext:byte16
+                              :displaced-to vector
+                              :displaced-index-offset 1)
+                  "a∩b∈c"  ; 17: string
+                  (make-string 3 :initial-element #\q :element-type 'base-char)  ; 18: base-string
+                  (make-array 6 :element-type 'bit :initial-contents #(0 1 0 1 1 0))  ; 19: bit-vector
+                  ;; stream: not externalizable?
+                  ;; 20: random-state
+                  (let ((r (make-random-state)))
+                    (random 10 r)
+                    r)
+                  ;; readtable: not externalizable
+                  #P"/foo/bar/whatever.gif"  ; 21: pathname
+                  ;; TODO: other objects
+                  ))
+         (deserialized (si::deserialize (si::serialize to-be-serialized))))
+    (is-true (equalp (subseq to-be-serialized 0 12)
+                     (subseq deserialized 0 12)))
+    (is-true (loop for key being the hash-keys of (elt to-be-serialized 12)
+                if (not (eq (gethash key (elt to-be-serialized 12))
+                            (gethash key (elt deserialized 12))))
+                return nil
+                finally (return t)))
+    (is-true (equalp (subseq to-be-serialized 13 16)
+                     (subseq deserialized 13 16)))
+    (is-true (and (equalp (multiple-value-list (array-displacement (elt to-be-serialized 15)))
+                          (multiple-value-list (array-displacement (elt to-be-serialized 15))))))
+    (is-true (equal (elt to-be-serialized 16) (elt deserialized 16)))
+    (is-true (equal (elt to-be-serialized 17) (elt deserialized 17)))
+    (is-true (equal (elt to-be-serialized 18) (elt deserialized 18)))
+    (is-true (equalp (elt to-be-serialized 19) (elt deserialized 19)))
+    (is-true (equal (elt to-be-serialized 20) (elt deserialized 20)))
+    ))

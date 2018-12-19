@@ -315,6 +315,9 @@ extern cl_object si_formatter_aux _ECL_ARGS((cl_narg narg, cl_object strm, cl_ob
 
 /* hash.d */
 extern cl_object ecl_extend_hashtable(cl_object hashtable);
+#ifdef ECL_EXTERNALIZABLE
+extern void ecl_reconstruct_serialized_hashtable(cl_object h);
+#endif
 
 /* gfun.d, kernel.lsp */
 
@@ -450,11 +453,11 @@ extern bool ecl_wild_string_p(cl_object item);
 typedef struct { cl_index start, end, length; } cl_index_pair;
 extern ECL_API cl_index_pair ecl_sequence_start_end(cl_object fun, cl_object s, cl_object start, cl_object end);
 
+#ifdef ECL_EXTERNALIZABLE
 /* serialize.d */
 
-extern cl_object si_serialize(cl_object root);
-extern cl_object si_deserialize(cl_object root);
 extern cl_object ecl_deserialize(uint8_t *data);
+#endif
 
 /* string.d */
 #define ecl_vector_start_end ecl_sequence_start_end

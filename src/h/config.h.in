@@ -218,6 +218,9 @@ typedef unsigned char ecl_base_char;
 /* Use CMU Common-Lisp's FORMAT routine                                 */
 #undef ECL_CMU_FORMAT
 
+/* Use the serialization framework                                      */
+#undef ECL_EXTERNALIZABLE
+
 /*
  * C macros for inlining, denoting probable code paths and other stuff
  * that makes better code. Most of it is GCC specific.

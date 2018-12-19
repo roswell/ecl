@@ -84,6 +84,7 @@
         (t
          "")))
 
+#-externalizable
 (defun data-c-dump (filename)
   (labels ((produce-strings ()
              ;; Only Windows has a size limit in the strings it creates.
@@ -98,7 +99,7 @@
                 for i from 0 below l by max-string-size
                 for this-l = (min (- l i) max-string-size)
                 collect (make-array this-l :displaced-to string
-                                    :element-type 'character
+                                    :element-type (array-element-type string)
                                     :displaced-index-offset i)))
            (output-one-c-string (name string stream)
              (let* ((*wt-string-size* 0)
@@ -126,6 +127,29 @@
             (princ "#define compiler_data_text NULL" stream))
         ;; Ensure a final newline or some compilers complain
         (terpri stream)))))
+
+#+externalizable
+(defun data-c-dump (filename)
+  (with-open-file (stream filename :direction :output :if-does-not-exist :create
+                          :if-exists :supersede :external-format :default)
+    (let ((data (data-dump-array)))
+      (if (plusp (length data))
+          (let ((s (with-output-to-string (stream)
+                     (loop for i below (length data) do
+                          (princ (elt data i) stream)
+                          (if (< i (1- (length data)))
+                              (princ "," stream))))))
+            (format stream "static uint8_t serialization_data[] = {~A};~%" s)
+            (format stream "static const struct ecl_vector compiler_data_text1[] = {{
+        (int8_t)t_vector, 0, ecl_aet_b8, 0,
+        ECL_NIL, (cl_index)~D, (cl_index)~D,
+        { .b8=serialization_data } }};~%"
+                    (length data) (length data))
+            (format stream "static const cl_object compiler_data_text[] = {
+(cl_object)compiler_data_text1}; "))
+          (princ "#define compiler_data_text NULL" stream))
+      ;; Ensure a final newline or some compilers complain
+      (terpri stream))))
 
 (defun data-empty-loc ()
   (add-object 0 :duplicate t :permanent t))
