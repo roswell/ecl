@@ -378,8 +378,8 @@ ecl_equal(register cl_object x, cl_object y)
     ox = x->vector.offset;
     oy = y->vector.offset;
     for (i = 0;  i < x->vector.fillp;  i++)
-      if(((x->vector.self.bit[(i+ox)/8] & (0200>>(i+ox)%8)) << ox)
-         !=((y->vector.self.bit[(i+oy)/8] & (0200>>(i+oy)%8)) << oy))
+      if(((x->vector.self.bit[(i+ox)/8] << (i+ox)%8) & 0200)
+         != ((y->vector.self.bit[(i+oy)/8] << (i+oy)%8) & 0200))
         return(FALSE);
     return(TRUE);
   }
