@@ -368,7 +368,7 @@ write_rwlock(cl_object x, cl_object stream)
 static void
 write_condition_variable(cl_object x, cl_object stream)
 {
-  _ecl_write_unreadable(x, "semaphore", ECL_NIL, stream);
+  _ecl_write_unreadable(x, "condition-variable", ECL_NIL, stream);
 }
 
 static void
