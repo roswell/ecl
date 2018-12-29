@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
 /*
-    unixint.c -- Unix interrupt interface.
+    unixint.d -- Unix interrupt interface.
 */
 /*
     Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.

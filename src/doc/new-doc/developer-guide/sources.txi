@@ -64,6 +64,9 @@
 @item compiler.d
 @tab bytecode compiler
 
+@item cons.d
+@tab list manipulation macros & functions (auto generated)
+
 @item disassembler.d
 @tab bytecodes disassembler utilities
 
@@ -73,7 +76,7 @@
 @item ecl_constants.h
 @tab constant values for all_symbols.d
 
-@item features.h
+@item ecl_features.h
 @tab names of features compiled into ECL
 
 @item error.d
@@ -130,6 +133,9 @@
 @item mapfun.d
 @tab mapping
 
+@item multival.d
+@tab multiple values
+
 @item newhash.d
 @tab hashing routines
 
@@ -171,7 +177,7 @@
 @tab printer utilities and object representations
 
 @item read.d
-@tab read.d - reader
+@tab reader
 
 @item reader/parse_integer.d
 @item reader/parse_number.d
@@ -219,6 +225,9 @@ symbols on the system which aren't local.
 
 @item unixfsys.d
 @tab Unix file system interface
+
+@item unixint.d
+@tab Unix interrupt interface.
 
 @item unixsys.d
 @tab Unix shell interface

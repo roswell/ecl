@@ -4,7 +4,9 @@
 @cindex Defun preprocessor
 
 Usage:
+@verbatim
         dpp [in-file [out-file]]
+@end verbatim
 
 The file named in-file is preprocessed and the output will be
 written to the file whose name is out-file. If in-file is "-"
@@ -14,7 +16,7 @@ C-program is written to standard output.
 The function definition:
 
 @exindex dpp: function definition
-@lisp
+@verbatim
 @(defun name ({var}*
               [&optional {var | (var [initform [svar]])}*]
               [&rest var]
@@ -30,32 +32,48 @@ The function definition:
         C-body
 
 } @)
-@end lisp
+@end verbatim
 
-     name can be either an identifier or a full C procedure header
-     enclosed in quotes (').
+name is the name of the lisp function
 
-     &optional may be abbreviated as &o.
-     &rest may be abbreviated as &r.
-     &key may be abbreviated as &k.
-     &allow_other_keys may be abbreviated as &aok.
-     &aux may be abbreviated as &a.
+&optional may be abbreviated as &o.@*
+&rest may be abbreviated as &r.@*
+&key may be abbreviated as &k.@*
+&allow_other_keys may be abbreviated as &aok.@*
+&aux may be abbreviated as &a.
 
-     Each variable becomes a C variable.
+Each variable becomes a C variable.
 
-     Each supplied-p parameter becomes a boolean C variable.
+Each supplied-p parameter becomes a boolean C variable.
 
-     Initforms are C expressions.
-     If an expression contains non-alphanumeric characters,
-     it should be surrounded by backquotes (`).
+Initforms are C expressions.
+If an expression contains non-alphanumeric characters,
+it should be surrounded by backquotes (`).
 
 
-     Function return:
+Function return:
+@verbatim
+        @(return {form}*);
+@end verbatim
 
-             @(return {form}*);
+Return function expands into a lexical block @verb{|{}|}, so if it's
+used inside IF/ELSE, then it should be enclosed, even if we
+use sole @verb{|@(return);|}, because ";" will be treated as the next
+instruction.
 
-     Return function expands into a lexical block {}, so if it's
-     used inside IF/ELSE, then it should be enclosed, even if we
-     use sole @(return);, because ";" will be treated as the next
-     instruction.
+Symbols:
 
+@verbatim
+@'name'
+@end verbatim
+
+Expands into a C statement, whole value is the given symbol
+from symbols_list.h
+
+@verbatim
+@[name]
+@end verbatim
+
+Expands into a C statement, whole value is a fixnum
+corresponding to the index in the builtin symbols table of the
+given symbol from symbols_list.h. Used for handling type errors.

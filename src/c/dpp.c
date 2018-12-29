@@ -40,8 +40,7 @@
  *
  *      } @)
  *
- *      name can be either an identifier or a full C procedure header
- *      enclosed in quotes (').
+ *      name is the name of the lisp function
  *
  *      &optional may be abbreviated as &o.
  *      &rest may be abbreviated as &r.
@@ -67,6 +66,18 @@
  *      use sole @(return);, because ";" will be treated as the next
  *      instruction.
  *
+ *      Symbols:
+ *
+ *      @'name'
+ *
+ *      Expands into a C statement, whole value is the given symbol
+ *      from symbols_list.h
+ *
+ *      @[name]
+ *
+ *      Expands into a C statement, whole value is a fixnum
+ *      corresponding to the index in the builtin symbols table of the
+ *      given symbol from symbols_list.h. Used for handling type errors.
  */
 
 #include <stdlib.h>
