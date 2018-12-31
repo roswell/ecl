@@ -39,9 +39,9 @@ Building strings of C data
 @end deftypefun
 @deftypefun cl_object ecl_alloc_adjustable_simple_string (cl_index @var{length});
 @end deftypefun
-@deftypefun cl_object ecl_make_simple_base_string (ecl_base_char* @var{data}, cl_index @var{length});
+@deftypefun cl_object ecl_make_simple_base_string (ecl_base_char* @var{data}, cl_fixnum @var{length});
 @end deftypefun
-@deftypefun cl_object ecl_make_constant_base_string (ecl_base_char* @var{data}, cl_index @var{length});
+@deftypefun cl_object ecl_make_constant_base_string (ecl_base_char* @var{data}, cl_fixnum @var{length});
 @end deftypefun
 
 @subsubheading Description
@@ -51,7 +51,7 @@ These are different ways to create a base string, which is a string that holds a
 
 @code{ecl_alloc_adjustable_base_string} is similar to the previous function, but creates an adjustable string with a fill pointer. This means that the length of the string can be changed and the string itself can be resized to accommodate more data.
 
-The other constructors create strings but use some preexisting data. @code{ecl_make_simple_base_string} creates a string copying the data that the user supplies, and using freshly allocated memory. @code{ecl_make_constant_base_string} on the other hand, does not allocate memory, but simply uses the supplied pointer as buffer for the string. This last function should be used with care, ensuring that the supplied buffer is not deallocated.
+The other constructors create strings but use some preexisting data. @code{ecl_make_simple_base_string} creates a string copying the data that the user supplies, and using freshly allocated memory. @code{ecl_make_constant_base_string} on the other hand, does not allocate memory, but simply uses the supplied pointer as buffer for the string. This last function should be used with care, ensuring that the supplied buffer is not deallocated. If the @var{length} argument of these functions is -1, the length is determined by @code{strlen}.
 
 @subsubsection String accessors
 @cppindex ecl_char
@@ -59,22 +59,21 @@ The other constructors create strings but use some preexisting data. @code{ecl_m
 Reading and writing characters into a string
 
 @subsubheading Functions
-@deftypefun ecl_character ecl_char (cl_object @var{string}, cl_index @var{ndx});
+@deftypefun ecl_character ecl_char (cl_object @var{string}, cl_index @var{index});
 @end deftypefun
-@deftypefun ecl_character ecl_char_set (cl_object @var{string}, cl_index @var{ndx}, ecl_character @var{c});
+@deftypefun ecl_character ecl_char_set (cl_object @var{string}, cl_index @var{index}, ecl_character @var{c});
 @end deftypefun
 
 @subsubheading Description
-Access to string information should be done using these two functions. The first one implements the equivalent of the @code{CHAR} function from Common Lisp, returning the character that is at position @var{ndx} in the string @var{s}.
+Access to string information should be done using these two functions. The first one implements the equivalent of the @code{CHAR} function from Common Lisp, returning the character that is at position @var{index} in the string @var{string}.
 
-The counterpart of the previous function is @code{ecl_char_set}, which implements @code{(SETF CHAR)} and stores character @var{c} at the position @var{ndx} in the given string.
+The counterpart of the previous function is @code{ecl_char_set}, which implements @code{(SETF CHAR)} and stores character @var{c} at the position @var{index} in the given string.
 
 Both functions check the type of their arguments and verify that the indices do not exceed the string boundaries. Otherwise they signal a @code{serious-condition}.
 
-@subsubsection Strings C dictionary
+@subsubsection ANSI dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .22 .78
 @headitem Lisp symbol @tab C function
 @item @clhs{f_smp-st.htm,simple-string-p} @tab cl_object cl_simple_string_p(cl_object string)
@@ -90,7 +89,7 @@ Common Lisp and C equivalence
 @item @clhs{f_stg_tr.htm,string-trim} @tab cl_object cl_string_trim(cl_object character_bag, cl_object string)
 @item @clhs{f_stg_tr.htm,string-left-trim} @tab cl_object cl_string_left_trim(cl_object character_bag, cl_object string)
 @item @clhs{f_stg_tr.htm,string-right-trim} @tab cl_object cl_string_right_trim(cl_object character_bag, cl_object string)
-@item @clhs{f_string.htm,string} @tab cl_object cl_string(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_string.htm,string} @tab cl_object cl_string(cl_object x)
 @item @clhs{f_stgeq_.htm,string=} @tab cl_object cl_stringE(cl_narg narg, cl_object string1, cl_object string2, ...)
 @item @clhs{f_stgeq_.htm,string/=} @tab cl_object cl_stringNE(cl_narg narg, cl_object string1, cl_object string2, ...)
 @item @clhs{f_stgeq_.htm,string<} @tab cl_object cl_stringL(cl_narg narg, cl_object string1, cl_object string2, ...)

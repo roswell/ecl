@@ -48,8 +48,8 @@ external-format-designator :=
 
 and the table of known symbols is shown below. Note how some symbols (@code{:cr}, @code{:little-endian}, etc.) just modify other external formats.
 
-@c @float Table, tab:stream-ext-formats
-@c @caption{Stream external formats}
+@float Table, tab:stream-ext-formats
+@caption{Stream external formats}
 @multitable @columnfractions .4 .4 .2
 @headitem Symbols @tab Codepage or encoding @tab Unicode required
 @item @code{:cr} @tab @code{#\Newline} is @code{Carriage Return} @tab No
@@ -103,7 +103,7 @@ and the table of known symbols is shown below. Note how some symbols (@code{:cr}
 @item @code{:windows-cp1257 :windows-1257 :winbaltrim} @tab Windows CP 1257 @tab Yes
 @item @code{:windows-cp1258 :windows-1258} @tab Windows CP 1258 @tab Yes
 @end multitable
-@c @end float
+@end float
 
 @node Streams - Dictionary
 @subsection Dictionary
@@ -137,20 +137,19 @@ If @var{mode} is @code{nil} or @code{:none}, @var{stream} will not be buffered, 
 @node Streams - C Reference
 @subsection C Reference
 
-@subsubsection Streams C dictionary
+@subsubsection ANSI dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .3 .7
 @headitem Lisp symbol @tab C function
 @item @clhs{f_broadc.htm,broadcast-stream-streams} @tab cl_object cl_broadcast_stream_streams(cl_object broadcast_stream)
 @item @clhs{f_clear_.htm,clear-input} @tab cl_object cl_clear_input(cl_narg narg, ...)
-@item @clhs{f_finish.htm,clear-output} @tab cl_object cl_clear_outputt(cl_narg narg, ...)
+@item @clhs{f_finish.htm,clear-output} @tab cl_object cl_clear_output(cl_narg narg, ...)
 @item @clhs{f_close.htm,close} @tab cl_object cl_close(cl_narg narg, cl_object stream, ...)
 @item @clhs{f_conc_1.htm,concatenated-stream-streams} @tab cl_object cl_concatenated_stream_streams(cl_object concatenated_stream)
 @item @clhs{f_echo_s.htm,echo-stream-input-stream} @tab cl_object cl_echo_stream_input_stream(cl_object echo_stream)
 @item @clhs{f_echo_s.htm,echo-stream-output-stream} @tab cl_object cl_echo_stream_output_stream(cl_object echo_stream)
-@item @clhs{f_file_p.htm,file-length} @tab cl_object cl_file_length(cl_object stream)
+@item @clhs{f_file_p.htm,file-length} @tab cl_object cl_file_position(cl_narg narg, cl_object file_stream, ...)
 @item @clhs{f_file_s.htm,file-position} @tab cl_object cl_file_position(cl_object stream)
 @item @clhs{f_finish.htm,file-string-length} @tab cl_object cl_file_string_length(cl_object stream, cl_object object)
 @item @clhs{f_finish.htm,finish-output} @tab cl_object cl_finish_outputt(cl_narg narg, ...)
@@ -175,7 +174,7 @@ Common Lisp and C equivalence
 @item @clhs{f_rd_cha.htm,read-char} @tab cl_object cl_read_char(cl_narg narg, ...)
 @item @clhs{f_rd_c_1.htm,read-char-no-hang} @tab cl_object cl_read_char_no_hang(cl_narg narg, ...)
 @item @clhs{f_rd_lin.htm,read-line} @tab cl_object cl_read_line(cl_narg narg, ...)
-@item @clhs{f_rd_seq.htm,read-sequence} @tab cl_object cl_read_sequence(cl_narg narg, cl_object sequence, cl_object stream)
+@item @clhs{f_rd_seq.htm,read-sequence} @tab cl_object cl_read_sequence(cl_narg narg, cl_object sequence, cl_object stream, ...)
 @item @clhs{f_stm_el.htm,stream-element-type} @tab cl_object cl_stream_element_type(cl_object stream)
 @item @clhs{f_stm_er.htm,stream-error-stream} @tab [Only in Common Lisp]
 @item @clhs{f_stm_ex.htm,stream-external-format} @tab cl_object cl_stream_external_format(cl_object stream)
@@ -187,9 +186,9 @@ Common Lisp and C equivalence
 @item @clhs{f_unrd_c.htm,unread-char} @tab cl_object cl_unread_char(cl_narg narg, cl_object character, ...)
 @item @clhs{f_wr_by.htm,write-byte} @tab cl_object cl_write_byte(cl_object byte, cl_object stream)
 @item @clhs{f_wr_cha.htm,write-char} @tab cl_object cl_write_char(cl_narg narg, cl_object character, ...)
-@item @clhs{f_wr_stg.htm,write-line} @tab cl_object cl_write_line(cl_narg narg, cl_object string)
-@item @clhs{f_wr_stg.htm,write-string} @tab cl_object cl_write_string(cl_narg narg, cl_object string)
-@item @clhs{f_wr_seq.htm,write-sequence} @tab cl_object cl_write_sequence(cl_narg narg, cl_object sequence, cl_object stream)
+@item @clhs{f_wr_stg.htm,write-line} @tab cl_object cl_write_line(cl_narg narg, cl_object string, ...)
+@item @clhs{f_wr_stg.htm,write-string} @tab cl_object cl_write_string(cl_narg narg, cl_object string, ...)
+@item @clhs{f_wr_seq.htm,write-sequence} @tab cl_object cl_write_sequence(cl_narg narg, cl_object sequence, cl_object stream, ...)
 @item @clhs{f_y_or_n.htm,y-or-n-p} @tab cl_object cl_y_or_n_p(cl_narg narg, ...)
 @item @clhs{f_y_or_n.htm,yes-or-no-p} @tab cl_object cl_yes_or_no_p(cl_narg narg, ...)
 @end multitable

@@ -24,9 +24,8 @@ As specified in ANSI @bibcite{ANSI} this function outputs the internal represent
 ECL only has a particular difference: it has two different compilers, one based on bytecodes and one based on the C language. The output will thus depend on the arguments and on which compiler is active at the moment in which this function is run.
 
 @itemize
-@item If the argument is a bytecompiled function, the output will be bytecodes.
-@item If the argument is a lambda form, it will be processed by the active compiler and the appropriate output (bytecodes or C) will be shown.
-@item If the argument is a C-compiled form, ECL will retrieve its original lambda form and process it with the currently active compiler.
+@item If the argument is a bytecompiled function or a lambda form, it will be processed by the active compiler and the appropriate output (bytecodes or C) will be shown.
+@item If the argument is a C-compiled form, disassembling the function by showing its C source code is not possible, since that would require saving not only the lambda form of the function, but also the precise configuration of the compiler when the function was compiled. Hence no output will be shown.
 @end itemize
 @end defun
 
@@ -36,7 +35,7 @@ Follow the execution of functions
 (trace @var{function-name*})
 @table @var
 @item function-name
-@{@var{symbol}|@var{symbol}[@var{option form}]*)@}
+@{@var{symbol} | (@var{symbol} [ @var{option} @var{form} ]*)@}
 @item symbol
 A symbol which is bound to a function in the global environment. Not evaluated.
 @item option
@@ -54,7 +53,7 @@ Not that if the function is called from another function compiled in the same fi
 
 trace returns a name list of those functions that were traced by the call to trace. If no @var{function-name} is given, @code{trace} simply returns a name list of all the currently traced functions.
 
-Trace options cause the normal printout to be suppressed, or cause extra information to be printed. Each option is a pair of an option keyword and a value form. If an already traced function is traced again, any new options replace the old options and a warning might be printed. The lisp @emph{form} accompanying the option is evaluated in an environment where @var{sys::arglist} is contains the list of arguments to the function.
+Trace options cause the normal printout to be suppressed, or cause extra information to be printed. Each option is a pair of an option keyword and a value form. If an already traced function is traced again, any new options replace the old options and a warning might be printed. The lisp @emph{form} accompanying the option is evaluated in an environment where @var{sys::args} contains the list of arguments to the function.
 
 The following options are defined:
 @table @code
@@ -69,8 +68,49 @@ In addition to the usual printout, the result of evaluating @var{form} is printe
 @end table
 @end defmac
 
+See also the following example:
+
+@exindex @code{trace} usage
+@example
+> (defun abc (x)
+    (if (>= x 10)
+        x
+        (abc (+ x (abc (1+ x))))))
+> (trace abc)
+
+> (abc 9)
+1> (ABC 9)
+| 2> (ABC 10)
+| <2 (ABC 10)
+| 2> (ABC 19)
+| <2 (ABC 19)
+<1 (ABC 19)
+19
+> (untrace abc)
+
+(ABC)
+;; Break if the first argument of the function is greater than 10
+> (trace (abc :break (>= (first si::args) 10)))
+
+((ABC :BREAK (>= (FIRST SI::ARGS) 10)))
+> (abc 9)
+1> (ABC 9)
+| 2> (ABC 10)
+
+Condition of type: SIMPLE-CONDITION
+tracing ABC
+Available restarts:
+
+1. (CONTINUE) Return from BREAK.
+2. (RESTART-TOPLEVEL) Go back to Top-Level REPL.
+
+Broken at ABC. In: #<process TOP-LEVEL 0x1842f80>.
+>> 
+@end example
+
 @node Environment - C Reference
 @subsection C Reference
+
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
 
@@ -85,12 +125,12 @@ Common Lisp and C equivalence
 @item @clhs{f_apropo.htm,apropos-list} @tab cl_object cl_apropos_list(cl_narg narg, cl_object string, ...)
 @item @clhs{f_descri.htm,describe} @tab cl_object cl_describe(cl_narg narg, cl_object object, ...)
 @item @clhs{f_desc_1.htm,describe-object} @tab [Only in Common Lisp]
-@item @clhs{f_get_in.htm,get-internal-real-time} @tab cl_object cl_get_internal_real_time()
-@item @clhs{f_get__1.htm,get-internal-run-time} @tab cl_object cl_get_internal_run_time()
+@item @clhs{f_get_in.htm,get-internal-real-time} @tab cl_object cl_get_internal_real_time(void)
+@item @clhs{f_get__1.htm,get-internal-run-time} @tab cl_object cl_get_internal_run_time(void)
 @item @clhs{f_disass.htm,disassemble} @tab [Only in Common Lisp]
 @item @clhs{f_docume.htm,documentation} @tab [Only in Common Lisp]
-@item @clhs{f_room.htm,room} @tab cl_object cl_room(cl_narg narg, ...)
-@item @clhs{f_ed.htm,ed} @tab cl_object cl_ed(cl_narg narg, ...)
+@item @clhs{f_room.htm,room} @tab [Only in Common Lisp]
+@item @clhs{f_ed.htm,ed} @tab [Only in Common Lisp]
 @item @clhs{f_inspec.htm,inspect} @tab cl_object cl_inspect(cl_object object)
 @item @clhs{f_dribbl.htm,dribble} @tab cl_object cl_dribble(cl_narg narg, ...)
 @item @clhs{f_lisp_i.htm,lisp-implementation-type} @tab cl_object cl_lisp_implementation_type(void)
@@ -102,5 +142,5 @@ Common Lisp and C equivalence
 @item @clhs{f_mach_v.htm,machine-version} @tab cl_object cl_machine_version()
 @item @clhs{f_sw_tpc.htm,software-type} @tab cl_object cl_software_type()
 @item @clhs{f_sw_tpc.htm,software-version} @tab cl_object cl_software_version()
-@item @clhs{f_user_h.htm,user-homedir-pathname} @tab cl_object cl_user_homedir_pathname()
+@item @clhs{f_user_h.htm,user-homedir-pathname} @tab cl_object cl_user_homedir_pathname(cl_narg narg, ...)
 @end multitable

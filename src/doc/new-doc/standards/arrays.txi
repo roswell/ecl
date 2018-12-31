@@ -28,6 +28,7 @@ When the elements of an array are declared to have some precise type, such as a 
 @item character @tab unsigned char or uint32_t @tab Depends on character range
 @item base-char @tab unsigned char @tab  
 @item fixnum @tab cl_fixnum @tab Machine word (32 or 64 bits)
+@item ext:cl-index @tab cl_index @tab Machine word (32 or 64 bits)
 @item (signed-byte 8) @tab int8_t @tab 8 bits
 @item (unsigned-byte 8) @tab uint8_t @tab 8 bits
 @item (signed-byte 16) @tab int16_t @tab 16 bits
@@ -38,7 +39,7 @@ When the elements of an array are declared to have some precise type, such as a 
 @item (unsigned-byte 64) @tab uint64_t @tab 64 bits
 @item single-float or short-float @tab float @tab 32-bits IEEE float
 @item double-float @tab double @tab 64-bits IEEE float
-@item long-float @tab long double @tab Between 96 and 128 bits.
+@c @item long-float @tab long double @tab Between 96 and 128 bits. !Not implemented
 @item t @tab cl_object @tab Size of a pointer.
 @end multitable
 
@@ -215,7 +216,6 @@ These functions query various properties of the arrays. Some of them belong to t
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .32 .68
 @headitem Lisp symbol @tab C function
 @item @clhs{f_mk_ar.htm,make-array} @tab cl_object cl_make_array(cl_narg narg, cl_object dimension...)
@@ -223,7 +223,7 @@ Common Lisp and C equivalence
 @item @clhs{f_adju_1.htm,adjustable-array-p} @tab cl_object cl_adjustable_array_p(cl_object array)
 @item @clhs{f_aref.htm,aref} @tab cl_object cl_aref(cl_narg narg, cl_object array, ...)
 @item @clhs{f_ar_dim.htm,array-dimension} @tab cl_object cl_array_dimension(cl_object array, cl_object index)
-@item @clhs{f_ar_d_1.htm,array-dimensions} @tab cl_object cl_array_dimension(cl_object array)
+@item @clhs{f_ar_d_1.htm,array-dimensions} @tab cl_object cl_array_dimensions(cl_object array)
 @item @clhs{f_ar_ele.htm,array-element-type} @tab cl_object cl_array_element_type(cl_object array)
 @item @clhs{f_ar_has.htm,array-has-fill-pointer-p} @tab cl_object cl_array_has_fill_pointer_p(cl_object array)
 @item @clhs{f_ar_dis.htm,array-displacement} @tab cl_object cl_array_displacement(cl_object array)
@@ -255,4 +255,6 @@ Common Lisp and C equivalence
 @item @clhs{f_bt_and.htm,bit-orc2} @tab cl_object cl_bit_orc1(cl_narg narg, cl_object array1, cl_object array2, ...)
 @item @clhs{f_bt_and.htm,bit-xor} @tab cl_object cl_bit_xor(cl_narg narg, cl_object array1, cl_object array2, ...)
 @item @clhs{f_bt_and.htm,bit-not} @tab cl_object cl_bit_not(cl_narg narg, cl_object array, ...)
+@item @clhs{f_bt_vec.htm,bit-vector-p} @tab cl_object cl_bit_vector_p(cl_object object)
+@item @clhs{f_smp_bt.htm,simple-bit-vector-p} @tab cl_object cl_simple_bit_vector_p(cl_object object)
 @end multitable

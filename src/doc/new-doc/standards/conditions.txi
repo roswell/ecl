@@ -1,11 +1,6 @@
 @node Conditions
 @section Conditions
 
-@menu
-* Conditions - C Reference::
-@end menu
-
-@node Conditions - C Reference
 @subsection C Reference
 @cppindex ECL_HANDLER_CASE
 @cppindex ECL_RESTART_CASE
@@ -26,7 +21,7 @@ ECL_HANDLER_CASE_BEGIN(env,names) {
 
 When a condition is signaled, ECL scans the list of signal handlers, looking for matches based on @code{typep}. If the match with the highest precedence belongs to the list @var{names}, ECL will perform a non-local transfer of control to the appropriate @code{ECL_HANDLER_CASE}, passing it a @var{condition} object as unique argument.
 
-The following example shows how to establish a handler for @code{ERROR} conditions. Note how the first value to @code{ECL_HANDLER_CASE} matches the position of the restart name in the list:
+The following example shows how to establish a handler for @code{ERROR} conditions. Note how the first value to @code{ECL_HANDLER_CASE} matches the position of the condition name in the list:
 
 @verbatim
 cl_object error = ecl_make_symbol("ERROR","CL");
@@ -71,19 +66,19 @@ ECL_RESTART_CASE_BEGIN(the_env, cl_list(2, abort, use_value)) {
    /* This code is executed when the 1st restart (ABORT) is invoked */
    output = ECL_NIL;
 } ECL_RESTART_CASE(2, args) {
-   /* This code is executed when the 2nd restart (ABORT) is invoked */
+   /* This code is executed when the 2nd restart (USE-VALUE) is invoked */
    output = ECL_CAR(args);
 } ECL_RESTART_CASE_END;
 @end verbatim
 @end deffn
 
-@subsubsection Conditions C dictionary
+@subsubsection ANSI dictionary
 Common Lisp and C equivalence
 
 @multitable @columnfractions .3 .7
 @headitem Lisp symbol @tab C function
 @item @clhs{f_abortc.htm,abort} @tab cl_object cl_abort(cl_narg narg, ...)
-@item @clhs{f_break.htm,break} @tab cl_object cl_break()
+@item @clhs{f_break.htm,break} @tab [Only in Common Lisp]
 @item @clhs{f_cell_e.htm,cell-error-name} @tab [Only in Common Lisp]
 @item @clhs{f_cerror.htm,cerror} @tab cl_object cl_cerror(cl_narg narg, cl_object continue_format_control, cl_object datum, ...)
 @item @clhs{f_comp_1.htm,compute-restarts} @tab cl_object cl_compute_restarts(cl_narg narg, ...)
@@ -91,19 +86,19 @@ Common Lisp and C equivalence
 @item @clhs{f_error.htm,error} @tab cl_object cl_error(cl_narg narg, cl_object datum, ...)
 @item @clhs{f_find_r.htm,find-restart} @tab cl_object cl_find_restart(cl_narg narg, cl_object identifier, ...)
 @item @clhs{m_hand_1.htm,handler-case} @tab ECL_HANDLER_CASE macro
-@item @clhs{f_invali.htm,invalid-method-error} @tab [Only in Common Lisp]
-@item @clhs{f_invoke.htm,invoke-debugger} @tab cl_object cl_invoke_debugger(cl_object condition)
+@item @clhs{f_invali.htm,invalid-method-error} @tab cl_object cl_invalid_method_error (cl_narg narg, cl_object method, cl_object format, ...)
+@item @clhs{f_invoke.htm,invoke-debugger} @tab [Only in Common Lisp]
 @item @clhs{f_invo_1.htm,invoke-restart} @tab cl_object cl_invoke_restart(cl_narg narg, cl_object restart, ...)
 @item @clhs{f_invo_2.htm,invoke-restart-interactively} @tab cl_object cl_invoke_restart_interactively(cl_object restart)
-@item @clhs{f_mk_cnd.htm,make-condition} @tab cl_object cl_make_condition(cl_narg narg, cl_object type)
-@item @clhs{f_meth_1.htm,method-combination-error} @tab [Only in Common Lisp]
+@item @clhs{f_mk_cnd.htm,make-condition} @tab cl_make_condition(cl_narg narg, cl_object type, ...)
+@item @clhs{f_meth_1.htm,method-combination-error} @tab cl_object cl_method_combination_error(cl_narg narg, cl_object format, ...)
 @item @clhs{f_abortc.htm,muffle-warning} @tab cl_object cl_muffle_warning(cl_narg narg, ...)
 @item @clhs{f_rst_na.htm,restart-name} @tab [Only in Common Lisp]
 @item @clhs{f_rst_ca.htm,restart-case} @tab ECL_RESTART_CASE macro
-@item @clhs{f_signal.htm,signal} @tab cl_object cl_signal(cl_narg narg, cl_object datum, ...)
+@item @clhs{f_signal.htm,signal} @tab [Only in Common Lisp]
 @item @clhs{f_smp_cn.htm,simple-condition-format-control} @tab [Only in Common Lisp]
 @item @clhs{f_smp_cn.htm,simple-condition-format-arguments} @tab [Only in Common Lisp]
 @item @clhs{f_abortc.htm,store-value} @tab cl_object cl_store_value(cl_narg narg, ...)
 @item @clhs{f_abortc.htm,use-value} @tab cl_object cl_use_value(cl_narg narg, ...)
-@item @clhs{f_warn.htm,warn} @tab cl_object cl_warn(cl_narg narg, cl_object datum, ...)
+@item @clhs{f_warn.htm,warn} @tab [Only in Common Lisp]
 @end multitable

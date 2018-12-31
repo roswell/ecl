@@ -1,16 +1,11 @@
 @node Sequences
 @section Sequences
 
-@menu
-* Sequences - C Reference::
-@end menu
-
-@node Sequences - C Reference
 @subsection C Reference
-@subsubsection Sequences C dictionary
+
+@subsubsection ANSI dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .22 .78
 @headitem Lisp symbol @tab C function
 @item @clhs{f_concat.htm,concatenate} @tab cl_object cl_concatenate(cl_narg narg, cl_object result_type, ...)
@@ -18,38 +13,39 @@ Common Lisp and C equivalence
 @item @clhs{f_countc.htm,count} @tab cl_object cl_count(cl_narg narg, cl_object item, cl_object sequence, ...)
 @item @clhs{f_countc.htm,count-if} @tab cl_object cl_count_if(cl_narg narg, cl_object predicate, cl_object sequence, ...)
 @item @clhs{f_countc.htm,count-if-not} @tab cl_object cl_count_if_not(cl_narg narg, cl_object predicate, cl_object sequence, ...)
-@item @clhs{f_rm_rm.htm,delete} @tab cl_object cl_delete(cl_narg narg, cl_object newitem, cl_object sequence, ...)
-@item @clhs{f_rm_rm.htm,delete-if} @tab cl_object cl_delete_if(cl_narg narg, cl_object newitem, cl_object test, cl_object sequence, ...)
-@item @clhs{f_rm_rm.htm,delete-if-not} @tab cl_object cl_delete_if_not(cl_narg narg, cl_object newitem, cl_object test, cl_object sequence, ...)
-@item @clhs{f_rm_dup.htm,delete-duplicates} @tab cl_object cl_delete_duplicates(cl_narg narg, cl_object sequence)
+@item @clhs{f_rm_rm.htm,delete} @tab cl_object cl_delete(cl_narg narg, cl_object item, cl_object sequence, ...)
+@item @clhs{f_rm_rm.htm,delete-if} @tab cl_object cl_delete_if(cl_narg narg, cl_object test, cl_object sequence, ...)
+@item @clhs{f_rm_rm.htm,delete-if-not} @tab cl_object cl_delete_if_not(cl_narg narg, cl_object test, cl_object sequence, ...)
+@item @clhs{f_rm_dup.htm,delete-duplicates} @tab cl_object cl_delete_duplicates(cl_narg narg, cl_object sequence, ...)
 @item @clhs{f_elt.htm,elt} @tab cl_object cl_elt(cl_object sequence, cl_object index)
 @item @clhs{f_fill.htm,fill} @tab cl_object cl_fill(cl_narg narg, cl_object sequence, cl_object item, ...)
 @item @clhs{f_find_.htm,find} @tab cl_object cl_find(cl_narg narg, cl_object item, cl_object sequence, ...)
 @item @clhs{f_find_.htm,find-if} @tab cl_object cl_find_if(cl_narg narg, cl_object predicate, cl_object sequence, ...)
 @item @clhs{f_find_.htm,find-if-not} @tab cl_object cl_find_if_not(cl_narg narg, cl_object predicate, cl_object sequence, ...)
+@item @clhs{f_length.htm,length} @tab cl_object cl_length(cl_object x)
 @item @clhs{f_mk_seq.htm,make-sequence} @tab cl_object cl_make_sequence(cl_narg narg, cl_object result_type, cl_object size, ...)
-@item @clhs{f_map.htm,map} @tab cl_object cl_map(cl_narg narg, cl_object result_type, cl_object function)
+@item @clhs{f_map.htm,map} @tab cl_object cl_map(cl_narg narg, cl_object result_type, cl_object function, , ...)
 @item @clhs{f_map_in.htm,map-into} @tab cl_object cl_map_into(cl_narg narg, cl_object result_sequence, cl_object function, ...)
-@item @clhs{f_merge.htm,merge} @tab cl_object cl_merge(cl_narg narg, cl_object result_type, cl_object sequence1, cl_object sequence2, ...)
-@item @clhs{f_mismat.htm,mismatch} @tab cl_object cl_mismatch(cl_narg narg, cl_object sequence1, cl_object sequence2)
+@item @clhs{f_merge.htm,merge} @tab cl_object cl_merge(cl_narg narg, cl_object result_type, cl_object sequence1, cl_object sequence2, cl_object predicate, ...)
+@item @clhs{f_mismat.htm,mismatch} @tab cl_object cl_mismatch(cl_narg narg, cl_object sequence1, cl_object sequence2, ...)
 @item @clhs{f_revers.htm,nreverse} @tab cl_object cl_nreverse(cl_object sequence)
 @item @clhs{f_sbs_s.htm,nsubstitute} @tab cl_object cl_nsubstitute(cl_narg narg, cl_object newitem, cl_object olditem, cl_object sequence, ...)
 @item @clhs{f_sbs_s.htm,nsubstitute-if} @tab cl_object cl_nsubstitute_if(cl_narg narg, cl_object newitem, cl_object predicate, cl_object sequence, ...)
 @item @clhs{f_sbs_s.htm,nsubstitute-if-not} @tab cl_object cl_nsubstitute_if_not(cl_narg narg, cl_object newitem, cl_object predicate, cl_object sequence, ...)
 @item @clhs{f_pos_p.htm,position} @tab cl_object cl_position(cl_narg narg, cl_object item, cl_object sequence, ...)
-@item @clhs{f_pos_p.htm,position-if} @tab cl_object cl_pos_pif(cl_narg narg, cl_object predicate, cl_object sequence, ...)
-@item @clhs{f_pos_p.htm,position-if-not} @tab cl_object cl_pos_pif_not(cl_narg narg, cl_object predicate, cl_object sequence, ...)
+@item @clhs{f_pos_p.htm,position-if} @tab cl_object cl_position_if(cl_narg narg, cl_object predicate, cl_object sequence, ...)
+@item @clhs{f_pos_p.htm,position-if-not} @tab cl_object cl_position_if_not(cl_narg narg, cl_object predicate, cl_object sequence, ...)
 @item @clhs{f_reduce.htm,reduce} @tab cl_object cl_reduce(cl_narg narg, cl_object function, cl_object sequence, ...)
-@item @clhs{f_rm_rm.htm,remove} @tab cl_object cl_remove(cl_narg narg, cl_object newitem, cl_object sequence, ...)
-@item @clhs{f_rm_rm.htm,remove-if} @tab cl_object cl_remove_if(cl_narg narg, cl_object newitem, cl_object test, cl_object sequence, ...)
-@item @clhs{f_rm_rm.htm,remove-if-not} @tab cl_object cl_remove_if_not(cl_narg narg, cl_object newitem, cl_object test, cl_object sequence, ...)
-@item @clhs{f_rm_dup.htm,remove-duplicates} @tab cl_object cl_remove_duplicates(cl_narg narg, cl_object sequence)
-@item @clhs{f_replac.htm,replace} @tab cl_object cl_replace(cl_narg narg, cl_object sequence1, cl_object sequence2)
+@item @clhs{f_rm_rm.htm,remove} @tab cl_object cl_remove(cl_narg narg, cl_object item, cl_object sequence, ...)
+@item @clhs{f_rm_rm.htm,remove-if} @tab cl_object cl_remove_if(cl_narg narg, cl_object test, cl_object sequence, ...)
+@item @clhs{f_rm_rm.htm,remove-if-not} @tab cl_object cl_remove_if_not(cl_narg narg, cl_object test, cl_object sequence, ...)
+@item @clhs{f_rm_dup.htm,remove-duplicates} @tab cl_object cl_remove_duplicates(cl_narg narg, cl_object sequence, ...)
+@item @clhs{f_replac.htm,replace} @tab cl_object cl_replace(cl_narg narg, cl_object sequence1, cl_object sequence2, ...)
 @item @clhs{f_revers.htm,reverse} @tab cl_object cl_reverse(cl_object sequence)
-@item @clhs{f_search.htm,search} @tab cl_object cl_search(cl_narg narg, cl_object sequence1, cl_object sequence2)
+@item @clhs{f_search.htm,search} @tab cl_object cl_search(cl_narg narg, cl_object sequence1, cl_object sequence2, ...)
 @item @clhs{f_sort_.htm,sort} @tab cl_object cl_sort(cl_narg narg, cl_object sequence, cl_object predicate, ...)
 @item @clhs{f_sort_.htm,stable-sort} @tab cl_object cl_stable_sort(cl_narg narg, cl_object sequence, cl_object predicate, ...)
-@item @clhs{f_subseq.htm,subseq} @tab cl_object cl_subseq(cl_narg narg, cl_object sequence, cl_object start)
+@item @clhs{f_subseq.htm,subseq} @tab cl_object cl_subseq(cl_narg narg, cl_object sequence, cl_object start, ...)
 @item @clhs{f_sbs_s.htm,substitute} @tab cl_object cl_substitute(cl_narg narg, cl_object newitem, cl_object olditem, cl_object sequence, ...)
 @item @clhs{f_sbs_s.htm,substitute-if} @tab cl_object cl_substitute_if(cl_narg narg, cl_object newitem, cl_object predicate, cl_object sequence, ...)
 @item @clhs{f_sbs_s.htm,substitute-if-not} @tab cl_object cl_substitute_if_not(cl_narg narg, cl_object newitem, cl_object predicate, cl_object sequence, ...)

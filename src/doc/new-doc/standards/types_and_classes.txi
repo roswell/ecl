@@ -10,8 +10,8 @@ ECL defines the following additional built-in classes in the @code{CL} package:
 @item @code{double-float}
 @end itemize
 
-
 @subsection C Reference
+
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
 

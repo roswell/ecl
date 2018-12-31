@@ -164,7 +164,7 @@ cl_object c = cl_cos(angle);
 printf("\nThe cosine of PI is %g\n", ecl_double_float(c));
 @end verbatim
 
-The second example also involves some Mathematics, but now we are going to use the C function corresponding to @code{+}. As described in @ref{Numbers - Numbers C dictionary}, the C name for the plus operator is @code{cl_P} and has a signature @code{cl_object cl_P(cl_narg narg,...)}. Our example now reads as follows
+The second example also involves some Mathematics, but now we are going to use the C function corresponding to @code{+}. As described in @ref{Numbers - ANSI dictionary}, the C name for the plus operator is @code{cl_P} and has a signature @code{cl_object cl_P(cl_narg narg,...)}. Our example now reads as follows
 
 @verbatim
 cl_object one = ecl_make_fixnum(1);
@@ -274,7 +274,7 @@ cl_object my_plus(cl_narg narg, cl_object required1, ...)
     ecl_va_start(varargs, required1, narg, 1);
     while (narg > 1) {
         cl_object other_value = ecl_va_arg(varargs);
-	required1 = ecl_plus(required1, other_value);
+        required1 = ecl_plus(required1, other_value);
     }
     ecl_va_end(varargs);
     ecl_return1(env, required1);
@@ -408,7 +408,6 @@ The utility of this construct is limited, for it only protects against nonlocal 
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .3 .7
 @headitem Lisp symbol @tab C function or constant
 @item @clhs{f_apply.htm,apply} @tab cl_object cl_apply(cl_narg narg, cl_object function, ...)

@@ -55,8 +55,7 @@ Note that @code{#\Linefeed} is synonymous with @code{#\Newline} and thus is a me
 
 @node Characters - Newline characters
 @subsection @code{#\Newline} characters
-Internally, ECL represents the @code{#\Newline} character by a single code. However, when using external formats, ECL may parse character pairs as a single @code{#\Newline}, and vice versa, use multiple characters to represent a single @code{#\Newline}.
-@c TODO: add an @xref to Stream -> External formats once it's written
+Internally, ECL represents the @code{#\Newline} character by a single code. However, when using external formats, ECL may parse character pairs as a single @code{#\Newline}, and vice versa, use multiple characters to represent a single @code{#\Newline}, @pxref{Streams - External formats}.
 
 
 @node Characters - C Reference
@@ -86,13 +85,14 @@ For your code to be portable and future proof, use both types to really express 
 @cppindex ECL_CODE_CHAR
 @cppindex ECL_CHAR_CODE
 @cppindex ecl_char_code
+@cppindex ecl_base_char_code
 Creating and extracting characters from Lisp objects
 @subsubheading Functions
 @deftypefun cl_object ECL_CODE_CHAR (ecl_character @var{code});
 @end deftypefun
 @deftypefun ecl_character ECL_CHAR_CODE (cl_object @var{o});
 @end deftypefun
-@deftypefun cl_object ecl_char_code (ecl_character @var{code});
+@deftypefun ecl_character ecl_char_code (cl_object @var{o});
 @end deftypefun
 @deftypefun ecl_base_char ecl_base_char_code (cl_object @var{o});
 @end deftypefun
@@ -113,11 +113,11 @@ C predicates for Lisp characters
 @end deftypefun
 @deftypefun bool ecl_alpha_char_p (ecl_character @var{c});
 @end deftypefun
-@deftypefun bool ecl_alphanumeric_p (ecl_character @var{c});
+@deftypefun bool ecl_alphanumericp (ecl_character @var{c});
 @end deftypefun
 @deftypefun bool ecl_graphic_char_p (ecl_character @var{c});
 @end deftypefun
-@deftypefun bool ecl_digit_p (ecl_character @var{c});
+@deftypefun bool ecl_digitp (ecl_character @var{c});
 @end deftypefun
 @deftypefun bool ecl_standard_char_p (ecl_character @var{c});
 @end deftypefun
@@ -147,7 +147,7 @@ These functions check or change the case of a character. Note that in a Unicode 
 
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
-@subsubheading Synopsis
+
 @multitable {aaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Lisp symbol @tab C function
 @item @clhs{f_chareq.htm,char=} @tab cl_object cl_charE(cl_narg narg, ...)
@@ -180,4 +180,5 @@ Common Lisp and C equivalence
 @item @clhs{f_code_c.htm,code-char} @tab cl_object cl_code_char(cl_object code)
 @item @clhs{f_char_n.htm,char-name} @tab cl_object cl_char_name(cl_object character)
 @item @clhs{f_name_c.htm,name-char} @tab cl_object cl_name_char(cl_object name)
+@item @clhs{v_char_c.htm,char-code-limit} @tab ECL_CHAR_CODE_LIMIT
 @end multitable

@@ -77,10 +77,10 @@ The matching rules in Common Lisp and ECL are simple but have some unintuitive c
 
 @node Filenames - C Reference
 @subsection C Reference
-@subsubsection Filenames C dictionary
+
+@subsubsection ANSI dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .30 .70
 @headitem Lisp symbol @tab C function
 @item @clhs{f_namest.htm,directory-namestring} @tab cl_object cl_directory_namestring(cl_object pathname)

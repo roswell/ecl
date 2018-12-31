@@ -8,8 +8,8 @@
 @bibcite{ANSI}. All functions and macros are expected to behave as
 described in that document and in the HyperSpec @bibcite{HyperSpec}
 which is the online version of @bibcite{ANSI}. In other words, the
-Standard is the basic reference for Common Lisp and also for @ecl{}, and
-this part of the manual just complements it, describing
+Standard is the basic reference for Common Lisp and also for @ecl{},
+and this part of the manual just complements it, describing
 implementation-specific features such as:
 
 @itemize

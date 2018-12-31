@@ -778,6 +778,7 @@ interpreted. The objects of type @code{t_bytecodes} are implicitly
 constructed by a call to eval, but can also be explicitly constructed
 with the @code{si_make_lambda} function.
 
+@anchor{si_safe_eval}
 @cppindex si_safe_eval
 @cppindex cl_safe_eval
 @cppindex cl_eval
@@ -789,7 +790,7 @@ with the @code{si_make_lambda} function.
 environment@footnote{Note that @code{env} must be a lexical
 environment as used in the interpreter, @xref{The lexical environment}}
 @code{env}, which can be @code{ECL_NIL}. Before evaluating it, the
-expression form must be bytecompiled.
+expression form is bytecompiled.
 
 @itemize @bullet
 @item @strong{DEPRECATED} @code{cl_object cl_eval (cl_object form)} -

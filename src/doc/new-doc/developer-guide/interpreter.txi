@@ -77,11 +77,11 @@ number of values of the function. The return value of the function is
 copied in the @code{values} array as well as returned directly.
 
 In general, if one is to play with the C kernel of ECL there is no
-need to know about all these conventions. There is a preprocessor that
-takes care of the details, by using a lisp representation of the
-statements that output values, and of the function definitions. For
-instance, the actual source code for @code{cl_last} in
-@code{src/c/list.d}
+need to know about all these conventions. There is a preprocessor
+(@pxref{Defun preprocessor}) that takes care of the details, by using a
+lisp representation of the statements that output values, and of the
+function definitions. For instance, the actual source code for
+@code{cl_last} in @code{src/c/list.d}
 
 @verbatim
 @(defun last (l &optional (k ecl_make_fixnum(1)))

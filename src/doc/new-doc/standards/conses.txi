@@ -1,17 +1,37 @@
 @node Conses
 @section Conses
 
-@menu
-* Conses - C Reference::
-@end menu
-
-@node Conses - C Reference
 @subsection C Reference
+
+@subsubsection Accessors
+@cppindex ECL_CONS_CAR
+@cppindex ECL_CONS_CDR
+@cppindex _ecl_car
+@cppindex _ecl_cdr
+Accessing the elements of conses
+@subsubheading Functions
+@deftypefun cl_object ECL_CONS_CAR (cl_object @var{o})
+@end deftypefun
+@deftypefun cl_object ECL_CONS_CDR (cl_object @var{o})
+@end deftypefun
+@deftypefun cl_object _ecl_car (cl_object @var{o})
+@end deftypefun
+@deftypefun cl_object _ecl_cdr (cl_object @var{o})
+@end deftypefun
+@deftypefun cl_object _ecl_caar (cl_object @var{o})
+@end deftypefun
+@deftypefun cl_object _ecl_cadr (cl_object @var{o})
+@end deftypefun
+...
+@subsubheading Description
+These functions access the elements of objects of type cons
+(@code{ECL_CONS_CAR} and @code{ECL_CONS_CDR}) or type list
+(@code{_ecl_car}, @code{_ecl_cdr}, @code{_ecl_caar}, ...). They don't
+check the type of their arguments.
 
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .30 .70
 @headitem Lisp symbol @tab C function
 @item @clhs{f_cons.htm,cons} @tab cl_object cl_cons(cl_object car, cl_object cdr)
@@ -61,7 +81,7 @@ Common Lisp and C equivalence
 @item @clhs{f_tree_e.htm,tree-equal} @tab cl_object cl_tree_equal(cl_narg narg, cl_object tree1, cl_object tree2, ...)
 @item @clhs{f_cp_lis.htm,copy-list} @tab cl_object cl_copy_list(cl_object list)
 @item @clhs{f_list_.htm,list} @tab cl_object cl_list(cl_narg narg, ...)
-@item @clhs{f_list_.htm,list*} @tab cl_object cl_listA(cl_narg narg, ...)
+@item @clhs{f_list_.htm,list*} @tab cl_object cl_listX(cl_narg narg, ...)
 @item @clhs{f_list_l.htm,list-length} @tab cl_object cl_list_length(cl_object list)
 @item @clhs{f_listp.htm,listp} @tab cl_object cl_listp(cl_object object)
 @item @clhs{f_mk_lis.htm,make-list} @tab cl_object cl_make_list(cl_narg narg, cl_object size, ...)
@@ -117,6 +137,6 @@ Common Lisp and C equivalence
 @item @clhs{f_set_ex.htm,set-exclusive-or} @tab cl_object cl_set_exclusive_or(cl_narg narg, cl_object list1, cl_object list2, ...)
 @item @clhs{f_sex_ex.htm,nset-exclusive-or} @tab cl_object cl_nset_exclusive_or(cl_narg narg, cl_object list1, cl_object list2, ...)
 @item @clhs{f_subset.htm,subsetp} @tab cl_object cl_subsetp(cl_narg narg, cl_object list1, cl_object list2, ...)
-@item @clhs{f_unionc.htm,union} @tab cl_object cl_union(cl_narg narg, cl_object list1, cl_object list2)
-@item @clhs{f_unionc.htm,nunion} @tab cl_object cl_nunion(cl_narg narg, cl_object list1, cl_object list2)
+@item @clhs{f_unionc.htm,union} @tab cl_object cl_union(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_unionc.htm,nunion} @tab cl_object cl_nunion(cl_narg narg, cl_object list1, cl_object list2, ...)
 @end multitable

@@ -6,8 +6,6 @@
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
-
 @multitable @columnfractions .3 .7
 @headitem Lisp symbol @tab C function
 @item @clhs{f_cp_rdt.htm,copy-readtable} @tab cl_object cl_copy_readtable(cl_narg narg, ...)

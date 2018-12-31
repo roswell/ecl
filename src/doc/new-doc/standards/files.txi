@@ -8,12 +8,14 @@
 
 @node Files - Dictionary
 @subsection Dictionary
-@subsubsection @code{DIRECTORY}
+
+@lspindex directory
+@defun directory pathspec
 
 This function does not have any additional arguments other than the ones described in ANSI @bibcite{ANSI}. To list files and directories, it follows the rules for matching pathnames described in @ref{Filenames - Wild pathnames and matching}. In short, you have the following practical examples:
 
 @float Table, tab:examples-using-directory
-@caption{Examples of using @code{DIRECTORY}}
+@caption{Examples of using @code{directory}}
 @multitable @columnfractions .25 .75
 @headitem Argument @tab Meaning
 @item @code{"/home/jlr/*.*"} @tab List all files in directory @code{/home/jlr/} Note that it lists only files, not directories!
@@ -22,12 +24,26 @@ This function does not have any additional arguments other than the ones describ
 @item @code{"/home/jlr/**/*.*"} @tab List all files in all directories contained in @code{/home/jlr/}, recursively. Nested directories are navigated.
 @end multitable
 @end float
+@end defun
+
+@defun rename-file filespec new-name &key (if-exists :error)
+
+In addition to the arguments described in ANSI @bibcite{ANSI}, the @code{rename-file} function in ECL has an @code{:if-exists} keyword argument that specifies what happens when a file with the new name already exists. Valid values of this argument are:
+
+@multitable @columnfractions .25 .75
+@headitem Argument @tab Behaviour of the @code{rename-file} function
+@item @code{:error} @tab Signal an error
+@item @code{:supersede}, @code{t} @tab Overwrite the existing file
+@item @code{nil} @tab Don't overwrite the existing file, don't signal an error
+@end multitable
+@end defun
 
 @node Files - C Reference
 @subsection C Reference
+
+@subsubsection ANSI Dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .3 .7
 @headitem Lisp symbol @tab C function
 @item @clhs{f_del_fi.htm,delete-file} @tab cl_object cl_delete_file(cl_object filespec)
@@ -37,6 +53,6 @@ Common Lisp and C equivalence
 @item @clhs{f_file_e.htm,file-error-pathname} @tab [Only in Common Lisp]
 @item @clhs{f_file_w.htm,file-write-date} @tab cl_object cl_file_write_date(cl_object pathspec)
 @item @clhs{f_probe_.htm,probe-file} @tab cl_object cl_probe_file(cl_object pathspec)
-@item @clhs{f_rn_fil.htm,rename-file} @tab cl_object cl_rename_file(cl_object filespec, cl_object new_name)
+@item @clhs{f_rn_fil.htm,rename-file} @tab cl_object cl_rename_file(cl_narg narg, cl_object filespec, cl_object new_name, ...)
 @item @clhs{f_tn.htm,truename} @tab cl_object cl_truename(cl_object filespec)
 @end multitable

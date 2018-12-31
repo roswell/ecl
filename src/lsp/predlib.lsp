@@ -134,9 +134,8 @@ retrieved by (documentation 'NAME 'type)."
   '(INTEGER 0 #.array-dimension-limit))
 
 (deftype fixnum ()
-  "A FIXNUM is an integer between MOST-NEGATIVE-FIXNUM (= - 2^29 in ECL) and
-MOST-POSITIVE-FIXNUM (= 2^29 - 1 in ECL) inclusive.  Other integers are
-bignums."
+  "A FIXNUM is an integer between MOST-NEGATIVE-FIXNUM and
+MOST-POSITIVE-FIXNUM inclusive.  Other integers are bignums."
   '(INTEGER #.most-negative-fixnum #.most-positive-fixnum))
 (deftype bignum ()
   '(OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))

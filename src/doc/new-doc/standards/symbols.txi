@@ -47,7 +47,7 @@ Common Lisp and C equivalence
 @headitem Lisp symbol @tab C function
 @item @clhs{f_boundp.htm,boundp} @tab cl_object cl_boundp(cl_object symbolp)
 @item @clhs{f_cp_sym.htm,copy-symbol} @tab cl_object cl_copy_symbol(cl_narg narg, cl_object symbol, ...)
-@item @clhs{f_get.htm,get} @tab cl_object cl_get(cl_object symbol, cl_object indicator)
+@item @clhs{f_get.htm,get} @tab cl_object cl_get(cl_narg narg, cl_object sym, cl_object indicator, ...)
 @item @clhs{f_gensym.htm,gensym} @tab cl_object cl_gensym(cl_narg narg, ...)
 @item @clhs{f_gentem.htm,gentemp} @tab cl_object cl_gentemp(cl_narg narg, ...)
 @item @clhs{f_kwdp.htm,keywordp} @tab cl_object cl_keywordp(cl_object object)

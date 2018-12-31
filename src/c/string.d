@@ -105,7 +105,7 @@ ecl_alloc_adjustable_extended_string(cl_index l)
 #endif
 
 /*
-  Make_simple_base_string(s) makes a simple-base string from C string s.
+  ecl_make_simple_base_string(s) creates a simple-base string from C string s.
 */
 cl_object
 ecl_make_simple_base_string(char *s, cl_fixnum l)

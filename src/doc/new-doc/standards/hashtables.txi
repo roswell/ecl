@@ -2,17 +2,21 @@
 @section Hash tables
 
 @menu
+* Hash tables - Extensions::
 * Hash tables - C Reference::
 @end menu
 
-@subheading Weakness in hash tables
+@node Hash tables - Extensions
+@subsection Extensions
+
+@subsubsection Weakness in hash tables
 @cindex Weak hash tables
 @ftindex ECL-WEAK-HASH
 
 Weak hash tables allow the garbage collector to reclaim some of the
 entries if they are not strongly referenced elsewhere. ECL supports
 four kinds of weakness in hash tables: @t{:key}, @t{:value},
-@t{key-and-value} and @t{key-or-value}.
+@t{:key-and-value} and @t{:key-or-value}.
 
 To make hash table weak, programmer has to provide @t{:weakness}
 keyword argument to @t{cl:make-hash-table} with the desired kind of
@@ -29,13 +33,13 @@ Returns type of the hash table weakness. Possible return values are:
 @t{:key}, @t{:value}, @t{:key-and-value}, @t{:key-or-value} or @t{NIL}.
 @end deffn
 
-@subheading Thread-safe hash tables
+@subsubsection Thread-safe hash tables
 @cindex Synchronized hash tables
 @cindex Thread-safe hash tables
 
 By default ECL doesn't protect hash tables from simultaneous access
 for performance reasons. Read and write access may is synchronized
-when @t{synchronized} keyword argument to @t{make-hash-table} is
+when @t{:synchronized} keyword argument to @t{make-hash-table} is
 @t{T} - @code{(make-hash-table :synchronized t)}.
 
 @lspindex hash-table-synchronized-p
@@ -43,7 +47,7 @@ when @t{synchronized} keyword argument to @t{make-hash-table} is
 Predicate answering whenever hash table is synchronized or not.
 @end deffn
 
-@subheading Hash tables serialization
+@subsubsection Hash tables serialization
 @cindex Hash table serialization
 
 @lspindex hash-table-content
@@ -59,7 +63,7 @@ table may have some content already, but conflicting keys will be
 overwritten.
 @end deffn
 
-@subheading Example
+@subsubsection Example
 @exindex Hash table extensions example
 @lisp
 CL-USER> (defparameter *ht*
@@ -84,8 +88,10 @@ CL-USER> (ext:hash-table-content *ht*)
 
 @node Hash tables - C Reference
 @subsection C Reference
-@subsubsection Hash tables C dictionary
+
+@subsubsection ANSI dictionary
 Common Lisp and C equivalence
+
 @multitable @columnfractions .3 .7
 @headitem Lisp symbol @tab C function
 @item @clhs{f_clrhas.htm,clrhash} @tab cl_object cl_clrhash(cl_object hash_table)
@@ -93,7 +99,7 @@ Common Lisp and C equivalence
 @item @clhs{f_hash_1.htm,hash-table-count} @tab cl_object cl_hash_table_count(cl_object hash_table)
 @item @clhs{f_hash_t.htm,hash-table-p} @tab cl_object cl_hash_table_p(cl_object hash_table)
 @item @clhs{f_hash_2.htm,hash-table-rehash-size} @tab cl_object cl_hash_table_rehash_size(cl_object hash_table)
-@item @clhs{f_hash_3.htm,hash-table-rehash-threshold} @tab cl_object cl_hash_table_rehash_thresholdy(cl_object hash_table)
+@item @clhs{f_hash_3.htm,hash-table-rehash-threshold} @tab cl_object cl_hash_table_rehash_threshold(cl_object hash_table)
 @item @clhs{f_hash_4.htm,hash-table-size} @tab cl_object cl_hash_table_size(cl_object hash_table)
 @item @clhs{f_hash_5.htm,hash-table-test} @tab cl_object cl_hash_table_test(cl_object hash_table)
 @item @clhs{f_mk_has.htm,make-hash-table} @tab cl_object cl_make_hash_table(cl_narg narg, ...)

@@ -8,7 +8,7 @@ In all situations where the rules are well specified, ECL prints objects accordi
 @multitable @columnfractions .28 .35 .37
 @headitem Lisp type @tab Format @tab Remarks
 @item @code{package} @tab @code{#<package @var{name}>} @tab  
-@item @code{random-state} @tab @code{#<character @var{array}>} @tab  
+@item @code{random-state} @tab @code{#<random-state @var{array}>} @tab  
 @item @code{bitvector} @tab @code{#<bit-vector @var{@var{unique-id}}>} @tab Only when @code{*print-array*} is false.
 @item @code{vector} @tab @code{#<vector @var{unique-id}>} @tab Only when @code{*print-array*} is false.
 @item @code{array} @tab @code{#<array @var{unique-id}>} @tab Only when @code{*print-array*} is false.
@@ -31,10 +31,9 @@ In all situations where the rules are well specified, ECL prints objects accordi
 @end float
 
 @subsection C Reference
+
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence
-
-@subsubheading Synopsis
 
 @multitable @columnfractions .3 .7
 @headitem Lisp symbol @tab C function
@@ -57,5 +56,5 @@ Common Lisp and C equivalence
 @item @clhs{f_wr_to_.htm,prin1-to-string} @tab cl_object cl_prin1_to_string(cl_object object)
 @item @clhs{f_wr_to_.htm,princ-to-string} @tab cl_object cl_princ_to_string(cl_object object)
 @item @clhs{f_pr_not.htm,print-not-readable-object} @tab [Only in Common Lisp]
-@item @clhs{f_format.htm,format} @tab cl_object cl_format(cl_narg narg, cl_object string, ...)
+@item @clhs{f_format.htm,format} @tab cl_object cl_format(cl_narg narg, cl_object stream, cl_object string, ...)
 @end multitable

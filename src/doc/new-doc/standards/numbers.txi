@@ -26,7 +26,7 @@ ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:nu
 @item long-float @tab Either equivalent to double-float, or a 96/128 bits IEEE floating point number (long double in C/C++).
 @item rational @tab An alias for (or integer ratio)
 @item float @tab An alias for (or single-float double-float short-float long-float)
-@item real @tab An alias for (or real integer float)
+@item real @tab An alias for (or rational float)
 @item complex @tab Complex number made of two real numbers of the above mentioned types.
 @end multitable
 @end float
@@ -43,7 +43,7 @@ Control the signaling of the floating point exceptions
 @subsubheading Synopsis
 @table @var
 @item condition
-one of @code{t}, @code{division-by-zero}, @code{floating-point-overflow}, @code{floating-point-underflow}, @code{floating-point-invalid-operation} or @code{floating-point-inexact}
+a symbol - one of @code{t}, @code{division-by-zero}, @code{floating-point-overflow}, @code{floating-point-underflow}, @code{floating-point-invalid-operation} or @code{floating-point-inexact}
 @item flag
 a generalized boolean
 @end table
@@ -94,7 +94,7 @@ Predicates to test if @var{x} is infinite or NaN.
 * Numbers - Number constructors::
 * Numbers - Number accessors::
 * Numbers - Number coercion::
-* Numbers - Numbers C dictionary::
+* Numbers - ANSI dictionary::
 @end menu
 
 @node Numbers - Number C types
@@ -108,8 +108,8 @@ Numeric C types understood by ECL
 @item float @tab short-float, single-float
 @item double @tab double-float
 @item long double (*) @tab long-float @tab ECL_LONG_FLOAT @tab :long-float
-@item uint8_t @tab (unsigned-byte 8)
-@item int8_t @tab (signed-byte 8)
+@item uint8_t @tab (unsigned-byte 8) @tab ecl_uint8_t
+@item int8_t @tab (signed-byte 8) @tab ecl_int8_t
 @item uint16_t @tab (unsigned-byte 16) @tab ecl_uint16_t @tab :uint16-t
 @item int16_t @tab (signed-byte 16) @tab ecl_int16_t @tab :int16-t
 @item uint32_t @tab (unsigned-byte 32) @tab ecl_uint32_t @tab :uint32-t
@@ -271,19 +271,18 @@ Checked conversion from Lisp types to C numbers
 @subsubheading Description
 These functions and macros convert a Lisp object to the corresponding C number type. The conversion is done through a coercion process which may signal an error if the argument does not fit the expected type.
 
-@node Numbers - Numbers C dictionary
-@subsubsection Numbers C dictionary
+@node Numbers - ANSI dictionary
+@subsubsection ANSI dictionary
 Common Lisp and C equivalence
 
-@subsubheading Synopsis
 @multitable @columnfractions .30 .70
 @headitem Lisp symbol @tab C function
-@item @clhs{f_eq_sle.htm,=} @tab cl_object cl_E()
-@item @clhs{f_eq_sle.htm,/=} @tab cl_object cl_NE()
-@item @clhs{f_eq_sle.htm,<} @tab cl_object cl_L()
-@item @clhs{f_eq_sle.htm,>} @tab cl_object cl_G()
-@item @clhs{f_eq_sle.htm,<=} @tab cl_object cl_LE()
-@item @clhs{f_eq_sle.htm,>=} @tab cl_object cl_GE()
+@item @clhs{f_eq_sle.htm,=} @tab cl_object cl_E(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,/=} @tab cl_object cl_NE(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,<} @tab cl_object cl_L(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,>} @tab cl_object cl_G(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,<=} @tab cl_object cl_LE(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,>=} @tab cl_object cl_GE(cl_narg narg, ...)
 @item @clhs{f_max_m.htm,max} @tab cl_object cl_max(cl_narg narg, ...)
 @item @clhs{f_max_m.htm,min} @tab cl_object cl_min(cl_narg narg, ...)
 @item @clhs{f_minusp.htm,minusp} @tab cl_object cl_minusp(cl_object real)
@@ -302,7 +301,7 @@ Common Lisp and C equivalence
 @item @clhs{f_sin_c.htm,tan} @tab cl_object cl_tan(cl_object radians)
 @item @clhs{f_asin_.htm,asin} @tab cl_object cl_asin(cl_object number)
 @item @clhs{f_asin_.htm,acos} @tab cl_object cl_acos(cl_object number)
-@item @clhs{f_asin_.htm,atan} @tab cl_object cl_atan(cl_object number)
+@item @clhs{f_asin_.htm,atan} @tab cl_object cl_atan(cl_narg narg, cl_object number1, ...)
 @item @clhs{c_number.htm,sinh} @tab cl_object cl_sinh(cl_object number)
 @item @clhs{c_number.htm,cosh} @tab cl_object cl_cosh(cl_object number)
 @item @clhs{c_number.htm,tanh} @tab cl_object cl_tanh(cl_object number)
@@ -313,8 +312,8 @@ Common Lisp and C equivalence
 @item @clhs{f_pl.htm,+} @tab cl_object cl_P(cl_narg narg, ...)
 @item @clhs{f__.htm,-} @tab cl_object cl_M(cl_narg narg, cl_object number, ...)
 @item @clhs{f_sl.htm,/} @tab cl_object cl_N(cl_narg narg, cl_object number, ...)
-@item @clhs{f_1pl_1_.htm,1+} @tab cl_object cl_1P()
-@item @clhs{f_1pl_1_.htm,1-} @tab cl_object cl_1M()
+@item @clhs{f_1pl_1_.htm,1+} @tab cl_object cl_1P(cl_object number)
+@item @clhs{f_1pl_1_.htm,1-} @tab cl_object cl_1M(cl_object number)
 @item @clhs{f_abs.htm,abs} @tab cl_object cl_abs(cl_object number)
 @item @clhs{f_evenpc.htm,evenp} @tab cl_object cl_evenp(cl_object integer)
 @item @clhs{f_evenpc.htm,oddp} @tab cl_object cl_oddp(cl_object integer)
@@ -380,7 +379,7 @@ Common Lisp and C equivalence
 @item @clhs{f_dec_fl.htm,float-digits} @tab cl_object cl_float_digits(cl_object float)
 @item @clhs{f_dec_fl.htm,float-precision} @tab cl_object cl_float_precision(cl_object float)
 @item @clhs{f_dec_fl.htm,integer-decode-float} @tab cl_object cl_integer_decode_float(cl_object float)
-@item @clhs{f_float.htm,float} @tab cl_object cl_float(cl_narg narg, cl_object number)
+@item @clhs{f_float.htm,float} @tab cl_object cl_float(cl_narg narg, cl_object number, ...)
 @item @clhs{f_floatp.htm,floatp} @tab cl_object cl_floatp(cl_object object)
 @item @clhs{f_arithm.htm,arithmetic-error-operands} @tab [Only in Common Lisp]
 @item @clhs{f_arithm.htm,arithmetic-error-operation} @tab [Only in Common Lisp]
