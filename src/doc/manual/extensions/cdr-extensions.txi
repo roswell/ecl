@@ -1,0 +1,17 @@
+@node CDR Extensions
+@section CDR Extensions
+
+ECL currently implements the following specifications of the
+@url{https://common-lisp.net/project/cdr/, Common Lisp Document
+Repository}:
+
+@float Table, tab:cdr-extensions
+@caption{Implemented CDR extensions}
+@multitable @columnfractions .2 .8
+@headitem Number @tab Comments
+@item 1 @tab In @code{clos} package; partial implementation, @pxref{Meta-Object Protocol (MOP)}
+@item 5 @tab In @code{ext} package
+@item 7 @tab Only if ECL is compiled with @code{--with-cmuformat} configure option
+@item 14 @tab
+@end multitable
+@end float
