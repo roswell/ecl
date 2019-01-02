@@ -133,13 +133,13 @@ This macro is compatible with the one in SBCL and as such it also defines three 
 
 @code{mp:with-local-interrupts} executes its body with interrupts enabled provided that there is an @code{mp:allow-with-interrupts} for every @code{mp:without-interrupts} surrounding the current one. @code{mp:with-local-interrupts} is equivalent to:
 
-@verbatim
+@lisp
   (allow-with-interrupts (with-interrupts ...))
-@end verbatim
+@end lisp
 
 Care must be taken not to let either @code{mp:allow-with-interrupts} or @code{mp:with-local-interrupts} appear in a function that escapes from inside the @code{mp:without-interrupts} in:
 
-@verbatim
+@lisp
   (without-interrupts
     ;; The body of the lambda would be executed with WITH-INTERRUPTS allowed
     ;; regardless of the interrupt policy in effect when it is called.
@@ -149,6 +149,6 @@ Care must be taken not to let either @code{mp:allow-with-interrupts} or @code{mp
     ;; The body of the lambda would be executed with interrupts enabled
     ;; regardless of the interrupt policy in effect when it is called.
     (lambda () (with-local-interrupts ...)))
-@end verbatim
+@end lisp
 
 @end defmac

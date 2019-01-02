@@ -128,40 +128,40 @@ Finally, the function @code{si_make_array} does a similar job to @code{si_make_f
 
 Create one-dimensional @code{base-string} with room for 11 characters:
 
-@verbatim
+@example
 cl_object s = ecl_alloc_simple_vector(ecl_aet_bc, 11);
-@end verbatim
+@end example
 
 Create a one-dimensional @code{array} with a fill pointer
 
-@verbatim
+@example
 cl_object type = ecl_make_symbol("BYTE8","EXT");
 cl_object a = si_make_vector(ecl_make_fixnum(16), type, ECL_NIL, /* adjustable */
                              ecl_make_fixnum(0) /* fill-pointer */,
                              ECL_NIL /* displaced_to */,
                              ECL_NIL /* displacement */);
-@end verbatim
+@end example
 
 An alternative formulation
 
-@verbatim
+@example
 cl_object type = ecl_make_symbol("BYTE8","EXT");
 cl_object a = si_make_array(ecl_make_fixnum(16), type, ECL_NIL, /* adjustable */
                             ecl_make_fixnum(0) /* fill-pointer */,
                             ECL_NIL /* displaced_to */,
                             ECL_NIL /* displacement */);
-@end verbatim
+@end example
 
 Create a 2-by-3 two-dimensional @code{array}, specialized for an integer type:
 
-@verbatim
+@example
 cl_object dims = cl_list(2, ecl_make_fixnum(2), ecl_make_fixnum(3));
 cl_object type = ecl_make_symbol("BYTE8","EXT");
 cl_object a = si_make_array(dims, type, ECL_NIL, /* adjustable */
                             ECL_NIL /* fill-pointer */,
                             ECL_NIL /* displaced_to */,
                             ECL_NIL /* displacement */);
-@end verbatim
+@end example
 
 @subsubsection Accessors
 @cppindex ecl_aref
