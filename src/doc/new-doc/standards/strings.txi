@@ -78,7 +78,9 @@ Common Lisp and C equivalence
 @headitem Lisp symbol @tab C function
 @item @clhs{f_smp-st.htm,simple-string-p} @tab cl_object cl_simple_string_p(cl_object string)
 @item @clhs{f_char_.htm,char} @tab cl_object cl_char(cl_object string, cl_object index)
+@item @clhs{f_char_.htm,(setf char)} @tab cl_object si_char_set(cl_object string, cl_object index, cl_object char)
 @item @clhs{f_char_.htm,schar} @tab cl_object cl_schar(cl_object string, cl_object index)
+@item @clhs{f_char_.htm,(setf schar)} @tab cl_object si_char_set(cl_object string, cl_object index, cl_object char)
 @item @clhs{f_string.htm,string} @tab cl_object cl_string(cl_object x)
 @item @clhs{f_stg_up.htm,string-upcase} @tab cl_object cl_string_upcase(cl_narg narg, cl_obejct string, ...)
 @item @clhs{f_stg_up.htm,string-downcase} @tab cl_object cl_string_downcase(cl_narg narg, cl_obejct string, ...)

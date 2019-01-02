@@ -96,6 +96,7 @@ Common Lisp and C equivalence
 @headitem Lisp symbol @tab C function
 @item @clhs{f_clrhas.htm,clrhash} @tab cl_object cl_clrhash(cl_object hash_table)
 @item @clhs{f_gethas.htm,gethash} @tab cl_object cl_gethash(cl_narg narg, cl_object key, cl_object hash_table, ...)
+@item @clhs{f_gethas.htm,(setf gethash)} @tab cl_object si_hash_set(cl_object key, cl_object hash_table, cl_object value)
 @item @clhs{f_hash_1.htm,hash-table-count} @tab cl_object cl_hash_table_count(cl_object hash_table)
 @item @clhs{f_hash_t.htm,hash-table-p} @tab cl_object cl_hash_table_p(cl_object hash_table)
 @item @clhs{f_hash_2.htm,hash-table-rehash-size} @tab cl_object cl_hash_table_rehash_size(cl_object hash_table)

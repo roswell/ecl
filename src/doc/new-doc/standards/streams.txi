@@ -178,6 +178,7 @@ Common Lisp and C equivalence
 @item @clhs{f_stm_el.htm,stream-element-type} @tab cl_object cl_stream_element_type(cl_object stream)
 @item @clhs{f_stm_er.htm,stream-error-stream} @tab [Only in Common Lisp]
 @item @clhs{f_stm_ex.htm,stream-external-format} @tab cl_object cl_stream_external_format(cl_object stream)
+@item @clhs{f_stm_ex.htm,(setf stream-external-format)} @tab cl_object si_stream_external_format_set(cl_object stream, cl_object format)
 @item @clhs{f_stmp.htm,streamp} @tab cl_object cl_streamp(cl_object object)
 @item @clhs{f_syn_st.htm,synonym-stream-symbol} @tab cl_object cl_synonym_stream_symbol(cl_object synonym_stream)
 @item @clhs{f_terpri.htm,terpri} @tab cl_object cl_terpri(cl_narg narg, ...)

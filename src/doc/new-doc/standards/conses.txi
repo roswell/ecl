@@ -14,6 +14,10 @@ Accessing the elements of conses
 @end deftypefun
 @deftypefun cl_object ECL_CONS_CDR (cl_object @var{o})
 @end deftypefun
+@deftypefun cl_object ECL_RPLACA (cl_object @var{o}, cl_object @var{v})
+@end deftypefun
+@deftypefun cl_object ECL_RPLACD (cl_object @var{o}, cl_object @var{v})
+@end deftypefun
 @deftypefun cl_object _ecl_car (cl_object @var{o})
 @end deftypefun
 @deftypefun cl_object _ecl_cdr (cl_object @var{o})
@@ -25,9 +29,9 @@ Accessing the elements of conses
 ...
 @subsubheading Description
 These functions access the elements of objects of type cons
-(@code{ECL_CONS_CAR} and @code{ECL_CONS_CDR}) or type list
-(@code{_ecl_car}, @code{_ecl_cdr}, @code{_ecl_caar}, ...). They don't
-check the type of their arguments.
+(@code{ECL_CONS_CAR}, @code{ECL_CONS_CDR}, @code{ECL_RPLACA} and
+@code{ECL_RPLACD}) or type list (@code{_ecl_car}, @code{_ecl_cdr},
+@code{_ecl_caar}, ...). They don't check the type of their arguments.
 
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence

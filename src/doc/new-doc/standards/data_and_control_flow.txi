@@ -430,13 +430,14 @@ Common Lisp and C equivalence
 @item @clhs{f_equalp.htm,equalp} @tab cl_object cl_equalp(cl_object x, cl_object y)
 @item @clhs{f_fbound.htm,fboundp} @tab cl_object cl_fboundp(cl_object function_name)
 @item @clhs{f_fdefin.htm,fdefinition} @tab cl_object cl_fdefinition(cl_object function_name)
+@item @clhs{f_fdefin.htm,(setf fdefinition)} @tab cl_object si_fset(cl_narg narg, cl_object function_name, cl_object definition, ...)
 @item @clhs{f_fmakun.htm,fmakunbound} @tab cl_object cl_fmakunbound(cl_object function_name)
 @item @clhs{f_funcal.htm,funcall} @tab cl_object cl_funcall(cl_narg narg, cl_object function, ...)
 @item @clhs{f_fn_lam.htm,function-lambda-expression} @tab cl_object cl_function_lambda_expression(cl_object function)
 @item @clhs{f_fnp.htm,functionp} @tab cl_object cl_functionp(cl_object object)
 @item @clhs{f_get_se.htm,get-setf-expansion} @tab cl_object cl_get_setf_expansion(cl_narg narg, cl_object place, ...)
 @item @clhs{f_identi.htm,identity} @tab cl_object cl_identity(cl_object x)
-@item @clhs{s_let_l.htm,LET}, @clhs{s_let_l.htm,LET*} @tab cl_object ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object value)
+@item @clhs{s_let_l.htm,let}, @clhs{s_let_l.htm,let*} @tab cl_object ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object value)
 @item @clhs{v_lamb_1.htm,lambda-parameters-limit} @tab ECL_LAMBDA_PARAMETERS_LIMIT
 @item @clhs{v_multip.htm,multiple-values-limit} @tab ECL_MULTIPLE_VALUES_LIMIT
 @item @clhs{f_not.htm,not} @tab cl_object cl_not(cl_object object)
