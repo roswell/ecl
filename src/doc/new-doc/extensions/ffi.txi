@@ -10,7 +10,7 @@
 * Higher level interfaces:: Usage examples
 * SFFI Reference:: Static FFI reference
 @c * LFFI Reference:: Library FFI reference /dlopen/
-@c * DFFI Reference:: Dynamic FFI reference
+* DFFI Reference:: Dynamic FFI reference
 * UFFI Reference:: UFFI reference manual
 @end menu
 
@@ -141,7 +141,7 @@ higher level interface (Section 3.4).
 
 The most important component of the object is the memory region where
 data is stored. By default ECL assumes that the user will perform
-automatic management of this memory, deleting the object when it is no
+manual management of this memory, deleting the object when it is no
 longer needed. The first reason is that this block may have been
 allocated by a foreign routine using @code{malloc()}, or
 @code{mmap()}, or statically, by referring to a C constant. The second
@@ -302,5 +302,5 @@ Build and load this module with (compile-file "ecl.lsp" :load t)
 @end lisp
 
 @include extensions/ffi_sffi.txi
-@c @include extensions/ffi_dffi.txi
+@include extensions/ffi_dffi.txi
 @include extensions/ffi_uffi.txi

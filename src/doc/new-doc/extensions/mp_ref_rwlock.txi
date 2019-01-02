@@ -5,9 +5,12 @@
 @cindex Readers-writer locks
 @cindex Shared-exclusive locks
 
-Readers-writer (or shared-exclusive ) lock allows concurrent access for
-read-only operations and write operations require exclusive
+Readers-writer (or shared-exclusive ) locks allow concurrent access
+for read-only operations, while write operations require exclusive
 access. @code{mp:rwlock} is non-recursive.
+
+Readers-writers locks are an optional feature, which is available if
+@code{*features*} includes @code{:ecl-read-write-lock}.
 
 
 @node Readers-writer locks dictionary
@@ -16,7 +19,7 @@ access. @code{mp:rwlock} is non-recursive.
 
 @cppindex ecl_make_rwlock
 
-@deftypefun ecl_make_rwlock (cl_object name)
+@deftypefun cl_object ecl_make_rwlock (cl_object name)
 C/C++ equivalent of @code{mp:make-rwlock} without @code{key} arguments.
 
 See @code{mp:make-rwlock}.
@@ -105,11 +108,11 @@ Release @code{lock}.
 
 @lspindex mp:with-rwlock
 
-@defmac mp:with-rwlock (lock op) &body body
+@defmac mp:with-rwlock (lock operation) &body body
 Acquire rwlock for the dynamic scope of @code{body} for operation
-@code{op}, which is executed with the lock held by current thread, and
-@code{with-rwlock} returns the values of body.
+@code{operation}, which is executed with the lock held by current
+thread. Returns the values of body.
 
-Valid values of argument @code{op} are @code{:read} or @code{:write}
-(for reader and writer access accordingly).
+Valid values of argument @code{operation} are @code{:read} or
+@code{:write} (for reader and writer access accordingly).
 @end defmac

@@ -12,7 +12,7 @@ can't).
 
 @cppindex ecl_make_lock
 
-@deftypefun ecl_make_lock (cl_object name, bool recursive)
+@deftypefun cl_object ecl_make_lock (cl_object name, bool recursive)
 C/C++ equivalent of @code{mp:make-lock} without @code{key} arguments.
 
 See @code{mp:make-lock}.
@@ -121,8 +121,7 @@ Releases @code{lock}.
 
 @defmac mp:with-lock (lock-form) &body body
 Acquire lock for the dynamic scope of @code{body}, which is executed
-with the lock held by current thread, and @code{with-lock} returns the
-values of body.
+with the lock held by current thread. Returns the values of body.
 
 @c (lock-form &key wait-p timeout)
 

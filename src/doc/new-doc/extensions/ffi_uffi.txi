@@ -197,7 +197,7 @@ Aggregate types are comprised of one or more primitive types.
 @subsubheading Reference
 
 @lspindex ffi:def-enum
-@defmac ffi:def-enum name fields &key separator-key
+@defmac ffi:def-enum name fields &key separator-string
 
 Defines a C enumeration
 
@@ -281,16 +281,16 @@ Retrieves a value from a slot of a structure
 @item obj
 A pointer to the foreign structure.
 @item type
-A name of the foreign structure.
+The name of the foreign structure.
 @item field
-A name of the desired field in foreign structure.
+The name of the desired field in the foreign structure.
 @item returns
 The value of the @code{field} in the structure @code{obj}.
 @end table
 
 @subsubheading Description
 Accesses a slot value from a structure. This is generalized and can be
-used with @code{SETF}-able.
+used with @code{setf}.
 
 @subsubheading Examples
 @exindex @code{ffi:get-slot-value} manipulating a struct field
@@ -311,16 +311,16 @@ Retrieves a pointer from a slot of a structure
 @item obj
 A pointer to the foreign structure.
 @item type
-A name of the foreign structure.
+The name of the foreign structure.
 @item field
-A name of the desired field in foreign structure.
+The name of the desired field in the foreign structure.
 @item returns
 The value of the pointer @var{field} in the structure @var{obj}.
 @end table
 
 @subsubheading Description
-This is similar to get-slot-value. It is used when the value of a slot
-is a pointer type.
+This is similar to @code{get-slot-value}. It is used when the value of
+a slot is a pointer type.
 
 @subsubheading Examples
 @exindex @code{ffi:get-slot-value} usage
@@ -376,7 +376,7 @@ The value stored in the @var{position} of the @var{array}.
 
 @subsubheading Description
 Dereferences (retrieves) the value of the foreign array
-element. @code{SETF}-able.
+element. @code{setf}-able.
 
 @subsubheading Examples
 @exindex @code{ffi:deref-array} retrieving array element
@@ -400,7 +400,7 @@ Defines a foreign union type
 @item name
 A name of the new union type.
 @item fields
-A list of fields of the union in form @code{(field-name fields-type)}.
+A list of fields of the union in form @code{(field-name field-type)}.
 @end table
 
 @subsubheading Description
@@ -569,11 +569,11 @@ The value of the object where the pointer points.
 @end table
 
 @subsubheading Description
-Returns the object to which a pointer points. @code{SETF}-able.
+Returns the object to which a pointer points. @code{setf}-able.
 
 @subsubheading Notes
-Casting of the pointer may be performed with @code{WITH-CAST-POINTER}
-together with the @code{DEREF-POINTER}/@code{DEREF-ARRAY}.
+Casting of the pointer may be performed with @code{with-cast-pointer}
+together with the @code{deref-pointer}/@code{deref-array}.
 
 @subsubheading Examples
 @exindex @code{ffi:deref-pointer}
@@ -601,7 +601,7 @@ A character.
 
 @subsubheading Description
 Ensures that an objects obtained by dereferencing @code{:char} and
-@code{:unsigned-char} pointers are a lisp character.
+@code{:unsigned-char} pointers is a lisp character.
 
 @subsubheading Examples
 @exindex @code{ffi:ensure-char-character}
@@ -698,9 +698,9 @@ The value of the object where the pointer points.
 @end table
 
 @subsubheading Description
-Executes @var{BODY} with @var{PTR} cast to be a pointer to type
-@var{FTYPE}. @var{VAR} is will be bound to this value during the
-execution of @var{BODY}.
+Executes @var{body} with @var{ptr} cast to be a pointer to type
+@var{ftype}. @var{var} will be bound to this value during the
+execution of @var{body}.
 
 @subsubheading Examples
 @exindex @code{ffi:with-cast-pointer}
@@ -727,16 +727,16 @@ Defines a symbol macro to access a variable in foreign code
 @item name
 A string or list specifying the symbol macro's name. If it is a
 string, that names the foreign variable. A Lisp name is created by
-translating @code{#\_} to @code{#\-} and by converting to upper-case in
-case-insensitive Lisp implementations.
+translating @code{#\_} to @code{#\-} and by converting to upper-case.
 
 If it is a list, the first item is a string specifying the foreign
 variable name and the second it is a symbol stating the Lisp name.
 @item type
 A foreign type of the foreign variable.
 @item module
-A string specifying the module (or library) the foreign variable resides
-in.
+Either a string specifying the module (or library) the foreign
+variable resides in, @code{:default} if no module needs to be loaded
+or @code{NIL} to use SFFI.
 @end table
 
 @subsubheading Description
@@ -788,17 +788,16 @@ Lisp code defining C structure, function and a variable:
 @cindex Foreign strings
 
 @subsubheading Overview
-@cindex @code{cstring} and @code{foreign string} differences
+@cindex cstring and foreign string differences
 
-UFFI has functions to two types of C-compatible strings:
-@code{cstring} and foreign strings. @code{cstring}s are used only as
-parameters to and from functions. In some implementations a
-@code{cstring} is not a foreign type but rather the Lisp string
-itself. On other platforms a cstring is a newly allocated foreign
-vector for storing characters. The following is an example of using
-@code{cstring}s to both send and return a value.
+UFFI has functions to two types of C-compatible strings: cstrings and
+foreign strings. cstrings are used only as parameters to and from
+functions. In some implementations a cstring is not a foreign type but
+rather the Lisp string itself. On other platforms a cstring is a newly
+allocated foreign vector for storing characters. The following is an
+example of using cstrings to both send and return a value.
 
-@exindex @code{cstring} used to send and return a value
+@exindex cstring used to send and return a value
 @lisp
 (ffi:def-function ("getenv" c-getenv) 
     ((name :cstring))
@@ -817,7 +816,7 @@ hold the return value of a string, you must use a foreign string and not
 a cstring. The following is an example of using a foreign string for a
 return value.
 
-@exindex @code{foreign string} used to send and return a value
+@exindex foreign string used to send and return a value
 @lisp
 (ffi:def-function ("gethostname" c-gethostname)
     ((name (* :unsigned-char))
@@ -838,11 +837,11 @@ return value.
 @end lisp
 
 Foreign functions that return pointers to freshly allocated strings
-should in general not return @code{cstring}s, but @code{foreign
-strings}. (There is no portable way to release such @code{cstring}s from
-Lisp.) The following is an example of handling such a function.
+should in general not return cstrings, but foreign strings. (There is
+no portable way to release such cstrings from Lisp.) The following is
+an example of handling such a function.
 
-@exindex Conversion between @code{foreign string} and @code{cstring}
+@exindex Conversion between foreign string and cstring
 @lisp
 (ffi:def-function ("readline" c-readline)
     ((prompt :cstring))
@@ -864,9 +863,9 @@ Lisp.) The following is an example of handling such a function.
 Converts a @code{cstring} to a Lisp string
 @table @var
 @item object
-@code{cstring}
+A @code{cstring}
 @item returns
-Lisp string
+A Lisp string
 @end table
 
 @subsubheading Description
@@ -879,9 +878,9 @@ processing the results of a foreign function that returns a cstring.
 Converts a Lisp string to a @code{cstring}
 @table @var
 @item object
-Lisp string
+A Lisp string
 @item returns
-@code{cstring}
+A @code{cstring}
 @end table
 
 @subsubheading Description
@@ -951,7 +950,7 @@ Result of evaluating the @var{body}.
 @subsubheading Description
 Binds a symbols to a @code{cstring}s created from conversion of a
 @var{string}s. Automatically frees the @var{cstring}s. This macro works
-similar to @code{LET*}. Based on @code{with-cstring}.
+similar to @code{let*}. Based on @code{with-cstring}.
 @end defmac
 
 @lspindex ffi:convert-from-foreign-string
@@ -975,7 +974,7 @@ binary strings.
 @end defmac
 
 @lspindex ffi:convert-to-foreign-string
-@defmac ffi:convert-to-foreign-string
+@defmac ffi:convert-to-foreign-string string
 Converts a Lisp string to a foreign string
 @table @var
 @item string
@@ -1040,7 +1039,7 @@ Result of evaluating the @var{body}.
 @subsubheading Description
 Binds a symbols to a @code{foreign-string}s created from conversion of a
 @var{string}s. Automatically frees the @var{foreign-string}s. This macro
-works similar to @code{LET*}. Based on @code{with-foreign-string}.
+works similar to @code{let*}. Based on @code{with-foreign-string}.
 @end defmac
 
 @node Functions and Libraries
@@ -1063,8 +1062,9 @@ symbol stating the Lisp name.
 A list of argument declarations. If @code{NIL}, indicates that the function
 does not take any arguments.
 @item module
-A string specifying which module (or library) that the foreign function
-resides.
+Either a string specifying which module (or library) that the foreign
+function resides, @code{:default} if no module needs to be loaded or
+@code{NIL} to use SFFI.
 @item call
 Function calling convention. May be one of @code{:default}, @code{:cdecl},
 @code{:sysv}, @code{:stdcall}, @code{:win64} and
@@ -1074,8 +1074,8 @@ This argument is used only when we're using the dynamic function
 interface. If ECL is built without the DFFI support, then it uses SFFI
 the @var{call} argument is ignored.
 @item returning
-A declaration specifying the result type of the foreign function. If
-@code{:void} indicates module does not return any value.
+A declaration specifying the result type of the foreign function.
+@code{:void} indicates that the function does not return any value.
 @end table
 @subsubheading Description
 Declares a foreign function.

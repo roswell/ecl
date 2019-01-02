@@ -76,7 +76,7 @@ A lisp form, not evaluated, where numbers from 0 to nargs will be
 replaced by the corresponding option argument.
 @end defvr
 
-@defvr opt :STOP
+@defvr opt :stop
 If present, parsing of arguments stops after this option is found and
 processed. The list of remaining arguments is passed to the
 rule. ECL's top-level uses this option with the @code{--} command line
@@ -84,10 +84,10 @@ option to set @code{ext:*unprocessed-ecl-command-args*} to the list of
 remaining arguments.
 @end defvr
 
-@defvr opt :NOLOADRC
-@defvrx opt :LOADRC
-Determine whether the lisp initialization file
-@code{(ext:*lisp-init-file-list*)} will be loaded before processing
+@defvr opt :noloadrc
+@defvrx opt :loadrc
+Determine whether the lisp initialization files in
+@code{ext:*lisp-init-file-list*} will be loaded before processing
 all forms.
 @end defvr
 
@@ -104,7 +104,7 @@ constructs a lisp statement using the template.
 
 After all arguments have been processed,
 @code{ext:process-command-args}, and there were no occurrences of
-@code{:noloadrc}, one of the files listed in
+@code{:noloadrc}, the first existing file listed in
 @code{ext:*lisp-init-file-list*} will be loaded. Finally, the list of
 lisp statements will be evaluated.
 @end defun

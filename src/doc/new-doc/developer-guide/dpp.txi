@@ -2,6 +2,11 @@
 @section Defun preprocessor
 
 @cindex Defun preprocessor
+The defun preprocessor allows for convenient definition of Lisp
+functions with optional and keyword arguments and the use of Lisp
+symbols in ECL's own C source code. It generates the C code necessary
+to use optional function arguments and to access symbols in ECL's
+builtin symbol table.
 
 Usage:
 @verbatim

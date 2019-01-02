@@ -22,7 +22,7 @@
 - [ ] Embedding ECL
 
 * Developer's guide
-- [ ] Source code structure
+- [-] Source code structure
 - [ ] Contributing
   - Source documentation
 - [ ] Modules hierarchy
@@ -75,4 +75,4 @@ Many nodes, moderate amount of content (deviations from the standard)
 #+END_SRC
 
 * Things to fix
-- [ ] Add :long-double to the UFFI interface
+- [X] Add :long-double to the UFFI interface

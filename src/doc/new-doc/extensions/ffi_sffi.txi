@@ -23,19 +23,19 @@ This special form inserts C code from strings passed in the
 sources. Contrary to @code{ffi:c-inline}, this function may have no
 executable statements, accepts no input value and returns no value.
 
-The main use of @code{FFI:CLINES} is to declare or define C variables
+The main use of @code{ffi:clines} is to declare or define C variables
 and functions that are going to be used later in other FFI
 statements. All statements from @var{arguments} are grouped at the
 beginning of the produced header file.
 
-@code{FFI:CLINES} is a special form that can only be used in lisp
+@code{ffi:clines} is a special form that can only be used in lisp
 compiled files as a toplevel form. Other uses will lead to an error
 being signaled, either at the compilation time or when loading the
 file.
 
 @subsubheading Examples
 @exindex @code{ffi:clines} adding c toplevel declarations
-In this example the @code{FFI:CLINES} statement is required to get
+In this example the @code{ffi:clines} statement is required to get
 access to the C function @code{cos}:
 @lisp
 (ffi:clines "#include <math.h>")
@@ -97,10 +97,10 @@ false, then the C template may be a more complicated block form, with
 braces, conditionals, loops and spanning multiple lines. In this case
 the output of the form can only be set using @verb{|@(return)|}.
 
-Parameter @var{side-effects} set to true will indicate, that the
+Parameter @var{side-effects} set to false will indicate, that the
 functions causes no side-effects. This information is used by the
 compiler to optimize the resulting code. If @var{side-effects} is set to
-true, but the function may cause the side effects, then results are
+false, but the function may cause the side effects, then results are
 undefined.
 
 Note that the conversion between lisp arguments and FFI types is

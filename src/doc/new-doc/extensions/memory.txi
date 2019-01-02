@@ -56,7 +56,7 @@ The customizable limits are listed in @ref{tab:mem-limits}, but they need a care
 @item
     @code{ext:binding-stack} controls the number of nested bindings for special variables. The current value is usually safe enough, unless you have deep recursive functions that bind special variables, which is not really a good idea.
 @item
-    @code{ext:frame-stack} controls the number of nested blocks, tagbody and other control structures. It affects both interpreted and compiled code, but quite often compiled code optimizes away these stack frames, saving memory and not being affected by this limit.
+    @code{ext:frame-stack} controls the number of nested blocks, tagbodys and other control structures. It affects both interpreted and compiled code, but quite often compiled code optimizes away these stack frames, saving memory and not being affected by this limit.
 @item
     @code{ext:lisp-stack} controls the size of the interpreter stack. It only affects interpreted code.
 @end itemize

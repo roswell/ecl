@@ -54,7 +54,7 @@ In addition to the set of synchronous signals or "exceptions", we have a set of 
 @itemize
 @item Request for program termination (@code{SIGKILL}, @code{SIGTERM}).
 @item Indication that a child process has finished.
-@item Request for program interruption (@code{SIGINT}), typically as a consequence of pressing a key combination, @kbd{Ctrl-C}.
+@item Request for program interruption (@code{SIGINT}), typically as a consequence of pressing a key combination, e.g. @kbd{Ctrl-C}.
 @end itemize
 
 The important difference with synchronous signals is that we have no thread that causes the interrupt and thus there is no preferred way of handling them. Moreover, the operating system will typically dispatch these signals to an arbitrary thread, unless we set up mechanisms to prevent it. This can have nasty consequences if the incoming signal interrupt a system call, or leaves the interrupted thread in an inconsistent state.
@@ -101,7 +101,7 @@ Systems that embed ECL and want to allow handling of synchronous signals should 
 @subsection Considerations when embedding ECL
 There are several approaches when handling signals and interrupts in a program that uses ECL. One is to install your own signal handlers. This is perfectly fine, but you should respect the same restrictions as ECL. Namely, you may not execute arbitrary code from those signal handlers, and in particular it will not always be safe to execute Common Lisp code from there.
 
-If you want to use your own signal handlers then you should set the appropriate options before invoking @code{cl_boot()}, as explained in @code{ecl_set_option}. Note that in this case ECL will not always be able to detect floating point exceptions, specially if your compiler does not support C99 and the corresponding floating point flags.
+If you want to use your own signal handlers then you should set the appropriate options before invoking @code{cl_boot()}, as explained in @code{ecl_set_option}. Note that in this case ECL will not always be able to detect floating point exceptions.
 
 The other option is to let ECL handle signals itself. This would be safer when the dominant part of the code is Common Lisp, but you may need to protect the code that embeds ECL from being interrupted using either the macros @code{ecl_disable_interrupts} and @code{ecl_enable_interrupts} or the POSIX functions @code{pthread_sigmaks}and @code{sigprocmask}.
 

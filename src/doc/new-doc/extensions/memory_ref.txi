@@ -50,7 +50,7 @@ This condition is signaled when ECL exhausts the @code{ext:heap-size} limit from
 @item
     If the heap size had a finite limit, ECL offers the user the chance to resize it, issuing a restartable condition. The user may at this point use @code{(ext:set-limit 'ext:heap-size 0)} to remove the heap limit and avoid further messages, or use the @code{(continue)} restart to let ECL enlarge the heap by some amount.
 @item
-    Independently of the heap size limit, if ECL finds that there is no space to free or to grow, ECL simply quits. There will be no chance to do some cleanup because there is no way to cons any additional data.
+    Independently of the heap size limit, if ECL finds that there is no space to free or to grow, ECL simply quits. There will be no chance to do some cleanup because there is no way to allocate any additional data.
 @end itemize
 @end deftp
 

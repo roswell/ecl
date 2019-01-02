@@ -16,7 +16,7 @@ Process is a primitive representing native thread.
 
 Returns the list of processes associated to running tasks. The list is a
 fresh new one and can be destructively modified. However, it may happen
-that the output list is not up to date, because some of the tasks has
+that the output list is not up to date, because some of the tasks have
 expired before this copy is returned.
 
 @end defun
@@ -49,6 +49,16 @@ Interrupt a task. This @code{function} sends a signal to a running
 @code{process}. When the task is free to process that signal, it will
 stop whatever it is doing and execute the given function.
 
+@strong{WARNING:} Use with care! Interrupts can happen anywhere,
+except in code regions explicitely protected with
+@code{mp:without-interrupts}. This can lead to dangerous situations
+when interrupting functions which are not thread safe. In particular,
+one has to consider:
+@itemize
+@item Reentrancy: Functions, which usually are not called recursively can be re-entered during execution of the interrupt.
+@item Stack unwinding: Non-local jumps like @code{throw} or @code{return-from} in the interrupting code will handle @code{unwind-protect} forms like usual. However, the cleanup forms of an @code{unwind-protect} can still be interrupted. In that case the execution flow will jump to the next @code{unwind-protect}.
+@end itemize
+
 @exindex Process interruption
 Example:
 
@@ -75,10 +85,13 @@ Kill a task that is doing nothing (See @code{mp:process-kill}).
 @defun mp:make-process &key name initial-bindings
 
 Create a new thread. This function creates a separate task with a name
-set to @code{name}, set of variable bindings @code{initial-bindings}
-and no function to run. See also @code{mp:process-run-function}. Returns
-newly created process.
+set to @code{name} and no function to run. See also
+@code{mp:process-run-function}. Returns newly created process.
 
+If @code{initial-bindings} is false, the new process inherits local
+bindings to special variables (i.e. binding a special variable with
+@code{let} or @code{let*}) from the current thread, otherwise the new
+thread possesses no local bindings.
 @end defun
 
 
@@ -336,7 +349,7 @@ effect during the dynamic scope of its body, unless there is an outer
 @code{allow-with-interrupts}.
 
 @code{with-local-interrupts} executes its body with interrupts enabled
-provided that for there is an @code{allow-with-interrupts} for every
+provided that there is an @code{allow-with-interrupts} for every
 @code{without-interrupts} surrounding the current
 one. @code{with-local-interrupts} is equivalent to:
 

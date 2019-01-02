@@ -35,11 +35,11 @@ Follow the execution of functions
 (trace @var{function-name*})
 @table @var
 @item function-name
-@{@var{symbol} | (@var{symbol} [ @var{option} @var{form} ]*)@}
+@{@var{symbol} | (@var{symbol} [@var{option} @var{form}]*)@}
 @item symbol
 A symbol which is bound to a function in the global environment. Not evaluated.
 @item option
-One of @code{:BREAK, :BREAK-AFTER, :COND-BEFORE, :COND-AFTER, :COND, :PRINT, :PRINT-AFTER, :STEP}
+One of @code{:break}, @code{:break-after}, @code{:cond-before}, @code{:cond-after}, @code{:cond}, @code{:print}, @code{:print-after}, @code{:step}
 @item form
 A lisp form evaluated in an special environment.
 @item returns
@@ -56,14 +56,14 @@ trace returns a name list of those functions that were traced by the call to tra
 Trace options cause the normal printout to be suppressed, or cause extra information to be printed. Each option is a pair of an option keyword and a value form. If an already traced function is traced again, any new options replace the old options and a warning might be printed. The lisp @emph{form} accompanying the option is evaluated in an environment where @var{sys::args} contains the list of arguments to the function.
 
 The following options are defined:
-@table @code
-@item :cond, :cond-before, :cond-after
+@table @asis
+@item @code{:cond}, @code{:cond-before}, @code{:cond-after}
 If @code{:cond-before} is specified, then @code{trace} does nothing unless @var{form} evaluates to true at the time of the call. @code{:cond-after} is similar, but suppresses the initial printout, and is tested when the function returns. @code{:cond} tries both before and after.
-@item :step
+@item @code{:step}
 If @var{form} evaluates to true, the stepper is entered.
-@item :break, :break-after
+@item @code{:break}, @code{:break-after}
 If specified, and @var{form} evaluates to true, then the debugger is invoked at the start of the function or at the end of the function according to the respective option.
-@item :print, :print-after
+@item @code{:print}, @code{:print-after}
 In addition to the usual printout, the result of evaluating @var{form} is printed at the start of the function or at the end of the function, depending on the option. Multiple print options cause multiple values to be output, in the order in which they were introduced.
 @end table
 @end defmac

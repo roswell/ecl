@@ -140,7 +140,7 @@ the result would be unpredictable.
                       (loop repeat 1000 do
                            (mp:atomic-update (test-struct-slot1 struct) #'1+)
                            (sleep 0.00001))))))
- (slot-value object 'slot1))
+  (test-struct-slot1 struct))
 => 100000
 @end lisp
 @end defmac
