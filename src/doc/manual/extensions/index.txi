@@ -65,5 +65,4 @@
 @c Package extensions
 @include extensions/packages.txi
 
-@node CDR Extensions
-@section CDR Extensions
+@include extensions/cdr-extensions.txi

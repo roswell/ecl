@@ -11,21 +11,21 @@
 
 @node Shadowed bindings
 @subsection Shadowed bindings
-@cindex Shadowed bindings in LET, FLET, LABELS and lambda-list
-ANSI doesn't specify what should happen if any of the @code{LET},
-@code{FLET} and @code{LABELS} special operators contain many bindings
+@cindex Shadowed bindings in let, flet, labels and lambda-list
+ANSI doesn't specify what should happen if any of the @code{let},
+@code{flet} and @code{labels} special operators contain many bindings
 sharing the same name. Because the behavior varies between the
 implementations and the programmer can't rely on the spec ECL signals an
 error if such situation occur.
 
 Moreover, while ANSI defines lambda list parameters in the terms of
-@code{LET*}, when used in function context programmer can't provide an
+@code{let*}, when used in function context programmer can't provide an
 initialization forms for required parameters. If required parameters
 share the same name an error is signaled.
 
 Described behavior is present in ECL since version 16.0.0. Previously
-the @code{LET} operator were using first binding. Both @code{FLET} and
-@code{LABELS} were signaling an error if C compiler was used and used
+the @code{let} operator were using first binding. Both @code{flet} and
+@code{labels} were signaling an error if C compiler was used and used
 the last binding as a visible one when the byte compiler was used.
 
 @node Minimal compilation
@@ -156,27 +156,27 @@ The previous conventions set some burden on the C programmer that calls ECL, for
 
 As an example let us assume that the user wants to invoke two functions which are part of the ANSI @bibcite{ANSI} standard and thus are exported with a C name. The first example is cl_cos, which takes just one argument and has a signature @code{cl_object cl_cos(cl_object)}.
 
-@verbatim
+@example
 #include <math.h>
 ...
 cl_object angle = ecl_make_double_float(M_PI);
 cl_object c = cl_cos(angle);
 printf("\nThe cosine of PI is %g\n", ecl_double_float(c));
-@end verbatim
+@end example
 
 The second example also involves some Mathematics, but now we are going to use the C function corresponding to @code{+}. As described in @ref{Numbers - ANSI dictionary}, the C name for the plus operator is @code{cl_P} and has a signature @code{cl_object cl_P(cl_narg narg,...)}. Our example now reads as follows
 
-@verbatim
+@example
 cl_object one = ecl_make_fixnum(1);
 cl_object two = cl_P(2, one, one);
 cl_object three = cl_P(3, one, one, one);
 printf("\n1 + 1 is %d\n", ecl_fixnum(two));
 printf("\n1 + 1 + 1 is %d\n", ecl_fixnum(three));
-@end verbatim
+@end example
 
 Note that most Common Lisp functions will not have a C name. In this case one must use the symbol that names them to actually call the functions, using @code{cl_funcall} or @code{cl_apply}. The previous examples may thus be rewritten as follows
 
-@verbatim
+@example
 /* Symbol + in package CL */
 cl_object plus = ecl_make_symbol("+","CL");
 cl_object one = ecl_make_fixnum(1);
@@ -184,7 +184,7 @@ cl_object two = cl_funcall(3, plus, one, one);
 cl_object three = cl_funcall(4, plus, one, one, one);
 printf("\n1 + 1 is %d\n", ecl_fixnum(two));
 printf("\n1 + 1 + 1 is %d\n", ecl_fixnum(three));
-@end verbatim
+@end example
 
 Another restriction of C and C++ is that functions can only take a limited number of arguments. In order to cope with this problem, ECL uses an internal stack to pass any argument above a hardcoded limit, @code{ECL_C_CALL_ARGUMENTS_LIMIT}, which is as of this writing 63. The use of this stack is transparently handled by the Common Lisp functions, such as apply, funcall and their C equivalents, and also by a set of macros, @code{cl_va_arg}, which can be used for coding functions that take an arbitrary name of arguments.
 
@@ -265,6 +265,7 @@ Accepting a variable number of arguments
 @subsubheading Description
 The macros above are used to code a function that accepts an arbitrary number of arguments. We will describe them in a practical example
 
+@example
 @verbatim
 cl_object my_plus(cl_narg narg, cl_object required1, ...)
 {
@@ -280,6 +281,7 @@ cl_object my_plus(cl_narg narg, cl_object required1, ...)
     ecl_return1(env, required1);
 }
 @end verbatim
+@end example
 
 The first thing to do is to declare the variable that will hold the arguments. This is @var{varargs} in our example and it has the type @code{ecl_va_list}.
 
@@ -312,20 +314,20 @@ Note that in both cases these macros and functions have to be used right after t
 @subsubheading Example
 A C/C++ excerpt:
 
-@verbatim
+@example
 cl_env_ptr env = ecl_process_env();
 cl_object a = ecl_make_fixnum(13);
 cl_object b = ecl_make_fixnum(6);
 cl_object modulus = cl_floor(2, a, b);
 cl_object remainder = ecl_nth_value(env, 1);
-@end verbatim
+@end example
 
 The somewhat equivalent Common Lisp code:
 
-@verbatim
+@lisp
 (multiple-value-bind (modulus equivalent)
     (floor 13 6))
-@end verbatim
+@end lisp
 
 @end deftypefun
 
@@ -351,11 +353,13 @@ Returns @var{N} values from a C/C++ function in a way that a Common Lisp functio
 
 @cppindex ECL_BLOCK_BEGIN
 @deffn Macro ECL_BLOCK_BEGIN
+@example
 @verbatim
 ECL_BLOCK_BEGIN(env,code) {
 
 } ECL_BLOCK_END;
 @end verbatim
+@end example
 
 @subsubheading Description
 @code{ECL_BLOCK_BEGIN} establishes a block named @var{code} that becomes visible for the Common Lisp code. This block can be used then as a target for @code{cl_return}.
@@ -368,11 +372,13 @@ The C/C++ program has to ensure that the code in @code{ECL_BLOCK_END} gets execu
 
 @cppindex ECL_CATCH_BEGIN
 @deffn Macro ECL_CATCH_BEGIN
+@example
 @verbatim
 ECL_CATCH_BEGIN(env,tag) {
 
 } ECL_CATCH_END;
 @end verbatim
+@end example
 
 @subsubheading Description
 @code{ECL_CATCH_BEGIN} establishes a destination for @code{throw} with the code given by @var{tag}.
@@ -388,6 +394,7 @@ The C/C++ program has to ensure that the code in @code{ECL_CATCH_END} gets execu
 C macro for unwind-protect
 
 @subsubheading Synopsis
+@example
 @verbatim
 ECL_UNWIND_PROTECT_BEGIN(env) {
 
@@ -395,6 +402,7 @@ ECL_UNWIND_PROTECT_BEGIN(env) {
 
 } ECL_UNWIND_PROTECT_END;
 @end verbatim
+@end example
 
 @subsubheading Description
 @code{ECL_UNWIND_PROTECT_BEGIN} establishes two blocks of C code that work like the equivalent ones in Common Lisp: a protected block, contained between the "BEGIN" and the "EXIT" statement, and the exit block, appearing immediately afterwards. The form guarantees that the exit block is always executed, even if the protected block attempts to exit via some nonlocal jump construct (@code{throw}, @code{return}, etc).
@@ -422,13 +430,14 @@ Common Lisp and C equivalence
 @item @clhs{f_equalp.htm,equalp} @tab cl_object cl_equalp(cl_object x, cl_object y)
 @item @clhs{f_fbound.htm,fboundp} @tab cl_object cl_fboundp(cl_object function_name)
 @item @clhs{f_fdefin.htm,fdefinition} @tab cl_object cl_fdefinition(cl_object function_name)
+@item @clhs{f_fdefin.htm,(setf fdefinition)} @tab cl_object si_fset(cl_narg narg, cl_object function_name, cl_object definition, ...)
 @item @clhs{f_fmakun.htm,fmakunbound} @tab cl_object cl_fmakunbound(cl_object function_name)
 @item @clhs{f_funcal.htm,funcall} @tab cl_object cl_funcall(cl_narg narg, cl_object function, ...)
 @item @clhs{f_fn_lam.htm,function-lambda-expression} @tab cl_object cl_function_lambda_expression(cl_object function)
 @item @clhs{f_fnp.htm,functionp} @tab cl_object cl_functionp(cl_object object)
 @item @clhs{f_get_se.htm,get-setf-expansion} @tab cl_object cl_get_setf_expansion(cl_narg narg, cl_object place, ...)
 @item @clhs{f_identi.htm,identity} @tab cl_object cl_identity(cl_object x)
-@item @clhs{s_let_l.htm,LET}, @clhs{s_let_l.htm,LET*} @tab cl_object ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object value)
+@item @clhs{s_let_l.htm,let}, @clhs{s_let_l.htm,let*} @tab cl_object ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object value)
 @item @clhs{v_lamb_1.htm,lambda-parameters-limit} @tab ECL_LAMBDA_PARAMETERS_LIMIT
 @item @clhs{v_multip.htm,multiple-values-limit} @tab ECL_MULTIPLE_VALUES_LIMIT
 @item @clhs{f_not.htm,not} @tab cl_object cl_not(cl_object object)

@@ -18,6 +18,7 @@ Common Lisp and C equivalence
 @item @clhs{f_rm_rm.htm,delete-if-not} @tab cl_object cl_delete_if_not(cl_narg narg, cl_object test, cl_object sequence, ...)
 @item @clhs{f_rm_dup.htm,delete-duplicates} @tab cl_object cl_delete_duplicates(cl_narg narg, cl_object sequence, ...)
 @item @clhs{f_elt.htm,elt} @tab cl_object cl_elt(cl_object sequence, cl_object index)
+@item @clhs{f_elt.htm,(setf elt)} @tab cl_object si_elt_set(cl_object sequence, cl_object index, cl_object value)
 @item @clhs{f_fill.htm,fill} @tab cl_object cl_fill(cl_narg narg, cl_object sequence, cl_object item, ...)
 @item @clhs{f_find_.htm,find} @tab cl_object cl_find(cl_narg narg, cl_object item, cl_object sequence, ...)
 @item @clhs{f_find_.htm,find-if} @tab cl_object cl_find_if(cl_narg narg, cl_object predicate, cl_object sequence, ...)

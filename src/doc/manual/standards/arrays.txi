@@ -128,40 +128,40 @@ Finally, the function @code{si_make_array} does a similar job to @code{si_make_f
 
 Create one-dimensional @code{base-string} with room for 11 characters:
 
-@verbatim
+@example
 cl_object s = ecl_alloc_simple_vector(ecl_aet_bc, 11);
-@end verbatim
+@end example
 
 Create a one-dimensional @code{array} with a fill pointer
 
-@verbatim
+@example
 cl_object type = ecl_make_symbol("BYTE8","EXT");
 cl_object a = si_make_vector(ecl_make_fixnum(16), type, ECL_NIL, /* adjustable */
                              ecl_make_fixnum(0) /* fill-pointer */,
                              ECL_NIL /* displaced_to */,
                              ECL_NIL /* displacement */);
-@end verbatim
+@end example
 
 An alternative formulation
 
-@verbatim
+@example
 cl_object type = ecl_make_symbol("BYTE8","EXT");
 cl_object a = si_make_array(ecl_make_fixnum(16), type, ECL_NIL, /* adjustable */
                             ecl_make_fixnum(0) /* fill-pointer */,
                             ECL_NIL /* displaced_to */,
                             ECL_NIL /* displacement */);
-@end verbatim
+@end example
 
 Create a 2-by-3 two-dimensional @code{array}, specialized for an integer type:
 
-@verbatim
+@example
 cl_object dims = cl_list(2, ecl_make_fixnum(2), ecl_make_fixnum(3));
 cl_object type = ecl_make_symbol("BYTE8","EXT");
 cl_object a = si_make_array(dims, type, ECL_NIL, /* adjustable */
                             ECL_NIL /* fill-pointer */,
                             ECL_NIL /* displaced_to */,
                             ECL_NIL /* displacement */);
-@end verbatim
+@end example
 
 @subsubsection Accessors
 @cppindex ecl_aref
@@ -222,6 +222,7 @@ Common Lisp and C equivalence
 @item @clhs{f_adjust.htm,adjust-array} @tab cl_object cl_adjust_array(cl_narg narg, cl_object array, cl_object dimensions, ...)
 @item @clhs{f_adju_1.htm,adjustable-array-p} @tab cl_object cl_adjustable_array_p(cl_object array)
 @item @clhs{f_aref.htm,aref} @tab cl_object cl_aref(cl_narg narg, cl_object array, ...)
+@item @clhs{f_aref.htm,(setf aref)} @tab cl_object si_aset(cl_narg narg, cl_object array, ...)
 @item @clhs{f_ar_dim.htm,array-dimension} @tab cl_object cl_array_dimension(cl_object array, cl_object index)
 @item @clhs{f_ar_d_1.htm,array-dimensions} @tab cl_object cl_array_dimensions(cl_object array)
 @item @clhs{f_ar_ele.htm,array-element-type} @tab cl_object cl_array_element_type(cl_object array)
@@ -233,17 +234,22 @@ Common Lisp and C equivalence
 @item @clhs{f_ar_tot.htm,array-total-size} @tab cl_object cl_array_total_size(cl_object array)
 @item @clhs{f_arrayp.htm,arrayp} @tab cl_object cl_arrayp(cl_object array)
 @item @clhs{f_fill_p.htm,fill-pointer} @tab cl_object cl_fill_pointer(cl_object array)
+@item @clhs{f_fill_p.htm,(setf fill-pointer)} @tab cl_object si_fill_pointer_set(cl_object array, cl_object fill_pointer)
 @item @clhs{f_row_ma.htm,row-major-aref} @tab cl_object cl_row_major_aref(cl_object array, cl_object index)
+@item @clhs{f_row_ma.htm,(setf row-major-aref)} @tab cl_object si_row_major_aset(cl_object array, cl_object index, cl_object value)
 @item @clhs{f_upgr_1.htm,upgraded-array-element-type} @tab cl_object cl_upgraded_array_element_type(cl_narg narg, cl_object typespec, ...)
 @item @clhs{f_smp_ve.htm,simple-vector-p} @tab cl_object cl_simple_vector_p(cl_object object)
 @item @clhs{f_svref.htm,svref} @tab cl_object cl_svref(cl_object simple_vector, cl_object index)
+@item @clhs{f_svref.htm,(setf svref)} @tab cl_object si_svset(cl_object simple_vector, cl_object index, cl_object value)
 @item @clhs{f_vector.htm,vector} @tab cl_object cl_vector(cl_narg narg, ...)
 @item @clhs{f_vec_po.htm,vector-pop} @tab cl_object cl_vector_pop(cl_object vector)
 @item @clhs{f_vec_ps.htm,vector-push} @tab cl_object cl_vector_push(cl_object new_element, cl_object vector)
 @item @clhs{f_vec_ps.htm,vector-push-extend} @tab cl_object cl_vector_push_extend(cl_narg narg, cl_object new_element, cl_object vector, ...)
 @item @clhs{f_vecp.htm,vectorp} @tab cl_object cl_vectorp(cl_object object)
 @item @clhs{f_bt_sb.htm,bit} @tab cl_object cl_bit(cl_narg narg, cl_object bit_array, ...)
+@item @clhs{f_bt_sb.htm,(setf bit)} @tab cl_object si_aset(cl_narg narg, cl_object array, ...)
 @item @clhs{f_bt_sb.htm,sbit} @tab cl_object cl_sbit(cl_narg narg, cl_object bit_array, ...)
+@item @clhs{f_bt_sb.htm,(setf sbit)} @tab cl_object si_aset(cl_narg narg, cl_object array, ...)
 @item @clhs{f_bt_and.htm,bit-and} @tab cl_object cl_bit_and(cl_narg narg, cl_object array1, cl_object array2, ...)
 @item @clhs{f_bt_and.htm,bit-andc1} @tab cl_object cl_bit_andc1(cl_narg narg, cl_object array1, cl_object array2, ...)
 @item @clhs{f_bt_and.htm,bit-andc2} @tab cl_object cl_bit_andc2(cl_narg narg, cl_object array1, cl_object array2, ...)

@@ -1,8 +1,8 @@
-html {	background: #FFF; }
+html { background: #FFF; }
 body {
 	margin: 1em 125px 0 10%;
-        line-height: 1.5em;
-        padding: 0 2em 1em 2em;
+	line-height: 1.5em;
+	padding: 0 2em 1em 2em;
 	background: #FFF;
 	font: 12px Verdana,Arial, sans-serif
 }
@@ -19,10 +19,15 @@ th, td {
 h1, h2, h3, h4, h5 { background: #EEE; }
 code, pre {
 	font-size: 1em;
-	font-family: fixed;
+	font-family: monospace;
+}
+code {
+	background: #CDC;
+}
+pre.verbatim {
+	margin: 0 0 0 0;
 }
 pre {
-	line-height: 1em;
 	overflow: auto;
 }
 pre.screen {
@@ -48,7 +53,7 @@ div.variablelist {
 	padding: 0 2em;
 }
 .type, .funcsynopsis, .symbol {
-	font-family: fixed;
+	font-family: monospace;
 }
 .type, .symbol, .replaceable {
 	white-space: nowrap;

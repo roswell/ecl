@@ -2,7 +2,7 @@
 # vim: set filetype=makefile tabstop=8 shiftwidth=4 expandtab:
 
 #
-# Makefile for ECoLisp
+# Makefile for ECL
 #
 top_srcdir= @top_srcdir@
 srcdir	= @srcdir@
@@ -238,9 +238,7 @@ install:
 	for i in LICENSE COPYING; do \
 	  $(INSTALL_DATA) $(top_srcdir)/../$$i $(DESTDIR)$(ecldir); \
 	done
-	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
-	$(INSTALL_DATA) doc/ecl.man $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
-	$(INSTALL_DATA) doc/ecl-config.man $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
+	$(MAKE) -C doc install
 
 flatinstall: build-stamp
 	$(MAKE) DESTDIR=$(DESTDIR) bindir=$(prefix) libdir=$(prefix) \
@@ -252,8 +250,7 @@ uninstall:
 			@SONAME@ @SONAME1@ @SONAME2@ @SONAME3@; do \
 	  $(RM) $(DESTDIR)$(libdir)/$$i || : ; \
 	done
-	$(RM) $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
-	$(RM) $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
+	$(MAKE) -C doc uninstall
 	$(RM) -r $(DESTDIR)$(includedir)/ecl $(DESTDIR)$(ecldir)
 
 clean: mostlyclean

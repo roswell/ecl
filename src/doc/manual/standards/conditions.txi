@@ -8,6 +8,7 @@
 @deffn Macro ECL_HANDLER_CASE
 C macro for @clhs{m_hand_1.htm,handler-case}
 @subsubheading Synopsis
+@example
 @verbatim
 ECL_HANDLER_CASE_BEGIN(env,names) {
 
@@ -15,6 +16,7 @@ ECL_HANDLER_CASE_BEGIN(env,names) {
 
 } ECL_HANDLER_CASE_END;
 @end verbatim
+@end example
 
 @subsubheading Description
 @code{ECL_HANDLER_CASE_BEGIN} runs a block of C code with a set of error handlers bound to the names given by the list @var{names}. The subsequent @code{ECL_HANDLER_CASE} statements specify what to do when the @var{n}-th type of conditions is found, where @var{n} is an integer denoting the position of the name in the list @var{names}.
@@ -23,6 +25,7 @@ When a condition is signaled, ECL scans the list of signal handlers, looking for
 
 The following example shows how to establish a handler for @code{ERROR} conditions. Note how the first value to @code{ECL_HANDLER_CASE} matches the position of the condition name in the list:
 
+@example
 @verbatim
 cl_object error = ecl_make_symbol("ERROR","CL");
 ECL_HANDLER_CASE_BEGIN(the_env, ecl_list1(error)) {
@@ -34,6 +37,7 @@ ECL_HANDLER_CASE_BEGIN(the_env, ecl_list1(error)) {
    output = condition;
 } ECL_HANDLER_CASE_END;
 @end verbatim
+@end example
 
 @end deffn
 
@@ -41,6 +45,7 @@ ECL_HANDLER_CASE_BEGIN(the_env, ecl_list1(error)) {
 @deffn Macro ECL_RESTART_CASE
 C macro for @clhs{m_rst_ca.htm,restart-case}
 @subsubheading Synopsis
+@example
 @verbatim
 ECL_RESTART_CASE_BEGIN(env,names) {
 
@@ -48,6 +53,7 @@ ECL_RESTART_CASE_BEGIN(env,names) {
 
 } ECL_RESTART_CASE_END;
 @end verbatim
+@end example
 
 @subsubheading Description
 @code{ECL_RESTART_CASE_BEGIN} runs a block of C code with a set of restarts bound to the names given by the list @var{names}. The subsequent @code{ECL_RESTART_CASE} statements specify what to do when the @var{n}-th restart is invoked, where @var{n} is an integer denoting the position of the name in the list @var{names}.
@@ -56,6 +62,7 @@ When the restart is invoked, it can receive any number of arguments, which are g
 
 The following example shows how to establish an @var{ABORT} and a @var{USE-VALUE} restart. Note how the first value to @var{ECL_RESTART_CASE} matches the position of the restart name in the list:
 
+@example
 @verbatim
 cl_object abort = ecl_make_symbol("ABORT","CL");
 cl_object use_value = ecl_make_symbol("USE-VALUE","CL");
@@ -70,6 +77,7 @@ ECL_RESTART_CASE_BEGIN(the_env, cl_list(2, abort, use_value)) {
    output = ECL_CAR(args);
 } ECL_RESTART_CASE_END;
 @end verbatim
+@end example
 @end deffn
 
 @subsubsection ANSI dictionary

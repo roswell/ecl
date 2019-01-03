@@ -15,6 +15,7 @@ Common Lisp and C equivalence
 @item @clhs{f_rd_de1.htm,read-delimited-list} @tab cl_object cl_read_delimited_list(cl_narg narg, cl_object char, ...)
 @item @clhs{f_rd_fro.htm,read-from-string} @tab cl_object cl_read_from_string(cl_narg narg, cl_object string, ...)
 @item @clhs{f_rdtab1.htm,readtable-case} @tab cl_object cl_readtable_case(cl_object readtable)
+@item @clhs{f_rdtab1.htm,(setf readtable-case)} @tab cl_object si_readtable_case_set(cl_object readtable, cl_object mode)
 @item @clhs{f_rdta_1.htm,readtablep} @tab cl_object cl_readtablep(cl_object object)
 @item @clhs{f_set__1.htm,get-dispatch-macro-character} @tab cl_object cl_get_dispatch_macro_character(cl_narg narg, cl_object disp_char, cl_object sub_char, ...)
 @item @clhs{f_set__1.htm,set-dispatch-macro-character} @tab cl_object cl_set_dispatch_macro_character(cl_narg narg, cl_object disp_char, cl_object sub_char, cl_object function, ...)

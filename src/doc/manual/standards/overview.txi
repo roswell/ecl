@@ -168,6 +168,7 @@ In most of those cases there exist straightforward alternatives using
 the constructs and functions in ECL. For example, @code{unwind-protect}
 can be implemented using a C macro which is provided by ECL
 
+@example
 @verbatim
 cl_env_ptr env = ecl_process_env();
 CL_UNWIND_PROTECT_BEGIN(env) {
@@ -176,6 +177,7 @@ CL_UNWIND_PROTECT_BEGIN(env) {
     /* exit code goes here */
 } CL_UNWIND_PROTECT_END;
 @end verbatim
+@end example
 
 Common Lisp generic functions can be directly accessed using
 @code{funcall} or @code{apply} and the function name, as shown in the

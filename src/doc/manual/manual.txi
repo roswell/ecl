@@ -1,6 +1,6 @@
 \input texinfo                  @c -*-texinfo-*-
 @c %**start of header
-@setfilename ecldoc.info
+@setfilename ecl.info
 @settitle ECL User's Guide
 @setchapternewpage odd
 @paragraphindent none

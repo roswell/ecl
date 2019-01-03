@@ -16,36 +16,38 @@
 Create a protected region.
 
 @subsubheading C Macro
+@example
 @verbatim
-  cl_env_ptr env = ecl_process_env();
-  CL_CATCH_ALL_BEGIN(env) {
-    /*
-     * Code that is protected. Uncaught lisp conditions, THROW,
-     * signals such as SIGSEGV and SIGBUS may cause jump to
-     * this region.
-     */
-  } CL_CATCH_ALL_IF_CAUGHT {
-    /*
-     * If the exception, lisp condition or other control transfer
-     * is caught, this code is executed.
-     */
-  } CL_CATCH_ALL_END
+cl_env_ptr env = ecl_process_env();
+CL_CATCH_ALL_BEGIN(env) {
   /*
-   * In all cases we exit here.
+   * Code that is protected. Uncaught lisp conditions, THROW,
+   * signals such as SIGSEGV and SIGBUS may cause jump to
+   * this region.
    */
+} CL_CATCH_ALL_IF_CAUGHT {
+  /*
+   * If the exception, lisp condition or other control transfer
+   * is caught, this code is executed.
+   */
+} CL_CATCH_ALL_END
+/*
+ * In all cases we exit here.
+ */
 @end verbatim
+@end example
 
 @subsubheading Description
 This is a set of three macros that create an @code{UNWIND-PROTECT} region that prevents any nonlocal transfer of control to outer loops. In the Lisp speak, the previous code is equivalent to
 
-@verbatim
+@lisp
 (block nil
   (unwind-protect
      (progn
         ;; Code that is protected
 	)
     (return nil)))
-@end verbatim
+@end lisp
 
 As explained in @code{CL_UNWIND_PROTECT},it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitrary transfers of control.
 
@@ -60,26 +62,28 @@ As explained in @code{CL_UNWIND_PROTECT},it is normally advisable to set up an u
 Create a protected region.
 
 @subsubheading C Macro
+@example
 @verbatim
-  cl_env_ptr env = ecl_process_env();
-  CL_UNWIND_PROTECT_BEGIN(env) {
-    /*
-     * Code that is protected. Uncaught lisp conditions, THROW,
-     * signals such as SIGSEGV and SIGBUS may cause jump to
-     * this region.
-     */
-  } CL_UNWIND_PROTECT_EXIT {
-    /*
-     * If the exception, lisp condition or other control transfer
-     * is caught, this code is executed. After this code, the
-     * process will jump to the original destination of the
-     * THROW, GOTO or other control statement that was interrupted.
-     */
-  } CL_UNWIND_PROTECT_END
+cl_env_ptr env = ecl_process_env();
+CL_UNWIND_PROTECT_BEGIN(env) {
   /*
-   * We only exit here if NO nonlocal jump was interrupted.
+   * Code that is protected. Uncaught lisp conditions, THROW,
+   * signals such as SIGSEGV and SIGBUS may cause jump to
+   * this region.
    */
+} CL_UNWIND_PROTECT_EXIT {
+  /*
+   * If the exception, lisp condition or other control transfer
+   * is caught, this code is executed. After this code, the
+   * process will jump to the original destination of the
+   * THROW, GOTO or other control statement that was interrupted.
+   */
+} CL_UNWIND_PROTECT_END
+/*
+ * We only exit here if NO nonlocal jump was interrupted.
+ */
 @end verbatim
+@end example
 
 @subsubheading Description
 When embedding ECL it is normally advisable to set up an @code{unwind-protect} frame to avoid the embedded lisp code to perform arbitrary transfers of control. Furthermore, the unwind protect form will be used in at least in the following occasions:
