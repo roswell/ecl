@@ -106,13 +106,14 @@ ecl_alloc_adjustable_extended_string(cl_index l)
 
 /*
   ecl_make_simple_base_string(s) creates a simple-base string from C string s.
+  ecl_make_constant_base_string(s) does the same, but without copying the C string.
 */
 cl_object
-ecl_make_simple_base_string(char *s, cl_fixnum l)
+ecl_make_constant_base_string(const char *s, cl_fixnum l)
 {
   cl_object x = ecl_alloc_object(t_base_string);
   x->base_string.elttype = ecl_aet_bc;
-  x->base_string.flags = 0; /* no fill pointer, no adjustable */
+  x->base_string.flags = 0; /* no fill pointer, not adjustable */
   x->base_string.displaced = ECL_NIL;
   if (l < 0) l = strlen(s);
   x->base_string.dim = (x->base_string.fillp = l);
@@ -121,10 +122,10 @@ ecl_make_simple_base_string(char *s, cl_fixnum l)
 }
 
 cl_object
-make_base_string_copy(const char *s)
+ecl_make_simple_base_string(const char *s, cl_fixnum l)
 {
   cl_object x;
-  cl_index l = strlen(s);
+  if (l < 0) l = strlen(s);
 
   x = ecl_alloc_simple_base_string(l);
   memcpy(x->base_string.self, s, l);
@@ -137,7 +138,7 @@ ecl_cstring_to_base_string_or_nil(const char *s)
   if (s == NULL)
     return ECL_NIL;
   else
-    return make_base_string_copy(s);
+    return ecl_make_simple_base_string(s,-1);
 }
 
 bool

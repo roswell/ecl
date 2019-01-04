@@ -542,7 +542,7 @@ _ecl_ucd_code_to_name(ecl_character c)
     char buffer[ECL_UCD_LARGEST_CHAR_NAME+1];
     buffer[0] = 0;
     fill_pair_name(buffer, pair);
-    return make_base_string_copy(buffer);
+    return ecl_make_simple_base_string(buffer,-1);
   }
 }
 

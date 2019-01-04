@@ -57,7 +57,7 @@ FEunknown_rwlock_error(cl_object lock, int rc)
                  1, lock);
   }
   FEerror("When acting on rwlock ~A, got the following C library error:~%"
-          "~A", 2, lock, make_constant_base_string(msg));
+          "~A", 2, lock, ecl_make_constant_base_string(msg,-1));
 #endif
 }
 

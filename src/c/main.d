@@ -852,7 +852,7 @@ si_argv(cl_object index)
   if (ECL_FIXNUMP(index)) {
     cl_fixnum i = ecl_fixnum(index);
     if (i >= 0 && i < ARGC) {
-      @(return make_base_string_copy(ARGV[i]));
+      @(return ecl_make_simple_base_string(ARGV[i],-1));
     }
   }
   FEerror("Illegal argument index: ~S.", 1, index);
@@ -866,7 +866,7 @@ si_getenv(cl_object var)
   /* Strings have to be null terminated base strings */
   var = si_copy_to_simple_base_string(var);
   value = getenv((char*)var->base_string.self);
-  @(return ((value == NULL)? ECL_NIL : make_base_string_copy(value)));
+  @(return ((value == NULL)? ECL_NIL : ecl_make_simple_base_string(value,-1)));
 }
 
 #if defined(HAVE_SETENV) || defined(HAVE_PUTENV)
@@ -898,7 +898,7 @@ si_setenv(cl_object var, cl_object value)
     ret_val = setenv((char*)var->base_string.self,
                      (char*)value->base_string.self, 1);
 #else
-    value = cl_format(4, ECL_NIL, make_constant_base_string("~A=~A"), var,
+    value = cl_format(4, ECL_NIL, ecl_make_constant_base_string("~A=~A",-1), var,
                       value);
     value = si_copy_to_simple_base_string(value);
     putenv((char*)value->base_string.self);
@@ -919,14 +919,14 @@ si_environ(void)
   char **p;
   extern char **environ;
   for (p = environ; *p; p++) {
-    output = CONS(make_constant_base_string(*p), output);
+    output = CONS(ecl_make_constant_base_string(*p,-1), output);
   }
   output = cl_nreverse(output);
 #else
 # if defined(ECL_MS_WINDOWS_HOST)
   LPTCH p;
   for (p = GetEnvironmentStrings(); *p; ) {
-    output = CONS(make_constant_base_string(p), output);
+    output = CONS(ecl_make_constant_base_string(p,-1), output);
     do { (void)0; } while (*(p++));
   }
   output = cl_nreverse(output);

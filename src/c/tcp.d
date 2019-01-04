@@ -404,10 +404,10 @@ si_lookup_host_entry(cl_object host_or_address)
   if (he == NULL) {
     @(return ECL_NIL ECL_NIL ECL_NIL);
   }
-  name = make_base_string_copy(he->h_name);
+  name = ecl_make_simple_base_string(he->h_name,-1);
   aliases = ECL_NIL;
   for (i = 0; he->h_aliases[i] != 0; i++)
-    aliases = CONS(make_base_string_copy(he->h_aliases[i]), aliases);
+    aliases = CONS(ecl_make_simple_base_string(he->h_aliases[i],-1), aliases);
   addresses = ECL_NIL;
   for (i = 0; he->h_addr_list[i]; i++) {
     unsigned long *s = (unsigned long*)(he->h_addr_list[i]);

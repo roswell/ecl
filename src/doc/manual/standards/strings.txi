@@ -39,9 +39,9 @@ Building strings of C data
 @end deftypefun
 @deftypefun cl_object ecl_alloc_adjustable_simple_string (cl_index @var{length});
 @end deftypefun
-@deftypefun cl_object ecl_make_simple_base_string (ecl_base_char* @var{data}, cl_fixnum @var{length});
+@deftypefun cl_object ecl_make_simple_base_string (const char* @var{data}, cl_fixnum @var{length});
 @end deftypefun
-@deftypefun cl_object ecl_make_constant_base_string (ecl_base_char* @var{data}, cl_fixnum @var{length});
+@deftypefun cl_object ecl_make_constant_base_string (const char* @var{data}, cl_fixnum @var{length});
 @end deftypefun
 
 @subsubheading Description

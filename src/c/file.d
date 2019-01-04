@@ -5523,7 +5523,7 @@ static cl_object
 not_a_file_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not an file stream"),
+           ecl_make_constant_base_string("~A is not an file stream",-1),
            @':format-arguments', cl_list(1, strm),
            @':expected-type', @'file-stream',
            @':datum', strm);
@@ -5533,7 +5533,7 @@ static void
 not_an_input_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not an input stream"),
+           ecl_make_constant_base_string("~A is not an input stream",-1),
            @':format-arguments', cl_list(1, strm),
            @':expected-type',
            cl_list(2, @'satisfies', @'input-stream-p'),
@@ -5544,7 +5544,7 @@ static void
 not_an_output_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not an output stream"),
+           ecl_make_constant_base_string("~A is not an output stream",-1),
            @':format-arguments', cl_list(1, strm),
            @':expected-type', cl_list(2, @'satisfies', @'output-stream-p'),
            @':datum', strm);
@@ -5554,7 +5554,7 @@ static void
 not_a_character_stream(cl_object s)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not a character stream"),
+           ecl_make_constant_base_string("~A is not a character stream",-1),
            @':format-arguments', cl_list(1, s),
            @':expected-type', @'character',
            @':datum', cl_stream_element_type(s));
@@ -5564,7 +5564,7 @@ static void
 not_a_binary_stream(cl_object s)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not a binary stream"),
+           ecl_make_constant_base_string("~A is not a binary stream",-1),
            @':format-arguments', cl_list(1, s),
            @':expected-type', @'integer',
            @':datum', cl_stream_element_type(s));
@@ -5587,8 +5587,8 @@ file_libc_error(cl_object error_type, cl_object stream,
   rest = cl_grab_rest_args(args);
 
   si_signal_simple_error(4, (cl_object)(cl_symbols + ecl_fixnum(error_type)), Cnil,
-                         make_constant_base_string("~?~%C library explanation: ~A."),
-                         cl_list(3, make_constant_base_string(msg), rest,
+                         ecl_make_constant_base_string("~?~%C library explanation: ~A.",-1),
+                         cl_list(3, ecl_make_constant_base_string(msg,-1), rest,
                                  error));
   _ecl_unexpected_return();
 }
@@ -5694,13 +5694,13 @@ wsock_error( const char *err_msg, cl_object strm )
   cl_object msg_obj;
   /* ecl_disable_interrupts(); ** done by caller */
   {
-    FormatMessage( FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                   0, WSAGetLastError(), 0, ( void* )&msg, 0, NULL );
-    msg_obj = make_base_string_copy( msg );
-    LocalFree( msg );
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                  0, WSAGetLastError(), 0, (void*)&msg, 0, NULL);
+    msg_obj = ecl_make_simple_base_string(msg,-1);
+    LocalFree(msg);
   }
   ecl_enable_interrupts();
-  FEerror( err_msg, 2, strm, msg_obj );
+  FEerror(err_msg, 2, strm, msg_obj);
 }
 #endif
 
@@ -5726,7 +5726,7 @@ init_file(void)
   flags = ECL_STREAM_DEFAULT_FORMAT;
 #endif
 
-  null_stream = ecl_make_stream_from_FILE(make_constant_base_string("/dev/null"),
+  null_stream = ecl_make_stream_from_FILE(ecl_make_constant_base_string("/dev/null",-1),
                                           NULL, ecl_smm_io, 8, flags, external_format);
   generic_close(null_stream);
   null_stream = cl_make_two_way_stream(null_stream, cl_make_broadcast_stream(0));
@@ -5735,20 +5735,20 @@ init_file(void)
   /* We choose C streams by default only when _not_ using threads.
    * The reason is that C streams block on I/O operations. */
 #if !defined(ECL_THREADS)
-  standard_input = maybe_make_windows_console_FILE(make_constant_base_string("stdin"),
+  standard_input = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stdin",-1),
                                                    stdin, ecl_smm_input, 8, flags, external_format);
-  standard_output = maybe_make_windows_console_FILE(make_constant_base_string("stdout"),
+  standard_output = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stdout",-1),
                                                     stdout, ecl_smm_output, 8, flags, external_format);
-  error_output = maybe_make_windows_console_FILE(make_constant_base_string("stderr"),
+  error_output = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stderr",-1),
                                                  stderr, ecl_smm_output, 8, flags, external_format);
 #else
-  standard_input = maybe_make_windows_console_fd(make_constant_base_string("stdin"),
+  standard_input = maybe_make_windows_console_fd(ecl_make_constant_base_string("stdin",-1),
                                                  STDIN_FILENO, ecl_smm_input_file, 8, flags,
                                                  external_format);
-  standard_output = maybe_make_windows_console_fd(make_constant_base_string("stdout"),
+  standard_output = maybe_make_windows_console_fd(ecl_make_constant_base_string("stdout",-1),
                                                   STDOUT_FILENO, ecl_smm_output_file, 8, flags,
                                                   external_format);
-  error_output = maybe_make_windows_console_fd(make_constant_base_string("stderr"),
+  error_output = maybe_make_windows_console_fd(ecl_make_constant_base_string("stderr",-1),
                                                STDERR_FILENO, ecl_smm_output_file, 8, flags,
                                                external_format);
 #endif

@@ -113,7 +113,7 @@ static void
 fmt_error(format_stack fmt, const char *s)
 {
   cl_error(7, @'si::format-error',
-           @':format-control', make_constant_base_string(s),
+           @':format-control', ecl_make_constant_base_string(s,-1),
            @':control-string', fmt->ctl_str,
            @':offset', ecl_make_fixnum(fmt->ctl_index));
 }
@@ -2220,8 +2220,7 @@ format(format_stack fmt, cl_index start, cl_index end)
     if (!ECL_ARRAY_HAS_FILL_POINTER_P(output)) {
       cl_error(7, @'si::format-error',
                @':format-control',
-               make_constant_base_string(
-                                         "Cannot output to a non adjustable string."),
+               ecl_make_constant_base_string("Cannot output to a non adjustable string.",-1),
                @':control-string', string,
                @':offset', ecl_make_fixnum(0));
     }

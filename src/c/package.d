@@ -42,7 +42,7 @@ FEpackage_error(const char *message, cl_object package, int narg, ...)
   si_signal_simple_error(6,
                          @'package-error',
                          ECL_NIL, /* not correctable */
-                         make_constant_base_string(message), /* format control */
+                         ecl_make_constant_base_string(message,-1), /* format control */
                          narg? cl_grab_rest_args(args) : cl_list(1,package), /* format args */
                          @':package', package); /* extra arguments */
 }
@@ -57,8 +57,8 @@ CEpackage_error(const char *message, const char *continue_message, cl_object pac
   ecl_va_end(args);
   si_signal_simple_error(6,
                          @'package-error',
-                         make_constant_base_string(continue_message),
-                         make_constant_base_string(message), /* format control */
+                         ecl_make_constant_base_string(continue_message,-1),
+                         ecl_make_constant_base_string(message,-1), /* format control */
                          arg,
                          @':package', package);
 }
@@ -380,7 +380,7 @@ cl_object
 _ecl_intern(const char *s, cl_object p)
 {
   int intern_flag;
-  cl_object str = make_constant_base_string(s);
+  cl_object str = ecl_make_constant_base_string(s,-1);
   return ecl_intern(str, p, &intern_flag);
 }
 

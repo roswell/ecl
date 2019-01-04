@@ -96,17 +96,17 @@ mangle_name(cl_object output, unsigned char *source, int l)
   if (is_symbol) {
     cl_fixnum p;
     if (symbol == ECL_NIL) {
-      @(return ECL_T make_constant_base_string("ECL_NIL"));
+      @(return ECL_T ecl_make_constant_base_string("ECL_NIL",-1));
     }
     else if (symbol == ECL_T) {
-      @(return ECL_T make_constant_base_string("ECL_T"));
+      @(return ECL_T ecl_make_constant_base_string("ECL_T",-1));
     }
 
     p  = (cl_symbol_initializer*)symbol - cl_symbols;
     if (p >= 0 && p <= cl_num_symbols_in_core) {
       found = ECL_T;
       output = cl_format(4, ECL_NIL,
-                         make_constant_base_string("ECL_SYM(~S,~D)"),
+                         ecl_make_constant_base_string("ECL_SYM(~S,~D)",-1),
                          name, ecl_make_fixnum(p));
       @(return found output maxarg);
     }
@@ -133,11 +133,11 @@ mangle_name(cl_object output, unsigned char *source, int l)
     ;
   }
   else if (package == cl_core.lisp_package)
-    package = make_constant_base_string("cl");
+    package = ecl_make_constant_base_string("cl",-1);
   else if (package == cl_core.system_package)
-    package = make_constant_base_string("si");
+    package = ecl_make_constant_base_string("si",-1);
   else if (package == cl_core.ext_package)
-    package = make_constant_base_string("si");
+    package = ecl_make_constant_base_string("si",-1);
   else if (package == cl_core.keyword_package)
     package = ECL_NIL;
   else
@@ -216,7 +216,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
   s->symbol.hpack = ECL_NIL;
   s->symbol.stype = stp;
   s->symbol.hpack = package;
-  s->symbol.name = make_constant_base_string(name);
+  s->symbol.name = ecl_make_constant_base_string(name,-1);
   if (package == cl_core.keyword_package) {
     package->pack.external =
       _ecl_sethash(s->symbol.name, package->pack.external, s);

@@ -20,11 +20,11 @@
         if (uname(&aux) < 0)
                 output = ECL_NIL;
         else
-                output = cl_list(5, make_base_string_copy(aux.sysname),
-                            make_base_string_copy(aux.nodename),
-                            make_base_string_copy(aux.release),
-                            make_base_string_copy(aux.version),
-                            make_base_string_copy(aux.machine));
+                output = cl_list(5, ecl_make_simple_base_string(aux.sysname,-1),
+                            ecl_make_simple_base_string(aux.nodename,-1),
+                            ecl_make_simple_base_string(aux.release,-1),
+                            ecl_make_simple_base_string(aux.version,-1),
+                            ecl_make_simple_base_string(aux.machine,-1));
         @(return) = output;
 }" :one-liner nil))
 

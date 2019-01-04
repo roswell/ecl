@@ -507,7 +507,7 @@ cl_char_name(cl_object c)
       start = name;
     }
     start[0] = 'U';
-    output = make_base_string_copy((const char*)start);
+    output = ecl_make_simple_base_string((const char*)start,-1);
   }
   @(return output);
 }
