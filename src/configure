@@ -4924,6 +4924,8 @@ case "${host_os}" in
 
 LSP_FEATURES="(cons :android ${LSP_FEATURES})"
 
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
 
         # libdir may have a dollar expression inside

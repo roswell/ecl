@@ -263,6 +263,8 @@ case "${host_os}" in
                 # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
                 CFLAGS="-D_GNU_SOURCE -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
                 ECL_ADD_FEATURE([android])
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
 
         # libdir may have a dollar expression inside
