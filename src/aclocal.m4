@@ -252,7 +252,7 @@ clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
 case "${host_os}" in
-        linux-androideabi)
+        linux-android*)
                 thehost='android'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
 #               THREAD_LIBS='-lpthread'
