@@ -84,7 +84,8 @@
 #endif /* !ECL_LEGACY_H && !ECL_NO_LEGACY */
 
 #define make_simple_base_string(s) ecl_make_simple_base_string((s),-1)
-#define make_constant_base_string(s) ecl_make_simple_base_string((char *)(s),-1)
+#define make_constant_base_string(s) ecl_make_constant_base_string((char *)(s),-1)
+#define make_base_string_copy(s) ecl_make_simple_base_string((s),-1)
 
 #define stp_ordinary ecl_stp_ordinary
 #define stp_constant ecl_stp_constant

@@ -493,7 +493,7 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
     return ecl_make_foreign_data(@':pointer-void', 0, *(void **)p);
   case ECL_FFI_CSTRING:
     return *(char **)p ?
-      ecl_make_simple_base_string(*(char **)p, -1) : ECL_NIL;
+      ecl_make_constant_base_string(*(char **)p, -1) : ECL_NIL;
   case ECL_FFI_OBJECT:
     return *(cl_object *)p;
   case ECL_FFI_FLOAT:

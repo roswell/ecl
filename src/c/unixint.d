@@ -1448,7 +1448,7 @@ create_signal_code_constants()
                 char buffer[64];
                 cl_object name;
                 sprintf(buffer, "+SIGRT%d+", i-SIGRTMIN);
-                name = ecl_intern(make_base_string_copy(buffer),
+                name = ecl_intern(ecl_make_simple_base_string(buffer,-1),
                                   cl_core.ext_package,
                                   intern_flag);
                 add_one_signal(hash, i, name, ECL_NIL);

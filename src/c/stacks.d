@@ -69,7 +69,7 @@ ecl_cs_overflow(void)
     ecl_unrecoverable_error(env, stack_overflow_msg);
 
   if (env->cs_max_size == (cl_index)0 || env->cs_size < env->cs_max_size)
-    si_serror(6, make_constant_base_string("Extend stack size"),
+    si_serror(6, ecl_make_constant_base_string("Extend stack size",-1),
               @'ext::stack-overflow',
               @':size', ecl_make_fixnum(size),
               @':type', @'ext::c-stack');
@@ -168,7 +168,7 @@ ecl_bds_overflow(void)
     ecl_unrecoverable_error(env, stack_overflow_msg);
   }
   env->bds_limit += margin;
-  si_serror(6, make_constant_base_string("Extend stack size"),
+  si_serror(6, ecl_make_constant_base_string("Extend stack size",-1),
             @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
             @':type', @'ext::binding-stack');
   ecl_bds_set_size(env, size + (size / 2));
@@ -540,7 +540,7 @@ frs_overflow(void)              /* used as condition in list.d */
     ecl_unrecoverable_error(env, stack_overflow_msg);
   }
   env->frs_limit += margin;
-  si_serror(6, make_constant_base_string("Extend stack size"),
+  si_serror(6, ecl_make_constant_base_string("Extend stack size",-1),
             @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
             @':type', @'ext::frame-stack');
   frs_set_size(env, size + size / 2);

@@ -52,7 +52,7 @@ si_load_binary(cl_object filename, cl_object verbose,
     prefix = @si::base-string-concatenate(3,
                                           init_prefix,
                                           prefix,
-                                          make_constant_base_string("_"));
+                                          ecl_make_constant_base_string("_",-1));
   }
   basename = cl_pathname_name(1,filename);
   basename = @si::base-string-concatenate(2, prefix, @string-upcase(1, funcall(4, @'nsubstitute', ECL_CODE_CHAR('_'), ECL_CODE_CHAR('-'), basename)));
@@ -263,7 +263,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   }
  NOT_A_FILENAME:
   if (verbose != ECL_NIL) {
-    cl_format(3, ECL_T, make_constant_base_string("~&;;; Loading ~s~%"),
+    cl_format(3, ECL_T, ecl_make_constant_base_string("~&;;; Loading ~s~%",-1),
               filename);
   }
   ecl_bds_bind(the_env, @'*package*', ecl_symbol_value(@'*package*'));
@@ -297,7 +297,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
     FEerror("LOAD: Could not load file ~S (Error: ~S)",
             2, filename, ok);
   if (print != ECL_NIL) {
-    cl_format(3, ECL_T, make_constant_base_string("~&;;; Loading ~s~%"),
+    cl_format(3, ECL_T, ecl_make_constant_base_string("~&;;; Loading ~s~%",-1),
               filename);
   }
   @(return filename);

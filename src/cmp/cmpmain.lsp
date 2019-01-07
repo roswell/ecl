@@ -455,7 +455,7 @@ filesystem or in the database of ASDF modules."
                    (wt-filtered-data (write-to-string epilogue-code) stream)
                    (princ ";
 cl_object output;
-si_select_package(ecl_make_simple_base_string(\"CL-USER\", 7));
+si_select_package(ecl_make_constant_base_string(\"CL-USER\", 7));
 output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
 }" stream)
                    )))))
@@ -471,7 +471,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                    (wt-filtered-data (write-to-string prologue-code) stream)
                    (princ ";
 cl_object output;
-si_select_package(ecl_make_simple_base_string(\"CL-USER\", 7));
+si_select_package(ecl_make_constant_base_string(\"CL-USER\", 7));
 output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
 }" stream)
                    )))))

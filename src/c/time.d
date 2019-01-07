@@ -181,7 +181,7 @@ cl_sleep(cl_object z)
   /* INV: ecl_minusp() makes sure `z' is real */
   if (ecl_minusp(z))
     cl_error(9, @'simple-type-error', @':format-control',
-             make_constant_base_string("Not a non-negative number ~S"),
+             ecl_make_constant_base_string("Not a non-negative number ~S",-1),
              @':format-arguments', cl_list(1, z),
              @':expected-type', @'real', @':datum', z);
   /* Compute time without overflows */

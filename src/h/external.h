@@ -1534,8 +1534,8 @@ extern ECL_API cl_object ecl_copy_readtable(cl_object from, cl_object to);
 extern ECL_API cl_object ecl_current_readtable(void);
 extern ECL_API int ecl_current_read_base(void);
 extern ECL_API char ecl_current_read_default_float_format(void);
-#define ecl_read_from_cstring(s) si_string_to_object(1,make_constant_base_string(s))
-#define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,make_constant_base_string(s),(v))
+#define ecl_read_from_cstring(s) si_string_to_object(1,ecl_make_constant_base_string(s,-1))
+#define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,ecl_make_constant_base_string(s,-1),(v))
 extern ECL_API cl_object ecl_init_module(cl_object block, void (*entry)(cl_object));
 
 /* reference.c */
@@ -1658,9 +1658,8 @@ extern ECL_API cl_object si_copy_to_simple_base_string(cl_object s);
 
 #define ecl_alloc_simple_base_string(l) ecl_alloc_simple_vector((l),ecl_aet_bc)
 extern ECL_API cl_object ecl_alloc_adjustable_base_string(cl_index l);
-extern ECL_API cl_object ecl_make_simple_base_string(char *s, cl_fixnum i);
-#define ecl_make_constant_base_string(s,n) ecl_make_simple_base_string((char*)s,n)
-extern ECL_API cl_object make_base_string_copy(const char *s);
+extern ECL_API cl_object ecl_make_constant_base_string(const char *s, cl_fixnum i);
+extern ECL_API cl_object ecl_make_simple_base_string(const char *s, cl_fixnum i);
 extern ECL_API cl_object ecl_cstring_to_base_string_or_nil(const char *s);
 extern ECL_API bool ecl_string_eq(cl_object x, cl_object y);
 extern ECL_API bool ecl_member_char(ecl_character c, cl_object char_bag);
