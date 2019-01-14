@@ -206,19 +206,19 @@ weird stuff - see gethostbyname(3) for grisly details."
                 cl_object addr_list = ECL_NIL;
                 int length = hostent->h_length;
 
-                funcall(3,#2,make_simple_base_string(hostent->h_name),#1);
+                funcall(3,#2,ecl_make_simple_base_string(hostent->h_name,-1),#1);
                 funcall(3,#4,ecl_make_integer(hostent->h_addrtype),#1);
 
                 for (aliases = hostent->h_aliases; *aliases != NULL; aliases++) {
-                        aliases_list = CONS(make_simple_base_string(*aliases),aliases_list);
+                        aliases_list = CONS(ecl_make_simple_base_string(*aliases,-1),aliases_list);
                 }
                 funcall(3,#3,aliases_list,#1);
 
                 for (addrs = hostent->h_addr_list; *addrs != NULL; addrs++) {
                         int pos;
-                        cl_object vector = funcall(2,@make-array,MAKE_FIXNUM(length));
+                        cl_object vector = funcall(2,@make-array,ecl_make_fixnum(length));
                         for (pos = 0; pos < length; pos++)
-                                ecl_aset(vector, pos, MAKE_FIXNUM((unsigned char)((*addrs)[pos])));
+                                ecl_aset(vector, pos, ecl_make_fixnum((unsigned char)((*addrs)[pos])));
                         addr_list = CONS(vector, addr_list);
 
 
@@ -264,19 +264,19 @@ weird stuff - see gethostbyname(3) for grisly details."
                 cl_object addr_list = ECL_NIL;
                 int length = hostent->h_length;
 
-                funcall(3,#2,make_simple_base_string(hostent->h_name),#1);
+                funcall(3,#2,ecl_make_simple_base_string(hostent->h_name,-1),#1);
                 funcall(3,#4,ecl_make_integer(hostent->h_addrtype),#1);
 
                 for (aliases = hostent->h_aliases; *aliases != NULL; aliases++) {
-                        aliases_list = CONS(make_simple_base_string(*aliases),aliases_list);
+                        aliases_list = CONS(ecl_make_simple_base_string(*aliases,-1),aliases_list);
                 }
                 funcall(3,#3,aliases_list,#1);
 
                 for (addrs = hostent->h_addr_list; *addrs != NULL; addrs++) {
                         int pos;
-                        cl_object vector = funcall(2,@make-array,MAKE_FIXNUM(length));
+                        cl_object vector = funcall(2,@make-array,ecl_make_fixnum(length));
                         for (pos = 0; pos < length; pos++)
-                                ecl_aset(vector, pos, MAKE_FIXNUM((unsigned char)((*addrs)[pos])));
+                                ecl_aset(vector, pos, ecl_make_fixnum((unsigned char)((*addrs)[pos])));
                         addr_list = CONS(vector, addr_list);
 
 
@@ -464,15 +464,15 @@ SB-SYS:MAKE-FD-STREAM."))
 static void *
 safe_buffer_pointer(cl_object x, cl_index size)
 {
-        cl_type t = type_of(x);
+        cl_type t = ecl_t_of(x);
         int ok = 0;
         if (t == t_base_string) {
                 ok = (size <= x->base_string.dim);
         } else if (t == t_vector) {
                 cl_elttype aet = (cl_elttype)x->vector.elttype;
-                if (aet == aet_b8 || aet == aet_i8 || aet == aet_bc) {
+                if (aet == ecl_aet_b8 || aet == ecl_aet_i8 || aet == ecl_aet_bc) {
                         ok = (size <= x->vector.dim);
-                } else if (aet == aet_fix || aet == aet_index) {
+                } else if (aet == ecl_aet_fix || aet == ecl_aet_index) {
                         cl_index divisor = sizeof(cl_index);
                         size = (size + divisor - 1) / divisor;
                         ok = (size <= x->vector.dim);
@@ -503,7 +503,7 @@ safe_buffer_pointer(cl_object x, cl_index size)
         int flags = ( #3 ? MSG_OOB : 0 )  |
                     ( #4 ? MSG_PEEK : 0 ) |
                     ( #5 ? MSG_WAITALL : 0 );
-        cl_type type = type_of(#1);
+        cl_type type = ecl_t_of(#1);
         ssize_t len;
 
         ecl_disable_interrupts();
@@ -655,12 +655,12 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
         if (new_fd != -1) {
                 uint32_t ip = ntohl(sockaddr.sin_addr.s_addr);
                 uint16_t port = ntohs(sockaddr.sin_port);
-                cl_object vector = cl_make_array(1,MAKE_FIXNUM(4));
+                cl_object vector = cl_make_array(1,ecl_make_fixnum(4));
 
-                ecl_aset(vector,0, MAKE_FIXNUM( ip>>24 ));
-                ecl_aset(vector,1, MAKE_FIXNUM( (ip>>16) & 0xFF));
-                ecl_aset(vector,2, MAKE_FIXNUM( (ip>>8) & 0xFF));
-                ecl_aset(vector,3, MAKE_FIXNUM( ip & 0xFF ));
+                ecl_aset(vector,0, ecl_make_fixnum( ip>>24 ));
+                ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+                ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+                ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
 
                 @(return 1) = vector;
                 @(return 2) = port;
@@ -717,10 +717,10 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                 uint32_t ip = ntohl(name.sin_addr.s_addr);
                 uint16_t port = ntohs(name.sin_port);
 
-                ecl_aset(#1,0, MAKE_FIXNUM( ip>>24 ));
-                ecl_aset(#1,1, MAKE_FIXNUM( (ip>>16) & 0xFF));
-                ecl_aset(#1,2, MAKE_FIXNUM( (ip>>8) & 0xFF));
-                ecl_aset(#1,3, MAKE_FIXNUM( ip & 0xFF ));
+                ecl_aset(#1,0, ecl_make_fixnum( ip>>24 ));
+                ecl_aset(#1,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+                ecl_aset(#1,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+                ecl_aset(#1,3, ecl_make_fixnum( ip & 0xFF ));
 
                 @(return) = port;
          } else {
@@ -748,10 +748,10 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                 uint32_t ip = ntohl(name.sin_addr.s_addr);
                 uint16_t port = ntohs(name.sin_port);
 
-                ecl_aset(#1,0, MAKE_FIXNUM( ip>>24 ));
-                ecl_aset(#1,1, MAKE_FIXNUM( (ip>>16) & 0xFF));
-                ecl_aset(#1,2, MAKE_FIXNUM( (ip>>8) & 0xFF));
-                ecl_aset(#1,3, MAKE_FIXNUM( ip & 0xFF ));
+                ecl_aset(#1,0, ecl_make_fixnum( ip>>24 ));
+                ecl_aset(#1,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+                ecl_aset(#1,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+                ecl_aset(#1,3, ecl_make_fixnum( ip & 0xFF ));
 
                 @(return) = port;
          } else {
@@ -801,7 +801,7 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                     ( #b ? MSG_DONTWAIT : 0 ) |
                     ( #c ? MSG_NOSIGNAL : 0 ) |
                     ( #d ? MSG_CONFIRM : 0 );
-        cl_type type = type_of(#1);
+        cl_type type = ecl_t_of(#1);
         struct sockaddr_in sockaddr;
         ssize_t len;
 
@@ -839,7 +839,7 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                     ( #6 ? MSG_DONTWAIT : 0 ) |
                     ( #7 ? MSG_NOSIGNAL : 0 ) |
                     ( #8 ? MSG_CONFIRM : 0 );
-        cl_type type = type_of(#1);
+        cl_type type = ecl_t_of(#1);
         ssize_t len;
         ecl_disable_interrupts();
 ##if (MSG_NOSIGNAL == 0) && defined(SO_NOSIGPIPE)
@@ -912,7 +912,7 @@ also known as unix-domain sockets."))
         new_fd = accept(#0, (struct sockaddr *)&sockaddr, &addr_len);
         ecl_enable_interrupts();
         @(return 0) = new_fd;
-        @(return 1) = (new_fd == -1) ? ECL_NIL : make_base_string_copy(sockaddr.sun_path);
+        @(return 1) = (new_fd == -1) ? ECL_NIL : ecl_make_simple_base_string(sockaddr.sun_path,-1);
 }")
     (cond
       ((= fd -1)
@@ -965,7 +965,7 @@ also known as unix-domain sockets."))
         ecl_enable_interrupts();
 
         if (ret == 0) {
-                @(return) = make_base_string_copy(name.sun_path);
+                @(return) = ecl_make_simple_base_string(name.sun_path,-1);
         } else {
                 @(return) = ECL_NIL;
         }
@@ -1349,7 +1349,7 @@ also known as unix-domain sockets."))
             (LPTSTR)&lpMsgBuf,
             0,
             NULL);
-          msg = make_base_string_copy(lpMsgBuf);
+          msg = ecl_make_simple_base_string(lpMsgBuf,-1);
           LocalFree(lpMsgBuf);
           ecl_enable_interrupts();
           @(return) = msg;}"
@@ -1560,7 +1560,7 @@ GET-NAME-SERVICE-ERRNO")
         ret = getsockopt(#0,#1,#2,wincoerce(char*,&tv),&socklen);
         ecl_enable_interrupts();
 
-        @(return) = (ret == 0) ? ecl_make_doublefloat((double)tv.tv_sec
+        @(return) = (ret == 0) ? ecl_make_double_float((double)tv.tv_sec
                                         + ((double)tv.tv_usec) / 1000000.0) : ECL_NIL;
 }")))
     (if ret

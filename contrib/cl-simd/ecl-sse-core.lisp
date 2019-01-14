@@ -84,7 +84,7 @@
 
 (defun wrap-ret-arg (core ret-type &optional ret-arg)
   (cond ((eq ret-type nil)
-         (format nil "(~A,Cnil)" core))
+         (format nil "(~A,ECL_NIL)" core))
         (ret-arg
          (format nil "@~36R;(~A,#~36R)" ret-arg core ret-arg))
         (t core)))
@@ -294,7 +294,7 @@
          (def-inline ,name :unsafe (,@prefix-itypes si:foreign-data ,@postfix-itypes) ,rftype
                      ,(fmt "(#~A)->foreign.data"))
          (def-inline ,name :unsafe (,@prefix-itypes si:foreign-data ,@postfix-itypes t) ,rftype
-                     ,(fmt "(((char*)(#~A)->foreign.data) + fix(#~A))"))
+                     ,(fmt "(((char*)(#~A)->foreign.data) + ecl_fixnum(#~A))"))
          (def-inline ,name :unsafe (,@prefix-itypes si:foreign-data ,@postfix-itypes fixnum) ,rftype
                      ,(fmt "(((char*)(#~A)->foreign.data) + #~A)"))))))
 
