@@ -209,7 +209,7 @@ assert_type_non_negative_integer(cl_object p)
   cl_type t = ecl_t_of(p);
 
   if (t == t_fixnum) {
-    if (ecl_fixnum_plusp(p))
+    if (!ecl_fixnum_minusp(p))
       return;
   } else if (t == t_bignum) {
     if (_ecl_big_sign(p) >= 0)

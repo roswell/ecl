@@ -330,14 +330,13 @@ cl_symbol_name(cl_object x)
   @)
 
 @(defun gensym (&optional (prefix cl_core.gensym_prefix))
-  cl_type t;
   cl_object counter, output;
   bool increment;
   @ {
     if (ecl_stringp(prefix)) {
       counter = ECL_SYM_VAL(the_env, @'*gensym-counter*');
       increment = 1;
-    } else if ((t = ecl_t_of(prefix)) == t_fixnum || t == t_bignum) {
+    } else if (ecl_t_of(prefix) == t_fixnum || ecl_t_of(prefix) == t_bignum) {
       counter = prefix;
       prefix = cl_core.gensym_prefix;
       increment = 0;
@@ -345,6 +344,7 @@ cl_symbol_name(cl_object x)
       FEwrong_type_nth_arg(@[gensym],2,prefix,
                            cl_list(3, @'or', @'string', @'integer'));
     }
+    assert_type_non_negative_integer(counter);
     output = ecl_make_string_output_stream(64, 1);
     ecl_bds_bind(the_env, @'*print-escape*', ECL_NIL);
     ecl_bds_bind(the_env, @'*print-readably*', ECL_NIL);
