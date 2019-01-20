@@ -252,7 +252,7 @@ clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
 case "${host_os}" in
-        linux-androideabi)
+        linux-android*)
                 thehost='android'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
 #               THREAD_LIBS='-lpthread'
@@ -261,8 +261,10 @@ case "${host_os}" in
                 ECL_LDRPATH='-Wl,--rpath,~A'
                 clibs="-ldl ${clibs}"
                 # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
-                CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
+                CFLAGS="-D_GNU_SOURCE -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
                 ECL_ADD_FEATURE([android])
+                SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}"
+                SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
 
         # libdir may have a dollar expression inside

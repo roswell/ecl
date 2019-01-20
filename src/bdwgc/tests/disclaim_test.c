@@ -25,7 +25,18 @@
 # include "config.h"
 #endif
 
+#undef GC_NO_THREAD_REDIRECTS
 #include "gc_disclaim.h"
+
+#ifdef LINT2
+  /* Avoid include gc_priv.h. */
+# ifndef GC_API_PRIV
+#   define GC_API_PRIV GC_API
+# endif
+  GC_API_PRIV long GC_random(void);
+# undef rand
+# define rand() (int)GC_random()
+#endif /* LINT2 */
 
 #define my_assert(e) \
     if (!(e)) { \
@@ -80,7 +91,7 @@ struct pair_s {
     pair_t cdr;
 };
 
-static const char *pair_magic = "PAIR_MAGIC_BYTES";
+static const char * const pair_magic = "PAIR_MAGIC_BYTES";
 
 int is_pair(pair_t p)
 {
@@ -111,6 +122,8 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     p->checksum = 0;
     p->car = cd;
     p->cdr = NULL;
+    GC_end_stubborn_change(p);
+    GC_reachable_here(cd);
 }
 
 pair_t
@@ -120,16 +133,19 @@ pair_new(pair_t car, pair_t cdr)
     static const struct GC_finalizer_closure fc = { pair_dct, NULL };
 
     p = GC_finalized_malloc(sizeof(struct pair_s), &fc);
-    my_assert(!is_pair(p));
     if (p == NULL) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);
     }
+    my_assert(!is_pair(p));
     my_assert(memeq(p, 0, sizeof(struct pair_s)));
     memcpy(p->magic, pair_magic, sizeof(p->magic));
     p->checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
     p->car = car;
     p->cdr = cdr;
+    GC_end_stubborn_change(p);
+    GC_reachable_here(car);
+    GC_reachable_here(cdr);
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
       printf("Construct %p = (%p, %p)\n",
              (void *)p, (void *)p->car, (void *)p->cdr);
@@ -165,7 +181,7 @@ pair_check_rec(pair_t p)
 #else
 #  define MUTATE_CNT 10000000
 #endif
-#define GROW_LIMIT 10000000
+#define GROW_LIMIT (MUTATE_CNT/10)
 
 void *test(void *data)
 {
