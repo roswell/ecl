@@ -5082,7 +5082,7 @@ si_copy_stream(cl_object in, cl_object out, cl_object wait)
     }
   }
   ecl_force_output(out);
-  @(return c==EOF);
+  @(return ((c==EOF) ? ECL_T : ECL_NIL));
 }
 
 
