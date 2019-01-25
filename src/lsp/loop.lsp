@@ -1256,7 +1256,7 @@ collected result will be returned as the value of the LOOP."
       (setq pseudo-steps (nconc pseudo-steps (copy-list (car (setq tem (cdr tem))))))
       (setq tem (cdr tem))
       (when *loop-emitted-body*
-        (loop-error "Iteration in LOOP follows body code. This error is typicall caused
+        (loop-error "Iteration in LOOP follows body code. This error is typically caused
 by a WHILE, UNTIL or similar condition placed in between FOR, AS, and similar iterations.
 Note that this is not a valid ANSI code."))
       (unless tem (setq tem data))
@@ -1684,22 +1684,32 @@ Note that this is not a valid ANSI code."))
      (when step-hack
        (setq step-hack `(,variable ,step-hack)))
      (let ((first-test test) (remaining-tests test))
-       (when (and stepby-constantp start-constantp limit-constantp)
+       (when (and stepby-constantp start-constantp)
          ;; We can make the number type more precise when we know the
          ;; start, end and step values.
-         (let ((new-type (typecase (+ start-value stepby limit-value)
+         (let ((new-type (typecase (+ start-value stepby)
                            (integer (if (and (fixnump start-value)
-                                             (fixnump limit-value))
+                                             limit-constantp
+                                             (< limit-value most-positive-fixnum)
+                                             (> limit-value most-negative-fixnum))
                                         'fixnum
-                                        indexv-type))
+                                        'integer))
                            (single-float 'single-float)
                            (double-float 'double-float)
                            (long-float 'long-float)
                            (short-float 'short-float)
                            (t indexv-type))))
+           (unless (subtypep (type-of start-value) new-type)
+             ;; The start type may not be a subtype of the type during
+             ;; iteration. Happens e.g. when stepping a fixnum start
+             ;; value by a float.
+             (setf new-type `(or ,(type-of start-value) ,new-type)))
            (unless (subtypep indexv-type new-type)
              (loop-declare-variable indexv new-type)))
-         (when (setq first-test (funcall (symbol-function testfn) start-value limit-value))
+         (when (and limit-constantp
+                    (setq first-test (funcall (symbol-function testfn)
+                                              start-value
+                                              limit-value)))
            (setq remaining-tests t)))
        `(() (,indexv ,step) ,remaining-tests ,step-hack
          () () ,first-test ,step-hack))))
