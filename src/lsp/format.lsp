@@ -123,7 +123,7 @@
           (cond (fdigits
                  (float-to-digits* nil x
                                    (min (- (+ fdigits scale))
-                                        (- fmin))
+                                        (- (+ fmin scale)))
                                    nil))
                 ((null width)
                  (float-to-digits* nil x nil nil))
@@ -190,98 +190,10 @@
                     (= position (1- length))
                     position))))))
 
-;;; SCALE-EXPONENT  --  Internal
-;;;
-;;;    Given a non-negative floating point number, SCALE-EXPONENT returns a new
-;;; floating point number Z in the range (0.1, 1.0] and an exponent E such
-;;; that Z * 10^E is (approximately) equal to the original number.  There may
-;;; be some loss of precision due the floating point representation.  The
-;;; scaling is always done with long float arithmetic, which helps printing of
-;;; lesser precisions as well as avoiding generic arithmetic.
-;;;
-(defun scale-exponent (original-x)
-  (declare (optimize (debug 0) (safety 0)))
-  (let* ((x (coerce original-x 'long-float))
-         (delta 0))
-    (declare (long-float x)
-             (fixnum delta))
-    (multiple-value-bind (sig exponent)
-        (decode-float x)
-      (declare (ignore sig)
-               (fixnum exponent)
-               (long-float sig))
-      (when (zerop x)
-        (return-from scale-exponent (values (float 0.0l0 original-x) 1)))
-      ;; When computing our initial scale factor using EXPT, we pull out part of
-      ;; the computation to avoid over/under flow.  When denormalized, we must pull
-      ;; out a large factor, since there is more negative exponent range than
-      ;; positive range.
-      (when (and (minusp exponent)
-                 (< least-negative-normalized-long-float x
-                    least-positive-normalized-long-float))
-        #+long-float
-        (setf x (* x 1.0l18) delta -18)
-        #-long-float
-        (setf x (* x 1.0l16) delta -16))
-      ;; We find the appropriate factor that keeps the output within [0.1,1)
-      ;; Note that we have to compute the exponential _every_ _time_ in the loop
-      ;; because multiplying just by 10.0l0 every time would lead to a greater
-      ;; loss of precission.
-      (let ((ex (- (round (* exponent #.(log 2l0 10))) delta)))
-        (declare (fixnum ex))
-        (if (minusp ex)
-            (loop for y of-type long-float
-                 = (* x (the long-float (expt 10.0l0 (- ex))))
-               while (< y 0.1l0)
-               do (decf ex)
-               finally (return (values y (the fixnum (+ delta ex)))))
-            (loop for y of-type long-float
-                 = (/ x (the long-float (expt 10.0l0 ex)))
-               while (>= y 1.0l0)
-               do (incf ex)
-               finally (return (values y (the fixnum (+ delta ex)))))))
-      #+(or)
-      (loop with ex of-type fixnum
-           = (round (* exponent #.(log 2l0 10)))
-         for y of-type long-float
-           = (if (minusp ex)
-                 (* x (the long-float (expt 10.0l0 (- ex))))
-                 (/ x (the long-float (expt 10.0l0 ex))))
-         do (cond ((<= y 0.1l0)
-                   (decf ex))
-                  ((> y 1.0l0)
-                   (incf ex))
-                  (t
-                   (return (values y (the fixnum (+ delta ex))))))))))
-#+(or)
-(defun scale-exponent (original-x)
-  (let* ((x (coerce original-x 'long-float)))
-    (multiple-value-bind (sig exponent)
-        (decode-float x)
-      (declare (ignore sig))
-      (if (= x 0.0l0)
-          (values (float 0.0l0 original-x) 1)
-          (let* ((ex (round (* exponent (log 2l0 10))))
-                 (x (if (minusp ex)
-                        (if #-ecl(float-denormalized-p x)
-                            #+ecl(< least-negative-normalized-long-float
-                                    x
-                                    least-positive-normalized-long-float)
-                            #-long-float
-                            (* x 1.0l16 (expt 10.0l0 (- (- ex) 16)))
-                            #+long-float
-                            (* x 1.0l18 (expt 10.0l0 (- (- ex) 18)))
-                            (* x 10.0l0 (expt 10.0l0 (- (- ex) 1))))
-                        (/ x 10.0l0 (expt 10.0l0 (1- ex))))))
-            (do ((d 10.0l0 (* d 10.0l0))
-                 (y x (/ x d))
-                 (ex ex (1+ ex)))
-                ((< y 1.0l0)
-                 (do ((m 10.0l0 (* m 10.0l0))
-                      (z y (* y m))
-                      (ex ex (1- ex)))
-                     ((>= z 0.1l0)
-                      (values (float z original-x) ex))))))))))
+(defun exponent-in-base10 (x)
+  (if (= x 0)
+      1
+      (1+ (floor (log (abs x) 10)))))
 
 (defstruct (format-directive
              #-ecl(:print-function %print-format-directive)
@@ -1469,50 +1381,46 @@
            (or (float-infinity-p number)
                (float-nan-p number)))
       (prin1 number stream)
-      (multiple-value-bind (num expt)
-          (sys::scale-exponent (abs number))
-        (when (< expt 0)                ; adjust scale factor
-          (decf k))
-        (let* ((expt (- expt k))
-               (estr (decimal-string (abs expt)))
-               (elen (if e (max (length estr) e) (length estr)))
-               (fdig (if d (if (plusp k) (1+ (- d k)) d) nil))
-               (fmin (if (minusp k) (- 1 k) 0))
-               (spaceleft (if w
-                              (- w 2 elen
-                                 (if (or atsign (minusp number))
-                                     1 0))
-                              nil)))
-          (if (and w ovf e (> elen e)) ;exponent overflow
-              (dotimes (i w) (write-char ovf stream))
-              (multiple-value-bind (fstr flen lpoint)
-                  (sys::flonum-to-string num spaceleft fdig k fmin)
-                (when w 
-                  (decf spaceleft flen)
-                  (when lpoint
-                    (if (> spaceleft 0)
-                        (decf spaceleft)
-                        (setq lpoint nil))))
-                (cond ((and w (< spaceleft 0) ovf)
-                       ;;significand overflow
-                       (dotimes (i w) (write-char ovf stream)))
-                      (t (when w
-                           (dotimes (i spaceleft) (write-char pad stream)))
-                         (if (minusp number)
-                             (write-char #\- stream)
-                             (if atsign (write-char #\+ stream)))
-                         (when lpoint (write-char #\0 stream))
-                         (write-string fstr stream)
-                         (write-char (if marker
-                                         marker
-                                         (format-exponent-marker number))
-                                     stream)
-                         (write-char (if (minusp expt) #\- #\+) stream)
-                         (when e 
-                           ;;zero-fill before exponent if necessary
-                           (dotimes (i (- e (length estr)))
-                             (write-char #\0 stream)))
-                         (write-string estr stream)))))))))
+      (let* ((expt (- (sys::exponent-in-base10 number) k))
+             (estr (decimal-string (abs expt)))
+             (elen (if e (max (length estr) e) (length estr)))
+             (fdig (if d (if (plusp k) (1+ (- d k)) d) nil))
+             (fmin (if (minusp k) (- 1 k) 0))
+             (spaceleft (if w
+                            (- w 2 elen
+                               (if (or atsign (minusp number))
+                                   1 0))
+                            nil)))
+        (if (and w ovf e (> elen e))   ;exponent overflow
+            (dotimes (i w) (write-char ovf stream))
+            (multiple-value-bind (fstr flen lpoint)
+                (sys::flonum-to-string number spaceleft fdig (- expt) fmin)
+              (when w
+                (decf spaceleft flen)
+                (when lpoint
+                  (if (> spaceleft 0)
+                      (decf spaceleft)
+                      (setq lpoint nil))))
+              (cond ((and w (< spaceleft 0) ovf)
+                     ;;significand overflow
+                     (dotimes (i w) (write-char ovf stream)))
+                    (t (when w
+                         (dotimes (i spaceleft) (write-char pad stream)))
+                       (if (minusp number)
+                           (write-char #\- stream)
+                           (if atsign (write-char #\+ stream)))
+                       (when lpoint (write-char #\0 stream))
+                       (write-string fstr stream)
+                       (write-char (if marker
+                                       marker
+                                       (format-exponent-marker number))
+                                   stream)
+                       (write-char (if (minusp expt) #\- #\+) stream)
+                       (when e
+                         ;;zero-fill before exponent if necessary
+                         (dotimes (i (- e (length estr)))
+                           (write-char #\0 stream)))
+                       (write-string estr stream))))))))
 
 (def-format-directive #\G (colonp atsignp params)
   (when colonp
@@ -1557,9 +1465,7 @@
            (or (float-infinity-p number)
                (float-nan-p number)))
       (prin1 number stream)
-      (multiple-value-bind (ignore n) 
-          (sys::scale-exponent (abs number))
-        (declare (ignore ignore))
+      (let ((n (sys::exponent-in-base10 number)))
         ;;Default d if omitted.  The procedure is taken directly
         ;;from the definition given in the manual, and is not
         ;;very efficient, since we generate the digits twice.
