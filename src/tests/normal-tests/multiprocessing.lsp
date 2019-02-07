@@ -723,3 +723,15 @@ creating stray processes."
         (is (eql (cdr *obj*) :cdr))
         (mp:remcas 'foo)
         (signals error (eval `(mp:compare-and-swap (foo *obj*) :car :cdr)))))
+
+;;; Date: 2019-02-07
+;;; From: Daniel Kochmański
+;;; Description:
+;;;
+;;;     Verifies that CAS modifications honor the package locks.
+;;;
+(test cas-locked-package
+      (signals package-error (mp:defcas cl:car (lambda (obj old new) nil)))
+      (signals package-error (mp:remcas 'cl:car))
+      (finishes (mp:defcas cor (lambda (obj old new) nil)))
+      (finishes (mp:remcas 'cor)))

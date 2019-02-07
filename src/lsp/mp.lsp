@@ -204,6 +204,15 @@ the resulting COMPARE-AND-SWAP expansions."
           (setq lambda-list (cons env lambda-list))
           (push `(declare (ignore ,env)) body))))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (let ((package (symbol-package ',accessor)))
+       (when (and package
+                  (ext:package-locked-p package)
+                  (null si:*ignore-package-locks*))
+         (si:signal-simple-error 'package-error
+                                 "Ignore lock and proceed."
+                                 "Attempt to define CAS accessor ~S in locked package."
+                                 '(,accessor)
+                                 :package package)))
      (si:put-sysprop ',accessor 'CAS-EXPANDER #'(ext::lambda-block ,accessor ,lambda-list ,@body))
      ',accessor))
 
@@ -227,6 +236,15 @@ the resulting COMPARE-AND-SWAP expansions."
 (defun remcas (symbol)
   "Remove a COMPARE-AND-SWAP expansion. It is a CAS operation equivalent of
     (FMAKUNBOUND (SETF SYMBOL))"
+  (let ((package (symbol-package symbol)))
+    (when (and package
+               (ext:package-locked-p package)
+               (null si:*ignore-package-locks*))
+      (si:signal-simple-error 'package-error
+                              "Ignore lock and proceed."
+                              "Attempt to define CAS accessor ~S in locked package."
+                              (list symbol)
+                              :package package)))
   (si:rem-sysprop symbol 'cas-expander))
 
 #+threads
