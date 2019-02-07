@@ -1313,6 +1313,7 @@ extern ECL_API cl_object si_remove_package_local_nickname(cl_object n, cl_object
 extern ECL_API cl_object cl_list_all_packages(void);
 extern ECL_API cl_object si_package_hash_tables(cl_object p);
 extern ECL_API cl_object si_package_lock(cl_object p, cl_object t);
+extern ECL_API cl_object si_package_locked_p(cl_object p);
 extern ECL_API cl_object cl_delete_package(cl_object p);
 extern ECL_API cl_object cl_make_package _ECL_ARGS((cl_narg narg, cl_object pack_name, ...));
 extern ECL_API cl_object cl_intern _ECL_ARGS((cl_narg narg, cl_object strng, ...));

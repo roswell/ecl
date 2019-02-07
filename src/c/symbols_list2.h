@@ -1207,9 +1207,9 @@ cl_symbols[] = {
 /* package extensions */
 {SYS_ "*IGNORE-PACKAGE-LOCKS*",NULL},
 {EXT_ "PACKAGE-LOCK","si_package_lock"},
+{EXT_ "PACKAGE-LOCKED-P","si_package_locked_p"},
 {SYS_ "LOCK-PACKAGE",NULL},
 {SYS_ "UNLOCK-PACKAGE",NULL},
-{SYS_ "PACKAGE-LOCKED-P",NULL},
 {SYS_ "WITHOUT-PACKAGE-LOCKS",NULL},
 {SYS_ "WITH-UNLOCKED-PACKAGES",NULL},
 {EXT_ "PACKAGE-LOCAL-NICKNAMES","si_package_local_nicknames"},
