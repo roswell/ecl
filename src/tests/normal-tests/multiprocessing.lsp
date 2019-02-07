@@ -704,3 +704,22 @@ creating stray processes."
            (is (svref vector 1) 0)
            (is *x* 0)
            (is (slot-value object 'slot1) 0)))))
+
+;;; Date: 2019-02-05
+;;; From: Daniel Kochmański
+;;; Description:
+;;;
+;;;     Verifies that CAS expansion may be removed.
+;;;
+(ext:with-clean-symbols (*obj* foo)
+  (test defcas/remcas
+        (mp:defcas foo (lambda (object old new)
+                         (assert (consp object))
+                         (setf (car object) old
+                               (cdr object) new)))
+        (defparameter *obj* (cons nil nil))
+        (eval `(mp:compare-and-swap (foo *obj*) :car :cdr))
+        (is (eql (car *obj*) :car))
+        (is (eql (cdr *obj*) :cdr))
+        (mp:remcas 'foo)
+        (signals error (eval `(mp:compare-and-swap (foo *obj*) :car :cdr)))))

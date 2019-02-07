@@ -778,6 +778,7 @@
 #+threads (proclamation mp:atomic-incf-car (cons fixnum) fixnum)
 #+threads (proclamation mp:compare-and-swap-cdr (cons t t) t)
 #+threads (proclamation mp:atomic-incf-cdr (cons fixnum) fixnum)
+#+threads (proclamation mp:remcas (symbol) boolean)
 
 ;;;
 ;;; 15. ARRAYS

@@ -227,6 +227,13 @@ Note that it is up to the user of this macro to ensure atomicity for
 the resulting compare-and-swap expansions.
 @end defmac
 
+@lspindex mp:remcas
+@defun mp:remcas symbol
+
+Remove a compare-and-swap expansion. It is an equivalent of
+@code{fmakeunbound (setf symbol)} for cas expansions.
+@end defun
+
 @lspindex mp:get-cas-expansion
 @defun mp:get-cas-expansion place &optional environment
 

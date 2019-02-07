@@ -224,6 +224,12 @@ the resulting COMPARE-AND-SWAP expansions."
                `(,',accessor ,@args)))))
 
 #+threads
+(defun remcas (symbol)
+  "Remove a COMPARE-AND-SWAP expansion. It is a CAS operation equivalent of
+    (FMAKUNBOUND (SETF SYMBOL))"
+  (si:rem-sysprop symbol 'cas-expander))
+
+#+threads
 (defun get-cas-expansion (place &optional environment &aux f)
   "Returns the COMPARE-AND-SWAP expansion forms and variables as defined
 in DEFINE-CAS-EXPANDER for PLACE as six values."
