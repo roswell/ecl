@@ -453,6 +453,7 @@
 (proclamation si:package-hash-tables (package-designator)
                    (values hash-table hash-table list) :reader)
 (proclamation ext:package-lock (package-designator gen-bool) package)
+(proclamation ext:package-locked-p (package-designator) boolean :no-side-effects)
 (proclamation ext:package-local-nicknames
  (package-designator) list :no-side-effects)
 (proclamation ext:package-locally-nicknamed-by-list
@@ -777,6 +778,7 @@
 #+threads (proclamation mp:atomic-incf-car (cons fixnum) fixnum)
 #+threads (proclamation mp:compare-and-swap-cdr (cons t t) t)
 #+threads (proclamation mp:atomic-incf-cdr (cons fixnum) fixnum)
+#+threads (proclamation mp:remcas (symbol) boolean)
 
 ;;;
 ;;; 15. ARRAYS

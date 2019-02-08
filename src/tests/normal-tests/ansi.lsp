@@ -46,6 +46,57 @@
     (is-true  (typep  3 '(nest (2) 3)))))
 
 
+;;; 8. Structures
+(ext:with-clean-symbols
+    (my-struct make-my-struct my-struct-2 make-my-struct-2 my-struct-compatible-type)
+ (test ansi.8.redefine-compatible
+       (let (foo-1 foo-2 foo-3 foo-4)
+         (defstruct (my-struct (:constructor make-my-struct)) slot-1 slot-2)
+         (setq foo-1 (make-my-struct :slot-1 3 :slot-2 4))
+         (finishes (defstruct (my-struct (:constructor make-my-struct))
+                     (slot-1 nil)
+                     (slot-2 t)))
+         (setq foo-2 (make-my-struct :slot-1 3 :slot-2 4))
+         (finishes (defstruct (my-struct (:constructor make-my-struct))
+                     (slot-1 3)
+                     (slot-2 4)))
+         (setq foo-3 (make-my-struct))
+         (finishes (defstruct (my-struct (:constructor make-my-struct))
+                     (slot-1 8 :type t :read-only nil)
+                     (slot-2 8 :type t :read-only nil)))
+         (setq foo-4 (make-my-struct :slot-1 3 :slot-2 4))
+         (is (equalp foo-1 foo-2))
+         (is (equalp foo-2 foo-3))
+         (is (equalp foo-3 foo-4)))
+       (deftype my-struct-compatible-type () `(integer 0 10))
+       (defstruct (my-struct-2 (:constructor make-my-struct-2))
+         (slot-1 nil :type my-struct-compatible-type :read-only t))
+       (finishes
+        (defstruct my-struct-2
+          (slot-1 nil :type (integer 0 10) :read-only t)))
+       (finishes
+        (defstruct my-struct-2
+          (slot-1 4 :type (integer 0 10) :read-only t)))
+       (finishes
+        (defstruct my-struct-2
+          (slot-1 4 :type (integer 0 10) :read-only nil)))))
+
+(ext:with-clean-symbols (my-struct make-my-struct)
+  (test ansi.8.redefine-incompatible
+        (defstruct (my-struct (:constructor make-my-struct)) slot-1 slot-2)
+        ;; different slot type
+        (signals error (defstruct (my-struct (:constructor make-my-struct))
+                         (slot-1 nil :type integer)
+                         (slot-2 t)))
+        ;; too many slots
+        (signals error (defstruct (my-struct (:constructor make-my-struct)) slot-1 slot-2 slot-3))
+        ;; too few slots
+        (signals error (defstruct (my-struct (:constructor make-my-struct)) slot-1))
+        ;; incompatible names
+        (signals error (defstruct (my-struct (:constructor make-my-struct)) slot-1x slot-2x))
+        (finishes (make-my-struct))))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 12.2.* Numbers tests ;;

@@ -2295,6 +2295,14 @@ built-in packages:
         system   system internal symbols.  Has nicknames SYS and SI.
         compiler system internal symbols for the ECL compiler.")
 
+(docfun ext:package-lock function
+        (package-designator lock) "
+Sets package's lock to LOCK. Returns previous lock value.")
+
+(docfun ext:package-locked-p function
+        (package-designator) "
+Returns T when PACKAGE is locked, NIL otherwise.")
+
 (docfun ext:package-local-nicknames function
         (package-designator) "
 Returns an alist of (LOCAL-NICKNAME . ACTUAL-PACKAGE)

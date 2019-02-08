@@ -563,7 +563,7 @@ void
 cl_export2(cl_object s, cl_object p)
 {
   int intern_flag, error;
-  cl_object other_p, name = ecl_symbol_name(s);
+  cl_object other_p = ECL_NIL, name = ecl_symbol_name(s);
   p = si_coerce_to_package(p);
   if (p->pack.locked
       && ECL_SYM_VAL(ecl_process_env(),
@@ -964,6 +964,13 @@ si_package_lock(cl_object p, cl_object t)
   previous = p->pack.locked;
   p->pack.locked = (t != ECL_NIL);
   @(return (previous? ECL_T : ECL_NIL));
+}
+
+cl_object
+si_package_locked_p (cl_object p)
+{
+  p = si_coerce_to_package(p);
+  @return (p->pack.locked ? ECL_T : ECL_NIL);
 }
 
 /* --- local nicknames ---------------------------------------------------- */

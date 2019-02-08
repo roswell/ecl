@@ -1207,9 +1207,9 @@ cl_symbols[] = {
 /* package extensions */
 {SYS_ "*IGNORE-PACKAGE-LOCKS*",NULL},
 {EXT_ "PACKAGE-LOCK","si_package_lock"},
+{EXT_ "PACKAGE-LOCKED-P","si_package_locked_p"},
 {SYS_ "LOCK-PACKAGE",NULL},
 {SYS_ "UNLOCK-PACKAGE",NULL},
-{SYS_ "PACKAGE-LOCKED-P",NULL},
 {SYS_ "WITHOUT-PACKAGE-LOCKS",NULL},
 {SYS_ "WITH-UNLOCKED-PACKAGES",NULL},
 {EXT_ "PACKAGE-LOCAL-NICKNAMES","si_package_local_nicknames"},
@@ -1637,6 +1637,7 @@ cl_symbols[] = {
 {MP_ "ATOMIC-INCF-INSTANCE",IF_MP("mp_atomic_incf_instance")},
 {MP_ "DEFINE-CAS-EXPANDER",NULL},
 {MP_ "DEFCAS",NULL},
+{MP_ "REMCAS",NULL},
 {MP_ "GET-CAS-EXPANSION",NULL},
 {MP_ "COMPARE-AND-SWAP",NULL},
 {MP_ "ATOMIC-UPDATE",NULL},
