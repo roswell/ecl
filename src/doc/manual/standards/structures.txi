@@ -1,6 +1,21 @@
 @node Structures
 @section Structures
 
+@subsection Redefining a defstruct structure
+
+@ansi{} says that consequences of redefining a @code{defstruct} are
+undefined. @ecl{} defines this behavior to siganal an error if the new
+structure is not compatible. Structures are incompatible when:
+
+@table @asis
+@item They have a different number of slots
+This is particularily important for other structures which could have
+included the current one and for already defined instances.
+
+@item Slot name, type or offset is different
+Binary compatibility between old and new instances.
+@end table
+
 @subsection C Reference
 
 @subsubsection ANSI Dictionary

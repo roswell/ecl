@@ -22,21 +22,24 @@
       slot-name))
 
 #+threads
-(defun make-atomic-accessors (name conc-name type slot-descriptions)
+(defun make-atomic-accessors (name conc-name type slot-descriptions removep)
   ;; If the structure is implemented as a CLOS instance, we can define
   ;; atomic compare-and-swap expansions for its slots
   (when (null type)
     (let (accessors)
       (dolist (slotd slot-descriptions accessors)
-        (unless (nth 3 slotd) ; don't create a CAS expansion if the slot is read-only
-          (let ((access-function (slot-access-function conc-name (nth 0 slotd)))
-                (offset (nth 4 slotd)))
-            (push `(mp::define-cas-expander ,access-function (x)
-                     (let ((old (gensym)) (new (gensym)))
-                       (values nil nil old new
-                               `(mp:compare-and-swap-structure ,x ',',name ,',offset ,old ,new)
-                               `(sys:structure-ref ,x ',',name ,',offset))))
-                  accessors)))))))
+        (let ((access-function (slot-access-function conc-name (nth 0 slotd)))
+              (read-only (nth 3 slotd))
+              (offset (nth 4 slotd)))
+          (if (and (null read-only) (null removep))
+              (push `(mp::define-cas-expander ,access-function (x)
+                       (let ((old (gensym)) (new (gensym)))
+                         (values nil nil old new
+                                 `(mp:compare-and-swap-structure ,x ',',name ,',offset ,old ,new)
+                                 `(sys:structure-ref ,x ',',name ,',offset))))
+                    accessors)
+              ;; Don't create a CAS expansion if the slot is read-only.
+              (push `(mp::remcas ',access-function) accessors)))))))
 
 (defun si::structure-type-error (value slot-type struct-name slot-name)
   (error 'simple-type-error
@@ -200,7 +203,7 @@
               (sys:make-structure .structure-constructor-class. ,@slot-names)))
           ((subtypep type '(VECTOR T))
            `(defun ,constructor-name ,keys
-             (vector ,@slot-names)))
+              (vector ,@slot-names)))
           ((subtypep type 'VECTOR)
            `(defun ,constructor-name ,keys
               (make-array ',(list (length slot-names))
@@ -248,30 +251,23 @@
 
 (defun parse-slot-description (slot-description offset &optional read-only)
   (declare (si::c-local))
-  (let* ((slot-type 'T)
-         slot-name default-init)
-    (cond ((atom slot-description)
-           (setq slot-name slot-description))
-          ((endp (cdr slot-description))
-           (setq slot-name (car slot-description)))
-          (t
-           (setq slot-name (car slot-description))
-           (setq default-init (cadr slot-description))
-           (do ((os (cddr slot-description) (cddr os)) (o) (v))
-               ((endp os))
-             (setq o (car os))
-             (when (endp (cdr os))
-                   (error "~S is an illegal structure slot option."
-                          os))
-             (setq v (cadr os))
-             (case o
-               (:TYPE (setq slot-type v))
-               (:READ-ONLY (setq read-only v))
-               (t
-                (error "~S is an illegal structure slot option."
-                         os))))))
-    (list slot-name default-init slot-type read-only offset nil)))
-
+  (when (atom slot-description)
+    (return-from parse-slot-description
+      (list slot-description nil t read-only offset nil)))
+  (do ((slot-type    T)
+       (slot-name    (first  slot-description))
+       (default-init (second slot-description))
+       (os (cddr slot-description) (cddr os)))
+      ((endp os)
+       (list slot-name default-init slot-type read-only offset nil))
+    (when (endp (cdr os))
+      (error "~S is an illegal structure slot option." os))
+    (let ((option (first os))
+          (value (second os)))
+      (case option
+        (:TYPE (setq slot-type value))
+        (:READ-ONLY (setq read-only value))
+        (t (error "~S is an illegal structure slot option." os))))))
 
 ;;; OVERWRITE-SLOT-DESCRIPTIONS overwrites the old slot-descriptions
 ;;;  with the new descriptions which are specified in the
@@ -302,9 +298,38 @@
                   (sixth new-slot) (sixth old-slot))))
       (push new-slot output))))
 
+(defun %struct-layout-compatible-p (old-slot-descriptions new-slot-descriptions)
+  (declare (si::c-local))
+  (do* ((old-defs old-slot-descriptions (cdr old-defs))
+        (new-defs new-slot-descriptions (cdr new-defs)))
+       ((or (null old-defs) (null new-defs))
+        ;; Structures must have the same number of compatible slots.
+        (and (null old-defs)
+             (null new-defs)))
+    (let ((old-def (car old-defs))
+          (new-def (car new-defs)))
+      ;; We need equal first because slot-description may be a list with
+      ;; (slot-name init …), a list (typed-structure-name ,name) or NIL.
+      (or (equal old-def new-def)
+          (destructuring-bind (old-slot-name old-init old-type old-read-only old-offset old-ac)
+              old-def
+            (declare (ignore old-init read-only old-ac))
+            (destructuring-bind (new-slot-name new-init new-type new-read-only new-offset new-ac)
+                new-def
+              (declare (ignore new-init new-read-only new-ac))
+              (and (eql old-slot-name new-slot-name)
+                   (= old-offset new-offset)
+                   (and (subtypep old-type new-type)
+                        (subtypep new-type old-type)))))
+          (return-from %struct-layout-compatible-p nil)))))
+
 (defun define-structure (name conc-name type named slots slot-descriptions
                          copier include print-function print-object constructors
                          offset name-offset documentation predicate)
+  (let ((old-slot-descriptions (get-sysprop name 'structure-slot-descriptions)))
+    (when (and old-slot-descriptions
+               (null (%struct-layout-compatible-p old-slot-descriptions slot-descriptions)))
+      (error "Attempt to redefine the structure ~S incompatibly with the current definition." name)))
   (create-type-name name)
   ;; We are going to modify this list!!!
   (setf slot-descriptions (copy-tree slot-descriptions))
@@ -420,7 +445,7 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
                (:INCLUDE
                 (setq include (cdar os))
                 (unless (get-sysprop v 'IS-A-STRUCTURE)
-                        (error "~S is an illegal included structure." v)))
+                  (error "~S is an illegal included structure." v)))
                (:PRINT-FUNCTION (setq print-function v))
                (:PRINT-OBJECT (setq print-object v))
                (:TYPE (setq type v))
@@ -444,14 +469,13 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
     ;; Skip the documentation string.
     (when (and (not (endp slot-descriptions))
                (stringp (car slot-descriptions)))
-          (setq documentation (car slot-descriptions))
-          (setq slot-descriptions (cdr slot-descriptions)))
+      (setq documentation (car slot-descriptions))
+      (setq slot-descriptions (cdr slot-descriptions)))
 
     ;; Check the include option.
-    (when include
-          (unless (equal type (get-sysprop (car include) 'STRUCTURE-TYPE))
-                  (error "~S is an illegal structure include."
-                         (car include))))
+    (when (and include
+               (not (equal type (get-sysprop (car include) 'STRUCTURE-TYPE))))
+      (error "~S is an illegal structure include." (car include)))
 
     ;; Set OFFSET.
     (setq offset (if include
@@ -460,13 +484,13 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
 
     ;; Increment OFFSET.
     (when (and type initial-offset)
-          (setq offset (+ offset initial-offset)))
+      (setq offset (+ offset initial-offset)))
     (when (and type named)
-          (unless (or (subtypep '(vector symbol) type)
-                      (subtypep type 'list))
-            (error "Structure cannot have type ~S and be :NAMED." type))
-          (setq name-offset offset)
-          (setq offset (1+ offset)))
+      (unless (or (subtypep '(vector symbol) type)
+                  (subtypep type 'list))
+        (error "Structure cannot have type ~S and be :NAMED." type))
+      (setq name-offset offset)
+      (setq offset (1+ offset)))
 
     ;; Parse slot-descriptions, incrementing OFFSET for each one.
     (do ((ds slot-descriptions (cdr ds))
@@ -479,13 +503,13 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
     ;; If TYPE is non-NIL and structure is named,
     ;;  add the slot for the structure-name to the slot-descriptions.
     (when (and type named)
-          (setq slot-descriptions
-                (cons (list 'TYPED-STRUCTURE-NAME name) slot-descriptions)))
+      (setq slot-descriptions
+            (cons (list 'TYPED-STRUCTURE-NAME name) slot-descriptions)))
 
     ;; Pad the slot-descriptions with the initial-offset number of NILs.
     (when (and type initial-offset)
-          (setq slot-descriptions
-                (append (make-list initial-offset) slot-descriptions)))
+      (setq slot-descriptions
+            (append (make-list initial-offset) slot-descriptions)))
 
     ;; Append the slot-descriptions of the included structure.
     ;; The slot-descriptions in the include option are also counted.
@@ -507,7 +531,7 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
            ;; If a constructor option is NIL,
            ;;  no constructor should have been specified.
            (when constructors
-                 (error "Contradictory constructor options.")))
+             (error "Contradictory constructor options.")))
           ((null constructors)
            ;; If no constructor is specified,
            ;;  the default-constructor is made.
@@ -533,10 +557,10 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
     ;; LOAD-TIME-VALUE.
     ;;
     (let ((core `(define-structure ',name ',conc-name ',type ',named ',slots
-                                ',slot-descriptions ',copier ',include
-                                ',print-function ',print-object ',constructors
-                                ',offset ',name-offset
-                                ',documentation ',predicate))
+                                   ',slot-descriptions ',copier ',include
+                                   ',print-function ',print-object ',constructors
+                                   ',offset ',name-offset
+                                   ',documentation ',predicate))
           (constructors (mapcar #'(lambda (constructor)
                                     (make-constructor name constructor type named
                                                       slot-descriptions))
@@ -551,7 +575,9 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
          (eval-when (:execute)
            (let ((.structure-constructor-class. ,core))
              ,@constructors))
-         ,(when atomic-accessors
-                `(eval-when (:compile-toplevel :load-toplevel :execute)
-                   #+threads ,@(make-atomic-accessors name conc-name type slot-descriptions)))
+
+         #+threads
+         (eval-when (:compile-toplevel :load-toplevel :execute)
+           ;; When ATOMIC-ACCESSORS is NIL then MP:REMCAS is collected instead.
+           ,@(make-atomic-accessors name conc-name type slot-descriptions (not atomic-accessors)))
          ',name))))
