@@ -335,7 +335,7 @@ cl_float_precision(cl_object x)
       precision = 0;
     } else {
       int exp;
-      frexp(f, &exp);
+      frexpl(f, &exp);
       if (exp >= LDBL_MIN_EXP) {
         precision = LDBL_MANT_DIG;
       } else {
