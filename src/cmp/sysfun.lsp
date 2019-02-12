@@ -348,12 +348,16 @@
 
 (def-inline 1+ :always (t) t "ecl_one_plus(#0)")
 (def-inline 1+ :always (fixnum) t "ecl_make_integer((#0)+1)")
+#+long-float
+(def-inline 1+ :always (long-float) :long-double "(long double)(#0)+1")
 (def-inline 1+ :always (double-float) :double "(double)(#0)+1")
 (def-inline 1+ :always (single-float) :float "(float)(#0)+1")
 (def-inline 1+ :always (fixnum) :fixnum "(#0)+1" :exact-return-type t)
 
 (def-inline 1- :always (t) t "ecl_one_minus(#0)")
 (def-inline 1- :always (fixnum) t "ecl_make_integer((#0)-1)")
+#+long-float
+(def-inline 1- :always (long-float) :long-double "(long double)(#0)-1")
 (def-inline 1- :always (double-float) :double "(double)(#0)-1")
 (def-inline 1- :always (single-float) :float "(float)(#0)-1")
 (def-inline 1- :always (fixnum) :fixnum "(#0)-1" :exact-return-type t)
@@ -364,6 +368,8 @@
 (def-inline float :always (t double-float) :double "ecl_to_double(#0)")
 #+long-float
 (def-inline float :always (t long-float) :long-double "ecl_to_long_double(#0)")
+#+long-float
+(def-inline float :always (fixnum-float) :long-double "((long double)(#0))" :exact-return-type t)
 (def-inline float :always (fixnum-float) :double "((double)(#0))" :exact-return-type t)
 (def-inline float :always (fixnum-float) :float "((float)(#0))" :exact-return-type t)
 
@@ -502,38 +508,52 @@
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
 
+#+long-float
+(def-inline log :always (fixnum-float) :long-double "logl((long double)(#0))" :exact-return-type t)
 (def-inline log :always (fixnum-float) :double "log((double)(#0))" :exact-return-type t)
-(def-inline log :always (fixnum-float) :float "(float)log((double)(#0))" :exact-return-type t)
+(def-inline log :always (fixnum-float) :float "logf((float)(#0))" :exact-return-type t)
 
 (def-inline sqrt :always (number) number "ecl_sqrt(#0)")
-(def-inline sqrt :always ((long-float 0.0 *)) :double "sqrt((double)(#0))")
+#+long-float
+(def-inline sqrt :always ((long-float 0.0 *)) :long-double "sqrtl((long double)(#0))")
 (def-inline sqrt :always ((double-float 0.0 *)) :double "sqrt((double)(#0))")
-(def-inline sqrt :always ((single-float 0.0 *)) :float "(float)sqrt((double)(#0))")
-(def-inline sqrt :always ((short-float 0.0 *)) :float "(float)sqrt((double)(#0))")
+(def-inline sqrt :always ((single-float 0.0 *)) :float "sqrtf((float)(#0))")
 
 (def-inline sin :always (number) number "ecl_sin(#0)")
+#+long-float
+(def-inline sin :always (fixnum-float) :long-double "sinl((long double)(#0))" :exact-return-type t)
 (def-inline sin :always (fixnum-float) :double "sin((double)(#0))" :exact-return-type t)
-(def-inline sin :always (fixnum-float) :float "(float)sin((double)(#0))" :exact-return-type t)
+(def-inline sin :always (fixnum-float) :float "sinf((float)(#0))" :exact-return-type t)
 
 (def-inline cos :always (t) number "ecl_cos(#0)")
+#+long-float
+(def-inline cos :always (fixnum-float) :long-double "cosl((long double)(#0))" :exact-return-type t)
 (def-inline cos :always (fixnum-float) :double "cos((double)(#0))" :exact-return-type t)
-(def-inline cos :always (fixnum-float) :float "(float)cos((double)(#0))" :exact-return-type t)
+(def-inline cos :always (fixnum-float) :float "cosf((float)(#0))" :exact-return-type t)
 
 (def-inline tan :always (t) number "ecl_tan(#0)")
+#+long-float
+(def-inline tan :always (fixnum-float) :long-double "tanl((long double)(#0))" :exact-return-type t)
 (def-inline tan :always (fixnum-float) :double "tan((double)(#0))" :exact-return-type t)
-(def-inline tan :always (fixnum-float) :float "(float)tan((double)(#0))" :exact-return-type t)
+(def-inline tan :always (fixnum-float) :float "tanf((float)(#0))" :exact-return-type t)
 
 (def-inline sinh :always (t) number "ecl_sinh(#0)")
+#+long-float
+(def-inline sinh :always (fixnum-float) :long-double "sinhl((long double)(#0))" :exact-return-type t)
 (def-inline sinh :always (fixnum-float) :double "sinh((double)(#0))" :exact-return-type t)
-(def-inline sinh :always (fixnum-float) :float "(float)sinh((double)(#0))" :exact-return-type t)
+(def-inline sinh :always (fixnum-float) :float "sinhf((float)(#0))" :exact-return-type t)
 
 (def-inline cosh :always (t) number "ecl_cosh(#0)")
+#+long-float
+(def-inline cosh :always (fixnum-float) :long-double "coshl((long double)(#0))" :exact-return-type t)
 (def-inline cosh :always (fixnum-float) :double "cosh((double)(#0))" :exact-return-type t)
-(def-inline cosh :always (fixnum-float) :float "(float)cosh((double)(#0))" :exact-return-type t)
+(def-inline cosh :always (fixnum-float) :float "coshf((float)(#0))" :exact-return-type t)
 
 (def-inline tanh :always (t) number "ecl_tanh(#0)")
+#+long-float
+(def-inline tanh :always (fixnum-float) :long-double "tanhl((long double)(#0))" :exact-return-type t)
 (def-inline tanh :always (fixnum-float) :double "tanh((double)(#0))" :exact-return-type t)
-(def-inline tanh :always (fixnum-float) :float "(float)tanh((double)(#0))" :exact-return-type t)
+(def-inline tanh :always (fixnum-float) :float "tanhf((float)(#0))" :exact-return-type t)
 
 ;; file package.d
 
