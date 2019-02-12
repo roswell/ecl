@@ -566,6 +566,12 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 # endif
 # define expf(x) exp((float)x)
 #endif
+#ifndef HAVE_POWF
+# ifdef powf
+#  undef powf
+# endif
+# define powf(x,y) pow((float)x,(float)y)
+#endif
 #ifndef HAVE_LOGF
 # ifdef logf
 #  undef logf

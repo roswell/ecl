@@ -507,6 +507,9 @@
 (def-inline expt :always ((integer 2 2) (integer 0 29)) :fixnum "(1<<(#1))")
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
+(def-inline expt :always ((long-float 0.0 *) long-float) :long-double "powl((long double)#0,(long double)#1)")
+(def-inline expt :always ((double-float 0.0 *) double-float) :double "pow((double)#0,(double)#1)")
+(def-inline expt :always ((single-float 0.0 *) single-float) :float "powf((float)#0,(float)#1)")
 
 #+long-float
 (def-inline log :always (fixnum-float) :long-double "logl((long double)(#0))" :exact-return-type t)

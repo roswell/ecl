@@ -725,7 +725,7 @@ AC_CHECK_DECL([feenableexcept],
               [AC_MSG_WARN(feenableexcept not declared: disabling floating point exceptions)],
               [#include <fenv.h>])
 
-AC_CHECK_FUNCS( [expf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
+AC_CHECK_FUNCS( [expf powf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
 		[floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \
                 [copysign] )
 

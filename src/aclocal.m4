@@ -6,7 +6,7 @@ AC_DEFUN([ECL_LONG_DOUBLE],[
 if test "$enable_longdouble" != "no" ; then
 AC_CHECK_TYPES([long double],[enable_longdouble=yes],[enable_longdouble=no])
 if test "$enable_longdouble" != "no" ; then
-AC_CHECK_FUNCS([sinl cosl tanl logl expl ldexpl frexpl],[],[enable_longdouble=no; break])
+AC_CHECK_FUNCS([sinl cosl tanl logl expl powl ldexpl frexpl],[],[enable_longdouble=no; break])
 if test "$enable_longdouble" != "no" ; then
 AC_DEFINE([ECL_LONG_FLOAT], [], [ECL_LONG_FLOAT])
 fi

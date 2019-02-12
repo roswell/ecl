@@ -268,6 +268,12 @@
 /* HAVE_POSIX_RWLOCK */
 #undef HAVE_POSIX_RWLOCK
 
+/* Define to 1 if you have the `powf' function. */
+#undef HAVE_POWF
+
+/* Define to 1 if you have the `powl' function. */
+#undef HAVE_POWL
+
 /* Define to 1 if the system has the type `pthread_rwlock_t'. */
 #undef HAVE_PTHREAD_RWLOCK_T
 
