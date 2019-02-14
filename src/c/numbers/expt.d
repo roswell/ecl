@@ -108,9 +108,11 @@ ecl_expt(cl_object x, cl_object y)
   } else if (tx == t_doublefloat && ty == t_doublefloat
              && ecl_double_float(x) >= 0.0) {
     z = ecl_make_double_float(pow(ecl_double_float(x), ecl_double_float(y)));
+#ifdef ECL_LONG_FLOAT
   } else if (tx == t_longfloat && ty == t_longfloat
              && ecl_long_float(x) >= 0.0l) {
     z = ecl_make_long_float(powl(ecl_long_float(x), ecl_long_float(y)));
+#endif
   } else if (ty != t_fixnum && ty != t_bignum) {
     /* The following could be just
        z = ecl_log1(x);
