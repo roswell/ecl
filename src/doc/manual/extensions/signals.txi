@@ -108,6 +108,7 @@ The other option is to let ECL handle signals itself. This would be safer when t
 
 @node Signals and Interrupts - Signals Reference
 @subsection Signals Reference
+
 @lspindex mp:with-interrupts
 @lspindex mp:without-interrupts
 
@@ -152,3 +153,80 @@ Care must be taken not to let either @code{mp:allow-with-interrupts} or @code{mp
 @end lisp
 
 @end defmac
+
+
+@lspindex ext:unix-signal-received
+@deftp Condition ext:unix-signal-received
+Unix signal condition
+
+@subsubheading Class Precedence List
+@code{condition, t}
+
+@subsubheading Methods
+@lspindex ext:unix-signal-received-code
+@defun ext:unix-signal-received-code condition
+Returns the signal code of @code{condition}
+@end defun
+@end deftp
+
+@lspindex ext:get-signal-handler
+@defun ext:get-signal-handler code
+Queries the currently active signal handler for @var{code}.
+@end defun
+
+@lspindex ext:set-signal-handler
+@defun ext:set-signal-handler code handler
+Arranges for the signal @var{code} to be caught in all threads and
+sets the signal handler for it. The value of @var{handler} modifies
+the signal handling behaviour as follows:
+@table @asis
+@item @var{handler} is a function designator
+The function designated by @var{handler} will be invoked with no
+arguments
+@item @var{handler} is a symbol denoting a condition type
+A continuable error of the given type will be signaled
+@item @var{handler} is equal to @var{code}
+A condition of type @code{ext:unix-signal-received} with the
+corresponding signal code will be signaled
+@item @var{handler} is @code{nil}
+The signal will be caught but no handler will be called
+@end table
+@end defun
+
+@lspindex ext:catch-signal
+@defun ext:catch-signal code flag &key process
+Changes the action taken on receiving the signal @var{code}.
+@var{flag} can be one of the following:
+@table @asis
+@item @code{nil} or @code{:ignore}
+Ignore the signal
+@item @code{:default}
+Use the default signal handling strategy of the operating system
+@item @code{t} or @code{:catch}
+Catch the signal and invoke the signal handler as given by @code{ext:get-signal-handler}
+@item @code{:mask}, @code{:unmask}
+Change the signal mask of either a) the not yet enabled @var{process}
+or b) the current process, if @var{process} is not supplied
+@end table
+Returns @code{t} on success and @code{nil} on failure.
+@end defun
+
+@exindex Setting a signal handler
+Example:
+@lisp
+CL-USER> (ext:catch-signal ext:+SIGPIPE+ :catch)
+T
+CL-USER> (ext:get-signal-handler ext:+SIGPIPE+)
+NIL
+CL-USER> (ext:set-signal-handler ext:+SIGPIPE+
+                                 #'(lambda ()
+                                     (format t "SIGPIPE detected in process: ~a~%" process)))
+#<bytecompiled-function 0x25ffca8>
+@end lisp
+Passing the SIGPIPE signal to the ECL program with @code{killall -s
+SIGPIPE ecl} results in the output:
+@example
+@verbatim
+SIGPIPE detected in process: #<process TOP-LEVEL 0x1ecdfc0>
+@end verbatim
+@end example
