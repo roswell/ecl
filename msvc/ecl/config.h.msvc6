@@ -201,7 +201,7 @@ typedef unsigned char ecl_base_char;
 #define ECL_SLOTS_LIMIT	32768
 
 /* compiler understands long double                                     */
-/* #undef ECL_LONG_FLOAT */
+#define ECL_LONG_FLOAT
 /* compiler understands complex                                         */
 /* #undef HAVE_DOUBLE_COMPLEX */
 /* #undef HAVE_FLOAT_COMPLEX */
