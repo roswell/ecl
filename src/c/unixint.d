@@ -337,15 +337,11 @@ handle_signal_now(cl_object signal_code, cl_object process)
                  * be a function, a symbol denoting a function or
                  * a symbol denoting a condition.
                  */
-                if (cl_find_class(2, signal_code, ECL_NIL) != ECL_NIL)
+                if (cl_find_class(2, signal_code, ECL_NIL) != ECL_NIL) {
                         cl_cerror(2, str_ignore_signal, signal_code);
-#ifdef ECL_THREADS
-                else if (!Null(process))
-                        _ecl_funcall3(signal_code, @':process', process);
-#endif
-                else
-                        _ecl_funcall1(signal_code);
-                break;
+                        break;
+                }
+                /* fallthrough */
         case t_cfun:
         case t_cfunfixed:
         case t_cclosure:

@@ -513,7 +513,7 @@ Use special code 0 to cancel this operation.")
   (restart-case (simple-terminal-interrupt)
     (continue ())))
 
-(defun terminal-interrupt (&key process (correctablep t))
+(defun terminal-interrupt (&key (correctablep t))
   (declare (ignore correctablep))
   #+threads
   (mp:without-interrupts
