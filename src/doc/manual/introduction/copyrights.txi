@@ -10,8 +10,9 @@ notice which is shipped with ECL.
 @verbatim
 ---- BEGINNING OF COPYRIGHT FOR THE ECL CORE ENVIRONMENT ------------
 
-Copyright (c) 2015, Daniel Kochmański
-Copyright (c) 2000, Juan Jose Garcia Ripoll
+Copyright (C) 2019, Daniel Kochmanski and Marius Gerbershagen
+Copyright (c) 2018, Daniel Kochmański
+Copyright (c) 2013, Juan Jose Garcia Ripoll
 Copyright (c) 1990, 1991, 1993 Giuseppe Attardi
 Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
 All Rights Reserved
