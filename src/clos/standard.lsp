@@ -164,7 +164,6 @@
     (finalize-inheritance class)))
 
 (defmethod initialize-instance ((class class) &rest initargs &key direct-slots direct-superclasses)
-  (declare (ignore sealedp))
   ;; convert the slots from lists to direct slots
   (apply #'call-next-method class
          :direct-slots
@@ -220,7 +219,7 @@
 (defmethod shared-initialize ((class std-class) slot-names &rest initargs &key
                               (optimize-slot-access (list *optimize-slot-access*))
                               sealedp)
-  (declare (ignore initargs slot-names))
+  (declare (ignore slot-names))
   (setf (slot-value class 'optimize-slot-access) (first optimize-slot-access)
         (slot-value class 'sealedp) (and sealedp t))
   (setf class (call-next-method))
@@ -632,11 +631,11 @@ because it contains a reference to the undefined class~%  ~A"
     (do* ((name-loc initargs (cddr name-loc))
           (allow-other-keys nil)
           (allow-other-keys-found nil)
-          (unknown-key nil))
+          (unknown-key-names nil))
          ((null name-loc)
-          (when (and (not allow-other-keys) unknown-key)
-            (simple-program-error "Unknown initialization option ~S for class ~A"
-                                  unknown-key class)))
+          (when (and (not allow-other-keys) unknown-key-names)
+            (simple-program-error "Unknown initialization options ~S for class ~A."
+                                  (nreverse unknown-key-names) class)))
       (let ((name (first name-loc)))
         (cond ((null (cdr name-loc))
                (simple-program-error "No value supplied for the init-name ~S." name))
@@ -652,7 +651,7 @@ because it contains a reference to the undefined class~%  ~A"
               ((member name cached-keywords))
               ((and methods (member name methods :test #'member :key #'method-keywords)))
               (t
-               (setf unknown-key name)))))))
+               (push name unknown-key-names)))))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Methods
