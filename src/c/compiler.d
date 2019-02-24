@@ -1473,6 +1473,9 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
 static int
 c_go(cl_env_ptr env, cl_object args, int flags) {
   cl_object tag = pop(&args);
+  if (Null(tag)) {
+    tag = ECL_NIL_SYMBOL;
+  }
   cl_object info = c_tag_ref(env, tag, @':tag');
   if (Null(info))
     FEprogram_error("GO: Unknown tag ~S.", 1, tag);
@@ -2060,6 +2063,9 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
   /* count the tags */
   for (nt = 0, body = args; !Null(body); ) {
     label = pop(&body);
+    if (Null(label)) {
+      label = ECL_NIL_SYMBOL;
+    }
     item_type = ecl_t_of(label);
     if (item_type == t_symbol || item_type == t_fixnum ||
         item_type == t_bignum) {
@@ -2080,6 +2086,9 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
 
   for (body = args; !Null(body); ) {
     label = pop(&body);
+    if (Null(label)) {
+      label = ECL_NIL_SYMBOL;
+    }
     item_type = ecl_t_of(label);
     if (item_type == t_symbol || item_type == t_fixnum ||
         item_type == t_bignum) {
