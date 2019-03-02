@@ -1791,7 +1791,7 @@ cl_symbols[] = {
 
 {EXT_ "*ACTION-ON-UNDEFINED-VARIABLE*",NULL},
 
-{SYS_ "SET-BUFFERING-MODE","si_set_buffering_mode"},
+{EXT_ "SET-BUFFERING-MODE","si_set_buffering_mode"},
 {KEY_ "NONE",NULL},
 {KEY_ "LINE-BUFFERED",NULL},
 {KEY_ "FULLY-BUFFERED",NULL},
