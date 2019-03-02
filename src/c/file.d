@@ -345,7 +345,7 @@ generic_read_byte_signed8(cl_object strm)
 static void
 generic_write_byte_signed8(cl_object byte, cl_object strm)
 {
-  signed char c = fixint(byte);
+  signed char c = ecl_to_int8_t(byte);
   strm->stream.ops->write_byte8(strm, (unsigned char *)&c, 1);
 }
 
