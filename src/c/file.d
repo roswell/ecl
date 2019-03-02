@@ -808,9 +808,9 @@ ucs_4_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
   stream->stream.decoder = ucs_4be_decoder;
   stream->stream.encoder = ucs_4be_encoder;
-  buffer[0] = 0xFF;
-  buffer[1] = 0xFE;
-  buffer[2] = buffer[3] = 0;
+  buffer[0] = buffer[1] = 0;
+  buffer[2] = 0xFE;
+  buffer[3] = 0xFF;
   return 4 + ucs_4be_encoder(stream, buffer+4, c);
 }
 
@@ -929,8 +929,8 @@ ucs_2_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
   stream->stream.decoder = ucs_2be_decoder;
   stream->stream.encoder = ucs_2be_encoder;
-  buffer[0] = 0xFF;
-  buffer[1] = 0xFE;
+  buffer[0] = 0xFE;
+  buffer[1] = 0xFF;
   return 2 + ucs_2be_encoder(stream, buffer+2, c);
 }
 

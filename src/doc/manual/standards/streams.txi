@@ -55,14 +55,14 @@ and the table of known symbols is shown below. Note how some symbols (@code{:cr}
 @item @code{:cr} @tab @code{#\Newline} is @code{Carriage Return} @tab No
 @item @code{:crlf} @tab @code{#\Newline} is @code{Carriage Return} followed by @code{Linefeed} @tab No
 @item @code{:lf} @tab @code{#\Newline} is @code{Linefeed} @tab No
-@item @code{:little-endian} @tab Modify UCS to use little endian encoding. @tab No
-@item @code{:big-endian} @tab Modify UCS to use big endian encoding. @tab No
+@item @code{:little-endian} @tab Modify UCS to use little-endian encoding. @tab No
+@item @code{:big-endian} @tab Modify UCS to use big-endian encoding. @tab No
 @item @code{:utf-8 :utf8} @tab Unicode UTF-8 @tab Yes
-@item @code{:ucs-2 :ucs2 :utf-16 :utf16 :unicode} @tab UCS-2 encoding with BOM. @tab Yes
-@item @code{:ucs-2le :ucs2le :utf-16le} @tab UCS-2 with big-endian encoding @tab Yes
+@item @code{:ucs-2 :ucs2 :utf-16 :utf16 :unicode} @tab UCS-2 encoding with BOM. Defaults to big-endian when writing or if no BOM is detected when reading. @tab Yes
+@item @code{:ucs-2le :ucs2le :utf-16le} @tab UCS-2 with little-endian encoding @tab Yes
 @item @code{:ucs-2be :ucs2be :utf-16be} @tab UCS-2 with big-endian encoding @tab Yes
-@item @code{:ucs-4 :ucs4 :utf-32 :utf32} @tab UCS-4 encoding with BOM. @tab Yes
-@item @code{:ucs-4le :ucs4le :utf-32le} @tab UCS-4 with big-endian encoding @tab Yes
+@item @code{:ucs-4 :ucs4 :utf-32 :utf32} @tab UCS-4 encoding with BOM. Defaults to big-endian when writing or if no BOM is detected when reading. @tab Yes
+@item @code{:ucs-4le :ucs4le :utf-32le} @tab UCS-4 with little-endian encoding @tab Yes
 @item @code{:ucs-4be :ucs4be :utf-32be} @tab UCS-4 with big-endian encoding @tab Yes
 @item @code{:iso-8859-1 :iso8859-1 :latin-1 :cp819 :ibm819} @tab Latin-1 encoding @tab Yes
 @item @code{:iso-8859-2 :iso8859-2 :latin-2 :latin2} @tab Latin-2 encoding @tab Yes
