@@ -385,22 +385,22 @@
 (def-inline /= :always (t t) :bool "!ecl_number_equalp(#0,#1)")
 (def-inline /= :always (fixnum-float fixnum-float) :bool "(#0)!=(#1)")
 
-(def-inline < :always (t t) :bool "ecl_number_compare(#0,#1)<0")
+(def-inline < :always (t t) :bool "ecl_lower(#0,#1)")
 (def-inline < :always (fixnum-float fixnum-float) :bool "(#0)<(#1)")
 (def-inline < :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)<(#1) && (#1)<(#2))")
 
-(def-inline > :always (t t) :bool "ecl_number_compare(#0,#1)>0")
+(def-inline > :always (t t) :bool "ecl_greater(#0,#1)")
 (def-inline > :always (fixnum-float fixnum-float) :bool "(#0)>(#1)")
 (def-inline > :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)>(#1) && (#1)>(#2))")
 
-(def-inline <= :always (t t) :bool "ecl_number_compare(#0,#1)<=0")
+(def-inline <= :always (t t) :bool "ecl_lowereq(#0,#1)")
 (def-inline <= :always (fixnum-float fixnum-float) :bool "(#0)<=(#1)")
 (def-inline <= :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)<=(#1) && (#1)<=(#2))")
 
-(def-inline >= :always (t t) :bool "ecl_number_compare(#0,#1)>=0")
+(def-inline >= :always (t t) :bool "ecl_greatereq(#0,#1)")
 (def-inline >= :always (fixnum-float fixnum-float) :bool "(#0)>=(#1)")
 (def-inline >= :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)>=(#1) && (#1)>=(#2))")

@@ -1191,10 +1191,17 @@ extern ECL_API cl_object cl_min _ECL_ARGS((cl_narg narg, cl_object min, ...));
 
 extern ECL_API int ecl_number_equalp(cl_object x, cl_object y);
 extern ECL_API int ecl_number_compare(cl_object x, cl_object y);
+#ifdef ECL_IEEE_FP
+#define ecl_lowereq(x,y) (!ecl_float_nan_p(x) && !ecl_float_nan_p(y) && ecl_number_compare((x),(y)) <= 0)
+#define ecl_greatereq(x,y) (!ecl_float_nan_p(x) && !ecl_float_nan_p(y) && ecl_number_compare((x),(y)) >= 0)
+#define ecl_lower(x,y) (!ecl_float_nan_p(x) && !ecl_float_nan_p(y) && ecl_number_compare((x),(y)) < 0)
+#define ecl_greater(x,y) (!ecl_float_nan_p(x) && !ecl_float_nan_p(y) && ecl_number_compare((x),(y)) > 0)
+#else
 #define ecl_lowereq(x,y) (ecl_number_compare((x),(y)) <= 0)
 #define ecl_greatereq(x,y) (ecl_number_compare((x),(y)) >= 0)
 #define ecl_lower(x,y) (ecl_number_compare((x),(y)) < 0)
 #define ecl_greater(x,y) (ecl_number_compare((x),(y)) > 0)
+#endif
 
 /* num_log.c */
 
