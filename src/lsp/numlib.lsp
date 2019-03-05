@@ -126,7 +126,15 @@ Returns zero for non-complex numbers."
   "Args: (number)
 Returns a number that represents the sign of NUMBER.  Returns NUMBER If it is
 zero.  Otherwise, returns the value of (/ NUMBER (ABS NUMBER))"
-  (if (zerop x) x (/ x (abs x))))
+  (if (complexp x)
+      (cis (atan (imagpart x) (realpart x)))
+      (let ((result (cond ((> x 0) 1)
+                          ((< x 0) -1)
+                          (t ; x is 0 or NaN
+                           x))))
+        (if (floatp x)
+            (float result x)
+            result))))
 
 (defun cis (x)
   "Args: (radians)
