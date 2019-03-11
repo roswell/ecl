@@ -628,7 +628,7 @@ Use special code 0 to cancel this operation.")
     (function (funcall *tpl-prompt-hook*))
     (t (fresh-line)
        (format t "~A~V,,,'>A "
-               (if (eq *package* (find-package 'user))
+               (if (eq *package* (find-package 'cl-user))
                    ""
                  (package-name *package*))
                (- *tpl-level* *step-level* -1)
