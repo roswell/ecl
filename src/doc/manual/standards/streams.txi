@@ -55,14 +55,14 @@ and the table of known symbols is shown below. Note how some symbols (@code{:cr}
 @item @code{:cr} @tab @code{#\Newline} is @code{Carriage Return} @tab No
 @item @code{:crlf} @tab @code{#\Newline} is @code{Carriage Return} followed by @code{Linefeed} @tab No
 @item @code{:lf} @tab @code{#\Newline} is @code{Linefeed} @tab No
-@item @code{:little-endian} @tab Modify UCS to use little endian encoding. @tab No
-@item @code{:big-endian} @tab Modify UCS to use big endian encoding. @tab No
+@item @code{:little-endian} @tab Modify UCS to use little-endian encoding. @tab No
+@item @code{:big-endian} @tab Modify UCS to use big-endian encoding. @tab No
 @item @code{:utf-8 :utf8} @tab Unicode UTF-8 @tab Yes
-@item @code{:ucs-2 :ucs2 :utf-16 :utf16 :unicode} @tab UCS-2 encoding with BOM. @tab Yes
-@item @code{:ucs-2le :ucs2le :utf-16le} @tab UCS-2 with big-endian encoding @tab Yes
+@item @code{:ucs-2 :ucs2 :utf-16 :utf16 :unicode} @tab UCS-2 encoding with BOM. Defaults to big-endian when writing or if no BOM is detected when reading. @tab Yes
+@item @code{:ucs-2le :ucs2le :utf-16le} @tab UCS-2 with little-endian encoding @tab Yes
 @item @code{:ucs-2be :ucs2be :utf-16be} @tab UCS-2 with big-endian encoding @tab Yes
-@item @code{:ucs-4 :ucs4 :utf-32 :utf32} @tab UCS-4 encoding with BOM. @tab Yes
-@item @code{:ucs-4le :ucs4le :utf-32le} @tab UCS-4 with big-endian encoding @tab Yes
+@item @code{:ucs-4 :ucs4 :utf-32 :utf32} @tab UCS-4 encoding with BOM. Defaults to big-endian when writing or if no BOM is detected when reading. @tab Yes
+@item @code{:ucs-4le :ucs4le :utf-32le} @tab UCS-4 with little-endian encoding @tab Yes
 @item @code{:ucs-4be :ucs4be :utf-32be} @tab UCS-4 with big-endian encoding @tab Yes
 @item @code{:iso-8859-1 :iso8859-1 :latin-1 :cp819 :ibm819} @tab Latin-1 encoding @tab Yes
 @item @code{:iso-8859-2 :iso8859-2 :latin-2 :latin2} @tab Latin-2 encoding @tab Yes
@@ -107,21 +107,62 @@ and the table of known symbols is shown below. Note how some symbols (@code{:cr}
 
 @node Streams - Dictionary
 @subsection Dictionary
-@lspindex open
-@lspindex si:set-buffering-mode
 
-@defun open filename &key (direction :input) (element-type character) if-exists if-does-not-exist (external-format :default) (cstream t)
-Open a file stream
-@subsubheading Synopsis
-@table @var
-@item cstream
-A generalized boolean; If true, internally use a C @code{FILE*} stream, else a POSIX file descriptor
-@end table
+@subsubsection Sequence Streams
+
+@lspindex ext:sequence-stream
+@deftp {System Class} ext:sequence-stream
+
+@subsubheading Class Precedence List
+@code{ext:sequence-stream, stream, t}
+
 @subsubheading Description
-All keyword arguments except @var{cstream} behave as specified by the ANSI standard @bibcite{ANSI}.
+Sequence streams work similar to string streams for vectors. The
+supplied vectors that the streams read from or write to must have a
+byte sized element type, i.e. @code{(signed-byte 8)},
+@code{(unsigned-byte 8)} or @code{base-char}.
+
+The semantics depend on the vector element type and the external
+format of the stream. If no external format is supplied and the
+element type is an integer type, the stream is a binary stream and
+accepts only integers of the same type as the element type of the
+vector. Otherwise, the stream accepts both characters and integers and
+converts them using the given external format. If the element type is
+@code{base-char}, the elements of the vectors are treated as bytes.
+This means that writing a character may use multiple elements of the
+vector, whose @code{char-code}s will be equal to the values of the
+bytes comprising the character in the given external format.
+@end deftp
+
+@lspindex ext:make-sequence-input-stream
+@defun ext:make-sequence-input-stream vector &key (start 0) (end nil) (external-format nil)
+Create a sequence input stream with the subsequence bounded by
+@var{start} and @var{end} of the given vector.
+@end defun
+@lspindex ext:make-sequence-output-stream
+@defun ext:make-sequence-output-stream vector &key (external-format nil)
+Create a sequence output stream.
 @end defun
 
-@defun si:set-buffering-mode stream mode
+@exindex Using sequence streams
+Example:
+
+Using sequence streams to convert to a UTF8 encoded base string
+@lisp
+CL-USER> (defvar *output* (make-array 20 :element-type 'base-char :adjustable t :fill-pointer 0))
+*OUTPUT*
+CL-USER> (defvar *stream* (ext:make-sequence-output-stream *output* :external-format :utf-8))
+*STREAM*
+CL-USER> (write-string "Spätzle mit Soß'" *stream*)
+"Spätzle mit Soß'"
+CL-USER> *output*
+"SpÃ¤tzle mit SoÃ\237'"
+@end lisp
+
+@subsubsection File Stream Extensions
+
+@lspindex ext:set-buffering-mode
+@defun ext:set-buffering-mode stream mode
 Control the buffering mode of a stream
 @subsubheading Synopsis
 @table @var
@@ -129,10 +170,139 @@ Control the buffering mode of a stream
 an ANSI stream
 @item mode
 one of @code{nil}, @code{:none}, @code{:line}, @code{:line-buffered}, @code{:full} or @code{:full-buffered}
+@item returns
+The supplied stream
 @end table
 @subsubheading Description
-If @var{mode} is @code{nil} or @code{:none}, @var{stream} will not be buffered, if it is @code{:line} or @code{:line-buffered} resp. @code{:full} or @code{:full-buffered}, @var{stream} will be line resp. fully buffered. Streams created with the @code{:cstream} argument to @code{open} set to @code{nil} will never be buffered.
+If @var{mode} is @code{nil} or @code{:none}, @var{stream} will not be
+buffered, if it is @code{:line} or @code{:line-buffered} resp.
+@code{:full} or @code{:fully-buffered}, @var{stream} will be line resp.
+fully buffered. If the stream does not support buffering, nothing will
+happen.
 @end defun
+
+@lspindex ext:file-stream-fd
+@defun ext:file-stream-fd file-stream
+Return the POSIX file descriptor of @var{file-stream} as an integer
+@end defun
+
+@subsubsection External Format Extensions
+
+@lspindex ext:all-encodings
+@defun ext:all-encodings
+Return a list of all supported external formats
+@end defun
+
+@lspindex ext:character-coding-error
+@deftp Condition ext:character-coding-error
+
+Character coding error
+
+@subsubheading Class Precedence List
+@code{ext:character-coding-error, error, serious-condition, condition, t}
+
+@subsubheading Methods
+@lspindex ext:character-coding-error-external-format
+@defun ext:character-coding-error-external-format condition
+@table @var
+@item returns
+The external format of @var{condition}
+@end table
+@end defun
+
+@subsubheading Description
+Superclass of @code{ext:character-encoding-error} and @code{ext:character-decoding-error}.
+@end deftp
+
+@lspindex ext:character-encoding-error
+@deftp Condition ext:character-encoding-error
+
+Character encoding error
+
+@subsubheading Class Precedence List
+@code{ext:character-encoding-error, ext:character-coding-error, error, serious-condition, condition, t}
+
+@subsubheading Methods
+@lspindex ext:character-encoding-error-code
+@defun ext:character-encoding-error-code condition
+@table @var
+@item returns
+The character code of the character, which can't be encoded
+@end table
+@end defun
+
+@subsubheading Description
+Condition for characters, which can't be encoded with some external
+format.
+@end deftp
+
+
+@lspindex ext:character-decoding-error
+@deftp Condition ext:character-decoding-error
+
+Character decoding error
+
+@subsubheading Class Precedence List
+@code{ext:character-decoding-error, ext:character-coding-error, error, serious-condition, condition, t}
+
+@subsubheading Methods
+@lspindex ext:character-decoding-error-octects
+@defun ext:character-decoding-error-octects condition
+@table @var
+@item returns
+A list of integers with the values of the @code{unsigned char}'s which
+can't be decoded.
+@end table
+@end defun
+
+@subsubheading Description
+Condition for characters, which can't be decoded with some external
+format.
+@end deftp
+
+@lspindex ext:stream-encoding-error
+@deftp Condition ext:stream-encoding-error
+
+Stream encoding error
+
+@subsubheading Class Precedence List
+@code{ext:stream-encoding-error, ext:character-encoding-error, ext:character-coding-error, stream-error, error, serious-condition, condition, t}
+
+@subsubheading Description
+This condition is signaled when trying to write a character to a
+stream, which can't be encoded with the streams external format.
+@end deftp
+
+
+@lspindex ext:stream-decoding-error
+@deftp Condition ext:stream-decoding-error
+
+Stream decoding error
+
+@subsubheading Class Precedence List
+@code{ext:stream-decoding-error, ext:character-decoding-error, ext:character-coding-error, stream-error, error, serious-condition, condition, t}
+
+@subsubheading Description
+This condition is signaled when trying to read a character from a
+ stream, which can't be decoded with the streams external format.
+@end deftp
+
+@lspindex ext:encoding-error
+@defun ext:encoding-error stream external-format code
+Signal a @code{ext:stream-encoding-error} with the given
+@var{external-format} and @var{code}. Make a restart available so
+that the error can be ignored or the character can be replaced with a
+different one.
+@end defun
+
+@lspindex ext:decoding-error
+@defun ext:decoding-error stream external-format octects
+Signal a @code{ext:stream-decoding-error} with the given
+@var{external-format} and @var{octets}. Make a restart available so
+that the error can be ignored or the octets can be replaced with a
+character.
+@end defun
+
 
 @node Streams - C Reference
 @subsection C Reference
