@@ -11,7 +11,8 @@ package is obtained when loading the ASDF library with @code{(require 'asdf)}.
 @caption{ECL packages}
 @multitable @columnfractions .25 .25 .2 .3
 @headitem Name @tab Nickname @tab In module @tab Description
-@item @code{COMMON-LISP} @tab @code{CL, LISP} @tab @code{ECL core} @tab Main Common Lisp package.
+@item @code{COMMON-LISP} @tab @code{CL} @tab @code{ECL core} @tab Main Common Lisp package.
+@item @code{COMMON-LISP-USER} @tab @code{CL-USER} @tab @code{ECL core} @tab User package.
 @item @code{CLOS} @tab @code{MOP} @tab @code{ECL core} @tab Symbols from the AMOP.
 @item @code{EXT} @tab @code{ } @tab @code{ECL core} @tab ECL extensions to the language & library.
 @item @code{SYSTEM} @tab @code{SI, SYS} @tab @code{ECL core} @tab Functions and variables internal to the implementation. Never to be used.
