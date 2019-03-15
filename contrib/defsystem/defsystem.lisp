@@ -887,7 +887,7 @@
               (fboundp 'system::require))
 
     #-:lispworks
-    (in-package "LISP")
+    (in-package "COMMON-LISP")
     #+:lispworks
     (in-package "SYSTEM")
 
@@ -1173,16 +1173,16 @@
 #|
 #-(or :sbcl :cmu :ccl :allegro :excl :lispworks :symbolics)
 (eval-when (compile load eval)
-  (import *exports* #-(or :cltl2 :lispworks) "USER"
+  (import *exports* #-(or :cltl2 :lispworks) "CL-USER"
                     #+(or :cltl2 :lispworks) "COMMON-LISP-USER")
-  (import *special-exports* #-(or :cltl2 :lispworks) "USER"
+  (import *special-exports* #-(or :cltl2 :lispworks) "CL-USER"
                             #+(or :cltl2 :lispworks) "COMMON-LISP-USER"))
 #+(or :sbcl :cmu :ccl :allegro :excl :lispworks :symbolics)
 (eval-when (compile load eval)
-  (import *exports* #-(or :cltl2 :lispworks) "USER"
+  (import *exports* #-(or :cltl2 :lispworks) "CL-USER"
                     #+(or :cltl2 :lispworks) "COMMON-LISP-USER")
   (shadowing-import *special-exports*
-                    #-(or :cltl2 :lispworks) "USER"
+                    #-(or :cltl2 :lispworks) "CL-USER"
                     #+(or :cltl2 :lispworks) "COMMON-LISP-USER"))
 |#
 
