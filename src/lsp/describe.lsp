@@ -565,7 +565,7 @@ Prints information about OBJECT to STREAM."
              (values))))
 
 (defun help* (string &optional (package "CL"))
-  "Args: (string &optional (package-spec 'lisp))
+  "Args: (string &optional (package-spec 'common-lisp))
 ECL specific.
 Prints the documentation associated with those symbols in the specified
 package whose print names contain STRING as substring.  STRING may be a

@@ -5,7 +5,7 @@
 ;;
 ;; Configuration file for ECL
 ;;
-(in-package "LISP")
+(in-package "COMMON-LISP")
 
 #+(and (not ecl-min) (not nacl) (not windows) (not mingw32) uname)
 (ffi:clines "

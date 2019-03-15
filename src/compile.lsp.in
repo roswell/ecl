@@ -56,7 +56,7 @@
 ;;; * Trick to make names shorter in C files
 ;;;
 (si::package-lock "CL" nil)
-(rename-package "CL" "CL" '("COMMON-LISP" "LISP"))
+(rename-package "CL" "CL" '("COMMON-LISP"))
 
 ;;;
 ;;; * Add include path to not yet installed headers, and remove include flag
