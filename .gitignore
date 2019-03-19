@@ -37,6 +37,7 @@ msvc/gmp/msvc-build
 msvc/gmp/*.[ch]
 msvc/lsp/*.lsp
 msvc/lsp/*.[ch]
+msvc/package-locks.asd
 
 BUILD-STAMP
 MODULES
