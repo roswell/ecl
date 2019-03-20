@@ -877,8 +877,8 @@
            #+(or :lucid)
            (compile load eval)
 
-  (unless (or (fboundp 'lisp::require)
-              (fboundp 'user::require)
+  (unless (or (fboundp 'common-lisp::require)
+              (fboundp 'common-lisp-user::require)
 
               #+(and :excl (and allegro-version>= (version>= 4 0)))
               (fboundp 'cltl1::require)
@@ -4347,7 +4347,7 @@ used with caution.")
 (unless *old-require*
   (setf *old-require*
         (symbol-function
-         #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'lisp:require
+         #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'common-lisp:require
          #+(and :excl :allegro-v4.0) 'cltl1:require
          #+:sbcl 'cl:require
          #+:lispworks3.1 'common-lisp::require
@@ -4361,7 +4361,7 @@ used with caution.")
           (ccl:*warn-if-redefine-kernel* nil))
       #-(or :ecl (and allegro-version>= (version>= 4 1)) :lispworks)
       (setf (symbol-function
-             #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'lisp:require
+             #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'common-lisp:require
              #+(and :excl :allegro-v4.0) 'cltl1:require
              #+:lispworks3.1 'common-lisp::require
              #+:sbcl 'cl:require
@@ -4373,7 +4373,7 @@ used with caution.")
       #+:ecl
       (progn
         (ext:package-lock "CL" nil)
-        (setf (symbol-function 'lisp:require)
+        (setf (symbol-function 'common-lisp:require)
               (symbol-function 'new-require))
         (ext:package-lock "CL" t))
       #+:lispworks
@@ -4388,7 +4388,7 @@ used with caution.")
         (setq system::*packages-for-warn-on-redefinition* warn-packs))
       #+(and allegro-version>= (version>= 4 1))
       (excl:without-package-locks
-       (setf (symbol-function 'lisp:require)
+       (setf (symbol-function 'common-lisp:require)
          (symbol-function 'new-require))))))
 )
 
@@ -4545,7 +4545,7 @@ used with caution.")
   #+:sbcl (sb-ext:run-program program arguments)
   #+:lispworks (foreign:call-system-showing-output
                 (format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
-  #+clisp (#+lisp=cl ext:run-program #-lisp=cl lisp:run-program
+  #+clisp (#+lisp=cl ext:run-program #-lisp=cl common-lisp:run-program
                      program :arguments arguments)
   )
 
