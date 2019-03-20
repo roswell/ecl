@@ -313,14 +313,18 @@
       (or (equal old-def new-def)
           (destructuring-bind (old-slot-name old-init old-type old-read-only old-offset old-ac)
               old-def
-            (declare (ignore old-init read-only old-ac))
+            (declare (ignore old-init old-read-only old-ac))
             (destructuring-bind (new-slot-name new-init new-type new-read-only new-offset new-ac)
                 new-def
               (declare (ignore new-init new-read-only new-ac))
               (and (eql old-slot-name new-slot-name)
                    (= old-offset new-offset)
-                   (and (subtypep old-type new-type)
-                        (subtypep new-type old-type)))))
+                   (and (multiple-value-bind (subtypep certain)
+                            (subtypep old-type new-type)
+                          (or (not certain) subtypep))
+                        (multiple-value-bind (subtypep certain)
+                            (subtypep new-type old-type)
+                          (or (not certain) subtypep))))))
           (return-from %struct-layout-compatible-p nil)))))
 
 (defun define-structure (name conc-name type named slots slot-descriptions
