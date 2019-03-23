@@ -450,8 +450,12 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
                 (setq include (cdar os))
                 (unless (get-sysprop v 'IS-A-STRUCTURE)
                   (error "~S is an illegal included structure." v)))
-               (:PRINT-FUNCTION (setq print-function v))
-               (:PRINT-OBJECT (setq print-object v))
+               (:PRINT-FUNCTION (setq print-function (if (symbolp v)
+                                                         `(quote ,v)
+                                                         `(function ,v))))
+               (:PRINT-OBJECT (setq print-object (if (symbolp v)
+                                                     `(quote ,v)
+                                                     `(function ,v))))
                (:TYPE (setq type v))
                (:INITIAL-OFFSET (setq initial-offset v))
                (t (error "~S is an illegal defstruct option." o))))
@@ -562,7 +566,7 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
     ;;
     (let ((core `(define-structure ',name ',conc-name ',type ',named ',slots
                                    ',slot-descriptions ',copier ',include
-                                   ',print-function ',print-object ',constructors
+                                   ,print-function ,print-object ',constructors
                                    ',offset ',name-offset
                                    ',documentation ',predicate))
           (constructors (mapcar #'(lambda (constructor)
