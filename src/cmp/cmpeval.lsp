@@ -157,9 +157,8 @@
                   (push v all-values)
                   (return nil))
            finally
-             (return (c1constant-value
-                      (apply fname (nreverse all-values))
-                      :only-small-values nil)))
+             (return (c1expr `(values ,@(multiple-value-list
+                                         (apply fname (nreverse all-values)))))))
       (error (c)))))
 
 (defun c2expr (form)
