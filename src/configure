@@ -9498,6 +9498,29 @@ else
 fi
 
 
+  if test "${system_libatomic}" = yes; then
+                OLD_LIBS="${LIBS}"
+    LIBS="${LIBS} -latomic_ops"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <atomic_ops.h>
+int
+main ()
+{
+AO_nop();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  system_libatomic=yes
+else
+  system_libatomic=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    LIBS="${OLD_LIBS}"
+  fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking libatomic-ops version " >&5
 $as_echo_n "checking libatomic-ops version ... " >&6; }
   if test "${enable_libatomic}" = auto; then

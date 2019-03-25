@@ -932,6 +932,18 @@ case "${enable_libatomic}" in
 esac
 if test "x${enable_threads}" != "xno"; then
   AC_CHECK_HEADER([atomic_ops.h],[system_libatomic=yes],[system_libatomic=no],[])
+  if test "${system_libatomic}" = yes; then
+    dnl checking that we can link against libatomic_ops requires a
+    dnl manual AC_LINK_IFELSE call, since all functionality could be
+    dnl implemented by macros
+    OLD_LIBS="${LIBS}"
+    LIBS="${LIBS} -latomic_ops"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <atomic_ops.h>]],
+                                    [[AO_nop();]])],
+                   [system_libatomic=yes],
+                   [system_libatomic=no])
+    LIBS="${OLD_LIBS}"
+  fi
   AC_MSG_CHECKING( [libatomic-ops version] )
   if test "${enable_libatomic}" = auto; then
     if test "${system_libatomic}" = yes; then
