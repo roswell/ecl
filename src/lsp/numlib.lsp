@@ -319,7 +319,7 @@ Returns the hyperbolic arc tangent of NUMBER."
   (declare (number z) (si::c-local))
   (/ (- (log (1+ z)) (log (- 1 z))) 2))
 
-(defun ffloor (x &optional (y 1))
+(defun ffloor (x &optional (y 1.0f0))
   "Args: (number &optional (divisor 1))
 Same as FLOOR, but returns a float as the first value."
   (multiple-value-bind (i r) (floor x y)

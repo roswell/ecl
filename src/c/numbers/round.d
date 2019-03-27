@@ -26,7 +26,7 @@
 @(defun round (x &optional (y OBJNULL))
   @
   if (narg == 1)
-  return ecl_round1(x);
+    return ecl_round1(x);
   else
     return ecl_round2(x, y);
   @)
