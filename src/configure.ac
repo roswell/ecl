@@ -237,9 +237,9 @@ AC_ARG_ENABLE(longdouble,
 
 AC_ARG_ENABLE(c99complex,
   AS_HELP_STRING( [--enable-c99complex],
-                  [include support for C complex type]
-                  [(default=NO)]),
-  [enable_c99complex=${enableval}], [enable_c99complex=no])
+                  [include support for c99 complex floats]
+                  [(default=auto)]),
+  [enable_c99complex=${enableval}], [enable_c99complex=auto])
 
 AC_ARG_ENABLE(smallcons,
   AS_HELP_STRING( [--enable-smallcons],
@@ -715,9 +715,7 @@ ECL_FILE_STRUCTURE
 ECL_FPE_MODEL
 ECL_SSE
 ECL_LONG_DOUBLE
-if test "$enable_c99complex" != "no" ; then
-AC_CHECK_TYPES([double complex, float complex],[],[],[#include <complex.h>])
-fi
+ECL_COMPLEX_C99
 
 dnl -----------------------------------------------------------------------
 dnl Study the call conventions
