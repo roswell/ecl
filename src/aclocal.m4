@@ -1,18 +1,23 @@
 dnl -*- autoconf -*-
 
 dnl --------------------------------------------------------------
-dnl check existence of long double and supporting functions
+dnl check existence of long double
 AC_DEFUN([ECL_LONG_DOUBLE],[
-if test "$enable_longdouble" != "no" ; then
-AC_CHECK_TYPES([long double],[enable_longdouble=yes],[enable_longdouble=no])
-if test "$enable_longdouble" != "no" ; then
-AC_CHECK_FUNCS([sinl cosl tanl logl expl powl ldexpl frexpl],[],[enable_longdouble=no; break])
-if test "$enable_longdouble" != "no" ; then
-AC_DEFINE([ECL_LONG_FLOAT], [], [ECL_LONG_FLOAT])
-fi
-fi
-fi
-])
+  if test "$enable_longdouble" != "no" ; then
+    AC_CHECK_TYPES([long double],
+                   [enable_longdouble=yes, AC_DEFINE([ECL_LONG_FLOAT], [], [ECL_LONG_FLOAT])]
+                   [enable_longdouble=no])
+  fi])
+
+dnl --------------------------------------------------------------
+dnl check for existence of complex float
+AC_DEFUN([ECL_COMPLEX_C99],[
+  if test "$enable_c99complex" != "no" ; then
+    AC_CHECK_TYPES([float complex, double complex, long complex],
+                   [enable_c99complex=yes, AC_DEFINE([ECL_COMPLEX_FLOAT], [], [ECL_COMPLEX_FLOAT])],
+                   [enable_c99complex=no],
+                   [#include <complex.h>])
+  fi])
 
 dnl --------------------------------------------------------------
 dnl http://autoconf-archive.cryp.to/ac_c_long_long_.html
