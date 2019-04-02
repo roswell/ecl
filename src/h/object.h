@@ -41,7 +41,7 @@ typedef enum {
         t_start = 0,
         t_list = 1,
         /* The most specific numeric types come first. Assumed by
-           some routines, like cl_expt */
+           some routines, like cl_expt. See ANSI 12.1.1.2. */
         t_character = 2,        /* immediate character */
         t_fixnum = 3,           /* immediate fixnum */
         t_bignum = 4,
@@ -53,6 +53,11 @@ typedef enum {
         t_longfloat,
 #endif
         t_complex,
+#ifdef ECL_COMPLEX_FLOAT
+        t_csfloat,
+        t_cdfloat,
+        t_clfloat,
+#endif
         t_symbol,
         t_package,
         t_hashtable,
@@ -230,6 +235,26 @@ struct ecl_complex {
         cl_object real;         /*  real part, must be a number  */
         cl_object imag;         /*  imaginary part, must be a number  */
 };
+
+#ifdef ECL_COMPLEX_FLOAT
+struct ecl_csfloat {
+        _ECL_HDR;
+        float _Complex value;
+};
+#define ecl_csfloat(o) ((o)->csfloat.value)
+
+struct ecl_cdfloat {
+        _ECL_HDR;
+        double _Complex value;
+};
+#define ecl_cdfloat(o) ((o)->cdfloat.value)
+
+struct ecl_clfloat {
+        _ECL_HDR;
+        long double _Complex value;
+};
+#define ecl_clfloat(o) ((o)->clfloat.value)
+#endif
 
 enum ecl_stype {                /*  symbol type  */
         ecl_stp_ordinary = 0,
@@ -1031,6 +1056,11 @@ union cl_lispunion {
         struct ecl_long_float   longfloat;      /*  long-float */
 #endif
         struct ecl_complex      complex;        /*  complex number  */
+#ifdef ECL_COMPLEX_FLOAT
+        struct ecl_csfloat      csfloat;        /*  complex single float */
+        struct ecl_cdfloat      cdfloat;        /*  complex double float */
+        struct ecl_clfloat      clfloat;        /*  complex long float */
+#endif
         struct ecl_symbol       symbol;         /*  symbol  */
         struct ecl_package      pack;           /*  package  */
         struct ecl_hashtable    hash;           /*  hash table  */
