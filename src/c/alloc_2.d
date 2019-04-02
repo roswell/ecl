@@ -560,6 +560,11 @@ ecl_alloc_object(cl_type t)
 #ifdef ECL_LONG_FLOAT
   case t_longfloat:
 #endif
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+  case t_cdfloat:
+  case t_clfloat:
+#endif
   case t_singlefloat:
   case t_doublefloat: {
     cl_object obj;
@@ -851,6 +856,11 @@ init_alloc(void)
   init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float), 0);
 #endif
   init_tm(t_complex, "COMPLEX", sizeof(struct ecl_complex), 2);
+#ifdef ECL_COMPLEX_FLOAT
+  init_tm(t_csfloat, "COMPLEX-SINGLE-FLOAT", sizeof(struct ecl_csfloat), 0);
+  init_tm(t_cdfloat, "COMPLEX-DOUBLE-FLOAT", sizeof(struct ecl_cdfloat), 0);
+  init_tm(t_clfloat, "COMPLEX-LONG-FLOAT", sizeof(struct ecl_clfloat), 0);
+#endif
   init_tm(t_symbol, "SYMBOL", sizeof(struct ecl_symbol), 5);
   init_tm(t_package, "PACKAGE", sizeof(struct ecl_package), -1); /* 36 */
 #ifdef ECL_THREADS
@@ -909,6 +919,11 @@ init_alloc(void)
   type_info[t_complex].descriptor =
     to_bitmap(&o, &(o.complex.real)) |
     to_bitmap(&o, &(o.complex.imag));
+#ifdef ECL_COMPLEX_FLOAT
+  type_info[t_csfloat].descriptor = 0;
+  type_info[t_cdfloat].descriptor = 0;
+  type_info[t_clfloat].descriptor = 0;
+#endif
   type_info[t_symbol].descriptor =
     to_bitmap(&o, &(o.symbol.value)) |
     to_bitmap(&o, &(o.symbol.gfdef)) |
