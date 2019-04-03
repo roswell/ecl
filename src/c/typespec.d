@@ -119,6 +119,14 @@ ecl_type_to_symbol(cl_type t)
 #endif
   case t_complex:
     return @'complex';
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+    return @'si::complex-single-float';
+  case t_cdfloat:
+    return @'si::complex-double-float';
+  case t_clfloat:
+    return @'si::complex-long-float';
+#endif
   case t_symbol:
     return @'symbol';
   case t_package:

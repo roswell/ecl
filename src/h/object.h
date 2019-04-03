@@ -57,6 +57,9 @@ typedef enum {
         t_csfloat,
         t_cdfloat,
         t_clfloat,
+        t_last_number = t_clfloat,
+#else
+        t_last_number = t_complex,
 #endif
         t_symbol,
         t_package,
@@ -157,7 +160,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_CHAR_CODE_NEWLINE   10
 #define ECL_CHAR_CODE_LINEFEED  10
 
-#define ECL_NUMBER_TYPE_P(t)    (t >= t_fixnum && t <= t_complex)
+#define ECL_NUMBER_TYPE_P(t)    (t >= t_fixnum && t <= t_last_number)
 #define ECL_REAL_TYPE_P(t)      (t >= t_fixnum && t < t_complex)
 #define ECL_ARRAYP(x)           ((ECL_IMMEDIATE(x) == 0) && (x)->d.t >= t_array && (x)->d.t <= t_bitvector)
 #define ECL_VECTORP(x)          ((ECL_IMMEDIATE(x) == 0) && (x)->d.t >= t_vector && (x)->d.t <= t_bitvector)
@@ -173,7 +176,11 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_BASE_STRING_P(x)    ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_base_string))
 #define ECL_HASH_TABLE_P(x)     ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_hashtable))
 #define ECL_BIGNUMP(x)          ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_bignum))
+#ifdef ECL_COMPLEX_FLOAT
+#define ECL_COMPLEXP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t >= t_complex) && ((x)->d.t <= t_clfloat))
+#else
 #define ECL_COMPLEXP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_complex))
+#endif
 #define ECL_RANDOM_STATE_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_random))
 #define ECL_SINGLE_FLOAT_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_singlefloat))
 #define ECL_DOUBLE_FLOAT_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_doublefloat))

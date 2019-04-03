@@ -13,6 +13,7 @@
  */
 
 #include <float.h>
+#include <complex.h>
 #include <limits.h>
 #include <signal.h>
 #define ECL_INCLUDE_MATH_H
@@ -622,6 +623,65 @@ ecl_make_complex(cl_object r, cl_object i)
   c->gencomplex.imag = i;
   return(c);
 }
+
+#ifdef ECL_COMPLEX_FLOAT
+/* This function is safe. Still both arguments must be of the same
+   float type, otherwise a type error will be signalled. -- jd 2019-04-03 */
+
+cl_object si_complex_float_p(cl_object f) {
+  switch(ecl_t_of(f)) {
+  case t_csfloat:
+  case t_cdfloat:
+  case t_clfloat:
+    return ECL_T;
+  default:
+    return ECL_NIL;
+  }
+}
+
+cl_object
+ecl_make_complex_float(cl_object r, cl_object i)
+{
+  cl_type tr = ecl_t_of(r);
+  cl_type ti = ecl_t_of(i);
+  cl_object result;
+  switch (tr) {
+  case t_singlefloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'single-float'); }
+    result = ecl_alloc_object(t_csfloat);
+    ecl_csfloat(result) = ecl_single_float(r) + ecl_single_float(i) * I;
+    break;
+  case t_doublefloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'double-float'); }
+    result = ecl_alloc_object(t_cdfloat);
+    ecl_cdfloat(result) = ecl_double_float(r) + ecl_double_float(i) * I;
+    break;
+  case t_longfloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'long-float'); }
+    result = ecl_alloc_object(t_clfloat);
+    ecl_clfloat(result) = ecl_long_float(r) + ecl_long_float(i) * I;
+    break;
+  default:
+    ecl_type_error(@'si::complex-float',"real part", r, @'float');
+  }
+  return result;
+}
+
+cl_object ecl_make_csfloat(float _Complex x) {
+  cl_object c = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(c) = x;
+}
+
+cl_object ecl_make_cdfloat(double _Complex x) {
+  cl_object c = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(c) = x;
+}
+
+cl_object ecl_make_clfloat(long double _Complex x) {
+  cl_object c = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(c) = x;
+}
+#endif
 
 static cl_object
 mantissa_and_exponent_from_ratio(cl_object num, cl_object den, int digits, cl_fixnum *exponent)

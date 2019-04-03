@@ -601,6 +601,8 @@
 (proclamation si:single-float-p (t) gen-bool :pure)
 (proclamation si:double-float-p (t) gen-bool :pure)
 (proclamation si:long-float-p (t) gen-bool :pure)
+#+complex-float (proclamation si:complex-float (float float) si:complex-float :pure)
+#+complex-float (proclamation si:complex-float-p (t) gen-bool :pure)
 
 ;; Virtual functions added by the compiler
 (proclamation shift>> (*) nil :pure)

@@ -116,6 +116,33 @@ write_float(cl_object f, cl_object stream)
   si_put_buffer_string(s);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static void                    /* XXX: do not cons new floats here! */
+write_complex_float(cl_object f, cl_object stream)
+{
+  cl_object real, imag;
+  switch (ecl_t_of(f)) {
+  case t_csfloat:
+    real = ecl_make_single_float(crealf(ecl_csfloat(f)));
+    imag = ecl_make_single_float(cimagf(ecl_csfloat(f)));
+    break;
+  case t_cdfloat:
+    real = ecl_make_double_float(creal(ecl_cdfloat(f)));
+    imag = ecl_make_double_float(cimag(ecl_cdfloat(f)));
+    break;
+  case t_clfloat:
+    real = ecl_make_long_float(creall(ecl_clfloat(f)));
+    imag = ecl_make_long_float(cimagl(ecl_clfloat(f)));
+    break;
+  }
+  writestr_stream("#<CF(", stream);
+  si_write_ugly_object(real, stream);
+  ecl_write_char(' ', stream);
+  si_write_ugly_object(imag, stream);
+  writestr_stream(")>", stream);
+}
+#endif
+
 static void
 write_character(cl_object x, cl_object stream)
 {
@@ -414,9 +441,9 @@ static printer dispatch[FREE+1] = {
 #endif
   write_complex,                /* t_complex */
 #ifdef ECL_COMPLEX_FLOAT
-  write_illegal,                /* t_csfloat */
-  write_illegal,                /* t_cdfloat */
-  write_illegal,                /* t_clfloat */
+  write_complex_float,          /* t_csfloat */
+  write_complex_float,          /* t_cdfloat */
+  write_complex_float,          /* t_clfloat */
 #endif
   _ecl_write_symbol,            /* t_symbol */
   write_package,                /* t_package */

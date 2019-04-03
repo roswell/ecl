@@ -402,6 +402,9 @@ and is not adjustable."
       (CHARACTER . CHARACTERP)
       (COMPILED-FUNCTION . COMPILED-FUNCTION-P)
       (COMPLEX . COMPLEXP)
+      #+complex-float(SI:COMPLEX-SINGLE-FLOAT . SI:COMPLEX-FLOAT-P)
+      #+complex-float(SI:COMPLEX-DOUBLE-FLOAT . SI:COMPLEX-FLOAT-P)
+      #+complex-float(SI:COMPLEX-LONG-FLOAT . SI:COMPLEX-FLOAT-P)
       (COMPLEX-ARRAY . COMPLEX-ARRAY-P)
       (CONS . CONSP)
       (DOUBLE-FLOAT . SI:DOUBLE-FLOAT-P)
@@ -1234,30 +1237,34 @@ if not possible."
 
                (INTEGER (INTEGER * *))
                (FIXNUM (INTEGER #.most-negative-fixnum #.most-positive-fixnum))
-               (BIGNUM (OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
-               #+short-float
-               (SHORT-FLOAT (SHORT-FLOAT * *))
+               (BIGNUM (OR (INTEGER * (#.most-negative-fixnum))
+                           (INTEGER (#.most-positive-fixnum) *)))
+               #+short-float (SHORT-FLOAT (SHORT-FLOAT * *))
                (SINGLE-FLOAT (SINGLE-FLOAT * *))
                (DOUBLE-FLOAT (DOUBLE-FLOAT * *))
-               #+long-float
-               (LONG-FLOAT (LONG-FLOAT * *))
+               #+long-float (LONG-FLOAT (LONG-FLOAT * *))
                (RATIO (RATIO * *))
 
                (RATIONAL (OR INTEGER RATIO))
-               (FLOAT (OR
-                       #+short-float SHORT-FLOAT
-                       SINGLE-FLOAT
-                       DOUBLE-FLOAT
-                       #+long-float LONG-FLOAT))
-               (REAL (OR INTEGER
-                      #+short-float SHORT-FLOAT
-                      SINGLE-FLOAT
-                      DOUBLE-FLOAT
-                      #+long-float LONG-FLOAT
-                      RATIO))
+               (FLOAT (OR #+short-float SHORT-FLOAT
+                          SINGLE-FLOAT
+                          DOUBLE-FLOAT
+                          #+long-float LONG-FLOAT))
+
+               (REAL (OR RATIONAL FLOAT))
                (COMPLEX (COMPLEX REAL))
 
-               (NUMBER (OR REAL COMPLEX))
+               ;; For now we create COMPLEX-FLOAT type being disjoint
+               ;; with the numeric tower. Later we will merge it with
+               ;; complex and arithmetic operations.
+               #+complex-float(SI:COMPLEX-SINGLE-FLOAT)
+               #+complex-float(SI:COMPLEX-DOUBLE-FLOAT)
+               #+complex-float(SI:COMPLEX-LONG-FLOAT)
+               #+complex-float(SI:COMPLEX-FLOAT (OR SI:COMPLEX-SINGLE-FLOAT
+                                                    SI:COMPLEX-DOUBLE-FLOAT
+                                                    SI:COMPLEX-LONG-FLOAT))
+
+               (NUMBER (OR REAL COMPLEX #+complex-float SI:COMPLEX-FLOAT))
 
                (CHARACTER)
                #-unicode

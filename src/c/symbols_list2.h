@@ -71,6 +71,11 @@ typedef struct {
 #else
 # define IF_DFFI(x) NULL
 #endif
+#ifdef ECL_COMPLEX_FLOAT
+# define IF_COMPLEX_FLOAT(x) x
+#else
+# define IF_COMPLEX_FLOAT(x) NULL
+#endif
 
 cl_symbol_initializer
 cl_symbols[] = {
@@ -2078,6 +2083,14 @@ cl_symbols[] = {
 /* #endif */
 
 {EXT_ "ARRAY-ELEMENT-TYPE-BYTE-SIZE","si_array_element_type_byte_size"},
+
+/* #ifdef ECL_COMPLEX_FLOAT */
+{SYS_ "COMPLEX-FLOAT-P","IF_COMPLEX_FLOAT(si_complex_float_p)"},
+{SYS_ "COMPLEX-FLOAT","IF_COMPLEX_FLOAT(ecl_make_complex_float)"},
+{SYS_ "COMPLEX-SINGLE-FLOAT",NULL},
+{SYS_ "COMPLEX-DOUBLE-FLOAT",NULL},
+{SYS_ "COMPLEX-LONG-FLOAT",NULL},
+/* #endif */
 
 /* #ifdef ECL_SSE2 */
 {EXT_ "SSE-PACK",NULL},

@@ -1137,6 +1137,14 @@ extern ECL_API double ecl_to_double(cl_object x);
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_long_float(long double f);
 #endif
+#ifdef ECL_COMPLEX_FLOAT
+extern ECL_API cl_object   ecl_make_csfloat(float _Complex x);
+extern ECL_API cl_object   ecl_make_cdfloat(double _Complex x);
+extern ECL_API cl_object   ecl_make_clfloat(long double _Complex x);
+extern ECL_API float       _Complex ecl_to_csfloat(cl_object x);
+extern ECL_API double      _Complex ecl_to_cdfloat(cl_object x);
+extern ECL_API long double _Complex ecl_to_clfloat(cl_object x);
+#endif
 #ifdef ECL_IEEE_FP
 extern ECL_API cl_object si_nan();
 #endif /* ECL_IEEE_FP */
