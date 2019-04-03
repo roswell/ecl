@@ -690,6 +690,10 @@ static union {
 # define LDBL_TRUE_MIN LDBL_MIN
 #endif
 
+#ifdef ECL_COMPLEX_FLOAT
+#include <complex.h>
+#endif
+
 #ifdef __cplusplus
 }
 #endif

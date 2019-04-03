@@ -134,6 +134,8 @@ write_complex_float(cl_object f, cl_object stream)
     real = ecl_make_long_float(creall(ecl_clfloat(f)));
     imag = ecl_make_long_float(cimagl(ecl_clfloat(f)));
     break;
+  default:
+    break;
   }
   writestr_stream("#<CF(", stream);
   si_write_ugly_object(real, stream);

@@ -263,7 +263,24 @@ cl_type_of(cl_object x)
     }
     break;
   }
-
+#ifdef ECL_COMPLEX_FLOAT
+  case t_complex:
+    t = cl_list(2, @'complex', @'rational');
+    break;
+  case t_csfloat:
+    t = cl_list(2, @'complex', @'single-float');
+    break;
+  case t_cdfloat:
+    t = cl_list(2, @'complex', @'double-float');
+    break;
+  case t_clfloat:
+    t = cl_list(2, @'complex', @'long-float');
+    break;
+#else
+  case t_complex:
+    t = cl_list(2, @'complex', @'real');
+    break;
+#endif
   case t_symbol:
     if (x == ECL_T)
       t = @'boolean';

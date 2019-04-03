@@ -343,6 +343,9 @@ enum ecl_built_in_classes {
   ECL_BUILTIN_COMPLEX,
 #ifdef ECL_COMPLEX_FLOAT
   ECL_BUILTIN_COMPLEX_FLOAT,
+  ECL_BUILTIN_COMPLEX_SINGLE_FLOAT,
+  ECL_BUILTIN_COMPLEX_DOUBLE_FLOAT,
+  ECL_BUILTIN_COMPLEX_LONG_FLOAT,
 #endif
   ECL_BUILTIN_SYMBOL,
   ECL_BUILTIN_NULL,
@@ -398,9 +401,11 @@ cl_class_of(cl_object x)
     index = ECL_BUILTIN_COMPLEX; break;
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:
+    index = ECL_BUILTIN_COMPLEX_SINGLE_FLOAT; break;
   case t_cdfloat:
+    index = ECL_BUILTIN_COMPLEX_DOUBLE_FLOAT; break;
   case t_clfloat:
-    index = ECL_BUILTIN_COMPLEX_FLOAT; break;
+    index = ECL_BUILTIN_COMPLEX_LONG_FLOAT; break;
 #endif
   case t_character:
     index = ECL_BUILTIN_CHARACTER; break;
