@@ -70,4 +70,5 @@ ecl_sin_complex(cl_object x)
 MATH_DEF_DISPATCH1(sin, @[sin], @[number],
                    ecl_sin_rational, ecl_sin_rational, ecl_sin_rational,
                    ecl_sin_single_float, ecl_sin_double_float, ecl_sin_long_float,
-                   ecl_sin_complex);
+                   ecl_sin_complex,
+                   /* implementme */ sin_nefailed, sin_nefailed, sin_nefailed);

@@ -67,4 +67,5 @@ ecl_cos_complex(cl_object x)
 MATH_DEF_DISPATCH1(cos, @[cos], @[number],
                    ecl_cos_rational, ecl_cos_rational, ecl_cos_rational,
                    ecl_cos_single_float, ecl_cos_double_float, ecl_cos_long_float,
-                   ecl_cos_complex);
+                   ecl_cos_complex,
+                   /* implementme */ cos_nefailed, cos_nefailed, cos_nefailed);

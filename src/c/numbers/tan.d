@@ -77,4 +77,5 @@ ecl_tan_complex(cl_object x)
 MATH_DEF_DISPATCH1(tan, @[tan], @[number],
                    ecl_tan_rational, ecl_tan_rational, ecl_tan_rational,
                    ecl_tan_single_float, ecl_tan_double_float, ecl_tan_long_float,
-                   ecl_tan_complex);
+                   ecl_tan_complex,
+                   /* implementme */ tan_nefailed, tan_nefailed, tan_nefailed);

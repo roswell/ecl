@@ -67,7 +67,8 @@ MATH_DEF_DISPATCH1_NE(one_plus, @[1+], @[number],
                       ecl_one_plus_fix, ecl_one_plus_big, ecl_one_plus_ratio,
                       ecl_one_plus_single_float, ecl_one_plus_double_float,
                       ecl_one_plus_long_float,
-                      ecl_one_plus_complex);
+                      ecl_one_plus_complex,
+                      /* implementme */ one_plusfailed, one_plusfailed, one_plusfailed);
 
 /*  (1+ x)  */
 cl_object

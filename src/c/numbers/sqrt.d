@@ -84,4 +84,5 @@ ecl_sqrt_complex(cl_object x)
 MATH_DEF_DISPATCH1(sqrt, @[sqrt], @[number],
                    ecl_sqrt_rational, ecl_sqrt_rational, ecl_sqrt_rational,
                    ecl_sqrt_single_float, ecl_sqrt_double_float, ecl_sqrt_long_float,
-                   ecl_sqrt_complex);
+                   ecl_sqrt_complex,
+                   /* implementme */ sqrt_nefailed, sqrt_nefailed, sqrt_nefailed);

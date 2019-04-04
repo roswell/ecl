@@ -64,4 +64,5 @@ MATH_DEF_DISPATCH1_NE(negate, @[-], @[number],
                       ecl_negate_fix, ecl_negate_big, ecl_negate_ratio,
                       ecl_negate_single_float, ecl_negate_double_float,
                       ecl_negate_long_float,
-                      ecl_negate_complex);
+                      ecl_negate_complex,
+                      /* implementme */ negatefailed, negatefailed, negatefailed);

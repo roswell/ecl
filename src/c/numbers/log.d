@@ -107,7 +107,8 @@ ecl_log1_complex(cl_object x)
 MATH_DEF_DISPATCH1(log1, @[log], @[number],
                    ecl_log1_rational, ecl_log1_bignum, ecl_log1_rational,
                    ecl_log1_single_float, ecl_log1_double_float, ecl_log1_long_float,
-                   ecl_log1_complex);
+                   ecl_log1_complex,
+                   /* implementme */ log1_nefailed, log1_nefailed, log1_nefailed);
 
 cl_object
 ecl_log2(cl_object x, cl_object y)
@@ -221,4 +222,5 @@ ecl_log1p_complex(cl_object x)
 MATH_DEF_DISPATCH1(log1p, @[si::log1p], @[number],
                    ecl_log1p_rational, ecl_log1p_simple, ecl_log1p_rational,
                    ecl_log1p_single_float, ecl_log1p_double_float, ecl_log1p_long_float,
-                   ecl_log1p_complex);
+                   ecl_log1p_complex,
+                   /* implementme */ log1p_nefailed, log1p_nefailed, log1p_nefailed);

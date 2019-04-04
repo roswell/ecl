@@ -63,4 +63,5 @@ MATH_DEF_DISPATCH1_BOOL(zerop, @[zerop], @[number],
                         ecl_zerop_fixnum, ecl_zerop_ratio, ecl_zerop_ratio,
                         ecl_zerop_single_float, ecl_zerop_double_float,
                         ecl_zerop_long_float,
-                        ecl_zerop_complex)
+                        ecl_zerop_complex,
+                        /* implementme */ zeropfailed, zeropfailed, zeropfailed)

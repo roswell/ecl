@@ -70,4 +70,5 @@ ecl_cosh_complex(cl_object x)
 MATH_DEF_DISPATCH1(cosh, @[cosh], @[number],
                    ecl_cosh_rational, ecl_cosh_rational, ecl_cosh_rational,
                    ecl_cosh_single_float, ecl_cosh_double_float, ecl_cosh_long_float,
-                   ecl_cosh_complex);
+                   ecl_cosh_complex,
+                   /* implementme */ cosh_nefailed, cosh_nefailed, cosh_nefailed);

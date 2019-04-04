@@ -37,4 +37,5 @@ MATH_DEF_DISPATCH1_NE(conjugate, @[conjugate], @[number],
                       ecl_conjugate_real, ecl_conjugate_real, ecl_conjugate_real,
                       ecl_conjugate_real, ecl_conjugate_real,
                       ecl_conjugate_real,
-                      ecl_conjugate_complex);
+                      ecl_conjugate_complex,
+                      /* implementme */ conjugatefailed, conjugatefailed, conjugatefailed);

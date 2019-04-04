@@ -62,4 +62,5 @@ MATH_DEF_DISPATCH1_BOOL(minusp, @[minusp], @[real],
                         ecl_minusp_fixnum, ecl_minusp_big, ecl_minusp_ratio,
                         ecl_minusp_single_float, ecl_minusp_double_float,
                         ecl_minusp_long_float,
-                        minuspfailed)
+                        minuspfailed,
+                        minuspfailed, minuspfailed, minuspfailed)

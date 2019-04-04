@@ -66,4 +66,5 @@ ecl_exp_complex(cl_object x)
 MATH_DEF_DISPATCH1(exp, @[exp], @[number],
                    ecl_exp_rational, ecl_exp_rational, ecl_exp_rational,
                    ecl_exp_single_float, ecl_exp_double_float, ecl_exp_long_float,
-                   ecl_exp_complex);
+                   ecl_exp_complex,
+                   /* implementme */ exp_nefailed, exp_nefailed, exp_nefailed);
