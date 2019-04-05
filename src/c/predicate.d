@@ -293,8 +293,8 @@ ecl_eql(cl_object x, cl_object y)
     FLOAT_EQL(ecl_long_float(x), ecl_long_float(y), long double);
 #endif
   case t_complex:
-    return (ecl_eql(x->complex.real, y->complex.real) &&
-            ecl_eql(x->complex.imag, y->complex.imag));
+    return (ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
+            ecl_eql(x->gencomplex.imag, y->gencomplex.imag));
 #ifdef ECL_SSE2
   case t_sse_pack:
     return !memcmp(x->sse.data.b8, y->sse.data.b8, 16);
@@ -355,8 +355,8 @@ ecl_equal(register cl_object x, cl_object y)
   }
 #endif
   case t_complex:
-    return (tx == ty) && ecl_eql(x->complex.real, y->complex.real) &&
-      ecl_eql(x->complex.imag, y->complex.imag);
+    return (tx == ty) && ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
+      ecl_eql(x->gencomplex.imag, y->gencomplex.imag);
   case t_character:
     return (tx == ty) && (ECL_CHAR_CODE(x) == ECL_CHAR_CODE(y));
   case t_base_string:

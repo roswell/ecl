@@ -227,9 +227,6 @@ struct ecl_ratio {
         cl_object num;          /*  numerator, must be an integer  */
 };
 
-#ifdef _MSC_VER
-#undef complex                  /* Otherwise we cannot do x->complex.real */
-#endif
 struct ecl_complex {
         _ECL_HDR;
         cl_object real;         /*  real part, must be a number  */
@@ -1055,7 +1052,7 @@ union cl_lispunion {
 #ifdef ECL_LONG_FLOAT
         struct ecl_long_float   longfloat;      /*  long-float */
 #endif
-        struct ecl_complex      complex;        /*  complex number  */
+        struct ecl_complex      gencomplex;     /*  generic complex number  */
 #ifdef ECL_COMPLEX_FLOAT
         struct ecl_csfloat      csfloat;        /*  complex single float */
         struct ecl_cdfloat      cdfloat;        /*  complex double float */

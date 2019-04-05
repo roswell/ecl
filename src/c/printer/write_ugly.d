@@ -101,9 +101,9 @@ static void
 write_complex(cl_object x, cl_object stream)
 {
   writestr_stream("#C(", stream);
-  si_write_ugly_object(x->complex.real, stream);
+  si_write_ugly_object(x->gencomplex.real, stream);
   ecl_write_char(' ', stream);
-  si_write_ugly_object(x->complex.imag, stream);
+  si_write_ugly_object(x->gencomplex.imag, stream);
   ecl_write_char(')', stream);
 }
 

@@ -59,8 +59,8 @@ ecl_one_minus_long_float(cl_object x)
 static cl_object
 ecl_one_minus_complex(cl_object x)
 {
-  return ecl_make_complex(ecl_one_minus(x->complex.real),
-                          x->complex.imag);
+  return ecl_make_complex(ecl_one_minus(x->gencomplex.real),
+                          x->gencomplex.imag);
 }
 
 MATH_DEF_DISPATCH1_NE(one_minus, @[1-], @[number],

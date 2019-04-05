@@ -667,8 +667,8 @@ sharp_C_reader(cl_object in, cl_object c, cl_object d)
       !Null(ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*')))
     {
       x = ecl_alloc_object(t_complex);
-      x->complex.real = real;
-      x->complex.imag = imag;
+      x->gencomplex.real = real;
+      x->gencomplex.imag = imag;
     } else {
     x = ecl_make_complex(real, imag);
   }
@@ -1239,11 +1239,11 @@ do_patch_sharp(cl_object x, cl_object table)
     }
     break;
   case t_complex: {
-    cl_object r = do_patch_sharp(x->complex.real, table);
-    cl_object i = do_patch_sharp(x->complex.imag, table);
-    if (r != x->complex.real || i != x->complex.imag) {
+    cl_object r = do_patch_sharp(x->gencomplex.real, table);
+    cl_object i = do_patch_sharp(x->gencomplex.imag, table);
+    if (r != x->gencomplex.real || i != x->gencomplex.imag) {
       cl_object c = ecl_make_complex(r, i);
-      x->complex = c->complex;
+      x->gencomplex = c->gencomplex;
     }
     break;
   }

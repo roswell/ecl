@@ -101,7 +101,7 @@ ecl_log1_long_float(cl_object x)
 static cl_object
 ecl_log1_complex(cl_object x)
 {
-  return ecl_log1_complex_inner(x->complex.real, x->complex.imag);
+  return ecl_log1_complex_inner(x->gencomplex.real, x->gencomplex.imag);
 }
 
 MATH_DEF_DISPATCH1(log1, @[log], @[number],
@@ -215,7 +215,7 @@ ecl_log1p_long_float(cl_object x)
 static cl_object
 ecl_log1p_complex(cl_object x)
 {
-  return ecl_log1_complex_inner(ecl_one_plus(x->complex.real), x->complex.imag);
+  return ecl_log1_complex_inner(ecl_one_plus(x->gencomplex.real), x->gencomplex.imag);
 }
 
 MATH_DEF_DISPATCH1(log1p, @[si::log1p], @[number],

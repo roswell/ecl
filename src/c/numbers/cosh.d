@@ -60,8 +60,8 @@ ecl_cosh_complex(cl_object x)
     = (exp(x)*(cos(y)+Isin(y))+exp(-x)*(cos(y)-Isin(y)))/2
     = cosh(x)*cos(y) + Isinh(x)*sin(y);
   */
-  cl_object dx = x->complex.real;
-  cl_object dy = x->complex.imag;
+  cl_object dx = x->gencomplex.real;
+  cl_object dy = x->gencomplex.imag;
   cl_object a = ecl_times(ecl_cosh(dx), ecl_cos(dy));
   cl_object b = ecl_times(ecl_sinh(dx), ecl_sin(dy));
   return ecl_make_complex(a, b);

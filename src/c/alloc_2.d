@@ -350,8 +350,8 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
     MAYBE_MARK(o->ratio.den);
     break;
   case t_complex:
-    MAYBE_MARK(o->complex.real);
-    MAYBE_MARK(o->complex.imag);
+    MAYBE_MARK(o->gencomplex.real);
+    MAYBE_MARK(o->gencomplex.imag);
     break;
   case t_symbol:
     MAYBE_MARK(o->symbol.hpack);

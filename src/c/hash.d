@@ -59,8 +59,8 @@ _hash_eql(cl_hashkey h, cl_object x)
   }
 #endif
   case t_complex:
-    h = _hash_eql(h, x->complex.real);
-    return _hash_eql(h, x->complex.imag);
+    h = _hash_eql(h, x->gencomplex.real);
+    return _hash_eql(h, x->gencomplex.imag);
   case t_character:
     return hash_word(h, ECL_CHAR_CODE(x));
 #ifdef ECL_SSE2
@@ -142,8 +142,8 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
   }
 # endif
   case t_complex: {
-    h = _hash_equal(depth, h, x->complex.real);
-    return _hash_equal(depth, h, x->complex.imag);
+    h = _hash_equal(depth, h, x->gencomplex.real);
+    return _hash_equal(depth, h, x->gencomplex.imag);
   }
 #endif
   default:
@@ -201,8 +201,8 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
     h = _hash_equalp(0, h, x->ratio.num);
     return _hash_equalp(0, h, x->ratio.den);
   case t_complex:
-    h = _hash_equalp(0, h, x->complex.real);
-    return _hash_equalp(0, h, x->complex.imag);
+    h = _hash_equalp(0, h, x->gencomplex.real);
+    return _hash_equalp(0, h, x->gencomplex.imag);
   case t_instance:
   case t_hashtable:
     /* FIXME! We should be more precise here! */

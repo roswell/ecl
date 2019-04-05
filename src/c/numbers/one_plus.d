@@ -59,8 +59,8 @@ ecl_one_plus_long_float(cl_object x)
 static cl_object
 ecl_one_plus_complex(cl_object x)
 {
-  return ecl_make_complex(ecl_one_plus(x->complex.real),
-                          x->complex.imag);
+  return ecl_make_complex(ecl_one_plus(x->gencomplex.real),
+                          x->gencomplex.imag);
 }
 
 MATH_DEF_DISPATCH1_NE(one_plus, @[1+], @[number],

@@ -76,8 +76,8 @@ expt_zero(cl_object x, cl_object y)
     return longfloat_one;
 #endif
   case t_complex:
-    z = expt_zero((tx == t_complex)? x->complex.real : x,
-                  (ty == t_complex)? y->complex.real : y);
+    z = expt_zero((tx == t_complex)? x->gencomplex.real : x,
+                  (ty == t_complex)? y->gencomplex.real : y);
     return ecl_make_complex(z, ecl_make_fixnum(0));
   default:
     /* We will never reach this */
@@ -100,7 +100,7 @@ ecl_expt(cl_object x, cl_object y)
   }
   if (ecl_zerop(x)) {
     z = x;
-    if (!ecl_plusp(ty==t_complex?y->complex.real:y))
+    if (!ecl_plusp(ty==t_complex?y->gencomplex.real:y))
       z = ecl_divide(ecl_make_fixnum(1), z);
   } else if (tx == t_singlefloat && ty == t_singlefloat && ecl_single_float(x) >= 0.0f) {
     z = ecl_make_single_float(powf(ecl_single_float(x), ecl_single_float(y)));

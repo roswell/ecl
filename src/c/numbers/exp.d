@@ -55,8 +55,8 @@ static cl_object
 ecl_exp_complex(cl_object x)
 {
   cl_object y, y1;
-  y = x->complex.imag;
-  x = ecl_exp(x->complex.real);
+  y = x->gencomplex.imag;
+  x = ecl_exp(x->gencomplex.real);
   y1 = ecl_cos(y);
   y = ecl_sin(y);
   y = ecl_make_complex(y1, y);

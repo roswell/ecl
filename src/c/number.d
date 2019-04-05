@@ -618,8 +618,8 @@ ecl_make_complex(cl_object r, cl_object i)
 
   }
   c = ecl_alloc_object(t_complex);
-  c->complex.real = r;
-  c->complex.imag = i;
+  c->gencomplex.real = r;
+  c->gencomplex.imag = i;
   return(c);
 }
 

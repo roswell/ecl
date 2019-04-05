@@ -157,14 +157,14 @@ ecl_times(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_COMPLEX;
       CASE_FIXNUM_COMPLEX {
       COMPLEX_Y:
-        return ecl_make_complex(ecl_times(x, y->complex.real),
-                                ecl_times(x, y->complex.imag));
+        return ecl_make_complex(ecl_times(x, y->gencomplex.real),
+                                ecl_times(x, y->gencomplex.imag));
       }
       CASE_COMPLEX_COMPLEX {
-        cl_object z11 = ecl_times(x->complex.real, y->complex.real);
-        cl_object z12 = ecl_times(x->complex.imag, y->complex.imag);
-        cl_object z21 = ecl_times(x->complex.imag, y->complex.real);
-        cl_object z22 = ecl_times(x->complex.real, y->complex.imag);
+        cl_object z11 = ecl_times(x->gencomplex.real, y->gencomplex.real);
+        cl_object z12 = ecl_times(x->gencomplex.imag, y->gencomplex.imag);
+        cl_object z21 = ecl_times(x->gencomplex.imag, y->gencomplex.real);
+        cl_object z22 = ecl_times(x->gencomplex.real, y->gencomplex.imag);
         return ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22));
       }
       CASE_UNKNOWN(@[*],x,y,@[number]);

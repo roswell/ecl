@@ -168,21 +168,21 @@ ecl_number_equalp(cl_object x, cl_object y)
   }
 #endif
   Y_COMPLEX:
-    if (!ecl_zerop(y->complex.imag))
+    if (!ecl_zerop(y->gencomplex.imag))
       return 0;
-    return ecl_number_equalp(x, y->complex.real);
+    return ecl_number_equalp(x, y->gencomplex.real);
   case t_complex:
     switch (ecl_t_of(y)) {
     case t_complex:
-      return (ecl_number_equalp(x->complex.real, y->complex.real) &&
-              ecl_number_equalp(x->complex.imag, y->complex.imag));
+      return (ecl_number_equalp(x->gencomplex.real, y->gencomplex.real) &&
+              ecl_number_equalp(x->gencomplex.imag, y->gencomplex.imag));
     case t_fixnum: case t_bignum: case t_ratio:
     case t_singlefloat: case t_doublefloat:
 #ifdef ECL_LONG_FLOAT
     case t_longfloat:
 #endif
-      if (ecl_zerop(x->complex.imag))
-        return ecl_number_equalp(x->complex.real, y) != 0;
+      if (ecl_zerop(x->gencomplex.imag))
+        return ecl_number_equalp(x->gencomplex.real, y) != 0;
       else
         return 0;
     default:

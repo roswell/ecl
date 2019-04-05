@@ -56,7 +56,7 @@ static int ecl_zerop_long_float(cl_object x)
 static int
 ecl_zerop_complex(cl_object x)
 {
-  return ecl_zerop(x->complex.real) && ecl_zerop(x->complex.imag);
+  return ecl_zerop(x->gencomplex.real) && ecl_zerop(x->gencomplex.imag);
 }
 
 MATH_DEF_DISPATCH1_BOOL(zerop, @[zerop], @[number],

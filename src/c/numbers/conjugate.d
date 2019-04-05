@@ -30,7 +30,7 @@ ecl_conjugate_real(cl_object x)
 static cl_object
 ecl_conjugate_complex(cl_object x)
 {
-  return ecl_make_complex(x->complex.real, ecl_negate(x->complex.imag));
+  return ecl_make_complex(x->gencomplex.real, ecl_negate(x->gencomplex.imag));
 }
 
 MATH_DEF_DISPATCH1_NE(conjugate, @[conjugate], @[number],

@@ -261,8 +261,8 @@ serialize_one(pool_t pool, cl_object what)
     break;
   }
   case t_complex: {
-    buffer->complex.real = enqueue(pool, buffer->complex.real);
-    buffer->complex.imag = enqueue(pool, buffer->complex.imag);
+    buffer->gencomplex.real = enqueue(pool, buffer->gencomplex.real);
+    buffer->gencomplex.imag = enqueue(pool, buffer->gencomplex.imag);
     break;
   }
   case t_hashtable:
@@ -568,8 +568,8 @@ fixup(cl_object o, cl_object *o_list)
     o->ratio.num = get_object(o->ratio.num, o_list);
     break;
   case t_complex:
-    o->complex.real = get_object(o->complex.real, o_list);
-    o->complex.imag = get_object(o->complex.imag, o_list);
+    o->gencomplex.real = get_object(o->gencomplex.real, o_list);
+    o->gencomplex.imag = get_object(o->gencomplex.imag, o_list);
     break;
   case t_hashtable:
     fixup_hashtable(o, o_list);

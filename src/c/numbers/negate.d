@@ -56,8 +56,8 @@ ecl_negate_long_float(cl_object x)
 static cl_object
 ecl_negate_complex(cl_object x)
 {
-  return ecl_make_complex(ecl_negate(x->complex.real),
-                          ecl_negate(x->complex.imag));
+  return ecl_make_complex(ecl_negate(x->gencomplex.real),
+                          ecl_negate(x->gencomplex.imag));
 }
 
 MATH_DEF_DISPATCH1_NE(negate, @[-], @[number],

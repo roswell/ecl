@@ -153,8 +153,8 @@ ecl_divide(cl_object x, cl_object y)
       CASE_COMPLEX_RATIO;
       CASE_COMPLEX_SINGLE_FLOAT;
       CASE_COMPLEX_DOUBLE_FLOAT; COMPLEX_X: {
-        return ecl_make_complex(ecl_divide(x->complex.real, y),
-                                ecl_divide(x->complex.imag, y));
+        return ecl_make_complex(ecl_divide(x->gencomplex.real, y),
+                                ecl_divide(x->gencomplex.imag, y));
       }
       CASE_BIGNUM_COMPLEX;
       CASE_RATIO_COMPLEX;
@@ -162,11 +162,11 @@ ecl_divide(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_COMPLEX;
       CASE_FIXNUM_COMPLEX {
       COMPLEX_Y:
-        return complex_divide(x, ecl_make_fixnum(0), y->complex.real, y->complex.imag);
+        return complex_divide(x, ecl_make_fixnum(0), y->gencomplex.real, y->gencomplex.imag);
       }
       CASE_COMPLEX_COMPLEX {
-        return complex_divide(x->complex.real, x->complex.imag,
-                              y->complex.real, y->complex.imag);
+        return complex_divide(x->gencomplex.real, x->gencomplex.imag,
+                              y->gencomplex.real, y->gencomplex.imag);
       }
       CASE_UNKNOWN(@[/],x,y,@[number]);
     }

@@ -150,8 +150,8 @@ ecl_minus(cl_object x, cl_object y)
       CASE_COMPLEX_SINGLE_FLOAT;
       CASE_COMPLEX_DOUBLE_FLOAT {
       COMPLEX_X:
-        return ecl_make_complex(ecl_minus(x->complex.real, y),
-                                x->complex.imag);
+        return ecl_make_complex(ecl_minus(x->gencomplex.real, y),
+                                x->gencomplex.imag);
       }
       CASE_BIGNUM_COMPLEX;
       CASE_RATIO_COMPLEX;
@@ -159,12 +159,12 @@ ecl_minus(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_COMPLEX;
       CASE_FIXNUM_COMPLEX {
       COMPLEX_Y:
-        return ecl_make_complex(ecl_minus(x, y->complex.real),
-                                ecl_negate(y->complex.imag));
+        return ecl_make_complex(ecl_minus(x, y->gencomplex.real),
+                                ecl_negate(y->gencomplex.imag));
       }
       CASE_COMPLEX_COMPLEX {
-        cl_object z = ecl_minus(x->complex.real, y->complex.real);
-        cl_object z1 = ecl_minus(x->complex.imag, y->complex.imag);
+        cl_object z = ecl_minus(x->gencomplex.real, y->gencomplex.real);
+        cl_object z1 = ecl_minus(x->gencomplex.imag, y->gencomplex.imag);
         return ecl_make_complex(z, z1);
       }
       CASE_UNKNOWN(@[-],x,y,@[number]);

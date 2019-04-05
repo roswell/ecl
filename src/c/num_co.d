@@ -434,7 +434,7 @@ cl_realpart(cl_object x)
 #endif
     break;
   case t_complex:
-    x = x->complex.real;
+    x = x->gencomplex.real;
     break;
   default:
     FEwrong_type_only_arg(@[realpart],x,@[number]);
@@ -472,7 +472,7 @@ cl_imagpart(cl_object x)
     break;
 #endif
   case t_complex:
-    x = x->complex.imag;
+    x = x->gencomplex.imag;
     break;
   default:
     FEwrong_type_only_arg(@[imagpart],x,@[number]);
