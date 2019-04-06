@@ -63,12 +63,32 @@ ecl_one_minus_complex(cl_object x)
                           x->gencomplex.imag);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_one_minus_csfloat(cl_object x)
+{
+  return ecl_make_csfloat(ecl_csfloat(x) - 1);
+}
+
+static cl_object
+ecl_one_minus_cdfloat(cl_object x)
+{
+  return ecl_make_cdfloat(ecl_cdfloat(x) - 1);
+}
+
+static cl_object
+ecl_one_minus_clfloat(cl_object x)
+{
+  return ecl_make_clfloat(ecl_clfloat(x) - 1);
+}
+#endif
+
 MATH_DEF_DISPATCH1_NE(one_minus, @[1-], @[number],
                       ecl_one_minus_fix, ecl_one_minus_big, ecl_one_minus_ratio,
                       ecl_one_minus_single_float, ecl_one_minus_double_float,
                       ecl_one_minus_long_float,
                       ecl_one_minus_complex,
-                      /* implementme */ one_minusfailed, one_minusfailed, one_minusfailed);
+                      ecl_one_minus_csfloat, ecl_one_minus_cdfloat, ecl_one_minus_clfloat);
 
 /*  (1- x)  */
 cl_object

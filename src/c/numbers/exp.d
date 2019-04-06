@@ -63,8 +63,34 @@ ecl_exp_complex(cl_object x)
   return ecl_times(x, y);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_exp_csfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(result) = cexpf(ecl_csfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_exp_cdfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(result) = cexp(ecl_cdfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_exp_clfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(result) = cexpl(ecl_clfloat(x));
+  return result;
+}
+#endif
+
 MATH_DEF_DISPATCH1(exp, @[exp], @[number],
                    ecl_exp_rational, ecl_exp_rational, ecl_exp_rational,
                    ecl_exp_single_float, ecl_exp_double_float, ecl_exp_long_float,
                    ecl_exp_complex,
-                   /* implementme */ exp_nefailed, exp_nefailed, exp_nefailed);
+                   ecl_exp_csfloat, ecl_exp_cdfloat, ecl_exp_clfloat);

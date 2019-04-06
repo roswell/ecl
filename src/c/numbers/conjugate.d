@@ -33,9 +33,35 @@ ecl_conjugate_complex(cl_object x)
   return ecl_make_complex(x->gencomplex.real, ecl_negate(x->gencomplex.imag));
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_conjugate_csfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(result) = conjf(ecl_csfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_conjugate_cdfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(result) = conj(ecl_cdfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_conjugate_clfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(result) = conjl(ecl_clfloat(x));
+  return result;
+}
+#endif
+
 MATH_DEF_DISPATCH1_NE(conjugate, @[conjugate], @[number],
                       ecl_conjugate_real, ecl_conjugate_real, ecl_conjugate_real,
                       ecl_conjugate_real, ecl_conjugate_real,
                       ecl_conjugate_real,
                       ecl_conjugate_complex,
-                      /* implementme */ conjugatefailed, conjugatefailed, conjugatefailed);
+                      ecl_conjugate_csfloat, ecl_conjugate_cdfloat, ecl_conjugate_clfloat);

@@ -68,8 +68,34 @@ ecl_sinh_complex(cl_object x)
   return ecl_make_complex(a, b);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_sinh_csfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(result) = csinhf(ecl_csfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_sinh_cdfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(result) = csinh(ecl_cdfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_sinh_clfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(result) = csinhl(ecl_clfloat(x));
+  return result;
+}
+#endif
+
 MATH_DEF_DISPATCH1(sinh, @[sinh], @[number],
                    ecl_sinh_rational, ecl_sinh_rational, ecl_sinh_rational,
                    ecl_sinh_single_float, ecl_sinh_double_float, ecl_sinh_long_float,
                    ecl_sinh_complex,
-                   /* implementme */ sinh_nefailed, sinh_nefailed, sinh_nefailed);
+                   ecl_sinh_csfloat, ecl_sinh_cdfloat, ecl_sinh_clfloat);

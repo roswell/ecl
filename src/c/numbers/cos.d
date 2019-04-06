@@ -64,8 +64,34 @@ ecl_cos_complex(cl_object x)
   return ecl_make_complex(a, b);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_cos_csfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(result) = ccosf(ecl_csfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_cos_cdfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(result) = ccos(ecl_cdfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_cos_clfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(result) = ccosl(ecl_clfloat(x));
+  return result;
+}
+#endif
+
 MATH_DEF_DISPATCH1(cos, @[cos], @[number],
                    ecl_cos_rational, ecl_cos_rational, ecl_cos_rational,
                    ecl_cos_single_float, ecl_cos_double_float, ecl_cos_long_float,
                    ecl_cos_complex,
-                   /* implementme */ cos_nefailed, cos_nefailed, cos_nefailed);
+                   ecl_cos_csfloat, ecl_cos_cdfloat, ecl_cos_clfloat);

@@ -60,9 +60,29 @@ ecl_negate_complex(cl_object x)
                           ecl_negate(x->gencomplex.imag));
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_negate_csfloat(cl_object x)
+{
+  return ecl_make_csfloat(-ecl_csfloat(x));
+}
+
+static cl_object
+ecl_negate_cdfloat(cl_object x)
+{
+  return ecl_make_cdfloat(-ecl_cdfloat(x));
+}
+
+static cl_object
+ecl_negate_clfloat(cl_object x)
+{
+  return ecl_make_clfloat(-ecl_clfloat(x));
+}
+#endif
+
 MATH_DEF_DISPATCH1_NE(negate, @[-], @[number],
                       ecl_negate_fix, ecl_negate_big, ecl_negate_ratio,
                       ecl_negate_single_float, ecl_negate_double_float,
                       ecl_negate_long_float,
                       ecl_negate_complex,
-                      /* implementme */ negatefailed, negatefailed, negatefailed);
+                      ecl_negate_csfloat, ecl_negate_cdfloat, ecl_negate_clfloat);

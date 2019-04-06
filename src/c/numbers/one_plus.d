@@ -63,12 +63,32 @@ ecl_one_plus_complex(cl_object x)
                           x->gencomplex.imag);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_one_plus_csfloat(cl_object x)
+{
+  return ecl_make_csfloat(ecl_csfloat(x) + 1);
+}
+
+static cl_object
+ecl_one_plus_cdfloat(cl_object x)
+{
+  return ecl_make_cdfloat(ecl_cdfloat(x) + 1);
+}
+
+static cl_object
+ecl_one_plus_clfloat(cl_object x)
+{
+  return ecl_make_clfloat(ecl_clfloat(x) + 1);
+}
+#endif
+
 MATH_DEF_DISPATCH1_NE(one_plus, @[1+], @[number],
                       ecl_one_plus_fix, ecl_one_plus_big, ecl_one_plus_ratio,
                       ecl_one_plus_single_float, ecl_one_plus_double_float,
                       ecl_one_plus_long_float,
                       ecl_one_plus_complex,
-                      /* implementme */ one_plusfailed, one_plusfailed, one_plusfailed);
+                      ecl_one_plus_csfloat, ecl_one_plus_cdfloat, ecl_one_plus_clfloat);
 
 /*  (1+ x)  */
 cl_object

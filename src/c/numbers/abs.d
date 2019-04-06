@@ -99,8 +99,34 @@ ecl_abs_complex(cl_object x)
   }
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_abs_csfloat(cl_object x)
+{
+  float f = crealf(cabsf(ecl_csfloat(x)));
+  x = ecl_make_single_float(f);
+  return x;
+}
+
+static cl_object
+ecl_abs_cdfloat(cl_object x)
+{
+  double f = creal(cabs(ecl_cdfloat(x)));
+  x = ecl_make_double_float(f);
+  return x;
+}
+
+static cl_object
+ecl_abs_clfloat(cl_object x)
+{
+  long double f = creall(cabsl(ecl_clfloat(x)));
+  x = ecl_make_long_float(f);
+  return x;
+}
+#endif
+
 MATH_DEF_DISPATCH1_NE(abs, @[abs], @[number],
                       ecl_abs_fixnum, ecl_abs_bignum, ecl_abs_rational,
                       ecl_abs_single_float, ecl_abs_double_float, ecl_abs_long_float,
                       ecl_abs_complex,
-                      /* implementme */ absfailed, absfailed, absfailed);
+                      ecl_abs_csfloat, ecl_abs_cdfloat, ecl_abs_clfloat);

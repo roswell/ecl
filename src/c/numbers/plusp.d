@@ -64,4 +64,4 @@ MATH_DEF_DISPATCH1_BOOL(plusp, @[plusp], @[real],
                         ecl_plusp_single_float, ecl_plusp_double_float,
                         ecl_plusp_long_float,
                         pluspfailed,
-                        /* implementme*/ pluspfailed, pluspfailed, pluspfailed)
+                        pluspfailed, pluspfailed, pluspfailed)

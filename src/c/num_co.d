@@ -436,6 +436,23 @@ cl_realpart(cl_object x)
   case t_complex:
     x = x->gencomplex.real;
     break;
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat: {
+    float f = crealf(ecl_csfloat(x));
+    x = ecl_make_single_float(f);
+    break;
+  }
+  case t_cdfloat: {
+    double f = creal(ecl_cdfloat(x));
+    x = ecl_make_double_float(f);
+    break;
+  }
+  case t_clfloat: {
+    long double f = creall(ecl_clfloat(x));
+    x = ecl_make_long_float(f);
+    break;
+  }
+#endif
   default:
     FEwrong_type_only_arg(@[realpart],x,@[number]);
   }
@@ -474,6 +491,23 @@ cl_imagpart(cl_object x)
   case t_complex:
     x = x->gencomplex.imag;
     break;
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat: {
+    float f = cimagf(ecl_csfloat(x));
+    x = ecl_make_single_float(f);
+    break;
+  }
+  case t_cdfloat: {
+    double f = cimag(ecl_cdfloat(x));
+    x = ecl_make_double_float(f);
+    break;
+  }
+  case t_clfloat: {
+    long double f = cimagl(ecl_clfloat(x));
+    x = ecl_make_long_float(f);
+    break;
+  }
+#endif
   default:
     FEwrong_type_only_arg(@[imagpart],x,@[number]);
   }

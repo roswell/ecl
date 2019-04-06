@@ -74,8 +74,34 @@ ecl_tan_complex(cl_object x)
   return ecl_divide(a, b);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_tan_csfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(result) = ctanf(ecl_csfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_tan_cdfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(result) = ctan(ecl_cdfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_tan_clfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(result) = ctanl(ecl_clfloat(x));
+  return result;
+}
+#endif
+
 MATH_DEF_DISPATCH1(tan, @[tan], @[number],
                    ecl_tan_rational, ecl_tan_rational, ecl_tan_rational,
                    ecl_tan_single_float, ecl_tan_double_float, ecl_tan_long_float,
                    ecl_tan_complex,
-                   /* implementme */ tan_nefailed, tan_nefailed, tan_nefailed);
+                   ecl_tan_csfloat, ecl_tan_cdfloat, ecl_tan_clfloat);
