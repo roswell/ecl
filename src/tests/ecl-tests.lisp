@@ -22,7 +22,7 @@
 ;;;; Declare the suites
 (suite 'ecl-tests
        '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed
-         cmp emb ffi mop mp run-program eformat))
+         cmp emb ffi mop mp run-program eformat complex))
 
 (suite 'make-check
        '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed
