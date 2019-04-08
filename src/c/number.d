@@ -623,129 +623,26 @@ ecl_make_complex(cl_object r, cl_object i)
   return(c);
 }
 
-static cl_object
-into_bignum(cl_object bignum, cl_object integer)
-{
-  if (ECL_FIXNUMP(integer)) {
-    _ecl_big_set_fixnum(bignum, ecl_fixnum(integer));
-  } else {
-    mpz_set(bignum->big.big_num, integer->big.big_num);
-  }
-  return bignum;
-}
-
-static cl_fixnum
-remove_zeros(cl_object *integer)
-{
-  cl_object buffer = into_bignum(_ecl_big_register0(), *integer);
-  unsigned long den_twos = mpz_scan1(buffer->big.big_num, 0);
-  if (den_twos < ULONG_MAX) {
-    mpz_div_2exp(buffer->big.big_num, buffer->big.big_num, den_twos);
-    *integer = _ecl_big_register_normalize(buffer);
-    return -den_twos;
-  } else {
-    _ecl_big_register_free(buffer);
-    return 0;
-  }
-}
-
-static cl_object
-prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scaleout)
-{
-  /* We have to cook our own routine because GMP does not round.
-   * The recipe is simple: we multiply the numberator by a large
-   * enough number so that the division by the denominator fits
-   * the floating point number. The result is scaled back by the
-   * appropriate exponent.
-   */
-  /* Scale down the denominator, eliminating the zeros
-   * so that we have smaller operands.
-   */
-  cl_fixnum scale = remove_zeros(&den);
-  cl_fixnum num_size = ecl_integer_length(num);
-  cl_fixnum delta = ecl_integer_length(den) - num_size;
-  scale -= delta;
-  {
-    cl_fixnum adjust = digits + delta + 1;
-    if (adjust > 0) {
-      num = ecl_ash(num, adjust);
-    } else if (adjust < 0) {
-      den = ecl_ash(den, -adjust);
-    }
-  }
-  do {
-    const cl_env_ptr the_env = ecl_process_env();
-    cl_object fraction = ecl_truncate2(num, den);
-    cl_object rem = ecl_nth_value(the_env, 1);
-    cl_fixnum len = ecl_integer_length(fraction);
-    if ((len - digits) == 1) {
-      if (ecl_oddp(fraction)) {
-        cl_object one = ecl_minusp(num)?
-          ecl_make_fixnum(-1) :
-          ecl_make_fixnum(1);
-        if (rem == ecl_make_fixnum(0)) {
-          if (cl_logbitp(ecl_make_fixnum(1), fraction)
-              != ECL_NIL)
-            fraction = ecl_plus(fraction, one);
-        } else {
-          fraction = ecl_plus(fraction, one);
-        }
-      }
-      *scaleout = scale - (digits + 1);
-      return fraction;
-    }
-    den = ecl_ash(den, 1);
-    scale++;
-  } while (1);
-}
-
-#if 0 /* Unused, we do not have ecl_to_float() */
-static float
-ratio_to_float(cl_object num, cl_object den)
-{
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, FLT_MANT_DIG, &scale);
-#if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  float output = ecl_fixnum(bits);
-#else
-  float output = ECL_FIXNUMP(bits)? ecl_fixnum(bits) : _ecl_big_to_double(bits);
-#endif
-  return ldexpf(output, scale);
-}
-#endif
-
 static double
-ratio_to_double(cl_object num, cl_object den)
+_ecl_ratio_to_double(cl_object x)
 {
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, DBL_MANT_DIG, &scale);
-#if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  double output = ecl_fixnum(bits);
-#else
-  double output = ECL_FIXNUMP(bits)? ecl_fixnum(bits) : _ecl_big_to_double(bits);
-#endif
-  return ldexp(output, scale);
+  double output;
+  mpq_t aux;
+  mpq_init(aux);
+  if (ECL_FIXNUMP(x->ratio.num)) {
+    mpz_set_si(mpq_numref(aux), ecl_fixnum(x->ratio.num));
+  } else {
+    mpz_set(mpq_numref(aux), x->ratio.num->big.big_num);
+  }
+  if (ECL_FIXNUMP(x->ratio.den)) {
+    mpz_set_si(mpq_denref(aux), ecl_fixnum(x->ratio.den));
+  } else {
+    mpz_set(mpq_denref(aux), x->ratio.den->big.big_num);
+  }
+  output = mpq_get_d(aux);
+  mpq_clear(aux);
+  return output;
 }
-
-#ifdef ECL_LONG_FLOAT
-static long double
-ratio_to_long_double(cl_object num, cl_object den)
-{
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
-#if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  long double output = ecl_fixnum(bits);
-#else
-  long double output = ECL_FIXNUMP(bits)?
-    (long double)ecl_fixnum(bits) :
-    _ecl_big_to_long_double(bits);
-#endif
-  return ldexpl(output, scale);
-}
-#endif /* ECL_LONG_FLOAT */
 
 float
 ecl_to_float(cl_object x)
@@ -756,13 +653,13 @@ ecl_to_float(cl_object x)
   case t_fixnum:
     return (float)ecl_fixnum(x);
   case t_bignum:
-    return (float)ratio_to_double(x, ecl_make_fixnum(1));
+    return _ecl_big_to_double(x);
   case t_ratio:
-    return (float)ratio_to_double(x->ratio.num, x->ratio.den);
+    return _ecl_ratio_to_double(x);
   case t_singlefloat:
     return ecl_single_float(x);
   case t_doublefloat:
-    return (float)ecl_double_float(x);
+    return ecl_double_float(x);
 #ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return (float)ecl_long_float(x);
@@ -777,18 +674,18 @@ ecl_to_double(cl_object x)
 {
   switch(ecl_t_of(x)) {
   case t_fixnum:
-    return((double)(ecl_fixnum(x)));
+    return ecl_fixnum(x);
   case t_bignum:
-    return ratio_to_double(x, ecl_make_fixnum(1));
+    return _ecl_big_to_double(x);
   case t_ratio:
-    return ratio_to_double(x->ratio.num, x->ratio.den);
+    return _ecl_ratio_to_double(x);
   case t_singlefloat:
-    return (double)ecl_single_float(x);
+    return ecl_single_float(x);
   case t_doublefloat:
-    return(ecl_double_float(x));
+    return ecl_double_float(x);
 #ifdef ECL_LONG_FLOAT
   case t_longfloat:
-    return (double)ecl_long_float(x);
+    return ecl_long_float(x);
 #endif
   default:
     FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
@@ -801,15 +698,15 @@ ecl_to_long_double(cl_object x)
 {
   switch(ecl_t_of(x)) {
   case t_fixnum:
-    return (long double)ecl_fixnum(x);
+    return ecl_fixnum(x);
   case t_bignum:
-    return ratio_to_long_double(x, ecl_make_fixnum(1));
+    return _ecl_big_to_long_double(x);
   case t_ratio:
-    return ratio_to_long_double(x->ratio.num, x->ratio.den);
+    return ecl_to_long_double(x->ratio.num) / ecl_to_long_double(x->ratio.den);
   case t_singlefloat:
-    return (long double)ecl_single_float(x);
+    return ecl_single_float(x);
   case t_doublefloat:
-    return (long double)ecl_double_float(x);
+    return ecl_double_float(x);
   case t_longfloat:
     return ecl_long_float(x);
   default:
