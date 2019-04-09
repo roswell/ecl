@@ -14,35 +14,23 @@
 #include <ecl/ecl.h>
 #include <ecl/number.h>
 #include <stdlib.h>
+#include <ecl/impl/math_dispatch2.h>
 
 cl_object
 ecl_integer_divide(cl_object x, cl_object y)
 {
-  cl_type tx, ty;
-
-  tx = ecl_t_of(x);
-  ty = ecl_t_of(y);
-  if (tx == t_fixnum) {
-    if (ty == t_fixnum) {
-      if (y == ecl_make_fixnum(0))
-        FEdivision_by_zero(x, y);
-      return ecl_make_fixnum(ecl_fixnum(x) / ecl_fixnum(y));
-    } else if (ty == t_bignum) {
-      return _ecl_fix_divided_by_big(ecl_fixnum(x), y);
-    } else {
-      FEwrong_type_nth_arg(@[round], 2, y, @[integer]);
+  MATH_DISPATCH2_BEGIN(x,y) {
+    CASE_FIXNUM_FIXNUM;
+    if (y == ecl_make_fixnum(0)) {
+      FEdivision_by_zero(x,y);
     }
+    return ecl_make_fixnum(ecl_fixnum(x) / ecl_fixnum(y));
+    CASE_FIXNUM_BIGNUM return _ecl_fix_divided_by_big(ecl_fixnum(x), y);
+    CASE_BIGNUM_FIXNUM return _ecl_big_divided_by_fix(x, ecl_fixnum(y));
+    CASE_BIGNUM_BIGNUM return _ecl_big_divided_by_big(x, y);
+    CASE_UNKNOWN(@[round],x,y,@[integer]);
   }
-  if (tx == t_bignum) {
-    if (ty == t_bignum) {
-      return _ecl_big_divided_by_big(x, y);
-    } else if (ty == t_fixnum) {
-      return _ecl_big_divided_by_fix(x, ecl_fixnum(y));
-    } else {
-      FEwrong_type_nth_arg(@[round], 2, y, @[integer]);
-    }
-  }
-  FEwrong_type_nth_arg(@[round], 1, x, @[integer]);
+  MATH_DISPATCH2_END;
 }
 
 @(defun gcd (&rest nums)
