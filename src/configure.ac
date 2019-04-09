@@ -293,14 +293,18 @@ AC_ARG_WITH(init-form,
                   [lisp forms to execute at startup (default="(si::top-level t)")]),
   [with_init_form="${withval}"], [with_init_form=""])
 
+AC_ARG_ENABLE(manual,
+  AS_HELP_STRING( [--with-manual={auto|html|info|no}],
+                  [Enable building of the manual]
+                  [(default=AUTO)]),
+  [enable_manual=${enableval}],
+  [enable_manual=auto])
+
 dnl -----------------------------------------------------------------------
 dnl Installation directories
 AC_ARG_VAR([ecldir], [the directory where *.fas files are installed])
 test -z "${ecldir}" && ecldir="${libdir}/ecl-${PACKAGE_VERSION}"
 AC_SUBST([ecldir])
-AC_ARG_VAR([docdir], [the directory where documentation is installed])
-test -z "${docdir}" && docdir="${datadir}/doc/ecl-${PACKAGE_VERSION}"
-AC_SUBST([docdir])
 
 dnl -----------------------------------------------------------------------
 dnl Initialize variables.
@@ -353,13 +357,36 @@ ECL_MAKE_ABSOLUTE_SRCDIR
 ECL_CROSS_CONFIG
 ECL_GUESS_HOST_OS
 
-AC_SUBST(INFOEXT)
-AC_SUBST(INSTALL_INFO)
-AC_PATH_PROG([INSTALL_INFO], [install-info], [/bin/true], [$PATH:/sbin:/usr/sbin:/usr/etc])
-if test -z `which gzip`; then
-  INFOEXT=info.gz
-else
-  INFOEXT=info
+if test "${enable_manual}" != "no"; then
+  AC_PATH_PROG([INSTALL_INFO], [install-info], [])  
+  if test "x${INSTALL_INFO}" = "x"; then
+    if test "${enable_manual}" = "auto"; then
+      enable_manual=no
+    elif test "${enable_manual}" = "info"; then
+      AC_MSG_ERROR([Unable to build the manual: install-info not found.])
+    fi
+  fi
+  AC_PATH_PROG([MAKEINFO], [makeinfo], [])
+  if test "x${MAKEINFO}" = "x"; then
+    if test "${enable_manual}" = "auto"; then
+      enable_manual=no
+    else
+      AC_MSG_ERROR([Unable to build the manual: makeinfo not found.])
+    fi
+  fi
+fi
+if test "${enable_manual}" != "no"; then
+  AC_SUBST(INSTALL_INFO)
+  AC_SUBST(MAKEINFO)
+  if test "${enable_manual}" = "html"; then
+    AC_SUBST(MANUAL_MAKE_TARGET, ['html'])
+    AC_SUBST(MANUAL_INSTALL_TARGET, ['install-html'])
+    AC_SUBST(MANUAL_UNINSTALL_TARGET, ['uninstall-html'])
+  else
+    AC_SUBST(MANUAL_MAKE_TARGET, ['info'])
+    AC_SUBST(MANUAL_INSTALL_TARGET, ['install-info'])
+    AC_SUBST(MANUAL_UNINSTALL_TARGET, ['uninstall-info'])
+  fi
 fi
 
 dnl ======================================================================

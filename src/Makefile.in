@@ -72,7 +72,7 @@ LSP_LIBRARIES = @LSP_LIBRARIES@
 TARGETS = @TARGETS@
 ECL_CMPDIR = @ECL_CMPDIR@
 
-all: $(TARGETS) bin/ecl-config .git/tags TAGS
+all: $(TARGETS) bin/ecl-config .git/tags TAGS doc
 .PHONY: all
 .SUFFIXES: .c .o .d .s
 
@@ -185,6 +185,10 @@ bin/ecl-config: bin/ecl-config.pre
 build-stamp: config.status
 	echo "#" `uname -a` > $@
 	head -8 config.log | tail -6 >> $@
+
+doc:
+	$(MAKE) -C doc
+.PHONY: doc
 
 install:
 # Here we would use the option -s but the install program in sourceforge-solaris
