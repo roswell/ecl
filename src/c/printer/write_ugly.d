@@ -137,11 +137,11 @@ write_complex_float(cl_object f, cl_object stream)
   default:
     break;
   }
-  writestr_stream("#<CF(", stream);
+  writestr_stream("#C(", stream);
   si_write_ugly_object(real, stream);
   ecl_write_char(' ', stream);
   si_write_ugly_object(imag, stream);
-  writestr_stream(")>", stream);
+  writestr_stream(")", stream);
 }
 #endif
 
