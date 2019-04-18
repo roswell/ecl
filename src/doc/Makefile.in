@@ -9,42 +9,55 @@ docdir=@docdir@
 datarootdir = @datarootdir@
 manext=1
 
-INFOEXT = @INFOEXT@
 SHELL = @SHELL@
 INSTALL	= @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_INFO = @INSTALL_INFO@
 mkinstalldirs = $(top_srcdir)/bdwgc/install-sh -d
-INFO_FILE = ecl.$(INFOEXT)
+INFO_FILE = ecl.info.gz
+MAKEINFO = @MAKEINFO@
+MANUAL_MAKE_TARGET = @MANUAL_MAKE_TARGET@
+MANUAL_INSTALL_TARGET = @MANUAL_INSTALL_TARGET@
+MANUAL_UNINSTALL_TARGET = @MANUAL_UNINSTALL_TARGET@
 
 VERSION=@PACKAGE_VERSION@
 
-all: manual
-	$(MAKE) -C manual
+all: $(MANUAL_MAKE_TARGET)
 
 manual:
 	cp -r $(srcdir)/manual .
 
-install: install-manual
+info: manual
+	$(MAKE) MAKEINFO=$(MAKEINFO) -C manual info
+
+html: manual
+	$(MAKE) MAKEINFO=$(MAKEINFO) -C manual html
+
+install: $(MANUAL_INSTALL_TARGET)
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
 	$(INSTALL_DATA) ecl.man $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
 	$(INSTALL_DATA) ecl-config.man $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
 
-install-manual: manual
-	$(MAKE) -C manual info
+install-info:
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
-	gzip < manual/$(INFO_FILE) > manual/$(INFO_FILE).gz
-	$(INSTALL_DATA) manual/$(INFO_FILE).gz $(DESTDIR)$(infodir)
-	$(INSTALL_INFO) --info-dir=$(DESTDIR)$(infodir) manual/$(INFO_FILE);
+	$(INSTALL_DATA) manual/$(INFO_FILE) $(DESTDIR)$(infodir)
+	$(INSTALL_INFO) --info-dir=$(DESTDIR)$(infodir) manual/$(INFO_FILE)
 
-uninstall: uninstall-manual
+install-html:
+	$(mkinstalldirs) $(DESTDIR)$(docdir)/ecl-$(VERSION)
+	cp -r manual/html/ $(DESTDIR)$(docdir)/ecl-$(VERSION)
+
+uninstall: $(MANUAL_UNINSTALL_TARGET)
 	$(RM) $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)
 	$(RM) $(DESTDIR)$(mandir)/man$(manext)/ecl-config.$(manext)
 
-uninstall-manual:
-	$(RM) $(DESTDIR)$(infodir)/$(INFO_FILE).gz
-	$(INSTALL_INFO) --info-dir=$(DESTDIR)$(infodir) --remove manual/$(INFO_FILE);
+uninstall-info:
+	$(RM) $(DESTDIR)$(infodir)/$(INFO_FILE)
+	$(INSTALL_INFO) --info-dir=$(DESTDIR)$(infodir) --remove manual/$(INFO_FILE)
+
+uninstall-html:
+	$(RM) -r $(DESTDIR)$(docdir)/ecl-$(VERSION)
 
 clean:
 	$(MAKE) -C manual clean
