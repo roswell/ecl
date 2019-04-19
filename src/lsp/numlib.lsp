@@ -128,6 +128,7 @@ zero.  Otherwise, returns the value of (/ NUMBER (ABS NUMBER))"
   "Args: (radians)
 Returns a complex number whose realpart and imagpart are the values of (COS
 RADIANS) and (SIN RADIANS) respectively."
+  (declare (ext:check-arguments-type))
   (exp (* imag-one x)))
 
 #-ecl-min
