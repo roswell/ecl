@@ -215,6 +215,9 @@
     (single-float . (float x 0.0f0))
     (double-float . (float x 0.0d0))
     (long-float . (float x 0.0l0))
+    (complex . (let ((y x))
+                 (declare (:read-only y))
+                 (complex (realpart y) (imagpart y))))
     (base-char . (character x))
     (character . (character x))
     (function . (si::coerce-to-function x))
@@ -251,15 +254,7 @@
               when (eq type a-type)
               do (return (subst value 'x template))))
           ;;
-          ;; FIXME! COMPLEX cannot be in +coercion-table+ because
-          ;; (type= '(complex) '(complex double-float)) == T
-          ;;
-          ((eq type 'COMPLEX)
-           `(let ((y ,value))
-              (declare (:read-only y))
-              (complex (realpart y) (imagpart y))))
-          ;;
-          ;; Complex types defined with DEFTYPE.
+          ;; Derived types defined with DEFTYPE.
           ((and (atom type)
                 (setq first (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
            (expand-coerce form value `',(funcall first nil) env))
