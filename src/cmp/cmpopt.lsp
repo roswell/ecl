@@ -79,7 +79,7 @@
               when (si::type= type a-type)
               do (return `(,function-name ,object))))
           ;;
-          ;; Complex types defined with DEFTYPE.
+          ;; Derived types defined with DEFTYPE.
           ((and (atom type)
                 (setq function (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
            (expand-typep form object `',(funcall function nil) env))
@@ -90,7 +90,7 @@
           ;;
           ;; CONS types. They must be checked _before_ sequence types. We
           ;; do not produce optimized forms because they can be recursive.
-          ((and (consp type) (eq first 'CONS))
+          ((and (consp type) (eq (first type) 'CONS))
            form)
           ;;
           ;; The type denotes a known class and we can check it
@@ -141,13 +141,19 @@
                        (setf ,var2 (truly-the ,first ,var1))
                        (AND ,@(expand-in-interval-p var2 rest)))))))
           ;;
+          ;; Compound COMPLEX types.
+          ((and (eq first 'COMPLEX)
+                (= (list-length type) 2))
+           `(and (typep (realpart ,object) ',(second type))
+                 (typep (imagpart ,object) ',(second type))))
+          ;;
           ;; (SATISFIES predicate)
           ((and (eq first 'SATISFIES)
                 (= (list-length type) 2)
                 (symbolp (setf function (second type))))
            `(,function ,object))
           ;;
-          ;; Complex types with arguments.
+          ;; Derived compound types.
           ((setf function (si:get-sysprop first 'SI::DEFTYPE-DEFINITION))
            (expand-typep form object `',(funcall function rest) env))
           (t

@@ -568,9 +568,10 @@ Returns T if X belongs to TYPE; NIL otherwise."
     (COMPLEX
      (and (complexp object)
           (or (null i)
+              ;; type specifier may be i.e (complex integer) so we
+              ;; should check both real and imag part (disregarding
+              ;; the fact that both have the same upgraded type).
               (and (typep (realpart object) (car i))
-                   ;;wfs--should only have to check one.
-                   ;;Illegal to mix real and imaginary types!
                    (typep (imagpart object) (car i))))
            ))
     (SEQUENCE (or (listp object) (vectorp object)))
@@ -1514,9 +1515,17 @@ if not possible."
   (declare (si::c-local))
   (when (eq t1 t2)
     (return-from fast-type= (values t t)))
-  (let* ((tag1 (safe-canonical-type t1))
-         (tag2 (safe-canonical-type t2)))
-    (cond ((and (numberp tag1) (numberp tag2))
+  (let ((tag1 (safe-canonical-type t1))
+        (tag2 (safe-canonical-type t2))
+        (tag3 (safe-canonical-type 'complex)))
+    ;; FAST-TYPE= can't rely on the CANONICAL-TYPE in case of complex
+    ;; numbers which have an exceptional behavior define for TYPEP not
+    ;; being consistent with SUBTYPEP. -- jd 2019-04-19
+    (cond ((and (numberp tag1)
+                (numberp tag2)
+                (/= tag2 tag3))
+           ;; We must call safe-canonical-type again because one of
+           ;; the calls above could have called UPDATE-TYPES.
            (values (= (safe-canonical-type t1) (safe-canonical-type t2))
                    t))
           #+nil
