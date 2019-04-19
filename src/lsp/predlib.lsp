@@ -1172,31 +1172,21 @@ if not possible."
 ;; bring the type to canonical form, which is a union of all specialized
 ;; complex types that can store an element of the corresponding type.
 ;;
+;; Don't be tempted to do "better" than that. CANONICAL-COMPLEX-TYPE
+;; yields results for use of SUBTYPEP which has clearly specified to
+;; return true when: T1 is a subtype of T2 or when the upgraded type
+;; specifiers refer to the same sets of objects. TYPEP has a different
+;; specification and TYPECASE should use it. -- jd 2019-04-19
 (defun canonical-complex-type (real-type)
   (declare (si::c-local))
-  (case real-type
-    ((#+short-float SHORT-FLOAT
-      SINGLE-FLOAT
-      DOUBLE-FLOAT
-      INTEGER
-      RATIO
-      #+long-float LONG-FLOAT)
-     (let ((tag (new-type-tag)))
-       (push-type `(COMPLEX ,real-type) tag)))
-    ((RATIONAL) (canonical-type '(OR (COMPLEX INTEGER) (COMPLEX RATIO))))
-    ((FLOAT) (canonical-type '(OR
-                               #+short-float (COMPLEX SHORT-FLOAT)
-                               (COMPLEX SINGLE-FLOAT)
-                               (COMPLEX DOUBLE-FLOAT)
-                               #+long-float (COMPLEX LONG-FLOAT))))
-    ((* NIL REAL) (canonical-type
-                   '(OR (COMPLEX INTEGER) (COMPLEX RATIO)
-                     #+short-float (COMPLEX SHORT-FLOAT)
-                     (COMPLEX SINGLE-FLOAT)
-                     (COMPLEX DOUBLE-FLOAT)
-                     #+long-float (COMPLEX LONG-FLOAT)
-                     )))
-    (otherwise (canonical-complex-type (upgraded-complex-part-type real-type)))))
+  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not
+  ;; a subtype of REAL.
+  (let ((type (if (eq real-type '*)
+                  `(complex real)
+                  `(complex ,(upgraded-complex-part-type real-type)))))
+    (or (find-registered-tag type)
+        (let ((tag (new-type-tag)))
+          (push-type type tag)))))
 
 ;;----------------------------------------------------------------------
 ;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
