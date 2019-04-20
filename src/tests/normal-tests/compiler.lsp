@@ -1437,3 +1437,91 @@
         (compile '(setf foo))
       (is (and fun (null warn) (null err))
           "compile: (setf foo) is a valid function name."))))
+
+;;; Date 2019-04-02
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/468
+;;; Fixed: 177ad215ea91524756a00b24436273b065628081
+;;; Description
+;;;
+;;;   TYPECASE doesn't distinguish between different complex types
+;;;   when compiled.
+(ext:with-clean-symbols (xxx)
+  (test cmp.0070.cmp-typecase-complex
+        (defun xxx ()
+          (let ((ci #c(5 7))
+                (cs #c(1.0s0 1.0s0))
+                (cd #c(1.0d0 1.0d0)))
+            (list (typecase ci
+                    ((complex integer) 'ci)
+                    ((complex single-float) 'csf)
+                    ((complex double-float) 'cdf))
+                  (typecase cs
+                    ((complex integer) 'ci)
+                    ((complex single-float) 'csf)
+                    ((complex double-float) 'cdf))
+                  (typecase cs
+                    ((complex integer) 'ci)
+                    ((complex double-float) 'cdf)
+                    ((complex single-float) 'csf))
+                  (typecase cd
+                    ((complex integer) 'ci)
+                    ((complex single-float) 'csf)
+                    ((complex double-float) 'cdf))
+                  (typecase cd
+                    ((complex integer) 'ci)
+                    ((complex double-float) 'cdf)
+                    ((complex single-float) 'csf))
+                  (typecase ci
+                    ((complex (integer 0 3)) 'invalid)
+                    ((complex (integer 0 6)) 'invalid)
+                    ((complex (integer 4 8)) 'ci)
+                    ((complex integer) 'overboard)))))
+        (is-equal (xxx) '(ci csf csf cdf cdf ci))
+        (compile 'xxx)
+        (is-equal (xxx) '(ci csf csf cdf cdf ci))))
+
+;;; Date 2019-04-19
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/493
+;;; Fixed: a73df694
+;;; Description
+;;;
+;;;   SUBTYPEP and TYPEP are not consistent for COMPLEX type in ANSI
+;;;   spec. SUBTYPEP pursues the internal representation (with
+;;;   UPGRADED-COMPLEX-PART-TYPE) while TYPEP goes after the type of
+;;;   the complex number parts to match the typespec. Problem was
+;;;   exhibited in compiled code. These are just a few examples which
+;;;   explore ECL potential failures. Test which goes more
+;;;   systematically across more types is defined in ansi-tests under
+;;;   name SUBTYPEP-COMPLEX.8.
+(test cmp.0071.cmp-typep-subtypep
+      (is (typep #c(1.0 2.0) '(complex single-float)))
+      (is (typep #c(1 2) '(complex fixnum)))
+      (is (typep #c(1 2) '(complex (integer 0 8))))
+      (is (not (typep #c(1.0 2.0) '(complex double-float))))
+      (is (not (typep #c(1 2) '(complex (integer 0 1)))))
+      (is (not (typep #c(1/2 2/3) '(complex (integer 0 1)))))
+      ;;
+      #-complex-float (is (subtypep '(complex single-float) '(complex double-float)))
+      #-complex-float (is (subtypep '(complex double-float) '(complex single-float)))
+      #-complex-float (is (subtypep '(complex double-float) '(complex float)))
+      #+complex-float (is (not (subtypep '(complex single-float) '(complex double-float))))
+      #+complex-float (is (not (subtypep '(complex double-float) '(complex single-float))))
+      (is (subtypep '(complex double-float) '(complex float)))
+      (is (subtypep '(complex fixnum) '(complex integer)))
+      (is (subtypep '(complex integer) '(complex fixnum)))
+      (is (subtypep '(complex ratio) '(complex fixnum)))
+      (is (subtypep '(complex bit) '(complex ratio)))
+      ;; this should be true even if single-float has a specialized
+      ;; representation because of the first rule:
+      ;;
+      ;;   (subtypep (complex t1) (complex t2)) is T, T when
+      ;;
+      ;;   1. (subtypep t1 t2) is T, T or
+      ;;   2. (equal (ucpt t1) (ucpt t2))
+      (is (subtypep '(complex single-float) '(complex real)))
+      #-complex-float
+      (is (and (subtypep '(complex bit) '(complex double-float))
+               (subtypep '(complex double-float) '(complex bit))))
+      #+complex-float
+      (is (and (not (subtypep '(complex bit) '(complex double-float)))
+               (not (subtypep '(complex double-float) '(complex bit) )))))

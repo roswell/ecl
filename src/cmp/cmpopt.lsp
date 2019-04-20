@@ -79,7 +79,7 @@
               when (si::type= type a-type)
               do (return `(,function-name ,object))))
           ;;
-          ;; Complex types defined with DEFTYPE.
+          ;; Derived types defined with DEFTYPE.
           ((and (atom type)
                 (setq function (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
            (expand-typep form object `',(funcall function nil) env))
@@ -90,7 +90,7 @@
           ;;
           ;; CONS types. They must be checked _before_ sequence types. We
           ;; do not produce optimized forms because they can be recursive.
-          ((and (consp type) (eq first 'CONS))
+          ((and (consp type) (eq (first type) 'CONS))
            form)
           ;;
           ;; The type denotes a known class and we can check it
@@ -141,13 +141,19 @@
                        (setf ,var2 (truly-the ,first ,var1))
                        (AND ,@(expand-in-interval-p var2 rest)))))))
           ;;
+          ;; Compound COMPLEX types.
+          ((and (eq first 'COMPLEX)
+                (= (list-length type) 2))
+           `(and (typep (realpart ,object) ',(second type))
+                 (typep (imagpart ,object) ',(second type))))
+          ;;
           ;; (SATISFIES predicate)
           ((and (eq first 'SATISFIES)
                 (= (list-length type) 2)
                 (symbolp (setf function (second type))))
            `(,function ,object))
           ;;
-          ;; Complex types with arguments.
+          ;; Derived compound types.
           ((setf function (si:get-sysprop first 'SI::DEFTYPE-DEFINITION))
            (expand-typep form object `',(funcall function rest) env))
           (t
@@ -209,6 +215,9 @@
     (single-float . (float x 0.0f0))
     (double-float . (float x 0.0d0))
     (long-float . (float x 0.0l0))
+    (complex . (let ((y x))
+                 (declare (:read-only y))
+                 (complex (realpart y) (imagpart y))))
     (base-char . (character x))
     (character . (character x))
     (function . (si::coerce-to-function x))
@@ -245,15 +254,7 @@
               when (eq type a-type)
               do (return (subst value 'x template))))
           ;;
-          ;; FIXME! COMPLEX cannot be in +coercion-table+ because
-          ;; (type= '(complex) '(complex double-float)) == T
-          ;;
-          ((eq type 'COMPLEX)
-           `(let ((y ,value))
-              (declare (:read-only y))
-              (complex (realpart y) (imagpart y))))
-          ;;
-          ;; Complex types defined with DEFTYPE.
+          ;; Derived types defined with DEFTYPE.
           ((and (atom type)
                 (setq first (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
            (expand-coerce form value `',(funcall first nil) env))

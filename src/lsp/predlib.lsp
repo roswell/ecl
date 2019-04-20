@@ -568,9 +568,10 @@ Returns T if X belongs to TYPE; NIL otherwise."
     (COMPLEX
      (and (complexp object)
           (or (null i)
+              ;; type specifier may be i.e (complex integer) so we
+              ;; should check both real and imag part (disregarding
+              ;; the fact that both have the same upgraded type).
               (and (typep (realpart object) (car i))
-                   ;;wfs--should only have to check one.
-                   ;;Illegal to mix real and imaginary types!
                    (typep (imagpart object) (car i))))
            ))
     (SEQUENCE (or (listp object) (vectorp object)))
@@ -1172,31 +1173,21 @@ if not possible."
 ;; bring the type to canonical form, which is a union of all specialized
 ;; complex types that can store an element of the corresponding type.
 ;;
+;; Don't be tempted to do "better" than that. CANONICAL-COMPLEX-TYPE
+;; yields results for use of SUBTYPEP which has clearly specified to
+;; return true when: T1 is a subtype of T2 or when the upgraded type
+;; specifiers refer to the same sets of objects. TYPEP has a different
+;; specification and TYPECASE should use it. -- jd 2019-04-19
 (defun canonical-complex-type (real-type)
   (declare (si::c-local))
-  (case real-type
-    ((#+short-float SHORT-FLOAT
-      SINGLE-FLOAT
-      DOUBLE-FLOAT
-      INTEGER
-      RATIO
-      #+long-float LONG-FLOAT)
-     (let ((tag (new-type-tag)))
-       (push-type `(COMPLEX ,real-type) tag)))
-    ((RATIONAL) (canonical-type '(OR (COMPLEX INTEGER) (COMPLEX RATIO))))
-    ((FLOAT) (canonical-type '(OR
-                               #+short-float (COMPLEX SHORT-FLOAT)
-                               (COMPLEX SINGLE-FLOAT)
-                               (COMPLEX DOUBLE-FLOAT)
-                               #+long-float (COMPLEX LONG-FLOAT))))
-    ((* NIL REAL) (canonical-type
-                   '(OR (COMPLEX INTEGER) (COMPLEX RATIO)
-                     #+short-float (COMPLEX SHORT-FLOAT)
-                     (COMPLEX SINGLE-FLOAT)
-                     (COMPLEX DOUBLE-FLOAT)
-                     #+long-float (COMPLEX LONG-FLOAT)
-                     )))
-    (otherwise (canonical-complex-type (upgraded-complex-part-type real-type)))))
+  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not
+  ;; a subtype of REAL.
+  (let ((type (if (eq real-type '*)
+                  `(complex real)
+                  `(complex ,(upgraded-complex-part-type real-type)))))
+    (or (find-registered-tag type)
+        (let ((tag (new-type-tag)))
+          (push-type type tag)))))
 
 ;;----------------------------------------------------------------------
 ;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
@@ -1524,9 +1515,17 @@ if not possible."
   (declare (si::c-local))
   (when (eq t1 t2)
     (return-from fast-type= (values t t)))
-  (let* ((tag1 (safe-canonical-type t1))
-         (tag2 (safe-canonical-type t2)))
-    (cond ((and (numberp tag1) (numberp tag2))
+  (let ((tag1 (safe-canonical-type t1))
+        (tag2 (safe-canonical-type t2))
+        (tag3 (safe-canonical-type 'complex)))
+    ;; FAST-TYPE= can't rely on the CANONICAL-TYPE in case of complex
+    ;; numbers which have an exceptional behavior define for TYPEP not
+    ;; being consistent with SUBTYPEP. -- jd 2019-04-19
+    (cond ((and (numberp tag1)
+                (numberp tag2)
+                (/= tag2 tag3))
+           ;; We must call safe-canonical-type again because one of
+           ;; the calls above could have called UPDATE-TYPES.
            (values (= (safe-canonical-type t1) (safe-canonical-type t2))
                    t))
           #+nil
