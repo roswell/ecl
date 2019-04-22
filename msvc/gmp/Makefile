@@ -428,6 +428,38 @@ MPZ_SOURCES = \
     mpz\urandomm.c \
     mpz\xor.c
 
+MPQ_SOURCES = \
+    mpq\abs.c \
+    mpq\aors.c \
+    mpq\canonicalize.c \
+    mpq\clear.c \
+    mpq\cmp.c \
+    mpq\cmp_si.c \
+    mpq\cmp_ui.c \
+    mpq\div.c \
+    mpq\equal.c \
+    mpq\get_d.c \
+    mpq\get_den.c \
+    mpq\get_num.c \
+    mpq\get_str.c \
+    mpq\init.c \
+    mpq\inp_str.c \
+    mpq\inv.c \
+    mpq\md_2exp.c \
+    mpq\mul.c \
+    mpq\neg.c \
+    mpq\out_str.c \
+    mpq\set.c \
+    mpq\set_d.c \
+    mpq\set_den.c \
+    mpq\set_f.c \
+    mpq\set_num.c \
+    mpq\set_si.c \
+    mpq\set_str.c \
+    mpq\set_ui.c \
+    mpq\set_z.c \
+    mpq\swap.c
+
 GMP_SOURCES = \
     assert.c \
     compat.c \
@@ -533,9 +565,10 @@ MPN_P3_OBJS = $(MPN_P3_ASM_SOURCES:.asm=.obj) $(MPN_P3_C_SOURCES:.c=.obj)
 MPN_P4_OBJS = $(MPN_P4_ASM_SOURCES:.asm=.obj) $(MPN_P4_C_SOURCES:.c=.obj)
 MPN_AMD64_OBJS = $(MPN_AMD64_ASM_SOURCES:.asm=.obj) $(MPN_AMD64_C_SOURCES:.c=.obj) #
 MPZ_OBJS = $(MPZ_SOURCES:.c=.obj)
+MPQ_OBJS = $(MPQ_SOURCES:.c=.obj)
 GMP_OBJS = $(GMP_SOURCES:.c=.obj)
 
-GMP_ALL_OBJS = $(MPZ_OBJS) $(GMP_OBJS)
+GMP_ALL_OBJS = $(MPZ_OBJS) $(MPQ_OBJS) $(GMP_OBJS)
 
 AUTO_FILES = mp_bases.h mp_bases.c fac_ui.h fib_table.h fib_table.c perfsqr.h
 
@@ -557,7 +590,7 @@ mpn_amd64.lib: msvc-build $(MPN_AMD64_OBJS)
 	link -lib /NOLOGO /OUT:$@ $(MPN_AMD64_OBJS)
 
 gmp.lib: mpn_$(MPN_TYPE).lib $(GMP_ALL_OBJS)
-	link -lib /NOLOGO /OUT:$@ *.obj mpz\*.obj mpn_$(MPN_TYPE).lib
+	link -lib /NOLOGO /OUT:$@ *.obj mpz\*.obj mpq\*.obj mpn_$(MPN_TYPE).lib
 
 #CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mpn\generic" /D "WIN32" /D "_LIB" /D "_WIN32" /D "_MBCS"
 CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mpn\generic" /D "_LIB" /D "_MBCS" $(D_WIN64)
@@ -566,11 +599,15 @@ CFLAGS = $(CFLAGS_CONFIG) /nologo /W3 /EHsc /I "." /I $(srcdir) /I "$(srcdir)\mp
 	cl -c $(CFLAGS) /Fo$@ $?
 {.\mpz}.c{.\mpz}.obj:
 	cl -c $(CFLAGS) /Fo$@ $?
+{.\mpq}.c{.\mpq}.obj:
+	cl -c $(CFLAGS) /Fo$@ $?
 {$(srcdir)\mpn\generic}.c{mpn\generic}.obj:
 	cl -c $(CFLAGS) /Fo$@ $?
 {$(srcdir)\mpn}.c{mpn}.obj:
 	cl -c $(CFLAGS) /Fo$@ $?
 {$(srcdir)\mpz}.c{mpz}.obj:
+	cl -c $(CFLAGS) /Fo$@ $?
+{$(srcdir)\mpq}.c{mpq}.obj:
 	cl -c $(CFLAGS) /Fo$@ $?
 {$(srcdir)}.c{}.obj:
 	cl -c $(CFLAGS) /Fo$@ $?
@@ -618,6 +655,7 @@ clean:
 	-erase mpn\amd64i\*.obj
 	-erase mpn\*.obj
 	-erase mpz\*.obj
+	-erase mpq\*.obj
 	-erase *.obj
 	-erase mpn_*.lib
 	-erase gmp.lib
