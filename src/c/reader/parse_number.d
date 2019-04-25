@@ -12,6 +12,7 @@
  */
 
 #include <ecl/ecl.h>
+#include <stdlib.h>
 
 static bool
 exponent_charp(cl_fixnum c)
@@ -72,35 +73,26 @@ infinity(cl_index exp_char, int sign)
 }
 
 static cl_object
-make_float(cl_object num, cl_object exp, cl_index exp_char, int sign)
-{
-  if (!ECL_FIXNUMP(exp)) {
-    return infinity(exp_char, sign);
-  } else {
-    cl_fixnum fix_exp = ecl_fixnum(exp);
-    if (fix_exp > 0) {
-      num = ecl_times(num, expt10(fix_exp));
-    } else if (fix_exp < 0) {
-      num = ecl_divide(num, expt10(-fix_exp));
-    }
+make_float_2(cl_object str, cl_index start, cl_index end,
+             cl_index exp_char, cl_index exp_index) {
+  str = si_copy_to_simple_base_string(str);
+  if (exp_index < end) {
+    ecl_char_set(str, exp_index, 'E');
   }
+
+  str = cl_subseq(3, str, ecl_make_fixnum(start), ecl_make_fixnum(end));
  AGAIN:
-  switch (exp_char) {
+  switch(exp_char) {
   case 'e': case 'E':
     exp_char = ecl_current_read_default_float_format();
     goto AGAIN;
   case 's':  case 'S':
   case 'f':  case 'F':
-    return ecl_make_single_float(sign * ecl_to_double(num));
+    return ecl_make_single_float(strtof(str->base_string.self, NULL));
+  case 'd':  case 'D':
+    return ecl_make_double_float(strtod(str->base_string.self, NULL));
   case 'l':  case 'L':
-#ifdef ECL_LONG_FLOAT
-    return ecl_make_long_float(sign * ecl_to_long_double(num));
-#endif
-  case 'd':  case 'D': {
-    return ecl_make_double_float(sign * ecl_to_double(num));
-  }
-  default:
-    return OBJNULL;
+    return ecl_make_long_float(strtold(str->base_string.self, NULL));
   }
 }
 
@@ -183,15 +175,13 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
         radix = 10;
         goto AGAIN;
       }
-      num = _ecl_big_register_normalize(num);
-      decimals = (decimal < i) ?
-        ecl_make_fixnum(decimal - i):
-        ecl_make_fixnum(0);
-      exp = ecl_parse_integer(str, ++i, end, ep, 10);
-      if (exp == OBJNULL || (*ep < end))
+      /* We still parse exp part to ensure valid syntax. */
+      exp = ecl_parse_integer(str, i+1, end, ep, 10);
+      if (exp == OBJNULL || (*ep < end)) {
         return OBJNULL;
-      return make_float(num, ecl_plus(decimals, exp),
-                        c, sign);
+      }
+      _ecl_big_register_free(num);
+      return make_float_2(str, start, end, c, i);
     } else if (radix != 10) {
       _ecl_big_register_free(num);
       num = ecl_parse_number(str, start, end, ep, 10);
@@ -217,8 +207,7 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
   /* If we have reached the end without decimals (for instance
    * 1., 2, 13., etc) we return an integer */
   if (decimal < i) {
-    return make_float(_ecl_big_register_normalize(num),
-                      ecl_make_fixnum(decimal - i), 'e', sign);
+    return make_float_2(str, start, end, 'e', i);
   } else {
     if (sign < 0) _ecl_big_complement(num, num);
     return _ecl_big_register_normalize(num);
