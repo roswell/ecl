@@ -624,126 +624,101 @@ ecl_make_complex(cl_object r, cl_object i)
 }
 
 static cl_object
-into_bignum(cl_object bignum, cl_object integer)
+mantissa_and_exponent_from_ratio(cl_object num, cl_object den, int digits, cl_fixnum *exponent)
 {
-  if (ECL_FIXNUMP(integer)) {
-    _ecl_big_set_fixnum(bignum, ecl_fixnum(integer));
-  } else {
-    mpz_set(bignum->big.big_num, integer->big.big_num);
-  }
-  return bignum;
-}
-
-static cl_fixnum
-remove_zeros(cl_object *integer)
-{
-  cl_object buffer = into_bignum(_ecl_big_register0(), *integer);
-  unsigned long den_twos = mpz_scan1(buffer->big.big_num, 0);
-  if (den_twos < ULONG_MAX) {
-    mpz_div_2exp(buffer->big.big_num, buffer->big.big_num, den_twos);
-    *integer = _ecl_big_register_normalize(buffer);
-    return -den_twos;
-  } else {
-    _ecl_big_register_free(buffer);
-    return 0;
-  }
-}
-
-static cl_object
-prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scaleout)
-{
-  /* We have to cook our own routine because GMP does not round.
-   * The recipe is simple: we multiply the numberator by a large
-   * enough number so that the division by the denominator fits
+  /* We have to cook our own routine because GMP does not round. The
+   * recipe is simple: we multiply the numerator by a large enough
+   * number so that the integer length of the division by the
+   * denominator is equal to the number of digits of the mantissa of
    * the floating point number. The result is scaled back by the
    * appropriate exponent.
    */
-  /* Scale down the denominator, eliminating the zeros
-   * so that we have smaller operands.
-   */
-  cl_fixnum scale = remove_zeros(&den);
-  cl_fixnum num_size = ecl_integer_length(num);
-  cl_fixnum delta = ecl_integer_length(den) - num_size;
-  scale -= delta;
-  {
-    cl_fixnum adjust = digits + delta + 1;
-    if (adjust > 0) {
-      num = ecl_ash(num, adjust);
-    } else if (adjust < 0) {
-      den = ecl_ash(den, -adjust);
-    }
+  bool negative = 0;
+  if (ecl_minusp(num)) {
+    negative = 1;
+    num = ecl_negate(num);
   }
-  do {
-    const cl_env_ptr the_env = ecl_process_env();
-    cl_object fraction = ecl_truncate2(num, den);
-    cl_object rem = ecl_nth_value(the_env, 1);
-    cl_fixnum len = ecl_integer_length(fraction);
-    if ((len - digits) == 1) {
-      if (ecl_oddp(fraction)) {
-        cl_object one = ecl_minusp(num)?
-          ecl_make_fixnum(-1) :
-          ecl_make_fixnum(1);
-        if (rem == ecl_make_fixnum(0)) {
-          if (cl_logbitp(ecl_make_fixnum(1), fraction)
-              != ECL_NIL)
-            fraction = ecl_plus(fraction, one);
-        } else {
-          fraction = ecl_plus(fraction, one);
-        }
-      }
-      *scaleout = scale - (digits + 1);
-      return fraction;
-    }
-    den = ecl_ash(den, 1);
-    scale++;
-  } while (1);
+  cl_fixnum num_digits = ecl_integer_length(num);
+  cl_fixnum den_digits = ecl_integer_length(den);
+  *exponent = 0;
+  /* Shift out unnecessary digits */
+  if (num_digits > digits) {
+    num = ecl_ash(num, digits - num_digits);
+    *exponent += num_digits - digits;
+    num_digits = digits;
+  }
+  if (den_digits > digits) {
+    den = ecl_ash(den, digits - den_digits);
+    *exponent -= den_digits - digits;
+    den_digits = digits;
+  }
+  /* Scale the numerator in the correct range so that the quotient
+   * truncated to an integer has a length of digits+1 or digits+2 */
+  cl_fixnum scale = digits+1 - (num_digits - den_digits);
+  num = ecl_ash(num, scale);
+  cl_object quotient = ecl_truncate2(num, den);
+  if (ecl_integer_length(quotient) > digits+1) {
+    /* quotient is too large, shift out an unnecessary digit */
+    scale--;
+    quotient = ecl_ash(quotient, -1);
+  }
+  /* round quotient */
+  if (ecl_oddp(quotient)) {
+    quotient = ecl_one_plus(quotient);
+  }
+  /* shift out the remaining unnecessary digit of quotient */
+  quotient = ecl_ash(quotient, -1);
+  /* fix the sign */
+  if (negative) {
+    quotient = ecl_negate(quotient);
+  }
+  *exponent += 1 - scale;
+  return quotient;
 }
 
 #if 0 /* Unused, we do not have ecl_to_float() */
 static float
 ratio_to_float(cl_object num, cl_object den)
 {
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, FLT_MANT_DIG, &scale);
+  cl_fixnum exponent;
+  cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, FLT_MANT_DIG, &exponent);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  float output = ecl_fixnum(bits);
+  /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
+  double output = ecl_fixnum(mantissa);
 #else
-  float output = ECL_FIXNUMP(bits)? ecl_fixnum(bits) : _ecl_big_to_double(bits);
+  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_double(mantissa);
 #endif
-  return ldexpf(output, scale);
+  return ldexpf(output, exponent);
 }
 #endif
 
 static double
 ratio_to_double(cl_object num, cl_object den)
 {
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, DBL_MANT_DIG, &scale);
+  cl_fixnum exponent;
+  cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, DBL_MANT_DIG, &exponent);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  double output = ecl_fixnum(bits);
+  /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
+  double output = ecl_fixnum(mantissa);
 #else
-  double output = ECL_FIXNUMP(bits)? ecl_fixnum(bits) : _ecl_big_to_double(bits);
+  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_double(mantissa);
 #endif
-  return ldexp(output, scale);
+  return ldexp(output, exponent);
 }
 
 #ifdef ECL_LONG_FLOAT
 static long double
 ratio_to_long_double(cl_object num, cl_object den)
 {
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
+  cl_fixnum exponent;
+  cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, LDBL_MANT_DIG, &exponent);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  long double output = ecl_fixnum(bits);
+  /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
+  double output = ecl_fixnum(mantissa);
 #else
-  long double output = ECL_FIXNUMP(bits)?
-    (long double)ecl_fixnum(bits) :
-    _ecl_big_to_long_double(bits);
+  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_long_double(mantissa);
 #endif
-  return ldexpl(output, scale);
+  return ldexpl(output, exponent);
 }
 #endif /* ECL_LONG_FLOAT */
 
