@@ -256,18 +256,21 @@ cl_eq(cl_object x, cl_object y)
  * long double has unused bits that makes two long floats be = but not eql.
  */
 #if !defined(ECL_SIGNED_ZERO) && !defined(ECL_IEEE_FP)
-# define FLOAT_EQL(a,b,type) return (a) == (b)
+#define FLOAT_EQL(name, type)                           \
+  static bool name(type a, type b) { return a == b; }
 #else
-# define FLOAT_EQL(a,b,type) {                  \
-    type xa = (a), xb = (b);                    \
-    if (xa == xb) {                             \
-      return signbit(xa) == signbit(xb);        \
-    } else if (isnan(xa) || isnan(xb)) {        \
-      return !memcmp(&xa, &xb, sizeof(type));   \
-    } else {                                    \
-      return 0;                                 \
-    } }
+#define FLOAT_EQL(name, type)                                           \
+  static bool name(type a, type b) {                                    \
+    if (a == b) return signbit(a) == signbit(b);                        \
+    if (isnan(a) || isnan(b)) return !memcmp(&a, &b, sizeof(type));   \
+    return 0;                                                           \
+  }
 #endif
+
+FLOAT_EQL(float_eql, float);
+FLOAT_EQL(double_eql, double);
+FLOAT_EQL(long_double_eql, long double);
+#undef FLOAT_EQL
 
 bool
 ecl_eql(cl_object x, cl_object y)
@@ -285,16 +288,27 @@ ecl_eql(cl_object x, cl_object y)
     return (ecl_eql(x->ratio.num, y->ratio.num) &&
             ecl_eql(x->ratio.den, y->ratio.den));
   case t_singlefloat:
-    FLOAT_EQL(ecl_single_float(x), ecl_single_float(y), float);
+    return float_eql(ecl_single_float(x), ecl_single_float(y));
   case t_doublefloat:
-    FLOAT_EQL(ecl_double_float(x), ecl_double_float(y), double);
+    return double_eql(ecl_double_float(x), ecl_double_float(y));
 #ifdef ECL_LONG_FLOAT
   case t_longfloat:
-    FLOAT_EQL(ecl_long_float(x), ecl_long_float(y), long double);
+    return long_double_eql(ecl_long_float(x), ecl_long_float(y));
 #endif
   case t_complex:
     return (ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
             ecl_eql(x->gencomplex.imag, y->gencomplex.imag));
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+    return (float_eql(crealf(ecl_csfloat(x)), crealf(ecl_csfloat(y))) &&
+            float_eql(cimagf(ecl_csfloat(x)), cimagf(ecl_csfloat(y))));
+  case t_cdfloat:
+    return (double_eql(creal(ecl_cdfloat(x)), creal(ecl_cdfloat(y))) &&
+            double_eql(cimag(ecl_cdfloat(x)), cimag(ecl_cdfloat(y))));
+  case t_clfloat:
+    return (long_double_eql(creall(ecl_clfloat(x)), creall(ecl_clfloat(y))) &&
+            long_double_eql(cimagl(ecl_clfloat(x)), cimagl(ecl_clfloat(y))));
+#endif
 #ifdef ECL_SSE2
   case t_sse_pack:
     return !memcmp(x->sse.data.b8, y->sse.data.b8, 16);
@@ -342,21 +356,35 @@ ecl_equal(register cl_object x, cl_object y)
       ecl_eql(x->ratio.den, y->ratio.den);
   case t_singlefloat: {
     if (tx != ty) return 0;
-    FLOAT_EQL(ecl_single_float(x), ecl_single_float(y), float);
+    return float_eql(ecl_single_float(x), ecl_single_float(y));
   }
   case t_doublefloat: {
     if (tx != ty) return 0;
-    FLOAT_EQL(ecl_double_float(x), ecl_double_float(y), double);
+    return double_eql(ecl_double_float(x), ecl_double_float(y));
   }
 #ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     if (tx != ty) return 0;
-    FLOAT_EQL(ecl_long_float(x), ecl_long_float(y), long double);
+    return long_double_eql(ecl_long_float(x), ecl_long_float(y));
   }
 #endif
   case t_complex:
     return (tx == ty) && ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
       ecl_eql(x->gencomplex.imag, y->gencomplex.imag);
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+    if (tx != ty) return 0;
+    return (float_eql(crealf(ecl_csfloat(x)), crealf(ecl_csfloat(y))) &&
+            float_eql(cimagf(ecl_csfloat(x)), cimagf(ecl_csfloat(y))));
+  case t_cdfloat:
+    if (tx != ty) return 0;
+    return (double_eql(creal(ecl_cdfloat(x)), creal(ecl_cdfloat(y))) &&
+            double_eql(cimag(ecl_cdfloat(x)), cimag(ecl_cdfloat(y))));
+  case t_clfloat:
+    if (tx != ty) return 0;
+    return (long_double_eql(creall(ecl_clfloat(x)), creall(ecl_clfloat(y))) &&
+            long_double_eql(cimagl(ecl_clfloat(x)), cimagl(ecl_clfloat(y))));
+#endif
   case t_character:
     return (tx == ty) && (ECL_CHAR_CODE(x) == ECL_CHAR_CODE(y));
   case t_base_string:
@@ -425,6 +453,11 @@ ecl_equalp(cl_object x, cl_object y)
   case t_longfloat:
 #endif
   case t_complex:
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+  case t_cdfloat:
+  case t_clfloat:
+#endif
     return ECL_NUMBER_TYPE_P(ty) && ecl_number_equalp(x, y);
   case t_vector:
   case t_base_string:

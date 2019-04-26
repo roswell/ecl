@@ -65,30 +65,38 @@ ecl_number_equalp(cl_object x, cl_object y)
     CASE_BIGNUM_DOUBLE_FLOAT;
     CASE_RATIO_SINGLE_FLOAT;
     CASE_RATIO_DOUBLE_FLOAT  {
+#ifdef ECL_IEEE_FP
       if (ecl_float_nan_p(y) || ecl_float_infinity_p(y)) {
         return 0;
       }
+#endif
       return ecl_number_equalp(x, cl_rational(y)); }
     CASE_SINGLE_FLOAT_BIGNUM;
     CASE_DOUBLE_FLOAT_BIGNUM;
     CASE_SINGLE_FLOAT_RATIO;
     CASE_DOUBLE_FLOAT_RATIO  {
+#ifdef ECL_IEEE_FP
       if (ecl_float_nan_p(x) || ecl_float_infinity_p(x)) {
         return 0;
       }
+#endif
       return ecl_number_equalp(cl_rational(x), y); }
 #ifdef ECL_LONG_FLOAT
     CASE_BIGNUM_LONG_FLOAT;
     CASE_RATIO_LONG_FLOAT {
+#ifdef ECL_IEEE_FP
       if (ecl_float_nan_p(y) || ecl_float_infinity_p(y)) {
         return 0;
       }
+#endif
       return ecl_number_equalp(x, cl_rational(y)); }
     CASE_LONG_FLOAT_BIGNUM;
     CASE_LONG_FLOAT_RATIO {
+#ifdef ECL_IEEE_FP
       if (ecl_float_nan_p(x) || ecl_float_infinity_p(x)) {
         return 0;
       }
+#endif
       return ecl_number_equalp(y, cl_rational(x)); }
 #endif
     /* float x float */
