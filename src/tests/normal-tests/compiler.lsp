@@ -1525,3 +1525,18 @@
       #+complex-float
       (is (and (not (subtypep '(complex bit) '(complex double-float)))
                (not (subtypep '(complex double-float) '(complex bit) )))))
+
+;;; Date 2019-04-26
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/497
+;;; Fixed: 60978163
+;;; Description
+;;;
+;;;     Constant folding first dropped the multiple values, then
+;;;     refused to compile properly for not self-evaluating ones. This
+;;;     test checks if both cases are compiled correctly.
+(test cmp.0072.cmp-constant-fold
+  (let (f1 f2)
+    (finishes (setq f1  (compile nil '(lambda () (byte 0 0)))))
+    (finishes (setq f2  (compile nil '(lambda () (truncate 2 1)))))
+    (is (equal '(0 . 0) (funcall f1)))
+    (is (equal '(2 0) (multiple-value-list (funcall f2))))))
