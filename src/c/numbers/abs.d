@@ -43,27 +43,26 @@ ecl_abs_rational(cl_object x)
     ecl_make_ratio(ecl_negate(x->ratio.num), x->ratio.den) : x;
 }
 
-/* In ecl_abs_*_float it would be conformant to use signbit or
-   fabs/fabsf/fabsl what would result in rendering:
+/* Example in ABS spec is a bit misleading because it says that
 
-   (abs -0.0) ; -> 0.0
+     (abs -0.0) ; -> -0.0
 
-   Example in CLHS for ABS function says the contrary, but CLHS 1.4.3
-   states that the examples are not normative. We keep the current
-   behavior for now though. */
+   but CLHS 1.4.3 states that the examples are not normative. */
 
 static cl_object
 ecl_abs_single_float(cl_object x)
 {
   float f = ecl_single_float(x);
-  return (f < 0)? ecl_make_single_float(-f) : x;
+  f = fabsf(f);
+  return ecl_make_single_float(f);
 }
 
 static cl_object
 ecl_abs_double_float(cl_object x)
 {
   double f = ecl_double_float(x);
-  return (f < 0)? ecl_make_double_float(-f) : x;
+  f = fabs(f);
+  return ecl_make_double_float(f);
 }
 
 #ifdef ECL_LONG_FLOAT
@@ -71,7 +70,8 @@ static cl_object
 ecl_abs_long_float(cl_object x)
 {
   long double f = ecl_long_float(x);
-  return (f < 0)? ecl_make_long_float(-f) : x;
+  f = fabsl(f);
+  return ecl_make_long_float(f);
 }
 #endif
 
