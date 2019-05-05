@@ -59,7 +59,7 @@ setup(cl_object number, float_approx *approx)
   default:
 	 break;
   }
-  approx->low_ok = approx->high_ok = ecl_evenp(f);
+  approx->low_ok = approx->high_ok = 0;
   if (e > 0) {
     cl_object be = EXPT_RADIX(e);
     if (limit_f) {
