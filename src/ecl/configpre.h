@@ -15,6 +15,9 @@
 /* Use CMU Common-Lisp's FORMAT routine */
 #undef ECL_CMU_FORMAT
 
+/* ECL_COMPLEX_FLOAT */
+#undef ECL_COMPLEX_FLOAT
+
 /* Do we use C or C++ compiler to compile ecl? */
 #undef ECL_CXX_CORE
 
@@ -99,9 +102,6 @@
 /* Define to 1 if you have the `coshf' function. */
 #undef HAVE_COSHF
 
-/* Define to 1 if you have the `cosl' function. */
-#undef HAVE_COSL
-
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
 
@@ -119,9 +119,6 @@
 
 /* Define to 1 if you have the `expf' function. */
 #undef HAVE_EXPF
-
-/* Define to 1 if you have the `expl' function. */
-#undef HAVE_EXPL
 
 /* Define to 1 if you have the `fabsf' function. */
 #undef HAVE_FABSF
@@ -152,9 +149,6 @@
 
 /* Define to 1 if you have the `frexpf' function. */
 #undef HAVE_FREXPF
-
-/* Define to 1 if you have the `frexpl' function. */
-#undef HAVE_FREXPL
 
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
@@ -189,9 +183,6 @@
 /* Define to 1 if you have the `ldexpf' function. */
 #undef HAVE_LDEXPF
 
-/* Define to 1 if you have the `ldexpl' function. */
-#undef HAVE_LDEXPL
-
 /* HAVE_LIBFFI */
 #undef HAVE_LIBFFI
 
@@ -219,8 +210,8 @@
 /* Define to 1 if you have the `logf' function. */
 #undef HAVE_LOGF
 
-/* Define to 1 if you have the `logl' function. */
-#undef HAVE_LOGL
+/* Define to 1 if the system has the type `long complex'. */
+#undef HAVE_LONG_COMPLEX
 
 /* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
@@ -271,9 +262,6 @@
 /* Define to 1 if you have the `powf' function. */
 #undef HAVE_POWF
 
-/* Define to 1 if you have the `powl' function. */
-#undef HAVE_POWL
-
 /* Define to 1 if the system has the type `pthread_rwlock_t'. */
 #undef HAVE_PTHREAD_RWLOCK_T
 
@@ -313,9 +301,6 @@
 
 /* Define to 1 if you have the `sinhf' function. */
 #undef HAVE_SINHF
-
-/* Define to 1 if you have the `sinl' function. */
-#undef HAVE_SINL
 
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
@@ -406,9 +391,6 @@
 
 /* Define to 1 if you have the `tanhf' function. */
 #undef HAVE_TANHF
-
-/* Define to 1 if you have the `tanl' function. */
-#undef HAVE_TANL
 
 /* Define to 1 if you have the `times' function. */
 #undef HAVE_TIMES

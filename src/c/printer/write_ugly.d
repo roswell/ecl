@@ -400,56 +400,56 @@ write_illegal(cl_object x, cl_object stream)
 typedef void (*printer)(cl_object x, cl_object stream);
 
 static printer dispatch[FREE+1] = {
-  0 /* t_start = 0 */,
-  _ecl_write_list, /* t_list = 1 */
-  write_character, /* t_character = 2 */
-  write_integer, /* t_fixnum = 3 */
-  write_integer, /* t_bignum = 4 */
-  write_ratio, /* t_ratio */
-  /* write_float, */ /* t_shortfloat */
-  write_float, /* t_singlefloat */
-  write_float, /* t_doublefloat */
+  0                         /* t_start = 0 */,
+  _ecl_write_list,              /* t_list = 1 */
+  write_character,              /* t_character = 2 */
+  write_integer,                /* t_fixnum = 3 */
+  write_integer,                /* t_bignum = 4 */
+  write_ratio,                  /* t_ratio */
+  /* write_float, */            /* t_shortfloat */
+  write_float,                  /* t_singlefloat */
+  write_float,                  /* t_doublefloat */
 #ifdef ECL_LONG_FLOAT
-  write_float, /* t_longfloat */
+  write_float,                  /* t_longfloat */
 #endif
-  write_complex, /* t_complex */
-  _ecl_write_symbol, /* t_symbol */
-  write_package, /* t_package */
-  write_hashtable, /* t_hashtable */
-  _ecl_write_array, /* t_array */
-  _ecl_write_vector, /* t_vector */
+  write_complex,                /* t_complex */
+  _ecl_write_symbol,            /* t_symbol */
+  write_package,                /* t_package */
+  write_hashtable,              /* t_hashtable */
+  _ecl_write_array,             /* t_array */
+  _ecl_write_vector,            /* t_vector */
 #ifdef ECL_UNICODE
-  _ecl_write_string, /* t_string */
+  _ecl_write_string,            /* t_string */
 #endif
-  _ecl_write_base_string, /* t_base_string */
-  _ecl_write_bitvector, /* t_bitvector */
-  write_stream, /* t_stream */
-  write_random, /* t_random */
-  write_readtable, /* t_readtable */
-  write_pathname, /* t_pathname */
-  _ecl_write_bytecodes, /* t_bytecodes */
-  _ecl_write_bclosure, /* t_bclosure */
-  write_cfun, /* t_cfun */
-  write_cfun, /* t_cfunfixed */
-  write_cclosure, /* t_cclosure */
-  write_instance, /* t_instance */
+  _ecl_write_base_string,       /* t_base_string */
+  _ecl_write_bitvector,         /* t_bitvector */
+  write_stream,                 /* t_stream */
+  write_random,                 /* t_random */
+  write_readtable,              /* t_readtable */
+  write_pathname,               /* t_pathname */
+  _ecl_write_bytecodes,         /* t_bytecodes */
+  _ecl_write_bclosure,          /* t_bclosure */
+  write_cfun,                   /* t_cfun */
+  write_cfun,                   /* t_cfunfixed */
+  write_cclosure,               /* t_cclosure */
+  write_instance,               /* t_instance */
 #ifdef ECL_THREADS
-  write_process, /* t_process */
-  write_lock, /* t_lock */
-  write_rwlock, /* t_rwlock */
-  write_condition_variable, /* t_condition_variable */
-  write_semaphore, /* t_semaphore */
-  write_barrier, /* t_barrier */
-  write_mailbox, /* t_mailbox */
+  write_process,                /* t_process */
+  write_lock,                   /* t_lock */
+  write_rwlock,                 /* t_rwlock */
+  write_condition_variable,     /* t_condition_variable */
+  write_semaphore,              /* t_semaphore */
+  write_barrier,                /* t_barrier */
+  write_mailbox,                /* t_mailbox */
 #endif
-  write_codeblock, /* t_codeblock */
-  write_foreign, /* t_foreign */
-  write_frame, /* t_frame */
-  write_weak_pointer, /* t_weak_pointer */
+  write_codeblock,              /* t_codeblock */
+  write_foreign,                /* t_foreign */
+  write_frame,                  /* t_frame */
+  write_weak_pointer,           /* t_weak_pointer */
 #ifdef ECL_SSE2
-  _ecl_write_sse, /* t_sse_pack */
+  _ecl_write_sse,               /* t_sse_pack */
 #endif
-  /* t_end */
+                            /* t_end */
 };
 
 cl_object

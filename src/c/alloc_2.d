@@ -828,9 +828,15 @@ init_alloc(void)
     cl_core.safety_region = 0;
   }
 
-#define init_tm(x,y,z,w) {                                              \
-    type_info[x].size = (z);                                            \
-    if ((w) == 0) { type_info[x].allocator = allocate_object_atomic; } }
+#define init_tm(/* cl_type  */ type,                                    \
+                /* char*    */ name,                                    \
+                /* cl_index */ object_size,                             \
+                /* cl_index */ maxpage) {                               \
+    type_info[type].size = (object_size);                               \
+    if ((maxpage) == 0) {                                               \
+      type_info[type].allocator = allocate_object_atomic;               \
+    }                                                                   \
+  }
   for (i = 0; i < t_end; i++) {
     type_info[i].t = i;
     type_info[i].size = 0;

@@ -20,11 +20,14 @@
 @(defun = (num &rest nums)
   int i;
   @
-  /* ANSI: Need not signal error for 1 argument */
   /* INV: For >= 2 arguments, ecl_number_equalp() performs checks */
-  for (i = 1; i < narg; i++)
-  if (!ecl_number_equalp(num, ecl_va_arg(nums))) {
-    @(return ECL_NIL);
+  if (!ECL_NUMBER_TYPE_P(ecl_t_of(num))) {
+    FEwrong_type_nth_arg(@[=], 1, num, @[number]);
+  }
+  for (i = 1; i < narg; i++) {
+    if (!ecl_number_equalp(num, ecl_va_arg(nums))) {
+      @(return ECL_NIL);
+    }
   }
   @(return ECL_T);
   @)

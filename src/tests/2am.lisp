@@ -181,26 +181,30 @@
                                :format-control ,fmt-ctrl
                                :format-arguments (list ,@fmt-args)))))
 
-(defun %signals (expected fn)
+(defun %signals (expected fn &rest args)
   (flet ((handler (condition)
            (cond ((typep condition expected)
                   (return-from %signals (passed)))
                  (t
                   (return-from %signals
-                    (failed (make-condition 'test-failure
-                                            :name *test-name*
-                                            :format-control "Expected to signal ~s, but got ~s:~%~a"
-                                            :format-arguments (list expected (type-of condition) condition))))))))
+                    (let ((fmt-ctrl (if args (car args) "Expected to signal ~s, but got ~s:~%~a"))
+                          (fmt-args (if args (cdr args) (list expected (type-of condition) condition))))
+                      (failed (make-condition 'test-failure
+                                              :name *test-name*
+                                              :format-control fmt-ctrl
+                                              :format-arguments fmt-args))))))))
     (handler-bind ((condition #'handler))
       (funcall fn)))
-  (failed (make-condition 'test-failure
-                          :name *test-name*
-                          :format-control "Expected to signal ~s, but got nothing"
-                          :format-arguments `(,expected))))
+  (let ((fmt-ctrl (if args (car args) "Expected to signal ~s, but got nothing"))
+        (fmt-args (if args (cdr args) `(,expected))))
+   (failed (make-condition 'test-failure
+                           :name *test-name*
+                           :format-control fmt-ctrl
+                           :format-arguments fmt-args))))
 
-(defmacro signals (condition &body body)
+(defmacro signals (condition form &rest args)
   "Assert that `body' signals a condition of type `condition'."
-  `(%signals ',condition (lambda () ,@body)))
+  `(%signals ',condition (lambda () ,form) ,@args))
 
 (defmacro finishes (form)
   `(handler-case (progn
