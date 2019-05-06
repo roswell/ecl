@@ -127,8 +127,9 @@
                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
                     (wt-nl "return value0;")))
              (return))
-           ((RETURN-FIXNUM RETURN-CHARACTER RETURN-DOUBLE-FLOAT
-             RETURN-SINGLE-FLOAT RETURN-OBJECT)
+           ((RETURN-FIXNUM RETURN-CHARACTER RETURN-OBJECT
+             RETURN-DOUBLE-FLOAT RETURN-SINGLE-FLOAT RETURN-LONG-FLOAT
+             RETURN-CSFLOAT RETURN-CSFLOAT RETURN-CSFLOAT)
             (when (eq *exit* ue)
               ;; *destination* must be RETURN-FIXNUM
               (setq loc (list 'COERCE-LOC
@@ -136,6 +137,9 @@
                                       RETURN-CHARACTER :char
                                       RETURN-SINGLE-FLOAT :float
                                       RETURN-DOUBLE-FLOAT :double
+                                      RETURN-CSFLOAT :csfloat
+                                      RETURN-CDFLOAT :cdfloat
+                                      RETURN-CLFLOAT :clfloat
                                       RETURN-OBJECT :object)
                                     ue)
                               loc))

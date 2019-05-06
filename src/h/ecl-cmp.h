@@ -45,6 +45,14 @@ enum ecl_locative_type {
         _ecl_uni_char_loc,
         _ecl_float_loc,
         _ecl_double_loc
+#ifdef ECL_LONG_FLOAT
+        , _ecl_long_double_loc
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        , _ecl_csfloat_loc
+        , _ecl_cdfloat_loc
+        , _ecl_clfloat_loc
+#endif
 #ifdef ECL_SSE2
         , _ecl_int_sse_pack_loc
         , _ecl_float_sse_pack_loc

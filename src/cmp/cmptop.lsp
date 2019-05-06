@@ -476,14 +476,13 @@
     (when (compiler-check-args)
       (wt-nl "_ecl_check_narg(" (length arg-types) ");"))
     (wt-nl "cl_env_copy->nvalues = 1;")
-    (wt-nl "return " (case return-type
-                            (FIXNUM "ecl_make_fixnum")
-                            (CHARACTER "CODE_CHAR")
-                            (DOUBLE-FLOAT "ecl_make_double_float")
-                            (SINGLE-FLOAT "ecl_make_single_float")
-                            #+long-float
-                            (LONG-FLOAT "ecl_make_long_float")
-                            (otherwise ""))
+    (wt-nl "return " (ecase return-type
+                       (FIXNUM "ecl_make_fixnum")
+                       (CHARACTER "CODE_CHAR")
+                       (DOUBLE-FLOAT "ecl_make_double_float")
+                       (SINGLE-FLOAT "ecl_make_single_float")
+                       #+long-float
+                       (LONG-FLOAT "ecl_make_long_float"))
            "(LI" cfun "(")
     (do ((types arg-types (cdr types))
          (n 1 (1+ n)))
@@ -610,6 +609,10 @@
                 (:char . "_ecl_base_char_loc")
                 (:float . "_ecl_float_loc")
                 (:double . "_ecl_double_loc")
+                #+long-float (:long-double . "_ecl_long_double_loc")
+                #+complex-float (:csfloat . "_ecl_csfloat_loc")
+                #+complex-float (:cdfloat . "_ecl_cdfloat_loc")
+                #+complex-float (:clfloat . "_ecl_clfloat_loc")
                 #+sse2 (:int-sse-pack . "_ecl_int_sse_pack_loc")
                 #+sse2 (:float-sse-pack . "_ecl_float_sse_pack_loc")
                 #+sse2 (:double-sse-pack . "_ecl_double_sse_pack_loc")

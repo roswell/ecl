@@ -283,6 +283,27 @@
             "ecl_def_ct_complex(~A,&~A_data,&~A_data,static,const);"
             name name-real name-imag)))
 
+#+complex-float
+(defun static-csfloat-builder (name value stream)
+  (let* ((*read-default-float-format* 'single-float)
+         (*print-readably* t))
+    (format stream "ecl_def_ct_csfloat(~A,(~S + I*~S),static,const);"
+            name (realpart value) (imagpart value) stream)))
+
+#+complex-float
+(defun static-cdfloat-builder (name value stream)
+  (let* ((*read-default-float-format* 'double-float)
+         (*print-readably* t))
+    (format stream "ecl_def_ct_cdfloat(~A,(~S + I*~S),static,const);"
+            name (realpart value) (imagpart value) stream)))
+
+#+complex-float
+(defun static-clfloat-builder (name value stream)
+  (let* ((*read-default-float-format* 'long-float)
+         (*print-readably* t))
+    (format stream "ecl_def_ct_clfloat(~A,(~SL + I*~SL),static,const);"
+            name (realpart value) (imagpart value) stream)))
+
 #+sse2
 (defun static-sse-pack-builder (name value stream)
   (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
@@ -311,6 +332,12 @@
     (long-float (and (not (ext:float-nan-p object))
                      (not (ext:float-infinity-p object))
                      #'static-long-float-builder))
+    #+complex-float
+    (si:complex-single-float #'static-csfloat-builder)
+    #+complex-float
+    (si:complex-double-float #'static-cdfloat-builder)
+    #+complex-float
+    (si:complex-long-float #'static-clfloat-builder)
     (complex (and (static-constant-expression (realpart object))
                   (static-constant-expression (imagpart object))
                   #'static-complex-builder))

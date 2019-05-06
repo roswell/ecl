@@ -813,6 +813,14 @@ enum ecl_ffi_tag {
         ECL_FFI_OBJECT,
         ECL_FFI_FLOAT,
         ECL_FFI_DOUBLE,
+#ifdef ECL_LONG_FLOAT
+        ECL_FFI_LONG_DOUBLE,
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        ECL_FFI_CSFLOAT,
+        ECL_FFI_CDFLOAT,
+        ECL_FFI_CLFLOAT,
+#endif
         ECL_FFI_VOID
 };
 
@@ -853,6 +861,14 @@ union ecl_ffi_values {
         cl_object o;
         float f;
         double d;
+#ifdef ECL_LONG_FLOAT
+        long double lf;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        float _Complex csf;
+        double _Complex cdf;
+        long double _Complex clf;
+#endif
 };
 
 enum ecl_ffi_calling_convention {

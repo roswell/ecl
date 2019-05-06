@@ -142,8 +142,8 @@ running the compiler. It may be updated by running ")
 ;;; *last-label* holds the label# of the last used label.
 ;;; *exit* holds an 'exit', which is
 ;;      ( label# . ref-flag ) or one of RETURNs (i.e. RETURN, RETURN-FIXNUM,
-;;      RETURN-CHARACTER, RETURN-DOUBLE-FLOAT, RETURN-SINGLE-FLOAT, or
-;;      RETURN-OBJECT).
+;;      RETURN-CHARACTER, RETURN-LONG-FLOAT, RETURN-DOUBLE-FLOAT, RETURN-SINGLE-FLOAT,
+;;      RETURN-CSFLOAT, RETURN-CDFLOAT, RETURN-CLFLOAT or RETURN-OBJECT).
 ;;; *unwind-exit* holds a list consisting of:
 ;;      ( label# . ref-flag ), one of RETURNs, TAIL-RECURSION-MARK, FRAME,
 ;;      JUMP, BDS-BIND (each pushed for a single special binding), or a
@@ -281,6 +281,11 @@ lines are inserted, but the order is preserved")
 ;;;     | ( 'LOAD-TIME-VALUE' vv )
 
 ;;; *global-entries* holds (... ( fname cfun return-types arg-type ) ...).
+
+;;; FIXME: global-entries mechanism seems to be completely abandoned
+;;; (always NIL). Either remove compiler code which uses it and remove
+;;; variable itself or properly document it and use where
+;;; applicable. -- jd 2019-05-07
 (defvar *global-entries* nil)
 
 (defvar *global-macros* nil)

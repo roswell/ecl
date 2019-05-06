@@ -73,6 +73,11 @@
     (:object . "ECL_FFI_OBJECT")
     (:float . "ECL_FFI_FLOAT")
     (:double . "ECL_FFI_DOUBLE")
+    (:long-double . "ECL_FFI_LONG_DOUBLE")
+    ;; complex floats
+    (:csfloat . "ECL_FFI_CSFLOAT")
+    (:cdfloat . "ECL_FFI_CDFLOAT")
+    (:clfloat . "ECL_FFI_CLFLOAT")
     (:void . "ECL_FFI_VOID")))
 
 (defun foreign-elt-type-code (type)
