@@ -49,9 +49,8 @@ _hash_eql(cl_hashkey h, cl_object x)
     return hash_string(h, (unsigned char*)&ecl_double_float(x), sizeof(ecl_double_float(x)));
 #ifdef ECL_LONG_FLOAT
   case t_longfloat: {
-    /* We coerce to double because long double has extra bits
-     * that give rise to different hash key and are not
-     * meaningful */
+    /* We coerce to double because long double has extra bits that
+     * give rise to different hash key and are not meaningful. */
     struct { double mantissa; int exponent; int sign; } aux;
     aux.mantissa = frexpl(ecl_long_float(x), &aux.exponent);
     aux.sign = (ecl_long_float(x) < 0)? -1: 1;
@@ -61,6 +60,26 @@ _hash_eql(cl_hashkey h, cl_object x)
   case t_complex:
     h = _hash_eql(h, x->gencomplex.real);
     return _hash_eql(h, x->gencomplex.imag);
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat: return hash_string(h, (unsigned char*)&ecl_csfloat(x), sizeof(ecl_csfloat(x)));
+  case t_cdfloat: return hash_string(h, (unsigned char*)&ecl_cdfloat(x), sizeof(ecl_cdfloat(x)));
+  case t_clfloat: {
+    /* We coerce to _Complex double because _Complex long double has
+     * extra bits that give rise to different hash key and are not
+     * meaningful. */
+    struct {
+      double mantissa1, mantissa2;
+      int exponent1, exponent2;
+      int sign1, sign2; } aux;
+    long double realpart = creall(ecl_clfloat(x));
+    long double imagpart = cimagl(ecl_clfloat(x));
+    aux.mantissa1 = frexpl(realpart, &aux.exponent1);
+    aux.mantissa2 = frexpl(imagpart, &aux.exponent2);
+    aux.sign1 = (realpart < 0)? -1: 1;
+    aux.sign2 = (imagpart < 0)? -1: 1;
+    return hash_string(h, (unsigned char*)&aux, sizeof(aux));
+  }
+#endif
   case t_character:
     return hash_word(h, ECL_CHAR_CODE(x));
 #ifdef ECL_SSE2
@@ -119,6 +138,9 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
       (h, (unsigned char*)array->vector.self.b8, 4*624);
   }
 #ifdef ECL_SIGNED_ZERO
+    /* According to 3.2.4.2.2 Definition of Similarity two numbers are
+       "similar" if they are of the same type and represent the same
+       mathematical value. -- jd 2019-05-06*/
   case t_singlefloat: {
     float f = ecl_single_float(x);
     if (f == 0.0) f = 0.0;
@@ -145,6 +167,38 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
     h = _hash_equal(depth, h, x->gencomplex.real);
     return _hash_equal(depth, h, x->gencomplex.imag);
   }
+# ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat: {
+    _Complex float f = ecl_csfloat(x);
+    if (crealf(f) == 0.0) f = 0.0 + I * cimagf(f);
+    if (cimagf(f) == 0.0) f = crealf(f) + I * 0.0;
+    return hash_string(h, (unsigned char*)&(f), sizeof(f));
+  }
+  case t_cdfloat: {
+    _Complex double f = ecl_cdfloat(x);
+    if (creal(f) == 0.0) f = 0.0 + I * cimag(f);
+    if (cimag(f) == 0.0) f = creal(f) + I * 0.0;
+    return hash_string(h, (unsigned char*)&(f), sizeof(f));
+  }
+  case t_clfloat: {
+    /* We coerce to _Complex double because _Complex long double has
+     * extra bits that give rise to different hash key and are not
+     * meaningful. */
+    struct {
+      double mantissa1, mantissa2;
+      int exponent1, exponent2;
+      int sign1, sign2; } aux;
+    long double realpart = creall(ecl_clfloat(x));
+    long double imagpart = cimagl(ecl_clfloat(x));
+    aux.mantissa1 = frexpl(realpart, &aux.exponent1);
+    aux.mantissa2 = frexpl(imagpart, &aux.exponent2);
+    aux.sign1 = (realpart < 0)? -1: 1;
+    aux.sign2 = (imagpart < 0)? -1: 1;
+    if (aux.mantissa1 == 0.0) aux.mantissa1 = 0.0;
+    if (aux.mantissa2 == 0.0) aux.mantissa2 = 0.0;
+    return hash_string(h, (unsigned char*)&aux, sizeof(aux));
+  }
+# endif
 #endif
   default:
     return _hash_eql(h, x);
@@ -203,6 +257,12 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
   case t_complex:
     h = _hash_equalp(0, h, x->gencomplex.real);
     return _hash_equalp(0, h, x->gencomplex.imag);
+#ifdef ECL_COMPLEX_FLOAT
+    /* FIXME! We should be more precise here! */
+  case t_csfloat: return hash_word(h, (cl_index)ecl_csfloat(x));
+  case t_cdfloat: return hash_word(h, (cl_index)ecl_cdfloat(x));
+  case t_clfloat: return hash_word(h, (cl_index)ecl_clfloat(x));
+#endif
   case t_instance:
   case t_hashtable:
     /* FIXME! We should be more precise here! */
