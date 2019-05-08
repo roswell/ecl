@@ -36,6 +36,9 @@ and pointers. They are all symbols in the keyword package.
 @lspindex :float
 @lspindex :double
 @lspindex :long-double
+@lspindex :csfloat
+@lspindex :cdfloat
+@lspindex :clfloat
 @lspindex :cstring
 @lspindex :void
 @lspindex :pointer-void
@@ -47,6 +50,7 @@ and pointers. They are all symbols in the keyword package.
 @ftindex UINT32-T
 @ftindex UINT64-T
 @ftindex LONG-FLOAT
+@ftindex COMPLEX-FLOAT
 
 @table @samp
 @item :char
@@ -76,6 +80,11 @@ Floating point numerals (32-bit and 64-bit).
 @item :long-double
 Floating point numeral (usually 80-bit, at least 64-bit, exact
 bitness is compiler/architecture/platform dependent).
+@item :csfloat
+@itemx :cdfloat
+@itemx :clfloat
+Complex floating point numerals. These types exist only when ECL is
+built with c99complex support.
 @item :cstring
 A @code{NULL} terminated string used for passing and returning
 characters strings with a C function.
