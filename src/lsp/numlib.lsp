@@ -19,6 +19,8 @@
 
 #-ecl-min
 (ffi:clines "#include <math.h>")
+#+(and (not ecl-min) complex-float)
+(ffi:clines "#include <complex.h>")
 
 #.
 (flet ((binary-search (f min max)
@@ -115,8 +117,10 @@ Returns the integer square root of INTEGER."
 Returns the angle part (in radians) of the polar representation of NUMBER.
 Returns zero for non-complex numbers."
   (if (zerop x)
-    (if (eq x 0) 0.0 (float 0 (realpart x)))
-    (atan (imagpart x) (realpart x))))
+      (if (eq x 0)
+          0.0
+          (float 0 (realpart x)))
+      (atan (imagpart x) (realpart x))))
 
 (defun signum (x)
   "Args: (number)
@@ -146,15 +150,28 @@ RADIANS) and (SIN RADIANS) respectively."
 (defun asin (x)
   "Args: (number)
 Returns the arc sine of NUMBER."
-  (if #+ecl-min t #-ecl-min (complexp x)
-      (complex-asin x)
-      #-ecl-min
-      (let* ((x (float x))
+  #+ecl-min
+  (complex-asin x)
+  #-ecl-min
+  (typecase x
+    #+complex-float
+    ((complex single-float)
+     (ffi:c-inline (x) (:csfloat) :csfloat "casinf(#0)" :one-liner t))
+    #+complex-float
+    ((complex double-float)
+     (ffi:c-inline (x) (:cdfloat) :cdfloat "casin(#0)" :one-liner t))
+    #+complex-float
+    ((complex long-float)
+     (ffi:c-inline (x) (:clfloat) :clfloat "casinl(#0)" :one-liner t))
+    (complex
+     (complex-asin x))
+    (otherwise
+     (let* ((x (float x))
              (xr (float x 1l0)))
         (declare (long-float xr))
         (if (and (<= -1.0 xr) (<= xr 1.0))
             (float (c-num-op "asin" xr) x)
-            (complex-asin x)))))
+            (complex-asin x))))))
 
 ;; Ported from CMUCL
 (defun complex-asin (z)
@@ -169,15 +186,28 @@ Returns the arc sine of NUMBER."
 (defun acos (x)
   "Args: (number)
 Returns the arc cosine of NUMBER."
-  (if #+ecl-min t #-ecl-min (complexp x)
-      (complex-acos x)
-      #-ecl-min
-      (let* ((x (float x))
-             (xr (float x 1l0)))
-        (declare (long-float xr))
-        (if (and (<= -1.0 xr) (<= xr 1.0))
-            (float (c-num-op "acos" xr) (float x))
-            (complex-acos x)))))
+  #+ecl-min
+  (complex-acos x)
+  #-ecl-min
+  (typecase x
+    #+complex-float
+    ((complex single-float)
+     (ffi:c-inline (x) (:csfloat) :csfloat "cacosf(#0)" :one-liner t))
+    #+complex-float
+    ((complex double-float)
+     (ffi:c-inline (x) (:cdfloat) :cdfloat "cacos(#0)" :one-liner t))
+    #+complex-float
+    ((complex long-float)
+     (ffi:c-inline (x) (:clfloat) :clfloat "cacosl(#0)" :one-liner t))
+    (complex
+     (complex-acos x))
+    (otherwise
+     (let* ((x (float x))
+            (xr (float x 1l0)))
+       (declare (long-float xr))
+       (if (and (<= -1.0 xr) (<= xr 1.0))
+           (float (c-num-op "acos" xr) (float x))
+           (complex-acos x))))))
 
 ;; Ported from CMUCL
 (defun complex-acos (z)
@@ -205,30 +235,61 @@ Returns the arc cosine of NUMBER."
 (defun asinh (x)
   "Args: (number)
 Returns the hyperbolic arc sine of NUMBER."
-  ;(log (+ x (sqrt (+ 1.0 (* x x)))))
-  (if #+(or ecl-min) t #-(or ecl-min) (complexp x)
-      (let* ((iz (complex (- (imagpart x)) (realpart x)))
-             (result (complex-asin iz)))
-        (complex (imagpart result)
-                 (- (realpart result))))
-      #-(or ecl-min)
-      (float (c-num-op "asinh" x) (float x))))
+  ;; (log (+ x (sqrt (+ 1.0 (* x x)))))
+  #+ecl-min
+  (complex-asinh x)
+  #-ecl-min
+  (typecase x
+    #+complex-float
+    ((complex single-float)
+     (ffi:c-inline (x) (:csfloat) :csfloat "casinhf(#0)" :one-liner t))
+    #+complex-float
+    ((complex double-float)
+     (ffi:c-inline (x) (:cdfloat) :cdfloat "casinh(#0)" :one-liner t))
+    #+complex-float
+    ((complex long-float)
+     (ffi:c-inline (x) (:clfloat) :clfloat "casinhl(#0)" :one-liner t))
+    (complex
+     (complex-asinh x))
+    (otherwise
+     (float (c-num-op "asinh" x) (float x)))))
+
+(defun complex-asinh (z)
+  (declare (number z) (si::c-local))
+  (let* ((iz (complex (- (imagpart z)) (realpart z)))
+         (result (complex-asin iz)))
+    (complex (imagpart result)
+             (- (realpart result)))))
 
 ;; Ported from CMUCL
 (defun acosh (x)
   "Args: (number)
 Returns the hyperbolic arc cosine of NUMBER."
-  ;(log (+ x (sqrt (* (1- x) (1+ x)))))
-  (if #+(or ecl-min) t #-(or ecl-min) (complexp x)
-      (complex-acosh x)
-      #-(or ecl-min)
-      (let* ((x (float x))
-             (xr (float x 1d0)))
-        (declare (double-float xr))
-        (if (<= 1.0 xr)
-            (float (c-num-op "acosh" xr) (float x))
-            (complex-acosh x)))))
+  ;; (log (+ x (sqrt (* (1- x) (1+ x)))))
+  #+ecl-min
+  (complex-acosh x)
+  #-ecl-min
+  (typecase x
+    #+complex-float
+    ((complex single-float)
+     (ffi:c-inline (x) (:csfloat) :csfloat "cacoshf(#0)" :one-liner t))
+    #+complex-float
+    ((complex double-float)
+     (ffi:c-inline (x) (:cdfloat) :cdfloat "cacosh(#0)" :one-liner t))
+    #+complex-float
+    ((complex long-float)
+     (ffi:c-inline (x) (:clfloat) :clfloat "cacoshl(#0)" :one-liner t))
+    (complex
+     (complex-acosh x))
+    (otherwise
+     (let* ((x (float x))
+            (xr (float x 1d0)))
+       (declare (double-float xr))
+       (if (<= 1.0 xr)
+           (float (c-num-op "acosh" xr) (float x))
+           (complex-acosh x))))))
 
+;; Ported from CMUCL
 (defun complex-acosh (z)
   (declare (number z) (si::c-local))
   (let ((sqrt-z-1 (sqrt (- z 1)))
@@ -240,17 +301,30 @@ Returns the hyperbolic arc cosine of NUMBER."
 (defun atanh (x)
   "Args: (number)
 Returns the hyperbolic arc tangent of NUMBER."
-  ;(/ (- (log (1+ x)) (log (- 1 x))) 2)
-  (if #+(or ecl-min) t #-(or ecl-min) (complexp x)
-      (complex-atanh x)
-      #-(or ecl-min)
-      (let* ((x (float x))
-             (xr (float x 1d0)))
-        (declare (double-float xr))
-        (if (and (<= -1.0 xr) (<= xr 1.0))
-            (float (c-num-op "atanh" xr) (float x))
-            (complex-atanh x)))))
+  #+ecl-min
+  (complex-atanh x)
+  #-ecl-min
+  (typecase x
+    #+complex-float
+    ((complex single-float)
+     (ffi:c-inline (x) (:csfloat) :csfloat "catanhf(#0)" :one-liner t))
+    #+complex-float
+    ((complex double-float)
+     (ffi:c-inline (x) (:cdfloat) :cdfloat "catanh(#0)" :one-liner t))
+    #+complex-float
+    ((complex long-float)
+     (ffi:c-inline (x) (:clfloat) :clfloat "catanhl(#0)" :one-liner t))
+    (complex
+     (complex-atanh x))
+    (otherwise
+     (let* ((x (float x))
+            (xr (float x 1d0)))
+       (declare (double-float xr))
+       (if (and (<= -1.0 xr) (<= xr 1.0))
+           (float (c-num-op "atanh" xr) (float x))
+           (complex-atanh x))))))
 
+;; Ported from CMUCL
 (defun complex-atanh (z)
   (declare (number z) (si::c-local))
   (/ (- (log (1+ z)) (log (- 1 z))) 2))
