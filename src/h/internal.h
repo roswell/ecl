@@ -72,6 +72,14 @@ static const cl_index ecl_aet_size[] = {
   sizeof(cl_object),          /* ecl_aet_object */
   sizeof(float),              /* ecl_aet_sf */
   sizeof(double),             /* ecl_aet_df */
+#ifdef ECL_LONG_FLOAT
+  sizeof(long double),        /* ecl_aet_lf */
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  sizeof(_Complex float),        /* ecl_aet_csf */
+  sizeof(_Complex double),       /* ecl_aet_cdf */
+  sizeof(_Complex long double),  /* ecl_aet_clf */
+#endif
   0,                          /* ecl_aet_bit: cannot be handled with this code */
   sizeof(cl_fixnum),          /* ecl_aet_fix */
   sizeof(cl_index),           /* ecl_aet_index */

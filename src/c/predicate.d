@@ -499,32 +499,58 @@ ecl_equalp(cl_object x, cl_object y)
               || etx == ecl_aet_fix || etx == ecl_aet_index)) {
         return memcmp(x->array.self.t, y->array.self.t, j * ecl_aet_size[etx]) == 0;
       }
-      if (etx == ecl_aet_sf) {
-        if (ety == ecl_aet_sf) {
-          for (i = 0; i < j; i++)
-            if (x->array.self.sf[i] != y->array.self.sf[i])
-              return(FALSE);
-          return(TRUE);
-        } else if (ety == ecl_aet_df) {
-          for (i = 0; i < j; i++)
-            if (x->array.self.sf[i] != y->array.self.df[i])
-              return(FALSE);
-          return(TRUE);
+
+#define AET_FLOAT_EQUALP(t1, t2)                                        \
+      case ecl_aet_##t2:                                                \
+        for (i = 0; i < j; i++)                                         \
+          if (x->array.self.t1[i] != y->array.self.t2[i])               \
+            return(FALSE);                                              \
+        return(TRUE);
+
+#ifdef ECL_LONG_FLOAT
+#define AET_FLOAT_EQUALP_LF(t1, lf) AET_FLOAT_EQUALP(t1, lf)
+#else
+#define AET_FLOAT_EQUALP_LF(t1, lf)
+#endif
+
+#ifdef ECL_COMPLEX_FLOAT
+#define AET_FLOAT_EQUALP_CF(t1, cf) AET_FLOAT_EQUALP(t1, cf)
+#else
+#define AET_FLOAT_EQUALP_CF(t1, cf)
+#endif
+
+#define AET_FLOAT_SWITCH(t1)                     \
+      case ecl_aet_##t1:                         \
+        switch(ety) {                            \
+          AET_FLOAT_EQUALP(t1, sf);              \
+          AET_FLOAT_EQUALP(t1, df);              \
+          AET_FLOAT_EQUALP_LF(t1, lf);           \
+          AET_FLOAT_EQUALP_CF(t1, csf);          \
+          AET_FLOAT_EQUALP_CF(t1, cdf);          \
+          AET_FLOAT_EQUALP_CF(t1, clf);          \
+        default:                                 \
+          break;                                 \
         }
+
+      switch (etx) {
+        AET_FLOAT_SWITCH(sf);
+        AET_FLOAT_SWITCH(df);
+#ifdef ECL_LONG_FLOAT
+        AET_FLOAT_SWITCH(lf);
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        AET_FLOAT_SWITCH(csf);
+        AET_FLOAT_SWITCH(cdf);
+        AET_FLOAT_SWITCH(clf);
+#endif
+      default:
+        break;
       }
-      if (etx == ecl_aet_df) {
-        if (ety == ecl_aet_sf) {
-          for (i = 0; i < j; i++)
-            if (x->array.self.df[i] != y->array.self.sf[i])
-              return(FALSE);
-          return(TRUE);
-        } else if (ety == ecl_aet_df) {
-          for (i = 0; i < j; i++)
-            if (x->array.self.df[i] != y->array.self.df[i])
-              return(FALSE);
-          return(TRUE);
-        }
-      }
+#undef AET_FLOAT_EQUALP
+#undef AET_FLOAT_SWITCH
+#undef AET_FLOAT_EQUALP_LF
+#undef AET_FLOAT_EQUALP_CF
+
       for (i = 0;  i < j;  i++)
         if (!ecl_equalp(ecl_aref_unsafe(x, i), ecl_aref_unsafe(y, i)))
           return(FALSE);

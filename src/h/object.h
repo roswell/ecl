@@ -421,6 +421,14 @@ typedef enum {                  /*  array element type  */
         ecl_aet_object,         /*  t                */
         ecl_aet_sf,             /*  single-float     */
         ecl_aet_df,             /*  double-float     */
+#ifdef ECL_LONG_FLOAT
+        ecl_aet_lf,             /*  long-float       */
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        ecl_aet_csf,            /*  complex-single-float */
+        ecl_aet_cdf,            /*  complex-double-float */
+        ecl_aet_clf,            /*  complex-long-float */
+#endif
         ecl_aet_bit,            /*  bit              */
         ecl_aet_fix,            /*  cl_fixnum        */
         ecl_aet_index,          /*  cl_index         */
@@ -468,6 +476,14 @@ union ecl_array_data {
 #endif
         float         *sf;
         double        *df;
+#ifdef ECL_LONG_FLOAT
+        long double   *lf;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        float _Complex *csf;
+        double _Complex *cdf;
+        long double _Complex *clf;
+#endif
         cl_fixnum     *fix;
         cl_index      *index;
         byte          *bit;

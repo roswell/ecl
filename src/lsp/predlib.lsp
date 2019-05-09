@@ -476,7 +476,11 @@ and is not adjustable."
              (when (< 32 cl-fixnum-bits 64) '(EXT::CL-INDEX FIXNUM))
              #+:uint64-t '(EXT:BYTE64 EXT:INTEGER64)
              (when (< 64 cl-fixnum-bits) '(EXT::CL-INDEX FIXNUM))
-             '(SINGLE-FLOAT DOUBLE-FLOAT T)))
+             '(SINGLE-FLOAT DOUBLE-FLOAT #+long-float LONG-FLOAT)
+             #+complex-float '(si:complex-single-float
+                               si:complex-double-float
+                               si:complex-long-float)
+             '(t)))
 
 (defun upgraded-array-element-type (element-type &optional env)
   (declare (ignore env))

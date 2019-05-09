@@ -17,8 +17,16 @@
 
 static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
   @':void', /* ecl_aet_object */
-  @':float', /* ecl_aet_df */
+  @':float', /* ecl_aet_sf */
   @':double', /* ecl_aet_df */
+#ifdef ECL_LONG_FLOAT
+  @':long-double', /* ecl_aet_lf */
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  @':csfloat', /* ecl_aet_csf */
+  @':cdfloat', /* ecl_aet_cdf */
+  @':clfloat', /* ecl_aet_clf */
+#endif
   @':void', /* ecl_aet_bit */
 #if ECL_FIXNUM_BITS == 32 && defined(ecl_uint32_t)
   @':int32-t', /* ecl_aet_fix */
