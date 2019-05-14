@@ -449,6 +449,7 @@
             (wt-c-inline-loc output-rep-type c-expression coerced-arguments t nil)
             (when one-liner (wt ";")))
           (cmpnote "Ignoring form ~S" c-expression))
+      (wt-nl "value0 = ECL_NIL;")
       (wt-nl "cl_env_copy->nvalues = 0;")
       (return-from produce-inline-loc 'RETURN))
 
