@@ -155,7 +155,7 @@ static struct {
 #endif
 };
 
-static ffi_type *ecl_type_to_libffi_type[] = {
+static ffi_type *ecl_type_to_libffi_types[] = {
   &ffi_type_schar, /*@':char',*/
   &ffi_type_uchar, /*@':unsigned-char',*/
   &ffi_type_sint8, /*@':byte',*/
@@ -195,12 +195,25 @@ static ffi_type *ecl_type_to_libffi_type[] = {
   &ffi_type_longdouble, /*@':long-double',*/
 #endif
 #ifdef ECL_COMPLEX_FLOAT
-  &ffi_type_complex_float, /*@':csfloat',*/
-  &ffi_type_complex_double, /*@':cdfloat',*/
-  &ffi_type_complex_longdouble, /*@':clfloat',*/
+  /* These ffi types are defined in libffi but they dont't seem to
+     work. For the issue report check the following link:
+     https://github.com/libffi/libffi/issues/489 -- jd 2019-05-14 */
+  NULL /* &ffi_type_complex_float      */, /*@':csfloat',*/
+  NULL /* &ffi_type_complex_double     */, /*@':cdfloat',*/
+  NULL /* &ffi_type_complex_longdouble */, /*@':clfloat',*/
 #endif
   &ffi_type_void /*@':void'*/
 };
+
+static ffi_type *
+ecl_type_to_libffi_type(cl_object type) {
+  enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
+  ffi_type *result = ecl_type_to_libffi_types[tag];
+  if (result == NULL) {
+    FEerror("Dynamic FFI cannot encode argument of type ~s.", 1, type);
+  }
+  return result;
+}
 #endif /* HAVE_LIBFFI */
 
 cl_object
@@ -849,10 +862,11 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
 {
   int n, ok;
   ffi_type **types;
-  enum ecl_ffi_tag type = ecl_foreign_type_code(return_type);
+  enum ecl_ffi_tag type;
+  cl_object arg_type;
   if (!the_env->ffi_args_limit)
     resize_call_stack(the_env, 32);
-  the_env->ffi_types[0] = ecl_type_to_libffi_type[type];
+  the_env->ffi_types[0] = ecl_type_to_libffi_type(return_type);
   for (n=0; !Null(arg_types); ) {
     if (!LISTP(arg_types)) {
       FEerror("In CALL-CFUN, types lists is not a proper list", 0);
@@ -860,9 +874,10 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
     if (n >= the_env->ffi_args_limit) {
       resize_call_stack(the_env, n + 32);
     }
-    type = ecl_foreign_type_code(ECL_CONS_CAR(arg_types));
+    arg_type = ECL_CONS_CAR(arg_types);
     arg_types = ECL_CONS_CDR(arg_types);
-    the_env->ffi_types[++n] = ecl_type_to_libffi_type[type];
+    type = ecl_foreign_type_code(arg_type);
+    the_env->ffi_types[++n] = ecl_type_to_libffi_type(arg_type);
     if (CONSP(args)) {
       cl_object object = ECL_CONS_CAR(args);
       args = ECL_CONS_CDR(args);
