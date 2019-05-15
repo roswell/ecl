@@ -97,6 +97,74 @@ expt_zero(cl_object x, cl_object y)
   }
 }
 
+static cl_object
+ecl_expt_generic(cl_object x, cl_object y) {
+  bool minusp = ecl_minusp(y);
+  cl_object z = ecl_make_fixnum(1);
+  if (minusp) {
+    y = ecl_negate(y);
+  }
+  ECL_MATHERR_CLEAR;
+  do {
+    /* INV: ecl_integer_divide outputs an integer */
+    if (!ecl_evenp(y)) {
+      z = ecl_times(z, x);
+    }
+    y = ecl_integer_divide(y, ecl_make_fixnum(2));
+    if (ecl_zerop(y)) {
+      if (minusp) return ecl_divide(ecl_make_fixnum(1), z);
+      else        return z;
+    }
+    x = ecl_times(x, x);
+  } while (1);
+  ECL_MATHERR_TEST;
+}
+
+static cl_object
+ecl_expt_float(cl_object x, cl_object y) {
+  cl_type
+    tx = ecl_t_of(x),
+    ty = ecl_t_of(y);
+  switch((ty > tx) ? ty : tx) {
+#ifdef ECL_LONG_FLOAT
+  case t_longfloat:
+    return ecl_make_long_float
+      (powl(ecl_to_long_double(x), ecl_to_long_double(y)));
+#endif
+  case t_doublefloat:
+    return ecl_make_double_float
+      (pow(ecl_to_double(x), ecl_to_double(y)));
+  case t_singlefloat:
+    return ecl_make_single_float
+      (powf(ecl_to_float(x), ecl_to_float(y)));
+  default:
+    if (ty > tx)  FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
+    else          FEwrong_type_nth_arg(@[expt], 2, y, @[number]);
+  }
+}
+
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_expt_complex_float(cl_object x, cl_object y) {
+  cl_type
+    tx = ecl_t_of(x),
+    ty = ecl_t_of(y);
+  switch ((ty > tx)? ty : tx) {
+  case t_clfloat:
+  case t_longfloat:
+    return ecl_make_clfloat
+      (cpowl(ecl_to_clfloat(x), ecl_to_clfloat(y)));
+  case t_cdfloat:
+  case t_doublefloat:
+    return ecl_make_cdfloat
+      (cpow (ecl_to_cdfloat(x), ecl_to_cdfloat(y)));
+  default:
+    return ecl_make_csfloat
+      (cpowf(ecl_to_csfloat(x), ecl_to_csfloat(y)));
+  }
+}
+#endif
+
 cl_object
 ecl_expt(cl_object x, cl_object y)
 {
@@ -122,59 +190,36 @@ ecl_expt(cl_object x, cl_object y)
     /* 0 ^ +y = 0 */
     return x;
   }
-  /* rational       ^ integer       -> rational                 */
-  /* number         ^ integer       -> number                   */
-  /* number         ^ complex       -> c?float                  */
-  /* complex        ^ (not integer) -> c?float                  */
-  /* negative       ^ (not integer) -> c?float                  */
-  /* positive       ^ (not integer) -> contagious float         */
+  /* Here comes the order in which we handle cases: */
+  /* -----------------------------------FIRST IF--- */
+  /* rational ^ integer  -> rational                */
+  /* complex  ^ integer  -> complex/rational        */
+  /* float    ^ integer  -> float                   */
+  /* ----------------------------------SECOND IF--- */
+  /* number   ^ complex  -> cfloat                  */
+  /* complex  ^ number   -> cfloat                  */
+  /* negative ^ number   -> cfloat                  */
+  /* ---------------------------------THIRD ELSE--- */
+  /* positive ^ number   -> float                   */
+  /* ---------------------------------------------- */
   if (ty == t_fixnum || ty == t_bignum) {
     switch (tx) {
     case t_fixnum:
     case t_bignum:
     case t_ratio:
-    case t_complex: {           /* rational ^ integer -> rational */
-      bool minusp = ecl_minusp(y);
-      if (minusp) {
-        y = ecl_negate(y);
-      }
-      ECL_MATHERR_CLEAR;
-      z = ecl_make_fixnum(1);
-      do {
-        /* INV: ecl_integer_divide outputs an integer */
-        if (!ecl_evenp(y)) {
-          z = ecl_times(z, x);
-        }
-        y = ecl_integer_divide(y, ecl_make_fixnum(2));
-        if (ecl_zerop(y)) {
-          if (minusp) return ecl_divide(ecl_make_fixnum(1), z);
-          else        return z;
-        }
-        x = ecl_times(x, x);
-      } while (1);
-      ECL_MATHERR_TEST;
-    }
-    default: {                  /* number ^ integer -> number */
-      /* We call expt_zero to ensure the most contagious type.*/
-      z = ecl_log1(ecl_times(x, expt_zero(x, y)));
-      z = ecl_times(z, y);
-      z = ecl_exp(z);
-      return z;
-    }
+    case t_complex:
+      return ecl_expt_generic(x, y);
+#ifdef ECL_LONG_FLOAT
+    case t_longfloat:
+#endif
+    case t_doublefloat:
+    case t_singlefloat:
+      return ecl_expt_float(x, y);
     }
   }
   if (ECL_COMPLEXP(y) || ECL_COMPLEXP(x) || ecl_minusp(x)) {
 #ifdef ECL_COMPLEX_FLOAT
-    /* number   ^ complex       -> c?float */
-    /* complex  ^ (not integer) -> c?float */
-    /* negative ^ (not integer) -> c?float */
-    switch ((ty > tx)? ty : tx) {
-    case t_clfloat:
-    case t_longfloat:   return ecl_make_clfloat(cpowl(ecl_to_clfloat(x), ecl_to_clfloat(y)));
-    case t_cdfloat:
-    case t_doublefloat: return ecl_make_cdfloat(cpow (ecl_to_cdfloat(x), ecl_to_cdfloat(y)));
-    default:            return ecl_make_csfloat(cpowf(ecl_to_csfloat(x), ecl_to_csfloat(y)));
-    }
+    return ecl_expt_complex_float(x, y);
 #else
     /* We call expt_zero to ensure the most contagious type.*/
     z = ecl_log1(ecl_times(x, expt_zero(x, y)));
@@ -183,16 +228,5 @@ ecl_expt(cl_object x, cl_object y)
     return z;
 #endif
   }
-  /* positive ^ (not integer) -> contagious float */
-  switch ((ty > tx)? ty : tx) {
-#ifdef ECL_LONG_FLOAT
-  case t_longfloat:   return ecl_make_long_float(powl(ecl_to_long_double(x), ecl_to_long_double(y)));
-#endif
-  case t_doublefloat: return ecl_make_double_float(pow(ecl_to_double(x), ecl_to_double(y)));
-  case t_singlefloat: return ecl_make_single_float(powf(ecl_to_float(x), ecl_to_float(y)));
-  default:
-    /* We will never reach this */
-    if (ty > tx)  FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
-    else          FEwrong_type_nth_arg(@[expt], 2, y, @[number]);
-  }
+  return ecl_expt_float(x, y);
 }
