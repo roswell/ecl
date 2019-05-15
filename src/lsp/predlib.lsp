@@ -768,6 +768,18 @@ if not possible."
                (DOUBLE-FLOAT (float object 0.0D0))
                (LONG-FLOAT (float object 0.0L0))
                (COMPLEX (complex (realpart object) (imagpart object)))
+               #+complex-float
+               (si:complex-single-float
+                (complex (coerce (realpart object) 'single-float)
+                         (coerce (imagpart object) 'single-float)))
+               #+complex-float
+               (si:complex-double-float
+                (complex (coerce (realpart object) 'double-float)
+                         (coerce (imagpart object) 'double-float)))
+               #+complex-float
+               (si:complex-long-float
+                (complex (coerce (realpart object) 'long-float)
+                         (coerce (imagpart object) 'long-float)))
                (FUNCTION (coerce-to-function object))
                ((VECTOR SIMPLE-VECTOR #+unicode SIMPLE-BASE-STRING SIMPLE-STRING
                         #+unicode BASE-STRING STRING BIT-VECTOR SIMPLE-BIT-VECTOR)
