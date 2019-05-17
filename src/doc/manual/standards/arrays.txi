@@ -67,20 +67,28 @@ C types, limits and enumerations
 
 @multitable @columnfractions .25 .25 .25 .25
 @headitem Lisp or C type @tab Enumeration value @tab Lisp or C type @tab Enumeration value
-@item t @tab ecl_aet_object @tab (unsigned-byte 1) @tab ecl_aet_bit
-@item cl_fixnum @tab ecl_aet_fix @tab cl_index @tab ecl_aet_index
-@item (unsigned-byte 8) @tab ecl_aet_b8 @tab (signed-byte 8) @tab ecl_aet_i8
-@item (unsigned-byte 16) @tab ecl_aet_b16 @tab (signed-byte 16) @tab ecl_aet_i16
-@item (unsigned-byte 32) @tab ecl_aet_b32 @tab (signed-byte 32) @tab ecl_aet_i32
-@item (unsigned-byte 64) @tab ecl_aet_b64 @tab (signed-byte 64) @tab ecl_aet_i64
-@item ecl_character @tab ecl_aet_ch @tab ecl_base_char @tab ecl_aet_bc
-@item single-float @tab ecl_aet_sf @tab double-float @tab ecl_aet_df
+@item t @tab ecl_aet_object                   @tab (unsigned-byte 1) @tab ecl_aet_bit
+@item cl_fixnum @tab ecl_aet_fix              @tab cl_index @tab ecl_aet_index
+@item (unsigned-byte 8) @tab ecl_aet_b8       @tab (signed-byte 8) @tab ecl_aet_i8
+@item (unsigned-byte 16) @tab ecl_aet_b16     @tab (signed-byte 16) @tab ecl_aet_i16
+@item (unsigned-byte 32) @tab ecl_aet_b32     @tab (signed-byte 32) @tab ecl_aet_i32
+@item (unsigned-byte 64) @tab ecl_aet_b64     @tab (signed-byte 64) @tab ecl_aet_i64
+@item ecl_character @tab ecl_aet_ch           @tab ecl_base_char @tab ecl_aet_bc
+@item single-float @tab ecl_aet_sf            @tab double-float @tab ecl_aet_df
+@item long-float @tab ecl_aet_lf              @tab (complex long-float) @tab ecl_aet_clf
+@item (complex single-float) @tab ecl_aet_csf @tab (complex double-float) @tab ecl_aet_cdf
 @end multitable
 
 @subsubheading Description
-This list contains the constants that limit the rank of an array (@code{ECL_ARRAY_RANK_LIMIT}), the maximum size of each dimension (@code{ECL_ARRAY_DIMENSION_LIMIT}) and the maximum number of elements in an array (@code{ECL_ARRAY_TOTAL_LIMIT}).
+This list contains the constants that limit the rank of an array
+(@code{ECL_ARRAY_RANK_LIMIT}), the maximum size of each dimension
+(@code{ECL_ARRAY_DIMENSION_LIMIT}) and the maximum number of elements
+in an array (@code{ECL_ARRAY_TOTAL_LIMIT}).
 
-ECL uses also internally a set of constants to describe the different specialized arrays. The constants form up the enumeration type cl_elttype. They are listed in the table above, which associates enumeration values with the corresponding Common Lisp element type.
+ECL uses also internally a set of constants to describe the different
+specialized arrays. The constants form up the enumeration type
+cl_elttype. They are listed in the table above, which associates
+enumeration values with the corresponding Common Lisp element type.
 
 @subsubsection ecl_aet_to_symbol, ecl_symbol_to_aet
 To and from element types

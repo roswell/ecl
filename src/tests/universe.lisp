@@ -157,7 +157,7 @@
       #C(1.0l0 6.0f0)
       #C(1.0l0 7.0d0)
       #C(1/2 1/3)
-      ))
+      #C(42 12)))
 
 (defparameter *numbers*
     (append *integers*

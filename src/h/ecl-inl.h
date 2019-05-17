@@ -5,6 +5,11 @@
 #ifndef ECL_ECL_INL_H
 #define ECL_ECL_INL_H
 
+#ifdef ECL_COMPLEX_FLOAT
+/* We need this include for the constant I. */
+#include <complex.h>
+#endif
+
 /*
  * Loops over a proper list. Complains on circularity
  */
@@ -118,10 +123,30 @@
                 (cl_object)real, (cl_object)imag };                     \
         static const cl_object name = (cl_object)(& name ## _data)
 
+#ifdef ECL_COMPLEX_FLOAT
+#define ecl_def_ct_csfloat(name,f,static,const)                         \
+        static const struct ecl_csfloat name ## _data = {               \
+                (int8_t)t_csfloat, 0, 0, 0,                             \
+                (float _Complex)(f) };                                  \
+        static const cl_object name = (cl_object)(& name ## _data)
+
+#define ecl_def_ct_cdfloat(name,f,static,const)                         \
+        static const struct ecl_cdfloat name ## _data = {               \
+                (int8_t)t_cdfloat, 0, 0, 0,                             \
+                (double _Complex)(f) };                                 \
+        static const cl_object name = (cl_object)(& name ## _data)
+
+#define ecl_def_ct_clfloat(name,f,static,const)                         \
+        static const struct ecl_clfloat name ## _data = {               \
+                (int8_t)t_clfloat, 0, 0, 0,                             \
+                (long double _Complex)(f) };                            \
+        static const cl_object name = (cl_object)(& name ## _data)
+#endif
+
 #define ecl_def_ct_vector(name,type,raw,len,static,const)               \
-        static const struct ecl_vector name ## _data = {                 \
+        static const struct ecl_vector name ## _data = {                \
                 (int8_t)t_vector, 0, (type), 0,                         \
-                ECL_NIL, (cl_index)(len), (cl_index)(len),                 \
+                ECL_NIL, (cl_index)(len), (cl_index)(len),              \
                 ecl_cast_ptr(cl_object*,raw), 0 };                      \
         static const cl_object name = (cl_object)(& name ## _data)
 

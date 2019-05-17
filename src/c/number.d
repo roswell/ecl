@@ -13,6 +13,7 @@
  */
 
 #include <float.h>
+#include <complex.h>
 #include <limits.h>
 #include <signal.h>
 #define ECL_INCLUDE_MATH_H
@@ -533,95 +534,111 @@ ecl_make_long_float(long double f)
 cl_object
 ecl_make_complex(cl_object r, cl_object i)
 {
-  cl_object c;
-  cl_type ti;
- AGAIN:
-  ti = ecl_t_of(i);
-  /* Both R and I are promoted to a common type */
-  switch (ecl_t_of(r)) {
+  cl_object c = ECL_NIL;
+  cl_type tr = ecl_t_of(r);
+  cl_type ti = ecl_t_of(i);
+  if (!ECL_REAL_TYPE_P(tr)) { ecl_type_error(@'complex', "real part", r, @'real'); }
+  if (!ECL_REAL_TYPE_P(ti)) { ecl_type_error(@'complex', "imaginary part", i, @'real'); }
+  switch((tr > ti) ? tr : ti) {
+#ifdef ECL_COMPLEX_FLOAT
+  case t_longfloat:   return ecl_make_clfloat(ecl_to_long_double(r) + I * ecl_to_long_double(i));
+  case t_doublefloat: return ecl_make_cdfloat(ecl_to_double(r) + I * ecl_to_double(i));
+  case t_singlefloat: return ecl_make_csfloat(ecl_to_float(r) + I * ecl_to_float(i));
+#else
+  case t_singlefloat:
+    c = ecl_alloc_object(t_complex);
+    c->gencomplex.real = ecl_make_single_float(ecl_to_float(r));
+    c->gencomplex.imag = ecl_make_single_float(ecl_to_float(i));
+    return c;
+  case t_doublefloat:
+    c = ecl_alloc_object(t_complex);
+    c->gencomplex.real = ecl_make_double_float(ecl_to_double(r));
+    c->gencomplex.imag = ecl_make_double_float(ecl_to_double(i));
+    return c;
+# ifdef ECL_LONG_FLOAT
+  case t_longfloat:
+    c = ecl_alloc_object(t_complex);
+    c->gencomplex.real = ecl_make_long_float(ecl_to_long_double(r));
+    c->gencomplex.imag = ecl_make_long_float(ecl_to_long_double(i));
+    return c;
+# endif
+#endif
   case t_fixnum:
   case t_bignum:
   case t_ratio:
-    switch (ti) {
-    case t_fixnum:
-      if (i == ecl_make_fixnum(0))
-        return(r);
-    case t_bignum:
-    case t_ratio:
-      break;
-    case t_singlefloat:
-      r = ecl_make_single_float((float)ecl_to_double(r));
-      break;
-    case t_doublefloat:
-      r = ecl_make_double_float(ecl_to_double(r));
-      break;
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      r = ecl_make_long_float(ecl_to_double(r));
-      break;
-#endif
-    default:
-      i = ecl_type_error(@'complex',"imaginary part", i, @'real');
-      goto AGAIN;
-    }
-    break;
-  case t_singlefloat:
-    switch (ti) {
-    case t_fixnum:
-    case t_bignum:
-    case t_ratio:
-      i = ecl_make_single_float((float)ecl_to_double(i));
-      break;
-    case t_singlefloat:
-      break;
-    case t_doublefloat:
-      r = ecl_make_double_float((double)(ecl_single_float(r)));
-      break;
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      r = ecl_make_long_float((long double)ecl_single_float(r));
-      break;
-#endif
-    default:
-      i = ecl_type_error(@'complex',"imaginary part", i, @'real');
-      goto AGAIN;
-    }
-    break;
-  case t_doublefloat:
-    switch (ti) {
-    case t_fixnum:
-    case t_bignum:
-    case t_ratio:
-    case t_singlefloat:
-      i = ecl_make_double_float(ecl_to_double(i));
-    case t_doublefloat:
-      break;
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      r = ecl_make_long_float((long double)ecl_double_float(r));
-      break;
-#endif
-    default:
-      i = ecl_type_error(@'complex',"imaginary part", i, @'real');
-      goto AGAIN;
-    }
-    break;
-#ifdef ECL_LONG_FLOAT
-  case t_longfloat:
-    if (ti != t_longfloat)
-      i = ecl_make_long_float((long double)ecl_to_double(i));
-    break;
-#endif
+    if (i == ecl_make_fixnum(0))
+      return r;
+    c = ecl_alloc_object(t_complex);
+    c->gencomplex.real = r;
+    c->gencomplex.imag = i;
+    return c;
   default:
-    r = ecl_type_error(@'complex',"real part", r, @'real');
-    goto AGAIN;
-
+    FEerror("ecl_make_complex: unexpected argument type.", 0);
   }
-  c = ecl_alloc_object(t_complex);
-  c->complex.real = r;
-  c->complex.imag = i;
   return(c);
 }
+
+#ifdef ECL_COMPLEX_FLOAT
+/* This function is safe. Still both arguments must be of the same
+   float type, otherwise a type error will be signalled. -- jd 2019-04-03 */
+
+cl_object si_complex_float_p(cl_object f) {
+  switch(ecl_t_of(f)) {
+  case t_csfloat:
+  case t_cdfloat:
+  case t_clfloat:
+    return ECL_T;
+  default:
+    return ECL_NIL;
+  }
+}
+
+cl_object
+ecl_make_complex_float(cl_object r, cl_object i)
+{
+  cl_type tr = ecl_t_of(r);
+  cl_type ti = ecl_t_of(i);
+  cl_object result;
+  switch (tr) {
+  case t_singlefloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'single-float'); }
+    result = ecl_alloc_object(t_csfloat);
+    ecl_csfloat(result) = ecl_single_float(r) + ecl_single_float(i) * I;
+    break;
+  case t_doublefloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'double-float'); }
+    result = ecl_alloc_object(t_cdfloat);
+    ecl_cdfloat(result) = ecl_double_float(r) + ecl_double_float(i) * I;
+    break;
+  case t_longfloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'long-float'); }
+    result = ecl_alloc_object(t_clfloat);
+    ecl_clfloat(result) = ecl_long_float(r) + ecl_long_float(i) * I;
+    break;
+  default:
+    ecl_type_error(@'si::complex-float',"real part", r, @'float');
+  }
+  return result;
+}
+
+cl_object ecl_make_csfloat(float _Complex x) {
+  cl_object c = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(c) = x;
+  return c;
+}
+
+cl_object ecl_make_cdfloat(double _Complex x) {
+  cl_object c = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(c) = x;
+  return c;
+}
+
+cl_object ecl_make_clfloat(long double _Complex x) {
+  cl_object c = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(c) = x;
+  return c;
+}
+#endif
 
 static cl_object
 mantissa_and_exponent_from_ratio(cl_object num, cl_object den, int digits, cl_fixnum *exponent)
@@ -779,6 +796,67 @@ ecl_to_long_double(cl_object x)
     return ecl_long_float(x);
   default:
     FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
+  }
+}
+#endif
+
+#ifdef ECL_COMPLEX_FLOAT
+float _Complex ecl_to_csfloat(cl_object x) {
+  switch(ecl_t_of(x)) {
+  case t_fixnum:
+  case t_bignum:
+  case t_ratio:
+  case t_singlefloat:
+  case t_doublefloat:
+  case t_longfloat: {
+    return ecl_to_float(x);
+  }
+  case t_complex: {
+    return ecl_to_float(x->gencomplex.real) + I * ecl_to_float(x->gencomplex.imag);
+  }
+  case t_csfloat: return ecl_csfloat(x);
+  case t_cdfloat: return ecl_cdfloat(x);
+  case t_clfloat: return ecl_clfloat(x);
+  default:
+    FEwrong_type_nth_arg(@[coerce], 1, x, @[number]);
+  }
+}
+
+double _Complex  ecl_to_cdfloat(cl_object x) {
+  switch(ecl_t_of(x)) {
+  case t_fixnum:
+  case t_bignum:
+  case t_ratio:
+  case t_singlefloat:
+  case t_doublefloat:
+  case t_longfloat:
+    return ecl_to_double(x);
+  case t_complex:
+    return ecl_to_double(x->gencomplex.real) + I * ecl_to_double(x->gencomplex.imag);
+  case t_csfloat: return ecl_csfloat(x);
+  case t_cdfloat: return ecl_cdfloat(x);
+  case t_clfloat: return ecl_clfloat(x);
+  default:
+    FEwrong_type_nth_arg(@[coerce], 1, x, @[number]);
+  }
+}
+
+long double _Complex ecl_to_clfloat(cl_object x) {
+  switch(ecl_t_of(x)) {
+  case t_fixnum:
+  case t_bignum:
+  case t_ratio:
+  case t_singlefloat:
+  case t_doublefloat:
+  case t_longfloat:
+    return ecl_to_long_double(x);
+  case t_complex:
+    return ecl_to_long_double(x->gencomplex.real) + I * ecl_to_long_double(x->gencomplex.imag);
+  case t_csfloat: return ecl_csfloat(x);
+  case t_cdfloat: return ecl_cdfloat(x);
+  case t_clfloat: return ecl_clfloat(x);
+  default:
+    FEwrong_type_nth_arg(@[coerce], 1, x, @[number]);
   }
 }
 #endif

@@ -21,11 +21,12 @@
   (cond
    ((let ((x (assoc val *optimizable-constants*)))
       (when x
-       (pushnew "#include <float.h>" *clines-string-list*)
-       (setf x (cdr x))
-       (if (listp x)
-           (c1expr x)
-           x))))
+        (pushnew "#include <float.h>" *clines-string-list*)
+        (pushnew "#include <complex.h>" *clines-string-list*)
+        (setf x (cdr x))
+        (if (listp x)
+            (c1expr x)
+            x))))
    ((eq val nil) (c1nil))
    ((eq val t) (c1t))
    ((sys::fixnump val)
@@ -88,7 +89,10 @@
                 (loc-type (case type
                             (single-float 'single-float-value)
                             (double-float 'double-float-value)
-                            (long-float 'long-float-value)))
+                            (long-float 'long-float-value)
+                            (si:complex-single-float 'csfloat-value)
+                            (si:complex-double-float 'cdfloat-value)
+                            (si:complex-long-float 'clfloat-value)))
                 (location (make-vv :location c-value :value value)))
            (cons value (make-c1form* 'LOCATION :type type
                                      :args (list loc-type value location)))))

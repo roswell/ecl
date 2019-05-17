@@ -26,8 +26,7 @@
   @)
 
 cl_object
-ecl_plus(cl_object x, cl_object y)
-{
+ecl_plus(cl_object x, cl_object y) {
   MATH_DISPATCH2_BEGIN(x,y)
     {
       CASE_FIXNUM_FIXNUM {
@@ -145,8 +144,8 @@ ecl_plus(cl_object x, cl_object y)
       CASE_COMPLEX_RATIO;
       CASE_COMPLEX_SINGLE_FLOAT;
       CASE_COMPLEX_DOUBLE_FLOAT; COMPLEX_X: {
-        cl_object aux = x;
-        x = y; y = aux;
+        cl_object aux;
+        aux = x; x = y; y = aux;
         goto COMPLEX_Y;
       }
       CASE_BIGNUM_COMPLEX;
@@ -155,14 +154,88 @@ ecl_plus(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_COMPLEX;
       CASE_FIXNUM_COMPLEX {
       COMPLEX_Y:
-        return ecl_make_complex(ecl_plus(x, y->complex.real),
-                                y->complex.imag);
+        return ecl_make_complex(ecl_plus(x, y->gencomplex.real),
+                                y->gencomplex.imag);
       }
       CASE_COMPLEX_COMPLEX {
-        cl_object z = ecl_plus(x->complex.real, y->complex.real);
-        cl_object z1 = ecl_plus(x->complex.imag, y->complex.imag);
+        cl_object z = ecl_plus(x->gencomplex.real, y->gencomplex.real);
+        cl_object z1 = ecl_plus(x->gencomplex.imag, y->gencomplex.imag);
         return ecl_make_complex(z, z1);
       }
+#ifdef ECL_COMPLEX_FLOAT
+      /* upgraded type csfloat */
+      CASE_CSFLOAT_FIXNUM;
+      CASE_CSFLOAT_BIGNUM;
+      CASE_CSFLOAT_RATIO;
+      CASE_CSFLOAT_SINGLE_FLOAT;
+      CASE_CSFLOAT_COMPLEX;
+
+      CASE_FIXNUM_CSFLOAT;
+      CASE_BIGNUM_CSFLOAT;
+      CASE_RATIO_CSFLOAT;
+      CASE_SINGLE_FLOAT_CSFLOAT;
+      CASE_COMPLEX_CSFLOAT;
+      CASE_CSFLOAT_CSFLOAT {
+        cl_object aux = ecl_alloc_object(t_csfloat);
+        ecl_csfloat(aux) = ecl_to_csfloat(x) + ecl_to_csfloat(y);
+        return aux;
+      }
+      /* upgraded type cdfloat */
+      CASE_CSFLOAT_DOUBLE_FLOAT;
+      CASE_DOUBLE_FLOAT_CSFLOAT;
+
+      CASE_CDFLOAT_FIXNUM;
+      CASE_CDFLOAT_BIGNUM;
+      CASE_CDFLOAT_RATIO;
+      CASE_CDFLOAT_SINGLE_FLOAT;
+      CASE_CDFLOAT_DOUBLE_FLOAT;
+      CASE_CDFLOAT_COMPLEX;
+      CASE_CDFLOAT_CSFLOAT;
+
+      CASE_FIXNUM_CDFLOAT;
+      CASE_BIGNUM_CDFLOAT;
+      CASE_RATIO_CDFLOAT;
+      CASE_SINGLE_FLOAT_CDFLOAT;
+      CASE_DOUBLE_FLOAT_CDFLOAT;
+      CASE_COMPLEX_CDFLOAT;
+      CASE_CSFLOAT_CDFLOAT;
+      CASE_CDFLOAT_CDFLOAT {
+        cl_object aux = ecl_alloc_object(t_cdfloat);
+        ecl_cdfloat(aux) = ecl_to_cdfloat(x) + ecl_to_cdfloat(y);
+        return aux;
+      }
+      /* upgraded type clfloat */
+      CASE_CSFLOAT_LONG_FLOAT;
+      CASE_LONG_FLOAT_CSFLOAT;
+      CASE_CDFLOAT_LONG_FLOAT;
+      CASE_LONG_FLOAT_CDFLOAT;
+
+      CASE_CLFLOAT_FIXNUM;
+      CASE_CLFLOAT_BIGNUM;
+      CASE_CLFLOAT_RATIO;
+      CASE_CLFLOAT_SINGLE_FLOAT;
+      CASE_CLFLOAT_DOUBLE_FLOAT;
+      CASE_CLFLOAT_LONG_FLOAT;
+      CASE_CLFLOAT_COMPLEX;
+      CASE_CLFLOAT_CSFLOAT;
+      CASE_CLFLOAT_CDFLOAT;
+
+      CASE_FIXNUM_CLFLOAT;
+      CASE_BIGNUM_CLFLOAT;
+      CASE_RATIO_CLFLOAT;
+      CASE_SINGLE_FLOAT_CLFLOAT;
+      CASE_DOUBLE_FLOAT_CLFLOAT;
+      CASE_LONG_FLOAT_CLFLOAT;
+      CASE_COMPLEX_CLFLOAT;
+      CASE_CSFLOAT_CLFLOAT;
+      CASE_CDFLOAT_CLFLOAT;
+      CASE_CLFLOAT_CLFLOAT
+      {
+        cl_object aux = ecl_alloc_object(t_clfloat);
+        ecl_clfloat(aux) = ecl_to_clfloat(x) + ecl_to_clfloat(y);
+        return aux;
+      }
+#endif
       CASE_UNKNOWN(@[+],x,y,@[number]);
     }
   MATH_DISPATCH2_END;

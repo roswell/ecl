@@ -19,6 +19,7 @@
 (defconstant +representation-types+
   '(;; These types can be used by ECL to unbox data
     ;; They are sorted from the most specific, to the least specific one.
+    ;; All functions must be declared in externa.h (not internal.h) header file.
     (:byte .
     #1=((signed-byte 8) "int8_t" "ecl_make_int8_t" "ecl_to_int8_t" "ecl_fixnum"))
     (:unsigned-byte .
@@ -34,6 +35,9 @@
     (:float single-float "float" "ecl_make_single_float" "ecl_to_float" "ecl_single_float")
     (:double double-float "double" "ecl_make_double_float" "ecl_to_double" "ecl_double_float")
     (:long-double long-float "long double" "ecl_make_long_float" "ecl_to_long_double" "ecl_long_float")
+    (:csfloat si::complex-single-float "_Complex float" "ecl_make_csfloat" "ecl_to_csfloat" "ecl_csfloat")
+    (:cdfloat si::complex-double-float "_Complex double" "ecl_make_cdfloat" "ecl_to_cdfloat" "ecl_cdfloat")
+    (:clfloat si::complex-long-float "_Complex long double" "ecl_make_clfloat" "ecl_to_clfloat" "ecl_clfloat")
     (:unsigned-char base-char "unsigned char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
     (:char base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
     (:wchar character "ecl_character" "CODE_CHAR" "ecl_char_code" "CHAR_CODE")
@@ -96,7 +100,9 @@
     #+:sse2 (:double-sse-pack . nil)
     #+:sse2 (:int-sse-pack . nil)
     #+:long-float (:long-double . nil)
-    ))
+    #+complex-float (:csfloat . nil)
+    #+complex-float (:cdfloat . nil)
+    #+complex-float (:clfloat . nil)))
 
 (defconstant +all-machines-c-types+
   '((:object)

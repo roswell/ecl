@@ -27,35 +27,80 @@ ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:nu
 @item rational @tab An alias for (or integer ratio)
 @item float @tab An alias for (or single-float double-float short-float long-float)
 @item real @tab An alias for (or rational float)
-@item complex @tab Complex number made of two real numbers of the above mentioned types.
+@item complex @tab Complex number made of two real numbers of the above mentioned types or a <float> _Complex type in C99.
 @end multitable
 @end float
 
-In general, the size of a @code{FIXNUM} is determined by the word size of a machine, which ranges from 32 to 64 bits. Integers larger than this are implemented using the @url{http://www.swox.com/gmp/, GNU Multiprecision library}. Rationals are implemented using two integers, without caring whether they are fixnum or not. Floating point numbers include at least the two IEEE types of 32 and 64 bits respectively. In machines where it is supported, it is possible to associate the lisp @code{LONG-FLOAT} with the machine type @code{long double} whose size ranges from 96 to 128 bits, and which are a bit slower.
+In general, the size of a @code{FIXNUM} is determined by the word size
+of a machine, which ranges from 32 to 64 bits. Integers larger than
+this are implemented using the @url{http://www.swox.com/gmp/, GNU
+Multiprecision library}. Rationals are implemented using two integers,
+without caring whether they are fixnum or not. Floating point numbers
+include at least the two IEEE types of 32 and 64 bits respectively.
+
+@cindex long-float internal representation
+@ftindex LONG-FLOAT
+In machines where it is supported, it is possible to associate the
+lisp @code{LONG-FLOAT} with the machine type @code{long double} whose
+size ranges from 96 to 128 bits, and which are a bit slower.
+
+@cindex (complex float) internal representation
+@ftindex COMPLEX-FLOAT
+In machines where a type @code{<float> _Complex} is supported numbers
+of type @code{(complex float)} are implemented with it, otherwise like
+ratios all complex numbers are pairs of numbers.
 
 @node Numbers - Floating point exceptions
 @subsection Floating point exceptions
-ECL supports two ways of dealing with special floating point values, such as Not a Number (NaN), infinity or denormalized floats, which can occur in floating point computations. Either a condition is signaled or the value is silently used as it is. There are multiple options controlling which behaviour is selected: If ECL is built with the @code{--with-ieee-fp=no} configure option, then a condition is signaled for every infinity or NaN encountered. If not, the behaviour can be controlled by @code{si:trap-fpe}. By default, a condition is signaled for invalid operation, division by zero and floating point overflows. If the @code{ECL_OPT_TRAP_SIGFPE} option is false, no conditions are signaled by default (Note that in this case, if you enable trapping of floating point exceptions with @code{si:trap-fpe}, then you have to install your own signal handler).
+ECL supports two ways of dealing with special floating point values,
+such as Not a Number (NaN), infinity or denormalized floats, which can
+occur in floating point computations. Either a condition is signaled
+or the value is silently used as it is. There are multiple options
+controlling which behaviour is selected: If ECL is built with the
+@code{--with-ieee-fp=no} configure option, then a condition is
+signaled for every infinity or NaN encountered. If not, the behaviour
+can be controlled by @code{si:trap-fpe}. By default, a condition is
+signaled for invalid operation, division by zero and floating point
+overflows. If the @code{ECL_OPT_TRAP_SIGFPE} option is false, no
+conditions are signaled by default (Note that in this case, if you
+enable trapping of floating point exceptions with @code{si:trap-fpe},
+then you have to install your own signal handler).
 
 @lspindex si:trap-fpe
 @defun si:trap-fpe condition flag
 Control the signaling of the floating point exceptions
+
 @subsubheading Synopsis
 @table @var
 @item condition
-a symbol - one of @code{t}, @code{division-by-zero}, @code{floating-point-overflow}, @code{floating-point-underflow}, @code{floating-point-invalid-operation} or @code{floating-point-inexact}
+a symbol - one of @code{t}, @code{division-by-zero},
+@code{floating-point-overflow}, @code{floating-point-underflow},
+@code{floating-point-invalid-operation} or
+@code{floating-point-inexact}
 @item flag
 a generalized boolean
 @end table
+
 @subsubheading Description
-If flag is true, arranges for the current thread to signal a @var{condition} if the corresponding floating point exception is detected in the future. If @var{condition} is @code{t}, the exceptions which are signaled by default are disabled or enabled all at once.
+If flag is true, arranges for the current thread to signal a
+@var{condition} if the corresponding floating point exception is
+detected in the future. If @var{condition} is @code{t}, the exceptions
+which are signaled by default are disabled or enabled all at once.
 @end defun
 
 @node Numbers - Random-States
 @subsection Random-States
-ECL relies internally on a 32-bit Mersenne-Twister random number generator, using a relatively large buffer to precompute about 5000 pseudo-random bytes. This implies also that random states can be printed readably and also read, using the @code{#$} macro. There is no provision to create random states from user arrays, though. Random state is printed unreadably by default.
+ECL relies internally on a 32-bit Mersenne-Twister random number
+generator, using a relatively large buffer to precompute about 5000
+pseudo-random bytes. This implies also that random states can be
+printed readably and also read, using the @code{#$} macro. There is no
+provision to create random states from user arrays, though. Random
+state is printed unreadably by default.
 
-The @code{#$} macro can be used to initialize the generator with a random seed (an integer), an array of random bytes (mainly used for reading back printed random-state) and another random-state (syntactic sugar for copying the random-state). 
+The @code{#$} macro can be used to initialize the generator with a
+random seed (an integer), an array of random bytes (mainly used for
+reading back printed random-state) and another random-state (syntactic
+sugar for copying the random-state).
 
 @node Numbers - Dictionary
 @subsection Dictionary
@@ -75,7 +120,8 @@ Constant positive/negative infinity for the different floating point types.
 
 @lspindex ext:nan
 @defun ext:nan
-Returns a double float NaN value. Coerce to other floating point types to get NaN values e.g. for single floats.
+Returns a double float NaN value. Coerce to other floating point types
+to get NaN values e.g. for single floats.
 @end defun
 
 @lspindex ext:float-infinity-p
@@ -108,6 +154,9 @@ Numeric C types understood by ECL
 @item float @tab short-float, single-float
 @item double @tab double-float
 @item long double (*) @tab long-float @tab ECL_LONG_FLOAT @tab :long-float
+@item float _Complex (**) @tab (complex single-float) @tab ECL_COMPLEX_FLOAT @tab :complex-float
+@item double _Complex (**) @tab (complex double-float) @tab ECL_COMPLEX_FLOAT @tab :complex-float
+@item long-double _Complex (**) @tab (complex long-float) @tab ECL_COMPLEX_FLOAT @tab :complex-float
 @item uint8_t @tab (unsigned-byte 8) @tab ecl_uint8_t
 @item int8_t @tab (signed-byte 8) @tab ecl_int8_t
 @item uint16_t @tab (unsigned-byte 16) @tab ecl_uint16_t @tab :uint16-t
@@ -129,9 +178,19 @@ Numeric C types understood by ECL
 @subsubheading Description
 The table above shows the relation between C types and the equivalent Common Lisp types. All types are standard C99 types, except for two. First, @code{cl_fixnum} is the smallest signed integer that can fit a fixnum. Second, @code{cl_index} is the smallest unsigned integer that fits a fixnum and is typically the unsigned counterpart of @code{cl_fixnum}.
 
-(*) The long double does not exist on all platforms. When it exists, the macro @code{ECL_LONG_DOUBLE} will be defined, and @code{long-double} will be equivalent to it.
+@cfindex --enable-longdouble [auto]
+(*) The long double does not exist on all platforms. When it exists,
+the macro @code{ECL_LONG_DOUBLE} will be defined, and
+@code{long-double} will be equivalent to it.
 
-Many other types might also not exist on all platforms. This includes not only @code{long long} and @code{unsigned long long}, but also some of the C99 integer types. There are two ways to detect which integer types are available in your system:
+@cfindex --enable-c99complex [auto]
+(**) The <float> _Complex types do not exist on all platforms. When
+they exist the macro @code{ECL_COMPLEX_FLOAT} will be defined.
+
+Many other types might also not exist on all platforms. This includes
+not only @code{long long} and @code{unsigned long long}, but also some
+of the C99 integer types. There are two ways to detect which integer
+types are available in your system:
 
 @itemize
 @item
@@ -156,6 +215,12 @@ Creating Lisp types from C numbers
 @deftypefun cl_object ecl_make_double_float (double @var{n})
 @end deftypefun
 @deftypefun cl_object ecl_make_long_float (long double @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_csfloat (float _Complex @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_cdfloat (double _Complex @var{n})
+@end deftypefun
+@deftypefun cl_object ecl_make_clfloat (long double _Complex @var{n})
 @end deftypefun
 @deftypefun cl_object ecl_make_uint8_t (uint8_t @var{n})
 @end deftypefun
@@ -195,11 +260,22 @@ Creating Lisp types from C numbers
 @end deftypefun
 
 @subsubheading Description
-These functions create a Lisp object from the corresponding C number. If the number is an integer type, the result will always be an integer, which may be a bignum. If on the other hand the C number is a float, double or long double, the result will be a float.
+These functions create a Lisp object from the corresponding C
+number. If the number is an integer type, the result will always be an
+integer, which may be a bignum. If on the other hand the C number is a
+float, double or long double, the result will be a float.
 
-There is some redundancy in the list of functions that convert from cl_fixnum and cl_index to lisp. On the one hand, @code{ecl_make_fixnum} always creates a fixnum, dropping bits if necessary. On the other hand, @code{ecl_make_integer} and @code{ecl_make_unsigned_integer} faithfully convert to a Lisp integer, which may be a bignum.
+There is some redundancy in the list of functions that convert from
+cl_fixnum and cl_index to lisp. On the one hand,
+@code{ecl_make_fixnum} always creates a fixnum, dropping bits if
+necessary. On the other hand, @code{ecl_make_integer} and
+@code{ecl_make_unsigned_integer} faithfully convert to a Lisp integer,
+which may be a bignum.
 
-Note also that some of the constructors do not use C numbers. This is the case of @code{ecl_make_ratio} and @code{ecl_make_complex}, because they are composite Lisp types.
+Note also that some of the constructors do not use C numbers. This is
+the case of @code{ecl_make_ratio} and @code{ecl_make_complex}, because
+they are composite Lisp types. When c99 complex float support is built
+in @code{ecl_make_complex} will use C number for float types.
 
 These functions or macros signal no errors.
 
@@ -215,6 +291,12 @@ Unchecked conversion from Lisp types to C numbers
 @deftypefun double ecl_double_float (cl_object @var{n})
 @end deftypefun
 @deftypefun {long double} ecl_long_float (cl_object @var{n})
+@end deftypefun
+@deftypefun {float _Complex} ecl_csfloat (cl_object @var{n})
+@end deftypefun
+@deftypefun {double _Complex} ecl_cdfloat (cl_object @var{n})
+@end deftypefun
+@deftypefun {long double _Complex} ecl_clfloat (cl_object @var{n})
 @end deftypefun
 
 @subsubheading Description
@@ -234,6 +316,12 @@ Checked conversion from Lisp types to C numbers
 @deftypefun double ecl_to_double (cl_object @var{n});
 @end deftypefun
 @deftypefun {long double} ecl_to_long_double (cl_object @var{n});
+@end deftypefun
+@deftypefun {float _Complex} ecl_to_csfloat (cl_object @var{n});
+@end deftypefun
+@deftypefun {double _Complex} ecl_to_cdfloat (cl_object @var{n});
+@end deftypefun
+@deftypefun {long double _Complex} ecl_to_clfloat (cl_object @var{n});
 @end deftypefun
 @deftypefun uint8_t ecl_to_uint8_t (cl_object @var{n});
 @end deftypefun
@@ -269,7 +357,9 @@ Checked conversion from Lisp types to C numbers
 @end deftypefun
 
 @subsubheading Description
-These functions and macros convert a Lisp object to the corresponding C number type. The conversion is done through a coercion process which may signal an error if the argument does not fit the expected type.
+These functions and macros convert a Lisp object to the corresponding
+C number type. The conversion is done through a coercion process which
+may signal an error if the argument does not fit the expected type.
 
 @node Numbers - ANSI dictionary
 @subsubsection ANSI dictionary

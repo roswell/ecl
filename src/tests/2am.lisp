@@ -206,12 +206,17 @@
   "Assert that `body' signals a condition of type `condition'."
   `(%signals ',condition (lambda () ,form) ,@args))
 
-(defmacro finishes (form)
-  `(handler-case (progn
-                   ,form
-                   (passed))
-     (serious-condition (c)
-       (failed (make-condition 'test-failure
-                               :name *test-name*
-                               :format-control "Expected to finish, but got ~s"
-                               :format-arguments (list (type-of c)))))))
+(defmacro finishes (form &rest args)
+  (if args
+      `(handler-case (progn ,form (passed))
+         (serious-condition (c)
+           (failed (make-condition 'test-failure
+                                   :name *test-name*
+                                   :format-control ,(car args)
+                                   :format-arguments (list ,@(cdr args))))))
+      `(handler-case (progn ,form (passed))
+         (serious-condition (c)
+           (failed (make-condition 'test-failure
+                                   :name *test-name*
+                                   :format-control "Expected to finish, but got ~s"
+                                   :format-arguments (list (type-of c))))))))

@@ -17,8 +17,16 @@
 
 static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
   @':void', /* ecl_aet_object */
-  @':float', /* ecl_aet_df */
+  @':float', /* ecl_aet_sf */
   @':double', /* ecl_aet_df */
+#ifdef ECL_LONG_FLOAT
+  @':long-double', /* ecl_aet_lf */
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  @':csfloat', /* ecl_aet_csf */
+  @':cdfloat', /* ecl_aet_cdf */
+  @':clfloat', /* ecl_aet_clf */
+#endif
   @':void', /* ecl_aet_bit */
 #if ECL_FIXNUM_BITS == 32 && defined(ecl_uint32_t)
   @':int32-t', /* ecl_aet_fix */
@@ -117,6 +125,14 @@ ecl_foreign_type_table[] = {
   FFI_DESC(@':object', cl_object),
   FFI_DESC(@':float', float),
   FFI_DESC(@':double', double),
+#ifdef ECL_LONG_FLOAT
+  FFI_DESC(@':long-double', long double),
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  FFI_DESC(@':csfloat', _Complex float),
+  FFI_DESC(@':cdfloat', _Complex double),
+  FFI_DESC(@':clfloat', _Complex long double),
+#endif
   {@':void', 0, 0}
 };
 
@@ -139,7 +155,7 @@ static struct {
 #endif
 };
 
-static ffi_type *ecl_type_to_libffi_type[] = {
+static ffi_type *ecl_type_to_libffi_types[] = {
   &ffi_type_schar, /*@':char',*/
   &ffi_type_uchar, /*@':unsigned-char',*/
   &ffi_type_sint8, /*@':byte',*/
@@ -175,8 +191,29 @@ static ffi_type *ecl_type_to_libffi_type[] = {
   &ffi_type_pointer, /*@':object',*/
   &ffi_type_float, /*@':float',*/
   &ffi_type_double, /*@':double',*/
+#ifdef ECL_LONG_FLOAT
+  &ffi_type_longdouble, /*@':long-double',*/
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  /* These ffi types are defined in libffi but they dont't seem to
+     work. For the issue report check the following link:
+     https://github.com/libffi/libffi/issues/489 -- jd 2019-05-14 */
+  NULL /* &ffi_type_complex_float      */, /*@':csfloat',*/
+  NULL /* &ffi_type_complex_double     */, /*@':cdfloat',*/
+  NULL /* &ffi_type_complex_longdouble */, /*@':clfloat',*/
+#endif
   &ffi_type_void /*@':void'*/
 };
+
+static ffi_type *
+ecl_type_to_libffi_type(cl_object type) {
+  enum ecl_ffi_tag tag = ecl_foreign_type_code(type);
+  ffi_type *result = ecl_type_to_libffi_types[tag];
+  if (result == NULL) {
+    FEerror("Dynamic FFI cannot encode argument of type ~s.", 1, type);
+  }
+  return result;
+}
 #endif /* HAVE_LIBFFI */
 
 cl_object
@@ -500,6 +537,18 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
     return ecl_make_single_float(*(float *)p);
   case ECL_FFI_DOUBLE:
     return ecl_make_double_float(*(double *)p);
+#ifdef ECL_LONG_FLOAT
+  case ECL_FFI_LONG_DOUBLE:
+    return ecl_make_long_float(*(long double *)p);
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  case ECL_FFI_CSFLOAT:
+    return ecl_make_csfloat(*(_Complex float *)p);
+  case ECL_FFI_CDFLOAT:
+    return ecl_make_cdfloat(*(_Complex double *)p);
+  case ECL_FFI_CLFLOAT:
+    return ecl_make_clfloat(*(_Complex long double *)p);
+#endif
   case ECL_FFI_VOID:
     return ECL_NIL;
   default:
@@ -594,6 +643,22 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
   case ECL_FFI_DOUBLE:
     *(double *)p = ecl_to_double(value);
     break;
+#ifdef ECL_LONG_FLOAT
+  case ECL_FFI_LONG_DOUBLE:
+    *(long double *)p = ecl_to_long_double(value);
+    break;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  case ECL_FFI_CSFLOAT:
+    *(_Complex float *)p = ecl_to_csfloat(value);
+    break;
+  case ECL_FFI_CDFLOAT:
+    *(_Complex double *)p = ecl_to_cdfloat(value);
+    break;
+  case ECL_FFI_CLFLOAT:
+    *(_Complex long double *)p = ecl_to_clfloat(value);
+    break;
+#endif
   case ECL_FFI_VOID:
     break;
   default:
@@ -797,10 +862,11 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
 {
   int n, ok;
   ffi_type **types;
-  enum ecl_ffi_tag type = ecl_foreign_type_code(return_type);
+  enum ecl_ffi_tag type;
+  cl_object arg_type;
   if (!the_env->ffi_args_limit)
     resize_call_stack(the_env, 32);
-  the_env->ffi_types[0] = ecl_type_to_libffi_type[type];
+  the_env->ffi_types[0] = ecl_type_to_libffi_type(return_type);
   for (n=0; !Null(arg_types); ) {
     if (!LISTP(arg_types)) {
       FEerror("In CALL-CFUN, types lists is not a proper list", 0);
@@ -808,9 +874,10 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
     if (n >= the_env->ffi_args_limit) {
       resize_call_stack(the_env, n + 32);
     }
-    type = ecl_foreign_type_code(ECL_CONS_CAR(arg_types));
+    arg_type = ECL_CONS_CAR(arg_types);
     arg_types = ECL_CONS_CDR(arg_types);
-    the_env->ffi_types[++n] = ecl_type_to_libffi_type[type];
+    type = ecl_foreign_type_code(arg_type);
+    the_env->ffi_types[++n] = ecl_type_to_libffi_type(arg_type);
     if (CONSP(args)) {
       cl_object object = ECL_CONS_CAR(args);
       args = ECL_CONS_CDR(args);

@@ -79,7 +79,10 @@
   (when (and (consp loc) (member (first loc)
                                  '(single-float-value
                                    double-float-value
-                                   long-float-value)))
+                                   long-float-value
+                                   csfloat-value
+                                   cdfloat-value
+                                   clfloat-value)))
     (wt (third loc)) ;; VV index
     (return-from wt-to-object-conversion))
   (let ((record (rep-type-record loc-rep-type)))
@@ -127,6 +130,9 @@
            (DOUBLE-FLOAT-VALUE 'DOUBLE-FLOAT)
            (SINGLE-FLOAT-VALUE 'SINGLE-FLOAT)
            (LONG-FLOAT-VALUE 'LONG-FLOAT)
+           (CSFLOAT-VALUE 'SI:COMPLEX-SINGLE-FLOAT)
+           (CDFLOAT-VALUE 'SI:COMPLEX-DOUBLE-FLOAT)
+           (CLFLOAT-VALUE 'SI:COMPLEX-LONG-FLOAT)
            (C-INLINE (let ((type (first (second loc))))
                        (cond ((and (consp type) (eq (first type) 'VALUES)) T)
                              ((lisp-type-p type) type)
@@ -151,6 +157,9 @@
            (DOUBLE-FLOAT-VALUE :double)
            (SINGLE-FLOAT-VALUE :float)
            (LONG-FLOAT-VALUE :long-double)
+           (CSFLOAT-VALUE :csfloat)
+           (CDFLOAT-VALUE :cdfloat)
+           (CLFLOAT-VALUE :clfloat)
            (C-INLINE (let ((type (first (second loc))))
                        (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
                              ((lisp-type-p type) (lisp-type->rep-type type))
@@ -196,6 +205,17 @@
             ;; We relax the check a bit, because it is valid in C to coerce
             ;; between floats of different types.
             (ensure-valid-object-type 'FLOAT)
+            (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
+           (t
+            (coercion-error))))
+        ((:csfloat :cdfloat :clfloat)
+         (cond
+           ((c-number-rep-type-p loc-rep-type)
+            (wt "(" (rep-type->c-name dest-rep-type) ")(" loc ")"))
+           ((eq loc-rep-type :object)
+            ;; We relax the check a bit, because it is valid in C to coerce
+            ;; between COMPLEX floats of different types.
+            (ensure-valid-object-type 'SI:COMPLEX-FLOAT)
             (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
            (t
             (coercion-error))))
@@ -429,6 +449,7 @@
             (wt-c-inline-loc output-rep-type c-expression coerced-arguments t nil)
             (when one-liner (wt ";")))
           (cmpnote "Ignoring form ~S" c-expression))
+      (wt-nl "value0 = ECL_NIL;")
       (wt-nl "cl_env_copy->nvalues = 0;")
       (return-from produce-inline-loc 'RETURN))
 

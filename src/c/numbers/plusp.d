@@ -63,4 +63,5 @@ MATH_DEF_DISPATCH1_BOOL(plusp, @[plusp], @[real],
                         ecl_plusp_fixnum, ecl_plusp_big, ecl_plusp_ratio,
                         ecl_plusp_single_float, ecl_plusp_double_float,
                         ecl_plusp_long_float,
-                        pluspfailed)
+                        pluspfailed,
+                        pluspfailed, pluspfailed, pluspfailed)

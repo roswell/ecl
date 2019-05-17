@@ -390,6 +390,28 @@ and is not adjustable."
   #+ecl-min
   (eq (type-of x) 'double-float))
 
+#+complex-float
+(defun complex-single-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_csfloat" :one-liner t)
+  #+ecl-min
+  (equal (type-of x) '(complex single-float)))
+
+#+complex-float
+(defun complex-double-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_cdfloat" :one-liner t)
+  #+ecl-min
+  (equal (type-of x) '(complex double-float)))
+
+#+complex-float
+(defun complex-long-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_clfloat" :one-liner t)
+  #+ecl-min
+  (equal (type-of x) '(complex long-float)))
+
+
 (eval-when (:execute :load-toplevel :compile-toplevel)
   (defconstant +known-typep-predicates+
     '((ARRAY . ARRAYP)
@@ -402,6 +424,9 @@ and is not adjustable."
       (CHARACTER . CHARACTERP)
       (COMPILED-FUNCTION . COMPILED-FUNCTION-P)
       (COMPLEX . COMPLEXP)
+      #+complex-float(SI:COMPLEX-SINGLE-FLOAT . COMPLEX-SINGLE-FLOAT-P)
+      #+complex-float(SI:COMPLEX-DOUBLE-FLOAT . COMPLEX-DOUBLE-FLOAT-P)
+      #+complex-float(SI:COMPLEX-LONG-FLOAT . COMPLEX-LONG-FLOAT-P)
       (COMPLEX-ARRAY . COMPLEX-ARRAY-P)
       (CONS . CONSP)
       (DOUBLE-FLOAT . SI:DOUBLE-FLOAT-P)
@@ -451,7 +476,11 @@ and is not adjustable."
              (when (< 32 cl-fixnum-bits 64) '(EXT::CL-INDEX FIXNUM))
              #+:uint64-t '(EXT:BYTE64 EXT:INTEGER64)
              (when (< 64 cl-fixnum-bits) '(EXT::CL-INDEX FIXNUM))
-             '(SINGLE-FLOAT DOUBLE-FLOAT T)))
+             '(SINGLE-FLOAT DOUBLE-FLOAT #+long-float LONG-FLOAT)
+             #+complex-float '(si:complex-single-float
+                               si:complex-double-float
+                               si:complex-long-float)
+             '(t)))
 
 (defun upgraded-array-element-type (element-type &optional env)
   (declare (ignore env))
@@ -478,9 +507,19 @@ and is not adjustable."
   ;;       (error "~S is not a valid part type for a complex." real-type))
   ;;     (when (subtypep real-type v)
   ;;       (return v))))
-  (unless (subtypep real-type 'REAL)
-    (error "~S is not a valid part type for a complex." real-type))
-  'REAL)
+  #+complex-float
+  (cond ((subtypep real-type 'null)         nil)
+        ((subtypep real-type 'rational)     'rational)
+        ((subtypep real-type 'single-float) 'single-float)
+        ((subtypep real-type 'double-float) 'double-float)
+        ((subtypep real-type 'long-float)   'long-float)
+        ((subtypep real-type 'float)        'float)
+        ((subtypep real-type 'real)         'real)
+        (t (error "~S is not a valid part type for a complex." real-type)))
+  #-complex-float
+  (cond ((subtypep real-type 'null) nil)
+        ((subtypep real-type 'real) 'real)
+        (t (error "~S is not a valid part type for a complex." real-type))))
 
 (defun in-interval-p (x interval)
   (declare (si::c-local))
@@ -729,6 +768,18 @@ if not possible."
                (DOUBLE-FLOAT (float object 0.0D0))
                (LONG-FLOAT (float object 0.0L0))
                (COMPLEX (complex (realpart object) (imagpart object)))
+               #+complex-float
+               (si:complex-single-float
+                (complex (coerce (realpart object) 'single-float)
+                         (coerce (imagpart object) 'single-float)))
+               #+complex-float
+               (si:complex-double-float
+                (complex (coerce (realpart object) 'double-float)
+                         (coerce (imagpart object) 'double-float)))
+               #+complex-float
+               (si:complex-long-float
+                (complex (coerce (realpart object) 'long-float)
+                         (coerce (imagpart object) 'long-float)))
                (FUNCTION (coerce-to-function object))
                ((VECTOR SIMPLE-VECTOR #+unicode SIMPLE-BASE-STRING SIMPLE-STRING
                         #+unicode BASE-STRING STRING BIT-VECTOR SIMPLE-BIT-VECTOR)
@@ -1182,10 +1233,24 @@ if not possible."
   (declare (si::c-local))
   ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not
   ;; a subtype of REAL.
-  (let ((type (if (eq real-type '*)
-                  `(complex real)
-                  `(complex ,(upgraded-complex-part-type real-type)))))
+  (when (eq real-type '*)
+    (setq real-type 'real))
+  (let* ((ucpt (upgraded-complex-part-type real-type))
+         (type `(complex ,ucpt)))
     (or (find-registered-tag type)
+        #+complex-float
+        (case ucpt
+          (real
+           (logior (canonical-complex-type 'float)
+                   (canonical-complex-type 'rational)))
+          (float
+           (logior (canonical-complex-type 'single-float)
+                   (canonical-complex-type 'double-float)
+                   (canonical-complex-type 'long-float)))
+          (otherwise
+           (let ((tag (new-type-tag)))
+             (push-type type tag))))
+        #-complex-float
         (let ((tag (new-type-tag)))
           (push-type type tag)))))
 
@@ -1234,29 +1299,28 @@ if not possible."
 
                (INTEGER (INTEGER * *))
                (FIXNUM (INTEGER #.most-negative-fixnum #.most-positive-fixnum))
-               (BIGNUM (OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
-               #+short-float
-               (SHORT-FLOAT (SHORT-FLOAT * *))
+               (BIGNUM (OR (INTEGER * (#.most-negative-fixnum))
+                           (INTEGER (#.most-positive-fixnum) *)))
+               #+short-float (SHORT-FLOAT (SHORT-FLOAT * *))
                (SINGLE-FLOAT (SINGLE-FLOAT * *))
                (DOUBLE-FLOAT (DOUBLE-FLOAT * *))
-               #+long-float
-               (LONG-FLOAT (LONG-FLOAT * *))
+               #+long-float (LONG-FLOAT (LONG-FLOAT * *))
                (RATIO (RATIO * *))
 
                (RATIONAL (OR INTEGER RATIO))
-               (FLOAT (OR
-                       #+short-float SHORT-FLOAT
-                       SINGLE-FLOAT
-                       DOUBLE-FLOAT
-                       #+long-float LONG-FLOAT))
-               (REAL (OR INTEGER
-                      #+short-float SHORT-FLOAT
-                      SINGLE-FLOAT
-                      DOUBLE-FLOAT
-                      #+long-float LONG-FLOAT
-                      RATIO))
-               (COMPLEX (COMPLEX REAL))
+               (FLOAT (OR #+short-float SHORT-FLOAT
+                          SINGLE-FLOAT
+                          DOUBLE-FLOAT
+                          #+long-float LONG-FLOAT))
 
+               (REAL (OR RATIONAL FLOAT))
+
+               #+complex-float(SI:COMPLEX-SINGLE-FLOAT (COMPLEX SINGLE-FLOAT))
+               #+complex-float(SI:COMPLEX-DOUBLE-FLOAT (COMPLEX DOUBLE-FLOAT))
+               #+complex-float(SI:COMPLEX-LONG-FLOAT (COMPLEX LONG-FLOAT))
+               #+complex-float(SI:COMPLEX-FLOAT (COMPLEX FLOAT))
+
+               (COMPLEX (COMPLEX *))
                (NUMBER (OR REAL COMPLEX))
 
                (CHARACTER)
@@ -1441,7 +1505,9 @@ if not possible."
                                  (RATIO ,@(rest type)))))
            (COMPLEX
             (or (find-built-in-tag type)
-                (canonical-complex-type (second type))))
+                (canonical-complex-type (if (endp (rest type))
+                                            'real
+                                            (second type)))))
            (CONS (apply #'register-cons-type (rest type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))

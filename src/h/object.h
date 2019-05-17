@@ -41,7 +41,7 @@ typedef enum {
         t_start = 0,
         t_list = 1,
         /* The most specific numeric types come first. Assumed by
-           some routines, like cl_expt */
+           some routines, like cl_expt. See ANSI 12.1.1.2. */
         t_character = 2,        /* immediate character */
         t_fixnum = 3,           /* immediate fixnum */
         t_bignum = 4,
@@ -53,6 +53,14 @@ typedef enum {
         t_longfloat,
 #endif
         t_complex,
+#ifdef ECL_COMPLEX_FLOAT
+        t_csfloat,
+        t_cdfloat,
+        t_clfloat,
+        t_last_number = t_clfloat,
+#else
+        t_last_number = t_complex,
+#endif
         t_symbol,
         t_package,
         t_hashtable,
@@ -152,7 +160,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_CHAR_CODE_NEWLINE   10
 #define ECL_CHAR_CODE_LINEFEED  10
 
-#define ECL_NUMBER_TYPE_P(t)    (t >= t_fixnum && t <= t_complex)
+#define ECL_NUMBER_TYPE_P(t)    (t >= t_fixnum && t <= t_last_number)
 #define ECL_REAL_TYPE_P(t)      (t >= t_fixnum && t < t_complex)
 #define ECL_ARRAYP(x)           ((ECL_IMMEDIATE(x) == 0) && (x)->d.t >= t_array && (x)->d.t <= t_bitvector)
 #define ECL_VECTORP(x)          ((ECL_IMMEDIATE(x) == 0) && (x)->d.t >= t_vector && (x)->d.t <= t_bitvector)
@@ -168,7 +176,11 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_BASE_STRING_P(x)    ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_base_string))
 #define ECL_HASH_TABLE_P(x)     ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_hashtable))
 #define ECL_BIGNUMP(x)          ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_bignum))
+#ifdef ECL_COMPLEX_FLOAT
+#define ECL_COMPLEXP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t >= t_complex) && ((x)->d.t <= t_clfloat))
+#else
 #define ECL_COMPLEXP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_complex))
+#endif
 #define ECL_RANDOM_STATE_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_random))
 #define ECL_SINGLE_FLOAT_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_singlefloat))
 #define ECL_DOUBLE_FLOAT_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_doublefloat))
@@ -222,14 +234,31 @@ struct ecl_ratio {
         cl_object num;          /*  numerator, must be an integer  */
 };
 
-#ifdef _MSC_VER
-#undef complex                  /* Otherwise we cannot do x->complex.real */
-#endif
 struct ecl_complex {
         _ECL_HDR;
         cl_object real;         /*  real part, must be a number  */
         cl_object imag;         /*  imaginary part, must be a number  */
 };
+
+#ifdef ECL_COMPLEX_FLOAT
+struct ecl_csfloat {
+        _ECL_HDR;
+        float _Complex value;
+};
+#define ecl_csfloat(o) ((o)->csfloat.value)
+
+struct ecl_cdfloat {
+        _ECL_HDR;
+        double _Complex value;
+};
+#define ecl_cdfloat(o) ((o)->cdfloat.value)
+
+struct ecl_clfloat {
+        _ECL_HDR;
+        long double _Complex value;
+};
+#define ecl_clfloat(o) ((o)->clfloat.value)
+#endif
 
 enum ecl_stype {                /*  symbol type  */
         ecl_stp_ordinary = 0,
@@ -392,6 +421,14 @@ typedef enum {                  /*  array element type  */
         ecl_aet_object,         /*  t                */
         ecl_aet_sf,             /*  single-float     */
         ecl_aet_df,             /*  double-float     */
+#ifdef ECL_LONG_FLOAT
+        ecl_aet_lf,             /*  long-float       */
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        ecl_aet_csf,            /*  complex-single-float */
+        ecl_aet_cdf,            /*  complex-double-float */
+        ecl_aet_clf,            /*  complex-long-float */
+#endif
         ecl_aet_bit,            /*  bit              */
         ecl_aet_fix,            /*  cl_fixnum        */
         ecl_aet_index,          /*  cl_index         */
@@ -439,6 +476,14 @@ union ecl_array_data {
 #endif
         float         *sf;
         double        *df;
+#ifdef ECL_LONG_FLOAT
+        long double   *lf;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        float _Complex *csf;
+        double _Complex *cdf;
+        long double _Complex *clf;
+#endif
         cl_fixnum     *fix;
         cl_index      *index;
         byte          *bit;
@@ -784,6 +829,14 @@ enum ecl_ffi_tag {
         ECL_FFI_OBJECT,
         ECL_FFI_FLOAT,
         ECL_FFI_DOUBLE,
+#ifdef ECL_LONG_FLOAT
+        ECL_FFI_LONG_DOUBLE,
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        ECL_FFI_CSFLOAT,
+        ECL_FFI_CDFLOAT,
+        ECL_FFI_CLFLOAT,
+#endif
         ECL_FFI_VOID
 };
 
@@ -824,6 +877,14 @@ union ecl_ffi_values {
         cl_object o;
         float f;
         double d;
+#ifdef ECL_LONG_FLOAT
+        long double lf;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+        float _Complex csf;
+        double _Complex cdf;
+        long double _Complex clf;
+#endif
 };
 
 enum ecl_ffi_calling_convention {
@@ -1030,7 +1091,12 @@ union cl_lispunion {
 #ifdef ECL_LONG_FLOAT
         struct ecl_long_float   longfloat;      /*  long-float */
 #endif
-        struct ecl_complex      complex;        /*  complex number  */
+        struct ecl_complex      gencomplex;     /*  generic complex number  */
+#ifdef ECL_COMPLEX_FLOAT
+        struct ecl_csfloat      csfloat;        /*  complex single float */
+        struct ecl_cdfloat      cdfloat;        /*  complex double float */
+        struct ecl_clfloat      clfloat;        /*  complex long float */
+#endif
         struct ecl_symbol       symbol;         /*  symbol  */
         struct ecl_package      pack;           /*  package  */
         struct ecl_hashtable    hash;           /*  hash table  */

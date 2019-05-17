@@ -300,61 +300,67 @@
 #+externalizable
 (test mix.0017.serialization
   (let* ((vector (make-array 4 :element-type 'ext:byte16 :initial-contents #(1 2 3 4)))
-         (to-be-serialized
-          (vector nil  ; 1: empty list
-                  '(1 2)  ; 2: non-empty list
-                  #\q  ; 3: character
-                  42  ; 4: fixnum
-                  (+ 10 most-positive-fixnum)  ; 5: bignum
-                  2/3  ; 6: ratio
-                  12.3f4  ; 7-9: floats
-                  13.2d4
-                  #+long-float 14.2l3
-                  #C(4 7)  ; 10: complex
-                  #.(find-package "COMMON-LISP-USER")  ; 11: package
-                  'q  ; 12: symbol
-                  ;; 13: hash-table
-                  (let ((ht (make-hash-table)))
-                    (setf (gethash :foo ht) :abc)
-                    (setf (gethash :bar ht) :def)
-                    ht)
-                  ;; 14: array
-                  (let ((a (make-array '(2 2) :initial-element 0)))
-                    (setf (aref a 0 0) 'q)
-                    (setf (aref a 0 1) 1/5)
-                    a)
-                  vector  ; 15: non-displaced vector
-                  ;; 16: displaced vector
-                  (make-array 3 :element-type 'ext:byte16
-                              :displaced-to vector
-                              :displaced-index-offset 1)
-                  "a∩b∈c"  ; 17: string
-                  (make-string 3 :initial-element #\q :element-type 'base-char)  ; 18: base-string
-                  (make-array 6 :element-type 'bit :initial-contents #(0 1 0 1 1 0))  ; 19: bit-vector
+         (object-table
+          ;; vector of (object . compare-function)
+          (vector '(nil . eql) ; empty list
+                  '('(1 2) . equalp) ; non-empty list
+                  '(#\q . eql) ; character
+                  '(42 . eql) ; fixnum
+                  (cons (+ 10 most-positive-fixnum) 'eql) ; bignum
+                  '(2/3 . eql) ; ratio
+                  '(12.3f4 . eql) ; floats
+                  '(13.2d4 . eql)
+                  #+long-float '(14.2l3 . eql)
+                  '(#c(4 7) . eql) ; complexes
+                  '(#c(1.0f0 2.0f0) . eql)
+                  '(#c(1.0d0 2.0d0) . eql)
+                  '(#c(1.0l0 2.0l0) . eql)
+                  '(#.(find-package "COMMON-LISP-USER") . eq) ; package
+                  '(q . eql) ; symbol
+                  ;; hash-table
+                  (cons (let ((ht (make-hash-table)))
+                          (setf (gethash :foo ht) :abc)
+                          (setf (gethash :bar ht) :def)
+                          ht)
+                        #'(lambda (x y)
+                            (loop for key being the hash-keys of x
+                               if (not (eq (gethash key x)
+                                           (gethash key y)))
+                               return nil
+                               finally (return t))))
+                  ;; array
+                  (cons (let ((a (make-array '(2 2) :initial-element 0)))
+                          (setf (aref a 0 0) 'q)
+                          (setf (aref a 0 1) 1/5)
+                          a)
+                        'equalp)
+                  (cons vector 'equalp) ; non-displaced vector
+                  ;; displaced vector
+                  (cons (make-array 3 :element-type 'ext:byte16
+                                    :displaced-to vector
+                                    :displaced-index-offset 1)
+                        #'(lambda (x y)
+                            (and (equalp x y)
+                                 (equalp (multiple-value-list (array-displacement x))
+                                         (multiple-value-list (array-displacement y))))))
+                  '("a∩b∈c" . equal) ; string
+                  (cons (make-string 3 :initial-element #\q :element-type 'base-char) 'equal) ; base-string
+                  (cons (make-array 6 :element-type 'bit :initial-contents #(0 1 0 1 1 0)) 'equal) ; bit-vector
                   ;; stream: not externalizable?
-                  ;; 20: random-state
-                  (let ((r (make-random-state)))
-                    (random 10 r)
-                    r)
+                  ;; random-state
+                  (cons (let ((r (make-random-state)))
+                          (random 10 r)
+                          r)
+                        'equalp)
                   ;; readtable: not externalizable
-                  #P"/foo/bar/whatever.gif"  ; 21: pathname
+                  '(#P"/foo/bar/whatever.gif" . equal) ; pathname
                   ;; TODO: other objects
                   ))
+         (to-be-serialized
+          (map 'vector #'first object-table))
          (deserialized (si::deserialize (si::serialize to-be-serialized))))
-    (is-true (equalp (subseq to-be-serialized 0 12)
-                     (subseq deserialized 0 12)))
-    (is-true (loop for key being the hash-keys of (elt to-be-serialized 12)
-                if (not (eq (gethash key (elt to-be-serialized 12))
-                            (gethash key (elt deserialized 12))))
-                return nil
-                finally (return t)))
-    (is-true (equalp (subseq to-be-serialized 13 16)
-                     (subseq deserialized 13 16)))
-    (is-true (and (equalp (multiple-value-list (array-displacement (elt to-be-serialized 15)))
-                          (multiple-value-list (array-displacement (elt to-be-serialized 15))))))
-    (is-true (equal (elt to-be-serialized 16) (elt deserialized 16)))
-    (is-true (equal (elt to-be-serialized 17) (elt deserialized 17)))
-    (is-true (equal (elt to-be-serialized 18) (elt deserialized 18)))
-    (is-true (equalp (elt to-be-serialized 19) (elt deserialized 19)))
-    (is-true (equal (elt to-be-serialized 20) (elt deserialized 20)))
-    ))
+    (is-true (= (length to-be-serialized) (length deserialized)))
+    (loop for i below (length to-be-serialized)
+       do (is-true (funcall (cdr (elt object-table i))
+                            (elt to-be-serialized i)
+                            (elt deserialized i))))))

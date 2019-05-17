@@ -43,27 +43,26 @@ ecl_abs_rational(cl_object x)
     ecl_make_ratio(ecl_negate(x->ratio.num), x->ratio.den) : x;
 }
 
-/* In ecl_abs_*_float it would be conformant to use signbit or
-   fabs/fabsf/fabsl what would result in rendering:
+/* Example in ABS spec is a bit misleading because it says that
 
-   (abs -0.0) ; -> 0.0
+     (abs -0.0) ; -> -0.0
 
-   Example in CLHS for ABS function says the contrary, but CLHS 1.4.3
-   states that the examples are not normative. We keep the current
-   behavior for now though. */
+   but CLHS 1.4.3 states that the examples are not normative. */
 
 static cl_object
 ecl_abs_single_float(cl_object x)
 {
   float f = ecl_single_float(x);
-  return (f < 0)? ecl_make_single_float(-f) : x;
+  f = fabsf(f);
+  return ecl_make_single_float(f);
 }
 
 static cl_object
 ecl_abs_double_float(cl_object x)
 {
   double f = ecl_double_float(x);
-  return (f < 0)? ecl_make_double_float(-f) : x;
+  f = fabs(f);
+  return ecl_make_double_float(f);
 }
 
 #ifdef ECL_LONG_FLOAT
@@ -71,7 +70,8 @@ static cl_object
 ecl_abs_long_float(cl_object x)
 {
   long double f = ecl_long_float(x);
-  return (f < 0)? ecl_make_long_float(-f) : x;
+  f = fabsl(f);
+  return ecl_make_long_float(f);
 }
 #endif
 
@@ -81,8 +81,8 @@ ecl_abs_complex(cl_object x)
   /* Compute sqrt(r*r + i*i) carefully to prevent overflow.
    * Assume |i| >= |r|. Then sqrt(i*i + r*r) = |i|*sqrt(1 +(r/i)^2).
    */
-  cl_object r = ecl_abs(x->complex.real);
-  cl_object i = ecl_abs(x->complex.imag);
+  cl_object r = ecl_abs(x->gencomplex.real);
+  cl_object i = ecl_abs(x->gencomplex.imag);
   int comparison;
   comparison = ecl_number_compare(r, i);
   if (comparison == 0) {
@@ -99,7 +99,34 @@ ecl_abs_complex(cl_object x)
   }
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_abs_csfloat(cl_object x)
+{
+  float f = crealf(cabsf(ecl_csfloat(x)));
+  x = ecl_make_single_float(f);
+  return x;
+}
+
+static cl_object
+ecl_abs_cdfloat(cl_object x)
+{
+  double f = creal(cabs(ecl_cdfloat(x)));
+  x = ecl_make_double_float(f);
+  return x;
+}
+
+static cl_object
+ecl_abs_clfloat(cl_object x)
+{
+  long double f = creall(cabsl(ecl_clfloat(x)));
+  x = ecl_make_long_float(f);
+  return x;
+}
+#endif
+
 MATH_DEF_DISPATCH1_NE(abs, @[abs], @[number],
                       ecl_abs_fixnum, ecl_abs_bignum, ecl_abs_rational,
                       ecl_abs_single_float, ecl_abs_double_float, ecl_abs_long_float,
-                      ecl_abs_complex);
+                      ecl_abs_complex,
+                      ecl_abs_csfloat, ecl_abs_cdfloat, ecl_abs_clfloat);

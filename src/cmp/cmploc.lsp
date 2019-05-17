@@ -41,6 +41,9 @@
 ;;;     ( LONG-FLOAT-VALUE long-float-value vv )
 ;;;     ( DOUBLE-FLOAT-VALUE double-float-value vv )
 ;;;     ( SINGLE-FLOAT-VALUE single-float-value vv )
+;;;     ( CSFLOAT-VALUE csfloat-value vv )
+;;;     ( CDFLOAT-VALUE cdfloat-value vv )
+;;;     ( CLFLOAT-VALUE clfloat-value vv )
 ;;;     ( STACK-POINTER index ) retrieve a value from the stack
 ;;;     ( SYS:STRUCTURE-REF loc slot-name-vv slot-index )
 ;;;     ( THE type location )
@@ -92,6 +95,9 @@
         ((member (setf loc (car loc))
                  '(VV VV-TEMP FIXNUM-VALUE CHARACTER-VALUE
                    DOUBLE-FLOAT-VALUE SINGLE-FLOAT-VALUE #+long-float LONG-FLOAT-VALUE
+                   #+complex-float CSFLOAT-VALUE
+                   #+complex-float CDFLOAT-VALUE
+                   #+complex-float CLFLOAT-VALUE
                    KEYVARS))
          t)
         (t
@@ -122,7 +128,8 @@
          (loc-immediate-value-p (third loc)))
         ((member (first loc)
                  '(fixnum-value long-float-value
-                   double-float-value single-float-value))
+                   double-float-value single-float-value
+                   csfloat-value cdfloat-value clfloat-value))
          (values t (second loc)))
         ((eq (first loc) 'character-value)
          (values t (code-char (second loc))))

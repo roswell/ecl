@@ -60,14 +60,41 @@ ecl_cosh_complex(cl_object x)
     = (exp(x)*(cos(y)+Isin(y))+exp(-x)*(cos(y)-Isin(y)))/2
     = cosh(x)*cos(y) + Isinh(x)*sin(y);
   */
-  cl_object dx = x->complex.real;
-  cl_object dy = x->complex.imag;
+  cl_object dx = x->gencomplex.real;
+  cl_object dy = x->gencomplex.imag;
   cl_object a = ecl_times(ecl_cosh(dx), ecl_cos(dy));
   cl_object b = ecl_times(ecl_sinh(dx), ecl_sin(dy));
   return ecl_make_complex(a, b);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_cosh_csfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(result) = ccoshf(ecl_csfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_cosh_cdfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(result) = ccosh(ecl_cdfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_cosh_clfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(result) = ccoshl(ecl_clfloat(x));
+  return result;
+}
+#endif
+
 MATH_DEF_DISPATCH1(cosh, @[cosh], @[number],
                    ecl_cosh_rational, ecl_cosh_rational, ecl_cosh_rational,
                    ecl_cosh_single_float, ecl_cosh_double_float, ecl_cosh_long_float,
-                   ecl_cosh_complex);
+                   ecl_cosh_complex,
+                   ecl_cosh_csfloat, ecl_cosh_cdfloat, ecl_cosh_clfloat);

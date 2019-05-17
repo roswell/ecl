@@ -46,6 +46,11 @@ static cl_index object_size[] = {
   ROUNDED_SIZE(ecl_long_float), /* t_longfloat */
 #endif
   ROUNDED_SIZE(ecl_complex), /* t_complex */
+#ifdef ECL_COMPLEX_FLOAT
+  ROUNDED_SIZE(ecl_csfloat), /* t_csfloat */
+  ROUNDED_SIZE(ecl_cdfloat), /* t_cdfloat */
+  ROUNDED_SIZE(ecl_clfloat), /* t_clfloat */
+#endif
   ROUNDED_SIZE(fake_symbol), /* t_symbol */
   ROUNDED_SIZE(fake_package), /* t_package */
   ROUNDED_SIZE(ecl_hashtable), /* t_hashtable */
@@ -244,6 +249,11 @@ serialize_one(pool_t pool, cl_object what)
 #ifdef ECL_LONG_FLOAT
   case t_longfloat:
 #endif
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+  case t_cdfloat:
+  case t_clfloat:
+#endif
     break;
   case t_bignum: {
     int8_t sign = mpz_sgn(buffer->big.big_num);
@@ -261,8 +271,8 @@ serialize_one(pool_t pool, cl_object what)
     break;
   }
   case t_complex: {
-    buffer->complex.real = enqueue(pool, buffer->complex.real);
-    buffer->complex.imag = enqueue(pool, buffer->complex.imag);
+    buffer->gencomplex.real = enqueue(pool, buffer->gencomplex.real);
+    buffer->gencomplex.imag = enqueue(pool, buffer->gencomplex.imag);
     break;
   }
   case t_hashtable:
@@ -568,8 +578,8 @@ fixup(cl_object o, cl_object *o_list)
     o->ratio.num = get_object(o->ratio.num, o_list);
     break;
   case t_complex:
-    o->complex.real = get_object(o->complex.real, o_list);
-    o->complex.imag = get_object(o->complex.imag, o_list);
+    o->gencomplex.real = get_object(o->gencomplex.real, o_list);
+    o->gencomplex.imag = get_object(o->gencomplex.imag, o_list);
     break;
   case t_hashtable:
     fixup_hashtable(o, o_list);

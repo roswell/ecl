@@ -24,7 +24,8 @@
                          (:file "ieee-fp" :if-feature :ieee-floating-point)
                          (:file "package-extensions")
 			 (:file "hash-tables")
-                         (:file "external-formats" :if-feature :unicode)))
+                         (:file "external-formats" :if-feature :unicode)
+                         (:file "complex")))
                (:module stress-tests
                         :default-component-class asdf:cl-source-file.lsp
                         :components

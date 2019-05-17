@@ -71,6 +71,11 @@ typedef struct {
 #else
 # define IF_DFFI(x) NULL
 #endif
+#ifdef ECL_COMPLEX_FLOAT
+# define IF_COMPLEX_FLOAT(x) x
+#else
+# define IF_COMPLEX_FLOAT(x) NULL
+#endif
 
 cl_symbol_initializer
 cl_symbols[] = {
@@ -1492,6 +1497,9 @@ cl_symbols[] = {
 {SYS_ "ALIGNMENT-OF-FOREIGN-ELT-TYPE","si_alignment_of_foreign_elt_type"},
 {KEY_ "BYTE",NULL},
 {KEY_ "CHAR",NULL},
+{KEY_ "CSFLOAT",NULL},
+{KEY_ "CDFLOAT",NULL},
+{KEY_ "CLFLOAT",NULL},
 {KEY_ "CSTRING",NULL},
 {KEY_ "DOUBLE",NULL},
 {KEY_ "FIXNUM",NULL},
@@ -1502,6 +1510,7 @@ cl_symbols[] = {
 {KEY_ "INT32-T",NULL},
 {KEY_ "INT64-T",NULL},
 {KEY_ "LONG",NULL},
+{KEY_ "LONG-DOUBLE",NULL},
 {KEY_ "LONG-LONG",NULL},
 {KEY_ "POINTER-SELF",NULL},
 {KEY_ "POINTER-VOID",NULL},
@@ -2078,6 +2087,14 @@ cl_symbols[] = {
 /* #endif */
 
 {EXT_ "ARRAY-ELEMENT-TYPE-BYTE-SIZE","si_array_element_type_byte_size"},
+
+/* #ifdef ECL_COMPLEX_FLOAT */
+{SYS_ "COMPLEX-FLOAT-P","IF_COMPLEX_FLOAT(si_complex_float_p)"},
+{SYS_ "COMPLEX-FLOAT","IF_COMPLEX_FLOAT(ecl_make_complex_float)"},
+{SYS_ "COMPLEX-SINGLE-FLOAT",NULL},
+{SYS_ "COMPLEX-DOUBLE-FLOAT",NULL},
+{SYS_ "COMPLEX-LONG-FLOAT",NULL},
+/* #endif */
 
 /* #ifdef ECL_SSE2 */
 {EXT_ "SSE-PACK",NULL},

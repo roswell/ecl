@@ -22,6 +22,14 @@ static const cl_object ecl_aet_name[] = {
   ECL_T,                   /* ecl_aet_object */
   @'single-float',      /* ecl_aet_sf */
   @'double-float',      /* ecl_aet_df */
+#ifdef ECL_LONG_FLOAT
+  @'long-float',        /* ecl_aet_lf */
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  @'si::complex-single-float',  /* ecl_aet_csf */
+  @'si::complex-double-float',  /* ecl_aet_cdf */
+  @'si::complex-long-float',    /* ecl_aet_clf */
+#endif
   @'bit',               /* ecl_aet_bit */
   @'ext::cl-fixnum',    /* ecl_aet_fix */
   @'ext::cl-index',     /* ecl_aet_index */
@@ -173,6 +181,18 @@ ecl_aref_unsafe(cl_object x, cl_index index)
     return(ecl_make_single_float(x->array.self.sf[index]));
   case ecl_aet_df:
     return(ecl_make_double_float(x->array.self.df[index]));
+#ifdef ECL_LONG_FLOAT
+  case ecl_aet_lf:
+    return(ecl_make_long_float(x->array.self.lf[index]));
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  case ecl_aet_csf:
+    return(ecl_make_csfloat(x->array.self.csf[index]));
+  case ecl_aet_cdf:
+    return(ecl_make_cdfloat(x->array.self.cdf[index]));
+  case ecl_aet_clf:
+    return(ecl_make_clfloat(x->array.self.clf[index]));
+#endif
   case ecl_aet_b8:
     return ecl_make_uint8_t(x->array.self.b8[index]);
   case ecl_aet_i8:
@@ -329,6 +349,22 @@ ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
   case ecl_aet_df:
     x->array.self.df[index] = ecl_to_double(value);
     break;
+#ifdef ECL_LONG_FLOAT
+  case ecl_aet_lf:
+    x->array.self.lf[index] = ecl_to_long_double(value);
+    break;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  case ecl_aet_csf:
+    x->array.self.csf[index] = ecl_to_csfloat(value);
+    break;
+  case ecl_aet_cdf:
+    x->array.self.cdf[index] = ecl_to_cdfloat(value);
+    break;
+  case ecl_aet_clf:
+    x->array.self.clf[index] = ecl_to_clfloat(value);
+    break;
+#endif
   case ecl_aet_b8:
     x->array.self.b8[index] = ecl_to_uint8_t(value);
     break;
@@ -635,11 +671,20 @@ ecl_symbol_to_elttype(cl_object x)
     return(ecl_aet_df);
   else if (x == @'long-float') {
 #ifdef ECL_LONG_FLOAT
-    return(ecl_aet_object);
+    return(ecl_aet_lf);
 #else
     return(ecl_aet_df);
 #endif
-  } else if (x == @'ext::byte8')
+  }
+#ifdef ECL_COMPLEX_FLOAT
+  else if (x == @'si::complex-single-float')
+    return(ecl_aet_csf);
+  else if (x == @'si::complex-double-float')
+    return(ecl_aet_cdf);
+  else if (x == @'si::complex-long-float')
+    return(ecl_aet_clf);
+#endif
+  else if (x == @'ext::byte8')
     return(ecl_aet_b8);
   else if (x == @'ext::integer8')
     return(ecl_aet_i8);
@@ -710,6 +755,18 @@ address_inc(void *address, cl_fixnum inc, cl_elttype elt_type)
 #endif
   case ecl_aet_df:
     return aux.df + inc;
+#ifdef ECL_LONG_FLOAT
+  case ecl_aet_lf:
+    return aux.lf + inc;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  case ecl_aet_csf:
+    return aux.csf + inc;
+  case ecl_aet_cdf:
+    return aux.cdf + inc;
+  case ecl_aet_clf:
+    return aux.clf + inc;
+#endif
   case ecl_aet_b8:
   case ecl_aet_i8:
     return aux.b8 + inc;
@@ -971,6 +1028,22 @@ cl_array_displacement(cl_object a)
     case ecl_aet_df:
       offset = a->array.self.df - to_array->array.self.df;
       break;
+#ifdef ECL_LONG_FLOAT
+    case ecl_aet_lf:
+      offset = a->array.self.lf - to_array->array.self.lf;
+      break;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+    case ecl_aet_csf:
+      offset = a->array.self.csf - to_array->array.self.csf;
+      break;
+    case ecl_aet_cdf:
+      offset = a->array.self.cdf - to_array->array.self.cdf;
+      break;
+    case ecl_aet_clf:
+      offset = a->array.self.clf - to_array->array.self.clf;
+      break;
+#endif
     case ecl_aet_b8:
     case ecl_aet_i8:
       offset = a->array.self.b8 - to_array->array.self.b8;
@@ -1241,6 +1314,38 @@ ecl_reverse_subarray(cl_object x, cl_index i0, cl_index i1)
       x->array.self.df[j] = y;
     }
     break;
+#ifdef ECL_LONG_FLOAT
+  case ecl_aet_lf:
+    for (i = i0, j = i1-1;  i < j;  i++, --j) {
+      long double y = x->array.self.lf[i];
+      x->array.self.lf[i] = x->array.self.lf[j];
+      x->array.self.lf[j] = y;
+    }
+    break;
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  case ecl_aet_csf:
+    for (i = i0, j = i1-1;  i < j;  i++, --j) {
+      _Complex float y = x->array.self.csf[i];
+      x->array.self.csf[i] = x->array.self.csf[j];
+      x->array.self.csf[j] = y;
+    }
+    break;
+  case ecl_aet_cdf:
+    for (i = i0, j = i1-1;  i < j;  i++, --j) {
+      _Complex double y = x->array.self.cdf[i];
+      x->array.self.cdf[i] = x->array.self.cdf[j];
+      x->array.self.cdf[j] = y;
+    }
+    break;
+  case ecl_aet_clf:
+    for (i = i0, j = i1-1;  i < j;  i++, --j) {
+      _Complex long double y = x->array.self.clf[i];
+      x->array.self.clf[i] = x->array.self.clf[j];
+      x->array.self.clf[j] = y;
+    }
+    break;
+#endif
   case ecl_aet_bc:
     for (i = i0, j = i1-1;  i < j;  i++, --j) {
       ecl_base_char y = x->array.self.bc[i];
@@ -1383,6 +1488,34 @@ si_fill_array_with_elt(cl_object x, cl_object elt, cl_object start, cl_object en
     for (first = last - first; first; --first, ++p) { *p = e; }
     break;
   }
+#ifdef ECL_LONG_FLOAT
+  case ecl_aet_lf: {
+    long double e = ecl_to_long_double(elt);
+    long double *p = x->vector.self.lf + first;
+    for (first = last - first; first; --first, ++p) { *p = e; }
+    break;
+  }
+#endif
+#ifdef ECL_COMPLEX_FLOAT
+  case ecl_aet_csf: {
+    _Complex float e = ecl_to_csfloat(elt);
+    _Complex float *p = x->vector.self.csf + first;
+    for (first = last - first; first; --first, ++p) { *p = e; }
+    break;
+  }
+  case ecl_aet_cdf: {
+    _Complex double e = ecl_to_cdfloat(elt);
+    _Complex double *p = x->vector.self.cdf + first;
+    for (first = last - first; first; --first, ++p) { *p = e; }
+    break;
+  }
+  case ecl_aet_clf: {
+    _Complex long double e = ecl_to_clfloat(elt);
+    _Complex long double *p = x->vector.self.clf + first;
+    for (first = last - first; first; --first, ++p) { *p = e; }
+    break;
+  }
+#endif
   case ecl_aet_b8: {
     uint8_t e = ecl_to_uint8_t(elt);
     uint8_t *p = x->vector.self.b8 + first;
