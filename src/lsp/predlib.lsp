@@ -346,68 +346,68 @@ and is not adjustable."
 
 (defun ratiop (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_ratio" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_ratio" :one-liner t)
   #+ecl-min
   (and (rationalp x) (not (integerp x))))
 
 #+short-float
 (defun short-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_shortfloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_shortfloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'short-float))
 
 #-short-float
 (defun short-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_singlefloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_singlefloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'single-float))
 
 (defun single-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_singlefloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_singlefloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'single-float))
 
 (defun double-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_doublefloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_doublefloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'double-float))
 
 #+long-float
 (defun long-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_longfloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_longfloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'long-float))
 
 #-long-float
 (defun long-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_doublefloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_doublefloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'double-float))
 
 #+complex-float
 (defun complex-single-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_csfloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_csfloat" :one-liner t)
   #+ecl-min
   (equal (type-of x) '(complex single-float)))
 
 #+complex-float
 (defun complex-double-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_cdfloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_cdfloat" :one-liner t)
   #+ecl-min
   (equal (type-of x) '(complex double-float)))
 
 #+complex-float
 (defun complex-long-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_clfloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_clfloat" :one-liner t)
   #+ecl-min
   (equal (type-of x) '(complex long-float)))
 

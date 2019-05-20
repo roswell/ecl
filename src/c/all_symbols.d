@@ -112,7 +112,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
     }
   } else if (!Null(symbol)) {
     cl_object fun = symbol->symbol.gfdef;
-    cl_type t = (fun == OBJNULL)? t_other : type_of(fun);
+    cl_type t = (fun == OBJNULL)? t_other : ecl_t_of(fun);
     if ((t == t_cfun || t == t_cfunfixed) && fun->cfun.block == OBJNULL) {
       for (l = 0; l <= cl_num_symbols_in_core; l++) {
         cl_object s = (cl_object)(cl_symbols + l);

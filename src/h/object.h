@@ -1148,7 +1148,6 @@ static inline cl_type ecl_t_of(cl_object o) {
 #define ecl_t_of(o) \
         ((cl_type)(ECL_IMMEDIATE(o) ? ECL_IMMEDIATE(o) : ((o)->d.t)))
 #endif
-#define type_of(o) ecl_t_of(o)
 
 /*
         This is used to retrieve optional arguments
