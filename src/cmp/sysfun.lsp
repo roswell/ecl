@@ -780,6 +780,13 @@
 #+long-float
 (def-inline si:long-float-p :always (t) :bool "@0;ECL_LONG_FLOAT_P(#0)")
 
+#+complex-float
+(def-inline si::complex-single-float-p :always (t) :bool "@0;ECL_COMPLEX_SINGLE_FLOAT_P(#0)")
+#+complex-float
+(def-inline si::complex-double-float-p :always (t) :bool "@0;ECL_COMPLEX_DOUBLE_FLOAT_P(#0)")
+#+complex-float
+(def-inline si::complex-long-float-p :always (t) :bool "@0;ECL_COMPLEX_LONG_FLOAT_P(#0)")
+
 (def-inline ext:fixnump :always (t) :bool "ECL_FIXNUMP(#0)")
 (def-inline ext:fixnump :always (fixnum) :bool "1")
 
