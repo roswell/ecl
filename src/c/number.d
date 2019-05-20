@@ -622,18 +622,27 @@ ecl_make_complex_float(cl_object r, cl_object i)
 }
 
 cl_object ecl_make_csfloat(float _Complex x) {
+  DO_DETECT_FPE(crealf(x));
+  DO_DETECT_FPE(cimagf(x));
+
   cl_object c = ecl_alloc_object(t_csfloat);
   ecl_csfloat(c) = x;
   return c;
 }
 
 cl_object ecl_make_cdfloat(double _Complex x) {
+  DO_DETECT_FPE(creal(x));
+  DO_DETECT_FPE(cimag(x));
+
   cl_object c = ecl_alloc_object(t_cdfloat);
   ecl_cdfloat(c) = x;
   return c;
 }
 
 cl_object ecl_make_clfloat(long double _Complex x) {
+  DO_DETECT_FPE(creall(x));
+  DO_DETECT_FPE(cimagl(x));
+
   cl_object c = ecl_alloc_object(t_clfloat);
   ecl_clfloat(c) = x;
   return c;
