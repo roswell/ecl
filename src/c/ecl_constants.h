@@ -48,7 +48,6 @@ ecl_def_ct_double_float(dbl_min_neg_norm,-DBL_MIN,static,const);
 #define ECL_MOST_POSITIVE_DOUBLE_FLOAT (cl_object)(&dbl_max_data)
 #define ECL_MOST_NEGATIVE_DOUBLE_FLOAT (cl_object)(&dbl_max_neg_data)
 
-#ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(ldbl_max,LDBL_MAX,static,const);
 ecl_def_ct_long_float(ldbl_max_neg,-LDBL_MAX,static,const);
 ecl_def_ct_long_float(ldbl_min,LDBL_TRUE_MIN,static,const);
@@ -61,18 +60,6 @@ ecl_def_ct_long_float(ldbl_min_neg_norm,-LDBL_MIN,static,const);
 #define ECL_LEAST_NEGATIVE_NORMALIZED_LONG_FLOAT (cl_object)(&ldbl_min_neg_norm_data)
 #define ECL_MOST_POSITIVE_LONG_FLOAT (cl_object)(&ldbl_max_data)
 #define ECL_MOST_NEGATIVE_LONG_FLOAT (cl_object)(&ldbl_max_neg_data)
-#else
-#define ECL_LEAST_POSITIVE_LONG_FLOAT (cl_object)(&dbl_min_data)
-#define ECL_LEAST_NEGATIVE_LONG_FLOAT (cl_object)(&dbl_min_neg_data)
-#define ECL_LEAST_POSITIVE_NORMALIZED_LONG_FLOAT (cl_object)(&dbl_min_norm_data)
-#define ECL_LEAST_NEGATIVE_NORMALIZED_LONG_FLOAT (cl_object)(&dbl_min_neg_norm_data)
-#define ECL_MOST_POSITIVE_LONG_FLOAT (cl_object)(&dbl_max_data)
-#define ECL_MOST_NEGATIVE_LONG_FLOAT (cl_object)(&dbl_max_neg_data)
-#endif
 
-#ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(float_pi,ECL_PI_L,static,const);
-#else
-ecl_def_ct_double_float(float_pi,ECL_PI_D,static,const);
-#endif
 #define ECL_PI (cl_object)(&float_pi_data)

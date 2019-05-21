@@ -51,7 +51,6 @@ ecl_truncate1(cl_object x)
     v1 = ecl_make_double_float(d - y);
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     long double y = d > 0? floorl(d) : ceill(d);
@@ -59,7 +58,6 @@ ecl_truncate1(cl_object x)
     v1 = ecl_make_long_float(d - y);
     break;
   }
-#endif
   default:
     FEwrong_type_nth_arg(@[truncate],1,x,@[real]);
   }

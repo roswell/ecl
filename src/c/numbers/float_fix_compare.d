@@ -47,7 +47,6 @@ double_fix_compare(cl_fixnum n, double d)
   }
 }
 
-#ifdef ECL_LONG_FLOAT
 static int
 long_double_fix_compare(cl_fixnum n, long double d)
 {
@@ -68,5 +67,4 @@ long_double_fix_compare(cl_fixnum n, long double d)
     }
   }
 }
-#endif
 

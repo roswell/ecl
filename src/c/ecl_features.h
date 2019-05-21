@@ -71,9 +71,7 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_UNICODE
   ecl_def_string_array_elt("UNICODE"),
 #endif
-#ifdef ECL_LONG_FLOAT
   ecl_def_string_array_elt("LONG-FLOAT"),
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   ecl_def_string_array_elt("COMPLEX-FLOAT"),
 #endif

@@ -33,9 +33,6 @@
 /* ECL_LIBATOMIC_OPS_H */
 #undef ECL_LIBATOMIC_OPS_H
 
-/* ECL_LONG_FLOAT */
-#undef ECL_LONG_FLOAT
-
 /* ECL_LONG_LONG_BITS */
 #undef ECL_LONG_LONG_BITS
 
@@ -212,9 +209,6 @@
 
 /* Define to 1 if the system has the type `long complex'. */
 #undef HAVE_LONG_COMPLEX
-
-/* Define to 1 if the system has the type `long double'. */
-#undef HAVE_LONG_DOUBLE
 
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT

@@ -229,12 +229,6 @@ AC_ARG_ENABLE(unicode,
                   [enable support for unicode (default=32)]),
   [], [enable_unicode=32])
 
-AC_ARG_ENABLE(longdouble,
-  AS_HELP_STRING( [--enable-longdouble],
-                  [include support for long double]
-                  [(yes|no|auto, default=AUTO)]),
-  [enable_longdouble=${enableval}], [enable_longdouble=yes])
-
 AC_ARG_ENABLE(c99complex,
   AS_HELP_STRING( [--enable-c99complex],
                   [include support for c99 complex floats]
@@ -714,7 +708,6 @@ ECL_FIND_SETJMP
 ECL_FILE_STRUCTURE
 ECL_FPE_MODEL
 ECL_SSE
-ECL_LONG_DOUBLE
 ECL_COMPLEX_C99
 
 dnl -----------------------------------------------------------------------

@@ -72,9 +72,7 @@ static const cl_index ecl_aet_size[] = {
   sizeof(cl_object),          /* ecl_aet_object */
   sizeof(float),              /* ecl_aet_sf */
   sizeof(double),             /* ecl_aet_df */
-#ifdef ECL_LONG_FLOAT
   sizeof(long double),        /* ecl_aet_lf */
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   sizeof(_Complex float),        /* ecl_aet_csf */
   sizeof(_Complex double),       /* ecl_aet_cdf */
@@ -346,9 +344,7 @@ extern cl_object _ecl_library_default_entry(void);
 
 extern cl_object _ecl_double_to_integer(double d);
 extern cl_object _ecl_float_to_integer(float d);
-#ifdef ECL_LONG_FLOAT
 extern cl_object _ecl_long_double_to_integer(long double d);
-#endif
 #ifdef ECL_COMPLEX_FLOAT
 extern cl_object si_complex_float_p(cl_object o);
 extern cl_object ecl_make_complex_float(cl_object r, cl_object i);

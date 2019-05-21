@@ -557,9 +557,7 @@ ecl_alloc_object(cl_type t)
 #ifdef ECL_SSE2
   case t_sse_pack:
 #endif
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:
   case t_cdfloat:
@@ -852,9 +850,7 @@ init_alloc(void)
   init_tm(t_ratio, "RATIO", sizeof(struct ecl_ratio), 2);
   init_tm(t_singlefloat, "SINGLE-FLOAT", sizeof(struct ecl_singlefloat), 0);
   init_tm(t_doublefloat, "DOUBLE-FLOAT", sizeof(struct ecl_doublefloat), 0);
-#ifdef ECL_LONG_FLOAT
   init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float), 0);
-#endif
   init_tm(t_complex, "COMPLEX", sizeof(struct ecl_complex), 2);
 #ifdef ECL_COMPLEX_FLOAT
   init_tm(t_csfloat, "COMPLEX-SINGLE-FLOAT", sizeof(struct ecl_csfloat), 0);
@@ -913,9 +909,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.ratio.den));
   type_info[t_singlefloat].descriptor = 0;
   type_info[t_doublefloat].descriptor = 0;
-#ifdef ECL_LONG_FLOAT
   type_info[t_longfloat].descriptor = 0;
-#endif
   type_info[t_complex].descriptor =
     to_bitmap(&o, &(o.complex.real)) |
     to_bitmap(&o, &(o.complex.imag));

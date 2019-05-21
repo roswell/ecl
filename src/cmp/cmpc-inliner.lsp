@@ -112,7 +112,7 @@
     output))
 
 (defun to-fixnum-float-type (type)
-  (dolist (i '(FIXNUM DOUBLE-FLOAT SINGLE-FLOAT #+long-float LONG-FLOAT)
+  (dolist (i '(FIXNUM DOUBLE-FLOAT SINGLE-FLOAT LONG-FLOAT)
            nil)
     (when (type>= i type)
       (return i))))
@@ -120,7 +120,6 @@
 (defun maximum-float-type (t1 t2)
   (cond ((null t1)
          t2)
-        #+long-float
         ((or (eq t1 'LONG-FLOAT) (eq t2 'LONG-FLOAT))
          'LONG-FLOAT)
         ((or (eq t1 'DOUBLE-FLOAT) (eq t2 'DOUBLE-FLOAT))

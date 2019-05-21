@@ -97,10 +97,10 @@
         (default (if only-real 'REAL 'NUMBER))
         (types-list (if only-real
                         '(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
-                          DOUBLE-FLOAT #+long-float LONG-FLOAT FLOAT REAL
+                          DOUBLE-FLOAT LONG-FLOAT FLOAT REAL
                           NUMBER)
                         '(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
-                          DOUBLE-FLOAT #+long-float LONG-FLOAT FLOAT REAL))))
+                          DOUBLE-FLOAT LONG-FLOAT FLOAT REAL))))
     (dolist (i types-list)
       (when (and (null t1-eq) (type>= i t1))
         (if (equalp t1 t2)

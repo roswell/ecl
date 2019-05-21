@@ -800,7 +800,6 @@ with_signed_zero
 with_ieee_fp
 with_sse
 enable_unicode
-enable_longdouble
 enable_c99complex
 enable_smallcons
 enable_gengc
@@ -1460,8 +1459,6 @@ Optional Features:
                           (portable|included|system|auto, default=auto)
   --enable-unicode={32|16|no}
                           enable support for unicode (default=32)
-  --enable-longdouble     include support for long double (yes|no|auto,
-                          default=AUTO)
   --enable-c99complex     include support for c99 complex floats
                           (default=auto)
   --enable-smallcons      use small (2 words) cons types. Requires
@@ -2955,14 +2952,6 @@ if test "${enable_unicode+set}" = set; then :
   enableval=$enable_unicode;
 else
   enable_unicode=32
-fi
-
-
-# Check whether --enable-longdouble was given.
-if test "${enable_longdouble+set}" = set; then :
-  enableval=$enable_longdouble; enable_longdouble=${enableval}
-else
-  enable_longdouble=yes
 fi
 
 
@@ -8218,22 +8207,6 @@ $as_echo "no" >&6; }
  fi
 fi
 
-
-  if test "$enable_longdouble" != "no" ; then
-    ac_fn_c_check_type "$LINENO" "long double" "ac_cv_type_long_double" "$ac_includes_default"
-if test "x$ac_cv_type_long_double" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_LONG_DOUBLE 1
-_ACEOF
-
-enable_longdouble=yes,
-$as_echo "#define ECL_LONG_FLOAT /**/" >>confdefs.h
-
-                   enable_longdouble=no
-fi
-
-  fi
 
   if test "$enable_c99complex" != "no" ; then
     ac_fn_c_check_type "$LINENO" "float complex" "ac_cv_type_float_complex" "#include <complex.h>

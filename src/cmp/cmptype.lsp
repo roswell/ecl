@@ -36,9 +36,17 @@
 (defun default-init (var &optional warn)
   (declare (ignore warn))
   (let ((new-value (cdr (assoc (var-type var)
-                               '((fixnum . 0) (character . #\space)
-                                 #+long-float (long-float 0.0L1)
-                                 (double-float . 0.0D1) (single-float . 0.0F1))
+                               '((fixnum . 0)
+                                 (character . #\space)
+                                 (long-float   . 0.0L1)
+                                 (double-float . 0.0D1)
+                                 (single-float . 0.0F1)
+                                 #+complex-float
+                                 (si:complex-single-float . #c(0.0f0 0.0f0))
+                                 #+complex-float
+                                 (si:complex-double-float . #c(0.0d0 0.0d0))
+                                 #+complex-float
+                                 (si:complex-single-float . #c(0.0l0 0.0l0)))
                                :test #'subtypep))))
     (if new-value
         (c1constant-value new-value :only-small-values t)

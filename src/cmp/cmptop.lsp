@@ -481,7 +481,6 @@
                        (CHARACTER "CODE_CHAR")
                        (DOUBLE-FLOAT "ecl_make_double_float")
                        (SINGLE-FLOAT "ecl_make_single_float")
-                       #+long-float
                        (LONG-FLOAT "ecl_make_long_float"))
            "(LI" cfun "(")
     (do ((types arg-types (cdr types))
@@ -493,7 +492,6 @@
             (CHARACTER "ecl_char_code")
             (DOUBLE-FLOAT "df")
             (SINGLE-FLOAT "sf")
-            #+long-float
             (LONG-FLOAT "ecl_long_float")
             (otherwise "")) "(")
         (wt-lcl n) (wt ")")
@@ -609,7 +607,7 @@
                 (:char . "_ecl_base_char_loc")
                 (:float . "_ecl_float_loc")
                 (:double . "_ecl_double_loc")
-                #+long-float (:long-double . "_ecl_long_double_loc")
+                (:long-double . "_ecl_long_double_loc")
                 #+complex-float (:csfloat . "_ecl_csfloat_loc")
                 #+complex-float (:cdfloat . "_ecl_cdfloat_loc")
                 #+complex-float (:clfloat . "_ecl_clfloat_loc")

@@ -438,9 +438,7 @@ static printer dispatch[FREE+1] = {
   /* write_float, */            /* t_shortfloat */
   write_float,                  /* t_singlefloat */
   write_float,                  /* t_doublefloat */
-#ifdef ECL_LONG_FLOAT
   write_float,                  /* t_longfloat */
-#endif
   write_complex,                /* t_complex */
 #ifdef ECL_COMPLEX_FLOAT
   write_complex_float,          /* t_csfloat */

@@ -1,15 +1,6 @@
 dnl -*- autoconf -*-
 
 dnl --------------------------------------------------------------
-dnl check existence of long double
-AC_DEFUN([ECL_LONG_DOUBLE],[
-  if test "$enable_longdouble" != "no" ; then
-    AC_CHECK_TYPES([long double],
-                   [enable_longdouble=yes, AC_DEFINE([ECL_LONG_FLOAT], [], [ECL_LONG_FLOAT])]
-                   [enable_longdouble=no])
-  fi])
-
-dnl --------------------------------------------------------------
 dnl check for existence of complex float
 AC_DEFUN([ECL_COMPLEX_C99],[
   if test "$enable_c99complex" != "no" ; then

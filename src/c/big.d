@@ -401,7 +401,6 @@ _ecl_big_fits_in_index(cl_object x)
 # error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
 #endif /* ECL_FIXNUM_BITS > GMP_LIMB_BITS, ECL_LONG_BITS */
 
-#ifdef ECL_LONG_FLOAT
 long double
 _ecl_big_to_long_double(cl_object o)
 {
@@ -413,7 +412,6 @@ _ecl_big_to_long_double(cl_object o)
   }
   return (mpz_sgn(o->big.big_num) < 0)? -output : output;
 }
-#endif
 
 static void
 mpz_ior_op(cl_object out, cl_object i, cl_object j)

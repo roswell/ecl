@@ -42,15 +42,8 @@ static cl_index object_size[] = {
   ROUNDED_SIZE(ecl_ratio), /* t_ratio */
   ROUNDED_SIZE(ecl_singlefloat), /* t_singlefloat */
   ROUNDED_SIZE(ecl_doublefloat), /* t_doublefloat */
-#ifdef ECL_LONG_FLOAT
   ROUNDED_SIZE(ecl_long_float), /* t_longfloat */
-#endif
   ROUNDED_SIZE(ecl_complex), /* t_complex */
-#ifdef ECL_COMPLEX_FLOAT
-  ROUNDED_SIZE(ecl_csfloat), /* t_csfloat */
-  ROUNDED_SIZE(ecl_cdfloat), /* t_cdfloat */
-  ROUNDED_SIZE(ecl_clfloat), /* t_clfloat */
-#endif
   ROUNDED_SIZE(fake_symbol), /* t_symbol */
   ROUNDED_SIZE(fake_package), /* t_package */
   ROUNDED_SIZE(ecl_hashtable), /* t_hashtable */
@@ -246,14 +239,7 @@ serialize_one(pool_t pool, cl_object what)
   switch (ecl_t_of(what)) {
   case t_singlefloat:
   case t_doublefloat:
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
-#endif
-#ifdef ECL_COMPLEX_FLOAT
-  case t_csfloat:
-  case t_cdfloat:
-  case t_clfloat:
-#endif
     break;
   case t_bignum: {
     int8_t sign = mpz_sgn(buffer->big.big_num);
