@@ -29,6 +29,8 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- specialized complex float types based on C99 complex numbers have been
+  added, together with corresponding specialized array element types.
 - support for atomic operations added with an interface similar to SBCL.
   Currently (SBCL 1.4.12), it differs in the following points:
   - the set of supported places is slightly different
@@ -39,9 +41,13 @@
     in ECL.
   - The arguments of ~defcas~ are consistent with the short form of
     ~defsetf~ in contrast to SBCL, where they are different.
-- improvements to C backtrace interface by Marius Gerbershagen. Compile
-  with CFLAGS+="-rdynamic" ./configure ... (Unix) or nmake
-  ECL_USE_DBGHELP=yes ... (MSVC) to take full advantage of this feature.
+  - compare-and-swap expansions can be removed with ~remcas~
+- experimental support for serializing Lisp objects in compiled files
+  directly instead of using the reader for faster loading of .fas files
+  (configure option ~--enable-serialization~).
+- improvements to C backtrace interface. Compile with CFLAGS+="-rdynamic"
+  ./configure ... (Unix) or nmake ECL_USE_DBGHELP=yes ... (MSVC) to take
+  full advantage of this feature.
 - better handling of fifo files (see man 7 fifo)
 - unicode names are always linked for unicode builds (~--with-unicode-names~ removed)
 - numerous bytecodes compiler enhancements
@@ -76,7 +82,7 @@
   set a high enough value.
 - ~block/return-from~ fixed (didn't work across some closure boundaries)
 - ~mp:semaphore-signal~ fixed (race when count was > 1)
-- Multiple native threads issues fixed by Marius Gerbershagen
+- Multiple native threads issues fixed
 - ASDF systems like foo/base and bar/base doesn't have conflicts in bundles
 - interactive input stream in ext:run-program on Windows
 - removed race condition between waitpid and sigchld handler on UNIX

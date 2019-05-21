@@ -378,7 +378,7 @@ print_lock(char *prefix, cl_object l, ...)
   va_list args;
   va_start(args, l);
   if (l == ECL_NIL
-      || type_of(l) == t_condition_variable
+      || ecl_t_of(l) == t_condition_variable
       || ECL_FIXNUMP(l->lock.name)) {
     cl_env_ptr env = ecl_process_env();
     ecl_get_spinlock(env, &lock);

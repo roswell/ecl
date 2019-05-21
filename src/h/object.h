@@ -178,6 +178,9 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_BIGNUMP(x)          ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_bignum))
 #ifdef ECL_COMPLEX_FLOAT
 #define ECL_COMPLEXP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t >= t_complex) && ((x)->d.t <= t_clfloat))
+#define ECL_COMPLEX_SINGLE_FLOAT_P(x) ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_csfloat))
+#define ECL_COMPLEX_DOUBLE_FLOAT_P(x) ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_cdfloat))
+#define ECL_COMPLEX_LONG_FLOAT_P(x) ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_clfloat))
 #else
 #define ECL_COMPLEXP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_complex))
 #endif
@@ -1148,7 +1151,6 @@ static inline cl_type ecl_t_of(cl_object o) {
 #define ecl_t_of(o) \
         ((cl_type)(ECL_IMMEDIATE(o) ? ECL_IMMEDIATE(o) : ((o)->d.t)))
 #endif
-#define type_of(o) ecl_t_of(o)
 
 /*
         This is used to retrieve optional arguments
