@@ -317,7 +317,10 @@
             (destructuring-bind (new-slot-name new-init new-type new-read-only new-offset new-ac)
                 new-def
               (declare (ignore new-init new-read-only new-ac))
-              (and (eql old-slot-name new-slot-name)
+              ;; Name EQL is not enforced because structures may be
+              ;; constructed by code generators and it is likely they
+              ;; will have gensymed names. -- jd 2019-05-22
+              (and #+ (or) (eql old-slot-name new-slot-name)
                    (= old-offset new-offset)
                    (and (multiple-value-bind (subtypep certain)
                             (subtypep old-type new-type)
