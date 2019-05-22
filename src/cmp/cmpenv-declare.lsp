@@ -113,9 +113,9 @@ and a possible documentation string (only accepted when DOC-P is true)."
                      (if (machine-c-type-p decl-name)
                          (values t decl-name)
                          (valid-type-specifier decl-name))
-                   (cmpassert ok "Unknown declaration specifier ~s"
-                              decl-name)
-                   (setf types (collect-declared type decl-args types))))))
+                   (if (null ok)
+                       (cmpwarn "Unknown declaration specifier ~s." decl-name)
+                       (setf types (collect-declared type decl-args types)))                   ))))
        finally (return (values body specials types ignored
                                (nreverse others) doc all-declarations)))))
 
