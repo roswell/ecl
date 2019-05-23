@@ -92,8 +92,6 @@
         (signals error (defstruct (my-struct (:constructor make-my-struct)) slot-1 slot-2 slot-3))
         ;; too few slots
         (signals error (defstruct (my-struct (:constructor make-my-struct)) slot-1))
-        ;; incompatible names
-        (signals error (defstruct (my-struct (:constructor make-my-struct)) slot-1x slot-2x))
         (finishes (make-my-struct))))
 
 
