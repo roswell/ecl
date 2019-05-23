@@ -574,13 +574,14 @@ _ecl_remhash_generic(cl_object key, cl_object hashtable)
 static cl_hashkey
 _ecl_hash_key(cl_object h, cl_object o) {
   switch (h->hash.test) {
-  case ecl_htt_eq:     return _hash_eq(o);
-  case ecl_htt_eql:    return _hash_eql(0, o);
-  case ecl_htt_equal:  return _hash_equal(3, 0, o);
-  case ecl_htt_equalp: return _hash_equalp(3, 0, o);
-  case ecl_htt_pack:   return _hash_equal(3, 0, o);
-  case ecl_htt_generic:
-    return _hash_generic(h, o);
+  case ecl_htt_eq:      return _hash_eq(o);
+  case ecl_htt_eql:     return _hash_eql(0, o);
+  case ecl_htt_equal:   return _hash_equal(3, 0, o);
+  case ecl_htt_equalp:  return _hash_equalp(3, 0, o);
+  case ecl_htt_pack:    return _hash_equal(3, 0, o);
+  case ecl_htt_generic: return _hash_generic(h, o);
+  default:
+    ecl_internal_error("Unknown hash test.");
   }
 }
 
@@ -679,13 +680,28 @@ _ecl_weak_hash_loop(cl_hashkey h, cl_object key, cl_object hashtable,
       continue;
     }
     switch (hashtable->hash.test) {
-    case ecl_htt_eq:     if (e.key == key)           return p;
-    case ecl_htt_eql:    if (ecl_eql(e.key, key))    return p;
-    case ecl_htt_equal:  if (ecl_equal(e.key, key))  return p;
-    case ecl_htt_equalp: if (ecl_equalp(e.key, key)) return p;
+    case ecl_htt_eq:
+      if (e.key == key)
+        return p;
+      break;
+    case ecl_htt_eql:
+      if (ecl_eql(e.key, key))
+        return p;
+      break;
+    case ecl_htt_equal:
+      if (ecl_equal(e.key, key))
+        return p;
+      break;
+    case ecl_htt_equalp:
+      if (ecl_equalp(e.key, key))
+        return p;
+      break;
     case ecl_htt_generic:
       if (_ecl_generic_hash_test(hashtable->hash.generic_test, e.key, key))
         return p;
+      break;
+    default:
+        ecl_internal_error("Unknown hash test.");
     }
   }
   return hashtable->hash.data + j;
@@ -697,10 +713,16 @@ _ecl_gethash_weak(cl_object key, cl_object hashtable, cl_object def)
   cl_hashkey h = _ecl_hash_key(hashtable, key);
   struct ecl_hashtable_entry aux[1];
   _ecl_weak_hash_loop(h, key, hashtable, aux);
-  if (aux->key != OBJNULL) {
-    return aux->value;
-  } else {
+  if (aux->key == OBJNULL) {
     return def;
+  }
+  switch (hashtable->hash.weak) {
+  case ecl_htt_weak_value:
+  case ecl_htt_weak_key_or_value:
+  case ecl_htt_weak_key_and_value:
+    return si_weak_pointer_value(aux->value);
+  default:
+    return aux->value;
   }
 }
 
@@ -721,19 +743,17 @@ _ecl_sethash_weak(cl_object key, cl_object hashtable, cl_object value)
     hashtable->hash.entries = i;
     switch (hashtable->hash.weak) {
     case ecl_htt_weak_key:
-      key = si_make_weak_pointer(key);
-      break;
-    case ecl_htt_weak_value:
-      value = si_make_weak_pointer(value);
-      break;
     case ecl_htt_weak_key_and_value:
     case ecl_htt_weak_key_or_value:
-    default:
       key = si_make_weak_pointer(key);
-      value = si_make_weak_pointer(value);
-      break;
     }
     e->key = key;
+  }
+  switch (hashtable->hash.weak) {
+  case ecl_htt_weak_value:
+  case ecl_htt_weak_key_and_value:
+  case ecl_htt_weak_key_or_value:
+    value = si_make_weak_pointer(value);
   }
   e->value = value;
   return hashtable;
@@ -1360,8 +1380,23 @@ cl_maphash(cl_object fun, cl_object ht)
   assert_type_hash_table(@[maphash], 2, ht);
   for (i = 0;  i < ht->hash.size;  i++) {
     struct ecl_hashtable_entry e = ht->hash.data[i];
-    if(e.key != OBJNULL)
-      funcall(3, fun, e.key, e.value);
+    if(e.key != OBJNULL) {
+      cl_object key = e.key;
+      cl_object val = e.value;
+      switch (ht->hash.weak) {
+      case ecl_htt_weak_key:
+        key = si_weak_pointer_value(key);
+        break;
+      case ecl_htt_weak_value:
+        val = si_weak_pointer_value(val);
+        break;
+      case ecl_htt_weak_key_and_value:
+      case ecl_htt_weak_key_or_value:
+        key = si_weak_pointer_value(key);
+        val = si_weak_pointer_value(val);
+      }
+      funcall(3, fun, key, val);
+    }
   }
   @(return ECL_NIL);
 }
