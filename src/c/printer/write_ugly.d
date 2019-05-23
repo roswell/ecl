@@ -176,8 +176,11 @@ write_hashtable(cl_object x, cl_object stream)
 {
   if (ecl_print_readably() && !Null(ecl_symbol_value(@'*read-eval*'))) {
     cl_object make =
-      cl_list(9, @'make-hash-table',
+      cl_list(15, @'make-hash-table',
               @':size', cl_hash_table_size(x),
+              @':synchronized', si_hash_table_synchronized_p(x),
+              @':weakness', si_hash_table_weakness(x),
+              @':hash-function', x->hash.generic_hash,
               @':rehash-size', cl_hash_table_rehash_size(x),
               @':rehash-threshold', cl_hash_table_rehash_threshold(x),
               @':test', cl_list(2, @'quote', cl_hash_table_test(x)));

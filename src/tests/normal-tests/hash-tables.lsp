@@ -76,3 +76,37 @@
     (is (= 3 (gethash :foo ht)))
     (is-true (remhash :bar ht))
     (is (= 1 (hash-table-count ht)))))
+
+
+;;; generic test and hash functions
+
+;;; In this test we provide an equality predicate which distinguishes
+;;; only two types of numbers: odd and even. HT is synchronized
+;;; because we want also to check, if lock is not hogged by errors
+;;; inside our function (we pass string for that purpose).
+(test hash-tables.custom
+      (flet ((not-so-fancy-equals (x y)
+               (if (zerop x)
+                   (= x y)
+                   (eql (evenp x) (evenp y))))
+             (not-so-fancy-hash (x)
+               (cond ((zerop x) 0)
+                     ((evenp x) 1)
+                     (T 2))))
+        (signals error (make-hash-table :test #'not-so-fancy-equals))
+        (let ((ht (make-hash-table :test #'not-so-fancy-equals
+                                   :hash-function #'not-so-fancy-hash
+                                   :synchronized t)))
+          (finishes
+           (setf (gethash 13 ht) 42
+                 (gethash 12 ht) 33
+                 (gethash 10 ht) 55))
+          (is (= (gethash 12 ht) 55))
+          (is (= (gethash 1  ht) 42))
+          (is (null (gethash 0 ht)))
+          (signals error (gethash "foobar" ht))
+          (signals error (setf (gethash "foobar" ht) 15))
+          (finishes (remhash 3 ht))
+          (is (null (gethash 1 ht)))
+          (finishes (setf (gethash 55 ht) 0))
+          (is (= (gethash 13 ht) 0)))))

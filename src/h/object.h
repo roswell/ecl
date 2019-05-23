@@ -378,7 +378,8 @@ enum ecl_httest {               /*  hash table key test function  */
         ecl_htt_eql,            /*  eql  */
         ecl_htt_equal,          /*  equal  */
         ecl_htt_equalp,         /*  equalp  */
-        ecl_htt_pack            /*  symbol hash  */
+        ecl_htt_pack,           /*  symbol hash  */
+        ecl_htt_generic         /*  generic user-supplied test  */
 };
 
 enum ecl_htweak {
@@ -398,6 +399,8 @@ struct ecl_hashtable {          /*  hash table header  */
         _ECL_HDR2(test,weak);
         struct ecl_hashtable_entry *data; /*  pointer to the hash table  */
         cl_object sync_lock;              /*  synchronization lock  */
+        cl_object generic_test;           /*  generic test function */
+        cl_object generic_hash;           /*  generic hashing function */
         cl_index entries;       /*  number of entries  */
         cl_index size;          /*  hash table size  */
         cl_index limit;         /*  hash table threshold (integer value)  */

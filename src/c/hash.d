@@ -268,6 +268,15 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
   }
 }
 
+static cl_hashkey _hash_generic(cl_object ht, cl_object key) {
+  cl_object hash_fun = ht->hash.generic_hash;
+  cl_object h_object = _ecl_funcall2(hash_fun, key);
+  if (!ECL_FIXNUMP(h_object) || ecl_fixnum_minusp(h_object)) {
+    FEwrong_type_argument(@'fixnum', h_object);
+  }
+  return ecl_fixnum(h_object);
+}
+
 #define HASH_TABLE_LOOP(hkey,hvalue,h,HASH_TABLE_LOOP_TEST) {           \
     cl_index hsize = hashtable->hash.size;                              \
     cl_index i = h % hsize, j = hsize, k;                               \
@@ -293,9 +302,6 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
     return hashtable->hash.data + j;                                    \
   }
 
-#if 0
-#define HASH_TABLE_SET(h,loop,compute_key,store_key)
-#else
 #define HASH_TABLE_SET(h,loop,compute_key,store_key) {                  \
     cl_hashkey h = compute_key;                                         \
     struct ecl_hashtable_entry *e;                                      \
@@ -313,17 +319,12 @@ AGAIN:                                                                  \
  e->value = value;                                                      \
  return hashtable;                                                      \
  }
-#endif
 
 /*
  * EQ HASHTABLES
  */
 
-#if 0
-#define _hash_eq(k) ((cl_hashkey)(k) ^ ((cl_hashkey)(k) >> 16))
-#else
 #define _hash_eq(k) ((cl_hashkey)(k) >> 2)
-#endif
 
 static struct ecl_hashtable_entry *
 _ecl_hash_loop_eq(cl_hashkey h, cl_object key, cl_object hashtable)
@@ -518,6 +519,51 @@ _ecl_remhash_pack(cl_object key, cl_object hashtable)
 }
 
 /*
+ * Generic HASHTABLES
+ */
+
+static bool
+_ecl_generic_hash_test(cl_object fun, cl_object key, cl_object hkey) {
+  return (_ecl_funcall3(fun, key, hkey) != ECL_NIL);
+}
+
+static struct ecl_hashtable_entry *
+_ecl_hash_loop_generic(cl_hashkey h, cl_object key, cl_object hashtable)
+{
+  cl_object test_fun = hashtable->hash.generic_test;
+  HASH_TABLE_LOOP(hkey, hvalue, h, _ecl_generic_hash_test(test_fun, key, hkey));
+}
+
+static cl_object
+_ecl_gethash_generic(cl_object key, cl_object hashtable, cl_object def)
+{
+  cl_hashkey h = _hash_generic(hashtable, key);
+  struct ecl_hashtable_entry *e = _ecl_hash_loop_generic(h, key, hashtable);
+  return (e->key == OBJNULL)? def : e->value;
+}
+
+static cl_object
+_ecl_sethash_generic(cl_object key, cl_object hashtable, cl_object value)
+{
+  HASH_TABLE_SET(h, _ecl_hash_loop_generic, _hash_generic(hashtable, key), key);
+}
+
+static bool
+_ecl_remhash_generic(cl_object key, cl_object hashtable)
+{
+  cl_hashkey h = _hash_generic(hashtable, key);
+  struct ecl_hashtable_entry *e = _ecl_hash_loop_generic(h, key, hashtable);
+  if (e->key == OBJNULL) {
+    return 0;
+  } else {
+    e->key = OBJNULL;
+    e->value = ECL_NIL;
+    hashtable->hash.entries--;
+    return 1;
+  }
+}
+
+/*
  * WEAK HASH TABLES
  */
 #ifndef ECL_WEAK_HASH
@@ -528,11 +574,13 @@ _ecl_remhash_pack(cl_object key, cl_object hashtable)
 static cl_hashkey
 _ecl_hash_key(cl_object h, cl_object o) {
   switch (h->hash.test) {
-  case ecl_htt_eq: return _hash_eq(o);
-  case ecl_htt_eql: return _hash_eql(0, o);
-  case ecl_htt_equal: return _hash_equal(3, 0, o);
-  case ecl_htt_equalp:
-  default: return _hash_equalp(3, 0, o);
+  case ecl_htt_eq:     return _hash_eq(o);
+  case ecl_htt_eql:    return _hash_eql(0, o);
+  case ecl_htt_equal:  return _hash_equal(3, 0, o);
+  case ecl_htt_equalp: return _hash_equalp(3, 0, o);
+  case ecl_htt_pack:   return _hash_equal(3, 0, o);
+  case ecl_htt_generic:
+    return _hash_generic(h, o);
   }
 }
 
@@ -631,14 +679,13 @@ _ecl_weak_hash_loop(cl_hashkey h, cl_object key, cl_object hashtable,
       continue;
     }
     switch (hashtable->hash.test) {
-    case ecl_htt_eq:
-      if (e.key == key) return p;
-    case ecl_htt_eql:
-      if (ecl_eql(e.key, key)) return p;
-    case ecl_htt_equal:
-      if (ecl_equal(e.key, key)) return p;
-    case ecl_htt_equalp:
-      if (ecl_equalp(e.key, key)) return p;
+    case ecl_htt_eq:     if (e.key == key)           return p;
+    case ecl_htt_eql:    if (ecl_eql(e.key, key))    return p;
+    case ecl_htt_equal:  if (ecl_equal(e.key, key))  return p;
+    case ecl_htt_equalp: if (ecl_equalp(e.key, key)) return p;
+    case ecl_htt_generic:
+      if (_ecl_generic_hash_test(hashtable->hash.generic_test, e.key, key))
+        return p;
     }
   }
   return hashtable->hash.data + j;
@@ -719,8 +766,11 @@ _ecl_sethash_sync(cl_object key, cl_object hashtable, cl_object value)
   cl_object output = ECL_NIL;
   cl_object sync_lock = hashtable->hash.sync_lock;
   mp_get_rwlock_write_wait(sync_lock);
-  output = hashtable->hash.set_unsafe(key, hashtable, value);
-  mp_giveup_rwlock_write(sync_lock);
+  ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+    output = hashtable->hash.set_unsafe(key, hashtable, value);
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
+    mp_giveup_rwlock_write(sync_lock);
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   return output;
 }
 
@@ -730,8 +780,11 @@ _ecl_gethash_sync(cl_object key, cl_object hashtable, cl_object def)
   cl_object output = ECL_NIL;
   cl_object sync_lock = hashtable->hash.sync_lock;
   mp_get_rwlock_read_wait(sync_lock);
-  output = hashtable->hash.get_unsafe(key, hashtable, def);
-  mp_giveup_rwlock_read(sync_lock);
+  ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+    output = hashtable->hash.get_unsafe(key, hashtable, def);
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
+    mp_giveup_rwlock_read(sync_lock);
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   return output;
 }
 
@@ -741,8 +794,11 @@ _ecl_remhash_sync(cl_object key, cl_object hashtable)
   bool output = 0;
   cl_object sync_lock = hashtable->hash.sync_lock;
   mp_get_rwlock_write_wait(sync_lock);
-  output = hashtable->hash.rem_unsafe(key, hashtable);
-  mp_giveup_rwlock_write(sync_lock);
+  ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+    output = hashtable->hash.rem_unsafe(key, hashtable);
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
+    mp_giveup_rwlock_write(sync_lock);
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   return output;
 }
 #endif
@@ -836,6 +892,7 @@ ecl_extend_hashtable(cl_object hashtable)
 }
 
 @(defun make_hash_table (&key (test @'eql')
+                         (hash_function ECL_NIL)
                          (weakness ECL_NIL)
                          (synchronized ECL_NIL)
                          (size ecl_make_fixnum(1024))
@@ -843,6 +900,17 @@ ecl_extend_hashtable(cl_object hashtable)
                          (rehash_threshold cl_core.rehash_threshold))
 @ {
     cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
+    if (hash->hash.test == ecl_htt_generic) {
+      /* Normally we would make hash_function an argument to
+         cl__make_hash_table and put this test in there and void
+         unnecessary object allocation, but we do not want to
+         compromise the API. -- jd 2019-05-23 */
+      if (hash_function == ECL_NIL) {
+        FEerror("~S is an illegal hash-table test function.", 1, test);
+      }
+      hash_function = si_coerce_to_function(hash_function);
+      hash->hash.generic_hash = hash_function;
+    }
 #ifdef ECL_WEAK_HASH
     if (!Null(weakness)) {
       if (weakness == @':key') {
@@ -910,6 +978,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
   int htt;
   cl_index hsize;
   cl_object h;
+  cl_object hash_test = ECL_NIL, hash_func = ECL_NIL;
   cl_object (*get)(cl_object, cl_object, cl_object);
   cl_object (*set)(cl_object, cl_object, cl_object);
   bool (*rem)(cl_object, cl_object);
@@ -942,8 +1011,11 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
     set = _ecl_sethash_pack;
     rem = _ecl_remhash_pack;
   } else {
-    FEerror("~S is an illegal hash-table test function.",
-            1, test);
+    htt = ecl_htt_generic;
+    get = _ecl_gethash_generic;
+    set = _ecl_sethash_generic;
+    rem = _ecl_remhash_generic;
+    hash_test = si_coerce_to_function(test);
   }
   if (ecl_unlikely(!ECL_FIXNUMP(size) ||
                    ecl_fixnum_minusp(size) ||
@@ -989,6 +1061,8 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
   h = ecl_alloc_object(t_hashtable);
   h->hash.test = htt;
   h->hash.weak = ecl_htt_not_weak;
+  h->hash.generic_test = hash_test;
+  h->hash.generic_hash = hash_func;
   h->hash.get = get;
   h->hash.set = set;
   h->hash.rem = rem;
@@ -1034,6 +1108,11 @@ ecl_reconstruct_serialized_hashtable(cl_object h) {
     h->hash.get = _ecl_gethash_pack;
     h->hash.set = _ecl_sethash_pack;
     h->hash.rem = _ecl_remhash_pack;
+    break;
+  case ecl_htt_generic:
+    h->hash.get = _ecl_gethash_generic;
+    h->hash.set = _ecl_sethash_generic;
+    h->hash.rem = _ecl_remhash_generic;
     break;
   }
   if (h->hash.weak != ecl_htt_not_weak) {
@@ -1139,12 +1218,13 @@ cl_hash_table_test(cl_object ht)
   cl_object output;
   assert_type_hash_table(@[hash-table-test], 1, ht);
   switch(ht->hash.test) {
-  case ecl_htt_eq: output = @'eq'; break;
-  case ecl_htt_eql: output = @'eql'; break;
-  case ecl_htt_equal: output = @'equal'; break;
-  case ecl_htt_equalp: output = @'equalp'; break;
-  case ecl_htt_pack:
-  default: output = @'equal';
+  case ecl_htt_eq:      output = @'eq';     break;
+  case ecl_htt_eql:     output = @'eql';    break;
+  case ecl_htt_equal:   output = @'equal';  break;
+  case ecl_htt_equalp:  output = @'equalp'; break;
+  case ecl_htt_pack:    output = @'equal';  break;
+  case ecl_htt_generic: output = ht->hash.generic_test;
+  default: FEerror("hash-table-test: unknown test.", 0);
   }
   @(return output);
 }
@@ -1322,6 +1402,7 @@ si_copy_hash_table(cl_object orig)
                              cl_hash_table_size(orig),
                              cl_hash_table_rehash_size(orig),
                              cl_hash_table_rehash_threshold(orig));
+  hash->hash.generic_hash = orig->hash.generic_hash,
   memcpy(hash->hash.data, orig->hash.data,
          orig->hash.size * sizeof(*orig->hash.data));
   hash->hash.entries = orig->hash.entries;
