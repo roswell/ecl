@@ -5,9 +5,25 @@ dnl check for existence of complex float
 AC_DEFUN([ECL_COMPLEX_C99],[
   if test "$enable_c99complex" != "no" ; then
     AC_CHECK_TYPES([float complex, double complex, long complex],
-                   [enable_c99complex=yes, AC_DEFINE([ECL_COMPLEX_FLOAT], [], [ECL_COMPLEX_FLOAT])],
+                   [enable_c99complex=yes],
                    [enable_c99complex=no],
                    [#include <complex.h>])
+  fi
+  dnl some retarded platforms (*cough* Android *cough*) have complex
+  dnl types defined, but not all corresponding numeric functions
+  if test "$enable_c99complex" != "no" ; then
+    AC_CHECK_FUNCS([crealf creal creall cimagf cimag cimagl] \
+                   [cabsf cabs cabsl conjf conj conjl csqrtf csqrt csqrtl] \
+                   [ccosf ccos ccosl csinf csin csinl ctanf ctan ctanl] \
+                   [ccoshf ccosh ccoshl csinhf csinh csinhl ctanhf ctanh ctanhl] \
+                   [cexpf cexp cexpl cpowf cpow cpowl clogf clog clogl] \
+                   [casinf casin casinl cacosf cacos cacosl catanf catan catanl] \
+                   [casinhf casinh casinhl cacoshf cacosh cacoshl catanhf catanh catanhl] \
+                   [],
+                   [enable_c99complex=no])
+  fi
+  if test "$enable_c99complex" != "no" ; then
+    AC_DEFINE([ECL_COMPLEX_FLOAT], [], [ECL_COMPLEX_FLOAT])
   fi])
 
 dnl --------------------------------------------------------------
