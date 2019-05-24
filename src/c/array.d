@@ -22,9 +22,7 @@ static const cl_object ecl_aet_name[] = {
   ECL_T,                   /* ecl_aet_object */
   @'single-float',      /* ecl_aet_sf */
   @'double-float',      /* ecl_aet_df */
-#ifdef ECL_LONG_FLOAT
   @'long-float',        /* ecl_aet_lf */
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   @'si::complex-single-float',  /* ecl_aet_csf */
   @'si::complex-double-float',  /* ecl_aet_cdf */
@@ -181,10 +179,8 @@ ecl_aref_unsafe(cl_object x, cl_index index)
     return(ecl_make_single_float(x->array.self.sf[index]));
   case ecl_aet_df:
     return(ecl_make_double_float(x->array.self.df[index]));
-#ifdef ECL_LONG_FLOAT
   case ecl_aet_lf:
     return(ecl_make_long_float(x->array.self.lf[index]));
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   case ecl_aet_csf:
     return(ecl_make_csfloat(x->array.self.csf[index]));
@@ -349,11 +345,9 @@ ecl_aset_unsafe(cl_object x, cl_index index, cl_object value)
   case ecl_aet_df:
     x->array.self.df[index] = ecl_to_double(value);
     break;
-#ifdef ECL_LONG_FLOAT
   case ecl_aet_lf:
     x->array.self.lf[index] = ecl_to_long_double(value);
     break;
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   case ecl_aet_csf:
     x->array.self.csf[index] = ecl_to_csfloat(value);
@@ -669,13 +663,8 @@ ecl_symbol_to_elttype(cl_object x)
     return(ecl_aet_sf);
   else if (x == @'double-float')
     return(ecl_aet_df);
-  else if (x == @'long-float') {
-#ifdef ECL_LONG_FLOAT
+  else if (x == @'long-float')
     return(ecl_aet_lf);
-#else
-    return(ecl_aet_df);
-#endif
-  }
 #ifdef ECL_COMPLEX_FLOAT
   else if (x == @'si::complex-single-float')
     return(ecl_aet_csf);
@@ -755,10 +744,8 @@ address_inc(void *address, cl_fixnum inc, cl_elttype elt_type)
 #endif
   case ecl_aet_df:
     return aux.df + inc;
-#ifdef ECL_LONG_FLOAT
   case ecl_aet_lf:
     return aux.lf + inc;
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   case ecl_aet_csf:
     return aux.csf + inc;
@@ -1028,11 +1015,9 @@ cl_array_displacement(cl_object a)
     case ecl_aet_df:
       offset = a->array.self.df - to_array->array.self.df;
       break;
-#ifdef ECL_LONG_FLOAT
     case ecl_aet_lf:
       offset = a->array.self.lf - to_array->array.self.lf;
       break;
-#endif
 #ifdef ECL_COMPLEX_FLOAT
     case ecl_aet_csf:
       offset = a->array.self.csf - to_array->array.self.csf;
@@ -1314,7 +1299,6 @@ ecl_reverse_subarray(cl_object x, cl_index i0, cl_index i1)
       x->array.self.df[j] = y;
     }
     break;
-#ifdef ECL_LONG_FLOAT
   case ecl_aet_lf:
     for (i = i0, j = i1-1;  i < j;  i++, --j) {
       long double y = x->array.self.lf[i];
@@ -1322,7 +1306,6 @@ ecl_reverse_subarray(cl_object x, cl_index i0, cl_index i1)
       x->array.self.lf[j] = y;
     }
     break;
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   case ecl_aet_csf:
     for (i = i0, j = i1-1;  i < j;  i++, --j) {
@@ -1488,14 +1471,12 @@ si_fill_array_with_elt(cl_object x, cl_object elt, cl_object start, cl_object en
     for (first = last - first; first; --first, ++p) { *p = e; }
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case ecl_aet_lf: {
     long double e = ecl_to_long_double(elt);
     long double *p = x->vector.self.lf + first;
     for (first = last - first; first; --first, ++p) { *p = e; }
     break;
   }
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   case ecl_aet_csf: {
     _Complex float e = ecl_to_csfloat(elt);

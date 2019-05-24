@@ -70,10 +70,8 @@ ecl_float_nan_p(cl_object x)
 /*     return !isnan(ecl_single_float(x)); */
 /*   case t_doublefloat: */
 /*     return !isnan(ecl_double_float(x)); */
-/* #ifdef ECL_LONG_FLOAT */
 /*   case t_longfloat: */
 /*     return !isnan(ecl_long_float(x)); */
-/* #endif */
 /*   default: */
 /*     return 0; */
 /*   } */
@@ -87,10 +85,8 @@ ecl_float_infinity_p(cl_object x)
     return !isfinite(ecl_single_float(x));
   case t_doublefloat:
     return !isfinite(ecl_double_float(x));
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return !isfinite(ecl_long_float(x));
-#endif
   default:
     return 0;
   }

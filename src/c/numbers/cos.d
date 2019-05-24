@@ -43,13 +43,11 @@ ecl_cos_double_float(cl_object x)
   return ecl_make_double_float(cos(ecl_double_float(x)));
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_cos_long_float(cl_object x)
 {
   return ecl_make_long_float(cosl(ecl_long_float(x)));
 }
-#endif
 
 static cl_object
 ecl_cos_complex(cl_object x)

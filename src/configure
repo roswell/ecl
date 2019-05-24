@@ -740,6 +740,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -800,7 +801,6 @@ with_signed_zero
 with_ieee_fp
 with_sse
 enable_unicode
-enable_longdouble
 enable_c99complex
 enable_smallcons
 enable_gengc
@@ -866,6 +866,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1118,6 +1119,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1255,7 +1265,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1408,6 +1418,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1460,8 +1471,6 @@ Optional Features:
                           (portable|included|system|auto, default=auto)
   --enable-unicode={32|16|no}
                           enable support for unicode (default=32)
-  --enable-longdouble     include support for long double (yes|no|auto,
-                          default=AUTO)
   --enable-c99complex     include support for c99 complex floats
                           (default=auto)
   --enable-smallcons      use small (2 words) cons types. Requires
@@ -2955,14 +2964,6 @@ if test "${enable_unicode+set}" = set; then :
   enableval=$enable_unicode;
 else
   enable_unicode=32
-fi
-
-
-# Check whether --enable-longdouble was given.
-if test "${enable_longdouble+set}" = set; then :
-  enableval=$enable_longdouble; enable_longdouble=${enableval}
-else
-  enable_longdouble=yes
 fi
 
 
@@ -8219,22 +8220,6 @@ $as_echo "no" >&6; }
 fi
 
 
-  if test "$enable_longdouble" != "no" ; then
-    ac_fn_c_check_type "$LINENO" "long double" "ac_cv_type_long_double" "$ac_includes_default"
-if test "x$ac_cv_type_long_double" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_LONG_DOUBLE 1
-_ACEOF
-
-enable_longdouble=yes,
-$as_echo "#define ECL_LONG_FLOAT /**/" >>confdefs.h
-
-                   enable_longdouble=no
-fi
-
-  fi
-
   if test "$enable_c99complex" != "no" ; then
     ac_fn_c_check_type "$LINENO" "float complex" "ac_cv_type_float_complex" "#include <complex.h>
 "
@@ -8244,9 +8229,7 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_FLOAT_COMPLEX 1
 _ACEOF
 
-enable_c99complex=yes,
-$as_echo "#define ECL_COMPLEX_FLOAT /**/" >>confdefs.h
-
+enable_c99complex=yes
 else
   enable_c99complex=no
 fi
@@ -8258,9 +8241,7 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_DOUBLE_COMPLEX 1
 _ACEOF
 
-enable_c99complex=yes,
-$as_echo "#define ECL_COMPLEX_FLOAT /**/" >>confdefs.h
-
+enable_c99complex=yes
 else
   enable_c99complex=no
 fi
@@ -8272,12 +8253,36 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_LONG_COMPLEX 1
 _ACEOF
 
-enable_c99complex=yes,
-$as_echo "#define ECL_COMPLEX_FLOAT /**/" >>confdefs.h
-
+enable_c99complex=yes
 else
   enable_c99complex=no
 fi
+
+  fi
+      if test "$enable_c99complex" != "no" ; then
+    for ac_func in crealf creal creall cimagf cimag cimagl \
+                   cabsf cabs cabsl conjf conj conjl csqrtf csqrt csqrtl \
+                   ccosf ccos ccosl csinf csin csinl ctanf ctan ctanl \
+                   ccoshf ccosh ccoshl csinhf csinh csinhl ctanhf ctanh ctanhl \
+                   cexpf cexp cexpl cpowf cpow cpowl clogf clog clogl \
+                   casinf casin casinl cacosf cacos cacosl catanf catan catanl \
+                   casinhf casinh casinhl cacoshf cacosh cacoshl catanhf catanh catanhl \
+
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+ enable_c99complex=no
+fi
+done
+
+  fi
+  if test "$enable_c99complex" != "no" ; then
+
+$as_echo "#define ECL_COMPLEX_FLOAT /**/" >>confdefs.h
 
   fi
 

@@ -206,10 +206,8 @@ struct cl_core_struct {
         cl_object doublefloat_zero;
         cl_object singlefloat_minus_zero;
         cl_object doublefloat_minus_zero;
-#ifdef ECL_LONG_FLOAT
         cl_object longfloat_zero;
         cl_object longfloat_minus_zero;
-#endif
 
         cl_object gensym_prefix;
         cl_object gentemp_prefix;
@@ -1133,10 +1131,8 @@ extern ECL_API cl_object cl_rational(cl_object x);
 #define cl_rationalize cl_rational
 extern ECL_API float ecl_to_float(cl_object x);
 extern ECL_API double ecl_to_double(cl_object x);
-#ifdef ECL_LONG_FLOAT
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_long_float(long double f);
-#endif
 #ifdef ECL_COMPLEX_FLOAT
 extern ECL_API cl_object   ecl_make_csfloat(float _Complex x);
 extern ECL_API cl_object   ecl_make_cdfloat(double _Complex x);

@@ -61,7 +61,6 @@ ecl_sqrt_double_float(cl_object x)
   }
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_sqrt_long_float(cl_object x)
 {
@@ -73,7 +72,6 @@ ecl_sqrt_long_float(cl_object x)
     return ecl_make_long_float(sqrtl(f));
   }
 }
-#endif
 
 static cl_object
 ecl_sqrt_complex(cl_object x)

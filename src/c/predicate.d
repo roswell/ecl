@@ -92,11 +92,7 @@ bool
 floatp(cl_object x)
 {
   cl_type t = ecl_t_of(x);
-  return (t == t_singlefloat) || (t == t_doublefloat)
-#ifdef ECL_LONG_FLOAT
-    || (t == t_longfloat)
-#endif
-    ;
+  return (t == t_singlefloat) || (t == t_doublefloat) || (t == t_longfloat);
 }
 
 cl_object
@@ -289,12 +285,10 @@ ecl_eql(cl_object x, cl_object y)
             ecl_eql(x->ratio.den, y->ratio.den));
   case t_singlefloat:
     return float_eql(ecl_single_float(x), ecl_single_float(y));
-  case t_doublefloat:
-    return double_eql(ecl_double_float(x), ecl_double_float(y));
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return long_double_eql(ecl_long_float(x), ecl_long_float(y));
-#endif
+  case t_doublefloat:
+    return double_eql(ecl_double_float(x), ecl_double_float(y));
   case t_complex:
     return (ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
             ecl_eql(x->gencomplex.imag, y->gencomplex.imag));
@@ -362,12 +356,10 @@ ecl_equal(register cl_object x, cl_object y)
     if (tx != ty) return 0;
     return double_eql(ecl_double_float(x), ecl_double_float(y));
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     if (tx != ty) return 0;
     return long_double_eql(ecl_long_float(x), ecl_long_float(y));
   }
-#endif
   case t_complex:
     return (tx == ty) && ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
       ecl_eql(x->gencomplex.imag, y->gencomplex.imag);
@@ -449,9 +441,7 @@ ecl_equalp(cl_object x, cl_object y)
   case t_ratio:
   case t_singlefloat:
   case t_doublefloat:
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
-#endif
   case t_complex:
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:
@@ -507,12 +497,6 @@ ecl_equalp(cl_object x, cl_object y)
             return(FALSE);                                              \
         return(TRUE);
 
-#ifdef ECL_LONG_FLOAT
-#define AET_FLOAT_EQUALP_LF(t1, lf) AET_FLOAT_EQUALP(t1, lf)
-#else
-#define AET_FLOAT_EQUALP_LF(t1, lf)
-#endif
-
 #ifdef ECL_COMPLEX_FLOAT
 #define AET_FLOAT_EQUALP_CF(t1, cf) AET_FLOAT_EQUALP(t1, cf)
 #else
@@ -524,7 +508,7 @@ ecl_equalp(cl_object x, cl_object y)
         switch(ety) {                            \
           AET_FLOAT_EQUALP(t1, sf);              \
           AET_FLOAT_EQUALP(t1, df);              \
-          AET_FLOAT_EQUALP_LF(t1, lf);           \
+          AET_FLOAT_EQUALP(t1, lf);              \
           AET_FLOAT_EQUALP_CF(t1, csf);          \
           AET_FLOAT_EQUALP_CF(t1, cdf);          \
           AET_FLOAT_EQUALP_CF(t1, clf);          \
@@ -535,9 +519,7 @@ ecl_equalp(cl_object x, cl_object y)
       switch (etx) {
         AET_FLOAT_SWITCH(sf);
         AET_FLOAT_SWITCH(df);
-#ifdef ECL_LONG_FLOAT
         AET_FLOAT_SWITCH(lf);
-#endif
 #ifdef ECL_COMPLEX_FLOAT
         AET_FLOAT_SWITCH(csf);
         AET_FLOAT_SWITCH(cdf);
@@ -548,7 +530,6 @@ ecl_equalp(cl_object x, cl_object y)
       }
 #undef AET_FLOAT_EQUALP
 #undef AET_FLOAT_SWITCH
-#undef AET_FLOAT_EQUALP_LF
 #undef AET_FLOAT_EQUALP_CF
 
       for (i = 0;  i < j;  i++)

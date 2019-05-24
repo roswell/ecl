@@ -212,7 +212,7 @@
                 (float real)
                   (single-float float)
                   (double-float float)
-                  #+long-float (long-float float)
+                  (long-float float)
             (complex number)
               #+complex-float (si:complex-float complex)
                 #+complex-float (si:complex-single-float si:complex-float)

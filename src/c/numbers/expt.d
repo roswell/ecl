@@ -45,9 +45,7 @@ cl_expt(cl_object x, cl_object y)
 
 ecl_def_ct_single_float(singlefloat_one,1,static,const);
 ecl_def_ct_double_float(doublefloat_one,1,static,const);
-#ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(longfloat_one,1,static,const);
-#endif
 #ifdef ECL_COMPLEX_FLOAT
 ecl_def_ct_csfloat(csfloat_one,1,static,const);
 ecl_def_ct_cdfloat(cdfloat_one,1,static,const);
@@ -74,10 +72,8 @@ expt_zero(cl_object x, cl_object y)
     return singlefloat_one;
   case t_doublefloat:
     return doublefloat_one;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return longfloat_one;
-#endif
   case t_complex:
     z = expt_zero((tx == t_complex)? x->gencomplex.real : x,
                   (ty == t_complex)? y->gencomplex.real : y);
@@ -126,11 +122,9 @@ ecl_expt_float(cl_object x, cl_object y) {
     tx = ecl_t_of(x),
     ty = ecl_t_of(y);
   switch((ty > tx) ? ty : tx) {
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return ecl_make_long_float
       (powl(ecl_to_long_double(x), ecl_to_long_double(y)));
-#endif
   case t_doublefloat:
     return ecl_make_double_float
       (pow(ecl_to_double(x), ecl_to_double(y)));
@@ -209,9 +203,7 @@ ecl_expt(cl_object x, cl_object y)
     case t_ratio:
     case t_complex:
       return ecl_expt_generic(x, y);
-#ifdef ECL_LONG_FLOAT
     case t_longfloat:
-#endif
     case t_doublefloat:
     case t_singlefloat:
       return ecl_expt_float(x, y);

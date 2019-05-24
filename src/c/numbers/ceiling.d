@@ -56,7 +56,6 @@ ecl_ceiling1(cl_object x)
     v1 = ecl_make_double_float(d - y);
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     long double y = ceill(d);
@@ -64,7 +63,6 @@ ecl_ceiling1(cl_object x)
     v1 = ecl_make_long_float(d - y);
     break;
   }
-#endif
   default:
     FEwrong_type_nth_arg(@[ceiling],1,x,@[real]);
   }
@@ -128,7 +126,6 @@ ecl_ceiling2(cl_object x, cl_object y)
       v1 = ecl_make_double_float(p*n - q*n);
       break;
     }
-#ifdef ECL_LONG_FLOAT
     case t_longfloat: {     /* FIX / LF */
       long double n = ecl_long_float(y);
       long double p = ecl_fixnum(x)/n;
@@ -137,7 +134,6 @@ ecl_ceiling2(cl_object x, cl_object y)
       v1 = ecl_make_long_float(p*n - q*n);
       break;
     }
-#endif
     default:
       (void)0; /*Never reached */
     }
@@ -174,7 +170,6 @@ ecl_ceiling2(cl_object x, cl_object y)
       v1 = ecl_make_double_float(p*n - q*n);
       break;
     }
-#ifdef ECL_LONG_FLOAT
     case t_longfloat: {     /* BIG / LF */
       long double n = ecl_long_float(y);
       long double p = _ecl_big_to_double(x)/n;
@@ -183,7 +178,6 @@ ecl_ceiling2(cl_object x, cl_object y)
       v1 = ecl_make_long_float(p*n - q*n);
       break;
     }
-#endif
     default:
       (void)0; /*Never reached */
     }
@@ -216,7 +210,6 @@ ecl_ceiling2(cl_object x, cl_object y)
     v1 = ecl_make_double_float(p*n - q*n);
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {             /* LF / ANY */
     long double n = ecl_to_long_double(y);
     long double p = ecl_long_float(x)/n;
@@ -225,7 +218,6 @@ ecl_ceiling2(cl_object x, cl_object y)
     v1 = ecl_make_long_float(p*n - q*n);
     break;
   }
-#endif
   default:
     FEwrong_type_nth_arg(@[ceiling], 1, x, @[real]);
   }

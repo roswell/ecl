@@ -23,12 +23,6 @@
 
 typedef cl_object (*math_one_arg_fn)(cl_object);
 
-#ifdef ECL_LONG_FLOAT
-#define MATH_LONG_DOUBLE(opt) opt,
-#else
-#define MATH_LONG_DOUBLE(opt)
-#endif
-
 #ifdef ECL_COMPLEX_FLOAT
 #define MATH_CFLOAT(c1,c2,c3) c1, c2, c3
 #else
@@ -48,7 +42,7 @@ typedef cl_object (*math_one_arg_fn)(cl_object);
         fix, big, ratio,              /* t_fixnum, t_bignum, t_ratio */ \
         single_float,                 /* t_singlefloat */               \
         double_float,                 /* t_doublefloat */               \
-        MATH_LONG_DOUBLE(long_float)  /* t_longfloat */                 \
+        long_float,                   /* t_longfloat */                 \
         complex,                      /* t_complex */                   \
         MATH_CFLOAT(csfloat,cdfloat,clfloat) /* t_c?float */ };         \
     cl_object ecl_##name(cl_object arg)                                 \
@@ -89,9 +83,9 @@ typedef int (*math_one_arg_bool_fn)(cl_object);
         fix, big, ratio,              /* t_fixnum, t_bignum, t_ratio */ \
         single_float,                 /* t_singlefloat */               \
         double_float,                 /* t_doublefloat */               \
-        MATH_LONG_DOUBLE(long_float)  /* t_longfloat */                 \
-        complex,                      /* t_complex */                  \
-        MATH_CFLOAT(csfloat,cdfloat,clfloat) /* t_c?float */ };        \
+        long_float,                   /* t_longfloat */                 \
+        complex,                      /* t_complex */                   \
+        MATH_CFLOAT(csfloat,cdfloat,clfloat) /* t_c?float */ };         \
     int ecl_##name(cl_object arg)                                       \
     {                                                                   \
         int t = ECL_IMMEDIATE(arg);                                     \

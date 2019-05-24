@@ -78,10 +78,8 @@ ecl_to_fixnum(cl_object x)
     return (cl_fixnum)ecl_single_float(x);
   case t_doublefloat:
     return (cl_fixnum)ecl_double_float(x);
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return (cl_fixnum)ecl_long_float(x);
-#endif
   default:
     FEerror("~S cannot be coerced to a C int.", 1, x);
   }
@@ -100,10 +98,8 @@ ecl_to_unsigned_integer(cl_object x)
     return (cl_index)ecl_single_float(x);
   case t_doublefloat:
     return (cl_index)ecl_double_float(x);
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return (cl_index)ecl_long_float(x);
-#endif
   default:
     FEerror("~S cannot be coerced to a C unsigned int.", 1, x);
   }

@@ -310,7 +310,7 @@
                   '(2/3 . eql) ; ratio
                   '(12.3f4 . eql) ; floats
                   '(13.2d4 . eql)
-                  #+long-float '(14.2l3 . eql)
+                  '(14.2l3 . eql)
                   '(#c(4 7) . eql) ; complexes
                   '(#c(1.0f0 2.0f0) . eql)
                   '(#c(1.0d0 2.0d0) . eql)

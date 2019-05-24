@@ -115,9 +115,7 @@
      (#.(coerce 0 'double-float) "cl_core.doublefloat_zero")
      (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
      (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
-     #+long-float
      (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
-     #+long-float
      (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
 
      ;; We temporarily remove this constant, because the bytecodes compiler
@@ -165,7 +163,6 @@
            (SINGLE-FLOAT-NEGATIVE-INFINITY "-INFINITY")
            (DOUBLE-FLOAT-NEGATIVE-INFINITY "-INFINITY"))
 
-       #+long-float
        ,@'((MOST-POSITIVE-LONG-FLOAT "LDBL_MAX")
            (MOST-NEGATIVE-LONG-FLOAT "-LDBL_MAX")
            (LEAST-POSITIVE-LONG-FLOAT "LDBL_TRUE_MIN")
@@ -175,5 +172,4 @@
            #+ieee-floating-point
            (LONG-FLOAT-POSITIVE-INFINITY   "INFINITY")
            #+ieee-floating-point
-           (LONG-FLOAT-NEGATIVE-INFINITY   "-INFINITY")
-           )))))
+           (LONG-FLOAT-NEGATIVE-INFINITY   "-INFINITY"))))))

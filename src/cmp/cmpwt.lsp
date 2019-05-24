@@ -252,7 +252,6 @@
     (format stream "ecl_def_ct_double_float(~A,~S,static,const);"
             name value stream)))
 
-#+long-float
 (defun static-long-float-builder (name value stream)
   (let* ((*read-default-float-format* 'long-float)
          (*print-readably* t))
@@ -328,7 +327,6 @@
     (double-float (and (not (ext:float-nan-p object))
                        (not (ext:float-infinity-p object))
                        #'static-double-float-builder))
-    #+long-float
     (long-float (and (not (ext:float-nan-p object))
                      (not (ext:float-infinity-p object))
                      #'static-long-float-builder))

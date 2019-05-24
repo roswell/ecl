@@ -49,13 +49,11 @@ setup(cl_object number, float_approx *approx)
     limit_f = (number->DF.DFVAL ==
                ldexp(FLT_RADIX, DBL_MANT_DIG-1));
     break;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     min_e = LDBL_MIN_EXP;
     limit_f = (number->longfloat.value ==
                ldexpl(FLT_RADIX, LDBL_MANT_DIG-1));
     break;
-#endif
   default:
 	 break;
   }

@@ -101,7 +101,6 @@ ecl_times(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_DOUBLE_FLOAT {
         return ecl_make_double_float(ecl_double_float(x) * ecl_double_float(y));
       }
-#ifdef ECL_LONG_FLOAT
       CASE_FIXNUM_LONG_FLOAT {
         return ecl_make_long_float(ecl_fixnum(x) * ecl_long_float(y));
       }
@@ -137,7 +136,6 @@ ecl_times(cl_object x, cl_object y)
       CASE_COMPLEX_LONG_FLOAT;  {
         goto COMPLEX_X;
       }
-#endif
       CASE_COMPLEX_FIXNUM;
       /* fallthrough */
       CASE_COMPLEX_BIGNUM;

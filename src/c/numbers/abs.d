@@ -65,7 +65,6 @@ ecl_abs_double_float(cl_object x)
   return ecl_make_double_float(f);
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_abs_long_float(cl_object x)
 {
@@ -73,7 +72,6 @@ ecl_abs_long_float(cl_object x)
   f = fabsl(f);
   return ecl_make_long_float(f);
 }
-#endif
 
 static cl_object
 ecl_abs_complex(cl_object x)

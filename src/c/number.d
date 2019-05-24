@@ -511,7 +511,6 @@ ecl_make_double_float(double f)
   return(x);
 }
 
-#ifdef ECL_LONG_FLOAT
 cl_object
 ecl_make_long_float(long double f)
 {
@@ -529,7 +528,6 @@ ecl_make_long_float(long double f)
   x->longfloat.value = f;
   return x;
 }
-#endif
 
 cl_object
 ecl_make_complex(cl_object r, cl_object i)
@@ -555,13 +553,11 @@ ecl_make_complex(cl_object r, cl_object i)
     c->gencomplex.real = ecl_make_double_float(ecl_to_double(r));
     c->gencomplex.imag = ecl_make_double_float(ecl_to_double(i));
     return c;
-# ifdef ECL_LONG_FLOAT
   case t_longfloat:
     c = ecl_alloc_object(t_complex);
     c->gencomplex.real = ecl_make_long_float(ecl_to_long_double(r));
     c->gencomplex.imag = ecl_make_long_float(ecl_to_long_double(i));
     return c;
-# endif
 #endif
   case t_fixnum:
   case t_bignum:
@@ -722,7 +718,6 @@ ratio_to_double(cl_object num, cl_object den)
   return ldexp(output, exponent);
 }
 
-#ifdef ECL_LONG_FLOAT
 static long double
 ratio_to_long_double(cl_object num, cl_object den)
 {
@@ -736,7 +731,6 @@ ratio_to_long_double(cl_object num, cl_object den)
 #endif
   return ldexpl(output, exponent);
 }
-#endif /* ECL_LONG_FLOAT */
 
 float
 ecl_to_float(cl_object x)
@@ -754,10 +748,8 @@ ecl_to_float(cl_object x)
     return ecl_single_float(x);
   case t_doublefloat:
     return (float)ecl_double_float(x);
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return (float)ecl_long_float(x);
-#endif
   default:
     FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
   }
@@ -777,16 +769,13 @@ ecl_to_double(cl_object x)
     return (double)ecl_single_float(x);
   case t_doublefloat:
     return(ecl_double_float(x));
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return (double)ecl_long_float(x);
-#endif
   default:
     FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
   }
 }
 
-#ifdef ECL_LONG_FLOAT
 long double
 ecl_to_long_double(cl_object x)
 {
@@ -807,7 +796,6 @@ ecl_to_long_double(cl_object x)
     FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
   }
 }
-#endif
 
 #ifdef ECL_COMPLEX_FLOAT
 float _Complex ecl_to_csfloat(cl_object x) {
@@ -899,7 +887,6 @@ cl_rational(cl_object x)
       }
     }
     break;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     if (d == 0) {
@@ -918,7 +905,6 @@ cl_rational(cl_object x)
     }
     break;
   }
-#endif
   default:
     x = ecl_type_error(@'rational',"argument",x,@'number');
     goto AGAIN;
@@ -926,7 +912,6 @@ cl_rational(cl_object x)
   @(return x);
 }
 
-#ifdef ECL_LONG_FLOAT
 cl_object
 _ecl_long_double_to_integer(long double d0)
 {
@@ -947,7 +932,6 @@ _ecl_long_double_to_integer(long double d0)
     return o;
   }
 }
-#endif
 
 cl_object
 _ecl_double_to_integer(double d)

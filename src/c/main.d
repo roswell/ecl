@@ -330,10 +330,8 @@ ecl_def_ct_single_float(flt_zero,0,static,const);
 ecl_def_ct_single_float(flt_zero_neg,-0.0,static,const);
 ecl_def_ct_double_float(dbl_zero,0,static,const);
 ecl_def_ct_double_float(dbl_zero_neg,-0.0,static,const);
-#ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(ldbl_zero,0,static,const);
 ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
-#endif
 ecl_def_ct_ratio(plus_half,ecl_make_fixnum(1),ecl_make_fixnum(2),static,const);
 ecl_def_ct_ratio(minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),static,const);
 ecl_def_ct_single_float(flt_one,1,static,const);
@@ -382,10 +380,8 @@ struct cl_core_struct cl_core = {
   (cl_object)&dbl_zero_data, /* doublefloat_zero */
   (cl_object)&flt_zero_neg_data, /* singlefloat_minus_zero */
   (cl_object)&dbl_zero_neg_data, /* doublefloat_minus_zero */
-#ifdef ECL_LONG_FLOAT
   (cl_object)&ldbl_zero_data, /* longfloat_zero */
   (cl_object)&ldbl_zero_neg_data, /* longfloat_minus_zero */
-#endif
 
   (cl_object)&str_G_data, /* gensym_prefix */
   (cl_object)&str_T_data, /* gentemp_prefix */

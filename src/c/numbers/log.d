@@ -124,7 +124,6 @@ ecl_log1_double_float(cl_object x)
   return ecl_make_double_float(log(f));
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_log1_long_float(cl_object x)
 {
@@ -142,7 +141,6 @@ ecl_log1_long_float(cl_object x)
   }
   return ecl_make_long_float(logl(f));
 }
-#endif
 
 static cl_object
 ecl_log1_complex(cl_object x)
@@ -259,7 +257,6 @@ ecl_log1p_double_float(cl_object x)
   return ecl_make_double_float(log1p(f));
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_log1p_long_float(cl_object x)
 {
@@ -276,7 +273,6 @@ ecl_log1p_long_float(cl_object x)
   }
   return ecl_make_long_float(log1pl(f));
 }
-#endif
 
 static cl_object
 ecl_log1p_complex(cl_object x)

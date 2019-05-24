@@ -113,10 +113,8 @@ ecl_type_to_symbol(cl_type t)
     return @'single-float';
   case t_doublefloat:
     return @'double-float';
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return @'long-float';
-#endif
   case t_complex:
     return @'complex';
 #ifdef ECL_COMPLEX_FLOAT

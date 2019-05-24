@@ -11,6 +11,23 @@
 #endif
 
 /*
+ * If minimum unnormalized floating point values defined in ISO C11
+ * are not declared, we use the normalized ones as the next best
+ * portable approximation.
+ */
+#include <float.h>
+
+#ifndef FLT_TRUE_MIN
+# define FLT_TRUE_MIN FLT_MIN
+#endif
+#ifndef DBL_TRUE_MIN
+# define DBL_TRUE_MIN DBL_MIN
+#endif
+#ifndef LDBL_TRUE_MIN
+# define LDBL_TRUE_MIN LDBL_MIN
+#endif
+
+/*
  * Loops over a proper list. Complains on circularity
  */
 #define loop_for_in_no_circle(list) { \

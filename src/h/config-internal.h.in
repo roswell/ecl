@@ -241,16 +241,7 @@
 #  define signbit(x) (copysign(1.0,(x)))
 # endif
 # ifndef isfinite
-#  ifdef __sun__
-#   ifndef ECL_LONG_FLOAT
-#    include <ieeefp.h>
-#    define isfinite(x) finite(x)
-#   else
-#    error "Function isfinite() is missing"
-#   endif
-#  else
-#   define isfinite(x) finite(x)
-#  endif
+#  error "Function isfinite() is missing"
 # endif
 # ifndef signbit
 #  ifndef ECL_SIGNED_ZERO
