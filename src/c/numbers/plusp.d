@@ -52,12 +52,10 @@ ecl_plusp_double_float(cl_object x)
   return ecl_double_float(x) > 0;
 }
 
-#ifdef ECL_LONG_FLOAT
 static int ecl_plusp_long_float(cl_object x)
 {
   return ecl_long_float(x) > 0;
 }
-#endif
 
 MATH_DEF_DISPATCH1_BOOL(plusp, @[plusp], @[real],
                         ecl_plusp_fixnum, ecl_plusp_big, ecl_plusp_ratio,

@@ -18,14 +18,15 @@ If you do not have access to the online version, follow the following recipies.
 3. Enter
    nmake ...
    followed by zero or more of those options
-  4. Use "nmake install" to create a directory called "package" with ECL in it.
-  5. Move that directory wherever you need.
+4. Use "nmake install" to create a directory called "package" with ECL in it.
+5. Move that directory wherever you need.
 
 * Cross-compile for the android platform (from the UNIX machine)
 1. Build the host ECL
    #+BEGIN_SRC shell-script
+     # C99 complex numbers are not fully supported on Android
      ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2"\
-                 --prefix=`pwd`/ecl-android-host --disable-longdouble
+                 --prefix=`pwd`/ecl-android-host --disable-c99complex
      make -j9
      make install
      rm -r build
@@ -49,6 +50,7 @@ If you do not have access to the online version, follow the following recipies.
      export CC=arm-linux-androideabi-clang
      ./configure --host=arm-linux-androideabi \
                  --prefix=`pwd`/ecl-android \
+                 --disable-c99complex \
                  --with-cross-config=`pwd`/src/util/android-arm.cross_config
      make -j9
      make install

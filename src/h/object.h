@@ -49,9 +49,7 @@ typedef enum {
         /* t_shortfloat, */
         t_singlefloat,
         t_doublefloat,
-#ifdef ECL_LONG_FLOAT
         t_longfloat,
-#endif
         t_complex,
 #ifdef ECL_COMPLEX_FLOAT
         t_csfloat,
@@ -187,9 +185,7 @@ typedef cl_object (*cl_objectfn_fixed)();
 #define ECL_RANDOM_STATE_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_random))
 #define ECL_SINGLE_FLOAT_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_singlefloat))
 #define ECL_DOUBLE_FLOAT_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_doublefloat))
-#ifdef ECL_LONG_FLOAT
 #define ECL_LONG_FLOAT_P(x)     ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_longfloat))
-#endif
 #define ECL_PACKAGEP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_package))
 #define ECL_PATHNAMEP(x)        ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_pathname))
 #define ECL_READTABLEP(x)       ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_readtable))
@@ -214,13 +210,11 @@ struct ecl_doublefloat {
 };
 #define ecl_double_float(o) ((o)->DF.DFVAL)
 
-#ifdef ECL_LONG_FLOAT
 struct ecl_long_float {
         _ECL_HDR;
         long double value;
 };
 #define ecl_long_float(o) ((o)->longfloat.value)
-#endif
 
 struct ecl_bignum {
         _ECL_HDR;
@@ -424,9 +418,7 @@ typedef enum {                  /*  array element type  */
         ecl_aet_object,         /*  t                */
         ecl_aet_sf,             /*  single-float     */
         ecl_aet_df,             /*  double-float     */
-#ifdef ECL_LONG_FLOAT
         ecl_aet_lf,             /*  long-float       */
-#endif
 #ifdef ECL_COMPLEX_FLOAT
         ecl_aet_csf,            /*  complex-single-float */
         ecl_aet_cdf,            /*  complex-double-float */
@@ -479,9 +471,7 @@ union ecl_array_data {
 #endif
         float         *sf;
         double        *df;
-#ifdef ECL_LONG_FLOAT
         long double   *lf;
-#endif
 #ifdef ECL_COMPLEX_FLOAT
         float _Complex *csf;
         double _Complex *cdf;
@@ -832,9 +822,7 @@ enum ecl_ffi_tag {
         ECL_FFI_OBJECT,
         ECL_FFI_FLOAT,
         ECL_FFI_DOUBLE,
-#ifdef ECL_LONG_FLOAT
         ECL_FFI_LONG_DOUBLE,
-#endif
 #ifdef ECL_COMPLEX_FLOAT
         ECL_FFI_CSFLOAT,
         ECL_FFI_CDFLOAT,
@@ -880,9 +868,7 @@ union ecl_ffi_values {
         cl_object o;
         float f;
         double d;
-#ifdef ECL_LONG_FLOAT
         long double lf;
-#endif
 #ifdef ECL_COMPLEX_FLOAT
         float _Complex csf;
         double _Complex cdf;
@@ -1091,9 +1077,7 @@ union cl_lispunion {
         struct ecl_ratio        ratio;          /*  ratio  */
         struct ecl_singlefloat  SF;             /*  single floating-point number  */
         struct ecl_doublefloat  DF;             /*  double floating-point number  */
-#ifdef ECL_LONG_FLOAT
         struct ecl_long_float   longfloat;      /*  long-float */
-#endif
         struct ecl_complex      gencomplex;     /*  generic complex number  */
 #ifdef ECL_COMPLEX_FLOAT
         struct ecl_csfloat      csfloat;        /*  complex single float */

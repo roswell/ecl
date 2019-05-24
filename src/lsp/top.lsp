@@ -911,13 +911,11 @@ Use special code 0 to cancel this operation.")
                 output = ecl_make_double_float(*p);
                 break;
         }
-#ifdef ECL_LONG_FLOAT
         case _ecl_long_double_loc: {
                 long double *p = (long double*)value;
                 output = ecl_make_long_float(*p);
                 break;
         }
-#endif
 #ifdef ECL_COMPLEX_FLOAT
         case _ecl_csfloat_loc: {
                 _Complex float *p = (_Complex float*)value;

@@ -178,10 +178,10 @@ Numeric C types understood by ECL
 @subsubheading Description
 The table above shows the relation between C types and the equivalent Common Lisp types. All types are standard C99 types, except for two. First, @code{cl_fixnum} is the smallest signed integer that can fit a fixnum. Second, @code{cl_index} is the smallest unsigned integer that fits a fixnum and is typically the unsigned counterpart of @code{cl_fixnum}.
 
-@cfindex --enable-longdouble [auto]
-(*) The long double does not exist on all platforms. When it exists,
-the macro @code{ECL_LONG_DOUBLE} will be defined, and
-@code{long-double} will be equivalent to it.
+(*) @strong{DEPRECATED} Previous versions of ECL supported compilers
+that did not define the long double type. The @code{ECL_LONG_DOUBLE}
+macro and @code{long-double} feature will be removed in the next
+release.
 
 @cfindex --enable-c99complex [auto]
 (**) The <float> _Complex types do not exist on all platforms. When

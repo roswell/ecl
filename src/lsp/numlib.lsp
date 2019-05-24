@@ -164,7 +164,6 @@ RADIANS) and (SIN RADIANS) respectively."
                              :one-liner t)
               #-complex-float
               (progn ,@gencomplex)))
-         #+long-float
          (long-float
           (if ,restriction
               (ffi::c-inline (,arg) (:long-double) :long-double
@@ -249,13 +248,11 @@ Returns the arc cosine of NUMBER."
 (progn
   (ffi:clines "double asinh(double x) { return log(x+sqrt(1.0+x*x)); }")
   (ffi:clines "double acosh(double x) { return log(x+sqrt((x-1)*(x+1))); }")
-  (ffi:clines "double atanh(double x) { return log((1+x)/(1-x))/2; }"))
-
-#+(and long-float (not ecl-min) win32 (not mingw32))
-(progn
-  (ffi:clines "double asinhl(long double x) { return logl(x+sqrtl(1.0+x*x)); }")
-  (ffi:clines "double acoshl(long double x) { return logl(x+sqrtl((x-1)*(x+1))); }")
-  (ffi:clines "double atanhl(long double x) { return logl((1+x)/(1-x))/2; }"))
+  (ffi:clines "double atanh(double x) { return log((1+x)/(1-x))/2; }")
+  
+  (ffi:clines "long double asinhl(long double x) { return logl(x+sqrtl(1.0+x*x)); }")
+  (ffi:clines "long double acoshl(long double x) { return logl(x+sqrtl((x-1)*(x+1))); }")
+  (ffi:clines "long double atanhl(long double x) { return logl((1+x)/(1-x))/2; }"))
 
 (defun asinh (x)
   "Args: (number)

@@ -58,7 +58,6 @@ ecl_floor1(cl_object x)
     v1 = ecl_make_double_float(d - y);
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     long double y = floorl(d);
@@ -66,7 +65,6 @@ ecl_floor1(cl_object x)
     v1 = ecl_make_long_float(d - y);
     break;
   }
-#endif
   default:
     FEwrong_type_nth_arg(@[floor],1,x,@[real]);
   }
@@ -124,7 +122,6 @@ ecl_floor2(cl_object x, cl_object y)
         v1 = ecl_make_double_float((p - q)*n);
         break;
       }
-#ifdef ECL_LONG_FLOAT
       CASE_FIXNUM_LONG_FLOAT {        /* FIX / LF */
         long double n = ecl_long_float(y);
         long double p = ecl_fixnum(x) / n;
@@ -133,7 +130,6 @@ ecl_floor2(cl_object x, cl_object y)
         v1 = ecl_make_long_float((p - q)*n);
         break;
       }
-#endif
       CASE_BIGNUM_FIXNUM {
         ECL_WITH_TEMP_BIGNUM(by,4);
         _ecl_big_set_fixnum(by, ecl_fixnum(y));
@@ -165,7 +161,6 @@ ecl_floor2(cl_object x, cl_object y)
         v1 = ecl_make_double_float((p - q)*n);
         break;
       }
-#ifdef ECL_LONG_FLOAT
       CASE_BIGNUM_LONG_FLOAT {
         long double n = ecl_long_float(y);
         long double p = _ecl_big_to_double(x) / n;
@@ -174,7 +169,6 @@ ecl_floor2(cl_object x, cl_object y)
         v1 = ecl_make_long_float((p - q)*n);
         break;
       }
-#endif
       CASE_RATIO_RATIO {
         v0 = ecl_floor2(ecl_times(x->ratio.num, y->ratio.den),
                         ecl_times(x->ratio.den, y->ratio.num));
@@ -184,9 +178,7 @@ ecl_floor2(cl_object x, cl_object y)
       CASE_RATIO_FIXNUM;
       CASE_RATIO_BIGNUM;
       CASE_RATIO_SINGLE_FLOAT;
-#ifdef ECL_LONG_FLOAT
       CASE_RATIO_LONG_FLOAT;
-#endif
       CASE_RATIO_DOUBLE_FLOAT {
         v0 = ecl_floor2(x->ratio.num, ecl_times(x->ratio.den, y));
         v1 = ecl_divide(ecl_nth_value(the_env, 1), x->ratio.den);
@@ -197,9 +189,7 @@ ecl_floor2(cl_object x, cl_object y)
       CASE_SINGLE_FLOAT_BIGNUM;
       CASE_SINGLE_FLOAT_RATIO;
       CASE_SINGLE_FLOAT_DOUBLE_FLOAT;
-#ifdef ECL_LONG_FLOAT   
       CASE_SINGLE_FLOAT_LONG_FLOAT;
-#endif
       CASE_SINGLE_FLOAT_SINGLE_FLOAT {
         float n = ecl_to_double(y);
         float p = ecl_single_float(x)/n;
@@ -215,9 +205,7 @@ ecl_floor2(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_BIGNUM;
       CASE_DOUBLE_FLOAT_RATIO;
       CASE_DOUBLE_FLOAT_SINGLE_FLOAT;
-#ifdef ECL_LONG_FLOAT   
       CASE_DOUBLE_FLOAT_LONG_FLOAT;
-#endif
       CASE_DOUBLE_FLOAT_DOUBLE_FLOAT {
         double n = ecl_to_double(y);
         double p = ecl_double_float(x)/n;
@@ -226,7 +214,6 @@ ecl_floor2(cl_object x, cl_object y)
         v1 = ecl_make_double_float(p*n - q*n);
         break;
       }
-#ifdef ECL_LONG_FLOAT
       CASE_LONG_FLOAT_FIXNUM;
       CASE_LONG_FLOAT_BIGNUM;
       CASE_LONG_FLOAT_RATIO;
@@ -240,7 +227,6 @@ ecl_floor2(cl_object x, cl_object y)
         v1 = ecl_make_long_float(p*n - q*n);
         break;
       }
-#endif
     default: DISPATCH2_ERROR: {
       if (!ecl_realp(x))
         FEwrong_type_nth_arg(@[floor], 1, x, @[real]);

@@ -1461,11 +1461,7 @@ ecl_current_read_default_float_format(void)
   if (x == @'double-float')
     return 'D';
   if (x == @'long-float') {
-#ifdef ECL_LONG_FLOAT
     return 'L';
-#else
-    return 'D';
-#endif
   }
   ECL_SETQ(the_env, @'*read-default-float-format*', @'single-float');
   FEerror("The value of *READ-DEFAULT-FLOAT-FORMAT*~& ~S~%"

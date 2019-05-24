@@ -105,12 +105,15 @@ and environment variables.
 
 Cross compiling ECL for Android requires first building the host ECL
 program. At present this host ECL needs to have the same word size and
-long double capabilities as the target system. Therefore, to build the
-host ECL for a 32 bit ARM system, use the following commands:
+same optional capabilities (e.g. threads, C99 complex floats) as
+the target system. Therefore, to build the host ECL for a 32 bit ARM
+system, use the following commands:
 
 @example
+# C99 complex numbers are not fully supported on Android
 ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2"\
-            --prefix=`pwd`/ecl-android-host --disable-longdouble
+            --prefix=`pwd`/ecl-android-host \
+            --disable-c99complex
 make -j9
 make install
 rm -r build
@@ -142,6 +145,7 @@ export CPPFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -isystem 
 export CC=arm-linux-androideabi-clang
 ./configure --host=arm-linux-androideabi \
             --prefix=`pwd`/ecl-android \
+            --disable-c99complex \
             --with-cross-config=`pwd`/src/util/android-arm.cross_config
 make -j9
 make install

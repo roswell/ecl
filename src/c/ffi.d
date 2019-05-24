@@ -19,9 +19,7 @@ static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
   @':void', /* ecl_aet_object */
   @':float', /* ecl_aet_sf */
   @':double', /* ecl_aet_df */
-#ifdef ECL_LONG_FLOAT
   @':long-double', /* ecl_aet_lf */
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   @':csfloat', /* ecl_aet_csf */
   @':cdfloat', /* ecl_aet_cdf */
@@ -125,9 +123,7 @@ ecl_foreign_type_table[] = {
   FFI_DESC(@':object', cl_object),
   FFI_DESC(@':float', float),
   FFI_DESC(@':double', double),
-#ifdef ECL_LONG_FLOAT
   FFI_DESC(@':long-double', long double),
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   FFI_DESC(@':csfloat', _Complex float),
   FFI_DESC(@':cdfloat', _Complex double),
@@ -191,9 +187,7 @@ static ffi_type *ecl_type_to_libffi_types[] = {
   &ffi_type_pointer, /*@':object',*/
   &ffi_type_float, /*@':float',*/
   &ffi_type_double, /*@':double',*/
-#ifdef ECL_LONG_FLOAT
   &ffi_type_longdouble, /*@':long-double',*/
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   /* These ffi types are defined in libffi but they dont't seem to
      work. For the issue report check the following link:
@@ -537,10 +531,8 @@ ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
     return ecl_make_single_float(*(float *)p);
   case ECL_FFI_DOUBLE:
     return ecl_make_double_float(*(double *)p);
-#ifdef ECL_LONG_FLOAT
   case ECL_FFI_LONG_DOUBLE:
     return ecl_make_long_float(*(long double *)p);
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   case ECL_FFI_CSFLOAT:
     return ecl_make_csfloat(*(_Complex float *)p);
@@ -643,11 +635,9 @@ ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
   case ECL_FFI_DOUBLE:
     *(double *)p = ecl_to_double(value);
     break;
-#ifdef ECL_LONG_FLOAT
   case ECL_FFI_LONG_DOUBLE:
     *(long double *)p = ecl_to_long_double(value);
     break;
-#endif
 #ifdef ECL_COMPLEX_FLOAT
   case ECL_FFI_CSFLOAT:
     *(_Complex float *)p = ecl_to_csfloat(value);

@@ -57,10 +57,8 @@ ecl_number_equalp(cl_object x, cl_object y)
     CASE_SINGLE_FLOAT_FIXNUM { return double_fix_compare(ecl_fixnum(y), ecl_single_float(x)) == 0; }
     CASE_FIXNUM_DOUBLE_FLOAT { return double_fix_compare(ecl_fixnum(x), ecl_double_float(y)) == 0; }
     CASE_DOUBLE_FLOAT_FIXNUM { return double_fix_compare(ecl_fixnum(y), ecl_double_float(x)) == 0; }
-#ifdef ECL_LONG_FLOAT
     CASE_FIXNUM_LONG_FLOAT   { return long_double_fix_compare(ecl_fixnum(x), ecl_long_float(y)) == 0; }
     CASE_LONG_FLOAT_FIXNUM   { return long_double_fix_compare(ecl_fixnum(y), ecl_long_float(x)) == 0; }
-#endif
     CASE_BIGNUM_SINGLE_FLOAT;
     CASE_BIGNUM_DOUBLE_FLOAT;
     CASE_RATIO_SINGLE_FLOAT;
@@ -81,7 +79,6 @@ ecl_number_equalp(cl_object x, cl_object y)
       }
 #endif
       return ecl_number_equalp(cl_rational(x), y); }
-#ifdef ECL_LONG_FLOAT
     CASE_BIGNUM_LONG_FLOAT;
     CASE_RATIO_LONG_FLOAT {
 #ifdef ECL_IEEE_FP
@@ -98,19 +95,16 @@ ecl_number_equalp(cl_object x, cl_object y)
       }
 #endif
       return ecl_number_equalp(y, cl_rational(x)); }
-#endif
     /* float x float */
     CASE_SINGLE_FLOAT_SINGLE_FLOAT { return ecl_single_float(x) == ecl_single_float(y); }
     CASE_SINGLE_FLOAT_DOUBLE_FLOAT { return ecl_single_float(x) == ecl_double_float(y); }
     CASE_DOUBLE_FLOAT_SINGLE_FLOAT { return ecl_double_float(x) == ecl_single_float(y); }
     CASE_DOUBLE_FLOAT_DOUBLE_FLOAT { return ecl_double_float(x) == ecl_double_float(y); }
-#ifdef ECL_LONG_FLOAT
     CASE_SINGLE_FLOAT_LONG_FLOAT { return ecl_single_float(x) == ecl_long_float(y); }
     CASE_LONG_FLOAT_SINGLE_FLOAT { return ecl_long_float(x) == ecl_single_float(y); }
     CASE_DOUBLE_FLOAT_LONG_FLOAT { return ecl_double_float(x) == ecl_long_float(y); }
     CASE_LONG_FLOAT_DOUBLE_FLOAT { return ecl_long_float(x) == ecl_double_float(y); }
     CASE_LONG_FLOAT_LONG_FLOAT   { return ecl_long_float(x) == ecl_long_float(y); }
-#endif
     /* complex x real ; c?float x real */
     CASE_COMPLEX_FIXNUM;
     CASE_COMPLEX_BIGNUM;
@@ -134,13 +128,11 @@ ecl_number_equalp(cl_object x, cl_object y)
     CASE_CLFLOAT_SINGLE_FLOAT;
     CASE_CLFLOAT_DOUBLE_FLOAT;
 #endif
-#ifdef ECL_LONG_FLOAT
     CASE_COMPLEX_LONG_FLOAT;
-# ifdef ECL_COMPLEX_FLOAT
+#ifdef ECL_COMPLEX_FLOAT
     CASE_CSFLOAT_LONG_FLOAT;
     CASE_CDFLOAT_LONG_FLOAT;
     CASE_CLFLOAT_LONG_FLOAT;
-# endif
 #endif
     {
       if (!ecl_zerop(cl_imagpart(x))) { return 0; }
@@ -168,13 +160,11 @@ ecl_number_equalp(cl_object x, cl_object y)
     CASE_SINGLE_FLOAT_CLFLOAT;
     CASE_DOUBLE_FLOAT_CLFLOAT;
 #endif
-#ifdef ECL_LONG_FLOAT
     CASE_LONG_FLOAT_COMPLEX;
-# ifdef ECL_COMPLEX_FLOAT
+#ifdef ECL_COMPLEX_FLOAT
     CASE_LONG_FLOAT_CSFLOAT;
     CASE_LONG_FLOAT_CDFLOAT;
     CASE_LONG_FLOAT_CLFLOAT;
-# endif
 #endif
     {
       if (!ecl_zerop(cl_imagpart(y))) { return 0; }

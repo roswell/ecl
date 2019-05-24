@@ -186,12 +186,6 @@ MOST-POSITIVE-FIXNUM inclusive.  Other integers are bignums."
       `(single-float ,@args)
       'single-float))
 
-#-long-float
-(deftype long-float (&rest args)
-  (if args
-      `(double-float ,@args)
-      'double-float))
-
 (deftype bit ()
   "A BIT is either integer 0 or 1."
   '(INTEGER 0 1))
@@ -376,19 +370,11 @@ and is not adjustable."
   #+ecl-min
   (eq (type-of x) 'double-float))
 
-#+long-float
 (defun long-float-p (x)
   #-ecl-min
   (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_longfloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'long-float))
-
-#-long-float
-(defun long-float-p (x)
-  #-ecl-min
-  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_doublefloat" :one-liner t)
-  #+ecl-min
-  (eq (type-of x) 'double-float))
 
 #+complex-float
 (defun complex-single-float-p (x)
@@ -476,7 +462,7 @@ and is not adjustable."
              (when (< 32 cl-fixnum-bits 64) '(EXT::CL-INDEX FIXNUM))
              #+:uint64-t '(EXT:BYTE64 EXT:INTEGER64)
              (when (< 64 cl-fixnum-bits) '(EXT::CL-INDEX FIXNUM))
-             '(SINGLE-FLOAT DOUBLE-FLOAT #+long-float LONG-FLOAT)
+             '(SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT)
              #+complex-float '(si:complex-single-float
                                si:complex-double-float
                                si:complex-long-float)
@@ -1304,14 +1290,14 @@ if not possible."
                #+short-float (SHORT-FLOAT (SHORT-FLOAT * *))
                (SINGLE-FLOAT (SINGLE-FLOAT * *))
                (DOUBLE-FLOAT (DOUBLE-FLOAT * *))
-               #+long-float (LONG-FLOAT (LONG-FLOAT * *))
+               (LONG-FLOAT (LONG-FLOAT * *))
                (RATIO (RATIO * *))
 
                (RATIONAL (OR INTEGER RATIO))
                (FLOAT (OR #+short-float SHORT-FLOAT
                           SINGLE-FLOAT
                           DOUBLE-FLOAT
-                          #+long-float LONG-FLOAT))
+                          LONG-FLOAT))
 
                (REAL (OR RATIONAL FLOAT))
 
@@ -1482,14 +1468,13 @@ if not possible."
                      SINGLE-FLOAT
                      DOUBLE-FLOAT
                      RATIO
-                     #+long-float LONG-FLOAT)
+                     LONG-FLOAT)
             (register-interval-type type))
            ((FLOAT)
             (canonical-type `(OR #+short-float
                                  (SHORT-FLOAT ,@(rest type))
                                  (SINGLE-FLOAT ,@(rest type))
                                  (DOUBLE-FLOAT ,@(rest type))
-                                 #+long-float
                                  (LONG-FLOAT ,@(rest type)))))
            ((REAL)
             (canonical-type `(OR (INTEGER ,@(rest type))
@@ -1498,7 +1483,6 @@ if not possible."
                                  (SHORT-FLOAT ,@(rest type))
                                  (SINGLE-FLOAT ,@(rest type))
                                  (DOUBLE-FLOAT ,@(rest type))
-                                 #+long-float
                                  (LONG-FLOAT ,@(rest type)))))
            ((RATIONAL)
             (canonical-type `(OR (INTEGER ,@(rest type))

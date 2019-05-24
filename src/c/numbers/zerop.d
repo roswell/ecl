@@ -46,12 +46,10 @@ ecl_zerop_double_float(cl_object x)
   return ecl_double_float(x) == 0;
 }
 
-#ifdef ECL_LONG_FLOAT
 static int ecl_zerop_long_float(cl_object x)
 {
   return ecl_long_float(x) == 0;
 }
-#endif
 
 static int
 ecl_zerop_complex(cl_object x)

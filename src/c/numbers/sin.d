@@ -44,13 +44,11 @@ ecl_sin_double_float(cl_object x)
   return ecl_make_double_float(sin(ecl_double_float(x)));
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_sin_long_float(cl_object x)
 {
   return ecl_make_long_float(sinl(ecl_long_float(x)));
 }
-#endif
 
 static cl_object
 ecl_sin_complex(cl_object x)

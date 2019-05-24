@@ -26,7 +26,6 @@ ecl_atan2(cl_object y, cl_object x)
   cl_object output;
   ECL_MATHERR_CLEAR;
   {
-#ifdef ECL_LONG_FLOAT
     int tx = ecl_t_of(x);
     int ty = ecl_t_of(y);
     if (tx < ty)
@@ -44,16 +43,6 @@ ecl_atan2(cl_object y, cl_object x)
         output = ecl_make_single_float(dz);
       }
     }
-#else
-    double dy = ecl_to_double(y);
-    double dx = ecl_to_double(x);
-    double dz = atan2(dy, dx);
-    if (ECL_DOUBLE_FLOAT_P(x) || ECL_DOUBLE_FLOAT_P(y)) {
-      output = ecl_make_double_float(dz);
-    } else {
-      output = ecl_make_single_float(dz);
-    }
-#endif
   }
   ECL_MATHERR_TEST;
   return output;

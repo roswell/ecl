@@ -39,7 +39,6 @@
 (def-inline aref :unsafe ((array base-char) fixnum fixnum) :unsigned-char "@0;(#0)->base_string.self[#1*(#0)->array.dims[1]+#2]")
 (def-inline aref :unsafe ((array double-float) fixnum fixnum) :double "@0;(#0)->array.self.df[#1*(#0)->array.dims[1]+#2]")
 (def-inline aref :unsafe ((array single-float) fixnum fixnum) :float "@0;(#0)->array.self.sf[#1*(#0)->array.dims[1]+#2]")
-#+long-float
 (def-inline aref :unsafe ((array long-float) fixnum fixnum) :long-double "@0;(#0)->array.self.lf[#1*(#0)->array.dims[1]+#2]")
 #+complex-float (def-inline aref :unsafe ((array si:complex-single-float) fixnum fixnum) :csfloat "@0;(#0)->array.self.csf[#1*(#0)->array.dims[1]+#2]")
 #+complex-float (def-inline aref :unsafe ((array si:complex-double-float) fixnum fixnum) :cdfloat "@0;(#0)->array.self.cdf[#1*(#0)->array.dims[1]+#2]")
@@ -57,7 +56,6 @@
 (def-inline aref :unsafe ((array base-char) fixnum) :unsigned-char "(#0)->base_string.self[#1]")
 (def-inline aref :unsafe ((array double-float) fixnum) :double "(#0)->array.self.df[#1]")
 (def-inline aref :unsafe ((array single-float) fixnum) :float "(#0)->array.self.sf[#1]")
-#+long-float
 (def-inline aref :unsafe ((array long-float) fixnum) :long-double "(#0)->array.self.lf[#1]")
 #+complex-float (def-inline aref :unsafe ((array si:complex-single-float) fixnum) :csfloat "(#0)->array.self.csf[#1]")
 #+complex-float (def-inline aref :unsafe ((array si:complex-double-float) fixnum) :cdfloat "(#0)->array.self.cdf[#1]")
@@ -81,7 +79,6 @@
 (def-inline row-major-aref :unsafe ((array ext:integer32) fixnum) :int32-t "(#0)->vector.self.i32[#1]")
 (def-inline row-major-aref :unsafe ((array ext:byte64) fixnum) :uint64-t "(#0)->vector.self.b64[#1]")
 (def-inline row-major-aref :unsafe ((array ext:integer64) fixnum) :int64-t "(#0)->vector.self.i64[#1]")
-#+long-float
 (def-inline row-major-aref :unsafe ((array long-float) fixnum) :long-double "(#0)->array.self.lf[#1]")
 (def-inline row-major-aref :unsafe ((array double-float) fixnum) :double "(#0)->array.self.df[#1]")
 (def-inline row-major-aref :unsafe ((array single-float) fixnum) :float "(#0)->array.self.sf[#1]")
@@ -108,7 +105,6 @@
 (def-inline si:row-major-aset :unsafe ((array ext:integer32) fixnum ext:integer32) :int32-t "(#0)->vector.self.i32[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array ext:byte64) fixnum ext:byte64) :uint64-t "(#0)->vector.self.b64[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array ext:integer64) fixnum ext:integer64) :int64-t "(#0)->vector.self.i64[#1]= #2")
-#+long-float
 (def-inline si:row-major-aset :unsafe ((array long-float) fixnum long-float) :long-double "(#0)->array.self.lf[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array double-float) fixnum double-float) :double "(#0)->array.self.df[#1]= #2")
 (def-inline si:row-major-aset :unsafe ((array single-float) fixnum single-float) :float "(#0)->array.self.sf[#1]= #2")
@@ -326,7 +322,6 @@
 
 (def-inline 1+ :always (t) t "ecl_one_plus(#0)")
 (def-inline 1+ :always (fixnum) t "ecl_make_integer((#0)+1)")
-#+long-float
 (def-inline 1+ :always (long-float) :long-double "(long double)(#0)+1")
 (def-inline 1+ :always (double-float) :double "(double)(#0)+1")
 (def-inline 1+ :always (single-float) :float "(float)(#0)+1")
@@ -337,7 +332,6 @@
 
 (def-inline 1- :always (t) t "ecl_one_minus(#0)")
 (def-inline 1- :always (fixnum) t "ecl_make_integer((#0)-1)")
-#+long-float
 (def-inline 1- :always (long-float) :long-double "(long double)(#0)-1")
 (def-inline 1- :always (double-float) :double "(double)(#0)-1")
 (def-inline 1- :always (single-float) :float "(float)(#0)-1")
@@ -350,9 +344,7 @@
 
 (def-inline float :always (t single-float) :float "ecl_to_float(#0)")
 (def-inline float :always (t double-float) :double "ecl_to_double(#0)")
-#+long-float
 (def-inline float :always (t long-float) :long-double "ecl_to_long_double(#0)")
-#+long-float
 (def-inline float :always (fixnum-float) :long-double "((long double)(#0))" :exact-return-type t)
 (def-inline float :always (fixnum-float) :double "((double)(#0))" :exact-return-type t)
 (def-inline float :always (fixnum-float) :float "((float)(#0))" :exact-return-type t)
@@ -491,7 +483,6 @@
 (def-inline expt :always ((integer 2 2) (integer 0 29)) :fixnum "(1<<(#1))")
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
-#+long-float
 (def-inline expt :always ((long-float 0.0 *) long-float) :long-double "powl((long double)#0,(long double)#1)")
 (def-inline expt :always ((double-float 0.0 *) double-float) :double "pow((double)#0,(double)#1)")
 (def-inline expt :always ((single-float 0.0 *) single-float) :float "powf((float)#0,(float)#1)")
@@ -499,7 +490,6 @@
 #+complex-float (def-inline expt :always (si:complex-double-float si:complex-double-float) :cdfloat "cpow(#0,#1)")
 #+complex-float (def-inline expt :always (si:complex-long-float si:complex-long-float) :clfloat "cpowl(#0,#1)")
 
-#+long-float
 (def-inline log :always (fixnum-float) :long-double "logl((long double)(#0))" :exact-return-type t)
 (def-inline log :always (fixnum-float) :double "log((double)(#0))" :exact-return-type t)
 (def-inline log :always (fixnum-float) :float "logf((float)(#0))" :exact-return-type t)
@@ -508,7 +498,6 @@
 #+complex-float (def-inline log :always (si:complex-long-float) :clfloat "clogl(#0)")
 
 (def-inline sqrt :always (number) number "ecl_sqrt(#0)")
-#+long-float
 (def-inline sqrt :always ((long-float 0.0 *)) :long-double "sqrtl((long double)(#0))")
 (def-inline sqrt :always ((double-float 0.0 *)) :double "sqrt((double)(#0))")
 (def-inline sqrt :always ((single-float 0.0 *)) :float "sqrtf((float)(#0))")
@@ -517,7 +506,6 @@
 #+complex-float (def-inline sqrt :always (si:complex-long-float) :clfloat "csqrtl(#0)")
 
 (def-inline sin :always (number) number "ecl_sin(#0)")
-#+long-float
 (def-inline sin :always (fixnum-float) :long-double "sinl((long double)(#0))" :exact-return-type t)
 (def-inline sin :always (fixnum-float) :double "sin((double)(#0))" :exact-return-type t)
 (def-inline sin :always (fixnum-float) :float "sinf((float)(#0))" :exact-return-type t)
@@ -526,7 +514,6 @@
 #+complex-float (def-inline sin :always (si:complex-long-float) :clfloat "csinl(#0)")
 
 (def-inline cos :always (t) number "ecl_cos(#0)")
-#+long-float
 (def-inline cos :always (fixnum-float) :long-double "cosl((long double)(#0))" :exact-return-type t)
 (def-inline cos :always (fixnum-float) :double "cos((double)(#0))" :exact-return-type t)
 (def-inline cos :always (fixnum-float) :float "cosf((float)(#0))" :exact-return-type t)
@@ -535,7 +522,6 @@
 #+complex-float (def-inline cos :always (si:complex-long-float) :clfloat "ccosl(#0)")
 
 (def-inline tan :always (t) number "ecl_tan(#0)")
-#+long-float
 (def-inline tan :always (fixnum-float) :long-double "tanl((long double)(#0))" :exact-return-type t)
 (def-inline tan :always (fixnum-float) :double "tan((double)(#0))" :exact-return-type t)
 (def-inline tan :always (fixnum-float) :float "tanf((float)(#0))" :exact-return-type t)
@@ -544,7 +530,6 @@
 #+complex-float (def-inline tan :always (si:complex-long-float) :clfloat "ctanl(#0)")
 
 (def-inline sinh :always (t) number "ecl_sinh(#0)")
-#+long-float
 (def-inline sinh :always (fixnum-float) :long-double "sinhl((long double)(#0))" :exact-return-type t)
 (def-inline sinh :always (fixnum-float) :double "sinh((double)(#0))" :exact-return-type t)
 (def-inline sinh :always (fixnum-float) :float "sinhf((float)(#0))" :exact-return-type t)
@@ -553,7 +538,6 @@
 #+complex-float (def-inline sinh :always (si:complex-long-float) :clfloat "csinhl(#0)")
 
 (def-inline cosh :always (t) number "ecl_cosh(#0)")
-#+long-float
 (def-inline cosh :always (fixnum-float) :long-double "coshl((long double)(#0))" :exact-return-type t)
 (def-inline cosh :always (fixnum-float) :double "cosh((double)(#0))" :exact-return-type t)
 (def-inline cosh :always (fixnum-float) :float "coshf((float)(#0))" :exact-return-type t)
@@ -562,7 +546,6 @@
 #+complex-float (def-inline cosh :always (si:complex-long-float) :clfloat "ccoshl(#0)")
 
 (def-inline tanh :always (t) number "ecl_tanh(#0)")
-#+long-float
 (def-inline tanh :always (fixnum-float) :long-double "tanhl((long double)(#0))" :exact-return-type t)
 (def-inline tanh :always (fixnum-float) :double "tanh((double)(#0))" :exact-return-type t)
 (def-inline tanh :always (fixnum-float) :float "tanhf((float)(#0))" :exact-return-type t)
@@ -775,9 +758,6 @@
 
 (def-inline si:double-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
 
-#-long-float
-(def-inline si:long-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
-#+long-float
 (def-inline si:long-float-p :always (t) :bool "@0;ECL_LONG_FLOAT_P(#0)")
 
 #+complex-float

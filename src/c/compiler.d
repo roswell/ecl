@@ -2200,9 +2200,7 @@ need_to_make_load_form_p(cl_object o)
   case t_ratio:
   case t_singlefloat:
   case t_doublefloat:
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
-#endif
   case t_complex:
   case t_symbol:
   case t_pathname:

@@ -94,7 +94,7 @@
          (loc-in-c1form-movable-p (third loc)))
         ((member (setf loc (car loc))
                  '(VV VV-TEMP FIXNUM-VALUE CHARACTER-VALUE
-                   DOUBLE-FLOAT-VALUE SINGLE-FLOAT-VALUE #+long-float LONG-FLOAT-VALUE
+                   DOUBLE-FLOAT-VALUE SINGLE-FLOAT-VALUE LONG-FLOAT-VALUE
                    #+complex-float CSFLOAT-VALUE
                    #+complex-float CDFLOAT-VALUE
                    #+complex-float CLFLOAT-VALUE

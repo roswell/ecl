@@ -47,7 +47,6 @@ _hash_eql(cl_hashkey h, cl_object x)
     return hash_string(h, (unsigned char*)&ecl_single_float(x), sizeof(ecl_single_float(x)));
   case t_doublefloat:
     return hash_string(h, (unsigned char*)&ecl_double_float(x), sizeof(ecl_double_float(x)));
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     /* We coerce to double because long double has extra bits that
      * give rise to different hash key and are not meaningful. */
@@ -56,7 +55,6 @@ _hash_eql(cl_hashkey h, cl_object x)
     aux.sign = (ecl_long_float(x) < 0)? -1: 1;
     return hash_string(h, (unsigned char*)&aux, sizeof(aux));
   }
-#endif
   case t_complex:
     h = _hash_eql(h, x->gencomplex.real);
     return _hash_eql(h, x->gencomplex.imag);
@@ -151,7 +149,6 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
     if (f == 0.0) f = 0.0;
     return hash_string(h, (unsigned char*)&f, sizeof(f));
   }
-# ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     /* We coerce to double because long double has extra bits
      * that give rise to different hash key and are not
@@ -162,7 +159,6 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
     if (aux.mantissa == 0.0) aux.mantissa = 0.0;
     return hash_string(h, (unsigned char*)&aux, sizeof(aux));
   }
-# endif
   case t_complex: {
     h = _hash_equal(depth, h, x->gencomplex.real);
     return _hash_equal(depth, h, x->gencomplex.imag);

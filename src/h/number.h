@@ -36,9 +36,7 @@ extern ECL_API cl_object _ecl_big_set_fixnum(cl_object x, cl_fixnum f);
 extern ECL_API cl_object _ecl_big_set_index(cl_object x, cl_index f);
 extern ECL_API cl_fixnum _ecl_big_get_fixnum(cl_object x);
 extern ECL_API cl_index _ecl_big_get_index(cl_object x);
-#ifdef ECL_LONG_FLOAT
 extern ECL_API long double _ecl_big_to_long_double(cl_object x);
-#endif
 typedef void (*_ecl_big_binary_op)(cl_object out, cl_object o1, cl_object o2);
 extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 
