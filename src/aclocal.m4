@@ -9,8 +9,8 @@ AC_DEFUN([ECL_COMPLEX_C99],[
                    [enable_c99complex=no],
                    [#include <complex.h>])
   fi
-  dnl some retarded platforms (*cough* Android *cough*) have complex
-  dnl types defined, but not all corresponding numeric functions
+  dnl Android have complex types defined, but not all corresponding
+  dnl numeric functions.
   if test "$enable_c99complex" != "no" ; then
     AC_CHECK_FUNCS([crealf creal creall cimagf cimag cimagl] \
                    [cabsf cabs cabsl conjf conj conjl csqrtf csqrt csqrtl] \
@@ -18,12 +18,15 @@ AC_DEFUN([ECL_COMPLEX_C99],[
                    [ccoshf ccosh ccoshl csinhf csinh csinhl ctanhf ctanh ctanhl] \
                    [cexpf cexp cexpl cpowf cpow cpowl clogf clog clogl] \
                    [casinf casin casinl cacosf cacos cacosl catanf catan catanl] \
-                   [casinhf casinh casinhl cacoshf cacosh cacoshl catanhf catanh catanhl] \
+                   [casinhf casinh casinhl cacoshf cacosh cacoshl catanhf catanh catanhl],
                    [],
                    [enable_c99complex=no])
   fi
   if test "$enable_c99complex" != "no" ; then
     AC_DEFINE([ECL_COMPLEX_FLOAT], [], [ECL_COMPLEX_FLOAT])
+    AC_MSG_RESULT("C99 Complex Float support is available")
+  else
+    AC_MSG_RESULT("C99 Complex Float support is not available")
   fi])
 
 dnl --------------------------------------------------------------
