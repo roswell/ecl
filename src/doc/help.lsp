@@ -1961,17 +1961,36 @@ An echo stream is notated as
         #<echo stream n>
 where N is a number that identifies the stream.")
 
-(docfun make-hash-table function (&key (test 'eql) (size 1024) (rehash-size 1.5) (rehash-threshold 0.7)) "
+(docfun make-hash-table function (&key (test 'eql) (size 1024) (rehash-size 1.5) (rehash-threshold 0.7) (hash-function nil) (synchronized nil) (weakness nil)) "
 Creates and returns a hash-table.
-TEST specifies which predicate should be used to access hash-table entries.
-It must be EQ, EQL, or EQUAL.  SIZE specifies the number of entries in the
-hash-table.  REHASH-SIZE, if an integer, specifies how many entries should be
-added when the hash-table becomes 'almost full'.  REHASH-SIZE, if a float,
-specifies the ratio of the new size and the old size.  REHASH-THRESHOLD
-specifies when to expand the hash-table.  If an integer, the hash-table is
-expanded when REHASH-THRESHOLD / REHASH-SIZE entries have been used.  If a
-float, the hash-table is expanded when REHASH-THRESHOLD times the whole
-entries have been used.")
+
+TEST specifies which predicate should be used to access hash-table
+entries.  It must be EQ, EQL, EQUAL, EQUALP or a function accepting
+two arguments. If it is a function then HASH-FUNCTION must be
+supplied.
+
+HASH-FUNCTION is used alongside with a custom TEST predicate. It
+accepts one argument and must return a positive fixnum being the
+object's hash.
+
+SIZE specifies the number of entries in the hash-table.
+
+REHASH-SIZE, if an integer, specifies how many entries should be added
+when the hash-table becomes 'almost full'.  REHASH-SIZE, if a float,
+specifies the ratio of the new size and the old size.
+
+REHASH-THRESHOLD specifies when to expand the hash-table.  If an
+integer, the hash-table is expanded when REHASH-THRESHOLD /
+
+REHASH-SIZE entries have been used.  If a float, the hash-table is
+expanded when REHASH-THRESHOLD times the whole entries have been used.
+
+SYNCHRONIZE if T then gethash, (setf gethash) and remhash operations
+are protected by a lock - in this case hash tables may be used from
+different threads without explicit synchronization.
+
+WEAKNESS is a GC extension and may be one of NIL, :KEY, :VALUE,
+:KEY-AND-VALUE or :KEY-OR-VALUE. ")
 
 (docfun make-list function (length &key (initial-element nil)) "
 Creates and returns a list of the specified LENGTH, whose elements are all the

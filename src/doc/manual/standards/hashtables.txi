@@ -63,6 +63,16 @@ table may have some content already, but conflicting keys will be
 overwritten.
 @end deffn
 
+@subsubsection Custom equivalence predicate
+@cindex Hash table generic test
+
+@code{make-hash-table} may accept arbitrary @code{:test} keyword for
+the equivalence predicate. If it is not one of the standard predicates
+(@code{:eq}, @code{:eql}, @code{:equal}, @code{:equalp}) a keyword
+argument @code{:hashing-function} must be a function accepting one
+argument and returning a positive fixnum. Otherwise the argument is
+ignored.
+
 @subsubsection Example
 @exindex Hash table extensions example
 @lisp

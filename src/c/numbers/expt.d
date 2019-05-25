@@ -207,6 +207,8 @@ ecl_expt(cl_object x, cl_object y)
     case t_doublefloat:
     case t_singlefloat:
       return ecl_expt_float(x, y);
+    default:
+      ecl_internal_error("expt: unhandled switch branch.");
     }
   }
   if (ECL_COMPLEXP(y) || ECL_COMPLEXP(x) || ecl_minusp(x)) {

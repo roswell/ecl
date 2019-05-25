@@ -29,6 +29,9 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- hash-table may now have a custom equivalence predicate
+- ~make-load-form-with-slots~ works for structs even if slot names are not interned
+- ~ext:weak-pointer-value~ returns two values (value and its presence)
 - specialized complex float types based on C99 complex numbers have been
   added, together with corresponding specialized array element types.
 - support for atomic operations added with an interface similar to SBCL.
@@ -73,6 +76,9 @@
   =--with-libgc-incdir= and =--with-libgc-libdir= (these flags work the
   same as flags for =libffi= and =libgmp=)
 ** Issues fixed
+- weak hashtables mishandled weak values when keys were present
+- gethash on weak hashtables returned the pointer instead of the value
+- maphash on weak hashtables mapped over pointers instead of the values
 - initarg caches are now invalidated when new methods are defined. Problem
   found and fixed by Alexander Wood.
 - ECL allocated too much space in lisp stack. Instead of the specified size
@@ -89,6 +95,7 @@
 - buildsystem parallel builds work (i.e make -j999)
 - ECL builds on consoles with unusual encodings on Windows (i.e cp936)
 ** API changes
+- make-hash-table accepts a new keyword argument ~:hashing-function~
 - no-op ~--enable-asmapply~ configure option has been removed
 - ~profile~ and ~rt~ contribs are now deprecated and disabled by default
 - thread-local variable support has been removed (~--with___thread~)
