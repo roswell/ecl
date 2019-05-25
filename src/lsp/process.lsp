@@ -124,6 +124,8 @@
   (when (eql error t) (setf error *error-output*))
 
   (labels ((process-stream (which &rest args)
+             (si:while (typep which 'synonym-stream)
+               (setf which (symbol-value (synonym-stream-symbol which))))
              (cond ((null which)
                     (null-stream (getf args :direction)))
                    ((or (stringp which)
