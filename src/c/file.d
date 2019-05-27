@@ -2703,7 +2703,6 @@ io_file_write_byte8(cl_object strm, unsigned char *c, cl_index n)
     cl_object aux = ecl_file_position(strm);
     if (!Null(aux))
       ecl_file_position_set(strm, aux);
-    strm->stream.byte_stack = ECL_NIL;
   }
   return output_file_write_byte8(strm, c, n);
 }
@@ -2843,6 +2842,7 @@ io_file_set_position(cl_object strm, cl_object large_disp)
   int mode;
   int f = IO_FILE_DESCRIPTOR(strm);
   if (isatty(f)) return(ECL_NIL);
+  strm->stream.byte_stack = ECL_NIL;
   if (Null(large_disp)) {
     disp = 0;
     mode = SEEK_END;
@@ -3556,6 +3556,7 @@ io_stream_set_position(cl_object strm, cl_object large_disp)
   FILE *f = IO_STREAM_FILE(strm);
   ecl_off_t disp;
   int mode;
+  strm->stream.byte_stack = ECL_NIL;
   if (Null(large_disp)) {
     disp = 0;
     mode = SEEK_END;
