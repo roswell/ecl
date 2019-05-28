@@ -62,8 +62,48 @@
       (is k 'random-state)
       (is v 'random-state))))
 
+;;; For some corner cases weak hash-tables returned unnormalized
+;;; values. Then we had a regression in gethash which tried to
+;;; normalize already normalized values. We clearly need a simple test
+;;; whenever hash tables work correctly.
+(test hash-tables.weak-faithful
+      (let ((hts (list (make-hash-table :weakness nil)
+                       (make-hash-table :weakness :key)
+                       (make-hash-table :weakness :value)
+                       (make-hash-table :weakness :key-or-value)
+                       (make-hash-table :weakness :key-and-value)))
+            (keys (list :a :b :c))
+            (vals (list :x :y :z)))
+        ;; ensure basic set/get on null entries
+        (mapc (lambda (ht)
+                (mapc (lambda (k v)
+                        (is (null (gethash k ht)))
+                        (setf (gethash k ht) v)
+                        (is (eql (gethash k ht) v)
+                            "gethash ~s = ~s, should be ~s, weakness is ~s"
+                            k (gethash k ht) v (ext:hash-table-weakness ht)))
+                      keys vals))
+              hts)
+        ;; ensure that values get updated for a known key
+        (mapc (lambda (ht)
+                (setf (gethash :c ht) :z-prim)
+                (is (eql (gethash :c ht) :z-prim)))
+              hts)
+        ;; ensure maphash
+        (mapc (lambda (ht)
+                (let ((i 0))
+                  (maphash (lambda (k v)
+                             (incf i)
+                             (is (eql v (ecase k
+                                          (:a :x)
+                                          (:b :y)
+                                          (:c :z-prim)))))
+                           ht)
+                  (is (= i 3))))
+              hts)))
+
 (test hash-tables.weak-err
-  (signals simple-type-error (make-hash-table :weakness :whatever)))
+      (signals simple-type-error (make-hash-table :weakness :whatever)))
 
 
 ;;; Synchronization

@@ -605,7 +605,9 @@ normalize_weak_key_and_value_entry(struct ecl_hashtable_entry *e) {
 
 static void *
 normalize_weak_key_or_value_entry(struct ecl_hashtable_entry *e) {
-  if ((e->key = e->key->weak.value) || (e->value = e->value->weak.value))
+  e->key = e->key->weak.value;
+  e->value = e->value->weak.value;
+  if (e->key || e->value)
     return (void*)e;
   else
     return 0;
@@ -716,14 +718,10 @@ _ecl_gethash_weak(cl_object key, cl_object hashtable, cl_object def)
   if (aux->key == OBJNULL) {
     return def;
   }
-  switch (hashtable->hash.weak) {
-  case ecl_htt_weak_value:
-  case ecl_htt_weak_key_or_value:
-  case ecl_htt_weak_key_and_value:
-    return si_weak_pointer_value(aux->value);
-  default:
-    return aux->value;
-  }
+  /* _ecl_weak_hash_loop "normalizes" entries. That means that
+     si_weak_pointer_value shouldn't be called because value is
+     already "unwrapped". -- jd 2019-05-28 */
+  return aux->value;
 }
 
 static cl_object
