@@ -3034,11 +3034,20 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
       return start + bytes / sizeof(cl_fixnum);
     }
   } else if (t == ecl_aet_bc) {
-    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE];
+    /* 1 extra byte for linefeed in crlf mode */
+    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE + 1];
     cl_index nbytes = 0;
     cl_index i;
     for (i = start; i < end; i++) {
       ecl_character c = *(data->vector.self.bc + i);
+      if (c == ECL_CHAR_CODE_NEWLINE) {
+        if (strm->stream.flags & ECL_STREAM_CR &&
+            strm->stream.flags & ECL_STREAM_LF)
+          nbytes += strm->stream.encoder(strm, buffer + nbytes, ECL_CHAR_CODE_RETURN);
+        else if (strm->stream.flags & ECL_STREAM_CR)
+          c = ECL_CHAR_CODE_RETURN;
+        strm->stream.column = 0;
+      }
       nbytes += strm->stream.encoder(strm, buffer + nbytes, c);
       write_char_increment_column(strm, c);
       if (nbytes >= VECTOR_ENCODING_BUFFER_SIZE) {
@@ -3051,11 +3060,20 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
   }
 #ifdef ECL_UNICODE
   else if (t == ecl_aet_ch) {
-    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE];
+    /* 1 extra byte for linefeed in crlf mode */
+    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE + 1];
     cl_index nbytes = 0;
     cl_index i;
     for (i = start; i < end; i++) {
       ecl_character c = *(data->vector.self.c + i);
+      if (c == ECL_CHAR_CODE_NEWLINE) {
+        if (strm->stream.flags & ECL_STREAM_CR &&
+            strm->stream.flags & ECL_STREAM_LF)
+          nbytes += strm->stream.encoder(strm, buffer + nbytes, ECL_CHAR_CODE_RETURN);
+        else if (strm->stream.flags & ECL_STREAM_CR)
+          c = ECL_CHAR_CODE_RETURN;
+        strm->stream.column = 0;
+      }
       nbytes += strm->stream.encoder(strm, buffer + nbytes, c);
       write_char_increment_column(strm, c);
       if (nbytes >= VECTOR_ENCODING_BUFFER_SIZE) {
