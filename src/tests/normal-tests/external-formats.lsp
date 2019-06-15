@@ -88,9 +88,9 @@ contents \(viewed as binary files)."
              for byte2 = (read-byte stream2 nil nil)
              while (and byte1 byte2)
              unless (= byte1 byte2)
-             do (return (values nil p1))
-             finally (return (values t 0)))
-          (values nil -1)))))
+             do (return (values nil p1 byte1 byte2))
+             finally (return (values t 0 0 0)))
+          (values nil -1 (file-length stream1) (file-length stream2))))))
 
 (defun copy-stream (in out)
   "Copies the contents of the binary stream STREAM-IN to the
@@ -104,11 +104,87 @@ written with EXTERNAL-FORMAT-OUT."
 (defun copy-stream* (in out)
   "Like COPY-STREAM, but uses READ-SEQUENCE and WRITE-SEQUENCE instead
 of READ-LINE and WRITE-LINE."
-  (let ((buffer (make-array +buffer-size+ :element-type 'char*)))
+  (let ((buffer (make-array +buffer-size+ :element-type 'character)))
     (loop
      (let ((position (read-sequence buffer in)))
        (when (zerop position) (return))
        (write-sequence buffer out :end position)))))
+
+(defun copy-stream** (in out)
+  "Like COPY-STREAM, but uses a random combination of PEEK-CHAR,
+READ-CHAR, READ-LINE, READ-SEQUENCE, UNREAD-CHAR and WRITE-CHAR,
+WRITE-LINE, WRITE-SEQUENCE, WRITE-STRING instead of READ-LINE and
+WRITE-LINE."
+  (flet ((random (n)
+           (if (> n 0)
+               (cl:random n)
+               0)))
+    (loop
+       with buffer = (make-array +buffer-size+ :element-type 'character :initial-element #\0)
+       with pos = 0
+       with previous-operation = nil
+       with eof = nil
+       for operation = (elt '(peek-char read-char read-line read-sequence unread-char)
+                            (random 5))
+       for previous-pos = pos
+       if (eql operation 'peek-char) do
+         (let ((char (peek-char nil in nil nil)))
+           (unless char
+             (setf eof t)))
+       if (eql operation 'read-char) do
+         (let ((char (read-char in nil nil)))
+           (if char
+               (progn (setf (elt buffer pos) char)
+                      (incf pos))
+               (setf eof t)))
+       if (eql operation 'read-line) do
+         (multiple-value-bind (line missing-newline)
+             (read-line in nil nil)
+           (if line
+               (progn (unless missing-newline
+                        (setf line (concatenate 'string line "
+")))
+                      (setf buffer (concatenate 'string (subseq buffer 0 pos) line))
+                      (incf pos (length line)))
+               (setf eof t)))
+       if (eql operation 'read-sequence) do
+         (let ((end (+ pos (random (- (length buffer) pos)))))
+           (when (> end pos)
+             (setf pos (read-sequence buffer in
+                                     :start pos
+                                     :end end))
+             (when (< pos end)
+               (setf eof t))))
+       if (eql operation 'unread-char) do
+         (when (and (> pos 0) (not (or (eql previous-operation 'unread-char)
+                                       (= pos previous-pos))))
+           (decf pos)
+           (unread-char (elt buffer pos) in))
+       do (setf previous-operation operation)
+       if (and (or (>= pos (length buffer)) eof) (> pos 0)) do
+         (loop
+            with pos2 = 0
+            for operation = (elt '(write-char write-line write-sequence write-string)
+                                 (random 4))
+            if (eql operation 'write-char) do
+              (write-char (elt buffer pos2) out)
+              (incf pos2)
+            if (eql operation 'write-line) do
+              (let ((newline-pos (position #\Newline buffer :start pos2 :end pos)))
+                (when newline-pos
+                  (write-line buffer out :start pos2 :end newline-pos)
+                  (setf pos2 (1+ newline-pos))))
+            if (eql operation 'write-sequence) do
+              (let ((end (+ pos2 (random (- pos pos2)))))
+                (write-sequence buffer out :start pos2 :end end)
+                (setf pos2 end))
+            if (eql operation 'write-string) do
+              (let ((end (+ pos2 (random (- pos pos2)))))
+                (write-string buffer out :start pos2 :end end)
+                (setf pos2 end))
+            while (< pos2 pos)
+            finally (setf pos 0))
+       while (not eof))))
 
 (defun do-eformat-test-001 (*copy-function*)
   "Each test in this suite copies the contents of one file \(in the
@@ -133,9 +209,9 @@ about each individual comparison if VERBOSE is true."
                                 :element-type 'character
                                 :direction direction-out
                                 :if-does-not-exist :create
-                                        :if-exists :supersede
-                                        :external-format external-format-out)
-                     (funcall *copy-function* in out))))
+                                :if-exists :supersede
+                                :external-format external-format-out)
+             (funcall *copy-function* in out))))
        (one-comparison (path-in external-format-in path-out external-format-out)
          (loop with full-path-in = (merge-pathnames path-in *eformat-tests-directory*)
             and full-path-out = (ensure-directories-exist
@@ -143,21 +219,23 @@ about each individual comparison if VERBOSE is true."
             and full-path-orig = (merge-pathnames path-out *eformat-tests-directory*)
             for direction-out in '(:output :io)
             nconc (loop for direction-in in '(:input :io)
-                       for args = (list path-in external-format-in direction-in
-                                        path-out external-format-out direction-out)
+                     for args = (list path-in external-format-in direction-in
+                                      path-out external-format-out direction-out)
                      with ok = nil
                      with pos = 0
+                     with byte1 = 0
+                     with byte2 = 0
                      unless (progn
                               (copy-file full-path-in external-format-in
                                          full-path-out external-format-out
                                          direction-out direction-in)
-                              (is (multiple-value-setq (ok pos)
+                              (is (multiple-value-setq (ok pos byte1 byte2)
                                     (file-equal full-path-out full-path-orig))
                                   "~%~A -> ~A" path-in path-out))
                      collect (progn
-                                 (format t "~%;;; Discordance at pos ~D~%between ~A~% and ~A~%"
-                                         pos full-path-out full-path-orig)
-                                 args)))))
+                               (format t "~%;;; Discordance at pos ~D between ~A and ~A~%in files ~A~%and ~A~%"
+                                       pos byte1 byte2 full-path-out full-path-orig)
+                               args)))))
     (loop with do-eformat-test-001-args-list =
          (loop for (file-name symbols) in *eformat-test-files*
             nconc (create-test-combinations file-name symbols))
@@ -171,7 +249,7 @@ about each individual comparison if VERBOSE is true."
 ;;;
 ;;;     Test external formats by transcoding several files into all possible
 ;;;     supported formats and checking against the expected results. This
-;;;     test uses READ/WRITE-CHAR via READ/WRITE-LINE.
+;;;     test uses READ/WRITE-LINE.
 ;;;
 (test external-format.0001-transcode-read-char
   (is-false (do-eformat-test-001 'copy-stream)))
@@ -183,10 +261,22 @@ about each individual comparison if VERBOSE is true."
 ;;;
 ;;;     Test external formats by transcoding several files into all possible
 ;;;     supported formats and checking against the expected results. This
-;;;     test uses READ/WRITE-CHAR via READ/WRITE-LINE.
+;;;     test uses READ/WRITE-SEQUENCE.
 ;;;
 (test external-format.0002-transcode-read-char
   (is-false (do-eformat-test-001 'copy-stream*)))
+
+;;; Date: 12/06/2019
+;;; From: Marius Gerbershagen
+;;; Fixed: Not a bug
+;;; Description:
+;;;
+;;;     Test external formats by transcoding several files into all possible
+;;;     supported formats and checking against the expected results. This
+;;;     test uses a random combination of READ/WRITE functions.
+;;;
+(test external-format.0003-transcode-read-char
+  (is-false (do-eformat-test-001 'copy-stream**)))
 
 
 ;;; eformat-002
