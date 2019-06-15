@@ -3659,8 +3659,12 @@ io_stream_get_position(cl_object strm)
   ecl_disable_interrupts();
   offset = ecl_ftello(f);
   ecl_enable_interrupts();
-  if (offset < 0)
-    io_error(strm);
+  unlikely_if (offset < 0) {
+    if (errno == ESPIPE)
+      return(ECL_NIL);
+    else
+      io_error(strm);
+  }
   if (sizeof(ecl_off_t) == sizeof(long)) {
     output = ecl_make_integer(offset);
   } else {
