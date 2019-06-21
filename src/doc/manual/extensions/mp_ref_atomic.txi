@@ -231,7 +231,7 @@ the resulting compare-and-swap expansions.
 @defun mp:remcas symbol
 
 Remove a compare-and-swap expansion. It is an equivalent of
-@code{fmakeunbound (setf symbol)} for cas expansions.
+@code{fmakunbound (setf symbol)} for cas expansions.
 @end defun
 
 @lspindex mp:get-cas-expansion

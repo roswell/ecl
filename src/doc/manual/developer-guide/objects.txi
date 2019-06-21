@@ -10,7 +10,7 @@ If you want to extend, fix or simply customize ECL for your own needs,
 you should understand how the implementation works.
 
 @cppindex cl_lispunion
-@deftp @cind{} cl_lispunion cons big ratio SF DF longfloat complex symbol pack hash array vector base_string string stream random readtable pathname bytecodes bclosure cfun cfunfixed cclosure d instance process queue lock rwlock condition_variable semaphore barrier mailbox cblock foreign frame weak sse
+@deftp @cind{} cl_lispunion { cons big ratio SF DF longfloat gencomplex csfloat cdfloat clfloat symbol pack hash array vector base_string string stream random readtable pathname bytecodes bclosure cfun cfunfixed cclosure d instance process queue lock rwlock condition_variable semaphore barrier mailbox cblock foreign frame weak sse }
 
 Union containing all first-class ECL types.
 @end deftp
@@ -143,6 +143,11 @@ objects. The most important values are:
 @cppindex t_longfloat
 @c #endif
 @cppindex t_complex
+@c #ifdef ECL_COMPLEX_FLOAT
+@cppindex t_csfloat
+@cppindex t_cdfloat
+@cppindex t_clfloat
+@c #endif
 @cppindex t_symbol
 @cppindex t_package
 @cppindex t_hashtable
@@ -425,7 +430,7 @@ if (ECL_CHARACTERP(o) && ECL_BASE_CHAR_P(o))
 Each character is assigned an integer code which ranges from 0 to
 (ECL_CHAR_CODE_LIMIT-1).
 @itemize @bullet
-@item @strong{DEPRECATED} @code{CODE_CHAR_LIMIT} – equivalent to @code{ECL_CHAR_CODE_LIMIT}
+@item @strong{DEPRECATED} @code{CHAR_CODE_LIMIT} – equivalent to @code{ECL_CHAR_CODE_LIMIT}
 @end itemize
 @end defvr
 
@@ -464,8 +469,8 @@ char_equal ignores it.
 
 @cppindex ecl_char_cmp
 @cppindex ecl_char_compare
-@deftypefun bool ecl_char_cmp (cl_object x, cl_object y)
-@deftypefunx bool ecl_char_compare (cl_object x, cl_object y)
+@deftypefun int ecl_char_cmp (cl_object x, cl_object y)
+@deftypefunx int ecl_char_compare (cl_object x, cl_object y)
 Compare the relative order of two characters. @code{char_cmp} takes care
 of case and @code{char_compare} converts all characters to uppercase
 before comparing them.
@@ -535,7 +540,7 @@ pointer depending on @var{x->array.elttype}.
 @end deftp
 
 @cppindex cl_elttype
-@deftp @cind{} cl_elttype ecl_aet_object ecl_aet_sf ecl_aet_df ecl_aet_bit ecl_aet_fix ecl_aet_index ecl_aet_b8 ecl_aet_i8 ecl_aet_b16 ecl_aet_i16 ecl_aet_b32 ecl_aet_i32 ecl_aet_b64 ecl_aet_i64 ecl_aet_ch ecl_aet_bc
+@deftp @cind{} cl_elttype ecl_aet_object ecl_aet_sf ecl_aet_df ecl_aet_lf ecl_aet_csf ecl_aet_cdf ecl_aet_clf ecl_aet_bit ecl_aet_fix ecl_aet_index ecl_aet_b8 ecl_aet_i8 ecl_aet_b16 ecl_aet_i16 ecl_aet_b32 ecl_aet_i32 ecl_aet_b64 ecl_aet_i64 ecl_aet_ch ecl_aet_bc
 
 Each array is of an specialized type which is the type of the elements
 of the array. ECL has arrays only a few following specialized types, and
@@ -550,6 +555,14 @@ some of those types together with the C constant that denotes that type:
 @code{ecl_aet_sf}
 @item DOUBLE-FLOAT
 @code{ecl_aet_df}
+@item LONG-FLOAT
+@code{ecl_aet_lf}
+@item (COMPLEX SINGLE-FLOAT)
+@code{ecl_aet_csf}
+@item (COMPLEX DOUBLE-FLOAT)
+@code{ecl_aet_cdf}
+@item (COMPLEX LONG-FLOAT)
+@code{ecl_aet_clf}
 @item BIT
 @code{ecl_aet_bit}
 @item FIXNUM
@@ -808,7 +821,7 @@ Equivalent of @code{si_safe_eval}.
 @subheading Example
 @exindex @code{si_safe_eval}
 @example
-si_object form = ecl_read_from_cstring("(print 1)");
+cl_object form = ecl_read_from_cstring("(print 1)");
 si_safe_eval(2, form, ECL_NIL);
 si_safe_eval(3, form, ECL_NIL, ecl_make_fixnum(3)); /* on error function will return 3 */
 @end example

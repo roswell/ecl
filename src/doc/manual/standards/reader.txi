@@ -22,7 +22,7 @@ Common Lisp and C equivalence
 @item @clhs{f_cp_rdt.htm,copy-readtable} @tab cl_object cl_copy_readtable(cl_narg narg, ...)
 @item @clhs{f_mk_dis.htm,make-dispatch-macro-character} @tab cl_object cl_make_dispatch_macro_character(cl_narg narg, cl_object char, ...)
 @item @clhs{f_rd_rd.htm,read} @tab cl_object cl_read(cl_narg narg, ...)
-@item @clhs{f_rd_rd.htm,read-preerving-whitespace} @tab cl_object cl_read_preserving_whitespace(cl_narg narg, ...)
+@item @clhs{f_rd_rd.htm,read-preserving-whitespace} @tab cl_object cl_read_preserving_whitespace(cl_narg narg, ...)
 @item @clhs{f_rd_de1.htm,read-delimited-list} @tab cl_object cl_read_delimited_list(cl_narg narg, cl_object char, ...)
 @item @clhs{f_rd_fro.htm,read-from-string} @tab cl_object cl_read_from_string(cl_narg narg, cl_object string, ...)
 @item @clhs{f_rdtab1.htm,readtable-case} @tab cl_object cl_readtable_case(cl_object readtable)

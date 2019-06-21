@@ -83,7 +83,7 @@ need to know about all these conventions. There is a preprocessor
 (@pxref{Defun preprocessor}) that takes care of the details, by using a
 lisp representation of the statements that output values, and of the
 function definitions. For instance, the actual source code for
-@code{cl_last} in @code{src/c/list.d}
+@code{cl_last} in @code{src/c/list.d} is
 
 @example
 @verbatim

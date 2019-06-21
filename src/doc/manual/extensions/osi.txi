@@ -340,7 +340,7 @@ Environment accessors.
 @defun ext:getpid
 @defunx ext:getuid
 @defunx ext:getcwd &optional (change-default-pathname-defaults NIL)
-@defunx ext:chdir directory (change-default-pathname-defaults T)
+@defunx ext:chdir directory &optional (change-default-pathname-defaults T)
 @defunx ext:file-kind filename follow-symlinks-p
 @defunx ext:copy-file filename destination-filename
 @defunx ext:chmod filename mode
