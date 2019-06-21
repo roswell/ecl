@@ -306,7 +306,7 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
       ecl_unread_char(c, in);
       break;
     }
-    unlikely_if (ecl_invalid_character_p(c)) {
+    unlikely_if (ecl_invalid_character_p(c) && !suppress) {
       FEreader_error("Found invalid character ~:C", in,
                      1, ECL_CODE_CHAR(c));
     }
@@ -459,7 +459,7 @@ cl_object comma_reader(cl_object in, cl_object c)
   const cl_env_ptr env = ecl_process_env();
   cl_fixnum backq_level = ecl_fixnum(ECL_SYM_VAL(env, @'si::*backq-level*'));
 
-  unlikely_if (backq_level <= 0)
+  unlikely_if (backq_level <= 0 && !read_suppress)
     FEreader_error("A comma has appeared out of a backquote.", in, 0);
   /* Read character & complain at EOF */
   c = cl_peek_char(2,ECL_NIL,in);
@@ -488,6 +488,8 @@ cl_object backquote_reader(cl_object in, cl_object c)
   ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level));
   unlikely_if (c == OBJNULL)
     FEend_of_file(in);
+  unlikely_if (read_suppress)
+    @(return ECL_NIL);
 #if 0
   @(return cl_macroexpand_1(2, cl_list(2, @'si::quasiquote', in), ECL_NIL));;
 #else

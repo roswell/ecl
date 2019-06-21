@@ -1,6 +1,17 @@
 @node Reader
 @section Reader
 
+@subsection @code{*read-supress*}
+The behaviour of @code{*read-supress*} is not fully specified in the
+standard. ECL tries to be as liberal as possible in the syntax that it
+accepts when @code{*read-suppress*} is true. Errors are only signaled
+in the following cases:
+@itemize @bullet
+@item End of file
+@item Unbalanced parantheses
+@item Invalid dispatching macro characters such as @code{<} or @code{)} (Undefined dispatching macro characters don't produce errors)
+@end itemize
+
 @subsection C Reference
 
 @subsubsection ANSI Dictionary
