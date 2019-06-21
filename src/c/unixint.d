@@ -1199,9 +1199,6 @@ cl_object
 si_trap_fpe(cl_object condition, cl_object flag)
 {
         cl_env_ptr the_env = ecl_process_env();
-#ifndef FE_ALL_EXCEPT
-# define FE_ALL_EXCEPT FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID
-#endif
         const int all = FE_ALL_EXCEPT;
         int bits = 0;
         if (condition == @'last') {

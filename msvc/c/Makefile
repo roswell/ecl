@@ -71,8 +71,10 @@ HFILES	= ..\ecl\config.h ..\ecl\config-internal.h ..\ecl\atomic_ops.h \
 	$(HDIR)\external.h $(HDIR)\cons.h $(HDIR)\legacy.h \
 	$(HDIR)\number.h $(HDIR)\page.h \
 	$(HDIR)\internal.h $(HDIR)\ecl-inl.h $(HDIR)\bytecodes.h \
-	$(HDIR)\impl\math_dispatch.h $(HDIR)\cache.h $(HDIR)\stack-resize.h \
-	$(HDIR)\ecl-atomic-ops.h
+	$(HDIR)\impl\math_dispatch.h $(HDIR)\impl\math_dispatch2.h \
+	$(HDIR)\impl\math_fenv.h $(HDIR)\impl\math_fenv_msvc.h \
+	$(HDIR)\cache.h $(HDIR)\stack-resize.h \
+	$(HDIR)\ecl_atomics.h
 
 OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	apply.obj eval.obj \

@@ -385,9 +385,10 @@ install:
 	$(CP) ecl-config.bat "$(bindir)\ecl-config.bat"
 	$(CP) ecl-cc.bat "$(bindir)\ecl-cc.bat"
 	IF NOT EXIST "$(includedir)\ecl" $(MKDIR) "$(includedir)\ecl"
+	IF NOT EXIST "$(includedir)\ecl\impl" $(MKDIR) "$(includedir)\ecl\impl"
 	IF NOT EXIST "$(includedir)\ecl\gc" $(MKDIR) $(includedir)\ecl\gc
 	IF NOT EXIST "$(includedir)\ecl\gc\private" $(MKDIR) "$(includedir)\ecl\gc\private"
-	for %i in (ecl\*.h ecl\gc\*.h ecl\gc\private\*.h) do $(CP) %i $(includedir)\%i
+	for %i in (ecl\*.h ecl\impl\*.h ecl\gc\*.h ecl\gc\private\*.h) do $(CP) %i $(includedir)\%i
 	IF EXIST "$(include)\ecl\atomic_ops" rmdir /S /Q "$(include)\ecl\atomic_ops"
 	IF EXIST "ecl\atomic_ops" xcopy /S /Y "ecl\atomic_ops" "$(includedir)\atomic_ops\"
 	cd c

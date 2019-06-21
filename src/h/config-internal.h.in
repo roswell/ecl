@@ -106,16 +106,11 @@
 #endif
 /* isatty() checks whether a file is connected to a			*/
 #undef HAVE_ISATTY
-/* can manipulate floating point environment				*/
-#undef HAVE_FENV_H
-/* can activate individual traps in floating point environment          */
 /* this flag has to be deactivated for the Itanium architecture, where  */
 /* the GNU libc functions are broken                                    */
 #if !defined(__ia64__) && !defined(PPC)
 #undef HAVE_FEENABLEEXCEPT
 #endif
-/* do we want to deactivate all support for floating point exceptions   */
-#undef ECL_AVOID_FPE_H
 /* do we want to have signed zeros                                      */
 #undef ECL_SIGNED_ZERO
 /* has support for large files                                          */

@@ -221,6 +221,15 @@ typedef unsigned char ecl_base_char;
 /* Use the serialization framework                                      */
 #undef ECL_EXTERNALIZABLE
 
+/* do we want to deactivate all support for floating point exceptions   */
+#undef ECL_AVOID_FPE_H
+
+/* can manipulate floating point environment				*/
+#undef HAVE_FENV_H
+
+/* feenableexcept is available */
+#undef HAVE_FEENABLEEXCEPT
+
 /*
  * C macros for inlining, denoting probable code paths and other stuff
  * that makes better code. Most of it is GCC specific.
