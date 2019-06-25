@@ -1401,8 +1401,6 @@ install_fpe_signal_handlers()
 /*                 si_trap_fpe(@'division-by-zero', ECL_NIL); */
 /*                 si_trap_fpe(@'floating-point-overflow', ECL_NIL); */
 /* # endif */
-        } else {
-                si_trap_fpe(ECL_T, ECL_NIL);
         }
 #endif
 }
