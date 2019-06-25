@@ -886,8 +886,8 @@
     (if (zerop n-cfuns)
         (wt-nl-h "#define compiler_cfuns NULL")
         (progn
-          (format stream "~%static const struct ecl_cfun compiler_cfuns[] = {~
-~%~t/*t,m,narg,padding,name,block,entry*/");
+          (format stream "~%static const struct ecl_cfunfixed compiler_cfuns[] = {~
+~%~t/*t,m,narg,padding,name=function-location,block=name-location,entry,entry_fixed,file,file_position*/")
           (loop for (loc fname-loc fun) in (nreverse *global-cfuns-array*)
                 do (let* ((cfun (fun-cfun fun))
                           (minarg (fun-minarg fun))
@@ -895,8 +895,8 @@
                           (narg (if (and (= minarg maxarg)
                                          (<= maxarg si:c-arguments-limit))
                                     maxarg
-                                    -1)))
-                     (format stream "~%{0,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,ECL_NIL,ecl_make_fixnum(~D)},"
+                                    (1- (- (min minarg si:c-arguments-limit))))))
+                     (format stream "~%{0,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,NULL,ECL_NIL,ecl_make_fixnum(~D)},"
                              narg
                              (vv-location loc)
                              (vv-location fname-loc)

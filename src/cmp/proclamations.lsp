@@ -196,6 +196,11 @@
 (proclamation ext:constant-form-value (t &optional environment) t)
 (proclamation ext:constantp-inner (t &optional environment) gen-bool)
 
+(proclamation si::remove-documentation (t) t)
+(proclamation si::find-declarations (t &optional gen-bool) t)
+(proclamation si::search-keyword (t t) t)
+(proclamation si::check-keyword (list list &optional gen-bool) t)
+
 ;;;
 ;;; 4. TYPES AND CLASSES
 ;;;
@@ -313,6 +318,12 @@
 (proclamation clos:extract-lambda-list (list) list)
 #+clos
 (proclamation clos:extract-specializer-names (list) list)
+#+clos
+(proclamation clos::install-method (t t t t t &rest t) t)
+#+clos
+(proclamation clos::find-slot-definition (t t) t)
+#+clos
+(proclamation clos::ensure-class (t &rest t) t)
 
 #+(and threads clos) (proclamation mp::compare-and-swap-standard-instance (ext:instance t t t) t)
 #+(and threads clos) (proclamation mp::compare-and-swap-slot-value (ext:instance symbol t t) t)
@@ -332,6 +343,8 @@
 (proclamation si:structure-set (structure-object t fixnum t) t)
 (proclamation si:structurep (t) gen-bool :predicate)
 (proclamation si:structure-subtype-p (t t) gen-bool :predicate)
+(proclamation si::define-structure (t t t t t t t t t t t t t t t) t)
+(proclamation si::structure-type-error (t t t t) t)
 
 #+threads (proclamation mp:compare-and-swap-structure (structure-object t fixnum t t) t)
 
@@ -452,6 +465,7 @@
 (proclamation si:select-package (package-designator) package)
 (proclamation si:package-hash-tables (package-designator)
                    (values hash-table hash-table list) :reader)
+(proclamation si::packages-iterator (t list gen-bool) function)
 (proclamation ext:package-lock (package-designator gen-bool) package)
 (proclamation ext:package-locked-p (package-designator) boolean :no-side-effects)
 (proclamation ext:package-local-nicknames
@@ -992,6 +1006,7 @@
               (t sequence sequence-index (or null sequence-index))
               (values fixnum fixnum fixnum) :no-side-effects)
 (proclamation si::sequence-count ((or null integer)) fixnum :no-side-effects)
+(proclamation si::coerce-to-list (sequence) list)
 
 ;;;
 ;;; 18. HASH TABLES
@@ -1222,6 +1237,10 @@
 ;; Slot accessor:
 ;; (proclamation print-not-readable-object (condition) t)
 
+;; ECL extensions:
+(proclamation si::pprint-logical-block-helper (t t t string gen-bool string) t)
+(proclamation si::pprint-pop-helper (t t stream) t)
+
 ;;;
 ;;; 23. READER
 ;;;
@@ -1382,6 +1401,10 @@
 
 (proclamation si:unbound () t :pure)
 (proclamation si:traced-old-definition (t) t :no-side-effects)
+
+(proclamation si::expand-set-documentation (t t t) t)
+(proclamation si::set-documentation (t t t) t)
+(proclamation si::get-documentation (t t) t)
 
 #+clos
 (proclamation si:allocate-raw-instance (t t fixnum) ext:instance)

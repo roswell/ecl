@@ -108,7 +108,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
       output = cl_format(4, ECL_NIL,
                          ecl_make_constant_base_string("ECL_SYM(~S,~D)",-1),
                          name, ecl_make_fixnum(p));
-      @(return found output maxarg);
+      @(return found output);
     }
   } else if (!Null(symbol)) {
     cl_object fun = symbol->symbol.gfdef;
@@ -120,8 +120,12 @@ mangle_name(cl_object output, unsigned char *source, int l)
           symbol = s;
           found = ECL_T;
           if (fun->cfun.narg >= 0) {
-            minarg =
-              maxarg = ecl_make_fixnum(fun->cfun.narg);
+            if (t == t_cfunfixed) {
+              minarg =
+                maxarg = ecl_make_fixnum(fun->cfunfixed.narg);
+            } else {
+              minarg = ecl_make_fixnum(fun->cfun.narg);
+            }
           }
           break;
         }
@@ -165,12 +169,12 @@ mangle_name(cl_object output, unsigned char *source, int l)
   output->base_string.fillp = 0;
   if (!Null(package)) {
     if (!mangle_name(output, package->base_string.self, package->base_string.fillp)) {
-      @(return ECL_NIL ECL_NIL maxarg);
+      @(return ECL_NIL ECL_NIL minarg maxarg);
     }
   }
   output->base_string.self[output->base_string.fillp++] = c;
   if (!(dest = mangle_name(output, source, l))) {
-    @(return ECL_NIL ECL_NIL maxarg);
+    @(return ECL_NIL ECL_NIL minarg maxarg);
   }
   if (dest[-1] == '_')
     dest[-1] = 'M';
@@ -243,7 +247,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
     if (narg >= 0) {
       f = ecl_make_cfun((cl_objectfn_fixed)fun, s, NULL, narg);
     } else {
-      f = ecl_make_cfun_va(fun, s, NULL);
+      f = ecl_make_cfun_va(fun, s, NULL, -narg - 1);
     }
     ECL_SYM_FUN(s) = f;
   }

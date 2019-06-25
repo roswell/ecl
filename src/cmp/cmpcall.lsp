@@ -177,11 +177,10 @@
                 (wt-h1 "cl_object"))
               (wt-h1 ");"))
             (progn
-              (wt-nl-h "#ifdef __cplusplus")
-              (wt-nl-h "extern cl_object " fun-c-name "(...);")
-              (wt-nl-h "#else")
-              (wt-nl-h "extern cl_object " fun-c-name "();")
-              (wt-nl-h "#endif")))
+              (wt-nl-h "extern cl_object " fun-c-name "(cl_narg")
+              (dotimes (i (min minarg si:c-arguments-limit))
+                (wt-h1 ",cl_object"))
+              (wt-h1 ",...);")))
         (setf (gethash fun-c-name *compiler-declared-globals*) 1))))
   (let ((fun (make-fun :name fname :global t :cfun fun-c-name :lambda 'NIL
                        :minarg minarg :maxarg maxarg)))

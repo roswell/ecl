@@ -736,7 +736,7 @@ struct ecl_codeblock {
         cl_object name;
         cl_object links;                /*  list of symbols with linking calls  */
         cl_index cfuns_size;            /*  number of functions defined  */
-        const struct ecl_cfun *cfuns;
+        const struct ecl_cfunfixed *cfuns;
         cl_object source;               /*  common debug information for this block  */
         cl_object refs;                 /*  reference counter for the library  */
         cl_object error;                /*  error message when loading */
@@ -763,16 +763,26 @@ struct ecl_bclosure {
 };
 
 struct ecl_cfun {               /*  compiled function header  */
-        _ECL_HDR1(narg);
+        _ECL_HDR1(narg);        /*  number of fixed arguments */
         cl_object name;         /*  compiled function name  */
         cl_object block;        /*  descriptor of C code block for GC  */
         cl_objectfn entry;      /*  entry address  */
+#ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
+        /* Some architectures (i.e. ARM64 on iOS) use a different
+         * calling convention for the fixed and variadic arguments of
+         * a variadic function. The only portable way to allow for
+         * function redefinitions during runtime in these
+         * architectures is to set entry to a dispatch function
+         * calling entry_variadic with the correct calling conventions
+         * (see cfun.d). -- mg 2019-12-02 */
+        cl_objectfn entry_variadic;
+#endif
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };
 
 struct ecl_cfunfixed {          /*  compiled function header  */
-        _ECL_HDR1(narg);
+        _ECL_HDR1(narg);        /*  number of arguments */
         cl_object name;         /*  compiled function name  */
         cl_object block;        /*  descriptor of C code block for GC  */
         cl_objectfn entry;      /*  entry address (must match the position of
@@ -783,11 +793,14 @@ struct ecl_cfunfixed {          /*  compiled function header  */
 };
 
 struct ecl_cclosure {           /*  compiled closure header  */
-        _ECL_HDR;
+        _ECL_HDR1(narg);        /*  number of fixed arguments */
         cl_object env;          /*  environment  */
         cl_object block;        /*  descriptor of C code block for GC  */
         cl_objectfn entry;      /*  entry address (must match the position of
                                  *  the equivalent field in cfun) */
+#ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
+        cl_objectfn entry_variadic; /* see struct ecl_cfun above */
+#endif
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };

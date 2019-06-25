@@ -2425,7 +2425,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 
     assert(block->cblock.cfuns_size == 0 || VV != NULL);
     for (i = 0; i < block->cblock.cfuns_size; i++) {
-      const struct ecl_cfun *prototype = block->cblock.cfuns+i;
+      const struct ecl_cfunfixed *prototype = block->cblock.cfuns+i;
       cl_index fname_location = ecl_fixnum(prototype->block);
       cl_object fname = VV[fname_location];
       cl_index location = ecl_fixnum(prototype->name);
@@ -2433,7 +2433,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
       int narg = prototype->narg;
       VV[location] = narg<0?
         ecl_make_cfun_va((cl_objectfn)prototype->entry,
-                         fname, block) :
+                         fname, block, -narg - 1) :
         ecl_make_cfun((cl_objectfn_fixed)prototype->entry,
                       fname, block, narg);
       /* Add source file info */

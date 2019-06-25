@@ -184,10 +184,11 @@
     (cond ((eq closure 'CLOSURE)
            (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
                (environment-accessor fun)
-               ",Cblock)"))
+               ",Cblock," (min (fun-minarg fun) si:c-arguments-limit) ")"))
           ((eq closure 'LEXICAL)
            (baboon :format-control "wt-make-closure: lexical closure detected."))
           ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
            (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",ECL_NIL,Cblock," narg ")"))
           (t ; empty environment variable number of args
-           (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock)")))))
+           (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock,"
+               (min (fun-minarg fun) si:c-arguments-limit) ")")))))

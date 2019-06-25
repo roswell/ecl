@@ -96,7 +96,7 @@ static cl_object
 make_setf_function_error(cl_object name)
 {
   return ecl_make_cclosure_va((cl_objectfn)unbound_setf_function_error,
-                              name, ECL_NIL);
+                              name, ECL_NIL, 0);
 }
 
 cl_object
