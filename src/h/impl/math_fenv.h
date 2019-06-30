@@ -98,35 +98,6 @@
 # define ECL_MATHERR_TEST
 #endif
 
-#if defined(__APPLE__) && defined(__amd64__)
-#define feclearexcept myfeclearexcept
-static inline void myfeclearexcept(int flags)
-{
-    int aux;
-    int f = ~(0x3d);
-    __asm__ (
-    "fnclex  \n\t"
-    "stmxcsr %0\n\t"
-    "andl    %1,%0\n\t"
-    "ldmxcsr %0\n\t"
-    : "=m"(aux) : "a"(f));
-}
-#define fetestexcept myfetestexcept
-static inline int myfetestexcept(cl_fixnum flags)
-{
-    cl_fixnum output = (flags & 0x3d);
-    int sw;
-    __asm__ (
-    "fnstsw  %0\n\t"
-    "movzwl  %0,%%eax\n\t"
-    "stmxcsr %0\n\t"
-    "orl     %0,%%eax\n\t"
-    "and     %%rax,%1\n\t"
-    : "=m"(sw), "=d"(output) : "d"(output) : "%rax");
-    return output;
-}
-#endif /* __APPLE__ && __amd64__ */
-
 extern void ecl_deliver_fpe(int flags);
 
 #endif /* !ECL_MATH_FENV_H */
