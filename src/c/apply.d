@@ -13,7 +13,6 @@
 
 #include <ecl/ecl.h>
 
-#ifndef ECL_ASM_APPLY
 cl_object
 APPLY(cl_narg n, cl_objectfn fn, cl_object *x)
 {
@@ -664,4 +663,3 @@ APPLY_fixed(cl_narg n, cl_object (*fn)(), cl_object *x)
     FEprogram_error("Too many arguments", 0);
   }
 }
-#endif

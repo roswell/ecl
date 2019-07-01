@@ -166,17 +166,6 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         struct ecl_stack_frame frame;\
         cl_object name = ecl_stack_frame_open(env, (cl_object)&frame, 0);
 
-#ifdef ECL_USE_VARARG_AS_POINTER
-#define ECL_STACK_FRAME_FROM_VA_LIST(e,f,va) do {                  \
-                const cl_object __frame = (f);                     \
-                __frame->frame.t = t_frame;                        \
-                __frame->frame.stack = 0;                          \
-                __frame->frame.env = (e);                          \
-                __frame->frame.size = va[0].narg;                  \
-                __frame->frame.base = va[0].sp? va[0].sp :         \
-                        (cl_object*)va[0].args;                    \
-        } while(0)
-#else
 #define ECL_STACK_FRAME_FROM_VA_LIST(e,f,va) do {                       \
                 const cl_object __frame = (f);                          \
                 cl_index i, __nargs = va[0].narg;                       \
@@ -185,28 +174,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                         __frame->frame.base[i] = ecl_va_arg(va);         \
                 }                                                       \
         } while (0)
-#endif
 
-#ifdef ECL_USE_VARARG_AS_POINTER
-#define ECL_STACK_FRAME_VARARGS_BEGIN(narg,lastarg,frame)               \
-        struct ecl_frame __ecl_frame;                                   \
-        const cl_object frame = (cl_object)&__ecl_frame;                \
-        const cl_env_ptr env = ecl_process_env();                       \
-        frame->frame.t = t_frame;                                       \
-        frame->frame.stack = 0;                                         \
-        frame->frame.env = env;                                         \
-        frame->frame.size = narg;                                       \
-        if (narg < ECL_C_ARGUMENTS_LIMIT) {                             \
-                va_list args;                                           \
-                va_start(args, lastarg);                                \
-                frame->frame.base = (cl_object*)args;                   \
-                va_end(args);                                           \
-        } else {                                                        \
-                frame->frame.base = env->stack_top - narg;              \
-        }
-#define ECL_STACK_FRAME_VARARGS_END(frame)      \
-        /* No stack consumed, no need to close frame */
-#else
 #define ECL_STACK_FRAME_VARARGS_BEGIN(narg,lastarg,frame)               \
         struct ecl_frame __ecl_frame;                                   \
         const cl_object frame = (cl_object)&__ecl_frame;                \
@@ -230,7 +198,6 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         }
 #define ECL_STACK_FRAME_VARARGS_END(frame)      \
         /* No stack consumed, no need to close frame */
-#endif
 
 extern cl_object _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...);
 extern cl_object _ecl_bclosure_dispatch_vararg(cl_narg narg, ...);
