@@ -182,7 +182,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         frame->frame.t = t_frame;                                       \
         frame->frame.env = env;                                         \
         frame->frame.size = narg;                                       \
-        if (narg < ECL_C_ARGUMENTS_LIMIT) {                             \
+        if (narg <= ECL_C_ARGUMENTS_LIMIT) {                            \
                 cl_object *p = frame->frame.base = env->values;         \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \
