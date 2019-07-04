@@ -13,6 +13,10 @@
 
 #include <ecl/ecl.h>
 
+#if !(ECL_C_ARGUMENTS_LIMIT == 63)
+#error "Please adjust code to the constant!"
+#endif
+
 cl_object
 APPLY(cl_narg n, cl_objectfn fn, cl_object *x)
 {
