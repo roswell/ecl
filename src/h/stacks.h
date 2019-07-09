@@ -299,7 +299,7 @@ typedef struct ecl_frame {
         jmp_buf         frs_jmpbuf;
         cl_object       frs_val;
         cl_index        frs_bds_top_index;
-        ecl_ihs_ptr             frs_ihs;
+        ecl_ihs_ptr     frs_ihs;
         cl_index        frs_sp;
 } *ecl_frame_ptr;
 
