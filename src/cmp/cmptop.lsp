@@ -56,8 +56,7 @@
         ((setq fd (cmp-macro-function fun))
          (push 'macroexpand *current-toplevel-form*)
          (t1expr* (cmp-expand-macro fd form)))
-        (t (t1ordinary form))
-        ))))
+        (t (t1ordinary form))))))
 
 (defun t1/c1expr (form)
   (cond ((not *compile-toplevel*)
@@ -727,8 +726,10 @@
          (lambda-expr (fun-lambda fun))
          (volatile (c1form-volatile* lambda-expr))
          (lambda-list (c1form-arg 0 lambda-expr))
-         (requireds (mapcar #'(lambda (v) (next-lcl (var-name v)))
-                            (car lambda-list)))
+         (requireds (loop
+                       repeat si::c-arguments-limit
+                       for arg in (car lambda-list)
+                       collect (next-lcl (var-name arg))))
          (narg (fun-needs-narg fun)))
     (let ((cmp-env (c1form-env lambda-expr)))
       (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
