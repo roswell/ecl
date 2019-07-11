@@ -199,34 +199,10 @@
           (wt-nl-h "#define VM " (data-permanent-storage-size))
           (wt-nl-h "#define VMtemp "  (data-temporary-storage-size)))))
 
-  (dolist (l *linking-calls*)
-    (let* ((c-name (fourth l))
-           (var-name (fifth l)))
-      (wt-nl-h "static cl_object " c-name "(cl_narg, ...);")
-      (wt-nl-h "static cl_object (*" var-name ")(cl_narg, ...)=" c-name ";")))
-
   ;;; Global entries for directly called functions.
   (dolist (x *global-entries*)
     (apply 'wt-global-entry x))
 
-  ;;; Initial functions for linking calls.
-  (dolist (l *linking-calls*)
-    (let* ((var-name (fifth l))
-           (c-name (fourth l))
-           (lisp-name (third l)))
-      (wt-nl "static cl_object " c-name "(cl_narg narg, ...)"
-              "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
-  #+(or)
-  (wt-nl-h "static cl_object ECL_SETF_DEFINITION(cl_object setf_vv, cl_object setf_form)
-{
- cl_object f1 = ecl_fdefinition(setf_form);
- cl_object f2 = ECL_CONS_CAR(setf_vv);
- if (f1 != f2) {
-  FEundefined_function(setf_form);
- }
- return f2;
-}
-")
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
   (loop for (name setf-vv name-vv) in *setf-definitions*
      do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",ECL_T);"))
