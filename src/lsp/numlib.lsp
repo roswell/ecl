@@ -151,7 +151,7 @@ RADIANS) and (SIN RADIANS) respectively."
          (setf ,arg (float ,arg)))
        (typecase ,arg
          (single-float
-          (if ,restriction
+          (if (or ,restriction #+ieee-floating-point (ext:float-nan-p ,arg))
               (ffi::c-inline (,arg) (:float) :float
                              ,(format nil "~af(#0)" name)
                              :one-liner t)
@@ -162,7 +162,7 @@ RADIANS) and (SIN RADIANS) respectively."
               #-complex-float
               (progn ,@gencomplex)))
          (double-float
-          (if ,restriction
+          (if (or ,restriction #+ieee-floating-point (ext:float-nan-p ,arg))
               (ffi::c-inline (,arg) (:double) :double
                              ,(format nil "~a(#0)" name)
                              :one-liner t)
@@ -173,7 +173,7 @@ RADIANS) and (SIN RADIANS) respectively."
               #-complex-float
               (progn ,@gencomplex)))
          (long-float
-          (if ,restriction
+          (if (or ,restriction #+ieee-floating-point (ext:float-nan-p ,arg))
               (ffi::c-inline (,arg) (:long-double) :long-double
                              ,(format nil "~al(#0)" name)
                              :one-liner t)
