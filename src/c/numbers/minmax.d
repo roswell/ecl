@@ -24,7 +24,11 @@
     }
   } else do {
       cl_object numi = ecl_va_arg(nums);
-      if (ecl_number_compare(max, numi) < 0)
+      if (ecl_lower(max, numi)
+#ifdef ECL_IEEE_FP
+          || ecl_float_nan_p(max)
+#endif
+          )
         max = numi;
     } while (--narg);
   @(return max);
@@ -40,7 +44,11 @@
     }
   } else do {
       cl_object numi = ecl_va_arg(nums);
-      if (ecl_number_compare(min, numi) > 0)
+      if (ecl_greater(min, numi)
+#ifdef ECL_IEEE_FP
+          || ecl_float_nan_p(min)
+#endif
+          )
         min = numi;
     } while (--narg);
   @(return min);
