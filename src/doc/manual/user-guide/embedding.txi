@@ -214,3 +214,53 @@ This macro sets a thread-local flag indicating that all received signals can be 
 @subsubheading See also
 @code{ecl_disable_interrupts} and @code{ecl_clear_interrupts}. 
 @end defmac
+
+@cppindex ECL_WITH_LISP_FPE
+@defmac ECL_WITH_LISP_FPE
+Execute Lisp code with correct floating point environment
+
+@subsubheading Description
+Unless floating point exceptions are disabled (via the
+@code{--without-fpe} configure option or @code{ECL_OPT_TRAP_SIGFPE}
+runtime option), ECL will change the floating point environment when
+booting. This macro allows for execution of Lisp code while saving and
+later restoring the floating point environment of surrounding C code
+so that changes in the floating point environment don't leak outside.
+
+@code{ECL_WITH_LISP_FPE} can be also used before ECL has booted or
+before ECL has been attached to a newly created thread.
+
+@exindex Safely executing Lisp code with floating point exceptions in embedding program
+@subsubheading Example
+@example
+@verbatim
+#include <ecl/ecl.h>
+#include <stdio.h>
+
+int main(int argc, char **argv) {
+  ECL_WITH_LISP_FPE_BEGIN {
+    cl_boot(argc, argv);
+  } ECL_WITH_LISP_FPE_END;
+
+  double a = 1.0 / 0.0;
+  double b;
+
+  ECL_WITH_LISP_FPE_BEGIN {
+    cl_object form = ecl_read_from_cstring("(handler-case"
+                                               "(/ 1d0 0d0)"
+                                             "(division-by-zero () 0d0))");
+    b = ecl_to_double(si_safe_eval(3, form, ECL_NIL, ECL_NIL));
+  } ECL_WITH_LISP_FPE_END;
+
+  printf("%g %g\n", a, b);
+
+  cl_shutdown();
+  return 0;
+}
+@end verbatim
+@end example
+will output
+@verbatim
+inf 0
+@end verbatim
+@end defmac

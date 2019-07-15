@@ -59,33 +59,37 @@ or the value is silently used as it is. There are multiple options
 controlling which behaviour is selected: If ECL is built with the
 @code{--with-ieee-fp=no} configure option, then a condition is
 signaled for every infinity or NaN encountered. If not, the behaviour
-can be controlled by @code{si:trap-fpe}. By default, a condition is
+can be controlled by @code{ext:trap-fpe}. By default, a condition is
 signaled for invalid operation, division by zero and floating point
 overflows. If the @code{ECL_OPT_TRAP_SIGFPE} option is false, no
 conditions are signaled by default (Note that in this case, if you
-enable trapping of floating point exceptions with @code{si:trap-fpe},
+enable trapping of floating point exceptions with @code{ext:trap-fpe},
 then you have to install your own signal handler).
 
-@lspindex si:trap-fpe
-@defun si:trap-fpe condition flag
+@lspindex ext:trap-fpe
+@defun ext:trap-fpe condition flag
 Control the signaling of the floating point exceptions
 
 @subsubheading Synopsis
 @table @var
 @item condition
-a symbol - one of @code{t}, @code{division-by-zero},
+a symbol - one of @code{last}, @code{t}, @code{division-by-zero},
 @code{floating-point-overflow}, @code{floating-point-underflow},
-@code{floating-point-invalid-operation} or
-@code{floating-point-inexact}
+@code{floating-point-invalid-operation},
+@code{floating-point-inexact} or an integer.
 @item flag
 a generalized boolean
 @end table
 
 @subsubheading Description
-If flag is true, arranges for the current thread to signal a
-@var{condition} if the corresponding floating point exception is
-detected in the future. If @var{condition} is @code{t}, the exceptions
-which are signaled by default are disabled or enabled all at once.
+If @var{condition} is @code{last}, @var{flag} is ignored and the
+currently enabled floating point exceptions are returned in an
+implementation depended format (currently an integer). Otherwise,
+@var{flag} determines whether current thread will signal a floating
+point exception for the conditions passed in @var{condition}.
+@var{condition} can be either a symbol denoting a single condition,
+@code{t} for all conditions that are enabled by default or a value
+obtained from an earlier call to @code{ext:trap-fpe} with @code{last}.
 @end defun
 
 @node Numbers - Random-States

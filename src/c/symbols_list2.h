@@ -1797,7 +1797,7 @@ cl_symbols[] = {
 {KEY_ "CDECL",NULL},
 {KEY_ "STDCALL",NULL},
 
-{SYS_ "TRAP-FPE","si_trap_fpe"},
+{EXT_ "TRAP-FPE","si_trap_fpe"},
 
 {EXT_ "*ACTION-ON-UNDEFINED-VARIABLE*",NULL},
 

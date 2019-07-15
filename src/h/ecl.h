@@ -89,6 +89,7 @@
 #include <ecl/stacks.h>
 #include <ecl/number.h>
 #include <ecl/legacy.h>
+#include <ecl/impl/math_fenv.h>
 
 typedef void (*ecl_init_function_t)(cl_object block);
 

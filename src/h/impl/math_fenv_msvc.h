@@ -18,8 +18,12 @@
 #ifndef ECL_MATH_FENV_MSVC_H
 #define ECL_MATH_FENV_MSVC_H
 
-#define HAVE_FEENABLEEXCEPT
-#define HAVE_FENV_H
+#ifndef HAVE_FEENABLEEXCEPT
+# define HAVE_FEENABLEEXCEPT
+#endif
+#ifndef HAVE_FENV_H
+# define HAVE_FENV_H
+#endif
 
 #include <float.h>
 
@@ -45,6 +49,7 @@ typedef int fenv_t;
     int cw = _controlfp(0,0); cw |= (bits); _controlfp(cw,MCW_EM); } while(0)
 #define feholdexcept(bits) do { \
     *(bits) = _controlfp(0,0); _controlfp(0xffffffff, MCW_EM); } while(0)
+#define fegetenv(bits) do { *(bits) = _controlfp(0,0); } while (0)
 #define fesetenv(bits) do { _controlfp(*(bits), MCW_EM); } while (0)
 #define feupdateenv(bits) fesetenv(bits)
 #define feclearexcept(bits) _clearfp()

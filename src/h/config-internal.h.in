@@ -106,16 +106,6 @@
 #endif
 /* isatty() checks whether a file is connected to a			*/
 #undef HAVE_ISATTY
-/* can manipulate floating point environment				*/
-#undef HAVE_FENV_H
-/* can activate individual traps in floating point environment          */
-/* this flag has to be deactivated for the Itanium architecture, where  */
-/* the GNU libc functions are broken                                    */
-#if !defined(__ia64__) && !defined(PPC)
-#undef HAVE_FEENABLEEXCEPT
-#endif
-/* do we want to deactivate all support for floating point exceptions   */
-#undef ECL_AVOID_FPE_H
 /* do we want to have signed zeros                                      */
 #undef ECL_SIGNED_ZERO
 /* has support for large files                                          */
@@ -164,19 +154,6 @@
 #undef HAVE_BACKTRACE
 #undef HAVE_BACKTRACE_SYMBOLS
 #undef HAVE_SCHED_H
-
-/*
- * we do not manage to get proper signal handling of floating point
- * arithmetics in the Alpha chips.
- */
-#if defined(__alpha__)
-# ifdef HAVE_FENV_H
-#  undef HAVE_FENV_H
-# endif
-# ifdef HAVE_FEENABLEEXCEPT
-#  undef HAVE_FEENABLEEXCEPT
-# endif
-#endif
 
 /* what characters are used to mark beginning of new line               */
 #undef ECL_NEWLINE_IS_CRLF
