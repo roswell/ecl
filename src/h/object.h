@@ -636,9 +636,14 @@ enum {
         ECL_STREAM_CLOSE_COMPONENTS = 1024
 };
 
-typedef ecl_character (*cl_eformat_decoder)(cl_object stream);
-typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, int c);
-typedef cl_index (*cl_eformat_read_byte8)(cl_object object, unsigned char *buffer, cl_index n);
+/* buffer points to an array of bytes ending at buffer_end. Decode one
+   character from this array and advance buffer by the number of bytes
+   consumed. If not enough bytes are available, return EOF and don't
+   advance buffer. */
+typedef ecl_character (*cl_eformat_decoder)(cl_object stream, unsigned char **buffer, unsigned char *buffer_end);
+/* Encode the character c and store the result in buffer. Return the
+   number of bytes used */
+typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, ecl_character c);
 
 #define ECL_ANSI_STREAM_P(o) \
         (ECL_IMMEDIATE(o) == 0 && ((o)->d.t == t_stream))

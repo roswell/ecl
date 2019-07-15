@@ -87,7 +87,7 @@ static void unread_twice(cl_object strm);
 static void io_error(cl_object strm) ecl_attr_noreturn;
 #ifdef ECL_UNICODE
 static cl_index encoding_error(cl_object strm, unsigned char *buffer, ecl_character c);
-static ecl_character decoding_error(cl_object strm, unsigned char *buffer, int length);
+static ecl_character decoding_error(cl_object strm, unsigned char **buffer, int char_length, unsigned char *buffer_end);
 #endif
 static void wrong_file_handler(cl_object strm) ecl_attr_noreturn;
 #if defined(ECL_WSOCK)
@@ -187,7 +187,7 @@ not_character_write_char(cl_object strm, ecl_character c)
 }
 
 static ecl_character
-not_character_decoder(cl_object stream) {
+not_character_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end) {
   not_a_character_stream(stream);
   return EOF;
 }
@@ -538,7 +538,7 @@ generic_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end
   if (expected_type == @'base-char' || expected_type == @'character') {
     ecl_character (*read_char)(cl_object) = ops->read_char;
     for (; start < end; start++) {
-      cl_fixnum c = read_char(strm);
+      ecl_character c = read_char(strm);
       if (c == EOF) break;
       ecl_elt_set(data, start, ECL_CODE_CHAR(c));
     }
@@ -586,7 +586,19 @@ eformat_unread_char(cl_object strm, ecl_character c)
 static ecl_character
 eformat_read_char(cl_object strm)
 {
-  ecl_character c = strm->stream.decoder(strm);
+  unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
+  ecl_character c;
+  unsigned char *buffer_pos = buffer;
+  unsigned char *buffer_end = buffer;
+  cl_index byte_size = (strm->stream.byte_size / 8);
+  do {
+    if (ecl_read_byte8(strm, buffer_end, byte_size) < byte_size) {
+      c = EOF;
+      break;
+    }
+    buffer_end += byte_size;
+    c = strm->stream.decoder(strm, &buffer_pos, buffer_end);
+  } while(c == EOF && (buffer_end - buffer) < ENCODING_BUFFER_MAX_SIZE);
   unlikely_if (c == strm->stream.eof_char)
     return EOF;
   if (c != EOF) {
@@ -681,13 +693,11 @@ eformat_write_char_crlf(cl_object strm, ecl_character c)
  */
 
 static ecl_character
-passthrough_decoder(cl_object stream)
+passthrough_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char aux;
-  if (ecl_read_byte8(stream, &aux, 1) < 1)
+  if (*buffer >= buffer_end)
     return EOF;
-  else
-    return aux;
+  return *((*buffer)++);
 }
 
 static int
@@ -708,15 +718,14 @@ passthrough_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ascii_decoder(cl_object stream)
+ascii_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char aux;
-  if (ecl_read_byte8(stream, &aux, 1) < 1) {
+  if (*buffer >= buffer_end)
     return EOF;
-  } else if (aux > 127) {
-    return decoding_error(stream, &aux, 1);
+  if (**buffer > 127) {
+    return decoding_error(stream, buffer, 1, buffer_end);
   } else {
-    return aux;
+    return *((*buffer)++);
   }
 }
 
@@ -735,14 +744,14 @@ ascii_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4be_decoder(cl_object stream)
+ucs_4be_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char buffer[4];
-  if (ecl_read_byte8(stream, buffer, 4) < 4) {
+  ecl_character aux;
+  if ((*buffer)+3 >= buffer_end)
     return EOF;
-  } else {
-    return buffer[3]+(buffer[2]<<8)+(buffer[1]<<16)+(buffer[0]<<24);
-  }
+  aux = (*buffer)[3]+((*buffer)[2]<<8)+((*buffer)[1]<<16)+((*buffer)[0]<<24);
+  *buffer += 4;
+  return aux;
 }
 
 static int
@@ -760,14 +769,14 @@ ucs_4be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4le_decoder(cl_object stream)
+ucs_4le_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char buffer[4];
-  if (ecl_read_byte8(stream, buffer, 4) < 4) {
+  ecl_character aux;
+  if ((*buffer)+3 >= buffer_end)
     return EOF;
-  } else {
-    return buffer[0]+(buffer[1]<<8)+(buffer[2]<<16)+(buffer[3]<<24);
-  }
+  aux = (*buffer)[0]+((*buffer)[1]<<8)+((*buffer)[2]<<16)+((*buffer)[3]<<24);
+  *buffer += 4;
+  return aux;
 }
 
 static int
@@ -785,17 +794,19 @@ ucs_4le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4_decoder(cl_object stream)
+ucs_4_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  cl_fixnum c = ucs_4be_decoder(stream);
+  cl_fixnum c = ucs_4be_decoder(stream, buffer, buffer_end);
+  if (c == EOF)
+    return c;
   if (c == 0xFEFF) {
     stream->stream.decoder = ucs_4be_decoder;
     stream->stream.encoder = ucs_4be_encoder;
-    return ucs_4be_decoder(stream);
+    return ucs_4be_decoder(stream, buffer, buffer_end);
   } else if (c == 0xFFFE0000) {
     stream->stream.decoder = ucs_4le_decoder;
     stream->stream.encoder = ucs_4le_encoder;
-    return ucs_4le_decoder(stream);
+    return ucs_4le_decoder(stream, buffer, buffer_end);
   } else {
     stream->stream.decoder = ucs_4be_decoder;
     stream->stream.encoder = ucs_4be_encoder;
@@ -820,25 +831,26 @@ ucs_4_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2be_decoder(cl_object stream)
+ucs_2be_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char buffer[2] = {0,0};
-  if (ecl_read_byte8(stream, buffer, 2) < 2) {
+  if ((*buffer)+1 >= buffer_end) {
     return EOF;
   } else {
-    ecl_character c = ((ecl_character)buffer[0] << 8) | buffer[1];
-    if ((buffer[0] & 0xFC) == 0xD8) {
-      if (ecl_read_byte8(stream, buffer, 2) < 2) {
+    ecl_character c = ((ecl_character)(*buffer)[0] << 8) | (*buffer)[1];
+    if (((*buffer)[0] & 0xFC) == 0xD8) {
+      if ((*buffer)+3 >= buffer_end) {
         return EOF;
       } else {
         ecl_character aux;
-        if ((buffer[1] & 0xFC) != 0xDC) {
-          return decoding_error(stream, buffer, 1);
+        if (((*buffer)[3] & 0xFC) != 0xDC) {
+          return decoding_error(stream, buffer, 4, buffer_end);
         }
-        aux = ((ecl_character)buffer[0] << 8) | buffer[1];
+        aux = ((ecl_character)(*buffer)[2] << 8) | (*buffer)[3];
+        *buffer += 4;
         return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
       }
     }
+    *buffer += 2;
     return c;
   }
 }
@@ -863,25 +875,26 @@ ucs_2be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2le_decoder(cl_object stream)
+ucs_2le_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char buffer[2];
-  if (ecl_read_byte8(stream, buffer, 2) < 2) {
+  if ((*buffer)+1 >= buffer_end) {
     return EOF;
   } else {
-    ecl_character c = ((ecl_character)buffer[1] << 8) | buffer[0];
-    if ((buffer[1] & 0xFC) == 0xD8) {
-      if (ecl_read_byte8(stream, buffer, 2) < 2) {
+    ecl_character c = ((ecl_character)(*buffer)[1] << 8) | (*buffer)[0];
+    if (((*buffer)[1] & 0xFC) == 0xD8) {
+      if ((*buffer)+3 >= buffer_end) {
         return EOF;
       } else {
         ecl_character aux;
-        if ((buffer[1] & 0xFC) != 0xDC) {
-          return decoding_error(stream, buffer, 2);
+        if (((*buffer)[3] & 0xFC) != 0xDC) {
+          return decoding_error(stream, buffer, 4, buffer_end);
         }
-        aux = ((ecl_character)buffer[1] << 8) | buffer[0];
+        aux = ((ecl_character)(*buffer)[3] << 8) | (*buffer)[2];
+        *buffer += 4;
         return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
       }
     }
+    *buffer += 2;
     return c;
   }
 }
@@ -906,17 +919,19 @@ ucs_2le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2_decoder(cl_object stream)
+ucs_2_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  ecl_character c = ucs_2be_decoder(stream);
+  ecl_character c = ucs_2be_decoder(stream, buffer, buffer_end);
+  if (c == EOF)
+    return c;
   if (c == 0xFEFF) {
     stream->stream.decoder = ucs_2be_decoder;
     stream->stream.encoder = ucs_2be_encoder;
-    return ucs_2be_decoder(stream);
+    return ucs_2be_decoder(stream, buffer, buffer_end);
   } else if (c == 0xFFFE) {
     stream->stream.decoder = ucs_2le_decoder;
     stream->stream.encoder = ucs_2le_encoder;
-    return ucs_2le_decoder(stream);
+    return ucs_2le_decoder(stream, buffer, buffer_end);
   } else {
     stream->stream.decoder = ucs_2be_decoder;
     stream->stream.encoder = ucs_2be_encoder;
@@ -939,29 +954,30 @@ ucs_2_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-user_decoder(cl_object stream)
+user_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
   cl_object table = stream->stream.format_table;
   cl_object character;
-  unsigned char buffer[2];
-  if (ecl_read_byte8(stream, buffer, 1) < 1) {
+  if (*buffer >= buffer_end) {
     return EOF;
   }
-  character = ecl_gethash_safe(ecl_make_fixnum(buffer[0]), table, ECL_NIL);
+  character = ecl_gethash_safe(ecl_make_fixnum((*buffer)[0]), table, ECL_NIL);
   unlikely_if (Null(character)) {
-    return decoding_error(stream, buffer, 1);
+    return decoding_error(stream, buffer, 1, buffer_end);
   }
   if (character == ECL_T) {
-    if (ecl_read_byte8(stream, buffer+1, 1) < 1) {
+    if ((*buffer)+1 >= buffer_end) {
       return EOF;
     } else {
-      cl_fixnum byte = (buffer[0]<<8) + buffer[1];
+      cl_fixnum byte = ((*buffer)[0]<<8) + (*buffer)[1];
       character = ecl_gethash_safe(ecl_make_fixnum(byte), table, ECL_NIL);
       unlikely_if (Null(character)) {
-        return decoding_error(stream, buffer, 2);
+        return decoding_error(stream, buffer, 2, buffer_end);
       }
     }
+    (*buffer)++;
   }
+  (*buffer)++;
   return ECL_CHAR_CODE(character);
 }
 
@@ -989,33 +1005,35 @@ user_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-user_multistate_decoder(cl_object stream)
+user_multistate_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
   cl_object table_list = stream->stream.format_table;
   cl_object table = ECL_CONS_CAR(table_list);
   cl_object character;
   cl_fixnum i, j;
-  unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
-  for (i = j = 0; i < ENCODING_BUFFER_MAX_SIZE; i++) {
-    if (ecl_read_byte8(stream, buffer+i, 1) < 1) {
+  for (i = j = 0; i < ENCODING_BUFFER_MAX_SIZE; ) {
+    if ((*buffer)+i >= buffer_end) {
       return EOF;
     }
-    j = (j << 8) | buffer[i];
+    j = (j << 8) | (*buffer)[i];
     character = ecl_gethash_safe(ecl_make_fixnum(j), table, ECL_NIL);
     if (ECL_CHARACTERP(character)) {
+      *buffer += i+1;
       return ECL_CHAR_CODE(character);
     }
     unlikely_if (Null(character)) {
-      return decoding_error(stream, buffer, i);
+      return decoding_error(stream, buffer, i+1, buffer_end);
     }
     if (character == ECL_T) {
       /* Need more characters */
+      i++;
       continue;
     }
     if (CONSP(character)) {
       /* Changed the state. */
       stream->stream.format_table = table_list = character;
       table = ECL_CONS_CAR(table_list);
+      *buffer += i+1;
       i = j = 0;
       continue;
     }
@@ -1066,52 +1084,58 @@ user_multistate_encoder(cl_object stream, unsigned char *buffer, ecl_character c
  */
 
 static ecl_character
-utf_8_decoder(cl_object stream)
+utf_8_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
   /* In understanding this code:
    * 0x8 = 1000, 0xC = 1100, 0xE = 1110, 0xF = 1111
    * 0x1 = 0001, 0x3 = 0011, 0x7 = 0111, 0xF = 1111
    */
   ecl_character cum = 0;
-  unsigned char buffer[5];
   int nbytes, i;
-  if (ecl_read_byte8(stream, buffer, 1) < 1)
+  unsigned char aux;
+  if (*buffer >= buffer_end)
     return EOF;
-  if ((buffer[0] & 0x80) == 0) {
-    return buffer[0];
+  aux = (*buffer)[0];
+  if ((aux & 0x80) == 0) {
+    (*buffer)++;
+    return aux;
   }
-  unlikely_if ((buffer[0] & 0x40) == 0)
-    return decoding_error(stream, buffer, 1);
-  if ((buffer[0] & 0x20) == 0) {
-    cum = buffer[0] & 0x1F;
+  unlikely_if ((aux & 0x40) == 0) {
+    return decoding_error(stream, buffer, 1, buffer_end);
+  }
+  if ((aux & 0x20) == 0) {
+    cum = aux & 0x1F;
     nbytes = 1;
-  } else if ((buffer[0] & 0x10) == 0) {
-    cum = buffer[0] & 0x0F;
+  } else if ((aux & 0x10) == 0) {
+    cum = aux & 0x0F;
     nbytes = 2;
-  } else if ((buffer[0] & 0x08) == 0) {
-    cum = buffer[0] & 0x07;
+  } else if ((aux & 0x08) == 0) {
+    cum = aux & 0x07;
     nbytes = 3;
   } else {
-    return decoding_error(stream, buffer, 1);
+    return decoding_error(stream, buffer, 1, buffer_end);
   }
-  if (ecl_read_byte8(stream, buffer+1, nbytes) < nbytes)
+  if ((*buffer)+nbytes >= buffer_end)
     return EOF;
   for (i = 1; i <= nbytes; i++) {
-    unsigned char c = buffer[i];
-    /*printf(": %04x :", c);*/
-    unlikely_if ((c & 0xC0) != 0x80)
-      return decoding_error(stream, buffer, nbytes+1);
+    unsigned char c = (*buffer)[i];
+    unlikely_if ((c & 0xC0) != 0x80) {
+      return decoding_error(stream, buffer, nbytes+1, buffer_end);
+    }
     cum = (cum << 6) | (c & 0x3F);
-    unlikely_if (cum == 0)
-      return decoding_error(stream, buffer, nbytes+1);
+    unlikely_if (cum == 0) {
+      return decoding_error(stream, buffer, nbytes+1, buffer_end);
+    }
   }
   if (cum >= 0xd800) {
-    unlikely_if (cum <= 0xdfff)
-      return decoding_error(stream, buffer, nbytes+1);
-    unlikely_if (cum >= 0xFFFE && cum <= 0xFFFF)
-      return decoding_error(stream, buffer, nbytes+1);
+    unlikely_if (cum <= 0xdfff) {
+      return decoding_error(stream, buffer, nbytes+1, buffer_end);
+    }
+    unlikely_if (cum >= 0xFFFE && cum <= 0xFFFF) {
+      return decoding_error(stream, buffer, nbytes+1, buffer_end);
+    }
   }
-  /*printf("; %04x ;", cum);*/
+  *buffer += nbytes+1;
   return cum;
 }
 
@@ -2880,6 +2904,83 @@ io_file_close(cl_object strm)
   return generic_close(strm);
 }
 
+static ecl_character io_file_decode_char_from_buffer(cl_object strm, unsigned char *buffer, unsigned char **buffer_pos, unsigned char **buffer_end, bool seekable, cl_index min_needed_bytes) {
+  bool crlf = 0;
+  unsigned char *previous_buffer_pos;
+  ecl_character c;
+ AGAIN:
+  previous_buffer_pos = *buffer_pos;
+  c = strm->stream.decoder(strm, buffer_pos, *buffer_end);
+  if (c != EOF) {
+    /* Ugly handling of line breaks */
+    if (crlf) {
+      if (c == ECL_CHAR_CODE_LINEFEED) {
+        strm->stream.last_code[1] = c;
+        c = ECL_CHAR_CODE_NEWLINE;
+      }
+      else {
+        *buffer_pos = previous_buffer_pos;
+        c = ECL_CHAR_CODE_RETURN;
+      }
+    } else if (strm->stream.flags & ECL_STREAM_CR && c == ECL_CHAR_CODE_RETURN) {
+      if (strm->stream.flags & ECL_STREAM_LF) {
+        strm->stream.last_code[0] = c;
+        crlf = 1;
+        goto AGAIN;
+      }
+      else
+        c = ECL_CHAR_CODE_NEWLINE;
+    }
+    if (!crlf) {
+      strm->stream.last_code[0] = c;
+      strm->stream.last_code[1] = EOF;
+    }
+    strm->stream.last_char = c;
+    return c;
+  } else {
+    /* We need more bytes. First copy unconsumed bytes at the
+     * beginning of buffer. */
+    cl_index unconsumed_bytes = *buffer_end - *buffer_pos;
+    memcpy(buffer, *buffer_pos, unconsumed_bytes);
+    cl_index needed_bytes = VECTOR_ENCODING_BUFFER_SIZE;
+    if (!seekable && min_needed_bytes < VECTOR_ENCODING_BUFFER_SIZE)
+      needed_bytes = min_needed_bytes;
+    *buffer_end = buffer + unconsumed_bytes
+      + ecl_read_byte8(strm, buffer + unconsumed_bytes, needed_bytes);
+    if (*buffer_end == buffer + unconsumed_bytes)
+      return EOF;
+    *buffer_pos = buffer;
+    goto AGAIN;
+  }
+}
+
+/* The following macros create a temporary buffer for efficient
+ * reading of characters from file streams */
+#define ECL_FILE_READ_BUFFER_CREATE(strm) \
+  cl_object __stream = (strm); \
+  unsigned char __buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE]; \
+  unsigned char *__buffer_pos = __buffer; \
+  unsigned char *__buffer_end = __buffer; \
+  /* When we can't call lseek/fseek we have to be conservative and \
+   * read only as many bytes as we actually need. Otherwise, we read \
+   * more and later reposition the file offset. */ \
+  bool __seekable = ecl_file_position(__stream) != ECL_NIL; \
+  ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+
+#define ECL_FILE_READ_BUFFER_GET_CHAR(min_needed_bytes) \
+  io_file_decode_char_from_buffer(__stream, __buffer, &__buffer_pos, &__buffer_end, __seekable, min_needed_bytes)
+
+#define ECL_FILE_READ_BUFFER_DESTROY \
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT { \
+    if (__seekable) \
+      /* INV: (buffer_end - buffer_pos) is divisible by \
+       * (strm->stream.byte_size / 8) since VECTOR_ENCODING_BUFFER_SIZE \
+       * is divisible by all byte sizes for character streams and all \
+       * decoders consume bytes in multiples of the byte size. */ \
+      ecl_file_position_set(__stream, ecl_minus(ecl_file_position(__stream), \
+        ecl_make_fixnum((__buffer_end - __buffer_pos) / (__stream->stream.byte_size / 8)))); \
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END
+
 static cl_index
 io_file_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end)
 {
@@ -2898,6 +2999,18 @@ io_file_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end
       bytes = strm->stream.ops->read_byte8(strm, aux, bytes);
       return start + bytes / sizeof(cl_fixnum);
     }
+  } else if (ecl_stream_element_type(strm) == @'base-char'
+             || ecl_stream_element_type(strm) == @'character') {
+    ECL_FILE_READ_BUFFER_CREATE(strm) {
+      while (start < end) {
+        ecl_character c = ECL_FILE_READ_BUFFER_GET_CHAR((end-start) * (strm->stream.byte_size / 8));
+        if (c != EOF)
+          ecl_elt_set(data, start++, ECL_CODE_CHAR(c));
+        else
+          break;
+      }
+    } ECL_FILE_READ_BUFFER_DESTROY;
+    return start;
   }
   return generic_read_vector(strm, data, start, end);
 }
@@ -2921,11 +3034,20 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
       return start + bytes / sizeof(cl_fixnum);
     }
   } else if (t == ecl_aet_bc) {
-    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE];
+    /* 1 extra byte for linefeed in crlf mode */
+    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE + 1];
     cl_index nbytes = 0;
     cl_index i;
     for (i = start; i < end; i++) {
       ecl_character c = *(data->vector.self.bc + i);
+      if (c == ECL_CHAR_CODE_NEWLINE) {
+        if (strm->stream.flags & ECL_STREAM_CR &&
+            strm->stream.flags & ECL_STREAM_LF)
+          nbytes += strm->stream.encoder(strm, buffer + nbytes, ECL_CHAR_CODE_RETURN);
+        else if (strm->stream.flags & ECL_STREAM_CR)
+          c = ECL_CHAR_CODE_RETURN;
+        strm->stream.column = 0;
+      }
       nbytes += strm->stream.encoder(strm, buffer + nbytes, c);
       write_char_increment_column(strm, c);
       if (nbytes >= VECTOR_ENCODING_BUFFER_SIZE) {
@@ -2938,11 +3060,20 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
   }
 #ifdef ECL_UNICODE
   else if (t == ecl_aet_ch) {
-    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE];
+    /* 1 extra byte for linefeed in crlf mode */
+    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE + 1];
     cl_index nbytes = 0;
     cl_index i;
     for (i = start; i < end; i++) {
       ecl_character c = *(data->vector.self.c + i);
+      if (c == ECL_CHAR_CODE_NEWLINE) {
+        if (strm->stream.flags & ECL_STREAM_CR &&
+            strm->stream.flags & ECL_STREAM_LF)
+          nbytes += strm->stream.encoder(strm, buffer + nbytes, ECL_CHAR_CODE_RETURN);
+        else if (strm->stream.flags & ECL_STREAM_CR)
+          c = ECL_CHAR_CODE_RETURN;
+        strm->stream.column = 0;
+      }
       nbytes += strm->stream.encoder(strm, buffer + nbytes, c);
       write_char_increment_column(strm, c);
       if (nbytes >= VECTOR_ENCODING_BUFFER_SIZE) {
@@ -3528,8 +3659,12 @@ io_stream_get_position(cl_object strm)
   ecl_disable_interrupts();
   offset = ecl_ftello(f);
   ecl_enable_interrupts();
-  if (offset < 0)
-    io_error(strm);
+  unlikely_if (offset < 0) {
+    if (errno == ESPIPE)
+      return(ECL_NIL);
+    else
+      io_error(strm);
+  }
   if (sizeof(ecl_off_t) == sizeof(long)) {
     output = ecl_make_integer(offset);
   } else {
@@ -5633,18 +5768,18 @@ encoding_error(cl_object stream, unsigned char *buffer, ecl_character c)
 }
 
 static ecl_character
-decoding_error(cl_object stream, unsigned char *buffer, int length)
+decoding_error(cl_object stream, unsigned char **buffer, int char_length, unsigned char *buffer_end)
 {
   cl_object octets = ECL_NIL, code;
-  while (length > 0) {
-    octets = CONS(ecl_make_fixnum(buffer[--length]), octets);
+  for (; char_length > 0; char_length--) {
+    octets = CONS(ecl_make_fixnum(*((*buffer)++)), octets);
   }
   code = _ecl_funcall4(@'ext::decoding-error', stream,
                        cl_stream_external_format(stream),
                        octets);
   if (Null(code)) {
     /* Go for next character */
-    return stream->stream.decoder(stream);
+    return stream->stream.decoder(stream, buffer, buffer_end);
   } else {
     /* Return supplied character */
     return ecl_char_code(code);
