@@ -1935,7 +1935,7 @@ extern ECL_API cl_object si_waitpid(cl_object pid, cl_object wait);
 extern ECL_API cl_object si_killpid(cl_object pid, cl_object signal);
 
 extern ECL_API cl_object si_run_program_inner
-(cl_object command, cl_object argv, cl_object environment);
+(cl_object command, cl_object argv, cl_object environment, cl_object wait);
 
 extern ECL_API cl_object si_spawn_subprocess
 (cl_object command, cl_object argv, cl_object environment,

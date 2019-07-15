@@ -2028,7 +2028,7 @@ cl_symbols[] = {
 #else
 {SYS_ "KILLPID", SI_ORDINARY, NULL, 2, OBJNULL},
 #endif
-{SYS_ "RUN-PROGRAM-INNER", SI_ORDINARY, si_run_program_inner, 3, OBJNULL},
+{SYS_ "RUN-PROGRAM-INNER", SI_ORDINARY, si_run_program_inner, 4, OBJNULL},
 {SYS_ "SPAWN-SUBPROCESS", SI_ORDINARY, si_spawn_subprocess, 6, OBJNULL},
 #if defined(ECL_MS_WINDOWS_HOST)
 {SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, si_close_windows_handle, 1, OBJNULL},

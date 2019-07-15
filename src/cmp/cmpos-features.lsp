@@ -17,7 +17,7 @@
 
 (defun run-and-collect (command args &optional file)
   (handler-case
-      (let ((lines (collect-lines (si:run-program-inner command args :default))))
+      (let ((lines (collect-lines (si:run-program-inner command args :default t))))
         (cond ((null file)
                lines)
               ((probe-file file)

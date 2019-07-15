@@ -50,10 +50,11 @@
          (args `(,@(cdr program) ,@args))
          (program (car program)))
     (with-current-directory
-      #-windows (multiple-value-bind (output-stream return-code)
-                    (si:run-program-inner program args :default)
-                  (setf output (collect-lines output-stream)
-                        result return-code))
+      #-windows (multiple-value-bind (output-stream return-status pid)
+                    (si:run-program-inner program args :default nil)
+                  (setf output (collect-lines output-stream))
+                  (multiple-value-setq (return-status result)
+                    (si:waitpid pid t)))
       #+windows (setf result (si:system (format nil "~A~{ ~A~}" program args)))))
   (cond ((null result)
          (cerror "Continues anyway."

@@ -350,8 +350,10 @@ create_descriptor(cl_object stream, cl_object direction,
 }
 #endif
 
+
 cl_object
-si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
+si_run_program_inner(cl_object command, cl_object argv, cl_object environ, cl_object wait)
+{
   cl_env_ptr the_env = ecl_process_env();
   int parent_write = 0, parent_read = 0, parent_error = 0;
   cl_object pid, stream_read, exit_status;
@@ -378,14 +380,18 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ) {
                                         ECL_STREAM_DEFAULT_FORMAT,
                                         @':default');
 
-  si_waitpid(pid, ECL_T);
-  exit_status = ecl_nth_value(the_env, 1);
+  if (wait != ECL_NIL) {
+    si_waitpid(pid, ECL_T);
+    exit_status = ecl_nth_value(the_env, 1);
+  } else {
+    exit_status = ECL_NIL;
+  }
 
   /* close unused descriptors */
   close(parent_write);
   close(parent_error);
 
-  @(return stream_read exit_status)
+  @(return stream_read exit_status pid)
 }
 
 cl_object
