@@ -604,7 +604,7 @@ extern ECL_API cl_object cl_funcall _ECL_ARGS((cl_narg narg, cl_object fun, ...)
 extern ECL_API cl_object cl_apply _ECL_ARGS((cl_narg narg, cl_object fun, cl_object arg, ...));
 extern ECL_API cl_object si_safe_eval _ECL_ARGS((cl_narg narg, cl_object form, cl_object env, ...));
 #define cl_safe_eval(form,env,value) si_safe_eval(3,form,env,value)
-extern ECL_API cl_object *_ecl_va_sp(cl_narg narg);
+extern ECL_API cl_object *_ecl_va_sp(ecl_va_list a);
 extern ECL_API cl_object si_unlink_symbol(cl_object s);
 extern ECL_API cl_object cl_eval(cl_object form);
 extern ECL_API cl_object cl_constantp _ECL_ARGS((cl_narg narg, cl_object arg, ...));

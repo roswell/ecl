@@ -7,6 +7,7 @@
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ * Copyright (c) 2019 Daniel Kochmański
  *
  * See file 'LICENSE' for the copyright details.
  *
@@ -16,10 +17,20 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 
+/* When the function is called with more arguments than the limit it
+   is callers responsibility to pass one more argument with a stack
+   pointer as the last one. We can't assume that stack pointer will be
+   the same as stack_top. Most notably mvp1 pushes onto the stack. See
+   #513 for details. -- jd 2019-07-19 */
 cl_object *
-_ecl_va_sp(cl_narg narg)
+_ecl_va_sp(ecl_va_list a)
 {
-  return ecl_process_env()->stack_top - narg;
+  /* KLUDGE: a[0].narg is temporarily number of required arguments. */
+  /* INV: ecl_va_start */
+  int i, last_c_arg = ECL_C_ARGUMENTS_LIMIT - a[0].narg;
+  for(i=1; i<=last_c_arg; i++)
+    va_arg(a[0].args,cl_object);
+  return va_arg(a[0].args,cl_object*) + a[0].narg;
 }
 
 /* Calling conventions:

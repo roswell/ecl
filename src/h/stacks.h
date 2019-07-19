@@ -318,11 +318,14 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr);
  *******************
  * Here we define how we handle the incoming arguments for a
  * function. Our calling conventions specify that at most
- * ECL_C_ARGUMENTS_LIMIT ar pushed onto the C stack. If the function
+ * ECL_C_ARGUMENTS_LIMIT are pushed onto the C stack. If the function
  * receives more than this number of arguments it will keep a copy of
  * _all_ those arguments _plus_ the remaining ones in the lisp
  * stack. The caller is responsible for storing and removing such
- * values.
+ * values. Up to ECL_C_ARGUMENTS_LIMIT arguments are passed on C stack
+ * as well regardless of storing them on the lisp stack. After that
+ * one additional argument is passed on C stack to ensure that we may
+ * apply arguments from frame, a cl_object* pointer.
  *
  * Given this structure, we need our own object for handling variable
  * argument list, ecl_va_list. This object joins the C data type for
@@ -337,10 +340,20 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr);
  * stored somewhere.
  */
 
-#define ecl_va_start(a,p,n,k) { \
-        a[0].narg = (n)-(k); \
-        va_start(a[0].args,p); \
-        a[0].sp = ((n) <= ECL_C_ARGUMENTS_LIMIT)? 0 : _ecl_va_sp(a[0].narg); }
+/* This operator (unlike the two which follow) must be a macro because
+   of va_start call. */
+#define ecl_va_start(a,p,n,k) {                                         \
+  va_start(a[0].args,p);                                                \
+  if ((n) > ECL_C_ARGUMENTS_LIMIT) {                                    \
+          /* KLUDGE: for _ecl_va_sp convenience temporarily narg=k */   \
+          a[0].narg = (k);                                              \
+          a[0].sp = _ecl_va_sp(a);                                      \
+  } else {                                                              \
+          a[0].sp = NULL;                                               \
+  }                                                                     \
+  a[0].narg = (n)-(k);                                                  \
+}
+
 #define ecl_va_arg(a) \
         (a[0].narg--,(a[0].sp? *(a[0].sp++) : va_arg(a[0].args,cl_object)))
 #define ecl_va_copy(dest,orig) { \
