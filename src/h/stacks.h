@@ -340,7 +340,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr);
 #define ecl_va_start(a,p,n,k) { \
         a[0].narg = (n)-(k); \
         va_start(a[0].args,p); \
-        a[0].sp = ((n) <= ECL_C_ARGUMENTS_LIMIT)? 0 : _ecl_va_sp(a[0].narg); }
+        a[0].sp = ((n) <= ECL_C_ARGUMENTS_LIMIT)? 0 : _ecl_va_sp(k); }
 #define ecl_va_arg(a) \
         (a[0].narg--,(a[0].sp? *(a[0].sp++) : va_arg(a[0].args,cl_object)))
 #define ecl_va_copy(dest,orig) { \
