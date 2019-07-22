@@ -1472,7 +1472,7 @@ Optional Features:
                           save externalizable objects in compiled files
                           (EXPERIMENTAL). (no|yes, default=NO)
   --enable-debug          enable various debugging features (default=NO)
-  --with-manual={auto|html|info|no}
+  --enable-manual={auto|html|info|no}
                           Enable building of the manual (default=AUTO)
 
 Optional Packages:

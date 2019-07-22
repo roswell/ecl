@@ -288,7 +288,7 @@ AC_ARG_WITH(init-form,
   [with_init_form="${withval}"], [with_init_form=""])
 
 AC_ARG_ENABLE(manual,
-  AS_HELP_STRING( [--with-manual={auto|html|info|no}],
+  AS_HELP_STRING( [--enable-manual={auto|html|info|no}],
                   [Enable building of the manual]
                   [(default=AUTO)]),
   [enable_manual=${enableval}],
