@@ -176,7 +176,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         } while (0)
 
 #define ECL_STACK_FRAME_VARARGS_BEGIN(narg,lastarg,frame)               \
-        struct ecl_frame __ecl_frame;                                   \
+        struct ecl_stack_frame __ecl_frame;                             \
         const cl_object frame = (cl_object)&__ecl_frame;                \
         const cl_env_ptr env = ecl_process_env();                       \
         frame->frame.t = t_frame;                                       \
