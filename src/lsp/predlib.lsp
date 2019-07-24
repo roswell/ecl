@@ -1384,7 +1384,7 @@ if not possible."
     (cond ((eq name T)
            -1)
           ((eq (setf record (gethash name +built-in-types+ name))
-                    name)
+               name)
            nil)
           (t
            (let* ((alias (pop record))
@@ -1523,10 +1523,13 @@ if not possible."
     (return-from fast-subtypep (values t t)))
   (let* ((tag1 (safe-canonical-type t1))
          (tag2 (safe-canonical-type t2)))
+    (when (and (numberp tag1) (numberp tag2))
+      ;; We must call safe-canonical-type again because one of
+      ;; the calls above could have called UPDATE-TYPES.
+      (setf tag1 (safe-canonical-type t1)
+            tag2 (safe-canonical-type t2)))
     (cond ((and (numberp tag1) (numberp tag2))
-           (values (zerop (logandc2 (safe-canonical-type t1)
-                                    (safe-canonical-type t2)))
-                   t))
+           (values (zerop (logandc2 tag1 tag2)) t))
           #+nil
           ((null tag1)
            (error "Unknown type specifier ~S." t1))
@@ -1571,13 +1574,13 @@ if not possible."
     ;; FAST-TYPE= can't rely on the CANONICAL-TYPE in case of complex
     ;; numbers which have an exceptional behavior define for TYPEP not
     ;; being consistent with SUBTYPEP. -- jd 2019-04-19
-    (cond ((and (numberp tag1)
-                (numberp tag2)
-                (/= tag2 tag3))
-           ;; We must call safe-canonical-type again because one of
-           ;; the calls above could have called UPDATE-TYPES.
-           (values (= (safe-canonical-type t1) (safe-canonical-type t2))
-                   t))
+    (when (and (numberp tag1) (numberp tag2) (/= tag2 tag3))
+      ;; We must call safe-canonical-type again because one of
+      ;; the calls above could have called UPDATE-TYPES.
+      (setf tag1 (safe-canonical-type t1)
+            tag2 (safe-canonical-type t2)))
+    (cond ((and (numberp tag1) (numberp tag2) (/= tag2 tag3))
+           (values (= tag1 tag2) t))
           #+nil
           ((null tag1)
            (error "Unknown type specifier ~S." t1))
