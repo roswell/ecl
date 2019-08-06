@@ -114,8 +114,8 @@
       (setf output integer-result))
     (values output (if t1-eq t1 default) (if t2-eq t2 default))))
 
-(defun ensure-number-type (general-type)
-  (maximum-number-type general-type general-type))
+(defun ensure-number-type (general-type &key integer-result)
+  (maximum-number-type general-type general-type :integer-result integer-result))
 
 (defun ensure-nonrational-type (general-type)
   (maximum-number-type general-type 'single-float))
@@ -130,7 +130,7 @@
   ;; point contagion, with the exception that an operation between two
   ;; integers has type INTEGER-RESULT (integer for *,-,+ and rational else)
   (multiple-value-bind (result-type op1-type)
-      (ensure-number-type op1-type)
+      (ensure-number-type op1-type :integer-result integer-result)
     (loop with arg-types = (list op1-type)
        for x in others
        for op2-type = x
