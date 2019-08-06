@@ -870,13 +870,15 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
     the_env->ffi_types[++n] = ecl_type_to_libffi_type(arg_type);
     if (CONSP(args)) {
       cl_object object = ECL_CONS_CAR(args);
-      args = ECL_CONS_CDR(args);
       if (type == ECL_FFI_CSTRING) {
-        object = ecl_null_terminated_base_string(CAR(args));
+        object = ecl_null_terminated_base_string(object);
+        /* Push the newly allocated object onto the stack so that it
+         * is reachable by the garbage collector */
         if (ECL_CONS_CAR(args) != object) {
           ECL_STACK_PUSH(the_env, object);
         }
       }
+      args = ECL_CONS_CDR(args);
       ecl_foreign_data_set_elt(the_env->ffi_values + n, type, object);
     }
   }
