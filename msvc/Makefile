@@ -116,13 +116,13 @@ CFLAGS_SSE=/arch:SSE2
 !if "$(ECL_DEBUG)" != ""
 CFLAGS_OPTIMIZE = /Od
 CFLAGS_CONFIG = /Zi /D_DEBUG /MDd $(CFLAGS_OPTIMIZE) $(CFLAGS_SSE)
-LDFLAGS_CONFIG = /debug /nodefaultlib:msvcrt.lib
+LDFLAGS_CONFIG = /debug
 SHARED_LDFLAGS = /LDd
 GCFLAGS =
 !else
 CFLAGS_OPTIMIZE = /O2
 CFLAGS_CONFIG = /DNDEBUG /MD $(CFLAGS_OPTIMIZE) $(CFLAGS_SSE)
-LDFLAGS_CONFIG = /nodefaultlib:msvcrtd.lib
+LDFLAGS_CONFIG = 
 SHARED_LDFLAGS = /LD
 GCFLAGS = nodebug=1
 !endif
@@ -132,7 +132,7 @@ CLIBS = $(CLIBS) DbgHelp.lib
 !endif
 
 CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
-LDFLAGS	= /link /incremental:no /nologo /nodefaultlib:libcmt /nodefaultlib:libcmtd /nodefaultlib:libc /nodefaultlib:libcd $(LDFLAGS_CONFIG)
+LDFLAGS	= /link /incremental:no /nologo $(LDFLAGS_CONFIG)
 
 
 # Additional configuration for thread support
