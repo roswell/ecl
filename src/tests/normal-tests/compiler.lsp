@@ -1540,3 +1540,45 @@
     (finishes (setq f2  (compile nil '(lambda () (truncate 2 1)))))
     (is (equal '(0 . 0) (funcall f1)))
     (is (equal '(2 0) (multiple-value-list (funcall f2))))))
+
+;;; Date 2019-07-02
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/513
+;;; Description
+;;;
+;;;     When number of args in unoptimized long call is exactly
+;;;     ECL_C_ARGUMENTS limit we have a segfault, when it is greater
+;;;     parse_key signals a condition.
+(test cmp.0073.c-arguments-limit.miscompilation
+  (with-compiler ("aux-cmp-0073.lsp" :load t)
+    `(progn
+       (defclass modual-bleh ()
+         ((xxx :initarg :foo :initform nil)))
+       (defmethod shared-initialize :after
+         ((instance modual-bleh) (slot-names t) &key)
+         42)
+       (defun run-1 ()
+         ">=63 arguments parse-key problem (first :foo is eaten)."
+         (make-instance
+          'modual-bleh
+          :foo 00 :foo 01 :foo 02 :foo 03 :foo 04 :foo 05 :foo 06 :foo 07 :foo 08 :foo 09
+          :foo 10 :foo 11 :foo 12 :foo 13 :foo 14 :foo 15 :foo 16 :foo 17 :foo 18 :foo 19
+          :foo 20 :foo 21 :foo 22 :foo 23 :foo 24 :foo 25 :foo 26 :foo 27 :foo 28 :foo 29
+          :foo 30 :foo 31))
+       (defun run-2 ()
+         "=62 arguments segmentation fault."
+         (make-instance
+          'modual-bleh
+          :foo 00 :foo 01 :foo 02 :foo 03 :foo 04 :foo 05 :foo 06 :foo 07 :foo 08 :foo 09
+          :foo 10 :foo 11 :foo 12 :foo 13 :foo 14 :foo 15 :foo 16 :foo 17 :foo 18 :foo 19
+          :foo 20 :foo 21 :foo 22 :foo 23 :foo 24 :foo 25 :foo 26 :foo 27 :foo 28 :foo 29
+          :foo 30))
+       (defun run-3 ()
+         "<=61 arguments all fine."
+         (make-instance
+          'modual-bleh
+          :foo 00 :foo 01 :foo 02 :foo 03 :foo 04 :foo 05 :foo 06 :foo 07 :foo 08 :foo 09
+          :foo 10 :foo 11 :foo 12 :foo 13 :foo 14 :foo 15 :foo 16 :foo 17 :foo 18 :foo 19
+          :foo 20 :foo 21 :foo 22 :foo 23 :foo 24 :foo 25 :foo 26 :foo 27 :foo 28 :foo 29))))
+  (finishes (run-1))
+  (finishes (run-2))
+  (finishes (run-3)))

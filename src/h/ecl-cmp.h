@@ -34,10 +34,6 @@
 #include <math.h> /* for inline mathematics */
 #include <ecl/ecl-inl.h>
 
-#define TRAMPOLINK(narg, vv, lk, cblock) \
-        ecl_va_list args; ecl_va_start(args, narg, narg, 0); \
-        return(_ecl_link_call(vv, (cl_objectfn *)lk, cblock, narg, args))
-
 enum ecl_locative_type {
         _ecl_object_loc = 0,
         _ecl_fixnum_loc,

@@ -31,9 +31,6 @@
 /* Undefine this if you do not want ECL to check for circular lists     */
 #define ECL_SAFE
 
-/* Assembler implementation of APPLY and friends                        */
-#undef ECL_ASM_APPLY
-
 /* Activate Boehm-Weiser incremental garbage collector                  */
 #undef GBC_BOEHM_GENGC
 
@@ -52,8 +49,6 @@
  * SYSTEM FEATURES:
  */
 
-/* Argument list can be access as an array                              */
-#undef ECL_USE_VARARG_AS_POINTER
 /* Most significant byte first                                          */
 #undef WORDS_BIGENDIAN
 /* Has <sys/resource.h>                                                 */

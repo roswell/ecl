@@ -265,7 +265,6 @@ lines are inserted, but the order is preserved")
 (defvar *global-funs* nil)              ; holds { fun }*
 (defvar *use-c-global* nil)             ; honor si::c-global declaration
 (defvar *global-cfuns-array* nil)       ; holds { fun }*
-(defvar *linking-calls* nil)            ; holds { ( global-fun-name fun symbol c-fun-name var-name ) }*
 (defvar *local-funs* nil)               ; holds { fun }*
 (defvar *top-level-forms* nil)          ; holds { top-level-form }*
 (defvar *make-forms* nil)               ; holds { top-level-form }*
@@ -324,7 +323,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*global-vars* nil)
     (*global-funs* nil)
     (*global-cfuns-array* nil)
-    (*linking-calls* nil)
     (*global-entries* nil)
     (*undefined-vars* nil)
     (*top-level-forms* nil)

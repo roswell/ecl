@@ -223,14 +223,12 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
    * which will be wiped out by the next function call. However this only
    * happens when we cannot reuse the values in the C stack.
    */
-#if !defined(ECL_USE_VARARG_AS_POINTER)
   struct ecl_stack_frame frame_aux;
   if (frame->frame.stack == (void*)0x1) {
     const cl_object new_frame = (cl_object)&frame_aux;
     ECL_STACK_FRAME_COPY(new_frame, frame);
     frame = new_frame;
   }
-#endif
 
   ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
     vector = fill_spec_vector(cache->keys, frame, gf);
@@ -259,10 +257,8 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
     func = _ecl_funcall3(func, frame, ECL_NIL);
 
   /* Only need to close the copy */
-#if !defined(ECL_USE_VARARG_AS_POINTER)
   if (frame == (cl_object)&frame_aux)
     ecl_stack_frame_close(frame);
-#endif
   return func;
 }
 

@@ -56,8 +56,7 @@
         ((setq fd (cmp-macro-function fun))
          (push 'macroexpand *current-toplevel-form*)
          (t1expr* (cmp-expand-macro fd form)))
-        (t (t1ordinary form))
-        ))))
+        (t (t1ordinary form))))))
 
 (defun t1/c1expr (form)
   (cond ((not *compile-toplevel*)
@@ -200,34 +199,10 @@
           (wt-nl-h "#define VM " (data-permanent-storage-size))
           (wt-nl-h "#define VMtemp "  (data-temporary-storage-size)))))
 
-  (dolist (l *linking-calls*)
-    (let* ((c-name (fourth l))
-           (var-name (fifth l)))
-      (wt-nl-h "static cl_object " c-name "(cl_narg, ...);")
-      (wt-nl-h "static cl_object (*" var-name ")(cl_narg, ...)=" c-name ";")))
-
   ;;; Global entries for directly called functions.
   (dolist (x *global-entries*)
     (apply 'wt-global-entry x))
 
-  ;;; Initial functions for linking calls.
-  (dolist (l *linking-calls*)
-    (let* ((var-name (fifth l))
-           (c-name (fourth l))
-           (lisp-name (third l)))
-      (wt-nl "static cl_object " c-name "(cl_narg narg, ...)"
-              "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
-  #+(or)
-  (wt-nl-h "static cl_object ECL_SETF_DEFINITION(cl_object setf_vv, cl_object setf_form)
-{
- cl_object f1 = ecl_fdefinition(setf_form);
- cl_object f2 = ECL_CONS_CAR(setf_vv);
- if (f1 != f2) {
-  FEundefined_function(setf_form);
- }
- return f2;
-}
-")
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
   (loop for (name setf-vv name-vv) in *setf-definitions*
      do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",ECL_T);"))
@@ -727,8 +702,10 @@
          (lambda-expr (fun-lambda fun))
          (volatile (c1form-volatile* lambda-expr))
          (lambda-list (c1form-arg 0 lambda-expr))
-         (requireds (mapcar #'(lambda (v) (next-lcl (var-name v)))
-                            (car lambda-list)))
+         (requireds (loop
+                       repeat si::c-arguments-limit
+                       for arg in (car lambda-list)
+                       collect (next-lcl (var-name arg))))
          (narg (fun-needs-narg fun)))
     (let ((cmp-env (c1form-env lambda-expr)))
       (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "

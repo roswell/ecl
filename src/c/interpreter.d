@@ -510,6 +510,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       cl_object frame = (cl_object)&frame_aux;
       frame_aux.size = narg;
       frame_aux.base = the_env->stack_top - narg;
+      the_env->stack_frame = frame;
       SETUP_ENV(the_env);
     AGAIN:
       if (ecl_unlikely(reg0 == OBJNULL || reg0 == ECL_NIL))
@@ -561,11 +562,12 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         FEinvalid_function(reg0);
       }
       ECL_STACK_POP_N_UNSAFE(the_env, narg);
+      the_env->stack_frame = NULL; /* for gc's sake */
       THREAD_NEXT;
     }
 
     /* OP_POP
-       Pops a singe value pushed by a OP_PUSH* operator.
+       Pops a single value pushed by a OP_PUSH* operator.
     */
     CASE(OP_POP); {
       reg0 = ECL_STACK_POP_UNSAFE(the_env);

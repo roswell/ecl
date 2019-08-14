@@ -384,6 +384,7 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
         cl_index nvalues = env->nvalues;
         cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
         memcpy(values, env->values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+        cl_object stack_frame = env->stack_frame;
         cl_object big_register[3];
         memcpy(big_register, env->big_register, 3*sizeof(cl_object));
         cl_object packages_to_be_created = env->packages_to_be_created;
@@ -409,6 +410,7 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
         env->packages_to_be_created_p = packages_to_be_created_p;
         env->packages_to_be_created = packages_to_be_created;
         memcpy(env->big_register, big_register, 3*sizeof(cl_object));
+        env->stack_frame = stack_frame;
         memcpy(env->values, values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
         env->nvalues = nvalues;
         env->function = fun;
