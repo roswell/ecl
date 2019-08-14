@@ -539,9 +539,9 @@ ecl_make_complex(cl_object r, cl_object i)
   if (!ECL_REAL_TYPE_P(ti)) { ecl_type_error(@'complex', "imaginary part", i, @'real'); }
   switch((tr > ti) ? tr : ti) {
 #ifdef ECL_COMPLEX_FLOAT
-  case t_longfloat:   return ecl_make_clfloat(ecl_to_long_double(r) + I * ecl_to_long_double(i));
-  case t_doublefloat: return ecl_make_cdfloat(ecl_to_double(r) + I * ecl_to_double(i));
-  case t_singlefloat: return ecl_make_csfloat(ecl_to_float(r) + I * ecl_to_float(i));
+  case t_longfloat:   return ecl_make_clfloat(CMPLXL(ecl_to_long_double(r), ecl_to_long_double(i)));
+  case t_doublefloat: return ecl_make_cdfloat(CMPLX(ecl_to_double(r), ecl_to_double(i)));
+  case t_singlefloat: return ecl_make_csfloat(CMPLXF(ecl_to_float(r), ecl_to_float(i)));
 #else
   case t_singlefloat:
     c = ecl_alloc_object(t_complex);
@@ -599,17 +599,17 @@ ecl_make_complex_float(cl_object r, cl_object i)
   case t_singlefloat:
     if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'single-float'); }
     result = ecl_alloc_object(t_csfloat);
-    ecl_csfloat(result) = ecl_single_float(r) + ecl_single_float(i) * I;
+    ecl_csfloat(result) = CMPLXF(ecl_single_float(r), ecl_single_float(i));
     break;
   case t_doublefloat:
     if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'double-float'); }
     result = ecl_alloc_object(t_cdfloat);
-    ecl_cdfloat(result) = ecl_double_float(r) + ecl_double_float(i) * I;
+    ecl_cdfloat(result) = CMPLX(ecl_double_float(r), ecl_double_float(i));
     break;
   case t_longfloat:
     if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'long-float'); }
     result = ecl_alloc_object(t_clfloat);
-    ecl_clfloat(result) = ecl_long_float(r) + ecl_long_float(i) * I;
+    ecl_clfloat(result) = CMPLXL(ecl_long_float(r), ecl_long_float(i));
     break;
   default:
     ecl_type_error(@'si::complex-float',"real part", r, @'float');

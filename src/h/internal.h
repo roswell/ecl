@@ -679,6 +679,15 @@ static union {
 
 #ifdef ECL_COMPLEX_FLOAT
 #include <complex.h>
+#ifndef CMPLXF
+# define CMPLXF(x, y) ((float complex)((float)(x) + I * (float)(y)))
+#endif
+#ifndef CMPLX
+# define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
+#endif
+#ifndef CMPLXL
+# define CMPLXL(x, y) ((long double complex)((long double)(x) + I * (long double)(y)))
+#endif
 #endif
 
 #ifdef __cplusplus
