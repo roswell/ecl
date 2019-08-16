@@ -126,7 +126,15 @@ Returns zero for non-complex numbers."
   "Args: (number)
 Returns a number that represents the sign of NUMBER.  Returns NUMBER If it is
 zero.  Otherwise, returns the value of (/ NUMBER (ABS NUMBER))"
-  (if (zerop x) x (/ x (abs x))))
+  (if (complexp x)
+      (cis (atan (imagpart x) (realpart x)))
+      (let ((result (cond ((> x 0) 1)
+                          ((< x 0) -1)
+                          (t ; x is 0 or NaN
+                           x))))
+        (if (floatp x)
+            (float result x)
+            result))))
 
 (defun cis (x)
   "Args: (radians)
@@ -143,7 +151,7 @@ RADIANS) and (SIN RADIANS) respectively."
          (setf ,arg (float ,arg)))
        (typecase ,arg
          (single-float
-          (if ,restriction
+          (if (or ,restriction #+ieee-floating-point (ext:float-nan-p ,arg))
               (ffi::c-inline (,arg) (:float) :float
                              ,(format nil "~af(#0)" name)
                              :one-liner t)
@@ -154,7 +162,7 @@ RADIANS) and (SIN RADIANS) respectively."
               #-complex-float
               (progn ,@gencomplex)))
          (double-float
-          (if ,restriction
+          (if (or ,restriction #+ieee-floating-point (ext:float-nan-p ,arg))
               (ffi::c-inline (,arg) (:double) :double
                              ,(format nil "~a(#0)" name)
                              :one-liner t)
@@ -165,7 +173,7 @@ RADIANS) and (SIN RADIANS) respectively."
               #-complex-float
               (progn ,@gencomplex)))
          (long-float
-          (if ,restriction
+          (if (or ,restriction #+ieee-floating-point (ext:float-nan-p ,arg))
               (ffi::c-inline (,arg) (:long-double) :long-double
                              ,(format nil "~al(#0)" name)
                              :one-liner t)
@@ -311,7 +319,7 @@ Returns the hyperbolic arc tangent of NUMBER."
   (declare (number z) (si::c-local))
   (/ (- (log (1+ z)) (log (- 1 z))) 2))
 
-(defun ffloor (x &optional (y 1))
+(defun ffloor (x &optional (y 1.0f0))
   "Args: (number &optional (divisor 1))
 Same as FLOOR, but returns a float as the first value."
   (multiple-value-bind (i r) (floor x y)

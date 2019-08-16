@@ -5,6 +5,7 @@
 * Numbers - Numeric types::
 * Numbers - Floating point exceptions::
 * Numbers - Random-States::
+* Numbers - Infinity and Not a Number::
 * Numbers - Dictionary::
 * Numbers - C Reference::
 @end menu
@@ -85,8 +86,8 @@ a generalized boolean
 If @var{condition} is @code{last}, @var{flag} is ignored and the
 currently enabled floating point exceptions are returned in an
 implementation depended format (currently an integer). Otherwise,
-@var{flag} determines whether current thread will signal a floating
-point exception for the conditions passed in @var{condition}.
+@var{flag} determines whether the current thread will signal a
+floating point exception for the conditions passed in @var{condition}.
 @var{condition} can be either a symbol denoting a single condition,
 @code{t} for all conditions that are enabled by default or a value
 obtained from an earlier call to @code{ext:trap-fpe} with @code{last}.
@@ -105,6 +106,44 @@ The @code{#$} macro can be used to initialize the generator with a
 random seed (an integer), an array of random bytes (mainly used for
 reading back printed random-state) and another random-state (syntactic
 sugar for copying the random-state).
+
+@node Numbers - Infinity and Not a Number
+@subsection Infinity and Not a Number
+The @ansi{} standard does not specify the behaviour of numeric
+functions for infinite or not number valued floating point numbers. If
+ECL is configured to support these special values (see the
+@code{--with-ieee-fp} configure option) and floating point exceptions
+are disabled, numeric functions generally return the same value as the
+corresponding C function. This means, that the output will be a NaN
+for a NaN input, and the ``mathematically correct'' value (which may
+be NaN, e.g. for ∞-∞) for an infinite real input. For complex floats,
+however, the return value of a numeric function called with a complex
+number for which the real or imaginary part is infinite, is
+undefined@footnote{The main reason for this is that some numeric
+functions for C complex numbers return mathematically incorrect
+values, for example sinh(i*∞) returns i*NaN instead of the
+mathematically correct i*∞. Keeping this consistent with our own
+implementation of complex arithmetic that is used when C complex
+numbers are not available would require to much work. Furthermore,
+complex arithmetic with infinities is unreliable anyway, since it
+quickly leads to NaN values (consider i*∞ = (0+i*1)*(∞+i*0) = NaN+i*∞;
+even this simple example is already mathematically incorrect).}.
+
+For other functions dealing with numbers, we adopt the following
+behaviour:
+
+@table @asis
+@item Comparison functions
+All numeric comparisons with @code{=,<,<=,>,>=} involving NaN return
+false. Comparing two NaNs of the same type with @code{eql} returns
+true.
+@item @code{min/max}
+NaN values are ignored, i.e. the maximum/minimum is taken only over
+the number valued parameters.
+@item Rounding functions
+All rounding functions signal an arithmetic-error if any of the given
+parameters are not number valued or infinite.
+@end table
 
 @node Numbers - Dictionary
 @subsection Dictionary

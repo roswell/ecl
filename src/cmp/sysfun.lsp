@@ -385,30 +385,32 @@
 (def-inline /= :always (t t) :bool "!ecl_number_equalp(#0,#1)")
 (def-inline /= :always (fixnum-float fixnum-float) :bool "(#0)!=(#1)")
 
-(def-inline < :always (t t) :bool "ecl_number_compare(#0,#1)<0")
+(def-inline < :always (t t) :bool "ecl_lower(#0,#1)")
 (def-inline < :always (fixnum-float fixnum-float) :bool "(#0)<(#1)")
 (def-inline < :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)<(#1) && (#1)<(#2))")
 
-(def-inline > :always (t t) :bool "ecl_number_compare(#0,#1)>0")
+(def-inline > :always (t t) :bool "ecl_greater(#0,#1)")
 (def-inline > :always (fixnum-float fixnum-float) :bool "(#0)>(#1)")
 (def-inline > :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)>(#1) && (#1)>(#2))")
 
-(def-inline <= :always (t t) :bool "ecl_number_compare(#0,#1)<=0")
+(def-inline <= :always (t t) :bool "ecl_lowereq(#0,#1)")
 (def-inline <= :always (fixnum-float fixnum-float) :bool "(#0)<=(#1)")
 (def-inline <= :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)<=(#1) && (#1)<=(#2))")
 
-(def-inline >= :always (t t) :bool "ecl_number_compare(#0,#1)>=0")
+(def-inline >= :always (t t) :bool "ecl_greatereq(#0,#1)")
 (def-inline >= :always (fixnum-float fixnum-float) :bool "(#0)>=(#1)")
 (def-inline >= :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)>=(#1) && (#1)>=(#2))")
 
-(def-inline max :always (t t) t "@01;(ecl_number_compare(#0,#1)>=0?#0:#1)")
+#+ieee-floating-point (def-inline max :always (t t) t "@01;((ecl_float_nan_p(#1) || ecl_greatereq(#0,#1))?#0:#1)")
+#-ieee-floating-point (def-inline max :always (t t) t "@01;(ecl_greatereq(#0,#1)?#0:#1)")
 (def-inline max :always (fixnum fixnum) :fixnum "@01;(#0)>=(#1)?#0:#1")
 
-(def-inline min :always (t t) t "@01;(ecl_number_compare(#0,#1)<=0?#0:#1)")
+#+ieee-floating-point (def-inline min :always (t t) t "@01;((ecl_float_nan_p(#1) || ecl_lowereq(#0,#1))?#0:#1)")
+#-ieee-floating-point (def-inline min :always (t t) t "@01;(ecl_lowereq(#0,#1)?#0:#1)")
 (def-inline min :always (fixnum fixnum) :fixnum "@01;(#0)<=(#1)?#0:#1")
 
 ;; file num_log.d

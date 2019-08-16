@@ -79,7 +79,7 @@ ecl_truncate2(cl_object x, cl_object y)
 @(defun truncate (x &optional (y OBJNULL))
   @
   if (narg == 1)
-  return ecl_truncate1(x);
+    return ecl_truncate1(x);
   else
     return ecl_truncate2(x, y);
   @)

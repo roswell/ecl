@@ -159,9 +159,18 @@ monotonic(int s, int t, int narg, ecl_va_list nums)
     FEwrong_type_nth_arg(@[<], 1, c, @[real]);
   }
   /* INV: type check occurs in ecl_number_compare() */
-  for (c = ecl_va_arg(nums); --narg; c = d) {
+  c = ecl_va_arg(nums);
+#ifdef ECL_IEEE_FP
+  if (ecl_float_nan_p(c))
+    return1(ECL_NIL);
+#endif
+  for (; --narg; c = d) {
     d = ecl_va_arg(nums);
-    if (s*ecl_number_compare(d, c) < t)
+    if (
+#ifdef ECL_IEEE_FP
+        ecl_float_nan_p(d) ||
+#endif
+        s*ecl_number_compare(d, c) < t)
       return1(ECL_NIL);
   }
   return1(ECL_T);
@@ -173,7 +182,7 @@ monotonic(int s, int t, int narg, ecl_va_list nums)
     ecl_va_end(nums);                                           \
     return result; }
 
-cl_object @<= MONOTONIC( 1, 0);
-cl_object @>= MONOTONIC(-1, 0);
-cl_object @<  MONOTONIC( 1, 1);
-cl_object @>  MONOTONIC(-1, 1);
+cl_object @<= MONOTONIC( 1, 0)
+cl_object @>= MONOTONIC(-1, 0)
+cl_object @<  MONOTONIC( 1, 1)
+cl_object @>  MONOTONIC(-1, 1)

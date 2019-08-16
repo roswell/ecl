@@ -21,7 +21,7 @@
 @(defun ceiling (x &optional (y OBJNULL))
   @
   if (narg == 1)
-  return ecl_ceiling1(x);
+    return ecl_ceiling1(x);
   else
     return ecl_ceiling2(x, y);
   @)
