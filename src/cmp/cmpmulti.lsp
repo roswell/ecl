@@ -46,8 +46,7 @@
     `(with-stack ,frame
        (stack-push-values ,frame ,(first args))
        ,@(rest args)
-       (stack-pop ,frame))))
-)
+       (stack-pop ,frame)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

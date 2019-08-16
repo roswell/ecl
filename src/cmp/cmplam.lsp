@@ -429,7 +429,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                     (format nil "lex~D" (1- *level*)))
                    (t "narg"))))
       (if (setq simple-varargs (and (not (or rest keywords allow-other-keys))
-                                    (< (+ nreq nopt) 30)))
+                                    (<= (+ nreq nopt) si::c-arguments-limit)))
           (wt-nl "va_list args; va_start(args,"
                  (last-variable)
                  ");")

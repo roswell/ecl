@@ -5,6 +5,10 @@
   cfun_dispatch.c - trampolines for functions
 */
 
+#if !(ECL_C_ARGUMENTS_LIMIT == 63)
+#error "Please adjust code to the constant!"
+#endif
+
 static cl_object dispatch0 (cl_narg narg) {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object fun = the_env->function;

@@ -183,7 +183,7 @@ typedef unsigned char ecl_base_char;
 
 /*	Numb. of args. which can be passed using the C stack		*/
 /*	See cmplam.lsp if you change this value				*/
-#define ECL_C_ARGUMENTS_LIMIT 64
+#define ECL_C_ARGUMENTS_LIMIT 63
 
 /*	Maximum number of output arguments				*/
 #define ECL_MULTIPLE_VALUES_LIMIT 64

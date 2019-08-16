@@ -127,13 +127,6 @@ $(srcdir)/symbols_list2.h: $(srcdir)/symbols_list.h Makefile
 # apply.o: apply.c $(HFILES)
 # 	$(CC) $(CFLAGS) apply.c -o $@
 
-# experimental apply (why isn't referenced anywhere?)
-# apply_x86.c: $(srcdir)/arch/apply_x86.d $(DPP) $(HFILES)
-# 	if test -f ../CROSS-DPP ; then \
-# 	  ../CROSS-DPP $(srcdir)/arch/apply_x86.d $@ ; \
-# 	else $(DPP) $(srcdir)/arch/apply_x86.d  $@ ; \
-# 	fi
-
 #
 # These files are interrelated
 #

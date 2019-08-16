@@ -26,6 +26,9 @@ struct cl_env_struct {
         /* Environment for calling closures, CLOS generic functions, etc */
         cl_object function;
 
+        /* Current stack frame */
+        cl_object stack_frame;
+
         /* The four stacks in ECL. */
 
         /*
