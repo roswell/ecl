@@ -24,7 +24,7 @@
 @(defun floor (x &optional (y OBJNULL))
   @
   if (narg == 1)
-  return ecl_floor1(x);
+    return ecl_floor1(x);
   else
     return ecl_floor2(x, y);
   @)

@@ -258,7 +258,7 @@ cl_eq(cl_object x, cl_object y)
 #define FLOAT_EQL(name, type)                                           \
   static bool name(type a, type b) {                                    \
     if (a == b) return signbit(a) == signbit(b);                        \
-    if (isnan(a) || isnan(b)) return !memcmp(&a, &b, sizeof(type));   \
+    if (isnan(a) || isnan(b)) return isnan(a) && isnan(b);              \
     return 0;                                                           \
   }
 #endif
