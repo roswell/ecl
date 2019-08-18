@@ -1450,6 +1450,8 @@ extern ECL_API cl_object cl_finish_output _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_fresh_line _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_force_output _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_clear_output _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_search_print_circle(cl_object x);
+extern ECL_API cl_object si_write_object_with_circle(cl_object object, cl_object stream, cl_object print_function);
 extern ECL_API cl_object si_write_object(cl_object object, cl_object stream);
 extern ECL_API cl_object si_write_ugly_object(cl_object object, cl_object stream);
 

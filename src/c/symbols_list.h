@@ -1277,6 +1277,8 @@ cl_symbols[] = {
 {SYS_ "UNIVERSAL-ERROR-HANDLER", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "STACK-ERROR-HANDLER", SI_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "VALID-FUNCTION-NAME-P", SI_ORDINARY, si_valid_function_name_p, 1, OBJNULL},
+{SYS_ "SEARCH-PRINT-CIRCLE", SI_SPECIAL, si_search_print_circle, 1, OBJNULL},
+{SYS_ "WRITE-OBJECT-WITH-CIRCLE", SI_SPECIAL, si_write_object_with_circle, 3, OBJNULL},
 {SYS_ "WRITE-OBJECT", SI_SPECIAL, si_write_object, 2, OBJNULL},
 {SYS_ "WRITE-UGLY-OBJECT", SI_SPECIAL, si_write_ugly_object, 2, OBJNULL},
 
