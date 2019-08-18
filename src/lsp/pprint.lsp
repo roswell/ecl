@@ -1171,13 +1171,16 @@
          (pprint-multi-dim-array stream array))))
 
 (defun pprint-vector (stream vector)
-  (pprint-logical-block (stream nil :prefix "#(" :suffix ")")
-    (dotimes (i (length vector))
-      (unless (zerop i)
-        (write-char #\space stream)
-        (pprint-newline :fill stream))
-      (pprint-pop)
-      (write-object (aref vector i) stream))))
+  (write-object-with-circle
+   vector stream
+   #'(lambda (vector stream)
+       (pprint-logical-block (stream nil :prefix "#(" :suffix ")")
+         (dotimes (i (length vector))
+           (unless (zerop i)
+             (write-char #\space stream)
+             (pprint-newline :fill stream))
+           (pprint-pop)
+           (write-object (aref vector i) stream))))))
 
 (defun pprint-array-contents (stream array)
   (declare (si::c-local)
@@ -1206,20 +1209,25 @@
 
 (defun pprint-multi-dim-array (stream array)
   (declare (si::c-local))
-  (funcall (formatter "#~DA") stream (array-rank array))
-  (pprint-array-contents stream array))
+  (write-object-with-circle
+   array stream
+   #'(lambda (array stream)
+       (funcall (formatter "#~DA") stream (array-rank array))
+       (pprint-array-contents stream array))))
 
 (defun pprint-raw-array (stream array)
   (declare (si::c-local))
-  (write-string "#A" stream)
-  (pprint-logical-block (stream nil :prefix "(" :suffix ")")
-    (write-object (array-element-type array) stream)
-    (write-char #\Space stream)
-    (pprint-newline :fill stream)
-    (write-object (array-dimensions array) stream)
-    (write-char #\Space stream)
-    (pprint-newline :fill stream)
-    (pprint-array-contents stream array)))
+  (write-object-with-circle
+   array stream
+   #'(lambda (array stream)
+       (pprint-logical-block (stream nil :prefix "#A(" :suffix ")")
+         (write-object (array-element-type array) stream)
+         (write-char #\Space stream)
+         (pprint-newline :fill stream)
+         (write-object (array-dimensions array) stream)
+         (write-char #\Space stream)
+         (pprint-newline :fill stream)
+         (pprint-array-contents stream array)))))
 
 (defun pprint-lambda-list (stream lambda-list &rest noise)
   (declare (ignore noise))
