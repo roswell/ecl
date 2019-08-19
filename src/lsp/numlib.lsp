@@ -127,7 +127,9 @@ Returns zero for non-complex numbers."
 Returns a number that represents the sign of NUMBER.  Returns NUMBER If it is
 zero.  Otherwise, returns the value of (/ NUMBER (ABS NUMBER))"
   (if (complexp x)
-      (cis (atan (imagpart x) (realpart x)))
+      (if (zerop x)
+          x
+          (cis (atan (imagpart x) (realpart x))))
       (let ((result (cond ((> x 0) 1)
                           ((< x 0) -1)
                           (t ; x is 0 or NaN
