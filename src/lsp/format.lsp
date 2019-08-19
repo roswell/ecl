@@ -2628,19 +2628,23 @@
             insides
             suffix)))
 
-(defun add-fill-style-newlines (list string offset)
+(defun add-fill-style-newlines (list string offset &optional previous-directive-is-newline)
   (declare (si::c-local))
   (if list
       (let ((directive (car list)))
-        (if (simple-string-p directive)
+        (if (and (simple-string-p directive)
+                 (not previous-directive-is-newline))
             (nconc (add-fill-style-newlines-aux directive string offset)
                    (add-fill-style-newlines (cdr list)
                                             string
-                                            (+ offset (length directive))))
+                                            (+ offset (length directive))
+                                            nil))
             (cons directive
                   (add-fill-style-newlines (cdr list)
                                            string
-                                           (format-directive-end directive)))))
+                                           (format-directive-end directive)
+                                           (char= (format-directive-character directive)
+                                                  #\newline)))))
       nil))
 
 (defun add-fill-style-newlines-aux (literal string offset)
