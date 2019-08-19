@@ -1698,6 +1698,7 @@ c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
   int n = ecl_length(vars);
   switch (n) {
   case 0:
+    compile_form(env, pop(&args), FLAG_IGNORE);
     return c_locally(env, args, flags);
   case 1:
     vars = ECL_CONS_CAR(vars);
