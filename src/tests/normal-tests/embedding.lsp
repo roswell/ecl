@@ -18,12 +18,12 @@
   (c::linker-cc "tmp/ecl-aux.exe" '("tmp/ecl-aux.o"))
   (ecase capture-output
     ((nil)
-     (return-from test-C-program (zerop (si::system #+mingw32 (format nil "PATH=%PATH%;~a tmp\\ecl-aux.exe" c::*ecl-library-directory*)
-                                                    #-mingw32 "tmp/ecl-aux.exe"))))
+     (return-from test-C-program (zerop (si::system #+windows (format nil "PATH=%PATH%;~a tmp\\ecl-aux.exe" c::*ecl-library-directory*)
+                                                    #-windows "tmp/ecl-aux.exe"))))
     ((string :string)
      (with-output-to-string (s)
        (let ((in (si::run-program "tmp/ecl-aux.exe" '() :output :stream
-                                  :environ (append #+mingw32 (list (format nil "PATH=~a;~a"
+                                  :environ (append #+windows (list (format nil "PATH=~a;~a"
                                                                            (ext:getenv "PATH")
                                                                            c::*ecl-library-directory*))
                                                    (ext:environ))))
@@ -36,7 +36,7 @@
      (do* ((all '())
            (x t)
            (in (si::run-program "tmp/ecl-aux.exe" '() :output :stream
-                                :environ (append #+mingw32 (list (format nil "PATH=~a;~a"
+                                :environ (append #+windows (list (format nil "PATH=~a;~a"
                                                                          (ext:getenv "PATH")
                                                                          c::*ecl-library-directory*))
                                                  (ext:environ)))))

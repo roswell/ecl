@@ -967,7 +967,7 @@
   (let ((indices (funcall (compile nil
                                    '(lambda ()
                                      (ffi:c-inline () () list "
-        union cl_lispunion x[0];
+        union cl_lispunion x[1];
         cl_index bytecodes = (char*)(&(x->bytecodes.entry)) - (char*)x;
         cl_index bclosure  = (char*)(&(x->bclosure.entry)) - (char*)x;
         cl_index cfun      = (char*)(&(x->cfun.entry)) - (char*)x;

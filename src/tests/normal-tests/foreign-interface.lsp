@@ -25,7 +25,7 @@
 #-ecl-bytecmp
 (test ffi.0001.callback
   (is
-   (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
+   (and (ensure-directories-exist "tmp/")
         (with-open-file (s "tmp/a.lsp" :direction :output
                            :if-exists :supersede
                            :if-does-not-exist :create)
@@ -39,8 +39,7 @@
         (c:build-program "tmp/foo" :lisp-files
                          (list (compile-file-pathname "tmp/a.lsp" :type :object)
                                (compile-file-pathname "tmp/b.lsp" :type :object)))
-        (probe-file (compile-file-pathname "tmp/foo" :type :program))
-        (zerop (si::system "rm -rf tmp")))))
+        (probe-file (compile-file-pathname "tmp/foo" :type :program)))))
 
 ;;; Date: 29/07/2008
 ;;; From: Juajo
@@ -50,7 +49,7 @@
 #-ecl-bytecmp
 (test ffi.0002.callback-sffi-example
   (is
-   (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
+   (and (ensure-directories-exist "tmp/")
         (with-open-file (s "tmp/c.lsp" :direction :output
                            :if-exists :supersede
                            :if-does-not-exist :create)
@@ -79,7 +78,7 @@ int (*foo)(int) = (int (*)(int))#0;
 #+(and (or) dffi (not ecl-bytecmp))
 (test ffi.0003.callback-dffi-example
   (is
-   (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
+   (and (ensure-directories-exist "tmp/")
         (with-open-file (s "tmp/c.lsp" :direction :output
                            :if-exists :supersede
                            :if-does-not-exist :create)
