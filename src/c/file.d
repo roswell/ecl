@@ -223,6 +223,12 @@ not_output_finish_output(cl_object strm)
   not_an_output_stream(strm);
 }
 
+static int
+unknown_column(cl_object strm)
+{
+  return -1;
+}
+
 #if defined(ECL_WSOCK)
 static cl_object
 not_implemented_get_position(cl_object strm)
@@ -464,7 +470,7 @@ generic_always_nil(cl_object strm)
 static int
 generic_column(cl_object strm)
 {
-  return 0;
+  return strm->stream.column;
 }
 
 static cl_object
@@ -1340,10 +1346,7 @@ static int
 clos_stream_column(cl_object strm)
 {
   cl_object col = _ecl_funcall2(@'gray::stream-line-column', strm);
-  /* FIXME! The Gray streams specifies NIL is a valid
-   * value but means "unknown". Should we make it
-   * zero? */
-  return Null(col)? 0 : ecl_to_size(col);
+  return Null(col)? -1 : ecl_to_size(col);
 }
 
 static cl_object
@@ -1433,12 +1436,6 @@ str_out_set_position(cl_object strm, cl_object pos)
   return ECL_T;
 }
 
-static int
-str_out_column(cl_object strm)
-{
-  return strm->stream.column;
-}
-
 const struct ecl_file_ops str_out_ops = {
   not_output_write_byte8,
   not_binary_read_byte8,
@@ -1468,7 +1465,7 @@ const struct ecl_file_ops str_out_ops = {
   not_a_file_stream, /* length */
   str_out_get_position,
   str_out_set_position,
-  str_out_column,
+  generic_column,
   generic_close
 };
 
@@ -1656,7 +1653,7 @@ const struct ecl_file_ops str_in_ops = {
   not_a_file_stream, /* length */
   str_in_get_position,
   str_in_set_position,
-  generic_column,
+  unknown_column,
   generic_close
 };
 
@@ -2367,7 +2364,7 @@ const struct ecl_file_ops concatenated_ops = {
   not_a_file_stream, /* length */
   generic_always_nil, /* get_position */
   generic_set_position,
-  generic_column,
+  unknown_column,
   concatenated_close
 };
 
@@ -2882,12 +2879,6 @@ io_file_set_position(cl_object strm, cl_object large_disp)
   return (disp == (ecl_off_t)-1)? ECL_NIL : ECL_T;
 }
 
-static int
-io_file_column(cl_object strm)
-{
-  return strm->stream.column;
-}
-
 static cl_object
 io_file_close(cl_object strm)
 {
@@ -3117,7 +3108,7 @@ const struct ecl_file_ops io_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
-  io_file_column,
+  generic_column,
   io_file_close
 };
 
@@ -3150,7 +3141,7 @@ const struct ecl_file_ops output_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
-  io_file_column,
+  generic_column,
   io_file_close
 };
 
@@ -3183,7 +3174,7 @@ const struct ecl_file_ops input_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
-  generic_column,
+  unknown_column,
   io_file_close
 };
 
@@ -3709,12 +3700,6 @@ io_stream_set_position(cl_object strm, cl_object large_disp)
   return mode? ECL_NIL : ECL_T;
 }
 
-static int
-io_stream_column(cl_object strm)
-{
-  return strm->stream.column;
-}
-
 static cl_object
 io_stream_close(cl_object strm)
 {
@@ -3775,7 +3760,7 @@ const struct ecl_file_ops io_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
-  io_stream_column,
+  generic_column,
   io_stream_close
 };
 
@@ -3808,7 +3793,7 @@ const struct ecl_file_ops output_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
-  io_stream_column,
+  generic_column,
   io_stream_close
 };
 
@@ -3841,7 +3826,7 @@ const struct ecl_file_ops input_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
-  generic_column,
+  unknown_column,
   io_stream_close
 };
 
@@ -4053,7 +4038,7 @@ const struct ecl_file_ops winsock_stream_input_ops = {
   not_a_file_stream,
   not_implemented_get_position,
   not_implemented_set_position,
-  generic_column,
+  unknown_column,
 
   winsock_stream_close
 };
@@ -4515,7 +4500,7 @@ const struct ecl_file_ops seq_in_ops = {
   not_a_file_stream, /* length */
   seq_in_get_position,
   seq_in_set_position,
-  generic_column,
+  unknown_column,
   generic_close
 };
 
@@ -5067,7 +5052,8 @@ si_do_read_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
 cl_object
 si_file_column(cl_object strm)
 {
-  @(return ecl_make_fixnum(ecl_file_column(strm)));
+  int column = ecl_file_column(strm);
+  @(return (column >= 0 ? ecl_make_fixnum(column) : ECL_NIL));
 }
 
 cl_object
