@@ -157,7 +157,8 @@
            (null-stream (direction)
              (open #-windows "/dev/null"
                    #+windows "nul"
-                   :direction direction)))
+                   :direction direction
+		   :if-exists :overwrite)))
     (let ((progname (si:copy-to-simple-base-string command))
           (args (prepare-args (cons command argv)))
           (process (make-external-process))
