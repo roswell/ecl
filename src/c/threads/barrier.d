@@ -34,7 +34,7 @@ ecl_make_barrier(cl_object name, cl_index count)
 @(defun mp::make-barrier (count &key name)
   @
   if (count == ECL_T)
-  count = ecl_make_fixnum(MOST_POSITIVE_FIXNUM);
+    count = ecl_make_fixnum(MOST_POSITIVE_FIXNUM);
   @(return ecl_make_barrier(name, fixnnint(count)));
   @)
 

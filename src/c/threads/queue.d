@@ -135,14 +135,6 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
   struct ecl_timeval start;
   ecl_get_internal_real_time(&start);
 
-  /* This spinlock is here because the default path (fair) is
-   * too slow */
-  for (iteration = 0; iteration < 10; iteration++) {
-    cl_object output = condition(the_env,o);
-    if (output != ECL_NIL)
-      return output;
-  }
-
   /* 0) We reserve a record for the queue. In order to avoid
    * using the garbage collector, we reuse records */
   record = own_process->process.queue_record;
@@ -162,14 +154,22 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
     ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_T);
     ecl_check_pending_interrupts(the_env);
 
+    /* This spinlock is here because the default path (fair) is
+     * too slow */
+    for (iteration = 0; iteration < 10; iteration++) {
+      if (!Null(output = condition(the_env,o)))
+        break;
+    }
+
     /* 3) Unlike the sigsuspend() implementation, this
      * implementation does not block signals and the
      * wakeup event might be lost before the sleep
      * function is invoked. We must thus spin over short
      * intervals of time to ensure that we check the
      * condition periodically. */
-    while (Null(output = condition(the_env, o))) {
+    while (Null(output)) {
       ecl_musleep(waiting_time(iteration++, &start), 1);
+      output = condition(the_env, o);
     }
     ecl_bds_unwind1(the_env);
   } ECL_UNWIND_PROTECT_EXIT {
