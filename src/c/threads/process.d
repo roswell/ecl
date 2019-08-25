@@ -206,12 +206,12 @@ thread_cleanup(void *aux)
 #endif
   process->process.env = NULL;
   ecl_unlist_process(process);
-  mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
-  ecl_set_process_env(NULL);
-  if (env) _ecl_dealloc_env(env);
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(process->process.thread);
 #endif
+  mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
+  ecl_set_process_env(NULL);
+  if (env) _ecl_dealloc_env(env);
   AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
 }
 
