@@ -491,18 +491,19 @@ safe_buffer_pointer(cl_object x, cl_index size)
   (unless (or buffer length) (error "You have to supply either buffer or length!"))
   (let ((buffer (or buffer (make-array length :element-type element-type)))
         (length (or length (length buffer)))
-        (fd (socket-file-descriptor socket)))
+        (fd (socket-file-descriptor socket))
+        (trunc (if (eql (socket-type socket) :datagram) t nil)))
 
     (multiple-value-bind (len-recv errno)
-           (c-inline (fd buffer length
-                      oob peek waitall)
-                     (:int :object :int :bool :bool :bool)
+           (c-inline (fd buffer length oob peek waitall trunc)
+                     (:int :object :int :bool :bool :bool :bool)
                   (values :long :int)
                      "
 {
         int flags = ( #3 ? MSG_OOB : 0 )  |
                     ( #4 ? MSG_PEEK : 0 ) |
-                    ( #5 ? MSG_WAITALL : 0 );
+                    ( #5 ? MSG_WAITALL : 0 ) |
+                    ( #6 ? MSG_TRUNC : 0 );
         cl_type type = ecl_t_of(#1);
         ssize_t len;
 
