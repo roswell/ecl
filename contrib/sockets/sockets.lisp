@@ -494,10 +494,10 @@ safe_buffer_pointer(cl_object x, cl_index size)
         (fd (socket-file-descriptor socket))
         (trunc (if (eql (socket-type socket) :datagram) t nil)))
 
-    (multiple-value-bind (len-recv errno)
+    (multiple-value-bind (len-recv errno vector port)
            (c-inline (fd buffer length oob peek waitall trunc)
                      (:int :object :int :bool :bool :bool :bool)
-                  (values :long :int)
+                  (values :long :int :object :int)
                      "
 {
         int flags = ( #3 ? MSG_OOB : 0 )  |
@@ -506,10 +506,12 @@ safe_buffer_pointer(cl_object x, cl_index size)
                     ( #6 ? MSG_TRUNC : 0 );
         cl_type type = ecl_t_of(#1);
         ssize_t len;
+        struct sockaddr_in sender;
+        socklen_t addr_len = (socklen_t)sizeof(struct sockaddr_in);
 
         ecl_disable_interrupts();
         len = recvfrom(#0, wincoerce(char*, safe_buffer_pointer(#1, #2)),
-                       #2, flags, NULL,NULL);
+                       #2, flags, &sender, &addr_len);
         ecl_enable_interrupts();
         if (len >= 0) {
                if (type == t_vector) { #1->vector.fillp = len; }
@@ -517,6 +519,22 @@ safe_buffer_pointer(cl_object x, cl_index size)
         }
         @(return 0) = len;
         @(return 1) = errno;
+        @(return 2) = ECL_NIL;
+        @(return 3) = 0;
+
+        if (len >= 0) {
+                uint32_t ip = ntohl(sender.sin_addr.s_addr);
+                uint16_t port = ntohs(sender.sin_port);
+                cl_object vector = cl_make_array(1,ecl_make_fixnum(4));
+
+                ecl_aset(vector,0, ecl_make_fixnum( ip>>24 ));
+                ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+                ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+                ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
+
+                @(return 2) = vector;
+                @(return 3) = port;
+        }
 }
 "
                   :one-liner nil)
@@ -525,8 +543,8 @@ safe_buffer_pointer(cl_object x, cl_index size)
              nil)
             ((= len-recv -1)
              (socket-error "receive"))
-            (t 
-             (values buffer len-recv))))))
+            (t
+             (values buffer len-recv vector port))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
