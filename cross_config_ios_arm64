@@ -60,5 +60,4 @@ ECL_WORKING_ENVIRON=yes
 ###		x86_64-apple-darwin15.3.0
 ### By default we assume that ECL can be accessed from some directory in
 ### the path.
-#ECL_TO_RUN=/usr/local/opt/ecl-ue4-mac/bin/ecl
-ECL_TO_RUN=/Users/whimse/SourceRepo/ecl-repo/build_mac/bin/ecl
+ECL_TO_RUN=/usr/local/opt/ecl-ue4-mac/bin/ecl
