@@ -128,12 +128,9 @@ ecl_expt_float(cl_object x, cl_object y) {
   case t_doublefloat:
     return ecl_make_double_float
       (pow(ecl_to_double(x), ecl_to_double(y)));
-  case t_singlefloat:
+  default:
     return ecl_make_single_float
       (powf(ecl_to_float(x), ecl_to_float(y)));
-  default:
-    if (ty > tx)  FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
-    else          FEwrong_type_nth_arg(@[expt], 2, y, @[number]);
   }
 }
 
@@ -163,18 +160,11 @@ cl_object
 ecl_expt(cl_object x, cl_object y)
 {
   cl_type ty, tx;
-  cl_object z;
   /* 0 ^ 0 -> 1 */
   if (ecl_unlikely(ecl_zerop(y))) {
     return expt_zero(x, y);
   }
-  ty = ecl_t_of(y);
-  tx = ecl_t_of(x);
-  /* ty is already ensured to be a number by ecl_zerop above */
-  if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
-    FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
-  }
-  if (ecl_zerop(x)) {
+  if (ecl_unlikely(ecl_zerop(x))) {
     /* 0 ^ -y = (1/0)^y */
     if (!ecl_plusp(cl_realpart(y))) {
       /* Normally we would have signalled FEdivision_by_zero, but fpe
@@ -182,7 +172,8 @@ ecl_expt(cl_object x, cl_object y)
       return ecl_divide(ecl_make_fixnum(1), x);
     }
     /* 0 ^ +y = 0 */
-    return x;
+    /* We call ecl_times to ensure the most contagious type.*/
+    return ecl_times(x, y);
   }
   /* Here comes the order in which we handle cases: */
   /* -----------------------------------FIRST IF--- */
@@ -196,6 +187,9 @@ ecl_expt(cl_object x, cl_object y)
   /* ---------------------------------THIRD ELSE--- */
   /* positive ^ number   -> float                   */
   /* ---------------------------------------------- */
+  /* x and y are already ensured to be a number by ecl_zerop above */
+  ty = ecl_t_of(y);
+  tx = ecl_t_of(x);
   if (ty == t_fixnum || ty == t_bignum) {
     switch (tx) {
     case t_fixnum:
@@ -216,7 +210,7 @@ ecl_expt(cl_object x, cl_object y)
     return ecl_expt_complex_float(x, y);
 #else
     /* We call expt_zero to ensure the most contagious type.*/
-    z = ecl_log1(ecl_times(x, expt_zero(x, y)));
+    cl_object z = ecl_log1(ecl_times(x, expt_zero(x, y)));
     z = ecl_times(z, y);
     z = ecl_exp(z);
     return z;
