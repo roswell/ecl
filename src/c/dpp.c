@@ -84,6 +84,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1800)
 #include <stdbool.h> 
@@ -179,9 +180,14 @@ put_lineno(void)
 }
 
 void
-error(char *s)
+error(char *s, ...)
 {
-  printf("Error in line %d: %s.\n", lineno, s);
+  char msg[2048];
+  va_list args;
+  va_start(args, s);
+  vsnprintf(msg, 2048, s, args);
+  printf("Error in line %d: %s.\n", lineno, msg);
+  va_end(args);
   exit(1);
 }
 
@@ -500,6 +506,21 @@ get_function(void)
     pushc('\0');
   }
   function_c_name = translate_function(function);
+}
+
+void
+check_nargs(void)
+{
+  int narg_declared = cl_symbols[function_code].narg;
+  int nreq_declared = narg_declared >= 0 ? narg_declared : (-narg_declared -1);
+  if (nreq != nreq_declared) {
+    error("Function %s: wrong declaration for number of required arguments, expected %d, but got %d",
+          cl_symbols[function_code].name, nreq, nreq_declared);
+  }
+  if (narg_declared > 0 &&
+      (nopt > 0 || rest_flag || key_flag)) {
+    error("Detected optional, keyword or rest arguments for function with fixed number of arguments");
+  }
 }
 
 void
@@ -931,6 +952,7 @@ main_loop(void)
     in_defun = 1;
     get_function();
     get_lambda_list();
+    check_nargs();
     put_fhead();
     put_lineno();
     c = jump_to_at();
