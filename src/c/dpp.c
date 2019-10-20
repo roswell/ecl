@@ -693,9 +693,7 @@ put_fhead(void)
   fprintf(out, "cl_object %s(cl_narg narg", function_c_name);
   for (i = 0; i < nreq; i++)
     fprintf(out, ", cl_object %s", required[i]);
-  if (nopt > 0 || rest_flag || key_flag)
-    fprintf(out, ", ...");
-  fprintf(out, ")\n{\n");
+  fprintf(out, ", ...)\n{\n");
 }
 
 void
