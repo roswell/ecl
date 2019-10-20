@@ -450,9 +450,9 @@ cl_object
 mp_process_preset(cl_narg narg, cl_object process, cl_object function, ...)
 {
   ecl_va_list args;
-  ecl_va_start(args, function, narg, 2);
   if (narg < 2)
     FEwrong_num_arguments(@[mp::process-preset]);
+  ecl_va_start(args, function, narg, 2);
   assert_type_process(process);
   process->process.function = function;
   process->process.args = cl_grab_rest_args(args);
@@ -679,7 +679,6 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
   cl_object process;
   cl_object rest;
   ecl_va_list args;
-  ecl_va_start(args, function, narg, 2);
   if (narg < 2)
     FEwrong_num_arguments(@[mp::process-run-function]);
   if (CONSP(name)) {
@@ -687,6 +686,7 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
   } else {
     process = mp_make_process(2, @':name', name);
   }
+  ecl_va_start(args, function, narg, 2);
   rest = cl_grab_rest_args(args);
   ecl_va_end(args);
   cl_apply(4, @'mp::process-preset', process, function,

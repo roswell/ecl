@@ -293,6 +293,7 @@ ecl_char_equal(cl_object x, cl_object y)
     c = ecl_va_arg(cs);
     for (j=1;  j<i;  j++)
       if (ecl_char_equal(c, ecl_va_arg(ds))) {
+        ecl_va_end(ds);
         @(return ECL_NIL);
       }
   }
