@@ -1433,7 +1433,7 @@
               (clos:funcallable-standard-object t)
               t :reader)
 #+clos
-(proclamation associate-methods-to-gfun (generic-function *)
+(proclamation clos::associate-methods-to-gfun (function-name *)
               generic-function)
 #+clos
 (proclamation clos::need-to-make-load-form-p (t t) gen-bool :pure)

@@ -96,10 +96,10 @@ mangle_name(cl_object output, unsigned char *source, int l)
   if (is_symbol) {
     cl_fixnum p;
     if (symbol == ECL_NIL) {
-      @(return ECL_T ecl_make_constant_base_string("ECL_NIL",-1));
+      @(return ECL_T ecl_make_constant_base_string("ECL_NIL",-1) minarg maxarg);
     }
     else if (symbol == ECL_T) {
-      @(return ECL_T ecl_make_constant_base_string("ECL_T",-1));
+      @(return ECL_T ecl_make_constant_base_string("ECL_T",-1) minarg maxarg);
     }
 
     p  = (cl_symbol_initializer*)symbol - cl_symbols;
@@ -108,7 +108,28 @@ mangle_name(cl_object output, unsigned char *source, int l)
       output = cl_format(4, ECL_NIL,
                          ecl_make_constant_base_string("ECL_SYM(~S,~D)",-1),
                          name, ecl_make_fixnum(p));
-      @(return found output);
+#ifndef ECL_FINAL
+      /* XXX to allow the Lisp compiler to check that the narg
+       * declaration in symbols_list.h matches the actual function
+       * definition, return the previously saved narg here. -- mg
+       * 2019-12-02 */
+      cl_object plist = cl_symbol_plist(symbol);
+      for ( ; ECL_CONSP(plist); plist = ECL_CONS_CDR(plist)) {
+        if (ECL_CONS_CAR(plist) == @'call-arguments-limit') {
+          plist = ECL_CONS_CDR(plist);
+          if (ECL_CONSP(plist) && ECL_FIXNUMP(ECL_CONS_CAR(plist))) {
+            cl_fixnum narg = ecl_fixnum(ECL_CONS_CAR(plist));
+            if (narg >= 0) {
+              minarg = maxarg = ecl_make_fixnum(narg);
+            } else {
+              minarg = ecl_make_fixnum(-narg-1);
+            }
+          }
+          break;
+        }
+      }
+#endif
+      @(return found output minarg maxarg);
     }
   } else if (!Null(symbol)) {
     cl_object fun = symbol->symbol.gfdef;
@@ -251,6 +272,12 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
     }
     ECL_SYM_FUN(s) = f;
   }
+#ifndef ECL_FINAL
+  /* XXX to allow the Lisp compiler to check that the narg declaration
+   * in symbols_list.h matches the actual function definition, we save
+   * narg here. -- mg 2019-12-02 */
+  si_set_symbol_plist(s, cl_list(2, @'call-arguments-limit', ecl_make_fixnum(narg)));
+#endif
   cl_num_symbols_in_core = i + 1;
 }
 

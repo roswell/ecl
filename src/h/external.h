@@ -2140,6 +2140,7 @@ extern ECL_API cl_object cl_every _ECL_ARGS((cl_narg narg, cl_object V1, cl_obje
 extern ECL_API cl_object cl_notany _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 extern ECL_API cl_object cl_notevery _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 extern ECL_API cl_object cl_map_into _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
+extern ECL_API cl_object si_sequence_count(cl_object count);
 
 /* seqlib.lsp */
 
@@ -2212,10 +2213,10 @@ extern ECL_API cl_object clos_need_to_make_load_form_p(cl_object o, cl_object en
 /* defclass.lsp */
 extern ECL_API cl_object clos_load_defclass(cl_object name, cl_object superclasses, cl_object slots, cl_object options);
 
-#if 0
 /* defclass.lsp */
 extern ECL_API cl_object clos_ensure_class _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 
+#if 0
 /* kernel.lsp */
 extern ECL_API cl_object clos_class_id _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_class_direct_superclasses _ECL_ARGS((cl_narg narg, cl_object V1, ...));
