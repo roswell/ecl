@@ -269,13 +269,21 @@
                 decls (list* `(declare (ignore ,env)) decls)))
       (multiple-value-bind (ppn whole dl arg-check ignorables)
           (destructure vl context)
-        (values `(ext::lambda-block ,name (,whole ,env &aux ,@dl)
-                                    (declare (ignorable ,@ignorables))
-                                    ,@decls 
-                                    ,@arg-check
-                                    ,@body)
-                ppn
-                doc)))))
+        (let ((function
+               (if (eql context 'cl:defmacro)
+                   `(ext::lambda-block ,name (,whole ,env &aux ,@dl)
+                      (declare (ignorable ,@ignorables))
+                      ,@decls
+                      ,@arg-check
+                      ,@body)
+                   `(lambda (,whole ,env &aux ,@dl)
+                      (declare (ignorable ,@ignorables))
+                      ,@decls
+                      (block ,(si::function-block-name name)
+                        ,@arg-check ,@body)))))
+         (values function
+                 ppn
+                 doc))))))
 
 #+ecl-min
 (si::fset 'defmacro

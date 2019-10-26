@@ -110,10 +110,11 @@ retrieved by (documentation 'NAME 'type)."
     (multiple-value-bind (ppn whole dl arg-check ignorables)
         (destructure lambda-list 'deftype)
       (declare (ignore ppn))
-      (let ((function `#'(ext::lambda-block ,name (,whole &aux ,@dl)
-                                            (declare (ignorable ,@ignorables))
-                                            ,@decls ,@arg-check
-                                            ,@body)))
+      (let ((function `#'(lambda (,whole &aux ,@dl)
+                           (declare (ignorable ,@ignorables))
+                           ,@decls
+                           (block ,name
+                             ,@arg-check ,@body))))
         (when (and (null lambda-list)
                    (consp body)
                    (null (rest body)))

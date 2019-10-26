@@ -213,7 +213,12 @@ the resulting COMPARE-AND-SWAP expansions."
                                  "Attempt to define CAS accessor ~S in locked package."
                                  '(,accessor)
                                  :package package)))
-     (si:put-sysprop ',accessor 'CAS-EXPANDER #'(ext::lambda-block ,accessor ,lambda-list ,@body))
+     (si:put-sysprop ',accessor 'CAS-EXPANDER
+                     ,(multiple-value-bind (decls body)
+                          (si::find-declarations body)
+                        `#'(lambda ,lambda-list
+                             ,@decls
+                             (block ,accessor ,@body))))
      ',accessor))
 
 #+threads
