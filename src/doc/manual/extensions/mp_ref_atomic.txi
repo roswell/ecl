@@ -98,10 +98,12 @@ Currently, the following places are supported:
 @code{car}, @code{cdr}, @code{first}, @code{rest}, @code{svref},
 @code{symbol-plist}, @code{symbol-value}, @code{slot-value},
 @code{clos:standard-instance-access},
-@code{clos:funcallable-standard-instance-access}, a struct accessor
-defined by @code{defstruct} with the @code{:atomic-accessors} option
-enabled or any other place for which a compare-and-swap expansion was
-defined by @code{mp:defcas} or @code{mp:define-cas-expander}.
+@code{clos:funcallable-standard-instance-access}, a structure slot
+accessor@footnote{The creation of atomic structure slot accessors can be
+deactivated by supplying a @code{(:atomic-accessors nil)} option to
+@code{defstruct}.} or any other place for which a compare-and-swap
+expansion was defined by @code{mp:defcas} or
+@code{mp:define-cas-expander}.
 
 For @code{slot-value}, @code{slot-unbound} is called if the slot is
 unbound unless @var{old} is @code{eq} to @code{si:unbound}, in which
@@ -129,7 +131,7 @@ Example:
 Atomic update of a structure slot. If the update would not be atomic,
 the result would be unpredictable.
 @lisp
-(defstruct (test-struct :atomic-accessors)
+(defstruct test-struct
   (slot1 0))
 (let ((struct (make-test-struct)))
   (mapc #'mp:process-join

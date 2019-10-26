@@ -270,8 +270,7 @@ Currently, the following places are supported:
 
 car, cdr, first, rest, svref, symbol-plist, symbol-value, slot-value,
 clos:standard-instance-access, clos:funcallable-standard-instance-access,
-a struct accessor defined by defstruct with the :atomic-accessors
-option enabled or any other place for which a compare-and-swap
+a struct accessor or any other place for which a compare-and-swap
 expansion was defined by defcas or define-cas-expander.
 
 For slot-value, slot-unbound is called if the slot is unbound unless
