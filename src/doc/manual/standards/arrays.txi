@@ -131,7 +131,7 @@ The function @code{si_make_vector} does the same job but allows creating an arra
 @item displacement is either ECL_NIL or a non-negative value with the array displacement.
 @end itemize
 
-Finally, the function @code{si_make_array} does a similar job to @code{si_make_function} but its second argument, @emph{dimension}, can be a list of dimensions, to create a multidimensional array.
+Finally, the function @code{si_make_array} does a similar job to @code{si_make_vector} but its second argument, @emph{dimension}, can be a list of dimensions, to create a multidimensional array.
 @subsubheading Examples
 
 Create one-dimensional @code{base-string} with room for 11 characters:
@@ -144,7 +144,7 @@ Create a one-dimensional @code{array} with a fill pointer
 
 @example
 cl_object type = ecl_make_symbol("BYTE8","EXT");
-cl_object a = si_make_vector(ecl_make_fixnum(16), type, ECL_NIL, /* adjustable */
+cl_object a = si_make_vector(type, ecl_make_fixnum(16), ECL_NIL, /* adjustable */
                              ecl_make_fixnum(0) /* fill-pointer */,
                              ECL_NIL /* displaced_to */,
                              ECL_NIL /* displacement */);
@@ -154,7 +154,7 @@ An alternative formulation
 
 @example
 cl_object type = ecl_make_symbol("BYTE8","EXT");
-cl_object a = si_make_array(ecl_make_fixnum(16), type, ECL_NIL, /* adjustable */
+cl_object a = si_make_array(type, ecl_make_fixnum(16), ECL_NIL, /* adjustable */
                             ecl_make_fixnum(0) /* fill-pointer */,
                             ECL_NIL /* displaced_to */,
                             ECL_NIL /* displacement */);
