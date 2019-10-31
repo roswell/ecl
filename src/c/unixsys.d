@@ -39,9 +39,14 @@
 cl_object
 si_system(cl_object cmd_string)
 {
-	cl_object cmd = si_copy_to_simple_base_string(cmd_string);
-	int code = system((const char *)(cmd->base_string.self));
-	return ecl_make_fixnum(code);
+#if !defined(HAVE_SYSTEM)
+  FElibc_error("si_system not implemented",1);
+  @(return ECL_NIL);
+#else
+  cl_object cmd = si_copy_to_simple_base_string(cmd_string);
+  int code = system((const char *)(cmd->base_string.self));
+  @(return ecl_make_fixnum(code));
+#endif
 }
 
 cl_object
