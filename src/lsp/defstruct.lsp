@@ -427,7 +427,7 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
         print-function print-object type named initial-offset
         offset name-offset
         documentation
-        atomic-accessors)
+        (atomic-accessors t))
 
     ;; Parse the defstruct options.
     (do ((os options (cdr os)) (o) (v))
@@ -461,6 +461,7 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
                                                      `(function ,v))))
                (:TYPE (setq type v))
                (:INITIAL-OFFSET (setq initial-offset v))
+               (:ATOMIC-ACCESSORS (setq atomic-accessors v))
                (t (error "~S is an illegal defstruct option." o))))
             (t
              (if (consp (car os))
@@ -472,9 +473,8 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
                       (cons default-constructor constructors)))
                (:CONC-NAME
                 (setq conc-name nil))
-               ((:COPIER :PREDICATE :PRINT-FUNCTION :PRINT-OBJECT))
+               ((:COPIER :PREDICATE :PRINT-FUNCTION :PRINT-OBJECT :ATOMIC-ACCESSORS))
                (:NAMED (setq named t))
-               (:ATOMIC-ACCESSORS (setq atomic-accessors t))
                (t (error "~S is an illegal defstruct option." o))))))
 
     ;; Skip the documentation string.
