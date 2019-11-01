@@ -105,7 +105,7 @@
            and maxarg = 0
            and in-optionals = nil
            do (cond ((member type '(* &rest &key &allow-other-keys) :test #'eq)
-                     (return (values minarg call-arguments-limit)))
+                     (return (values minarg call-arguments-limit found)))
                     ((eq type '&optional)
                      (setf in-optionals t maxarg minarg))
                     (in-optionals

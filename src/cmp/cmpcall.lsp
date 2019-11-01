@@ -138,22 +138,34 @@
   ;; Call to a function whose C language function name is known,
   ;; either because it has been proclaimed so, or because it belongs
   ;; to the runtime.
-  (when (policy-use-direct-C-call)
-    (let ((fd (si:get-sysprop fname 'Lfun)))
-      (when fd
-        (multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
-          (return-from call-global-loc
-            (call-exported-function-loc
-             fname args fd minarg maxarg
-             (si::mangle-name fname)
-             return-type))))))
-
   (multiple-value-bind (found fd minarg maxarg)
       (si::mangle-name fname t)
     (when found
       (return-from call-global-loc
         (call-exported-function-loc fname args fd minarg maxarg t
                                     return-type))))
+
+  (when (policy-use-direct-C-call)
+    (let ((fd (si:get-sysprop fname 'Lfun)))
+      (when fd
+        (multiple-value-bind (minarg maxarg found) (get-proclaimed-narg fname)
+          #+ecl-min
+          (unless found
+            ;; Without knowing the number of arguments we cannot call
+            ;; the C function. When compiling ECL itself, we get this
+            ;; information through si::mangle-name from symbols_list.h
+            ;; for core functions defined in Lisp code.
+            (let (ignored)
+              (multiple-value-setq (found ignored minarg maxarg)
+                (si::mangle-name fname))))
+          (unless found
+            (cmperr "Can not call the function ~A using its exported C name ~A because its function type has not been proclaimed"
+                    fname fd))
+          (return-from call-global-loc
+            (call-exported-function-loc
+             fname args fd minarg maxarg
+             (si::mangle-name fname)
+             return-type))))))
 
   (call-unknown-global-loc fname nil args))
 
