@@ -105,7 +105,12 @@
 
 (defmacro def-inline (name mode arg-types ret-type call-str &rest flags)
   `(eval-when (:compile-toplevel :load-toplevel)
-     (c::def-inline ',name ',mode ',arg-types ',ret-type ,call-str ,@flags)))
+     ;; FIXME: We should think of a way to achieve this without using
+     ;; internal compiler functions
+     (let ((c::*inline-information* (c::machine-inline-information c::+default-machine+)))
+       (c::def-inline ',name ',mode ',arg-types ',ret-type ,call-str ,@flags)
+       (setf (c::machine-inline-information c::+default-machine+)
+             c::*inline-information*))))
 
 (defmacro def-intrinsic (name arg-types ret-type c-name
                          &key (export t) ret-arg reorder-args immediate-args defun-body)
