@@ -331,7 +331,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*inline-blocks* 0)
     (*open-c-braces* 0)
     (si::*defun-inline-hook* 'maybe-install-inline-function)
-    (*machine* (or *machine* +default-machine+))
+    (*machine* (or *machine* *default-machine*))
     (*optimizable-constants* (make-optimizable-constants *machine*))
     (*inline-information*
      (let ((r (machine-inline-information *machine*)))

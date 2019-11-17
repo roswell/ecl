@@ -926,8 +926,8 @@
                   name i inline-info))
     (push inline-info (gethash (list name safety) *inline-information*))))
 
-(setf (machine-inline-information +default-machine+)
-      (make-inline-information +default-machine+))
+(setf (machine-inline-information *default-machine*)
+      (make-inline-information *default-machine*))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

@@ -129,7 +129,7 @@
      #+threads
      (#.(find-package :mp) "cl_core.mp_package")
      )
-   (when (eq machine +default-machine+)
+   (when (eq machine *default-machine*)
      ;; Constants which are not portable
      `((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")
        (MOST-POSITIVE-SINGLE-FLOAT "FLT_MAX")
