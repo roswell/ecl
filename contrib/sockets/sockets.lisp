@@ -183,55 +183,70 @@ containing the whole rest of the given `string', if any."
 (defmethod host-ent-address ((host-ent host-ent))
   (car (host-ent-addresses host-ent)))
 
-;; FIXME: We should move this to using getaddrinfo
 (defun get-host-by-name (host-name)
   "Returns a HOST-ENT instance for HOST-NAME or throws some kind of condition.
-HOST-NAME may also be an IP address in dotted quad notation or some other
-weird stuff - see gethostbyname(3) for grisly details."
-  (let ((host-ent (make-instance 'host-ent)))
-    (if (c-inline (host-name host-ent
-                             #'(setf host-ent-name)
-                             #'(setf host-ent-aliases)
-                             #'(setf host-ent-address-type)
-                             #'(setf host-ent-addresses))
-                  (:cstring t t t t t) t
-                  "
+HOST-NAME may also be an IP address in dotted quad notation or some
+other weird stuff - see getaddrinfo(3) for details."
+  (multiple-value-bind (result canonical-name addresses aliases)
+      (c-inline (host-name) (:cstring)
+                (values :object :object :object :object)
+                "
 {
-        struct hostent *hostent = gethostbyname(#0);
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;                                     /* IPv4 */
+    hints.ai_socktype = 0;                                         /* Any type */
+    hints.ai_protocol = 0;                                         /* Any protocol */
+    hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG | AI_CANONNAME); /* Get cannonname */
+    hints.ai_addr = NULL;
+    hints.ai_next = NULL;
+    struct addrinfo *result;
+    int s = getaddrinfo(#0, NULL, &hints, &result);
 
-        if (hostent != NULL) {
-                char **aliases;
-                char **addrs;
-                cl_object aliases_list = ECL_NIL;
-                cl_object addr_list = ECL_NIL;
-                int length = hostent->h_length;
+    if (s == 0) {
+        cl_object host_name = ECL_NIL;
+        cl_object aliases = ECL_NIL;
+        cl_object addresses = ECL_NIL;
+        struct addrinfo *rp;
 
-                funcall(3,#2,ecl_make_simple_base_string(hostent->h_name,-1),#1);
-                funcall(3,#4,ecl_make_integer(hostent->h_addrtype),#1);
-
-                for (aliases = hostent->h_aliases; *aliases != NULL; aliases++) {
-                        aliases_list = CONS(ecl_make_simple_base_string(*aliases,-1),aliases_list);
-                }
-                funcall(3,#3,aliases_list,#1);
-
-                for (addrs = hostent->h_addr_list; *addrs != NULL; addrs++) {
-                        int pos;
-                        cl_object vector = funcall(2,@make-array,ecl_make_fixnum(length));
-                        for (pos = 0; pos < length; pos++)
-                                ecl_aset(vector, pos, ecl_make_fixnum((unsigned char)((*addrs)[pos])));
-                        addr_list = CONS(vector, addr_list);
-
-
-                }
-                funcall(3,#5,addr_list,#1);
-
-                @(return) = #1;
-        } else {
-                @(return) = ECL_NIL;
+        for (rp = result; rp != NULL; rp = rp->ai_next) {
+            if ( (rp == result) && (rp->ai_canonname != 0) ) {  /* first one may hold cannonname */
+                host_name = ecl_make_simple_base_string( rp->ai_canonname, -1 );
+            }
+            struct sockaddr_in *ipv4 = (struct sockaddr_in *)rp->ai_addr;
+            uint32_t ip = ntohl( ipv4->sin_addr.s_addr );
+            cl_object vector = cl_make_array(1,ecl_make_fixnum(4));
+            ecl_aset(vector,0, ecl_make_fixnum( ip>>24 ));
+            ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+            ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+            ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
+            addresses = CONS(vector, addresses);
+            if ( rp->ai_canonname != 0 ) {
+                cl_object alias = ecl_make_simple_base_string( rp->ai_canonname, -1 );
+                aliases = CONS(alias, aliases);
+            }
         }
+        @(return 0) = ECL_T;
+        @(return 1) = host_name;
+        @(return 2) = addresses;
+        @(return 3) = aliases;
+    }
+    else {
+        /* error returned */
+        @(return 0) = ecl_make_fixnum(s);                                  /* error number */
+        @(return 1) = ecl_make_simple_base_string(gai_strerror(s),-1);     /* error string */
+        @(return 2) = ECL_NIL;
+        @(return 3) = ECL_NIL;
+    }
+    freeaddrinfo(result);
 }"
-                  :side-effects t)
-        host-ent
+                :one-liner nil)
+    (if result
+        (make-instance 'host-ent
+                       :name (or canonical-name host-name)
+                       :aliases aliases
+                       :type +af-inet+
+                       :addresses addresses)
         (name-service-error "get-host-by-name"))))
 
 (defun get-host-by-address (address)
@@ -318,11 +333,13 @@ protocol. Other values are used as-is.")
   (:documentation "Common base class of all sockets, not meant to be
 directly instantiated."))
 
-
 (defmethod print-object ((object socket) stream)
   (print-unreadable-object (object stream :type t :identity t)
-                           (princ "descriptor " stream)
-                           (princ (slot-value object 'file-descriptor) stream)))
+    (if (slot-boundp object 'file-descriptor)
+        (progn
+          (princ "descriptor " stream)
+          (princ (slot-value object 'file-descriptor) stream))
+        (princ "(unbound descriptor)"))))
 
 (defmethod shared-initialize :after ((socket socket) slot-names
                                      &key protocol type
