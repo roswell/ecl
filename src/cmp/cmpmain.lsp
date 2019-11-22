@@ -644,8 +644,7 @@ compiled successfully, returns the pathname of the compiled file"
 
   (cmpprogress "~&;;;~%;;; Compiling ~a." (namestring input-pathname))
 
-  (let* ((eof '(NIL))
-         (*compiler-in-use* *compiler-in-use*)
+  (let* ((*compiler-in-use* *compiler-in-use*)
          (*load-time-values* nil) ;; Load time values are compiled
          (output-file (apply #'compile-file-pathname input-file args))
          (true-output-file nil) ;; Will be set at the end
@@ -667,20 +666,11 @@ compiled successfully, returns the pathname of the compiled file"
       (when (probe-file "./cmpinit.lsp")
         (load "./cmpinit.lsp" :verbose *compile-verbose*))
 
-      (data-init)
-
       (with-open-file (*compiler-input* *compile-file-pathname*
                                         :external-format external-format)
         (unless source-truename
           (setf (car ext:*source-location*) *compile-file-pathname*))
-        (do* ((*compile-file-position* 0 (file-position *compiler-input*))
-              (form (si::read-object-or-ignore *compiler-input* eof)
-                    (si::read-object-or-ignore *compiler-input* eof)))
-             ((eq form eof))
-          (when form
-            (setf (cdr ext:*source-location*)
-                  (+ source-offset *compile-file-position*))
-            (t1expr form))))
+        (compiler-pass1 *compiler-input* source-offset))
 
       (cmpprogress "~&;;; End of Pass 1.")
       (setf init-name (compute-init-name output-file :kind
@@ -800,8 +790,7 @@ after compilation."
     (with-compiler-env (compiler-conditions)
       (setf form (set-closure-env form lexenv *cmp-env-root*))
       (print-compiler-info)
-      (data-init)
-      (t1expr form)
+      (compiler-pass1 form)
       (cmpprogress "~&;;; End of Pass 1.")
       (let (#+(or mingw32 msvc cygwin)(*self-destructing-fasl* t))
         (compiler-pass2 c-pathname h-pathname data-pathname init-name
@@ -897,8 +886,7 @@ from the C language code.  NIL means \"do not create the file\"."
                    #'(lambda (&rest args)
                        (let ((*compiler-output1* *standard-output*))
                          (apply t3local-fun args))))
-             (data-init)
-             (t1expr disassembled-form)
+             (compiler-pass1 disassembled-form)
              (ctop-write (compute-init-name "foo" :kind :fasl)
                          (if h-file h-file "")
                          (if data-file data-file ""))
@@ -908,10 +896,29 @@ from the C language code.  NIL means \"do not create the file\"."
         (when h-file (close *compiler-output2*)))))
   nil)
 
+;;; FIXME source-offset and source-truename are used by swanks string
+;;; compilation. Revisit if it is truly needed. SBCL deals with that
+;;; using WITH-COMPILATION-UNIT macro what seems to be a much better
+;;; place to customize the source location. -- jd 2019-11-25
+(defun compiler-pass1 (object &optional source-offset)
+  (data-init)
+  (if (streamp object)
+      (do* ((eof '(NIL))
+            (*compile-file-position* 0 (file-position *compiler-input*))
+            (form (si::read-object-or-ignore *compiler-input* eof)
+                  (si::read-object-or-ignore *compiler-input* eof)))
+           ((eq form eof))
+        (when form
+          (setf (cdr ext:*source-location*)
+                (+ source-offset *compile-file-position*))
+          (t1expr form)))
+      (t1expr object)))
+
 (defun compiler-pass2 (c-pathname h-pathname data-pathname init-name
                        &key input-designator)
   (with-open-file (*compiler-output1* c-pathname :direction :output
-                                      :if-does-not-exist :create :if-exists :supersede)
+                                                 :if-does-not-exist :create
+                                                 :if-exists :supersede)
     (wt-comment-nl "Compiler: ~A ~A" (lisp-implementation-type) (lisp-implementation-version))
     #-ecl-min
     (multiple-value-bind (second minute hour day month year)
@@ -921,7 +928,8 @@ from the C language code.  NIL means \"do not create the file\"."
       (wt-comment-nl "Machine: ~A ~A ~A" (software-type) (software-version) (machine-type)))
     (wt-comment-nl "Source: ~A" input-designator)
     (with-open-file (*compiler-output2* h-pathname :direction :output
-                                        :if-does-not-exist :create :if-exists :supersede)
+                                                   :if-does-not-exist :create
+                                                   :if-exists :supersede)
       (wt-nl1 "#include " *cmpinclude*)
       (ctop-write init-name h-pathname data-pathname)
       (terpri *compiler-output1*)
