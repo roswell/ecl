@@ -31,6 +31,7 @@
                      (*current-form* form)
                      (*first-error* t)
                      (*setjmps* 0))
+  (setq form (chk-symbol-macrolet form))
   (when (consp form)
     (let ((fun (car form)) (args (cdr form)) fd)
       (when (member fun *toplevel-forms-to-print*)
