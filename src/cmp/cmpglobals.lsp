@@ -235,9 +235,6 @@ slashes before special characters.")
 in the translated C/C++ file. Notice that it is unspecified where these
 lines are inserted, but the order is preserved")
 
-(defvar *compile-time-too* nil)
-(defvar *not-compile-time* nil)
-
 (defvar *permanent-data* nil)           ; detemines whether we use *permanent-objects*
                                         ; or *temporary-objects*
 (defvar *permanent-objects* nil)        ; holds { ( object (VV vv-index) ) }*
@@ -326,7 +323,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*global-entries* nil)
     (*undefined-vars* nil)
     (*top-level-forms* nil)
-    (*compile-time-too* nil)
     (*clines-string-list* '())
     (*inline-blocks* 0)
     (*open-c-braces* 0)
