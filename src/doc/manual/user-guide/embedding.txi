@@ -159,7 +159,8 @@ The second set is related to the sizes of different stacks. Currently ECL uses f
 @item @code{FRAME_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
 @item @code{LISP_STACK_SIZE} @tab cl_index @tab 32768 @tab Size of interpreter stack.
 @item @code{LISP_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
-@item @code{C_STACK_SIZE} @tab cl_index @tab 131072 @tab Size of C stack (not exact).
+@item @code{C_STACK_SIZE} @tab cl_index @tab 131072 @tab Size of C
+stack@footnote{On operating systems on which ECL can resize the stack at runtime (currently only Unixes), the size of the C stack will be set to this value if the default stack size is smaller. Otherwise, this option should be set to the value of the available stack space to allow for reliable stack overflow detection.}.
 @item @code{C_STACK_SAFETY_AREA} @tab cl_index @tab 4192 @tab  
 @item @code{THREAD_INTERRUPT_SIGNAL} @tab unsigned int @tab 0 @tab If nonzero, specify the unix signal which is used to communicate different Lisp threads.
 @end multitable
