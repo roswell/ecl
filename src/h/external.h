@@ -82,12 +82,17 @@ struct cl_env_struct {
          * memory. They will eventually disappear, because most operating
          * systems already take care of this.
          */
-        cl_index cs_size;
-        cl_index cs_limit_size;
-        cl_index cs_max_size;
-        char *cs_org;
-        char *cs_limit;
-        char *cs_barrier;
+        cl_index cs_size;       /* current size */
+        cl_index cs_limit_size; /* current size minus safety area */
+        cl_index cs_max_size;   /* maximum possible size */
+        char *cs_org;           /* origin address */
+        char *cs_limit;         /* limit address; if the stack pointer
+                                   goes beyond this value, a stack
+                                   overflow will be signaled ... */
+        char *cs_barrier;       /* ... but the area up to cs_barrier
+                                   is still available to allow
+                                   programs to recover from the
+                                   stack overflow */
 
         /* Private variables used by different parts of ECL: */
         /* ... the reader and printer ... */
