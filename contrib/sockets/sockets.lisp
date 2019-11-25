@@ -528,7 +528,7 @@ safe_buffer_pointer(cl_object x, cl_index size)
 
         ecl_disable_interrupts();
         len = recvfrom(#0, wincoerce(char*, safe_buffer_pointer(#1, #2)),
-                       #2, flags, &sender, &addr_len);
+                       #2, flags, (struct sockaddr *)&sender, &addr_len);
         ecl_enable_interrupts();
         if (len >= 0) {
                if (type == t_vector) { #1->vector.fillp = len; }
