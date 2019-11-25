@@ -65,5 +65,61 @@ MacPort command:
 #+BEGIN_SRC shell-script
   sudo port select --set gcc none
 #+END_SRC
-   
+
 Hint provided by Pascal J. Bourguignon.
+
+
+* Cross-compile for the iOS platform
+1. Build the host ECL
+   #+BEGIN_SRC shell-script
+     ./configure --prefix=`pwd`/ecl-iOS-host --disable-c99complex
+     make -j9
+     make install
+     rm -r build
+     export ECL_TO_RUN=`pwd`/ecl-iOS-host/bin/ecl
+   #+END_SRC
+2. Configure the toolchain
+   #+BEGIN_SRC shell-script
+     export IOS_VERSION_MIN="8.0"
+     export IOS_SDK_DIR="`xcode-select --print-path`/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/"
+
+     export CC="clang"
+     export CXX="clang++"
+
+     export CFLAGS="-arch arm64 -miphoneos-version-min=${IOS_VERSION_MIN} -isysroot ${IOS_SDK_DIR}"
+     export CFLAGS="$CFLAGS -pipe -Wno-trigraphs -Wreturn-type -Wunused-variable"
+     export CFLAGS="$CFLAGS -fpascal-strings -fasm-blocks -fmessage-length=0 -fvisibility=hidden"
+     export CFLAGS="$CFLAGS -O2 -DNO_ASM"
+
+     export LD="ld"
+     export LDFLAGS="-arch arm64 -pipe -std=c99 -gdwarf-2 -isysroot ${IOS_SDK_DIR}"
+     export LIBS="-framework Foundation"
+   #+END_SRC
+3. Build and install the target library
+   #+BEGIN_SRC shell-script
+     export CFLAGS="$CFLAGS -DECL_C_COMPATIBLE_VARIADIC_DISPATCH -DGC_DISABLE_INCREMENTAL -DECL_RWLOCK"
+     export CXXFLAGS="$CFLAGS"
+     ./configure --host=aarch64-apple-darwin \
+                 --prefix=`pwd`/ecl-iOS \
+                 --disable-c99complex \
+                 --disable-shared \
+                 --with-cross-config=`pwd`/src/util/iOS-arm64.cross_config
+     make -j9
+     make install
+   #+END_SRC
+4. Library and assets in the ecl-iOS directory are ready to run on
+   the iOS system.
+
+** Using ECL on iOS
+
+The Boehm-Demers-Weiser garbage collector cannot find the stack base
+automatically on iOS. Therefore, this has to be specified manually. In
+the main function, before calling cl_boot, add e.g. (see the garbage
+collector documentation for more details):
+#+BEGIN_SRC C
+  const int size = 256;
+  char* ecl_argv[size];
+  GC_allow_register_threads();
+  GC_register_my_thread((const struct GC_stack_base*)ecl_argv);
+  GC_stackbottom = (char*)(ecl_argv + size - 1);
+#+END_SRC

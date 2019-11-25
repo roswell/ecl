@@ -29,6 +29,7 @@
 
 * Pending changes since 16.1.3
 ** Enhancements
+- iOS support thanks to the help of P. Ruetz and gitlab user Whimse
 - hash-table may now have a custom equivalence predicate
 - ~make-load-form-with-slots~ works for structs even if slot names are not interned
 - ~ext:weak-pointer-value~ returns two values (value and its presence)
