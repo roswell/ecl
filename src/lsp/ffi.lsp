@@ -761,7 +761,11 @@ Loads a foreign library."
                                                 (values-list name)
                                                 (values name :default))
         (let ((arg-types (mapcar #'second arg-desc))
-              (arg-names (mapcar #'first arg-desc)))
+              (arg-names (mapcar #'first arg-desc))
+              (ret-type (typecase ret-type
+                          ((member nil :void)      :void)
+                          ((cons (member * array)) :pointer-void)
+                          (otherwise               ret-type))))
           `(si::make-dynamic-callback
             #'(ext::lambda-block ,name ,arg-names ,@body)
             ',name ',ret-type ',arg-types ,call-type)))

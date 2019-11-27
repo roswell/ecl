@@ -48,12 +48,17 @@
 (defun foreign-elt-type-code (type)
   (let ((x (assoc type +foreign-elt-type-codes+)))
     (unless x
-      (cmperr "~a is not a valid elementary FFI type" type))
+      (cmperr "DEFCALLBACK: ~a is not a valid elementary FFI type." type))
     (cdr x)))
 
 (defun c1-defcallback (args)
   (destructuring-bind (name return-type arg-list &rest body)
       args
+    (cond ((eql return-type nil)
+           (setf return-type :void))
+          ((and (consp return-type)
+                (member (first return-type) '(* array)))
+           (setf return-type :pointer-void)))
     (let ((arg-types '())
           (arg-type-constants '())
           (arg-variables '())
@@ -65,34 +70,27 @@
           (cmperr "Syntax error in CALLBACK form: C type is missing in argument ~A "i))
         (push (first i) arg-variables)
         (let ((type (second i)))
-          (push (second i) arg-types)
-          (push (if (ffi::foreign-elt-type-p type)
-                    (foreign-elt-type-code type)
-                    (add-object type))
-                arg-type-constants)))
+          (push type arg-types)
+          (push (foreign-elt-type-code type) arg-type-constants)))
       (push (list name c-name (add-object name)
-                  return-type (reverse arg-types) (reverse arg-type-constants) call-type)
+                  return-type
+                  (foreign-elt-type-code return-type)
+                  (reverse arg-types)
+                  (reverse arg-type-constants)
+                  call-type)
             *callbacks*)
       (c1expr
        `(progn
-         (defun ,name ,(reverse arg-variables) ,@body)
-         (si:put-sysprop ',name :callback
-          (ffi:c-inline () () :object
-           ,(format nil "ecl_make_foreign_data(@':pointer-void,0,(void*)~a)" c-name)
-           :one-liner t)))))))
+          (defun ,name ,(reverse arg-variables) ,@body)
+          (si:put-sysprop ',name :callback
+                          (ffi:c-inline () () :object
+                                        ,(format nil "ecl_make_foreign_data(@':pointer-void,0,(void*)~a)" c-name)
+                                        :one-liner t)))))))
 
-
-(defun t3-defcallback (lisp-name c-name c-name-constant return-type
+(defun t3-defcallback (lisp-name c-name c-name-constant return-type return-type-code
                        arg-types arg-type-constants call-type &aux (return-p t))
-  (cond ((member return-type '(nil :void))
-         (setf return-p nil))
-        ((ffi::foreign-elt-type-p return-type))
-        ((and (consp return-type)
-              (member (first return-type) '(* array)))
-         (setf return-type :pointer-void))
-        (t
-         (cmperr "DEFCALLBACK does not support complex return types such as ~A"
-                 return-type)))
+  (when (eql return-type :void)
+    (setf return-p nil))
   (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))
         (fmod (case call-type
                 ((:cdecl :default) "")
@@ -100,15 +98,14 @@
                 (t (cmperr "DEFCALLBACK does not support ~A as calling convention"
                            call-type)))))
     (wt-nl-h "static " return-type-name " " fmod c-name "(")
-    (wt-nl1 "static " return-type-name " " fmod c-name "(")
-    (loop for n from 0
-          and type in arg-types
-          with comma = ""
-          do
-          (progn
-            (wt-h comma (rep-type->c-name (ffi::%convert-to-arg-type type)) " var" n)
-            (wt comma (rep-type->c-name (ffi::%convert-to-arg-type type)) " var" n)
-            (setf comma ",")))
+    (wt-nl1  "static " return-type-name " " fmod c-name "(")
+    (loop with comma = ""
+          for n from 0
+          for type in arg-types
+          for arg-type-name = (rep-type->c-name (ffi::%convert-to-arg-type type))
+          do (wt-h comma arg-type-name " var" n)
+             (wt   comma arg-type-name " var" n)
+             (setf comma ","))
     (wt ")")
     (wt-h ");")
     (wt-nl-open-brace)
@@ -120,17 +117,13 @@
     (loop for n from 0
           and type in arg-types
           and ct in arg-type-constants
-          do
-          (if (stringp ct)
-              (wt-nl "ecl_stack_frame_push(frame,ecl_foreign_data_ref_elt(&var"
-                     n "," ct "));")
-              (wt-nl "ecl_stack_frame_push(frame,ecl_make_foreign_data(&var"
-                     n "," ct ", (void*)" (ffi:size-of-foreign-type type) "));")))
+          do (wt-nl "ecl_stack_frame_push("
+                    "frame,ecl_foreign_data_ref_elt(" "&var" n "," ct ")"
+                    ");"))
     (wt-nl "aux = ecl_apply_from_stack_frame(frame,"
            "ecl_fdefinition(" c-name-constant "));")
     (wt-nl "ecl_stack_frame_close(frame);")
     (when return-p
-      (wt-nl "ecl_foreign_data_set_elt(&output,"
-             (foreign-elt-type-code return-type) ",aux);")
+      (wt-nl "ecl_foreign_data_set_elt(&output," return-type-code ",aux);")
       (wt-nl "return output;"))
     (wt-nl-close-brace)))
