@@ -51,6 +51,12 @@
       (cmperr "DEFCALLBACK: ~a is not a valid elementary FFI type." type))
     (cdr x)))
 
+;;; We could have made FFI:DEFCALLBACK to accept any ffi type defined
+;;; for the current machine (see cmpc-machine.lisp), but it wouldn't
+;;; be useful because it only extends FFI types with ECL-specific
+;;; types like :fixnum or :sse2. Another argument against such
+;;; approach is semantic equivalence between interpreted and compiled
+;;; versions of the special form. -- jd 2019-11-27
 (defun c1-defcallback (args)
   (destructuring-bind (name return-type arg-list &rest body)
       args
