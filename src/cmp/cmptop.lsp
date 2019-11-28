@@ -200,10 +200,6 @@
           (wt-nl-h "#define VM " (data-permanent-storage-size))
           (wt-nl-h "#define VMtemp "  (data-temporary-storage-size)))))
 
-  ;;; Global entries for directly called functions.
-  (dolist (x *global-entries*)
-    (apply 'wt-global-entry x))
-
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
   (loop for (name setf-vv name-vv) in *setf-definitions*
      do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",ECL_T);"))
@@ -435,46 +431,6 @@
        for comma = "" then ", "
        do (wt comma "CLV" i)
        finally (wt ";"))))
-
-(defun wt-global-entry (fname cfun arg-types return-type)
-    (when (and (symbolp fname) (si:get-sysprop fname 'NO-GLOBAL-ENTRY))
-      (return-from wt-global-entry nil))
-    (wt-comment-nl "global entry for the function ~a" fname)
-    (wt-nl "static cl_object L" cfun "(cl_narg narg")
-    (wt-nl-h "static cl_object L" cfun "(cl_narg")
-    (do ((vl arg-types (cdr vl))
-         (lcl (1+ *lcl*) (1+ lcl)))
-        ((endp vl) (wt1 ")"))
-      (declare (fixnum lcl))
-      (wt1 ", cl_object ") (wt-lcl lcl)
-      (wt-h ", cl_object"))
-    (wt-h1 ");")
-    (wt-nl-open-brace)
-    (when (compiler-check-args)
-      (wt-nl "_ecl_check_narg(" (length arg-types) ");"))
-    (wt-nl "cl_env_copy->nvalues = 1;")
-    (wt-nl "return " (ecase return-type
-                       (FIXNUM "ecl_make_fixnum")
-                       (CHARACTER "CODE_CHAR")
-                       (DOUBLE-FLOAT "ecl_make_double_float")
-                       (SINGLE-FLOAT "ecl_make_single_float")
-                       (LONG-FLOAT "ecl_make_long_float"))
-           "(LI" cfun "(")
-    (do ((types arg-types (cdr types))
-         (n 1 (1+ n)))
-        ((endp types))
-      (declare (fixnum n))
-      (wt (case (car types)
-            (FIXNUM "fix")
-            (CHARACTER "ecl_char_code")
-            (DOUBLE-FLOAT "df")
-            (SINGLE-FLOAT "sf")
-            (LONG-FLOAT "ecl_long_float")
-            (otherwise "")) "(")
-        (wt-lcl n) (wt ")")
-        (unless (endp (cdr types)) (wt ",")))
-    (wt "));")
-    (wt-nl-close-many-braces 0))
 
 (defun rep-type (type)
   (case type
