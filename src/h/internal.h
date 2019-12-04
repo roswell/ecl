@@ -312,10 +312,6 @@ extern cl_object _ecl_library_default_entry(void);
 extern cl_object _ecl_double_to_integer(double d);
 extern cl_object _ecl_float_to_integer(float d);
 extern cl_object _ecl_long_double_to_integer(long double d);
-#ifdef ECL_COMPLEX_FLOAT
-extern cl_object si_complex_float_p(cl_object o);
-extern cl_object si_complex_float(cl_object r, cl_object i);
-#endif
 
 /* main.d */
 
