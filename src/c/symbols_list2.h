@@ -77,6 +77,10 @@ typedef struct {
 # define IF_COMPLEX_FLOAT(x) NULL
 #endif
 
+/* XXX When the symbol has the associated function its name must
+   follow the naming convention, otherwise si:mangle-name will
+   miscompile the symbol reference. See #534. -- jd 2019-12-04*/
+
 cl_symbol_initializer
 cl_symbols[] = {
 
@@ -2093,7 +2097,7 @@ cl_symbols[] = {
 
 /* #ifdef ECL_COMPLEX_FLOAT */
 {SYS_ "COMPLEX-FLOAT-P","IF_COMPLEX_FLOAT(si_complex_float_p)"},
-{SYS_ "COMPLEX-FLOAT","IF_COMPLEX_FLOAT(ecl_make_complex_float)"},
+{SYS_ "COMPLEX-FLOAT","IF_COMPLEX_FLOAT(si_complex_float)"},
 {SYS_ "COMPLEX-SINGLE-FLOAT",NULL},
 {SYS_ "COMPLEX-DOUBLE-FLOAT",NULL},
 {SYS_ "COMPLEX-LONG-FLOAT",NULL},

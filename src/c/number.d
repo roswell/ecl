@@ -590,7 +590,7 @@ cl_object si_complex_float_p(cl_object f) {
 }
 
 cl_object
-ecl_make_complex_float(cl_object r, cl_object i)
+si_complex_float(cl_object r, cl_object i)
 {
   cl_type tr = ecl_t_of(r);
   cl_type ti = ecl_t_of(i);
