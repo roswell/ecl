@@ -108,7 +108,7 @@
 
 ;;; We may want to craft it into an interface. Suspend/Resume *is* possible on Windows:
 ;;; http://stackoverflow.com/questions/11010165/how-to-suspend-resume-a-process-in-windows
-#-windows
+#-(or windows cygwin)
 (test suspend-resume
   (is-equal `(t :signaled ,ext:+sigkill+)
             (with-run-program (heartbeat nil)
@@ -121,6 +121,12 @@
                 (sleep 2)
                 (is-eql :resumed (ext:external-process-wait process nil))
                 (finishes (ext:terminate-process process t))))))
+
+;;; Cygwin programs seems not to react to signals. We use a stub to
+;;; avoid infintie wait for process termination.
+#+cygwin
+(test suspend-resume
+  (is (null "killpid doesn't seem to work on cygwin.")))
 
 #+threads
 (test no-fd-streams
@@ -160,6 +166,7 @@
   (is (read-line (ext:run-program "env" nil :environ '("foo=bar")) nil nil))
   (is (read-line (ext:run-program "env" nil :environ :default)     nil nil))
   (signals simple-error (ext:run-program "env" nil :environ :bam)  nil nil)
+  #-cygwin ;; Cygwin always injects `WINDIR=C:\\Windows' variable.
   (is (null (slurp (ext:run-program "/usr/bin/env" nil :environ nil)))))
 
 #+windows
