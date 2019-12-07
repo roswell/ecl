@@ -897,11 +897,6 @@ union ecl_ffi_values {
 #endif
 };
 
-enum ecl_ffi_calling_convention {
-        ECL_FFI_CC_CDECL = 0,
-        ECL_FFI_CC_STDCALL
-};
-
 struct ecl_foreign {            /*  user defined datatype  */
         _ECL_HDR;
         cl_object tag;          /*  a tag identifying the type  */

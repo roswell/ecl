@@ -138,17 +138,36 @@ static struct {
   ffi_abi abi;
 } ecl_foreign_cc_table[] = {
   {@':default', FFI_DEFAULT_ABI},
-#ifdef X86_WIN32
-  {@':cdecl', FFI_SYSV},
-  {@':sysv', FFI_SYSV},
-  {@':stdcall', FFI_STDCALL},
-#elif defined(X86_WIN64)
-  {@':win64', FFI_WIN64},
-#elif defined(X86_ANY) || defined(X86) || defined(X86_64)
-  {@':cdecl', FFI_SYSV},
-  {@':sysv', FFI_SYSV},
-  {@':unix64', FFI_UNIX64},
+#ifdef FFI_MS_CDECL
+  {@':cdecl', FFI_MS_CDECL}
+#elif defined(FFI_SYSV)
+  {@':cdecl', FFI_SYSV}
 #endif
+#ifdef FFI_EABI
+  {@':eabi', FFI_EABI}
+#endif
+#ifdef FFI_GNUW64
+  {@':gnuw64', FFI_GNUW64}
+#endif
+#ifdef FFI_STDCALL
+  {@':stdcall', FFI_STDCALL}
+#endif
+#ifdef FFI_SYSV
+  {@':sysv', FFI_SYSV}
+#endif
+#ifdef FFI_UNIX
+  {@':unix', FFI_UNIX}
+#endif
+#ifdef FFI_UNIX64
+  {@':unix64', FFI_UNIX64}
+#endif
+#ifdef FFI_VFP
+  {@':vfp', FFI_VFP}
+#endif
+#ifdef FFI_WIN64
+  {@':win64', FFI_WIN64}
+#endif
+  {NULL, 0}
 };
 
 static ffi_type *ecl_type_to_libffi_types[] = {
@@ -449,12 +468,12 @@ ffi_abi
 ecl_foreign_cc_code(cl_object cc)
 {
   int i;
-  for (i = 0; i <= ECL_FFI_CC_STDCALL; i++) {
+  for (i = 0; ecl_foreign_cc_table[i].symbol != NULL; i++) {
     if (cc == ecl_foreign_cc_table[i].symbol)
       return ecl_foreign_cc_table[i].abi;
   }
   FEerror("~A does no denote a valid calling convention.", 1, cc);
-  return ECL_FFI_CC_CDECL;
+  return FFI_DEFAULT_ABI;
 }
 #endif
 
