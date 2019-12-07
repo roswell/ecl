@@ -64,6 +64,7 @@
  "#define MSG_DONTWAIT 0"
  "#define MSG_NOSIGNAL 0"
  "#define MSG_CONFIRM 0"
+ "#define MSG_TRUNC 0"
  "#include <errno.h>"
  "#include <fcntl.h>"
  "#include <stdio.h>")
