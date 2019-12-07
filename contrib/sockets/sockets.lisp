@@ -68,6 +68,10 @@
  "#include <fcntl.h>"
  "#include <stdio.h>")
 
+#+windows
+(clines
+ "#include <ws2tcpip.h>")
+
 #+:wsock
 (progn
   (defvar +wsock-initialized+ nil)
