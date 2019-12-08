@@ -523,6 +523,9 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
                            frame_aux.base);
         break;
       case t_cfun:
+#ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
+        the_env->function = reg0;
+#endif
         reg0 = APPLY(narg, reg0->cfun.entry, frame_aux.base);
         break;
       case t_cclosure:

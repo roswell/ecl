@@ -114,15 +114,23 @@ ensure_up_to_date_instance(cl_object instance)
 }
 
 cl_object
-ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
+ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */)
 {
   const cl_env_ptr env = ecl_process_env();
   cl_object gfun = env->function;
   cl_object index, value;
   ecl_cache_record_ptr e;
+  cl_object instance;
 
-  unlikely_if (narg != 1)
+  unlikely_if (narg != 1) {
     FEwrong_num_arguments(gfun);
+  } else {
+    va_list args;
+    va_start(args, narg);
+    instance = va_arg(args, cl_object);
+    va_end(args);
+  }
+
   unlikely_if (!ECL_INSTANCEP(instance)) {
     no_applicable_method(env, gfun, ecl_list1(instance));
     return env->values[0];
@@ -159,16 +167,24 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 }
 
 cl_object
-ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_object instance)
+ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instance */)
 {
   const cl_env_ptr env = ecl_process_env();
   cl_object gfun = env->function;
   ecl_cache_record_ptr e;
   cl_object index;
+  cl_object value, instance;
 
   unlikely_if (narg != 2) {
     FEwrong_num_arguments(gfun);
+  } else {
+    va_list args;
+    va_start(args, narg);
+    value = va_arg(args, cl_object);
+    instance = va_arg(args, cl_object);
+    va_end(args);
   }
+
   unlikely_if (!ECL_INSTANCEP(instance)) {
     no_applicable_method(env, gfun, cl_list(2, value, instance));
     return env->values[0];

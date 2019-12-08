@@ -38,12 +38,15 @@ static void
 FEpackage_error(const char *message, cl_object package, int narg, ...)
 {
   ecl_va_list args;
+  cl_object rest;
   ecl_va_start(args, narg, narg, 0);
+  rest = narg? cl_grab_rest_args(args) : cl_list(1,package);
+  ecl_va_end(args);
   si_signal_simple_error(6,
                          @'package-error',
                          ECL_NIL, /* not correctable */
                          ecl_make_constant_base_string(message,-1), /* format control */
-                         narg? cl_grab_rest_args(args) : cl_list(1,package), /* format args */
+                         rest, /* format args */
                          @':package', package); /* extra arguments */
 }
 

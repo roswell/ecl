@@ -81,11 +81,15 @@ SETF doc and can be retrieved by (documentation 'SYMBOL 'setf)."
               documentation (cadr rest)
               stores `(,(gensym)))
         (let* ((args (first rest))
-               (body (cddr rest)))
+               (body (cddr rest))
+               decls)
+          (multiple-value-setq (decls body documentation)
+            (find-declarations body t))
           (setq stores (second rest)
-                documentation (find-documentation body)
-                function `#'(lambda-block ,access-fn (,@stores ,@args) ,@body))))
-    `(eval-when (compile load eval)
+                function `#'(lambda (,@stores ,@args)
+                              ,@decls
+                              (block ,access-fn ,@body)))))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
        ,(ext:register-with-pde whole `(do-defsetf ',access-fn ,function ,(length stores)))
        ,@(si::expand-set-documentation access-fn 'setf documentation)
        ',access-fn)))
@@ -121,11 +125,15 @@ by (DOCUMENTATION 'SYMBOL 'SETF)."
           (setq env (gensym))
           (setq args (cons env args))
           (push `(declare (ignore ,env)) body))))
-  `(eval-when (compile load eval)
-     (do-define-setf-method ',access-fn #'(ext::lambda-block ,access-fn ,args ,@body))
-     ,@(si::expand-set-documentation access-fn 'setf
-                                     (find-documentation body))
-     ',access-fn))
+  (multiple-value-bind (decls body documentation)
+      (find-declarations body t)
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (do-define-setf-method ',access-fn
+         #'(lambda ,args
+             ,@decls
+             (block ,access-fn ,@body)))
+       ,@(si::expand-set-documentation access-fn 'setf documentation)
+       ',access-fn)))
 
 
 ;;;; get-setf-expansion.

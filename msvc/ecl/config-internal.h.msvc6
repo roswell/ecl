@@ -113,19 +113,7 @@
 /* #undef HAVE_SYS_WAIT_H */
 /* size of long long            					*/
 #define ECL_LONG_LONG_BITS 64
-
-/*
- * we do not manage to get proper signal handling of floating point
- * arithmetics in the Alpha chips.
- */
-#if defined(__alpha__)
-# ifdef HAVE_FENV_H
-#  undef HAVE_FENV_H
-# endif
-# ifdef HAVE_FEENABLEEXCEPT
-#  undef HAVE_FEENABLEEXCEPT
-# endif
-#endif
+#define HAVE_SYSTEM
 
 /* what characters are used to mark beginning of new line		*/
 #define ECL_NEWLINE_IS_CRLF 1

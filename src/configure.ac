@@ -737,14 +737,14 @@ dnl !!! end autoscan
 
 AC_CHECK_FUNCS( [nanosleep alarm times select setenv putenv] \
                 [lstat mkstemp sigprocmask isatty tzset] \
-		[gettimeofday getrusage] )
+                [gettimeofday getrusage system] )
 AC_CHECK_DECL([feenableexcept],
               [AC_DEFINE(HAVE_FEENABLEEXCEPT,[],[feenableexcept is available])],
               [AC_MSG_WARN(feenableexcept not declared: disabling floating point exceptions)],
               [#include <fenv.h>])
 
 AC_CHECK_FUNCS( [expf powf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
-		[floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \
+                [floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \
                 [copysign] )
 
 AC_CHECK_FUNCS( [sched_yield uname fseeko dladdr backtrace backtrace_symbols] )

@@ -45,17 +45,6 @@
 #define big_size        big_num->_mp_size
 #define big_limbs       big_num->_mp_d
 
-#define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
-#define cl_def_c_function(sym,function,narg) ecl_def_c_function(sym,function,narg)
-#define cl_def_c_macro(sym,function,narg) {                     \
-                int n = (narg);                                 \
-                if (n < 0)                                      \
-                        ecl_def_c_macro_va((sym),(function));   \
-                else                                            \
-                        ecl_def_c_macro((sym),(function),n); }
-#define cl_make_cfun(fun,name,block,narg) ecl_make_cfun(fun,name,block,narg)
-#define cl_make_cfun_va(fun,name,block) ecl_make_cfun_va(fun,name,block)
-#define cl_make_cclosure_va(fun,name,block) ecl_make_cclosure_va(fun,name,block)
 #define si_bc_file(o) si_compiled_function_file(o)
 #define ARRAYP ECL_ARRAYP
 #define VECTORP ECL_VECTORP

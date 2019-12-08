@@ -149,6 +149,7 @@
 #undef HAVE_BACKTRACE
 #undef HAVE_BACKTRACE_SYMBOLS
 #undef HAVE_SCHED_H
+#undef HAVE_SYSTEM
 
 /* what characters are used to mark beginning of new line               */
 #undef ECL_NEWLINE_IS_CRLF

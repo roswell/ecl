@@ -82,12 +82,17 @@ struct cl_env_struct {
          * memory. They will eventually disappear, because most operating
          * systems already take care of this.
          */
-        cl_index cs_size;
-        cl_index cs_limit_size;
-        cl_index cs_max_size;
-        char *cs_org;
-        char *cs_limit;
-        char *cs_barrier;
+        cl_index cs_size;       /* current size */
+        cl_index cs_limit_size; /* current size minus safety area */
+        cl_index cs_max_size;   /* maximum possible size */
+        char *cs_org;           /* origin address */
+        char *cs_limit;         /* limit address; if the stack pointer
+                                   goes beyond this value, a stack
+                                   overflow will be signaled ... */
+        char *cs_barrier;       /* ... but the area up to cs_barrier
+                                   is still available to allow
+                                   programs to recover from the
+                                   stack overflow */
 
         /* Private variables used by different parts of ECL: */
         /* ... the reader and printer ... */
@@ -283,14 +288,14 @@ extern ECL_API cl_object si_make_weak_pointer(cl_object o);
 extern ECL_API cl_object si_weak_pointer_value(cl_object o);
 #else
 extern ECL_API cl_object si_allocate _ECL_ARGS((cl_narg narg, cl_object type, cl_object qty, ...));
-extern ECL_API cl_object si_maximum_allocatable_pages _ECL_ARGS((cl_narg narg, cl_object type));
-extern ECL_API cl_object si_allocated_pages _ECL_ARGS((cl_narg narg, cl_object type));
+extern ECL_API cl_object si_maximum_allocatable_pages _ECL_ARGS((cl_narg narg, cl_object type, ...));
+extern ECL_API cl_object si_allocated_pages _ECL_ARGS((cl_narg narg, cl_object type, ...));
 extern ECL_API cl_object si_alloc_contpage _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_allocated_contiguous_pages _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_maximum_contiguous_pages _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_allocated_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_maximum_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_allocate_contiguous_pages _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_get_hole_size _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_set_hole_size _ECL_ARGS((cl_narg narg, cl_object size));
+extern ECL_API cl_object si_get_hole_size _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_set_hole_size _ECL_ARGS((cl_narg narg, cl_object size, ...));
 extern ECL_API cl_object si_ignore_maximum_pages _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API void *ecl_alloc(cl_index n);
 extern ECL_API void *ecl_alloc_align(cl_index size, cl_index align);
@@ -431,12 +436,12 @@ extern ECL_API cl_object cl_function_lambda_expression(cl_object fun);
 extern ECL_API cl_object si_compiled_function_file(cl_object fun);
 
 extern ECL_API cl_object ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object block, int narg);
-extern ECL_API cl_object ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block);
-extern ECL_API cl_object ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block);
+extern ECL_API cl_object ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block, int narg_fixed);
+extern ECL_API cl_object ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block, int narg_fixed);
 extern ECL_API void ecl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg);
 extern ECL_API void ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg);
-extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function);
-extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_objectfn c_function);
+extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function, int narg_fixed);
+extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_objectfn c_function, int narg_fixed);
 extern ECL_API void ecl_set_function_source_file_info(cl_object fun, cl_object source, cl_object position);
 extern ECL_API void ecl_cmp_defmacro(cl_object data);
 extern ECL_API void ecl_cmp_defun(cl_object data);
@@ -533,7 +538,7 @@ extern ECL_API cl_object si_eval_with_env _ECL_ARGS((cl_narg narg, cl_object for
 
 /* interpreter.c */
 
-extern ECL_API cl_object si_interpreter_stack _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_interpreter_stack _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size);
 extern ECL_API void ecl_stack_frame_push(cl_object f, cl_object o);
 extern ECL_API void ecl_stack_frame_push_values(cl_object f);
@@ -762,10 +767,10 @@ extern ECL_API cl_object cl_format _ECL_ARGS((cl_narg narg, cl_object stream, cl
 /* gbc.c */
 
 #if !defined(GBC_BOEHM)
-extern ECL_API cl_object si_room_report _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_reset_gc_count _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_gc_time _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_gc(cl_object area);
+extern ECL_API cl_object si_room_report _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_reset_gc_count _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_gc_time _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_gc(cl_object area, ...);
 #define GC_enabled() GC_enable
 #define GC_enable() GC_enable = TRUE;
 #define GC_disable() GC_enable = FALSE;
@@ -1503,9 +1508,9 @@ extern ECL_API cl_object si_print_unreadable_object_function(cl_object o, cl_obj
 
 /* profile.c */
 #ifdef PROFILE
-extern ECL_API cl_object si_profile _ECL_ARGS((cl_narg narg, cl_object scale, cl_object start_address));
-extern ECL_API cl_object si_clear_profile _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_display_profile _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_profile _ECL_ARGS((cl_narg narg, cl_object scale, cl_object start_address, ...));
+extern ECL_API cl_object si_clear_profile _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_display_profile _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API int total_ticks(unsigned short *aar, unsigned int dim);
 extern ECL_API int init_profile(void);
 #endif
@@ -2140,6 +2145,7 @@ extern ECL_API cl_object cl_every _ECL_ARGS((cl_narg narg, cl_object V1, cl_obje
 extern ECL_API cl_object cl_notany _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 extern ECL_API cl_object cl_notevery _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 extern ECL_API cl_object cl_map_into _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
+extern ECL_API cl_object si_sequence_count(cl_object count);
 
 /* seqlib.lsp */
 
@@ -2212,10 +2218,10 @@ extern ECL_API cl_object clos_need_to_make_load_form_p(cl_object o, cl_object en
 /* defclass.lsp */
 extern ECL_API cl_object clos_load_defclass(cl_object name, cl_object superclasses, cl_object slots, cl_object options);
 
-#if 0
 /* defclass.lsp */
 extern ECL_API cl_object clos_ensure_class _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 
+#if 0
 /* kernel.lsp */
 extern ECL_API cl_object clos_class_id _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_class_direct_superclasses _ECL_ARGS((cl_narg narg, cl_object V1, ...));
@@ -2236,7 +2242,7 @@ extern ECL_API cl_object clos_method_specializers _ECL_ARGS((cl_narg narg, cl_ob
 extern ECL_API cl_object cl_method_qualifiers _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_method_function _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_method_plist _ECL_ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object clos_install_method _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, cl_object V4, cl_object V5, cl_object V6, cl_object V7, ...));
+extern ECL_API cl_object clos_install_method _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, cl_object V4, cl_object V5, ...));
 
 #endif
 

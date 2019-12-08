@@ -938,10 +938,18 @@
 ;;; name that users (and compiled code) can refer to. This means, for instance, that
 ;;; MAKE-ARRAY will be compiled to a function called cl_make_array, etc.
 ;;;
+;;; Note that if the created C function should take only fixed
+;;; arguments, a proclamation for the function type must exist so that
+;;; the compiler can produce the correct function signature!
+;;;
 
 (in-package "SI")
 
+#+ecl-min
 (defvar c::*in-all-symbols-functions*
+  ;; These functions are visible from external.h and their function
+  ;; objects are created in init_all_symbols from the data in
+  ;; symbols_list.h
   `(;; arraylib.lsp
     make-array vector array-dimensions array-in-bounds-p array-row-major-index
     bit sbit bit-and bit-ior bit-xor bit-eqv bit-nand bit-nor bit-andc1
@@ -965,9 +973,8 @@
     describe inspect
     ;; iolib.lsp
     read-from-string write-to-string prin1-to-string princ-to-string
-    y-or-n-p yes-or-no-p string-to-object dribble ext:make-encoding
-    ext:make-encoding
-    ext:load-encoding
+    y-or-n-p yes-or-no-p string-to-object dribble
+    ext:make-encoding ext:load-encoding
     ;; listlib.lsp
     union nunion intersection nintersection set-difference nset-difference
     set-exclusive-or nset-exclusive-or subsetp rassoc-if rassoc-if-not
@@ -986,13 +993,19 @@
     deposit-field
     ;; packlib.lsp
     find-all-symbols apropos apropos-list
+    ;; pprint.lsp
+    pprint-fill copy-pprint-dispatch pprint-dispatch
+    pprint-linear pprint-newline pprint-tab pprint-tabular
+    set-pprint-dispatch pprint-indent
     ;; predlib.lsp
     upgraded-array-element-type upgraded-complex-part-type typep subtypep coerce
-    do-deftype si::ratiop si::single-float-p si::short-float-p si::double-float-p
+    si::do-deftype si::ratiop si::single-float-p si::short-float-p si::double-float-p
     si::long-float-p
+    ;; process.lsp
+    ext:run-program
+    ext:terminate-process
     ;; seq.lsp
-    make-sequence concatenate map some every notany notevery map-into
-    complement
+    make-sequence concatenate map some every notany notevery map-into complement
     ;; seqlib.lsp
     reduce fill replace
     remove remove-if remove-if-not delete delete-if delete-if-not
@@ -1000,40 +1013,40 @@
     nsubstitute nsubstitute-if nsubstitute-if-not find find-if find-if-not
     position position-if position-if-not remove-duplicates
     delete-duplicates mismatch search sort stable-sort merge constantly
+    si::sequence-count
     ;; setf.lsp
     si::do-defsetf si::do-define-setf-method
-    ;; process.lsp
-    ext:run-program
-    ext:terminate-process
-    ;; pprint.lsp
-    pprint-fill copy-pprint-dispatch pprint-dispatch
-    pprint-linear pprint-newline pprint-tab pprint-tabular
-    set-pprint-dispatch pprint-indent
+    ;; trace.lsp
+    si::traced-old-definition
 
     #+clos
     ,@'(;; combin.lsp
-     method-combination-error
      invalid-method-error
-     clos:std-compute-applicable-methods
-     clos:std-compute-effective-method
+     method-combination-error
      clos:compute-effective-method-function
-     ;; std-slot-value.lsp
-     clos::standard-instance-access ;; alias clos:funcallable-standard-instance-access
-     clos::standard-instance-set
-     subclassp of-class-p
-     ;; boot.lsp
-     slot-boundp
-     slot-makunbound
-     slot-value
-     clos::slot-value-set
-     slot-exists-p
-     clos::need-to-make-load-form-p
-     ;; defclass
+     clos:std-compute-effective-method
+     ;; defclass.lsp
+     clos::ensure-class
      clos:load-defclass
-     ;; method
+     ;; kernel.lsp
+     clos:std-compute-applicable-methods
+     ;; method.lsp
      clos:extract-lambda-list
      clos:extract-specializer-names
-     )
+     ;; predlib.lsp
+     si::subclassp si::of-class-p
+     ;; print.lsp
+     clos::need-to-make-load-form-p
+     ;; slotvalue.lsp
+     slot-makunbound
+     ;; std-slot-value.lsp
+     slot-boundp
+     slot-exists-p
+     slot-value
+     clos::slot-value-set
+     clos::standard-instance-access ;; alias clos:funcallable-standard-instance-access
+     clos::standard-instance-set
+    )
 
     ;; cdr-5
     ext:array-index-p
@@ -1060,20 +1073,27 @@
 ))
 
 (proclaim
+  ;; These functions are not visible in external.h and have no entry in
+  ;; symbols_list.h
   `(si::c-export-fname #+ecl-min ,@c::*in-all-symbols-functions*
-    typecase-error-string find-documentation find-declarations
+    ;; defmacro.lsp
+    find-documentation find-declarations
     si::search-keyword si::check-keyword
     si::dm-too-many-arguments si::dm-too-few-arguments
-    remove-documentation si::get-documentation
-    si::set-documentation si::expand-set-documentation
+    remove-documentation
+    ;; defstruct.lsp
+    si::structure-type-error si::define-structure
+    ;; helpfile.lsp
+    si::get-documentation si::set-documentation
+    si::expand-set-documentation
+    ;; packlib.lsp
     si::packages-iterator
+    ;; pprint.lsp
     si::pprint-logical-block-helper si::pprint-pop-helper
+    ;; seq.lsp
     si::make-seq-iterator si::seq-iterator-ref
     si::seq-iterator-set si::seq-iterator-next
-    si::sequence-count
-    si::structure-type-error si::define-structure
     si::coerce-to-list si::coerce-to-vector
-    si::traced-old-definition
 
     #+formatter
     ,@'(
@@ -1085,15 +1105,14 @@
     format-relative-tab format-absolute-tab
     format-justification
         )
+
     #+clos
-    ,@'(;; defclass.lsp
-     clos::ensure-class
-     clos::find-slot-definition
-     ;; combin.lsp
-     clos::simple-code-walker
+    ,@'(;; generic.lsp
+     clos::associate-methods-to-gfun
      ;; kernel.lsp
      clos::install-method
-     clos::default-initargs-of
+     ;; std-slot-value.lsp
+     clos::find-slot-definition
      ;; clos::generic-function-lambda-list
      ;; clos::generic-function-argument-precedence-order
      ;; clos::generic-function-method-combination
@@ -1105,8 +1124,6 @@
      ;; clos::method-qualifiers
      ;; clos::method-function
      ;; clos::method-plist
-     clos::associate-methods-to-gfun
-     ;; method.lsp
-     clos::pop-next-method
-     )))
+        )
+    ))
 

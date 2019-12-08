@@ -29,6 +29,26 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
+#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
+  {
+    struct rlimit rl;
+
+    if (!getrlimit(RLIMIT_STACK, &rl)) {
+      env->cs_max_size = rl.rlim_max;
+      if (new_size > rl.rlim_cur) {
+        rl.rlim_cur = (new_size > rl.rlim_max) ? rl.rlim_max : new_size;
+        if (setrlimit(RLIMIT_STACK, &rl))
+          ecl_internal_error("Can't set the size of the C stack");
+      }
+      new_size = rl.rlim_cur;
+#ifdef ECL_DOWN_STACK
+      env->cs_barrier = env->cs_org - new_size;
+#else
+      env->cs_barrier = env->cs_org + new_size;
+#endif
+    }
+  }
+#endif
   env->cs_limit_size = new_size - (2*margin);
 #ifdef ECL_DOWN_STACK
   if (&foo > (env->cs_org - new_size) + 16) {
@@ -44,7 +64,7 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
   }
 #endif
   else
-    ecl_internal_error("can't reset env->cs_limit.");
+    ecl_internal_error("Can't set the size of the C stack");
   env->cs_size = new_size;
 }
 
@@ -87,33 +107,20 @@ ecl_cs_overflow(void)
 void
 ecl_cs_set_org(cl_env_ptr env)
 {
-  /* Rough estimate. Not very safe. We assume that cl_boot()
-   * is invoked from the main() routine of the program.
-   */
-  env->cs_org = (char*)(&env);
+#ifdef GBC_BOEHM
+  struct GC_stack_base base;
+  if (GC_get_stack_base(&base) == GC_SUCCESS)
+    env->cs_org = (char*)base.mem_base;
+  else
+#endif
+    {
+      /* Rough estimate. Not very safe. We assume that cl_boot()
+       * is invoked from the main() routine of the program.
+       */
+      env->cs_org = (char*)(&env);
+    }
   env->cs_barrier = env->cs_org;
   env->cs_max_size = 0;
-#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
-  {
-    struct rlimit rl;
-    cl_index size;
-
-    if (!getrlimit(RLIMIT_STACK, &rl) &&
-        ( rl.rlim_cur != RLIM_INFINITY
-          || rl.rlim_cur != RLIM_SAVED_MAX
-          || rl.rlim_cur != RLIM_SAVED_CUR) ) {
-      env->cs_max_size = rl.rlim_cur;
-      size = rl.rlim_cur / 2;
-      if (size < (cl_index)ecl_option_values[ECL_OPT_C_STACK_SIZE])
-        ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
-#ifdef ECL_DOWN_STACK
-      env->cs_barrier = (env->cs_org - rl.rlim_cur) - 1024;
-#else
-      env->cs_barrier = (env->cs_org + rl.rlim_cur) + 1024;
-#endif
-    }
-  }
-#endif
   cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
 }
 
