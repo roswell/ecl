@@ -16,92 +16,84 @@
 
 (in-package "COMPILER")
 
+;; These types can be used by ECL to unbox data They are sorted from
+;; the most specific, to the least specific one.  All functions must
+;; be declared in external.h (not internal.h) header file.
 (defconstant +representation-types+
-  '(;; These types can be used by ECL to unbox data
-    ;; They are sorted from the most specific, to the least specific one.
-    ;; All functions must be declared in externa.h (not internal.h) header file.
-    (:byte .
-    #1=((signed-byte 8) "int8_t" "ecl_make_int8_t" "ecl_to_int8_t" "ecl_fixnum"))
-    (:unsigned-byte .
-    #2=((unsigned-byte 8) "uint8_t" "ecl_make_uint8_t" "ecl_to_uint8_t" "ecl_fixnum"))
-    (:fixnum integer "cl_fixnum" "ecl_make_fixnum" "ecl_to_fixnum" "ecl_fixnum")
-    (:int integer "int" "ecl_make_int" "ecl_to_int" "ecl_to_int")
-    (:unsigned-int integer "unsigned int" "ecl_make_uint" "ecl_to_uint" "ecl_to_uint")
-    (:long integer "long" "ecl_make_long" "ecl_to_long" "ecl_to_long")
-    (:unsigned-long integer "unsigned long" "ecl_make_ulong" "ecl_to_ulong" "ecl_to_ulong")
-    (:cl-index integer "cl_index" "ecl_make_unsigned_integer" "ecl_to_cl_index" "ecl_fixnum")
-    (:long-long integer "ecl_long_long_t" "ecl_make_long_long" "ecl_to_long_long" "ecl_to_long_long")
-    (:unsigned-long-long integer "ecl_ulong_long_t" "ecl_make_ulong_long" "ecl_to_ulong_long" "ecl_to_ulong_long")
-    (:float single-float "float" "ecl_make_single_float" "ecl_to_float" "ecl_single_float")
-    (:double double-float "double" "ecl_make_double_float" "ecl_to_double" "ecl_double_float")
-    (:long-double long-float "long double" "ecl_make_long_float" "ecl_to_long_double" "ecl_long_float")
-    (:csfloat si::complex-single-float "_Complex float" "ecl_make_csfloat" "ecl_to_csfloat" "ecl_csfloat")
-    (:cdfloat si::complex-double-float "_Complex double" "ecl_make_cdfloat" "ecl_to_cdfloat" "ecl_cdfloat")
-    (:clfloat si::complex-long-float "_Complex long double" "ecl_make_clfloat" "ecl_to_clfloat" "ecl_clfloat")
-    (:unsigned-char base-char "unsigned char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
-    (:char base-char "char" "CODE_CHAR" "ecl_base_char_code" "CHAR_CODE")
-    (:wchar character "ecl_character" "CODE_CHAR" "ecl_char_code" "CHAR_CODE")
-    (:float-sse-pack ext::float-sse-pack "__m128" "ecl_make_float_sse_pack"
-     "ecl_unbox_float_sse_pack" "ecl_unbox_float_sse_pack_unsafe")
-    (:double-sse-pack ext::double-sse-pack "__m128d" "ecl_make_double_sse_pack"
-     "ecl_unbox_double_sse_pack" "ecl_unbox_double_sse_pack_unsafe")
-    (:int-sse-pack ext::sse-pack #|<-intentional|# "__m128i" "ecl_make_int_sse_pack"
-     "ecl_unbox_int_sse_pack" "ecl_unbox_int_sse_pack_unsafe")
-    (:object t "cl_object")
-    (:bool t "bool" "ecl_make_bool" "ecl_to_bool" "ecl_to_bool")
+  ;; ffi-type            lisp type                c type                 convert C->Lisp                     convert Lisp->C             unbox Lisp->C (unsafe)
+  '((:byte             . #1=((signed-byte 8)      "int8_t"               "ecl_make_int8_t"                   "ecl_to_int8_t"             "ecl_fixnum"))
+    (:unsigned-byte    . #2=((unsigned-byte 8)    "uint8_t"              "ecl_make_uint8_t"                  "ecl_to_uint8_t"            "ecl_fixnum"))
+    (:fixnum             integer                  "cl_fixnum"            "ecl_make_fixnum"                   "ecl_to_fixnum"             "ecl_fixnum")
+    (:int                integer                  "int"                  "ecl_make_int"                      "ecl_to_int"                "ecl_to_int")
+    (:unsigned-int       integer                  "unsigned int"         "ecl_make_uint"                     "ecl_to_uint"               "ecl_to_uint")
+    (:long               integer                  "long"                 "ecl_make_long"                     "ecl_to_long"               "ecl_to_long")
+    (:unsigned-long      integer                  "unsigned long"        "ecl_make_ulong"                    "ecl_to_ulong"              "ecl_to_ulong")
+    (:cl-index           integer                  "cl_index"             "ecl_make_unsigned_integer"         "ecl_to_cl_index"           "ecl_fixnum")
+    (:long-long          integer                  "ecl_long_long_t"      "ecl_make_long_long"                "ecl_to_long_long"          "ecl_to_long_long")
+    (:unsigned-long-long integer                  "ecl_ulong_long_t"     "ecl_make_ulong_long"               "ecl_to_ulong_long"         "ecl_to_ulong_long")
+    (:float              single-float             "float"                "ecl_make_single_float"             "ecl_to_float"              "ecl_single_float")
+    (:double             double-float             "double"               "ecl_make_double_float"             "ecl_to_double"             "ecl_double_float")
+    (:long-double        long-float               "long double"          "ecl_make_long_float"               "ecl_to_long_double"        "ecl_long_float")
+    (:csfloat            si::complex-single-float "_Complex float"       "ecl_make_csfloat"                  "ecl_to_csfloat"            "ecl_csfloat")
+    (:cdfloat            si::complex-double-float "_Complex double"      "ecl_make_cdfloat"                  "ecl_to_cdfloat"            "ecl_cdfloat")
+    (:clfloat            si::complex-long-float   "_Complex long double" "ecl_make_clfloat"                  "ecl_to_clfloat"            "ecl_clfloat")
+    (:unsigned-char      base-char                "unsigned char"        "CODE_CHAR"                         "ecl_base_char_code"        "CHAR_CODE")
+    (:char               base-char                "char"                 "CODE_CHAR"                         "ecl_base_char_code"        "CHAR_CODE")
+    (:wchar              character                "ecl_character"        "CODE_CHAR"                         "ecl_char_code"             "CHAR_CODE")
+    (:float-sse-pack     ext::float-sse-pack      "__m128"               "ecl_make_float_sse_pack"           "ecl_unbox_float_sse_pack"  "ecl_unbox_float_sse_pack_unsafe")
+    (:double-sse-pack    ext::double-sse-pack     "__m128d"              "ecl_make_double_sse_pack"          "ecl_unbox_double_sse_pack" "ecl_unbox_double_sse_pack_unsafe")
+    ;; intentional       v
+    (:int-sse-pack       ext::sse-pack            "__m128i"              "ecl_make_int_sse_pack"             "ecl_unbox_int_sse_pack"    "ecl_unbox_int_sse_pack_unsafe")
+    (:object             t                        "cl_object"            nil                                 nil                         nil)
+    (:bool               t                        "bool"                 "ecl_make_bool"                     "ecl_to_bool"               "ecl_to_bool")
     ;; These types are never selected to unbox data.
     ;; They are here, because we need to know how to print them.
-    (:void nil "void")
-    (:pointer-void si::foreign-data "void*" "ecl_make_pointer" "ecl_to_pointer" "ecl_to_pointer")
-    (:cstring string "char*" "ecl_cstring_to_base_string_or_nil")
-    (:char* string "char*")
-    (:int8-t . #1#)
-    (:uint8-t . #2#)
-    (:int16-t integer "ecl_int16_t" "ecl_make_int16_t" "ecl_to_int16_t" "ecl_to_int16_t")
-    (:uint16-t integer "ecl_uint16_t" "ecl_make_uint16_t" "ecl_to_uint16_t" "ecl_to_unt16_t")
-    (:int32-t integer "ecl_int32_t" "ecl_make_int32_t" "ecl_to_int32_t" "ecl_to_int32_t")
-    (:uint32-t integer "ecl_uint32_t" "ecl_make_uint32_t" "ecl_to_uint32_t" "ecl_to_uint32_t")
-    (:int64-t integer "ecl_int64_t" "ecl_make_int64_t" "ecl_to_int64_t" "ecl_to_int64_t")
-    (:uint64-t integer "ecl_uint64_t" "ecl_make_uint64_t" "ecl_to_uint64_t" "ecl_to_uint64_t")
-    (:short integer "short" "ecl_make_short" "ecl_to_short" "ecl_fixnum")
-    (:unsigned-short integer "unsigned short" "ecl_make_ushort" "ecl_to_ushort" "ecl_fixnum")
-    ))
+    (:void               nil                      "void"                 nil                                 nil                         nil)
+    (:pointer-void       si::foreign-data         "void*"                "ecl_make_pointer"                  "ecl_to_pointer"            "ecl_to_pointer")
+    (:cstring            string                   "char*"                "ecl_cstring_to_base_string_or_nil" nil                         nil)
+    (:char*              string                   "char*"                nil                                 nil                         nil)
+    (:int8-t           . #1#)
+    (:uint8-t          . #2#)
+    (:int16-t            integer                  "ecl_int16_t"          "ecl_make_int16_t"                  "ecl_to_int16_t"            "ecl_to_int16_t")
+    (:uint16-t           integer                  "ecl_uint16_t"         "ecl_make_uint16_t"                 "ecl_to_uint16_t"           "ecl_to_unt16_t")
+    (:int32-t            integer                  "ecl_int32_t"          "ecl_make_int32_t"                  "ecl_to_int32_t"            "ecl_to_int32_t")
+    (:uint32-t           integer                  "ecl_uint32_t"         "ecl_make_uint32_t"                 "ecl_to_uint32_t"           "ecl_to_uint32_t")
+    (:int64-t            integer                  "ecl_int64_t"          "ecl_make_int64_t"                  "ecl_to_int64_t"            "ecl_to_int64_t")
+    (:uint64-t           integer                  "ecl_uint64_t"         "ecl_make_uint64_t"                 "ecl_to_uint64_t"           "ecl_to_uint64_t")
+    (:short              integer                  "short"                "ecl_make_short"                    "ecl_to_short"              "ecl_fixnum")
+    (:unsigned-short     integer                  "unsigned short"       "ecl_make_ushort"                   "ecl_to_ushort"             "ecl_fixnum")))
 
+
+;; FIXME number of bits is used for bit fiddling optimizations. That
+;; information should be defined separately. -- jd 2019-11-27
 (defconstant +this-machine-c-types+
-  '((:byte . -8)
-    (:unsigned-byte . 8)
-    (:unsigned-short . #.(- (logcount ffi:c-ushort-max)))
-    (:short . #.(- (logcount ffi:c-ushort-max)))
-    (:unsigned-int . #.(logcount ffi:c-uint-max))
-    (:int . #.(- (logcount ffi:c-uint-max)))
-    (:unsigned-long . #.(logcount ffi:c-ulong-max))
-    (:long . #.(- (logcount ffi:c-ulong-max)))
-    #+long-long
-    (:unsigned-long-long . #.(logcount ffi:c-ulong-long-max))
-    #+long-long
-    (:long-long . #.(- (logcount ffi:c-ulong-long-max)))
-    (:cl-index . #.(logcount most-positive-fixnum))
-    (:fixnum . #.(- -1 (logcount most-positive-fixnum)))
-    (:uint8-t . 8)
-    (:int8-t . -8)
-    #+:uint16-t
-    (:uint16-t . 16)
-    #+:uint16-t
-    (:int16-t . -16)
-    #+:uint32-t
-    (:uint32-t . 32)
-    #+:uint32-t
-    (:int32-t . -32)
-    #+:uint64-t
-    (:uint64-t . 64)
-    #+:uint64-t
-    (:int64-t . -64)
-    #+:sse2 (:float-sse-pack . nil)
-    #+:sse2 (:double-sse-pack . nil)
-    #+:sse2 (:int-sse-pack . nil)
-    #+complex-float (:csfloat . nil)
-    #+complex-float (:cdfloat . nil)
-    #+complex-float (:clfloat . nil)))
+  ;; type                                 integer bits (negative means "signed")
+  '((:byte                               . -8)
+    (:unsigned-byte                      .  8)
+    (:unsigned-short                     . #.(- (logcount ffi:c-ushort-max)))
+    (:short                              . #.(- (logcount ffi:c-ushort-max)))
+    (:unsigned-int                       . #.(logcount ffi:c-uint-max))
+    (:int                                . #.(- (logcount ffi:c-uint-max)))
+    (:unsigned-long                      . #.(logcount ffi:c-ulong-max))
+    (:long                               . #.(- (logcount ffi:c-ulong-max)))
+    #+long-long     (:unsigned-long-long . #.(logcount ffi:c-ulong-long-max))
+    #+long-long     (:long-long          . #.(- (logcount ffi:c-ulong-long-max)))
+    (:cl-index                           . #.(logcount most-positive-fixnum))
+    (:fixnum                             . #.(- -1 (logcount most-positive-fixnum)))
+    (:uint8-t                            .   8)
+    (:int8-t                             .  -8)
+    #+:uint16-t     (:uint16-t           .  16)
+    #+:uint16-t     (:int16-t            . -16)
+    #+:uint32-t     (:uint32-t           .  32)
+    #+:uint32-t     (:int32-t            . -32)
+    #+:uint64-t     (:uint64-t           .  64)
+    #+:uint64-t     (:int64-t            . -64)
+    #+:sse2         (:float-sse-pack     . nil)
+    #+:sse2         (:double-sse-pack    . nil)
+    #+:sse2         (:int-sse-pack       . nil)
+    #+complex-float (:csfloat            . nil)
+    #+complex-float (:cdfloat            . nil)
+    #+complex-float (:clfloat            . nil)))
 
 (defconstant +all-machines-c-types+
   '((:object)

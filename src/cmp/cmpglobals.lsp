@@ -69,7 +69,6 @@ running the compiler. It may be updated by running ")
 (defvar *compiler-break-enable* nil)
 
 (defvar *compiler-in-use* nil)
-(defvar *compiler-input*)
 (defvar *compiler-output1*)
 (defvar *compiler-output2*)
 
@@ -235,9 +234,6 @@ slashes before special characters.")
 in the translated C/C++ file. Notice that it is unspecified where these
 lines are inserted, but the order is preserved")
 
-(defvar *compile-time-too* nil)
-(defvar *not-compile-time* nil)
-
 (defvar *permanent-data* nil)           ; detemines whether we use *permanent-objects*
                                         ; or *temporary-objects*
 (defvar *permanent-objects* nil)        ; holds { ( object (VV vv-index) ) }*
@@ -279,16 +275,6 @@ lines are inserted, but the order is preserved")
 ;;;     | ( 'CLINES'    string* )
 ;;;     | ( 'LOAD-TIME-VALUE' vv )
 
-;;; *global-entries* holds (... ( fname cfun return-types arg-type ) ...).
-
-;;; FIXME: global-entries mechanism seems to be completely abandoned
-;;; (always NIL). Either remove compiler code which uses it and remove
-;;; variable itself or properly document it and use where
-;;; applicable. -- jd 2019-05-07
-(defvar *global-entries* nil)
-
-(defvar *global-macros* nil)
-
 (defvar *self-destructing-fasl* '()
 "A value T means that, when a FASL module is being unloaded (for
 instance during garbage collection), the associated file will be
@@ -323,10 +309,8 @@ be deleted if they have been opened with LoadLibrary.")
     (*global-vars* nil)
     (*global-funs* nil)
     (*global-cfuns-array* nil)
-    (*global-entries* nil)
     (*undefined-vars* nil)
     (*top-level-forms* nil)
-    (*compile-time-too* nil)
     (*clines-string-list* '())
     (*inline-blocks* 0)
     (*open-c-braces* 0)
