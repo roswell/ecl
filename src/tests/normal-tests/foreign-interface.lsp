@@ -112,3 +112,27 @@ int (*foo)(int) = (int (*)(int))#0;
 (test ffi.0005.string-is-array
   (finishes
     (si::make-foreign-data-from-array "dan")))
+
+;;; Date: 2019-12-16
+;;; Description:
+;;;     Regression test to ensure correct complex float handling by
+;;;     the interface. On some platforms libffi is miscompiled to
+;;;     mishandle complex float return values. See the commit message
+;;;     in a commit ad5fe834.
+#+complex-float
+(defun ffi.0006.complex-floats ()
+  ;; dffi
+  (let* ((arg #C(10.0s0 0.5s0))
+         (expect (atanh arg)))
+    (finishes (ffi:def-function "catanhf" ((x :csfloat))
+                :returning :csfloat
+                :module :default))
+    (is (= expect (catanhf arg))))
+  ;; sffi
+  #-ecl-bytecmp
+  (let* ((arg #C(10.0s0 0.5s0))
+         (expect (atanh arg)))
+    (finishes (ffi:def-function "catanhf" ((x :csfloat))
+                :returning :csfloat))
+    (compile 'catanhf)
+    (is (= expect (catanhf arg)))))
