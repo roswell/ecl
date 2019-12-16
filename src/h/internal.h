@@ -209,16 +209,6 @@ extern void _ecl_dump_c_backtrace();
 
 /* ffi.d */
 
-struct ecl_fficall {
-        char *buffer_sp;
-        size_t buffer_size;
-        union ecl_ffi_values output;
-        enum ecl_ffi_calling_convention cc;
-        struct ecl_fficall_reg *registers;
-        char buffer[ECL_FFICALL_LIMIT];
-        cl_object cstring;
-};
-
 extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
 /* file.d */

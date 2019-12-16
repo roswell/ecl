@@ -1803,8 +1803,6 @@ cl_symbols[] = {
 {SYS_ "MAKE-DYNAMIC-CALLBACK",IF_DFFI("si_make_dynamic_callback"),-5},
 {SYS_ "FREE-FFI-CLOSURE",IF_DFFI("si_free_ffi_closure"),1},
 /* #endif defined(HAVE_LIBFFI) */
-{KEY_ "CDECL",NULL,-1},
-{KEY_ "STDCALL",NULL,-1},
 
 {EXT_ "TRAP-FPE","si_trap_fpe",2},
 
@@ -1974,8 +1972,14 @@ cl_symbols[] = {
 
 {SYS_ "STREAM-EXTERNAL-FORMAT-SET","si_stream_external_format_set",2},
 
+{KEY_ "CDECL",NULL,-1},
+{KEY_ "EABI",NULL,-1},
+{KEY_ "GNUW64",NULL,-1},
+{KEY_ "STDCALL",NULL,-1},
 {KEY_ "SYSV",NULL,-1},
+{KEY_ "UNIX",NULL,-1},
 {KEY_ "UNIX64",NULL,-1},
+{KEY_ "VFP",NULL,-1},
 {KEY_ "WIN64",NULL,-1},
 
 {EXT_ "WEAK-POINTER",NULL,-1},
