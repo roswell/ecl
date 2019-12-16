@@ -133,6 +133,13 @@ ecl_foreign_type_table[] = {
 };
 
 #ifdef HAVE_LIBFFI
+
+/* FIXME libffi does not define long long. */
+# ifndef ffi_type_slonglong
+#  define ffi_type_slonglong ffi_type_sint64
+#  define ffi_type_ulonglong ffi_type_uint64
+# endif
+
 static struct {
   const cl_object symbol;
   ffi_abi abi;
@@ -171,49 +178,46 @@ static struct {
 };
 
 static ffi_type *ecl_type_to_libffi_types[] = {
-  &ffi_type_schar, /*@':char',*/
-  &ffi_type_uchar, /*@':unsigned-char',*/
-  &ffi_type_sint8, /*@':byte',*/
-  &ffi_type_uint8, /*@':unsigned-byte',*/
-  &ffi_type_sshort, /*@':short',*/
-  &ffi_type_ushort, /*@':unsigned-short',*/
-  &ffi_type_sint, /*@':int',*/
-  &ffi_type_uint, /*@':unsigned-int',*/
-  &ffi_type_slong, /*@':long',*/
-  &ffi_type_ulong, /*@':unsigned-long',*/
+  &ffi_type_schar,              /*@':char',*/
+  &ffi_type_uchar,              /*@':unsigned-char',*/
+  &ffi_type_sint8,              /*@':byte',*/
+  &ffi_type_uint8,              /*@':unsigned-byte',*/
+  &ffi_type_sshort,             /*@':short',*/
+  &ffi_type_ushort,             /*@':unsigned-short',*/
+  &ffi_type_sint,               /*@':int',*/
+  &ffi_type_uint,               /*@':unsigned-int',*/
+  &ffi_type_slong,              /*@':long',*/
+  &ffi_type_ulong,              /*@':unsigned-long',*/
 #ifdef ecl_uint8_t
-  &ffi_type_sint8, /*@':int8-t',*/
-  &ffi_type_uint8, /*@':uint8-t',*/
+  &ffi_type_sint8,              /*@':int8-t',*/
+  &ffi_type_uint8,              /*@':uint8-t',*/
 #endif
 #ifdef ecl_uint16_t
-  &ffi_type_sint16, /*@':int16-t',*/
-  &ffi_type_uint16, /*@':uint16-t',*/
+  &ffi_type_sint16,             /*@':int16-t',*/
+  &ffi_type_uint16,             /*@':uint16-t',*/
 #endif
 #ifdef ecl_uint32_t
-  &ffi_type_sint32, /*@':int32-t',*/
-  &ffi_type_uint32, /*@':uint32-t',*/
+  &ffi_type_sint32,             /*@':int32-t',*/
+  &ffi_type_uint32,             /*@':uint32-t',*/
 #endif
 #ifdef ecl_uint64_t
-  &ffi_type_sint64, /*@':int64-t',*/
-  &ffi_type_uint64, /*@':uint64-t',*/
+  &ffi_type_sint64,             /*@':int64-t',*/
+  &ffi_type_uint64,             /*@':uint64-t',*/
 #endif
 #ifdef ecl_long_long_t
-  &ffi_type_sint64, /*@':long-long',*/ /*FIXME! libffi does not have long long */
-  &ffi_type_uint64, /*@':unsigned-long-long',*/
+  &ffi_type_slonglong,          /*@':long-long',*/
+  &ffi_type_ulonglong,          /*@':unsigned-long-long',*/
 #endif
-  &ffi_type_pointer, /*@':pointer-void',*/
-  &ffi_type_pointer, /*@':cstring',*/
-  &ffi_type_pointer, /*@':object',*/
-  &ffi_type_float, /*@':float',*/
-  &ffi_type_double, /*@':double',*/
-  &ffi_type_longdouble, /*@':long-double',*/
+  &ffi_type_pointer,            /*@':pointer-void',*/
+  &ffi_type_pointer,            /*@':cstring',*/
+  &ffi_type_pointer,            /*@':object',*/
+  &ffi_type_float,              /*@':float',*/
+  &ffi_type_double,             /*@':double',*/
+  &ffi_type_longdouble,         /*@':long-double',*/
 #ifdef ECL_COMPLEX_FLOAT
-  /* These ffi types are defined in libffi but they dont't seem to
-     work. For the issue report check the following link:
-     https://github.com/libffi/libffi/issues/489 -- jd 2019-05-14 */
-  NULL /* &ffi_type_complex_float      */, /*@':csfloat',*/
-  NULL /* &ffi_type_complex_double     */, /*@':cdfloat',*/
-  NULL /* &ffi_type_complex_longdouble */, /*@':clfloat',*/
+  &ffi_type_complex_float,      /*@':csfloat',*/
+  &ffi_type_complex_double,     /*@':cdfloat',*/
+  &ffi_type_complex_longdouble, /*@':clfloat',*/
 #endif
   &ffi_type_void /*@':void'*/
 };
