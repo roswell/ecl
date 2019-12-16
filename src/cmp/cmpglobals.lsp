@@ -69,7 +69,6 @@ running the compiler. It may be updated by running ")
 (defvar *compiler-break-enable* nil)
 
 (defvar *compiler-in-use* nil)
-(defvar *compiler-input*)
 (defvar *compiler-output1*)
 (defvar *compiler-output2*)
 

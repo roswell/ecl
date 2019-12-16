@@ -666,11 +666,11 @@ compiled successfully, returns the pathname of the compiled file"
       (when (probe-file "./cmpinit.lsp")
         (load "./cmpinit.lsp" :verbose *compile-verbose*))
 
-      (with-open-file (*compiler-input* *compile-file-pathname*
-                                        :external-format external-format)
+      (with-open-file (stream *compile-file-pathname*
+                              :external-format external-format)
         (unless source-truename
           (setf (car ext:*source-location*) *compile-file-pathname*))
-        (compiler-pass1 *compiler-input* source-offset))
+        (compiler-pass1 stream source-offset))
 
       (cmpprogress "~&;;; End of Pass 1.")
       (setf init-name (compute-init-name output-file :kind
@@ -904,9 +904,9 @@ from the C language code.  NIL means \"do not create the file\"."
   (data-init)
   (if (streamp object)
       (do* ((eof '(NIL))
-            (*compile-file-position* 0 (file-position *compiler-input*))
-            (form (si::read-object-or-ignore *compiler-input* eof)
-                  (si::read-object-or-ignore *compiler-input* eof)))
+            (*compile-file-position* 0 (file-position object))
+            (form (si::read-object-or-ignore object eof)
+                  (si::read-object-or-ignore object eof)))
            ((eq form eof))
         (when form
           (setf (cdr ext:*source-location*)
