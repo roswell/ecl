@@ -1143,7 +1143,7 @@ if test "${enable_libffi}" = "included"; then
    if (destdir=`${PWDCMD}`; cd libffi; \
        $srcdir/libffi/configure --disable-shared --prefix=${destdir} \
 	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	 --host=${host_alias} --disable-multi-os-directory \
+	 --host=${host_alias} --disable-multi-os-directory --disable-docs \
          CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
 	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS"); then
      ECL_LIBFFI_HEADER='ecl/ffi.h'
