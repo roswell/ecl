@@ -288,10 +288,12 @@
           ((subtypep type 'sequence)
            (multiple-value-bind (elt-type length)
                (si::closest-sequence-type type)
-             (if (eq elt-type 'list)
-                 `(si::coerce-to-list ,value)
-                 `(si::coerce-to-vector ,value ',elt-type ',length
-                                        ,(and (subtypep type 'simple-array) t)))))
+             (if (or (eq length '*) (policy-assume-right-type))
+                 (if (eq elt-type 'list)
+                     `(si::coerce-to-list ,value)
+                     `(si::coerce-to-vector ,value ',elt-type ',length
+                                            ,(and (subtypep type 'simple-array) t)))
+                 form)))
           ;;
           ;; There are no other atomic types to optimize
           ((atom type)
