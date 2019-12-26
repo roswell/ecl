@@ -364,3 +364,11 @@
        do (is-true (funcall (cdr (elt object-table i))
                             (elt to-be-serialized i)
                             (elt deserialized i))))))
+
+;;; Date: 2019-12-26
+;;; Description:
+;;;
+;;;   Stack overflow detection and recovery
+(test mix.0018.stack-overflow
+  (signals ext:stack-overflow (labels ((f (x) (f (1+ x))))
+                                (f 1))))
