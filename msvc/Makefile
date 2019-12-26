@@ -17,6 +17,9 @@ SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
 THEHOST           = win32
 
+# Size of the C stack in bytes
+ECL_DEFAULT_C_STACK_SIZE = 1048576
+
 # Define to 1 to make a 64-bit build
 # ECL_WIN64 =
 
@@ -132,7 +135,7 @@ CLIBS = $(CLIBS) DbgHelp.lib
 !endif
 
 CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
-LDFLAGS	= /link /incremental:no /nologo $(LDFLAGS_CONFIG)
+LDFLAGS	= /link /incremental:no /nologo $(LDFLAGS_CONFIG) /STACK:$(ECL_DEFAULT_C_STACK_SIZE)
 
 
 # Additional configuration for thread support
@@ -346,6 +349,7 @@ ecl-cc.bat: util\ecl-cc.bat Makefile
 eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd c
 	$(MAKE) /nologo ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
+                ECL_DEFAULT_C_STACK_SIZE=$(ECL_DEFAULT_C_STACK_SIZE) \
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
 		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
 		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
