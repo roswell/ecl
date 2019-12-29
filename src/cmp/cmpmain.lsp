@@ -821,7 +821,17 @@ after compilation."
     (cmp-delete-file h-pathname)
     (cmp-delete-file so-pathname)
     (mapc 'cmp-delete-file tmp-names)
-    (let ((output (or name (and (boundp 'GAZONK) (symbol-value 'GAZONK)))))
+    (let ((output (or name (and (boundp 'GAZONK) (symbol-value 'GAZONK))
+                      #'(lambda (&rest x)
+                          (declare (ignore x))
+                          ;; if compilation failed, we return this
+                          ;; function which does nothing but resignal
+                          ;; the compiler errors we got
+                          (loop for c in compiler-conditions
+                             if (typep c 'compiler-error)
+                             do (apply #'si::simple-program-error
+                                       (simple-condition-format-control c)
+                                       (simple-condition-format-arguments c)))))))
       ;; By unsetting GAZONK we avoid spurious references to the
       ;; loaded code.
       (set 'GAZONK nil)
