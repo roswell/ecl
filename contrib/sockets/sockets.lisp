@@ -202,7 +202,7 @@ other weird stuff - see getaddrinfo(3) for details."
     hints.ai_family = AF_INET;                                     /* IPv4 */
     hints.ai_socktype = 0;                                         /* Any type */
     hints.ai_protocol = 0;                                         /* Any protocol */
-    hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG | AI_CANONNAME); /* Get cannonname */
+    hints.ai_flags = (AI_ADDRCONFIG | AI_CANONNAME);               /* Get cannonname */
     hints.ai_addr = NULL;
     hints.ai_next = NULL;
     struct addrinfo *result;
