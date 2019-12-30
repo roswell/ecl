@@ -202,6 +202,12 @@ ecl_expt(cl_object x, cl_object y)
     case t_doublefloat:
     case t_singlefloat:
       return ecl_expt_float(x, y);
+#ifdef ECL_COMPLEX_FLOAT
+    case t_clfloat:
+    case t_cdfloat:
+    case t_csfloat:
+      return ecl_expt_complex_float(x, y);
+#endif
     default:
       ecl_internal_error("expt: unhandled switch branch.");
     }

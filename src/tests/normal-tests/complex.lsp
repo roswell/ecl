@@ -298,5 +298,5 @@
   ;;
   ;;     (EXPT #C(1.0 0.0) 2) causes unrecoverable error.
   ;;
-  (test.csfloat.0010.issue-547
+  (test csfloat.0010.issue-547
    (finishes (expt #c(1.0 0.0) 2))))
