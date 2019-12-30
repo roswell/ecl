@@ -251,6 +251,8 @@ AC_SUBST(EXEEXT)
 AC_SUBST(INSTALL_TARGET)dnl Which type of installation: flat directory or unix like.
 AC_SUBST(thehost)
 AC_SUBST(ECL_GC_DIR)dnl Which version of the Boehm-Weiser library to use
+AC_SUBST(ECL_DEFAULT_C_STACK_SIZE)dnl Default size of the C stack in bytes
+ECL_DEFAULT_C_STACK_SIZE=1048576 dnl Default to 1 MB if we can't set the stack size at runtime
 ECL_GC_DIR=bdwgc
 ECL_LDRPATH=''
 SHAREDEXT='so'
@@ -404,8 +406,8 @@ case "${host_os}" in
                 enable_threads='yes'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
                 THREAD_GC_FLAGS='--enable-threads=win32'
-                SHARED_LDFLAGS=''
-                BUNDLE_LDFLAGS=''
+                SHARED_LDFLAGS="-Wl,--stack,${ECL_DEFAULT_C_STACK_SIZE}"
+                BUNDLE_LDFLAGS="-Wl,--stack,${ECL_DEFAULT_C_STACK_SIZE}"
                 SHAREDPREFIX=''
                 SHAREDEXT='dll'
                 PICFLAG=''

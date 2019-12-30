@@ -168,6 +168,7 @@ $(HFILES): ../ecl/config.h.msvc6 ../ecl/config-internal.h.msvc6 Makefile
 	-mkdir ..\ecl\impl
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
+                "@ECL_DEFAULT_C_STACK_SIZE@" "$(ECL_DEFAULT_C_STACK_SIZE)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
@@ -175,6 +176,7 @@ $(HFILES): ../ecl/config.h.msvc6 ../ecl/config-internal.h.msvc6 Makefile
 	        < ..\ecl\config.h.msvc6 > ..\ecl\config.h
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
+                "@ECL_DEFAULT_C_STACK_SIZE@" "$(ECL_DEFAULT_C_STACK_SIZE)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \

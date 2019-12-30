@@ -126,11 +126,8 @@
 /*
  * Memory limits for the old garbage collector.
  */
-#define	LISP_PAGESIZE	2048	/* Page size in bytes			*/
-#define MAXPAGE	16384		/* Maximum Memory Size			*/
-
-/* We reserve these many bytes for computation with bignums registers	*/
-#define BIGNUM_REGISTER_SIZE 16
+#define LISP_PAGESIZE	2048	/* Page size in bytes			*/
+#define MAXPAGE	65536		/* Maximum Memory Size			*/
 
 /* We allocate a number of strings in a pool which is used to speed up reading */
 #define ECL_MAX_STRING_POOL_SIZE	10
@@ -191,7 +188,17 @@
 # define ECL_MATHERR_TEST
 #endif
 
+#if defined(HAVE_LIBFFI) && defined(ECL_INCLUDE_FFI_H)
+#include "@ECL_LIBFFI_HEADER@"
+#endif
+
 #define ECL_WINDOWS_BACKTRACE @ECL_USE_DBGHELP@
 #if !ECL_WINDOWS_BACKTRACE
 #undef ECL_WINDOWS_BACKTRACE
+#endif
+
+#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
+#define ECL_DEFAULT_C_STACK_SIZE 0 /* Use the stack size provided by the OS */
+#else
+#define ECL_DEFAULT_C_STACK_SIZE @ECL_DEFAULT_C_STACK_SIZE@
 #endif
