@@ -20,13 +20,12 @@
 
 
 ;;;; Declare the suites
-(suite 'ecl-tests
-       '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed
-         cmp emb ffi mop mp run-program eformat complex))
-
 (suite 'make-check
        '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed
-         cmp emb ffi mop run-program mp))
+         cmp emb ffi mop run-program mp complex))
+
+(suite 'ecl-tests
+       '(make-check eformat))
 
 (suite 'stress)
 (test stress.all (finishes (1am-ecl:run)))

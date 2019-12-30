@@ -180,6 +180,7 @@ ecl_expt(cl_object x, cl_object y)
   /* rational ^ integer  -> rational                */
   /* complex  ^ integer  -> complex/rational        */
   /* float    ^ integer  -> float                   */
+  /* cfloat   ^ integer  -> cfloat                  */
   /* ----------------------------------SECOND IF--- */
   /* number   ^ complex  -> cfloat                  */
   /* complex  ^ number   -> cfloat                  */
