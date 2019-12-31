@@ -215,9 +215,15 @@ static ffi_type *ecl_type_to_libffi_types[] = {
   &ffi_type_double,             /*@':double',*/
   &ffi_type_longdouble,         /*@':long-double',*/
 #ifdef ECL_COMPLEX_FLOAT
+# ifdef FFI_TARGET_HAS_COMPLEX_TYPE
   &ffi_type_complex_float,      /*@':csfloat',*/
   &ffi_type_complex_double,     /*@':cdfloat',*/
   &ffi_type_complex_longdouble, /*@':clfloat',*/
+# else
+  NULL,                         /*@':csfloat',*/
+  NULL,                         /*@':cdfloat',*/
+  NULL,                         /*@':clfloat',*/
+# endif
 #endif
   &ffi_type_void /*@':void'*/
 };
