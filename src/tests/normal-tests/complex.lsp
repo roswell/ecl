@@ -288,4 +288,15 @@
         (is (typep #c(1.0 0)       'si:complex-float))
         (is (not (typep #c(1 1)    'si:complex-float)))
         (is (not (typep #c(0 1)    'si:complex-float)))
-        (is (not (typep #c(1 0)    'si:complex-float)))))
+        (is (not (typep #c(1 0)    'si:complex-float))))
+
+  ;; Date: 2019-12-30
+  ;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/547
+  ;; From: Karsten Poeck
+  ;; Fixed: 2019-12-30 (Daniel Kochmański)
+  ;; Description:
+  ;;
+  ;;     (EXPT #C(1.0 0.0) 2) causes unrecoverable error.
+  ;;
+  (test csfloat.0010.issue-547
+   (finishes (expt #c(1.0 0.0) 2))))
