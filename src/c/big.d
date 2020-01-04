@@ -46,7 +46,10 @@
 void
 _ecl_big_register_free(cl_object x)
 {
-  return;
+  /* We only need to free the integer when it gets too large */
+  if (ECL_BIGNUM_DIM(x) > 4 * ECL_BIG_REGISTER_SIZE) {
+    _ecl_big_realloc2(x, ECL_BIG_REGISTER_SIZE);
+  }
 }
 
 static cl_object
