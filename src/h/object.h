@@ -221,9 +221,9 @@ struct ecl_bignum {
         mpz_t big_num;
 };
 
-#define ECL_BIGNUM_DIM(x)       ((x)->big.big_num->_mp_alloc)
-#define ECL_BIGNUM_SIZE(x)      ((x)->big.big_num->_mp_size)
-#define ECL_BIGNUM_LIMBS(x)     ((x)->big.big_num->_mp_d)
+#define ECL_BIGNUM_DIM(x)       ((x)->big.big_num->_mp_alloc) /* number of allocated limbs */
+#define ECL_BIGNUM_SIZE(x)      ((x)->big.big_num->_mp_size)  /* number of limbs in use times sign of the bignum */
+#define ECL_BIGNUM_LIMBS(x)     ((x)->big.big_num->_mp_d)     /* pointer to array of allocated limbs */
 
 struct ecl_ratio {
         _ECL_HDR;

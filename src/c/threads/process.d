@@ -194,7 +194,10 @@ thread_cleanup(void *aux)
   cl_env_ptr env = process->process.env;
   /* The following flags will disable all interrupts. */
   AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
-  if (env) ecl_disable_interrupts_env(env);
+  if (env) {
+    ecl_clear_bignum_registers(env);
+    ecl_disable_interrupts_env(env);
+  }
 #ifdef HAVE_SIGPROCMASK
   /* ...but we might get stray signals. */
   {

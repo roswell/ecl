@@ -131,6 +131,26 @@ ecl_set_option(int option, cl_fixnum value)
 }
 
 void
+ecl_init_bignum_registers(cl_env_ptr env)
+{
+  int i;
+  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    cl_object x = ecl_alloc_object(t_bignum);
+    _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
+    env->big_register[i] = x;
+  }
+}
+
+void
+ecl_clear_bignum_registers(cl_env_ptr env)
+{
+  int i;
+  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    _ecl_big_clear(env->big_register[i]);
+  }
+}
+
+void
 ecl_init_env(cl_env_ptr env)
 {
   env->c_env = NULL;
@@ -167,14 +187,7 @@ ecl_init_env(cl_env_ptr env)
 
   init_stacks(env);
 
-  {
-    int i;
-    for (i = 0; i < 3; i++) {
-      cl_object x = ecl_alloc_object(t_bignum);
-      _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
-      env->big_register[i] = x;
-    }
-  }
+  ecl_init_bignum_registers(env);
 
   env->trap_fpe_bits = 0;
 
