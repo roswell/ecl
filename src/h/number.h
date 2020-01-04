@@ -45,6 +45,7 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 #define _ecl_big_set_index(x, f) mpz_set_ui((x)->big.big_num,(f))
 #endif
 #define _ecl_big_init2(x,size)  mpz_init2((x)->big.big_num,(size)*GMP_LIMB_BITS)
+#define _ecl_big_realloc2(x,size)       mpz_realloc2((x)->big.big_num,(size)*GMP_LIMB_BITS)
 #define _ecl_big_clear(x)       mpz_clear((x)->big.big_num)
 #define _ecl_big_set(x,y)       mpz_set((x)->big.big_num,(y)->big.big_num)
 #define _ecl_big_odd_p(x)       ((mpz_get_ui(x->big.big_num) & 1) != 0)

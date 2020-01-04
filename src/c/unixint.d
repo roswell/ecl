@@ -385,10 +385,15 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
         cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
         memcpy(values, env->values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
         cl_object stack_frame = env->stack_frame;
-        cl_object big_register[3];
-        memcpy(big_register, env->big_register, 3*sizeof(cl_object));
         cl_object packages_to_be_created = env->packages_to_be_created;
         cl_object packages_to_be_created_p = env->packages_to_be_created_p;
+        /* bignum registers need some special handling, because their
+         * contents are allocated as uncollectable memory. If we did
+         * not init and clear them before calling the interrupting
+         * code we would risk memory leaks. */
+        cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
+        memcpy(big_register, env->big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
+        ecl_init_bignum_registers(env);
         /* We might have been interrupted while we push/pop in the
          * stack. Increasing env->stack_top ensures that we don't
          * overwrite the topmost stack value. */
@@ -407,9 +412,10 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
         memcpy(env->bds_top+1, &top_binding, sizeof(struct ecl_bds_frame));
         memcpy(env->frs_top+1, &top_frame, sizeof(struct ecl_frame));
         env->stack_top--;
+        ecl_clear_bignum_registers(env);
+        memcpy(env->big_register, big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
         env->packages_to_be_created_p = packages_to_be_created_p;
         env->packages_to_be_created = packages_to_be_created;
-        memcpy(env->big_register, big_register, 3*sizeof(cl_object));
         env->stack_frame = stack_frame;
         memcpy(env->values, values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
         env->nvalues = nvalues;

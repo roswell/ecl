@@ -2,7 +2,8 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * big.c - bignum routines based on the GMP
+ * big.c - bignum routines based on the GMP multiple precision
+ * integers.
  *
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
@@ -17,14 +18,38 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
-/* 
- * Using GMP multiple precision integers.
+/*************************************************************
+ * MEMORY MANAGEMENT WITH GMP
+ *
+ * A careful reader of the below code will note that there is no
+ * invocation of mpz_init anywhere. The reason for this is that we
+ * keep a number of initialized bignums in the thread local
+ * environment in what are called bignum registers. From these bignum
+ * registers, we obtain bignum objects that are passed around in user
+ * code by copying the contents of the mpz_t object into a compact
+ * object. This means that the bignum type and the contents of the
+ * corresponding mpz_t are allocated as a single block.
+ *
+ * A consequence of the above is that we also need not call mpz_clear,
+ * since a garbage collection of a compactly allocated bignum
+ * automatically leads to a deallocation of the contents of the
+ * corresponding mpz_t object. The exception to this rule are the
+ * bignum registers which are deallocated upon thread exit.
+ *
+ * The GMP library may also allocate temporary memory for its
+ * computations. It is configurable at runtime whether we use malloc
+ * and free or the corresponding equivalents from the garbage
+ * collector (ecl_alloc_uncollectable and ecl_free_uncollectable) for
+ * that.
  */
 
 void
 _ecl_big_register_free(cl_object x)
 {
-  return;
+  /* We only need to free the integer when it gets too large */
+  if (ECL_BIGNUM_DIM(x) > 4 * ECL_BIG_REGISTER_SIZE) {
+    _ecl_big_realloc2(x, ECL_BIG_REGISTER_SIZE);
+  }
 }
 
 static cl_object
@@ -273,13 +298,13 @@ _ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
 static void *
 mp_alloc(size_t size)
 {
-  return ecl_alloc_atomic(size);
+  return ecl_alloc_uncollectable(size);
 }
 
 static void
 mp_free(void *ptr, size_t size)
 {
-  ecl_dealloc(ptr);
+  ecl_free_uncollectable(ptr);
 }
 
 static void *
