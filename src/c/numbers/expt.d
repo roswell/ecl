@@ -100,7 +100,6 @@ ecl_expt_generic(cl_object x, cl_object y) {
   if (minusp) {
     y = ecl_negate(y);
   }
-  ECL_MATHERR_CLEAR;
   do {
     /* INV: ecl_integer_divide outputs an integer */
     if (!ecl_evenp(y)) {
@@ -113,7 +112,6 @@ ecl_expt_generic(cl_object x, cl_object y) {
     }
     x = ecl_times(x, x);
   } while (1);
-  ECL_MATHERR_TEST;
 }
 
 static cl_object

@@ -29,20 +29,26 @@
  * to be raised when invalid operations are performed.
  */
 #  define DO_DETECT_FPE(f) ecl_detect_fpe()
+#  define DO_DETECT_FPE2(f1,f2) DO_DETECT_FPE(f1)
 # else
 /*
- * Floating point exceptions are disabled
+ * We need explicit checks for floating point exception bits being set
  */
-#  define DO_DETECT_FPE(f)
+#  define DO_DETECT_FPE(f) do {                                   \
+    int status = fetestexcept(ecl_process_env()->trap_fpe_bits);  \
+    unlikely_if (status) ecl_deliver_fpe(status);                 \
+  } while (0)
+#  define DO_DETECT_FPE2(f1,f2) DO_DETECT_FPE(f1)
 # endif
 #else
 /*
  * We do not want IEEE NaNs and infinities
  */
-# define DO_DETECT_FPE(f) do {                                  \
-    unlikely_if (isnan(f)) ecl_deliver_fpe(FE_INVALID);         \
-    unlikely_if (!isfinite(f)) ecl_deliver_fpe(FE_OVERFLOW);    \
+# define DO_DETECT_FPE(f) do {                                   \
+    unlikely_if (isnan(f)) ecl_deliver_fpe(FE_INVALID);          \
+    unlikely_if (!isfinite(f)) ecl_deliver_fpe(FE_OVERFLOW);     \
   } while (0)
+# define DO_DETECT_FPE2(f1,f2) DO_DETECT_FPE(f1); DO_DETECT_FPE(f2)
 #endif
 
 #if !ECL_CAN_INLINE
@@ -618,8 +624,7 @@ si_complex_float(cl_object r, cl_object i)
 }
 
 cl_object ecl_make_csfloat(float _Complex x) {
-  DO_DETECT_FPE(crealf(x));
-  DO_DETECT_FPE(cimagf(x));
+  DO_DETECT_FPE2(crealf(x), cimagf(x));
 
   cl_object c = ecl_alloc_object(t_csfloat);
   ecl_csfloat(c) = x;
@@ -627,8 +632,7 @@ cl_object ecl_make_csfloat(float _Complex x) {
 }
 
 cl_object ecl_make_cdfloat(double _Complex x) {
-  DO_DETECT_FPE(creal(x));
-  DO_DETECT_FPE(cimag(x));
+  DO_DETECT_FPE2(creal(x), cimag(x));
 
   cl_object c = ecl_alloc_object(t_cdfloat);
   ecl_cdfloat(c) = x;
@@ -636,8 +640,7 @@ cl_object ecl_make_cdfloat(double _Complex x) {
 }
 
 cl_object ecl_make_clfloat(long double _Complex x) {
-  DO_DETECT_FPE(creall(x));
-  DO_DETECT_FPE(cimagl(x));
+  DO_DETECT_FPE2(creall(x), cimagl(x));
 
   cl_object c = ecl_alloc_object(t_clfloat);
   ecl_clfloat(c) = x;

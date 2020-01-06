@@ -87,17 +87,4 @@
 # define ECL_WITH_LISP_FPE_END } while (0)
 #endif
 
-#if defined(HAVE_FENV_H) && !defined(HAVE_FEENABLEEXCEPT) && !defined(ECL_AVOID_FPE_H)
-# define ECL_USED_EXCEPTIONS (FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW|FE_UNDERFLOW)
-# define ECL_MATHERR_CLEAR feclearexcept(FE_ALL_EXCEPT)
-# define ECL_MATHERR_TEST do {                                  \
-        int bits = fetestexcept(ECL_USED_EXCEPTIONS);           \
-    unlikely_if (bits) ecl_deliver_fpe(bits); } while(0)
-#else
-# define ECL_MATHERR_CLEAR
-# define ECL_MATHERR_TEST
-#endif
-
-extern void ecl_deliver_fpe(int flags);
-
 #endif /* !ECL_MATH_FENV_H */
