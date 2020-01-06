@@ -107,11 +107,7 @@ struct cl_env_struct {
 #endif
 
         /* ... arithmetics ... */
-        /* Note: if you change the size of these registers, change also
-           BIGNUM_REGISTER_SIZE in config.h */
-        /* FIXME: actually use BIGNUM_REGISTER_SIZE; Also fix
-           handle_all_queued_interrupt_safe in unixint.d */
-        cl_object big_register[3];
+        cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
 
         cl_object own_process;
         /* The objects in this struct need to be writeable from a
@@ -405,6 +401,7 @@ extern ECL_API cl_object mp_atomic_incf_symbol_value(cl_object x, cl_object incr
 
 /* big.c */
 
+/* Note: Needs to be adapted if ECL_BIGNUM_REGISTER_NUMBER changes */
 #define _ecl_big_register0()    ecl_process_env()->big_register[0]
 #define _ecl_big_register1()    ecl_process_env()->big_register[1]
 #define _ecl_big_register2()    ecl_process_env()->big_register[2]
@@ -425,8 +422,6 @@ extern ECL_API cl_object _ecl_big_ceiling(cl_object x, cl_object y, cl_object *r
 extern ECL_API cl_object _ecl_big_floor(cl_object x, cl_object y, cl_object *r);
 extern ECL_API cl_object _ecl_big_negate(cl_object x);
 extern ECL_API void _ecl_big_register_free(cl_object x);
-extern ECL_API cl_object bignum1(cl_fixnum val);
-
 
 /* cfun.c */
 

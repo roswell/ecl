@@ -148,6 +148,8 @@ typedef unsigned int cl_index;
 typedef unsigned int cl_hashkey;
 #endif
 
+#define ECL_BIGNUM_REGISTER_NUMBER 3
+
 /*
  * The character type
  */
