@@ -939,6 +939,53 @@ if test $ECL_WORKING_ENVIRON = yes ; then
 fi
 ])
 
+dnl
+dnl --------------------------------------------------------------
+dnl Check if we have feenableexcept and the hardware generates
+dnl floating point exceptions.
+dnl
+AC_DEFUN(ECL_FLOATING_POINT_EXCEPTIONS,[
+  if test "${with_fpe}" = "yes" ; then
+  AC_MSG_CHECKING(for working feenableexcept)
+  saved_libs="${LIBS}"
+  LIBS="-lm"
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[
+
+#define _GNU_SOURCE
+#include <fenv.h>
+#include <signal.h>
+#include <stdlib.h>
+
+const int traps = FE_DIVBYZERO | FE_OVERFLOW;
+
+void fpe_handler(int code) {
+	if (code == SIGFPE)
+		exit(0);
+}
+
+double raises_fpe(double x) {
+	return x / 0.0;
+}
+
+int main() {
+	signal(SIGFPE, fpe_handler);
+	feclearexcept(traps);
+	feenableexcept(traps);
+	raises_fpe(1.0);
+	return 1;
+}
+]])],
+  [AC_DEFINE([HAVE_FEENABLEEXCEPT], [], [feenableexcept works])
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)],
+  [AC_MSG_RESULT(only checking if feenableexcept is present due to cross compilation)
+   AC_CHECK_DECL([feenableexcept],
+                 [AC_DEFINE(HAVE_FEENABLEEXCEPT,[],[feenableexcept is declared])],
+                 [],
+                 [#include <fenv.h>])])
+  LIBS="${saved_libs}"
+  fi])
+
 dnl ----------------------------------------------------------------------
 dnl Configure libatomic-ops
 dnl

@@ -738,10 +738,6 @@ dnl !!! end autoscan
 AC_CHECK_FUNCS( [nanosleep alarm times select setenv putenv] \
                 [lstat mkstemp sigprocmask isatty tzset] \
                 [gettimeofday getrusage system] )
-AC_CHECK_DECL([feenableexcept],
-              [AC_DEFINE(HAVE_FEENABLEEXCEPT,[],[feenableexcept is available])],
-              [AC_MSG_WARN(feenableexcept not declared: disabling floating point exceptions)],
-              [#include <fenv.h>])
 
 AC_CHECK_FUNCS( [expf powf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
                 [floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \
@@ -755,6 +751,8 @@ AC_CHECK_HEADER( [sys/mman.h],
                )
 
 ECL_POSIX_ENVIRON
+
+ECL_FLOATING_POINT_EXCEPTIONS
 
 dnl =====================================================================
 dnl Checks for system services
