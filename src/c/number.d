@@ -23,7 +23,13 @@
 #include <ecl/impl/math_fenv.h>
 
 #if defined(ECL_IEEE_FP)
-# if defined(HAVE_FEENABLEEXCEPT)
+# if defined(ECL_AVOID_FPE_H)
+/*
+ * We don't check for floating point exceptions
+ */
+#  define DO_DETECT_FPE(f)
+#  define DO_DETECT_FPE2(f1,f2)
+# elif defined(HAVE_FEENABLEEXCEPT)
 /*
  * We are using IEEE arithmetics and can rely on FPE exceptions
  * to be raised when invalid operations are performed.

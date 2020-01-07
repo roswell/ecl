@@ -215,7 +215,7 @@ AC_ARG_WITH(signed-zero,
 AC_ARG_WITH(ieee-fp,
   AS_HELP_STRING( [--with-ieee-fp={yes|no}],
                   [full IEEE floating point system, including denormals (default=YES).]
-                  [Implies signed-zero and fpe]),
+                  [Implies signed-zero]),
   [], [with_ieee_fp="yes"])
 
 AC_ARG_WITH(sse,
@@ -633,7 +633,6 @@ dnl ----------------------------------------------------------------------
 dnl Deactivate floating point exceptions if asked to
 if test "${with_ieee_fp}" = yes; then
    with_signed_zero="yes"
-   with_fpe="yes"
    AC_DEFINE([ECL_IEEE_FP], [], [ECL_IEEE_FP])
 fi
 if test "${with_fpe}" != yes; then

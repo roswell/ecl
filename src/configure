@@ -1537,7 +1537,7 @@ Optional Packages:
   --with-signed-zero={yes|no}
                           allow for IEEE signed zeros (default=YES).
   --with-ieee-fp={yes|no} full IEEE floating point system, including denormals
-                          (default=YES). Implies signed-zero and fpe
+                          (default=YES). Implies signed-zero
   --with-sse={yes|no|auto}
                           implement SSE intrinsics in ECL (default=NO). Only
                           works when supported by the compiler
@@ -6511,7 +6511,6 @@ ECL_VERSION_NUMBER=$(($PACKAGE_MAJOR * 10000 + $PACKAGE_MINOR * 100 + $PACKAGE_L
 
 if test "${with_ieee_fp}" = yes; then
    with_signed_zero="yes"
-   with_fpe="yes"
 
 $as_echo "#define ECL_IEEE_FP /**/" >>confdefs.h
 
