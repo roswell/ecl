@@ -55,17 +55,20 @@ ratios all complex numbers are pairs of numbers.
 @subsection Floating point exceptions
 ECL supports two ways of dealing with special floating point values,
 such as Not a Number (NaN), infinity or denormalized floats, which can
-occur in floating point computations. Either a condition is signaled
-or the value is silently used as it is. There are multiple options
+occur in floating point computations. Either a condition is signaled or
+the value is silently used as it is. There are multiple options
 controlling which behaviour is selected: If ECL is built with the
-@code{--with-ieee-fp=no} configure option, then a condition is
-signaled for every infinity or NaN encountered. If not, the behaviour
-can be controlled by @code{ext:trap-fpe}. By default, a condition is
-signaled for invalid operation, division by zero and floating point
-overflows. If the @code{ECL_OPT_TRAP_SIGFPE} option is false, no
-conditions are signaled by default (Note that in this case, if you
-enable trapping of floating point exceptions with @code{ext:trap-fpe},
-then you have to install your own signal handler).
+@code{--without-ieee-fp} configure option, then a condition is signaled
+for every infinity or NaN encountered. If not, floating point exceptions
+can be disabled at build time using the @code{--without-fpe} configure
+option. Otherwise, if both @code{--with-ieee-fp} and @code{--with-fpe}
+options are on, by default, a condition is signaled for invalid
+operation, division by zero and floating point overflows. This can be
+changed at runtime by using @code{ext:trap-fpe}. If the
+@code{ECL_OPT_TRAP_SIGFPE} boot option is false, no conditions are
+signaled by default (Note that in this case, if you enable trapping of
+floating point exceptions with @code{ext:trap-fpe}, then you have to
+install your own signal handler).
 
 @lspindex ext:trap-fpe
 @defun ext:trap-fpe condition flag
@@ -91,6 +94,10 @@ floating point exception for the conditions passed in @var{condition}.
 @var{condition} can be either a symbol denoting a single condition,
 @code{t} for all conditions that are enabled by default or a value
 obtained from an earlier call to @code{ext:trap-fpe} with @code{last}.
+
+@subsubheading See also
+@code{ECL_WITH_LISP_FPE}
+
 @end defun
 
 @node Numbers - Random-States

@@ -263,4 +263,8 @@ will output
 @verbatim
 inf 0
 @end verbatim
+
+@subsubheading See also
+@code{ext:trap-fpe}
+
 @end defmac

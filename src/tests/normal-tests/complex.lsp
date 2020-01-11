@@ -224,9 +224,13 @@
         ;; exp, sqrt, log and log1p
         (finishes (mapc (lambda (cf) (exp cf))       all-cfloats) "exp1")
         (finishes (mapc (lambda (cf) (sqrt cf))      all-cfloats) "sqrt")
-        (finishes (mapc (lambda (cf) (if (zerop cf)
-                                         (signals division-by-zero (log cf))
-                                         (log cf)))
+        (finishes (mapc (lambda (cf)
+                          #+floating-point-exceptions
+                          (if (zerop cf)
+                              (signals division-by-zero (log cf))
+                              (log cf))
+                          #-floating-point-exceptions
+                          (log cf))
                         all-cfloats) "log1")
         (finishes (mapc (lambda (cf) (si:log1p cf))  all-cfloats) "log1p")
         ;; log operations on floats should give corresponding cfloat type

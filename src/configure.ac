@@ -215,7 +215,7 @@ AC_ARG_WITH(signed-zero,
 AC_ARG_WITH(ieee-fp,
   AS_HELP_STRING( [--with-ieee-fp={yes|no}],
                   [full IEEE floating point system, including denormals (default=YES).]
-                  [Implies signed-zero and fpe]),
+                  [Implies signed-zero]),
   [], [with_ieee_fp="yes"])
 
 AC_ARG_WITH(sse,
@@ -633,7 +633,6 @@ dnl ----------------------------------------------------------------------
 dnl Deactivate floating point exceptions if asked to
 if test "${with_ieee_fp}" = yes; then
    with_signed_zero="yes"
-   with_fpe="yes"
    AC_DEFINE([ECL_IEEE_FP], [], [ECL_IEEE_FP])
 fi
 if test "${with_fpe}" != yes; then
@@ -738,10 +737,6 @@ dnl !!! end autoscan
 AC_CHECK_FUNCS( [nanosleep alarm times select setenv putenv] \
                 [lstat mkstemp sigprocmask isatty tzset] \
                 [gettimeofday getrusage system] )
-AC_CHECK_DECL([feenableexcept],
-              [AC_DEFINE(HAVE_FEENABLEEXCEPT,[],[feenableexcept is available])],
-              [AC_MSG_WARN(feenableexcept not declared: disabling floating point exceptions)],
-              [#include <fenv.h>])
 
 AC_CHECK_FUNCS( [expf powf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
                 [floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \
@@ -755,6 +750,8 @@ AC_CHECK_HEADER( [sys/mman.h],
                )
 
 ECL_POSIX_ENVIRON
+
+ECL_FLOATING_POINT_EXCEPTIONS
 
 dnl =====================================================================
 dnl Checks for system services
