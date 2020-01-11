@@ -159,7 +159,7 @@ struct ecl_interrupt_struct {
 #if defined(ECL_THREADS)
 # define cl_env (*ecl_process_env())
   extern ECL_API cl_env_ptr ecl_process_env(void) __attribute__((const));
-  extern ECL_API cl_env_ptr ecl_process_env_unsafe(void) __attribute__((const));
+  extern ECL_API cl_env_ptr ecl_process_env_unsafe(void);
 #else
 # define cl_env (*cl_env_p)
 # define ecl_process_env() cl_env_p
