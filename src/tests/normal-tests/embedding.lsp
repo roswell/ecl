@@ -116,3 +116,71 @@ main ( const int argc, const char * const argv [] )
 }
 "))
      (test-C-program c-code))))
+
+;;; Date: 2020-01-11 (Marius Gerbershagen)
+;;; Description:
+;;;
+;;;     Verify that the ECL_WITH_LISP_FPE macro works correctly
+;;;
+(test emb.0003.with-lisp-fpe
+  (is-true
+   (let ((c-code "
+#include <math.h>
+#include <ecl/ecl.h>
+
+int main(int argc, char **argv) {
+  double a, b;
+  int ret = 1;
+  cl_env_ptr env;
+  cl_object conditions;
+
+  ECL_WITH_LISP_FPE_BEGIN {
+    cl_boot(argc, argv);
+  } ECL_WITH_LISP_FPE_END;
+
+  env = ecl_process_env();
+  conditions  = ecl_list1(ecl_make_symbol(\"ARITHMETIC-ERROR\", \"CL\"));
+  ECL_HANDLER_CASE_BEGIN(env, conditions) {
+    a = 1.0 / 0.0;
+  } ECL_HANDLER_CASE(1, condition) {
+    ret = 2;
+    goto out;
+  } ECL_HANDLER_CASE_END;
+
+  ECL_WITH_LISP_FPE_BEGIN {
+    ECL_HANDLER_CASE_BEGIN(env, conditions) {
+      b = ecl_to_double(ecl_make_double_float(1.0));
+    } ECL_HANDLER_CASE(1, condition) {
+      ret = 3; /* Exception bits being set before ECL_WITH_LISP_FPE_BEGIN
+                * shouldn't lead to a floating point exception being
+                * signaled when creating a double float ...
+                */
+      goto out;
+    } ECL_HANDLER_CASE_END;
+  } ECL_WITH_LISP_FPE_END;
+
+  ECL_WITH_LISP_FPE_BEGIN {
+    ECL_HANDLER_CASE_BEGIN(env, conditions) {
+      b = ecl_to_double(cl_N(2, ecl_make_double_float(1.0), ecl_make_double_float(0.0)));
+    } ECL_HANDLER_CASE(1, condition) {
+      b = 0.0; /* ... but dividing by a zero float should definitely do so
+                */
+    } ECL_HANDLER_CASE_END;
+  } ECL_WITH_LISP_FPE_END;
+
+  if (isinf(a) &&
+#ifdef ECL_AVOID_FPE_H
+      isinf(b)
+#else
+      b == 0.0
+#endif
+      ) {
+    ret = 0;
+  }
+
+out:
+  cl_shutdown();
+  return ret;
+}
+"))
+     (test-C-program c-code))))
