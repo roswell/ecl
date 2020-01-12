@@ -18,10 +18,12 @@
 (in-package "COMPILER")
 
 (defun unoptimized-long-call (fun arguments)
-  (let ((frame (gensym)))
+  (let ((frame (gensym))
+        (f-arg (gensym)))
     `(with-stack ,frame
-       ,@(loop for i in arguments collect `(stack-push ,frame ,i))
-       (si::apply-from-stack-frame ,frame ,fun))))
+       (let ((,f-arg ,fun))
+         ,@(loop for i in arguments collect `(stack-push ,frame ,i))
+         (si::apply-from-stack-frame ,frame ,f-arg)))))
 
 (defun unoptimized-funcall (fun arguments)
   (let ((l (length arguments)))
