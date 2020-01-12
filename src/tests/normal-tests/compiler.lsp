@@ -1582,3 +1582,26 @@
   (finishes (run-1))
   (finishes (run-2))
   (finishes (run-3)))
+
+;;; Date 2020-01-12
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/550
+;;; Description
+;;;
+;;;     When we invoke an unopitmized long call (that is we apply from
+;;;     a stack frame), function argument is evaluated after the
+;;;     arguments what is wrong for operators where function is the
+;;;     first argument (and should be evaluated first).
+(test cmp.0074.c-arguments-limit.evaluation-rule
+      (flet ((make-fn (n)
+               `(lambda ()
+                  (let ((se-var '()))
+                    (funcall (prog1 #'list (push :fun se-var))
+                             ,@(list* `(push :arg se-var)
+                                      (make-list (1- n))))
+                    (nreverse se-var))))
+             (check-fn (form)
+               (is (equal '(:fun :arg) (funcall (compile nil form))))))
+        (check-fn (make-fn 10))
+        (check-fn (make-fn (1+ si::c-arguments-limit)))
+        (check-fn (make-fn (1- si::c-arguments-limit)))
+        (check-fn (make-fn si::c-arguments-limit))))
