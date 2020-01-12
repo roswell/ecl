@@ -24,27 +24,23 @@ cl_object
 ecl_atan2(cl_object y, cl_object x)
 {
   cl_object output;
-  ECL_MATHERR_CLEAR;
-  {
-    int tx = ecl_t_of(x);
-    int ty = ecl_t_of(y);
-    if (tx < ty)
-      tx = ty;
-    if (tx == t_longfloat) {
-      long double d = atan2l(ecl_to_long_double(y), ecl_to_long_double(x));
-      output = ecl_make_long_float(d);
+  int tx = ecl_t_of(x);
+  int ty = ecl_t_of(y);
+  if (tx < ty)
+    tx = ty;
+  if (tx == t_longfloat) {
+    long double d = atan2l(ecl_to_long_double(y), ecl_to_long_double(x));
+    output = ecl_make_long_float(d);
+  } else {
+    double dx = ecl_to_double(x);
+    double dy = ecl_to_double(y);
+    double dz = atan2(dy, dx);
+    if (tx == t_doublefloat) {
+      output = ecl_make_double_float(dz);
     } else {
-      double dx = ecl_to_double(x);
-      double dy = ecl_to_double(y);
-      double dz = atan2(dy, dx);
-      if (tx == t_doublefloat) {
-        output = ecl_make_double_float(dz);
-      } else {
-        output = ecl_make_single_float(dz);
-      }
+      output = ecl_make_single_float(dz);
     }
   }
-  ECL_MATHERR_TEST;
   return output;
 }
 

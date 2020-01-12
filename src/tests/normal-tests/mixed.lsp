@@ -191,10 +191,11 @@
 ;;; Date: 2016-12-21
 ;;; Description:
 ;;;
-;;;   `sleep' sues `ECL_WITHOUT_FPE_BEGIN' which didn't restore fpe
+;;;   `sleep' uses `ECL_WITHOUT_FPE_BEGIN' which didn't restore fpe
 ;;;   correctly.
 ;;;
 ;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/317
+#+floating-point-exceptions
 (test mix.0013.sleep-without-fpe
   (sleep 0.1)
   (let ((a 1.0)

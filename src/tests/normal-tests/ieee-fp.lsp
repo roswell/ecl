@@ -332,6 +332,7 @@ Common Lisp type contagion rules."
 
 ;;; ... but we don't, therefore everything throws arithmetic errors.
 
+#+floating-point-exceptions
 (test ieee-fp.0010.NaN-floor/ceiling/truncate/round/mod/rem
       (loop :for function :in '(floor ceiling truncate round
                                 ffloor fceiling ftruncate fround
@@ -347,6 +348,7 @@ Common Lisp type contagion rules."
          (for-all-number-subtypes (x float 0)
            (signals arithmetic-error (funcall function x x)))))
 
+#+floating-point-exceptions
 (test ieee-fp.0011.infinity-floor/ceiling/truncate/round
       (loop :for function :in '(floor ceiling truncate round
                                 ffloor fceiling ftruncate fround

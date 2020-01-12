@@ -1238,6 +1238,7 @@
 ;;;
 ;;;    On some platforms (without feenableexcept) compiling code with
 ;;;    constants being infinity cause fpe-exception.
+#+ieee-floating-point
 (test cmp.0056.artificial-fpe
   (finishes
     (funcall (compile nil
