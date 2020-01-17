@@ -244,13 +244,13 @@ ecl_to_uint64_t(cl_object x) {
       cl_object copy = _ecl_big_register0();
       mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
       if (mpz_fits_ulong_p(copy->big.big_num)) {
-        volatile ecl_uint64_t output;
+        ecl_uint64_t output;
         output = (ecl_uint64_t)mpz_get_ui(copy->big.big_num);
-        output = (output << 32) +
-          (ecl_uint64_t)mpz_get_ui(x->big.big_num);
+        output = (output << 32) + (ecl_uint64_t)mpz_get_ui(x->big.big_num);
         _ecl_big_register_free(copy);
         return output;
       }
+      _ecl_big_register_free(copy);
     }
   }
   FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),
@@ -273,8 +273,11 @@ ecl_to_int64_t(cl_object x) {
       ecl_int64_t output;
       output = (ecl_int64_t)mpz_get_si(copy->big.big_num);
       mpz_fdiv_r_2exp(copy->big.big_num, x->big.big_num, 32);
-      return (output << 32) + mpz_get_ui(copy->big.big_num);
+      output = (output << 32) + mpz_get_ui(copy->big.big_num);
+      _ecl_big_register_free(copy);
+      return output;
     }
+    _ecl_big_register_free(copy);
   }
   FEwrong_type_argument(cl_list(3,@'integer',
                                 ecl_negate(ecl_ash(ecl_make_fixnum(1), 63)),
@@ -360,15 +363,17 @@ ecl_to_ulong_long(cl_object x) {
       int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
       mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
       if (mpz_fits_ulong_p(copy->big.big_num)) {
-        volatile ecl_ulong_long_t output;
+        ecl_ulong_long_t output;
         output = mpz_get_ui(copy->big.big_num);
         for (i -= ECL_FIXNUM_BITS; i;
              i-= ECL_FIXNUM_BITS) {
           output = (output << ECL_FIXNUM_BITS);
           output += mpz_get_ui(x->big.big_num);
         }
+        _ecl_big_register_free(copy);
         return output;
       }
+      _ecl_big_register_free(copy);
     }
   }
   FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),
@@ -391,14 +396,16 @@ ecl_to_long_long(cl_object x)
     int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
     mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
     if (mpz_fits_ulong_p(copy->big.big_num)) {
-      volatile ecl_long_long_t output;
+      ecl_long_long_t output;
       output = mpz_get_si(copy->big.big_num);
       for (i -= ECL_FIXNUM_BITS; i; i-= ECL_FIXNUM_BITS) {
         output = (output << ECL_FIXNUM_BITS);
         output += mpz_get_ui(x->big.big_num);
       }
+      _ecl_big_register_free(copy);
       return output;
     }
+    _ecl_big_register_free(copy);
   }
   FEwrong_type_argument(cl_list(3,@'integer',
                                 ecl_negate(ecl_ash(ecl_make_fixnum(1), ECL_LONG_LONG_BITS-1)),

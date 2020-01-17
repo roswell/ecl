@@ -189,7 +189,6 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
       return make_float(num, ecl_plus(decimals, exp),
                         c, sign);
     } else if (radix != 10) {
-      _ecl_big_register_free(num);
       num = ecl_parse_number(str, start, end, ep, 10);
       if (num != OBJNULL) {
         if (floatp(num))
@@ -204,7 +203,6 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
     } else {
     NOT_A_NUMBER:
       *ep = i;
-      _ecl_big_register_free(num);
       return OBJNULL;
     }
   }

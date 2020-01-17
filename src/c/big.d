@@ -43,6 +43,24 @@
  * that.
  */
 
+/*************************************************************
+ * HOW TO USE BIGNUM REGISTERS
+ *
+ * All users of the bignum registers must use the following routine to
+ * prevent crashes and memory leaks:
+ * 1) Aquire bignum registers using _ecl_big_registerx
+ * 2) Do some computations using _ecl_big_xxx
+ * 3) Do one of the following with the bignum registers:
+ *    - Extract results of the computation using
+ *      _ecl_big_register_normalize (if result may be a fixnum) or
+ *      _ecl_big_register_copy (if result is known to be a bignum).
+ *      Do not pass the obtained value to _ecl_big_register_free.
+ *      Do not directly return a bignum register!
+ *    - Call _ecl_big_register_free for any registers whose value is not
+ *      needed after the computation (not strictly needed, can be
+ *      skipped if particularly inconvenient).
+ */
+
 void
 _ecl_big_register_free(cl_object x)
 {
