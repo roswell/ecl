@@ -15,8 +15,10 @@
 (define-function print-test
   (terpri *standard-output*)
   (princ "Hello stdout" *standard-output*)
+  (finish-output *standard-output*)
   (terpri *error-output*)
-  (princ "Hello stderr" *error-output*))
+  (princ "Hello stderr" *error-output*)
+  (finish-output *error-output*))
 
 (define-function io/err
   (princ "Welcome to ITP(NR) - Intelligent Test Program (not really)!")
