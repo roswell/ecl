@@ -148,6 +148,9 @@
               name library depends-on (string name) compiled))
     path))
 
+(defun init-name (name)
+  (concatenate 'string "init_lib_" (string-upcase (substitute #\_ #\- name))))
+
 (defun build-module (name sources &key additional-files depends-on
                      (builtin nil) (dir "build:")
                      ((:prefix si::*init-function-prefix*) "EXT"))
@@ -158,7 +161,9 @@
     (let* ((objects (compile-if-old dir sources :system-p t :c-file t
                                     :data-file t :h-file t))
            (compiled-file-name (string name))
-           (static-library (c::build-static-library name :lisp-files objects)))
+           (static-library (c::build-static-library name
+                                                    :lisp-files objects
+                                                    :init-name (init-name name))))
       (push static-library *module-files*)
       (when builtin
         (push (intern name) *module-symbols*))
