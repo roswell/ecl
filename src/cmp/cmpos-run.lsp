@@ -50,19 +50,26 @@
          (args `(,@(cdr program) ,@args))
          (program (car program)))
     (with-current-directory
-      #-windows (multiple-value-bind (output-stream return-status pid)
-                    (si:run-program-inner program args :default nil)
-                  (setf output (collect-lines output-stream))
-                  (multiple-value-setq (return-status result)
-                    (si:waitpid pid t)))
-      #+windows (setf result (si:system (format nil "~A~{ ~A~}" program args)))))
+     ;; when compiling ECL itself, we only have low-level functions
+     ;; available, otherwise we can use run-program and get proper
+     ;; quoting of arguments
+     #+ecl-min (multiple-value-bind (output-stream return-status pid)
+                   (si:run-program-inner program args :default nil)
+                 (setf output (collect-lines output-stream))
+                 (multiple-value-setq (return-status result)
+                   (si:waitpid pid t)))
+     #-ecl-min (multiple-value-bind (output-stream return-status process-obj)
+                   (ext:run-program program args :wait nil)
+                 (setf output (collect-lines output-stream))
+                 (multiple-value-setq (return-status result)
+                   (ext:external-process-wait process-obj t)))))
   (cond ((null result)
          (cerror "Continues anyway."
-                 "Unable to execute:~%(SI:RUN-PROGRAM-INNER ~S ~S NIL)"
+                 "Unable to execute:~%(EXT:RUN-PROGRAM ~S ~S)"
                  program args result))
         ((not (zerop result))
          (cerror "Continues anyway."
-                 "Error code ~D when executing~%(SI:RUN-PROGRAM-INNER ~S ~S NIL):~%~{~A~^~%~}"
+                 "Error code ~D when executing~%(EXT:RUN-PROGRAM ~S ~S):~%~{~A~^~%~}"
                  result program args output)))
   result)
 
