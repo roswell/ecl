@@ -738,9 +738,11 @@ locations. Returns the path of the first found file."
 Loads a foreign library."
   (declare (ignore module force-load supporting-libraries))
   (let ((compile-form (and (constantp filename env)
-                           `((eval-when (:compile-toplevel)
-                               (do-load-foreign-library ,filename
-                                 ,(ext:constant-form-value system-library))))))
+                           `((ext:with-backend
+                                 :c/c++ (eval-when (:compile-toplevel)
+                                          (do-load-foreign-library ,filename
+                                            ,(ext:constant-form-value system-library)))
+                                 :bytecodes nil))))
         (dyn-form #+dffi (when (and (not system-library) *use-dffi*)
                            `((si:load-foreign-module ,filename)))
                   #-dffi nil))
