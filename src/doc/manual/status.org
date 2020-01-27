@@ -59,7 +59,7 @@ Many nodes, moderate amount of content (deviations from the standard)
 - [ ] Series
 - [ ] Tree walker
 - [X] Local package nicknames
-- [ ] CDR Extensions
+- [X] CDR Extensions
 
 * Not documented yet
 #+BEGIN_SRC lisp
@@ -67,10 +67,6 @@ Many nodes, moderate amount of content (deviations from the standard)
     foo
     bar)
 
-  (ext:with-backend
-      :bytecodes fib
-      :c/c++     fact)
-  
   (ffi:definline …)
 #+END_SRC
 

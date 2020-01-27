@@ -290,6 +290,31 @@ The interpreter ignores this form.
 @c determine that the actual arguments are of the specified type.
 @c <XXX
 
+@lspindex ext:with-backend
+@defspec ext:with-backend &key bytecodes c/c++
+
+Use different code depending on the backend.
+
+@subsubheading Description
+Depending on whether the bytecodes or C compiler is used, this form will
+emit the code given in the corresponding keyword argument.
+
+@subsubheading Examples
+@exindex @code{ext:with-backend} use different code for c and bytecodes compiler
+@verbatim
+CL-USER> (defmacro test ()
+           '(ext:with-backend :c/c++ "c/c++" :bytecodes "bytecodes"))
+TEST
+CL-USER> (test)
+"bytecodes"
+CL-USER> (funcall (compile nil (lambda () (test))))
+
+;;; OPTIMIZE levels: Safety=2, Space=0, Speed=3, Debug=3
+"c/c++"
+
+@end verbatim
+@end defspec
+
 @lspindex ffi:defla
 @defmac ffi:defla name args &body body
 
