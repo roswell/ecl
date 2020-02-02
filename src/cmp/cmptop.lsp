@@ -52,8 +52,14 @@
                 (multiple-value-setq (fd success)
                   (cmp-expand-macro fd form))
                 success))
-         (push 'macroexpand *current-toplevel-form*)
-         (t1expr* fd))
+         (when *compile-time-too*
+           ;; Ignore compiler macros during compile time evaluation
+           ;; (they may expand in ffi:c-inline which the bytecodes
+           ;; compiler can't execute).
+           (cmp-eval form))
+         (let ((*compile-time-too* nil))
+           (push 'macroexpand *current-toplevel-form*)
+           (t1expr* fd)))
         ((setq fd (cmp-macro-function fun))
          (push 'macroexpand *current-toplevel-form*)
          (t1expr* (cmp-expand-macro fd form)))
