@@ -12,12 +12,15 @@
 @cindex Command line processing
 @node Command line arguments
 @subsection Command line arguments
+
+@lspdef ext:*help-message*
 @deftypevar string ext:*help-message*
 Command line help message. Initial value is ECL help message. This
 variable contains the help message which is output when ECL is invoked
 with the @code{--help}.
 @end deftypevar
 
+@lspdef ext:*lisp-init-file-list*
 @deftypevar list-of-pathname-designators ext:*lisp-init-file-list*
 ECL initialization files. Initial value is @code{'("~/.ecl"
 "~/.eclrc")}. This variable contains the names of initialization files
@@ -25,17 +28,19 @@ that are loaded by ECL or embedding programs. The loading of
 initialization files happens automatically in ECL unless invoked with
 the option @code{--norc}. Whether initialization files are loaded or
 not is controlled by the command line options rules, as described in
-@code{ext:process-command-args}.
+@coderef{ext:process-command-args}.
 @end deftypevar
 
+@lspdef ext:+default-command-arg-rules+
 @deftypevar list-of-lists ext:+default-command-arg-rules+
 ECL command line options. This constant contains a list of rules for
 parsing the command line arguments. This list is made of all the
 options which ECL accepts by default. It can be passed as first
-argument to @code{ext:process-command-args}, and you can use it as a
+argument to @coderef{ext:process-command-args}, and you can use it as a
 starting point to extend ECL.
 @end deftypevar
 
+@lspdef ext:command-args
 @defun ext:command-args
 Original list of command line arguments. This function returns the
 list of command line arguments passed to either ECL or the program it
@@ -45,15 +50,16 @@ name of the program as it was invoked. You should not count on the
 filename to be resolved.
 @end defun
 
+@lspdef ext:process-command-args
 @defun ext:process-command-args &key args rules
 
-@defvr argument args
-A list of strings. Defaults to the output of @code{ext:command-args}.
-@end defvr
-@defvr argument rules
+@table @var
+@item args
+A list of strings. Defaults to the output of @coderef{ext:command-args}.
+@item rules
 A list of lists. Defaults to the value of
-@code{ext:+default-command-arg-rules+}.
-@end defvr
+@coderef{ext:+default-command-arg-rules+}.
+@end table
 
 This function processes the command line arguments passed to either
 ECL or the program that embeds it. It uses the list of rules rules,
@@ -61,51 +67,47 @@ which has the following syntax:
 
 @code{(option-name nargs template [:stop | :noloadrc | :loadrc]*)}
 
-@defvr opt option-name
+@table @code
+@item option-name
 A string with the option prefix as typed by the user. For instance
 @code{--help}, @code{-?}, @code{--compile}, etc.
-@end defvr
 
-@defvr opt nargs
+@item nargs
 A non-negative integer denoting the number of arguments taken by this
 option.
-@end defvr
 
-@defvr opt template
+@item template
 A lisp form, not evaluated, where numbers from 0 to nargs will be
 replaced by the corresponding option argument.
-@end defvr
 
-@defvr opt :stop
+@item :stop
 If present, parsing of arguments stops after this option is found and
 processed. The list of remaining arguments is passed to the
 rule. ECL's top-level uses this option with the @code{--} command line
 option to set @code{ext:*unprocessed-ecl-command-args*} to the list of
 remaining arguments.
-@end defvr
 
-@defvr opt :noloadrc
-@defvrx opt :loadrc
+@item :noloadrc, :loadrc
 Determine whether the lisp initialization files in
-@code{ext:*lisp-init-file-list*} will be loaded before processing
+@coderef{ext:*lisp-init-file-list*} will be loaded before processing
 all forms.
-@end defvr
+@end table
 
-@code{ext:process-command-args} works as follows. First of all, it
+@coderef{ext:process-command-args} works as follows. First of all, it
 parses all the command line arguments, except for the first one, which
 is assumed to contain the program name. Each of these arguments is
 matched against the rules, sequentially, until one of the patterns
 succeeds.
 
-A special name @code{*DEFAULT*}, matches any unknown command line
-option. If there is no @code{*DEFAULT*} rule and no match is found, an
+A special name @code{*default*}, matches any unknown command line
+option. If there is no @code{*default*} rule and no match is found, an
 error is signaled. For each rule that succeeds, the function
 constructs a lisp statement using the template.
 
 After all arguments have been processed,
-@code{ext:process-command-args}, and there were no occurrences of
+@coderef{ext:process-command-args}, and there were no occurrences of
 @code{:noloadrc}, the first existing file listed in
-@code{ext:*lisp-init-file-list*} will be loaded. Finally, the list of
+@coderef{ext:*lisp-init-file-list*} will be loaded. Finally, the list of
 lisp statements will be evaluated.
 @end defun
 
@@ -114,7 +116,7 @@ lisp statements will be evaluated.
 
 The following piece of code implements the ls command using
 lisp. Instructions for building this program are found under
-@code{ecl/examples/cmdline/ls.lsp}.
+@file{examples/cmdline/ls.lsp}.
 
 @lisp
 @verbatim
@@ -147,25 +149,26 @@ ls [--help | -?] filename*
 @subsection External processes
 
 ECL provides several facilities for invoking and communicating with
-@code{ext:external-process}. If one just wishes to execute some
-program, without caring for its output, then probably
-@code{ext:system} is the best function. In all other cases it is
-preferable to use @code{ext:run-program}, which opens pipes to
-communicate with the program and manipulate it while it runs on the
-background.
+external processes. If one just wishes to execute some program, without
+caring for its output, then probably @coderef{ext:system} is the best
+function. In all other cases it is preferable to use
+@coderef{ext:run-program}, which opens pipes to communicate with the
+program and manipulate it while it runs on the background.
 
-External process is a structure created with @code{ext:run-program}
+External process is a structure created with @coderef{ext:run-program}
 (returned as third value). It is programmer responsibility, to call
-@code{ext:external-process-wait} on finished processes, however during
+@coderef{ext:external-process-wait} on finished processes, however during
 garbage collection object will be finalized.
 
+@lspdef ext:external-process-pid
 @defun ext:external-process-pid process
 Returns process PID or @code{nil} if already finished.
 @end defun
 
+@lspdef ext:external-process-status
 @defun ext:external-process-status process
-Updates process status. @code{ext:external-process-status} calls
-@code{ext:external-process-wait} if process has not finished yet
+Updates process status. @coderef{ext:external-process-status} calls
+@coderef{ext:external-process-wait} if process has not finished yet
 (non-blocking call).  Returns two values:
 
 @code{status} - member of @code{(:abort :error :exited :signalled
@@ -175,40 +178,45 @@ Updates process status. @code{ext:external-process-status} calls
 it is a signal code. Otherwise NIL.
 @end defun
 
+@lspdef ext:external-process-wait
 @defun ext:external-process-wait process wait
 If the second argument is non-NIL, function blocks until external
 process is finished. Otherwise status is updated. Returns two values
-(see @code{ext:external-process-status}).
+(see @coderef{ext:external-process-status}).
 @end defun
 
+@lspdef ext:terminate-process
 @defun ext:terminate-process process &optional force
 Terminates external process.
 @end defun
 
+@lspdef ext:external-process-input
+@lspdef ext:external-process-output
+@lspdef ext:external-process-error-stream
 @defun ext:external-process-input process
 @defunx ext:external-process-output process
 @defunx ext:external-process-error-stream process
 Process stream accessors (read-only).
 @end defun
 
-@lspindex ext:run-program
+@lspdef ext:run-program
 @defun ext:run-program command argv @
        &key input output error wait environ @
        if-input-does-not-exist if-output-exists if-error-exists @
        external-format #+windows escape-arguments
 
-@code{run-program} creates a new process specified by the
+@coderef{ext:run-program} creates a new process specified by the
 @var{command} argument. @var{argv} are the standard arguments that can
 be passed to a program. For no arguments, use @code{nil} (which means
 that just the name of the program is passed as arg 0).
 
-@code{run-program} will return three values - two-way stream for
+@coderef{ext:run-program} will return three values - two-way stream for
 communication, return code or @code{nil} (if process is called
 asynchronously), and @code{ext:external-process} object holding
 process state.
 
 It is programmer responsibility to call
-@code{ext:external-process-wait} on finished process, however ECL
+@coderef{ext:external-process-wait} on finished process, however ECL
 associates @ref{Finalization, finalizer} with the object calling it
 when the object is garbage collected. If process didn't finish but is
 not referenced, finalizer will be invoked once more during next
@@ -216,71 +224,68 @@ garbage collection.
 
 The @code{&key} arguments have the following meanings:
 
-@defvr argument input
+@table @var
+@item input
 Either @code{t}, @code{nil}, a pathname, a string, a stream or
 @code{:stream}. If @code{t} the standard input for the current process
-is inherited. If @code{nil}, @code{/dev/null} is used. If a pathname
-(or a string), the file so specified is used. If a stream, all the
-input is read from that stream and sent to the subprocess. If
-@code{:stream}, the @code{external-process-input} slot is filled in
-with a stream that sends its output to the process. Defaults to
-@code{:stream}.
-@end defvr
+is inherited. If @code{nil}, @code{/dev/null} is used. If a pathname (or
+a string), the file so specified is used. If a stream, all the input is
+read from that stream and sent to the subprocess. If @code{:stream}, the
+@coderef{ext:external-process-input} slot is filled in with a stream
+that sends its output to the process. Defaults to @code{:stream}.
 
-@defvr argument if-input-does-not-exist
-can be one of: @code{:error} to generate an error @code{:create} to
+@item if-input-does-not-exist
+Can be one of: @code{:error} to generate an error @code{:create} to
 create an empty file @code{nil} (the default) to return nil from
-@code{run-program}
-@end defvr
+@coderef{ext:run-program}
 
-@defvr argument output
+@item output
 Either @code{t}, @code{nil}, a pathname, a string, a stream, or
-@code{:stream}. If @code{t}, the standard output for the current
-process is inherited. If @code{nil}, @code{/dev/null} is used. If a
-pathname (or as string), the file so specified is used. If a stream,
-all the output from the process is written to this stream. If
-@code{:stream}, the @code{external-process-output} slot is filled in
-with a stream that can be read to get the output. Defaults to
-@code{:stream}.
-@end defvr
+@code{:stream}. If @code{t}, the standard output for the current process
+is inherited. If @code{nil}, @code{/dev/null} is used. If a pathname (or
+as string), the file so specified is used. If a stream, all the output
+from the process is written to this stream. If @code{:stream}, the
+@coderef{ext:external-process-output} slot is filled in with a stream
+that can be read to get the output. Defaults to @code{:stream}.
 
-@defvr argument if-output-exists
-@end defvr
+@item if-output-exists
+Can be one of: @code{:error} (the default) to generate an error,
+@code{:supersede} to supersede the file with output from the program,
+@code{:append} to append output from the program to the file or
+@code{nil} to return @code{nil} from @coderef{ext:run-program}.
 
-@defvr argument error
+@item error
 Same as @code{:output}, except that @code{:error} can also be
 specified as @code{:output} in which case all error output is routed
 to the same place as normal output. Defaults to @code{:output}.
-@end defvr
 
-@defvr argument if-error-exists
+@item if-error-exists
 Same as @code{:if-output-exists}.
-@end defvr
 
-@defvr argument wait
-If non-NIL (default), wait until the created process finishes. If
+@item wait
+If non-@code{nil} (default), wait until the created process finishes. If
 @code{nil}, continue running Lisp until the program finishes.
-@end defvr
 
-@defvr argument environ
+@item environ
 A list of STRINGs describing the new Unix environment (as in "man
 environ"). The default is to copy the environment of the current
 process. To extend existing environment (instead of replacing it),
 use @code{:environ (append *my-env* (ext:environ))}.
 
-If non-NIL @code{environ} argument is supplied, then first argument to
-@code{ext:run-program} @code{command} must be full path to the file.
-@end defvr
+If non-@code{nil} @code{environ} argument is supplied, then first
+argument to @coderef{ext:run-program}, @var{command}, must be full path
+to the file.
 
-@defvr argument external-format
+@item external-format
 The external-format to use for @code{:input}, @code{:output}, and
 @code{:error} STREAMs.
-@end defvr
+@end table
 
-@emph{Windows specific options:}
-@defvr argument escape-arguments
-Controls escaping of the arguments passed to CreateProcess.
-@end defvr
+@strong{Windows specific options:}
+@table @var
+@item escape-arguments
+Controls escaping of the arguments passed to @code{CreateProcess}.
+@end table
 @end defun
 
 @cindex FIFO files (named pipes)
@@ -289,8 +294,8 @@ Controls escaping of the arguments passed to CreateProcess.
 
 Named pipe (known as fifo) may be created on UNIX with a shell command
 mkfifo. ECL opens such files in non-blocking
-mode. @code{ext:file-kind} will return for such file
-@code{:FIFO}. Since it is impossible to guess how many characters are
+mode. @coderef{ext:file-kind} will return for such file
+@code{:fifo}. Since it is impossible to guess how many characters are
 available in this special file @code{file-length} function will return
 NIL.
 
@@ -307,15 +312,17 @@ NIL.
 @c @defun ext:argv
 @c @end defun
 
+@lspdef ext:system
 @defun ext:system command
 Run shell command ignoring its output. Uses fork.
 @end defun
 
+@lspdef ext:make-pipe
 @defun ext:make-pipe
 Creates a pipe and wraps it in a two way stream.
 @end defun
 
-
+@lspdef ext:quit
 @defun ext:quit &optional exit-code kill-all-threads
 This function abruptly stops the execution of the program in which ECL
 is embedded. Depending on the platform, several other functions will
@@ -324,10 +331,13 @@ be invoked to free resources, close loaded modules, etc.
 The exit code is the code seen by the parent process that invoked this
 program. Normally a code other than zero denotes an error.
 
-If @code{kill-all-threads} is non-NIL, tries to gently kill and join
-with running threads.
+If @var{kill-all-threads} is non-@code{nil}, tries to gently kill and
+join with running threads.
 @end defun
 
+@lspdef ext:environ
+@lspdef ext:getenv
+@lspdef ext:setenv
 @defun ext:environ
 @defunx ext:getenv variable
 @defunx ext:setenv variable value
@@ -336,6 +346,14 @@ Environment accessors.
 
 
 @c UNIX shell interface
+
+@lspdef ext:getpid
+@lspdef ext:getuid
+@lspdef ext:getcwd
+@lspdef ext:chdir
+@lspdef ext:file-kind
+@lspdef ext:copy-file
+@lspdef ext:chmod
 
 @defun ext:getpid
 @defunx ext:getuid

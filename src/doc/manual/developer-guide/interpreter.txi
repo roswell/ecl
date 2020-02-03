@@ -83,7 +83,7 @@ need to know about all these conventions. There is a preprocessor
 (@pxref{Defun preprocessor}) that takes care of the details, by using a
 lisp representation of the statements that output values, and of the
 function definitions. For instance, the actual source code for
-@code{cl_last} in @code{src/c/list.d} is
+@code{cl_last} in @file{src/c/list.d} is
 
 @example
 @verbatim
@@ -107,7 +107,7 @@ Note that this list is different from what the Common Lisp standard
 calls a lexical environment, which is the content of a
 @code{&environment} parameter to @code{defmacro}. For the differences
 between this two environments see the comments in
-@code{src/c/compiler.d} and @code{src/c/interpreter.d}.
+@file{src/c/compiler.d} and @file{src/c/interpreter.d}.
 
 @node The interpreter stack
 @subsection The interpreter stack
@@ -115,7 +115,7 @@ between this two environments see the comments in
 The bytecodes interpreter uses a stack of its own to save and restore
 values from intermediate calculations. This Forth-like data stack is
 also used in other parts of the C kernel for various purposes, such as
-saving compiled code, keeping arguments to @code{FORMAT}, etc.
+saving compiled code, keeping arguments to @code{format}, etc.
 
 However, one of the most important roles of the Interpreter Stack is
 to keep a log of the functions which are called during the execution
@@ -130,7 +130,7 @@ lisp objects on the stack:
 
 The first item is the object which is funcalled. It can be a bytecodes
 object, a compiled function or a generic function. In the last two
-cases the lexical environment is just @code{NIL}. In the first case,
+cases the lexical environment is just @code{nil}. In the first case,
 the second item on the stack is the lexical environment on which the
 code is executed. Each of these records are popped out of the stack
 after function invocation.

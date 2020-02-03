@@ -15,23 +15,24 @@
 
 Weak hash tables allow the garbage collector to reclaim some of the
 entries if they are not strongly referenced elsewhere. ECL supports
-four kinds of weakness in hash tables: @t{:key}, @t{:value},
-@t{:key-and-value} and @t{:key-or-value}.
+four kinds of weakness in hash tables: @code{:key}, @code{:value},
+@code{:key-and-value} and @code{:key-or-value}.
 
-To make hash table weak, programmer has to provide @t{:weakness}
-keyword argument to @t{cl:make-hash-table} with the desired kind of
-weakness value (@t{NIL} means that the hash table has only strong
+To make hash table weak, programmer has to provide @code{:weakness}
+keyword argument to @code{cl:make-hash-table} with the desired kind of
+weakness value (@code{nil} means that the hash table has only strong
 references).
 
 For more information see
 @url{https://www.haible.de/bruno/papers/cs/weak/WeakDatastructures-writeup.html,Weak
 References - Data Types and Implementation} by Bruno Haible.
 
-@lspindex hash-table-weakness
-@deffn {ext} {hash-table-weakness} ht
+@lspdef ext:hash-table-weakness
+@defun ext:hash-table-weakness ht
 Returns type of the hash table weakness. Possible return values are:
-@t{:key}, @t{:value}, @t{:key-and-value}, @t{:key-or-value} or @t{NIL}.
-@end deffn
+@code{:key}, @code{:value}, @code{:key-and-value}, @code{:key-or-value}
+or @code{nil}.
+@end defun
 
 @subsubsection Thread-safe hash tables
 @cindex Synchronized hash tables
@@ -39,29 +40,29 @@ Returns type of the hash table weakness. Possible return values are:
 
 By default ECL doesn't protect hash tables from simultaneous access
 for performance reasons. Read and write access may is synchronized
-when @t{:synchronized} keyword argument to @t{make-hash-table} is
-@t{T} - @code{(make-hash-table :synchronized t)}.
+when @code{:synchronized} keyword argument to @code{make-hash-table} is
+@code{t} - @code{(make-hash-table :synchronized t)}.
 
-@lspindex hash-table-synchronized-p
-@deffn {ext} {hash-table-synchronized-p} ht
-Predicate answering whenever hash table is synchronized or not.
-@end deffn
+@lspdef ext:hash-table-synchronized-p
+@defun ext:hash-table-synchronized-p ht
+Predicate answering whether hash table is synchronized or not.
+@end defun
 
 @subsubsection Hash tables serialization
 @cindex Hash table serialization
 
-@lspindex hash-table-content
-@deffn {ext} {hash-table-content} ht
+@lspdef hash-table-content
+@defun ext:hash-table-content ht
 Returns freshly consed list of pairs @code{(key . val)} being contents
 of the hash table.
-@end deffn
+@end defun
 
-@lspindex hash-table-fill
-@deffn {ext} {hash-table-fill} ht values
-Fills @t{ht} with @t{values} being list of @code{(key . val)}. Hash
+@lspdef ext:hash-table-fill
+@defun ext:hash-table-fill ht values
+Fills @var{ht} with @var{values} being list of @code{(key . val)}. Hash
 table may have some content already, but conflicting keys will be
 overwritten.
-@end deffn
+@end defun
 
 @subsubsection Custom equivalence predicate
 @cindex Hash table generic test

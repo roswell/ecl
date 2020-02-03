@@ -17,102 +17,100 @@ Readers-writers locks are an optional feature, which is available if
 @subsection Read-Write locks dictionary
 
 
-@cppindex ecl_make_rwlock
+@cppdef ecl_make_rwlock
 
 @deftypefun cl_object ecl_make_rwlock (cl_object name)
-C/C++ equivalent of @code{mp:make-rwlock} without @code{key} arguments.
+C/C++ equivalent of @coderef{mp:make-rwlock} without @code{key} arguments.
 
-See @code{mp:make-rwlock}.
+See @coderef{mp:make-rwlock}.
 @end deftypefun
 
 
-@lspindex mp:make_rwlock
+@lspdef mp:make-rwlock
 
-@defun mp:make_rwlock &key name
-Creates a rwlock with @code{name}.
+@defun mp:make-rwlock &key name
+Creates a rwlock named @var{name}.
 @end defun
 
 
-@cppindex mp_rwlock_name
-@lspindex mp:rwlock-name
+@cppdef mp_rwlock_name
+@lspdef mp:rwlock-name
 
 @deftypefun cl_object mp_rwlock_name (cl_object lock)
 @end deftypefun
 
-@defun mp:rwlock_name lock
-Returns @code{lock} name.
+@defun mp:rwlock-name lock
+Returns the name of @var{lock}.
 @end defun
 
 
-@cppindex mp_get_rwlock_read_wait
-@cppindex mp_get_rwlock_read_nowait
-@lspindex mp:get-rwlock-read
+@cppdef mp_get_rwlock_read_wait
+@cppdef mp_get_rwlock_read_nowait
+@lspdef mp:get-rwlock-read
 
 @deftypefun cl_object mp_get_rwlock_read_wait (cl_object lock)
-Acquires @code{lock} (blocks if @code{lock} is already taken with
-@code{mp:get-rwlock-write}. Lock may be acquired by multiple
+Acquires @var{lock} (blocks if @var{lock} is already taken with
+@coderef{mp:get-rwlock-write}. Lock may be acquired by multiple
 readers). Returns @code{ECL_T}.
 @end deftypefun
 
 @deftypefun cl_object mp_get_rwlock_read_nowait
-Tries to acquire @code{lock}. If @code{lock} is already taken with
-@code{mp:get-rwlock-write} returns @code{ECL_NIL}, otherwise
+Tries to acquire @var{lock}. If @var{lock} is already taken with
+@coderef{mp:get-rwlock-write} returns @code{ECL_NIL}, otherwise
 @code{ECL_T}.
 @end deftypefun
 
 @defun mp:get-rwlock-read lock &optional (wait t)
-Tries to acquire @code{lock}. @code{wait} indicates whenever function
-should block or give up if @code{lock} is already taken with
-@code{mp:get-rwlock-write}.
+Tries to acquire @var{lock}. @var{wait} indicates whenever function
+should block or give up if @var{lock} is already taken with
+@coderef{mp:get-rwlock-write}.
 @end defun
 
 
-@cppindex mp_get_rwlock_write_wait
-@cppindex mp_get_rwlock_write_nowait
-@lspindex mp:get-rwlock-write
+@cppdef mp_get_rwlock_write_wait
+@cppdef mp_get_rwlock_write_nowait
+@lspdef mp:get-rwlock-write
 
 @deftypefun cl_object mp_get_rwlock_write_wait (cl_object lock)
-Acquires @code{lock} (blocks if @code{lock} is already taken). Returns
+Acquires @var{lock} (blocks if @var{lock} is already taken). Returns
 @code{ECL_T}.
 @end deftypefun
 
 @deftypefun cl_object mp_get_rwlock_write_nowait
-Tries to acquire @code{lock}. If @code{lock} is already taken returns
+Tries to acquire @var{lock}. If @var{lock} is already taken returns
 @code{ECL_NIL}, otherwise @code{ECL_T}.
 @end deftypefun
 
 @defun mp:get-rwlock-write lock &optional (wait t)
-Tries to acquire @code{lock}. @code{wait} indicates whenever function
-should block or give up if @code{lock} is already taken.
+Tries to acquire @var{lock}. @var{wait} indicates whenever function
+should block or give up if @var{lock} is already taken.
 @end defun
 
 
-@cppindex mp_giveup_rwlock_read
-@cppindex mp_giveup_rwlock_write
+@cppdef mp_giveup_rwlock_read
+@cppdef mp_giveup_rwlock_write
 
-@lspindex mp:giveup-rwlock-read
-@lspindex mp:giveup-rwlock-write
+@lspdef mp:giveup-rwlock-read
+@lspdef mp:giveup-rwlock-write
 
 
 @deftypefun cl_object mp_giveup_rwlock_read (cl_object lock)
-@end deftypefun
-@deftypefun cl_object mp_giveup_rwlock_write (cl_object lock)
+@deftypefunx cl_object mp_giveup_rwlock_write (cl_object lock)
 @end deftypefun
 
 @defun mp:giveup-rwlock-read lock
-@end defun
-@defun mp:giveup-rwlock-write lock
-Release @code{lock}.
+@defunx mp:giveup-rwlock-write lock
+Release @var{lock}.
 @end defun
 
 
-@lspindex mp:with-rwlock
+@lspdef mp:with-rwlock
 
 @defmac mp:with-rwlock (lock operation) &body body
-Acquire rwlock for the dynamic scope of @code{body} for operation
-@code{operation}, which is executed with the lock held by current
+Acquire rwlock for the dynamic scope of @var{body} for operation
+@var{operation}, which is executed with the lock held by current
 thread. Returns the values of body.
 
-Valid values of argument @code{operation} are @code{:read} or
+Valid values of argument @var{operation} are @code{:read} or
 @code{:write} (for reader and writer access accordingly).
 @end defmac

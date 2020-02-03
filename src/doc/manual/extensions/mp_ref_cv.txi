@@ -8,8 +8,8 @@ true (e.g new client connects to the server).
 @subsection Condition variables dictionary
 
 
-@cppindex mp_make_condition_variable
-@lspindex mp:make-condition-variable
+@cppdef mp_make_condition_variable
+@lspdef mp:make-condition-variable
 
 @deftypefun cl_object mp_make_condition_variable ()
 @end deftypefun
@@ -19,53 +19,53 @@ Creates a condition variable.
 @end defun
 
 
-@cppindex mp_condition_variable_wait
-@lspindex mp:condition-variable-wait
+@cppdef mp_condition_variable_wait
+@lspdef mp:condition-variable-wait
 
 @deftypefun cl_object mp_condition_variable_wait (cl_object cv, cl_object lock)
 @end deftypefun
 
 @defun mp:condition-variable-wait cv lock
-Release @code{lock} and suspend thread until condition
-@code{mp:condition-variable-signal} is called on @code{cv}. When thread
-resumes re-aquire @code{lock}.
+Release @var{lock} and suspend thread until condition
+@coderef{mp:condition-variable-signal} is called on @var{cv}. When thread
+resumes re-aquire @var{lock}.
 @end defun
 
 
-@cppindex mp_condition_variable_timedwait
-@lspindex mp:condition-variable-timedwait
+@cppdef mp_condition_variable_timedwait
+@lspdef mp:condition-variable-timedwait
 
 @deftypefun cl_object mp_condition_variable_timedwait (cl_object cv, cl_object lock, cl_object seconds)
 @end deftypefun
 
 @defun mp:condition-variable-timedwait cv lock seconds
-@code{mp:condition-variable-wait} which timeouts after @code{seconds}
+@coderef{mp:condition-variable-wait} which timeouts after @var{seconds}
 seconds.
 @end defun
 
 
-@cppindex mp_condition_variable_signal
-@lspindex mp:condition-variable-signal
+@cppdef mp_condition_variable_signal
+@lspdef mp:condition-variable-signal
 
 @deftypefun cl_object mp_condition_variable_signal (cl_object cv)
 @end deftypefun
 
 @defun mp:condition-variable-signal cv
-Signal @code{cv} (wakes up only one waiter). After signal, signaling
+Signal @var{cv} (wakes up only one waiter). After signal, signaling
 thread keeps lock, waking thread goes on the queue waiting for the lock.
 
-See @code{mp:condition-variable-wait}.
+See @coderef{mp:condition-variable-wait}.
 @end defun
 
 
-@cppindex mp_condition_variable-broadcast
-@lspindex mp:condition-variable-broadcast
+@cppdef mp_condition_variable-broadcast
+@lspdef mp:condition-variable-broadcast
 
 @deftypefun cl_object mp_condition_variable_broadcast (cl_object cv)
 @end deftypefun
 
 @defun mp:condition-variable-broadcast cv
-Signal @code{cv} (wakes up all waiters).
+Signal @var{cv} (wakes up all waiters).
 
-See @code{mp:condition-variable-wait}.  
+See @coderef{mp:condition-variable-wait}.  
 @end defun

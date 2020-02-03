@@ -4,6 +4,6 @@
 
 @lspindex ffi:*use-dffi*
 @defvr Variable {ffi:*use-dffi*}
-This variable controls whether @code{DFFI} is used or not.
+This variable controls whether DFFI is used or not.
 @end defvr
 

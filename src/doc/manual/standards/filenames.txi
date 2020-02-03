@@ -32,11 +32,11 @@ The way ECL parses a namestring is by first looking for the @var{hostname} compo
 
 If this syntax also fails, then the namestring is not a valid pathname string and a @code{parse-error} will be signaled.
 
-It is important to remark that in ECL, all physical namestrings result into pathnames with a version equal to @code{:NEWEST}. Pathnames which are not logical and have any other version (i. e. @code{NIL} or a number), cannot be printed readably, but can produce a valid namestring which results of ignoring the version.
+It is important to remark that in ECL, all physical namestrings result into pathnames with a version equal to @code{:newest}. Pathnames which are not logical and have any other version (i. e. @code{nil} or a number), cannot be printed readably, but can produce a valid namestring which results of ignoring the version.
 
 Finally, an important rule applies to physical namestrings: if a namestring contains one or more periods `.', the last period separates the namestring into the file name and the filetype. However, a namestring with a single leading period results in a name with a period in it. This is for compatibility with Unix filenames such as @code{.bashrc}, where the leading period indicates that the file is hidden.
 
-The previous rule has in important consequence, because it means that if you want to create a pathname without a name, you have to do it explicitely. In other words, ".*" is equivalent to (@code{MAKE-PATHNAME :NAME ".*" :TYPE NIL}), while (@code{MAKE-PATHNAME :NAME NIL :TYPE :WILD}) creates a pathname whose type is a wildcard.
+The previous rule has in important consequence, because it means that if you want to create a pathname without a name, you have to do it explicitely. In other words, @code{".*"} is equivalent to @code{(make-pathname :name ".*" :type nil)}, while @code{(make-pathname :name nil :type :wild)} creates a pathname whose type is a wildcard.
 
 The following table illustrates how the physical pathnames work with practical examples.
 
@@ -44,18 +44,18 @@ The following table illustrates how the physical pathnames work with practical e
 @caption{Examples of physical namestrings}
 @multitable @columnfractions .28 .12 .1 .3 .2
 @headitem Namestring @tab Name @tab Type @tab Directory @tab Device
-@item "foo.lsp" @tab "foo" @tab "lsp" @tab NIL @tab NIL
-@item ".bashrc" @tab ".bashrc" @tab NIL @tab NIL @tab NIL
-@item ".ecl.lsp" @tab ".ecl" @tab "lsp" @tab NIL @tab NIL
-@item "foo.*" @tab "foo" @tab :WILD @tab NIL @tab NIL
-@item "*.*" @tab :WILD @tab :WILD @tab NIL @tab NIL
-@item "ecl/build/bare.lsp" @tab "bare" @tab "lsp" @tab (:relative "ecl" "build") @tab NIL
-@item "ecl/build/" @tab NIL @tab NIL @tab (:relative "ecl" "build") @tab NIL
-@item "../../ecl/build/" @tab NIL @tab NIL @tab (:relative :up :up "ecl" "build") @tab NIL
-@item "/etc/" @tab NIL @tab NIL @tab (:absolute "etc") @tab NIL
-@item "C:/etc/" @tab NIL @tab NIL @tab (:absolute "etc") @tab "C"
-@item ".*" @tab ".*" @tab NIL @tab NIL @tab NIL
-@item #.(MAKE-PATHNAME :TYPE "*") @tab NIL @tab :WILD @tab NIL @tab NIL
+@item @code{"foo.lsp"} @tab @code{"foo"} @tab @code{"lsp"} @tab @code{nil} @tab @code{nil}
+@item @code{".bashrc"} @tab @code{".bashrc"} @tab @code{nil} @tab @code{nil} @tab @code{nil}
+@item @code{".ecl.lsp"} @tab @code{".ecl"} @tab @code{"lsp"} @tab @code{nil} @tab @code{nil}
+@item @code{"foo.*"} @tab @code{"foo"} @tab @code{:wild} @tab @code{nil} @tab @code{nil}
+@item @code{"*.*"} @tab @code{:wild} @tab @code{:wild} @tab @code{nil} @tab @code{nil}
+@item @code{"ecl/build/bare.lsp"} @tab @code{"bare"} @tab @code{"lsp"} @tab @code{(:relative "ecl" "build")} @tab @code{nil}
+@item @code{"ecl/build/"} @tab @code{nil} @tab @code{nil} @tab @code{(:relative "ecl" "build")} @tab @code{nil}
+@item @code{"../../ecl/build/"} @tab @code{nil} @tab @code{nil} @tab @code{(:relative :up :up "ecl" "build")} @tab @code{nil}
+@item @code{"/etc/"} @tab @code{nil} @tab @code{nil} @tab @code{(:absolute "etc")} @tab @code{nil}
+@item @code{"C:/etc/"} @tab @code{nil} @tab @code{nil} @tab @code{(:absolute "etc")} @tab @code{"C"}
+@item @code{".*"} @tab @code{".*"} @tab @code{nil} @tab @code{nil} @tab @code{nil}
+@item @code{#.(make-pathname :type "*")} @tab @code{nil} @tab @code{:wild} @tab @code{nil} @tab @code{nil}
 @end multitable
 @end float
 
@@ -64,16 +64,16 @@ The following table illustrates how the physical pathnames work with practical e
 ECL accepts four kind of wildcards in pathnames.
 
 @itemize
-@item A single wildcard in a directory component, file name, type or version is parsed as the @code{:WILD} value. See for instance "@code{*.*}", "@code{/home/*/.bashrc}", etc
+@item A single wildcard in a directory component, file name, type or version is parsed as the @code{:wild} value. See for instance "@code{*.*}", "@code{/home/*/.bashrc}", etc
 
-@item A double wildcard in a directory component, such as in "@code{/home/**/}" is parsed as the @code{:WILD-INFERIORS}, and matches any number of directories, even nested ones, such as: @code{/home/}, @code{/home/jlr}, @code{/home/jlr/lib}, etc.
+@item A double wildcard in a directory component, such as in "@code{/home/**/}" is parsed as the @code{:wild-inferiors}, and matches any number of directories, even nested ones, such as: @code{/home/}, @code{/home/jlr}, @code{/home/jlr/lib}, etc.
 
 @item An isolated wildcard "@code{log*.txt}" matches any number of characters: @code{log.txt}, @code{log_back.txt}, etc.
 
 @item A question mark "@code{log?.txt}" matches a single character: @code{log1.txt}, @code{log2.txt}...
 @end itemize
 
-The matching rules in Common Lisp and ECL are simple but have some unintuitive consequences when compared to Unix/DOS rules. The most important one is that directories must always end with a trailing slash @code{/}, as in @code{#p"/my/home/directory/"}. Second to that, @code{NIL} values can only be matched by @code{NIL} and @code{:WILD}. Hence, "@code{*}" can only match files without file type. For some examples see @ref{Files - Dictionary}.
+The matching rules in Common Lisp and ECL are simple but have some unintuitive consequences when compared to Unix/DOS rules. The most important one is that directories must always end with a trailing slash @code{/}, as in @code{#p"/my/home/directory/"}. Second to that, @code{nil} values can only be matched by @code{nil} and @code{:wild}. Hence, "@code{*}" can only match files without file type. For some examples see @ref{Files - Dictionary}.
 
 @node Filenames - C Reference
 @subsection C Reference

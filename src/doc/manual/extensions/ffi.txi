@@ -41,11 +41,13 @@ are the arguments that these routines expect, what are the calling
 conventions and where are these routines to be found.
 @end table
 
-On top of these components sits a higher level interface written entirely in lisp, with which
-you will actually declare and use foreign variables, functions and libraries. In the following
-sections we describe both the details of the low-level components (Section 3.2, Section 3.3),
-and of the higher level interface (Section 3.4). It is highly recommended that you read all
-sections.
+On top of these components sits a higher level interface written
+entirely in lisp, with which you will actually declare and use foreign
+variables, functions and libraries. In the following sections we
+describe both the details of the low-level components (@xref{Two kinds
+of FFI} and @ref{Foreign objects}), and of the higher level interface
+(@xref{Higher level interfaces}). It is highly recommended that you read
+all sections.
 
 @node Two kinds of FFI
 @subsection Two kinds of FFI
@@ -112,8 +114,8 @@ section @emph{Supported Platforms} at
 
 @ftindex DFFI
 You can test if your copy of ECL was built with DFFI by inspecting
-whether the symbol @var{:DFFI} is present in the list from variable
-@var{*FEATURES*}.
+whether the symbol @code{:dffi} is present in the list from variable
+@code{*features*}.
 
 @node Foreign objects
 @subsection Foreign objects
@@ -137,7 +139,7 @@ memory and deallocated when no longer in use.
 A foreign object may contain many different kinds of data: integers,
 floating point numbers, C structures, unions, etc. The actual type of
 the object is stored in a list or a symbol which is understood by the
-higher level interface (Section 3.4).
+higher level interface (@xref{Higher level interfaces}).
 
 The most important component of the object is the memory region where
 data is stored. By default ECL assumes that the user will perform
@@ -151,9 +153,9 @@ valid, ECL should not attempt to automatically destroy the object.
 
 In many cases, however, it is desirable to automatically destroy foreign
 objects once they have been used. The higher level interfaces UFFI and
-CFFI provide tools for doing this. For instance, in the following
-example adapted from the UFFI documentation, the string @var{NAME} is
-automatically deallocated
+@url{https://common-lisp.net/project/cffi/,CFFI} provide tools for doing
+this. For instance, in the following example adapted from the UFFI
+documentation, the string @var{name} is automatically deallocated
 
 @lisp
 (ffi:def-function ("gethostname" c-gethostname)
@@ -180,10 +182,11 @@ version 1.8 (api for >=v2.0 is provided by cffi-uffi-compat system
 shipped with CFFI). Code designed for UFFI library should run mostly
 unchanged with ECL. Note, that api resides in ffi package, not uffi, to
 prevent conflicts with cffi-uffi-compat. New code shouldn't use this
-interface preferring CFFI.
+interface preferring @url{https://common-lisp.net/project/cffi/,CFFI}.
 @item
-The CFFI library features a complete backend for ECL. This method of
-interfacing with the foreign libraries is preferred over using UFFI.
+The @url{https://common-lisp.net/project/cffi/,CFFI} library features a
+complete backend for ECL. This method of interfacing with the foreign
+libraries is preferred over using UFFI.
 @item
 ECL's own low level interface. Only to be used if ECL is your deployment
 platform. It features some powerful constructs that allow you to mix
@@ -208,7 +211,7 @@ You need to specify the libraries you use and do it at the toplevel, so
 that the compiler may include them at link time.
 @item
 Every function you will use has to be declared using
-@code{ffi:def-function}.
+@coderef{ffi:def-function}.
 @end itemize
 
 @lisp
@@ -239,9 +242,10 @@ Build and load this module with (compile-file "uffi.lsp" :load t)
 @subsubheading CFFI example
 @exindex CFFI usage
 
-The CFFI library is an independent project and it is not shipped with
-ECL. If you wish to use it you can go to their homepage, download the
-code and build it using ASDF.
+The @url{https://common-lisp.net/project/cffi/,CFFI} library is an
+independent project and it is not shipped with ECL. If you wish to use
+it you can go to their homepage, download the code and build it using
+ASDF.
 
 CFFI differs slightly from UFFI in that functions may be used even
 without being declared beforehand.
@@ -280,7 +284,7 @@ Build and load this module with (compile-file "cffi.lsp" :load t)
 @exindex SFFI usage
 
 To compare with the previous pieces of code, we show how the previous programs would be
-written using @code{ffi:clines} and @code{ffi:c-inline}.
+written using @coderef{ffi:clines} and @coderef{ffi:c-inline}.
 
 @lisp
 #|

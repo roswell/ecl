@@ -32,9 +32,9 @@ ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:nu
 @end multitable
 @end float
 
-In general, the size of a @code{FIXNUM} is determined by the word size
+In general, the size of a @code{fixnum} is determined by the word size
 of a machine, which ranges from 32 to 64 bits. Integers larger than
-this are implemented using the @url{http://www.swox.com/gmp/, GNU
+this are implemented using the @url{https://gmplib.org/, GNU
 Multiprecision library}. Rationals are implemented using two integers,
 without caring whether they are fixnum or not. Floating point numbers
 include at least the two IEEE types of 32 and 64 bits respectively.
@@ -42,7 +42,7 @@ include at least the two IEEE types of 32 and 64 bits respectively.
 @cindex long-float internal representation
 @ftindex LONG-FLOAT
 In machines where it is supported, it is possible to associate the
-lisp @code{LONG-FLOAT} with the machine type @code{long double} whose
+lisp @code{long-float} with the machine type @code{long double} whose
 size ranges from 96 to 128 bits, and which are a bit slower.
 
 @cindex (complex float) internal representation
@@ -53,6 +53,9 @@ ratios all complex numbers are pairs of numbers.
 
 @node Numbers - Floating point exceptions
 @subsection Floating point exceptions
+@cfindex --with-ieee-fp [YES|no]
+@cfindex --with-fpe [YES|no]
+
 ECL supports two ways of dealing with special floating point values,
 such as Not a Number (NaN), infinity or denormalized floats, which can
 occur in floating point computations. Either a condition is signaled or
@@ -64,17 +67,18 @@ can be disabled at build time using the @code{--without-fpe} configure
 option. Otherwise, if both @code{--with-ieee-fp} and @code{--with-fpe}
 options are on, by default, a condition is signaled for invalid
 operation, division by zero and floating point overflows. This can be
-changed at runtime by using @code{ext:trap-fpe}. If the
-@code{ECL_OPT_TRAP_SIGFPE} boot option is false, no conditions are
-signaled by default (Note that in this case, if you enable trapping of
-floating point exceptions with @code{ext:trap-fpe}, then you have to
-install your own signal handler).
+changed at runtime by using @coderef{ext:trap-fpe}. If the
+@code{ECL_OPT_TRAP_SIGFPE} boot option is false (see
+@ref{tab:boot-options}), no conditions are signaled by default (Note
+that in this case, if you enable trapping of floating point exceptions
+with @coderef{ext:trap-fpe}, then you have to install your own signal
+handler).
 
-@lspindex ext:trap-fpe
+@lspdef ext:trap-fpe
 @defun ext:trap-fpe condition flag
 Control the signaling of the floating point exceptions
 
-@subsubheading Synopsis
+@paragraph Synopsis
 @table @var
 @item condition
 a symbol - one of @code{last}, @code{t}, @code{division-by-zero},
@@ -85,18 +89,18 @@ a symbol - one of @code{last}, @code{t}, @code{division-by-zero},
 a generalized boolean
 @end table
 
-@subsubheading Description
+@paragraph Description
 If @var{condition} is @code{last}, @var{flag} is ignored and the
 currently enabled floating point exceptions are returned in an
 implementation depended format (currently an integer). Otherwise,
-@var{flag} determines whether the current thread will signal a
-floating point exception for the conditions passed in @var{condition}.
+@var{flag} determines whether the current thread will signal a floating
+point exception for the conditions passed in @var{condition}.
 @var{condition} can be either a symbol denoting a single condition,
 @code{t} for all conditions that are enabled by default or a value
-obtained from an earlier call to @code{ext:trap-fpe} with @code{last}.
+obtained from an earlier call to @coderef{ext:trap-fpe} with
+@code{last}.
 
-@subsubheading See also
-@code{ECL_WITH_LISP_FPE}
+@seealso{ECL_WITH_LISP_FPE}
 
 @end defun
 
@@ -148,37 +152,36 @@ true.
 NaN values are ignored, i.e. the maximum/minimum is taken only over
 the number valued parameters.
 @item Rounding functions
-All rounding functions signal an arithmetic-error if any of the given
-parameters are not number valued or infinite.
+All rounding functions signal an @code{arithmetic-error} if any of the
+given parameters are not number valued or infinite.
 @end table
 
 @node Numbers - Dictionary
 @subsection Dictionary
 
-@lspindex ext:short-float-positive-infinity
-@lspindex ext:short-float-negative-infinity
-@lspindex ext:single-float-positive-infinity
-@lspindex ext:single-float-negative-infinity
-@lspindex ext:double-float-positive-infinity
-@lspindex ext:double-float-negative-infinity
-@lspindex ext:long-float-positive-infinity
-@lspindex ext:long-float-negative-infinity
+@lspdef ext:short-float-positive-infinity
+@lspdef ext:short-float-negative-infinity
+@lspdef ext:single-float-positive-infinity
+@lspdef ext:single-float-negative-infinity
+@lspdef ext:double-float-positive-infinity
+@lspdef ext:double-float-negative-infinity
+@lspdef ext:long-float-positive-infinity
+@lspdef ext:long-float-negative-infinity
 @defvr Constant {ext:@{short,single,double,long@}-float-@{positive,negative@}-infinity}
 Constant positive/negative infinity for the different floating point types.
 @end defvr
 
 
-@lspindex ext:nan
+@lspdef ext:nan
 @defun ext:nan
 Returns a double float NaN value. Coerce to other floating point types
 to get NaN values e.g. for single floats.
 @end defun
 
-@lspindex ext:float-infinity-p
-@defun ext:float-infinity-p x
-@end defun
+@lspdef ext:float-infinity-p
 @lspindex ext:float-nan-p
-@defun ext:float-nan-p x
+@defun ext:float-infinity-p x
+@defunx ext:float-nan-p x
 Predicates to test if @var{x} is infinite or NaN.
 @end defun
 
@@ -225,13 +228,13 @@ Numeric C types understood by ECL
 @item unsigned long long @tab (integer 0 ffi:c-ulong-long-max) @tab ecl_ulong_long_t @tab :ulong-long
 @end multitable
 
-@subsubheading Description
+@paragraph Description
 The table above shows the relation between C types and the equivalent Common Lisp types. All types are standard C99 types, except for two. First, @code{cl_fixnum} is the smallest signed integer that can fit a fixnum. Second, @code{cl_index} is the smallest unsigned integer that fits a fixnum and is typically the unsigned counterpart of @code{cl_fixnum}.
 
 (*) @strong{DEPRECATED} Previous versions of ECL supported compilers
 that did not define the long double type. The @code{ECL_LONG_DOUBLE}
-macro and @code{long-double} feature will be removed in the next
-release.
+macro and @code{long-double} features indicating whether support for
+long double was available are removed now.
 
 @cfindex --enable-c99complex [auto]
 (**) The <float> _Complex types do not exist on all platforms. When
@@ -254,62 +257,63 @@ In Lisp code, check for the presence of the associated features, shown in the fo
 Creating Lisp types from C numbers
 
 @subsubheading Functions
-@deftypefun cl_object ecl_make_fixnum (cl_fixnum @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_integer (cl_fixnum @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_unsigned_integer (cl_index @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_single_float (float @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_double_float (double @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_long_float (long double @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_csfloat (float _Complex @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_cdfloat (double _Complex @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_clfloat (long double _Complex @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_uint8_t (uint8_t @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_int8_t (int8_t @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_uint16_t (uint16_t @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_int16_t (int16_t @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_uint32_t (uint32_t @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_int32_t (int32_t @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_uint64_t (uint64_t @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_int64_t (int64_t @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_short_t (short @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_ushort_t (unsigned short @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_int (int @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_uint (unsigned int @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_long (long @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_ulong (unsigned long @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_long_long (long long @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_ulong_long (unsigned long long @var{n})
-@end deftypefun
-@deftypefun cl_object ecl_make_ratio (cl_object @var{numerator}, cl_object @var{denominator})
-@end deftypefun
-@deftypefun cl_object ecl_make_complex (cl_object @var{real}, cl_object @var{imag})
-@end deftypefun
+@cppdef ecl_make_fixnum
+@cppdef ecl_make_integer
+@cppdef ecl_make_unsigned_integer
+@cppdef ecl_make_single_float
+@cppdef ecl_make_double_float
+@cppdef ecl_make_long_float
+@cppdef ecl_make_csfloat
+@cppdef ecl_make_cdfloat
+@cppdef ecl_make_clfloat
+@cppdef ecl_make_uint8_t
+@cppdef ecl_make_int8_t
+@cppdef ecl_make_uint16_t
+@cppdef ecl_make_int16_t
+@cppdef ecl_make_uint32_t
+@cppdef ecl_make_int32_t
+@cppdef ecl_make_uint64_t
+@cppdef ecl_make_int64_t
+@cppdef ecl_make_short_t
+@cppdef ecl_make_ushort_t
+@cppdef ecl_make_int
+@cppdef ecl_make_uint
+@cppdef ecl_make_long
+@cppdef ecl_make_ulong
+@cppdef ecl_make_long_long
+@cppdef ecl_make_ulong_long
+@cppdef ecl_make_ratio
+@cppdef ecl_make_complex
 
-@subsubheading Description
+@deftypefun cl_object ecl_make_fixnum (cl_fixnum n)
+@deftypefunx cl_object ecl_make_integer (cl_fixnum n)
+@deftypefunx cl_object ecl_make_unsigned_integer (cl_index n)
+@deftypefunx cl_object ecl_make_single_float (float n)
+@deftypefunx cl_object ecl_make_double_float (double n)
+@deftypefunx cl_object ecl_make_long_float (long double n)
+@deftypefunx cl_object ecl_make_csfloat (float _Complex n)
+@deftypefunx cl_object ecl_make_cdfloat (double _Complex n)
+@deftypefunx cl_object ecl_make_clfloat (long double _Complex n)
+@deftypefunx cl_object ecl_make_uint8_t (uint8_t n)
+@deftypefunx cl_object ecl_make_int8_t (int8_t n)
+@deftypefunx cl_object ecl_make_uint16_t (uint16_t n)
+@deftypefunx cl_object ecl_make_int16_t (int16_t n)
+@deftypefunx cl_object ecl_make_uint32_t (uint32_t n)
+@deftypefunx cl_object ecl_make_int32_t (int32_t n)
+@deftypefunx cl_object ecl_make_uint64_t (uint64_t n)
+@deftypefunx cl_object ecl_make_int64_t (int64_t n)
+@deftypefunx cl_object ecl_make_short_t (short n)
+@deftypefunx cl_object ecl_make_ushort_t (unsigned short n)
+@deftypefunx cl_object ecl_make_int (int n)
+@deftypefunx cl_object ecl_make_uint (unsigned int n)
+@deftypefunx cl_object ecl_make_long (long n)
+@deftypefunx cl_object ecl_make_ulong (unsigned long n)
+@deftypefunx cl_object ecl_make_long_long (long long n)
+@deftypefunx cl_object ecl_make_ulong_long (unsigned long long n)
+@deftypefunx cl_object ecl_make_ratio (cl_object numerator, cl_object denominator)
+@deftypefunx cl_object ecl_make_complex (cl_object real, cl_object imag)
+
+@paragraph Description
 These functions create a Lisp object from the corresponding C
 number. If the number is an integer type, the result will always be an
 integer, which may be a bignum. If on the other hand the C number is a
@@ -317,99 +321,104 @@ float, double or long double, the result will be a float.
 
 There is some redundancy in the list of functions that convert from
 cl_fixnum and cl_index to lisp. On the one hand,
-@code{ecl_make_fixnum} always creates a fixnum, dropping bits if
-necessary. On the other hand, @code{ecl_make_integer} and
-@code{ecl_make_unsigned_integer} faithfully convert to a Lisp integer,
-which may be a bignum.
+@coderef{ecl_make_fixnum} always creates a fixnum, dropping bits if
+necessary. On the other hand, @coderef{ecl_make_integer} and
+@coderef{ecl_make_unsigned_integer} faithfully convert to a Lisp
+integer, which may be a bignum.
 
 Note also that some of the constructors do not use C numbers. This is
-the case of @code{ecl_make_ratio} and @code{ecl_make_complex}, because
-they are composite Lisp types. When c99 complex float support is built
-in @code{ecl_make_complex} will use C number for float types.
+the case of @coderef{ecl_make_ratio} and @coderef{ecl_make_complex},
+because they are composite Lisp types. When c99 complex float support is
+built in @coderef{ecl_make_complex} will use C number for float types.
 
 These functions or macros signal no errors.
+@end deftypefun
 
 @node Numbers - Number accessors
 @subsubsection Number accessors
 Unchecked conversion from Lisp types to C numbers
 
 @subsubheading Functions
-@deftypefun cl_fixnum ecl_fixnum (cl_object @var{n})
-@end deftypefun
-@deftypefun float ecl_single_float (cl_object @var{n})
-@end deftypefun
-@deftypefun double ecl_double_float (cl_object @var{n})
-@end deftypefun
-@deftypefun {long double} ecl_long_float (cl_object @var{n})
-@end deftypefun
-@deftypefun {float _Complex} ecl_csfloat (cl_object @var{n})
-@end deftypefun
-@deftypefun {double _Complex} ecl_cdfloat (cl_object @var{n})
-@end deftypefun
-@deftypefun {long double _Complex} ecl_clfloat (cl_object @var{n})
-@end deftypefun
+@cppdef ecl_fixnum
+@cppdef ecl_single_float
+@cppdef ecl_double_float
+@cppdef ecl_long_float
+@cppdef ecl_csfloat
+@cppdef ecl_cdfloat
+@cppdef ecl_clfloat
 
-@subsubheading Description
+@deftypefun cl_fixnum ecl_fixnum (cl_object n)
+@deftypefunx float ecl_single_float (cl_object n)
+@deftypefunx double ecl_double_float (cl_object n)
+@deftypefunx {long double} ecl_long_float (cl_object n)
+@deftypefunx {float _Complex} ecl_csfloat (cl_object n)
+@deftypefunx {double _Complex} ecl_cdfloat (cl_object n)
+@deftypefunx {long double _Complex} ecl_clfloat (cl_object n)
+
+@paragraph Description
 These functions and macros extract a C number from a Lisp object. They do not check the type of the Lisp object as they typically just access directly the value from a C structure.
+@end deftypefun
 
 @node Numbers - Number coercion
 @subsubsection Number coercion
 Checked conversion from Lisp types to C numbers
 
 @subsubheading Functions
-@deftypefun cl_fixnum ecl_to_fixnum (cl_object @var{n});
-@end deftypefun
-@deftypefun cl_index ecl_to_unsigned_integer (cl_object @var{n});
-@end deftypefun
-@deftypefun float ecl_to_float (cl_object @var{n});
-@end deftypefun
-@deftypefun double ecl_to_double (cl_object @var{n});
-@end deftypefun
-@deftypefun {long double} ecl_to_long_double (cl_object @var{n});
-@end deftypefun
-@deftypefun {float _Complex} ecl_to_csfloat (cl_object @var{n});
-@end deftypefun
-@deftypefun {double _Complex} ecl_to_cdfloat (cl_object @var{n});
-@end deftypefun
-@deftypefun {long double _Complex} ecl_to_clfloat (cl_object @var{n});
-@end deftypefun
-@deftypefun uint8_t ecl_to_uint8_t (cl_object @var{n});
-@end deftypefun
-@deftypefun int8_t ecl_to_int8_t (cl_object @var{n});
-@end deftypefun
-@deftypefun uint16_t ecl_to_uint16_t (cl_object @var{n});
-@end deftypefun
-@deftypefun int16_t ecl_to_int16_t (cl_object @var{n});
-@end deftypefun
-@deftypefun uint32_t ecl_to_uint32_t (cl_object @var{n});
-@end deftypefun
-@deftypefun int32_t ecl_to_int32_t (cl_object @var{n});
-@end deftypefun
-@deftypefun uint64_t ecl_to_uint64_t (cl_object @var{n});
-@end deftypefun
-@deftypefun int64_t ecl_to_int64_t (cl_object @var{n});
-@end deftypefun
-@deftypefun short ecl_to_short (cl_object @var{n});
-@end deftypefun
-@deftypefun {unsigned short} ecl_to_ushort (cl_object @var{n});
-@end deftypefun
-@deftypefun int ecl_to_int (cl_object @var{n});
-@end deftypefun
-@deftypefun {unsigned int} ecl_to_uint (cl_object @var{n});
-@end deftypefun
-@deftypefun long ecl_to_long (cl_object @var{n});
-@end deftypefun
-@deftypefun {unsigned long} ecl_to_ulong (cl_object @var{n});
-@end deftypefun
-@deftypefun long long ecl_to_long_long (cl_object @var{n});
-@end deftypefun
-@deftypefun {unsigned long} long ecl_to_ulong_long (cl_object @var{n});
-@end deftypefun
+@cppdef ecl_to_fixnum
+@cppdef ecl_to_unsigned_integer
+@cppdef ecl_to_float
+@cppdef ecl_to_double
+@cppdef ecl_to_long_double
+@cppdef ecl_to_csfloat
+@cppdef ecl_to_cdfloat
+@cppdef ecl_to_clfloat
+@cppdef ecl_to_uint8_t
+@cppdef ecl_to_int8_t
+@cppdef ecl_to_uint16_t
+@cppdef ecl_to_int16_t
+@cppdef ecl_to_uint32_t
+@cppdef ecl_to_int32_t
+@cppdef ecl_to_uint64_t
+@cppdef ecl_to_int64_t
+@cppdef ecl_to_short
+@cppdef ecl_to_ushort
+@cppdef ecl_to_int
+@cppdef ecl_to_uint
+@cppdef ecl_to_long
+@cppdef ecl_to_ulong
+@cppdef ecl_to_long_long
+@cppdef ecl_to_ulong_long
 
-@subsubheading Description
+@deftypefun cl_fixnum ecl_to_fixnum (cl_object n);
+@deftypefunx cl_index ecl_to_unsigned_integer (cl_object n);
+@deftypefunx float ecl_to_float (cl_object n);
+@deftypefunx double ecl_to_double (cl_object n);
+@deftypefunx {long double} ecl_to_long_double (cl_object n);
+@deftypefunx {float _Complex} ecl_to_csfloat (cl_object n);
+@deftypefunx {double _Complex} ecl_to_cdfloat (cl_object n);
+@deftypefunx {long double _Complex} ecl_to_clfloat (cl_object n);
+@deftypefunx uint8_t ecl_to_uint8_t (cl_object n);
+@deftypefunx int8_t ecl_to_int8_t (cl_object n);
+@deftypefunx uint16_t ecl_to_uint16_t (cl_object n);
+@deftypefunx int16_t ecl_to_int16_t (cl_object n);
+@deftypefunx uint32_t ecl_to_uint32_t (cl_object n);
+@deftypefunx int32_t ecl_to_int32_t (cl_object n);
+@deftypefunx uint64_t ecl_to_uint64_t (cl_object n);
+@deftypefunx int64_t ecl_to_int64_t (cl_object n);
+@deftypefunx short ecl_to_short (cl_object n);
+@deftypefunx {unsigned short} ecl_to_ushort (cl_object n);
+@deftypefunx int ecl_to_int (cl_object n);
+@deftypefunx {unsigned int} ecl_to_uint (cl_object n);
+@deftypefunx long ecl_to_long (cl_object n);
+@deftypefunx {unsigned long} ecl_to_ulong (cl_object n);
+@deftypefunx {long long} ecl_to_long_long (cl_object n);
+@deftypefunx {unsigned long long} ecl_to_ulong_long (cl_object n);
+
+@paragraph Description
 These functions and macros convert a Lisp object to the corresponding
 C number type. The conversion is done through a coercion process which
 may signal an error if the argument does not fit the expected type.
+@end deftypefun
 
 @node Numbers - ANSI dictionary
 @subsubsection ANSI dictionary

@@ -152,5 +152,5 @@ make install
 @end verbatim
 @end example
 
-Library and assets are installed in the @code{ecl-android} directory
+Library and assets are installed in the "ecl-android" directory
 and are ready to run on the Android system.

@@ -51,8 +51,8 @@ Example:
 @end lisp
 @end defmac
 
-@lspindex ext:package-local-nicknames
-@cppindex si_package_local_nicknames
+@lspdef ext:package-local-nicknames
+@cppdef si_package_local_nicknames
 @defun {ext:package-local-nicknames} package-designator
 @end defun
 @deftypefun cl_object si_package_local_nicknames (cl_object package_designator)
@@ -69,8 +69,8 @@ local nickname is used instead of the real name in order to preserve
 print-read consistency.
 @end deftypefun
 
-@lspindex ext:package-locally-nicknamed-by-list
-@cppindex si_package_locally_nicknamed_by_list
+@lspdef ext:package-locally-nicknamed-by-list
+@cppdef si_package_locally_nicknamed_by_list
 @defun {ext:package-locally-nicknamed-by-list} package-designator
 @end defun
 @deftypefun cl_object si_package_locally_nicknamed_by_list (cl_object package_designator)
@@ -78,8 +78,8 @@ Returns a list of packages which have a local nickname for the
 designated package.
 @end deftypefun
 
-@lspindex ext:add-package-local-nickname
-@cppindex si_add_package_local_nickname
+@lspdef ext:add-package-local-nickname
+@cppdef si_add_package_local_nickname
 @defun {ext:add-package-local-nickname} local-nickname actual-package &optional package-designator
 @end defun
 @deftypefun cl_object si_add_package_local_nickname (cl_object local_nickname, cl_object actual_package, cl_object package_designator)
@@ -103,14 +103,14 @@ nickname, the local nickname is used instead of the real name in order
 to preserve print-read consistency.
 @end deftypefun
 
-@lspindex ext:remove-package-local-nickname
-@cppindex si_remove_package_local_nickname
+@lspdef ext:remove-package-local-nickname
+@cppdef si_remove_package_local_nickname
 @defun {ext:remove-package-local-nickname} old-nickname &optional package-designator
 @end defun
 @deftypefun cl_object si_remove_package_local_nickname (cl_object old_nickname, cl_object package_designator)
 If the designated package had @var{old-nickname} as a local nickname
 for another package, it is removed. Returns true if the nickname
-existed and was removed, and @code{NIL} otherwise.
+existed and was removed, and @code{nil} otherwise.
 @end deftypefun
 
 @node Package locks
@@ -193,52 +193,50 @@ Removing an existing package local nickname to a package.
 
 @subsection Package Lock Dictionary
 
-@lspindex ext:package-locked-p
+@lspdef ext:package-locked-p
 @defun ext:package-locked-p package
-Returns @code{t} when @code{package} is locked, @code{nil}
-otherwise. Signals an error if @code{package} doesn't designate a valid
+Returns @code{t} when @var{package} is locked, @code{nil}
+otherwise. Signals an error if @var{package} doesn't designate a valid
 package.
 @end defun
 
-@lspindex ext:lock-package
+@lspdef ext:lock-package
 @defun ext:lock-package package
-Locks @code{package} and returns @code{t}. Has no effect if package was
+Locks @var{package} and returns @code{t}. Has no effect if package was
 already locked. Signals an error if package is not a valid
-@code{package} designator
+@var{package} designator
 @end defun
 
-@lspindex ext:unlock-package
+@lspdef ext:unlock-package
 @defun ext:unlock-package package
-Unlocks @code{package} and returns @code{t}. Has no effect if
-@code{package} was already unlocked. Signals an error if @code{package}
+Unlocks @var{package} and returns @code{t}. Has no effect if
+@var{package} was already unlocked. Signals an error if @var{package}
 is not a valid package designator.
 @end defun
 
-@lspindex ext:without-package-locks
+@lspdef ext:without-package-locks
 @defmac ext:without-package-locks &body body
 Ignores all runtime package lock violations during the execution of
 body. Body can begin with declarations.
 @end defmac
 
-@lspindex ext:with-unlocked-packages
+@lspdef ext:with-unlocked-packages
 @defmac ext:with-unlocked-packages (&rest packages) &body body
-Unlocks @code{packages} for the dynamic scope of the
-@code{body}. Signals an error if any of @code{packages} is not a valid
+Unlocks @var{packages} for the dynamic scope of the
+@var{body}. Signals an error if any of @var{packages} is not a valid
 package designator.
 @end defmac
 
 @defmac cl:defpackage name [[option]]* @result{} package
 
-Options are extended to include the following:
+Options are extended to include
 
-@itemize
-@item
-@code{:lock} @var{boolean}
+@example
+    :lock boolean
+@end example
 
 If the argument to @code{:lock} is @code{t}, the package is initially
 locked. If @code{:lock} is not provided it defaults to @code{nil}.
-
-@end itemize
 
 @exindex Defpackage @code{:lock} option
 Example:

@@ -14,9 +14,9 @@
 @subheading In-house DFFI
 
 Commit @code{10bd3b613fd389da7640902c2b88a6e36088c920}. Native DFFI was
-replaced by a @code{libffi} long time ago, but we have maintained the
-code as a fallback. Due to small number of supported platforms and no
-real use it has been removed in 2016.
+replaced by a @url{https://sourceware.org/libffi/,libffi} long time ago,
+but we have maintained the code as a fallback. Due to small number of
+supported platforms and no real use it has been removed in 2016.
 
 @c @node In-house GC
 @subheading In-house GC

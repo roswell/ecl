@@ -25,7 +25,7 @@ The number in the @ecl{} banner identifies the revision of
 Unless user specifies @code{--norc} flag when invoking the @ecl{}, it
 will look for the initialization files @file{~/.ecl} and
 @file{~/.eclrc}. If he wants to load his own file from the current
-directory, then he should pass the file path to the @code{-load}
+directory, then he should pass the file path to the @code{--load}
 parameter:
 @example
 % ecl --norc --load init.lisp
@@ -42,7 +42,7 @@ Type :h for Help.  Top level.
 The prompt indicates that @ecl{} is now ready to receive a form from the
 terminal and to evaluate it.
 
-Usually, the current package (i.e., the value of @var{*package*}) is the
+Usually, the current package (i.e., the value of @code{*package*}) is the
 user package, and the prompt appears as above.  If, however, the current
 package is other than the user package, then the prompt will be prefixed
 with the package name.
@@ -55,7 +55,7 @@ COMMON-LISP> (in-package "SYSTEM")
 SI>
 @end example
 
-To exit from @ecl{}, call the function @code{quit}.
+To exit from @ecl{}, call the function @coderef{ext:quit}.
 
 @example
 > (quit)
@@ -110,7 +110,7 @@ Broken at FOO. In: #<process TOP-LEVEL>.
 
 `@code{>>}' in the last line is the prompt of the break loop.  Like in
 the top-level loop, the prompt will be prefixed by the current package
-name, if the current package is other than the @code{user} package.
+name, if the current package is other than the @code{cl-user} package.
 
 To go back to the top-level loop, type @code{:q}
 

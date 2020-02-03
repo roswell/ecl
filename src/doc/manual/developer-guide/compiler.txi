@@ -100,9 +100,9 @@ The C function @code{L1add1} implements the Lisp function @code{add1}. This rela
 @subsection Implementation of Compiled Closures
 The ECL compiler takes two passes before it invokes the C compiler. The major role of the first pass is to detect function closures and to detect, for each function closure, those lexical objects (i.e., lexical variable, local function definitions, tags, and block-names) to be enclosed within the closure. This check must be done before the C code generation in the second pass, because lexical objects to be enclosed in function closures are treated in a different way from those not enclosed.
 
-Ordinarily, lexical variables in a compiled function @var{f} are allocated on the C stack. However, if a lexical variable is to be enclosed in function closures, it is allocated on a list, called the "environment list", which is local to @var{f}. In addition, a local variable is created which points to the lexical variable's location (within the environment list), so that the variable may be accessed through an indirection rather than by list traversal.
+Ordinarily, lexical variables in a compiled function @code{f} are allocated on the C stack. However, if a lexical variable is to be enclosed in function closures, it is allocated on a list, called the "environment list", which is local to @code{f}. In addition, a local variable is created which points to the lexical variable's location (within the environment list), so that the variable may be accessed through an indirection rather than by list traversal.
 
-The environment list is a pushdown list: It is empty when @var{f} is called. An element is pushed on the environment list when a variable to be enclosed in closures is bound, and is popped when the binding is no more in effect. That is, at any moment during execution of @var{f}, the environment list contains those lexical variables whose binding is still in effect and which should be enclosed in closures. When a compiled closure is created during execution of @var{f}, the compiled code for the closure is coupled with the environment list at that moment to form the compiled closure.
+The environment list is a pushdown list: It is empty when @code{f} is called. An element is pushed on the environment list when a variable to be enclosed in closures is bound, and is popped when the binding is no more in effect. That is, at any moment during execution of @code{f}, the environment list contains those lexical variables whose binding is still in effect and which should be enclosed in closures. When a compiled closure is created during execution of @code{f}, the compiled code for the closure is coupled with the environment list at that moment to form the compiled closure.
 
 Later, when the compiled closure is invoked, a pointer is set up to each lexical variable in the environment list, so that each object may be referenced through a memory indirection.
 
@@ -164,7 +164,7 @@ Declarations, especially type and function declarations, increase the efficiency
 @end lisp
 
 
-The compiler generates the following C code (Note that the tail-recursive call of @code{TAK} was replaced by iteration):
+The compiler generates the following C code (Note that the tail-recursive call of @code{tak} was replaced by iteration):
 @example
 @verbatim
 /*      function definition for TAK                                   */

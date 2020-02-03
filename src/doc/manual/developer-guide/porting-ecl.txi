@@ -5,9 +5,9 @@ To port ECL to a new architecture, the following steps are required:
 
 @enumerate
 @item Ensure that the GNU Multiprecision library supports this machine.
-@item Ensure that the Boehm-Weiser garbage collector is supported by that architecture. Alternatively, port ECL's own garbage collector @code{src/c/alloc.d} and @code{src/c/gbc.d} to that platform.
-@item Fix @code{src/aclocal.in}, @code{src/h/config.h.in} and @code{src/h/ecl.h} so that they supply flags for the new host machine.
-@item Fix the machine dependent code in @code{src/c/}. The most critical parts are in the @code{unix*.d} and @code{thread*.d} files.
+@item Ensure that the Boehm-Weiser garbage collector is supported by that architecture. Alternatively, port ECL's own garbage collector @file{src/c/alloc.d} and @file{src/c/gbc.d} to that platform.
+@item Fix @file{src/aclocal.in}, @file{src/h/config.h.in} and @file{src/h/ecl.h} so that they supply flags for the new host machine.
+@item Fix the machine dependent code in @file{src/c/}. The most critical parts are in the @file{unix*.d} and @file{thread*.d} files.
 @item Compile as in any other platform.
 @item Run the tests and compare to the results of other platforms.
 @end enumerate
