@@ -37,8 +37,7 @@
       (when (member fun *toplevel-forms-to-print*)
         (print-current-form))
       (cond
-        ((consp fun)
-         (t1ordinary form))
+        ((consp fun) (t1ordinary form))
         ((not (symbolp fun))
          (cmperr "~s is illegal function." fun))
         ((eq fun 'QUOTE)
@@ -53,8 +52,14 @@
                 (multiple-value-setq (fd success)
                   (cmp-expand-macro fd form))
                 success))
-         (push 'macroexpand *current-toplevel-form*)
-         (t1expr* fd))
+         (when *compile-time-too*
+           ;; Ignore compiler macros during compile time evaluation
+           ;; (they may expand in ffi:c-inline which the bytecodes
+           ;; compiler can't execute).
+           (cmp-eval form))
+         (let ((*compile-time-too* nil))
+           (push 'macroexpand *current-toplevel-form*)
+           (t1expr* fd)))
         ((setq fd (cmp-macro-function fun))
          (push 'macroexpand *current-toplevel-form*)
          (t1expr* (cmp-expand-macro fd form)))
@@ -95,7 +100,8 @@
 (defun emit-local-funs ()
   (declare (si::c-local))
   ;; Local functions and closure functions
-  (do ((*compile-toplevel* nil))
+  (do ((*compile-time-too* nil)
+       (*compile-toplevel* nil))
       ;; repeat until t3local-fun generates no more
       ((eq *emitted-local-funs* *local-funs*))
     ;; scan *local-funs* backwards
@@ -269,21 +275,19 @@
         (execute-flag nil))
     (dolist (situation (car args))
       (case situation
-        ((CL:LOAD :LOAD-TOPLEVEL)
-         (setq load-flag t))
-        ((CL:COMPILE :COMPILE-TOPLEVEL)
-         (setq compile-flag t))
+        ((CL:LOAD :LOAD-TOPLEVEL) (setq load-flag t))
+        ((CL:COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
         ((CL:EVAL :EXECUTE)
-         (unless *compile-toplevel*
-           (setq execute-flag t)))
+         (if *compile-toplevel*
+             (setq compile-flag (or *compile-time-too* compile-flag))
+             (setq execute-flag t)))
         (otherwise (cmperr "The EVAL-WHEN situation ~s is illegal."
                            situation))))
     (cond ((not *compile-toplevel*)
            (c1progn (and execute-flag (rest args))))
           (load-flag
-           (if compile-flag
-               (cmp-eval (cons 'PROGN (rest args))))
-           (c1progn (rest args)))
+           (let ((*compile-time-too* compile-flag))
+             (c1progn (rest args))))
           (compile-flag
            (cmp-eval (cons 'PROGN (rest args)))
            (c1progn 'NIL))
@@ -441,7 +445,9 @@
     (otherwise "cl_object ")))
 
 (defun t1ordinary (form)
-  (let ((*compile-toplevel* nil))
+  (when *compile-time-too* (cmp-eval form))
+  (let ((*compile-toplevel* nil)
+        (*compile-time-too* nil))
     (add-load-time-values (make-c1form* 'ORDINARY :args (c1expr form)))))
 
 (defun p1ordinary (c1form assumptions form)
@@ -752,7 +758,10 @@
 ;;;
 (defun t1fset (args)
   (let ((form `(si::fset ,@args)))
-    (let ((*compile-toplevel* nil))
+    (when *compile-time-too*
+      (cmp-eval form))
+    (let ((*compile-toplevel* nil)
+          (*compile-time-too* nil))
       (add-load-time-values (c1fset form)))))
 
 (defun c1fset (form)
