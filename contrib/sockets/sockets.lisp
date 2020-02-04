@@ -141,6 +141,23 @@
 #+:wsock
 (defconstant +af-named-pipe+ -2)
 
+(Clines
+ "
+static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
+                               int a1, int a2, int a3, int a4)
+{
+#if defined(_MSC_VER) || defined(mingw32)
+        memset(sockaddr,0,sizeof(struct sockaddr_in));
+#else
+        bzero(sockaddr,sizeof(struct sockaddr_in));
+#endif
+        sockaddr->sin_family = AF_INET;
+        sockaddr->sin_port = htons(port);
+        sockaddr->sin_addr.s_addr= htonl((uint32_t)a1<<24 | (uint32_t)a2<<16 | (uint32_t)a3<<8 | (uint32_t)a4) ;
+
+}
+")
+
 ;; Foreign functions
 
 (defentry ff-socket (:int :int :int) (:int "socket") :no-interrupts t)
@@ -192,12 +209,18 @@ containing the whole rest of the given `string', if any."
   "Returns a HOST-ENT instance for HOST-NAME or throws some kind of condition.
 HOST-NAME may also be an IP address in dotted quad notation or some
 other weird stuff - see getaddrinfo(3) for details."
-  (multiple-value-bind (result canonical-name addresses aliases)
+  (multiple-value-bind (errno canonical-name addresses aliases)
       (c-inline (host-name) (:cstring)
-                (values :object :object :object :object)
+                (values :int :object :object :object)
                 "
 {
     struct addrinfo hints;
+    struct addrinfo *result;
+    cl_object host_name = ECL_NIL;
+    cl_object aliases = ECL_NIL;
+    cl_object addresses = ECL_NIL;
+    int err;
+
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;                                     /* IPv4 */
     hints.ai_socktype = 0;                                         /* Any type */
@@ -205,13 +228,12 @@ other weird stuff - see getaddrinfo(3) for details."
     hints.ai_flags = (AI_ADDRCONFIG | AI_CANONNAME);               /* Get cannonname */
     hints.ai_addr = NULL;
     hints.ai_next = NULL;
-    struct addrinfo *result;
-    int s = getaddrinfo(#0, NULL, &hints, &result);
 
-    if (s == 0) {
-        cl_object host_name = ECL_NIL;
-        cl_object aliases = ECL_NIL;
-        cl_object addresses = ECL_NIL;
+    ecl_disable_interrupts();
+    err = getaddrinfo(#0, NULL, &hints, &result);
+    ecl_enable_interrupts();
+
+    if (err == 0) {
         struct addrinfo *rp;
 
         for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -231,86 +253,58 @@ other weird stuff - see getaddrinfo(3) for details."
                 aliases = CONS(alias, aliases);
             }
         }
-        @(return 0) = ECL_T;
-        @(return 1) = host_name;
-        @(return 2) = addresses;
-        @(return 3) = aliases;
+        freeaddrinfo(result);
     }
-    else {
-        /* error returned */
-        @(return 0) = ecl_make_fixnum(s);                                  /* error number */
-        @(return 1) = ecl_make_simple_base_string(gai_strerror(s),-1);     /* error string */
-        @(return 2) = ECL_NIL;
-        @(return 3) = ECL_NIL;
-    }
-    freeaddrinfo(result);
+    @(return 0) = err;
+    @(return 1) = host_name;
+    @(return 2) = addresses;
+    @(return 3) = aliases;
 }"
-                :one-liner nil)
-    (if result
+                :side-effects t)
+    (if (= errno 0)
         (make-instance 'host-ent
                        :name (or canonical-name host-name)
                        :aliases aliases
                        :type +af-inet+
                        :addresses addresses)
-        (name-service-error "get-host-by-name"))))
+        (name-service-error "get-host-by-name" errno))))
+
+;;; Use values from getnameinfo man page if NI_MAXHOST is not declared
+(clines
+ "#ifndef NI_MAXHOST
+  #define NI_MAXHOST 1025
+  #endif")
 
 (defun get-host-by-address (address)
   (assert (and (typep address 'vector)
                (= (length address) 4)))
-  (let ((host-ent (make-instance 'host-ent)))
-    (if
-     (c-inline (address host-ent
-                        #'(setf host-ent-name)
-                        #'(setf host-ent-aliases)
-                        #'(setf host-ent-address-type)
-                        #'(setf host-ent-addresses))
-               (t t t t t t) t
-               "
+  (multiple-value-bind (errno name)
+      (c-inline ((aref address 0) (aref address 1) (aref address 2) (aref address 3))
+                (:int :int :int :int) (values :int t)
+             "
 {
-        unsigned char vector[4];
-        struct hostent *hostent;
-        vector[0] = fixint(ecl_aref(#0,0));
-        vector[1] = fixint(ecl_aref(#0,1));
-        vector[2] = fixint(ecl_aref(#0,2));
-        vector[3] = fixint(ecl_aref(#0,3));
-        ecl_disable_interrupts();
-        hostent = gethostbyaddr(wincoerce(const char *, vector),4,AF_INET);
-        ecl_enable_interrupts();
+    struct sockaddr_in addr;
+    socklen_t addr_len = (socklen_t)sizeof(struct sockaddr_in);
+    char host[NI_MAXHOST];
+    int err;
 
-        if (hostent != NULL) {
-                char **aliases;
-                char **addrs;
-                cl_object aliases_list = ECL_NIL;
-                cl_object addr_list = ECL_NIL;
-                int length = hostent->h_length;
+    fill_inet_sockaddr(&addr, 0, #0, #1, #2, #3);
 
-                funcall(3,#2,ecl_make_simple_base_string(hostent->h_name,-1),#1);
-                funcall(3,#4,ecl_make_integer(hostent->h_addrtype),#1);
+    ecl_disable_interrupts();
+    err = getnameinfo((struct sockaddr *) &addr, addr_len, host, NI_MAXHOST, NULL, 0, NI_NAMEREQD);
+    ecl_enable_interrupts();
 
-                for (aliases = hostent->h_aliases; *aliases != NULL; aliases++) {
-                        aliases_list = CONS(ecl_make_simple_base_string(*aliases,-1),aliases_list);
-                }
-                funcall(3,#3,aliases_list,#1);
-
-                for (addrs = hostent->h_addr_list; *addrs != NULL; addrs++) {
-                        int pos;
-                        cl_object vector = funcall(2,@make-array,ecl_make_fixnum(length));
-                        for (pos = 0; pos < length; pos++)
-                                ecl_aset(vector, pos, ecl_make_fixnum((unsigned char)((*addrs)[pos])));
-                        addr_list = CONS(vector, addr_list);
-
-
-                }
-                funcall(3,#5,addr_list,#1);
-
-                @(return) = #1;
-        } else {
-                @(return) = ECL_NIL;
-        }
+    @(return 0) = err;
+    @(return 1) = err ? ECL_NIL : ecl_make_simple_base_string(host,-1);
 }"
-               :side-effects t)
-     host-ent
-     (name-service-error "get-host-by-address"))))
+             :side-effects t)
+    (if (= errno 0)
+        (make-instance 'host-ent
+                       :name name
+                       :aliases nil
+                       :type +af-inet+
+                       :addresses (list address))
+        (name-service-error "get-host-by-address" errno))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -635,23 +629,6 @@ Examples:
 (defun make-inet-socket (type protocol)
   "Make an INET socket.  Deprecated in favour of make-instance"
   (make-instance 'inet-socket :type type :protocol protocol))
-
-(Clines
- "
-static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
-                               int a1, int a2, int a3, int a4)
-{
-#if defined(_MSC_VER) || defined(mingw32)
-        memset(sockaddr,0,sizeof(struct sockaddr_in));
-#else
-        bzero(sockaddr,sizeof(struct sockaddr_in));
-#endif
-        sockaddr->sin_family = AF_INET;
-        sockaddr->sin_port = htons(port);
-        sockaddr->sin_addr.s_addr= htonl((uint32_t)a1<<24 | (uint32_t)a2<<16 | (uint32_t)a3<<8 | (uint32_t)a4) ;
-
-}
-")
 
 
 
@@ -1441,21 +1418,11 @@ also known as unix-domain sockets."))
   "#define EPROTONOSUPPORT WSAEPROTONOSUPPORT"
   "#define ESOCKTNOSUPPORT WSAESOCKTNOSUPPORT"
   "#define ENETUNREACH WSAENETUNREACH"
-  "#define NETDB_INTERNAL WSAEAFNOSUPPORT"
-  "#define NETDB_SUCCESS 0"
 )
 
 #+:haiku
 (clines
  "#define ESOCKTNOSUPPORT ENOTSUP")
-
-(Clines
-  "#ifndef NETDB_INTERNAL"
-  "#define NETDB_INTERNAL 0"
-  "#endif"
-  "#ifndef NETDB_SUCCESS"
-  "#define NETDB_SUCCESS 0"
-  "#endif")
 
 (define-socket-condition EADDRINUSE address-in-use-error)
 (define-socket-condition EAGAIN interrupted-error)
@@ -1485,19 +1452,17 @@ also known as unix-domain sockets."))
 ;;; 2) DNS ERRORS
 ;;;
 
-(defvar *name-service-errno* 0
-  "The value of h_errno, after it's been fetched from Unix-land by calling
-GET-NAME-SERVICE-ERRNO")
+(clines
+ "#ifndef EAI_SYSTEM
+  #define EAI_SYSTEM 0
+  #endif")
 
-(defun name-service-error (where)
-  (get-name-service-errno)
-  ;; Comment next to NETDB_INTERNAL in netdb.h says "See errno.".
-  ;; This special case treatment hasn't actually been tested yet.
-  (if (= *name-service-errno* (c-constant "NETDB_INTERNAL"))
+(defun name-service-error (where &optional (errno #+:wsock (c-constant "WSAGetLastError()")))
+  (if (= errno (c-constant "EAI_SYSTEM"))
       (socket-error where)
-    (let ((condition
-           (condition-for-name-service-errno *name-service-errno*)))
-      (error condition :errno *name-service-errno* :syscall where))))
+      (let ((condition
+             (condition-for-name-service-errno errno)))
+        (error condition :errno errno :syscall where))))
 
 (define-condition name-service-error (condition)
   ((errno :initform nil
@@ -1523,30 +1488,22 @@ GET-NAME-SERVICE-ERRNO")
 
 (defparameter *conditions-for-name-service-errno* nil)
 
-(define-name-service-condition NETDB_INTERNAL netdb-internal-error)
-(define-name-service-condition NETDB_SUCCESS netdb-success-error)
-(define-name-service-condition HOST_NOT_FOUND host-not-found-error)
-(define-name-service-condition TRY_AGAIN try-again-error)
-(define-name-service-condition NO_RECOVERY no-recovery-error)
-;; this is the same as the next one
-;;(define-name-service-condition NO_DATA no-data-error)
-(define-name-service-condition NO_ADDRESS no-address-error)
+;;; getaddrinfo/getnameinfo have more failure codes, but for
+;;; compability with gethostbyname/gethostbyaddr, we only need the
+;;; following
+(define-name-service-condition EAI_NONAME host-not-found-error)
+(define-name-service-condition EAI_AGAIN try-again-error)
+(define-name-service-condition EAI_FAIL no-recovery-error)
 
 (defun condition-for-name-service-errno (err)
   (or (cdr (assoc err *conditions-for-name-service-errno* :test #'eql))
       'name-service))
 
-(defun get-name-service-errno ()
-  (setf *name-service-errno* (c-constant #-:wsock "h_errno" #+:wsock "WSAGetLastError()")))
-
 (defun get-name-service-error-message (num)
-  #+:nsr
-  (c-inline (num) (:int) :cstring "strerror(#0)" :one-liner t)
   #+:wsock
   (get-win32-error-string num)
-  #-(or :wsock :nsr)
-  (c-inline (num) (:int) :cstring "strerror(#0)" :one-liner t)
-)
+  #-:wsock
+  (c-inline (num) (:int) :cstring "gai_strerror(#0)" :one-liner t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
