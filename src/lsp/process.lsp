@@ -158,7 +158,20 @@
              (open #-windows "/dev/null"
                    #+windows "nul"
                    :direction direction
-		   :if-exists :overwrite)))
+		             :if-exists :overwrite))
+           (verify-stream (stream stream-type)
+             (case stream
+               ((nil)
+                (when (null (case stream-type
+                              (:input if-input-does-not-exist)
+                              (:output if-output-exists)
+                              (:error if-error-exists)))
+                  (return-from run-program nil))
+                (null-stream (if (eql stream-type :input)
+                                 :output
+                                 :input)))
+               (:virtual-stream :stream)
+               (otherwise stream))))
     (let ((progname (si:copy-to-simple-base-string command))
           (args (prepare-args (cons command argv)))
           (process (make-external-process))
@@ -177,18 +190,9 @@
 
       (multiple-value-setq (pid parent-write parent-read parent-error)
         (si:spawn-subprocess progname args environ
-                             (case process-input
-                               ((nil) (null-stream :output))
-                               (:virtual-stream :stream)
-                               (otherwise process-input))
-                             (case process-output
-                               ((nil) (null-stream :input))
-                               (:virtual-stream :stream)
-                               (otherwise process-output))
-                             (case process-error
-                               ((nil) (null-stream :input))
-                               (:virtual-stream :stream)
-                               (otherwise process-error))))
+                             (verify-stream process-input :input)
+                             (verify-stream process-output :output)
+                             (verify-stream process-error :error)))
 
       (let ((stream-write
              (when (plusp parent-write)
