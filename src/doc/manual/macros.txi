@@ -102,10 +102,10 @@
 @c --- TAGS --- @
 
 @macro cind
-C/C++ identifier
+{C/C++ identifier}
 @end macro
 @macro lind
-Common Lisp symbol
+{Common Lisp symbol}
 @end macro
 @macro ocl
 @emph{Only in Common Lisp}
@@ -120,4 +120,29 @@ Common Lisp symbol
 @item
 \left\
 @tab \right\
+@end macro
+
+@macro paragraph{title}
+
+@b{\title\}
+
+@end macro
+
+@macro coderef{code}
+@inlinefmtifelse{html, @code{@ref{\code\}}, @code{\code\}}
+@end macro
+
+@macro seealso{node}
+@paragraph{See also}
+@coderef{\node\}
+@end macro
+
+@macro cppdef{name}
+@anchor{\name\}
+@cppindex \name\
+@end macro
+
+@macro lspdef{name}
+@anchor{\name\}
+@lspindex \name\
 @end macro

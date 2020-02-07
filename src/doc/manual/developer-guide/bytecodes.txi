@@ -6,9 +6,9 @@ system. Call to @code{eval} invokes the bytecode compiler and then the
 bytecode interpreter.
 
 @itemize
-@item @code{src/c/compiler.d} - bytecode compiler 
-@item @code{src/c/interpreter.d} - bytecode interpreter
-@item @code{src/c/interpreter.d} - bytecode disassembler
+@item @file{src/c/compiler.d} - bytecode compiler
+@item @file{src/c/interpreter.d} - bytecode interpreter
+@item @file{src/c/disassembler.d} - bytecode disassembler
 @end itemize
 
 Structure @code{ecl_bytecodes} has the following fields:
@@ -30,7 +30,7 @@ Moreover if bytecompiled function is a closure then its structure is
 @itemize
 @item @code{code}  - closure function (@code{ecl_bytecodes})
 @item @code{lex}   - closure lexical environment
-@item @code{entry} - closure entry address (function _ecl_bclosure_dispatch_vararg)
+@item @code{entry} - closure entry address (function @code{_ecl_bclosure_dispatch_vararg})
 @end itemize
 
 @subsection Bytecode compiler
@@ -39,6 +39,6 @@ Moreover if bytecompiled function is a closure then its structure is
 
 @subsection Bytecode disassembler
 
-@defun{si:bc-split} {@var{function}}
+@defun si:bc-split function
 Returns five values: lex, bytecodes, data and name.
 @end defun

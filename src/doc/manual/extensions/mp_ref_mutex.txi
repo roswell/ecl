@@ -10,117 +10,116 @@ can't).
 @subsection Locks dictionary
 
 
-@cppindex ecl_make_lock
+@cppdef ecl_make_lock
 
 @deftypefun cl_object ecl_make_lock (cl_object name, bool recursive)
-C/C++ equivalent of @code{mp:make-lock} without @code{key} arguments.
+C/C++ equivalent of @coderef{mp:make-lock} without @var{key} arguments.
 
-See @code{mp:make-lock}.
+See @coderef{mp:make-lock}.
 @end deftypefun
 
 
-@lspindex mp:make-lock
+@lspdef mp:make-lock
 
 @defun mp:make-lock &key name (recursive nil)
-Creates a lock @code{name}. If @code{recursive} isn't @code{nil}, then
-the created lock is recursive.
+Creates a lock named @var{name}. If @var{recursive} is true, a recursive
+lock is created that can be locked multiple times by the same thread.
 @end defun
 
 
-@cppindex mp_recursive_lock_p
-@lspindex mp:recursive-lock-p
+@cppdef mp_recursive_lock_p
+@lspdef mp:recursive-lock-p
 
 @deftypefun cl_object mp_recursive_lock_p (cl_object lock)
 @end deftypefun
 
 @defun mp:recursive-lock-p lock
-Predicate verifying if @code{lock} is recursive.
+Predicate verifying if @var{lock} is recursive.
 @end defun
 
 
-@cppindex mp_holding_lock_p
-@lspindex mp:holding-lock-p
+@cppdef mp_holding_lock_p
+@lspdef mp:holding-lock-p
 
 @deftypefun cl_object mp_holding_lock_p (cl_object lock)
 @end deftypefun
 
 @defun mp:holding-lock-p lock
-Predicate verifying if the current thread holds @code{lock}.
+Predicate verifying if the current thread holds @var{lock}.
 @end defun
 
 
-@cppindex mp_lock_name
-@lspindex mp:lock-name
+@cppdef mp_lock_name
+@lspdef mp:lock-name
 
 @deftypefun cl_object mp_lock_name (cl_object lock)
 @end deftypefun
 
 @defun mp:lock_name lock
-Returns @code{lock} name.
+Returns the name of @var{lock}.
 @end defun
 
 
-@lspindex mp_lock_owner
-@lspindex mp:lock-owner
+@lspdef mp_lock_owner
+@lspdef mp:lock-owner
 
 @deftypefun cl_object mp_lock_owner (cl_object lock)
 @end deftypefun
 
-@defun mp:lock_owner lock
-Returns process owning @code{lock} (or @code{nil} if it is free). For
-testing whether the current thread is holding a lock see
-@code{holding-lock-p}.
+@defun mp:lock-owner lock
+Returns the process owning @var{lock}. For testing whether the current
+thread is holding a lock see @coderef{mp:holding-lock-p}.
 @end defun
 
 
-@cppindex mp_lock_count
-@lspindex mp:lock-count
+@cppdef mp_lock_count
+@lspdef mp:lock-count
 
 @deftypefun cl_object mp_lock_count (cl_object lock)
 @end deftypefun
 
 @defun mp:lock-count lock
-Returns number of processes waiting for @code{lock}.
+Returns number of processes waiting for @var{lock}.
 @end defun
 
 
-@cppindex mp_get_lock_wait
-@cppindex mp_get_lock_nowait
-@lspindex mp:get-lock
+@cppdef mp_get_lock_wait
+@cppdef mp_get_lock_nowait
+@lspdef mp:get-lock
 
 @deftypefun cl_object mp_get_lock_wait (cl_object lock)
-Grabs a lock (blocking if @code{lock} is already taken). Returns
+Grabs a lock (blocking if @var{lock} is already taken). Returns
 @code{ECL_T}.
 @end deftypefun
 
 @deftypefun cl_object mp_get_lock_nowait
-Grabs a lock if free (non-blocking). If @code{lock} is already taken
+Grabs a lock if free (non-blocking). If @var{lock} is already taken
 returns @code{ECL_NIL}, otherwise @code{ECL_T}.
 @end deftypefun
 
 @defun mp:get-lock lock &optional (wait t)
-Tries to acquire a lock. @code{wait} indicates whenever function should
-block or give up if @code{lock} is already taken. If @code{wait} is
-@code{nil} and @code{lock} can't be acquired returns
+Tries to acquire a lock. @var{wait} indicates whether function should
+block or give up if @var{lock} is already taken. If @var{wait} is
+@code{nil} and @var{lock} can't be acquired returns
 @code{nil}. Succesful operation returns @code{t}.
 @end defun
 
 
-@cppindex mp_giveup_lock
-@lspindex mp:giveup-lock
+@cppdef mp_giveup_lock
+@lspdef mp:giveup-lock
 
 @deftypefun cl_object mp_giveup_lock (cl_object lock)
 @end deftypefun
 
-@defun mp:giveup_lock lock
-Releases @code{lock}.
+@defun mp:giveup-lock lock
+Releases @var{lock}.
 @end defun
 
 
-@lspindex mp:with-lock
+@lspdef mp:with-lock
 
 @defmac mp:with-lock (lock-form) &body body
-Acquire lock for the dynamic scope of @code{body}, which is executed
+Acquire lock for the dynamic scope of @var{body}, which is executed
 with the lock held by current thread. Returns the values of body.
 
 @c (lock-form &key wait-p timeout)

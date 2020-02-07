@@ -9,59 +9,59 @@ of concurrent threads allowed to access it is limited.
 @subsection Semaphores dictionary
 
 
-@cppindex ecl_make_semaphore
+@cppdef ecl_make_semaphore
 @deftypefun cl_object ecl_make_semaphore (cl_object name, cl_fixnum count)
-C/C++ equivalent of @code{mp:make-sempahore} without @code{key}
+C/C++ equivalent of @coderef{mp:make-semaphore} without @code{key}
 arguments.
 
-See @code{mp:make-sempahore}.
+See @coderef{mp:make-semaphore}.
 @end deftypefun
 
 
-@cppindex mp_make_semaphore
-@lspindex mp:make-semaphore
+@cppdef mp_make_semaphore
+@lspdef mp:make-semaphore
 
 @defun mp:make-semaphore &key name count
-Creates a counting semaphore @code{name} with a resource count
-@code{count}.
+Creates a counting semaphore @var{name} with a resource count
+@var{count}.
 @end defun
 
 
-@cppindex mp_semaphore_name
-@lspindex mp:semaphore-name
+@cppdef mp_semaphore_name
+@lspdef mp:semaphore-name
 
 @deftypefun cl_object mp_semaphore_name (cl_object semaphore)
 @end deftypefun
 
 @defun mp:semaphore-name semaphore
-Returns @code{semaphore} name.
+Returns the name of @var{semaphore}.
 @end defun
 
 
-@cppindex mp_semaphore_count
-@lspindex mp:semaphore-count
+@cppdef mp_semaphore_count
+@lspdef mp:semaphore-count
 
 @deftypefun cl_object mp_semaphore_count (cl_object semaphore)
 @end deftypefun
 
 @defun mp:semaphore-count semaphore
-Returns @code{semaphore} count of resources.
+Returns the resource count of @var{semaphore}.
 @end defun
 
 
-@cppindex mp_semaphore_wait_count
-@lspindex mp:semaphore-wait-count
+@cppdef mp_semaphore_wait_count
+@lspdef mp:semaphore-wait-count
 
 @deftypefun cl_object mp_semaphore_wait_count (cl_object semaphore)
 @end deftypefun
 
 @defun mp:semaphore-wait-count semaphore
-Returns number of threads waiting on @code{semaphore}.
+Returns the number of threads waiting on @var{semaphore}.
 @end defun
 
 
-@cppindex mp_wait_on_semaphore
-@lspindex mp:wait-on-semaphore
+@cppdef mp_wait_on_semaphore
+@lspdef mp:wait-on-semaphore
 
 @deftypefun cl_object mp_wait_on_semaphore (cl_object semaphore)
 @end deftypefun
@@ -72,8 +72,8 @@ resource count before semaphore was acquired.
 @end defun
 
 
-@cppindex mp_try_get_semaphore
-@lspindex mp:try-get-semaphore
+@cppdef mp_try_get_semaphore
+@lspdef mp:try-get-semaphore
 
 @deftypefun cl_object mp_try_get_semaphore (cl_object semaphore)
 @end deftypefun
@@ -85,12 +85,12 @@ was acquired.
 @end defun
 
 
-@lspindex mp_signal_semaphore
-@lspindex mp:signal-semaphore
+@lspdef mp_signal_semaphore
+@lspdef mp:signal-semaphore
 
 @deftypefun cl_object mp_signal_semaphore (cl_narg n, cl_object sem, ...);
 @end deftypefun
 
 @defun mp:signal-semaphore semaphore &optional (count 1)
-Releases @code{count} units of a resource on @code{semaphore}.
+Releases @var{count} units of a resource on @var{semaphore}.
 @end defun

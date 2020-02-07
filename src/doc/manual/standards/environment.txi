@@ -13,12 +13,12 @@
 
 @defun disassemble function-designator*
 Display the assembly code of a function 
-@subsubheading Synopsis
+@paragraph Synopsis
 @table @var
 @item function-designator
 A symbol which is bound to a function in the global environment, or a lambda form
 @end table
-@subsubheading Description
+@paragraph Description
 As specified in ANSI @bibcite{ANSI} this function outputs the internal representation of a compiled function, or of a lambda form, as it would look after being compiled.
 
 ECL only has a particular difference: it has two different compilers, one based on bytecodes and one based on the C language. The output will thus depend on the arguments and on which compiler is active at the moment in which this function is run.
@@ -31,7 +31,7 @@ ECL only has a particular difference: it has two different compilers, one based 
 
 @defmac trace function-name*
 Follow the execution of functions
-@subsubheading Synopsis
+@paragraph Synopsis
 (trace @var{function-name*})
 @table @var
 @item function-name
@@ -46,14 +46,14 @@ A lisp form evaluated in an special environment.
 List of symbols with traced functions.
 @end table
 
-@subsubheading Description
+@paragraph Description
 Causes one or more functions to be traced. Each @var{function-name} can be a symbol which is bound to a function, or a list containing that symbol plus additional options. If the function bound to that symbol is called, information about the arguments and output of this function will be printed. Trace options will modify the amount of information and when it is printed.
 
 Not that if the function is called from another function compiled in the same file, tracing might not be enabled. If this is the case, to enable tracing, recompile the caller with a @code{notinline} declaration for the called function.
 
 trace returns a name list of those functions that were traced by the call to trace. If no @var{function-name} is given, @code{trace} simply returns a name list of all the currently traced functions.
 
-Trace options cause the normal printout to be suppressed, or cause extra information to be printed. Each option is a pair of an option keyword and a value form. If an already traced function is traced again, any new options replace the old options and a warning might be printed. The lisp @emph{form} accompanying the option is evaluated in an environment where @var{sys::args} contains the list of arguments to the function.
+Trace options cause the normal printout to be suppressed, or cause extra information to be printed. Each option is a pair of an option keyword and a value form. If an already traced function is traced again, any new options replace the old options and a warning might be printed. The lisp @var{form} accompanying the option is evaluated in an environment where @var{sys::args} contains the list of arguments to the function.
 
 The following options are defined:
 @table @asis

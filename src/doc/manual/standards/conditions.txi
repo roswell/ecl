@@ -2,12 +2,11 @@
 @section Conditions
 
 @subsection C Reference
-@cppindex ECL_HANDLER_CASE
-@cppindex ECL_RESTART_CASE
+@cppdef ECL_HANDLER_CASE
 
 @deffn Macro ECL_HANDLER_CASE
 C macro for @clhs{m_hand_1.htm,handler-case}
-@subsubheading Synopsis
+@paragraph Synopsis
 @example
 @verbatim
 ECL_HANDLER_CASE_BEGIN(env,names) {
@@ -18,12 +17,12 @@ ECL_HANDLER_CASE_BEGIN(env,names) {
 @end verbatim
 @end example
 
-@subsubheading Description
-@code{ECL_HANDLER_CASE_BEGIN} runs a block of C code with a set of error handlers bound to the names given by the list @var{names}. The subsequent @code{ECL_HANDLER_CASE} statements specify what to do when the @var{n}-th type of conditions is found, where @var{n} is an integer denoting the position of the name in the list @var{names}.
+@paragraph Description
+@code{ECL_HANDLER_CASE_BEGIN} runs a block of C code with a set of error handlers bound to the names given by the list @var{names}. The subsequent @coderef{ECL_HANDLER_CASE} statements specify what to do when the @var{n}-th type of conditions is found, where @var{n} is an integer denoting the position of the name in the list @var{names}.
 
-When a condition is signaled, ECL scans the list of signal handlers, looking for matches based on @code{typep}. If the match with the highest precedence belongs to the list @var{names}, ECL will perform a non-local transfer of control to the appropriate @code{ECL_HANDLER_CASE}, passing it a @var{condition} object as unique argument.
+When a condition is signaled, ECL scans the list of signal handlers, looking for matches based on @code{typep}. If the match with the highest precedence belongs to the list @var{names}, ECL will perform a non-local transfer of control to the appropriate @coderef{ECL_HANDLER_CASE}, passing it a @var{condition} object as unique argument.
 
-The following example shows how to establish a handler for @code{ERROR} conditions. Note how the first value to @code{ECL_HANDLER_CASE} matches the position of the condition name in the list:
+The following example shows how to establish a handler for @code{error} conditions. Note how the first value to @coderef{ECL_HANDLER_CASE} matches the position of the condition name in the list:
 
 @example
 @verbatim
@@ -42,9 +41,10 @@ ECL_HANDLER_CASE_BEGIN(the_env, ecl_list1(error)) {
 @end deffn
 
 
+@cppdef ECL_RESTART_CASE
 @deffn Macro ECL_RESTART_CASE
 C macro for @clhs{m_rst_ca.htm,restart-case}
-@subsubheading Synopsis
+@paragraph Synopsis
 @example
 @verbatim
 ECL_RESTART_CASE_BEGIN(env,names) {
@@ -55,12 +55,12 @@ ECL_RESTART_CASE_BEGIN(env,names) {
 @end verbatim
 @end example
 
-@subsubheading Description
-@code{ECL_RESTART_CASE_BEGIN} runs a block of C code with a set of restarts bound to the names given by the list @var{names}. The subsequent @code{ECL_RESTART_CASE} statements specify what to do when the @var{n}-th restart is invoked, where @var{n} is an integer denoting the position of the name in the list @var{names}.
+@paragraph Description
+@code{ECL_RESTART_CASE_BEGIN} runs a block of C code with a set of restarts bound to the names given by the list @var{names}. The subsequent @coderef{ECL_RESTART_CASE} statements specify what to do when the @var{n}-th restart is invoked, where @var{n} is an integer denoting the position of the name in the list @var{names}.
 
 When the restart is invoked, it can receive any number of arguments, which are grouped in a list and stored in a new variable created with the name @var{args}.
 
-The following example shows how to establish an @var{ABORT} and a @var{USE-VALUE} restart. Note how the first value to @var{ECL_RESTART_CASE} matches the position of the restart name in the list:
+The following example shows how to establish an @var{abort} and a @var{use-value} restart. Note how the first value to @coderef{ECL_RESTART_CASE} matches the position of the restart name in the list:
 
 @example
 @verbatim

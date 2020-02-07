@@ -1,7 +1,7 @@
 @node Evaluation and compilation
 @section Evaluation and compilation
 
-@subsection Compiler declaration @code{OPTIMIZE}
+@subsection Compiler declaration @code{optimize}
 @cindex Compiler declarations
 @lspindex optimize
 @lspindex debug
@@ -9,21 +9,21 @@
 @lspindex safety
 @lspindex space
 
-The @code{OPTIMIZE} declaration includes three concepts: @code{DEBUG},
-@code{SPEED}, @code{SAFETY} and @code{SPACE}. Each of these declarations
+The @code{optimize} declaration includes three concepts: @code{debug},
+@code{speed}, @code{safety} and @code{space}. Each of these declarations
 can take one of the integer values 0, 1, 2 and 3. According to these
 values, the implementation may decide how to compile or interpret a given
 lisp form.
 
 ECL currently does not use all these declarations, but some of them
 definitely affect the speed and behavior of compiled functions. For
-instance, the @code{DEBUG} declaration, as shown in
+instance, the @code{debug} declaration, as shown in
 @ref{tab:optimize-debug}, the value of debugging is zero, the function
 will not appear in the debugger and, if redefined, some functions might
 not see the redefinition.
 
 @float Table, tab:optimize-debug
-@caption{Behavior for different levels of @code{DEBUG}}
+@caption{Behavior for different levels of @code{debug}}
 @multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {a} {a} {a} {a}
 @headitem Behavior
 @tab 0
@@ -52,16 +52,16 @@ not see the redefinition.
 @end multitable
 @end float
 
-A bit more critical is the value of @code{SAFETY} because as shown in
+A bit more critical is the value of @code{safety} because as shown in
 @ref{tab:optimize-safety}, it may affect the safety checks generated
 by the compiler. In particular, in some circumstances the compiler may
 assume that the arguments to a function are properly typed. For
-instance, if you compile with a low value of @code{SAFETY}, and invoke
-@code{RPLACA} with an object which is not a list, the consequences are
+instance, if you compile with a low value of @code{safety}, and invoke
+@code{rplaca} with an object which is not a list, the consequences are
 unspecified.
 
 @float Table, tab:optimize-safety
-@caption{Behavior for different levels of @code{SAFETY}}
+@caption{Behavior for different levels of @code{safety}}
 @multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {a} {a} {a} {a}
 @headitem Behavior
 @tab 0
@@ -81,7 +81,7 @@ unspecified.
 @tab N
 @tab N
 
-@item We believe type declarations and type inference and, if the type of a form is inferred to be right for a function, slot accessor, etc, this may be inlined. Affects functions like @code{CAR}, @code{CDR}, etc
+@item We believe type declarations and type inference and, if the type of a form is inferred to be right for a function, slot accessor, etc, this may be inlined. Affects functions like @code{car}, @code{cdr}, etc
 @tab Y
 @tab Y
 @tab N
@@ -99,7 +99,7 @@ unspecified.
 @tab N
 @tab N
 
-@item The slots or fields in a lisp object are accessed directly without type checks even if the type of the object could not be inferred (see line above). Affects functions like @code{PATHNAME-TYPE}, @code{CAR}, @code{REST}, etc.
+@item The slots or fields in a lisp object are accessed directly without type checks even if the type of the object could not be inferred (see line above). Affects functions like @code{pathname-type}, @code{car}, @code{rest}, etc.
 @tab Y
 @tab N
 @tab N
@@ -120,8 +120,8 @@ compiled.
 
 @subsection C Reference
 
-@cppindex ecl_process_env
-@deftypefn {@cind{}} cl_object cl_env_ptr ()
+@cppdef ecl_process_env
+@deftypefn @cind{} cl_env_ptr ecl_process_env ()
 ECL stores information about each thread on a dedicated structure, which
 is the process environment. A pointer to this structure can be retrieved
 using the function or macro above. This pointer can be used for a

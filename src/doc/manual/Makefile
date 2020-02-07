@@ -16,7 +16,7 @@ ecl.info.gz: $(FILES)
 	gzip < ecl.info > ecl.info.gz
 
 html/index.html: $(FILES)
-	$(MAKEINFO) --html --css-include=ecl.css --split=chapter manual.txi
+	$(MAKEINFO) --html --css-include=ecl.css --split=section manual.txi
 	rm -rf html
 	mv ecl html
 	cp -r figures html

@@ -1,7 +1,7 @@
 \input texinfo                  @c -*-texinfo-*-
 @c %**start of header
 @setfilename ecl.info
-@settitle ECL User's Guide
+@settitle ECL Manual
 @setchapternewpage odd
 @paragraphindent none
 @defcodeindex cpp
@@ -47,8 +47,6 @@ Copyright @copyright{} 2000, Juan Jose Garcia Ripoll
 Copyright @copyright{} 2015, Daniel Kochmański
 @end titlepage
 
-@contents
-
 @c ************************ TOP NODE **************************
 
 @ifnottex
@@ -72,21 +70,22 @@ languages.
 @menu
 * Introduction:: What @ecl{} is
 * User's guide:: Guide for the programmers using ECL
-* Developer's guide:: Guide for the ECL developers
 * Standards:: Deviations and clarifications of the standard
 * Extensions:: ECL-specific features and extensions
+* Developer's guide:: Guide for the ECL developers
 * Indexes:: Concepts, functions, variables, types and C/C++
-
 * Bibliography:: Some interesting books.
 @c * List of Figures::
 @c * List of Tables::
 @end menu
 
+@contents
+
 @include introduction/index.txi
 @include user-guide/index.txi
-@include developer-guide/index.txi
 @include standards/index.txi
 @include extensions/index.txi
+@include developer-guide/index.txi
 @include indexes/index.txi
 
 @node Bibliography

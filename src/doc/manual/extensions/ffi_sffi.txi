@@ -5,7 +5,7 @@
 
 @subsubheading Reference
 
-@lspindex ffi:clines
+@lspdef ffi:clines
 @defspec ffi:clines c/c++-code*
 
 Insert C declarations and definitions
@@ -17,25 +17,25 @@ One or more strings with C definitions. Not evaluated.
 No value.
 @end table
 
-@subsubheading Description
+@paragraph Description
 This special form inserts C code from strings passed in the
 @var{arguments} directly in the file that results from compiling lisp
-sources. Contrary to @code{ffi:c-inline}, this function may have no
+sources. Contrary to @coderef{ffi:c-inline}, this function may have no
 executable statements, accepts no input value and returns no value.
 
-The main use of @code{ffi:clines} is to declare or define C variables
+The main use of @coderef{ffi:clines} is to declare or define C variables
 and functions that are going to be used later in other FFI
 statements. All statements from @var{arguments} are grouped at the
 beginning of the produced header file.
 
-@code{ffi:clines} is a special form that can only be used in lisp
+@coderef{ffi:clines} is a special form that can only be used in lisp
 compiled files as a toplevel form. Other uses will lead to an error
 being signaled, either at the compilation time or when loading the
 file.
 
-@subsubheading Examples
-@exindex @code{ffi:clines} adding c toplevel declarations
-In this example the @code{ffi:clines} statement is required to get
+@paragraph Examples
+@exindex @coderef{ffi:clines} adding c toplevel declarations
+In this example the @coderef{ffi:clines} statement is required to get
 access to the C function @code{cos}:
 @lisp
 (ffi:clines "#include <math.h>")
@@ -44,7 +44,7 @@ access to the C function @code{cos}:
 @end lisp
 @end defspec
 
-@lspindex ffi:c-inline
+@lspdef ffi:c-inline
 @defspec ffi:c-inline (lisp-values) (arg-c-types) return-type c/c++-code @
                       &key (side-effects t) (one-liner nil)
 
@@ -56,20 +56,20 @@ One or more lisp expressions. Evaluated.
 @item arg-c-types
 One or more valid FFI types. Evaluated.
 @item return-type
-Valid FFI type or (VALUES ffi-type*).
+Valid FFI type or @code{(values ffi-type*)}.
 @item c/c++-code
 String containing valid C code plus some valid escape forms.
 @item one-liner
 Boolean indicating, if the expression is a valid R-value. Defaults to
-@code{NIL}.
+@code{nil}.
 @item side-effects
 Boolean indicating, if the expression causes side effects. Defaults to
-@code{T}.
+@code{t}.
 @item returns
 One or more lisp values.
 @end table
 
-@subsubheading Description
+@paragraph Description
 This is a special form which can be only used in compiled code and whose
 purpose is to execute some C code getting and returning values from and
 to the lisp environment.
@@ -86,16 +86,16 @@ mixes C expressions with two kind of escape forms.
 The first kind of escape form are made of a hash and a letter or a
 number, as in: @code{#0}, @code{#1}, ..., until @code{#z}. These codes
 are replaced by the corresponding input values. The second kind of
-escape form has the format @verb{|@(return [n])|}, it can be used as
+escape form has the format @code{@@(return [n])}, it can be used as
 lvalue in a C expression and it is used to set the n-th output value of
-the @code{ffi:c-inline} form.
+the @coderef{ffi:c-inline} form.
 
 When the parameter @var{one-liner} is true, then the C template must be
 a simple C statement that outputs a value. In this case the use of
-@verb{|@(return)|} is not allowed. When the parameter @var{one-liner} is
+@code{@@(return)} is not allowed. When the parameter @var{one-liner} is
 false, then the C template may be a more complicated block form, with
 braces, conditionals, loops and spanning multiple lines. In this case
-the output of the form can only be set using @verb{|@(return)|}.
+the output of the form can only be set using @code{@@(return)}.
 
 Parameter @var{side-effects} set to false will indicate, that the
 functions causes no side-effects. This information is used by the
@@ -104,11 +104,11 @@ false, but the function may cause the side effects, then results are
 undefined.
 
 Note that the conversion between lisp arguments and FFI types is
-automatic. Note also that @code{ffi:c-inline} cannot be used in
+automatic. Note also that @coderef{ffi:c-inline} cannot be used in
 interpreted or bytecompiled code! Such usage will signal an error.
 
-@subsubheading Examples
-@exindex @code{ffi:c-inline} inlining c code
+@paragraph Examples
+@exindex @coderef{ffi:c-inline} inlining c code
 The following example implements the transcendental function SIN using
 the C equivalent:
 
@@ -121,7 +121,7 @@ the C equivalent:
     :side-effects nil))
 @end lisp
 
-This function can also be implemented using the @verb{|@(return)|} form
+This function can also be implemented using the @code{@@(return)} form
 as follows:
 
 @lisp
@@ -136,7 +136,7 @@ as follows:
 The following example is slightly more complicated as it involves loops
 and two output values:
 
-@exindex @code{ffi:c-inline} returning multiple values
+@exindex @coderef{ffi:c-inline} returning multiple values
 @lisp
 @verbatim
 (defun sample (x)
@@ -155,7 +155,7 @@ and two output values:
 @end lisp
 @end defspec
 
-@lspindex ffi:c-progn
+@lspdef ffi:c-progn
 @defspec ffi:c-progn args &body body
 
 Interleave C statements with the Lisp code
@@ -167,14 +167,14 @@ Lisp arguments. Evaluated.
 No value.
 @end table
 
-@subsubheading Description
+@paragraph Description
 This form is used for it's side effects. It allows for interleaving C
 statements with the Lisp code. The argument types doesn't have to be
 declared – in such case the objects type in the C world will be
 @code{cl_object}.
 
-@subsubheading Examples
-@exindex @code{ffi:c-progn} interleaving c and lisp code
+@paragraph Examples
+@exindex @coderef{ffi:c-progn} interleaving c and lisp code
 @lisp
 @verbatim
 (lambda (i)
@@ -195,7 +195,7 @@ declared – in such case the objects type in the C world will be
 @c XXX: SFFI returns one-element list pointer, while DFFI returns just a
 @c pointer. This is probably a bug.
 
-@lspindex ffi:defcallback
+@lspdef ffi:defcallback
 @defspec ffi:defcallback name ret-type arg-desc &body body
 
 @table @var
@@ -211,13 +211,13 @@ Function body.
 Pointer to the defined callback.
 @end table
 
-@subsubheading Description
+@paragraph Description
 Defines Lisp function and generates a callback for the C world, which
 may be passed to these functions. Note, that this special operator has
 also a dynamic variant (with the same name and interface).
 @end defspec
 
-@lspindex ffi:defcbody
+@lspdef ffi:defcbody
 @defmac ffi:defcbody name arg-types result-type c-expression
 
 Define C function under the lisp name
@@ -233,16 +233,16 @@ Result type of the C function (may be @code{(values ...)}.
 Defined function name.
 @end table
 
-@subsubheading Description
-The compiler defines a Lisp function named by @var{NAME} whose body
-consists of the C code of the string @var{C-EXPRESSION}. In the
-@var{C-EXPRESSION} one can reference the arguments of the function as
+@paragraph Description
+The compiler defines a Lisp function named by @var{name} whose body
+consists of the C code of the string @var{c-expression}. In the
+@var{c-expression} one can reference the arguments of the function as
 @code{#0}, @code{#1}, etc.
 
 The interpreter ignores this form.
 @end defmac
 
-@lspindex ffi:defentry
+@lspdef ffi:defentry
 @defmac ffi:defentry name arg-types c-name &key no-interrupts
 
 @table @var
@@ -253,26 +253,26 @@ Lisp name for the function.
 Argument types of the C function.
 
 @item c-name 
-If @var{C-NAME} is a list, then C function result type is declared as
-@code{(CAR C-NAME)} and its name is @code{(STRING (CDR C-NAME))}.
+If @var{c-name} is a list, then C function result type is declared as
+@code{(car c-name)} and its name is @code{(string (cdr c-name))}.
 
-If it's an atom, then the result type is @code{:OBJECT}, and function
-name is @code{(STRING C-NAME)}.
+If it's an atom, then the result type is @code{:object}, and function
+name is @code{(string c-name)}.
 
 @item returns
-Lisp function @code{NAME}.
+Lisp function @code{name}.
 @end table
 
-@subsubheading Description
-The compiler defines a Lisp function named by @var{NAME} whose body
+@paragraph Description
+The compiler defines a Lisp function named by @var{name} whose body
 consists of a calling sequence to the C language function named by
-@var{C-NAME}.
+@var{c-name}.
 
 The interpreter ignores this form.
 @end defmac
 
 @c XXX> note sure if this works
-@c @subsubheading @code{definline}
+@c @paragraph @code{definline}
 @c @lspindex ffi:definline
 @c @defmac ffi:definline fun arg-types result-type code
 @c @table @var
@@ -283,24 +283,24 @@ The interpreter ignores this form.
 @c @end table
 @c @end defmac
 
-@c @subsubheading Description
+@c @paragraph Description
 @c DEFINLINE behaves like a DEFCBODY (see), but also instructs the LISP
 @c compiler to expand inline any call to function SYMBOL into code
 @c corresponding to the C language expression C/C++-CODE, whenever it can
 @c determine that the actual arguments are of the specified type.
 @c <XXX
 
-@lspindex ext:with-backend
+@lspdef ext:with-backend
 @defspec ext:with-backend &key bytecodes c/c++
 
 Use different code depending on the backend.
 
-@subsubheading Description
+@paragraph Description
 Depending on whether the bytecodes or C compiler is used, this form will
 emit the code given in the corresponding keyword argument.
 
-@subsubheading Examples
-@exindex @code{ext:with-backend} use different code for c and bytecodes compiler
+@paragraph Examples
+@exindex @coderef{ext:with-backend} use different code for c and bytecodes compiler
 @verbatim
 CL-USER> (defmacro test ()
            '(ext:with-backend :c/c++ "c/c++" :bytecodes "bytecodes"))
@@ -315,12 +315,13 @@ CL-USER> (funcall (compile nil (lambda () (test))))
 @end verbatim
 @end defspec
 
-@lspindex ffi:defla
+@lspdef ffi:defla
 @defmac ffi:defla name args &body body
 
 Provide Lisp alternative for interpreted code. 
 
-@subsubheading Description
-Used to DEFine Lisp Alternative.  For the interpreter, DEFLA is equivalent to
-DEFUN, but the compiler ignores this form.
+@paragraph Description
+Used to DEFine Lisp Alternative. For the interpreter,
+@coderef{ffi:defla} is equivalent to @code{defun}, but the compiler
+ignores this form.
 @end defmac

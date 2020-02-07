@@ -65,9 +65,9 @@ Function return:
 @end verbatim
 @end example
 
-Return function expands into a lexical block @verb{|{}|}, so if it's
-used inside IF/ELSE, then it should be enclosed, even if we
-use sole @verb{|@(return);|}, because ";" will be treated as the next
+Return function expands into a lexical block @code{@{@}}, so if it's
+used inside @code{if/else}, then it should be enclosed, even if we
+use sole @code{@@(return);}, because ";" will be treated as the next
 instruction.
 
 Symbols:
@@ -79,7 +79,7 @@ Symbols:
 @end example
 
 Expands into a C statement, whole value is the given symbol
-from symbols_list.h
+from @file{symbols_list.h}
 
 @example
 @verbatim
@@ -87,6 +87,6 @@ from symbols_list.h
 @end verbatim
 @end example
 
-Expands into a C statement, whole value is a fixnum
-corresponding to the index in the builtin symbols table of the
-given symbol from symbols_list.h. Used for handling type errors.
+Expands into a C statement, whole value is a fixnum corresponding to the
+index in the builtin symbols table of the given symbol from
+@file{symbols_list.h}. Used for handling type errors.

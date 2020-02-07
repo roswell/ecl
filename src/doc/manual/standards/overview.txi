@@ -76,8 +76,8 @@ of such types may depend on the platform, but it includes at least the
 Memory allocated types on the other hand require the use of the garbage
 collector to be created. ECL abstracts this from the user providing
 enough constructors, either in the form of Common Lisp functions
-(@code{cl_make_array()}, @code{cl_complex()},...), or in the form of
-C/C++ constructors (@code{ecl_make_symbol()}, etc).
+(@code{cl_make_array}, @code{cl_complex},...), or in the form of
+C/C++ constructors (@coderef{ecl_make_symbol}, etc).
 
 Memory allocated types must always be kept alive so that the garbage
 collector does not reclaim them. This involves referencing the object
@@ -107,15 +107,15 @@ described below.
 
 @itemize
 @item
-Functions in the Common Lisp (@code{CL}) package are prefixed with the
-characters @code{cl_}, functions in the System (@code{SI}) package are
-prefix with @code{si_}, etc, etc.
+Functions in the Common Lisp (@code{cl}) package are prefixed with the
+characters @code{cl_}, functions in the System (@code{si}) and
+Extensions (@code{ext}) package are prefix with @code{si_}, etc, etc.
 
 @item
 If a function takes only a fixed number of arguments, it is mapped to a
 C function with also a fixed number of arguments. For instance,
-@code{COS} maps to @code{cl_object cl_cos(cl_object)}, which takes a
-single Lisp object and returns a Lisp object of type @code{FLOAT}.
+@code{cos} maps to @code{cl_object cl_cos(cl_object)}, which takes a
+single Lisp object and returns a Lisp object of type @code{float}.
 
 @item
 If the function takes a variable number of arguments, its signature
@@ -127,9 +127,9 @@ a)}, etc.
 
 @item
 Functions return at least one value, which is either the first value
-output by the function, or @code{NIL}. The extra values may be retrieved
+output by the function, or @code{nil}. The extra values may be retrieved
 immediately after the function call using the function
-@code{ecl_nth_value}.
+@coderef{ecl_nth_value}.
 @end itemize
 
 In addition to the Common Lisp core functions (@code{cl_*}), there exist

@@ -3,11 +3,12 @@
 @lspindex single-float
 @lspindex double-float
 
-ECL defines the following additional built-in classes in the @code{CL} package:
+ECL defines the following additional built-in classes in the @code{cl} package:
 
 @itemize
 @item @code{single-float}
 @item @code{double-float}
+@item @code{long-float}
 @end itemize
 
 @subsection C Reference

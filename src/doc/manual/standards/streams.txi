@@ -110,13 +110,13 @@ and the table of known symbols is shown below. Note how some symbols (@code{:cr}
 
 @subsubsection Sequence Streams
 
-@lspindex ext:sequence-stream
+@lspdef ext:sequence-stream
 @deftp {System Class} ext:sequence-stream
 
-@subsubheading Class Precedence List
-@code{ext:sequence-stream, stream, t}
+@paragraph Class Precedence List
+@coderef{ext:sequence-stream}, @code{stream}, @code{t}
 
-@subsubheading Description
+@paragraph Description
 Sequence streams work similar to string streams for vectors. The
 supplied vectors that the streams read from or write to must have a
 byte sized element type, i.e. @code{(signed-byte 8)},
@@ -134,12 +134,12 @@ vector, whose @code{char-code}s will be equal to the values of the
 bytes comprising the character in the given external format.
 @end deftp
 
-@lspindex ext:make-sequence-input-stream
+@lspdef ext:make-sequence-input-stream
 @defun ext:make-sequence-input-stream vector &key (start 0) (end nil) (external-format nil)
 Create a sequence input stream with the subsequence bounded by
 @var{start} and @var{end} of the given vector.
 @end defun
-@lspindex ext:make-sequence-output-stream
+@lspdef ext:make-sequence-output-stream
 @defun ext:make-sequence-output-stream vector &key (external-format nil)
 Create a sequence output stream.
 @end defun
@@ -161,10 +161,10 @@ CL-USER> *output*
 
 @subsubsection File Stream Extensions
 
-@lspindex ext:set-buffering-mode
+@lspdef ext:set-buffering-mode
 @defun ext:set-buffering-mode stream mode
 Control the buffering mode of a stream
-@subsubheading Synopsis
+@paragraph Synopsis
 @table @var
 @item stream
 an ANSI stream
@@ -173,7 +173,7 @@ one of @code{nil}, @code{:none}, @code{:line}, @code{:line-buffered}, @code{:ful
 @item returns
 The supplied stream
 @end table
-@subsubheading Description
+@paragraph Description
 If @var{mode} is @code{nil} or @code{:none}, @var{stream} will not be
 buffered, if it is @code{:line} or @code{:line-buffered} resp.
 @code{:full} or @code{:fully-buffered}, @var{stream} will be line resp.
@@ -181,28 +181,28 @@ fully buffered. If the stream does not support buffering, nothing will
 happen.
 @end defun
 
-@lspindex ext:file-stream-fd
+@lspdef ext:file-stream-fd
 @defun ext:file-stream-fd file-stream
 Return the POSIX file descriptor of @var{file-stream} as an integer
 @end defun
 
 @subsubsection External Format Extensions
 
-@lspindex ext:all-encodings
+@lspdef ext:all-encodings
 @defun ext:all-encodings
 Return a list of all supported external formats
 @end defun
 
-@lspindex ext:character-coding-error
+@lspdef ext:character-coding-error
 @deftp Condition ext:character-coding-error
 
 Character coding error
 
-@subsubheading Class Precedence List
-@code{ext:character-coding-error, error, serious-condition, condition, t}
+@paragraph Class Precedence List
+@coderef{ext:character-coding-error}, @code{error}, @code{serious-condition}, @code{condition}, @code{t}
 
-@subsubheading Methods
-@lspindex ext:character-coding-error-external-format
+@paragraph Methods
+@lspdef ext:character-coding-error-external-format
 @defun ext:character-coding-error-external-format condition
 @table @var
 @item returns
@@ -210,20 +210,20 @@ The external format of @var{condition}
 @end table
 @end defun
 
-@subsubheading Description
-Superclass of @code{ext:character-encoding-error} and @code{ext:character-decoding-error}.
+@paragraph Description
+Superclass of @coderef{ext:character-encoding-error} and @coderef{ext:character-decoding-error}.
 @end deftp
 
-@lspindex ext:character-encoding-error
+@lspdef ext:character-encoding-error
 @deftp Condition ext:character-encoding-error
 
 Character encoding error
 
-@subsubheading Class Precedence List
-@code{ext:character-encoding-error, ext:character-coding-error, error, serious-condition, condition, t}
+@paragraph Class Precedence List
+@coderef{ext:character-encoding-error}, @coderef{ext:character-coding-error}, @code{error}, @code{serious-condition}, @code{condition}, @code{t}
 
-@subsubheading Methods
-@lspindex ext:character-encoding-error-code
+@paragraph Methods
+@lspdef ext:character-encoding-error-code
 @defun ext:character-encoding-error-code condition
 @table @var
 @item returns
@@ -231,22 +231,22 @@ The character code of the character, which can't be encoded
 @end table
 @end defun
 
-@subsubheading Description
+@paragraph Description
 Condition for characters, which can't be encoded with some external
 format.
 @end deftp
 
 
-@lspindex ext:character-decoding-error
+@lspdef ext:character-decoding-error
 @deftp Condition ext:character-decoding-error
 
 Character decoding error
 
-@subsubheading Class Precedence List
-@code{ext:character-decoding-error, ext:character-coding-error, error, serious-condition, condition, t}
+@paragraph Class Precedence List
+@coderef{ext:character-decoding-error}, @coderef{ext:character-coding-error}, @code{error}, @code{serious-condition}, @code{condition}, @code{t}
 
-@subsubheading Methods
-@lspindex ext:character-decoding-error-octects
+@paragraph Methods
+@lspdef ext:character-decoding-error-octects
 @defun ext:character-decoding-error-octects condition
 @table @var
 @item returns
@@ -255,49 +255,49 @@ can't be decoded.
 @end table
 @end defun
 
-@subsubheading Description
+@paragraph Description
 Condition for characters, which can't be decoded with some external
 format.
 @end deftp
 
-@lspindex ext:stream-encoding-error
+@lspdef ext:stream-encoding-error
 @deftp Condition ext:stream-encoding-error
 
 Stream encoding error
 
-@subsubheading Class Precedence List
-@code{ext:stream-encoding-error, ext:character-encoding-error, ext:character-coding-error, stream-error, error, serious-condition, condition, t}
+@paragraph Class Precedence List
+@coderef{ext:stream-encoding-error}, @coderef{ext:character-encoding-error}, @coderef{ext:character-coding-error}, @code{stream-error}, @code{error}, @code{serious-condition}, @code{condition}, @code{t}
 
-@subsubheading Description
+@paragraph Description
 This condition is signaled when trying to write a character to a
 stream, which can't be encoded with the streams external format.
 @end deftp
 
 
-@lspindex ext:stream-decoding-error
+@lspdef ext:stream-decoding-error
 @deftp Condition ext:stream-decoding-error
 
 Stream decoding error
 
-@subsubheading Class Precedence List
-@code{ext:stream-decoding-error, ext:character-decoding-error, ext:character-coding-error, stream-error, error, serious-condition, condition, t}
+@paragraph Class Precedence List
+@coderef{ext:stream-decoding-error}, @coderef{ext:character-decoding-error}, @coderef{ext:character-coding-error}, @code{stream-error}, @code{error}, @code{serious-condition}, @code{condition}, @code{t}
 
-@subsubheading Description
+@paragraph Description
 This condition is signaled when trying to read a character from a
  stream, which can't be decoded with the streams external format.
 @end deftp
 
-@lspindex ext:encoding-error
+@lspdef ext:encoding-error
 @defun ext:encoding-error stream external-format code
-Signal a @code{ext:stream-encoding-error} with the given
+Signal a @coderef{ext:stream-encoding-error} with the given
 @var{external-format} and @var{code}. Make a restart available so
 that the error can be ignored or the character can be replaced with a
 different one.
 @end defun
 
-@lspindex ext:decoding-error
+@lspdef ext:decoding-error
 @defun ext:decoding-error stream external-format octects
-Signal a @code{ext:stream-decoding-error} with the given
+Signal a @coderef{ext:stream-decoding-error} with the given
 @var{external-format} and @var{octets}. Make a restart available so
 that the error can be ignored or the octets can be replaced with a
 character.
@@ -322,8 +322,8 @@ Common Lisp and C equivalence
 @item @clhs{f_file_p.htm,file-length} @tab cl_object cl_file_position(cl_narg narg, cl_object file_stream, ...)
 @item @clhs{f_file_s.htm,file-position} @tab cl_object cl_file_position(cl_object stream)
 @item @clhs{f_finish.htm,file-string-length} @tab cl_object cl_file_string_length(cl_object stream, cl_object object)
-@item @clhs{f_finish.htm,finish-output} @tab cl_object cl_finish_outputt(cl_narg narg, ...)
-@item @clhs{f_finish.htm,force-output} @tab cl_object cl_force_outputt(cl_narg narg, ...)
+@item @clhs{f_finish.htm,finish-output} @tab cl_object cl_finish_output(cl_narg narg, ...)
+@item @clhs{f_finish.htm,force-output} @tab cl_object cl_force_output(cl_narg narg, ...)
 @item @clhs{f_terpri.htm,fresh-line} @tab cl_object cl_fresh_line(cl_narg narg, ...)
 @item @clhs{f_get_out.htm,get-output-stream-string} @tab cl_object cl_get_output_stream_string(cl_object string_output_stream)
 @item @clhs{f_in_stm.htm,input-stream-p} @tab cl_object cl_input_stream_p(cl_object stream)

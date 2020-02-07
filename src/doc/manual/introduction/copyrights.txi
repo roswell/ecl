@@ -55,6 +55,8 @@ ecl-devel@common-lisp.net.
 
 @itemize Copyright
 @item
+Daniel Kochmański and Marius Gerbershagen, 2020
+@item
 Daniel Kochmański, 2016
 @item
 Juan José García-Ripoll, 2006
