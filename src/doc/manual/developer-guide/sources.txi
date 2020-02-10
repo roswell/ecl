@@ -4,265 +4,263 @@
 @subsection src/c
 
 @multitable {aaaaaaaaaaaaaaa}{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
-@item alloc_2.d
+@item @file{alloc_2.d}
 @tab memory allocation based on the Boehm GC
 
-@item all_symbols.d
+@item @file{all_symbols.d}
 @tab name mangler and symbol initialization
 
-@item apply.d
+@item @file{apply.d}
 @tab interface to C call mechanism
 
-@item arch/*
+@item @file{arch/*}
 @tab architecture dependant code
 
-@item array.d
+@item @file{array.d}
 @tab array routines
 
-@item assignment.c
+@item @file{assignment.c}
 @tab assignment
 
-@item backq.d
+@item @file{backq.d}
 @tab backquote mechanism
 
-@item big.d
+@item @file{big.d}
 @tab bignum routines based on the GMP
 
-@item big_ll.d
+@item @file{big_ll.d}
 @tab bignum emulation with long long
 
-@item cfun.d
+@item @file{cfun.d}
 @tab compiled functions
 
-@item cfun_dispatch.d
+@item @file{cfun_dispatch.d}
 @tab trampolines for functions
 
-@item character.d
+@item @file{character.d}
 @tab character routines
 
-@item char_ctype.d
+@item @file{char_ctype.d}
 @tab character properties.
 
-@item cinit.d
+@item @file{cinit.d}
 @tab lisp initialization
 
-@item clos/accessor.d
+@item @file{clos/accessor.d}
 @tab dispatch for slots
 
-@item clos/cache.d
+@item @file{clos/cache.d}
 @tab thread-local cache for a variety of operations
 
-@item clos/gfun.d
+@item @file{clos/gfun.d}
 @tab dispatch for generic functions
 
-@item clos/instance.d
+@item @file{clos/instance.d}
 @tab CLOS interface
 
-@item cmpaux.d
+@item @file{cmpaux.d}
 @tab auxiliaries used in compiled Lisp code
 
-@item compiler.d
+@item @file{compiler.d}
 @tab bytecode compiler
 
-@item cons.d
+@item @file{cons.d}
 @tab list manipulation macros & functions (auto generated)
 
-@item disassembler.d
+@item @file{disassembler.d}
 @tab bytecodes disassembler utilities
 
-@item dpp.c
+@item @file{dpp.c}
 @tab defun preprocessor
 
-@item ecl_constants.h
+@item @file{ecl_constants.h}
 @tab constant values for all_symbols.d
 
-@item ecl_features.h
+@item @file{ecl_features.h}
 @tab names of features compiled into ECL
 
-@item error.d
+@item @file{error.d}
 @tab error handling
 
-@item eval.d
+@item @file{eval.d}
 @tab evaluation
 
-@item ffi/backtrace.d
+@item @file{ffi/backtrace.d}
 @tab C backtraces
 
-@item ffi/cdata.d
+@item @file{ffi/cdata.d}
 @tab data for compiled files
 
-@item ffi/libraries.d
+@item @file{ffi/libraries.d}
 @tab shared library and bundle opening / copying / closing
 
-@item ffi/mmap.d
+@item @file{ffi/mmap.d}
 @tab mapping of binary files
 
-@item ffi.d
+@item @file{ffi.d}
 @tab user defined data types and foreign functions interface
 
-@item file.d
+@item @file{file.d}
 @tab file interface (implementation dependent)
 
-@item format.d
+@item @file{format.d}
 @tab format (this isn't ANSI compliant, we need it for bootstrapping though)
 
-@item hash.d
+@item @file{hash.d}
 @tab hash tables
 
-@item interpreter.d
+@item @file{interpreter.d}
 @tab bytecode interpreter
 
-@item iso_latin_names.h
+@item @file{iso_latin_names.h}
 @tab character names in ISO-LATIN-1
 
-@item list.d
+@item @file{list.d}
 @tab list manipulating routines
 
-@item load.d
+@item @file{load.d}
 @tab binary loader (contains also open_fasl_data)
 
-@item macros.d
+@item @file{macros.d}
 @tab macros and environment
 
-@item main.d
+@item @file{main.d}
 @tab ecl boot process
 
-@item Makefile.in
+@item @file{Makefile.in}
 @tab Makefile for ECL core library
 
-@item mapfun.d
+@item @file{mapfun.d}
 @tab mapping
 
-@item multival.d
+@item @file{multival.d}
 @tab multiple values
 
-@item newhash.d
+@item @file{newhash.d}
 @tab hashing routines
 
-@item num_arith.d
+@item @file{num_arith.d}
 @tab arithmetic operations
 
-@item number.d
+@item @file{number.d}
 @tab constructing numbers
 
 @c these files need to be cleaned
-@item numbers/*.d
+@item @file{numbers/*.d}
 @tab arithmetic operations (abs, atan, plusp etc)
 
-@item num_co.d
+@item @file{num_co.d}
 @tab operations on floating-point numbers (implementation dependent)
 
-@item num_log.d
+@item @file{num_log.d}
 @tab logical operations on numbers
 
-@item num_pred.d
+@item @file{num_pred.d}
 @tab predicates on numbers
 
-@item num_rand.d
+@item @file{num_rand.d}
 @tab random numbers
 
-@item package.d
+@item @file{package.d}
 @tab packages (OS dependent)
 
-@item pathname.d
+@item @file{pathname.d}
 @tab pathnames
 
-@item predicate.d
+@item @file{predicate.d}
 @tab predicates
 
-@item print.d
+@item @file{print.d}
 @tab print
 
-@item printer/*.d
+@item @file{printer/*.d}
 @tab printer utilities and object representations
 
-@item read.d
+@item @file{read.d}
 @tab reader
 
-@item reader/parse_integer.d
-@item reader/parse_number.d
+@item @file{reader/parse_integer.d}
+@item @file{reader/parse_number.d}
 
-@item reference.d
+@item @file{reference.d}
 @tab reference in Constants and Variables
 
-@item sequence.d
+@item @file{sequence.d}
 @tab sequence routines
 
-@item serialize.d
+@item @file{serialize.d}
 @tab serialize a bunch of lisp data
 
-@item sse2.d
+@item @file{sse2.d}
 @tab SSE2 vector type support
 
-@item stacks.d
+@item @file{stacks.d}
 @tab binding/history/frame stacks
 
-@item string.d
+@item @file{string.d}
 @tab string routines
 
-@item structure.d
+@item @file{structure.d}
 @tab structure interface
 
-@item symbol.d
+@item @file{symbol.d}
 @tab symbols
 
-@item symbols_list.h
-@item symbols_list2.h
+@item @file{symbols_list.h}
+@item @file{symbols_list2.h}
 @tab The latter is generated from the first. The first has to contain all
 symbols on the system which aren't local.
 
-@item tcp.d
+@item @file{tcp.d}
 @tab stream interface to TCP
 
-@item time.d
+@item @file{time.d}
 @tab time routines
 
-@item typespec.d
+@item @file{typespec.d}
 @tab type specifier routines
 
-@item unicode/*
+@item @file{unicode/*}
 @tab unicode definitions
 
-@item unixfsys.d
+@item @file{unixfsys.d}
 @tab Unix file system interface
 
-@item unixint.d
+@item @file{unixint.d}
 @tab Unix interrupt interface.
 
-@item unixsys.d
+@item @file{unixsys.d}
 @tab Unix shell interface
 
-@item vector_push.d
+@item @file{vector_push.d}
 @tab vector optimizations
 
-@headitem threads/
-
-@item atomic.d
+@item @file{threads/atomic.d}
 @tab atomic operations
 
-@item barrier.d
+@item @file{threads/barrier.d}
 @tab wait barriers
 
-@item condition_variable.d
+@item @file{threads/condition_variable.d}
 @tab condition variables for native threads
 @c implement me: @code{mp_condition_variable_timedwait}
 
-@item mailbox.d
+@item @file{threads/mailbox.d}
 @tab thread communication queue
 
-@item mutex.d
+@item @file{threads/mutex.d}
 @tab mutually exclusive locks.
 
-@item process.d
+@item @file{threads/process.d}
 @tab native threads
 
-@item queue.d
+@item @file{threads/queue.d}
 @tab waiting queue for threads
 
-@item rwlock.d
+@item @file{threads/rwlock.d}
 @tab POSIX read-write locks
 
-@item semaphore.d
+@item @file{threads/semaphore.d}
 @tab POSIX-like semaphores
 
 @end multitable

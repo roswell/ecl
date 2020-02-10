@@ -9,37 +9,37 @@ similar to @code{setf}.
 @subsection Atomic operations dictionary
 
 @subsubheading C Reference
-@cppindex ecl_compare_and_swap
+@cppdef ecl_compare_and_swap
 @deftypefun cl_object ecl_compare_and_swap (cl_object *slot, cl_object old, cl_object new)
 
 Perform an atomic compare and swap operation on @var{slot} and return
 the previous value stored in @var{slot}. If the return value is equal
 to @var{old} (comparison by @code{==}), the operation has succeeded.
-This is a inline-only function defined in ``ecl/ecl_atomics.h''.
+This is a inline-only function defined in "ecl/ecl_atomics.h".
 @end deftypefun
 
-@cppindex ecl_atomic_incf
+@cppdef ecl_atomic_incf
 @deftypefun cl_object ecl_atomic_incf (cl_object *slot, cl_object increment)
 @end deftypefun
-@cppindex ecl_atomic_incf_by_fixnum
+@cppdef ecl_atomic_incf_by_fixnum
 @deftypefun cl_object ecl_atomic_incf_by_fixnum (cl_object *slot, cl_fixnum increment)
 
 Atomically increment @var{slot} by the given increment and return the
 previous value stored in @var{slot}. The consequences are undefined if
 the value of @var{slot} is not of type @code{fixnum}.
-@code{ecl_atomic_incf} signals an error if @var{increment} is not of
+@coderef{ecl_atomic_incf} signals an error if @var{increment} is not of
 type @code{fixnum}. This is a inline-only function defined in
-``ecl/ecl_atomics.h''.
+"ecl/ecl_atomics.h".
 @end deftypefun
 
-@cppindex ecl_atomic_index_incf
+@cppdef ecl_atomic_index_incf
 @deftypefun cl_index ecl_atomic_index_incf (cl_index *slot);
 
 Atomically increment @var{slot} by 1 and return the new value stored
 in @var{slot}.
 @end deftypefun
 
-@cppindex ecl_atomic_get
+@cppdef ecl_atomic_get
 @deftypefun cl_object ecl_atomic_get (cl_object *slot)
 
 Perform a volatile load of the object in @var{slot} and then
@@ -47,26 +47,25 @@ atomically set @var{slot} to @code{ECL_NIL}. Returns the value
 previously stored in @var{slot}.
 @end deftypefun
 
-@cppindex ecl_atomic_push
+@cppdef ecl_atomic_push
 @deftypefun void ecl_atomic_push (cl_object *slot, cl_object o)
 @end deftypefun
-@cppindex ecl_atomic_pop
+@cppdef ecl_atomic_pop
 @deftypefun cl_object ecl_atomic_pop (cl_object *slot)
 
 Like push/pop but atomic.
 @end deftypefun
 
 @subsubheading Lisp Reference
-@lspindex mp:atomic-incf
+@lspdef mp:atomic-incf
+@lspdef mp:atomic-decf
 @defmac mp:atomic-incf place &optional (increment 1)
-@end defmac
-@lspindex mp:atomic-decf
-@defmac mp:atomic-decf place &optional (increment 1)
+@defmacx mp:atomic-decf place &optional (increment 1)
 
 Atomically increments/decrements the fixnum stored in @var{place} by
 the given @var{increment} and returns the value of @var{place} before
 the increment. Incrementing and decrementing is done using modular
-arithmetic, so that @code{mp:atomic-incf} of a place whose value is
+arithmetic, so that @coderef{mp:atomic-incf} of a place whose value is
 @code{most-positive-fixnum} by 1 results in
 @code{most-negative-fixnum} stored in place.
 
@@ -85,7 +84,7 @@ The consequences are undefined if the value of @var{place} is not of
 type @code{fixnum}.
 @end defmac
 
-@lspindex mp:compare-and-swap
+@lspdef mp:compare-and-swap
 @defmac mp:compare-and-swap place old new
 
 Atomically stores @var{new} in @var{place} if @var{old} is @code{eq}
@@ -102,8 +101,8 @@ Currently, the following places are supported:
 accessor@footnote{The creation of atomic structure slot accessors can be
 deactivated by supplying a @code{(:atomic-accessors nil)} option to
 @code{defstruct}.} or any other place for which a compare-and-swap
-expansion was defined by @code{mp:defcas} or
-@code{mp:define-cas-expander}.
+expansion was defined by @coderef{mp:defcas} or
+@coderef{mp:define-cas-expander}.
 
 For @code{slot-value}, @code{slot-unbound} is called if the slot is
 unbound unless @var{old} is @code{eq} to @code{si:unbound}, in which
@@ -112,7 +111,7 @@ Additionally, the object should have no applicable methods defined for
 @code{slot-value-using-class} or @code{(setf slot-value-using-class)}.
 @end defmac
 
-@lspindex mp:atomic-update
+@lspdef mp:atomic-update
 @defmac mp:atomic-update place update-fn &rest arguments
 
 Atomically updates the CAS-able @var{place} to the value returned by
@@ -147,17 +146,16 @@ the result would be unpredictable.
 @end lisp
 @end defmac
 
-@lspindex mp:atomic-push
+@lspdef mp:atomic-push
+@lspdef mp:atomic-pop
 @defmac mp:atomic-push obj place
-@end defmac
-@lspindex mp:atomic-pop
-@defmac mp:atomic-pop place
+@defmacx mp:atomic-pop place
 
 Like @code{push}/@code{pop}, but atomic. @var{place} must be CAS-able
 and may be read multiple times before the update succeeds.
 @end defmac
 
-@lspindex mp:define-cas-expander
+@lspdef mp:define-cas-expander
 @defmac mp:define-cas-expander accessor lambda-list &body body
 
 Define a compare-and-swap expander similar to
@@ -165,7 +163,7 @@ Define a compare-and-swap expander similar to
 generalized-variables @code{(accessor ...)}. When a form
 @code{(mp:compare-and-swap (accessor arg1 ... argn) old new)} is
 evaluated, the forms given in the body of
-@code{mp:define-cas-expander} are evaluated in order with the
+@coderef{mp:define-cas-expander} are evaluated in order with the
 parameters in @code{lambda-list} bound to @code{arg1 ... argn}. The
 body must return six values
 @lisp
@@ -188,35 +186,49 @@ variables, unlike in @code{define-setf-expander}). The whole
 Note that it is up to the user of this macro to ensure atomicity for
 the resulting compare-and-swap expansions.
 
-@exindex CAS expansion definition
-Example:
+@exindex Define a compare-and-swap expansion
+@paragraph Example
 
-CAS expansion for @code{mp:process-name}. A process is defined as
-follows in C:
-@example
-@verbatim
-struct ecl_process {
-        _ECL_HDR;
-        cl_object name;
-        cl_object function;
-        ...
-};
-@end verbatim
-@end example
-
-Hence we can define a CAS expander as (omitting type checks):
+@coderef{mp:define-cas-expander} can be used to define a more
+convienient compare-and-swap expansion for a class slot. Consider the
+following class:
 @lisp
-(mp:define-cas-expander mp:process-name (x)
-  (let ((old (gensym)) (new (gensym)))
+(defclass food ()
+  ((name :initarg :name)
+   (deliciousness :initform 5 :type '(integer 0 10)
+                  :accessor food-deliciousness)))
+
+(defvar *spätzle* (make-instance 'food :name "Spätzle"))
+@end lisp
+We can't just use @coderef{mp:compare-and-swap} on
+@code{*spätzle*}:
+@lisp
+> (mp:compare-and-swap (food-deliciousness *x*) 5 10)
+
+Condition of type: SIMPLE-ERROR
+Cannot get the compare-and-swap expansion of (FOOD-DELICIOUSNESS *X*).
+@end lisp
+We can use @code{symbol-value}, but let's define a more convenient
+compare-and-swap expander:
+@lisp
+(mp:define-cas-expander food-deliciousness (food)
+  (let ((old (gensym))
+        (new (gensym)))
     (values nil nil old new
-            `(ffi:c-inline (,x ,old ,new) (:object :object :object) :object
-                           "ecl_compare_and_swap(&(#0)->process.name,#1,#2)"
-                           :one-liner t)
-            `(mp:process-name ,x))))
+            `(progn (check-type ,new (integer 0 10))
+                    (mp:compare-and-swap (slot-value ,food 'deliciousness)
+                                         ,old ,new))
+            `(food-deliciousness ,food))))
+@end lisp
+Now finally, we can safely store our rating:
+@lisp
+> (mp:compare-and-swap (food-deliciousness *spätzle*) 5 10)
+
+5
 @end lisp
 @end defmac
 
-@lspindex mp:defcas
+@lspdef mp:defcas
 @defmac mp:defcas accessor cas-fun &optional documentation
 
 Define a compare-and-swap expansion similar to the short form
@@ -229,16 +241,16 @@ Note that it is up to the user of this macro to ensure atomicity for
 the resulting compare-and-swap expansions.
 @end defmac
 
-@lspindex mp:remcas
+@lspdef mp:remcas
 @defun mp:remcas symbol
 
 Remove a compare-and-swap expansion. It is an equivalent of
 @code{fmakunbound (setf symbol)} for cas expansions.
 @end defun
 
-@lspindex mp:get-cas-expansion
+@lspdef mp:get-cas-expansion
 @defun mp:get-cas-expansion place &optional environment
 
-Returns the compare-and-swap expansion forms and variables as
-defined in @code{mp:define-cas-expander} for @var{place} as six values.
+Returns the compare-and-swap expansion forms and variables as defined in
+@coderef{mp:define-cas-expander} for @var{place} as six values.
 @end defun

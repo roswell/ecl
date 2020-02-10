@@ -4,34 +4,34 @@
 @subsection C Reference
 
 @subsubsection Accessors
-@cppindex ECL_CONS_CAR
-@cppindex ECL_CONS_CDR
-@cppindex _ecl_car
-@cppindex _ecl_cdr
+@cppdef ECL_CONS_CAR
+@cppdef ECL_CONS_CDR
+@cppdef ECL_RPLACA
+@cppdef ECL_RPLACD
+@cppdef _ecl_car
+@cppdef _ecl_cdr
+@cppdef _ecl_caar
+@cppdef _ecl_cadr
 Accessing the elements of conses
+
 @subsubheading Functions
-@deftypefun cl_object ECL_CONS_CAR (cl_object @var{o})
-@end deftypefun
-@deftypefun cl_object ECL_CONS_CDR (cl_object @var{o})
-@end deftypefun
-@deftypefun cl_object ECL_RPLACA (cl_object @var{o}, cl_object @var{v})
-@end deftypefun
-@deftypefun cl_object ECL_RPLACD (cl_object @var{o}, cl_object @var{v})
-@end deftypefun
-@deftypefun cl_object _ecl_car (cl_object @var{o})
-@end deftypefun
-@deftypefun cl_object _ecl_cdr (cl_object @var{o})
-@end deftypefun
-@deftypefun cl_object _ecl_caar (cl_object @var{o})
-@end deftypefun
-@deftypefun cl_object _ecl_cadr (cl_object @var{o})
-@end deftypefun
+@deftypefun cl_object ECL_CONS_CAR (cl_object o)
+@deftypefunx cl_object ECL_CONS_CDR (cl_object o)
+@deftypefunx cl_object ECL_RPLACA (cl_object o, cl_object v)
+@deftypefunx cl_object ECL_RPLACD (cl_object o, cl_object v)
+@deftypefunx cl_object _ecl_car (cl_object o)
+@deftypefunx cl_object _ecl_cdr (cl_object o)
+@deftypefunx cl_object _ecl_caar (cl_object o)
+@deftypefunx cl_object _ecl_cadr (cl_object o)
 ...
-@subsubheading Description
+
+@paragraph Description
 These functions access the elements of objects of type cons
-(@code{ECL_CONS_CAR}, @code{ECL_CONS_CDR}, @code{ECL_RPLACA} and
-@code{ECL_RPLACD}) or type list (@code{_ecl_car}, @code{_ecl_cdr},
-@code{_ecl_caar}, ...). They don't check the type of their arguments.
+(@coderef{ECL_CONS_CAR}, @coderef{ECL_CONS_CDR}, @coderef{ECL_RPLACA}
+and @coderef{ECL_RPLACD}) or type list (@coderef{_ecl_car},
+@coderef{_ecl_cdr}, @coderef{_ecl_caar}, ...). They don't check the type
+of their arguments.
+@end deftypefun
 
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence

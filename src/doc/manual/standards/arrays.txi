@@ -39,7 +39,10 @@ When the elements of an array are declared to have some precise type, such as a 
 @item (unsigned-byte 64) @tab uint64_t @tab 64 bits
 @item single-float or short-float @tab float @tab 32-bits IEEE float
 @item double-float @tab double @tab 64-bits IEEE float
-@c @item long-float @tab long double @tab Between 96 and 128 bits. !Not implemented
+@item long-float @tab long double @tab Between 96 and 128 bits
+@item (complex single-float) @tab float _Complex @tab 64 bits
+@item (complex double-float) @tab double _Complex @tab 128 bits
+@item (complex long-float) @tab long double _Complex @tab Between 192 and 256 bits
 @item t @tab cl_object @tab Size of a pointer.
 @end multitable
 
@@ -52,18 +55,15 @@ Let us remark that some of these specialized types might not exist in your platf
 C types, limits and enumerations
 
 @subsubheading Constants and types
-@cppindex ECL_ARRAY_RANK_LIMIT
-@cppindex ECL_ARRAY_DIMENSION_LIMIT
-@cppindex ECL_ARRAY_TOTAL_LIMIT
-@cppindex cl_elttype
+@cppdef ECL_ARRAY_RANK_LIMIT
+@cppdef ECL_ARRAY_DIMENSION_LIMIT
+@cppdef ECL_ARRAY_TOTAL_LIMIT
+@cppdef cl_elttype
 @defvr Constant ECL_ARRAY_RANK_LIMIT
-@end defvr
-@defvr Constant ECL_ARRAY_DIMENSION_LIMIT
-@end defvr
-@defvr Constant ECL_ARRAY_TOTAL_LIMIT
+@defvrx Constant ECL_ARRAY_DIMENSION_LIMIT
+@defvrx Constant ECL_ARRAY_TOTAL_LIMIT
 @end defvr
 @deftp enum cl_elttype @{ecl_aet_object, ...@}
-@end deftp
 
 @multitable @columnfractions .25 .25 .25 .25
 @headitem Lisp or C type @tab Enumeration value @tab Lisp or C type @tab Enumeration value
@@ -79,50 +79,49 @@ C types, limits and enumerations
 @item (complex single-float) @tab ecl_aet_csf @tab (complex double-float) @tab ecl_aet_cdf
 @end multitable
 
-@subsubheading Description
+@paragraph Description
 This list contains the constants that limit the rank of an array
-(@code{ECL_ARRAY_RANK_LIMIT}), the maximum size of each dimension
-(@code{ECL_ARRAY_DIMENSION_LIMIT}) and the maximum number of elements
-in an array (@code{ECL_ARRAY_TOTAL_LIMIT}).
+(@coderef{ECL_ARRAY_RANK_LIMIT}), the maximum size of each dimension
+(@coderef{ECL_ARRAY_DIMENSION_LIMIT}) and the maximum number of elements
+in an array (@coderef{ECL_ARRAY_TOTAL_LIMIT}).
 
 ECL uses also internally a set of constants to describe the different
 specialized arrays. The constants form up the enumeration type
-cl_elttype. They are listed in the table above, which associates
-enumeration values with the corresponding Common Lisp element type.
+@coderef{cl_elttype}. They are listed in the table above, which
+associates enumeration values with the corresponding Common Lisp element
+type.
+@end deftp
 
 @subsubsection ecl_aet_to_symbol, ecl_symbol_to_aet
 To and from element types
 
 @subsubheading Functions
-@cppindex ecl_aet_to_symbol
-@cppindex ecl_symbol_to_aet
-@deftypefun cl_object ecl_aet_to_symbol (cl_elttype @var{param})
-@end deftypefun
-@deftypefun cl_elttype ecl_symbol_to_aet (cl_object @var{type})
-@end deftypefun
+@cppdef ecl_aet_to_symbol
+@cppdef ecl_symbol_to_aet
+@deftypefun cl_object ecl_aet_to_symbol (cl_elttype param)
+@deftypefunx cl_elttype ecl_symbol_to_aet (cl_object type)
 
-@subsubheading Description
-@code{ecl_aet_to_symbol} returns the Lisp type associated to the elements of that specialized array class. @code{ecl_symbol_to_aet} does the converse, computing the C constant that is associated to a Lisp element type.
+@paragraph Description
+@coderef{ecl_aet_to_symbol} returns the Lisp type associated to the elements of that specialized array class. @coderef{ecl_symbol_to_aet} does the converse, computing the C constant that is associated to a Lisp element type.
 
 The functions may signal an error if any of the arguments is an invalid C or Lisp type.
+@end deftypefun
 
 @subsubsection Constructors
 Creating array and vectors
 
 @subsubheading Functions
-@cppindex ecl_alloc_simple_vector
-@cppindex si_make_vector
-@cppindex si_make_array
+@cppdef ecl_alloc_simple_vector
+@cppdef si_make_vector
+@cppdef si_make_array
 @deftypefun cl_object ecl_alloc_simple_vector (cl_elttype element_type, cl_index length);
-@end deftypefun
-@deftypefun cl_object si_make_vector (cl_object element_type, cl_object length, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
-@end deftypefun
-@deftypefun cl_object si_make_array (cl_object element_type, cl_object dimensions, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
-@end deftypefun
-@subsubheading Description
-The function @code{ecl_alloc_simple_vector} is the simplest constructor, creating a simple vector (i.e. non-adjustable and without a fill pointer), of the given size, preallocating the memory for the array data. The first argument, @emph{element_type}, is a C constant that represents a valid array element type (See cl_elttype).
+@deftypefunx cl_object si_make_vector (cl_object element_type, cl_object length, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
+@deftypefunx cl_object si_make_array (cl_object element_type, cl_object dimensions, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
 
-The function @code{si_make_vector} does the same job but allows creating an array with fill pointer, which is adjustable or displaced to another array.
+@paragraph Description
+The function @coderef{ecl_alloc_simple_vector} is the simplest constructor, creating a simple vector (i.e. non-adjustable and without a fill pointer), of the given size, preallocating the memory for the array data. The first argument, @emph{element_type}, is a C constant that represents a valid array element type (See @coderef{cl_elttype}).
+
+The function @coderef{si_make_vector} does the same job but allows creating an array with fill pointer, which is adjustable or displaced to another array.
 @itemize
 @item element_type is now a Common Lisp type descriptor, which is a symbol or list denoting a valid element type
 @item dimension is a non-negative fixnum with the vector size.
@@ -131,9 +130,9 @@ The function @code{si_make_vector} does the same job but allows creating an arra
 @item displacement is either ECL_NIL or a non-negative value with the array displacement.
 @end itemize
 
-Finally, the function @code{si_make_array} does a similar job to @code{si_make_vector} but its second argument, @emph{dimension}, can be a list of dimensions, to create a multidimensional array.
-@subsubheading Examples
+Finally, the function @coderef{si_make_array} does a similar job to @coderef{si_make_vector} but its second argument, @emph{dimension}, can be a list of dimensions, to create a multidimensional array.
 
+@paragraph Examples
 Create one-dimensional @code{base-string} with room for 11 characters:
 
 @example
@@ -170,56 +169,51 @@ cl_object a = si_make_array(dims, type, ECL_NIL, /* adjustable */
                             ECL_NIL /* displaced_to */,
                             ECL_NIL /* displacement */);
 @end example
+@end deftypefun
 
 @subsubsection Accessors
-@cppindex ecl_aref
-@cppindex ecl_aset
-@cppindex ecl_aref1
-@cppindex ecl_aset1
+@cppdef ecl_aref
+@cppdef ecl_aset
+@cppdef ecl_aref1
+@cppdef ecl_aset1
 Reading and writing array elements
 
 @subsubheading Functions
+@deftypefun cl_object ecl_aref (cl_object array, cl_index row_major_index);
+@deftypefunx cl_object ecl_aset (cl_object array, cl_index row_major_index, cl_object new_value);
+@deftypefunx cl_object ecl_aref1 (cl_object vector, cl_index row_major_index);
+@deftypefunx cl_object ecl_aset1 (cl_object vector, cl_index row_major_index, cl_object new_value);
 
-@deftypefun cl_object ecl_aref (cl_object @var{array}, cl_index @var{row_major_index});
+@paragraph Description
+@coderef{ecl_aref} accesses an array using the supplied @emph{row_major_index}, checking the array bounds and returning a Lisp object for the value at that position. @coderef{ecl_aset} does the converse, storing a Lisp value at the given @emph{row_major_index}.
+
+The first argument to @coderef{ecl_aref} or @coderef{ecl_aset} is an array of any number of dimensions. For an array of rank @code{N} and dimensions @code{d1, d2 ...} up to @code{dN}, the row major index associated to the indices (@code{i1,i2,...iN}) is computed using the formula @code{i1+d1*(i2+d3*(i3+...))}.
+
+@coderef{ecl_aref1} and @coderef{ecl_aset1} are specialized versions that only work with one-dimensional arrays or vectors. They verify that the first argument is indeed a vector.
+
+All functions above check that the index does not exceed the array bounds, that the values match the array element type and that the argument is an array (or a vector). If these conditions are not met, a @code{type-error} is signaled.
 @end deftypefun
-@deftypefun cl_object ecl_aset (cl_object @var{array}, cl_index @var{row_major_index}, cl_object @var{new_value});
-@end deftypefun
-@deftypefun cl_object ecl_aref1 (cl_object @var{vector}, cl_index @var{row_major_index});
-@end deftypefun
-@deftypefun cl_object ecl_aset1 (cl_object @var{vector}, cl_index @var{row_major_index}, cl_object @var{new_value});
-@end deftypefun
-
-@subsubheading Description
-@code{ecl_aref} accesses an array using the supplied @emph{row_major_index}, checking the array bounds and returning a Lisp object for the value at that position. @code{ecl_aset} does the converse, storing a Lisp value at the given @emph{row_major_index}.
-
-The first argument to @code{ecl_aref} or @code{ecl_aset} is an array of any number of dimensions. For an array of rank @code{N} and dimensions @code{d1, d2 ...} up to @code{dN}, the row major index associated to the indices (@code{i1,i2,...iN}) is computed using the formula @code{i1+d1*(i2+d3*(i3+...))}.
-
-@code{ecl_aref1} and @code{ecl_aset1} are specialized versions that only work with one-dimensional arrays or vectors. They verify that the first argument is indeed a vector.
-
-All functions above check that the index does not exceed the array bounds, that the values match the array element type and that the argument is an array (or a vector). If these conditions are not met, a type error is signaled.
 
 @subsubsection Array properties
-@cppindex ecl_array_elttype
-@cppindex ecl_array_rank
-@cppindex ecl_array_dimension
+@cppdef ecl_array_elttype
+@cppdef ecl_array_rank
+@cppdef ecl_array_dimension
 Array size, fill pointer, etc.
 
-@subsubheading Synopsis
-@deftypefun cl_elttype ecl_array_elttype (cl_object @var{array});
-@end deftypefun
-@deftypefun cl_index ecl_array_rank (cl_object @var{array});
-@end deftypefun
-@deftypefun cl_index ecl_array_dimension (cl_object @var{array}, cl_index @var{index});
-@end deftypefun
+@subsubheading Functions
+@deftypefun cl_elttype ecl_array_elttype (cl_object array);
+@deftypefunx cl_index ecl_array_rank (cl_object array);
+@deftypefunx cl_index ecl_array_dimension (cl_object array, cl_index index);
 
-@subsubheading Description
+@paragraph Description
 These functions query various properties of the arrays. Some of them belong to the list of functions in the Common Lisp package, without any need for specialized versions. More precisely
 
 @itemize
-@item @code{ecl_array_elttype} returns the array element type, with the encoding found in the enumeration cl_elttype.
-@item @code{ecl_array_rank} returns the number of dimensions of the vector or array.
-@item @code{ecl_array_dimension} queries the dimension of an array, where index is a non-negative integer between 0 and @code{ecl_array_dimension(array)-1}.
+@item @coderef{ecl_array_elttype} returns the array element type, with the encoding found in the enumeration cl_elttype.
+@item @coderef{ecl_array_rank} returns the number of dimensions of the vector or array.
+@item @coderef{ecl_array_dimension} queries the dimension of an array, where index is a non-negative integer between 0 and @code{ecl_array_dimension(array)-1}.
 @end itemize
+@end deftypefun
 
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence

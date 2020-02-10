@@ -11,6 +11,8 @@ ECL is fully ANSI Common-Lisp compliant in all aspects of the character data typ
 
 @node Characters - Unicode vs. POSIX locale
 @subsection Unicode vs. POSIX locale
+@cfindex --enable-unicode [32|16|no]
+
 There are two ways of building ECL: with C or with Unicode character codes. These build modes are accessed using the @code{--disable-unicode} and @code{--enable-unicode} configuration options, the last one being the default.
 
 When using C characters we are actually relying on the char type of the C language, using the C library functions for tasks such as character conversions, comparison, etc. In this case characters are typically 8 bit wide and the character order and collation are determines by the current POSIX or C locale. This is not very accurate, leaves out many languages and character encodings but it is sufficient for small applications that do not need multilingual support.
@@ -62,88 +64,83 @@ Internally, ECL represents the @code{#\Newline} character by a single code. Howe
 @subsection C Reference
 
 @subsubsection C types
-@cppindex ecl_base_char
-@cppindex ecl_character
+@cppdef ecl_base_char
+@cppdef ecl_character
 C character types
-@subsubheading Type names
+
+@paragraph Type names
 @multitable {aaaaaaaaaaaaa} {aaaaaaaaa}
 @item ecl_character @tab character
 @item ecl_base_char @tab base-char
 @end multitable
-@subsubheading Description
 
-ECL defines two C types to hold its characters: @code{ecl_base_char} and @code{ecl_character}.
+@paragraph Description
+ECL defines two C types to hold its characters: @coderef{ecl_base_char} and @coderef{ecl_character}.
 
 @itemize
 @item When ECL is built without Unicode, they both coincide and typically match @code{unsigned char}, to cover the 256 codes that are needed.
-@item When ECL is built with Unicode, the two types are no longer equivalent, with @code{ecl_character} being larger.
+@item When ECL is built with Unicode, the two types are no longer equivalent, with @coderef{ecl_character} being larger.
 @end itemize
 
 For your code to be portable and future proof, use both types to really express what you intend to do.
 
 @subsubsection Constructors
-@cppindex ECL_CODE_CHAR
-@cppindex ECL_CHAR_CODE
-@cppindex ecl_char_code
-@cppindex ecl_base_char_code
+@cppdef ECL_CODE_CHAR
+@cppdef ECL_CHAR_CODE
+@cppdef ecl_char_code
+@cppdef ecl_base_char_code
 Creating and extracting characters from Lisp objects
+
 @subsubheading Functions
-@deftypefun cl_object ECL_CODE_CHAR (ecl_character @var{code});
+@deftypefn Macro cl_object ECL_CODE_CHAR (ecl_character code);
+@deftypefnx Macro ecl_character ECL_CHAR_CODE (cl_object o);
+@end deftypefn
+@deftypefun ecl_character ecl_char_code (cl_object o);
+@deftypefunx ecl_base_char ecl_base_char_code (cl_object o);
+
+@paragraph Description
+These functions and macros convert back and forth from C character types to Lisp. The macros @coderef{ECL_CHAR_CODE} and @coderef{ECL_CODE_CHAR} perform this coercion without checking the arguments. The functions @coderef{ecl_char_code} and @coderef{ecl_base_char_code}, on the other hand, verify that the argument has the right type and signal an error otherwise.
 @end deftypefun
-@deftypefun ecl_character ECL_CHAR_CODE (cl_object @var{o});
-@end deftypefun
-@deftypefun ecl_character ecl_char_code (cl_object @var{o});
-@end deftypefun
-@deftypefun ecl_base_char ecl_base_char_code (cl_object @var{o});
-@end deftypefun
-@subsubheading Description
-These functions and macros convert back and forth from C character types to Lisp. The macros @code{ECL_CHAR_CODE} and @code{ECL_CODE_CHAR} perform this coercion without checking the arguments. The functions @code{ecl_char_code} and @code{ecl_base_char_code}, on the other hand, verify that the argument has the right type and signal an error otherwise.
 
 @subsubsection Predicates
-@cppindex ecl_base_char_p
-@cppindex ecl_alpha_char_p
-@cppindex ecl_alphanumeric_p
-@cppindex ecl_graphic_char_p
-@cppindex ecl_digit_p
-@cppindex ecl_standard_char_p
+@cppdef ecl_base_char_p
+@cppdef ecl_alpha_char_p
+@cppdef ecl_alphanumeric_p
+@cppdef ecl_graphic_char_p
+@cppdef ecl_digit_p
+@cppdef ecl_standard_char_p
 C predicates for Lisp characters
-@subsubheading Functions
 
-@deftypefun bool ecl_base_char_p (ecl_character @var{c});
-@end deftypefun
-@deftypefun bool ecl_alpha_char_p (ecl_character @var{c});
-@end deftypefun
-@deftypefun bool ecl_alphanumericp (ecl_character @var{c});
-@end deftypefun
-@deftypefun bool ecl_graphic_char_p (ecl_character @var{c});
-@end deftypefun
-@deftypefun bool ecl_digitp (ecl_character @var{c});
-@end deftypefun
-@deftypefun bool ecl_standard_char_p (ecl_character @var{c});
-@end deftypefun
-@subsubheading Description
+@subsubheading Functions
+@deftypefun bool ecl_base_char_p (ecl_character c);
+@deftypefunx bool ecl_alpha_char_p (ecl_character c);
+@deftypefunx bool ecl_alphanumericp (ecl_character c);
+@deftypefunx bool ecl_graphic_char_p (ecl_character c);
+@deftypefunx bool ecl_digitp (ecl_character c);
+@deftypefunx bool ecl_standard_char_p (ecl_character c);
+
+@paragraph Description
 These functions are equivalent to their Lisp equivalents but return C booleans.
+@end deftypefun
 
 @subsubsection Character case
-@cppindex ecl_upper_case_p
-@cppindex ecl_lower_case_p
-@cppindex ecl_both_case_p
-@cppindex ecl_char_downcase
-@cppindex ecl_char_upcase
+@cppdef ecl_upper_case_p
+@cppdef ecl_lower_case_p
+@cppdef ecl_both_case_p
+@cppdef ecl_char_downcase
+@cppdef ecl_char_upcase
 C functions related to the character case
+
 @subsubheading Functions
-@deftypefun bool ecl_upper_case_p (ecl_character @var{c});
-@end deftypefun
-@deftypefun bool ecl_lower_case_p (ecl_character @var{c});
-@end deftypefun
-@deftypefun bool ecl_both_case_p (ecl_character @var{c});
-@end deftypefun
-@deftypefun ecl_character ecl_char_downcase (ecl_character @var{c});
-@end deftypefun
-@deftypefun ecl_character ecl_char_upcase (ecl_character @var{c});
-@end deftypefun
-@subsubheading Description
+@deftypefun bool ecl_upper_case_p (ecl_character c);
+@deftypefunx bool ecl_lower_case_p (ecl_character c);
+@deftypefunx bool ecl_both_case_p (ecl_character c);
+@deftypefunx ecl_character ecl_char_downcase (ecl_character c);
+@deftypefunx ecl_character ecl_char_upcase (ecl_character c);
+
+@paragraph Description
 These functions check or change the case of a character. Note that in a Unicode context, the output of these functions might not be accurate (for instance when the uppercase character has two or more codepoints).
+@end deftypefun
 
 @subsubsection ANSI Dictionary
 Common Lisp and C equivalence

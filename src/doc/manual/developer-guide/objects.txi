@@ -9,7 +9,7 @@
 If you want to extend, fix or simply customize ECL for your own needs,
 you should understand how the implementation works.
 
-@cppindex cl_lispunion
+@cppdef cl_lispunion
 @deftp @cind{} cl_lispunion { cons big ratio SF DF longfloat gencomplex csfloat cdfloat clfloat symbol pack hash array vector base_string string stream random readtable pathname bytecodes bclosure cfun cfunfixed cclosure d instance process queue lock rwlock condition_variable semaphore barrier mailbox cblock foreign frame weak sse }
 
 Union containing all first-class ECL types.
@@ -92,7 +92,7 @@ comments in the source code):
  */
 @end verbatim
 
-@cppindex cl_object
+@cppdef cl_object
 @deftp @cind{} cl_object
 This is the type of a lisp object. For your C/C++ program, a cl_object
 can be either a fixnum, a character, or a pointer to a union of
@@ -131,63 +131,63 @@ how to use the different fields of a @code{cl_object} pointer.
 Enumeration type which distinguishes the different types of lisp
 objects. The most important values are:
 
-@cppindex t_start
-@cppindex t_list
-@cppindex t_character
-@cppindex t_fixnum
-@cppindex t_bignum
-@cppindex t_ratio
-@c @cppindex t_shortfloat
-@cppindex t_singlefloat
+@cppdef t_start
+@cppdef t_list
+@cppdef t_character
+@cppdef t_fixnum
+@cppdef t_bignum
+@cppdef t_ratio
+@c @cppdef t_shortfloat
+@cppdef t_singlefloat
 @c #ifdef ECL_LONG_FLOAT
-@cppindex t_longfloat
+@cppdef t_longfloat
 @c #endif
-@cppindex t_complex
+@cppdef t_complex
 @c #ifdef ECL_COMPLEX_FLOAT
-@cppindex t_csfloat
-@cppindex t_cdfloat
-@cppindex t_clfloat
+@cppdef t_csfloat
+@cppdef t_cdfloat
+@cppdef t_clfloat
 @c #endif
-@cppindex t_symbol
-@cppindex t_package
-@cppindex t_hashtable
-@cppindex t_array
-@cppindex t_vector
+@cppdef t_symbol
+@cppdef t_package
+@cppdef t_hashtable
+@cppdef t_array
+@cppdef t_vector
 @c #ifdef ECL_UNICODE
-@cppindex t_string
+@cppdef t_string
 @c #endif
-@cppindex t_base_string
-@cppindex t_bitvector
-@cppindex t_stream
-@cppindex t_random
-@cppindex t_readtable
-@cppindex t_pathname
-@cppindex t_bytecodes
-@cppindex t_bclosure
-@cppindex t_cfun
-@cppindex t_cfunfixed
-@cppindex t_cclosure
-@cppindex t_instance
-@cppindex t_structure = t_instance
+@cppdef t_base_string
+@cppdef t_bitvector
+@cppdef t_stream
+@cppdef t_random
+@cppdef t_readtable
+@cppdef t_pathname
+@cppdef t_bytecodes
+@cppdef t_bclosure
+@cppdef t_cfun
+@cppdef t_cfunfixed
+@cppdef t_cclosure
+@cppdef t_instance
+@cppdef t_structure = t_instance
 @c #ifdef ECL_THREADS
-@cppindex t_process
-@cppindex t_lock
-@cppindex t_rwlock
-@cppindex t_condition_variable
-@cppindex t_semaphore
-@cppindex t_barrier
-@cppindex t_mailbox
+@cppdef t_process
+@cppdef t_lock
+@cppdef t_rwlock
+@cppdef t_condition_variable
+@cppdef t_semaphore
+@cppdef t_barrier
+@cppdef t_mailbox
 @c #endif
-@cppindex t_codeblock
-@cppindex t_foreign
-@cppindex t_frame
-@cppindex t_weak_pointer
+@cppdef t_codeblock
+@cppdef t_foreign
+@cppdef t_frame
+@cppdef t_weak_pointer
 @c #ifdef ECL_SSE2
-@cppindex t_sse_pack
+@cppdef t_sse_pack
 @c #endif
-@cppindex t_end
-@cppindex t_other
-@cppindex t_contiguous – contiguous block
+@cppdef t_end
+@cppdef t_other
+@cppdef t_contiguous – contiguous block
 
 @code{t_cons} @code{t_fixnum}, @code{t_character}, @code{t_bignum},
 @code{t_ratio}, @code{t_singlefloat}, @code{t_doublefloat},
@@ -198,39 +198,39 @@ objects. The most important values are:
 @code{t_instance}, @code{t_foreign} and @code{t_thread}.
 @end deftp
 
-@cppindex ecl_t_of
+@cppdef ecl_t_of
 @deftypefun cl_type ecl_t_of (cl_object x)
 If @var{x} is a valid lisp object, @code{ecl_t_of(x)} returns an integer
 denoting the type that lisp object. That integer is one of the values of
 the enumeration type @code{cl_type}.
 @end deftypefun
 
-@cppindex ECL_CHARACTERP
-@cppindex ECL_BASE_CHAR_P
-@cppindex ECL_BASE_CHAR_CODE_P
-@cppindex ECL_NUMBER_TYPE_P
-@cppindex ECL_COMPLEXP
-@cppindex ECL_REAL_TYPE_P
-@cppindex ECL_FIXNUMP
-@cppindex ECL_BIGNUMP
-@cppindex ECL_SINGLE_FLOAT_P
-@cppindex ECL_DOUBLE_FLOAT_P
-@cppindex ECL_LONG_FLOAT_P
-@cppindex ECL_CONSP
-@cppindex ECL_LISTP
-@cppindex ECL_ATOM
-@cppindex ECL_SYMBOLP
-@cppindex ECL_ARRAYP
-@cppindex ECL_VECTORP
-@cppindex ECL_BIT_VECTOR_P
-@cppindex ECL_STRINGP
-@cppindex ECL_HASH_TABLE_P
-@cppindex ECL_RANDOM_STATE_P
-@cppindex ECL_PACKAGEP
-@cppindex ECL_PATHNAMEP
-@cppindex ECL_READTABLEP
-@cppindex ECL_FOREIGN_DATA_P
-@cppindex ECL_SSE_PACK_P
+@cppdef ECL_CHARACTERP
+@cppdef ECL_BASE_CHAR_P
+@cppdef ECL_BASE_CHAR_CODE_P
+@cppdef ECL_NUMBER_TYPE_P
+@cppdef ECL_COMPLEXP
+@cppdef ECL_REAL_TYPE_P
+@cppdef ECL_FIXNUMP
+@cppdef ECL_BIGNUMP
+@cppdef ECL_SINGLE_FLOAT_P
+@cppdef ECL_DOUBLE_FLOAT_P
+@cppdef ECL_LONG_FLOAT_P
+@cppdef ECL_CONSP
+@cppdef ECL_LISTP
+@cppdef ECL_ATOM
+@cppdef ECL_SYMBOLP
+@cppdef ECL_ARRAYP
+@cppdef ECL_VECTORP
+@cppdef ECL_BIT_VECTOR_P
+@cppdef ECL_STRINGP
+@cppdef ECL_HASH_TABLE_P
+@cppdef ECL_RANDOM_STATE_P
+@cppdef ECL_PACKAGEP
+@cppdef ECL_PATHNAMEP
+@cppdef ECL_READTABLEP
+@cppdef ECL_FOREIGN_DATA_P
+@cppdef ECL_SSE_PACK_P
 
 @deftypefun bool ECL_CHARACTERP (cl_object o)
 @deftypefunx bool ECL_BASE_CHAR_P (cl_object o)
@@ -264,7 +264,7 @@ type. These checks have been optimized, and are preferred over several
 calls to @code{ecl_t_of}.
 @end deftypefun
 
-@cppindex ECL_IMMEDIATE
+@cppdef ECL_IMMEDIATE
 @deftypefun bool ECL_IMMEDIATE (cl_object o)
 Tells whether @var{x} is an immediate datatype.
 @end deftypefun
@@ -285,24 +285,24 @@ the functionality in the lisp environment. In those cases you need to
 The first way makes use of a C or Lisp string to construct an
 object. The two functions you need to know are the following ones.
 
-@cppindex c_string_to_object
-@cppindex ecl_read_from_cstring
-@cppindex si_string_to_object
+@cppdef c_string_to_object
+@cppdef ecl_read_from_cstring
+@cppdef si_string_to_object
 @defun si::string-to-object string &optional (err-value nil)
 @end defun
 @deftypefun cl_object si_string_to_object (cl_narg narg, cl_object str, ...)
 @deftypefunx cl_object ecl_read_from_cstring (const char *s)
-@code{ecl_read_from_cstring} builds a lisp object from a C string
+@coderef{ecl_read_from_cstring} builds a lisp object from a C string
 which contains a suitable representation of a lisp
-object. @code{si_string_to_object} performs the same task, but uses a
+object. @coderef{si_string_to_object} performs the same task, but uses a
 lisp string, and therefore it is less useful.
 
 @itemize @bullet
-@item @strong{DEPRECATED} @code{c_string_to_object} – equivalent to @code{ecl_read_from_cstring}
+@item @strong{DEPRECATED} @coderef{c_string_to_object} – equivalent to @coderef{ecl_read_from_cstring}
 @end itemize
 
 @subsubheading Example
-@exindex @code{ecl_read_from_cstring} constructing Lisp objects in C
+@exindex @coderef{ecl_read_from_cstring} constructing Lisp objects in C
 
 Using a C string
 @example
@@ -320,7 +320,7 @@ cl_object array2 = si_string_to_object(string);
 Common-Lisp distinguishes two types of integer types: @code{bignum}s and
 @code{fixnum}s. A fixnum is a small integer, which ideally occupies only
 a word of memory and which is between the values
-@code{MOST-NEGATIVE-FIXNUM} and @code{MOST-POSITIVE-FIXNUM}. A
+@coderef{MOST-NEGATIVE-FIXNUM} and @coderef{MOST-POSITIVE-FIXNUM}. A
 @code{bignum} is any integer which is not a @code{fixnum} and it is only
 constrained by the amount of memory available to represent it.
 
@@ -333,7 +333,7 @@ your C extensions are portable. All other integers are stored as
 amount of memory and the GNU Multiprecision Library is required to
 create, manipulate and calculate with them.
 
-@cppindex cl_fixnum
+@cppdef cl_fixnum
 @deftp @cind{} cl_fixnum
 This is a C signed integer type capable of holding a whole @code{fixnum}
 without any loss of precision. The opposite is not true, and you may
@@ -341,28 +341,28 @@ create a @code{cl_fixnum} which exceeds the limits of a fixnum and
 should be stored as a @code{bignum}.
 @end deftp
 
-@cppindex cl_index
+@cppdef cl_index
 @deftp @cind{} cl_index
 This is a C unsigned integer type capable of holding a non-negative
 @code{fixnum} without loss of precision. Typically, a @code{cl_index} is
 used as an index into an array, or into a proper list, etc.
 @end deftp
 
-@cppindex MOST_NEGATIVE_FIXNUM
-@cppindex MOST_POSITIVE_FIXNUM
-@lspindex MOST-NEGATIVE-FIXNUM
-@lspindex MOST-POSITIVE-FIXNUM
+@cppdef MOST_NEGATIVE_FIXNUM
+@cppdef MOST_POSITIVE_FIXNUM
+@lspdef MOST-NEGATIVE-FIXNUM
+@lspdef MOST-POSITIVE-FIXNUM
 @defvr {Constant} MOST_NEGATIVE_FIXNUM
 @defvrx {Constant} MOST_POSITIVE_FIXNUM
 These constants mark the limits of a @code{fixnum}.
 @end defvr
 
-@cppindex ecl_fixnum_lower
-@cppindex ecl_fixnum_greater
-@cppindex ecl_fixnum_leq
-@cppindex ecl_fixnum_geq
-@cppindex ecl_fixnum_plusp
-@cppindex ecl_fixnum_minusp
+@cppdef ecl_fixnum_lower
+@cppdef ecl_fixnum_greater
+@cppdef ecl_fixnum_leq
+@cppdef ecl_fixnum_geq
+@cppdef ecl_fixnum_plusp
+@cppdef ecl_fixnum_minusp
 @deftypefun bool ecl_fixnum_lower (cl_fixnum a, cl_fixnum b)
 @deftypefunx bool ecl_fixnum_greater (cl_fixnum a, cl_fixnum b)
 @deftypefunx bool ecl_fixnum_leq (cl_fixnum a, cl_fixnum b)
@@ -389,12 +389,14 @@ integer). These functions do @strong{not} check their arguments.
 
 @cppindex cl_fixnum
 @cppindex cl_index
+@cppdef fixint
+@cppdef fixnint
 @deftypefun cl_fixnum fixint (cl_object o)
 @deftypefunx cl_index fixnint (cl_object o)
 Safe conversion of a lisp @code{fixnum} to a C integer of the
 appropriate size. Signals an error if @var{o} is not of fixnum type.
 
-@code{fixnint} additionally ensure that @var{o} is not negative.
+@coderef{fixnint} additionally ensure that @var{o} is not negative.
 @end deftypefun
 
 @subheading Characters
@@ -411,9 +413,9 @@ the other is used when ECL is built with a configure option
 @deftp @cind{} ecl_character
 Immediate type @code{t_character}. If ECL built with Unicode support,
 then may be either base or extended character, which may be
-distinguished with the predicate @code{ECL_BASE_CHAR_P}.
+distinguished with the predicate @coderef{ECL_BASE_CHAR_P}.
 
-Additionally we have @code{ecl_base_char} for base strings, which is an
+Additionally we have @coderef{ecl_base_char} for base strings, which is an
 equivalent to the ordinary char.
 
 @subsubheading Example
@@ -444,11 +446,11 @@ Each character is assigned an integer code which ranges from 0 to
 @deftypefunx ecl_character ECL_CHAR_CODE (cl_object o)
 @deftypefunx ecl_character ecl_char_code (cl_object o)
 @deftypefunx ecl_base_char ecl_base_char_code (cl_object o)
-@code{ECL_CHAR_CODE}, @code{ecl_char_code} and @code{ecl_base_char_code}
-return the integer code associated to a lisp
-character. @code{ecl_char_code} and @code{ecl_base_char_code} perform a
-safe conversion, while @code{ECL_CHAR_CODE} doesn't check its
-argument.
+@code{ECL_CHAR_CODE}, @code{ecl_char_code} and
+@code{ecl_base_char_code} return the integer code associated to a
+lisp character. @code{ecl_char_code} and @code{ecl_base_char_code}
+perform a safe conversion, while @code{ECL_CHAR_CODE} doesn't check
+its argument.
 
 @code{ECL_CODE_CHAR} returns the lisp character associated to an integer
 code. It does not check its arguments.
@@ -459,21 +461,21 @@ code. It does not check its arguments.
 @end itemize
 @end deftypefun
 
-@cppindex ecl_char_eq
-@cppindex ecl_char_equal
+@cppdef ecl_char_eq
+@cppdef ecl_char_equal
 @deftypefun bool ecl_char_eq (cl_object x, cl_object y)
 @deftypefunx bool ecl_char_equal (cl_object x, cl_object y)
 Compare two characters for equality. char_eq take case into account and
 char_equal ignores it.
 @end deftypefun
 
-@cppindex ecl_char_cmp
-@cppindex ecl_char_compare
+@cppdef ecl_char_cmp
+@cppdef ecl_char_compare
 @deftypefun int ecl_char_cmp (cl_object x, cl_object y)
 @deftypefunx int ecl_char_compare (cl_object x, cl_object y)
-Compare the relative order of two characters. @code{char_cmp} takes care
-of case and @code{char_compare} converts all characters to uppercase
-before comparing them.
+Compare the relative order of two characters. @coderef{ecl_char_cmp}
+takes care of case and @coderef{ecl_char_compare} converts all
+characters to uppercase before comparing them.
 @end deftypefun
 
 @subheading Arrays
@@ -484,8 +486,8 @@ with a pointer to the region of memory which contains the actual
 data. The cell of an array datatype varies depending on whether it is a
 vector, a bit-vector, a multidimensional array or a string.
 
-@cppindex ECL_ADJUSTABLE_ARRAY_P
-@cppindex ECL_ARRAY_HAS_FILL_POINTER_P
+@cppdef ECL_ADJUSTABLE_ARRAY_P
+@cppdef ECL_ARRAY_HAS_FILL_POINTER_P
 @deftypefun bool ECL_ADJUSTABLE_ARRAY_P (cl_object x)
 @deftypefunx bool ECL_ARRAY_HAS_FILL_POINTER_P (cl_object x)
 All arrays (arrays, strings and bit-vectors) may be tested for being
@@ -493,7 +495,7 @@ adjustable and whenever they have a fill pointer with this two
 macros. They don't check the type of their arguments.
 @end deftypefun
 
-@cppindex ecl_vector
+@cppdef ecl_vector
 @deftp @cind{} ecl_vector
 If @code{x} contains a vector, you can access the following fields:
 
@@ -501,8 +503,8 @@ If @code{x} contains a vector, you can access the following fields:
 @item x->vector.elttype
 The type of the elements of the vector.
 @item x->vector.displaced
-List storing the vectors that x is displaced from and that x displaces
-to.
+List storing the vectors that @code{x} is displaced from and that x
+displaces to.
 @item x->vector.dim
 The maximum number of elements.
 @item x->vector.fillp
@@ -513,7 +515,7 @@ pointer depending on @var{x->vector.elttype}.
 @end table
 @end deftp
 
-@cppindex ecl_array
+@cppdef ecl_array
 @deftp @cind{} ecl_array
 If @code{x} contains a multidimensional array, you can access the
 following fields:
@@ -524,8 +526,8 @@ The type of the elements of the array.
 @item x->array.rank
 The number of array dimensions.
 @item x->array.displaced
-List storing the arrays that x is displaced from and that x displaces
-to.
+List storing the arrays that @code{x} is displaced from and that x
+displaces to.
 @item x->array.dim
 The maximum number of elements.
 @item x->array.dims[]
@@ -549,13 +551,13 @@ value of @code{x->array.elttype} or @code{x->vector.elttype}. We list
 some of those types together with the C constant that denotes that type:
 
 @table @var
-@item T
+@item t
 @code{ecl_aet_object}
-@item SINGLE-FLOAT
+@item single-float
 @code{ecl_aet_sf}
-@item DOUBLE-FLOAT
+@item double-float
 @code{ecl_aet_df}
-@item LONG-FLOAT
+@item long-float
 @code{ecl_aet_lf}
 @item (COMPLEX SINGLE-FLOAT)
 @code{ecl_aet_csf}
@@ -639,8 +641,8 @@ zero terminated C string. Thus, if a string has n characters, ECL will
 reserve n+1 bytes for the base-string. This allows us to pass the
 base-string self pointer to any C routine.
 
-@cppindex ecl_string
-@cppindex ecl_base_string
+@cppdef ecl_string
+@cppdef ecl_base_string
 @deftp @cind{} ecl_string
 @deftpx @cind{} ecl_base_string
 If @code{x} is a lisp object of type string or a base-string, we can
@@ -655,8 +657,8 @@ Pointer to the characters (appropriately @code{ecl_character}'s and @code{ecl_ba
 @end table
 @end deftp
 
-@cppindex ECL_EXTENDED_STRING_P
-@cppindex ECL_BASE_STRING_P
+@cppdef ECL_EXTENDED_STRING_P
+@cppdef ECL_BASE_STRING_P
 @deftypefun bool ECL_EXTENDED_STRING_P (cl_object object)
 @deftypefunx bool ECL_BASE_STRING_P (cl_object object)
 
@@ -684,11 +686,11 @@ separate package @var{GRAY}. We may redefine functions in the
 @var{COMMON-LISP} package with a function @code{redefine-cl-functions}
 at run-time.
 
-@cppindex ecl_file_pos
+@cppdef ecl_file_pos
 @deftp @cind{} ecl_file_ops write_* read_* unread_* peek_* listen clear_input clear_output finish_output force_output input_p output_p interactive_p element_type length get_position set_position column close
 @end deftp
 
-@cppindex ecl_stream
+@cppdef ecl_stream
 @deftp @cind{} ecl_stream
 @table @code
 @item ecl_smmode mode
@@ -730,12 +732,12 @@ Character table, flags, etc
 @end table
 @end deftp
 
-@cppindex ECL_ANSI_STREAM_P
+@cppdef ECL_ANSI_STREAM_P
 @deftypefun bool ECL_ANSI_STREAM_P (cl_object o)
 Predicate determining if @code{o} is a first-class stream object.
 @end deftypefun
 
-@cppindex ECL_ANSI_STREAM_TYPE_P
+@cppdef ECL_ANSI_STREAM_TYPE_P
 @deftypefun bool ECL_ANSI_STREAM_TYPE_P (cl_object o, ecl_smmode m)
 Predicate determining if @code{o} is a first-class stream object of
 type @code{m}.
@@ -747,11 +749,11 @@ Structures and instances share the same datatype @code{t_instance} (
 with a few exceptions. Structure implementation details are the file
 @code{src/c/structure.d}.
 
-@cppindex ECL_STRUCT_TYPE
-@cppindex ECL_STRUCT_SLOTS
-@cppindex ECL_STRUCT_LENGTH
-@cppindex ECL_STRUCT_SLOT
-@cppindex ECL_STRUCT_NAME
+@cppdef ECL_STRUCT_TYPE
+@cppdef ECL_STRUCT_SLOTS
+@cppdef ECL_STRUCT_LENGTH
+@cppdef ECL_STRUCT_SLOT
+@cppdef ECL_STRUCT_NAME
 @deftypefun cl_object ECL_STRUCT_TYPE (cl_object x)
 @deftypefunx cl_object ECL_STRUCT_SLOTS (cl_object x)
 @deftypefunx cl_object ECL_STRUCT_LENGTH (cl_object x)
@@ -762,15 +764,15 @@ Convenience functions for the structures.
 
 @subheading Instances
 
-@cppindex ECL_CLASS_OF
-@cppindex ECL_SPEC_FLAG
-@cppindex ECL_SPEC_OBJECT
-@cppindex ECL_CLASS_NAME
-@cppindex ECL_CLASS_SUPERIORS
-@cppindex ECL_CLASS_INFERIORS
-@cppindex ECL_CLASS_SLOTS
-@cppindex ECL_CLASS_CPL
-@cppindex ECL_INSTANCEP
+@cppdef ECL_CLASS_OF
+@cppdef ECL_SPEC_FLAG
+@cppdef ECL_SPEC_OBJECT
+@cppdef ECL_CLASS_NAME
+@cppdef ECL_CLASS_SUPERIORS
+@cppdef ECL_CLASS_INFERIORS
+@cppdef ECL_CLASS_SLOTS
+@cppdef ECL_CLASS_CPL
+@cppdef ECL_INSTANCEP
 
 @deftypefun cl_object ECL_CLASS_OF (cl_object x)
 @deftypefunx cl_object ECL_SPEC_FLAG (cl_object x)
@@ -791,10 +793,9 @@ interpreted. The objects of type @code{t_bytecodes} are implicitly
 constructed by a call to eval, but can also be explicitly constructed
 with the @code{si_make_lambda} function.
 
-@anchor{si_safe_eval}
-@cppindex si_safe_eval
-@cppindex cl_safe_eval
-@cppindex cl_eval
+@cppdef si_safe_eval
+@cppdef cl_safe_eval
+@cppdef cl_eval
 @defun si:safe-eval form env &optional err-value
 @end defun
 @deftypefun cl_object si_safe_eval (cl_narg narg, cl_object form, cl_object env, ...)
@@ -827,7 +828,7 @@ si_safe_eval(3, form, ECL_NIL, ecl_make_fixnum(3)); /* on error function will re
 @end example
 @end deftypefun
 
-@cppindex si_make_lambda
+@cppdef si_make_lambda
 @deftypefun cl_object si_make_lambda (cl_object name, cl_object def)
 Builds an interpreted lisp function with name given by the symbol name
 and body given by @code{def}.
