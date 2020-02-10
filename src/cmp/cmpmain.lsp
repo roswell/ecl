@@ -165,7 +165,7 @@ the environment variable TMPDIR to a different value." template))
                             :if-does-not-exist :create :if-exists :supersede)
            (format f "/OUT:~A ~A ~{~&\"~A\"~}"
                    output-name o-name ld-flags))
-         (safe-run-program "link" '("-lib -nologo" "@static_lib.tmp")))
+         (safe-run-program "link" '("-lib" "-nologo" "@static_lib.tmp")))
     (when (probe-file "static_lib.tmp")
       (cmp-delete-file "static_lib.tmp"))))
 
