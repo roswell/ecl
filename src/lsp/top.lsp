@@ -809,38 +809,6 @@ Use special code 0 to cancel this operation.")
         (format t " No source code available for this function.~%"))
     (values)))
 
-(defun reconstruct-bytecodes-lambda-list (data)
-  (declare (si::c-local data))
-  (let ((output '()))
-    (dotimes (n (pop data))     ;; required values
-      (declare (fixnum n))
-      (push (pop data) output))
-    (let ((l (pop data)))       ;; optional values
-      (declare (fixnum l))
-      (unless (zerop l)
-        (push '&optional output)
-        (dotimes (n l)
-          (push (first data) output)
-          (setf data (cdddr data)))))
-    (let ((rest (pop data)))    ;; &rest value
-      (when rest
-        (push '&rest output)
-        (push rest output)))
-    (let* ((allow-other-keys (pop data))) ;; &keys and &allow-other-keys
-      (unless (eql allow-other-keys 0)
-        (push '&key output)
-        (let ((l (pop data)))
-          (declare (fixnum l))
-          (dotimes (n l)
-            (let* ((key (first data))
-                   (var (second data)))
-              (unless (and (keywordp key) (string= key var))
-                (setf var (list (list key var))))
-              (push var output))))
-        (when allow-other-keys
-          (push '&allow-other-keys output))))
-    (nreverse output)))
-
 (defun lambda-list-from-annotations (name)
   (declare (si::c-local)) 
   (let ((args (ext:get-annotation name :lambda-list nil)))
@@ -868,16 +836,8 @@ Use special code 0 to cancel this operation.")
                 (ndx (position '&aux list)))
            (return-from function-lambda-list
              (values (if ndx (subseq list 0 (1- ndx)) list) t))))))
-    ;; Reconstruct the lambda list from the bytecodes
-    ((multiple-value-bind (lex-env bytecodes data)
-         (si::bc-split function)
-       (declare (ignore lex-env))
-       (when bytecodes
-         (setq data (coerce data 'list))
-         (return-from function-lambda-list
-           (values (reconstruct-bytecodes-lambda-list data) t)))))
     ;; If it's a compiled function of ECL itself, reconstruct the
-    ;; lambda-list from its documentation string.
+    ;; lambda-list from the annotation.
     (t
      (lambda-list-from-annotations (compiled-function-name function)))))
 
