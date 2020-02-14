@@ -287,9 +287,11 @@ si_clear_gfun_hash(cl_object what)
   for (list = mp_all_processes(); !Null(list); list = ECL_CONS_CDR(list)) {
     cl_object process = ECL_CONS_CAR(list);
     struct cl_env_struct *env = process->process.env;
-    if (the_env != env) {
-      ecl_cache_remove_one(env->method_cache, what);
-      ecl_cache_remove_one(env->slot_cache, what);
+    if (the_env != env && env) {
+      if (env->method_cache)
+        ecl_cache_remove_one(env->method_cache, what);
+      if (env->slot_cache)
+        ecl_cache_remove_one(env->slot_cache, what);
     }
   }
 #endif
