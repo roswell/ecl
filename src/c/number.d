@@ -38,13 +38,11 @@
 #  define DO_DETECT_FPE2(f1,f2) DO_DETECT_FPE(f1)
 # else
 /*
- * We need explicit checks for floating point exception bits being set
+ * We need explicit checks for floating point exception bits being
+ * set; ECL_MATHERR_TEST handles this for us, so nothing to do here.
  */
-#  define DO_DETECT_FPE(f) do {                                   \
-    int status = fetestexcept(ecl_process_env()->trap_fpe_bits);  \
-    unlikely_if (status) ecl_deliver_fpe(status);                 \
-  } while (0)
-#  define DO_DETECT_FPE2(f1,f2) DO_DETECT_FPE(f1)
+#  define DO_DETECT_FPE(f)
+#  define DO_DETECT_FPE2(f1,f2)
 # endif
 #else
 /*

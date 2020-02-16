@@ -18,6 +18,8 @@
 #endif
 #include <ecl/internal.h>
 
+#pragma STDC FENV_ACCESS ON
+
 @(defun ceiling (x &optional (y OBJNULL))
   @
   if (narg == 1)
@@ -30,6 +32,8 @@ cl_object
 ecl_ceiling1(cl_object x)
 {
   cl_object v0, v1;
+  ECL_MATHERR_CLEAR;
+
   switch (ecl_t_of(x)) {
   case t_fixnum:
   case t_bignum:
@@ -66,6 +70,8 @@ ecl_ceiling1(cl_object x)
   default:
     FEwrong_type_nth_arg(@[ceiling],1,x,@[real]);
   }
+
+  ECL_MATHERR_TEST;
   @(return v0 v1);
 }
 
@@ -75,6 +81,8 @@ ecl_ceiling2(cl_object x, cl_object y)
   const cl_env_ptr the_env = ecl_process_env();
   cl_object v0, v1;
   cl_type ty;
+  ECL_MATHERR_CLEAR;
+
   v0 = v1 = ECL_NIL;
   ty = ecl_t_of(y);
   if (ecl_unlikely(!ECL_REAL_TYPE_P(ty))) {
@@ -221,5 +229,7 @@ ecl_ceiling2(cl_object x, cl_object y)
   default:
     FEwrong_type_nth_arg(@[ceiling], 1, x, @[real]);
   }
+
+  ECL_MATHERR_TEST;
   ecl_return2(the_env, v0, v1);
 }
