@@ -22,10 +22,14 @@
 #endif
 #include <ecl/internal.h>
 
+#pragma STDC FENV_ACCESS ON
+
 cl_object
 ecl_truncate1(cl_object x)
 {
   cl_object v0, v1;
+  ECL_MATHERR_CLEAR;
+
   switch (ecl_t_of(x)) {
   case t_fixnum:
   case t_bignum:
@@ -61,6 +65,7 @@ ecl_truncate1(cl_object x)
   default:
     FEwrong_type_nth_arg(@[truncate],1,x,@[real]);
   }
+  ECL_MATHERR_TEST;
   {
     const cl_env_ptr the_env = ecl_process_env();
     ecl_return2(the_env, v0, v1);

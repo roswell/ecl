@@ -63,7 +63,9 @@ typedef cl_object (*math_one_arg_fn)(cl_object);
     cl_object ecl_##name(cl_object arg)                                 \
     {                                                                   \
         cl_object out;                                                  \
+        ECL_MATHERR_CLEAR;                                              \
         out = ecl_##name##_ne(arg);                                     \
+        ECL_MATHERR_TEST;                                               \
         return out;                                                     \
     }
 

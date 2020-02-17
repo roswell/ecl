@@ -16,6 +16,11 @@
 #include <ecl/ecl.h>
 #include <ecl/impl/math_dispatch.h>
 
+/* INV: FLT_MAX + 1 == FLT_MAX
+ *      DBL_MAX + 1 == DBL_MAX
+ *      LDBL_MAX + 1 == LDBL_MAX
+ * (no ECL_MATHERR_TEST needed) */
+
 static cl_object
 ecl_one_plus_fix(cl_object x)
 {
