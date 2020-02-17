@@ -179,7 +179,9 @@ ecl_init_env(cl_env_ptr env)
 
   env->method_cache = ecl_make_cache(64, 4096);
   env->slot_cache = ecl_make_cache(3, 4096);
+  env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
   env->interrupt_struct->pending_interrupt = ECL_NIL;
+  env->interrupt_struct->signal_queue_spinlock = ECL_NIL;
   {
     int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
     env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
@@ -224,6 +226,13 @@ _ecl_alloc_env(cl_env_ptr parent)
    * Allocates the lisp environment for a thread. Depending on which
    * mechanism we use for detecting delayed signals, we may allocate
    * the environment using mmap or the garbage collector.
+   *
+   * Note that at this point we are not allocating any other memory
+   * which is stored via a pointer in the environment. If we would do
+   * that, an unlucky interrupt by the gc before the allocated
+   * environment is registered in cl_core.processes could lead to
+   * memory being freed because the gc is not aware of the pointer to
+   * the allocated memory in the environment.
    */
   cl_env_ptr output;
 #if defined(ECL_USE_MPROTECT)
@@ -249,10 +258,6 @@ _ecl_alloc_env(cl_env_ptr parent)
   }
 # endif
 #endif
-  if (!ecl_option_values[ECL_OPT_BOOTED])
-    output->interrupt_struct = ecl_alloc_unprotected(sizeof(*output->interrupt_struct));
-  else
-    output->interrupt_struct = ecl_alloc(sizeof(*output->interrupt_struct));
   {
     size_t bytes = cl_core.default_sigmask_bytes;
     if (bytes == 0) {
@@ -266,13 +271,13 @@ _ecl_alloc_env(cl_env_ptr parent)
       output->default_sigmask = cl_core.default_sigmask;
     }
   }
+  output->method_cache = output->slot_cache = NULL;
+  output->interrupt_struct = NULL;
   /*
    * An uninitialized environment _always_ disables interrupts. They
    * are activated later on by the thread entry point or init_unixint().
    */
   output->disable_interrupts = 1;
-  output->interrupt_struct->pending_interrupt = ECL_NIL;
-  output->interrupt_struct->signal_queue_spinlock = ECL_NIL;
   return output;
 }
 

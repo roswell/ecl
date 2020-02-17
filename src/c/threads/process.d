@@ -403,14 +403,20 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   process->process.phase = ECL_PROCESS_BOOTING;
   process->process.thread = current;
 
+  /* Immediately list the process such that its environment is
+   * marked by the gc when its contents are allocated */
+  ecl_list_process(process);
+
+  /* Now we can safely allocate memory for the environment contents
+   * and store pointers to it in the environment */
   ecl_init_env(env);
+
   env->cleanup = registered;
   env->bindings_array = process->process.initial_bindings;
   env->thread_local_bindings_size = env->bindings_array->vector.dim;
   env->thread_local_bindings = env->bindings_array->vector.self.t;
   ecl_enable_interrupts_env(env);
 
-  ecl_list_process(process);
   /* Activate the barrier so that processes can immediately start waiting. */
   mp_barrier_unblock(1, process->process.exit_barrier);
   process->process.phase = ECL_PROCESS_ACTIVE;
@@ -544,14 +550,20 @@ mp_process_enable(cl_object process)
     process->process.parent = mp_current_process();
     process->process.trap_fpe_bits =
       process->process.parent->process.env->trap_fpe_bits;
-    ecl_list_process(process);
 
     /* Link environment and process together */
     process_env = _ecl_alloc_env(the_env);
     process_env->own_process = process;
     process->process.env = process_env;
 
+    /* Immediately list the process such that its environment is
+     * marked by the gc when its contents are allocated */
+    ecl_list_process(process);
+
+    /* Now we can safely allocate memory for the environment contents
+     * and store pointers to it in the environment */
     ecl_init_env(process_env);
+
     process_env->trap_fpe_bits = process->process.trap_fpe_bits;
     process_env->bindings_array = process->process.initial_bindings;
     process_env->thread_local_bindings_size = 
