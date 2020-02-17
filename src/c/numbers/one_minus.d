@@ -16,6 +16,11 @@
 #include <ecl/ecl.h>
 #include <ecl/impl/math_dispatch.h>
 
+/* INV: FLT_MIN - 1 == FLT_MIN
+ *      DBL_MIN - 1 == DBL_MIN
+ *      LDBL_MIN - 1 == LDBL_MIN
+ * (no ECL_MATHERR_TEST needed) */
+
 static cl_object
 ecl_one_minus_fix(cl_object x)
 {

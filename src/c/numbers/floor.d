@@ -21,6 +21,8 @@
 #include <ecl/impl/math_dispatch2.h>
 #include <ecl/internal.h>
 
+#pragma STDC FENV_ACCESS ON
+
 @(defun floor (x &optional (y OBJNULL))
   @
   if (narg == 1)
@@ -34,6 +36,8 @@ ecl_floor1(cl_object x)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object v0, v1;
+  ECL_MATHERR_CLEAR;
+
   switch (ecl_t_of(x)) {
   case t_fixnum:
   case t_bignum:
@@ -68,6 +72,8 @@ ecl_floor1(cl_object x)
   default:
     FEwrong_type_nth_arg(@[floor],1,x,@[real]);
   }
+
+  ECL_MATHERR_TEST;
   ecl_return2(the_env, v0, v1);
 }
 
@@ -76,6 +82,8 @@ ecl_floor2(cl_object x, cl_object y)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object v0, v1;
+  ECL_MATHERR_CLEAR;
+
   MATH_DISPATCH2_BEGIN(x,y)
     {
       CASE_FIXNUM_FIXNUM {
@@ -235,6 +243,8 @@ ecl_floor2(cl_object x, cl_object y)
     }
     }
   MATH_DISPATCH2_END;
+
+  ECL_MATHERR_TEST;
   ecl_return2(the_env, v0, v1);
 }
 
