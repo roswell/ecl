@@ -104,7 +104,7 @@ elapsed_time(struct ecl_timeval *start)
   bignum_set_time(delta_big, &now);
   _ecl_big_sub(delta_big, delta_big, aux_big);
   _ecl_big_register_free(aux_big);
-  return _ecl_big_register_normalize(delta_big);
+  return delta_big;
 }
 
 static double
