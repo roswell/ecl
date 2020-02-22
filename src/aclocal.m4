@@ -399,7 +399,6 @@ case "${host_os}" in
         mingw*)
                 thehost='mingw32'
                 dnl We disable fpe because ECL/MinGW has problems with FE_INEXACT
-                with_ieee_fp='no'
                 with_fpe='no'
                 clibs=''
                 shared='yes'
