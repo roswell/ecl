@@ -171,11 +171,11 @@ can be implemented using a C macro which is provided by ECL
 @example
 @verbatim
 cl_env_ptr env = ecl_process_env();
-CL_UNWIND_PROTECT_BEGIN(env) {
+ECL_UNWIND_PROTECT_BEGIN(env) {
     /* protected code goes here */
-} CL_UNWIND_PROTECT_EXIT {
+} ECL_UNWIND_PROTECT_EXIT {
     /* exit code goes here */
-} CL_UNWIND_PROTECT_END;
+} ECL_UNWIND_PROTECT_END;
 @end verbatim
 @end example
 

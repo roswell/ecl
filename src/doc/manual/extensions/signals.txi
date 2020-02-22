@@ -94,7 +94,7 @@ The approach in ECL is more lightweight: we install our own signal handler and u
 
 Systems that embed ECL may wish to deactivate completely these signal handlers. This is done using the boot options, @code{ECL_OPT_TRAP_SIGFPE}, @code{ECL_OPT_TRAP_SIGSEGV}, @code{ECL_OPT_TRAP_SIGBUS}, @code{ECL_OPT_TRAP_INTERRUPT_SIGNAL}.
 
-Systems that embed ECL and want to allow handling of synchronous signals should take care to also trap the associated lisp conditions that may arise. This is automatically taken care of by functions such as @coderef{si_safe_eval}, and in all other cases it can be solved by enclosing the unsafe code in a @coderef{CL_CATCH_ALL} frame.
+Systems that embed ECL and want to allow handling of synchronous signals should take care to also trap the associated lisp conditions that may arise. This is automatically taken care of by functions such as @coderef{si_safe_eval}, and in all other cases it can be solved by enclosing the unsafe code in a @coderef{ECL_CATCH_ALL} frame.
 
 
 @node Signals and Interrupts - Considerations when embedding ECL
