@@ -141,7 +141,8 @@ int main(int argc, char **argv) {
   env = ecl_process_env();
   conditions  = ecl_list1(ecl_make_symbol(\"ARITHMETIC-ERROR\", \"CL\"));
   ECL_HANDLER_CASE_BEGIN(env, conditions) {
-    a = 1.0 / 0.0;
+    a = 1.0 / (double) (argc - 1); /* equivalent of 1.0/0.0 but without
+                                      compilers complaining about it */
   } ECL_HANDLER_CASE(1, condition) {
     ret = 2;
     goto out;
@@ -161,7 +162,7 @@ int main(int argc, char **argv) {
 
   ECL_WITH_LISP_FPE_BEGIN {
     ECL_HANDLER_CASE_BEGIN(env, conditions) {
-      b = ecl_to_double(cl_N(2, ecl_make_double_float(1.0), ecl_make_double_float(0.0)));
+      b = ecl_to_double(cl_N(2, ecl_make_double_float(1.0), ecl_make_double_float((double) (argc - 1))));
     } ECL_HANDLER_CASE(1, condition) {
       b = 0.0; /* ... but dividing by a zero float should definitely do so
                 */
