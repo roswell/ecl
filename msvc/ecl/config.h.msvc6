@@ -129,7 +129,7 @@
  * use autoconf to guess the following values.
  */
 #ifdef _M_X64
-#define ECL_INT_BITS		64
+#define ECL_INT_BITS		32
 #define ECL_LONG_BITS		32
 #define ECL_FIXNUM_BITS		64
 #define MOST_POSITIVE_FIXNUM	((cl_fixnum)2305843009213693951LL)
