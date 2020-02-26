@@ -154,11 +154,11 @@ typedef unsigned int cl_hashkey;
  * The character type
  */
 #ifdef ECL_UNICODE
-#define	ECL_CHAR_CODE_LIMIT	65536 /*	unicode character code limit  */
+#define	ECL_CHAR_CODE_LIMIT	1114112 /*	unicode character code limit  */
 #else
 #define	ECL_CHAR_CODE_LIMIT	256	/*  unicode character code limit  */
 #endif
-typedef short ecl_character;
+typedef int ecl_character;
 typedef unsigned char ecl_base_char;
 
 /*
