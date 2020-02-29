@@ -429,9 +429,6 @@ void
 ecl_release_current_thread(void)
 {
   cl_env_ptr env = ecl_process_env();
-#ifdef ECL_WINDOWS_THREADS
-  HANDLE to_close = env->own_process->process.thread;
-#endif
 
   int cleanup = env->cleanup;
   cl_object own_process = env->own_process;
@@ -442,9 +439,6 @@ ecl_release_current_thread(void)
   if (cleanup) {
     GC_unregister_my_thread();
   }
-#endif
-#ifdef ECL_WINDOWS_THREADS
-  CloseHandle(to_close);
 #endif
 }
 
