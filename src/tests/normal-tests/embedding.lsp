@@ -185,3 +185,111 @@ out:
 }
 "))
      (test-C-program c-code))))
+
+
+;;; Date: 2020-02-29 (Marius Gerbershagen)
+;;; Description:
+;;;
+;;;     Verify that ecl_import_current_thread works correctly
+;;;
+#+threads
+(test emb.0004.import-current-thread
+  (is-true
+   (let* ((c-code "
+#define NUM_THREADS 50
+#define BUFSIZE 1024
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ecl/ecl.h>
+/* Force use of ordinary thread creation functions instead of gc defines like
+ * GC_CreateThread, GC_pthread_create. */
+#undef CreateThread
+#undef pthread_create
+#undef pthread_join
+#ifdef _WIN32
+# include <windows.h>
+#else
+# include <unistd.h>
+# include <pthread.h>
+#endif
+
+#ifdef ECL_WINDOWS_THREADS
+static DWORD WINAPI
+#else
+static void *
+#endif
+thread_entry_point(void *data)
+{
+        cl_object form = (cl_object)data;
+
+        if (!ecl_import_current_thread(ECL_NIL, ECL_NIL)) {
+                exit(3);
+        }
+
+        cl_eval(form);
+
+        ecl_release_current_thread();
+#ifdef ECL_WINDOWS_THREADS
+        return 1;
+#else
+        return NULL;
+#endif
+}
+
+
+int main(int narg, char **argv)
+{
+#ifdef ECL_WINDOWS_THREADS
+        HANDLE child_thread[NUM_THREADS];
+        DWORD thread_id[NUM_THREADS];
+#else
+        pthread_t child_thread[NUM_THREADS];
+#endif
+        int i, code;
+        char buffer[BUFSIZE];
+        volatile cl_object forms[NUM_THREADS];
+
+        cl_boot(narg, argv);
+        snprintf(buffer, BUFSIZE, \"(defparameter *test-results* (make-array %d :initial-element nil))\", NUM_THREADS);
+        cl_eval(c_string_to_object(buffer));
+
+        for (i = 0; i < NUM_THREADS; i++) {
+                snprintf(buffer, BUFSIZE, \"(setf (elt *test-results* %d) %d)\", i, i);
+                forms[i] = c_string_to_object(buffer);
+#ifdef ECL_WINDOWS_THREADS
+                child_thread[i] = (HANDLE)CreateThread(NULL, 0, thread_entry_point,
+                                                       (void*)forms[i], 0, &thread_id[i]);
+                if (child_thread[i] == NULL) {
+                        exit(1);
+                }
+#else
+                code = pthread_create(&child_thread[i], NULL, thread_entry_point,
+                                      (void*)forms[i]);
+                if (code) {
+                        exit(1);
+                }
+#endif
+        }
+
+        for (i = 0; i < NUM_THREADS; i++) {
+#ifdef ECL_WINDOWS_THREADS
+                WaitForSingleObject(child_thread[i], INFINITE);
+                CloseHandle(child_thread[i]);
+#else
+                pthread_join(child_thread[i], NULL);
+#endif
+        }
+
+        for (i = 0; i < NUM_THREADS; i++) {
+                snprintf(buffer, BUFSIZE, \"(elt *test-results* %d)\", i);
+                cl_object result = cl_eval(c_string_to_object(buffer));
+                if (!ecl_eql(result, ecl_make_fixnum(i))) {
+                        exit(2);
+                }
+        }
+
+        cl_shutdown();
+        return 0;
+}"))
+     (test-C-program c-code))))
