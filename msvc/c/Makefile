@@ -20,9 +20,11 @@ THREADS_OBJ=
 !endif
 
 !if "$(ECL_UNICODE)" != ""
-ECL_UNICODE_FLAG=16
-ECL_UCD_OBJ = ucd16.obj ucd16-0000.obj ucd16-0016.obj \
-	      ucd16-0032.obj ucd16-0048.obj ucd16-0064.obj ucd_names_char.obj ucd_names_codes.obj ucd_names_pair.obj ucd_names_str.obj
+ECL_UNICODE_FLAG=21
+ECL_UCD_OBJ = ucd.obj ucd-0000.obj ucd-0016.obj \
+	      ucd-0032.obj ucd-0048.obj ucd-0064.obj \
+	      ucd-0080.obj ucd-0096.obj ucd_names_char.obj ucd_names_codes.obj ucd_names_pair.obj ucd_names_str.obj
+
 !else
 ECL_UNICODE_FLAG=0
 !endif
