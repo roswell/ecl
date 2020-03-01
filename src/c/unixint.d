@@ -1236,6 +1236,9 @@ si_trap_fpe(cl_object condition, cl_object flag)
 # ifdef HAVE_FENV_H
         feclearexcept(all);
 # endif
+# if defined(ECL_MS_WINDOWS_HOST)
+        _fpreset();
+# endif
 # ifdef HAVE_FEENABLEEXCEPT
         fedisableexcept(all & ~bits);
         feenableexcept(all & bits);

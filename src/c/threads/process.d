@@ -391,30 +391,33 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
         return 0;
     }
   }
-  /* We need a fake env to allow for interrupts blocking. */
+  /* We need a fake env to allow for interrupts blocking and to set up
+   * frame stacks or other stuff which may be needed by alloc_process
+   * and ecl_list_process. Since the fake env is allocated on the stack,
+   * we can safely store pointers to memory allocated by the gc there. */
+  memset(env_aux, 0, sizeof(*env_aux));
   env_aux->disable_interrupts = 1;
   ecl_set_process_env(env_aux);
-  env = _ecl_alloc_env(0);
-  ecl_set_process_env(env);
+  ecl_init_env(env_aux);
 
-  /* Link environment and process together */
-  env->own_process = process = alloc_process(name, bindings);
+  /* Allocate real environment, link it together with process */
+  env = _ecl_alloc_env(0);
+  process = alloc_process(name, bindings);
   process->process.env = env;
   process->process.phase = ECL_PROCESS_BOOTING;
   process->process.thread = current;
 
-  /* Immediately list the process such that its environment is
-   * marked by the gc when its contents are allocated */
+  /* Copy initial bindings from process to the fake environment */
+  env_aux->cleanup = registered;
+  env_aux->bindings_array = process->process.initial_bindings;
+  env_aux->thread_local_bindings_size = env_aux->bindings_array->vector.dim;
+  env_aux->thread_local_bindings = env_aux->bindings_array->vector.self.t;
+
+  /* Switch over to the real environment */
+  memcpy(env, env_aux, sizeof(*env));
+  env->own_process = process;
+  ecl_set_process_env(env);
   ecl_list_process(process);
-
-  /* Now we can safely allocate memory for the environment contents
-   * and store pointers to it in the environment */
-  ecl_init_env(env);
-
-  env->cleanup = registered;
-  env->bindings_array = process->process.initial_bindings;
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
   ecl_enable_interrupts_env(env);
 
   /* Activate the barrier so that processes can immediately start waiting. */
@@ -429,9 +432,6 @@ void
 ecl_release_current_thread(void)
 {
   cl_env_ptr env = ecl_process_env();
-#ifdef ECL_WINDOWS_THREADS
-  HANDLE to_close = env->own_process->process.thread;
-#endif
 
   int cleanup = env->cleanup;
   cl_object own_process = env->own_process;
@@ -442,9 +442,6 @@ ecl_release_current_thread(void)
   if (cleanup) {
     GC_unregister_my_thread();
   }
-#endif
-#ifdef ECL_WINDOWS_THREADS
-  CloseHandle(to_close);
 #endif
 }
 
