@@ -14,6 +14,7 @@
  */
 
 #define ECL_INCLUDE_MATH_H
+#include <limits.h>
 #include <string.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
@@ -334,36 +335,6 @@ mp_realloc(void *ptr, size_t osize, size_t nsize)
   return p;
 }
 
-cl_fixnum
-fixint(cl_object x)
-{
-  if (ECL_FIXNUMP(x))
-    return ecl_fixnum(x);
-  if (ECL_BIGNUMP(x)) {
-    if (mpz_fits_slong_p(x->big.big_num)) {
-      return mpz_get_si(x->big.big_num);
-    }
-  }
-  FEwrong_type_argument(@[fixnum], x);
-}
-
-cl_index
-fixnnint(cl_object x)
-{
-  if (ECL_FIXNUMP(x)) {
-    cl_fixnum i = ecl_fixnum(x);
-    if (i >= 0)
-      return i;
-  } else if (ECL_BIGNUMP(x)) {
-    if (mpz_fits_ulong_p(x->big.big_num)) {
-      return mpz_get_ui(x->big.big_num);
-    }
-  }
-  FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),
-                                ecl_make_fixnum(MOST_POSITIVE_FIXNUM)),
-                        x);
-}
-
 #undef _ecl_big_set_fixnum
 #undef _ecl_big_set_index
 #if ECL_LONG_BITS >= ECL_FIXNUM_BITS
@@ -405,6 +376,7 @@ _ecl_big_set_fixnum(cl_object x, cl_fixnum f)
     ECL_BIGNUM_SIZE(x) = -1;
     ECL_BIGNUM_LIMBS(x)[0] = -f;
   }
+  return x;
 }
 
 cl_object
@@ -416,6 +388,7 @@ _ecl_big_set_index(cl_object x, cl_index f)
     ECL_BIGNUM_SIZE(x) = 1;
     ECL_BIGNUM_LIMBS(x)[0] = f;
   }
+  return x;
 }
 
 cl_fixnum
@@ -433,16 +406,82 @@ _ecl_big_get_index(cl_object x)
   cl_index output = ECL_BIGNUM_LIMBS(x)[0];
   return (ECL_BIGNUM_SIZE(x) > 0)? output : ~(output - 1);
 }
-
-bool
-_ecl_big_fits_in_index(cl_object x)
-{
-  /* INV: x is a bignum and thus size != 0 */
-  return (ECL_BIGNUM_SIZE(x) ^ 1) == 0;
-}
 #else
 # error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
 #endif /* ECL_FIXNUM_BITS > GMP_LIMB_BITS, ECL_LONG_BITS */
+
+#if ECL_FIXNUM_BITS == ECL_INT_BITS
+static inline bool
+_ecl_big_fits_in_fixnum(cl_object x)
+{
+  return mpz_fits_sint_p(x->big.big_num);
+}
+
+static inline bool
+_ecl_big_fits_in_index(cl_object x)
+{
+  return mpz_fits_uint_p(x->big.big_num);
+}
+#elif ECL_FIXNUM_BITS == ECL_LONG_BITS
+static inline bool
+_ecl_big_fits_in_fixnum(cl_object x)
+{
+  return mpz_fits_slong_p(x->big.big_num);
+}
+
+static inline bool
+_ecl_big_fits_in_index(cl_object x)
+{
+  return mpz_fits_ulong_p(x->big.big_num);
+}
+#elif ECL_FIXNUM_BITS == ECL_LONG_LONG_BITS && GMP_LIMB_BITS >= ECL_FIXNUM_BITS
+static inline bool
+_ecl_big_fits_in_fixnum(cl_object x)
+{
+  /* INV: x is a bignum and thus size != 0 */
+  return (ECL_BIGNUM_SIZE(x) == 1 && ECL_BIGNUM_LIMBS(x)[0] <= LLONG_MAX)
+      || (ECL_BIGNUM_SIZE(x) == -1 && -(ECL_BIGNUM_LIMBS(x)[0]) >= LLONG_MIN);
+}
+
+static inline bool
+_ecl_big_fits_in_index(cl_object x)
+{
+  /* INV: x is a bignum and thus size != 0 */
+  return ECL_BIGNUM_SIZE(x) == 1 && ECL_BIGNUM_LIMBS(x)[0] <= ULLONG_MAX;
+}
+#else
+# error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
+#endif
+
+cl_fixnum
+fixint(cl_object x)
+{
+  if (ECL_FIXNUMP(x))
+    return ecl_fixnum(x);
+  if (ECL_BIGNUMP(x)) {
+    if (_ecl_big_fits_in_fixnum(x)) {
+      return _ecl_big_get_fixnum(x);
+    }
+  }
+  FEwrong_type_argument(@[fixnum], x);
+}
+
+cl_index
+fixnnint(cl_object x)
+{
+  if (ECL_FIXNUMP(x)) {
+    cl_fixnum i = ecl_fixnum(x);
+    if (i >= 0)
+      return i;
+  } else if (ECL_BIGNUMP(x)) {
+    if (_ecl_big_fits_in_index(x)) {
+      return _ecl_big_get_index(x);
+    }
+  }
+  FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),
+                                ecl_make_fixnum(MOST_POSITIVE_FIXNUM)),
+                        x);
+}
 
 long double
 _ecl_big_to_long_double(cl_object o)
