@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
+#include <string.h>
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #ifdef ECL_WINDOWS_THREADS
