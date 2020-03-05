@@ -185,14 +185,21 @@
   (flet ((handler (condition)
            (cond ((typep condition expected)
                   (return-from %signals (passed)))
-                 (t
+                 ((typep condition 'serious-condition)
                   (return-from %signals
-                    (let ((fmt-ctrl (if args (car args) "Expected to signal ~s, but got ~s:~%~a"))
-                          (fmt-args (if args (cdr args) (list expected (type-of condition) condition))))
+                    (let ((fmt-ctrl
+                            (if args
+                                (car args)
+                                "Expected to signal ~s, but got ~s:~%~a"))
+                          (fmt-args
+                            (if args
+                                (cdr args)
+                                (list expected (type-of condition) condition))))
                       (failed (make-condition 'test-failure
                                               :name *test-name*
                                               :format-control fmt-ctrl
-                                              :format-arguments fmt-args))))))))
+                                              :format-arguments fmt-args)))))
+                 (t #|ignore non-serious unexpected conditions|#))))
     (handler-bind ((condition #'handler))
       (funcall fn)))
   (let ((fmt-ctrl (if args (car args) "Expected to signal ~s, but got nothing"))
