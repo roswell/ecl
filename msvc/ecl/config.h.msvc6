@@ -166,7 +166,7 @@ typedef unsigned char ecl_base_char;
  */
 #define	ECL_ARRAY_RANK_LIMIT 64
 #ifdef GBC_BOEHM
-#define	ECL_ARRAY_DIMENSION_LIMIT 536870911
+#define	ECL_ARRAY_DIMENSION_LIMIT MOST_POSITIVE_FIXNUM
 #else
 #define ECL_ARRAY_DIMENSION_LIMIT 16*1024*1024
 #endif
