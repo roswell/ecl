@@ -601,6 +601,25 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 # define ldexpf(x,y) ldexp((float)x,y)
 #endif
 
+#ifndef HAVE_LOG1PF
+# ifdef log1pf
+#  undef log1pf
+# endif
+# define log1pf(x) logf(x+1.0f)
+#endif
+#ifndef HAVE_LOG1P
+# ifdef log1p
+#  undef log1p
+# endif
+# define log1p(x) log(x+1.0)
+#endif
+#ifndef HAVE_LOG1PL
+# ifdef log1pl
+#  undef log1pl
+# endif
+# define log1pl(x) logl(x+1.0l)
+#endif
+
 /*
  * Fake INFINITY and NAN defined in ISO C99 (portably)
  */
