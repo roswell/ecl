@@ -1994,6 +1994,9 @@ cl_symbols[] = {
 {EXT_ "WITH-UNIQUE-NAMES",NULL,-1},
 {EXT_ "WITH-GENSYMS",NULL,-1},
 {EXT_ "WITH-CLEAN-SYMBOLS",NULL,-1},
+{EXT_ "IF-LET",NULL,-1},
+{EXT_ "WHEN-LET",NULL,-1},
+{EXT_ "WHEN-LET*",NULL,-1},
 
 {SYS_ "HANDLE-SIGNAL","si_handle_signal",2},
 
