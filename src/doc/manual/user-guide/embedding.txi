@@ -11,6 +11,122 @@
 @node Embedding ECL - Embedding Reference
 @subsection Embedding Reference
 
+@node Starting and Stopping
+@subsubsection Starting and Stopping
+
+@cppdef cl_boot
+@deftypefun int cl_boot (int argc, char **argv);
+Setup the lisp environment.
+@table @var
+@item argc
+An integer with the number of arguments to this program.
+@item argv
+A vector of strings with the arguments to this program.
+@end table
+
+@paragraph Description
+This function must be called before any other function from the ECL library, including the creation of any lisp object or evaluating any lisp code. The only exception are @coderef{ecl_set_option} and @coderef{ecl_get_option}.
+
+@end deftypefun
+
+
+@cppdef cl_shutdown
+@deftypefun int cl_shutdown (void);
+Close the lisp environment.
+
+@paragraph Description
+This function must be called before exiting a program that uses the ECL environment. It performs some cleaning, including the execution of any finalizers, unloading shared libraries and deleting temporary files that were created by the compiler. 
+@end deftypefun
+
+@cppdef ecl_set_option
+@deftypefun void ecl_set_option (int option, cl_fixnum value); 
+Set a boot option.
+
+@table @var
+@item option
+An integer from @ref{tab:boot-options}.
+@item value
+A @code{cl_index} value for this option
+@end table
+
+@paragraph Description
+This functions sets the value of different options that have to be customized @emph{before} ECL boots. The table of options and default values [@ref{tab:boot-options}] shows that some of them are boolean, and some of them are unsigned integers.
+
+We distinguish three sets of values. The first set determines whether ECL handles certain exceptions, such as access to forbidden regions of memory, interrupts via , floating point exceptions, etc.
+
+The second set is related to the sizes of different stacks. Currently ECL uses four stacks: a bind stack for keeping assignments to special variables; a frame stack for implementing blocks, tagbodys and catch points; an interpreter stack for evaluating bytecodes, and finally the machine or C stack, of the computer we run in. We can set the expected size of these stacks, together with the size of a safety area which, if penetrated, will lead to the generation of a correctable error.
+
+@float Table,tab:boot-options
+@caption{Boot options for embedded ECL}
+@multitable @columnfractions .3 .15 .16 .39
+@headitem Name @code{(ECL_OPT_*)} @tab Type @tab Default @tab Description
+@item @code{INCREMENTAL_GC} @tab boolean @tab TRUE @tab Activate generational garbage collector.
+@item @code{TRAP_SIGSEGV} @tab boolean @tab TRUE @tab Capture @code{SIGSEGV} signals.
+@item @code{TRAP_SIGFPE} @tab boolean @tab TRUE @tab Capture floating point exceptions.
+@item @code{TRAP_SIGINT} @tab boolean @tab TRUE @tab Capture user interrupts.
+@item @code{TRAP_SIGILL} @tab boolean @tab TRUE @tab Capture @code{SIGILL} exception.
+@item @code{TRAP_INTERRUPT_SIGNAL} @tab boolean @tab TRUE @tab Capture the signal that implements @coderef{mp:interrupt-process}.
+@item @code{SIGNAL_HANDLING_THREAD} @tab boolean @tab TRUE @tab Create a signal to capture and process asynchronous threads (@xref{Signals and Interrupts - Asynchronous signals}).
+@item @code{BOOTED} @tab boolean @tab TRUE/FALSE @tab Has ECL booted (read only).
+@item @code{BIND_STACK_SIZE} @tab cl_index @tab 8192 @tab Size of stack for binding special variables.
+@item @code{BIND_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{FRAME_STACK_SIZE} @tab cl_index @tab 2048 @tab Size of stack for nonlocal jumps.
+@item @code{FRAME_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{LISP_STACK_SIZE} @tab cl_index @tab 32768 @tab Size of interpreter stack.
+@item @code{LISP_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{C_STACK_SIZE} @tab cl_index @tab 0 or 1048576 @tab Size of C stack in bytes. The effect and default value of this option depends on the operating system. On Unix, the default is 0 which means that ECL will use the stack size provided by the OS. If set to a non-default value, ECL will set the stack size to the given value unless the stack size provided by the OS is already large enough. On Windows, the stack size is set at build time and cannot be changed at runtime. Here, we use a default of 1 MiB. For other operating systems, it is up to the user to set this value to the available stack size so that ECL can reliably detect stack overflows.
+@item @code{C_STACK_SAFETY_AREA} @tab cl_index @tab 4192 @tab  
+@item @code{THREAD_INTERRUPT_SIGNAL} @tab unsigned int @tab 0 @tab If nonzero, specify the unix signal which is used to communicate between different Lisp threads.
+@end multitable
+@end float
+@end deftypefun
+
+
+@cppdef ecl_get_option
+@deftypefun cl_fixnum ecl_get_option (int option); 
+Read the value of a boot option.
+@table @var
+@item option
+An integer from @ref{tab:boot-options}.
+@end table
+
+@paragraph Description
+This functions reads the value of different options that have to be customized @emph{before} ECL boots. The table of options and default values is @ref{tab:boot-options}. 
+@end deftypefun
+
+@cppdef ecl_import_current_thread
+@deftypefun bool ecl_import_current_thread (cl_object name, cl_object bindings);
+Import an external thread in the Lisp environment.
+@table @var
+@item name
+Thread name.
+@item bindings
+Unused (specifying initial bindings for external threads is not supported currently)
+@item returns
+True if the thread was successfully imported, false otherwise.
+@end table
+
+@paragraph Description
+External threads, i.e. threads which are not created in the Lisp world using the routines described in @ref{Processes (native threads)}, need to be imported with @coderef{ecl_import_current_thread} before Lisp code can be executed.
+
+@seealso{ecl_release_current_thread}
+@end deftypefun
+
+@cppdef ecl_release_current_thread
+@deftypefun void ecl_release_current_thread (void);
+Release an external thread imported with @coderef{ecl_import_current_thread}. Must be called before thread exit to prevent memory leaks.
+@end deftypefun
+
+@defvr {Environment variable} ECLDIR
+Specify a non-standard installation directory.
+
+@paragraph Description
+ECL includes various files for external modules (e.g. asdf, sockets), character encodings or documentation strings. The installation directory for these files is chosen during build time by the configure script. If the directory is moved to a different place, the @code{ECLDIR} environment variable should be updated accordingly. Note that the contents of the variable are parsed as a Common Lisp pathname, thus it must end with a slash.
+@end defvr
+
+@node Catching Errors and Managing Interrupts
+@subsubsection Catching Errors and Managing Interrupts
+
 @cppdef ECL_CATCH_ALL
 @defmac ECL_CATCH_ALL
 Create a protected region.
@@ -95,87 +211,6 @@ Besides this, normal mechanisms for exit, such as @coderef{ext:quit}, and uncaug
 @seealso ECL_CATCH_ALL
 @end defmac
 
-@cppdef cl_boot
-@deftypefun int cl_boot (int argc, char **argv);
-Setup the lisp environment.
-@table @var
-@item argc
-An integer with the number of arguments to this program.
-@item argv
-A vector of strings with the arguments to this program.
-@end table
-
-@paragraph Description
-This function must be called before any other function from the ECL library, including the creation of any lisp object or evaluating any lisp code. The only exception are @coderef{ecl_set_option} and @coderef{ecl_get_option}.
-
-@end deftypefun
-
-
-@cppdef cl_shutdown
-@deftypefun int cl_shutdown (void);
-Close the lisp environment.
-
-@paragraph Description
-This function must be called before exiting a program that uses the ECL environment. It performs some cleaning, including the execution of any finalizers, unloading shared libraries and deleting temporary files that were created by the compiler. 
-@end deftypefun
-
-@cppdef ecl_set_option
-@deftypefun void ecl_set_option (int option, cl_fixnum value); 
-Set a boot option.
-
-@table @var
-@item option
-An integer from @ref{tab:boot-options}.
-@item value
-A @code{cl_index} value for this option
-@end table
-
-@paragraph Description
-This functions sets the value of different options that have to be customized @emph{before} ECL boots. The table of options and default values [@ref{tab:boot-options}] shows that some of them are boolean, and some of them are unsigned integers.
-
-We distinguish three sets of values. The first set determines whether ECL handles certain exceptions, such as access to forbidden regions of memory, interrupts via , floating point exceptions, etc.
-
-The second set is related to the sizes of different stacks. Currently ECL uses four stacks: a bind stack for keeping assignments to special variables; a frame stack for implementing blocks, tagbodys and catch points; an interpreter stack for evaluating bytecodes, and finally the machine or C stack, of the computer we run in. We can set the expected size of these stacks, together with the size of a safety area which, if penetrated, will lead to the generation of a correctable error.
-
-@float Table,tab:boot-options
-@caption{Boot options for embedded ECL}
-@multitable @columnfractions .3 .15 .16 .39
-@headitem Name @code{(ECL_OPT_*)} @tab Type @tab Default @tab Description
-@item @code{INCREMENTAL_GC} @tab boolean @tab TRUE @tab Activate generational garbage collector.
-@item @code{TRAP_SIGSEGV} @tab boolean @tab TRUE @tab Capture @code{SIGSEGV} signals.
-@item @code{TRAP_SIGFPE} @tab boolean @tab TRUE @tab Capture floating point exceptions.
-@item @code{TRAP_SIGINT} @tab boolean @tab TRUE @tab Capture user interrupts.
-@item @code{TRAP_SIGILL} @tab boolean @tab TRUE @tab Capture @code{SIGILL} exception.
-@item @code{TRAP_INTERRUPT_SIGNAL} @tab boolean @tab TRUE @tab Capture the signal that implements @coderef{mp:interrupt-process}.
-@item @code{SIGNAL_HANDLING_THREAD} @tab boolean @tab TRUE @tab Create a signal to capture and process asynchronous threads (@xref{Signals and Interrupts - Asynchronous signals}).
-@item @code{BOOTED} @tab boolean @tab TRUE/FALSE @tab Has ECL booted (read only).
-@item @code{BIND_STACK_SIZE} @tab cl_index @tab 8192 @tab Size of stack for binding special variables.
-@item @code{BIND_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
-@item @code{FRAME_STACK_SIZE} @tab cl_index @tab 2048 @tab Size of stack for nonlocal jumps.
-@item @code{FRAME_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
-@item @code{LISP_STACK_SIZE} @tab cl_index @tab 32768 @tab Size of interpreter stack.
-@item @code{LISP_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
-@item @code{C_STACK_SIZE} @tab cl_index @tab 0 or 1048576 @tab Size of C stack in bytes. The effect and default value of this option depends on the operating system. On Unix, the default is 0 which means that ECL will use the stack size provided by the OS. If set to a non-default value, ECL will set the stack size to the given value unless the stack size provided by the OS is already large enough. On Windows, the stack size is set at build time and cannot be changed at runtime. Here, we use a default of 1 MiB. For other operating systems, it is up to the user to set this value to the available stack size so that ECL can reliably detect stack overflows.
-@item @code{C_STACK_SAFETY_AREA} @tab cl_index @tab 4192 @tab  
-@item @code{THREAD_INTERRUPT_SIGNAL} @tab unsigned int @tab 0 @tab If nonzero, specify the unix signal which is used to communicate different Lisp threads.
-@end multitable
-@end float
-@end deftypefun
-
-
-@cppdef ecl_get_option
-@deftypefun cl_fixnum ecl_get_option (int option); 
-Read the value of a boot option.
-@table @var
-@item option
-An integer from @ref{tab:boot-options}.
-@end table
-
-@paragraph Description
-This functions reads the value of different options that have to be customized @emph{before} ECL boots. The table of options and default values is @ref{tab:boot-options}. 
-@end deftypefun
-
-
 @cppdef ecl_clear_interrupts
 @defmac ecl_clear_interrupts ()
 Clear all pending signals and exceptions.
@@ -193,7 +228,7 @@ This macro clears all pending interrupts.
 Postpone handling of signals and exceptions.
 
 @paragraph Description
-This macro sets a thread-local flag indicating that all received signals should be queued for later processing. Note that it is not possible to execute lisp code while interrupts are disabled in this way. For this purpose, use the @coderef{mp:without-interrupts} macro. Every call to @coderef{ecl_disable_interrupts} must be followed by a corresponding call to @coderef{ecl_enable_interrupts}, else race conditions will appear.
+This macro sets a thread-local flag indicating that all received signals should be queued for later processing. Note that it is not possible to execute lisp code while interrupts are disabled in this way. For this purpose, use the @coderef{mp:without-interrupts} macro. Every call to @coderef{ecl_disable_interrupts} must be followed by a corresponding call to @coderef{ecl_enable_interrupts}, otherwise race conditions will appear.
 
 @paragraph See also
 @coderef{ecl_enable_interrupts} and @coderef{ecl_clear_interrupts}. 
@@ -201,7 +236,7 @@ This macro sets a thread-local flag indicating that all received signals should 
 
 
 @cppdef ecl_enable_interrupts
-@defmac ecl_enable_interrupts(); 
+@defmac ecl_enable_interrupts (); 
 Activate handling of signals and exceptions.
 
 @paragraph Description
@@ -224,7 +259,7 @@ later restoring the floating point environment of surrounding C code
 so that changes in the floating point environment don't leak outside.
 
 @coderef{ECL_WITH_LISP_FPE} can be also used before ECL has booted or
-before ECL has been attached to a newly created thread.
+before an external thread has been imported.
 
 @exindex Safely executing Lisp code with floating point exceptions in embedding program
 @paragraph Example
