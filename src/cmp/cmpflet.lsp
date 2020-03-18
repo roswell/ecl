@@ -151,13 +151,14 @@
     ;; This recursive algorithm is guaranteed to stop when functions
     ;; do not change.
     (let ((new-type (compute-closure-type fun))
-          (to-be-updated (fun-child-funs fun)))
+          to-be-updated)
       ;; Same type
       (when (eq new-type old-type)
         (return-from update-fun-closure-type nil))
       (when (fun-global fun)
         (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
                  (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun))))
+      (setf to-be-updated (append (fun-child-funs fun) (fun-referencing-funs fun)))
       (setf (fun-closure fun) new-type)
       ;; All external, non-global variables become of type closure
       (when (eq new-type 'CLOSURE)
