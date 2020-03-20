@@ -361,12 +361,13 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                  &aux (requireds (first lambda-list))
                  (optionals (second lambda-list))
                  (rest (third lambda-list)) rest-loc
+                 (key-flag (fourth lambda-list))
                  (keywords (fifth lambda-list))
                  (allow-other-keys (sixth lambda-list))
                  (nreq (length requireds))
                  (nopt (/ (length optionals) 3))
                  (nkey (/ (length keywords) 4))
-                 (varargs (or optionals rest keywords allow-other-keys))
+                 (varargs (or optionals rest key-flag allow-other-keys))
                  (fname-in-ihs-p (or (policy-debug-variable-bindings)
                                      (and (policy-debug-ihs-frame)
                                           (or description fname))))
@@ -380,13 +381,13 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
   (if (and fname ;; named function
            ;; no required appears in closure,
-           (dolist (var (car lambda-list) t)
+           (dolist (var requireds t)
              (declare (type var var))
              (when (var-ref-ccb var) (return nil)))
-           (null (second lambda-list))  ;; no optionals,
-           (null (third lambda-list))   ;; no rest parameter, and
-           (null (fourth lambda-list))) ;; no keywords.
-    (setf *tail-recursion-info* (cons *tail-recursion-info* (car lambda-list)))
+           (null optionals)  ;; no optionals,
+           (null rest)       ;; no rest parameter, and
+           (null key-flag))  ;; no keywords.
+    (setf *tail-recursion-info* (cons *tail-recursion-info* requireds))
     (setf *tail-recursion-info* nil))
 
   ;; check arguments
@@ -396,7 +397,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
         (when varargs
           (when requireds
             (wt-nl "if (ecl_unlikely(narg<" nreq ")) FEwrong_num_arguments_anonym();"))
-          (unless (or rest keywords allow-other-keys)
+          (unless (or rest key-flag allow-other-keys)
             (wt-nl "if (ecl_unlikely(narg>" (+ nreq nopt) ")) FEwrong_num_arguments_anonym();"))))
     (open-inline-block))
 
@@ -431,7 +432,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     ;; dont create rest or varargs if not used
     (when (and rest (< (var-ref rest) 1))
       (setq rest nil
-            varargs (or optionals keywords allow-other-keys)))
+            varargs (or optionals key-flag allow-other-keys)))
     ;; Declare &optional variables
     (do ((opt optionals (cdddr opt)))
         ((endp opt))
@@ -453,7 +454,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                    ((eq closure-type 'LEXICAL)
                     (format nil "lex~D" (1- *level*)))
                    (t "narg"))))
-      (if (setq simple-varargs (and (not (or rest keywords allow-other-keys))
+      (if (setq simple-varargs (and (not (or rest key-flag allow-other-keys))
                                     (<= (+ nreq nopt) si::c-arguments-limit)))
           (wt-nl "va_list args; va_start(args,"
                  (last-variable)
@@ -502,8 +503,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
         (wt-nl "}"))
       (wt-nl-close-brace)))
 
-  (when (or rest keywords allow-other-keys)
-    (cond ((not (or keywords allow-other-keys))
+  (when (or rest key-flag allow-other-keys)
+    (cond ((not (or key-flag allow-other-keys))
            (wt-nl rest-loc " = cl_grab_rest_args(args);"))
           (t
            (cond (keywords
