@@ -1606,3 +1606,26 @@
         (check-fn (make-fn (1+ si::c-arguments-limit)))
         (check-fn (make-fn (1- si::c-arguments-limit)))
         (check-fn (make-fn si::c-arguments-limit))))
+
+;;; Date 2020-03-18
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/545
+;;; Description
+;;;
+;;; The closure type for local functions calling global closures was
+;;; not determined correctly to also be a global closure.
+(test cmp.0075.local-fun.closure-type
+  (ext:with-clean-symbols (*function*)
+    (defvar *function*)
+    (let ((result
+           (funcall
+            (compile nil
+                     (lambda (b)
+                       (flet ((%f10 () b))
+                         (flet ((%f4 () (%f10)))
+                           (incf b)
+                           (setf *function* #'%f10) ; makes a global
+                                                    ; closure out of %f10
+                           (%f4)))))
+            3)))
+    (is (eq result 4))
+    (is (eq (funcall *function*) 4)))))
