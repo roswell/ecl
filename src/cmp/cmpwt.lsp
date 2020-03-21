@@ -155,15 +155,29 @@
   (add-object 0 :duplicate t :permanent t))
 
 (defun add-load-form (object location)
-  (when (clos::need-to-make-load-form-p object *cmp-env*)
-    (if (not (eq *compiler-phase* 't1))
-        (cmperr "Unable to internalize complex object ~A in ~a phase" object *compiler-phase*)
-        (multiple-value-bind (make-form init-form) (make-load-form object)
-          (setf (gethash object *load-objects*) location)
-          (when make-form
-            (push (make-c1form* 'MAKE-FORM :args location (c1expr make-form)) *make-forms*))
-          (when init-form
-            (push (make-c1form* 'INIT-FORM :args location (c1expr init-form)) *make-forms*))))))
+  (unless (clos::need-to-make-load-form-p object *cmp-env*)
+    (return-from add-load-form))
+  (unless (eq *compiler-phase* 't1)
+    (cmperr "Unable to internalize complex object ~A in ~a phase." object *compiler-phase*))
+  (multiple-value-bind (make-form init-form) (make-load-form object)
+    (setf (gethash object *load-objects*) location)
+    (let (deferred)
+      (when make-form
+        (let ((*objects-init-deferred* nil)
+              (*objects-being-created* (list* object *objects-being-created*)))
+          (push (make-c1form* 'MAKE-FORM :args location (c1expr make-form)) *make-forms*)
+          (setf deferred (nreverse *objects-init-deferred*))))
+      (flet ((maybe-init (loc init)
+               (handler-case
+                   (push (make-c1form* 'INIT-FORM :args loc (c1expr init)) *make-forms*)
+                 (circular-dependency (c)
+                   (if *objects-being-created*
+                       (push (cons location init-form) *objects-init-deferred*)
+                       (error c))))))
+        (loop for (loc . init) in deferred
+              do (maybe-init loc init)
+              finally (when init-form
+                        (maybe-init location init-form)))))))
 
 (defun add-object (object &key
                             (duplicate nil)
@@ -197,6 +211,8 @@
                       (vector-push-extend (list object vv ndx) array)
                       vv))
                    (item
+                    (when (member object *objects-being-created*)
+                      (error 'circular-dependency :form object))
                     (second item))
                    ;; FIXME! all other branches return VV instance
                    ;; while this branch returns a STRING making the
