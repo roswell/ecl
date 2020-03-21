@@ -430,7 +430,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
        when (unboxed var)
        do (setf (var-loc var) (wt-decl var)))
     ;; dont create rest or varargs if not used
-    (when (and rest (< (var-ref rest) 1))
+    (when (and rest (< (var-ref rest) 1)
+               (not (eq (var-kind rest) 'SPECIAL)))
       (setq rest nil
             varargs (or optionals key-flag allow-other-keys)))
     ;; Declare &optional variables
