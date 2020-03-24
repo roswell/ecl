@@ -154,6 +154,15 @@ pop_maybe_nil(cl_object *l) {
   return head;
 }
 
+static cl_object
+push(cl_object v, cl_object *l) {
+  cl_object list = *l;
+  unlikely_if (!ECL_LISTP(list))
+    FEill_formed_input();
+  *l = ecl_cons(v, *l);
+  return *l;
+}
+
 /* ------------------------------ ASSEMBLER ------------------------------ */
 
 static cl_object
@@ -1310,7 +1319,7 @@ c_register_functions(cl_env_ptr env, cl_object l)
 
 static int
 c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
-#define push(v,l) { cl_object c = *l = CONS(v, *l); l = &ECL_CONS_CDR(c); }
+#define push_back(v,l) { cl_object c = *l = CONS(v, *l); l = &ECL_CONS_CDR(c); }
   cl_object l, def_list = pop(&args);
   cl_object old_vars = env->c_env->variables;
   cl_object old_funs = env->c_env->macros;
@@ -1331,7 +1340,7 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
       FEprogram_error
         ("~s: The function ~s was already defined.",
          2, (op == OP_LABELS ? @'LABELS' : @'FLET'), v);
-    push(v, f);
+    push_back(v, f);
   }
 
   /* If compiling a LABELS form, add the function names to the lexical
@@ -1626,9 +1635,7 @@ c_load_time_value(cl_env_ptr env, cl_object args, int flags)
   } else if (ECL_SYMBOLP(value) || ECL_LISTP(value)) {
     /* Using the form as constant, we force the system to coalesce multiple
      * copies of the same load-time-value form */
-    c_env->load_time_forms =
-      ecl_cons(cl_list(3, args, value, ECL_NIL),
-               c_env->load_time_forms);
+    push(cl_list(3, args, value, ECL_NIL), &c_env->load_time_forms);
     value = args;
   }
   return compile_constant(env, value, flags);
@@ -2232,8 +2239,7 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
     return;
   make = _ecl_funcall2(@'make-load-form', constant);
   init = (env->nvalues > 1)? env->values[1] : ECL_NIL;
-  c_env->load_time_forms = ecl_cons(cl_list(3, constant, make, init),
-                                    c_env->load_time_forms);
+  push(cl_list(3, constant, make, init), &c_env->load_time_forms);
 }
 
 static int
@@ -2681,12 +2687,12 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
     }
     for (form = ECL_CONS_CDR(form); !Null(form); ) {
       cl_object sentence = pop(&form);
-      declarations = ecl_cons(sentence, declarations);
+      push(sentence, &declarations);
       if (pop(&sentence) == @'special') {
         while (!Null(sentence)) {
           cl_object v = pop(&sentence);
           assert_type_symbol(v);
-          specials = ecl_cons(v, specials);
+          specials = push(v, &specials);
         }
       }
     }
