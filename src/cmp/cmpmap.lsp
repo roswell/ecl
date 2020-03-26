@@ -54,8 +54,8 @@
             do (let ((var (gensym)))
                  (setf iterators (cons var iterators)
                        for-statements (list* :for var in-or-on arg for-statements))))
-      `(loop ,@list-1-form
-             ,@fun-with
+      `(loop ,@fun-with
+             ,@list-1-form
              ,@for-statements
              ,do-or-collect (funcall ,function ,@iterators)
              ,@finally-form))))
