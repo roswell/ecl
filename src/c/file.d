@@ -3491,7 +3491,7 @@ ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
   stream->stream.mode = (short)smm;
   stream->stream.closed = 0;
   set_stream_elt_type(stream, byte_size, flags, external_format);
-  IO_FILE_FILENAME(stream) = fname; /* not really used */
+  IO_FILE_FILENAME(stream) = fname; /* used in cl:pathname */
   stream->stream.column = 0;
   IO_FILE_DESCRIPTOR(stream) = fd;
   stream->stream.last_op = 0;
@@ -5223,41 +5223,42 @@ FEinvalid_option(cl_object option, cl_object value)
 }
 
 cl_object
-ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
+ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
                 cl_object if_does_not_exist, cl_fixnum byte_size,
                 int flags, cl_object external_format)
 {
   cl_object output, file_kind;
   int fd;
-  char *fname;
   bool appending = 0, exists;
 #if defined(ECL_MS_WINDOWS_HOST)
   ecl_mode_t mode = _S_IREAD | _S_IWRITE;
 #else
   ecl_mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 #endif
-  filename = si_coerce_to_filename(filename);
-  fname = (char*)filename->base_string.self;
+  /* FILENAME is used only to access the actual file while a stream
+     remembers the original pathname FN. -- jd 2020-03-27 */
+  cl_object filename = si_coerce_to_filename(fn);
+  char *fname = (char*)filename->base_string.self;
   file_kind = si_file_kind(filename, ECL_T);
   exists = file_kind != ECL_NIL;
   if (!exists) {
     if (if_does_not_exist == ECL_NIL) return ECL_NIL;
-    if (if_does_not_exist == @':error') FEcannot_open(filename);
+    if (if_does_not_exist == @':error') FEcannot_open(fn);
     if (if_does_not_exist != @':create')
       FEinvalid_option(@':if-does-not-exist', if_does_not_exist);
     fd = safe_open(fname, O_WRONLY|O_CREAT, mode);
-    unlikely_if (fd < 0) FEcannot_open(filename);
+    unlikely_if (fd < 0) FEcannot_open(fn);
     safe_close(fd);
     fd = -1;
   }
   switch (smm) {
   case ecl_smm_probe:
-    output = ecl_make_file_stream_from_fd(filename, -1, smm, byte_size, flags, external_format);
+    output = ecl_make_file_stream_from_fd(fn, -1, smm, byte_size, flags, external_format);
     generic_close(output);
     return output;
   case ecl_smm_input:
     fd = safe_open(fname, O_RDONLY|O_NONBLOCK, mode);
-    unlikely_if (fd < 0) FEcannot_open(filename);
+    unlikely_if (fd < 0) FEcannot_open(fn);
     break;
   case ecl_smm_output:
     /* For output we could have used O_WRONLY, but this doesn't matter because
@@ -5265,19 +5266,19 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
   case ecl_smm_io: {
     if (exists) {
       if (if_exists == ECL_NIL) return ECL_NIL;
-      if (if_exists == @':error') FEcannot_open(filename);
+      if (if_exists == @':error') FEcannot_open(fn);
       if (if_exists == @':rename') {
         fd = ecl_backup_open(fname, O_RDWR|O_CREAT, mode);
-        unlikely_if (fd < 0) FEcannot_open(filename);
+        unlikely_if (fd < 0) FEcannot_open(fn);
       } else if (if_exists == @':rename_and_delete' ||
                  if_exists == @':new_version' ||
                  if_exists == @':supersede' ||
                  if_exists == @':truncate') {
         fd = safe_open(fname, O_RDWR|O_TRUNC, mode);
-        unlikely_if (fd < 0) FEcannot_open(filename);
+        unlikely_if (fd < 0) FEcannot_open(fn);
       } else if (if_exists == @':overwrite' || if_exists == @':append') {
         fd = safe_open(fname, O_RDWR, mode);
-        unlikely_if (fd < 0) FEcannot_open(filename);
+        unlikely_if (fd < 0) FEcannot_open(fn);
         appending = (if_exists == @':append');
       } else {
         FEinvalid_option(@':if-exists', if_exists);
@@ -5318,10 +5319,10 @@ ecl_open_stream(cl_object filename, enum ecl_smmode smm, cl_object if_exists,
     default:;
       /* never reached (errors earlier) */
     }
-    output = ecl_make_stream_from_FILE(filename, fp, smm, byte_size, flags, external_format);
+    output = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags, external_format);
     si_set_buffering_mode(output, byte_size? @':full' : @':line');
   } else {
-    output = ecl_make_file_stream_from_fd(filename, fd, smm, byte_size, flags, external_format);
+    output = ecl_make_file_stream_from_fd(fn, fd, smm, byte_size, flags, external_format);
   }
   output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
   si_set_finalizer(output, ECL_T);
