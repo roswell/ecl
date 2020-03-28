@@ -352,6 +352,20 @@ read_symbol(int code)
 }
 
 char *
+read_string()
+{
+  char c, *str = poolp;
+  char end = '"';
+  pushstr("ecl_make_constant_base_string(\"");
+  do {
+    c = readc();
+    pushc(c);
+  } while (c != end);
+  pushstr(", -1)\0");
+  return str;
+}
+
+char *
 search_function(char *name)
 {
   int i;
@@ -441,6 +455,9 @@ read_token(void)
         poolp--;
       } else if (c == '@') {
         pushc(c);
+      } else if (c == '"') {
+        read_string();
+        poolp--;
       } else {
         char *name;
         unreadc(c);
@@ -930,6 +947,13 @@ main_loop(void)
     char * tmp = poolp;
     p = read_symbol(1);
     pushc('\0');
+    fprintf(out,"%s",p);
+    poolp = tmp;
+    goto LOOP;
+  } else if (c == '"') {
+    char *p;
+    char * tmp = poolp;
+    p = read_string();
     fprintf(out,"%s",p);
     poolp = tmp;
     goto LOOP;

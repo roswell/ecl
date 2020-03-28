@@ -128,9 +128,11 @@ printer and we should rather use MAKE-LOAD-FORM."
                                          x))))
                  (and init-forms `(progn ,@init-forms)))))
       (cons
-       (values `(cons ,(maybe-quote (car object)) nil)
-               (and (rest object) `(rplacd ,(maybe-quote object)
-                                           ,(maybe-quote (cdr object))))))
+       (values `(cons nil nil)
+               `(progn (rplaca ,(maybe-quote object)
+                               ,(maybe-quote (car object)))
+                       (rplacd ,(maybe-quote object)
+                               ,(maybe-quote (cdr object))))))
       (hash-table
        (let* ((content (ext:hash-table-content object))
               (make-form `(make-hash-table

@@ -134,6 +134,14 @@
                                Compiler assumes it is a global."
                               (slot-value c 'variable)))))
 
+(define-condition circular-dependency (compiler-error)
+  ()
+  (:report
+   (lambda (c stream)
+     (compiler-message-report stream c
+                              "Circular references in creation form for ~S."
+                              (compiler-message-form c)))))
+
 (defun print-compiler-message (c stream)
   (unless (typep c *suppress-compiler-messages*)
     #+cmu-format

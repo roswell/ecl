@@ -268,6 +268,9 @@ lines are inserted, but the order is preserved")
 (defvar *top-level-forms* nil)          ; holds { top-level-form }*
 (defvar *make-forms* nil)               ; holds { top-level-form }*
 
+(defvar *objects-being-created* nil)    ; helps detecting circular references
+(defvar *objects-init-deferred* nil)    ; helps avoiding circularity
+
 ;;;
 ;;;     top-level-form:
 ;;;       ( 'DEFUN'     fun-name cfun lambda-expr doc-vv sp )

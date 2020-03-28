@@ -631,8 +631,8 @@
 ;;; Fixed: 18/05/2006 (juanjo)
 ;;; Description:
 ;;;
-;;;     The detection of when a lisp constant has to be externalized using MAKE-LOAD-FORM
-;;;     breaks down with some circular structures
+;;;     The detection of when a lisp constant has to be externalized
+;;;     using MAKE-LOAD-FORM breaks down with some circular structures
 ;;;
 (defclass compiler-test-class ()
   ((parent :accessor compiler-test-parent :initform nil)
@@ -666,25 +666,35 @@
 ;;;     printed representation.  In that case MAKE-LOAD-FORM should be
 ;;;     used.
 ;;;
+;;;
+;;; Date: 2020-02-12
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/562
+;;; Description:
+;;;
+;;;     Circular structures are not properly initialized because make
+;;;     and init form order of evaluation is not always correct.
 (test cmp.0030.make-load-form
-  (let ((output
-         (with-compiler ("make-load-form.lsp")
-           "(in-package cl-test)"
-           "(eval-when (:compile-toplevel)
-      (defvar s4 (make-instance 'compiler-test-class))
-      (defvar s5 (make-instance 'compiler-test-class))
-      (setf (compiler-test-parent s5) s4)
-      (setf (compiler-test-children s4) (list s5)))"
-           "(defvar a '#.s5)"
-           "(defvar b '#.s4)"
-           "(defvar c '#.s5)"
-           "(defun foo ()
+  (multiple-value-bind (file output)
+      (with-compiler ("make-load-form.lsp")
+        "(in-package cl-test)"
+        "(eval-when (:compile-toplevel)
+      (defparameter s4.0030 (make-instance 'compiler-test-class))
+      (defparameter s5.0030 (make-instance 'compiler-test-class))
+      (setf (compiler-test-parent s5.0030) s4.0030)
+      (setf (compiler-test-children s4.0030) (list s5.0030)))"
+        "(defparameter a.0030 '#.s5.0030)"
+        "(defparameter b.0030 '#.s4.0030)"
+        "(defparameter c.0030 '#.s5.0030)"
+        "(defun foo.0030 ()
        (let ((*print-circle* t))
-         (with-output-to-string (s) (princ '#1=(1 2 3 #.s4 #1#) s))))")))
-    (load output)
+         (with-output-to-string (s) (princ '#1=(1 2 3 #.s4.0030 #1#) s))))")
+    (declare (ignore output))
+    (load file)
     (delete-file "make-load-form.lsp")
-    (delete-file output))
-  (is-equal "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS> #1#)" (foo)))
+    (delete-file file))
+  (is-equal "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS> #1#)" (foo.0030))
+  (is (eq (compiler-test-parent a.0030) b.0030))
+  (is (eq (first (compiler-test-children b.0030)) a.0030)))
 
 ;;; Date: 9/06/2006 (Pascal Costanza)
 ;;; Fixed: 13/06/2006 (juanjo)
@@ -1629,3 +1639,106 @@
             3)))
     (is (eq result 4))
     (is (eq (funcall *function*) 4)))))
+
+;;; Date 2020-03-13
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/565
+;;; Description
+;;;
+;;;     COMPILE-FILE produces two vectors VV and VVtemp which
+;;;     represent the fasl data segment. The latter is deallocated
+;;;     after all top-level forms are evaluated. As compiler processes
+;;;     them currently if the object is first pushed to the temporary
+;;;     segment and then we try to add it to the permanent segment we
+;;;     have two versions of the same objects which are not EQ. File
+;;;     src/cmp/cmpwt.lsp has an appropriate FIXME in the ADD-OBJECT
+;;;     function definition.
+(test cmp.0076.make-load-form-non-eq
+  (multiple-value-bind (file output)
+      (with-compiler ("make-temp.lsp")
+        "(in-package #:cl-test)"
+        "(eval-when (:compile-toplevel :load-toplevel :execute)
+          (defclass my-class ()
+            ((name :initarg :name :accessor name)))
+          (defmethod print-object ((obj my-class) stream)
+            (print-unreadable-object (obj stream :identity t)
+              (format stream \"~s ~s\" (name obj) (class-name (class-of obj)))))
+          (defmethod make-load-form ((x my-class) &optional environment)
+            (declare (ignore environment))
+            `(make-instance ',(class-of x) :name ',(slot-value x 'name))))"
+        "(eval-when (:compile-toplevel)
+          (defparameter s4 (make-instance 'my-class :name :s4)))"
+        "(defparameter *s4-a* nil)"
+        "(defparameter *s4-b* nil)"
+        "(let ((a '#.s4))
+          (setf *s4-a* a))"
+        "(defun foo ()
+          (let ((x #.s4))
+            (values x *s4-a* *s4-b*)))"
+        "(let ((b '#.s4))
+          (setf *s4-b* b))")
+    (declare (ignore output))
+    (load file)
+    (delete-file "make-temp.lsp")
+    (delete-file file))
+  (multiple-value-bind (x a b) (foo)
+    (is (eq x a) "~a is not eq to ~a" x a)
+    ;; This test passes because B toplevel form is compiled after the
+    ;; function FOO. Included here for completness.
+    (is (eq x b) "~a is not eq to ~a" x b)
+    (is (eq a b) "~a is not eq to ~a" a b)))
+
+(ext:with-clean-symbols (class)
+  (test cmp.0077.make-load-form.circular-dep
+    (macrolet ((make-template (&body extra)
+                 `(with-compiler ("make-circle.lsp")
+                    '(progn
+                      (in-package #:cl-test)
+                      (eval-when (:compile-toplevel :load-toplevel :execute)
+                        (defclass class ()
+                          ((peer  :initform nil :initarg :peer  :accessor peer)
+                           (peer* :initform nil :initarg :peer* :accessor peer*)))
+                        (defmethod make-load-form ((x class) &optional env)
+                          (declare (ignore env))
+                          (values `(make-instance 'class :peer ',(peer x))
+                                  `(setf (peer* ',x) ',(peer* x)))))
+                      (eval-when (:compile-toplevel)
+                        (defparameter var1 (make-instance 'class))
+                        (defparameter var2 (make-instance 'class :peer var1))
+                        ,@extra))
+                    "(defun foo () (values '#.var1 '#.var2))")))
+      ;; Ordinary case (reference).
+      (multiple-value-bind (file output)
+          (make-template)
+        (load file)
+        (delete-file "make-circle.lsp")
+        (delete-file file)
+        (multiple-value-bind (v1 v2) (foo)
+          (is (eq (peer v2) v1))))
+      ;; Circularity between make forms (should signal an error).
+      (signals error
+        (unwind-protect (multiple-value-bind (file output)
+                            (make-template (setf (peer var1) var2))
+                          (when file (delete-file file)))
+          (delete-file "make-circle.lsp"))
+        "Successfully compiled a file with a circular dependency.")
+      ;; Circularity between make and init forms (is not an error!).
+      (multiple-value-bind (file output)
+          (make-template (setf (peer* var1) var2))
+        (load file)
+        (delete-file "make-circle.lsp")
+        (delete-file file)
+        (multiple-value-bind (v1 v2) (foo)
+          (is (eq (peer v2) v1))
+          (is (eq (peer* v1) v2))))
+      ;; Circularity between init forms (is not an error!).
+      (multiple-value-bind (file output)
+          (make-template (setf (peer* var1) var2)
+                         (setf (peer* var2) var1))
+        (load file)
+        (delete-file "make-circle.lsp")
+        (delete-file file)
+        (multiple-value-bind (v1 v2) (foo)
+          (is (eq (peer v2) v1))
+          (is (eq (peer* v1) v2))
+          (is (eq (peer* v2) v1)))))))
+

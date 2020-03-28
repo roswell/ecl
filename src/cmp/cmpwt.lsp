@@ -155,60 +155,85 @@
   (add-object 0 :duplicate t :permanent t))
 
 (defun add-load-form (object location)
-  (when (clos::need-to-make-load-form-p object *cmp-env*)
-    (if (not (eq *compiler-phase* 't1))
-        (cmperr "Unable to internalize complex object ~A in ~a phase" object *compiler-phase*)
-        (multiple-value-bind (make-form init-form) (make-load-form object)
-          (setf (gethash object *load-objects*) location)
-          (when make-form
-            (push (make-c1form* 'MAKE-FORM :args location (c1expr make-form)) *make-forms*))
-          (when init-form
-            (push (make-c1form* 'INIT-FORM :args location (c1expr init-form)) *make-forms*))))))
+  (unless (clos::need-to-make-load-form-p object *cmp-env*)
+    (return-from add-load-form))
+  (unless (eq *compiler-phase* 't1)
+    (cmperr "Unable to internalize complex object ~A in ~a phase." object *compiler-phase*))
+  (multiple-value-bind (make-form init-form) (make-load-form object)
+    (setf (gethash object *load-objects*) location)
+    (let (deferred)
+      (when make-form
+        (let ((*objects-init-deferred* nil)
+              (*objects-being-created* (list* object *objects-being-created*)))
+          (push (make-c1form* 'MAKE-FORM :args location (c1expr make-form)) *make-forms*)
+          (setf deferred (nreverse *objects-init-deferred*))))
+      (flet ((maybe-init (loc init)
+               (handler-case
+                   (push (make-c1form* 'INIT-FORM :args loc (c1expr init)) *make-forms*)
+                 (circular-dependency (c)
+                   (if *objects-being-created*
+                       (push (cons location init-form) *objects-init-deferred*)
+                       (error c))))))
+        (loop for (loc . init) in deferred
+              do (maybe-init loc init)
+              finally (when init-form
+                        (maybe-init location init-form)))))))
 
-(defun add-object (object &key (duplicate nil)
-                   (permanent (or (symbolp object) *permanent-data*))
-                   (used-p nil))
-  ;; FIXME! Currently we have two data vectors and, when compiling
-  ;; files, it may happen that a constant is duplicated and stored
-  ;; both in VV and VVtemp. This would not be a problem if the
-  ;; constant were readable, but due to using MAKE-LOAD-FORM we may
-  ;; end up having two non-EQ objects created for the same value.
+(defun add-object (object &key
+                            (duplicate nil)
+                            (used-p nil)
+                            (permanent (or (symbolp object)
+                                           *permanent-data*)))
+  (when-let ((vv (add-static-constant object)))
+    (when used-p
+      (setf (vv-used-p vv) t))
+    (return-from add-object vv))
   (let* ((test (if *compiler-constants* 'eq 'equal))
-         (array (if permanent *permanent-objects* *temporary-objects*))
-         (x (or (and (not permanent)
-                     (find object *permanent-objects* :test test
-                           :key #'first))
-                (find object array :test test :key #'first)))
-         (next-ndx (length array))
-         (forced duplicate)
-         found)
-    (setq x
-          (cond ((add-static-constant object))
-                ((and x duplicate)
-                 (setq x (make-vv :location next-ndx :used-p forced
-                                  :permanent-p permanent
-                                  :value object
-                                  :used-p t))
-                 (vector-push-extend (list object x next-ndx) array)
-                 x)
-                (x
-                 (second x))
-                ((and (not duplicate)
-                      (symbolp object)
-                      (multiple-value-setq (found x) (si::mangle-name object)))
-                 x)
-                (t
-                 (setq x (make-vv :location next-ndx :used-p forced
-                                  :permanent-p permanent
-                                  :value object
-                                  :used-p used-p))
-                 (vector-push-extend (list object x next-ndx) array)
-                 (unless *compiler-constants*
-                   (add-load-form object x))
-                 x)))
-    (when (and used-p (typep x 'vv))
-      (setf (vv-used-p x) t))
-    x))
+         (item (if permanent
+                   ;; FIXME! Currently we have two data vectors and,
+                   ;; when compiling files, it may happen that a
+                   ;; constant is duplicated and stored both in VV
+                   ;; and VVtemp. This would not be a problem if the
+                   ;; constant were readable, but due to using
+                   ;; MAKE-LOAD-FORM we may end up having two non-EQ
+                   ;; objects created for the same value.
+                   (find object *permanent-objects* :test test :key #'first)
+                   (or (find object *permanent-objects* :test test :key #'first)
+                       (find object *temporary-objects* :test test :key #'first))))
+         (array (if permanent
+                    *permanent-objects*
+                    *temporary-objects*))
+         (vv (cond ((and item duplicate)
+                    (let* ((ndx (length array))
+                           (vv (make-vv :location ndx
+                                        :permanent-p permanent
+                                        :value object)))
+                      (vector-push-extend (list object vv ndx) array)
+                      vv))
+                   (item
+                    (when (member object *objects-being-created*)
+                      (error 'circular-dependency :form object))
+                    (second item))
+                   ;; FIXME! all other branches return VV instance
+                   ;; while this branch returns a STRING making the
+                   ;; function return value inconsistent.
+                   ((and (not item) (not duplicate) (symbolp object)
+                         (multiple-value-bind (foundp symbol)
+                             (si::mangle-name object)
+                           (and foundp
+                                (return-from add-object symbol)))))
+                   (t
+                    (let* ((ndx (length array))
+                           (vv (make-vv :location ndx
+                                        :permanent-p permanent
+                                        :value object)))
+                      (vector-push-extend (list object vv ndx) array)
+                      (unless *compiler-constants*
+                        (add-load-form object vv))
+                      vv)))))
+    (when (or duplicate used-p)
+      (setf (vv-used-p vv) t))
+    vv))
 
 (defun add-symbol (symbol)
   (add-object symbol :duplicate nil :permanent t))
@@ -347,10 +372,10 @@
   #+msvc
   nil
   #-msvc
-  ;; FIXME! The Microsoft compiler does not allow static initialization of bit fields.
-  ;; SSE uses always unboxed static constants. No reference
-  ;; is kept to them -- it is thus safe to use them even on code
-  ;; that might be unloaded.
+  ;; FIXME! The MSVC compiler does not allow static initialization of
+  ;; bit fields. SSE uses always unboxed static constants. No
+  ;; reference is kept to them -- it is thus safe to use them even on
+  ;; code that might be unloaded.
   (unless (or *compiler-constants*
               (and (not *use-static-constants-p*)
                    #+sse2

@@ -107,6 +107,9 @@ as a second value."
        ;; (when delete-files
        ;;   (delete-file filename)
        ;;   (delete-file compiled-file))
+       (when (null compiled-file)
+         (delete-file ,filename)
+         (error "Compiling file ~a failed:~%~a" ,filename output))
        (values compiled-file output))))
 
 (defmacro with-temporary-file ((var string &rest args) &body body)
