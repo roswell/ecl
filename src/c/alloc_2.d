@@ -924,8 +924,8 @@ init_alloc(void)
   type_info[t_doublefloat].descriptor = 0;
   type_info[t_longfloat].descriptor = 0;
   type_info[t_complex].descriptor =
-    to_bitmap(&o, &(o.complex.real)) |
-    to_bitmap(&o, &(o.complex.imag));
+    to_bitmap(&o, &(o.gencomplex.real)) |
+    to_bitmap(&o, &(o.gencomplex.imag));
 #ifdef ECL_COMPLEX_FLOAT
   type_info[t_csfloat].descriptor = 0;
   type_info[t_cdfloat].descriptor = 0;
@@ -940,6 +940,8 @@ init_alloc(void)
   type_info[t_package].descriptor =
     to_bitmap(&o, &(o.pack.name)) |
     to_bitmap(&o, &(o.pack.nicknames)) |
+    to_bitmap(&o, &(o.pack.local_nicknames)) |
+    to_bitmap(&o, &(o.pack.nicknamedby)) |
     to_bitmap(&o, &(o.pack.shadowings)) |
     to_bitmap(&o, &(o.pack.uses)) |
     to_bitmap(&o, &(o.pack.usedby)) |
@@ -947,6 +949,9 @@ init_alloc(void)
     to_bitmap(&o, &(o.pack.external));
   type_info[t_hashtable].descriptor =
     to_bitmap(&o, &(o.hash.data)) |
+    to_bitmap(&o, &(o.hash.sync_lock)) |
+    to_bitmap(&o, &(o.hash.generic_test)) |
+    to_bitmap(&o, &(o.hash.generic_hash)) |
     to_bitmap(&o, &(o.hash.rehash_size)) |
     to_bitmap(&o, &(o.hash.threshold));
   type_info[t_array].descriptor =
@@ -1070,6 +1075,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.cblock.name)) |
     to_bitmap(&o, &(o.cblock.links)) |
     to_bitmap(&o, &(o.cblock.source)) |
+    to_bitmap(&o, &(o.cblock.refs)) |
     to_bitmap(&o, &(o.cblock.error));
   type_info[t_foreign].descriptor =
     to_bitmap(&o, &(o.foreign.data)) |
