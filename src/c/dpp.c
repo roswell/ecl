@@ -361,7 +361,8 @@ read_string()
     c = readc();
     pushc(c);
   } while (c != end);
-  pushstr(", -1)\0");
+  pushstr(", -1)");
+  pushc(0);
   return str;
 }
 
