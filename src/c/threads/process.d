@@ -592,14 +592,16 @@ mp_process_enable(cl_object process)
       pthread_attr_init(&pthreadattr);
       pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
       /*
-       * We launch the thread with the signal mask specified in cl_core.
-       * The reason is that we might need to block certain signals
-       * to be processed by the signal handling thread in unixint.d
+       * Block all asynchronous signals until the thread is completely
+       * set up. The synchronous signals SIGSEGV and SIGBUS are needed
+       * by the gc and thus can't be blocked.
        */
 #ifdef HAVE_SIGPROCMASK
       {
         sigset_t new, previous;
         sigfillset(&new);
+        sigdelset(&new, SIGSEGV);
+        sigdelset(&new, SIGBUS);
         pthread_sigmask(SIG_BLOCK, &new, &previous);
         code = pthread_create(&process->process.thread, &pthreadattr,
                               thread_entry_point, process);
@@ -764,6 +766,10 @@ mp_block_signals(void)
   cl_object previous = mp_get_sigmask();
   sigset_t all_signals;
   sigfillset(&all_signals);
+  /* SIGSEGV or SIGBUS are needed by the gc in incremental mode and
+   * can thus never be blocked */
+  sigdelset(&all_signals, SIGSEGV);
+  sigdelset(&all_signals, SIGBUS);
   if (pthread_sigmask(SIG_SETMASK, &all_signals, NULL))
     FElibc_error("MP:BLOCK-SIGNALS failed in a call to pthread_sigmask",0);
   @(return previous);

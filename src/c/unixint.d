@@ -580,7 +580,9 @@ asynchronous_signal_servicing_thread()
         const cl_env_ptr the_env = ecl_process_env();
         int interrupt_signal = -1;
         /*
-         * We block all signals except the usual interrupt thread and GC signals.
+         * We block all signals except the usual interrupt thread and
+         * GC signals (including SIGSEGV and SIGSEGV which are needed
+         * when the GC runs in incremental mode).
          */
         {
                 sigset_t handled_set;
@@ -591,6 +593,8 @@ asynchronous_signal_servicing_thread()
                         sigdelset(&handled_set, interrupt_signal);
                         sigdelset(&handled_set, GC_get_suspend_signal());
                         sigdelset(&handled_set, GC_get_thr_restart_signal());
+                        sigdelset(&handled_set, SIGSEGV);
+                        sigdelset(&handled_set, SIGBUS);
                 }
                 pthread_sigmask(SIG_BLOCK, &handled_set, NULL);
         }
