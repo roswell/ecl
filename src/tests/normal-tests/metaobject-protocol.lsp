@@ -664,3 +664,15 @@ the metaclass")
     (signals error (make-instance 'foo1))
     (finishes (defclass foo2 () ()))
     (finishes (make-instance 'foo1))))
+
+;;; Date 2020-04-05
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/568
+;;; Fixed: 557541f3
+;;; Description
+;;;
+;;;     Finalizing inheritance of a standard-effective-slot-definition
+;;;     lead to the infinite recursion by making all its instances
+;;;     obsolete (including its own slots!).
+(test mop.0025.xxx
+  (clos:finalize-inheritance
+   (find-class 'clos:standard-effective-slot-definition)))

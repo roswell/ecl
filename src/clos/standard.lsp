@@ -292,10 +292,14 @@ because it contains a reference to the undefined class~%  ~A"
     ;; which is not yet finalized and rely on the fact that this
     ;; class will also try to finalize all of its children.
     ;;
-    (let ((x (find-if-not #'class-finalized-p cpl :from-end t)))
-      (unless (or (null x) (eq x class))
-        (return-from finalize-inheritance
-          (finalize-inheritance x))))
+    (when-let ((x (find-if-not #'class-finalized-p (rest cpl) :from-end t)))
+      (return-from finalize-inheritance
+        (finalize-inheritance x)))
+
+    ;; Don't try to finalize a class that is already finalized.
+    (when (class-finalized-p class)
+      (return-from finalize-inheritance))
+
     (setf (class-precedence-list class) cpl)
     (let ((slots (compute-slots class)))
       (setf (class-slots class) slots
@@ -352,13 +356,15 @@ because it contains a reference to the undefined class~%  ~A"
   ;; As mentioned above, when a parent is finalized, it is responsible for
   ;; invoking FINALIZE-INHERITANCE on all of its children. Obviously,
   ;; this only makes sense when the class has been defined.
-  (dolist (subclass (reverse (class-direct-subclasses class)))
-    (finalize-unless-forward subclass))
+  (let ((subclasses (reverse (class-direct-subclasses class))))
+    (dolist (subclass subclasses)
+      (setf (class-finalized-p subclass) nil))
+    (dolist (subclass subclasses)
+      (finalize-unless-forward subclass)))
   ;;
   ;; We create various caches to more rapidly find the slot locations and
   ;; slot definitions.
-  (std-create-slots-table class)
-  )
+  (std-create-slots-table class))
 
 (defmethod finalize-inheritance ((class std-class))
   (call-next-method)
