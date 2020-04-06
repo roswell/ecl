@@ -692,7 +692,9 @@
     (load file)
     (delete-file "make-load-form.lsp")
     (delete-file file))
-  (is-equal "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS> #1#)" (foo.0030))
+  (let ((str (foo.0030)))
+    (is (and (search "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS" str)
+             (search "> #1#)" str))))
   (is (eq (compiler-test-parent a.0030) b.0030))
   (is (eq (first (compiler-test-children b.0030)) a.0030)))
 
