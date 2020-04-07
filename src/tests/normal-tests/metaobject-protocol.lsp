@@ -674,5 +674,24 @@ the metaclass")
 ;;;     lead to the infinite recursion by making all its instances
 ;;;     obsolete (including its own slots!).
 (test mop.0025.xxx
-  (clos:finalize-inheritance
-   (find-class 'clos:standard-effective-slot-definition)))
+  (finishes
+   (clos:finalize-inheritance
+    (find-class 'clos:standard-effective-slot-definition))))
+
+;;; Date 2020-04-07
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/merge_requests/194
+;;; Description
+;;;
+;;;     Some implementations extend the lambda list congruency for
+;;;     generic functions and methods by allowing methods not accept
+;;;     keys mentioned in the generic function lambda list if it has
+;;;     &allow-other-keys. We follow the suit for compatibility with a
+;;;     bad code.
+(ext:with-clean-symbols (foo bar)
+  (test mop.0026.congruent-ll
+    (defgeneric foo (arg1 &key arg2 &allow-other-keys))
+    (finishes (defmethod  foo ((arg1 integer) &key arg3)))
+    (finishes (defmethod  foo ((arg1 string) &key arg3 &allow-other-keys)))
+    (defgeneric bar (arg1 &key arg2))
+    (finishes (defmethod bar ((arg1 string) &key arg3 &allow-other-keys)))
+    (signals error (defmethod bar ((arg1 integer) &key arg3)))))
