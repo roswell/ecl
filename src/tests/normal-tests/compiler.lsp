@@ -655,7 +655,7 @@
                  (subst 3 l l)
                  (make-instance 'compiler-test-class)
                  (subst (make-instance 'compiler-test-class) 3 l)))
-       collect (clos::need-to-make-load-form-p object nil))
+       collect (si::need-to-make-load-form-p object))
     '(nil nil t t))))
 
 ;;; Date: 18/05/2005

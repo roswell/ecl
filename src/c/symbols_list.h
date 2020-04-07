@@ -1214,6 +1214,7 @@ cl_symbols[] = {
 {SYS_ "MEMQ", SI_ORDINARY, si_memq, 2, OBJNULL},
 {SYS_ "MKDIR", SI_ORDINARY, si_mkdir, 2, OBJNULL},
 {EXT_ "MKSTEMP", EXT_ORDINARY, si_mkstemp, 1, OBJNULL},
+{SYS_ "NEED-TO-MAKE-LOAD-FORM-P", SI_ORDINARY, si_need_to_make_load_form_p, 1, OBJNULL},
 {SYS_ "RMDIR", SI_ORDINARY, si_rmdir, 1, OBJNULL},
 {EXT_ "MAKE-PIPE", EXT_ORDINARY, si_make_pipe, 0, OBJNULL},
 /* package extensions */
@@ -1776,7 +1777,6 @@ cl_symbols[] = {
 {CLOS_ "VALIDATE-SUPERCLASS", CLOS_ORDINARY, NULL, -1, OBJNULL},
 {CLOS_ "WRITER-METHOD-CLASS", CLOS_ORDINARY, NULL, -1, OBJNULL},
 {SYS_ "CLEAR-GFUN-HASH", SI_ORDINARY, si_clear_gfun_hash, 1, OBJNULL},
-{CLOS_ "NEED-TO-MAKE-LOAD-FORM-P", CLOS_ORDINARY, ECL_NAME(clos_need_to_make_load_form_p), 2, OBJNULL},
 {CLOS_ "LOAD-DEFCLASS", CLOS_ORDINARY, ECL_NAME(clos_load_defclass), 4, OBJNULL},
 {CLOS_ "DOCSTRING", CLOS_ORDINARY, NULL, -1, OBJNULL},
 {CLOS_ "SAFE-INSTANCE-REF", CLOS_ORDINARY, clos_safe_instance_ref, 2, OBJNULL},

@@ -522,6 +522,7 @@ extern ECL_API cl_object cl_grab_rest_args(ecl_va_list args);
 /* compiler.c */
 
 extern ECL_API cl_object si_macrolet_function(cl_object form, cl_object env);
+extern ECL_API cl_object si_need_to_make_load_form_p(cl_object object);
 extern ECL_API cl_object si_process_lambda_list(cl_object lambda_list, cl_object context);
 extern ECL_API cl_object si_process_lambda(cl_object lambda);
 extern ECL_API cl_object si_make_lambda(cl_object name, cl_object body);
@@ -2206,9 +2207,6 @@ extern ECL_API cl_object clos_compute_effective_method_function(cl_object gf, cl
 extern ECL_API cl_object cl_slot_boundp(cl_object object, cl_object slot);
 extern ECL_API cl_object cl_slot_makunbound(cl_object object, cl_object slot);
 extern ECL_API cl_object cl_slot_exists_p(cl_object object, cl_object slot);
-
-/* print.lsp */
-extern ECL_API cl_object clos_need_to_make_load_form_p(cl_object o, cl_object env);
 
 /* defclass.lsp */
 extern ECL_API cl_object clos_load_defclass(cl_object name, cl_object superclasses, cl_object slots, cl_object options);
