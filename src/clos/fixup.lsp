@@ -120,21 +120,26 @@
 (defun congruent-lambda-p (l1 l2)
   (multiple-value-bind (r1 opts1 rest1 key-flag1 keywords1 a-o-k1)
       (si::process-lambda-list l1 'FUNCTION)
-    (declare (ignore a-o-k1))
     (multiple-value-bind (r2 opts2 rest2 key-flag2 keywords2 a-o-k2)
         (si::process-lambda-list l2 'FUNCTION)
-        (and (= (length r2) (length r1))
-             (= (length opts1) (length opts2))
-             (eq (and (null rest1) (null key-flag1))
-                 (and (null rest2) (null key-flag2)))
-             ;; All keywords mentioned in the genericf function
-             ;; must be accepted by the method.
-             (or (null key-flag1)
-                 (null key-flag2)
-                 a-o-k2
-                 (null (set-difference (all-keywords keywords1)
-                                       (all-keywords keywords2))))
-             t))))
+      (and (= (length r2) (length r1))
+           (= (length opts1) (length opts2))
+           (eq (and (null rest1) (null key-flag1))
+               (and (null rest2) (null key-flag2)))
+           ;; All keywords mentioned in the generic function must be
+           ;; accepted by the method.
+           (or (null key-flag1)
+               (null key-flag2)
+               ;; Testing for a-o-k1 here may not be conformant when
+               ;; the fourth point of 7.6.4 is read literally, but it
+               ;; is more consistent with the generic function calling
+               ;; specification. Also it is compatible with popular
+               ;; implementations like SBCL and CCL. -- jd 2020-04-07
+               a-o-k1
+               a-o-k2
+               (null (set-difference (all-keywords keywords1)
+                                     (all-keywords keywords2))))
+           t))))
 
 (defun add-method (gf method)
   ;; during boot it's a structure accessor
