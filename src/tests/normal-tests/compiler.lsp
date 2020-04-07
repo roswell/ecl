@@ -1744,3 +1744,14 @@
           (is (eq (peer* v1) v2))
           (is (eq (peer* v2) v1)))))))
 
+;;; Date 2020-03-13
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/571
+;;; Description
+;;;
+;;;     LOAD-TIME-VALUE inside a DEFMETHOD is evaluated at the
+;;;     compilation time.
+(test cmp.0078.defmethod-not-eager
+  (finishes (with-compiler ("aux-compiler.0078.lsp")
+              `(defclass class () ())
+              `(defmethod method ()
+                 (load-time-value (find-class class))))))
