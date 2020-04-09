@@ -2198,34 +2198,6 @@ c_values(cl_env_ptr env, cl_object args, int flags) {
   return FLAG_VALUES;
 }
 
-static int
-need_to_make_load_form_p(cl_object o)
-{
-  switch (ecl_t_of(o)) {
-  case t_character:
-  case t_fixnum:
-  case t_bignum:
-  case t_ratio:
-  case t_singlefloat:
-  case t_doublefloat:
-  case t_longfloat:
-  case t_complex:
-  case t_symbol:
-  case t_pathname:
-#ifdef ECL_UNICODE
-  case t_string:
-#endif
-  case t_base_string:
-  case t_bitvector:
-    return 0;
-  case t_list:
-    if (Null(o)) return 0;
-  default:
-    return _ecl_funcall3(@'clos::need-to-make-load-form-p', o, ECL_NIL)
-      != ECL_NIL;
-  }
-}
-
 static void
 maybe_make_load_forms(cl_env_ptr env, cl_object constant)
 {
@@ -2235,7 +2207,7 @@ maybe_make_load_forms(cl_env_ptr env, cl_object constant)
     return;
   if (c_search_constant(env, constant) >= 0)
     return;
-  if (!need_to_make_load_form_p(constant))
+  if (si_need_to_make_load_form_p(constant) == ECL_NIL)
     return;
   make = _ecl_funcall2(@'make-load-form', constant);
   init = (env->nvalues > 1)? env->values[1] : ECL_NIL;
@@ -2664,6 +2636,89 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
    {form}*                         ; body)
 
    ------------------------------------------------------------ */
+
+/*
+  Determine whether the form can be externalized using the lisp
+  printer or we should rather use MAKE-LOAD-FORM.
+*/
+cl_object
+si_need_to_make_load_form_p(cl_object object)
+{
+  cl_object load_form_cache = ECL_NIL;
+  cl_object waiting_objects = ecl_list1(object);
+  cl_type type = t_start;
+
+ loop:
+  if (waiting_objects == ECL_NIL)
+    return ECL_NIL;
+  object = pop(&waiting_objects);
+  type = ecl_t_of(object);
+  /* For simple, atomic objects we just return NIL. There is no need
+     to call MAKE-LOAD-FORM on them. */
+  switch (type) {
+  case t_character:
+  case t_fixnum:
+  case t_bignum:
+  case t_ratio:
+  case t_singlefloat:
+  case t_doublefloat:
+  case t_longfloat:
+  case t_complex:
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+  case t_cdfloat:
+  case t_clfloat:
+#endif
+  case t_symbol:
+  case t_pathname:
+#ifdef ECL_UNICODE
+  case t_string:
+#endif
+  case t_base_string:
+  case t_bitvector:
+    goto loop;
+  case t_list:
+    if (Null(object)) goto loop;
+  default:
+    ;
+  }
+  /* For compound objects we set up a cache and run through the
+     objects content looking for components that might require
+     MAKE-LOAD-FORM to be externalized. The cache is used to solve the
+     problem of circularity and of EQ references. */
+  if (ecl_member_eq(object, load_form_cache))
+    goto loop;
+  push(object, &load_form_cache);
+  switch (type) {
+  case t_array:
+  case t_vector:
+    if (object->array.elttype == ecl_aet_object) {
+      cl_index i = 0;
+      for(; i<object->array.dim; i++) {
+        push(object->array.self.t[i], &waiting_objects);
+      }
+    }
+    goto loop;
+  case t_list:
+    push(ECL_CONS_CAR(object), &waiting_objects);
+    push(ECL_CONS_CDR(object), &waiting_objects);
+    goto loop;
+  case t_bclosure: {
+    cl_object bc = object->bclosure.code;;
+    push(object->bclosure.lex, &waiting_objects);
+    push(bc->bytecodes.data, &waiting_objects);
+    push(bc->bytecodes.name, &waiting_objects);
+    goto loop;
+  }
+  case t_bytecodes:
+    push(object->bytecodes.data, &waiting_objects);
+    push(object->bytecodes.name, &waiting_objects);
+    goto loop;
+  default:
+    return ECL_T;
+  }
+  _ecl_unexpected_return();
+}
 
 /*
   Handles special declarations, removes declarations from body

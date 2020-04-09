@@ -51,57 +51,12 @@
                  (primitive-nil))
              initialization-form)))))))
 
-(defun need-to-make-load-form-p (object env)
-  "Return T if the object cannot be externalized using the lisp
-printer and we should rather use MAKE-LOAD-FORM."
-  (declare (ignore env))
-  (let ((*load-form-cache* nil))
-    (declare (special *load-form-cache*))
-    (labels ((recursive-test (object)
-               (loop
-                ;; For simple, atomic objects we just return NIL. There is no need to
-                ;; call MAKE-LOAD-FORM on them
-                (when (typep object '(or character number symbol pathname string bit-vector))
-                  (return nil))
-                ;; For complex objects we set up a cache and run through the
-                ;; objects content looking for data that might require
-                ;; MAKE-LOAD-FORM to be externalized.  The cache is used to
-                ;; solve the problem of circularity and of EQ references.
-                (unless *load-form-cache*
-                  (setf *load-form-cache* (make-hash-table :size 128 :test #'eq)))
-                (when (gethash object *load-form-cache*)
-                  (return nil))
-                (setf (gethash object *load-form-cache*) t)
-                (cond ((arrayp object)
-                       (unless (subtypep (array-element-type object) '(or character number))
-                         (dotimes (i (array-total-size object))
-                           (recursive-test (row-major-aref object i))))
-                       (return nil))
-                      ((consp object)
-                       (recursive-test (car object))
-                       (setf object (rest object)))
-                      ((compiled-function-p object)
-                       (multiple-value-bind (lex code data name)
-                           (si::bc-split object)
-                         (when (or (null data)
-                                   (null code)
-                                   (recursive-test lex)
-                                   (recursive-test code)
-                                   (recursive-test name))
-                           (throw 'need-to-make-load-form t))
-                         (setf object data)))
-                      (t
-                       (throw 'need-to-make-load-form t))))))
-      (catch 'need-to-make-load-form
-        (recursive-test object)
-        nil))))
-
 (defmethod make-load-form ((object t) &optional env)
   (flet ((maybe-quote (object)
            (if (or (consp object) (symbolp object))
                (list 'quote object)
                object)))
-    (unless (need-to-make-load-form-p object env)
+    (unless (si::need-to-make-load-form-p object)
       (return-from make-load-form (maybe-quote object)))
     (typecase object
       (compiled-function
@@ -121,7 +76,7 @@ printer and we should rather use MAKE-LOAD-FORM."
                    :initial-contents
                    ',(loop for i from 0 below (array-total-size object)
                            collect (let ((x (row-major-aref object i)))
-                                     (if (need-to-make-load-form-p x env)
+                                     (if (si::need-to-make-load-form-p x)
                                          (progn (push `(setf (row-major-aref ,object ,i) ',x)
                                                       init-forms)
                                                 0)
@@ -140,7 +95,7 @@ printer and we should rather use MAKE-LOAD-FORM."
                            :rehash-size ,(hash-table-rehash-size object)
                            :rehash-threshold ,(hash-table-rehash-threshold object)
                            :test ',(hash-table-test object))))
-         (if (need-to-make-load-form-p content env)
+         (if (si::need-to-make-load-form-p content)
              (values
               make-form
               `(dolist (i ',(loop for key being each hash-key in object
