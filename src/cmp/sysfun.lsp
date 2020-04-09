@@ -1035,8 +1035,6 @@
      clos:extract-specializer-names
      ;; predlib.lsp
      si::subclassp si::of-class-p
-     ;; print.lsp
-     clos::need-to-make-load-form-p
      ;; slotvalue.lsp
      slot-makunbound
      ;; std-slot-value.lsp
