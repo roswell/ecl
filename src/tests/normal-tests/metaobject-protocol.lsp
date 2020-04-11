@@ -695,3 +695,26 @@ the metaclass")
     (defgeneric bar (arg1 &key arg2))
     (finishes (defmethod bar ((arg1 string) &key arg3 &allow-other-keys)))
     (signals error (defmethod bar ((arg1 integer) &key arg3)))))
+
+;;; Date 2020-04-10
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/572
+;;; Fixed: 6ea255fe
+;;; Description
+;;;
+;;;     Fix in 557541f3 (see the test mop.0025.xxx) introduced a
+;;;     regression for custom compute-class-precedence-list methods.
+;;;     This issue is triggered only by a non-conforming code which
+;;;     defines the method which returns a sequence which first
+;;;     element *is not* the class passes as the argument. See:
+;;;
+;;;     http://metamodular.com/CLOS-MOP/compute-class-precedence-list.html
+(ext:with-clean-symbols (meta hack test-class)
+  (test mop.0027.finalize-inheritance
+    (finishes
+      (progn (defclass meta (standard-class) ())
+             (defclass hack () ())
+             (defmethod clos:validate-superclass ((class meta) (super standard-class)) t)
+             (defmethod clos:validate-superclass ((class standard-class) (super meta)) t)
+             (defmethod clos:compute-class-precedence-list ((class meta))
+               (cons (find-class 'hack) (call-next-method)))
+             (defclass test-class () () (:metaclass meta))))))
