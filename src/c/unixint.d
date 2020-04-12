@@ -789,17 +789,17 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
         if (((char*)&the_env->disable_interrupts <= (char*)info->si_addr) &&
             ((char*)info->si_addr < (char*)(&the_env->disable_interrupts+1)))
         {
+                unblock_signal(the_env, sig);
                 mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
-                unblock_signal(the_env, sig);
                 handle_all_queued_interrupt_safe(the_env);
                 return;
         } else if (the_env->disable_interrupts &&
                    ((char*)(&the_env->disable_interrupts+1) <= (char*)info->si_addr) &&
                    ((char*)info->si_addr < (char*)(the_env+1))) {
+                unblock_signal(the_env, sig);
                 mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
-                unblock_signal(the_env, sig);
                 ecl_unrecoverable_error(the_env, interrupt_msg);
                 return;
         }
