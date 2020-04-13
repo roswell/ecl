@@ -301,10 +301,6 @@ because it contains a reference to the undefined class~%  ~A"
         (return-from finalize-inheritance
           (finalize-inheritance x))))
 
-    ;; Don't try to finalize a class that is already finalized.
-    (when (class-finalized-p class)
-      (return-from finalize-inheritance))
-
     (setf (class-precedence-list class) cpl)
     (let ((slots (compute-slots class)))
       (setf (class-slots class) slots
@@ -362,11 +358,8 @@ because it contains a reference to the undefined class~%  ~A"
   ;; As mentioned above, when a parent is finalized, it is responsible for
   ;; invoking FINALIZE-INHERITANCE on all of its children. Obviously,
   ;; this only makes sense when the class has been defined.
-  (let ((subclasses (reverse (class-direct-subclasses class))))
-    (dolist (subclass subclasses)
-      (setf (class-finalized-p subclass) nil))
-    (dolist (subclass subclasses)
-      (finalize-unless-forward subclass)))
+  (dolist (subclass (reverse (class-direct-subclasses class)))
+    (finalize-unless-forward subclass))
   ;;
   ;; We create various caches to more rapidly find the slot locations and
   ;; slot definitions.
