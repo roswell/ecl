@@ -160,7 +160,8 @@
                  (class-direct-superclasses class)))))
 
 (defun finalize-unless-forward (class)
-  (unless (find-if #'has-forward-referenced-parents (class-direct-superclasses class))
+  (unless (or (forward-referenced-class-p class)
+              (find-if #'has-forward-referenced-parents (class-direct-superclasses class)))
     (finalize-inheritance class)))
 
 (defmethod initialize-instance ((class class) &rest initargs &key direct-slots direct-superclasses)
