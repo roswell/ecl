@@ -98,8 +98,12 @@
 
 (defmethod allocate-instance ((class class) &rest initargs)
   (declare (ignore initargs))
-  ;; FIXME! Inefficient! We should keep a list of dependent classes.
+  ;; As pointed out in the CLASP source code (after Dr. Strandh), the
+  ;; class is already finalized, because initargs can't be computed
+  ;; without finalizing the class. We keep the next form to be on a
+  ;; safe side, but under normal circumstances it is never executed.
   (unless (class-finalized-p class)
+    ;; FIXME! Inefficient! We should keep a list of dependent classes.
     (finalize-inheritance class))
   (let ((x (si::allocate-raw-instance nil class (class-size class))))
     (si::instance-sig-set x)
