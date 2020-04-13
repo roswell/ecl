@@ -1295,6 +1295,8 @@ cl_symbols[] = {
 {SYS_ "INSTANCE-REF", SI_ORDINARY, si_instance_ref, 2, OBJNULL},
 {SYS_ "INSTANCE-SET", SI_ORDINARY, si_instance_set, 3, OBJNULL},
 {SYS_ "INSTANCE-OBSOLETE-P", SI_ORDINARY, si_instance_obsolete_p, 1, OBJNULL},
+{SYS_ "INSTANCE-NEW-STAMP", SI_ORDINARY, si_instance_new_stamp, 1, OBJNULL},
+{SYS_ "INSTANCE-GET-STAMP", SI_ORDINARY, si_instance_get_stamp, 1, OBJNULL},
 {SYS_ "INSTANCE-SIG", SI_ORDINARY, si_instance_sig, 1, OBJNULL},
 {SYS_ "INSTANCE-SIG-SET", SI_ORDINARY, si_instance_sig_set, 1, OBJNULL},
 {SYS_ "INSTANCE-CLASS", SI_ORDINARY, si_instance_class, 1, OBJNULL},

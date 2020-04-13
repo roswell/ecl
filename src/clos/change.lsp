@@ -83,15 +83,21 @@
 ;;;
 ;;; PART 2: UPDATING AN INSTANCE THAT BECAME OBSOLETE
 ;;;
-;;; Each instance has a hidden field (readable with SI::INSTANCE-SIG), which
-;;; contains the list of slots of its class. This field is updated every time
-;;; the class is initialized or reinitialized. Generally
-;;;     (EQ (SI::INSTANCE-SIG x) (CLASS-SLOTS (CLASS-OF x)))
-;;; returns NIL whenever the class became obsolete.
+;;; Each instance has a hidden field (readable with SI::INSTANCE-SIG),
+;;; which contains the list of slots of its class which are needed to
+;;; update it when it is obsolete. Generally
 ;;;
-;;; There are two circumstances under which a instance may become obsolete:
-;;; either the class has been modified using REDEFINE-INSTANCE (and thus the
-;;; list of slots changed), or MAKE-INSTANCES-OBSOLETE has been used.
+;;;     (SI::INSTANCE-OBSOLETE-P x)
+;;;
+;;; returns T whenever the instance became obsolete. We track that by
+;;; comparing the class stamp (which is updated by M-I-O) with a stamp
+;;; embedded in the instance. When the instance is being updated its
+;;; stamp is corrected to match its class stamp.
+;;;
+;;; There are two circumstances under which a instance may become
+;;; obsolete: either the class has been modified so the list of slots
+;;; has changed in an incompatible way (see FINALIZE-INHERITANCE), or
+;;; MAKE-INSTANCES-OBSOLETE has been called explicitly.
 ;;;
 ;;; The function UPDATE-INSTANCE (hidden to the user) does the job of
 ;;; updating an instance that has become obsolete.
@@ -235,7 +241,7 @@
                         (null new-slotds)))))
 
 (defmethod make-instances-obsolete ((class class))
-  (setf (class-slots class) (copy-list (class-slots class)))
+  (si::instance-new-stamp class)
   class)
 
 (defun remove-optional-slot-accessors (class)

@@ -43,15 +43,28 @@ si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size)
 cl_object
 si_instance_obsolete_p(cl_object x)
 {
-  /* The up-to-date status of a class is determined by instance.sig.
-     This slot contains a list of slot definitions that was used to
-     create the instance. When the class is updated, the list is newly
-     created. Structures are also "instances" but keep ECL_UNBOUND
-     instead of the list. */
-  if (x->instance.sig == ECL_UNBOUND)
+  /* Each class has a slot class_stamp and each instance has a slot
+     stamp. When an instance stamp its class class_stamp don't match,
+     then the instance is obsolete. Structure stamp is always 0. */
+  if (x->instance.stamp == 0)
     return ECL_NIL;
-  return (x->instance.sig != ECL_CLASS_SLOTS(ECL_CLASS_OF(x)))
+  return (x->instance.stamp != ECL_CLASS_OF(x)->instance.class_stamp)
     ? ECL_T : ECL_NIL;
+}
+
+cl_object
+si_instance_new_stamp(cl_object x)
+{
+  x->instance.class_stamp = ecl_next_stamp();
+  return ecl_make_fixnum(x->instance.class_stamp);
+}
+
+cl_object
+si_instance_get_stamp(cl_object x)
+{
+  cl_object a = ecl_make_fixnum(x->instance.stamp);
+  cl_object b = ecl_make_fixnum(ECL_CLASS_OF(x)->instance.class_stamp);
+  @(return a b);
 }
 
 cl_object
@@ -63,6 +76,7 @@ si_instance_sig(cl_object x)
 cl_object
 si_instance_sig_set(cl_object x)
 {
+  x->instance.stamp = ECL_CLASS_OF(x)->instance.class_stamp;
   @(return (x->instance.sig = ECL_CLASS_SLOTS(ECL_CLASS_OF(x))));
 }
 
@@ -283,6 +297,8 @@ si_copy_instance(cl_object x)
   }
   y = ecl_allocate_instance(x->instance.clas, x->instance.length);
   y->instance.sig = x->instance.sig;
+  y->instance.stamp = x->instance.stamp;
+  y->instance.class_stamp = x->instance.class_stamp;
   memcpy(y->instance.slots, x->instance.slots,
          x->instance.length * sizeof(cl_object));
   @(return y);

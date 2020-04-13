@@ -60,6 +60,8 @@ reshape_instance(cl_object x, int delta)
   cl_object aux = ecl_allocate_instance(ECL_CLASS_OF(x), size);
   /* Except for the different size, this must match si_copy_instance */
   aux->instance.sig = x->instance.sig;
+  aux->instance.stamp = x->instance.stamp;
+  aux->instance.class_stamp = x->instance.class_stamp;
   memcpy(aux->instance.slots, x->instance.slots,
          (delta < 0 ? aux->instance.length : x->instance.length) *
          sizeof(cl_object));

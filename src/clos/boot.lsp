@@ -56,6 +56,7 @@
               (compute-clos-class-precedence-list class superclasses)))
       (when index
         (setf (aref +builtin-classes-pre-array+ index) class))
+      (si:instance-new-stamp class)
       class)))
 
 (defun remove-accessors (slotds)

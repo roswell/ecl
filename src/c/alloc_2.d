@@ -686,6 +686,15 @@ ecl_alloc_instance(cl_index slots)
   return i;
 }
 
+static cl_index stamp = 0;
+cl_index ecl_next_stamp() {
+#if ECL_THREADS
+  return AO_fetch_and_add((AO_t*)&stamp, 1) + 1;
+#else
+  return ++stamp;
+#endif
+}
+
 void *
 ecl_alloc_uncollectable(size_t size)
 {

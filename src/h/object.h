@@ -1039,13 +1039,15 @@ struct ecl_condition_variable {
 #define ECL_WRITER_DISPATCH     4
 #define ECL_USER_DISPATCH       5
 
-struct ecl_instance {           /*  instance header  */
-        _ECL_HDR1(isgf);
-        cl_index length;        /*  instance length  */
-        cl_object clas;         /*  instance class  */
-        cl_objectfn entry;      /*  entry address  */
-        cl_object sig;          /*  generation signature  */
-        cl_object *slots;       /*  instance slots  */
+struct ecl_instance {            /* -- instance header -- */
+        _ECL_HDR1(isgf);         /*  gf type              */
+        cl_index length;         /*  instance length      */
+        cl_object clas;          /*  instance class       */
+        cl_objectfn entry;       /*  entry address        */
+        cl_object sig;           /*  instance class slots */
+        cl_object *slots;        /*  instance slots       */
+        cl_index stamp;          /*  instance stamp       */
+        cl_index class_stamp;    /*  class stamp          */
 };
 
 #ifdef ECL_SSE2

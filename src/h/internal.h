@@ -63,6 +63,7 @@ extern void _ecl_dealloc_env(cl_env_ptr);
 extern void _ecl_set_max_heap_size(size_t new_size);
 extern cl_object ecl_alloc_bytecodes(cl_index data_size, cl_index code_size);
 extern cl_index ecl_object_byte_size(cl_type t);
+extern cl_index ecl_next_stamp();
 
 /* array.d */
 
