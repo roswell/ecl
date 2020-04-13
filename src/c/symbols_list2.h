@@ -1294,6 +1294,7 @@ cl_symbols[] = {
 {SYS_ "GENERIC-FUNCTION-P","si_generic_function_p",1},
 {SYS_ "INSTANCE-REF","si_instance_ref",2},
 {SYS_ "INSTANCE-SET","si_instance_set",3},
+{SYS_ "INSTANCE-OBSOLETE-P","si_instance_obsolete_p",1},
 {SYS_ "INSTANCE-SIG","si_instance_sig",1},
 {SYS_ "INSTANCE-SIG-SET","si_instance_sig_set",1},
 {SYS_ "INSTANCE-CLASS","si_instance_class",1},

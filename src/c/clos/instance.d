@@ -41,6 +41,20 @@ si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size)
 }
 
 cl_object
+si_instance_obsolete_p(cl_object x)
+{
+  /* The up-to-date status of a class is determined by instance.sig.
+     This slot contains a list of slot definitions that was used to
+     create the instance. When the class is updated, the list is newly
+     created. Structures are also "instances" but keep ECL_UNBOUND
+     instead of the list. */
+  if (x->instance.sig == ECL_UNBOUND)
+    return ECL_NIL;
+  return (x->instance.sig != ECL_CLASS_SLOTS(ECL_CLASS_OF(x)))
+    ? ECL_T : ECL_NIL;
+}
+
+cl_object
 si_instance_sig(cl_object x)
 {
   @(return x->instance.sig);
