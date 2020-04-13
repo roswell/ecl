@@ -159,5 +159,79 @@
                           (qtest 1 64))))     ; => hang
 (test qtest.3 (finishes (qtest 10000 64)))    ; => error "Attempted to recursively lock..."
 
+
+;; Interrupts
+
+(define-condition timeout (serious-condition)
+  ((value :initarg :value :reader timeout-value))
+  (:report (lambda (c s)
+             (format s "timeout at ~a seconds" (timeout-value c)))))
+
+;;; simplified version of with-timeout from bordeaux-threads
+(defmacro with-timeout ((timeout) &body body)
+  `(let (sleeper)
+     (multiple-value-prog1
+         (catch 'exit
+           (catch 'timeout
+             (let ((caller mp:*current-process*))
+               (setf sleeper
+                     (mp:process-run-function
+                      "sleeper-thread"
+                      #'(lambda ()
+                          (sleep ,timeout)
+                          (mp:interrupt-process caller
+                                                #'(lambda ()
+                                                    (ignore-errors
+                                                      (throw 'timeout nil)))))))
+               (throw 'exit (progn ,@body))))
+           (error 'timeout :value ,timeout))
+       (when (mp:process-active-p sleeper)
+         (ignore-errors (mp:process-kill sleeper))))))
+
+(defun log-random (min max)
+  "Randomly distributed number on a log scale between min and max"
+  (exp (+ (random (- (log max) (log min)))
+          (log min))))
+
+;; with-timeout macro from bordeaux threads, tests interrupt safety of
+;; various stuff (catch frames, error handling, killing threads
+;; which may be inactive). The code itself does nothing except sleep,
+;; but it shouldn't segfault.
+(test with-timeout
+  (finishes (dotimes (i (* *runs* 10000))
+              (let ((timeout-value (log-random 1e-8 1e-2)))
+                (handler-case
+                    (with-timeout (timeout-value) (sleep (* timeout-value 10)))
+                  (timeout (c)))))))
+
+;; interrupt safety of binding special variables
+(defvar *test-var* 0)
+(test interrupt-bind-special
+  (dotimes (i *runs*)
+    (let* ((interrupt-count 10000)
+           (worker-count 64)
+           (*test-var* -1)
+           (threads
+            (loop for j from 1 upto worker-count collect
+                 (let ((k j))
+                   (mp:process-run-function
+                    "test"
+                    #'(lambda ()
+                        (loop (sleep (log-random 1e-8 1e-2))
+                           (let ((*test-var* k))
+                             (sleep (log-random 1e-8 1e-2)))))))))
+           failure-p)
+      (loop repeat interrupt-count do
+        (loop for j from 1 upto worker-count
+           for thread in threads do
+             (let ((k j))
+               (mp:interrupt-process
+                thread
+                #'(lambda ()
+                    (unless (or (eq *test-var* 0)
+                                (eq *test-var* k))
+                      (setf failure-p t)))))))
+      (mapcar #'mp:process-kill threads)
+      (is (not failure-p)))))
 
 
