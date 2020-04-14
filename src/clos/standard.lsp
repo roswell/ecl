@@ -303,8 +303,14 @@ because it contains a reference to the undefined class~%  ~A"
 
     (setf (class-precedence-list class) cpl)
     (let ((slots (compute-slots class)))
-      (setf (class-slots class) slots
-            (class-size class) (compute-instance-size slots)
+      ;; We don't change identity of class-slots when slot definitions
+      ;; are compatible to avoid making instances obsolete. This is
+      ;; allowed by the standard (see MAKE-INSTANCES-OBSOLETE).
+      (if (and (slot-boundp class 'slots)
+               (slot-definitions-compatible-p (class-slots class) slots))
+          (map-into (class-slots class) #'identity slots)
+          (setf (class-slots class) slots))
+      (setf (class-size class) (compute-instance-size slots)
             (class-default-initargs class) (compute-default-initargs class)
             (class-finalized-p class) t))
     ;;

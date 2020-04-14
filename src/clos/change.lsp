@@ -215,6 +215,25 @@
 
   class)
 
+(defun slot-definitions-compatible-p (old-slotds new-slotds)
+  (loop for o = (pop old-slotds)
+        for n = (pop new-slotds)
+        while (and o n)
+        do (let ((old-alloc (slot-definition-allocation o))
+                 (new-alloc (slot-definition-allocation n)))
+             (unless (and (eq old-alloc new-alloc)
+                          (eq (slot-definition-name o)
+                              (slot-definition-name n))
+                          (or (not (eq old-alloc :instance))
+                              (= (slot-definition-location o)
+                                 (slot-definition-location n))))
+               (return-from slot-definitions-compatible-p nil)))
+        finally
+           (return (and (null o)
+                        (null n)
+                        (null old-slotds)
+                        (null new-slotds)))))
+
 (defmethod make-instances-obsolete ((class class))
   (setf (class-slots class) (copy-list (class-slots class)))
   class)
