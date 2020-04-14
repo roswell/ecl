@@ -239,9 +239,7 @@
         ;; after method
         (when (setq found
                     (find-method gf-object ':after (list class) nil))
-          (remove-method gf-object found))
-        (when (null (generic-function-methods gf-object))
-          (fmakunbound reader))))
+          (remove-method gf-object found))))
 
     ;; remove previous defined writer methods
     (dolist (writer (slot-definition-writers slotd))
@@ -258,6 +256,4 @@
         ;; after method
         (when (setq found
                     (find-method gf-object ':after (list 'T class) nil))
-          (remove-method gf-object found))
-        (when (null (generic-function-methods gf-object))
-          (fmakunbound writer))))))
+          (remove-method gf-object found))))))
