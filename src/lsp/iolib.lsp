@@ -34,18 +34,17 @@ automatically closed on exit."
 Evaluates FORMs with VAR bound to a string input stream from the string that
 is the value of STRING-FORM.  The stream is automatically closed on exit.
 Possible keywords are :INDEX, :START, and :END."
-  (if index
-      (multiple-value-bind (ds b)
-          (find-declarations body)
-        `(LET ((,var (MAKE-STRING-INPUT-STREAM ,string ,start ,end)))
-           ,@ds
-           (UNWIND-PROTECT
-             (MULTIPLE-VALUE-PROG1
-              (PROGN ,@b)
-              (SETF ,index (FILE-POSITION ,var)))
-             (CLOSE ,var))))
-      `(LET ((,var (MAKE-STRING-INPUT-STREAM ,string ,start ,end)))
-         ,@body)))
+  (multiple-value-bind (ds b)
+      (find-declarations body)
+    `(let ((,var (make-string-input-stream ,string ,start ,end)))
+       ,@ds
+       (unwind-protect
+            ,(if index
+                 `(multiple-value-prog1
+                      (progn ,@b)
+                    (setf ,index (file-position ,var)))
+                 `(progn ,@b))
+         (close ,var)))))
 
 (defmacro with-output-to-string ((var &optional string &rest r &key element-type) &rest body)
   "Syntax: (with-output-to-string (var [string-form]) {decl}* {form}*)

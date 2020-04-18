@@ -373,3 +373,17 @@
 (test mix.0018.stack-overflow
   (signals ext:stack-overflow (labels ((f (x) (f (1+ x))))
                                 (f 1))))
+
+;;; Date 2020-04-18
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/merge_requests/197
+;;; Description:
+;;;
+;;;     Ensure that with-input-from-string closes the input stream
+;;;     that it creates.
+(test mix.0019.close-with-input-from-string-stream
+  (let (stream-var)
+    (with-input-from-string (inner-stream-var "test")
+      (setf stream-var inner-stream-var)
+      (is (open-stream-p stream-var)))
+    (is (streamp stream-var))
+    (is (not (open-stream-p stream-var)))))
