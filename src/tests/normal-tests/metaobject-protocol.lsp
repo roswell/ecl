@@ -149,9 +149,11 @@
    "DEFCLASS allows additional options which should be handled by ~
 the metaclass")
   (is
-   (equal (eval '(progn
+   (equal (eval '(let ((*aux* 5))
+                  (declare (special *aux*))
                   (defclass fee ()
                     ((a :initform *aux* :initarg :a)))
+                  (make-instance 'faa)
                   (setf (documentation (first (clos:class-slots (find-class 'fee))) t)
                    #1="hola")
                   (documentation (first (clos:class-slots (find-class 'fee))) t)))
@@ -221,6 +223,7 @@ the metaclass")
       ((slot-0 :initform 2 :reader slot-2)))
     (defclass fee-3 (fee-1 fee-2)
       ((slot-0 :initform 3 :accessor c-slot-0)))
+    (make-instance 'fee-3)              ; finalizes inheritance
     (flet ((accessors (class)
              (list (class-name class)
                    (mapcar #'clos:slot-definition-readers (clos:class-slots class))
@@ -616,10 +619,11 @@ the metaclass")
   (defclass c (a b) ())
   (defmethod f ((o a)))
   (defmethod f ((o b)))
+  (make-instance 'c)                    ; finalizes inheritance
   (test mop.0020.c-a-m-disambiguation
     (finishes
-      (clos:compute-applicable-methods-using-classes
-       #'f (list (find-class 'c))))))
+     (clos:compute-applicable-methods-using-classes
+      #'f (list (find-class 'c))))))
 
 ;;; Bug #46
 ;;;
@@ -718,3 +722,35 @@ the metaclass")
              (defmethod clos:compute-class-precedence-list ((class meta))
                (cons (find-class 'hack) (call-next-method)))
              (defclass test-class () () (:metaclass meta))))))
+
+;;; Date 2020-04-14
+;;; Description
+;;;
+;;;     This is a local regression (never commited to the repository),
+;;;     which signals "function class-a-c undefined" when redefining a
+;;;     class after removing a slot.
+(ext:with-clean-symbols (class-a class-a-b class-a-c)
+  (test mop.0028.local-regression
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)
+       (c :accessor class-a-c :initarg :c)))
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)))
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)
+       (c :accessor class-a-c :initarg :c)))
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)
+       (c :accessor class-a-c :initarg :c)))))
+
+;;; Date 2020-04-16
+;;; Description
+;;;
+;;;     When finializing the standard-method metaclass we had
+;;;     encountered a metastability issue when regenerating the
+;;;     standard accessors (which implies removing them first as
+;;;     specified in MOP), where METHOD-GENERIC-FUNCTION is invoked
+;;;     from ADD-DIRECT-METHOD after specialization on the
+;;;     STANDARD-METHOD is removed.
+(test mop.0029.standard-method-metastability
+  (finishes (clos:finalize-inheritance (find-class 'standard-method))))

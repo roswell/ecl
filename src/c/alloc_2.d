@@ -443,7 +443,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
     break;
   case t_instance:
     MAYBE_MARK(o->instance.slots);
-    MAYBE_MARK(o->instance.sig);
+    MAYBE_MARK(o->instance.slotds);
     MAYBE_MARK(o->instance.clas);
     break;
 # ifdef ECL_THREADS
@@ -682,8 +682,17 @@ ecl_alloc_instance(cl_index slots)
   i->instance.slots = (cl_object *)ecl_alloc(sizeof(cl_object) * slots);
   i->instance.length = slots;
   i->instance.entry = FEnot_funcallable_vararg;
-  i->instance.sig = ECL_UNBOUND;
+  i->instance.slotds = ECL_UNBOUND;
   return i;
+}
+
+static cl_index stamp = 0;
+cl_index ecl_next_stamp() {
+#if ECL_THREADS
+  return AO_fetch_and_add((AO_t*)&stamp, 1) + 1;
+#else
+  return ++stamp;
+#endif
 }
 
 void *
@@ -1003,7 +1012,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.cclosure.file_position));
   type_info[t_instance].descriptor =
     to_bitmap(&o, &(o.instance.clas)) |
-    to_bitmap(&o, &(o.instance.sig)) |
+    to_bitmap(&o, &(o.instance.slotds)) |
     to_bitmap(&o, &(o.instance.slots));
 # ifdef ECL_THREADS
   type_info[t_process].descriptor =

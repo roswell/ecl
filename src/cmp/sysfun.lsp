@@ -827,8 +827,8 @@
  "(#0)->instance.slots[#1]")
 
 #+clos
-(def-inline si::instance-sig :unsafe (standard-object) list
- "(#0)->instance.sig")
+(def-inline si::instance-slotds :unsafe (standard-object) list
+ "(#0)->instance.slotds")
 
 #+clos
 (def-inline si:instance-set :unsafe (t fixnum t) t

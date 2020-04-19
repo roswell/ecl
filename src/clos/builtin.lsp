@@ -81,6 +81,8 @@
          (make-list (class-size class) :initial-element nil)))
 
 (defmethod finalize-inheritance ((class structure-class))
+  (when (class-finalized-p class)
+    (return-from finalize-inheritance))
   (call-next-method)
   (dolist (slot (class-slots class))
     (unless (eq :INSTANCE (slot-definition-allocation slot))
