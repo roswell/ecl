@@ -247,7 +247,7 @@ other weird stuff - see getaddrinfo(3) for details."
             ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
             ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
             ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
-            addresses = CONS(vector, addresses);
+            addresses = cl_adjoin(4, vector, addresses, @':test, @'equalp);
             if ( rp->ai_canonname != 0 ) {
                 cl_object alias = ecl_make_simple_base_string( rp->ai_canonname, -1 );
                 aliases = CONS(alias, aliases);
