@@ -27,16 +27,20 @@
 ;;; Class SPECIALIZER
 
 (eval-when (:compile-toplevel :execute)
+  ;; Specializer class has a SPECIALIZER-METHOD-HOLDER accessor which
+  ;; is a cons cell. Direct methods are stored in CAR and direct
+  ;; generic functions are lazily computed from CAR and stored in
+  ;; CDR. This approach is taken to avoid metastability issues. For
+  ;; more details see stdmethod.lsp and the commit message.
+
   (defparameter +specializer-slots+
     '((flag :initform nil :accessor eql-specializer-flag)
-      (direct-methods :initform nil :accessor specializer-direct-methods)
-      (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions))))
+      (holder :initform (cons nil nil) :accessor specializer-method-holder)
+      (slot-padding :initform nil)))
 
-(eval-when (:compile-toplevel :execute)
   (defparameter +eql-specializer-slots+
     '((flag :initform t :accessor eql-specializer-flag)
-      (direct-methods :initform nil :accessor specializer-direct-methods)
-      (direct-generic-functions :initform nil :accessor specializer-direct-generic-functions)
+      (holder :initform (cons nil nil) :accessor specializer-method-holder)
       (object :initarg :object :accessor eql-specializer-object))))
 
 ;;; ----------------------------------------------------------------------
@@ -215,9 +219,9 @@
                   (long-float float)
             (complex number)
               #+complex-float (si:complex-float complex)
-                #+complex-float (si:complex-single-float si:complex-float)
-                #+complex-float (si:complex-double-float si:complex-float)
-                #+complex-float (si:complex-long-float   si:complex-float)
+              #+complex-float (si:complex-single-float si:complex-float)
+              #+complex-float (si:complex-double-float si:complex-float)
+              #+complex-float (si:complex-long-float   si:complex-float)
            (symbol)
               (null symbol list)
               (keyword symbol)

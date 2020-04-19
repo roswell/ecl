@@ -106,9 +106,7 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
 static void
 ensure_up_to_date_instance(cl_object instance)
 {
-  cl_object clas = ECL_CLASS_OF(instance);
-  cl_object slots = ECL_CLASS_SLOTS(clas);
-  unlikely_if (slots != ECL_UNBOUND && instance->instance.sig != slots) {
+  if (si_instance_obsolete_p(instance) == ECL_T) {
     _ecl_funcall2(@'clos::update-instance', instance);
   }
 }

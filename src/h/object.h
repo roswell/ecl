@@ -1026,11 +1026,11 @@ struct ecl_condition_variable {
 #define ECL_CLASS_OF(x)         (x)->instance.clas
 #define ECL_SPEC_FLAG(x)        (x)->instance.slots[0]
 #define ECL_SPEC_OBJECT(x)      (x)->instance.slots[3]
-#define ECL_CLASS_NAME(x)               (x)->instance.slots[3+0]
+#define ECL_CLASS_NAME(x)       (x)->instance.slots[3+0]
 #define ECL_CLASS_SUPERIORS(x)  (x)->instance.slots[3+1]
 #define ECL_CLASS_INFERIORS(x)  (x)->instance.slots[3+2]
-#define ECL_CLASS_SLOTS(x)              (x)->instance.slots[3+3]
-#define ECL_CLASS_CPL(x)                (x)->instance.slots[3+4]
+#define ECL_CLASS_SLOTS(x)      (x)->instance.slots[3+3]
+#define ECL_CLASS_CPL(x)        (x)->instance.slots[3+4]
 #define ECL_INSTANCEP(x)        ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
 #define ECL_NOT_FUNCALLABLE     0
 #define ECL_STANDARD_DISPATCH   1
@@ -1039,13 +1039,15 @@ struct ecl_condition_variable {
 #define ECL_WRITER_DISPATCH     4
 #define ECL_USER_DISPATCH       5
 
-struct ecl_instance {           /*  instance header  */
-        _ECL_HDR1(isgf);
-        cl_index length;        /*  instance length  */
-        cl_object clas;         /*  instance class  */
-        cl_objectfn entry;      /*  entry address  */
-        cl_object sig;          /*  generation signature  */
-        cl_object *slots;       /*  instance slots  */
+struct ecl_instance {            /* -- instance header -- */
+        _ECL_HDR1(isgf);         /*  gf type              */
+        cl_index length;         /*  instance length      */
+        cl_object clas;          /*  instance class       */
+        cl_objectfn entry;       /*  entry address        */
+        cl_object slotds;        /*  slot definitions     */
+        cl_object *slots;        /*  instance slots       */
+        cl_index stamp;          /*  instance stamp       */
+        cl_index class_stamp;    /*  class stamp          */
 };
 
 #ifdef ECL_SSE2

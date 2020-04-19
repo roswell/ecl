@@ -413,32 +413,89 @@
      (undefined-function (c) t)
      (serious-condition (c) nil))))
 
-
 ;;; Date: 29/11/2009 (P. Costanza)
 ;;; Fixed: 29/11/2009 (Juanjo)
 ;;; Description:
 ;;;
 ;;;     Updating of instances is not triggered by MAKE-INSTANCES-OBSOLETE.
 ;;;
-(ext:with-clean-symbols (*update-guard* class-a class-a-b)
+(ext:with-clean-symbols (class-a class-a-b class-a-c class-a-x)
   (test cmp.0020.make-instances-obsolete
-    (defparameter *update-guard* nil)
-    (defclass class-a () ((b :accessor class-a-b :initarg :b)))
-    (let ((*a* (make-instance 'class-a :b 2)))
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)
+       (c :accessor class-a-c :initarg :c)))
+    (let ((instance (make-instance 'class-a :b 2 :c 3))
+          (update-guard nil))
       (defmethod update-instance-for-redefined-class :before
-        ((instance standard-object) added-slots discarded-slots property-list
-         &rest initargs)
-        (setf *update-guard* t))
-      (is-true
-       (and (null *update-guard*)
-            (progn (class-a-b *a*) (null *update-guard*))
-            (progn (make-instances-obsolete (find-class 'class-a))
-                   (null *update-guard*))
-            (progn (class-a-b *a*) *update-guard*)
-            (progn (setf *update-guard* nil)
-                   (defclass class-a () ((b :accessor class-a-b :initarg :b)))
-                   (class-a-b *a*)
-                   *update-guard*))))))
+          ((instance standard-object) added-slots discarded-slots property-list
+           &rest initargs)
+        (setf update-guard t))
+      (macrolet ((check-situation (change-form trigger-form result doc)
+                   `(progn
+                      (setf update-guard nil)
+                      ,change-form
+                      (is (and (null update-guard)
+                               (progn ,trigger-form
+                                      (eq update-guard ,result)))
+                          ,doc))))
+        (check-situation
+         (make-instances-obsolete (find-class 'class-a))
+         (class-a-b instance)
+         t
+         "Direct call to MAKE-INSTANCES-OBSOLETE doesn't work.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-b :initarg :b)))
+         (class-a-b instance)
+         t
+         "Removing a slot does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-b :initarg :b)
+            (c :accessor class-a-c :initarg :c)))
+         (class-a-b instance)
+         t
+         "Adding a slot does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((c :accessor class-a-c :initarg :c)
+            (b :accessor class-a-b :initarg :b)))
+         (class-a-b instance)
+         t
+         "Shuffling slots does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((c :accessor class-a-c :initarg :c :allocation :class)
+            (b :accessor class-a-b :initarg :b)))
+         (class-a-b instance)
+         t
+         "Changing slot allocation does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-b :initarg :b)
+            (c :accessor class-a-c :initarg :c)))
+         (class-a-b instance)
+         t
+         "Redefining class does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-b :initarg :b)
+            (c :accessor class-a-c :initarg :c)))
+         (class-a-b instance)
+         nil
+         "Without a change system should not make instances obsolete.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-x :initarg :b)
+            (c :accessor class-a-c :initarg :c)))
+         (class-a-x instance)
+         nil
+         "Changing accessors should not make instances obsolete.")
+        ;; The old accessor is removed (the generic function).
+        (signals error (class-a-b instance)
+                 "Reader method is not removed after redefinition.")
+        (is (fboundp 'class-a-b)
+            "Redefining a class removes generic functions.")))))
 
 ;;; Date: 25/03/2009 (R. Toy)
 ;;; Fixed: 4/12/2009 (Juanjo)
