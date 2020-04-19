@@ -843,7 +843,7 @@ extern ECL_API cl_object si_sl_makunbound(cl_object x, cl_object index);
 extern ECL_API cl_object si_instance_obsolete_p(cl_object x);
 extern ECL_API cl_object si_instance_new_stamp(cl_object x);
 extern ECL_API cl_object si_instance_get_stamp(cl_object x);
-extern ECL_API cl_object si_instance_sig(cl_object x);
+extern ECL_API cl_object si_instance_slotds(cl_object x);
 extern ECL_API cl_object si_instance_sig_set(cl_object x);
 
 extern ECL_API cl_object ecl_allocate_instance(cl_object clas, cl_index size);

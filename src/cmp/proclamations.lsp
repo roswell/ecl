@@ -1428,7 +1428,7 @@
 #+clos
 (proclamation si:instance-ref (t fixnum) t :reader)
 #+clos
-(proclamation si::instance-sig (standard-object) list :reader)
+(proclamation si::instance-slotds (standard-object) list :reader)
 #+clos
 (proclamation si:instance-set (t fixnum t) t)
 #+clos

@@ -87,9 +87,7 @@
                                       (t
                                        old-class))))
       (si::instance-sig-set gfun)
-      (register-method-with-specializers method)
-      )
-    ))
+      (register-method-with-specializers method))))
 
 
 ;;; ---------------------------------------------------------------------

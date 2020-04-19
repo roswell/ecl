@@ -35,8 +35,8 @@
 
 (defmethod update-instance-for-different-class
     ((old-data standard-object) (new-data standard-object) &rest initargs)
-  (let ((old-local-slotds (si::instance-sig old-data))
-        (new-local-slotds (remove :instance (si::instance-sig new-data)
+  (let ((old-local-slotds (si::instance-slotds old-data))
+        (new-local-slotds (remove :instance (si::instance-slotds new-data)
                                   :test-not #'eq :key #'slot-definition-allocation))
         added-slots)
     (setf added-slots (set-difference (mapcar #'slot-definition-name new-local-slotds)
@@ -83,9 +83,9 @@
 ;;;
 ;;; PART 2: UPDATING AN INSTANCE THAT BECAME OBSOLETE
 ;;;
-;;; Each instance has a hidden field (readable with SI::INSTANCE-SIG),
-;;; which contains the list of slots of its class which are needed to
-;;; update it when it is obsolete. Generally
+;;; Each instance has a field (readable with SI::INSTANCE-SLOTDS),
+;;; which contains the list of slot definitions from its class which
+;;; are needed to update it when it is obsolete. Generally
 ;;;
 ;;;     (SI::INSTANCE-OBSOLETE-P x)
 ;;;
@@ -147,7 +147,7 @@
 
 (defun update-instance (instance)
   (let* ((class (class-of instance))
-         (old-slotds (si::instance-sig instance))
+         (old-slotds (si::instance-slotds instance))
          (new-slotds (class-slots class))
          (old-instance (si::copy-instance instance))
          (discarded-slots '())

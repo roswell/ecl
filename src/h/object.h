@@ -1044,7 +1044,7 @@ struct ecl_instance {            /* -- instance header -- */
         cl_index length;         /*  instance length      */
         cl_object clas;          /*  instance class       */
         cl_objectfn entry;       /*  entry address        */
-        cl_object sig;           /*  instance class slots */
+        cl_object slotds;        /*  slot definitions     */
         cl_object *slots;        /*  instance slots       */
         cl_index stamp;          /*  instance stamp       */
         cl_index class_stamp;    /*  class stamp          */

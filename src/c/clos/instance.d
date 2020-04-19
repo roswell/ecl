@@ -68,16 +68,16 @@ si_instance_get_stamp(cl_object x)
 }
 
 cl_object
-si_instance_sig(cl_object x)
+si_instance_slotds(cl_object x)
 {
-  @(return x->instance.sig);
+  @(return x->instance.slotds);
 }
 
 cl_object
 si_instance_sig_set(cl_object x)
 {
   x->instance.stamp = ECL_CLASS_OF(x)->instance.class_stamp;
-  @(return (x->instance.sig = ECL_CLASS_SLOTS(ECL_CLASS_OF(x))));
+  @(return (x->instance.slotds = ECL_CLASS_SLOTS(ECL_CLASS_OF(x))));
 }
 
 cl_object
@@ -296,7 +296,7 @@ si_copy_instance(cl_object x)
     FEwrong_type_nth_arg(@[si::copy-instance], 1, x, @[ext::instance]);
   }
   y = ecl_allocate_instance(x->instance.clas, x->instance.length);
-  y->instance.sig = x->instance.sig;
+  y->instance.slotds = x->instance.slotds;
   y->instance.stamp = x->instance.stamp;
   y->instance.class_stamp = x->instance.class_stamp;
   memcpy(y->instance.slots, x->instance.slots,
