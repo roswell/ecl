@@ -11,9 +11,9 @@
   programs as a shared library.
 
   ECL supports the operating systems Linux, FreeBSD, NetBSD, OpenBSD,
-  Solaris (at least v. 9), Microsoft Windows and OSX, running on top of
-  the Intel, Sparc, Alpha, ARM and PowerPC processors.  Porting to other
-  architectures should be rather easy.
+  Solaris (at least v. 9), Microsoft Windows, OSX, Android and iOS, running
+  on top of the Intel, Sparc, Alpha, ARM and PowerPC processors.  Porting
+  to other architectures should be rather easy.
 
 * Known issues
 
@@ -27,7 +27,52 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 16.1.3
+* Pending changes since 20.4.24
+* 20.4.24 changes since 16.1.3
+** Announcement
+Dear Community,
+
+After more than three years of development, we are proud to announce a new
+ECL release having the version tag `20.4.24`. During that time many
+important improvements have been made including bug fixes, stability
+enhancements and new features. Changes include but are not limited to:
+
+- package local nicknames support
+- atomic operations support
+- specialized representations of complex float types
+- a port to the iOS platform
+- fixes for weak hash tables and weak pointers
+- fixes for race conditions in the ECL internals
+- hash table extensions (synchronization and custom test functions)
+- better MOP conformance and improved meta-stability
+- improvements to the manual
+
+For more information please read the file CHANGELOG which is located in the
+source code, and browse commits. We'd like to thank all people who made
+this release possible by contributions of code, documentation, issue
+reports, testing and others. Some of them are listed here (without any
+particular order): Paul Ruetz, Karsten Poeck, Vadim Penzin, Roger Sen, Stas
+Boukarev, Michael Fox, Erik Bray, Bo Yao, Jeremy Cooper, Florian Margaine,
+Fabrizio Fabbri, Tomek Kurcz, Kris Katterjohn, Marcin Kolenda, Zhang Yuguo,
+Sébastien Villemot, Moritz Petersen, Marius Gerbershagen and Daniel
+Kochmański. We'd also like to thank the company Rigetti Computing for
+sponsoring the work on specialized complex float representations.
+
+We have another important announcement we'd like to make. Embeddable
+Common-Lisp project has now two maintainers: Daniel Kochmański and Marius
+Gerbershagen. After numerous contributions from Marius I've proposed him
+this responsibility and to my rejoice he has accepted it. That reflects our
+community growth.
+
+This release is available for download in a form of a source code archive
+(we do not ship prebuilt binaries):
+
+- [ECL 20.4.24 tarball archive](https://common-lisp.net/project/ecl/static/files/release/ecl-20.4.24.tgz)
+- [The ECL Manual](https://common-lisp.net/project/ecl/static/manual/)
+
+Happy Hacking,  
+The ECL Developers
+
 ** Enhancements
 - iOS support thanks to the help of P. Ruetz and gitlab user Whimse
 - hash-table may now have a custom equivalence predicate
@@ -78,6 +123,8 @@
   =--with-libgc-incdir= and =--with-libgc-libdir= (these flags work the
   same as flags for =libffi= and =libgmp=)
 ** Issues fixed
+- issues with type system revealed by sbcl bootstrapping are gone
+- classes are not defined at compilation time
 - weak hashtables mishandled weak values when keys were present
 - gethash on weak hashtables returned the pointer instead of the value
 - maphash on weak hashtables mapped over pointers instead of the values
@@ -97,6 +144,8 @@
 - buildsystem parallel builds work (i.e make -j999)
 - ECL builds on consoles with unusual encodings on Windows (i.e cp936)
 ** API changes
+- ~LISP~ and ~USER~ package nicknames to ~COMMON-LISP~ and
+  ~COMMON-LISP-USER~ are removed
 - make-hash-table accepts a new keyword argument ~:hashing-function~
 - no-op ~--enable-asmapply~ configure option has been removed
 - ~profile~ and ~rt~ contribs are now deprecated and disabled by default
