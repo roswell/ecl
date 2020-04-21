@@ -51,15 +51,23 @@ Possible keywords are :INDEX, :START, and :END."
 Evaluates FORMs with VAR bound to a string output stream to the string that is
 the value of STRING-FORM.  If STRING-FORM is not given, a new string is used.
 The stream is automatically closed on exit and the string is returned."
-  (if string
-      `(LET* ((,var (MAKE-STRING-OUTPUT-STREAM-FROM-STRING ,string))
-              (,(gensym) ,element-type))
-        ;; We must evaluate element-type if it has been supplied by the user.
-        ;; Even if we ignore the value afterwards.
-         ,@body)
-      `(LET ((,var (MAKE-STRING-OUTPUT-STREAM ,@r)))
-         ,@body
-         (GET-OUTPUT-STREAM-STRING ,var))))
+  (multiple-value-bind (decls body)
+      (find-declarations body)
+    (if string
+        `(let ((,var (make-string-output-stream-from-string ,string)))
+           ,@decls
+           ;; We must evaluate element-type if it has been supplied by the user.
+           ;; Even if we ignore the value afterwards.
+           ,element-type
+           (unwind-protect (progn ,@body)
+             (close ,var)))
+        `(let ((,var (make-string-output-stream ,@r)))
+           ,@decls
+           ,element-type
+           (unwind-protect (progn
+                             ,@body
+                             (get-output-stream-string ,var))
+             (close ,var))))))
 
 (defun read-from-string (string
                          &optional (eof-error-p t) eof-value
