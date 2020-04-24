@@ -61,7 +61,6 @@ ecl_sqrt_double_float(cl_object x)
   }
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_sqrt_long_float(cl_object x)
 {
@@ -73,7 +72,6 @@ ecl_sqrt_long_float(cl_object x)
     return ecl_make_long_float(sqrtl(f));
   }
 }
-#endif
 
 static cl_object
 ecl_sqrt_complex(cl_object x)
@@ -81,7 +79,34 @@ ecl_sqrt_complex(cl_object x)
   return ecl_expt(x, cl_core.plus_half);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_sqrt_csfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(result) = csqrtf(ecl_csfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_sqrt_cdfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(result) = csqrt(ecl_cdfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_sqrt_clfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(result) = csqrtl(ecl_clfloat(x));
+  return result;
+}
+#endif
+
 MATH_DEF_DISPATCH1(sqrt, @[sqrt], @[number],
                    ecl_sqrt_rational, ecl_sqrt_rational, ecl_sqrt_rational,
                    ecl_sqrt_single_float, ecl_sqrt_double_float, ecl_sqrt_long_float,
-                   ecl_sqrt_complex);
+                   ecl_sqrt_complex,
+                   ecl_sqrt_csfloat, ecl_sqrt_cdfloat, ecl_sqrt_clfloat);

@@ -1,0 +1,141 @@
+\input texinfo                  @c -*-texinfo-*-
+@c %**start of header
+@setfilename ecl.info
+@settitle ECL Manual
+@setchapternewpage odd
+@paragraphindent none
+@defcodeindex cpp
+@defcodeindex lsp
+@defcodeindex cf
+@defcodeindex ft
+@defindex ex
+@documentencoding UTF-8
+@c %**end of header
+
+@c Entries for @command{install-info} to use
+@dircategory Lisp Programming
+@direntry
+* ecl: (ecl).           Embeddable Common Lisp (ECL) User's Manual
+@end direntry
+
+@include macros.txi
+
+@ifinfo
+@ecl{} is an implementation of @clisp{} designed for being
+@emph{embeddable} into C based applications.
+
+@noindent
+Copyright @copyright{} 2015, Daniel Kochmański
+@noindent
+Copyright @copyright{} 2000, Juan Jose Garcia-Ripoll
+@noindent
+Copyright @copyright{} 1990, Giuseppe Attardi
+@end ifinfo
+
+@titlepage
+@title ECL User's Guide
+@author Giuseppe Attardi
+@author Juan Jose Garcia Ripoll (revised version)
+@author Daniel Kochmański (revised revised version)
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1990, Giuseppe Attardi
+
+Copyright @copyright{} 2000, Juan Jose Garcia Ripoll
+
+Copyright @copyright{} 2015, Daniel Kochmański
+@end titlepage
+
+@c ************************ TOP NODE **************************
+
+@ifnottex
+@node Top
+@top Top
+@end ifnottex
+
+@iftex
+@page
+@titlefont{Preface}
+@vskip 1cm
+@end iftex
+
+@ecl{} is an implementation of @clisp{} originally designed for being
+@emph{embeddable} into C based applications.  This document describes
+the @ecl{} implementation and how it differs from @bibcite{ANSI} and
+@bibcite{Steele:84}. @ref{Developer's guide} and @ref{User's guide} for
+the details about the implementation and how to interface with other
+languages.
+
+@menu
+* Introduction:: What @ecl{} is
+* User's guide:: Guide for the programmers using ECL
+* Standards:: Deviations and clarifications of the standard
+* Extensions:: ECL-specific features and extensions
+* Developer's guide:: Guide for the ECL developers
+* Indexes:: Concepts, functions, variables, types and C/C++
+* Bibliography:: Some interesting books.
+@c * List of Figures::
+@c * List of Tables::
+@end menu
+
+@contents
+
+@include introduction/index.txi
+@include user-guide/index.txi
+@include standards/index.txi
+@include extensions/index.txi
+@include developer-guide/index.txi
+@include indexes/index.txi
+
+@node Bibliography
+@unnumbered Bibliography
+
+@table @b
+@item ANSI
+ANSI @clisp{} Specification, 1986.
+
+@item AMOP
+Gregor Kickzales et al. ``The Art of the Metaobject Protocol'' The
+M.I.T. Press, Massachussets Institute of Technology, 1999
+
+@item LISP1.5
+John McCarthy et al. ``Lisp 1.5 Programmer's Manual 2nd ed'' The
+M.I.T. Press, Massachussets Institute of Technology, 1985
+
+@item Steele:84
+Guy L. Steele Jr. et al. ``Common Lisp: the Language'',
+Digital Press, 1984.
+
+@item Steele:90
+Guy L. Steele Jr. at al. ``Common Lisp: the Language II'', second edition,
+Digital Press, 1990.
+
+@item Yasa:85
+Taiichi Yuasa and Masami Hagiya ``Kyoto @clisp{} Report'',
+Research Institute for Mathematical Sciences, Kyoto University, 1988.
+
+@item Attardi:95
+Giusseppe Attardi ``Embeddable @clisp{}'', ACM Lisp Pointers, 8(1),
+30-41, 1995
+
+@item Smith:84
+B.C. Smith and J. des Rivieres  ``The Implementation of
+Procedurally Reflective Languages'', @emph{Proc. of the 1984 ACM
+Symposium on LISP and Functional Programming}, 1984.
+@end table
+
+@bye
+
+@c * Input and output::            Accessing files with ECL.
+@c * Memory management::           Bits and bytes of every object.
+@c * Program development::         Tracing, steppping, error handling, etc.
+@c * The interpreter::             The guts behind ECL.
+@c * The compiler::                When you need speed@dots{}
+@c * Declarations::                Helping the compiler
+@c * OS interface::                Operating system interface.
+@c * Macros::                      Implementation dependent features of macros.
+@c * CLOS::                        Common-Lisp's Object System.
+@c * Multithread::                 Lisp lightweight processes or threads.
+@c * Bibliography::                Some interesting books.
+

@@ -54,7 +54,7 @@
 
 #ifdef HAVE_FENV_H
 # define ECL_WITHOUT_FPE_BEGIN do { fenv_t env; feholdexcept(&env);
-# define ECL_WITHOUT_FPE_END } while (0)
+# define ECL_WITHOUT_FPE_END        fesetenv(&env); } while (0)
 #else
 # define FE_INVALID 1
 # define FE_DIVBYZERO 2
@@ -66,45 +66,49 @@
 # define feclearexcept(x)
 #endif /* !HAVE_FENV_H */
 
-#if defined(HAVE_FENV_H) && !defined(HAVE_FEENABLEEXCEPT) && !defined(ECL_AVOID_FPE_H)
+#ifndef FE_ALL_EXCEPT
+# define FE_ALL_EXCEPT FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID
+#endif
+
+#if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FPE_H)
+# if defined(HAVE_FEENABLEEXCEPT)
+#  define ECL_WITH_LISP_FPE_BEGIN do {                   \
+        fenv_t __fenv;                                   \
+        fegetenv(&__fenv);                               \
+        cl_env_ptr __the_env = ecl_process_env_unsafe(); \
+        if (__the_env) {                                 \
+                int bits = __the_env->trap_fpe_bits;     \
+                fedisableexcept(FE_ALL_EXCEPT & ~bits);  \
+                feenableexcept(FE_ALL_EXCEPT & bits);    \
+        }                                                \
+        feclearexcept(FE_ALL_EXCEPT);
+# else
+#  define ECL_WITH_LISP_FPE_BEGIN do {                   \
+        fenv_t __fenv;                                   \
+        fegetenv(&__fenv);                               \
+        feclearexcept(FE_ALL_EXCEPT);
+# endif
+# define ECL_WITH_LISP_FPE_END \
+        fesetenv(&__fenv); } while (0)
+#else
+# define ECL_WITH_LISP_FPE_BEGIN do {
+# define ECL_WITH_LISP_FPE_END } while (0)
+#endif
+
+#if defined(HAVE_FENV_H) && defined(ECL_IEEE_FP) && !defined(HAVE_FEENABLEEXCEPT) && !defined(ECL_AVOID_FPE_H)
 # define ECL_USED_EXCEPTIONS (FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW|FE_UNDERFLOW)
 # define ECL_MATHERR_CLEAR feclearexcept(FE_ALL_EXCEPT)
-# define ECL_MATHERR_TEST do {                                  \
-        int bits = fetestexcept(ECL_USED_EXCEPTIONS);           \
-    unlikely_if (bits) ecl_deliver_fpe(bits); } while(0)
+# define ECL_MATHERR_TEST do {                                         \
+        int bits = fetestexcept(ECL_USED_EXCEPTIONS);                  \
+        unlikely_if (bits) {                                           \
+                bits &= ecl_process_env()->trap_fpe_bits;              \
+                if (bits) ecl_deliver_fpe(bits);                       \
+        }                                                              \
+        } while(0)
 #else
 # define ECL_MATHERR_CLEAR
 # define ECL_MATHERR_TEST
 #endif
-
-#if defined(__APPLE__) && defined(__amd64__)
-#define feclearexcept myfeclearexcept
-static inline void myfeclearexcept(int flags)
-{
-    int aux;
-    int f = ~(0x3d);
-    __asm__ (
-    "fnclex  \n\t"
-    "stmxcsr %0\n\t"
-    "andl    %1,%0\n\t"
-    "ldmxcsr %0\n\t"
-    : "=m"(aux) : "a"(f));
-}
-#define fetestexcept myfetestexcept
-static inline int myfetestexcept(cl_fixnum flags)
-{
-    cl_fixnum output = (flags & 0x3d);
-    int sw;
-    __asm__ (
-    "fnstsw  %0\n\t"
-    "movzwl  %0,%%eax\n\t"
-    "stmxcsr %0\n\t"
-    "orl     %0,%%eax\n\t"
-    "and     %%rax,%1\n\t"
-    : "=m"(sw), "=d"(output) : "d"(output) : "%rax");
-    return output;
-}
-#endif /* __APPLE__ && __amd64__ */
 
 extern void ecl_deliver_fpe(int flags);
 

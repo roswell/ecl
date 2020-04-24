@@ -101,30 +101,13 @@ enum {
 #define MAX_OPARG 0x7FFF
 typedef int16_t cl_oparg;
 
-/*
- * Note that in the small bytecodes case, we have to recompose a signed
- * small integer out of its pieces. We have to be careful because the
- * least significant byte has to be interpreted as unsigned, while the
- * most significant byte carries a sign.
- */
-#ifdef ECL_SMALL_BYTECODES
-  typedef signed char cl_opcode;
-# define OPCODE_SIZE 1
-# define OPARG_SIZE 2
-# ifdef WORDS_BIGENDIAN
-#  define READ_OPARG(v) ((cl_fixnum)v[0] << 8) + (unsigned char)v[1]
-# else
-#  define READ_OPARG(v) ((cl_fixnum)v[1] << 8) + (unsigned char)v[0]
-# endif
-# define GET_OPARG(r,v) { r = READ_OPARG(v); v += 2; }
-#else
-  typedef int16_t cl_opcode;
+typedef int16_t cl_opcode;
 # define OPCODE_SIZE 1
 # define OPARG_SIZE 1
 # define READ_OPCODE(v) v[0]
 # define READ_OPARG(v)  v[0]
 # define GET_OPARG(r,v) { r = *(v++); }
-#endif
+
 #define GET_OPCODE(v) *((v)++)
 #define GET_DATA(r,v,data) { \
         cl_oparg ndx; \

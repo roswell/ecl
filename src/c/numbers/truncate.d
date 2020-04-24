@@ -22,10 +22,14 @@
 #endif
 #include <ecl/internal.h>
 
+#pragma STDC FENV_ACCESS ON
+
 cl_object
 ecl_truncate1(cl_object x)
 {
   cl_object v0, v1;
+  ECL_MATHERR_CLEAR;
+
   switch (ecl_t_of(x)) {
   case t_fixnum:
   case t_bignum:
@@ -51,7 +55,6 @@ ecl_truncate1(cl_object x)
     v1 = ecl_make_double_float(d - y);
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     long double y = d > 0? floorl(d) : ceill(d);
@@ -59,10 +62,10 @@ ecl_truncate1(cl_object x)
     v1 = ecl_make_long_float(d - y);
     break;
   }
-#endif
   default:
     FEwrong_type_nth_arg(@[truncate],1,x,@[real]);
   }
+  ECL_MATHERR_TEST;
   {
     const cl_env_ptr the_env = ecl_process_env();
     ecl_return2(the_env, v0, v1);
@@ -81,7 +84,7 @@ ecl_truncate2(cl_object x, cl_object y)
 @(defun truncate (x &optional (y OBJNULL))
   @
   if (narg == 1)
-  return ecl_truncate1(x);
+    return ecl_truncate1(x);
   else
     return ecl_truncate2(x, y);
   @)

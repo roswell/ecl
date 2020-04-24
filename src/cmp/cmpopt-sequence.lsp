@@ -161,7 +161,9 @@
             (unless ,test (return ,output))
             (let ((,%elt (si::seq-iterator-ref ,%sequence ,%iterator)))
               ,@body)
-            (setf ,%iterator (si::seq-iterator-next ,%sequence ,%iterator)))))))
+            (setf ,%iterator (si::seq-iterator-next ,%sequence ,%iterator))
+            ,(when end
+               `(decf ,%counter)))))))
 
 ;;;
 ;;; MEMBER
@@ -208,10 +210,11 @@
           (return-from expand-member
             `(ffi:c-inline (,value ,list) (:object :object) :object
                            "ecl_member(#0,#1)" :one-liner t :side-effects nil)))))
-    (ext:with-unique-names (%value %sublist %elt)
+    (ext:with-unique-names (%value %list %sublist %elt)
       `(let ((,%value ,value)
+             (,%list ,list)
              ,@init)
-         (do-in-list (,%elt ,%sublist ,list)
+         (do-in-list (,%elt ,%sublist ,%list)
            (when ,(funcall test-function %value
                            (funcall key-function %elt))
              (return ,%sublist)))))))
@@ -249,10 +252,11 @@
             `(ffi:c-inline (,value ,list) (:object :object) :object
                            "ecl_assqlp(#0,#1)" :one-liner t :side-effects nil)))))
     (when test-function
-      (ext:with-unique-names (%value %sublist %elt %car)
+      (ext:with-unique-names (%value %list %sublist %elt %car)
         `(let ((,%value ,value)
+               (,%list ,list)
                ,@init)
-           (do-in-list (,%elt ,%sublist ,list)
+           (do-in-list (,%elt ,%sublist ,%list)
              (when ,%elt
                (let ((,%car (cons-car (optional-type-check ,%elt cons))))
                  (when ,(funcall test-function %value

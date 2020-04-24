@@ -248,7 +248,8 @@
                          (group-checks '())
                          (group-after '())
                          (generic-function '.generic-function.)
-                         (method-arguments '()))
+                         (method-arguments '())
+                         decls documentation)
         form
       (unless (symbolp name) (syntax-error))
       (let ((x (first body)))
@@ -259,6 +260,8 @@
           (setf body (rest body))
           (unless (symbolp (setf generic-function (second x)))
             (syntax-error))))
+      (multiple-value-setq (decls body documentation)
+        (si::find-declarations body t))
       (dolist (group method-groups)
         (destructuring-bind (group-name predicate &key description
                                   (order :most-specific-first) (required nil))
@@ -282,7 +285,7 @@
           (when required
             (push `(unless ,group-name
                     (error "Method combination: ~S. No methods ~
-                            in required group ~S." ,name ,group-name))
+                            in required group ~S." ',name ,group-name))
                   group-after))
           (case order
             (:most-specific-first
@@ -294,17 +297,22 @@
                      group-after (list* `(when (eq ,order-var :most-specific-first)
                                            (setf ,group-name (nreverse ,group-name)))
                                         group-after)))))))
-      `(install-method-combination ',name
-          (ext::lambda-block ,name (,generic-function .methods-list. ,@lambda-list)
-            (let (,@group-names)
-              (dolist (.method. .methods-list.)
-                (let ((.method-qualifiers. (method-qualifiers .method.)))
-                  (cond ,@(nreverse group-checks)
-                        (t (invalid-method-error .method.
-                             "Method qualifiers ~S are not allowed in the method~
-                              combination ~S." .method-qualifiers. ,name)))))
-              ,@group-after
-              (effective-method-function (progn ,@body) t))))
+      `(progn
+         ,@(si::expand-set-documentation name 'method-combination documentation)
+         (install-method-combination ',name
+            (lambda (,generic-function .methods-list. ,@lambda-list)
+              (declare (ignorable ,generic-function))
+              ,@decls
+              (block ,name
+                (let (,@group-names)
+                  (dolist (.method. .methods-list.)
+                    (let ((.method-qualifiers. (method-qualifiers .method.)))
+                      (cond ,@(nreverse group-checks)
+                            (t (invalid-method-error .method.
+                                 "Method qualifiers ~S are not allowed in the method~
+                                  combination ~S." .method-qualifiers. ',name)))))
+                  ,@group-after
+                  (effective-method-function (progn ,@body) t))))))
       )))
 
 (defmacro define-method-combination (name &body body)
@@ -361,18 +369,15 @@
   `(funcall ,(std-compute-effective-method gf method-combination applicable-methods)
             .combined-method-args. *next-methods*))
 
-;;
-;; These method combinations are bytecompiled, for simplicity.
-;;
 (install-method-combination 'standard 'standard-compute-effective-method)
-(eval '(progn
-        (define-method-combination progn :identity-with-one-argument t)
-        (define-method-combination and :identity-with-one-argument t)
-        (define-method-combination max :identity-with-one-argument t)
-        (define-method-combination + :identity-with-one-argument t)
-        (define-method-combination nconc :identity-with-one-argument t)
-        (define-method-combination append :identity-with-one-argument nil)
-        (define-method-combination list :identity-with-one-argument nil)
-        (define-method-combination min :identity-with-one-argument t)
-        (define-method-combination or :identity-with-one-argument t)))
+(progn
+  (define-method-combination progn :identity-with-one-argument t)
+  (define-method-combination and :identity-with-one-argument t)
+  (define-method-combination max :identity-with-one-argument t)
+  (define-method-combination + :identity-with-one-argument t)
+  (define-method-combination nconc :identity-with-one-argument t)
+  (define-method-combination append :identity-with-one-argument nil)
+  (define-method-combination list :identity-with-one-argument nil)
+  (define-method-combination min :identity-with-one-argument t)
+  (define-method-combination or :identity-with-one-argument t))
 

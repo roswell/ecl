@@ -41,63 +41,52 @@ _ecl_will_print_as_hash(cl_object x)
    to the element.
 */
 
-static cl_fixnum
-search_print_circle(cl_object x)
+cl_object
+si_search_print_circle(cl_object x)
 {
   cl_object circle_counter = ecl_symbol_value(@'si::*circle-counter*');
   cl_object circle_stack = ecl_symbol_value(@'si::*circle-stack*');
   cl_object code;
 
+  code = ecl_gethash_safe(x, circle_stack, OBJNULL);
   if (!ECL_FIXNUMP(circle_counter)) {
-    code = ecl_gethash_safe(x, circle_stack, OBJNULL);
     if (code == OBJNULL) {
       /* Was not found before */
       _ecl_sethash(x, circle_stack, ECL_NIL);
-      return 0;
+      return ecl_make_fixnum(0);
     } else if (code == ECL_NIL) {
       /* This object is referenced twice */
       _ecl_sethash(x, circle_stack, ECL_T);
-      return 1;
+      return ecl_make_fixnum(1);
     } else {
-      return 2;
+      return ecl_make_fixnum(2);
     }
   } else {
-    code = ecl_gethash_safe(x, circle_stack, OBJNULL);
     if (code == OBJNULL || code == ECL_NIL) {
       /* Is not referenced or was not found before */
-      /* _ecl_sethash(x, circle_stack, ECL_NIL); */
-      return 0;
+      return ecl_make_fixnum(0);
     } else if (code == ECL_T) {
       /* This object is referenced twice, but has no code yet */
-      cl_fixnum new_code = ecl_fixnum(circle_counter) + 1;
-      circle_counter = ecl_make_fixnum(new_code);
+      circle_counter = ecl_make_fixnum(ecl_fixnum(circle_counter) + 1);
       _ecl_sethash(x, circle_stack, circle_counter);
       ECL_SETQ(ecl_process_env(), @'si::*circle-counter*',
                circle_counter);
-      return -new_code;
+      return ecl_make_fixnum(-ecl_fixnum(circle_counter));
     } else {
-      return ecl_fixnum(code);
+      return code;
     }
   }
 }
 
 cl_object
-si_write_object(cl_object x, cl_object stream)
+si_write_object_with_circle(cl_object x, cl_object stream, cl_object print_function)
 {
-  bool circle;
-#ifdef ECL_CMU_FORMAT
-  if (ecl_symbol_value(@'*print-pretty*') != ECL_NIL) {
-    cl_object f = _ecl_funcall2(@'pprint-dispatch', x);
-    if (VALUES(1) != ECL_NIL) {
-      _ecl_funcall3(f, stream, x);
-      goto OUTPUT;
-    }
-  }
-#endif /* ECL_CMU_FORMAT */
-  circle = ecl_print_circle();
+  bool circle = ecl_print_circle();
   if (circle && !Null(x) && !ECL_FIXNUMP(x) && !ECL_CHARACTERP(x) &&
-      (LISTP(x) || (x->d.t != t_symbol) || (Null(x->symbol.hpack))))
+      (ecl_t_of(x) != t_symbol || (Null(x->symbol.hpack))))
     {
+      /* everything except fixnums, characters or interned symbols can
+         possibly contain cycles */
       cl_object circle_counter;
       cl_fixnum code;
       circle_counter = ecl_symbol_value(@'si::*circle-counter*');
@@ -110,14 +99,14 @@ si_write_object(cl_object x, cl_object stream)
                               cl_core.rehash_threshold);
         ecl_bds_bind(env, @'si::*circle-counter*', ECL_T);
         ecl_bds_bind(env, @'si::*circle-stack*', hash);
-        si_write_object(x, cl_core.null_stream);
+        si_write_object_with_circle(x, cl_core.null_stream, print_function);
         ECL_SETQ(env, @'si::*circle-counter*', ecl_make_fixnum(0));
-        si_write_object(x, stream);
+        si_write_object_with_circle(x, stream, print_function);
         cl_clrhash(hash);
         ecl_bds_unwind_n(env, 2);
         goto OUTPUT;
       }
-      code = search_print_circle(x);
+      code = ecl_fixnum(si_search_print_circle(x));
       if (!ECL_FIXNUMP(circle_counter)) {
         /* We are only inspecting the object to be printed. */
         /* Only run X if it was not referenced before */
@@ -138,7 +127,23 @@ si_write_object(cl_object x, cl_object stream)
         goto OUTPUT;
       }
     }
-  return si_write_ugly_object(x, stream);
+  return _ecl_funcall3(print_function, x, stream);
  OUTPUT:
   @(return x);
+
+}
+
+cl_object
+si_write_object(cl_object x, cl_object stream)
+{
+#ifdef ECL_CMU_FORMAT
+  if (ecl_symbol_value(@'*print-pretty*') != ECL_NIL) {
+    cl_object f = _ecl_funcall2(@'pprint-dispatch', x);
+    if (VALUES(1) != ECL_NIL) {
+      _ecl_funcall3(f, stream, x);
+      @(return x);
+    }
+  }
+#endif /* ECL_CMU_FORMAT */
+  return si_write_object_with_circle(x, stream, @'si::write-ugly-object');
 }

@@ -6,8 +6,6 @@
 ;;; Macros only used in the code of the compiler itself:
 
 (in-package "COMPILER")
-(import 'sys::arglist "COMPILER")
-(import 'sys::with-clean-symbols "COMPILER")
 
 ;; ----------------------------------------------------------------------
 ;; CACHED FUNCTIONS

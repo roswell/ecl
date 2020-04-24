@@ -23,7 +23,7 @@
 
 (defparameter *help-message* "
 Usage: ecl [-? | --help]
-           [--dir dir] [--load file] [--shell file] [--eval expr] [--rc | --norc] [--hp | --nohp]
+           [--dir dir] [--load file] [--shell file] [--eval expr] [--rc | --norc]
            [--c-stack size] [--lisp-stack size] [--heap-size size] [--frame-stack size]
            [[-o ofile] [-c [cfile]] [-h [hfile]] [--data [datafile]] [-s] [-q]
             --compile file]
@@ -117,8 +117,6 @@ appeared after a '--'.")
     ("-h" &optional (setq h-file 1))
     (("-data" "--data") 1 (setq data-file 1))
     (("-q" "--quiet") 0 (setq verbose nil))
-    (("-hp" "--hp") 0 (setf *relative-package-names* t))
-    (("-nohp" "--nohp") 0 (setf *relative-package-names* nil))
     ("-s" 0 (setq system-p t))
     ("--" 1 (setf ext:*unprocessed-ecl-command-args* (rest 1)) :stop)))
 

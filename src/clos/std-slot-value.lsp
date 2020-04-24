@@ -142,18 +142,10 @@
 ;;;
 (eval-when (:compile-toplevel :execute)
   (defmacro ensure-up-to-date-instance (instance)
-    ;; The up-to-date status of a class is determined by
-    ;; instance.sig. This slot of the C structure contains a list of
-    ;; slot definitions that was used to create the instance. When the
-    ;; class is updated, the list is newly created. Structures are also
-    ;; "instances" but keep ECL_UNBOUND instead of the list.
-    `(let* ((i ,instance)
-            (s (si::instance-sig i)))
-       (declare (:read-only i s))
-       (with-early-accessors (+standard-class-slots+)
-         (when (si:sl-boundp s)
-           (unless (eq s (class-slots (si::instance-class i)))
-             (update-instance i)))))))
+    `(let ((instance ,instance))
+       (declare (:read-only instance))
+       (when (si::instance-obsolete-p instance)
+         (update-instance instance)))))
 
 (defun update-instance (x)
   (si::instance-sig-set x))
@@ -259,3 +251,70 @@
            (ignore instance))
   (error "Invalid location ~A when accessing slot of class ~A"
          location (class-of location)))
+
+
+;;;
+;;; Atomic functions to set and increment slot values
+;;;
+#+threads
+(defun std-slot-location (self slot-name operation)
+  (let* ((class (class-of self))
+         (location-table (class-location-table class))
+         (location (if location-table
+                       (gethash slot-name location-table nil)
+                       ;; We ignore possible definitions of
+                       ;; slot-value-using-class and hope for the
+                       ;; best
+                       (let ((slotd (find slot-name (class-slots class)
+                                          :key #'slot-definition-name)))
+                         (if slotd
+                             (slot-definition-location slotd)
+                             nil)))))
+    (or location (slot-missing class self slot-name operation))))
+
+#+threads
+(defun mp::compare-and-swap-standard-instance (instance location old new)
+  (with-early-accessors (+standard-class-slots+
+                         +slot-definition-slots+)
+    (ensure-up-to-date-instance instance)
+    (cond ((ext:fixnump location)
+           ;; local slot
+           (mp:compare-and-swap-instance instance (truly-the fixnum location) old new))
+          ((consp location)
+           ;; shared slot
+           (mp:compare-and-swap (car location) old new))
+          (t
+           (invalid-slot-location instance location)))))
+
+#+threads
+(defun mp::compare-and-swap-slot-value (self slot-name old new)
+  (with-early-accessors (+standard-class-slots+
+                         +slot-definition-slots+)
+    (let* ((location (std-slot-location self slot-name 'MP:COMPARE-AND-SWAP))
+           (old-slot-value
+            (mp::compare-and-swap-standard-instance self location old new)))
+      (if (and (not (si:sl-boundp old-slot-value)) (si:sl-boundp old))
+          (slot-unbound (class-of self) self slot-name)
+          old-slot-value))))
+
+#+threads
+(defun mp::atomic-incf-standard-instance (instance location increment)
+  (with-early-accessors (+standard-class-slots+
+                         +slot-definition-slots+)
+    (ensure-up-to-date-instance instance)
+    (cond ((ext:fixnump location)
+           ;; local slot
+           (mp:atomic-incf-instance instance (truly-the fixnum location) increment))
+          ((consp location)
+           ;; shared slot
+           (mp:atomic-incf (car location) increment))
+          (t
+           (invalid-slot-location instance location)))))
+
+#+threads
+(defun mp::atomic-incf-slot-value (self slot-name increment)
+  (with-early-accessors (+standard-class-slots+
+                         +slot-definition-slots+)
+    (mp::atomic-incf-standard-instance self
+                                       (std-slot-location self slot-name 'MP:ATOMIC-INCF)
+                                       increment)))

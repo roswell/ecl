@@ -54,13 +54,35 @@ ecl_internal_error(const char *s)
             strerror(saved_errno));
   }
   fflush(stderr);
-  si_dump_c_backtrace(ecl_make_fixnum(32));
+  _ecl_dump_c_backtrace();
 #ifdef SIGIOT
   signal(SIGIOT, SIG_DFL); /* avoid getting into a loop with abort */
 #endif
   abort();
 }
 
+#ifdef ECL_THREADS
+void
+ecl_thread_internal_error(const char *s)
+{
+  int saved_errno = errno;
+  fprintf(stderr, "\nInternal thread error in:\n%s\n", s);
+  if (saved_errno) {
+    fprintf(stderr, "  [%d: %s]\n", saved_errno,
+            strerror(saved_errno));
+  }
+  _ecl_dump_c_backtrace();
+  fprintf(stderr,
+          "\nDid you forget to call `ecl_import_current_thread'?\n"
+          "Exitting thread.\n");
+  fflush(stderr);
+#ifdef ECL_WINDOWS_THREADS
+  ExitThread(0);
+#else
+  pthread_exit(NULL);
+#endif
+}
+#endif
 
 void
 ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
@@ -104,12 +126,15 @@ void
 FEerror(const char *s, int narg, ...)
 {
   ecl_va_list args;
+  cl_object rest;
   ecl_va_start(args, narg, narg, 0);
   ecl_enable_interrupts();
+  rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
   funcall(4, @'si::universal-error-handler',
           ECL_NIL,                    /*  not correctable  */
-          make_constant_base_string(s),    /*  condition text  */
-          cl_grab_rest_args(args));
+          ecl_make_constant_base_string(s,-1),    /*  condition text  */
+          rest);
   _ecl_unexpected_return();
 }
 
@@ -117,12 +142,15 @@ cl_object
 CEerror(cl_object c, const char *err, int narg, ...)
 {
   ecl_va_list args;
+  cl_object rest;
   ecl_va_start(args, narg, narg, 0);
   ecl_enable_interrupts();
+  rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
   return funcall(4, @'si::universal-error-handler',
                  c,                       /*  correctable  */
-                 make_constant_base_string(err),  /*  continue-format-string  */
-                 cl_grab_rest_args(args));
+                 ecl_make_constant_base_string(err,-1),  /*  continue-format-string  */
+                 rest);
 }
 
 /***********************
@@ -135,7 +163,7 @@ FEprogram_error(const char *s, int narg, ...)
   cl_object real_args, text;
   ecl_va_list args;
   ecl_va_start(args, narg, narg, 0);
-  text = make_constant_base_string(s);
+  text = ecl_make_constant_base_string(s,-1);
   real_args = cl_grab_rest_args(args);
   if (cl_boundp(@'si::*current-form*') != ECL_NIL) {
     /* When FEprogram_error is invoked from the compiler, we can
@@ -144,33 +172,7 @@ FEprogram_error(const char *s, int narg, ...)
     cl_object stmt = ecl_symbol_value(@'si::*current-form*');
     if (stmt != ECL_NIL) {
       real_args = @list(3, stmt, text, real_args);
-      text = make_constant_base_string("In form~%~S~%~?");
-    }
-  }
-  si_signal_simple_error(4, 
-                         @'program-error', /* condition name */
-                         ECL_NIL, /* not correctable */
-                         text,
-                         real_args);
-  _ecl_unexpected_return();
-}
-
-void
-FEprogram_error_noreturn(const char *s, int narg, ...)
-{
-  cl_object real_args, text;
-  ecl_va_list args;
-  ecl_va_start(args, narg, narg, 0);
-  text = make_constant_base_string(s);
-  real_args = cl_grab_rest_args(args);
-  if (cl_boundp(@'si::*current-form*') != ECL_NIL) {
-    /* When FEprogram_error is invoked from the compiler, we can
-     * provide information about the offending form.
-     */
-    cl_object stmt = ecl_symbol_value(@'si::*current-form*');
-    if (stmt != ECL_NIL) {
-      real_args = @list(3, stmt, text, real_args);
-      text = make_constant_base_string("In form~%~S~%~?");
+      text = ecl_make_constant_base_string("In form~%~S~%~?",-1);
     }
   }
   si_signal_simple_error(4, 
@@ -185,23 +187,27 @@ void
 FEcontrol_error(const char *s, int narg, ...)
 {
   ecl_va_list args;
+  cl_object rest;
   ecl_va_start(args, narg, narg, 0);
+  rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
   si_signal_simple_error(4,
                          @'control-error', /* condition name */
                          ECL_NIL, /* not correctable */
-                         make_constant_base_string(s), /* format control */
-                         cl_grab_rest_args(args)); /* format args */
+                         ecl_make_constant_base_string(s,-1), /* format control */
+                         rest); /* format args */
   _ecl_unexpected_return();
 }
 
 void
 FEreader_error(const char *s, cl_object stream, int narg, ...)
 {
-  cl_object message = make_constant_base_string(s);
+  cl_object message = ecl_make_constant_base_string(s,-1);
   cl_object args_list;
   ecl_va_list args;
   ecl_va_start(args, narg, narg, 0);
   args_list = cl_grab_rest_args(args);
+  ecl_va_end(args);
   if (Null(stream)) {
     /* Parser error */
     si_signal_simple_error(4,
@@ -211,8 +217,8 @@ FEreader_error(const char *s, cl_object stream, int narg, ...)
                            args_list);
   } else {
     /* Actual reader error */
-    cl_object prefix = make_constant_base_string("Reader error in file ~S, "
-                                                 "position ~D:~%");
+    cl_object prefix = ecl_make_constant_base_string("Reader error in file ~S, "
+                                                     "position ~D:~%",-1);
     cl_object position = cl_file_position(1, stream);
     message = si_base_string_concatenate(2, prefix, message);
     args_list = cl_listX(3, stream, position, args_list);
@@ -275,7 +281,7 @@ FEwrong_type_only_arg(cl_object function, cl_object value, cl_object type)
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
                          ECL_NIL, /* not correctable */
-                         make_constant_base_string(message), /* format control */
+                         ecl_make_constant_base_string(message,-1), /* format control */
                          cl_list(3, function, value, type),
                          @':expected-type', type,
                          @':datum', value);
@@ -299,7 +305,7 @@ FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_objec
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
                          ECL_NIL, /* not correctable */
-                         make_constant_base_string(message), /* format control */
+                         ecl_make_constant_base_string(message,-1), /* format control */
                          cl_list(4, function, ecl_make_fixnum(narg),
                                  value, type),
                          @':expected-type', type,
@@ -325,7 +331,7 @@ FEwrong_type_key_arg(cl_object function, cl_object key, cl_object value, cl_obje
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
                          ECL_NIL, /* not correctable */
-                         make_constant_base_string(message), /* format control */
+                         ecl_make_constant_base_string(message,-1), /* format control */
                          cl_list(4, function, key, value, type),
                          @':expected-type', type,
                          @':datum', value);
@@ -346,7 +352,7 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
     "takes a value ~D out of the range ~A.";
   cl_object limit = ecl_make_integer(nonincl_limit-1);
   cl_object type = ecl_make_integer_type(ecl_make_fixnum(0), limit);
-  cl_object message = make_constant_base_string((which<0) ? message1 : message2);
+  cl_object message = ecl_make_constant_base_string((which<0) ? message1 : message2,-1);
   cl_env_ptr env = ecl_process_env();
   struct ecl_ihs_frame tmp_ihs;
   function = cl_symbol_or_object(function);
@@ -411,9 +417,21 @@ FEinvalid_variable(const char *s, cl_object obj)
 }
 
 void
+FEillegal_variable_name(cl_object v)
+{
+  FEprogram_error("Not a valid variable name ~S.", 1, v);
+}
+
+void
 FEassignment_to_constant(cl_object v)
 {
   FEprogram_error("SETQ: Tried to assign a value to the constant ~S.", 1, v);
+}
+
+void
+FEbinding_a_constant(cl_object v)
+{
+  FEprogram_error("The constant ~S is being bound.", 1, v);
 }
 
 void
@@ -426,7 +444,7 @@ void
 FEinvalid_function_name(cl_object fname)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("Not a valid function name ~D"),
+           ecl_make_constant_base_string("Not a valid function name ~D.",-1),
            @':format-arguments', cl_list(1, fname),
            @':expected-type', cl_list(2, @'satisfies', @'si::valid-function-name-p'),
            @':datum', fname);
@@ -474,7 +492,7 @@ cl_object
 _ecl_strerror(int code)
 {
   const char *error = strerror(code);
-  return make_base_string_copy(error);
+  return ecl_make_simple_base_string(error,-1);
 }
 
 /*************************************
@@ -493,9 +511,10 @@ FElibc_error(const char *msg, int narg, ...)
 
   ecl_va_start(args, narg, narg, 0);
   rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
 
   FEerror("~?~%C library explanation: ~A.", 3,
-          make_constant_base_string(msg), rest,
+          ecl_make_constant_base_string(msg,-1), rest,
           error);
 }
 
@@ -513,14 +532,15 @@ FEwin32_error(const char *msg, int narg, ...)
                     0, GetLastError(), 0, (void*)&win_msg, 0, NULL) == 0)
     win_msg_obj = unknown_error;
   else {
-    win_msg_obj = make_base_string_copy(win_msg);
+    win_msg_obj = ecl_make_simple_base_string(win_msg,-1);
     LocalFree(win_msg);
   }
 
   ecl_va_start(args, narg, narg, 0);
   rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
   FEerror("~?~%Windows library explanation: ~A.", 3,
-          make_constant_base_string(msg), rest,
+          ecl_make_constant_base_string(msg,-1), rest,
           win_msg_obj);
 }
 #endif
@@ -540,15 +560,15 @@ FEwin32_error(const char *msg, int narg, ...)
 @(defun cerror (cformat eformat &rest args)
 @ {
   ecl_enable_interrupts();
-  return funcall(4, @'si::universal-error-handler', cformat, eformat,
-                 cl_grab_rest_args(args));
+  @(return funcall(4, @'si::universal-error-handler', cformat, eformat,
+                   cl_grab_rest_args(args)));
 } @)
 
 @(defun si::serror (cformat eformat &rest args)
 @ {
   ecl_enable_interrupts();
-  return funcall(4, @'si::stack-error-handler', cformat, eformat,
-                 cl_grab_rest_args(args));
+  @(return funcall(4, @'si::stack-error-handler', cformat, eformat,
+                   cl_grab_rest_args(args)));
 } @)
 
 void

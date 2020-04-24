@@ -1,9 +1,0 @@
-@node Atomic operations
-@subsubsection Atomic operations
-/* threads/atomic.c */
-
-cl_object ecl_atomic_get(cl_object *slot);
-void ecl_atomic_push(cl_object *slot, cl_object o);
-void ecl_atomic_nconc(cl_object l, cl_object *slot);
-cl_object ecl_atomic_pop(cl_object *slot);
-cl_index ecl_atomic_index_incf(cl_index *slot);

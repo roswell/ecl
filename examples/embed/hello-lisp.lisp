@@ -1,1 +1,3 @@
-(defun hello-lisp () (format t "hello-lisp!~%"))
+(defun hello-lisp ()
+  (format t "hello-lisp!~%")
+  :foo)

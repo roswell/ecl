@@ -79,7 +79,7 @@ mp_semaphore_wait_count(cl_object semaphore)
     }
     AO_fetch_and_add((AO_t*)&semaphore->semaphore.counter, n);
     if (semaphore->semaphore.queue_list != ECL_NIL) {
-      ecl_wakeup_waiters(env, semaphore, ECL_WAKEUP_ONE);
+      ecl_wakeup_waiters(env, semaphore, ECL_WAKEUP_ALL);
     }
     @(return);
   } @)
@@ -125,7 +125,6 @@ cl_object
 mp_try_get_semaphore(cl_object semaphore)
 {
   cl_env_ptr env = ecl_process_env();
-  cl_object output;
   unlikely_if (ecl_t_of(semaphore) != t_semaphore) {
     FEerror_not_a_semaphore(semaphore);
   }

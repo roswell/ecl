@@ -457,7 +457,7 @@ See: WITH-CSTRING. Works similar to LET*."
          foreign-string &key length (null-terminated-p t)
 
 Returns a Lisp string from a foreign string FOREIGN-STRING. Can
-translated ASCII and binary strings."
+translate ASCII and binary strings."
   (cond ((and (not length) null-terminated-p)
          (setf length (foreign-string-length foreign-string)))
         ((not (integerp length))
@@ -504,11 +504,11 @@ FREE-FOREIGN-OBJECT. Initial contents of the string are undefined."
 
 Binds FOREIGN-STRING to a foreign string created from conversion of a
 STRING and evaluated the BODY. Automatically frees the FOREIGN-STRING."
-  (let ((result (gensym)))
-    `(let* ((,foreign-string (convert-to-foreign-string ,lisp-string))
-            (,result (progn ,@body)))
-       (free-foreign-object ,foreign-string)
-       ,result)))
+  `(let* ((,foreign-string (convert-to-foreign-string ,lisp-string)))
+     (mp:without-interrupts
+         (unwind-protect
+              (mp:with-restored-interrupts ,@body)
+           (free-foreign-object ,foreign-string)))))
 
 (defmacro with-foreign-strings (bindings &rest body)
   "Syntax: (with-foreign-strings ((foreign-string string)*) &body body)
@@ -530,9 +530,10 @@ See: WITH-FOREIGN-STRING. Works similar to LET*."
 Wraps the allocation, binding and destruction of a foreign object
 around a body of code"
   `(let ((,var (allocate-foreign-object ,type)))
-     (unwind-protect
-         (progn ,@body)
-       (free-foreign-object ,var))))
+     (mp:without-interrupts
+         (unwind-protect
+              (mp:with-restored-interrupts ,@body)
+           (free-foreign-object ,var)))))
 
 (defmacro with-foreign-objects (bindings &rest body)
   (if bindings
@@ -737,9 +738,11 @@ locations. Returns the path of the first found file."
 Loads a foreign library."
   (declare (ignore module force-load supporting-libraries))
   (let ((compile-form (and (constantp filename env)
-                           `((eval-when (:compile-toplevel)
-                               (do-load-foreign-library ,filename
-                                 ,(ext:constant-form-value system-library))))))
+                           `((ext:with-backend
+                                 :c/c++ (eval-when (:compile-toplevel)
+                                          (do-load-foreign-library ,filename
+                                            ,(ext:constant-form-value system-library)))
+                                 :bytecodes nil))))
         (dyn-form #+dffi (when (and (not system-library) *use-dffi*)
                            `((si:load-foreign-module ,filename)))
                   #-dffi nil))
@@ -760,7 +763,11 @@ Loads a foreign library."
                                                 (values-list name)
                                                 (values name :default))
         (let ((arg-types (mapcar #'second arg-desc))
-              (arg-names (mapcar #'first arg-desc)))
+              (arg-names (mapcar #'first arg-desc))
+              (ret-type (typecase ret-type
+                          ((member nil :void)      :void)
+                          ((cons (member * array)) :pointer-void)
+                          (otherwise               ret-type))))
           `(si::make-dynamic-callback
             #'(ext::lambda-block ,name ,arg-names ,@body)
             ',name ',ret-type ',arg-types ,call-type)))
@@ -770,7 +777,7 @@ Loads a foreign library."
   (let ((x (si::get-sysprop name :callback)))
     (unless x
       (error "There is no callback with name ~a" name))
-    (first x)))
+    x))
 
 ;;;----------------------------------------------------------------------
 ;;; COMPATIBILITY WITH OLDER FFI
@@ -840,9 +847,8 @@ The compiler defines a Lisp function named by NAME whose body consists
 of a calling sequence to the C language function named by
 FUNCTION-NAME.
 
-The interpreter ignores this form.  ARG-TYPES are argument types of
-the C function and RESULT-TYPE is its return type. Symbols OBJECT,
-INT, CHAR, CHAR*, FLOAT, DOUBLE are allowed for these types."
+The interpreter ignores this form. ARG-TYPES are argument types of
+the C function and RESULT-TYPE is its return type."
   (let ((output-type :object)
         (args (mapcar #'(lambda (x) (gensym)) arg-types)))
     (if (consp c-name)

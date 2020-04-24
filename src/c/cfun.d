@@ -22,46 +22,75 @@ ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, in
 {
   cl_object cf;
 
+  if (ecl_unlikely(narg < 0 || narg > ECL_C_ARGUMENTS_LIMIT)) {
+    FEprogram_error("ecl_make_cfun: ~a", 1,
+                    (narg < 0)
+                    ? ecl_make_constant_base_string("number of arguments must be greater than 0.",-1)
+                    : ecl_make_constant_base_string("function requires too many arguments.",-1));
+  }
+
   cf = ecl_alloc_object(t_cfunfixed);
-  cf->cfunfixed.entry = dispatch_table[narg];
+  cf->cfunfixed.entry = fixed_dispatch_table[narg];
   cf->cfunfixed.entry_fixed = c_function;
   cf->cfunfixed.name = name;
   cf->cfunfixed.block = cblock;
   cf->cfunfixed.file = ECL_NIL;
   cf->cfunfixed.file_position = ecl_make_fixnum(-1);
   cf->cfunfixed.narg = narg;
-  if (ecl_unlikely(narg < 0 || narg > ECL_C_ARGUMENTS_LIMIT))
-    FEprogram_error_noreturn("ecl_make_cfun: function requires "
-                             "too many arguments.",0);
   return cf;
 }
 
 cl_object
-ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock)
+ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock, int narg_fixed)
 {
   cl_object cf;
 
+  if (ecl_unlikely(narg_fixed < 0 || narg_fixed > ECL_C_ARGUMENTS_LIMIT)) {
+    FEprogram_error("ecl_make_cfun_va: ~a", 1,
+                    (narg_fixed < 0)
+                    ? ecl_make_constant_base_string("number of arguments must be greater than 0.",-1)
+                    : ecl_make_constant_base_string("function requires too many arguments.",-1));
+  }
+
   cf = ecl_alloc_object(t_cfun);
+#ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
+  cf->cfun.entry = variadic_dispatch_table[narg_fixed];
+  cf->cfun.entry_variadic = c_function;
+#else
   cf->cfun.entry = c_function;
+#endif
   cf->cfun.name = name;
   cf->cfun.block = cblock;
-  cf->cfun.narg = -1;
   cf->cfun.file = ECL_NIL;
   cf->cfun.file_position = ecl_make_fixnum(-1);
+  cf->cfun.narg = narg_fixed;
   return cf;
 }
 
 cl_object
-ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block)
+ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block, int narg_fixed)
 {
   cl_object cc;
 
+  if (ecl_unlikely(narg_fixed < 0 || narg_fixed > ECL_C_ARGUMENTS_LIMIT)) {
+    FEprogram_error("ecl_make_cclosure_va: ~a", 1,
+                    (narg_fixed < 0)
+                    ? ecl_make_constant_base_string("number of arguments must be greater than 0.",-1)
+                    : ecl_make_constant_base_string("function requires too many arguments.",-1));
+  }
+
   cc = ecl_alloc_object(t_cclosure);
+#ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
+  cc->cclosure.entry = variadic_dispatch_table[narg_fixed];
+  cc->cclosure.entry_variadic = c_function;
+#else
   cc->cclosure.entry = c_function;
+#endif
   cc->cclosure.env = env;
   cc->cclosure.block = block;
   cc->cclosure.file = ECL_NIL;
   cc->cclosure.file_position = ecl_make_fixnum(-1);
+  cc->cclosure.narg = narg_fixed;
   return cc;
 }
 
@@ -81,18 +110,18 @@ ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg)
 }
 
 void
-ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function)
+ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function, int narg_fixed)
 {
   si_fset(3, sym,
-          ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')),
+          ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg_fixed),
           ECL_T);
 }
 
 void
-ecl_def_c_function_va(cl_object sym, cl_objectfn c_function)
+ecl_def_c_function_va(cl_object sym, cl_objectfn c_function, int narg_fixed)
 {
   si_fset(2, sym,
-          ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*')));
+          ecl_make_cfun_va(c_function, sym, ecl_symbol_value(@'si::*cblock*'), narg_fixed));
 }
 
 cl_object
@@ -127,12 +156,13 @@ cl_function_lambda_expression(cl_object fun)
   case t_bclosure:
     lex = fun->bclosure.lex;
     fun = fun->bclosure.code;
+    /* fallthrough */
   case t_bytecodes:
     name = fun->bytecodes.name;
     output = fun->bytecodes.definition;
-    if (name == ECL_NIL)
+    if (name == ECL_NIL && output != ECL_NIL)
       output = cl_cons(@'lambda', output);
-    else if (name != @'si::bytecodes')
+    else if (name != @'si::bytecodes' && output != ECL_NIL)
       output = @list*(3, @'ext::lambda-block', name, output);
     break;
   case t_cfun:

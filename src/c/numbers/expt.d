@@ -20,8 +20,6 @@
 #include <ecl/impl/math_fenv.h>
 #include <ecl/impl/math_dispatch.h>
 
-#include <stdlib.h> /* for abort() */
-
 #pragma STDC FENV_ACCESS ON
 
 cl_fixnum
@@ -47,8 +45,11 @@ cl_expt(cl_object x, cl_object y)
 
 ecl_def_ct_single_float(singlefloat_one,1,static,const);
 ecl_def_ct_double_float(doublefloat_one,1,static,const);
-#ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(longfloat_one,1,static,const);
+#ifdef ECL_COMPLEX_FLOAT
+ecl_def_ct_csfloat(csfloat_one,1,static,const);
+ecl_def_ct_cdfloat(cdfloat_one,1,static,const);
+ecl_def_ct_clfloat(clfloat_one,1,static,const);
 #endif
 
 static cl_object
@@ -71,62 +72,170 @@ expt_zero(cl_object x, cl_object y)
     return singlefloat_one;
   case t_doublefloat:
     return doublefloat_one;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return longfloat_one;
-#endif
   case t_complex:
-    z = expt_zero((tx == t_complex)? x->complex.real : x,
-                  (ty == t_complex)? y->complex.real : y);
+    z = expt_zero((tx == t_complex)? x->gencomplex.real : x,
+                  (ty == t_complex)? y->gencomplex.real : y);
     return ecl_make_complex(z, ecl_make_fixnum(0));
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+    return csfloat_one;
+  case t_cdfloat:
+    return cdfloat_one;
+  case t_clfloat:
+    return clfloat_one;
+#endif
   default:
     /* We will never reach this */
-    abort();
+    if (ty > tx)  FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
+    else          FEwrong_type_nth_arg(@[expt], 2, y, @[number]);
   }
 }
+
+static cl_object
+ecl_expt_generic(cl_object x, cl_object y) {
+  bool minusp = ecl_minusp(y);
+  cl_object z = ecl_make_fixnum(1);
+  if (minusp) {
+    y = ecl_negate(y);
+  }
+  do {
+    /* INV: ecl_integer_divide outputs an integer */
+    if (!ecl_evenp(y)) {
+      z = ecl_times(z, x);
+    }
+    y = ecl_integer_divide(y, ecl_make_fixnum(2));
+    if (ecl_zerop(y)) {
+      if (minusp) return ecl_divide(ecl_make_fixnum(1), z);
+      else        return z;
+    }
+    x = ecl_times(x, x);
+  } while (1);
+}
+
+static cl_object
+ecl_expt_float(cl_object x, cl_object y) {
+  cl_type
+    tx = ecl_t_of(x),
+    ty = ecl_t_of(y);
+  cl_object ret;
+
+  ECL_MATHERR_CLEAR;
+  switch((ty > tx) ? ty : tx) {
+  case t_longfloat:
+    ret = ecl_make_long_float
+      (powl(ecl_to_long_double(x), ecl_to_long_double(y)));
+    break;
+  case t_doublefloat:
+    ret = ecl_make_double_float
+      (pow(ecl_to_double(x), ecl_to_double(y)));
+    break;
+  default:
+    ret = ecl_make_single_float
+      (powf(ecl_to_float(x), ecl_to_float(y)));
+    break;
+  }
+  ECL_MATHERR_TEST;
+  return ret;
+}
+
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_expt_complex_float(cl_object x, cl_object y) {
+  cl_type
+    tx = ecl_t_of(x),
+    ty = ecl_t_of(y);
+  cl_object ret;
+
+  ECL_MATHERR_CLEAR;
+  switch ((ty > tx)? ty : tx) {
+  case t_clfloat:
+  case t_longfloat:
+    ret = ecl_make_clfloat
+      (cpowl(ecl_to_clfloat(x), ecl_to_clfloat(y)));
+    break;
+  case t_cdfloat:
+  case t_doublefloat:
+    ret = ecl_make_cdfloat
+      (cpow (ecl_to_cdfloat(x), ecl_to_cdfloat(y)));
+    break;
+  default:
+    ret = ecl_make_csfloat
+      (cpowf(ecl_to_csfloat(x), ecl_to_csfloat(y)));
+    break;
+  }
+  ECL_MATHERR_TEST;
+  return ret;
+}
+#endif
 
 cl_object
 ecl_expt(cl_object x, cl_object y)
 {
   cl_type ty, tx;
-  cl_object z;
+  /* 0 ^ 0 -> 1 */
   if (ecl_unlikely(ecl_zerop(y))) {
     return expt_zero(x, y);
   }
+  if (ecl_unlikely(ecl_zerop(x))) {
+    /* 0 ^ -y = (1/0)^y */
+    if (!ecl_plusp(cl_realpart(y))) {
+      /* Normally we would have signalled FEdivision_by_zero, but fpe
+         may be disabled and then we want to work on infinity. */
+      return ecl_divide(ecl_make_fixnum(1), x);
+    }
+    /* 0 ^ +y = 0 */
+    /* We call ecl_times to ensure the most contagious type.*/
+    return ecl_times(x, y);
+  }
+  /* Here comes the order in which we handle cases: */
+  /* -----------------------------------FIRST IF--- */
+  /* rational ^ integer  -> rational                */
+  /* complex  ^ integer  -> complex/rational        */
+  /* float    ^ integer  -> float                   */
+  /* cfloat   ^ integer  -> cfloat                  */
+  /* ----------------------------------SECOND IF--- */
+  /* number   ^ complex  -> cfloat                  */
+  /* complex  ^ number   -> cfloat                  */
+  /* negative ^ number   -> cfloat                  */
+  /* ---------------------------------THIRD ELSE--- */
+  /* positive ^ number   -> float                   */
+  /* ---------------------------------------------- */
+  /* x and y are already ensured to be a number by ecl_zerop above */
   ty = ecl_t_of(y);
   tx = ecl_t_of(x);
-  if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
-    FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
+  if (ty == t_fixnum || ty == t_bignum) {
+    switch (tx) {
+    case t_fixnum:
+    case t_bignum:
+    case t_ratio:
+    case t_complex:
+      return ecl_expt_generic(x, y);
+    case t_longfloat:
+    case t_doublefloat:
+    case t_singlefloat:
+      return ecl_expt_float(x, y);
+#ifdef ECL_COMPLEX_FLOAT
+    case t_clfloat:
+    case t_cdfloat:
+    case t_csfloat:
+      return ecl_expt_complex_float(x, y);
+#endif
+    default:
+      ecl_internal_error("expt: unhandled switch branch.");
+    }
   }
-  if (ecl_zerop(x)) {
-    z = ecl_times(x, y);
-    if (!ecl_plusp(ty==t_complex?y->complex.real:y))
-      z = ecl_divide(ecl_make_fixnum(1), z);
-  } else if (ty != t_fixnum && ty != t_bignum) {
-    /* The following could be just
-       z = ecl_log1(x);
-       however, Maxima expects EXPT to have double accuracy
-       when the first argument is integer and the second
-       is double-float */
-    z = ecl_log1(ecl_times(x, expt_zero(x, y)));
+  if (ECL_COMPLEXP(y) || ECL_COMPLEXP(x) || ecl_minusp(x)) {
+#ifdef ECL_COMPLEX_FLOAT
+    return ecl_expt_complex_float(x, y);
+#else
+    /* We call expt_zero to ensure the most contagious type.*/
+    cl_object z = ecl_log1(ecl_times(x, expt_zero(x, y)));
     z = ecl_times(z, y);
     z = ecl_exp(z);
-  } else if (ecl_minusp(y)) {
-    z = ecl_negate(y);
-    z = ecl_expt(x, z);
-    z = ecl_divide(ecl_make_fixnum(1), z);
-  } else {
-    ECL_MATHERR_CLEAR;
-    z = ecl_make_fixnum(1);
-    do {
-      /* INV: ecl_integer_divide outputs an integer */
-      if (!ecl_evenp(y))
-        z = ecl_times(z, x);
-      y = ecl_integer_divide(y, ecl_make_fixnum(2));
-      if (ecl_zerop(y)) break;
-      x = ecl_times(x, x);
-    } while (1);
-    ECL_MATHERR_TEST;
+    return z;
+#endif
   }
-  return z;
+  return ecl_expt_float(x, y);
 }

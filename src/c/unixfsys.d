@@ -49,24 +49,11 @@ typedef int mode_t;
 #include <fcntl.h>
 #include <errno.h>
 
-ecl_def_ct_base_string(str_slash,"/",1,static,const);
-
-static cl_object
-coerce_to_posix_filename(cl_object filename)
-{
-  /* This converts a pathname designator into a namestring, with the
-   * particularity that directories do not end with a slash '/', because
-   * this is not supported on all POSIX platforms (most notably Windows)
-   */
-  filename = si_coerce_to_filename(filename);
-  return cl_string_right_trim(str_slash, filename);
-}
-
 static int
 safe_chdir(const char *path, cl_object prefix)
 {
   if (prefix != ECL_NIL) {
-    cl_object aux = make_constant_base_string(path);
+    cl_object aux = ecl_make_constant_base_string(path,-1);
     aux = si_base_string_concatenate(2, prefix, aux);
     return safe_chdir((char *)aux->base_string.self, ECL_NIL);
   } else {
@@ -108,7 +95,7 @@ drive_host_prefix(cl_object pathname)
   cl_object host = pathname->pathname.host;
   cl_object output = ECL_NIL;
   if (device != ECL_NIL) {
-    output = make_base_string_copy("X:");
+    output = ecl_make_simple_base_string("X:",-1);
     output->base_string.self[0] = device->base_string.self[0];
   }
   if (host != ECL_NIL) {
@@ -150,7 +137,7 @@ current_dir(void) {
   cl_index size = 128;
 
   do {
-    output = ecl_alloc_adjustable_base_string(size);
+    output = ecl_alloc_adjustable_base_string(size+2);
     ecl_disable_interrupts();
     ok = getcwd((char*)output->base_string.self, size);
     if (ok == NULL && errno != ERANGE) {
@@ -161,20 +148,14 @@ current_dir(void) {
     size += 256;
   } while (ok == NULL);
   size = strlen((char*)output->base_string.self);
-  if ((size + 2) >= output->base_string.dim) {
-    /* Too small to host the trailing '/' and '\0' */
-    cl_object other = ecl_alloc_adjustable_base_string(size+2);
-    strcpy((char*)other->base_string.self, (char*)output->base_string.self);
-    output = other;
-  }
 #ifdef _MSC_VER
-  for (c = output->base_string.self; *c; c++)
-    if (*c == '\\')
-      *c = '/';
+  for (c = output->base_string.self; *c; c++) {
+    if (*c == '\\') *c = '/';
+  }
 #endif
   if (output->base_string.self[size-1] != '/') {
     output->base_string.self[size++] = '/';
-    output->base_string.self[size] = 0;
+    output->base_string.self[size] = '\0';
   }
   output->base_string.fillp = size;
   return output;
@@ -214,6 +195,10 @@ file_kind(char *filename, bool follow_links) {
       output = @':directory';
     else if (S_ISREG(buf.st_mode))
       output = @':file';
+# ifdef S_ISFIFO
+    else if (S_ISFIFO(buf.st_mode))
+      output = @':fifo';
+# endif
     else
       output = @':special';
 #endif
@@ -222,7 +207,7 @@ file_kind(char *filename, bool follow_links) {
 
 cl_object
 si_file_kind(cl_object filename, cl_object follow_links) {
-  filename = coerce_to_posix_filename(filename);
+  filename = si_coerce_to_filename(filename);
   @(return file_kind((char*)filename->base_string.self, !Null(follow_links)));
 }
 
@@ -234,19 +219,14 @@ si_readlink(cl_object filename) {
   cl_index size = 128, written;
   cl_object output, kind;
   do {
-    output = ecl_alloc_adjustable_base_string(size);
+    /* We reserve 2 characters for trailing '/' and '\0' */
+    output = ecl_alloc_adjustable_base_string(size+2);
     ecl_disable_interrupts();
     written = readlink((char*)filename->base_string.self,
                        (char*)output->base_string.self, size);
     ecl_enable_interrupts();
     size += 256;
   } while (written == size-256);
-  if ((written + 2) > (cl_index)(output->base_string.self)) {
-    /* Too small to host the trailing '/' and '\0' */
-    cl_object other = ecl_alloc_adjustable_base_string(written+2);
-    strcpy((char*)other->base_string.self, (char*)output->base_string.self);
-    output = other;
-  }
   output->base_string.self[written] = '\0';
   kind = file_kind((char*)output->base_string.self, FALSE);
   if (kind == @':directory') {
@@ -273,7 +253,7 @@ enter_directory(cl_object base_dir, cl_object subdir, bool ignore_if_failure)
     /* Nothing to do */
     return base_dir;
   } else if (subdir == @':up') {
-    aux = make_constant_base_string("..");
+    aux = ecl_make_constant_base_string("..",-1);
   } else if (!ECL_BASE_STRING_P(subdir)) {
     unlikely_if (!ecl_fits_in_base_string(subdir))
       FEerror("Directory component ~S found in pathname~&  ~S"
@@ -390,7 +370,7 @@ file_truename(cl_object pathname, cl_object filename, int flags)
         pathname->pathname.type != ECL_NIL) {
       pathname = si_base_string_concatenate
         (2, filename,
-         make_constant_base_string("/"));
+         ecl_make_constant_base_string("/",-1));
       pathname = cl_truename(pathname);
     }
   }
@@ -473,12 +453,22 @@ ecl_file_len(int f)
   ecl_disable_interrupts();
   fstat(f, &filestatus);
   ecl_enable_interrupts();
+#ifdef S_ISFIFO
+  if (S_ISFIFO(filestatus.st_mode)) {
+    return ECL_NIL;
+  } else {
+    return ecl_make_integer(filestatus.st_size);
+  }
+#else
   return ecl_make_integer(filestatus.st_size);
+#endif
 }
 
 @(defun rename-file (oldn newn &key (if_exists @':error'))
   cl_object old_filename, new_filename, old_truename, new_truename;
+#if defined(ECL_MS_WINDOWS_HOST)
   int error;
+#endif
   @
 
   /* 1) Get the old filename, and complain if it has wild components,
@@ -486,7 +476,7 @@ ecl_file_len(int f)
    *    is not the truename, because we might be renaming a symbolic link.
    */
   old_truename = cl_truename(oldn);
-  old_filename = coerce_to_posix_filename(old_truename);
+  old_filename = si_coerce_to_filename(old_truename);
 
   /* 2) Create the new file name. */
   newn = ecl_merge_pathnames(newn, oldn, @':newest');
@@ -602,8 +592,8 @@ cl_delete_file(cl_object file)
 {
   cl_object path = cl_pathname(file);
   int isdir = directory_pathname_p(path);
-  cl_object filename = coerce_to_posix_filename(path);
-  int ok, code;
+  cl_object filename = si_coerce_to_filename(path);
+  int ok;
 
   ecl_disable_interrupts();
   ok = (isdir? rmdir : unlink)((char*)filename->base_string.self);
@@ -636,7 +626,7 @@ cl_probe_file(cl_object file)
 cl_object
 cl_file_write_date(cl_object file)
 {
-  cl_object time, filename = coerce_to_posix_filename(file);
+  cl_object time, filename = si_coerce_to_filename(file);
   struct stat filestatus;
   if (safe_stat((char*)filename->base_string.self, &filestatus) < 0) {
     time = ECL_NIL;
@@ -649,7 +639,7 @@ cl_file_write_date(cl_object file)
 cl_object
 cl_file_author(cl_object file)
 {
-  cl_object output, filename = coerce_to_posix_filename(file);
+  cl_object output, filename = si_coerce_to_filename(file);
   struct stat filestatus;
   if (safe_stat((char*)filename->base_string.self, &filestatus) < 0) {
     const char *msg = "Unable to read file author for ~S."
@@ -669,10 +659,10 @@ cl_file_author(cl_object file)
     ecl_disable_interrupts();
     pwent = getpwuid(filestatus.st_uid);
     ecl_enable_interrupts();
-    output = make_base_string_copy(pwent->pw_name);
+    output = ecl_make_simple_base_string(pwent->pw_name,-1);
   }
 #else
-  output = make_constant_base_string("UNKNOWN");
+  output = ecl_make_constant_base_string("UNKNOWN",-1);
 #endif
   @(return output);
 }
@@ -682,7 +672,10 @@ ecl_homedir_pathname(cl_object user)
 {
   cl_index i;
   cl_object namestring;
-  const char *h, *d;
+  const char *h;
+#if defined(ECL_MS_WINDOWS_HOST)
+  const char *d;
+#endif
   if (!Null(user)) {
 #ifdef HAVE_PWD_H
     struct passwd *pwent = NULL;
@@ -703,20 +696,20 @@ ecl_homedir_pathname(cl_object user)
     pwent = getpwnam(p);
     if (pwent == NULL)
       FEerror("Unknown user ~S.", 1, p);
-    namestring = make_base_string_copy(pwent->pw_dir);
+    namestring = ecl_make_simple_base_string(pwent->pw_dir,-1);
 #endif
     FEerror("Unknown user ~S.", 1, p);
   } else if ((h = getenv("HOME"))) {
-    namestring = make_base_string_copy(h);
+    namestring = ecl_make_simple_base_string(h,-1);
 #if defined(ECL_MS_WINDOWS_HOST)
   } else if ((h = getenv("HOMEPATH")) && (d = getenv("HOMEDRIVE"))) {
     namestring =
       si_base_string_concatenate(2,
-                                 make_constant_base_string(d),
-                                 make_constant_base_string(h));
+                                 ecl_make_constant_base_string(d,-1),
+                                 ecl_make_constant_base_string(h,-1));
 #endif
   } else {
-    namestring = make_constant_base_string("/");
+    namestring = ecl_make_constant_base_string("/",-1);
   }
   if (namestring->base_string.self[0] == '~') {
     FEerror("Not a valid home pathname ~S", 1, namestring);
@@ -757,7 +750,7 @@ string_match(const char *s, cl_object pattern)
       continue;                                                         \
     if (!string_match(text, text_mask))                                 \
       continue;                                                         \
-    component = make_constant_base_string(text);                        \
+    component = ecl_make_constant_base_string(text,-1);                 \
     component = si_base_string_concatenate(2, prefix, component);       \
     component_path = cl_pathname(component);                            \
     if (!Null(pathname_mask)) {                                         \
@@ -809,7 +802,7 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
   ecl_disable_interrupts();
   for (;;) {
     if (hFind == NULL) {
-      cl_object aux = make_constant_base_string(".\\*");
+      cl_object aux = ecl_make_constant_base_string(".\\*",-1);
       cl_object mask = si_base_string_concatenate(2, prefix, aux);
       hFind = FindFirstFile((char*)mask->base_string.self, &fd);
       if (hFind == INVALID_HANDLE_VALUE) {
@@ -853,8 +846,8 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
 # endif /* !ECL_MS_WINDOWS_HOST */
 #endif /* !HAVE_DIRENT_H */
 
-  ecl_enable_interrupts();
  OUTPUT:
+  ecl_enable_interrupts();
   return cl_nreverse(out);
 }
 
@@ -1008,7 +1001,7 @@ si_get_library_pathname(void)
   } else {
     const char *v = getenv("ECLDIR");
     if (v) {
-      s = make_constant_base_string(v);
+      s = ecl_make_constant_base_string(v,-1);
       goto OUTPUT;
     }
   }
@@ -1036,7 +1029,7 @@ si_get_library_pathname(void)
     s = ecl_namestring(s, ECL_NAMESTRING_FORCE_BASE_STRING);
   }
 #else
-  s = make_constant_base_string(ECLDIR "/");
+  s = ecl_make_constant_base_string(ECLDIR "/",-1);
 #endif
  OUTPUT:
   {
@@ -1240,7 +1233,7 @@ cl_object
 si_chmod(cl_object file, cl_object mode)
 {
   mode_t code = ecl_to_uint32_t(mode);
-  cl_object filename = coerce_to_posix_filename(file);
+  cl_object filename = si_coerce_to_filename(file);
   unlikely_if (chmod((char*)filename->base_string.self, code)) {
     cl_object c_error = _ecl_strerror(errno);
     const char *msg = "Unable to change mode of file ~S to value ~O"

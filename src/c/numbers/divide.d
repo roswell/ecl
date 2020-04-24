@@ -12,8 +12,11 @@
  *
  */
 
+#define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <ecl/impl/math_dispatch2.h>
+
+#pragma STDC FENV_ACCESS ON
 
 @(defun / (num &rest nums)
   @
@@ -28,8 +31,6 @@
   @(return num);
   @)
 
-#ifdef MATH_DISPATCH2_BEGIN
-
 static cl_object
 complex_divide(cl_object ar, cl_object ai, cl_object br, cl_object bi)
 {
@@ -43,6 +44,9 @@ complex_divide(cl_object ar, cl_object ai, cl_object br, cl_object bi)
 cl_object
 ecl_divide(cl_object x, cl_object y)
 {
+  cl_object ret;
+  ECL_MATHERR_CLEAR;
+
   MATH_DISPATCH2_BEGIN(x,y)
     {
       CASE_FIXNUM_FIXNUM;
@@ -60,18 +64,22 @@ ecl_divide(cl_object x, cl_object y)
                               y->ratio.num);
       }
       CASE_FIXNUM_SINGLE_FLOAT {
-        return ecl_make_single_float(ecl_fixnum(x) / ecl_single_float(y));
+        ret = ecl_make_single_float(ecl_fixnum(x) / ecl_single_float(y));
+        break;
       }
       CASE_FIXNUM_DOUBLE_FLOAT {
-        return ecl_make_double_float(ecl_fixnum(x) / ecl_double_float(y));
+        ret = ecl_make_double_float(ecl_fixnum(x) / ecl_double_float(y));
+        break;
       }
       CASE_BIGNUM_SINGLE_FLOAT;
       CASE_RATIO_SINGLE_FLOAT {
-        return ecl_make_single_float(ecl_to_float(x) / ecl_single_float(y));
+        ret = ecl_make_single_float(ecl_to_float(x) / ecl_single_float(y));
+        break;
       }
       CASE_BIGNUM_DOUBLE_FLOAT;
       CASE_RATIO_DOUBLE_FLOAT {
-        return ecl_make_double_float(ecl_to_double(x) / ecl_double_float(y));
+        ret = ecl_make_double_float(ecl_to_double(x) / ecl_double_float(y));
+        break;
       }
       CASE_RATIO_FIXNUM {
         if (y == ecl_make_fixnum(0)) {
@@ -88,60 +96,76 @@ ecl_divide(cl_object x, cl_object y)
         return ecl_make_ratio(num, den);
       }
       CASE_SINGLE_FLOAT_FIXNUM {
-        return ecl_make_single_float(ecl_single_float(x) / ecl_fixnum(y));
+        ret = ecl_make_single_float(ecl_single_float(x) / ecl_fixnum(y));
+        break;
       }
       CASE_SINGLE_FLOAT_BIGNUM;
       CASE_SINGLE_FLOAT_RATIO {
-        return ecl_make_single_float(ecl_single_float(x) / ecl_to_float(y));
+        ret = ecl_make_single_float(ecl_single_float(x) / ecl_to_float(y));
+        break;
       }
       CASE_SINGLE_FLOAT_SINGLE_FLOAT {
-        return ecl_make_single_float(ecl_single_float(x) / ecl_single_float(y));
+        ret = ecl_make_single_float(ecl_single_float(x) / ecl_single_float(y));
+        break;
       }
       CASE_SINGLE_FLOAT_DOUBLE_FLOAT {
-        return ecl_make_double_float(ecl_single_float(x) / ecl_double_float(y));
+        ret = ecl_make_double_float(ecl_single_float(x) / ecl_double_float(y));
+        break;
       }
       CASE_DOUBLE_FLOAT_FIXNUM {
-        return ecl_make_double_float(ecl_double_float(x) / ecl_fixnum(y));
+        ret = ecl_make_double_float(ecl_double_float(x) / ecl_fixnum(y));
+        break;
       }
       CASE_DOUBLE_FLOAT_BIGNUM;
       CASE_DOUBLE_FLOAT_RATIO {
-        return ecl_make_double_float(ecl_double_float(x) / ecl_to_double(y));
+        ret = ecl_make_double_float(ecl_double_float(x) / ecl_to_double(y));
+        break;
       }
       CASE_DOUBLE_FLOAT_SINGLE_FLOAT {
-        return ecl_make_double_float(ecl_double_float(x) / ecl_single_float(y));
+        ret = ecl_make_double_float(ecl_double_float(x) / ecl_single_float(y));
+        break;
       }
       CASE_DOUBLE_FLOAT_DOUBLE_FLOAT {
-        return ecl_make_double_float(ecl_double_float(x) / ecl_double_float(y));
+        ret = ecl_make_double_float(ecl_double_float(x) / ecl_double_float(y));
+        break;
       }
-#ifdef ECL_LONG_FLOAT
       CASE_FIXNUM_LONG_FLOAT {
-        return ecl_make_long_float(ecl_fixnum(x) / ecl_long_float(y));
+        ret = ecl_make_long_float(ecl_fixnum(x) / ecl_long_float(y));
+        break;
       }
       CASE_BIGNUM_LONG_FLOAT;
       CASE_RATIO_LONG_FLOAT {
-        return ecl_make_long_float(ecl_to_long_double(x) / ecl_long_float(y));
+        ret = ecl_make_long_float(ecl_to_long_double(x) / ecl_long_float(y));
+        break;
       }
       CASE_SINGLE_FLOAT_LONG_FLOAT {
-        return ecl_make_long_float(ecl_single_float(x) / ecl_long_float(y));
+        ret = ecl_make_long_float(ecl_single_float(x) / ecl_long_float(y));
+        break;
       }
       CASE_DOUBLE_FLOAT_LONG_FLOAT {
-        return ecl_make_long_float(ecl_double_float(x) / ecl_long_float(y));
+        ret = ecl_make_long_float(ecl_double_float(x) / ecl_long_float(y));
+        break;
       }
       CASE_LONG_FLOAT_FIXNUM {
-        return ecl_make_long_float(ecl_long_float(x) / ecl_fixnum(y));
+        ret = ecl_make_long_float(ecl_long_float(x) / ecl_fixnum(y));
+        break;
       }
       CASE_LONG_FLOAT_BIGNUM;
       CASE_LONG_FLOAT_RATIO {
-        return ecl_make_long_float(ecl_long_float(x) / ecl_to_long_double(y));
+        ret = ecl_make_long_float(ecl_long_float(x) / ecl_to_long_double(y));
+        break;
       }
       CASE_LONG_FLOAT_SINGLE_FLOAT {
-        return ecl_make_long_float(ecl_long_float(x) / ecl_single_float(y));
+        ret = ecl_make_long_float(ecl_long_float(x) / ecl_single_float(y));
+        break;
       }
       CASE_LONG_FLOAT_DOUBLE_FLOAT {
-        return ecl_make_long_float(ecl_long_float(x) / ecl_double_float(y));
+        ret = ecl_make_long_float(ecl_long_float(x) / ecl_double_float(y));
+        break;
       }
       CASE_LONG_FLOAT_LONG_FLOAT {
-        return ecl_make_long_float(ecl_long_float(x) / ecl_long_float(y));
+        ret = ecl_make_long_float(ecl_long_float(x) / ecl_long_float(y));
+        break;
       }
       CASE_LONG_FLOAT_COMPLEX {
         goto COMPLEX_Y;
@@ -149,14 +173,13 @@ ecl_divide(cl_object x, cl_object y)
       CASE_COMPLEX_LONG_FLOAT;  {
         goto COMPLEX_X;
       }
-#endif
       CASE_COMPLEX_FIXNUM;
       CASE_COMPLEX_BIGNUM;
       CASE_COMPLEX_RATIO;
       CASE_COMPLEX_SINGLE_FLOAT;
       CASE_COMPLEX_DOUBLE_FLOAT; COMPLEX_X: {
-        return ecl_make_complex(ecl_divide(x->complex.real, y),
-                                ecl_divide(x->complex.imag, y));
+        return ecl_make_complex(ecl_divide(x->gencomplex.real, y),
+                                ecl_divide(x->gencomplex.imag, y));
       }
       CASE_BIGNUM_COMPLEX;
       CASE_RATIO_COMPLEX;
@@ -164,162 +187,89 @@ ecl_divide(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_COMPLEX;
       CASE_FIXNUM_COMPLEX {
       COMPLEX_Y:
-        return complex_divide(x, ecl_make_fixnum(0), y->complex.real, y->complex.imag);
+        return complex_divide(x, ecl_make_fixnum(0), y->gencomplex.real, y->gencomplex.imag);
       }
       CASE_COMPLEX_COMPLEX {
-        return complex_divide(x->complex.real, x->complex.imag,
-                              y->complex.real, y->complex.imag);
+        return complex_divide(x->gencomplex.real, x->gencomplex.imag,
+                              y->gencomplex.real, y->gencomplex.imag);
       }
+#ifdef ECL_COMPLEX_FLOAT
+      /* upgraded type csfloat */
+      CASE_CSFLOAT_FIXNUM;
+      CASE_CSFLOAT_BIGNUM;
+      CASE_CSFLOAT_RATIO;
+      CASE_CSFLOAT_SINGLE_FLOAT;
+      CASE_CSFLOAT_COMPLEX;
+
+      CASE_FIXNUM_CSFLOAT;
+      CASE_BIGNUM_CSFLOAT;
+      CASE_RATIO_CSFLOAT;
+      CASE_SINGLE_FLOAT_CSFLOAT;
+      CASE_COMPLEX_CSFLOAT;
+      CASE_CSFLOAT_CSFLOAT {
+        ret = ecl_alloc_object(t_csfloat);
+        ecl_csfloat(ret) = ecl_to_csfloat(x) / ecl_to_csfloat(y);
+        break;
+      }
+      /* upgraded type cdfloat */
+      CASE_CSFLOAT_DOUBLE_FLOAT;
+      CASE_DOUBLE_FLOAT_CSFLOAT;
+
+      CASE_CDFLOAT_FIXNUM;
+      CASE_CDFLOAT_BIGNUM;
+      CASE_CDFLOAT_RATIO;
+      CASE_CDFLOAT_SINGLE_FLOAT;
+      CASE_CDFLOAT_DOUBLE_FLOAT;
+      CASE_CDFLOAT_COMPLEX;
+      CASE_CDFLOAT_CSFLOAT;
+
+      CASE_FIXNUM_CDFLOAT;
+      CASE_BIGNUM_CDFLOAT;
+      CASE_RATIO_CDFLOAT;
+      CASE_SINGLE_FLOAT_CDFLOAT;
+      CASE_DOUBLE_FLOAT_CDFLOAT;
+      CASE_COMPLEX_CDFLOAT;
+      CASE_CSFLOAT_CDFLOAT;
+      CASE_CDFLOAT_CDFLOAT {
+        ret = ecl_alloc_object(t_cdfloat);
+        ecl_cdfloat(ret) = ecl_to_cdfloat(x) / ecl_to_cdfloat(y);
+        break;
+      }
+      /* upgraded type clfloat */
+      CASE_CSFLOAT_LONG_FLOAT;
+      CASE_LONG_FLOAT_CSFLOAT;
+      CASE_CDFLOAT_LONG_FLOAT;
+      CASE_LONG_FLOAT_CDFLOAT;
+
+      CASE_CLFLOAT_FIXNUM;
+      CASE_CLFLOAT_BIGNUM;
+      CASE_CLFLOAT_RATIO;
+      CASE_CLFLOAT_SINGLE_FLOAT;
+      CASE_CLFLOAT_DOUBLE_FLOAT;
+      CASE_CLFLOAT_LONG_FLOAT;
+      CASE_CLFLOAT_COMPLEX;
+      CASE_CLFLOAT_CSFLOAT;
+      CASE_CLFLOAT_CDFLOAT;
+
+      CASE_FIXNUM_CLFLOAT;
+      CASE_BIGNUM_CLFLOAT;
+      CASE_RATIO_CLFLOAT;
+      CASE_SINGLE_FLOAT_CLFLOAT;
+      CASE_DOUBLE_FLOAT_CLFLOAT;
+      CASE_LONG_FLOAT_CLFLOAT;
+      CASE_COMPLEX_CLFLOAT;
+      CASE_CSFLOAT_CLFLOAT;
+      CASE_CDFLOAT_CLFLOAT;
+      CASE_CLFLOAT_CLFLOAT {
+        ret = ecl_alloc_object(t_clfloat);
+        ecl_clfloat(ret) = ecl_to_clfloat(x) / ecl_to_clfloat(y);
+        break;
+      }
+#endif
       CASE_UNKNOWN(@[/],x,y,@[number]);
     }
   MATH_DISPATCH2_END;
+
+  ECL_MATHERR_TEST;
+  return ret;
 }
-
-#else
-
-cl_object
-ecl_divide(cl_object x, cl_object y)
-{
-  cl_object z, z1, z2;
-
-  switch (ecl_t_of(x)) {
-  case t_fixnum:
-  case t_bignum:
-    switch (ecl_t_of(y)) {
-    case t_fixnum:
-      if (y == ecl_make_fixnum(0))
-        FEdivision_by_zero(x, y);
-    case t_bignum:
-      if (ecl_minusp(y) == TRUE) {
-        x = ecl_negate(x);
-        y = ecl_negate(y);
-      }
-      return ecl_make_ratio(x, y);
-    case t_ratio:
-      z = ecl_times(x, y->ratio.den);
-      return ecl_make_ratio(z, y->ratio.num);
-    case t_singlefloat:
-      return ecl_make_single_float(ecl_to_double(x) / ecl_single_float(y));
-    case t_doublefloat:
-      return ecl_make_double_float(ecl_to_double(x) / ecl_double_float(y));
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      return ecl_make_long_float(ecl_to_double(x) / ecl_long_float(y));
-#endif
-    case t_complex:
-      goto COMPLEX;
-    default:
-      FEwrong_type_nth_arg(@[/], 2, y, @[number]);
-    }
-  case t_ratio:
-    switch (ecl_t_of(y)) {
-    case t_fixnum:
-      if (y == ecl_make_fixnum(0))
-        FEdivision_by_zero(x, y);
-    case t_bignum:
-      z = ecl_times(x->ratio.den, y);
-      return ecl_make_ratio(x->ratio.num, z);
-    case t_ratio:
-      z = ecl_times(x->ratio.num,y->ratio.den);
-      z1 = ecl_times(x->ratio.den,y->ratio.num);
-      return ecl_make_ratio(z, z1);
-    case t_singlefloat:
-      return ecl_make_single_float(ecl_to_double(x) / ecl_single_float(y));
-    case t_doublefloat:
-      return ecl_make_double_float(ecl_to_double(x) / ecl_double_float(y));
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      return ecl_make_long_float(ecl_to_double(x) / ecl_long_float(y));
-#endif
-    case t_complex:
-      goto COMPLEX;
-    default:
-      FEwrong_type_nth_arg(@[/], 2, y, @[number]);
-    }
-  case t_singlefloat:
-    switch (ecl_t_of(y)) {
-    case t_fixnum:
-      return ecl_make_single_float(ecl_single_float(x) / ecl_fixnum(y));
-    case t_bignum:
-    case t_ratio:
-      return ecl_make_single_float(ecl_single_float(x) / ecl_to_double(y));
-    case t_singlefloat:
-      return ecl_make_single_float(ecl_single_float(x) / ecl_single_float(y));
-    case t_doublefloat:
-      return ecl_make_double_float(ecl_single_float(x) / ecl_double_float(y));
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      return ecl_make_long_float(ecl_single_float(x) / ecl_long_float(y));
-#endif
-    case t_complex:
-      goto COMPLEX;
-    default:
-      FEwrong_type_nth_arg(@[/], 2, y, @[number]);
-    }
-  case t_doublefloat:
-    switch (ecl_t_of(y)) {
-    case t_fixnum:
-      return ecl_make_double_float(ecl_double_float(x) / ecl_fixnum(y));
-    case t_bignum:
-    case t_ratio:
-      return ecl_make_double_float(ecl_double_float(x) / ecl_to_double(y));
-    case t_singlefloat:
-      return ecl_make_double_float(ecl_double_float(x) / ecl_single_float(y));
-    case t_doublefloat:
-      return ecl_make_double_float(ecl_double_float(x) / ecl_double_float(y));
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      return ecl_make_long_float(ecl_double_float(x) / ecl_long_float(y));
-#endif
-    case t_complex:
-      goto COMPLEX;
-    default:
-      FEwrong_type_nth_arg(@[/], 2, y, @[number]);
-    }
-#ifdef ECL_LONG_FLOAT
-  case t_longfloat:
-    switch (ecl_t_of(y)) {
-    case t_fixnum:
-      return ecl_make_long_float(ecl_long_float(x) / ecl_fixnum(y));
-    case t_bignum:
-    case t_ratio:
-      return ecl_make_long_float(ecl_long_float(x) / ecl_to_double(y));
-    case t_singlefloat:
-      return ecl_make_long_float(ecl_long_float(x) / ecl_single_float(y));
-    case t_doublefloat:
-      return ecl_make_long_float(ecl_long_float(x) / ecl_double_float(y));
-    case t_longfloat:
-      return ecl_make_long_float(ecl_long_float(x) / ecl_long_float(y));
-    case t_complex:
-      goto COMPLEX;
-    default:
-      FEwrong_type_nth_arg(@[/], 2, y, @[number]);
-    }
-#endif
-  case t_complex:
-    if (ecl_t_of(y) != t_complex) {
-      z1 = ecl_divide(x->complex.real, y);
-      z2 = ecl_divide(x->complex.imag, y);
-      return ecl_make_complex(z1, z2);
-    } else if (1) {
-      /* #C(z1 z2) = #C(xr xi) * #C(yr -yi) */
-      z1 = ecl_plus(ecl_times(x->complex.real, y->complex.real),
-                    ecl_times(x->complex.imag, y->complex.imag));
-      z2 = ecl_minus(ecl_times(x->complex.imag, y->complex.real),
-                     ecl_times(x->complex.real, y->complex.imag));
-    } else {
-    COMPLEX: /* INV: x is real, y is complex */
-      /* #C(z1 z2) = x * #C(yr -yi) */
-      z1 = ecl_times(x, y->complex.real);
-      z2 = ecl_negate(ecl_times(x, y->complex.imag));
-    }
-    z  = ecl_plus(ecl_times(y->complex.real, y->complex.real),
-                  ecl_times(y->complex.imag, y->complex.imag));
-    z  = ecl_make_complex(ecl_divide(z1, z), ecl_divide(z2, z));
-    return(z);
-  default:
-    FEwrong_type_nth_arg(@[/], 1, x, @[number]);
-  }
-}
-
-#endif

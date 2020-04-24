@@ -40,8 +40,7 @@
  *
  *      } @)
  *
- *      name can be either an identifier or a full C procedure header
- *      enclosed in quotes (').
+ *      name is the name of the lisp function
  *
  *      &optional may be abbreviated as &o.
  *      &rest may be abbreviated as &r.
@@ -67,12 +66,25 @@
  *      use sole @(return);, because ";" will be treated as the next
  *      instruction.
  *
+ *      Symbols:
+ *
+ *      @'name'
+ *
+ *      Expands into a C statement, whole value is the given symbol
+ *      from symbols_list.h
+ *
+ *      @[name]
+ *
+ *      Expands into a C statement, whole value is a fixnum
+ *      corresponding to the index in the builtin symbols table of the
+ *      given symbol from symbols_list.h. Used for handling type errors.
  */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1800)
 #include <stdbool.h> 
@@ -120,6 +132,11 @@ char *required[MAXREQ];
 int nreq;
 
 int the_env_defined = 0;
+enum vararg_status_t {
+	VARARG_NOT_DEFINED,
+	VARARG_SIMPLE,
+	VARARG_ECL};
+enum vararg_status_t vararg_status = VARARG_NOT_DEFINED;
 
 struct optional {
   char *o_var;
@@ -163,9 +180,14 @@ put_lineno(void)
 }
 
 void
-error(char *s)
+error(char *s, ...)
 {
-  printf("Error in line %d: %s.\n", lineno, s);
+  char msg[2048];
+  va_list args;
+  va_start(args, s);
+  vsnprintf(msg, 2048, s, args);
+  printf("Error in line %d: %s.\n", lineno, msg);
+  va_end(args);
   exit(1);
 }
 
@@ -330,6 +352,21 @@ read_symbol(int code)
 }
 
 char *
+read_string()
+{
+  char c, *str = poolp;
+  char end = '"';
+  pushstr("ecl_make_constant_base_string(\"");
+  do {
+    c = readc();
+    pushc(c);
+  } while (c != end);
+  pushstr(", -1)");
+  pushc(0);
+  return str;
+}
+
+char *
 search_function(char *name)
 {
   int i;
@@ -419,6 +456,9 @@ read_token(void)
         poolp--;
       } else if (c == '@') {
         pushc(c);
+      } else if (c == '"') {
+        read_string();
+        poolp--;
       } else {
         char *name;
         unreadc(c);
@@ -470,6 +510,7 @@ reset(void)
     aux[i].a_var
       = aux[i].a_init
       = NULL;
+  vararg_status = VARARG_NOT_DEFINED;
 }
 
 void
@@ -483,6 +524,21 @@ get_function(void)
     pushc('\0');
   }
   function_c_name = translate_function(function);
+}
+
+void
+check_nargs(void)
+{
+  int narg_declared = cl_symbols[function_code].narg;
+  int nreq_declared = narg_declared >= 0 ? narg_declared : (-narg_declared -1);
+  if (nreq != nreq_declared) {
+    error("Function %s: wrong declaration for number of required arguments, expected %d, but got %d",
+          cl_symbols[function_code].name, nreq, nreq_declared);
+  }
+  if (narg_declared > 0 &&
+      (nopt > 0 || rest_flag || key_flag)) {
+    error("Detected optional, keyword or rest arguments for function with fixed number of arguments");
+  }
 }
 
 void
@@ -655,9 +711,7 @@ put_fhead(void)
   fprintf(out, "cl_object %s(cl_narg narg", function_c_name);
   for (i = 0; i < nreq; i++)
     fprintf(out, ", cl_object %s", required[i]);
-  if (nopt > 0 || rest_flag || key_flag)
-    fprintf(out, ", ...");
-  fprintf(out, ")\n{\n");
+  fprintf(out, ", ...)\n{\n");
 }
 
 void
@@ -668,7 +722,15 @@ put_declaration(void)
 
   put_lineno();
   the_env_defined = 1;
-  fprintf(out, "\tconst cl_env_ptr the_env = ecl_process_env();\n");
+  fprintf(out,
+          "#ifdef __clang__\n"
+          "#pragma clang diagnostic push\n"
+          "#pragma clang diagnostic ignored \"-Wunused-variable\"\n"
+          "#endif\n"
+          "\tconst cl_env_ptr the_env = ecl_process_env();\n"
+          "#ifdef __clang__\n"
+          "#pragma clang diagnostic pop\n"
+          "#endif\n" );
   for (i = 0;  i < nopt;  i++) {
     put_lineno();
     fprintf(out, "\tcl_object %s;\n", optional[i].o_var);
@@ -718,13 +780,16 @@ put_declaration(void)
       }
     }
     put_lineno();
-    if (simple_varargs)
+    if (simple_varargs) {
+	   vararg_status = VARARG_SIMPLE;
       fprintf(out,"\tva_list %s;\n\tva_start(%s, %s);\n",
               rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"));
-    else
+    } else {
+	   vararg_status = VARARG_ECL;
       fprintf(out,"\tecl_va_list %s;\n\tecl_va_start(%s, %s, narg, %d);\n",
               rest_var, rest_var, ((nreq > 0) ? required[nreq-1] : "narg"),
               nreq);
+    }
     put_lineno();
     fprintf(out, "\tif (ecl_unlikely(narg < %d", nreq);
     if (nopt > 0 && !rest_flag && !key_flag) {
@@ -791,6 +856,16 @@ put_declaration(void)
   }
 }
 
+void unregister_varargs()
+{
+	if (vararg_status == VARARG_SIMPLE) {
+		fprintf(out, "va_end(%s);\n", rest_var);
+	}
+	else if (vararg_status == VARARG_ECL) {
+		fprintf(out, "ecl_va_end(%s);\n", rest_var);
+	}
+}
+
 void
 put_return(void)
 {
@@ -813,10 +888,12 @@ put_return(void)
     }
     put_tabs(t);
     fprintf(out, "the_env->nvalues = %d;\n", nres);
-    for (i = nres-1;  i > 0;  i--) {
+    for (i = nres-1;  i >= 0;  i--) {
       put_tabs(t);
       fprintf(out, "the_env->values[%d] = __value%d;\n", i, i);
     }
+    put_tabs(t);
+    unregister_varargs();
     put_tabs(t);
     fprintf(out, "return __value0;\n");
   }
@@ -860,24 +937,35 @@ main_loop(void)
     goto LOOP;
   } else if (c == '\'') {
     char *p;
-    poolp = pool;
+    char* tmp = poolp;
     p = read_symbol(0);
     pushc('\0');
     fprintf(out,"%s",p);
+    poolp = tmp;
     goto LOOP;
   }  else if (c == '[') {
     char *p;
-    poolp = pool;
+    char * tmp = poolp;
     p = read_symbol(1);
     pushc('\0');
     fprintf(out,"%s",p);
+    poolp = tmp;
+    goto LOOP;
+  } else if (c == '"') {
+    char *p;
+    char * tmp = poolp;
+    p = read_string();
+    fprintf(out,"%s",p);
+    poolp = tmp;
     goto LOOP;
   } else if (c != '(') {
     char *p;
+    char * tmp = poolp;
     unreadc(c);
-    poolp = pool;
-    poolp = p = read_function();
-    fprintf(out,"%s",translate_function(poolp));
+    //poolp = pool;
+    p = read_function();
+    fprintf(out,"%s",translate_function(p));
+    poolp = tmp;
     goto LOOP;
   }
   p = read_token();
@@ -887,6 +975,7 @@ main_loop(void)
     in_defun = 1;
     get_function();
     get_lambda_list();
+    check_nargs();
     put_fhead();
     put_lineno();
     c = jump_to_at();

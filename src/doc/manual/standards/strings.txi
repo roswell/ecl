@@ -1,0 +1,105 @@
+@node Strings
+@section Strings
+
+@menu
+* Strings - String types & Unicode::
+* Strings - C reference::
+@end menu
+
+@node Strings - String types & Unicode
+@subsection String types & Unicode
+The ECL implementation of strings is ANSI Common-Lisp compliant. There are basically four string types as shown in @ref{tab:cl-str-types}. As explained in @ref{Characters}, when Unicode support is disabled, @code{character} and @code{base-character} are the same type and the last two string types are equivalent to the first two.
+
+@float Table, tab:cl-str-types
+@caption{Common Lisp string types}
+@multitable @columnfractions .25 .25 .5
+@headitem Abbreviation @tab Expanded type @tab Remarks
+@item string @tab (array character (*)) @tab 8 or 32 bits per character, adjustable.
+@item simple-string @tab (simple-array character (*)) @tab 8 or 32 bits per character, not adjustable nor displaced.
+@item base-string @tab (array base-char (*)) @tab 8 bits per character, adjustable.
+@item simple-base-string @tab (simple-array base-char (*)) @tab 8 bits per character, not adjustable nor displaced.
+@end multitable
+@end float
+
+It is important to remember that strings with unicode characters can only be printed readably when the external format supports those characters. If this is not the case, ECL will signal a @code{serious-condition}. This condition will abort your program if not properly handled.
+
+@node Strings - C reference
+@subsection C reference
+@subsubsection Base string constructors
+@cppdef ecl_alloc_adjustable_base_string
+@cppdef ecl_alloc_simple_base_string
+@cppdef ecl_make_simple_base_string
+@cppdef ecl_make_constant_base_string
+
+Building strings of C data
+
+@subsubheading Functions
+
+@deftypefun cl_object ecl_alloc_adjustable_base_string (cl_index length);
+@deftypefunx cl_object ecl_alloc_simple_base_string (cl_index length);
+@deftypefunx cl_object ecl_make_simple_base_string (const char* data, cl_fixnum length);
+@deftypefunx cl_object ecl_make_constant_base_string (const char* data, cl_fixnum length);
+
+@paragraph Description
+These are different ways to create a base string, which is a string that holds a small subset of characters, the @code{base-char}, with codes ranging from 0 to 255.
+
+@coderef{ecl_alloc_simple_base_string} creates an empty string with that much space for characters and a fixed length. The string does not have a fill pointer and cannot be resized, and the initial data is unspecified
+
+@coderef{ecl_alloc_adjustable_base_string} is similar to the previous function, but creates an adjustable string with a fill pointer. This means that the length of the string can be changed and the string itself can be resized to accommodate more data.
+
+The other constructors create strings but use some preexisting data. @coderef{ecl_make_simple_base_string} creates a string copying the data that the user supplies, and using freshly allocated memory. @coderef{ecl_make_constant_base_string} on the other hand, does not allocate memory, but simply uses the supplied pointer as buffer for the string. This last function should be used with care, ensuring that the supplied buffer is not deallocated. If the @var{length} argument of these functions is -1, the length is determined by @code{strlen}.
+@end deftypefun
+
+@subsubsection String accessors
+@cppdef ecl_char
+@cppdef ecl_char_set
+Reading and writing characters into a string
+
+@subsubheading Functions
+@deftypefun ecl_character ecl_char (cl_object string, cl_index index);
+@deftypefunx ecl_character ecl_char_set (cl_object string, cl_index index, ecl_character c);
+
+@paragraph Description
+Access to string information should be done using these two functions. The first one implements the equivalent of the @code{char} function from Common Lisp, returning the character that is at position @var{index} in the string @var{string}.
+
+The counterpart of the previous function is @coderef{ecl_char_set}, which implements @code{(setf char)} and stores character @var{c} at the position @var{index} in the given string.
+
+Both functions check the type of their arguments and verify that the indices do not exceed the string boundaries. Otherwise they signal a @code{serious-condition}.
+@end deftypefun
+
+@subsubsection ANSI dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .22 .78
+@headitem Lisp symbol @tab C function
+@item @clhs{f_smp-st.htm,simple-string-p} @tab cl_object cl_simple_string_p(cl_object string)
+@item @clhs{f_char_.htm,char} @tab cl_object cl_char(cl_object string, cl_object index)
+@item @clhs{f_char_.htm,(setf char)} @tab cl_object si_char_set(cl_object string, cl_object index, cl_object char)
+@item @clhs{f_char_.htm,schar} @tab cl_object cl_schar(cl_object string, cl_object index)
+@item @clhs{f_char_.htm,(setf schar)} @tab cl_object si_char_set(cl_object string, cl_object index, cl_object char)
+@item @clhs{f_string.htm,string} @tab cl_object cl_string(cl_object x)
+@item @clhs{f_stg_up.htm,string-upcase} @tab cl_object cl_string_upcase(cl_narg narg, cl_obejct string, ...)
+@item @clhs{f_stg_up.htm,string-downcase} @tab cl_object cl_string_downcase(cl_narg narg, cl_obejct string, ...)
+@item @clhs{f_stg_up.htm,string-capitalize} @tab cl_object cl_string_capitalize(cl_narg narg, cl_obejct string, ...)
+@item @clhs{f_stg_up.htm,nstring-upcase} @tab cl_object cl_nstring_upcase(cl_narg narg, cl_obejct string, ...)
+@item @clhs{f_stg_up.htm,nstring-downcase} @tab cl_object cl_nstring_downcase(cl_narg narg, cl_obejct string, ...)
+@item @clhs{f_stg_up.htm,nstring-capitalize} @tab cl_object cl_nstring_capitalize(cl_narg narg, cl_obejct string, ...)
+@item @clhs{f_stg_tr.htm,string-trim} @tab cl_object cl_string_trim(cl_object character_bag, cl_object string)
+@item @clhs{f_stg_tr.htm,string-left-trim} @tab cl_object cl_string_left_trim(cl_object character_bag, cl_object string)
+@item @clhs{f_stg_tr.htm,string-right-trim} @tab cl_object cl_string_right_trim(cl_object character_bag, cl_object string)
+@item @clhs{f_string.htm,string} @tab cl_object cl_string(cl_object x)
+@item @clhs{f_stgeq_.htm,string=} @tab cl_object cl_stringE(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string/=} @tab cl_object cl_stringNE(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string<} @tab cl_object cl_stringL(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string>} @tab cl_object cl_stringG(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string<=} @tab cl_object cl_stringLE(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string>=} @tab cl_object cl_stringGE(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string-equal} @tab cl_object cl_string_equal(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string-not-equal} @tab cl_object cl_string_not_equal(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string-lessp} @tab cl_object cl_string_lessp(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string-greaterp} @tab cl_object cl_string_greaterp(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string-not-greaterp} @tab cl_object cl_string_not_greaterp(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgeq_.htm,string-not-lessp} @tab cl_object cl_string_not_lessp(cl_narg narg, cl_object string1, cl_object string2, ...)
+@item @clhs{f_stgp.htm,stringp} @tab cl_object cl_stringp(cl_object x)
+@item @clhs{f_mk_stg.htm,make-string} @tab cl_object cl_make_string(cl_narg narg, cl_object size, ...)
+@end multitable

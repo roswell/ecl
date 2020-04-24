@@ -134,7 +134,10 @@ the environment variable TMPDIR to a different value." template))
      ,@(split-program-options *user-ld-flags*)
      ,@ld-flags
      ,(if (eq type :program)
-           (concatenate 'string "/IMPLIB:prog" (file-namestring o-pathname) ".lib") "" )))
+          (concatenate 'string "/IMPLIB:prog" (file-namestring o-pathname) ".lib")
+          "")
+     ,(concatenate 'string "/LIBPATH:"
+                   (ecl-library-directory))))
   (embed-manifest-file o-pathname type)
   (delete-msvc-generated-files o-pathname))
 
@@ -160,9 +163,9 @@ the environment variable TMPDIR to a different value." template))
        (progn
          (with-open-file (f "static_lib.tmp" :direction :output
                             :if-does-not-exist :create :if-exists :supersede)
-           (format f "/DEBUGTYPE:CV /OUT:~A ~A ~{~&\"~A\"~}"
+           (format f "/OUT:~A ~A ~{~&\"~A\"~}"
                    output-name o-name ld-flags))
-         (safe-run-program "link" '("-lib" "@static_lib.tmp")))
+         (safe-run-program "link" '("-lib" "-nologo" "@static_lib.tmp")))
     (when (probe-file "static_lib.tmp")
       (cmp-delete-file "static_lib.tmp"))))
 
@@ -262,7 +265,7 @@ void ~A(cl_object cblock)
          * circular chain. This disables the garbage collection of
          * the library until _ALL_ functions in all modules are unlinked.
          */
-        cl_object current, next = Cblock;
+        cl_object current = OBJNULL, next = Cblock;
 ~:{
         current = ecl_make_codeblock();
         current->cblock.next = next;
@@ -283,8 +286,7 @@ extern \"C\"
 ECL_DLLEXPORT
 void ~A(cl_object cblock)
 {
-        /* This function is a wrapper over the randomized init function
-         * name. */
+        /* This is a wrapper around the randomized init function name. */
         ~A(cblock);
 }
 ")
@@ -313,6 +315,7 @@ extern int
         ecl_init_module(OBJNULL, ~A);
         ~A
         } ECL_CATCH_ALL_END;
+        return 0;
 }
 ")
 
@@ -332,6 +335,10 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         ~A
         } ECL_CATCH_ALL_END;
         si_exit(0);
+        for (int i = 0; i < argc; i++) {
+          LocalFree(argv[i]);
+        }
+        LocalFree(argv);
 }
 ")
 
@@ -419,14 +426,20 @@ filesystem or in the database of ASDF modules."
                   (output-name (if (or (symbolp output-name) (stringp output-name))
                                    (compile-file-pathname output-name :type target)
                                    output-name))
-                  (init-name (or init-name (compute-init-name output-name
-                                                              :kind target)))
-                  (wrap-init-name (compute-init-name output-name
-                                                     :kind target
-                                                     :wrapper t))
-                  (main-name (or main-name (compute-init-name output-name
-                                                              :kind target
-                                                              :prefix "main_"))))
+                  ;; wrap-name is the init function name defined by a programmer
+                  (wrap-name init-name))
+  ;; init-name should always be unique
+  (setf init-name (compute-init-name output-name :kind target))
+  (cond ((null wrap-name) nil)
+        ((equal init-name wrap-name)        ; fixup for ASDF
+         (cmpwarn "Parameter `init-name' is the same as the result of an internal function `compute-init-name'. Ignoring.")
+         (setf wrap-name nil))
+        ((null (member target '(:static-library :shared-library)))
+         (cmpwarn "Supplying `init-name' is valid only for libraries. Ignoring.")))
+  (unless main-name
+    (setf main-name (compute-init-name output-name :kind target :prefix "main_")))
+
+
   ;;
   ;; The epilogue-code can be either a string made of C code, or a
   ;; lisp form.  In the latter case we add some additional C code to
@@ -436,7 +449,7 @@ filesystem or in the database of ASDF modules."
   (cond ((null epilogue-code)
          (setf epilogue-code ""))
         ((stringp epilogue-code)
-         )
+         nil)
         (t
          (with-standard-io-syntax
            (setq epilogue-code
@@ -445,7 +458,7 @@ filesystem or in the database of ASDF modules."
                    (wt-filtered-data (write-to-string epilogue-code) stream)
                    (princ ";
 cl_object output;
-si_select_package(ecl_make_simple_base_string(\"CL-USER\", 7));
+si_select_package(ecl_make_constant_base_string(\"CL-USER\", 7));
 output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
 }" stream)
                    )))))
@@ -461,7 +474,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                    (wt-filtered-data (write-to-string prologue-code) stream)
                    (princ ";
 cl_object output;
-si_select_package(ecl_make_simple_base_string(\"CL-USER\", 7));
+si_select_package(ecl_make_constant_base_string(\"CL-USER\", 7));
 output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
 }" stream)
                    )))))
@@ -480,7 +493,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (o-name (si::coerce-to-filename
                   (compile-file-pathname tmp-name :type :object)))
          submodules
-         (submodules-data ())
          c-file)
     (dolist (item (reverse lisp-files))
       (let* ((path (etypecase item
@@ -504,17 +516,15 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
           (when flags (push flags ld-flags))
           (when init-fn
             (push (list init-fn path) submodules)))))
-    (setf submodules-data (apply #'concatenate '(array base-char (*))
-                                 submodules-data))
     (setq c-file (open c-name :direction :output :external-format :default))
     (format c-file +lisp-program-header+ submodules)
 
     (let ((init-tag (init-name-tag init-name :kind target)))
       (ecase target
         (:program
-         (format c-file +lisp-program-init+ init-name
-                 init-tag
-                 "" submodules "")
+         (format c-file +lisp-program-init+ init-name init-tag "" submodules "")
+         ;; we don't need wrapper in the program, we have main for that
+         ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (format c-file
                  #+:win32 (ecase system
                             (:console +lisp-program-main+)
@@ -527,7 +537,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:static-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
-         (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
+         (when wrap-name
+           (format c-file +lisp-init-wrapper+ wrap-name init-name))
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
@@ -538,7 +549,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:shared-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
-         (format c-file +lisp-init-wrapper+ wrap-init-name init-name)
+         (when wrap-name
+           (format c-file +lisp-init-wrapper+ wrap-name init-name))
          (format c-file +lisp-library-main+
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
@@ -548,6 +560,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (:fasl
          (format c-file +lisp-program-init+ init-name init-tag prologue-code
                  submodules epilogue-code)
+         ;; we don't need wrapper in the fasl, we scan for init function name
+         ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (close c-file)
          (compiler-cc c-name o-name)
          (bundle-cc output-name init-name (list* o-name ld-flags))))
@@ -630,8 +644,7 @@ compiled successfully, returns the pathname of the compiled file"
 
   (cmpprogress "~&;;;~%;;; Compiling ~a." (namestring input-pathname))
 
-  (let* ((eof '(NIL))
-         (*compiler-in-use* *compiler-in-use*)
+  (let* ((*compiler-in-use* *compiler-in-use*)
          (*load-time-values* nil) ;; Load time values are compiled
          (output-file (apply #'compile-file-pathname input-file args))
          (true-output-file nil) ;; Will be set at the end
@@ -653,20 +666,11 @@ compiled successfully, returns the pathname of the compiled file"
       (when (probe-file "./cmpinit.lsp")
         (load "./cmpinit.lsp" :verbose *compile-verbose*))
 
-      (data-init)
-
-      (with-open-file (*compiler-input* *compile-file-pathname*
-                                        :external-format external-format)
+      (with-open-file (stream *compile-file-pathname*
+                              :external-format external-format)
         (unless source-truename
           (setf (car ext:*source-location*) *compile-file-pathname*))
-        (do* ((*compile-file-position* 0 (file-position *compiler-input*))
-              (form (si::read-object-or-ignore *compiler-input* eof)
-                    (si::read-object-or-ignore *compiler-input* eof)))
-             ((eq form eof))
-          (when form
-            (setf (cdr ext:*source-location*)
-                  (+ source-offset *compile-file-position*))
-            (t1expr form))))
+        (compiler-pass1 stream source-offset))
 
       (cmpprogress "~&;;; End of Pass 1.")
       (setf init-name (compute-init-name output-file :kind
@@ -688,8 +692,7 @@ compiled successfully, returns the pathname of the compiled file"
                      (list (si::coerce-to-filename o-pathname)))))
 
       (if (setf true-output-file (probe-file output-file))
-          (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%"
-                       (namestring input-pathname))
+          (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%" (namestring input-pathname))
           (cmperr "The C compiler failed to compile the intermediate file."))
 
       (mapc #'cmp-delete-file to-delete)
@@ -724,6 +727,7 @@ compiled successfully, returns the pathname of the compiled file"
 #+dlopen
 (defun compile (name &optional (def nil supplied-p)
                       &aux form data-pathname
+                      (lexenv nil)
                       (*suppress-compiler-messages* (or *suppress-compiler-messages*
                                                         (not *compile-verbose*)))
                       (*compiler-in-use* *compiler-in-use*)
@@ -745,19 +749,23 @@ If NAME is NIL, then the compiled function is not installed but is simply
 returned as the value of COMPILE.  In any case, COMPILE creates temporary
 files, whose filenames begin with \"gazonk\", which are automatically deleted
 after compilation."
-  (unless (symbolp name) (error "~s is not a symbol." name))
+  (unless (si:valid-function-name-p name) (error "~s is not a valid function name." name))
 
   (cond ((and supplied-p def)
          (when (functionp def)
            (unless (function-lambda-expression def)
              (return-from compile def))
-           (setf def (function-lambda-expression def)))
+           (multiple-value-setq (def lexenv)
+             (function-lambda-expression def))
+           (when (eq lexenv t)
+             (warn "COMPILE can not compile C closures")
+             (return-from compile (values def t nil))))
          (setq form (if name
-                        `(setf (symbol-function ',name) #',def)
+                        `(setf (fdefinition ',name) #',def)
                         `(set 'GAZONK #',def))))
         ((not (fboundp name))
          (error "Symbol ~s is unbound." name))
-        ((typep (setf def (symbol-function name)) 'standard-generic-function)
+        ((typep (setf def (fdefinition name)) 'standard-generic-function)
          (warn "COMPILE can not compile generic functions yet")
          (return-from compile (values def t nil)))
         ((null (setq form (function-lambda-expression def)))
@@ -765,22 +773,24 @@ after compilation."
                name)
          (return-from compile (values def t nil)))
         (t
-         (setq form `(setf (symbol-function ',name) #',form))))
+         (setq form `(setf (fdefinition ',name) #',form))))
 
-  (let*((*load-time-values* 'values) ;; Only the value is kept
-        (tmp-names (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
-        (data-pathname (first tmp-names))
-        (c-pathname (compile-file-pathname data-pathname :type :c))
-        (h-pathname (compile-file-pathname data-pathname :type :h))
-        (o-pathname (compile-file-pathname data-pathname :type :object))
-        (so-pathname (compile-file-pathname data-pathname))
-        (init-name (compute-init-name so-pathname :kind :fasl))
-        (compiler-conditions nil))
+  (let* ((*load-time-values* 'values) ;; Only the value is kept
+         (tmp-names (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
+         (data-pathname (first tmp-names))
+         (c-pathname (compile-file-pathname data-pathname :type :c))
+         (h-pathname (compile-file-pathname data-pathname :type :h))
+         (o-pathname (compile-file-pathname data-pathname :type :object))
+         (so-pathname (compile-file-pathname data-pathname))
+         (init-name (compute-init-name so-pathname :kind :fasl))
+         (compiler-conditions nil)
+         (*permanent-data* t)        ; needed for literal objects in closures
+         (*cmp-env-root* *cmp-env-root*))
 
     (with-compiler-env (compiler-conditions)
+      (setf form (set-closure-env form lexenv *cmp-env-root*))
       (print-compiler-info)
-      (data-init)
-      (t1expr form)
+      (compiler-pass1 form)
       (cmpprogress "~&;;; End of Pass 1.")
       (let (#+(or mingw32 msvc cygwin)(*self-destructing-fasl* t))
         (compiler-pass2 c-pathname h-pathname data-pathname init-name
@@ -811,7 +821,17 @@ after compilation."
     (cmp-delete-file h-pathname)
     (cmp-delete-file so-pathname)
     (mapc 'cmp-delete-file tmp-names)
-    (let ((output (or name (symbol-value 'GAZONK))))
+    (let ((output (or name (and (boundp 'GAZONK) (symbol-value 'GAZONK))
+                      #'(lambda (&rest x)
+                          (declare (ignore x))
+                          ;; if compilation failed, we return this
+                          ;; function which does nothing but resignal
+                          ;; the compiler errors we got
+                          (loop for c in compiler-conditions
+                             if (typep c 'compiler-error)
+                             do (apply #'si::simple-program-error
+                                       (simple-condition-format-control c)
+                                       (simple-condition-format-arguments c)))))))
       ;; By unsetting GAZONK we avoid spurious references to the
       ;; loaded code.
       (set 'GAZONK nil)
@@ -819,7 +839,7 @@ after compilation."
       (compiler-output-values output compiler-conditions))))
 
 (defun disassemble (thing &key (h-file nil) (data-file nil)
-                    &aux def disassembled-form
+                    &aux lexenv disassembled-form
                     (*compiler-in-use* *compiler-in-use*)
                     (*print-pretty* nil))
 "Compiles the form specified by THING and prints the intermediate C language
@@ -832,6 +852,12 @@ form.  H-FILE and DATA-FILE specify intermediate files to build a fasl file
 from the C language code.  NIL means \"do not create the file\"."
   (when (si::valid-function-name-p thing)
     (setq thing (fdefinition thing)))
+  (when (and (functionp thing) (function-lambda-expression thing))
+    (multiple-value-setq (thing lexenv)
+      (function-lambda-expression thing))
+    (when (eq lexenv t)
+      (warn "DISASSEMBLE can not disassemble C closures")
+      (return-from disassemble nil)))
   (cond ((null thing))
         ((functionp thing)
          (unless (si::bc-disassemble thing)
@@ -860,16 +886,17 @@ from the C language code.  NIL means \"do not create the file\"."
                                  (open h-file :direction :output :external-format :default)
                                  null-stream))
          (t3local-fun (symbol-function 'T3LOCAL-FUN))
-         (compiler-conditions nil))
+         (compiler-conditions nil)
+         (*cmp-env-root* *cmp-env-root*))
     (with-compiler-env (compiler-conditions)
+      (setf disassembled-form (set-closure-env disassembled-form lexenv *cmp-env-root*))
       (unwind-protect
            (progn
              (setf (symbol-function 'T3LOCAL-FUN)
                    #'(lambda (&rest args)
                        (let ((*compiler-output1* *standard-output*))
                          (apply t3local-fun args))))
-             (data-init)
-             (t1expr disassembled-form)
+             (compiler-pass1 disassembled-form)
              (ctop-write (compute-init-name "foo" :kind :fasl)
                          (if h-file h-file "")
                          (if data-file data-file ""))
@@ -879,10 +906,29 @@ from the C language code.  NIL means \"do not create the file\"."
         (when h-file (close *compiler-output2*)))))
   nil)
 
+;;; FIXME source-offset and source-truename are used by swanks string
+;;; compilation. Revisit if it is truly needed. SBCL deals with that
+;;; using WITH-COMPILATION-UNIT macro what seems to be a much better
+;;; place to customize the source location. -- jd 2019-11-25
+(defun compiler-pass1 (object &optional source-offset)
+  (data-init)
+  (if (streamp object)
+      (do* ((eof '(NIL))
+            (*compile-file-position* 0 (file-position object))
+            (form (si::read-object-or-ignore object eof)
+                  (si::read-object-or-ignore object eof)))
+           ((eq form eof))
+        (when form
+          (setf (cdr ext:*source-location*)
+                (+ source-offset *compile-file-position*))
+          (t1expr form)))
+      (t1expr object)))
+
 (defun compiler-pass2 (c-pathname h-pathname data-pathname init-name
                        &key input-designator)
   (with-open-file (*compiler-output1* c-pathname :direction :output
-                                      :if-does-not-exist :create :if-exists :supersede)
+                                                 :if-does-not-exist :create
+                                                 :if-exists :supersede)
     (wt-comment-nl "Compiler: ~A ~A" (lisp-implementation-type) (lisp-implementation-version))
     #-ecl-min
     (multiple-value-bind (second minute hour day month year)
@@ -892,7 +938,8 @@ from the C language code.  NIL means \"do not create the file\"."
       (wt-comment-nl "Machine: ~A ~A ~A" (software-type) (software-version) (machine-type)))
     (wt-comment-nl "Source: ~A" input-designator)
     (with-open-file (*compiler-output2* h-pathname :direction :output
-                                        :if-does-not-exist :create :if-exists :supersede)
+                                                   :if-does-not-exist :create
+                                                   :if-exists :supersede)
       (wt-nl1 "#include " *cmpinclude*)
       (ctop-write init-name h-pathname data-pathname)
       (terpri *compiler-output1*)
@@ -963,8 +1010,8 @@ from the C language code.  NIL means \"do not create the file\"."
     (setf *features* (delete :ecl-bytecmp *features*))
     (setf (fdefinition 'disassemble) disassemble
           (fdefinition 'compile) compile
-          (fdefinition 'compile-file) #'compile-file
-          (fdefinition 'compile-file-pathname) #'compile-file-pathname)
+          (fdefinition 'compile-file) compile-file
+          (fdefinition 'compile-file-pathname) compile-file-pathname)
     (ext::package-lock (find-package :cl) t)))
 
 (provide 'cmp)

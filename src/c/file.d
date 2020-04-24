@@ -60,6 +60,8 @@
  * with 4 being the charset prefix, 2 for the character.
  */
 #define ENCODING_BUFFER_MAX_SIZE 6
+/* Size of the encoding buffer for vectors */
+#define VECTOR_ENCODING_BUFFER_SIZE 2048
 
 static cl_index ecl_read_byte8(cl_object stream, unsigned char *c, cl_index n);
 static cl_index ecl_write_byte8(cl_object stream, unsigned char *c, cl_index n);
@@ -85,7 +87,7 @@ static void unread_twice(cl_object strm);
 static void io_error(cl_object strm) ecl_attr_noreturn;
 #ifdef ECL_UNICODE
 static cl_index encoding_error(cl_object strm, unsigned char *buffer, ecl_character c);
-static ecl_character decoding_error(cl_object strm, unsigned char *buffer, int length);
+static ecl_character decoding_error(cl_object strm, unsigned char **buffer, int char_length, unsigned char *buffer_end);
 #endif
 static void wrong_file_handler(cl_object strm) ecl_attr_noreturn;
 #if defined(ECL_WSOCK)
@@ -184,6 +186,18 @@ not_character_write_char(cl_object strm, ecl_character c)
   return c;
 }
 
+static ecl_character
+not_character_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end) {
+  not_a_character_stream(stream);
+  return EOF;
+}
+
+static int
+not_character_encoder(cl_object stream, unsigned char *buffer, ecl_character c) {
+  not_a_character_stream(stream);
+  return 0;
+}
+
 static void
 not_input_clear_input(cl_object strm)
 {
@@ -207,6 +221,12 @@ static void
 not_output_finish_output(cl_object strm)
 {
   not_an_output_stream(strm);
+}
+
+static int
+unknown_column(cl_object strm)
+{
+  return -1;
 }
 
 #if defined(ECL_WSOCK)
@@ -331,7 +351,7 @@ generic_read_byte_signed8(cl_object strm)
 static void
 generic_write_byte_signed8(cl_object byte, cl_object strm)
 {
-  signed char c = fixint(byte);
+  signed char c = ecl_to_int8_t(byte);
   strm->stream.ops->write_byte8(strm, (unsigned char *)&c, 1);
 }
 
@@ -450,7 +470,7 @@ generic_always_nil(cl_object strm)
 static int
 generic_column(cl_object strm)
 {
-  return 0;
+  return strm->stream.column;
 }
 
 static cl_object
@@ -522,9 +542,9 @@ generic_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end
   expected_type = ecl_stream_element_type(strm);
   ops = stream_dispatch_table(strm);
   if (expected_type == @'base-char' || expected_type == @'character') {
-    ecl_character (*read_char)(cl_object) = ops->read_char;                 
+    ecl_character (*read_char)(cl_object) = ops->read_char;
     for (; start < end; start++) {
-      cl_fixnum c = read_char(strm);
+      ecl_character c = read_char(strm);
       if (c == EOF) break;
       ecl_elt_set(data, start, ECL_CODE_CHAR(c));
     }
@@ -572,7 +592,19 @@ eformat_unread_char(cl_object strm, ecl_character c)
 static ecl_character
 eformat_read_char(cl_object strm)
 {
-  ecl_character c = strm->stream.decoder(strm);
+  unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
+  ecl_character c;
+  unsigned char *buffer_pos = buffer;
+  unsigned char *buffer_end = buffer;
+  cl_index byte_size = (strm->stream.byte_size / 8);
+  do {
+    if (ecl_read_byte8(strm, buffer_end, byte_size) < byte_size) {
+      c = EOF;
+      break;
+    }
+    buffer_end += byte_size;
+    c = strm->stream.decoder(strm, &buffer_pos, buffer_end);
+  } while(c == EOF && (buffer_end - buffer) < ENCODING_BUFFER_MAX_SIZE);
   unlikely_if (c == strm->stream.eof_char)
     return EOF;
   if (c != EOF) {
@@ -583,6 +615,17 @@ eformat_read_char(cl_object strm)
   return c;
 }
 
+static inline void
+write_char_increment_column(cl_object strm, ecl_character c)
+{
+  if (c == '\n')
+    strm->stream.column = 0;
+  else if (c == '\t')
+    strm->stream.column = (strm->stream.column & ~((cl_index)07)) + 8;
+  else
+    strm->stream.column++;
+}
+
 static ecl_character
 eformat_write_char(cl_object strm, ecl_character c)
 {
@@ -590,13 +633,7 @@ eformat_write_char(cl_object strm, ecl_character c)
   ecl_character nbytes;
   nbytes = strm->stream.encoder(strm, buffer, c);
   strm->stream.ops->write_byte8(strm, buffer, nbytes);
-  if (c == '\n')
-    strm->stream.column = 0;
-  else if (c == '\t')
-    strm->stream.column = (strm->stream.column & ~((cl_index)07)) + 8;
-  else
-    strm->stream.column++;
-  fflush(stdout);
+  write_char_increment_column(strm, c);
   return c;
 }
 
@@ -662,13 +699,11 @@ eformat_write_char_crlf(cl_object strm, ecl_character c)
  */
 
 static ecl_character
-passthrough_decoder(cl_object stream)
+passthrough_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char aux;
-  if (ecl_read_byte8(stream, &aux, 1) < 1)
+  if (*buffer >= buffer_end)
     return EOF;
-  else
-    return aux;
+  return *((*buffer)++);
 }
 
 static int
@@ -689,15 +724,14 @@ passthrough_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ascii_decoder(cl_object stream)
+ascii_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char aux;
-  if (ecl_read_byte8(stream, &aux, 1) < 1) {
+  if (*buffer >= buffer_end)
     return EOF;
-  } else if (aux > 127) {
-    return decoding_error(stream, &aux, 1);
+  if (**buffer > 127) {
+    return decoding_error(stream, buffer, 1, buffer_end);
   } else {
-    return aux;
+    return *((*buffer)++);
   }
 }
 
@@ -716,14 +750,14 @@ ascii_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4be_decoder(cl_object stream)
+ucs_4be_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char buffer[4];
-  if (ecl_read_byte8(stream, buffer, 4) < 4) {
+  ecl_character aux;
+  if ((*buffer)+3 >= buffer_end)
     return EOF;
-  } else {
-    return buffer[3]+(buffer[2]<<8)+(buffer[1]<<16)+(buffer[0]<<24);
-  }
+  aux = (*buffer)[3]+((*buffer)[2]<<8)+((*buffer)[1]<<16)+((*buffer)[0]<<24);
+  *buffer += 4;
+  return aux;
 }
 
 static int
@@ -741,14 +775,14 @@ ucs_4be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4le_decoder(cl_object stream)
+ucs_4le_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char buffer[4];
-  if (ecl_read_byte8(stream, buffer, 4) < 4) {
+  ecl_character aux;
+  if ((*buffer)+3 >= buffer_end)
     return EOF;
-  } else {
-    return buffer[0]+(buffer[1]<<8)+(buffer[2]<<16)+(buffer[3]<<24);
-  }
+  aux = (*buffer)[0]+((*buffer)[1]<<8)+((*buffer)[2]<<16)+((*buffer)[3]<<24);
+  *buffer += 4;
+  return aux;
 }
 
 static int
@@ -766,17 +800,19 @@ ucs_4le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_4_decoder(cl_object stream)
+ucs_4_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  cl_fixnum c = ucs_4be_decoder(stream);
+  cl_fixnum c = ucs_4be_decoder(stream, buffer, buffer_end);
+  if (c == EOF)
+    return c;
   if (c == 0xFEFF) {
     stream->stream.decoder = ucs_4be_decoder;
     stream->stream.encoder = ucs_4be_encoder;
-    return ucs_4be_decoder(stream);
+    return ucs_4be_decoder(stream, buffer, buffer_end);
   } else if (c == 0xFFFE0000) {
     stream->stream.decoder = ucs_4le_decoder;
     stream->stream.encoder = ucs_4le_encoder;
-    return ucs_4le_decoder(stream);
+    return ucs_4le_decoder(stream, buffer, buffer_end);
   } else {
     stream->stream.decoder = ucs_4be_decoder;
     stream->stream.encoder = ucs_4be_encoder;
@@ -789,9 +825,9 @@ ucs_4_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
   stream->stream.decoder = ucs_4be_decoder;
   stream->stream.encoder = ucs_4be_encoder;
-  buffer[0] = 0xFF;
-  buffer[1] = 0xFE;
-  buffer[2] = buffer[3] = 0;
+  buffer[0] = buffer[1] = 0;
+  buffer[2] = 0xFE;
+  buffer[3] = 0xFF;
   return 4 + ucs_4be_encoder(stream, buffer+4, c);
 }
 
@@ -801,25 +837,26 @@ ucs_4_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2be_decoder(cl_object stream)
+ucs_2be_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char buffer[2] = {0,0};
-  if (ecl_read_byte8(stream, buffer, 2) < 2) {
+  if ((*buffer)+1 >= buffer_end) {
     return EOF;
   } else {
-    ecl_character c = ((ecl_character)buffer[0] << 8) | buffer[1];
-    if ((buffer[0] & 0xFC) == 0xD8) {
-      if (ecl_read_byte8(stream, buffer, 2) < 2) {
+    ecl_character c = ((ecl_character)(*buffer)[0] << 8) | (*buffer)[1];
+    if (((*buffer)[0] & 0xFC) == 0xD8) {
+      if ((*buffer)+3 >= buffer_end) {
         return EOF;
       } else {
         ecl_character aux;
-        if ((buffer[1] & 0xFC) != 0xDC) {
-          return decoding_error(stream, buffer, 1);
+        if (((*buffer)[3] & 0xFC) != 0xDC) {
+          return decoding_error(stream, buffer, 4, buffer_end);
         }
-        aux = ((ecl_character)buffer[0] << 8) | buffer[1];
+        aux = ((ecl_character)(*buffer)[2] << 8) | (*buffer)[3];
+        *buffer += 4;
         return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
       }
     }
+    *buffer += 2;
     return c;
   }
 }
@@ -844,25 +881,26 @@ ucs_2be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2le_decoder(cl_object stream)
+ucs_2le_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  unsigned char buffer[2];
-  if (ecl_read_byte8(stream, buffer, 2) < 2) {
+  if ((*buffer)+1 >= buffer_end) {
     return EOF;
   } else {
-    ecl_character c = ((ecl_character)buffer[1] << 8) | buffer[0];
-    if ((buffer[1] & 0xFC) == 0xD8) {
-      if (ecl_read_byte8(stream, buffer, 2) < 2) {
+    ecl_character c = ((ecl_character)(*buffer)[1] << 8) | (*buffer)[0];
+    if (((*buffer)[1] & 0xFC) == 0xD8) {
+      if ((*buffer)+3 >= buffer_end) {
         return EOF;
       } else {
         ecl_character aux;
-        if ((buffer[1] & 0xFC) != 0xDC) {
-          return decoding_error(stream, buffer, 2);
+        if (((*buffer)[3] & 0xFC) != 0xDC) {
+          return decoding_error(stream, buffer, 4, buffer_end);
         }
-        aux = ((ecl_character)buffer[1] << 8) | buffer[0];
+        aux = ((ecl_character)(*buffer)[3] << 8) | (*buffer)[2];
+        *buffer += 4;
         return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
       }
     }
+    *buffer += 2;
     return c;
   }
 }
@@ -887,17 +925,19 @@ ucs_2le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-ucs_2_decoder(cl_object stream)
+ucs_2_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
-  ecl_character c = ucs_2be_decoder(stream);
+  ecl_character c = ucs_2be_decoder(stream, buffer, buffer_end);
+  if (c == EOF)
+    return c;
   if (c == 0xFEFF) {
     stream->stream.decoder = ucs_2be_decoder;
     stream->stream.encoder = ucs_2be_encoder;
-    return ucs_2be_decoder(stream);
+    return ucs_2be_decoder(stream, buffer, buffer_end);
   } else if (c == 0xFFFE) {
     stream->stream.decoder = ucs_2le_decoder;
     stream->stream.encoder = ucs_2le_encoder;
-    return ucs_2le_decoder(stream);
+    return ucs_2le_decoder(stream, buffer, buffer_end);
   } else {
     stream->stream.decoder = ucs_2be_decoder;
     stream->stream.encoder = ucs_2be_encoder;
@@ -910,8 +950,8 @@ ucs_2_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
   stream->stream.decoder = ucs_2be_decoder;
   stream->stream.encoder = ucs_2be_encoder;
-  buffer[0] = 0xFF;
-  buffer[1] = 0xFE;
+  buffer[0] = 0xFE;
+  buffer[1] = 0xFF;
   return 2 + ucs_2be_encoder(stream, buffer+2, c);
 }
 
@@ -920,29 +960,30 @@ ucs_2_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-user_decoder(cl_object stream)
+user_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
   cl_object table = stream->stream.format_table;
   cl_object character;
-  unsigned char buffer[2];
-  if (ecl_read_byte8(stream, buffer, 1) < 1) {
+  if (*buffer >= buffer_end) {
     return EOF;
   }
-  character = ecl_gethash_safe(ecl_make_fixnum(buffer[0]), table, ECL_NIL);
+  character = ecl_gethash_safe(ecl_make_fixnum((*buffer)[0]), table, ECL_NIL);
   unlikely_if (Null(character)) {
-    return decoding_error(stream, buffer, 1);
+    return decoding_error(stream, buffer, 1, buffer_end);
   }
   if (character == ECL_T) {
-    if (ecl_read_byte8(stream, buffer+1, 1) < 1) {
+    if ((*buffer)+1 >= buffer_end) {
       return EOF;
     } else {
-      cl_fixnum byte = (buffer[0]<<8) + buffer[1];
+      cl_fixnum byte = ((*buffer)[0]<<8) + (*buffer)[1];
       character = ecl_gethash_safe(ecl_make_fixnum(byte), table, ECL_NIL);
       unlikely_if (Null(character)) {
-        return decoding_error(stream, buffer, 2);
+        return decoding_error(stream, buffer, 2, buffer_end);
       }
     }
+    (*buffer)++;
   }
+  (*buffer)++;
   return ECL_CHAR_CODE(character);
 }
 
@@ -970,33 +1011,35 @@ user_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
  */
 
 static ecl_character
-user_multistate_decoder(cl_object stream)
+user_multistate_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
   cl_object table_list = stream->stream.format_table;
   cl_object table = ECL_CONS_CAR(table_list);
   cl_object character;
   cl_fixnum i, j;
-  unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
-  for (i = j = 0; i < ENCODING_BUFFER_MAX_SIZE; i++) {
-    if (ecl_read_byte8(stream, buffer+i, 1) < 1) {
+  for (i = j = 0; i < ENCODING_BUFFER_MAX_SIZE; ) {
+    if ((*buffer)+i >= buffer_end) {
       return EOF;
     }
-    j = (j << 8) | buffer[i];
+    j = (j << 8) | (*buffer)[i];
     character = ecl_gethash_safe(ecl_make_fixnum(j), table, ECL_NIL);
     if (ECL_CHARACTERP(character)) {
+      *buffer += i+1;
       return ECL_CHAR_CODE(character);
     }
     unlikely_if (Null(character)) {
-      return decoding_error(stream, buffer, i);
+      return decoding_error(stream, buffer, i+1, buffer_end);
     }
     if (character == ECL_T) {
       /* Need more characters */
+      i++;
       continue;
     }
     if (CONSP(character)) {
       /* Changed the state. */
       stream->stream.format_table = table_list = character;
       table = ECL_CONS_CAR(table_list);
+      *buffer += i+1;
       i = j = 0;
       continue;
     }
@@ -1047,62 +1090,66 @@ user_multistate_encoder(cl_object stream, unsigned char *buffer, ecl_character c
  */
 
 static ecl_character
-utf_8_decoder(cl_object stream)
+utf_8_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end)
 {
   /* In understanding this code:
    * 0x8 = 1000, 0xC = 1100, 0xE = 1110, 0xF = 1111
    * 0x1 = 0001, 0x3 = 0011, 0x7 = 0111, 0xF = 1111
    */
   ecl_character cum = 0;
-  unsigned char buffer[5];
   int nbytes, i;
-  if (ecl_read_byte8(stream, buffer, 1) < 1)
+  unsigned char aux;
+  if (*buffer >= buffer_end)
     return EOF;
-  if ((buffer[0] & 0x80) == 0) {
-    return buffer[0];
+  aux = (*buffer)[0];
+  if ((aux & 0x80) == 0) {
+    (*buffer)++;
+    return aux;
   }
-  unlikely_if ((buffer[0] & 0x40) == 0)
-    return decoding_error(stream, buffer, 1);
-  if ((buffer[0] & 0x20) == 0) {
-    cum = buffer[0] & 0x1F;
+  unlikely_if ((aux & 0x40) == 0) {
+    return decoding_error(stream, buffer, 1, buffer_end);
+  }
+  if ((aux & 0x20) == 0) {
+    cum = aux & 0x1F;
     nbytes = 1;
-  } else if ((buffer[0] & 0x10) == 0) {
-    cum = buffer[0] & 0x0F;
+  } else if ((aux & 0x10) == 0) {
+    cum = aux & 0x0F;
     nbytes = 2;
-  } else if ((buffer[0] & 0x08) == 0) {
-    cum = buffer[0] & 0x07;
+  } else if ((aux & 0x08) == 0) {
+    cum = aux & 0x07;
     nbytes = 3;
   } else {
-    return decoding_error(stream, buffer, 1);
+    return decoding_error(stream, buffer, 1, buffer_end);
   }
-  if (ecl_read_byte8(stream, buffer+1, nbytes) < nbytes)
+  if ((*buffer)+nbytes >= buffer_end)
     return EOF;
   for (i = 1; i <= nbytes; i++) {
-    unsigned char c = buffer[i];
-    /*printf(": %04x :", c);*/
-    unlikely_if ((c & 0xC0) != 0x80)
-      return decoding_error(stream, buffer, nbytes+1);
+    unsigned char c = (*buffer)[i];
+    unlikely_if ((c & 0xC0) != 0x80) {
+      return decoding_error(stream, buffer, nbytes+1, buffer_end);
+    }
     cum = (cum << 6) | (c & 0x3F);
-    unlikely_if (cum == 0)
-      return decoding_error(stream, buffer, nbytes+1);
+    unlikely_if (cum == 0) {
+      return decoding_error(stream, buffer, nbytes+1, buffer_end);
+    }
   }
   if (cum >= 0xd800) {
-    unlikely_if (cum <= 0xdfff)
-      return decoding_error(stream, buffer, nbytes+1);
-    unlikely_if (cum >= 0xFFFE && cum <= 0xFFFF)
-      return decoding_error(stream, buffer, nbytes+1);
+    unlikely_if (cum <= 0xdfff) {
+      return decoding_error(stream, buffer, nbytes+1, buffer_end);
+    }
+    unlikely_if (cum >= 0xFFFE && cum <= 0xFFFF) {
+      return decoding_error(stream, buffer, nbytes+1, buffer_end);
+    }
   }
-  /*printf("; %04x ;", cum);*/
+  *buffer += nbytes+1;
   return cum;
 }
 
 static int
 utf_8_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
-  int nbytes;
-  if (c < 0) {
-    nbytes = 0;
-  } else if (c <= 0x7F) {
+  int nbytes = 0;
+  if (c <= 0x7F) {
     buffer[0] = c;
     nbytes = 1;
   } else if (c <= 0x7ff) {
@@ -1210,6 +1257,21 @@ clos_stream_peek_char(cl_object strm)
   return ecl_char_code(out);
 }
 
+static cl_index
+clos_stream_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end)
+{
+  return fixnnint(_ecl_funcall5(@'gray::stream-read-sequence', strm, data, ecl_make_fixnum(start), ecl_make_fixnum(end)));
+}
+
+static cl_index
+clos_stream_write_vector(cl_object strm, cl_object data, cl_index start, cl_index end)
+{
+  _ecl_funcall5(@'gray::stream-write-sequence', strm, data, ecl_make_fixnum(start), ecl_make_fixnum(end));
+  if (start >= end)
+    return start;
+  return end;
+}
+
 static int
 clos_stream_listen(cl_object strm)
 {
@@ -1284,10 +1346,7 @@ static int
 clos_stream_column(cl_object strm)
 {
   cl_object col = _ecl_funcall2(@'gray::stream-line-column', strm);
-  /* FIXME! The Gray streams specifies NIL is a valid
-   * value but means "unknown". Should we make it
-   * zero? */
-  return Null(col)? 0 : ecl_to_size(col);
+  return Null(col)? -1 : ecl_to_size(col);
 }
 
 static cl_object
@@ -1308,8 +1367,8 @@ const struct ecl_file_ops clos_stream_ops = {
   clos_stream_unread_char,
   clos_stream_peek_char,
 
-  generic_read_vector,
-  generic_write_vector,
+  clos_stream_read_vector,
+  clos_stream_write_vector,
 
   clos_stream_listen,
   clos_stream_clear_input,
@@ -1337,13 +1396,7 @@ const struct ecl_file_ops clos_stream_ops = {
 static ecl_character
 str_out_write_char(cl_object strm, ecl_character c)
 {
-  int column = strm->stream.column;
-  if (c == '\n')
-    strm->stream.column = 0;
-  else if (c == '\t')
-    strm->stream.column = (column&~(cl_index)7) + 8;
-  else
-    strm->stream.column++;
+  write_char_increment_column(strm, c);
   ecl_string_push_extend(STRING_OUTPUT_STRING(strm), c);
   return c;
 }
@@ -1383,12 +1436,6 @@ str_out_set_position(cl_object strm, cl_object pos)
   return ECL_T;
 }
 
-static int
-str_out_column(cl_object strm)
-{
-  return strm->stream.column;
-}
-
 const struct ecl_file_ops str_out_ops = {
   not_output_write_byte8,
   not_binary_read_byte8,
@@ -1418,7 +1465,7 @@ const struct ecl_file_ops str_out_ops = {
   not_a_file_stream, /* length */
   str_out_get_position,
   str_out_set_position,
-  str_out_column,
+  generic_column,
   generic_close
 };
 
@@ -1606,7 +1653,7 @@ const struct ecl_file_ops str_in_ops = {
   not_a_file_stream, /* length */
   str_in_get_position,
   str_in_set_position,
-  generic_column,
+  unknown_column,
   generic_close
 };
 
@@ -1626,7 +1673,7 @@ ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend)
   strm->stream.flags = ECL_STREAM_DEFAULT_FORMAT;
   strm->stream.byte_size = 8;
 #else
-  if (ECL_BASE_STRING_P(strng) == t_base_string) {
+  if (ECL_BASE_STRING_P(strng)) {
     strm->stream.format = @':latin-1';
     strm->stream.flags = ECL_STREAM_LATIN_1;
     strm->stream.byte_size = 8;
@@ -1918,7 +1965,7 @@ broadcast_length(cl_object strm)
   cl_object l = BROADCAST_STREAM_LIST(strm);
   if (Null(l))
     return ecl_make_fixnum(0);
-  return ecl_file_length(ECL_CONS_CAR(l));
+  return ecl_file_length(ECL_CONS_CAR(ecl_last(l, 1)));
 }
 
 static cl_object
@@ -1927,7 +1974,7 @@ broadcast_get_position(cl_object strm)
   cl_object l = BROADCAST_STREAM_LIST(strm);
   if (Null(l))
     return ecl_make_fixnum(0);
-  return ecl_file_position(ECL_CONS_CAR(l));
+  return ecl_file_position(ECL_CONS_CAR(ecl_last(l, 1)));
 }
 
 static cl_object
@@ -2317,7 +2364,7 @@ const struct ecl_file_ops concatenated_ops = {
   not_a_file_stream, /* length */
   generic_always_nil, /* get_position */
   generic_set_position,
-  generic_column,
+  unknown_column,
   concatenated_close
 };
 
@@ -2677,7 +2724,6 @@ io_file_write_byte8(cl_object strm, unsigned char *c, cl_index n)
     cl_object aux = ecl_file_position(strm);
     if (!Null(aux))
       ecl_file_position_set(strm, aux);
-    strm->stream.byte_stack = ECL_NIL;
   }
   return output_file_write_byte8(strm, c, n);
 }
@@ -2784,10 +2830,12 @@ io_file_get_position(cl_object strm)
   offset = lseek(f, 0, SEEK_CUR);
   ecl_enable_interrupts();
   unlikely_if (offset < 0)
+  {
     if (errno == ESPIPE)
       return(ECL_NIL);
     else
       io_error(strm);
+  }
   if (sizeof(ecl_off_t) == sizeof(long)) {
     output = ecl_make_integer(offset);
   } else {
@@ -2815,6 +2863,7 @@ io_file_set_position(cl_object strm, cl_object large_disp)
   int mode;
   int f = IO_FILE_DESCRIPTOR(strm);
   if (isatty(f)) return(ECL_NIL);
+  strm->stream.byte_stack = ECL_NIL;
   if (Null(large_disp)) {
     disp = 0;
     mode = SEEK_END;
@@ -2828,12 +2877,6 @@ io_file_set_position(cl_object strm, cl_object large_disp)
   }
   disp = lseek(f, disp, mode);
   return (disp == (ecl_off_t)-1)? ECL_NIL : ECL_T;
-}
-
-static int
-io_file_column(cl_object strm)
-{
-  return strm->stream.column;
 }
 
 static cl_object
@@ -2851,6 +2894,83 @@ io_file_close(cl_object strm)
   IO_FILE_DESCRIPTOR(strm) = -1;
   return generic_close(strm);
 }
+
+static ecl_character io_file_decode_char_from_buffer(cl_object strm, unsigned char *buffer, unsigned char **buffer_pos, unsigned char **buffer_end, bool seekable, cl_index min_needed_bytes) {
+  bool crlf = 0;
+  unsigned char *previous_buffer_pos;
+  ecl_character c;
+ AGAIN:
+  previous_buffer_pos = *buffer_pos;
+  c = strm->stream.decoder(strm, buffer_pos, *buffer_end);
+  if (c != EOF) {
+    /* Ugly handling of line breaks */
+    if (crlf) {
+      if (c == ECL_CHAR_CODE_LINEFEED) {
+        strm->stream.last_code[1] = c;
+        c = ECL_CHAR_CODE_NEWLINE;
+      }
+      else {
+        *buffer_pos = previous_buffer_pos;
+        c = ECL_CHAR_CODE_RETURN;
+      }
+    } else if (strm->stream.flags & ECL_STREAM_CR && c == ECL_CHAR_CODE_RETURN) {
+      if (strm->stream.flags & ECL_STREAM_LF) {
+        strm->stream.last_code[0] = c;
+        crlf = 1;
+        goto AGAIN;
+      }
+      else
+        c = ECL_CHAR_CODE_NEWLINE;
+    }
+    if (!crlf) {
+      strm->stream.last_code[0] = c;
+      strm->stream.last_code[1] = EOF;
+    }
+    strm->stream.last_char = c;
+    return c;
+  } else {
+    /* We need more bytes. First copy unconsumed bytes at the
+     * beginning of buffer. */
+    cl_index unconsumed_bytes = *buffer_end - *buffer_pos;
+    memcpy(buffer, *buffer_pos, unconsumed_bytes);
+    cl_index needed_bytes = VECTOR_ENCODING_BUFFER_SIZE;
+    if (!seekable && min_needed_bytes < VECTOR_ENCODING_BUFFER_SIZE)
+      needed_bytes = min_needed_bytes;
+    *buffer_end = buffer + unconsumed_bytes
+      + ecl_read_byte8(strm, buffer + unconsumed_bytes, needed_bytes);
+    if (*buffer_end == buffer + unconsumed_bytes)
+      return EOF;
+    *buffer_pos = buffer;
+    goto AGAIN;
+  }
+}
+
+/* The following macros create a temporary buffer for efficient
+ * reading of characters from file streams */
+#define ECL_FILE_READ_BUFFER_CREATE(strm) \
+  cl_object __stream = (strm); \
+  unsigned char __buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE]; \
+  unsigned char *__buffer_pos = __buffer; \
+  unsigned char *__buffer_end = __buffer; \
+  /* When we can't call lseek/fseek we have to be conservative and \
+   * read only as many bytes as we actually need. Otherwise, we read \
+   * more and later reposition the file offset. */ \
+  bool __seekable = ecl_file_position(__stream) != ECL_NIL; \
+  ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+
+#define ECL_FILE_READ_BUFFER_GET_CHAR(min_needed_bytes) \
+  io_file_decode_char_from_buffer(__stream, __buffer, &__buffer_pos, &__buffer_end, __seekable, min_needed_bytes)
+
+#define ECL_FILE_READ_BUFFER_DESTROY \
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT { \
+    if (__seekable) \
+      /* INV: (buffer_end - buffer_pos) is divisible by \
+       * (strm->stream.byte_size / 8) since VECTOR_ENCODING_BUFFER_SIZE \
+       * is divisible by all byte sizes for character streams and all \
+       * decoders consume bytes in multiples of the byte size. */ \
+      ecl_file_position_set(__stream, ecl_minus(ecl_file_position(__stream), \
+        ecl_make_fixnum((__buffer_end - __buffer_pos) / (__stream->stream.byte_size / 8)))); \
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END
 
 static cl_index
 io_file_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end)
@@ -2870,6 +2990,18 @@ io_file_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end
       bytes = strm->stream.ops->read_byte8(strm, aux, bytes);
       return start + bytes / sizeof(cl_fixnum);
     }
+  } else if (ecl_stream_element_type(strm) == @'base-char'
+             || ecl_stream_element_type(strm) == @'character') {
+    ECL_FILE_READ_BUFFER_CREATE(strm) {
+      while (start < end) {
+        ecl_character c = ECL_FILE_READ_BUFFER_GET_CHAR((end-start) * (strm->stream.byte_size / 8));
+        if (c != EOF)
+          ecl_elt_set(data, start++, ECL_CODE_CHAR(c));
+        else
+          break;
+      }
+    } ECL_FILE_READ_BUFFER_DESTROY;
+    return start;
   }
   return generic_read_vector(strm, data, start, end);
 }
@@ -2892,7 +3024,58 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
       bytes = strm->stream.ops->write_byte8(strm, aux, bytes);
       return start + bytes / sizeof(cl_fixnum);
     }
+  } else if (t == ecl_aet_bc) {
+    /* 1 extra byte for linefeed in crlf mode */
+    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE + 1];
+    cl_index nbytes = 0;
+    cl_index i;
+    for (i = start; i < end; i++) {
+      ecl_character c = *(data->vector.self.bc + i);
+      if (c == ECL_CHAR_CODE_NEWLINE) {
+        if (strm->stream.flags & ECL_STREAM_CR &&
+            strm->stream.flags & ECL_STREAM_LF)
+          nbytes += strm->stream.encoder(strm, buffer + nbytes, ECL_CHAR_CODE_RETURN);
+        else if (strm->stream.flags & ECL_STREAM_CR)
+          c = ECL_CHAR_CODE_RETURN;
+        strm->stream.column = 0;
+      }
+      nbytes += strm->stream.encoder(strm, buffer + nbytes, c);
+      write_char_increment_column(strm, c);
+      if (nbytes >= VECTOR_ENCODING_BUFFER_SIZE) {
+        strm->stream.ops->write_byte8(strm, buffer, nbytes);
+        nbytes = 0;
+      }
+    }
+    strm->stream.ops->write_byte8(strm, buffer, nbytes);
+    return end;
   }
+#ifdef ECL_UNICODE
+  else if (t == ecl_aet_ch) {
+    /* 1 extra byte for linefeed in crlf mode */
+    unsigned char buffer[VECTOR_ENCODING_BUFFER_SIZE + ENCODING_BUFFER_MAX_SIZE + 1];
+    cl_index nbytes = 0;
+    cl_index i;
+    for (i = start; i < end; i++) {
+      ecl_character c = *(data->vector.self.c + i);
+      if (c == ECL_CHAR_CODE_NEWLINE) {
+        if (strm->stream.flags & ECL_STREAM_CR &&
+            strm->stream.flags & ECL_STREAM_LF)
+          nbytes += strm->stream.encoder(strm, buffer + nbytes, ECL_CHAR_CODE_RETURN);
+        else if (strm->stream.flags & ECL_STREAM_CR)
+          c = ECL_CHAR_CODE_RETURN;
+        strm->stream.column = 0;
+      }
+      nbytes += strm->stream.encoder(strm, buffer + nbytes, c);
+      write_char_increment_column(strm, c);
+      if (nbytes >= VECTOR_ENCODING_BUFFER_SIZE) {
+        strm->stream.ops->write_byte8(strm, buffer, nbytes);
+        nbytes = 0;
+      }
+    }
+    strm->stream.ops->write_byte8(strm, buffer, nbytes);
+    return end;
+  }
+#endif
   return generic_write_vector(strm, data, start, end);
 }
 
@@ -2925,7 +3108,7 @@ const struct ecl_file_ops io_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
-  io_file_column,
+  generic_column,
   io_file_close
 };
 
@@ -2958,7 +3141,7 @@ const struct ecl_file_ops output_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
-  io_file_column,
+  generic_column,
   io_file_close
 };
 
@@ -2991,7 +3174,7 @@ const struct ecl_file_ops input_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
-  generic_column,
+  unknown_column,
   io_file_close
 };
 
@@ -3075,7 +3258,7 @@ parse_external_format(cl_object stream, cl_object format, int flags)
     return (flags & ~ECL_STREAM_FORMAT) | ECL_STREAM_USER_FORMAT;
   }
   if (ECL_SYMBOLP(format)) {
-    format = si_make_encoding(format);
+    format = _ecl_funcall2(@'ext::make-encoding', format);
     if (ECL_SYMBOLP(format))
       goto PARSE_SYMBOLS;
     stream->stream.format_table = format;
@@ -3099,7 +3282,9 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
     flags &= ~ECL_STREAM_SIGNED_BYTES;
     t = @'unsigned-byte';
   }
-  flags = parse_external_format(stream, external_format, flags);
+  if (external_format != ECL_NIL) {
+    flags = parse_external_format(stream, external_format, flags);
+  }
   stream->stream.ops->read_char = eformat_read_char;
   stream->stream.ops->write_char = eformat_write_char;
   switch (flags & ECL_STREAM_FORMAT) {
@@ -3108,6 +3293,8 @@ set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
     stream->stream.format = t;
     stream->stream.ops->read_char = not_character_read_char;
     stream->stream.ops->write_char = not_character_write_char;
+    stream->stream.decoder = not_character_decoder;
+    stream->stream.encoder = not_character_encoder;
     break;
 #ifdef ECL_UNICODE
     /*case ECL_ISO_8859_1:*/
@@ -3264,12 +3451,10 @@ si_stream_external_format_set(cl_object stream, cl_object format)
 #endif
     {
       cl_object elt_type = ecl_stream_element_type(stream);
-      unlikely_if (elt_type != @'character' &&
-                   elt_type != @'base-char')
-        FEerror("Cannot change external format"
-                "of binary stream ~A", 1, stream);
-      set_stream_elt_type(stream, stream->stream.byte_size,
-                          stream->stream.flags, format);
+      unlikely_if (elt_type != @'character' && elt_type != @'base-char') {
+        FEerror("Cannot change external format of binary stream ~A", 1, stream);
+      }
+      set_stream_elt_type(stream, stream->stream.byte_size, stream->stream.flags, format);
     }
     break;
   default:
@@ -3306,7 +3491,7 @@ ecl_make_file_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
   stream->stream.mode = (short)smm;
   stream->stream.closed = 0;
   set_stream_elt_type(stream, byte_size, flags, external_format);
-  IO_FILE_FILENAME(stream) = fname; /* not really used */
+  IO_FILE_FILENAME(stream) = fname; /* used in cl:pathname */
   stream->stream.column = 0;
   IO_FILE_DESCRIPTOR(stream) = fd;
   stream->stream.last_op = 0;
@@ -3465,8 +3650,12 @@ io_stream_get_position(cl_object strm)
   ecl_disable_interrupts();
   offset = ecl_ftello(f);
   ecl_enable_interrupts();
-  if (offset < 0)
-    io_error(strm);
+  unlikely_if (offset < 0) {
+    if (errno == ESPIPE)
+      return(ECL_NIL);
+    else
+      io_error(strm);
+  }
   if (sizeof(ecl_off_t) == sizeof(long)) {
     output = ecl_make_integer(offset);
   } else {
@@ -3493,6 +3682,7 @@ io_stream_set_position(cl_object strm, cl_object large_disp)
   FILE *f = IO_STREAM_FILE(strm);
   ecl_off_t disp;
   int mode;
+  strm->stream.byte_stack = ECL_NIL;
   if (Null(large_disp)) {
     disp = 0;
     mode = SEEK_END;
@@ -3508,12 +3698,6 @@ io_stream_set_position(cl_object strm, cl_object large_disp)
   mode = ecl_fseeko(f, disp, mode);
   ecl_enable_interrupts();
   return mode? ECL_NIL : ECL_T;
-}
-
-static int
-io_stream_column(cl_object strm)
-{
-  return strm->stream.column;
 }
 
 static cl_object
@@ -3576,7 +3760,7 @@ const struct ecl_file_ops io_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
-  io_stream_column,
+  generic_column,
   io_stream_close
 };
 
@@ -3609,7 +3793,7 @@ const struct ecl_file_ops output_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
-  io_stream_column,
+  generic_column,
   io_stream_close
 };
 
@@ -3642,7 +3826,7 @@ const struct ecl_file_ops input_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
-  generic_column,
+  unknown_column,
   io_stream_close
 };
 
@@ -3854,7 +4038,7 @@ const struct ecl_file_ops winsock_stream_input_ops = {
   not_a_file_stream,
   not_implemented_get_position,
   not_implemented_set_position,
-  generic_column,
+  unknown_column,
 
   winsock_stream_close
 };
@@ -3879,10 +4063,14 @@ wcon_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
     HANDLE h = (HANDLE)IO_FILE_DESCRIPTOR(strm);
     DWORD nchars;
     unsigned char aux[4];
+    WCHAR waux[1];
     for (len = 0; len < n; ) {
       int i, ok;
       ecl_disable_interrupts_env(the_env);
-      ok = ReadConsole(h, &aux, 1, &nchars, NULL);
+      ok = ReadConsoleW(h, waux, 1, &nchars, NULL);
+      if (ok) {
+        nchars = WideCharToMultiByte(GetConsoleCP(), 0, waux, 1, aux, 4, NULL, NULL);
+      }
       ecl_enable_interrupts_env(the_env);
       unlikely_if (!ok) {
         FEwin32_error("Cannot read from console", 0);
@@ -4312,7 +4500,7 @@ const struct ecl_file_ops seq_in_ops = {
   not_a_file_stream, /* length */
   seq_in_get_position,
   seq_in_set_position,
-  generic_column,
+  unknown_column,
   generic_close
 };
 
@@ -4326,9 +4514,7 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
   int byte_size;
   int flags = 0;
   if (!ECL_VECTORP(vector) ||
-      ((type = ecl_array_elttype(vector)) < ecl_aet_b8 &&
-       type > ecl_aet_bc) ||
-      ecl_aet_size[type] != 1)
+      ecl_aet_size[type = ecl_array_elttype(vector)] != 1)
     {
       FEerror("MAKE-SEQUENCE-INPUT-STREAM only accepts vectors whose element has a size of 1 byte.~%~A", 1, vector);
     }
@@ -4339,29 +4525,12 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
   strm = alloc_stream();
   strm->stream.ops = duplicate_dispatch_table(&seq_in_ops);
   strm->stream.mode = (short)ecl_smm_sequence_input;
-  if (!byte_size) {
-#if defined(ECL_UNICODE)
-    if (ECL_BASE_STRING_P(vector)) {
-      if (Null(external_format))
-        external_format = @':default';
-    } else {
-      if (Null(external_format)) {
-# ifdef WORDS_BIGENDIAN
-        external_format = @':ucs-4be';
-# else
-        external_format = @':ucs-4le';
-# endif
-      }
-    }
-#else
-    if (Null(external_format)) {
-      external_format = @':default';
-    }
-#endif
+  if (!byte_size && Null(external_format)) {
+    external_format = @':default';
   }
   set_stream_elt_type(strm, byte_size, flags, external_format);
-  /* Override byte size and elt type */
-  if (byte_size) strm->stream.byte_size = byte_size;
+  /* Override byte size */
+  if (byte_size) strm->stream.byte_size = 8;
   SEQ_INPUT_VECTOR(strm) = vector;
   SEQ_INPUT_POSITION(strm) = istart;
   SEQ_INPUT_LIMIT(strm) = iend;
@@ -4395,6 +4564,9 @@ seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
     cl_fixnum delta = last - curr_pos;
     if (delta < n) {
       /* Not enough space, enlarge */
+      if (!ECL_ADJUSTABLE_ARRAY_P(vector)) {
+        FEerror("Can't adjust the dimensions of the sequence of sequence stream ~A", 1, strm);
+      }
       vector = _ecl_funcall3(@'adjust-array', vector,
                              ecl_ash(ecl_make_fixnum(last), 1));
       SEQ_OUTPUT_VECTOR(strm) = vector;
@@ -4473,9 +4645,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
   int byte_size;
   int flags = 0;
   if (!ECL_VECTORP(vector) ||
-      ((type = ecl_array_elttype(vector)) < ecl_aet_b8 &&
-       type > ecl_aet_bc) ||
-      ecl_aet_size[type] != 1)
+      ecl_aet_size[type = ecl_array_elttype(vector)] != 1)
     {
       FEerror("MAKE-SEQUENCE-OUTPUT-STREAM only accepts vectors whose element has a size of 1 byte.~%~A", 1, vector);
     }
@@ -4486,29 +4656,12 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
   strm = alloc_stream();
   strm->stream.ops = duplicate_dispatch_table(&seq_out_ops);
   strm->stream.mode = (short)ecl_smm_sequence_output;
-  if (!byte_size) {
-#if defined(ECL_UNICODE)
-    if (ECL_BASE_STRING_P(vector)) {
-      if (Null(external_format))
-        external_format = @':default';
-    } else {
-      if (Null(external_format)) {
-# ifdef WORDS_BIGENDIAN
-        external_format = @':ucs-4be';
-# else
-        external_format = @':ucs-4le';
-# endif
-      }
-    }
-#else
-    if (Null(external_format)) {
-      external_format = @':default';
-    }
-#endif
+  if (!byte_size && Null(external_format)) {
+    external_format = @':default';
   }
   set_stream_elt_type(strm, byte_size, flags, external_format);
-  /* Override byte size and elt type */
-  if (byte_size) strm->stream.byte_size = byte_size;
+  /* Override byte size */
+  if (byte_size) strm->stream.byte_size = 8;
   SEQ_OUTPUT_VECTOR(strm) = vector;
   SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp;
   return strm;
@@ -4695,8 +4848,20 @@ ecl_peek_char(cl_object strm)
 void
 writestr_stream(const char *s, cl_object strm)
 {
-  while (*s != '\0')
-    ecl_write_char(*s++, strm);
+  cl_object buffer = si_get_buffer_string();
+  cl_index size = ecl_fixnum(cl_array_total_size(buffer));
+  cl_index i = 0;
+  while (*s != '\0') {
+    ecl_char_set(buffer, i++, (ecl_character) *s++);
+    if (i >= size) {
+      si_fill_pointer_set(buffer, ecl_make_fixnum(size));
+      si_do_write_sequence(buffer, strm, ecl_make_fixnum(0), ECL_NIL);
+      i = 0;
+    }
+  }
+  si_fill_pointer_set(buffer, ecl_make_fixnum(i));
+  si_do_write_sequence(buffer, strm, ecl_make_fixnum(0), ECL_NIL);
+  si_put_buffer_string(buffer);
 }
 
 static cl_index
@@ -4742,6 +4907,7 @@ cl_file_string_length(cl_object stream, cl_object string)
     if (Null(stream)) {
       @(return ecl_make_fixnum(1));
     } else {
+      stream = ECL_CONS_CAR(ecl_last(stream, 1));
       goto BEGIN;
     }
   }
@@ -4886,7 +5052,8 @@ si_do_read_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
 cl_object
 si_file_column(cl_object strm)
 {
-  @(return ecl_make_fixnum(ecl_file_column(strm)));
+  int column = ecl_file_column(strm);
+  @(return (column >= 0 ? ecl_make_fixnum(column) : ECL_NIL));
 }
 
 cl_object
@@ -4989,14 +5156,20 @@ cl_streamp(cl_object strm)
  */
 
 cl_object
-si_copy_stream(cl_object in, cl_object out)
+si_copy_stream(cl_object in, cl_object out, cl_object wait)
 {
   ecl_character c;
+  if ((wait == ECL_NIL) && !ecl_listen_stream(in)) {
+    return ECL_NIL;
+  }
   for (c = ecl_read_char(in); c != EOF; c = ecl_read_char(in)) {
     ecl_write_char(c, out);
+    if ((wait == ECL_NIL) && !ecl_listen_stream(in)) {
+      break;
+    }
   }
   ecl_force_output(out);
-  @(return ECL_T);
+  @(return ((c==EOF) ? ECL_T : ECL_NIL));
 }
 
 
@@ -5054,106 +5227,107 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
                 cl_object if_does_not_exist, cl_fixnum byte_size,
                 int flags, cl_object external_format)
 {
-  cl_object output;
-  int f;
+  cl_object output, file_kind;
+  int fd;
+  bool appending = 0, exists;
 #if defined(ECL_MS_WINDOWS_HOST)
   ecl_mode_t mode = _S_IREAD | _S_IWRITE;
 #else
   ecl_mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 #endif
+  /* FILENAME is used only to access the actual file while a stream
+     remembers the original pathname FN. -- jd 2020-03-27 */
   cl_object filename = si_coerce_to_filename(fn);
   char *fname = (char*)filename->base_string.self;
-  bool appending = 0;
-  bool exists = si_file_kind(filename, ECL_T) != ECL_NIL;
-  if (smm == ecl_smm_input || smm == ecl_smm_probe) {
-    if (!exists) {
-      if (if_does_not_exist == @':error') {
-        FEcannot_open(fn);
-      } else if (if_does_not_exist == @':create') {
-        f = safe_open(fname, O_WRONLY|O_CREAT, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
-        safe_close(f);
-      } else if (Null(if_does_not_exist)) {
-        return ECL_NIL;
-      } else {
-        FEinvalid_option(@':if-does-not-exist',
-                         if_does_not_exist);
-      }
-    }
-    f = safe_open(fname, O_RDONLY, mode);
-    unlikely_if (f < 0) FEcannot_open(fn);
-  } else if (smm == ecl_smm_output || smm == ecl_smm_io) {
-    int base = (smm == ecl_smm_output)? O_WRONLY : O_RDWR;
-    if (if_exists == @':new_version' &&
-        if_does_not_exist == @':create') {
-      exists = 0;
-      if_does_not_exist = @':create';
-    }
+  file_kind = si_file_kind(filename, ECL_T);
+  exists = file_kind != ECL_NIL;
+  if (!exists) {
+    if (if_does_not_exist == ECL_NIL) return ECL_NIL;
+    if (if_does_not_exist == @':error') FEcannot_open(fn);
+    if (if_does_not_exist != @':create')
+      FEinvalid_option(@':if-does-not-exist', if_does_not_exist);
+    fd = safe_open(fname, O_WRONLY|O_CREAT, mode);
+    unlikely_if (fd < 0) FEcannot_open(fn);
+    safe_close(fd);
+    fd = -1;
+  }
+  switch (smm) {
+  case ecl_smm_probe:
+    output = ecl_make_file_stream_from_fd(fn, -1, smm, byte_size, flags, external_format);
+    generic_close(output);
+    return output;
+  case ecl_smm_input:
+    fd = safe_open(fname, O_RDONLY|O_NONBLOCK, mode);
+    unlikely_if (fd < 0) FEcannot_open(fn);
+    break;
+  case ecl_smm_output:
+    /* For output we could have used O_WRONLY, but this doesn't matter because
+       we fopen with OPEN_RW later anyway. stream opts enforce things. */
+  case ecl_smm_io: {
     if (exists) {
-      if (if_exists == @':error') {
-        FEcannot_open(fn);
-      } else if (if_exists == @':rename') {
-        f = ecl_backup_open(fname, base|O_CREAT, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
+      if (if_exists == ECL_NIL) return ECL_NIL;
+      if (if_exists == @':error') FEcannot_open(fn);
+      if (if_exists == @':rename') {
+        fd = ecl_backup_open(fname, O_RDWR|O_CREAT, mode);
+        unlikely_if (fd < 0) FEcannot_open(fn);
       } else if (if_exists == @':rename_and_delete' ||
                  if_exists == @':new_version' ||
-                 if_exists == @':supersede') {
-        f = safe_open(fname, base|O_TRUNC, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
+                 if_exists == @':supersede' ||
+                 if_exists == @':truncate') {
+        fd = safe_open(fname, O_RDWR|O_TRUNC, mode);
+        unlikely_if (fd < 0) FEcannot_open(fn);
       } else if (if_exists == @':overwrite' || if_exists == @':append') {
-        f = safe_open(fname, base, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
+        fd = safe_open(fname, O_RDWR, mode);
+        unlikely_if (fd < 0) FEcannot_open(fn);
         appending = (if_exists == @':append');
-      } else if (Null(if_exists)) {
-        return ECL_NIL;
       } else {
         FEinvalid_option(@':if-exists', if_exists);
       }
-    } else {
-      if (if_does_not_exist == @':error') {
-        FEcannot_open(fn);
-      } else if (if_does_not_exist == @':create') {
-        f = safe_open(fname, base | O_CREAT | O_TRUNC, mode);
-        unlikely_if (f < 0) FEcannot_open(fn);
-      } else if (Null(if_does_not_exist)) {
-        return ECL_NIL;
-      } else {
-        FEinvalid_option(@':if-does-not-exist',
-                         if_does_not_exist);
-      }
     }
-  } else {
+    break;
+  }
+  default:
     FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
   }
   if (flags & ECL_STREAM_C_STREAM) {
-    FILE *fp;
-    safe_close(f);
-    /* We do not use fdopen() because Windows seems to
-     * have problems with the resulting streams. Furthermore, even for
-     * output we open with w+ because we do not want to
-     * overwrite the file. */
+    FILE *fp = 0;
+    /* We do not use fdopen() because Windows seems to have problems with the
+     * resulting streams. Furthermore, even for output we open with w+ because
+     * we do not want to overwrite the file. */
     switch (smm) {
     case ecl_smm_probe:
-    case ecl_smm_input: fp = safe_fopen(fname, OPEN_R); break;
+      /* never happens (returns earlier) */
+    case ecl_smm_input:
+      if (file_kind == @':fifo') {
+        fp = safe_fdopen(fd, OPEN_R);
+      } else {
+        if (fd >= 0)
+          safe_close(fd);
+        fp = safe_fopen(fname, OPEN_R);
+      }
+      break;
     case ecl_smm_output:
-    case ecl_smm_io: fp = safe_fopen(fname, OPEN_RW); break;
-    default:; /* never reached */
+    case ecl_smm_io:
+      if (file_kind == @':fifo') {
+        fp = safe_fdopen(fd, OPEN_RW);
+      } else {
+        if (fd >= 0)
+          safe_close(fd);
+        fp = safe_fopen(fname, OPEN_RW);
+      }
+      break;
+    default:;
+      /* never reached (errors earlier) */
     }
-    output = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags,
-                                       external_format);
+    output = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags, external_format);
     si_set_buffering_mode(output, byte_size? @':full' : @':line');
   } else {
-    output = ecl_make_file_stream_from_fd(fn, f, smm, byte_size, flags,
-                                          external_format);
+    output = ecl_make_file_stream_from_fd(fn, fd, smm, byte_size, flags, external_format);
   }
-  if (smm == ecl_smm_probe) {
-    cl_close(1, output);
-  } else {
-    output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
-    si_set_finalizer(output, ECL_T);
-    /* Set file pointer to the correct position */
-    ecl_file_position_set(output, appending? ECL_NIL : ecl_make_fixnum(0));
-  }
+  output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
+  si_set_finalizer(output, ECL_T);
+  /* Set file pointer to the correct position */
+  ecl_file_position_set(output, appending? ECL_NIL : ecl_make_fixnum(0));
   return output;
 }
 
@@ -5244,7 +5418,9 @@ file_listen(cl_object stream, int fileno)
   retv = select(fileno + 1, &fds, NULL, NULL, &tv);
   if (ecl_unlikely(retv < 0))
     file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
-  else if (retv > 0)
+  /* XXX: for FIFO there should be also peek-byte (not implemented and peek-char
+     doesn't work for binary streams). */
+  else if ((retv > 0) /* && (generic_peek_byte(stream) != EOF) */)
     return ECL_LISTEN_AVAILABLE;
   else
     return ECL_LISTEN_NO_CHAR;
@@ -5254,7 +5430,7 @@ file_listen(cl_object stream, int fileno)
     ioctl(fileno, FIONREAD, &c);
     return (c > 0)? ECL_LISTEN_AVAILABLE : ECL_LISTEN_NO_CHAR;
   }
-# endif /* FIONREAD */
+# endif
 #else
   HANDLE hnd = (HANDLE)_get_osfhandle(fileno);
   switch (GetFileType(hnd)) {
@@ -5264,7 +5440,7 @@ file_listen(cl_object stream, int fileno)
       unlikely_if (!GetConsoleMode(hnd, &cm))
         FEwin32_error("GetConsoleMode() failed", 0);
       if (dw > 0) {
-        PINPUT_RECORD recs = (PINPUT_RECORD)GC_malloc(sizeof(INPUT_RECORD)*dw);
+        PINPUT_RECORD recs = (PINPUT_RECORD)GC_MALLOC(sizeof(INPUT_RECORD)*dw);
         int i;
         unlikely_if (!PeekConsoleInput(hnd, recs, dw, &dw_read))
           FEwin32_error("PeekConsoleInput failed()", 0);
@@ -5314,7 +5490,7 @@ static int
 flisten(cl_object stream, FILE *fp)
 {
   int aux;
-  if (feof(fp))
+  if (feof(fp) || ferror(fp))
     return ECL_LISTEN_EOF;
 #ifdef FILE_CNT
   if (FILE_CNT(fp) > 0)
@@ -5328,7 +5504,8 @@ flisten(cl_object stream, FILE *fp)
   {
     /* regular file */
     ecl_off_t old_pos = ecl_ftello(fp), end_pos;
-    unlikely_if (ecl_fseeko(fp, 0, SEEK_END) != 0)
+    unlikely_if (old_pos == -1 ||
+                 ecl_fseeko(fp, 0, SEEK_END) != 0)
       file_libc_error(@[file-error], stream,
                       "Unable to check file position", 0);
     end_pos = ecl_ftello(fp);
@@ -5434,7 +5611,7 @@ static cl_object
 not_a_file_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not an file stream"),
+           ecl_make_constant_base_string("~A is not an file stream",-1),
            @':format-arguments', cl_list(1, strm),
            @':expected-type', @'file-stream',
            @':datum', strm);
@@ -5444,7 +5621,7 @@ static void
 not_an_input_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not an input stream"),
+           ecl_make_constant_base_string("~A is not an input stream",-1),
            @':format-arguments', cl_list(1, strm),
            @':expected-type',
            cl_list(2, @'satisfies', @'input-stream-p'),
@@ -5455,7 +5632,7 @@ static void
 not_an_output_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not an output stream"),
+           ecl_make_constant_base_string("~A is not an output stream",-1),
            @':format-arguments', cl_list(1, strm),
            @':expected-type', cl_list(2, @'satisfies', @'output-stream-p'),
            @':datum', strm);
@@ -5465,7 +5642,7 @@ static void
 not_a_character_stream(cl_object s)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not a character stream"),
+           ecl_make_constant_base_string("~A is not a character stream",-1),
            @':format-arguments', cl_list(1, s),
            @':expected-type', @'character',
            @':datum', cl_stream_element_type(s));
@@ -5475,7 +5652,7 @@ static void
 not_a_binary_stream(cl_object s)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~A is not a binary stream"),
+           ecl_make_constant_base_string("~A is not a binary stream",-1),
            @':format-arguments', cl_list(1, s),
            @':expected-type', @'integer',
            @':datum', cl_stream_element_type(s));
@@ -5496,10 +5673,11 @@ file_libc_error(cl_object error_type, cl_object stream,
 
   ecl_va_start(args, narg, narg, 0);
   rest = cl_grab_rest_args(args);
+  ecl_va_end(args);
 
   si_signal_simple_error(4, (cl_object)(cl_symbols + ecl_fixnum(error_type)), Cnil,
-                         make_constant_base_string("~?~%C library explanation: ~A."),
-                         cl_list(3, make_constant_base_string(msg), rest,
+                         ecl_make_constant_base_string("~?~%C library explanation: ~A.",-1),
+                         cl_list(3, ecl_make_constant_base_string(msg,-1), rest,
                                  error));
   _ecl_unexpected_return();
 }
@@ -5578,18 +5756,18 @@ encoding_error(cl_object stream, unsigned char *buffer, ecl_character c)
 }
 
 static ecl_character
-decoding_error(cl_object stream, unsigned char *buffer, int length)
+decoding_error(cl_object stream, unsigned char **buffer, int char_length, unsigned char *buffer_end)
 {
   cl_object octets = ECL_NIL, code;
-  while (length > 0) {
-    octets = CONS(ecl_make_fixnum(buffer[--length]), octets);
+  for (; char_length > 0; char_length--) {
+    octets = CONS(ecl_make_fixnum(*((*buffer)++)), octets);
   }
   code = _ecl_funcall4(@'ext::decoding-error', stream,
                        cl_stream_external_format(stream),
                        octets);
   if (Null(code)) {
     /* Go for next character */
-    return stream->stream.decoder(stream);
+    return stream->stream.decoder(stream, buffer, buffer_end);
   } else {
     /* Return supplied character */
     return ecl_char_code(code);
@@ -5605,13 +5783,13 @@ wsock_error( const char *err_msg, cl_object strm )
   cl_object msg_obj;
   /* ecl_disable_interrupts(); ** done by caller */
   {
-    FormatMessage( FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                   0, WSAGetLastError(), 0, ( void* )&msg, 0, NULL );
-    msg_obj = make_base_string_copy( msg );
-    LocalFree( msg );
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                  0, WSAGetLastError(), 0, (void*)&msg, 0, NULL);
+    msg_obj = ecl_make_simple_base_string(msg,-1);
+    LocalFree(msg);
   }
   ecl_enable_interrupts();
-  FEerror( err_msg, 2, strm, msg_obj );
+  FEerror(err_msg, 2, strm, msg_obj);
 }
 #endif
 
@@ -5637,7 +5815,7 @@ init_file(void)
   flags = ECL_STREAM_DEFAULT_FORMAT;
 #endif
 
-  null_stream = ecl_make_stream_from_FILE(make_constant_base_string("/dev/null"),
+  null_stream = ecl_make_stream_from_FILE(ecl_make_constant_base_string("/dev/null",-1),
                                           NULL, ecl_smm_io, 8, flags, external_format);
   generic_close(null_stream);
   null_stream = cl_make_two_way_stream(null_stream, cl_make_broadcast_stream(0));
@@ -5646,20 +5824,20 @@ init_file(void)
   /* We choose C streams by default only when _not_ using threads.
    * The reason is that C streams block on I/O operations. */
 #if !defined(ECL_THREADS)
-  standard_input = maybe_make_windows_console_FILE(make_constant_base_string("stdin"),
+  standard_input = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stdin",-1),
                                                    stdin, ecl_smm_input, 8, flags, external_format);
-  standard_output = maybe_make_windows_console_FILE(make_constant_base_string("stdout"),
+  standard_output = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stdout",-1),
                                                     stdout, ecl_smm_output, 8, flags, external_format);
-  error_output = maybe_make_windows_console_FILE(make_constant_base_string("stderr"),
+  error_output = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stderr",-1),
                                                  stderr, ecl_smm_output, 8, flags, external_format);
 #else
-  standard_input = maybe_make_windows_console_fd(make_constant_base_string("stdin"),
+  standard_input = maybe_make_windows_console_fd(ecl_make_constant_base_string("stdin",-1),
                                                  STDIN_FILENO, ecl_smm_input_file, 8, flags,
                                                  external_format);
-  standard_output = maybe_make_windows_console_fd(make_constant_base_string("stdout"),
+  standard_output = maybe_make_windows_console_fd(ecl_make_constant_base_string("stdout",-1),
                                                   STDOUT_FILENO, ecl_smm_output_file, 8, flags,
                                                   external_format);
-  error_output = maybe_make_windows_console_fd(make_constant_base_string("stderr"),
+  error_output = maybe_make_windows_console_fd(ecl_make_constant_base_string("stderr",-1),
                                                STDERR_FILENO, ecl_smm_output_file, 8, flags,
                                                external_format);
 #endif

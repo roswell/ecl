@@ -45,23 +45,42 @@ ecl_negate_double_float(cl_object x)
   return ecl_make_double_float(-ecl_double_float(x));
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_negate_long_float(cl_object x)
 {
   return ecl_make_long_float(-ecl_long_float(x));
 }
-#endif
 
 static cl_object
 ecl_negate_complex(cl_object x)
 {
-  return ecl_make_complex(ecl_negate(x->complex.real),
-                          ecl_negate(x->complex.imag));
+  return ecl_make_complex(ecl_negate(x->gencomplex.real),
+                          ecl_negate(x->gencomplex.imag));
 }
+
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_negate_csfloat(cl_object x)
+{
+  return ecl_make_csfloat(-ecl_csfloat(x));
+}
+
+static cl_object
+ecl_negate_cdfloat(cl_object x)
+{
+  return ecl_make_cdfloat(-ecl_cdfloat(x));
+}
+
+static cl_object
+ecl_negate_clfloat(cl_object x)
+{
+  return ecl_make_clfloat(-ecl_clfloat(x));
+}
+#endif
 
 MATH_DEF_DISPATCH1_NE(negate, @[-], @[number],
                       ecl_negate_fix, ecl_negate_big, ecl_negate_ratio,
                       ecl_negate_single_float, ecl_negate_double_float,
                       ecl_negate_long_float,
-                      ecl_negate_complex);
+                      ecl_negate_complex,
+                      ecl_negate_csfloat, ecl_negate_cdfloat, ecl_negate_clfloat);

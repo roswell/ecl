@@ -1,0 +1,181 @@
+@node Characters
+@section Characters
+
+ECL is fully ANSI Common-Lisp compliant in all aspects of the character data type, with the following peculiarities.
+
+@menu
+* Characters - Unicode vs. POSIX locale::
+* Characters - Newline characters::
+* Characters - C Reference::
+@end menu
+
+@node Characters - Unicode vs. POSIX locale
+@subsection Unicode vs. POSIX locale
+@cfindex --enable-unicode [32|16|no]
+
+There are two ways of building ECL: with C or with Unicode character codes. These build modes are accessed using the @code{--disable-unicode} and @code{--enable-unicode} configuration options, the last one being the default.
+
+When using C characters we are actually relying on the char type of the C language, using the C library functions for tasks such as character conversions, comparison, etc. In this case characters are typically 8 bit wide and the character order and collation are determines by the current POSIX or C locale. This is not very accurate, leaves out many languages and character encodings but it is sufficient for small applications that do not need multilingual support.
+
+When no option is specified ECL builds with support for a larger character set, the Unicode 6.0 standard. This uses 24 bit large character codes, also known as @dfn{codepoints}, with a large database of character properties which include their nature (alphanumeric, numeric, etc), their case, their collation properties, whether they are standalone or composing characters, etc.
+
+@subsubsection Character types
+@lspindex extended-char
+If ECL is compiled without Unicode support, all characters are implemented using 8-bit codes and the type @code{extended-char} is empty. If compiled with Unicode support, characters are implemented using 24 bits and the @code{extended-char} type covers characters above code 255.
+@multitable @columnfractions .33 .33 .33
+@headitem Type @tab With Unicode @tab Without Unicode
+@item standard-char @tab #\Newline,32-126 @tab #\Newline,32-126
+@item base-char @tab 0-255 @tab 0-255
+@item extended-char @tab - @tab 256-16777215
+@end multitable
+
+@subsubsection Character names
+@lspindex standard-char
+All characters have a name. For non-printing characters between 0 and 32, and for 127 we use the ordinary ASCII names. Characters above 127 are printed and read using hexadecimal Unicode notation, with a U followed by 24 bit hexadecimal number, as in @code{U0126}.
+
+@float Table, tab:example-char-names
+@multitable {aaaaaaaaaaa} {aaa}
+@headitem Character @tab Code
+@item #\Null @tab 0
+@item #\Ack @tab 1
+@item #\Bell @tab 7
+@item #\Backspace @tab 8
+@item #\Tab @tab 9
+@item #\Newline @tab 10
+@item #\Linefeed @tab 10
+@item #\Page @tab 12
+@item #\Esc @tab 27
+@item #\Escape @tab 27
+@item #\Space @tab 32
+@item #\Rubout @tab 127
+@item #\U0080 @tab 128
+@end multitable
+@end float
+
+Note that @code{#\Linefeed} is synonymous with @code{#\Newline} and thus is a member of @code{standard-char}.
+
+
+@node Characters - Newline characters
+@subsection @code{#\Newline} characters
+Internally, ECL represents the @code{#\Newline} character by a single code. However, when using external formats, ECL may parse character pairs as a single @code{#\Newline}, and vice versa, use multiple characters to represent a single @code{#\Newline}, @pxref{Streams - External formats}.
+
+
+@node Characters - C Reference
+@subsection C Reference
+
+@subsubsection C types
+@cppdef ecl_base_char
+@cppdef ecl_character
+C character types
+
+@paragraph Type names
+@multitable {aaaaaaaaaaaaa} {aaaaaaaaa}
+@item ecl_character @tab character
+@item ecl_base_char @tab base-char
+@end multitable
+
+@paragraph Description
+ECL defines two C types to hold its characters: @coderef{ecl_base_char} and @coderef{ecl_character}.
+
+@itemize
+@item When ECL is built without Unicode, they both coincide and typically match @code{unsigned char}, to cover the 256 codes that are needed.
+@item When ECL is built with Unicode, the two types are no longer equivalent, with @coderef{ecl_character} being larger.
+@end itemize
+
+For your code to be portable and future proof, use both types to really express what you intend to do.
+
+@subsubsection Constructors
+@cppdef ECL_CODE_CHAR
+@cppdef ECL_CHAR_CODE
+@cppdef ecl_char_code
+@cppdef ecl_base_char_code
+Creating and extracting characters from Lisp objects
+
+@subsubheading Functions
+@deftypefn Macro cl_object ECL_CODE_CHAR (ecl_character code);
+@deftypefnx Macro ecl_character ECL_CHAR_CODE (cl_object o);
+@end deftypefn
+@deftypefun ecl_character ecl_char_code (cl_object o);
+@deftypefunx ecl_base_char ecl_base_char_code (cl_object o);
+
+@paragraph Description
+These functions and macros convert back and forth from C character types to Lisp. The macros @coderef{ECL_CHAR_CODE} and @coderef{ECL_CODE_CHAR} perform this coercion without checking the arguments. The functions @coderef{ecl_char_code} and @coderef{ecl_base_char_code}, on the other hand, verify that the argument has the right type and signal an error otherwise.
+@end deftypefun
+
+@subsubsection Predicates
+@cppdef ecl_base_char_p
+@cppdef ecl_alpha_char_p
+@cppdef ecl_alphanumeric_p
+@cppdef ecl_graphic_char_p
+@cppdef ecl_digit_p
+@cppdef ecl_standard_char_p
+C predicates for Lisp characters
+
+@subsubheading Functions
+@deftypefun bool ecl_base_char_p (ecl_character c);
+@deftypefunx bool ecl_alpha_char_p (ecl_character c);
+@deftypefunx bool ecl_alphanumericp (ecl_character c);
+@deftypefunx bool ecl_graphic_char_p (ecl_character c);
+@deftypefunx bool ecl_digitp (ecl_character c);
+@deftypefunx bool ecl_standard_char_p (ecl_character c);
+
+@paragraph Description
+These functions are equivalent to their Lisp equivalents but return C booleans.
+@end deftypefun
+
+@subsubsection Character case
+@cppdef ecl_upper_case_p
+@cppdef ecl_lower_case_p
+@cppdef ecl_both_case_p
+@cppdef ecl_char_downcase
+@cppdef ecl_char_upcase
+C functions related to the character case
+
+@subsubheading Functions
+@deftypefun bool ecl_upper_case_p (ecl_character c);
+@deftypefunx bool ecl_lower_case_p (ecl_character c);
+@deftypefunx bool ecl_both_case_p (ecl_character c);
+@deftypefunx ecl_character ecl_char_downcase (ecl_character c);
+@deftypefunx ecl_character ecl_char_upcase (ecl_character c);
+
+@paragraph Description
+These functions check or change the case of a character. Note that in a Unicode context, the output of these functions might not be accurate (for instance when the uppercase character has two or more codepoints).
+@end deftypefun
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable {aaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Lisp symbol @tab C function
+@item @clhs{f_chareq.htm,char=} @tab cl_object cl_charE(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char/=} @tab cl_object cl_charNE(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char<} @tab cl_object cl_charL(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char>} @tab cl_object cl_charG(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char<=} @tab cl_object cl_charLE(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char>=} @tab cl_object cl_charGE(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char-equal} @tab cl_object cl_char_equal(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char-not-equal} @tab cl_object cl_char_not_equal(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char-lessp} @tab cl_object cl_char_lessp(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char-greaterp} @tab cl_object cl_char_greaterp(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char-not-greaterp} @tab cl_object cl_char_not_greaterp(cl_narg narg, ...)
+@item @clhs{f_chareq.htm,char-not-lessp} @tab cl_object cl_char_not_lessp(cl_narg narg, ...)
+@item @clhs{f_ch.htm,character} @tab cl_object cl_character(cl_object char_designator)
+@item @clhs{f_chp.htm,characterp} @tab cl_object cl_characterp(cl_object object)
+@item @clhs{f_alpha_.htm,alpha-char-p} @tab cl_object cl_alpha_char_p(cl_object character)
+@item @clhs{f_alphan.htm,alphanumericp} @tab cl_object cl_alphanumericp(cl_object character)
+@item @clhs{f_digit_.htm,digit-char} @tab cl_object cl_digit_char(cl_narg narg, cl_object character, ...)
+@item @clhs{f_digi_1.htm,digit-char-p} @tab cl_object cl_digit_char_p(cl_narg narg, cl_object character, ...)
+@item @clhs{f_graphi.htm,graphic-char-p} @tab cl_object cl_graphic_char_p(cl_object character)
+@item @clhs{f_std_ch.htm,standard-char-p} @tab cl_object cl_standard_char_p(cl_object character)
+@item @clhs{f_char_u.htm,char_upcase} @tab cl_object cl_char_upcase(cl_object character)
+@item @clhs{f_char_u.htm,char-downcase} @tab cl_object cl_char_downcase(cl_object character)
+@item @clhs{f_upper_.htm,upper-case-p} @tab cl_object cl_upper_case_p(cl_object character)
+@item @clhs{f_upper_.htm,lower-case-p} @tab cl_object cl_lower_case_p(cl_object character)
+@item @clhs{f_upper_.htm,both-case-p} @tab cl_object cl_both_case_p(cl_object character)
+@item @clhs{f_char_c.htm,char-code} @tab cl_object cl_char_code(cl_object character)
+@item @clhs{f_char_i.htm,char-int} @tab cl_object cl_char_int(cl_object character)
+@item @clhs{f_code_c.htm,code-char} @tab cl_object cl_code_char(cl_object code)
+@item @clhs{f_char_n.htm,char-name} @tab cl_object cl_char_name(cl_object character)
+@item @clhs{f_name_c.htm,name-char} @tab cl_object cl_name_char(cl_object name)
+@item @clhs{v_char_c.htm,char-code-limit} @tab ECL_CHAR_CODE_LIMIT
+@end multitable

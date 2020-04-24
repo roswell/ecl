@@ -34,33 +34,40 @@ automatically closed on exit."
 Evaluates FORMs with VAR bound to a string input stream from the string that
 is the value of STRING-FORM.  The stream is automatically closed on exit.
 Possible keywords are :INDEX, :START, and :END."
-  (if index
-      (multiple-value-bind (ds b)
-          (find-declarations body)
-        `(LET ((,var (MAKE-STRING-INPUT-STREAM ,string ,start ,end)))
-           ,@ds
-           (UNWIND-PROTECT
-             (MULTIPLE-VALUE-PROG1
-              (PROGN ,@b)
-              (SETF ,index (FILE-POSITION ,var)))
-             (CLOSE ,var))))
-      `(LET ((,var (MAKE-STRING-INPUT-STREAM ,string ,start ,end)))
-         ,@body)))
+  (multiple-value-bind (ds b)
+      (find-declarations body)
+    `(let ((,var (make-string-input-stream ,string ,start ,end)))
+       ,@ds
+       (unwind-protect
+            ,(if index
+                 `(multiple-value-prog1
+                      (progn ,@b)
+                    (setf ,index (file-position ,var)))
+                 `(progn ,@b))
+         (close ,var)))))
 
 (defmacro with-output-to-string ((var &optional string &rest r &key element-type) &rest body)
   "Syntax: (with-output-to-string (var [string-form]) {decl}* {form}*)
 Evaluates FORMs with VAR bound to a string output stream to the string that is
 the value of STRING-FORM.  If STRING-FORM is not given, a new string is used.
 The stream is automatically closed on exit and the string is returned."
-  (if string
-      `(LET* ((,var (MAKE-STRING-OUTPUT-STREAM-FROM-STRING ,string))
-              (,(gensym) ,element-type))
-        ;; We must evaluate element-type if it has been supplied by the user.
-        ;; Even if we ignore the value afterwards.
-         ,@body)
-      `(LET ((,var (MAKE-STRING-OUTPUT-STREAM ,@r)))
-         ,@body
-         (GET-OUTPUT-STREAM-STRING ,var))))
+  (multiple-value-bind (decls body)
+      (find-declarations body)
+    (if string
+        (with-gensyms (elt-type-var)
+          `(let ((,var (make-string-output-stream-from-string ,string))
+                 ;; We must evaluate element-type for side effects.
+                 (,elt-type-var ,element-type))
+             (declare (ignore ,elt-type-var))
+             ,@decls
+             (unwind-protect (progn ,@body)
+               (close ,var))))
+        `(let ((,var (make-string-output-stream ,@r)))
+           ,@decls
+           (unwind-protect (progn
+                             ,@body
+                             (get-output-stream-string ,var))
+             (close ,var))))))
 
 (defun read-from-string (string
                          &optional (eof-error-p t) eof-value
@@ -233,7 +240,7 @@ is not given, ends the recording."
                                    *dribble-closure* nil))))
            (multiple-value-bind (sec min hour day month year)
                (get-decoded-time)
-             (format dribble-stream "~&Starts dribbling to ~A (~d/~d/~d, ~d:~d:~d)."
+             (format dribble-stream "~&Starts dribbling to ~A (~d/~d/~d, ~2,'0d:~2,'0d:~2,'0d)."
                      namestring year month day hour min sec)
              (setq *standard-input* dribble-stream
                    *standard-output* dribble-stream
@@ -278,7 +285,7 @@ the one used internally by ECL compiled files."
 
 (let* ((basic-encodings
         #+unicode
-         '(:UTF-8 :UCS-2 :UCS-2BE :UCS-2LE :UCS-4 :UCS-4BE
+         '(:UTF-8 :UCS-2 :UCS-2BE :UCS-2LE :UCS-4 :UCS-4BE :UCS-4LE
            :ISO-8859-1 :LATIN-1 :US-ASCII :DEFAULT)
          #-unicode
          '(:DEFAULT))
@@ -289,7 +296,7 @@ the one used internally by ECL compiled files."
           (setf all-encodings basic-encodings)
           #+unicode
           (dolist (i (directory "sys:encodings;*"))
-            (push (intern (pathname-name i) "KEYWORD") all-encodings))
+            (push (intern (string-upcase (pathname-name i)) "KEYWORD") all-encodings))
           all-encodings))))
 
 (defun ext:load-encoding (name)

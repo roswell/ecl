@@ -26,6 +26,9 @@ struct cl_env_struct {
         /* Environment for calling closures, CLOS generic functions, etc */
         cl_object function;
 
+        /* Current stack frame */
+        cl_object stack_frame;
+
         /* The four stacks in ECL. */
 
         /*
@@ -79,32 +82,38 @@ struct cl_env_struct {
          * memory. They will eventually disappear, because most operating
          * systems already take care of this.
          */
-        cl_index cs_size;
-        cl_index cs_limit_size;
-        cl_index cs_max_size;
-        char *cs_org;
-        char *cs_limit;
-        char *cs_barrier;
+        cl_index cs_size;       /* current size */
+        cl_index cs_limit_size; /* current size minus safety area */
+        cl_index cs_max_size;   /* maximum possible size */
+        char *cs_org;           /* origin address */
+        char *cs_limit;         /* limit address; if the stack pointer
+                                   goes beyond this value, a stack
+                                   overflow will be signaled ... */
+        char *cs_barrier;       /* ... but the area up to cs_barrier
+                                   is still available to allow
+                                   programs to recover from the
+                                   stack overflow */
 
         /* Private variables used by different parts of ECL: */
-        /* ... the reader ... */
+        /* ... the reader and printer ... */
         cl_object string_pool;
 
         /* ... the compiler ... */
         struct cl_compiler_env *c_env;
 
         /* ... the formatter ... */
+#if !defined(ECL_CMU_FORMAT)
         cl_object fmt_aux_stream;
+#endif
 
         /* ... arithmetics ... */
-        /* Note: if you change the size of these registers, change also
-           BIGNUM_REGISTER_SIZE in config.h */
-        cl_object big_register[3];
+        cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
 
         cl_object own_process;
-        cl_object pending_interrupt;
-        cl_object signal_queue;
-        cl_object signal_queue_spinlock;
+        /* The objects in this struct need to be writeable from a
+           different thread, if environment is write-protected by
+           mprotect. Hence they have to be allocated seperately. */
+        struct ecl_interrupt_struct *interrupt_struct;
         void *default_sigmask;
 
         /* The following is a hash table for caching invocations of
@@ -122,15 +131,8 @@ struct cl_env_struct {
         union ecl_ffi_values **ffi_values_ptrs;
 #endif
 
-        /* Alternative stack for processing signals */
-        void *altstack;
-        cl_index altstack_size;
-
         /* Floating point interrupts which are trapped */
         int trap_fpe_bits;
-
-        /* Old exception filter. Needed by windows. */
-        void *old_exception_filter;
 
         /* List of packages interned when loading a FASL but which have
          * to be explicitely created by the compiled code itself. */
@@ -145,21 +147,23 @@ struct cl_env_struct {
 #endif
 };
 
+struct ecl_interrupt_struct {
+        cl_object pending_interrupt;
+        cl_object signal_queue;
+        cl_object signal_queue_spinlock;
+};
+
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
 #if defined(ECL_THREADS)
-# ifdef WITH___THREAD
-#  define cl_env (*cl_env_p)
-#  define ecl_process_env() cl_env_p
-   extern __thread cl_env_ptr cl_env_p;
-# else
-#  define cl_env (*ecl_process_env())
-   extern ECL_API cl_env_ptr ecl_process_env(void) __attribute__((const));
-# endif
+# define cl_env (*ecl_process_env())
+  extern ECL_API cl_env_ptr ecl_process_env(void) __attribute__((const));
+  extern ECL_API cl_env_ptr ecl_process_env_unsafe(void);
 #else
 # define cl_env (*cl_env_p)
 # define ecl_process_env() cl_env_p
+# define ecl_process_env_unsafe() cl_env_p
   extern ECL_API cl_env_ptr cl_env_p;
 #endif
 
@@ -206,10 +210,8 @@ struct cl_core_struct {
         cl_object doublefloat_zero;
         cl_object singlefloat_minus_zero;
         cl_object doublefloat_minus_zero;
-#ifdef ECL_LONG_FLOAT
         cl_object longfloat_zero;
         cl_object longfloat_minus_zero;
-#endif
 
         cl_object gensym_prefix;
         cl_object gentemp_prefix;
@@ -251,9 +253,6 @@ struct cl_core_struct {
         cl_object rehash_size;
         cl_object rehash_threshold;
 
-        cl_object external_processes;
-        cl_object external_processes_lock;
-
         cl_object known_signals;
 };
 
@@ -285,14 +284,14 @@ extern ECL_API cl_object si_make_weak_pointer(cl_object o);
 extern ECL_API cl_object si_weak_pointer_value(cl_object o);
 #else
 extern ECL_API cl_object si_allocate _ECL_ARGS((cl_narg narg, cl_object type, cl_object qty, ...));
-extern ECL_API cl_object si_maximum_allocatable_pages _ECL_ARGS((cl_narg narg, cl_object type));
-extern ECL_API cl_object si_allocated_pages _ECL_ARGS((cl_narg narg, cl_object type));
+extern ECL_API cl_object si_maximum_allocatable_pages _ECL_ARGS((cl_narg narg, cl_object type, ...));
+extern ECL_API cl_object si_allocated_pages _ECL_ARGS((cl_narg narg, cl_object type, ...));
 extern ECL_API cl_object si_alloc_contpage _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_allocated_contiguous_pages _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_maximum_contiguous_pages _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_allocated_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_maximum_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_allocate_contiguous_pages _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_get_hole_size _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_set_hole_size _ECL_ARGS((cl_narg narg, cl_object size));
+extern ECL_API cl_object si_get_hole_size _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_set_hole_size _ECL_ARGS((cl_narg narg, cl_object size, ...));
 extern ECL_API cl_object si_ignore_maximum_pages _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API void *ecl_alloc(cl_index n);
 extern ECL_API void *ecl_alloc_align(cl_index size, cl_index align);
@@ -376,6 +375,10 @@ extern ECL_API cl_object ecl_elttype_to_symbol(cl_elttype aet);
 extern ECL_API void ecl_copy_subarray(cl_object dest, cl_index i0, cl_object orig, cl_index i1, cl_index l);
 extern ECL_API void ecl_reverse_subarray(cl_object dest, cl_index i0, cl_index i1);
 
+#ifdef ECL_THREADS
+extern ECL_API cl_object mp_compare_and_swap_svref(cl_object x, cl_object index, cl_object old_val, cl_object new_val);
+extern ECL_API cl_object mp_atomic_incf_svref(cl_object x, cl_object index, cl_object increment);
+#endif
 
 /* assignment.c */
 
@@ -391,8 +394,14 @@ extern ECL_API cl_object si_setf_definition(cl_object fname, cl_object createp);
 
 extern ECL_API void ecl_clear_compiler_properties(cl_object sym);
 
+#ifdef ECL_THREADS
+extern ECL_API cl_object mp_compare_and_swap_symbol_value(cl_object x, cl_object old_val, cl_object new_val);
+extern ECL_API cl_object mp_atomic_incf_symbol_value(cl_object x, cl_object increment);
+#endif
+
 /* big.c */
 
+/* Note: Needs to be adapted if ECL_BIGNUM_REGISTER_NUMBER changes */
 #define _ecl_big_register0()    ecl_process_env()->big_register[0]
 #define _ecl_big_register1()    ecl_process_env()->big_register[1]
 #define _ecl_big_register2()    ecl_process_env()->big_register[2]
@@ -413,8 +422,6 @@ extern ECL_API cl_object _ecl_big_ceiling(cl_object x, cl_object y, cl_object *r
 extern ECL_API cl_object _ecl_big_floor(cl_object x, cl_object y, cl_object *r);
 extern ECL_API cl_object _ecl_big_negate(cl_object x);
 extern ECL_API void _ecl_big_register_free(cl_object x);
-extern ECL_API cl_object bignum1(cl_fixnum val);
-
 
 /* cfun.c */
 
@@ -424,12 +431,12 @@ extern ECL_API cl_object cl_function_lambda_expression(cl_object fun);
 extern ECL_API cl_object si_compiled_function_file(cl_object fun);
 
 extern ECL_API cl_object ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object block, int narg);
-extern ECL_API cl_object ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block);
-extern ECL_API cl_object ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block);
+extern ECL_API cl_object ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object block, int narg_fixed);
+extern ECL_API cl_object ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block, int narg_fixed);
 extern ECL_API void ecl_def_c_function(cl_object sym, cl_objectfn_fixed c_function, int narg);
 extern ECL_API void ecl_def_c_macro(cl_object sym, cl_objectfn_fixed c_function, int narg);
-extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function);
-extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_objectfn c_function);
+extern ECL_API void ecl_def_c_macro_va(cl_object sym, cl_objectfn c_function, int narg_fixed);
+extern ECL_API void ecl_def_c_function_va(cl_object sym, cl_objectfn c_function, int narg_fixed);
 extern ECL_API void ecl_set_function_source_file_info(cl_object fun, cl_object source, cl_object position);
 extern ECL_API void ecl_cmp_defmacro(cl_object data);
 extern ECL_API void ecl_cmp_defun(cl_object data);
@@ -515,6 +522,7 @@ extern ECL_API cl_object cl_grab_rest_args(ecl_va_list args);
 /* compiler.c */
 
 extern ECL_API cl_object si_macrolet_function(cl_object form, cl_object env);
+extern ECL_API cl_object si_need_to_make_load_form_p(cl_object object);
 extern ECL_API cl_object si_process_lambda_list(cl_object lambda_list, cl_object context);
 extern ECL_API cl_object si_process_lambda(cl_object lambda);
 extern ECL_API cl_object si_make_lambda(cl_object name, cl_object body);
@@ -526,7 +534,7 @@ extern ECL_API cl_object si_eval_with_env _ECL_ARGS((cl_narg narg, cl_object for
 
 /* interpreter.c */
 
-extern ECL_API cl_object si_interpreter_stack _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_interpreter_stack _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size);
 extern ECL_API void ecl_stack_frame_push(cl_object f, cl_object o);
 extern ECL_API void ecl_stack_frame_push_values(cl_object f);
@@ -556,10 +564,12 @@ extern ECL_API cl_object cl_error _ECL_ARGS((cl_narg narg, cl_object eformat, ..
 extern ECL_API cl_object cl_cerror _ECL_ARGS((cl_narg narg, cl_object cformat, cl_object eformat, ...));
 
 extern ECL_API void ecl_internal_error(const char *s) ecl_attr_noreturn;
+#ifdef ECL_THREADS
+extern ECL_API void ecl_thread_internal_error(const char *s) ecl_attr_noreturn;
+#endif
 extern ECL_API void ecl_unrecoverable_error(cl_env_ptr the_env, const char *message) ecl_attr_noreturn;
 extern ECL_API void ecl_cs_overflow(void) /*ecl_attr_noreturn*/;
 extern ECL_API void FEprogram_error(const char *s, int narg, ...) ecl_attr_noreturn;
-extern ECL_API void FEprogram_error_noreturn(const char *s, int narg, ...) ecl_attr_noreturn;
 extern ECL_API void FEcontrol_error(const char *s, int narg, ...) ecl_attr_noreturn;
 extern ECL_API void FEreader_error(const char *s, cl_object stream, int narg, ...) ecl_attr_noreturn;
 #define FEparse_error FEreader_error
@@ -577,7 +587,9 @@ extern ECL_API void FEwrong_index(cl_object function, cl_object a, int which, cl
 extern ECL_API void FEunbound_variable(cl_object sym) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_macro_call(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_variable(const char *s, cl_object obj) ecl_attr_noreturn;
+extern ECL_API void FEillegal_variable_name(cl_object) ecl_attr_noreturn;
 extern ECL_API void FEassignment_to_constant(cl_object v) ecl_attr_noreturn;
+extern ECL_API void FEbinding_a_constant(cl_object v) ecl_attr_noreturn;
 extern ECL_API void FEundefined_function(cl_object fname) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function_name(cl_object obj) ecl_attr_noreturn;
@@ -626,7 +638,6 @@ extern ECL_API cl_object si_mmap_array(cl_object map);
 
 /* ffi/backtrace.d */
 extern ECL_API cl_object si_dump_c_backtrace(cl_object size);
-extern ECL_API cl_object si_backtrace(cl_object start, cl_object end);
 
 /* ffi.c */
 
@@ -689,7 +700,7 @@ extern ECL_API cl_object cl_stream_external_format(cl_object strm);
 extern ECL_API cl_object cl_file_length(cl_object strm);
 extern ECL_API cl_object si_get_string_input_stream_index(cl_object strm);
 extern ECL_API cl_object si_make_string_output_stream_from_string(cl_object strng);
-extern ECL_API cl_object si_copy_stream(cl_object in, cl_object out);
+extern ECL_API cl_object si_copy_stream(cl_object in, cl_object out, cl_object wait);
 extern ECL_API cl_object cl_open_stream_p(cl_object strm);
 extern ECL_API cl_object cl_make_broadcast_stream _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_broadcast_stream_streams(cl_object strm);
@@ -734,8 +745,8 @@ extern ECL_API cl_object ecl_file_position_set(cl_object strm, cl_object disp);
 extern ECL_API cl_object ecl_file_length(cl_object strm);
 extern ECL_API int ecl_file_column(cl_object strm);
 extern ECL_API cl_fixnum ecl_normalize_stream_element_type(cl_object element);
-extern ECL_API cl_object ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm, cl_fixnum byte_size, int flags, cl_object external_format);
 extern ECL_API cl_object ecl_make_stream_from_FILE(cl_object fname, void *fd, enum ecl_smmode smm, cl_fixnum byte_size, int flags, cl_object external_format);
+extern ECL_API cl_object ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm, cl_fixnum byte_size, int flags, cl_object external_format);
 extern ECL_API cl_object si_file_stream_fd(cl_object s);
 extern ECL_API int ecl_stream_to_handle(cl_object s, bool output);
 
@@ -752,10 +763,10 @@ extern ECL_API cl_object cl_format _ECL_ARGS((cl_narg narg, cl_object stream, cl
 /* gbc.c */
 
 #if !defined(GBC_BOEHM)
-extern ECL_API cl_object si_room_report _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_reset_gc_count _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_gc_time _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_gc(cl_object area);
+extern ECL_API cl_object si_room_report _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_reset_gc_count _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_gc_time _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_gc(cl_object area, ...);
 #define GC_enabled() GC_enable
 #define GC_enable() GC_enable = TRUE;
 #define GC_disable() GC_enable = FALSE;
@@ -808,6 +819,7 @@ extern ECL_API cl_object si_hash_equalp _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object si_hash_table_content(cl_object ht);
 extern ECL_API cl_object si_hash_table_fill(cl_object ht, cl_object values);
 extern ECL_API cl_object si_hash_table_weakness(cl_object ht);
+extern ECL_API cl_object si_hash_table_synchronized_p(cl_object ht);
 
 extern ECL_API cl_object ecl_sethash(cl_object key, cl_object hashtable, cl_object value);
 extern ECL_API cl_object ecl_gethash(cl_object key, cl_object hash);
@@ -828,7 +840,10 @@ extern ECL_API cl_object si_instancep(cl_object x);
 extern ECL_API cl_object si_unbound(void);
 extern ECL_API cl_object si_sl_boundp(cl_object x);
 extern ECL_API cl_object si_sl_makunbound(cl_object x, cl_object index);
-extern ECL_API cl_object si_instance_sig(cl_object x);
+extern ECL_API cl_object si_instance_obsolete_p(cl_object x);
+extern ECL_API cl_object si_instance_new_stamp(cl_object x);
+extern ECL_API cl_object si_instance_get_stamp(cl_object x);
+extern ECL_API cl_object si_instance_slotds(cl_object x);
 extern ECL_API cl_object si_instance_sig_set(cl_object x);
 
 extern ECL_API cl_object ecl_allocate_instance(cl_object clas, cl_index size);
@@ -839,6 +854,12 @@ extern ECL_API cl_object si_copy_instance(cl_object x);
 extern ECL_API cl_object ecl_slot_value(cl_object x, const char *slot);
 extern ECL_API cl_object ecl_slot_value_set(cl_object x, const char *slot, cl_object y);
 
+#ifdef ECL_THREADS
+extern ECL_API cl_object ecl_compare_and_swap_instance(cl_object x, cl_fixnum i, cl_object old_val, cl_object new_val);
+extern ECL_API cl_object mp_compare_and_swap_instance(cl_object x, cl_object index, cl_object old_val, cl_object new_val);
+extern ECL_API cl_object ecl_atomic_incf_instance(cl_object x, cl_fixnum i, cl_object increment);
+extern ECL_API cl_object mp_atomic_incf_instance(cl_object x, cl_object index, cl_object increment);
+#endif
 
 /* list.c */
 
@@ -911,6 +932,12 @@ extern ECL_API cl_object ecl_delete_eq(cl_object x, cl_object l);
 #define si_cons_car cl_car
 #define si_cons_cdr cl_cdr
 
+#ifdef ECL_THREADS
+extern ECL_API cl_object mp_compare_and_swap_car(cl_object x, cl_object old_val, cl_object new_val);
+extern ECL_API cl_object mp_atomic_incf_car(cl_object x, cl_object increment);
+extern ECL_API cl_object mp_compare_and_swap_cdr(cl_object x, cl_object old_val, cl_object new_val);
+extern ECL_API cl_object mp_atomic_incf_cdr(cl_object x, cl_object increment);
+#endif
 
 /* load.c */
 
@@ -945,7 +972,6 @@ typedef enum {
         ECL_OPT_TRAP_SIGILL,
         ECL_OPT_TRAP_SIGBUS,
         ECL_OPT_TRAP_SIGPIPE,
-        ECL_OPT_TRAP_SIGCHLD,
         ECL_OPT_TRAP_INTERRUPT_SIGNAL,
         ECL_OPT_SIGNAL_HANDLING_THREAD,
         ECL_OPT_SIGNAL_QUEUE_SIZE,
@@ -958,7 +984,6 @@ typedef enum {
         ECL_OPT_LISP_STACK_SAFETY_AREA,
         ECL_OPT_C_STACK_SIZE,
         ECL_OPT_C_STACK_SAFETY_AREA,
-        ECL_OPT_SIGALTSTACK_SIZE,
         ECL_OPT_HEAP_SIZE,
         ECL_OPT_HEAP_SAFETY_AREA,
         ECL_OPT_THREAD_INTERRUPT_SIGNAL,
@@ -1113,9 +1138,17 @@ extern ECL_API cl_object cl_rational(cl_object x);
 #define cl_rationalize cl_rational
 extern ECL_API float ecl_to_float(cl_object x);
 extern ECL_API double ecl_to_double(cl_object x);
-#ifdef ECL_LONG_FLOAT
 extern ECL_API long double ecl_to_long_double(cl_object x);
 extern ECL_API cl_object ecl_make_long_float(long double f);
+#ifdef ECL_COMPLEX_FLOAT
+extern ECL_API cl_object   ecl_make_csfloat(float _Complex x);
+extern ECL_API cl_object   ecl_make_cdfloat(double _Complex x);
+extern ECL_API cl_object   ecl_make_clfloat(long double _Complex x);
+extern ECL_API cl_object   si_complex_float_p(cl_object o);
+extern ECL_API cl_object   si_complex_float(cl_object r, cl_object i);
+extern ECL_API float       _Complex ecl_to_csfloat(cl_object x);
+extern ECL_API double      _Complex ecl_to_cdfloat(cl_object x);
+extern ECL_API long double _Complex ecl_to_clfloat(cl_object x);
 #endif
 #ifdef ECL_IEEE_FP
 extern ECL_API cl_object si_nan();
@@ -1167,10 +1200,17 @@ extern ECL_API cl_object cl_min _ECL_ARGS((cl_narg narg, cl_object min, ...));
 
 extern ECL_API int ecl_number_equalp(cl_object x, cl_object y);
 extern ECL_API int ecl_number_compare(cl_object x, cl_object y);
+#ifdef ECL_IEEE_FP
+#define ecl_lowereq(x,y) (!ecl_float_nan_p(x) && !ecl_float_nan_p(y) && ecl_number_compare((x),(y)) <= 0)
+#define ecl_greatereq(x,y) (!ecl_float_nan_p(x) && !ecl_float_nan_p(y) && ecl_number_compare((x),(y)) >= 0)
+#define ecl_lower(x,y) (!ecl_float_nan_p(x) && !ecl_float_nan_p(y) && ecl_number_compare((x),(y)) < 0)
+#define ecl_greater(x,y) (!ecl_float_nan_p(x) && !ecl_float_nan_p(y) && ecl_number_compare((x),(y)) > 0)
+#else
 #define ecl_lowereq(x,y) (ecl_number_compare((x),(y)) <= 0)
 #define ecl_greatereq(x,y) (ecl_number_compare((x),(y)) >= 0)
 #define ecl_lower(x,y) (ecl_number_compare((x),(y)) < 0)
 #define ecl_greater(x,y) (ecl_number_compare((x),(y)) > 0)
+#endif
 
 /* num_log.c */
 
@@ -1286,9 +1326,14 @@ extern ECL_API cl_object cl_package_nicknames(cl_object p);
 extern ECL_API cl_object cl_package_use_list(cl_object p);
 extern ECL_API cl_object cl_package_used_by_list(cl_object p);
 extern ECL_API cl_object cl_package_shadowing_symbols(cl_object p);
+extern ECL_API cl_object si_package_local_nicknames(cl_object p);
+extern ECL_API cl_object si_package_locally_nicknamed_by_list(cl_object p);
+extern ECL_API cl_object si_add_package_local_nickname(cl_object n, cl_object p1, cl_object p2);
+extern ECL_API cl_object si_remove_package_local_nickname(cl_object n, cl_object p);
 extern ECL_API cl_object cl_list_all_packages(void);
 extern ECL_API cl_object si_package_hash_tables(cl_object p);
 extern ECL_API cl_object si_package_lock(cl_object p, cl_object t);
+extern ECL_API cl_object si_package_locked_p(cl_object p);
 extern ECL_API cl_object cl_delete_package(cl_object p);
 extern ECL_API cl_object cl_make_package _ECL_ARGS((cl_narg narg, cl_object pack_name, ...));
 extern ECL_API cl_object cl_intern _ECL_ARGS((cl_narg narg, cl_object strng, ...));
@@ -1303,7 +1348,7 @@ extern ECL_API cl_object cl_shadow _ECL_ARGS((cl_narg narg, cl_object symbols, .
 extern ECL_API cl_object cl_use_package _ECL_ARGS((cl_narg narg, cl_object pack, ...));
 extern ECL_API cl_object cl_unuse_package _ECL_ARGS((cl_narg narg, cl_object pack, ...));
 
-extern ECL_API cl_object ecl_make_package(cl_object n, cl_object ns, cl_object ul);
+extern ECL_API cl_object ecl_make_package(cl_object n, cl_object ns, cl_object ul, cl_object lns);
 extern ECL_API cl_object ecl_rename_package(cl_object x, cl_object n, cl_object ns);
 extern ECL_API cl_object ecl_find_package_nolock(cl_object n);
 extern ECL_API cl_object ecl_find_package(const char *p);
@@ -1421,6 +1466,8 @@ extern ECL_API cl_object cl_finish_output _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_fresh_line _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_force_output _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_clear_output _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_search_print_circle(cl_object x);
+extern ECL_API cl_object si_write_object_with_circle(cl_object object, cl_object stream, cl_object print_function);
 extern ECL_API cl_object si_write_object(cl_object object, cl_object stream);
 extern ECL_API cl_object si_write_ugly_object(cl_object object, cl_object stream);
 
@@ -1460,9 +1507,9 @@ extern ECL_API cl_object si_print_unreadable_object_function(cl_object o, cl_obj
 
 /* profile.c */
 #ifdef PROFILE
-extern ECL_API cl_object si_profile _ECL_ARGS((cl_narg narg, cl_object scale, cl_object start_address));
-extern ECL_API cl_object si_clear_profile _ECL_ARGS((cl_narg narg));
-extern ECL_API cl_object si_display_profile _ECL_ARGS((cl_narg narg));
+extern ECL_API cl_object si_profile _ECL_ARGS((cl_narg narg, cl_object scale, cl_object start_address, ...));
+extern ECL_API cl_object si_clear_profile _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_display_profile _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API int total_ticks(unsigned short *aar, unsigned int dim);
 extern ECL_API int init_profile(void);
 #endif
@@ -1510,8 +1557,8 @@ extern ECL_API cl_object ecl_copy_readtable(cl_object from, cl_object to);
 extern ECL_API cl_object ecl_current_readtable(void);
 extern ECL_API int ecl_current_read_base(void);
 extern ECL_API char ecl_current_read_default_float_format(void);
-#define ecl_read_from_cstring(s) si_string_to_object(1,make_constant_base_string(s))
-#define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,make_constant_base_string(s),(v))
+#define ecl_read_from_cstring(s) si_string_to_object(1,ecl_make_constant_base_string(s,-1))
+#define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,ecl_make_constant_base_string(s,-1),(v))
 extern ECL_API cl_object ecl_init_module(cl_object block, void (*entry)(cl_object));
 
 /* reference.c */
@@ -1542,6 +1589,14 @@ extern ECL_API cl_object ecl_elt_set(cl_object seq, cl_fixnum index, cl_object v
 extern ECL_API cl_fixnum ecl_length(cl_object x);
 extern ECL_API cl_object ecl_subseq(cl_object seq, cl_index start, cl_index limit);
 extern ECL_API cl_object ecl_copy_seq(cl_object seq);
+
+#ifdef ECL_EXTERNALIZABLE
+/* serialize.d */
+
+extern cl_object si_serialize(cl_object root);
+extern cl_object si_deserialize(cl_object root);
+
+#endif
 
 #ifdef ECL_SSE2
 /* sse2.c */
@@ -1626,9 +1681,8 @@ extern ECL_API cl_object si_copy_to_simple_base_string(cl_object s);
 
 #define ecl_alloc_simple_base_string(l) ecl_alloc_simple_vector((l),ecl_aet_bc)
 extern ECL_API cl_object ecl_alloc_adjustable_base_string(cl_index l);
-extern ECL_API cl_object ecl_make_simple_base_string(char *s, cl_fixnum i);
-#define ecl_make_constant_base_string(s,n) ecl_make_simple_base_string((char*)s,n)
-extern ECL_API cl_object make_base_string_copy(const char *s);
+extern ECL_API cl_object ecl_make_constant_base_string(const char *s, cl_fixnum i);
+extern ECL_API cl_object ecl_make_simple_base_string(const char *s, cl_fixnum i);
 extern ECL_API cl_object ecl_cstring_to_base_string_or_nil(const char *s);
 extern ECL_API bool ecl_string_eq(cl_object x, cl_object y);
 extern ECL_API bool ecl_member_char(ecl_character c, cl_object char_bag);
@@ -1646,9 +1700,12 @@ extern ECL_API cl_object si_structure_set(cl_object x, cl_object type, cl_object
 extern ECL_API cl_object si_structurep(cl_object s);
 extern ECL_API cl_object si_make_structure _ECL_ARGS((cl_narg narg, cl_object type, ...));
 
-extern ECL_API cl_object ecl_structure_ref(cl_object x, cl_object name, int n);
-extern ECL_API cl_object ecl_structure_set(cl_object x, cl_object name, int n, cl_object v);
+extern ECL_API cl_object ecl_structure_ref(cl_object x, cl_object name, cl_fixnum n);
+extern ECL_API cl_object ecl_structure_set(cl_object x, cl_object name, cl_fixnum n, cl_object v);
 
+#ifdef ECL_THREADS
+extern ECL_API cl_object mp_compare_and_swap_structure(cl_object x, cl_object type, cl_object index, cl_object old_val, cl_object new_val);
+#endif
 
 /* symbol.c */
 
@@ -1686,6 +1743,9 @@ extern ECL_API cl_object ecl_getf(cl_object place, cl_object indicator, cl_objec
 extern ECL_API cl_object ecl_get(cl_object s, cl_object p, cl_object d);
 extern ECL_API bool ecl_keywordp(cl_object s);
 
+#ifdef ECL_THREADS
+extern ECL_API cl_object mp_compare_and_swap_symbol_plist(cl_object x, cl_object old_val, cl_object new_val);
+#endif
 
 /* tcp.c */
 
@@ -1766,7 +1826,6 @@ extern ECL_API cl_object mp_mailbox_try_send(cl_object mailbox, cl_object msg);
 
 extern ECL_API cl_object ecl_atomic_get(cl_object *slot);
 extern ECL_API void ecl_atomic_push(cl_object *slot, cl_object o);
-extern ECL_API void ecl_atomic_nconc(cl_object l, cl_object *slot);
 extern ECL_API cl_object ecl_atomic_pop(cl_object *slot);
 extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
 
@@ -1864,7 +1923,7 @@ extern ECL_API cl_object si_copy_file(cl_object orig, cl_object end);
 #define ecl_disable_interrupts_env(env) ((env)->disable_interrupts=1)
 #define ecl_enable_interrupts_env(env) (((env)->disable_interrupts^=1) && (ecl_check_pending_interrupts(env),0))
 #endif
-#define ecl_clear_interrupts_env(env) ((env)->pendinginterrupts=0)
+#define ecl_clear_interrupts_env(env) ((env)->interrupt_struct->pending_interrupt=ECL_NIL)
 #define ecl_clear_interrupts() ecl_clear_interrupts(&cl_env)
 #define ecl_disable_interrupts() ecl_disable_interrupts_env(&cl_env)
 #define ecl_enable_interrupts() ecl_enable_interrupts_env(&cl_env)
@@ -1888,9 +1947,18 @@ extern ECL_API void ecl_check_pending_interrupts(cl_env_ptr env);
 extern ECL_API cl_object si_system(cl_object cmd);
 extern ECL_API cl_object si_make_pipe();
 extern ECL_API cl_object si_run_program _ECL_ARGS((cl_narg narg, cl_object command, cl_object args, ...));
-extern ECL_API cl_object si_external_process_wait _ECL_ARGS((cl_narg narg, cl_object h, ...));
 extern ECL_API cl_object si_close_windows_handle(cl_object h);
 extern ECL_API cl_object si_terminate_process _ECL_ARGS((cl_narg narg, cl_object process, ...));
+extern ECL_API cl_object si_waitpid(cl_object pid, cl_object wait);
+extern ECL_API cl_object si_killpid(cl_object pid, cl_object signal);
+
+extern ECL_API cl_object si_run_program_inner
+(cl_object command, cl_object argv, cl_object environment, cl_object wait);
+
+extern ECL_API cl_object si_spawn_subprocess
+(cl_object command, cl_object argv, cl_object environment,
+ cl_object input, cl_object output, cl_object error);
+
 
 /* unicode -- no particular file, but we group these changes here */
 
@@ -1901,10 +1969,8 @@ extern ECL_API cl_object si_coerce_to_base_string(cl_object x);
 extern ECL_API cl_object si_coerce_to_extended_string(cl_object x);
 #define ecl_alloc_simple_extended_string(l) ecl_alloc_simple_vector((l),ecl_aet_ch)
 extern ECL_API cl_object ecl_alloc_adjustable_extended_string(cl_index l);
-# ifdef ECL_UNICODE_NAMES
 extern ECL_API cl_object _ecl_ucd_code_to_name(ecl_character c);
 extern ECL_API cl_object _ecl_ucd_name_to_code(cl_object name);
-# endif
 #else
 #define si_base_char_p cl_characterp
 #define si_base_string_p cl_stringp
@@ -2009,6 +2075,7 @@ extern ECL_API cl_object cl_get_decoded_time();
 extern ECL_API cl_object cl_ensure_directories_exist _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object si_simple_program_error _ECL_ARGS((cl_narg narg, cl_object format, ...)) ecl_attr_noreturn;
 extern ECL_API cl_object si_signal_simple_error _ECL_ARGS((cl_narg narg, cl_object condition, cl_object continuable, cl_object format, cl_object args, ...));
+extern ECL_API cl_object si_make_stream_from_fd _ECL_ARGS((cl_narg narg, cl_object fd, cl_object direction, ...));
 
 /* module.lsp */
 
@@ -2045,7 +2112,6 @@ extern ECL_API cl_object cl_deposit_field(cl_object V1, cl_object V2, cl_object 
 extern ECL_API cl_object cl_find_all_symbols(cl_object V1);
 extern ECL_API cl_object cl_apropos _ECL_ARGS((cl_narg arg, cl_object V1, ...));
 extern ECL_API cl_object cl_apropos_list _ECL_ARGS((cl_narg arg, cl_object V1, ...));
-extern ECL_API cl_object si_find_relative_package _ECL_ARGS((cl_narg narg, cl_object pack_name, ...));
 
 /* predlib.lsp */
 
@@ -2078,6 +2144,7 @@ extern ECL_API cl_object cl_every _ECL_ARGS((cl_narg narg, cl_object V1, cl_obje
 extern ECL_API cl_object cl_notany _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 extern ECL_API cl_object cl_notevery _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
 extern ECL_API cl_object cl_map_into _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
+extern ECL_API cl_object si_sequence_count(cl_object count);
 
 /* seqlib.lsp */
 
@@ -2144,16 +2211,13 @@ extern ECL_API cl_object cl_slot_boundp(cl_object object, cl_object slot);
 extern ECL_API cl_object cl_slot_makunbound(cl_object object, cl_object slot);
 extern ECL_API cl_object cl_slot_exists_p(cl_object object, cl_object slot);
 
-/* print.lsp */
-extern ECL_API cl_object clos_need_to_make_load_form_p(cl_object o, cl_object env);
-
 /* defclass.lsp */
 extern ECL_API cl_object clos_load_defclass(cl_object name, cl_object superclasses, cl_object slots, cl_object options);
 
-#if 0
 /* defclass.lsp */
 extern ECL_API cl_object clos_ensure_class _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 
+#if 0
 /* kernel.lsp */
 extern ECL_API cl_object clos_class_id _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_class_direct_superclasses _ECL_ARGS((cl_narg narg, cl_object V1, ...));
@@ -2174,7 +2238,7 @@ extern ECL_API cl_object clos_method_specializers _ECL_ARGS((cl_narg narg, cl_ob
 extern ECL_API cl_object cl_method_qualifiers _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_method_function _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 extern ECL_API cl_object clos_method_plist _ECL_ARGS((cl_narg narg, cl_object V1, ...));
-extern ECL_API cl_object clos_install_method _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, cl_object V4, cl_object V5, cl_object V6, cl_object V7, ...));
+extern ECL_API cl_object clos_install_method _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, cl_object V3, cl_object V4, cl_object V5, ...));
 
 #endif
 

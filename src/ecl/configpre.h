@@ -15,20 +15,23 @@
 /* Use CMU Common-Lisp's FORMAT routine */
 #undef ECL_CMU_FORMAT
 
+/* ECL_COMPLEX_FLOAT */
+#undef ECL_COMPLEX_FLOAT
+
 /* Do we use C or C++ compiler to compile ecl? */
 #undef ECL_CXX_CORE
 
 /* Stack grows downwards */
 #undef ECL_DOWN_STACK
 
+/* Use the serialization framework */
+#undef ECL_EXTERNALIZABLE
+
 /* ECL_IEEE_FP */
 #undef ECL_IEEE_FP
 
 /* ECL_LIBATOMIC_OPS_H */
 #undef ECL_LIBATOMIC_OPS_H
-
-/* ECL_LONG_FLOAT */
-#undef ECL_LONG_FLOAT
 
 /* ECL_LONG_LONG_BITS */
 #undef ECL_LONG_LONG_BITS
@@ -39,17 +42,11 @@
 /* Define if your newline is CRLF */
 #undef ECL_NEWLINE_IS_CRLF
 
-/* Hierarchical package names */
-#undef ECL_RELATIVE_PACKAGE_NAMES
-
 /* ECL_RWLOCK */
 #undef ECL_RWLOCK
 
 /* ECL_SIGNED_ZERO */
 #undef ECL_SIGNED_ZERO
-
-/* Bytecodes and arguments are 8 and 16 bits large, respectively */
-#undef ECL_SMALL_BYTECODES
 
 /* ECL_SMALL_CONS */
 #undef ECL_SMALL_CONS
@@ -90,8 +87,125 @@
 /* Define to 1 if you have the `backtrace_symbols' function. */
 #undef HAVE_BACKTRACE_SYMBOLS
 
+/* Define to 1 if you have the `cabs' function. */
+#undef HAVE_CABS
+
+/* Define to 1 if you have the `cabsf' function. */
+#undef HAVE_CABSF
+
+/* Define to 1 if you have the `cabsl' function. */
+#undef HAVE_CABSL
+
+/* Define to 1 if you have the `cacos' function. */
+#undef HAVE_CACOS
+
+/* Define to 1 if you have the `cacosf' function. */
+#undef HAVE_CACOSF
+
+/* Define to 1 if you have the `cacosh' function. */
+#undef HAVE_CACOSH
+
+/* Define to 1 if you have the `cacoshf' function. */
+#undef HAVE_CACOSHF
+
+/* Define to 1 if you have the `cacoshl' function. */
+#undef HAVE_CACOSHL
+
+/* Define to 1 if you have the `cacosl' function. */
+#undef HAVE_CACOSL
+
+/* Define to 1 if you have the `casin' function. */
+#undef HAVE_CASIN
+
+/* Define to 1 if you have the `casinf' function. */
+#undef HAVE_CASINF
+
+/* Define to 1 if you have the `casinh' function. */
+#undef HAVE_CASINH
+
+/* Define to 1 if you have the `casinhf' function. */
+#undef HAVE_CASINHF
+
+/* Define to 1 if you have the `casinhl' function. */
+#undef HAVE_CASINHL
+
+/* Define to 1 if you have the `casinl' function. */
+#undef HAVE_CASINL
+
+/* Define to 1 if you have the `catan' function. */
+#undef HAVE_CATAN
+
+/* Define to 1 if you have the `catanf' function. */
+#undef HAVE_CATANF
+
+/* Define to 1 if you have the `catanh' function. */
+#undef HAVE_CATANH
+
+/* Define to 1 if you have the `catanhf' function. */
+#undef HAVE_CATANHF
+
+/* Define to 1 if you have the `catanhl' function. */
+#undef HAVE_CATANHL
+
+/* Define to 1 if you have the `catanl' function. */
+#undef HAVE_CATANL
+
+/* Define to 1 if you have the `ccos' function. */
+#undef HAVE_CCOS
+
+/* Define to 1 if you have the `ccosf' function. */
+#undef HAVE_CCOSF
+
+/* Define to 1 if you have the `ccosh' function. */
+#undef HAVE_CCOSH
+
+/* Define to 1 if you have the `ccoshf' function. */
+#undef HAVE_CCOSHF
+
+/* Define to 1 if you have the `ccoshl' function. */
+#undef HAVE_CCOSHL
+
+/* Define to 1 if you have the `ccosl' function. */
+#undef HAVE_CCOSL
+
 /* Define to 1 if you have the `ceilf' function. */
 #undef HAVE_CEILF
+
+/* Define to 1 if you have the `cexp' function. */
+#undef HAVE_CEXP
+
+/* Define to 1 if you have the `cexpf' function. */
+#undef HAVE_CEXPF
+
+/* Define to 1 if you have the `cexpl' function. */
+#undef HAVE_CEXPL
+
+/* Define to 1 if you have the `cimag' function. */
+#undef HAVE_CIMAG
+
+/* Define to 1 if you have the `cimagf' function. */
+#undef HAVE_CIMAGF
+
+/* Define to 1 if you have the `cimagl' function. */
+#undef HAVE_CIMAGL
+
+/* Define to 1 if you have the `clog' function. */
+#undef HAVE_CLOG
+
+/* Define to 1 if you have the `clogf' function. */
+#undef HAVE_CLOGF
+
+/* Define to 1 if you have the `clogl' function. */
+#undef HAVE_CLOGL
+
+/* Define to 1 if you have the `conj' function. */
+#undef HAVE_CONJ
+
+/* Define to 1 if you have the `conjf' function. */
+#undef HAVE_CONJF
+
+/* Define to 1 if you have the `conjl' function. */
+#undef HAVE_CONJL
 
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
@@ -102,8 +216,68 @@
 /* Define to 1 if you have the `coshf' function. */
 #undef HAVE_COSHF
 
-/* Define to 1 if you have the `cosl' function. */
-#undef HAVE_COSL
+/* Define to 1 if you have the `cpow' function. */
+#undef HAVE_CPOW
+
+/* Define to 1 if you have the `cpowf' function. */
+#undef HAVE_CPOWF
+
+/* Define to 1 if you have the `cpowl' function. */
+#undef HAVE_CPOWL
+
+/* Define to 1 if you have the `creal' function. */
+#undef HAVE_CREAL
+
+/* Define to 1 if you have the `crealf' function. */
+#undef HAVE_CREALF
+
+/* Define to 1 if you have the `creall' function. */
+#undef HAVE_CREALL
+
+/* Define to 1 if you have the `csin' function. */
+#undef HAVE_CSIN
+
+/* Define to 1 if you have the `csinf' function. */
+#undef HAVE_CSINF
+
+/* Define to 1 if you have the `csinh' function. */
+#undef HAVE_CSINH
+
+/* Define to 1 if you have the `csinhf' function. */
+#undef HAVE_CSINHF
+
+/* Define to 1 if you have the `csinhl' function. */
+#undef HAVE_CSINHL
+
+/* Define to 1 if you have the `csinl' function. */
+#undef HAVE_CSINL
+
+/* Define to 1 if you have the `csqrt' function. */
+#undef HAVE_CSQRT
+
+/* Define to 1 if you have the `csqrtf' function. */
+#undef HAVE_CSQRTF
+
+/* Define to 1 if you have the `csqrtl' function. */
+#undef HAVE_CSQRTL
+
+/* Define to 1 if you have the `ctan' function. */
+#undef HAVE_CTAN
+
+/* Define to 1 if you have the `ctanf' function. */
+#undef HAVE_CTANF
+
+/* Define to 1 if you have the `ctanh' function. */
+#undef HAVE_CTANH
+
+/* Define to 1 if you have the `ctanhf' function. */
+#undef HAVE_CTANHF
+
+/* Define to 1 if you have the `ctanhl' function. */
+#undef HAVE_CTANHL
+
+/* Define to 1 if you have the `ctanl' function. */
+#undef HAVE_CTANL
 
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
@@ -123,16 +297,13 @@
 /* Define to 1 if you have the `expf' function. */
 #undef HAVE_EXPF
 
-/* Define to 1 if you have the `expl' function. */
-#undef HAVE_EXPL
-
 /* Define to 1 if you have the `fabsf' function. */
 #undef HAVE_FABSF
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
-/* Define to 1 if you have the `feenableexcept' function. */
+/* feenableexcept works */
 #undef HAVE_FEENABLEEXCEPT
 
 /* Define to 1 if you have the <fenv.h> header file. */
@@ -155,9 +326,6 @@
 
 /* Define to 1 if you have the `frexpf' function. */
 #undef HAVE_FREXPF
-
-/* Define to 1 if you have the `frexpl' function. */
-#undef HAVE_FREXPL
 
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
@@ -192,9 +360,6 @@
 /* Define to 1 if you have the `ldexpf' function. */
 #undef HAVE_LDEXPF
 
-/* Define to 1 if you have the `ldexpl' function. */
-#undef HAVE_LDEXPL
-
 /* HAVE_LIBFFI */
 #undef HAVE_LIBFFI
 
@@ -222,11 +387,8 @@
 /* Define to 1 if you have the `logf' function. */
 #undef HAVE_LOGF
 
-/* Define to 1 if you have the `logl' function. */
-#undef HAVE_LOGL
-
-/* Define to 1 if the system has the type `long double'. */
-#undef HAVE_LONG_DOUBLE
+/* Define to 1 if the system has the type `long complex'. */
+#undef HAVE_LONG_COMPLEX
 
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
@@ -271,6 +433,9 @@
 /* HAVE_POSIX_RWLOCK */
 #undef HAVE_POSIX_RWLOCK
 
+/* Define to 1 if you have the `powf' function. */
+#undef HAVE_POWF
+
 /* Define to 1 if the system has the type `pthread_rwlock_t'. */
 #undef HAVE_PTHREAD_RWLOCK_T
 
@@ -310,9 +475,6 @@
 
 /* Define to 1 if you have the `sinhf' function. */
 #undef HAVE_SINHF
-
-/* Define to 1 if you have the `sinl' function. */
-#undef HAVE_SINL
 
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
@@ -356,6 +518,9 @@
 
 /* Define to 1 if you have the `strtol' function. */
 #undef HAVE_STRTOL
+
+/* Define to 1 if you have the `system' function. */
+#undef HAVE_SYSTEM
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
@@ -404,9 +569,6 @@
 /* Define to 1 if you have the `tanhf' function. */
 #undef HAVE_TANHF
 
-/* Define to 1 if you have the `tanl' function. */
-#undef HAVE_TANL
-
 /* Define to 1 if you have the `times' function. */
 #undef HAVE_TIMES
 
@@ -436,9 +598,6 @@
 
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
-
-/* HAVE___BUILTIN_RETURN_ADDRESS */
-#undef HAVE___BUILTIN_RETURN_ADDRESS
 
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
@@ -485,9 +644,6 @@
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
-
-/* __thread thread-local variables? */
-#undef WITH___THREAD
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */

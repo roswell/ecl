@@ -2,7 +2,7 @@
 # DIST: make most of the changes to this file you might want, so try
 # DIST: that first.
 
-# make all	to compile and build Emacs.
+# make all	to compile and build ECL.
 # make install	to install it.
 # make TAGS	to update tags tables.
 #
@@ -50,13 +50,6 @@ bindir=@bindir@
 infodir=@infodir@
 mandir=@mandir@
 libdir=@libdir@
-
-#  What to release
-TAR_CONTENTS=Makefile.in README.md LGPL ANNOUNCEMENT LICENSE doc \
-	configure src/c src/cmp src/clos src/CHANGELOG src/lsp src/doc \
-	src/h  src/gmp src/config* src/install.sh src/Makefile.in \
-	src/util contrib/ src/gc src/*.in src/*.m4 src/gabriel \
-	src/tests/Makefile.in msvc examples
 
 # ==================== Utility Programs for the Build ====================
 
@@ -126,11 +119,9 @@ check:
 
 TAR_DIR=ecl-$(VERSION)
 
-doc: build/doc/index.html
-	-mkdir doc
-	(cd build/doc; make html); cp build/doc/*.html doc
-build/doc/index.html:
-	cd build/doc; $(MAKE)
+doc:
+	$(MAKE) -C build/doc
+.PHONY: doc
 
 source-dist: $(TAR_DIR).tgz
 

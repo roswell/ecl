@@ -1,0 +1,27 @@
+@node Structures
+@section Structures
+
+@subsection Redefining a defstruct structure
+
+@ansi{} says that consequences of redefining a @code{defstruct} are
+undefined. ECL defines this behavior to signal an error if the new
+structure is not compatible. Structures are incompatible when:
+
+@table @asis
+@item They have a different number of slots
+This is particularly important for other structures which could have
+included the current one and for already defined instances.
+
+@item Slot name, type or offset is different
+Binary compatibility between old and new instances.
+@end table
+
+@subsection C Reference
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_cp_stu.htm,copy-structure} @tab cl_object cl_copy_structure(cl_object structure)
+@end multitable

@@ -99,7 +99,7 @@ static cl_object
 copy_object_file(cl_object original)
 {
   int err;
-  cl_object copy = make_constant_base_string("TMP:ECL");
+  cl_object copy = ecl_make_constant_base_string("TMP:ECL",-1);
   copy = si_coerce_to_filename(si_mkstemp(copy));
   /*
    * We either have to make a full copy to convince the loader to load this object
@@ -124,7 +124,7 @@ copy_object_file(cl_object original)
 #endif
 #ifdef cygwin
   {
-    cl_object new_copy = make_constant_base_string(".dll");
+    cl_object new_copy = ecl_make_constant_base_string(".dll",-1);
     new_copy = si_base_string_concatenate(2, copy, new_copy);
     cl_rename_file(2, copy, new_copy);
     copy = new_copy;
@@ -147,7 +147,7 @@ set_library_error(cl_object block) {
   cl_object output;
   ecl_disable_interrupts();
 #ifdef HAVE_DLFCN_H
-  output = make_base_string_copy(dlerror());
+  output = ecl_cstring_to_base_string_or_nil(dlerror());
 #endif
 #ifdef HAVE_MACH_O_DYLD_H
   {
@@ -155,7 +155,7 @@ set_library_error(cl_object block) {
     int number;
     const char *filename;
     NSLinkEditError(&c, &number, &filename, &message);
-    output = make_base_string_copy(message);
+    output = ecl_make_simple_base_string(message,-1);
   }
 #endif
 #if defined(ECL_MS_WINDOWS_HOST)
@@ -164,7 +164,7 @@ set_library_error(cl_object block) {
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
                   FORMAT_MESSAGE_ALLOCATE_BUFFER,
                   0, GetLastError(), 0, (void*)&message, 0, NULL);
-    output = make_base_string_copy(message);
+    output = ecl_make_simple_base_string(message,-1);
     LocalFree(message);
   }
 #endif
@@ -284,7 +284,6 @@ cl_object
 ecl_library_open(cl_object filename, bool force_reload) {
   cl_object block;
   bool self_destruct = 0;
-  char *filename_string;
 
   /* Coerces to a file name but does not merge with cwd */
   filename = coerce_to_physical_pathname(filename);

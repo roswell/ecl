@@ -110,10 +110,11 @@ retrieved by (documentation 'NAME 'type)."
     (multiple-value-bind (ppn whole dl arg-check ignorables)
         (destructure lambda-list 'deftype)
       (declare (ignore ppn))
-      (let ((function `#'(ext::lambda-block ,name (,whole &aux ,@dl)
-                                            (declare (ignorable ,@ignorables))
-                                            ,@decls ,@arg-check
-                                            ,@body)))
+      (let ((function `#'(lambda (,whole &aux ,@dl)
+                           (declare (ignorable ,@ignorables))
+                           ,@decls
+                           (block ,name
+                             ,@arg-check ,@body))))
         (when (and (null lambda-list)
                    (consp body)
                    (null (rest body)))
@@ -134,9 +135,8 @@ retrieved by (documentation 'NAME 'type)."
   '(INTEGER 0 #.array-dimension-limit))
 
 (deftype fixnum ()
-  "A FIXNUM is an integer between MOST-NEGATIVE-FIXNUM (= - 2^29 in ECL) and
-MOST-POSITIVE-FIXNUM (= 2^29 - 1 in ECL) inclusive.  Other integers are
-bignums."
+  "A FIXNUM is an integer between MOST-NEGATIVE-FIXNUM and
+MOST-POSITIVE-FIXNUM inclusive.  Other integers are bignums."
   '(INTEGER #.most-negative-fixnum #.most-positive-fixnum))
 (deftype bignum ()
   '(OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
@@ -186,12 +186,6 @@ bignums."
   (if args
       `(single-float ,@args)
       'single-float))
-
-#-long-float
-(deftype long-float (&rest args)
-  (if args
-      `(double-float ,@args)
-      'double-float))
 
 (deftype bit ()
   "A BIT is either integer 0 or 1."
@@ -325,6 +319,10 @@ and is not adjustable."
 (deftype array-index ()
   '(integer 0 #.(1- array-dimension-limit)))
 
+(deftype ext:virtual-stream ()
+  '(or string-stream
+    #+clos-streams gray:fundamental-stream))
+
 ;;************************************************************
 ;;                      TYPEP
 ;;************************************************************
@@ -343,49 +341,63 @@ and is not adjustable."
 
 (defun ratiop (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_ratio" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_ratio" :one-liner t)
   #+ecl-min
   (and (rationalp x) (not (integerp x))))
 
 #+short-float
 (defun short-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_shortfloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_shortfloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'short-float))
 
 #-short-float
 (defun short-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_singlefloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_singlefloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'single-float))
 
 (defun single-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_singlefloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_singlefloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'single-float))
 
 (defun double-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_doublefloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_doublefloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'double-float))
 
-#+long-float
 (defun long-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_longfloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_longfloat" :one-liner t)
   #+ecl-min
   (eq (type-of x) 'long-float))
 
-#-long-float
-(defun long-float-p (x)
+#+complex-float
+(defun complex-single-float-p (x)
   #-ecl-min
-  (ffi::c-inline (x) (t) :bool "type_of(#0) == t_doublefloat" :one-liner t)
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_csfloat" :one-liner t)
   #+ecl-min
-  (eq (type-of x) 'double-float))
+  (equal (type-of x) '(complex single-float)))
+
+#+complex-float
+(defun complex-double-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_cdfloat" :one-liner t)
+  #+ecl-min
+  (equal (type-of x) '(complex double-float)))
+
+#+complex-float
+(defun complex-long-float-p (x)
+  #-ecl-min
+  (ffi::c-inline (x) (t) :bool "ecl_t_of(#0) == t_clfloat" :one-liner t)
+  #+ecl-min
+  (equal (type-of x) '(complex long-float)))
+
 
 (eval-when (:execute :load-toplevel :compile-toplevel)
   (defconstant +known-typep-predicates+
@@ -399,6 +411,9 @@ and is not adjustable."
       (CHARACTER . CHARACTERP)
       (COMPILED-FUNCTION . COMPILED-FUNCTION-P)
       (COMPLEX . COMPLEXP)
+      #+complex-float(SI:COMPLEX-SINGLE-FLOAT . COMPLEX-SINGLE-FLOAT-P)
+      #+complex-float(SI:COMPLEX-DOUBLE-FLOAT . COMPLEX-DOUBLE-FLOAT-P)
+      #+complex-float(SI:COMPLEX-LONG-FLOAT . COMPLEX-LONG-FLOAT-P)
       (COMPLEX-ARRAY . COMPLEX-ARRAY-P)
       (CONS . CONSP)
       (DOUBLE-FLOAT . SI:DOUBLE-FLOAT-P)
@@ -448,7 +463,11 @@ and is not adjustable."
              (when (< 32 cl-fixnum-bits 64) '(EXT::CL-INDEX FIXNUM))
              #+:uint64-t '(EXT:BYTE64 EXT:INTEGER64)
              (when (< 64 cl-fixnum-bits) '(EXT::CL-INDEX FIXNUM))
-             '(SINGLE-FLOAT DOUBLE-FLOAT T)))
+             '(SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT)
+             #+complex-float '(si:complex-single-float
+                               si:complex-double-float
+                               si:complex-long-float)
+             '(t)))
 
 (defun upgraded-array-element-type (element-type &optional env)
   (declare (ignore env))
@@ -475,9 +494,19 @@ and is not adjustable."
   ;;       (error "~S is not a valid part type for a complex." real-type))
   ;;     (when (subtypep real-type v)
   ;;       (return v))))
-  (unless (subtypep real-type 'REAL)
-    (error "~S is not a valid part type for a complex." real-type))
-  'REAL)
+  #+complex-float
+  (cond ((subtypep real-type 'null)         nil)
+        ((subtypep real-type 'rational)     'rational)
+        ((subtypep real-type 'single-float) 'single-float)
+        ((subtypep real-type 'double-float) 'double-float)
+        ((subtypep real-type 'long-float)   'long-float)
+        ((subtypep real-type 'float)        'float)
+        ((subtypep real-type 'real)         'real)
+        (t (error "~S is not a valid part type for a complex." real-type)))
+  #-complex-float
+  (cond ((subtypep real-type 'null) nil)
+        ((subtypep real-type 'real) 'real)
+        (t (error "~S is not a valid part type for a complex." real-type))))
 
 (defun in-interval-p (x interval)
   (declare (si::c-local))
@@ -565,9 +594,10 @@ Returns T if X belongs to TYPE; NIL otherwise."
     (COMPLEX
      (and (complexp object)
           (or (null i)
+              ;; type specifier may be i.e (complex integer) so we
+              ;; should check both real and imag part (disregarding
+              ;; the fact that both have the same upgraded type).
               (and (typep (realpart object) (car i))
-                   ;;wfs--should only have to check one.
-                   ;;Illegal to mix real and imaginary types!
                    (typep (imagpart object) (car i))))
            ))
     (SEQUENCE (or (listp object) (vectorp object)))
@@ -725,6 +755,18 @@ if not possible."
                (DOUBLE-FLOAT (float object 0.0D0))
                (LONG-FLOAT (float object 0.0L0))
                (COMPLEX (complex (realpart object) (imagpart object)))
+               #+complex-float
+               (si:complex-single-float
+                (complex (coerce (realpart object) 'single-float)
+                         (coerce (imagpart object) 'single-float)))
+               #+complex-float
+               (si:complex-double-float
+                (complex (coerce (realpart object) 'double-float)
+                         (coerce (imagpart object) 'double-float)))
+               #+complex-float
+               (si:complex-long-float
+                (complex (coerce (realpart object) 'long-float)
+                         (coerce (imagpart object) 'long-float)))
                (FUNCTION (coerce-to-function object))
                ((VECTOR SIMPLE-VECTOR #+unicode SIMPLE-BASE-STRING SIMPLE-STRING
                         #+unicode BASE-STRING STRING BIT-VECTOR SIMPLE-BIT-VECTOR)
@@ -1169,39 +1211,35 @@ if not possible."
 ;; bring the type to canonical form, which is a union of all specialized
 ;; complex types that can store an element of the corresponding type.
 ;;
+;; Don't be tempted to do "better" than that. CANONICAL-COMPLEX-TYPE
+;; yields results for use of SUBTYPEP which has clearly specified to
+;; return true when: T1 is a subtype of T2 or when the upgraded type
+;; specifiers refer to the same sets of objects. TYPEP has a different
+;; specification and TYPECASE should use it. -- jd 2019-04-19
 (defun canonical-complex-type (real-type)
   (declare (si::c-local))
-  ;; UPGRADE-COMPLEX-PART-TYPE will signal an error if REAL-TYPE
-  ;; is not a subtype of REAL.
-  (unless (eq real-type '*)
-    (upgraded-complex-part-type real-type))
-  (or (find-registered-tag '(COMPLEX REAL))
-      (let ((tag (new-type-tag)))
-        (push-type '(COMPLEX REAL) tag)))
-  #+(or)
-  (case real-type
-    ((#+short-float SHORT-FLOAT
-      SINGLE-FLOAT
-      DOUBLE-FLOAT
-      INTEGER
-      RATIO
-      #+long-float LONG-FLOAT)
-     (let ((tag (new-type-tag)))
-       (push-type `(COMPLEX ,real-type) tag)))
-    ((RATIONAL) (canonical-type '(OR (COMPLEX INTEGER) (COMPLEX RATIO))))
-    ((FLOAT) (canonical-type '(OR
-                               #+short-float (COMPLEX SHORT-FLOAT)
-                               (COMPLEX SINGLE-FLOAT)
-                               (COMPLEX DOUBLE-FLOAT)
-                               #+long-float (COMPLEX LONG-FLOAT))))
-    ((* NIL REAL) (canonical-type
-                   '(OR (COMPLEX INTEGER) (COMPLEX RATIO)
-                     #+short-float (COMPLEX SHORT-FLOAT)
-                     (COMPLEX SINGLE-FLOAT)
-                     (COMPLEX DOUBLE-FLOAT)
-                     #+long-float (COMPLEX LONG-FLOAT)
-                     )))
-    (otherwise (canonical-complex-type (upgraded-complex-part-type real-type)))))
+  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not
+  ;; a subtype of REAL.
+  (when (eq real-type '*)
+    (setq real-type 'real))
+  (let* ((ucpt (upgraded-complex-part-type real-type))
+         (type `(complex ,ucpt)))
+    (or (find-registered-tag type)
+        #+complex-float
+        (case ucpt
+          (real
+           (logior (canonical-complex-type 'float)
+                   (canonical-complex-type 'rational)))
+          (float
+           (logior (canonical-complex-type 'single-float)
+                   (canonical-complex-type 'double-float)
+                   (canonical-complex-type 'long-float)))
+          (otherwise
+           (let ((tag (new-type-tag)))
+             (push-type type tag))))
+        #-complex-float
+        (let ((tag (new-type-tag)))
+          (push-type type tag)))))
 
 ;;----------------------------------------------------------------------
 ;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
@@ -1248,29 +1286,28 @@ if not possible."
 
                (INTEGER (INTEGER * *))
                (FIXNUM (INTEGER #.most-negative-fixnum #.most-positive-fixnum))
-               (BIGNUM (OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
-               #+short-float
-               (SHORT-FLOAT (SHORT-FLOAT * *))
+               (BIGNUM (OR (INTEGER * (#.most-negative-fixnum))
+                           (INTEGER (#.most-positive-fixnum) *)))
+               #+short-float (SHORT-FLOAT (SHORT-FLOAT * *))
                (SINGLE-FLOAT (SINGLE-FLOAT * *))
                (DOUBLE-FLOAT (DOUBLE-FLOAT * *))
-               #+long-float
                (LONG-FLOAT (LONG-FLOAT * *))
                (RATIO (RATIO * *))
 
                (RATIONAL (OR INTEGER RATIO))
-               (FLOAT (OR
-                       #+short-float SHORT-FLOAT
-                       SINGLE-FLOAT
-                       DOUBLE-FLOAT
-                       #+long-float LONG-FLOAT))
-               (REAL (OR INTEGER
-                      #+short-float SHORT-FLOAT
-                      SINGLE-FLOAT
-                      DOUBLE-FLOAT
-                      #+long-float LONG-FLOAT
-                      RATIO))
-               (COMPLEX (COMPLEX REAL))
+               (FLOAT (OR #+short-float SHORT-FLOAT
+                          SINGLE-FLOAT
+                          DOUBLE-FLOAT
+                          LONG-FLOAT))
 
+               (REAL (OR RATIONAL FLOAT))
+
+               #+complex-float(SI:COMPLEX-SINGLE-FLOAT (COMPLEX SINGLE-FLOAT))
+               #+complex-float(SI:COMPLEX-DOUBLE-FLOAT (COMPLEX DOUBLE-FLOAT))
+               #+complex-float(SI:COMPLEX-LONG-FLOAT (COMPLEX LONG-FLOAT))
+               #+complex-float(SI:COMPLEX-FLOAT (COMPLEX FLOAT))
+
+               (COMPLEX (COMPLEX *))
                (NUMBER (OR REAL COMPLEX))
 
                (CHARACTER)
@@ -1313,9 +1350,11 @@ if not possible."
                (EXT:SEQUENCE-STREAM)
                (EXT:ANSI-STREAM (OR BROADCAST-STREAM CONCATENATED-STREAM ECHO-STREAM
                                  FILE-STREAM STRING-STREAM SYNONYM-STREAM TWO-WAY-STREAM
-                                 EXT:SEQUENCE-STREAM
-                                 #+clos-streams GRAY:FUNDAMENTAL-STREAM))
-               (STREAM EXT:ANSI-STREAM)
+                                 EXT:SEQUENCE-STREAM))
+               #+clos-streams (GRAY:FUNDAMENTAL-STREAM)
+               (STREAM (OR EXT:ANSI-STREAM
+                        #+clos-streams GRAY:FUNDAMENTAL-STREAM))
+               (EXT:VIRTUAL-STREAM (OR STRING-STREAM #+clos-streams GRAY:FUNDAMENTAL-STREAM))
 
                (READTABLE)
                #+threads (MP::PROCESS)
@@ -1346,7 +1385,7 @@ if not possible."
     (cond ((eq name T)
            -1)
           ((eq (setf record (gethash name +built-in-types+ name))
-                    name)
+               name)
            nil)
           (t
            (let* ((alias (pop record))
@@ -1430,14 +1469,13 @@ if not possible."
                      SINGLE-FLOAT
                      DOUBLE-FLOAT
                      RATIO
-                     #+long-float LONG-FLOAT)
+                     LONG-FLOAT)
             (register-interval-type type))
            ((FLOAT)
             (canonical-type `(OR #+short-float
                                  (SHORT-FLOAT ,@(rest type))
                                  (SINGLE-FLOAT ,@(rest type))
                                  (DOUBLE-FLOAT ,@(rest type))
-                                 #+long-float
                                  (LONG-FLOAT ,@(rest type)))))
            ((REAL)
             (canonical-type `(OR (INTEGER ,@(rest type))
@@ -1446,14 +1484,15 @@ if not possible."
                                  (SHORT-FLOAT ,@(rest type))
                                  (SINGLE-FLOAT ,@(rest type))
                                  (DOUBLE-FLOAT ,@(rest type))
-                                 #+long-float
                                  (LONG-FLOAT ,@(rest type)))))
            ((RATIONAL)
             (canonical-type `(OR (INTEGER ,@(rest type))
                                  (RATIO ,@(rest type)))))
            (COMPLEX
             (or (find-built-in-tag type)
-                (canonical-complex-type (second type))))
+                (canonical-complex-type (if (endp (rest type))
+                                            'real
+                                            (second type)))))
            (CONS (apply #'register-cons-type (rest type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))
@@ -1485,10 +1524,13 @@ if not possible."
     (return-from fast-subtypep (values t t)))
   (let* ((tag1 (safe-canonical-type t1))
          (tag2 (safe-canonical-type t2)))
+    (when (and (numberp tag1) (numberp tag2))
+      ;; We must call safe-canonical-type again because one of
+      ;; the calls above could have called UPDATE-TYPES.
+      (setf tag1 (safe-canonical-type t1)
+            tag2 (safe-canonical-type t2)))
     (cond ((and (numberp tag1) (numberp tag2))
-           (values (zerop (logandc2 (safe-canonical-type t1)
-                                    (safe-canonical-type t2)))
-                   t))
+           (values (zerop (logandc2 tag1 tag2)) t))
           #+nil
           ((null tag1)
            (error "Unknown type specifier ~S." t1))
@@ -1527,11 +1569,19 @@ if not possible."
   (declare (si::c-local))
   (when (eq t1 t2)
     (return-from fast-type= (values t t)))
-  (let* ((tag1 (safe-canonical-type t1))
-         (tag2 (safe-canonical-type t2)))
-    (cond ((and (numberp tag1) (numberp tag2))
-           (values (= (safe-canonical-type t1) (safe-canonical-type t2))
-                   t))
+  (let ((tag1 (safe-canonical-type t1))
+        (tag2 (safe-canonical-type t2))
+        (tag3 (safe-canonical-type 'complex)))
+    ;; FAST-TYPE= can't rely on the CANONICAL-TYPE in case of complex
+    ;; numbers which have an exceptional behavior define for TYPEP not
+    ;; being consistent with SUBTYPEP. -- jd 2019-04-19
+    (when (and (numberp tag1) (numberp tag2) (/= tag2 tag3))
+      ;; We must call safe-canonical-type again because one of
+      ;; the calls above could have called UPDATE-TYPES.
+      (setf tag1 (safe-canonical-type t1)
+            tag2 (safe-canonical-type t2)))
+    (cond ((and (numberp tag1) (numberp tag2) (/= tag2 tag3))
+           (values (= tag1 tag2) t))
           #+nil
           ((null tag1)
            (error "Unknown type specifier ~S." t1))

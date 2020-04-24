@@ -12,6 +12,8 @@
  *
  */
 
+#include <ecl/config.h>
+
 #ifdef ECL_SSE2
 #include <ecl/ecl.h>
 #include <ecl/internal.h>

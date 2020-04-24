@@ -3,7 +3,7 @@
 .*.swp
 \#*
 
-build
+/build
 cov-int
 
 *.data
@@ -17,6 +17,7 @@ cov-int
 *.manifest
 *.obj
 *.pdb
+*.fasl
 
 
 msvc/help.doc
@@ -36,6 +37,7 @@ msvc/gmp/msvc-build
 msvc/gmp/*.[ch]
 msvc/lsp/*.lsp
 msvc/lsp/*.[ch]
+msvc/package-locks.asd
 
 BUILD-STAMP
 MODULES
@@ -50,18 +52,9 @@ regressions/eformat-tests/*.txt
 *.cp*
 *.fn*
 *.log
-/src/doc/new-doc/*.lsp*
 *.toc
 *.tp*
 *.vr*
-/src/doc/new-doc/new-doc.pdf
-/src/doc/new-doc/ecldoc.info
-/src/doc/new-doc/new-doc.ex
-/src/doc/new-doc/new-doc.exs
-/src/doc/new-doc/new-doc.ft
-/src/doc/new-doc/new-doc.fts
-/src/doc/new-doc/new-doc.cf
-/src/doc/new-doc/new-doc.cfs
 /examples/ecl_qt/qt/ecl_qtdemo
 /examples/ecl_qt/hello-lisp-system--all-systems.fasb
 /examples/ecl_qt/lisp-envi.a
@@ -96,3 +89,6 @@ regressions/eformat-tests/*.txt
 /msvc/rt.asd
 /msvc/sb-bsd-sockets.asd
 /msvc/sockets.asd
+/src/tests/aux-compiler.0058-coerce.lsp
+/publications/
+/src/cmp/notes.md

@@ -103,8 +103,11 @@ out_of_memory(size_t requested_bytes)
   int interrupts = the_env->disable_interrupts;
   int method = 0;
   void *output;
-  if (!interrupts)
-    ecl_disable_interrupts_env(the_env);
+  /* Disable interrupts only with the ext::*interrupts-enabled*
+   * mechanism to allow for writes in the thread local environment */
+  if (interrupts)
+    ecl_enable_interrupts_env(the_env);
+  ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
   /* Free the input / output buffers */
   the_env->string_pool = ECL_NIL;
 
@@ -151,15 +154,14 @@ out_of_memory(size_t requested_bytes)
 #ifdef ECL_THREADS
   ECL_UNWIND_PROTECT_EXIT {
     mp_giveup_lock(cl_core.error_lock);
-    ecl_enable_interrupts_env(the_env);
   } ECL_UNWIND_PROTECT_END;
-#else
-  ecl_enable_interrupts_env(the_env);
 #endif
+  ecl_bds_unwind1(the_env);
+  ecl_check_pending_interrupts(the_env);
   switch (method) {
   case 0: cl_error(1, @'ext::storage-exhausted');
     break;
-  case 1: cl_cerror(2, make_constant_base_string("Extend heap size"),
+  case 1: cl_cerror(2, ecl_make_constant_base_string("Extend heap size",-1),
                     @'ext::storage-exhausted');
     break;
   case 2:
@@ -268,7 +270,10 @@ allocate_object_own(register struct ecl_type_information *type_info)
     if( (op = *opp) == 0 ) {
       UNLOCK();
       op = (ptr_t)GENERAL_MALLOC((word)lb, cl_object_kind);
-      if (0 == op) return 0;
+      if (0 == op) {
+        ecl_enable_interrupts_env(the_env);
+        return 0;
+      }
       lg = GC_size_map[lb];   /* May have been uninitialized. */
     } else {
       *opp = obj_link(op);
@@ -345,8 +350,8 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
     MAYBE_MARK(o->ratio.den);
     break;
   case t_complex:
-    MAYBE_MARK(o->complex.real);
-    MAYBE_MARK(o->complex.imag);
+    MAYBE_MARK(o->gencomplex.real);
+    MAYBE_MARK(o->gencomplex.imag);
     break;
   case t_symbol:
     MAYBE_MARK(o->symbol.hpack);
@@ -438,13 +443,13 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
     break;
   case t_instance:
     MAYBE_MARK(o->instance.slots);
-    MAYBE_MARK(o->instance.sig);
+    MAYBE_MARK(o->instance.slotds);
     MAYBE_MARK(o->instance.clas);
     break;
 # ifdef ECL_THREADS
   case t_process:
     MAYBE_MARK(o->process.queue_record);
-    MAYBE_MARK(o->process.start_spinlock);
+    MAYBE_MARK(o->process.start_stop_spinlock);
     MAYBE_MARK(o->process.woken_up);
     MAYBE_MARK(o->process.exit_values);
     MAYBE_MARK(o->process.exit_barrier);
@@ -552,8 +557,11 @@ ecl_alloc_object(cl_type t)
 #ifdef ECL_SSE2
   case t_sse_pack:
 #endif
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+  case t_cdfloat:
+  case t_clfloat:
 #endif
   case t_singlefloat:
   case t_doublefloat: {
@@ -674,8 +682,17 @@ ecl_alloc_instance(cl_index slots)
   i->instance.slots = (cl_object *)ecl_alloc(sizeof(cl_object) * slots);
   i->instance.length = slots;
   i->instance.entry = FEnot_funcallable_vararg;
-  i->instance.sig = ECL_UNBOUND;
+  i->instance.slotds = ECL_UNBOUND;
   return i;
+}
+
+static cl_index stamp = 0;
+cl_index ecl_next_stamp() {
+#if ECL_THREADS
+  return AO_fetch_and_add((AO_t*)&stamp, 1) + 1;
+#else
+  return ++stamp;
+#endif
 }
 
 void *
@@ -760,8 +777,10 @@ to_bitmap(void *x, void *y)
 void
 init_alloc(void)
 {
+#ifdef GBC_BOEHM_PRECISE
   union cl_lispunion o;
   struct ecl_cons c;
+#endif
   int i;
   if (alloc_initialized) return;
   alloc_initialized = TRUE;
@@ -821,9 +840,15 @@ init_alloc(void)
     cl_core.safety_region = 0;
   }
 
-#define init_tm(x,y,z,w) {                                              \
-    type_info[x].size = (z);                                            \
-    if ((w) == 0) { type_info[x].allocator = allocate_object_atomic; } }
+#define init_tm(/* cl_type  */ type,                                    \
+                /* char*    */ name,                                    \
+                /* cl_index */ object_size,                             \
+                /* cl_index */ maxpage) {                               \
+    type_info[type].size = (object_size);                               \
+    if ((maxpage) == 0) {                                               \
+      type_info[type].allocator = allocate_object_atomic;               \
+    }                                                                   \
+  }
   for (i = 0; i < t_end; i++) {
     type_info[i].t = i;
     type_info[i].size = 0;
@@ -834,10 +859,13 @@ init_alloc(void)
   init_tm(t_ratio, "RATIO", sizeof(struct ecl_ratio), 2);
   init_tm(t_singlefloat, "SINGLE-FLOAT", sizeof(struct ecl_singlefloat), 0);
   init_tm(t_doublefloat, "DOUBLE-FLOAT", sizeof(struct ecl_doublefloat), 0);
-#ifdef ECL_LONG_FLOAT
   init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float), 0);
-#endif
   init_tm(t_complex, "COMPLEX", sizeof(struct ecl_complex), 2);
+#ifdef ECL_COMPLEX_FLOAT
+  init_tm(t_csfloat, "COMPLEX-SINGLE-FLOAT", sizeof(struct ecl_csfloat), 0);
+  init_tm(t_cdfloat, "COMPLEX-DOUBLE-FLOAT", sizeof(struct ecl_cdfloat), 0);
+  init_tm(t_clfloat, "COMPLEX-LONG-FLOAT", sizeof(struct ecl_clfloat), 0);
+#endif
   init_tm(t_symbol, "SYMBOL", sizeof(struct ecl_symbol), 5);
   init_tm(t_package, "PACKAGE", sizeof(struct ecl_package), -1); /* 36 */
 #ifdef ECL_THREADS
@@ -890,12 +918,15 @@ init_alloc(void)
     to_bitmap(&o, &(o.ratio.den));
   type_info[t_singlefloat].descriptor = 0;
   type_info[t_doublefloat].descriptor = 0;
-#ifdef ECL_LONG_FLOAT
   type_info[t_longfloat].descriptor = 0;
-#endif
   type_info[t_complex].descriptor =
     to_bitmap(&o, &(o.complex.real)) |
     to_bitmap(&o, &(o.complex.imag));
+#ifdef ECL_COMPLEX_FLOAT
+  type_info[t_csfloat].descriptor = 0;
+  type_info[t_cdfloat].descriptor = 0;
+  type_info[t_clfloat].descriptor = 0;
+#endif
   type_info[t_symbol].descriptor =
     to_bitmap(&o, &(o.symbol.value)) |
     to_bitmap(&o, &(o.symbol.gfdef)) |
@@ -981,7 +1012,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.cclosure.file_position));
   type_info[t_instance].descriptor =
     to_bitmap(&o, &(o.instance.clas)) |
-    to_bitmap(&o, &(o.instance.sig)) |
+    to_bitmap(&o, &(o.instance.slotds)) |
     to_bitmap(&o, &(o.instance.slots));
 # ifdef ECL_THREADS
   type_info[t_process].descriptor =
@@ -995,7 +1026,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.process.exit_barrier)) |
     to_bitmap(&o, &(o.process.exit_values)) |
     to_bitmap(&o, &(o.process.woken_up)) |
-    to_bitmap(&o, &(o.process.start_spinlock)) |
+    to_bitmap(&o, &(o.process.start_stop_spinlock)) |
     to_bitmap(&o, &(o.process.queue_record));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
@@ -1158,7 +1189,7 @@ wrapped_finalizer(cl_object o, cl_object finalizer)
         */
        GC_finalization_proc ofn;
        void *odata;
-       GC_register_finalizer_no_order(cl_list(2,o,finalizer),
+       GC_REGISTER_FINALIZER_NO_ORDER(cl_list(2,o,finalizer),
                                       (GC_finalization_proc)deferred_finalizer, 0,
                                       &ofn, &odata);
        return;
@@ -1181,7 +1212,7 @@ si_get_finalizer(cl_object o)
   GC_finalization_proc ofn;
   void *odata;
   ecl_disable_interrupts_env(the_env);
-  GC_register_finalizer_no_order(o, (GC_finalization_proc)0, 0, &ofn, &odata);
+  GC_REGISTER_FINALIZER_NO_ORDER(o, (GC_finalization_proc)0, 0, &ofn, &odata);
   if (ofn == 0) {
     output = ECL_NIL;
   } else if (ofn == (GC_finalization_proc)wrapped_finalizer) {
@@ -1189,7 +1220,7 @@ si_get_finalizer(cl_object o)
   } else {
     output = ECL_NIL;
   }
-  GC_register_finalizer_no_order(o, ofn, odata, &ofn, &odata);
+  GC_REGISTER_FINALIZER_NO_ORDER(o, ofn, odata, &ofn, &odata);
   ecl_enable_interrupts_env(the_env);
   @(return output);
 }
@@ -1200,12 +1231,12 @@ ecl_set_finalizer_unprotected(cl_object o, cl_object finalizer)
   GC_finalization_proc ofn;
   void *odata;
   if (finalizer == ECL_NIL) {
-    GC_register_finalizer_no_order(o, (GC_finalization_proc)0,
+    GC_REGISTER_FINALIZER_NO_ORDER(o, (GC_finalization_proc)0,
                                    0, &ofn, &odata);
   } else {
     GC_finalization_proc newfn;
     newfn = (GC_finalization_proc)wrapped_finalizer;
-    GC_register_finalizer_no_order(o, newfn, finalizer,
+    GC_REGISTER_FINALIZER_NO_ORDER(o, newfn, finalizer,
                                    &ofn, &odata);
   }
 }
@@ -1348,7 +1379,7 @@ ecl_mark_env(struct cl_env_struct *env)
 static void
 stacks_scanner()
 {
-  cl_env_ptr the_env = ecl_process_env();
+  cl_env_ptr the_env = ecl_process_env_unsafe();
   cl_object l;
   l = cl_core.libraries;
   if (l) {
@@ -1429,7 +1460,7 @@ ecl_alloc_weak_pointer(cl_object o)
   obj->t = t_weak_pointer;
   obj->value = o;
   if (!ECL_FIXNUMP(o) && !ECL_CHARACTERP(o) && !Null(o)) {
-    GC_general_register_disappearing_link((void**)&(obj->value), (void*)o);
+    GC_GENERAL_REGISTER_DISAPPEARING_LINK((void**)&(obj->value), (void*)o);
     si_set_finalizer((cl_object)obj, ECL_T);
   }
   return (cl_object)obj;
@@ -1456,7 +1487,11 @@ si_weak_pointer_value(cl_object o)
     FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
                           @[ext::weak-pointer]);
   value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
-  @(return (value? value : ECL_NIL));
+  if (value) {
+    @(return value ECL_T);
+  } else {
+    @(return ECL_NIL ECL_NIL);
+  }
 }
 
 #endif /* GBC_BOEHM */

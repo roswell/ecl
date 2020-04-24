@@ -18,10 +18,12 @@
 (in-package "COMPILER")
 
 (defun unoptimized-long-call (fun arguments)
-  (let ((frame (gensym)))
+  (let ((frame (gensym))
+        (f-arg (gensym)))
     `(with-stack ,frame
-       ,@(loop for i in arguments collect `(stack-push ,frame ,i))
-       (si::apply-from-stack-frame ,frame ,fun))))
+       (let ((,f-arg ,fun))
+         ,@(loop for i in arguments collect `(stack-push ,frame ,i))
+         (si::apply-from-stack-frame ,frame ,f-arg)))))
 
 (defun unoptimized-funcall (fun arguments)
   (let ((l (length arguments)))
@@ -138,22 +140,34 @@
   ;; Call to a function whose C language function name is known,
   ;; either because it has been proclaimed so, or because it belongs
   ;; to the runtime.
-  (when (policy-use-direct-C-call)
-    (let ((fd (get-sysprop fname 'Lfun)))
-      (when fd
-        (multiple-value-bind (minarg maxarg) (get-proclaimed-narg fname)
-          (return-from call-global-loc
-            (call-exported-function-loc
-             fname args fd minarg maxarg
-             (member fname *in-all-symbols-functions*)
-             return-type))))))
-
   (multiple-value-bind (found fd minarg maxarg)
       (si::mangle-name fname t)
     (when found
       (return-from call-global-loc
         (call-exported-function-loc fname args fd minarg maxarg t
                                     return-type))))
+
+  (when (policy-use-direct-C-call)
+    (let ((fd (si:get-sysprop fname 'Lfun)))
+      (when fd
+        (multiple-value-bind (minarg maxarg found) (get-proclaimed-narg fname)
+          #+ecl-min
+          (unless found
+            ;; Without knowing the number of arguments we cannot call
+            ;; the C function. When compiling ECL itself, we get this
+            ;; information through si::mangle-name from symbols_list.h
+            ;; for core functions defined in Lisp code.
+            (let (ignored)
+              (multiple-value-setq (found ignored minarg maxarg)
+                (si::mangle-name fname))))
+          (unless found
+            (cmperr "Can not call the function ~A using its exported C name ~A because its function type has not been proclaimed"
+                    fname fd))
+          (return-from call-global-loc
+            (call-exported-function-loc
+             fname args fd minarg maxarg
+             (si::mangle-name fname)
+             return-type))))))
 
   (call-unknown-global-loc fname nil args))
 
@@ -177,11 +191,10 @@
                 (wt-h1 "cl_object"))
               (wt-h1 ");"))
             (progn
-              (wt-nl-h "#ifdef __cplusplus")
-              (wt-nl-h "extern cl_object " fun-c-name "(...);")
-              (wt-nl-h "#else")
-              (wt-nl-h "extern cl_object " fun-c-name "();")
-              (wt-nl-h "#endif")))
+              (wt-nl-h "extern cl_object " fun-c-name "(cl_narg")
+              (dotimes (i (min minarg si:c-arguments-limit))
+                (wt-h1 ",cl_object"))
+              (wt-h1 ",...);")))
         (setf (gethash fun-c-name *compiler-declared-globals*) 1))))
   (let ((fun (make-fun :name fname :global t :cfun fun-c-name :lambda 'NIL
                        :minarg minarg :maxarg maxarg)))
@@ -220,13 +233,6 @@
 
 (defvar *text-for-lexical-level*
   '("lex0" "lex1" "lex2" "lex3" "lex4" "lex5" "lex6" "lex7" "lex8" "lex9"))
-
-(defvar *text-for-closure*
-  '("env0" "env1" "env2" "env3" "env4" "env5" "env6" "env7" "env8" "env9"))
-
-(defun env-var-name (n)
-  (or (nth n *text-for-closure*)
-      (format nil "env~D" n)))
 
 (defun wt-stack-pointer (narg)
   (wt "cl_env_copy->stack_top-" narg))
@@ -274,10 +280,7 @@
        (let ((lex-lvl (fun-level fun)))
          (dotimes (n lex-lvl)
            (let* ((j (- lex-lvl n 1))
-                  (x (nth j *text-for-lexical-level*)))
-             (unless x
-               (setf x (format nil "lex~d" j)
-                     (nth n *text-for-lexical-level*) x))
+                  (x (lex-env-var-name j)))
              (push x args))))))
     (unless (<= minarg narg maxarg)
       (cmperr "Wrong number of arguments for function ~S"

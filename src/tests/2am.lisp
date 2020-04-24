@@ -38,6 +38,7 @@
 (defvar *pass-count* nil)
 (defvar *fail-count* nil)
 (defvar *running* nil)
+(defvar *last-fail* nil)
 
 (define-condition test-failure (simple-condition)
   ((test-name :initarg :name
@@ -165,7 +166,8 @@
     (incf *fail-count*))
   (when *failures*
     (push c (gethash *test-name* *failures*)))
-  NIL)
+  (setf *last-fail* c)
+  nil)
 
 (defmacro is (form &rest args
               &aux
@@ -179,33 +181,49 @@
                                :format-control ,fmt-ctrl
                                :format-arguments (list ,@fmt-args)))))
 
-(defun %signals (expected fn)
+(defun %signals (expected fn &rest args)
   (flet ((handler (condition)
            (cond ((typep condition expected)
                   (return-from %signals (passed)))
-                 (t
+                 ((typep condition 'serious-condition)
                   (return-from %signals
-                    (failed (make-condition 'test-failure
-                                            :name *test-name*
-                                            :format-control "Expected to signal ~s, but got ~s:~%~a"
-                                            :format-arguments (list expected (type-of condition) condition))))))))
+                    (let ((fmt-ctrl
+                            (if args
+                                (car args)
+                                "Expected to signal ~s, but got ~s:~%~a"))
+                          (fmt-args
+                            (if args
+                                (cdr args)
+                                (list expected (type-of condition) condition))))
+                      (failed (make-condition 'test-failure
+                                              :name *test-name*
+                                              :format-control fmt-ctrl
+                                              :format-arguments fmt-args)))))
+                 (t #|ignore non-serious unexpected conditions|#))))
     (handler-bind ((condition #'handler))
       (funcall fn)))
-  (failed (make-condition 'test-failure
-                          :name *test-name*
-                          :format-control "Expected to signal ~s, but got nothing"
-                          :format-arguments `(,expected))))
+  (let ((fmt-ctrl (if args (car args) "Expected to signal ~s, but got nothing"))
+        (fmt-args (if args (cdr args) `(,expected))))
+   (failed (make-condition 'test-failure
+                           :name *test-name*
+                           :format-control fmt-ctrl
+                           :format-arguments fmt-args))))
 
-(defmacro signals (condition &body body)
+(defmacro signals (condition form &rest args)
   "Assert that `body' signals a condition of type `condition'."
-  `(%signals ',condition (lambda () ,@body)))
+  `(%signals ',condition (lambda () ,form) ,@args))
 
-(defmacro finishes (form)
-  `(handler-case (progn
-                   ,form
-                   (passed))
-     (serious-condition (c)
-       (failed (make-condition 'test-failure
-                               :name *test-name*
-                               :format-control "Expected to finish, but got ~s"
-                               :format-arguments (list (type-of c)))))))
+(defmacro finishes (form &rest args)
+  (if args
+      `(handler-case (progn ,form (passed))
+         (serious-condition (c)
+           (failed (make-condition 'test-failure
+                                   :name *test-name*
+                                   :format-control ,(car args)
+                                   :format-arguments (list ,@(cdr args))))))
+      `(handler-case (progn ,form (passed))
+         (serious-condition (c)
+           (failed (make-condition 'test-failure
+                                   :name *test-name*
+                                   :format-control "Expected to finish, but got ~s"
+                                   :format-arguments (list (type-of c))))))))

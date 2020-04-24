@@ -64,9 +64,14 @@
  "#define MSG_DONTWAIT 0"
  "#define MSG_NOSIGNAL 0"
  "#define MSG_CONFIRM 0"
+ "#define MSG_TRUNC 0"
  "#include <errno.h>"
  "#include <fcntl.h>"
  "#include <stdio.h>")
+
+#+windows
+(clines
+ "#include <ws2tcpip.h>")
 
 #+:wsock
 (progn
@@ -136,6 +141,23 @@
 #+:wsock
 (defconstant +af-named-pipe+ -2)
 
+(Clines
+ "
+static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
+                               int a1, int a2, int a3, int a4)
+{
+#if defined(_MSC_VER) || defined(mingw32)
+        memset(sockaddr,0,sizeof(struct sockaddr_in));
+#else
+        bzero(sockaddr,sizeof(struct sockaddr_in));
+#endif
+        sockaddr->sin_family = AF_INET;
+        sockaddr->sin_port = htons(port);
+        sockaddr->sin_addr.s_addr= htonl((uint32_t)a1<<24 | (uint32_t)a2<<16 | (uint32_t)a3<<8 | (uint32_t)a4) ;
+
+}
+")
+
 ;; Foreign functions
 
 (defentry ff-socket (:int :int :int) (:int "socket") :no-interrupts t)
@@ -183,114 +205,106 @@ containing the whole rest of the given `string', if any."
 (defmethod host-ent-address ((host-ent host-ent))
   (car (host-ent-addresses host-ent)))
 
-;; FIXME: We should move this to using getaddrinfo
 (defun get-host-by-name (host-name)
   "Returns a HOST-ENT instance for HOST-NAME or throws some kind of condition.
-HOST-NAME may also be an IP address in dotted quad notation or some other
-weird stuff - see gethostbyname(3) for grisly details."
-  (let ((host-ent (make-instance 'host-ent)))
-    (if (c-inline (host-name host-ent
-                             #'(setf host-ent-name)
-                             #'(setf host-ent-aliases)
-                             #'(setf host-ent-address-type)
-                             #'(setf host-ent-addresses))
-                  (:cstring t t t t t) t
-                  "
+HOST-NAME may also be an IP address in dotted quad notation or some
+other weird stuff - see getaddrinfo(3) for details."
+  (multiple-value-bind (errno canonical-name addresses aliases)
+      (c-inline (host-name) (:cstring)
+                (values :int :object :object :object)
+                "
 {
-        struct hostent *hostent = gethostbyname(#0);
+    struct addrinfo hints;
+    struct addrinfo *result;
+    cl_object host_name = ECL_NIL;
+    cl_object aliases = ECL_NIL;
+    cl_object addresses = ECL_NIL;
+    int err;
 
-        if (hostent != NULL) {
-                char **aliases;
-                char **addrs;
-                cl_object aliases_list = ECL_NIL;
-                cl_object addr_list = ECL_NIL;
-                int length = hostent->h_length;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;                     /* IPv4 */
+    hints.ai_socktype = 0;                         /* Any type */
+    hints.ai_protocol = 0;                         /* Any protocol */
+    hints.ai_flags = (AI_CANONNAME);               /* Get cannonname */
+    hints.ai_addr = NULL;
+    hints.ai_next = NULL;
 
-                funcall(3,#2,make_simple_base_string(hostent->h_name),#1);
-                funcall(3,#4,ecl_make_integer(hostent->h_addrtype),#1);
+    ecl_disable_interrupts();
+    err = getaddrinfo(#0, NULL, &hints, &result);
+    ecl_enable_interrupts();
 
-                for (aliases = hostent->h_aliases; *aliases != NULL; aliases++) {
-                        aliases_list = CONS(make_simple_base_string(*aliases),aliases_list);
-                }
-                funcall(3,#3,aliases_list,#1);
+    if (err == 0) {
+        struct addrinfo *rp;
 
-                for (addrs = hostent->h_addr_list; *addrs != NULL; addrs++) {
-                        int pos;
-                        cl_object vector = funcall(2,@make-array,MAKE_FIXNUM(length));
-                        for (pos = 0; pos < length; pos++)
-                                ecl_aset(vector, pos, MAKE_FIXNUM((unsigned char)((*addrs)[pos])));
-                        addr_list = CONS(vector, addr_list);
-
-
-                }
-                funcall(3,#5,addr_list,#1);
-
-                @(return) = #1;
-        } else {
-                @(return) = ECL_NIL;
+        for (rp = result; rp != NULL; rp = rp->ai_next) {
+            if ( (rp == result) && (rp->ai_canonname != 0) ) {  /* first one may hold cannonname */
+                host_name = ecl_make_simple_base_string( rp->ai_canonname, -1 );
+            }
+            struct sockaddr_in *ipv4 = (struct sockaddr_in *)rp->ai_addr;
+            uint32_t ip = ntohl( ipv4->sin_addr.s_addr );
+            cl_object vector = cl_make_array(1,ecl_make_fixnum(4));
+            ecl_aset(vector,0, ecl_make_fixnum( ip>>24 ));
+            ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+            ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+            ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
+            addresses = cl_adjoin(4, vector, addresses, @':test, @'equalp);
+            if ( rp->ai_canonname != 0 ) {
+                cl_object alias = ecl_make_simple_base_string( rp->ai_canonname, -1 );
+                aliases = CONS(alias, aliases);
+            }
         }
+        freeaddrinfo(result);
+    }
+    @(return 0) = err;
+    @(return 1) = host_name;
+    @(return 2) = addresses;
+    @(return 3) = aliases;
 }"
-                  :side-effects t)
-        host-ent
-        (name-service-error "get-host-by-name"))))
+                :side-effects t)
+    (if (= errno 0)
+        (make-instance 'host-ent
+                       :name (or canonical-name host-name)
+                       :aliases aliases
+                       :type +af-inet+
+                       :addresses addresses)
+        (name-service-error "get-host-by-name" errno))))
+
+;;; Use values from getnameinfo man page if NI_MAXHOST is not declared
+(clines
+ "#ifndef NI_MAXHOST
+  #define NI_MAXHOST 1025
+  #endif")
 
 (defun get-host-by-address (address)
   (assert (and (typep address 'vector)
                (= (length address) 4)))
-  (let ((host-ent (make-instance 'host-ent)))
-    (if
-     (c-inline (address host-ent
-                        #'(setf host-ent-name)
-                        #'(setf host-ent-aliases)
-                        #'(setf host-ent-address-type)
-                        #'(setf host-ent-addresses))
-               (t t t t t t) t
-               "
+  (multiple-value-bind (errno name)
+      (c-inline ((aref address 0) (aref address 1) (aref address 2) (aref address 3))
+                (:int :int :int :int) (values :int t)
+             "
 {
-        unsigned char vector[4];
-        struct hostent *hostent;
-        vector[0] = fixint(ecl_aref(#0,0));
-        vector[1] = fixint(ecl_aref(#0,1));
-        vector[2] = fixint(ecl_aref(#0,2));
-        vector[3] = fixint(ecl_aref(#0,3));
-        ecl_disable_interrupts();
-        hostent = gethostbyaddr(wincoerce(const char *, vector),4,AF_INET);
-        ecl_enable_interrupts();
+    struct sockaddr_in addr;
+    socklen_t addr_len = (socklen_t)sizeof(struct sockaddr_in);
+    char host[NI_MAXHOST];
+    int err;
 
-        if (hostent != NULL) {
-                char **aliases;
-                char **addrs;
-                cl_object aliases_list = ECL_NIL;
-                cl_object addr_list = ECL_NIL;
-                int length = hostent->h_length;
+    fill_inet_sockaddr(&addr, 0, #0, #1, #2, #3);
 
-                funcall(3,#2,make_simple_base_string(hostent->h_name),#1);
-                funcall(3,#4,ecl_make_integer(hostent->h_addrtype),#1);
+    ecl_disable_interrupts();
+    err = getnameinfo((struct sockaddr *) &addr, addr_len, host, NI_MAXHOST, NULL, 0, NI_NAMEREQD);
+    ecl_enable_interrupts();
 
-                for (aliases = hostent->h_aliases; *aliases != NULL; aliases++) {
-                        aliases_list = CONS(make_simple_base_string(*aliases),aliases_list);
-                }
-                funcall(3,#3,aliases_list,#1);
-
-                for (addrs = hostent->h_addr_list; *addrs != NULL; addrs++) {
-                        int pos;
-                        cl_object vector = funcall(2,@make-array,MAKE_FIXNUM(length));
-                        for (pos = 0; pos < length; pos++)
-                                ecl_aset(vector, pos, MAKE_FIXNUM((unsigned char)((*addrs)[pos])));
-                        addr_list = CONS(vector, addr_list);
-
-
-                }
-                funcall(3,#5,addr_list,#1);
-
-                @(return) = #1;
-        } else {
-                @(return) = ECL_NIL;
-        }
+    @(return 0) = err;
+    @(return 1) = err ? ECL_NIL : ecl_make_simple_base_string(host,-1);
 }"
-               :side-effects t)
-     host-ent
-     (name-service-error "get-host-by-address"))))
+             :side-effects t)
+    (if (= errno 0)
+        (make-instance 'host-ent
+                       :name name
+                       :aliases nil
+                       :type +af-inet+
+                       :addresses (list address))
+        (name-service-error "get-host-by-address" errno))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -318,11 +332,13 @@ protocol. Other values are used as-is.")
   (:documentation "Common base class of all sockets, not meant to be
 directly instantiated."))
 
-
 (defmethod print-object ((object socket) stream)
   (print-unreadable-object (object stream :type t :identity t)
-                           (princ "descriptor " stream)
-                           (princ (slot-value object 'file-descriptor) stream)))
+    (if (slot-boundp object 'file-descriptor)
+        (progn
+          (princ "descriptor " stream)
+          (princ (slot-value object 'file-descriptor) stream))
+        (princ "(unbound descriptor)"))))
 
 (defmethod shared-initialize :after ((socket socket) slot-names
                                      &key protocol type
@@ -402,9 +418,9 @@ list of an ip address and a port). If no socket address is provided, send(2)
 will be called instead. Returns the number of octets written."))
 
 
-(defgeneric socket-close (socket)
+(defgeneric socket-close (socket &key abort)
   (:documentation "Close SOCKET.  May throw any kind of error that write(2) would have
-thrown.  If SOCKET-MAKE-STREAM has been called, calls CLOSE on that
+thrown.  If SOCKET-MAKE-STREAM has been called, calls CLOSE using ABORT on that
 stream instead"))
 
 (defgeneric socket-make-stream (socket  &rest args)
@@ -431,7 +447,7 @@ SB-SYS:MAKE-FD-STREAM."))
 (defmethod socket-close-low-level ((socket socket))
   (ff-close (socket-file-descriptor socket)))
 
-(defmethod socket-close ((socket socket))
+(defmethod socket-close ((socket socket) &key abort)
   ;; the close(2) manual page has all kinds of warning about not
   ;; checking the return value of close, on the grounds that an
   ;; earlier write(2) might have returned successfully w/o actually
@@ -450,11 +466,11 @@ SB-SYS:MAKE-FD-STREAM."))
       (cond ((slot-boundp socket 'stream)
              (let ((stream (slot-value socket 'stream)))
                #+threads
-               (close (two-way-stream-input-stream stream))
+               (close (two-way-stream-input-stream stream) :abort abort)
                #+threads
-               (close (two-way-stream-output-stream stream))
+               (close (two-way-stream-output-stream stream) :abort abort)
                #-threads
-               (close stream)) ;; closes fd indirectly
+               (close stream :abort abort)) ;; closes fd indirectly
              (slot-makunbound socket 'stream))
             ((= (socket-close-low-level socket) -1)
              (socket-error "close")))
@@ -464,15 +480,15 @@ SB-SYS:MAKE-FD-STREAM."))
 static void *
 safe_buffer_pointer(cl_object x, cl_index size)
 {
-        cl_type t = type_of(x);
+        cl_type t = ecl_t_of(x);
         int ok = 0;
         if (t == t_base_string) {
                 ok = (size <= x->base_string.dim);
         } else if (t == t_vector) {
                 cl_elttype aet = (cl_elttype)x->vector.elttype;
-                if (aet == aet_b8 || aet == aet_i8 || aet == aet_bc) {
+                if (aet == ecl_aet_b8 || aet == ecl_aet_i8 || aet == ecl_aet_bc) {
                         ok = (size <= x->vector.dim);
-                } else if (aet == aet_fix || aet == aet_index) {
+                } else if (aet == ecl_aet_fix || aet == ecl_aet_index) {
                         cl_index divisor = sizeof(cl_index);
                         size = (size + divisor - 1) / divisor;
                         ok = (size <= x->vector.dim);
@@ -487,28 +503,31 @@ safe_buffer_pointer(cl_object x, cl_index size)
 
 ;; FIXME: How bad is manipulating fillp directly?
 (defmethod socket-receive ((socket socket) buffer length
-                           &key oob peek waitall element-type)
+                           &key oob peek waitall (element-type 'ext:byte8))
   (unless (or buffer length) (error "You have to supply either buffer or length!"))
   (let ((buffer (or buffer (make-array length :element-type element-type)))
         (length (or length (length buffer)))
-        (fd (socket-file-descriptor socket)))
+        (fd (socket-file-descriptor socket))
+        (trunc (if (eql (socket-type socket) :datagram) t nil)))
 
-    (multiple-value-bind (len-recv errno)
-           (c-inline (fd buffer length
-                      oob peek waitall)
-                     (:int :object :int :bool :bool :bool)
-                  (values :long :int)
+    (multiple-value-bind (len-recv errno vector port)
+           (c-inline (fd buffer length oob peek waitall trunc)
+                     (:int :object :int :bool :bool :bool :bool)
+                  (values :long :int :object :int)
                      "
 {
         int flags = ( #3 ? MSG_OOB : 0 )  |
                     ( #4 ? MSG_PEEK : 0 ) |
-                    ( #5 ? MSG_WAITALL : 0 );
-        cl_type type = type_of(#1);
+                    ( #5 ? MSG_WAITALL : 0 ) |
+                    ( #6 ? MSG_TRUNC : 0 );
+        cl_type type = ecl_t_of(#1);
         ssize_t len;
+        struct sockaddr_in sender;
+        socklen_t addr_len = (socklen_t)sizeof(struct sockaddr_in);
 
         ecl_disable_interrupts();
         len = recvfrom(#0, wincoerce(char*, safe_buffer_pointer(#1, #2)),
-                       #2, flags, NULL,NULL);
+                       #2, flags, (struct sockaddr *)&sender, &addr_len);
         ecl_enable_interrupts();
         if (len >= 0) {
                if (type == t_vector) { #1->vector.fillp = len; }
@@ -516,6 +535,22 @@ safe_buffer_pointer(cl_object x, cl_index size)
         }
         @(return 0) = len;
         @(return 1) = errno;
+        @(return 2) = ECL_NIL;
+        @(return 3) = 0;
+
+        if (len >= 0) {
+                uint32_t ip = ntohl(sender.sin_addr.s_addr);
+                uint16_t port = ntohs(sender.sin_port);
+                cl_object vector = cl_make_array(1,ecl_make_fixnum(4));
+
+                ecl_aset(vector,0, ecl_make_fixnum( ip>>24 ));
+                ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+                ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+                ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
+
+                @(return 2) = vector;
+                @(return 3) = port;
+        }
 }
 "
                   :one-liner nil)
@@ -524,8 +559,8 @@ safe_buffer_pointer(cl_object x, cl_index size)
              nil)
             ((= len-recv -1)
              (socket-error "receive"))
-            (t 
-             (values buffer len-recv))))))
+            (t
+             (values buffer len-recv vector port))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -595,23 +630,6 @@ Examples:
   "Make an INET socket.  Deprecated in favour of make-instance"
   (make-instance 'inet-socket :type type :protocol protocol))
 
-(Clines
- "
-static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
-                               int a1, int a2, int a3, int a4)
-{
-#if defined(_MSC_VER) || defined(mingw32)
-        memset(sockaddr,0,sizeof(struct sockaddr_in));
-#else
-        bzero(sockaddr,sizeof(struct sockaddr_in));
-#endif
-        sockaddr->sin_family = AF_INET;
-        sockaddr->sin_port = htons(port);
-        sockaddr->sin_addr.s_addr= htonl((uint32_t)a1<<24 | (uint32_t)a2<<16 | (uint32_t)a3<<8 | (uint32_t)a4) ;
-
-}
-")
-
 
 
 (defmethod socket-bind ((socket inet-socket) &rest address)
@@ -655,12 +673,12 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
         if (new_fd != -1) {
                 uint32_t ip = ntohl(sockaddr.sin_addr.s_addr);
                 uint16_t port = ntohs(sockaddr.sin_port);
-                cl_object vector = cl_make_array(1,MAKE_FIXNUM(4));
+                cl_object vector = cl_make_array(1,ecl_make_fixnum(4));
 
-                ecl_aset(vector,0, MAKE_FIXNUM( ip>>24 ));
-                ecl_aset(vector,1, MAKE_FIXNUM( (ip>>16) & 0xFF));
-                ecl_aset(vector,2, MAKE_FIXNUM( (ip>>8) & 0xFF));
-                ecl_aset(vector,3, MAKE_FIXNUM( ip & 0xFF ));
+                ecl_aset(vector,0, ecl_make_fixnum( ip>>24 ));
+                ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+                ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+                ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
 
                 @(return 1) = vector;
                 @(return 2) = port;
@@ -717,10 +735,10 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                 uint32_t ip = ntohl(name.sin_addr.s_addr);
                 uint16_t port = ntohs(name.sin_port);
 
-                ecl_aset(#1,0, MAKE_FIXNUM( ip>>24 ));
-                ecl_aset(#1,1, MAKE_FIXNUM( (ip>>16) & 0xFF));
-                ecl_aset(#1,2, MAKE_FIXNUM( (ip>>8) & 0xFF));
-                ecl_aset(#1,3, MAKE_FIXNUM( ip & 0xFF ));
+                ecl_aset(#1,0, ecl_make_fixnum( ip>>24 ));
+                ecl_aset(#1,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+                ecl_aset(#1,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+                ecl_aset(#1,3, ecl_make_fixnum( ip & 0xFF ));
 
                 @(return) = port;
          } else {
@@ -748,10 +766,10 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                 uint32_t ip = ntohl(name.sin_addr.s_addr);
                 uint16_t port = ntohs(name.sin_port);
 
-                ecl_aset(#1,0, MAKE_FIXNUM( ip>>24 ));
-                ecl_aset(#1,1, MAKE_FIXNUM( (ip>>16) & 0xFF));
-                ecl_aset(#1,2, MAKE_FIXNUM( (ip>>8) & 0xFF));
-                ecl_aset(#1,3, MAKE_FIXNUM( ip & 0xFF ));
+                ecl_aset(#1,0, ecl_make_fixnum( ip>>24 ));
+                ecl_aset(#1,1, ecl_make_fixnum( (ip>>16) & 0xFF));
+                ecl_aset(#1,2, ecl_make_fixnum( (ip>>8) & 0xFF));
+                ecl_aset(#1,3, ecl_make_fixnum( ip & 0xFF ));
 
                 @(return) = port;
          } else {
@@ -801,7 +819,7 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                     ( #b ? MSG_DONTWAIT : 0 ) |
                     ( #c ? MSG_NOSIGNAL : 0 ) |
                     ( #d ? MSG_CONFIRM : 0 );
-        cl_type type = type_of(#1);
+        cl_type type = ecl_t_of(#1);
         struct sockaddr_in sockaddr;
         ssize_t len;
 
@@ -839,7 +857,7 @@ static void fill_inet_sockaddr(struct sockaddr_in *sockaddr, int port,
                     ( #6 ? MSG_DONTWAIT : 0 ) |
                     ( #7 ? MSG_NOSIGNAL : 0 ) |
                     ( #8 ? MSG_CONFIRM : 0 );
-        cl_type type = type_of(#1);
+        cl_type type = ecl_t_of(#1);
         ssize_t len;
         ecl_disable_interrupts();
 ##if (MSG_NOSIGNAL == 0) && defined(SO_NOSIGPIPE)
@@ -912,7 +930,7 @@ also known as unix-domain sockets."))
         new_fd = accept(#0, (struct sockaddr *)&sockaddr, &addr_len);
         ecl_enable_interrupts();
         @(return 0) = new_fd;
-        @(return 1) = (new_fd == -1) ? ECL_NIL : make_base_string_copy(sockaddr.sun_path);
+        @(return 1) = (new_fd == -1) ? ECL_NIL : ecl_make_simple_base_string(sockaddr.sun_path,-1);
 }")
     (cond
       ((= fd -1)
@@ -965,7 +983,7 @@ also known as unix-domain sockets."))
         ecl_enable_interrupts();
 
         if (ret == 0) {
-                @(return) = make_base_string_copy(name.sun_path);
+                @(return) = ecl_make_simple_base_string(name.sun_path,-1);
         } else {
                 @(return) = ECL_NIL;
         }
@@ -1039,8 +1057,8 @@ also known as unix-domain sockets."))
     (socket-error "socket-peername"))
   (slot-value socket 'local-path))
 
-(defmethod socket-close ((socket local-socket))
-  (socket-close (slot-value socket 'proxy-socket))
+(defmethod socket-close ((socket local-socket) &key abort)
+  (socket-close (slot-value socket 'proxy-socket) :abort abort)
   (slot-makunbound socket 'local-path))
 
 (defmethod socket-make-stream ((socket local-socket) &rest args)
@@ -1170,7 +1188,8 @@ also known as unix-domain sockets."))
       (socket-error "SetNamedPipeHandleState")
       (setf (slot-value socket 'non-blocking-p) non-blocking-p))))
 
-(defmethod socket-close ((socket named-pipe-socket))
+(defmethod socket-close ((socket named-pipe-socket) &key abort)
+  (declare (ignore abort))
   (let ((fd (socket-file-descriptor socket)))
     (unless (c-inline (fd) (:int) t
                   "
@@ -1244,33 +1263,6 @@ also known as unix-domain sockets."))
 
 (defun dup (fd)
   (ffi:c-inline (fd) (:int) :int "dup(#0)" :one-liner t))
-
-(defun make-stream-from-fd (fd mode &key buffering element-type (external-format :default)
-                            (name "FD-STREAM"))
-  (assert (stringp name) (name) "name must be a string.")
-  (let* ((smm-mode (ecase mode
-                       (:input (c-constant "ecl_smm_input"))
-                       (:output (c-constant "ecl_smm_output"))
-                       (:input-output (c-constant "ecl_smm_io"))
-                       #+:wsock
-                       (:input-wsock (c-constant "ecl_smm_input_wsock"))
-                       #+:wsock
-                       (:output-wsock (c-constant "ecl_smm_output_wsock"))
-                       #+:wsock
-                       (:input-output-wsock (c-constant "ecl_smm_io_wsock"))
-                       ))
-         (external-format (unless (subtypep element-type 'integer) external-format))
-         (stream (ffi:c-inline (name fd smm-mode element-type external-format)
-                               (t :int :int t t)
-                               t
-                               "
-ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
-                        ecl_normalize_stream_element_type(#3),
-                        0,#4)"
-                               :one-liner t)))
-    (when buffering
-      (si::set-buffering-mode stream buffering))
-    stream))
 
 (defun auto-close-two-way-stream (stream)
   (declare (si::c-local))
@@ -1375,7 +1367,7 @@ ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
             (LPTSTR)&lpMsgBuf,
             0,
             NULL);
-          msg = make_base_string_copy(lpMsgBuf);
+          msg = ecl_make_simple_base_string(lpMsgBuf,-1);
           LocalFree(lpMsgBuf);
           ecl_enable_interrupts();
           @(return) = msg;}"
@@ -1426,21 +1418,11 @@ ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
   "#define EPROTONOSUPPORT WSAEPROTONOSUPPORT"
   "#define ESOCKTNOSUPPORT WSAESOCKTNOSUPPORT"
   "#define ENETUNREACH WSAENETUNREACH"
-  "#define NETDB_INTERNAL WSAEAFNOSUPPORT"
-  "#define NETDB_SUCCESS 0"
 )
 
 #+:haiku
 (clines
  "#define ESOCKTNOSUPPORT ENOTSUP")
-
-(Clines
-  "#ifndef NETDB_INTERNAL"
-  "#define NETDB_INTERNAL 0"
-  "#endif"
-  "#ifndef NETDB_SUCCESS"
-  "#define NETDB_SUCCESS 0"
-  "#endif")
 
 (define-socket-condition EADDRINUSE address-in-use-error)
 (define-socket-condition EAGAIN interrupted-error)
@@ -1470,19 +1452,17 @@ ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
 ;;; 2) DNS ERRORS
 ;;;
 
-(defvar *name-service-errno* 0
-  "The value of h_errno, after it's been fetched from Unix-land by calling
-GET-NAME-SERVICE-ERRNO")
+(clines
+ "#ifndef EAI_SYSTEM
+  #define EAI_SYSTEM 0
+  #endif")
 
-(defun name-service-error (where)
-  (get-name-service-errno)
-  ;; Comment next to NETDB_INTERNAL in netdb.h says "See errno.".
-  ;; This special case treatment hasn't actually been tested yet.
-  (if (= *name-service-errno* (c-constant "NETDB_INTERNAL"))
+(defun name-service-error (where &optional (errno #+:wsock (c-constant "WSAGetLastError()")))
+  (if (= errno (c-constant "EAI_SYSTEM"))
       (socket-error where)
-    (let ((condition
-           (condition-for-name-service-errno *name-service-errno*)))
-      (error condition :errno *name-service-errno* :syscall where))))
+      (let ((condition
+             (condition-for-name-service-errno errno)))
+        (error condition :errno errno :syscall where))))
 
 (define-condition name-service-error (condition)
   ((errno :initform nil
@@ -1508,30 +1488,22 @@ GET-NAME-SERVICE-ERRNO")
 
 (defparameter *conditions-for-name-service-errno* nil)
 
-(define-name-service-condition NETDB_INTERNAL netdb-internal-error)
-(define-name-service-condition NETDB_SUCCESS netdb-success-error)
-(define-name-service-condition HOST_NOT_FOUND host-not-found-error)
-(define-name-service-condition TRY_AGAIN try-again-error)
-(define-name-service-condition NO_RECOVERY no-recovery-error)
-;; this is the same as the next one
-;;(define-name-service-condition NO_DATA no-data-error)
-(define-name-service-condition NO_ADDRESS no-address-error)
+;;; getaddrinfo/getnameinfo have more failure codes, but for
+;;; compability with gethostbyname/gethostbyaddr, we only need the
+;;; following
+(define-name-service-condition EAI_NONAME host-not-found-error)
+(define-name-service-condition EAI_AGAIN try-again-error)
+(define-name-service-condition EAI_FAIL no-recovery-error)
 
 (defun condition-for-name-service-errno (err)
   (or (cdr (assoc err *conditions-for-name-service-errno* :test #'eql))
       'name-service))
 
-(defun get-name-service-errno ()
-  (setf *name-service-errno* (c-constant #-:wsock "h_errno" #+:wsock "WSAGetLastError()")))
-
 (defun get-name-service-error-message (num)
-  #+:nsr
-  (c-inline (num) (:int) :cstring "strerror(#0)" :one-liner t)
   #+:wsock
   (get-win32-error-string num)
-  #-(or :wsock :nsr)
-  (c-inline (num) (:int) :cstring "strerror(#0)" :one-liner t)
-)
+  #-:wsock
+  (c-inline (num) (:int) :cstring "gai_strerror(#0)" :one-liner t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -1586,7 +1558,7 @@ GET-NAME-SERVICE-ERRNO")
         ret = getsockopt(#0,#1,#2,wincoerce(char*,&tv),&socklen);
         ecl_enable_interrupts();
 
-        @(return) = (ret == 0) ? ecl_make_doublefloat((double)tv.tv_sec
+        @(return) = (ret == 0) ? ecl_make_double_float((double)tv.tv_sec
                                         + ((double)tv.tv_usec) / 1000000.0) : ECL_NIL;
 }")))
     (if ret

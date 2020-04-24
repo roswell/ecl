@@ -65,18 +65,16 @@ print_float_exponent(cl_object buffer, cl_object number, cl_fixnum exp)
   case t_singlefloat:
     e = (r == @'single-float' || r == @'short-float')? 'e' : 'f';
     break;
-#ifdef ECL_LONG_FLOAT
-  case t_longfloat:
-    e = (r == @'long-float') ? 'e' : 'l';
-    break;
   case t_doublefloat:
     e = (r == @'double-float')? 'e' : 'd';
     break;
-#else
-  case t_doublefloat:
-    e = (r == @'double-float' || r == @'long-float')? 'e' : 'd';
+  case t_longfloat:
+    e = (r == @'long-float') ? 'e' : 'l';
     break;
-#endif
+  default:
+    ecl_internal_error("*** \n"
+                       "*** print_float_exponent unexpected argument\n"
+                       "***\n");
   }
   if (e != 'e' || exp != 0) {
     ecl_string_push_extend(buffer, e);

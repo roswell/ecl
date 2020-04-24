@@ -18,9 +18,10 @@
 
 (defun expand-mapcar (whole)
   (when (< (length whole) 3)
-    (si::signal-simple-error
-     #'program-error nil "Too few arguments to function ~A in form: ~A"
-     (firt whole) whole))
+    (cmpwarn "Too few arguments to function ~A in form: ~A" (first whole) whole)
+    (return-from expand-mapcar
+      `(si:simple-program-error
+        "Too few arguments to function ~A in form: ~A" ',(first whole) ',whole)))
   (let ((which (first whole)))
     (when (eq which 'FUNCALL)
       (setf whole (rest whole)
@@ -53,8 +54,8 @@
             do (let ((var (gensym)))
                  (setf iterators (cons var iterators)
                        for-statements (list* :for var in-or-on arg for-statements))))
-      `(loop ,@list-1-form
-             ,@fun-with
+      `(loop ,@fun-with
+             ,@list-1-form
              ,@for-statements
              ,do-or-collect (funcall ,function ,@iterators)
              ,@finally-form))))

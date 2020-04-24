@@ -1017,5 +1017,5 @@ the sense of TEST."
 (defun complement (f)
   "Args: (f)
 Returns a new function which first applies F to its arguments and then negates
-the output"
+the output."
   #'(lambda (&rest x) (not (apply f x))))

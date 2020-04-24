@@ -46,9 +46,9 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
    WNDCLASS    wndclass;
    HANDLE      hAccel;
 
-#  ifdef THREAD_LOCAL_ALLOC
-     GC_INIT();  /* Required if GC is built with THREAD_LOCAL_ALLOC     */
-                 /* Always safe, but this is used as a GC test.         */
+   GC_INIT();
+#  if defined(CPPCHECK)
+     GC_noop1((GC_word)&WinMain);
 #  endif
 
    if (!hPrevInstance)
@@ -65,11 +65,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
       wndclass.lpszClassName  = szAppName;
 
       if (RegisterClass (&wndclass) == 0) {
-          char buf[50];
-
-          sprintf(buf, "RegisterClass: error code: 0x%X",
-                  (unsigned)GetLastError());
-          de_error(buf);
+          de_error("RegisterClass error");
           return(0);
       }
    }
@@ -102,11 +98,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                         NULL,   /* Window class menu */
                         hInstance, NULL);
    if (hwnd == NULL) {
-        char buf[50];
-
-        sprintf(buf, "CreateWindow: error code: 0x%X",
-                (unsigned)GetLastError());
-        de_error(buf);
+        de_error("CreateWindow error");
         return(0);
    }
 
@@ -122,7 +114,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
          DispatchMessage (&msg);
       }
    }
-   return msg.wParam;
+   return (int)msg.wParam;
 }
 
 /* Return the argument with all control characters replaced by blanks.  */
@@ -131,6 +123,7 @@ char * plain_chars(char * text, size_t len)
     char * result = GC_MALLOC_ATOMIC(len + 1);
     register size_t i;
 
+    if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
        if (iscntrl(((unsigned char *)text)[i])) {
            result[i] = ' ';
@@ -149,6 +142,7 @@ char * control_chars(char * text, size_t len)
     char * result = GC_MALLOC_ATOMIC(len + 1);
     register size_t i;
 
+    if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
        if (iscntrl(((unsigned char *)text)[i])) {
            result[i] = text[i] + 0x40;
@@ -163,9 +157,9 @@ char * control_chars(char * text, size_t len)
 int char_width;
 int char_height;
 
-void get_line_rect(int line, int win_width, RECT * rectp)
+void get_line_rect(int line_arg, int win_width, RECT * rectp)
 {
-    rectp -> top = line * char_height;
+    rectp -> top = line_arg * (LONG)char_height;
     rectp -> bottom = rectp->top + char_height;
     rectp -> left = 0;
     rectp -> right = win_width;
@@ -204,7 +198,7 @@ INT_PTR CALLBACK AboutBoxCallback( HWND hDlg, UINT message,
    return FALSE;
 }
 
-LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
+LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
                           WPARAM wParam, LPARAM lParam)
 {
    static HANDLE  hInstance;
@@ -221,13 +215,13 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
    {
       case WM_CREATE:
            hInstance = ( (LPCREATESTRUCT) lParam)->hInstance;
-           dc = GetDC(hwnd);
+           dc = GetDC(hwnd_arg);
            SelectObject(dc, GetStockObject(SYSTEM_FIXED_FONT));
            GetTextMetrics(dc, &tm);
-           ReleaseDC(hwnd, dc);
+           ReleaseDC(hwnd_arg, dc);
            char_width = tm.tmAveCharWidth;
            char_height = tm.tmHeight + tm.tmExternalLeading;
-           GetClientRect(hwnd, &client_area);
+           GetClientRect(hwnd_arg, &client_area);
            COLS = (client_area.right - client_area.left)/char_width;
            LINES = (client_area.bottom - client_area.top)/char_height;
            generic_init();
@@ -235,21 +229,21 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
 
       case WM_CHAR:
            if (wParam == QUIT) {
-               SendMessage( hwnd, WM_CLOSE, 0, 0L );
+               SendMessage(hwnd_arg, WM_CLOSE, 0, 0L);
            } else {
                do_command((int)wParam);
            }
            return(0);
 
       case WM_SETFOCUS:
-           CreateCaret(hwnd, NULL, char_width, char_height);
-           ShowCaret(hwnd);
+           CreateCaret(hwnd_arg, NULL, char_width, char_height);
+           ShowCaret(hwnd_arg);
            caret_visible = 1;
            update_cursor();
            return(0);
 
       case WM_KILLFOCUS:
-           HideCaret(hwnd);
+           HideCaret(hwnd_arg);
            DestroyCaret();
            caret_visible = 0;
            return(0);
@@ -273,13 +267,13 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
            } else {
              switch(id) {
                case IDM_FILEEXIT:
-                  SendMessage( hwnd, WM_CLOSE, 0, 0L );
+                  SendMessage(hwnd_arg, WM_CLOSE, 0, 0L);
                   return( 0 );
 
                case IDM_HELPABOUT:
                   if( DialogBox( hInstance, TEXT("ABOUTBOX"),
-                                 hwnd, AboutBoxCallback ) )
-                     InvalidateRect( hwnd, NULL, TRUE );
+                                 hwnd_arg, AboutBoxCallback ) )
+                     InvalidateRect(hwnd_arg, NULL, TRUE);
                   return( 0 );
                case IDM_HELPCONTENTS:
                   de_error(
@@ -292,7 +286,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
            break;
 
       case WM_CLOSE:
-           DestroyWindow( hwnd );
+           DestroyWindow(hwnd_arg);
            return 0;
 
       case WM_DESTROY:
@@ -301,8 +295,8 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
            return 0;
 
       case WM_PAINT:
-           dc = BeginPaint(hwnd, &ps);
-           GetClientRect(hwnd, &client_area);
+           dc = BeginPaint(hwnd_arg, &ps);
+           GetClientRect(hwnd_arg, &client_area);
            COLS = (client_area.right - client_area.left)/char_width;
            LINES = (client_area.bottom - client_area.top)/char_height;
            SelectObject(dc, GetStockObject(SYSTEM_FIXED_FONT));
@@ -317,27 +311,32 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
                    char * blanks = CORD_to_char_star(CORD_chars(' ',
                                                                 COLS - len));
                    char * control = control_chars(text, len);
+                   if (NULL == plain || NULL == control)
+                       de_error("Out of memory!");
+
 #                  define RED RGB(255,0,0)
 
                    SetBkMode(dc, OPAQUE);
                    SetTextColor(dc, GetSysColor(COLOR_WINDOWTEXT));
 
-                   TextOutA(dc, this_line.left, this_line.top,
-                            plain, (int)len);
+                   if (plain != NULL)
+                       TextOutA(dc, this_line.left, this_line.top,
+                                plain, (int)len);
                    TextOutA(dc, this_line.left + (int)len * char_width,
                             this_line.top,
                             blanks, (int)(COLS - len));
                    SetBkMode(dc, TRANSPARENT);
                    SetTextColor(dc, RED);
-                   TextOutA(dc, this_line.left, this_line.top,
-                            control, (int)strlen(control));
+                   if (control != NULL)
+                       TextOutA(dc, this_line.left, this_line.top,
+                                control, (int)strlen(control));
                }
            }
-           EndPaint(hwnd, &ps);
+           EndPaint(hwnd_arg, &ps);
            screen_was_painted = 1;
            return 0;
    }
-   return DefWindowProc (hwnd, message, wParam, lParam);
+   return DefWindowProc(hwnd_arg, message, wParam, lParam);
 }
 
 int last_col;
@@ -359,11 +358,11 @@ void update_cursor(void)
 
 void invalidate_line(int i)
 {
-    RECT line;
+    RECT line_r;
 
     if (!screen_was_painted) return;
         /* Invalidating a rectangle before painting seems result in a   */
         /* major performance problem.                                   */
-    get_line_rect(i, COLS*char_width, &line);
-    InvalidateRect(hwnd, &line, FALSE);
+    get_line_rect(i, COLS*char_width, &line_r);
+    InvalidateRect(hwnd, &line_r, FALSE);
 }

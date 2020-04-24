@@ -174,7 +174,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
   cl_object line_no;
 
   if (cl_fboundp(@'si::formatter-aux') != ECL_NIL)
-    line_format = make_constant_base_string("~%~4d\t");
+    line_format = ecl_make_constant_base_string("~%~4d\t",-1);
   else
     line_format = ECL_NIL;
  BEGIN:
@@ -429,7 +429,7 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
        Returns from the block whose record in the lexical environment
        occuppies the n-th position.
     */
-  case OP_RETURN:         string = "RETFROM";
+  case OP_RETURN:         string = "RETFROM\t";
     GET_OPARG(n, vector);
     goto OPARG;
 

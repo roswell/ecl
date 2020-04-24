@@ -10,10 +10,8 @@
  *
  */
 
-#define AO_ASSUME_WINDOWS98 /* We need this for CAS */
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-#include "threads/ecl_atomics.h"
 
 static ECL_INLINE void
 FEerror_not_a_barrier(cl_object barrier)
@@ -36,7 +34,7 @@ ecl_make_barrier(cl_object name, cl_index count)
 @(defun mp::make-barrier (count &key name)
   @
   if (count == ECL_T)
-  count = ecl_make_fixnum(MOST_POSITIVE_FIXNUM);
+    count = ecl_make_fixnum(MOST_POSITIVE_FIXNUM);
   @(return ecl_make_barrier(name, fixnnint(count)));
   @)
 
@@ -137,28 +135,28 @@ mp_barrier_wait(cl_object barrier)
   cl_object output;
   cl_fixnum counter;
   cl_env_ptr the_env = ecl_process_env();
-  cl_object  own_process = the_env->own_process;
 
   unlikely_if (ecl_t_of(barrier) != t_barrier) {
     FEerror_not_a_barrier(barrier);
   }
   ecl_disable_interrupts_env(the_env);
   counter = decrement_counter(&barrier->barrier.arrivers_count);
-  if (counter == 0) {
+  if (counter == 1) {
     print_lock("barrier %p saturated", barrier, barrier);
     /* There are (count-1) threads in the queue and we
      * are the last one. We thus unblock all threads and
      * proceed. */
-    mp_barrier_unblock(1, barrier);
     ecl_enable_interrupts_env(the_env);
+    mp_barrier_unblock(1, barrier);
     output = @':unblocked';
-  } else if (counter > 0) {
+  } else if (counter > 1) {
     print_lock("barrier %p waiting", barrier, barrier);
     ecl_enable_interrupts_env(the_env);
     ecl_wait_on(the_env, barrier_wait_condition, barrier);
     output = ECL_T;
   } else {
     print_lock("barrier %p pass-through", barrier, barrier);
+    ecl_enable_interrupts_env(the_env);
     /* Barrier disabled */
     output = ECL_NIL;
   }

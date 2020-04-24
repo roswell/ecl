@@ -1,9 +1,0 @@
-@node Gray streams
-@section Gray streams
-
-@defun{close} {@var{stream} @keys{} :abort}
-
-If @var{stream} isn't a stream close will ``let to specialize
-itself''. This decision ahs been taken mainly for the compatibility
-reasons with some libraries.
-@end defun

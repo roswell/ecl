@@ -68,6 +68,9 @@
              (unoptimized-long-call `#',fname args)))
         ((setq fd (local-function-ref fname))
          (c1call-local fname fd args))
+        ((and macros-allowed            ; macrolet
+              (setq fd (cmp-env-search-macro fname)))
+         (cmp-expand-macro fd (list* fname args)))
         ((and (setq can-inline (inline-possible fname))
               (setq fd (compiler-macro-function fname))
               (progn
@@ -81,8 +84,8 @@
                   (clos-compiler-macro-expand fname args))
                 success))
          fd)
-        ((and macros-allowed
-              (setq fd (cmp-macro-function fname)))
+        ((and macros-allowed            ; global macro
+              (setq fd (macro-function fname)))
          (cmp-expand-macro fd (list* fname args)))
         ((and (setq can-inline (declared-inline-p fname))
               (consp can-inline)
@@ -141,7 +144,7 @@
                   )))
 
 (defun c1call-constant-fold (fname forms)
-  (when (and (get-sysprop fname 'pure)
+  (when (and (si:get-sysprop fname 'pure)
              (policy-evaluate-forms)
              (inline-possible fname))
     (handler-case
@@ -154,10 +157,15 @@
                   (push v all-values)
                   (return nil))
            finally
-             (return (c1constant-value
-                      (apply fname (nreverse all-values))
-                      :only-small-values nil)))
-      (error (c)))))
+             (let ((results (multiple-value-list (apply fname (nreverse all-values)))))
+               (if (endp (rest results))
+                   (c1constant-value (first results) :only-small-values nil)
+                   (let ((results (mapcar (lambda (r)
+                                            (c1constant-value r :only-small-values nil))
+                                          results)))
+                     (when (every #'identity results)
+                       (make-c1form* 'values :args results))))))
+      (error (c) (cmpdebug "Can't constant-fold ~s ~s: ~a~%" fname forms c)))))
 
 (defun c2expr (form)
   (with-c1form-env (form form)

@@ -98,14 +98,14 @@ get_aux_stream(void)
   cl_env_ptr env = ecl_process_env();
   cl_object stream;
 
-  ecl_disable_interrupts_env(env);
-  if (env->fmt_aux_stream == ECL_NIL) {
-    stream = ecl_make_string_output_stream(64, 1);
-  } else {
-    stream = env->fmt_aux_stream;
-    env->fmt_aux_stream = ECL_NIL;
-  }
-  ecl_enable_interrupts_env(env);
+  ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
+    if (env->fmt_aux_stream == ECL_NIL) {
+      stream = ecl_make_string_output_stream(64, 1);
+    } else {
+      stream = env->fmt_aux_stream;
+      env->fmt_aux_stream = ECL_NIL;
+    }
+  } ECL_WITHOUT_INTERRUPTS_END;
   return stream;
 }
 
@@ -113,7 +113,7 @@ static void
 fmt_error(format_stack fmt, const char *s)
 {
   cl_error(7, @'si::format-error',
-           @':format-control', make_constant_base_string(s),
+           @':format-control', ecl_make_constant_base_string(s,-1),
            @':control-string', fmt->ctl_str,
            @':offset', ecl_make_fixnum(fmt->ctl_index));
 }
@@ -751,31 +751,20 @@ fmt_character(format_stack fmt, bool colon, bool atsign)
  * Notice that we leave some extra margin, to ensure that reading the number
  * again will produce the same floating point number.
  */
-#ifdef ECL_LONG_FLOAT
-# define LDBL_SIG ((int)(LDBL_MANT_DIG * LOG10_2 + 1))
-# define DBL_MAX_DIGITS (LDBL_SIG + 3)
-# define DBL_EXPONENT_SIZE (1 + 1 + 4)
-#else
-# define DBL_MAX_DIGITS (DBL_SIG + 3)
-# define DBL_EXPONENT_SIZE (1 + 1 + 3) /* Exponent marker 'e' + sign + digits .*/
-#endif
+#define LDBL_SIG ((int)(LDBL_MANT_DIG * LOG10_2 + 1))
+#define DBL_MAX_DIGITS (LDBL_SIG + 3)
+#define DBL_EXPONENT_SIZE (1 + 1 + 4)
 
 /* The sinificant digits + the possible sign + the decimal dot. */
 #define DBL_MANTISSA_SIZE (DBL_MAX_DIGITS + 1 + 1)
 /* Total estimated size that a floating point number can take. */
 #define DBL_SIZE (DBL_MANTISSA_SIZE + DBL_EXPONENT_SIZE)
 
-#ifdef ECL_LONG_FLOAT
 #define EXP_STRING "Le"
 #define G_EXP_STRING "Lg"
 #define DBL_TYPE long double
 #define strtod strtold
 extern long double strtold(const char *nptr, char **endptr);
-#else
-#define EXP_STRING "e"
-#define G_EXP_STRING "g"
-#define DBL_TYPE double
-#endif
 
 static int
 edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
@@ -795,10 +784,8 @@ edit_double(int n, DBL_TYPE d, int *sp, char *s, int *ep)
       do {
         sprintf(buff, "%- *.*" EXP_STRING, n + 1 + 1 + DBL_EXPONENT_SIZE, n-1, d);
         aux = strtod(buff, NULL);
-#ifdef ECL_LONG_FLOAT
         if (n < LDBL_SIG)
           aux = (double) aux;
-#endif
         if (n < DBL_SIG)
           aux = (float)aux;
         n++;
@@ -1159,11 +1146,7 @@ fmt_exponential_float(format_stack fmt, bool colon, bool atsign)
   y = ecl_symbol_value(@'*read-default-float-format*');
   if (exponentchar < 0) {
     if (y == @'long-float') {
-#ifdef ECL_LONG_FLOAT
       t = t_longfloat;
-#else
-      t = t_doublefloat;
-#endif
     } else if (y == @'double-float') {
       t = t_doublefloat;
     } else if (y == @'single-float') {
@@ -1175,10 +1158,8 @@ fmt_exponential_float(format_stack fmt, bool colon, bool atsign)
       exponentchar = 'E';
     else if (ecl_t_of(x) == t_singlefloat)
       exponentchar = 'F';
-#ifdef ECL_LONG_FLOAT
     else if (ecl_t_of(x) == t_longfloat)
       exponentchar = 'L';
-#endif
     else
       exponentchar = 'D';
   }
@@ -2220,8 +2201,7 @@ format(format_stack fmt, cl_index start, cl_index end)
     if (!ECL_ARRAY_HAS_FILL_POINTER_P(output)) {
       cl_error(7, @'si::format-error',
                @':format-control',
-               make_constant_base_string(
-                                         "Cannot output to a non adjustable string."),
+               ecl_make_constant_base_string("Cannot output to a non adjustable string.",-1),
                @':control-string', string,
                @':offset', ecl_make_fixnum(0));
     }

@@ -20,6 +20,7 @@
 # include <sys/resource.h>
 #endif
 #include <ecl/internal.h>
+#include <ecl/stack-resize.h>
 
 /************************ C STACK ***************************/
 
@@ -28,6 +29,26 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
+#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
+  {
+    struct rlimit rl;
+
+    if (!getrlimit(RLIMIT_STACK, &rl)) {
+      env->cs_max_size = rl.rlim_max;
+      if (new_size > rl.rlim_cur) {
+        rl.rlim_cur = (new_size > rl.rlim_max) ? rl.rlim_max : new_size;
+        if (setrlimit(RLIMIT_STACK, &rl))
+          ecl_internal_error("Can't set the size of the C stack");
+      }
+      new_size = rl.rlim_cur;
+#ifdef ECL_DOWN_STACK
+      env->cs_barrier = env->cs_org - new_size;
+#else
+      env->cs_barrier = env->cs_org + new_size;
+#endif
+    }
+  }
+#endif
   env->cs_limit_size = new_size - (2*margin);
 #ifdef ECL_DOWN_STACK
   if (&foo > (env->cs_org - new_size) + 16) {
@@ -43,7 +64,7 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
   }
 #endif
   else
-    ecl_internal_error("can't reset env->cs_limit.");
+    ecl_internal_error("Can't set the size of the C stack");
   env->cs_size = new_size;
 }
 
@@ -68,7 +89,7 @@ ecl_cs_overflow(void)
     ecl_unrecoverable_error(env, stack_overflow_msg);
 
   if (env->cs_max_size == (cl_index)0 || env->cs_size < env->cs_max_size)
-    si_serror(6, make_constant_base_string("Extend stack size"),
+    si_serror(6, ecl_make_constant_base_string("Extend stack size",-1),
               @'ext::stack-overflow',
               @':size', ecl_make_fixnum(size),
               @':type', @'ext::c-stack');
@@ -86,33 +107,20 @@ ecl_cs_overflow(void)
 void
 ecl_cs_set_org(cl_env_ptr env)
 {
-  /* Rough estimate. Not very safe. We assume that cl_boot()
-   * is invoked from the main() routine of the program.
-   */
-  env->cs_org = (char*)(&env);
+#ifdef GBC_BOEHM
+  struct GC_stack_base base;
+  if (GC_get_stack_base(&base) == GC_SUCCESS)
+    env->cs_org = (char*)base.mem_base;
+  else
+#endif
+    {
+      /* Rough estimate. Not very safe. We assume that cl_boot()
+       * is invoked from the main() routine of the program.
+       */
+      env->cs_org = (char*)(&env);
+    }
   env->cs_barrier = env->cs_org;
   env->cs_max_size = 0;
-#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
-  {
-    struct rlimit rl;
-    cl_index size;
-
-    if (!getrlimit(RLIMIT_STACK, &rl) &&
-        ( rl.rlim_cur != RLIM_INFINITY
-          || rl.rlim_cur != RLIM_SAVED_MAX
-          || rl.rlim_cur != RLIM_SAVED_CUR) ) {
-      env->cs_max_size = rl.rlim_cur;
-      size = rl.rlim_cur / 2;
-      if (size < (cl_index)ecl_option_values[ECL_OPT_C_STACK_SIZE])
-        ecl_set_option(ECL_OPT_C_STACK_SIZE, size);
-#ifdef ECL_DOWN_STACK
-      env->cs_barrier = (env->cs_org - rl.rlim_cur) - 1024;
-#else
-      env->cs_barrier = (env->cs_org + rl.rlim_cur) + 1024;
-#endif
-    }
-  }
-#endif
   cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
 }
 
@@ -139,13 +147,13 @@ ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
     env->bds_limit_size = new_size - 2*margin;
     org = ecl_alloc_atomic(new_size * sizeof(*org));
 
-    ecl_disable_interrupts_env(env);
+    ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
     memcpy(org, old_org, (limit + 1) * sizeof(*org));
     env->bds_top = org + limit;
     env->bds_org = org;
     env->bds_limit = org + (new_size - 2*margin);
     env->bds_size = new_size;
-    ecl_enable_interrupts_env(env);
+    ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 
     ecl_dealloc(old_org);
   }
@@ -167,7 +175,7 @@ ecl_bds_overflow(void)
     ecl_unrecoverable_error(env, stack_overflow_msg);
   }
   env->bds_limit += margin;
-  si_serror(6, make_constant_base_string("Extend stack size"),
+  si_serror(6, ecl_make_constant_base_string("Extend stack size",-1),
             @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
             @':type', @'ext::binding-stack');
   ecl_bds_set_size(env, size + (size / 2));
@@ -183,7 +191,7 @@ ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index)
 #ifdef ECL_THREADS
     ecl_bds_unwind1(env);
 #else
-  bds->symbol->symbol.value = bds->value;
+    bds->symbol->symbol.value = bds->value;
 #endif
   env->bds_top = new_bds_top;
 }
@@ -198,6 +206,10 @@ ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
       return n;
     } else {
       cl_object var = ECL_CONS_CAR(vars);
+      if (!ECL_SYMBOLP(var))
+        FEillegal_variable_name(var);
+      if (ecl_symbol_type(var) & ecl_stp_constant)
+        FEbinding_a_constant(var);
       if (Null(values)) {
         ecl_bds_bind(env, var, OBJNULL);
       } else {
@@ -240,7 +252,7 @@ cl_object
 si_bds_val(cl_object arg)
 {
   cl_object v = get_bds_ptr(arg)->value;
-  @(return ((v == OBJNULL)? ECL_UNBOUND : v));
+  @(return ((v == OBJNULL || v == ECL_NO_TL_BINDING)? ECL_UNBOUND : v));
 }
 
 #ifdef ecl_bds_bind
@@ -270,7 +282,7 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
     symbol->symbol.binding = new_index;
     symbol->symbol.dynamic |= 1;
   }
-  si_set_finalizer(symbol, ECL_T);
+  ecl_set_finalizer_unprotected(symbol, ECL_T);
   return new_index;
 }
 
@@ -316,16 +328,24 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
     index = invalid_or_too_large_binding_index(env,s);
   }
   location = env->thread_local_bindings + index;
-  slot = ++env->bds_top;
+  slot = env->bds_top+1;
   if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  slot->symbol = ECL_DUMMY_TAG;
+  AO_nop_full();
+  ++env->bds_top;
+  ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
   *location = v;
+  ecl_enable_interrupts_env(env);
 #else
   ecl_bds_check(env);
-  (++(env->bds_top))->symbol = s;
-  env->bds_top->value = s->symbol.value; \
+  ecl_bds_ptr slot = ++(env->bds_top);
+  ecl_disable_interrupts_env(env);
+  slot->symbol = s;
+  slot->value = s->symbol.value;
   s->symbol.value = v;
+  ecl_enable_interrupts_env(env);
 #endif
 }
 
@@ -340,29 +360,37 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
     index = invalid_or_too_large_binding_index(env,s);
   }
   location = env->thread_local_bindings + index;
-  slot = ++env->bds_top;
+  slot = env->bds_top+1;
   if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  slot->symbol = ECL_DUMMY_TAG;
+  AO_nop_full();
+  ++env->bds_top;
+  ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
   if (*location == ECL_NO_TL_BINDING) *location = s->symbol.value;
+  ecl_enable_interrupts_env(env);
 #else
   ecl_bds_check(env);
-  (++(env->bds_top))->symbol = s;
-  env->bds_top->value = s->symbol.value;
+  ecl_bds_ptr slot = ++(env->bds_top);
+  ecl_disable_interrupts_env(env);
+  slot->symbol = s;
+  slot->value = s->symbol.value;
+  ecl_enable_interrupts_env(env);
 #endif
 }
 
 void
 ecl_bds_unwind1(cl_env_ptr env)
 {
-  ecl_bds_ptr slot = env->bds_top--;
-  cl_object s = slot->symbol;
+  cl_object s = env->bds_top->symbol;
 #ifdef ECL_THREADS
   cl_object *location = env->thread_local_bindings + s->symbol.binding;
-  *location = slot->value;
+  *location = env->bds_top->value;
 #else
-  s->symbol.value = slot->value;
+  s->symbol.value = env->bds_top->value;
 #endif
+  --env->bds_top;
 }
 
 #ifdef ECL_THREADS
@@ -491,13 +519,13 @@ frs_set_size(cl_env_ptr env, cl_index new_size)
     env->frs_limit_size = new_size - 2*margin;
     org = ecl_alloc_atomic(new_size * sizeof(*org));
 
-    ecl_disable_interrupts_env(env);
+    ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
     memcpy(org, old_org, (limit + 1) * sizeof(*org));
     env->frs_top = org + limit;
     env->frs_org = org;
     env->frs_limit = org + (new_size - 2*margin);
     env->frs_size = new_size;
-    ecl_enable_interrupts_env(env);
+    ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 
     ecl_dealloc(old_org);
   }
@@ -519,22 +547,29 @@ frs_overflow(void)              /* used as condition in list.d */
     ecl_unrecoverable_error(env, stack_overflow_msg);
   }
   env->frs_limit += margin;
-  si_serror(6, make_constant_base_string("Extend stack size"),
+  si_serror(6, ecl_make_constant_base_string("Extend stack size",-1),
             @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
             @':type', @'ext::frame-stack');
   frs_set_size(env, size + size / 2);
 }
 
 ecl_frame_ptr
-_ecl_frs_push(register cl_env_ptr env, register cl_object val)
+_ecl_frs_push(register cl_env_ptr env)
 {
-  ecl_frame_ptr output = ++env->frs_top;
+  /* We store a dummy tag first, to make sure that it is safe to
+   * interrupt this method with a call to ecl_unwind. Otherwise, a
+   * stray ECL_PROTECT_TAG will lead to segfaults. AO_nop_full is
+   * needed to ensure that the CPU doesn't reorder the memory
+   * stores. */
+  ecl_frame_ptr output = env->frs_top+1;
   if (output >= env->frs_limit) {
     frs_overflow();
-    output = env->frs_top;
+    output = env->frs_top+1;
   }
+  output->frs_val = ECL_DUMMY_TAG;
+  AO_nop_full();
+  ++env->frs_top;
   output->frs_bds_top_index = env->bds_top - env->bds_org;
-  output->frs_val = val;
   output->frs_ihs = env->ihs_top;
   output->frs_sp = ECL_STACK_INDEX(env);
   return output;
@@ -544,11 +579,15 @@ void
 ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
 {
   env->nlj_fr = fr;
-  while (env->frs_top != fr && env->frs_top->frs_val != ECL_PROTECT_TAG)
-    --env->frs_top;
-  env->ihs_top = env->frs_top->frs_ihs;
-  ecl_bds_unwind(env, env->frs_top->frs_bds_top_index);
-  ECL_STACK_SET_INDEX(env, env->frs_top->frs_sp);
+  ecl_frame_ptr top = env->frs_top;
+  while (top != fr && top->frs_val != ECL_PROTECT_TAG){
+    top->frs_val = ECL_DUMMY_TAG;
+    --top;
+  }
+  env->ihs_top = top->frs_ihs;
+  ecl_bds_unwind(env, top->frs_bds_top_index);
+  ECL_STACK_SET_INDEX(env, top->frs_sp);
+  env->frs_top = top;
   ecl_longjmp(env->frs_top->frs_jmpbuf, 1);
   /* never reached */
 }

@@ -17,12 +17,18 @@
 @(defun max (max &rest nums)
   @
   /* INV: type check occurs in ecl_number_compare() for the rest of
-     numbers, but for the first argument it happens in ecl_zerop(). */
+     numbers, but for an unary argument it happens here. */
   if (narg-- == 1) {
-    ecl_zerop(max);
+    if (! ECL_REAL_TYPE_P(ecl_t_of(max))) {
+      FEwrong_type_nth_arg(@[max], 1, max, @[real]);
+    }
   } else do {
       cl_object numi = ecl_va_arg(nums);
-      if (ecl_number_compare(max, numi) < 0)
+      if (ecl_lower(max, numi)
+#ifdef ECL_IEEE_FP
+          || ecl_float_nan_p(max)
+#endif
+          )
         max = numi;
     } while (--narg);
   @(return max);
@@ -31,12 +37,18 @@
 @(defun min (min &rest nums)
   @
   /* INV: type check occurs in ecl_number_compare() for the rest of
-     numbers, but for the first argument it happens in ecl_zerop(). */
+     numbers, but for an unary argument it happens here. */
   if (narg-- == 1) {
-    ecl_zerop(min);
+    if (! ECL_REAL_TYPE_P(ecl_t_of(min))) {
+      FEwrong_type_nth_arg(@[min], 1, min, @[real]);
+    }
   } else do {
       cl_object numi = ecl_va_arg(nums);
-      if (ecl_number_compare(min, numi) > 0)
+      if (ecl_greater(min, numi)
+#ifdef ECL_IEEE_FP
+          || ecl_float_nan_p(min)
+#endif
+          )
         min = numi;
     } while (--narg);
   @(return min);

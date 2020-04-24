@@ -1,0 +1,108 @@
+@node Standards
+@chapter Standards
+
+@menu
+* Overview::
+@c * Syntax::
+* Evaluation and compilation::
+* Types and classes::
+* Data and control flow::
+@c * Iteration::
+* Objects::
+* Structures::
+* Conditions::
+* Symbols::
+* Packages::
+* Numbers::
+* Characters::
+* Conses::
+* Arrays::
+* Strings::
+* Sequences::
+* Hash tables::
+* Filenames::
+* Files::
+* Streams::
+* Printer::
+* Reader::
+* System construction::
+* Environment::
+@c * Glossary::
+@end menu
+
+@include standards/overview.txi
+
+@c No changes regarding the standard
+@c @node Syntax
+@c @section Syntax
+
+@include standards/evaluation.txi
+@include standards/types_and_classes.txi
+@include standards/data_and_control_flow.txi
+
+@c @node Iteration
+@c @section Iteration
+
+@include standards/objects.txi
+@include standards/structures.txi
+@include standards/conditions.txi
+@include standards/symbols.txi
+@include standards/packages.txi
+@include standards/numbers.txi
+@c @node Numbers
+@c @section Numbers
+@c ext:float-nan-string
+@c ext:float-infinity-string
+
+@c make-random-state fixnum|array
+@c ext:random-state-array
+@c #$ macro
+
+@include standards/characters.txi
+@include standards/conses.txi
+@include standards/arrays.txi
+@include standards/strings.txi
+@include standards/sequences.txi
+@include standards/hashtables.txi
+@include standards/filenames.txi
+@include standards/files.txi
+@include standards/streams.txi
+@include standards/printer.txi
+@include standards/reader.txi
+@c @c #$ - random state
+
+@include standards/sys-constr.txi
+
+@c ext:*load-hooks*, si::*load-search-list* variable:
+
+@c EXT:*LOAD-HOOKS* is an assoc array of form ((TYPE . LOAD-FUNCTION)),
+@c where TYPE is either a string (i.e "lisp", "fasb" etc.), wildcard
+@c :WILD (matching any extension) and NIL for no
+@c extension. LOAD-FUNCTION is a symbol of a function used to load the
+@c file of the TYPE type.
+
+@c If the argument SOURCE of LOAD is a stream, it is read as an ordinary
+@c lisp source code, otherwise it should a pathname (or a string which
+@c may be coerced to it).
+
+@c If pathname doesn't have a directory, host nor device components,
+@c then file is looked in the `:SEARCH-LIST` directories (defaulting to
+@c si::*load-search-list*) and if found – loaded with LOAD (with
+@c pathname with a directory merged from the search-list).
+
+@c Otherwise (if a pathname does have a directory or the file can't be
+@c found in the SEARCH-LIST) and the file type is neither NIL or :WILD,
+@c then the assoc value of the TYPE is looked up in EXT:*LOAD-HOOKS* and
+@c funcalled on the file (if the TYPE doesn't exist, we load a file as a source code).
+
+@c If file type is NIL or :WILD, then we try to "guess" it's extension
+@c trying extensions from the EXT:*LOAD-HOOKS* in order in which they
+@c appear on the list. By default, first entry is (NIL
+@c . SI:LOAD-SOURCE), so if there is a file without extension in the
+@c directory, it will be treated as a source code. Otherwise we'll try
+@c known extensions.
+
+@include standards/environment.txi
+
+@c @node Glossary
+@c @section Glossary

@@ -149,9 +149,11 @@
    "DEFCLASS allows additional options which should be handled by ~
 the metaclass")
   (is
-   (equal (eval '(progn
+   (equal (eval '(let ((*aux* 5))
+                  (declare (special *aux*))
                   (defclass fee ()
                     ((a :initform *aux* :initarg :a)))
+                  (make-instance 'faa)
                   (setf (documentation (first (clos:class-slots (find-class 'fee))) t)
                    #1="hola")
                   (documentation (first (clos:class-slots (find-class 'fee))) t)))
@@ -221,6 +223,7 @@ the metaclass")
       ((slot-0 :initform 2 :reader slot-2)))
     (defclass fee-3 (fee-1 fee-2)
       ((slot-0 :initform 3 :accessor c-slot-0)))
+    (make-instance 'fee-3)              ; finalizes inheritance
     (flet ((accessors (class)
              (list (class-name class)
                    (mapcar #'clos:slot-definition-readers (clos:class-slots class))
@@ -616,19 +619,18 @@ the metaclass")
   (defclass c (a b) ())
   (defmethod f ((o a)))
   (defmethod f ((o b)))
+  (make-instance 'c)                    ; finalizes inheritance
   (test mop.0020.c-a-m-disambiguation
     (finishes
-      (clos:compute-applicable-methods-using-classes
-       #'f (list (find-class 'c))))))
+     (clos:compute-applicable-methods-using-classes
+      #'f (list (find-class 'c))))))
 
-
 ;;; Bug #46
 ;;;
 ;;; Reported 2016-05-30
 ;;;
-;;; Description: DEFGENERIC doesn't create methods on same pass as
-;;;  creating generics.
-#+ (or)
+;;; Description: DEFGENERIC doesn't create methods on same pass as creating
+;;; generics.
 (test mop.0021.ensure-generic
   (is (progn (fmakunbound 'mop.0021.ensure-generic.fun)
              (defun mop.0021.ensure-generic.fun () 'hi)
@@ -637,3 +639,118 @@ the metaclass")
 (defmethod mop.0021.ensure-generic.fun () (print 'bye))
 ")
                (compile-file input-file)))))
+
+;;; Bug #426
+;;;
+;;; CLOS::*CLOS-BOOTED* wasn't set correctly because of gray-streams bootstrap
+;;; (fundamental-stream subclasses stream).
+(ext:with-clean-symbols (foo)
+  (test mop.0022.subclass-builtin
+    (signals error (defclass foo (stream) ()))))
+
+;;; Bug #425
+;;;
+;;; update-dependent didn't invalidate initarg caches when new methods were
+;;; defined.
+(ext:with-clean-symbols (foo)
+  (test mop.0023.update-dependent
+    (defclass foo () ())
+    (finishes (make-instance 'foo))
+    (signals error (make-instance 'foo :test "hi"))
+    (defmethod initialize-instance :after ((obj foo) &key test) test)
+    (finishes (make-instance 'foo :test "hi"))
+    (signals error (make-instance 'foo :test "hi" :bam "bye"))))
+
+;;; Ensure that forward-referenced classes work as expected.
+(ext:with-clean-symbols (foo1 foo2)
+  (test mop.0024.frc
+    (finishes (defclass foo1 (foo2) ()))
+    (signals error (make-instance 'foo1))
+    (finishes (defclass foo2 () ()))
+    (finishes (make-instance 'foo1))))
+
+;;; Date 2020-04-05
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/568
+;;; Fixed: 557541f3
+;;; Description
+;;;
+;;;     Finalizing inheritance of a standard-effective-slot-definition
+;;;     lead to the infinite recursion by making all its instances
+;;;     obsolete (including its own slots!).
+(test mop.0025.xxx
+  (finishes
+   (clos:finalize-inheritance
+    (find-class 'clos:standard-effective-slot-definition))))
+
+;;; Date 2020-04-07
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/merge_requests/194
+;;; Description
+;;;
+;;;     Some implementations extend the lambda list congruency for
+;;;     generic functions and methods by allowing methods not accept
+;;;     keys mentioned in the generic function lambda list if it has
+;;;     &allow-other-keys. We follow the suit for compatibility with a
+;;;     bad code.
+(ext:with-clean-symbols (foo bar)
+  (test mop.0026.congruent-ll
+    (defgeneric foo (arg1 &key arg2 &allow-other-keys))
+    (finishes (defmethod  foo ((arg1 integer) &key arg3)))
+    (finishes (defmethod  foo ((arg1 string) &key arg3 &allow-other-keys)))
+    (defgeneric bar (arg1 &key arg2))
+    (finishes (defmethod bar ((arg1 string) &key arg3 &allow-other-keys)))
+    (signals error (defmethod bar ((arg1 integer) &key arg3)))))
+
+;;; Date 2020-04-10
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/572
+;;; Fixed: 6ea255fe
+;;; Description
+;;;
+;;;     Fix in 557541f3 (see the test mop.0025.xxx) introduced a
+;;;     regression for custom compute-class-precedence-list methods.
+;;;     This issue is triggered only by a non-conforming code which
+;;;     defines the method which returns a sequence which first
+;;;     element *is not* the class passes as the argument. See:
+;;;
+;;;     http://metamodular.com/CLOS-MOP/compute-class-precedence-list.html
+(ext:with-clean-symbols (meta hack test-class)
+  (test mop.0027.finalize-inheritance
+    (finishes
+      (progn (defclass meta (standard-class) ())
+             (defclass hack () ())
+             (defmethod clos:validate-superclass ((class meta) (super standard-class)) t)
+             (defmethod clos:validate-superclass ((class standard-class) (super meta)) t)
+             (defmethod clos:compute-class-precedence-list ((class meta))
+               (cons (find-class 'hack) (call-next-method)))
+             (defclass test-class () () (:metaclass meta))))))
+
+;;; Date 2020-04-14
+;;; Description
+;;;
+;;;     This is a local regression (never commited to the repository),
+;;;     which signals "function class-a-c undefined" when redefining a
+;;;     class after removing a slot.
+(ext:with-clean-symbols (class-a class-a-b class-a-c)
+  (test mop.0028.local-regression
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)
+       (c :accessor class-a-c :initarg :c)))
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)))
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)
+       (c :accessor class-a-c :initarg :c)))
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)
+       (c :accessor class-a-c :initarg :c)))))
+
+;;; Date 2020-04-16
+;;; Description
+;;;
+;;;     When finializing the standard-method metaclass we had
+;;;     encountered a metastability issue when regenerating the
+;;;     standard accessors (which implies removing them first as
+;;;     specified in MOP), where METHOD-GENERIC-FUNCTION is invoked
+;;;     from ADD-DIRECT-METHOD after specialization on the
+;;;     STANDARD-METHOD is removed.
+(test mop.0029.standard-method-metastability
+  (finishes (clos:finalize-inheritance (find-class 'standard-method))))

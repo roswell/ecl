@@ -927,11 +927,11 @@ collected result will be returned as the value of the LOOP."
                 (loop-error "Duplicated variable ~S in LOOP parallel binding." name)))
          (unless (symbolp name)
            (loop-error "Bad variable ~S somewhere in LOOP." name))
-         (loop-declare-variable name dtype)
-         ;; We use ASSOC on this list to check for duplications (above),
-         ;; so don't optimize out this list:
-         (push (list name (or initialization (loop-typed-init dtype)))
-               *loop-variables*))
+         (let ((init (or initialization (loop-typed-init dtype))))
+           (loop-declare-variable name dtype init)
+           ;; We use ASSOC on this list to check for duplications (above),
+           ;; so don't optimize out this list:
+           (push (list name init) *loop-variables*)))
         (initialization
          (cond (*loop-destructuring-hooks*
                 (loop-declare-variable name dtype)
@@ -957,11 +957,15 @@ collected result will be returned as the value of the LOOP."
   (loop-make-variable name initialization dtype t))
 
 
-(defun loop-declare-variable (name dtype)
+(defun loop-declare-variable (name dtype &optional (initialization nil initialization-p))
   (declare (si::c-local))
   (cond ((or (null name) (null dtype) (eq dtype t)) nil)
         ((symbolp name)
          (unless (or (eq dtype t) (member (truly-the symbol name) *loop-nodeclare*))
+           (when (and initialization-p (constantp initialization))
+             (let ((init-type (type-of initialization)))
+               (unless (subtypep init-type dtype)
+                 (setf dtype `(or ,dtype ,init-type)))))
            ;; Allow redeclaration of a variable. This can be used by
            ;; the loop constructors to make the type more and more
            ;; precise as we add keywords
@@ -975,10 +979,12 @@ collected result will be returned as the value of the LOOP."
                  (setf (second previous) dtype)
                  (push `(type ,dtype ,name) *loop-declarations*)))))
         ((consp name)
+         ;; to be on the safe side, we always assume that
+         ;; destructuring variable bindings initialize to nil
          (cond ((consp dtype)
-                (loop-declare-variable (car name) (car dtype))
+                (loop-declare-variable (car name) (car dtype) nil)
                 (loop-declare-variable (cdr name) (cdr dtype)))
-               (t (loop-declare-variable (car name) dtype)
+               (t (loop-declare-variable (car name) dtype nil)
                   (loop-declare-variable (cdr name) dtype))))
         (t (error "Invalid LOOP variable passed in: ~S." name))))
 
@@ -1256,7 +1262,7 @@ collected result will be returned as the value of the LOOP."
       (setq pseudo-steps (nconc pseudo-steps (copy-list (car (setq tem (cdr tem))))))
       (setq tem (cdr tem))
       (when *loop-emitted-body*
-        (loop-error "Iteration in LOOP follows body code. This error is typicall caused
+        (loop-error "Iteration in LOOP follows body code. This error is typically caused
 by a WHILE, UNTIL or similar condition placed in between FOR, AS, and similar iterations.
 Note that this is not a valid ANSI code."))
       (unless tem (setq tem data))
@@ -1411,7 +1417,8 @@ Note that this is not a valid ANSI code."))
       (cond ((and var (symbolp var))
              (loop-make-iteration-variable var list data-type))
             (t
-             (loop-make-variable (setq listvar (gensym)) list 'list)
+             ;; using data type 'list for listvar can lead to errors for dotted lists
+             (loop-make-variable (setq listvar (gensym)) list nil)
              (loop-make-iteration-variable var nil data-type)))
       (let ((list-step (loop-list-step listvar)))
         (let* ((first-endtest
@@ -1683,22 +1690,32 @@ Note that this is not a valid ANSI code."))
      (when step-hack
        (setq step-hack `(,variable ,step-hack)))
      (let ((first-test test) (remaining-tests test))
-       (when (and stepby-constantp start-constantp limit-constantp)
+       (when (and stepby-constantp start-constantp)
          ;; We can make the number type more precise when we know the
          ;; start, end and step values.
-         (let ((new-type (typecase (+ start-value stepby limit-value)
+         (let ((new-type (typecase (+ start-value stepby)
                            (integer (if (and (fixnump start-value)
-                                             (fixnump limit-value))
+                                             limit-constantp
+                                             (< limit-value most-positive-fixnum)
+                                             (> limit-value most-negative-fixnum))
                                         'fixnum
-                                        indexv-type))
+                                        'integer))
                            (single-float 'single-float)
                            (double-float 'double-float)
                            (long-float 'long-float)
                            (short-float 'short-float)
                            (t indexv-type))))
+           (unless (subtypep (type-of start-value) new-type)
+             ;; The start type may not be a subtype of the type during
+             ;; iteration. Happens e.g. when stepping a fixnum start
+             ;; value by a float.
+             (setf new-type `(or ,(type-of start-value) ,new-type)))
            (unless (subtypep indexv-type new-type)
              (loop-declare-variable indexv new-type)))
-         (when (setq first-test (funcall (symbol-function testfn) start-value limit-value))
+         (when (and limit-constantp
+                    (setq first-test (funcall (symbol-function testfn)
+                                              start-value
+                                              limit-value)))
            (setq remaining-tests t)))
        `(() (,indexv ,step) ,remaining-tests ,step-hack
          () () ,first-test ,step-hack))))

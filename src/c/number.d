@@ -13,6 +13,7 @@
  */
 
 #include <float.h>
+#include <complex.h>
 #include <limits.h>
 #include <signal.h>
 #define ECL_INCLUDE_MATH_H
@@ -21,23 +22,37 @@
 #include <ecl/internal.h>
 #include <ecl/impl/math_fenv.h>
 
-#if defined(ECL_IEEE_FP) && defined(HAVE_FEENABLEEXCEPT)
+#if defined(ECL_IEEE_FP)
+# if defined(ECL_AVOID_FPE_H)
+/*
+ * We don't check for floating point exceptions
+ */
+#  define DO_DETECT_FPE(f)
+#  define DO_DETECT_FPE2(f1,f2)
+# elif defined(HAVE_FEENABLEEXCEPT)
 /*
  * We are using IEEE arithmetics and can rely on FPE exceptions
  * to be raised when invalid operations are performed.
  */
-# define DO_DETECT_FPE(f) ecl_detect_fpe()
+#  define DO_DETECT_FPE(f) ecl_detect_fpe()
+#  define DO_DETECT_FPE2(f1,f2) DO_DETECT_FPE(f1)
+# else
+/*
+ * We need explicit checks for floating point exception bits being
+ * set; ECL_MATHERR_TEST handles this for us, so nothing to do here.
+ */
+#  define DO_DETECT_FPE(f)
+#  define DO_DETECT_FPE2(f1,f2)
+# endif
 #else
 /*
- * Either we can not rely on C signals or we do not want IEEE NaNs and
- * infinities. The first case typically happens for instance under OS
- * X, where the status of the FPE control word is changed by
- * printf. We have two alternatives.
+ * We do not want IEEE NaNs and infinities
  */
-# define DO_DETECT_FPE(f) do {                                  \
-    unlikely_if (isnan(f)) ecl_deliver_fpe(FE_INVALID);         \
-    unlikely_if (!isfinite(f)) ecl_deliver_fpe(FE_OVERFLOW);    \
+# define DO_DETECT_FPE(f) do {                                   \
+    unlikely_if (isnan(f)) ecl_deliver_fpe(FE_INVALID);          \
+    unlikely_if (!isfinite(f)) ecl_deliver_fpe(FE_OVERFLOW);     \
   } while (0)
+# define DO_DETECT_FPE2(f1,f2) DO_DETECT_FPE(f1); DO_DETECT_FPE(f2)
 #endif
 
 #if !ECL_CAN_INLINE
@@ -227,13 +242,13 @@ ecl_to_uint64_t(cl_object x) {
       cl_object copy = _ecl_big_register0();
       mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
       if (mpz_fits_ulong_p(copy->big.big_num)) {
-        volatile ecl_uint64_t output;
+        ecl_uint64_t output;
         output = (ecl_uint64_t)mpz_get_ui(copy->big.big_num);
-        output = (output << 32) +
-          (ecl_uint64_t)mpz_get_ui(x->big.big_num);
+        output = (output << 32) + (ecl_uint64_t)mpz_get_ui(x->big.big_num);
         _ecl_big_register_free(copy);
         return output;
       }
+      _ecl_big_register_free(copy);
     }
   }
   FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),
@@ -256,8 +271,11 @@ ecl_to_int64_t(cl_object x) {
       ecl_int64_t output;
       output = (ecl_int64_t)mpz_get_si(copy->big.big_num);
       mpz_fdiv_r_2exp(copy->big.big_num, x->big.big_num, 32);
-      return (output << 32) + mpz_get_ui(copy->big.big_num);
+      output = (output << 32) + mpz_get_ui(copy->big.big_num);
+      _ecl_big_register_free(copy);
+      return output;
     }
+    _ecl_big_register_free(copy);
   }
   FEwrong_type_argument(cl_list(3,@'integer',
                                 ecl_negate(ecl_ash(ecl_make_fixnum(1), 63)),
@@ -343,15 +361,17 @@ ecl_to_ulong_long(cl_object x) {
       int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
       mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
       if (mpz_fits_ulong_p(copy->big.big_num)) {
-        volatile ecl_ulong_long_t output;
+        ecl_ulong_long_t output;
         output = mpz_get_ui(copy->big.big_num);
         for (i -= ECL_FIXNUM_BITS; i;
              i-= ECL_FIXNUM_BITS) {
           output = (output << ECL_FIXNUM_BITS);
           output += mpz_get_ui(x->big.big_num);
         }
+        _ecl_big_register_free(copy);
         return output;
       }
+      _ecl_big_register_free(copy);
     }
   }
   FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),
@@ -374,14 +394,16 @@ ecl_to_long_long(cl_object x)
     int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
     mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
     if (mpz_fits_ulong_p(copy->big.big_num)) {
-      volatile ecl_long_long_t output;
+      ecl_long_long_t output;
       output = mpz_get_si(copy->big.big_num);
       for (i -= ECL_FIXNUM_BITS; i; i-= ECL_FIXNUM_BITS) {
         output = (output << ECL_FIXNUM_BITS);
         output += mpz_get_ui(x->big.big_num);
       }
+      _ecl_big_register_free(copy);
       return output;
     }
+    _ecl_big_register_free(copy);
   }
   FEwrong_type_argument(cl_list(3,@'integer',
                                 ecl_negate(ecl_ash(ecl_make_fixnum(1), ECL_LONG_LONG_BITS-1)),
@@ -506,7 +528,6 @@ ecl_make_double_float(double f)
   return(x);
 }
 
-#ifdef ECL_LONG_FLOAT
 cl_object
 ecl_make_long_float(long double f)
 {
@@ -524,224 +545,206 @@ ecl_make_long_float(long double f)
   x->longfloat.value = f;
   return x;
 }
-#endif
 
 cl_object
 ecl_make_complex(cl_object r, cl_object i)
 {
-  cl_object c;
-  cl_type ti;
- AGAIN:
-  ti = ecl_t_of(i);
-  /* Both R and I are promoted to a common type */
-  switch (ecl_t_of(r)) {
+  cl_object c = ECL_NIL;
+  cl_type tr = ecl_t_of(r);
+  cl_type ti = ecl_t_of(i);
+  if (!ECL_REAL_TYPE_P(tr)) { ecl_type_error(@'complex', "real part", r, @'real'); }
+  if (!ECL_REAL_TYPE_P(ti)) { ecl_type_error(@'complex', "imaginary part", i, @'real'); }
+  switch((tr > ti) ? tr : ti) {
+#ifdef ECL_COMPLEX_FLOAT
+  case t_longfloat:   return ecl_make_clfloat(CMPLXL(ecl_to_long_double(r), ecl_to_long_double(i)));
+  case t_doublefloat: return ecl_make_cdfloat(CMPLX(ecl_to_double(r), ecl_to_double(i)));
+  case t_singlefloat: return ecl_make_csfloat(CMPLXF(ecl_to_float(r), ecl_to_float(i)));
+#else
+  case t_singlefloat:
+    c = ecl_alloc_object(t_complex);
+    c->gencomplex.real = ecl_make_single_float(ecl_to_float(r));
+    c->gencomplex.imag = ecl_make_single_float(ecl_to_float(i));
+    return c;
+  case t_doublefloat:
+    c = ecl_alloc_object(t_complex);
+    c->gencomplex.real = ecl_make_double_float(ecl_to_double(r));
+    c->gencomplex.imag = ecl_make_double_float(ecl_to_double(i));
+    return c;
+  case t_longfloat:
+    c = ecl_alloc_object(t_complex);
+    c->gencomplex.real = ecl_make_long_float(ecl_to_long_double(r));
+    c->gencomplex.imag = ecl_make_long_float(ecl_to_long_double(i));
+    return c;
+#endif
   case t_fixnum:
   case t_bignum:
   case t_ratio:
-    switch (ti) {
-    case t_fixnum:
-      if (i == ecl_make_fixnum(0))
-        return(r);
-    case t_bignum:
-    case t_ratio:
-      break;
-    case t_singlefloat:
-      r = ecl_make_single_float((float)ecl_to_double(r));
-      break;
-    case t_doublefloat:
-      r = ecl_make_double_float(ecl_to_double(r));
-      break;
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      r = ecl_make_long_float(ecl_to_double(r));
-      break;
-#endif
-    default:
-      i = ecl_type_error(@'complex',"imaginary part", i, @'real');
-      goto AGAIN;
-    }
-    break;
-  case t_singlefloat:
-    switch (ti) {
-    case t_fixnum:
-    case t_bignum:
-    case t_ratio:
-      i = ecl_make_single_float((float)ecl_to_double(i));
-      break;
-    case t_singlefloat:
-      break;
-    case t_doublefloat:
-      r = ecl_make_double_float((double)(ecl_single_float(r)));
-      break;
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      r = ecl_make_long_float((long double)ecl_single_float(r));
-      break;
-#endif
-    default:
-      i = ecl_type_error(@'complex',"imaginary part", i, @'real');
-      goto AGAIN;
-    }
-    break;
-  case t_doublefloat:
-    switch (ti) {
-    case t_fixnum:
-    case t_bignum:
-    case t_ratio:
-    case t_singlefloat:
-      i = ecl_make_double_float(ecl_to_double(i));
-    case t_doublefloat:
-      break;
-#ifdef ECL_LONG_FLOAT
-    case t_longfloat:
-      r = ecl_make_long_float((long double)ecl_double_float(r));
-      break;
-#endif
-    default:
-      i = ecl_type_error(@'complex',"imaginary part", i, @'real');
-      goto AGAIN;
-    }
-    break;
-#ifdef ECL_LONG_FLOAT
-  case t_longfloat:
-    if (ti != t_longfloat)
-      i = ecl_make_long_float((long double)ecl_to_double(i));
-    break;
-#endif
+    if (i == ecl_make_fixnum(0))
+      return r;
+    c = ecl_alloc_object(t_complex);
+    c->gencomplex.real = r;
+    c->gencomplex.imag = i;
+    return c;
   default:
-    r = ecl_type_error(@'complex',"real part", r, @'real');
-    goto AGAIN;
-
+    FEerror("ecl_make_complex: unexpected argument type.", 0);
   }
-  c = ecl_alloc_object(t_complex);
-  c->complex.real = r;
-  c->complex.imag = i;
   return(c);
 }
 
-static cl_object
-into_bignum(cl_object bignum, cl_object integer)
-{
-  if (ECL_FIXNUMP(integer)) {
-    _ecl_big_set_fixnum(bignum, ecl_fixnum(integer));
-  } else {
-    mpz_set(bignum->big.big_num, integer->big.big_num);
-  }
-  return bignum;
-}
+#ifdef ECL_COMPLEX_FLOAT
+/* This function is safe. Still both arguments must be of the same
+   float type, otherwise a type error will be signalled. -- jd 2019-04-03 */
 
-static cl_fixnum
-remove_zeros(cl_object *integer)
-{
-  cl_object buffer = into_bignum(_ecl_big_register0(), *integer);
-  unsigned long den_twos = mpz_scan1(buffer->big.big_num, 0);
-  if (den_twos < ULONG_MAX) {
-    mpz_div_2exp(buffer->big.big_num, buffer->big.big_num, den_twos);
-    *integer = _ecl_big_register_normalize(buffer);
-    return -den_twos;
-  } else {
-    _ecl_big_register_free(buffer);
-    return 0;
+cl_object si_complex_float_p(cl_object f) {
+  switch(ecl_t_of(f)) {
+  case t_csfloat:
+  case t_cdfloat:
+  case t_clfloat:
+    return ECL_T;
+  default:
+    return ECL_NIL;
   }
 }
 
-static cl_object
-prepare_ratio_to_float(cl_object num, cl_object den, int digits, cl_fixnum *scaleout)
+cl_object
+si_complex_float(cl_object r, cl_object i)
 {
-  /* We have to cook our own routine because GMP does not round.
-   * The recipe is simple: we multiply the numberator by a large
-   * enough number so that the division by the denominator fits
+  cl_type tr = ecl_t_of(r);
+  cl_type ti = ecl_t_of(i);
+  cl_object result;
+  switch (tr) {
+  case t_singlefloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'single-float'); }
+    result = ecl_alloc_object(t_csfloat);
+    ecl_csfloat(result) = CMPLXF(ecl_single_float(r), ecl_single_float(i));
+    break;
+  case t_doublefloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'double-float'); }
+    result = ecl_alloc_object(t_cdfloat);
+    ecl_cdfloat(result) = CMPLX(ecl_double_float(r), ecl_double_float(i));
+    break;
+  case t_longfloat:
+    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'long-float'); }
+    result = ecl_alloc_object(t_clfloat);
+    ecl_clfloat(result) = CMPLXL(ecl_long_float(r), ecl_long_float(i));
+    break;
+  default:
+    ecl_type_error(@'si::complex-float',"real part", r, @'float');
+  }
+  return result;
+}
+
+cl_object ecl_make_csfloat(float _Complex x) {
+  DO_DETECT_FPE2(crealf(x), cimagf(x));
+
+  cl_object c = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(c) = x;
+  return c;
+}
+
+cl_object ecl_make_cdfloat(double _Complex x) {
+  DO_DETECT_FPE2(creal(x), cimag(x));
+
+  cl_object c = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(c) = x;
+  return c;
+}
+
+cl_object ecl_make_clfloat(long double _Complex x) {
+  DO_DETECT_FPE2(creall(x), cimagl(x));
+
+  cl_object c = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(c) = x;
+  return c;
+}
+#endif
+
+static cl_object
+mantissa_and_exponent_from_ratio(cl_object num, cl_object den, int digits, cl_fixnum *exponent)
+{
+  /* We have to cook our own routine because GMP does not round. The
+   * recipe is simple: we multiply the numerator by a large enough
+   * number so that the integer length of the division by the
+   * denominator is equal to the number of digits of the mantissa of
    * the floating point number. The result is scaled back by the
    * appropriate exponent.
    */
-  /* Scale down the denominator, eliminating the zeros
-   * so that we have smaller operands.
-   */
-  cl_fixnum scale = remove_zeros(&den);
-  cl_fixnum num_size = ecl_integer_length(num);
-  cl_fixnum delta = ecl_integer_length(den) - num_size;
-  scale -= delta;
-  {
-    cl_fixnum adjust = digits + delta + 1;
-    if (adjust > 0) {
-      num = ecl_ash(num, adjust);
-    } else if (adjust < 0) {
-      den = ecl_ash(den, -adjust);
-    }
+  bool negative = 0;
+  if (ecl_minusp(num)) {
+    negative = 1;
+    num = ecl_negate(num);
   }
-  do {
-    const cl_env_ptr the_env = ecl_process_env();
-    cl_object fraction = ecl_truncate2(num, den);
-    cl_object rem = ecl_nth_value(the_env, 1);
-    cl_fixnum len = ecl_integer_length(fraction);
-    if ((len - digits) == 1) {
-      if (ecl_oddp(fraction)) {
-        cl_object one = ecl_minusp(num)?
-          ecl_make_fixnum(-1) :
-          ecl_make_fixnum(1);
-        if (rem == ecl_make_fixnum(0)) {
-          if (cl_logbitp(ecl_make_fixnum(1), fraction)
-              != ECL_NIL)
-            fraction = ecl_plus(fraction, one);
-        } else {
-          fraction = ecl_plus(fraction, one);
-        }
-      }
-      *scaleout = scale - (digits + 1);
-      return fraction;
-    }
-    den = ecl_ash(den, 1);
-    scale++;
-  } while (1);
+  cl_fixnum num_digits = ecl_integer_length(num);
+  cl_fixnum den_digits = ecl_integer_length(den);
+  cl_fixnum scale = digits+1 - (num_digits - den_digits);
+  /* Scale the numerator in the correct range so that the quotient
+   * truncated to an integer has a length of digits+1 or digits+2. If
+   * scale is negative, we simply shift out unnecessary digits of num,
+   * which don't affect the quotient. */
+  num = ecl_ash(num, scale);
+  cl_object quotient = ecl_integer_divide(num, den);
+  if (ecl_integer_length(quotient) > digits+1) {
+    /* quotient is too large, shift out an unnecessary digit */
+    scale--;
+    quotient = ecl_ash(quotient, -1);
+  }
+  /* round quotient */
+  if (ecl_oddp(quotient)) {
+    quotient = ecl_one_plus(quotient);
+  }
+  /* shift out the remaining unnecessary digit of quotient */
+  quotient = ecl_ash(quotient, -1);
+  /* fix the sign */
+  if (negative) {
+    quotient = ecl_negate(quotient);
+  }
+  *exponent = 1 - scale;
+  return quotient;
 }
 
 #if 0 /* Unused, we do not have ecl_to_float() */
 static float
 ratio_to_float(cl_object num, cl_object den)
 {
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, FLT_MANT_DIG, &scale);
+  cl_fixnum exponent;
+  cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, FLT_MANT_DIG, &exponent);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  float output = ecl_fixnum(bits);
+  /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
+  double output = ecl_fixnum(mantissa);
 #else
-  float output = ECL_FIXNUMP(bits)? ecl_fixnum(bits) : _ecl_big_to_double(bits);
+  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_double(mantissa);
 #endif
-  return ldexpf(output, scale);
+  return ldexpf(output, exponent);
 }
 #endif
 
 static double
 ratio_to_double(cl_object num, cl_object den)
 {
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, DBL_MANT_DIG, &scale);
+  cl_fixnum exponent;
+  cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, DBL_MANT_DIG, &exponent);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  double output = ecl_fixnum(bits);
+  /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
+  double output = ecl_fixnum(mantissa);
 #else
-  double output = ECL_FIXNUMP(bits)? ecl_fixnum(bits) : _ecl_big_to_double(bits);
+  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_double(mantissa);
 #endif
-  return ldexp(output, scale);
+  return ldexp(output, exponent);
 }
 
-#ifdef ECL_LONG_FLOAT
 static long double
 ratio_to_long_double(cl_object num, cl_object den)
 {
-  cl_fixnum scale;
-  cl_object bits = prepare_ratio_to_float(num, den, LDBL_MANT_DIG, &scale);
+  cl_fixnum exponent;
+  cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, LDBL_MANT_DIG, &exponent);
 #if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
-  /* The output of prepare_ratio_to_float will always fit an integer */
-  long double output = ecl_fixnum(bits);
+  /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
+  long double output = ecl_fixnum(mantissa);
 #else
-  long double output = ECL_FIXNUMP(bits)?
-    (long double)ecl_fixnum(bits) :
-    _ecl_big_to_long_double(bits);
+  long double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_long_double(mantissa);
 #endif
-  return ldexpl(output, scale);
+  return ldexpl(output, exponent);
 }
-#endif /* ECL_LONG_FLOAT */
 
 float
 ecl_to_float(cl_object x)
@@ -759,10 +762,8 @@ ecl_to_float(cl_object x)
     return ecl_single_float(x);
   case t_doublefloat:
     return (float)ecl_double_float(x);
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return (float)ecl_long_float(x);
-#endif
   default:
     FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
   }
@@ -782,16 +783,13 @@ ecl_to_double(cl_object x)
     return (double)ecl_single_float(x);
   case t_doublefloat:
     return(ecl_double_float(x));
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return (double)ecl_long_float(x);
-#endif
   default:
     FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
   }
 }
 
-#ifdef ECL_LONG_FLOAT
 long double
 ecl_to_long_double(cl_object x)
 {
@@ -810,6 +808,66 @@ ecl_to_long_double(cl_object x)
     return ecl_long_float(x);
   default:
     FEwrong_type_nth_arg(@[coerce], 1, x, @[real]);
+  }
+}
+
+#ifdef ECL_COMPLEX_FLOAT
+float _Complex ecl_to_csfloat(cl_object x) {
+  switch(ecl_t_of(x)) {
+  case t_fixnum:
+  case t_bignum:
+  case t_ratio:
+  case t_singlefloat:
+  case t_doublefloat:
+  case t_longfloat: {
+    return ecl_to_float(x);
+  }
+  case t_complex: {
+    return ecl_to_float(x->gencomplex.real) + I * ecl_to_float(x->gencomplex.imag);
+  }
+  case t_csfloat: return ecl_csfloat(x);
+  case t_cdfloat: return ecl_cdfloat(x);
+  case t_clfloat: return ecl_clfloat(x);
+  default:
+    FEwrong_type_nth_arg(@[coerce], 1, x, @[number]);
+  }
+}
+
+double _Complex  ecl_to_cdfloat(cl_object x) {
+  switch(ecl_t_of(x)) {
+  case t_fixnum:
+  case t_bignum:
+  case t_ratio:
+  case t_singlefloat:
+  case t_doublefloat:
+  case t_longfloat:
+    return ecl_to_double(x);
+  case t_complex:
+    return ecl_to_double(x->gencomplex.real) + I * ecl_to_double(x->gencomplex.imag);
+  case t_csfloat: return ecl_csfloat(x);
+  case t_cdfloat: return ecl_cdfloat(x);
+  case t_clfloat: return ecl_clfloat(x);
+  default:
+    FEwrong_type_nth_arg(@[coerce], 1, x, @[number]);
+  }
+}
+
+long double _Complex ecl_to_clfloat(cl_object x) {
+  switch(ecl_t_of(x)) {
+  case t_fixnum:
+  case t_bignum:
+  case t_ratio:
+  case t_singlefloat:
+  case t_doublefloat:
+  case t_longfloat:
+    return ecl_to_long_double(x);
+  case t_complex:
+    return ecl_to_long_double(x->gencomplex.real) + I * ecl_to_long_double(x->gencomplex.imag);
+  case t_csfloat: return ecl_csfloat(x);
+  case t_cdfloat: return ecl_cdfloat(x);
+  case t_clfloat: return ecl_clfloat(x);
+  default:
+    FEwrong_type_nth_arg(@[coerce], 1, x, @[number]);
   }
 }
 #endif
@@ -843,7 +901,6 @@ cl_rational(cl_object x)
       }
     }
     break;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     if (d == 0) {
@@ -862,7 +919,6 @@ cl_rational(cl_object x)
     }
     break;
   }
-#endif
   default:
     x = ecl_type_error(@'rational',"argument",x,@'number');
     goto AGAIN;
@@ -870,7 +926,6 @@ cl_rational(cl_object x)
   @(return x);
 }
 
-#ifdef ECL_LONG_FLOAT
 cl_object
 _ecl_long_double_to_integer(long double d0)
 {
@@ -891,7 +946,6 @@ _ecl_long_double_to_integer(long double d0)
     return o;
   }
 }
-#endif
 
 cl_object
 _ecl_double_to_integer(double d)

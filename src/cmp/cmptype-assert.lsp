@@ -101,10 +101,17 @@
            (c1checked-value (list (values-type-primary-type type)
                                   value)))
           ((and (policy-evaluate-forms) (constantp value *cmp-env*))
-           (unless (typep (ext:constant-form-value value *cmp-env*) type)
-             (cmpwarn "Failed type assertion for value ~A and type ~A"
-                      value type))
-           value)
+           (if (typep (ext:constant-form-value value *cmp-env*) type)
+               value
+               (progn
+                 ;; warn and generate error.
+                 (cmpwarn "Failed type assertion for value ~A and type ~A"
+                          value type)
+                 (c1expr `(error 'simple-type-error
+                                 :datum ,value
+                                 :expected-type ',type
+                                 :format-control "The constant value ~S is not a ~S"
+                                 :format-arguments (list ,value ',type))))))
           ;; Is the form type contained in the test?
           ((progn
              (setf form (c1expr value)
@@ -119,7 +126,7 @@
            form)
           ;; Otherwise, emit a full test
           (t
-           (cmpnote "Checking type of ~S to be ~S" value type)
+           (cmpdebug "Checking type of ~S to be ~S" value type)
            (let ((full-check
                   (with-clean-symbols (%checked-value)
                     `(let* ((%checked-value ,value))
@@ -140,11 +147,11 @@
 expression, ensuring that it is satisfied."
   (when (and (policy-type-assertions env)
              (not (trivial-type-p type)))
-    (cmpnote "Checking type of ~A to be ~A" value type)
+    (cmpdebug "Checking type of ~A to be ~A" value type)
     `(checked-value ,type ,value)))
 
 (defmacro type-assertion (&whole whole value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
-  (cmpnote "Checking type of ~A to be ~A" value type)
+  (cmpdebug "Checking type of ~A to be ~A" value type)
   (unless (trivial-type-p type)
     (expand-type-assertion value type env t)))

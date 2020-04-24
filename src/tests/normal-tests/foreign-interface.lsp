@@ -25,7 +25,7 @@
 #-ecl-bytecmp
 (test ffi.0001.callback
   (is
-   (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
+   (and (ensure-directories-exist "tmp/")
         (with-open-file (s "tmp/a.lsp" :direction :output
                            :if-exists :supersede
                            :if-does-not-exist :create)
@@ -39,8 +39,7 @@
         (c:build-program "tmp/foo" :lisp-files
                          (list (compile-file-pathname "tmp/a.lsp" :type :object)
                                (compile-file-pathname "tmp/b.lsp" :type :object)))
-        (probe-file (compile-file-pathname "tmp/foo" :type :program))
-        (zerop (si::system "rm -rf tmp")))))
+        (probe-file (compile-file-pathname "tmp/foo" :type :program)))))
 
 ;;; Date: 29/07/2008
 ;;; From: Juajo
@@ -50,7 +49,7 @@
 #-ecl-bytecmp
 (test ffi.0002.callback-sffi-example
   (is
-   (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
+   (and (ensure-directories-exist "tmp/")
         (with-open-file (s "tmp/c.lsp" :direction :output
                            :if-exists :supersede
                            :if-does-not-exist :create)
@@ -79,7 +78,7 @@ int (*foo)(int) = (int (*)(int))#0;
 #+(and (or) dffi (not ecl-bytecmp))
 (test ffi.0003.callback-dffi-example
   (is
-   (and (zerop (si::system "rm -rf tmp; mkdir tmp"))
+   (and (ensure-directories-exist "tmp/")
         (with-open-file (s "tmp/c.lsp" :direction :output
                            :if-exists :supersede
                            :if-does-not-exist :create)
@@ -113,3 +112,27 @@ int (*foo)(int) = (int (*)(int))#0;
 (test ffi.0005.string-is-array
   (finishes
     (si::make-foreign-data-from-array "dan")))
+
+;;; Date: 2019-12-16
+;;; Description:
+;;;     Regression test to ensure correct complex float handling by
+;;;     the interface. On some platforms libffi is miscompiled to
+;;;     mishandle complex float return values. See the commit message
+;;;     in a commit ad5fe834.
+#+complex-float
+(defun ffi.0006.complex-floats ()
+  ;; dffi
+  (let* ((arg #C(10.0s0 0.5s0))
+         (expect (atanh arg)))
+    (finishes (ffi:def-function "catanhf" ((x :csfloat))
+                :returning :csfloat
+                :module :default))
+    (is (= expect (catanhf arg))))
+  ;; sffi
+  #-ecl-bytecmp
+  (let* ((arg #C(10.0s0 0.5s0))
+         (expect (atanh arg)))
+    (finishes (ffi:def-function "catanhf" ((x :csfloat))
+                :returning :csfloat))
+    (compile 'catanhf)
+    (is (= expect (catanhf arg)))))

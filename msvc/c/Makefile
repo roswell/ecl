@@ -23,7 +23,8 @@ THREADS_OBJ=
 ECL_UNICODE_FLAG=21
 ECL_UCD_OBJ = ucd.obj ucd-0000.obj ucd-0016.obj \
 	      ucd-0032.obj ucd-0048.obj ucd-0064.obj \
-	      ucd-0080.obj ucd-0096.obj
+	      ucd-0080.obj ucd-0096.obj ucd_names_char.obj ucd_names_codes.obj ucd_names_pair.obj ucd_names_str.obj
+
 !else
 ECL_UNICODE_FLAG=0
 !endif
@@ -36,11 +37,16 @@ ECL_SSE_FLAG=0
 ECL_SSE_OBJ=
 !endif
 
+!if "$(ECL_USE_DBGHELP)" != ""
+ECL_USE_DBGHELP_FLAG=1
+!else
+ECL_USE_DBGHELP_FLAG=0
+!endif
+
 # Programs used by "make":
 #
-TRUE_CC = cl
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private
+CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private -I$(srcdir)/unicode
 
 SHELL	= /bin/sh
 RM	= del
@@ -61,12 +67,16 @@ libdir=$(prefix)\lib\ecl
 # Files
 
 HDIR	= $(top_srcdir)\h
-HFILES	= ..\ecl\config.h ..\ecl\atomic_ops.h $(HDIR)\ecl.h $(HDIR)\ecl-cmp.h\
-	$(HDIR)\object.h $(HDIR)\cs.h $(HDIR)\stacks.h\
-	$(HDIR)\external.h $(HDIR)\cons.h $(HDIR)\legacy.h\
+HFILES	= ..\ecl\config.h ..\ecl\config-internal.h ..\ecl\atomic_ops.h \
+	$(HDIR)\ecl.h $(HDIR)\ecl-cmp.h \
+	$(HDIR)\object.h $(HDIR)\cs.h $(HDIR)\stacks.h \
+	$(HDIR)\external.h $(HDIR)\cons.h $(HDIR)\legacy.h \
 	$(HDIR)\number.h $(HDIR)\page.h \
 	$(HDIR)\internal.h $(HDIR)\ecl-inl.h $(HDIR)\bytecodes.h \
-	$(HDIR)\impl\math_dispatch.h
+	$(HDIR)\impl\math_dispatch.h $(HDIR)\impl\math_dispatch2.h \
+	$(HDIR)\impl\math_fenv.h $(HDIR)\impl\math_fenv_msvc.h \
+	$(HDIR)\cache.h $(HDIR)\stack-resize.h \
+	$(HDIR)\ecl_atomics.h
 
 OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	apply.obj eval.obj \
@@ -138,7 +148,7 @@ cut.exe: $(top_srcdir)/util/cut.c
 
 ..\eclmin.lib: $(OBJS:.obj=.c) all_symbols.c $(OBJS) all_symbols.obj all_symbols2.obj
 	-$(RM) $@
-	$(LINK) -lib -out:$@ $(OBJS)
+	$(LINK) -lib -nologo -out:$@ $(OBJS)
 
 clean:
 	-for %f in ($(OBJS:.obj=.c) all_symbols.c) do $(RM) %f
@@ -154,21 +164,25 @@ clean:
 
 # Build rules
 
-$(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h
-	$(TRUE_CC) -I.. -I./ $(srcdir)/dpp.c  -o $@
-$(HFILES): ../ecl/config.h.msvc6 Makefile
+$(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h ../ecl/config-internal.h
+	$(CC) /nologo -I.. -I./ $(srcdir)/dpp.c /Fe$@
+$(HFILES): ../ecl/config.h.msvc6 ../ecl/config-internal.h.msvc6 Makefile
 	-mkdir ..\ecl\impl
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
+                "@ECL_DEFAULT_C_STACK_SIZE@" "$(ECL_DEFAULT_C_STACK_SIZE)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
+		"@ECL_USE_DBGHELP@" "$(ECL_USE_DBGHELP_FLAG)" \
 	        < ..\ecl\config.h.msvc6 > ..\ecl\config.h
 	cut.exe "@ECL_FPE_CODE@" "$(srcdir:\=/)/arch/$(ECL_FPE_CODE)" \
 		"@ECL_VERSION_NUMBER@" "$(ECL_VERSION_NUMBER)" \
+                "@ECL_DEFAULT_C_STACK_SIZE@" "$(ECL_DEFAULT_C_STACK_SIZE)" \
 		"@ECL_THREADS@" "$(ECL_THREADS_FLAG)" \
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
+		"@ECL_USE_DBGHELP@" "$(ECL_USE_DBGHELP_FLAG)" \
 	        < ..\ecl\config-internal.h.msvc6 > ..\ecl\config-internal.h
 	xcopy /SYI $(top_srcdir)\h\*.h ..\ecl
 	-mkdir ..\ecl\atomic_ops

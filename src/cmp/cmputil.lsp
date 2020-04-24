@@ -46,7 +46,8 @@
   (ecase target
     ((:shared-library :dll :standalone-shared-library :standalone-dll) :shared-library)
     ((:static-library :lib :standalone-static-library :standalone-lib) :static-library)
-    ((:fasl :program) target)))
+    ((:fasl :fasb) :fasl)
+    (:program :program)))
 
 (defun innermost-non-expanded-form (form)
   (when (listp form)
@@ -132,6 +133,14 @@
                               "Variable ~A was undefined. ~
                                Compiler assumes it is a global."
                               (slot-value c 'variable)))))
+
+(define-condition circular-dependency (compiler-error)
+  ()
+  (:report
+   (lambda (c stream)
+     (compiler-message-report stream c
+                              "Circular references in creation form for ~S."
+                              (compiler-message-form c)))))
 
 (defun print-compiler-message (c stream)
   (unless (typep c *suppress-compiler-messages*)
@@ -382,10 +391,10 @@
       (values nil nil))))
 
 (defun si::compiler-clear-compiler-properties (symbol)
-  (rem-sysprop symbol 't1)
-  (rem-sysprop symbol 't2)
-  (rem-sysprop symbol 't3)
-  (rem-sysprop symbol 'lfun))
+  (si:rem-sysprop symbol 't1)
+  (si:rem-sysprop symbol 't2)
+  (si:rem-sysprop symbol 't3)
+  (si:rem-sysprop symbol 'lfun))
 
 (defun lisp-to-c-name (obj)
   "Translate Lisp object prin1 representation to valid C identifier name"
@@ -397,3 +406,8 @@
                           (<= #.(char-code #\0) cc #.(char-code #\9)))
                       c #\_)))
             (string-downcase (prin1-to-string obj)))))
+
+(defun collect-lines (stream)
+  (loop for line = (read-line stream nil nil)
+     while line
+     collect line))

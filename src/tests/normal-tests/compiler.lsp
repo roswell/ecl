@@ -413,32 +413,89 @@
      (undefined-function (c) t)
      (serious-condition (c) nil))))
 
-
 ;;; Date: 29/11/2009 (P. Costanza)
 ;;; Fixed: 29/11/2009 (Juanjo)
 ;;; Description:
 ;;;
 ;;;     Updating of instances is not triggered by MAKE-INSTANCES-OBSOLETE.
 ;;;
-(ext:with-clean-symbols (*update-guard* class-a class-a-b)
+(ext:with-clean-symbols (class-a class-a-b class-a-c class-a-x)
   (test cmp.0020.make-instances-obsolete
-    (defparameter *update-guard* nil)
-    (defclass class-a () ((b :accessor class-a-b :initarg :b)))
-    (let ((*a* (make-instance 'class-a :b 2)))
+    (defclass class-a ()
+      ((b :accessor class-a-b :initarg :b)
+       (c :accessor class-a-c :initarg :c)))
+    (let ((instance (make-instance 'class-a :b 2 :c 3))
+          (update-guard nil))
       (defmethod update-instance-for-redefined-class :before
-        ((instance standard-object) added-slots discarded-slots property-list
-         &rest initargs)
-        (setf *update-guard* t))
-      (is-true
-       (and (null *update-guard*)
-            (progn (class-a-b *a*) (null *update-guard*))
-            (progn (make-instances-obsolete (find-class 'class-a))
-                   (null *update-guard*))
-            (progn (class-a-b *a*) *update-guard*)
-            (progn (setf *update-guard* nil)
-                   (defclass class-a () ((b :accessor class-a-b :initarg :b)))
-                   (class-a-b *a*)
-                   *update-guard*))))))
+          ((instance standard-object) added-slots discarded-slots property-list
+           &rest initargs)
+        (setf update-guard t))
+      (macrolet ((check-situation (change-form trigger-form result doc)
+                   `(progn
+                      (setf update-guard nil)
+                      ,change-form
+                      (is (and (null update-guard)
+                               (progn ,trigger-form
+                                      (eq update-guard ,result)))
+                          ,doc))))
+        (check-situation
+         (make-instances-obsolete (find-class 'class-a))
+         (class-a-b instance)
+         t
+         "Direct call to MAKE-INSTANCES-OBSOLETE doesn't work.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-b :initarg :b)))
+         (class-a-b instance)
+         t
+         "Removing a slot does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-b :initarg :b)
+            (c :accessor class-a-c :initarg :c)))
+         (class-a-b instance)
+         t
+         "Adding a slot does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((c :accessor class-a-c :initarg :c)
+            (b :accessor class-a-b :initarg :b)))
+         (class-a-b instance)
+         t
+         "Shuffling slots does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((c :accessor class-a-c :initarg :c :allocation :class)
+            (b :accessor class-a-b :initarg :b)))
+         (class-a-b instance)
+         t
+         "Changing slot allocation does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-b :initarg :b)
+            (c :accessor class-a-c :initarg :c)))
+         (class-a-b instance)
+         t
+         "Redefining class does not obsolete class instances.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-b :initarg :b)
+            (c :accessor class-a-c :initarg :c)))
+         (class-a-b instance)
+         nil
+         "Without a change system should not make instances obsolete.")
+        (check-situation
+         (defclass class-a ()
+           ((b :accessor class-a-x :initarg :b)
+            (c :accessor class-a-c :initarg :c)))
+         (class-a-x instance)
+         nil
+         "Changing accessors should not make instances obsolete.")
+        ;; The old accessor is removed (the generic function).
+        (signals error (class-a-b instance)
+                 "Reader method is not removed after redefinition.")
+        (is (fboundp 'class-a-b)
+            "Redefining a class removes generic functions.")))))
 
 ;;; Date: 25/03/2009 (R. Toy)
 ;;; Fixed: 4/12/2009 (Juanjo)
@@ -564,8 +621,8 @@
    (let ((warn nil))
      (with-dflet ((c::cmpwarn (setf warn t)))
        (with-compiler ("aux-compiler.0104.lsp")
-         '(defconstant foo (list 1 2 3))
-         '(print foo)))
+         '(defconstant +foo+ (list 1 2 3))
+         '(print +foo+)))
      (delete-file "aux-compiler.0104.lsp")
      (delete-file (compile-file-pathname "aux-compiler.0104.lsp" :type :fas))
      warn)))
@@ -631,8 +688,8 @@
 ;;; Fixed: 18/05/2006 (juanjo)
 ;;; Description:
 ;;;
-;;;     The detection of when a lisp constant has to be externalized using MAKE-LOAD-FORM
-;;;     breaks down with some circular structures
+;;;     The detection of when a lisp constant has to be externalized
+;;;     using MAKE-LOAD-FORM breaks down with some circular structures
 ;;;
 (defclass compiler-test-class ()
   ((parent :accessor compiler-test-parent :initform nil)
@@ -655,7 +712,7 @@
                  (subst 3 l l)
                  (make-instance 'compiler-test-class)
                  (subst (make-instance 'compiler-test-class) 3 l)))
-       collect (clos::need-to-make-load-form-p object nil))
+       collect (si::need-to-make-load-form-p object))
     '(nil nil t t))))
 
 ;;; Date: 18/05/2005
@@ -666,25 +723,37 @@
 ;;;     printed representation.  In that case MAKE-LOAD-FORM should be
 ;;;     used.
 ;;;
+;;;
+;;; Date: 2020-02-12
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/562
+;;; Description:
+;;;
+;;;     Circular structures are not properly initialized because make
+;;;     and init form order of evaluation is not always correct.
 (test cmp.0030.make-load-form
-  (let ((output
-         (with-compiler ("make-load-form.lsp")
-           "(in-package cl-test)"
-           "(eval-when (:compile-toplevel)
-      (defvar s4 (make-instance 'compiler-test-class))
-      (defvar s5 (make-instance 'compiler-test-class))
-      (setf (compiler-test-parent s5) s4)
-      (setf (compiler-test-children s4) (list s5)))"
-           "(defvar a '#.s5)"
-           "(defvar b '#.s4)"
-           "(defvar c '#.s5)"
-           "(defun foo ()
+  (multiple-value-bind (file output)
+      (with-compiler ("make-load-form.lsp")
+        "(in-package cl-test)"
+        "(eval-when (:compile-toplevel)
+      (defparameter s4.0030 (make-instance 'compiler-test-class))
+      (defparameter s5.0030 (make-instance 'compiler-test-class))
+      (setf (compiler-test-parent s5.0030) s4.0030)
+      (setf (compiler-test-children s4.0030) (list s5.0030)))"
+        "(defparameter a.0030 '#.s5.0030)"
+        "(defparameter b.0030 '#.s4.0030)"
+        "(defparameter c.0030 '#.s5.0030)"
+        "(defun foo.0030 ()
        (let ((*print-circle* t))
-         (with-output-to-string (s) (princ '#1=(1 2 3 #.s4 #1#) s))))")))
-    (load output)
+         (with-output-to-string (s) (princ '#1=(1 2 3 #.s4.0030 #1#) s))))")
+    (declare (ignore output))
+    (load file)
     (delete-file "make-load-form.lsp")
-    (delete-file output))
-  (is-equal "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS> #1#)" (foo)))
+    (delete-file file))
+  (let ((str (foo.0030)))
+    (is (and (search "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS" str)
+             (search "> #1#)" str))))
+  (is (eq (compiler-test-parent a.0030) b.0030))
+  (is (eq (first (compiler-test-children b.0030)) a.0030)))
 
 ;;; Date: 9/06/2006 (Pascal Costanza)
 ;;; Fixed: 13/06/2006 (juanjo)
@@ -967,7 +1036,7 @@
   (let ((indices (funcall (compile nil
                                    '(lambda ()
                                      (ffi:c-inline () () list "
-        union cl_lispunion x[0];
+        union cl_lispunion x[1];
         cl_index bytecodes = (char*)(&(x->bytecodes.entry)) - (char*)x;
         cl_index bclosure  = (char*)(&(x->bclosure.entry)) - (char*)x;
         cl_index cfun      = (char*)(&(x->cfun.entry)) - (char*)x;
@@ -1167,3 +1236,579 @@
 ;;;    type RANDOM-TYPE
 (test cmp.0051.make-load-form.random-state
   (finishes (make-load-form (make-random-state))))
+
+
+;;; Date 2016-12-20
+;;; Reported by Paul F. Dietz
+;;; Description
+;;;
+;;;    Order of VALUES evaluation in compiled code is wrong.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/330
+(ext:with-clean-symbols (f2)
+  (test cmp.0052.values-evaluation-order
+    (defun f2 (a) (lcm (values a (setq a 1))))
+    (is-eql 10 (f2 10))
+    (compile 'f2)
+    (is-eql 10 (f2 10))))
+
+;;; Date 2017-06-27
+;;; Reported by Fabrizio Fabbri
+;;; Description
+;;;
+;;;    Compiled function drop argument type checkin
+;;;    on constant.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
+(test cmp.0053.check-values-type-on-constant
+      (handler-case 
+          (funcall (compile nil
+                            '(lambda () (rplaca 'A 1))))
+        (simple-type-error () t)
+        (error () nil)
+        (:no-error (v) (declare (ignore v)) nil)))
+
+;;; Date 2017-06-28
+;;; Reported by Fabrizio Fabbri
+;;; Description
+;;;
+;;;    Compiled assoc does not check that alist argument
+;;;    is a valid association list.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
+(test cmp.0054.invalid-argument-type
+      (handler-case 
+          (funcall (compile nil
+                            '(lambda () (assoc 'z '((a . b) :bad (c . d))))))
+        (simple-type-error () t)
+        (error () nil)
+        (:no-error (v) (declare (ignore v)) nil)))
+
+;;; Date 2017-07-05
+;;; Reported by Fabrizio Fabbri
+;;; Description
+;;;
+;;;    Compiled vector-push and vector-push-extend
+;;;    does not check for invalid argument and
+;;;    SIGSEGV
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
+(test cmp.0055.invalid-argument-type
+  (is-true
+   (handler-case
+       (funcall (compile nil
+                         '(lambda () (vector-push))))
+     (program-error () t)
+     (error () nil)
+     (:no-error (v) (declare (ignore v)) nil))))
+
+;;; Date 2017-08-10
+;;; Description
+;;;
+;;;    On some platforms (without feenableexcept) compiling code with
+;;;    constants being infinity cause fpe-exception.
+#+ieee-floating-point
+(test cmp.0056.artificial-fpe
+  (finishes
+    (funcall (compile nil
+                      '(lambda ()
+                        (eql 10d0 ext:double-float-positive-infinity))))))
+
+;;; Date 2017-08-10
+;;; Description
+;;;
+;;;    Confirm, that malformed code compiles (errors should be issued
+;;;    at runtime).
+(test cmp.0057.expand
+  (let (fun)
+    ;; expand-mapcar
+    (is (setf fun (compile nil '(lambda () (mapcar)))))
+    (signals program-error (funcall fun))
+    ;; expand-vector-push
+    (is (setf fun (compile nil '(lambda () (vector-push)))))
+    (signals program-error (funcall fun))))
+
+;;; Date 2017-08-16
+;;;
+;;; Description
+;;;
+;;;    `si:coerce-to-vector' (called from cmpopt) had invalid
+;;;    check-type statements preventing compilation of valid code.
+(test cmp.0058.coerce-expand
+  (finishes (load (with-compiler ("aux-compiler.0058-coerce.lsp")
+                    '(defun flesh-failures ()
+                      (load-time-value
+                       (coerce #(0) '(simple-array (unsigned-byte 8) (1)))))))))
+
+;;; Date 2017-09-29
+;;;
+;;; Description
+;;;
+;;;   `typep' compiler macroexpansion did treat
+;;;   `gray:fundamental-stream' as subtype of `ext:ansi-stream'.
+(test cmp.0059.gray-is-not-ansi
+  (let ((stream (make-instance 'gray:fundamental-stream)))
+    (is-false (typep stream 'ext:ansi-stream))))
+
+;;; Date 2017-11-21
+;;; Description
+;;;
+;;;   loop on dotted lists with destructuring bind gave a type error
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/418
+(test cmp.0060.loop-on-dotted-list
+  (finishes (funcall (compile nil
+                              '(lambda () (loop for (i) on '(1 2 . 3)))))))
+
+;;; Date 2017-12-02
+;;; Description
+;;;
+;;;   type declarations for optional and keyword function arguments
+;;;   resulted in an error, when the default values weren't of the
+;;;   specified type.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/292
+(test cmp.0061.optional-type-declaration
+  (declaim (ftype (function (real &optional real &key (:c symbol)) real) foo))
+  (defun foo (a &optional (b 'test) &key (c 1)) (if b c a))
+  (compile 'foo)
+  (finishes (foo 1)))
+
+;;; Date 2018-01-23
+;;; Description
+;;;
+;;;   block referenced across closure boundries could lead to a local variable
+;;;   corruption due to the change of _when_ closure type is computed.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/374
+(test cmp.0062.ccb-block-variable-corruption
+  (defun fooman ()
+    (let ((foo-1 0)
+          (second-time nil))
+      (tagbody :G124
+         (block exitpoint
+           (handler-bind ((simple-error
+                           #'(lambda (c)
+                               (declare (ignore c))
+                               (if (= foo-1 0)
+                                   (format nil "all is fine folks~%")
+                                   (error "foo-1 is ~s should be 0" foo-1))
+                               ;; exitpoint is referenced across closure boundries
+                               (return-from exitpoint nil))))
+             (signal 'simple-error)))
+         (unless second-time
+           (setf second-time t)
+           (GO :G124)))))
+  (compile 'fooman)
+  (finishes (fooman)))
+
+;;; Date 2018-02-10
+;;; Description
+;;;
+;;;   Compiler macros do not get shadowed by lexical function bindings.
+;;;
+;;; Spec: http://www.lispworks.com/documentation/HyperSpec/Body/03_bba.htm
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/83
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/237
+(test cmp.0063.lexical-macrolet
+  (defun foo () :function)
+  (define-compiler-macro foo () :compiler-macro)
+  (let ((result (funcall (compile nil '(lambda ()
+                                        (macrolet ((foo () :macrolet))
+                                          (foo)))))))
+    (is (eq :macrolet result) "Expected :MACROLET, got ~s." result)))
+
+;;; Date 2018-02-11
+;;; Description
+;;;
+;;;   ecl_bclosure lexenv is not used during complation (both bytecmp and ccmp).
+;;;   That leads to dangling references in compiled code.
+;;;
+;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/429
+(test cmp.0064.bytecmp-compile-bclosure
+  (let ((fun-1                                 (lambda () :fun-1-nil))
+        (fun-2 (let      ((fun-2-var    :var)) (lambda () fun-2-var)))
+        (fun-3 (flet     ((fun-3-fun () :fun)) (lambda () (fun-3-fun))))
+        (fun-4 (macrolet ((fun-4-mac () :mac)) (lambda () (fun-4-mac))))
+        (fun-5 (symbol-macrolet ((fun-5-sym :sym)) (lambda () fun-5-sym))))
+    (is (eq :fun-1-nil (funcall fun-1)))
+    (is (eq :var (funcall fun-2)))
+    (is (eq :fun (funcall fun-3)))
+    (is (eq :mac (funcall fun-4)))
+    (is (eq :sym (funcall fun-5)))
+    (let ((fun-1 (ext::bc-compile nil fun-1))
+          (fun-2 (ext::bc-compile nil fun-2))
+          (fun-3 (ext::bc-compile nil fun-3))
+          (fun-4 (ext::bc-compile nil fun-4))
+          (fun-5 (ext::bc-compile nil fun-5)))
+      (is (eq :fun-1-nil (funcall fun-1)))
+      (is (eq :var (ignore-errors (funcall fun-2))) "fun-2-var from lexenv is not used.")
+      (is (eq :fun (ignore-errors (funcall fun-3))) "fun-3-fun from lexenv is not used.")
+      (is (eq :mac (ignore-errors (funcall fun-4))) "fun-4-mac from lexenv is not used.")
+      (is (eq :sym (ignore-errors (funcall fun-5))) "fun-5-sym from lexenv is not used."))))
+
+(test cmp.0065.cmp-compile-bclosure
+  (let ((fun-1                                 (lambda () :fun-1-nil))
+        (fun-2 (let      ((fun-2-var    :var)) (lambda () fun-2-var)))
+        (fun-3 (flet     ((fun-3-fun () :fun)) (lambda () (fun-3-fun))))
+        (fun-4 (macrolet ((fun-4-mac () :mac)) (lambda () (fun-4-mac))))
+        (fun-5 (symbol-macrolet ((fun-5-sym :sym)) (lambda () fun-5-sym))))
+    (is (eq :fun-1-nil (funcall fun-1)))
+    (is (eq :var (funcall fun-2)))
+    (is (eq :fun (funcall fun-3)))
+    (is (eq :mac (funcall fun-4)))
+    (is (eq :sym (funcall fun-5)))
+    (let ((fun-1 (compile nil fun-1))
+          (fun-2 (compile nil fun-2))
+          (fun-3 (compile nil fun-3))
+          (fun-4 (compile nil fun-4))
+          (fun-5 (compile nil fun-5)))
+      (is (eq :fun-1-nil (funcall fun-1)))
+      (is (eq :var (ignore-errors (funcall fun-2))) "fun-2-var from lexenv is not used.")
+      (is (eq :fun (ignore-errors (funcall fun-3))) "fun-3-fun from lexenv is not used.")
+      (is (eq :mac (ignore-errors (funcall fun-4))) "fun-4-mac from lexenv is not used.")
+      (is (eq :sym (ignore-errors (funcall fun-5))) "fun-5-sym from lexenv is not used."))))
+
+;;; Date 2018-02-12
+;;; Description
+;;;
+;;;   bytecmp always makes flet functions closures even if lexenv is empty.
+(test cmp.0066.bytecodes-flet-closure
+  (let ((fun-1 (flet ((a () 1)) #'a))
+        (fun-2 (let ((b 3))    ; this make break if we replace B with a constant
+                 (flet ((a () b)) #'a))))
+    (is (null (nth-value 1 (function-lambda-expression fun-1))))
+    (is (nth-value 1 (function-lambda-expression fun-2)))))
+
+;;; Date 2018-02-13
+;;; Description
+;;;
+;;;   ext::bc-compile executed compiled form.
+(test cmp.0067.bytecodes-compile-exec
+  (multiple-value-bind (fun warn err)
+      (ext::bc-compile nil '(flet ((a () 3)) #'a))
+    (is (and (null fun) warn err)
+        "bc-compile: invalid lambda expression should signal error.")))
+
+;;; Date 2018-02-13
+;;; Description
+;;;
+;;; compile / ext::bc-compile doesn't accept (setf foo).
+(ext:with-clean-symbols (foo bar)
+  (test cmp.0068.bytecmp-setf-foo
+    (defun (setf foo) (x) x)
+    (multiple-value-bind (fun warn err)
+        (ext::bc-compile '(setf foo))
+      (is (and fun (null warn) (null err))
+          "bc-compile: (setf foo) is a valid function name.")))
+  (test cmp.0069.cmp-setf-foo
+    (defun (setf foo) (x) x)
+    (multiple-value-bind (fun warn err)
+        (compile '(setf foo))
+      (is (and fun (null warn) (null err))
+          "compile: (setf foo) is a valid function name."))))
+
+;;; Date 2019-04-02
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/468
+;;; Fixed: 177ad215ea91524756a00b24436273b065628081
+;;; Description
+;;;
+;;;   TYPECASE doesn't distinguish between different complex types
+;;;   when compiled.
+(ext:with-clean-symbols (xxx)
+  (test cmp.0070.cmp-typecase-complex
+        (defun xxx ()
+          (let ((ci #c(5 7))
+                (cs #c(1.0s0 1.0s0))
+                (cd #c(1.0d0 1.0d0)))
+            (list (typecase ci
+                    ((complex integer) 'ci)
+                    ((complex single-float) 'csf)
+                    ((complex double-float) 'cdf))
+                  (typecase cs
+                    ((complex integer) 'ci)
+                    ((complex single-float) 'csf)
+                    ((complex double-float) 'cdf))
+                  (typecase cs
+                    ((complex integer) 'ci)
+                    ((complex double-float) 'cdf)
+                    ((complex single-float) 'csf))
+                  (typecase cd
+                    ((complex integer) 'ci)
+                    ((complex single-float) 'csf)
+                    ((complex double-float) 'cdf))
+                  (typecase cd
+                    ((complex integer) 'ci)
+                    ((complex double-float) 'cdf)
+                    ((complex single-float) 'csf))
+                  (typecase ci
+                    ((complex (integer 0 3)) 'invalid)
+                    ((complex (integer 0 6)) 'invalid)
+                    ((complex (integer 4 8)) 'ci)
+                    ((complex integer) 'overboard)))))
+        (is-equal (xxx) '(ci csf csf cdf cdf ci))
+        (compile 'xxx)
+        (is-equal (xxx) '(ci csf csf cdf cdf ci))))
+
+;;; Date 2019-04-19
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/493
+;;; Fixed: a73df694
+;;; Description
+;;;
+;;;   SUBTYPEP and TYPEP are not consistent for COMPLEX type in ANSI
+;;;   spec. SUBTYPEP pursues the internal representation (with
+;;;   UPGRADED-COMPLEX-PART-TYPE) while TYPEP goes after the type of
+;;;   the complex number parts to match the typespec. Problem was
+;;;   exhibited in compiled code. These are just a few examples which
+;;;   explore ECL potential failures. Test which goes more
+;;;   systematically across more types is defined in ansi-tests under
+;;;   name SUBTYPEP-COMPLEX.8.
+(test cmp.0071.cmp-typep-subtypep
+      (is (typep #c(1.0 2.0) '(complex single-float)))
+      (is (typep #c(1 2) '(complex fixnum)))
+      (is (typep #c(1 2) '(complex (integer 0 8))))
+      (is (not (typep #c(1.0 2.0) '(complex double-float))))
+      (is (not (typep #c(1 2) '(complex (integer 0 1)))))
+      (is (not (typep #c(1/2 2/3) '(complex (integer 0 1)))))
+      ;;
+      #-complex-float (is (subtypep '(complex single-float) '(complex double-float)))
+      #-complex-float (is (subtypep '(complex double-float) '(complex single-float)))
+      #-complex-float (is (subtypep '(complex double-float) '(complex float)))
+      #+complex-float (is (not (subtypep '(complex single-float) '(complex double-float))))
+      #+complex-float (is (not (subtypep '(complex double-float) '(complex single-float))))
+      (is (subtypep '(complex double-float) '(complex float)))
+      (is (subtypep '(complex fixnum) '(complex integer)))
+      (is (subtypep '(complex integer) '(complex fixnum)))
+      (is (subtypep '(complex ratio) '(complex fixnum)))
+      (is (subtypep '(complex bit) '(complex ratio)))
+      ;; this should be true even if single-float has a specialized
+      ;; representation because of the first rule:
+      ;;
+      ;;   (subtypep (complex t1) (complex t2)) is T, T when
+      ;;
+      ;;   1. (subtypep t1 t2) is T, T or
+      ;;   2. (equal (ucpt t1) (ucpt t2))
+      (is (subtypep '(complex single-float) '(complex real)))
+      #-complex-float
+      (is (and (subtypep '(complex bit) '(complex double-float))
+               (subtypep '(complex double-float) '(complex bit))))
+      #+complex-float
+      (is (and (not (subtypep '(complex bit) '(complex double-float)))
+               (not (subtypep '(complex double-float) '(complex bit) )))))
+
+;;; Date 2019-04-26
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/497
+;;; Fixed: 60978163
+;;; Description
+;;;
+;;;     Constant folding first dropped the multiple values, then
+;;;     refused to compile properly for not self-evaluating ones. This
+;;;     test checks if both cases are compiled correctly.
+(test cmp.0072.cmp-constant-fold
+  (let (f1 f2)
+    (finishes (setq f1  (compile nil '(lambda () (byte 0 0)))))
+    (finishes (setq f2  (compile nil '(lambda () (truncate 2 1)))))
+    (is (equal '(0 . 0) (funcall f1)))
+    (is (equal '(2 0) (multiple-value-list (funcall f2))))))
+
+;;; Date 2019-07-02
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/513
+;;; Description
+;;;
+;;;     When number of args in unoptimized long call is exactly
+;;;     ECL_C_ARGUMENTS limit we have a segfault, when it is greater
+;;;     parse_key signals a condition.
+(test cmp.0073.c-arguments-limit.miscompilation
+  (with-compiler ("aux-cmp-0073.lsp" :load t)
+    `(progn
+       (defclass modual-bleh ()
+         ((xxx :initarg :foo :initform nil)))
+       (defmethod shared-initialize :after
+         ((instance modual-bleh) (slot-names t) &key)
+         42)
+       (defun run-1 ()
+         ">=63 arguments parse-key problem (first :foo is eaten)."
+         (make-instance
+          'modual-bleh
+          :foo 00 :foo 01 :foo 02 :foo 03 :foo 04 :foo 05 :foo 06 :foo 07 :foo 08 :foo 09
+          :foo 10 :foo 11 :foo 12 :foo 13 :foo 14 :foo 15 :foo 16 :foo 17 :foo 18 :foo 19
+          :foo 20 :foo 21 :foo 22 :foo 23 :foo 24 :foo 25 :foo 26 :foo 27 :foo 28 :foo 29
+          :foo 30 :foo 31))
+       (defun run-2 ()
+         "=62 arguments segmentation fault."
+         (make-instance
+          'modual-bleh
+          :foo 00 :foo 01 :foo 02 :foo 03 :foo 04 :foo 05 :foo 06 :foo 07 :foo 08 :foo 09
+          :foo 10 :foo 11 :foo 12 :foo 13 :foo 14 :foo 15 :foo 16 :foo 17 :foo 18 :foo 19
+          :foo 20 :foo 21 :foo 22 :foo 23 :foo 24 :foo 25 :foo 26 :foo 27 :foo 28 :foo 29
+          :foo 30))
+       (defun run-3 ()
+         "<=61 arguments all fine."
+         (make-instance
+          'modual-bleh
+          :foo 00 :foo 01 :foo 02 :foo 03 :foo 04 :foo 05 :foo 06 :foo 07 :foo 08 :foo 09
+          :foo 10 :foo 11 :foo 12 :foo 13 :foo 14 :foo 15 :foo 16 :foo 17 :foo 18 :foo 19
+          :foo 20 :foo 21 :foo 22 :foo 23 :foo 24 :foo 25 :foo 26 :foo 27 :foo 28 :foo 29))))
+  (finishes (run-1))
+  (finishes (run-2))
+  (finishes (run-3)))
+
+;;; Date 2020-01-12
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/550
+;;; Description
+;;;
+;;;     When we invoke an unopitmized long call (that is we apply from
+;;;     a stack frame), function argument is evaluated after the
+;;;     arguments what is wrong for operators where function is the
+;;;     first argument (and should be evaluated first).
+(test cmp.0074.c-arguments-limit.evaluation-rule
+      (flet ((make-fn (n)
+               `(lambda ()
+                  (let ((se-var '()))
+                    (funcall (prog1 #'list (push :fun se-var))
+                             ,@(list* `(push :arg se-var)
+                                      (make-list (1- n))))
+                    (nreverse se-var))))
+             (check-fn (form)
+               (is (equal '(:fun :arg) (funcall (compile nil form))))))
+        (check-fn (make-fn 10))
+        (check-fn (make-fn (1+ si::c-arguments-limit)))
+        (check-fn (make-fn (1- si::c-arguments-limit)))
+        (check-fn (make-fn si::c-arguments-limit))))
+
+;;; Date 2020-03-18
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/545
+;;; Description
+;;;
+;;; The closure type for local functions calling global closures was
+;;; not determined correctly to also be a global closure.
+(test cmp.0075.local-fun.closure-type
+  (ext:with-clean-symbols (*function*)
+    (defvar *function*)
+    (let ((result
+           (funcall
+            (compile nil
+                     (lambda (b)
+                       (flet ((%f10 () b))
+                         (flet ((%f4 () (%f10)))
+                           (incf b)
+                           (setf *function* #'%f10) ; makes a global
+                                                    ; closure out of %f10
+                           (%f4)))))
+            3)))
+    (is (eq result 4))
+    (is (eq (funcall *function*) 4)))))
+
+;;; Date 2020-03-13
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/565
+;;; Description
+;;;
+;;;     COMPILE-FILE produces two vectors VV and VVtemp which
+;;;     represent the fasl data segment. The latter is deallocated
+;;;     after all top-level forms are evaluated. As compiler processes
+;;;     them currently if the object is first pushed to the temporary
+;;;     segment and then we try to add it to the permanent segment we
+;;;     have two versions of the same objects which are not EQ. File
+;;;     src/cmp/cmpwt.lsp has an appropriate FIXME in the ADD-OBJECT
+;;;     function definition.
+(test cmp.0076.make-load-form-non-eq
+  (multiple-value-bind (file output)
+      (with-compiler ("make-temp.lsp")
+        "(in-package #:cl-test)"
+        "(eval-when (:compile-toplevel :load-toplevel :execute)
+          (defclass my-class ()
+            ((name :initarg :name :accessor name)))
+          (defmethod print-object ((obj my-class) stream)
+            (print-unreadable-object (obj stream :identity t)
+              (format stream \"~s ~s\" (name obj) (class-name (class-of obj)))))
+          (defmethod make-load-form ((x my-class) &optional environment)
+            (declare (ignore environment))
+            `(make-instance ',(class-of x) :name ',(slot-value x 'name))))"
+        "(eval-when (:compile-toplevel)
+          (defparameter s4 (make-instance 'my-class :name :s4)))"
+        "(defparameter *s4-a* nil)"
+        "(defparameter *s4-b* nil)"
+        "(let ((a '#.s4))
+          (setf *s4-a* a))"
+        "(defun foo ()
+          (let ((x #.s4))
+            (values x *s4-a* *s4-b*)))"
+        "(let ((b '#.s4))
+          (setf *s4-b* b))")
+    (declare (ignore output))
+    (load file)
+    (delete-file "make-temp.lsp")
+    (delete-file file))
+  (multiple-value-bind (x a b) (foo)
+    (is (eq x a) "~a is not eq to ~a" x a)
+    ;; This test passes because B toplevel form is compiled after the
+    ;; function FOO. Included here for completness.
+    (is (eq x b) "~a is not eq to ~a" x b)
+    (is (eq a b) "~a is not eq to ~a" a b)))
+
+(ext:with-clean-symbols (class)
+  (test cmp.0077.make-load-form.circular-dep
+    (macrolet ((make-template (&body extra)
+                 `(with-compiler ("make-circle.lsp")
+                    '(progn
+                      (in-package #:cl-test)
+                      (eval-when (:compile-toplevel :load-toplevel :execute)
+                        (defclass class ()
+                          ((peer  :initform nil :initarg :peer  :accessor peer)
+                           (peer* :initform nil :initarg :peer* :accessor peer*)))
+                        (defmethod make-load-form ((x class) &optional env)
+                          (declare (ignore env))
+                          (values `(make-instance 'class :peer ',(peer x))
+                                  `(setf (peer* ',x) ',(peer* x)))))
+                      (eval-when (:compile-toplevel)
+                        (defparameter var1 (make-instance 'class))
+                        (defparameter var2 (make-instance 'class :peer var1))
+                        ,@extra))
+                    "(defun foo () (values '#.var1 '#.var2))")))
+      ;; Ordinary case (reference).
+      (multiple-value-bind (file output)
+          (make-template)
+        (load file)
+        (delete-file "make-circle.lsp")
+        (delete-file file)
+        (multiple-value-bind (v1 v2) (foo)
+          (is (eq (peer v2) v1))))
+      ;; Circularity between make forms (should signal an error).
+      (signals error
+        (unwind-protect (multiple-value-bind (file output)
+                            (make-template (setf (peer var1) var2))
+                          (when file (delete-file file)))
+          (delete-file "make-circle.lsp"))
+        "Successfully compiled a file with a circular dependency.")
+      ;; Circularity between make and init forms (is not an error!).
+      (multiple-value-bind (file output)
+          (make-template (setf (peer* var1) var2))
+        (load file)
+        (delete-file "make-circle.lsp")
+        (delete-file file)
+        (multiple-value-bind (v1 v2) (foo)
+          (is (eq (peer v2) v1))
+          (is (eq (peer* v1) v2))))
+      ;; Circularity between init forms (is not an error!).
+      (multiple-value-bind (file output)
+          (make-template (setf (peer* var1) var2)
+                         (setf (peer* var2) var1))
+        (load file)
+        (delete-file "make-circle.lsp")
+        (delete-file file)
+        (multiple-value-bind (v1 v2) (foo)
+          (is (eq (peer v2) v1))
+          (is (eq (peer* v1) v2))
+          (is (eq (peer* v2) v1)))))))
+
+;;; Date 2020-03-13
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/571
+;;; Description
+;;;
+;;;     LOAD-TIME-VALUE inside a DEFMETHOD is evaluated at the
+;;;     compilation time.
+(test cmp.0078.defmethod-not-eager
+  (finishes (with-compiler ("aux-compiler.0078.lsp")
+              `(defclass class () ())
+              `(defmethod method ()
+                 (load-time-value (find-class class))))))

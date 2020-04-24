@@ -26,7 +26,7 @@
 ;;;        number of local slots.
 ;;;     b) The new local slots are filled with the value of the old
 ;;;        slots. Only the name is used, so that a new local slot may
-;;;        get the value of old slots that were eithe local or shared.
+;;;        get the value of old slots that were either local or shared.
 ;;;     c) Finally, UPDATE-INSTANCE-FOR-DIFFERENT-CLASS is invoked
 ;;;        with a copy of the instance as it looked before the change,
 ;;;        the changed instance and enough information to perform any
@@ -35,8 +35,8 @@
 
 (defmethod update-instance-for-different-class
     ((old-data standard-object) (new-data standard-object) &rest initargs)
-  (let ((old-local-slotds (si::instance-sig old-data))
-        (new-local-slotds (remove :instance (si::instance-sig new-data)
+  (let ((old-local-slotds (si::instance-slotds old-data))
+        (new-local-slotds (remove :instance (si::instance-slotds new-data)
                                   :test-not #'eq :key #'slot-definition-allocation))
         added-slots)
     (setf added-slots (set-difference (mapcar #'slot-definition-name new-local-slotds)
@@ -83,15 +83,21 @@
 ;;;
 ;;; PART 2: UPDATING AN INSTANCE THAT BECAME OBSOLETE
 ;;;
-;;; Each instance has a hidden field (readable with SI::INSTANCE-SIG), which
-;;; contains the list of slots of its class. This field is updated every time
-;;; the class is initialized or reinitialized. Generally
-;;;     (EQ (SI::INSTANCE-SIG x) (CLASS-SLOTS (CLASS-OF x)))
-;;; returns NIL whenever the class became obsolete.
+;;; Each instance has a field (readable with SI::INSTANCE-SLOTDS),
+;;; which contains the list of slot definitions from its class which
+;;; are needed to update it when it is obsolete. Generally
 ;;;
-;;; There are two circumstances under which a instance may become obsolete:
-;;; either the class has been modified using REDEFINE-INSTANCE (and thus the
-;;; list of slots changed), or MAKE-INSTANCES-OBSOLETE has been used.
+;;;     (SI::INSTANCE-OBSOLETE-P x)
+;;;
+;;; returns T whenever the instance became obsolete. We track that by
+;;; comparing the class stamp (which is updated by M-I-O) with a stamp
+;;; embedded in the instance. When the instance is being updated its
+;;; stamp is corrected to match its class stamp.
+;;;
+;;; There are two circumstances under which a instance may become
+;;; obsolete: either the class has been modified so the list of slots
+;;; has changed in an incompatible way (see FINALIZE-INHERITANCE), or
+;;; MAKE-INSTANCES-OBSOLETE has been called explicitly.
 ;;;
 ;;; The function UPDATE-INSTANCE (hidden to the user) does the job of
 ;;; updating an instance that has become obsolete.
@@ -141,7 +147,7 @@
 
 (defun update-instance (instance)
   (let* ((class (class-of instance))
-         (old-slotds (si::instance-sig instance))
+         (old-slotds (si::instance-slotds instance))
          (new-slotds (class-slots class))
          (old-instance (si::copy-instance instance))
          (discarded-slots '())
@@ -215,8 +221,27 @@
 
   class)
 
+(defun slot-definitions-compatible-p (old-slotds new-slotds)
+  (loop for o = (pop old-slotds)
+        for n = (pop new-slotds)
+        while (and o n)
+        do (let ((old-alloc (slot-definition-allocation o))
+                 (new-alloc (slot-definition-allocation n)))
+             (unless (and (eq old-alloc new-alloc)
+                          (eq (slot-definition-name o)
+                              (slot-definition-name n))
+                          (or (not (eq old-alloc :instance))
+                              (= (slot-definition-location o)
+                                 (slot-definition-location n))))
+               (return-from slot-definitions-compatible-p nil)))
+        finally
+           (return (and (null o)
+                        (null n)
+                        (null old-slotds)
+                        (null new-slotds)))))
+
 (defmethod make-instances-obsolete ((class class))
-  (setf (class-slots class) (copy-list (class-slots class)))
+  (si::instance-new-stamp class)
   class)
 
 (defun remove-optional-slot-accessors (class)
@@ -239,9 +264,7 @@
         ;; after method
         (when (setq found
                     (find-method gf-object ':after (list class) nil))
-          (remove-method gf-object found))
-        (when (null (generic-function-methods gf-object))
-          (fmakunbound reader))))
+          (remove-method gf-object found))))
 
     ;; remove previous defined writer methods
     (dolist (writer (slot-definition-writers slotd))
@@ -258,6 +281,4 @@
         ;; after method
         (when (setq found
                     (find-method gf-object ':after (list 'T class) nil))
-          (remove-method gf-object found))
-        (when (null (generic-function-methods gf-object))
-          (fmakunbound writer))))))
+          (remove-method gf-object found))))))

@@ -96,23 +96,44 @@ mangle_name(cl_object output, unsigned char *source, int l)
   if (is_symbol) {
     cl_fixnum p;
     if (symbol == ECL_NIL) {
-      @(return ECL_T make_constant_base_string("ECL_NIL"));
+      @(return ECL_T ecl_make_constant_base_string("ECL_NIL",-1) minarg maxarg);
     }
     else if (symbol == ECL_T) {
-      @(return ECL_T make_constant_base_string("ECL_T"));
+      @(return ECL_T ecl_make_constant_base_string("ECL_T",-1) minarg maxarg);
     }
 
     p  = (cl_symbol_initializer*)symbol - cl_symbols;
     if (p >= 0 && p <= cl_num_symbols_in_core) {
       found = ECL_T;
       output = cl_format(4, ECL_NIL,
-                         make_constant_base_string("ECL_SYM(~S,~D)"),
+                         ecl_make_constant_base_string("ECL_SYM(~S,~D)",-1),
                          name, ecl_make_fixnum(p));
-      @(return found output maxarg);
+#ifndef ECL_FINAL
+      /* XXX to allow the Lisp compiler to check that the narg
+       * declaration in symbols_list.h matches the actual function
+       * definition, return the previously saved narg here. -- mg
+       * 2019-12-02 */
+      cl_object plist = cl_symbol_plist(symbol);
+      for ( ; ECL_CONSP(plist); plist = ECL_CONS_CDR(plist)) {
+        if (ECL_CONS_CAR(plist) == @'call-arguments-limit') {
+          plist = ECL_CONS_CDR(plist);
+          if (ECL_CONSP(plist) && ECL_FIXNUMP(ECL_CONS_CAR(plist))) {
+            cl_fixnum narg = ecl_fixnum(ECL_CONS_CAR(plist));
+            if (narg >= 0) {
+              minarg = maxarg = ecl_make_fixnum(narg);
+            } else {
+              minarg = ecl_make_fixnum(-narg-1);
+            }
+          }
+          break;
+        }
+      }
+#endif
+      @(return found output minarg maxarg);
     }
   } else if (!Null(symbol)) {
     cl_object fun = symbol->symbol.gfdef;
-    cl_type t = (fun == OBJNULL)? t_other : type_of(fun);
+    cl_type t = (fun == OBJNULL)? t_other : ecl_t_of(fun);
     if ((t == t_cfun || t == t_cfunfixed) && fun->cfun.block == OBJNULL) {
       for (l = 0; l <= cl_num_symbols_in_core; l++) {
         cl_object s = (cl_object)(cl_symbols + l);
@@ -120,8 +141,12 @@ mangle_name(cl_object output, unsigned char *source, int l)
           symbol = s;
           found = ECL_T;
           if (fun->cfun.narg >= 0) {
-            minarg =
-              maxarg = ecl_make_fixnum(fun->cfun.narg);
+            if (t == t_cfunfixed) {
+              minarg =
+                maxarg = ecl_make_fixnum(fun->cfunfixed.narg);
+            } else {
+              minarg = ecl_make_fixnum(fun->cfun.narg);
+            }
           }
           break;
         }
@@ -133,11 +158,11 @@ mangle_name(cl_object output, unsigned char *source, int l)
     ;
   }
   else if (package == cl_core.lisp_package)
-    package = make_constant_base_string("cl");
+    package = ecl_make_constant_base_string("cl",-1);
   else if (package == cl_core.system_package)
-    package = make_constant_base_string("si");
+    package = ecl_make_constant_base_string("si",-1);
   else if (package == cl_core.ext_package)
-    package = make_constant_base_string("si");
+    package = ecl_make_constant_base_string("si",-1);
   else if (package == cl_core.keyword_package)
     package = ECL_NIL;
   else
@@ -165,12 +190,12 @@ mangle_name(cl_object output, unsigned char *source, int l)
   output->base_string.fillp = 0;
   if (!Null(package)) {
     if (!mangle_name(output, package->base_string.self, package->base_string.fillp)) {
-      @(return ECL_NIL ECL_NIL maxarg);
+      @(return ECL_NIL ECL_NIL minarg maxarg);
     }
   }
   output->base_string.self[output->base_string.fillp++] = c;
   if (!(dest = mangle_name(output, source, l))) {
-    @(return ECL_NIL ECL_NIL maxarg);
+    @(return ECL_NIL ECL_NIL minarg maxarg);
   }
   if (dest[-1] == '_')
     dest[-1] = 'M';
@@ -216,7 +241,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
   s->symbol.hpack = ECL_NIL;
   s->symbol.stype = stp;
   s->symbol.hpack = package;
-  s->symbol.name = make_constant_base_string(name);
+  s->symbol.name = ecl_make_constant_base_string(name,-1);
   if (package == cl_core.keyword_package) {
     package->pack.external =
       _ecl_sethash(s->symbol.name, package->pack.external, s);
@@ -243,10 +268,16 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
     if (narg >= 0) {
       f = ecl_make_cfun((cl_objectfn_fixed)fun, s, NULL, narg);
     } else {
-      f = ecl_make_cfun_va(fun, s, NULL);
+      f = ecl_make_cfun_va(fun, s, NULL, -narg - 1);
     }
     ECL_SYM_FUN(s) = f;
   }
+#ifndef ECL_FINAL
+  /* XXX to allow the Lisp compiler to check that the narg declaration
+   * in symbols_list.h matches the actual function definition, we save
+   * narg here. -- mg 2019-12-02 */
+  si_set_symbol_plist(s, cl_list(2, @'call-arguments-limit', ecl_make_fixnum(narg)));
+#endif
   cl_num_symbols_in_core = i + 1;
 }
 

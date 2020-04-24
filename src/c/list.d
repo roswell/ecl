@@ -14,6 +14,7 @@
 
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
 
 struct cl_test {
   bool (*test_c_function)(struct cl_test *, cl_object);
@@ -645,7 +646,7 @@ cl_ldiff(cl_object x, cl_object y)
 cl_object
 cl_rplaca(cl_object x, cl_object v)
 {
-  if (ecl_unlikely(!CONSP(x)))
+  if (ecl_unlikely(!ECL_CONSP(x)))
     FEwrong_type_nth_arg(@[rplaca], 1, x, @[cons]);
   ECL_RPLACA(x, v);
   @(return x);
@@ -654,11 +655,45 @@ cl_rplaca(cl_object x, cl_object v)
 cl_object
 cl_rplacd(cl_object x, cl_object v)
 {
-  if (ecl_unlikely(!CONSP(x)))
+  if (ecl_unlikely(!ECL_CONSP(x)))
     FEwrong_type_nth_arg(@[rplacd], 1, x, @[cons]);
   ECL_RPLACD(x, v);
   @(return x);
 }
+
+#ifdef ECL_THREADS
+cl_object
+mp_compare_and_swap_car(cl_object x, cl_object old, cl_object new)
+{
+  if (ecl_unlikely(!ECL_CONSP(x)))
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-car], 1, x, @[cons]);
+  return ecl_compare_and_swap(&ECL_CONS_CAR(x), old, new);
+}
+
+cl_object
+mp_atomic_incf_car(cl_object x, cl_object increment)
+{
+  if (ecl_unlikely(!ECL_CONSP(x)))
+    FEwrong_type_nth_arg(@[mp::atomic-incf-car], 1, x, @[cons]);
+  return ecl_atomic_incf(&ECL_CONS_CAR(x), increment);
+}
+
+cl_object
+mp_compare_and_swap_cdr(cl_object x, cl_object old, cl_object new)
+{
+  if (ecl_unlikely(!ECL_CONSP(x)))
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-cdr], 1, x, @[cons]);
+  return ecl_compare_and_swap(&ECL_CONS_CDR(x), old, new);
+}
+
+cl_object
+mp_atomic_incf_cdr(cl_object x, cl_object increment)
+{
+  if (ecl_unlikely(!ECL_CONSP(x)))
+    FEwrong_type_nth_arg(@[mp::atomic-incf-cdr], 1, x, @[cons]);
+  return ecl_atomic_incf(&ECL_CONS_CDR(x), increment);
+}
+#endif /* ECL_THREADS */
 
 @(defun subst (new_obj old_obj tree &key test test_not key)
   struct cl_test t;
@@ -1018,6 +1053,10 @@ ecl_assq(cl_object x, cl_object l)
 {
   loop_for_in(l) {
     cl_object pair = ECL_CONS_CAR(l);
+    if (pair==ECL_NIL) continue;
+    if (ecl_unlikely(ECL_ATOM(pair))) {
+      FEtype_error_cons(pair);
+    }
     if (x == CAR(pair))
       return pair;
   } end_loop_for_in;
@@ -1029,6 +1068,10 @@ ecl_assql(cl_object x, cl_object l)
 {
   loop_for_in(l) {
     cl_object pair = ECL_CONS_CAR(l);
+    if (pair==ECL_NIL) continue;
+    if (ecl_unlikely(ECL_ATOM(pair))) {
+      FEtype_error_cons(pair);
+    }
     if (ecl_eql(x, CAR(pair)))
       return pair;
   } end_loop_for_in;
@@ -1040,6 +1083,10 @@ ecl_assoc(cl_object x, cl_object l)
 {
   loop_for_in(l) {
     cl_object pair = ECL_CONS_CAR(l);
+    if (pair==ECL_NIL) continue;
+    if (ecl_unlikely(ECL_ATOM(pair))) {
+      FEtype_error_cons(pair);
+    }
     if (ecl_equal(x, CAR(pair)))
       return pair;
   } end_loop_for_in;
@@ -1051,6 +1098,10 @@ ecl_assqlp(cl_object x, cl_object l)
 {
   loop_for_in(l) {
     cl_object pair = ECL_CONS_CAR(l);
+    if (pair==ECL_NIL) continue;
+    if (ecl_unlikely(ECL_ATOM(pair))) {
+      FEtype_error_cons(pair);
+    }
     if (ecl_equalp(x, CAR(pair)))
       return pair;
   } end_loop_for_in;

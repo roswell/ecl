@@ -1,0 +1,74 @@
+* Toplevel
+- [X] Makefile
+
+* Introduction
+- [X] About ECL
+- [X] History
+- [X] Credits
+- [X] Copyrights
+
+* User's guide
+- [-] Building ECL
+- [X] Basic skills
+- [ ] Top-level loop
+- [ ] Tracer
+- [ ] Stepper
+- [ ] Errors
+- [ ] The break loop
+- [ ] Describe and inspect
+- [ ] Online help
+- [ ] Building programs
+- [ ] User accessible hooks
+- [ ] Embedding ECL
+
+* Developer's guide
+- [-] Source code structure
+- [ ] Contributing
+  - Source documentation
+- [ ] Modules hierarchy
+- [ ] Testing and benchmarking
+- [X] Manipulating Lisp objects
+- [ ] Environment implementation
+- [X] The interpreter
+- [X] The compiler
+- [X] Porting ECL
+- [ ] Experimental features
+- [ ] Current roadmap
+
+* Standards
+Many nodes, moderate amount of content (deviations from the standard)
+
+* Extensions
+- [X] System building (ASDF, builder)
+- [X] OS interface
+- [X] FFI
+  - [X] General info and examples
+  - [X] SFFI :: Static FFI
+# - [ ] LFFI :: Library FFI :: (?) /dlopen etc./
+# - [ ] DFFI :: Dynamic FFI
+  - [X] UFFI
+- [X] Multithreading
+- [X] Signals and Interrupts
+- [ ] Networking
+- [X] Memory managament
+- [-] MOP
+- [ ] Green threads
+- [ ] Continuations
+- [ ] Extensible Sequences
+- [ ] Gray streams
+- [ ] Series
+- [ ] Tree walker
+- [X] Local package nicknames
+- [X] CDR Extensions
+
+* Not documented yet
+#+BEGIN_SRC lisp
+  (when (>= ext:+ecl-version-number+ 160102)
+    foo
+    bar)
+
+  (ffi:definline …)
+#+END_SRC
+
+* Things to fix
+- [X] Add :long-double to the UFFI interface

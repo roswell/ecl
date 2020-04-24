@@ -28,7 +28,7 @@
 #include <setjmp.h>             /* setjmp and buffers */
 #include <stdio.h>              /* FILE */
 /* Microsoft VC++ does not have va_copy() */
-#if ( defined(_MSC_VER) && (_MSC_VER < 1900) ) || !defined(va_copy)
+#if ( defined(_MSC_VER) && (_MSC_VER < 1800) ) || !defined(va_copy)
 #define va_copy(dst, src) \
    ((void) memcpy(&(dst), &(src), sizeof(va_list)))
 #endif
@@ -89,6 +89,7 @@
 #include <ecl/stacks.h>
 #include <ecl/number.h>
 #include <ecl/legacy.h>
+#include <ecl/impl/math_fenv.h>
 
 typedef void (*ecl_init_function_t)(cl_object block);
 

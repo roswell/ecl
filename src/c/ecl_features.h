@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * features.h - names of features compiled into ECL
+ * ecl_features.h - names of features compiled into ECL
  *
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
@@ -19,8 +19,12 @@ ecl_def_string_array(feature_names,static,const) = {
   ecl_def_string_array_elt("FFI"),
   ecl_def_string_array_elt("PREFIXED-API"),
   ecl_def_string_array_elt("CDR-14"),
+  ecl_def_string_array_elt("PACKAGE-LOCAL-NICKNAMES"),
 #ifdef ECL_IEEE_FP
   ecl_def_string_array_elt("IEEE-FLOATING-POINT"),
+#endif
+#if !defined(ECL_IEEE_FP) || !defined(ECL_AVOID_FPE_H)
+  ecl_def_string_array_elt("FLOATING-POINT-EXCEPTIONS"),
 #endif
   ecl_def_string_array_elt("COMMON-LISP"),
   ecl_def_string_array_elt("ANSI-CL"),
@@ -70,11 +74,9 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_UNICODE
   ecl_def_string_array_elt("UNICODE"),
 #endif
-#ifdef ECL_LONG_FLOAT
   ecl_def_string_array_elt("LONG-FLOAT"),
-#endif
-#ifdef ECL_RELATIVE_PACKAGE_NAMES
-  ecl_def_string_array_elt("RELATIVE-PACKAGE-NAMES"),
+#ifdef ECL_COMPLEX_FLOAT
+  ecl_def_string_array_elt("COMPLEX-FLOAT"),
 #endif
 #ifdef ecl_uint16_t
   ecl_def_string_array_elt("UINT16-T"),
@@ -110,6 +112,9 @@ ecl_def_string_array(feature_names,static,const) = {
 #endif
 #ifdef ECL_WEAK_HASH
   ecl_def_string_array_elt("ECL-WEAK-HASH"),
+#endif
+#ifdef ECL_WSOCK
+  ecl_def_string_array_elt("WSOCK"),
 #endif
   ecl_def_string_array_elt(0)
 };

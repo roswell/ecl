@@ -39,7 +39,7 @@ write_array_inner(bool vector, cl_object x, cl_object stream)
   } else {
     if (!ecl_print_array()) {
       writestr_stream(vector? "#<vector " : "#<array ", stream);
-      _ecl_write_addr(x, stream);
+      _ecl_write_addr((void *)x, stream);
       ecl_write_char('>', stream);
       return;
     }
@@ -148,18 +148,20 @@ _ecl_write_vector(cl_object x, cl_object stream)
 void
 _ecl_write_string(cl_object x, cl_object stream)
 {
-  cl_index ndx;
   if (!ecl_print_escape() && !ecl_print_readably()) {
-    for (ndx = 0;  ndx < x->string.fillp;  ndx++)
-      ecl_write_char(x->string.self[ndx], stream);
+    si_do_write_sequence(x, stream, ecl_make_fixnum(0), ECL_NIL);
   } else {
+    cl_index ndx, ndx_start;
     ecl_write_char('"', stream);
-    for (ndx = 0;  ndx < x->string.fillp;  ndx++) {
+    for (ndx = ndx_start = 0;  ndx < x->string.fillp;  ndx++) {
       ecl_character c = x->string.self[ndx];
-      if (c == '"' || c == '\\')
+      if (c == '"' || c == '\\') {
+        si_do_write_sequence(x, stream, ecl_make_fixnum(ndx_start), ecl_make_fixnum(ndx));
         ecl_write_char('\\', stream);
-      ecl_write_char(c, stream);
+        ndx_start = ndx;
+      }
     }
+    si_do_write_sequence(x, stream, ecl_make_fixnum(ndx_start), ECL_NIL);
     ecl_write_char('"', stream);
   }
 }
@@ -168,18 +170,20 @@ _ecl_write_string(cl_object x, cl_object stream)
 void
 _ecl_write_base_string(cl_object x, cl_object stream)
 {
-  cl_index ndx;
   if (!ecl_print_escape() && !ecl_print_readably()) {
-    for (ndx = 0;  ndx < x->base_string.fillp;  ndx++)
-      ecl_write_char(x->base_string.self[ndx], stream);
+    si_do_write_sequence(x, stream, ecl_make_fixnum(0), ECL_NIL);
   } else {
+    cl_index ndx, ndx_start;
     ecl_write_char('"', stream);
-    for (ndx = 0;  ndx < x->base_string.fillp;  ndx++) {
-      int c = x->base_string.self[ndx];
-      if (c == '"' || c == '\\')
+    for (ndx = ndx_start = 0;  ndx < x->base_string.fillp;  ndx++) {
+      ecl_character c = x->base_string.self[ndx];
+      if (c == '"' || c == '\\') {
+        si_do_write_sequence(x, stream, ecl_make_fixnum(ndx_start), ecl_make_fixnum(ndx));
         ecl_write_char('\\', stream);
-      ecl_write_char(c, stream);
+        ndx_start = ndx;
+      }
     }
+    si_do_write_sequence(x, stream, ecl_make_fixnum(ndx_start), ECL_NIL);
     ecl_write_char('"', stream);
   }
 }
@@ -189,7 +193,7 @@ _ecl_write_bitvector(cl_object x, cl_object stream)
 {
   if (!ecl_print_array() && !ecl_print_readably()) {
     writestr_stream("#<bit-vector ", stream);
-    _ecl_write_addr(x, stream);
+    _ecl_write_addr((void *)x, stream);
     ecl_write_char('>', stream);
   } else {
     cl_index ndx;

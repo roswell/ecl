@@ -101,9 +101,9 @@ static void
 write_complex(cl_object x, cl_object stream)
 {
   writestr_stream("#C(", stream);
-  si_write_ugly_object(x->complex.real, stream);
+  si_write_ugly_object(x->gencomplex.real, stream);
   ecl_write_char(' ', stream);
-  si_write_ugly_object(x->complex.imag, stream);
+  si_write_ugly_object(x->gencomplex.imag, stream);
   ecl_write_char(')', stream);
 }
 
@@ -115,6 +115,35 @@ write_float(cl_object f, cl_object stream)
   si_do_write_sequence(s, stream, ecl_make_fixnum(0), ECL_NIL);
   si_put_buffer_string(s);
 }
+
+#ifdef ECL_COMPLEX_FLOAT
+static void                    /* XXX: do not cons new floats here! */
+write_complex_float(cl_object f, cl_object stream)
+{
+  cl_object real, imag;
+  switch (ecl_t_of(f)) {
+  case t_csfloat:
+    real = ecl_make_single_float(crealf(ecl_csfloat(f)));
+    imag = ecl_make_single_float(cimagf(ecl_csfloat(f)));
+    break;
+  case t_cdfloat:
+    real = ecl_make_double_float(creal(ecl_cdfloat(f)));
+    imag = ecl_make_double_float(cimag(ecl_cdfloat(f)));
+    break;
+  case t_clfloat:
+    real = ecl_make_long_float(creall(ecl_clfloat(f)));
+    imag = ecl_make_long_float(cimagl(ecl_clfloat(f)));
+    break;
+  default:
+    break;
+  }
+  writestr_stream("#C(", stream);
+  si_write_ugly_object(real, stream);
+  ecl_write_char(' ', stream);
+  si_write_ugly_object(imag, stream);
+  writestr_stream(")", stream);
+}
+#endif
 
 static void
 write_character(cl_object x, cl_object stream)
@@ -147,8 +176,11 @@ write_hashtable(cl_object x, cl_object stream)
 {
   if (ecl_print_readably() && !Null(ecl_symbol_value(@'*read-eval*'))) {
     cl_object make =
-      cl_list(9, @'make-hash-table',
+      cl_list(15, @'make-hash-table',
               @':size', cl_hash_table_size(x),
+              @':synchronized', si_hash_table_synchronized_p(x),
+              @':weakness', si_hash_table_weakness(x),
+              @':hash-function', x->hash.generic_hash,
               @':rehash-size', cl_hash_table_rehash_size(x),
               @':rehash-threshold', cl_hash_table_rehash_threshold(x),
               @':test', cl_list(2, @'quote', cl_hash_table_test(x)));
@@ -178,12 +210,7 @@ write_stream(cl_object x, cl_object stream)
 {
   const char *prefix;
   cl_object tag;
-  union cl_lispunion str;
-#ifdef ECL_UNICODE
-  ecl_character buffer[10];
-#else
-  ecl_base_char buffer[10];
-#endif
+  cl_object buffer = OBJNULL;
   switch ((enum ecl_smmode)x->stream.mode) {
   case ecl_smm_input_file:
     prefix = "closed input file";
@@ -252,28 +279,20 @@ write_stream(cl_object x, cl_object stream)
     tag = ECL_NIL;
     break;
   case ecl_smm_string_input: {
+    buffer = si_get_buffer_string();
     cl_object text = x->stream.object0;
     cl_index ndx, l = ecl_length(text);
     for (ndx = 0; (ndx < 8) && (ndx < l); ndx++) {
-      buffer[ndx] = ecl_char(text, ndx);
+      ecl_char_set(buffer, ndx, ecl_char(text, ndx));
     }
     if (l > ndx) {
-      buffer[ndx-1] = '.';
-      buffer[ndx-2] = '.';
-      buffer[ndx-3] = '.';
+      ecl_char_set(buffer, ndx-1, '.');
+      ecl_char_set(buffer, ndx-2, '.');
+      ecl_char_set(buffer, ndx-3, '.');
     }
-    buffer[ndx++] = 0;
+    si_fill_pointer_set(buffer, ecl_make_fixnum(ndx));
     prefix = "closed string-input stream from";
-    tag = &str;
-#ifdef ECL_UNICODE
-    tag->string.t = t_string;
-    tag->string.self = buffer;
-#else
-    tag->base_string.t = t_base_string;
-    tag->base_string.self = buffer;
-#endif
-    tag->base_string.dim = ndx;
-    tag->base_string.fillp = ndx-1;
+    tag = buffer;
     break;
   }
   case ecl_smm_string_output:
@@ -294,6 +313,8 @@ write_stream(cl_object x, cl_object stream)
   if (!x->stream.closed)
     prefix = prefix + 7;
   _ecl_write_unreadable(x, prefix, tag, stream);
+  if (buffer != OBJNULL)
+    si_put_buffer_string(buffer);
 }
 
 static void
@@ -329,7 +350,18 @@ write_cclosure(cl_object x, cl_object stream)
 static void
 write_foreign(cl_object x, cl_object stream)
 {
-  _ecl_write_unreadable(x, "foreign", x->foreign.tag, stream);
+  if (ecl_print_readably()) {
+    FEprint_not_readable(x);
+  }
+  writestr_stream("#<foreign ", stream);
+  si_write_ugly_object(x->foreign.tag, stream);
+  ecl_write_char(' ', stream);
+  if (x->foreign.data == NULL) {
+    writestr_stream("NULL", stream);
+  } else {
+    _ecl_write_addr((void *)x->foreign.data, stream);
+  }
+  ecl_write_char('>', stream);
 }
 
 static void
@@ -368,7 +400,7 @@ write_rwlock(cl_object x, cl_object stream)
 static void
 write_condition_variable(cl_object x, cl_object stream)
 {
-  _ecl_write_unreadable(x, "semaphore", ECL_NIL, stream);
+  _ecl_write_unreadable(x, "condition-variable", ECL_NIL, stream);
 }
 
 static void
@@ -400,56 +432,59 @@ write_illegal(cl_object x, cl_object stream)
 typedef void (*printer)(cl_object x, cl_object stream);
 
 static printer dispatch[FREE+1] = {
-  0 /* t_start = 0 */,
-  _ecl_write_list, /* t_list = 1 */
-  write_character, /* t_character = 2 */
-  write_integer, /* t_fixnum = 3 */
-  write_integer, /* t_bignum = 4 */
-  write_ratio, /* t_ratio */
-  /* write_float, */ /* t_shortfloat */
-  write_float, /* t_singlefloat */
-  write_float, /* t_doublefloat */
-#ifdef ECL_LONG_FLOAT
-  write_float, /* t_longfloat */
+  0                         /* t_start = 0 */,
+  _ecl_write_list,              /* t_list = 1 */
+  write_character,              /* t_character = 2 */
+  write_integer,                /* t_fixnum = 3 */
+  write_integer,                /* t_bignum = 4 */
+  write_ratio,                  /* t_ratio */
+  /* write_float, */            /* t_shortfloat */
+  write_float,                  /* t_singlefloat */
+  write_float,                  /* t_doublefloat */
+  write_float,                  /* t_longfloat */
+  write_complex,                /* t_complex */
+#ifdef ECL_COMPLEX_FLOAT
+  write_complex_float,          /* t_csfloat */
+  write_complex_float,          /* t_cdfloat */
+  write_complex_float,          /* t_clfloat */
 #endif
-  write_complex, /* t_complex */
-  _ecl_write_symbol, /* t_symbol */
-  write_package, /* t_package */
-  write_hashtable, /* t_hashtable */
-  _ecl_write_array, /* t_array */
-  _ecl_write_vector, /* t_vector */
+  _ecl_write_symbol,            /* t_symbol */
+  write_package,                /* t_package */
+  write_hashtable,              /* t_hashtable */
+  _ecl_write_array,             /* t_array */
+  _ecl_write_vector,            /* t_vector */
 #ifdef ECL_UNICODE
-  _ecl_write_string, /* t_string */
+  _ecl_write_string,            /* t_string */
 #endif
-  _ecl_write_base_string, /* t_base_string */
-  _ecl_write_bitvector, /* t_bitvector */
-  write_stream, /* t_stream */
-  write_random, /* t_random */
-  write_readtable, /* t_readtable */
-  write_pathname, /* t_pathname */
-  _ecl_write_bytecodes, /* t_bytecodes */
-  _ecl_write_bclosure, /* t_bclosure */
-  write_cfun, /* t_cfun */
-  write_cfun, /* t_cfunfixed */
-  write_cclosure, /* t_cclosure */
-  write_instance, /* t_instance */
+  _ecl_write_base_string,       /* t_base_string */
+  _ecl_write_bitvector,         /* t_bitvector */
+  write_stream,                 /* t_stream */
+  write_random,                 /* t_random */
+  write_readtable,              /* t_readtable */
+  write_pathname,               /* t_pathname */
+  _ecl_write_bytecodes,         /* t_bytecodes */
+  _ecl_write_bclosure,          /* t_bclosure */
+  write_cfun,                   /* t_cfun */
+  write_cfun,                   /* t_cfunfixed */
+  write_cclosure,               /* t_cclosure */
+  write_instance,               /* t_instance */
 #ifdef ECL_THREADS
-  write_process, /* t_process */
-  write_lock, /* t_lock */
-  write_rwlock, /* t_rwlock */
-  write_condition_variable, /* t_condition_variable */
-  write_semaphore, /* t_semaphore */
-  write_barrier, /* t_barrier */
-  write_mailbox, /* t_mailbox */
+  write_process,                /* t_process */
+  write_lock,                   /* t_lock */
+  write_rwlock,                 /* t_rwlock */
+  write_condition_variable,     /* t_condition_variable */
+  write_semaphore,              /* t_semaphore */
+  write_barrier,                /* t_barrier */
+  write_mailbox,                /* t_mailbox */
 #endif
-  write_codeblock, /* t_codeblock */
-  write_foreign, /* t_foreign */
-  write_frame, /* t_frame */
-  write_weak_pointer, /* t_weak_pointer */
+  write_codeblock,              /* t_codeblock */
+  write_foreign,                /* t_foreign */
+  write_frame,                  /* t_frame */
+  write_weak_pointer,           /* t_weak_pointer */
 #ifdef ECL_SSE2
-  _ecl_write_sse, /* t_sse_pack */
+  _ecl_write_sse,               /* t_sse_pack */
 #endif
-  /* t_end */
+                            /* t_end */
 };
 
 cl_object

@@ -68,11 +68,6 @@
 #undef ECL_RWLOCK
 #endif
 
-/* __thread thread-local variables?                                     */
-#ifndef openbsd
-#undef WITH___THREAD
-#endif
-
 /* Use Boehm's garbage collector                                        */
 #undef GBC_BOEHM
 #ifdef GBC_BOEHM
@@ -103,8 +98,6 @@
 
 /* Support for Unicode strings */
 #undef ECL_UNICODE
-/* Link in the Unicode names for all characters (takes ~0.5 Mb)         */
-#undef ECL_UNICODE_NAMES
 
 /* Allow STREAM operations to work on arbitrary objects                 */
 #undef ECL_CLOS_STREAMS
@@ -114,9 +107,6 @@
 
 /* We have libffi and can use it                                        */
 #undef HAVE_LIBFFI
-
-/* We use hierarchical package names, like in Allegro CL                */
-#undef ECL_RELATIVE_PACKAGE_NAMES
 
 /* Use mprotect for fast interrupt dispatch				*/
 #ifndef NACL
@@ -160,6 +150,8 @@
 typedef @CL_FIXNUM_TYPE@ cl_fixnum;
 typedef unsigned @CL_FIXNUM_TYPE@ cl_index;
 typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
+
+#define ECL_BIGNUM_REGISTER_NUMBER 3
 
 /*
  * The character type
@@ -210,11 +202,11 @@ typedef unsigned char ecl_base_char;
  */
 #define ECL_SLOTS_LIMIT 32768
 
-/* compiler understands long double                                     */
-#undef ECL_LONG_FLOAT
+/* compiler understands long float */
+#define ECL_LONG_FLOAT
+
 /* compiler understands complex                                         */
-#undef HAVE_DOUBLE_COMPLEX
-#undef HAVE_FLOAT_COMPLEX
+#undef ECL_COMPLEX_FLOAT
 
 /* do we want NaNs and Infs                                             */
 #undef ECL_IEEE_FP
@@ -227,6 +219,18 @@ typedef unsigned char ecl_base_char;
 
 /* Use CMU Common-Lisp's FORMAT routine                                 */
 #undef ECL_CMU_FORMAT
+
+/* Use the serialization framework                                      */
+#undef ECL_EXTERNALIZABLE
+
+/* do we want to deactivate all support for floating point exceptions   */
+#undef ECL_AVOID_FPE_H
+
+/* can manipulate floating point environment				*/
+#undef HAVE_FENV_H
+
+/* feenableexcept is available */
+#undef HAVE_FEENABLEEXCEPT
 
 /*
  * C macros for inlining, denoting probable code paths and other stuff

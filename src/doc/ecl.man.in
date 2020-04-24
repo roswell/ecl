@@ -105,12 +105,12 @@ in kilobytes.
 .BI \-\-lisp-stack " size"
 Specify stack
 .I size
-in kilobytes for lisp system.
+in kilobytes for bytecodes interpreter.
 .TP
 .BI \-\-frame-stack " size"
 Specify frame stack
 .I size
-in kilobytes.
+in kilobytes for runtime control structures.
 .TP
 .BI \-\-c-stack " size"
 Specify stack

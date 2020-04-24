@@ -27,7 +27,7 @@
 
 #undef _complex
 
-static cl_object dispatch_macro_character(cl_object table, cl_object strm, int c);
+static cl_object dispatch_macro_character(cl_object table, cl_object strm, int c, bool signal_error);
 
 #define read_suppress (ecl_symbol_value(@'*read-suppress*') != ECL_NIL)
 
@@ -194,7 +194,13 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
       (flags != ECL_READ_ONLY_TOKEN)) {
     cl_object o;
     if (ECL_HASH_TABLE_P(x)) {
-      o = dispatch_macro_character(x, in, c);
+      if (suppress) {
+        o = dispatch_macro_character(x, in, c, FALSE);
+        if (o == OBJNULL)
+          goto BEGIN;
+      } else {
+        o = dispatch_macro_character(x, in, c, TRUE);
+      }
     } else {
       o = _ecl_funcall3(x, in, ECL_CODE_CHAR(c));
     }
@@ -300,7 +306,7 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
       ecl_unread_char(c, in);
       break;
     }
-    unlikely_if (ecl_invalid_character_p(c)) {
+    unlikely_if (ecl_invalid_character_p(c) && !suppress) {
       FEreader_error("Found invalid character ~:C", in,
                      1, ECL_CODE_CHAR(c));
     }
@@ -383,8 +389,8 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
   if (external_symbol) {
     x = ecl_find_symbol(token, p, &intern_flag);
     unlikely_if (intern_flag != ECL_EXTERNAL) {
-      FEerror("Cannot find the external symbol ~A in ~S.",
-              2, cl_copy_seq(token), p);
+      FEreader_error("Cannot find the external symbol ~A in ~S.", in,
+                     2, cl_copy_seq(token), p);
     }
   } else {
     if (p == ECL_NIL) {
@@ -453,7 +459,7 @@ cl_object comma_reader(cl_object in, cl_object c)
   const cl_env_ptr env = ecl_process_env();
   cl_fixnum backq_level = ecl_fixnum(ECL_SYM_VAL(env, @'si::*backq-level*'));
 
-  unlikely_if (backq_level <= 0)
+  unlikely_if (backq_level <= 0 && !read_suppress)
     FEreader_error("A comma has appeared out of a backquote.", in, 0);
   /* Read character & complain at EOF */
   c = cl_peek_char(2,ECL_NIL,in);
@@ -482,6 +488,8 @@ cl_object backquote_reader(cl_object in, cl_object c)
   ECL_SETQ(the_env, @'si::*backq-level*', ecl_make_fixnum(backq_level));
   unlikely_if (c == OBJNULL)
     FEend_of_file(in);
+  unlikely_if (read_suppress)
+    @(return ECL_NIL);
 #if 0
   @(return cl_macroexpand_1(2, cl_list(2, @'si::quasiquote', in), ECL_NIL));;
 #else
@@ -556,11 +564,15 @@ dispatch_reader_fun(cl_object in, cl_object dc)
   unlikely_if (!ECL_HASH_TABLE_P(dispatch_table))
     FEreader_error("~C is not a dispatching macro character",
                    in, 1, dc);
-  return dispatch_macro_character(dispatch_table, in, c);
+  return dispatch_macro_character(dispatch_table, in, c, TRUE);
 }
 
+/*
+  Returns OBJNULL if no dispatch function is defined and signal_error
+  is false
+ */
 static cl_object
-dispatch_macro_character(cl_object table, cl_object in, int c)
+dispatch_macro_character(cl_object table, cl_object in, int c, bool signal_error)
 {
   cl_object arg;
   int d;
@@ -581,9 +593,13 @@ dispatch_macro_character(cl_object table, cl_object in, int c)
     cl_object dc = ECL_CODE_CHAR(c);
     cl_object fun = ecl_gethash_safe(dc, table, ECL_NIL);
     unlikely_if (Null(fun)) {
-      FEreader_error("No dispatch function defined "
-                     "for character ~S",
-                     in, 1, dc);
+      if (signal_error) {
+        FEreader_error("No dispatch function defined "
+                       "for character ~S",
+                       in, 1, dc);
+      } else {
+        return OBJNULL;
+      }
     }
     return _ecl_funcall4(fun, in, dc, arg);
   }
@@ -622,6 +638,13 @@ semicolon_reader(cl_object in, cl_object c)
 */
 
 static cl_object
+sharp_generic_error(cl_object in, cl_object c, cl_object n)
+{
+  FEreader_error("The character ~:C is not a valid dispatch macro character",
+                 in, 1, c);
+}
+
+static cl_object
 sharp_C_reader(cl_object in, cl_object c, cl_object d)
 {
   const cl_env_ptr the_env = ecl_process_env();
@@ -646,8 +669,8 @@ sharp_C_reader(cl_object in, cl_object c, cl_object d)
       !Null(ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*')))
     {
       x = ecl_alloc_object(t_complex);
-      x->complex.real = real;
-      x->complex.imag = imag;
+      x->gencomplex.real = real;
+      x->gencomplex.imag = imag;
     } else {
     x = ecl_make_complex(real, imag);
   }
@@ -708,7 +731,7 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   cl_object x, rv, nth, lex;
 
   if (d != ECL_NIL && !read_suppress)
-    extra_argument('C', in, d);
+    extra_argument('Y', in, d);
   x = ecl_read_object(in);
   unlikely_if (x == OBJNULL) {
     FEend_of_file(in);
@@ -716,18 +739,9 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   if (read_suppress) {
     @(return ECL_NIL);
   }
-  unlikely_if (!ECL_CONSP(x) || ecl_length(x) < 5) {
-    FEreader_error("Reader macro #Y should be followed by a list",
-                   in, 0);
-  }
 
-  if (ecl_length(x) == 2) {
-    rv = ecl_alloc_object(t_bclosure);
-    rv->bclosure.code = ECL_CONS_CAR(x);
-    x = ECL_CONS_CDR(x);
-    rv->bclosure.lex = ECL_CONS_CAR(x);
-    rv->bclosure.entry = _ecl_bclosure_dispatch_vararg;
-    @(return rv);
+  unlikely_if (!ECL_CONSP(x) || ecl_length(x) < 5) {
+    FEreader_error("Reader macro #Y should be followed by a list", in, 0);
   }
 
   rv = ecl_alloc_object(t_bytecodes);
@@ -768,6 +782,14 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   rv->bytecodes.file_position = nth;
 
   rv->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
+
+  if (lex != ECL_NIL) {
+    cl_object x = ecl_alloc_object(t_bclosure);
+    x->bclosure.code = rv;
+    x->bclosure.lex = lex;
+    x->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+    rv = x;
+  }
   @(return rv);
 }
 
@@ -883,7 +905,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
   cl_env_ptr env = ecl_process_env();
   cl_index sp = ECL_STACK_INDEX(env);
   cl_object last, elt, x;
-  cl_index dim, dimcount, i;
+  cl_fixnum dim, dimcount, i;
   cl_object rtbl = ecl_current_readtable();
   enum ecl_chattrib a;
 
@@ -976,8 +998,11 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
         ecl_string_push_extend(token, c);
       }
       goto K;
-    } else if (ecl_lower_case_p(c))
+    } else if (ecl_lower_case_p(c)) {
       c = ecl_char_upcase(c);
+    } else if (c == ':' && !read_suppress) {
+      FEreader_error("An uninterned symbol must not contain a package prefix", in, 0);
+    }
     if (a == cat_whitespace || a == cat_terminating)
       break;
   }
@@ -1131,34 +1156,41 @@ sharp_sharp_reader(cl_object in, cl_object c, cl_object d)
 
 static cl_object
 do_patch_sharp(cl_object x, cl_object table)
-#if 1
 {
   /* The hash table maintains an association as follows:
    *
    * [1] object -> itself
-   *      The object has been processed by patch_sharp, us as it is.
+   *      The object has been processed by patch_sharp, use as it is.
    * [2] object -> nothing
    *      The object has to be processed by do_patch_sharp.
    * [3] (# . object) -> object
-   *      This is the value of a #n# statement. The object migt
+   *      This is the value of a #n# statement. The object might
    *      or might not yet be processed by do_patch_sharp().
    */
+  /* If x is a list, it is processed iteratively. For this, we store
+   * the first and current cons cell */
+  cl_object first_cons = OBJNULL;
+  cl_object current_cons = OBJNULL;
  AGAIN:
   switch (ecl_t_of(x)) {
   case t_list: {
     cl_object y;
     if (Null(x))
-      return x;
+      return (first_cons ? first_cons : x);
     y = ecl_gethash_safe(x, table, table);
     if (y == table) {
       /* case [2] */
+      if (first_cons == OBJNULL)
+        first_cons = x;
       break;
     } else if (y == x) {
       /* case [1] */
-      return x;
+      return (first_cons ? first_cons : x);
     } else {
       /* case [3] */
       x = y;
+      if (current_cons != OBJNULL)
+        ECL_RPLACD(current_cons, x);
       goto AGAIN;
     }
   }
@@ -1175,15 +1207,22 @@ do_patch_sharp(cl_object x, cl_object table)
     /* it can only be case [1] */
   }
   default:
-    return x;
+    return (first_cons ? first_cons : x);
   }
   /* We eagerly mark the object as processed, to avoid infinite
    * recursion. */
   _ecl_sethash(x, table, x);
   switch (ecl_t_of(x)) {
   case t_list:
+    current_cons = x;
     ECL_RPLACA(x, do_patch_sharp(ECL_CONS_CAR(x), table));
-    ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
+    cl_object rest = ECL_CONS_CDR(x);
+    if (ecl_t_of(rest) == t_list) {
+      x = rest;
+      goto AGAIN;
+    } else {
+      ECL_RPLACD(x, do_patch_sharp(rest, table));
+    }
     break;
   case t_vector:
     if (x->vector.elttype == ecl_aet_object) {
@@ -1202,17 +1241,17 @@ do_patch_sharp(cl_object x, cl_object table)
     }
     break;
   case t_complex: {
-    cl_object r = do_patch_sharp(x->complex.real, table);
-    cl_object i = do_patch_sharp(x->complex.imag, table);
-    if (r != x->complex.real || i != x->complex.imag) {
+    cl_object r = do_patch_sharp(x->gencomplex.real, table);
+    cl_object i = do_patch_sharp(x->gencomplex.imag, table);
+    if (r != x->gencomplex.real || i != x->gencomplex.imag) {
       cl_object c = ecl_make_complex(r, i);
-      x->complex = c->complex;
+      x->gencomplex = c->gencomplex;
     }
     break;
   }
   case t_bclosure: {
     x->bclosure.lex = do_patch_sharp(x->bclosure.lex, table);
-    x = x->bclosure.code = do_patch_sharp(x->bclosure.code, table);
+    x->bclosure.code = do_patch_sharp(x->bclosure.code, table);
     break;
   }
   case t_bytecodes: {
@@ -1223,74 +1262,8 @@ do_patch_sharp(cl_object x, cl_object table)
   }
   default:;
   }
-  return x;
+  return (first_cons ? first_cons : x);
 }
-#else
-{
-  switch (ecl_t_of(x)) {
-  case t_list:
-    if (Null(x))
-      return x;
-  case t_vector:
-  case t_array:
-  case t_complex:
-  case t_bclosure:
-  case t_bytecodes: {
-    cl_object y = ecl_gethash_safe(x, table, table);
-    if (y == table)
-      break;
-    x = y;
-  }
-  default:
-    return x;
-  }
-  switch (ecl_t_of(x)) {
-  case t_list:
-    ECL_RPLACA(x, do_patch_sharp(ECL_CONS_CAR(x), table));
-    ECL_RPLACD(x, do_patch_sharp(ECL_CONS_CDR(x), table));
-    break;
-  case t_vector:
-    if (x->vector.elttype == ecl_aet_object) {
-      cl_index i;
-      for (i = 0;  i < x->vector.fillp;  i++)
-        x->vector.self.t[i] =
-          do_patch_sharp(x->vector.self.t[i], table);
-    }
-    break;
-  case t_array:
-    if (x->vector.elttype == ecl_aet_object) {
-      cl_index i, j = x->array.dim;
-      for (i = 0;  i < j;  i++)
-        x->array.self.t[i] =
-          do_patch_sharp(x->array.self.t[i], table);
-    }
-    break;
-  case t_complex: {
-    cl_object r = do_patch_sharp(x->complex.real, table);
-    cl_object i = do_patch_sharp(x->complex.imag, table);
-    if (r != x->complex.real || i != x->complex.imag) {
-      cl_object c = ecl_make_complex(r, i);
-      x->complex = c->complex;
-    }
-    break;
-  }
-  case t_bclosure: {
-    x->bclosure.lex = do_patch_sharp(x->bclosure.lex, table);
-    x = x->bclosure.code = do_patch_sharp(x->bclosure.code, table);
-    break;
-  }
-  case t_bytecodes: {
-    x->bytecodes.name = do_patch_sharp(x->bytecodes.name, table);
-    x->bytecodes.definition = do_patch_sharp(x->bytecodes.definition, table);
-    x->bytecodes.data = do_patch_sharp(x->bytecodes.data, table);
-    break;
-  }
-  default:;
-  }
-  _ecl_sethash(x, table, x);
-  return x;
-}
-#endif
 
 static cl_object
 patch_sharp(const cl_env_ptr the_env, cl_object x)
@@ -1490,11 +1463,7 @@ ecl_current_read_default_float_format(void)
   if (x == @'double-float')
     return 'D';
   if (x == @'long-float') {
-#ifdef ECL_LONG_FLOAT
     return 'L';
-#else
-    return 'D';
-#endif
   }
   ECL_SETQ(the_env, @'*read-default-float-format*', @'single-float');
   FEerror("The value of *READ-DEFAULT-FLOAT-FORMAT*~& ~S~%"
@@ -1630,7 +1599,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
   if (!ECL_ANSI_STREAM_P(strm)) {
     value0 = _ecl_funcall2(@'gray::stream-read-line', strm);
     value1 = ecl_nth_value(the_env, 1);
-    if (!Null(value1)) {
+    if (Null(value0) && !Null(value1)) {
       if (!Null(eof_errorp))
         FEend_of_file(strm);
       value0 = eof_value;
@@ -1795,7 +1764,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
   return funcall(5, @'gray::stream-read-sequence', stream, sequence, start, end);
   else
 #endif
-    return si_do_read_sequence(sequence, stream, start, end);
+	  @(return si_do_read_sequence(sequence, stream, start, end));
   @)
 
 
@@ -1826,7 +1795,7 @@ static void
 error_locked_readtable(cl_object r)
 {
   cl_error(2,
-           make_constant_base_string("Cannot modify locked readtable ~A."),
+           ecl_make_constant_base_string("Cannot modify locked readtable ~A.",-1),
            r);
 }
 
@@ -2157,6 +2126,24 @@ init_read(void)
                                   make_cf3(sharp_minus_reader), r);
   cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('|'),
                                   make_cf3(sharp_vertical_bar_reader), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\b'),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\t'),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_NEWLINE),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_LINEFEED),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\f'),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_RETURN),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(' '),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(')'),
+                                  make_cf3(sharp_generic_error), r);
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('<'),
+                                  make_cf3(sharp_generic_error), r);
   /*  This is specific to this implementation  */
   cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('$'),
                                   make_cf3(sharp_dollar_reader), r);
@@ -2182,7 +2169,7 @@ init_read(void)
 
   {
     cl_object var, val;
-    var = cl_list(24,
+    var = cl_list(25,
                   @'*print-pprint-dispatch*', /* See end of pprint.lsp */
                   @'*print-array*',
                   @'*print-base*',
@@ -2203,11 +2190,12 @@ init_read(void)
                   @'*read-eval*',
                   @'*read-suppress*',
                   @'*readtable*',
+                  @'*package*',
                   @'si::*print-package*',
                   @'si::*print-structure*',
                   @'si::*sharp-eq-context*',
                   @'si::*circle-counter*');
-    val = cl_list(24,
+    val = cl_list(25,
                   /**pprint-dispatch-table**/ ECL_NIL,
                   /**print-array**/ ECL_T,
                   /**print-base**/ ecl_make_fixnum(10),
@@ -2228,6 +2216,7 @@ init_read(void)
                   /**read-eval**/ ECL_T,
                   /**read-suppress**/ ECL_NIL,
                   /**readtable**/ cl_core.standard_readtable,
+                  /**package**/ cl_core.lisp_package,
                   /*si::*print-package**/ cl_core.lisp_package,
                   /*si::*print-structure**/ ECL_T,
                   /*si::*sharp-eq-context**/ ECL_NIL,
@@ -2388,11 +2377,18 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
     /* Read all data for the library */
 #ifdef ECL_EXTERNALIZABLE
     {
-      cl_object v = ecl_deserialize(block->cblock.data_text);
-      unlikely_if (v->vector.dim < len)
-        FEreader_error("Not enough data while loading"
-                       "binary file", in, 0);
-      memcpy(VV, v->vector.self.t, len * sizeof(cl_object));
+      unlikely_if (block->cblock.data_text == NULL) {
+        unlikely_if (len > 0)
+          FEreader_error("Not enough data while loading"
+                         "binary file", in, 0);
+      } else {
+        cl_object v = si_deserialize(*(block->cblock.data_text));
+        unlikely_if (v->vector.dim < len)
+          FEreader_error("Not enough data while loading"
+                         "binary file", in, 0);
+        memcpy(VV, v->vector.self.t, perm_len * sizeof(cl_object));
+        memcpy(VVtemp, v->vector.self.t + perm_len, temp_len * sizeof(cl_object));
+      }
     }
 #else
     in = make_data_stream(block->cblock.data_text);
@@ -2429,7 +2425,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 
     assert(block->cblock.cfuns_size == 0 || VV != NULL);
     for (i = 0; i < block->cblock.cfuns_size; i++) {
-      const struct ecl_cfun *prototype = block->cblock.cfuns+i;
+      const struct ecl_cfunfixed *prototype = block->cblock.cfuns+i;
       cl_index fname_location = ecl_fixnum(prototype->block);
       cl_object fname = VV[fname_location];
       cl_index location = ecl_fixnum(prototype->name);
@@ -2437,7 +2433,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
       int narg = prototype->narg;
       VV[location] = narg<0?
         ecl_make_cfun_va((cl_objectfn)prototype->entry,
-                         fname, block) :
+                         fname, block, -narg - 1) :
         ecl_make_cfun((cl_objectfn_fixed)prototype->entry,
                       fname, block, narg);
       /* Add source file info */
@@ -2466,12 +2462,12 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
       ecl_dealloc(VVtemp);
     }
     ecl_bds_unwind1(env);
-  } ECL_UNWIND_PROTECT_EXIT {
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     if (in != OBJNULL)
       cl_close(1,in);
     env->packages_to_be_created = old_eptbc;
     env->packages_to_be_created_p = ECL_NIL;
-  } ECL_UNWIND_PROTECT_END;
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
 
   return block;
 }

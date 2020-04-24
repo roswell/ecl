@@ -44,13 +44,11 @@ ecl_tanh_double_float(cl_object x)
   return ecl_make_double_float(tanh(ecl_double_float(x)));
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_tanh_long_float(cl_object x)
 {
   return ecl_make_long_float(tanhl(ecl_long_float(x)));
 }
-#endif
 
 static cl_object
 ecl_tanh_complex(cl_object x)
@@ -60,7 +58,34 @@ ecl_tanh_complex(cl_object x)
   return ecl_divide(a, b);
 }
 
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_tanh_csfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_csfloat);
+  ecl_csfloat(result) = ctanhf(ecl_csfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_tanh_cdfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_cdfloat);
+  ecl_cdfloat(result) = ctanh(ecl_cdfloat(x));
+  return result;
+}
+
+static cl_object
+ecl_tanh_clfloat(cl_object x)
+{
+  cl_object result = ecl_alloc_object(t_clfloat);
+  ecl_clfloat(result) = ctanhl(ecl_clfloat(x));
+  return result;
+}
+#endif
+
 MATH_DEF_DISPATCH1(tanh, @[tanh], @[number],
                    ecl_tanh_rational, ecl_tanh_rational, ecl_tanh_rational,
                    ecl_tanh_single_float, ecl_tanh_double_float, ecl_tanh_long_float,
-                   ecl_tanh_complex);
+                   ecl_tanh_complex,
+                   ecl_tanh_csfloat, ecl_tanh_cdfloat, ecl_tanh_clfloat);

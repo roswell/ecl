@@ -25,6 +25,54 @@ that are susceptible to be changed by PROCLAIM."
 (defun cmp-env-copy (&optional (env *cmp-env*))
   (cons (car env) (cdr env)))
 
+(defun set-closure-env (definition lexenv &optional (env *cmp-env*))
+  "Set up an environment for compilation of closures: Register closed
+over macros in the compiler environment and enclose the definition of
+the closure in let/flet forms for variables/functions it closes over."
+  (loop for record in lexenv
+     do (cond ((not (listp record))
+               (multiple-value-bind (record-def record-lexenv)
+                   (function-lambda-expression record)
+                 (cond ((eql (car record-def) 'LAMBDA)
+                        (setf record-def (cdr record-def)))
+                       ((eql (car record-def) 'EXT:LAMBDA-BLOCK)
+                        (setf record-def (cddr record-def)))
+                       (t
+                        (error "~&;;; Error: Not a valid lambda expression: ~s." record-def)))
+                 ;; allow for closures which close over closures.
+                 ;; (first record-def) is the lambda list, (rest
+                 ;; record-def) the definition of the local function
+                 ;; in record
+                 (setf (rest record-def)
+                       (list (set-closure-env (if (= (length record-def) 2)
+                                                  (second record-def)
+                                                  `(progn ,@(rest record-def)))
+                                              record-lexenv env)))
+                 (setf definition
+                       `(flet ((,(compiled-function-name record)
+                                   ,@record-def))
+                          ,definition))))
+              ((and (listp record) (symbolp (car record)))
+               (cond ((eq (car record) 'si::macro)
+                      (cmp-env-register-macro (cddr record) (cadr record) env))
+                     ((eq (car record) 'si::symbol-macro)
+                      (cmp-env-register-symbol-macro-function (cddr record) (cadr record) env))
+                     (t
+                      (setf definition
+                            `(let ((,(car record) ',(cdr record)))
+                               ,definition)))
+                     ))
+              ;; ((and (integerp (cdr record)) (= (cdr record) 0))
+              ;;  Tags: We have lost the information, which tag
+              ;;  corresponds to the lex-env record. If we are
+              ;;  compiling a closure over a tag, we will get an
+              ;;  error later on.
+              ;;  )
+              ;; (t
+              ;;  Blocks: Not yet implemented
+              )
+     finally (return definition)))
+
 (defmacro cmp-env-variables (&optional (env '*cmp-env*))
   `(car ,env))
 
@@ -102,6 +150,11 @@ that are susceptible to be changed by PROCLAIM."
         (cmp-env-variables env))
   env)
 
+(defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*))
+  (push (list name 'si::symbol-macro function)
+        (cmp-env-variables env))
+  env)
+
 (defun cmp-env-register-block (blk &optional (env *cmp-env*))
   (push (list :block (blk-name blk) blk)
         (cmp-env-variables env))
@@ -117,16 +170,13 @@ that are susceptible to be changed by PROCLAIM."
   env)
 
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
-  (let ((ccb nil)
-        (clb nil)
+  (let ((cfb nil)
         (unw nil)
         (found nil))
     (dolist (record (cmp-env-functions env))
-      (cond ((eq record 'CB)
-             (setf ccb t))
-            ((eq record 'LB)
-             (setf clb t))
-            ((eq record 'UNWIND-PROTECT)
+      (cond ((eq record 'SI:FUNCTION-BOUNDARY)
+             (setf cfb t))
+            ((eq record 'SI:UNWIND-PROTECT-BOUNDARY)
              (setf unw t))
             ((atom record)
              (baboon :format-control "Uknown record found in environment~%~S"
@@ -135,19 +185,16 @@ that are susceptible to be changed by PROCLAIM."
             ((equal (first record) name)
              (setf found (first (last record)))
              (return))))
-    (values found ccb clb unw)))
+    (values found cfb unw)))
 
 (defun cmp-env-search-variables (type name env)
-  (let ((ccb nil)
-        (clb nil)
+  (let ((cfb nil)
         (unw nil)
         (found nil))
     (dolist (record (cmp-env-variables env))
-      (cond ((eq record 'CB)
-             (setf ccb t))
-            ((eq record 'LB)
-             (setf clb t))
-            ((eq record 'UNWIND-PROTECT)
+      (cond ((eq record 'SI:FUNCTION-BOUNDARY)
+             (setf cfb t))
+            ((eq record 'SI:UNWIND-PROTECT-BOUNDARY)
              (setf unw t))
             ((atom record)
              (baboon :format-control "Uknown record found in environment~%~S"
@@ -168,7 +215,7 @@ that are susceptible to be changed by PROCLAIM."
             (t
              (setf found record)
              (return))))
-    (values (first (last found)) ccb clb unw)))
+    (values (first (last found)) cfb unw)))
 
 (defun cmp-env-search-block (name &optional (env *cmp-env*))
   (cmp-env-search-variables :block name env))

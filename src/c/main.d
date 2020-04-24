@@ -50,8 +50,6 @@
 
 #if !defined(ECL_THREADS)
 cl_env_ptr cl_env_p = NULL;
-#elif defined(WITH___THREAD)
-__thread cl_env_ptr cl_env_p = NULL;
 #endif
 const char *ecl_self;
 
@@ -71,6 +69,7 @@ const char *ecl_self;
 
 static int ARGC;
 static char **ARGV;
+/* INV: see ecl_option enum in external.h */
 cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
 #ifdef GBC_BOEHM_GENGC
   1,              /* ECL_OPT_INCREMENTAL_GC */
@@ -83,7 +82,6 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
   1,              /* ECL_OPT_TRAP_SIGILL */
   1,              /* ECL_OPT_TRAP_SIGBUS */
   1,              /* ECL_OPT_TRAP_SIGPIPE */
-  1,              /* ECL_OPT_TRAP_SIGCHLD */
   1,              /* ECL_OPT_TRAP_INTERRUPT_SIGNAL */
   1,              /* ECL_OPT_SIGNAL_HANDLING_THREAD */
   16,             /* ECL_OPT_SIGNAL_QUEUE_SIZE */
@@ -94,9 +92,8 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
   128,            /* ECL_OPT_FRAME_STACK_SAFETY_AREA */
   32768,          /* ECL_OPT_LISP_STACK_SIZE */
   128,            /* ECL_OPT_LISP_STACK_SAFETY_AREA */
-  128*sizeof(cl_index)*1024, /* ECL_OPT_C_STACK_SIZE */
+  ECL_DEFAULT_C_STACK_SIZE, /* ECL_OPT_C_STACK_SIZE */
   4*sizeof(cl_index)*1024, /* ECL_OPT_C_STACK_SAFETY_AREA */
-  1,              /* ECL_OPT_SIGALTSTACK_SIZE */
   HEAP_SIZE_DEFAULT, /* ECL_OPT_HEAP_SIZE */
   1024*1024,      /* ECL_OPT_HEAP_SAFETY_AREA */
   0,              /* ECL_OPT_THREAD_INTERRUPT_SIGNAL */
@@ -134,6 +131,26 @@ ecl_set_option(int option, cl_fixnum value)
 }
 
 void
+ecl_init_bignum_registers(cl_env_ptr env)
+{
+  int i;
+  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    cl_object x = ecl_alloc_object(t_bignum);
+    _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
+    env->big_register[i] = x;
+  }
+}
+
+void
+ecl_clear_bignum_registers(cl_env_ptr env)
+{
+  int i;
+  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    _ecl_big_clear(env->big_register[i]);
+  }
+}
+
+void
 ecl_init_env(cl_env_ptr env)
 {
   env->c_env = NULL;
@@ -162,22 +179,17 @@ ecl_init_env(cl_env_ptr env)
 
   env->method_cache = ecl_make_cache(64, 4096);
   env->slot_cache = ecl_make_cache(3, 4096);
-  env->pending_interrupt = ECL_NIL;
+  env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
+  env->interrupt_struct->pending_interrupt = ECL_NIL;
+  env->interrupt_struct->signal_queue_spinlock = ECL_NIL;
   {
     int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
-    env->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
+    env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
   }
 
   init_stacks(env);
 
-  {
-    int i;
-    for (i = 0; i < 3; i++) {
-      cl_object x = ecl_alloc_object(t_bignum);
-      _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
-      env->big_register[i] = x;
-    }
-  }
+  ecl_init_bignum_registers(env);
 
   env->trap_fpe_bits = 0;
 
@@ -214,6 +226,13 @@ _ecl_alloc_env(cl_env_ptr parent)
    * Allocates the lisp environment for a thread. Depending on which
    * mechanism we use for detecting delayed signals, we may allocate
    * the environment using mmap or the garbage collector.
+   *
+   * Note that at this point we are not allocating any other memory
+   * which is stored via a pointer in the environment. If we would do
+   * that, an unlucky interrupt by the gc before the allocated
+   * environment is registered in cl_core.processes could lead to
+   * memory being freed because the gc is not aware of the pointer to
+   * the allocated memory in the environment.
    */
   cl_env_ptr output;
 #if defined(ECL_USE_MPROTECT)
@@ -252,13 +271,13 @@ _ecl_alloc_env(cl_env_ptr parent)
       output->default_sigmask = cl_core.default_sigmask;
     }
   }
+  output->method_cache = output->slot_cache = NULL;
+  output->interrupt_struct = NULL;
   /*
    * An uninitialized environment _always_ disables interrupts. They
    * are activated later on by the thread entry point or init_unixint().
    */
   output->disable_interrupts = 1;
-  output->pending_interrupt = ECL_NIL;
-  output->signal_queue_spinlock = ECL_NIL;
   return output;
 }
 
@@ -294,7 +313,6 @@ ecl_def_ct_base_string(str_LISP,"LISP",4,static,const);
 ecl_def_ct_base_string(str_c,"C",1,static,const);
 ecl_def_ct_base_string(str_compiler,"COMPILER",8,static,const);
 ecl_def_ct_base_string(str_ffi,"FFI",3,static,const);
-ecl_def_ct_base_string(str_user,"USER",4,static,const);
 ecl_def_ct_base_string(str_keyword,"KEYWORD",7,static,const);
 ecl_def_ct_base_string(str_si,"SI",2,static,const);
 ecl_def_ct_base_string(str_sys,"SYS",3,static,const);
@@ -330,10 +348,8 @@ ecl_def_ct_single_float(flt_zero,0,static,const);
 ecl_def_ct_single_float(flt_zero_neg,-0.0,static,const);
 ecl_def_ct_double_float(dbl_zero,0,static,const);
 ecl_def_ct_double_float(dbl_zero_neg,-0.0,static,const);
-#ifdef ECL_LONG_FLOAT
 ecl_def_ct_long_float(ldbl_zero,0,static,const);
 ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
-#endif
 ecl_def_ct_ratio(plus_half,ecl_make_fixnum(1),ecl_make_fixnum(2),static,const);
 ecl_def_ct_ratio(minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),static,const);
 ecl_def_ct_single_float(flt_one,1,static,const);
@@ -382,10 +398,8 @@ struct cl_core_struct cl_core = {
   (cl_object)&dbl_zero_data, /* doublefloat_zero */
   (cl_object)&flt_zero_neg_data, /* singlefloat_minus_zero */
   (cl_object)&dbl_zero_neg_data, /* doublefloat_minus_zero */
-#ifdef ECL_LONG_FLOAT
   (cl_object)&ldbl_zero_data, /* longfloat_zero */
   (cl_object)&ldbl_zero_neg_data, /* longfloat_minus_zero */
-#endif
 
   (cl_object)&str_G_data, /* gensym_prefix */
   (cl_object)&str_T_data, /* gentemp_prefix */
@@ -431,8 +445,6 @@ struct cl_core_struct cl_core = {
   (cl_object)&default_rehash_size_data, /* rehash_size */
   (cl_object)&default_rehash_threshold_data, /* rehash_threshold */
 
-  ECL_NIL, /* external_processes */
-  ECL_NIL, /* external_processes_lock */
   ECL_NIL /* known_signals */
 };
 
@@ -555,46 +567,75 @@ cl_boot(int argc, char **argv)
 #endif
 
   env->packages_to_be_created = ECL_NIL;
+
+#ifdef ECL_THREADS
+  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
+                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
+  env->thread_local_bindings_size = env->bindings_array->vector.dim;
+  env->thread_local_bindings = env->bindings_array->vector.self.t;
+#endif
+
+  /*
+   * Initialize the per-thread data.
+   * This cannot come later, because we need to be able to bind
+   * ext::*interrupts-enabled* while creating packages.
+   */
+  init_big();
+  ecl_init_env(env);
+  ecl_cs_set_org(env);
+
   cl_core.lisp_package =
     ecl_make_package(str_common_lisp,
-                     cl_list(2, str_cl, str_LISP),
+                     cl_list(1, str_cl),
+                     ECL_NIL,
                      ECL_NIL);
   cl_core.user_package =
     ecl_make_package(str_common_lisp_user,
-                     cl_list(2, str_cl_user, str_user),
-                     ecl_list1(cl_core.lisp_package));
+                     cl_list(1, str_cl_user),
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.keyword_package =
-    ecl_make_package(str_keyword, ECL_NIL, ECL_NIL);
+    ecl_make_package(str_keyword, ECL_NIL, ECL_NIL, ECL_NIL);
   cl_core.ext_package =
-    ecl_make_package(str_ext, ECL_NIL,
-                     ecl_list1(cl_core.lisp_package));
+    ecl_make_package(str_ext,
+                     ECL_NIL,
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.system_package =
     ecl_make_package(str_si,
                      cl_list(2,str_system,str_sys),
                      cl_list(2,cl_core.ext_package,
-                             cl_core.lisp_package));
+                             cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.c_package =
     ecl_make_package(str_c,
                      ecl_list1(str_compiler),
-                     ecl_list1(cl_core.lisp_package));
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.clos_package =
     ecl_make_package(str_clos,
                      ecl_list1(str_mop),
-                     ecl_list1(cl_core.lisp_package));
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
   cl_core.mp_package =
     ecl_make_package(str_mp,
                      ecl_list1(str_multiprocessing),
-                     ecl_list1(cl_core.lisp_package));
+                     ecl_list1(cl_core.lisp_package),
+                     ECL_NIL);
 #ifdef ECL_CLOS_STREAMS
-  cl_core.gray_package = ecl_make_package(str_gray, ECL_NIL,
-                                          CONS(cl_core.lisp_package, ECL_NIL));
+  cl_core.gray_package = ecl_make_package(str_gray,
+                                          ECL_NIL,
+                                          ecl_list1(cl_core.lisp_package),
+                                          ECL_NIL);
 #endif
   cl_core.ffi_package =
     ecl_make_package(str_ffi,
                      ECL_NIL,
                      cl_list(3,cl_core.lisp_package,
                              cl_core.system_package,
-                             cl_core.ext_package));
+                             cl_core.ext_package),
+                     ECL_NIL);
 
   ECL_NIL_SYMBOL->symbol.hpack = cl_core.lisp_package;
   cl_import2(ECL_NIL, cl_core.lisp_package);
@@ -610,14 +651,6 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-  /*
-   * Initialize the per-thread data.
-   * This cannot come later, because some routines need the
-   * frame stack immediately (for instance SI:PATHNAME-TRANSLATIONS).
-   */
-  init_big();
-  ecl_init_env(env);
-  ecl_cs_set_org(env);
 #if !defined(GBC_BOEHM)
   /* We need this because a lot of stuff is to be created */
   init_GC();
@@ -635,11 +668,6 @@ cl_boot(int argc, char **argv)
 #endif
 
 #ifdef ECL_THREADS
-  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
-                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
   ECL_SET(@'mp::*current-process*', env->own_process);
 #endif
 
@@ -837,7 +865,7 @@ si_argv(cl_object index)
   if (ECL_FIXNUMP(index)) {
     cl_fixnum i = ecl_fixnum(index);
     if (i >= 0 && i < ARGC) {
-      @(return make_base_string_copy(ARGV[i]));
+      @(return ecl_make_simple_base_string(ARGV[i],-1));
     }
   }
   FEerror("Illegal argument index: ~S.", 1, index);
@@ -851,7 +879,7 @@ si_getenv(cl_object var)
   /* Strings have to be null terminated base strings */
   var = si_copy_to_simple_base_string(var);
   value = getenv((char*)var->base_string.self);
-  @(return ((value == NULL)? ECL_NIL : make_base_string_copy(value)));
+  @(return ((value == NULL)? ECL_NIL : ecl_make_simple_base_string(value,-1)));
 }
 
 #if defined(HAVE_SETENV) || defined(HAVE_PUTENV)
@@ -883,7 +911,7 @@ si_setenv(cl_object var, cl_object value)
     ret_val = setenv((char*)var->base_string.self,
                      (char*)value->base_string.self, 1);
 #else
-    value = cl_format(4, ECL_NIL, make_constant_base_string("~A=~A"), var,
+    value = cl_format(4, ECL_NIL, ecl_make_constant_base_string("~A=~A",-1), var,
                       value);
     value = si_copy_to_simple_base_string(value);
     putenv((char*)value->base_string.self);
@@ -904,14 +932,14 @@ si_environ(void)
   char **p;
   extern char **environ;
   for (p = environ; *p; p++) {
-    output = CONS(make_constant_base_string(*p), output);
+    output = CONS(ecl_make_constant_base_string(*p,-1), output);
   }
   output = cl_nreverse(output);
 #else
 # if defined(ECL_MS_WINDOWS_HOST)
   LPTCH p;
   for (p = GetEnvironmentStrings(); *p; ) {
-    output = CONS(make_constant_base_string(p), output);
+    output = CONS(ecl_make_constant_base_string(p,-1), output);
     do { (void)0; } while (*(p++));
   }
   output = cl_nreverse(output);
@@ -930,6 +958,7 @@ si_pointer(cl_object x)
 #if defined(ECL_MS_WINDOWS_HOST)
 void
 ecl_get_commandline_args(int* argc, char*** argv) {
+  /* the caller should use LocalFree to release the memory of strings in argv and argv itself */
   LPWSTR *wArgs;
   int i;
 
@@ -937,10 +966,10 @@ ecl_get_commandline_args(int* argc, char*** argv) {
     return;
 
   wArgs = CommandLineToArgvW(GetCommandLineW(), argc);
-  *argv = (char**)malloc(sizeof(char*)*(*argc));
+  *argv = (char**)LocalAlloc(0, sizeof(char*)*(*argc));
   for (i=0; i<*argc; i++) {
     int len = wcslen(wArgs[i]);
-    (*argv)[i] = (char*)malloc(2*(len+1));
+    (*argv)[i] = (char*)LocalAlloc(0, 2*(len+1));
     wcstombs((*argv)[i], wArgs[i], len+1);
   }
   LocalFree(wArgs);

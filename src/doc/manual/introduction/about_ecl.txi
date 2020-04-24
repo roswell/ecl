@@ -1,0 +1,35 @@
+@node What is ECL
+@section What is ECL
+
+@clisp{} is a general purpose programming language. It lays its roots in
+the @acronym{LISP} programming language @bibcite{LISP1.5} developed by
+John McCarthy in the 80s. @clisp{} as we know it @ansi{} is the result
+of an standardization process aimed at unifying the multiple lisp
+dialects that were born from that language.
+
+@ecl{} is an implementation of the @clisp{} language. As such it derives
+from the implementation of the same name developed by Giuseppe Attardi,
+which itself was built using code from the Kyoto Common-Lisp
+@bibcite{Yasa:85}. @ref{History} for the history of the code you are
+about to use.
+
+@ecl{} (ECL for short) uses standard C calling conventions for Lisp
+compiled functions, which allows C programs to easily call Lisp
+functions and vice versa. No foreign function interface is required:
+data can be exchanged between C and Lisp with no need for conversion.
+
+ECL is based on a Common Runtime Support (CRS) which provides basic
+facilities for memory management, dynamic loading and dumping of binary
+images, support for multiple threads of execution. The CRS is built into
+a library that can be linked with the code of the application. ECL is
+modular: main modules are the program development tools (top level,
+debugger, trace, stepper), the compiler, and CLOS. A native
+implementation of CLOS is available in ECL. A runtime version of ECL can
+be built with just the modules which are required by the application.
+
+The ECL compiler compiles from Lisp to C, and then invokes the C
+compiler to produce binaries. Additionally portable bytecode compiler is
+provided for machines which doesn't have C compiler. While former
+releases of ECL adhere to the the reference of the language given in
+@cltl2{} @bibcite{Steele90}, the ECL is now compliant with X3J13 ANSI
+Common Lisp @bibcite{ANSI}.

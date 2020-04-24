@@ -58,9 +58,8 @@ search_macro_function(cl_object name, cl_object env)
 {
   int type = ecl_symbol_type(name);
   if (env != ECL_NIL) {
-    /* When the environment has been produced by the
-       compiler, there might be atoms/symbols signalling
-       closure and block boundaries. */
+    /* When the environment has been produced by the compiler, there might be
+       atoms/symbols signaling function and unwind-protect boundaries. */
     while (!Null(env = CDR(env))) {
       cl_object record = CAR(env);
       if (CONSP(record) && CAR(record) == name) {
@@ -173,7 +172,7 @@ when_macro(cl_object whole, cl_object env)
 {
   cl_object args = CDR(whole);
   if (ecl_unlikely(ecl_endp(args)))
-    FEprogram_error_noreturn("Syntax error: ~S.", 1, whole);
+    FEprogram_error("Syntax error: ~S.", 1, whole);
   return cl_list(3, @'if', CAR(args), CONS(@'progn', CDR(args)));
 }
 

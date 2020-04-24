@@ -49,7 +49,7 @@ si_structure_subtype_p(cl_object x, cl_object y)
   ECL_STRUCT_SLOTS(x) = NULL;     /* for GC sake */
   ECL_STRUCT_LENGTH(x) = --narg;
   ECL_STRUCT_SLOTS(x) = (cl_object *)ecl_alloc_align(sizeof(cl_object)*narg, sizeof(cl_object));
-  x->instance.sig = ECL_UNBOUND;
+  x->instance.slotds = ECL_UNBOUND;
   if (narg >= ECL_SLOTS_LIMIT)
     FEerror("Limit on structure size exceeded: ~S slots requested.",
             1, ecl_make_fixnum(narg));
@@ -102,7 +102,7 @@ si_structure_ref(cl_object x, cl_object type, cl_object index)
 }
 
 cl_object
-ecl_structure_ref(cl_object x, cl_object type, int n)
+ecl_structure_ref(cl_object x, cl_object type, cl_fixnum n)
 {
 
   if (ecl_unlikely(ecl_t_of(x) != T_STRUCTURE ||
@@ -122,15 +122,25 @@ si_structure_set(cl_object x, cl_object type, cl_object index, cl_object val)
 }
 
 cl_object
-ecl_structure_set(cl_object x, cl_object type, int n, cl_object v)
+ecl_structure_set(cl_object x, cl_object type, cl_fixnum n, cl_object v)
 {
-
   if (ecl_unlikely(ecl_t_of(x) != T_STRUCTURE ||
                    !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
     FEwrong_type_nth_arg(@[si::structure-set], 1, x, type);
   ECL_STRUCT_SLOT(x, n) = v;
   return(v);
 }
+
+#ifdef ECL_THREADS
+cl_object
+mp_compare_and_swap_structure(cl_object x, cl_object type, cl_object index, cl_object old, cl_object new)
+{
+  if (ecl_unlikely(ecl_t_of(x) != T_STRUCTURE ||
+                   !structure_subtypep(ECL_STRUCT_TYPE(x), type)))
+    FEwrong_type_nth_arg(@[mp::compare-and-swap-structure], 1, x, type);
+  return ecl_compare_and_swap(&(ECL_STRUCT_SLOT(x, ecl_fixnum(index))), old, new);
+}
+#endif
 
 cl_object
 si_structurep(cl_object s)

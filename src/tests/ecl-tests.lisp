@@ -20,54 +20,32 @@
 
 
 ;;;; Declare the suites
-(suite 'ecl-tests
-       '(executable eformat ieee-fp eprocess package-locks ansi+ mixed
-         cmp emb ffi mop mp))
-
 (suite 'make-check
-       '(executable ieee-fp eprocess package-locks ansi+ mixed cmp emb
-         ffi mop))
+       '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed
+         cmp emb ffi mop run-program mp complex))
+
+(suite 'ecl-tests
+       '(make-check eformat))
+
+(suite 'stress)
+(test stress.all (finishes (1am-ecl:run)))
 
 
-;;; Some syntactic sugar for 2am
-(defmacro once-only (specs &body body)
-  "Once-Only ({(Var Value-Expression)}*) Form*
-
-  Create a Let* which evaluates each Value-Expression, binding a
-  temporary variable to the result, and wrapping the Let* around the
-  result of the evaluation of Body.  Within the body, each Var is
-  bound to the corresponding temporary variable."
-  (labels ((frob (specs body)
-             (if (null specs)
-                 `(progn ,@body)
-                 (let ((spec (first specs)))
-                   (when (/= (length spec) 2)
-                     (error "Malformed Once-Only binding spec: ~S." spec))
-                   (let ((name (first spec))
-                         (exp-temp (gensym)))
-                     `(let ((,exp-temp ,(second spec))
-                            (,name (gensym "OO-")))
-                        `(let ((,,name ,,exp-temp))
-                           ,,(frob (rest specs) body))))))))
-    (frob specs body)))
-
 (defmacro is-true (form)
-  (once-only ((result form))
-    `(is (eql ,result t) "Expected T, but got ~s" ,result)))
+  (ext:once-only (form)
+    `(is (eql ,form t) "Expected T, but got ~s" ,form)))
 
 (defmacro is-false (form)
-  (once-only ((result form))
-    `(is (null ,result) "Expected NIL, but got ~s" ,result)))
+  (ext:once-only (form)
+    `(is (null ,form) "Expected NIL, but got ~s" ,form)))
 
 (defmacro is-equal (what form)
-  (once-only ((what what)
-              (form form))
-    `(is (equal ,what ,form) "EQUAL: ~s to ~s" ,form ,what)))
+  (ext:once-only (what form)
+    `(is (equal ,what ,form) "EQUAL: ~s to ~s" ,what ,form)))
 
 (defmacro is-eql (what form)
-  (once-only ((what what)
-              (form form))
-    `(is (eql ,what ,form) "EQL: ~s to ~s" ,what ,form)))
+  (ext:once-only (what form)
+    `(is (eql ,what ,form) "EQL: ~s to ~a" ,what ,form)))
 
 (defmacro pass (form &rest args)
   (declare (ignore form args))
@@ -125,6 +103,13 @@ as a second value."
                      (*compile-verbose* t)
                      (*compile-print* t))
                  (setf compiled-file (compile-file ,filename ,@compiler-args))))))
+       ;; todo: add delete-files flag
+       ;; (when delete-files
+       ;;   (delete-file filename)
+       ;;   (delete-file compiled-file))
+       (when (null compiled-file)
+         (delete-file ,filename)
+         (error "Compiling file ~a failed:~%~a" ,filename output))
        (values compiled-file output))))
 
 (defmacro with-temporary-file ((var string &rest args) &body body)
@@ -134,3 +119,18 @@ as a second value."
          (format ,stream ,string ,@args))
        (multiple-value-prog1 (progn ,@body)
          (delete-file ,var)))))
+
+
+;;; Approximate equality function
+(defun approx= (x y &optional (eps (epsilon x)))
+  (or (= x y)
+      (<= (abs (/ (- x y) (max (abs x) 1))) eps)))
+
+(defun epsilon (number)
+  (etypecase number
+    (complex (* 2 (epsilon (realpart number)))) ;; crude
+    (short-float short-float-epsilon)
+    (single-float single-float-epsilon)
+    (double-float double-float-epsilon)
+    (long-float long-float-epsilon)
+    (rational 0)))

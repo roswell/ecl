@@ -17,6 +17,7 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/bytecodes.h>
 #include <ecl/internal.h>
+#include <ecl/stack-resize.h>
 
 /* -------------------- INTERPRETER STACK -------------------- */
 
@@ -29,7 +30,7 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   cl_index new_size = tentative_new_size + 2*safety_area;
 
   /* Round to page size */
-  new_size = (new_size + (LISP_PAGESIZE-1))/LISP_PAGESIZE * new_size;
+  new_size = ((new_size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
 
   if (ecl_unlikely(top > new_size)) {
     FEerror("Internal error: cannot shrink stack below stack top.",0);
@@ -38,14 +39,13 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   old_stack = env->stack;
   new_stack = (cl_object *)ecl_alloc_atomic(new_size * sizeof(cl_object));
 
-  ecl_disable_interrupts_env(env);
+  ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
   memcpy(new_stack, old_stack, env->stack_size * sizeof(cl_object));
   env->stack_size = new_size;
   env->stack_limit_size = new_size - 2*safety_area;
   env->stack = new_stack;
   env->stack_top = env->stack + top;
   env->stack_limit = env->stack + (new_size - 2*safety_area);
-  ecl_enable_interrupts_env(env);
 
   /* A stack always has at least one element. This is assumed by cl__va_start
    * and friends, which take a sp=0 to have no arguments.
@@ -53,6 +53,8 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   if (top == 0) {
     *(env->stack_top++) = ecl_make_fixnum(0);
   }
+  ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
+
   return env->stack_top;
 }
 
@@ -124,8 +126,8 @@ ecl_stack_frame_push(cl_object f, cl_object o)
   if (top >= env->stack_limit) {
     top = ecl_stack_grow(env);
   }
-  *top = o;
   env->stack_top = ++top;
+  *(top-1) = o;
   f->frame.base = top - (++(f->frame.size));
   f->frame.stack = env->stack;
 }
@@ -162,6 +164,20 @@ ecl_stack_frame_close(cl_object f)
 }
 
 /* ------------------------------ LEXICAL ENV. ------------------------------ */
+/*
+ * A lexical environment is a list of pairs, each one containing
+ * either a variable definition, a tagbody or block tag, or a local
+ * function or macro definition.
+ *
+ *      lex_env ---> ( { record }* )
+ *      record = variable | function | block_tag | tagbody_tag | macro
+ *
+ *      variable = ( var_name[symbol] . value )
+ *      function = function[bytecodes]
+ *      block_tag = ( tag[fixnum] . block_name[symbol] )
+ *      tagbody_tag = ( tag[fixnum] . 0 )
+ *      macro = ( { si::macro | si::symbol-macro } macro_function[bytecodes] . macro_name )
+ */
 
 #define bind_var(env, var, val)         CONS(CONS(var, val), (env))
 #define bind_function(env, name, fun)   CONS(fun, (env))
@@ -204,14 +220,28 @@ _ecl_bclosure_dispatch_vararg(cl_narg narg, ...)
   return output;
 }
 
-static cl_object
-close_around(cl_object fun, cl_object lex) {
-  cl_object v = ecl_alloc_object(t_bclosure);
-  if (ecl_t_of(fun) != t_bytecodes)
-    FEerror("!!!", 0);
-  v->bclosure.code = fun;
-  v->bclosure.lex = lex;
-  v->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+cl_object
+ecl_close_around(cl_object fun, cl_object lex) {
+  cl_object v;
+  if (Null(lex)) return fun;
+  switch (ecl_t_of(fun)) {
+  case t_bytecodes:
+    v = ecl_alloc_object(t_bclosure);
+    v->bclosure.code = fun;
+    v->bclosure.lex = lex;
+    v->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+    break;
+  case t_bclosure:
+    v = ecl_alloc_object(t_bclosure);
+    v->bclosure.code = fun->bclosure.code;
+    /* Put the predefined macros in fun->bclosure.lex at the end of
+       the lexenv so that lexenv indices are still valid */
+    v->bclosure.lex = ecl_append(lex, fun->bclosure.lex);
+    v->bclosure.entry = fun->bclosure.entry;
+    break;
+  default:
+    FEerror("Internal error: ecl_close_around should be called on t_bytecodes or t_bclosure.", 0);
+  }
   return v;
 }
 
@@ -480,6 +510,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       cl_object frame = (cl_object)&frame_aux;
       frame_aux.size = narg;
       frame_aux.base = the_env->stack_top - narg;
+      the_env->stack_frame = frame;
       SETUP_ENV(the_env);
     AGAIN:
       if (ecl_unlikely(reg0 == OBJNULL || reg0 == ECL_NIL))
@@ -492,6 +523,9 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
                            frame_aux.base);
         break;
       case t_cfun:
+#ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
+        the_env->function = reg0;
+#endif
         reg0 = APPLY(narg, reg0->cfun.entry, frame_aux.base);
         break;
       case t_cclosure:
@@ -531,11 +565,12 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         FEinvalid_function(reg0);
       }
       ECL_STACK_POP_N_UNSAFE(the_env, narg);
+      the_env->stack_frame = NULL; /* for gc's sake */
       THREAD_NEXT;
     }
 
     /* OP_POP
-       Pops a singe value pushed by a OP_PUSH* operator.
+       Pops a single value pushed by a OP_PUSH* operator.
     */
     CASE(OP_POP); {
       reg0 = ECL_STACK_POP_UNSAFE(the_env);
@@ -667,7 +702,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       do {
         cl_object f;
         GET_DATA(f, vector, data);
-        f = close_around(f, old_lex);
+        f = ecl_close_around(f, old_lex);
         lex_env = bind_function(lex_env, f->bytecodes.name, f);
       } while (--nfun);
       THREAD_NEXT;
@@ -698,7 +733,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       {
         cl_object l = lex_env;
         do {
-          ECL_RPLACA(l, close_around(ECL_CONS_CAR(l), lex_env));
+          ECL_RPLACA(l, ecl_close_around(ECL_CONS_CAR(l), lex_env));
           l = ECL_CONS_CDR(l);
         } while (--nfun);
       }
@@ -708,7 +743,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
        Calls the local or global function with N arguments
        which have been deposited in the stack.
     */
-    CASE(OP_LFUNCTION); {
+    CASE(OP_LFUNCTION); {       /* XXX: local function (fix comment) */
       int lex_env_index;
       GET_OPARG(lex_env_index, vector);
       reg0 = ecl_lex_env_get_fun(lex_env, lex_env_index);
@@ -720,20 +755,19 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
        may be defined in the global environment or in the local
        environment. This last value takes precedence.
     */
-    CASE(OP_FUNCTION); {
+    CASE(OP_FUNCTION); {        /* XXX: global function (fix comment) */
       GET_DATA(reg0, vector, data);
       reg0 = ecl_fdefinition(reg0);
       THREAD_NEXT;
     }
 
-    /* OP_CLOSE     name{symbol}
-       Extracts the function associated to a symbol. The function
-       may be defined in the global environment or in the local
-       environment. This last value takes precedence.
+    /* OP_CLOSE name{symbol}
+       Creates a closure around the current lexical environment for
+       the function associated to the given symbol.
     */
     CASE(OP_CLOSE); {
       GET_DATA(reg0, vector, data);
-      reg0 = close_around(reg0, lex_env);
+      reg0 = ecl_close_around(reg0, lex_env);
       THREAD_NEXT;
     }
     /* OP_GO        n{arg}, tag-ndx{arg}
@@ -992,7 +1026,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_LABEL(exit, vector);
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)exit);
-      if (ecl_frs_push(the_env,reg1) == 0) {
+      ecl_frs_push(the_env,reg1);
+      if (__ecl_frs_push_result == 0) {
         THREAD_NEXT;
       } else {
         reg0 = the_env->values[0];
@@ -1020,7 +1055,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)vector); /* FIXME! */
       vector += n * OPARG_SIZE;
-      if (ecl_frs_push(the_env,reg1) != 0) {
+      ecl_frs_push(the_env,reg1);
+      if (__ecl_frs_push_result != 0) {
         /* Wait here for gotos. Each goto sets
            VALUES(0) to an integer which ranges from 0
            to ntags-1, depending on the tag. These
@@ -1146,7 +1182,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_LABEL(exit, vector);
       ECL_STACK_PUSH(the_env, lex_env);
       ECL_STACK_PUSH(the_env, (cl_object)exit);
-      if (ecl_frs_push(the_env,ECL_PROTECT_TAG) != 0) {
+      ecl_frs_push(the_env,ECL_PROTECT_TAG);
+      if (__ecl_frs_push_result != 0) {
         ecl_frs_pop(the_env);
         vector = (cl_opcode *)ECL_STACK_POP_UNSAFE(the_env);
         lex_env = ECL_STACK_POP_UNSAFE(the_env);

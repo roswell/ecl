@@ -16,7 +16,6 @@
 #include <signal.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-#include "threads/ecl_atomics.h"
 
 void ECL_INLINE
 ecl_process_yield()
@@ -34,6 +33,8 @@ void ECL_INLINE
 ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
 {
   cl_object own_process = the_env->own_process;
+  if(*lock == own_process)
+    return;
   while (!AO_compare_and_swap_full((AO_t*)lock, (AO_t)ECL_NIL,
                                    (AO_t)own_process)) {
     ecl_process_yield();
@@ -49,6 +50,7 @@ ecl_giveup_spinlock(cl_object *lock)
 static ECL_INLINE void
 wait_queue_nconc(cl_env_ptr the_env, cl_object q, cl_object new_tail)
 {
+  /* INV: interrupts are disabled */
   ecl_get_spinlock(the_env, &q->queue.spinlock);
   q->queue.list = ecl_nconc(q->queue.list, new_tail);
   ecl_giveup_spinlock(&q->queue.spinlock);
@@ -72,6 +74,7 @@ wait_queue_pop_all(cl_env_ptr the_env, cl_object q)
 static ECL_INLINE void
 wait_queue_delete(cl_env_ptr the_env, cl_object q, cl_object item)
 {
+  /* INV: interrupts are disabled */
   ecl_get_spinlock(the_env, &q->queue.spinlock);
   q->queue.list = ecl_delete_eq(item, q->queue.list);
   ecl_giveup_spinlock(&q->queue.spinlock);
@@ -132,14 +135,6 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
   struct ecl_timeval start;
   ecl_get_internal_real_time(&start);
 
-  /* This spinlock is here because the default path (fair) is
-   * too slow */
-  for (iteration = 0; iteration < 10; iteration++) {
-    cl_object output = condition(the_env,o);
-    if (output != ECL_NIL)
-      return output;
-  }
-
   /* 0) We reserve a record for the queue. In order to avoid
    * using the garbage collector, we reuse records */
   record = own_process->process.queue_record;
@@ -159,14 +154,22 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
     ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_T);
     ecl_check_pending_interrupts(the_env);
 
+    /* This spinlock is here because the default path (fair) is
+     * too slow */
+    for (iteration = 0; iteration < 10; iteration++) {
+      if (!Null(output = condition(the_env,o)))
+        break;
+    }
+
     /* 3) Unlike the sigsuspend() implementation, this
      * implementation does not block signals and the
      * wakeup event might be lost before the sleep
      * function is invoked. We must thus spin over short
      * intervals of time to ensure that we check the
      * condition periodically. */
-    while (Null(output = condition(the_env, o))) {
+    while (Null(output)) {
       ecl_musleep(waiting_time(iteration++, &start), 1);
+      output = condition(the_env, o);
     }
     ecl_bds_unwind1(the_env);
   } ECL_UNWIND_PROTECT_EXIT {
@@ -336,6 +339,7 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
     cl_object *tail, l;
     for (tail = &q->queue.list; (l = *tail) != ECL_NIL; ) {
       cl_object p = ECL_CONS_CAR(l);
+      ecl_get_spinlock(the_env, &p->process.start_stop_spinlock);
       if (p->process.phase == ECL_PROCESS_INACTIVE ||
           p->process.phase == ECL_PROCESS_EXITING) {
         print_lock("removing %p", q, p);
@@ -349,15 +353,19 @@ ecl_wakeup_waiters(cl_env_ptr the_env, cl_object q, int flags)
           *tail = ECL_CONS_CDR(l);
         tail = &ECL_CONS_CDR(l);
         if (flags & ECL_WAKEUP_KILL)
-          mp_process_kill(p);
+          ecl_interrupt_process(p, @'mp::exit-process');
         else
           ecl_wakeup_process(p);
-        if (!(flags & ECL_WAKEUP_ALL))
+        if (!(flags & ECL_WAKEUP_ALL)) {
+          ecl_giveup_spinlock(&p->process.start_stop_spinlock);
           break;
+        }
       }
+      ecl_giveup_spinlock(&p->process.start_stop_spinlock);
     }
   }
   ecl_giveup_spinlock(&q->queue.spinlock);
+  ecl_enable_interrupts_env(the_env);
   ecl_process_yield();
 }
 
@@ -370,7 +378,7 @@ print_lock(char *prefix, cl_object l, ...)
   va_list args;
   va_start(args, l);
   if (l == ECL_NIL
-      || type_of(l) == t_condition_variable
+      || ecl_t_of(l) == t_condition_variable
       || ECL_FIXNUMP(l->lock.name)) {
     cl_env_ptr env = ecl_process_env();
     ecl_get_spinlock(env, &lock);
@@ -386,5 +394,6 @@ print_lock(char *prefix, cl_object l, ...)
     fflush(stdout);
     ecl_giveup_spinlock(&lock);
   }
+  va_end(args);
 }
 /*#define print_lock(a,b,c) (void)0*/

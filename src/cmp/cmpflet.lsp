@@ -45,13 +45,13 @@
         (cmp-env-register-function fun new-env)
         (push (cons fun (cdr def)) defs)))
 
-    ;; Now we compile the functions, either in an empty environment
-    ;; in which there are no new functions
+    ;; Now we compile the functions, either in the current environment
+    ;; or in an empty environment in which there are no new functions
     (let ((*cmp-env* (cmp-env-copy (if (eq origin 'FLET) *cmp-env* new-env))))
       (dolist (def (nreverse defs))
         (let ((fun (first def)))
           ;; The closure type will be fixed later on by COMPUTE-...
-          (push (c1compile-function (rest def) :fun fun :CB/LB 'LB)
+          (push (c1compile-function (rest def) :fun fun)
                 local-funs))))
 
     ;; When we are in a LABELs form, we have to propagate the external
@@ -73,7 +73,7 @@
     (let ((*cmp-env* new-env))
       (multiple-value-bind (body ss ts is other-decl)
           (c1body (rest args) t)
-        (c1declare-specials ss)
+        (mapc #'cmp-env-declare-special ss)
         (check-vdecl nil ts is)
         (setq body-c1form (c1decl-body other-decl body))))
 
@@ -151,13 +151,14 @@
     ;; This recursive algorithm is guaranteed to stop when functions
     ;; do not change.
     (let ((new-type (compute-closure-type fun))
-          (to-be-updated (fun-child-funs fun)))
+          to-be-updated)
       ;; Same type
       (when (eq new-type old-type)
         (return-from update-fun-closure-type nil))
       (when (fun-global fun)
         (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
                  (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun))))
+      (setf to-be-updated (append (fun-child-funs fun) (fun-referencing-funs fun)))
       (setf (fun-closure fun) new-type)
       ;; All external, non-global variables become of type closure
       (when (eq new-type 'CLOSURE)
@@ -185,7 +186,7 @@
                  (*env* *env*)
                  (*inline-blocks* 0)
                  (*env-lvl* *env-lvl*))
-  (declare (ignore c1form))
+  (declare (ignore c1form labels))
   ;; create location for each function which is returned,
   ;; either in lexical:
   (loop with env-grows = nil
@@ -234,14 +235,14 @@
       (c1body args t)
     (if (or ss ts is other-decl)
         (let ((*cmp-env* (cmp-env-copy)))
-          (c1declare-specials ss)
+          (mapc #'cmp-env-declare-special ss)
           (check-vdecl nil ts is)
           (c1decl-body other-decl body))
         (c1progn body))))
 
 (defun c1macrolet (args)
   (check-args-number 'MACROLET args 1)
-  (let ((*cmp-env* (cmp-env-register-macrolet (first args) (cmp-env-copy))))
+  (let ((*cmp-env* (si:cmp-env-register-macrolet (first args) (cmp-env-copy))))
     (c1locally (cdr args))))
 
 (defun c1symbol-macrolet (args)
@@ -255,8 +256,9 @@
     (c1locally (cdr args))))
 
 (defun local-function-ref (fname &optional build-object)
-  (multiple-value-bind (fun ccb clb unw)
+  (multiple-value-bind (fun cfb unw)
       (cmp-env-search-function fname)
+    (declare (ignore unw))
     (when fun
       (when (functionp fun) 
         (when build-object
@@ -273,18 +275,13 @@
               (push caller (fun-referencing-funs fun)))))
       ;; we introduce a variable to hold the funob
       (let ((var (fun-var fun)))
-        (cond (ccb (when build-object
-                     (setf (var-ref-ccb var) t
-                           (var-kind var) 'CLOSURE))
-                   (setf (fun-ref-ccb fun) t))
-              (clb (when build-object 
-                     (setf (var-ref-clb var) t
-                           (var-kind var) 'LEXICAL))))))
+        (when (and cfb build-object)
+          (setf (var-ref-clb var) t
+                (var-kind var) 'LEXICAL))))
     fun))
 
 (defun c2call-local (c1form fun args)
-  (declare (type fun fun)
-           (ignore c1form))
+  (declare (type fun fun))
   (unless (c2try-tail-recursive-call fun args)
     (let ((*inline-blocks* 0)
           (*temp* *temp*))

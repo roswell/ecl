@@ -1,0 +1,211 @@
+@node The interpreter
+@section The interpreter
+
+@menu
+* ECL stacks::
+* Procedure Call Conventions::
+* The lexical environment::
+* The interpreter stack::
+@end menu
+
+@node ECL stacks
+@subsection ECL stacks
+ECL uses the following stacks:
+@multitable @columnfractions .3 .7
+@item Frame Stack
+@tab consisting of catch, block, tagbody frames
+@item Bind Stack
+@tab for shallow binding of dynamic variables
+@item Interpreter Stack
+@tab acts as a Forth data stack, keeping intermediate arguments to interpreted functions, plus a history of called functions.
+@item C Control Stack
+@tab used for arguments/values passing, typed lexical variables, temporary values, and function invocation.
+@end multitable
+
+@node Procedure Call Conventions
+@subsection Procedure Call Conventions
+ECL employs standard C calling conventions to achieve efficiency and
+interoperability with other languages. Each Lisp function is
+implemented as a C function which takes as many arguments as the Lisp
+original. If the function takes optional or keyword arguments, the
+corresponding C function takes one additional integer argument which
+holds the number of actual arguments. The function sets @code{nvalues}
+in the thread local environment to the number of Lisp values produced,
+it returns the first one and the remaining ones are kept in a global
+(per thread) array (@code{values}).
+
+To show the argument/value passing mechanism, here we list the actual
+code for the Common-Lisp function last.
+
+@example
+@verbatim
+cl_object
+cl_last(cl_narg narg, cl_object l, ...)
+{
+	const cl_env_ptr the_env = ecl_process_env();
+	cl_object k;
+	va_list ARGS;
+	va_start(ARGS, l);
+	if (ecl_unlikely(narg < 1|| narg > 2)) FEwrong_num_arguments(/* ... */);
+	if (narg > 1) {
+		k = va_arg(ARGS,cl_object);
+	} else {
+		k = ecl_make_fixnum(1);
+	}
+	cl_object __value0 = ecl_last(l, ecl_to_size(k));
+	the_env->nvalues = 1;
+	the_env->values[0] = __value0;
+	va_end(ARGS);
+	return __value0;
+}
+@end verbatim
+@end example
+
+ECL adopts the convention that the name of a function that implements
+a Common-Lisp function begins with a short package name (@code{cl} for
+@code{COMMON-LISP}, @code{si} for @code{SYSTEM}, etc), followed by
+@code{L}, and followed by the name of the Common-Lisp
+function. (Strictly speaking, `@code{-}' and `@code{*}' in the
+Common-Lisp function name are replaced by `@code{_}' and `@code{A}',
+respectively, to obey the syntax of C.)
+
+The code for the function @code{last} first checks that the right
+number of arguments are supplied to @code{cl_last}. That is, it checks
+that @code{narg} is 1 or 2, and otherwise, it causes an error.
+Following that, the optional variable @code{k} is initialized and the
+return value @code{__value0} is computed. The number assigned to
+@code{nvalues} set by the function (1 in this case) represents the
+number of values of the function. The return value of the function is
+copied in the @code{values} array as well as returned directly.
+
+In general, if one is to play with the C kernel of ECL there is no
+need to know about all these conventions. There is a preprocessor
+(@pxref{Defun preprocessor}) that takes care of the details, by using a
+lisp representation of the statements that output values, and of the
+function definitions. For instance, the actual source code for
+@code{cl_last} in @file{src/c/list.d} is
+
+@example
+@verbatim
+@(defun last (l &optional (k ecl_make_fixnum(1)))
+@
+  @(return ecl_last(l, ecl_to_size(k)));
+@)
+@end verbatim
+@end example
+
+@node The lexical environment
+@subsection The lexical environment
+The ECL interpreter uses a list containing local functions and macros,
+variables, tags and blocks to represent the lexical environment. When
+a function closure is created, the current lexical environment is
+saved in the closure along with the lambda expression. Later, when the
+closure is invoked, this list is used to recover the lexical
+environment.
+
+Note that this list is different from what the Common Lisp standard
+calls a lexical environment, which is the content of a
+@code{&environment} parameter to @code{defmacro}. For the differences
+between this two environments see the comments in
+@file{src/c/compiler.d} and @file{src/c/interpreter.d}.
+
+@node The interpreter stack
+@subsection The interpreter stack
+
+The bytecodes interpreter uses a stack of its own to save and restore
+values from intermediate calculations. This Forth-like data stack is
+also used in other parts of the C kernel for various purposes, such as
+saving compiled code, keeping arguments to @code{format}, etc.
+
+However, one of the most important roles of the Interpreter Stack is
+to keep a log of the functions which are called during the execution
+of bytecodes. For each function invoked, the interpreter keeps three
+lisp objects on the stack:
+
+@verbatim
+  +----------+------------------------------------------------+
+  | function | lexical environment | index to previous record |
+  +----------+---------------------+--------------------------+
+@end verbatim
+
+The first item is the object which is funcalled. It can be a bytecodes
+object, a compiled function or a generic function. In the last two
+cases the lexical environment is just @code{nil}. In the first case,
+the second item on the stack is the lexical environment on which the
+code is executed. Each of these records are popped out of the stack
+after function invocation.
+
+Let us see how these invocation records are used for debugging.
+
+@example
+@verbatim
+> (defun fact (x)               ;;;  Wrong definition of the
+    (if (= x 0)                 ;;;  factorial function.
+        one                     ;;;  one  should be  1.
+        (* x (fact (1- x)))))
+FACT
+
+> (fact 3)                      ;;;  Tries  3!
+Error: The variable ONE is unbound.
+Error signalled by IF.
+Broken at IF.
+>> :b                           ;;;  Backtrace.
+Backtrace: eval > fact > if > fact > if > fact > if > fact > IF
+;;;  Currently at the last  IF.
+>> :h                           ;;;  Help.
+
+Break commands:
+:q(uit)         Return to some previous break level.
+:pop            Pop to previous break level.
+:c(ontinue)     Continue execution.
+:b(acktrace)    Print backtrace.
+:f(unction)     Show current function.
+:p(revious)     Go to previous function.
+:n(ext)         Go to next function.
+:g(o)           Go to next function.
+:fs             Search forward for function.
+:bs             Search backward for function.
+:v(ariables)    Show local variables, functions, blocks, and tags.
+:l(ocal)        Return the nth local value on the stack.
+:hide           Hide function.
+:unhide         Unhide function.
+:hp             Hide package.
+:unhp           Unhide package.
+:unhide-all     Unhide all variables and packages.
+:bds            Show binding stack.
+:m(essage)      Show error message.
+:hs             Help stack.
+Top level commands:
+:cf             Compile file.
+:exit or ^D     Exit Lisp.
+:ld             Load file.
+:step           Single step form.
+:tr(ace)        Trace function.
+:untr(ace)      Untrace function.
+
+Help commands:
+:apropos        Apropos.
+:doc(ument)     Document.
+:h(elp) or ?    Help.  Type ":help help" for more information.
+
+>> :p                       ;;;  Move to the last call of  FACT.
+Broken at IF.
+
+>> :b
+Backtrace: eval > fact > if > fact > if > fact > if > FACT > if
+;;;  Now at the last  FACT.
+>> :v                       ;;;  The environment at the last call
+Local variables:            ;;;  to  FACT  is recovered.
+  X: 0                      ;;;  X  is the only bound variable.
+Block names: FACT.          ;;;  The block  FACT  is established.
+
+>> x
+0                           ;;;  The value of  x  is  0.
+
+>>(return-from fact 1)      ;;;  Return from the last call of
+6                           ;;;  FACT  with the value of  0.
+                            ;;;  The execution is resumed and
+>                           ;;;  the value  6  is returned.
+;;;  Again at the top-level loop.
+@end verbatim
+@end example

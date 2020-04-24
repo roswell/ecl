@@ -1,0 +1,535 @@
+@node Numbers
+@section Numbers
+
+@menu
+* Numbers - Numeric types::
+* Numbers - Floating point exceptions::
+* Numbers - Random-States::
+* Numbers - Infinity and Not a Number::
+* Numbers - Dictionary::
+* Numbers - C Reference::
+@end menu
+
+@node Numbers - Numeric types
+@subsection Numeric types
+ECL supports all of the Common Lisp numeric tower, which is shown in @ref{tab:num-types}. The details, however, depend both on the platform on which ECL runs and on the configuration which was chosen when building ECL.
+
+@float Table, tab:num-types
+@caption{Numeric types in ECL}
+@multitable @columnfractions .18 .82
+@headitem Type @tab Description
+@item fixnum @tab Signed integer with a number of bits given by ext:fixnum-bits, fit in a machine word.
+@item bignum @tab Arbitrary size integers, only limited by amount of memory.
+@item ratio @tab Arbitrary size rational number, made up of two integers.
+@item short-float @tab Equivalent to single-float.
+@item single-float @tab 32-bits IEEE floating point number.
+@item double-float @tab 64-bits IEEE floating point number.
+@item long-float @tab Either equivalent to double-float, or a 96/128 bits IEEE floating point number (long double in C/C++).
+@item rational @tab An alias for (or integer ratio)
+@item float @tab An alias for (or single-float double-float short-float long-float)
+@item real @tab An alias for (or rational float)
+@item complex @tab Complex number made of two real numbers of the above mentioned types or a <float> _Complex type in C99.
+@end multitable
+@end float
+
+In general, the size of a @code{fixnum} is determined by the word size
+of a machine, which ranges from 32 to 64 bits. Integers larger than
+this are implemented using the @url{https://gmplib.org/, GNU
+Multiprecision library}. Rationals are implemented using two integers,
+without caring whether they are fixnum or not. Floating point numbers
+include at least the two IEEE types of 32 and 64 bits respectively.
+
+@cindex long-float internal representation
+@ftindex LONG-FLOAT
+In machines where it is supported, it is possible to associate the
+lisp @code{long-float} with the machine type @code{long double} whose
+size ranges from 96 to 128 bits, and which are a bit slower.
+
+@cindex (complex float) internal representation
+@ftindex COMPLEX-FLOAT
+In machines where a type @code{<float> _Complex} is supported numbers
+of type @code{(complex float)} are implemented with it, otherwise like
+ratios all complex numbers are pairs of numbers.
+
+@node Numbers - Floating point exceptions
+@subsection Floating point exceptions
+@cfindex --with-ieee-fp [YES|no]
+@cfindex --with-fpe [YES|no]
+
+ECL supports two ways of dealing with special floating point values,
+such as Not a Number (NaN), infinity or denormalized floats, which can
+occur in floating point computations. Either a condition is signaled or
+the value is silently used as it is. There are multiple options
+controlling which behaviour is selected: If ECL is built with the
+@code{--without-ieee-fp} configure option, then a condition is signaled
+for every infinity or NaN encountered. If not, floating point exceptions
+can be disabled at build time using the @code{--without-fpe} configure
+option. Otherwise, if both @code{--with-ieee-fp} and @code{--with-fpe}
+options are on, by default, a condition is signaled for invalid
+operation, division by zero and floating point overflows. This can be
+changed at runtime by using @coderef{ext:trap-fpe}. If the
+@code{ECL_OPT_TRAP_SIGFPE} boot option is false (see
+@ref{tab:boot-options}), no conditions are signaled by default (Note
+that in this case, if you enable trapping of floating point exceptions
+with @coderef{ext:trap-fpe}, then you have to install your own signal
+handler).
+
+@lspdef ext:trap-fpe
+@defun ext:trap-fpe condition flag
+Control the signaling of the floating point exceptions
+
+@paragraph Synopsis
+@table @var
+@item condition
+a symbol - one of @code{last}, @code{t}, @code{division-by-zero},
+@code{floating-point-overflow}, @code{floating-point-underflow},
+@code{floating-point-invalid-operation},
+@code{floating-point-inexact} or an integer.
+@item flag
+a generalized boolean
+@end table
+
+@paragraph Description
+If @var{condition} is @code{last}, @var{flag} is ignored and the
+currently enabled floating point exceptions are returned in an
+implementation depended format (currently an integer). Otherwise,
+@var{flag} determines whether the current thread will signal a floating
+point exception for the conditions passed in @var{condition}.
+@var{condition} can be either a symbol denoting a single condition,
+@code{t} for all conditions that are enabled by default or a value
+obtained from an earlier call to @coderef{ext:trap-fpe} with
+@code{last}.
+
+@seealso{ECL_WITH_LISP_FPE}
+
+@end defun
+
+@node Numbers - Random-States
+@subsection Random-States
+ECL relies internally on a 32-bit Mersenne-Twister random number
+generator, using a relatively large buffer to precompute about 5000
+pseudo-random bytes. This implies also that random states can be
+printed readably and also read, using the @code{#$} macro. There is no
+provision to create random states from user arrays, though. Random
+state is printed unreadably by default.
+
+The @code{#$} macro can be used to initialize the generator with a
+random seed (an integer), an array of random bytes (mainly used for
+reading back printed random-state) and another random-state (syntactic
+sugar for copying the random-state).
+
+@node Numbers - Infinity and Not a Number
+@subsection Infinity and Not a Number
+The @ansi{} standard does not specify the behaviour of numeric
+functions for infinite or not number valued floating point numbers. If
+ECL is configured to support these special values (see the
+@code{--with-ieee-fp} configure option) and floating point exceptions
+are disabled, numeric functions generally return the same value as the
+corresponding C function. This means, that the output will be a NaN
+for a NaN input, and the ``mathematically correct'' value (which may
+be NaN, e.g. for ∞-∞) for an infinite real input. For complex floats,
+however, the return value of a numeric function called with a complex
+number for which the real or imaginary part is infinite, is
+undefined@footnote{The main reason for this is that some numeric
+functions for C complex numbers return mathematically incorrect
+values, for example sinh(i*∞) returns i*NaN instead of the
+mathematically correct i*∞. Keeping this consistent with our own
+implementation of complex arithmetic that is used when C complex
+numbers are not available would require to much work. Furthermore,
+complex arithmetic with infinities is unreliable anyway, since it
+quickly leads to NaN values (consider i*∞ = (0+i*1)*(∞+i*0) = NaN+i*∞;
+even this simple example is already mathematically incorrect).}.
+
+For other functions dealing with numbers, we adopt the following
+behaviour:
+
+@table @asis
+@item Comparison functions
+All numeric comparisons with @code{=,<,<=,>,>=} involving NaN return
+false. Comparing two NaNs of the same type with @code{eql} returns
+true.
+@item @code{min/max}
+NaN values are ignored, i.e. the maximum/minimum is taken only over
+the number valued parameters.
+@item Rounding functions
+All rounding functions signal an @code{arithmetic-error} if any of the
+given parameters are not number valued or infinite.
+@end table
+
+@node Numbers - Dictionary
+@subsection Dictionary
+
+@lspdef ext:short-float-positive-infinity
+@lspdef ext:short-float-negative-infinity
+@lspdef ext:single-float-positive-infinity
+@lspdef ext:single-float-negative-infinity
+@lspdef ext:double-float-positive-infinity
+@lspdef ext:double-float-negative-infinity
+@lspdef ext:long-float-positive-infinity
+@lspdef ext:long-float-negative-infinity
+@defvr Constant {ext:@{short,single,double,long@}-float-@{positive,negative@}-infinity}
+Constant positive/negative infinity for the different floating point types.
+@end defvr
+
+
+@lspdef ext:nan
+@defun ext:nan
+Returns a double float NaN value. Coerce to other floating point types
+to get NaN values e.g. for single floats.
+@end defun
+
+@lspdef ext:float-infinity-p
+@lspindex ext:float-nan-p
+@defun ext:float-infinity-p x
+@defunx ext:float-nan-p x
+Predicates to test if @var{x} is infinite or NaN.
+@end defun
+
+@node Numbers - C Reference
+@subsection C Reference
+
+@menu
+* Numbers - Number C types::
+* Numbers - Number constructors::
+* Numbers - Number accessors::
+* Numbers - Number coercion::
+* Numbers - ANSI dictionary::
+@end menu
+
+@node Numbers - Number C types
+@subsubsection Number C types
+Numeric C types understood by ECL
+
+@subsubheading Type names
+@multitable @columnfractions .21 .40 .25 .14
+@item cl_fixnum @tab fixnum
+@item cl_index @tab (integer 0 most-positive-fixnum)
+@item float @tab short-float, single-float
+@item double @tab double-float
+@item long double (*) @tab long-float @tab ECL_LONG_FLOAT @tab :long-float
+@item float _Complex (**) @tab (complex single-float) @tab ECL_COMPLEX_FLOAT @tab :complex-float
+@item double _Complex (**) @tab (complex double-float) @tab ECL_COMPLEX_FLOAT @tab :complex-float
+@item long-double _Complex (**) @tab (complex long-float) @tab ECL_COMPLEX_FLOAT @tab :complex-float
+@item uint8_t @tab (unsigned-byte 8) @tab ecl_uint8_t
+@item int8_t @tab (signed-byte 8) @tab ecl_int8_t
+@item uint16_t @tab (unsigned-byte 16) @tab ecl_uint16_t @tab :uint16-t
+@item int16_t @tab (signed-byte 16) @tab ecl_int16_t @tab :int16-t
+@item uint32_t @tab (unsigned-byte 32) @tab ecl_uint32_t @tab :uint32-t
+@item int32_t @tab (signed-byte 32) @tab ecl_int32_t @tab :int32-t
+@item uint64_t @tab (unsigned-byte 64) @tab ecl_uint64_t @tab :uint64-t
+@item int64_t @tab (signed-byte 64) @tab ecl_int64_t @tab :int64-t
+@item short @tab (integer ffi:c-short-min ffi:c-short-max)
+@item unsigned short @tab (integer 0 ffi:c-ushort-max)
+@item int @tab (integer ffi:c-int-min ffi:c-int-max)
+@item unsigned int @tab (integer 0 ffi:c-uint-max)
+@item long @tab (integer ffi:c-long-min ffi:c-long-max)
+@item unsigned long @tab (integer 0 ffi:c-long-max)
+@item long long @tab (integer ffi:c-long-long-min ffi:c-long-long-max) @tab ecl_long_long_t @tab :long-long
+@item unsigned long long @tab (integer 0 ffi:c-ulong-long-max) @tab ecl_ulong_long_t @tab :ulong-long
+@end multitable
+
+@paragraph Description
+The table above shows the relation between C types and the equivalent Common Lisp types. All types are standard C99 types, except for two. First, @code{cl_fixnum} is the smallest signed integer that can fit a fixnum. Second, @code{cl_index} is the smallest unsigned integer that fits a fixnum and is typically the unsigned counterpart of @code{cl_fixnum}.
+
+(*) @strong{DEPRECATED} Previous versions of ECL supported compilers
+that did not define the long double type. The @code{ECL_LONG_DOUBLE}
+macro and @code{long-double} features indicating whether support for
+long double was available are removed now.
+
+@cfindex --enable-c99complex [auto]
+(**) The <float> _Complex types do not exist on all platforms. When
+they exist the macro @code{ECL_COMPLEX_FLOAT} will be defined.
+
+Many other types might also not exist on all platforms. This includes
+not only @code{long long} and @code{unsigned long long}, but also some
+of the C99 integer types. There are two ways to detect which integer
+types are available in your system:
+
+@itemize
+@item
+Check for the definition of C macros with a similar name, shown in the fifth column above.
+@item
+In Lisp code, check for the presence of the associated features, shown in the fourth column above.
+@end itemize
+
+@node Numbers - Number constructors
+@subsubsection Number constructors
+Creating Lisp types from C numbers
+
+@subsubheading Functions
+@cppdef ecl_make_fixnum
+@cppdef ecl_make_integer
+@cppdef ecl_make_unsigned_integer
+@cppdef ecl_make_single_float
+@cppdef ecl_make_double_float
+@cppdef ecl_make_long_float
+@cppdef ecl_make_csfloat
+@cppdef ecl_make_cdfloat
+@cppdef ecl_make_clfloat
+@cppdef ecl_make_uint8_t
+@cppdef ecl_make_int8_t
+@cppdef ecl_make_uint16_t
+@cppdef ecl_make_int16_t
+@cppdef ecl_make_uint32_t
+@cppdef ecl_make_int32_t
+@cppdef ecl_make_uint64_t
+@cppdef ecl_make_int64_t
+@cppdef ecl_make_short_t
+@cppdef ecl_make_ushort_t
+@cppdef ecl_make_int
+@cppdef ecl_make_uint
+@cppdef ecl_make_long
+@cppdef ecl_make_ulong
+@cppdef ecl_make_long_long
+@cppdef ecl_make_ulong_long
+@cppdef ecl_make_ratio
+@cppdef ecl_make_complex
+
+@deftypefun cl_object ecl_make_fixnum (cl_fixnum n)
+@deftypefunx cl_object ecl_make_integer (cl_fixnum n)
+@deftypefunx cl_object ecl_make_unsigned_integer (cl_index n)
+@deftypefunx cl_object ecl_make_single_float (float n)
+@deftypefunx cl_object ecl_make_double_float (double n)
+@deftypefunx cl_object ecl_make_long_float (long double n)
+@deftypefunx cl_object ecl_make_csfloat (float _Complex n)
+@deftypefunx cl_object ecl_make_cdfloat (double _Complex n)
+@deftypefunx cl_object ecl_make_clfloat (long double _Complex n)
+@deftypefunx cl_object ecl_make_uint8_t (uint8_t n)
+@deftypefunx cl_object ecl_make_int8_t (int8_t n)
+@deftypefunx cl_object ecl_make_uint16_t (uint16_t n)
+@deftypefunx cl_object ecl_make_int16_t (int16_t n)
+@deftypefunx cl_object ecl_make_uint32_t (uint32_t n)
+@deftypefunx cl_object ecl_make_int32_t (int32_t n)
+@deftypefunx cl_object ecl_make_uint64_t (uint64_t n)
+@deftypefunx cl_object ecl_make_int64_t (int64_t n)
+@deftypefunx cl_object ecl_make_short_t (short n)
+@deftypefunx cl_object ecl_make_ushort_t (unsigned short n)
+@deftypefunx cl_object ecl_make_int (int n)
+@deftypefunx cl_object ecl_make_uint (unsigned int n)
+@deftypefunx cl_object ecl_make_long (long n)
+@deftypefunx cl_object ecl_make_ulong (unsigned long n)
+@deftypefunx cl_object ecl_make_long_long (long long n)
+@deftypefunx cl_object ecl_make_ulong_long (unsigned long long n)
+@deftypefunx cl_object ecl_make_ratio (cl_object numerator, cl_object denominator)
+@deftypefunx cl_object ecl_make_complex (cl_object real, cl_object imag)
+
+@paragraph Description
+These functions create a Lisp object from the corresponding C
+number. If the number is an integer type, the result will always be an
+integer, which may be a bignum. If on the other hand the C number is a
+float, double or long double, the result will be a float.
+
+There is some redundancy in the list of functions that convert from
+cl_fixnum and cl_index to lisp. On the one hand,
+@coderef{ecl_make_fixnum} always creates a fixnum, dropping bits if
+necessary. On the other hand, @coderef{ecl_make_integer} and
+@coderef{ecl_make_unsigned_integer} faithfully convert to a Lisp
+integer, which may be a bignum.
+
+Note also that some of the constructors do not use C numbers. This is
+the case of @coderef{ecl_make_ratio} and @coderef{ecl_make_complex},
+because they are composite Lisp types. When c99 complex float support is
+built in @coderef{ecl_make_complex} will use C number for float types.
+
+These functions or macros signal no errors.
+@end deftypefun
+
+@node Numbers - Number accessors
+@subsubsection Number accessors
+Unchecked conversion from Lisp types to C numbers
+
+@subsubheading Functions
+@cppdef ecl_fixnum
+@cppdef ecl_single_float
+@cppdef ecl_double_float
+@cppdef ecl_long_float
+@cppdef ecl_csfloat
+@cppdef ecl_cdfloat
+@cppdef ecl_clfloat
+
+@deftypefun cl_fixnum ecl_fixnum (cl_object n)
+@deftypefunx float ecl_single_float (cl_object n)
+@deftypefunx double ecl_double_float (cl_object n)
+@deftypefunx {long double} ecl_long_float (cl_object n)
+@deftypefunx {float _Complex} ecl_csfloat (cl_object n)
+@deftypefunx {double _Complex} ecl_cdfloat (cl_object n)
+@deftypefunx {long double _Complex} ecl_clfloat (cl_object n)
+
+@paragraph Description
+These functions and macros extract a C number from a Lisp object. They do not check the type of the Lisp object as they typically just access directly the value from a C structure.
+@end deftypefun
+
+@node Numbers - Number coercion
+@subsubsection Number coercion
+Checked conversion from Lisp types to C numbers
+
+@subsubheading Functions
+@cppdef ecl_to_fixnum
+@cppdef ecl_to_unsigned_integer
+@cppdef ecl_to_float
+@cppdef ecl_to_double
+@cppdef ecl_to_long_double
+@cppdef ecl_to_csfloat
+@cppdef ecl_to_cdfloat
+@cppdef ecl_to_clfloat
+@cppdef ecl_to_uint8_t
+@cppdef ecl_to_int8_t
+@cppdef ecl_to_uint16_t
+@cppdef ecl_to_int16_t
+@cppdef ecl_to_uint32_t
+@cppdef ecl_to_int32_t
+@cppdef ecl_to_uint64_t
+@cppdef ecl_to_int64_t
+@cppdef ecl_to_short
+@cppdef ecl_to_ushort
+@cppdef ecl_to_int
+@cppdef ecl_to_uint
+@cppdef ecl_to_long
+@cppdef ecl_to_ulong
+@cppdef ecl_to_long_long
+@cppdef ecl_to_ulong_long
+
+@deftypefun cl_fixnum ecl_to_fixnum (cl_object n);
+@deftypefunx cl_index ecl_to_unsigned_integer (cl_object n);
+@deftypefunx float ecl_to_float (cl_object n);
+@deftypefunx double ecl_to_double (cl_object n);
+@deftypefunx {long double} ecl_to_long_double (cl_object n);
+@deftypefunx {float _Complex} ecl_to_csfloat (cl_object n);
+@deftypefunx {double _Complex} ecl_to_cdfloat (cl_object n);
+@deftypefunx {long double _Complex} ecl_to_clfloat (cl_object n);
+@deftypefunx uint8_t ecl_to_uint8_t (cl_object n);
+@deftypefunx int8_t ecl_to_int8_t (cl_object n);
+@deftypefunx uint16_t ecl_to_uint16_t (cl_object n);
+@deftypefunx int16_t ecl_to_int16_t (cl_object n);
+@deftypefunx uint32_t ecl_to_uint32_t (cl_object n);
+@deftypefunx int32_t ecl_to_int32_t (cl_object n);
+@deftypefunx uint64_t ecl_to_uint64_t (cl_object n);
+@deftypefunx int64_t ecl_to_int64_t (cl_object n);
+@deftypefunx short ecl_to_short (cl_object n);
+@deftypefunx {unsigned short} ecl_to_ushort (cl_object n);
+@deftypefunx int ecl_to_int (cl_object n);
+@deftypefunx {unsigned int} ecl_to_uint (cl_object n);
+@deftypefunx long ecl_to_long (cl_object n);
+@deftypefunx {unsigned long} ecl_to_ulong (cl_object n);
+@deftypefunx {long long} ecl_to_long_long (cl_object n);
+@deftypefunx {unsigned long long} ecl_to_ulong_long (cl_object n);
+
+@paragraph Description
+These functions and macros convert a Lisp object to the corresponding
+C number type. The conversion is done through a coercion process which
+may signal an error if the argument does not fit the expected type.
+@end deftypefun
+
+@node Numbers - ANSI dictionary
+@subsubsection ANSI dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .30 .70
+@headitem Lisp symbol @tab C function
+@item @clhs{f_eq_sle.htm,=} @tab cl_object cl_E(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,/=} @tab cl_object cl_NE(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,<} @tab cl_object cl_L(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,>} @tab cl_object cl_G(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,<=} @tab cl_object cl_LE(cl_narg narg, ...)
+@item @clhs{f_eq_sle.htm,>=} @tab cl_object cl_GE(cl_narg narg, ...)
+@item @clhs{f_max_m.htm,max} @tab cl_object cl_max(cl_narg narg, ...)
+@item @clhs{f_max_m.htm,min} @tab cl_object cl_min(cl_narg narg, ...)
+@item @clhs{f_minusp.htm,minusp} @tab cl_object cl_minusp(cl_object real)
+@item @clhs{f_minusp.htm,plusp} @tab cl_object cl_plusp(cl_object real)
+@item @clhs{f_zerop.htm,zerop} @tab cl_object cl_zerop(cl_object number)
+@item @clhs{f_floorc.htm,floor} @tab cl_object cl_floor(cl_narg narg, cl_object number, ...)
+@item @clhs{f_floorc.htm,ffloor} @tab cl_object cl_ffloor(cl_narg narg, cl_object number, ...)
+@item @clhs{f_floorc.htm,ceiling} @tab cl_object cl_ceiling(cl_narg narg, cl_object number, ...)
+@item @clhs{f_floorc.htm,fceiling} @tab cl_object cl_fceiling(cl_narg narg, cl_object number, ...)
+@item @clhs{f_floorc.htm,truncate} @tab cl_object cl_truncate(cl_narg narg, cl_object number, ...)
+@item @clhs{f_floorc.htm,ftruncate} @tab cl_object cl_ftruncate(cl_narg narg, cl_object number, ...)
+@item @clhs{f_floorc.htm,round} @tab cl_object cl_round(cl_narg narg, cl_object number, ...)
+@item @clhs{f_floorc.htm,fround} @tab cl_object cl_fround(cl_narg narg, cl_object number, ...)
+@item @clhs{f_sin_c.htm,sin} @tab cl_object cl_sin(cl_object radians)
+@item @clhs{f_sin_c.htm,cos} @tab cl_object cl_cos(cl_object radians)
+@item @clhs{f_sin_c.htm,tan} @tab cl_object cl_tan(cl_object radians)
+@item @clhs{f_asin_.htm,asin} @tab cl_object cl_asin(cl_object number)
+@item @clhs{f_asin_.htm,acos} @tab cl_object cl_acos(cl_object number)
+@item @clhs{f_asin_.htm,atan} @tab cl_object cl_atan(cl_narg narg, cl_object number1, ...)
+@item @clhs{c_number.htm,sinh} @tab cl_object cl_sinh(cl_object number)
+@item @clhs{c_number.htm,cosh} @tab cl_object cl_cosh(cl_object number)
+@item @clhs{c_number.htm,tanh} @tab cl_object cl_tanh(cl_object number)
+@item @clhs{c_number.htm,asinh} @tab cl_object cl_asinh(cl_object number)
+@item @clhs{c_number.htm,acosh} @tab cl_object cl_acosh(cl_object number)
+@item @clhs{c_number.htm,atanh} @tab cl_object cl_atanh(cl_object number)
+@item @clhs{f_st.htm,*} @tab cl_object cl_X(cl_narg narg, ...)
+@item @clhs{f_pl.htm,+} @tab cl_object cl_P(cl_narg narg, ...)
+@item @clhs{f__.htm,-} @tab cl_object cl_M(cl_narg narg, cl_object number, ...)
+@item @clhs{f_sl.htm,/} @tab cl_object cl_N(cl_narg narg, cl_object number, ...)
+@item @clhs{f_1pl_1_.htm,1+} @tab cl_object cl_1P(cl_object number)
+@item @clhs{f_1pl_1_.htm,1-} @tab cl_object cl_1M(cl_object number)
+@item @clhs{f_abs.htm,abs} @tab cl_object cl_abs(cl_object number)
+@item @clhs{f_evenpc.htm,evenp} @tab cl_object cl_evenp(cl_object integer)
+@item @clhs{f_evenpc.htm,oddp} @tab cl_object cl_oddp(cl_object integer)
+@item @clhs{f_exp_e.htm,exp} @tab cl_object cl_exp(cl_object number)
+@item @clhs{f_exp_e.htm,expt} @tab cl_object cl_expt(cl_object base, cl_object power)
+@item @clhs{f_gcd.htm,gcd} @tab cl_object cl_gcd(cl_narg narg, ...)
+@item @clhs{f_lcm.htm,lcm} @tab cl_object cl_lcm(cl_narg narg, ...)
+@item @clhs{f_log.htm,log} @tab cl_object cl_log(cl_narg narg, cl_object number, ...)
+@item @clhs{f_mod_r.htm,mod} @tab cl_object cl_mod(cl_object number, cl_object divisor)
+@item @clhs{f_mod_r.htm,rem} @tab cl_object cl_rem(cl_object number, cl_object divisor)
+@item @clhs{f_signum.htm,signum} @tab cl_object cl_signum(cl_object number)
+@item @clhs{f_sqrt_.htm,sqrt} @tab cl_object cl_sqrt(cl_object number)
+@item @clhs{f_sqrt.htm,isqrt} @tab cl_object cl_isqrt(cl_object natural)
+@item @clhs{f_mk_rnd.htm,make-random-state} @tab cl_object cl_make_random_state(cl_narg narg, ...)
+@item @clhs{f_random.htm,random} @tab cl_object cl_random(cl_narg narg, cl_object limit, ...)
+@item @clhs{f_rnd_st.htm,random-state-p} @tab cl_object cl_random_state_p(cl_object object)
+@item @clhs{f_nump.htm,numberp} @tab cl_object cl_numberp(cl_object object)
+@item @clhs{f_cis.htm,cis} @tab cl_object cl_cis(cl_object radians)
+@item @clhs{f_comp_2.htm,complex} @tab cl_object cl_complex(cl_narg narg, cl_object realpart, ...)
+@item @clhs{f_comp_3.htm,complexp} @tab cl_object cl_complexp(cl_object object)
+@item @clhs{f_conjug.htm,conjugate} @tab cl_object cl_conjugate(cl_object number)
+@item @clhs{f_phase.htm,phase} @tab cl_object cl_phase(cl_object number)
+@item @clhs{f_realpa.htm,realpart} @tab cl_object cl_realpart(cl_object number)
+@item @clhs{f_realpa.htm,imagpart} @tab cl_object cl_imagpart(cl_object number)
+@item @clhs{f_upgrad.htm,upgraded-complex-part-type} @tab cl_object cl_upgraded_complex_part_type(cl_narg narg, cl_object typespec, ...)
+@item @clhs{f_realp.htm,realp} @tab cl_object cl_realp(cl_object object)
+@item @clhs{f_numera.htm,numerator} @tab cl_object cl_numerator(cl_object rational)
+@item @clhs{f_numera.htm,denominator} @tab cl_object cl_denominator(cl_object rational)
+@item @clhs{f_ration.htm,rational} @tab cl_object cl_rational(cl_object number)
+@item @clhs{f_ration.htm,rationalize} @tab cl_object cl_rationalize(cl_object number)
+@item @clhs{f_rati_1.htm,rationalp} @tab cl_object cl_rationalp(cl_object object)
+@item @clhs{f_ash.htm,ash} @tab cl_object cl_ash(cl_object integer, cl_object count)
+@item @clhs{f_intege.htm,integer-length} @tab cl_object cl_integer_length(cl_object integer)
+@item @clhs{f_inte_1.htm,integerp} @tab cl_object cl_integerp(cl_object object)
+@item @clhs{f_parse_.htm,parse-integer} @tab cl_object cl_parse_integer(cl_narg narg, cl_object string, ...)
+@item @clhs{f_boole.htm,boole} @tab cl_object cl_boole(cl_object op, cl_object integer1, cl_object integer2)
+@item @clhs{f_logand.htm,logand} @tab cl_object cl_logand(cl_narg narg, ...)
+@item @clhs{f_logand.htm,logandc1} @tab cl_object cl_logandc1(cl_object integer1, cl_object integer2)
+@item @clhs{f_logand.htm,logandc2} @tab cl_object cl_logandc2(cl_object integer1, cl_object integer2)
+@item @clhs{f_logand.htm,logeqv} @tab cl_object cl_logeqv(cl_narg narg, ...)
+@item @clhs{f_logand.htm,logior} @tab cl_object cl_logior(cl_narg narg, ...)
+@item @clhs{f_logand.htm,lognand} @tab cl_object cl_lognand(cl_object integer1, cl_object integer2)
+@item @clhs{f_logand.htm,lognor} @tab cl_object cl_lognor(cl_object integer1, cl_object integer2)
+@item @clhs{f_logand.htm,lognot} @tab cl_object cl_lognot(cl_object integer)
+@item @clhs{f_logand.htm,logorc1} @tab cl_object cl_logorc1(cl_object integer1, cl_object integer2)
+@item @clhs{f_logand.htm,logorc2} @tab cl_object cl_logorc2(cl_object integer1, cl_object integer2)
+@item @clhs{f_logand.htm,logxor} @tab cl_object cl_logxor(cl_narg narg, ...)
+@item @clhs{f_logbtp.htm,logbitp} @tab cl_object cl_logbitp(cl_object index, cl_object integer)
+@item @clhs{f_logcou.htm,logcount} @tab cl_object cl_logcount(cl_object integer)
+@item @clhs{f_logtes.htm,logtest} @tab cl_object cl_logtest(cl_object integer1, cl_object integer2)
+@item @clhs{f_by_by.htm,byte} @tab cl_object cl_byte(cl_object size, cl_object position)
+@item @clhs{f_by_by.htm,bytes-size} @tab cl_object cl_byte_size(cl_object bytespec)
+@item @clhs{f_by_by.htm,byte-position} @tab cl_object cl_byte_position(cl_object bytespec)
+@item @clhs{f_deposi.htm,deposit-field} @tab cl_object cl_deposit_field(cl_object newbyte, cl_object bytespec, cl_object integer)
+@item @clhs{f_dpb.htm,dpb} @tab cl_object cl_dpb(cl_object newbyte, cl_object bytespec, cl_object integer)
+@item @clhs{f_ldb.htm,ldb} @tab cl_object cl_ldb(cl_object bytespec, cl_object integer)
+@item @clhs{f_ldb_te.htm,ldb-test} @tab cl_object cl_ldb_test(cl_object bytespec, cl_object integer)
+@item @clhs{f_mask_f.htm,mask-field} @tab cl_object cl_mask_field(cl_object bytespec, cl_object integer)
+@item @clhs{f_dec_fl.htm,decode-float} @tab cl_object cl_decode_float(cl_object float)
+@item @clhs{f_dec_fl.htm,scale-float} @tab cl_object cl_scale_float(cl_object float, cl_object integer)
+@item @clhs{f_dec_fl.htm,float-radix} @tab cl_object cl_float_radix(cl_object float)
+@item @clhs{f_dec_fl.htm,float-sign} @tab cl_object cl_float_sign(cl_narg narg, cl_object float1, ...)
+@item @clhs{f_dec_fl.htm,float-digits} @tab cl_object cl_float_digits(cl_object float)
+@item @clhs{f_dec_fl.htm,float-precision} @tab cl_object cl_float_precision(cl_object float)
+@item @clhs{f_dec_fl.htm,integer-decode-float} @tab cl_object cl_integer_decode_float(cl_object float)
+@item @clhs{f_float.htm,float} @tab cl_object cl_float(cl_narg narg, cl_object number, ...)
+@item @clhs{f_floatp.htm,floatp} @tab cl_object cl_floatp(cl_object object)
+@item @clhs{f_arithm.htm,arithmetic-error-operands} @tab [Only in Common Lisp]
+@item @clhs{f_arithm.htm,arithmetic-error-operation} @tab [Only in Common Lisp]
+@end multitable

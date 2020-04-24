@@ -1,0 +1,116 @@
+@node Readers-writer locks
+@subsection Readers-writer locks
+
+@ftindex ecl-read-write-lock
+@cindex Readers-writer locks
+@cindex Shared-exclusive locks
+
+Readers-writer (or shared-exclusive ) locks allow concurrent access
+for read-only operations, while write operations require exclusive
+access. @code{mp:rwlock} is non-recursive.
+
+Readers-writers locks are an optional feature, which is available if
+@code{*features*} includes @code{:ecl-read-write-lock}.
+
+
+@node Readers-writer locks dictionary
+@subsection Read-Write locks dictionary
+
+
+@cppdef ecl_make_rwlock
+
+@deftypefun cl_object ecl_make_rwlock (cl_object name)
+C/C++ equivalent of @coderef{mp:make-rwlock} without @code{key} arguments.
+
+See @coderef{mp:make-rwlock}.
+@end deftypefun
+
+
+@lspdef mp:make-rwlock
+
+@defun mp:make-rwlock &key name
+Creates a rwlock named @var{name}.
+@end defun
+
+
+@cppdef mp_rwlock_name
+@lspdef mp:rwlock-name
+
+@deftypefun cl_object mp_rwlock_name (cl_object lock)
+@end deftypefun
+
+@defun mp:rwlock-name lock
+Returns the name of @var{lock}.
+@end defun
+
+
+@cppdef mp_get_rwlock_read_wait
+@cppdef mp_get_rwlock_read_nowait
+@lspdef mp:get-rwlock-read
+
+@deftypefun cl_object mp_get_rwlock_read_wait (cl_object lock)
+Acquires @var{lock} (blocks if @var{lock} is already taken with
+@coderef{mp:get-rwlock-write}. Lock may be acquired by multiple
+readers). Returns @code{ECL_T}.
+@end deftypefun
+
+@deftypefun cl_object mp_get_rwlock_read_nowait
+Tries to acquire @var{lock}. If @var{lock} is already taken with
+@coderef{mp:get-rwlock-write} returns @code{ECL_NIL}, otherwise
+@code{ECL_T}.
+@end deftypefun
+
+@defun mp:get-rwlock-read lock &optional (wait t)
+Tries to acquire @var{lock}. @var{wait} indicates whenever function
+should block or give up if @var{lock} is already taken with
+@coderef{mp:get-rwlock-write}.
+@end defun
+
+
+@cppdef mp_get_rwlock_write_wait
+@cppdef mp_get_rwlock_write_nowait
+@lspdef mp:get-rwlock-write
+
+@deftypefun cl_object mp_get_rwlock_write_wait (cl_object lock)
+Acquires @var{lock} (blocks if @var{lock} is already taken). Returns
+@code{ECL_T}.
+@end deftypefun
+
+@deftypefun cl_object mp_get_rwlock_write_nowait
+Tries to acquire @var{lock}. If @var{lock} is already taken returns
+@code{ECL_NIL}, otherwise @code{ECL_T}.
+@end deftypefun
+
+@defun mp:get-rwlock-write lock &optional (wait t)
+Tries to acquire @var{lock}. @var{wait} indicates whenever function
+should block or give up if @var{lock} is already taken.
+@end defun
+
+
+@cppdef mp_giveup_rwlock_read
+@cppdef mp_giveup_rwlock_write
+
+@lspdef mp:giveup-rwlock-read
+@lspdef mp:giveup-rwlock-write
+
+
+@deftypefun cl_object mp_giveup_rwlock_read (cl_object lock)
+@deftypefunx cl_object mp_giveup_rwlock_write (cl_object lock)
+@end deftypefun
+
+@defun mp:giveup-rwlock-read lock
+@defunx mp:giveup-rwlock-write lock
+Release @var{lock}.
+@end defun
+
+
+@lspdef mp:with-rwlock
+
+@defmac mp:with-rwlock (lock operation) &body body
+Acquire rwlock for the dynamic scope of @var{body} for operation
+@var{operation}, which is executed with the lock held by current
+thread. Returns the values of body.
+
+Valid values of argument @var{operation} are @code{:read} or
+@code{:write} (for reader and writer access accordingly).
+@end defmac

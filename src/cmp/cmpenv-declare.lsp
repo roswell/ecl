@@ -26,9 +26,9 @@
            (every test x))))
 
 (defun type-name-p (name)
-  (or (get-sysprop name 'SI::DEFTYPE-DEFINITION)
+  (or (si:get-sysprop name 'SI::DEFTYPE-DEFINITION)
       (find-class name nil)
-      (get-sysprop name 'SI::STRUCTURE-TYPE)))
+      (si:get-sysprop name 'SI::STRUCTURE-TYPE)))
 
 (defun validate-alien-declaration (names-list error)
   (dolist (new-declaration names-list)
@@ -113,9 +113,9 @@ and a possible documentation string (only accepted when DOC-P is true)."
                      (if (machine-c-type-p decl-name)
                          (values t decl-name)
                          (valid-type-specifier decl-name))
-                   (cmpassert ok "Unknown declaration specifier ~s"
-                              decl-name)
-                   (setf types (collect-declared type decl-args types))))))
+                   (if (null ok)
+                       (cmpwarn "Unknown declaration specifier ~s." decl-name)
+                       (setf types (collect-declared type decl-args types)))                   ))))
        finally (return (values body specials types ignored
                                (nreverse others) doc all-declarations)))))
 

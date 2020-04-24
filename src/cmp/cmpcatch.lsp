@@ -30,14 +30,17 @@
       (c2expr* tag))
     (let* ((*destination* new-destination)
            (*unwind-exit* (cons 'FRAME *unwind-exit*)))
+      (wt-nl-open-brace)
       (if (member new-destination '(TRASH VALUES))
           (progn
-            (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")==0) {")
+            (wt-nl "ecl_frs_push(cl_env_copy," 'VALUE0 ");")
+            (wt-nl "if (__ecl_frs_push_result==0) {")
             (wt-comment "BEGIN CATCH ~A" code)
             (with-indentation
                 (c2expr* body)))
           (progn
-            (wt-nl "if (ecl_frs_push(cl_env_copy," 'VALUE0 ")) {")
+            (wt-nl "ecl_frs_push(cl_env_copy," 'VALUE0 ");")
+            (wt-nl "if (__ecl_frs_push_result) {")
             (wt-comment "BEGIN CATCH ~A" code)
             (with-indentation
                 (with-exit-label (label)
@@ -49,15 +52,21 @@
     (wt-nl "}")
     (wt-nl "ecl_frs_pop(cl_env_copy);")
     (wt-comment "END CATCH ~A" code)
+    (wt-nl-close-brace)
     (unwind-exit new-destination)))
 
 (defun c1unwind-protect (args)
   (check-args-number 'UNWIND-PROTECT args 1)
-  (incf *setjmps*)
-  (let ((form (let ((*cmp-env* (cmp-env-mark 'UNWIND-PROTECT)))
-                (c1expr (first args)))))
-    (make-c1form* 'UNWIND-PROTECT :type (c1form-type form) :sp-change t
-                  :args form (c1progn (rest args)))))
+  (cond
+    ((null (rest args))
+     (cmpdebug "UNWIND-PROTECT without CLEANUP-FORMS was replaced by its FORM.")
+     (c1expr (first args)))
+    (T
+     (incf *setjmps*)
+     (let ((form (let ((*cmp-env* (cmp-env-mark 'SI:UNWIND-PROTECT-BOUNDARY)))
+                   (c1expr (first args)))))
+       (make-c1form* 'UNWIND-PROTECT :type (c1form-type form) :sp-change t
+                     :args form (c1progn (rest args)))))))
 
 (defun c2unwind-protect (c1form form body)
   (declare (ignore c1form))
@@ -70,7 +79,8 @@
     (wt-nl "ecl_frame_ptr next_fr;")
     ;; Here we compile the form which is protected. When this form
     ;; is aborted, it continues at the ecl_frs_pop() with unwinding=TRUE.
-    (wt-nl "if (ecl_frs_push(cl_env_copy,ECL_PROTECT_TAG)) {")
+    (wt-nl "ecl_frs_push(cl_env_copy,ECL_PROTECT_TAG);")
+    (wt-nl "if (__ecl_frs_push_result) {")
     (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->nlj_fr;")
     (wt-nl "} else {")
     (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))

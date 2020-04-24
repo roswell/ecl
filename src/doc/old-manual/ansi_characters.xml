@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book [
+<!ENTITY % eclent SYSTEM "ecl.ent">
+%eclent;
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en">
+<chapter xml:id="ansi.characters">
+ <title>Characters</title>
+ <para>&ECL; is fully ANSI Common-Lisp compliant in all aspects of the character
+ data type, with the following peculiarities.</para>
+
+ <section xml:id="ansi.characeer.unicode">
+   <title>Unicode vs. POSIX locale</title>
+
+   <para>There are two ways of building &ECL;: with C or with Unicode character codes. These build modes are accessed using the <code>--disable-unicode</code> and <code>--enable-unicode</code> configuration options, the last one being the default.</para>
+
+   <para>When using C characters we are actually relying on the <type>char</type> type of the C language, using the C library functions for tasks such as character conversions, comparison, etc. In this case characters are typically 8 bit wide and the character order and collation are determines by the current POSIX or C locale. This is not very accurate, leaves out many languages and character encodings but it is sufficient for small applications that do not need multilingual support.</para>
+
+   <para>When no option is specified &ECL; builds with support for a larger character set, the Unicode 6.0 standard. This uses 24 bit large character codes, also known as <emphasis>codepoints</emphasis>, with a large database of character properties which include their nature (alphanumeric, numeric, etc), their case, their collation properties, whether they are standalone or composing characters, etc.</para>
+
+ <section xml:id="ansi.character-types">
+  <title>Character types</title>
+
+  <para>If compiled without Unicode support, &ECL; all characters are
+  implemented using 8-bit codes and the type <type>extended-char</type>
+  is empty. If compiled with Unicode support, characters are implemented
+  using 24 bits and the <type>extended-char</type> type covers characters above
+  code 255.</para>
+  <informaltable>
+   <tgroup cols="3">
+    <thead>
+     <row>
+      <entry>Type</entry>
+      <entry>With Unicode</entry>
+      <entry>Without Unicode</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row>
+      <entry><type>standard-char</type></entry>
+      <entry>#\Newline,32-126</entry>
+      <entry>#\Newline,32-126</entry>
+     </row>
+     <row>
+      <entry><type>base-char</type></entry>
+      <entry>0-255</entry>
+      <entry>0-255</entry>
+     </row>
+     <row>
+      <entry><type>extended-char</type></entry>
+      <entry>256-16777215</entry>
+      <entry>-</entry>
+     </row>
+    </tbody>
+   </tgroup>
+  </informaltable>
+ </section>
+
+ <section xml:id="ansi.character-names">
+  <title>Character names</title>
+
+  <para>All characters have a name. For non-printing characters between 0 and 32, and for 127 we use the ordinary <acronym>ASCII</acronym> names. Characters above 127 are printed and read using hexadecimal Unicode notation, with a <literal>U</literal> followed by 24 bit hexadecimal number, as in <literal>U0126</literal>.</para>
+  <table xml:id="table.character-names">
+   <title>Examples of character names</title>
+   <tgroup cols="2">
+    <thead>
+     <row>
+      <entry>Character</entry>
+      <entry>Code</entry>
+     </row>
+    </thead>
+    <tbody>
+     <row><entry><literal>#\Null</literal></entry><entry>0</entry></row>
+     <row><entry><literal>#\Ack</literal></entry><entry>1</entry></row>
+     <row><entry><literal>#\Bell</literal></entry><entry>7</entry></row>
+     <row><entry><literal>#\Backspace</literal></entry><entry>8</entry></row>
+     <row><entry><literal>#\Tab</literal></entry><entry>9</entry></row>
+     <row><entry><literal>#\Newline</literal></entry><entry>10</entry></row>
+     <row><entry><literal>#\Linefeed</literal></entry><entry>10</entry></row>
+     <row><entry><literal>#\Page</literal></entry><entry>12</entry></row>
+     <row><entry><literal>#\Esc</literal></entry><entry>27</entry></row>
+     <row><entry><literal>#\Escape</literal></entry><entry>27</entry></row>
+     <row><entry><literal>#\Space</literal></entry><entry>32</entry></row>
+     <row><entry><literal>#\Rubout</literal></entry><entry>127</entry></row>
+     <row><entry><literal>#\U0080</literal></entry><entry>128</entry></row>
+    </tbody>
+   </tgroup>
+  </table>
+  <para>Note that <literal>#\Linefeed</literal> is synonymous with
+  <literal>#\Newline</literal> and thus is a member of
+  <type>standard-char</type>.</para>
+ </section>
+ </section>
+
+ <section>
+  <title><code>#\Newline</code> characters</title>
+
+  <para>Internally, &ECL; represents the <literal>#\Newline</literal> character by a single code. However, when using external formats, &ECL; may parse character pairs as a single <literal>#\Newline</literal>, and viceversa, use multiple characters to represent a single <literal>#\Newline</literal>. See <xref linkend="ansi.streams.formats"/>.</para>
+ </section>
+
+ <xi:include href="ref_c_characters.xml" xpointer="ansi.characters.c-dict" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+</chapter>
+</book>

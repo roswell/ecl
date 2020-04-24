@@ -28,6 +28,7 @@ extern int errno;
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
@@ -132,11 +133,11 @@ int connect_to_server(char *host, int port)
 #ifdef TCP_NODELAY
   /* make sure to turn off TCP coalescence */
 #if defined(ECL_MS_WINDOWS_HOST)
-  { char mi;
+  { char mi = 1;
     setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof (char));
   }
 #else
-  { int mi;
+  { int mi = 1;
     setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof (int));
   }
 #endif
@@ -166,7 +167,6 @@ int
 create_server_port(int port)
 {
   struct sockaddr_in inaddr;    /* INET socket address. */
-  struct sockaddr *addr;        /* address to connect to */
   int addrlen;                  /* length of address */
   int request, conn;            /* Network socket */
 
@@ -196,18 +196,19 @@ create_server_port(int port)
 #ifdef TCP_NODELAY
   /* make sure to turn off TCP coalescence */
 #if defined(ECL_MS_WINDOWS_HOST)
-  { char mi;
+  { char mi = 1;
     setsockopt(request, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof (char));
   }
 #else
-  { int mi;
+  { int mi = 1;
     setsockopt(request, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof (int));
   }
 #endif
 #endif
 
   /* Set up the socket data. */
-  memset((char *)&inaddr, 0, sizeof(inaddr));
+  addrlen = sizeof (struct sockaddr_in);
+  memset((char *)&inaddr, 0, addrlen);
   inaddr.sin_family = AF_INET;
 #if defined(ECL_MS_WINDOWS_HOST)
   inaddr.sin_port = htons((unsigned short)port);
@@ -216,7 +217,7 @@ create_server_port(int port)
 #endif
   inaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  if (bind(request, (struct sockaddr *)&inaddr, sizeof (inaddr)))
+  if (bind(request, (struct sockaddr *)&inaddr, addrlen))
     FElibc_error("Binding TCP socket", 0);
   if (listen(request, 1))
     FElibc_error("TCP listening", 0);
@@ -251,6 +252,7 @@ create_server_port(int port)
     FElibc_error("Accepting requests", 0);
 #endif  /* THREADS */
 
+  close(request);
   return(conn);
 }
 
@@ -269,7 +271,7 @@ create_server_port(int port)
 cl_object
 si_open_client_stream(cl_object host, cl_object port)
 {
-  int fd, p;                   /* file descriptor */
+  int fd;                   /* file descriptor */
   cl_object stream;
 
   /* Ensure "host" is a string that we can pass to a C function */
@@ -277,11 +279,10 @@ si_open_client_stream(cl_object host, cl_object port)
 
   if (ecl_unlikely(!ECL_FIXNUMP(port) ||
                    ecl_fixnum_minusp(port) ||
-                   ecl_fixnum_greater(port,ecl_make_fixnum(65536)))) {
+                   ecl_fixnum_greater(port,ecl_make_fixnum(65535)))) {
     FEwrong_type_nth_arg(@[si::open-client-stream], 2, port,
                          ecl_read_from_cstring("(INTEGER 0 65535)"));
   }
-  p = ecl_fixnum(port);
 
   if (host->base_string.fillp > BUFSIZ - 1)
     FEerror("~S is a too long file name.", 1, host);
@@ -311,8 +312,8 @@ si_open_server_stream(cl_object port)
 
   if (ecl_unlikely(!ECL_FIXNUMP(port) ||
                    ecl_fixnum_minusp(port) ||
-                   ecl_fixnum_greater(port,ecl_make_fixnum(65536)))) {
-    FEwrong_type_only_arg(@[si::open-client-stream], port,
+                   ecl_fixnum_greater(port,ecl_make_fixnum(65535)))) {
+    FEwrong_type_only_arg(@[si::open-server-stream], port,
                           ecl_read_from_cstring("(INTEGER 0 65535)"));
   }
   p = ecl_fixnum(port);
@@ -337,8 +338,7 @@ si_open_unix_socket_stream(cl_object path)
   struct sockaddr_un addr;
 
   if (ecl_unlikely(!ECL_STRINGP(path)))
-    FEwrong_type_nth_arg(@[si::open-unix-socket-stream], 1, path,
-                         @[string]);
+    FEwrong_type_only_arg(@[si::open-unix-socket-stream], path, @[string]);
 
   path = si_coerce_to_base_string(path);
   if (path->base_string.fillp > UNIX_MAX_PATH-1)
@@ -404,10 +404,10 @@ si_lookup_host_entry(cl_object host_or_address)
   if (he == NULL) {
     @(return ECL_NIL ECL_NIL ECL_NIL);
   }
-  name = make_base_string_copy(he->h_name);
+  name = ecl_make_simple_base_string(he->h_name,-1);
   aliases = ECL_NIL;
   for (i = 0; he->h_aliases[i] != 0; i++)
-    aliases = CONS(make_base_string_copy(he->h_aliases[i]), aliases);
+    aliases = CONS(ecl_make_simple_base_string(he->h_aliases[i],-1), aliases);
   addresses = ECL_NIL;
   for (i = 0; he->h_addr_list[i]; i++) {
     unsigned long *s = (unsigned long*)(he->h_addr_list[i]);

@@ -1,0 +1,300 @@
+@node Embedding ECL
+@section Embedding ECL
+
+@menu
+* Embedding ECL - Embedding Reference::
+@end menu
+
+@c @node Embedding ECL - Introduction
+@c @subsection Introduction
+
+@node Embedding ECL - Embedding Reference
+@subsection Embedding Reference
+
+@node Starting and Stopping
+@subsubsection Starting and Stopping
+
+@cppdef cl_boot
+@deftypefun int cl_boot (int argc, char **argv);
+Setup the lisp environment.
+@table @var
+@item argc
+An integer with the number of arguments to this program.
+@item argv
+A vector of strings with the arguments to this program.
+@end table
+
+@paragraph Description
+This function must be called before any other function from the ECL library, including the creation of any lisp object or evaluating any lisp code. The only exception are @coderef{ecl_set_option} and @coderef{ecl_get_option}.
+
+@end deftypefun
+
+
+@cppdef cl_shutdown
+@deftypefun int cl_shutdown (void);
+Close the lisp environment.
+
+@paragraph Description
+This function must be called before exiting a program that uses the ECL environment. It performs some cleaning, including the execution of any finalizers, unloading shared libraries and deleting temporary files that were created by the compiler. 
+@end deftypefun
+
+@cppdef ecl_set_option
+@deftypefun void ecl_set_option (int option, cl_fixnum value); 
+Set a boot option.
+
+@table @var
+@item option
+An integer from @ref{tab:boot-options}.
+@item value
+A @code{cl_index} value for this option
+@end table
+
+@paragraph Description
+This functions sets the value of different options that have to be customized @emph{before} ECL boots. The table of options and default values [@ref{tab:boot-options}] shows that some of them are boolean, and some of them are unsigned integers.
+
+We distinguish three sets of values. The first set determines whether ECL handles certain exceptions, such as access to forbidden regions of memory, interrupts via , floating point exceptions, etc.
+
+The second set is related to the sizes of different stacks. Currently ECL uses four stacks: a bind stack for keeping assignments to special variables; a frame stack for implementing blocks, tagbodys and catch points; an interpreter stack for evaluating bytecodes, and finally the machine or C stack, of the computer we run in. We can set the expected size of these stacks, together with the size of a safety area which, if penetrated, will lead to the generation of a correctable error.
+
+@float Table,tab:boot-options
+@caption{Boot options for embedded ECL}
+@multitable @columnfractions .3 .15 .16 .39
+@headitem Name @code{(ECL_OPT_*)} @tab Type @tab Default @tab Description
+@item @code{INCREMENTAL_GC} @tab boolean @tab TRUE @tab Activate generational garbage collector.
+@item @code{TRAP_SIGSEGV} @tab boolean @tab TRUE @tab Capture @code{SIGSEGV} signals.
+@item @code{TRAP_SIGFPE} @tab boolean @tab TRUE @tab Capture floating point exceptions.
+@item @code{TRAP_SIGINT} @tab boolean @tab TRUE @tab Capture user interrupts.
+@item @code{TRAP_SIGILL} @tab boolean @tab TRUE @tab Capture @code{SIGILL} exception.
+@item @code{TRAP_INTERRUPT_SIGNAL} @tab boolean @tab TRUE @tab Capture the signal that implements @coderef{mp:interrupt-process}.
+@item @code{SIGNAL_HANDLING_THREAD} @tab boolean @tab TRUE @tab Create a signal to capture and process asynchronous threads (@xref{Signals and Interrupts - Asynchronous signals}).
+@item @code{BOOTED} @tab boolean @tab TRUE/FALSE @tab Has ECL booted (read only).
+@item @code{BIND_STACK_SIZE} @tab cl_index @tab 8192 @tab Size of stack for binding special variables.
+@item @code{BIND_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{FRAME_STACK_SIZE} @tab cl_index @tab 2048 @tab Size of stack for nonlocal jumps.
+@item @code{FRAME_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{LISP_STACK_SIZE} @tab cl_index @tab 32768 @tab Size of interpreter stack.
+@item @code{LISP_STACK_SAFETY_AREA} @tab cl_index @tab 128 @tab  
+@item @code{C_STACK_SIZE} @tab cl_index @tab 0 or 1048576 @tab Size of C stack in bytes. The effect and default value of this option depends on the operating system. On Unix, the default is 0 which means that ECL will use the stack size provided by the OS. If set to a non-default value, ECL will set the stack size to the given value unless the stack size provided by the OS is already large enough. On Windows, the stack size is set at build time and cannot be changed at runtime. Here, we use a default of 1 MiB. For other operating systems, it is up to the user to set this value to the available stack size so that ECL can reliably detect stack overflows.
+@item @code{C_STACK_SAFETY_AREA} @tab cl_index @tab 4192 @tab  
+@item @code{THREAD_INTERRUPT_SIGNAL} @tab unsigned int @tab 0 @tab If nonzero, specify the unix signal which is used to communicate between different Lisp threads.
+@end multitable
+@end float
+@end deftypefun
+
+
+@cppdef ecl_get_option
+@deftypefun cl_fixnum ecl_get_option (int option); 
+Read the value of a boot option.
+@table @var
+@item option
+An integer from @ref{tab:boot-options}.
+@end table
+
+@paragraph Description
+This functions reads the value of different options that have to be customized @emph{before} ECL boots. The table of options and default values is @ref{tab:boot-options}. 
+@end deftypefun
+
+@cppdef ecl_import_current_thread
+@deftypefun bool ecl_import_current_thread (cl_object name, cl_object bindings);
+Import an external thread in the Lisp environment.
+@table @var
+@item name
+Thread name.
+@item bindings
+Unused (specifying initial bindings for external threads is not supported currently)
+@item returns
+True if the thread was successfully imported, false otherwise.
+@end table
+
+@paragraph Description
+External threads, i.e. threads which are not created in the Lisp world using the routines described in @ref{Processes (native threads)}, need to be imported with @coderef{ecl_import_current_thread} before Lisp code can be executed.
+
+@seealso{ecl_release_current_thread}
+@end deftypefun
+
+@cppdef ecl_release_current_thread
+@deftypefun void ecl_release_current_thread (void);
+Release an external thread imported with @coderef{ecl_import_current_thread}. Must be called before thread exit to prevent memory leaks.
+@end deftypefun
+
+@defvr {Environment variable} ECLDIR
+Specify a non-standard installation directory.
+
+@paragraph Description
+ECL includes various files for external modules (e.g. asdf, sockets), character encodings or documentation strings. The installation directory for these files is chosen during build time by the configure script. If the directory is moved to a different place, the @code{ECLDIR} environment variable should be updated accordingly. Note that the contents of the variable are parsed as a Common Lisp pathname, thus it must end with a slash.
+@end defvr
+
+@node Catching Errors and Managing Interrupts
+@subsubsection Catching Errors and Managing Interrupts
+
+@cppdef ECL_CATCH_ALL
+@defmac ECL_CATCH_ALL
+Create a protected region.
+
+@paragraph C Macro
+@example
+@verbatim
+cl_env_ptr env = ecl_process_env();
+ECL_CATCH_ALL_BEGIN(env) {
+  /*
+   * Code that is protected. Uncaught lisp conditions, THROW,
+   * signals such as SIGSEGV and SIGBUS may cause jump to
+   * this region.
+   */
+} ECL_CATCH_ALL_IF_CAUGHT {
+  /*
+   * If the exception, lisp condition or other control transfer
+   * is caught, this code is executed.
+   */
+} ECL_CATCH_ALL_END
+/*
+ * In all cases we exit here.
+ */
+@end verbatim
+@end example
+
+@paragraph Description
+This is a set of three macros that create an @code{unwind-protect} region that prevents any nonlocal transfer of control to outer loops. In the Lisp speak, the previous code is equivalent to
+
+@lisp
+(block nil
+  (unwind-protect
+     (progn
+        ;; Code that is protected
+	)
+    (return nil)))
+@end lisp
+
+As explained in @coderef{ECL_UNWIND_PROTECT}, it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitrary transfers of control.
+
+@seealso{ECL_UNWIND_PROTECT}
+@end defmac
+
+
+@cppdef ECL_UNWIND_PROTECT
+@defmac ECL_UNWIND_PROTECT
+Create a protected region.
+
+@paragraph C Macro
+@example
+@verbatim
+cl_env_ptr env = ecl_process_env();
+ECL_UNWIND_PROTECT_BEGIN(env) {
+  /*
+   * Code that is protected. Uncaught lisp conditions, THROW,
+   * signals such as SIGSEGV and SIGBUS may cause jump to
+   * this region.
+   */
+} ECL_UNWIND_PROTECT_EXIT {
+  /*
+   * If the exception, lisp condition or other control transfer
+   * is caught, this code is executed. After this code, the
+   * process will jump to the original destination of the
+   * THROW, GOTO or other control statement that was interrupted.
+   */
+} ECL_UNWIND_PROTECT_END
+/*
+ * We only exit here if NO nonlocal jump was interrupted.
+ */
+@end verbatim
+@end example
+
+@paragraph Description
+When embedding ECL it is normally advisable to set up an @code{unwind-protect} frame to avoid the embedded lisp code to perform arbitrary transfers of control. Furthermore, the unwind protect form will be used in at least in the following occasions:
+
+@itemize
+@item In a normal program exit, caused by @coderef{ext:quit}, ECL unwinds up to the outermost frame, which may be an @coderef{ECL_CATCH_ALL} or @coderef{ECL_UNWIND_PROTECT} macro.
+@end itemize
+
+Besides this, normal mechanisms for exit, such as @coderef{ext:quit}, and uncaught exceptions, such as serious signals (@xref{Signals and Interrupts - Synchronous signals}), are best handled using @code{unwind-protect} blocks.
+
+@seealso ECL_CATCH_ALL
+@end defmac
+
+@cppdef ecl_clear_interrupts
+@defmac ecl_clear_interrupts ()
+Clear all pending signals and exceptions.
+
+@paragraph Description
+This macro clears all pending interrupts.
+
+@paragraph See also
+@coderef{ecl_disable_interrupts} and @coderef{ecl_enable_interrupts}.
+@end defmac
+
+
+@cppdef ecl_disable_interrupts
+@defmac ecl_disable_interrupts ()
+Postpone handling of signals and exceptions.
+
+@paragraph Description
+This macro sets a thread-local flag indicating that all received signals should be queued for later processing. Note that it is not possible to execute lisp code while interrupts are disabled in this way. For this purpose, use the @coderef{mp:without-interrupts} macro. Every call to @coderef{ecl_disable_interrupts} must be followed by a corresponding call to @coderef{ecl_enable_interrupts}, otherwise race conditions will appear.
+
+@paragraph See also
+@coderef{ecl_enable_interrupts} and @coderef{ecl_clear_interrupts}. 
+@end defmac
+
+
+@cppdef ecl_enable_interrupts
+@defmac ecl_enable_interrupts (); 
+Activate handling of signals and exceptions.
+
+@paragraph Description
+This macro sets a thread-local flag indicating that all received signals can be handled. If there are any pending signals, they will be immediately processed.
+
+@paragraph See also
+@coderef{ecl_disable_interrupts} and @coderef{ecl_clear_interrupts}. 
+@end defmac
+
+@cppdef ECL_WITH_LISP_FPE
+@defmac ECL_WITH_LISP_FPE
+Execute Lisp code with correct floating point environment
+
+@paragraph Description
+Unless floating point exceptions are disabled (via the
+@code{--without-fpe} configure option or @code{ECL_OPT_TRAP_SIGFPE}
+runtime option), ECL will change the floating point environment when
+booting. This macro allows for execution of Lisp code while saving and
+later restoring the floating point environment of surrounding C code
+so that changes in the floating point environment don't leak outside.
+
+@coderef{ECL_WITH_LISP_FPE} can be also used before ECL has booted or
+before an external thread has been imported.
+
+@exindex Safely executing Lisp code with floating point exceptions in embedding program
+@paragraph Example
+@example
+@verbatim
+#include <ecl/ecl.h>
+#include <stdio.h>
+
+int main(int argc, char **argv) {
+  ECL_WITH_LISP_FPE_BEGIN {
+    cl_boot(argc, argv);
+  } ECL_WITH_LISP_FPE_END;
+
+  double a = 1.0 / 0.0;
+  double b;
+
+  ECL_WITH_LISP_FPE_BEGIN {
+    cl_object form = ecl_read_from_cstring("(handler-case"
+                                               "(/ 1d0 0d0)"
+                                             "(division-by-zero () 0d0))");
+    b = ecl_to_double(si_safe_eval(3, form, ECL_NIL, ECL_NIL));
+  } ECL_WITH_LISP_FPE_END;
+
+  printf("%g %g\n", a, b);
+
+  cl_shutdown();
+  return 0;
+}
+@end verbatim
+@end example
+will output
+@verbatim
+inf 0
+@end verbatim
+
+@seealso{ext:trap-fpe}
+
+@end defmac

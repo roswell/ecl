@@ -1,8 +1,0 @@
-@node Environment implementation
-@section Environment implementation
-
-@cppindex cl_env_struct
-
-@c @deftp {@cind} cl_env_struct
-@c xxx
-@c @end deftp

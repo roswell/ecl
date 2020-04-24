@@ -236,9 +236,6 @@ default value of INITIAL-ELEMENT depends on TYPE."
              (setf object output))
           (declare (index j))
           (setf (aref output j) (seq-iterator-ref object i)))))
-    (unless (eq length '*)
-      (unless (= length (length output))
-        (check-type output `(vector ,elt-type (,length)) "coerced object")))
     output))
 
 (defun concatenate (result-type &rest sequences)
