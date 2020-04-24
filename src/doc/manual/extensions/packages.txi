@@ -1,0 +1,252 @@
+@node Package local nicknames
+@section Local package nicknames
+
+@cindex Package local nicknames
+@ftindex PACKAGE-LOCAL-NICKNAMES
+
+@c @menu
+@c * Package local nicknames overview::
+@c * Package local nicknames dictionary::
+@c @end menu
+
+@subsection Overview
+
+ECL allows giving packages local nicknames: they allow short and
+easy-to-use names to be used without fear of name conflict associated
+with normal nicknames.
+
+A local nickname is valid only when inside the package for which it
+has been specified. Different packages can use same local nickname for
+different global names, or different local nickname for same global
+name.
+
+The keyword @code{:package-local-nicknames} in @code{*features*}
+indicates the support for this feature.
+
+@subsection Package local nicknames dictionary
+
+@defmac cl:defpackage name [[options]]*
+Options are extended to include
+
+@example
+    :local-nicknames (local-nickname actual-package-name)*
+@end example
+
+The package has the specified local nicknames for the
+corresponding actual packages.
+
+@exindex defpackage and package local nicknames
+Example:
+
+@lisp
+(defpackage :bar (:intern "X"))
+(defpackage :foo (:intern "X"))
+(defpackage :quux (:use :cl) (:local-nicknames (:bar :foo) (:foo :bar)))
+(find-symbol "X" :foo) ; => FOO::X
+(find-symbol "X" :bar) ; => BAR::X
+(let ((*package* (find-package :quux)))
+  (find-symbol "X" :foo))               ; => BAR::X
+(let ((*package* (find-package :quux)))
+  (find-symbol "X" :bar))               ; => FOO::X
+@end lisp
+@end defmac
+
+@lspdef ext:package-local-nicknames
+@cppdef si_package_local_nicknames
+@defun {ext:package-local-nicknames} package-designator
+@end defun
+@deftypefun cl_object si_package_local_nicknames (cl_object package_designator)
+Returns an alist of @code{(local-nickname . actual-package)}
+describing the nicknames local to the designated package.
+
+When in the designated package, calls to @code{find-package} with any
+of the local-nicknames will return the corresponding actual-package
+instead. This also affects all implied calls to @code{find-package},
+including those performed by the reader.
+
+When printing a package prefix for a symbol with a package local nickname, the
+local nickname is used instead of the real name in order to preserve
+print-read consistency.
+@end deftypefun
+
+@lspdef ext:package-locally-nicknamed-by-list
+@cppdef si_package_locally_nicknamed_by_list
+@defun {ext:package-locally-nicknamed-by-list} package-designator
+@end defun
+@deftypefun cl_object si_package_locally_nicknamed_by_list (cl_object package_designator)
+Returns a list of packages which have a local nickname for the
+designated package.
+@end deftypefun
+
+@lspdef ext:add-package-local-nickname
+@cppdef si_add_package_local_nickname
+@defun {ext:add-package-local-nickname} local-nickname actual-package &optional package-designator
+@end defun
+@deftypefun cl_object si_add_package_local_nickname (cl_object local_nickname, cl_object actual_package, cl_object package_designator)
+Adds @var{local-nickname} for @var{actual-package} in the designated
+package, defaulting to current package. @var{local-nickname} must be a
+string designator, and @var{actual-package} must be a package
+designator.
+
+Returns the designated package.
+
+Signals a continuable error if @var{local-nickname} is already a
+package local nickname for a different package.
+
+When in the designated package, calls to @code{find-package} with the
+@var{local-nickname} will return the package the designated
+@var{actual-package} instead. This also affects all implied calls to
+@code{find-package}, including those performed by the reader.
+
+When printing a package prefix for a symbol with a package local
+nickname, the local nickname is used instead of the real name in order
+to preserve print-read consistency.
+@end deftypefun
+
+@lspdef ext:remove-package-local-nickname
+@cppdef si_remove_package_local_nickname
+@defun {ext:remove-package-local-nickname} old-nickname &optional package-designator
+@end defun
+@deftypefun cl_object si_remove_package_local_nickname (cl_object old_nickname, cl_object package_designator)
+If the designated package had @var{old-nickname} as a local nickname
+for another package, it is removed. Returns true if the nickname
+existed and was removed, and @code{nil} otherwise.
+@end deftypefun
+
+@node Package locks
+@section Package locks
+
+@cindex Package locks
+@ftindex PACKAGE-LOCKS
+
+@subsection Package Locking Overview
+
+ECL borrows parts of the protocol and documentation from SBCL for
+compatibility. Interface is the same except that the home package for
+locking is @code{ext} and that ECL doesn't implement Implementation
+Packages and a few constructs. To load the extension you need to
+require @code{package-locks}:
+
+@lisp
+(require '#:package-locks)
+@end lisp
+
+Package locks protect against unintentional modifications of a package:
+they provide similar protection to user packages as is mandated to
+@code{common-lisp} package by the ANSI specification. They are not, and
+should not be used as, a security measure.
+
+Newly created packages are by default unlocked (see the @code{:lock}
+option to @code{defpackage}).
+
+The package @code{common-lisp} and ECL internal implementation packages
+are locked by default, including @code{ext}.
+
+It may be beneficial to lock @code{common-lisp-user} as well, to
+ensure that various libraries don't pollute it without asking,
+but this is not currently done by default.
+
+@subsection Operations Violating Package Locks
+
+The following actions cause a package lock violation if the package
+operated on is locked, and @code{*package*} is not an implementation
+package of that package, and the action would cause a change in the
+state of the package (so e.g. exporting already external symbols is
+never a violation). Package lock violations caused by these operations
+signal errors of type @code{package-error}.
+
+@enumerate
+@item
+Shadowing a symbol in a package.
+
+@item
+Importing a symbol to a package.
+
+@item
+Uninterning a symbol from a package.
+
+@item
+Exporting a symbol from a package.
+
+@item
+Unexporting a symbol from a package.
+
+@item
+Changing the packages used by a package.
+
+@item
+Renaming a package.
+
+@item
+Deleting a package.
+
+@item
+Attempting to redefine a function in a locked package.
+
+@item
+Adding a new package local nickname to a package.
+
+@item
+Removing an existing package local nickname to a package.
+
+@end enumerate
+
+@subsection Package Lock Dictionary
+
+@lspdef ext:package-locked-p
+@defun ext:package-locked-p package
+Returns @code{t} when @var{package} is locked, @code{nil}
+otherwise. Signals an error if @var{package} doesn't designate a valid
+package.
+@end defun
+
+@lspdef ext:lock-package
+@defun ext:lock-package package
+Locks @var{package} and returns @code{t}. Has no effect if package was
+already locked. Signals an error if package is not a valid
+@var{package} designator
+@end defun
+
+@lspdef ext:unlock-package
+@defun ext:unlock-package package
+Unlocks @var{package} and returns @code{t}. Has no effect if
+@var{package} was already unlocked. Signals an error if @var{package}
+is not a valid package designator.
+@end defun
+
+@lspdef ext:without-package-locks
+@defmac ext:without-package-locks &body body
+Ignores all runtime package lock violations during the execution of
+body. Body can begin with declarations.
+@end defmac
+
+@lspdef ext:with-unlocked-packages
+@defmac ext:with-unlocked-packages (&rest packages) &body body
+Unlocks @var{packages} for the dynamic scope of the
+@var{body}. Signals an error if any of @var{packages} is not a valid
+package designator.
+@end defmac
+
+@defmac cl:defpackage name [[option]]* @result{} package
+
+Options are extended to include
+
+@example
+    :lock boolean
+@end example
+
+If the argument to @code{:lock} is @code{t}, the package is initially
+locked. If @code{:lock} is not provided it defaults to @code{nil}.
+
+@exindex Defpackage @code{:lock} option
+Example:
+
+@lisp
+(defpackage "FOO" (:export "BAR") (:lock t))
+
+;;; is equivalent to
+
+(defpackage "FOO") (:export "BAR"))
+(lock-package "FOO")
+@end lisp
+@end defmac

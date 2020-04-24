@@ -16,6 +16,11 @@
 #include <ecl/ecl.h>
 #include <ecl/impl/math_dispatch.h>
 
+/* INV: FLT_MIN - 1 == FLT_MIN
+ *      DBL_MIN - 1 == DBL_MIN
+ *      LDBL_MIN - 1 == LDBL_MIN
+ * (no ECL_MATHERR_TEST needed) */
+
 static cl_object
 ecl_one_minus_fix(cl_object x)
 {
@@ -48,26 +53,45 @@ ecl_one_minus_double_float(cl_object x)
   return ecl_make_double_float(ecl_double_float(x) - 1);
 }
 
-#ifdef ECL_LONG_FLOAT
 static cl_object
 ecl_one_minus_long_float(cl_object x)
 {
   return ecl_make_long_float(ecl_long_float(x) - 1);
 }
-#endif
 
 static cl_object
 ecl_one_minus_complex(cl_object x)
 {
-  return ecl_make_complex(ecl_one_minus(x->complex.real),
-                          x->complex.imag);
+  return ecl_make_complex(ecl_one_minus(x->gencomplex.real),
+                          x->gencomplex.imag);
 }
+
+#ifdef ECL_COMPLEX_FLOAT
+static cl_object
+ecl_one_minus_csfloat(cl_object x)
+{
+  return ecl_make_csfloat(ecl_csfloat(x) - 1);
+}
+
+static cl_object
+ecl_one_minus_cdfloat(cl_object x)
+{
+  return ecl_make_cdfloat(ecl_cdfloat(x) - 1);
+}
+
+static cl_object
+ecl_one_minus_clfloat(cl_object x)
+{
+  return ecl_make_clfloat(ecl_clfloat(x) - 1);
+}
+#endif
 
 MATH_DEF_DISPATCH1_NE(one_minus, @[1-], @[number],
                       ecl_one_minus_fix, ecl_one_minus_big, ecl_one_minus_ratio,
                       ecl_one_minus_single_float, ecl_one_minus_double_float,
                       ecl_one_minus_long_float,
-                      ecl_one_minus_complex);
+                      ecl_one_minus_complex,
+                      ecl_one_minus_csfloat, ecl_one_minus_cdfloat, ecl_one_minus_clfloat);
 
 /*  (1- x)  */
 cl_object

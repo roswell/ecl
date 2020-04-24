@@ -31,24 +31,20 @@
 ;;; ALL FUNCTION DECLARATIONS AND INLINE FORMS
 ;;;
 
-(def-inline aref :unsafe (t t t) t
- "@0;ecl_aref_unsafe(#0,ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2))")
-(def-inline aref :unsafe ((array t) t t) t
- "@0;(#0)->array.self.t[ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2)]")
-(def-inline aref :unsafe ((array bit) t t) :fixnum
- "@0;ecl_aref_bv(#0,ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2))")
-(def-inline aref :unsafe ((array t) fixnum fixnum) t
- "@0;(#0)->array.self.t[#1*(#0)->array.dims[1]+#2]")
-(def-inline aref :unsafe ((array bit) fixnum fixnum) :fixnum
- "@0;ecl_aref_bv(#0,(#1)*(#0)->array.dims[1]+#2)")
-(def-inline aref :unsafe ((array base-char) fixnum fixnum) :unsigned-char
- "@0;(#0)->base_string.self[#1*(#0)->array.dims[1]+#2]")
-(def-inline aref :unsafe ((array double-float) fixnum fixnum) :double
- "@0;(#0)->array.self.df[#1*(#0)->array.dims[1]+#2]")
-(def-inline aref :unsafe ((array single-float) fixnum fixnum) :float
- "@0;(#0)->array.self.sf[#1*(#0)->array.dims[1]+#2]")
-(def-inline aref :unsafe ((array fixnum) fixnum fixnum) :fixnum
- "@0;(#0)->array.self.fix[#1*(#0)->array.dims[1]+#2]")
+(def-inline aref :unsafe (t t t) t "@0;ecl_aref_unsafe(#0,ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2))")
+(def-inline aref :unsafe ((array t) t t) t "@0;(#0)->array.self.t[ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2)]")
+(def-inline aref :unsafe ((array bit) t t) :fixnum "@0;ecl_aref_bv(#0,ecl_fixnum(#1)*(#0)->array.dims[1]+ecl_fixnum(#2))")
+(def-inline aref :unsafe ((array t) fixnum fixnum) t "@0;(#0)->array.self.t[#1*(#0)->array.dims[1]+#2]")
+(def-inline aref :unsafe ((array bit) fixnum fixnum) :fixnum "@0;ecl_aref_bv(#0,(#1)*(#0)->array.dims[1]+#2)")
+(def-inline aref :unsafe ((array base-char) fixnum fixnum) :unsigned-char "@0;(#0)->base_string.self[#1*(#0)->array.dims[1]+#2]")
+(def-inline aref :unsafe ((array double-float) fixnum fixnum) :double "@0;(#0)->array.self.df[#1*(#0)->array.dims[1]+#2]")
+(def-inline aref :unsafe ((array single-float) fixnum fixnum) :float "@0;(#0)->array.self.sf[#1*(#0)->array.dims[1]+#2]")
+(def-inline aref :unsafe ((array long-float) fixnum fixnum) :long-double "@0;(#0)->array.self.lf[#1*(#0)->array.dims[1]+#2]")
+#+complex-float (def-inline aref :unsafe ((array si:complex-single-float) fixnum fixnum) :csfloat "@0;(#0)->array.self.csf[#1*(#0)->array.dims[1]+#2]")
+#+complex-float (def-inline aref :unsafe ((array si:complex-double-float) fixnum fixnum) :cdfloat "@0;(#0)->array.self.cdf[#1*(#0)->array.dims[1]+#2]")
+#+complex-float (def-inline aref :unsafe ((array si:complex-long-float) fixnum fixnum) :clfloat "@0;(#0)->array.self.clf[#1*(#0)->array.dims[1]+#2]")
+
+(def-inline aref :unsafe ((array fixnum) fixnum fixnum) :fixnum "@0;(#0)->array.self.fix[#1*(#0)->array.dims[1]+#2]")
 
 (def-inline aref :always (t t) t "ecl_aref1(#0,ecl_to_size(#1))")
 (def-inline aref :always (t fixnum) t "ecl_aref1(#0,#1)")
@@ -56,16 +52,15 @@
 (def-inline aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,ecl_fixnum(#1))")
 (def-inline aref :unsafe ((array bit) fixnum) :fixnum "ecl_aref_bv(#0,#1)")
 #+unicode
-(def-inline aref :unsafe ((array character) fixnum) :wchar
- "(#0)->string.self[#1]")
-(def-inline aref :unsafe ((array base-char) fixnum) :unsigned-char
- "(#0)->base_string.self[#1]")
-(def-inline aref :unsafe ((array double-float) fixnum) :double
- "(#0)->array.self.df[#1]")
-(def-inline aref :unsafe ((array single-float) fixnum) :float
- "(#0)->array.self.sf[#1]")
-(def-inline aref :unsafe ((array fixnum) fixnum) :fixnum
- "(#0)->array.self.fix[#1]")
+(def-inline aref :unsafe ((array character) fixnum) :wchar "(#0)->string.self[#1]")
+(def-inline aref :unsafe ((array base-char) fixnum) :unsigned-char "(#0)->base_string.self[#1]")
+(def-inline aref :unsafe ((array double-float) fixnum) :double "(#0)->array.self.df[#1]")
+(def-inline aref :unsafe ((array single-float) fixnum) :float "(#0)->array.self.sf[#1]")
+(def-inline aref :unsafe ((array long-float) fixnum) :long-double "(#0)->array.self.lf[#1]")
+#+complex-float (def-inline aref :unsafe ((array si:complex-single-float) fixnum) :csfloat "(#0)->array.self.csf[#1]")
+#+complex-float (def-inline aref :unsafe ((array si:complex-double-float) fixnum) :cdfloat "(#0)->array.self.cdf[#1]")
+#+complex-float (def-inline aref :unsafe ((array si:complex-long-float) fixnum) :clfloat "(#0)->array.self.clf[#1]")    
+(def-inline aref :unsafe ((array fixnum) fixnum) :fixnum "(#0)->array.self.fix[#1]")
 
 (def-inline row-major-aref :always (t t) t "ecl_aref(#0,ecl_to_size(#1))")
 (def-inline row-major-aref :always (t fixnum) t "ecl_aref(#0,#1)")
@@ -74,70 +69,49 @@
 (def-inline row-major-aref :unsafe ((array bit) t) :fixnum "ecl_aref_bv(#0,ecl_fixnum(#1))")
 (def-inline row-major-aref :unsafe ((array bit) fixnum) :fixnum "ecl_aref_bv(#0,#1)")
 #+unicode
-(def-inline row-major-aref :unsafe ((array character) fixnum) :wchar
- "(#0)->string.self[#1]")
-(def-inline row-major-aref :unsafe ((array base-char) fixnum) :unsigned-char
- "(#0)->base_string.self[#1]")
-(def-inline row-major-aref :unsafe ((array ext:byte8) fixnum) :uint8-t
- "(#0)->vector.self.b8[#1]")
-(def-inline row-major-aref :unsafe ((array ext:integer8) fixnum) :int8-t
- "(#0)->vector.self.i8[#1]")
-(def-inline row-major-aref :unsafe ((array ext:byte16) fixnum) :uint16-t
- "(#0)->vector.self.b16[#1]")
-(def-inline row-major-aref :unsafe ((array ext:integer16) fixnum) :int16-t
- "(#0)->vector.self.i16[#1]")
-(def-inline row-major-aref :unsafe ((array ext:byte32) fixnum) :uint32-t
- "(#0)->vector.self.b32[#1]")
-(def-inline row-major-aref :unsafe ((array ext:integer32) fixnum) :int32-t
- "(#0)->vector.self.i32[#1]")
-(def-inline row-major-aref :unsafe ((array ext:byte64) fixnum) :uint64-t
- "(#0)->vector.self.b64[#1]")
-(def-inline row-major-aref :unsafe ((array ext:integer64) fixnum) :int64-t
- "(#0)->vector.self.i64[#1]")
-(def-inline row-major-aref :unsafe ((array double-float) fixnum) :double
- "(#0)->array.self.df[#1]")
-(def-inline row-major-aref :unsafe ((array single-float) fixnum) :float
- "(#0)->array.self.sf[#1]")
-(def-inline row-major-aref :unsafe ((array fixnum) fixnum) :fixnum
- "(#0)->array.self.fix[#1]")
+(def-inline row-major-aref :unsafe ((array character) fixnum) :wchar "(#0)->string.self[#1]")
+(def-inline row-major-aref :unsafe ((array base-char) fixnum) :unsigned-char "(#0)->base_string.self[#1]")
+(def-inline row-major-aref :unsafe ((array ext:byte8) fixnum) :uint8-t "(#0)->vector.self.b8[#1]")
+(def-inline row-major-aref :unsafe ((array ext:integer8) fixnum) :int8-t "(#0)->vector.self.i8[#1]")
+(def-inline row-major-aref :unsafe ((array ext:byte16) fixnum) :uint16-t "(#0)->vector.self.b16[#1]")
+(def-inline row-major-aref :unsafe ((array ext:integer16) fixnum) :int16-t "(#0)->vector.self.i16[#1]")
+(def-inline row-major-aref :unsafe ((array ext:byte32) fixnum) :uint32-t "(#0)->vector.self.b32[#1]")
+(def-inline row-major-aref :unsafe ((array ext:integer32) fixnum) :int32-t "(#0)->vector.self.i32[#1]")
+(def-inline row-major-aref :unsafe ((array ext:byte64) fixnum) :uint64-t "(#0)->vector.self.b64[#1]")
+(def-inline row-major-aref :unsafe ((array ext:integer64) fixnum) :int64-t "(#0)->vector.self.i64[#1]")
+(def-inline row-major-aref :unsafe ((array long-float) fixnum) :long-double "(#0)->array.self.lf[#1]")
+(def-inline row-major-aref :unsafe ((array double-float) fixnum) :double "(#0)->array.self.df[#1]")
+(def-inline row-major-aref :unsafe ((array single-float) fixnum) :float "(#0)->array.self.sf[#1]")
+#+complex-float (def-inline row-major-aref :unsafe ((array si:complex-single-float) fixnum) :csfloat "(#0)->array.self.csf[#1]")
+#+complex-float (def-inline row-major-aref :unsafe ((array si:complex-double-float) fixnum) :cdfloat "(#0)->array.self.cdf[#1]")
+#+complex-float (def-inline row-major-aref :unsafe ((array si:complex-long-float) fixnum) :clfloat "(#0)->array.self.clf[#1]")
+(def-inline row-major-aref :unsafe ((array fixnum) fixnum) :fixnum "(#0)->array.self.fix[#1]")
 
 (def-inline si:row-major-aset :always (t t t) t "ecl_aset(#0,ecl_to_size(#1),#2)")
 (def-inline si:row-major-aset :always (t fixnum t) t "ecl_aset(#0,#1,#2)")
 (def-inline si:row-major-aset :unsafe (t t t) t "ecl_aset_unsafe(#0,ecl_fixnum(#1),#2)")
 (def-inline si:row-major-aset :unsafe (t fixnum t) t "ecl_aset_unsafe(#0,#1,#2)")
-(def-inline si:row-major-aset :unsafe ((array t) fixnum t) t
- "(#0)->vector.self.t[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array bit) fixnum t) :fixnum
- "ecl_aset_bv(#0,#1,ecl_fixnum(#2))")
-(def-inline si:row-major-aset :unsafe ((array bit) fixnum fixnum) :fixnum
- "ecl_aset_bv(#0,#1,#2)")
-(def-inline si:row-major-aset :unsafe ((array base-char) fixnum base-char) :unsigned-char
- "(#0)->base_string.self[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array t) fixnum t) t "(#0)->vector.self.t[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array bit) fixnum t) :fixnum "ecl_aset_bv(#0,#1,ecl_fixnum(#2))")
+(def-inline si:row-major-aset :unsafe ((array bit) fixnum fixnum) :fixnum "ecl_aset_bv(#0,#1,#2)")
+(def-inline si:row-major-aset :unsafe ((array base-char) fixnum base-char) :unsigned-char "(#0)->base_string.self[#1]= #2")
 #+unicode
-(def-inline si:row-major-aset :unsafe ((array character) fixnum character) :wchar
- "(#0)->string.self[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array ext:byte8) fixnum ext:byte8) :uint8-t
- "(#0)->vector.self.b8[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array ext:integer8) fixnum ext:integer8) :int8-t
- "(#0)->vector.self.i8[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array ext:byte16) fixnum ext:byte16) :uint16-t
- "(#0)->vector.self.b16[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array ext:integer16) fixnum ext:integer16) :int16-t
- "(#0)->vector.self.i16[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array ext:byte32) fixnum ext:byte32) :uint32-t
- "(#0)->vector.self.b32[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array ext:integer32) fixnum ext:integer32) :int32-t
- "(#0)->vector.self.i32[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array ext:byte64) fixnum ext:byte64) :uint64-t
- "(#0)->vector.self.b64[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array ext:integer64) fixnum ext:integer64) :int64-t
- "(#0)->vector.self.i64[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array double-float) fixnum double-float) :double
- "(#0)->array.self.df[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array single-float) fixnum single-float) :float
- "(#0)->array.self.sf[#1]= #2")
-(def-inline si:row-major-aset :unsafe ((array fixnum) fixnum fixnum) :fixnum
- "(#0)->array.self.fix[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array character) fixnum character) :wchar "(#0)->string.self[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:byte8) fixnum ext:byte8) :uint8-t "(#0)->vector.self.b8[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:integer8) fixnum ext:integer8) :int8-t "(#0)->vector.self.i8[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:byte16) fixnum ext:byte16) :uint16-t "(#0)->vector.self.b16[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:integer16) fixnum ext:integer16) :int16-t "(#0)->vector.self.i16[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:byte32) fixnum ext:byte32) :uint32-t "(#0)->vector.self.b32[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:integer32) fixnum ext:integer32) :int32-t "(#0)->vector.self.i32[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:byte64) fixnum ext:byte64) :uint64-t "(#0)->vector.self.b64[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array ext:integer64) fixnum ext:integer64) :int64-t "(#0)->vector.self.i64[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array long-float) fixnum long-float) :long-double "(#0)->array.self.lf[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array double-float) fixnum double-float) :double "(#0)->array.self.df[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array single-float) fixnum single-float) :float "(#0)->array.self.sf[#1]= #2")
+#+complex-float (def-inline si:row-major-aset :unsafe ((array si:complex-single-float) fixnum si:complex-single-float) :csfloat "(#0)->array.self.csf[#1]= #2")
+#+complex-float (def-inline si:row-major-aset :unsafe ((array si:complex-double-float) fixnum si:complex-double-float) :cdfloat "(#0)->array.self.cdf[#1]= #2")
+#+complex-float (def-inline si:row-major-aset :unsafe ((array si:complex-long-float) fixnum si:complex-long-float) :clfloat "(#0)->array.self.clf[#1]= #2")
+(def-inline si:row-major-aset :unsafe ((array fixnum) fixnum fixnum) :fixnum "(#0)->array.self.fix[#1]= #2")
 
 (def-inline si:copy-subarray :always (array ext:array-index array ext:array-index
                                       ext:array-index) array
@@ -348,22 +322,30 @@
 
 (def-inline 1+ :always (t) t "ecl_one_plus(#0)")
 (def-inline 1+ :always (fixnum) t "ecl_make_integer((#0)+1)")
+(def-inline 1+ :always (long-float) :long-double "(long double)(#0)+1")
 (def-inline 1+ :always (double-float) :double "(double)(#0)+1")
 (def-inline 1+ :always (single-float) :float "(float)(#0)+1")
+#+complex-float (def-inline 1+ :always (si:complex-single-float) :csfloat "(_Complex float)(#0)+1")
+#+complex-float (def-inline 1+ :always (si:complex-double-float) :cdfloat "(_Complex double)(#0)+1")
+#+complex-float (def-inline 1+ :always (si:complex-long-float) :clfloat "(_Complex long double)(#0)+1")
 (def-inline 1+ :always (fixnum) :fixnum "(#0)+1" :exact-return-type t)
 
 (def-inline 1- :always (t) t "ecl_one_minus(#0)")
 (def-inline 1- :always (fixnum) t "ecl_make_integer((#0)-1)")
+(def-inline 1- :always (long-float) :long-double "(long double)(#0)-1")
 (def-inline 1- :always (double-float) :double "(double)(#0)-1")
 (def-inline 1- :always (single-float) :float "(float)(#0)-1")
+#+complex-float (def-inline 1- :always (si:complex-single-float) :csfloat "(_Complex float)(#0)-1")
+#+complex-float (def-inline 1- :always (si:complex-double-float) :cdfloat "(_Complex double)(#0)-1")
+#+complex-float (def-inline 1- :always (si:complex-long-float) :clfloat "(_Complex long double)(#0)-1")
 (def-inline 1- :always (fixnum) :fixnum "(#0)-1" :exact-return-type t)
 
 ;; file num_co.d
 
 (def-inline float :always (t single-float) :float "ecl_to_float(#0)")
 (def-inline float :always (t double-float) :double "ecl_to_double(#0)")
-#+long-float
 (def-inline float :always (t long-float) :long-double "ecl_to_long_double(#0)")
+(def-inline float :always (fixnum-float) :long-double "((long double)(#0))" :exact-return-type t)
 (def-inline float :always (fixnum-float) :double "((double)(#0))" :exact-return-type t)
 (def-inline float :always (fixnum-float) :float "((float)(#0))" :exact-return-type t)
 
@@ -403,30 +385,32 @@
 (def-inline /= :always (t t) :bool "!ecl_number_equalp(#0,#1)")
 (def-inline /= :always (fixnum-float fixnum-float) :bool "(#0)!=(#1)")
 
-(def-inline < :always (t t) :bool "ecl_number_compare(#0,#1)<0")
+(def-inline < :always (t t) :bool "ecl_lower(#0,#1)")
 (def-inline < :always (fixnum-float fixnum-float) :bool "(#0)<(#1)")
 (def-inline < :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)<(#1) && (#1)<(#2))")
 
-(def-inline > :always (t t) :bool "ecl_number_compare(#0,#1)>0")
+(def-inline > :always (t t) :bool "ecl_greater(#0,#1)")
 (def-inline > :always (fixnum-float fixnum-float) :bool "(#0)>(#1)")
 (def-inline > :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)>(#1) && (#1)>(#2))")
 
-(def-inline <= :always (t t) :bool "ecl_number_compare(#0,#1)<=0")
+(def-inline <= :always (t t) :bool "ecl_lowereq(#0,#1)")
 (def-inline <= :always (fixnum-float fixnum-float) :bool "(#0)<=(#1)")
 (def-inline <= :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)<=(#1) && (#1)<=(#2))")
 
-(def-inline >= :always (t t) :bool "ecl_number_compare(#0,#1)>=0")
+(def-inline >= :always (t t) :bool "ecl_greatereq(#0,#1)")
 (def-inline >= :always (fixnum-float fixnum-float) :bool "(#0)>=(#1)")
 (def-inline >= :always (fixnum-float fixnum-float fixnum-float) :bool
             "@012;((#0)>=(#1) && (#1)>=(#2))")
 
-(def-inline max :always (t t) t "@01;(ecl_number_compare(#0,#1)>=0?#0:#1)")
+#+ieee-floating-point (def-inline max :always (t t) t "@01;((ecl_float_nan_p(#1) || ecl_greatereq(#0,#1))?#0:#1)")
+#-ieee-floating-point (def-inline max :always (t t) t "@01;(ecl_greatereq(#0,#1)?#0:#1)")
 (def-inline max :always (fixnum fixnum) :fixnum "@01;(#0)>=(#1)?#0:#1")
 
-(def-inline min :always (t t) t "@01;(ecl_number_compare(#0,#1)<=0?#0:#1)")
+#+ieee-floating-point (def-inline min :always (t t) t "@01;((ecl_float_nan_p(#1) || ecl_lowereq(#0,#1))?#0:#1)")
+#-ieee-floating-point (def-inline min :always (t t) t "@01;(ecl_lowereq(#0,#1)?#0:#1)")
 (def-inline min :always (fixnum fixnum) :fixnum "@01;(#0)<=(#1)?#0:#1")
 
 ;; file num_log.d
@@ -501,39 +485,75 @@
 (def-inline expt :always ((integer 2 2) (integer 0 29)) :fixnum "(1<<(#1))")
 (def-inline expt :always ((integer 0 0) t) :fixnum "0")
 (def-inline expt :always ((integer 1 1) t) :fixnum "1")
+(def-inline expt :always ((long-float 0.0 *) long-float) :long-double "powl((long double)#0,(long double)#1)")
+(def-inline expt :always ((double-float 0.0 *) double-float) :double "pow((double)#0,(double)#1)")
+(def-inline expt :always ((single-float 0.0 *) single-float) :float "powf((float)#0,(float)#1)")
+#+complex-float (def-inline expt :always (si:complex-single-float si:complex-single-float) :csfloat "cpowf(#0,#1)")
+#+complex-float (def-inline expt :always (si:complex-double-float si:complex-double-float) :cdfloat "cpow(#0,#1)")
+#+complex-float (def-inline expt :always (si:complex-long-float si:complex-long-float) :clfloat "cpowl(#0,#1)")
 
+(def-inline log :always (fixnum-float) :long-double "logl((long double)(#0))" :exact-return-type t)
 (def-inline log :always (fixnum-float) :double "log((double)(#0))" :exact-return-type t)
-(def-inline log :always (fixnum-float) :float "(float)log((double)(#0))" :exact-return-type t)
+(def-inline log :always (fixnum-float) :float "logf((float)(#0))" :exact-return-type t)
+#+complex-float (def-inline log :always (si:complex-single-float) :csfloat "clogf(#0)")
+#+complex-float (def-inline log :always (si:complex-double-float) :cdfloat "clog(#0)")
+#+complex-float (def-inline log :always (si:complex-long-float) :clfloat "clogl(#0)")
 
 (def-inline sqrt :always (number) number "ecl_sqrt(#0)")
-(def-inline sqrt :always ((long-float 0.0 *)) :double "sqrt((double)(#0))")
+(def-inline sqrt :always ((long-float 0.0 *)) :long-double "sqrtl((long double)(#0))")
 (def-inline sqrt :always ((double-float 0.0 *)) :double "sqrt((double)(#0))")
-(def-inline sqrt :always ((single-float 0.0 *)) :float "(float)sqrt((double)(#0))")
-(def-inline sqrt :always ((short-float 0.0 *)) :float "(float)sqrt((double)(#0))")
+(def-inline sqrt :always ((single-float 0.0 *)) :float "sqrtf((float)(#0))")
+#+complex-float (def-inline sqrt :always (si:complex-single-float) :csfloat "csqrtf(#0)")
+#+complex-float (def-inline sqrt :always (si:complex-double-float) :cdfloat "csqrt(#0)")
+#+complex-float (def-inline sqrt :always (si:complex-long-float) :clfloat "csqrtl(#0)")
 
 (def-inline sin :always (number) number "ecl_sin(#0)")
+(def-inline sin :always (fixnum-float) :long-double "sinl((long double)(#0))" :exact-return-type t)
 (def-inline sin :always (fixnum-float) :double "sin((double)(#0))" :exact-return-type t)
-(def-inline sin :always (fixnum-float) :float "(float)sin((double)(#0))" :exact-return-type t)
+(def-inline sin :always (fixnum-float) :float "sinf((float)(#0))" :exact-return-type t)
+#+complex-float (def-inline sin :always (si:complex-single-float) :csfloat "csinf(#0)")
+#+complex-float (def-inline sin :always (si:complex-double-float) :cdfloat "csin(#0)")
+#+complex-float (def-inline sin :always (si:complex-long-float) :clfloat "csinl(#0)")
 
 (def-inline cos :always (t) number "ecl_cos(#0)")
+(def-inline cos :always (fixnum-float) :long-double "cosl((long double)(#0))" :exact-return-type t)
 (def-inline cos :always (fixnum-float) :double "cos((double)(#0))" :exact-return-type t)
-(def-inline cos :always (fixnum-float) :float "(float)cos((double)(#0))" :exact-return-type t)
+(def-inline cos :always (fixnum-float) :float "cosf((float)(#0))" :exact-return-type t)
+#+complex-float (def-inline cos :always (si:complex-single-float) :csfloat "ccosf(#0)")
+#+complex-float (def-inline cos :always (si:complex-double-float) :cdfloat "ccos(#0)")
+#+complex-float (def-inline cos :always (si:complex-long-float) :clfloat "ccosl(#0)")
 
 (def-inline tan :always (t) number "ecl_tan(#0)")
+(def-inline tan :always (fixnum-float) :long-double "tanl((long double)(#0))" :exact-return-type t)
 (def-inline tan :always (fixnum-float) :double "tan((double)(#0))" :exact-return-type t)
-(def-inline tan :always (fixnum-float) :float "(float)tan((double)(#0))" :exact-return-type t)
+(def-inline tan :always (fixnum-float) :float "tanf((float)(#0))" :exact-return-type t)
+#+complex-float (def-inline tan :always (si:complex-single-float) :csfloat "ctanf(#0)")
+#+complex-float (def-inline tan :always (si:complex-double-float) :cdfloat "ctan(#0)")
+#+complex-float (def-inline tan :always (si:complex-long-float) :clfloat "ctanl(#0)")
 
 (def-inline sinh :always (t) number "ecl_sinh(#0)")
+(def-inline sinh :always (fixnum-float) :long-double "sinhl((long double)(#0))" :exact-return-type t)
 (def-inline sinh :always (fixnum-float) :double "sinh((double)(#0))" :exact-return-type t)
-(def-inline sinh :always (fixnum-float) :float "(float)sinh((double)(#0))" :exact-return-type t)
+(def-inline sinh :always (fixnum-float) :float "sinhf((float)(#0))" :exact-return-type t)
+#+complex-float (def-inline sinh :always (si:complex-single-float) :csfloat "csinhf(#0)")
+#+complex-float (def-inline sinh :always (si:complex-double-float) :cdfloat "csinh(#0)")
+#+complex-float (def-inline sinh :always (si:complex-long-float) :clfloat "csinhl(#0)")
 
 (def-inline cosh :always (t) number "ecl_cosh(#0)")
+(def-inline cosh :always (fixnum-float) :long-double "coshl((long double)(#0))" :exact-return-type t)
 (def-inline cosh :always (fixnum-float) :double "cosh((double)(#0))" :exact-return-type t)
-(def-inline cosh :always (fixnum-float) :float "(float)cosh((double)(#0))" :exact-return-type t)
+(def-inline cosh :always (fixnum-float) :float "coshf((float)(#0))" :exact-return-type t)
+#+complex-float (def-inline cosh :always (si:complex-single-float) :csfloat "ccoshf(#0)")
+#+complex-float (def-inline cosh :always (si:complex-double-float) :cdfloat "ccosh(#0)")
+#+complex-float (def-inline cosh :always (si:complex-long-float) :clfloat "ccoshl(#0)")
 
 (def-inline tanh :always (t) number "ecl_tanh(#0)")
+(def-inline tanh :always (fixnum-float) :long-double "tanhl((long double)(#0))" :exact-return-type t)
 (def-inline tanh :always (fixnum-float) :double "tanh((double)(#0))" :exact-return-type t)
-(def-inline tanh :always (fixnum-float) :float "(float)tanh((double)(#0))" :exact-return-type t)
+(def-inline tanh :always (fixnum-float) :float "tanhf((float)(#0))" :exact-return-type t)
+#+complex-float (def-inline tanh :always (si:complex-single-float) :csfloat "ctanhf(#0)")
+#+complex-float (def-inline tanh :always (si:complex-double-float) :cdfloat "ctanh(#0)")
+#+complex-float (def-inline tanh :always (si:complex-long-float) :clfloat "ctanhl(#0)")
 
 ;; file package.d
 
@@ -740,17 +760,63 @@
 
 (def-inline si:double-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
 
-#-long-float
-(def-inline si:long-float-p :always (t) :bool "@0;ECL_DOUBLE_FLOAT_P(#0)")
-#+long-float
 (def-inline si:long-float-p :always (t) :bool "@0;ECL_LONG_FLOAT_P(#0)")
+
+#+complex-float
+(def-inline si::complex-single-float-p :always (t) :bool "@0;ECL_COMPLEX_SINGLE_FLOAT_P(#0)")
+#+complex-float
+(def-inline si::complex-double-float-p :always (t) :bool "@0;ECL_COMPLEX_DOUBLE_FLOAT_P(#0)")
+#+complex-float
+(def-inline si::complex-long-float-p :always (t) :bool "@0;ECL_COMPLEX_LONG_FLOAT_P(#0)")
 
 (def-inline ext:fixnump :always (t) :bool "ECL_FIXNUMP(#0)")
 (def-inline ext:fixnump :always (fixnum) :bool "1")
 
 ;; Functions only available with threads
 #+threads
-(def-inline mp:lock-count :unsafe (mp:lock) fixnum "((#0)->lock.count)")
+(def-inline mp:lock-count :unsafe (mp:lock) fixnum "((#0)->lock.counter)")
+
+#+threads
+(def-inline mp:compare-and-swap-car :always (cons t t) t "ecl_compare_and_swap(&ECL_CONS_CAR(#0),(#1),(#2))")
+#+threads
+(def-inline mp:atomic-incf-car :always (cons t) t "ecl_atomic_incf(&ECL_CONS_CAR(#0),(#1))")
+#+threads
+(def-inline mp:atomic-incf-car :always (cons fixnum) t "ecl_atomic_incf_by_fixnum(&ECL_CONS_CAR(#0),(#1))")
+
+#+threads
+(def-inline mp:compare-and-swap-cdr :always (cons t t) t "ecl_compare_and_swap(&ECL_CONS_CDR(#0),(#1),(#2))")
+#+threads
+(def-inline mp:atomic-incf-cdr :always (cons t) t "ecl_atomic_incf(&ECL_CONS_CDR(#0),(#1))")
+#+threads
+(def-inline mp:atomic-incf-cdr :always (cons fixnum) t "ecl_atomic_incf_by_fixnum(&ECL_CONS_CDR(#0),(#1))")
+
+#+threads
+(def-inline mp:compare-and-swap-symbol-value :unsafe (symbol t t) t "ecl_compare_and_swap(ecl_bds_ref(ecl_process_env(),(#0)),(#1),(#2))")
+#+threads
+(def-inline mp:atomic-incf-symbol-value :always (t fixnum) t "ecl_atomic_incf_by_fixnum(ecl_bds_ref(ecl_process_env(),(#0)),(#1))")
+#+threads
+(def-inline mp:atomic-incf-symbol-value :unsafe (symbol t) t "ecl_atomic_incf(ecl_bds_ref(ecl_process_env(),(#0)),(#1))")
+#+threads
+(def-inline mp:atomic-incf-symbol-value :unsafe (symbol fixnum) t "ecl_atomic_incf_by_fixnum(ecl_bds_ref(ecl_process_env(),(#0)),(#1))")
+
+#+threads
+(def-inline mp:compare-and-swap-svref :unsafe (t t t t) t "ecl_compare_and_swap((#0)->vector.self.t + ecl_fixnum(#1),(#2),(#3))")
+#+threads
+(def-inline mp:compare-and-swap-svref :unsafe (t fixnum t t) t "ecl_compare_and_swap((#0)->vector.self.t + (#1),(#2),(#3))")
+
+#+(and threads clos)
+(def-inline mp:compare-and-swap-instance :always (t fixnum t t) t "ecl_compare_and_swap_instance((#0),(#1),(#2),(#3))")
+#+(and threads clos)
+(def-inline mp:compare-and-swap-instance :unsafe (standard-object fixnum t t) t "ecl_compare_and_swap((#0)->instance.slots+(#1),(#2),(#3))")
+#+(and threads clos)
+(def-inline mp:atomic-incf-instance :always (t fixnum t) t "ecl_atomic_incf_instance((#0),(#1),(#2))")
+#+(and threads clos)
+(def-inline mp:atomic-incf-instance :unsafe (standard-object fixnum t) t "ecl_atomic_incf((#0)->instance.slots+(#1),(#2))")
+#+(and threads clos)
+(def-inline mp:atomic-incf-instance :unsafe (standard-object fixnum fixnum) t "ecl_atomic_incf_by_fixnum((#0)->instance.slots+(#1),(#2))")
+
+#+threads
+(def-inline mp:compare-and-swap-structure :unsafe (structure-object t fixnum t t) t "ecl_compare_and_swap(&(ECL_STRUCT_SLOT((#0),(#2))),(#3),(#4))")
 
 ;; Functions only available with CLOS
 
@@ -761,8 +827,8 @@
  "(#0)->instance.slots[#1]")
 
 #+clos
-(def-inline si::instance-sig :unsafe (standard-object) list
- "(#0)->instance.sig")
+(def-inline si::instance-slotds :unsafe (standard-object) list
+ "(#0)->instance.slotds")
 
 #+clos
 (def-inline si:instance-set :unsafe (t fixnum t) t
@@ -849,7 +915,7 @@
                             :arg-types arg-types
                             :exact-return-type exact-return-type
                             :multiple-values multiple-values
-                            ;; :side-effects (not (get-sysprop name 'no-side-effects))
+                            ;; :side-effects (not (si:get-sysprop name 'no-side-effects))
                             :one-liner one-liner
                             :expansion expansion)))
     #+(or)
@@ -860,8 +926,8 @@
                   name i inline-info))
     (push inline-info (gethash (list name safety) *inline-information*))))
 
-(setf (machine-inline-information +default-machine+)
-      (make-inline-information +default-machine+))
+(setf (machine-inline-information *default-machine*)
+      (make-inline-information *default-machine*))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -872,10 +938,18 @@
 ;;; name that users (and compiled code) can refer to. This means, for instance, that
 ;;; MAKE-ARRAY will be compiled to a function called cl_make_array, etc.
 ;;;
+;;; Note that if the created C function should take only fixed
+;;; arguments, a proclamation for the function type must exist so that
+;;; the compiler can produce the correct function signature!
+;;;
 
 (in-package "SI")
 
+#+ecl-min
 (defvar c::*in-all-symbols-functions*
+  ;; These functions are visible from external.h and their function
+  ;; objects are created in init_all_symbols from the data in
+  ;; symbols_list.h
   `(;; arraylib.lsp
     make-array vector array-dimensions array-in-bounds-p array-row-major-index
     bit sbit bit-and bit-ior bit-xor bit-eqv bit-nand bit-nor bit-andc1
@@ -899,8 +973,8 @@
     describe inspect
     ;; iolib.lsp
     read-from-string write-to-string prin1-to-string princ-to-string
-    y-or-n-p yes-or-no-p string-to-object dribble ext:make-encoding
-    ext:load-encoding
+    y-or-n-p yes-or-no-p string-to-object dribble
+    ext:make-encoding ext:load-encoding
     ;; listlib.lsp
     union nunion intersection nintersection set-difference nset-difference
     set-exclusive-or nset-exclusive-or subsetp rassoc-if rassoc-if-not
@@ -919,14 +993,19 @@
     deposit-field
     ;; packlib.lsp
     find-all-symbols apropos apropos-list
-    find-relative-package package-parent package-children
+    ;; pprint.lsp
+    pprint-fill copy-pprint-dispatch pprint-dispatch
+    pprint-linear pprint-newline pprint-tab pprint-tabular
+    set-pprint-dispatch pprint-indent
     ;; predlib.lsp
     upgraded-array-element-type upgraded-complex-part-type typep subtypep coerce
-    do-deftype si::ratiop si::single-float-p si::short-float-p si::double-float-p
+    si::do-deftype si::ratiop si::single-float-p si::short-float-p si::double-float-p
     si::long-float-p
+    ;; process.lsp
+    ext:run-program
+    ext:terminate-process
     ;; seq.lsp
-    make-sequence concatenate map some every notany notevery map-into
-    complement
+    make-sequence concatenate map some every notany notevery map-into complement
     ;; seqlib.lsp
     reduce fill replace
     remove remove-if remove-if-not delete delete-if delete-if-not
@@ -934,39 +1013,38 @@
     nsubstitute nsubstitute-if nsubstitute-if-not find find-if find-if-not
     position position-if position-if-not remove-duplicates
     delete-duplicates mismatch search sort stable-sort merge constantly
+    si::sequence-count
     ;; setf.lsp
     si::do-defsetf si::do-define-setf-method
-    ;; process.lsp
-    ext:system
-    ;; pprint.lsp
-    pprint-fill copy-pprint-dispatch pprint-dispatch
-    pprint-linear pprint-newline pprint-tab pprint-tabular
-    set-pprint-dispatch pprint-indent
+    ;; trace.lsp
+    si::traced-old-definition
 
     #+clos
     ,@'(;; combin.lsp
-     method-combination-error
      invalid-method-error
-     clos:std-compute-applicable-methods
-     clos:std-compute-effective-method
+     method-combination-error
      clos:compute-effective-method-function
-     ;; std-slot-value.lsp
-     clos::standard-instance-access ;; alias clos:funcallable-standard-instance-access
-     clos::standard-instance-set
-     subclassp of-class-p
-     ;; boot.lsp
-     slot-boundp
-     slot-makunbound
-     slot-value
-     clos::slot-value-set
-     slot-exists-p
-     clos::need-to-make-load-form-p
-     ;; defclass
+     clos:std-compute-effective-method
+     ;; defclass.lsp
+     clos::ensure-class
      clos:load-defclass
-     ;; method
+     ;; kernel.lsp
+     clos:std-compute-applicable-methods
+     ;; method.lsp
      clos:extract-lambda-list
      clos:extract-specializer-names
-     )
+     ;; predlib.lsp
+     si::subclassp si::of-class-p
+     ;; slotvalue.lsp
+     slot-makunbound
+     ;; std-slot-value.lsp
+     slot-boundp
+     slot-exists-p
+     slot-value
+     clos::slot-value-set
+     clos::standard-instance-access ;; alias clos:funcallable-standard-instance-access
+     clos::standard-instance-set
+    )
 
     ;; cdr-5
     ext:array-index-p
@@ -993,20 +1071,27 @@
 ))
 
 (proclaim
+  ;; These functions are not visible in external.h and have no entry in
+  ;; symbols_list.h
   `(si::c-export-fname #+ecl-min ,@c::*in-all-symbols-functions*
-    typecase-error-string find-documentation find-declarations
+    ;; defmacro.lsp
+    find-documentation find-declarations
     si::search-keyword si::check-keyword
     si::dm-too-many-arguments si::dm-too-few-arguments
-    remove-documentation si::get-documentation
-    si::set-documentation si::expand-set-documentation
+    remove-documentation
+    ;; defstruct.lsp
+    si::structure-type-error si::define-structure
+    ;; helpfile.lsp
+    si::get-documentation si::set-documentation
+    si::expand-set-documentation
+    ;; packlib.lsp
     si::packages-iterator
+    ;; pprint.lsp
     si::pprint-logical-block-helper si::pprint-pop-helper
+    ;; seq.lsp
     si::make-seq-iterator si::seq-iterator-ref
     si::seq-iterator-set si::seq-iterator-next
-    si::sequence-count
-    si::structure-type-error si::define-structure
     si::coerce-to-list si::coerce-to-vector
-    si::traced-old-definition
 
     #+formatter
     ,@'(
@@ -1018,15 +1103,14 @@
     format-relative-tab format-absolute-tab
     format-justification
         )
+
     #+clos
-    ,@'(;; defclass.lsp
-     clos::ensure-class
-     clos::find-slot-definition
-     ;; combin.lsp
-     clos::simple-code-walker
+    ,@'(;; generic.lsp
+     clos::associate-methods-to-gfun
      ;; kernel.lsp
      clos::install-method
-     clos::default-initargs-of
+     ;; std-slot-value.lsp
+     clos::find-slot-definition
      ;; clos::generic-function-lambda-list
      ;; clos::generic-function-argument-precedence-order
      ;; clos::generic-function-method-combination
@@ -1038,8 +1122,6 @@
      ;; clos::method-qualifiers
      ;; clos::method-function
      ;; clos::method-plist
-     clos::associate-methods-to-gfun
-     ;; method.lsp
-     clos::pop-next-method
-     )))
+        )
+    ))
 

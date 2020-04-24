@@ -70,7 +70,7 @@
            form)
           ;;
           ;; There exists a function which checks for this type?
-          ((setf function (get-sysprop type 'si::type-predicate))
+          ((setf function (si:get-sysprop type 'si::type-predicate))
            `(,function ,object))
           ;;
           ;; Similar as before, but we assume the user did not give us
@@ -79,9 +79,9 @@
               when (si::type= type a-type)
               do (return `(,function-name ,object))))
           ;;
-          ;; Complex types defined with DEFTYPE.
+          ;; Derived types defined with DEFTYPE.
           ((and (atom type)
-                (setq function (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
+                (setq function (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
            (expand-typep form object `',(funcall function nil) env))
           ;;
           ;; No optimizations that take up too much space unless requested.
@@ -90,7 +90,7 @@
           ;;
           ;; CONS types. They must be checked _before_ sequence types. We
           ;; do not produce optimized forms because they can be recursive.
-          ((and (consp type) (eq first 'CONS))
+          ((and (consp type) (eq (first type) 'CONS))
            form)
           ;;
           ;; The type denotes a known class and we can check it
@@ -124,7 +124,7 @@
           ;;
           ;; (INTEGER * *), etc
           ((member first '(INTEGER RATIONAL FLOAT REAL SINGLE-FLOAT
-                           DOUBLE-FLOAT #+long-float LONG-FLOAT))
+                           DOUBLE-FLOAT LONG-FLOAT))
            (let ((var1 (gensym))
                  (var2 (gensym)))
              ;; Small optimization: it is easier to check for fixnum
@@ -141,14 +141,20 @@
                        (setf ,var2 (truly-the ,first ,var1))
                        (AND ,@(expand-in-interval-p var2 rest)))))))
           ;;
+          ;; Compound COMPLEX types.
+          ((and (eq first 'COMPLEX)
+                (= (list-length type) 2))
+           `(and (typep (realpart ,object) ',(second type))
+                 (typep (imagpart ,object) ',(second type))))
+          ;;
           ;; (SATISFIES predicate)
           ((and (eq first 'SATISFIES)
                 (= (list-length type) 2)
                 (symbolp (setf function (second type))))
            `(,function ,object))
           ;;
-          ;; Complex types with arguments.
-          ((setf function (get-sysprop first 'SI::DEFTYPE-DEFINITION))
+          ;; Derived compound types.
+          ((setf function (si:get-sysprop first 'SI::DEFTYPE-DEFINITION))
            (expand-typep form object `',(funcall function rest) env))
           (t
            form))))
@@ -167,21 +173,31 @@
     ((var expression &optional output-form) &body body &environment env)
   (multiple-value-bind (declarations body)
       (si:process-declarations body nil)
-    (let* ((list-var (gensym))
+    (let* ((filtered-declarations
+            ;; NB: we filter out `type' and `ignore' declarations from
+            ;; `dolist', because VAR may be used in the result form
+            ;; and its type changes to NIL. These will be placed in
+            ;; the output-form (if present).
+            (cons `(ignorable ,var)
+                  (remove-if (lambda (clause)
+                               (and (consp clause)
+                                    (or (eq (car clause) 'type)
+                                        (eq (car clause) 'ignore))))
+                             declarations)))
+           (list-var (gensym))
            (typed-var (if (policy-assume-no-errors env)
                           list-var
                           `(truly-the cons ,list-var))))
       `(block nil
          (let* ((,list-var ,expression))
            (si::while ,list-var
-              (let ((,var (first ,typed-var)))
-                (declare ,@declarations)
-                (tagbody
-                   ,@body))
-              (setq ,list-var (rest ,typed-var)))
+             (let ((,var (first ,typed-var)))
+               (declare ,@declarations)
+               (tagbody ,@body))
+             (setq ,list-var (rest ,typed-var)))
            ,(when output-form
               `(let ((,var nil))
-                 (declare ,@declarations)
+                 (declare ,@filtered-declarations)
                  ,output-form)))))))
 
 ;;;
@@ -199,10 +215,27 @@
     (single-float . (float x 0.0f0))
     (double-float . (float x 0.0d0))
     (long-float . (float x 0.0l0))
+    #+complex-float
+    (si:complex-single-float . (let ((y x))
+                                 (declare (:read-only y))
+                                 (complex (float (realpart y) 0.0f0)
+                                          (float (imagpart y) 0.0f0))))
+    #+complex-float
+    (si:complex-double-float . (let ((y x))
+                                 (declare (:read-only y))
+                                 (complex (float (realpart y) 0.0d0)
+                                          (float (imagpart y) 0.0d0))))
+    #+complex-float
+    (si:complex-long-float . (let ((y x))
+                               (declare (:read-only y))
+                               (complex (float (realpart y) 0.0l0)
+                                        (float (imagpart y) 0.0l0))))
+    (complex . (let ((y x))
+                 (declare (:read-only y))
+                 (complex (realpart y) (imagpart y))))
     (base-char . (character x))
     (character . (character x))
-    (function . (si::coerce-to-function x))
-    ))
+    (function . (si::coerce-to-function x))))
 
 (defun expand-coerce (form value type env)
   (declare (si::c-local))
@@ -235,17 +268,9 @@
               when (eq type a-type)
               do (return (subst value 'x template))))
           ;;
-          ;; FIXME! COMPLEX cannot be in +coercion-table+ because
-          ;; (type= '(complex) '(complex double-float)) == T
-          ;;
-          ((eq type 'COMPLEX)
-           `(let ((y ,value))
-              (declare (:read-only y))
-              (complex (realpart y) (imagpart y))))
-          ;;
-          ;; Complex types defined with DEFTYPE.
+          ;; Derived types defined with DEFTYPE.
           ((and (atom type)
-                (setq first (get-sysprop type 'SI::DEFTYPE-DEFINITION)))
+                (setq first (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
            (expand-coerce form value `',(funcall first nil) env))
           ;;
           ;; CONS types are not coercible.
@@ -263,10 +288,12 @@
           ((subtypep type 'sequence)
            (multiple-value-bind (elt-type length)
                (si::closest-sequence-type type)
-             (if (eq elt-type 'list)
-                 `(si::coerce-to-list ,value)
-                 `(si::coerce-to-vector ,value ',elt-type ',length
-                                        ,(and (subtypep type 'simple-array) t)))))
+             (if (or (eq length '*) (policy-assume-right-type))
+                 (if (eq elt-type 'list)
+                     `(si::coerce-to-list ,value)
+                     `(si::coerce-to-vector ,value ',elt-type ',length
+                                            ,(and (subtypep type 'simple-array) t)))
+                 form)))
           ;;
           ;; There are no other atomic types to optimize
           ((atom type)
@@ -293,7 +320,7 @@
           ;; does not match. However, if safety settings are low, we
           ;; skip the interval test.
           ((member first '(INTEGER RATIONAL FLOAT REAL SINGLE-FLOAT
-                           DOUBLE-FLOAT #+long-float LONG-FLOAT))
+                           DOUBLE-FLOAT LONG-FLOAT))
            (let ((unchecked (expand-coerce form value `',first env)))
              (if (policy-assume-no-errors)
                  unchecked

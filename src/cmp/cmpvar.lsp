@@ -152,11 +152,10 @@
     (and record (not (var-p record)))))
 
 (defun variable-type-in-env (name &optional (env *cmp-env*))
-  (multiple-value-bind (var ccb clb unw)
-      (cmp-env-search-var name)
+  (let ((var (cmp-env-search-var name)))
     (cond ((var-p var)
            (var-type var))
-          ((get-sysprop name 'CMP-TYPE))
+          ((si:get-sysprop name 'CMP-TYPE))
           (t))))
 
 ;;;
@@ -187,7 +186,7 @@
              (cmperr "Special variable ~A cannot be declared to have C type ~A"
                      name type))
            (when (eq type 'T)
-             (setf type (or (get-sysprop name 'CMP-TYPE) 'T)))
+             (setf type (or (si:get-sysprop name 'CMP-TYPE) 'T)))
            (c1make-global-variable name :kind 'SPECIAL :type type))
           (t
            (make-var :name name :type type :loc 'OBJECT
@@ -228,27 +227,25 @@
 ;;;     ( var-object ) Beppe(ccb) ccb-reference )
 
 (defun c1vref (name)
-  (multiple-value-bind (var ccb clb unw)
+  (multiple-value-bind (var cfb unw)
       (cmp-env-search-var name)
     (cond ((null var)
            (c1make-global-variable name :warn t
-                                   :type (or (get-sysprop name 'CMP-TYPE) t)))
+                                   :type (or (si:get-sysprop name 'CMP-TYPE) t)))
           ((not (var-p var))
            ;; symbol-macrolet
-           (baboon))
+           (baboon :format-control "c1vref: ~s is not a variable."
+                   :format-arguments (list name)))
           (t
            (case (var-kind var)
              ((SPECIAL GLOBAL))
              ((CLOSURE))
              ((LEXICAL)
-              (cond (ccb (setf (var-ref-clb var) nil ; replace a previous 'CLB
-                              (var-ref-ccb var) t
-                              (var-kind var) 'CLOSURE
-                              (var-loc var) 'OBJECT))
-                   (clb (setf (var-ref-clb var) t
-                              (var-loc var) 'OBJECT))))
+              (when cfb
+                (setf (var-ref-clb var) t
+                      (var-loc var) 'OBJECT)))
              (t
-              (when (or clb ccb)
+              (when cfb
                 (cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."
                         (var-name var)))))
            var))))
@@ -298,7 +295,8 @@
 
 (defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
   (unless (var-p var)
-    (baboon))
+    (baboon :format-control "set-var: ~s is not a vairable."
+            :format-arguments (list var)))
   (case (var-kind var)
     (CLOSURE
      (wt-nl)(wt-env var-loc)(wt " = ")
@@ -331,7 +329,7 @@
 ;;; ----------------------------------------------------------------------
 
 (defun c1make-global-variable (name &key
-                               (type (or (get-sysprop name 'CMP-TYPE) t))
+                               (type (or (si:get-sysprop name 'CMP-TYPE) t))
                                (kind 'GLOBAL)
                                (warn nil))
   (let* ((var (make-var :name name :kind kind :type type :loc (add-symbol name))))
@@ -342,9 +340,6 @@
         (undefined-variable name)
         (push name *undefined-vars*)))
     var))
-
-(defun c1declare-specials (globals)
-  (mapc #'cmp-env-declare-special globals))
 
 (defun si::register-global (name)
   (pushnew name *global-vars*)

@@ -51,15 +51,14 @@ ecl_minusp_double_float(cl_object x)
   return ecl_double_float(x) < 0;
 }
 
-#ifdef ECL_LONG_FLOAT
 static int ecl_minusp_long_float(cl_object x)
 {
   return ecl_long_float(x) < 0;
 }
-#endif
 
 MATH_DEF_DISPATCH1_BOOL(minusp, @[minusp], @[real],
                         ecl_minusp_fixnum, ecl_minusp_big, ecl_minusp_ratio,
                         ecl_minusp_single_float, ecl_minusp_double_float,
                         ecl_minusp_long_float,
-                        minuspfailed)
+                        minuspfailed,
+                        minuspfailed, minuspfailed, minuspfailed)

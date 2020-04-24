@@ -45,17 +45,6 @@
 #define big_size        big_num->_mp_size
 #define big_limbs       big_num->_mp_d
 
-#define cl_def_c_function_va(sym,function) ecl_def_c_function_va(sym,function)
-#define cl_def_c_function(sym,function,narg) ecl_def_c_function(sym,function,narg)
-#define cl_def_c_macro(sym,function,narg) {                     \
-                int n = (narg);                                 \
-                if (n < 0)                                      \
-                        ecl_def_c_macro_va((sym),(function));   \
-                else                                            \
-                        ecl_def_c_macro((sym),(function),n); }
-#define cl_make_cfun(fun,name,block,narg) ecl_make_cfun(fun,name,block,narg)
-#define cl_make_cfun_va(fun,name,block) ecl_make_cfun_va(fun,name,block)
-#define cl_make_cclosure_va(fun,name,block) ecl_make_cclosure_va(fun,name,block)
 #define si_bc_file(o) si_compiled_function_file(o)
 #define ARRAYP ECL_ARRAYP
 #define VECTORP ECL_VECTORP
@@ -79,10 +68,13 @@
 
 #define read_VV ecl_init_module
 
+#define FEprogram_error_noreturn FEprogram_error
+
 #endif /* !ECL_LEGACY_H && !ECL_NO_LEGACY */
 
 #define make_simple_base_string(s) ecl_make_simple_base_string((s),-1)
-#define make_constant_base_string(s) ecl_make_simple_base_string((char *)(s),-1)
+#define make_constant_base_string(s) ecl_make_constant_base_string((char *)(s),-1)
+#define make_base_string_copy(s) ecl_make_simple_base_string((s),-1)
 
 #define stp_ordinary ecl_stp_ordinary
 #define stp_constant ecl_stp_constant
@@ -154,6 +146,7 @@
 #define CL_CATCH_BEGIN ECL_CATCH_BEGIN
 #define CL_CATCH_END ECL_CATCH_END
 #define CL_CATCH_ALL_BEGIN ECL_CATCH_ALL_BEGIN
+#define CL_CATCH_ALL_IF_CAUGHT ECL_CATCH_ALL_IF_CAUGHT
 #define CL_CATCH_ALL_END ECL_CATCH_ALL_END
 
 #define bds_bd ecl_bds_frame
@@ -210,7 +203,5 @@ enum {  /*  stream mode  */
 #define SLENGTH(x) ECL_STRUCT_LENGTH(x)
 #define SNAME(x) ECL_STRUCT_NAME(x)
 
-#ifndef type_of
 #define type_of(x) ecl_t_of(x)
-#endif
 

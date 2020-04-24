@@ -174,24 +174,220 @@
             "Not-file stream would cause internal error on this ECL (skipped)")))
 
 
-;;;; Author:   Daniel Kochmański
-;;;; Created:  2016-09-07
-;;;; Contains: External process interaction API
-;;;;
-(test external-process.0001.run-program
-  (let ((p (nth-value 2 (ext:run-program #-windows "sleep"
-                                         #+windows "timeout"
-                                         (list "3") :wait nil))))
-    (is (eql :running (ext:external-process-wait p nil))
-        "process doesn't run")
-    (ext:terminate-process p)
-    (sleep 1)
-    (multiple-value-bind (status code)
-        (ext:external-process-wait p nil)
-      (is (eql :signaled status)
-          "status is ~s, should be ~s" status :signalled)
-      (is (eql ext:+sigterm+ code)
-          "signal code is ~s, should be ~s" code ext:+sigterm+))
-    (finishes (ext:terminate-process p))))
+;;; Date: 2016-12-20
+;;; Reported by: Kris Katterjohn
+;;; Fixed: Daniel Kochmański
+;;; Description:
+;;;
+;;;   atan signalled `division-by-zero' exception when the second
+;;;   argument was signed zero. Also inconsistent behavior on invalid
+;;;   operation (atan 0.0 0.0).
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/329
+(test mix.0012.atan-signed-zero
+  (finishes (atan 1.0 -0.0)))
 
 
+;;; Date: 2016-12-21
+;;; Description:
+;;;
+;;;   `sleep' uses `ECL_WITHOUT_FPE_BEGIN' which didn't restore fpe
+;;;   correctly.
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/317
+#+floating-point-exceptions
+(test mix.0013.sleep-without-fpe
+  (sleep 0.1)
+  (let ((a 1.0)
+        (b 0.0))
+    ;; nb: normally operation signals `division-by-zero', but OSX
+    ;; signals `floating-point-overflow'. It's OK I suppose.
+    (signals arithmetic-error (/ a b))))
+
+
+;;; Date: 2017-01-20
+;;; Description:
+;;;
+;;;   `dolist' macroexpansion yields result which doesn't have a
+;;;   correct scope.
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/348
+(test mix.0014.dolist
+  (is-false
+   (nth-value 1
+     (compile nil
+              (lambda ()
+                (dolist (s '("foo" "bar" "baz") s)
+                  (declare (type string s))
+                  (check-type s string)
+                  (format nil "~s" s))))))
+  (finishes (eval '(dolist (e '(1 2 3 4) e)
+                    (print e)
+                    (go :next)
+                    (print 'skip)
+                    :next))))
+
+
+;;; Date: 2017-07-02
+;;; Description:
+;;;
+;;;   Function `ecl_new_binding_index' called `si_set_finalizer',
+;;;   which resetted `env->nvalues' leading to invalid binding in mvb
+;;;   during the first function run.
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/233
+(test mix.0015.mvb
+  (with-compiler ("aux-cl-0003.lsp" :load t)
+    `(progn
+       (defvar mix.0015.v1 'booya)
+       (defun mix.0015.fun ()
+         (let ((share_t))
+           (multiple-value-bind (mix.0015.v1 woops)
+               (case share_t
+                 ((nil)
+                  (values 1 2)))
+             woops)))))
+  (ignore-errors
+    (delete-file "aux-cl-0003.lsp")
+    (delete-file "aux-cl-0003.fas")
+    (delete-file "aux-cl-0003.fasc"))
+  (is-eql 2 (mix.0015.fun)))
+
+;;; Date: 2018-05-08
+;;; Description:
+;;;
+;;;   Better handling of fifos. This test will most likely fail on Windows (this
+;;;   is not confirmed yet) because it does not support non-blocking
+;;;   operations.
+;;;
+;;;   When we figure out what would be correct semantics for Windows this test
+;;;   should be disabled for that platform and a separate test case ought to be
+;;;   created. It is possible that it won't fail (because cygwin will handle it
+;;;   gracefully and/or WinAPI does not support file-pipes).
+;;;
+;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/242
+(test mix.0016.fifo-tests
+  (ext:run-program "mkfifo" '("my-fifo") :output t)
+  ;; 1) reader (first) and writer (inside)
+  (with-open-file (stream "my-fifo")
+    (is (null (file-length stream)))
+    (is (null (listen stream)))
+    (is (eql :foo (read-line stream nil :foo)))
+    (is (eql :fifo (ext:file-kind stream nil)))
+    (with-open-file (stream2 "my-fifo" :direction :output)
+      ;; Even for output it should not block on Linux.
+      (finishes (write-line "foobar" stream2)))
+    (is (equal "foobar" (read-line stream nil :foo))))
+  ;; 2) writer (first) and reader (second)
+  (with-open-file (stream "my-fifo" :direction :output)
+    (finishes (write-line "foobar" stream)))
+  (with-open-file (stream "my-fifo" :direction :input)
+    ;; there is nobody on the other side, data is lost
+    (is (eql :foo (read-line stream nil :foo))))
+  ;; 3) writer (first) and reader (inside)
+  (with-open-file (stream "my-fifo" :direction :output)
+    (finishes (write-line "foobar" stream))
+    (with-open-file (stream2 "my-fifo" :direction :input)
+      ;; Even for output it should not block on Linux.
+      (is (equal "foobar" (read-line stream2 nil :foo)))))
+  ;; clean up
+  (ext:run-program "rm" '("-rf" "my-fifo") :output t))
+
+
+;;; Date: 2018-12-02
+;;; Description:
+;;;
+;;;   Serialization/Deserialization tests
+#+externalizable
+(test mix.0017.serialization
+  (let* ((vector (make-array 4 :element-type 'ext:byte16 :initial-contents #(1 2 3 4)))
+         (object-table
+          ;; vector of (object . compare-function)
+          (vector '(nil . eql) ; empty list
+                  '('(1 2) . equalp) ; non-empty list
+                  '(#\q . eql) ; character
+                  '(42 . eql) ; fixnum
+                  (cons (+ 10 most-positive-fixnum) 'eql) ; bignum
+                  '(2/3 . eql) ; ratio
+                  '(12.3f4 . eql) ; floats
+                  '(13.2d4 . eql)
+                  '(14.2l3 . eql)
+                  '(#c(4 7) . eql) ; complexes
+                  '(#c(1.0f0 2.0f0) . eql)
+                  '(#c(1.0d0 2.0d0) . eql)
+                  '(#c(1.0l0 2.0l0) . eql)
+                  '(#.(find-package "COMMON-LISP-USER") . eq) ; package
+                  '(q . eql) ; symbol
+                  ;; hash-table
+                  (cons (let ((ht (make-hash-table)))
+                          (setf (gethash :foo ht) :abc)
+                          (setf (gethash :bar ht) :def)
+                          ht)
+                        #'(lambda (x y)
+                            (loop for key being the hash-keys of x
+                               if (not (eq (gethash key x)
+                                           (gethash key y)))
+                               return nil
+                               finally (return t))))
+                  ;; array
+                  (cons (let ((a (make-array '(2 2) :initial-element 0)))
+                          (setf (aref a 0 0) 'q)
+                          (setf (aref a 0 1) 1/5)
+                          a)
+                        'equalp)
+                  (cons vector 'equalp) ; non-displaced vector
+                  ;; displaced vector
+                  (cons (make-array 3 :element-type 'ext:byte16
+                                    :displaced-to vector
+                                    :displaced-index-offset 1)
+                        #'(lambda (x y)
+                            (and (equalp x y)
+                                 (equalp (multiple-value-list (array-displacement x))
+                                         (multiple-value-list (array-displacement y))))))
+                  '("a∩b∈c" . equal) ; string
+                  (cons (make-string 3 :initial-element #\q :element-type 'base-char) 'equal) ; base-string
+                  (cons (make-array 6 :element-type 'bit :initial-contents #(0 1 0 1 1 0)) 'equal) ; bit-vector
+                  ;; stream: not externalizable?
+                  ;; random-state
+                  (cons (let ((r (make-random-state)))
+                          (random 10 r)
+                          r)
+                        'equalp)
+                  ;; readtable: not externalizable
+                  '(#P"/foo/bar/whatever.gif" . equal) ; pathname
+                  ;; TODO: other objects
+                  ))
+         (to-be-serialized
+          (map 'vector #'first object-table))
+         (deserialized (si::deserialize (si::serialize to-be-serialized))))
+    (is-true (= (length to-be-serialized) (length deserialized)))
+    (loop for i below (length to-be-serialized)
+       do (is-true (funcall (cdr (elt object-table i))
+                            (elt to-be-serialized i)
+                            (elt deserialized i))))))
+
+;;; Date: 2019-12-26
+;;; Description:
+;;;
+;;;   Stack overflow detection and recovery
+(test mix.0018.stack-overflow
+  (signals ext:stack-overflow (labels ((f (x) (f (1+ x))))
+                                (f 1))))
+
+;;; Date 2020-04-22
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/merge_requests/197
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/576
+;;; Description:
+;;;
+;;;     Ensure that with-input-from-string and with-output-to-string
+;;;     close the streams that they provide.
+(test mix.0019.with-string-io-close-streams
+  (let (stream-var)
+    (with-input-from-string (inner-stream-var "test")
+      (setf stream-var inner-stream-var)
+      (is (open-stream-p stream-var)))
+    (is (not (open-stream-p stream-var)))
+    (with-output-to-string (inner-stream-var)
+      (setf stream-var inner-stream-var)
+      (is (open-stream-p stream-var)))
+    (is (not (open-stream-p stream-var)))))

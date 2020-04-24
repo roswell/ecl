@@ -28,7 +28,7 @@
 ;;; name to class.
 ;;; 
 ;;; This is only used during boot. The real one is in built-in.
-(eval-when (compile)
+(eval-when (:compile-toplevel)
   (defun setf-find-class (new-value class &optional errorp env)
     (warn "Ignoring class definition for ~S" class)))
 
@@ -65,7 +65,7 @@
 
 (defun install-method (name qualifiers specializers lambda-list fun &rest options)
   (declare (notinline ensure-generic-function))
-;  (record-definition 'method `(method ,name ,@qualifiers ,specializers))
+  ;;(record-definition 'method `(method ,name ,@qualifiers ,specializers))
   (let* ((gf (ensure-generic-function name))
          (fun (wrapped-method-function fun))
          (specializers (mapcar #'(lambda (x)

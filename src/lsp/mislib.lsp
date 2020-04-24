@@ -134,9 +134,11 @@ Evaluates FORM, outputs the realtime and runtime used for the evaluation to
 
 #-ecl-min
 (defun get-local-time-zone ()
-  "Returns the number of hours West of Greenwich for the local time zone."
+  "Returns the number of hours West of Greenwich for the local time
+zone and a boolean indicating whether Daylight Saving Time is in
+effect."
   (declare (si::c-local))
-  (ffi::c-inline () () :object "
+  (ffi::c-inline () () (values :object :object) "
 {
   cl_fixnum mw;
 #if 0 && defined(HAVE_TZSET)
@@ -155,8 +157,11 @@ Evaluates FORM, outputs the realtime and runtime used for the evaluation to
     mw -= 24*60;
   else if (gtm.tm_wday == (ltm.tm_wday + 1) % 7)
     mw += 24*60;
+  if (ltm.tm_isdst)
+    mw += 60;
 #endif
-  @(return) = ecl_make_ratio(ecl_make_fixnum(mw),ecl_make_fixnum(60));
+  @(return 0) = ecl_make_ratio(ecl_make_fixnum(mw),ecl_make_fixnum(60));
+  @(return 1) = ltm.tm_isdst ? ECL_T : ECL_NIL;
 }"
                  :one-liner nil))
 
@@ -172,30 +177,30 @@ Evaluates FORM, outputs the realtime and runtime used for the evaluation to
   "Args: (integer &optional (timezone (si::get-local-time-zone)))
 Returns as nine values the day-and-time represented by INTEGER.  See GET-
 DECODED-TIME."
-(loop
-  (let* ((ut orig-ut) sec min hour day month year dow days)
-    (unless tz
-      (setq tz (get-local-time-zone)))
-    (decf ut (round (* (+ tz (if dstp -1 0)) 3600)))
-    (multiple-value-setq (ut sec) (floor ut 60))
-    (multiple-value-setq (ut min) (floor ut 60))
-    (multiple-value-setq (days hour) (floor ut 24))
-    (setq dow (mod days 7))
-    (setq year (+ 1900 (floor days 366))) ; Guess!
-    (do ((x))
-        ((< (setq x (- days (number-of-days-from-1900 year)))
-            (if (leap-year-p year) 366 365))
-         (setq day (1+ x)))
-      (incf year))
-    (when (leap-year-p year)
-      (cond ((= day 60) (setf month 2 day 29))
-            ((> day 60) (decf day))))
-    (unless month
-      (setq month (position day month-startdays :test #'<=)
-            day (- day (svref month-startdays (1- month)))))
-    (if (and (not tz-p) (daylight-saving-time-p orig-ut year))
-        (setf tz-p t dstp t)
-        (return (values sec min hour day month year dow dstp tz))))))
+  (loop
+     (let* ((ut orig-ut) sec min hour day month year dow days)
+       (unless tz
+         (setq tz (get-local-time-zone)))
+       (decf ut (round (* (+ tz (if dstp -1 0)) 3600)))
+       (multiple-value-setq (ut sec) (floor ut 60))
+       (multiple-value-setq (ut min) (floor ut 60))
+       (multiple-value-setq (days hour) (floor ut 24))
+       (setq dow (mod days 7))
+       (setq year (+ 1900 (floor days 366))) ; Guess!
+       (do ((x))
+           ((< (setq x (- days (number-of-days-from-1900 year)))
+               (if (leap-year-p year) 366 365))
+            (setq day (1+ x)))
+         (incf year))
+       (when (leap-year-p year)
+         (cond ((= day 60) (setf month 2 day 29))
+               ((> day 60) (decf day))))
+       (unless month
+         (setq month (position day month-startdays :test #'<=)
+               day (- day (svref month-startdays (1- month)))))
+       (if (and (not tz-p) (daylight-saving-time-p orig-ut year))
+           (setf tz-p t dstp t)
+           (return (values sec min hour day month year dow dstp tz))))))
 
 (defun encode-universal-time (sec min hour day month year &optional tz)
   "Args: (second minute hour date month year
@@ -246,11 +251,11 @@ Universal Time UT, which defaults to the current time."
                         #.(encode-universal-time 0 0 0 1 1 2033 0))
                     (- universal-time (encode-universal-time 0 0 0 1 1 year 0) utc-1-1-1970)))))
     #-ecl-min
-    (ffi::c-inline (unix-time) (:unsigned-long) :bool "
+    (ffi::c-inline (unix-time) (:unsigned-long-long) :bool "
 {
         time_t when = (#0);
         struct tm *ltm = localtime(&when);
-        @(return) = ltm->tm_isdst;
+        @(return) = (ltm != NULL) && ltm->tm_isdst;
 }"
                  :one-liner nil)))
 
@@ -320,3 +325,33 @@ hash table; otherwise it signals that we have reached the end of the hash table.
 
 (defun si::simple-program-error (message &rest datum)
   (signal-simple-error 'program-error nil message datum))
+
+#-ecl-min
+(defun make-stream-from-fd (fd direction &key buffering
+                                           element-type
+                                           (external-format :default)
+                                           (name "FD-STREAM"))
+  (check-type name string "name must be a string.")
+  (macrolet ((c-const (string) `(ffi:c-inline () () :int ,string :one-liner t)))
+    (let* ((smm-mode
+            (ecase direction
+              (:input                                   (c-const "ecl_smm_input"))
+              (:output                                  (c-const "ecl_smm_output"))
+              ((:io :input-output)                      (c-const "ecl_smm_io"))
+              #+:wsock (:input-wsock                    (c-const "ecl_smm_input_wsock"))
+              #+:wsock (:output-wsock                   (c-const "ecl_smm_output_wsock"))
+              #+:wsock ((:io-wsock :input-output-wsock) (c-const "ecl_smm_io_wsock"))
+              #+:wsock ((:io-wcon :input-output-wcon)   (c-const "ecl_smm_io_wcon"))))
+           ;; if external-format is not NIL, flags are ignored
+           (external-format (unless (subtypep element-type 'integer) external-format))
+           (stream (ffi:c-inline (name fd smm-mode element-type external-format)
+                                 (t :int :int t t) stream
+                                 "
+ecl_make_stream_from_fd(#0,#1,(enum ecl_smmode)#2,
+                        ecl_normalize_stream_element_type(#3),
+                        ECL_STREAM_BINARY,
+                        #4)"
+                                 :one-liner t)))
+      (when buffering
+        (si::set-buffering-mode stream buffering))
+      stream)))

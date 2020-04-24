@@ -53,9 +53,7 @@
   switch (tx = ecl_t_of(x)) {
   case t_singlefloat:
   case t_doublefloat:
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
-#endif
     if (y == OBJNULL || ty == tx)
       break;
   case t_fixnum:
@@ -66,10 +64,8 @@
       x = ecl_make_single_float(ecl_to_double(x)); break;
     case t_doublefloat:
       x = ecl_make_double_float(ecl_to_double(x)); break;
-#ifdef ECL_LONG_FLOAT
     case t_longfloat:
       x = ecl_make_long_float(ecl_to_long_double(x)); break;
-#endif
     default:
       FEwrong_type_nth_arg(@[float],2,y,@[float]);
     }
@@ -91,7 +87,7 @@ cl_numerator(cl_object x)
   case t_bignum:
     break;
   default:
-    FEwrong_type_nth_arg(@[numerator],1,x,@[rational]);
+    FEwrong_type_only_arg(@[numerator],x,@[rational]);
   }
   @(return x)
     }
@@ -108,7 +104,7 @@ cl_denominator(cl_object x)
     x = ecl_make_fixnum(1);
     break;
   default:
-    FEwrong_type_nth_arg(@[numerator],1,x,@[rational]);
+    FEwrong_type_only_arg(@[denominator],x,@[rational]);
   }
   @(return x)
     }
@@ -163,7 +159,6 @@ cl_decode_float(cl_object x)
     x = ecl_make_double_float(d);
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     if (d >= 0.0)
@@ -176,9 +171,8 @@ cl_decode_float(cl_object x)
     x = ecl_make_long_float(d);
     break;
   }
-#endif
   default:
-    FEwrong_type_nth_arg(@[decode-float],1,x,@[float]);
+    FEwrong_type_only_arg(@[decode-float],x,@[float]);
   }
   ecl_return3(the_env, x, ecl_make_fixnum(e), ecl_make_single_float(s));
 }
@@ -201,11 +195,9 @@ cl_scale_float(cl_object x, cl_object y)
   case t_doublefloat:
     x = ecl_make_double_float(ldexp(ecl_double_float(x), k));
     break;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     x = ecl_make_long_float(ldexpl(ecl_long_float(x), k));
     break;
-#endif
   default:
     FEwrong_type_nth_arg(@[scale-float],1,x,@[float]);
   }
@@ -217,7 +209,7 @@ cl_float_radix(cl_object x)
 {
   const cl_env_ptr the_env = ecl_process_env();
   if (ecl_unlikely(cl_floatp(x) != ECL_T)) {
-    FEwrong_type_nth_arg(@[float-radix],1,x,@[float]);
+    FEwrong_type_only_arg(@[float-radix],x,@[float]);
   }
   ecl_return1(the_env, ecl_make_fixnum(FLT_RADIX));
 }
@@ -230,10 +222,8 @@ ecl_signbit(cl_object x)
     return signbit(ecl_single_float(x));
   case t_doublefloat:
     return signbit(ecl_double_float(x));
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return signbit(ecl_long_float(x));
-#endif
   default:
     FEwrong_type_nth_arg(@[float-sign],1,x,@[float]);
   }
@@ -257,13 +247,11 @@ ecl_signbit(cl_object x)
     if (signbit(f) != negativep) y = ecl_make_double_float(-f);
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double f = ecl_long_float(y);
     if (signbit(f) != negativep) y = ecl_make_long_float(-f);
     break;
   }
-#endif
   default:
     FEwrong_type_nth_arg(@[float-sign],2,y,@[float]);
   }
@@ -281,13 +269,11 @@ cl_float_digits(cl_object x)
   case t_doublefloat:
     x = ecl_make_fixnum(DBL_MANT_DIG);
     break;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     x = ecl_make_fixnum(LDBL_MANT_DIG);
     break;
-#endif
   default:
-    FEwrong_type_nth_arg(@[float-digits],1,x,@[float]);
+    FEwrong_type_only_arg(@[float-digits],x,@[float]);
   }
   ecl_return1(the_env, x);
 }
@@ -328,14 +314,13 @@ cl_float_precision(cl_object x)
     }
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double f = ecl_long_float(x);
     if (f == 0.0) {
       precision = 0;
     } else {
       int exp;
-      frexp(f, &exp);
+      frexpl(f, &exp);
       if (exp >= LDBL_MIN_EXP) {
         precision = LDBL_MANT_DIG;
       } else {
@@ -344,9 +329,8 @@ cl_float_precision(cl_object x)
     }
     break;
   }
-#endif
   default:
-    FEwrong_type_nth_arg(@[float-precision],1,x,@[float]);
+    FEwrong_type_only_arg(@[float-precision],x,@[float]);
   }
   ecl_return1(the_env, ecl_make_fixnum(precision));
 }
@@ -358,7 +342,6 @@ cl_integer_decode_float(cl_object x)
   int e, s = 1;
 
   switch (ecl_t_of(x)) {
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     if (signbit(d)) {
@@ -375,7 +358,6 @@ cl_integer_decode_float(cl_object x)
     }
     break;
   }
-#endif
   case t_doublefloat: {
     double d = ecl_double_float(x);
     if (signbit(d)) {
@@ -409,7 +391,7 @@ cl_integer_decode_float(cl_object x)
     break;
   }
   default:
-    FEwrong_type_nth_arg(@[integer-decode-float],1,x,@[float]);
+    FEwrong_type_only_arg(@[integer-decode-float],x,@[float]);
   }
   ecl_return3(the_env, x, ecl_make_fixnum(e), ecl_make_fixnum(s));
 }
@@ -429,15 +411,30 @@ cl_realpart(cl_object x)
   case t_ratio:
   case t_singlefloat:
   case t_doublefloat:
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
-#endif
     break;
   case t_complex:
-    x = x->complex.real;
+    x = x->gencomplex.real;
     break;
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat: {
+    float f = crealf(ecl_csfloat(x));
+    x = ecl_make_single_float(f);
+    break;
+  }
+  case t_cdfloat: {
+    double f = creal(ecl_cdfloat(x));
+    x = ecl_make_double_float(f);
+    break;
+  }
+  case t_clfloat: {
+    long double f = creall(ecl_clfloat(x));
+    x = ecl_make_long_float(f);
+    break;
+  }
+#endif
   default:
-    FEwrong_type_nth_arg(@[realpart],1,x,@[number]);
+    FEwrong_type_only_arg(@[realpart],x,@[number]);
   }
   @(return x);
 }
@@ -463,19 +460,34 @@ cl_imagpart(cl_object x)
     else
       x = cl_core.doublefloat_zero;
     break;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     if (signbit(ecl_long_float(x)))
       x = cl_core.longfloat_minus_zero;
     else
       x = cl_core.longfloat_zero;
     break;
-#endif
   case t_complex:
-    x = x->complex.imag;
+    x = x->gencomplex.imag;
     break;
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat: {
+    float f = cimagf(ecl_csfloat(x));
+    x = ecl_make_single_float(f);
+    break;
+  }
+  case t_cdfloat: {
+    double f = cimag(ecl_cdfloat(x));
+    x = ecl_make_double_float(f);
+    break;
+  }
+  case t_clfloat: {
+    long double f = cimagl(ecl_clfloat(x));
+    x = ecl_make_long_float(f);
+    break;
+  }
+#endif
   default:
-    FEwrong_type_nth_arg(@[imagpart],1,x,@[number]);
+    FEwrong_type_only_arg(@[imagpart],x,@[number]);
   }
   @(return x);
 }

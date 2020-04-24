@@ -40,8 +40,7 @@
             (class-default-initargs    class) nil
             (class-finalized-p         class) t
             (eql-specializer-flag      class) nil
-            (specializer-direct-methods class) nil
-            (specializer-direct-generic-functions class) nil
+            (specializer-method-holder class) (cons nil nil)
             (gethash name si::*class-name-hash-table*) class
             (class-sealedp             class) nil
             (class-dependents          class) nil
@@ -57,6 +56,7 @@
               (compute-clos-class-precedence-list class superclasses)))
       (when index
         (setf (aref +builtin-classes-pre-array+ index) class))
+      (si:instance-new-stamp class)
       class)))
 
 (defun remove-accessors (slotds)

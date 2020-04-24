@@ -1,45 +1,0 @@
-@node Barriers
-@subsubsection Barriers
-
-@cindex Barriers (synchronization)
-
-
-@cppindex ecl_make_barrier
-cl_object ecl_make_barrier (cl_object name, cl_index count)
-
-
-@lspindex mp:make-barrier
-mp:make-barrier count &key name
-
-
-@cppindex mp_barrier_count
-@lspindex mp:barrier-count
-
-cl_object mp_barrier_count (cl_object barrier)
-mp:barrier-count
-
-
-@cppindex mp_barrier_name
-@lspindex mp:barrier-name
-
-cl_object mp_barrier_name (cl_object)
-mp:barrier_name
-
-
-@cppindex mp_barrier_arrivers_count
-n@lspindex mp:barrier-arrivers-count
-
-cl_object mp_barrier_arrivers_count(cl_object barrier);
-mp:barrier_arrivers_count barrier
-
-
-@cppindex mp_barrier_wait
-@lspindex mp:barrier-wait
-
-mp:barrier-wait barrier
-cl_object mp_barrier_wait (cl_object barrier);
-
-
-@lspindex mp:barrier-unblock
-mp:barrier-unblock barrier &key reset_count disable kill-waiting
-

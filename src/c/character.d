@@ -206,8 +206,10 @@ ecl_char_eq(cl_object x, cl_object y)
     c = ecl_va_arg(cs);
     for (j = 1; j<i; j++)
       if (ecl_char_eq(ecl_va_arg(ds), c)) {
+        ecl_va_end(ds);
         @(return ECL_NIL);
       }
+    ecl_va_end(ds);
   }
   @(return ECL_T);
 } @)
@@ -239,22 +241,22 @@ ecl_char_cmp(cl_object x, cl_object y)
 
 @(defun char< (&rest args)
   @
-  return Lchar_cmp(the_env, narg, 1, 1, args);
+  @(return Lchar_cmp(the_env, narg, 1, 1, args));
   @)
 
 @(defun char> (&rest args)
   @
-  return Lchar_cmp(the_env, narg,-1, 1, args);
+  @(return Lchar_cmp(the_env, narg,-1, 1, args));
   @)
 
 @(defun char<= (&rest args)
   @
-  return Lchar_cmp(the_env, narg, 1, 0, args);
+  @(return Lchar_cmp(the_env, narg, 1, 0, args));
   @)
 
 @(defun char>= (&rest args)
   @
-  return Lchar_cmp(the_env, narg,-1, 0, args);
+  @(return Lchar_cmp(the_env, narg,-1, 0, args));
   @)
 
 @(defun char_equal (c &rest cs)
@@ -291,6 +293,7 @@ ecl_char_equal(cl_object x, cl_object y)
     c = ecl_va_arg(cs);
     for (j=1;  j<i;  j++)
       if (ecl_char_equal(c, ecl_va_arg(ds))) {
+        ecl_va_end(ds);
         @(return ECL_NIL);
       }
   }
@@ -330,22 +333,22 @@ ecl_char_compare(cl_object x, cl_object y)
 
 @(defun char-lessp (&rest args)
   @
-  return Lchar_compare(the_env, narg, 1, 1, args);
+  @(return Lchar_compare(the_env, narg, 1, 1, args));
   @)
 
 @(defun char-greaterp (&rest args)
   @
-  return Lchar_compare(the_env, narg,-1, 1, args);
+  @(return Lchar_compare(the_env, narg,-1, 1, args));
   @)
 
 @(defun char-not-greaterp (&rest args)
   @
-  return Lchar_compare(the_env, narg, 1, 0, args);
+  @(return Lchar_compare(the_env, narg, 1, 0, args));
   @)
 
 @(defun char-not-lessp (&rest args)
   @
-  return Lchar_compare(the_env, narg,-1, 0, args);
+  @(return Lchar_compare(the_env, narg,-1, 0, args));
   @)
 
 
@@ -485,13 +488,11 @@ cl_char_name(cl_object c)
   cl_object output;
   if (code <= 127) {
     output = ecl_gethash_safe(ecl_make_fixnum(code), cl_core.char_names, ECL_NIL);
-  }
-#ifdef ECL_UNICODE_NAMES
-  else if (!Null(output = _ecl_ucd_code_to_name(code))) {
+#ifdef ECL_UNICODE
+  } else if (!Null(output = _ecl_ucd_code_to_name(code))) {
     (void)0;
-  }
 #endif
-  else {
+  } else {
     ecl_base_char name[8];
     ecl_base_char *start;
     name[7] = 0;
@@ -507,7 +508,7 @@ cl_char_name(cl_object c)
       start = name;
     }
     start[0] = 'U';
-    output = make_base_string_copy((const char*)start);
+    output = ecl_make_simple_base_string((const char*)start,-1);
   }
   @(return output);
 }
@@ -523,7 +524,7 @@ cl_name_char(cl_object name)
   if (c != ECL_NIL) {
     ecl_return1(the_env, ECL_CODE_CHAR(ecl_fixnum(c)));
   }
-#ifdef ECL_UNICODE_NAMES
+#ifdef ECL_UNICODE
   c = _ecl_ucd_name_to_code(name);
   if (c != ECL_NIL) {
     ecl_return1(the_env, cl_code_char(c));

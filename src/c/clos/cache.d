@@ -126,6 +126,7 @@ vector_hash_key(cl_object keys)
 /*
  * variation of ecl_gethash from hash.d, which takes an array of objects as key
  * It also assumes that entries are never removed except by clrhash.
+ * This method must be called with interrupts disabled!
  */
 
 ecl_cache_record_ptr

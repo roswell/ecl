@@ -79,7 +79,7 @@
                  (make-c1form* 'FUNCTION
                                :type 'FUNCTION
                                :sp-change (not (and (symbolp fun)
-                                                    (get-sysprop fun 'NO-SP-CHANGE)))
+                                                    (si:get-sysprop fun 'NO-SP-CHANGE)))
                                :args 'GLOBAL nil fun))))
           ((and (consp fun) (member (car fun) '(LAMBDA EXT::LAMBDA-BLOCK)))
            (cmpck (endp (cdr fun))
@@ -97,7 +97,8 @@
     (GLOBAL
      (unwind-exit (list 'FDEFINITION fun)))
     (CLOSURE
-     (baboon)
+     ;; XXX: we have some code after baboon – is CLOSURE legal or not?
+     (baboon :format-control "c2function: c1form is of unexpected kind.")
      (new-local fun)
      (unwind-exit `(MAKE-CCLOSURE ,fun)))))
 
@@ -183,10 +184,11 @@
     (cond ((eq closure 'CLOSURE)
            (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
                (environment-accessor fun)
-               ",Cblock)"))
+               ",Cblock," (min (fun-minarg fun) si:c-arguments-limit) ")"))
           ((eq closure 'LEXICAL)
-           (baboon))
+           (baboon :format-control "wt-make-closure: lexical closure detected."))
           ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
            (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",ECL_NIL,Cblock," narg ")"))
           (t ; empty environment variable number of args
-           (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock)")))))
+           (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock,"
+               (min (fun-minarg fun) si:c-arguments-limit) ")")))))

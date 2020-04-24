@@ -18,14 +18,14 @@
 #+(and cygwin (not ecl-min))
 (ffi:clines "#include <stdlib.h>")
 
+;;; this is needed by compile.lsp.in
 (defun safe-system (string)
   (cmpnote "Invoking external command:~%  ~A~%" string)
   (let ((result (ext:system string)))
     (unless (zerop result)
       (cerror "Continues anyway."
               "(SYSTEM ~S) returned non-zero value ~D"
-              string result))
-    result))
+              string result))))
 
 (defun save-directory (forms)
   (let ((directory
@@ -42,37 +42,36 @@
 (defmacro with-current-directory (&body forms)
   `(save-directory #'(lambda () ,@forms)))
 
-#+(and cygwin (not ecl-min))
-(defun old-crappy-system (program args)
-  (let* ((command (format nil "~S~{ ~S~}" program args))
-         (base-string-command (si:copy-to-simple-base-string command))
-         (code (ffi:c-inline (base-string-command) (:object) :int
-                  "system((const char*)(#0->base_string.self))":one-liner t)))
-    (values nil code nil)))
-
-(defun safe-run-program (program args)
+(defun safe-run-program (program args &aux result output)
   (cmpnote "Invoking external command:~%  ~A ~{~A ~}" program args)
-  (multiple-value-bind (stream result process)
-      (let* ((*standard-output* ext:+process-standard-output+)
-             (*error-output* ext:+process-error-output+)
-             (program (split-program-options program))
-             (args `(,@(cdr program) ,@args))
-             (program (car program)))
-        (with-current-directory
-            #-(and cygwin (not ecl-min))
-            (ext:run-program program args :input nil :output t :error t :wait t)
-            #+(and cygwin (not ecl-min))
-            (old-crappy-system program args)
-            ))
-    (cond ((null result)
-           (cerror "Continues anyway."
-                   "Unable to execute:~%(RUN-PROGRAM ~S ~S)"
-                   program args result))
-          ((not (zerop result))
-           (cerror "Continues anyway."
-                   "Error code ~D when executing~%(RUN-PROGRAM ~S ~S)"
-                   result program args)))
-    result))
+  (let* ((*standard-output* ext:+process-standard-output+)
+         (*error-output* ext:+process-error-output+)
+         (program (split-program-options program))
+         (args `(,@(cdr program) ,@args))
+         (program (car program)))
+    (with-current-directory
+     ;; when compiling ECL itself, we only have low-level functions
+     ;; available, otherwise we can use run-program and get proper
+     ;; quoting of arguments
+     #+ecl-min (multiple-value-bind (output-stream return-status pid)
+                   (si:run-program-inner program args :default nil)
+                 (setf output (collect-lines output-stream))
+                 (multiple-value-setq (return-status result)
+                   (si:waitpid pid t)))
+     #-ecl-min (multiple-value-bind (output-stream return-status process-obj)
+                   (ext:run-program program args :wait nil)
+                 (setf output (collect-lines output-stream))
+                 (multiple-value-setq (return-status result)
+                   (ext:external-process-wait process-obj t)))))
+  (cond ((null result)
+         (cerror "Continues anyway."
+                 "Unable to execute:~%(EXT:RUN-PROGRAM ~S ~S)"
+                 program args result))
+        ((not (zerop result))
+         (cerror "Continues anyway."
+                 "Error code ~D when executing~%(EXT:RUN-PROGRAM ~S ~S):~%~{~A~^~%~}"
+                 result program args output)))
+  result)
 
 (defun split-program-options (string)
   (labels ((maybe-push (options current)

@@ -19,7 +19,7 @@
 cl_object *
 _ecl_va_sp(cl_narg narg)
 {
-  return ecl_process_env()->stack_top - narg;
+  return ecl_process_env()->stack_frame->frame.base + narg;
 }
 
 /* Calling conventions:
@@ -37,6 +37,8 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
   cl_object *sp = frame->frame.base;
   cl_index narg = frame->frame.size;
   cl_object fun = x;
+  cl_object ret;
+  frame->frame.env->stack_frame = frame;
  AGAIN:
   frame->frame.env->function = fun;
   if (ecl_unlikely(fun == OBJNULL || fun == ECL_NIL))
@@ -45,37 +47,47 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
   case t_cfunfixed:
     if (ecl_unlikely(narg != (cl_index)fun->cfun.narg))
       FEwrong_num_arguments(fun);
-    return APPLY_fixed(narg, fun->cfunfixed.entry_fixed, sp);
+    ret = APPLY_fixed(narg, fun->cfunfixed.entry_fixed, sp);
+    break;
   case t_cfun:
-    return APPLY(narg, fun->cfun.entry, sp);
+    ret = APPLY(narg, fun->cfun.entry, sp);
+    break;
   case t_cclosure:
-    return APPLY(narg, fun->cclosure.entry, sp);
+    ret = APPLY(narg, fun->cclosure.entry, sp);
+    break;
   case t_instance:
     switch (fun->instance.isgf) {
     case ECL_STANDARD_DISPATCH:
     case ECL_RESTRICTED_DISPATCH:
-      return _ecl_standard_dispatch(frame, fun);
+      ret = _ecl_standard_dispatch(frame, fun);
+      break;
     case ECL_USER_DISPATCH:
       fun = fun->instance.slots[fun->instance.length - 1];
       goto AGAIN;
     case ECL_READER_DISPATCH:
     case ECL_WRITER_DISPATCH:
-      return APPLY(narg, fun->instance.entry, sp);
+      ret = APPLY(narg, fun->instance.entry, sp);
+      break;
     default:
       FEinvalid_function(fun);
     }
+    break;
   case t_symbol:
     if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
       FEundefined_function(x);
     fun = ECL_SYM_FUN(fun);
     goto AGAIN;
   case t_bytecodes:
-    return ecl_interpret(frame, ECL_NIL, fun);
+    ret = ecl_interpret(frame, ECL_NIL, fun);
+    break;
   case t_bclosure:
-    return ecl_interpret(frame, fun->bclosure.lex, fun->bclosure.code);
+    ret = ecl_interpret(frame, fun->bclosure.lex, fun->bclosure.code);
+    break;
   default:
     FEinvalid_function(x);
   }
+  frame->frame.env->stack_frame = NULL; /* for gc's sake */
+  return ret;
 }
 
 cl_objectfn
@@ -150,7 +162,7 @@ cl_funcall(cl_narg narg, cl_object function, ...)
       } else loop_for_in (lastarg) {
           if (ecl_unlikely(i >= ECL_CALL_ARGUMENTS_LIMIT)) {
             ecl_stack_frame_close(frame);
-            FEprogram_error_noreturn("CALL-ARGUMENTS-LIMIT exceeded",0);
+            FEprogram_error("CALL-ARGUMENTS-LIMIT exceeded",0);
           }
           ecl_stack_frame_push(frame, CAR(lastarg));
           i++;
@@ -224,12 +236,6 @@ cl_eval(cl_object form)
     if (ECL_CONS_CAR(form) == @'quote') {
       return cl_second(form);
     }
-    /* value = cl_macroexpand(2, form, env); */
-    /* if (value != form) { */
-    /*   form = value; */
-    /*   goto AGAIN; */
-    /* } */
-  ERROR:
     FEerror("EXT:CONSTANT-FORM-VALUE invoked with a non-constant form ~A",
             0, form);
     break;

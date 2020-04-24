@@ -1,0 +1,16 @@
+@node System construction
+@section System construction
+
+@subsection C Reference
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_cmp_fi.htm,compile-file} @tab [Only in Common Lisp]
+@item @clhs{f_cmp__1.htm,compile-file-pathname} @tab [Only in Common Lisp]
+@item @clhs{f_load.htm,load} @tab cl_object cl_load(cl_narg narg, cl_object pathname, ...)
+@item @clhs{f_provid.htm,provide} @tab cl_object cl_provide(cl_object module_name)
+@item @clhs{f_provid.htm,require} @tab cl_object cl_require(cl_narg narg, cl_object module_name, ...)
+@end multitable

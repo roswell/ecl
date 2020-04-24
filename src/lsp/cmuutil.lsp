@@ -194,3 +194,33 @@ ones, which is useful for creating hygienic macros."
                          (cons s (make-symbol (symbol-name s))))
                      symbols)
              body)))
+
+
+;;; Curbed from alexandria
+(defmacro if-let (bindings &body (then-form &optional else-form))
+  (let* ((binding-list (if (and (consp bindings) (symbolp (car bindings)))
+                           (list bindings)
+                           bindings))
+         (variables (mapcar #'car binding-list)))
+    `(let ,binding-list
+       (if (and ,@variables)
+           ,then-form
+           ,else-form))))
+
+(defmacro when-let (bindings &body forms)
+  `(if-let ,bindings
+     (progn ,@forms)))
+
+(defmacro when-let* (bindings &body body)
+  (let ((binding-list (if (and (consp bindings) (symbolp (car bindings)))
+                          (list bindings)
+                          bindings)))
+    (labels ((bind (bindings body)
+               (if bindings
+                   `((let (,(car bindings))
+                       (when ,(caar bindings)
+                         ,@(bind (cdr bindings) body))))
+                   body)))
+      `(let (,(car binding-list))
+         (when ,(caar binding-list)
+           ,@(bind (cdr binding-list) body))))))

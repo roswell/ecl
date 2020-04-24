@@ -10,12 +10,15 @@ srcdir	= ..\src
 
 SHORT_SITE_NAME   =
 LONG_SITE_NAME    =
-ECL_VERSION       = 16.1.3
-ECL_VERSION_NUMBER= 160103
+ECL_VERSION       = 20.4.24
+ECL_VERSION_NUMBER= 200424
 ARCHITECTURE      = PENTIUM4
 SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
 THEHOST           = win32
+
+# Size of the C stack in bytes
+ECL_DEFAULT_C_STACK_SIZE = 1048576
 
 # Define to 1 to make a 64-bit build
 # ECL_WIN64 =
@@ -26,6 +29,7 @@ THEHOST           = win32
 # 	p0 -> Pentium processor
 # 	p3 -> Pentium III processor
 # 	p4 -> Pentium IV processor
+#   amd64 -> X86_64 compatible processor
 !if "$(GMP_TYPE)" == ""
 GMP_TYPE = gc
 !endif
@@ -59,6 +63,16 @@ ECL_RT      =
 ECL_DEFSYS  =
 # Profiling
 ECL_PROFILE =
+# Use the DbgHelp.lib shared library to provide C Backtrace support
+ECL_USE_DBGHELP = $(ECL_DEBUG)
+
+!if "$(YASM)" == ""
+!if "$(ECL_WIN64)" != ""
+YASM=yasm-1.3.0-win64.exe
+!else
+YASM=yasm-1.3.0-win32.exe
+!endif
+!endif
 
 # <END> (ECL configuration)
 # =============================================================
@@ -69,7 +83,9 @@ TAR_DIR = %CD%\ecl-$(ECL_VERSION)
 #
 
 CC	= cl
-LIBS	= eclgc.lib eclgmp.lib user32.lib ws2_32.lib shell32.lib
+CLIBS   = user32.lib ws2_32.lib shell32.lib
+STATICLIBS = eclgc.lib eclgmp.lib
+LIBS	= $(STATICLIBS) $(CLIBS)
 RM	= del
 RMDIR   = rmdir /Q /S
 MKDIR   = mkdir
@@ -79,9 +95,6 @@ MV      = move /Y
 MSDEV   = msdev
 MKNSI   = makensis.exe
 
-!if "$(YASM)" == ""
-YASM=yasm-1.2.0-win32.exe
-!endif
 
 # ==================== Flags ====================
 
@@ -106,19 +119,23 @@ CFLAGS_SSE=/arch:SSE2
 !if "$(ECL_DEBUG)" != ""
 CFLAGS_OPTIMIZE = /Od
 CFLAGS_CONFIG = /Zi /D_DEBUG /MDd $(CFLAGS_OPTIMIZE) $(CFLAGS_SSE)
-LDFLAGS_CONFIG = /debug /nodefaultlib:msvcrt.lib
+LDFLAGS_CONFIG = /debug
 SHARED_LDFLAGS = /LDd
 GCFLAGS =
 !else
 CFLAGS_OPTIMIZE = /O2
 CFLAGS_CONFIG = /DNDEBUG /MD $(CFLAGS_OPTIMIZE) $(CFLAGS_SSE)
-LDFLAGS_CONFIG = /nodefaultlib:msvcrtd.lib
+LDFLAGS_CONFIG = 
 SHARED_LDFLAGS = /LD
 GCFLAGS = nodebug=1
 !endif
 
+!if "$(ECL_USE_DBGHELP)" != ""
+CLIBS = $(CLIBS) DbgHelp.lib
+!endif
+
 CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
-LDFLAGS	= /link /incremental:no /nologo /nodefaultlib:libcmt /nodefaultlib:libcmtd /nodefaultlib:libc /nodefaultlib:libcd $(LDFLAGS_CONFIG)
+LDFLAGS	= /link /incremental:no /nologo $(LDFLAGS_CONFIG) /STACK:$(ECL_DEFAULT_C_STACK_SIZE)
 
 
 # Additional configuration for thread support
@@ -257,9 +274,9 @@ compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
-	    "@CLIBS@" "user32.lib ws2_32.lib shell32.lib" \
-	    "@STATICLIBS@" "eclgmp.lib eclgc.lib" \
-	    "@LIBS@" "user32.lib ws2_32.lib shell32.lib" \
+	    "@CLIBS@" "$(CLIBS)" \
+	    "@STATICLIBS@" "$(STATICLIBS)" \
+	    "@LIBS@" "$(LIBS)" \
 	    "@CORE_LIBS@" "" \
 	    "@FASL_LIBS@" "" \
 	    "@OBJEXT@" "obj" \
@@ -299,8 +316,8 @@ cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
-	    "@CLIBS@" "user32.lib ws2_32.lib shell32.lib" \
-	    "@STATICLIBS@" "eclgmp.lib eclgc.lib" \
+	    "@CLIBS@" "$(CLIBS)" \
+	    "@STATICLIBS@" "$(STATICLIBS)" \
 	    "@OBJEXT@" "obj" \
 	    "@SHAREDPREFIX@" "" \
 	    "@SHAREDEXT@" "dll" \
@@ -331,14 +348,16 @@ ecl-cc.bat: util\ecl-cc.bat Makefile
 
 eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	cd c
-	$(MAKE) ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
+	$(MAKE) /nologo ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
+                ECL_DEFAULT_C_STACK_SIZE=$(ECL_DEFAULT_C_STACK_SIZE) \
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
 		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
+		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
 		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
 	cd ..
 eclgc.lib:
 	cd gc
-	$(MAKE) $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" gc.lib
+	$(MAKE) /nologo $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" gc.lib
 	$(CP) gc.lib ..\eclgc.lib
 	cd ..
 	if not exist ecl\gc $(MKDIR) ecl\gc
@@ -351,7 +370,7 @@ eclgc.lib:
 
 eclgmp.lib:
 	cd gmp
-	$(MAKE) "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
+	$(MAKE) /nologo "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
 		"BITS=$(GMP_BITS)" "YASM=$(YASM)"
 	$(CP) gmp.lib ..\eclgmp.lib
 	$(CP) gmp.h ..\ecl\gmp.h
@@ -370,13 +389,14 @@ install:
 	$(CP) ecl-config.bat "$(bindir)\ecl-config.bat"
 	$(CP) ecl-cc.bat "$(bindir)\ecl-cc.bat"
 	IF NOT EXIST "$(includedir)\ecl" $(MKDIR) "$(includedir)\ecl"
+	IF NOT EXIST "$(includedir)\ecl\impl" $(MKDIR) "$(includedir)\ecl\impl"
 	IF NOT EXIST "$(includedir)\ecl\gc" $(MKDIR) $(includedir)\ecl\gc
 	IF NOT EXIST "$(includedir)\ecl\gc\private" $(MKDIR) "$(includedir)\ecl\gc\private"
-	for %i in (ecl\*.h ecl\gc\*.h ecl\gc\private\*.h) do $(CP) %i $(includedir)\%i
+	for %i in (ecl\*.h ecl\impl\*.h ecl\gc\*.h ecl\gc\private\*.h) do $(CP) %i $(includedir)\%i
 	IF EXIST "$(include)\ecl\atomic_ops" rmdir /S /Q "$(include)\ecl\atomic_ops"
 	IF EXIST "ecl\atomic_ops" xcopy /S /Y "ecl\atomic_ops" "$(includedir)\atomic_ops\"
 	cd c
-	$(MAKE) cut.exe
+	$(MAKE) /nologo cut.exe
 	cd ..
 	c\cut.exe < ecl\config.h > $(includedir)\ecl\config.h
 	IF NOT EXIST "$(libdir)" $(MKDIR) "$(libdir)"
@@ -393,15 +413,15 @@ install:
 
 check: package\ecl.exe
 	cd tests
-	$(MAKE)
+	$(MAKE) /nologo 
 
 recheck: package\ecl.exe
 	cd tests
-	$(MAKE) clean
-	$(MAKE)
+	$(MAKE) /nologo clean
+	$(MAKE) /nologo 
 
 package\ecl.exe: ecl2$(EXE)
-	$(MAKE) install ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) 
+	$(MAKE) /nologo install ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) 
 
 windows-nsi:
 	IF EXIST "$(TAR_DIR)" $(RMDIR) "$(TAR_DIR)"
@@ -417,7 +437,7 @@ clean: clean_ecl clean_lisp
 	-$(RM) .gdbinit cinit.lib ecl_min.lib
 	-$(RM) bdwgc\*.pdb
 	cd gc
-	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
+	-$(MAKE) /nologo $(GCFLAGS) ECL_THREADS=$(ECL_THREADS) "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" "MY_CPU=$(GC_CPU)" clean
 	cd ..
 	-for %h in (gc.h gc_local_alloc.h gc_pthread_redirects.h \
 	            gc_config_macros.h leak_detector.h gc_typed.h \
@@ -426,7 +446,8 @@ clean: clean_ecl clean_lisp
 	-$(RMDIR) ecl\gc\private
 	-$(RMDIR) ecl\gc
 	cd gmp
-	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
+	-$(MAKE) /nologo "MPN_TYPE=$(GMP_TYPE)" "CFLAGS_CONFIG=$(CFLAGS_CONFIG)" \
+		"BITS=$(GMP_BITS)" "YASM=$(YASM)" clean
 	cd ..
 	-$(RM) ecl\gmp.h
 clean_ecl:
@@ -438,7 +459,11 @@ clean_ecl:
 		    ecl-cc.bat ecl.rc ecl.res) \
 	     do $(RM) %i
 	cd c
-	-$(MAKE) ECL_THREADS=$(ECL_THREADS) clean
+	-$(MAKE) /nologo ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
+	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
+		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
+		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
+		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD" clean
 	cd ..
 clean_lisp:
 	-for %i in (lsp clos $(ECL_MODULES)) do for %k in (%i.lib %i.fas %i.ilk %i.c %i.obj %i.pdb) do $(RM) %k

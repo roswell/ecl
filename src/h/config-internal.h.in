@@ -31,12 +31,6 @@
 /* Undefine this if you do not want ECL to check for circular lists     */
 #define ECL_SAFE
 
-/* Bytecodes and arguments are 8 and 16 bits large, respectively        */
-#undef ECL_SMALL_BYTECODES
-
-/* Assembler implementation of APPLY and friends                        */
-#undef ECL_ASM_APPLY
-
 /* Activate Boehm-Weiser incremental garbage collector                  */
 #undef GBC_BOEHM_GENGC
 
@@ -55,8 +49,6 @@
  * SYSTEM FEATURES:
  */
 
-/* Argument list can be access as an array                              */
-#undef ECL_USE_VARARG_AS_POINTER
 /* Most significant byte first                                          */
 #undef WORDS_BIGENDIAN
 /* Has <sys/resource.h>                                                 */
@@ -109,16 +101,6 @@
 #endif
 /* isatty() checks whether a file is connected to a			*/
 #undef HAVE_ISATTY
-/* can manipulate floating point environment				*/
-#undef HAVE_FENV_H
-/* can activate individual traps in floating point environment          */
-/* this flag has to be deactivated for the Itanium architecture, where  */
-/* the GNU libc functions are broken                                    */
-#if !defined(__ia64__) && !defined(PPC)
-#undef HAVE_FEENABLEEXCEPT
-#endif
-/* do we want to deactivate all support for floating point exceptions   */
-#undef ECL_AVOID_FPE_H
 /* do we want to have signed zeros                                      */
 #undef ECL_SIGNED_ZERO
 /* has support for large files                                          */
@@ -164,24 +146,10 @@
 /* existence of char **environ                                          */
 #undef HAVE_ENVIRON
 /* existence of pointer -> function name functions                      */
-#undef HAVE_DLADDR
 #undef HAVE_BACKTRACE
 #undef HAVE_BACKTRACE_SYMBOLS
-#undef HAVE___BUILTIN_RETURN_ADDRESS
 #undef HAVE_SCHED_H
-
-/*
- * we do not manage to get proper signal handling of floating point
- * arithmetics in the Alpha chips.
- */
-#if defined(__alpha__)
-# ifdef HAVE_FENV_H
-#  undef HAVE_FENV_H
-# endif
-# ifdef HAVE_FEENABLEEXCEPT
-#  undef HAVE_FEENABLEEXCEPT
-# endif
-#endif
+#undef HAVE_SYSTEM
 
 /* what characters are used to mark beginning of new line               */
 #undef ECL_NEWLINE_IS_CRLF
@@ -246,16 +214,7 @@
 #  define signbit(x) (copysign(1.0,(x)))
 # endif
 # ifndef isfinite
-#  ifdef __sun__
-#   ifndef ECL_LONG_FLOAT
-#    include <ieeefp.h>
-#    define isfinite(x) finite(x)
-#   else
-#    error "Function isfinite() is missing"
-#   endif
-#  else
-#   define isfinite(x) finite(x)
-#  endif
+#  error "Function isfinite() is missing"
 # endif
 # ifndef signbit
 #  ifndef ECL_SIGNED_ZERO
@@ -284,4 +243,10 @@
 
 #if defined(HAVE_LIBFFI) && defined(ECL_INCLUDE_FFI_H)
 #include "@ECL_LIBFFI_HEADER@"
+#endif
+
+#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
+#define ECL_DEFAULT_C_STACK_SIZE 0 /* Use the stack size provided by the OS */
+#else
+#define ECL_DEFAULT_C_STACK_SIZE @ECL_DEFAULT_C_STACK_SIZE@
 #endif

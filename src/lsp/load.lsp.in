@@ -44,8 +44,6 @@
   "src:lsp;defpackage.lsp"
   "src:lsp;ffi.lsp"
   "src:lsp;mp.lsp"
-#+tk
-  "src:lsp;tk-init.lsp"
   "build:lsp;config.lsp"
   "src:lsp;module.lsp"
   "src:lsp;cmdline.lsp"

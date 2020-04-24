@@ -15,6 +15,32 @@
 
 (in-package "COMPILER")
 
+;;----------------------------------------------------------------------
+;; We transform BOOLE into the individual operations, which have
+;; inliners
+;;
+
+(define-compiler-macro boole (&whole form op-code op1 op2)
+  (or (and (constantp op-code *cmp-env*)
+           (case (ext:constant-form-value op-code *cmp-env*)
+             (#. boole-clr `(progn ,op1 ,op2 0))
+             (#. boole-set `(progn ,op1 ,op2 -1))
+             (#. boole-1 `(prog1 ,op1 ,op2))
+             (#. boole-2 `(progn ,op1 ,op2))
+             (#. boole-c1 `(prog1 (lognot ,op1) ,op2))
+             (#. boole-c2 `(progn ,op1 (lognot ,op2)))
+             (#. boole-and `(logand ,op1 ,op2))
+             (#. boole-ior `(logior ,op1 ,op2))
+             (#. boole-xor `(logxor ,op1 ,op2))
+             (#. boole-eqv `(logeqv ,op1 ,op2))
+             (#. boole-nand `(lognand ,op1 ,op2))
+             (#. boole-nor `(lognor ,op1 ,op2))
+             (#. boole-andc1 `(logandc1 ,op1 ,op2))
+             (#. boole-andc2 `(logandc2 ,op1 ,op2))
+             (#. boole-orc1 `(logorc1 ,op1 ,op2))
+             (#. boole-orc2 `(logorc2 ,op1 ,op2))))
+      form))
+
 (defun simplify-arithmetic (operator args whole)
   (if (every #'numberp args)
       (apply operator args)
@@ -71,10 +97,10 @@
         (default (if only-real 'REAL 'NUMBER))
         (types-list (if only-real
                         '(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
-                          DOUBLE-FLOAT #+long-float LONG-FLOAT FLOAT REAL
+                          DOUBLE-FLOAT LONG-FLOAT FLOAT REAL
                           NUMBER)
                         '(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
-                          DOUBLE-FLOAT #+long-float LONG-FLOAT FLOAT REAL))))
+                          DOUBLE-FLOAT LONG-FLOAT FLOAT REAL))))
     (dolist (i types-list)
       (when (and (null t1-eq) (type>= i t1))
         (if (equalp t1 t2)
@@ -88,8 +114,8 @@
       (setf output integer-result))
     (values output (if t1-eq t1 default) (if t2-eq t2 default))))
 
-(defun ensure-number-type (general-type)
-  (maximum-number-type general-type general-type))
+(defun ensure-number-type (general-type &key integer-result)
+  (maximum-number-type general-type general-type :integer-result integer-result))
 
 (defun ensure-nonrational-type (general-type)
   (maximum-number-type general-type 'single-float))
@@ -104,7 +130,7 @@
   ;; point contagion, with the exception that an operation between two
   ;; integers has type INTEGER-RESULT (integer for *,-,+ and rational else)
   (multiple-value-bind (result-type op1-type)
-      (ensure-number-type op1-type)
+      (ensure-number-type op1-type :integer-result integer-result)
     (loop with arg-types = (list op1-type)
        for x in others
        for op2-type = x

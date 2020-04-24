@@ -1,0 +1,446 @@
+@node Data and control flow
+@section Data and control flow
+
+@menu
+* Shadowed bindings::
+* Minimal compilation::
+* Function types::
+* C Calling conventions::
+* C Reference::
+@end menu
+
+@node Shadowed bindings
+@subsection Shadowed bindings
+@cindex Shadowed bindings in let, flet, labels and lambda-list
+ANSI doesn't specify what should happen if any of the @code{let},
+@code{flet} and @code{labels} special operators contain many bindings
+sharing the same name. Because the behavior varies between the
+implementations and the programmer can't rely on the spec ECL signals an
+error if such situation occur.
+
+Moreover, while ANSI defines lambda list parameters in the terms of
+@code{let*}, when used in function context programmer can't provide an
+initialization forms for required parameters. If required parameters
+share the same name an error is signaled.
+
+Described behavior is present in ECL since version 16.0.0. Previously
+the @code{let} operator were using first binding. Both @code{flet} and
+@code{labels} were signaling an error if C compiler was used and used
+the last binding as a visible one when the byte compiler was used.
+
+@node Minimal compilation
+@subsection Minimal compilation
+@cindex Bytecodes eager compilation
+@lspdef si::make-lambda
+Former versions of ECL, as well as many other lisps, used linked lists
+to represent code. Executing code thus meant traversing these lists and
+performing code transformations, such as macro expansion, every time
+that a statement was to be executed. The result was a slow and memory
+hungry interpreter.
+
+Beginning with version 0.3, ECL was shipped with a bytecodes compiler
+and interpreter which circumvent the limitations of linked lists. When
+you enter code at the lisp prompt, or when you load a source file, ECL
+begins a process known as minimal compilation. Barely this process
+consists on parsing each form, macroexpanding it and translating it into
+an intermediate language made of bytecodes.
+
+The bytecodes compiler is implemented in src/c/compiler.d. The main
+entry point is the lisp function si::make-lambda, which takes a name for
+the function and the body of the lambda lists, and produces a lisp
+object that can be invoked. For instance,
+
+@exindex @code{si::make-lambda} usage (bytecodes compilation)
+@lisp
+> (defvar fun (si::make-lambda 'f '((x) (1+ x))))
+*FUN*
+> (funcall fun 2)
+3
+@end lisp
+
+ECL can only execute bytecodes. When a list is passed to @code{eval} it
+must be first compiled to bytecodes and, if the process succeeds, the
+resulting bytecodes are passed to the interpreter. Similarly, every time
+a function object is created, such as in @code{defun} or
+@code{defmacro}, the compiler processes the lambda form to produce a
+suitable bytecodes object.
+
+@cindex Eager compilation implications
+
+The fact that ECL performs this eager compilation means that changes on
+a macro are not immediately seen in code which was already
+compiled. This has subtle implications. Take the following code:
+
+@exindex Eager compilation impact on macros
+@lisp
+> (defmacro f (a b) `(+ ,a ,b))
+F
+> (defun g (x y) (f x y))
+G
+> (g 1 2)
+3
+> (defmacro f (a b) `(- ,a ,b))
+F
+> (g 1 2)
+3
+@end lisp
+
+The last statement always outputs 3 while in former implementations
+based on simple list traversal it would produce -1.
+
+@node Function types
+@subsection Function types
+
+Functions in ECL can be of two types: they are either compiled to
+bytecodes or they have been compiled to machine code using a lisp to C
+translator and a C compiler. To the first category belong function
+loaded from lisp source files or entered at the toplevel. To the second
+category belong all functions in the ECL core environment and functions
+in files processed by @code{compile} or @code{compile-file}.
+
+The output of @code{(symbol-function fun)} is one of the following:
+@itemize
+@item a function object denoting the definition of the function @code{fun},
+@item a list of the form @code{(macro . function-object)} when @code{fun} denotes a macro,
+@item or simply @code{'special}, when @code{fun} denotes a special form, such as @code{block}, @code{if}, etc.
+@end itemize
+
+@cindex @code{disassemble} and @code{compile} on defined functions
+@exindex Keeping lambda definitions with @code{si:*keep-definitions*}
+
+ECL usually keeps the source code of a function unless the global
+variable @code{si:*keep-definitions*} was false when the function was
+translated into bytecodes. Therefore, if you don't need to use compile
+and disassemble on defined functions, you should issue @code{(setq
+si:*keep-definitions* nil)} at the beginning of your session.
+
+@lspdef si:*keep-definitions*
+@defvr Variable {si:*keep-definitions*}
+If set to @code{t} ECL will preserve the compiled function source code
+for disassembly and recompilation.
+@end defvr
+
+@cindex Common Lisp functions limits
+@lspdef call-arguments-limit
+@lspdef lambda-parameters-limit
+@lspdef multiple-values-limit
+@lspdef lambda-list-keywords
+
+In @ref{tab:fun-const} we list all Common Lisp values related to the limits of functions.
+@float Table,tab:fun-const
+@caption{Function related constants}
+@multitable @columnfractions 0.3 0.7
+@item call-arguments-limit
+@tab @code{65536}
+
+@item lambda-parameters-limit
+@tab @code{call-arguments-limit}
+
+@item multiple-values-limit
+@tab @code{64}
+
+@item lambda-list-keywords
+@tab @code{(&optional &rest &key &allow-other-keys &aux &whole &environment &body)}
+@end multitable
+@end float
+
+@node C Calling conventions
+@subsection C Calling conventions
+ECL is implemented using either a C or a C++ compiler. This is not a limiting factor, but imposes some constraints on how these languages are used to implement functions, multiple values, closures, etc. In particular, while C functions can be called with a variable number of arguments, there is no facility to check how many values were actually passed. This forces us to have two types of functions in ECL
+
+@itemize
+@item Functions that take a fixed number of arguments have a simple C signature, with all arguments being properly declared, as in @code{cl_object cl_not(cl_object arg1)}.
+@item Functions with a variable number of arguments, such as those accepting @code{&optional}, @code{&rest} or @code{&key} arguments, must take as first argument the number of remaining ones, as in @code{cl_object cl_list(cl_narg narg, ...)}. Here @var{narg} is the number of supplied arguments.
+@end itemize
+
+The previous conventions set some burden on the C programmer that calls ECL, for she must know the type of function that is being called and supply the right number of arguments. This burden disappears for Common Lisp programmers, though.
+
+As an example let us assume that the user wants to invoke two functions which are part of the ANSI @bibcite{ANSI} standard and thus are exported with a C name. The first example is @code{cl_cos}, which takes just one argument and has a signature @code{cl_object cl_cos(cl_object)}.
+
+@example
+#include <math.h>
+...
+cl_object angle = ecl_make_double_float(M_PI);
+cl_object c = cl_cos(angle);
+printf("\nThe cosine of PI is %g\n", ecl_double_float(c));
+@end example
+
+The second example also involves some Mathematics, but now we are going to use the C function corresponding to @code{+}. As described in @ref{Numbers - ANSI dictionary}, the C name for the plus operator is @code{cl_P} and has a signature @code{cl_object cl_P(cl_narg narg,...)}. Our example now reads as follows
+
+@example
+cl_object one = ecl_make_fixnum(1);
+cl_object two = cl_P(2, one, one);
+cl_object three = cl_P(3, one, one, one);
+printf("\n1 + 1 is %d\n", ecl_fixnum(two));
+printf("\n1 + 1 + 1 is %d\n", ecl_fixnum(three));
+@end example
+
+Note that most Common Lisp functions will not have a C name. In this case one must use the symbol that names them to actually call the functions, using @code{cl_funcall} or @code{cl_apply}. The previous examples may thus be rewritten as follows
+
+@example
+/* Symbol + in package CL */
+cl_object plus = ecl_make_symbol("+","CL");
+cl_object one = ecl_make_fixnum(1);
+cl_object two = cl_funcall(3, plus, one, one);
+cl_object three = cl_funcall(4, plus, one, one, one);
+printf("\n1 + 1 is %d\n", ecl_fixnum(two));
+printf("\n1 + 1 + 1 is %d\n", ecl_fixnum(three));
+@end example
+
+Another restriction of C and C++ is that functions can only take a limited number of arguments. In order to cope with this problem, ECL uses an internal stack to pass any argument above a hardcoded limit, @code{ECL_C_CALL_ARGUMENTS_LIMIT}, which is as of this writing 63. The use of this stack is transparently handled by the Common Lisp functions, such as @code{apply}, @code{funcall} and their C equivalents, and also by a set of macros, @code{cl_va_arg}, which can be used for coding functions that take an arbitrary name of arguments.
+
+
+@node C Reference
+@subsection C Reference
+@cppdef ecl_bds_bind
+@cppdef ecl_bds_push
+@deftypefun void ecl_bds_bind (cl_env_ptr cl_env, cl_object var, cl_object value);
+@deftypefunx void ecl_bds_push (cl_env_ptr cl_env, cl_object var);
+Bind a special variable
+
+@paragraph Description
+Establishes a variable binding for the symbol @var{var} in the Common Lisp environment @var{env}, assigning it @var{value}.
+
+This macro or function is the equivalent of @clhs{s_let_l.htm,let*} and @clhs{s_let_l.htm,let}.
+
+@coderef{ecl_bds_push} does a similar thing, but reuses the old value of the same variable. It is thus the equivalent of @code{(let ((var var)) ...)}
+
+Every variable binding must undone when no longer needed. It is best practice to match each call to @coderef{ecl_bds_bind} by another call to @coderef{ecl_bds_unwind1} in the same function.
+@end deftypefun
+
+@cppdef ecl_bds_unwind1
+@cppdef ecl_bds_unwind_n
+@deftypefun void ecl_bds_unwind1 (cl_env_ptr cl_env);
+@deftypefunx void ecl_bds_unwind_n (cl_env_ptr cl_env, int n);
+Undo one variable binding
+
+@paragraph Description
+@coderef{ecl_bds_unwind1} undoes the outermost variable binding, restoring the original value of the symbol in the process.
+
+@coderef{ecl_bds_unwind_n} does the same, but for the @var{n} last variables.
+
+Every variable binding must undone when no longer needed. It is best practice to match each call to @coderef{ecl_bds_bind} by another call to @coderef{ecl_bds_unwind1} in the same function.
+@end deftypefun
+
+
+@cppdef ecl_setq
+@deftypefun cl_object ecl_setq (cl_env_ptr cl_env, cl_object var, cl_object value);
+C equivalent of setq
+
+@paragraph Description
+Assigns @var{value} to the special variable denoted by the symbol @var{var}, in the Common Lisp environment @var{cl_env}.
+
+This function implements a variable assignment, not a variable binding. It is thus the equivalent of @clhs{s_setq.htm,setq}.
+@end deftypefun
+
+
+@cppdef ecl_symbol_value
+@deftypefun cl_object ecl_symbol_value (cl_env_ptr cl_env, cl_object var); 
+@paragraph Description
+Retrieves the value of the special variable or constant denoted by the symbol @var{var}, in the Common Lisp environment @var{cl_env}.
+
+This function implements the equivalent of @clhs{f_symb_5.htm,symbol-value} and works both on special variables and constants.
+
+If the symbol is not bound, an error is signaled.
+@end deftypefun
+
+
+@cppdef ecl_va_list
+@cppdef ecl_va_start
+@cppdef ecl_va_arg
+@cppdef ecl_va_end
+@deffn Macro {typedef struct @{ ... @} ecl_va_list[1];}
+@end deffn
+
+@deffn Macro ecl_va_start (ecl_va_list arglist, last_argument, narg, n_ordinary);
+@end deffn
+
+@deftypefn Macro cl_object ecl_va_arg (ecl_va_list arglist); 
+@end deftypefn
+
+@deftypefn Macro cl_object ecl_va_end (ecl_va_list arglist); 
+Accepting a variable number of arguments
+
+@paragraph Description
+The macros above are used to code a function that accepts an arbitrary number of arguments. We will describe them in a practical example
+
+@example
+@verbatim
+cl_object my_plus(cl_narg narg, cl_object required1, ...)
+{
+    cl_env_ptr env = ecl_process_env();
+    cl_object other_value;
+    ecl_va_list varargs;
+    ecl_va_start(varargs, required1, narg, 1);
+    while (narg > 1) {
+        cl_object other_value = ecl_va_arg(varargs);
+        required1 = ecl_plus(required1, other_value);
+    }
+    ecl_va_end(varargs);
+    ecl_return1(env, required1);
+}
+@end verbatim
+@end example
+
+The first thing to do is to declare the variable that will hold the arguments. This is @var{varargs} in our example and it has the type @coderef{ecl_va_list}.
+
+This arguments list is initialized with the @coderef{ecl_va_start} macro, based on the supplied number of arguments, @var{narg}, the number of required arguments which are passed as ordinary C arguments (1 in this case), the last such ordinary arguments, @var{required}, and the buffer for the argument list, @var{varargs}.
+
+Once @var{varargs} has been initialized, we can retrieve these values one by one using @coderef{ecl_va_arg}. Note that the returned value always has the type @code{cl_object}, for it is always a Common Lisp object.
+
+The last statement before returning the output of the function is @coderef{ecl_va_end}. This macro performs any required cleanup and should never be omitted.
+
+@end deftypefn
+
+
+@cppdef ecl_nvalues
+@cppdef ecl_nth_value
+@deftypefun cl_object ecl_nvalues (cl_env_ptr env); 
+@deftypefunx cl_object ecl_nth_value (cl_env_ptr env, int n); 
+Accessing output values
+
+@paragraph Description
+Common Lisp functions may return zero, one or more values. In ECL, the first two cases do not require any special manipulation, as the C function returns either @code{nil} or the first (zeroth) value directly. However, if one wishes to access additional values from a function, one needs to use these two macros or functions
+
+@itemize
+@item @code{ecl_nvalues(env)} returns the number of values that the function actually outputs. The single argument is the lisp environment. This value is larger or equal to 0 and smaller than @code{ECL_MULTIPLE_VALUES_LIMIT}.
+@item Once we know the number of return values, they can be directly accessed using the function @code{ecl_nth_value(env,n)}, where @var{n} is a number larger than or equal to 1, and smaller than @code{ECL_MULTIPLE_VALUES_LIMIT}, which must correspond to a valid output value. No checking is done.
+@end itemize
+
+Note that in both cases these macros and functions have to be used right after the Lisp function was called. This is so because other Lisp functions might destroy the content of the return stack.
+
+@paragraph Example
+A C/C++ excerpt:
+
+@example
+cl_env_ptr env = ecl_process_env();
+cl_object a = ecl_make_fixnum(13);
+cl_object b = ecl_make_fixnum(6);
+cl_object modulus = cl_floor(2, a, b);
+cl_object remainder = ecl_nth_value(env, 1);
+@end example
+
+The somewhat equivalent Common Lisp code:
+
+@lisp
+(multiple-value-bind (modulus equivalent)
+    (floor 13 6))
+@end lisp
+
+@end deftypefun
+
+
+@cppdef ecl_return0
+@cppdef ecl_return1
+@cppdef ecl_return2
+@cppdef ecl_return3
+@defmac ecl_return0 (cl_env_ptr cl_env);
+@defmacx ecl_return1 (cl_env_ptr cl_env, cl_object value1);
+@defmacx ecl_return2 (cl_env_ptr cl_env, cl_object value1, cl_object value2);
+@defmacx ecl_return3 (cl_env_ptr cl_env, cl_object value1, cl_object value2, cl_object value3);
+Returning multiple values
+
+@paragraph Description
+Returns @var{N} values from a C/C++ function in a way that a Common Lisp function can recognize and use them. The 0-th value is returned directly, while values 1 to N are stored in the Common Lisp environment @var{cl_env}. This macro has to be used from a function which returns an object of type @code{cl_object}.
+
+@end defmac
+
+
+@cppdef ECL_BLOCK_BEGIN
+@deffn Macro ECL_BLOCK_BEGIN
+@example
+@verbatim
+ECL_BLOCK_BEGIN(env,code) {
+
+} ECL_BLOCK_END;
+@end verbatim
+@end example
+
+@paragraph Description
+@coderef{ECL_BLOCK_BEGIN} establishes a block named @var{code} that becomes visible for the Common Lisp code. This block can be used then as a target for @code{cl_return}.
+
+@var{env} must be the value of the current Common Lisp environment, obtained with @coderef{ecl_process_env}.
+
+The C/C++ program has to ensure that the code in @code{ECL_BLOCK_END} gets executed, avoiding a direct exit of the block via @code{goto} or a C/C++ return.
+@end deffn
+
+
+@cppdef ECL_CATCH_BEGIN
+@deffn Macro ECL_CATCH_BEGIN
+@example
+@verbatim
+ECL_CATCH_BEGIN(env,tag) {
+
+} ECL_CATCH_END;
+@end verbatim
+@end example
+
+@paragraph Description
+@coderef{ECL_CATCH_BEGIN} establishes a destination for @code{throw} with the code given by @var{tag}.
+
+@var{env} must be the value of the current Common Lisp environment, obtained with @coderef{ecl_process_env}.
+
+The C/C++ program has to ensure that the code in @code{ECL_CATCH_END} gets executed, avoiding a direct exit of the catch block via goto or a C/C++ return.
+@end deffn
+
+
+@cppdef ECL_UNWIND_PROTECT_BEGIN
+@deffn Macro ECL_UNWIND_PROTECT_BEGIN
+C macro for unwind-protect
+
+@paragraph Synopsis
+@example
+@verbatim
+ECL_UNWIND_PROTECT_BEGIN(env) {
+
+} ECL_UNWIND_PROTECT_EXIT {
+
+} ECL_UNWIND_PROTECT_END;
+@end verbatim
+@end example
+
+@paragraph Description
+@coderef{ECL_UNWIND_PROTECT_BEGIN} establishes two blocks of C code that work like the equivalent ones in Common Lisp: a protected block, contained between the "BEGIN" and the "EXIT" statement, and the exit block, appearing immediately afterwards. The form guarantees that the exit block is always executed, even if the protected block attempts to exit via some nonlocal jump construct (@code{throw}, @code{return}, etc).
+
+@var{env} must be the value of the current Common Lisp environment, obtained with @coderef{ecl_process_env}.
+
+The utility of this construct is limited, for it only protects against nonlocal exits caused by Common Lisp constructs: it does not interfere with C @code{goto}, @code{return} or with C++ exceptions.
+@end deffn
+
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function or constant
+@item @clhs{f_apply.htm,apply} @tab cl_object cl_apply(cl_narg narg, cl_object function, ...)
+@item @clhs{v_call_a.htm,call-arguments-limit} @tab ECL_CALL_ARGUMENTS_LIMIT
+@item @clhs{f_cmpd_f.htm,compiled-function-p} @tab cl_object cl_compiled_function_p(cl_object object)
+@item @clhs{f_comple.htm,complement} @tab cl_object cl_complement(cl_object function)
+@item @clhs{f_cons_1.htm,constantly} @tab cl_object cl_constantly(cl_object value)
+@item @clhs{f_everyc.htm,every} @tab cl_object cl_every(cl_narg narg, cl_object predicate, ...)
+@item @clhs{f_eq.htm,eq} @tab cl_object cl_eq(cl_object x, cl_object y)
+@item @clhs{f_eql.htm,eql} @tab cl_object cl_eql(cl_object x, cl_object y)
+@item @clhs{f_equal.htm,equal} @tab cl_object cl_equal(cl_object x, cl_object y)
+@item @clhs{f_equalp.htm,equalp} @tab cl_object cl_equalp(cl_object x, cl_object y)
+@item @clhs{f_fbound.htm,fboundp} @tab cl_object cl_fboundp(cl_object function_name)
+@item @clhs{f_fdefin.htm,fdefinition} @tab cl_object cl_fdefinition(cl_object function_name)
+@item @clhs{f_fdefin.htm,(setf fdefinition)} @tab cl_object si_fset(cl_narg narg, cl_object function_name, cl_object definition, ...)
+@item @clhs{f_fmakun.htm,fmakunbound} @tab cl_object cl_fmakunbound(cl_object function_name)
+@item @clhs{f_funcal.htm,funcall} @tab cl_object cl_funcall(cl_narg narg, cl_object function, ...)
+@item @clhs{f_fn_lam.htm,function-lambda-expression} @tab cl_object cl_function_lambda_expression(cl_object function)
+@item @clhs{f_fnp.htm,functionp} @tab cl_object cl_functionp(cl_object object)
+@item @clhs{f_get_se.htm,get-setf-expansion} @tab cl_object cl_get_setf_expansion(cl_narg narg, cl_object place, ...)
+@item @clhs{f_identi.htm,identity} @tab cl_object cl_identity(cl_object x)
+@item @clhs{s_let_l.htm,let}, @clhs{s_let_l.htm,let*} @tab cl_object ecl_bds_bind(cl_env_ptr env, cl_object symbol, cl_object value)
+@item @clhs{v_lamb_1.htm,lambda-parameters-limit} @tab ECL_LAMBDA_PARAMETERS_LIMIT
+@item @clhs{v_multip.htm,multiple-values-limit} @tab ECL_MULTIPLE_VALUES_LIMIT
+@item @clhs{f_not.htm,not} @tab cl_object cl_not(cl_object object)
+@item @clhs{f_everyc.htm,notevery} @tab cl_object cl_notevery(cl_narg narg, cl_object predicate, ...)
+@item @clhs{f_everyc.htm,notany} @tab cl_object cl_notany(cl_narg narg, cl_object predicate, ...)
+@item @clhs{f_set.htm,set} @tab cl_object cl_set(cl_object symbol, cl_object value)
+@item @clhs{s_setq.htm,setq} @tab cl_object ecl_setq(cl_env_ptr env, cl_object symbol, cl_object value)
+@item @clhs{f_symb_5.htm,symbol-value} @tab cl_object ecl_symbol_value(cl_env_ptr env, cl_object symbol)
+@item @clhs{f_everyc.htm,some} @tab cl_object cl_some(cl_narg narg, cl_object predicate, ...)
+@item @clhs{f_vals_l.htm,values-list} @tab cl_object cl_values_list(cl_object list)
+@end multitable

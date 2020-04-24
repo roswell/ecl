@@ -84,7 +84,7 @@
 
 (defun wrap-ret-arg (core ret-type &optional ret-arg)
   (cond ((eq ret-type nil)
-         (format nil "(~A,Cnil)" core))
+         (format nil "(~A,ECL_NIL)" core))
         (ret-arg
          (format nil "@~36R;(~A,#~36R)" ret-arg core ret-arg))
         (t core)))
@@ -105,7 +105,12 @@
 
 (defmacro def-inline (name mode arg-types ret-type call-str &rest flags)
   `(eval-when (:compile-toplevel :load-toplevel)
-     (c::def-inline ',name ',mode ',arg-types ',ret-type ,call-str ,@flags)))
+     ;; FIXME: We should think of a way to achieve this without using
+     ;; internal compiler functions
+     (let ((c::*inline-information* (c::machine-inline-information c::*default-machine*)))
+       (c::def-inline ',name ',mode ',arg-types ',ret-type ,call-str ,@flags)
+       (setf (c::machine-inline-information c::*default-machine*)
+             c::*inline-information*))))
 
 (defmacro def-intrinsic (name arg-types ret-type c-name
                          &key (export t) ret-arg reorder-args immediate-args defun-body)
@@ -294,7 +299,7 @@
          (def-inline ,name :unsafe (,@prefix-itypes si:foreign-data ,@postfix-itypes) ,rftype
                      ,(fmt "(#~A)->foreign.data"))
          (def-inline ,name :unsafe (,@prefix-itypes si:foreign-data ,@postfix-itypes t) ,rftype
-                     ,(fmt "(((char*)(#~A)->foreign.data) + fix(#~A))"))
+                     ,(fmt "(((char*)(#~A)->foreign.data) + ecl_fixnum(#~A))"))
          (def-inline ,name :unsafe (,@prefix-itypes si:foreign-data ,@postfix-itypes fixnum) ,rftype
                      ,(fmt "(((char*)(#~A)->foreign.data) + #~A)"))))))
 

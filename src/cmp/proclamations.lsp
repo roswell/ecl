@@ -153,7 +153,7 @@
 (deftype tree ()
   't)
 (deftype type-specifier ()
-  "Name or object representing a time."
+  "Name or object representing a type."
   '(or symbol class list))
 (deftype universal-time ()
   "Time represented as a non-negative number of seconds measured from the beginning of 1900."
@@ -195,6 +195,11 @@
 (proclamation si::do-define-setf-method (symbol function) t)
 (proclamation ext:constant-form-value (t &optional environment) t)
 (proclamation ext:constantp-inner (t &optional environment) gen-bool)
+
+(proclamation si::remove-documentation (t) t)
+(proclamation si::find-declarations (t &optional gen-bool) t)
+(proclamation si::search-keyword (t t) t)
+(proclamation si::check-keyword (list list &optional gen-bool) t)
 
 ;;;
 ;;; 4. TYPES AND CLASSES
@@ -298,7 +303,7 @@
 ; (proclamation unbound-slot-instance (condition) si::instance :predicate)
 
 #+clos
-(proclamation clos::standard-instance-set (t ext:instance t) t)
+(proclamation clos::standard-instance-set (ext:instance t t) t)
 #+clos
 (proclamation clos:std-compute-applicable-methods (generic-function list) list)
 #+clos
@@ -313,6 +318,17 @@
 (proclamation clos:extract-lambda-list (list) list)
 #+clos
 (proclamation clos:extract-specializer-names (list) list)
+#+clos
+(proclamation clos::install-method (t t t t t &rest t) t)
+#+clos
+(proclamation clos::find-slot-definition (t t) t)
+#+clos
+(proclamation clos::ensure-class (t &rest t) t)
+
+#+(and threads clos) (proclamation mp::compare-and-swap-standard-instance (ext:instance t t t) t)
+#+(and threads clos) (proclamation mp::compare-and-swap-slot-value (ext:instance symbol t t) t)
+#+(and threads clos) (proclamation mp::atomic-incf-standard-instance (ext:instance t fixnum) fixnum)
+#+(and threads clos) (proclamation mp::atomic-incf-slot-value (ext:instance symbol fixnum) fixnum)
 
 ;;;
 ;;; 8. STRUCTURES
@@ -327,6 +343,10 @@
 (proclamation si:structure-set (structure-object t fixnum t) t)
 (proclamation si:structurep (t) gen-bool :predicate)
 (proclamation si:structure-subtype-p (t t) gen-bool :predicate)
+(proclamation si::define-structure (t t t t t t t t t t t t t t t) t)
+(proclamation si::structure-type-error (t t t t) t)
+
+#+threads (proclamation mp:compare-and-swap-structure (structure-object t fixnum t t) t)
 
 ;;;
 ;;; 9. CONDITIONS
@@ -404,6 +424,9 @@
 (proclamation si:rem-sysprop (t t) boolean)
 (proclamation si:put-properties (symbol &rest t) symbol :no-sp-change)
 
+#+threads (proclamation mp:compare-and-swap-symbol-plist (symbol list list) list)
+#+threads (proclamation mp:compare-and-swap-symbol-value (symbol t t) t)
+#+threads (proclamation mp:atomic-incf-symbol-value (symbol fixnum) fixnum)
 
 ;;;
 ;;; 11. PACKAGES
@@ -442,7 +465,21 @@
 (proclamation si:select-package (package-designator) package)
 (proclamation si:package-hash-tables (package-designator)
                    (values hash-table hash-table list) :reader)
+(proclamation si::packages-iterator (t list gen-bool) function)
 (proclamation ext:package-lock (package-designator gen-bool) package)
+(proclamation ext:package-locked-p (package-designator) boolean :no-side-effects)
+(proclamation ext:package-local-nicknames
+ (package-designator) list :no-side-effects)
+(proclamation ext:package-locally-nicknamed-by-list
+ (package-designator) list :no-side-effects)
+(proclamation si:%add-package-local-nickname
+ (string-designator package-designator package-designator) package)
+(proclamation si:%remove-package-local-nickname
+ (string-designator package-designator) list)
+(proclamation ext:add-package-local-nickname
+ (string-designator package-designator &optional package-designator) package)
+(proclamation ext:remove-package-local-nickname
+ (string-designator &optional package-designator) list)
 
 ;;;
 ;;; 12. NUMBERS
@@ -578,6 +615,8 @@
 (proclamation si:single-float-p (t) gen-bool :pure)
 (proclamation si:double-float-p (t) gen-bool :pure)
 (proclamation si:long-float-p (t) gen-bool :pure)
+#+complex-float (proclamation si:complex-float (float float) si:complex-float :pure)
+#+complex-float (proclamation si:complex-float-p (t) gen-bool :pure)
 
 ;; Virtual functions added by the compiler
 (proclamation shift>> (*) nil :pure)
@@ -751,6 +790,12 @@
 (proclamation si:cons-cdr (cons) t :reader)
 (proclamation si::proper-list-p (t) gen-bool :predicate)
 
+#+threads (proclamation mp:compare-and-swap-car (cons t t) t)
+#+threads (proclamation mp:atomic-incf-car (cons fixnum) fixnum)
+#+threads (proclamation mp:compare-and-swap-cdr (cons t t) t)
+#+threads (proclamation mp:atomic-incf-cdr (cons fixnum) fixnum)
+#+threads (proclamation mp:remcas (symbol) boolean)
+
 ;;;
 ;;; 15. ARRAYS
 ;;;
@@ -834,6 +879,9 @@
 (proclamation si:svset (simple-vector ext:array-index t) t)
 (proclamation si:fill-pointer-set (vector ext:array-index) ext:array-index)
 (proclamation si:replace-array (array array) array)
+
+#+threads (proclamation mp:compare-and-swap-svref (simple-vector ext:array-index t t) t)
+#+threads (proclamation mp:atomic-incf-svref (simple-vector ext:array-index fixnum) fixnum)
 
 ;;;
 ;;; 16. STRINGS
@@ -958,6 +1006,7 @@
               (t sequence sequence-index (or null sequence-index))
               (values fixnum fixnum fixnum) :no-side-effects)
 (proclamation si::sequence-count ((or null integer)) fixnum :no-side-effects)
+(proclamation si::coerce-to-list (sequence) list)
 
 ;;;
 ;;; 18. HASH TABLES
@@ -1140,8 +1189,8 @@
 (proclamation si:open-unix-socket-stream (string) stream)
 #+wants-sockets
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
-(proclamation si:copy-stream (stream stream) t)
-(proclamation si:make-encoding (t) t)
+(proclamation si:copy-stream (stream stream wait) t)
+(proclamation si:make-encoding (t) hash-table)
 (proclamation si:load-encoding (t) t)
 
 ;;;
@@ -1187,6 +1236,25 @@
 
 ;; Slot accessor:
 ;; (proclamation print-not-readable-object (condition) t)
+
+;; ECL extensions:
+(proclamation si::pprint-logical-block-helper (t t t string gen-bool string) t)
+(proclamation si::pprint-pop-helper (t t stream) t)
+#+formatter (proclamation si::format-princ (stream-designator t gen-bool gen-bool t t integer character) t)
+#+formatter (proclamation si::format-prin1 (stream-designator t gen-bool gen-bool t t integer character) t)
+#+formatter (proclamation si::format-print-named-character (character stream-designator) t)
+#+formatter (proclamation si::format-print-integer (stream-designator t gen-bool gen-bool radix t character character integer) t)
+#+formatter (proclamation si::format-print-cardinal (stream-designator number) t)
+#+formatter (proclamation si::format-print-ordinal (stream-designator number) t)
+#+formatter (proclamation si::format-print-old-roman (stream-designator number) t)
+#+formatter (proclamation si::format-print-roman (stream-designator number) t)
+#+formatter (proclamation si::format-fixed (stream-designator t t t integer t character gen-bool) t)
+#+formatter (proclamation si::format-exponential (stream-designator t t t t integer t character t gen-bool) t)
+#+formatter (proclamation si::format-general (stream-designator t t t t integer t character t gen-bool) t)
+#+formatter (proclamation si::format-dollars (stream-designator t integer integer integer character gen-bool gen-bool) t)
+#+formatter (proclamation si::format-relative-tab (stream-designator integer integer) t)
+#+formatter (proclamation si::format-absolute-tab (stream-designator integer integer) t)
+#+formatter (proclamation si::format-justification (stream-designator (or string null) integer integer list gen-bool gen-bool integer integer integer character) t)
 
 ;;;
 ;;; 23. READER
@@ -1329,6 +1397,18 @@
               (values (or null two-way-stream)
                       (or null integer)
                       ext:external-process))
+(proclamation ext:file-stream-fd (stream) fixnum)
+(proclamation ext:make-stream-from-fd (fixnum keyword &key) stream)
+
+(proclamation si:waitpid (fixnum gen-bool) (values
+                                            (or null keyword)
+                                            (or null fixnum)
+                                            (or null fixnum)))
+(proclamation si:killpid (fixnum fixnum) fixnum)
+(proclamation si:run-program-inner (string (or list string) list gen-bool)
+              (values file-stream integer))
+(proclamation si:spawn-subprocess (string (or list string) list t t t)
+              (values (or null integer) fixnum fixnum fixnum))
 (proclamation ext:terminate-process (t &optional gen-bool) null)
 
 (proclamation ext:make-weak-pointer (t) ext:weak-pointer :no-side-effects)
@@ -1337,6 +1417,10 @@
 (proclamation si:unbound () t :pure)
 (proclamation si:traced-old-definition (t) t :no-side-effects)
 
+(proclamation si::expand-set-documentation (t t t) t)
+(proclamation si::set-documentation (t t t) t)
+(proclamation si::get-documentation (t t) t)
+
 #+clos
 (proclamation si:allocate-raw-instance (t t fixnum) ext:instance)
 #+clos
@@ -1344,7 +1428,7 @@
 #+clos
 (proclamation si:instance-ref (t fixnum) t :reader)
 #+clos
-(proclamation si::instance-sig (standard-object) list :reader)
+(proclamation si::instance-slotds (standard-object) list :reader)
 #+clos
 (proclamation si:instance-set (t fixnum t) t)
 #+clos
@@ -1364,13 +1448,16 @@
               (clos:funcallable-standard-object t)
               t :reader)
 #+clos
-(proclamation associate-methods-to-gfun (generic-function *)
+(proclamation clos::associate-methods-to-gfun (function-name *)
               generic-function)
 #+clos
-(proclamation clos::need-to-make-load-form-p (t t) gen-bool :pure)
+(proclamation si::need-to-make-load-form-p (t) gen-bool :pure)
 
 #+clos
 (proclamation clos::load-defclass (t t t t) t)
+
+#+(and threads clos) (proclamation mp:compare-and-swap-instance (t fixnum t t) t)
+#+(and threads clos) (proclamation mp:atomic-incf-instance (t fixnum fixnum) fixnum)
 
 ;;;
 ;;; A. FFI
@@ -1378,6 +1465,58 @@
 
 (proclamation si:pointer (t) unsigned-byte)
 (proclamation si:foreign-data-p (t) gen-bool :pure)
+
+;;;
+;;; B. Multithreading
+;;;
+
+#+threads (proclamation mp:all-processes () list :no-side-effects)
+#+threads (proclamation mp:exit-process () t)
+#+threads (proclamation mp:interrupt-process (mp:process t) gen-bool)
+#+threads (proclamation mp:make-process (&key) mp:process :no-side-effects)
+#+threads (proclamation mp:process-active-p (mp:process) gen-bool :reader)
+#+threads (proclamation mp:process-enable (mp:process) t)
+#+threads (proclamation mp:process-yield () t)
+#+threads (proclamation mp:process-join (mp:process) (values &rest t))
+#+threads (proclamation mp:process-kill (mp:process) gen-bool)
+#+threads (proclamation mp:process-suspend (mp:process) gen-bool)
+#+threads (proclamation mp:process-resume (mp:process) gen-bool)
+#+threads (proclamation mp:process-name (mp:process) t :reader)
+#+threads (proclamation mp:process-preset (mp:process t &rest t) mp:process)
+#+threads (proclamation mp:process-run-function (t t &rest t) t)
+#+threads (proclamation mp:block-signals () t)
+#+threads (proclamation mp:restore-signals (t) t)
+
+#+threads (proclamation mp:make-lock (&key) mp:lock :no-side-effects)
+#+threads (proclamation mp:recursive-lock-p (mp:lock) gen-bool :reader)
+#+threads (proclamation mp:holding-lock-p (mp:lock) gen-bool)
+#+threads (proclamation mp:lock-name (mp:lock) t :reader)
+#+threads (proclamation mp:lock-owner (mp:lock) t :reader)
+#+threads (proclamation mp:lock-count (mp:lock) fixnum :reader)
+#+threads (proclamation mp:get-lock (mp:lock &optional gen-bool) gen-bool)
+#+threads (proclamation mp:giveup-lock (mp:lock) (eql t))
+
+#+threads (proclamation mp:make-rwlock (&key) mp:rwlock :no-side-effects)
+#+threads (proclamation mp:rwlock-name (mp:rwlock) t :reader)
+#+threads (proclamation mp:get-rwlock-read (mp:rwlock &optional gen-bool) gen-bool)
+#+threads (proclamation mp:get-rwlock-write (mp:rwlock &optional gen-bool) gen-bool)
+#+threads (proclamation mp:giveup-rwlock-read (mp:rwlock) (eql t))
+#+threads (proclamation mp:giveup-rwlock-write (mp:rwlock) (eql t))
+
+#+threads (proclamation mp:make-condition-variable () mp:condition-variable :no-side-effects)
+#+threads (proclamation mp:condition-variable-wait (mp:condition-variable mp:lock) (eql t))
+;; Currently not supported
+;; #+threads (proclamation mp:condition-variable-timedwait (mp:condition-variable mp:lock natural) (eql t))
+#+threads (proclamation mp:condition-variable-signal (mp:condition-variable) (eql t))
+#+threads (proclamation mp:condition-variable-broadcast (mp:condition-variable) (eql t))
+
+#+threads (proclamation mp:make-semaphore (&key) mp:semaphore :no-side-effects)
+#+threads (proclamation mp:semaphore-name (mp:semaphore) t :reader)
+#+threads (proclamation mp:semaphore-count (mp:semaphore) fixnum :reader)
+#+threads (proclamation mp:semaphore-wait-count (mp:semaphore) natural :reader)
+#+threads (proclamation mp:wait-on-semaphore (mp:semaphore) fixnum)
+#+threads (proclamation mp:try-get-semaphore (mp:semaphore) t)
+#+threads (proclamation mp:signal-semaphore (mp:semaphore &optional fixnum) t)
 
 ;;;
 ;;; CDR-5 http://cdr.eurolisp.org/document/5/extra-num-types.html

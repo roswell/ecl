@@ -2,11 +2,12 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * atan1.d - Trascendental functions: arc tangent
+ * atan.d - Trascendental functions: arc tangent
  *
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ * Copyright (c) 2016 Daniel Kochmański
  *
  * See file 'LICENSE' for the copyright details.
  *
@@ -19,103 +20,29 @@
 
 #pragma STDC FENV_ACCESS ON
 
-static double
-ecl_atan2_double(double y, double x)
-{
-  if (signbit(x)) {
-    if (signbit(y)) {
-      return -ECL_PI_D + atan(-y / -x);
-    } else if (y == 0) {
-      return ECL_PI_D;
-    } else {
-      return ECL_PI_D - atan(y / -x);
-    }
-  } else if (x == 0) {
-    if (signbit(y)) {
-      return -ECL_PI2_D;
-    } else if (y == 0) {
-      return x / y;  /* Produces a NaN */
-    } else {
-      return ECL_PI2_D;
-    }
-  } else {
-    if (signbit(y)) {
-      return -atan(-y / x);
-    } else if (y == 0) {
-      return (double)0;
-    } else {
-      return atan(y / x);
-    }
-  }
-}
-
-#ifdef ECL_LONG_FLOAT
-static long double
-ecl_atan2_long_double(long double y, long double x)
-{
-  if (signbit(x)) {
-    if (signbit(y)) {
-      return -ECL_PI_L + atanl(-y / -x);
-    } else if (y == 0) {
-      return ECL_PI_L;
-    } else {
-      return ECL_PI_L - atanl(y / -x);
-    }
-  } else if (x == 0) {
-    if (signbit(y)) {
-      return -ECL_PI2_L;
-    } else if (y == 0) {
-      return x / y;  /* Produces a NaN */
-    } else {
-      return ECL_PI2_L;
-    }
-  } else {
-    if (signbit(y)) {
-      return -atanl(-y / x);
-    } else if (y == 0) {
-      return (long double)0;
-    } else {
-      return atanl(y / x);
-    }
-  }
-}
-#endif
-
 cl_object
 ecl_atan2(cl_object y, cl_object x)
 {
   cl_object output;
   ECL_MATHERR_CLEAR;
   {
-#ifdef ECL_LONG_FLOAT
     int tx = ecl_t_of(x);
     int ty = ecl_t_of(y);
     if (tx < ty)
       tx = ty;
     if (tx == t_longfloat) {
-      long double d = ecl_atan2_long_double(ecl_to_long_double(y),
-                                            ecl_to_long_double(x));
+      long double d = atan2l(ecl_to_long_double(y), ecl_to_long_double(x));
       output = ecl_make_long_float(d);
     } else {
       double dx = ecl_to_double(x);
       double dy = ecl_to_double(y);
-      double dz = ecl_atan2_double(dy, dx);
+      double dz = atan2(dy, dx);
       if (tx == t_doublefloat) {
         output = ecl_make_double_float(dz);
       } else {
         output = ecl_make_single_float(dz);
       }
     }
-#else
-    double dy = ecl_to_double(y);
-    double dx = ecl_to_double(x);
-    double dz = ecl_atan2_double(dy, dx);
-    if (ECL_DOUBLE_FLOAT_P(x) || ECL_DOUBLE_FLOAT_P(y)) {
-      output = ecl_make_double_float(dz);
-    } else {
-      output = ecl_make_single_float(dz);
-    }
-#endif
   }
   ECL_MATHERR_TEST;
   return output;
@@ -149,8 +76,8 @@ ecl_atan1(cl_object y)
 
 @(defun atan (x &optional (y OBJNULL))
   @
-  /* INV: type check in ecl_atan() & ecl_atan2() */
-  /* FIXME ecl_atan() and ecl_atan2() produce generic errors
+  /* INV: type check in ecl_atan1() & ecl_atan2() */
+  /* FIXME ecl_atan1() and ecl_atan2() produce generic errors
      without recovery and function information. */
   if (y == OBJNULL) {
     @(return ecl_atan1(x));

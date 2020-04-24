@@ -12,7 +12,7 @@ a single-threaded application.  <FONT COLOR=green>The green
 text contains information about other platforms or scenarios.
 It can be skipped, especially on first reading</font>.
 <H2>Building the collector</h2>
-If you haven't already so, unpack the collector and enter
+If you have not so yet, unpack the collector and enter
 the newly created directory with
 <PRE>
 tar xvfz gc&lt;version&gt;.tar.gz
@@ -55,7 +55,7 @@ strong preference of the would-be maintainer of those project files.)
 If you need thread support, configure the collector with
 </font>
 <PRE style="color:green">
---enable-threads=posix --enable-thread-local-alloc --enable-parallel-mark
+--enable-threads=posix --enable-parallel-mark
 </pre>
 <FONT COLOR=green>
 instead of
@@ -142,22 +142,6 @@ Files that either allocate through the GC <I>or make thread-related calls</i>
 should first define the macro <TT>GC_THREADS</tt>, and then
 include <TT>"gc.h"</tt>.  On some platforms this will redefine some
 threads primitives, e.g. to let the collector keep track of thread creation.
-</font>
-<LI>
-<FONT COLOR=green>
-To take advantage of fast thread-local allocation in versions before 7.0,
-use the following instead
-of including <TT>gc.h</tt>:
-</font>
-<PRE style="color:green">
-#define GC_REDIRECT_TO_LOCAL
-#include "gc_local_alloc.h"
-</pre>
-<FONT COLOR=green>
-This will cause GC_MALLOC and GC_MALLOC_ATOMIC to keep per-thread allocation
-caches, and greatly reduce the number of lock acquisitions during allocation.
-For versions after 7.0, this happens implicitly if the collector is built
-with thread-local allocation enabled.
 </font>
 </ul>
 

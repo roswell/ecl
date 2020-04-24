@@ -56,7 +56,7 @@
 ;;; * Trick to make names shorter in C files
 ;;;
 (si::package-lock "CL" nil)
-(rename-package "CL" "CL" '("COMMON-LISP" "LISP"))
+(rename-package "CL" "CL" '("COMMON-LISP"))
 
 ;;;
 ;;; * Add include path to not yet installed headers, and remove include flag
@@ -125,7 +125,9 @@
                                                 :h-file t
                                                 ;;:shared-data-file "build:ecl.sdat"
                                                 )))))
-  (c::build-static-library "lsp" :lisp-files lsp-objects
+  (c::build-static-library "lsp"
+                           :lisp-files lsp-objects
+                           :init-name "init_lib_LSP"
                            ;;:shared-data-file "build:ecl.sdat"
                            ))
 
@@ -321,9 +323,7 @@
 ;;;
 (build-module "package-locks"
               '("ext:package-locks;package-locks.lisp")
-              :dir "build:ext;"
-              :prefix "EXT"
-              :builtin nil)
+              :dir "build:ext;" :prefix "EXT" :builtin nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -340,10 +340,8 @@
                   :if-does-not-exist :create)
   (write-line "id ICON \"ecl.ico\"" s))
  (ext:copy-file #p"src:util;ecl.ico" "ecl.ico")
- #+msvc
- (ext:run-program "rc" '("/r" "ecl.rc"))
- #-msvc
- (ext:run-program "windres" '("ecl.rc" "-O" "coff" "ecl.res")))
+ #+msvc (ext:system "rc /nologo /r ecl.rc")
+ #-msvc (ext:system "windres ecl.rc -O coff ecl.res"))
 
 (si::pathname-translations "SYS" '(("**;*.*.*" "@true_builddir@/**/*.*")))
 

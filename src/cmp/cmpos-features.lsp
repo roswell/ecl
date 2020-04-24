@@ -16,24 +16,18 @@
 (in-package "COMPILER")
 
 (defun run-and-collect (command args &optional file)
-  (flet ((collect-lines (stream)
-           (loop for line = (read-line stream nil nil)
-              while line
-              collect line)))
-    (handler-case
-        (multiple-value-bind (stream process)
-            (ext:run-program command args :input nil :output :stream :error :output)
-          (let ((lines (collect-lines stream)))
-            (cond ((null file)
-                   lines)
-                  ((probe-file file)
-                   (with-open-file (s file :direction :input)
-                     (collect-lines s)))
-                  (t
-                   (warn "Unable to find file ~A" file)))))
-      (error (c)
-        (format t "~&;;; Unable to execute program ~S~&;;; Condition~&;;; ~A"
-                command c)))))
+  (handler-case
+      (let ((lines (collect-lines (si:run-program-inner command args :default t))))
+        (cond ((null file)
+               lines)
+              ((probe-file file)
+               (with-open-file (s file :direction :input)
+                 (collect-lines s)))
+              (t
+               (warn "Unable to find file ~A" file))))
+    (error (c)
+      (format t "~&;;; Unable to execute program ~S~&;;; Condition~&;;; ~A"
+              command c))))
 
 (defun split-words (string)
   (loop with output = '()

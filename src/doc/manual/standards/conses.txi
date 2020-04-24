@@ -1,0 +1,146 @@
+@node Conses
+@section Conses
+
+@subsection C Reference
+
+@subsubsection Accessors
+@cppdef ECL_CONS_CAR
+@cppdef ECL_CONS_CDR
+@cppdef ECL_RPLACA
+@cppdef ECL_RPLACD
+@cppdef _ecl_car
+@cppdef _ecl_cdr
+@cppdef _ecl_caar
+@cppdef _ecl_cadr
+Accessing the elements of conses
+
+@subsubheading Functions
+@deftypefun cl_object ECL_CONS_CAR (cl_object o)
+@deftypefunx cl_object ECL_CONS_CDR (cl_object o)
+@deftypefunx cl_object ECL_RPLACA (cl_object o, cl_object v)
+@deftypefunx cl_object ECL_RPLACD (cl_object o, cl_object v)
+@deftypefunx cl_object _ecl_car (cl_object o)
+@deftypefunx cl_object _ecl_cdr (cl_object o)
+@deftypefunx cl_object _ecl_caar (cl_object o)
+@deftypefunx cl_object _ecl_cadr (cl_object o)
+...
+
+@paragraph Description
+These functions access the elements of objects of type cons
+(@coderef{ECL_CONS_CAR}, @coderef{ECL_CONS_CDR}, @coderef{ECL_RPLACA}
+and @coderef{ECL_RPLACD}) or type list (@coderef{_ecl_car},
+@coderef{_ecl_cdr}, @coderef{_ecl_caar}, ...). They don't check the type
+of their arguments.
+@end deftypefun
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .30 .70
+@headitem Lisp symbol @tab C function
+@item @clhs{f_cons.htm,cons} @tab cl_object cl_cons(cl_object car, cl_object cdr)
+@item @clhs{f_consp.htm,consp} @tab cl_object cl_consp(cl_object object)
+@item @clhs{f_atom.htm,atom} @tab cl_object cl_atom(cl_object object)
+@item @clhs{f_rplaca.htm,rplaca} @tab cl_object cl_rplaca(cl_object cons, cl_object car)
+@item @clhs{f_rplaca.htm,rplacd} @tab cl_object cl_rplacd(cl_object cons, cl_object cdr)
+@item @clhs{f_car_c.htm,car} @tab cl_object cl_car(cl_object cons)
+@item @clhs{f_car_c.htm,cdr} @tab cl_object cl_cdr(cl_object cons)
+@item @clhs{f_car_c.htm,caar} @tab cl_object cl_caar(cl_object cons)
+@item @clhs{f_car_c.htm,cdar} @tab cl_object cl_cdar(cl_object cons)
+@item @clhs{f_car_c.htm,cadr} @tab cl_object cl_cadr(cl_object cons)
+@item @clhs{f_car_c.htm,cddr} @tab cl_object cl_cddr(cl_object cons)
+@item @clhs{f_car_c.htm,caaar} @tab cl_object cl_caaar(cl_object cons)
+@item @clhs{f_car_c.htm,cdaar} @tab cl_object cl_cdaar(cl_object cons)
+@item @clhs{f_car_c.htm,cadar} @tab cl_object cl_cadar(cl_object cons)
+@item @clhs{f_car_c.htm,cddar} @tab cl_object cl_cddar(cl_object cons)
+@item @clhs{f_car_c.htm,caadr} @tab cl_object cl_caadr(cl_object cons)
+@item @clhs{f_car_c.htm,cdadr} @tab cl_object cl_cdadr(cl_object cons)
+@item @clhs{f_car_c.htm,caddr} @tab cl_object cl_caddr(cl_object cons)
+@item @clhs{f_car_c.htm,cdddr} @tab cl_object cl_cdddr(cl_object cons)
+@item @clhs{f_car_c.htm,caaaar} @tab cl_object cl_caaaar(cl_object cons)
+@item @clhs{f_car_c.htm,cdaaar} @tab cl_object cl_cdaaar(cl_object cons)
+@item @clhs{f_car_c.htm,cadaar} @tab cl_object cl_cadaar(cl_object cons)
+@item @clhs{f_car_c.htm,cddaar} @tab cl_object cl_cddaar(cl_object cons)
+@item @clhs{f_car_c.htm,caadar} @tab cl_object cl_caadar(cl_object cons)
+@item @clhs{f_car_c.htm,cdadar} @tab cl_object cl_cdadar(cl_object cons)
+@item @clhs{f_car_c.htm,caddar} @tab cl_object cl_caddar(cl_object cons)
+@item @clhs{f_car_c.htm,cdddar} @tab cl_object cl_cdddar(cl_object cons)
+@item @clhs{f_car_c.htm,caaadr} @tab cl_object cl_caaadr(cl_object cons)
+@item @clhs{f_car_c.htm,cdaadr} @tab cl_object cl_cdaadr(cl_object cons)
+@item @clhs{f_car_c.htm,cadadr} @tab cl_object cl_cadadr(cl_object cons)
+@item @clhs{f_car_c.htm,cddadr} @tab cl_object cl_cddadr(cl_object cons)
+@item @clhs{f_car_c.htm,caaddr} @tab cl_object cl_caaddr(cl_object cons)
+@item @clhs{f_car_c.htm,cdaddr} @tab cl_object cl_cdaddr(cl_object cons)
+@item @clhs{f_car_c.htm,cadddr} @tab cl_object cl_cadddr(cl_object cons)
+@item @clhs{f_car_c.htm,cddddr} @tab cl_object cl_cddddr(cl_object cons)
+@item @clhs{f_cp_tre.htm,copy-tree} @tab cl_object cl_copy_tree(cl_object tree)
+@item @clhs{f_sublis.htm,sublis} @tab cl_object cl_sublis(cl_narg narg, cl_object alist, cl_object tree, ...)
+@item @clhs{f_nsublis.htm,nsublis} @tab cl_object cl_sublis(cl_narg narg, cl_object alist, cl_object tree, ...)
+@item @clhs{f_substc.htm,subst} @tab cl_object cl_subst(cl_narg narg, cl_object new, cl_object old, cl_object tree, ...)
+@item @clhs{f_substc.htm,subst-if} @tab cl_object cl_subst_if(cl_narg narg, cl_object new, cl_object predicate, cl_object tree, ...)
+@item @clhs{f_substc.htm,subst-if-not} @tab cl_object cl_subst_if_not(cl_narg narg, cl_object new, cl_object predicate, cl_object tree, ...)
+@item @clhs{f_substc.htm,nsubst} @tab cl_object cl_nsubst(cl_narg narg, cl_object new, cl_object old, cl_object tree, ...)
+@item @clhs{f_substc.htm,nsubst-if} @tab cl_object cl_nsubst_if(cl_narg narg, cl_object new, cl_object predicate, cl_object tree, ...)
+@item @clhs{f_substc.htm,nsubst-if-not} @tab cl_object cl_nsubst_if_not(cl_narg narg, cl_object new, cl_object predicate, cl_object tree, ...)
+@item @clhs{f_tree_e.htm,tree-equal} @tab cl_object cl_tree_equal(cl_narg narg, cl_object tree1, cl_object tree2, ...)
+@item @clhs{f_cp_lis.htm,copy-list} @tab cl_object cl_copy_list(cl_object list)
+@item @clhs{f_list_.htm,list} @tab cl_object cl_list(cl_narg narg, ...)
+@item @clhs{f_list_.htm,list*} @tab cl_object cl_listX(cl_narg narg, ...)
+@item @clhs{f_list_l.htm,list-length} @tab cl_object cl_list_length(cl_object list)
+@item @clhs{f_listp.htm,listp} @tab cl_object cl_listp(cl_object object)
+@item @clhs{f_mk_lis.htm,make-list} @tab cl_object cl_make_list(cl_narg narg, cl_object size, ...)
+@item @clhs{f_firstc.htm,first} @tab cl_object cl_first(cl_object list)
+@item @clhs{f_firstc.htm,second} @tab cl_object cl_second(cl_object list)
+@item @clhs{f_firstc.htm,third} @tab cl_object cl_third(cl_object list)
+@item @clhs{f_firstc.htm,fourth} @tab cl_object cl_fourth(cl_object list)
+@item @clhs{f_firstc.htm,fifth} @tab cl_object cl_fifth(cl_object list)
+@item @clhs{f_firstc.htm,sixth} @tab cl_object cl_sixth(cl_object list)
+@item @clhs{f_firstc.htm,seventh} @tab cl_object cl_seventh(cl_object list)
+@item @clhs{f_firstc.htm,eighth} @tab cl_object cl_eighth(cl_object list)
+@item @clhs{f_firstc.htm,ninth} @tab cl_object cl_ninth(cl_object list)
+@item @clhs{f_firstc.htm,tenth} @tab cl_object cl_tenth(cl_object list)
+@item @clhs{f_nth.htm,nth} @tab cl_object cl_nth(cl_object n, cl_object list)
+@item @clhs{f_endp.htm,endp} @tab cl_object cl_endp(cl_object list)
+@item @clhs{f_null.htm,null} @tab cl_object cl_null(cl_object object)
+@item @clhs{f_nconc.htm,nconc} @tab cl_object cl_nconc(cl_narg narg, ...)
+@item @clhs{f_append.htm,append} @tab cl_object cl_append(cl_narg narg, ...)
+@item @clhs{f_revapp.htm,revappend} @tab cl_object cl_revappend(cl_object list, cl_object tail)
+@item @clhs{f_revapp.htm,nreconc} @tab cl_object cl_nreconc(cl_object list, cl_object tail)
+@item @clhs{f_butlas.htm,butlast} @tab cl_object cl_butlast(cl_narg narg, cl_object list, ...)
+@item @clhs{f_butlas.htm,nbutlast} @tab cl_object cl_nbutlast(cl_narg narg, cl_object list, ...)
+@item @clhs{f_last.htm,last} @tab cl_object cl_last(cl_narg narg, cl_object list, ...)
+@item @clhs{f_ldiffc.htm,ldiff} @tab cl_object cl_ldiff(cl_object list, cl_object object)
+@item @clhs{f_ldiffc.htm,tailp} @tab cl_object cl_tailp(cl_object object, cl_object list)
+@item @clhs{f_nthcdr.htm,nthcdr} @tab cl_object cl_nthcdr(cl_object n, cl_object list)
+@item @clhs{f_rest.htm,rest} @tab cl_object cl_rest(cl_object list)
+@item @clhs{f_mem_m.htm,member} @tab cl_object cl_member(cl_narg narg, cl_object member, cl_object list, ....)
+@item @clhs{f_mem_m.htm,member-if} @tab cl_object cl_member_if(cl_narg narg, cl_object predicate, cl_object list, ....)
+@item @clhs{f_mem_m.htm,member-if-not} @tab cl_object cl_member_if_not(cl_narg narg, cl_object predicate, cl_object list, ....)
+@item @clhs{f_mapc_.htm,mapc} @tab cl_object cl_mapc(cl_narg narg, cl_object function, ...)
+@item @clhs{f_mapc_.htm,mapcar} @tab cl_object cl_mapcar(cl_narg narg, cl_object function, ...)
+@item @clhs{f_mapc_.htm,mapcan} @tab cl_object cl_mapcan(cl_narg narg, cl_object function, ...)
+@item @clhs{f_mapc_.htm,mapl} @tab cl_object cl_mapl(cl_narg narg, cl_object function, ...)
+@item @clhs{f_mapc_.htm,maplist} @tab cl_object cl_maplist(cl_narg narg, cl_object function, ...)
+@item @clhs{f_mapc_.htm,mapcon} @tab cl_object cl_mapcon(cl_narg narg, cl_object function, ...)
+@item @clhs{f_acons.htm,acons} @tab cl_object cl_acons(cl_object key, cl_object datum, cl_object alist)
+@item @clhs{f_assocc.htm,assoc} @tab cl_object cl_assoc(cl_narg narg, cl_object item, cl_object alist, ...)
+@item @clhs{f_assocc.htm,assoc-if} @tab cl_object cl_assoc_if(cl_narg narg, cl_object predicate, cl_object alist, ...)
+@item @clhs{f_assocc.htm,assoc-if-not} @tab cl_object cl_assoc_if_not(cl_narg narg, cl_object predicate, cl_object alist, ...)
+@item @clhs{f_cp_ali.htm,copy-alist} @tab cl_object cl_copy_alist(cl_object alist)
+@item @clhs{f_pairli.htm,pairlis} @tab cl_object cl_pairlis(cl_narg narg, cl_object keys, cl_object data, ...)
+@item @clhs{f_rassoc.htm,rassoc} @tab cl_object cl_rassoc(cl_narg narg, cl_object item, cl_object alist, ...)
+@item @clhs{f_rassoc.htm,rassoc-if} @tab cl_object cl_rassoc_if(cl_narg narg, cl_object predicate, cl_object alist, ...)
+@item @clhs{f_rassoc.htm,rassoc-if-not} @tab cl_object cl_rassoc_if_not(cl_narg narg, cl_object predicate, cl_object alist, ...)
+@item @clhs{f_get_pr.htm,get-properties} @tab cl_object cl_get_properties(cl_object plist, cl_object indicator_list)
+@item @clhs{f_getf.htm,getf} @tab cl_object cl_getf(cl_narg narg, cl_object plist, cl_object indicator, ...)
+@item @clhs{f_isec_.htm,intersection} @tab cl_object cl_intersection(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_isec_.htm,nintersection} @tab cl_object cl_nintersection(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_adjoin.htm,adjoin} @tab cl_object cl_adjoin(cl_narg narg, cl_object item, cl_object list, ...)
+@item @clhs{f_set_di.htm,set-difference} @tab cl_object cl_set_difference(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_set_di.htm,nset-difference} @tab cl_object cl_nset_difference(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_set_ex.htm,set-exclusive-or} @tab cl_object cl_set_exclusive_or(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_sex_ex.htm,nset-exclusive-or} @tab cl_object cl_nset_exclusive_or(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_subset.htm,subsetp} @tab cl_object cl_subsetp(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_unionc.htm,union} @tab cl_object cl_union(cl_narg narg, cl_object list1, cl_object list2, ...)
+@item @clhs{f_unionc.htm,nunion} @tab cl_object cl_nunion(cl_narg narg, cl_object list1, cl_object list2, ...)
+@end multitable

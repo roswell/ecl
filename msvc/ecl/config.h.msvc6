@@ -62,9 +62,6 @@
 # undef ECL_THREADS
 #endif
 
-/* __thread thread-local variables?                                     */
-/* #undef WITH___THREAD */
-
 /* Use Windows's interlocked operations to define compare-and-swap      */
 #define AO_ASSUME_WINDOWS98
 
@@ -102,14 +99,6 @@
 /* We have libffi and can use it                                        */
 /*#undef HAVE_LIBFFI*/
 
-/* We have non-portable implementation of FFI calls			*/
-#ifndef _M_X64
-# define ECL_DYNAMIC_FFI 1
-#endif
-
-/* We use hierarchical package names, like in Allegro CL                */
-#define ECL_RELATIVE_PACKAGE_NAMES 1
-
 /* Use mprotect for fast interrupt dispatch				*/
 /* #undef ECL_USE_MPROTECT */
 #if defined(_MSC_VER) || defined(mingw32)
@@ -140,7 +129,7 @@
  * use autoconf to guess the following values.
  */
 #ifdef _M_X64
-#define ECL_INT_BITS		64
+#define ECL_INT_BITS		32
 #define ECL_LONG_BITS		32
 #define ECL_FIXNUM_BITS		64
 #define MOST_POSITIVE_FIXNUM	((cl_fixnum)2305843009213693951LL)
@@ -159,11 +148,13 @@ typedef unsigned int cl_index;
 typedef unsigned int cl_hashkey;
 #endif
 
+#define ECL_BIGNUM_REGISTER_NUMBER 3
+
 /*
  * The character type
  */
 #ifdef ECL_UNICODE
-#define	ECL_CHAR_CODE_LIMIT	1114112	/*  unicode character code limit  */
+#define	ECL_CHAR_CODE_LIMIT	1114112 /*	unicode character code limit  */
 #else
 #define	ECL_CHAR_CODE_LIMIT	256	/*  unicode character code limit  */
 #endif
@@ -175,7 +166,7 @@ typedef unsigned char ecl_base_char;
  */
 #define	ECL_ARRAY_RANK_LIMIT 64
 #ifdef GBC_BOEHM
-#define	ECL_ARRAY_DIMENSION_LIMIT 536870911
+#define	ECL_ARRAY_DIMENSION_LIMIT MOST_POSITIVE_FIXNUM
 #else
 #define ECL_ARRAY_DIMENSION_LIMIT 16*1024*1024
 #endif
@@ -194,7 +185,7 @@ typedef unsigned char ecl_base_char;
 
 /*	Numb. of args. which can be passed using the C stack		*/
 /*	See cmplam.lsp if you change this value				*/
-#define ECL_C_ARGUMENTS_LIMIT 64
+#define ECL_C_ARGUMENTS_LIMIT 63
 
 /*	Maximum number of output arguments				*/
 #define ECL_MULTIPLE_VALUES_LIMIT 64
@@ -212,16 +203,24 @@ typedef unsigned char ecl_base_char;
 #define ECL_SLOTS_LIMIT	32768
 
 /* compiler understands long double                                     */
-/* #undef ECL_LONG_FLOAT */
+#define ECL_LONG_FLOAT
 /* compiler understands complex                                         */
-/* #undef HAVE_DOUBLE_COMPLEX */
-/* #undef HAVE_FLOAT_COMPLEX */
+/* #undef ECL_COMPLEX_FLOAT */
+
+/* do we want NaNs and Infs						*/
+#define ECL_IEEE_FP 1
+/* can manipulate floating point environment				*/
+/* #undef HAVE_FENV_H */
+/* can activate individual traps in floating point environment		*/
+/* #undef HAVE_FEENABLEEXCEPT */
+/* do we want to deactivate all support for floating point exceptions   */
+/* #undef ECL_AVOID_FPE_H */
 
 /* Missing integer types */
-#if _MSC_VER < 1900
-typedef char int8_t;
-typedef short int16_t;
-typedef int int32_t;
+#if _MSC_VER < 1600
+typedef signed char int8_t;
+typedef signed short int16_t;
+typedef signed int int32_t;
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;

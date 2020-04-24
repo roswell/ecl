@@ -1,2 +1,0 @@
-@node Embedding ECL
-@section Embedding ECL

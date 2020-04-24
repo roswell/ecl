@@ -123,7 +123,7 @@
       (when (eq let/let* 'LET)
         (mapc #'push-vars vars))
       (check-vdecl (mapcar #'var-name vars) types ignoreds)
-      (c1declare-specials specials)
+      (mapc #'cmp-env-declare-special specials)
       (values vars forms (c1decl-body other-decls body)))))
 
 (defun c1let-optimize-read-only-vars (all-vars all-forms body)

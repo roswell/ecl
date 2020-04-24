@@ -1,0 +1,146 @@
+@node Environment
+@section Environment
+
+@menu
+* Environment - Dictionary::
+* Environment - C Reference::
+@end menu
+
+@node Environment - Dictionary
+@subsection Dictionary
+@lspindex disassemble
+@lspindex trace
+
+@defun disassemble function-designator*
+Display the assembly code of a function 
+@paragraph Synopsis
+@table @var
+@item function-designator
+A symbol which is bound to a function in the global environment, or a lambda form
+@end table
+@paragraph Description
+As specified in ANSI @bibcite{ANSI} this function outputs the internal representation of a compiled function, or of a lambda form, as it would look after being compiled.
+
+ECL only has a particular difference: it has two different compilers, one based on bytecodes and one based on the C language. The output will thus depend on the arguments and on which compiler is active at the moment in which this function is run.
+
+@itemize
+@item If the argument is a bytecompiled function or a lambda form, it will be processed by the active compiler and the appropriate output (bytecodes or C) will be shown.
+@item If the argument is a C-compiled form, disassembling the function by showing its C source code is not possible, since that would require saving not only the lambda form of the function, but also the precise configuration of the compiler when the function was compiled. Hence no output will be shown.
+@end itemize
+@end defun
+
+@defmac trace function-name*
+Follow the execution of functions
+@paragraph Synopsis
+(trace @var{function-name*})
+@table @var
+@item function-name
+@{@var{symbol} | (@var{symbol} [@var{option} @var{form}]*)@}
+@item symbol
+A symbol which is bound to a function in the global environment. Not evaluated.
+@item option
+One of @code{:break}, @code{:break-after}, @code{:cond-before}, @code{:cond-after}, @code{:cond}, @code{:print}, @code{:print-after}, @code{:step}
+@item form
+A lisp form evaluated in an special environment.
+@item returns
+List of symbols with traced functions.
+@end table
+
+@paragraph Description
+Causes one or more functions to be traced. Each @var{function-name} can be a symbol which is bound to a function, or a list containing that symbol plus additional options. If the function bound to that symbol is called, information about the arguments and output of this function will be printed. Trace options will modify the amount of information and when it is printed.
+
+Not that if the function is called from another function compiled in the same file, tracing might not be enabled. If this is the case, to enable tracing, recompile the caller with a @code{notinline} declaration for the called function.
+
+trace returns a name list of those functions that were traced by the call to trace. If no @var{function-name} is given, @code{trace} simply returns a name list of all the currently traced functions.
+
+Trace options cause the normal printout to be suppressed, or cause extra information to be printed. Each option is a pair of an option keyword and a value form. If an already traced function is traced again, any new options replace the old options and a warning might be printed. The lisp @var{form} accompanying the option is evaluated in an environment where @var{sys::args} contains the list of arguments to the function.
+
+The following options are defined:
+@table @asis
+@item @code{:cond}, @code{:cond-before}, @code{:cond-after}
+If @code{:cond-before} is specified, then @code{trace} does nothing unless @var{form} evaluates to true at the time of the call. @code{:cond-after} is similar, but suppresses the initial printout, and is tested when the function returns. @code{:cond} tries both before and after.
+@item @code{:step}
+If @var{form} evaluates to true, the stepper is entered.
+@item @code{:break}, @code{:break-after}
+If specified, and @var{form} evaluates to true, then the debugger is invoked at the start of the function or at the end of the function according to the respective option.
+@item @code{:print}, @code{:print-after}
+In addition to the usual printout, the result of evaluating @var{form} is printed at the start of the function or at the end of the function, depending on the option. Multiple print options cause multiple values to be output, in the order in which they were introduced.
+@end table
+@end defmac
+
+See also the following example:
+
+@exindex @code{trace} usage
+@example
+> (defun abc (x)
+    (if (>= x 10)
+        x
+        (abc (+ x (abc (1+ x))))))
+> (trace abc)
+
+> (abc 9)
+1> (ABC 9)
+| 2> (ABC 10)
+| <2 (ABC 10)
+| 2> (ABC 19)
+| <2 (ABC 19)
+<1 (ABC 19)
+19
+> (untrace abc)
+
+(ABC)
+;; Break if the first argument of the function is greater than 10
+> (trace (abc :break (>= (first si::args) 10)))
+
+((ABC :BREAK (>= (FIRST SI::ARGS) 10)))
+> (abc 9)
+1> (ABC 9)
+| 2> (ABC 10)
+
+Condition of type: SIMPLE-CONDITION
+tracing ABC
+Available restarts:
+
+1. (CONTINUE) Return from BREAK.
+2. (RESTART-TOPLEVEL) Go back to Top-Level REPL.
+
+Broken at ABC. In: #<process TOP-LEVEL 0x1842f80>.
+>> 
+@end example
+
+@node Environment - C Reference
+@subsection C Reference
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_dec_un.htm,decode-universal-time} @tab cl_object cl_decode_universal_time(cl_narg narg, cl_object universal_time, ...)
+@item @clhs{f_encode.htm,encode-universal-time} @tab cl_object cl_encode_universal_time(cl_narg narg, cl_object second, cl_object minute, cl_object hour, cl_object date, cl_object month, cl_object year, ...)
+@item @clhs{f_get_un.htm,get-universal-time} @tab cl_object cl_get_universal_time(void)
+@item @clhs{f_get_un.htm,get-decoded-time} @tab cl_object cl_get_decoded_time(void)
+@item @clhs{f_sleep.htm,sleep} @tab cl_object cl_sleep(cl_object seconds)
+@item @clhs{f_apropo.htm,apropos} @tab cl_object cl_apropos(cl_narg narg, cl_object string, ...)
+@item @clhs{f_apropo.htm,apropos-list} @tab cl_object cl_apropos_list(cl_narg narg, cl_object string, ...)
+@item @clhs{f_descri.htm,describe} @tab cl_object cl_describe(cl_narg narg, cl_object object, ...)
+@item @clhs{f_desc_1.htm,describe-object} @tab [Only in Common Lisp]
+@item @clhs{f_get_in.htm,get-internal-real-time} @tab cl_object cl_get_internal_real_time(void)
+@item @clhs{f_get__1.htm,get-internal-run-time} @tab cl_object cl_get_internal_run_time(void)
+@item @clhs{f_disass.htm,disassemble} @tab [Only in Common Lisp]
+@item @clhs{f_docume.htm,documentation} @tab [Only in Common Lisp]
+@item @clhs{f_room.htm,room} @tab [Only in Common Lisp]
+@item @clhs{f_ed.htm,ed} @tab [Only in Common Lisp]
+@item @clhs{f_inspec.htm,inspect} @tab cl_object cl_inspect(cl_object object)
+@item @clhs{f_dribbl.htm,dribble} @tab cl_object cl_dribble(cl_narg narg, ...)
+@item @clhs{f_lisp_i.htm,lisp-implementation-type} @tab cl_object cl_lisp_implementation_type(void)
+@item @clhs{f_lisp_i.htm,lisp-implementation-version} @tab cl_object cl_lisp_implementation_version(void)
+@item @clhs{f_short_.htm,short-site-name} @tab cl_object cl_short_site_name()
+@item @clhs{f_short_.htm,long-site-name} @tab cl_object cl_long_site_name()
+@item @clhs{f_mach_i.htm,machine-instance} @tab cl_object cl_machine_instance()
+@item @clhs{f_mach_t.htm,machine-type} @tab cl_object cl_machine_type()
+@item @clhs{f_mach_v.htm,machine-version} @tab cl_object cl_machine_version()
+@item @clhs{f_sw_tpc.htm,software-type} @tab cl_object cl_software_type()
+@item @clhs{f_sw_tpc.htm,software-version} @tab cl_object cl_software_version()
+@item @clhs{f_user_h.htm,user-homedir-pathname} @tab cl_object cl_user_homedir_pathname(cl_narg narg, ...)
+@end multitable

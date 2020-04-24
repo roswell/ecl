@@ -105,14 +105,15 @@ ecl_alloc_adjustable_extended_string(cl_index l)
 #endif
 
 /*
-  Make_simple_base_string(s) makes a simple-base string from C string s.
+  ecl_make_simple_base_string(s) creates a simple-base string from C string s.
+  ecl_make_constant_base_string(s) does the same, but without copying the C string.
 */
 cl_object
-ecl_make_simple_base_string(char *s, cl_fixnum l)
+ecl_make_constant_base_string(const char *s, cl_fixnum l)
 {
   cl_object x = ecl_alloc_object(t_base_string);
   x->base_string.elttype = ecl_aet_bc;
-  x->base_string.flags = 0; /* no fill pointer, no adjustable */
+  x->base_string.flags = 0; /* no fill pointer, not adjustable */
   x->base_string.displaced = ECL_NIL;
   if (l < 0) l = strlen(s);
   x->base_string.dim = (x->base_string.fillp = l);
@@ -121,10 +122,10 @@ ecl_make_simple_base_string(char *s, cl_fixnum l)
 }
 
 cl_object
-make_base_string_copy(const char *s)
+ecl_make_simple_base_string(const char *s, cl_fixnum l)
 {
   cl_object x;
-  cl_index l = strlen(s);
+  if (l < 0) l = strlen(s);
 
   x = ecl_alloc_simple_base_string(l);
   memcpy(x->base_string.self, s, l);
@@ -137,7 +138,7 @@ ecl_cstring_to_base_string_or_nil(const char *s)
   if (s == NULL)
     return ECL_NIL;
   else
-    return make_base_string_copy(s);
+    return ecl_make_simple_base_string(s,-1);
 }
 
 bool
@@ -241,7 +242,7 @@ cl_string(cl_object x)
       break;
     }
   default:
-    FEwrong_type_nth_arg(@[string],1,x,@[string]);
+    FEwrong_type_only_arg(@[string],x,@[string]);
   }
   @(return x);
 }
@@ -603,52 +604,52 @@ string_compare(cl_narg narg, int sign1, int sign2, int case_sensitive, ecl_va_li
 
 @(defun string< (&rest args)
   @
-  return string_compare(narg, -1, -1, 1, args);
+  @(return string_compare(narg, -1, -1, 1, args));
   @)
 
 @(defun string> (&rest args)
   @
-  return string_compare(narg, +1, +1, 1, args);
+  @(return string_compare(narg, +1, +1, 1, args));
   @)
 
 @(defun string<= (&rest args)
   @
-  return string_compare(narg, -1, 0, 1, args);
+  @(return string_compare(narg, -1, 0, 1, args));
   @)
 
 @(defun string>= (&rest args)
   @
-  return string_compare(narg, 0, +1, 1, args);
+  @(return string_compare(narg, 0, +1, 1, args));
   @)
 
 @(defun string/= (&rest args)
   @
-  return string_compare(narg, -1, +1, 1, args);
+  @(return string_compare(narg, -1, +1, 1, args));
   @)
 
 @(defun string-lessp (&rest args)
   @
-  return string_compare(narg, -1, -1, 0, args);
+  @(return string_compare(narg, -1, -1, 0, args));
   @)
 
 @(defun string-greaterp (&rest args)
   @
-  return string_compare(narg, +1, +1, 0, args);
+  @(return string_compare(narg, +1, +1, 0, args));
   @)
 
 @(defun string-not-greaterp (&rest args)
   @
-  return string_compare(narg, -1, 0, 0, args);
+  @(return string_compare(narg, -1, 0, 0, args));
   @)
 
 @(defun string-not-lessp (&rest args)
   @
-  return string_compare(narg, 0, +1, 0, args);
+  @(return string_compare(narg, 0, +1, 0, args));
   @)
 
 @(defun string-not-equal (&rest args)
   @
-  return string_compare(narg, -1, +1, 0, args);
+  @(return string_compare(narg, -1, +1, 0, args));
   @)
 
 bool
@@ -781,7 +782,7 @@ char_upcase(ecl_character c, bool *bp)
 
 @(defun string-upcase (&rest args)
   @
-  return string_case(narg, @[string-upcase], char_upcase, args);
+  @(return string_case(narg, @[string-upcase], char_upcase, args));
   @)
 
 static ecl_character
@@ -792,7 +793,7 @@ char_downcase(ecl_character c, bool *bp)
 
 @(defun string-downcase (&rest args)
   @
-  return string_case(narg, @[string-downcase], char_downcase, args);
+  @(return string_case(narg, @[string-downcase], char_downcase, args));
   @)
 
 static ecl_character
@@ -814,7 +815,7 @@ char_capitalize(ecl_character c, bool *bp)
 
 @(defun string-capitalize (&rest args)
   @
-  return string_case(narg, @[string-capitalize], char_capitalize, args);
+  @(return string_case(narg, @[string-capitalize], char_capitalize, args));
   @)
 
 
@@ -858,17 +859,17 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
 
 @(defun nstring-upcase (&rest args)
   @
-  return nstring_case(narg, @'nstring-upcase', char_upcase, args);
+  @(return nstring_case(narg, @'nstring-upcase', char_upcase, args));
   @)
 
 @(defun nstring-downcase (&rest args)
   @
-  return nstring_case(narg, @'nstring-downcase', char_downcase, args);
+  @(return nstring_case(narg, @'nstring-downcase', char_downcase, args));
   @)
 
 @(defun nstring-capitalize (&rest args)
   @
-  return nstring_case(narg, @'nstring-capitalize', char_capitalize, args);
+  @(return nstring_case(narg, @'nstring-capitalize', char_capitalize, args));
   @)
 
 @(defun si::base-string-concatenate (&rest args)

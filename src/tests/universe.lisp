@@ -111,12 +111,29 @@
                         long-float-negative-epsilon)
            when (boundp sym) collect (symbol-value sym))
      (list
-      0.0 1.0 -1.0 313123.13 283143.231 -314781.9
+      0.0 -0.0 1.0 -1.0 313123.13 283143.231 -314781.9
       1.31283d2 834.13812D-45
       8131238.1E14 -4618926.231e-2
       -37818.131F3 81.318231f-19
       1.31273s3 12361.12S-7
       6124.124l0 13123.1L-23)))
+
+#+ieee-floating-point
+(defparameter *ieee-fp.inf*
+  (list ext:short-float-negative-infinity
+        ext:single-float-negative-infinity
+        ext:double-float-negative-infinity
+        ext:long-float-negative-infinity
+        ext:short-float-positive-infinity
+        ext:single-float-positive-infinity
+        ext:double-float-positive-infinity
+        ext:long-float-positive-infinity))
+
+#+ieee-floating-point
+(defparameter *ieee-fp.nan*
+  (list (coerce (ext:nan) 'single-float)
+        (coerce (ext:nan) 'double-float)
+        (coerce (ext:nan) 'long-float)))
 
 (defparameter *ratios*
     '(1/3 1/1000 1/1000000000000000 -10/3 -1000/7 -987129387912381/13612986912361
@@ -146,7 +163,7 @@
       #C(1.0l0 6.0f0)
       #C(1.0l0 7.0d0)
       #C(1/2 1/3)
-      ))
+      #C(42 12)))
 
 (defparameter *numbers*
     (append *integers*

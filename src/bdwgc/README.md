@@ -1,11 +1,17 @@
 # Boehm-Demers-Weiser Garbage Collector
 
-This is version 7.5.0 (next release development) of a conservative garbage
+This is version 7.6.8 of a conservative garbage
 collector for C and C++.
 
-You might find a more recent version
-[here](http://www.hboehm.info/gc/), or
-[here](https://github.com/ivmai/bdwgc).
+
+## Download
+
+You might find a more recent/stable version on the
+[Download](https://github.com/ivmai/bdwgc/wiki/Download) page, or
+[BDWGC site](http://www.hboehm.info/gc/).
+
+Also, the latest bug fixes and new features are available in the
+[development repository](https://github.com/ivmai/bdwgc).
 
 
 ## Overview
@@ -63,7 +69,7 @@ collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
 in Xerox Cedar, or the "rope" package in the SGI STL or the g++ distribution.)
 
 Further collector documentation can be found
-[here](http://www.hboehm.info/gc/).
+in [overview.html](doc/overview.html).
 
 
 ## General Description
@@ -174,14 +180,17 @@ libatomic_ops source repository as well) could look like:
     git clone git://github.com/ivmai/bdwgc.git
     cd bdwgc
     git clone git://github.com/ivmai/libatomic_ops.git
-    autoreconf -vif
-    automake --add-missing
+    ./autogen.sh
     ./configure
-    make
+    make -j
     make check
 
+If you are getting "syntax error near unexpected token ATOMIC_OPS" during
+configure execution, this means pkg.m4 cannot be found, most probably
+you should run `pkg-config` once before running `./autogen.sh` (autoreconf).
+
 Below we focus on the collector build using classic makefile.
-For the Makefile.direct-based process, typing `make test` instead of `make`
+For the Makefile.direct-based process, typing `make check` instead of `make`
 will automatically build the collector and then run `setjmp_test` and `gctest`.
 `Setjmp_test` will give you information about configuring the collector, which is
 useful primarily if you have a machine that's not already supported.  Gctest is
@@ -453,7 +462,7 @@ equivalents.  (`GC_REGISTER_FINALIZER` is necessary, since pointers to
 objects with debugging information are really pointers to a displacement
 of 16 bytes form the object beginning, and some translation is necessary
 when finalization routines are invoked.  For details, about what's stored
-in the header, see the definition of the type oh in debug_malloc.c)
+in the header, see the definition of the type oh in dbg_mlc.c file.)
 
 
 ## Incremental/Generational Collection
@@ -534,9 +543,30 @@ per MB of accessible memory that needs to be scanned and processor.
 Your mileage may vary.)  The incremental/generational collection facility
 may help in some cases.
 
-Please address bug reports [here](mailto:bdwgc@lists.opendylan.org).
-If you are contemplating a major addition, you might also send mail to ask
-whether it's already been done (or whether we tried and discarded it).
+
+## Feedback, Contribution, Questions and Notifications
+
+Please address bug reports and new feature ideas to
+[GitHub issues](https://github.com/ivmai/bdwgc/issues).  Before the
+submission please check that it has not been done yet by someone else.
+
+If you want to contribute, submit
+a [pull request](https://github.com/ivmai/bdwgc/pulls) to GitHub.
+
+If you need help, use
+[Stack Overflow](https://stackoverflow.com/questions/tagged/boehm-gc).
+Older technical discussions are available in `bdwgc` mailing list archive - it
+can be downloaded as a
+[compressed file](https://github.com/ivmai/bdwgc/files/1038163/bdwgc-mailing-list-archive-2017_04.tar.gz)
+or browsed at [Narkive](http://bdwgc.opendylan.narkive.com).
+
+To get new release announcements, subscribe to
+[RSS feed](https://github.com/ivmai/bdwgc/releases.atom).
+(To receive the notifications by email, a 3rd-party free service like
+[IFTTT RSS Feed](https://ifttt.com/feed) can be setup.)
+To be notified on all issues, please
+[watch](https://github.com/ivmai/bdwgc/watchers) the project on
+GitHub.
 
 
 ## Copyright & Warranty
@@ -545,21 +575,31 @@ whether it's already been done (or whether we tried and discarded it).
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2011 by Hewlett-Packard Development Company.
+ * Copyright (c) 2008-2018 Ivan Maidanski
 
-The file linux_threads.c is also
+The files pthread_stop_world.c, pthread_support.c and some others are also
 
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
 
-The files Makefile.am, and configure.in are
+The file gc.h is also
 
-* Copyright (c) 2001 by Red Hat Inc. All rights reserved.
+ * Copyright (c) 2007 Free Software Foundation, Inc
+
+The files Makefile.am and configure.ac are
+
+ * Copyright (c) 2001 by Red Hat Inc. All rights reserved.
+
+The files msvc_dbg.c and msvc_dbg.h are
+
+ * Copyright (c) 2004-2005 Andrei Polushin
+
+The file initsecondarythread.c is
+
+ * Copyright (c) 2011 Ludovic Courtes
 
 Several files supporting GNU-style builds are copyrighted by the Free
 Software Foundation, and carry a different license from that given
-below.  The files included in the libatomic_ops distribution (included
-here) use either the license below, or a similar MIT-style license,
-or, for some files not actually used by the garbage-collector library, the
-GPL.
+below.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -575,8 +615,3 @@ slightly different licenses, though they are all similar in spirit.  A few
 are GPL'ed, but with an exception that should cover all uses in the
 collector. (If you are concerned about such things, I recommend you look
 at the notice in config.guess or ltmain.sh.)
-
-The atomic_ops library contains some code that is covered by the GNU General
-Public License, but is not needed by, nor linked into the collector library.
-It is included here only because the atomic_ops distribution is, for
-simplicity, included in its entirety.

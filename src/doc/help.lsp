@@ -965,6 +965,9 @@ compiled function is notated in either of the following formats:
         #<compiled-closure nil>
 where S is actually the symbol that names the function.")
 
+(docfun si::compiled-function-file function (function) "
+Returns two values: a pathname and a position of the function definition.")
+
 (docfun si::compiled-function-name function (compiled-function) "
 ECL specific.
 Returns the function name associated with COMPILED-FUNCTION.")
@@ -1256,9 +1259,17 @@ Evaluates FORM and returns all values.")
 (docfun eval-when special ((&rest situation) &body forms) "
 Specifies when to evaluate FORMs.  Each SITUATION must be one of the following
 symbols.
-        COMPILE (compile-time)
-        LOAD    (load-time of the fasl file)
-        EVAL    (load-time of the source file)")
+        :COMPILE-TOPLEVEL (compile-time)
+        :LOAD-TOPLEVEL    (load-time of the fasl file)
+        :EXECUTE          (load-time of the source file)")
+
+(docfun si::eval-with-env function
+        (form &optional env stepping compiler-env-p (execute t)) "
+Evaluates FORM in provided env. ENV is either lexical environment or compiler
+environment (depends on flag COMPILER-ENV-P).
+
+    STEPPING = T   augments all calls with OP_STEPCALL
+    EXECUTE  = NIL compiles form to bytecode without executing it.")
 
 (docfun evalhook function (form fun1 fun2 &optional (env nil)) "
 Evaluates FORM with *EVALHOOK* bound to FUN1 and *APPLYHOOK* bound to FUN2,
@@ -1950,17 +1961,36 @@ An echo stream is notated as
         #<echo stream n>
 where N is a number that identifies the stream.")
 
-(docfun make-hash-table function (&key (test 'eql) (size 1024) (rehash-size 1.5) (rehash-threshold 0.7)) "
+(docfun make-hash-table function (&key (test 'eql) (size 1024) (rehash-size 1.5) (rehash-threshold 0.7) (hash-function nil) (synchronized nil) (weakness nil)) "
 Creates and returns a hash-table.
-TEST specifies which predicate should be used to access hash-table entries.
-It must be EQ, EQL, or EQUAL.  SIZE specifies the number of entries in the
-hash-table.  REHASH-SIZE, if an integer, specifies how many entries should be
-added when the hash-table becomes 'almost full'.  REHASH-SIZE, if a float,
-specifies the ratio of the new size and the old size.  REHASH-THRESHOLD
-specifies when to expand the hash-table.  If an integer, the hash-table is
-expanded when REHASH-THRESHOLD / REHASH-SIZE entries have been used.  If a
-float, the hash-table is expanded when REHASH-THRESHOLD times the whole
-entries have been used.")
+
+TEST specifies which predicate should be used to access hash-table
+entries.  It must be EQ, EQL, EQUAL, EQUALP or a function accepting
+two arguments. If it is a function then HASH-FUNCTION must be
+supplied.
+
+HASH-FUNCTION is used alongside with a custom TEST predicate. It
+accepts one argument and must return a positive fixnum being the
+object's hash.
+
+SIZE specifies the number of entries in the hash-table.
+
+REHASH-SIZE, if an integer, specifies how many entries should be added
+when the hash-table becomes 'almost full'.  REHASH-SIZE, if a float,
+specifies the ratio of the new size and the old size.
+
+REHASH-THRESHOLD specifies when to expand the hash-table.  If an
+integer, the hash-table is expanded when REHASH-THRESHOLD /
+
+REHASH-SIZE entries have been used.  If a float, the hash-table is
+expanded when REHASH-THRESHOLD times the whole entries have been used.
+
+SYNCHRONIZE if T then gethash, (setf gethash) and remhash operations
+are protected by a lock - in this case hash tables may be used from
+different threads without explicit synchronization.
+
+WEAKNESS is a GC extension and may be one of NIL, :KEY, :VALUE,
+:KEY-AND-VALUE or :KEY-OR-VALUE. ")
 
 (docfun make-list function (length &key (initial-element nil)) "
 Creates and returns a list of the specified LENGTH, whose elements are all the
@@ -1988,6 +2018,15 @@ DIRECTORY, NAME, TYPE, and VERSION.")
 Creates and returns a random-state object.  If RANDOM-STATE is NIL, copies the
 value of *RANDOM-STATE*.  If RANDOM-STATE is a random-state, copies it.  If
 RANDOM-STATE is T, creates a random-state randomly.")
+
+(docfun ext:make-stream-from-fd function
+        (fd direction &key buffering element-type (external-format :default) (name "FD-STREAM")) "
+Creates and returns a new stream build on top of given FD file descriptor.
+
+DIRECTION may be :INPUT, :OUTPUT and :IO. On Windows it may be
+also :INPUT-WSOCK, :OUTPUT-WSOCK, :IO-WSOCK and :IO-WCON.
+
+BUFFERING may be :NONE, :LINE and :FULL.")
 
 (docfun make-string function (length &key (initial-element #\Space)) "
 Creates and returns a new string of the given LENGTH, whose elements are all
@@ -2237,21 +2276,21 @@ Returns T if INTEGER is an odd number; NIL otherwise.")
 
 (docfun open function (filespec &key (direction :input) element-type
                      if-exists if-does-not-exist) "
-Opens the specified file and returns a file stream to/from the file.  FILESPEC
-may be a symbol, a string, a pathname, or a file stream.  DIRECTION may be
-:INPUT, :OUTPUT, :IO, or :PROBE.  ELEMENT-TYPE is simply ignored in ECL.  IF-
-EXISTS specifies what to do when DIRECTION is either :OUTPUT or :IO and the
-specified file exists already.  It may be :ERROR (the default), :NEW-VERSION,
-:RENAME, :RENAME-AND-DELETE, :OVERWRITE, :APPEND, :SUPERSEDE, or NIL.  IF-
-DOES-NOT-EXIST specifies what to do when the specified file does not exists.
-It may be :ERROR (the default when DIRECTION is :INPUT), :CREATE (the default
-when DIRECTION is either :OUTPUT or :IO), or NIL.
-File streams are notated in one of the following ways:
-        #<input stream f>
-        #<output stream f>
-        #<io stream f>
-        #<probe stream f>
-where F is the file name.")
+Opens the specified file and returns a file stream to/from the file.
+
+FILESPEC may be a symbol, a string, a pathname, or a file stream.
+
+DIRECTION may be :INPUT, :OUTPUT, :IO, or :PROBE.
+
+IF-EXISTS specifies what to do when DIRECTION is either :OUTPUT or :IO and the
+specified file exists already.  It may be :ERROR (the
+default), :NEW-VERSION, :RENAME, :RENAME-AND-DELETE, :OVERWRITE, :APPEND, :TRUNCATE
+:SUPERSEDE, or NIL.
+
+IF-DOES-NOT-EXIST specifies what to do when the specified file does
+not exists.  It may be :ERROR (the default when DIRECTION
+is :INPUT), :CREATE (the default when DIRECTION is either :OUTPUT
+or :IO), or NIL.")
 
 (docfun ext:make-pipe function ()
 "Creates a pipe in the form of a two-way stream that can be used for
@@ -2274,6 +2313,36 @@ built-in packages:
         keyword  keyword symbols.
         system   system internal symbols.  Has nicknames SYS and SI.
         compiler system internal symbols for the ECL compiler.")
+
+(docfun ext:package-lock function
+        (package-designator lock) "
+Sets package's lock to LOCK. Returns previous lock value.")
+
+(docfun ext:package-locked-p function
+        (package-designator) "
+Returns T when PACKAGE is locked, NIL otherwise.")
+
+(docfun ext:package-local-nicknames function
+        (package-designator) "
+Returns an alist of (LOCAL-NICKNAME . ACTUAL-PACKAGE)
+describing the nicknames local to the designated package.")
+
+(docfun ext:package-locally-nicknamed-by-list function
+        (package-designator) "
+Returns a list of packages which have a local nickname for the
+designated package.")
+
+(docfun ext:add-package-local-nickname function
+        (local-nickname actul-package &optional package-designator) "
+Adds LOCAL-NICKNAME for ACTUAL-PACKAGE in the designated package,
+defaulting to current package. LOCAL-NICKNAME must be a string
+designator, and ACTUAL-PACKAGE must be a package designator.")
+
+(docfun ext:remove-package-local-nickname function
+        (old-nickname &optional package-designator) "
+If the designated package had OLD-NICKNAME as a local nickname
+for another package, it is removed. Returns true if the nickname
+existed and was removed, and NIL otherwise.")
 
 (docfun package-name function (package) "
 Returns the name of PACKAGE as a string.")
@@ -3225,6 +3294,81 @@ Outputs STRING to STREAM.  Returns STRING.")
 
 (docfun zerop function (number) "
 Returns T if the arg is zero; NIL otherwise.")
+
+;;; ----------------------------------------------------------------------
+;;; Multi Processing (POSIX Threads)
+
+#+threads
+(progn
+  (docfun mp:all-processes function () "
+Returns a list of all running processes.")
+
+  (docfun mp:make-process function (&key name) "
+Allocates new process.")
+
+  (docfun mp:process-yield function () "
+Causes current process to yield the control.")
+
+  (docfun mp:exit-process function () "
+Exits current process.")
+
+  (docfun mp:process-active-p function (process) "
+Returns T if the process is active; NIL otherwise.")
+
+  (docfun mp:process-enable function (process) "
+Starts a process. If process is already enabled signals error.")
+
+  (docfun mp:interrupt-process function (process function) "
+Interrupts active PROCESS to call FUNCTION. When FUNCTION
+finishes normal normal execution is resumed.")
+
+  (docfun mp:process-kill function (process) "
+Exits running PROCESS. If PROCESS is inactive signals error.")
+
+  (docfun mp:process-suspend function (process) "
+Stops running PROCESS. If PROCESS is inactive signals error.")
+
+  (docfun mp:process-suspend function (process) "
+Resumes running PROCESS. If PROCESS is inactive signals error.")
+
+  (docfun mp:process-name function (process) "
+Returns PROCESS name assigned on MP:MAKE-PROCESS call.")
+
+  (docfun mp:process-preset function (process function &rest args) "
+Initializes a process. When process is enabled it will call FUNCTION
+with ARGS.")
+
+  (docfun mp:process-whostate function (process) "
+Reserved for future use. Returns empty string.")
+
+  (docfun mp:process-join function (process) "
+Waits until process stops its execution.")
+
+  (docfun mp:process-run-function function (name function &rest args) "
+Equivalent to creating a process with MP:MAKE-PROCESS, presetting it
+with MP:PROCESS-PRESET and starting with MP:PROCESS-ENABLE. Returns
+created process.")
+
+  ;; Semaphore interface
+  (docfun mp:make-semaphore function (&key name count) "
+Creates a counting semaphore NAME with a resource count COUNT.")
+
+  (docfun mp:semaphore-name function (semaphore) "
+Returns SEMAPHORE name.")
+
+  (docfun mp:semaphore-count function (semaphore) "
+Returns SEMAPHORE count of resources.")
+
+  (docfun mp:wait-on-semaphore function (semaphore) "
+Waits on SEMAPHORE until it can grab the resource (blocking). Returns resource count
+before semaphore was acquired.")
+
+  (docfun mp:try-get-semaphore function (semaphore) "
+Tries to get a SEMAPHORE (non-blocking). If there is no resource left returns
+NIL, otherwise returns resource count before semaphore was acquired.")
+
+  (docfun mp:signal-semaphore function (semaphore &optional (count 1)) "
+Releases COUNT units of a resource on SEMAPHORE."))
 
 #||
 ;;; ----------------------------------------------------------------------

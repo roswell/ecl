@@ -1,0 +1,57 @@
+@node Packages
+@section Packages
+
+In @ref{tab:ECL-packages} we list all packages available in ECL. The
+nicknames are aliases for a package. Thus, @code{system:symbol} may be
+written as @code{sys:symbol} or @code{si:symbol}. The module field
+explains which library provides what package. For instance, the ASDF
+package is obtained when loading the ASDF library with @code{(require 'asdf)}.
+
+@float Table, tab:ECL-packages
+@caption{ECL packages}
+@multitable @columnfractions .25 .25 .2 .3
+@headitem Name @tab Nickname @tab In module @tab Description
+@item @code{COMMON-LISP} @tab @code{CL} @tab @code{ECL core} @tab Main Common Lisp package.
+@item @code{COMMON-LISP-USER} @tab @code{CL-USER} @tab @code{ECL core} @tab User package.
+@item @code{CLOS} @tab @code{MOP} @tab @code{ECL core} @tab Symbols from the AMOP.
+@item @code{EXT} @tab @code{ } @tab @code{ECL core} @tab ECL extensions to the language & library.
+@item @code{SYSTEM} @tab @code{SI, SYS} @tab @code{ECL core} @tab Functions and variables internal to the implementation. Never to be used.
+@item @code{FFI} @tab @code{} @tab @code{ECL core} @tab Foreign function interface
+@item @code{CMP} @tab @code{C} @tab @code{CMP} @tab The compiler
+@item @code{SB-BSD-SOCKETS} @tab @code{ } @tab @code{SOCKETS} @tab Sockets library compatible with SBCL's
+@item @code{SB-RT} @tab @code{RT, REGRESSION-TEST} @tab @code{RT} @tab Test units (customized for ECL)
+@item @code{ASDF} @tab @code{ } @tab @code{ASDF} @tab System definition file with ECL customizations.
+@end multitable
+@end float
+
+@subsection C Reference
+
+@subsubsection ANSI Dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_export.htm,export} @tab cl_object cl_export(cl_narg narg, cl_object symbols, ...)
+@item @clhs{f_find_s.htm,find-symbol} @tab cl_object cl_find_symbol(cl_narg narg, cl_object string, ...)
+@item @clhs{f_find_p.htm,find-package} @tab cl_object cl_find_package(cl_object name)
+@item @clhs{f_find_a.htm,find-all-symbols} @tab cl_object cl_find_all_symbols(cl_object string)
+@item @clhs{f_import.htm,import} @tab cl_object cl_import(cl_narg narg, cl_object symbols, ...)
+@item @clhs{f_list_a.htm,list-all-packages} @tab cl_object cl_list_all_packages(void)
+@item @clhs{f_rn_pkg.htm,rename-package} @tab cl_object cl_rename_package(cl_narg narg, cl_object package, cl_object new_name, ...)
+@item @clhs{f_shadow.htm,shadow} @tab cl_object cl_shadow(cl_narg narg, cl_object symbols, ...)
+@item @clhs{f_shdw_i.htm,shadowing-import} @tab cl_object cl_shadowing_import(cl_narg narg, cl_object symbols, ...)
+@item @clhs{f_del_pk.htm,delete-package} @tab cl_object cl_delete_package(cl_object package)
+@item @clhs{f_mk_pkg.htm,make-package} @tab cl_object cl_make_package(cl_narg narg, cl_object package_name, ...)
+@item @clhs{f_unexpo.htm,unexport} @tab cl_object cl_unexport(cl_narg narg, cl_object symbols, ...)
+@item @clhs{f_uninte.htm,unintern} @tab cl_object cl_unintern(cl_narg narg, cl_object symbol, ...)
+@item @clhs{f_unuse_.htm,unuse-package} @tab cl_object cl_unuse_package(cl_narg narg, cl_object package, ...)
+@item @clhs{f_use_pk.htm,use-package} @tab cl_object cl_use_package(cl_narg narg, cl_object package, ...)
+@item @clhs{f_intern.htm,intern} @tab cl_object cl_intern(cl_narg narg, cl_object string, ...)
+@item @clhs{f_pkg_na.htm,package-name} @tab cl_object cl_package_name(cl_object package)
+@item @clhs{f_pkg_ni.htm,package-nicknames} @tab cl_object cl_package_nicknames(cl_object package)
+@item @clhs{f_pkg_sh.htm,package-shadowing-symbols} @tab cl_object cl_package_shadowing_symbols(cl_object package)
+@item @clhs{f_pkg_us.htm,package-use-list} @tab cl_object cl_package_use_list(cl_object package)
+@item @clhs{f_pkg__1.htm,package-used-by-list} @tab cl_object cl_package_used_by_list(cl_object package)
+@item @clhs{f_pkgp.htm,packagep} @tab cl_object cl_packagep(cl_object object)
+@item @clhs{f_pkg_er.htm,package-error-package} @tab [Only in Common Lisp]
+@end multitable

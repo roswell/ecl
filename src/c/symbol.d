@@ -15,6 +15,7 @@
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <string.h>
 
 cl_object
 ecl_symbol_package(cl_object s)
@@ -23,7 +24,7 @@ ecl_symbol_package(cl_object s)
     return ECL_NIL_SYMBOL->symbol.hpack;
   if (ecl_t_of(s) == t_symbol)
     return s->symbol.hpack;
-  FEwrong_type_nth_arg(@[symbol-package], 1, s, @[symbol]);
+  FEwrong_type_only_arg(@[symbol-package], s, @[symbol]);
 }
 
 int
@@ -59,7 +60,7 @@ ecl_symbol_name(cl_object s)
   if (ecl_t_of(s) == t_symbol) {
     return s->symbol.name;
   }
-  FEwrong_type_nth_arg(@[symbol-name], 1, s, @[symbol]);
+  FEwrong_type_only_arg(@[symbol-name], s, @[symbol]);
 }
 
 static cl_object *
@@ -71,7 +72,7 @@ ecl_symbol_plist(cl_object s)
   if (ecl_t_of(s) == t_symbol) {
     return &s->symbol.plist;
   }
-  FEwrong_type_nth_arg(@[symbol-plist], 1, s, @[symbol]);
+  FEwrong_type_only_arg(@[symbol-plist], s, @[symbol]);
 }
 
 /**********************************************************************/
@@ -97,7 +98,7 @@ cl_make_symbol(cl_object str)
     str = si_copy_to_simple_base_string(str);
     break;
   default:
-    FEwrong_type_nth_arg(@[make-symbol],1,str,@[string]);
+    FEwrong_type_only_arg(@[make-symbol],str,@[string]);
   }
   x = ecl_alloc_object(t_symbol);
   x->symbol.name = str;
@@ -127,8 +128,8 @@ ecl_make_keyword(const char *s)
 cl_object
 ecl_make_symbol(const char *s, const char *p)
 {
-  cl_object package = ecl_find_package(p);
-  cl_object x = _ecl_intern(s, package);
+  ecl_def_ct_base_string(pack_name,p,strlen(p),,);
+  cl_object x = _ecl_intern(s, pack_name);
   /* cl_export(x, keyword_package); this is implicit in ecl_intern() */
   return x;
 }
@@ -152,7 +153,7 @@ static void
 FEtype_error_plist(cl_object x)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("Not a valid property list ~D"),
+           ecl_make_constant_base_string("Not a valid property list ~D",-1),
            @':format-arguments', cl_list(1, x),
            @':expected-type', @'si::property-list',
            @':datum', x);
@@ -329,14 +330,13 @@ cl_symbol_name(cl_object x)
   @)
 
 @(defun gensym (&optional (prefix cl_core.gensym_prefix))
-  cl_type t;
   cl_object counter, output;
   bool increment;
   @ {
     if (ecl_stringp(prefix)) {
       counter = ECL_SYM_VAL(the_env, @'*gensym-counter*');
       increment = 1;
-    } else if ((t = ecl_t_of(prefix)) == t_fixnum || t == t_bignum) {
+    } else if (ecl_t_of(prefix) == t_fixnum || ecl_t_of(prefix) == t_bignum) {
       counter = prefix;
       prefix = cl_core.gensym_prefix;
       increment = 0;
@@ -344,6 +344,7 @@ cl_symbol_name(cl_object x)
       FEwrong_type_nth_arg(@[gensym],2,prefix,
                            cl_list(3, @'or', @'string', @'integer'));
     }
+    assert_type_non_negative_integer(counter);
     output = ecl_make_string_output_stream(64, 1);
     ecl_bds_bind(the_env, @'*print-escape*', ECL_NIL);
     ecl_bds_bind(the_env, @'*print-readably*', ECL_NIL);
@@ -418,6 +419,14 @@ si_set_symbol_plist(cl_object sym, cl_object plist)
   *ecl_symbol_plist(sym) = plist;
   @(return plist);
 }
+
+#ifdef ECL_THREADS
+cl_object
+mp_compare_and_swap_symbol_plist(cl_object x, cl_object old, cl_object new)
+{
+  return ecl_compare_and_swap(ecl_symbol_plist(x), old, new);
+}
+#endif /* ECL_THREADS */
 
 cl_object
 si_putprop(cl_object sym, cl_object value, cl_object indicator)

@@ -45,12 +45,21 @@
       (si::simple-program-error "Illegal defclass form: superclasses and slots should be lists"))
     (unless (and (symbolp name) (every #'symbolp superclasses))
       (si::simple-program-error "Illegal defclass form: superclasses and class name are not valid"))
-    `(eval-when (compile load eval)
-       ,(ext:register-with-pde
-         form
-         `(load-defclass ',name ',superclasses
-                         ,(compress-slot-forms slots)
-                         ,(process-class-options options))))))
+    ;; According to the X3J13 cleanup issue
+    ;; CLOS-MACRO-COMPILATION:MINIMAL, at compile time we only need
+    ;; to ensure that
+    ;; * The class name may appear in subsequent type declarations.
+    ;; * The class name can be used as a specializer in subsequent
+    ;;   DEFMETHOD forms.
+    ;; Doing more at compile time leads to problems with the mop as
+    ;; for example validate-superclass methods might not be installed
+    ;; at compile time.
+    (si:create-type-name name)
+    (ext:register-with-pde
+     form
+     `(load-defclass ',name ',superclasses
+                     ,(compress-slot-forms slots)
+                     ,(process-class-options options)))))
 
 (defun compress-slot-forms (slot-definitions)
   (declare (si::c-local))

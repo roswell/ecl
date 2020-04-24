@@ -64,19 +64,16 @@
                 (make-instance 'eql-specializer :object object))))))
 
 (defmethod add-direct-method ((spec specializer) (method method))
-  (pushnew method (specializer-direct-methods spec))
-  (let ((gf (method-generic-function method)))
-    (pushnew gf (specializer-direct-generic-functions spec)))
+  (let ((cell (specializer-method-holder spec)))
+    (setf (cdr cell) nil
+          (car cell) (adjoin method (car cell) :test #'eq)))
   (values))
 
 (defmethod remove-direct-method ((spec specializer) (method method))
-  (let* ((gf (method-generic-function method))
-         (methods (delete method (specializer-direct-methods spec))))
-    (setf (specializer-direct-methods spec) methods)
-    (unless (find gf methods :key #'method-generic-function)
-      (setf (specializer-direct-generic-functions spec)
-            (delete gf (specializer-direct-generic-functions spec))))
-    (values)))
+  (let ((cell (specializer-method-holder spec)))
+    (setf (cdr cell) nil
+          (car cell) (delete method (car cell) :test #'eq)))
+  (values))
 
 (defmethod remove-direct-method ((spec eql-specializer) (method method))
   (mp:with-lock (*eql-specializer-lock*)
@@ -84,3 +81,15 @@
     (unless (specializer-direct-methods spec)
       (remhash spec *eql-specializer-hash*)))
   (values))
+
+(defmethod specializer-direct-methods ((spec specializer))
+  (car (specializer-method-holder spec)))
+
+(defmethod specializer-direct-generic-functions ((spec specializer))
+  (let ((cell (specializer-method-holder spec)))
+    (or (cdr cell)
+        (when (car cell)
+          (loop with acc = nil
+                for method in (car cell)
+                do (pushnew (method-generic-function method) acc :test #'eq)
+                finally (return (setf (cdr cell) (nreverse acc))))))))

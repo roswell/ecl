@@ -1,5 +1,5 @@
 ;;; -*- mode: Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp ; buffer-read-only: t; -*-
-;;; This is ASDF 3.1.8.2: Another System Definition Facility.
+;;; This is ASDF 3.1.8.8: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -4672,6 +4672,7 @@ or COMPRESSION on SBCL, and APPLICATION-TYPE on SBCL/Windows."
                             (shell-boolean-exit
                              (restore-image))))))))
                  (when forms `(progn ,@forms))))))
+      #+(or clasp ecl) (when (eql kind :image) (setf kind :program)) ; for no-uiop ubilds
       #+(or clasp ecl) (check-type kind (member :dll :lib :static-library :program :object :fasl))
       (apply #+clasp 'cmp:builder #+clasp kind
              #+(and ecl (not clasp)) 'c::builder #+(and ecl (not clasp)) kind
@@ -4682,7 +4683,7 @@ or COMPRESSION on SBCL, and APPLICATION-TYPE on SBCL/Windows."
                       ((:program) 'compiler::build-program))
              (pathname destination)
              #+(or clasp ecl) :lisp-files #+mkcl :lisp-object-files (append lisp-object-files #+(or clasp ecl) extra-object-files)
-             #+(or clasp ecl) :init-name #+(or clasp ecl) (c::compute-init-name (or output-name destination) :kind kind)
+             #+(or clasp ecl) :init-name #+(or clasp ecl) (getf build-args :init-name)
              (append
               (when prologue-code `(:prologue-code ,prologue-code))
               (when epilogue-code `(:epilogue-code ,epilogue-code))
@@ -7273,7 +7274,7 @@ previously-loaded version of ASDF."
          ;; "3.4.5.67" would be a development version in the official branch, on top of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "3.1.8.2")
+         (asdf-version "3.1.8.8")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
@@ -9617,17 +9618,12 @@ or predicate on system names, or NIL if none are forced, or :ALL if all are."
 
 ;;;; action-valid-p
 (with-upgradability ()
-  (defgeneric action-valid-p (plan operation component)
-    (:documentation "Is this action valid to include amongst dependencies?"))
-  ;; :if-feature will invalidate actions on components for which the features don't apply.
-  (defmethod action-valid-p ((plan t) (o operation) (c component))
-    (if-let (it (component-if-feature c)) (featurep it) t))
-  ;; If either the operation or component was resolved to nil, the action is invalid.
-  (defmethod action-valid-p ((plan t) (o null) (c t)) nil)
-  (defmethod action-valid-p ((plan t) (o t) (c null)) nil)
-  ;; If the plan is null, i.e., we're looking at reality,
-  ;; then any action with actual operation and component objects is valid.
-  (defmethod action-valid-p ((plan null) (o operation) (c component)) t))
+  (defun action-valid-p (operation component)
+    "Is this action valid to include amongst dependencies?"
+    ;; If either the operation or component was resolved to nil, the action is invalid.
+    ;; :if-feature will invalidate actions on components for which the features don't apply.
+    (and operation component
+         (if-let (it (component-if-feature component)) (featurep it) t))))
 
 ;;;; Is the action needed in this image?
 (with-upgradability ()
@@ -9647,12 +9643,13 @@ to be meaningful, or could it just as well have been done in another Lisp image?
 (with-upgradability ()
   (defun (map-direct-dependencies) (plan operation component fun)
     "Call FUN on all the valid dependencies of the given action in the given plan"
+    (declare (ignore plan))
     (loop* :for (dep-o-spec . dep-c-specs) :in (component-depends-on operation component)
            :for dep-o = (find-operation operation dep-o-spec)
            :when dep-o
            :do (loop :for dep-c-spec :in dep-c-specs
                      :for dep-c = (and dep-c-spec (resolve-dependency-spec component dep-c-spec))
-                     :when (and dep-c (action-valid-p plan dep-o dep-c))
+                     :when (action-valid-p dep-o dep-c)
                        :do (funcall fun dep-o dep-c))))
 
   (defun (reduce-direct-dependencies) (plan operation component combinator seed)
@@ -9766,9 +9763,6 @@ initialized with SEED."
     (or (and (action-forced-not-p p o c) (plan-action-status nil o c))
         (values (gethash (node-for o c) (plan-visited-actions p)))))
 
-  (defmethod action-valid-p ((p plan-traversal) (o operation) (s system))
-    (and (not (action-forced-not-p p o s)) (call-next-method)))
-
   (defgeneric plan-record-dependency (plan operation component)
     (:documentation "Record an action as a dependency in the current plan")))
 
@@ -9825,7 +9819,7 @@ initialized with SEED."
     (block nil
       ;; ACTION-VALID-P among other things, handles forcing logic, including FORCE-NOT,
       ;; and IF-FEATURE filtering.
-      (unless (action-valid-p plan operation component) (return nil))
+      (unless (action-valid-p operation component) (return nil))
       ;; the following hook is needed by POIU, which tracks a full dependency graph,
       ;; instead of just a dependency order as in vanilla ASDF
       (plan-record-dependency plan operation component)
@@ -9840,7 +9834,7 @@ initialized with SEED."
           (return (action-stamp status))) ; Already visited with sufficient need-in-image level!
         (labels ((visit-action (niip) ; We may visit the action twice, once with niip NIL, then T
                    (map-direct-dependencies ; recursively traverse dependencies
-                    plan operation component #'(lambda (o c) (traverse-action plan o c niip)))
+                    t operation component #'(lambda (o c) (traverse-action plan o c niip)))
                    (multiple-value-bind (stamp done-p) ; AFTER dependencies have been traversed,
                        (compute-action-stamp plan operation component) ; compute action stamp
                      (let ((add-to-plan-p (or (eql stamp t) (and niip (not done-p)))))
@@ -9953,11 +9947,6 @@ initialized with SEED."
       (setf forced (normalize-forced-systems (if other-systems :all t) system))
       (setf forced-not (normalize-forced-not-systems (if other-systems nil t) system))
       (setf action-filter (ensure-function action-filter))))
-
-  (defmethod action-valid-p ((plan filtered-sequential-plan) o c)
-    (and (funcall (plan-action-filter plan) o c)
-         (typep c (plan-component-type plan))
-         (call-next-method)))
 
   (defmethod traverse-actions (actions &rest keys &key plan-class &allow-other-keys)
     "Given a list of actions, build a plan with these actions as roots."
@@ -11356,7 +11345,7 @@ itself."))
 
   (defmethod prologue-code ((x t)) nil)
   (defmethod epilogue-code ((x t)) nil)
-  (defmethod no-uiop ((x t)) nil)
+  (defmethod no-uiop ((x t)) t)
   (defmethod prefix-lisp-object-files ((x t)) nil)
   (defmethod postfix-lisp-object-files ((x t)) nil)
   (defmethod extra-object-files ((x t)) nil)
@@ -11652,9 +11641,14 @@ or of opaque libraries shipped along the source code."))
        'program-op)))
 
   ;; SUPPORTED ALTERNATIVE: Use program-op and program-system
-  (defun make-build (system &rest args &key (monolithic nil) (type :fasl)
-                             (move-here nil move-here-p)
-                             &allow-other-keys)
+  (defun make-build (system &rest args
+                     &key
+                       (monolithic nil)
+                       (type :fasl)
+                       (move-here nil move-here-p)
+                       (init-name nil)
+                     &allow-other-keys)
+    (declare (ignore init-name))
     (let* ((operation-name (select-bundle-operation type monolithic))
            (move-here-path (if (and move-here
                                     (typep move-here '(or pathname string)))
@@ -11873,20 +11867,17 @@ or of opaque libraries shipped along the source code."))
 
   (defmethod component-depends-on :around ((o image-op) (c system))
     (destructuring-bind ((lib-op . deps)) (call-next-method)
-      (labels ((has-it-p (x) (find x deps :test 'equal :key 'coerce-name))
-               (ensure-linkable-system (x)
-		 (unless (has-it-p x)
-                   (or (if-let (s (find-system x))
-                         (and (system-source-directory x)
-                              (list s)))
-                       (if-let (p (system-module-pathname x))
-                         (list (make-prebuilt-system x p)))))))
+      (labels ((ensure-linkable-system (x)
+                 (or (if-let (s (find-system x))
+                       (and (system-source-directory x)
+                            s))
+                     (if-let (p (system-module-pathname x))
+                       (make-prebuilt-system x p)))))
         `((,lib-op
-           ,@(unless (no-uiop c)
-               (append (ensure-linkable-system "cmp")
-                       (or (ensure-linkable-system "uiop")
-                           (ensure-linkable-system "asdf"))))
-           ,@deps)))))
+           ,@(mapcar #'ensure-linkable-system
+                     (if (no-uiop c)
+                         deps
+                         (union deps '("cmp" "uiop" "asdf")))))))))
 
   (defmethod perform ((o link-op) (c system))
     (let* ((object-files (input-files o c))

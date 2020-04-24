@@ -1,0 +1,161 @@
+@node Building ECL
+@section Building ECL
+
+Due to its portable nature ECL works on every (at least) 32-bit
+architecture which provides a proper C99 compliant compiler.
+
+Operating systems on which ECL is reported to work: Linux, Darwin (Mac
+OS X), Solaris, FreeBSD, NetBSD, OpenBSD, DragonFly BSD, Windows and
+Android. On each of them ECL supports native threads.
+
+In the past Juanjo José García-Ripoll maintained a test farm which
+performed ECL tests for each release on number of platforms and
+architectures. Due to lack of the resources we can't afford such doing,
+however each release is tested by volunteers with an excellent package
+@uref{https://common-lisp.net/project/cl-test-grid,cl-test-grid} created
+and maintained by Anton Vodonosov.
+
+@subsection Autoconf based configuration
+
+ECL, like many other FOSS programs, can be built and installed with a
+GNU tool called Autoconf. This is a set of automatically generated
+scripts that detect the features of your machine, such as the compiler
+type, existing libraries, desired installation path, and configures ECL
+accordingly. The following procedure describes how to build ECL using
+this procedure and it applies to all platforms except for the Windows
+ports using Microsoft Visual Studio compilers (however you may build ECL
+with cygwin or mingw using the autoconf as described here).
+
+To build @ecl{} you need to
+
+@enumerate
+@item
+Extract the source code and enter it's directory
+
+@example
+$ tar -xf ecl-xx.x.x.tgz
+$ cd ecl-xx.x.x
+@end example
+
+@item
+Run the configuration file, build the program and install it
+
+@example
+$ ./configure --prefix=/usr/local
+$ make                          # -jX if you have X cores
+$ make install
+@end example
+
+@item
+Make sure the program is installed and ready to run:
+
+@example
+$ /usr/local/bin/ecl
+
+ECL (Embeddable Common-Lisp) 16.0.0
+Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya
+Copyright (C) 1993 Giuseppe Attardi
+Copyright (C) 2000 Juan J. Garcia-Ripoll
+Copyright (C) 2015 Daniel Kochmanski
+ECL is free software, and you are welcome to redistribute it
+under certain conditions; see file 'Copyright' for details.
+Type :h for Help.
+Top level in: #<process TOP-LEVEL>.
+> 
+@end example
+@end enumerate
+
+@subsection Platform specific instructions
+@subsubsection MSVC based configuration
+
+You need Microsoft Visual Studio 2015 or better to compile ECL,
+which flavor(Professional, Community, etc) does not matter.
+
+You also need @uref{http://yasm.tortall.net,yasm} optionally to build gmp,
+fetch yasm-1.3.0-win64.exe and yasm-1.3.0-win32.exe,
+and put them in your system PATH directory.
+
+In the Visual Studio's startup menu, click
+@uref{https://docs.microsoft.com/en-us/dotnet/framework/tools/developer-command-prompt-for-vs,Developer
+Command Prompt for Visual Studio} to open the console
+window. Alternatively, open the developer console from the start menu
+through "Visual Studio 20xx" -> "Visual Studio Tools" -> "VC" and
+select "x64 Native Tools Command Prompt for VS 20xx" or "x86 Native
+Tools Command Prompt for VS 20xx", depending on whether you want to
+build 32 or 64bit versions of ECL.
+
+@enumerate
+@item
+Change to the msvc directory.
+@item
+Run nmake to build ECL.
+@item
+Run nmake install prefix=d:\Software\ECL where the prefix is the
+directory where you want to install ECL.
+@item
+If you want to build debug version, add ECL_DEBUG=1 to nmake command line.
+@item
+If you want to build 64bit version, add ECL_WIN64=1 to nmake command line,
+you can also set GMP_TYPE=AMD64 to use specific assembly codes.
+@item
+Optionally, if you want to build a self-installing executable, you can
+install NSIS and run nmake windows-nsi.
+@end enumerate
+
+
+@c @node BSD systems
+@c @subsubsection BSD systems
+
+@subsubsection Android
+
+Cross compiling ECL for Android requires first building the host ECL
+program. At present this host ECL needs to have the same word size and
+same optional capabilities (e.g. threads, C99 complex floats) as
+the target system. Therefore, to build the host ECL for a 32 bit ARM
+system, use the following commands:
+
+@example
+# C99 complex numbers are not fully supported on Android
+./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2"\
+            --prefix=`pwd`/ecl-android-host \
+            --disable-c99complex
+make -j9
+make install
+rm -r build
+export ECL_TO_RUN=`pwd`/ecl-android-host/bin/ecl
+@end example
+
+The next step is to configure the cross compilation toolchain. This
+requires the Android NDK version 15 or higher.
+
+@example
+@verbatim
+export NDK_PATH=/opt/android-ndk
+export ANDROID_API=23
+export TOOLCHAIN_PATH=`pwd`/android-toolchain
+${NDK_PATH}/build/tools/make_standalone_toolchain.py --arch arm --install-dir ${TOOLCHAIN_PATH} --api ${ANDROID_API}
+export SYSROOT=${TOOLCHAIN_PATH}/sysroot
+export PATH=${TOOLCHAIN_PATH}/bin:$PATH
+@end verbatim
+@end example
+
+Here, @code{ANDROID_API} is the minimum Android API version ECL will
+run on. Finally, we can build and install the target ECL:
+
+@example
+@verbatim
+# boehm GC is not compatible with ld.gold linker, force use of ld.bfd
+export LDFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -fuse-ld=bfd"
+export CPPFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -isystem ${SYSROOT}/usr/include/arm-linux-androideabi"
+export CC=arm-linux-androideabi-clang
+./configure --host=arm-linux-androideabi \
+            --prefix=`pwd`/ecl-android \
+            --disable-c99complex \
+            --with-cross-config=`pwd`/src/util/android-arm.cross_config
+make -j9
+make install
+@end verbatim
+@end example
+
+Library and assets are installed in the "ecl-android" directory
+and are ready to run on the Android system.

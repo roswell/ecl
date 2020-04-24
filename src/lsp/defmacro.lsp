@@ -269,13 +269,21 @@
                 decls (list* `(declare (ignore ,env)) decls)))
       (multiple-value-bind (ppn whole dl arg-check ignorables)
           (destructure vl context)
-        (values `(ext::lambda-block ,name (,whole ,env &aux ,@dl)
-                                    (declare (ignorable ,@ignorables))
-                                    ,@decls 
-                                    ,@arg-check
-                                    ,@body)
-                ppn
-                doc)))))
+        (let ((function
+               (if (eql context 'cl:defmacro)
+                   `(ext::lambda-block ,name (,whole ,env &aux ,@dl)
+                      (declare (ignorable ,@ignorables))
+                      ,@decls
+                      ,@arg-check
+                      ,@body)
+                   `(lambda (,whole ,env &aux ,@dl)
+                      (declare (ignorable ,@ignorables))
+                      ,@decls
+                      (block ,(si::function-block-name name)
+                        ,@arg-check ,@body)))))
+         (values function
+                 ppn
+                 doc))))))
 
 #+ecl-min
 (si::fset 'defmacro
@@ -348,37 +356,37 @@ environment can be used to bytecompile the functions in MACROLET
 or SYMBOL-MACRO forms, and also to evaluate other forms."
   (declare (si::c-local))
   (flet ((local-var-error-function (name)
-          #'(lambda (whole env)
-              (declare (ignore whole env))
-              (error
-"In a MACROLET function you tried to access a local variable, ~A,
+           #'(lambda (whole env)
+               (declare (ignore whole env))
+               (error
+                "In a MACROLET function you tried to access a local variable, ~A,
 from the function in which it appears." name)))
          (local-fun-error-function (name)
-          #'(lambda (whole env)
-              (declare (ignore whole env))
-              (error
-"In a MACROLET function you tried to access a local function, ~A,
+           #'(lambda (whole env)
+               (declare (ignore whole env))
+               (error
+                "In a MACROLET function you tried to access a local function, ~A,
 from the function in which it appears." name))))
     (cons (do ((env (car old-env) (cdr env))
                (variables '()))
               ((endp env) (nreverse variables))
             (let ((i (car env)))
               (if (consp i)
-                (let ((name (first i)))
-                  (if (not (keywordp name))
-                      (push (if (second i)
-                                i
-                              (list name 'si::symbol-macro (local-var-error-function name)))
-                            variables))))))
+                  (let ((name (first i)))
+                    (if (not (keywordp name))
+                        (push (if (second i)
+                                  i
+                                  (list name 'si::symbol-macro (local-var-error-function name)))
+                              variables))))))
           (do ((env (cdr old-env) (cdr env))
                (macros '()))
               ((endp env) (nreverse macros))
             (let ((i (car env)))
               (if (consp i)
-                (push (if (eq (second i) 'SI::MACRO)
-                          i
-                        (list (first i) 'SI:MACRO (local-fun-error-function (first i))))
-                      macros)))))))
+                  (push (if (eq (second i) 'SI::MACRO)
+                            i
+                            (list (first i) 'SI:MACRO (local-fun-error-function (first i))))
+                        macros)))))))
 
 (defun macrolet-functions (definitions old-env)
   (declare (si::c-local))

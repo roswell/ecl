@@ -6,7 +6,7 @@ hello-lisp.a: hello-lisp.lisp
 	ecl -norc \
 	    -eval '(require :asdf)' \
 	    -eval '(push "./" asdf:*central-registry*)' \
-	    -eval '(asdf:make-build :hello-lisp :type :static-library :move-here "./")' \
+	    -eval '(asdf:make-build :hello-lisp :type :static-library :move-here "./" :init-name "init_lib_HELLO_LISP")' \
 	    -eval '(quit)'
 
 clean:

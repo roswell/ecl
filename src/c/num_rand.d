@@ -263,12 +263,10 @@ rando(cl_object x, cl_object rs)
     z = ecl_make_double_float(ecl_double_float(x) *
                               generate_double(rs->random.value));
     break;
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     z = ecl_make_long_float(ecl_long_float(x) *
                             (long double)generate_double(rs->random.value));
     break;
-#endif
   default: ERROR: {
     const char *type = "(OR (INTEGER (0) *) (FLOAT (0) *))";
     FEwrong_type_nth_arg(@[random],1,x, ecl_read_from_cstring(type));

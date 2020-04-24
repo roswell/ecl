@@ -97,8 +97,15 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                (setf (fun-referenced-funs fun) new-funs)
                (return t))))
 
-(defun c1compile-function (lambda-list-and-body &key (fun (make-fun))
-                           (name (fun-name fun)) (CB/LB 'CB))
+;;; searches for a (FUNCTION-BLOCK-NAME ...) declaration
+(defun function-block-name-declaration (declarations)
+  (loop for i in declarations
+     if (and (consp i) (eql (car i) 'si::function-block-name)
+             (consp (cdr i))) return (cadr i)
+     finally (return nil)))
+
+(defun c1compile-function (lambda-list-and-body
+                           &key (fun (make-fun)) (name (fun-name fun)))
   (let ((lambda (if name
                     `(ext:lambda-block ,name ,@lambda-list-and-body)
                     `(lambda ,@lambda-list-and-body))))
@@ -108,59 +115,86 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (when *current-function*
     (push fun (fun-child-funs *current-function*)))
   (let* ((*current-function* fun)
-         (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark CB/LB)))
+         (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark 'SI:FUNCTION-BOUNDARY)))
          (setjmps *setjmps*)
          (decl (si::process-declarations (rest lambda-list-and-body)))
          (global (and *use-c-global*
                       (assoc 'SI::C-GLOBAL decl)
                       (setf (fun-global fun) T)))
          (no-entry (assoc 'SI::C-LOCAL decl))
-         (lambda-expr (c1lambda-expr lambda-list-and-body
-                                     name
-                                     (si::function-block-name name)))
-         cfun exported minarg maxarg)
-    (when (and no-entry (policy-debug-ihs-frame))
-      (setf no-entry nil)
-      (cmpnote "Ignoring SI::C-LOCAL declaration for~%~4I~A~%because the debug level is large" name))
-    (unless (eql setjmps *setjmps*)
-      (setf (c1form-volatile lambda-expr) t))
-    (setf (fun-lambda fun) lambda-expr)
-    (if global
-        (multiple-value-setq (cfun exported) (exported-fname name))
-        (setf cfun (next-cfun "LC~D~A" name) exported nil))
-    #+ecl-min
-    (when (member name c::*in-all-symbols-functions*)
-      (setf no-entry t))
-    (if exported
-        ;; Check whether the function was proclaimed to have a certain
-        ;; number of arguments, and otherwise produce a function with
-        ;; a flexible signature.
-        (progn
-          (multiple-value-setq (minarg maxarg) (get-proclaimed-narg name))
-          (format t "~&;;; Function ~A proclaimed (~A,~A)" name minarg maxarg)
-          (unless minarg
-            (setf minarg 0 maxarg call-arguments-limit)))
-        (multiple-value-setq (minarg maxarg)
-          (lambda-form-allowed-nargs lambda-expr)))
-    (setf (fun-cfun fun) cfun
-          (fun-exported fun) exported
-          (fun-closure fun) nil
-          (fun-minarg fun) minarg
-          (fun-maxarg fun) maxarg
-          (fun-description fun) name
-          (fun-no-entry fun) no-entry)
-    (loop for child in (fun-child-funs fun)
-       do (add-to-fun-referenced-vars fun (fun-referenced-vars child))
-       do (add-to-fun-referenced-funs fun (fun-referenced-funs child)))
-    (loop for f in (fun-referenced-funs fun)
-       do (add-to-fun-referenced-vars fun (fun-referenced-vars f)))
-    (update-fun-closure-type fun)
-    (when global
-      (if (fun-closure fun)
-          (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
-                   (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun)))
-          (new-defun fun (fun-no-entry fun)))))
-  fun)
+         cfun exported minarg maxarg proclamation-found-p)
+    (multiple-value-bind (lambda-expr optional-type-checks keyword-type-checks)
+        (c1lambda-expr lambda-list-and-body name
+                       (si::function-block-name name))
+      (when (and no-entry (policy-debug-ihs-frame))
+        (setf no-entry nil)
+        (cmpnote "Ignoring SI::C-LOCAL declaration for~%~4I~A~%because the debug level is large" name))
+      (unless (eql setjmps *setjmps*)
+        (setf (c1form-volatile lambda-expr) t))
+      (setf (fun-lambda fun) lambda-expr)
+      (if global
+          (multiple-value-setq (cfun exported) (exported-fname name))
+          (setf cfun (next-cfun "LC~D~A" name) exported nil))
+      (if exported
+          ;; Check whether the function was proclaimed to have a certain
+          ;; number of arguments, and otherwise produce a function with
+          ;; a flexible signature.
+          (progn
+            (multiple-value-setq (minarg maxarg proclamation-found-p)
+              (get-proclaimed-narg name))
+            (cmpdebug "~&;;; Function ~A proclaimed (~A,~A)" name minarg maxarg)
+            (multiple-value-bind (found-minarg found-maxarg)
+                (lambda-form-allowed-nargs lambda-expr)
+              (if proclamation-found-p
+                  ;; sanity check that the proclamation matches the actual
+                  ;; number of arguments found
+                  (when (or (/= minarg found-minarg) (/= maxarg found-maxarg))
+                    (cmperr "Function ~A takes between ~A and ~A arguments, but is proclaimed to take between ~A and ~A arguments"
+                            name found-minarg found-maxarg minarg maxarg))
+                  ;; no proclamation found, produce function with
+                  ;; flexible signature
+                  (setf minarg found-minarg))))
+          (multiple-value-setq (minarg maxarg)
+            (lambda-form-allowed-nargs lambda-expr)))
+      #+ecl-min
+      (when exported
+        (multiple-value-bind (foundp ignored minarg-core maxarg-core)
+            (si::mangle-name name)
+          (declare (ignore ignored))
+          (when foundp
+            ;; Core functions declared in symbols_list.h are
+            ;; initialized during startup in all_symbols.d
+            (setf no-entry t)
+            ;; Sanity check that the number of arguments is consistent
+            ;; with the declaration in symbols_list.h. Note that the
+            ;; information about the maximum number of arguments for
+            ;; variadic functions is missing from this declaration.
+            (when (or (/= minarg minarg-core)
+                      (and (= maxarg minarg)
+                           (/= maxarg maxarg-core)))
+              (cmperr "Function ~A takes between ~A and ~A arguments, but is declared to take between ~A and ~A arguments in symbols_list.h"
+                      name minarg maxarg minarg-core maxarg-core)))))
+      (setf (fun-cfun fun) cfun
+            (fun-exported fun) exported
+            (fun-closure fun) nil
+            (fun-minarg fun) minarg
+            (fun-maxarg fun) maxarg
+            (fun-description fun) (or (function-block-name-declaration decl) name)
+            (fun-no-entry fun) no-entry
+            (fun-optional-type-check-forms fun) optional-type-checks
+            (fun-keyword-type-check-forms fun) keyword-type-checks)
+      (loop for child in (fun-child-funs fun)
+         do (add-to-fun-referenced-vars fun (fun-referenced-vars child))
+         do (add-to-fun-referenced-funs fun (fun-referenced-funs child)))
+      (loop for f in (fun-referenced-funs fun)
+         do (add-to-fun-referenced-vars fun (fun-referenced-vars f)))
+      (update-fun-closure-type fun)
+      (when global
+        (if (fun-closure fun)
+            (cmpnote "Function ~A is global but is closed over some variables.~%~{~A ~}"
+                     (fun-name fun) (mapcar #'var-name (fun-referenced-vars fun)))
+            (new-defun fun (fun-no-entry fun)))))
+    fun))
 
 (defun cmp-process-lambda-list (list)
   (handler-case (si::process-lambda-list list 'function)
@@ -241,65 +275,69 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                             :initial-value *cmp-env*))
 
     ;; After creating all variables and processing the initalization
-    ;; forms, we wil process the body. However, all free declarations,
+    ;; forms, we will process the body. However, all free declarations,
     ;; that is declarations which do not refer to the function
     ;; arguments, have to be applied to the body. At the same time, we
     ;; replace &aux variables with a LET* form that defines them.
-    (let* ((declarations other-decls)
-           (type-checks (extract-lambda-type-checks
-                         function-name requireds optionals
-                         keywords ts other-decls))
-           (type-check-forms (car type-checks))
-           (let-vars (loop for spec on (nconc (cdr type-checks) aux-vars)
-                           by #'cddr
-                           for name = (first spec)
-                           for init = (second spec)
-                           collect (list name init)))
-           (new-variables (cmp-env-new-variables *cmp-env* old-env))
-           (already-declared-names (set-difference (mapcar #'var-name new-variables)
-                                                   (mapcar #'car let-vars))))
-      ;; Gather declarations for &aux variables, either special...
-      (let ((specials (set-difference ss already-declared-names)))
-        (when specials
-          (push `(special ,@specials) declarations)))
-      ;; ...ignorable...
-      (let ((ignorables (loop for (var . expected-uses) in is
-                              unless (member var already-declared-names)
-                              collect var)))
-        (when ignorables
-          (push `(ignorable ,@ignorables) declarations)))
-      ;; ...or type declarations
-      (loop for (var . type) in ts
-            unless (member var already-declared-names)
-            do (push `(type ,type ,var) declarations))
-      ;; ...create the enclosing LET* form for the &aux variables
-      (when (or let-vars declarations)
-        (setq body `((let* ,let-vars
-                       (declare ,@declarations)
-                       ,@body))))
-      ;; ...wrap around the optional type checks
-      (setq body (nconc type-check-forms body))
-      ;; ...now finally compile the body with the type checks
-      (let ((*cmp-env* (cmp-env-copy *cmp-env*)))
-        (setf body (c1progn body)))
-      ;;
-      ;; ...and verify whether all variables are used.
-      (dolist (var new-variables)
-        (check-vref var))
-      (make-c1form* 'LAMBDA
-                    :local-vars new-variables
-                    :args (list requireds optionals rest key-flag keywords
-                                allow-other-keys)
-                    doc body))))
+    (multiple-value-bind (required-type-check-forms optional-type-check-forms keyword-type-check-forms new-auxs)
+          (extract-lambda-type-checks function-name requireds optionals
+                                      keywords ts other-decls)
+        (let* ((declarations other-decls)
+               (let-vars (loop for spec on (nconc new-auxs aux-vars)
+                            by #'cddr
+                            for name = (first spec)
+                            for init = (second spec)
+                            collect (list name init)))
+               (new-variables (cmp-env-new-variables *cmp-env* old-env))
+               (already-declared-names (set-difference (mapcar #'var-name new-variables)
+                                                       (mapcar #'car let-vars))))
+       ;; Gather declarations for &aux variables, either special...
+       (let ((specials (set-difference ss already-declared-names)))
+         (when specials
+           (push `(special ,@specials) declarations)))
+       ;; ...ignorable...
+       (let ((ignorables (loop for (var . expected-uses) in is
+                            unless (member var already-declared-names)
+                            collect var)))
+         (when ignorables
+           (push `(ignorable ,@ignorables) declarations)))
+       ;; ...or type declarations
+       (loop for (var . type) in ts
+          unless (member var already-declared-names)
+          do (push `(type ,type ,var) declarations))
+       ;; ...create the enclosing LET* form for the &aux variables
+       (when (or let-vars declarations)
+         (setq body `((let* ,let-vars
+                        (declare ,@declarations)
+                        ,@body))))
+       ;; ...wrap around the type checks for required variables, removing
+       ;; unnecessary nil's
+       (setq body (nconc (delete nil required-type-check-forms) body))
+       ;; ...now finally compile the body with the type checks
+       (let ((*cmp-env* (cmp-env-copy *cmp-env*)))
+         (setf body (c1progn body)))
+       ;;
+       ;; ...and verify whether all variables are used.
+       (dolist (var new-variables)
+         (check-vref var))
+       (values (make-c1form* 'LAMBDA
+                             :local-vars new-variables
+                             :args (list requireds optionals rest key-flag keywords
+                                         allow-other-keys)
+                             doc body)
+               (mapcar #'(lambda (x) (if x (c1expr x) nil))
+                       optional-type-check-forms)
+               (mapcar #'(lambda (x) (if x (c1expr x) nil))
+                       keyword-type-check-forms))))))
 
 (defun lambda-form-allowed-nargs (lambda)
   (let ((minarg 0)
         (maxarg call-arguments-limit))
     (destructuring-bind (requireds optionals rest key-flag keywords a-o-k)
         (c1form-arg 0 lambda)
+      (setf minarg (length requireds))
       (when (and (null rest) (not key-flag) (not a-o-k))
-        (setf minarg (length requireds)
-              maxarg (+ minarg (/ (length optionals) 3)))))
+        (setf maxarg (+ minarg (/ (length optionals) 3)))))
     (values minarg maxarg)))
 
 #| Steps:
@@ -318,19 +356,21 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 |#
 
 (defun c2lambda-expr
-    (lambda-list body cfun fname use-narg required-lcls closure-type
+    (lambda-list body cfun fname description use-narg required-lcls closure-type
+                 optional-type-check-forms keyword-type-check-forms
                  &aux (requireds (first lambda-list))
                  (optionals (second lambda-list))
                  (rest (third lambda-list)) rest-loc
+                 (key-flag (fourth lambda-list))
                  (keywords (fifth lambda-list))
                  (allow-other-keys (sixth lambda-list))
                  (nreq (length requireds))
                  (nopt (/ (length optionals) 3))
                  (nkey (/ (length keywords) 4))
-                 (varargs (or optionals rest keywords allow-other-keys))
+                 (varargs (or optionals rest key-flag allow-other-keys))
                  (fname-in-ihs-p (or (policy-debug-variable-bindings)
                                      (and (policy-debug-ihs-frame)
-                                          fname)))
+                                          (or description fname))))
                  simple-varargs
                  (*permanent-data* t)
                  (*unwind-exit* *unwind-exit*)
@@ -341,13 +381,13 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
   (if (and fname ;; named function
            ;; no required appears in closure,
-           (dolist (var (car lambda-list) t)
+           (dolist (var requireds t)
              (declare (type var var))
              (when (var-ref-ccb var) (return nil)))
-           (null (second lambda-list))  ;; no optionals,
-           (null (third lambda-list))   ;; no rest parameter, and
-           (null (fourth lambda-list))) ;; no keywords.
-    (setf *tail-recursion-info* (cons *tail-recursion-info* (car lambda-list)))
+           (null optionals)  ;; no optionals,
+           (null rest)       ;; no rest parameter, and
+           (null key-flag))  ;; no keywords.
+    (setf *tail-recursion-info* (cons *tail-recursion-info* requireds))
     (setf *tail-recursion-info* nil))
 
   ;; check arguments
@@ -357,7 +397,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
         (when varargs
           (when requireds
             (wt-nl "if (ecl_unlikely(narg<" nreq ")) FEwrong_num_arguments_anonym();"))
-          (unless (or rest keywords allow-other-keys)
+          (unless (or rest key-flag allow-other-keys)
             (wt-nl "if (ecl_unlikely(narg>" (+ nreq nopt) ")) FEwrong_num_arguments_anonym();"))))
     (open-inline-block))
 
@@ -390,9 +430,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
        when (unboxed var)
        do (setf (var-loc var) (wt-decl var)))
     ;; dont create rest or varargs if not used
-    (when (and rest (< (var-ref rest) 1))
+    (when (and rest (< (var-ref rest) 1)
+               (not (eq (var-kind rest) 'SPECIAL)))
       (setq rest nil
-            varargs (or optionals keywords allow-other-keys)))
+            varargs (or optionals key-flag allow-other-keys)))
     ;; Declare &optional variables
     (do ((opt optionals (cdddr opt)))
         ((endp opt))
@@ -414,8 +455,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                    ((eq closure-type 'LEXICAL)
                     (format nil "lex~D" (1- *level*)))
                    (t "narg"))))
-      (if (setq simple-varargs (and (not (or rest keywords allow-other-keys))
-                                    (< (+ nreq nopt) 30)))
+      (if (setq simple-varargs (and (not (or rest key-flag allow-other-keys))
+                                    (<= (+ nreq nopt) si::c-arguments-limit)))
           (wt-nl "va_list args; va_start(args,"
                  (last-variable)
                  ");")
@@ -432,7 +473,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (push 'IHS *unwind-exit*)
     (when (policy-debug-variable-bindings)
       (build-debug-lexical-env (reverse requireds) t))
-    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol fname)
+    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol (or description fname))
            ",_ecl_debug_env);"))
 
   ;; Bind optional parameters as long as there remain arguments.
@@ -445,7 +486,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
       ;; counter for optionals
       (wt-nl-open-brace)
       (wt-nl "int i = " nreq ";")
-      (do ((opt optionals (cdddr opt)))
+      (do ((opt optionals (cdddr opt))
+           (type-check optional-type-check-forms (cdr type-check)))
           ((endp opt))
         (wt-nl "if (i >= narg) {")
         (let ((*opened-c-braces* (1+ *opened-c-braces*)))
@@ -456,12 +498,14 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
               (*unwind-exit* *unwind-exit*))
           (wt-nl "i++;")
           (bind va-arg-loc (first opt))
+          (if (car type-check)
+              (c2expr* (car type-check)))
           (when (third opt) (bind t (third opt))))
         (wt-nl "}"))
       (wt-nl-close-brace)))
 
-  (when (or rest keywords allow-other-keys)
-    (cond ((not (or keywords allow-other-keys))
+  (when (or rest key-flag allow-other-keys)
+    (cond ((not (or key-flag allow-other-keys))
            (wt-nl rest-loc " = cl_grab_rest_args(args);"))
           (t
            (cond (keywords
@@ -483,7 +527,8 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (do ((kwd keywords (cddddr kwd))
        (all-kwd nil)
        (KEYVARS[i] `(KEYVARS 0))
-       (i 0 (1+ i)))
+       (i 0 (1+ i))
+       (type-check keyword-type-check-forms (cdr type-check)))
       ((endp kwd)
        (when all-kwd
          (wt-nl-h "#define " cfun "keys (&" (add-keywords (nreverse all-kwd)) ")")
@@ -510,7 +555,9 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
              (wt-nl "} else {")
              (let ((*opened-c-braces* (1+ *opened-c-braces*)))
                (setf (second KEYVARS[i]) i)
-               (bind KEYVARS[i] var))
+               (bind KEYVARS[i] var)
+               (if (car type-check)
+                   (c2expr* (car type-check))))
              (wt-nl "}")))
       (when flag
         (setf (second KEYVARS[i]) (+ nkey i))

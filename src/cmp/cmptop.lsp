@@ -31,6 +31,7 @@
                      (*current-form* form)
                      (*first-error* t)
                      (*setjmps* 0))
+  (setq form (chk-symbol-macrolet form))
   (when (consp form)
     (let ((fun (car form)) (args (cdr form)) fd)
       (when (member fun *toplevel-forms-to-print*)
@@ -51,13 +52,18 @@
                 (multiple-value-setq (fd success)
                   (cmp-expand-macro fd form))
                 success))
-         (push 'macroexpand *current-toplevel-form*)
-         (t1expr* fd))
+         (when *compile-time-too*
+           ;; Ignore compiler macros during compile time evaluation
+           ;; (they may expand in ffi:c-inline which the bytecodes
+           ;; compiler can't execute).
+           (cmp-eval form))
+         (let ((*compile-time-too* nil))
+           (push 'macroexpand *current-toplevel-form*)
+           (t1expr* fd)))
         ((setq fd (cmp-macro-function fun))
          (push 'macroexpand *current-toplevel-form*)
          (t1expr* (cmp-expand-macro fd form)))
-        (t (t1ordinary form))
-        ))))
+        (t (t1ordinary form))))))
 
 (defun t1/c1expr (form)
   (cond ((not *compile-toplevel*)
@@ -92,6 +98,7 @@
       (mapc #'t3local-fun (nreverse to-be-emitted)))))
 
 (defun emit-local-funs ()
+  (declare (si::c-local))
   ;; Local functions and closure functions
   (do ((*compile-time-too* nil)
        (*compile-toplevel* nil))
@@ -105,6 +112,7 @@
            ;; so disassemble can redefine it
            (t3local-fun (first lfs)))))))
 
+;;; XXX: referenced in main
 (defun ctop-write (name h-pathname data-pathname
                         &aux def top-output-string
                         (*volatile* "volatile "))
@@ -153,8 +161,8 @@
     (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
     (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
     (when ext:*source-location*
-      (wt-nl "flag->cblock.source = make_constant_base_string(\""
-             (namestring (car ext:*source-location*)) "\");"))
+      (wt-nl "flag->cblock.source = ecl_make_constant_base_string(\""
+             (namestring (car ext:*source-location*)) "\",-1);"))
     (wt-nl "return;}")
     (wt-nl "#ifdef ECL_DYNAMIC_VV")
     (wt-nl "VV = Cblock->cblock.data;")
@@ -198,34 +206,6 @@
           (wt-nl-h "#define VM " (data-permanent-storage-size))
           (wt-nl-h "#define VMtemp "  (data-temporary-storage-size)))))
 
-  (dolist (l *linking-calls*)
-    (let* ((c-name (fourth l))
-           (var-name (fifth l)))
-      (wt-nl-h "static cl_object " c-name "(cl_narg, ...);")
-      (wt-nl-h "static cl_object (*" var-name ")(cl_narg, ...)=" c-name ";")))
-
-  ;;; Global entries for directly called functions.
-  (dolist (x *global-entries*)
-    (apply 'wt-global-entry x))
-
-  ;;; Initial functions for linking calls.
-  (dolist (l *linking-calls*)
-    (let* ((var-name (fifth l))
-           (c-name (fourth l))
-           (lisp-name (third l)))
-      (wt-nl "static cl_object " c-name "(cl_narg narg, ...)"
-              "{TRAMPOLINK(narg," lisp-name ",&" var-name ",Cblock);}")))
-  #+(or)
-  (wt-nl-h "static cl_object ECL_SETF_DEFINITION(cl_object setf_vv, cl_object setf_form)
-{
- cl_object f1 = ecl_fdefinition(setf_form);
- cl_object f2 = ECL_CONS_CAR(setf_vv);
- if (f1 != f2) {
-  FEundefined_function(setf_form);
- }
- return f2;
-}
-")
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
   (loop for (name setf-vv name-vv) in *setf-definitions*
      do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",ECL_T);"))
@@ -256,6 +236,7 @@
   (wt-nl top-output-string))
 
 (defun emit-toplevel-form (form c-output-file)
+  (declare (si::c-local))
   (let ((*ihs-used-p* nil)
         (*max-lex* 0)
         (*max-env* 0)
@@ -294,9 +275,9 @@
         (execute-flag nil))
     (dolist (situation (car args))
       (case situation
-        ((LOAD :LOAD-TOPLEVEL) (setq load-flag t))
-        ((COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
-        ((EVAL :EXECUTE)
+        ((CL:LOAD :LOAD-TOPLEVEL) (setq load-flag t))
+        ((CL:COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
+        ((CL:EVAL :EXECUTE)
          (if *compile-toplevel*
              (setq compile-flag (or *compile-time-too* compile-flag))
              (setq execute-flag t)))
@@ -321,14 +302,16 @@
   (declare (ignore c1form))
   (mapc #'t2expr args))
 
+;;; used (only once) in cmp1lam.lsp
 (defun exported-fname (name)
   (let (cname)
-    (if (and (symbolp name) (setf cname (get-sysprop name 'Lfun)))
+    (if (and (symbolp name) (setf cname (si:get-sysprop name 'Lfun)))
         (values cname t)
         (values (next-cfun "L~D~A" name) nil))))
 
 ;;; Mechanism for sharing code:
 ;;; FIXME! Revise this 'DEFUN stuff.
+;;; used (only once) in cmp1lam.lsp
 (defun new-defun (new &optional no-entry)
   #|
   (unless (fun-exported new)
@@ -438,7 +421,7 @@
     (wt-nl "volatile cl_object lex" *level* "[" *max-lex* "];"))
 
   (unless (eq closure-type 'CLOSURE)
-    (wt-nl "cl_object " *volatile* "env0;"))
+    (wt-nl "cl_object " *volatile* "env0 = ECL_NIL;"))
 
   (when  (plusp *max-env*)
     ;; Closure structure has to be marked volatile or else GCC may
@@ -452,49 +435,6 @@
        for comma = "" then ", "
        do (wt comma "CLV" i)
        finally (wt ";"))))
-
-(defun wt-global-entry (fname cfun arg-types return-type)
-    (when (and (symbolp fname) (get-sysprop fname 'NO-GLOBAL-ENTRY))
-      (return-from wt-global-entry nil))
-    (wt-comment-nl "global entry for the function ~a" fname)
-    (wt-nl "static cl_object L" cfun "(cl_narg narg")
-    (wt-nl-h "static cl_object L" cfun "(cl_narg")
-    (do ((vl arg-types (cdr vl))
-         (lcl (1+ *lcl*) (1+ lcl)))
-        ((endp vl) (wt1 ")"))
-      (declare (fixnum lcl))
-      (wt1 ", cl_object ") (wt-lcl lcl)
-      (wt-h ", cl_object"))
-    (wt-h1 ");")
-    (wt-nl-open-brace)
-    (when (compiler-check-args)
-      (wt-nl "_ecl_check_narg(" (length arg-types) ");"))
-    (wt-nl "cl_env_copy->nvalues = 1;")
-    (wt-nl "return " (case return-type
-                            (FIXNUM "ecl_make_fixnum")
-                            (CHARACTER "CODE_CHAR")
-                            (DOUBLE-FLOAT "ecl_make_double_float")
-                            (SINGLE-FLOAT "ecl_make_single_float")
-                            #+long-float
-                            (LONG-FLOAT "ecl_make_long_float")
-                            (otherwise ""))
-           "(LI" cfun "(")
-    (do ((types arg-types (cdr types))
-         (n 1 (1+ n)))
-        ((endp types))
-      (declare (fixnum n))
-      (wt (case (car types)
-            (FIXNUM "fix")
-            (CHARACTER "ecl_char_code")
-            (DOUBLE-FLOAT "df")
-            (SINGLE-FLOAT "sf")
-            #+long-float
-            (LONG-FLOAT "ecl_long_float")
-            (otherwise "")) "(")
-        (wt-lcl n) (wt ")")
-        (unless (endp (cdr types)) (wt ",")))
-    (wt "));")
-    (wt-nl-close-many-braces 0))
 
 (defun rep-type (type)
   (case type
@@ -604,6 +544,10 @@
                 (:char . "_ecl_base_char_loc")
                 (:float . "_ecl_float_loc")
                 (:double . "_ecl_double_loc")
+                (:long-double . "_ecl_long_double_loc")
+                #+complex-float (:csfloat . "_ecl_csfloat_loc")
+                #+complex-float (:cdfloat . "_ecl_cdfloat_loc")
+                #+complex-float (:clfloat . "_ecl_clfloat_loc")
                 #+sse2 (:int-sse-pack . "_ecl_int_sse_pack_loc")
                 #+sse2 (:float-sse-pack . "_ecl_float_sse_pack_loc")
                 #+sse2 (:double-sse-pack . "_ecl_double_sse_pack_loc")
@@ -699,9 +643,12 @@
                        (c1form-arg 2 lambda-expr)
                        (fun-cfun fun)
                        (fun-name fun)
+                       (fun-description fun)
                        (fun-needs-narg fun)
                        (fun-required-lcls fun)
-                       (fun-closure fun))))
+                       (fun-closure fun)
+                       (fun-optional-type-check-forms fun)
+                       (fun-keyword-type-check-forms fun))))
     string))
 
 (defun t3local-fun-declaration (fun)
@@ -717,8 +664,10 @@
          (lambda-expr (fun-lambda fun))
          (volatile (c1form-volatile* lambda-expr))
          (lambda-list (c1form-arg 0 lambda-expr))
-         (requireds (mapcar #'(lambda (v) (next-lcl (var-name v)))
-                            (car lambda-list)))
+         (requireds (loop
+                       repeat si::c-arguments-limit
+                       for arg in (car lambda-list)
+                       collect (next-lcl (var-name arg))))
          (narg (fun-needs-narg fun)))
     (let ((cmp-env (c1form-env lambda-expr)))
       (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
@@ -899,8 +848,8 @@
     (if (zerop n-cfuns)
         (wt-nl-h "#define compiler_cfuns NULL")
         (progn
-          (format stream "~%static const struct ecl_cfun compiler_cfuns[] = {~
-~%~t/*t,m,narg,padding,name,block,entry*/");
+          (format stream "~%static const struct ecl_cfunfixed compiler_cfuns[] = {~
+~%~t/*t,m,narg,padding,name=function-location,block=name-location,entry,entry_fixed,file,file_position*/")
           (loop for (loc fname-loc fun) in (nreverse *global-cfuns-array*)
                 do (let* ((cfun (fun-cfun fun))
                           (minarg (fun-minarg fun))
@@ -908,8 +857,8 @@
                           (narg (if (and (= minarg maxarg)
                                          (<= maxarg si:c-arguments-limit))
                                     maxarg
-                                    -1)))
-                     (format stream "~%{0,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,ECL_NIL,ecl_make_fixnum(~D)},"
+                                    (1- (- (min minarg si:c-arguments-limit))))))
+                     (format stream "~%{0,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,NULL,ECL_NIL,ecl_make_fixnum(~D)},"
                              narg
                              (vv-location loc)
                              (vv-location fname-loc)

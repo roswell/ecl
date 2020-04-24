@@ -127,8 +127,9 @@
                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
                     (wt-nl "return value0;")))
              (return))
-           ((RETURN-FIXNUM RETURN-CHARACTER RETURN-DOUBLE-FLOAT
-             RETURN-SINGLE-FLOAT RETURN-OBJECT)
+           ((RETURN-FIXNUM RETURN-CHARACTER RETURN-OBJECT
+             RETURN-DOUBLE-FLOAT RETURN-SINGLE-FLOAT RETURN-LONG-FLOAT
+             RETURN-CSFLOAT RETURN-CSFLOAT RETURN-CSFLOAT)
             (when (eq *exit* ue)
               ;; *destination* must be RETURN-FIXNUM
               (setq loc (list 'COERCE-LOC
@@ -136,6 +137,9 @@
                                       RETURN-CHARACTER :char
                                       RETURN-SINGLE-FLOAT :float
                                       RETURN-DOUBLE-FLOAT :double
+                                      RETURN-CSFLOAT :csfloat
+                                      RETURN-CDFLOAT :cdfloat
+                                      RETURN-CLFLOAT :clfloat
                                       RETURN-OBJECT :object)
                                     ue)
                               loc))
@@ -214,12 +218,13 @@
 ;;;        enclosed in a closure, and CATCH),
 
 (defun tail-recursion-possible ()
-  (dolist (ue *unwind-exit* (baboon))
+  (dolist (ue *unwind-exit*
+           (baboon :format-control "tail-recursion-possible: should never return."))
     (cond ((eq ue 'TAIL-RECURSION-MARK) (return t))
           ((or (numberp ue) (eq ue 'BDS-BIND) (eq ue 'FRAME))
            (return nil))
           ((or (consp ue) (eq ue 'JUMP) (eq ue 'IHS-ENV)))
-          (t (baboon)))))
+          (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
 
 (defun c2try-tail-recursive-call (fun args)
   (when (and *tail-recursion-info*

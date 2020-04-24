@@ -1,6 +1,6 @@
 
 # Rewritten smakefile for amiga / sas/c. -Kjetil M.
-# Dont use the cord-package if you define parm=both or parm=reg.
+# Don't use the cord-package if you define parm=both or parm=reg.
 
 
 #----------------TOOLS--------------------------------
@@ -32,7 +32,7 @@ DEFINE __USE_SYSBASE
 
 SOPT= $(OPT) $(IGNORE) \
 DEFINE AMIGA_SKIP_SEG \
-DEFINE ATOMIC_UNCOLLECTABLE \
+DEFINE GC_ATOMIC_UNCOLLECTABLE \
 DEFINE GC_AMIGA_FASTALLOC \
 DEFINE GC_AMIGA_RETRY \
 DEFINE GC_AMIGA_PRINTSTATS \

@@ -55,33 +55,33 @@
 (defconstant tpl-commands
    '(("Top level commands"
       ((:cf :compile-file) tpl-compile-command :string
-       ":cf             Compile file"
+       ":cf              Compile file"
        ":compile-file &string &rest files               [Top level command]~@
         :cf &string &rest files                         [Abbreviation]~@
         ~@
         Compile files.  With no arguments, uses values from latest :cf~@
         command.  File extensions are optional.~%")
       ((:exit :eof) quit :eval
-       ":exit           Exit Lisp"
+       ":exit            Exit Lisp"
        ":exit &eval &optional (status 0)                [Top level command]~@
         ~@
         Exit Lisp without further confirmation.~%")
       ((:ld :load) tpl-load-command :string
-       ":ld             Load file"
+       ":ld              Load file"
        ":load &string &rest files                       [Top level command]~@
         :ld &string &rest files                         [Abbreviation]~@
         ~@
         Load files.  With no arguments, uses values from latest :ld~@
         or :cf command. File extensions are optional.~%")
       ((:step) tpl-step-command nil
-       ":step           Single step form"
+       ":step            Single step form"
        ":step form                                      [Top level command]~@
         ~@
         Evaluate form in single step mode.  While stepping, a new break~@
         level is invoked before every evaluation.  Extra commands are~@
         available at this time to control stepping and form evaluation.~%")
       ((:tr :trace) tpl-trace-command nil
-       ":tr(ace)        Trace function"
+       ":tr(ace)         Trace function"
        ":trace &rest functions                          [Top level command]~@
         :tr &rest functions                             [Abbreviation]~@
         ~@
@@ -90,7 +90,7 @@
         ~@
         See also: :untrace.~%")
       ((:untr :untrace) tpl-untrace-command nil
-       ":untr(ace)      Untrace function"
+       ":untr(ace)       Untrace function"
        ":untrace &rest functions                        [Top level command]~@
         :untr &rest functions                           [Abbreviation]~@
         ~@
@@ -100,7 +100,7 @@
         See also: :trace.~%")
       #+threads
       ((:s :switch) tpl-switch-command nil
-       ":s(witch)       Switch to next process to debug"
+       ":s(witch)        Switch to next process to debug"
        ":switch process                                 [Break command]~@
         :s processs                                     [Abbreviation]~@
         ~@
@@ -109,7 +109,7 @@
         of the process in the debugger waiting list.~%")
       #+threads
       ((:br :break) tpl-interrupt-command nil
-       ":br(eak)        Stop a given process"
+       ":br(eak)         Stop a given process"
        ":break process                                  [Break command]~@
         :br processs                                    [Abbreviation]~@
         ~@
@@ -118,7 +118,7 @@
         of the process in the debugger waiting list (:waiting).~%")
       #+threads
       ((:w :waiting) tpl-waiting-command nil
-       ":w(aiting)      Display list of active toplevels"
+       ":w(aiting)       Display list of active toplevels"
        ":waiting                                        [Break command]~@
         :w                                              [Abbreviation]~@
         ~@
@@ -126,24 +126,24 @@
       )
      ("Help commands"
       ((:apropos) tpl-apropos-command nil
-       ":apropos        Apropos"
+       ":apropos         Apropos"
        ":apropos string &optional package               [Top level command]~@
         ~@
         Finds all available symbols whose print names contain string.~@
         If a non NIL package is specified, only symbols in that package are considered.~@
         ~%")
       ((:doc document) tpl-document-command nil
-       ":doc(ument)     Document"
+       ":doc(ument)      Document"
        ":document symbol                                [Top level command]~@
         ~@
         Displays documentation about function, print names contain string.~%")
       ((? :h :help) tpl-help-command nil
-       ":h(elp) or ?    Help.  Type \":help help\" for more information"
+       ":h(elp) or ?     Help.  Type \":help help\" for more information"
        ":help &optional topic                           [Top level command]~@
-        :h &optional topic                              [Abbrevation]~@
+        :h &optional topic                              [Abbreviation]~@
         ~@
         Print information on specified topic.  With no arguments, print~@
-        quick summery of top level commands.~@
+        quick summary of top level commands.~@
         ~@
         Help information for top level commands follows the documentation~@
         style found in \"Common Lisp, the Language\"; and, in general, the~@
@@ -168,20 +168,20 @@
 (defconstant break-commands
   '("Break commands"
      ((:q :quit) tpl-quit-command nil
-       ":q(uit)         Return to some previous break level"
+       ":q(uit)          Return to some previous break level"
        ":quit &optional n                               [Break command]~@
         :q &optional n                                  [Abbreviation]~@
         ~@
         Without argument, return to top level;~@
         otherwise return to break level n.~%")
       ((:pop) (tpl-pop-command) :constant
-       ":pop            Pop to previous break level"
+       ":pop             Pop to previous break level"
        ":pop                                            [Break command]~@
         ~@
         Pop to previous break level, or if already in top level,~@
         exit Lisp after confirmation.~%")
       ((:c :continue) continue nil
-       ":c(ontinue)     Continue execution"
+       ":c(ontinue)      Continue execution"
        ":continue                                       [Break command]~@
         :c                                              [Abbreviation]~@
         ~@
@@ -189,7 +189,7 @@
         This command is only available when the break level is continuable~@
         (e.g., called from a correctable error or the function break).~%")
       ((:b :backtrace) tpl-backtrace nil
-       ":b(acktrace)    Print backtrace"
+       ":b(acktrace)     Print backtrace"
        ":backtrace &optional n                          [Break command]~@
         :b &optional n                                  [Abbreviation]~@
         ~@
@@ -202,7 +202,7 @@
         ~@
         See also: :function, :previous, :next.~%")
       ((:f :function) tpl-print-current nil
-       ":f(unction)     Show current function"
+       ":f(unction)      Show current function"
        ":function                                       [Break command]~@
         :f                                              [Abbreviation]~@
         ~@
@@ -213,7 +213,7 @@
         ~@
         See also: :backtrace, :next, previous, :disassemble, :variables.~%")
       ((:p :previous) tpl-previous nil
-       ":p(revious)     Go to previous function"
+       ":p(revious)      Go to previous function"
        ":previous &optional (n 1)                       [Break command]~@
         :p &optional (n 1)                              [Abbreviation]~@
         ~@
@@ -222,11 +222,11 @@
         ~@
         See also: :backtrace, :function, :go, :next.~%")
       ((:d :down) tpl-previous nil
-       ":d(own)         Alias to :previous"
+       ":d(own)          Alias to :previous"
        ""
        )
       ((:n :next) tpl-next nil
-       ":n(ext)         Go to next function"
+       ":n(ext)          Go to next function"
        ":next &optional (n 1)                           [Break command]~@
         :n &optional (n 1)                              [Abbreviation]~@
         ~@
@@ -235,18 +235,18 @@
         ~@
         See also: :backtrace, :function, :go, :previous.~%")
       ((:u :up) tpl-next nil
-       ":u(p)           Alias to :next"
+       ":u(p)            Alias to :next"
        ""
        )
       ((:g :go) tpl-go nil
-       ":g(o)           Go to next function"
+       ":g(o)            Go to next function"
        ":go &optional (n 1)                             [Break command]~@
         :g &optional (n 1)                              [Abbreviation]~@
         ~@
         Move to the function at IHS[i].~@
         See also: :backtrace, :function, :next, :previous.~%")
       ((:fs :forward-search) tpl-forward-search :string
-       ":fs             Search forward for function"
+       ":fs              Search forward for function"
        ":forward-search &string substring               [Break command]~@
         :fs &string substring                           [Abbreviation]~@
         ~@
@@ -255,7 +255,7 @@
         ~@
         See also: :backtrace, :function, :next.~%")
       ((:bs :backward-search) tpl-backward-search :string
-       ":bs             Search backward for function"
+       ":bs              Search backward for function"
        ":backward-search &string substring              [Break command]~@
         :bs &string substring                           [Abbreviation]~@
         ~@
@@ -264,7 +264,7 @@
         ~@
         See also: :backtrace, :function, :previous.~%")
       ((:disassemble) tpl-disassemble-command nil
-       ":disassemble    Disassemble current function"
+       ":disassemble     Disassemble current function"
        ":disassemble                                    [Break command]~@
         :disassemble                                    [Abbreviation]~@
         ~@
@@ -278,7 +278,7 @@
         Show the lisp code of the current function. Only works for interpreted~@
         functions.~%")
       ((:v :variables) tpl-variables-command nil
-       ":v(ariables)    Show local variables, functions, blocks, and tags"
+       ":v(ariables)     Show local variables, functions, blocks, and tags"
        ":variables &optional no-values                  [Break command]~@
         :v &optional no-values                          [Abbreviation]~@
         ~@
@@ -288,7 +288,7 @@
         unless the argument is non-null.~%")
 #|
       ((:l :local) tpl-local-command nil
-       ":l(ocal)        Return the nth local value on the stack"
+       ":l(ocal)         Return the nth local value on the stack"
        ":local &optional (n 0)                          [Break command]~@
         :l &optional (n 0)                              [Abbreviation]
         ~@
@@ -297,14 +297,14 @@
         level as well as saved in the variable *.~%")
 |#
       ((:hide) tpl-hide nil
-       ":hide           Hide function"
+       ":hide            Hide function"
        ":hide function                                  [Break command]~@
         ~@
         Hide function.  A hidden function is not displayed in a backtrace.~@
         ~@
         See also: :backtrace, :unhide, :hide-package.~%")
       ((:unhide) tpl-unhide nil
-       ":unhide         Unhide function"
+       ":unhide          Unhide function"
        ":unhide function                                [Break command]~@
         ~@
         Unhide function.  The specified function will be displayed in future~@
@@ -312,7 +312,7 @@
         ~@
         See also: :backtrace, :hide, :unhide-package.~%")
       ((:hp :hide-package) tpl-hide-package nil
-       ":hp             Hide package"
+       ":hp              Hide package"
        ":hide-package package                           [Break command]~@
         :hp package                                     [Abbreviation]~@
         ~@
@@ -321,7 +321,7 @@
         ~@
         See also: :backtrace, :unhide-package.~%")
       ((:unhp :unhide-package) tpl-unhide-package nil
-       ":unhp           Unhide package"
+       ":unhp            Unhide package"
        ":unhide-package package                         [Break command]~@
         :unhp package                                   [Abbreviation]~@
         ~@
@@ -330,7 +330,7 @@
         ~@
         See also: :backtrace, :hide-package, :hide, :unhide.~%")
       ((:unhide-all) tpl-unhide-all nil
-       ":unhide-all     Unhide all variables and packages"
+       ":unhide-all      Unhide all variables and packages"
        ":unhide-all                                     [Break command]~@
         ~@
         Unhide all variables and packages.  All functions will be displayed~@
@@ -339,7 +339,7 @@
         See also: :hide, :unhide, :hide-package, :unhide-package.~%")
 #|
       ((:vs :value-stack) tpl-vs-command nil
-       ":vs             Show value stack"
+       ":vs              Show value stack"
        ":value-stack &optional n                        [Break command]~@
         :vs &optional n                                 [Abbreviation]~@
         ~@
@@ -350,7 +350,7 @@
         See also: :local.~%")
 |#
       ((:bds :binding-stack) tpl-bds-command nil
-       ":bds            Show binding stack"
+       ":bds             Show binding stack"
        ":binding-stack &optional variable               [Break command]~@
         :bds &optional variable                         [Abbreviation]~@
         ~@
@@ -358,23 +358,23 @@
         break level.  With a variable name, print nothing, but return the~@
         value of the given variable on the binding stack.~%")
       ((:frs :frame-stack) tpl-frs-command nil
-       ":frs            Show frame stack"
+       ":frs             Show frame stack"
        ""
        )
       ((:m :message) tpl-print-message nil
-       ":m(essage)      Show error message"
+       ":m(essage)       Show error message"
        ":message                                        [Break command]~@
         :m                                              [Abbreviation]~@
         ~@
         Show current error message.~%")
       ((:hs :help-stack) tpl-help-stack-command nil
-       ":hs             Help stack"
+       ":hs              Help stack"
        ":help-stack                                     [Break command]~@
-        :hs                                             [Abbrevation]~@
+        :hs                                             [Abbreviation]~@
         ~@
         Lists the functions to access the LISP system stacks.~%")
       ((:i :inspect) tpl-inspect-command nil
-       ":i(nspect)      Inspect value of local variable"
+       ":i(nspect)       Inspect value of local variable"
        ":inspect var-name                               [Break command]~@
         :i var-name                                     [Abbreviation]~@
         ~@
@@ -383,6 +383,15 @@
         then be used regardless of of the symbol's package.~@
         ~@
         See also: :variables.~%")
+      ((:cb :c-backtrace) ext::dump-c-backtrace nil
+       ":c(-)b(acktrace) Print a raw C backtrace"
+       ":c-backtrace n                                  [Break command]~@
+        :cb n                                           [Abbreviation]~@
+        ~@
+        Show function call history of the n C functions above and~@
+        including the current one.~@
+        ~@
+        See also: :backtrace.~%")
   ))
 
 (defparameter *lisp-initialized* nil)
@@ -398,15 +407,15 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
       (in-package "CL-USER")
 
       (unless (or *lisp-initialized* (null process-command-line))
-        (si:trap-fpe :last t)
         (process-command-args)
         (format t "ECL (Embeddable Common-Lisp) ~A (git:~D)"
                 (lisp-implementation-version)
                 (ext:lisp-implementation-vcs-id))
         (format t "~%Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya~@
 Copyright (C) 1993 Giuseppe Attardi~@
-Copyright (C) 2000 Juan J. Garcia-Ripoll~@
-Copyright (C) 2016 Daniel Kochmanski~@
+Copyright (C) 2013 Juan J. Garcia-Ripoll~@
+Copyright (C) 2018 Daniel Kochmanski~@
+Copyright (C) 2020 Daniel Kochmanski and Marius Gerbershagen~@
 ECL is free software, and you are welcome to redistribute it~@
 under certain conditions; see file 'Copyright' for details.")
         (format *standard-output* "~%Type :h for Help.  "))
@@ -458,13 +467,14 @@ under certain conditions; see file 'Copyright' for details.")
   #-threads
   `(progn ,@body)
   #+threads
-  `(unwind-protect
-        (progn
-          (register-in-waiting-list mp:*current-process*)
-          (grab-console mp:*current-process*)
-          ,@body)
-     (delete-from-waiting-list mp:*current-process*)
-     (release-console mp:*current-process*)))
+  `(mp:without-interrupts
+     (unwind-protect
+          (mp:with-restored-interrupts
+            (register-in-waiting-list mp:*current-process*)
+            (grab-console mp:*current-process*)
+            ,@body)
+       (delete-from-waiting-list mp:*current-process*)
+       (release-console mp:*current-process*))))
 
 (defparameter *allow-recursive-debug* nil)
 (defparameter *debug-status* nil)
@@ -503,7 +513,7 @@ Use special code 0 to cancel this operation.")
   (restart-case (simple-terminal-interrupt)
     (continue ())))
 
-(defun terminal-interrupt (&key process (correctablep t))
+(defun terminal-interrupt (&key (correctablep t))
   (declare (ignore correctablep))
   #+threads
   (mp:without-interrupts
@@ -618,7 +628,7 @@ Use special code 0 to cancel this operation.")
     (function (funcall *tpl-prompt-hook*))
     (t (fresh-line)
        (format t "~A~V,,,'>A "
-               (if (eq *package* (find-package 'user))
+               (if (eq *package* (find-package 'cl-user))
                    ""
                  (package-name *package*))
                (- *tpl-level* *step-level* -1)
@@ -799,38 +809,6 @@ Use special code 0 to cancel this operation.")
         (format t " No source code available for this function.~%"))
     (values)))
 
-(defun reconstruct-bytecodes-lambda-list (data)
-  (declare (si::c-local data))
-  (let ((output '()))
-    (dotimes (n (pop data))     ;; required values
-      (declare (fixnum n))
-      (push (pop data) output))
-    (let ((l (pop data)))       ;; optional values
-      (declare (fixnum l))
-      (unless (zerop l)
-        (push '&optional output)
-        (dotimes (n l)
-          (push (first data) output)
-          (setf data (cdddr data)))))
-    (let ((rest (pop data)))    ;; &rest value
-      (when rest
-        (push '&rest output)
-        (push rest output)))
-    (let* ((allow-other-keys (pop data))) ;; &keys and &allow-other-keys
-      (unless (eql allow-other-keys 0)
-        (push '&key output)
-        (let ((l (pop data)))
-          (declare (fixnum l))
-          (dotimes (n l)
-            (let* ((key (first data))
-                   (var (second data)))
-              (unless (and (keywordp key) (string= key var))
-                (setf var (list (list key var))))
-              (push var output))))
-        (when allow-other-keys
-          (push '&allow-other-keys output))))
-    (nreverse output)))
-
 (defun lambda-list-from-annotations (name)
   (declare (si::c-local)) 
   (let ((args (ext:get-annotation name :lambda-list nil)))
@@ -858,16 +836,8 @@ Use special code 0 to cancel this operation.")
                 (ndx (position '&aux list)))
            (return-from function-lambda-list
              (values (if ndx (subseq list 0 (1- ndx)) list) t))))))
-    ;; Reconstruct the lambda list from the bytecodes
-    ((multiple-value-bind (lex-env bytecodes data)
-         (si::bc-split function)
-       (declare (ignore lex-env))
-       (when bytecodes
-         (setq data (coerce data 'list))
-         (return-from function-lambda-list
-           (values (reconstruct-bytecodes-lambda-list data) t)))))
     ;; If it's a compiled function of ECL itself, reconstruct the
-    ;; lambda-list from its documentation string.
+    ;; lambda-list from the annotation.
     (t
      (lambda-list-from-annotations (compiled-function-name function)))))
 
@@ -879,7 +849,7 @@ Use special code 0 to cancel this operation.")
         cl_index ndx = #1;
         typedef struct ecl_var_debug_info *pinfo;
         pinfo d = (pinfo)(v->vector.self.t[1]) + ndx;
-        cl_object name = make_constant_base_string(d->name);
+        cl_object name = ecl_make_constant_base_string(d->name,-1);
         void *value = (void*)(v->vector.self.t[2+ndx]);
         cl_object output;
         switch (d->type) {
@@ -901,6 +871,28 @@ Use special code 0 to cancel this operation.")
                 output = ecl_make_double_float(*p);
                 break;
         }
+        case _ecl_long_double_loc: {
+                long double *p = (long double*)value;
+                output = ecl_make_long_float(*p);
+                break;
+        }
+#ifdef ECL_COMPLEX_FLOAT
+        case _ecl_csfloat_loc: {
+                _Complex float *p = (_Complex float*)value;
+                output = ecl_make_csfloat(*p);
+                break;
+        }
+        case _ecl_cdfloat_loc: {
+                _Complex double *p = (_Complex double*)value;
+                output = ecl_make_cdfloat(*p);
+                break;
+        }
+        case _ecl_clfloat_loc: {
+                _Complex long double *p = (_Complex long double*)value;
+                output = ecl_make_clfloat(*p);
+                break;
+        }
+#endif
 #ifdef ECL_SSE2
         case _ecl_int_sse_pack_loc: {
                 __m128i *p = (__m128i*)value;
@@ -1326,20 +1318,20 @@ Use special code 0 to cancel this operation.")
 Use the following functions to directly access ECL stacks.
 
 Invocation History Stack:
-(sys:IHS-TOP)   Returns the index of the TOP of the IHS.
+(SYS:IHS-TOP)   Returns the index of the TOP of the IHS.
 (SYS:IHS-FUN i) Returns the function of the i-th entity in IHS.
 (SYS:IHS-ENV i)
 (SYS:IHS-PREV i)
 (SYS:IHS-NEXT i)
 
 Frame (catch, block) Stack:
-(sys:FRS-TOP)   Returns the index of the TOP of the FRS.
+(SYS:FRS-TOP)   Returns the index of the TOP of the FRS.
 (SYS:FRS-BDS i) Returns the BDS index of the i-th entity in FRS.
 (SYS:FRS-IHS i) Returns the IHS index of the i-th entity in FRS.
 (SYS:FRS-TAG i)
 
 Binding Stack:
-(sys:BDS-TOP)   Returns the index of the TOP of the BDS.
+(SYS:BDS-TOP)   Returns the index of the TOP of the BDS.
 (SYS:BDS-VAR i) Returns the symbol of the i-th entity in BDS.
 (SYS:BDS-VAL i) Returns the value of the i-th entity in BDS.
 
@@ -1449,11 +1441,12 @@ package."
       (setq *console-owner* mp:*current-process*)
       ;; As of ECL 9.4.1 making a normal function return from the debugger
       ;; seems to be a very bad idea! Basically, it dumps core...
-      (when (listen *debug-io*)
-        (clear-input *debug-io*))
+      (ignore-errors
+        (when (listen *debug-io*)
+          (clear-input *debug-io*)))
       ;; Like in SBCL, the error message is output through *error-output*
       ;; The rest of the interaction is performed through *debug-io*
-      (finish-output)
+      (ignore-errors (finish-output))
       ;; We wrap the following in `ignore-errors' because error may be
       ;; caused by writing to the `*error-output*', what leads to
       ;; infinite recursion!

@@ -14,8 +14,6 @@
 ;;;;  CMPPACKAGE -- Package definitions and exported symbols
 ;;;;
 
-(ext:package-lock "CL" nil)
-
 (defpackage "C"
   (:nicknames "COMPILER")
   (:use "FFI" "EXT" #+threads "MP" "CL")
@@ -50,3 +48,5 @@
   (:import-from "SI" "GET-SYSPROP" "PUT-SYSPROP" "REM-SYSPROP" "MACRO"
                 "*COMPILER-CONSTANTS*" "REGISTER-GLOBAL" "CMP-ENV-REGISTER-MACROLET"
                 "COMPILER-LET"))
+
+(ext:package-lock "CL" nil)

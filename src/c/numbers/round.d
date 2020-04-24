@@ -23,10 +23,12 @@
 #endif
 #include <ecl/internal.h>
 
+#pragma STDC FENV_ACCESS ON
+
 @(defun round (x &optional (y OBJNULL))
   @
   if (narg == 1)
-  return ecl_round1(x);
+    return ecl_round1(x);
   else
     return ecl_round2(x, y);
   @)
@@ -53,12 +55,13 @@ round_double(double d)
       }
     }
     return q;
+  } else if (isnan(d)) {
+    return d;
   } else {
     return -round_double(-d);
   }
 }
 
-#ifdef ECL_LONG_FLOAT
 static long double
 round_long_double(long double d)
 {
@@ -71,11 +74,12 @@ round_long_double(long double d)
       }
     }
     return q;
+  } else if (isnan(d)) {
+    return d;
   } else {
     return -round_long_double(-d);
   }
 }
-#endif
 
 static cl_object
 ecl_round2_integer(const cl_env_ptr the_env, cl_object x, cl_object y, cl_object q)
@@ -102,6 +106,8 @@ ecl_round1(cl_object x)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object v0, v1;
+  ECL_MATHERR_CLEAR;
+
   switch (ecl_t_of(x)) {
   case t_fixnum:
   case t_bignum:
@@ -126,7 +132,6 @@ ecl_round1(cl_object x)
     v1 = ecl_make_double_float(d - q);
     break;
   }
-#ifdef ECL_LONG_FLOAT
   case t_longfloat: {
     long double d = ecl_long_float(x);
     long double q = round_long_double(d);
@@ -134,10 +139,11 @@ ecl_round1(cl_object x)
     v1 = ecl_make_long_float(d - q);
     break;
   }
-#endif
   default:
     FEwrong_type_nth_arg(@[round],1,x,@[real]);
   }
+
+  ECL_MATHERR_TEST;
   ecl_return2(the_env, v0, v1);
 }
 

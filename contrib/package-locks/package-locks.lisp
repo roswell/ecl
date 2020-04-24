@@ -26,14 +26,6 @@
                 :one-liner t)
   T)
 
-(defun package-locked-p (package &aux (package (si:coerce-to-package package)))
-  "Returns T when PACKAGE is locked, NIL otherwise. Signals an error
-if PACKAGE doesn't designate a valid package."
-  (ffi:c-inline (package) (:object) :object
-                "(#0)->pack.locked ? ECL_T : ECL_NIL"
-                :side-effects nil
-                :one-liner t))
-
 (defmacro without-package-locks (&body body)
   "Ignores all runtime package lock violations during the execution of
 body. Body can begin with declarations."

@@ -21,11 +21,12 @@
   (cond
    ((let ((x (assoc val *optimizable-constants*)))
       (when x
-       (pushnew "#include <float.h>" *clines-string-list*)
-       (setf x (cdr x))
-       (if (listp x)
-           (c1expr x)
-           x))))
+        (pushnew "#include <float.h>" *clines-string-list*)
+        (pushnew "#include <complex.h>" *clines-string-list*)
+        (setf x (cdr x))
+        (if (listp x)
+            (c1expr x)
+            x))))
    ((eq val nil) (c1nil))
    ((eq val t) (c1t))
    ((sys::fixnump val)
@@ -88,7 +89,10 @@
                 (loc-type (case type
                             (single-float 'single-float-value)
                             (double-float 'double-float-value)
-                            (long-float 'long-float-value)))
+                            (long-float 'long-float-value)
+                            (si:complex-single-float 'csfloat-value)
+                            (si:complex-double-float 'cdfloat-value)
+                            (si:complex-long-float 'clfloat-value)))
                 (location (make-vv :location c-value :value value)))
            (cons value (make-c1form* 'LOCATION :type type
                                      :args (list loc-type value location)))))
@@ -111,9 +115,7 @@
      (#.(coerce 0 'double-float) "cl_core.doublefloat_zero")
      (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
      (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
-     #+long-float
      (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
-     #+long-float
      (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
 
      ;; We temporarily remove this constant, because the bytecodes compiler
@@ -127,7 +129,7 @@
      #+threads
      (#.(find-package :mp) "cl_core.mp_package")
      )
-   (when (eq machine +default-machine+)
+   (when (eq machine *default-machine*)
      ;; Constants which are not portable
      `((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")
        (MOST-POSITIVE-SINGLE-FLOAT "FLT_MAX")
@@ -135,21 +137,21 @@
        (MOST-NEGATIVE-SHORT-FLOAT "-FLT_MAX")
        (MOST-NEGATIVE-SINGLE-FLOAT "-FLT_MAX")
 
-       (LEAST-POSITIVE-SHORT-FLOAT "FLT_MIN")
-       (LEAST-POSITIVE-SINGLE-FLOAT "FLT_MIN")
+       (LEAST-POSITIVE-SHORT-FLOAT "FLT_TRUE_MIN")
+       (LEAST-POSITIVE-SINGLE-FLOAT "FLT_TRUE_MIN")
        (LEAST-POSITIVE-NORMALIZED-SHORT-FLOAT "FLT_MIN")
        (LEAST-POSITIVE-NORMALIZED-SINGLE-FLOAT" FLT_MIN")
 
-       (LEAST-NEGATIVE-SHORT-FLOAT "-FLT_MIN")
-       (LEAST-NEGATIVE-SINGLE-FLOAT "-FLT_MIN")
+       (LEAST-NEGATIVE-SHORT-FLOAT "-FLT_TRUE_MIN")
+       (LEAST-NEGATIVE-SINGLE-FLOAT "-FLT_TRUE_MIN")
        (LEAST-NEGATIVE-NORMALIZED-SHORT-FLOAT "-FLT_MIN")
        (LEAST-NEGATIVE-NORMALIZED-SINGLE-FLOAT "-FLT_MIN")
 
        (MOST-POSITIVE-DOUBLE-FLOAT "DBL_MAX")
        (MOST-NEGATIVE-DOUBLE-FLOAT "-DBL_MAX")
-       (LEAST-POSITIVE-DOUBLE-FLOAT "DBL_MIN")
+       (LEAST-POSITIVE-DOUBLE-FLOAT "DBL_TRUE_MIN")
        (LEAST-POSITIVE-NORMALIZED-DOUBLE-FLOAT "DBL_MIN")
-       (LEAST-NEGATIVE-DOUBLE-FLOAT "-DBL_MIN")
+       (LEAST-NEGATIVE-DOUBLE-FLOAT "-DBL_TRUE_MIN")
        (LEAST-NEGATIVE-NORMALIZED-DOUBLE-FLOAT "-DBL_MIN")
 
        #+ieee-floating-point
@@ -161,15 +163,13 @@
            (SINGLE-FLOAT-NEGATIVE-INFINITY "-INFINITY")
            (DOUBLE-FLOAT-NEGATIVE-INFINITY "-INFINITY"))
 
-       #+long-float
        ,@'((MOST-POSITIVE-LONG-FLOAT "LDBL_MAX")
            (MOST-NEGATIVE-LONG-FLOAT "-LDBL_MAX")
-           (LEAST-POSITIVE-LONG-FLOAT "LDBL_MIN")
+           (LEAST-POSITIVE-LONG-FLOAT "LDBL_TRUE_MIN")
            (LEAST-POSITIVE-NORMALIZED-LONG-FLOAT" LDBL_MIN")
-           (LEAST-NEGATIVE-LONG-FLOAT "-LDBL_MIN")
+           (LEAST-NEGATIVE-LONG-FLOAT "-LDBL_TRUE_MIN")
            (LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT "-LDBL_MIN")
            #+ieee-floating-point
            (LONG-FLOAT-POSITIVE-INFINITY   "INFINITY")
            #+ieee-floating-point
-           (LONG-FLOAT-NEGATIVE-INFINITY   "-INFINITY")
-           )))))
+           (LONG-FLOAT-NEGATIVE-INFINITY   "-INFINITY"))))))

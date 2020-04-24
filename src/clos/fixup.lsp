@@ -87,9 +87,7 @@
                                       (t
                                        old-class))))
       (si::instance-sig-set gfun)
-      (register-method-with-specializers method)
-      )
-    ))
+      (register-method-with-specializers method))))
 
 
 ;;; ---------------------------------------------------------------------
@@ -120,21 +118,26 @@
 (defun congruent-lambda-p (l1 l2)
   (multiple-value-bind (r1 opts1 rest1 key-flag1 keywords1 a-o-k1)
       (si::process-lambda-list l1 'FUNCTION)
-    (declare (ignore a-o-k1))
     (multiple-value-bind (r2 opts2 rest2 key-flag2 keywords2 a-o-k2)
         (si::process-lambda-list l2 'FUNCTION)
-        (and (= (length r2) (length r1))
-             (= (length opts1) (length opts2))
-             (eq (and (null rest1) (null key-flag1))
-                 (and (null rest2) (null key-flag2)))
-             ;; All keywords mentioned in the genericf function
-             ;; must be accepted by the method.
-             (or (null key-flag1)
-                 (null key-flag2)
-                 a-o-k2
-                 (null (set-difference (all-keywords keywords1)
-                                       (all-keywords keywords2))))
-             t))))
+      (and (= (length r2) (length r1))
+           (= (length opts1) (length opts2))
+           (eq (and (null rest1) (null key-flag1))
+               (and (null rest2) (null key-flag2)))
+           ;; All keywords mentioned in the generic function must be
+           ;; accepted by the method.
+           (or (null key-flag1)
+               (null key-flag2)
+               ;; Testing for a-o-k1 here may not be conformant when
+               ;; the fourth point of 7.6.4 is read literally, but it
+               ;; is more consistent with the generic function calling
+               ;; specification. Also it is compatible with popular
+               ;; implementations like SBCL and CCL. -- jd 2020-04-07
+               a-o-k1
+               a-o-k2
+               (null (set-difference (all-keywords keywords1)
+                                     (all-keywords keywords2))))
+           t))))
 
 (defun add-method (gf method)
   ;; during boot it's a structure accessor
@@ -328,11 +331,20 @@ their lambda lists ~A and ~A are not congruent."
   (mapc #'recursively-update-classes
         (class-direct-subclasses a-class)))
 
-(defmethod update-dependent ((object generic-function)
-                             (dep initargs-updater)
-                             &rest initargs)
-  (declare (ignore dep initargs object))
-  (recursively-update-classes +the-class+))
+(defmethod update-dependent ((object generic-function) (dep initargs-updater)
+                             &rest initargs
+                             &key
+                               ((add-method added-method) nil am-p)
+                               ((remove-method removed-method) nil rm-p)
+                               &allow-other-keys)
+  (declare (ignore object dep initargs))
+  (when-let ((method (cond (am-p added-method)
+                           (rm-p removed-method))))
+    ;; update-dependent is also called when the gf itself is reinitialized,
+    ;; so make sure we actually have a method that's added or removed
+    (let ((spec (first (method-specializers method)))) ; the class being initialized or allocated
+      (when (classp spec) ; sanity check against eql specialization
+        (recursively-update-classes spec)))))
 
 (let ((x (make-instance 'initargs-updater)))
   (add-dependent #'shared-initialize x)

@@ -1,0 +1,390 @@
+@node Processes (native threads)
+@subsection Processes (native threads)
+
+Process is a primitive representing native thread.
+
+@node Processes dictionary
+@subsection Processes dictionary
+
+@cppdef mp_all_processes
+@lspdef mp:all-processes
+
+@deftypefun cl_object mp_all_processes ()
+@end deftypefun
+
+@defun mp:all-processes
+
+Returns the list of processes associated to running tasks. The list is a
+fresh new one and can be destructively modified. However, it may happen
+that the output list is not up to date, because some of the tasks have
+expired before this copy is returned.
+
+@end defun
+
+
+@cppdef mp_exit_process
+@lspdef mp:exit-process
+
+@deftypefun cl_object mp_exit_process () ecl_attr_noreturn
+@end deftypefun
+
+@defun mp:exit-process
+
+When called from a running task, this function immediately causes the
+task to finish. When invoked from the main thread, it is equivalent to
+invoking @coderef{ext:quit} with exit code 0.
+
+@end defun
+
+
+@cppdef mp_interrupt_process
+@lspdef mp:interrupt-process
+
+@deftypefun cl_object mp_interrupt_process (cl_object process, cl_object function)
+@end deftypefun
+
+@defun mp:interrupt-process process function
+
+Interrupt a task. This function sends a signal to a running
+@var{process}. When the task is free to process that signal, it will
+stop whatever it is doing and execute the given function.
+
+@strong{WARNING:} Use with care! Interrupts can happen anywhere,
+except in code regions explicitely protected with
+@coderef{mp:without-interrupts}. This can lead to dangerous situations
+when interrupting functions which are not thread safe. In particular,
+one has to consider:
+@itemize
+@item Reentrancy: Functions, which usually are not called recursively can be re-entered during execution of the interrupt.
+@item Stack unwinding: Non-local jumps like @code{throw} or @code{return-from} in the interrupting code will handle @code{unwind-protect} forms like usual. However, the cleanup forms of an @code{unwind-protect} can still be interrupted. In that case the execution flow will jump to the next @code{unwind-protect}.
+@end itemize
+
+@exindex Process interruption
+Example:
+
+Kill a task that is doing nothing (See @coderef{mp:process-kill}).
+
+@lisp
+(flet ((task-to-be-killed ()
+         ;; Infinite loop
+         (loop (sleep 1))))
+  (let ((task (mp:process-run-function 'background #'task-to-be-killed)))
+    (sleep 10)
+    (mp:interrupt-process task 'mp:exit-process)))
+@end lisp
+
+@end defun
+
+
+@cppdef mp_make_process
+@lspdef mp:make-process
+
+@deftypefun cl_object mp_make_process (cl_narg narg, ...)
+@end deftypefun
+
+@defun mp:make-process &key name initial-bindings
+
+Create a new thread. This function creates a separate task with a name
+set to @var{name} and no function to run. See also
+@coderef{mp:process-run-function}. Returns newly created process.
+
+If @var{initial-bindings} is false, the new process inherits local
+bindings to special variables (i.e. binding a special variable with
+@code{let} or @code{let*}) from the current thread, otherwise the new
+thread possesses no local bindings.
+@end defun
+
+
+@cppdef mp_process_active_p
+@lspdef mp:process-active-p
+
+@deftypefun cl_object mp_process_active_p (cl_object process)
+@end deftypefun
+
+@defun mp:process-active-p process
+
+Returns @code{t} when @var{process} is active, @code{nil}
+otherwise. Signals an error if @var{process} doesn't designate a valid
+process.
+
+@end defun
+
+
+@cppdef mp_process_enable
+@lspdef mp:process-enable
+
+@deftypefun cl_object mp_process_enable (cl_object process)
+@end deftypefun
+
+@defun mp:process-enable process
+
+The argument to this function should be a process created by
+@coderef{mp:make-process}, which has a function associated as per
+@coderef{mp:process-preset} but which is not yet running.  After invoking
+this function a new thread will be created in which the associated
+function will be executed.  Returns @var{process} if the thread
+creation was successful and @code{nil} otherwise.
+
+@exindex Possible implementation of @coderef{mp:process-run-function}:
+
+@lisp
+(defun process-run-function (process-name process-function &rest args)
+  (let ((process (mp:make-process name)))
+    (apply #'mp:process-preset process function args)
+    (mp:process-enable process)))
+@end lisp
+@end defun
+
+
+@cppdef mp_process_yield
+@lspdef mp:process-yield
+
+@deftypefun cl_object mp_process_yield ()
+@end deftypefun
+
+@defun mp:process-yield
+Yield the processor to other threads.
+@end defun
+
+
+@cppdef mp_process-join
+@lspdef mp:process-join
+
+@deftypefun cl_object mp_process_join (cl_object process)
+@end deftypefun
+
+@defun mp:process-join process
+Suspend current thread until @var{process} exits. Return the result
+values of the @var{process} function.
+@end defun
+
+
+@cppdef mp_process_kill
+@lspdef mp:process-kill
+
+@deftypefun cl_object mp_process_kill (cl_object process)
+@end deftypefun
+
+@defun mp:process-kill process
+Try to stop a running task. Killing a process may fail if the task has
+disabled interrupts.
+
+@exindex Killing process
+Example:
+
+Kill a task that is doing nothing
+@lisp
+(flet ((task-to-be-killed ()
+         ;; Infinite loop
+         (loop (sleep 1))))
+  (let ((task (mp:process-run-function 'background #'task-to-be-killed)))
+    (sleep 10)
+    (mp:process-kill task)))
+@end lisp
+@end defun
+
+
+@cppdef mp_process_suspend
+@lspdef mp:process-suspend
+
+@deftypefun cl_object mp_process_suspend (cl_object process)
+@end deftypefun
+
+@defun mp:process-suspend process
+Suspend a running @var{process}. May be resumed with
+@coderef{mp:process-resume}.
+
+@exindex Suspend and resume process
+Example:
+
+@lisp
+(flet ((ticking-task ()
+         ;; Infinite loop
+         (loop
+            (sleep 1)
+            (print :tick))))
+  (print "Running task (one tick per second)")
+  (let ((task (mp:process-run-function 'background #'ticking-task)))
+    (sleep 5)
+    (print "Suspending task for 5 seconds")
+    (mp:process-suspend task)
+    (sleep 5)
+    (print "Resuming task for 5 seconds")
+    (mp:process-resume task)
+    (sleep 5)
+    (print "Killing task")
+    (mp:process-kill task)))
+@end lisp
+@end defun
+
+
+@cppdef mp_process_resume
+@lspdef mp:process-resume
+
+@deftypefun cl_object mp_process_resume (cl_object process)
+@end deftypefun
+
+@defun mp:process-resume process
+Resumes a suspended @var{process}. See example in
+@coderef{mp:process-suspend}.
+@end defun
+
+
+@cppdef mp_process_name
+@lspdef mp:process-name
+
+@deftypefun cl_object mp_process_name (cl_object process)
+@end deftypefun
+
+@defun mp:process-name process
+Returns the name of a @var{process} (if any).
+@end defun
+
+
+@cppdef mp_process_preset
+@lspdef mp:process-preset
+
+@deftypefun cl_object mp_process_preset (cl_narg narg, cl_object process, cl_object function, ...)
+@end deftypefun
+
+@defun mp:process-preset process function &rest function-args
+
+Associates a @var{function} to call with the arguments
+@var{function-args}, with a stopped @var{process}. The function will
+be the entry point when the task is enabled in the future.
+
+See @coderef{mp:process-enable} and @coderef{mp:process-run-function}.
+
+@end defun
+
+
+@cppdef mp_process_run_function
+@lspdef mp:process-run-function
+
+@deftypefun cl_object mp_process_run_function (cl_narg narg, cl_object name, cl_object function, ...)
+@end deftypefun
+
+@defun mp:process-run-function name function &rest function-args
+Create a new process using @coderef{mp:make-process}, associate a function
+to it and start it using @coderef{mp:process-preset}.
+
+@exindex mp:process-run-function usage
+Example:
+
+@lisp
+(flet ((count-numbers (end-number)
+         (dotimes (i end-number)
+	   (format t "~%;;; Counting: ~i" i)
+	   (terpri)
+	   (sleep 1))))
+  (mp:process-run-function 'counter #'count-numbers 10))
+@end lisp
+@end defun
+
+
+@cppdef mp_current_process
+@lspdef mp:*current-process*
+
+@deftypefun cl_object mp_current_process ()
+@end deftypefun
+
+@defvr Variable {mp:*current-process*}
+Returns/holds the current process of a caller.
+@end defvr
+
+
+@cppdef mp_block_signals
+@lspdef mp:block-signals
+
+@deftypefun cl_object mp_block_signals ()
+@end deftypefun
+
+@defun mp:block-signals
+Blocks process for interrupts and returns the previous sigmask.
+
+See @coderef{mp:interrupt-process}.
+@end defun
+
+
+@cppdef mp_restore_signals
+@lspdef mp:restore-signals
+
+@deftypefun cl_object mp_restore_signals (cl_object sigmask)
+@end deftypefun
+
+@defun mp:restore-signals sigmask
+Enables the interrupts from @var{sigmask}.
+
+See @coderef{mp:interrupt-process}.
+@end defun
+
+
+@lspdef mp:without-interrupts
+@lspdef mp:allow-with-interrupts
+@lspdef mp:with-local-interrupts
+@lspdef mp:with-restored-interrupts
+
+@defmac mp:without-interrupts &body body
+
+Executes @var{body} with all deferrable interrupts disabled. Deferrable
+interrupts arriving during execution of the @var{body} take effect
+after @var{body} has been executed.
+
+Deferrable interrupts include most blockable POSIX signals, and
+@coderef{mp:interrupt-process}. Does not interfere with garbage
+collection, and unlike in many traditional Lisps using userspace
+threads, in ECL @coderef{mp:without-interrupts} does not inhibit
+scheduling of other threads.
+
+Binds @coderef{mp:allow-with-interrupts},
+@coderef{mp:with-local-interrupts} and
+@coderef{mp:with-restored-interrupts} as a local macros.
+
+@coderef{mp:with-restored-interrupts} executes the body with interrupts
+enabled if and only if the @coderef{mp:without-interrupts} was in an
+environment in which interrupts were allowed.
+
+@coderef{mp:allow-with-interrupts} allows the
+@coderef{mp:with-interrupts} to take effect during the dynamic scope of
+its body, unless there is an outer @coderef{mp:without-interrupts}
+without a corresponding @coderef{mp:allow-with-interrupts}.
+
+@coderef{mp:with-local-interrupts} executes its body with interrupts
+enabled provided that there is an @coderef{mp:allow-with-interrupts} for
+every @coderef{mp:without-interrupts} surrounding the current one.
+@coderef{mp:with-local-interrupts} is equivalent to:
+
+@lisp
+(mp:allow-with-interrupts (mp:with-interrupts ...))
+@end lisp
+
+Care must be taken not to let either @coderef{mp:allow-with-interrupts}
+or @coderef{mp:with-local-interrupts} appear in a function that escapes
+from inside the @coderef{mp:without-interrupts} in:
+
+@lisp
+(mp:without-interrupts
+  ;; The body of the lambda would be executed with WITH-INTERRUPTS allowed
+  ;; regardless of the interrupt policy in effect when it is called.
+  (lambda () (mp:allow-with-interrupts ...)))
+
+(mp:without-interrupts
+  ;; The body of the lambda would be executed with interrupts enabled
+  ;; regardless of the interrupt policy in effect when it is called.
+  (lambda () (mp:with-local-interrupts ...)))
+@end lisp
+@end defmac
+
+
+@lspdef mp:with-interrupts
+@defmac mp:with-interrupts &body body
+Executes @var{body} with deferrable interrupts conditionally
+enabled. If there are pending interrupts they take effect prior to
+executing @var{body}.
+
+As interrupts are normally allowed @coderef{mp:with-interrupts} only
+makes sense if there is an outer @coderef{mp:without-interrupts} with a
+corresponding @coderef{mp:allow-with-interrupts}: interrupts are not
+enabled if any outer @coderef{mp:without-interrupts} is not accompanied
+by @coderef{mp:allow-with-interrupts}.
+@end defmac

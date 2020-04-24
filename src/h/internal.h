@@ -63,6 +63,7 @@ extern void _ecl_dealloc_env(cl_env_ptr);
 extern void _ecl_set_max_heap_size(size_t new_size);
 extern cl_object ecl_alloc_bytecodes(cl_index data_size, cl_index code_size);
 extern cl_index ecl_object_byte_size(cl_type t);
+extern cl_index ecl_next_stamp();
 
 /* array.d */
 
@@ -72,6 +73,12 @@ static const cl_index ecl_aet_size[] = {
   sizeof(cl_object),          /* ecl_aet_object */
   sizeof(float),              /* ecl_aet_sf */
   sizeof(double),             /* ecl_aet_df */
+  sizeof(long double),        /* ecl_aet_lf */
+#ifdef ECL_COMPLEX_FLOAT
+  sizeof(_Complex float),        /* ecl_aet_csf */
+  sizeof(_Complex double),       /* ecl_aet_cdf */
+  sizeof(_Complex long double),  /* ecl_aet_clf */
+#endif
   0,                          /* ecl_aet_bit: cannot be handled with this code */
   sizeof(cl_fixnum),          /* ecl_aet_fix */
   sizeof(cl_index),           /* ecl_aet_index */
@@ -160,17 +167,6 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         struct ecl_stack_frame frame;\
         cl_object name = ecl_stack_frame_open(env, (cl_object)&frame, 0);
 
-#ifdef ECL_USE_VARARG_AS_POINTER
-#define ECL_STACK_FRAME_FROM_VA_LIST(e,f,va) do {                  \
-                const cl_object __frame = (f);                     \
-                __frame->frame.t = t_frame;                        \
-                __frame->frame.stack = 0;                          \
-                __frame->frame.env = (e);                          \
-                __frame->frame.size = va[0].narg;                  \
-                __frame->frame.base = va[0].sp? va[0].sp :         \
-                        (cl_object*)va[0].args;                    \
-        } while(0)
-#else
 #define ECL_STACK_FRAME_FROM_VA_LIST(e,f,va) do {                       \
                 const cl_object __frame = (f);                          \
                 cl_index i, __nargs = va[0].narg;                       \
@@ -179,35 +175,15 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                         __frame->frame.base[i] = ecl_va_arg(va);         \
                 }                                                       \
         } while (0)
-#endif
 
-#ifdef ECL_USE_VARARG_AS_POINTER
 #define ECL_STACK_FRAME_VARARGS_BEGIN(narg,lastarg,frame)               \
-        struct ecl_frame __ecl_frame;                                   \
-        const cl_object frame = (cl_object)&__ecl_frame;                \
-        const cl_env_ptr env = ecl_process_env();                       \
-        frame->frame.t = t_frame;                                       \
-        frame->frame.stack = 0;                                         \
-        frame->frame.env = env;                                         \
-        frame->frame.size = narg;                                       \
-        if (narg < ECL_C_ARGUMENTS_LIMIT) {                             \
-                va_list args;                                           \
-                va_start(args, lastarg);                                \
-                frame->frame.base = (cl_object*)args;                   \
-        } else {                                                        \
-                frame->frame.base = env->stack_top - narg;              \
-        }
-#define ECL_STACK_FRAME_VARARGS_END(frame)      \
-        /* No stack consumed, no need to close frame */
-#else
-#define ECL_STACK_FRAME_VARARGS_BEGIN(narg,lastarg,frame)               \
-        struct ecl_frame __ecl_frame;                                   \
+        struct ecl_stack_frame __ecl_frame;                             \
         const cl_object frame = (cl_object)&__ecl_frame;                \
         const cl_env_ptr env = ecl_process_env();                       \
         frame->frame.t = t_frame;                                       \
         frame->frame.env = env;                                         \
         frame->frame.size = narg;                                       \
-        if (narg < ECL_C_ARGUMENTS_LIMIT) {                                 \
+        if (narg <= ECL_C_ARGUMENTS_LIMIT) {                            \
                 cl_object *p = frame->frame.base = env->values;         \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \
@@ -215,6 +191,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                         *p = va_arg(args, cl_object);                   \
                         ++p;                                            \
                 }                                                       \
+                va_end(args);                                           \
                 frame->frame.stack = (cl_object*)0x1;                   \
         } else {                                                        \
                 frame->frame.base = env->stack_top - narg;              \
@@ -222,26 +199,16 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         }
 #define ECL_STACK_FRAME_VARARGS_END(frame)      \
         /* No stack consumed, no need to close frame */
-#endif
 
 extern cl_object _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...);
 extern cl_object _ecl_bclosure_dispatch_vararg(cl_narg narg, ...);
+extern cl_object ecl_close_around(cl_object fun, cl_object env);
 
 /* ffi/backtrace.d */
 
 extern void _ecl_dump_c_backtrace();
 
 /* ffi.d */
-
-struct ecl_fficall {
-        char *buffer_sp;
-        size_t buffer_size;
-        union ecl_ffi_values output;
-        enum ecl_ffi_calling_convention cc;
-        struct ecl_fficall_reg *registers;
-        char buffer[ECL_FFICALL_LIMIT];
-        cl_object cstring;
-};
 
 extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
@@ -259,6 +226,11 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 #define OPEN_RW "r+b"
 #define OPEN_A  "ab"
 #define OPEN_RA "a+b"
+
+/* Windows does not have this flag (POSIX thing) */
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0
+#endif
 
 #define ECL_FILE_STREAM_P(strm) \
         (ECL_ANSI_STREAM_P(strm) && (strm)->stream.mode < ecl_smm_synonym)
@@ -307,6 +279,9 @@ extern cl_object si_formatter_aux _ECL_ARGS((cl_narg narg, cl_object strm, cl_ob
 
 /* hash.d */
 extern cl_object ecl_extend_hashtable(cl_object hashtable);
+#ifdef ECL_EXTERNALIZABLE
+extern void ecl_reconstruct_serialized_hashtable(cl_object h);
+#endif
 
 /* gfun.d, kernel.lsp */
 
@@ -315,8 +290,8 @@ extern cl_object ecl_extend_hashtable(cl_object hashtable);
 #define GFUN_COMB(x) ((x)->instance.slots[2])
 
 extern cl_object FEnot_funcallable_vararg(cl_narg narg, ...);
-extern cl_object ecl_slot_reader_dispatch(cl_narg narg, cl_object instance);
-extern cl_object ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_object instance);
+extern cl_object ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */);
+extern cl_object ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instance */);
 
 /* load.d */
 
@@ -327,18 +302,19 @@ extern cl_object _ecl_library_default_entry(void);
 
 extern cl_object _ecl_double_to_integer(double d);
 extern cl_object _ecl_float_to_integer(float d);
-#ifdef ECL_LONG_FLOAT
 extern cl_object _ecl_long_double_to_integer(long double d);
-#endif
 
 /* main.d */
 
 extern cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1];
 
+extern void ecl_init_bignum_registers(cl_env_ptr env);
+extern void ecl_clear_bignum_registers(cl_env_ptr env);
+
 /* print.d */
 
 extern cl_object _ecl_stream_or_default_output(cl_object stream);
-extern void _ecl_write_addr(cl_object x, cl_object stream);
+extern void _ecl_write_addr(void *x, cl_object stream);
 extern void _ecl_write_array(cl_object o, cl_object stream);
 extern void _ecl_write_vector(cl_object o, cl_object stream);
 extern void _ecl_write_bitvector(cl_object o, cl_object stream);
@@ -367,23 +343,26 @@ extern void cl_write_object(cl_object x, cl_object stream);
         ECL_WITH_LOCK_BEGIN(the_env, cl_core.global_lock)
 # define ECL_WITH_GLOBAL_LOCK_END               \
         ECL_WITH_LOCK_END
-# define ECL_WITH_LOCK_BEGIN(the_env,lock) {            \
-        const cl_env_ptr __ecl_the_env = the_env;       \
-        const cl_object __ecl_the_lock = lock;          \
-        ecl_disable_interrupts_env(the_env);            \
-        mp_get_lock_wait(__ecl_the_lock);               \
-        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);                \
+# define ECL_WITH_LOCK_BEGIN(the_env,lock) {             \
+        const cl_env_ptr __ecl_the_env = the_env;        \
+        const cl_object __ecl_the_lock = lock;           \
+        ecl_disable_interrupts_env(__ecl_the_env);       \
+        mp_get_lock_wait(__ecl_the_lock);                \
+        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
         ecl_enable_interrupts_env(__ecl_the_env);
-# define ECL_WITH_LOCK_END                                    \
-        ECL_UNWIND_PROTECT_EXIT {                              \
-                mp_giveup_lock(__ecl_the_lock);               \
-        } ECL_UNWIND_PROTECT_END; }
-# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {                \
-        const cl_env_ptr __ecl_the_env = (the_env);             \
-        cl_object *__ecl_the_lock = (lock);                     \
+# define ECL_WITH_LOCK_END                               \
+        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
+                mp_giveup_lock(__ecl_the_lock);          \
+        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
+# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {         \
+        const cl_env_ptr __ecl_the_env = (the_env);      \
+        cl_object *__ecl_the_lock = (lock);              \
+        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
         ecl_get_spinlock(__ecl_the_env, __ecl_the_lock);
-# define ECL_WITH_SPINLOCK_END                  \
-        ecl_giveup_spinlock(__ecl_the_lock); }
+# define ECL_WITH_SPINLOCK_END                           \
+        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
+                ecl_giveup_spinlock(__ecl_the_lock);     \
+        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
 #else
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
 # define ECL_WITH_GLOBAL_LOCK_END
@@ -396,18 +375,20 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #ifdef ECL_RWLOCK
 # define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {            \
         const cl_env_ptr __ecl_pack_env = the_env;              \
-        ecl_disable_interrupts_env(__ecl_pack_env);             \
+        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
         mp_get_rwlock_read_wait(cl_core.global_env_lock);
 # define ECL_WITH_GLOBAL_ENV_RDLOCK_END                   \
         mp_giveup_rwlock_read(cl_core.global_env_lock);   \
-        ecl_enable_interrupts_env(__ecl_pack_env); }
+        ecl_bds_unwind1(__ecl_pack_env);                  \
+        ecl_check_pending_interrupts(__ecl_pack_env); }
 # define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {            \
         const cl_env_ptr __ecl_pack_env = the_env;              \
-        ecl_disable_interrupts_env(__ecl_pack_env);             \
+        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
         mp_get_rwlock_write_wait(cl_core.global_env_lock);
 # define ECL_WITH_GLOBAL_ENV_WRLOCK_END                    \
         mp_giveup_rwlock_write(cl_core.global_env_lock);   \
-        ecl_enable_interrupts_env(__ecl_pack_env); }
+        ecl_bds_unwind1(__ecl_pack_env);                   \
+        ecl_check_pending_interrupts(__ecl_pack_env); }
 #else
 # define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env)
 # define ECL_WITH_GLOBAL_ENV_RDLOCK_END
@@ -415,17 +396,7 @@ extern void cl_write_object(cl_object x, cl_object stream);
 # define ECL_WITH_GLOBAL_ENV_WRLOCK_END
 #endif /* ECL_RWLOCK */
 
-#ifdef ECL_THREADS
-# define AO_REQUIRE_CAS
-# ifdef ECL_LIBATOMIC_OPS_H
-#  include <ecl/atomic_ops.h>
-# else
-#  include <atomic_ops.h>
-# endif
-#else
-# define AO_load(x) (x)
-# define AO_store(x,y) ((x)=(y))
-#endif
+#include <ecl/ecl_atomics.h>
 
 /* read.d */
 #ifdef ECL_UNICODE
@@ -447,11 +418,11 @@ extern bool ecl_wild_string_p(cl_object item);
 typedef struct { cl_index start, end, length; } cl_index_pair;
 extern ECL_API cl_index_pair ecl_sequence_start_end(cl_object fun, cl_object s, cl_object start, cl_object end);
 
+#ifdef ECL_EXTERNALIZABLE
 /* serialize.d */
 
-extern cl_object si_serialize(cl_object root);
-extern cl_object si_deserialize(cl_object root);
 extern cl_object ecl_deserialize(uint8_t *data);
+#endif
 
 /* string.d */
 #define ecl_vector_start_end ecl_sequence_start_end
@@ -525,8 +496,29 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 
 extern void ecl_interrupt_process(cl_object process, cl_object function);
 
+/* disabling interrupts on the lisp side */
+
+#define ECL_WITHOUT_INTERRUPTS_BEGIN(the_env) do {                \
+        cl_env_ptr __the_env = (the_env);                         \
+        ecl_bds_bind(__the_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);
+
+#define ECL_WITHOUT_INTERRUPTS_END                 \
+        ecl_bds_unwind1(__the_env);                \
+        ecl_check_pending_interrupts(__the_env); } while(0)
+
 /* unixsys.d */
-extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
+
+/* Some old BSD systems don't have WCONTINUED / WIFCONTINUED */
+
+#ifndef ECL_MS_WINDOWS_HOST
+# ifndef WCONTINUED
+#  define WCONTINUED 0
+# endif
+
+# ifndef WIFCONTINUED
+#  define WIFCONTINUED(x) 0
+# endif
+#endif /* ECL_MS_WINDOWS_HOST */
 
 /*
  * Fake several ISO C99 mathematical functions if not available
@@ -538,6 +530,12 @@ extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
 #  undef expf
 # endif
 # define expf(x) exp((float)x)
+#endif
+#ifndef HAVE_POWF
+# ifdef powf
+#  undef powf
+# endif
+# define powf(x,y) pow((float)x,(float)y)
 #endif
 #ifndef HAVE_LOGF
 # ifdef logf
@@ -604,6 +602,25 @@ extern cl_object si_wait_for_all_processes _ECL_ARGS((cl_narg narg, ...));
 # define ldexpf(x,y) ldexp((float)x,y)
 #endif
 
+#ifndef HAVE_LOG1PF
+# ifdef log1pf
+#  undef log1pf
+# endif
+# define log1pf(x) logf(x+1.0f)
+#endif
+#ifndef HAVE_LOG1P
+# ifdef log1p
+#  undef log1p
+# endif
+# define log1p(x) log(x+1.0)
+#endif
+#ifndef HAVE_LOG1PL
+# ifdef log1pl
+#  undef log1pl
+# endif
+# define log1pl(x) logl(x+1.0l)
+#endif
+
 /*
  * Fake INFINITY and NAN defined in ISO C99 (portably)
  */
@@ -635,6 +652,19 @@ static union {
 #  define NAN (0.0/0.0)
 # endif  /* _MSC_VER == 1600 */
 #endif /* ~NAN */
+
+#ifdef ECL_COMPLEX_FLOAT
+#include <complex.h>
+#ifndef CMPLXF
+# define CMPLXF(x, y) ((float complex)((float)(x) + I * (float)(y)))
+#endif
+#ifndef CMPLX
+# define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
+#endif
+#ifndef CMPLXL
+# define CMPLXL(x, y) ((long double complex)((long double)(x) + I * (long double)(y)))
+#endif
+#endif
 
 #ifdef __cplusplus
 }

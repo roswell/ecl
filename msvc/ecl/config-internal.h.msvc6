@@ -23,9 +23,6 @@
 /* Use CMU Common-Lisp's FORMAT routine					*/
 #define ECL_CMU_FORMAT 1
 
-/* Bytecodes and arguments are 8 and 16 bits large, respectively	*/
-/* #undef ECL_SMALL_BYTECODES */
-
 /* Assembler implementation of APPLY and friends			*/
 /* #undef ECL_ASM_APPLY */
 
@@ -82,16 +79,8 @@
 /* #undef HAVE_SIGPROCMASK */
 /* isatty() checks whether a file is connected to a                     */ 
 #define HAVE_ISATTY  1 
-/* can manipulate floating point environment				*/
-/* #undef HAVE_FENV_H */
-/* can activate individual traps in floating point environment		*/
-/* #undef HAVE_FEENABLEEXCEPT */
-/* do we want to deactivate all support for floating point exceptions   */
-/* #undef ECL_AVOID_FPE_H */
 /* do we want to have signed zeros					*/
 #define ECL_SIGNED_ZERO 1
-/* do we want NaNs and Infs						*/
-#define ECL_IEEE_FP 1
 /* has support for large files						*/
 /* #undef HAVE_FSEEKO */
 /* compiler understands long long                                       */ 
@@ -124,19 +113,7 @@
 /* #undef HAVE_SYS_WAIT_H */
 /* size of long long            					*/
 #define ECL_LONG_LONG_BITS 64
-
-/*
- * we do not manage to get proper signal handling of floating point
- * arithmetics in the Alpha chips.
- */
-#if defined(__alpha__)
-# ifdef HAVE_FENV_H
-#  undef HAVE_FENV_H
-# endif
-# ifdef HAVE_FEENABLEEXCEPT
-#  undef HAVE_FEENABLEEXCEPT
-# endif
-#endif
+#define HAVE_SYSTEM
 
 /* what characters are used to mark beginning of new line		*/
 #define ECL_NEWLINE_IS_CRLF 1
@@ -149,11 +126,8 @@
 /*
  * Memory limits for the old garbage collector.
  */
-#define	LISP_PAGESIZE	2048	/* Page size in bytes			*/
-#define MAXPAGE	16384		/* Maximum Memory Size			*/
-
-/* We reserve these many bytes for computation with bignums registers	*/
-#define BIGNUM_REGISTER_SIZE 16
+#define LISP_PAGESIZE	2048	/* Page size in bytes			*/
+#define MAXPAGE	65536		/* Maximum Memory Size			*/
 
 /* We allocate a number of strings in a pool which is used to speed up reading */
 #define ECL_MAX_STRING_POOL_SIZE	10
@@ -198,7 +172,7 @@
 #endif
 
 #define strcasecmp _stricmp
-#if defined(_MSC_VER) && (_MSC_VER < 1900)
+#if defined(_MSC_VER) && (_MSC_VER < 1800)
 #define isnan _isnan
 #endif
 #define finite _finite
@@ -212,4 +186,19 @@
 # define signbit(x) (_copysign(1.0,(x)) < 0)
 # define ECL_MATHERR_CLEAR
 # define ECL_MATHERR_TEST
+#endif
+
+#if defined(HAVE_LIBFFI) && defined(ECL_INCLUDE_FFI_H)
+#include "@ECL_LIBFFI_HEADER@"
+#endif
+
+#define ECL_WINDOWS_BACKTRACE @ECL_USE_DBGHELP@
+#if !ECL_WINDOWS_BACKTRACE
+#undef ECL_WINDOWS_BACKTRACE
+#endif
+
+#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
+#define ECL_DEFAULT_C_STACK_SIZE 0 /* Use the stack size provided by the OS */
+#else
+#define ECL_DEFAULT_C_STACK_SIZE @ECL_DEFAULT_C_STACK_SIZE@
 #endif

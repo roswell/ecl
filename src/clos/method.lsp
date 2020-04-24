@@ -43,9 +43,18 @@
       (slot-value generic-function 'method-class)
       (find-class 'standard-method)))
 
-(defun method-prototype-for-gf (generic-function)
-  (when *clos-booted*
-    (class-prototype (generic-function-method-class generic-function))))
+(defun prototypes-for-make-method-lambda (name)
+  (if (not *clos-booted*)
+      (values nil nil)
+      (let ((gf? (and (fboundp name)
+                      (fdefinition name))))
+        (if (or (null gf?)
+                (not (si:instancep gf?)))
+            (values (class-prototype (find-class 'standard-generic-function))
+                    (class-prototype (find-class 'standard-method)))
+            (values gf?
+                    (class-prototype (or (generic-function-method-class gf?)
+                                         (find-class 'standard-method))))))))
 
 (defmacro defmethod (&whole whole name &rest args &environment env)
   (declare (notinline make-method-lambda))
@@ -55,10 +64,10 @@
         (parse-specialized-lambda-list specialized-lambda-list)
       (multiple-value-bind (lambda-form declarations documentation)
           (make-raw-lambda name lambda-list required-parameters specializers body env)
-        (let* ((generic-function (ensure-generic-function name))
-               (method (method-prototype-for-gf generic-function)))
+        (multiple-value-bind (proto-gf proto-method)
+            (prototypes-for-make-method-lambda name)
           (multiple-value-bind (fn-form options)
-              (make-method-lambda generic-function method lambda-form env)
+              (make-method-lambda proto-gf proto-method lambda-form env)
             (when documentation
               (setf options (list* :documentation documentation options)))
             (ext:register-with-pde
@@ -208,9 +217,8 @@
   (let ((counter 0))
     (declare (fixnum counter))
     (dolist (item (car env))
-      (when (and (consp item)
-                 (eq (first (the cons item)) 'si::function-boundary)
-                 (> (incf counter) 1)) 
+      (when (and (eq item 'si::function-boundary)
+                 (> (incf counter) 1))
         (return t)))))
 
 (defun walk-method-lambda (method-lambda env)
@@ -243,7 +251,7 @@
         ;; explicitely the bytecodes compiler with an environment, no
         ;; stepping, compiler-env-p = t and execute = nil, so that the
         ;; form does not get executed.
-        (si::eval-with-env method-lambda env nil t t)))
+        (si::eval-with-env method-lambda env nil t nil)))
     (values call-next-method-p
             next-method-p-p
             in-closure-p)))

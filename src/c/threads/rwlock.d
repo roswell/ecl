@@ -57,7 +57,7 @@ FEunknown_rwlock_error(cl_object lock, int rc)
                  1, lock);
   }
   FEerror("When acting on rwlock ~A, got the following C library error:~%"
-          "~A", 2, lock, make_constant_base_string(msg));
+          "~A", 2, lock, ecl_make_constant_base_string(msg,-1));
 #endif
 }
 
@@ -166,7 +166,7 @@ mp_get_rwlock_read_wait(cl_object lock)
 @(defun mp::get-rwlock-read (lock &optional (wait ECL_T))
   @
   if (Null(wait))
-  return mp_get_rwlock_read_nowait(lock);
+    return mp_get_rwlock_read_nowait(lock);
   else
     return mp_get_rwlock_read_wait(lock);
   @)

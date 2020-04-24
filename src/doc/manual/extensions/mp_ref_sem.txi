@@ -1,0 +1,96 @@
+@node Semaphores
+@subsection Semaphores
+
+Semaphores are objects which allow an arbitrary resource
+count. Semaphores are used for shared access to resources where number
+of concurrent threads allowed to access it is limited.
+
+@node Semaphores dictionary
+@subsection Semaphores dictionary
+
+
+@cppdef ecl_make_semaphore
+@deftypefun cl_object ecl_make_semaphore (cl_object name, cl_fixnum count)
+C/C++ equivalent of @coderef{mp:make-semaphore} without @code{key}
+arguments.
+
+See @coderef{mp:make-semaphore}.
+@end deftypefun
+
+
+@cppdef mp_make_semaphore
+@lspdef mp:make-semaphore
+
+@defun mp:make-semaphore &key name count
+Creates a counting semaphore @var{name} with a resource count
+@var{count}.
+@end defun
+
+
+@cppdef mp_semaphore_name
+@lspdef mp:semaphore-name
+
+@deftypefun cl_object mp_semaphore_name (cl_object semaphore)
+@end deftypefun
+
+@defun mp:semaphore-name semaphore
+Returns the name of @var{semaphore}.
+@end defun
+
+
+@cppdef mp_semaphore_count
+@lspdef mp:semaphore-count
+
+@deftypefun cl_object mp_semaphore_count (cl_object semaphore)
+@end deftypefun
+
+@defun mp:semaphore-count semaphore
+Returns the resource count of @var{semaphore}.
+@end defun
+
+
+@cppdef mp_semaphore_wait_count
+@lspdef mp:semaphore-wait-count
+
+@deftypefun cl_object mp_semaphore_wait_count (cl_object semaphore)
+@end deftypefun
+
+@defun mp:semaphore-wait-count semaphore
+Returns the number of threads waiting on @var{semaphore}.
+@end defun
+
+
+@cppdef mp_wait_on_semaphore
+@lspdef mp:wait-on-semaphore
+
+@deftypefun cl_object mp_wait_on_semaphore (cl_object semaphore)
+@end deftypefun
+
+@defun mp:wait-on-semaphore semaphore
+Waits on semaphore until it can grab the resource (blocking). Returns
+resource count before semaphore was acquired.
+@end defun
+
+
+@cppdef mp_try_get_semaphore
+@lspdef mp:try-get-semaphore
+
+@deftypefun cl_object mp_try_get_semaphore (cl_object semaphore)
+@end deftypefun
+
+@defun mp:try-get-semaphore semaphore
+Tries to get a semaphore (non-blocking). If there is no resource left
+returns @code{nil}, otherwise returns resource count before semaphore
+was acquired.
+@end defun
+
+
+@lspdef mp_signal_semaphore
+@lspdef mp:signal-semaphore
+
+@deftypefun cl_object mp_signal_semaphore (cl_narg n, cl_object sem, ...);
+@end deftypefun
+
+@defun mp:signal-semaphore semaphore &optional (count 1)
+Releases @var{count} units of a resource on @var{semaphore}.
+@end defun

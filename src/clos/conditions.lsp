@@ -142,10 +142,11 @@
   (flet ((transform-keywords (&key report interactive test)
            (let ((keywords '()))
              (when test
-               (setq keywords (list :TEST-FUNCTION `#',test)))                              
+               (setq keywords (list :TEST-FUNCTION `#',test)))
              (when interactive
-               (setq keywords (list :INTERACTIVE-FUNCTION
-                                    `#',interactive)))
+               (setq keywords (list* :INTERACTIVE-FUNCTION
+                                     `#',interactive
+                                     keywords)))
              (when report
                (setq keywords (list* :REPORT-FUNCTION
                                      (if (stringp report)

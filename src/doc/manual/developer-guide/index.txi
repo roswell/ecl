@@ -1,0 +1,28 @@
+@node Developer's guide
+@chapter Developer's guide
+
+@menu
+* Sources structure:: Overview of the source code structure
+* Contributing:: How to contribute to the ECL project
+@c * Modules hierarchy::
+@c * Testing and benchmarking::
+* Defun preprocessor:: Preprocessor for the Lisp constructs in C
+* Manipulating Lisp objects::
+* Environment implementation::
+* The interpreter::
+* The compiler::
+* Porting ECL::
+* Removed features::
+@c * Experimental features::
+@c * Current roadmap::
+@end menu
+
+@include developer-guide/sources.txi
+@include developer-guide/contributing.txi
+@include developer-guide/dpp.txi
+@include developer-guide/objects.txi
+@include developer-guide/environment.txi
+@include developer-guide/interpreter.txi
+@include developer-guide/compiler.txi
+@include developer-guide/porting-ecl.txi
+@include developer-guide/removed.txi

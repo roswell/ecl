@@ -1,0 +1,121 @@
+@node Hash tables
+@section Hash tables
+
+@menu
+* Hash tables - Extensions::
+* Hash tables - C Reference::
+@end menu
+
+@node Hash tables - Extensions
+@subsection Extensions
+
+@subsubsection Weakness in hash tables
+@cindex Weak hash tables
+@ftindex ECL-WEAK-HASH
+
+Weak hash tables allow the garbage collector to reclaim some of the
+entries if they are not strongly referenced elsewhere. ECL supports
+four kinds of weakness in hash tables: @code{:key}, @code{:value},
+@code{:key-and-value} and @code{:key-or-value}.
+
+To make hash table weak, programmer has to provide @code{:weakness}
+keyword argument to @code{cl:make-hash-table} with the desired kind of
+weakness value (@code{nil} means that the hash table has only strong
+references).
+
+For more information see
+@url{https://www.haible.de/bruno/papers/cs/weak/WeakDatastructures-writeup.html,Weak
+References - Data Types and Implementation} by Bruno Haible.
+
+@lspdef ext:hash-table-weakness
+@defun ext:hash-table-weakness ht
+Returns type of the hash table weakness. Possible return values are:
+@code{:key}, @code{:value}, @code{:key-and-value}, @code{:key-or-value}
+or @code{nil}.
+@end defun
+
+@subsubsection Thread-safe hash tables
+@cindex Synchronized hash tables
+@cindex Thread-safe hash tables
+
+By default ECL doesn't protect hash tables from simultaneous access
+for performance reasons. Read and write access may is synchronized
+when @code{:synchronized} keyword argument to @code{make-hash-table} is
+@code{t} - @code{(make-hash-table :synchronized t)}.
+
+@lspdef ext:hash-table-synchronized-p
+@defun ext:hash-table-synchronized-p ht
+Predicate answering whether hash table is synchronized or not.
+@end defun
+
+@subsubsection Hash tables serialization
+@cindex Hash table serialization
+
+@lspdef hash-table-content
+@defun ext:hash-table-content ht
+Returns freshly consed list of pairs @code{(key . val)} being contents
+of the hash table.
+@end defun
+
+@lspdef ext:hash-table-fill
+@defun ext:hash-table-fill ht values
+Fills @var{ht} with @var{values} being list of @code{(key . val)}. Hash
+table may have some content already, but conflicting keys will be
+overwritten.
+@end defun
+
+@subsubsection Custom equivalence predicate
+@cindex Hash table generic test
+
+@code{make-hash-table} may accept arbitrary @code{:test} keyword for
+the equivalence predicate. If it is not one of the standard predicates
+(@code{:eq}, @code{:eql}, @code{:equal}, @code{:equalp}) a keyword
+argument @code{:hashing-function} must be a function accepting one
+argument and returning a positive fixnum. Otherwise the argument is
+ignored.
+
+@subsubsection Example
+@exindex Hash table extensions example
+@lisp
+CL-USER> (defparameter *ht*
+           (make-hash-table :synchronized t
+                            :weakness :key-or-value))
+*HT*
+
+CL-USER> (ext:hash-table-weakness *ht*)
+:KEY-OR-VALUE
+
+CL-USER> (ext:hash-table-synchronized-p *ht*)
+T
+
+CL-USER> (ext:hash-table-fill *ht* '((:foo 3) (:bar 4) (:quux 5)))
+#<hash-table 000055b1229e0b40>
+
+CL-USER> (ext:hash-table-content *ht*)
+((#<weak-pointer 000055b121866350> . #<weak-pointer 000055b121866320>)
+ (#<weak-pointer 000055b121866370> . #<weak-pointer 000055b121866360>)
+ (#<weak-pointer 000055b121866390> . #<weak-pointer 000055b121866380>))
+@end lisp
+
+@node Hash tables - C Reference
+@subsection C Reference
+
+@subsubsection ANSI dictionary
+Common Lisp and C equivalence
+
+@multitable @columnfractions .3 .7
+@headitem Lisp symbol @tab C function
+@item @clhs{f_clrhas.htm,clrhash} @tab cl_object cl_clrhash(cl_object hash_table)
+@item @clhs{f_gethas.htm,gethash} @tab cl_object cl_gethash(cl_narg narg, cl_object key, cl_object hash_table, ...)
+@item @clhs{f_gethas.htm,(setf gethash)} @tab cl_object si_hash_set(cl_object key, cl_object hash_table, cl_object value)
+@item @clhs{f_hash_1.htm,hash-table-count} @tab cl_object cl_hash_table_count(cl_object hash_table)
+@item @clhs{f_hash_t.htm,hash-table-p} @tab cl_object cl_hash_table_p(cl_object hash_table)
+@item @clhs{f_hash_2.htm,hash-table-rehash-size} @tab cl_object cl_hash_table_rehash_size(cl_object hash_table)
+@item @clhs{f_hash_3.htm,hash-table-rehash-threshold} @tab cl_object cl_hash_table_rehash_threshold(cl_object hash_table)
+@item @clhs{f_hash_4.htm,hash-table-size} @tab cl_object cl_hash_table_size(cl_object hash_table)
+@item @clhs{f_hash_5.htm,hash-table-test} @tab cl_object cl_hash_table_test(cl_object hash_table)
+@item @clhs{f_mk_has.htm,make-hash-table} @tab cl_object cl_make_hash_table(cl_narg narg, ...)
+@item @clhs{f_maphas.htm,maphash} @tab cl_object cl_maphash(cl_object function, cl_object hash_table)
+@item @clhs{f_remhas.htm,remhash} @tab cl_object cl_remhash(cl_object key, cl_object hash_table)
+@item @clhs{f_sxhash.htm,sxhash} @tab cl_object cl_sxhash(cl_object object)
+@end multitable

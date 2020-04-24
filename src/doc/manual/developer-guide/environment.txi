@@ -1,0 +1,33 @@
+@node Environment implementation
+@section Environment implementation
+
+@cindex Environment implementation
+
+@cppindex cl_env_struct
+@cppindex cl_env_ptr
+
+@c @deftp {@cind} cl_env_struct
+@c @deftpx {@cind} cl_env_ptr
+@c Structure responsible for holding the environment. Each native thread
+@c has its own instance of this structure. Pointer @code{cl_env_struct*} is
+@c type-defined to @code{cl_env_ptr}.
+
+@c Compiler environment is in @code{c_env} pointer member.
+@c @end deftp
+
+@c @deftp {@cind} cl_compiler_env
+@c variables - variables, tags, functions, etc: the env.
+@c macros - macros and function bindings
+@c lexical-level - =0 if toplevel form
+@c constants - constants for this form
+@c load-time-forms - that have to be rebuilt
+@c lex-env - lexical env. for eval-when
+@c code-walker - value of si:*code-walker*
+
+@c env-depth
+@c env-size
+
+@c mode - one of FLAG_EXECUTE, FLAG_LOAD, FLAG_ONLY_LOAD, FLAG_COMPILE
+@c stepping - used by bytecodes interpreter for stepping purposes (set in
+@c @code{si:eval-with-env}).
+@c @end eftp

@@ -1,0 +1,69 @@
+@node Removed features
+@section Removed features
+
+@c @menu
+@c * In-house DFFI:: Hand-written FFI assembly
+@c * In-house GC:: ECL's own GC
+@c * Green threads:: Lightweight processes
+@c * Compiler newcmp:: Experimental compiler architecture
+@c * In-house bignum implementation::
+@c * Possibility to build without bignums::
+@c @end menu
+
+@c @node In-house DFFI
+@subheading In-house DFFI
+
+Commit @code{10bd3b613fd389da7640902c2b88a6e36088c920}. Native DFFI was
+replaced by a @url{https://sourceware.org/libffi/,libffi} long time ago,
+but we have maintained the code as a fallback. Due to small number of
+supported platforms and no real use it has been removed in 2016.
+
+@c @node In-house GC
+@subheading In-house GC
+Commit @code{61500316b7ea17d0e42f5ca127f2f9fa3e6596a8}.  Broken GC is
+replaced by BoehmGC library. This may be added back as a fallback in
+the near future.
+
+@code{3bd9799a2fef21cc309472e604a46be236b155c7} removes a leftover
+(apparently gbc.d wasn't bdwgc glue).
+
+@c @node Green threads
+@subheading Green threads
+Commit @code{41923d5927f31f4dd702f546b9caee74e98a2080}. Green threads
+(aka light weight processes) has been replaced with native threads
+implementation. There is an ongoing effort to bring them back as an
+alternative interface.
+
+@c @node Compiler newcmp
+@subheading Compiler newcmp
+Commit @code{9b8258388487df8243e2ced9c784e569c0b34c4f} This was
+abandoned effort of changing the compiler architecture. Some clever
+ideas and a compiler package hierarchy. Some of these things should be
+incorporated during the evolution of the primary compiler.
+
+@subheading Old MIT loop
+Commit @code{5042589043a7be853b7f85fd7a996747412de6b4}. This old loop
+implementation has got superseded by the one incorporated from
+Symbolics LOOP in 2001.
+
+@subheading Support for bignum arithmetic (earith.d)
+Commit @code{edfc2ba785d6a64667e89c869ef0a872d7b9704b}. Removes
+pre-gmp bignum code. Name comes probably from ``extended arithmetic'',
+contains multiplication and division routines (assembler and a
+portable implementation).
+
+@subheading Unification module
+Commit @code{6ff5d20417a21a76846c4b28e532aac097f03109}. Old unification
+module (logic programming) from EcoLisp times.
+
+@subheading Hierarchical packages
+Commit @code{72e422f1b3c4b3c52fa273b961517db943749a8f}. Partially
+broken. Tests left in package-extensions.lsp.
+
+@subheading 8-bit opcodes in bytecodes interpreter
+Commit @code{c3244b0148ed352808779b07b25c3edddf9d7349}. Works fine but
+provides no real gain and is limited to intel.
+
+@subheading thread local variables
+Commit @code{618f6e92e8144f7b95bc36b42a337c212bacc8e7}. Disabled by
+default, practically not tested, works on limited number of platforms.

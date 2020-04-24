@@ -1,0 +1,64 @@
+@node Native threads
+@section Native threads
+@cindex Native threads
+@ftindex THREADS
+@cfindex --enable-threads [yes|no|AUTO]
+
+@menu
+* Introduction to native threads::
+* Processes (native threads)::
+* Processes dictionary::
+* Locks (mutexes)::
+* Locks dictionary::
+* Readers-writer locks::
+* Readers-writer locks dictionary::
+* Condition variables::
+* Condition variables dictionary::
+* Semaphores::
+* Semaphores dictionary::
+* Atomic operations::
+* Atomic operations dictionary::
+@end menu
+
+@node Introduction to native threads
+@subsection Tasks, threads or processes
+
+On most platforms, ECL supports native multithreading. That means there
+can be several tasks executing lisp code on parallel and sharing memory,
+variables and files. The interface for multitasking in ECL, like those
+of most other implementations, is based on a set of functions and types
+that resemble the multiprocessing capabilities of old Lisp Machines.
+
+This backward compatibility is why tasks or threads are called
+"processes". However, they should not be confused with operating system
+processes, which are made of programs running in separate contexts and
+without access to each other's memory.
+
+The implementation of threads in ECL is purely native and based on Posix
+Threads wherever available. The use of native threads has
+advantages. For instance, they allow for non-blocking file operations,
+so that while one task is reading a file, a different one is performing
+a computation.
+
+As mentioned above, tasks share the same memory, as well as the set of
+open files and sockets. This manifests on two features. First of all,
+different tasks can operate on the same lisp objects, reading and
+writing their slots, or manipulating the same arrays. Second, while
+threads share global variables, constants and function definitions they
+can also have thread-local bindings to special variables that are not
+seen by other tasks.
+
+The fact that different tasks have access to the same set of data allows
+both for flexibility and a greater risk. In order to control access to
+different resources, ECL provides the user with locks, as explained in
+the next section.
+
+@include extensions/mp_ref_process.txi
+@include extensions/mp_ref_mutex.txi
+@include extensions/mp_ref_rwlock.txi
+@include extensions/mp_ref_cv.txi
+@include extensions/mp_ref_sem.txi
+@include extensions/mp_ref_atomic.txi
+
+@c @include extensions/mp_ref_barrier.txi
+@c @include extensions/mp_ref_mailbox.txi

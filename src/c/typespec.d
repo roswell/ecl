@@ -39,7 +39,7 @@ FEtype_error_list(cl_object x) {
 void
 FEtype_error_proper_list(cl_object x) {
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("Not a proper list ~D"),
+           ecl_make_constant_base_string("Not a proper list ~D",-1),
            @':format-arguments', cl_list(1, x),
            @':expected-type', ecl_read_from_cstring("si::proper-list"),
            @':datum', x);
@@ -51,7 +51,7 @@ FEcircular_list(cl_object x)
   /* FIXME: Is this the right way to rebind it? */
   ecl_bds_bind(ecl_process_env(), @'*print-circle*', ECL_T);
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("Circular list ~D"),
+           ecl_make_constant_base_string("Circular list ~D",-1),
            @':format-arguments', cl_list(1, x),
            @':expected-type', @'list',
            @':datum', x);
@@ -63,7 +63,7 @@ FEtype_error_index(cl_object seq, cl_fixnum ndx)
   cl_object n = ecl_make_fixnum(ndx);
   cl_index l = ECL_INSTANCEP(seq)? seq->instance.length : ecl_length(seq);
   cl_error(9, @'simple-type-error', @':format-control',
-           make_constant_base_string("~S is not a valid index into the object ~S"),
+           ecl_make_constant_base_string("~S is not a valid index into the object ~S",-1),
            @':format-arguments', cl_list(2, n, seq),
            @':expected-type', cl_list(3, @'integer', ecl_make_fixnum(0), ecl_make_fixnum(l-1)),
            @':datum', n);
@@ -90,9 +90,9 @@ cl_object
 ecl_type_error(cl_object function, const char *place, cl_object o,
                cl_object type)
 {
-  si_wrong_type_argument(4, o, type,
-                         (*place? make_constant_base_string(place) : ECL_NIL),
-                         function);
+  return si_wrong_type_argument(4, o, type,
+                                (*place? ecl_make_constant_base_string(place,-1) : ECL_NIL),
+                                function);
 }
 
 /**********************************************************************/
@@ -113,12 +113,18 @@ ecl_type_to_symbol(cl_type t)
     return @'single-float';
   case t_doublefloat:
     return @'double-float';
-#ifdef ECL_LONG_FLOAT
   case t_longfloat:
     return @'long-float';
-#endif
   case t_complex:
     return @'complex';
+#ifdef ECL_COMPLEX_FLOAT
+  case t_csfloat:
+    return @'si::complex-single-float';
+  case t_cdfloat:
+    return @'si::complex-double-float';
+  case t_clfloat:
+    return @'si::complex-long-float';
+#endif
   case t_symbol:
     return @'symbol';
   case t_package:
@@ -209,7 +215,7 @@ assert_type_non_negative_integer(cl_object p)
   cl_type t = ecl_t_of(p);
 
   if (t == t_fixnum) {
-    if (ecl_fixnum_plusp(p))
+    if (!ecl_fixnum_minusp(p))
       return;
   } else if (t == t_bignum) {
     if (_ecl_big_sign(p) >= 0)
@@ -255,7 +261,24 @@ cl_type_of(cl_object x)
     }
     break;
   }
-
+#ifdef ECL_COMPLEX_FLOAT
+  case t_complex:
+    t = cl_list(2, @'complex', @'rational');
+    break;
+  case t_csfloat:
+    t = cl_list(2, @'complex', @'single-float');
+    break;
+  case t_cdfloat:
+    t = cl_list(2, @'complex', @'double-float');
+    break;
+  case t_clfloat:
+    t = cl_list(2, @'complex', @'long-float');
+    break;
+#else
+  case t_complex:
+    t = cl_list(2, @'complex', @'real');
+    break;
+#endif
   case t_symbol:
     if (x == ECL_T)
       t = @'boolean';

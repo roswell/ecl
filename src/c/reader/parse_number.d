@@ -52,17 +52,15 @@ infinity(cl_index exp_char, int sign)
       @'ext::single-float-negative-infinity' :
       @'ext::single-float-positive-infinity';
       break;
-  case 'l':  case 'L':
-# ifdef ECL_LONG_FLOAT
-    var = (sign<0)?
-      @'ext::long-float-negative-infinity' :
-        @'ext::long-float-positive-infinity';
-        break;
-# endif
   case 'd':  case 'D':
     var = (sign<0)?
       @'ext::double-float-negative-infinity' :
           @'ext::double-float-positive-infinity';
+          break;
+  case 'l':  case 'L':
+    var = (sign<0)?
+      @'ext::long-float-negative-infinity' :
+          @'ext::long-float-positive-infinity';
           break;
 #endif /* ECL_IEEE_FP */
   default:
@@ -92,12 +90,10 @@ make_float(cl_object num, cl_object exp, cl_index exp_char, int sign)
   case 's':  case 'S':
   case 'f':  case 'F':
     return ecl_make_single_float(sign * ecl_to_double(num));
-  case 'l':  case 'L':
-#ifdef ECL_LONG_FLOAT
-    return ecl_make_long_float(sign * ecl_to_long_double(num));
-#endif
   case 'd':  case 'D': {
     return ecl_make_double_float(sign * ecl_to_double(num));
+  case 'l':  case 'L':
+    return ecl_make_long_float(sign * ecl_to_long_double(num));
   }
   default:
     return OBJNULL;
@@ -193,7 +189,6 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
       return make_float(num, ecl_plus(decimals, exp),
                         c, sign);
     } else if (radix != 10) {
-      _ecl_big_register_free(num);
       num = ecl_parse_number(str, start, end, ep, 10);
       if (num != OBJNULL) {
         if (floatp(num))
@@ -208,15 +203,14 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
     } else {
     NOT_A_NUMBER:
       *ep = i;
-      _ecl_big_register_free(num);
       return OBJNULL;
     }
   }
+  if (!some_digit) goto NOT_A_NUMBER;
+  *ep = i;
   /* If we have reached the end without decimals (for instance
    * 1., 2, 13., etc) we return an integer */
-  *ep = i;
   if (decimal < i) {
-    if (!some_digit) goto NOT_A_NUMBER;
     return make_float(_ecl_big_register_normalize(num),
                       ecl_make_fixnum(decimal - i), 'e', sign);
   } else {

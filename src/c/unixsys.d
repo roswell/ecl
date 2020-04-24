@@ -23,10 +23,7 @@
 #endif
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
-#ifdef cygwin
-# include <sys/cygwin.h> /* For cygwin_attach_handle_to_fd() */
-#endif
-#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
+#if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
 #endif
 #ifdef HAVE_SYS_WAIT_H
@@ -38,6 +35,19 @@
 #ifdef environ
 # undef environ
 #endif
+
+cl_object
+si_system(cl_object cmd_string)
+{
+#if !defined(HAVE_SYSTEM)
+  FElibc_error("si_system not implemented",1);
+  @(return ECL_NIL);
+#else
+  cl_object cmd = si_copy_to_simple_base_string(cmd_string);
+  int code = system((const char *)(cmd->base_string.self));
+  @(return ecl_make_fixnum(code));
+#endif
+}
 
 cl_object
 si_getpid(void)
@@ -99,16 +109,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   cl_object buffer;
   char **environ;
   for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
-    cl_object s;
-    if (!CONSP(p)) {
-      FEerror("In EXT:RUN-PROGRAM, environment "
-              "is not a list of strings", 0);
-    }
-    s = ECL_CONS_CAR(p);
-    if (!ECL_BASE_STRING_P(s)) {
-      FEerror("In EXT:RUN-PROGRAM, environment "
-              "is not a list of base strings", 0);
-    }
+    cl_object s = ECL_CONS_CAR(p);
     total_size += s->base_string.fillp + 1;
     nstrings++;
   }
@@ -119,11 +120,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   for (j = i = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
     cl_index l = s->base_string.fillp;
-    if (i + l + 1 >= total_size) {
-      FEerror("In EXT:RUN-PROGRAM, environment list"
-              " changed during execution.", 0);
-      break;
-    }
+
     environ[j++] = (char*)(buffer->base_string.self + i);
     memcpy(buffer->base_string.self + i,
            s->base_string.self,
@@ -137,113 +134,12 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   return buffer;
 }
 
-static cl_object
-make_external_process()
-{
-  return _ecl_funcall1(@'ext::make-external-process');
-}
-
-static cl_object
-external_process_pid(cl_object p)
-{
-  return ecl_structure_ref(p, @'ext::external-process', 0);
-}
-
-static cl_object
-external_process_status(cl_object p)
-{
-  return ecl_structure_ref(p, @'ext::external-process', 4);
-}
-
-static cl_object
-external_process_code(cl_object p)
-{
-  return ecl_structure_ref(p, @'ext::external-process', 5);
-}
-
-static void
-set_external_process_pid(cl_object process, cl_object pid)
-{
-  ecl_structure_set(process, @'ext::external-process', 0, pid);
-}
-
-static void
-set_external_process_streams(cl_object process, cl_object input,
-                             cl_object  output, cl_object error)
-{
-  ecl_structure_set(process, @'ext::external-process', 1, input);
-  ecl_structure_set(process, @'ext::external-process', 2, output);
-  ecl_structure_set(process, @'ext::external-process', 3, error);
-}
-
-
-static void
-update_process_status(cl_object process, cl_object status, cl_object code)
-{
-  ecl_structure_set(process, @'ext::external-process', 0, ECL_NIL);
-  ecl_structure_set(process, @'ext::external-process', 4, status);
-  ecl_structure_set(process, @'ext::external-process', 5, code);
-}
-
-#if defined(SIGCHLD) && !defined(ECL_MS_WINDOWS_HOST)
-static void
-add_external_process(cl_env_ptr env, cl_object process)
-{
-  cl_object l = ecl_list1(process);
-  ecl_disable_interrupts_env(env);
-  ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
-  {
-    ECL_RPLACD(l, cl_core.external_processes);
-    cl_core.external_processes = l;
-  }
-  ECL_WITH_SPINLOCK_END;
-  ecl_enable_interrupts_env(env);
-}
-
-static void
-remove_external_process(cl_env_ptr env, cl_object process)
-{
-  ecl_disable_interrupts_env(env);
-  ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
-  {
-    cl_core.external_processes =
-      ecl_delete_eq(process, cl_core.external_processes);
-  }
-  ECL_WITH_SPINLOCK_END;
-  ecl_enable_interrupts_env(env);
-}
-
-static cl_object
-find_external_process(cl_env_ptr env, cl_object pid)
-{
-  cl_object output = ECL_NIL;
-  ecl_disable_interrupts_env(env);
-  ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
-  {
-    cl_object p;
-    for (p = cl_core.external_processes; p != ECL_NIL; p = ECL_CONS_CDR(p)) {
-      cl_object process = ECL_CONS_CAR(p);
-      if (external_process_pid(process) == pid) {
-        output = process;
-        break;
-      }
-    }
-  }
-  ECL_WITH_SPINLOCK_END(&cl_core.external_processes_lock);
-  ecl_enable_interrupts_env(env);
-  return output;
-}
-#else
-#define add_external_process(env,p)
-#define remove_external_process(env,p)
-#endif
-
-static cl_object
-ecl_waitpid(cl_object pid, cl_object wait)
+cl_object
+si_waitpid(cl_object pid, cl_object wait)
 {
   cl_object status, code;
 #if defined(NACL)
-  FElibc_error("ecl_waitpid not implemented",1);
+  FElibc_error("si_waitpid not implemented",1);
   @(return ECL_NIL);
 #elif defined(ECL_MS_WINDOWS_HOST)
   cl_env_ptr the_env = ecl_process_env();
@@ -261,14 +157,19 @@ ecl_waitpid(cl_object pid, cl_object wait)
     code = ECL_NIL;
   } else {
     status = @':exited';
-    code = ecl_make_fixnum(exitcode);
+    code = ecl_make_fixnum((int)exitcode);
     pid->foreign.data = NULL;
     CloseHandle(*hProcess);
   }
   ecl_enable_interrupts_env(the_env);
 #else
   int code_int, error;
-  error = waitpid(ecl_to_fix(pid), &code_int, Null(wait)? WNOHANG : 0);
+
+  if (Null(wait))
+    error = waitpid(ecl_to_fix(pid), &code_int, WNOHANG | WUNTRACED | WCONTINUED);
+  else
+    error = waitpid(ecl_to_fix(pid), &code_int, 0);
+
   if (error < 0) {
     if (errno == EINTR) {
       status = @':abort';
@@ -292,6 +193,9 @@ ecl_waitpid(cl_object pid, cl_object wait)
     } else if (WIFSTOPPED(code_int)) {
       status = @':stopped';
       code = ecl_make_fixnum(WSTOPSIG(code_int));
+    } else if (WIFCONTINUED(code_int)) {
+      status = @':resumed';
+      code = ecl_make_fixnum(SIGCONT);
     } else {
       status = @':running';
       code = ECL_NIL;
@@ -301,64 +205,15 @@ ecl_waitpid(cl_object pid, cl_object wait)
   @(return status code pid);
 }
 
-@(defun ext::terminate-process (process &optional (force ECL_NIL))
-  @
-  {
-    cl_env_ptr env = ecl_process_env();
-    bool error_encountered = FALSE;
-    ECL_WITH_SPINLOCK_BEGIN(env, &cl_core.external_processes_lock);
-    {
-      cl_object pid = external_process_pid(process);
-      if (!Null(pid)) {
-        int ret;
+#if !defined(ECL_MS_WINDOWS_HOST)
+cl_object
+si_killpid(cl_object pid, cl_object signal) {
+  int ret = kill(ecl_fixnum(pid), ecl_fixnum(signal));
+  return ecl_make_fixnum(ret);
+}
+#endif
+
 #if defined(ECL_MS_WINDOWS_HOST)
-        HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(pid);
-        ret = TerminateProcess(*ph, -1);
-        error_encountered = (ret == 0);
-#else
-        ret = kill(ecl_fixnum(pid), Null(force) ? SIGTERM : SIGKILL);
-        error_encountered = (ret != 0);
-#endif
-      }
-    }
-    ECL_WITH_SPINLOCK_END;
-    if (error_encountered)
-      FEerror("Cannot terminate the process ~A", 1, process);
-    return ECL_NIL;
-  }
-  @)
-
-
-@(defun si::wait-for-all-processes (&key (process ECL_NIL))
-  @
-  {
-    const cl_env_ptr env = ecl_process_env();
-#if defined(SIGCHLD) && !defined(ECL_WINDOWS_HOST)
-    do {
-      cl_object status = ecl_waitpid(ecl_make_fixnum(-1), ECL_NIL);
-      cl_object code = env->values[1];
-      cl_object pid = env->values[2];
-      if (Null(pid)) {
-        if (status != @':abort')
-          break;
-      } else {
-        cl_object p = find_external_process(env, pid);
-        if (!Null(p)) {
-          set_external_process_pid(p, ECL_NIL);
-          update_process_status(p, status, code);
-        }
-        if (status != @':running') {
-          remove_external_process(env, p);
-          ecl_delete_eq(p, cl_core.external_processes);
-        }
-      }
-    } while (1);
-#endif
-    ecl_return0(env);
-  }
-  @)
-
-#if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 cl_object
 si_close_windows_handle(cl_object h)
 {
@@ -380,41 +235,6 @@ make_windows_handle(HANDLE h)
 }
 #endif
 
-@(defun ext::external-process-wait (process &optional (wait ECL_NIL))
-  @ {
-    cl_object status, code, pid;
-  AGAIN:
-    pid = external_process_pid(process);
-    if (Null(pid)) {
-      /* If PID is NIL, it may be because the process failed,
-       * or because it is being updated by a separate thread,
-       * which is why we have to spin here. Note also the order
-       * here: status is updated _after_ code, and hence we
-       * check it _before_ code. */
-      do {
-        ecl_musleep(0.0, 1);
-        status = external_process_status(process);
-      } while (status == @':running');
-      code = external_process_code(process);
-    } else {
-      status = ecl_waitpid(pid, wait);
-      code = ecl_nth_value(the_env, 1);
-      pid = ecl_nth_value(the_env, 2);
-      /* A SIGCHLD interrupt may abort waitpid. If this
-       * is the case, the signal handler may have consumed
-       * the process status and we have to start over again */
-      if (Null(pid)) {
-        if (!Null(wait)) goto AGAIN;
-        status = external_process_status(process);
-        code = external_process_code(process);
-      } else {
-        update_process_status(process, status, code);
-        remove_external_process(the_env, process);
-      }
-    }
-    @(return status code);
-  } @)
-
 #if defined(ECL_MS_WINDOWS_HOST)
 HANDLE
 ecl_stream_to_HANDLE(cl_object s, bool output)
@@ -427,9 +247,7 @@ ecl_stream_to_HANDLE(cl_object s, bool output)
   case ecl_smm_output_wsock:
   case ecl_smm_io_wsock:
 #endif
-#if defined(ECL_MS_WINDOWS_HOST)
   case ecl_smm_io_wcon:
-#endif
     return (HANDLE)IO_FILE_DESCRIPTOR(s);
   default: {
     int stream_descriptor = ecl_stream_to_handle(s, output);
@@ -452,57 +270,52 @@ create_descriptor(cl_object stream, cl_object direction,
   attr.bInheritHandle = TRUE;
 
   if (stream == @':stream') {
-    /* Creates a pipe that we can write to and the
-       child reads from. We duplicate one extreme of the
-       pipe so that the child does not inherit it. */
+    /* Creates a pipe that we can write to and the child reads
+       from. We duplicate one extreme of the pipe so that the child
+       does not inherit it. */
     HANDLE tmp;
-    if (CreatePipe(&tmp, child, &attr, 0) == 0)
-      return;
-
-    if (DuplicateHandle(current, tmp, current,
-                        &tmp, 0, FALSE,
-                        DUPLICATE_CLOSE_SOURCE |
-                        DUPLICATE_SAME_ACCESS) == 0)
-      return;
-
     if (direction == @':input') {
-#ifdef cygwin
-      *parent = cygwin_attach_handle_to_fd
-        (0, -1, tmp, S_IRWXU, GENERIC_WRITE);
-#else
-      *parent = _open_osfhandle
-        ((intptr_t)tmp, _O_WRONLY);
-#endif
+      if (CreatePipe(child, &tmp, &attr, 0) == 0)
+        return;
+      if (DuplicateHandle(current, tmp, current,
+                          &tmp, 0, FALSE,
+                          DUPLICATE_CLOSE_SOURCE |
+                          DUPLICATE_SAME_ACCESS) == 0)
+        return;
+
+      *parent = _open_osfhandle((intptr_t)tmp, _O_WRONLY);
     }
-    else {
-#ifdef cygwin
-      *parent = cygwin_attach_handle_to_fd
-        (0, -1, tmp, S_IRWXU, GENERIC_READ);
-#else
-      *parent = _open_osfhandle
-        ((intptr_t)tmp, _O_RDONLY);
-#endif
+    else /* if (direction == @':output') */ {
+      if (CreatePipe(&tmp, child, &attr, 0) == 0)
+        return;
+      if (DuplicateHandle(current, tmp, current,
+                          &tmp, 0, FALSE,
+                          DUPLICATE_CLOSE_SOURCE |
+                          DUPLICATE_SAME_ACCESS) == 0)
+        return;
+
+      *parent = _open_osfhandle((intptr_t)tmp, _O_RDONLY);
     }
 
     if (*parent < 0)
       printf("open_osfhandle failed\n");
   }
-  else if (Null(stream)) {
-    *child = NULL;
-  }
   else if (!Null(cl_streamp(stream))) {
     HANDLE stream_handle = ecl_stream_to_HANDLE
       (stream, direction != @':input');
     if (stream_handle == INVALID_HANDLE_VALUE) {
-      FEerror("~S argument to RUN-PROGRAM does not "
-              "have a file handle:~%~S", 2, direction, stream);
+      CEerror(ecl_make_constant_base_string("Create a new stream.",-1),
+              "~S argument to RUN-PROGRAM does not have a file handle:~%~S",
+              2, direction, stream);
+      create_descriptor(@':stream', direction, child, parent);
+      return;
     }
     DuplicateHandle(current, stream_handle,
                     current, child, 0, TRUE,
                     DUPLICATE_SAME_ACCESS);
   }
   else {
-    FEerror("Invalid ~S argument to EXT:RUN-PROGRAM", 1, stream);
+    FEerror("Invalid ~S argument to EXT:RUN-PROGRAM.", 1, stream);
   }
 }
 #else
@@ -510,8 +323,11 @@ static void
 create_descriptor(cl_object stream, cl_object direction,
                   int *child, int *parent) {
   if (stream == @':stream') {
-    int fd[2];
-    pipe(fd);
+    int fd[2], ret;
+    ret = pipe(fd);
+    if (ret != 0) {
+      FElibc_error("Unable to create pipe", 0);
+    }
     if (direction == @':input') {
       *parent = fd[1];
       *child = fd[0];
@@ -520,72 +336,84 @@ create_descriptor(cl_object stream, cl_object direction,
       *child = fd[1];
     }
   }
-  else if (Null(stream)) {
-    if (direction == @':input')
-      *child = open("/dev/null", O_RDONLY);
-    else
-      *child = open("/dev/null", O_WRONLY);
-  }
   else if (!Null(cl_streamp(stream))) {
     *child = ecl_stream_to_handle
       (stream, direction != @':input');
     if (*child >= 0) {
       *child = dup(*child);
     } else {
-      FEerror("~S argument to RUN-PROGRAM does not "
-              "have a file handle:~%~S", 2, direction, stream);
+      CEerror(ecl_make_constant_base_string("Create a new stream.",-1),
+              "~S argument to RUN-PROGRAM does not have a file handle:~%~S",
+              2, direction, stream);
+      create_descriptor(@':stream', direction, child, parent);
+      return;
     }
   }
   else {
-    FEerror("Invalid ~S argument to EXT:RUN-PROGRAM", 1, stream);
+    FEerror("Invalid ~S argument to EXT:RUN-PROGRAM.", 1, stream);
   }
 }
 #endif
-@(defun ext::run-program (command argv &key (input @':stream') (output @':stream')
-                          (error @':output') (wait @'t') (environ ECL_NIL)
-                          (if_input_does_not_exist ECL_NIL)
-                          (if_output_exists @':error')
-                          (if_error_exists  @':error')
-                          (external_format  @':default'))
+
+
+cl_object
+si_run_program_inner(cl_object command, cl_object argv, cl_object environ, cl_object wait)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  int parent_write = 0, parent_read = 0, parent_error = 0;
+  cl_object pid, stream_read, exit_status;
+
+  command = si_copy_to_simple_base_string(command);
+
+#if defined(ECL_MS_WINDOWS_HOST)
+  argv = cl_format(4, ECL_NIL,
+                   ecl_make_constant_base_string("~A~{ ~A~}",-1),
+                   command, argv);
+  argv = si_copy_to_simple_base_string(argv);
+#else
+  argv = CONS(command, cl_mapcar(2, @'si::copy-to-simple-base-string', argv));
+#endif
+
+  pid = si_spawn_subprocess(command, argv, environ, @':stream', @':stream', @':output');
+  parent_write = ecl_fixnum(ecl_nth_value(the_env, 1));
+  parent_read = ecl_fixnum(ecl_nth_value(the_env, 2));
+  parent_error = ecl_fixnum(ecl_nth_value(the_env, 3));
+
+  /* descriptor is closed in the stream finalizer */
+  stream_read = ecl_make_stream_from_fd(command, parent_read,
+                                        ecl_smm_input, 8,
+                                        ECL_STREAM_DEFAULT_FORMAT,
+                                        @':default');
+
+  if (wait != ECL_NIL) {
+    si_waitpid(pid, ECL_T);
+    exit_status = ecl_nth_value(the_env, 1);
+  } else {
+    exit_status = ECL_NIL;
+  }
+
+  /* close unused descriptors */
+  close(parent_write);
+  close(parent_error);
+
+  @(return stream_read exit_status pid)
+}
+
+cl_object
+si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
+                    cl_object input, cl_object output, cl_object error) {
+
   int parent_write = 0, parent_read = 0, parent_error = 0;
   int child_pid;
-  cl_object pid, process;
-  cl_object stream_write;
-  cl_object stream_read;
-  cl_object stream_error;
-  cl_object exit_status = ECL_NIL;
-  @
-  command = si_copy_to_simple_base_string(command);
-  argv = cl_mapcar(2, @'si::copy-to-simple-base-string', argv);
-  process = make_external_process();
+  cl_object pid;
 
-  {
-    if (input == @'t')
-      input = ecl_symbol_value(@'*standard-input*');
-    if (ECL_STRINGP(input) || ECL_PATHNAMEP(input))
-      input = cl_open(5, input,
-                      @':direction', @':input',
-                      @':if-does-not-exist', if_input_does_not_exist,
-                      @':external-format', external_format);
-
-    if (output == @'t')
-      output = ecl_symbol_value(@'*standard-output*');
-    if (ECL_STRINGP(output) || ECL_PATHNAMEP(output))
-      output = cl_open(7, output,
-                       @':direction', @':output',
-                       @':if-exists', if_output_exists,
-                       @':if-does-not-exist', @':create',
-                       @':external-format', external_format);
-
-    if (error == @'t')
-      error = ecl_symbol_value(@'*error-output*');
-    if (ECL_STRINGP(error) || ECL_PATHNAMEP(error))
-      error = cl_open(7, error,
-                      @':direction', @':output',
-                      @':if-exists', if_error_exists,
-                      @':if-does-not-exist', @':create',
-                      @':external-format', external_format);
+  /* environ is either a list or `:default'. */
+  if (ECL_LISTP(environ)) {
+    environ = cl_mapcar(2, @'si::copy-to-simple-base-string', environ);
+  } else if (!ecl_eql(environ, @':default')) {
+    FEerror("Malformed :ENVIRON argument to EXT:RUN-PROGRAM.", 0);
   }
+  
 #if defined(ECL_MS_WINDOWS_HOST)
   {
     BOOL ok;
@@ -593,37 +421,26 @@ create_descriptor(cl_object stream, cl_object direction,
     PROCESS_INFORMATION pr_info;
     HANDLE child_stdout, child_stdin, child_stderr;
     HANDLE current = GetCurrentProcess();
-    HANDLE saved_stdout, saved_stdin, saved_stderr;
     cl_object env_buffer;
     char *env = NULL;
 
-    /* Enclose each argument, as well as the file name
-       in double quotes, to avoid problems when these
-       arguments or file names have spaces */
-    command =
-      cl_format(4, ECL_NIL,
-                ecl_make_simple_base_string("~S~{ ~S~}", -1),
-                command, argv);
-    command = si_copy_to_simple_base_string(command);
-    command = ecl_null_terminated_base_string(command);
-
-    if (!Null(environ)) {
+    if (ECL_LISTP(environ)) {
       env_buffer = from_list_to_execve_argument(environ, NULL);
       env = env_buffer->base_string.self;
     }
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
     create_descriptor(output, @':output', &child_stdout, &parent_read);
-    if (error == @':output')
-      /* The child inherits a duplicate of its own output
-         handle.*/
+    if (error == @':output') {
+      /* The child inherits a duplicate of its own output handle. */
       DuplicateHandle(current, child_stdout, current,
                       &child_stderr, 0, TRUE,
                       DUPLICATE_SAME_ACCESS);
+      /* Same for the parent_read and parent_error. */
+      parent_error = dup(parent_read);
+    }
     else
-      create_descriptor(error, @':error', &child_stderr, &parent_error);
+      create_descriptor(error, @':output', &child_stderr, &parent_error);
 
-    add_external_process(the_env, process);
-#if 1
     ZeroMemory(&st_info, sizeof(STARTUPINFO));
     st_info.cb = sizeof(STARTUPINFO);
     st_info.lpTitle = NULL; /* No window title, just exec name */
@@ -633,7 +450,12 @@ create_descriptor(cl_object stream, cl_object direction,
     st_info.hStdOutput = child_stdout;
     st_info.hStdError = child_stderr;
     ZeroMemory(&pr_info, sizeof(PROCESS_INFORMATION));
-    ok = CreateProcess(NULL, command->base_string.self,
+
+    /* Command is passed as is from argv. It is responsibility of
+       higher level interface to decide, whenever arguments should be
+       quoted or left as-is. */
+    /* ecl_null_terminated_base_string(argv); */
+    ok = CreateProcess(NULL, argv->base_string.self,
                        NULL, NULL, /* lpProcess/ThreadAttributes */
                        TRUE, /* Inherit handles (for files) */
                        /*CREATE_NEW_CONSOLE |*/
@@ -642,29 +464,7 @@ create_descriptor(cl_object stream, cl_object direction,
                        NULL, /* Current directory */
                        &st_info, /* Startup info */
                        &pr_info); /* Process info */
-#else /* 1 */
-    saved_stdin = GetStdHandle(STD_INPUT_HANDLE);
-    saved_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    saved_stderr = GetStdHandle(STD_ERROR_HANDLE);
-    SetStdHandle(STD_INPUT_HANDLE, child_stdin);
-    SetStdHandle(STD_OUTPUT_HANDLE, child_stdout);
-    SetStdHandle(STD_ERROR_HANDLE, child_stderr);
-    ZeroMemory(&st_info, sizeof(STARTUPINFO));
-    st_info.cb = sizeof(STARTUPINFO);
-    ZeroMemory(&pr_info, sizeof(PROCESS_INFORMATION));
-    ok = CreateProcess(NULL, command->base_string.self,
-                       NULL, NULL, /* lpProcess/ThreadAttributes */
-                       TRUE, /* Inherit handles (for files) */
-                       /*CREATE_NEW_CONSOLE |*/
-                       0,
-                       NULL, /* Inherit environment */
-                       NULL, /* Current directory */
-                       &st_info, /* Startup info */
-                       &pr_info); /* Process info */
-    SetStdHandle(STD_INPUT_HANDLE, saved_stdin);
-    SetStdHandle(STD_OUTPUT_HANDLE, saved_stdout);
-    SetStdHandle(STD_ERROR_HANDLE, saved_stderr);
-#endif /* 1 */
+
     /* Child handles must be closed in the parent process */
     /* otherwise the created pipes are never closed       */
     if (ok) {
@@ -679,48 +479,39 @@ create_descriptor(cl_object stream, cl_object direction,
       LocalFree(message);
       pid = ECL_NIL;
     }
-    set_external_process_pid(process, pid);
     if (child_stdin) CloseHandle(child_stdin);
     if (child_stdout) CloseHandle(child_stdout);
     if (child_stderr) CloseHandle(child_stderr);
   }
-#elif !defined(NACL) /* mingw */
+#elif !defined(NACL) /* All POSIX but NaCL/pNaCL */
   {
     int child_stdin, child_stdout, child_stderr;
-    int pipe_fd[2];
-    argv = CONS(command, ecl_nconc(argv, ecl_list1(ECL_NIL)));
+    argv = ecl_nconc(argv, ecl_list1(ECL_NIL));
     argv = _ecl_funcall3(@'coerce', argv, @'vector');
 
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
     create_descriptor(output, @':output', &child_stdout, &parent_read);
-    if (error == @':output')
+    if (error == @':output') {
       child_stderr = child_stdout;
+      parent_error = dup(parent_read);
+    }
     else
-      create_descriptor(error,  @':error', &child_stderr, &parent_error);
+      create_descriptor(error,  @':output', &child_stderr, &parent_error);
 
-    add_external_process(the_env, process);
-    pipe(pipe_fd);
     child_pid = fork();
     if (child_pid == 0) {
       /* Child */
       int j;
       void **argv_ptr = (void **)argv->vector.self.t;
-      {
-        /* Wait for the parent to set up its process structure */
-        char sync[1];
-        close(pipe_fd[1]);
-        while (read(pipe_fd[0], sync, 1) < 1) {
-          printf("\nError reading child pipe %d", errno);
-          fflush(stdout);
-        }
-        close(pipe_fd[0]);
-      }
-      dup2(child_stdin, STDIN_FILENO);
+
       if (parent_write) close(parent_write);
-      dup2(child_stdout, STDOUT_FILENO);
-      if (parent_read) close(parent_read);
-      dup2(child_stderr, STDERR_FILENO);
+      if (parent_read)  close(parent_read);
       if (parent_error) close(parent_error);
+
+      dup2(child_stdin,  STDIN_FILENO);
+      dup2(child_stdout, STDOUT_FILENO);
+      dup2(child_stderr, STDERR_FILENO);
+
       for (j = 0; j < argv->vector.fillp; j++) {
         cl_object arg = argv->vector.self.t[j];
         if (arg == ECL_NIL) {
@@ -729,9 +520,9 @@ create_descriptor(cl_object stream, cl_object direction,
           argv_ptr[j] = arg->base_string.self;
         }
       }
-      if (!Null(environ)) {
+      if (ECL_LISTP(environ)) {
         char **pstrings;
-        cl_object buffer = from_list_to_execve_argument(environ, &pstrings);
+        from_list_to_execve_argument(environ, &pstrings);
         execve((char*)command->base_string.self, (char **)argv_ptr, pstrings);
       } else {
         execvp((char*)command->base_string.self, (char **)argv_ptr);
@@ -740,82 +531,35 @@ create_descriptor(cl_object stream, cl_object direction,
       perror("exec");
       abort();
     }
+    close(child_stdin);
+    close(child_stdout);
+    if (!(error == @':output')) close(child_stderr);
+
     if (child_pid < 0) {
       pid = ECL_NIL;
     } else {
       pid = ecl_make_fixnum(child_pid);
     }
-    set_external_process_pid(process, pid);
-    {
-      /* This guarantees that the child process does not exit
-       * before we have created the process structure. If we do not
-       * do this, the SIGPIPE signal may arrive before
-       * set_external_process_pid() and our call to external-process-wait
-       * down there may block indefinitely. */
-      char sync[1];
-      close(pipe_fd[0]);
-      while (write(pipe_fd[1], sync, 1) < 1) {
-        printf("\nError writing child pipe %d", errno);
-        fflush(stdout);
-      }
-      close(pipe_fd[1]);
-    }
-    close(child_stdin);
-    close(child_stdout);
-    close(child_stderr);
   }
-#else
+#else  /* NACL */
   {
-    FElibc_error("ext::run-program not implemented",1);
+    FElibc_error("ext::run-program-inner not implemented",1);
     @(return ECL_NIL);
   }
-#endif /* mingw */
+#endif
+
   if (Null(pid)) {
     if (parent_write) close(parent_write);
     if (parent_read) close(parent_read);
-    if (parent_error) close(parent_error);
+    if (parent_error > 0) close(parent_error);
     parent_write = 0;
     parent_read = 0;
     parent_error = 0;
-    remove_external_process(the_env, process);
     FEerror("Could not spawn subprocess to run ~S.", 1, command);
   }
-  if (parent_write > 0) {
-    stream_write = ecl_make_stream_from_fd(command, parent_write,
-                                           ecl_smm_output, 8,
-                                           ECL_STREAM_DEFAULT_FORMAT,
-                                           external_format);
-  } else {
-    parent_write = 0;
-    stream_write = cl_core.null_stream;
-  }
-  if (parent_read > 0) {
-    stream_read = ecl_make_stream_from_fd(command, parent_read,
-                                          ecl_smm_input, 8,
-                                          ECL_STREAM_DEFAULT_FORMAT,
-                                          external_format);
-  } else {
-    parent_read = 0;
-    stream_read = cl_core.null_stream;
-  }
-  if (parent_error > 0) {
-    stream_error = ecl_make_stream_from_fd(command, parent_error,
-                                           ecl_smm_input, 8,
-                                           ECL_STREAM_DEFAULT_FORMAT,
-                                           external_format);
-  } else {
-    parent_error = 0;
-    stream_error = cl_core.null_stream;
-  }
-  set_external_process_streams(process, stream_write, stream_read,
-                               stream_error);
-  if (!Null(wait)) {
-    exit_status = si_external_process_wait(2, process, ECL_T);
-    exit_status = ecl_nth_value(the_env, 1);
-  }
-  @(return ((parent_read || parent_write)?
-            cl_make_two_way_stream(stream_read, stream_write) :
-            ECL_NIL)
-    exit_status
-    process);
-  @)
+
+  @(return pid
+    ecl_make_fixnum(parent_write)
+    ecl_make_fixnum(parent_read)
+    ecl_make_fixnum(parent_error))
+}

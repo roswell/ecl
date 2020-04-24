@@ -1,11 +1,3 @@
-;;; Copyright (c) 2005, Juan Jose Garcia-Ripoll
-;;;
-;;;   This program is free software; you can redistribute it and/or
-;;;   modify it under the terms of the GNU Library General Public
-;;;   License as published by the Free Software Foundation; either
-;;;   version 2 of the License, or (at your option) any later version.
-;;;
-;;;   See file '../../Copyright' for full details.
 ;;;
 ;;; This an extremely simple example of how to build standalone programs and
 ;;; unified fasl files from a system definition file.  You should peruse this

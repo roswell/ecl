@@ -13,15 +13,28 @@
 
 # include "gc.h"    /* For GC_INIT() only */
 # include "cord.h"
+
+# include <stdarg.h>
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
+
 /* This is a very incomplete test of the cord package.  It knows about  */
 /* a few internals of the package (e.g. when C strings are returned)    */
-/* that real clients shouldn't rely on.                 */
+/* that real clients shouldn't rely on.                                 */
 
 # define ABORT(string) \
-    { int x = 0; fprintf(stderr, "FAILED: %s\n", string); x = 1 / x; abort(); }
+    { fprintf(stderr, "FAILED: %s\n", string); abort(); }
+
+#if defined(CPPCHECK)
+# undef CORD_iter
+# undef CORD_next
+# undef CORD_pos_fetch
+# undef CORD_pos_to_cord
+# undef CORD_pos_to_index
+# undef CORD_pos_valid
+# undef CORD_prev
+#endif
 
 int count;
 
@@ -53,7 +66,6 @@ void test_basics(void)
 {
     CORD x = CORD_from_char_star("ab");
     register int i;
-    char c;
     CORD y;
     CORD_pos p;
 
@@ -114,11 +126,22 @@ void test_basics(void)
     i = 0;
     CORD_set_pos(p, y, i);
     while(CORD_pos_valid(p)) {
-        c = CORD_pos_fetch(p);
+        char c = CORD_pos_fetch(p);
+
         if(c != i) ABORT("Traversal of function node failed");
-    CORD_next(p); i++;
+        CORD_next(p);
+        i++;
     }
     if (i != 13) ABORT("Bad apparent length for function node");
+#   if defined(CPPCHECK)
+        /* TODO: Actually test these functions. */
+        CORD_prev(p);
+        (void)CORD_pos_to_cord(p);
+        (void)CORD_pos_to_index(p);
+        (void)CORD_iter(CORD_EMPTY, test_fn, NULL);
+        (void)CORD_riter(CORD_EMPTY, test_fn, NULL);
+        CORD_dump(y);
+#   endif
 }
 
 void test_extras(void)
@@ -128,7 +151,7 @@ void test_extras(void)
     register int i;
     CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
     CORD x = "{}";
-    CORD w, z;
+    CORD u, w, z;
     FILE *f;
     FILE *f1a, *f1b, *f2;
 
@@ -180,7 +203,9 @@ void test_extras(void)
         ABORT("file substr wrong");
     if (strcmp(CORD_to_char_star(CORD_substr(w, 1000*36, 36)), y) != 0)
         ABORT("char * file substr wrong");
-    if (strcmp(CORD_substr(w, 1000*36, 2), "ab") != 0)
+    u = CORD_substr(w, 1000*36, 2);
+    if (!u) ABORT("CORD_substr returned NULL");
+    if (strcmp(u, "ab") != 0)
         ABORT("short file substr wrong");
     if (CORD_str(x,1,"9a") != 35) ABORT("CORD_str failed 1");
     if (CORD_str(x,0,"9abcdefghijk") != 35) ABORT("CORD_str failed 2");
@@ -197,11 +222,33 @@ void test_extras(void)
     if (remove(FNAME1) != 0) {
         /* On some systems, e.g. OS2, this may fail if f1 is still open. */
         /* But we cannot call fclose as it might lead to double close.   */
-        fprintf(stderr, "WARNING: remove(FNAME1) failed\n");
+        fprintf(stderr, "WARNING: remove failed: " FNAME1 "\n");
     }
     if (remove(FNAME2) != 0) {
-        fprintf(stderr, "WARNING: remove(FNAME2) failed\n");
+        fprintf(stderr, "WARNING: remove failed: " FNAME2 "\n");
     }
+}
+
+int wrap_vprintf(CORD format, ...)
+{
+    va_list args;
+    int result;
+
+    va_start(args, format);
+    result = CORD_vprintf(format, args);
+    va_end(args);
+    return result;
+}
+
+int wrap_vfprintf(FILE * f, CORD format, ...)
+{
+    va_list args;
+    int result;
+
+    va_start(args, format);
+    result = CORD_vfprintf(f, format, args);
+    va_end(args);
+    return result;
 }
 
 #if defined(__DJGPP__) || defined(__STRICT_ANSI__)
@@ -249,6 +296,10 @@ void test_printf(void)
 #   endif
     result2[sizeof(result2) - 1] = '\0';
     if (CORD_cmp(result, result2) != 0)ABORT("CORD_sprintf goofed 5");
+    /* TODO: Better test CORD_[v][f]printf.     */
+    (void)CORD_printf(CORD_EMPTY);
+    (void)wrap_vfprintf(stdout, CORD_EMPTY);
+    (void)wrap_vprintf(CORD_EMPTY);
 }
 
 int main(void)

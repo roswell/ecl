@@ -93,7 +93,11 @@
 
 (defun emit-inlined-values (form forms)
   (let ((args (c1form-arg 0 form)))
-    (prog1 (emit-inline-form (or (pop args) (c1nil)) forms)
+    (prog1 (emit-inline-form (or (pop args) (c1nil))
+                             ;; the rest of the values args need to be
+                             ;; added to the rest forms to execute side
+                             ;; effects in the correct order
+                             (append args forms))
       (loop with *destination* = 'TRASH
          for form in args
          do (c2expr* form)))))
@@ -189,8 +193,8 @@
   (some #'c1form-side-effects forms))
 
 (defun function-may-have-side-effects (fname)
-  (not (get-sysprop fname 'no-side-effects)))
+  (not (si:get-sysprop fname 'no-side-effects)))
 
 (defun function-may-change-sp (fname)
-  (not (or (get-sysprop fname 'no-side-effects)
-           (get-sysprop fname 'no-sp-change))))
+  (not (or (si:get-sysprop fname 'no-side-effects)
+           (si:get-sysprop fname 'no-sp-change))))

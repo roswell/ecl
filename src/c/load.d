@@ -21,7 +21,7 @@ si_load_binary(cl_object filename, cl_object verbose,
                cl_object print, cl_object external_format)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  cl_object block, map, array;
+  cl_object block;
   cl_object basename;
   cl_object init_prefix, prefix;
   cl_object output;
@@ -52,7 +52,7 @@ si_load_binary(cl_object filename, cl_object verbose,
     prefix = @si::base-string-concatenate(3,
                                           init_prefix,
                                           prefix,
-                                          make_constant_base_string("_"));
+                                          ecl_make_constant_base_string("_",-1));
   }
   basename = cl_pathname_name(1,filename);
   basename = @si::base-string-concatenate(2, prefix, @string-upcase(1, funcall(4, @'nsubstitute', ECL_CODE_CHAR('_'), ECL_CODE_CHAR('-'), basename)));
@@ -111,14 +111,14 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
       }
     }
     ecl_bds_unwind1(the_env);
-  } ECL_UNWIND_PROTECT_EXIT {
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     /* We do not want to come back here if close_stream fails,
        therefore, first we frs_pop() current jump point, then
        try to close the stream, and then jump to next catch
        point */
     if (strm != source)
       cl_close(3, strm, @':abort', @'t');
-  } ECL_UNWIND_PROTECT_END;
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   @(return ECL_NIL);
 }
 
@@ -176,14 +176,14 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
                 2, x, source);
       }
     }
-  } ECL_UNWIND_PROTECT_EXIT {
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     /* We do not want to come back here if close_stream fails,
        therefore, first we frs_pop() current jump point, then
        try to close the stream, and then jump to next catch
        point */
     if (strm != source)
       cl_close(3, strm, @':abort', @'t');
-  } ECL_UNWIND_PROTECT_END;
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   @(return ECL_NIL);
 }
 
@@ -263,7 +263,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   }
  NOT_A_FILENAME:
   if (verbose != ECL_NIL) {
-    cl_format(3, ECL_T, make_constant_base_string("~&;;; Loading ~s~%"),
+    cl_format(3, ECL_T, ecl_make_constant_base_string("~&;;; Loading ~s~%",-1),
               filename);
   }
   ecl_bds_bind(the_env, @'*package*', ecl_symbol_value(@'*package*'));
@@ -297,7 +297,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
     FEerror("LOAD: Could not load file ~S (Error: ~S)",
             2, filename, ok);
   if (print != ECL_NIL) {
-    cl_format(3, ECL_T, make_constant_base_string("~&;;; Loading ~s~%"),
+    cl_format(3, ECL_T, ecl_make_constant_base_string("~&;;; Loading ~s~%",-1),
               filename);
   }
   @(return filename);

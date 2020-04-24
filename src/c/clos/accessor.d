@@ -71,8 +71,12 @@ static ecl_cache_record_ptr
 search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
 {
   ecl_cache_ptr cache = env->slot_cache;
-  fill_spec_vector(cache->keys, gfun, instance);
-  return ecl_search_cache(cache);
+  ecl_cache_record_ptr ret;
+  ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
+    fill_spec_vector(cache->keys, gfun, instance);
+    ret = ecl_search_cache(cache);
+  } ECL_WITHOUT_INTERRUPTS_END;
+  return ret;
 }
 
 static ecl_cache_record_ptr
@@ -89,10 +93,12 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
   {
     ecl_cache_record_ptr e;
     ecl_cache_ptr cache = env->slot_cache;
-    fill_spec_vector(cache->keys, gfun, instance);
-    e = ecl_search_cache(cache);
-    e->key = cl_copy_seq(cache->keys);
-    e->value = index;
+    ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
+      fill_spec_vector(cache->keys, gfun, instance);
+      e = ecl_search_cache(cache);
+      e->key = cl_copy_seq(cache->keys);
+      e->value = index;
+    } ECL_WITHOUT_INTERRUPTS_END;
     return e;
   }
 }
@@ -100,23 +106,29 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
 static void
 ensure_up_to_date_instance(cl_object instance)
 {
-  cl_object clas = ECL_CLASS_OF(instance);
-  cl_object slots = ECL_CLASS_SLOTS(clas);
-  unlikely_if (slots != ECL_UNBOUND && instance->instance.sig != slots) {
+  if (si_instance_obsolete_p(instance) == ECL_T) {
     _ecl_funcall2(@'clos::update-instance', instance);
   }
 }
 
 cl_object
-ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
+ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */)
 {
   const cl_env_ptr env = ecl_process_env();
   cl_object gfun = env->function;
   cl_object index, value;
   ecl_cache_record_ptr e;
+  cl_object instance;
 
-  unlikely_if (narg != 1)
+  unlikely_if (narg != 1) {
     FEwrong_num_arguments(gfun);
+  } else {
+    va_list args;
+    va_start(args, narg);
+    instance = va_arg(args, cl_object);
+    va_end(args);
+  }
+
   unlikely_if (!ECL_INSTANCEP(instance)) {
     no_applicable_method(env, gfun, ecl_list1(instance));
     return env->values[0];
@@ -153,16 +165,24 @@ ecl_slot_reader_dispatch(cl_narg narg, cl_object instance)
 }
 
 cl_object
-ecl_slot_writer_dispatch(cl_narg narg, cl_object value, cl_object instance)
+ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instance */)
 {
   const cl_env_ptr env = ecl_process_env();
   cl_object gfun = env->function;
   ecl_cache_record_ptr e;
   cl_object index;
+  cl_object value, instance;
 
   unlikely_if (narg != 2) {
     FEwrong_num_arguments(gfun);
+  } else {
+    va_list args;
+    va_start(args, narg);
+    value = va_arg(args, cl_object);
+    instance = va_arg(args, cl_object);
+    va_end(args);
   }
+
   unlikely_if (!ECL_INSTANCEP(instance)) {
     no_applicable_method(env, gfun, cl_list(2, value, instance));
     return env->values[0];
