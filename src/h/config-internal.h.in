@@ -108,7 +108,6 @@
 /* the tzset() function gets the current time zone                      */
 #undef HAVE_TZSET
 /* several floating point functions (ISO C99)                           */
-#if 0
 #undef HAVE_EXPF
 #undef HAVE_LOGF
 #undef HAVE_SQRTF
@@ -118,7 +117,6 @@
 #undef HAVE_SINHF
 #undef HAVE_COSHF
 #undef HAVE_TANHF
-#endif
 #undef HAVE_FLOORF
 #undef HAVE_CEILF
 #undef HAVE_FABSF

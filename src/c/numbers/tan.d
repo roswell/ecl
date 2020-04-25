@@ -20,20 +20,6 @@
 
 #pragma STDC FENV_ACCESS ON
 
-/*
- * As of 2006-10-13 I found this bug in GLIBC's tanf, which overflows
- * when the argument is pi/4. It is 2008 and this has not yet been
- * solved. Not only that, but if we use tan() on float, GCC automatically
- * and stupidly forces the use of tanf(). 
- * As of 2013-03-31, this problem persists also on other platforms, such
- * as ARM, or PowerPC64. We thus extend the conditional to all GLIB copies.
- */
-#if /*defined(__amd64__) && */ defined(__GLIBC__)
-static double safe_tanf(double x) { return tan(x); }
-#else
-# define safe_tanf(x) tanf(x)
-#endif
-
 cl_object
 cl_tan(cl_object x)
 {
@@ -43,13 +29,13 @@ cl_tan(cl_object x)
 static cl_object
 ecl_tan_rational(cl_object x)
 {
-  return ecl_make_single_float(safe_tanf(ecl_to_float(x)));
+  return ecl_make_single_float(tanf(ecl_to_float(x)));
 }
 
 static cl_object
 ecl_tan_single_float(cl_object x)
 {
-  return ecl_make_single_float(safe_tanf(ecl_single_float(x)));
+  return ecl_make_single_float(tanf(ecl_single_float(x)));
 }
 
 static cl_object

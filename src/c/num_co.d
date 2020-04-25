@@ -22,21 +22,6 @@
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
 #include <float.h>
-#ifndef HAVE_ISOC99
-# define floorf floor
-# define ceilf ceil
-# define fabsf fabs
-# define frexpf frexp
-# define ldexpf ldexp
-# define cosf cos
-# define coshf cosh
-# define expf exp
-# define logf log
-# define sinf sin
-# define sqrtf sqrt
-# define tanf tan
-# define tanhf tanh
-#endif
 #include <ecl/internal.h>
 
 /* Coerce X to single-float if one arg,
