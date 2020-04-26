@@ -191,11 +191,13 @@ static struct ecl_type_information {
   size_t t;
 } type_info[t_end];
 
+#ifdef GBC_BOEHM_PRECISE
 static void
 error_wrong_tag(cl_type t)
 {
   ecl_internal_error("Collector called with invalid tag number.");
 }
+#endif
 
 cl_index
 ecl_object_byte_size(cl_type t)
@@ -764,6 +766,7 @@ extern void (*GC_push_other_roots)();
 static void (*old_GC_push_other_roots)();
 static void stacks_scanner();
 
+#ifdef GBC_BOEHM_PRECISE
 static cl_index
 to_bitmap(void *x, void *y)
 {
@@ -773,6 +776,7 @@ to_bitmap(void *x, void *y)
   n /= sizeof(void*);
   return 1 << n;
 }
+#endif
 
 void
 init_alloc(void)

@@ -36,7 +36,6 @@
 int
 ecl_number_equalp(cl_object x, cl_object y)
 {
-  double dx;
   /* INV: (= fixnum bignum) => 0 */
   /* INV: (= fixnum ratio) => 0 */
   /* INV: (= bignum ratio) => 0 */

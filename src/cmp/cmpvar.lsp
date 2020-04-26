@@ -74,13 +74,13 @@
   (mapcar #'first (var-read-nodes var)))
 
 (defun assert-var-ref-value (var)
-  #+debug-compiler
-  (unless (let ((ref (var-ref var)))
-            (or (> ref (/ most-positive-fixnum 2))
-                (= (var-ref var) (+ (length (var-read-nodes var))
-                                    (length (var-set-nodes var))))))
-    (baboon :format-control "Number of references in VAR ~A unequal to references list"
-            :format-arguments (list var))))
+  (when *debug-compiler*
+    (unless (let ((ref (var-ref var)))
+              (or (> ref (/ most-positive-fixnum 2))
+                  (= (var-ref var) (+ (length (var-read-nodes var))
+                                      (length (var-set-nodes var))))))
+      (baboon :format-control "Number of references in VAR ~A unequal to references list"
+              :format-arguments (list var)))))
 
 (defun assert-var-not-ignored (var)
   (when (let ((x (var-ignorable var))) (and x (minusp x)))
@@ -229,6 +229,7 @@
 (defun c1vref (name)
   (multiple-value-bind (var cfb unw)
       (cmp-env-search-var name)
+    (declare (ignore unw))
     (cond ((null var)
            (c1make-global-variable name :warn t
                                    :type (or (si:get-sysprop name 'CMP-TYPE) t)))

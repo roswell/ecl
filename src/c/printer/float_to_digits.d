@@ -161,10 +161,8 @@ generate(cl_object digits, float_approx *approx)
 static void
 change_precision(float_approx *approx, cl_object position, cl_object relativep)
 {
-  cl_fixnum pos;
   if (Null(position))
     return;
-  pos = ecl_fixnum(position);
   if (!Null(relativep)) {
     cl_object k = ecl_make_fixnum(0);
     cl_object l = ecl_make_fixnum(1);

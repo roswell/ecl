@@ -48,6 +48,8 @@ the environment variable TMPDIR to a different value." template))
                               verbose print c-file h-file data-file
                               system-p load external-format source-truename
                               source-offset)
+  (declare (ignore verbose print c-file h-file data-file load
+                   external-format source-truename source-offset))
   (let* ((format '())
          (extension '()))
     (unless type-supplied-p
@@ -145,6 +147,7 @@ the environment variable TMPDIR to a different value." template))
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
                   (ld-flags (split-program-options *ld-flags*)))
+  (declare (ignore type))
   (safe-run-program
    *ld*
    `("-o" ,(brief-namestring o-pathname)
@@ -995,6 +998,7 @@ from the C language code.  NIL means \"do not create the file\"."
                *safety* *space* *speed* *debug*))
 
 (defmacro with-compilation-unit (options &rest body)
+  (declare (ignore options))
   `(progn ,@body))
 
 (ext:package-lock "CL" t)

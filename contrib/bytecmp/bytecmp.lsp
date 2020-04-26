@@ -81,7 +81,7 @@
 (defun bc-compile-file-pathname (name &key (output-file name) (type :fasl)
 				 verbose print c-file h-file data-file
 				 shared-data-file system-p load external-format)
-  (declare (ignore load c-file h-file data-file shared-data-file system-p verbose print))
+  (declare (ignore load c-file h-file data-file shared-data-file system-p verbose print external-format))
   (let ((extension "fasc"))
     (case type
       ((:fasl :fas) (setf extension "fasc"))

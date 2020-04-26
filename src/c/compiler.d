@@ -847,7 +847,7 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
   struct cl_compiler_env old_env;
   cl_object name = pop(&body);
   cl_object block_record;
-  cl_index labelz, pc, loc, constants;
+  cl_index labelz, pc, constants;
   int flags;
 
   if (!ECL_SYMBOLP(name))
@@ -858,7 +858,7 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
   pc = current_pc(env);
 
   flags = maybe_values_or_reg0(old_flags);
-  loc = c_register_block(env, name);
+  c_register_block(env, name);
   block_record = ECL_CONS_CAR(env->c_env->variables);
   if (Null(name)) {
     asm_op(env, OP_DO);
@@ -1063,7 +1063,7 @@ c_case(cl_env_ptr env, cl_object clause, int flags) {
 
 static int
 c_catch(cl_env_ptr env, cl_object args, int flags) {
-  cl_index labelz, loc;
+  cl_index labelz;
   cl_object old_env;
 
   /* Compile evaluation of tag */
@@ -1071,7 +1071,7 @@ c_catch(cl_env_ptr env, cl_object args, int flags) {
 
   /* Compile binding of tag */
   old_env = env->c_env->variables;
-  loc = c_register_block(env, ecl_make_fixnum(0));
+  c_register_block(env, ecl_make_fixnum(0));
   asm_op(env, OP_CATCH);
 
   /* Compile jump point */
@@ -3039,7 +3039,7 @@ c_default(cl_env_ptr env, cl_object var, cl_object stmt, cl_object flag, cl_obje
 cl_object
 ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   cl_object reqs, opts, rest, key, keys, auxs, allow_other_keys;
-  cl_object specials, doc, decl, body, output;
+  cl_object specials, decl, body, output;
   cl_index handle;
   struct cl_compiler_env *old_c_env, new_c_env;
 
@@ -3057,7 +3057,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   keys = env->values[4];
   allow_other_keys = env->values[5];
   auxs = env->values[6];
-  doc  = env->values[7];
+  /* doc  = env->values[7]; unused */;
   specials = env->values[8];
   decl = env->values[9];
   body = env->values[10];

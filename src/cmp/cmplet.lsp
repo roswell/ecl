@@ -311,7 +311,7 @@
           (when env (pop-debug-lexical-env))))
       (c2expr body))
 
-  (close-inline-blocks :line))
+  (close-inline-blocks))
 
 (defun discarded (var form body &aux last)
   (labels ((last-form (x &aux (args (c1form-args x)))

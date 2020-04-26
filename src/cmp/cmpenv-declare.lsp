@@ -33,10 +33,10 @@
 (defun validate-alien-declaration (names-list error)
   (dolist (new-declaration names-list)
     (unless (symbolp new-declaration)
-      (cmperr "The declaration ~s is not a symbol" new-declaration))
+      (funcall error "The declaration ~s is not a symbol" new-declaration))
     (when (type-name-p new-declaration)
-      (cmperr "Symbol name ~S cannot be both the name of a type and of a declaration"
-              new-declaration))))
+      (funcall error "Symbol name ~S cannot be both the name of a type and of a declaration"
+               new-declaration))))
 
 (defun alien-declaration-p (name &optional (env *cmp-env*))
   (and (symbolp name)

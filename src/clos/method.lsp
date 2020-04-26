@@ -102,6 +102,7 @@
   (when (eq (first method-lambda) 'lambda)
     (multiple-value-bind (declarations body documentation)
         (si::find-declarations (cddr method-lambda))
+      (declare (ignore documentation))
       (let (block)
         (when (and (null (rest body))
                    (listp (setf block (first body)))
@@ -177,6 +178,7 @@
       (values method-lambda declarations documentation))))
 
 (defun make-method-lambda (gf method method-lambda env)
+  (declare (ignore method gf))
   (multiple-value-bind (call-next-method-p next-method-p-p in-closure-p)
       (walk-method-lambda method-lambda env)
     (values `(lambda (.combined-method-args. *next-methods*)
@@ -190,6 +192,7 @@
 (defun add-call-next-method-closure (method-lambda)
   (multiple-value-bind (declarations real-body documentation)
       (si::find-declarations (cddr method-lambda))
+    (declare (ignore documentation))
     `(lambda ,(second method-lambda)
        ,@declarations
        (let* ((.closed-combined-method-args.

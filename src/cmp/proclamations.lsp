@@ -1189,7 +1189,7 @@
 (proclamation si:open-unix-socket-stream (string) stream)
 #+wants-sockets
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
-(proclamation si:copy-stream (stream stream wait) t)
+(proclamation si:copy-stream (stream stream gen-bool) t)
 (proclamation si:make-encoding (t) hash-table)
 (proclamation si:load-encoding (t) t)
 

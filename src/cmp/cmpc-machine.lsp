@@ -130,10 +130,6 @@
        :from-lisp from-lisp
        :from-lisp-unsafe from-lisp-unsafe))))
 
-(defun make-rep-type-hash (all-c-types)
-  (let ((table (make-hash-table :size 128 :test 'eq)))
-    table))
-
 (defun default-machine ()
   (let* ((all-c-types (append +this-machine-c-types+ +all-machines-c-types+))
          (table (make-hash-table :size 128 :test 'eq))

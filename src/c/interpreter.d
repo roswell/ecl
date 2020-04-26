@@ -314,7 +314,6 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
   frame_aux.stack = frame_aux.base = 0;
   frame_aux.size = 0;
   frame_aux.env = the_env;
- BEGIN:
   BEGIN_SWITCH {
     CASE(OP_NOP); {
       reg0 = ECL_NIL;

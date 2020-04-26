@@ -181,7 +181,7 @@
 
 (defmethod shared-initialize ((gfun standard-generic-function) slot-names
                               &rest initargs)
-  (declare (ignore initargs slot-names))
+  (declare (ignore slot-names))
   (call-next-method)
   (when (generic-function-methods gfun)
     (compute-g-f-spec-list gfun))

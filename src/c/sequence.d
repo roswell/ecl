@@ -189,7 +189,7 @@ ecl_copy_seq(cl_object sequence)
   return ecl_subseq(sequence, 0, MOST_POSITIVE_FIXNUM);
 }
 
-@(defun subseq (sequence start &optional end &aux x)
+@(defun subseq (sequence start &optional end)
   cl_index_pair p;
   @
   p = ecl_sequence_start_end(@[subseq], sequence, start, end);

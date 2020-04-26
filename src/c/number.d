@@ -611,7 +611,7 @@ si_complex_float(cl_object r, cl_object i)
 {
   cl_type tr = ecl_t_of(r);
   cl_type ti = ecl_t_of(i);
-  cl_object result;
+  cl_object result = OBJNULL;
   switch (tr) {
   case t_singlefloat:
     if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'single-float'); }

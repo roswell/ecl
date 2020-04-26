@@ -220,6 +220,7 @@
              (return ,%sublist)))))))
 
 (define-compiler-macro member (&whole whole value list &rest sequence-args)
+  (declare (value list sequence-args))
   (if (policy-inline-sequence-functions)
       (or (apply #'expand-member (rest whole))
           whole)
@@ -264,6 +265,7 @@
                    (return ,%elt))))))))))
 
 (define-compiler-macro assoc (&whole whole value list &rest sequence-args)
+  (declare (ignore value list sequence-args))
   (if (policy-inline-sequence-functions)
       (or (apply #'expand-assoc (rest whole))
           whole)
@@ -287,6 +289,7 @@
                (return ,%elt))))))))
 
 (define-compiler-macro find (&whole whole value sequence &rest sequence-args)
+  (declare (ignore value sequence sequence-args))
   (if (policy-inline-sequence-functions)
       (or (apply #'expand-find (rest whole))
           whole)

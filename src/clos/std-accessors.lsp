@@ -23,6 +23,7 @@
 ;;; 
 
 (defun safe-slot-definition-location (slotd &optional default)
+  (declare (ignore default))
   (cond ((listp slotd)
          (error "List instead of a slot definition object"))
         (t

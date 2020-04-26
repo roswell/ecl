@@ -91,7 +91,7 @@
         (values nil nil))))
 
 (defun get-local-return-type (fun &optional (env *cmp-env*))
-  (let ((x (cmp-env-search-ftype (fun-name fun))))
+  (let ((x (cmp-env-search-ftype (fun-name fun) env)))
     (if x
         (values (second x) t)
         (values nil nil))))

@@ -834,7 +834,8 @@ reference the arguments of the function as \"#0\", \"#1\", etc.
 
 The interpreter ignores this form.  ARG-TYPES are argument types of
 the defined Lisp function and RESULT-TYPE is its return type."
-  (let ((args (mapcar #'(lambda (x) (gensym)) arg-types)))
+  (let ((args (mapcar #'(lambda (x) (declare (ignore x)) (gensym))
+                      arg-types)))
   `(defun ,name ,args
      (c-inline ,args ,arg-types ,result-type
                ,c-expression :one-liner t))))
@@ -850,7 +851,8 @@ FUNCTION-NAME.
 The interpreter ignores this form. ARG-TYPES are argument types of
 the C function and RESULT-TYPE is its return type."
   (let ((output-type :object)
-        (args (mapcar #'(lambda (x) (gensym)) arg-types)))
+        (args (mapcar #'(lambda (x) (declare (ignore x)) (gensym))
+                      arg-types)))
     (if (consp c-name)
         (setf output-type (first c-name)
               c-name (second c-name)))

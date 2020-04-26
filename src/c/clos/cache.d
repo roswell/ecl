@@ -36,6 +36,7 @@ empty_cache(ecl_cache_ptr cache)
 #endif
 }
 
+#ifndef ECL_THREADS
 static void
 clear_one_from_cache(ecl_cache_ptr cache, cl_object target)
 {
@@ -51,8 +52,7 @@ clear_one_from_cache(ecl_cache_ptr cache, cl_object target)
     }
   }
 }
-
-#ifdef ECL_THREADS
+#else
 static void
 clear_list_from_cache(ecl_cache_ptr cache)
 {

@@ -355,7 +355,7 @@
   (with-early-accessors (+standard-generic-function-slots+
                          +eql-specializer-slots+
                          +standard-method-slots+)
-    (flet ((nupdate-spec-how-list (spec-how-list specializers gf)
+    (flet ((nupdate-spec-how-list (spec-how-list specializers)
              ;; update the spec-how of the gfun 
              ;; computing the or of the previous value and the new one
              (setf spec-how-list (or spec-how-list
@@ -379,7 +379,7 @@
              (a-p-o (generic-function-argument-precedence-order gf)))
         (dolist (method (generic-function-methods gf))
           (setf spec-how-list
-                (nupdate-spec-how-list spec-how-list (method-specializers method) gf)))
+                (nupdate-spec-how-list spec-how-list (method-specializers method))))
         (setf (generic-function-spec-list gf)
               (loop for type in spec-how-list
                  for i from 0

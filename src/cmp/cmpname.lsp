@@ -161,7 +161,7 @@ initialization from the C code which wants to use it."
                   c)
                  (t
                   #\p)))
-         (disambiguation (c)
+         (disambiguation (kind)
            (case kind
              ((:object :c) "")
              ((:fasl :fas) "fas_")

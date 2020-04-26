@@ -166,7 +166,7 @@
   (declare (si::c-local))
   (if (plusp i) (values-loc i) 'VALUE0))
 
-(defun do-m-v-setq (vars form use-bind &aux min-values max-values)
+(defun do-m-v-setq (vars form use-bind)
   ;; This routine moves values from the multiple-value stack into the
   ;; variables VARS. The amount of values is not known (or at least we only
   ;; know that there is some number between MIN-VALUES and MAX-VALUES).  If

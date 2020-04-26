@@ -31,7 +31,6 @@
         (push item vars))
       (push item all))
     (dotimes (i stores-no)
-      (declare (ignore i))
       (push (gensym) stores))
     (let* ((all (nreverse all)))
       (values (nreverse vars)

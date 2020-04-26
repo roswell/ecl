@@ -58,7 +58,7 @@
            FEtype_error_sequence(#0);")
     (vector . "if (ecl_unlikely(!ECL_VECTORP(#0))) FEtype_error_vector(#0);")))
 
-(defun simple-type-assertion (value type env)
+(defun simple-type-assertion (value type)
   (let ((simple-form (cdr (assoc type +simple-type-assertions+))))
     (if simple-form
         `(ffi:c-inline (,value) (:object) :void ,simple-form
@@ -82,13 +82,13 @@
         (compulsory
          ;; The check has to be produced, independent of the declared
          ;; value of the variable (for instance, in LAMBDA arguments).
-         (simple-type-assertion value type env))
+         (simple-type-assertion value type))
         (t
          ;; We may rely on the compiler to choose the appropriate
          ;; branch once type propagation has happened.
          `(ext:compiler-typecase ,value
             (,type)
-            (t ,(simple-type-assertion value type env))))))
+            (t ,(simple-type-assertion value type))))))
 
 (defun c1checked-value (args)
   (let* ((type (pop args))

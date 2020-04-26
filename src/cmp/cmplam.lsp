@@ -335,6 +335,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
         (maxarg call-arguments-limit))
     (destructuring-bind (requireds optionals rest key-flag keywords a-o-k)
         (c1form-arg 0 lambda)
+      (declare (ignore keywords))
       (setf minarg (length requireds))
       (when (and (null rest) (not key-flag) (not a-o-k))
         (setf maxarg (+ minarg (/ (length optionals) 3)))))

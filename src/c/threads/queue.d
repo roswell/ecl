@@ -84,6 +84,7 @@ wait_queue_delete(cl_env_ptr the_env, cl_object q, cl_object item)
  * THREAD SCHEDULER & WAITING
  */
 
+#if !defined(HAVE_SIGPROCMASK)
 static cl_object
 bignum_set_time(cl_object bignum, struct ecl_timeval *time)
 {
@@ -194,6 +195,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
   ecl_bds_unwind1(the_env);
   return output;
 }
+#endif
 
 /**********************************************************************
  * BLOCKING WAIT QUEUE ALGORITHM
