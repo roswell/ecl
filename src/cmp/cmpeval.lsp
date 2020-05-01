@@ -104,8 +104,9 @@
                (declared-inline-p fname)
                (plusp *inline-max-depth*))
       (return-from c1call-local
-        (let ((*inline-max-depth* (1- *inline-max-depth*)))
-          `(funcall #',lambda ,@args)))))
+        (let ((*inline-max-depth* (1- *inline-max-depth*))
+              (*cmp-env* (fun-cmp-env fun)))
+          (c1expr `(funcall #',lambda ,@args))))))
   (let* ((forms (c1args* args))
          (return-type (or (get-local-return-type fun) 'T))
          (arg-types (get-local-arg-types fun)))
