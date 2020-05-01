@@ -1812,3 +1812,79 @@
               `(defclass class () ())
               `(defmethod method ()
                  (load-time-value (find-class class))))))
+
+;;; Date 2020-05-01
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/577
+;;; Description
+;;;
+;;; Inlining of closures did not work properly if closed over
+;;; variables were in the scope in which the inlined function was
+;;; called.
+(test cmp.0079.inline-closure
+  ;; local function
+  (is (equal
+       (funcall (compile
+                 nil
+                 (lambda ()
+                   (let ((b 123)
+                         results)
+                     (flet ((set-b (x) (setf b x))
+                            (get-b () b))
+                       (declare (inline set-b get-b))
+                       (push (get-b) results)
+                       (push b results)
+                       (let ((b 345))
+                         (push (get-b) results)
+                         (push b results)
+                         (set-b 0)
+                         (push (get-b) results)
+                         (push b results))
+                       (push (get-b) results)
+                       (push b results))
+                     (nreverse results)))))
+       '(123 123 123 345 0 345 0 0)))
+  ;; global function from bytecodes compiler, proclaimed inline
+  (ext:with-clean-symbols (set-b get-b)
+    (proclaim '(inline set-b get-b))
+    (eval
+     '(let ((b 123))
+        (defun set-b (x)
+          (setf b x))
+        (defun get-b () b)))
+    (is (equal
+         (funcall (compile
+                   nil
+                   (lambda ()
+                     (let (results)
+                       (push (get-b) results)
+                       (let ((b 345))
+                         (push (get-b) results)
+                         (push b results)
+                         (set-b 0)
+                         (push (get-b) results)
+                         (push b results))
+                       (push (get-b) results)
+                       (nreverse results)))))
+         '(123 123 345 0 345 0))))
+  ;; global function in same file, declaimed inline
+  (load (with-compiler ("inline-closure.lsp")
+          '(in-package #:cl-test)
+          '(declaim (inline set-b.0079 get-b.0079))
+          '(let ((b 123))
+            (defun set-b.0079 (x)
+              (setf b x))
+            (defun get-b.0079 () b))
+          '(defun foo.0079 ()
+            (let (results)
+              (push (get-b.0079) results)
+              (let ((b 345))
+                (push (get-b.0079) results)
+                (push b results)
+                (set-b.0079 0)
+                (push (get-b.0079) results)
+                (push b results))
+              (push (get-b.0079) results)
+              (nreverse results)))))
+  (is (equal
+       (funcall 'foo.0079)
+       '(123 123 345 0 345 0))))
