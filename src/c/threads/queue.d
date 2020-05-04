@@ -25,9 +25,9 @@ ecl_process_yield()
 #elif defined(HAVE_SCHED_H)
   sched_yield();
 #else
-  ecl_musleep(0.0, 1);*/
+  ecl_musleep(0.0, 1);
 #endif
-    }
+}
 
 void ECL_INLINE
 ecl_get_spinlock(cl_env_ptr the_env, cl_object *lock)
@@ -126,7 +126,7 @@ waiting_time(cl_index iteration, struct ecl_timeval *start)
 }
 
 static cl_object
-ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
+ecl_wait_on_timed(cl_env_ptr env, mp_wait_test condition, cl_object mp_object)
 {
   volatile const cl_env_ptr the_env = env;
   volatile cl_object own_process = the_env->own_process;
@@ -149,16 +149,16 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
     /* 2) Now we add ourselves to the queue. In order to
      * avoid a call to the GC, we try to reuse records. */
-    print_lock("adding to queue", o);
+    print_lock("adding to queue", mp_object);
     own_process->process.woken_up = ECL_NIL;
-    wait_queue_nconc(the_env, o, record);
+    wait_queue_nconc(the_env, mp_object, record);
     ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_T);
     ecl_check_pending_interrupts(the_env);
 
     /* This spinlock is here because the default path (fair) is
      * too slow */
     for (iteration = 0; iteration < 10; iteration++) {
-      if (!Null(output = condition(the_env,o)))
+      if (!Null(output = condition(the_env, mp_object)))
         break;
     }
 
@@ -170,14 +170,14 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
      * condition periodically. */
     while (Null(output)) {
       ecl_musleep(waiting_time(iteration++, &start), 1);
-      output = condition(the_env, o);
+      output = condition(the_env, mp_object);
     }
     ecl_bds_unwind1(the_env);
   } ECL_UNWIND_PROTECT_EXIT {
     /* 4) At this point we wrap up. We remove ourselves
      * from the queue and unblock the lisp interrupt
      * signal. Note that we recover the cons for later use.*/
-    wait_queue_delete(the_env, o, own_process);
+    wait_queue_delete(the_env, mp_object, own_process);
     own_process->process.queue_record = record;
     ECL_RPLACD(record, ECL_NIL);
 
@@ -189,7 +189,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
      * semaphores, where the condition may be satisfied
      * more than once. */
     if (Null(output)) {
-      ecl_wakeup_waiters(the_env, o, ECL_WAKEUP_ONE);
+      ecl_wakeup_waiters(the_env, mp_object, ECL_WAKEUP_ONE);
     }
   } ECL_UNWIND_PROTECT_END;
   ecl_bds_unwind1(the_env);
@@ -227,7 +227,7 @@ ecl_wait_on_timed(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object),
  */
 
 cl_object
-ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o)
+ecl_wait_on(cl_env_ptr env, mp_wait_test condition, cl_object mp_object)
 {
 #if defined(HAVE_SIGPROCMASK)
   volatile const cl_env_ptr the_env = env;
@@ -257,14 +257,14 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
 
   /* 2) Now we add ourselves to the queue. */
   own_process->process.woken_up = ECL_NIL;
-  wait_queue_nconc(the_env, o, record);
+  wait_queue_nconc(the_env, mp_object, record);
 
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
     /* 3) At this point we may receive signals, but we
      * might have missed a wakeup event if that happened
      * between 0) and 2), which is why we start with the
      * check*/
-    while (Null(output = condition(the_env, o)))
+    while (Null(output = condition(the_env, mp_object)))
       {
         /* This will wait until we get a signal that
          * demands some code being executed. Note that
@@ -279,7 +279,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
     /* 4) At this point we wrap up. We remove ourselves
      * from the queue and unblock the lisp interrupt
      * signal. Note that we recover the cons for later use.*/
-    wait_queue_delete(the_env, o, own_process);
+    wait_queue_delete(the_env, mp_object, own_process);
     own_process->process.queue_record = record;
     ECL_RPLACD(record, ECL_NIL);
 
@@ -291,7 +291,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
      * semaphores, where the condition may be satisfied
      * more than once. */
     if (Null(output)) {
-      ecl_wakeup_waiters(the_env, o, ECL_WAKEUP_ONE);
+      ecl_wakeup_waiters(the_env, mp_object, ECL_WAKEUP_ONE);
     }
 
     /* 6) Restoring signals is done last, to ensure that
@@ -300,7 +300,7 @@ ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_ob
   } ECL_UNWIND_PROTECT_END;
   return output;
 #else
-  return ecl_wait_on_timed(env, condition, o);
+  return ecl_wait_on_timed(env, condition, mp_object);
 #endif
 }
 
