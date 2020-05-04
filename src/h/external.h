@@ -594,6 +594,7 @@ extern ECL_API void FEundefined_function(cl_object fname) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function_name(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEprint_not_readable(cl_object obj) ecl_attr_noreturn;
+extern ECL_API void FEtimeout() ecl_attr_noreturn;
 extern ECL_API cl_object CEerror(cl_object c, const char *err_str, int narg, ...);
 extern ECL_API void FElibc_error(const char *msg, int narg, ...) ecl_attr_noreturn;
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
