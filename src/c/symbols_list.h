@@ -1562,7 +1562,7 @@ cl_symbols[] = {
 {SYS_ "ROOM-REPORT", SI_ORDINARY, si_room_report, -1, OBJNULL},
 {SYS_ "RESET-GC-COUNT", SI_ORDINARY, si_reset_gc_count, -1, OBJNULL},
 #endif /* !GBC_BOEHM */
-
+{EXT_ "TIMEOUT", EXT_ORDINARY, NULL, -1, OBJNULL},
 /* #ifdef ECL_THREADS */
 {MP_ "PROCESS", MP_ORDINARY, NULL, -1, OBJNULL},
 {MP_ "LOCK", MP_ORDINARY, NULL, -1, OBJNULL},
