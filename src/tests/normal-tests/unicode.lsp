@@ -40,3 +40,30 @@
   (is (equal
        "ДАННЫЕ"
        (pathname-name (pathname "/tmp/данные.txt") :case :common))))
+
+;;; Date: 2020-05-03
+;;; From: Vladimir Sedach <vas@oneofus.la>
+;;; Fixed: 2020-05-03 (Vladimir Sedach)
+;;; Description:
+;;;
+;;;     Symbol names that contain Unicode are not printed correctly
+;;;
+(test unicode.0003.print-unicode-symbols
+  (is (string-equal
+       "АБРАКАДАБРА"
+       (format nil "~A" (read-from-string "абракадабра")))))
+
+;;; Date: 2020-05-03
+;;; From: Vladimir Sedach <vas@oneofus.la>
+;;; Fixed: 2020-05-03 (Vladimir Sedach)
+;;; Description:
+;;;
+;;;     unicode.0003.print-unicode-symbols shows up as a compiler
+;;;     error for symbol names that contain char codes between 128
+;;;     and 255, possibly others
+;;;
+(test unicode.0004.compile-unicode-symbols
+  (with-compiler ("unicode.0004.lsp" :load t)
+    "(defun unicode.0004 (x¹ y²)
+       (+ x¹ y²))")
+  (is (= 7 (unicode.0004 5 2))))
