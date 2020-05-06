@@ -103,7 +103,7 @@ needs_to_be_escaped(cl_object s, cl_object readtable, cl_object print_case)
 }
 
 static inline void
-buffer_write_char(char c, cl_object buffer, cl_object stream, cl_index *buffer_ndx, cl_index buffer_size) {
+buffer_write_char(ecl_character c, cl_object buffer, cl_object stream, cl_index *buffer_ndx, cl_index buffer_size) {
   ecl_char_set(buffer, (*buffer_ndx)++, c);
   if (*buffer_ndx >= buffer_size) {
     si_fill_pointer_set(buffer, ecl_make_fixnum(buffer_size));
