@@ -1729,7 +1729,7 @@ Note that this is not a valid ANSI code."))
   (unless var
     (setf var (gensym)))
   (loop-sequencer
-    var (loop-check-data-type data-type 'real) t
+    var (loop-check-data-type data-type 'number) t
     nil nil nil nil nil nil
     (loop-collect-prepositional-phrases
       '((:from :upfrom :downfrom) (:to :upto :downto :above :below) (:by))
