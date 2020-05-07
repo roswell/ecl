@@ -226,13 +226,20 @@
         for n = (pop new-slotds)
         while (and o n)
         do (let ((old-alloc (slot-definition-allocation o))
-                 (new-alloc (slot-definition-allocation n)))
+                 (new-alloc (slot-definition-allocation n))
+                 (old-class (class-of o))
+                 (new-class (class-of n)))
              (unless (and (eq old-alloc new-alloc)
                           (eq (slot-definition-name o)
                               (slot-definition-name n))
                           (or (not (eq old-alloc :instance))
                               (= (slot-definition-location o)
-                                 (slot-definition-location n))))
+                                 (slot-definition-location n)))
+                          (eq old-class new-class)
+                          (or (eq new-class
+                                  (find-class 'standard-direct-slot-definition))
+                              (eq new-class
+                                  (find-class 'standard-effective-slot-definition))))
                (return-from slot-definitions-compatible-p nil)))
         finally
            (return (and (null o)
