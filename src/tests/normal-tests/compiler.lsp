@@ -1888,3 +1888,18 @@
   (is (equal
        (funcall 'foo.0079)
        '(123 123 345 0 345 0))))
+
+;;; Date 2020-05-08
+;;;
+;;; Regression from a fix for #577.
+(test cmp.0080.inline-closure
+  (is (funcall (compile
+                nil
+                '(lambda ()
+                  (labels ((bam (pos)
+                             (declare (inline bam))
+                             (if (= pos 42)
+                                 :banzai
+                                 (let ((my-new-val 42))
+                                   (bam my-new-val)))))
+                    (eq :banzai (bam 30))))))))
