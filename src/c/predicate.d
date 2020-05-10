@@ -574,7 +574,9 @@ ecl_equalp(cl_object x, cl_object y)
           return TRUE;
         } else {
           cl_object key = env->values[1];
-          if (ecl_gethash_safe(key, y, OBJNULL) == OBJNULL)
+          cl_object x_value = env->values[2];
+          cl_object y_value = ecl_gethash_safe(key, y, OBJNULL);
+          if (y_value == OBJNULL || !ecl_equalp(x_value, y_value))
             return FALSE;
         }
       } while (1);
