@@ -187,13 +187,14 @@ thread_cleanup(void *aux)
    * executed, never use pthread_cancel() to kill a process, but
    * rather use the lisp functions mp_interrupt_process() and
    * mp_process_kill().
-   *
-   * NOTE: to avoid race conditions, this method must be executed
-   * while process.start_stop_spinlock is held.
    */
   cl_object process = (cl_object)aux;
   cl_env_ptr env = process->process.env;
+
   /* The following flags will disable all interrupts. */
+  if (env) {
+    ecl_get_spinlock(env, &process->process.start_stop_spinlock);
+  }
   AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
   if (env) {
     ecl_clear_bignum_registers(env);
@@ -216,7 +217,9 @@ thread_cleanup(void *aux)
   mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
   ecl_set_process_env(NULL);
   if (env) _ecl_dealloc_env(env);
+
   AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
+  ecl_giveup_spinlock(&process->process.start_stop_spinlock);
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -282,9 +285,6 @@ static DWORD WINAPI thread_entry_point(void *arg)
       /* ABORT restart. */
       process->process.exit_values = args;
     } ECL_RESTART_CASE_END;
-    /* This will disable interrupts during the exit
-     * so that the unwinding is not interrupted. */
-    ecl_get_spinlock(env, &process->process.start_stop_spinlock);
     process->process.phase = ECL_PROCESS_EXITING;
     ecl_bds_unwind1(env);
   } ECL_CATCH_ALL_END;
@@ -295,13 +295,9 @@ static DWORD WINAPI thread_entry_point(void *arg)
    */
 #ifdef ECL_WINDOWS_THREADS
   thread_cleanup(process);
-#else
-  pthread_cleanup_pop(1);
-#endif
-  ecl_giveup_spinlock(&process->process.start_stop_spinlock);
-#ifdef ECL_WINDOWS_THREADS
   return 1;
 #else
+  pthread_cleanup_pop(1);
   return NULL;
 #endif
 }
@@ -436,9 +432,7 @@ ecl_release_current_thread(void)
 
   int cleanup = env->cleanup;
   cl_object own_process = env->own_process;
-  ecl_get_spinlock(env, &own_process->process.start_stop_spinlock);
   thread_cleanup(own_process);
-  ecl_giveup_spinlock(&own_process->process.start_stop_spinlock);
 #ifdef GBC_BOEHM
   if (cleanup) {
     GC_unregister_my_thread();
@@ -592,14 +586,16 @@ mp_process_enable(cl_object process)
       pthread_attr_init(&pthreadattr);
       pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
       /*
-       * We launch the thread with the signal mask specified in cl_core.
-       * The reason is that we might need to block certain signals
-       * to be processed by the signal handling thread in unixint.d
+       * Block all asynchronous signals until the thread is completely
+       * set up. The synchronous signals SIGSEGV and SIGBUS are needed
+       * by the gc and thus can't be blocked.
        */
 #ifdef HAVE_SIGPROCMASK
       {
         sigset_t new, previous;
         sigfillset(&new);
+        sigdelset(&new, SIGSEGV);
+        sigdelset(&new, SIGBUS);
         pthread_sigmask(SIG_BLOCK, &new, &previous);
         code = pthread_create(&process->process.thread, &pthreadattr,
                               thread_entry_point, process);
@@ -764,6 +760,10 @@ mp_block_signals(void)
   cl_object previous = mp_get_sigmask();
   sigset_t all_signals;
   sigfillset(&all_signals);
+  /* SIGSEGV or SIGBUS are needed by the gc in incremental mode and
+   * can thus never be blocked */
+  sigdelset(&all_signals, SIGSEGV);
+  sigdelset(&all_signals, SIGBUS);
   if (pthread_sigmask(SIG_SETMASK, &all_signals, NULL))
     FElibc_error("MP:BLOCK-SIGNALS failed in a call to pthread_sigmask",0);
   @(return previous);

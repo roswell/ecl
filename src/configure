@@ -6209,26 +6209,6 @@ else
   system_boehm="no"
 fi
 
- fi
- if test "${system_boehm}" = yes; then
-   ac_fn_c_check_header_mongrel "$LINENO" "gc.h" "ac_cv_header_gc_h" "$ac_includes_default"
-if test "x$ac_cv_header_gc_h" = xyes; then :
-  ECL_BOEHM_GC_HEADER='gc.h'
-fi
-
-
-   if test -z "$ECL_BOEHM_GC_HEADER"; then
-     ac_fn_c_check_header_mongrel "$LINENO" "gc/gc.h" "ac_cv_header_gc_gc_h" "$ac_includes_default"
-if test "x$ac_cv_header_gc_gc_h" = xyes; then :
-  ECL_BOEHM_GC_HEADER='gc/gc.h'
-else
-  system_boehm=no
-fi
-
-
-   fi
- fi
- if test "${system_boehm}" = "yes"; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GC_set_start_callback in -lgc" >&5
 $as_echo_n "checking for GC_set_start_callback in -lgc... " >&6; }
 if ${ac_cv_lib_gc_GC_set_start_callback+:} false; then :
@@ -6266,14 +6246,25 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gc_GC_set_start_callback" >&5
 $as_echo "$ac_cv_lib_gc_GC_set_start_callback" >&6; }
 if test "x$ac_cv_lib_gc_GC_set_start_callback" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGC 1
+_ACEOF
 
-$as_echo "#define HAVE_GC_SET_START_CALLBACK /**/" >>confdefs.h
+  LIBS="-lgc $LIBS"
 
+else
+  system_boehm="no"
 fi
 
- else
+ fi
+ if test "${system_boehm}" = yes; then
+   ac_fn_c_check_header_mongrel "$LINENO" "gc/gc.h" "ac_cv_header_gc_gc_h" "$ac_includes_default"
+if test "x$ac_cv_header_gc_gc_h" = xyes; then :
+  ECL_BOEHM_GC_HEADER='gc/gc.h'
+else
+  system_boehm=no
+fi
 
-$as_echo "#define HAVE_GC_SET_START_CALLBACK /**/" >>confdefs.h
 
  fi
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can use the existing Boehm-Weiser library " >&5
@@ -6324,10 +6315,9 @@ $as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
 
 $as_echo "#define GBC_BOEHM 0" >>confdefs.h
 
+   else
+     as_fn_error $? "Unable to configure Boehm-Weiser GC" "$LINENO" 5
    fi
- fi
- if test -z "${ECL_BOEHM_GC_HEADER}"; then
-   as_fn_error $? "Unable to configure Boehm-Weiser GC" "$LINENO" 5
  fi
 fi
 if test "${enable_gengc}" != "no" ; then
