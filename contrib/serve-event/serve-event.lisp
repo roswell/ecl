@@ -1,11 +1,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; This file provides a port the SBCL/CMUCL 'serve-event'
-;; functionality to ecl.  serve-event provides a lispy abstraction of
-;; unix select(2) non-blocking IO (and potentially other variants such as
-;; epoll).  It works with Unix-level file-descriptors, which can be
-;; retrieved from the sockets module using the socket-file-descriptor
-;; slot.
+;; This file provides a port of the SBCL/CMUCL 'serve-event' extension
+;; to ECL.  serve-event provides a lispy abstraction of unix select(2)
+;; non-blocking IO (and potentially other variants such as epoll).  It
+;; works with Unix-level file-descriptors, which can be retrieved from
+;; the sockets module using the socket-file-descriptor slot.
 ;;
 ;; As this file is based on SBCL's serve-event module it is being
 ;; released under the same (non) license as SBCL (i.e. public-domain).
@@ -16,29 +15,38 @@
 ;; Test Example
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; (defun test-stdin ()
-;;   (format t "DOING STDIN~%")
-;;   (with-fd-handler (0 :input #'(lambda (fd) (declare (ignore fd))
-;;                                        (format t "Got data~%")
-;;                                        (read-char)))
-;;     (loop ;; FIXME: End condition
-;;        (format t "Entering serve-all-events...~%")(force-output)
-;;        (serve-all-events 5)
-;;        (format t "Events served~%"))))
+;; (defun test-stdin (&aux exit)
+;;   (format t "DOING STDIN. Type Q to exit.~%")
+;;   (serve-event:with-fd-handler
+;;       (0 :input #'(lambda (fd)
+;;                     (declare (ignore fd))
+;;                     (let ((ch (read-char)))
+;;                       (format t "Got data ~s~%" ch)
+;;                       (when (char= ch #\Q)
+;;                         (setf exit t)))))
+;;     (loop until exit
+;;           do (format t "Entering serve-all-events...~%")
+;;              (force-output)
+;;              (serve-event:serve-all-events 5)
+;;              (format t "Events served~%"))))
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; A more advanced example using sockets is available here:
 ;;
-;;    http://haltcondition.net/?p=2232
+;;    https://web.archive.org/web/20161203154152/http://haltcondition.net/?p=2232
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defpackage "SERVE-EVENT"
-  (:use "CL" "FFI")
-  (:export "WITH-FD-HANDLER" "ADD-FD-HANDLER" "REMOVE-FD-HANDLER"
-           "SERVE-EVENT" "SERVE-ALL-EVENTS"))
-(in-package "SERVE-EVENT")
+(defpackage #:serve-event
+  (:use #:cl #:ffi)
+  ;;; KLUDGE *DESCRIPTOR-HANDLERS* must be a thread-local variable if
+  ;;; we want to be able to use it safely from different context (most
+  ;;; notably to not have unexpected non-local exists from closures).
+  #+threads
+  (:import-from #:mp #:*descriptor-handlers*)
+  (:export #:with-fd-handler #:add-fd-handler #:remove-fd-handler
+           #:serve-event #:serve-all-events))
+(in-package #:serve-event)
 
 (clines
  "#include <errno.h>"
@@ -67,9 +75,7 @@
   ;; Function to call.
   (function nil :type function))
 
-
 (defvar *descriptor-handlers* nil
-  #!+sb-doc
   "List of all the currently active handlers for file descriptors")
 
 (defun coerce-to-descriptor (stream-or-fd direction)
@@ -106,7 +112,6 @@
 
 ;;; Remove an old handler from *descriptor-handlers*.
 (defun remove-fd-handler (handler)
-  #!+sb-doc
   "Removes HANDLER from the list of active handlers."
   (setf *descriptor-handlers*
         (delete handler *descriptor-handlers*)))
