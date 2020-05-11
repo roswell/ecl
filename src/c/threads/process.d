@@ -225,8 +225,8 @@ thread_cleanup(void *aux)
 #ifdef ECL_WINDOWS_THREADS
 static DWORD WINAPI thread_entry_point(void *arg)
 #else
-  static void *
-  thread_entry_point(void *arg)
+static void *
+thread_entry_point(void *arg)
 #endif
 {
   cl_object process = (cl_object)arg;
@@ -268,7 +268,9 @@ static DWORD WINAPI thread_entry_point(void *arg)
     process->process.phase = ECL_PROCESS_ACTIVE;
     ecl_enable_interrupts_env(env);
     si_trap_fpe(@'last', ECL_T);
+
     ecl_bds_bind(env, @'mp::*current-process*', process);
+    ecl_bds_bind(env, @'mp::*descriptor-handlers*', ECL_NIL);
 
     ECL_RESTART_CASE_BEGIN(env, @'abort') {
       env->values[0] = cl_apply(2, process->process.function,
@@ -422,6 +424,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   process->process.phase = ECL_PROCESS_ACTIVE;
 
   ecl_bds_bind(env, @'mp::*current-process*', process);
+  ecl_bds_bind(env, @'mp::*descriptor-handlers*', ECL_NIL);
   return 1;
 }
 
@@ -480,7 +483,7 @@ mp_suspend_loop()
   cl_env_ptr env = ecl_process_env();
   ECL_CATCH_BEGIN(env,@'mp::suspend-loop') {
     for ( ; ; ) {
-      cl_sleep(ecl_make_fixnum(100));
+      cl_sleep(ecl_make_fixnum(MOST_POSITIVE_FIXNUM));
     }
   } ECL_CATCH_END;
   ecl_return0(env);

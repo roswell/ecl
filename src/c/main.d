@@ -669,6 +669,7 @@ cl_boot(int argc, char **argv)
 
 #ifdef ECL_THREADS
   ECL_SET(@'mp::*current-process*', env->own_process);
+  ECL_SET(@'mp::*descriptor-handlers*', env->own_process);
 #endif
 
   /*

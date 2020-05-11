@@ -1564,10 +1564,11 @@ cl_symbols[] = {
 #endif /* !GBC_BOEHM */
 {EXT_ "TIMEOUT",NULL,-1},
 /* #ifdef ECL_THREADS */
+{MP_ "*CURRENT-PROCESS*",NULL,-1},
+{MP_ "*DESCRIPTOR-HANDLERS*",NULL,-1},
 {MP_ "PROCESS",NULL,-1},
 {MP_ "LOCK",NULL,-1},
 {MP_ "CONDITION-VARIABLE",NULL,-1},
-{MP_ "*CURRENT-PROCESS*",NULL,-1},
 {MP_ "ALL-PROCESSES",IF_MP("mp_all_processes"),0},
 {MP_ "EXIT-PROCESS",IF_MP("mp_exit_process"),0},
 {MP_ "MAKE-PROCESS",IF_MP("mp_make_process"),-1},
