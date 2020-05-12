@@ -27,32 +27,20 @@
 #endif
 
 #ifdef GBC_BOEHM
+#include <gc/gc_mark.h>
 
 static void (*GC_old_start_callback)(void) = NULL;
-#ifdef HAVE_GC_SET_START_CALLBACK
-extern void GC_set_start_callback(void *);
-extern void *GC_get_start_callback();
-#else
-extern void (*GC_start_call_back)(void);
-#endif
 static void gather_statistics(void);
 static void update_bytes_consed(void);
 static void ecl_mark_env(struct cl_env_struct *env);
-
-/* We need these prototypes because private/gc.h is not available
- * and this interface is not yet exported by BDWGC */
-extern void GC_push_all(char *bottom, char *top);
-extern void GC_push_conditional(char *bottom, char *top, int all);
-extern void GC_set_mark_bit(const void *p);
  
 #ifdef GBC_BOEHM_PRECISE
 # if GBC_BOEHM
 #  undef GBC_BOEHM_PRECISE
 # else
-#  include "gc_typed.h"
-#  include "gc_mark.h"
+#  include <gc/gc_typed.h>
 #  ifdef GBC_BOEHM_OWN_ALLOCATOR
-#  include "private/gc_priv.h"
+#  include <gc/private/gc_priv.h>
 #  endif
 #  define GBC_BOEHM_OWN_MARKER
 #  if defined(GBC_BOEHM_OWN_MARKER) || defined(GBC_BOEHM_OWN_ALLOCATOR)
@@ -295,13 +283,6 @@ allocate_object_own(register struct ecl_type_information *type_info)
 #endif /* GBC_BOEHM_OWN_ALLOCATOR */
 
 #ifdef GBC_BOEHM_OWN_MARKER
-#define IGNORABLE_POINTER(obj) (ECL_IMMEDIATE(obj) & 2)
-#define GC_MARK_AND_PUSH(obj, msp, lim, src)                    \
-  ((!IGNORABLE_POINTER(obj) &&                                  \
-    (GC_word)obj >= (GC_word)GC_least_plausible_heap_addr &&    \
-    (GC_word)obj <= (GC_word)GC_greatest_plausible_heap_addr)?  \
-   GC_mark_and_push(obj, msp, lim, src) :                       \
-   msp)
 
 static struct GC_ms_entry *
 cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl,
@@ -924,8 +905,8 @@ init_alloc(void)
   type_info[t_doublefloat].descriptor = 0;
   type_info[t_longfloat].descriptor = 0;
   type_info[t_complex].descriptor =
-    to_bitmap(&o, &(o.complex.real)) |
-    to_bitmap(&o, &(o.complex.imag));
+    to_bitmap(&o, &(o.gencomplex.real)) |
+    to_bitmap(&o, &(o.gencomplex.imag));
 #ifdef ECL_COMPLEX_FLOAT
   type_info[t_csfloat].descriptor = 0;
   type_info[t_cdfloat].descriptor = 0;
@@ -940,6 +921,8 @@ init_alloc(void)
   type_info[t_package].descriptor =
     to_bitmap(&o, &(o.pack.name)) |
     to_bitmap(&o, &(o.pack.nicknames)) |
+    to_bitmap(&o, &(o.pack.local_nicknames)) |
+    to_bitmap(&o, &(o.pack.nicknamedby)) |
     to_bitmap(&o, &(o.pack.shadowings)) |
     to_bitmap(&o, &(o.pack.uses)) |
     to_bitmap(&o, &(o.pack.usedby)) |
@@ -947,6 +930,9 @@ init_alloc(void)
     to_bitmap(&o, &(o.pack.external));
   type_info[t_hashtable].descriptor =
     to_bitmap(&o, &(o.hash.data)) |
+    to_bitmap(&o, &(o.hash.sync_lock)) |
+    to_bitmap(&o, &(o.hash.generic_test)) |
+    to_bitmap(&o, &(o.hash.generic_hash)) |
     to_bitmap(&o, &(o.hash.rehash_size)) |
     to_bitmap(&o, &(o.hash.threshold));
   type_info[t_array].descriptor =
@@ -1070,6 +1056,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.cblock.name)) |
     to_bitmap(&o, &(o.cblock.links)) |
     to_bitmap(&o, &(o.cblock.source)) |
+    to_bitmap(&o, &(o.cblock.refs)) |
     to_bitmap(&o, &(o.cblock.error));
   type_info[t_foreign].descriptor =
     to_bitmap(&o, &(o.foreign.data)) |
@@ -1108,13 +1095,8 @@ init_alloc(void)
 #endif /* GBC_BOEHM_PRECISE */
   old_GC_push_other_roots = GC_push_other_roots;
   GC_push_other_roots = stacks_scanner;
-#ifdef HAVE_GC_SET_START_CALLBACK
   GC_old_start_callback = GC_get_start_callback();
   GC_set_start_callback(gather_statistics);
-#else
-  GC_old_start_callback = GC_start_call_back;
-  GC_start_call_back = (void (*)(void))gather_statistics;
-#endif
   GC_set_java_finalization(1);
   GC_set_oom_fn(out_of_memory);
   GC_set_warn_proc(no_warnings);

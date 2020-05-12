@@ -46,7 +46,7 @@ ECL_USE_DBGHELP_FLAG=0
 # Programs used by "make":
 #
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private -I$(srcdir)/unicode
+CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I../ecl -I$(srcdir) -I$(srcdir)/unicode
 
 SHELL	= /bin/sh
 RM	= del

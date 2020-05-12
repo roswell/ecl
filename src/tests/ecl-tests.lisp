@@ -27,9 +27,6 @@
 (suite 'ecl-tests
        '(make-check eformat))
 
-(suite 'stress)
-(test stress.all (finishes (1am-ecl:run)))
-
 
 (defmacro is-true (form)
   (ext:once-only (form)

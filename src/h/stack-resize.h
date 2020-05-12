@@ -29,6 +29,8 @@
 #  define ECL_STACK_RESIZE_DISABLE_INTERRUPTS(the_env) \
         sigset_t __sigset_new, __sigset_previous;      \
         sigfillset(&__sigset_new);                     \
+        sigdelset(&__sigset_new, SIGSEGV);             \
+        sigdelset(&__sigset_new, SIGBUS);              \
         pthread_sigmask(SIG_BLOCK, &__sigset_new, &__sigset_previous)
 #  define ECL_STACK_RESIZE_ENABLE_INTERRUPTS(the_env) \
         pthread_sigmask(SIG_SETMASK, &__sigset_previous, NULL)

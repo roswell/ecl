@@ -330,9 +330,6 @@
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
 
-/* HAVE_GC_SET_START_CALLBACK */
-#undef HAVE_GC_SET_START_CALLBACK
-
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
 

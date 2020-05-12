@@ -1065,20 +1065,12 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
                  [], [system_boehm="no"] )
    AC_CHECK_LIB( [gc], [GC_register_my_thread],
                  [], [system_boehm="no"] )
+   AC_CHECK_LIB( [gc], [GC_set_start_callback],
+                 [], [system_boehm="no"] )
  fi
  if test "${system_boehm}" = yes; then
-   AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[],[])
-   if test -z "$ECL_BOEHM_GC_HEADER"; then
-     AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],
-                     [system_boehm=no],[])
-   fi
- fi
- if test "${system_boehm}" = "yes"; then
-   AC_CHECK_LIB( [gc], [GC_set_start_callback],
-                 [AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [],
-                            [HAVE_GC_SET_START_CALLBACK])], [] )
- else
-  AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [], [HAVE_GC_SET_START_CALLBACK])
+   AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],
+                   [system_boehm=no],[])
  fi
  AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
  AC_MSG_RESULT( [${system_boehm}] )
@@ -1126,10 +1118,9 @@ if test "${enable_boehm}" = "included"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
      fi
      AC_DEFINE(GBC_BOEHM, [0], [Use Boehm's garbage collector])
+   else
+     AC_MSG_ERROR([Unable to configure Boehm-Weiser GC])
    fi
- fi
- if test -z "${ECL_BOEHM_GC_HEADER}"; then
-   AC_MSG_ERROR([Unable to configure Boehm-Weiser GC])
  fi
 fi
 if test "${enable_gengc}" != "no" ; then

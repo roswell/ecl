@@ -42,9 +42,6 @@
 #define ECL_WEAK_HASH
 #endif
 
-/* GC_set_start_callback                                                */
-#undef HAVE_GC_SET_START_CALLBACK
-
 /*
  * SYSTEM FEATURES:
  */
