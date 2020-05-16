@@ -229,22 +229,6 @@ unknown_column(cl_object strm)
   return -1;
 }
 
-#if defined(ECL_WSOCK)
-static cl_object
-not_implemented_get_position(cl_object strm)
-{
-  FEerror("file-position not implemented for stream ~S", 1, strm);
-  return ECL_NIL;
-}
-
-static cl_object
-not_implemented_set_position(cl_object strm, cl_object pos)
-{
-  FEerror("file-position not implemented for stream ~S", 1, strm);
-  return ECL_NIL;
-}
-#endif
-
 /**********************************************************************
  * CLOSED STREAM OPS
  */
@@ -3968,8 +3952,8 @@ const struct ecl_file_ops winsock_stream_io_ops = {
   winsock_stream_element_type,
 
   not_a_file_stream,
-  not_implemented_get_position,
-  not_implemented_set_position,
+  generic_always_nil, /* get_position */
+  generic_set_position,
   generic_column,
 
   winsock_stream_close
@@ -4002,8 +3986,8 @@ const struct ecl_file_ops winsock_stream_output_ops = {
   winsock_stream_element_type,
 
   not_a_file_stream,
-  not_implemented_get_position,
-  not_implemented_set_position,
+  generic_always_nil, /* get_position */
+  generic_set_position,
   generic_column,
 
   winsock_stream_close
@@ -4036,8 +4020,8 @@ const struct ecl_file_ops winsock_stream_input_ops = {
   winsock_stream_element_type,
 
   not_a_file_stream,
-  not_implemented_get_position,
-  not_implemented_set_position,
+  generic_always_nil, /* get_position */
+  generic_set_position,
   unknown_column,
 
   winsock_stream_close
@@ -4158,8 +4142,8 @@ const struct ecl_file_ops wcon_stream_io_ops = {
   wcon_stream_element_type,
 
   not_a_file_stream,
-  not_implemented_get_position,
-  not_implemented_set_position,
+  generic_always_nil, /* get_position */
+  generic_set_position,
   generic_column,
 
   generic_close,
