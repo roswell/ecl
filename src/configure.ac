@@ -359,13 +359,14 @@ if test "${enable_manual}" != "no"; then
     elif test "${enable_manual}" = "info"; then
       AC_MSG_ERROR([Unable to build the manual: install-info not found.])
     fi
-  fi
-  AC_PATH_PROG([MAKEINFO], [makeinfo], [])
-  if test "x${MAKEINFO}" = "x"; then
-    if test "${enable_manual}" = "auto"; then
-      enable_manual=no
-    else
-      AC_MSG_ERROR([Unable to build the manual: makeinfo not found.])
+  else
+    AC_PATH_PROG([MAKEINFO], [makeinfo], [])
+    if test "x${MAKEINFO}" = "x"; then
+      if test "${enable_manual}" = "auto"; then
+        enable_manual=no
+      else
+        AC_MSG_ERROR([Unable to build the manual: makeinfo not found.])
+      fi
     fi
   fi
 fi
