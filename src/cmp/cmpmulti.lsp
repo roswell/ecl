@@ -191,27 +191,32 @@
     ;; At least we always have NIL value0
     (setf min-values (max 1 min-values))
 
-    ;; We know that at least MIN-VALUES variables will get a value
-    (dotimes (i min-values)
-      (when vars
-        (let ((v (pop vars))
-              (loc (values-loc-or-value0 i)))
-          (bind-or-set loc v use-bind))))
+    (let* ((*lcl* *lcl*)
+           (useful-extra-vars (some #'useful-var-p (nthcdr min-values vars)))
+           (nr (make-lcl-var :type :int)))
+      (wt-nl-open-brace)
+      (when useful-extra-vars
+        ;; Make a copy of env->nvalues before assigning to any variables
+        (wt-nl "const int " nr " = cl_env_copy->nvalues;"))
 
-    (when (some #'useful-var-p vars)
-      (let* ((*lcl* *lcl*)
-             (nr (make-lcl-var :type :int))
-             (tmp (make-lcl-var)))
-        (wt-nl-open-brace)
-        (wt-nl "const int " nr " = cl_env_copy->nvalues;")
-        (wt-nl "cl_object " tmp ";")
-        (loop for v in vars
-           for i from min-values
-           for loc = (values-loc-or-value0 i)
-           do (when (useful-var-p v)
-                (wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
-                (bind-or-set tmp v use-bind)))
-        (wt-nl-close-brace)))
+      ;; We know that at least MIN-VALUES variables will get a value
+      (dotimes (i min-values)
+        (when vars
+          (let ((v (pop vars))
+                (loc (values-loc-or-value0 i)))
+            (bind-or-set loc v use-bind))))
+
+      ;; Assign to other variables only when the form returns enough values
+      (when useful-extra-vars
+        (let ((tmp (make-lcl-var)))
+          (wt-nl "cl_object " tmp ";")
+          (loop for v in vars
+             for i from min-values
+             for loc = (values-loc-or-value0 i)
+             do (when (useful-var-p v)
+                  (wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
+                  (bind-or-set tmp v use-bind)))))
+      (wt-nl-close-brace))
     'VALUE0))
 
 (defun c2multiple-value-setq (c1form vars form)

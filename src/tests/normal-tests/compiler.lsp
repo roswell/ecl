@@ -1903,3 +1903,21 @@
                                  (let ((my-new-val 42))
                                    (bam my-new-val)))))
                     (eq :banzai (bam 30))))))))
+
+;;; Date 2020-05-28
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/591
+;;; Description
+;;;
+;;; MULTIPLE-VALUE-SETQ would wrongly assign NIL to special variables
+;;; due to not saving env->nvalues before calling SET
+(ext:with-clean-symbols (*a* *b* foo)
+  (defvar *a* :wrong-a)
+  (defvar *b* :wrong-b)
+  (defun foo () (values :right-a :right-b))
+  (test cmp.0081.m-v-setq-special
+    (is (funcall (compile
+                  nil
+                  '(lambda ()
+                    (multiple-value-setq (*a* *b*) (foo))
+                    (and (eq *a* :right-a)
+                         (eq *b* :right-b))))))))
