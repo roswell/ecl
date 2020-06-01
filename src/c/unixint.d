@@ -425,43 +425,66 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
 static void
 queue_signal(cl_env_ptr env, cl_object code, int allocate)
 {
-        ECL_WITH_SPINLOCK_BEGIN(ecl_process_env(), &env->interrupt_struct->signal_queue_spinlock) {
-                cl_object record;
-                if (allocate) {
-                        record = ecl_list1(ECL_NIL);
-                } else {
-                        record = env->interrupt_struct->signal_queue;
-                        if (record != ECL_NIL) {
-                                env->interrupt_struct->signal_queue = ECL_CONS_CDR(record);
-                        }
-                }
+        /* Note: We don't use ECL_WITH_SPINLOCK_BEGIN/END here since
+         * it checks for pending interrupts after unlocking the
+         * spinlock. This would lead to the interrupt being handled
+         * immediately when queueing an interrupt for the current
+         * thread, even when interrupts are disabled. */
+
+        /* INV: interrupts are disabled, therefore the spinlock will
+         * always be released */
+        ecl_get_spinlock(ecl_process_env(), &env->interrupt_struct->signal_queue_spinlock);
+
+        cl_object record;
+        if (allocate) {
+                record = ecl_list1(ECL_NIL);
+        } else {
+                record = env->interrupt_struct->signal_queue;
                 if (record != ECL_NIL) {
-                        ECL_RPLACA(record, code);
-                        env->interrupt_struct->pending_interrupt =
-                                ecl_nconc(env->interrupt_struct->pending_interrupt,
-                                          record);
+                        env->interrupt_struct->signal_queue = ECL_CONS_CDR(record);
                 }
-        } ECL_WITH_SPINLOCK_END;
+        }
+        if (record != ECL_NIL) {
+                ECL_RPLACA(record, code);
+                env->interrupt_struct->pending_interrupt =
+                        ecl_nconc(env->interrupt_struct->pending_interrupt,
+                                  record);
+        }
+
+        ecl_giveup_spinlock(&env->interrupt_struct->signal_queue_spinlock);
 }
 
 static cl_object
 pop_signal(cl_env_ptr env)
 {
         cl_object record, value;
-        ECL_WITH_SPINLOCK_BEGIN(env, &env->interrupt_struct->signal_queue_spinlock) {
-                if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
-                        value = ECL_NIL;
-                } else {
-                        record = env->interrupt_struct->pending_interrupt;
-                        value = ECL_CONS_CAR(record);
-                        env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
-                        /* Save some conses for future use, to avoid allocating */
-                        if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
-                                ECL_RPLACD(record, env->interrupt_struct->signal_queue);
-                                env->interrupt_struct->signal_queue = record;
-                        }
+        /* Note: We don't use ECL_WITH_SPINLOCK_BEGIN/END here since
+         * it checks for pending interrupts after unlocking the
+         * spinlock. This would lead to handle_all_queued and
+         * pop_signal being called again and the interrupts being
+         * handled in the wrong order. */
+
+        /* INV: ecl_get_spinlock and ecl_giveup_spinlock don't write
+         * into env, therefore it is valid to use
+         * ecl_disable_interrupts_env */
+        ecl_disable_interrupts_env(env);
+        ecl_get_spinlock(env, &env->interrupt_struct->signal_queue_spinlock);
+
+        if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
+                value = ECL_NIL;
+        } else {
+                record = env->interrupt_struct->pending_interrupt;
+                value = ECL_CONS_CAR(record);
+                env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
+                /* Save some conses for future use, to avoid allocating */
+                if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
+                        ECL_RPLACD(record, env->interrupt_struct->signal_queue);
+                        env->interrupt_struct->signal_queue = record;
                 }
-        } ECL_WITH_SPINLOCK_END;
+        }
+
+        ecl_giveup_spinlock(&env->interrupt_struct->signal_queue_spinlock);
+        ecl_enable_interrupts_env(env);
         return value;
 }
 
@@ -1076,8 +1099,13 @@ ecl_interrupt_process(cl_object process, cl_object function)
         if (!Null(function) &&
             (process->process.phase >= ECL_PROCESS_BOOTING))
         {
+                cl_env_ptr the_env = ecl_process_env();
                 function = si_coerce_to_function(function);
+                /* queue_signal must be called with disabled
+                 * interrupts for the current process */
+                ecl_disable_interrupts_env(the_env);
                 queue_signal(process->process.env, function, 1);
+                ecl_enable_interrupts_env(the_env);
         }
         /* ... but only deliver if the process is still alive */
         if (process->process.phase == ECL_PROCESS_ACTIVE)
