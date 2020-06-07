@@ -334,6 +334,8 @@ AC_CANONICAL_HOST
 dnl =====================================================================
 dnl Checks for programs
 AC_PROG_CC	      # sets variable CC
+AC_PROG_CC_C99        # checks that CC by default accepts C99 code, if not,
+                      # tries adding -std=gnu-99, if this has no effect, throws an error.
 AC_PROG_CXX           # sets variable CXX
 AC_PROG_CPP           # sets variable CPP
 AC_PROG_RANLIB        # sets variable RANLIB
