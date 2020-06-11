@@ -572,7 +572,7 @@
 
 (defmethod stream-read-sequence ((stream ansi-stream) sequence
                                  &optional (start 0) (end nil))
-  (si:do-read-sequence stream sequence start end))
+  (si:do-read-sequence sequence stream start end))
 
 (defmethod stream-read-sequence ((stream t) sequence &optional start end)
   (declare (ignore sequence start end))
