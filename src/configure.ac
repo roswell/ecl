@@ -658,7 +658,7 @@ AC_CHECK_HEADERS( [fcntl.h limits.h netdb.h netinet/in.h] \
 		  [sched.h] )
 dnl !!! end autoscan
 
-AC_CHECK_HEADERS( [sys/resource.h sys/utsname.h float.h pwd.h dlfcn.h link.h] \
+AC_CHECK_HEADERS( [sys/utsname.h float.h pwd.h dlfcn.h link.h] \
                   [mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h] \
                   [sys/wait.h semaphore.h] )
 
@@ -711,8 +711,9 @@ ECL_SSE
 ECL_COMPLEX_C99
 
 dnl -----------------------------------------------------------------------
-dnl Study the call conventions
+dnl Stack size and growth direction
 ECL_STACK_DIRECTION
+ECL_STACK_SIZE
 
 dnl =====================================================================
 dnl Checks for library functions

@@ -29,7 +29,7 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
-#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
+#if defined(ECL_CAN_SET_STACK_SIZE)
   {
     struct rlimit rl;
 
