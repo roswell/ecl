@@ -4042,34 +4042,17 @@ wcon_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
   unlikely_if (strm->stream.byte_stack != ECL_NIL) {
     return consume_byte_stack(strm, c, n);
   } else {
-    cl_index len = 0;
     cl_env_ptr the_env = ecl_process_env();
     HANDLE h = (HANDLE)IO_FILE_DESCRIPTOR(strm);
     DWORD nchars;
-    unsigned char aux[4];
-    WCHAR waux[1];
-    for (len = 0; len < n; ) {
-      int i, ok;
-      ecl_disable_interrupts_env(the_env);
-      ok = ReadConsoleW(h, waux, 1, &nchars, NULL);
-      if (ok) {
-        nchars = WideCharToMultiByte(GetConsoleCP(), 0, waux, 1, aux, 4, NULL, NULL);
-      }
-      ecl_enable_interrupts_env(the_env);
-      unlikely_if (!ok) {
-        FEwin32_error("Cannot read from console", 0);
-      }
-      for (i = 0; i < nchars; i++) {
-        if (len < n) {
-          c[len++] = aux[i];
-        } else {
-          strm->stream.byte_stack =
-            ecl_nconc(strm->stream.byte_stack,
-                      ecl_list1(ecl_make_fixnum(aux[i])));
-        }
-      }
+    int ok;
+    ecl_disable_interrupts_env(the_env);
+    ok = ReadConsoleA(h, c, n, &nchars, NULL);
+    ecl_enable_interrupts_env(the_env);
+    unlikely_if (!ok) {
+      FEwin32_error("Cannot read from console", 0);
     }
-    return (len > 0) ? len : EOF;
+    return (nchars > 0) ? nchars : EOF;
   }
 }
 
@@ -4078,7 +4061,7 @@ wcon_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
   HANDLE h = (HANDLE)IO_FILE_DESCRIPTOR(strm);
   DWORD nchars;
-  unlikely_if(!WriteConsole(h, c, n, &nchars, NULL)) {
+  unlikely_if(!WriteConsoleA(h, c, n, &nchars, NULL)) {
     FEwin32_error("Cannot write to console.", 0);
   }
   return nchars;
@@ -4202,6 +4185,67 @@ maybe_make_windows_console_fd(cl_object fname, int desc, enum ecl_smmode smm,
        external_format);
   }
   return output;
+}
+
+cl_object
+si_windows_codepage_encoding()
+{
+  /* Mapping from windows codepages to encoding names used by ECL */
+  DWORD cp = GetConsoleCP();
+  cl_object encoding;
+  switch (cp) {
+#ifdef ECL_UNICODE
+  case 437: return ecl_make_keyword("DOS-CP437");
+  case 708: return ecl_make_keyword("ISO-8859-6");
+  case 850: return ecl_make_keyword("DOS-CP850");
+  case 852: return ecl_make_keyword("DOS-CP852");
+  case 855: return ecl_make_keyword("DOS-CP855");
+  case 857: return ecl_make_keyword("DOS-CP857");
+  case 858: return ecl_make_keyword("DOS-CP858");
+  case 860: return ecl_make_keyword("DOS-CP860");
+  case 861: return ecl_make_keyword("DOS-CP861");
+  case 862: return ecl_make_keyword("DOS-CP862");
+  case 863: return ecl_make_keyword("DOS-CP863");
+  case 864: return ecl_make_keyword("DOS-CP864");
+  case 865: return ecl_make_keyword("DOS-CP865");
+  case 866: return ecl_make_keyword("DOS-CP866");
+  case 869: return ecl_make_keyword("DOS-CP869");
+  case 932: return ecl_make_keyword("WINDOWS-CP932");
+  case 936: return ecl_make_keyword("WINDOWS-CP936");
+  case 949: return ecl_make_keyword("WINDOWS-CP949");
+  case 950: return ecl_make_keyword("WINDOWS-CP950");
+  case 1200: return ecl_make_keyword("UCS-2LE");
+  case 1201: return ecl_make_keyword("UCS-2BE");
+  case 1250: return ecl_make_keyword("WINDOWS-CP1250");
+  case 1251: return ecl_make_keyword("WINDOWS-CP1251");
+  case 1252: return ecl_make_keyword("WINDOWS-CP1252");
+  case 1253: return ecl_make_keyword("WINDOWS-CP1253");
+  case 1254: return ecl_make_keyword("WINDOWS-CP1254");
+  case 1255: return ecl_make_keyword("WINDOWS-CP1255");
+  case 1256: return ecl_make_keyword("WINDOWS-CP1256");
+  case 1257: return ecl_make_keyword("WINDOWS-CP1257");
+  case 1258: return ecl_make_keyword("WINDOWS-CP1258");
+  case 12000: return ecl_make_keyword("UCS-4LE");
+  case 12001: return ecl_make_keyword("UCS-4BE");
+  case 20932: return ecl_make_keyword("JISX0212");
+  case 21866: return ecl_make_keyword("KOI8-U");
+  case 28591: return ecl_make_keyword("ISO-8859-1");
+  case 28592: return ecl_make_keyword("ISO-8859-2");
+  case 28593: return ecl_make_keyword("ISO-8859-3");
+  case 28594: return ecl_make_keyword("ISO-8859-4");
+  case 28595: return ecl_make_keyword("ISO-8859-5");
+  case 28596: return ecl_make_keyword("ISO-8859-6");
+  case 28597: return ecl_make_keyword("ISO-8859-7");
+  case 28598: return ecl_make_keyword("ISO-8859-8");
+  case 28599: return ecl_make_keyword("ISO-8859-9");
+  case 28603: return ecl_make_keyword("ISO-8859-13");
+  case 28605: return ecl_make_keyword("ISO-8859-15");
+  case 50220: return ecl_make_keyword("ISO-2022-JP");
+  case 65001: return ecl_make_keyword("UTF-8");
+#endif
+    /* Nothing we can do here, try our best with :pass-through */
+  default: return @':pass-through';
+  }
 }
 #else
 #define maybe_make_windows_console_FILE ecl_make_stream_from_FILE
@@ -5788,11 +5832,15 @@ init_file(void)
   cl_object null_stream;
   cl_object external_format = ECL_NIL;
 #if defined(ECL_MS_WINDOWS_HOST)
+  /* We start out with :pass-through external format for standard
+   * input/output for bootstrap reasons (some of the external format
+   * support is implemented in lisp and not available on start of
+   * ECL). The correct format is later on set using the encoding
+   * specified by the current codepage. */
+  external_format = cl_list(2, @':pass-through', @':crlf');
 # ifdef ECL_UNICODE
-  external_format = cl_list(2, @':latin-1', @':crlf');
   flags = 0;
 # else
-  external_format = cl_list(2, @':crlf', @':pass-through');
   flags = ECL_STREAM_DEFAULT_FORMAT;
 # endif
 #else
