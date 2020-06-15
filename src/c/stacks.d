@@ -29,7 +29,7 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
-#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
+#if defined(ECL_CAN_SET_STACK_SIZE)
   {
     struct rlimit rl;
 
@@ -40,13 +40,22 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
         if (setrlimit(RLIMIT_STACK, &rl))
           ecl_internal_error("Can't set the size of the C stack");
       }
-      new_size = rl.rlim_cur;
-#ifdef ECL_DOWN_STACK
-      env->cs_barrier = env->cs_org - new_size;
-#else
-      env->cs_barrier = env->cs_org + new_size;
-#endif
+    } else {
+      rl.rlim_cur = new_size;
     }
+    if (rl.rlim_cur == 0 || rl.rlim_cur == RLIM_INFINITY || rl.rlim_cur > (cl_index)(-1)) {
+      /* Either getrlimit failed or returned nonsense, either way we
+       * don't know the stack size. Use a default of 1 MB and hope for
+       * the best. */
+      new_size = 1048576;
+    } else {
+      new_size = rl.rlim_cur;
+    }
+#ifdef ECL_DOWN_STACK
+    env->cs_barrier = env->cs_org - new_size;
+#else
+    env->cs_barrier = env->cs_org + new_size;
+#endif
   }
 #endif
   env->cs_limit_size = new_size - (2*margin);
@@ -64,7 +73,7 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
   }
 #endif
   else
-    ecl_internal_error("Can't set the size of the C stack");
+    ecl_internal_error("Can't set the size of the C stack: sanity check failed");
   env->cs_size = new_size;
 }
 

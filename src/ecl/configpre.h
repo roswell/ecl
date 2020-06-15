@@ -9,6 +9,9 @@
 /* ECL_AVOID_FPE_H */
 #undef ECL_AVOID_FPE_H
 
+/* Define to 1 if we can set the stack size at runtime. */
+#undef ECL_CAN_SET_STACK_SIZE
+
 /* Allow STREAM operations to work on arbitrary objects */
 #undef ECL_CLOS_STREAMS
 
