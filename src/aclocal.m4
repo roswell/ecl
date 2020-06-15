@@ -665,6 +665,21 @@ case "${ECL_STACK_DIR}" in
   up|UP) AC_MSG_RESULT(no) ;;
   *) AC_MSG_ERROR(Unable to determine stack growth direction)
 esac])
+
+dnl
+dnl --------------------------------------------------------------
+dnl Check if we can determine the stack size at runtime
+dnl
+AC_DEFUN(ECL_STACK_SIZE,[
+AC_CHECK_HEADER([sys/resource.h],
+                [AC_DEFINE([HAVE_SYS_RESOURCE_H], [], [Define to 1 if you have the <sys/resource.h> header file.])
+                 AC_CHECK_DECL([RLIMIT_STACK],
+                               [AC_DEFINE([ECL_CAN_SET_STACK_SIZE], [], [Define to 1 if we can set the stack size at runtime.])],
+                               [],
+                               [#include <sys/resource.h>])],
+                [],[])
+])
+
 dnl
 dnl ------------------------------------------------------------
 dnl Find out a setjmp() that does not save signals. It is called
