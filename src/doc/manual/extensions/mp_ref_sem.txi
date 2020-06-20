@@ -85,7 +85,7 @@ was acquired.
 @end defun
 
 
-@lspdef mp_signal_semaphore
+@cppdef mp_signal_semaphore
 @lspdef mp:signal-semaphore
 
 @deftypefun cl_object mp_signal_semaphore (cl_narg n, cl_object sem, ...);

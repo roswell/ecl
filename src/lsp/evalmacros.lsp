@@ -162,9 +162,11 @@ terminated by a non-local exit."
 (defmacro lambda-block (name lambda-list &rest lambda-body)
   (multiple-value-bind (decl body doc)
       (si::process-declarations lambda-body)
-    (when decl (setq decl (list (cons 'declare decl))))
-    `(lambda ,lambda-list ,@doc ,@decl
-      (block ,(si::function-block-name name) ,@body))))
+    (let ((decl (and decl (list (cons 'declare decl))))
+          (block-name (si:function-block-name name)))
+      `(lambda ,lambda-list ,@doc ,@decl
+         (declare (si::function-block-name ,block-name))
+         (block ,block-name ,@body)))))
 
 ; assignment
 

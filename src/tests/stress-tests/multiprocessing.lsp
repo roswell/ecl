@@ -162,11 +162,6 @@
 
 ;; Interrupts
 
-(define-condition timeout (serious-condition)
-  ((value :initarg :value :reader timeout-value))
-  (:report (lambda (c s)
-             (format s "timeout at ~a seconds" (timeout-value c)))))
-
 ;;; simplified version of with-timeout from bordeaux-threads
 (defmacro with-timeout ((timeout) &body body)
   `(let (sleeper)
@@ -184,7 +179,7 @@
                                                     (ignore-errors
                                                       (throw 'timeout nil)))))))
                (throw 'exit (progn ,@body))))
-           (error 'timeout :value ,timeout))
+           (error 'ext:timeout :value ,timeout))
        (when (mp:process-active-p sleeper)
          (ignore-errors (mp:process-kill sleeper))))))
 
@@ -202,7 +197,7 @@
               (let ((timeout-value (log-random 1e-8 1e-2)))
                 (handler-case
                     (with-timeout (timeout-value) (sleep (* timeout-value 10)))
-                  (timeout (c)))))))
+                  (ext:timeout (c)))))))
 
 ;; interrupt safety of binding special variables
 (defvar *test-var* 0)

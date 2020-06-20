@@ -30,12 +30,15 @@
 * Pending changes since 20.4.24
 ** Announcement
 ** Enhancements
+- less cryptic names in backtraces of C-compiled functions
 ** Issues fixed
 - The generational and precise garbage collector modes work again
 - ECL can now use precompiled headers to speed up compilation. Use ~(setq
   c::*use-precompiled-headers* nil)~ to disable this feature
 ** Issues fixed
+- ~serve-event~ extension may be used simultaneously from different threads now
 ** API changes
+- a condition ~ext:timeout~ is defined
 * 20.4.24 changes since 16.1.3
 ** Announcement
 Dear Community,
