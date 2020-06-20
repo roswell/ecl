@@ -55,8 +55,7 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
                          @[mp::lock]);
   }
   unlikely_if (cv->condition_variable.lock != ECL_NIL &&
-               cv->condition_variable.lock != lock)
-    {
+               cv->condition_variable.lock != lock) {
       FEerror("Attempt to associate lock ~A~%with condition variable ~A,"
               "~%which is already associated to lock ~A", 2, lock,
               cv, cv->condition_variable.lock);
@@ -65,7 +64,7 @@ mp_condition_variable_wait(cl_object cv, cl_object lock)
     FEerror("Attempt to wait on a condition variable using lock~%~S"
             "~%which is not owned by process~%~S", 2, lock, own_process);
   }
-  unlikely_if (lock->lock.counter > 1) {
+  unlikely_if (lock->lock.recursive) {
     FEerror("mp:condition-variable-wait can not be used with recursive"
             " locks:~%~S", 1, lock);
   }

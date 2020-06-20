@@ -469,12 +469,14 @@ extern cl_fixnum ecl_runtime(void);
 /* threads/mutex.d */
 
 #ifdef ECL_THREADS
+typedef cl_object (*mp_wait_test)(cl_env_ptr, cl_object);
+
 extern void ecl_process_yield(void);
 extern void print_lock(char *s, cl_object lock, ...);
 #define print_lock(...) ((void)0)
 extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
 extern void ecl_giveup_spinlock(cl_object *lock);
-extern cl_object ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
+extern cl_object ecl_wait_on(cl_env_ptr env, mp_wait_test test, cl_object object);
 extern void ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, int flags);
 extern void ecl_wakeup_process(cl_object process);
 extern cl_object ecl_waiter_pop(cl_env_ptr the_env, cl_object q);
