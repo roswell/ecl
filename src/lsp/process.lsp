@@ -209,28 +209,28 @@
                (ext:make-stream-from-fd parent-error :input
                                         :element-type 'base-char
                                         :external-format external-format)))
-            (piped-pairs nil))
+            (pipes nil))
 
         (when (eql process-input :virtual-stream)
-          (push (cons input stream-write) piped-pairs))
+          (push (list input stream-write :input) pipes))
         (when (eql process-output :virtual-stream)
-          (push (cons stream-read output) piped-pairs))
+          (push (list stream-read output :output) pipes))
         (when (eql process-error :virtual-stream)
-          (push (cons stream-error error) piped-pairs))
+          (push (list stream-error error :error) pipes))
 
         (setf (external-process-pid process) pid
               (external-process-input process) stream-write
               (external-process-output process) stream-read
               (external-process-error-stream process) stream-error)
 
-        (when piped-pairs
+        (when pipes
           #+threads
           (let ((thread (external-process-%pipe process)))
-            (mp:process-preset thread #'pipe-streams process piped-pairs)
+            (mp:process-preset thread #'pipe-streams process pipes)
             (mp:process-enable thread))
           #-threads
           (if wait
-              (pipe-streams process piped-pairs)
+              (pipe-streams process pipes)
               (warn "EXT:RUN-PROGRAM: Ignoring virtual stream I/O argument.")))
 
         (if wait
@@ -274,22 +274,31 @@
   (write-char #\" stream))
 
 
-(defun pipe-streams (process pairs &aux to-remove)
+(defun pipe-streams (process pipes &aux to-remove)
   ;; note we don't use serve-event here because process input may be a virtual
   ;; stream and `select' won't catch this stream change.
-  (si:until (or (null pairs)
-                (member (external-process-wait process nil)
-                        '(:exited :signaled :abort :error)))
-    #1=(dolist (pair pairs)
-         (destructuring-bind (input . output) pair
-           (when (or (null (open-stream-p output))
-                     (null (open-stream-p input))
-                     (and (listen input)
-                          (si:copy-stream input output nil)))
-             (push pair to-remove))))
-    ;; remove from the list exhausted streams
-    (when to-remove
-      (setf pairs (set-difference pairs to-remove)))
-    (sleep 0.001))
-  ;; something may still be in pipes after child termination
-  #1#)
+  (flet ((thunk ()
+           (loop for pipe in pipes
+                 for (input output type) = pipe
+                 do (when (or (null (open-stream-p output))
+                              (null (open-stream-p input))
+                              (let ((next-char (read-char-no-hang input nil :eof)))
+                                (cond
+                                  ((eq next-char :eof)
+                                   t)
+                                  (next-char
+                                   (unread-char next-char input)
+                                   (si:copy-stream input output nil)))))
+                      (when (eq type :input)
+                        (close output))
+                      (push pipe to-remove)))))
+    (si:until (or (null pipes)
+                  (member (external-process-wait process nil)
+                          '(:exited :signaled :abort :error)))
+      (thunk)
+      ;; remove from the list exhausted streams
+      (when to-remove
+        (setf pipes (set-difference pipes to-remove)))
+      (sleep 0.001))
+    ;; something may still be in pipes after child termination
+    (thunk)))
