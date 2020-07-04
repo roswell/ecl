@@ -22,6 +22,23 @@
 (load "bare.lsp" :verbose nil)
 
 ;;;
+;;; * External formats. These come at the very beginning since msvc needs
+;;;   them to compile correctly.
+;;;
+#+UNICODE
+(load "ext:encodings;generate.lisp")
+
+;;;
+;;; * Find out what features are supported by the C compiler we are using
+;;;
+(progn
+  (c::update-compiler-features
+   :executable
+   #+(or windows cygwin mingw32) "build:ecl_min.exe"
+   #-(or windows cygwin mingw32) "build:ecl_min")
+  (format t "~&;;; System features: ~A~%" c::*compiler-features*))
+
+;;;
 ;;; * Complain about functions which are not in the core
 ;;;
 #+(or)
@@ -311,12 +328,6 @@
               :dir "build:ext;"
               :prefix "EXT"
               :builtin #+:BUILTIN-RT t #-:BUILTIN-RT nil)
-
-;;;
-;;; * External formats
-;;;
-#+UNICODE
-(load "ext:encodings;generate.lisp")
 
 ;;;
 ;;; * Package locks
