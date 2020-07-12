@@ -394,6 +394,10 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
    * we can safely store pointers to memory allocated by the gc there. */
   memset(env_aux, 0, sizeof(*env_aux));
   env_aux->disable_interrupts = 1;
+  env_aux->interrupt_struct = ecl_alloc_unprotected(sizeof(*env_aux->interrupt_struct));
+  env_aux->interrupt_struct->pending_interrupt = ECL_NIL;
+  env_aux->interrupt_struct->signal_queue_spinlock = ECL_NIL;
+  env_aux->interrupt_struct->signal_queue = ECL_NIL;
   ecl_set_process_env(env_aux);
   ecl_init_env(env_aux);
 
