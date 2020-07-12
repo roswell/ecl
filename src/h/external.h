@@ -1933,7 +1933,7 @@ extern ECL_API cl_object si_copy_file(cl_object orig, cl_object end);
 #define ecl_enable_interrupts() ecl_enable_interrupts_env(&cl_env)
 #define ECL_PSEUDO_ATOMIC_ENV(env,stmt) (ecl_disable_interrupts_env(env),(stmt),ecl_enable_interrupts_env(env))
 #define ECL_PSEUDO_ATOMIC(stmt) (ecl_disable_interrupts(),(stmt),ecl_enable_interrupts())
-extern ECL_API cl_object si_handle_signal(cl_object signal, cl_object process);
+extern ECL_API cl_object si_handle_signal(cl_object signal);
 extern ECL_API cl_object si_get_signal_handler(cl_object signal);
 extern ECL_API cl_object si_set_signal_handler(cl_object signal, cl_object handler);
 extern ECL_API cl_object si_catch_signal(cl_narg narg, cl_object signal, cl_object state, ...);

@@ -2009,7 +2009,7 @@ cl_symbols[] = {
 {EXT_ "WHEN-LET",NULL,-1},
 {EXT_ "WHEN-LET*",NULL,-1},
 
-{SYS_ "HANDLE-SIGNAL","si_handle_signal",2},
+{SYS_ "HANDLE-SIGNAL","si_handle_signal",1},
 
 {EXT_ "WITH-INTERRUPTS",NULL,-1},
 {EXT_ "WITHOUT-INTERRUPTS",NULL,-1},
