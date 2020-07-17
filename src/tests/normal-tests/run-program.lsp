@@ -142,6 +142,20 @@
       (is (null (zerop (length (get-output-stream-string error-stream)))))
       (mapc #'close (list output-stream error-stream)))))
 
+#+threads
+(test empty-string-input-stream
+  (with-output-to-string (output-stream)
+    (with-output-to-string (error-stream)
+      (with-input-from-string (input-stream "")
+        (is-equal '(nil :exited 1)
+                  (with-run-program (io/err nil
+                                            :input input-stream
+                                            :output output-stream
+                                            :error error-stream))))
+      (is (null (zerop (length (get-output-stream-string output-stream)))))
+      (is (null (zerop (length (get-output-stream-string error-stream)))))
+      (mapc #'close (list output-stream error-stream)))))
+
 #-threads
 (test no-fd-streams
   (with-output-to-string (output-stream)
