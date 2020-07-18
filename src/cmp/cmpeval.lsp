@@ -97,15 +97,31 @@
            `(funcall ,can-inline ,@args)))
         (t (c1call-global fname args))))
 
+(defun inline-local (lambda fun args)
+  (declare (si::c-local))
+  (let ((*inline-max-depth* (1- *inline-max-depth*))
+        (setjmps *setjmps*)
+        (*cmp-env* (cmp-env-copy)))
+    ;; To inline the function, we transform it into a let* statement.
+    (multiple-value-bind (bindings body)
+        (transform-funcall/apply-into-let* (macroexpand-lambda-block lambda)
+                                           args nil)
+      (multiple-value-bind (let-vars let-inits specials other-decls body)
+          (process-let-bindings 'LET* bindings body)
+        ;; We have to compile the function body in the same
+        ;; environment in which the function was defined to get
+        ;; inlining of closures right.
+        (let ((*cmp-env* (cmp-env-copy (fun-cmp-env fun))))
+          (mapc #'push-vars let-vars)
+          (process-let-body 'LET* let-vars let-inits specials other-decls body setjmps))))))
+
 (defun c1call-local (fname fun args)
   (declare (si::c-local))
   (let ((lambda (fun-lambda-expression fun)))
     (when (and lambda
                (declared-inline-p fname)
                (plusp *inline-max-depth*))
-      (return-from c1call-local
-        (let ((*inline-max-depth* (1- *inline-max-depth*)))
-          `(funcall #',lambda ,@args)))))
+      (return-from c1call-local (inline-local lambda fun args))))
   (let* ((forms (c1args* args))
          (return-type (or (get-local-return-type fun) 'T))
          (arg-types (get-local-arg-types fun)))
