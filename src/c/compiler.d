@@ -2469,6 +2469,7 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
     cl_object p, forms_list = cl_nreverse(c_env->load_time_forms);
     c_env->load_time_forms = ECL_NIL;
     p = forms_list;
+    c_env->lexical_level++;     /* don't treat load time forms as toplevel forms */
     do {
       cl_object r = ECL_CONS_CAR(p);
       cl_object constant = pop(&r);
@@ -2481,6 +2482,7 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
       ECL_RPLACA(p, ecl_make_fixnum(loc));
       p = ECL_CONS_CDR(p);
     } while (p != ECL_NIL);
+    c_env->lexical_level--;
     p = forms_list;
     do {
       cl_index loc = ecl_fixnum(ECL_CONS_CAR(p));
