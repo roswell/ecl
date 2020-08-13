@@ -1154,6 +1154,7 @@ cl_symbols[] = {
 {SYS_ "ASET" ECL_FUN("si_aset", si_aset, -2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "BASE-CHAR-P" ECL_FUN("si_base_char_p", si_base_char_p, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "BASE-STRING-P" ECL_FUN("si_base_string_p", si_base_string_p, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "BC-COMPILE-FROM-STREAM" ECL_FUN("si_bc_compile_from_stream", si_bc_compile_from_stream, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "BC-DISASSEMBLE" ECL_FUN("si_bc_disassemble", si_bc_disassemble, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "BC-SPLIT" ECL_FUN("si_bc_split", si_bc_split, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "BC-JOIN" ECL_FUN("si_bc_join", si_bc_join, 4) ECL_VAR(SI_ORDINARY, OBJNULL)},

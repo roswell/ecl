@@ -19,7 +19,7 @@
 
     takes two words of memory: one for the operator and one for the argument.
     The interpreter is written with this assumption in mind, but it should be
-    easily modifed, because arguments are retrieved with "next_arg" and
+    easily modified, because arguments are retrieved with "next_arg" and
     operators with "next_op".  Parts which will require a careful modification
     are marked with flag [1].
 */
@@ -2708,7 +2708,7 @@ si_need_to_make_load_form_p(cl_object object)
     push(ECL_CONS_CDR(object), &waiting_objects);
     goto loop;
   case t_bclosure: {
-    cl_object bc = object->bclosure.code;;
+    cl_object bc = object->bclosure.code;
     push(object->bclosure.lex, &waiting_objects);
     push(bc->bytecodes.data, &waiting_objects);
     push(bc->bytecodes.name, &waiting_objects);
@@ -3201,6 +3201,42 @@ si_make_lambda(cl_object name, cl_object rest)
     c_restore_env(the_env, &new_c_env, old_c_env);
   } ECL_UNWIND_PROTECT_END;
   @(return lambda);
+}
+
+cl_object
+si_bc_compile_from_stream(cl_object input)
+{
+  /* Compile all forms read from input stream to bytecodes */
+  cl_env_ptr the_env = ecl_process_env();
+  cl_compiler_env_ptr old_c_env;
+  struct cl_compiler_env new_c_env;
+  cl_object bytecodes = ECL_NIL;
+  old_c_env = the_env->c_env;
+  c_new_env(the_env, &new_c_env, ECL_NIL, 0);
+  new_c_env.mode = FLAG_LOAD;
+
+  ECL_UNWIND_PROTECT_BEGIN(the_env) {
+    while (TRUE) {
+      cl_object position, form, source_location;
+      cl_index handle;
+      position = ecl_file_position(input);
+      form = cl_read(3, input, ECL_NIL, @':eof');
+      if (form == @':eof')
+        break;
+      source_location = ECL_SYM_VAL(the_env, @'ext::*source-location*');
+      if (source_location != ECL_NIL)
+        cl_rplacd(source_location, position);
+
+      handle = asm_begin(the_env);
+      compile_with_load_time_forms(the_env, form, FLAG_VALUES);
+      asm_op(the_env, OP_EXIT);
+      push(asm_end(the_env, handle, form), &bytecodes);
+    }
+  } ECL_UNWIND_PROTECT_EXIT {
+    c_restore_env(the_env, &new_c_env, old_c_env);
+  } ECL_UNWIND_PROTECT_END;
+
+  return cl_nreverse(bytecodes);
 }
 
 @(defun si::eval-with-env (form &optional (env ECL_NIL) (stepping ECL_NIL)
