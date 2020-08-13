@@ -5436,6 +5436,8 @@ $as_echo "${SOFTWARE_TYPE} / ${SOFTWARE_VERSION}" >&6; }
 
 
 if test "${enable_manual}" != "no"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build the manual; finding install-info..." >&5
+$as_echo_n "checking whether to build the manual; finding install-info...... " >&6; }
   # Extract the first word of "install-info", so it can be a program name with args.
 set dummy install-info; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -5478,11 +5480,17 @@ fi
 
   if test "x${INSTALL_INFO}" = "x"; then
     if test "${enable_manual}" = "auto"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result:  Not building the manual: no install-info found." >&5
+$as_echo " Not building the manual: no install-info found." >&6; }
       enable_manual=no
     elif test "${enable_manual}" = "info"; then
       as_fn_error $? "Unable to build the manual: install-info not found." "$LINENO" 5
     fi
   else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result:  install-info found." >&5
+$as_echo " install-info found." >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working makeinfo..." >&5
+$as_echo_n "checking for working makeinfo...... " >&6; }
     # Extract the first word of "makeinfo", so it can be a program name with args.
 set dummy makeinfo; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -5525,10 +5533,23 @@ fi
 
     if test "x${MAKEINFO}" = "x"; then
       if test "${enable_manual}" = "auto"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result:  Not building the manual: no makeinfo  found." >&5
+$as_echo " Not building the manual: no makeinfo  found." >&6; }
         enable_manual=no
       else
         as_fn_error $? "Unable to build the manual: makeinfo not found." "$LINENO" 5
       fi
+    elif test "x`echo \"@inlinefmtifelse{html, foo, bar}\" | makeinfo 2>&1 | grep Unknown`" != "x"; then
+        if test "${enable_manual}" = "auto"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result:  Not building the manual: broken/outdated makeinfo." >&5
+$as_echo " Not building the manual: broken/outdated makeinfo." >&6; }
+          enable_manual=no
+        else
+          as_fn_error $? "Unable to build the manual: broken/outdated makeinfo." "$LINENO" 5
+        fi
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result:  Will build the manual." >&5
+$as_echo " Will build the manual." >&6; }
     fi
   fi
 fi
