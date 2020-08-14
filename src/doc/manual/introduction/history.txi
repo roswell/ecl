@@ -3,31 +3,53 @@
 
 The ECL project is an implementation of the Common Lisp language
 inherits from many other previous projects, as shown in
-@ref{fig:hierarchy}.  The oldest ancestor is the Kyoto Common Lisp, an
-implementation developed at the the Research Institute for Mathematical
-Sciences, Kyoto University @bibcite{Yasa:85}. This implementation was
-developed partially in C and partially in Common Lisp itself and
-featured a lisp to C translator.
+@ref{fig:hierarchy}.
 
 @float Figure,fig:hierarchy
 @caption{ECL's family tree}
 @image{figures/kcl-hierarchy,,4.5in}
 @end float
 
-The KCL implementation remained a proprietary project for some
-time. During this time, William F. Schelter improved KCL in several
-areas and developed Austin Kyoto Common-Lisp (AKCL). However, those
-changes had to be distributed as patches over the proprietary KCL
-implementation and it was not until much later that both KCL and AKCL
-became freely available and gave rise to the GNU Common Lisp project,
-GCL.
+The oldest ancestor is the Kyoto Common Lisp (KCL), an implementation
+developed in 1984 at the the Research Institute for Mathematical
+Sciences, Kyoto University @bibcite{Yasa:85} by Taiichi Yuasa and
+Masami Hagiya. This implementation was developed partially in C and
+partially in Common Lisp itself and featured a lisp to C translator.
 
-Around the 90's, Giuseppe Attardi worked on the KCL and AKCL code basis
-to produce an implementation of Common Lisp that could be embedded in
-other C programs @bibcite{Attardi:95}. The result was an implementation
-sometimes known as ECL and sometimes as ECoLisp, which achieved rather
-good compliance to the informal specification of the language in CLTL2
-@bibcite{Steele:90}, and which run on a rather big number of platforms.
+Richard W. Weyhrauch in 1985 founded a company Ibuki to sell its
+version of KCL called Ibuki Common Lisp (IBCL) in the USA.
+
+Giuseppe Attardi learned about KCL from Richard Weyhrauch in 1986. At
+the time he was working with the company DELPHI. He extended KCL by
+adding a CLOS implementation and other improvements. The whole
+combination was released in 1988 as DELPHI Common Lisp (DCL).
+
+William F. Schelter in 1987 started improving KCL in several areas and
+developed Austin Kyoto Common-Lisp (AKCL). However, those changes had
+to be distributed as patches over the proprietary KCL implementation.
+
+Much later in 1994, when KCL became open source (and by extension also
+AKCL), William F. Schelter re-released AKCL as GNU Common Lisp (GCL),
+implementation which primary purpose at the time was to support the
+Maxima compute algebra system, which was also maintained by William
+F. Schelter.
+
+@c https://www.hpl.hp.com/hpjournal/95oct/oct95.htm
+In 1995 another AKCL descendant called HCL is released. This
+commercial implementation is an extension language for the application
+HP PE/SolidDesigner. A large part of the application's user interface
+is written in Common Lisp.
+
+In 1994 Giuseppe Attardi left DELPHI and went back to the University
+of Pisa, where he decided to build a version of DCL that would allow
+integrating Lisp code with other languages@bibcite{Attardi:95}. Since
+Lisp had become less popular and Lisp programmers were diminishing in
+number, he used the acronym ECL, which could be read as either the
+Embeddable Common Lisp as well as ECoLisp, as a joke for the
+ecological goal of preserving the disappearing species, the Lisp
+programmer. The implementation achieved rather good compliance to the
+informal specification of the language in CLTL2 @bibcite{Steele:90},
+and which run on a rather big number of platforms.
 
 The ECL project stagnated a little bit in the coming years. In
 particular, certain dependencies such as object binary formats, word
@@ -42,22 +64,24 @@ in mind: increase portability, make the code 64-bit clean, make it able
 to build itself from scratch, without other implementation of Common
 Lisp and restore the ability to link ECL with other C programs.
 
-Those goals were rather quickly achieved. ECL became ported to a number
-of platforms and with the years also compatibility with the ANSI
-specification became a more important goal. At some point the fork ECLS,
-with agreement of Prof. Attardi, took over the original ECL
+Those goals were rather quickly achieved. ECL was then ported to a
+number of platforms and with time the compatibility with the ANSI
+specification became a more important goal. At some point the fork
+ECLS, with agreement of Prof. Attardi, took over the original ECL
 implementation and it became what it is nowadays, a community project.
 
 In 2013 once again project got unmaintained. In 2015 Daniel Kochmański
-took the position of a maintainer with consent of Juanjo García-Ripoll.
+took the position of a maintainer with consent of Juanjo
+García-Ripoll. In 2020 Marius Gerbershagen became the project
+co-maintainer.
 
 The ECL project owes a lot to different people who have contributed in
 many different aspects, from pointing out bugs and incompatibilities of
 ECL with other programs and specifications, to actually solving these
 bugs and porting ECL to new platforms.
 
-Current development of ECL is still driven by Daniel Kochmański with
-main focus on improving ANSI compliance and compatibility with the
-Common Lisp libraries ecosystem, fixing bugs, improving speed and the
-portability. The project homepage is located at
-@uref{https://common-lisp.net/project/ecl/}.
+Current development of ECL is still driven by Daniel Kochmański and
+Marius Gerbershagen with main focus on improving ANSI compliance and
+compatibility with the Common Lisp libraries ecosystem, fixing bugs,
+improving speed and the portability. The project homepage is located
+at @uref{https://common-lisp.net/project/ecl/}.
