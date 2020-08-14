@@ -735,3 +735,120 @@ creating stray processes."
       (signals package-error (mp:remcas 'cl:car))
       (finishes (mp:defcas cor (lambda (obj old new) nil)))
       (finishes (mp:remcas 'cor)))
+
+
+;;; Date: 2020-08-14
+;;; From: Daniel Kochmański
+;;; Description:
+;;;
+;;;     Smoke tests for barriers.
+;;;
+
+(test mp.barrier.slots
+      (let ((barrier (mp:make-barrier 3 :name 'foo)))
+        (is (eq 'foo (mp:barrier-name barrier)))
+        (is (= 3 (mp:barrier-count barrier)))
+        (is (= 0 (mp:barrier-arrivers-count barrier)))))
+
+(test mp.barrier.blocking
+      (let ((barrier (mp:make-barrier 3))
+            (before-barrier 0)
+            (after-barrier 0))
+        (labels ((try-barrier ()
+                   (mp:process-run-function
+                    "try-barrier"
+                    (lambda ()
+                      (incf before-barrier)
+                      (mp:barrier-wait barrier)
+                      (incf after-barrier))))
+                 (check-barrier (before after arrivers)
+                   (try-barrier)
+                   (sleep 0.01)
+                   (is (= before before-barrier))
+                   (is (= after after-barrier))
+                   (is (= arrivers (mp:barrier-arrivers-count barrier)))))
+          (check-barrier 1 0 1)
+          (check-barrier 2 0 2)
+          (check-barrier 3 3 0)
+          (check-barrier 4 3 1)
+          (check-barrier 5 3 2)
+          (check-barrier 6 6 0))))
+
+(test mp.barrier.unblock-1
+      (let ((barrier (mp:make-barrier 3))
+            (before-barrier 0)
+            (after-barrier 0))
+        (labels ((try-barrier ()
+                   (mp:process-run-function
+                    "try-barrier"
+                    (lambda ()
+                      (incf before-barrier)
+                      (mp:barrier-wait barrier)
+                      (incf after-barrier))))
+                 (check-barrier (before after arrivers)
+                   (try-barrier)
+                   (sleep 0.01)
+                   (is (= before before-barrier))
+                   (is (= after after-barrier))
+                   (is (= arrivers (mp:barrier-arrivers-count barrier))))
+                 (wake-barrier ()
+                   (mp:barrier-unblock barrier :kill-waiting nil))
+                 (kill-barrier ()
+                   (mp:barrier-unblock barrier :kill-waiting t)))
+          (check-barrier 1 0 1)
+          (check-barrier 2 0 2)
+          (wake-barrier)
+          (sleep 0.01)
+          (check-barrier 3 2 1)
+          (check-barrier 4 2 2)
+          (kill-barrier)
+          (sleep 0.01)
+          (check-barrier 5 2 1))))
+
+(test mp.barrier.unblock-2
+      (let ((barrier (mp:make-barrier 3))
+            (before-barrier 0)
+            (after-barrier 0))
+        (labels ((try-barrier ()
+                   (mp:process-run-function
+                    "try-barrier"
+                    (lambda ()
+                      (incf before-barrier)
+                      (mp:barrier-wait barrier)
+                      (incf after-barrier))))
+                 (check-barrier (before after arrivers)
+                   (try-barrier)
+                   (sleep 0.01)
+                   (is (= before before-barrier))
+                   (is (= after after-barrier))
+                   (is (= arrivers (mp:barrier-arrivers-count barrier)))))
+          (mp:barrier-unblock barrier :disable t)
+          (check-barrier 1 1 0)
+          (check-barrier 2 2 0)
+          (check-barrier 3 3 0)
+          (check-barrier 4 4 0))))
+
+(test mp.barrier.unblock-3
+      (let ((barrier (mp:make-barrier 3))
+            (before-barrier 0)
+            (after-barrier 0))
+        (labels ((try-barrier ()
+                   (mp:process-run-function
+                    "try-barrier"
+                    (lambda ()
+                      (incf before-barrier)
+                      (mp:barrier-wait barrier)
+                      (incf after-barrier))))
+                 (check-barrier (before after arrivers)
+                   (try-barrier)
+                   (sleep 0.01)
+                   (is (= before before-barrier))
+                   (is (= after after-barrier))
+                   (is (= arrivers (mp:barrier-arrivers-count barrier)))))
+          (mp:barrier-unblock barrier :reset-count 4)
+          (check-barrier 1 0 1)
+          (check-barrier 2 0 2)
+          (check-barrier 3 0 3)
+          (check-barrier 4 4 0)
+          (check-barrier 5 4 1)
+          (check-barrier 6 4 2))))
