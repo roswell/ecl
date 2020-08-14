@@ -1921,3 +1921,20 @@
                     (multiple-value-setq (*a* *b*) (foo))
                     (and (eq *a* :right-a)
                          (eq *b* :right-b))))))))
+
+;;; Date 2020-08-14
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/594
+;;; Description
+;;;
+;;;     The code walker used in DEFMETHOD would call MAKE-LOAD-VALUE
+;;;     for literal objects encountered during code walking, even while
+;;;     loading a file or using eval.
+(ext:with-clean-symbols (test-class test-method)
+  (eval '(defclass test-class () ()))
+  (eval '(defmethod make-load-form ((obj test-class) &optional env)
+          (error "We shouldn't have called MAKE-LOAD-FORM here.")))
+  (test cmp.0082.defmethod-make-load-form
+    (let* ((test-obj (make-instance 'test-class))
+           (code `(defmethod test-method ()
+                    ,test-obj)))
+      (finishes (eval code)))))
