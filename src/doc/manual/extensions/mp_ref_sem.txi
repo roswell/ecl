@@ -1,6 +1,8 @@
 @node Semaphores
 @subsection Semaphores
 
+@cindex Semaphores (synchronization)
+
 Semaphores are objects which allow an arbitrary resource
 count. Semaphores are used for shared access to resources where number
 of concurrent threads allowed to access it is limited.

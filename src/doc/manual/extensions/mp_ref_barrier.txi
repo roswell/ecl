@@ -1,45 +1,77 @@
 @node Barriers
-@subsubsection Barriers
+@subsection Barriers
 
 @cindex Barriers (synchronization)
 
-
-@cppindex ecl_make_barrier
-cl_object ecl_make_barrier (cl_object name, cl_index count)
+Barriers are objects which for a group of threads make them stop and
+they can't proceed until all other threads reach the barrier.
+
+@node Barriers dictionary
+@subsection Barriers dictionary
 
 
-@lspindex mp:make-barrier
-mp:make-barrier count &key name
+@cppdef ecl_make_barrier
+@deftypefun cl_object ecl_make_barrier (cl_object name, cl_index count)
+C/C++ equivalent of @coderef{mp:make-barrier} without @code{key}
+arguments.
+
+See @coderef{mp:make-barrier}.
+@end deftypefun
 
 
-@cppindex mp_barrier_count
-@lspindex mp:barrier-count
+@cppdef mp_make_barrier
+@lspdef mp:make-barrier
 
-cl_object mp_barrier_count (cl_object barrier)
-mp:barrier-count
-
-
-@cppindex mp_barrier_name
-@lspindex mp:barrier-name
-
-cl_object mp_barrier_name (cl_object)
-mp:barrier-name
+@defun mp:make-barrier count &key name
+Creates a barrier @var{name} with a thread count @var{count}.
+@end defun
 
 
-@cppindex mp_barrier_arrivers_count
-n@lspindex mp:barrier-arrivers-count
+@cppdef mp_barrier_count
+@lspdef mp:barrier-count
 
-cl_object mp_barrier_arrivers_count(cl_object barrier);
-mp:barrier_arrivers_count barrier
-
-
-@cppindex mp_barrier_wait
-@lspindex mp:barrier-wait
-
-mp:barrier-wait barrier
-cl_object mp_barrier_wait (cl_object barrier);
+@defun mp:barrier-count barrier
+Returns the count of @var{barrier}.
+@end defun
 
 
-@lspindex mp:barrier-unblock
-mp:barrier-unblock barrier &key reset_count disable kill-waiting
+@cppdef mp_barrier_name
+@lspdef mp:barrier-name
+
+@defun mp:barrier-name barrier
+Returns the name of @var{barrier}.
+@end defun
+
+
+@cppdef mp_barrier_arrivers_count
+@lspdef mp:barrier-arrivers-count
+
+@defun mp:barrier-arrivers-count barrier
+Returns the number of threads waiting on @var{barrier}.
+@end defun
+
+
+@cppdef mp_barrier_wait
+@lspdef mp:barrier-wait
+
+@defun mp:barrier-wait barrier
+The caller thread waits on @var{barrier}. When the barrier is
+saturated then all threads waiting on it are unblocked.
+@end defun
+
+
+@cppdef mp_barrier_unblock
+@lspdef mp:barrier-unblock
+
+@defun mp:barrier-unblock barrier &key reset-count disable kill-waiting
+Forcefully wakes up all processes waiting on the barrier.
+
+@var{reset-count} when used resets @var{barrier} counter.
+
+@var{disable} disables or enables @var{barrier}. When a barrier is
+disabled then all calls to @coderef{mp:barrier-wait} immedietely
+return.
+
+@var{kill-waiting} is used to kill all woken threads.
+@end defun
 
