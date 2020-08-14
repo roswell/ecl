@@ -357,7 +357,7 @@
        (when throw-flag ,error-form))))
 
 (defun cmp-eval (form &optional (env *cmp-env*))
-  (handler-case (si::eval-with-env form env nil t t)
+  (handler-case (si::eval-with-env form env nil t :execute)
     (serious-condition (c)
       (when *compiler-break-enable*
         (invoke-debugger c))

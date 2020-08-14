@@ -1630,7 +1630,7 @@ c_load_time_value(cl_env_ptr env, cl_object args, int flags)
   unlikely_if (Null(args) || cl_cddr(args) != ECL_NIL)
     FEprogram_error("LOAD-TIME-VALUE: Wrong number of arguments.", 0);
   value = ECL_CONS_CAR(args);
-  if (c_env->mode != FLAG_LOAD) {
+  if (c_env->mode == FLAG_EXECUTE) {
     value = si_eval_with_env(1, value);
   } else if (ECL_SYMBOLP(value) || ECL_LISTP(value)) {
     /* Using the form as constant, we force the system to coalesce multiple
@@ -3200,14 +3200,24 @@ si_make_lambda(cl_object name, cl_object rest)
 }
 
 @(defun si::eval-with-env (form &optional (env ECL_NIL) (stepping ECL_NIL)
-                           (compiler_env_p ECL_NIL) (execute ECL_T))
+                           (compiler_env_p ECL_NIL) (mode @':execute'))
   volatile cl_compiler_env_ptr old_c_env;
   struct cl_compiler_env new_c_env;
   cl_object interpreter_env, compiler_env;
 @
   /*
    * Compile to bytecodes.
+   * Parameter mode is interpreted as follows:
+   * - execute: Execute the compiled form
+   * - load-toplevel: Compile the form without executing. Calls
+   *   make-load-form for literal objects encountered during
+   *   compilation.
+   * - compile-toplevel: Compile the form without executing, do not
+   *   call make-load-form. Useful for code walking.
    */
+  if (!(mode == @':execute' || mode == @':load-toplevel' || mode == @':compile-toplevel')) {
+    FEerror("Invalid mode in SI:EVAL-WITH-ENV", 0);
+  }
   if (compiler_env_p == ECL_NIL) {
     interpreter_env = env;
     compiler_env = ECL_NIL;
@@ -3225,15 +3235,15 @@ si_make_lambda(cl_object name, cl_object rest)
   }
   new_c_env.stepping = stepping != ECL_NIL;
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
-    if (Null(execute)) {
+    if (mode == @':execute') {
+      eval_form(the_env, form);
+    } else {
       cl_index handle = asm_begin(the_env);
-      new_c_env.mode = FLAG_LOAD;
+      new_c_env.mode = (mode == @':load-toplevel') ? FLAG_LOAD : FLAG_COMPILE;
       compile_with_load_time_forms(the_env, form, FLAG_VALUES);
       asm_op(the_env, OP_EXIT);
       the_env->values[0] = asm_end(the_env, handle, form);
       the_env->nvalues = 1;
-    } else {
-      eval_form(the_env, form);
     }
   } ECL_UNWIND_PROTECT_EXIT {
     /* Clear up */

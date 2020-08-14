@@ -252,9 +252,9 @@
       (let ((si::*code-walker* #'code-walker))
         ;; Instead of (coerce method-lambda 'function) we use
         ;; explicitely the bytecodes compiler with an environment, no
-        ;; stepping, compiler-env-p = t and execute = nil, so that the
-        ;; form does not get executed.
-        (si::eval-with-env method-lambda env nil t nil)))
+        ;; stepping, compiler-env-p = t and mode = :compile-toplevel,
+        ;; so that the form does not get executed.
+        (si::eval-with-env method-lambda env nil t :compile-toplevel)))
     (values call-next-method-p
             next-method-p-p
             in-closure-p)))
