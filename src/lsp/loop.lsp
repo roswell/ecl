@@ -659,8 +659,12 @@ collected result will be returned as the value of the LOOP."
   (cond
     ((null tree) (car (push (gensym) *ignores*)))
     ((atom tree) tree)
-    (t (cons (subst-gensyms-for-nil (car tree))
-             (subst-gensyms-for-nil (cdr tree))))))
+    ((atom (cdr tree))
+     (cons (subst-gensyms-for-nil (car tree))
+           (subst-gensyms-for-nil (cdr tree))))
+    (t
+     (list* '&optional
+            (mapcar #'subst-gensyms-for-nil tree)))))
  
 (defun loop-build-destructuring-bindings (crocks forms)
   (if crocks
