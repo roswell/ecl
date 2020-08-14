@@ -79,6 +79,11 @@ typedef struct {
 #else
 # define IF_COMPLEX_FLOAT(x) NULL
 #endif
+#ifdef ECL_MS_WINDOWS_HOST
+# define IF_WINDOWS(x) x
+#else
+# define IF_WINDOWS(x) NULL
+#endif
 
 /* XXX When the symbol has the associated function its name must
    follow the naming convention, otherwise si:mangle-name will
@@ -1811,6 +1816,8 @@ cl_symbols[] = {
 
 {EXT_ "*ACTION-ON-UNDEFINED-VARIABLE*",NULL,-1},
 
+{SYS_ "WINDOWS-CODEPAGE-ENCODING",IF_WINDOWS("si_windows_codepage_encoding"),0},
+
 {EXT_ "SET-BUFFERING-MODE","si_set_buffering_mode",2},
 {KEY_ "NONE",NULL,-1},
 {KEY_ "LINE-BUFFERED",NULL,-1},
@@ -1923,6 +1930,7 @@ cl_symbols[] = {
 {KEY_ "CR",NULL,-1},
 {KEY_ "LF",NULL,-1},
 {KEY_ "CRLF",NULL,-1},
+
 {KEY_ "UCS-2BE",NULL,-1},
 {KEY_ "UCS-4BE",NULL,-1},
 {KEY_ "UCS-2LE",NULL,-1},
@@ -2001,7 +2009,7 @@ cl_symbols[] = {
 {EXT_ "WHEN-LET",NULL,-1},
 {EXT_ "WHEN-LET*",NULL,-1},
 
-{SYS_ "HANDLE-SIGNAL","si_handle_signal",2},
+{SYS_ "HANDLE-SIGNAL","si_handle_signal",1},
 
 {EXT_ "WITH-INTERRUPTS",NULL,-1},
 {EXT_ "WITHOUT-INTERRUPTS",NULL,-1},
@@ -2049,11 +2057,7 @@ cl_symbols[] = {
 #endif
 {SYS_ "RUN-PROGRAM-INNER","si_run_program_inner",4},
 {SYS_ "SPAWN-SUBPROCESS","si_spawn_subprocess",6},
-#if defined(ECL_MS_WINDOWS_HOST)
-{SYS_ "CLOSE-WINDOWS-HANDLE","si_close_windows_handle",1},
-#else
-{SYS_ "CLOSE-WINDOWS-HANDLE",NULL,-1},
-#endif
+{SYS_ "CLOSE-WINDOWS-HANDLE",IF_WINDOWS("si_close_windows_handle"),1},
 /* ~ */
 
 {EXT_ "*INVOKE-DEBUGGER-HOOK*",NULL,-1},

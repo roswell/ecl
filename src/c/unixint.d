@@ -324,7 +324,7 @@ unblock_signal(cl_env_ptr the_env, int signal)
 ecl_def_ct_base_string(str_ignore_signal,"Ignore signal",13,static,const);
 
 static void
-handle_signal_now(cl_object signal_code, cl_object process)
+handle_signal_now(cl_object signal_code)
 {
         switch (ecl_t_of(signal_code)) {
         case t_fixnum:
@@ -354,9 +354,9 @@ handle_signal_now(cl_object signal_code, cl_object process)
 }
 
 cl_object
-si_handle_signal(cl_object signal_code, cl_object process)
+si_handle_signal(cl_object signal_code)
 {
-        handle_signal_now(signal_code, process);
+        handle_signal_now(signal_code);
         @(return)
 }
 
@@ -364,7 +364,7 @@ static void
 handle_all_queued(cl_env_ptr env)
 {
         while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
-                handle_signal_now(pop_signal(env), env->own_process);
+                handle_signal_now(pop_signal(env));
         }
 }
 
@@ -519,7 +519,7 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
         else {
                 if (code) unblock_signal(the_env, code);
                 si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
-                handle_signal_now(signal_code, the_env->own_process);
+                handle_signal_now(signal_code);
         }
 }
 
@@ -555,7 +555,7 @@ handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *dat
         signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
                                          cl_core.known_signals,
                                          ECL_NIL);
-        handle_signal_now(signal_object, the_env->own_process);
+        handle_signal_now(signal_object);
         errno = old_errno;
 }
 
@@ -651,10 +651,9 @@ asynchronous_signal_servicing_thread()
                                                cl_core.known_signals,
                                                ECL_NIL);
                 if (!Null(signal_code)) {
-                        mp_process_run_function(4, @'si::handle-signal',
+                        mp_process_run_function(3, @'si::handle-signal',
                                                 @'si::handle-signal',
-                                                signal_code,
-                                                signal_thread_msg.process);
+                                                signal_code);
                 }
         }
 # if defined(ECL_USE_MPROTECT)
@@ -773,7 +772,7 @@ handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
         */
         si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
         unblock_signal(the_env, code);
-        handle_signal_now(condition, the_env->own_process);
+        handle_signal_now(condition);
         /* We will not reach past this point. */
 }
 
@@ -1152,43 +1151,43 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                 /* Catch all arithmetic exceptions */
                 case EXCEPTION_INT_DIVIDE_BY_ZERO:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'division-by-zero', the_env->own_process);
+                        handle_signal_now(@'division-by-zero');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_INT_OVERFLOW:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'arithmetic-error', the_env->own_process);
+                        handle_signal_now(@'arithmetic-error');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_DIVIDE_BY_ZERO:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-overflow', the_env->own_process);
+                        handle_signal_now(@'floating-point-overflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_OVERFLOW:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-overflow', the_env->own_process);
+                        handle_signal_now(@'floating-point-overflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_UNDERFLOW:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-underflow', the_env->own_process);
+                        handle_signal_now(@'floating-point-underflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_INEXACT_RESULT:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-inexact', the_env->own_process);
+                        handle_signal_now(@'floating-point-inexact');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_DENORMAL_OPERAND:
                 case EXCEPTION_FLT_INVALID_OPERATION:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-invalid-operation', the_env->own_process);
+                        handle_signal_now(@'floating-point-invalid-operation');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_STACK_CHECK:
-                        handle_signal_now(@'arithmetic-error', the_env->own_process);
+                        handle_signal_now(@'arithmetic-error');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 /* Catch segmentation fault */
                 case EXCEPTION_ACCESS_VIOLATION:
-                        handle_signal_now(@'ext::segmentation-violation', the_env->own_process);
+                        handle_signal_now(@'ext::segmentation-violation');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 /* Catch illegal instruction */
                 case EXCEPTION_ILLEGAL_INSTRUCTION:
-                        handle_signal_now(@'ext::illegal-instruction', the_env->own_process);
+                        handle_signal_now(@'ext::illegal-instruction');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 /* Do not catch anything else */
                 default:
@@ -1204,9 +1203,9 @@ static cl_object
 W32_handle_in_new_thread(cl_object signal_code)
 {
         int outside_ecl = ecl_import_current_thread(@'si::handle-signal', ECL_NIL);
-        mp_process_run_function(4, @'si::handle-signal',
+        mp_process_run_function(3, @'si::handle-signal',
                                 @'si::handle-signal',
-                                signal_code, ECL_NIL);
+                                signal_code);
         if (outside_ecl) ecl_release_current_thread();
 }
 

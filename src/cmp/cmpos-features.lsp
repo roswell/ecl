@@ -17,7 +17,13 @@
 
 (defun run-and-collect (command args &optional file)
   (handler-case
-      (let ((lines (collect-lines (si:run-program-inner command args :default t))))
+      (let ((output-stream (si:run-program-inner command args :default t))
+            lines)
+        #+msvc
+        (si::stream-external-format-set
+         output-stream
+         (list (si::windows-codepage-encoding) :crlf))
+        (setf lines (collect-lines output-stream))
         (cond ((null file)
                lines)
               ((probe-file file)
@@ -147,12 +153,3 @@ we are currently using with ECL."
 
 (defun update-compiler-features (&rest args)
   (setf *compiler-features* (apply #'gather-system-features args)))
-
-#+ecl-min
-(update-compiler-features
- :executable
- #+(or windows cygwin mingw32) "build:ecl_min.exe"
- #-(or windows cygwin mingw32) "build:ecl_min")
-
-#+ecl-min
-(format t ";;; System features: ~A~%" *compiler-features*)

@@ -454,40 +454,16 @@ struct cl_core_struct cl_core = {
 static void
 maybe_fix_console_stream(cl_object stream)
 {
-  DWORD cp = GetConsoleCP();
-  const char *encoding;
   cl_object external_format;
-  int i;
-  static const struct {
-    int code;
-    const char *name;
-  } known_cp[] = {
-    {874, "WINDOWS-CP874"},
-    {932, "WINDOWS-CP932"},
-    {936, "WINDOWS-CP936"},
-    {949, "WINDOWS-CP949"},
-    {950, "WINDOWS-CP950"},
-    {1200, "WINDOWS-CP1200"},
-    {1201, "WINDOWS-CP1201"},
-    {1250, "WINDOWS-CP1250"},
-    {1251, "WINDOWS-CP1251"},
-    {1252, "WINDOWS-CP1252"},
-    {1253, "WINDOWS-CP1253"},
-    {1254, "WINDOWS-CP1254"},
-    {1255, "WINDOWS-CP1255"},
-    {1256, "WINDOWS-CP1256"},
-    {1257, "WINDOWS-CP1257"},
-    {1258, "WINDOWS-CP1258"},
-    {65001, "UTF8"},
-    {0,"LATIN-1"}
-  };
   if (stream->stream.mode != ecl_smm_io_wcon)
     return;
-  for (i = 0; known_cp[i].code && known_cp[i].code != cp; i++)
-    {}
-  external_format = cl_list(2, ecl_make_keyword(known_cp[i].name),
-                            @':crlf');
-  si_stream_external_format_set(stream, external_format);
+  external_format = si_windows_codepage_encoding();
+  if (external_format == @':pass-through')
+    fprintf(stderr,
+            "Unsupported codepage %d, input/output encoding may be wrong.\n"
+            "Use the chcp command to change codepages, e.g. 'chcp 65001' to change to utf-8.\n",
+            GetConsoleCP());
+  si_stream_external_format_set(stream, cl_list(2, external_format, @':crlf'));
   stream->stream.eof_char = 26;
 }
 #endif

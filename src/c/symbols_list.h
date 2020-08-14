@@ -79,6 +79,11 @@ typedef struct {
 #else
 # define IF_COMPLEX_FLOAT(x) NULL
 #endif
+#ifdef ECL_MS_WINDOWS_HOST
+# define IF_WINDOWS(x) x
+#else
+# define IF_WINDOWS(x) NULL
+#endif
 
 /* XXX When the symbol has the associated function its name must
    follow the naming convention, otherwise si:mangle-name will
@@ -1811,6 +1816,8 @@ cl_symbols[] = {
 
 {EXT_ "*ACTION-ON-UNDEFINED-VARIABLE*", EXT_SPECIAL, NULL, -1, ECL_NIL},
 
+{SYS_ "WINDOWS-CODEPAGE-ENCODING", SI_ORDINARY, IF_WINDOWS(si_windows_codepage_encoding), 0, OBJNULL},
+
 {EXT_ "SET-BUFFERING-MODE", EXT_ORDINARY, si_set_buffering_mode, 2, OBJNULL},
 {KEY_ "NONE", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "LINE-BUFFERED", KEYWORD, NULL, -1, OBJNULL},
@@ -1923,6 +1930,7 @@ cl_symbols[] = {
 {KEY_ "CR", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "LF", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "CRLF", KEYWORD, NULL, -1, OBJNULL},
+
 {KEY_ "UCS-2BE", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "UCS-4BE", KEYWORD, NULL, -1, OBJNULL},
 {KEY_ "UCS-2LE", KEYWORD, NULL, -1, OBJNULL},
@@ -2001,7 +2009,7 @@ cl_symbols[] = {
 {EXT_ "WHEN-LET", EXT_ORDINARY, NULL, -1, OBJNULL},
 {EXT_ "WHEN-LET*", EXT_ORDINARY, NULL, -1, OBJNULL},
 
-{SYS_ "HANDLE-SIGNAL", SI_ORDINARY, si_handle_signal, 2, OBJNULL},
+{SYS_ "HANDLE-SIGNAL", SI_ORDINARY, si_handle_signal, 1, OBJNULL},
 
 {EXT_ "WITH-INTERRUPTS", MP_CONSTANT, NULL, -1, OBJNULL},
 {EXT_ "WITHOUT-INTERRUPTS", MP_CONSTANT, NULL, -1, OBJNULL},
@@ -2049,11 +2057,7 @@ cl_symbols[] = {
 #endif
 {SYS_ "RUN-PROGRAM-INNER", SI_ORDINARY, si_run_program_inner, 4, OBJNULL},
 {SYS_ "SPAWN-SUBPROCESS", SI_ORDINARY, si_spawn_subprocess, 6, OBJNULL},
-#if defined(ECL_MS_WINDOWS_HOST)
-{SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, si_close_windows_handle, 1, OBJNULL},
-#else
-{SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, NULL, -1, OBJNULL},
-#endif
+{SYS_ "CLOSE-WINDOWS-HANDLE", SI_ORDINARY, IF_WINDOWS(si_close_windows_handle), 1, OBJNULL},
 /* ~ */
 
 {EXT_ "*INVOKE-DEBUGGER-HOOK*", EXT_SPECIAL, NULL, -1, ECL_NIL},

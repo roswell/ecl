@@ -718,6 +718,9 @@ extern ECL_API cl_object si_do_write_sequence(cl_object string, cl_object stream
 extern ECL_API cl_object si_do_read_sequence(cl_object string, cl_object stream, cl_object start, cl_object end);
 extern ECL_API cl_object si_file_column(cl_object strm);
 extern ECL_API cl_object cl_interactive_stream_p(cl_object strm);
+#if defined(ECL_MS_WINDOWS_HOST)
+extern ECL_API cl_object si_windows_codepage_encoding();
+#endif
 extern ECL_API cl_object si_set_buffering_mode(cl_object strm, cl_object mode);
 extern ECL_API cl_object si_stream_external_format_set(cl_object strm, cl_object format);
 
@@ -1930,7 +1933,7 @@ extern ECL_API cl_object si_copy_file(cl_object orig, cl_object end);
 #define ecl_enable_interrupts() ecl_enable_interrupts_env(&cl_env)
 #define ECL_PSEUDO_ATOMIC_ENV(env,stmt) (ecl_disable_interrupts_env(env),(stmt),ecl_enable_interrupts_env(env))
 #define ECL_PSEUDO_ATOMIC(stmt) (ecl_disable_interrupts(),(stmt),ecl_enable_interrupts())
-extern ECL_API cl_object si_handle_signal(cl_object signal, cl_object process);
+extern ECL_API cl_object si_handle_signal(cl_object signal);
 extern ECL_API cl_object si_get_signal_handler(cl_object signal);
 extern ECL_API cl_object si_set_signal_handler(cl_object signal, cl_object handler);
 extern ECL_API cl_object si_catch_signal(cl_narg narg, cl_object signal, cl_object state, ...);

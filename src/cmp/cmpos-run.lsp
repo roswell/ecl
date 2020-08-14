@@ -55,6 +55,9 @@
      #+(and ecl-min (not cygwin))
      (multiple-value-bind (output-stream return-status pid)
          (si:run-program-inner program args :default nil)
+       #+msvc
+       (si::stream-external-format-set output-stream
+                                       (list (si::windows-codepage-encoding) :crlf))
        (setf output (collect-lines output-stream))
        (multiple-value-setq (return-status result)
          (si:waitpid pid t)))
@@ -62,7 +65,9 @@
      ;; quoting of arguments ...
      #+(and (not ecl-min) (not cygwin))
      (multiple-value-bind (output-stream return-status process-obj)
-         (ext:run-program program args :wait nil)
+         (ext:run-program program args :wait nil
+                          #+msvc :external-format
+                          #+msvc (list (si::windows-codepage-encoding) :crlf))
        (setf output (collect-lines output-stream))
        (multiple-value-setq (return-status result)
          (ext:external-process-wait process-obj t)))
