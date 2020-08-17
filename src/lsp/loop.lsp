@@ -663,8 +663,15 @@ collected result will be returned as the value of the LOOP."
      (cons (subst-gensyms-for-nil (car tree))
            (subst-gensyms-for-nil (cdr tree))))
     (t
-     (list* '&optional
-            (mapcar #'subst-gensyms-for-nil tree)))))
+     (do* ((acc (cons '&optional nil))
+           (acc-last acc)
+           (elt tree (cdr elt)))
+          ((atom elt)
+           (setf (cdr acc-last) elt)
+           acc)
+       (setf (cdr acc-last)
+             (cons (subst-gensyms-for-nil (car elt)) nil))
+       (setf acc-last (cdr acc-last))))))
  
 (defun loop-build-destructuring-bindings (crocks forms)
   (if crocks
