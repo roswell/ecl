@@ -1,0 +1,55 @@
+
+After ELS 2020 where I gave a talk about ECL the professor Marco Antoniotti
+noticed, that there were some historical inaccuracies in my description and
+was kind enough to contact me with the professor Giuseppe Attardi who was the
+the original author of the ECoLisp (which was a fork of the Kyoto Common
+Lisp), who was kind enough to answer me regarding the early history of the
+project. The manual is updated to cover this new information, but the email
+contains more interesting facts regarding ECL which are worth preserving in
+the repository. With the permission from the author I'm adding that email
+(without metadata). -- jd 2020-08-17
+
+--------------------------------------------------------------------------------
+From: Giuseppe Attardi
+To: Daniel Kochmański
+Date: 02.08.2020
+Topic: Re: ECoLisp history
+--------------------------------------------------------------------------------
+
+I first heard about KCL by Richard Weyhrauch in 1986, who had founded Ibuchi to sell its version of KCL in the USA.
+I was working with DELPHI, a company which offered advanced software hardware/software, including Symbolic Lisp machines and Sun Workstations.
+I wished to provide a cheaper alternative for Lisp programmers that could not afford a Symbolics Lisp machine, which was designed as a personal computer for a single user.
+Sun workstations were Unix multiuser computers and could be used for a variety of more general applications.
+In particular I added a CLOS implementation, as well as a graphical facility based on CLX that used the X Window System API.
+I also extended the debugger so that it could also step backwards, since the cause of an error must be often traced to earlier steps.
+The whole combination was called DCL (DELPHI Common Lisp) and it would run on Unix and Sun SPARC workstations in particular.
+I also developed a version for the Sun Runner, which was a Sun Workstation with a x86 CPU.
+
+KCL was not available under an Open Source licence and each user was required to send a signed copy of the license to Kyoto.
+I was a friend of Reiji Nakajima, the director of the Computer Science Research Group in Kyoto. I went to visit him in 1988 and convinced him to allow me to distribute DCL with a GPL licence.
+In 1994 I left DELPHI and went back to the University of Pisa, where I decided to build a version of DCL that would allow integrating Lisp code with other parts of the application written possibly  in other languages.
+Since Lisp had become less popular and Lisp programmers were diminishing in number, I used the acronym ECL, which you could read as Embeddable Common Lisp as wells ECoLisp, as a joke for the ecological goal of preserving a disappearing species, the Lisp programmer.
+
+A major difference with KCL/DCL was to use the C stack, disposing with the special Lisp stack and introducing unboxed types.
+That required a major rewrite of the interpreter and compiler.
+I also introduced a conservative garbage collector, so that C data and Lisp data would be allowed to coexist on the stack, and tracing from the C stack would work, even though certain values on the stack might be confused as Lisp object pointers and occasionally preserved longer than needed.
+I also added the ability to dump an image of the running system, with all libraries pre-loaded, so that one could start Lisp with a full environment ready for use.
+In particular I wished to provide an environment that would feel similar to the Lisp on a Symbolics Lisp Machine.
+I also added a multithreading facility, fully based on the Unix setjmp/lonjmp functions, at a time were multithreading was not widely available nor supported by OS libraries like pthreads.
+I made the combination of these facilities, that provided support for higher level language facilities, the Common Runtime Support, which included: GC, threading, image dump/reload, I/O.
+The CRS in fact allowed to run and mix code from three languages: C, Lisp and Prolog. The idea was that each part of an application might be written in the most convenient language, or use existing code, but could interoperate. Lisp programmers at the time had to rewrite all their code in Lisp, with a significant effort with respect to other programmers, who could just load available code or libraries.
+A similar idea of a Common Runtime for several programming language is the basis for example of .Net Common Language Runtime.
+
+The conservative GC idea was also the basis for my later development of CMM (Customizable Memory Management) for C++.
+My colleagues mathematicians, that had been working on symbolic computer algebra systems in Lisp, had decided to switch to C++, justifying their choice for performance reasons and because they thought that C++ was a more widely used language.
+Despite I was showing them benchmarks and proving that by compiling to C, ECL had similar performance to C++, I eventually gave up.
+However I put the condition to have a GC for C++. Hence I implemented a mostly copying conservative garbage collection for C++, which is actually a framework that allows defining different heaps with different reclaimation policies.
+
+In 1994 I met Bill Joy, a founder of Sun Microsystem and a friend of mine, who told me they were developing a new programming language, to be used in a variety of environments and which needed a garbage collector.
+I gave him a copy of my Usenix C++ Conference paper on CMM, that contained an FTP link to the code.
+Shortly thereafter I had discussions with Joy’s colleagues at Sun Engineering who had started using CMM in the implementation of their new programming language Java.
+So there is a lineage from ECL to Java, at least as GC is concerned.
+
+Regards
+
+— Giuseppe
