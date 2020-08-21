@@ -75,8 +75,6 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-/* To get APCProc calls */
-#define _WIN32_WINNT 0x400
 #include <signal.h>
 
 #if defined(_MSC_VER) || defined(__MINGW32__)

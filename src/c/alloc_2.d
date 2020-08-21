@@ -446,15 +446,10 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
       ecl_mark_env(o->process.env);
     break;
   case t_lock:
-    MAYBE_MARK(o->lock.queue_list);
-    MAYBE_MARK(o->lock.queue_spinlock);
     MAYBE_MARK(o->lock.owner);
     MAYBE_MARK(o->lock.name);
     break;
   case t_condition_variable:
-    MAYBE_MARK(o->condition_variable.queue_spinlock);
-    MAYBE_MARK(o->condition_variable.queue_list);
-    MAYBE_MARK(o->condition_variable.lock);
     break;
   case t_rwlock:
     MAYBE_MARK(o->rwlock.name);
@@ -1020,9 +1015,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.process.queue_record));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
-    to_bitmap(&o, &(o.lock.owner)) |
-    to_bitmap(&o, &(o.lock.queue_spinlock)) |
-    to_bitmap(&o, &(o.lock.queue_list));
+    to_bitmap(&o, &(o.lock.owner));
 #  ifdef ECL_RWLOCK
   type_info[t_rwlock].descriptor =
     to_bitmap(&o, &(o.rwlock.name));
@@ -1031,10 +1024,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.rwlock.name)) |
     to_bitmap(&o, &(o.rwlock.mutex));
 #  endif
-  type_info[t_condition_variable].descriptor =
-    to_bitmap(&o, &(o.condition_variable.lock)) |
-    to_bitmap(&o, &(o.condition_variable.queue_list)) |
-    to_bitmap(&o, &(o.condition_variable.queue_spinlock));
+  type_info[t_condition_variable].descriptor = 0;
   type_info[t_semaphore].descriptor = 
     to_bitmap(&o, &(o.semaphore.name)) |
     to_bitmap(&o, &(o.semaphore.queue_list)) |
@@ -1123,6 +1113,20 @@ standard_finalizer(cl_object o)
     GC_unregister_disappearing_link((void**)&(o->weak.value));
     break;
 #ifdef ECL_THREADS
+  case t_lock: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->lock.mutex);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_condition_variable: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_cond_var_destroy(&o->condition_variable.cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
 # ifdef ECL_RWLOCK
   case t_rwlock: {
     const cl_env_ptr the_env = ecl_process_env();
@@ -1169,9 +1173,13 @@ register_finalizer(cl_object o, void *finalized_object,
   case t_codeblock:
 #endif
   case t_stream:
-#if defined(ECL_THREADS) && defined(ECL_RWLOCK)
+#if defined(ECL_THREADS)
+  case t_lock:
+  case t_condition_variable:
+# if defined(ECL_RWLOCK)
   case t_rwlock:
-#endif
+# endif
+#endif  /* ECL_THREADS */
     /* Don't delete the standard finalizer. */
     if (fn == NULL) {
       fn = (GC_finalization_proc)wrapped_finalizer;

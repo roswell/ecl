@@ -928,12 +928,26 @@ struct ecl_dummy {
 };
 
 #ifdef ECL_THREADS
+
+#ifdef ECL_WINDOWS_THREADS
+typedef HANDLE ecl_mutex_t;
+typedef struct ecl_cond_var_t {
+        HANDLE broadcast_event;
+        HANDLE signal_event;
+        cl_index state;
+} ecl_cond_var_t;
+#else
+typedef pthread_mutex_t ecl_mutex_t;
+typedef pthread_cond_t ecl_cond_var_t;
+#endif
+
 enum {
         ECL_PROCESS_INACTIVE = 0,
         ECL_PROCESS_BOOTING,
         ECL_PROCESS_ACTIVE,
         ECL_PROCESS_EXITING
 };
+
 struct ecl_process {
         _ECL_HDR;
         cl_object name;
@@ -990,8 +1004,7 @@ struct ecl_barrier {
 
 struct ecl_lock {
         _ECL_HDR1(recursive);
-        cl_object queue_list;
-        cl_object queue_spinlock;
+        ecl_mutex_t mutex;
         cl_object owner;       /* thread holding the lock or NIL */
         cl_object name;
         cl_fixnum counter;
@@ -1020,9 +1033,7 @@ struct ecl_rwlock {
 
 struct ecl_condition_variable {
         _ECL_HDR;
-        cl_object queue_list;
-        cl_object queue_spinlock;
-        cl_object lock;
+        ecl_cond_var_t cv;
 };
 #endif /* ECL_THREADS */
 

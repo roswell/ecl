@@ -237,6 +237,7 @@
 "h/object.h"
 "h/page.h"
 "h/stacks.h"
+"h/threads.h"
 "lsp/arraylib.lsp"
 "lsp/assert.lsp"
 "lsp/autoload.lsp"

@@ -387,7 +387,7 @@ print_lock(char *prefix, cl_object l, ...)
     printf("\n%ld\t", ecl_fixnum(env->own_process->process.name));
     vprintf(prefix, args);
     if (l != ECL_NIL) {
-      cl_object p = l->lock.queue_list;
+      cl_object p = l->semaphore.queue_list;
       while (p != ECL_NIL) {
         printf(" %lx", ecl_fixnum(ECL_CONS_CAR(p)->process.name));
         p = ECL_CONS_CDR(p);
