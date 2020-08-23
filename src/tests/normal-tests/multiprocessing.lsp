@@ -788,3 +788,138 @@
       ;; clean up
       (mapc #'mp:process-kill all-processes)
       (mapc #'mp:process-join all-processes))))
+
+
+;; Condition variables
+(test-with-timeout mp.cv.wait-and-signal
+  (let* ((mutex (mp:make-lock :name "cv.wait-and-signal"))
+         (cv (mp:make-condition-variable))
+         (counter-before 0)
+         (counter-after 0)
+         (n-threads 10)
+         (waiting-processes
+          (loop repeat n-threads collect
+               (mp:process-run-function
+                "cv.wait-and-signal"
+                (lambda ()
+                  (mp:get-lock mutex)
+                  (incf counter-before)
+                  (mp:condition-variable-wait cv mutex)
+                  (when (not (eq (mp:lock-owner mutex) mp:*current-process*))
+                    (error "Wrong lock owner"))
+                  (incf counter-after)
+                  (mp:giveup-lock mutex))))))
+    (loop until (mp:with-lock (mutex) (= counter-before n-threads)))
+    ;; signal wakes up _at least_ one thread each time it is called (for
+    ;; efficiency reasons, the posix specification explicitely allows waking
+    ;; up more than one thread)
+    (loop with n-signaled = 0 ; minimum number of threads that have woken up
+          until (= n-signaled n-threads)
+          do (mp:get-lock mutex)
+             (is (eq (mp:lock-owner mutex) mp:*current-process*))
+             (mp:condition-variable-signal cv)
+             (mp:giveup-lock mutex)
+             (is (not (eq (mp:lock-owner mutex) mp:*current-process*)))
+             (loop until (mp:with-lock (mutex)
+                           (and (> counter-after n-signaled)
+                                (setf n-signaled counter-after)))))))
+
+(test-with-timeout mp.cv.wait-and-broadcast
+  (let* ((mutex (mp:make-lock :name "cv.wait-and-broadcast"))
+         (cv (mp:make-condition-variable))
+         (counter-before 0)
+         (counter-after 0)
+         (wakeup nil)
+         (n-threads 10)
+         (waiting-processes
+          (loop repeat n-threads collect
+               (mp:process-run-function
+                "cv.wait-and-broadcast"
+                (lambda ()
+                  (mp:get-lock mutex)
+                  (incf counter-before)
+                  (loop until wakeup ; ignore spurious wakeups (allowed by posix)
+                        do (mp:condition-variable-wait cv mutex))
+                  (when (not (eq (mp:lock-owner mutex) mp:*current-process*))
+                    (error "Wrong lock owner"))
+                  (incf counter-after)
+                  (mp:giveup-lock mutex))))))
+    (loop until (mp:with-lock (mutex) (= counter-before n-threads)))
+    ;; broadcast wakes up all threads
+    (mp:get-lock mutex)
+    (is (eq (mp:lock-owner mutex) mp:*current-process*))
+    (setf wakeup t)
+    (mp:condition-variable-broadcast cv)
+    (mp:giveup-lock mutex)
+    (is (not (eq (mp:lock-owner mutex) mp:*current-process*)))
+    (mapc #'mp:process-join waiting-processes)
+    (is (= counter-after n-threads))))
+
+(test-with-timeout (mp.cv.timedwait-timeout 30) ; whole test times out after 30 seconds
+  (let* ((mutex (mp:make-lock :name "cv.timedwait-timeout"))
+         (cv (mp:make-condition-variable))
+         (flag 0)
+         (waiting-process
+          (mp:process-run-function
+           "cv.timedwait-timeout"
+           (lambda ()
+             (mp:get-lock mutex)
+             (setf flag 1)
+             ;; condition variable times out after 1 second, before
+             ;; whole test times out
+             (mp:condition-variable-timedwait cv mutex 1)
+             (when (not (eq (mp:lock-owner mutex) mp:*current-process*))
+               (error "Wrong lock owner"))
+             (setf flag 2)
+             (mp:giveup-lock mutex)))))
+    (loop until (mp:with-lock (mutex) (/= flag 0)))
+    (mp:process-join waiting-process)
+    (is (null (mp:lock-owner mutex)))
+    (is (= flag 2))))
+
+(test-with-timeout (mp.cv.timedwait-signal 30) ; whole test times out after 30 seconds
+  (let* ((mutex (mp:make-lock :name "cv.timedwait-signal"))
+         (cv (mp:make-condition-variable))
+         (flag 0)
+         (waiting-process
+          (mp:process-run-function
+           "cv.timedwait-signal"
+           (lambda ()
+             (mp:get-lock mutex)
+             (setf flag 1)
+             ;; condition variable times out after 60 seconds, after
+             ;; whole test times out
+             (mp:condition-variable-timedwait cv mutex 60)
+             (when (not (eq (mp:lock-owner mutex) mp:*current-process*))
+               (error "Wrong lock owner"))
+             (setf flag 2)
+             (mp:giveup-lock mutex)))))
+    (loop until (mp:with-lock (mutex) (/= flag 0)))
+    (mp:get-lock mutex)
+    (is (eq (mp:lock-owner mutex) mp:*current-process*))
+    (mp:condition-variable-signal cv)
+    (mp:giveup-lock mutex)
+    (is (not (eq (mp:lock-owner mutex) mp:*current-process*)))
+    (mp:process-join waiting-process)
+    (is (= flag 2))))
+
+(test-with-timeout mp.cv.interruptible
+  (let* ((mutex (mp:make-lock :name "cv.interruptible"))
+         (cv (mp:make-condition-variable))
+         (flag 0)
+         (waiting-process
+          (mp:process-run-function
+           "cv.interruptible"
+           (lambda ()
+             (mp:get-lock mutex)
+             (setf flag 1)
+             (mp:condition-variable-wait cv mutex)
+             (setf flag 2)
+             (error "We shouldn't have gotten to this point")))))
+    (loop until (mp:with-lock (mutex) (/= flag 0)))
+    (sleep 0.1)
+    (is (mp:process-kill waiting-process))
+    (mp:process-join waiting-process)
+    (is (null (mp:lock-owner mutex)))
+    (is (= flag 1))))
+
