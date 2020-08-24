@@ -58,6 +58,12 @@ one has to consider:
 @item Reentrancy: Functions, which usually are not called recursively can be re-entered during execution of the interrupt.
 @item Stack unwinding: Non-local jumps like @code{throw} or @code{return-from} in the interrupting code will handle @code{unwind-protect} forms like usual. However, the cleanup forms of an @code{unwind-protect} can still be interrupted. In that case the execution flow will jump to the next @code{unwind-protect}.
 @end itemize
+Note also that no guarantees are made that functions from the Common
+Lisp standard or ECL extensions are interrupt safe (although most of
+them will be). In particular, the compiler (@code{compile} and
+@code{compile-file} functions), FFI calls and aquire/release functions
+for multithreading synchronization objects like mutexes or condition
+variables should not be interrupted by @coderef{mp:interrupt-process}.
 
 @exindex Process interruption
 Example:
