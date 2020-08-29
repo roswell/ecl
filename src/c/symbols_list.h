@@ -2069,7 +2069,6 @@ cl_symbols[] = {
 #endif
 {SYS_ "RUN-PROGRAM-INNER" ECL_FUN("si_run_program_inner", si_run_program_inner, 4) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "SPAWN-SUBPROCESS" ECL_FUN("si_spawn_subprocess", si_spawn_subprocess, 6) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "CLOSE-WINDOWS-HANDLE" ECL_FUN("si_close_windows_handle", IF_WINDOWS(si_close_windows_handle), 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 /* ~ */
 
 {EXT_ "*INVOKE-DEBUGGER-HOOK*" ECL_FUN(NULL, NULL, -1) ECL_VAR(EXT_SPECIAL, ECL_NIL)},
