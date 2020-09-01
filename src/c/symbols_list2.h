@@ -94,6 +94,7 @@ cl_symbols[] = {
 
 {"NIL",NULL,-1},
 {"T",NULL,-1},
+{"*PACKAGE*",NULL,-1},
 {SYS_ "UNBOUND","si_unbound",0},
 {SYS_ "PROTECT-TAG",NULL,-1},
 {SYS_ "DUMMY-TAG",NULL,-1},
@@ -139,7 +140,6 @@ cl_symbols[] = {
 {"*MACROEXPAND-HOOK*",NULL,-1},
 {"*MODULES*",NULL,-1},
 {EXT_ "*MODULE-PROVIDER-FUNCTIONS*",NULL,-1},
-{"*PACKAGE*",NULL,-1},
 {"*PRINT-ARRAY*",NULL,-1},
 {"*PRINT-BASE*",NULL,-1},
 {"*PRINT-CASE*",NULL,-1},

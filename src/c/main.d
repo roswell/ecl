@@ -343,6 +343,7 @@ ecl_def_ct_base_string(str_LSP,"LSP",3,static,const);
 ecl_def_ct_base_string(str_lisp,"lisp",4,static,const);
 ecl_def_ct_base_string(str_NIL,"NIL",3,static,const);
 ecl_def_ct_base_string(str_slash,"/",1,static,const);
+ecl_def_ct_base_string(str_XPACKAGEX,"*PACKAGE*",9,static,const);
 
 ecl_def_ct_single_float(flt_zero,0,static,const);
 ecl_def_ct_single_float(flt_zero_neg,-0.0,static,const);
@@ -536,6 +537,22 @@ cl_boot(int argc, char **argv)
 #endif
   cl_num_symbols_in_core=2;
 
+  /* FIXME: Simplifying the intialization routine of the core symbol
+   * table would remove the need to set up the *PACKAGE* symbol here
+   * to be able to create packages. */
+  ECL_XPACKAGEX_SYMBOL->symbol.t = (short)t_symbol;
+  ECL_XPACKAGEX_SYMBOL->symbol.dynamic = 0;
+  ECL_XPACKAGEX_SYMBOL->symbol.value = ECL_NIL;
+  ECL_XPACKAGEX_SYMBOL->symbol.name = str_XPACKAGEX;
+  ECL_XPACKAGEX_SYMBOL->symbol.gfdef = ECL_NIL;
+  ECL_XPACKAGEX_SYMBOL->symbol.plist = ECL_NIL;
+  ECL_XPACKAGEX_SYMBOL->symbol.hpack = ECL_NIL;
+  ECL_XPACKAGEX_SYMBOL->symbol.stype = ecl_stp_special;
+#ifdef ECL_THREADS
+  ECL_XPACKAGEX_SYMBOL->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
+#endif
+  cl_num_symbols_in_core=3;
+
 #ifdef NO_PATH_MAX
   cl_core.path_max = sysconf(_PC_PATH_MAX);
 #else
@@ -620,6 +637,10 @@ cl_boot(int argc, char **argv)
   ECL_T->symbol.hpack = cl_core.lisp_package;
   cl_import2(ECL_T, cl_core.lisp_package);
   cl_export2(ECL_T, cl_core.lisp_package);
+
+  ECL_XPACKAGEX_SYMBOL->symbol.hpack = cl_core.lisp_package;
+  cl_import2(ECL_XPACKAGEX_SYMBOL, cl_core.lisp_package);
+  cl_export2(ECL_XPACKAGEX_SYMBOL, cl_core.lisp_package);
 
   /* At exit, clean up */
   atexit(cl_shutdown);
