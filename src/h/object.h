@@ -993,13 +993,16 @@ struct ecl_semaphore {
         cl_fixnum counter;
 };
 
+#define ECL_BARRIER_WAKEUP_NORMAL 1
+#define ECL_BARRIER_WAKEUP_KILL 2
+
 struct ecl_barrier {
-        _ECL_HDR;
-        cl_object queue_list;
-        cl_object queue_spinlock;
+        _ECL_HDR2(disabled,wakeup);
         cl_object name;
-        cl_fixnum count;
-        cl_fixnum arrivers_count;
+        cl_index count;
+        cl_index arrivers_count;
+        ecl_mutex_t mutex;
+        ecl_cond_var_t cv;
 };
 
 struct ecl_lock {
