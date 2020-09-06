@@ -987,10 +987,11 @@ struct ecl_queue {
 
 struct ecl_semaphore {
         _ECL_HDR;
-        cl_object queue_list;
-        cl_object queue_spinlock;
         cl_object name;
         cl_fixnum counter;
+        cl_fixnum wait_count;
+        ecl_mutex_t mutex;
+        ecl_cond_var_t cv;
 };
 
 #define ECL_BARRIER_WAKEUP_NORMAL 1

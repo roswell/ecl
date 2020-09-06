@@ -458,8 +458,6 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
     break;
 #  endif
   case t_semaphore:
-    MAYBE_MARK(o->semaphore.queue_list);
-    MAYBE_MARK(o->semaphore.queue_spinlock);
     MAYBE_MARK(o->semaphore.name);
     break;
   case t_barrier:
@@ -1024,9 +1022,7 @@ init_alloc(void)
 #  endif
   type_info[t_condition_variable].descriptor = 0;
   type_info[t_semaphore].descriptor = 
-    to_bitmap(&o, &(o.semaphore.name)) |
-    to_bitmap(&o, &(o.semaphore.queue_list)) |
-    to_bitmap(&o, &(o.semaphore.queue_spinlock));
+    to_bitmap(&o, &(o.semaphore.name));
   type_info[t_barrier].descriptor = 
     to_bitmap(&o, &(o.barrier.name));
   type_info[t_mailbox].descriptor = 
@@ -1131,6 +1127,14 @@ standard_finalizer(cl_object o)
     ecl_enable_interrupts_env(the_env);
     break;
   }
+  case t_semaphore: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->semaphore.mutex);
+    ecl_cond_var_destroy(&o->semaphore.cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
 # ifdef ECL_RWLOCK
   case t_rwlock: {
     const cl_env_ptr the_env = ecl_process_env();
@@ -1181,6 +1185,7 @@ register_finalizer(cl_object o, void *finalized_object,
   case t_lock:
   case t_condition_variable:
   case t_barrier:
+  case t_semaphore:
 # if defined(ECL_RWLOCK)
   case t_rwlock:
 # endif
