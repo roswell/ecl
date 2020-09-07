@@ -29,9 +29,6 @@
 # if !defined(AO_HAVE_compare_and_swap)
 #  error "ECL needs AO_compare_and_swap or an equivalent"
 # endif
-# if !defined(AO_HAVE_fetch_and_add1)
-#  error "Cannot implement mailboxs without AO_fetch_and_add1"
-# endif
 # if !defined(AO_HAVE_fetch_and_add)
 #  error "ECL needs AO_fetch_and_add or an equivalent"
 # endif

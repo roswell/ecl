@@ -1018,11 +1018,12 @@ struct ecl_mailbox {
         _ECL_HDR;
         cl_object name;
         cl_object data;
-        cl_object reader_semaphore;
-        cl_object writer_semaphore;
+        ecl_mutex_t mutex;
+        ecl_cond_var_t reader_cv;
+        ecl_cond_var_t writer_cv;
+        cl_index message_count;
         cl_index read_pointer;
         cl_index write_pointer;
-        cl_index mask;
 };
 
 struct ecl_rwlock {
