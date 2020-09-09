@@ -1753,7 +1753,7 @@ extern ECL_API cl_object mp_compare_and_swap_symbol_plist(cl_object x, cl_object
 
 /* tcp.c */
 
-#ifdef TCP
+#ifdef ECL_TCP
 extern ECL_API cl_object si_open_client_stream(cl_object host, cl_object port);
 extern ECL_API cl_object si_open_server_stream(cl_object port);
 extern ECL_API cl_object si_open_unix_socket_stream(cl_object path);

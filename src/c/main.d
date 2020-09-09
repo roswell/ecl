@@ -296,7 +296,7 @@ cl_shutdown(void)
 #ifdef ENABLE_DLOPEN
     ecl_library_close_all();
 #endif
-#ifdef TCP
+#ifdef ECL_TCP
     ecl_tcp_close_all();
 #endif
   }

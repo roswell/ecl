@@ -637,7 +637,7 @@
 #undef STDC_HEADERS
 
 /* Network streams */
-#undef TCP
+#undef ECL_TCP
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME

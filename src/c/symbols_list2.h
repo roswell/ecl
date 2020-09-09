@@ -45,7 +45,7 @@ typedef struct {
 #else
 # define IF_MP(x) NULL
 #endif
-#ifdef TCP
+#ifdef ECL_TCP
 # define IF_TCP(x) x
 #else
 # define IF_TCP(x) NULL
@@ -1323,13 +1323,13 @@ cl_symbols[] = {
 {SYS_ "DISPLAY-PROFILE",IF_PROFILE("si_display_profile"),-1},
 /* #endif PROFILE */
 
-/* #ifdef TCP */
+/* #ifdef ECL_TCP */
 {SYS_ "*PROFILE-ARRAY*",NULL,-1},
 {SYS_ "OPEN-CLIENT-STREAM",IF_TCP("si_open_client_stream"),2},
 {SYS_ "OPEN-SERVER-STREAM",IF_TCP("si_open_server_stream"),1},
 {SYS_ "OPEN-UNIX-SOCKET-STREAM",IF_TCP("si_open_unix_socket_stream"),1},
 {SYS_ "LOOKUP-HOST-ENTRY",IF_TCP("si_lookup_host_entry"),1},
-/* #endif TCP */
+/* #endif ECL_TCP */
 
 {EXT_ "CATCH-SIGNAL","si_catch_signal",-3},
 {EXT_ "GET-SIGNAL-HANDLER","si_get_signal_handler",1},
