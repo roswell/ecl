@@ -703,7 +703,7 @@ AC_SUBST(CL_FIXNUM_MAX)
 AC_SUBST(CL_FIXNUM_MIN)
 AC_SUBST(CL_INT_BITS)
 AC_SUBST(CL_LONG_BITS)
-AC_MSG_CHECKING(appropiate type for fixnums)
+AC_MSG_CHECKING(appropriate type for fixnums)
 if test -z "${CL_FIXNUM_TYPE}" ; then
   AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 int main() {
@@ -778,7 +778,7 @@ int main() {
 }]])],[eval "`cat conftestval`"],[],[])
 fi
 if test -z "${CL_FIXNUM_TYPE}" ; then
-AC_MSG_ERROR(There is no appropiate integer type for the cl_fixnum type)
+AC_MSG_ERROR(There is no appropriate integer type for the cl_fixnum type)
 fi
 AC_MSG_RESULT([${CL_FIXNUM_TYPE}])])
 

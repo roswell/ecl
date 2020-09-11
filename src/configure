@@ -1493,7 +1493,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-cross-config=f   supply configuration for a cross compiler
   --with-C-gmp            Deprecated! See --enable-gmp
-  --with-system-gmp       Derpecated! See --enable-gmp
+  --with-system-gmp       Deprecated! See --enable-gmp
   --with-gmp=args         Deprecated! See --with-gmp-args
   --with-gmp-args=args    supply arguments for configuring GMP library
   --with-gmp-prefix=path  prefix for system GMP includes and libraries
@@ -7887,8 +7887,8 @@ $as_echo "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking appropiate type for fixnums" >&5
-$as_echo_n "checking appropiate type for fixnums... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking appropriate type for fixnums" >&5
+$as_echo_n "checking appropriate type for fixnums... " >&6; }
 if test -z "${CL_FIXNUM_TYPE}" ; then
   if test "$cross_compiling" = yes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
@@ -7979,7 +7979,7 @@ fi
 
 fi
 if test -z "${CL_FIXNUM_TYPE}" ; then
-as_fn_error $? "There is no appropiate integer type for the cl_fixnum type" "$LINENO" 5
+as_fn_error $? "There is no appropriate integer type for the cl_fixnum type" "$LINENO" 5
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${CL_FIXNUM_TYPE}" >&5
 $as_echo "${CL_FIXNUM_TYPE}" >&6; }

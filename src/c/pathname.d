@@ -872,7 +872,7 @@ coerce_to_file_pathname(cl_object pathname)
 
 /*
  * coerce_to_physical_pathname(P) converts P to a physical pathname,
- * performing the appropiate transformation if P was a logical pathname.
+ * performing the appropriate transformation if P was a logical pathname.
  */
 cl_object
 coerce_to_physical_pathname(cl_object x)
