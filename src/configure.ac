@@ -76,7 +76,7 @@ AC_ARG_WITH(C-gmp,
 
 AC_ARG_WITH(system-gmp,
   AS_HELP_STRING( [--with-system-gmp],
-                  [Derpecated! See --enable-gmp]),
+                  [Deprecated! See --enable-gmp]),
   [], [with_system_gmp="auto"])
 
 AC_ARG_WITH(gmp,
@@ -715,7 +715,7 @@ dnl  CFLAGS="${CFLAGS} -fstrict-aliasing"
 dnl fi
 
 dnl ----------------------------------------------------------------------
-dnl Check the appropiate type for cl_fixnum/cl_index
+dnl Check the appropriate type for cl_fixnum/cl_index
 ECL_FIXNUM_TYPE
 ECL_INTEGER_TYPES
 
