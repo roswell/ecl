@@ -137,6 +137,13 @@ ecl_make_symbol(const char *s, const char *p)
 cl_object
 ecl_symbol_value(cl_object s)
 {
+#ifndef ECL_FINAL
+  /* Symbols are not initialized yet. This test is issued only during ECL
+     compilation to ensure, that we have no early references in the core. */
+  if(cl_num_symbols_in_core < 3) {
+    ecl_internal_error("SYMBOL-VALUE: symbols are not initialized yet.");
+  }
+#endif
   if (Null(s)) {
     return s;
   } else {
