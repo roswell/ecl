@@ -288,6 +288,7 @@ struct ecl_symbol {
         cl_object plist;        /*  property list  */
                                 /*  This field coincides with cons.car  */
         cl_object name;         /*  print name  */
+        cl_object cname;        /*  associated C name (or NIL)  */
         cl_object hpack;        /*  home package  */
                                 /*  ECL_NIL for uninterned symbols  */
 #ifdef ECL_THREADS
