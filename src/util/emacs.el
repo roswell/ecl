@@ -201,7 +201,6 @@
 "c/structure.d"
 "c/symbol.d"
 "c/symbols_list.h"
-"c/symbols_list2.h"
 "c/tcp.d"
 "c/threads/atomic.d"
 "c/threads/barrier.d"
