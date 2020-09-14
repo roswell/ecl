@@ -310,9 +310,10 @@ extern ECL_API cl_object si_mangle_name _ECL_ARGS((cl_narg narg, cl_object symbo
 typedef union {
         struct {
                 const char *name;
-                int type;
+                const char *translation;
                 void *fun;
-                short narg;
+                int narg;
+                int type;
                 cl_object value;
         } init;
         struct ecl_symbol data;
