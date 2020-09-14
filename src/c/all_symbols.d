@@ -153,6 +153,9 @@ mangle_name(cl_object output, unsigned char *source, int l)
       }
     }
   }
+  if (!Null(symbol->symbol.cname)) {
+    @(return found symbol->symbol.cname minarg maxarg);
+  }
   package = ecl_symbol_package(symbol);
   if (Null(package)) {
     ;
@@ -204,7 +207,8 @@ mangle_name(cl_object output, unsigned char *source, int l)
 @)
 
 static void
-make_this_symbol(int i, cl_object s, int code, const char *name,
+make_this_symbol(int i, cl_object s, int code,
+                 const char *name, const char *cname,
                  cl_objectfn fun, int narg, cl_object value)
 {
   enum ecl_stype stp;
@@ -242,6 +246,7 @@ make_this_symbol(int i, cl_object s, int code, const char *name,
   s->symbol.stype = stp;
   s->symbol.hpack = package;
   s->symbol.name = ecl_make_constant_base_string(name,-1);
+  s->symbol.cname = ecl_cstring_to_base_string_or_nil(cname);
   if (package == cl_core.keyword_package) {
     package->pack.external =
       _ecl_sethash(s->symbol.name, package->pack.external, s);
@@ -285,7 +290,7 @@ void
 init_all_symbols(void)
 {
   int i, code, narg;
-  const char *name;
+  const char *name, *cname;
   cl_object s, value;
   cl_objectfn fun;
 
@@ -297,6 +302,7 @@ init_all_symbols(void)
     fun = (cl_objectfn)cl_symbols[i].init.fun;
     narg = cl_symbols[i].init.narg;
     value = cl_symbols[i].init.value;
-    make_this_symbol(i, s, code, name, fun, narg, value);
+    cname = cl_symbols[i].init.translation;
+    make_this_symbol(i, s, code, name, cname, fun, narg, value);
   }
 }
