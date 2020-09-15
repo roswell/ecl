@@ -71,7 +71,7 @@ si_load_binary(cl_object filename, cl_object verbose,
  OUTPUT:
   ecl_return1(the_env, output);
 }
-#endif /* !ENABLE_DLOPEN */
+#endif /* ENABLE_DLOPEN */
 
 cl_object
 si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object external_format)
