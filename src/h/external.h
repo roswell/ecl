@@ -2024,6 +2024,7 @@ extern ECL_API cl_object cl_long_site_name();
 extern ECL_API cl_object cl_lisp_implementation_type();
 extern ECL_API cl_object cl_lisp_implementation_version();
 extern ECL_API cl_object si_lisp_implementation_vcs_id();
+extern ECL_API cl_object si_lisp_core_checksum();
 extern ECL_API cl_object cl_machine_type();
 extern ECL_API cl_object cl_machine_instance();
 extern ECL_API cl_object cl_machine_version();

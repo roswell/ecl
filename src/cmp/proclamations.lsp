@@ -1382,6 +1382,7 @@
 ;; ECL extensions
 
 (proclamation ext::lisp-implementation-vcs-id () string :pure)
+(proclamation si::lisp-core-checksum () fixnum :pure)
 (proclamation si::room-report () (values t t t t t t t t))
 (proclamation si::reset-gbc-count () t)
 (proclamation ext:gc (&optional gen-bool) t)

@@ -2081,6 +2081,7 @@ cl_symbols[] = {
 {EXT_ "LOCATION" ECL_FUN(NULL, NULL, -1) ECL_VAR(EXT_ORDINARY, ECL_NIL)},
 
 {EXT_ "LISP-IMPLEMENTATION-VCS-ID" ECL_FUN("si_lisp_implementation_vcs_id", ECL_NAME(si_lisp_implementation_vcs_id), 0) ECL_VAR(EXT_ORDINARY, ECL_NIL)},
+{SYS_ "LISP-CORE-CHECKSUM" ECL_FUN("si_lisp_core_checksum", ECL_NAME(si_lisp_core_checksum), 0) ECL_VAR(EXT_ORDINARY, ECL_NIL)},
 
 {SYS_ "SIGNAL-SERVICING" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, ECL_NIL)},
 

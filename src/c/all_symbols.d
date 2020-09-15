@@ -206,6 +206,31 @@ mangle_name(cl_object output, unsigned char *source, int l)
   @(return found output minarg maxarg);
 @)
 
+#ifndef ECL_FINAL
+/* Fletcher's checksum is curbed from Wikipedia[1]. We use it to compute the
+   checksum of the symbol table. We account only for symbol names in sequence,
+   because we want to allow loading FASL's from different ECL builds (possibly
+   with a different configuration), under the condition that the table indexes
+   are matching.
+
+   [1] https://en.wikipedia.org/wiki/Fletcher%27s_checksum */
+
+uint16_t cl_core_symbols_checksum = 0;
+
+static void
+update_symbols_checksum(const char *data) {
+  size_t i = 0;
+  uint16_t sum1 = cl_core_symbols_checksum & 255;
+  uint16_t sum2 = cl_core_symbols_checksum >> 8;
+  uint8_t word;
+  while ((word=(uint8_t)data[i++])) {
+    sum1 = (sum1 + word) % 255;
+    sum2 = (sum2 + sum1) % 255;
+  }
+  cl_core_symbols_checksum = (sum2 << 8) | sum1;
+}
+#endif /* ECL_FINAL */
+
 static void
 make_this_symbol(int i, cl_object s, int code,
                  const char *name, const char *cname,
@@ -281,7 +306,11 @@ make_this_symbol(int i, cl_object s, int code,
   /* XXX to allow the Lisp compiler to check that the narg declaration
    * in symbols_list.h matches the actual function definition, we save
    * narg here. -- mg 2019-12-02 */
-  si_set_symbol_plist(s, cl_list(2, @'call-arguments-limit', ecl_make_fixnum(narg)));
+  si_set_symbol_plist(s, cl_list(2,
+                                 @'call-arguments-limit',
+                                 ecl_make_fixnum(narg)));
+  /* Update the symbols checksum. -- jd 2020-09-15 */
+  update_symbols_checksum(name);
 #endif
   cl_num_symbols_in_core = i + 1;
 }
@@ -305,4 +334,7 @@ init_all_symbols(void)
     cname = cl_symbols[i].init.translation;
     make_this_symbol(i, s, code, name, cname, fun, narg, value);
   }
+#ifndef ECL_FINAL
+  ECL_SET(@'SI::LISP-CORE-CHECKSUM', ecl_make_fixnum(cl_core_symbols_checksum));
+#endif
 }

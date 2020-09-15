@@ -65,6 +65,9 @@ Returns the version of your ECL as a string."
 (defun ext:lisp-implementation-vcs-id ()
   #.si::+commit-id+)
 
+(defun si::lisp-core-checksum ()
+  #.si::lisp-core-checksum)
+
 (defun machine-type ()
   "Args: ()
 Returns, as a string, the type of the machine on which ECL runs."

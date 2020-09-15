@@ -962,6 +962,7 @@
     short-site-name long-site-name machine-type machine-instance machine-version
     software-type software-version lisp-implementation-type lisp-implementation-version
     si::lisp-implementation-vcs-id
+    si::lisp-core-checksum
     ;; assignment.lsp
     si::setf-definition
     ;; conditions.lsp
