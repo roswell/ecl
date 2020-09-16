@@ -252,12 +252,14 @@ void ~A(cl_object cblock)
          * it is invoked with OBJNULL, to force initialization.
          */
         static cl_object Cblock = OBJNULL;
+        cl_object checksum = ecl_make_fixnum(~A);
         if (cblock != OBJNULL) {
                 Cblock = cblock;
 #ifndef ECL_DYNAMIC_VV
                 cblock->cblock.data = NULL;
 #endif
                 cblock->cblock.data_size = 0;
+                cblock->cblock.checksum = checksum;
                 return;
         }
         Cblock->cblock.data_text = (const cl_object *)\"~A\";
@@ -272,6 +274,7 @@ void ~A(cl_object cblock)
         cl_object current = OBJNULL, next = Cblock;
 ~:{
         current = ecl_make_codeblock();
+        current->cblock.checksum = checksum;
         current->cblock.next = next;
         next = current;
         ecl_init_module(current, ~A);
@@ -526,7 +529,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
     (let ((init-tag (init-name-tag init-name :kind target)))
       (ecase target
         (:program
-         (format c-file +lisp-program-init+ init-name init-tag "" submodules "")
+         (format c-file +lisp-program-init+
+                 init-name (si::lisp-core-checksum) init-tag "" submodules "")
          ;; we don't need wrapper in the program, we have main for that
          ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (format c-file
@@ -540,7 +544,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (linker-cc output-name (list* (namestring o-name) ld-flags)))
         (:static-library
          (format c-file +lisp-program-init+
-                 init-name init-tag prologue-code submodules epilogue-code)
+                 init-name (si::lisp-core-checksum) init-tag
+                 prologue-code submodules epilogue-code)
          (when wrap-name
            (format c-file +lisp-init-wrapper+ wrap-name init-name))
          (format c-file +lisp-library-main+
@@ -552,7 +557,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         #+dlopen
         (:shared-library
          (format c-file +lisp-program-init+
-                 init-name init-tag prologue-code submodules epilogue-code)
+                 init-name (si::lisp-core-checksum) init-tag
+                 prologue-code submodules epilogue-code)
          (when wrap-name
            (format c-file +lisp-init-wrapper+ wrap-name init-name))
          (format c-file +lisp-library-main+
@@ -562,8 +568,9 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (shared-cc output-name (list* o-name ld-flags)))
         #+dlopen
         (:fasl
-         (format c-file +lisp-program-init+ init-name init-tag prologue-code
-                 submodules epilogue-code)
+         (format c-file +lisp-program-init+
+                 init-name (si::lisp-core-checksum) init-tag
+                 prologue-code submodules epilogue-code)
          ;; we don't need wrapper in the fasl, we scan for init function name
          ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (close c-file)

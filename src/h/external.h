@@ -320,6 +320,7 @@ typedef union {
 } cl_symbol_initializer;
 extern ECL_API cl_symbol_initializer cl_symbols[];
 extern ECL_API cl_index cl_num_symbols_in_core;
+extern ECL_API uint16_t cl_core_symbols_checksum;
 
 #define ECL_SYM(name,code) ((cl_object)(cl_symbols+(code)))
 

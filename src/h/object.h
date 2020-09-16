@@ -740,6 +740,7 @@ struct ecl_codeblock {
         const struct ecl_cfunfixed *cfuns;
         cl_object source;               /*  common debug information for this block  */
         cl_object refs;                 /*  reference counter for the library  */
+        cl_object checksum;             /*  the symbol table checksum */
         cl_object error;                /*  error message when loading */
 };
 

@@ -91,6 +91,7 @@ ecl_make_codeblock()
   block->cblock.source = ECL_NIL;
   block->cblock.error = ECL_NIL;
   block->cblock.refs = ecl_make_fixnum(0);
+  block->cblock.checksum = ECL_NIL;
   si_set_finalizer(block, ECL_T);
   return block;
 }

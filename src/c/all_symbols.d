@@ -206,7 +206,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
   @(return found output minarg maxarg);
 @)
 
-#ifndef ECL_FINAL
+/* #ifndef ECL_FINAL */
 /* Fletcher's checksum is curbed from Wikipedia[1]. We use it to compute the
    checksum of the symbol table. We account only for symbol names in sequence,
    because we want to allow loading FASL's from different ECL builds (possibly
@@ -229,7 +229,7 @@ update_symbols_checksum(const char *data) {
   }
   cl_core_symbols_checksum = (sum2 << 8) | sum1;
 }
-#endif /* ECL_FINAL */
+/* #endif /\* ECL_FINAL *\/ */
 
 static void
 make_this_symbol(int i, cl_object s, int code,
@@ -309,9 +309,9 @@ make_this_symbol(int i, cl_object s, int code,
   si_set_symbol_plist(s, cl_list(2,
                                  @'call-arguments-limit',
                                  ecl_make_fixnum(narg)));
+#endif
   /* Update the symbols checksum. -- jd 2020-09-15 */
   update_symbols_checksum(name);
-#endif
   cl_num_symbols_in_core = i + 1;
 }
 
@@ -334,7 +334,7 @@ init_all_symbols(void)
     cname = cl_symbols[i].init.translation;
     make_this_symbol(i, s, code, name, cname, fun, narg, value);
   }
-#ifndef ECL_FINAL
+/* #ifndef ECL_FINAL */
   ECL_SET(@'SI::LISP-CORE-CHECKSUM', ecl_make_fixnum(cl_core_symbols_checksum));
-#endif
+/* #endif */
 }

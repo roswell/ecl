@@ -2316,6 +2316,20 @@ make_data_stream(const cl_object *data)
   }
 }
 
+static void
+verify_module_checksum(cl_object block) {
+  cl_object name = block->cblock.name;
+  cl_object checksum = block->cblock.checksum;
+  cl_object core_checksum = ecl_make_fixnum(cl_core_symbols_checksum);
+  printf("XXX checksum %d vs %u\n",
+         ecl_fixnum(block->cblock.checksum),
+         cl_core_symbols_checksum);
+  if (checksum != core_checksum) {
+    FEerror("Module's ~s checksum is invalid ~a (should be ~a).",
+            3, name, checksum, core_checksum);
+  }
+}
+
 cl_object
 ecl_init_module(cl_object block, void (*entry_point)(cl_object))
 {
@@ -2325,9 +2339,11 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
   cl_index i, len, perm_len, temp_len;
   cl_object in;
   cl_object *VV = NULL, *VVtemp = NULL;
-
-  if (block == NULL)
+  bool checkp = 1;
+  if (block == NULL) {
+    checkp = 0;
     block = ecl_make_codeblock();
+  }
   block->cblock.entry = entry_point;
 
   in = OBJNULL;
@@ -2341,7 +2357,14 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
     /* Communicate the library which Cblock we are using, and get
      * back the amount of data to be processed.
      */
+    printf("XXX about to call entry block\n");
     (*entry_point)(block);
+    if(checkp) {
+      printf("XXX about to call verify module checksum\n");
+      verify_module_checksum(block);
+    } else {
+      printf("XXX skipping verify module checksum\n");
+    }
     perm_len = block->cblock.data_size;
     temp_len = block->cblock.temp_data_size;
     len = perm_len + temp_len;
