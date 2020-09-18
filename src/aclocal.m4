@@ -49,7 +49,9 @@ else
 fi
 if test $ac_cv_c_long_long = yes; then
   if test "x$ECL_LONG_LONG_BITS" = "x"; then
-    AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
+    AC_RUN_IFELSE([AC_LANG_SOURCE([
+[#include <stdio.h>
+ #include <stdlib.h>
 int main() {
   const char *int_type;
   int bits;
@@ -705,7 +707,9 @@ AC_SUBST(CL_INT_BITS)
 AC_SUBST(CL_LONG_BITS)
 AC_MSG_CHECKING(appropriate type for fixnums)
 if test -z "${CL_FIXNUM_TYPE}" ; then
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <stdlib.h>
 int main() {
   const char *int_type;
   int bits;
@@ -790,7 +794,9 @@ dnl
 AC_DEFUN(ECL_LINEFEED_MODE,[
 AC_MSG_CHECKING(character sequence for end of line)
 if test -z "${ECL_NEWLINE}" ; then
-AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <stdlib.h>
 int main() {
   FILE *f = fopen("conftestval","w");
   int c1, c2;
