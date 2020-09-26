@@ -102,7 +102,7 @@ out_of_memory(size_t requested_bytes)
   /* The out of memory condition may happen in more than one thread */
   /* But then we have to ensure the error has not been solved */
 #ifdef ECL_THREADS
-  mp_get_lock_wait(cl_core.error_lock);
+  ecl_mutex_lock(&cl_core.error_lock);
   ECL_UNWIND_PROTECT_BEGIN(the_env)
 #endif
   {
@@ -141,7 +141,7 @@ out_of_memory(size_t requested_bytes)
   }
 #ifdef ECL_THREADS
   ECL_UNWIND_PROTECT_EXIT {
-    mp_giveup_lock(cl_core.error_lock);
+    ecl_mutex_unlock(&cl_core.error_lock);
   } ECL_UNWIND_PROTECT_END;
 #endif
   ecl_bds_unwind1(the_env);
@@ -432,10 +432,8 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 # ifdef ECL_THREADS
   case t_process:
     MAYBE_MARK(o->process.queue_record);
-    MAYBE_MARK(o->process.start_stop_spinlock);
     MAYBE_MARK(o->process.woken_up);
     MAYBE_MARK(o->process.exit_values);
-    MAYBE_MARK(o->process.exit_barrier);
     MAYBE_MARK(o->process.parent);
     MAYBE_MARK(o->process.initial_bindings);
     MAYBE_MARK(o->process.interrupt);
@@ -1002,10 +1000,8 @@ init_alloc(void)
     to_bitmap(&o, &(o.process.interrupt)) |
     to_bitmap(&o, &(o.process.initial_bindings)) |
     to_bitmap(&o, &(o.process.parent)) |
-    to_bitmap(&o, &(o.process.exit_barrier)) |
     to_bitmap(&o, &(o.process.exit_values)) |
     to_bitmap(&o, &(o.process.woken_up)) |
-    to_bitmap(&o, &(o.process.start_stop_spinlock)) |
     to_bitmap(&o, &(o.process.queue_record));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
@@ -1149,6 +1145,14 @@ standard_finalizer(cl_object o)
     break;
   }
 # endif
+  case t_process: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->process.start_stop_lock);
+    ecl_cond_var_destroy(&o->process.exit_barrier);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
   case t_symbol: {
     ecl_atomic_push(&cl_core.reused_indices,
                     ecl_make_fixnum(o->symbol.binding));
@@ -1195,6 +1199,7 @@ register_finalizer(cl_object o, void *finalized_object,
 # if defined(ECL_RWLOCK)
   case t_rwlock:
 # endif
+  case t_process:
 #endif  /* ECL_THREADS */
     /* Don't delete the standard finalizer. */
     if (fn == NULL) {

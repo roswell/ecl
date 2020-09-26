@@ -150,7 +150,7 @@ struct cl_env_struct {
 struct ecl_interrupt_struct {
         cl_object pending_interrupt;
         cl_object signal_queue;
-        cl_object signal_queue_spinlock;
+        ecl_mutex_t signal_queue_lock;
 };
 
 #ifndef __GNUC__
@@ -224,10 +224,10 @@ struct cl_core_struct {
 
 #ifdef ECL_THREADS
         cl_object processes;
-        cl_object processes_spinlock;
-        cl_object global_lock;
-        cl_object error_lock;
-        cl_object global_env_lock;
+        ecl_mutex_t processes_lock;
+        ecl_mutex_t global_lock;
+        ecl_mutex_t error_lock;
+        ecl_rwlock_t global_env_lock;
 #endif
         cl_object libraries;
 

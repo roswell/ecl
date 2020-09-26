@@ -423,16 +423,16 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
 static void
 queue_signal(cl_env_ptr env, cl_object code, int allocate)
 {
-        /* Note: We don't use ECL_WITH_SPINLOCK_BEGIN/END here since
-         * it checks for pending interrupts after unlocking the
-         * spinlock. This would lead to the interrupt being handled
+        /* Note: We don't use ECL_WITH_NATIVE_LOCK_BEGIN/END here
+         * since it checks for pending interrupts after unlocking the
+         * mutex. This would lead to the interrupt being handled
          * immediately when queueing an interrupt for the current
          * thread, even when interrupts are disabled. */
 
-        /* INV: interrupts are disabled, therefore the spinlock will
+        /* INV: interrupts are disabled, therefore the lock will
          * always be released */
 #ifdef ECL_THREADS
-        ecl_get_spinlock(ecl_process_env(), &env->interrupt_struct->signal_queue_spinlock);
+        ecl_mutex_lock(&env->interrupt_struct->signal_queue_lock);
 #endif
 
         cl_object record;
@@ -453,7 +453,7 @@ queue_signal(cl_env_ptr env, cl_object code, int allocate)
         }
 
 #ifdef ECL_THREADS
-        ecl_giveup_spinlock(&env->interrupt_struct->signal_queue_spinlock);
+        ecl_mutex_unlock(&env->interrupt_struct->signal_queue_lock);
 #endif
 }
 
@@ -461,19 +461,17 @@ static cl_object
 pop_signal(cl_env_ptr env)
 {
         cl_object record, value;
-        /* Note: We don't use ECL_WITH_SPINLOCK_BEGIN/END here since
-         * it checks for pending interrupts after unlocking the
-         * spinlock. This would lead to handle_all_queued and
-         * pop_signal being called again and the interrupts being
-         * handled in the wrong order. */
+        /* Note: We don't use ECL_WITH_NATIVE_LOCK_BEGIN/END here
+         * since it checks for pending interrupts after unlocking the
+         * mutex. This would lead to handle_all_queued and pop_signal
+         * being called again and the interrupts being handled in the
+         * wrong order. */
 
-        /* INV: ecl_get_spinlock and ecl_giveup_spinlock don't write
-         * into env, therefore it is valid to use
-         * ecl_disable_interrupts_env */
         ecl_disable_interrupts_env(env);
 #ifdef ECL_THREADS
-        ecl_get_spinlock(env, &env->interrupt_struct->signal_queue_spinlock);
+        ecl_mutex_lock(&env->interrupt_struct->signal_queue_lock);
 #endif
+
         if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
                 value = ECL_NIL;
         } else {
@@ -486,8 +484,9 @@ pop_signal(cl_env_ptr env)
                         env->interrupt_struct->signal_queue = record;
                 }
         }
+
 #ifdef ECL_THREADS
-        ecl_giveup_spinlock(&env->interrupt_struct->signal_queue_spinlock);
+        ecl_mutex_unlock(&env->interrupt_struct->signal_queue_lock);
 #endif
         ecl_enable_interrupts_env(env);
         return value;
@@ -570,7 +569,7 @@ typedef struct {
 } signal_thread_message;
 static cl_object signal_thread_process = ECL_NIL;
 static signal_thread_message signal_thread_msg;
-static cl_object signal_thread_spinlock = ECL_NIL;
+static ecl_mutex_t signal_thread_lock;
 static int signal_thread_pipe[2] = {-1,-1};
 
 static void
@@ -592,9 +591,9 @@ handler_fn_prototype(deferred_signal_handler, int sig, siginfo_t *siginfo, void 
                  * Note that read() will abort the thread will get notified. */
                 signal_thread_msg = msg;
         } else if (signal_thread_pipe[1] > 0) {
-                ecl_get_spinlock(the_env, &signal_thread_spinlock);
+                ecl_mutex_lock(&signal_thread_lock);
                 write(signal_thread_pipe[1], &msg, sizeof(msg));
-                ecl_giveup_spinlock(&signal_thread_spinlock);
+                ecl_mutex_unlock(&signal_thread_lock);
         } else {
                 /* Nothing to do. There is no way to handle this signal because
                  * the responsible thread is not running */
@@ -630,9 +629,9 @@ asynchronous_signal_servicing_thread()
          * We create the object for communication. We need a lock to prevent other
          * threads from writing before the pipe is created.
          */
-        ecl_get_spinlock(the_env, &signal_thread_spinlock);
+        ecl_mutex_lock(&signal_thread_lock);
         pipe(signal_thread_pipe);
-        ecl_giveup_spinlock(&signal_thread_spinlock);
+        ecl_mutex_unlock(&signal_thread_lock);
         signal_thread_msg.process = ECL_NIL;
         for (;;) {
                 cl_object signal_code;
@@ -1316,6 +1315,9 @@ install_asynchronous_signal_handlers()
 # else
         sigprocmask(SIG_SETMASK, NULL, sigmask);
 # endif
+#endif
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+        ecl_mutex_init(&signal_thread_lock, TRUE);
 #endif
 #ifdef SIGINT
         if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {

@@ -208,7 +208,6 @@
 "c/threads/mailbox.d"
 "c/threads/mutex.d"
 "c/threads/process.d"
-"c/threads/queue.d"
 "c/threads/rwlock.d"
 "c/threads/semaphore.d"
 "c/time.d"

@@ -7326,7 +7326,7 @@ done
 
 for ac_header in sys/utsname.h float.h pwd.h dlfcn.h link.h \
                   mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h \
-                  sys/wait.h semaphore.h
+                  sys/wait.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"

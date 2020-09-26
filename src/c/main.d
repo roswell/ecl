@@ -181,7 +181,7 @@ ecl_init_env(cl_env_ptr env)
   env->slot_cache = ecl_make_cache(3, 4096);
   env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
   env->interrupt_struct->pending_interrupt = ECL_NIL;
-  env->interrupt_struct->signal_queue_spinlock = ECL_NIL;
+  ecl_mutex_init(&env->interrupt_struct->signal_queue_lock, FALSE);
   {
     int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
     env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
@@ -208,6 +208,7 @@ _ecl_dealloc_env(cl_env_ptr env)
    * a lisp environment set up -- the allocator assumes one -- and we
    * may have already cleaned up the value of ecl_process_env()
    */
+  ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
@@ -360,92 +361,88 @@ ecl_def_ct_complex(flt_imag_unit_neg,&flt_zero_data,&flt_one_neg_data,static,con
 ecl_def_ct_complex(flt_imag_two,&flt_zero_data,&flt_two_data,static,const);
 
 struct cl_core_struct cl_core = {
-  ECL_NIL, /* packages */
-  ECL_NIL, /* lisp_package */
-  ECL_NIL, /* user_package */
-  ECL_NIL, /* keyword_package */
-  ECL_NIL, /* system_package */
-  ECL_NIL, /* ext_package */
-  ECL_NIL, /* clos_package */
+  .packages = ECL_NIL,
+  .lisp_package = ECL_NIL,
+  .user_package = ECL_NIL,
+  .keyword_package = ECL_NIL,
+  .system_package = ECL_NIL,
+  .ext_package = ECL_NIL,
+  .clos_package = ECL_NIL,
 # ifdef ECL_CLOS_STREAMS
-  ECL_NIL, /* gray_package */
+  .gray_package = ECL_NIL,
 # endif
-  ECL_NIL, /* mp_package */
-  ECL_NIL, /* c_package */
-  ECL_NIL, /* ffi_package */
+  .mp_package = ECL_NIL,
+  .c_package = ECL_NIL,
+  .ffi_package = ECL_NIL,
 
-  ECL_NIL, /* pathname_translations */
-  ECL_NIL, /* library_pathname */
+  .pathname_translations = ECL_NIL,
+  .library_pathname = ECL_NIL,
 
-  ECL_NIL, /* terminal_io */
-  ECL_NIL, /* null_stream */
-  ECL_NIL, /* standard_input */
-  ECL_NIL, /* standard_output */
-  ECL_NIL, /* error_output */
-  ECL_NIL, /* standard_readtable */
-  ECL_NIL, /* dispatch_reader */
-  ECL_NIL, /* default_dispatch_macro */
+  .terminal_io = ECL_NIL,
+  .null_stream = ECL_NIL,
+  .standard_input = ECL_NIL,
+  .standard_output = ECL_NIL,
+  .error_output = ECL_NIL,
+  .standard_readtable = ECL_NIL,
+  .dispatch_reader = ECL_NIL,
+  .default_dispatch_macro = ECL_NIL,
 
-  ECL_NIL, /* char_names */
-  (cl_object)&str_empty_data, /* null_string */
+  .char_names = ECL_NIL,
+  .null_string = (cl_object)&str_empty_data,
 
-  (cl_object)&plus_half_data, /* plus_half */
-  (cl_object)&minus_half_data, /* minus_half */
-  (cl_object)&flt_imag_unit_data, /* imag_unit */
-  (cl_object)&flt_imag_unit_neg_data, /* minus_imag_unit */
-  (cl_object)&flt_imag_two_data, /* imag_two */
-  (cl_object)&flt_zero_data, /* singlefloat_zero */
-  (cl_object)&dbl_zero_data, /* doublefloat_zero */
-  (cl_object)&flt_zero_neg_data, /* singlefloat_minus_zero */
-  (cl_object)&dbl_zero_neg_data, /* doublefloat_minus_zero */
-  (cl_object)&ldbl_zero_data, /* longfloat_zero */
-  (cl_object)&ldbl_zero_neg_data, /* longfloat_minus_zero */
+  .plus_half = (cl_object)&plus_half_data,
+  .minus_half = (cl_object)&minus_half_data,
+  .imag_unit = (cl_object)&flt_imag_unit_data,
+  .minus_imag_unit = (cl_object)&flt_imag_unit_neg_data,
+  .imag_two = (cl_object)&flt_imag_two_data,
+  .singlefloat_zero = (cl_object)&flt_zero_data,
+  .doublefloat_zero = (cl_object)&dbl_zero_data,
+  .singlefloat_minus_zero = (cl_object)&flt_zero_neg_data,
+  .doublefloat_minus_zero = (cl_object)&dbl_zero_neg_data,
+  .longfloat_zero = (cl_object)&ldbl_zero_data,
+  .longfloat_minus_zero = (cl_object)&ldbl_zero_neg_data,
 
-  (cl_object)&str_G_data, /* gensym_prefix */
-  (cl_object)&str_T_data, /* gentemp_prefix */
-  ecl_make_fixnum(0), /* gentemp_counter */
+  .gensym_prefix = (cl_object)&str_G_data,
+  .gentemp_prefix = (cl_object)&str_T_data,
+  .gentemp_counter = ecl_make_fixnum(0),
 
-  ECL_NIL, /* Jan1st1970UT */
+  .Jan1st1970UT = ECL_NIL,
 
-  ECL_NIL, /* system_properties */
-  ECL_NIL, /* setf_definition */
+  .system_properties = ECL_NIL,
+  .setf_definitions = ECL_NIL,
 
 #ifdef ECL_THREADS
-  ECL_NIL, /* processes */
-  ECL_NIL, /* processes_spinlock */
-  ECL_NIL, /* global_lock */
-  ECL_NIL, /* error_lock */
-  ECL_NIL, /* global_env_lock */
+  .processes = ECL_NIL,
 #endif
   /* LIBRARIES is an adjustable vector of objects. It behaves as
      a vector of weak pointers thanks to the magic in
      gbc.d/alloc_2.d */
-  ECL_NIL, /* libraries */
+  .libraries = ECL_NIL,
 
-  0, /* max_heap_size */
-  ECL_NIL, /* bytes_consed */
-  ECL_NIL, /* gc_counter */
-  0, /* gc_stats */
-  0, /* path_max */
+  .max_heap_size = 0,
+  .bytes_consed = ECL_NIL,
+  .gc_counter = ECL_NIL,
+  .gc_stats = 0,
+  .path_max = 0,
 #ifdef GBC_BOEHM
-  NULL, /* safety_region */
+  .safety_region = NULL,
 #endif
 
-  NULL, /* default_sigmask */
-  0, /* default_sigmask_bytes */
+  .default_sigmask = NULL,
+  .default_sigmask_bytes = 0,
 
 #ifdef ECL_THREADS
-  0, /* last_var_index */
-  ECL_NIL, /* reused_indices */
+  .last_var_index = 0,
+  .reused_indices = ECL_NIL,
 #endif
-  (cl_object)&str_slash_data, /* slash */
+  .slash = (cl_object)&str_slash_data,
 
-  ECL_NIL, /* compiler_dispatch */
+  .compiler_dispatch = ECL_NIL,
 
-  (cl_object)&default_rehash_size_data, /* rehash_size */
-  (cl_object)&default_rehash_threshold_data, /* rehash_threshold */
+  .rehash_size = (cl_object)&default_rehash_size_data,
+  .rehash_threshold = (cl_object)&default_rehash_threshold_data,
 
-  ECL_NIL /* known_signals */
+  .known_signals = ECL_NIL
 };
 
 #if !defined(ECL_MS_WINDOWS_HOST)

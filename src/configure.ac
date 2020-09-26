@@ -676,7 +676,7 @@ dnl !!! end autoscan
 
 AC_CHECK_HEADERS( [sys/utsname.h float.h pwd.h dlfcn.h link.h] \
                   [mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h] \
-                  [sys/wait.h semaphore.h] )
+                  [sys/wait.h] )
 
 
 AC_CHECK_HEADERS([ulimit.h], [], [],

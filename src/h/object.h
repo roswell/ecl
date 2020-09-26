@@ -957,11 +957,11 @@ struct ecl_process {
         cl_object interrupt;
         cl_object initial_bindings;
         cl_object parent;
-        cl_object exit_barrier;
         cl_object exit_values;
         cl_object woken_up;
         cl_object queue_record;
-        cl_object start_stop_spinlock;
+        ecl_mutex_t start_stop_lock; /* phase is updated only when we hold this lock */
+        ecl_cond_var_t exit_barrier; /* process-join waits on this barrier */
         cl_index phase;
 #ifdef ECL_WINDOWS_THREADS
         HANDLE thread;
@@ -977,12 +977,6 @@ enum {
         ECL_WAKEUP_RESET_FLAG = 2,
         ECL_WAKEUP_KILL = 4,
         ECL_WAKEUP_DELETE = 8
-};
-
-struct ecl_queue {
-        _ECL_HDR;
-        cl_object list;
-        cl_object spinlock;
 };
 
 struct ecl_semaphore {
@@ -1143,7 +1137,6 @@ union cl_lispunion {
         struct ecl_instance     instance;       /*  clos instance */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
-        struct ecl_queue        queue;          /*  lock  */
         struct ecl_lock         lock;           /*  lock  */
         struct ecl_rwlock       rwlock;         /*  read/write lock  */
         struct ecl_condition_variable condition_variable; /*  condition-variable */
