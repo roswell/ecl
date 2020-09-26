@@ -45,9 +45,6 @@
 /* Define if your newline is CRLF */
 #undef ECL_NEWLINE_IS_CRLF
 
-/* ECL_RWLOCK */
-#undef ECL_RWLOCK
-
 /* ECL_SIGNED_ZERO */
 #undef ECL_SIGNED_ZERO
 

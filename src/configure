@@ -5142,7 +5142,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
@@ -6225,9 +6225,6 @@ _ACEOF
 
 
 
-$as_echo "#define ECL_RWLOCK /**/" >>confdefs.h
-
-
 $as_echo "#define HAVE_POSIX_RWLOCK /**/" >>confdefs.h
 
 
@@ -6236,7 +6233,6 @@ fi
 
 fi
 
-THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
     for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done

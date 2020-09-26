@@ -936,9 +936,23 @@ typedef struct ecl_cond_var_t {
         HANDLE signal_event;
         cl_index state;
 } ecl_cond_var_t;
+typedef SRWLOCK ecl_rwlock_t;
 #else
 typedef pthread_mutex_t ecl_mutex_t;
 typedef pthread_cond_t ecl_cond_var_t;
+# ifdef HAVE_POSIX_RWLOCK
+typedef pthread_rwlock_t ecl_rwlock_t;
+# else
+typedef struct ecl_rwlock_t {
+        pthread_mutex_t mutex;
+        pthread_cond_t reader_cv;
+        pthread_cond_t writer_cv;
+        /* reader_count = 0: lock is free
+         * reader_count =-1: writer holds the lock
+         * reader_count > 0: number of readers */
+        cl_fixnum reader_count;
+} ecl_rwlock_t;
+# endif
 #endif
 
 enum {
@@ -1023,11 +1037,7 @@ struct ecl_mailbox {
 struct ecl_rwlock {
         _ECL_HDR;
         cl_object name;
-#ifdef ECL_RWLOCK
-        pthread_rwlock_t mutex;
-#else
-        cl_object mutex;
-#endif
+        ecl_rwlock_t mutex;
 };
 
 struct ecl_condition_variable {

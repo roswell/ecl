@@ -140,6 +140,152 @@ ecl_cond_var_broadcast(ecl_cond_var_t *cv)
   return pthread_cond_broadcast(cv);
 }
 
+/* READ-WRITE LOCK */
+
+/* If posix rwlocks are not available, we provide our own fallback
+ * implementation. Note that for reasons of simplicity and performance
+ * this implementation is a) not interrupt safe, b) will not signal
+ * errors on unlocking a mutex which is owned by a different thread
+ * and c) allows for writer starvation, i.e. as long as readers are
+ * active, the writer will never obtain the lock. */
+
+static inline void
+ecl_rwlock_init(ecl_rwlock_t *rwlock)
+{
+#if defined(HAVE_POSIX_RWLOCK)
+  pthread_rwlock_init(rwlock, NULL);
+#else
+  pthread_mutex_init(&rwlock->mutex, NULL);
+  pthread_cond_init(&rwlock->reader_cv, NULL);
+  pthread_cond_init(&rwlock->writer_cv, NULL);
+  rwlock->reader_count = 0;
+#endif
+}
+
+static inline void
+ecl_rwlock_destroy(ecl_rwlock_t *rwlock)
+{
+#if defined(HAVE_POSIX_RWLOCK)
+  pthread_rwlock_destroy(rwlock);
+#else
+  pthread_mutex_destroy(&rwlock->mutex);
+  pthread_cond_destroy(&rwlock->reader_cv);
+  pthread_cond_destroy(&rwlock->writer_cv);
+#endif
+}
+
+static inline int
+ecl_rwlock_unlock_read(ecl_rwlock_t *rwlock)
+{
+#if defined(HAVE_POSIX_RWLOCK)
+  return pthread_rwlock_unlock(rwlock);
+#else
+  int rc;
+  pthread_mutex_lock(&rwlock->mutex);
+  if (rwlock->reader_count <= 0) {
+    rc = ECL_MUTEX_NOT_OWNED;
+  } else {
+    if (--rwlock->reader_count == 0) {
+      pthread_cond_signal(&rwlock->writer_cv);
+    }
+    rc = ECL_MUTEX_SUCCESS;
+  }
+  pthread_mutex_unlock(&rwlock->mutex);
+  return rc;
+#endif
+}
+
+static inline int
+ecl_rwlock_unlock_write(ecl_rwlock_t *rwlock)
+{
+#if defined(HAVE_POSIX_RWLOCK)
+  return pthread_rwlock_unlock(rwlock);
+#else
+  int rc;
+  pthread_mutex_lock(&rwlock->mutex);
+  if (rwlock->reader_count >= 0) {
+    rc = ECL_MUTEX_NOT_OWNED;
+  } else {
+    rwlock->reader_count = 0;
+    pthread_cond_signal(&rwlock->writer_cv);
+    pthread_cond_broadcast(&rwlock->reader_cv);
+    rc = ECL_MUTEX_SUCCESS;
+  }
+  pthread_mutex_unlock(&rwlock->mutex);
+  return rc;
+#endif
+}
+
+static inline int
+ecl_rwlock_trylock_read(ecl_rwlock_t *rwlock)
+{
+#if defined(HAVE_POSIX_RWLOCK)
+  return pthread_rwlock_tryrdlock(rwlock);
+#else
+  int rc;
+  pthread_mutex_lock(&rwlock->mutex);
+  if (rwlock->reader_count == -1) {
+    rc = ECL_MUTEX_LOCKED;
+  } else {
+    ++rwlock->reader_count;
+    rc = ECL_MUTEX_SUCCESS;
+  }
+  pthread_mutex_unlock(&rwlock->mutex);
+  return rc;
+#endif
+}
+
+static inline int
+ecl_rwlock_trylock_write(ecl_rwlock_t *rwlock)
+{
+#if defined(HAVE_POSIX_RWLOCK)
+  return pthread_rwlock_trywrlock(rwlock);
+#else
+  int rc;
+  pthread_mutex_lock(&rwlock->mutex);
+  if (rwlock->reader_count != 0) {
+    rc = ECL_MUTEX_LOCKED;
+  } else {
+    rwlock->reader_count = -1;
+    rc = ECL_MUTEX_SUCCESS;
+  }
+  pthread_mutex_unlock(&rwlock->mutex);
+  return rc;
+#endif
+}
+
+static inline int
+ecl_rwlock_lock_read(ecl_rwlock_t *rwlock)
+{
+#if defined(HAVE_POSIX_RWLOCK)
+  return pthread_rwlock_rdlock(rwlock);
+#else
+  pthread_mutex_lock(&rwlock->mutex);
+  while (rwlock->reader_count == -1) {
+    pthread_cond_wait(&rwlock->reader_cv, &rwlock->mutex);
+  }
+  ++rwlock->reader_count;
+  pthread_mutex_unlock(&rwlock->mutex);
+  return ECL_MUTEX_SUCCESS;
+#endif
+}
+
+static inline int
+ecl_rwlock_lock_write(ecl_rwlock_t *rwlock)
+{
+#if defined(HAVE_POSIX_RWLOCK)
+  return pthread_rwlock_wrlock(rwlock);
+#else
+  pthread_mutex_lock(&rwlock->mutex);
+  while (rwlock->reader_count != 0) {
+    pthread_cond_wait(&rwlock->writer_cv, &rwlock->mutex);
+  }
+  rwlock->reader_count = -1;
+  pthread_mutex_unlock(&rwlock->mutex);
+  return ECL_MUTEX_SUCCESS;
+#endif
+}
+
 #else /* ECL_WINDOWS_THREADS */
 
 /* To allow for timed wait operations on locks and for interrupting
@@ -467,6 +613,60 @@ ecl_cond_var_broadcast(ecl_cond_var_t *cv)
           !AO_compare_and_swap_full((AO_t*)&cv->state, (AO_t)old_state, (AO_t)new_state));
   return SetEvent(cv->broadcast_event) ? ECL_MUTEX_SUCCESS : GetLastError();
 }
+
+/* READ-WRITE LOCK */
+
+static inline void
+ecl_rwlock_init(ecl_rwlock_t *rwlock)
+{
+  InitializeSRWLock(rwlock);
+}
+
+static inline void
+ecl_rwlock_destroy(ecl_rwlock_t *rwlock) { }
+
+static inline int
+ecl_rwlock_unlock_read(ecl_rwlock_t *rwlock)
+{
+  ReleaseSRWLockShared(rwlock);
+  return ECL_MUTEX_SUCCESS;
+}
+
+static inline int
+ecl_rwlock_unlock_write(ecl_rwlock_t *rwlock)
+{
+  ReleaseSRWLockExclusive(rwlock);
+  return ECL_MUTEX_SUCCESS;
+}
+
+static inline int
+ecl_rwlock_trylock_read(ecl_rwlock_t *rwlock)
+{
+  return (TryAcquireSRWLockShared(rwlock) == 0) ? ECL_MUTEX_LOCKED : ECL_MUTEX_SUCCESS;
+}
+
+static inline int
+ecl_rwlock_trylock_write(ecl_rwlock_t *rwlock)
+{
+  return (TryAcquireSRWLockExclusive(rwlock) == 0) ? ECL_MUTEX_LOCKED : ECL_MUTEX_SUCCESS;
+}
+
+static inline int
+ecl_rwlock_lock_read(ecl_rwlock_t *rwlock)
+{
+  AcquireSRWLockShared(rwlock);
+  return ECL_MUTEX_SUCCESS;
+}
+
+static inline int
+ecl_rwlock_lock_write(ecl_rwlock_t *rwlock)
+{
+  AcquireSRWLockExclusive(rwlock);
+  return ECL_MUTEX_SUCCESS;
+}
+
+#endif /* ECL_WINDOWS_THREADS */
+
 #endif /* ECL_MUTEX_H */
 
 #endif /* ECL_THREADS */

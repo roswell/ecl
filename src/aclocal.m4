@@ -266,7 +266,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
@@ -931,11 +931,9 @@ dnl Check whether we have POSIX read/write locks are available
 AC_DEFUN([ECL_POSIX_RWLOCK],[
 AC_CHECK_FUNC( [pthread_rwlock_init], [
   AC_CHECK_TYPES([pthread_rwlock_t], [
-    AC_DEFINE([ECL_RWLOCK], [], [ECL_RWLOCK])
     AC_DEFINE([HAVE_POSIX_RWLOCK], [], [HAVE_POSIX_RWLOCK])
   ], [])
 ], [])
-THREAD_OBJ="$THREAD_OBJ threads/rwlock"
 ])
 
 

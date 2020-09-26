@@ -451,10 +451,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
     break;
   case t_rwlock:
     MAYBE_MARK(o->rwlock.name);
-#  ifndef ECL_RWLOCK
-    MAYBE_MARK(o->rwlock.mutex);
     break;
-#  endif
   case t_semaphore:
     MAYBE_MARK(o->semaphore.name);
     break;
@@ -1006,14 +1003,8 @@ init_alloc(void)
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
     to_bitmap(&o, &(o.lock.owner));
-#  ifdef ECL_RWLOCK
   type_info[t_rwlock].descriptor =
     to_bitmap(&o, &(o.rwlock.name));
-#  else
-  type_info[t_rwlock].descriptor =
-    to_bitmap(&o, &(o.rwlock.name)) |
-    to_bitmap(&o, &(o.rwlock.mutex));
-#  endif
   type_info[t_condition_variable].descriptor = 0;
   type_info[t_semaphore].descriptor = 
     to_bitmap(&o, &(o.semaphore.name));
@@ -1136,15 +1127,13 @@ standard_finalizer(cl_object o)
     ecl_enable_interrupts_env(the_env);
     break;
   }
-# ifdef ECL_RWLOCK
   case t_rwlock: {
     const cl_env_ptr the_env = ecl_process_env();
     ecl_disable_interrupts_env(the_env);
-    pthread_rwlock_destroy(&o->rwlock.mutex);
+    ecl_rwlock_destroy(&o->rwlock.mutex);
     ecl_enable_interrupts_env(the_env);
     break;
   }
-# endif
   case t_process: {
     const cl_env_ptr the_env = ecl_process_env();
     ecl_disable_interrupts_env(the_env);
@@ -1196,9 +1185,7 @@ register_finalizer(cl_object o, void *finalized_object,
   case t_barrier:
   case t_semaphore:
   case t_mailbox:
-# if defined(ECL_RWLOCK)
   case t_rwlock:
-# endif
   case t_process:
 #endif  /* ECL_THREADS */
     /* Don't delete the standard finalizer. */
