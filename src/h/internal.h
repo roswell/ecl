@@ -311,6 +311,10 @@ extern cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1];
 extern void ecl_init_bignum_registers(cl_env_ptr env);
 extern void ecl_clear_bignum_registers(cl_env_ptr env);
 
+/* threads/mutex.d */
+
+extern cl_object si_mutex_timeout();
+
 /* print.d */
 
 extern cl_object _ecl_stream_or_default_output(cl_object stream);

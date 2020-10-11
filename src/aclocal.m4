@@ -928,12 +928,13 @@ fi
 
 dnl ----------------------------------------------------------------------
 dnl Check whether we have POSIX read/write locks are available
-AC_DEFUN([ECL_POSIX_RWLOCK],[
+AC_DEFUN([ECL_PTHREAD_EXTENSIONS],[
 AC_CHECK_FUNC( [pthread_rwlock_init], [
   AC_CHECK_TYPES([pthread_rwlock_t], [
     AC_DEFINE([HAVE_POSIX_RWLOCK], [], [HAVE_POSIX_RWLOCK])
   ], [])
 ], [])
+AC_CHECK_FUNCS([pthread_mutex_timedlock])
 ])
 
 

@@ -101,6 +101,18 @@ add_timeout_delta(struct timespec *ts, double seconds)
   }
 }
 
+static inline int
+ecl_mutex_timedlock(ecl_mutex_t *mutex, double seconds)
+{
+#if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK)
+  struct timespec ts;
+  add_timeout_delta(&ts, seconds);
+  return pthread_mutex_timedlock(mutex, &ts);
+#else
+  /* Not implemented, see mutex.d for alternative implementation using interrupts */
+  return -1;
+#endif
+}
 
 static inline void
 ecl_cond_var_init(ecl_cond_var_t *cv)
@@ -357,6 +369,24 @@ remaining_milliseconds(double seconds, DWORD start_ticks)
 {
   DWORD ret = ((DWORD) seconds * 1000.0) - (GetTickCount() - start_ticks);
   return (ret < 0) ? 0 : ret;
+}
+
+static inline int
+ecl_mutex_timedlock(ecl_mutex_t *mutex, double seconds)
+{
+  DWORD start_ticks = GetTickCount();
+ AGAIN:
+  switch (WaitForSingleObjectEx(*mutex, remaining_milliseconds(seconds, start_ticks), TRUE)) {
+  case WAIT_OBJECT_0:
+  case WAIT_ABANDONED:
+    return ECL_MUTEX_SUCCESS;
+  case WAIT_IO_COMPLETION:
+    goto AGAIN;
+  case WAIT_TIMEOUT:
+    return ECL_MUTEX_TIMEOUT;
+  default:
+    return GetLastError();
+  }
 }
 
 /* CONDITION VARIABLE */

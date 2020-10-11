@@ -112,7 +112,7 @@ by ALLOW-WITH-INTERRUPTS."
 ;;;
 ;;; Convenience macros for locks
 ;;;
-(defmacro with-lock ((lock-form &rest options) &body body)
+(defmacro with-lock ((lock-form &key (wait-form t)) &body body)
   #-threads
   `(progn ,@body)
   ;; We do our best to make sure that the lock is released if we are
@@ -121,9 +121,10 @@ by ALLOW-WITH-INTERRUPTS."
   ;; mutex is locked but before we store the return value of
   ;; mp:get-lock.
   #+threads
-  (ext:with-unique-names (lock)
-    `(let ((,lock ,lock-form))
-       (when (mp:get-lock ,lock)
+  (ext:with-unique-names (lock wait)
+    `(let ((,lock ,lock-form)
+           (,wait ,wait-form))
+       (when (mp:get-lock ,lock ,wait)
          (without-interrupts
            (unwind-protect
                 (with-restored-interrupts

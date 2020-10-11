@@ -101,7 +101,9 @@ returns @code{ECL_NIL}, otherwise @code{ECL_T}.
 @defun mp:get-lock lock &optional (wait t)
 Tries to acquire a lock. @var{wait} indicates whether function should
 block or give up if @var{lock} is already taken. If @var{wait} is
-@code{nil} and @var{lock} can't be acquired returns
+@code{nil}, immediately return, if @var{wait} is a real number
+@var{wait} specifies a timeout in seconds and otherwise block until the
+lock becomes available. If @var{lock} can't be acquired return
 @code{nil}. Succesful operation returns @code{t}. Will signal an error
 if the mutex is non-recursive and current thread already owns the lock.
 @end defun

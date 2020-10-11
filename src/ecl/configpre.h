@@ -436,6 +436,9 @@
 /* Define to 1 if you have the `powf' function. */
 #undef HAVE_POWF
 
+/* Define to 1 if you have the `pthread_mutex_timedlock' function. */
+#undef HAVE_PTHREAD_MUTEX_TIMEDLOCK
+
 /* Define to 1 if the system has the type `pthread_rwlock_t'. */
 #undef HAVE_PTHREAD_RWLOCK_T
 

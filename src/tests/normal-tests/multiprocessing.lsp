@@ -147,6 +147,45 @@
       (is (eq (mp:lock-owner mutex) mp:*current-process*)))
     (mp:giveup-lock mutex)))
 
+(test-with-timeout (mp.mutex.timedlock-timeout 30)
+  (let ((mutex (mp:make-lock :name "mutex.timedlock-timeout"))
+         (flag 0))
+    (mp:get-lock mutex)
+    (setf flag 1)
+    (let ((waiting-process
+           (mp:process-run-function
+            "mutex.timedlock-timeout"
+            (lambda ()
+              (when (mp:get-lock mutex 1)
+                (error "Grabbing the mutex shouldn't have succeeded"))
+              (when (eq (mp:lock-owner mutex) mp:*current-process*)
+                (error "Wrong lock owner"))
+              (setf flag 2)))))
+      (mp:process-join waiting-process)
+      (is (eq mp:*current-process* (mp:lock-owner mutex)))
+      (is (= flag 2)))))
+
+(test-with-timeout (mp.mutex.timedlock-acquire 30)
+  (let ((mutex (mp:make-lock :name "mutex.timedlock-acquire"))
+        (flag 0))
+    (mp:get-lock mutex)
+    (setf flag 1)
+    (let ((waiting-process
+           (mp:process-run-function
+            "mutex.timedlock-acquire"
+            (lambda ()
+              (setf flag 2)
+              (unless (mp:get-lock mutex 60)
+                (error "Grabbing the mutex should have succeeded"))
+              (when (not (eq (mp:lock-owner mutex) mp:*current-process*))
+                (error "Wrong lock owner"))
+              (setf flag 3)
+              (mp:giveup-lock mutex)))))
+      (loop until (> flag 1))
+      (sleep 1)
+      (mp:giveup-lock mutex)
+      (mp:process-join waiting-process)
+      (is (= flag 3)))))
 
 ;; Semaphores
 

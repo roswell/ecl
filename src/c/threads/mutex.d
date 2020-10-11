@@ -199,6 +199,7 @@ mp_get_lock_wait(cl_object lock)
 #endif
   rc = ecl_mutex_lock(&lock->lock.mutex);
   if (ecl_likely(rc == ECL_MUTEX_SUCCESS)) {
+    ecl_disable_interrupts_env(env);
     lock->lock.counter++;
     lock->lock.owner = own_process;
     ecl_enable_interrupts_env(env);
@@ -208,7 +209,104 @@ mp_get_lock_wait(cl_object lock)
     FEerror_not_a_recursive_lock(lock);
 #endif
   } else {
+    FEunknown_lock_error(lock);
+  }
+}
+
+static cl_object
+si_abort_wait_on_mutex(cl_narg narg, ...)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object env = the_env->function->cclosure.env;
+  cl_object lock = CAR(env);
+  if (ECL_SYM_VAL(the_env, @'si::mutex-timeout') == lock) {
+    ECL_SETQ(the_env, @'si::mutex-timeout', ECL_T);
+    cl_throw(@'si::mutex-timeout');
+  }
+  @(return)
+}
+
+cl_object
+si_mutex_timeout(cl_object process, cl_object lock, cl_object timeout)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  if (cl_plusp(timeout)) {
+    cl_sleep(timeout);
+  }
+  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &process->process.start_stop_lock) {
+    if (ecl_likely(mp_process_active_p(process) != ECL_NIL)) {
+      ecl_interrupt_process(process,
+                            ecl_make_cclosure_va(si_abort_wait_on_mutex,
+                                                 cl_list(1, lock),
+                                                 @'si::mutex-timeout',
+                                                 0));
+    }
+  } ECL_WITH_NATIVE_LOCK_END;
+  @(return)
+}
+
+cl_object
+mp_get_lock_timedwait(cl_object lock, cl_object timeout)
+{
+  cl_env_ptr env = ecl_process_env();
+  cl_object own_process = env->own_process;
+  if (ecl_unlikely(ecl_t_of(lock) != t_lock)) {
+    FEwrong_type_nth_arg(@[mp::get-lock], 1, lock, @[mp::lock]);
+  }
+#if !defined(ECL_MUTEX_DEADLOCK)
+  if (ecl_unlikely(lock->lock.owner == own_process && !lock->lock.recursive)) {
+    /* INV: owner != nil only if the mutex is locked */
+    FEerror_not_a_recursive_lock(lock);
+  }
+#endif
+#if defined(ECL_WINDOWS_THREADS) || defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK)
+  int rc = ecl_mutex_timedlock(&lock->lock.mutex, ecl_to_double(timeout));
+#else
+  /* If we don't have pthread_mutex_timedlock available, we create a
+   * timer thread which interrupts our thread after the specified
+   * timeout. si::mutex-timeout serves a dual purpose below: the
+   * symbol itself denotes a catchpoint and its value is used to
+   * determine a) if the catchpoint is active and b) if the timer has
+   * fired. */
+  volatile int rc;
+  volatile cl_object timer_thread;
+  ecl_bds_bind(env, @'si::mutex-timeout', lock);
+  ECL_CATCH_BEGIN(env, @'si::mutex-timeout') {
+    timer_thread = mp_process_run_function(5, @'si::mutex-timeout',
+                                           @'si::mutex-timeout',
+                                           env->own_process,
+                                           lock,
+                                           timeout);
+    rc = ecl_mutex_lock(&lock->lock.mutex);
+    ECL_SETQ(env, @'si::mutex-timeout', ECL_NIL);
+  } ECL_CATCH_END;
+  ECL_WITH_NATIVE_LOCK_BEGIN(env, &timer_thread->process.start_stop_lock) {
+    if (mp_process_active_p(timer_thread)) {
+      ecl_interrupt_process(timer_thread, @'mp::exit-process');
+    }
+  } ECL_WITH_NATIVE_LOCK_END;
+  if (ECL_SYM_VAL(env, @'si::mutex-timeout') == ECL_T) {
+    rc = ECL_MUTEX_TIMEOUT;
+    /* The mutex might have been locked before we could kill the timer
+     * thread. Therefore, we unconditionally try to unlock the mutex
+     * again and treat the operation as having timed out. */
+    ecl_mutex_unlock(&lock->lock.mutex);
+  }
+  ecl_bds_unwind1(env);
+#endif
+  if (rc == ECL_MUTEX_SUCCESS) {
+    ecl_disable_interrupts_env(env);
+    lock->lock.counter++;
+    lock->lock.owner = own_process;
     ecl_enable_interrupts_env(env);
+    ecl_return1(env, lock);
+  } else if (rc == ECL_MUTEX_TIMEOUT) {
+    ecl_return1(env,ECL_NIL);
+#if defined(ECL_MUTEX_DEADLOCK)
+  } else if (ecl_unlikely(rc == ECL_MUTEX_DEADLOCK)) {
+    FEerror_not_a_recursive_lock(lock);
+#endif
+  } else {
     FEunknown_lock_error(lock);
   }
 }
@@ -217,6 +315,8 @@ mp_get_lock_wait(cl_object lock)
   @
   if (Null(wait)) {
     return mp_get_lock_nowait(lock);
+  } else if (ecl_realp(wait)) {
+    return mp_get_lock_timedwait(lock, wait);
   } else {
     return mp_get_lock_wait(lock);
   }

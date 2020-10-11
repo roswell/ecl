@@ -584,7 +584,7 @@ if test "${enable_threads}" = "yes" ; then
   else
     LIBS="${THREAD_LIBS} ${LIBS}"
     CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
-    ECL_POSIX_RWLOCK
+    ECL_PTHREAD_EXTENSIONS
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
     for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
     AC_MSG_CHECKING([for thread object files])
