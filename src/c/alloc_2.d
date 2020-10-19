@@ -1448,7 +1448,7 @@ ecl_alloc_weak_pointer(cl_object o)
   ecl_enable_interrupts_env(the_env);
   obj->t = t_weak_pointer;
   obj->value = o;
-  if (!ECL_FIXNUMP(o) && !ECL_CHARACTERP(o) && !Null(o)) {
+  if (!ECL_IMMEDIATE(o)) {
     GC_GENERAL_REGISTER_DISAPPEARING_LINK((void**)&(obj->value), (void*)o);
     si_set_finalizer((cl_object)obj, ECL_T);
   }
