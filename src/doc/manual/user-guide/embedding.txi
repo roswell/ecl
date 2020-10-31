@@ -258,8 +258,7 @@ booting. This macro allows for execution of Lisp code while saving and
 later restoring the floating point environment of surrounding C code
 so that changes in the floating point environment don't leak outside.
 
-@coderef{ECL_WITH_LISP_FPE} can be also used before ECL has booted or
-before an external thread has been imported.
+@coderef{ECL_WITH_LISP_FPE} can be also used before ECL has booted.
 
 @exindex Safely executing Lisp code with floating point exceptions in embedding program
 @paragraph Example

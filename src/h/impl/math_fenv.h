@@ -75,12 +75,12 @@
 #  define ECL_WITH_LISP_FPE_BEGIN do {                       \
         fenv_t __fenv;                                       \
         fegetenv(&__fenv);                                   \
+        feclearexcept(FE_ALL_EXCEPT);                        \
         if (ecl_get_option(ECL_OPT_BOOTED) > 0) {            \
                 int bits = ecl_process_env()->trap_fpe_bits; \
                 fedisableexcept(FE_ALL_EXCEPT & ~bits);      \
                 feenableexcept(FE_ALL_EXCEPT & bits);        \
-        }                                                    \
-        feclearexcept(FE_ALL_EXCEPT);
+        }
 # else
 #  define ECL_WITH_LISP_FPE_BEGIN do {                   \
         fenv_t __fenv;                                   \
