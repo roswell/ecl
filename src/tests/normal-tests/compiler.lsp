@@ -76,9 +76,13 @@
 ;;;
 ;;;     There is a problem with SUBTYPEP and type STREAM
 ;;;
+(defclass gray-stream-test (gray:fundamental-character-output-stream) ())
 (test cmp.0005.subtypep-stream
   (is (equal (multiple-value-list
               (subtypep (find-class 'gray:fundamental-stream) 'stream))
+             (list t t)))
+  (is (equal (multiple-value-list
+              (subtypep (find-class 'gray-stream-test) 'stream))
              (list t t))))
 
 ;;; Date: 09/07/2006 (Tim S)
