@@ -27,6 +27,13 @@
   (equalp (make-inet-address "242.1.211.3")  #(242 1 211 3))
   t)
 
+(deftest get-protocol-by-name-unknown-protocol
+  (let ((protocol-name "totally-unknown-protocol"))
+    (handler-case (get-protocol-by-name protocol-name)
+      (unknown-protocol (c) (string= protocol-name (unknown-protocol-name c)))
+      (:no-error (&rest args) (declare (ignore args)) nil)))
+  t)
+
 (deftest make-inet-socket
   ;; make a socket
   (let ((s (make-instance 'inet-socket :type :stream :protocol (get-protocol-by-name "tcp"))))
@@ -46,7 +53,7 @@
         (make-instance 'inet-socket :type :stream :protocol (get-protocol-by-name "udp"))
       ((or socket-type-not-supported-error protocol-not-supported-error) (c)
         (declare (ignorable c)) t)
-      (:no-error nil))
+      (:no-error (&rest args) (declare (ignore args)) nil))
   t)
 
 (deftest make-inet-socket-keyword-wrong
@@ -55,7 +62,7 @@
         (make-instance 'inet-socket :type :stream :protocol :udp)
       ((or protocol-not-supported-error socket-type-not-supported-error) (c)
         (declare (ignorable c)) t)
-      (:no-error nil))
+      (:no-error (&rest args) (declare (ignore args)) nil))
   t)
 
 
@@ -194,7 +201,7 @@
   (handler-case
    (get-host-by-name "foo.tninkpad.telent.net")
    (NAME-SERVICE-ERROR () t)
-   (:no-error nil))
+   (:no-error (&rest args) (declare (ignore args)) nil))
   t)
 
 (defun http-stream (host port request)
