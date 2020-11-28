@@ -833,7 +833,7 @@ if test "${with_tcp}" = "builtin"; then
   with_tcp=yes
 fi
 if test "${with_tcp}" = "yes"; then
-  AC_DEFINE(TCP, [1], [Network streams])
+  AC_DEFINE(ECL_TCP, [1], [Network streams])
   EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"
   ECL_ADD_LISP_MODULE([sockets])
   LIBS="${LIBS} ${TCPLIBS}"

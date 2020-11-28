@@ -9951,7 +9951,7 @@ LSP_FEATURES="(cons :builtin-sockets ${LSP_FEATURES})"
 fi
 if test "${with_tcp}" = "yes"; then
 
-$as_echo "#define TCP 1" >>confdefs.h
+$as_echo "#define ECL_TCP 1" >>confdefs.h
 
   EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"
 

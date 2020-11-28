@@ -88,8 +88,8 @@
 #undef ECL_LIBATOMIC_OPS_H
 
 /* Network streams                                                      */
-#undef TCP
-#if defined(TCP) && defined(ECL_MS_WINDOWS_HOST)
+#undef ECL_TCP
+#if defined(ECL_TCP) && defined(ECL_MS_WINDOWS_HOST)
 # define ECL_WSOCK
 #endif
 

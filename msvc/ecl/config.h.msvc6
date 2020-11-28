@@ -76,8 +76,8 @@
 #define ECL_LIBATOMIC_OPS_H
 
 /* Network streams							*/
-#define TCP 1
-#if defined(TCP) && (defined(_MSC_VER) || defined(mingw32))
+#define ECL_TCP 1
+#if defined(ECL_TCP) && (defined(_MSC_VER) || defined(mingw32))
 # define ECL_WSOCK
 #endif
 
