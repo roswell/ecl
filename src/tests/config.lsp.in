@@ -87,19 +87,23 @@
        (progn
          (ext:chdir *sandbox*)
          (ext:setenv "TEST_IMAGE" *test-image*)
-         (ext:run-program *test-image*
-                          `("-norc"
-                            "-eval" "(print (ext:getenv \"ECLDIR\"))"
-                            "-eval" "(ignore-errors (require :cmp))"
-                            "-load" ,(namestring
-                                      (merge-pathnames
-                                       "tests/doit.lsp" *ecl-sources*))
-                            "-eval" "(in-package cl-test)"
-                            "-eval" ,(format nil "(2am-ecl:run '~a)" suites)
-                            "-eval" "(ext:exit)")
-                          :input nil
-                          :output t
-                          :error :output))
+         (ext:run-program
+          *test-image*
+          `("-norc"
+            "-eval" "(print (ext:getenv \"ECLDIR\"))"
+            "-eval" "(ext:install-bytecodes-compiler)"
+            "-eval" ,(if (ext:getenv "BYTECMP")
+                         "t"
+                         "(ignore-errors (ext:install-c-compiler))")
+            "-load" ,(namestring
+                      (merge-pathnames
+                       "tests/doit.lsp" *ecl-sources*))
+            "-eval" "(in-package cl-test)"
+            "-eval" ,(format nil "(2am-ecl:run '~a)" suites)
+            "-eval" "(ext:exit)")
+          :input nil
+          :output t
+          :error :output))
     (ext:chdir *here*)
     #+ (or)
     (format t "~%Known fails: ~%~{~a~%~}~%"
