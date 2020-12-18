@@ -2420,29 +2420,25 @@ execute_each_form(cl_env_ptr env, cl_object body)
   return FLAG_VALUES;
 }
 
-static cl_index *
+static cl_object
 save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
 {
-#ifdef GBC_BOEHM
   cl_index l = end - start;
-  cl_index *bytecodes = ecl_alloc_atomic((l + 1) * sizeof(cl_index));
-  cl_index *p = bytecodes;
-  for (*(p++) = l; end > start; end--, p++) {
+  cl_object bytecodes = ecl_alloc_simple_vector(l, ecl_aet_index);
+  cl_index *p;
+  for (p = bytecodes->vector.self.index; end > start; end--, p++) {
     *p = (cl_index)ECL_STACK_POP_UNSAFE(env);
   }
   return bytecodes;
-#else
-#error "Pointer references outside of recognizable object"
-#endif
 }
 
 static void
-restore_bytecodes(cl_env_ptr env, cl_index *bytecodes)
+restore_bytecodes(cl_env_ptr env, cl_object bytecodes)
 {
-  cl_index *p = bytecodes;
+  cl_index *p = bytecodes->vector.self.index;
   cl_index l;
-  for (l = *p; l; l--) {
-    ECL_STACK_PUSH(env, (cl_object)p[l]);
+  for (l = bytecodes->vector.dim; l; l--) {
+    ECL_STACK_PUSH(env, (cl_object)p[l-1]);
   }
   ecl_dealloc(bytecodes);
 }
@@ -2461,7 +2457,7 @@ compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
    * code _before_ the actual forms;
    */
   if (c_env->load_time_forms != ECL_NIL) {
-    cl_index *bytecodes = save_bytecodes(env, handle, current_pc(env));
+    cl_object bytecodes = save_bytecodes(env, handle, current_pc(env));
     /* reverse the load time forms list to make sure the forms are
      * compiled in the right order */
     cl_object p, forms_list = cl_nreverse(c_env->load_time_forms);
