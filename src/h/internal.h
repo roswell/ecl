@@ -237,6 +237,10 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0
 #endif
+/* Windows needs to be told explicitely to open files in binary mode */
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 #define ECL_FILE_STREAM_P(strm) \
         (ECL_ANSI_STREAM_P(strm) && (strm)->stream.mode < ecl_smm_synonym)
