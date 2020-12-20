@@ -102,7 +102,6 @@ ecl_string_case(cl_object s)
   /* Returns 1 if string is all uppercase, -1 if all lowercase, and 0 if mixed case */
   int upcase;
   cl_index i;
-  ecl_base_char *text;
         
   switch (ecl_t_of(s)) {
 #ifdef ECL_UNICODE

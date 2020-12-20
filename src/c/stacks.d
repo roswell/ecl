@@ -435,34 +435,6 @@ ecl_bds_set(cl_env_ptr env, cl_object s, cl_object value)
 
 /******************** INVOCATION STACK **********************/
 
-static cl_object
-ihs_function_name(cl_object x)
-{
-  cl_object y;
-
-  switch (ecl_t_of(x)) {
-  case t_symbol:
-    return(x);
-
-  case t_bclosure:
-    x = x->bclosure.code;
-
-  case t_bytecodes:
-    y = x->bytecodes.name;
-    if (Null(y))
-      return(@'lambda');
-    else
-      return y;
-
-  case t_cfun:
-  case t_cfunfixed:
-    return(x->cfun.name);
-
-  default:
-    return(ECL_NIL);
-  }
-}
-
 static ecl_ihs_ptr
 get_ihs_ptr(cl_index n)
 {
