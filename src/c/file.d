@@ -5299,6 +5299,12 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
              if_exists != @':overwrite') {
     FEinvalid_option(@':if-exists', if_exists);
   }
+  if (flags & ECL_STREAM_CLOSE_ON_EXEC) {
+    open_flags |= O_CLOEXEC;
+  }
+  if (flags & ECL_STREAM_NONBLOCK) {
+    open_flags |= O_NONBLOCK;
+  }
 
   fd = safe_open(fname, open_flags, mode);
   if (fd < 0) {
@@ -5367,6 +5373,8 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
               (if_does_not_exist ECL_NIL idnesp)
               (external_format @':default')
               (cstream ECL_T)
+              (close_on_exec ECL_T)
+              (nonblock ECL_NIL)
               &aux strm)
   enum ecl_smmode smm;
   int flags = 0;
@@ -5413,6 +5421,12 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
   }
   if (!Null(cstream)) {
     flags |= ECL_STREAM_C_STREAM;
+  }
+  if (!Null(close_on_exec)) {
+    flags |= ECL_STREAM_CLOSE_ON_EXEC;
+  }
+  if (!Null(nonblock)) {
+    flags |= ECL_STREAM_NONBLOCK;
   }
   strm = ecl_open_stream(filename, smm, if_exists, if_does_not_exist,
                          byte_size, flags, external_format);

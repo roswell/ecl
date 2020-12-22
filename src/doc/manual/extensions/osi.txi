@@ -293,11 +293,11 @@ Controls escaping of the arguments passed to @code{CreateProcess}.
 @subsection FIFO files (named pipes)
 
 Named pipe (known as fifo) may be created on UNIX with a shell command
-mkfifo. ECL opens such files in non-blocking
-mode. @coderef{ext:file-kind} will return for such file
-@code{:fifo}. Since it is impossible to guess how many characters are
-available in this special file @code{file-length} function will return
-NIL.
+mkfifo. They can be opened in non-blocking mode by using @code{:nonblock
+t} option for @coderef{open}. @coderef{ext:file-kind} will return for
+such file @code{:fifo}. Since it is impossible to guess how many
+characters are available in this special file @code{file-length}
+function will return @code{nil}.
 
 @node Operating System Interface Reference
 @subsection Operating System Interface Reference

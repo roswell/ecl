@@ -234,6 +234,9 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 #define OPEN_RA "a+b"
 
 /* Windows does not have this flag (POSIX thing) */
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0
 #endif
