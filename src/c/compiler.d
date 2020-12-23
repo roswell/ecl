@@ -550,7 +550,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->lexical_level = 0;
     new->load_time_forms = ECL_NIL;
     new->ltf_being_created = ECL_NIL;
-    new->ltf_defer_init_until = ECL_NIL;
+    new->ltf_defer_init_until = ECL_T;
     new->ltf_locations = ECL_NIL;
     new->env_depth = 0;
     new->macros = CDR(env);
@@ -2218,7 +2218,11 @@ static void
 defer_load_object(cl_env_ptr env, cl_object place, cl_object created)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  if (ecl_member_eq(c_env->ltf_defer_init_until, created)) {
+  if (c_env->ltf_defer_init_until == ECL_T) {
+    FEerror("Circular dependency in load time forms involving ~S.", 1, ECL_CONS_CAR(place));
+  }
+  if (c_env->ltf_defer_init_until != ECL_NIL
+      && ecl_member_eq(c_env->ltf_defer_init_until, created)) {
     /* We are already deferring the init form long enough, nothing to do. */
     return;
   }
@@ -2411,7 +2415,7 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
                                        ECL_NIL);
   new_c_env.load_time_forms = ECL_NIL;
   new_c_env.ltf_being_created = ECL_NIL;
-  new_c_env.ltf_defer_init_until = ECL_NIL;
+  new_c_env.ltf_defer_init_until = ECL_T;
   new_c_env.ltf_locations = ECL_NIL;
   new_c_env.env_depth = 0;
   new_c_env.env_size = 0;
