@@ -207,9 +207,7 @@
 @tab symbols
 
 @item @file{symbols_list.h}
-@item @file{symbols_list2.h}
-@tab The latter is generated from the first. The first has to contain all
-symbols on the system which aren't local.
+@tab The file has contains all symbols defined in the core.
 
 @item @file{tcp.d}
 @tab stream interface to TCP
