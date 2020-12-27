@@ -114,7 +114,7 @@ Creating array and vectors
 @cppdef ecl_alloc_simple_vector
 @cppdef si_make_vector
 @cppdef si_make_array
-@deftypefun cl_object ecl_alloc_simple_vector (cl_elttype element_type, cl_index length);
+@deftypefun cl_object ecl_alloc_simple_vector (cl_index length, cl_elttype element_type);
 @deftypefunx cl_object si_make_vector (cl_object element_type, cl_object length, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
 @deftypefunx cl_object si_make_array (cl_object element_type, cl_object dimensions, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
 
@@ -136,7 +136,7 @@ Finally, the function @coderef{si_make_array} does a similar job to @coderef{si_
 Create one-dimensional @code{base-string} with room for 11 characters:
 
 @example
-cl_object s = ecl_alloc_simple_vector(ecl_aet_bc, 11);
+cl_object s = ecl_alloc_simple_vector(11, ecl_aet_bc);
 @end example
 
 Create a one-dimensional @code{array} with a fill pointer
