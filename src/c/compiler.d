@@ -549,6 +549,9 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->stepping = 0;
     new->lexical_level = 0;
     new->load_time_forms = ECL_NIL;
+    new->ltf_being_created = ECL_NIL;
+    new->ltf_defer_init_until = ECL_NIL;
+    new->ltf_locations = ECL_NIL;
     new->env_depth = 0;
     new->macros = CDR(env);
     new->variables = CAR(env);
@@ -571,6 +574,13 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
 static void
 c_restore_env(cl_env_ptr the_env, cl_compiler_env_ptr new_c_env, cl_compiler_env_ptr old_c_env)
 {
+  if (new_c_env->env_depth == 0) {
+    /* Clear created constants (they cannot be printed) */
+    loop_for_in(new_c_env->ltf_locations) {
+      cl_index loc = ecl_fixnum(ECL_CONS_CAR(new_c_env->ltf_locations));
+      new_c_env->constants->vector.self.t[loc] = ecl_make_fixnum(0);
+    } end_loop_for_in;
+  }
   the_env->c_env = old_c_env;
 }
 
@@ -2205,16 +2215,34 @@ c_values(cl_env_ptr env, cl_object args, int flags) {
 }
 
 static void
+defer_load_object(cl_env_ptr env, cl_object place, cl_object created)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  if (ecl_member_eq(c_env->ltf_defer_init_until, created)) {
+    /* We are already deferring the init form long enough, nothing to do. */
+    return;
+  }
+  c_env->ltf_defer_init_until = place;
+}
+
+static void
 maybe_make_load_forms(cl_env_ptr env, cl_object constant)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object init, make;
-  if (c_env->mode != FLAG_LOAD)
+  cl_object init, make, created;
+  if ((c_env->mode != FLAG_LOAD)
+      || (si_need_to_make_load_form_p(constant) == ECL_NIL))
     return;
-  if (c_search_constant(env, constant) >= 0)
-    return;
-  if (si_need_to_make_load_form_p(constant) == ECL_NIL)
-    return;
+  created = c_env->ltf_being_created;
+  /* If we are compiling a creation form for another load time form, defer the
+   * init form until after this creation form has been compiled. */
+  loop_for_in(created) {
+    cl_object place = ECL_CONS_CAR(created);
+    if (ECL_CONS_CAR(place) == constant) {
+      defer_load_object(env, place, created);
+      return;
+    }
+  } end_loop_for_in;
   make = _ecl_funcall2(@'make-load-form', constant);
   init = (env->nvalues > 1)? env->values[1] : ECL_NIL;
   push(cl_list(3, constant, make, init), &c_env->load_time_forms);
@@ -2382,6 +2410,9 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
                                        ECL_NIL, /* displacement */
                                        ECL_NIL);
   new_c_env.load_time_forms = ECL_NIL;
+  new_c_env.ltf_being_created = ECL_NIL;
+  new_c_env.ltf_defer_init_until = ECL_NIL;
+  new_c_env.ltf_locations = ECL_NIL;
   new_c_env.env_depth = 0;
   new_c_env.env_size = 0;
   env->c_env = &new_c_env;
@@ -2449,47 +2480,90 @@ restore_bytecodes(cl_env_ptr env, cl_object bytecodes)
   ecl_dealloc(bytecodes);
 }
 
+static cl_index
+add_load_form(cl_env_ptr env, cl_object object)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  cl_object constant = pop(&object);
+  cl_object make_form = pop(&object);
+  cl_object init_form = pop(&object);
+  cl_object deferred_init_forms;
+  cl_index loc = c_register_constant(env, constant);
+  {
+    cl_object previous_locs = c_env->ltf_locations;
+    loop_for_in(previous_locs) {
+      if (ecl_fixnum(ECL_CONS_CAR(previous_locs)) == loc) {
+        /* We already compiled this load time form, nothing to do */
+        return loc;
+      }
+    } end_loop_for_in;
+  }
+  /* compile the MAKE-FORM */
+  /* c_env->ltf_being_created holds a list with the constant whose
+   * creation form is being compiled as first element... */
+  push(ecl_list1(constant), &c_env->ltf_being_created);
+  compile_with_load_time_forms(env, make_form, FLAG_REG0);
+  asm_op2(env, OP_CSET, loc);
+  /* ... and bytecodes for init forms which need to be deferred
+   * until the creation form has been evaluated in the following
+   * elements */
+  deferred_init_forms = ECL_CONS_CDR(pop(&c_env->ltf_being_created));
+  /* save the location of the created constant. This also serves as an
+   * indicator that we already compiled the load form for constant and
+   * don't need to do that again if we encouter constant in any other
+   * load time forms. */
+  push(ecl_make_fixnum(loc), &c_env->ltf_locations);
+  /* compile the INIT-FORM ... */
+  if (init_form != ECL_NIL) {
+    cl_index handle_init = current_pc(env);
+    cl_object old_init_until = c_env->ltf_defer_init_until;
+    c_env->ltf_defer_init_until = ECL_NIL;
+    compile_with_load_time_forms(env, init_form, FLAG_IGNORE);
+    /* ... and if it needs to be deferred, add it to c_env->ltf_being_created */
+    if (c_env->ltf_defer_init_until != ECL_NIL
+        && c_env->ltf_defer_init_until != object) {
+      cl_object bytecodes_init = save_bytecodes(env, handle_init, current_pc(env));
+      cl_object l = si_memq(c_env->ltf_defer_init_until, c_env->ltf_being_created);
+      if (l != ECL_NIL) {
+        cl_object constant_and_inits = ECL_CONS_CAR(l);
+        ECL_RPLACD(constant_and_inits,
+                   CONS(bytecodes_init, ECL_CONS_CDR(constant_and_inits)));
+      }
+    }
+    c_env->ltf_defer_init_until = old_init_until;
+  }
+  /* restore bytecodes for deferred init-forms. This comes after
+   * compiling the init form for constant since we are required to
+   * evaluate init forms as soon as possible. */
+  loop_for_in(deferred_init_forms) {
+    restore_bytecodes(env, ECL_CONS_CAR(deferred_init_forms));
+  } end_loop_for_in;
+  return loc;
+}
+
+
+/* First we compile the form as usual. If some constants need to be built,
+ * insert the code _before_ the actual forms; to do that we first save the
+ * bytecodes for the form, and then we compile forms that build constants;
+ * only after that we restore bytecodes of the compiled form. */
 static int
 compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags)
 {
-  /*
-   * First compile the form as usual.
-   */
   const cl_compiler_ptr c_env = env->c_env;
   cl_index handle = asm_begin(env);
   int output_flags = compile_form(env, form, flags);
-  /*
-   * If some constants need to be built, we insert the
-   * code _before_ the actual forms;
-   */
   if (c_env->load_time_forms != ECL_NIL) {
+    /* load_time_forms are collected in a reverse order, so we need to reverse
+       the list. Forms should not be compiled as top-level forms - to ensure
+       that we increment the lexical_level. */
     cl_object bytecodes = save_bytecodes(env, handle, current_pc(env));
-    /* reverse the load time forms list to make sure the forms are
-     * compiled in the right order */
-    cl_object p, forms_list = cl_nreverse(c_env->load_time_forms);
+    cl_object p = cl_nreverse(c_env->load_time_forms);
     c_env->load_time_forms = ECL_NIL;
-    p = forms_list;
-    c_env->lexical_level++;     /* don't treat load time forms as toplevel forms */
-    do {
-      cl_object r = ECL_CONS_CAR(p);
-      cl_object constant = pop(&r);
-      cl_object make_form = pop(&r);
-      cl_object init_form = pop(&r);
-      cl_index loc = c_register_constant(env, constant);
-      compile_with_load_time_forms(env, make_form, FLAG_REG0);
-      asm_op2(env, OP_CSET, loc);
-      compile_with_load_time_forms(env, init_form, FLAG_IGNORE);
-      ECL_RPLACA(p, ecl_make_fixnum(loc));
-      p = ECL_CONS_CDR(p);
-    } while (p != ECL_NIL);
+    c_env->lexical_level++;
+    loop_for_in(p) {
+      add_load_form(env, ECL_CONS_CAR(p));
+    } end_loop_for_in;
     c_env->lexical_level--;
-    p = forms_list;
-    do {
-      cl_index loc = ecl_fixnum(ECL_CONS_CAR(p));
-      /* Clear created constants (they cannot be printed) */
-      c_env->constants->vector.self.t[loc] = ecl_make_fixnum(0);
-      p = ECL_CONS_CDR(p);
-    } while (p != ECL_NIL);
     restore_bytecodes(env, bytecodes);
   }
   return output_flags;

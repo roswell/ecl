@@ -113,6 +113,12 @@ struct cl_compiler_env {
         cl_fixnum lexical_level;        /* =0 if toplevel form */
         cl_object constants;            /* Constants for this form */
         cl_object load_time_forms;      /* Constants that have to be rebuilt */
+        cl_object ltf_being_created;    /* Load time objects being compiled */
+        cl_object ltf_defer_init_until; /* Defer evaluation of current
+                                         * load time init form until
+                                         * this object has been created */
+        cl_object ltf_locations;        /* Locations of constants externalized
+                                         * with make-load-form */
         cl_object lex_env;              /* Lexical env. for eval-when */
         cl_object code_walker;          /* Value of SI:*CODE-WALKER* */
         cl_index env_depth;
