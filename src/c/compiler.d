@@ -568,6 +568,12 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
   new->env_size = 0;
 }
 
+static void
+c_restore_env(cl_env_ptr the_env, cl_compiler_env_ptr new_c_env, cl_compiler_env_ptr old_c_env)
+{
+  the_env->c_env = old_c_env;
+}
+
 static cl_object
 c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
 {
@@ -3139,7 +3145,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   output->bytecodes.name = name;
 
   old_c_env->load_time_forms = env->c_env->load_time_forms;
-  env->c_env = old_c_env;
+  c_restore_env(env, &new_c_env, old_c_env);
 
   ecl_bds_unwind1(env);
 
@@ -3183,21 +3189,21 @@ si_make_lambda(cl_object name, cl_object rest)
 {
   cl_object lambda;
   const cl_env_ptr the_env = ecl_process_env();
-  volatile cl_compiler_env_ptr old_c_env = the_env->c_env;
+  cl_compiler_env_ptr old_c_env = the_env->c_env;
   struct cl_compiler_env new_c_env;
 
   c_new_env(the_env, &new_c_env, ECL_NIL, 0);
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
     lambda = ecl_make_lambda(the_env, name, rest);
   } ECL_UNWIND_PROTECT_EXIT {
-    the_env->c_env = old_c_env;
+    c_restore_env(the_env, &new_c_env, old_c_env);
   } ECL_UNWIND_PROTECT_END;
   @(return lambda);
 }
 
 @(defun si::eval-with-env (form &optional (env ECL_NIL) (stepping ECL_NIL)
                            (compiler_env_p ECL_NIL) (mode @':execute'))
-  volatile cl_compiler_env_ptr old_c_env;
+  cl_compiler_env_ptr old_c_env;
   struct cl_compiler_env new_c_env;
   cl_object interpreter_env, compiler_env;
 @
@@ -3242,9 +3248,7 @@ si_make_lambda(cl_object name, cl_object rest)
       the_env->nvalues = 1;
     }
   } ECL_UNWIND_PROTECT_EXIT {
-    /* Clear up */
-    the_env->c_env = old_c_env;
-    memset(&new_c_env, 0, sizeof(new_c_env));
+    c_restore_env(the_env, &new_c_env, old_c_env);
   } ECL_UNWIND_PROTECT_END;
   return the_env->values[0];
 @)
