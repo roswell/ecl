@@ -531,6 +531,8 @@ extern ECL_API cl_object si_function_block_name(cl_object name);
 extern ECL_API cl_object si_valid_function_name_p(cl_object name);
 extern ECL_API cl_object si_process_declarations _ECL_ARGS((cl_narg narg, cl_object body, ...));
 
+extern ECL_API cl_object si_bc_compile_from_stream (cl_object input);
+
 extern ECL_API cl_object si_eval_with_env _ECL_ARGS((cl_narg narg, cl_object form, ...));
 
 /* interpreter.c */
