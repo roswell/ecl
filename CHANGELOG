@@ -31,12 +31,19 @@
 ** Announcement
 ** Enhancements
 - less cryptic names in backtraces of C-compiled functions
-** Issues fixed
-- The generational and precise garbage collector modes work again
 - ECL can now use precompiled headers to speed up compilation. Use ~(setq
   c::*use-precompiled-headers* nil)~ to disable this feature
 ** Issues fixed
+- the generational and precise garbage collector modes work again
 - ~serve-event~ extension may be used simultaneously from different threads now
+- several Unicode issues have been fixed thanks to Vladimir Sedach
+- encoding issues when reading in the output of the MSVC compiler have been fixed
+- inlining of a local function which closes over a variable no longer leads
+  to miscompilations if a variable with the same name exists at the point
+  where the function is inlined
+- the bytecompiler handles load time forms from literal objects correctly
+  with regards to the evaluation order and to multiple occurrences of the same
+  literal object in a single file
 ** API changes
 - a condition ~ext:timeout~ is defined
 * 20.4.24 changes since 16.1.3
