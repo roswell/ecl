@@ -169,6 +169,7 @@ find_pending_package(cl_env_ptr env, cl_object name, cl_object nicknames)
       }
     l = ECL_CONS_CDR(l);
   }
+  return ECL_NIL;
 }
 
 static cl_object
