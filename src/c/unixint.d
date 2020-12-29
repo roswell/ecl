@@ -433,7 +433,9 @@ queue_signal(cl_env_ptr env, cl_object code, int allocate)
 
         /* INV: interrupts are disabled, therefore the spinlock will
          * always be released */
+#ifdef ECL_THREADS
         ecl_get_spinlock(ecl_process_env(), &env->interrupt_struct->signal_queue_spinlock);
+#endif
 
         cl_object record;
         if (allocate) {
@@ -452,7 +454,9 @@ queue_signal(cl_env_ptr env, cl_object code, int allocate)
                                   record);
         }
 
+#ifdef ECL_THREADS
         ecl_giveup_spinlock(&env->interrupt_struct->signal_queue_spinlock);
+#endif
 }
 
 static cl_object
@@ -469,8 +473,9 @@ pop_signal(cl_env_ptr env)
          * into env, therefore it is valid to use
          * ecl_disable_interrupts_env */
         ecl_disable_interrupts_env(env);
+#ifdef ECL_THREADS
         ecl_get_spinlock(env, &env->interrupt_struct->signal_queue_spinlock);
-
+#endif
         if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
                 value = ECL_NIL;
         } else {
@@ -483,8 +488,9 @@ pop_signal(cl_env_ptr env)
                         env->interrupt_struct->signal_queue = record;
                 }
         }
-
+#ifdef ECL_THREADS
         ecl_giveup_spinlock(&env->interrupt_struct->signal_queue_spinlock);
+#endif
         ecl_enable_interrupts_env(env);
         return value;
 }
