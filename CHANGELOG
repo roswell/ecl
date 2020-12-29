@@ -32,7 +32,7 @@
 ** Enhancements
 - less cryptic names in backtraces of C-compiled functions
 - ECL can now use precompiled headers to speed up compilation. Use ~(setq
-  c::*use-precompiled-headers* nil)~ to disable this feature
+  c::*use-precompiled-headers* t)~ to enable this feature
 ** Issues fixed
 - the generational and precise garbage collector modes work again
 - ~serve-event~ extension may be used simultaneously from different threads now

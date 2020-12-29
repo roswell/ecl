@@ -212,7 +212,7 @@ slashes before special characters.")
 and standalone programs. It is not required to surround values with quotes or use
 slashes before special characters.")
 
-(defvar *use-precompiled-headers* #+msvc nil #-msvc t
+(defvar *use-precompiled-headers* nil
 "This variable controls whether the C compiler uses precompiled header files.")
 (defvar *precompiled-header-flags* nil)
 (defvar *precompiled-header-cc-config* nil)
