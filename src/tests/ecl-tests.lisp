@@ -89,10 +89,12 @@ allow using reader macros. The output is stored in a string and output
 as a second value."
   `(progn
      (with-open-file (s ,filename :direction :output :if-exists :supersede
-                        :if-does-not-exist :create)
-       ,@(loop for f in forms collect (if (stringp f)
-                                          `(format s "~A" ,f)
-                                          `(print ,f s))))
+                                  :if-does-not-exist :create)
+       (let ((*print-circle* t)
+             (*print-readably* t))
+         ,@(loop for f in forms collect (if (stringp f)
+                                            `(format s "~A" ,f)
+                                            `(print ,f s)))))
      (let* ((compiled-file t)
             (output
              (with-output-to-string (*standard-output*)
