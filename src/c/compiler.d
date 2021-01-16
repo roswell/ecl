@@ -547,6 +547,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
                                     ECL_NIL, /* displacement */
                                     ECL_NIL);
     new->stepping = 0;
+    new->lex_env = ECL_NIL;
     new->lexical_level = 0;
     new->load_time_forms = ECL_NIL;
     new->ltf_being_created = ECL_NIL;
