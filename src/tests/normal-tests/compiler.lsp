@@ -1967,3 +1967,38 @@
                                    (block nil
                                      (progv '(*s*) (list 0) (return 1) *s*)))))))
     (is (not (boundp '*s*)))))
+
+;;; Date 2021-01-16
+;;; Description
+;;;
+;;;     Compiling a local function of type CLOSURE can lead to an
+;;;     internal compiler error if the function is later inlined
+;;;     because the compiler would indiscriminantly change the closure
+;;;     type to LEXICAL during inlining.
+(ext:with-clean-symbols (some-global-fun another-global-fun)
+  (defun some-global-fun (fun)
+    (funcall fun))
+  (defun another-global-fun (x)
+    x)
+  (test cmp.0084.inline-local-closure-type
+    (let ((fun '(lambda (arg)
+                 (declare (optimize speed))
+                 (labels
+                     ((a ()
+                        (some-global-fun #'b)
+                        (c))
+                      (b ()
+                        (c))
+                      (c ()
+                        ;; c is of type CLOSURE (arg is passed to
+                        ;; a global function). This "infects" a
+                        ;; and b to be of type CLOSURE too.
+                        (incf arg)
+                        (another-global-fun arg)))
+                   (declare (inline a))
+                   (a))))
+          compiled-fun warnings-p errors-p)
+      (finishes (multiple-value-setq (compiled-fun warnings-p error-p)
+                  (compile nil fun)))
+      (is (null errors-p))
+      (is (= (funcall compiled-fun 0) 2)))))

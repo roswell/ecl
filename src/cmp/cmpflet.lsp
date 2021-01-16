@@ -276,8 +276,9 @@
       ;; we introduce a variable to hold the funob
       (let ((var (fun-var fun)))
         (when (and cfb build-object)
-          (setf (var-ref-clb var) t
-                (var-kind var) 'LEXICAL))))
+          (setf (var-ref-clb var) t)
+          (when (not (eq (var-kind var) 'CLOSURE))
+            (setf (var-kind var) 'LEXICAL)))))
     fun))
 
 (defun c2call-local (c1form fun args)
