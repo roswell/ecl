@@ -1943,3 +1943,27 @@
            (code `(defmethod test-method ()
                     ,test-obj)))
       (finishes (eval code)))))
+
+;;; Date 2021-01-02
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/620
+;;; Description
+;;;
+;;;     RETURN inside the symbol or value arguments for PROGV leads to
+;;;     a segfault
+(ext:with-clean-symbols (*s*)
+  (test cmp.0083.progv-return
+    (proclaim '(special *s*))
+    (is (eql 0 (funcall (compile nil
+                                 '(lambda ()
+                                   (block nil
+                                     (progv (list (return 0)) (list 1))))))))
+    (is (eql 0 (funcall (compile nil
+                                 '(lambda ()
+                                   (block nil
+                                     (progv '(*s*) (list (return 0)))))))))
+    (is (not (boundp '*s*)))
+    (is (eql 1 (funcall (compile nil
+                                 '(lambda ()
+                                   (block nil
+                                     (progv '(*s*) (list 0) (return 1) *s*)))))))
+    (is (not (boundp '*s*)))))
