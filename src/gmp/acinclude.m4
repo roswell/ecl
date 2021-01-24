@@ -3486,6 +3486,7 @@ else
      AC_TRY_RUN([
 #include <string.h>  /* for strcmp */
 #include <stdio.h>   /* for vsnprintf */
+#include <stdlib.h>  /* for exit */
 
 #if HAVE_STDARG
 #include <stdarg.h>
@@ -3659,6 +3660,7 @@ AC_DEFUN([GMP_PROG_CC_FOR_BUILD_WORKS],
 # remove anything that might look like compiler output to our "||" expression
 rm -f conftest* a.out b.out a.exe a_out.exe
 cat >conftest.c <<EOF
+#include <stdlib.h>
 int
 main ()
 {
@@ -3733,6 +3735,7 @@ AC_DEFUN([GMP_PROG_EXEEXT_FOR_BUILD],
 AC_CACHE_CHECK([for build system executable suffix],
                gmp_cv_prog_exeext_for_build,
 [cat >conftest.c <<EOF
+#include <stdlib.h>
 int
 main ()
 {
@@ -3769,6 +3772,7 @@ AC_DEFUN([GMP_CHECK_LIBM_FOR_BUILD],
 AC_CACHE_CHECK([for build system compiler math library],
                gmp_cv_check_libm_for_build,
 [cat >conftest.c <<EOF
+#include <stdlib.h>
 int
 main ()
 {
