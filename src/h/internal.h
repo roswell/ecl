@@ -490,7 +490,7 @@ extern cl_object ecl_waiter_pop(cl_env_ptr the_env, cl_object q);
 
 /* threads/rwlock.d */
 
-#ifdef ECL_RWLOCK
+#ifdef ECL_THREADS
 extern cl_object mp_get_rwlock_read_wait(cl_object lock);
 extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 #endif
