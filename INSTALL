@@ -98,7 +98,7 @@ Hint provided by Pascal J. Bourguignon.
    #+END_SRC
 3. Build and install the target library
    #+BEGIN_SRC shell-script
-     export CFLAGS="$CFLAGS -DECL_C_COMPATIBLE_VARIADIC_DISPATCH -DGC_DISABLE_INCREMENTAL -DECL_RWLOCK"
+     export CFLAGS="$CFLAGS -DGC_DISABLE_INCREMENTAL -DECL_RWLOCK"
      export CXXFLAGS="$CFLAGS"
      ./configure --host=aarch64-apple-darwin \
                  --prefix=`pwd`/ecl-iOS \
