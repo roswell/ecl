@@ -769,7 +769,7 @@ struct ecl_cfun {               /*  compiled function header  */
         cl_object block;        /*  descriptor of C code block for GC  */
         cl_objectfn entry;      /*  entry address  */
 #ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
-        /* Some architectures (i.e. ARM64 on iOS) use a different
+        /* Some architectures (i.e. ARM64 on iOS/Mac OS X) use a different
          * calling convention for the fixed and variadic arguments of
          * a variadic function. The only portable way to allow for
          * function redefinitions during runtime in these
