@@ -57,6 +57,9 @@
 /* ECL_SSE2 */
 #undef ECL_SSE2
 
+/* Network streams */
+#undef ECL_TCP
+
 /* Userland threads? */
 #undef ECL_THREADS
 
@@ -635,9 +638,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Network streams */
-#undef ECL_TCP
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
