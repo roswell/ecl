@@ -26,17 +26,17 @@
   (when (si::valid-function-name-p thing)
     (setq thing (fdefinition thing)))
   (cond ((null thing))
-	((functionp thing)
-	 (si::bc-disassemble thing))
-	((and (consp thing)
+        ((functionp thing)
+         (si::bc-disassemble thing))
+        ((and (consp thing)
               (member (car thing) '(LAMBDA 'EXT:LAMBDA-BLOCK)))
-	 (disassemble (compile nil thing)))
-	(t
-	 (error 'simple-type-error
-		:datum thing
-		:expected-type '(OR FUNCTION (SATISFIES SI:VALID-FUNCTION-NAME-P))
-		:format-control "DISASSEMBLE cannot accept ~A."
-		:format-arguments (list thing))))
+         (disassemble (compile nil thing)))
+        (t
+         (error 'simple-type-error
+                :datum thing
+                :expected-type '(OR FUNCTION (SATISFIES SI:VALID-FUNCTION-NAME-P))
+                :format-control "DISASSEMBLE cannot accept ~A."
+                :format-arguments (list thing))))
   nil)
 
 (defun bc-compile (name &optional (definition nil def-p) &aux (*print-pretty* nil))
@@ -49,14 +49,14 @@
                     (warn "COMPILE can not compile C closures")
                     (return-from bc-compile (values definition t nil)))
                    (lexenv (setf definition (si:eval-with-env form lexenv)))
-                   (t (setf definition (si:eval-with-env form nil nil nil t))))))
+                   (t (setf definition (si:eval-with-env form nil nil nil :execute))))))
          (when name (setf (fdefinition name) definition))
          (return-from bc-compile (values (or name definition) nil nil)))
         ((not (null definition))
          (unless (member (car definition) '(LAMBDA EXT:LAMBDA-BLOCK))
            (format t "~&;;; Error: Not a valid lambda expression: ~s." definition)
            (return-from bc-compile (values nil t t)))
-         (setq definition (si:eval-with-env definition nil nil nil t))
+         (setq definition (si:eval-with-env definition nil nil nil :execute))
          (when name (setf (fdefinition name) definition))
          (return-from bc-compile (values (or name definition) nil nil)))
         ((not (fboundp name))
@@ -72,16 +72,16 @@
                     (warn "The bytecodes compiler can not compile C closures")
                     (return-from bc-compile (values definition t nil)))
                    (lexenv (setf definition (si:eval-with-env form lexenv)))
-                   (t (setf definition (si:eval-with-env form nil nil nil t))))))
+                   (t (setf definition (si:eval-with-env form nil nil nil :execute))))))
          (when (null definition)
            (warn "We have lost the original function definition for ~s." name)
            (return-from bc-compile (values name t nil)))
          (return-from bc-compile (values name nil nil)))))
 
 (defun bc-compile-file-pathname (name &key (output-file name) (type :fasl)
-				 verbose print c-file h-file data-file
-				 shared-data-file system-p load external-format)
-  (declare (ignore load c-file h-file data-file shared-data-file system-p verbose print))
+                                        verbose print c-file h-file data-file
+                                        shared-data-file system-p load external-format)
+  (declare (ignore load c-file h-file data-file shared-data-file system-p verbose print external-format))
   (let ((extension "fasc"))
     (case type
       ((:fasl :fas) (setf extension "fasc"))
@@ -89,13 +89,13 @@
     (make-pathname :type extension :defaults output-file)))
 
 (defun bc-compile-file (input
-			&key
-			((:verbose *compile-verbose*) *compile-verbose*)
-			((:print *compile-print*) *compile-print*)
-			(load nil)
-			(external-format :default)
-			(output-file nil output-file-p)
-			&allow-other-keys &aux foo)
+                        &key
+                          ((:verbose *compile-verbose*) *compile-verbose*)
+                          ((:print *compile-print*) *compile-print*)
+                          (load nil)
+                          (external-format :default)
+                          (output-file nil output-file-p)
+                        &allow-other-keys &aux foo)
   (setf output-file (if (and output-file-p (not (eql output-file t)))
                         (pathname output-file)
                         (bc-compile-file-pathname input)))
@@ -112,20 +112,15 @@
         (t
          (with-open-file (sout output-file :direction :output :if-exists :supersede
                                :if-does-not-exist :create
-			       :external-format external-format)
-	   (let ((binary (loop
-			    with *package* = *package*
-			    with *readtable* = *readtable*
-			    with ext:*bytecodes-compiler* = t
-			    for position = (file-position input)
-			    for form = (read input nil :EOF)
-			    until (eq form :EOF)
-			    do (when ext::*source-location*
-				 (rplacd ext:*source-location* position))
-			    collect (si:eval-with-env form nil nil nil nil))))
-	     (sys:with-ecl-io-syntax
-		 (write binary :stream sout :circle t :escape t :readably t :pretty nil))
-	     (terpri sout)))))
+                               :external-format external-format)
+           (let ((binary
+                  (let ((*package* *package*)
+                        (*readtable* *readtable*)
+                        (ext:*bytecodes-compiler* t))
+                    (si::bc-compile-from-stream input))))
+             (sys:with-ecl-io-syntax
+                 (write binary :stream sout :circle t :escape t :readably t :pretty nil))
+             (terpri sout)))))
   (when load
     (load output-file :verbose *compile-verbose*))
   (values output-file nil nil))

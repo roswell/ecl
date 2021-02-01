@@ -335,6 +335,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
         (maxarg call-arguments-limit))
     (destructuring-bind (requireds optionals rest key-flag keywords a-o-k)
         (c1form-arg 0 lambda)
+      (declare (ignore keywords))
       (setf minarg (length requireds))
       (when (and (null rest) (not key-flag) (not a-o-k))
         (setf maxarg (+ minarg (/ (length optionals) 3)))))
@@ -572,12 +573,15 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 
   (close-inline-blocks))
 
-(defun optimize-funcall/apply-lambda (lambda-form arguments apply-p
-                                      &aux body apply-list apply-var
-                                      let-vars extra-stmts all-keys)
+;;; Transform a (funcall lambda-form arguments) or (apply lambda-form
+;;; arguments) expression into an equivalent let* statement. Returns
+;;; the bindings and body as two values.
+(defun transform-funcall/apply-into-let* (lambda-form arguments apply-p
+                                          &aux body apply-list apply-var
+                                          let-vars extra-stmts all-keys)
   (multiple-value-bind (requireds optionals rest key-flag keywords
                                   allow-other-keys aux-vars)
-      (cmp-process-lambda-list (car lambda-form))
+      (cmp-process-lambda-list (second lambda-form))
     (when apply-p
       (setf apply-list (first (last arguments))
             apply-var (gensym)
@@ -655,8 +659,13 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
                 extra-stmts))))
     (when (and key-flag (not allow-other-keys))
       (push `(si::check-keyword ,rest ',all-keys) extra-stmts))
-    `(let* ,(nreverse (delete-if-not #'first let-vars))
-       ,@(and apply-var `((declare (ignorable ,apply-var))))
-      ,@(multiple-value-bind (decl body)
-           (si::find-declarations (rest lambda-form))
-         (append decl extra-stmts body)))))
+    (values (nreverse (delete-if-not #'first let-vars))
+            `(,@(and apply-var `((declare (ignorable ,apply-var))))
+              ,@(multiple-value-bind (decl body)
+                    (si::find-declarations (cddr lambda-form))
+                  (append decl extra-stmts body))))))
+
+(defun optimize-funcall/apply-lambda (lambda-form arguments apply-p)
+  (multiple-value-bind (bindings body)
+      (transform-funcall/apply-into-let* lambda-form arguments apply-p)
+    `(let* ,bindings ,@body)))

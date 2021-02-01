@@ -99,23 +99,23 @@ cl_both_case_p(cl_object c)
 int
 ecl_string_case(cl_object s)
 {
+  /* Returns 1 if string is all uppercase, -1 if all lowercase, and 0 if mixed case */
   int upcase;
   cl_index i;
-  ecl_base_char *text;
         
   switch (ecl_t_of(s)) {
 #ifdef ECL_UNICODE
   case t_string:
-    s = si_coerce_to_base_string(s);
 #endif
   case t_base_string:
-    text = (ecl_base_char*)s->base_string.self;
     for (i = 0, upcase = 0; i < s->base_string.dim; i++) {
-      if (ecl_upper_case_p(text[i])) {
+      ecl_character c = ecl_char(s, i);
+
+      if (ecl_upper_case_p(c)) {
         if (upcase < 0)
           return 0;
         upcase = +1;
-      } else if (ecl_lower_case_p(text[i])) {
+      } else if (ecl_lower_case_p(c)) {
         if (upcase > 0)
           return 0;
         upcase = -1;

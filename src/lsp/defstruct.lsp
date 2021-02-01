@@ -313,10 +313,10 @@
       (or (equal old-def new-def)
           (destructuring-bind (old-slot-name old-init old-type old-read-only old-offset old-ac)
               old-def
-            (declare (ignore old-init old-read-only old-ac))
+            (declare (ignore old-slot-name old-init old-read-only old-ac))
             (destructuring-bind (new-slot-name new-init new-type new-read-only new-offset new-ac)
                 new-def
-              (declare (ignore new-init new-read-only new-ac))
+              (declare (ignore new-slot-name new-init new-read-only new-ac))
               ;; Name EQL is not enforced because structures may be
               ;; constructed by code generators and it is likely they
               ;; will have gensymed names. -- jd 2019-05-22

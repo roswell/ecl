@@ -112,12 +112,15 @@
        (no-make-load-form object)))))
 
 (defmethod make-load-form ((object standard-object) &optional environment)
+  (declare (ignore environment))
   (no-make-load-form object))
 
 (defmethod make-load-form ((object structure-object) &optional environment)
+  (declare (ignore environment))
   (no-make-load-form object))
 
 (defmethod make-load-form ((object condition) &optional environment)
+  (declare (ignore environment))
   (no-make-load-form object))
 
 (defun no-make-load-form (object)

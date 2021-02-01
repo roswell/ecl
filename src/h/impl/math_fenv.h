@@ -72,16 +72,15 @@
 
 #if defined(HAVE_FENV_H) && !defined(ECL_AVOID_FPE_H)
 # if defined(HAVE_FEENABLEEXCEPT)
-#  define ECL_WITH_LISP_FPE_BEGIN do {                   \
-        fenv_t __fenv;                                   \
-        fegetenv(&__fenv);                               \
-        cl_env_ptr __the_env = ecl_process_env_unsafe(); \
-        if (__the_env) {                                 \
-                int bits = __the_env->trap_fpe_bits;     \
-                fedisableexcept(FE_ALL_EXCEPT & ~bits);  \
-                feenableexcept(FE_ALL_EXCEPT & bits);    \
-        }                                                \
-        feclearexcept(FE_ALL_EXCEPT);
+#  define ECL_WITH_LISP_FPE_BEGIN do {                       \
+        fenv_t __fenv;                                       \
+        fegetenv(&__fenv);                                   \
+        feclearexcept(FE_ALL_EXCEPT);                        \
+        if (ecl_get_option(ECL_OPT_BOOTED) > 0) {            \
+                int bits = ecl_process_env()->trap_fpe_bits; \
+                fedisableexcept(FE_ALL_EXCEPT & ~bits);      \
+                feenableexcept(FE_ALL_EXCEPT & bits);        \
+        }
 # else
 #  define ECL_WITH_LISP_FPE_BEGIN do {                   \
         fenv_t __fenv;                                   \

@@ -46,7 +46,7 @@ ECL_USE_DBGHELP_FLAG=0
 # Programs used by "make":
 #
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I$(srcdir) -I$(top_srcdir)/bdwgc/include  -I$(top_srcdir)/bdwgc/include/private -I$(srcdir)/unicode
+CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I../ecl -I$(srcdir) -I$(srcdir)/unicode
 
 SHELL	= /bin/sh
 RM	= del
@@ -155,7 +155,7 @@ clean:
 	-for %f in ($(OBJS) all_symbols.obj all_symbols2.obj) do $(RM) %f
 	-$(RM) *.pdb
 	-for %f in (..\ecl\config.h dpp dpp.obj $(DPP) cut.exe cut.obj \
-	            ..\eclmin.lib ..\cinit.obj cinit.c symbols_list2.h) \
+	            ..\eclmin.lib ..\cinit.obj cinit.c) \
 	     do $(RM) %f
 	-for %f in (..\ecl\*.h) do $(RM) %f
 	-for %f in (cut.exe cut.obj dpp.exe dpp.obj) do $(RM) %f
@@ -164,7 +164,7 @@ clean:
 
 # Build rules
 
-$(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list2.h ../ecl/config.h ../ecl/config-internal.h
+$(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list.h ../ecl/config.h ../ecl/config-internal.h
 	$(CC) /nologo -I.. -I./ $(srcdir)/dpp.c /Fe$@
 $(HFILES): ../ecl/config.h.msvc6 ../ecl/config-internal.h.msvc6 Makefile
 	-mkdir ..\ecl\impl

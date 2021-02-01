@@ -351,7 +351,7 @@ file_truename(cl_object pathname, cl_object filename, int flags)
      * the other hand, if the link is broken – return file
      * truename "as is". */
     struct stat filestatus;
-    if (safe_stat(filename->base_string.self, &filestatus) < 0) {
+    if (safe_stat((char*) filename->base_string.self, &filestatus) < 0) {
       @(return pathname kind);
     }
     filename = si_readlink(filename);
@@ -560,7 +560,9 @@ ecl_file_len(int f)
     }
 #endif
   }
+#if defined(ECL_MS_WINDOWS_HOST)
  FAILURE_CLOBBER:
+#endif
   ecl_enable_interrupts();
   {
     cl_object c_error = _ecl_strerror(errno);

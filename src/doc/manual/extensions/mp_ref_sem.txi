@@ -1,6 +1,8 @@
 @node Semaphores
 @subsection Semaphores
 
+@cindex Semaphores (synchronization)
+
 Semaphores are objects which allow an arbitrary resource
 count. Semaphores are used for shared access to resources where number
 of concurrent threads allowed to access it is limited.
@@ -85,7 +87,7 @@ was acquired.
 @end defun
 
 
-@lspdef mp_signal_semaphore
+@cppdef mp_signal_semaphore
 @lspdef mp:signal-semaphore
 
 @deftypefun cl_object mp_signal_semaphore (cl_narg n, cl_object sem, ...);

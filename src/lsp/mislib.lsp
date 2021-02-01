@@ -251,7 +251,7 @@ Universal Time UT, which defaults to the current time."
                         #.(encode-universal-time 0 0 0 1 1 2033 0))
                     (- universal-time (encode-universal-time 0 0 0 1 1 year 0) utc-1-1-1970)))))
     #-ecl-min
-    (ffi::c-inline (unix-time) (:unsigned-long-long) :bool "
+    (ffi::c-inline (unix-time) (#+long-long :unsigned-long-long #-long-long :unsigned-long) :bool "
 {
         time_t when = (#0);
         struct tm *ltm = localtime(&when);

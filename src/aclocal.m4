@@ -49,7 +49,9 @@ else
 fi
 if test $ac_cv_c_long_long = yes; then
   if test "x$ECL_LONG_LONG_BITS" = "x"; then
-    AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
+    AC_RUN_IFELSE([AC_LANG_SOURCE([
+[#include <stdio.h>
+ #include <stdlib.h>
 int main() {
   const char *int_type;
   int bits;
@@ -665,6 +667,21 @@ case "${ECL_STACK_DIR}" in
   up|UP) AC_MSG_RESULT(no) ;;
   *) AC_MSG_ERROR(Unable to determine stack growth direction)
 esac])
+
+dnl
+dnl --------------------------------------------------------------
+dnl Check if we can determine the stack size at runtime
+dnl
+AC_DEFUN(ECL_STACK_SIZE,[
+AC_CHECK_HEADER([sys/resource.h],
+                [AC_DEFINE([HAVE_SYS_RESOURCE_H], [], [Define to 1 if you have the <sys/resource.h> header file.])
+                 AC_CHECK_DECL([RLIMIT_STACK],
+                               [AC_DEFINE([ECL_CAN_SET_STACK_SIZE], [], [Define to 1 if we can set the stack size at runtime.])],
+                               [],
+                               [#include <sys/resource.h>])],
+                [],[])
+])
+
 dnl
 dnl ------------------------------------------------------------
 dnl Find out a setjmp() that does not save signals. It is called
@@ -688,9 +705,11 @@ AC_SUBST(CL_FIXNUM_MAX)
 AC_SUBST(CL_FIXNUM_MIN)
 AC_SUBST(CL_INT_BITS)
 AC_SUBST(CL_LONG_BITS)
-AC_MSG_CHECKING(appropiate type for fixnums)
+AC_MSG_CHECKING(appropriate type for fixnums)
 if test -z "${CL_FIXNUM_TYPE}" ; then
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <stdlib.h>
 int main() {
   const char *int_type;
   int bits;
@@ -763,7 +782,7 @@ int main() {
 }]])],[eval "`cat conftestval`"],[],[])
 fi
 if test -z "${CL_FIXNUM_TYPE}" ; then
-AC_MSG_ERROR(There is no appropiate integer type for the cl_fixnum type)
+AC_MSG_ERROR(There is no appropriate integer type for the cl_fixnum type)
 fi
 AC_MSG_RESULT([${CL_FIXNUM_TYPE}])])
 
@@ -775,7 +794,9 @@ dnl
 AC_DEFUN(ECL_LINEFEED_MODE,[
 AC_MSG_CHECKING(character sequence for end of line)
 if test -z "${ECL_NEWLINE}" ; then
-AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <stdlib.h>
 int main() {
   FILE *f = fopen("conftestval","w");
   int c1, c2;
@@ -1065,20 +1086,12 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
                  [], [system_boehm="no"] )
    AC_CHECK_LIB( [gc], [GC_register_my_thread],
                  [], [system_boehm="no"] )
+   AC_CHECK_LIB( [gc], [GC_set_start_callback],
+                 [], [system_boehm="no"] )
  fi
  if test "${system_boehm}" = yes; then
-   AC_CHECK_HEADER([gc.h],[ECL_BOEHM_GC_HEADER='gc.h'],[],[])
-   if test -z "$ECL_BOEHM_GC_HEADER"; then
-     AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],
-                     [system_boehm=no],[])
-   fi
- fi
- if test "${system_boehm}" = "yes"; then
-   AC_CHECK_LIB( [gc], [GC_set_start_callback],
-                 [AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [],
-                            [HAVE_GC_SET_START_CALLBACK])], [] )
- else
-  AC_DEFINE([HAVE_GC_SET_START_CALLBACK], [], [HAVE_GC_SET_START_CALLBACK])
+   AC_CHECK_HEADER([gc/gc.h],[ECL_BOEHM_GC_HEADER='gc/gc.h'],
+                   [system_boehm=no],[])
  fi
  AC_MSG_CHECKING( [whether we can use the existing Boehm-Weiser library] )
  AC_MSG_RESULT( [${system_boehm}] )
@@ -1126,10 +1139,9 @@ if test "${enable_boehm}" = "included"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
      fi
      AC_DEFINE(GBC_BOEHM, [0], [Use Boehm's garbage collector])
+   else
+     AC_MSG_ERROR([Unable to configure Boehm-Weiser GC])
    fi
- fi
- if test -z "${ECL_BOEHM_GC_HEADER}"; then
-   AC_MSG_ERROR([Unable to configure Boehm-Weiser GC])
  fi
 fi
 if test "${enable_gengc}" != "no" ; then

@@ -65,19 +65,19 @@
                      "ecl_princ(#0,#1)"
                      :one-liner t)))
 
-(define-compiler-macro terpri (&optional stream &environment env)
+(define-compiler-macro terpri (&optional stream)
   `(ffi:c-inline (,stream)
                  (:object) :object
                  "ecl_terpri(#0)"
                  :one-liner t))
 
-(define-compiler-macro print (value &optional stream &environment env)
+(define-compiler-macro print (value &optional stream)
   `(ffi:c-inline (,value ,stream)
                  (:object :object) :object
                  "ecl_print(#0,#1)"
                  :one-liner t))
 
-(define-compiler-macro prin1 (value &optional stream &environment env)
+(define-compiler-macro prin1 (value &optional stream)
   `(ffi:c-inline (,value ,stream)
                  (:object :object) :object
                  "ecl_prin1(#0,#1)"

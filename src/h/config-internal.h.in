@@ -42,9 +42,6 @@
 #define ECL_WEAK_HASH
 #endif
 
-/* GC_set_start_callback                                                */
-#undef HAVE_GC_SET_START_CALLBACK
-
 /*
  * SYSTEM FEATURES:
  */
@@ -108,7 +105,6 @@
 /* the tzset() function gets the current time zone                      */
 #undef HAVE_TZSET
 /* several floating point functions (ISO C99)                           */
-#if 0
 #undef HAVE_EXPF
 #undef HAVE_LOGF
 #undef HAVE_SQRTF
@@ -118,7 +114,6 @@
 #undef HAVE_SINHF
 #undef HAVE_COSHF
 #undef HAVE_TANHF
-#endif
 #undef HAVE_FLOORF
 #undef HAVE_CEILF
 #undef HAVE_FABSF
@@ -245,8 +240,20 @@
 #include "@ECL_LIBFFI_HEADER@"
 #endif
 
-#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK) && !defined(NACL)
+/* Can we determine and set the stack size at runtime? */
+#undef ECL_CAN_SET_STACK_SIZE
+
+#if defined(ECL_CAN_SET_STACK_SIZE)
 #define ECL_DEFAULT_C_STACK_SIZE 0 /* Use the stack size provided by the OS */
 #else
 #define ECL_DEFAULT_C_STACK_SIZE @ECL_DEFAULT_C_STACK_SIZE@
+#endif
+
+/* Do the fixed and optional arguments of a variadic function use a
+ * different calling convention?
+ * Hardcoded since there's no easy way to determine this from a
+ * configure check and currently ARM64 apple is the only platform
+ * known to do this. */
+#if defined(__APPLE__) && (defined(__arm64__) || defined(__aarch64__))
+#define ECL_C_COMPATIBLE_VARIADIC_DISPATCH
 #endif

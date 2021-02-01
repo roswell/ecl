@@ -53,13 +53,11 @@ print_oparg_arg(const char *s, cl_fixnum n, cl_object x) {
 static void
 disassemble_lambda(cl_object bytecodes) {
   const cl_env_ptr env = ecl_process_env();
-  cl_object *data;
   cl_opcode *vector;
 
   ecl_bds_bind(env, @'*print-pretty*', ECL_NIL);
 
   /* Print required arguments */
-  data = bytecodes->bytecodes.data->vector.self.t;
   cl_print(1,bytecodes->bytecodes.data);
 
   /* Name of LAMBDA */

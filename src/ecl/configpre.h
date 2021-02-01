@@ -9,6 +9,9 @@
 /* ECL_AVOID_FPE_H */
 #undef ECL_AVOID_FPE_H
 
+/* Define to 1 if we can set the stack size at runtime. */
+#undef ECL_CAN_SET_STACK_SIZE
+
 /* Allow STREAM operations to work on arbitrary objects */
 #undef ECL_CLOS_STREAMS
 
@@ -53,6 +56,9 @@
 
 /* ECL_SSE2 */
 #undef ECL_SSE2
+
+/* Network streams */
+#undef ECL_TCP
 
 /* Userland threads? */
 #undef ECL_THREADS
@@ -329,9 +335,6 @@
 
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
-
-/* HAVE_GC_SET_START_CALLBACK */
-#undef HAVE_GC_SET_START_CALLBACK
 
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
@@ -635,9 +638,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Network streams */
-#undef TCP
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME

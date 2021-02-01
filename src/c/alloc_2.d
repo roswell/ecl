@@ -27,32 +27,20 @@
 #endif
 
 #ifdef GBC_BOEHM
+#include <gc/gc_mark.h>
 
 static void (*GC_old_start_callback)(void) = NULL;
-#ifdef HAVE_GC_SET_START_CALLBACK
-extern void GC_set_start_callback(void *);
-extern void *GC_get_start_callback();
-#else
-extern void (*GC_start_call_back)(void);
-#endif
 static void gather_statistics(void);
 static void update_bytes_consed(void);
 static void ecl_mark_env(struct cl_env_struct *env);
-
-/* We need these prototypes because private/gc.h is not available
- * and this interface is not yet exported by BDWGC */
-extern void GC_push_all(char *bottom, char *top);
-extern void GC_push_conditional(char *bottom, char *top, int all);
-extern void GC_set_mark_bit(const void *p);
  
 #ifdef GBC_BOEHM_PRECISE
 # if GBC_BOEHM
 #  undef GBC_BOEHM_PRECISE
 # else
-#  include "gc_typed.h"
-#  include "gc_mark.h"
+#  include <gc/gc_typed.h>
 #  ifdef GBC_BOEHM_OWN_ALLOCATOR
-#  include "private/gc_priv.h"
+#  include <gc/private/gc_priv.h>
 #  endif
 #  define GBC_BOEHM_OWN_MARKER
 #  if defined(GBC_BOEHM_OWN_MARKER) || defined(GBC_BOEHM_OWN_ALLOCATOR)
@@ -191,11 +179,13 @@ static struct ecl_type_information {
   size_t t;
 } type_info[t_end];
 
+#ifdef GBC_BOEHM_PRECISE
 static void
 error_wrong_tag(cl_type t)
 {
   ecl_internal_error("Collector called with invalid tag number.");
 }
+#endif
 
 cl_index
 ecl_object_byte_size(cl_type t)
@@ -293,13 +283,6 @@ allocate_object_own(register struct ecl_type_information *type_info)
 #endif /* GBC_BOEHM_OWN_ALLOCATOR */
 
 #ifdef GBC_BOEHM_OWN_MARKER
-#define IGNORABLE_POINTER(obj) (ECL_IMMEDIATE(obj) & 2)
-#define GC_MARK_AND_PUSH(obj, msp, lim, src)                    \
-  ((!IGNORABLE_POINTER(obj) &&                                  \
-    (GC_word)obj >= (GC_word)GC_least_plausible_heap_addr &&    \
-    (GC_word)obj <= (GC_word)GC_greatest_plausible_heap_addr)?  \
-   GC_mark_and_push(obj, msp, lim, src) :                       \
-   msp)
 
 static struct GC_ms_entry *
 cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl,
@@ -764,6 +747,7 @@ extern void (*GC_push_other_roots)();
 static void (*old_GC_push_other_roots)();
 static void stacks_scanner();
 
+#ifdef GBC_BOEHM_PRECISE
 static cl_index
 to_bitmap(void *x, void *y)
 {
@@ -773,6 +757,7 @@ to_bitmap(void *x, void *y)
   n /= sizeof(void*);
   return 1 << n;
 }
+#endif
 
 void
 init_alloc(void)
@@ -920,8 +905,8 @@ init_alloc(void)
   type_info[t_doublefloat].descriptor = 0;
   type_info[t_longfloat].descriptor = 0;
   type_info[t_complex].descriptor =
-    to_bitmap(&o, &(o.complex.real)) |
-    to_bitmap(&o, &(o.complex.imag));
+    to_bitmap(&o, &(o.gencomplex.real)) |
+    to_bitmap(&o, &(o.gencomplex.imag));
 #ifdef ECL_COMPLEX_FLOAT
   type_info[t_csfloat].descriptor = 0;
   type_info[t_cdfloat].descriptor = 0;
@@ -936,6 +921,8 @@ init_alloc(void)
   type_info[t_package].descriptor =
     to_bitmap(&o, &(o.pack.name)) |
     to_bitmap(&o, &(o.pack.nicknames)) |
+    to_bitmap(&o, &(o.pack.local_nicknames)) |
+    to_bitmap(&o, &(o.pack.nicknamedby)) |
     to_bitmap(&o, &(o.pack.shadowings)) |
     to_bitmap(&o, &(o.pack.uses)) |
     to_bitmap(&o, &(o.pack.usedby)) |
@@ -943,6 +930,9 @@ init_alloc(void)
     to_bitmap(&o, &(o.pack.external));
   type_info[t_hashtable].descriptor =
     to_bitmap(&o, &(o.hash.data)) |
+    to_bitmap(&o, &(o.hash.sync_lock)) |
+    to_bitmap(&o, &(o.hash.generic_test)) |
+    to_bitmap(&o, &(o.hash.generic_hash)) |
     to_bitmap(&o, &(o.hash.rehash_size)) |
     to_bitmap(&o, &(o.hash.threshold));
   type_info[t_array].descriptor =
@@ -1066,6 +1056,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.cblock.name)) |
     to_bitmap(&o, &(o.cblock.links)) |
     to_bitmap(&o, &(o.cblock.source)) |
+    to_bitmap(&o, &(o.cblock.refs)) |
     to_bitmap(&o, &(o.cblock.error));
   type_info[t_foreign].descriptor =
     to_bitmap(&o, &(o.foreign.data)) |
@@ -1104,13 +1095,8 @@ init_alloc(void)
 #endif /* GBC_BOEHM_PRECISE */
   old_GC_push_other_roots = GC_push_other_roots;
   GC_push_other_roots = stacks_scanner;
-#ifdef HAVE_GC_SET_START_CALLBACK
   GC_old_start_callback = GC_get_start_callback();
   GC_set_start_callback(gather_statistics);
-#else
-  GC_old_start_callback = GC_start_call_back;
-  GC_start_call_back = (void (*)(void))gather_statistics;
-#endif
   GC_set_java_finalization(1);
   GC_set_oom_fn(out_of_memory);
   GC_set_warn_proc(no_warnings);
@@ -1159,9 +1145,9 @@ static void
 wrapped_finalizer(cl_object o, cl_object finalizer);
 
 static void
-deferred_finalizer(cl_object o)
+deferred_finalizer(cl_object* x)
 {
-	wrapped_finalizer(cl_first(o), cl_second(o));
+  wrapped_finalizer(x[0], x[1]);
 }
 
 void
@@ -1169,7 +1155,7 @@ wrapped_finalizer(cl_object o, cl_object finalizer)
 {
   if (finalizer != ECL_NIL && finalizer != NULL) {
 #ifdef ECL_THREADS
-    const cl_env_ptr the_env = ecl_process_env();
+    const cl_env_ptr the_env = ecl_process_env_unsafe();
     if (!the_env
         || !the_env->own_process
         || the_env->own_process->process.phase < ECL_PROCESS_ACTIVE)
@@ -1183,13 +1169,16 @@ wrapped_finalizer(cl_object o, cl_object finalizer)
         * the original finalizer is no more registered to o, and if o
         * is not anymore reachable it will be colleted.  To prevent
         * this we need to make this object reachable again after that
-        * roundtrip and postpone the finalization to the next garbace
-        * colletion.  Given that this is a rare condition one way to
+        * roundtrip and postpone the finalization to the next garbage
+        * collection.  Given that this is a rare condition one way to
         * do that is:
         */
        GC_finalization_proc ofn;
        void *odata;
-       GC_REGISTER_FINALIZER_NO_ORDER(cl_list(2,o,finalizer),
+       cl_object* wrapper = GC_MALLOC(2*sizeof(cl_object));
+       wrapper[0] = o;
+       wrapper[1] = finalizer;
+       GC_REGISTER_FINALIZER_NO_ORDER(wrapper,
                                       (GC_finalization_proc)deferred_finalizer, 0,
                                       &ofn, &odata);
        return;
@@ -1459,7 +1448,7 @@ ecl_alloc_weak_pointer(cl_object o)
   ecl_enable_interrupts_env(the_env);
   obj->t = t_weak_pointer;
   obj->value = o;
-  if (!ECL_FIXNUMP(o) && !ECL_CHARACTERP(o) && !Null(o)) {
+  if (!ECL_IMMEDIATE(o)) {
     GC_GENERAL_REGISTER_DISAPPEARING_LINK((void**)&(obj->value), (void*)o);
     si_set_finalizer((cl_object)obj, ECL_T);
   }

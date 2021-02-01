@@ -53,7 +53,7 @@
                        @':element-type', element_type,
                        @':if-exists', if_exists,
                        @':if-does-not-exist', if_does_not_exist,
-                       @':external-format', @':default',
+                       @':external-format', external_format,
                        @':cstream', ECL_NIL);
       fd = ecl_to_int(si_file_stream_fd(stream));
       if (Null(length))

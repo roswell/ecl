@@ -218,6 +218,7 @@
 ;;;
 
 (defun set-unknown-loc (loc)
+  (declare (ignore loc))
   (unknown-location 'set-loc *destination*))
 
 (defun set-loc (loc &aux fd)

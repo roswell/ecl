@@ -59,22 +59,18 @@
           (t
            (c1let/let* 'let* bindings args)))))
 
+;; Processing of a let form is split in two stages:
+;; - processing bindings
+;; - processing the body
+;; This allows reusing the below functions for inlined closures. These
+;; are transformed in a let statement for which the body needs to be
+;; compiled in a different lexical environment than the bindings.
 (defun c1let/let* (let/let* bindings body)
   (let* ((setjmps *setjmps*)
          (*cmp-env* (cmp-env-copy)))
-    (multiple-value-bind (vars forms body)
+    (multiple-value-bind (vars forms specials other-decls body)
         (process-let-bindings let/let* bindings body)
-      ;; Try eliminating unused variables, replace constant ones, etc.
-      (multiple-value-setq (vars forms)
-        (c1let-optimize-read-only-vars vars forms body))
-      ;; Verify that variables are referenced and assign final boxed / unboxed type
-      (mapc #'check-vref vars)
-      (let ((sp-change (some #'global-var-p vars)))
-        (make-c1form* let/let*
-                      :type (c1form-type body)
-                      :volatile (not (eql setjmps *setjmps*))
-                      :local-vars vars
-                      :args vars forms body)))))
+      (process-let-body let/let* vars forms specials other-decls body setjmps))))
 
 (defun invalid-let-bindings (let/let* bindings)
   (cmperr "Syntax error in ~A bindings:~%~4I~A"
@@ -123,8 +119,22 @@
       (when (eq let/let* 'LET)
         (mapc #'push-vars vars))
       (check-vdecl (mapcar #'var-name vars) types ignoreds)
-      (mapc #'cmp-env-declare-special specials)
-      (values vars forms (c1decl-body other-decls body)))))
+      (values vars forms specials other-decls body))))
+
+(defun process-let-body (let/let* vars forms specials other-decls body setjmps)
+  (mapc #'cmp-env-declare-special specials)
+  (setf body (c1decl-body other-decls body))
+  ;; Try eliminating unused variables, replace constant ones, etc.
+  (multiple-value-setq (vars forms)
+    (c1let-optimize-read-only-vars vars forms body))
+  ;; Verify that variables are referenced and assign final boxed / unboxed type
+  (mapc #'check-vref vars)
+  (let ((sp-change (some #'global-var-p vars)))
+    (make-c1form* let/let*
+                  :type (c1form-type body)
+                  :volatile (not (eql setjmps *setjmps*))
+                  :local-vars vars
+                  :args vars forms body)))
 
 (defun c1let-optimize-read-only-vars (all-vars all-forms body)
   (loop with base = (list body)
@@ -311,7 +321,7 @@
           (when env (pop-debug-lexical-env))))
       (c2expr body))
 
-  (close-inline-blocks :line))
+  (close-inline-blocks))
 
 (defun discarded (var form body &aux last)
   (labels ((last-form (x &aux (args (c1form-args x)))

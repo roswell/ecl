@@ -16,6 +16,9 @@
     See file '../Copyright' for full details.
 */
 
+#ifndef ECL_CMP_H
+#define ECL_CMP_H
+
 #ifndef __CYGWIN__
 /* Recent versions of cygwin do not define fd_set when WINSOCKAPI is
  * defined */
@@ -61,3 +64,5 @@ struct ecl_var_debug_info {
 
 #define _ecl_check_narg(n) \
         do { if (ecl_unlikely(narg != (n))) FEwrong_num_arguments_anonym();} while(0)
+
+#endif /* ECL_CMP_H */

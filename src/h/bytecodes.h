@@ -152,6 +152,7 @@ typedef int16_t cl_opcode;
         goto *(&&LBL_OP_NOP + offsets[GET_OPCODE(vector)])
 #else
 #define BEGIN_SWITCH \
+        BEGIN: \
         switch (GET_OPCODE(vector))
 #define THREAD_NEXT \
         goto BEGIN

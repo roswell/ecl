@@ -85,15 +85,15 @@
 (deftype external-file-format ()
   '(or symbol list))
 (deftype declaration-specifier ()
-  "Element that can appear in a DECLARE form"
+  "Element that can appear in a DECLARE form."
   'list)
 (deftype digit-weight ()
   '(integer 0 35))
 (deftype environment ()
-  "Environment used by compiler and interpreter"
+  "Environment used by compiler and interpreter."
   'list)
 (deftype form ()
-  "Valid lisp form"
+  "Valid lisp form."
   t)
 (deftype format-control ()
   "Format control for FORMAT. It can be a string or a function returned by FORMATTER."
@@ -102,16 +102,16 @@
   "An object that denotes a function and which can be a symbol or a function."
   '(or symbol function))
 (deftype function-name ()
-  "Valid name of a function, typically a symbol or (SETF symbol)"
+  "Valid name of a function, typically a symbol or (SETF symbol)."
   '(or list symbol))
 (deftype gen-bool ()
-  "Generalized boolean type"
+  "Generalized boolean type."
   't)
 (deftype integer-length ()
-  "A type that fits maximum number of bits that an integer may have in this system"
+  "A type that fits maximum number of bits that an integer may have in this system."
   'ext:array-index)
 (deftype natural ()
-  "Non-negative number"
+  "Non-negative integer."
   '(integer 0 *))
 (deftype package-designator ()
   '(or string-designator package))
@@ -1189,7 +1189,7 @@
 (proclamation si:open-unix-socket-stream (string) stream)
 #+wants-sockets
 (proclamation si:lookup-host-entry (t) (values (or null string) list list))
-(proclamation si:copy-stream (stream stream wait) t)
+(proclamation si:copy-stream (stream stream gen-bool) t)
 (proclamation si:make-encoding (t) hash-table)
 (proclamation si:load-encoding (t) t)
 

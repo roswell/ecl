@@ -80,7 +80,7 @@ int main(int narg, char **argv)
          * Here we spawn 10 threads using the OS functions. The
          * current version is for Unix and uses pthread_create.
          * Since we have included <gc.h>, pthread_create will be
-         * replaced with the appropiate routine from the garbage
+         * replaced with the appropriate routine from the garbage
          * collector.
          */
         cl_object sym_print = c_string_to_object("PRINT");

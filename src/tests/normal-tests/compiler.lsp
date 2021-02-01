@@ -76,9 +76,13 @@
 ;;;
 ;;;     There is a problem with SUBTYPEP and type STREAM
 ;;;
+(defclass gray-stream-test (gray:fundamental-character-output-stream) ())
 (test cmp.0005.subtypep-stream
   (is (equal (multiple-value-list
               (subtypep (find-class 'gray:fundamental-stream) 'stream))
+             (list t t)))
+  (is (equal (multiple-value-list
+              (subtypep (find-class 'gray-stream-test) 'stream))
              (list t t))))
 
 ;;; Date: 09/07/2006 (Tim S)
@@ -735,16 +739,16 @@
       (with-compiler ("make-load-form.lsp")
         "(in-package cl-test)"
         "(eval-when (:compile-toplevel)
-      (defparameter s4.0030 (make-instance 'compiler-test-class))
-      (defparameter s5.0030 (make-instance 'compiler-test-class))
-      (setf (compiler-test-parent s5.0030) s4.0030)
-      (setf (compiler-test-children s4.0030) (list s5.0030)))"
+           (defparameter s4.0030 (make-instance 'compiler-test-class))
+           (defparameter s5.0030 (make-instance 'compiler-test-class))
+           (setf (compiler-test-parent s5.0030) s4.0030)
+           (setf (compiler-test-children s4.0030) (list s5.0030)))"
         "(defparameter a.0030 '#.s5.0030)"
         "(defparameter b.0030 '#.s4.0030)"
         "(defparameter c.0030 '#.s5.0030)"
         "(defun foo.0030 ()
-       (let ((*print-circle* t))
-         (with-output-to-string (s) (princ '#1=(1 2 3 #.s4.0030 #1#) s))))")
+           (let ((*print-circle* t))
+             (with-output-to-string (s) (princ '#1=(1 2 3 #.s4.0030 #1#) s))))")
     (declare (ignore output))
     (load file)
     (delete-file "make-load-form.lsp")
@@ -753,7 +757,8 @@
     (is (and (search "#1=(1 2 3 #<a CL-TEST::COMPILER-TEST-CLASS" str)
              (search "> #1#)" str))))
   (is (eq (compiler-test-parent a.0030) b.0030))
-  (is (eq (first (compiler-test-children b.0030)) a.0030)))
+  (is (eq (first (compiler-test-children b.0030)) a.0030))
+  (is (eq a.0030 c.0030)))
 
 ;;; Date: 9/06/2006 (Pascal Costanza)
 ;;; Fixed: 13/06/2006 (juanjo)
@@ -1703,14 +1708,16 @@
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/565
 ;;; Description
 ;;;
-;;;     COMPILE-FILE produces two vectors VV and VVtemp which
-;;;     represent the fasl data segment. The latter is deallocated
-;;;     after all top-level forms are evaluated. As compiler processes
-;;;     them currently if the object is first pushed to the temporary
-;;;     segment and then we try to add it to the permanent segment we
-;;;     have two versions of the same objects which are not EQ. File
-;;;     src/cmp/cmpwt.lsp has an appropriate FIXME in the ADD-OBJECT
-;;;     function definition.
+;;;     This test checks whether the same constant is coalesced to the EQ
+;;;     value among three distinct top-level forms.
+;;;
+;;;     ccmp's COMPILE-FILE produces two vectors VV and VVtemp which represent
+;;;     the fasl data segment. The latter is deallocated after all top-level
+;;;     forms are evaluated. As compiler processes them currently if the
+;;;     object is first pushed to the temporary segment and then we try to add
+;;;     it to the permanent segment we have two versions of the same objects
+;;;     which are not EQ. File src/cmp/cmpwt.lsp has an appropriate FIXME in
+;;;     the ADD-OBJECT function definition.
 (test cmp.0076.make-load-form-non-eq
   (multiple-value-bind (file output)
       (with-compiler ("make-temp.lsp")
@@ -1741,8 +1748,6 @@
     (delete-file file))
   (multiple-value-bind (x a b) (foo)
     (is (eq x a) "~a is not eq to ~a" x a)
-    ;; This test passes because B toplevel form is compiled after the
-    ;; function FOO. Included here for completness.
     (is (eq x b) "~a is not eq to ~a" x b)
     (is (eq a b) "~a is not eq to ~a" a b)))
 
@@ -1812,3 +1817,188 @@
               `(defclass class () ())
               `(defmethod method ()
                  (load-time-value (find-class class))))))
+
+;;; Date 2020-05-01
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/577
+;;; Description
+;;;
+;;; Inlining of closures did not work properly if closed over
+;;; variables were in the scope in which the inlined function was
+;;; called.
+(test cmp.0079.inline-closure
+  ;; local function
+  (is (equal
+       (funcall (compile
+                 nil
+                 (lambda ()
+                   (let ((b 123)
+                         results)
+                     (flet ((set-b (x) (setf b x))
+                            (get-b () b))
+                       (declare (inline set-b get-b))
+                       (push (get-b) results)
+                       (push b results)
+                       (let ((b 345))
+                         (push (get-b) results)
+                         (push b results)
+                         (set-b 0)
+                         (push (get-b) results)
+                         (push b results))
+                       (push (get-b) results)
+                       (push b results))
+                     (nreverse results)))))
+       '(123 123 123 345 0 345 0 0)))
+  ;; global function from bytecodes compiler, proclaimed inline
+  (ext:with-clean-symbols (set-b get-b)
+    (proclaim '(inline set-b get-b))
+    (eval
+     '(let ((b 123))
+        (defun set-b (x)
+          (setf b x))
+        (defun get-b () b)))
+    (is (equal
+         (funcall (compile
+                   nil
+                   (lambda ()
+                     (let (results)
+                       (push (get-b) results)
+                       (let ((b 345))
+                         (push (get-b) results)
+                         (push b results)
+                         (set-b 0)
+                         (push (get-b) results)
+                         (push b results))
+                       (push (get-b) results)
+                       (nreverse results)))))
+         '(123 123 345 0 345 0))))
+  ;; global function in same file, declaimed inline
+  (load (with-compiler ("inline-closure.lsp")
+          '(in-package #:cl-test)
+          '(declaim (inline set-b.0079 get-b.0079))
+          '(let ((b 123))
+            (defun set-b.0079 (x)
+              (setf b x))
+            (defun get-b.0079 () b))
+          '(defun foo.0079 ()
+            (let (results)
+              (push (get-b.0079) results)
+              (let ((b 345))
+                (push (get-b.0079) results)
+                (push b results)
+                (set-b.0079 0)
+                (push (get-b.0079) results)
+                (push b results))
+              (push (get-b.0079) results)
+              (nreverse results)))))
+  (is (equal
+       (funcall 'foo.0079)
+       '(123 123 345 0 345 0))))
+
+;;; Date 2020-05-08
+;;;
+;;; Regression from a fix for #577.
+(test cmp.0080.inline-closure
+  (is (funcall (compile
+                nil
+                '(lambda ()
+                  (labels ((bam (pos)
+                             (declare (inline bam))
+                             (if (= pos 42)
+                                 :banzai
+                                 (let ((my-new-val 42))
+                                   (bam my-new-val)))))
+                    (eq :banzai (bam 30))))))))
+
+;;; Date 2020-05-28
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/591
+;;; Description
+;;;
+;;; MULTIPLE-VALUE-SETQ would wrongly assign NIL to special variables
+;;; due to not saving env->nvalues before calling SET
+(ext:with-clean-symbols (*a* *b* foo)
+  (defvar *a* :wrong-a)
+  (defvar *b* :wrong-b)
+  (defun foo () (values :right-a :right-b))
+  (test cmp.0081.m-v-setq-special
+    (is (funcall (compile
+                  nil
+                  '(lambda ()
+                    (multiple-value-setq (*a* *b*) (foo))
+                    (and (eq *a* :right-a)
+                         (eq *b* :right-b))))))))
+
+;;; Date 2020-08-14
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/594
+;;; Description
+;;;
+;;;     The code walker used in DEFMETHOD would call MAKE-LOAD-VALUE
+;;;     for literal objects encountered during code walking, even while
+;;;     loading a file or using eval.
+(ext:with-clean-symbols (test-class test-method)
+  (eval '(defclass test-class () ()))
+  (eval '(defmethod make-load-form ((obj test-class) &optional env)
+          (error "We shouldn't have called MAKE-LOAD-FORM here.")))
+  (test cmp.0082.defmethod-make-load-form
+    (let* ((test-obj (make-instance 'test-class))
+           (code `(defmethod test-method ()
+                    ,test-obj)))
+      (finishes (eval code)))))
+
+;;; Date 2021-01-02
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/620
+;;; Description
+;;;
+;;;     RETURN inside the symbol or value arguments for PROGV leads to
+;;;     a segfault
+(ext:with-clean-symbols (*s*)
+  (test cmp.0083.progv-return
+    (proclaim '(special *s*))
+    (is (eql 0 (funcall (compile nil
+                                 '(lambda ()
+                                   (block nil
+                                     (progv (list (return 0)) (list 1))))))))
+    (is (eql 0 (funcall (compile nil
+                                 '(lambda ()
+                                   (block nil
+                                     (progv '(*s*) (list (return 0)))))))))
+    (is (not (boundp '*s*)))
+    (is (eql 1 (funcall (compile nil
+                                 '(lambda ()
+                                   (block nil
+                                     (progv '(*s*) (list 0) (return 1) *s*)))))))
+    (is (not (boundp '*s*)))))
+
+;;; Date 2021-01-16
+;;; Description
+;;;
+;;;     Compiling a local function of type CLOSURE can lead to an
+;;;     internal compiler error if the function is later inlined
+;;;     because the compiler would indiscriminantly change the closure
+;;;     type to LEXICAL during inlining.
+(ext:with-clean-symbols (some-global-fun another-global-fun)
+  (defun some-global-fun (fun)
+    (funcall fun))
+  (defun another-global-fun (x)
+    x)
+  (test cmp.0084.inline-local-closure-type
+    (let ((fun '(lambda (arg)
+                 (declare (optimize speed))
+                 (labels
+                     ((a ()
+                        (some-global-fun #'b)
+                        (c))
+                      (b ()
+                        (c))
+                      (c ()
+                        ;; c is of type CLOSURE (arg is passed to
+                        ;; a global function). This "infects" a
+                        ;; and b to be of type CLOSURE too.
+                        (incf arg)
+                        (another-global-fun arg)))
+                   (declare (inline a))
+                   (a))))
+          compiled-fun warnings-p errors-p)
+      (finishes (multiple-value-setq (compiled-fun warnings-p error-p)
+                  (compile nil fun)))
+      (is (null errors-p))
+      (is (= (funcall compiled-fun 0) 2)))))

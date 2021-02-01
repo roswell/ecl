@@ -211,6 +211,7 @@
     o))
 
 (defun find-method-combination (gf method-combination-type-name method-combination-options)
+  (declare (ignore gf))
   (make-method-combination method-combination-type-name
                            (search-method-combination method-combination-type-name)
                            method-combination-options

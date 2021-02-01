@@ -160,6 +160,7 @@
            form))))
 
 (define-compiler-macro typep (&whole form object type &optional e &environment env)
+  (declare (ignore e))
   (expand-typep form object type env))
 
 ;;;
@@ -346,8 +347,7 @@
     (multiple-value-bind (constant-p float)
         (constant-value-p float env)
       (when (and constant-p (floatp float))
-        (let* ((aux (gentemp))
-               (float (type-of float))
+        (let* ((float (type-of float))
                (c-type (lisp-type->rep-type float)))
           `(let ((value ,value))
              (declare (:read-only value))

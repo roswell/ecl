@@ -477,6 +477,7 @@
       args
     (multiple-value-bind (function pprint doc-string)
         (sys::expand-defmacro name lambda-list body)
+      (declare (ignore pprint doc-string))
       (let ((fn (cmp-eval function *cmp-env*)))
         (cmp-env-register-global-macro name fn))
       (t1expr* (macroexpand `(DEFMACRO ,@args))))))

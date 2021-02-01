@@ -324,7 +324,7 @@ unblock_signal(cl_env_ptr the_env, int signal)
 ecl_def_ct_base_string(str_ignore_signal,"Ignore signal",13,static,const);
 
 static void
-handle_signal_now(cl_object signal_code, cl_object process)
+handle_signal_now(cl_object signal_code)
 {
         switch (ecl_t_of(signal_code)) {
         case t_fixnum:
@@ -354,9 +354,9 @@ handle_signal_now(cl_object signal_code, cl_object process)
 }
 
 cl_object
-si_handle_signal(cl_object signal_code, cl_object process)
+si_handle_signal(cl_object signal_code)
 {
-        handle_signal_now(signal_code, process);
+        handle_signal_now(signal_code);
         @(return)
 }
 
@@ -364,7 +364,7 @@ static void
 handle_all_queued(cl_env_ptr env)
 {
         while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
-                handle_signal_now(pop_signal(env), env->own_process);
+                handle_signal_now(pop_signal(env));
         }
 }
 
@@ -425,43 +425,73 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
 static void
 queue_signal(cl_env_ptr env, cl_object code, int allocate)
 {
-        ECL_WITH_SPINLOCK_BEGIN(ecl_process_env(), &env->interrupt_struct->signal_queue_spinlock) {
-                cl_object record;
-                if (allocate) {
-                        record = ecl_list1(ECL_NIL);
-                } else {
-                        record = env->interrupt_struct->signal_queue;
-                        if (record != ECL_NIL) {
-                                env->interrupt_struct->signal_queue = ECL_CONS_CDR(record);
-                        }
-                }
+        /* Note: We don't use ECL_WITH_SPINLOCK_BEGIN/END here since
+         * it checks for pending interrupts after unlocking the
+         * spinlock. This would lead to the interrupt being handled
+         * immediately when queueing an interrupt for the current
+         * thread, even when interrupts are disabled. */
+
+        /* INV: interrupts are disabled, therefore the spinlock will
+         * always be released */
+#ifdef ECL_THREADS
+        ecl_get_spinlock(ecl_process_env(), &env->interrupt_struct->signal_queue_spinlock);
+#endif
+
+        cl_object record;
+        if (allocate) {
+                record = ecl_list1(ECL_NIL);
+        } else {
+                record = env->interrupt_struct->signal_queue;
                 if (record != ECL_NIL) {
-                        ECL_RPLACA(record, code);
-                        env->interrupt_struct->pending_interrupt =
-                                ecl_nconc(env->interrupt_struct->pending_interrupt,
-                                          record);
+                        env->interrupt_struct->signal_queue = ECL_CONS_CDR(record);
                 }
-        } ECL_WITH_SPINLOCK_END;
+        }
+        if (record != ECL_NIL) {
+                ECL_RPLACA(record, code);
+                ECL_RPLACD(record, ECL_NIL);
+                env->interrupt_struct->pending_interrupt =
+                        ecl_nconc(env->interrupt_struct->pending_interrupt,
+                                  record);
+        }
+
+#ifdef ECL_THREADS
+        ecl_giveup_spinlock(&env->interrupt_struct->signal_queue_spinlock);
+#endif
 }
 
 static cl_object
 pop_signal(cl_env_ptr env)
 {
         cl_object record, value;
-        ECL_WITH_SPINLOCK_BEGIN(env, &env->interrupt_struct->signal_queue_spinlock) {
-                if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
-                        value = ECL_NIL;
-                } else {
-                        record = env->interrupt_struct->pending_interrupt;
-                        value = ECL_CONS_CAR(record);
-                        env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
-                        /* Save some conses for future use, to avoid allocating */
-                        if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
-                                ECL_RPLACD(record, env->interrupt_struct->signal_queue);
-                                env->interrupt_struct->signal_queue = record;
-                        }
+        /* Note: We don't use ECL_WITH_SPINLOCK_BEGIN/END here since
+         * it checks for pending interrupts after unlocking the
+         * spinlock. This would lead to handle_all_queued and
+         * pop_signal being called again and the interrupts being
+         * handled in the wrong order. */
+
+        /* INV: ecl_get_spinlock and ecl_giveup_spinlock don't write
+         * into env, therefore it is valid to use
+         * ecl_disable_interrupts_env */
+        ecl_disable_interrupts_env(env);
+#ifdef ECL_THREADS
+        ecl_get_spinlock(env, &env->interrupt_struct->signal_queue_spinlock);
+#endif
+        if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
+                value = ECL_NIL;
+        } else {
+                record = env->interrupt_struct->pending_interrupt;
+                value = ECL_CONS_CAR(record);
+                env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
+                /* Save some conses for future use, to avoid allocating */
+                if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
+                        ECL_RPLACD(record, env->interrupt_struct->signal_queue);
+                        env->interrupt_struct->signal_queue = record;
                 }
-        } ECL_WITH_SPINLOCK_END;
+        }
+#ifdef ECL_THREADS
+        ecl_giveup_spinlock(&env->interrupt_struct->signal_queue_spinlock);
+#endif
+        ecl_enable_interrupts_env(env);
         return value;
 }
 
@@ -495,7 +525,7 @@ handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
         else {
                 if (code) unblock_signal(the_env, code);
                 si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
-                handle_signal_now(signal_code, the_env->own_process);
+                handle_signal_now(signal_code);
         }
 }
 
@@ -531,7 +561,7 @@ handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *dat
         signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
                                          cl_core.known_signals,
                                          ECL_NIL);
-        handle_signal_now(signal_object, the_env->own_process);
+        handle_signal_now(signal_object);
         errno = old_errno;
 }
 
@@ -580,7 +610,9 @@ asynchronous_signal_servicing_thread()
         const cl_env_ptr the_env = ecl_process_env();
         int interrupt_signal = -1;
         /*
-         * We block all signals except the usual interrupt thread and GC signals.
+         * We block all signals except the usual interrupt thread and
+         * GC signals (including SIGSEGV and SIGSEGV which are needed
+         * when the GC runs in incremental mode).
          */
         {
                 sigset_t handled_set;
@@ -591,6 +623,8 @@ asynchronous_signal_servicing_thread()
                         sigdelset(&handled_set, interrupt_signal);
                         sigdelset(&handled_set, GC_get_suspend_signal());
                         sigdelset(&handled_set, GC_get_thr_restart_signal());
+                        sigdelset(&handled_set, SIGSEGV);
+                        sigdelset(&handled_set, SIGBUS);
                 }
                 pthread_sigmask(SIG_BLOCK, &handled_set, NULL);
         }
@@ -623,10 +657,9 @@ asynchronous_signal_servicing_thread()
                                                cl_core.known_signals,
                                                ECL_NIL);
                 if (!Null(signal_code)) {
-                        mp_process_run_function(4, @'si::handle-signal',
+                        mp_process_run_function(3, @'si::handle-signal',
                                                 @'si::handle-signal',
-                                                signal_code,
-                                                signal_thread_msg.process);
+                                                signal_code);
                 }
         }
 # if defined(ECL_USE_MPROTECT)
@@ -745,7 +778,7 @@ handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
         */
         si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
         unblock_signal(the_env, code);
-        handle_signal_now(condition, the_env->own_process);
+        handle_signal_now(condition);
         /* We will not reach past this point. */
 }
 
@@ -785,17 +818,17 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
         if (((char*)&the_env->disable_interrupts <= (char*)info->si_addr) &&
             ((char*)info->si_addr < (char*)(&the_env->disable_interrupts+1)))
         {
+                unblock_signal(the_env, sig);
                 mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
-                unblock_signal(the_env, sig);
                 handle_all_queued_interrupt_safe(the_env);
                 return;
         } else if (the_env->disable_interrupts &&
                    ((char*)(&the_env->disable_interrupts+1) <= (char*)info->si_addr) &&
                    ((char*)info->si_addr < (char*)(the_env+1))) {
+                unblock_signal(the_env, sig);
                 mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
                 the_env->disable_interrupts = 0;
-                unblock_signal(the_env, sig);
                 ecl_unrecoverable_error(the_env, interrupt_msg);
                 return;
         }
@@ -1072,8 +1105,13 @@ ecl_interrupt_process(cl_object process, cl_object function)
         if (!Null(function) &&
             (process->process.phase >= ECL_PROCESS_BOOTING))
         {
+                cl_env_ptr the_env = ecl_process_env();
                 function = si_coerce_to_function(function);
+                /* queue_signal must be called with disabled
+                 * interrupts for the current process */
+                ecl_disable_interrupts_env(the_env);
                 queue_signal(process->process.env, function, 1);
+                ecl_enable_interrupts_env(the_env);
         }
         /* ... but only deliver if the process is still alive */
         if (process->process.phase == ECL_PROCESS_ACTIVE)
@@ -1119,43 +1157,43 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
                 /* Catch all arithmetic exceptions */
                 case EXCEPTION_INT_DIVIDE_BY_ZERO:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'division-by-zero', the_env->own_process);
+                        handle_signal_now(@'division-by-zero');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_INT_OVERFLOW:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'arithmetic-error', the_env->own_process);
+                        handle_signal_now(@'arithmetic-error');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_DIVIDE_BY_ZERO:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-overflow', the_env->own_process);
+                        handle_signal_now(@'floating-point-overflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_OVERFLOW:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-overflow', the_env->own_process);
+                        handle_signal_now(@'floating-point-overflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_UNDERFLOW:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-underflow', the_env->own_process);
+                        handle_signal_now(@'floating-point-underflow');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_INEXACT_RESULT:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-inexact', the_env->own_process);
+                        handle_signal_now(@'floating-point-inexact');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_DENORMAL_OPERAND:
                 case EXCEPTION_FLT_INVALID_OPERATION:
                         feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-invalid-operation', the_env->own_process);
+                        handle_signal_now(@'floating-point-invalid-operation');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 case EXCEPTION_FLT_STACK_CHECK:
-                        handle_signal_now(@'arithmetic-error', the_env->own_process);
+                        handle_signal_now(@'arithmetic-error');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 /* Catch segmentation fault */
                 case EXCEPTION_ACCESS_VIOLATION:
-                        handle_signal_now(@'ext::segmentation-violation', the_env->own_process);
+                        handle_signal_now(@'ext::segmentation-violation');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 /* Catch illegal instruction */
                 case EXCEPTION_ILLEGAL_INSTRUCTION:
-                        handle_signal_now(@'ext::illegal-instruction', the_env->own_process);
+                        handle_signal_now(@'ext::illegal-instruction');
                         return EXCEPTION_CONTINUE_EXECUTION;
                 /* Do not catch anything else */
                 default:
@@ -1171,9 +1209,9 @@ static cl_object
 W32_handle_in_new_thread(cl_object signal_code)
 {
         int outside_ecl = ecl_import_current_thread(@'si::handle-signal', ECL_NIL);
-        mp_process_run_function(4, @'si::handle-signal',
+        mp_process_run_function(3, @'si::handle-signal',
                                 @'si::handle-signal',
-                                signal_code, ECL_NIL);
+                                signal_code);
         if (outside_ecl) ecl_release_current_thread();
 }
 

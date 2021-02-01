@@ -48,6 +48,8 @@ the environment variable TMPDIR to a different value." template))
                               verbose print c-file h-file data-file
                               system-p load external-format source-truename
                               source-offset)
+  (declare (ignore verbose print c-file h-file data-file load
+                   external-format source-truename source-offset))
   (let* ((format '())
          (extension '()))
     (unless type-supplied-p
@@ -63,6 +65,7 @@ the environment variable TMPDIR to a different value." template))
       (:program (setf format +executable-file-format+))
       #+msvc
       (:import-library (setf extension "implib"))
+      (:precompiled-header (setf format #-msvc "~a.h.gch" #+msvc "~a.pch"))
       ((:fasl :fas) (setf extension "fas")))
     (cond ((not (member output-file '(T NIL)))
            output-file)
@@ -145,6 +148,7 @@ the environment variable TMPDIR to a different value." template))
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
                   (ld-flags (split-program-options *ld-flags*)))
+  (declare (ignore type))
   (safe-run-program
    *ld*
    `("-o" ,(brief-namestring o-pathname)
@@ -970,6 +974,7 @@ from the C language code.  NIL means \"do not create the file\"."
   (safe-run-program
    *cc*
    `("-I."
+     ,@(precompiled-header-flags)
      ,(concatenate 'string "-I" (fix-for-mingw (ecl-include-directory)))
      ,@(split-program-options *cc-flags*)
      ,@(and (>= (cmp-env-optimization 'speed) 2)
@@ -995,7 +1000,80 @@ from the C language code.  NIL means \"do not create the file\"."
                *safety* *space* *speed* *debug*))
 
 (defmacro with-compilation-unit (options &rest body)
+  (declare (ignore options))
   `(progn ,@body))
+
+(defun need-to-dump-precompiled-header ()
+  (let* ((config *precompiled-header-cc-config*)
+         (need-to-dump (or (null config)
+                           (not (eq (svref config 0) *cc*))
+                           (not (eq (svref config 1) (ecl-include-directory)))
+                           (not (eq (svref config 2) *cc-flags*))
+                           (not (eq (svref config 3) *cc-optimize*))
+                           (not (eq (svref config 4) *user-cc-flags*)))))
+    (when need-to-dump
+      (setf *precompiled-header-cc-config*
+            (vector *cc* (ecl-include-directory) *cc-flags*
+                    *cc-optimize* *user-cc-flags*)))
+    need-to-dump))
+
+(defun precompiled-header-flags ()
+  (when *use-precompiled-headers*
+    (when (need-to-dump-precompiled-header)
+      (handler-case
+          (dump-precompiled-header)
+        (error (err)
+          (setf *use-precompiled-headers* nil
+                *precompiled-header-flags* nil
+                *precompiled-header-cc-config* nil)
+          (cmpnote "Disabling precompiled header files due to error:~%  ~A" err))))
+    *precompiled-header-flags*))
+
+#+msvc
+(defun dump-precompiled-header ()
+  ;; The way precompiled headers work on msvc is not compatible with
+  ;; what we want to use them for. The msvc compiler creates a
+  ;; precompiled header file out of ordinary source files by
+  ;; processing them up to a certain point at which all needed headers
+  ;; are included. This creates both a precompiled header and a object
+  ;; file. The object file created by this compilation must be
+  ;; included in all binaries which are linked together from other
+  ;; source files compiled using the precompiled header. Thus, we
+  ;; would need to include the first object file created in a session
+  ;; in all further object files if we wanted to support that.
+  (error "Precompiled headers are not supported for msvc."))
+
+#-msvc
+(defun dump-precompiled-header ()
+  (let* ((input-file (make-pathname
+                      :directory (append (pathname-directory (ecl-include-directory))
+                                         '("ecl"))
+                      :defaults (ecl-include-directory)
+                      :name "ecl-cmp"
+                      :type "h"))
+         (output-dir (merge-pathnames
+                      (format nil "ecl-include~4,'0x/" (random #xffff))
+                      (translate-logical-pathname "TMP:")))
+         (output-file (compile-file-pathname
+                       (make-pathname :name "ecl-cmp" :defaults output-dir)
+                       :type :precompiled-header)))
+        (ensure-directories-exist output-dir)
+        (push output-dir *files-to-be-deleted*)
+        (safe-run-program
+         *cc*
+         `("-x" "c-header"
+                ,(fix-for-mingw (namestring input-file))
+                ,(concatenate 'string "-I" (fix-for-mingw (ecl-include-directory)))
+                ,@(split-program-options *cc-flags*)
+                ,@(split-program-options *cc-optimize*)
+                "-o"
+                ,(fix-for-mingw (namestring output-file))
+                ,@(split-program-options *user-cc-flags*)))
+        (push output-file *files-to-be-deleted*)
+        (setf *precompiled-header-flags*
+              (list (concatenate 'string "-I" (namestring output-dir))
+                    "-include"
+                    (concatenate 'string (namestring output-dir) "ecl-cmp.h")))))
 
 (ext:package-lock "CL" t)
 

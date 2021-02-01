@@ -1,5 +1,5 @@
 You will find detailed installation instructions in the ECL manual
-       https://common-lisp.net/project/ecl/static/manual/pr01s06.html
+       https://common-lisp.net/project/ecl/static/manual/Building-ECL.html
 If you do not have access to the online version, follow the following recipies.
 
 * Unix and similar platforms.
@@ -70,7 +70,7 @@ MacPort command:
 Hint provided by Pascal J. Bourguignon.
 
 
-* Cross-compile for the iOS platform
+* Cross-compile for the iOS platform (needs Xcode 11 or higher)
 1. Build the host ECL
    #+BEGIN_SRC shell-script
      ./configure --prefix=`pwd`/ecl-iOS-host --disable-c99complex
@@ -98,7 +98,7 @@ Hint provided by Pascal J. Bourguignon.
    #+END_SRC
 3. Build and install the target library
    #+BEGIN_SRC shell-script
-     export CFLAGS="$CFLAGS -DECL_C_COMPATIBLE_VARIADIC_DISPATCH -DGC_DISABLE_INCREMENTAL -DECL_RWLOCK"
+     export CFLAGS="$CFLAGS -DGC_DISABLE_INCREMENTAL -DECL_RWLOCK"
      export CXXFLAGS="$CFLAGS"
      ./configure --host=aarch64-apple-darwin \
                  --prefix=`pwd`/ecl-iOS \
@@ -110,17 +110,3 @@ Hint provided by Pascal J. Bourguignon.
    #+END_SRC
 4. Library and assets in the ecl-iOS directory are ready to run on
    the iOS system.
-
-** Using ECL on iOS
-
-The Boehm-Demers-Weiser garbage collector cannot find the stack base
-automatically on iOS. Therefore, this has to be specified manually. In
-the main function, before calling cl_boot, add e.g. (see the garbage
-collector documentation for more details):
-#+BEGIN_SRC C
-  const int size = 256;
-  char* ecl_argv[size];
-  GC_allow_register_threads();
-  GC_register_my_thread((const struct GC_stack_base*)ecl_argv);
-  GC_stackbottom = (char*)(ecl_argv + size - 1);
-#+END_SRC

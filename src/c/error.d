@@ -386,6 +386,12 @@ FEprint_not_readable(cl_object x)
   cl_error(3, @'print-not-readable', @':object', x);
 }
 
+void
+FEtimeout()
+{
+  cl_error(1, @'ext::timeout');
+}
+
 /*************
  * Shortcuts *
  *************/

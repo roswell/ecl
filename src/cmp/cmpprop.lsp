@@ -379,12 +379,14 @@ compute it. This version only handles the simplest cases."
             elt-type)))
 
 (def-type-propagator si::row-major-aset (fname array-type index obj)
+  (declare (ignore index obj))
   (multiple-value-bind (elt-type array-type)
       (type-from-array-elt array-type)
     (values (list array-type 'si::index elt-type)
             elt-type)))
 
 (def-type-propagator row-major-aref (fname array-type index)
+  (declare (ignore index))
   (multiple-value-bind (elt-type array-type)
       (type-from-array-elt array-type)
     (values (list array-type 'si::index) elt-type)))

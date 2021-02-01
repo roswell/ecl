@@ -962,7 +962,6 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
 {
   cl_object rtbl = ecl_current_readtable();
   enum ecl_chattrib a;
-  bool escape_flag;
   int c;
   cl_object output, token;
 
@@ -970,7 +969,6 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
     extra_argument(':', in, d);
   c = ecl_read_char_noeof(in);
   a = ecl_readtable_get(rtbl, c, NULL);
-  escape_flag = FALSE;
   token = si_get_buffer_string();
   goto L;
   for (;;) {
@@ -984,9 +982,7 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
     if (a == cat_single_escape) {
       c = ecl_read_char_noeof(in);
       a = cat_constituent;
-      escape_flag = TRUE;
     } else if (a == cat_multiple_escape) {
-      escape_flag = TRUE;
       for (;;) {
         c = ecl_read_char_noeof(in);
         a = ecl_readtable_get(rtbl, c, NULL);

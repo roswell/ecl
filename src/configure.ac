@@ -8,7 +8,7 @@ dnl  AUTOCONF configuration for ECL
 dnl  Giuseppe Attardi 25.1.1994
 dnl
 
-AC_INIT([ecl],[20.4.24],[])
+AC_INIT([ecl],[21.2.1],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
@@ -76,7 +76,7 @@ AC_ARG_WITH(C-gmp,
 
 AC_ARG_WITH(system-gmp,
   AS_HELP_STRING( [--with-system-gmp],
-                  [Derpecated! See --enable-gmp]),
+                  [Deprecated! See --enable-gmp]),
   [], [with_system_gmp="auto"])
 
 AC_ARG_WITH(gmp,
@@ -334,6 +334,8 @@ AC_CANONICAL_HOST
 dnl =====================================================================
 dnl Checks for programs
 AC_PROG_CC	      # sets variable CC
+AC_PROG_CC_C99        # checks that CC by default accepts C99 code, if not,
+                      # tries adding -std=gnu-99, if this has no effect, throws an error.
 AC_PROG_CXX           # sets variable CXX
 AC_PROG_CPP           # sets variable CPP
 AC_PROG_RANLIB        # sets variable RANLIB
@@ -352,20 +354,35 @@ ECL_CROSS_CONFIG
 ECL_GUESS_HOST_OS
 
 if test "${enable_manual}" != "no"; then
+  AC_MSG_CHECKING([whether to build the manual; finding install-info...])
   AC_PATH_PROG([INSTALL_INFO], [install-info], [])  
   if test "x${INSTALL_INFO}" = "x"; then
     if test "${enable_manual}" = "auto"; then
+      AC_MSG_RESULT([ Not building the manual: no install-info found.])
       enable_manual=no
     elif test "${enable_manual}" = "info"; then
       AC_MSG_ERROR([Unable to build the manual: install-info not found.])
     fi
-  fi
-  AC_PATH_PROG([MAKEINFO], [makeinfo], [])
-  if test "x${MAKEINFO}" = "x"; then
-    if test "${enable_manual}" = "auto"; then
-      enable_manual=no
-    else
-      AC_MSG_ERROR([Unable to build the manual: makeinfo not found.])
+  else
+    AC_MSG_RESULT([ install-info found.])
+    AC_MSG_CHECKING([for working makeinfo...])
+    AC_PATH_PROG([MAKEINFO], [makeinfo], [])
+    if test "x${MAKEINFO}" = "x"; then
+      if test "${enable_manual}" = "auto"; then
+        AC_MSG_RESULT([ Not building the manual: no makeinfo  found.])
+        enable_manual=no
+      else
+        AC_MSG_ERROR([Unable to build the manual: makeinfo not found.])
+      fi
+    elif test "x`echo \"@inlinefmtifelse{html, foo, bar}\" | makeinfo 2>&1 | grep Unknown`" != "x"; then
+        if test "${enable_manual}" = "auto"; then
+          AC_MSG_RESULT([ Not building the manual: broken/outdated makeinfo.])
+          enable_manual=no
+        else
+          AC_MSG_ERROR([Unable to build the manual: broken/outdated makeinfo.])
+        fi
+    else 
+        AC_MSG_RESULT([ Will build the manual.])
     fi
   fi
 fi
@@ -657,7 +674,7 @@ AC_CHECK_HEADERS( [fcntl.h limits.h netdb.h netinet/in.h] \
 		  [sched.h] )
 dnl !!! end autoscan
 
-AC_CHECK_HEADERS( [sys/resource.h sys/utsname.h float.h pwd.h dlfcn.h link.h] \
+AC_CHECK_HEADERS( [sys/utsname.h float.h pwd.h dlfcn.h link.h] \
                   [mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h] \
                   [sys/wait.h semaphore.h] )
 
@@ -698,7 +715,7 @@ dnl  CFLAGS="${CFLAGS} -fstrict-aliasing"
 dnl fi
 
 dnl ----------------------------------------------------------------------
-dnl Check the appropiate type for cl_fixnum/cl_index
+dnl Check the appropriate type for cl_fixnum/cl_index
 ECL_FIXNUM_TYPE
 ECL_INTEGER_TYPES
 
@@ -710,8 +727,9 @@ ECL_SSE
 ECL_COMPLEX_C99
 
 dnl -----------------------------------------------------------------------
-dnl Study the call conventions
+dnl Stack size and growth direction
 ECL_STACK_DIRECTION
+ECL_STACK_SIZE
 
 dnl =====================================================================
 dnl Checks for library functions
@@ -815,7 +833,7 @@ if test "${with_tcp}" = "builtin"; then
   with_tcp=yes
 fi
 if test "${with_tcp}" = "yes"; then
-  AC_DEFINE(TCP, [1], [Network streams])
+  AC_DEFINE(ECL_TCP, [1], [Network streams])
   EXTRA_OBJS="${EXTRA_OBJS} tcp.${OBJEXT}"
   ECL_ADD_LISP_MODULE([sockets])
   LIBS="${LIBS} ${TCPLIBS}"

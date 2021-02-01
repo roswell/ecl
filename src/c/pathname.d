@@ -659,7 +659,9 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
   if (!ecl_stringp(device)) {
     return ECL_NIL;
   }
+#if defined(ECL_MS_WINDOWS_HOST)
  maybe_parse_host:
+#endif
   /* Files have no effective device. */
   if (@string-equal(2, device, @':file') == ECL_T)
     device = ECL_NIL;
@@ -870,7 +872,7 @@ coerce_to_file_pathname(cl_object pathname)
 
 /*
  * coerce_to_physical_pathname(P) converts P to a physical pathname,
- * performing the appropiate transformation if P was a logical pathname.
+ * performing the appropriate transformation if P was a logical pathname.
  */
 cl_object
 coerce_to_physical_pathname(cl_object x)
@@ -1707,7 +1709,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
   return l;
 }
 
-@(defun translate-pathname (source from to &key ((:case scase) @':local'))
+@(defun translate-pathname (source from to &key)
   cl_object wilds, d;
   cl_object host, device, directory, name, type, version;
   cl_object fromcase, tocase;

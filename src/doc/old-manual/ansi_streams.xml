@@ -16,7 +16,7 @@
   <para>&ECL; implements all stream types described in &ANSI;. Additionally,
   when configured with option <option>--enable-clos-streams</option>, &ECL;
   includes a version of Gray streams where any object that implements the
-  appropiate methods (<function>stream-input-p</function>,
+  appropriate methods (<function>stream-input-p</function>,
   <function>stream-read-char</function>, etc) is a valid argument for the
   functions that expect streams, such as <function>read</function>,
   <function>print</function>, etc.</para>

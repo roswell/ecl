@@ -254,11 +254,13 @@
 (def-type-propagator acos (fname op1-type)
   (multiple-value-bind (output-type op1-type)
       (ensure-nonrational-type op1-type)
+    (declare (ignore output-type))
     (values (list op1-type) 'NUMBER)))
 
 (def-type-propagator atan (fname op1-type &optional (op2-type t op2-p))
   (multiple-value-bind (float-t1 t1)
       (ensure-nonrational-type op1-type)
+    (declare (ignore float-t1))
     (if op2-p
         (multiple-value-bind (result t1 t2)
             (maximum-number-type t1 op2-type :only-real t)

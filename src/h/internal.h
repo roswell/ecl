@@ -113,6 +113,12 @@ struct cl_compiler_env {
         cl_fixnum lexical_level;        /* =0 if toplevel form */
         cl_object constants;            /* Constants for this form */
         cl_object load_time_forms;      /* Constants that have to be rebuilt */
+        cl_object ltf_being_created;    /* Load time objects being compiled */
+        cl_object ltf_defer_init_until; /* Defer evaluation of current
+                                         * load time init form until
+                                         * this object has been created */
+        cl_object ltf_locations;        /* Locations of constants externalized
+                                         * with make-load-form */
         cl_object lex_env;              /* Lexical env. for eval-when */
         cl_object code_walker;          /* Value of SI:*CODE-WALKER* */
         cl_index env_depth;
@@ -469,12 +475,14 @@ extern cl_fixnum ecl_runtime(void);
 /* threads/mutex.d */
 
 #ifdef ECL_THREADS
+typedef cl_object (*mp_wait_test)(cl_env_ptr, cl_object);
+
 extern void ecl_process_yield(void);
 extern void print_lock(char *s, cl_object lock, ...);
 #define print_lock(...) ((void)0)
 extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
 extern void ecl_giveup_spinlock(cl_object *lock);
-extern cl_object ecl_wait_on(cl_env_ptr env, cl_object (*condition)(cl_env_ptr, cl_object), cl_object o);
+extern cl_object ecl_wait_on(cl_env_ptr env, mp_wait_test test, cl_object object);
 extern void ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, int flags);
 extern void ecl_wakeup_process(cl_object process);
 extern cl_object ecl_waiter_pop(cl_env_ptr the_env, cl_object q);
@@ -482,7 +490,7 @@ extern cl_object ecl_waiter_pop(cl_env_ptr the_env, cl_object q);
 
 /* threads/rwlock.d */
 
-#ifdef ECL_RWLOCK
+#ifdef ECL_THREADS
 extern cl_object mp_get_rwlock_read_wait(cl_object lock);
 extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 #endif

@@ -541,6 +541,14 @@ memory limits before executing the program again."))
   ()
   (:REPORT "Illegal instruction."))
 
+(define-condition ext:timeout (serious-condition)
+  ((value :initarg :value :initform nil))
+  (:report (lambda (condition stream)
+             (format stream "Timeout occurred~@[ after ~A second~:P~]."
+                     (slot-value condition 'value))))
+  (:documentation
+   "Signaled when an operation does not complete within an allotted time budget."))
+
 (define-condition ext:unix-signal-received ()
   ((code :type fixnum
          :initform 0

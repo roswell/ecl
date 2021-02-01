@@ -27,7 +27,59 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 20.4.24
+* Pending changes since 21.2.1
+* 21.2.1 changes since 20.4.24
+** Announcement
+Dear Community,
+
+We are announcing a new stable ECL release which fixes a number of bugs
+from the previous release. Changes made include amongst others
+
+- working generational and precise garbage collector modes
+- support for using precompiled headers to improve compilation speed
+- the bytecompiler correctly implements the ANSI specification for load
+  time forms of literal objects in compiled files
+- fixes for encoding issues when reading in the output of the MSVC compiler
+- issues preventing ECL from compiling on Xcode 12 and running on ARM64
+  versions of Mac OS have been rectified
+
+More detailed information can be obtained from the CHANGELOG file and git
+commit logs. We'd like to thank all people who contributed to this release.
+Some of them are listed here (without any particular order): Paul Ruetz,
+Karsten Poeck, Eric Timmons, Vladimir Sedach, Dima Pasechnik, Matthias
+Köppe, Yuri Lensky, Tobias Hansen, Pritam Baral, Marius Gerbershagen and
+Daniel Kochmański.
+
+This release is available for download in a form of a source code archive
+(we do not ship prebuilt binaries):
+
+- [ECL 21.2.1 tarball archive](https://common-lisp.net/project/ecl/static/files/release/ecl-21.2.1.tgz)
+- [The ECL Manual](https://common-lisp.net/project/ecl/static/manual/)
+
+Happy Hacking,
+The ECL Developers
+
+** Enhancements
+- less cryptic names in backtraces of C-compiled functions
+- ECL can now use precompiled headers to speed up compilation. Use ~(setq
+  c::*use-precompiled-headers* t)~ to enable this feature
+** Issues fixed
+- the generational and precise garbage collector modes work again
+- ~serve-event~ extension may be used simultaneously from different threads now
+- several Unicode issues have been fixed thanks to Vladimir Sedach
+- encoding issues when reading in the output of the MSVC compiler have been fixed
+- inlining of a local function which closes over a variable no longer leads
+  to miscompilations if a variable with the same name exists at the point
+  where the function is inlined
+- the bytecompiler handles load time forms from literal objects correctly
+  with regards to the evaluation order and to multiple occurrences of the same
+  literal object in a single file
+- the ECL_C_COMPATIBLE_VARIADIC_DISPATCH option needed for running on Apple
+  ARM64 devices is automatically enabled when ECL is compiled for such a
+  device, allowing ECL to run on ARM64 Mac OS without any special compile
+  flags
+** API changes
+- a condition ~ext:timeout~ is defined
 * 20.4.24 changes since 16.1.3
 ** Announcement
 Dear Community,

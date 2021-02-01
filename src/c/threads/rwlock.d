@@ -198,7 +198,6 @@ mp_get_rwlock_write_nowait(cl_object lock)
 cl_object
 mp_get_rwlock_write_wait(cl_object lock)
 {
-  cl_env_ptr env = ecl_process_env();
   if (ecl_t_of(lock) != t_rwlock)
     FEerror_not_a_rwlock(lock);
 #ifdef ECL_RWLOCK

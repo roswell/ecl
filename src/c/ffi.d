@@ -769,7 +769,7 @@ si_load_foreign_module(cl_object filename)
   cl_object output;
 
 # ifdef ECL_THREADS
-  mp_get_lock(1, ecl_symbol_value(@'mp::+load-compile-lock+'));
+  mp_get_lock_wait(ecl_symbol_value(@'mp::+load-compile-lock+'));
   ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
 # endif
     output = ecl_library_open(filename, 0);
@@ -806,7 +806,7 @@ si_unload_foreign_module(cl_object module)
             1, module);
   }
 # ifdef ECL_THREADS
-  mp_get_lock(1, ecl_symbol_value(@'mp::+load-compile-lock+'));
+  mp_get_lock_wait(ecl_symbol_value(@'mp::+load-compile-lock+'));
   ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
 # endif
     if (ecl_likely(ecl_library_close(module))) output = ECL_T;

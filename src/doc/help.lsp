@@ -3349,6 +3349,55 @@ Equivalent to creating a process with MP:MAKE-PROCESS, presetting it
 with MP:PROCESS-PRESET and starting with MP:PROCESS-ENABLE. Returns
 created process.")
 
+  ;; Mutexes
+  (docfun mp:make-lock function (&key name (recursive nil)) "
+Creates a lock named NAME. If RECURSIVE is T then lock is reentrant.")
+
+  (docfun mp:recursive-lock-p function (lock) "
+Returns T if LOCK is reentrant, NIL otherwise.")
+
+  (docfun mp:holding-lock-p function (lock) "
+Returns T if the current thread holds LOCK, NIL otherwise.")
+
+  (docfun mp:lock-name function (lock) "
+Returns the name of LOCK.")
+
+  (docfun mp:lock-owner function (lock) "
+Returns the process owning LOCK. If the lock is not grabbed then
+returns NIL. For testing whether the current thread is holding the
+lock use MP:HOLDING-LOCK-P.")
+
+  (docfun mp:lock-count function (lock) "
+Returns number of processes waiting for LOCK.")
+
+  (docfun mp:get-lock function (lock &optional (waitp t)) "
+Tries to acquire LOCK. If WAITP is T (a default value), function
+blocks until the lock may be acquired, otherwise it returns
+immedietely. Returns T when the operation is successful, NIL
+otherwise.")
+
+  (docfun mp:giveup-lock function (lock) "
+Releases LOCK.")
+
+  ;; Condition variable interface
+  (docfun mp:make-condition-variable function () "
+Creates a condition variable.")
+
+  (docfun mp:condition-variable-wait function (cv lock) "
+Release LOCK and suspend thread until condition
+MP:CONDITION-VARIABLE-SIGNAL is called on CV. When thread resumes,
+re-acquire LOCK.")
+
+  (docfun mp:condition-variable-timedwait function (cv lock timeout) "
+Same as MP:CONDITION-VARIABLE-WAIT but with TIMEOUT. If operation is
+not complete before TIMEOUT seconds signals EXT:TIMEOUT.")
+
+  (docfun mp:condition-variable-signal function (cv) "
+Signal CV (wakes up only one waiter).")
+
+  (docfun mp:condition-variable-broadcast function (cv) "
+Signal CV (wakes up all waiters).")
+
   ;; Semaphore interface
   (docfun mp:make-semaphore function (&key name count) "
 Creates a counting semaphore NAME with a resource count COUNT.")
@@ -3368,7 +3417,32 @@ Tries to get a SEMAPHORE (non-blocking). If there is no resource left returns
 NIL, otherwise returns resource count before semaphore was acquired.")
 
   (docfun mp:signal-semaphore function (semaphore &optional (count 1)) "
-Releases COUNT units of a resource on SEMAPHORE."))
+Releases COUNT units of a resource on SEMAPHORE.")
+
+  ;; Mailboxes
+  (docfun mp:make-mailbox function (&key name (count 128)) "")
+  (docfun mp:mailbox-name function (mailbox) "")
+  (docfun mp:mailbox-empty-p function (mailbox) "")
+  (docfun mp:mailbox-read function (mailbox) "")
+  (docfun mp:mailbox-try-read function (mailbox) "")
+  (docfun mp:mailbox-send function (mailbox) "")
+  (docfun mp:mailbox-try-send function (mailbox) "")
+
+  ;; Barriers
+  (docfun mp:make-barrier function (count &key name) "")
+  (docfun mp:barrier-name function (barrier) "")
+  (docfun mp:barrier-count function (barrier) "")
+  (docfun mp:barrier-arrivers-count function (barrier) "")
+  (docfun mp:barrier-wait function (barrier) "")
+  (docfun mp:barrier-unblock function (barrier &key reset-count disable kill-waiting) "")
+
+  ;; RW-locks
+  (docfun mp:make-rwlock function (&key name) "")
+  (docfun mp:rwlock-name function (&key name) "")
+  (docfun mp:giveup-rwlock-read function (lock) "")
+  (docfun mp:giveup-rwlock-write function (lock) "")
+  (docfun mp:get-rwlock-read function (lock &optional (waitp t)) "")
+  (docfun mp:get-rwlock-write function (lock &optional (waitp t)) ""))
 
 #||
 ;;; ----------------------------------------------------------------------

@@ -153,23 +153,31 @@ _ecl_package_to_be_created(const cl_env_ptr env, cl_object name)
 static cl_object
 find_pending_package(cl_env_ptr env, cl_object name, cl_object nicknames)
 {
-  if (ecl_option_values[ECL_OPT_BOOTED]) {
-    cl_object l = env->packages_to_be_created;
-    while (!Null(l)) {
-      cl_object pair = ECL_CONS_CAR(l);
-      cl_object other_name = ECL_CONS_CAR(pair);
-      if (ecl_equal(other_name, name) ||
-          _ecl_funcall5(@'member', other_name, nicknames,
-                        @':test', @'string=') != ECL_NIL)
-        {
-          cl_object x = ECL_CONS_CDR(pair);
-          env->packages_to_be_created =
-            ecl_remove_eq(pair,
-                          env->packages_to_be_created);
-          return x;
-        }
-      l = ECL_CONS_CDR(l);
-    }
+  cl_object l = env->packages_to_be_created;
+  while (!Null(l)) {
+    cl_object pair = ECL_CONS_CAR(l);
+    cl_object other_name = ECL_CONS_CAR(pair);
+    if (ecl_equal(other_name, name) ||
+        _ecl_funcall5(@'member', other_name, nicknames,
+                      @':test', @'string=') != ECL_NIL)
+      {
+        cl_object x = ECL_CONS_CDR(pair);
+        env->packages_to_be_created =
+          ecl_remove_eq(pair,
+                        env->packages_to_be_created);
+        return x;
+      }
+    l = ECL_CONS_CDR(l);
+  }
+  return ECL_NIL;
+}
+
+static cl_object
+find_local_nickname_package(cl_object name) {
+  cl_object p = ecl_symbol_value(@'*package*');
+  if (ECL_PACKAGEP(p)) {
+    p = ecl_assoc(name, p->pack.local_nicknames);
+    if (!Null(p)) return ECL_CONS_CDR(p);
   }
   return ECL_NIL;
 }
@@ -222,27 +230,34 @@ ecl_make_package(cl_object name, cl_object nicknames,
   local_nicknames = process_local_nicknames_list(local_nicknames);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(env) {
-    /* Find a similarly named package in the list of
-     * packages to be created and use it or try to build a
-     * new package */
-    x = find_pending_package(env, name, nicknames);
-    if (Null(x)) {
-      other = ecl_find_package_nolock(name);
-      if (other != ECL_NIL) {
-        goto OUTPUT;
-      } else {
-        x = alloc_package(name);
+    if (ecl_option_values[ECL_OPT_BOOTED]) {
+      /* Find a similarly named package in the list of packages to be created
+       * and use it or try to build a new package. */
+      x = find_pending_package(env, name, nicknames);
+      if (Null(x)) {
+        other = ecl_find_package_nolock(name);
+        if (other != ECL_NIL) {
+          goto OUTPUT;
+        } else {
+          x = alloc_package(name);
+        }
       }
+      loop_for_in(nicknames) {
+        cl_object nick = ECL_CONS_CAR(nicknames);
+        other = ecl_find_package_nolock(nick);
+        if (other != ECL_NIL) {
+          name = nick;
+          goto OUTPUT;
+        }
+        x->pack.nicknames = CONS(nick, x->pack.nicknames);
+      } end_loop_for_in;
+    } else {
+      /* When we are not booted yet, then we are certain that there are no
+         duplicated package definitions (nor pending packages or nicknames
+         overlapping with existing packages). */
+      x = alloc_package(name);
+      x->pack.nicknames = nicknames;
     }
-    loop_for_in(nicknames) {
-      cl_object nick = ECL_CONS_CAR(nicknames);
-      other = ecl_find_package_nolock(nick);
-      if (other != ECL_NIL) {
-        name = nick;
-        goto OUTPUT;
-      }
-      x->pack.nicknames = CONS(nick, x->pack.nicknames);
-    } end_loop_for_in;
     loop_for_in(use_list) {
       cl_object y = ECL_CONS_CAR(use_list);
       x->pack.uses = CONS(y, x->pack.uses);
@@ -327,11 +342,8 @@ ecl_find_package_nolock(cl_object name)
     return name;
   name = cl_string(name);
 
-  p = ecl_symbol_value(@'*package*');
-  if (ECL_PACKAGEP(p)) {
-    p = ecl_assoc(name, p->pack.local_nicknames);
-    if (!Null(p)) return ECL_CONS_CDR(p);
-  }
+  p = find_local_nickname_package(name);
+  if (!Null(p)) return p;
 
   l = cl_core.packages;
   loop_for_on_unsafe(l) {

@@ -571,17 +571,27 @@ safe_buffer_pointer(cl_object x, cl_index size)
 ;; We could refactor a lot here, if we pass sockaddr_foo structs around in Lisp. But
 ;; I do not feel comfortable with that.
 
+(define-condition unknown-protocol (error)
+  ((name :initarg :name
+         :reader unknown-protocol-name))
+  (:report (lambda (condition stream)
+             (format stream "Protocol not found: ~A"
+                     (prin1-to-string (unknown-protocol-name condition))))))
+
 (defun get-protocol-by-name (string-or-symbol)
   "Calls getprotobyname"
   #-:android
-  (let ((string (string string-or-symbol)))
-      (c-inline (string) (:cstring) :int
-                "{
-                 struct protoent *pe;
-                 pe = getprotobyname(#0);
-                 @(return 0) = pe ? pe->p_proto : -1;
-                 }
-               "))
+  (let* ((string (string string-or-symbol))
+         (proto-num (c-inline (string) (:cstring) :int
+                              "{
+                                 struct protoent *pe;
+                                 pe = getprotobyname(#0);
+                                 @(return 0) = pe ? pe->p_proto : -1;
+                               }
+               ")))
+    (if (= proto-num -1)
+      (error 'unknown-protocol :name string)
+      proto-num))
   ;; getprotobyname is not yet implemented on bionic
   #+:android
   (let ((proto (string-downcase (if (symbolp string-or-symbol)

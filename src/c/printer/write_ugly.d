@@ -120,7 +120,7 @@ write_float(cl_object f, cl_object stream)
 static void                    /* XXX: do not cons new floats here! */
 write_complex_float(cl_object f, cl_object stream)
 {
-  cl_object real, imag;
+  cl_object real = OBJNULL, imag = OBJNULL;
   switch (ecl_t_of(f)) {
   case t_csfloat:
     real = ecl_make_single_float(crealf(ecl_csfloat(f)));

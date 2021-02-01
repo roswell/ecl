@@ -529,7 +529,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
       }
       /* at this point exec has failed */
       perror("exec");
-      abort();
+      _exit(EXIT_FAILURE);
     }
     close(child_stdin);
     close(child_stdout);
