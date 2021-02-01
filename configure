@@ -10,7 +10,7 @@ set -e
 #else
 #  srcdir=`pwd`/src
 #fi
-srcdir=`pwd`/src
+srcdir="`pwd`/src"
 [ "x$buildir" = "x" ] && buildir=build
 export buildir
 
@@ -34,6 +34,5 @@ if ( echo $* | grep guess-host-cflags ); then
 fi
 
 cd ${buildir}
-${srcdir}/configure --srcdir=${srcdir} "$@"
-
+"${srcdir}/configure" --srcdir="${srcdir}" $*
 echo Configuration complete. To build ECL, issue 'make' in this directory.
