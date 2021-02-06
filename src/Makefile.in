@@ -83,19 +83,7 @@ endif
 %Makefile: $(srcdir)/%Makefile.in config.status
 	./config.status
 
-#
-# When compiling the library itself, we have to remove the dllimport
-# declarations, because the variables that they mark are in the
-# in the library and can be referenced without indirection.
-#
-c/ecl/external.h: $(top_srcdir)/h/external.h
-	test -d c/ecl || mkdir c/ecl
-	sed 's,__declspec(dllimport),,g' $(top_srcdir)/h/external.h > $@
-
-ecl/external.h: c/ecl/external.h c/ecl/external.h
-	cp -rf $(srcdir)/h/*.h $(srcdir)/h/impl ecl/
-
-bin/$(ECL): $(ECL_MIN) compile.lsp ecl/external.h build-stamp $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
+bin/$(ECL): $(ECL_MIN) compile.lsp build-stamp $(top_srcdir)/h/*.h $(top_srcdir)/h/impl/*.h $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
@@ -139,7 +127,7 @@ libeclgmp.a:
 	fi
 
 # final objects archive
-libeclmin.a: libeclgmp.a libeclatomic.a libeclgc.a libeclffi.a lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp ecl/external.h
+libeclmin.a: libeclgmp.a libeclatomic.a libeclgc.a libeclffi.a lsp/config.lsp $(ECL_CMPDIR)/cmpdefs.lsp
 	@echo "Building $@..."
 	cd c; $(MAKE)
 
