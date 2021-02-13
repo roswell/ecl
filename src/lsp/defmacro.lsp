@@ -102,7 +102,7 @@
              (multiple-value-bind (reqs opts rest key-flag keys allow-other-keys auxs)
                  (si::process-lambda-list
                   vl (case context
-                       ((defmacro define-compiler-macro)
+                       ((defmacro define-compiler-macro define-setf-expander)
                         'macro)
                        (otherwise 'destructuring-bind)))
                (let* ((pointer (tempsym))
@@ -120,7 +120,7 @@
                                             (eq (caadr ,whole) 'cl:function))
                                        (cddr (truly-the cons ,whole))
                                        (cdr (truly-the cons ,whole))))
-                                 (defmacro
+                                 ((defmacro define-setf-expander)
                                      `(cdr (truly-the cons ,whole)))
                                  (otherwise whole)))
                  (dolist (v (cdr reqs))
@@ -250,7 +250,8 @@
     (values (if decls `((declare ,@decls)) nil)
             body doc)))
 
-;; Optional argument context can be 'cl:define-compiler-macro or 'cl:defmacro (default)
+;; Optional argument context can be 'cl:define-setf-expander,
+;; 'cl:define-compiler-macro or 'cl:defmacro (default)
 (defun sys::expand-defmacro (name vl body &optional (context 'cl:defmacro))
   (multiple-value-bind (decls body doc)
       (find-declarations body)
