@@ -174,6 +174,27 @@
               finally (when init-form
                         (maybe-init location init-form)))))))
 
+(defun find-vv-record (object duplicate permanent)
+  (let* ((test (if *compiler-constants* 'eq 'equal))
+         (item (or (find object *permanent-objects* :test test :key #'vv-value)
+                   (find object *temporary-objects* :test test :key #'vv-value))))
+    (when (and item (not duplicate) permanent (not (vv-permanent-p item)))
+      ;; promote temporary to permanent object
+      (let ((old-loc (vv-location item))
+            (new-loc (length *permanent-objects*)))
+        (setf (vv-permanent-p item) t
+              (vv-location item) new-loc)
+        (vector-push-extend item *permanent-objects*)
+        ;; adjust location of other temporary objects
+        ;; INV: we can safely move VV locations of temporary objects
+        (replace *temporary-objects* *temporary-objects*
+                 :start1 old-loc :start2 (1+ old-loc))
+        (decf (fill-pointer *temporary-objects*))
+        (loop for i from old-loc below (length *temporary-objects*)
+              for vv-record = (svref *temporary-objects* i)
+              do (decf (vv-location vv-record)))))
+    item))
+
 (defun add-object (object &key
                             (duplicate nil)
                             (used-p nil)
@@ -183,18 +204,7 @@
     (when used-p
       (setf (vv-used-p vv) t))
     (return-from add-object vv))
-  (let* ((test (if *compiler-constants* 'eq 'equal))
-         (item (if permanent
-                   ;; FIXME! Currently we have two data vectors and,
-                   ;; when compiling files, it may happen that a
-                   ;; constant is duplicated and stored both in VV
-                   ;; and VVtemp. This would not be a problem if the
-                   ;; constant were readable, but due to using
-                   ;; MAKE-LOAD-FORM we may end up having two non-EQ
-                   ;; objects created for the same value.
-                   (find object *permanent-objects* :test test :key #'vv-value)
-                   (or (find object *permanent-objects* :test test :key #'vv-value)
-                       (find object *temporary-objects* :test test :key #'vv-value))))
+  (let* ((item (find-vv-record object duplicate permanent))
          (array (if permanent
                     *permanent-objects*
                     *temporary-objects*))
@@ -241,6 +251,8 @@
   ;; keywords lists from other functions when they coincide with ours.
   ;; We search for keyword lists that are similar. However, the list
   ;; *OBJECTS* contains elements in decreasing order!!!
+
+  ;; INV: once assigned, the VV locations of permanent-objects don't change
   (let ((x (search keywords *permanent-objects*
                    :test #'(lambda (k record) (eq k (vv-value record))))))
     (if x
