@@ -191,7 +191,7 @@
                  :start1 old-loc :start2 (1+ old-loc))
         (decf (fill-pointer *temporary-objects*))
         (loop for i from old-loc below (length *temporary-objects*)
-              for vv-record = (svref *temporary-objects* i)
+              for vv-record = (aref *temporary-objects* i)
               do (decf (vv-location vv-record)))))
     item))
 
