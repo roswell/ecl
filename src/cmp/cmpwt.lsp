@@ -49,20 +49,15 @@
   ;; We collect all objects that are to be externalized, but filter out
   ;; those which will be created by a lisp form.
   (loop for array in (list *permanent-objects* *temporary-objects*)
-     nconc (loop for (object vv-record . rest) across array
-              collect (cond ((gethash object *load-objects*)
-                             0)
-                            ((vv-used-p vv-record)
-                             object)
-                            (t
-                             ;; Value optimized away or not used
-                             0))))
-  #+(or)
-  (loop for i in (nconc (map 'list #'first *permanent-objects*)
-                        (map 'list #'first *temporary-objects*))
-        collect (if (gethash i *load-objects*)
-                    0
-                    i)))
+        nconc (loop for vv-record across array
+                    for object = (vv-value vv-record)
+                    collect (cond ((gethash object *load-objects*)
+                                   0)
+                                  ((vv-used-p vv-record)
+                                   object)
+                                  (t
+                                   ;; Value optimized away or not used
+                                   0)))))
 
 (defun data-dump-array ()
   (cond (*compiler-constants*
@@ -197,9 +192,9 @@
                    ;; constant were readable, but due to using
                    ;; MAKE-LOAD-FORM we may end up having two non-EQ
                    ;; objects created for the same value.
-                   (find object *permanent-objects* :test test :key #'first)
-                   (or (find object *permanent-objects* :test test :key #'first)
-                       (find object *temporary-objects* :test test :key #'first))))
+                   (find object *permanent-objects* :test test :key #'vv-value)
+                   (or (find object *permanent-objects* :test test :key #'vv-value)
+                       (find object *temporary-objects* :test test :key #'vv-value))))
          (array (if permanent
                     *permanent-objects*
                     *temporary-objects*))
@@ -208,12 +203,12 @@
                            (vv (make-vv :location ndx
                                         :permanent-p permanent
                                         :value object)))
-                      (vector-push-extend (list object vv ndx) array)
+                      (vector-push-extend vv array)
                       vv))
                    (item
                     (when (member object *objects-being-created*)
                       (error 'circular-dependency :form object))
-                    (second item))
+                    item)
                    ;; FIXME! all other branches return VV instance
                    ;; while this branch returns a STRING making the
                    ;; function return value inconsistent.
@@ -227,7 +222,7 @@
                            (vv (make-vv :location ndx
                                         :permanent-p permanent
                                         :value object)))
-                      (vector-push-extend (list object vv ndx) array)
+                      (vector-push-extend vv array)
                       (unless *compiler-constants*
                         (add-load-form object vv))
                       vv)))))
@@ -247,9 +242,9 @@
   ;; We search for keyword lists that are similar. However, the list
   ;; *OBJECTS* contains elements in decreasing order!!!
   (let ((x (search keywords *permanent-objects*
-                   :test #'(lambda (k record) (eq k (first record))))))
+                   :test #'(lambda (k record) (eq k (vv-value record))))))
     (if x
-        (second (elt *permanent-objects* x))
+        (elt *permanent-objects* x)
         (prog1
             (add-object (pop keywords) :duplicate t :permanent t)
           (dolist (k keywords)

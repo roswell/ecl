@@ -244,8 +244,8 @@ lines are inserted, but the order is preserved")
 
 (defvar *permanent-data* nil)           ; detemines whether we use *permanent-objects*
                                         ; or *temporary-objects*
-(defvar *permanent-objects* nil)        ; holds { ( object (VV vv-index) ) }*
-(defvar *temporary-objects* nil)        ; holds { ( object (VV vv-index) ) }*
+(defvar *permanent-objects* nil)        ; holds { vv-record }*
+(defvar *temporary-objects* nil)        ; holds { vv-record }*
 (defvar *load-objects* nil)             ; hash with association object -> vv-location
 (defvar *load-time-values* nil)         ; holds { ( vv-index form ) }*,
 ;;;  where each vv-index should be given an object before
