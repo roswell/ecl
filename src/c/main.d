@@ -512,10 +512,12 @@ cl_boot(int argc, char **argv)
   ECL_NIL_SYMBOL->symbol.t = t_symbol;
   ECL_NIL_SYMBOL->symbol.value = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.name = str_NIL;
-  ECL_NIL_SYMBOL->symbol.gfdef = ECL_NIL;
+  ECL_NIL_SYMBOL->symbol.cname = ECL_NIL;
+  ECL_FMAKUNBOUND(ECL_NIL_SYMBOL);
   ECL_NIL_SYMBOL->symbol.plist = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.hpack = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.stype = ecl_stp_constant;
+  ECL_NIL_SYMBOL->symbol.undef_entry = ecl_undefined_function_entry;
 #ifdef ECL_THREADS
   ECL_NIL_SYMBOL->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
@@ -524,10 +526,12 @@ cl_boot(int argc, char **argv)
   ECL_T->symbol.t = (short)t_symbol;
   ECL_T->symbol.value = ECL_T;
   ECL_T->symbol.name = str_T;
-  ECL_T->symbol.gfdef = ECL_NIL;
+  ECL_T->symbol.cname = ECL_NIL;
+  ECL_FMAKUNBOUND(ECL_T);
   ECL_T->symbol.plist = ECL_NIL;
   ECL_T->symbol.hpack = ECL_NIL;
   ECL_T->symbol.stype = ecl_stp_constant;
+  ECL_T->symbol.undef_entry = ecl_undefined_function_entry;
 #ifdef ECL_THREADS
   ECL_T->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif

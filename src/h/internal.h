@@ -161,6 +161,8 @@ extern ECL_API cl_object si_serror _ECL_ARGS
 #define _ecl_funcall1(fun) \
         ecl_function_dispatch(ecl_process_env(), (fun))(0)
 
+extern cl_object ecl_undefined_function_entry _ECL_ARGS((cl_narg narg, ...));
+
 extern cl_object si_constantp_inner _ECL_ARGS((cl_narg narg, cl_object form, ...));
 extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form, ...));
 

@@ -951,7 +951,7 @@ c_call(cl_env_ptr env, cl_object args, int flags) {
       && name < (cl_object)(cl_symbols + cl_num_symbols_in_core))
     {
       cl_object f = ECL_SYM_FUN(name);
-      cl_type t = (f == OBJNULL)? t_other : ecl_t_of(f);
+      cl_type t = (!ECL_FBOUNDP(name))? t_other : ecl_t_of(f);
       if (t == t_cfunfixed) {
         cl_index n = ecl_length(args);
         if (f->cfun.narg == 1 && n == 1) {

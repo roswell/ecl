@@ -98,9 +98,12 @@
 
 (defun wt-call-indirect (fun-loc args fname function-p)
   (let ((narg (length args)))
-    (if function-p
-        (wt "(cl_env_copy->function=" fun-loc ")->cfun.entry(" narg)
-        (wt "ecl_function_dispatch(cl_env_copy," fun-loc ")(" narg))
+    (cond (function-p
+           (wt "(cl_env_copy->function=" fun-loc ")->cfun.entry(" narg))
+          ((and fname (symbolp fname))
+           (wt "(cl_env_copy->function=" fun-loc "->symbol.gfdef)->cfun.entry(" narg))
+          (t
+           (wt "ecl_function_dispatch(cl_env_copy," fun-loc ")(" narg)))
     (dolist (arg args)
       (wt ", " arg))
     (wt ")")

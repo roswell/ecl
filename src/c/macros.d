@@ -72,7 +72,7 @@ search_macro_function(cl_object name, cl_object env)
     }
   }
   if (type & ecl_stp_macro) {
-    return ECL_SYM_FUN(name);
+    return name->symbol.macfun;
   } else {
     return ECL_NIL;
   }

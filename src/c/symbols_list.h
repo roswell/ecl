@@ -1174,6 +1174,7 @@ cl_symbols[] = {
 {SYS_ "COERCE-TO-FUNCTION" ECL_FUN("si_coerce_to_function", si_coerce_to_function, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "COERCE-TO-PACKAGE" ECL_FUN("si_coerce_to_package", si_coerce_to_package, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "COERCE-TO-PHYSICAL-PATHNAME" ECL_FUN("si_coerce_to_physical_pathname", si_coerce_to_physical_pathname, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "COPY-SYSPROP" ECL_FUN("si_copy_sysprop", si_copy_sysprop, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "COPY-TO-SIMPLE-BASE-STRING" ECL_FUN("si_copy_to_simple_base_string", si_copy_to_simple_base_string, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "COMPILED-FUNCTION-BLOCK" ECL_FUN("si_compiled_function_block", si_compiled_function_block, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {EXT_ "COMPILED-FUNCTION-NAME" ECL_FUN("si_compiled_function_name", si_compiled_function_name, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},

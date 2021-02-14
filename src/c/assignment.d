@@ -174,11 +174,13 @@ ecl_rem_setf_definition(cl_object sym)
   if (ECL_SYMBOLP(fname)) {
     if (mflag) {
       type |= ecl_stp_macro;
+      sym->symbol.macfun = def;
+      ECL_FMAKUNBOUND(sym);
     } else {
       type &= ~ecl_stp_macro;
+      ECL_SYM_FUN(sym) = def;
     }
     ecl_symbol_type_set(sym, type);
-    ECL_SYM_FUN(sym) = def;
     ecl_clear_compiler_properties(sym);
 #ifndef ECL_CMU_FORMAT
     if (pprint == ECL_NIL)
@@ -221,7 +223,8 @@ cl_fmakunbound(cl_object fname)
   }
   if (ECL_SYMBOLP(fname)) {
     ecl_clear_compiler_properties(sym);
-    ECL_SYM_FUN(sym) = ECL_NIL;
+    ECL_FMAKUNBOUND(sym);
+    sym->symbol.macfun = ECL_NIL;
     ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~ecl_stp_macro);
   } else {
     ecl_rem_setf_definition(sym);
@@ -269,9 +272,25 @@ si_rem_sysprop(cl_object sym, cl_object prop)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object plist, found;
-  plist = ecl_gethash_safe(sym, cl_core.system_properties, ECL_NIL);
-  plist = si_rem_f(plist, prop);
-  found = ecl_nth_value(the_env, 1);
-  ecl_sethash(sym, cl_core.system_properties, plist);
+  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
+    plist = ecl_gethash_safe(sym, cl_core.system_properties, ECL_NIL);
+    plist = si_rem_f(plist, prop);
+    found = ecl_nth_value(the_env, 1);
+    ecl_sethash(sym, cl_core.system_properties, plist);
+  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
   ecl_return1(the_env, found);
+}
+
+cl_object
+si_copy_sysprop(cl_object sym_old, cl_object sym_new)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object plist = ECL_NIL;
+  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
+    plist = ecl_gethash_safe(sym_old, cl_core.system_properties, ECL_NIL);
+    if (!Null(plist)) {
+      ecl_sethash(sym_new, cl_core.system_properties, plist);
+    }
+  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
+  @(return plist);
 }

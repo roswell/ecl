@@ -133,8 +133,8 @@ mangle_name(cl_object output, unsigned char *source, int l)
       @(return found output minarg maxarg);
     }
   } else if (!Null(symbol)) {
-    cl_object fun = symbol->symbol.gfdef;
-    cl_type t = (fun == OBJNULL)? t_other : ecl_t_of(fun);
+    cl_object fun = ECL_SYM_FUN(symbol);
+    cl_type t = (!ECL_FBOUNDP(symbol))? t_other : ecl_t_of(fun);
     if ((t == t_cfun || t == t_cfunfixed) && fun->cfun.block == OBJNULL) {
       for (l = 0; l <= cl_num_symbols_in_core; l++) {
         cl_object s = (cl_object)(cl_symbols + l);
@@ -154,7 +154,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
       }
     }
   }
-  if (!Null(symbol->symbol.cname)) {
+  if (!ECL_FBOUNDP(symbol) && !Null(symbol->symbol.cname)) {
     @(return found symbol->symbol.cname minarg maxarg);
   }
   package = ecl_symbol_package(symbol);
@@ -240,7 +240,9 @@ make_this_symbol(int i, cl_object s, int code,
   s->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
   ECL_SET(s, OBJNULL);
-  ECL_SYM_FUN(s) = ECL_NIL;
+  ECL_FMAKUNBOUND(s);
+  s->symbol.undef_entry = ecl_undefined_function_entry;
+  s->symbol.macfun = ECL_NIL;
   s->symbol.plist = ECL_NIL;
   s->symbol.hpack = ECL_NIL;
   s->symbol.stype = stp;
