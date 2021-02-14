@@ -150,8 +150,6 @@
   (add-object 0 :duplicate t :permanent t))
 
 (defun add-load-form (object location)
-  (unless (si::need-to-make-load-form-p object)
-    (return-from add-load-form))
   (unless (eq *compiler-phase* 't1)
     (cmperr "Unable to internalize complex object ~A in ~a phase." object *compiler-phase*))
   (multiple-value-bind (make-form init-form) (make-load-form object)
@@ -178,20 +176,22 @@
                             (duplicate nil)
                             (used-p nil)
                             (permanent (or (symbolp object)
-                                           *permanent-data*)))
+                                           *permanent-data*))
+                   &aux load-form-p)
   (when-let ((vv (add-static-constant object)))
     (when used-p
       (setf (vv-used-p vv) t))
     (return-from add-object vv))
+  (when (and (null *compiler-constants*)
+             (si::need-to-make-load-form-p object))
+    ;; all objects created with MAKE-LOAD-FORM go into the permanent
+    ;; storage to prevent two non-eq instances of the same object in
+    ;; the permanent and temporary storage from being created (we
+    ;; can't move objects from the temporary into the permanent
+    ;; storage once they have been created)
+    (setf load-form-p t permanent t))
   (let* ((test (if *compiler-constants* 'eq 'equal))
          (item (if permanent
-                   ;; FIXME! Currently we have two data vectors and,
-                   ;; when compiling files, it may happen that a
-                   ;; constant is duplicated and stored both in VV
-                   ;; and VVtemp. This would not be a problem if the
-                   ;; constant were readable, but due to using
-                   ;; MAKE-LOAD-FORM we may end up having two non-EQ
-                   ;; objects created for the same value.
                    (find object *permanent-objects* :test test :key #'vv-value)
                    (or (find object *permanent-objects* :test test :key #'vv-value)
                        (find object *temporary-objects* :test test :key #'vv-value))))
@@ -223,7 +223,7 @@
                                         :permanent-p permanent
                                         :value object)))
                       (vector-push-extend vv array)
-                      (unless *compiler-constants*
+                      (when load-form-p
                         (add-load-form object vv))
                       vv)))))
     (when (or duplicate used-p)
