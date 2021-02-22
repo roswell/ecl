@@ -86,33 +86,41 @@
 ;;; that some of they have become binary operators.
 ;;;
 
-(defun maximum-number-type (t1 t2 &key only-real integer-result)
+(defun maximum-number-type (type1 type2 &key only-real integer-result)
   ;; Computes the output type of an operation between number types T1
   ;; and T2 using the rules of floating point contagion. It returns
   ;; the type of the result, and the types of T1 and T2, if they
   ;; represent known types, or NUMBER, in other cases.
   (let ((t1-eq nil)
         (t2-eq nil)
+        (t1 type1)
+        (t2 type2)
         (output nil)
+        (complex-t1 nil)
+        (complex-t2 nil)
         (default (if only-real 'REAL 'NUMBER))
-        (types-list (if only-real
-                        '(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
-                          DOUBLE-FLOAT LONG-FLOAT FLOAT REAL
-                          NUMBER)
-                        '(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
-                          DOUBLE-FLOAT LONG-FLOAT FLOAT REAL))))
-    (dolist (i types-list)
-      (when (and (null t1-eq) (type>= i t1))
-        (if (equalp t1 t2)
-            (setf t2-eq i))
-        (setf t1-eq i output i))
-      (when (and (null t2-eq) (type>= i t2))
-        (setf t2-eq i output i)))
+        (number-types #(FIXNUM INTEGER RATIONAL SINGLE-FLOAT
+                        DOUBLE-FLOAT LONG-FLOAT FLOAT REAL)))
+    (when (and (consp t1) (eq (first t1) 'COMPLEX))
+      (setf t1 (second t1) complex-t1 t))
+    (when (and (consp t2) (eq (first t2) 'COMPLEX))
+      (setf t2 (second t2) complex-t2 t))
+    (when (and only-real (or complex-t1 complex-t2))
+      (return-from maximum-number-type (values default default default)))
+    (loop for i across number-types
+          do (when (and (null t1-eq) (type>= i t1))
+               (when (equalp t1 t2)
+                 (setf t2-eq i))
+               (setf t1-eq i output i))
+             (when (and (null t2-eq) (type>= i t2))
+               (setf t2-eq i output i)))
     (unless (and t1-eq t2-eq output)
       (setf output default))
-    (when (and integer-result (or (eq output 'fixnum) (eq output 'integer)))
+    (when (and integer-result (or (eq output 'FIXNUM) (eq output 'INTEGER)))
       (setf output integer-result))
-    (values output (if t1-eq t1 default) (if t2-eq t2 default))))
+    (when (and (or complex-t1 complex-t2) (not (eq output 'NUMBER)))
+      (setf output (if (eq output 'REAL) 'COMPLEX `(COMPLEX ,output))))
+    (values output (if t1-eq type1 default) (if t2-eq type2 default))))
 
 (defun ensure-number-type (general-type &key integer-result)
   (maximum-number-type general-type general-type :integer-result integer-result))
