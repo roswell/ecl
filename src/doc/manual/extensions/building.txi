@@ -370,7 +370,7 @@ Use this in the REPL to make a shared library:
                  :type :shared-library
                  :move-here #P"./"
                  :monolithic t
-                 :init-name "init_example")
+                 :init-name "init_dll_example")
 @end lisp
 
 Here @code{:monolithic t} means that ECL will compile the library and
