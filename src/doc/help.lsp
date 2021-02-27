@@ -2301,6 +2301,15 @@ Evaluates FORMs in order from left to right.  If any FORM evaluates to non-
 NIL, quits and returns that (single) value.  If the last FORM is reached,
 returns whatever values it returns.")
 
+(docfun ext::octets-to-string function (input &key
+                                              (external-format :default)
+                                              (start 0)
+                                              (end nil)) "
+Decode a sequence of octets into a string according to the given
+external format. The bounding index designators start and end optionally
+denote a subsequence to be decoded.
+")
+
 (docfun output-stream-p function (stream) "
 Returns T if STREAM can handle output operations; NIL otherwise.")
 
@@ -3013,6 +3022,17 @@ Similar to STRING>=, but ignores cases.")
 (docfun string-right-trim function (char-bag string) "
 Returns a copy of STRING with the specified characters removed from the right
 end.  CHAR-SPEC must be a sequence of characters.")
+
+(docfun ext::string-to-octets function (input &key
+                                              (external-format :default)
+                                              (start 0)
+                                              (end nil)
+                                              (null-terminate nil)) "
+Encode a string into a sequence of octets according to the given
+external format. The bounding index designators start and end
+optionally denote a subsequence to be encoded. If null-terminate is
+true, add a terminating null byte.
+")
 
 (docfun si::string-to-object function (string) "
 ECL specific.

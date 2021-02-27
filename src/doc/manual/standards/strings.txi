@@ -67,6 +67,29 @@ The counterpart of the previous function is @coderef{ecl_char_set}, which implem
 Both functions check the type of their arguments and verify that the indices do not exceed the string boundaries. Otherwise they signal a @code{serious-condition}.
 @end deftypefun
 
+@subsubsection Converting Unicode strings
+Converting between different encodings. See @ref{Streams - External formats} for a list of supported encodings (external formats).
+
+@subsubheading Functions
+@cppdef si_octets_to_string
+@lspdef ext:octets-to-string
+@defun ext:octets-to-string octets &key (external-format :default) (start 0) (end nil)
+Decode a sequence of octets (i.e. 8-bit bytes) into a string according
+to the given external format. @var{octets} must be a vector whose
+elements have a size of 8-bit. The bounding index designators
+@var{start} and @var{end} optionally denote a subsequence to be decoded.
+Signals an @coderef{ext:character-decoding-error} if the decoding fails.
+@end defun
+
+@cppdef si_string_to_octets
+@lspdef ext:string-to-octets
+@defun ext:string-to-octets string &key (external-format :default) (start 0) (end nil) (null-terminate nil)
+Encode a string into a sequence of octets according to the given
+external format. The bounding index designators @var{start} and
+@var{end} optionally denote a subsequence to be encoded. If
+@var{null-terminate} is true, add a terminating null byte. Signals an
+@coderef{ext:character-encoding-error} if the encoding fails.
+@end defun
 @subsubsection ANSI dictionary
 Common Lisp and C equivalence
 

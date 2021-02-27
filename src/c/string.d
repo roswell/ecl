@@ -70,7 +70,7 @@ do_make_string(cl_index s, ecl_character code)
   @)
 
 /*
-  Make a string of a certain size, with some eading zeros to
+  Make a string of a certain size, with some leading zeros to
   keep C happy. The string must be adjustable, to allow further
   growth. (See unixfsys.c for its use).
 */
@@ -895,3 +895,68 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
   }
   @(return output);
   @)
+
+@(defun ext::octets-to-string (input &key
+                               (external_format @':default')
+                               (start ecl_make_fixnum(0))
+                               (end ECL_NIL))
+  cl_object output;
+  cl_index input_size;
+  cl_object input_stream;
+  cl_index output_size;
+  cl_object ret;
+  @
+  output = si_get_buffer_string();
+  input_stream = si_make_sequence_input_stream(7, input,
+                                               @':external-format', external_format,
+                                               @':start', start,
+                                               @':end', end);
+  /* INV: MAKE-SEQUENCE-INPUT-STREAM checks types of start and end indices */
+  input_size = (Null(end) ? ecl_length(input) : ecl_fixnum(end)) - ecl_fixnum(start);
+  output_size = 0;
+  do {
+    output->base_string.fillp = output->base_string.dim;
+    output_size += ecl_to_unsigned_integer(si_do_read_sequence(output, input_stream,
+                                                               ecl_make_fixnum(output_size),
+                                                               ecl_make_fixnum(output->base_string.dim)));
+    if (output_size < output->base_string.dim) {
+      break;
+    }
+    output = _ecl_funcall3(@'adjust-array', output,
+                           ecl_make_fixnum(input_size > output_size
+                                           ? input_size
+                                           : output_size + 128));
+  } while (1);
+  output->base_string.fillp = output_size;
+  if (ecl_fits_in_base_string(output)) {
+    ret = si_copy_to_simple_base_string(output);
+  } else {
+    ret = cl_copy_seq(output);
+  }
+  si_put_buffer_string(output);
+  @(return ret);
+@)
+
+@(defun ext::string-to-octets (input &key
+                               (external_format @':default')
+                               (start ecl_make_fixnum(0))
+                               (end ECL_NIL)
+                               (null_terminate ECL_NIL)
+                               (element_type @'ext::byte8'))
+  cl_object output;
+  cl_object output_stream;
+  @
+  output = si_make_vector(element_type, /* element-type */
+                          cl_length(input), /* length */
+                          ECL_T,             /* adjustable */
+                          ecl_make_fixnum(0), /* fillp */
+                          ECL_NIL,            /* displaced */
+                          ECL_NIL);           /* displaced-offset */
+  output_stream = si_make_sequence_output_stream(3, output,
+                                                 @':external-format', external_format);
+  si_do_write_sequence(input, output_stream, start, end);
+  if (!Null(null_terminate)) {
+    ecl_write_char(0, output_stream);
+  }
+  @(return output);
+@)
