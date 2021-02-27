@@ -206,7 +206,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   }
   /* INV: coerce_to_file_pathname() creates a fresh new pathname object */
   source   = cl_merge_pathnames(1, source);
-  pathname = coerce_to_file_pathname(source);
+  pathname = si_coerce_to_file_pathname(source);
   pntype   = pathname->pathname.type;
 
   filename = ECL_NIL;
@@ -233,8 +233,8 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
     /* If filename already has an extension, make sure
        that the file exists */
     cl_object kind;
-    filename = si_coerce_to_filename(pathname);
-    kind = si_file_kind(filename, ECL_T);
+    filename = pathname;
+    kind = si_file_kind(pathname, ECL_T);
     if (kind != @':file' && kind != @':special') {
       filename = ECL_NIL;
     } else {

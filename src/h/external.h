@@ -1406,8 +1406,8 @@ extern ECL_API cl_object cl_wild_pathname_p _ECL_ARGS((cl_narg narg, cl_object p
 
 extern ECL_API cl_object ecl_make_pathname(cl_object host, cl_object device, cl_object directory, cl_object name, cl_object type, cl_object version, cl_object scase);
 extern ECL_API cl_object ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep, cl_object default_host);
-extern ECL_API cl_object coerce_to_physical_pathname(cl_object x);
-extern ECL_API cl_object coerce_to_file_pathname(cl_object pathname);
+extern ECL_API cl_object si_coerce_to_physical_pathname(cl_object x);
+extern ECL_API cl_object si_coerce_to_file_pathname(cl_object pathname);
 #define ECL_NAMESTRING_TRUNCATE_IF_ERROR 1
 #define ECL_NAMESTRING_FORCE_BASE_STRING 2
 extern ECL_API cl_object ecl_namestring(cl_object pname, int truncate_if_impossible);
@@ -1923,8 +1923,6 @@ extern ECL_API cl_object cl_user_homedir_pathname _ECL_ARGS((cl_narg narg, ...))
 extern ECL_API cl_object si_mkstemp(cl_object templ);
 extern ECL_API cl_object si_rmdir(cl_object directory);
 
-extern ECL_API cl_object ecl_cstring_to_pathname(char *s);
-extern ECL_API int ecl_backup_open(const char *filename, int option, int mode);
 extern ECL_API cl_object ecl_file_len(int f);
 extern ECL_API cl_object ecl_homedir_pathname(cl_object user);
 extern ECL_API cl_object si_get_library_pathname(void);

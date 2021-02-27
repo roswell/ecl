@@ -2594,12 +2594,12 @@ cl_synonym_stream_symbol(cl_object strm)
 #endif
 
 static int
-safe_open(const char *filename, int flags, ecl_mode_t mode)
+safe_open(const ecl_filename_char *filename, int flags, ecl_mode_t mode)
 {
   const cl_env_ptr the_env = ecl_process_env();
   int output;
   ecl_disable_interrupts_env(the_env);
-  output = open(filename, flags, mode);
+  output = ecl_open(filename, flags, mode);
   ecl_enable_interrupts_env(the_env);
   return output;
 }
@@ -2616,12 +2616,12 @@ safe_close(int f)
 }
 
 static FILE *
-safe_fdopen(int fildes, const char *mode)
+safe_fdopen(int fildes, const ecl_filename_char *mode)
 {
   const cl_env_ptr the_env = ecl_process_env();
   FILE *output;
   ecl_disable_interrupts_env(the_env);
-  output = fdopen(fildes, mode);
+  output = ecl_fdopen(fildes, mode);
   ecl_enable_interrupts_env(the_env);
   return output;
 }
@@ -4323,7 +4323,7 @@ cl_object
 ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
                         cl_fixnum byte_size, int flags, cl_object external_format)
 {
-  char *mode;                     /* file open mode */
+  ecl_filename_char *mode;        /* file open mode */
   FILE *fp;                       /* file pointer */
   switch(smm) {
   case ecl_smm_input:
@@ -5461,7 +5461,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
   /* FILENAME is used only to access the actual file while a stream
      remembers the original pathname FN. -- jd 2020-03-27 */
   cl_object filename = si_coerce_to_filename(fn);
-  char *fname = (char*)filename->base_string.self;
+  ecl_filename_char *fname = ecl_filename_self(filename);
 
   if (if_does_not_exist == @':create') {
     open_flags |= O_CREAT;
