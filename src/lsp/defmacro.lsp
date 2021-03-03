@@ -80,15 +80,15 @@
            (setq err head)))))
 
 (defun dm-too-many-arguments (*current-form*)
-  (error "Too many arguments supplied to a macro or a destructuring-bind form:~%~s"
-         *current-form*))
+  (simple-program-error "Too many arguments supplied to a macro or a destructuring-bind form:~%~s"
+                        *current-form*))
 
 (defun dm-too-few-arguments (form-or-nil)
   (if form-or-nil
       (let ((*current-form* form-or-nil))
-        (error "Too few arguments supplied to a macro or a destructuring-bind form:~%~S"
-               *current-form*))
-      (error "Too few arguments supplied to a inlined lambda form.")))
+        (simple-program-error "Too few arguments supplied to a macro or a destructuring-bind form:~%~S"
+                              *current-form*))
+      (simple-program-error "Too few arguments supplied to a inlined lambda form.")))
 
 (defun sys::destructure (vl context &aux
                                       (basis-form (gensym))
