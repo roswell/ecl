@@ -656,20 +656,23 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         if (flag != ECL_NIL) ECL_STACK_PUSH(the_env, value);
         ECL_STACK_PUSH(the_env, flag);
       }
-      if (count) {
-        if (Null(aok)) {
-          int aok = 0, mask = 1;
-          cl_object *p = first;
-          for (; p != last; ++p) {
-            if (*(p++) == @':allow-other-keys') {
-              if (!Null(*p)) aok |= mask;
-              mask <<= 1;
+      if (count && Null(aok)) {
+        cl_object *p = first;
+        for (; p != last; ++p) {
+          if (*(p++) == @':allow-other-keys') {
+            aok = *p;
+            count -= 2;
+            /* only the first :allow-other-keys argument is considered */
+            for (++p; p != last; ++p) {
+              if (*(p++) != @':allow-other-keys')
+                break;
               count -= 2;
             }
+            break;
           }
-          if (ecl_unlikely(count && (aok & 1) == 0)) {
-            unknown_keyword(bytecodes, frame);
-          }
+        }
+        if (ecl_likely(count && Null(aok))) {
+          unknown_keyword(bytecodes, frame);
         }
       }
       THREAD_NEXT;
