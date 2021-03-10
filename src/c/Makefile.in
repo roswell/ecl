@@ -84,11 +84,11 @@ endif
 
 all: $(DPP) ../libeclmin.a ../cinit.o
 
-$(HDIR)/%.h: $(top_srcdir)/h/%.h
-	cp $< $@
-
 $(HDIR)/impl/%.h: $(top_srcdir)/h/impl/%.h
 	mkdir -p $(HDIR)/impl
+	cp $< $@
+
+$(HDIR)/%.h: $(top_srcdir)/h/%.h
 	cp $< $@
 
 %.c: %.d $(DPP)
