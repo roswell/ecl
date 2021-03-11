@@ -168,11 +168,10 @@ special variable declarations, as these have been extracted before."
             env)))))
 
 (defun symbol-macro-declaration-p (name type)
-  (let* ((record (cmp-env-search-symbol-macro name)))
-    (when (and record (functionp record))
-      (let* ((expression (funcall record name nil)))
-        (cmp-env-register-symbol-macro name `(the ,type ,expression)))
-      t)))
+  (when-let ((record (cmp-env-search-symbol-macro name)))
+    (let* ((expression (funcall record name nil)))
+      (cmp-env-register-symbol-macro name `(the ,type ,expression)))
+    t))
 
 (defun check-vdecl (vnames ts is)
   (loop for (name . type) in ts

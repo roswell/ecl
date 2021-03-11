@@ -110,6 +110,8 @@ the closure in let/flet forms for variables/functions it closes over."
   env)
 
 (defun cmp-env-declare-special (name &optional (env *cmp-env*))
+  (when (cmp-env-search-symbol-macro name env)
+    (cmperr "Symbol ~A cannot be declared special and appear in a symbol-macrolet." name))
   (cmp-env-register-var (c::c1make-global-variable name :warn nil :kind 'SPECIAL)
                         env nil)
   env)
@@ -145,12 +147,13 @@ the closure in let/flet forms for variables/functions it closes over."
   env)
 
 (defun cmp-env-register-symbol-macro (name form &optional (env *cmp-env*))
-  (push (list name 'si::symbol-macro
-              #'(lambda (whole env) (declare (ignore env whole)) form))
-        (cmp-env-variables env))
-  env)
+  (cmp-env-register-symbol-macro-function name
+                                          #'(lambda (whole env) (declare (ignore env whole)) form)
+                                          env))
 
 (defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*))
+  (when (or (constantp name) (special-variable-p name))
+    (cmperr "Cannot bind the special or constant variable ~A with symbol-macrolet." name))
   (push (list name 'si::symbol-macro function)
         (cmp-env-variables env))
   env)
@@ -208,12 +211,13 @@ the closure in let/flet forms for variables/functions it closes over."
              (when (member name (second record) :test #'eql)
                (setf found record)
                (return)))
-            ((eq (second record) 'si::symbol-macro)
-             (when (eq name 'si::symbol-macro)
+            ((eq name 'si::symbol-macro)
+             (when (eq (second record) 'si::symbol-macro)
                (setf found record))
              (return))
             (t
-             (setf found record)
+             (when (not (eq (second record) 'si::symbol-macro))
+               (setf found record))
              (return))))
     (values (first (last found)) cfb unw)))
 
