@@ -172,7 +172,7 @@ FEprogram_error(const char *s, int narg, ...)
     cl_object stmt = ecl_symbol_value(@'si::*current-form*');
     if (stmt != ECL_NIL) {
       real_args = @list(3, stmt, text, real_args);
-      text = ecl_make_constant_base_string("In form~%~S~%~?",-1);
+      text = @"In form~%~S~%~?";
     }
   }
   si_signal_simple_error(4, 
@@ -217,8 +217,7 @@ FEreader_error(const char *s, cl_object stream, int narg, ...)
                            args_list);
   } else {
     /* Actual reader error */
-    cl_object prefix = ecl_make_constant_base_string("Reader error in file ~S, "
-                                                     "position ~D:~%",-1);
+    cl_object prefix = @"Reader error in file ~S, position ~D:~%";
     cl_object position = cl_file_position(1, stream);
     message = si_base_string_concatenate(2, prefix, message);
     args_list = cl_listX(3, stream, position, args_list);
@@ -240,7 +239,7 @@ FEcannot_open(cl_object file)
   si_signal_simple_error
     (6, @'file-error', /* condition */
      ECL_NIL, /* continuable */
-     ecl_make_constant_base_string("Cannot open ~S.~%C library error: ~A",-1), /* format */
+     @"Cannot open ~S.~%C library error: ~A", /* format */
      cl_list(2, file, c_error), /* format args */
      @':pathname', /* file-error options */
      file);
@@ -458,7 +457,7 @@ void
 FEinvalid_function_name(cl_object fname)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("Not a valid function name ~D.",-1),
+           @"Not a valid function name ~D.",
            @':format-arguments', cl_list(1, fname),
            @':expected-type', cl_list(2, @'satisfies', @'si::valid-function-name-p'),
            @':datum', fname);

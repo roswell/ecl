@@ -96,17 +96,17 @@ mangle_name(cl_object output, unsigned char *source, int l)
   if (is_symbol) {
     cl_fixnum p;
     if (symbol == ECL_NIL) {
-      @(return ECL_T ecl_make_constant_base_string("ECL_NIL",-1) minarg maxarg);
+      @(return ECL_T @"ECL_NIL" minarg maxarg);
     }
     else if (symbol == ECL_T) {
-      @(return ECL_T ecl_make_constant_base_string("ECL_T",-1) minarg maxarg);
+      @(return ECL_T @"ECL_T" minarg maxarg);
     }
 
     p  = (cl_symbol_initializer*)symbol - cl_symbols;
     if (p >= 0 && p <= cl_num_symbols_in_core) {
       found = ECL_T;
       output = cl_format(4, ECL_NIL,
-                         ecl_make_constant_base_string("ECL_SYM(~S,~D)",-1),
+                         @"ECL_SYM(~S,~D)",
                          name, ecl_make_fixnum(p));
 #ifndef ECL_FINAL
       /* XXX to allow the Lisp compiler to check that the narg
@@ -161,11 +161,11 @@ mangle_name(cl_object output, unsigned char *source, int l)
     ;
   }
   else if (package == cl_core.lisp_package)
-    package = ecl_make_constant_base_string("cl",-1);
+    package = @"cl";
   else if (package == cl_core.system_package)
-    package = ecl_make_constant_base_string("si",-1);
+    package = @"si";
   else if (package == cl_core.ext_package)
-    package = ecl_make_constant_base_string("si",-1);
+    package = @"si";
   else if (package == cl_core.keyword_package)
     package = ECL_NIL;
   else

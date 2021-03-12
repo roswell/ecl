@@ -777,7 +777,7 @@ cl_logical_pathname(cl_object x)
   x = cl_pathname(x);
   if (!x->pathname.logical) {
     cl_error(9, @'simple-type-error', @':format-control',
-             ecl_make_constant_base_string("~S cannot be coerced to a logical pathname.",-1),
+             @"~S cannot be coerced to a logical pathname.",
              @':format-arguments', cl_list(1, x),
              @':expected-type', @'logical-pathname',
              @':datum', x);

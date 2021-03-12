@@ -39,7 +39,7 @@ FEtype_error_list(cl_object x) {
 void
 FEtype_error_proper_list(cl_object x) {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("Not a proper list ~D",-1),
+           @"Not a proper list ~D",
            @':format-arguments', cl_list(1, x),
            @':expected-type', ecl_read_from_cstring("si::proper-list"),
            @':datum', x);
@@ -51,7 +51,7 @@ FEcircular_list(cl_object x)
   /* FIXME: Is this the right way to rebind it? */
   ecl_bds_bind(ecl_process_env(), @'*print-circle*', ECL_T);
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("Circular list ~D",-1),
+           @"Circular list ~D",
            @':format-arguments', cl_list(1, x),
            @':expected-type', @'list',
            @':datum', x);
@@ -63,7 +63,7 @@ FEtype_error_index(cl_object seq, cl_fixnum ndx)
   cl_object n = ecl_make_fixnum(ndx);
   cl_index l = ECL_INSTANCEP(seq)? seq->instance.length : ecl_length(seq);
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("~S is not a valid index into the object ~S",-1),
+           @"~S is not a valid index into the object ~S",
            @':format-arguments', cl_list(2, n, seq),
            @':expected-type', cl_list(3, @'integer', ecl_make_fixnum(0), ecl_make_fixnum(l-1)),
            @':datum', n);

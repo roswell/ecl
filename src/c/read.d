@@ -1791,7 +1791,7 @@ static void
 error_locked_readtable(cl_object r)
 {
   cl_error(2,
-           ecl_make_constant_base_string("Cannot modify locked readtable ~A.",-1),
+           @"Cannot modify locked readtable ~A.",
            r);
 }
 

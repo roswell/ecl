@@ -304,7 +304,7 @@ create_descriptor(cl_object stream, cl_object direction,
     HANDLE stream_handle = ecl_stream_to_HANDLE
       (stream, direction != @':input');
     if (stream_handle == INVALID_HANDLE_VALUE) {
-      CEerror(ecl_make_constant_base_string("Create a new stream.",-1),
+      CEerror(@"Create a new stream.",
               "~S argument to RUN-PROGRAM does not have a file handle:~%~S",
               2, direction, stream);
       create_descriptor(@':stream', direction, child, parent);
@@ -342,7 +342,7 @@ create_descriptor(cl_object stream, cl_object direction,
     if (*child >= 0) {
       *child = dup(*child);
     } else {
-      CEerror(ecl_make_constant_base_string("Create a new stream.",-1),
+      CEerror(@"Create a new stream.",
               "~S argument to RUN-PROGRAM does not have a file handle:~%~S",
               2, direction, stream);
       create_descriptor(@':stream', direction, child, parent);
@@ -367,7 +367,7 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ, cl_ob
 
 #if defined(ECL_MS_WINDOWS_HOST)
   argv = cl_format(4, ECL_NIL,
-                   ecl_make_constant_base_string("~A~{ ~A~}",-1),
+                   @"~A~{ ~A~}",
                    command, argv);
   argv = si_copy_to_simple_base_string(argv);
 #else

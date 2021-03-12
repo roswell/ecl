@@ -160,7 +160,7 @@ static void
 FEtype_error_plist(cl_object x)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("Not a valid property list ~D",-1),
+           @"Not a valid property list ~D",
            @':format-arguments', cl_list(1, x),
            @':expected-type', @'si::property-list',
            @':datum', x);

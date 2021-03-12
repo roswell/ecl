@@ -253,7 +253,7 @@ enter_directory(cl_object base_dir, cl_object subdir, bool ignore_if_failure)
     /* Nothing to do */
     return base_dir;
   } else if (subdir == @':up') {
-    aux = ecl_make_constant_base_string("..",-1);
+    aux = @"..";
   } else if (!ECL_BASE_STRING_P(subdir)) {
     unlikely_if (!ecl_fits_in_base_string(subdir))
       FEerror("Directory component ~S found in pathname~&  ~S"
@@ -369,8 +369,7 @@ file_truename(cl_object pathname, cl_object filename, int flags)
     if (pathname->pathname.name != ECL_NIL ||
         pathname->pathname.type != ECL_NIL) {
       pathname = si_base_string_concatenate
-        (2, filename,
-         ecl_make_constant_base_string("/",-1));
+        (2, filename, @"/");
       pathname = cl_truename(pathname);
     }
   }
@@ -664,7 +663,7 @@ cl_file_author(cl_object file)
     output = ecl_make_simple_base_string(pwent->pw_name,-1);
   }
 #else
-  output = ecl_make_constant_base_string("UNKNOWN",-1);
+  output = @"UNKNOWN";
 #endif
   @(return output);
 }
@@ -711,7 +710,7 @@ ecl_homedir_pathname(cl_object user)
                                  ecl_make_constant_base_string(h,-1));
 #endif
   } else {
-    namestring = ecl_make_constant_base_string("/",-1);
+    namestring = @"/";
   }
   if (namestring->base_string.self[0] == '~') {
     FEerror("Not a valid home pathname ~S", 1, namestring);
@@ -804,7 +803,7 @@ list_directory(cl_object base_dir, cl_object text_mask, cl_object pathname_mask,
   ecl_disable_interrupts();
   for (;;) {
     if (hFind == NULL) {
-      cl_object aux = ecl_make_constant_base_string(".\\*",-1);
+      cl_object aux = @".\\*";
       cl_object mask = si_base_string_concatenate(2, prefix, aux);
       hFind = FindFirstFile((char*)mask->base_string.self, &fd);
       if (hFind == INVALID_HANDLE_VALUE) {

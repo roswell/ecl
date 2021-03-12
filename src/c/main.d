@@ -887,7 +887,7 @@ si_setenv(cl_object var, cl_object value)
     ret_val = setenv((char*)var->base_string.self,
                      (char*)value->base_string.self, 1);
 #else
-    value = cl_format(4, ECL_NIL, ecl_make_constant_base_string("~A=~A",-1), var,
+    value = cl_format(4, ECL_NIL, @"~A=~A", var,
                       value);
     value = si_copy_to_simple_base_string(value);
     putenv((char*)value->base_string.self);

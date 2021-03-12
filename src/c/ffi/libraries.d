@@ -99,7 +99,7 @@ static cl_object
 copy_object_file(cl_object original)
 {
   int err;
-  cl_object copy = ecl_make_constant_base_string("TMP:ECL",-1);
+  cl_object copy = @"TMP:ECL";
   copy = si_coerce_to_filename(si_mkstemp(copy));
   /*
    * We either have to make a full copy to convince the loader to load this object
@@ -124,7 +124,7 @@ copy_object_file(cl_object original)
 #endif
 #ifdef cygwin
   {
-    cl_object new_copy = ecl_make_constant_base_string(".dll",-1);
+    cl_object new_copy = @".dll";
     new_copy = si_base_string_concatenate(2, copy, new_copy);
     cl_rename_file(2, copy, new_copy);
     copy = new_copy;

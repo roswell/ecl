@@ -149,7 +149,7 @@ out_of_memory(size_t requested_bytes)
   switch (method) {
   case 0: cl_error(1, @'ext::storage-exhausted');
     break;
-  case 1: cl_cerror(2, ecl_make_constant_base_string("Extend heap size",-1),
+  case 1: cl_cerror(2, @"Extend heap size",
                     @'ext::storage-exhausted');
     break;
   case 2:
