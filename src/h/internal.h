@@ -234,8 +234,15 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 #define OPEN_RA "a+b"
 
 /* Windows does not have this flag (POSIX thing) */
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0
+#endif
+/* Windows needs to be told explicitely to open files in binary mode */
+#ifndef O_BINARY
+#define O_BINARY 0
 #endif
 
 #define ECL_FILE_STREAM_P(strm) \

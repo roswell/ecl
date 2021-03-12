@@ -234,9 +234,17 @@ FEreader_error(const char *s, cl_object stream, int narg, ...)
 
 
 void
-FEcannot_open(cl_object fn)
+FEcannot_open(cl_object file)
 {
-  cl_error(3, @'file-error', @':pathname', fn);
+  cl_object c_error = _ecl_strerror(errno);
+  si_signal_simple_error
+    (6, @'file-error', /* condition */
+     ECL_NIL, /* continuable */
+     ecl_make_constant_base_string("Cannot open ~S.~%C library error: ~A",-1), /* format */
+     cl_list(2, file, c_error), /* format args */
+     @':pathname', /* file-error options */
+     file);
+  _ecl_unexpected_return();
 }
 
 void
