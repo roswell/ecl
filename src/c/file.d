@@ -2616,17 +2616,6 @@ safe_close(int f)
 }
 
 static FILE *
-safe_fopen(const char *filename, const char *mode)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  FILE *output;
-  ecl_disable_interrupts_env(the_env);
-  output = fopen(filename, mode);
-  ecl_enable_interrupts_env(the_env);
-  return output;
-}
-
-static FILE *
 safe_fdopen(int fildes, const char *mode)
 {
   const cl_env_ptr the_env = ecl_process_env();
@@ -5250,14 +5239,30 @@ FEinvalid_option(cl_object option, cl_object value)
   FEerror("Invalid value op option ~A: ~A", 2, option, value);
 }
 
+static int
+smmode_to_open_flag(enum ecl_smmode smm)
+{
+  switch (smm) {
+  case ecl_smm_probe:
+  case ecl_smm_input:
+    return O_RDONLY;
+  case ecl_smm_output:
+    return O_WRONLY;
+  case ecl_smm_io:
+    return O_RDWR;
+  default:
+    FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
+  }
+}
+
 cl_object
 ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
                 cl_object if_does_not_exist, cl_fixnum byte_size,
                 int flags, cl_object external_format)
 {
-  cl_object output, file_kind;
-  int fd;
-  bool appending = 0, exists;
+  cl_object output;
+  int fd, open_flags = smmode_to_open_flag(smm) | O_BINARY;
+  bool appending = 0;
 #if defined(ECL_MS_WINDOWS_HOST)
   ecl_mode_t mode = _S_IREAD | _S_IWRITE;
 #else
@@ -5267,91 +5272,93 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
      remembers the original pathname FN. -- jd 2020-03-27 */
   cl_object filename = si_coerce_to_filename(fn);
   char *fname = (char*)filename->base_string.self;
-  file_kind = si_file_kind(filename, ECL_T);
-  exists = file_kind != ECL_NIL;
-  if (!exists) {
-    if (if_does_not_exist == ECL_NIL) return ECL_NIL;
-    if (if_does_not_exist == @':error') FEcannot_open(fn);
-    if (if_does_not_exist != @':create')
-      FEinvalid_option(@':if-does-not-exist', if_does_not_exist);
-    fd = safe_open(fname, O_WRONLY|O_CREAT, mode);
-    unlikely_if (fd < 0) FEcannot_open(fn);
-    safe_close(fd);
-    fd = -1;
+
+  if (if_does_not_exist == @':create') {
+    open_flags |= O_CREAT;
+    if ((smm == ecl_smm_output || smm == ecl_smm_io) &&
+        (if_exists == ECL_NIL || if_exists == @':error' || if_exists == @':rename')) {
+      open_flags |= O_EXCL;
+    }
+  } else if (if_does_not_exist != ECL_NIL && if_does_not_exist != @':error') {
+    FEinvalid_option(@':if-does-not-exist', if_does_not_exist);
   }
-  switch (smm) {
-  case ecl_smm_probe:
+  if (if_exists == @':rename_and_delete' ||
+      if_exists == @':new_version' ||
+      if_exists == @':supersede' ||
+      if_exists == @':truncate') {
+    if (smm == ecl_smm_output || smm == ecl_smm_io) {
+      open_flags |= O_TRUNC;
+    }
+  } else if (if_exists == @':append') {
+    if (smm == ecl_smm_output || smm == ecl_smm_io) {
+      appending = 1;
+    }
+  } else if (if_exists != ECL_NIL &&
+             if_exists != @':error' &&
+             if_exists != @':rename' &&
+             if_exists != @':overwrite') {
+    FEinvalid_option(@':if-exists', if_exists);
+  }
+  if (flags & ECL_STREAM_CLOSE_ON_EXEC) {
+    open_flags |= O_CLOEXEC;
+  }
+  if (flags & ECL_STREAM_NONBLOCK) {
+    open_flags |= O_NONBLOCK;
+  }
+
+  fd = safe_open(fname, open_flags, mode);
+  if (fd < 0) {
+    if (errno == ENOENT && if_does_not_exist == ECL_NIL) {
+      return ECL_NIL;
+    } else if (errno == EEXIST) {
+      if (if_exists == ECL_NIL) {
+        safe_close(fd);
+        return ECL_NIL;
+      } else if (if_exists == @':error') {
+        safe_close(fd);
+        FEcannot_open(fn);
+      } else if (if_exists == @':rename') {
+        safe_close(fd);
+        fd = ecl_backup_open(fname, smmode_to_open_flag(smm)|O_CREAT, mode);
+        unlikely_if (fd < 0) FEcannot_open(fn);
+      }
+    } else {
+      FEcannot_open(fn);
+    }
+  }
+
+  if (smm == ecl_smm_probe) {
+    safe_close(fd);
     output = ecl_make_file_stream_from_fd(fn, -1, smm, byte_size, flags, external_format);
     generic_close(output);
     return output;
-  case ecl_smm_input:
-    fd = safe_open(fname, O_RDONLY|O_NONBLOCK, mode);
-    unlikely_if (fd < 0) FEcannot_open(fn);
-    break;
-  case ecl_smm_output:
-    /* For output we could have used O_WRONLY, but this doesn't matter because
-       we fopen with OPEN_RW later anyway. stream opts enforce things. */
-  case ecl_smm_io: {
-    if (exists) {
-      if (if_exists == ECL_NIL) return ECL_NIL;
-      if (if_exists == @':error') FEcannot_open(fn);
-      if (if_exists == @':rename') {
-        fd = ecl_backup_open(fname, O_RDWR|O_CREAT, mode);
-        unlikely_if (fd < 0) FEcannot_open(fn);
-      } else if (if_exists == @':rename_and_delete' ||
-                 if_exists == @':new_version' ||
-                 if_exists == @':supersede' ||
-                 if_exists == @':truncate') {
-        fd = safe_open(fname, O_RDWR|O_TRUNC, mode);
-        unlikely_if (fd < 0) FEcannot_open(fn);
-      } else if (if_exists == @':overwrite' || if_exists == @':append') {
-        fd = safe_open(fname, O_RDWR, mode);
-        unlikely_if (fd < 0) FEcannot_open(fn);
-        appending = (if_exists == @':append');
-      } else {
-        FEinvalid_option(@':if-exists', if_exists);
-      }
-    }
-    break;
-  }
-  default:
-    FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
   }
   if (flags & ECL_STREAM_C_STREAM) {
     FILE *fp = 0;
-    /* We do not use fdopen() because Windows seems to have problems with the
-     * resulting streams. Furthermore, even for output we open with w+ because
-     * we do not want to overwrite the file. */
     switch (smm) {
     case ecl_smm_probe:
       /* never happens (returns earlier) */
     case ecl_smm_input:
-      if (file_kind == @':fifo') {
-        fp = safe_fdopen(fd, OPEN_R);
-      } else {
-        if (fd >= 0)
-          safe_close(fd);
-        fp = safe_fopen(fname, OPEN_R);
-      }
+      fp = safe_fdopen(fd, OPEN_R);
       break;
     case ecl_smm_output:
+      fp = safe_fdopen(fd, OPEN_W);
+      break;
     case ecl_smm_io:
-      if (file_kind == @':fifo') {
-        fp = safe_fdopen(fd, OPEN_RW);
-      } else {
-        if (fd >= 0)
-          safe_close(fd);
-        fp = safe_fopen(fname, OPEN_RW);
-      }
+      fp = safe_fdopen(fd, OPEN_RW);
       break;
     default:;
       /* never reached (errors earlier) */
+    }
+    if (fp == NULL) {
+      FEcannot_open(fn);
     }
     output = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags, external_format);
     si_set_buffering_mode(output, byte_size? @':full' : @':line');
   } else {
     output = ecl_make_file_stream_from_fd(fn, fd, smm, byte_size, flags, external_format);
   }
+
   output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
   si_set_finalizer(output, ECL_T);
   /* Set file pointer to the correct position */
@@ -5366,6 +5373,8 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
               (if_does_not_exist ECL_NIL idnesp)
               (external_format @':default')
               (cstream ECL_T)
+              (close_on_exec ECL_T)
+              (nonblock ECL_NIL)
               &aux strm)
   enum ecl_smmode smm;
   int flags = 0;
@@ -5412,6 +5421,12 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
   }
   if (!Null(cstream)) {
     flags |= ECL_STREAM_C_STREAM;
+  }
+  if (!Null(close_on_exec)) {
+    flags |= ECL_STREAM_CLOSE_ON_EXEC;
+  }
+  if (!Null(nonblock)) {
+    flags |= ECL_STREAM_NONBLOCK;
   }
   strm = ecl_open_stream(filename, smm, if_exists, if_does_not_exist,
                          byte_size, flags, external_format);
@@ -5703,7 +5718,7 @@ file_libc_error(cl_object error_type, cl_object stream,
   rest = cl_grab_rest_args(args);
   ecl_va_end(args);
 
-  si_signal_simple_error(4, (cl_object)(cl_symbols + ecl_fixnum(error_type)), Cnil,
+  si_signal_simple_error(4, (cl_object)(cl_symbols + ecl_fixnum(error_type)), ECL_NIL,
                          ecl_make_constant_base_string("~?~%C library explanation: ~A.",-1),
                          cl_list(3, ecl_make_constant_base_string(msg,-1), rest,
                                  error));

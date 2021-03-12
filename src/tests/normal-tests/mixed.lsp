@@ -256,42 +256,29 @@
 ;;; Date: 2018-05-08
 ;;; Description:
 ;;;
-;;;   Better handling of fifos. This test will most likely fail on Windows (this
-;;;   is not confirmed yet) because it does not support non-blocking
-;;;   operations.
-;;;
-;;;   When we figure out what would be correct semantics for Windows this test
-;;;   should be disabled for that platform and a separate test case ought to be
-;;;   created. It is possible that it won't fail (because cygwin will handle it
-;;;   gracefully and/or WinAPI does not support file-pipes).
+;;;   Better handling of fifos.
 ;;;
 ;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/242
+#-windows
 (test mix.0016.fifo-tests
   (ext:run-program "mkfifo" '("my-fifo") :output t)
   ;; 1) reader (first) and writer (inside)
-  (with-open-file (stream "my-fifo")
+  (with-open-file (stream "my-fifo" :nonblock t)
     (is (null (file-length stream)))
     (is (null (listen stream)))
     (is (eql :foo (read-line stream nil :foo)))
     (is (eql :fifo (ext:file-kind stream nil)))
-    (with-open-file (stream2 "my-fifo" :direction :output)
-      ;; Even for output it should not block on Linux.
+    (with-open-file (stream2 "my-fifo" :direction :output :nonblock t)
+      ;; Even for output it should not block on Unix.
       (finishes (write-line "foobar" stream2)))
-    (is (equal "foobar" (read-line stream nil :foo))))
-  ;; 2) writer (first) and reader (second)
-  (with-open-file (stream "my-fifo" :direction :output)
-    (finishes (write-line "foobar" stream)))
-  (with-open-file (stream "my-fifo" :direction :input)
     ;; there is nobody on the other side, data is lost
+    (is (equal :foo (read-line stream nil :foo))))
+  ;; 2) writer (first) and reader (second)
+  (signals file-error (open "my-fifo" :direction :output :nonblock t))
+  (with-open-file (stream "my-fifo" :direction :input :nonblock t)
     (is (eql :foo (read-line stream nil :foo))))
-  ;; 3) writer (first) and reader (inside)
-  (with-open-file (stream "my-fifo" :direction :output)
-    (finishes (write-line "foobar" stream))
-    (with-open-file (stream2 "my-fifo" :direction :input)
-      ;; Even for output it should not block on Linux.
-      (is (equal "foobar" (read-line stream2 nil :foo)))))
   ;; clean up
-  (ext:run-program "rm" '("-rf" "my-fifo") :output t))
+  (delete-file "my-fifo"))
 
 
 ;;; Date: 2018-12-02

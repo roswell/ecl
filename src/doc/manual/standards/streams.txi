@@ -108,58 +108,22 @@ and the table of known symbols is shown below. Note how some symbols (@code{:cr}
 @node Streams - Dictionary
 @subsection Dictionary
 
-@subsubsection Sequence Streams
-
-@lspdef ext:sequence-stream
-@deftp {System Class} ext:sequence-stream
-
-@paragraph Class Precedence List
-@coderef{ext:sequence-stream}, @code{stream}, @code{t}
-
-@paragraph Description
-Sequence streams work similar to string streams for vectors. The
-supplied vectors that the streams read from or write to must have a
-byte sized element type, i.e. @code{(signed-byte 8)},
-@code{(unsigned-byte 8)} or @code{base-char}.
-
-The semantics depend on the vector element type and the external
-format of the stream. If no external format is supplied and the
-element type is an integer type, the stream is a binary stream and
-accepts only integers of the same type as the element type of the
-vector. Otherwise, the stream accepts both characters and integers and
-converts them using the given external format. If the element type is
-@code{base-char}, the elements of the vectors are treated as bytes.
-This means that writing a character may use multiple elements of the
-vector, whose @code{char-code}s will be equal to the values of the
-bytes comprising the character in the given external format.
-@end deftp
-
-@lspdef ext:make-sequence-input-stream
-@defun ext:make-sequence-input-stream vector &key (start 0) (end nil) (external-format nil)
-Create a sequence input stream with the subsequence bounded by
-@var{start} and @var{end} of the given vector.
-@end defun
-@lspdef ext:make-sequence-output-stream
-@defun ext:make-sequence-output-stream vector &key (external-format nil)
-Create a sequence output stream.
-@end defun
-
-@exindex Using sequence streams
-Example:
-
-Using sequence streams to convert to a UTF8 encoded base string
-@lisp
-CL-USER> (defvar *output* (make-array 20 :element-type 'base-char :adjustable t :fill-pointer 0))
-*OUTPUT*
-CL-USER> (defvar *stream* (ext:make-sequence-output-stream *output* :external-format :utf-8))
-*STREAM*
-CL-USER> (write-string "Spätzle mit Soß'" *stream*)
-"Spätzle mit Soß'"
-CL-USER> *output*
-"SpÃ¤tzle mit SoÃ\237'"
-@end lisp
-
 @subsubsection File Stream Extensions
+
+@lspdef open
+@defun open filespec &key direction element-type if-exists if-does-not-exist external-format close-on-exec nonblock
+Additional options for @clhs{f_open.htm,open} include:
+@table @code
+@item :close-on-exec
+Child processes don't inherit a copy of this stream: new processes
+created by @code{fork} and @code{exec} (for example by calling
+@coderef{ext:run-program}) close the stream after calling @code{exec}.
+Defaults to @code{t}.
+@item :nonblock
+Open fifos or device files in nonblocking mode. Defaults to @code{nil}.
+@end table
+These options are ignored on operating systems which do not support them.
+@end defun
 
 @lspdef ext:set-buffering-mode
 @defun ext:set-buffering-mode stream mode
@@ -303,6 +267,56 @@ that the error can be ignored or the octets can be replaced with a
 character.
 @end defun
 
+@subsubsection Sequence Streams
+
+@lspdef ext:sequence-stream
+@deftp {System Class} ext:sequence-stream
+
+@paragraph Class Precedence List
+@coderef{ext:sequence-stream}, @code{stream}, @code{t}
+
+@paragraph Description
+Sequence streams work similar to string streams for vectors. The
+supplied vectors that the streams read from or write to must have a
+byte sized element type, i.e. @code{(signed-byte 8)},
+@code{(unsigned-byte 8)} or @code{base-char}.
+
+The semantics depend on the vector element type and the external
+format of the stream. If no external format is supplied and the
+element type is an integer type, the stream is a binary stream and
+accepts only integers of the same type as the element type of the
+vector. Otherwise, the stream accepts both characters and integers and
+converts them using the given external format. If the element type is
+@code{base-char}, the elements of the vectors are treated as bytes.
+This means that writing a character may use multiple elements of the
+vector, whose @code{char-code}s will be equal to the values of the
+bytes comprising the character in the given external format.
+@end deftp
+
+@lspdef ext:make-sequence-input-stream
+@defun ext:make-sequence-input-stream vector &key (start 0) (end nil) (external-format nil)
+Create a sequence input stream with the subsequence bounded by
+@var{start} and @var{end} of the given vector.
+@end defun
+@lspdef ext:make-sequence-output-stream
+@defun ext:make-sequence-output-stream vector &key (external-format nil)
+Create a sequence output stream.
+@end defun
+
+@exindex Using sequence streams
+Example:
+
+Using sequence streams to convert to a UTF8 encoded base string
+@lisp
+CL-USER> (defvar *output* (make-array 20 :element-type 'base-char :adjustable t :fill-pointer 0))
+*OUTPUT*
+CL-USER> (defvar *stream* (ext:make-sequence-output-stream *output* :external-format :utf-8))
+*STREAM*
+CL-USER> (write-string "Spätzle mit Soß'" *stream*)
+"Spätzle mit Soß'"
+CL-USER> *output*
+"SpÃ¤tzle mit SoÃ\237'"
+@end lisp
 
 @node Streams - C Reference
 @subsection C Reference

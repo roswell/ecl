@@ -634,7 +634,9 @@ enum {
         ECL_STREAM_LITTLE_ENDIAN = 128,
         ECL_STREAM_C_STREAM = 256,
         ECL_STREAM_MIGHT_SEEK = 512,
-        ECL_STREAM_CLOSE_COMPONENTS = 1024
+        ECL_STREAM_CLOSE_COMPONENTS = 1024,
+        ECL_STREAM_CLOSE_ON_EXEC = 2048,
+        ECL_STREAM_NONBLOCK = 4096
 };
 
 /* buffer points to an array of bytes ending at buffer_end. Decode one
