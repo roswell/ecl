@@ -184,7 +184,7 @@
 
 (defun c1form-single-valued-p (form)
   (or (fourth (gethash (c1form-name form) +c1-form-hash+))
-      (<= (nth-value 1 (c1form-values-number form)) 1)))
+      (= (nth-value 1 (c1form-values-number form)) 1)))
 
 (defmacro with-c1form-env ((form value) &rest body)
   `(let* ((,form ,value)

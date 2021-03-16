@@ -2002,3 +2002,14 @@
                   (compile nil fun)))
       (is (null errors-p))
       (is (= (funcall compiled-fun 0) 2)))))
+
+;;; Date 2020-08-14
+;;; Description
+;;;
+;;;     (values (values)) was miscompiled and returned no value
+;;;     instead of the correct nil
+(test cmp.0085.values-values
+  (is (equal '(nil)
+             (multiple-value-list
+              (funcall
+               (compile nil '(lambda () (values (values)))))))))
