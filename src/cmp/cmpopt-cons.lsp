@@ -88,28 +88,28 @@
 ;;; NTH / NTHCDR
 ;;;
 
-(define-compiler-macro nth (&whole whole &rest args)
-  (case (car args)
-    (0 (cons 'CAR (cdr args)))
-    (1 (cons 'CADR (cdr args)))
-    (2 (cons 'CADDR (cdr args)))
-    (3 (cons 'CADDDR (cdr args)))
-    (4 (list 'CAR (cons 'CDDDDR (cdr args))))
-    (5 (list 'CADR (cons 'CDDDDR (cdr args))))
-    (6 (list 'CADDR (cons 'CDDDDR (cdr args))))
-    (7 (list 'CADDDR (cons 'CDDDDR (cdr args))))
+(define-compiler-macro nth (&whole whole n list)
+  (case n
+    (0 `(car ,list))
+    (1 `(cadr ,list))
+    (2 `(caddr ,list))
+    (3 `(cadddr ,list))
+    (4 `(car (cddddr ,list)))
+    (5 `(cadr (cddddr ,list)))
+    (6 `(caddr (cddddr ,list)))
+    (7 `(cadddr (cddddr ,list)))
     (t whole)))
 
-(define-compiler-macro nthcdr (&whole whole &rest args)
-  (case (car args)
-    (0 (second args))
-    (1 (cons 'CDR (cdr args)))
-    (2 (cons 'CDDR (cdr args)))
-    (3 (cons 'CDDDR (cdr args)))
-    (4 (cons 'CDDDDR (cdr args)))
-    (5 (list 'CDR (cons 'CDDDDR (cdr args))))
-    (6 (list 'CDDR (cons 'CDDDDR (cdr args))))
-    (7 (list 'CDDDR (cons 'CDDDDR (cdr args))))
+(define-compiler-macro nthcdr (&whole whole n list)
+  (case n
+    (0 list)
+    (1 `(cdr ,list))
+    (2 `(cddr ,list))
+    (3 `(cdddr ,list))
+    (4 `(cddddr ,list))
+    (5 `(cdr (cddddr ,list)))
+    (6 `(cddr (cddddr ,list)))
+    (7 `(cdddr (cddddr ,list)))
     (t whole)))
 
 ;;;
