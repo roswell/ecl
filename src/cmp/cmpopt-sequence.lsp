@@ -195,7 +195,7 @@
                           for elt = (first l)
                           collect `(and ,(funcall test-function %value `',elt)
                                         ',l)))))))
-        (when (or (consp list) (symbol list))
+        (when (or (consp list) (symbolp list))
           (setf list `',list)))
       (when (or (null test-flag) (eq test-flag :test))
         (when (member test '('EQ #'EQ) :test #'equal)
@@ -220,7 +220,7 @@
              (return ,%sublist)))))))
 
 (define-compiler-macro member (&whole whole value list &rest sequence-args)
-  (declare (value list sequence-args))
+  (declare (ignore value list sequence-args))
   (if (policy-inline-sequence-functions)
       (or (apply #'expand-member (rest whole))
           whole)

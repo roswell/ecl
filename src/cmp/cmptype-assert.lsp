@@ -94,7 +94,7 @@
   (let* ((type (pop args))
          (value (pop args))
          form form-type and-type)
-    (cond ((or (trivial-type-p args) (not (policy-type-assertions)))
+    (cond ((or (trivial-type-p type) (not (policy-type-assertions)))
            value)
           ((and (consp type)
                 (eq (first type) 'values))
