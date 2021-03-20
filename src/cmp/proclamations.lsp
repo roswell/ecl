@@ -432,20 +432,20 @@
 ;;; 11. PACKAGES
 ;;;
 
-(proclamation export (list &optional package-designator) t)
+(proclamation export ((or list symbol) &optional package-designator) t)
 (proclamation find-symbol (string &optional package-designator)
               (values symbol (member :inherited :external :internal nil)))
 (proclamation find-package (package-designator) (or package null))
 (proclamation find-all-symbols (string-designator) list)
-(proclamation import (list &optional package-designator) t)
+(proclamation import ((or list symbol) &optional package-designator) t)
 (proclamation list-all-packages () list)
 (proclamation rename-package (package-designator package-designator
                               &optional list) package)
-(proclamation shadow (list &optional package-designator) t)
-(proclamation shadowing-import (list &optional package-designator) t)
+(proclamation shadow ((or list string-designator) &optional package-designator) t)
+(proclamation shadowing-import ((or symbol list) &optional package-designator) t)
 (proclamation delete-package (package-designator) gen-bool)
 (proclamation make-package (string-designator &rest t) package)
-(proclamation unexport (list &optional package-designator) t)
+(proclamation unexport ((or list symbol) &optional package-designator) t)
 (proclamation unintern (symbol &optional package-designator) gen-bool)
 (proclamation unuse-package (list &optional package-designator) t)
 (proclamation use-package (list &optional package-designator) t)
