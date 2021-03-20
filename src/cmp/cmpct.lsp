@@ -54,7 +54,7 @@
     (c1constant-value/sse val))
    (only-small-values nil)
    (always
-    (make-c1form* 'LOCATION :type (object-type val)
+    (make-c1form* 'LOCATION :type `(eql ,val)
                   :args (add-object val)))
    (t nil)))
 
