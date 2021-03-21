@@ -119,20 +119,20 @@
                    and-type (type-and form-type type))
              (eq and-type form-type))
            form)
-          ;; Are the form type and the test disjoint types?
-          ((null and-type)
-           (cmpwarn "The expression ~S is not of the expected type ~S"
-                    value type)
-           form)
           ;; Otherwise, emit a full test
           (t
-           (cmpdebug "Checking type of ~S to be ~S" value type)
+           (if (null and-type) ; Are the form type and the test disjoint types?
+               (cmpwarn "The expression ~S is not of the expected type ~S"
+                        value type)
+               (cmpdebug "Checking type of ~S to be ~S" value type))
            (let ((full-check
                   (with-clean-symbols (%checked-value)
                     `(let* ((%checked-value ,value))
                        (declare (:read-only %checked-value))
                        ,(expand-type-assertion '%checked-value type *cmp-env* nil)
-                       (truly-the ,type %checked-value)))))
+                       ,(if (null and-type)
+                            '%checked-value
+                            `(truly-the ,type %checked-value))))))
              (make-c1form* 'CHECKED-VALUE
                            :type type
                            :args type form (c1expr full-check)))))))
