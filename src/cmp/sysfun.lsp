@@ -631,10 +631,8 @@
 
 ;; file sequence.d
 
-(def-inline elt :always (t t) t "ecl_elt(#0,ecl_fixnum(#1))")
+(def-inline elt :always (t t) t "ecl_elt(#0,ecl_to_size(#1))")
 (def-inline elt :always (t fixnum) t "ecl_elt(#0,#1)")
-(def-inline elt :always (vector t) t "ecl_aref1(#0,ecl_fixnum(#1))")
-(def-inline elt :always (vector fixnum) t "ecl_aref1(#0,#1)")
 
 (def-inline elt :unsafe (t t) t "ecl_elt(#0,ecl_fixnum(#1))")
 (def-inline elt :unsafe (t fixnum) t "ecl_elt(#0,#1)")
@@ -656,8 +654,6 @@
 
 (def-inline si:elt-set :always (t t t) t "ecl_elt_set(#0,ecl_to_size(#1),#2)")
 (def-inline si:elt-set :always (t fixnum t) t "ecl_elt_set(#0,#1,#2)")
-(def-inline si:elt-set :always (vector t t) t "ecl_aset1(#0,ecl_to_size(#1),#2)")
-(def-inline si:elt-set :always (vector fixnum t) t "ecl_aset1(#0,#1,#2)")
 
 (def-inline si:elt-set :unsafe (t t t) t "ecl_elt_set(#0,ecl_fixnum(#1),#2)")
 (def-inline si:elt-set :unsafe (vector t t) t "ecl_aset_unsafe(#0,ecl_to_size(#1),#2)")
