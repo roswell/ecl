@@ -176,7 +176,8 @@ special variable declarations, as these have been extracted before."
 (defun check-vdecl (vnames ts is)
   (loop for (name . type) in ts
      unless (or (member name vnames :test #'eq)
-                (symbol-macro-declaration-p name type))
+                (symbol-macro-declaration-p name type)
+                (cmp-env-search-var name))
      do (cmpwarn "Declaration of type~&~4T~A~&was found for not bound variable ~s."
                  type name))
   (loop for (name . expected-uses) in is
