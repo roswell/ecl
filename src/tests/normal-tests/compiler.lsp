@@ -2013,3 +2013,27 @@
              (multiple-value-list
               (funcall
                (compile nil '(lambda () (values (values)))))))))
+
+;;; Date 2021-03-25
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/633
+;;; Description
+;;;
+;;;     The order of function arguments was wrong when inlining a
+;;;     function with &key and &aux arguments. This test checks
+;;;     correct ordering in general.
+(test cmp.0086.inline-ordering-function-arguments
+  (is (equal (multiple-value-list
+              (funcall (compile nil '(lambda ()
+                                      (flet ((f (a
+                                                 &optional (b a)
+                                                 &rest c
+                                                 &key (d c)
+                                                 &aux (e d))
+                                               (list a b c d e)))
+                                        (declare (inline f))
+                                        (values (f 1)
+                                                (f 1 2)
+                                                (f 1 2 :d 3)))))))
+             '((1 1 nil nil nil)
+               (1 2 nil nil nil)
+               (1 2 (:d 3) 3 3)))))
