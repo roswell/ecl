@@ -50,13 +50,11 @@
            (cmpwarn "The first argument to MAKE-ARRAY~%~A~%is not a valid set of dimensions" orig-dimensions)
            '*))))
 
-(define-compiler-macro make-array (&whole form dimensions &key (element-type t)
-                                          (initial-element nil initial-element-supplied-p)
-                                          (initial-contents nil initial-contents-supplied-p)
-                                          adjustable fill-pointer
-                                          displaced-to (displaced-index-offset 0)
-                                          &environment env)
-  (declare (ignore env))
+(define-compiler-macro* make-array (&whole form dimensions &key (element-type t)
+                                           (initial-element nil initial-element-supplied-p)
+                                           (initial-contents nil initial-contents-supplied-p)
+                                           adjustable fill-pointer
+                                           displaced-to (displaced-index-offset 0))
   ;; This optimization is always done unless we provide content. There
   ;; is no speed, debug or space reason not to do it, unless the user
   ;; specifies not to inline MAKE-ARRAY, but in that case the compiler
@@ -78,11 +76,11 @@
           (setf function 'si::make-vector
                 dimensions (first dimensions-type)))
         (setf form
-              `(,function ,element-type ,dimensions ,adjustable ,fill-pointer
-                          ,displaced-to ,displaced-index-offset)))
+              `(,function ,%element-type ,%dimensions ,%adjustable ,%fill-pointer
+                          ,%displaced-to ,%displaced-index-offset)))
       ;; Then we may fill the array with a given value
       (when initial-element-supplied-p
-        (setf form `(si::fill-array-with-elt ,form ,initial-element 0 nil)))
+        (setf form `(si::fill-array-with-elt ,form ,%initial-element 0 nil)))
       (setf form `(truly-the (array ,guessed-element-type ,dimensions-type)
                     ,form))))
   form)

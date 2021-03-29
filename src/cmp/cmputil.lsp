@@ -411,3 +411,221 @@
   (loop for line = (read-line stream nil nil)
      while line
      collect line))
+
+(defmacro define-compiler-macro* (name lambda-list &body body)
+  "A version of define-compiler-macro that helps avoiding incorrect
+evaluation order and double evaluation.
+
+Example: A naive (simplified) definition of the compiler macro for
+make-array could look as follows
+
+(define-compiler-macro make-array (&whole form dimensions &key (element-type t) ...)
+  (let ((dimensions-type (guess-array-dimensions-type dimensions)))
+    (if (and (listp dimensions-type)
+             (null (rest dimensions-type))
+             (integerp (first dimensions-type)))
+        `(si::make-vector ,element-type ,(first dimensions-type) ...)
+        `(si::make-pure-array ,element-type ,dimensions ...))))
+
+However this has several problems: first element-type and dimensions
+are evaluated in the wrong order and second the compiler macro will
+not accept perfectly valid forms like
+
+(let ((etype :element-type))
+  (make-array 10 etype 'character))
+
+A correct version could be implemented using define-compiler-macro* as
+follows
+
+(define-compiler-macro make-array (&whole form dimensions &key (element-type t) ...)
+  (let ((dimensions-type (guess-array-dimensions-type dimensions)))
+    (if (and (listp dimensions-type)
+             (null (rest dimensions-type))
+             (integerp (first dimensions-type)))
+        `(si::make-vector ,%element-type ,(first dimensions-type) ...)
+        `(si::make-pure-array ,%element-type ,%dimensions ...))))
+
+which would expand (make-array dim :element-type 'character) to
+
+(let ((#:dimensions dim)
+      (#:element-type 'character))
+  (si::make-pure-array #:element-type #:dimensions))
+
+Note that dimensions and element-type are evaluated in the correct
+order. In the case of (let ((etype :element-type))
+                        (make-array 10 etype 'character))
+the corrected version using define-compiler-macro* will simply
+decline to produce an expansion. On the other hand, for
+(make-array 10 :element-type 'character), the corrected version would
+expand to
+
+(let ((#:dimensions 10)
+      (#:element-type 'character))
+  (si::make-vector #:element-type 10))
+
+
+How it works:
+
+For each argument two let bindings are established: one for the
+variable holding the actual argument and one for a symbol (prefixed
+with %) which will be bound to the value that the argument evaluates
+to. In the compiler macro expansion, the % prefixed symbols are
+evaluated in the order in which the corresponding arguments are given
+to the compiler macro.
+
+This allows the compiler-macro to look at the actual form provided for
+the arguments and also use these values produced by these forms in the
+final expansion.
+
+Keyword arguments are handled specially: we try to match keywords in
+the list of arguments to the compiler macro to the corresponding &key
+arguments, but if we a non-keyword form in place where we expect a
+keyword argument, the compiler-macro declines to provide an expansion.
+"
+  ;; General info: parsing happens in three steps. In the first pass,
+  ;; the keyword arguments given to the compiler-macro are matched.
+  ;; Then the body of the compiler macro is evaluated. In the second
+  ;; pass, let bindings are constructed in the correct order for all
+  ;; arguments given to the compiler macro. In the third pass, let
+  ;; bindings for default initforms of arguments not given to the
+  ;; compiler-macro are constructed.
+  (ext:with-unique-names (;; local vars
+                          given-keyword given-arg some-keyword-found output
+                          all-found-keywords
+                          ;; bindings-for-expansion: these bindings
+                          ;; are active around the expansion returned
+                          ;; by the compiler macro
+                          bindings-for-expansion)
+    (let* ((whole (gensym))              ; symbol for &whole compiler-macro argument
+           (new-lambda-list (list whole '&whole)) ; lambda-list after we have stripped out &key, collected in reverse order
+           aux-setf-forms                ; forms for &aux vars
+           parse-forms-pass1 parse-forms-pass2 parse-forms-pass3 ; lists of parse-forms generated below
+           keyword-parse-forms-pass2
+           ;; bindings-for-body: these bindings are active around the
+           ;; body of the compiler macro
+           (bindings-for-body (list all-found-keywords bindings-for-expansion)))
+      ;; lambda-list handling:
+      ;; 1. extract &whole and &environment
+      (when (eq (first lambda-list) '&whole)
+        (push `(,(second lambda-list) ,whole) bindings-for-body)
+        (setf lambda-list (cddr lambda-list)))
+      (when-let ((env (member '&environment lambda-list)))
+        (push '&environment new-lambda-list)
+        (push (second env) new-lambda-list)
+        (setq lambda-list (nconc (ldiff lambda-list env) (cddr env))))
+      ;; 2. parse the remaining lambda-list
+      (multiple-value-bind (reqs opts rest key-flag keywords allow-other-keys auxs)
+          (si::process-lambda-list lambda-list 'si::macro)
+        (when (and rest (or key-flag allow-other-keys))
+          (error "define-compiler-macro* can't deal with lambda-lists with both &key and &rest arguments"))
+        ;; utility functions
+        (labels ((prefix-symbol (s)
+                   (intern (concatenate 'string "%" (symbol-name s))))
+                 (pass1-parse ()
+                   (when key-flag
+                     `(progn
+                        (unless (zerop (mod (length ,rest) 2))
+                          (return-from ,name ,whole))
+                        (loop for ,given-keyword in ,rest by #'cddr
+                              for ,given-arg in (rest ,rest) by #'cddr
+                              for ,some-keyword-found = nil
+                              do (when (not (keywordp ,given-keyword))
+                                   (return-from ,name ,whole))
+                              ,@parse-forms-pass1
+                              (when (not ,some-keyword-found)
+                                (if ,allow-other-keys
+                                    (push
+                                     ;; &allow-other-keys: we still
+                                     ;; have to evaluate the argument
+                                     `(list ,(gensym) ,,given-arg)
+                                     ,bindings-for-expansion)
+                                    (return-from ,name ,whole)))))))
+                 (handle-required-parameter (symbol)
+                   (let ((%symbol (prefix-symbol symbol)))
+                     (push `(,%symbol (gensym)) bindings-for-body)
+                     (push symbol new-lambda-list)
+                     (push `(push (list ,%symbol ,symbol) ,bindings-for-expansion)
+                           parse-forms-pass2)))
+                 (handle-optional-parameter (opt-spec)
+                   (let* ((symbol (first opt-spec))
+                          (init (second opt-spec))
+                          (supplied-p (or (third opt-spec) (gensym)))
+                          (%symbol (prefix-symbol symbol)))
+                     (push `(,%symbol (gensym)) bindings-for-body)
+                     (push `(,symbol ,init ,supplied-p) new-lambda-list)
+                     (push `(when ,supplied-p
+                              (push (list ,%symbol ,symbol) ,bindings-for-expansion))
+                           parse-forms-pass2)
+                     (push `(unless ,supplied-p
+                              (push (list ,%symbol ,symbol) ,bindings-for-expansion))
+                           parse-forms-pass3)))
+                 (handle-keyword-parameter (key-spec)
+                   (let* ((keyword (first key-spec))
+                          (symbol (second key-spec))
+                          (init (third key-spec))
+                          (supplied-p (or (fourth key-spec) (gensym)))
+                          (%symbol (prefix-symbol symbol)))
+                     (push `(,%symbol (gensym)) bindings-for-body)
+                     (push `(,symbol ,init) bindings-for-body)
+                     (push `(,supplied-p nil) bindings-for-body)
+                     (push `(when (and (eq ,given-keyword ,keyword)
+                                       (not ,supplied-p))
+                              (setf ,some-keyword-found t)
+                              (setf ,symbol ,given-arg)
+                              (setf ,supplied-p t)
+                              (push ,keyword ,all-found-keywords))
+                           parse-forms-pass1)
+                     (push `(when (eq ,given-keyword ,keyword)
+                              (push (list ,%symbol ,symbol) ,bindings-for-expansion))
+                           keyword-parse-forms-pass2)
+                     (push `(unless ,supplied-p
+                              (push (list ,%symbol ,symbol) ,bindings-for-expansion))
+                           parse-forms-pass3))))
+          ;; 3. required, optional and rest parameters are simply
+          ;; copied to the new lambda-list
+          (mapcar #'handle-required-parameter (rest reqs))
+          (when (> (first opts) 0)
+            (push '&optional new-lambda-list)
+            (loop for o on (rest opts) by #'cdddr
+                  do (handle-optional-parameter o)))
+          (when rest
+            (let ((%rest (prefix-symbol rest)))
+              (push `(,%rest (gensym)) bindings-for-body)
+              (push `(push (list ,%rest ,rest) ,bindings-for-expansion)
+                    parse-forms-pass2)
+              (push '&rest new-lambda-list)
+              (push rest new-lambda-list)))
+          ;; 4. keyword parameters: first put all remaining parameters
+          ;; in a rest argument, then parse keywords from this rest
+          ;; argument
+          (when (or key-flag allow-other-keys)
+            (unless rest
+              (setf rest (gensym))
+              (push '&rest new-lambda-list)
+              (push rest new-lambda-list))
+            (loop for key-spec on (rest keywords) by #'cddddr
+                  do (handle-keyword-parameter key-spec))
+            (push `(loop for ,given-keyword in (nreverse ,all-found-keywords)
+                         do ,@keyword-parse-forms-pass2)
+                  parse-forms-pass2))
+          ;; 5. &aux vars: these are simply set to their initforms after
+          ;; parsing of keywords has finished
+          (loop for a on auxs
+                do (push (first auxs) bindings-for-body)
+                   (push `(setf ,(first auxs) ,(second auxs)) aux-setf-forms))
+          ;; 6. Finally, we are ready to create the compiler-macro definition
+          `(define-compiler-macro ,name ,(nreverse new-lambda-list)
+             (let* ,(nreverse bindings-for-body)
+               ;; parse arguments
+               ,(pass1-parse)
+               ,@aux-setf-forms
+               ;; evaluate the body of the compiler-macro
+               (let ((,output (locally ,@body)))
+                 (if (eq ,output ,whole)
+                     ,whole
+                     (progn
+                       ,@(nreverse parse-forms-pass2)
+                       ,@(nreverse parse-forms-pass3)
+                       ;; create bindings for the arguments passed to the compiler-macro
+                       `(let ,(nreverse ,bindings-for-expansion)
+                          ,,output)))))))))))
