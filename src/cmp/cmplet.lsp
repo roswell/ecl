@@ -108,7 +108,7 @@
             (multiple-value-bind (constantp value)
                 (c1form-constant-p init)
               (when constantp
-                (cmp-env-register-symbol-macro name (si::maybe-quote value))
+                (cmp-env-register-symbol-macro name `',value)
                 (setf var nil))))
           (when var
             (push var vars)

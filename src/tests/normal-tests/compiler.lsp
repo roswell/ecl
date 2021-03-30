@@ -2037,3 +2037,12 @@
              '((1 1 nil nil nil)
                (1 2 nil nil nil)
                (1 2 (:d 3) 3 3)))))
+
+;;; Date 2021-03-30
+;;; Description
+;;;
+;;;     let bindings of lists like '(quote ...) were miscompiled
+(test cmp.0087.let-list-containing-quote
+  (is (equal '((quote) (quote a b c))
+             (funcall
+              (compile nil '(lambda () (let ((x '(quote)) (y '(quote a b c))) (list x y))))))))
