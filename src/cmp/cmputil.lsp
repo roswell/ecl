@@ -529,7 +529,8 @@ keyword argument, the compiler-macro declines to provide an expansion.
                         (loop for ,given-keyword in ,rest by #'cddr
                               for ,given-arg in (rest ,rest) by #'cddr
                               for ,some-keyword-found = nil
-                              do (when (not (keywordp ,given-keyword))
+                              do (when (or (not (keywordp ,given-keyword))
+                                           (eq ,given-keyword :allow-other-keys))
                                    (return-from ,name ,whole))
                               ,@parse-forms-pass1
                               (when (not ,some-keyword-found)
@@ -620,7 +621,7 @@ keyword argument, the compiler-macro declines to provide an expansion.
                ,(pass1-parse)
                ,@aux-setf-forms
                ;; evaluate the body of the compiler-macro
-               (let ((,output (locally ,@body)))
+               (let ((,output (block ,name (locally ,@body))))
                  (if (eq ,output ,whole)
                      ,whole
                      (progn
