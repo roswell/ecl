@@ -173,14 +173,15 @@
                   (push v all-values)
                   (return nil))
            finally
-             (let ((results (multiple-value-list (apply fname (nreverse all-values)))))
-               (if (endp (rest results))
-                   (c1constant-value (first results) :only-small-values nil)
-                   (let ((results (mapcar (lambda (r)
-                                            (c1constant-value r :only-small-values nil))
-                                          results)))
-                     (when (every #'identity results)
-                       (make-c1form* 'values :args results))))))
+              (return
+                (let ((results (multiple-value-list (apply fname (nreverse all-values)))))
+                  (if (endp (rest results))
+                      (c1constant-value (first results) :only-small-values nil)
+                      (let ((results (mapcar (lambda (r)
+                                               (c1constant-value r :only-small-values nil))
+                                             results)))
+                        (when (every #'identity results)
+                          (make-c1form* 'values :args results)))))))
       (error (c) (cmpdebug "Can't constant-fold ~s ~s: ~a~%" fname forms c)))))
 
 (defun c2expr (form)
