@@ -101,7 +101,7 @@ MKNSI   = makensis.exe
 !if "$(ECL_WIN64)" != ""
 GMP_BITS=64
 GC_CPU=AMD64
-ARCHITECTURE=AMD64
+ARCHITECTURE=X86-64
 VCREDIST=vcredist_x64.exe
 !else
 GMP_BITS=32
@@ -134,7 +134,7 @@ GCFLAGS = nodebug=1
 CLIBS = $(CLIBS) DbgHelp.lib
 !endif
 
-CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
+CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /wd4068 /wd4715 /wd4716 /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
 LDFLAGS	= /link /incremental:no /nologo $(LDFLAGS_CONFIG) /STACK:$(ECL_DEFAULT_C_STACK_SIZE)
 
 
@@ -353,6 +353,7 @@ eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
 		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
 		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
+		ECL_ARCHITECTURE=$(ARCHITECTURE) \
 		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
 	cd ..
 eclgc.lib:
