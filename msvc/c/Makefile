@@ -183,6 +183,7 @@ $(HFILES): ../ecl/config.h.msvc6 ../ecl/config-internal.h.msvc6 Makefile
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
 		"@ECL_USE_DBGHELP@" "$(ECL_USE_DBGHELP_FLAG)" \
+		"@ARCHITECTURE@" "$(ECL_ARCHITECTURE)" \
 	        < ..\ecl\config-internal.h.msvc6 > ..\ecl\config-internal.h
 	xcopy /SYI $(top_srcdir)\h\*.h ..\ecl
 	-mkdir ..\ecl\atomic_ops
