@@ -46,7 +46,8 @@
                                      '((si:complex-single-float . #c(0.0f0 0.0f0))
                                        (si:complex-double-float . #c(0.0d0 0.0d0))
                                        (si:complex-long-float . #c(0.0l0 0.0l0)))))
-                               :test #'subtypep))))
+                               :test #'(lambda (t1 t2)
+                                         (subtypep t1 t2 *cmp-env*))))))
     (if new-value
         (c1constant-value new-value)
         (c1nil))))
@@ -60,7 +61,7 @@
   (flet ((maybe-fix-type (var init type type-iterator)
            (multiple-value-bind (constantp value)
                (c1form-constant-p init)
-             (when (and constantp (not (typep value type)))
+             (when (and constantp (not (typep value type *cmp-env*)))
                (cmpwarn-style "The init-form of the argument ~A of ~:[an anonymous function~;the function ~:*~A~] is not of the declared type ~A."
                               (var-name var)
                               (fun-name *current-function*)
@@ -191,7 +192,7 @@
 (defmacro assert-type-if-known (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (multiple-value-bind (trivial valid)
-      (subtypep 't type)
+      (subtypep 't type *cmp-env*)
     (cond ((and trivial valid)
            value)
           ((multiple-value-setq (valid value) (constant-value-p value env))

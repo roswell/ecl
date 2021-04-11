@@ -110,7 +110,7 @@
 (defun c2call-unknown (c1form form args)
   (declare (ignore c1form))
   (let* ((form-type (c1form-primary-type form))
-         (function-p (and (subtypep form-type 'function)
+         (function-p (and (subtypep form-type 'function *cmp-env*)
                           (policy-assume-right-type)))
          (loc (emit-inline-form form args))
          (args (inline-args args)))

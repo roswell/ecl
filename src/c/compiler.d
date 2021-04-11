@@ -421,6 +421,7 @@ c_register_captured(cl_env_ptr env, cl_object c)
  *     SI:FUNCTION-BOUNDARY |
  *     SI:UNWIND-PROTECT-BOUNDARY
  *     (:declare declaration-arguments*)
+ *     (:type type-name [type-definition | expansion-function])
  * macro-record =
  *     (function-name FUNCTION [| function-object]) |
  *     (macro-name si::macro macro-function) |
@@ -948,7 +949,7 @@ c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def)
     type = pop(&reg);
     special = pop(&reg);
     if (type == @':block' || type == @':tag' || type == @':function'
-        || type == @':declare' || type != var) {
+        || type == @':declare' || type == @':type' || type != var) {
       continue;
     } else if (Null(special)) {
       if (function_boundary_crossed) {
@@ -1098,7 +1099,7 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
         if (!only_specials) num_lexical++;
       } else if (name == @':function' || Null(special)) {
         if (!only_specials) num_lexical++;
-      } else if (name == @':declare') {
+      } else if (name == @':declare' || name == @':type') {
         /* Ignored */
       } else if (special != @'si::symbol-macro') {
         /* If (third special) = NIL, the variable was declared

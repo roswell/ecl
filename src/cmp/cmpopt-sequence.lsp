@@ -52,7 +52,7 @@
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
        (declare (optimize (safety 0)))
-       (if (ext:fixnump %iterator)
+       (if (typep %iterator 'fixnum *cmp-env*)
            ;; Fixnum iterators are always fine
            (aref %seq %iterator)
            ;; Error check in case we may have been passed an improper list
@@ -64,7 +64,7 @@
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
        (declare (optimize (safety 0)))
-       (if (ext:fixnump %iterator)
+       (if (typep %iterator 'fixnum *cmp-env*)
            (let ((%iterator (1+ (ext:truly-the fixnum %iterator))))
              (declare (fixnum %iterator))
              (and (< %iterator (length (ext:truly-the vector %seq)))

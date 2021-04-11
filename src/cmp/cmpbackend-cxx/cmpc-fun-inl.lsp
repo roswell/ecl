@@ -83,7 +83,9 @@
     ((equal (inline-info-arg-types ia) (inline-info-arg-types ib))
      ia)
     ;; More specific?
-    ((every #'type>= (inline-info-arg-types ia) (inline-info-arg-types ib))
+    ((every #'(lambda (t1 t2) (type>= t1 t2 *cmp-env*))
+            (inline-info-arg-types ia)
+            (inline-info-arg-types ib))
      ib)
     ;; Keep the first one, which is typically the least safe but fastest. 
     (t
@@ -103,7 +105,7 @@
 
 (defun to-fixnum-float-type (type)
   (dolist (i '(CL:FIXNUM CL:DOUBLE-FLOAT CL:SINGLE-FLOAT CL:LONG-FLOAT) nil)
-    (when (type>= i type)
+    (when (type>= i type *cmp-env*)
       (return i))))
 
 (defun maximum-float-type (t1 t2)
@@ -140,10 +142,10 @@
                  (setq number-max (maximum-float-type number-max new-type))))
               #+sse2
               ;; Allow implicit casts between SSE subtypes to kick in
-              ((and (type>= 'ext:sse-pack type)
-                    (type>= 'ext:sse-pack arg-type))
+              ((and (type>= 'ext:sse-pack type *cmp-env*)
+                    (type>= 'ext:sse-pack arg-type *cmp-env*))
                (push type rts))
-              ((type>= type arg-type)
+              ((type>= type arg-type *cmp-env*)
                (push type rts))
               (t (return-from inline-type-matches nil)))))
     ;;
@@ -163,10 +165,10 @@
                          (and (setf number-max (if (eq number-max 'fixnum)
                                                    'integer
                                                    number-max))
-                              (type>= inline-return-type number-max)
-                              (type>= number-max return-type))
+                              (type>= inline-return-type number-max *cmp-env*)
+                              (type>= number-max return-type *cmp-env*))
                          ;; no contravariance
-                         (type>= inline-return-type return-type)))))
+                         (type>= inline-return-type return-type *cmp-env*)))))
       (let ((inline-info (copy-structure inline-info)))
         (setf (inline-info-arg-types inline-info)
               (nreverse rts))

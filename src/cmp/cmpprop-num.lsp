@@ -20,7 +20,7 @@
           (if args
               (dolist (int-type '((UNSIGNED-BYTE 8) FIXNUM) 'integer)
                 (when (loop for value in args
-                         always (subtypep value int-type))
+                         always (subtypep value int-type *cmp-env*))
                   (return int-type)))
               'fixnum)))
 
@@ -51,11 +51,11 @@
     (when (and only-real (or complex-t1 complex-t2))
       (return-from maximum-number-type (values default default default)))
     (loop for i across number-types
-          do (when (and (null t1-eq) (type>= i t1))
+          do (when (and (null t1-eq) (type>= i t1 *cmp-env*))
                (when (equalp t1 t2)
                  (setf t2-eq i))
                (setf t1-eq i output i))
-             (when (and (null t2-eq) (type>= i t2))
+             (when (and (null t2-eq) (type>= i t2 *cmp-env*))
                (setf t2-eq i output i)))
     (unless (and t1-eq t2-eq output)
       (setf output default))
@@ -134,10 +134,10 @@
   (let ((exponent (ensure-real-type exponent)))
     (values (list base exponent)
             (cond ((eql exponent 'integer)
-                   (if (subtypep base 'fixnum)
+                   (if (subtypep base 'fixnum *cmp-env*)
                        'integer
                        base))
-                  ((type>= '(real 0 *) base)
+                  ((type>= '(real 0 *) base *cmp-env*)
                    (let* ((exponent (ensure-nonrational-type exponent)))
                      (maximum-number-type exponent base)))
                   (t
@@ -148,7 +148,7 @@
       (ensure-number-type arg)
     (values (list arg)
             (or (cdr (assoc output
-                            '((FIXNUM . (INTEGER 0 #.MOST-POSITIVE-FIXNUM))
+                            '((FIXNUM . (AND FIXNUM (INTEGER 0 *)))
                               (INTEGER . (INTEGER 0 *))
                               (RATIONAL . (RATIONAL 0 *))
                               (SHORT-FLOAT . (SHORT-FLOAT 0 *))
@@ -163,10 +163,10 @@
   (multiple-value-bind (output arg)
       (ensure-nonrational-type arg)
     (values (list arg)
-            (if (type>= '(REAL 0 *) arg) output 'NUMBER))))
+            (if (type>= '(REAL 0 *) arg *cmp-env*) output 'NUMBER))))
 
 (def-type-propagator isqrt (fname arg)
-  (if (type>= '(integer 0 #.MOST-POSITIVE-FIXNUM) arg)
-      (values '((integer 0 #.MOST-POSITIVE-FIXNUM))
-              '(integer 0 #.MOST-POSITIVE-FIXNUM))
+  (if (type>= 'ext:non-negative-fixnum arg *cmp-env*)
+      (values '(ext:non-negative-fixnum)
+              'ext:non-negative-fixnum)
       (values '((integer 0 *)) '(integer 0 *))))

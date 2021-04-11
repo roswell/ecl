@@ -157,7 +157,7 @@
 
 (defun precise-loc-lisp-type (loc new-type)
   (let ((loc-type (loc-lisp-type loc)))
-    (if (subtypep loc-type new-type)
+    (if (subtypep loc-type new-type *cmp-env*)
         loc
         `(the ,(type-and loc-type new-type) ,loc))))
 
