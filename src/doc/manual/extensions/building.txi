@@ -544,8 +544,14 @@ shared libraries and standalone programs.
 @end deftypevar
 
 @deftypevar string {c:*user-ld-flags*}
-Flags and options to be passed to the linker when building FASL,
-shared libraries and standalone programs.
+Flags and options to be passed to the linker when building FASL, shared
+libraries and standalone programs@footnote{For gcc compatible compilers,
+these flags are passed in the following order to the compiler: flags
+such as @code{-lfoo} specifying additional libraries to link in are put
+at the end of the commandline. Other linker flags such as
+@code{-Wl,--bar} are inserted in the commandline before the object files
+that are linked together in the same order as that given in
+@code{c:*user-ld-flags}.}.
 @end deftypevar
 
 @deftypevar string {c:*cc-optimize*}

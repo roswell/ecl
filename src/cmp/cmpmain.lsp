@@ -144,19 +144,41 @@ the environment variable TMPDIR to a different value." template))
   (embed-manifest-file o-pathname type)
   (delete-msvc-generated-files o-pathname))
 
+(defun extract-libs-from-ld-flags (ld-flags)
+  (loop for flag in ld-flags
+        ;; library flags are extracted because they need to come after
+        ;; the object files and other flags on the commandline.
+        if (or (string= flag "-l" :end1 2)  ; match -lfoo
+               (and  ; match foo.so or foo.so.bar but not -foo.so or -foo.so.bar
+                (>= (length flag) (1+ (length +shared-library-extension+)))
+                (not (char= (char flag 0) #\-))
+                (when-let* ((pos-start (search +shared-library-extension+ flag))
+                            (pos-end (+ pos-start (length +shared-library-extension+))))
+                  (and (>= pos-start 1)
+                       (char= (char flag (1- pos-start)) #\.)
+                       (or (= (length flag) pos-end)
+                           (char= (char flag pos-end) #\.))))))
+          collect flag into libs
+        else
+          collect flag into ld-flags-without-libs
+        finally (return (values ld-flags-without-libs libs))))
+
 #-msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
                   (ld-flags (split-program-options *ld-flags*)))
   (declare (ignore type))
-  (safe-run-program
-   *ld*
-   `("-o" ,(brief-namestring o-pathname)
-     ,(concatenate 'string "-L" (fix-for-mingw (ecl-library-directory)))
-     ,@object-files
-     ,@(and *ld-rpath* (list *ld-rpath*))
-     ,@(split-program-options *user-ld-flags*)
-     ,@ld-flags)))
+  (multiple-value-bind (ld-flags libs)
+      (extract-libs-from-ld-flags
+       (append (split-program-options *user-ld-flags*) ld-flags))
+    (safe-run-program
+     *ld*
+     `("-o" ,(brief-namestring o-pathname)
+       ,(concatenate 'string "-L" (fix-for-mingw (ecl-library-directory)))
+       ,@ld-flags
+       ,@object-files
+       ,@(and *ld-rpath* (list *ld-rpath*))
+       ,@libs))))
 
 (defun linker-ar (output-name o-name ld-flags)
   #-msvc
