@@ -23,10 +23,9 @@
   (gethash rep-type (machine-rep-type-hash *machine*)))
 
 (defun rep-type-record (rep-type)
-  (let ((record (gethash rep-type (machine-rep-type-hash *machine*))))
-    (unless record
-      (cmperr "Not a valid C type name ~A" rep-type))
-    record))
+  (if-let ((record (gethash rep-type (machine-rep-type-hash *machine*))))
+    record
+    (cmperr "Not a valid C type name ~A" rep-type)))
 
 (defun rep-type->lisp-type (name)
   (let ((output (rep-type-record-unsafe name)))
@@ -172,8 +171,8 @@
 
 (defun wt-coerce-loc (dest-rep-type loc)
   (setq dest-rep-type (lisp-type->rep-type dest-rep-type))
-  ;(print dest-rep-type)
-  ;(print loc)
+                                        ;(print dest-rep-type)
+                                        ;(print loc)
   (let* ((dest-type (rep-type->lisp-type dest-rep-type))
          (loc-type (loc-type loc))
          (loc-rep-type (loc-representation-type loc)))
@@ -293,6 +292,8 @@
 ;;; might be collapsed into one, or we might not produce that function at all
 ;;; and rather inline it.
 ;;;
+
+;;; FIXME pass1 handler defined in the pass2 module.
 (defun c1clines (args)
   (unless (every #'stringp args)
     (cmperr "The argument to CLINES, ~s, is not a list of strings." args))
@@ -303,20 +304,20 @@
   (flet ((parse-one-string (s output-stream)
            (with-input-from-string (stream s)
              (loop for c = (read-char stream nil nil)
-                while c
-                do (if (eq c #\@)
-                       (let ((object (handler-case (read stream)
-                                       (serious-condition (c)
-                                         (cmperr "Unable to parse FFI:CLINES string~& ~S"
-                                                 s)))))
-                         (let ((*compiler-output1* output-stream))
-                           (wt (add-object object :permanent t))))
-                       (write-char c output-stream))))))
+                   while c
+                   do (if (eq c #\@)
+                          (let ((object (handler-case (read stream)
+                                          (serious-condition (c)
+                                            (cmperr "Unable to parse FFI:CLINES string~& ~S"
+                                                    s)))))
+                            (let ((*compiler-output1* output-stream))
+                              (wt (add-object object :permanent t))))
+                          (write-char c output-stream))))))
     (loop for s in *clines-string-list*
-       do (terpri output-stream)
-       do (if (find #\@ s)
-              (parse-one-string s output-stream)
-              (write-string s output-stream)))
+          do (terpri output-stream)
+          do (if (find #\@ s)
+                 (parse-one-string s output-stream)
+                 (write-string s output-stream)))
     (terpri output-stream)
     (setf *clines-string-list* nil)))
 
@@ -324,98 +325,18 @@
 ;; C/C++ INLINE CODE
 ;;
 
-(defun c1c-inline (args)
-  ;; We are on the safe side by assuming that the form has side effects
-  (destructuring-bind (arguments arg-types output-type c-expression
-                                 &rest rest
-                                 &key (side-effects t) one-liner
-                                 &aux output-rep-type)
-      args
-    (unless (= (length arguments) (length arg-types))
-      (cmperr "In a C-INLINE form the number of declare arguments and the number of supplied ones do not match:~%~S"
-              `(C-INLINE ,@args)))
-    ;; We cannot handle :cstrings as input arguments. :cstrings are
-    ;; null-terminated strings, but not all of our lisp strings will
-    ;; be null terminated. In particular, those with a fill pointer
-    ;; will not.
-    (let ((ndx (position :cstring arg-types)))
-      (when ndx
-        (let* ((var (gensym))
-               (arguments (copy-list arguments))
-               (value (elt arguments ndx)))
-          (setf (elt arguments ndx) var
-                (elt arg-types ndx) :char*)
-          (return-from c1c-inline
-            (c1expr
-             `(ffi::with-cstring (,var ,value)
-               (c-inline ,arguments ,arg-types ,output-type ,c-expression
-                ,@rest)))))))
-    ;; Find out the output types of the inline form. The syntax is rather relaxed
-    ;;  output-type = lisp-type | c-type | (values {lisp-type | c-type}*)
-    (flet ((produce-type-pair (type)
-             (if (lisp-type-p type)
-                 (cons type (lisp-type->rep-type type))
-                 (cons (rep-type->lisp-type type) type))))
-      (cond ((eq output-type ':void)
-             (setf output-rep-type '()
-                   output-type 'NIL))
-            ((equal output-type '(VALUES &REST t))
-             (setf output-rep-type '((VALUES &REST t))))
-            ((and (consp output-type) (eql (first output-type) 'VALUES))
-             (let ((x (mapcar #'produce-type-pair (rest output-type))))
-               (setf output-rep-type (mapcar #'cdr x)
-                     output-type `(VALUES ,@(mapcar #'car x)))))
-            (t
-             (let ((x (produce-type-pair output-type)))
-               (setf output-type (car x)
-                     output-rep-type (list (cdr x)))))))
-    (unless (and (listp arguments)
-                 (listp arg-types)
-                 (stringp c-expression))
-      (cmperr "C-INLINE: syntax error in ~S"
-              (list* 'c-inline args)))
-    (unless (= (length arguments)
-               (length arg-types))
-      (cmperr "C-INLINE: wrong number of arguments in ~S"
-              (list* 'c-inline args)))
-    (let* ((arguments (mapcar #'c1expr arguments))
-           (form (make-c1form* 'C-INLINE :type output-type
-                               :side-effects side-effects
-                               :args arguments arg-types
-                               output-rep-type
-                               c-expression
-                               side-effects
-                               one-liner)))
-      (loop for form in arguments
-         when (eq (c1form-name form) 'VAR)
-         do (let ((var (c1form-arg 0 form)))
-              (add-to-set-nodes var form)))
-      form)))
-
-(defun c1c-progn (arguments)
-  (let* ((variables (mapcar #'c1vref (pop arguments)))
-         (statements (loop for form in arguments
-                        collect (if (stringp form)
-                                    form
-                                    (c1expr form))))
-         (form (make-c1form* 'FFI:C-PROGN :type NIL
-                             :side-effects t
-                             :args variables statements)))
-    (add-to-set-nodes-of-var-list variables form)
-    form))
-
 (defun c2c-progn (c1form variables statements)
   (loop with *destination* = 'TRASH
-     for form in statements
-     do (cond ((stringp form)
-               (wt-nl)
-               (wt-c-inline-loc :void form variables
-                                t ; side effects
-                                nil) ; no output variables
-               )
-              (t
-               (c2expr* form)))
-     finally (unwind-exit nil)))
+        for form in statements
+        do (cond ((stringp form)
+                  (wt-nl)
+                  (wt-c-inline-loc :void form variables
+                                   t ; side effects
+                                   nil) ; no output variables
+                  )
+                 (t
+                  (c2expr* form)))
+        finally (unwind-exit nil)))
 
 (defun produce-inline-loc (inlined-arguments arg-types output-rep-type
                            c-expression side-effects one-liner)
@@ -501,27 +422,27 @@
   ;;    - A lisp type (:OBJECT, :FINXUM, etc)
   ;;    - A machine representation type (T, INTEGER, etc)
   (loop with block-opened = nil
-     for (lisp-type loc) in inlined-args
-     for type in (or types '#1=(:object . #1#))
-     for i from 0
-     for rep-type = (lisp-type->rep-type type)
-     collect
-       (cond ((and args-to-be-saved
-                   (member i args-to-be-saved :test #'eql)
-                   (not (loc-movable-p loc)))
-              (let ((lcl (make-lcl-var :rep-type rep-type)))
-                (wt-nl)
-                (unless block-opened
-                  (setf block-opened t)
-                  (open-inline-block))
-                (wt (rep-type->c-name rep-type) " " lcl "= ")
-                (wt-coerce-loc rep-type loc)
-                (wt ";")
-                lcl))
-             ((equal rep-type (loc-representation-type loc))
-              loc)
-             (t
-              `(COERCE-LOC ,rep-type ,loc)))))
+        for (lisp-type loc) in inlined-args
+        for type in (or types '#1=(:object . #1#))
+        for i from 0
+        for rep-type = (lisp-type->rep-type type)
+        collect
+        (cond ((and args-to-be-saved
+                    (member i args-to-be-saved :test #'eql)
+                    (not (loc-movable-p loc)))
+               (let ((lcl (make-lcl-var :rep-type rep-type)))
+                 (wt-nl)
+                 (unless block-opened
+                   (setf block-opened t)
+                   (open-inline-block))
+                 (wt (rep-type->c-name rep-type) " " lcl "= ")
+                 (wt-coerce-loc rep-type loc)
+                 (wt ";")
+                 lcl))
+              ((equal rep-type (loc-representation-type loc))
+               loc)
+              (t
+               `(COERCE-LOC ,rep-type ,loc)))))
 
 (defun wt-c-inline-loc (output-rep-type c-expression coerced-arguments side-effects output-vars)
   (with-input-from-string (s c-expression)
@@ -540,8 +461,8 @@
                             (l (length output-vars)))
                         (if (< ndx l)
                             (wt (nth ndx output-vars))
-                          (cmperr "Used @(RETURN ~D) in a C-INLINE form with ~D output values"
-                                  ndx l)))))
+                            (cmperr "Used @(RETURN ~D) in a C-INLINE form with ~D output values"
+                                    ndx l)))))
                  (t
                   (when (and (consp object) (eq (first object) 'QUOTE))
                     (setq object (second object)))
@@ -568,6 +489,47 @@
   (c-filtered-string
    (concatenate 'string
                 (loop for c across constant-string
-                   when (member c '(#\# #\@))
-                   collect c
-                   collect c))))
+                      when (member c '(#\# #\@))
+                        collect c
+                      collect c))))
+
+(defun t3-defcallback (lisp-name c-name c-name-constant return-type return-type-code
+                       arg-types arg-type-constants call-type &aux (return-p t))
+  (when (eql return-type :void)
+    (setf return-p nil))
+  (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))
+        (fmod (case call-type
+                ((:cdecl :default) "")
+                (:stdcall "__stdcall ")
+                (t (cmperr "DEFCALLBACK does not support ~A as calling convention"
+                           call-type)))))
+    (wt-nl-h "static " return-type-name " " fmod c-name "(")
+    (wt-nl1  "static " return-type-name " " fmod c-name "(")
+    (loop with comma = ""
+          for n from 0
+          for type in arg-types
+          for arg-type-name = (rep-type->c-name (ffi::%convert-to-arg-type type))
+          do (wt-h comma arg-type-name " var" n)
+             (wt   comma arg-type-name " var" n)
+             (setf comma ","))
+    (wt ")")
+    (wt-h ");")
+    (wt-nl-open-brace)
+    (when return-p
+      (wt-nl return-type-name " output;"))
+    (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
+    (wt-nl "cl_object aux;")
+    (wt-nl "ECL_BUILD_STACK_FRAME(cl_env_copy, frame, helper)")
+    (loop for n from 0
+          and type in arg-types
+          and ct in arg-type-constants
+          do (wt-nl "ecl_stack_frame_push("
+                    "frame,ecl_foreign_data_ref_elt(" "&var" n "," ct ")"
+                    ");"))
+    (wt-nl "aux = ecl_apply_from_stack_frame(frame,"
+           "ecl_fdefinition(" c-name-constant "));")
+    (wt-nl "ecl_stack_frame_close(frame);")
+    (when return-p
+      (wt-nl "ecl_foreign_data_set_elt(&output," return-type-code ",aux);")
+      (wt-nl "return output;"))
+    (wt-nl-close-brace)))

@@ -1,5 +1,3 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil -*-
-;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;; @configure_input@
 
@@ -13,42 +11,51 @@
     "src:cmp;cmpform.lsp"
     "src:cmp;cmptables.lsp"
     "src:cmp;cmpinline.lsp"
+    ;; Types
     "src:cmp;cmptype-arith.lsp"
     "src:cmp;cmptype-prop.lsp"
     "src:cmp;cmptype.lsp"
     "src:cmp;cmptype-assert.lsp"
+    ;; Environment
     "src:cmp;cmpenv-api.lsp"
     "src:cmp;cmpenv-fun.lsp"
     "src:cmp;cmpenv-declare.lsp"
     "src:cmp;cmpenv-proclaim.lsp"
     "src:cmp;cmpenv-declaim.lsp"
+    "src:cmp;cmppolicy.lsp"
+    ;; Abstract C machine
     "src:cmp;cmpc-machine.lsp"
     "src:cmp;cmpc-wt.lsp"
     "src:cmp;cmpc-inliner.lsp"
-    "src:cmp;cmpbind.lsp"
-    "src:cmp;cmpblock.lsp"
-    "src:cmp;cmpcall.lsp"
-    "src:cmp;cmpcatch.lsp"
-    "src:cmp;cmppolicy.lsp"
-    "src:cmp;cmpeval.lsp"
-    "src:cmp;cmpexit.lsp"
-    "src:cmp;cmpflet.lsp"
-    "src:cmp;cmpfun.lsp"
-    "src:cmp;cmpif.lsp"
-    "src:cmp;cmplam.lsp"
-    "src:cmp;cmplet.lsp"
-    "src:cmp;cmploc.lsp"
-    "src:cmp;cmpmap.lsp"
-    "src:cmp;cmpstack.lsp"
-    "src:cmp;cmpmulti.lsp"
-    "src:cmp;cmpspecial.lsp"
-    "src:cmp;cmptag.lsp"
-    "src:cmp;cmptop.lsp"
-    "src:cmp;cmpvar.lsp"
-    "src:cmp;cmpwt.lsp"
-    "src:cmp;cmpffi.lsp"
-    "src:cmp;cmpcbk.lsp"
+    ;; AST building pass
+    "src:cmp;cmppass1-data.lsp"
+    "src:cmp;cmppass1-top.lsp"
+    "src:cmp;cmppass1-stack.lsp"
+    "src:cmp;cmppass1-special.lsp"
+    "src:cmp;cmppass1-cont.lsp"
+    "src:cmp;cmppass1-eval.lsp"
+    "src:cmp;cmppass1-call.lsp"
+    "src:cmp;cmppass1-var.lsp"
+    "src:cmp;cmppass1-fun.lsp"
+    "src:cmp;cmppass1-ffi.lsp"
+    ;; Type propagation pass
+    "src:cmp;cmpprop.lsp"
+    ;; Code generation pass
+    "src:cmp;cmppass2-data.lsp"
+    "src:cmp;cmppass2-top.lsp"
+    "src:cmp;cmppass2-stack.lsp"
+    "src:cmp;cmppass2-special.lsp"
+    "src:cmp;cmppass2-exit.lsp"
+    "src:cmp;cmppass2-cont.lsp"
+    "src:cmp;cmppass2-eval.lsp"
+    "src:cmp;cmppass2-call.lsp"
+    "src:cmp;cmppass2-var.lsp"
+    "src:cmp;cmppass2-loc.lsp"
+    "src:cmp;cmppass2-fun.lsp"
+    "src:cmp;cmppass2-ffi.lsp"
+    ;; Optimizations
     "src:cmp;cmpct.lsp"
+    "src:cmp;cmpmap.lsp"
     "src:cmp;cmpnum.lsp"
     "src:cmp;cmpname.lsp"
     "src:cmp;cmpopt.lsp"
@@ -59,15 +66,15 @@
     "src:cmp;cmpopt-printer.lsp"
     "src:cmp;cmpopt-sequence.lsp"
     "src:cmp;cmpopt-type.lsp"
-    "src:cmp;cmpprop.lsp"
     "src:cmp;cmpclos.lsp"
     "src:cmp;cmpstructures.lsp"
     "src:cmp;cmparray.lsp"
+    "src:cmp;sysfun.lsp"
+    ;; Other
     "src:cmp;cmpos-run.lsp"
     "src:cmp;cmpos-features.lsp"
     "src:cmp;cmpmain.lsp"
-    "src:cmp;proclamations.lsp"
-    "src:cmp;sysfun.lsp"))
+    "src:cmp;proclamations.lsp"))
 
 (let ((si::*keep-documentation* nil))
   (mapc #'(lambda (x) (load x :verbose t)) +cmp-module-files+))

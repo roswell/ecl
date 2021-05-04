@@ -15,16 +15,17 @@
 
 (in-package "COMPILER")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; TYPE PROPAGATION LOOP
-;;;
-
 (eval-when (:execute :compile-toplevel)
   (defparameter *type-propagation-messages* nil)
   (defmacro prop-message (string &rest args)
     (when *type-propagation-messages*
       `(format *standard-output* ,string ,@args))))
+
+(defun p1ordinary (c1form assumptions form)
+  (p1propagate form assumptions))
+
+(defun p1fset (c1form assumptions fun fname macro pprint c1forms)
+  (p1propagate (fun-lambda fun) assumptions))
 
 (defun p1propagate (form assumptions)
   (unless form
@@ -46,10 +47,10 @@
           (prop-message "~&;;; Propagating ~A gives type ~A" name
                         new-type)
           (return-from p1propagate
-             (values (setf (c1form-type form)
-                           (values-type-and (c1form-type form)
-                                            new-type))
-                     assumptions))))))
+            (values (setf (c1form-type form)
+                          (values-type-and (c1form-type form)
+                                           new-type))
+                    assumptions))))))
   (cmpnote "Refusing to propagate ~A" form)
   (values (c1form-type form) assumptions))
 

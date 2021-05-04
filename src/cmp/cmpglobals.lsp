@@ -36,6 +36,8 @@
   "Depth at which inlining of functions stops.")
 (defvar *inline-information* nil)
 
+(defvar *emitted-local-funs* nil)
+
 ;;; --cmputil.lsp--
 ;;;
 ;;; Variables and constants for error handling
@@ -253,7 +255,8 @@ lines are inserted, but the order is preserved")
 (defvar *setf-definitions* nil)         ; C forms to find out (SETF fname) locations
 
 (defvar *optimizable-constants* nil)    ; (value . c1form) pairs for inlining constants
-(defvar *use-static-constants-p*        ; T/NIL flag to determine whether one may
+
+(defvar *use-static-constants-p*    ; T/NIL flag to determine whether one may
   #+ecl-min t #-ecl-min nil)            ; generate lisp constant values as C structs
 (defvar *static-constants* nil)         ; constants that can be built as C values
                                         ; holds { ( object c-variable constant ) }*

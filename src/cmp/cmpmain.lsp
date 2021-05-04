@@ -676,7 +676,6 @@ compiled successfully, returns the pathname of the compiled file"
           (setf (car ext:*source-location*) *compile-file-pathname*))
         (compiler-pass1 stream source-offset))
 
-      (cmpprogress "~&;;; End of Pass 1.")
       (setf init-name (compute-init-name output-file :kind
                                          (if system-p :object :fasl)))
       (compiler-pass2 c-pathname h-pathname data-pathname init-name
@@ -793,9 +792,7 @@ after compilation."
 
     (with-compiler-env (compiler-conditions)
       (setf form (set-closure-env form lexenv *cmp-env-root*))
-      (print-compiler-info)
       (compiler-pass1 form)
-      (cmpprogress "~&;;; End of Pass 1.")
       (let (#+(or mingw32 msvc cygwin)(*self-destructing-fasl* t))
         (compiler-pass2 c-pathname h-pathname data-pathname init-name
                         :input-designator (let* ((*print-circle* t)
