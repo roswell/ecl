@@ -1,28 +1,31 @@
-(load "./load-names.lisp")
-
 (declaim (optimize (debug 0) (speed 3)))
 
 (setf *print-circle* t)
 
 (defun compute-pairs (data table)
+  ;; Compute the frequency of consecutive pairs of words and store
+  ;; them in table.
   (clrhash table)
   (loop with max = 0
      with max-pair = nil
      for (code name . l) in data
      do (loop for l2 on l
-           for a = (car l2)
-           for b = (cadr l2)
+           for a = (first l2)
+           for b = (second l2)
            while b
            do (let* ((pair (cons a b))
-                     (c (gethash pair table)))
+                     (freq (gethash pair table)))
                 (setf (gethash pair table)
-                      (setf c (if c (1+ c) 1))
+                      (setf freq (if freq (1+ freq) 1))
                       a b)
-                (when (> c max)
-                  (setf max c max-pair pair))))
+                (when (> freq max)
+                  (setf max freq max-pair pair))))
      finally (return (cons max max-pair))))
 
 (defun replace-pair (pair code data)
+  ;; For all characters in data, replace the pair representing two
+  ;; consecutive words by code (which is a single integer).
+  ;; Returns the total number of pairs left.
   (let ((old-a (car pair))
         (old-b (cdr pair)))
     (loop with more = 0
@@ -32,14 +35,17 @@
              for b = (second l2)
              while b
              do (when (and (eql a old-a) (eql b old-b))
-                  ;; replace (a b . c) with (pair . c)
+                  ;; replace (a b . rest) with (code . rest)
                   (setf (car l2) code
                         (cdr l2) (cddr l2)))
              do (setf l2 (cdr l2)))
-       do (setf more (+ more (1- (length l))))
+          (incf more (1- (length l)))
        finally (return more))))
 
 (defun compress (data)
+  ;; Compress data by replacing the pair of consecutive words with
+  ;; maximum frequency with a new code until no pairs with frequency >
+  ;; 1 are left.
   (loop with last-length = 0
      with table = (make-hash-table :size 2048 :test #'equal)
      with pairs = '()
