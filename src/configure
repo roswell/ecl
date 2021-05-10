@@ -10093,7 +10093,7 @@ $as_echo "#define ECL_UNICODE 21" >>confdefs.h
 
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
-      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o unicode/ucd-0112.o unicode/ucd-0128.o unicode/ucd-0144.o"
    fi
 
 $as_echo "#define ECL_UNICODE_NAMES 1" >>confdefs.h
