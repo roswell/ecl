@@ -239,24 +239,29 @@
         (remove child (class-direct-subclasses parent))))
 
 (defun check-direct-superclasses (class supplied-superclasses)
-  (if supplied-superclasses
-      (loop for superclass in supplied-superclasses
-         ;; Until we process streams.lsp there are some invalid combinations
-         ;; using built-in-class, which here we simply ignore.
-         unless (or (validate-superclass class superclass)
-                    (not (eq *clos-booted* T)))
-         do (error "Class ~A is not a valid superclass for ~A" superclass class))
-      (setf supplied-superclasses
-            (list (find-class (typecase class
-                                (STANDARD-CLASS 'STANDARD-OBJECT)
-                                (STRUCTURE-CLASS 'STRUCTURE-OBJECT)
-                                (FUNCALLABLE-STANDARD-CLASS 'FUNCALLABLE-STANDARD-OBJECT)
-                                (otherwise (error "No :DIRECT-SUPERCLASS ~
-argument was supplied for metaclass ~S." (class-of class))))))))
-  ;; FIXME!!! Here should come the invocation of VALIDATE-SUPERCLASS!
-  ;; FIXME!!! We should check that structures and standard objects are
-  ;; not mixed, and that STANDARD-CLASS, or STANDARD-GENERIC-FUNCTION,
-  ;; etc, are the first classes.
+  (unless supplied-superclasses
+    (setf supplied-superclasses
+          (typecase class
+            (standard-class
+             (list (find-class 'standard-object)))
+            (structure-class
+             (list (find-class 'structure-object)))
+            (funcallable-standard-class
+             (list (find-class 'funcallable-standard-object)))
+            (forward-referenced-class
+             nil)
+            (otherwise
+             (error "No :DIRECT-SUPERCLASS argument was supplied for the ~
+                     metaclass ~S." (class-of class))))))
+  ;; Until we process streams.lsp there are some invalid combinations using
+  ;; built-in-class, which here we simply ignore.
+  (when (eq *clos-booted* T)
+    (loop for superclass in supplied-superclasses
+          unless (validate-superclass class superclass)
+            do (error "Class ~A is not a valid superclass for ~A" superclass class)))
+  ;; FIXME!!! We should check that structures and standard objects are not
+  ;; mixed, and that STANDARD-CLASS, or STANDARD-GENERIC-FUNCTION, etc, are
+  ;; the first classes.
   supplied-superclasses)
 
 (defmethod validate-superclass ((class class) (superclass class))

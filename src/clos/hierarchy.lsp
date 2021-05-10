@@ -59,7 +59,7 @@
   (defparameter +class-slots+
     `(,@+specializer-slots+
       (name :initarg :name :initform nil :accessor class-id)
-      (direct-superclasses :initarg :direct-superclasses
+      (direct-superclasses :initarg :direct-superclasses :initform nil
        :accessor class-direct-superclasses)
       (direct-subclasses :initform nil :accessor class-direct-subclasses)
       (slots :accessor class-slots)
