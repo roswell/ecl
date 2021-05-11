@@ -3,19 +3,10 @@
 
 (defconstant +cmp-module-files+
   '("src:cmp;cmppackage.lsp"
-    "src:cmp;cmptypes.lsp"
     "src:cmp;cmpglobals.lsp"
     "build:cmp;cmpdefs.lsp"
     "src:cmp;cmpmac.lsp"
     "src:cmp;cmputil.lsp"
-    "src:cmp;cmpform.lsp"
-    "src:cmp;cmptables.lsp"
-    "src:cmp;cmpinline.lsp"
-    ;; Types
-    "src:cmp;cmptype-arith.lsp"
-    "src:cmp;cmptype-prop.lsp"
-    "src:cmp;cmptype.lsp"
-    "src:cmp;cmptype-assert.lsp"
     ;; Environment
     "src:cmp;cmpenv-api.lsp"
     "src:cmp;cmpenv-fun.lsp"
@@ -23,6 +14,18 @@
     "src:cmp;cmpenv-proclaim.lsp"
     "src:cmp;cmpenv-declaim.lsp"
     "src:cmp;cmppolicy.lsp"
+    ;; Internal representation
+    "src:cmp;cmptypes.lsp"
+    "src:cmp;cmpform.lsp"
+    "src:cmp;cmpvar.lsp"
+    "src:cmp;cmpfun.lsp"
+    "src:cmp;cmptables.lsp"
+    "src:cmp;cmpinline.lsp"
+    ;; Types
+    "src:cmp;cmptype-arith.lsp"
+    "src:cmp;cmptype-prop.lsp"
+    "src:cmp;cmptype.lsp"
+    "src:cmp;cmptype-assert.lsp"
     ;; Abstract C machine
     "src:cmp;cmpc-machine.lsp"
     "src:cmp;cmpc-wt.lsp"
