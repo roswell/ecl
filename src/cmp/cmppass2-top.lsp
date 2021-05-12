@@ -117,8 +117,7 @@
   (wt-nl-h "}")
   (wt-nl-h "#endif")
 
-  (when (and (listp *static-constants*)
-             (setf *static-constants* (nreverse *static-constants*)))
+  (unless (null *static-constants*)
     (wt-nl-h "/*")
     (wt-nl-h " * Statically defined constants")
     (wt-nl-h " */")
