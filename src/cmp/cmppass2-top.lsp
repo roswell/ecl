@@ -33,7 +33,6 @@
                         &aux def top-output-string
                         (*volatile* "volatile "))
 
-  (setq *top-level-forms* (nreverse *top-level-forms*))
   (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
 
   ;; VV might be needed by functions in CLINES.
@@ -91,19 +90,7 @@
 
     (wt-nl "ECL_DEFINE_SETF_FUNCTIONS")
 
-    ;; Type propagation phase
-
-    (when *do-type-propagation*
-      (setq *compiler-phase* 'p1propagate)
-      (dolist (form *top-level-forms*)
-        (when form
-          (p1propagate form nil)))
-      (dolist (fun *local-funs*)
-        (p1propagate (fun-lambda fun) nil)))
-
-    (setq *compiler-phase* 't2)
-
-    (loop for form in (nconc (reverse *make-forms*) *top-level-forms*)
+    (loop for form in (nconc *make-forms* *top-level-forms*)
        do (emit-toplevel-form form c-output-file))
     (wt-nl-close-many-braces 0)
     (setq top-output-string (get-output-stream-string *compiler-output1*)))

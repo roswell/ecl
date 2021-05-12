@@ -15,7 +15,7 @@
 
 (in-package "COMPILER")
 
-(eval-when (:execute :compile-toplevel)
+(eval-when (:execute :load-toplevel :compile-toplevel)
   (defparameter *type-propagation-messages* nil)
   (defmacro prop-message (string &rest args)
     (when *type-propagation-messages*
@@ -31,21 +31,19 @@
   (unless form
     (return-from p1propagate (values 'null assumptions)))
   (when (c1form-p form)
-    (let* ((*cmp-env* (c1form-env form))
-           (*compile-file-pathname* (c1form-file form))
-           (*compile-file-position* (c1form-file-position form))
-           (*current-form* (c1form-form form))
-           (*current-toplevel-form* (c1form-toplevel-form form))
-           (name (c1form-name form))
-           (propagator (gethash name *p1-dispatch-table*)))
-      (when propagator
+    (let ((*cmp-env* (c1form-env form))
+          (*compile-file-pathname* (c1form-file form))
+          (*compile-file-position* (c1form-file-position form))
+          (*current-form* (c1form-form form))
+          (*current-toplevel-form* (c1form-toplevel-form form))
+          (name (c1form-name form)))
+      (when-let ((propagator (gethash name *p1-dispatch-table*)))
         (prop-message "~&;;; Entering type propagation for ~A" name)
         (multiple-value-bind (new-type assumptions)
             (apply propagator form assumptions (c1form-args form))
           (when assumptions
             (baboon :format-control "Non-empty assumptions found in P1PROPAGATE"))
-          (prop-message "~&;;; Propagating ~A gives type ~A" name
-                        new-type)
+          (prop-message "~&;;; Propagating ~A gives type ~A" name new-type)
           (return-from p1propagate
             (values (setf (c1form-type form)
                           (values-type-and (c1form-type form)
