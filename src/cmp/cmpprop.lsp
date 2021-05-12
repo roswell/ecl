@@ -25,7 +25,7 @@
   (p1propagate form assumptions))
 
 (defun p1fset (c1form assumptions fun fname macro pprint c1forms)
-  (p1propagate (fun-lambda fun) assumptions))
+  (values 'function assumptions))
 
 (defun p1propagate (form assumptions)
   (unless form
