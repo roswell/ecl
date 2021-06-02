@@ -1233,6 +1233,7 @@ cl_symbols[] = {
 {SYS_ "RMDIR" ECL_FUN("si_rmdir", si_rmdir, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {EXT_ "MAKE-PIPE" ECL_FUN("si_make_pipe", si_make_pipe, 0) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 /* package extensions */
+{EXT_ "*ED-FUNCTIONS*" ECL_FUN(NULL, NULL, -1) ECL_VAR(EXT_SPECIAL, OBJNULL)},
 {SYS_ "*IGNORE-PACKAGE-LOCKS*" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_SPECIAL, ECL_NIL)},
 {EXT_ "PACKAGE-LOCK" ECL_FUN("si_package_lock", si_package_lock, 2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 {EXT_ "PACKAGE-LOCKED-P" ECL_FUN("si_package_locked_p", si_package_locked_p, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
