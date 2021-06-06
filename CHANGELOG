@@ -28,6 +28,8 @@
     parameter given to configure script).
 
 * Pending changes since 21.2.1
+** Enhancements
+- Add hook functions for cl:ed via ext:*ed-functions* list
 * 21.2.1 changes since 20.4.24
 ** Announcement
 Dear Community,
