@@ -212,6 +212,9 @@ that the compiler may include them at link time.
 @item
 Every function you will use has to be declared using
 @coderef{ffi:def-function}.
+@item
+In the cases of headers not used by ECL, a header to include might need
+to be specified using @coderef{ffi:clines}.
 @end itemize
 
 @lisp
@@ -221,11 +224,11 @@ Build and load this module with (compile-file "uffi.lsp" :load t)
 ;;
 ;; This toplevel statement notifies the compiler that we will
 ;; need this shared library at runtime. We do not need this
-;; statement in windows.
+;; statement in windows or modern macOS.
+;; The actually needed path to libm might be different on different systems.
 ;;
-#-(or ming32 windows)
-(ffi:load-foreign-library #+darwin "/usr/lib/libm.dylib"
-			  #-darwin "/usr/lib/libm.so")
+#-(or ming32 windows darwin)
+(ffi:load-foreign-library "/usr/lib/libm.so")
 ;;
 ;; With this other statement, we import the C function sin(),
 ;; which operates on IEEE doubles.
@@ -257,11 +260,10 @@ Build and load this module with (compile-file "cffi.lsp" :load t)
 ;;
 ;; This toplevel statement notifies the compiler that we will
 ;; need this shared library at runtime. We do not need this
-;; statement in windows.
+;; statement in windows or macOS.
 ;;
-#-(or ming32 windows)
-(cffi:load-foreign-library #+darwin "/usr/lib/libm.dylib"
-			   #-darwin "/usr/lib/libm.so")
+#-(or ming32 windows darwin)
+(cffi:load-foreign-library "/usr/lib/libm.so")
 ;;
 ;; With this other statement, we import the C function sin(),
 ;; which operates on IEEE doubles.
