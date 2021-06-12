@@ -1135,6 +1135,7 @@ standard_finalizer(cl_object o)
   case t_symbol: {
     ecl_atomic_push(&cl_core.reused_indices,
                     ecl_make_fixnum(o->symbol.binding));
+    o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
   }
 #endif /* ECL_THREADS */
   default:;
@@ -1145,12 +1146,62 @@ static void
 wrapped_finalizer(cl_object o, cl_object finalizer);
 
 static void
+register_finalizer(cl_object o, void *finalized_object,
+                   GC_finalization_proc fn, void *cd,
+                   GC_finalization_proc *ofn, void **ocd)
+{
+  /* Finalizers for some builtin objects are only run when the object is not
+   * reachable by any means, including through other finalizers which might
+   * make the object reachable again. The objects must not contain any cyclic
+   * references for which finalizers are registered.
+   *
+   * We don't use this type of finalizer for user-defined finalizers, because
+   * those might contain cyclic references which would prevent the objects
+   * from being garbage collected. It is instead the duty of the user to write
+   * the finalizers in a consistent way.
+   *
+   * case t_symbol: is not finalized with the "unreachable" finalizer because
+   * it might contain cyclic references; Also running the finalizer too early
+   * doesn't lead to any problems, we will simply choose a new binding index
+   * the next time a binding is established. */
+  switch (o->d.t) {
+#ifdef ENABLE_DLOPEN
+  case t_codeblock:
+#endif
+  case t_stream:
+#if defined(ECL_THREADS) && defined(ECL_RWLOCK)
+  case t_rwlock:
+#endif
+    /* Don't delete the standard finalizer. */
+    if (fn == NULL) {
+      fn = (GC_finalization_proc)wrapped_finalizer;
+      cd = ECL_T;
+    }
+    GC_REGISTER_FINALIZER_UNREACHABLE(finalized_object, fn, cd, ofn, ocd);
+    break;
+  case t_weak_pointer:
+#if defined(ECL_THREADS)
+  case t_symbol:
+#endif
+    /* Don't delete the standard finalizer. */
+    if (fn == NULL) {
+      fn = (GC_finalization_proc)wrapped_finalizer;
+      cd = ECL_T;
+    }
+    /* fallthrough */
+  default:
+    GC_REGISTER_FINALIZER_NO_ORDER(finalized_object, fn, cd, ofn, ocd);
+    break;
+  }
+}
+
+static void
 deferred_finalizer(cl_object* x)
 {
   wrapped_finalizer(x[0], x[1]);
 }
 
-void
+static void
 wrapped_finalizer(cl_object o, cl_object finalizer)
 {
   if (finalizer != ECL_NIL && finalizer != NULL) {
@@ -1178,9 +1229,10 @@ wrapped_finalizer(cl_object o, cl_object finalizer)
        cl_object* wrapper = GC_MALLOC(2*sizeof(cl_object));
        wrapper[0] = o;
        wrapper[1] = finalizer;
-       GC_REGISTER_FINALIZER_NO_ORDER(wrapper,
-                                      (GC_finalization_proc)deferred_finalizer, 0,
-                                      &ofn, &odata);
+
+       register_finalizer(o, wrapper,
+                          (GC_finalization_proc)deferred_finalizer, 0,
+                          &ofn, &odata);
        return;
     }
 #endif /* ECL_THREADS */
@@ -1201,7 +1253,7 @@ si_get_finalizer(cl_object o)
   GC_finalization_proc ofn;
   void *odata;
   ecl_disable_interrupts_env(the_env);
-  GC_REGISTER_FINALIZER_NO_ORDER(o, (GC_finalization_proc)0, 0, &ofn, &odata);
+  register_finalizer(o, o, (GC_finalization_proc)0, 0, &ofn, &odata);
   if (ofn == 0) {
     output = ECL_NIL;
   } else if (ofn == (GC_finalization_proc)wrapped_finalizer) {
@@ -1209,7 +1261,7 @@ si_get_finalizer(cl_object o)
   } else {
     output = ECL_NIL;
   }
-  GC_REGISTER_FINALIZER_NO_ORDER(o, ofn, odata, &ofn, &odata);
+  register_finalizer(o, o, ofn, odata, &ofn, &odata);
   ecl_enable_interrupts_env(the_env);
   @(return output);
 }
@@ -1220,13 +1272,11 @@ ecl_set_finalizer_unprotected(cl_object o, cl_object finalizer)
   GC_finalization_proc ofn;
   void *odata;
   if (finalizer == ECL_NIL) {
-    GC_REGISTER_FINALIZER_NO_ORDER(o, (GC_finalization_proc)0,
-                                   0, &ofn, &odata);
+    register_finalizer(o, o, (GC_finalization_proc)0, 0, &ofn, &odata);
   } else {
     GC_finalization_proc newfn;
     newfn = (GC_finalization_proc)wrapped_finalizer;
-    GC_REGISTER_FINALIZER_NO_ORDER(o, newfn, finalizer,
-                                   &ofn, &odata);
+    register_finalizer(o, o, newfn, finalizer, &ofn, &odata);
   }
 }
 

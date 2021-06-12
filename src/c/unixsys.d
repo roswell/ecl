@@ -214,15 +214,6 @@ si_killpid(cl_object pid, cl_object signal) {
 #endif
 
 #if defined(ECL_MS_WINDOWS_HOST)
-cl_object
-si_close_windows_handle(cl_object h)
-{
-  if (ecl_t_of(h) == t_foreign) {
-    HANDLE *ph = (HANDLE*)h->foreign.data;
-    if (ph) CloseHandle(*ph);
-  }
-}
-
 static cl_object
 make_windows_handle(HANDLE h)
 {
@@ -230,7 +221,6 @@ make_windows_handle(HANDLE h)
                                                 sizeof(HANDLE*));
   HANDLE *ph = (HANDLE*)foreign->foreign.data;
   *ph = h;
-  si_set_finalizer(foreign, @'si::close-windows-handle');
   return foreign;
 }
 #endif
