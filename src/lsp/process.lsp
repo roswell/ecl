@@ -98,6 +98,9 @@
 ;;; We don't handle `sigchld' because we don't want races with
 ;;; `external-process-wait'. Take care of forgotten processes.
 (defun finalize-external-process (process)
+  ;; INV: this finalizer also closes the process handle on windows
+  ;; since external-process-wait calls si:waitpid which closes the
+  ;; handle once the process has exited.
   (unless (member (ext:external-process-wait process nil)
                   '(:exited :signaled :abort :error))
     (ext:set-finalizer process #'finalize-external-process)))
