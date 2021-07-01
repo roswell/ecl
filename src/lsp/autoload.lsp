@@ -46,12 +46,44 @@ Gives a global declaration.  See DECLARE for possible DECL-SPECs."
 
 ;;; Editor.
 
-(defun ed (&optional filename)
-  "Args: (&optional filename)
-Invokes the editor.  The action depends on the version of ECL.  See the ECL
-Report for details."
-  (ext:system (format nil "~S ~A" (or (si::getenv "EDITOR") "vi") filename)))
+;;; Default editor hook which calls external program defined by the EDITOR
+;;; environment variable or vi if that is not defined.
+(declaim (ftype (function (t) boolean) ed-external))
+(defun ed-external (x)
+  (when (typep x '(or null pathname string))
+    (run-program (or (getenv "EDITOR") "vi") (and x (list x)))
+    t))
 
+;;; Copied mostly from SBCL
+(declaim (type list *ed-functions*))
+(defvar *ed-functions* (list #'ed-external)
+  "See function documentation for ED.")
+
+(defun ed (&optional x)
+  "Starts the editor (on a file or an object if named).  Functions from the
+list EXT:*ED-FUNCTIONS* are called in order with X as an argument until one
+of them returns non-NIL; these functions are responsible for signalling a
+FILE-ERROR to indicate failure to perform an operation on the file system.
+If no function returns a non-NIL value or EXT:*ED-FUNCTIONS* is NIL then a
+SIMPLE-ERROR will be signalled.
+
+The Common Lisp specification states that the X argument is either NIL, a
+function name, or an instance of STRING or PATHNAME and that a TYPE-ERROR
+may be signalled if is not one of these types. ECL does not check the type
+of X and thus permits any object to be passed to the hook functions. This
+allows for the possibility of editing other objects that have a
+representation in source code such as class definitions. Therefore, the
+hook functions should not make any assumptions about the type of X and
+should instead return NIL if there is not an approriate edit method for a
+specific value of X.
+
+By default EXT:*ED-FUNCTIONS* contains a single function that attempts to
+run the program named in the environment variable EDITOR. If this
+environment variable is not set then the fallback program is vi."
+  (dolist (fun *ed-functions*
+           (error "Do not know how to ED ~a." x))
+    (when (funcall fun x)
+      (return t))))
 
 ;;; Allocator.
 
