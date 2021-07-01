@@ -378,3 +378,20 @@
       (setf stream-var inner-stream-var)
       (is (open-stream-p stream-var)))
     (is (not (open-stream-p stream-var)))))
+
+;;;; Author:   Tarn W. Burton
+;;;; Created:  2021-06-05
+;;;; Contains: *ed-functions* tests
+(test mix.0020.ed-functions
+  (let ((ext:*ed-functions* (list (lambda (x)
+                                    (equal x "foo"))
+                                  (lambda (x)
+                                    (equal x "bar"))
+                                  (lambda (x)
+                                    (when (equal x "baz")
+                                      (error 'file-error :pathname x))))))
+    (is (ed "foo"))
+    (is (ed "bar"))
+    (signals simple-error (ed "qux"))
+    (signals file-error (ed "baz"))))
+
