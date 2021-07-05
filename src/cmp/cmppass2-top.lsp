@@ -1,101 +1,18 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
-;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
+(in-package #:compiler)
 
-;;;;
+
 ;;;;  CMPTOP  --  Compiler top-level.
-
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
-;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
-
-(in-package "COMPILER")
-
-(defun t1expr (form)
-  (let* ((*current-toplevel-form* nil)
-         (*cmp-env* (if *cmp-env*
-                        (cmp-env-copy *cmp-env*)
-                        (cmp-env-root))))
-    (push (t1expr* form) *top-level-forms*)))
-
-(defvar *toplevel-forms-to-print*
-  '(defun defmacro defvar defparameter defclass defmethod defgeneric))
-
-(defun t1expr* (form &aux
-                     (*current-toplevel-form* (list* form *current-toplevel-form*))
-                     (*current-form* form)
-                     (*first-error* t)
-                     (*setjmps* 0))
-  (setq form (chk-symbol-macrolet form))
-  (when (consp form)
-    (let ((fun (car form)) (args (cdr form)) fd)
-      (when (member fun *toplevel-forms-to-print*)
-        (print-current-form))
-      (cond
-        ((consp fun) (t1ordinary form))
-        ((not (symbolp fun))
-         (cmperr "~s is illegal function." fun))
-        ((eq fun 'QUOTE)
-         (t1ordinary 'NIL))
-        ((setq fd (gethash fun *t1-dispatch-table*))
-         (funcall fd args))
-        ((gethash fun *c1-dispatch-table*)
-         (t1ordinary form))
-        ((and (setq fd (compiler-macro-function fun))
-              (inline-possible fun)
-              (let ((success nil))
-                (multiple-value-setq (fd success)
-                  (cmp-expand-macro fd form))
-                success))
-         (when *compile-time-too*
-           ;; Ignore compiler macros during compile time evaluation
-           ;; (they may expand in ffi:c-inline which the bytecodes
-           ;; compiler can't execute).
-           (cmp-eval form))
-         (let ((*compile-time-too* nil))
-           (push 'macroexpand *current-toplevel-form*)
-           (t1expr* fd)))
-        ((setq fd (cmp-macro-function fun))
-         (push 'macroexpand *current-toplevel-form*)
-         (t1expr* (cmp-expand-macro fd form)))
-        (t (t1ordinary form))))))
-
-(defun t1/c1expr (form)
-  (cond ((not *compile-toplevel*)
-         (c1expr form))
-        ((atom form)
-         (t1ordinary form))
-        (t
-         (t1expr* form))))
 
 (defun t2expr (form)
   (when form
-    (let* ((def (gethash (c1form-name form) *t2-dispatch-table*)))
-      (if def
-          (let ((*compile-file-truename* (c1form-file form))
-                (*compile-file-position* (c1form-file-position form))
-                (*current-toplevel-form* (c1form-form form))
-                (*current-form* (c1form-form form))
-                (*cmp-env* (c1form-env form)))
-            (apply def form (c1form-args form)))
-          (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A"
-                  form)))))
-
-(defvar *emitted-local-funs* nil)
-
-#+nil
-(defun emit-local-funs ()
-  ;; Local functions and closure functions
-  (do ()
-      ((eq *local-funs* *emitted-local-funs*))
-    (let ((to-be-emitted (ldiff *local-funs* *emitted-local-funs*)))
-      (setf *emitted-local-funs* *local-funs*)
-      (mapc #'t3local-fun (nreverse to-be-emitted)))))
+    (if-let ((def (gethash (c1form-name form) *t2-dispatch-table*)))
+      (let ((*compile-file-truename* (c1form-file form))
+            (*compile-file-position* (c1form-file-position form))
+            (*current-toplevel-form* (c1form-form form))
+            (*current-form* (c1form-form form))
+            (*cmp-env* (c1form-env form)))
+        (apply def form (c1form-args form)))
+      (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A" form))))
 
 (defun emit-local-funs ()
   (declare (si::c-local))
@@ -112,12 +29,10 @@
            ;; so disassemble can redefine it
            (t3local-fun (first lfs)))))))
 
-;;; XXX: referenced in main
 (defun ctop-write (name h-pathname data-pathname
                         &aux def top-output-string
                         (*volatile* "volatile "))
 
-  (setq *top-level-forms* (nreverse *top-level-forms*))
   (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
 
   ;; VV might be needed by functions in CLINES.
@@ -175,19 +90,7 @@
 
     (wt-nl "ECL_DEFINE_SETF_FUNCTIONS")
 
-    ;; Type propagation phase
-
-    (when *do-type-propagation*
-      (setq *compiler-phase* 'p1propagate)
-      (dolist (form *top-level-forms*)
-        (when form
-          (p1propagate form nil)))
-      (dolist (fun *local-funs*)
-        (p1propagate (fun-lambda fun) nil)))
-
-    (setq *compiler-phase* 't2)
-
-    (loop for form in (nconc (reverse *make-forms*) *top-level-forms*)
+    (loop for form in (nconc *make-forms* *top-level-forms*)
        do (emit-toplevel-form form c-output-file))
     (wt-nl-close-many-braces 0)
     (setq top-output-string (get-output-stream-string *compiler-output1*)))
@@ -214,8 +117,7 @@
   (wt-nl-h "}")
   (wt-nl-h "#endif")
 
-  (when (and (listp *static-constants*)
-             (setf *static-constants* (nreverse *static-constants*)))
+  (unless (null *static-constants*)
     (wt-nl-h "/*")
     (wt-nl-h " * Statically defined constants")
     (wt-nl-h " */")
@@ -268,32 +170,6 @@
     (let ((*compiler-output1* c-output-file))
       (emit-local-funs))))
 
-(defun c1eval-when (args)
-  (check-args-number 'EVAL-WHEN args 1)
-  (let ((load-flag nil)
-        (compile-flag nil)
-        (execute-flag nil))
-    (dolist (situation (car args))
-      (case situation
-        ((CL:LOAD :LOAD-TOPLEVEL) (setq load-flag t))
-        ((CL:COMPILE :COMPILE-TOPLEVEL) (setq compile-flag t))
-        ((CL:EVAL :EXECUTE)
-         (if *compile-toplevel*
-             (setq compile-flag (or *compile-time-too* compile-flag))
-             (setq execute-flag t)))
-        (otherwise (cmperr "The EVAL-WHEN situation ~s is illegal."
-                           situation))))
-    (cond ((not *compile-toplevel*)
-           (c1progn (and execute-flag (rest args))))
-          (load-flag
-           (let ((*compile-time-too* compile-flag))
-             (c1progn (rest args))))
-          (compile-flag
-           (cmp-eval (cons 'PROGN (rest args)))
-           (c1progn 'NIL))
-          (t
-           (c1progn 'NIL)))))
-
 (defun t2compiler-let (c1form symbols values body)
   (declare (ignore c1form))
   (progv symbols values (c2expr body)))
@@ -301,106 +177,6 @@
 (defun t2progn (c1form args)
   (declare (ignore c1form))
   (mapc #'t2expr args))
-
-;;; used (only once) in cmp1lam.lsp
-(defun exported-fname (name)
-  (let (cname)
-    (if (and (symbolp name) (setf cname (si:get-sysprop name 'Lfun)))
-        (values cname t)
-        (values (next-cfun "L~D~A" name) nil))))
-
-;;; Mechanism for sharing code:
-;;; FIXME! Revise this 'DEFUN stuff.
-;;; used (only once) in cmp1lam.lsp
-(defun new-defun (new &optional no-entry)
-  #|
-  (unless (fun-exported new)
-    ;; Check whether this function is similar to a previous one and
-    ;; share code with it.
-    (dolist (old *global-funs*)
-      (when (similar (fun-lambda new) (fun-lambda old))
-        (cmpnote "Sharing code among functions ~A and ~A"
-                 (fun-name new) (fun-name old))
-        (setf (fun-shares-with new) old
-              (fun-cfun new) (fun-cfun old)
-              (fun-minarg new) (fun-minarg old)
-              (fun-maxarg new) (fun-maxarg old))
-        (return))))
-  |#
-  (push new *global-funs*))
-
-(defun print-function (x)
-  (format t "~%<a FUN: ~A, CLOSURE: ~A, LEVEL: ~A, ENV: ~A>"
-          (fun-name x) (fun-closure x) (fun-level x) (fun-env x)))
-
-(defmacro and! (&body body)
-  `(let ((l (list ,@body)))
-     (pprint (list* 'l? l))
-     (every #'identity l)))
-
-#|
-(defun similar (x y)
-  (let ((*processed* (make-hash-table :test #'equal)))
-    ;; FIXME! This could be more accurate
-    (labels ((similar (x y)
-               (when (eql x y)
-                 (return-from similar t))
-               (let ((pair (cons x y)))
-                 (case (gethash pair *processed* :not-found)
-                   ((nil) (return-from similar nil))
-                   ((t) (return-from similar t))
-                   ((:ongoing) (return-from similar t))
-                   ((:not-found)))
-                 (setf (gethash pair *processed*) :ongoing)
-                 (setf (gethash pair *processed*)
-                       (and (eql (type-of x) (type-of y))
-                            (typecase x
-                              (CONS (and (similar (car x) (car y))
-                                         (similar (cdr x) (cdr y))))
-                              (VAR (similar-var x y))
-                              (FUN (similar-fun x y))
-                              (REF (similar-ref x y))
-                              (TAG NIL)
-                              (BLK NIL)
-                              (C1FORM (similar-c1form x y))
-                              (SEQUENCE (and (every #'similar x y)))
-                              (T (equal x y)))))))
-             (similar-list (x y)
-               (null (set-difference x y)))
-             (similar-ref (x y)
-               (and (equal (ref-ref-ccb x) (ref-ref-ccb y))
-                    (equal (ref-ref-clb x) (ref-ref-clb y))
-                    (equal (ref-ref x) (ref-ref y))))
-             (similar-var (x y)
-               (and! (similar-ref x y)
-                    (equal (var-name x) (var-name y))
-                    (equal (var-kind x) (var-kind y))
-                    (equal (var-loc x) (var-loc y))
-                    (equal (var-type x) (var-type y))
-                    (equal (var-index x) (var-index y))))
-             (similar-c1form (x y)
-               (and (equal (c1form-name x) (c1form-name y))
-                    (similar (c1form-args x) (c1form-args y))
-                    (similar (c1form-local-vars x) (c1form-local-vars y))
-                    (eql (c1form-sp-change x) (c1form-sp-change y))
-                    (eql (c1form-volatile x) (c1form-volatile y))))
-             (similar-fun (x y)
-               (and! (similar-ref x y)
-                    (eql (fun-global x) (fun-global y))
-                    (eql (fun-exported x) (fun-exported y))
-                    (eql (fun-closure x) (fun-closure y))
-                    (similar (fun-var x) (fun-var y))
-                    (similar (fun-lambda x) (fun-lambda y))
-                    (= (fun-level x) (fun-level y))
-                    (= (fun-env x) (fun-env y))
-                    (= (fun-minarg x) (fun-minarg y))
-                    (eql (fun-maxarg x) (fun-maxarg y))
-                    (every #'similar (fun-local-vars x) (fun-local-vars y))
-                    (every #'similar (fun-referenced-vars x) (fun-referenced-vars y))
-                    (every #'similar (fun-referenced-funs x) (fun-referenced-funs y))
-                    (every #'similar (fun-child-funs x) (fun-child-funs y)))))
-      (similar x y))))
-|#
 
 (defun wt-function-locals (&optional closure-type)
   ;; FIXME! Are we careful enough with temporary variables that
@@ -432,26 +208,10 @@
 
     (wt-nl "cl_object " *volatile*)
     (loop for i from 0 below *max-env*
-       for comma = "" then ", "
-       do (wt comma "CLV" i)
-       finally (wt ";"))))
+          for comma = "" then ", "
+          do (wt comma "CLV" i)
+          finally (wt ";"))))
 
-(defun rep-type (type)
-  (case type
-    (FIXNUM "cl_fixnum ")
-    (CHARACTER "unsigned char ")
-    (SINGLE-FLOAT "float ")
-    (DOUBLE-FLOAT "double ")
-    (otherwise "cl_object ")))
-
-(defun t1ordinary (form)
-  (when *compile-time-too* (cmp-eval form))
-  (let ((*compile-toplevel* nil)
-        (*compile-time-too* nil))
-    (add-load-time-values (make-c1form* 'ORDINARY :args (c1expr form)))))
-
-(defun p1ordinary (c1form assumptions form)
-  (p1propagate form assumptions))
 
 (defun t2ordinary (c1form form)
   (declare (ignore c1form))
@@ -460,44 +220,6 @@
          (*destination* 'TRASH))
     (c2expr form)
     (wt-label *exit*)))
-
-(defun add-load-time-values (form)
-  (let ((previous (append (and (consp *load-time-values*)
-                               (nreverse *load-time-values*))
-                          (nreverse *make-forms*))))
-    (when previous
-      (setf *load-time-values* nil
-            *make-forms* nil)
-      (setf form (make-c1form* 'PROGN :args (nconc previous (list form))))))
-  form)
-
-(defun t1defmacro (args)
-  (check-args-number 'LOAD-TIME-VALUE args 2)
-  (destructuring-bind (name lambda-list &rest body)
-      args
-    (multiple-value-bind (function pprint doc-string)
-        (sys::expand-defmacro name lambda-list body)
-      (declare (ignore pprint doc-string))
-      (let ((fn (cmp-eval function *cmp-env*)))
-        (cmp-env-register-global-macro name fn))
-      (t1expr* (macroexpand `(DEFMACRO ,@args))))))
-
-(defun c1load-time-value (args)
-  (check-args-number 'LOAD-TIME-VALUE args 1 2)
-  (let ((form (first args))
-        loc)
-    (cond ((not (listp *load-time-values*))
-           ;; When using COMPILE, we set *load-time-values* to 'VALUES and
-           ;; thus signal that we do not want to compile these forms, but
-           ;; just to retain their value.
-           (return-from c1load-time-value (c1constant-value (cmp-eval form) :always t)))
-          ((typep form '(or list symbol))
-           (setf loc (data-empty-loc))
-           (push (make-c1form* 'LOAD-TIME-VALUE :args loc (c1expr form))
-                 *load-time-values*))
-          (t
-           (setf loc (add-object (cmp-eval form)))))
-    (make-c1form* 'LOCATION :type t :args loc)))
 
 (defun t2load-time-value (c1form vv-loc form)
   (declare (ignore c1form))
@@ -519,24 +241,6 @@
          (*destination* 'TRASH))
     (c2expr form)
     (wt-label *exit*)))
-
-(defun parse-cvspecs (x &aux (cvspecs nil))
-  (dolist (cvs x (nreverse cvspecs))
-    (cond ((symbolp cvs)
-           (push (list :OBJECT (string-downcase (symbol-name cvs))) cvspecs))
-          ((stringp cvs) (push (list :OBJECT cvs) cvspecs))
-          ((and (consp cvs)
-                (member (car cvs) '(OBJECT CHAR INT FLOAT DOUBLE)))
-           (dolist (name (cdr cvs))
-             (push (list (car cvs)
-                         (cond ((symbolp name)
-                                (string-downcase (symbol-name name)))
-                               ((stringp name) name)
-                               (t (cmperr "The C variable name ~s is illegal."
-                                          name))))
-                   cvspecs)))
-          (t (cmperr "The C variable specification ~s is illegal." cvs))))
-  )
 
 (defun locative-type-from-var-kind (kind)
   (cdr (assoc kind
@@ -742,104 +446,6 @@
     (wt-nl-open-brace)
     (wt " /* ... closure scanning finished */")))
 
-;;; ----------------------------------------------------------------------
-;;; Optimizer for FSET. Removes the need for a special handling of DEFUN as a
-;;; toplevel form and also allows optimizing calls to DEFUN or DEFMACRO which
-;;; are not toplevel, but which create no closures.
-;;;
-;;; The idea is as follows: when the function or macro to be defined is not a
-;;; closure, we can use the auxiliary C functions c_def_c_*() instead of
-;;; creating a closure and invoking si_fset(). However until the C2 phase of
-;;; the compiler we do not know whether a function is a closure, hence the need
-;;; for a c2fset.
-;;;
-;;; We optimize (SYS:FSET #'(LAMBDA ...) ..) and also, accidentally,
-;;; (SYS:FSET (FLET ((FOO ...)) #'FOO) ...) which is to what LAMBDA gets
-;;; translated in c1function.
-;;;
-(defun t1fset (args)
-  (let ((form `(si::fset ,@args)))
-    (when *compile-time-too*
-      (cmp-eval form))
-    (let ((*compile-toplevel* nil)
-          (*compile-time-too* nil))
-      (add-load-time-values (c1fset form)))))
-
-(defun c1fset (form)
-  (destructuring-bind (fname def &optional (macro nil) (pprint nil))
-      (rest form)
-    (let* ((*use-c-global* t)
-           (fun-form (c1expr def)))
-      (when (eq (c1form-name fun-form) 'LOCALS)
-        (let* ((function-list (c1form-arg 0 fun-form))
-               (fun-object (pop function-list))
-               (form (c1form-arg 1 fun-form))
-               (labels (c1form-arg 2 fun-form)))
-          (when (and
-                 ;; Only 1 function
-                 (null function-list)
-                 ;; Not closed over anything
-                 (every #'global-var-p (fun-referenced-vars fun-object))
-                 ;; Referencing the function variable
-                 (eq (c1form-name form) 'VAR)
-                 (eq (c1form-arg 0 form)
-                     (fun-var fun-object)))
-            (when (fun-no-entry fun-object)
-              (when macro
-                (cmperr "Declaration C-LOCAL used in macro ~a"
-                        (fun-name fun-object)))
-              (return-from c1fset
-                (make-c1form* 'SI:FSET :args fun-object nil nil nil nil)))
-            (when (and (typep macro 'boolean)
-                       (typep pprint '(or integer null))
-                       (consp fname)
-                       (eq (first fname) 'quote))
-              (return-from c1fset
-                (make-c1form* 'SI:FSET :args
-                              fun-object ;; Function object
-                              (let* ((fname (second fname))
-                                     (in-cl-symbols-p (and (symbolp fname)
-                                                           (si::mangle-name fname))))
-                                (add-object fname :permanent t
-                                            :duplicate in-cl-symbols-p
-                                            :used-p t))
-                              macro
-                              pprint
-                              ;; The c1form, when we do not optimize
-                              (list (c1expr fname)
-                                    fun-form
-                                    (c1expr macro)
-                                    (c1expr pprint)))))))))
-    (t1ordinary form)))
-
-(defun p1fset (c1form assumptions fun fname macro pprint c1forms)
-  (p1propagate (fun-lambda fun) assumptions))
-
-(defun t2fset (c1form &rest args)
-  (t2ordinary nil c1form))
-
-(defun c2fset (c1form fun fname macro pprint c1forms)
-  (when (fun-no-entry fun)
-    (wt-nl "(void)0; /* No entry created for "
-           (format nil "~A" (fun-name fun))
-           " */")
-    ;; FIXME! Look at C2LOCALS!
-    (new-local fun)
-    (return-from c2fset))
-  (unless (and (not (fun-closure fun))
-               (eq *destination* 'TRASH))
-    (return-from c2fset
-      (c2call-global c1form 'SI:FSET c1forms)))
-  (let ((*inline-blocks* 0)
-        (loc (data-empty-loc)))
-    (push (list loc fname fun) *global-cfuns-array*)
-    ;; FIXME! Look at C2LOCALS!
-    (new-local fun)
-    (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
-           loc ");")
-    (wt-comment (loc-immediate-value fname))
-    (close-inline-blocks)))
-
 (defun output-cfuns (stream)
   (let ((n-cfuns (length *global-cfuns-array*)))
     (wt-nl-h "/*")
@@ -865,3 +471,28 @@
                              (vv-location fname-loc)
                              cfun (fun-file-position fun))))
           (format stream "~%};")))))
+
+(defun t2fset (c1form &rest args)
+  (t2ordinary nil c1form))
+
+(defun c2fset (c1form fun fname macro pprint c1forms)
+  (when (fun-no-entry fun)
+    (wt-nl "(void)0; /* No entry created for "
+           (format nil "~A" (fun-name fun))
+           " */")
+    ;; FIXME! Look at C2LOCALS!
+    (new-local fun)
+    (return-from c2fset))
+  (unless (and (not (fun-closure fun))
+               (eq *destination* 'TRASH))
+    (return-from c2fset
+      (c2call-global c1form 'SI:FSET c1forms)))
+  (let ((*inline-blocks* 0)
+        (loc (data-empty-loc)))
+    (push (list loc fname fun) *global-cfuns-array*)
+    ;; FIXME! Look at C2LOCALS!
+    (new-local fun)
+    (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
+           loc ");")
+    (wt-comment (loc-immediate-value fname))
+    (close-inline-blocks)))

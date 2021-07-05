@@ -1,9 +1,8 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
-;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
-
 ;;;;
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
+;;;;  Copyright (c) 1990, Giuseppe Attardi
+;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
+;;;;  Copyright (c) 2021, Daniel Kochmański
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -11,70 +10,46 @@
 ;;;;    version 2 of the License, or (at your option) any later version.
 ;;;;
 ;;;;    See file '../Copyright' for full details.
+;;;;
 
-;;;; CMPIF  Conditionals.
+(in-package #:compiler)
 
-(in-package "COMPILER")
+(defun c2expr (form)
+  (with-c1form-env (form form)
+    (let* ((name (c1form-name form))
+           (args (c1form-args form))
+           (dispatch (gethash name *c2-dispatch-table*)))
+      (apply dispatch form args))))
 
-(defun c1if (args)
-  (check-args-number 'IF args 2 3)
-  (let ((test (c1expr (car args))))
-    ;; Resolve IF expressions with constant arguments
-    (multiple-value-bind (constant-p value)
-        (c1form-constant-p test)
-      (when constant-p
-        (return-from c1if
-          (if value (second args) (third args)))))
-    ;; Otherwise, normal IF form
-    (let* ((true-branch (c1expr (second args)))
-           (false-branch (c1expr (third args))))
-      (make-c1form* 'IF
-                    :type (values-type-or (c1form-type true-branch)
-                                          (c1form-type false-branch))
-                    :args test true-branch false-branch))))
+(defun c2expr* (form)
+  ;; C2EXPR* compiles the giving expression in a context in which
+  ;; other expressions will follow this one. We must thus create
+  ;; a possible label so that the compiled forms exit right at
+  ;; the point where the next form will be compiled.
+  (with-exit-label (label)
+    (let* ((*exit* label)
+           (*unwind-exit* (cons *exit* *unwind-exit*))
+           ;;(*lex* *lex*)
+           (*lcl* *lcl*)
+           (*temp* *temp*))
+      (c2expr form))))
 
-(defun c1not (args)
-  (check-args-number 'NOT args 1 1)
-  (let* ((value (c1expr (first args))))
-    ;; When the argument is constant, we can just return
-    ;; a constant as well.
-    (multiple-value-bind (constant-p value)
-        (c1form-constant-p value)
-      (when constant-p
-        (return-from c1not (not value))))
-    (make-c1form* 'FMLA-NOT
-                  :type '(member t nil)
-                  :args value)))
-
-(defun c1and (args)
-  ;; (AND) => T
-  (if (null args)
-      (c1t)
-      (let* ((values (c1args* args))
-             (last (first (last values)))
-             (butlast (nbutlast values)))
-        ;; (AND x) => x
-        (if butlast
-            (make-c1form* 'FMLA-AND
-                          :type (type-or 'null (c1form-primary-type last))
-                          :args butlast last)
-            last))))
-
-(defun c1or (args)
-  ;; (OR) => T
-  (if (null args)
-      (c1nil)
-      (let* ((values (c1args* args))
-             (last (first (last values)))
-             (butlast (butlast values)))
-        ;; (OR x) => x
-        (if butlast
-            (make-c1form* 'FMLA-OR
-                         :type (reduce #'type-or butlast
-                                       :key #'c1form-primary-type
-                                       :initial-value (c1form-primary-type last))
-                         :args butlast last)
-            last))))
+(defun c2progn (c1form forms)
+  (declare (ignore c1form))
+  ;; c1progn ensures that the length of forms is not less than 1.
+  (do ((l forms (cdr l))
+       (lex *lex*))
+      ((endp (cdr l))
+       (c2expr (car l)))
+    (let* ((this-form (first l))
+           (name (c1form-name this-form)))
+      (let ((*destination* 'TRASH))
+        (c2expr* (car l)))
+      (setq *lex* lex)  ; recycle lex locations
+      ;; Since PROGN does not have tags, any transfer of control means
+      ;; leaving the current PROGN statement.
+      (when (or (eq name 'GO) (eq name 'RETURN-FROM))
+        (return)))))
 
 (defun c2if (c1form fmla form1 form2)
   (declare (ignore c1form))
@@ -218,3 +193,64 @@
           (t
            (unwind-no-exit label)
            (wt-nl) (wt-go label)))))
+
+(defun c2values (c1form forms)
+  (declare (ignore c1form))
+  (when (and (eq *destination* 'RETURN-OBJECT)
+             (rest forms)
+             (consp *current-form*)
+             (eq 'DEFUN (first *current-form*)))
+    (cmpwarn "Trying to return multiple values. ~
+              ~%;But ~a was proclaimed to have single value.~
+              ~%;Only first one will be assured."
+             (second *current-form*)))
+  (cond
+   ;; When the values are not going to be used, then just
+   ;; process each form separately.
+   ((eq *destination* 'TRASH)
+    (mapc #'c2expr* forms)
+    ;; We really pass no value, but we need UNWIND-EXIT to trigger all the
+    ;; frame-pop, stack-pop and all other exit forms.
+    (unwind-exit 'VALUE0)
+    )
+   ;; For (VALUES) we can replace the output with either NIL (if the value
+   ;; is actually used) and set only NVALUES when the value is the output
+   ;; of a function.
+   ((endp forms)
+    (cond ((eq *destination* 'RETURN)
+           (wt-nl "value0 = ECL_NIL;")
+           (wt-nl "cl_env_copy->nvalues = 0;")
+           (unwind-exit 'RETURN))
+          ((eq *destination* 'VALUES)
+           (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
+           (wt-nl "cl_env_copy->nvalues = 0;")
+           (unwind-exit 'VALUES))
+          (t
+           (unwind-exit 'NIL))))
+   ;; For a single form, we must simply ensure that we only take a single
+   ;; value of those that the function may output.
+   ((endp (rest forms))
+    (let ((form (first forms)))
+      (if (or (not (member *destination* '(RETURN VALUES)))
+              (c1form-single-valued-p form))
+          (c2expr form)
+          (progn
+            (let ((*destination* 'VALUE0)) (c2expr* form))
+            (unwind-exit 'VALUE0)))))
+   ;; In all other cases, we store the values in the VALUES vector,
+   ;; and force the compiler to retrieve anything out of it.
+   (t
+    (let* ((nv (length forms))
+           (*inline-blocks* 0)
+           (*temp* *temp*)
+           (forms (nreverse (coerce-locs (inline-args forms)))))
+      ;; By inlining arguments we make sure that VL has no call to funct.
+      ;; Reverse args to avoid clobbering VALUES(0)
+      (wt-nl "cl_env_copy->nvalues = " nv ";")
+      (do ((vl forms (rest vl))
+           (i (1- (length forms)) (1- i)))
+          ((null vl))
+        (declare (fixnum i))
+        (wt-nl "cl_env_copy->values[" i "] = " (first vl) ";"))
+      (unwind-exit 'VALUES)
+      (close-inline-blocks)))))

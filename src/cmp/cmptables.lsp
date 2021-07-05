@@ -210,18 +210,18 @@
     ))
 
 (defconstant +c2-dispatch-alist+
-  '((block . c2block) ; c2
-    (return-from . c2return-from) ; c2
-    (funcall . c2funcall) ; c2
-    (call-global . c2call-global) ; c2
-    (catch . c2catch) ; c2
-    (unwind-protect . c2unwind-protect) ; c2
-    (throw . c2throw) ; c2
-    (progn . c2progn) ; c2
-    (ffi:c-inline . c2c-inline) ; c2
-    (ffi:c-progn . c2c-progn) ; c2
-    (locals . c2locals) ; c2
-    (call-local . c2call-local) ; c2
+  '((block . c2block)
+    (return-from . c2return-from)
+    (funcall . c2funcall)
+    (call-global . c2call-global)
+    (catch . c2catch)
+    (unwind-protect . c2unwind-protect)
+    (throw . c2throw)
+    (progn . c2progn)
+    (ffi:c-inline . c2c-inline)
+    (ffi:c-progn . c2c-progn)
+    (locals . c2locals)
+    (call-local . c2call-local)
 
     (if . c2if)
     (fmla-not . c2fmla-not)
@@ -230,24 +230,24 @@
 
     (let* . c2let*)
 
-    (values . c2values) ; c2
-    (multiple-value-setq . c2multiple-value-setq) ; c2
-    (multiple-value-bind . c2multiple-value-bind) ; c2
+    (values . c2values)
+    (multiple-value-setq . c2multiple-value-setq)
+    (multiple-value-bind . c2multiple-value-bind)
 
-    (function . c2function) ; c2
-    (ext:compiler-let . c2compiler-let) ; c2
+    (function . c2function)
+    (ext:compiler-let . c2compiler-let)
 
-    (with-stack . c2with-stack) ; c2
-    (stack-push-values . c2stack-push-values) ; c2
+    (with-stack . c2with-stack)
+    (stack-push-values . c2stack-push-values)
 
-    (tagbody . c2tagbody) ; c2
-    (go . c2go) ; c2
+    (tagbody . c2tagbody)
+    (go . c2go)
 
-    (var . c2var/location) ; c2
-    (location . c2var/location) ; c2
-    (setq . c2setq) ; c2
-    (progv . c2progv) ; c2
-    (psetq . c2psetq) ; c2
+    (var . c2var/location)
+    (location . c2var/location)
+    (setq . c2setq)
+    (progv . c2progv)
+    (psetq . c2psetq)
 
     (si:fset . c2fset)
 

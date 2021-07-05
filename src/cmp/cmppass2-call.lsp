@@ -1,11 +1,8 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
-;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
-
 ;;;;
-;;;;  CMPCALL  Function call.
-
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
+;;;;  Copyright (c) 1990, Giuseppe Attardi
+;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
+;;;;  Copyright (c) 2021, Daniel Kochmański
 ;;;;
 ;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
@@ -13,63 +10,24 @@
 ;;;;    version 2 of the License, or (at your option) any later version.
 ;;;;
 ;;;;    See file '../Copyright' for full details.
+;;;;
 
+(in-package #:compiler)
 
-(in-package "COMPILER")
-
-(defun unoptimized-long-call (fun arguments)
-  (let ((frame (gensym))
-        (f-arg (gensym)))
-    `(with-stack ,frame
-       (let ((,f-arg ,fun))
-         ,@(loop for i in arguments collect `(stack-push ,frame ,i))
-         (si::apply-from-stack-frame ,frame ,f-arg)))))
-
-(defun unoptimized-funcall (fun arguments)
-  (let ((l (length arguments)))
-    (if (<= l si::c-arguments-limit)
-        (make-c1form* 'FUNCALL :sp-change t :side-effects t
-                      :args (c1expr fun) (c1args* arguments))
-        (unoptimized-long-call fun arguments))))
-
-(defun macroexpand-lambda-block (lambda)
-  (if (eq (first lambda) 'EXT::LAMBDA-BLOCK)
-      (macroexpand-1 lambda)
-      lambda))
-
-(defun c1funcall (args)
-  (check-args-number 'FUNCALL args 1)
-  (let ((fun (first args))
-        (arguments (rest args))
-        fd)
-    (cond ;; (FUNCALL (LAMBDA ...) ...) or (FUNCALL (EXT::LAMBDA-BLOCK ...) ...)
-          ((and (consp fun)
-                (member (first fun) '(LAMBDA EXT::LAMBDA-BLOCK)))
-           (optimize-funcall/apply-lambda (macroexpand-lambda-block fun)
-                                          arguments nil))
-          ;; (FUNCALL atomic-expression ...)
-          ((atom fun)
-           (unoptimized-funcall fun arguments))
-          ;; (FUNCALL macro-expression ...)
-          ((let ((name (first fun)))
-             (setq fd (and (symbolp name)
-                           ;; We do not want to macroexpand 'THE
-                           (not (eq name 'THE))
-                           (cmp-macro-function name))))
-           (c1funcall (list* (cmp-expand-macro fd fun) arguments)))
-          ;; (FUNCALL lisp-expression ...)
-          ((not (eq (first fun) 'FUNCTION))
-           (unoptimized-funcall fun arguments))
-          ;; (FUNCALL #'GENERALIZED-FUNCTION-NAME ...)
-          ((si::valid-function-name-p (setq fun (second fun)))
-           (c1call fun arguments nil))
-          ;; (FUNCALL #'(LAMBDA ...) ...) or (FUNCALL #'(EXT::LAMBDA-BLOCK ...) ...)
-          ((and (consp fun)
-                (member (first fun) '(LAMBDA EXT::LAMBDA-BLOCK)))
-           (optimize-funcall/apply-lambda (macroexpand-lambda-block fun)
-                                          arguments nil))
+;;; Functions that use MAYBE-SAVE-VALUE should rebind *temp*.
+(defun maybe-save-value (value &optional (other-forms nil other-forms-flag))
+  (let ((name (c1form-name value)))
+    (cond ((eq name 'LOCATION)
+           (c1form-arg 0 value))
+          ((and (eq name 'VAR)
+                other-forms-flag
+                (not (var-changed-in-form-list (c1form-arg 0 value) other-forms)))
+           (c1form-arg 0 value))
           (t
-           (cmperr "Malformed function name: ~A" fun)))))
+           (let* ((temp (make-temp-var))
+                  (*destination* temp))
+             (c2expr* value)
+             temp)))))
 
 (defun c2funcall (c1form form args)
   (declare (ignore c1form))
@@ -95,6 +53,58 @@
            (*temp* *temp*))
       (unwind-exit (call-global-loc fname fun args (c1form-primary-type c1form)
                                     (loc-type *destination*)))
+      (close-inline-blocks))))
+
+;;; Tail-recursion optimization for a function F is possible only if
+;;;     1. F receives only required parameters, and
+;;;     2. no required parameter of F is enclosed in a closure.
+;;;
+;;; A recursive call (F e1 ... en) may be replaced by a loop only if
+;;;     1. F is not declared as NOTINLINE,
+;;;     2. n is equal to the number of required parameters of F,
+;;;     3. the form is a normal function call (i.e. args are not ARGS-PUSHED),
+;;;     4. (F e1 ... en) is not surrounded by a form that causes dynamic
+;;;        binding (such as LET, LET*, PROGV),
+;;;     5. (F e1 ... en) is not surrounded by a form that that pushes a frame
+;;;        onto the frame-stack (such as BLOCK and TAGBODY whose tags are
+;;;        enclosed in a closure, and CATCH),
+
+(defun tail-recursion-possible ()
+  (dolist (ue *unwind-exit*
+              (baboon :format-control "tail-recursion-possible: should never return."))
+    (cond ((eq ue 'TAIL-RECURSION-MARK) (return t))
+          ((or (numberp ue) (eq ue 'BDS-BIND) (eq ue 'FRAME))
+           (return nil))
+          ((or (consp ue) (eq ue 'JUMP) (eq ue 'IHS-ENV)))
+          (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
+
+(defun c2try-tail-recursive-call (fun args)
+  (when (and *tail-recursion-info*
+             (eq fun (first *tail-recursion-info*))
+             (last-call-p)
+             (tail-recursion-possible)
+             (inline-possible (fun-name fun))
+             (= (length args) (length (rest *tail-recursion-info*))))
+    (let* ((*destination* 'TRASH)
+           (*exit* (next-label))
+           (*unwind-exit* (cons *exit* *unwind-exit*)))
+      (c2psetq nil ;; We do not provide any C2FORM
+               (cdr *tail-recursion-info*) args)
+      (wt-label *exit*))
+    (unwind-no-exit 'TAIL-RECURSION-MARK)
+    (wt-nl "goto TTL;")
+    (cmpdebug "Tail-recursive call of ~s was replaced by iteration."
+              (fun-name fun))
+    t))
+
+
+(defun c2call-local (c1form fun args)
+  (declare (type fun fun))
+  (unless (c2try-tail-recursive-call fun args)
+    (let ((*inline-blocks* 0)
+          (*temp* *temp*))
+      (unwind-exit (call-loc (fun-name fun) fun (inline-args args)
+                             (c1form-primary-type c1form)))
       (close-inline-blocks))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -129,7 +139,7 @@
              (or (fun-p fun)
                  (and (null fun)
                       (setf fun (find fname *global-funs* :test #'same-fname-p
-                                      :key #'fun-name)))))
+                                                          :key #'fun-name)))))
     (return-from call-global-loc (call-loc fname fun args return-type)))
 
   ;; Call to a global (SETF ...) function
@@ -215,26 +225,8 @@
               function-p t)))
   `(CALL-INDIRECT ,loc ,(coerce-locs args) ,fname ,function-p))
 
-;;; Functions that use MAYBE-SAVE-VALUE should rebind *temp*.
-(defun maybe-save-value (value &optional (other-forms nil other-forms-flag))
-  (let ((name (c1form-name value)))
-    (cond ((eq name 'LOCATION)
-           (c1form-arg 0 value))
-          ((and (eq name 'VAR)
-                other-forms-flag
-                (not (var-changed-in-form-list (c1form-arg 0 value) other-forms)))
-           (c1form-arg 0 value))
-          (t
-           (let* ((temp (make-temp-var))
-                  (*destination* temp))
-             (c2expr* value)
-             temp)))))
-
-(defvar *text-for-lexical-level*
-  '("lex0" "lex1" "lex2" "lex3" "lex4" "lex5" "lex6" "lex7" "lex8" "lex9"))
-
-(defun wt-stack-pointer (narg)
-  (wt "cl_env_copy->stack_top-" narg))
+
+;;; wt routines
 
 (defun wt-call (fun args &optional fname env)
   (if env
