@@ -15,63 +15,6 @@
 
 (in-package "COMPILER")
 
-(defparameter +optimizable-constants+ '())
-
-(defun c1constant-value (val &key always only-small-values)
-  (cond
-   ((let ((x (assoc val *optimizable-constants*)))
-      (when x
-        (pushnew "#include <float.h>" *clines-string-list*)
-        (pushnew "#include <complex.h>" *clines-string-list*)
-        (setf x (cdr x))
-        (if (listp x)
-            (c1expr x)
-            x))))
-   ((eq val nil) (c1nil))
-   ((eq val t) (c1t))
-   ((sys::fixnump val)
-    (make-c1form* 'LOCATION :type 'FIXNUM :args (list 'FIXNUM-VALUE val)))
-   ((characterp val)
-    (make-c1form* 'LOCATION :type 'CHARACTER
-                  :args (list 'CHARACTER-VALUE (char-code val))))
-   ((typep val 'DOUBLE-FLOAT)
-    (when (and (ext:float-nan-p val) (not only-small-values))
-      (cmperr "Cannot externalize value ~A" val))
-    (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT
-                  :args (list 'DOUBLE-FLOAT-VALUE val (add-object val))))
-   ((typep val 'SINGLE-FLOAT)
-    (when (and (ext:float-nan-p val) (not only-small-values))
-      (cmperr "Cannot externalize value ~A" val))
-    (make-c1form* 'LOCATION :type 'SINGLE-FLOAT
-                  :args (list 'SINGLE-FLOAT-VALUE val (add-object val))))
-   ((typep val 'LONG-FLOAT)
-    (when (and (ext:float-nan-p val) (not only-small-values))
-      (cmperr "Cannot externalize value ~A" val))
-    (make-c1form* 'LOCATION :type 'LONG-FLOAT
-                  :args (list 'LONG-FLOAT-VALUE val (add-object val))))
-   #+sse2
-   ((typep val 'EXT:SSE-PACK)
-    (c1constant-value/sse val))
-   (only-small-values nil)
-   (always
-    (make-c1form* 'LOCATION :type `(eql ,val)
-                  :args (add-object val)))
-   (t nil)))
-
-#+sse2
-(defun c1constant-value/sse (value)
-  (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
-         (elt-type (ext:sse-pack-element-type value)))
-    (multiple-value-bind (wrapper rtype)
-        (case elt-type
-          (single-float (values "_mm_castsi128_ps" :float-sse-pack))
-          (double-float (values "_mm_castsi128_pd" :double-sse-pack))
-          (otherwise    (values ""                 :int-sse-pack)))
-      `(c-inline () () ,rtype
-                 ,(format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
-                          wrapper (coerce bytes 'list))
-                 :one-liner t :side-effects nil))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; KNOWN OPTIMIZABLE CONSTANTS

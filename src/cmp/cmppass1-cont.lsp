@@ -1,36 +1,78 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
-;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
-
 ;;;;
-;;;;  CMPTAG  --  Tagbody and Go.
-
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
+;;;;  Copyright (c) 1990, Giuseppe Attardi
+;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
+;;;;  Copyright (c) 2021, Daniel Kochmański
 ;;;;
-;;;;    ECoLisp is free software; you can redistribute it and/or
+;;;;    This program is free software; you can redistribute it and/or
 ;;;;    modify it under the terms of the GNU Library General Public
 ;;;;    License as published by the Free Software Foundation; either
 ;;;;    version 2 of the License, or (at your option) any later version.
 ;;;;
 ;;;;    See file '../Copyright' for full details.
+;;;;
 
+(in-package #:compiler)
 
-(in-package "COMPILER")
+
+;;; A dummy variable is created to hold the block identifier.  When a reference
+;;; to the block (via `return-from') is found, the `var-ref' count for that
+;;; variable is incremented only if the reference appears across a boundary
+;;; (`SI:FUNCTION-BOUNDARY' or `SI:UNWIND-PROTECT-BOUNDARY'), while the
+;;; `blk-ref' is always incremented.  Therefore `blk-ref' represents whether the
+;;; block is used at all and `var-ref' for the dummy variable represents whether
+;;; a block identifier must be created and stored in such variable.
 
+(defun c1block (args)
+  (check-args-number 'BLOCK args 1)
+  (let ((block-name (first args)))
+    (unless (symbolp block-name)
+      (cmperr "The block name ~s is not a symbol." block-name))
+    (let* ((blk-var (make-var :name block-name :kind 'LEXICAL))
+           (blk (make-blk :var blk-var :name block-name))
+           (body (let ((*cmp-env* (cmp-env-copy)))
+                   (cmp-env-register-block blk)
+                   (c1progn (rest args)))))
+      (when (or (var-ref-ccb blk-var) (var-ref-clb blk-var))
+        (incf *setjmps*))
+      (if (plusp (blk-ref blk))
+          (make-c1form* 'BLOCK
+                        :local-vars (list blk-var)
+                        :type (values-type-or (blk-type blk) (c1form-type body))
+                        :args blk body)
+          body))))
+
+(defun c1return-from (args)
+  (check-args-number 'RETURN-FROM args 1 2)
+  (let ((name (first args)))
+    (unless (symbolp name)
+      (cmperr "The block name ~s is not a symbol." name))
+    (multiple-value-bind (blk cfb unw)
+        (cmp-env-search-block name)
+      (unless blk
+        (cmperr "The block ~s is undefined." name))
+      (let* ((val (c1expr (second args)))
+             (var (blk-var blk))
+             (type T))
+        (cond (cfb (setf type 'CLB
+                         (var-ref-clb var) T))
+              (unw (setf type 'UNWIND-PROTECT)))
+        (incf (blk-ref blk))
+        (setf (blk-type blk) (values-type-or (blk-type blk) (c1form-type val)))
+        (let ((output (make-c1form* 'RETURN-FROM :type 'T :args blk type val)))
+          (when (or cfb unw)
+            (add-to-read-nodes var output))
+          output)))))
+
+
 ;;;  A dummy variable is created to hold the tag identifier and one tag
-;;;  structure (containing reference to such variable) is created for each
-;;;  label in the body.
-;;;  When a reference to a tag (go instruction) is found, the
+;;;  structure (containing reference to such variable) is created for each label
+;;;  in the body.  When a reference to a tag (go instruction) is found, the
 ;;;  var-kind is stepped from NIL to OBJECT (if appearing inside an
 ;;;  unwind-protect) to LEXICAL or CLOSURE (if appearing across a boundary).
-;;;  The tag-ref is also incremented.
-;;;  Therefore var-ref represents whether some tag is used at all and var-kind
-;;;  variable represents whether a tag identifier must be created and the
-;;;  kind of the dummy variable to store it.
-
-
-(defvar *reg-amount* 60)
-;;; amount to increase var-ref for each variable reference inside a loop
+;;;  The tag-ref is also incremented.  Therefore var-ref represents whether some
+;;;  tag is used at all and var-kind variable represents whether a tag
+;;;  identifier must be created and the kind of the dummy variable to store it.
 
 (defun add-loop-registers (tagbody)
   ;; Find a maximal iteration interval in TAGBODY from first to end
@@ -123,72 +165,7 @@
     (incf *setjmps*))
   (add-loop-registers body)
   (make-c1form* 'TAGBODY :local-vars (list tag-var)
-                :args tag-var body))
-
-(defun c2tagbody (c1form tag-loc body)
-  (declare (type var tag-loc)
-           (ignore c1form))
-  (if (null (var-kind tag-loc))
-      ;; only local goto's
-      (dolist (x body (c2tagbody-body body))
-        ;; Allocate labels.
-        (when (and (tag-p x) (plusp (tag-ref x)))
-          (setf (tag-label x) (next-label*))
-          (setf (tag-unwind-exit x) *unwind-exit*)))
-      ;; some tag used non locally or inside an unwind-protect
-      (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
-            (*env* *env*) (*env-lvl* *env-lvl*)
-            (*lex* *lex*) (*lcl* *lcl*)
-            (*inline-blocks* 0)
-            (env-grows (env-grows (var-ref-ccb tag-loc))))
-        (when env-grows
-          (let ((env-lvl *env-lvl*))
-            (maybe-open-inline-block)
-            (wt-nl "volatile cl_object env" (incf *env-lvl*)
-                   " = env" env-lvl ";")))
-        (when (eq :OBJECT (var-kind tag-loc))
-          (setf (var-loc tag-loc) (next-lcl))
-          (maybe-open-inline-block)
-          (wt-nl "cl_object " tag-loc ";"))
-        (bind "ECL_NEW_FRAME_ID(cl_env_copy)" tag-loc)
-        (wt-nl-open-brace)
-        (wt-nl "ecl_frs_push(cl_env_copy," tag-loc ");")
-        (wt-nl "if (__ecl_frs_push_result) {")
-        ;; Allocate labels.
-        (dolist (tag body)
-          (when (and (tag-p tag) (plusp (tag-ref tag)))
-            (setf (tag-label tag) (next-label))
-            (setf (tag-unwind-exit tag) *unwind-exit*)
-            (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
-            (wt-go (tag-label tag))))
-        (when (var-ref-ccb tag-loc)
-          (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");"))
-        (wt-nl "}")
-        (wt-nl-close-brace)
-        (c2tagbody-body body)
-        (close-inline-blocks))))
-
-(defun c2tagbody-body (body)
-  ;;; INV: BODY is a list of tags and forms. We have processed the body
-  ;;; so that the last element is always a form producing NIL.
-  (do ((l body (cdr l)))
-      ((null l))
-    (let* ((this-form (first l)))
-      (cond ((tag-p this-form)
-             (wt-label (tag-label this-form)))
-            ((endp (rest l))
-             ;; Last form, it is never a label!
-             (c2expr this-form))
-            (t
-             (let* ((next-form (second l))
-                    (*exit* (if (tag-p next-form)
-                                (tag-label next-form)
-                                (next-label)))
-                    (*unwind-exit* (cons *exit* *unwind-exit*))
-                    (*destination* 'TRASH))
-               (c2expr this-form)
-               (unless (tag-p next-form)
-                 (wt-label *exit*))))))))
+                         :args tag-var body))
 
 (defun c1go (args)
   (check-args-number 'GO args 1 1)
@@ -207,12 +184,26 @@
         (incf (tag-ref tag))
         (add-to-read-nodes var (make-c1form* 'GO :args tag (or cfb unw)))))))
 
-(defun c2go (c1form tag nonlocal)
-  (declare (ignore c1form))
-  (if nonlocal
-      (let ((var (tag-var tag)))
-        (wt-nl "cl_go(" var ",ecl_make_fixnum(" (tag-index tag) "));"))
-      ;; local go
-      (progn
-        (unwind-no-exit-until (tag-unwind-exit tag))
-        (wt-nl) (wt-go (tag-label tag)))))
+
+(defun c1throw (args)
+  (check-args-number 'THROW args 2 2)
+  (make-c1form* 'THROW :args (c1expr (first args)) (c1expr (second args))))
+
+(defun c1catch (args)
+  (check-args-number 'CATCH args 1)
+  (incf *setjmps*)
+  (make-c1form* 'CATCH :sp-change t :type t :args (c1expr (first args))
+                (c1progn (rest args))))
+
+(defun c1unwind-protect (args)
+  (check-args-number 'UNWIND-PROTECT args 1)
+  (cond
+    ((null (rest args))
+     (cmpdebug "UNWIND-PROTECT without CLEANUP-FORMS was replaced by its FORM.")
+     (c1expr (first args)))
+    (T
+     (incf *setjmps*)
+     (let ((form (let ((*cmp-env* (cmp-env-mark 'SI:UNWIND-PROTECT-BOUNDARY)))
+                   (c1expr (first args)))))
+       (make-c1form* 'UNWIND-PROTECT :type (c1form-type form) :sp-change t
+                                     :args form (c1progn (rest args)))))))

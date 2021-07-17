@@ -107,9 +107,10 @@
          (incf *lex*)
          (setq *max-lex* (max *lex* *max-lex*))))
 
-(defun next-env () (prog1 *env*
-                     (incf *env*)
-                     (setq *max-env* (max *env* *max-env*))))
+(defun next-env ()
+  (prog1 *env*
+    (incf *env*)
+    (setq *max-env* (max *env* *max-env*))))
 
 (defmacro reckless (&rest body)
   `(locally (declare (optimize (safety 0)))
