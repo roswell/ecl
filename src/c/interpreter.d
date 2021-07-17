@@ -184,7 +184,7 @@ ecl_stack_frame_close(cl_object f)
 #define bind_frame(env, id, name)       CONS(CONS(id, name), (env))
 
 static cl_object
-ecl_lex_env_get_record(register cl_object env, register int s)
+ecl_lex_env_get_record(cl_object env, int s)
 {
   do {
     if (s-- == 0) return ECL_CONS_CAR(env);
@@ -268,7 +268,7 @@ static void odd_number_of_keywords(cl_object bytecodes) ecl_attr_noreturn;
 static void unknown_keyword(cl_object bytecodes, cl_object frame) ecl_attr_noreturn;
 
 static void
-too_many_arguments(register cl_object bytecodes, register cl_object frame)
+too_many_arguments(cl_object bytecodes, cl_object frame)
 {
   FEprogram_error("Too many arguments passed to "
                   "function ~A~&Argument list: ~S",
@@ -276,7 +276,7 @@ too_many_arguments(register cl_object bytecodes, register cl_object frame)
 }
 
 static void
-odd_number_of_keywords(register cl_object bytecodes)
+odd_number_of_keywords(cl_object bytecodes)
 {
   FEprogram_error("Function ~A called with odd number "
                   "of keyword arguments.",
@@ -284,7 +284,7 @@ odd_number_of_keywords(register cl_object bytecodes)
 }
 
 static void
-unknown_keyword(register cl_object bytecodes, register cl_object frame)
+unknown_keyword(cl_object bytecodes, cl_object frame)
 {
   FEprogram_error("Unknown keyword argument passed to function ~S.~&"
                   "Argument list: ~S", 2, bytecodes,

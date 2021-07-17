@@ -1452,7 +1452,7 @@ extern ECL_API bool floatp(cl_object x);
 extern ECL_API bool ecl_numberp(cl_object x);
 extern ECL_API bool ecl_realp(cl_object x);
 extern ECL_API bool ecl_eql(cl_object x, cl_object y);
-extern ECL_API bool ecl_equal(register cl_object x, cl_object y);
+extern ECL_API bool ecl_equal(cl_object x, cl_object y);
 extern ECL_API bool ecl_equalp(cl_object x, cl_object y);
 extern ECL_API bool ecl_stringp(cl_object x);
 

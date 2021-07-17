@@ -68,8 +68,8 @@ static void asm_clear(cl_env_ptr env, cl_index h);
 static void asm_op(cl_env_ptr env, cl_fixnum op);
 static void asm_op2(cl_env_ptr env, int op, int arg);
 static cl_object asm_end(cl_env_ptr env, cl_index handle, cl_object definition);
-static cl_index asm_jmp(cl_env_ptr env, register int op);
-static void asm_complete(cl_env_ptr env, register int op, register cl_index original);
+static cl_index asm_jmp(cl_env_ptr env, int op);
+static void asm_complete(cl_env_ptr env, int op, cl_index original);
 
 static cl_fixnum c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_defined);
 
@@ -672,7 +672,7 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
 }
 
 static bool
-c_declared_special(register cl_object var, register cl_object specials)
+c_declared_special(cl_object var, cl_object specials)
 {
   return ((ecl_symbol_type(var) & ecl_stp_special) || ecl_member_eq(var, specials));
 }

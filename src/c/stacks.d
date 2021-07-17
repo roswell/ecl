@@ -535,7 +535,7 @@ frs_overflow(void)              /* used as condition in list.d */
 }
 
 ecl_frame_ptr
-_ecl_frs_push(register cl_env_ptr env)
+_ecl_frs_push(cl_env_ptr env)
 {
   /* We store a dummy tag first, to make sure that it is safe to
    * interrupt this method with a call to ecl_unwind. Otherwise, a

@@ -175,7 +175,7 @@ static struct ecl_type_information {
 #ifdef GBC_BOEHM_PRECISE
   GC_word descriptor;
 #endif
-  cl_object (*allocator)(register struct ecl_type_information *);
+  cl_object (*allocator)(struct ecl_type_information *);
   size_t t;
 } type_info[t_end];
 
@@ -200,7 +200,7 @@ ecl_object_byte_size(cl_type t)
 }
 
 static cl_object
-allocate_object_atomic(register struct ecl_type_information *type_info)
+allocate_object_atomic(struct ecl_type_information *type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
@@ -212,7 +212,7 @@ allocate_object_atomic(register struct ecl_type_information *type_info)
 }
 
 static cl_object
-allocate_object_full(register struct ecl_type_information *type_info)
+allocate_object_full(struct ecl_type_information *type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
@@ -225,7 +225,7 @@ allocate_object_full(register struct ecl_type_information *type_info)
 
 #ifdef GBC_BOEHM_PRECISE
 static cl_object
-allocate_object_typed(register struct ecl_type_information *type_info)
+allocate_object_typed(struct ecl_type_information *type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
@@ -240,7 +240,7 @@ allocate_object_typed(register struct ecl_type_information *type_info)
 #ifdef GBC_BOEHM_OWN_ALLOCATOR
 #error
 static cl_object
-allocate_object_own(register struct ecl_type_information *type_info)
+allocate_object_own(struct ecl_type_information *type_info)
 {
 #define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 #define GENERAL_MALLOC(lb,k) (void *)GC_generic_malloc(lb, k)
@@ -505,7 +505,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 }
 
 static cl_object
-allocate_object_marked(register struct ecl_type_information *type_info)
+allocate_object_marked(struct ecl_type_information *type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
