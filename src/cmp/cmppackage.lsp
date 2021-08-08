@@ -27,7 +27,9 @@
    #:*cc*
    #:*cc-optimize*
    #:*user-cc-flags*
-   #:*user-ld-flags*
+   #:*user-ld-flags*                    ; deprecated
+   #:*user-linker-flags*
+   #:*user-linker-libs*
    #:*suppress-compiler-messages*
    ;; Build targets. BUILD-ECL is not defined, preasumbly it was meant
    ;; for cross compilation.

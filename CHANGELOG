@@ -45,6 +45,14 @@
 ** API changes
 - A new function ~(mp:semaphore-wait semaphore count timeout)~
 - Deprecate Functions ~mp:wait-on-semaphore~ and ~mp:try-get-semphore~
+- The variable ~c:*user-ld-flags*~ is deprecated in favor of
+  ~c:*user-linker-flags*~ for option flags (like ~-Wl,foo~) and
+  ~c:*user-linker-libs*~ for libraries to link in (like ~-lfoo~).
+
+  The variable ~c:*user-ld-flags*~ is left for backward compatibility and
+  may be removed in future releases - it may cause option flags to be added
+  in the wrong place in the commandline when invoking the C compiler
+  program.
 
 * 21.2.1 changes since 20.4.24
 ** Announcement

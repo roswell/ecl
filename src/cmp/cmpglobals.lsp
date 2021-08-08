@@ -205,9 +205,21 @@ value of *CMP-ENV*.")
 (defvar *files-to-be-deleted* '())
 
 (defvar *user-ld-flags* '()
-"Flags and options to be passed to the linker when building FASL, shared libraries
-and standalone programs. It is not required to surround values with quotes or use
-slashes before special characters.")
+"DEPRECATED Flags and options to be passed to the linker when building FASL,
+shared libraries and standalone programs. It is not required to surround values
+with quotes or use slashes before special characters.")
+
+(defvar *user-linker-flags* '()
+  "Command line flags for additional options (e.g. \"-Wl,foo\" flags) to
+be passed to the linker when building FASL, shared libraries and
+standalone programs. It is not required to surround values with quotes
+or use slashes before special characters.")
+
+(defvar *user-linker-libs* '()
+"Command line flags for additional libraries (e.g. \"-lfoo\" flags) to
+be passed to the linker when building FASL, shared libraries and
+standalone programs. It is not required to surround values with quotes
+or use slashes before special characters.")
 
 (defvar *user-cc-flags* '()
 "Flags and options to be passed to the C compiler when building FASL, shared libraries
