@@ -125,17 +125,36 @@ the environment variable TMPDIR to a different value." template))
   (let ((x (string-right-trim '(#\\ #\/) directory-namestring)))
     (if (zerop (length x)) "/" x)))
 
+(defun append-deprecated-ld-flags (ld-option-flags ld-library-flags)
+  (when-let ((ld-flags (split-program-options *ld-flags*)))
+    (cmpwarn "The variable c::*ld-flags* is deprecated. Please use c::*ld-option-flags* and c::*ld-library-flags* instead.")
+    ;; To preserve compatibility with older releases, whenever
+    ;; ld-flags is non-empty this variable specifies the _whole_ set
+    ;; of linker flags, taking precedence over both ld-option-flags
+    ;; and ld-library-flags.
+    (setf ld-option-flags nil
+          ld-library-flags ld-flags))
+  (when-let ((user-ld-flags (split-program-options *user-ld-flags*)))
+    (cmpwarn "The variable c::*user-ld-flags* is deprecated. Please use c::*user-ld-option-flags* and c::*user-ld-library-flags* instead.")
+    (setf ld-library-flags (nconc user-ld-flags ld-library-flags)))
+  (values ld-option-flags ld-library-flags))
+
 #+msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
-                  (ld-flags (split-program-options *ld-flags*)))
+                  (ld-option-flags (split-program-options *ld-option-flags*))
+                  (ld-library-flags (split-program-options *ld-library-flags*)))
+  (setf (values ld-option-flags ld-library-flags)
+        (append-deprecated-ld-flags ld-option-flags ld-library-flags))
   (safe-run-program
    *ld*
    `(,(concatenate 'string "-Fe" (brief-namestring o-pathname))
      ,@object-files
      ,@(split-program-options *ld-rpath*)
-     ,@(split-program-options *user-ld-flags*)
-     ,@ld-flags
+     ,@(split-program-options *user-ld-option-flags*)
+     ,@ld-option-flags
+     ,@(split-program-options *user-ld-library-flags*)
+     ,@ld-library-flags
      ,(if (eq type :program)
           (concatenate 'string "/IMPLIB:prog" (file-namestring o-pathname) ".lib")
           "")
@@ -147,28 +166,33 @@ the environment variable TMPDIR to a different value." template))
 #-msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
-                  (ld-flags (split-program-options *ld-flags*)))
+                  (ld-option-flags (split-program-options *ld-option-flags*))
+                  (ld-library-flags (split-program-options *ld-library-flags*)))
   (declare (ignore type))
+  (setf (values ld-option-flags ld-library-flags)
+        (append-deprecated-ld-flags ld-option-flags ld-library-flags))
   (safe-run-program
    *ld*
    `("-o" ,(brief-namestring o-pathname)
      ,(concatenate 'string "-L" (fix-for-mingw (ecl-library-directory)))
+     ,@(split-program-options *user-ld-option-flags*)
+     ,@ld-option-flags
      ,@object-files
      ,@(and *ld-rpath* (list *ld-rpath*))
-     ,@(split-program-options *user-ld-flags*)
-     ,@ld-flags)))
+     ,@(split-program-options *user-ld-library-flags*)
+     ,@ld-library-flags)))
 
-(defun linker-ar (output-name o-name ld-flags)
+(defun linker-ar (output-name o-name ld-library-flags)
   #-msvc
   (static-lib-ar (namestring output-name)
-                 (list* (brief-namestring o-name) ld-flags))
+                 (list* (brief-namestring o-name) ld-library-flags))
   #+msvc
   (unwind-protect
        (progn
          (with-open-file (f "static_lib.tmp" :direction :output
                             :if-does-not-exist :create :if-exists :supersede)
            (format f "/OUT:~A ~A ~{~&\"~A\"~}"
-                   output-name o-name ld-flags))
+                   output-name o-name ld-library-flags))
          (safe-run-program "link" '("-lib" "-nologo" "@static_lib.tmp")))
     (when (probe-file "static_lib.tmp")
       (cmp-delete-file "static_lib.tmp"))))
@@ -182,33 +206,44 @@ the environment variable TMPDIR to a different value." template))
 
 #+dlopen
 (defun shared-cc (o-pathname object-files)
-  (let ((ld-flags (split-program-options *ld-shared-flags*)))
+  (let ((ld-option-flags (split-program-options *ld-shared-option-flags*))
+        (ld-library-flags (split-program-options *ld-library-flags*)))
+    (when-let ((ld-flags (split-program-options *ld-shared-flags*)))
+      (cmpwarn "The variable c::*ld-shared-flags* is deprecated. Please use c::*ld-shared-option-flags* to specify linker options for shared libraries and c::*ld-library-flags* to specify additional libraries to link in.")
+      (setf ld-option-flags nil
+            ld-library-flags ld-flags))
     #+msvc
-    (setf ld-flags
+    (setf ld-option-flags
           (let ((implib (brief-namestring
                          (compile-file-pathname o-pathname :type :lib))))
             ;; MSVC linker options are added at the end, after the
             ;; /link flag, because they are not processed by the
             ;; compiler, but by the linker
-            (append ld-flags
+            (append ld-option-flags
                     (list (concatenate 'string "/LIBPATH:"
                                        (ecl-library-directory))
                           (concatenate 'string "/IMPLIB:" implib)))))
     #+mingw32
-    (setf ld-flags (list* "-shared" ld-flags))
-    (linker-cc o-pathname object-files :type :dll :ld-flags ld-flags)))
+    (setf ld-option-flags (list* "-shared" ld-option-flags))
+    (linker-cc o-pathname object-files :type :dll
+               :ld-option-flags ld-option-flags :ld-library-flags ld-library-flags)))
 
 #+dlopen
 (defun bundle-cc (o-pathname init-name object-files)
-  (let ((ld-flags (split-program-options *ld-bundle-flags*)))
+  (let ((ld-option-flags (split-program-options *ld-bundle-option-flags*))
+        (ld-library-flags (split-program-options *ld-library-flags*)))
+    (when-let ((ld-flags (split-program-options *ld-bundle-flags*)))
+      (cmpwarn "The variable c::*ld-bundle-flags* is deprecated. Please use c::*ld-bundle-option-flags* to specify linker options for bundles and c::*ld-library-flags* to specify additional libraries to link in.")
+      (setf ld-option-flags nil
+            ld-library-flags ld-flags))
     #+msvc
-    (setf ld-flags
+    (setf ld-option-flags
           (let ((implib (brief-namestring
                          (compile-file-pathname o-pathname :type :import-library))))
             ;; MSVC linker options are added at the end, after the
             ;; /link flag, because they are not processed by the
             ;; compiler, but by the linker
-            (append ld-flags
+            (append ld-option-flags
                     (list
                      ;; Not needed because we use ECL_DLLEXPORT
                      ;; (concatenate 'string "/EXPORT:" init-name)
@@ -216,8 +251,9 @@ the environment variable TMPDIR to a different value." template))
                                   (ecl-library-directory))
                      (concatenate 'string "/IMPLIB:" implib)))))
     #+mingw32
-    (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags))
-    (linker-cc o-pathname object-files :type :fasl :ld-flags ld-flags)))
+    (setf ld-option-flags (list* "-shared" "-Wl,--export-all-symbols" ld-option-flags))
+    (linker-cc o-pathname object-files :type :fasl
+               :ld-option-flags ld-option-flags :ld-library-flags ld-library-flags)))
 
 (defconstant +lisp-program-header+ "
 #include <ecl/ecl.h>
@@ -417,7 +453,7 @@ filesystem or in the database of ASDF modules."
 
 (defun builder (target output-name
                 &key
-                  lisp-files ld-flags
+                  lisp-files ld-flags ld-option-flags ld-library-flags
                   (init-name nil)
                   (main-name nil)
                   (prologue-code "")
@@ -432,6 +468,11 @@ filesystem or in the database of ASDF modules."
                                    output-name))
                   ;; wrap-name is the init function name defined by a programmer
                   (wrap-name init-name))
+  ;; warn for deprecated arguments
+  (when ld-flags
+    (cmpwarn "The :LD-FLAGS argument to the C::BUILDER function is deprecated. Please use the :LD-OPTION-FLAGS argument to specify linker options and the :LD-LIBRARY-FLAGS arguments to add additional libraries to link in.")
+    (setf ld-library-flags (append ld-library-flags ld-flags)))
+
   ;; init-name should always be unique
   (setf init-name (compute-init-name output-name :kind target))
   (cond ((null wrap-name) nil)
@@ -517,7 +558,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
         (let* ((init-fn (guess-init-name path kind))
                (flags (guess-ld-flags path)))
           ;; We should give a warning that we cannot link this module in
-          (when flags (push flags ld-flags))
+          (when flags (push flags ld-library-flags))
           (when init-fn
             (push (list init-fn path) submodules)))))
     (setq c-file (open c-name :direction :output :external-format :default))
@@ -537,7 +578,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                  prologue-code init-name epilogue-code)
          (close c-file)
          (compiler-cc c-name o-name)
-         (linker-cc output-name (list* (namestring o-name) ld-flags)))
+         (linker-cc output-name (append ld-option-flags (list (namestring o-name))
+                                        ld-library-flags)))
         (:static-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
@@ -548,7 +590,7 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (close c-file)
          (compiler-cc c-name o-name)
          (when (probe-file output-name) (delete-file output-name))
-         (linker-ar output-name o-name ld-flags))
+         (linker-ar output-name o-name ld-library-flags))
         #+dlopen
         (:shared-library
          (format c-file +lisp-program-init+
@@ -559,7 +601,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                  main-name prologue-code init-name epilogue-code)
          (close c-file)
          (compiler-cc c-name o-name)
-         (shared-cc output-name (list* o-name ld-flags)))
+         (shared-cc output-name (append ld-option-flags (list o-name)
+                                        ld-library-flags)))
         #+dlopen
         (:fasl
          (format c-file +lisp-program-init+ init-name init-tag prologue-code
@@ -568,7 +611,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (close c-file)
          (compiler-cc c-name o-name)
-         (bundle-cc output-name init-name (list* o-name ld-flags))))
+         (bundle-cc output-name init-name (append ld-option-flags (list o-name)
+                                                  ld-library-flags))))
       (mapc 'cmp-delete-file tmp-names)
       (cmp-delete-file c-name)
       (cmp-delete-file o-name)

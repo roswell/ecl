@@ -543,9 +543,14 @@ Flags and options to be passed to the C compiler when building FASL,
 shared libraries and standalone programs.
 @end deftypevar
 
-@deftypevar string {c:*user-ld-flags*}
-Flags and options to be passed to the linker when building FASL,
-shared libraries and standalone programs.
+@deftypevar string {c:*user-ld-option-flags*}
+Flags for options (e.g. @code{-Wl,foo} flags) to be passed to the linker
+when building FASL, shared libraries and standalone programs.
+@end deftypevar
+
+@deftypevar string {c:*user-ld-library-flags*}
+Flags for libraries (e.g. @code{-lfoo} flags) to be passed to the linker
+when building FASL, shared libraries and standalone programs.
 @end deftypevar
 
 @deftypevar string {c:*cc-optimize*}

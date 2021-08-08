@@ -86,24 +86,24 @@
       #+msvc "@CFLAGS@ @ECL_CFLAGS@"
       c::*ecl-include-directory* "@true_builddir@/"
       c::*ecl-library-directory* "@true_builddir@/")
-#-:wants-dlopen 
-(setf c::*ld-flags*
-      "@LDFLAGS@ @LIBPREFIX@ecl.@LIBEXT@ @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
+(setf c::*ld-option-flags* "@LDFLAGS@")
+#-:wants-dlopen
+(setf c::*ld-library-flags* "@LIBPREFIX@ecl.@LIBEXT@ @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
 #+(and :wants-dlopen (not nonstop))
-(setf c::*ld-flags*
-      "@LDFLAGS@ @SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@"
-      c::*ld-shared-flags*
-      "@SHARED_LDFLAGS@ @LDFLAGS@ @SHAREDPREFIX@ecl.@SHAREDEXT@ @FASL_LIBS@ @LIBS@"
-      c::*ld-bundle-flags*
-      "@BUNDLE_LDFLAGS@ @LDFLAGS@ @SHAREDPREFIX@ecl.@SHAREDEXT@ @FASL_LIBS@ @LIBS@")
+(setf c::*ld-library-flags*
+      "@SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@"
+      c::*ld-shared-option-flags*
+      "@SHARED_LDFLAGS@ @LDFLAGS@"
+      c::*ld-bundle-option-flags*
+      "@BUNDLE_LDFLAGS@ @LDFLAGS@")
 ;;; FIXME: The nonstop platform does not support soname
 #+(and :wants-dlopen nonstop)
-(setf c::*ld-flags*
-      "@LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@"
-      c::*ld-shared-flags*
-      "@SHARED_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @FASL_LIBS@ @LIBS@"
-      c::*ld-bundle-flags*
-      "@BUNDLE_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @FASL_LIBS@ @LIBS@")
+(setf c::*ld-library-flags*
+      "-Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@"
+      c::*ld-shared-option-flags*
+      "@SHARED_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@"
+      c::*ld-bundle-option-flags*
+      "@BUNDLE_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@")
 
 ;;;
 ;;; * Avoid name clashes with user supplied code.
@@ -162,8 +162,10 @@
 ;;;
 ;;; We do not need the -rpath flag for the library, nor -lecl.
 ;;;
-(let* ((c::*ld-shared-flags* #-msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @SONAME_LDFLAGS@ @CORE_LIBS@ @FASL_LIBS@ @LIBS@"
-                             #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @STATICLIBS@ @CLIBS@")
+(let* ((c::*ld-shared-option-flags* #-msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @SONAME_LDFLAGS@"
+                                    #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@")
+       (c::*ld-library-flags* #-msvc "@CORE_LIBS@ @FASL_LIBS@ @LIBS@"
+                              #+msvc "@STATICLIBS@ @CLIBS@")
        (c::*cc-flags* (concatenate 'string "-DECL_API -I@true_builddir@/c " c::*cc-flags*))
        (extra-args nil))
   #+(or mingw32 cygwin)
@@ -362,7 +364,7 @@
  #-(or cross stage1 msvc) "ecl2"
  :epilogue-code '@ECL_INIT_FORM@
  :lisp-files *module-symbols*
- :ld-flags
+ :ld-option-flags
  (concatenate 'list #-msvc '("-L./") #+windows '("ecl.res" #+msvc "/F 10485760")))
 
 (with-open-file (modules-list #P"build:MODULES" :direction :output

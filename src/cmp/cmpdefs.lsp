@@ -52,17 +52,21 @@ coprocessor).")
 			  (t
 			   "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")))
 
+(defvar *ld-flags* "")                  ; deprecated, use *ld-option-flags* and *ld-library-flags* instead
+(defvar *ld-option-flags* "@LDFLAGS@")
 #-dlopen
-(defvar *ld-flags* "@LDFLAGS@ -lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
+(defvar *ld-library-flags* "-lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
 #+dlopen
-(defvar *ld-flags* #-msvc "@LDFLAGS@ -lecl @FASL_LIBS@ @LIBS@"
-                   #+msvc "@LDFLAGS@ ecl.lib @CLIBS@")
+(defvar *ld-library-flags* #-msvc "-lecl @FASL_LIBS@ @LIBS@"
+                           #+msvc "ecl.lib @CLIBS@")
 #+dlopen
-(defvar *ld-shared-flags* #-msvc "@SHARED_LDFLAGS@ @LDFLAGS@ -lecl @FASL_LIBS@ @LIBS@"
-                          #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@ ecl.lib @CLIBS@")
+(defvar *ld-shared-flags* "")           ; deprecated, use *ld-shared-option-flags* and *ld-library-flags* instead
 #+dlopen
-(defvar *ld-bundle-flags* #-msvc "@BUNDLE_LDFLAGS@ @LDFLAGS@ -lecl @FASL_LIBS@ @LIBS@"
-                          #+msvc "@BUNDLE_LDFLAGS@ @LDFLAGS@ ecl.lib @CLIBS@")
+(defvar *ld-bundle-flags* "")           ; deprecated, use *ld-bundle-option-flags* and *ld-library-flags* instead
+#+dlopen
+(defvar *ld-shared-option-flags* "@SHARED_LDFLAGS@ @LDFLAGS@")
+#+dlopen
+(defvar *ld-bundle-option-flags* "@BUNDLE_LDFLAGS@ @LDFLAGS@")
 
 (defvar +shared-library-prefix+ "@SHAREDPREFIX@")
 (defvar +shared-library-extension+ "@SHAREDEXT@")
