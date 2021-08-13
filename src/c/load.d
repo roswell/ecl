@@ -122,6 +122,15 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
   @(return ECL_NIL);
 }
 
+static cl_object
+read_forms(cl_object stream, cl_object errorp) {
+  cl_env_ptr env = ecl_process_env();
+  cl_object forms;
+  env->packages_to_be_created_p = ECL_T;
+  forms = cl_read(3, stream, errorp, ECL_NIL);
+  env->packages_to_be_created_p = ECL_NIL;
+  return forms;
+}
 
 cl_object
 si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_object external_format)
@@ -146,20 +155,18 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
       cl_object progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');
       cl_index bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
                                    ECL_CONS_CDR(progv_list));
-      env->packages_to_be_created_p = ECL_T;
-      forms = cl_read(1, strm);
-      env->packages_to_be_created_p = ECL_NIL;
+      forms = read_forms(strm, ECL_T);
       ecl_bds_unwind(env, bds_ndx);
     }
     while (!Null(forms)) {
       if (ECL_LISTP(forms)) {
         cl_object x = ECL_CONS_CAR(forms);
         forms = ECL_CONS_CDR(forms);
-        if (Null(forms)) {
-          forms = cl_read(3, strm, ECL_NIL, ECL_NIL);
-        }
         if (ecl_t_of(x) == t_bytecodes) {
           _ecl_funcall1(x);
+          if (Null(forms)) {
+            forms = read_forms(strm, ECL_NIL);
+          }
           continue;
         }
       }
@@ -184,8 +191,9 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
        therefore, first we frs_pop() current jump point, then
        try to close the stream, and then jump to next catch
        point */
-    if (strm != source)
+    if (strm != source) {
       cl_close(3, strm, @':abort', @'t');
+    }
   } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   @(return ECL_NIL);
 }
