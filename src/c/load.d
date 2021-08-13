@@ -155,6 +155,9 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
       if (ECL_LISTP(forms)) {
         cl_object x = ECL_CONS_CAR(forms);
         forms = ECL_CONS_CDR(forms);
+        if (Null(forms)) {
+          forms = cl_read(3, strm, ECL_NIL, ECL_NIL);
+        }
         if (ecl_t_of(x) == t_bytecodes) {
           _ecl_funcall1(x);
           continue;
