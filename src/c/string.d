@@ -960,3 +960,109 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
   }
   @(return output);
 @)
+
+cl_object
+ecl_decode_from_cstring(const char *s, cl_fixnum len, cl_object encoding)
+{
+  volatile cl_object ret;
+  ECL_HANDLER_CASE_BEGIN(ecl_process_env(), ecl_list1(@'ext::character-decoding-error')) {
+    ret = si_octets_to_string(3, ecl_make_constant_base_string(s, len), @':external-format', encoding);
+  } ECL_HANDLER_CASE(1, c) {
+    ret = c; /* suppress "unused variable `c`" warning */
+    ret = OBJNULL;
+  } ECL_HANDLER_CASE_END;
+  return ret;
+}
+
+cl_fixnum
+ecl_encode_to_cstring(char *output, cl_fixnum output_len, cl_object input, cl_object encoding)
+{
+  volatile cl_fixnum ret;
+  ECL_HANDLER_CASE_BEGIN(ecl_process_env(), ecl_list1(@'ext::character-encoding-error')) {
+    cl_object output_vec = si_string_to_octets(3, input, @':external-format', encoding);
+    ret = output_vec->vector.fillp + 1;
+    if (ret <= output_len) {
+      memcpy(output, output_vec->vector.self.b8, (ret-1)*sizeof(char));
+      output[ret-1] = 0; /* null-terminator */
+    }
+  } ECL_HANDLER_CASE(1, c) {
+    input = c; /* suppress "unused variable `c`" warning */
+    ret = -1;
+  } ECL_HANDLER_CASE_END;
+  return ret;
+}
+
+#ifdef HAVE_WCHAR_H
+cl_object
+ecl_decode_from_unicode_wstring(const wchar_t *s, cl_fixnum len)
+{
+  cl_object input;
+  cl_object elttype;
+  cl_object encoding;
+  volatile cl_object ret;
+  if (len < 0) {
+    len = wcslen(s);
+  }
+  switch (sizeof(wchar_t)) {
+  case 1:
+    elttype = @'ext::byte8';
+    encoding = @':utf-8';
+    break;
+  case 2:
+    elttype = @'ext::byte16';
+    encoding = @':ucs-2';
+    break;
+  case 4:
+    elttype = @'ext::byte32';
+    encoding = @':ucs-4';
+    break;
+  default:
+    ecl_internal_error("Unexpected sizeof(wchar_t)");
+  }
+  input = si_make_vector(elttype, ecl_make_fixnum(len), ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  memcpy(input->vector.self.b8, s, len*sizeof(wchar_t));
+  ECL_HANDLER_CASE_BEGIN(ecl_process_env(), ecl_list1(@'ext::character-decoding-error')) {
+    ret = si_octets_to_string(3, input, @':external-format', encoding);
+  } ECL_HANDLER_CASE(1, c) {
+    ret = c; /* suppress "unused variable `c`" warning */
+    ret = OBJNULL;
+  } ECL_HANDLER_CASE_END;
+  return ret;
+}
+
+cl_fixnum
+ecl_encode_to_unicode_wstring(wchar_t *output, cl_fixnum output_len, cl_object input)
+{
+  cl_object elttype;
+  cl_object encoding;
+  volatile cl_fixnum ret;
+  switch (sizeof(wchar_t)) {
+  case 1:
+    elttype = @'ext::byte8';
+    encoding = @':utf-8';
+    break;
+  case 2:
+    elttype = @'ext::byte16';
+    encoding = @':ucs-2';
+    break;
+  case 4:
+    elttype = @'ext::byte32';
+    encoding = @':ucs-4';
+    break;
+  default:
+    ecl_internal_error("Unexpected sizeof(wchar_t)");
+  }
+  ECL_HANDLER_CASE_BEGIN(ecl_process_env(), ecl_list1(@'ext::character-encoding-error')) {
+    cl_object output_vec = si_string_to_octets(5, input, @':external-format', encoding, @':element-type', elttype);
+    ret = output_vec->vector.fillp + 1;
+    if (ret <= output_len) {
+      memcpy(output, output_vec->vector.self.b8, (ret-1)*sizeof(wchar_t));
+      output[ret-1] = 0; /* null-terminator */
+    }
+  } ECL_HANDLER_CASE(1, c) {
+    input = c; /* suppress "unused variable `c`" warning */
+    ret = -1;
+  } ECL_HANDLER_CASE_END;
+  return ret;
+}
+#endif

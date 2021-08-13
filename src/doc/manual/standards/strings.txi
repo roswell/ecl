@@ -90,6 +90,33 @@ external format. The bounding index designators @var{start} and
 @var{null-terminate} is true, add a terminating null byte. Signals an
 @coderef{ext:character-encoding-error} if the encoding fails.
 @end defun
+
+@cppdef ecl_decode_from_cstring
+@deftypefun cl_object ecl_decode_from_cstring (const char *string, cl_fixnum length, cl_object external_format)
+Decode a C string of the given length into a Lisp string using the
+specified external format. If @var{length} is -1, the length is
+determined by @code{strlen}. Returns @code{NULL} if the decoding fails.
+@end deftypefun
+
+@cppdef ecl_encode_to_cstring
+@deftypefun cl_fixnum ecl_encode_to_cstring (char *output, cl_fixnum output_length, cl_object input, cl_object external_format)
+Encode the Lisp string @var{input} into a C string of the given length
+using the specified external format. Returns the number of characters
+necessary to encode the Lisp string (including the null terminator). If
+this is larger than @var{output_length}, @var{output} is unchanged.
+Returns -1 if the encoding fails.
+@end deftypefun
+
+@cppdef ecl_decode_from_unicode_wstring
+@cppdef ecl_encode_to_unicode_wstring
+@deftypefun cl_object ecl_decode_from_unicode_wstring (const wchar_t *string, cl_fixnum length)
+@deftypefunx cl_fixnum ecl_encode_to_unicode_wstring (wchar_t *output, cl_fixnum output_length, cl_object input)
+These functions work the same as @coderef{ecl_decode_from_cstring},
+@coderef{ecl_encode_to_cstring}, except that the external format used is
+either utf-8, utf-16 or utf-32 depending on whether
+@code{sizeof(wchar_t)} is 1, 2, or 4 respectively.
+@end deftypefun
+
 @subsubsection ANSI dictionary
 Common Lisp and C equivalence
 
