@@ -1,7 +1,7 @@
 @node Building ECL
 @section Building ECL
 
-Due to its portable nature ECL works on every (at least) 32-bit
+Due to its portable nature, ECL works on every (at least) 32-bit
 architecture which provides a proper C99 compliant compiler.
 
 Operating systems on which ECL is reported to work: Linux, Darwin (Mac
