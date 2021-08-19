@@ -908,6 +908,7 @@ if test "x${enable_unicode}" != "xno"; then
    fi
    AC_DEFINE([ECL_UNICODE_NAMES], [1], [Link in the database of Unicode names])
    EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
+	AC_CHECK_HEADERS([wchar.h])
 else
    CHAR_CODE_LIMIT=256
    ECL_CHARACTER="int"
