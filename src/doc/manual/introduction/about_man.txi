@@ -12,20 +12,20 @@ purpose. The homepage of the
 @uref{https://common-lisp.net,Common-Lisp.net} contains a good list of
 links of such teaching and learning material.
 
-This book is structure into four parts:
+This book is structured into four parts:
 
 @subsection User's guide
 We begin with [@ref{User's guide}] which provides introductory material
 showing the user how to build and use ECL and some of its unique
 features. This part assumes some basic Common Lisp knowledge and is
-suggested as an entry point for a new users who want to start using
+suggested as an entry point for new users who want to start using
 @ecl{}.
 
 @subsection Developer's guide
 [@ref{Developer's guide}] documents @ecl{} implementation details. This
 part is not meant for normal users but rather for the ECL developers
 and other people who want to contribute to @ecl{}. This section is prone
-to change due to the dynamic nature of a software. Covered topics
+to change due to the dynamic nature of the software. Covered topics
 include source code structure, contributing guide, internal
 implementation details and many other topics relevant to the development
 process.
