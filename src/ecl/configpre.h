@@ -593,6 +593,9 @@
 /* Define to 1 if you have the <vfork.h> header file. */
 #undef HAVE_VFORK_H
 
+/* Define to 1 if you have the <wchar.h> header file. */
+#undef HAVE_WCHAR_H
+
 /* Define to 1 if `fork' works. */
 #undef HAVE_WORKING_FORK
 

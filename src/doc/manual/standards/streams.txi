@@ -152,6 +152,13 @@ Return the POSIX file descriptor of @var{file-stream} as an integer
 
 @subsubsection External Format Extensions
 
+@lspdef ext:*default-external-format*
+@defvar ext:*default-external-format*
+Default external format to use for reading from streams, dealing with
+filenames, etc. The default is to use utf-8 encoding if ECL is built
+with Unicode support.
+@end defvar
+
 @lspdef ext:all-encodings
 @defun ext:all-encodings
 Return a list of all supported external formats

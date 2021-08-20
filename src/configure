@@ -10099,6 +10099,18 @@ $as_echo "#define ECL_UNICODE 21" >>confdefs.h
 $as_echo "#define ECL_UNICODE_NAMES 1" >>confdefs.h
 
    EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
+	for ac_header in wchar.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "wchar.h" "ac_cv_header_wchar_h" "$ac_includes_default"
+if test "x$ac_cv_header_wchar_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_WCHAR_H 1
+_ACEOF
+
+fi
+
+done
+
 else
    CHAR_CODE_LIMIT=256
    ECL_CHARACTER="int"
