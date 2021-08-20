@@ -109,14 +109,14 @@ copy_object_file(cl_object original)
    */
 #if defined(ECL_MS_WINDOWS_HOST)
   ecl_disable_interrupts();
-  err = !CopyFile(original->base_string.self, copy->base_string.self, 0);
+  err = !ecl_CopyFile(ecl_filename_self(original), ecl_filename_self(copy), 0);
   ecl_enable_interrupts();
   if (err) {
     FEwin32_error("Error when copying file from~&~3T~A~&to~&~3T~A",
                   2, original, copy);
   }
 #else
-  err = Null(si_copy_file(original, copy));
+  err = Null(si_copy_file(ecl_decode_filename(original,ECL_NIL), copy));
   if (err) {
     FEerror("Error when copying file from~&~3T~A~&to~&~3T~A",
             2, original, copy);
@@ -125,12 +125,12 @@ copy_object_file(cl_object original)
 #ifdef cygwin
   {
     cl_object new_copy = @".dll";
-    new_copy = si_base_string_concatenate(2, copy, new_copy);
-    cl_rename_file(2, copy, new_copy);
+    new_copy = ecl_concatenate_filename(copy, new_copy);
+    cl_rename_file(2, ecl_decode_filename(copy,ECL_NIL), ecl_decode_filename(new_copy,ECL_NIL));
     copy = new_copy;
   }
   ecl_disable_interrupts();
-  err = chmod(copy->base_string.self, S_IRWXU) < 0;
+  err = ecl_chmod(ecl_filename_self(copy), S_IRWXU) < 0;
   ecl_enable_interrupts();
   if (err) {
     FElibc_error("Unable to give executable permissions to ~A",
@@ -176,7 +176,7 @@ static void
 dlopen_wrapper(cl_object block)
 {
   cl_object filename = block->cblock.name;
-  char *filename_string = (char*)filename->base_string.self;
+  ecl_filename_char *filename_string = ecl_filename_self(filename);
 #ifdef HAVE_DLFCN_H
   block->cblock.handle = dlopen(filename_string, RTLD_NOW|RTLD_GLOBAL);
 #endif
@@ -196,7 +196,7 @@ dlopen_wrapper(cl_object block)
     }}
 #endif
 #if defined(ECL_MS_WINDOWS_HOST)
-  block->cblock.handle = LoadLibrary(filename_string);
+  block->cblock.handle = ecl_LoadLibrary(filename_string);
 #endif
   if (block->cblock.handle == NULL)
     set_library_error(block);
@@ -286,7 +286,7 @@ ecl_library_open(cl_object filename, bool force_reload) {
   bool self_destruct = 0;
 
   /* Coerces to a file name but does not merge with cwd */
-  filename = coerce_to_physical_pathname(filename);
+  filename = si_coerce_to_physical_pathname(filename);
   filename = ecl_namestring(filename,
                             ECL_NAMESTRING_TRUNCATE_IF_ERROR |
                             ECL_NAMESTRING_FORCE_BASE_STRING);
@@ -438,7 +438,7 @@ ecl_library_close(cl_object block) {
   } ECL_WITH_GLOBAL_LOCK_END;
   if (block != ECL_NIL && block->cblock.self_destruct) {
     if (!Null(block->cblock.name)) {
-      unlink((char*)block->cblock.name->base_string.self);
+      ecl_unlink(ecl_filename_self(block->cblock.name));
     }
   }
   return success;

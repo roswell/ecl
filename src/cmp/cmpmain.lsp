@@ -185,7 +185,7 @@ the environment variable TMPDIR to a different value." template))
   (let ((ld-flags (split-program-options *ld-shared-flags*)))
     #+msvc
     (setf ld-flags
-          (let ((implib (si::coerce-to-filename
+          (let ((implib (brief-namestring
                          (compile-file-pathname o-pathname :type :lib))))
             ;; MSVC linker options are added at the end, after the
             ;; /link flag, because they are not processed by the
@@ -203,7 +203,7 @@ the environment variable TMPDIR to a different value." template))
   (let ((ld-flags (split-program-options *ld-bundle-flags*)))
     #+msvc
     (setf ld-flags
-          (let ((implib (si::coerce-to-filename
+          (let ((implib (brief-namestring
                          (compile-file-pathname o-pathname :type :import-library))))
             ;; MSVC linker options are added at the end, after the
             ;; /link flag, because they are not processed by the
@@ -492,9 +492,9 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
   ;;
   (let* ((tmp-names (safe-mkstemp #P"TMP:ECLINIT"))
          (tmp-name (first tmp-names))
-         (c-name (si::coerce-to-filename
+         (c-name (brief-namestring
                   (compile-file-pathname tmp-name :type :c)))
-         (o-name (si::coerce-to-filename
+         (o-name (brief-namestring
                   (compile-file-pathname tmp-name :type :object)))
          submodules
          c-file)
@@ -679,9 +679,9 @@ compiled successfully, returns the pathname of the compiled file"
         #+dlopen
         (unless system-p
           (push o-pathname to-delete)
-          (bundle-cc (si::coerce-to-filename output-file)
+          (bundle-cc (brief-namestring output-file)
                      init-name
-                     (list (si::coerce-to-filename o-pathname)))))
+                     (list (brief-namestring o-pathname)))))
       (if (setf true-output-file (probe-file output-file))
           (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%"
                        (namestring input-pathname))
@@ -787,9 +787,9 @@ after compilation."
       (data-c-dump data-pathname)
 
       (compiler-cc c-pathname o-pathname)
-      (bundle-cc (si::coerce-to-filename so-pathname)
+      (bundle-cc (brief-namestring so-pathname)
                  init-name
-                 (list (si::coerce-to-filename o-pathname)))
+                 (list (brief-namestring o-pathname)))
       (cmp-delete-file c-pathname)
       (cmp-delete-file h-pathname)
       (cmp-delete-file o-pathname)
