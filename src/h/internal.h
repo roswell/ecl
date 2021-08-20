@@ -220,19 +220,6 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
 /* file.d */
 
-/*
- * POSIX specifies that the "b" flag is ignored. This is good, because
- * under MSDOS and Apple's OS we need to open text files in binary mode,
- * so that we get both the carriage return and the linefeed characters.
- * Otherwise, it would be complicated to implement file-position and
- * seek operations.
- */
-#define OPEN_R  "rb"
-#define OPEN_W  "wb"
-#define OPEN_RW "r+b"
-#define OPEN_A  "ab"
-#define OPEN_RA "a+b"
-
 /* Windows does not have this flag (POSIX thing) */
 #ifndef O_CLOEXEC
 #define O_CLOEXEC 0
@@ -500,6 +487,123 @@ extern cl_object ecl_waiter_pop(cl_env_ptr the_env, cl_object q);
 extern cl_object mp_get_rwlock_read_wait(cl_object lock);
 extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 #endif
+
+/* unixfsys.d */
+
+/* Filename encodings: on Unix we use ordinary chars encoded in a user
+ * specified format (usually utf8), while on Windows we use a wchar_t
+ * type.
+ *
+ * Naming conventions:
+ *  fstr: null-terminated raw C array with element type char or wchar_t
+ *  filename: Lisp base string or vector with element type byte16,
+ *            also null-terminated
+ */
+#if defined(ECL_MS_WINDOWS_HOST) && defined(ECL_UNICODE)
+#include <wchar.h>
+
+typedef wchar_t ecl_filename_char;
+#define ecl_fstrlen(x) wcslen(x)
+#define ecl_fstrcpy(x,y) wcscpy(x,y)
+#define ecl_fstrcat(x,y) wcscat(x,y)
+#define ecl_fstr(x) L ## x      /* wchar_t string constructor prefixed with L */
+
+cl_object ecl_make_simple_filename(const ecl_filename_char *x, cl_fixnum size);
+#define ecl_make_constant_filename(x,y) ecl_make_simple_filename(x,y)
+cl_object ecl_alloc_filename(cl_index len, cl_object adjustable);
+#define ecl_alloc_adjustable_filename(len) ecl_alloc_filename(len, ECL_T)
+#define ecl_alloc_simple_filename(len) ecl_alloc_filename(len, ECL_NIL)
+cl_object ecl_concatenate_filename(cl_object x, cl_object y);
+#define ecl_filename_self(x) ((ecl_filename_char*)((x)->vector.self.b16))
+
+#define ecl_chdir _wchdir
+#define ecl_stat _wstat64
+#define ecl_fstat _fstat64
+typedef struct __stat64 ecl_stat_struct;
+#define ecl_getcwd _wgetcwd
+#define ecl_access _waccess
+#define ecl_unlink _wunlink
+#define ecl_rename _wrename
+#define ecl_open _wopen
+#define ecl_fopen _wfopen
+#define ecl_fdopen _wfdopen
+#define ecl_rmdir _wrmdir
+#define ecl_mkdir _wmkdir
+#define ecl_chmod _wchmod
+#define ecl_getenv _wgetenv
+#define ecl_GetFileAttributes GetFileAttributesW
+#define ecl_MoveFile MoveFileW
+#define ecl_MoveFileEx MoveFileExW
+#define ecl_DeleteFile DeleteFileW
+#define ecl_FindFirstFile FindFirstFileW
+#define ecl_FindNextFile FindNextFileW
+#define ecl_WIN32_FIND_DATA WIN32_FIND_DATAW
+#define ecl_GetTempFileName GetTempFileNameW
+#define ecl_CopyFile CopyFileW
+#define ecl_LoadLibrary LoadLibraryW
+#define ecl_GetModuleFileName GetModuleFileNameW
+
+#else
+
+typedef char ecl_filename_char;
+#define ecl_fstrlen(x) strlen(x)
+#define ecl_fstrcpy(x,y) strcpy(x,y)
+#define ecl_fstrcat(x,y) strcat(x,y)
+#define ecl_fstr(x) x
+
+#define ecl_make_simple_filename(x,y) ecl_make_simple_base_string((char *)x,y)
+#define ecl_make_constant_filename(x,y) ecl_make_constant_base_string((char *)x,y)
+#define ecl_alloc_adjustable_filename(len) ecl_alloc_adjustable_base_string(len)
+#define ecl_alloc_simple_filename(len) ecl_alloc_simple_base_string(len)
+#define ecl_concatenate_filename(x,y) si_base_string_concatenate(2,x,y)
+#define ecl_filename_self(x) ((ecl_filename_char*)((x)->base_string.self))
+
+#define ecl_chdir chdir
+#define ecl_stat stat
+#define ecl_fstat fstat
+typedef struct stat ecl_stat_struct;
+#define ecl_getcwd getcwd
+#define ecl_access access
+#define ecl_unlink unlink
+#define ecl_rename rename
+#define ecl_open open
+#define ecl_fopen fopen
+#define ecl_fdopen fdopen
+#define ecl_rmdir rmdir
+#define ecl_mkdir mkdir
+#define ecl_chmod chmod
+#define ecl_getenv getenv
+#define ecl_GetFileAttributes GetFileAttributesA
+#define ecl_MoveFile MoveFileA
+#define ecl_MoveFileEx MoveFileExA
+#define ecl_DeleteFile DeleteFileA
+#define ecl_FindFirstFile FindFirstFileA
+#define ecl_FindNextFile FindNextFileA
+#define ecl_WIN32_FIND_DATA WIN32_FIND_DATAA
+#define ecl_GetTempFileName GetTempFileNameA
+#define ecl_CopyFile CopyFileA
+#define ecl_LoadLibrary LoadLibraryA
+#define ecl_GetModuleFileName GetModuleFileNameA
+
+#endif
+
+/*
+ * POSIX specifies that the "b" flag is ignored. This is good, because
+ * under MSDOS and Apple's OS we need to open text files in binary mode,
+ * so that we get both the carriage return and the linefeed characters.
+ * Otherwise, it would be complicated to implement file-position and
+ * seek operations.
+ */
+#define OPEN_R  ecl_fstr("rb")
+#define OPEN_W  ecl_fstr("wb")
+#define OPEN_RW ecl_fstr("r+b")
+#define OPEN_A  ecl_fstr("ab")
+#define OPEN_RA ecl_fstr("a+b")
+
+int ecl_backup_open(const ecl_filename_char *filename, int option, int mode);
+cl_object ecl_decode_filename(cl_object x, cl_object len);
+cl_object ecl_encode_filename(cl_object x, cl_object len);
+
 
 /* unixint.d */
 
