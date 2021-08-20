@@ -37,10 +37,12 @@
   ;; because it breaks down when using paths such as
   ;; c:/docume~1/juanjo/locals~1/temp/foo.tmp. enough-namestring would
   ;; return /docume~1/juanjo/locals~1/temp/foo.tmp which is not found
+  (when (wild-pathname-p path)
+    (error "Cannot coerce ~A to a physical filename~%" path))
   #+windows
-  (namestring (si::coerce-to-filename path))
+  (namestring (si::coerce-to-file-pathname path))
   #-windows
-  (enough-namestring (si::coerce-to-filename path)))
+  (enough-namestring (si::coerce-to-file-pathname path)))
 
 (defun normalize-build-target-name (target)
   (ecase target

@@ -634,14 +634,13 @@ cl_boot(int argc, char **argv)
   GC_enable();
 
   /*
-   * Initialize default pathnames
+   * Set *default-pathname-defaults* to a temporary fake value. We
+   * will fix this when we have access to the condition system to
+   * allow for error recovery when we can't parse the output of
+   * getcwd.
    */
-#if 1
-  ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
-#else
   ECL_SET(@'*default-pathname-defaults*',
           ecl_make_pathname(ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL, @':local'));
-#endif
 
 #ifdef ECL_THREADS
   ECL_SET(@'mp::*current-process*', env->own_process);
@@ -778,6 +777,12 @@ cl_boot(int argc, char **argv)
   ecl_set_option(ECL_OPT_BOOTED, 1);
 
   ecl_init_module(OBJNULL,init_lib_LSP);
+
+  ECL_HANDLER_CASE_BEGIN(env, ecl_list1(@'ext::stream-decoding-error')) {
+    ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
+  } ECL_HANDLER_CASE(1, c) {
+    _ecl_funcall3(@'warn', @"Cannot initialize *DEFAULT-PATHNAME-DEFAULTS* with the current directory:~%~A~%", c);
+  } ECL_HANDLER_CASE_END;
 
   if (cl_fboundp(@'ext::make-encoding') != ECL_NIL) {
     maybe_fix_console_stream(cl_core.standard_input);
