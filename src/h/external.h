@@ -1697,6 +1697,15 @@ extern ECL_API bool ecl_member_char(ecl_character c, cl_object char_bag);
 extern ECL_API bool ecl_fits_in_base_string(cl_object s);
 extern ECL_API ecl_character ecl_char(cl_object s, cl_index i);
 extern ECL_API ecl_character ecl_char_set(cl_object s, cl_index i, ecl_character c);
+extern ECL_API cl_object si_octets_to_string _ECL_ARGS((cl_narg narg, cl_object input, ...));
+extern ECL_API cl_object si_string_to_octets _ECL_ARGS((cl_narg narg, cl_object input, ...));
+extern ECL_API cl_object ecl_decode_from_cstring(const char *s, cl_fixnum len, cl_object encoding);
+extern ECL_API cl_fixnum ecl_encode_to_cstring(char *output, cl_fixnum output_len, cl_object input, cl_object encoding);
+#ifdef HAVE_WCHAR_H
+#include <wchar.h>
+extern ECL_API cl_object ecl_decode_from_unicode_wstring(const wchar_t *s, cl_fixnum len);
+extern ECL_API cl_fixnum ecl_encode_to_unicode_wstring(wchar_t *output, cl_fixnum output_len, cl_object input);
+#endif
 
 /* structure.c */
 
