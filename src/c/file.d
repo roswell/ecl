@@ -832,12 +832,12 @@ ucs_2be_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_
         return EOF;
       } else {
         ecl_character aux;
-        if (((*buffer)[3] & 0xFC) != 0xDC) {
+        if (((*buffer)[2] & 0xFC) != 0xDC) {
           return decoding_error(stream, buffer, 4, buffer_end);
         }
         aux = ((ecl_character)(*buffer)[2] << 8) | (*buffer)[3];
         *buffer += 4;
-        return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
+        return ((c & 0x3FF) << 10) + (aux & 0x3FF) + 0x10000;
       }
     }
     *buffer += 2;
@@ -851,7 +851,7 @@ ucs_2be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
   if (c >= 0x10000) {
     c -= 0x10000;
     ucs_2be_encoder(stream, buffer, (c >> 10) | 0xD800);
-    ucs_2be_encoder(stream, buffer+2, (c & 0x3FFF) | 0xDC00);
+    ucs_2be_encoder(stream, buffer+2, (c & 0x3FF) | 0xDC00);
     return 4;
   } else {
     buffer[1] = c & 0xFF; c >>= 8;
@@ -881,7 +881,7 @@ ucs_2le_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_
         }
         aux = ((ecl_character)(*buffer)[3] << 8) | (*buffer)[2];
         *buffer += 4;
-        return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
+        return ((c & 0x3FF) << 10) + (aux & 0x3FF) + 0x10000;
       }
     }
     *buffer += 2;
@@ -894,8 +894,8 @@ ucs_2le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
   if (c >= 0x10000) {
     c -= 0x10000;
-    ucs_2le_encoder(stream, buffer, (c >> 10) | 0xD8000);
-    ucs_2le_encoder(stream, buffer+2, (c & 0x3FFF) | 0xD800);
+    ucs_2le_encoder(stream, buffer, (c >> 10) | 0xD800);
+    ucs_2le_encoder(stream, buffer+2, (c & 0x3FF) | 0xDC00);
     return 4;
   } else {
     buffer[0] = c & 0xFF; c >>= 8;
@@ -4479,7 +4479,7 @@ seq_in_ucs2_read_char(cl_object strm)
       err = cl_list(2, ecl_make_fixnum(c), ecl_make_fixnum(aux));
       goto DECODING_ERROR;
     }
-    c = ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
+    c = ((c & 0x3FF) << 10) + (aux & 0x3FF) + 0x10000;
   }
   SEQ_INPUT_POSITION(strm) = curr_pos;
   return c;
@@ -4712,7 +4712,7 @@ seq_out_ucs2_write_char(cl_object strm, ecl_character c)
     if (c >= 0x10000) {
       c -= 0x10000;
       vector->vector.self.b16[curr_pos++] = (c >> 10) | 0xD800;
-      vector->vector.self.b16[curr_pos++] = (c & 0x3FFF) | 0xDC00;
+      vector->vector.self.b16[curr_pos++] = (c & 0x3FF) | 0xDC00;
     } else {
       vector->vector.self.b16[curr_pos++] = c;
     }
