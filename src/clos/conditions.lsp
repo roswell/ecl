@@ -494,6 +494,14 @@ returns with NIL."
 
 (define-condition error (serious-condition) ())
 
+(defgeneric simple-condition-format-control (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'simple-condition)))
+
+(defgeneric simple-condition-format-arguments (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'simple-condition)))
+
 (define-condition simple-condition ()
   ((format-control :INITARG :FORMAT-CONTROL :INITFORM ""
                    :ACCESSOR simple-condition-format-control)
@@ -558,6 +566,14 @@ memory limits before executing the program again."))
              (format stream "Serious signal ~D caught."
                      (ext:unix-signal-received-code condition)))))
 
+(defgeneric type-error-datum (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'type-error)))
+
+(defgeneric type-error-expected-type (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'type-error)))
+
 (define-condition type-error (error)
   ((datum :INITARG :DATUM :READER type-error-datum)
    (expected-type :INITARG :EXPECTED-TYPE :READER type-error-expected-type))
@@ -583,6 +599,10 @@ memory limits before executing the program again."))
 
 (define-condition control-error (error) ())
 
+(defgeneric stream-error-stream (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'stream-error)))
+
 (define-condition stream-error (error)
   ((stream :initarg :stream :reader stream-error-stream)))
 
@@ -591,6 +611,10 @@ memory limits before executing the program again."))
   (:REPORT (lambda (condition stream)
              (format stream "Unexpected end of file on ~S."
                      (stream-error-stream condition)))))
+
+(defgeneric file-error-pathname (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'file-error)))
 
 (define-condition file-error (error)
   ((pathname :INITARG :PATHNAME :READER file-error-pathname))
@@ -601,8 +625,16 @@ memory limits before executing the program again."))
  3) the pathname points to a broken symbolic link."
                      (file-error-pathname condition)))))
 
+(defgeneric package-error-package (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'package-error)))
+
 (define-condition package-error (error)
   ((package :INITARG :PACKAGE :READER package-error-package)))
+
+(defgeneric cell-error-name (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'cell-error)))
 
 (define-condition cell-error (error)
   ((name :INITARG :NAME :READER cell-error-name)))
@@ -613,6 +645,10 @@ memory limits before executing the program again."))
              (format stream "The variable ~S is unbound."
                      (cell-error-name condition)))))
   
+(defgeneric unbound-slot-instance (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'unbound-slot)))
+
 (define-condition unbound-slot (cell-error)
   ((instance :INITARG :INSTANCE :READER unbound-slot-instance))
   (:REPORT (lambda (condition stream)
@@ -625,6 +661,14 @@ memory limits before executing the program again."))
   (:REPORT (lambda (condition stream)
              (format stream "The function ~S is undefined."
                      (cell-error-name condition)))))
+
+(defgeneric arithmetic-error-operation (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'arithmetic-error)))
+
+(defgeneric arithmetic-error-operands (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'arithmetic-error)))
 
 (define-condition arithmetic-error (error)
   ((operation :INITARG :OPERATION :READER arithmetic-error-operation)
@@ -642,6 +686,10 @@ memory limits before executing the program again."))
 
 (define-condition abort-failure (control-error) ()
   (:REPORT "Abort failed."))
+
+(defgeneric print-not-readable-object (instance)
+  (:method (instance)
+    (error 'type-error :datum instance :expected-type 'print-not-readable)))
 
 (define-condition print-not-readable (error)
   ((object :INITARG :OBJECT :READER print-not-readable-object))
