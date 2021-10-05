@@ -33,6 +33,7 @@
   to utf-8 on Unix and may be changed using ~ext:*default-external-format*~
   (Windows always uses the utf-16 format provided by the OS).
 - Add hook functions for cl:ed via ext:*ed-functions* list)
+- Signal type-error in condition readers for WSCL conformance.
 * 21.2.1 changes since 20.4.24
 ** Announcement
 Dear Community,
