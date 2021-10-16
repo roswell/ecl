@@ -22,7 +22,7 @@
 ;;;; Declare the suites
 (suite 'make-check
        '(executable ieee-fp eprocess package-ext hash-tables ansi+ mixed
-         cmp emb ffi mop run-program mp complex #+unicode unicode))
+         cmp emb ffi mop run-program mp complex wscl #+unicode unicode))
 
 (suite 'ecl-tests
        '(make-check eformat))
