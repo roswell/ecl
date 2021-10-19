@@ -102,7 +102,7 @@ out_of_memory(size_t requested_bytes)
   /* The out of memory condition may happen in more than one thread */
   /* But then we have to ensure the error has not been solved */
 #ifdef ECL_THREADS
-  mp_get_lock_wait(cl_core.error_lock);
+  ecl_mutex_lock(&cl_core.error_lock);
   ECL_UNWIND_PROTECT_BEGIN(the_env)
 #endif
   {
@@ -141,7 +141,7 @@ out_of_memory(size_t requested_bytes)
   }
 #ifdef ECL_THREADS
   ECL_UNWIND_PROTECT_EXIT {
-    mp_giveup_lock(cl_core.error_lock);
+    ecl_mutex_unlock(&cl_core.error_lock);
   } ECL_UNWIND_PROTECT_END;
 #endif
   ecl_bds_unwind1(the_env);
@@ -432,10 +432,8 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 # ifdef ECL_THREADS
   case t_process:
     MAYBE_MARK(o->process.queue_record);
-    MAYBE_MARK(o->process.start_stop_spinlock);
     MAYBE_MARK(o->process.woken_up);
     MAYBE_MARK(o->process.exit_values);
-    MAYBE_MARK(o->process.exit_barrier);
     MAYBE_MARK(o->process.parent);
     MAYBE_MARK(o->process.initial_bindings);
     MAYBE_MARK(o->process.interrupt);
@@ -446,37 +444,23 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
       ecl_mark_env(o->process.env);
     break;
   case t_lock:
-    MAYBE_MARK(o->lock.queue_list);
-    MAYBE_MARK(o->lock.queue_spinlock);
     MAYBE_MARK(o->lock.owner);
     MAYBE_MARK(o->lock.name);
     break;
   case t_condition_variable:
-    MAYBE_MARK(o->condition_variable.queue_spinlock);
-    MAYBE_MARK(o->condition_variable.queue_list);
-    MAYBE_MARK(o->condition_variable.lock);
     break;
   case t_rwlock:
     MAYBE_MARK(o->rwlock.name);
-#  ifndef ECL_RWLOCK
-    MAYBE_MARK(o->rwlock.mutex);
     break;
-#  endif
   case t_semaphore:
-    MAYBE_MARK(o->semaphore.queue_list);
-    MAYBE_MARK(o->semaphore.queue_spinlock);
     MAYBE_MARK(o->semaphore.name);
     break;
   case t_barrier:
-    MAYBE_MARK(o->barrier.queue_list);
-    MAYBE_MARK(o->barrier.queue_spinlock);
     MAYBE_MARK(o->barrier.name);
     break;
   case t_mailbox:
     MAYBE_MARK(o->mailbox.data);
     MAYBE_MARK(o->mailbox.name);
-    MAYBE_MARK(o->mailbox.reader_semaphore);
-    MAYBE_MARK(o->mailbox.writer_semaphore);
     break;
 # endif
   case t_codeblock:
@@ -1013,41 +997,22 @@ init_alloc(void)
     to_bitmap(&o, &(o.process.interrupt)) |
     to_bitmap(&o, &(o.process.initial_bindings)) |
     to_bitmap(&o, &(o.process.parent)) |
-    to_bitmap(&o, &(o.process.exit_barrier)) |
     to_bitmap(&o, &(o.process.exit_values)) |
     to_bitmap(&o, &(o.process.woken_up)) |
-    to_bitmap(&o, &(o.process.start_stop_spinlock)) |
     to_bitmap(&o, &(o.process.queue_record));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
-    to_bitmap(&o, &(o.lock.owner)) |
-    to_bitmap(&o, &(o.lock.queue_spinlock)) |
-    to_bitmap(&o, &(o.lock.queue_list));
-#  ifdef ECL_RWLOCK
+    to_bitmap(&o, &(o.lock.owner));
   type_info[t_rwlock].descriptor =
     to_bitmap(&o, &(o.rwlock.name));
-#  else
-  type_info[t_rwlock].descriptor =
-    to_bitmap(&o, &(o.rwlock.name)) |
-    to_bitmap(&o, &(o.rwlock.mutex));
-#  endif
-  type_info[t_condition_variable].descriptor =
-    to_bitmap(&o, &(o.condition_variable.lock)) |
-    to_bitmap(&o, &(o.condition_variable.queue_list)) |
-    to_bitmap(&o, &(o.condition_variable.queue_spinlock));
+  type_info[t_condition_variable].descriptor = 0;
   type_info[t_semaphore].descriptor = 
-    to_bitmap(&o, &(o.semaphore.name)) |
-    to_bitmap(&o, &(o.semaphore.queue_list)) |
-    to_bitmap(&o, &(o.semaphore.queue_spinlock));
+    to_bitmap(&o, &(o.semaphore.name));
   type_info[t_barrier].descriptor = 
-    to_bitmap(&o, &(o.barrier.name)) |
-    to_bitmap(&o, &(o.barrier.queue_list)) |
-    to_bitmap(&o, &(o.barrier.queue_spinlock));
+    to_bitmap(&o, &(o.barrier.name));
   type_info[t_mailbox].descriptor = 
     to_bitmap(&o, &(o.mailbox.name)) |
-    to_bitmap(&o, &(o.mailbox.data)) |
-    to_bitmap(&o, &(o.mailbox.reader_semaphore)) |
-    to_bitmap(&o, &(o.mailbox.writer_semaphore));
+    to_bitmap(&o, &(o.mailbox.data));
 # endif
   type_info[t_codeblock].descriptor =
     to_bitmap(&o, &(o.cblock.data)) |
@@ -1123,15 +1088,60 @@ standard_finalizer(cl_object o)
     GC_unregister_disappearing_link((void**)&(o->weak.value));
     break;
 #ifdef ECL_THREADS
-# ifdef ECL_RWLOCK
-  case t_rwlock: {
+  case t_lock: {
     const cl_env_ptr the_env = ecl_process_env();
     ecl_disable_interrupts_env(the_env);
-    pthread_rwlock_destroy(&o->rwlock.mutex);
+    ecl_mutex_destroy(&o->lock.mutex);
     ecl_enable_interrupts_env(the_env);
     break;
   }
-# endif
+  case t_condition_variable: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_cond_var_destroy(&o->condition_variable.cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_barrier: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->barrier.mutex);
+    ecl_cond_var_destroy(&o->barrier.cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_semaphore: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->semaphore.mutex);
+    ecl_cond_var_destroy(&o->semaphore.cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_mailbox: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->mailbox.mutex);
+    ecl_cond_var_destroy(&o->mailbox.reader_cv);
+    ecl_cond_var_destroy(&o->mailbox.writer_cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_rwlock: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_rwlock_destroy(&o->rwlock.mutex);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_process: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->process.start_stop_lock);
+    ecl_cond_var_destroy(&o->process.exit_barrier);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
   case t_symbol: {
     ecl_atomic_push(&cl_core.reused_indices,
                     ecl_make_fixnum(o->symbol.binding));
@@ -1169,9 +1179,15 @@ register_finalizer(cl_object o, void *finalized_object,
   case t_codeblock:
 #endif
   case t_stream:
-#if defined(ECL_THREADS) && defined(ECL_RWLOCK)
+#if defined(ECL_THREADS)
+  case t_lock:
+  case t_condition_variable:
+  case t_barrier:
+  case t_semaphore:
+  case t_mailbox:
   case t_rwlock:
-#endif
+  case t_process:
+#endif  /* ECL_THREADS */
     /* Don't delete the standard finalizer. */
     if (fn == NULL) {
       fn = (GC_finalization_proc)wrapped_finalizer;

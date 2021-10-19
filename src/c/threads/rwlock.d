@@ -26,59 +26,16 @@
  * READ/WRITE LOCKS
  */
 
-static void
-FEerror_not_a_rwlock(cl_object lock)
-{
-  FEwrong_type_argument(@'mp::rwlock', lock);
-}
-
-static void
-FEunknown_rwlock_error(cl_object lock, int rc)
-{
-#ifdef ECL_WINDOWS_THREADS
-  FEwin32_error("When acting on rwlock ~A, got an unexpected error.", 1, lock);
-#else
-  const char *msg = NULL;
-  switch (rc) {
-  case EINVAL:
-    msg = "The value specified by rwlock is invalid";
-    break;
-  case EPERM:
-    msg = "Read/write lock not owned by us";
-    break;
-  case EDEADLK:
-    msg = "Thread already owns this lock";
-    break;
-  case ENOMEM:
-    msg = "Out of memory";
-    break;
-  default:
-    FElibc_error("When acting on rwlock ~A, got an unexpected error.",
-                 1, lock);
-  }
-  FEerror("When acting on rwlock ~A, got the following C library error:~%"
-          "~A", 2, lock, ecl_make_constant_base_string(msg,-1));
-#endif
-}
-
 cl_object
 ecl_make_rwlock(cl_object name)
 {
-  const cl_env_ptr the_env = ecl_process_env();
+  cl_env_ptr env = ecl_process_env();
   cl_object output = ecl_alloc_object(t_rwlock);
-#ifdef ECL_RWLOCK
-  int rc;
-  ecl_disable_interrupts_env(the_env);
-  rc = pthread_rwlock_init(&output->rwlock.mutex, NULL);
-  ecl_enable_interrupts_env(the_env);
-  if (rc) {
-    FEerror("Unable to create read/write lock", 0);
-  }
-  ecl_set_finalizer_unprotected(output, ECL_T);
-#else
-  output->rwlock.mutex = ecl_make_lock(name, 0);
-#endif
   output->rwlock.name = name;
+  ecl_disable_interrupts_env(env);
+  ecl_rwlock_init(&output->rwlock.mutex);
+  ecl_set_finalizer_unprotected(output, ECL_T);
+  ecl_enable_interrupts_env(env);
   return output;
 }
 
@@ -91,134 +48,130 @@ cl_object
 mp_rwlock_name(cl_object lock)
 {
   const cl_env_ptr env = ecl_process_env();
-  if (ecl_t_of(lock) != t_rwlock)
-    FEerror_not_a_rwlock(lock);
+  if (ecl_unlikely(ecl_t_of(lock) != t_rwlock)) {
+    FEwrong_type_only_arg(@[mp::rwlock-name], lock, @[mp::rwlock]);
+  }
   ecl_return1(env, lock->rwlock.name);
 }
 
 cl_object
 mp_giveup_rwlock_read(cl_object lock)
 {
-  /* Must be called with interrupts disabled. */
-  if (ecl_t_of(lock) != t_rwlock)
-    FEerror_not_a_rwlock(lock);
-#ifdef ECL_RWLOCK
-  {
-    int rc = pthread_rwlock_unlock(&lock->rwlock.mutex);
-    if (rc)
-      FEunknown_rwlock_error(lock, rc);
-    @(return ECL_T);
+  const cl_env_ptr env = ecl_process_env();
+  int rc;
+  if (ecl_unlikely(ecl_t_of(lock) != t_rwlock)) {
+    FEwrong_type_only_arg(@[mp::giveup-rwlock-read], lock, @[mp::rwlock]);
   }
-#else
-  return mp_giveup_lock(lock->rwlock.mutex);
-#endif
+  rc = ecl_rwlock_unlock_read(&lock->rwlock.mutex);
+  if (ecl_likely(rc == ECL_MUTEX_SUCCESS)) {
+    ecl_return1(env, ECL_T);
+  } else if (rc == ECL_MUTEX_NOT_OWNED) {
+    FEerror_not_owned(lock);
+  } else {
+    FEunknown_lock_error(lock);
+  }
 }
 
 cl_object
 mp_giveup_rwlock_write(cl_object lock)
 {
-  return mp_giveup_rwlock_read(lock);
+  const cl_env_ptr env = ecl_process_env();
+  int rc;
+  if (ecl_unlikely(ecl_t_of(lock) != t_rwlock)) {
+    FEwrong_type_only_arg(@[mp::giveup-rwlock-write], lock, @[mp::rwlock]);
+  }
+  rc = ecl_rwlock_unlock_write(&lock->rwlock.mutex);
+  if (ecl_likely(rc == ECL_MUTEX_SUCCESS)) {
+    ecl_return1(env, ECL_T);
+  } else if (rc == ECL_MUTEX_NOT_OWNED) {
+    FEerror_not_owned(lock);
+  } else {
+    FEunknown_lock_error(lock);
+  }
 }
 
 cl_object
 mp_get_rwlock_read_nowait(cl_object lock)
 {
-  if (ecl_t_of(lock) != t_rwlock)
-    FEerror_not_a_rwlock(lock);
-#ifdef ECL_RWLOCK
-  {
-    const cl_env_ptr env = ecl_process_env();
-    cl_object output = ECL_T;
-    int rc = pthread_rwlock_tryrdlock(&lock->rwlock.mutex);
-    if (rc == 0) {
-      output = ECL_T;
-    } else if (rc == EBUSY) {
-      output = ECL_NIL;
-    } else {
-      FEunknown_rwlock_error(lock, rc);
-    }
-    ecl_return1(env, output);
+  const cl_env_ptr env = ecl_process_env();
+  int rc;
+  if (ecl_unlikely(ecl_t_of(lock) != t_rwlock)) {
+    FEwrong_type_only_arg(@[mp::get-rwlock-read], lock, @[mp::rwlock]);
   }
-#else
-  return mp_get_lock_nowait(lock->rwlock.mutex);
-#endif
+  rc = ecl_rwlock_trylock_read(&lock->rwlock.mutex);
+  if (rc == ECL_MUTEX_SUCCESS) {
+    ecl_return1(env, ECL_T);
+  } else if (rc == ECL_MUTEX_LOCKED) {
+    ecl_return1(env, ECL_NIL);
+  } else {
+    FEunknown_lock_error(lock);
+  }
 }
 
 cl_object
 mp_get_rwlock_read_wait(cl_object lock)
 {
-  if (ecl_t_of(lock) != t_rwlock)
-    FEerror_not_a_rwlock(lock);
-#ifdef ECL_RWLOCK
-  {
-    const cl_env_ptr env = ecl_process_env();
-    int rc = pthread_rwlock_rdlock(&lock->rwlock.mutex);
-    if (rc != 0) {
-      FEunknown_rwlock_error(lock, rc);
-    }
-    ecl_return1(env, ECL_T);
+  const cl_env_ptr env = ecl_process_env();
+  int rc;
+  if (ecl_unlikely(ecl_t_of(lock) != t_rwlock)) {
+    FEwrong_type_only_arg(@[mp::get-rwlock-read], lock, @[mp::rwlock]);
   }
-#else
-  return mp_get_lock_wait(lock->rwlock.mutex);
-#endif
+  rc = ecl_rwlock_lock_read(&lock->rwlock.mutex);
+  if (ecl_likely(rc == ECL_MUTEX_SUCCESS)) {
+    ecl_return1(env, ECL_T);
+  } else {
+    FEunknown_lock_error(lock);
+  }
 }
 
 @(defun mp::get-rwlock-read (lock &optional (wait ECL_T))
   @
-  if (Null(wait))
+  if (Null(wait)) {
     return mp_get_rwlock_read_nowait(lock);
-  else
+  } else {
     return mp_get_rwlock_read_wait(lock);
+  }
   @)
 
 cl_object
 mp_get_rwlock_write_nowait(cl_object lock)
 {
-  if (ecl_t_of(lock) != t_rwlock)
-    FEerror_not_a_rwlock(lock);
-#ifdef ECL_RWLOCK
-  {
-    const cl_env_ptr env = ecl_process_env();
-    cl_object output = ECL_T;
-    int rc = pthread_rwlock_trywrlock(&lock->rwlock.mutex);
-    if (rc == 0) {
-      output = ECL_T;
-    } else if (rc == EBUSY) {
-      output = ECL_NIL;
-    } else {
-      FEunknown_rwlock_error(lock, rc);
-    }
-    ecl_return1(env, output);
+  const cl_env_ptr env = ecl_process_env();
+  int rc;
+  if (ecl_unlikely(ecl_t_of(lock) != t_rwlock)) {
+    FEwrong_type_only_arg(@[mp::get-rwlock-write], lock, @[mp::rwlock]);
   }
-#else
-  return mp_get_lock_nowait(lock->rwlock.mutex);
-#endif
+  rc = ecl_rwlock_trylock_write(&lock->rwlock.mutex);
+  if (rc == ECL_MUTEX_SUCCESS) {
+    ecl_return1(env, ECL_T);
+  } else if (rc == ECL_MUTEX_LOCKED) {
+    ecl_return1(env, ECL_NIL);
+  } else {
+    FEunknown_lock_error(lock);
+  }
 }
 
 cl_object
 mp_get_rwlock_write_wait(cl_object lock)
 {
-  if (ecl_t_of(lock) != t_rwlock)
-    FEerror_not_a_rwlock(lock);
-#ifdef ECL_RWLOCK
-  {
-    int rc = pthread_rwlock_wrlock(&lock->rwlock.mutex);
-    if (rc != 0) {
-      FEunknown_rwlock_error(lock, rc);
-    }
-    @(return ECL_T);
+  const cl_env_ptr env = ecl_process_env();
+  int rc;
+  if (ecl_unlikely(ecl_t_of(lock) != t_rwlock)) {
+    FEwrong_type_only_arg(@[mp::get-rwlock-write], lock, @[mp::rwlock]);
   }
-#else
-  return mp_get_lock_wait(lock->rwlock.mutex);
-#endif
+  rc = ecl_rwlock_lock_write(&lock->rwlock.mutex);
+  if (ecl_likely(rc == ECL_MUTEX_SUCCESS)) {
+    ecl_return1(env, ECL_T);
+  } else {
+    FEunknown_lock_error(lock);
+  }
 }
 
 @(defun mp::get-rwlock-write (lock &optional (wait ECL_T))
   @
   if (Null(wait)) {
     return mp_get_rwlock_write_nowait(lock);
-  }
-  else {
+  } else {
     return mp_get_rwlock_write_wait(lock);
   }
   @)

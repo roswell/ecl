@@ -463,6 +463,25 @@ FEinvalid_function_name(cl_object fname)
            @':datum', fname);
 }
 
+#ifdef ECL_THREADS
+void
+FEerror_not_owned(cl_object lock)
+{
+  FEerror("Attempted to give up lock ~S that is not owned by process ~S",
+          2, lock, mp_current_process());
+}
+
+void
+FEunknown_lock_error(cl_object lock)
+{
+#ifdef ECL_WINDOWS_THREADS
+  FEwin32_error("When acting on lock ~A, got an unexpected error.", 1, lock);
+#else
+  FEerror("When acting on lock ~A, got an unexpected error.", 1, lock);
+#endif
+}
+#endif
+
 /*      bootstrap version                */
 static int recursive_error = 0;
 
