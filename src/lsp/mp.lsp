@@ -112,36 +112,24 @@ by ALLOW-WITH-INTERRUPTS."
 ;;;
 ;;; Convenience macros for locks
 ;;;
-(defmacro with-lock ((lock-form &rest options) &body body)
+(defmacro with-lock ((lock-form &key (wait-form t)) &body body)
   #-threads
   `(progn ,@body)
-  ;; Why do we need %count? Even if get-lock succeeeds, an interrupt may
-  ;; happen between the end of get-lock and when we save the output of
-  ;; the function. That means we lose the information and ignore that
-  ;; the lock was actually acquired. Furthermore, a lock can be recursive
-  ;; and mp:lock-holder is also not reliable.
-  ;;
-  ;; Next notice how we need to disable interrupts around the body and
-  ;; the get-lock statement, to ensure that the unlocking is done with
-  ;; interrupts disabled.
+  ;; We do our best to make sure that the lock is released if we are
+  ;; interrupted and jump up the call stack, however there is an
+  ;; unavoidable race condition if the interrupt happens after the
+  ;; mutex is locked but before we store the return value of
+  ;; mp:get-lock.
   #+threads
-  (ext:with-unique-names (lock owner count process)
-    `(let* ((,lock ,lock-form)
-            (,owner (mp:lock-owner ,lock))
-            (,count (mp:lock-count ,lock)))
-       (declare (type fixnum ,count))
-       (without-interrupts
+  (ext:with-unique-names (lock wait)
+    `(let ((,lock ,lock-form)
+           (,wait ,wait-form))
+       (when (mp:get-lock ,lock ,wait)
+         (without-interrupts
            (unwind-protect
                 (with-restored-interrupts
-                    (mp::get-lock ,lock)
-                  (locally ,@body))
-             (let ((,process mp:*current-process*))
-               (declare (optimize (speed 3) (safety 0) (debug 0)))
-               (when (and (eq ,process (mp:lock-owner ,lock))
-                          (or (not (eq ,owner ,process))
-                              (> (the fixnum (mp:lock-count ,lock))
-                                 (the fixnum ,count))))
-                 (mp::giveup-lock ,lock))))))))
+                    (locally ,@body))
+             (mp:giveup-lock ,lock)))))))
 
 #+ecl-read-write-lock
 (defmacro with-rwlock ((lock op) &body body)

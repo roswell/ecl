@@ -5142,7 +5142,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
@@ -6225,9 +6225,6 @@ _ACEOF
 
 
 
-$as_echo "#define ECL_RWLOCK /**/" >>confdefs.h
-
-
 $as_echo "#define HAVE_POSIX_RWLOCK /**/" >>confdefs.h
 
 
@@ -6236,7 +6233,17 @@ fi
 
 fi
 
-THREAD_OBJ="$THREAD_OBJ threads/rwlock"
+for ac_func in pthread_mutex_timedlock
+do :
+  ac_fn_c_check_func "$LINENO" "pthread_mutex_timedlock" "ac_cv_func_pthread_mutex_timedlock"
+if test "x$ac_cv_func_pthread_mutex_timedlock" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_PTHREAD_MUTEX_TIMEDLOCK 1
+_ACEOF
+
+fi
+done
+
 
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
     for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
@@ -7326,7 +7333,7 @@ done
 
 for ac_header in sys/utsname.h float.h pwd.h dlfcn.h link.h \
                   mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h \
-                  sys/wait.h semaphore.h
+                  sys/wait.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
