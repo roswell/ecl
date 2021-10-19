@@ -1816,9 +1816,10 @@ extern ECL_API cl_object mp_make_semaphore _ECL_ARGS((cl_narg, ...));
 extern ECL_API cl_object mp_semaphore_count(cl_object);
 extern ECL_API cl_object mp_semaphore_name(cl_object);
 extern ECL_API cl_object mp_semaphore_wait_count(cl_object);
-extern ECL_API cl_object mp_wait_on_semaphore(cl_object);
-extern ECL_API cl_object mp_try_get_semaphore(cl_object);
-extern ECL_API cl_object mp_signal_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_semaphore_wait(cl_object, cl_object, cl_object);
+extern ECL_API cl_object mp_wait_on_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_try_get_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_signal_semaphore  _ECL_ARGS((cl_narg, cl_object, ...));
 extern ECL_API cl_object ecl_make_semaphore(cl_object name, cl_fixnum count);
 
 /* threads/barrier.d */
