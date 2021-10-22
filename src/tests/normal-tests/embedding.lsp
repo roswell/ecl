@@ -316,89 +316,89 @@ int main(int narg, char **argv)
 #include <ecl/ecl.h>
 
 int main(int argc, char** argv) {
-	cl_boot(argc, argv);
+    cl_boot(argc, argv);
 
-   cl_object utf_8 = ecl_make_keyword(\"UTF-8\");
+    cl_object utf_8 = ecl_make_keyword(\"UTF-8\");
 
-	unsigned char invalid[3] = {0xff, 0xfe, 0};
-   if (ecl_decode_from_cstring(invalid, -1, utf_8) != NULL) {
-      return -1;
-   }
+    unsigned char invalid[3] = {0xff, 0xfe, 0};
+    if (ecl_decode_from_cstring(invalid, -1, utf_8) != NULL) {
+         return -1;
+    }
 
-   unsigned char x[9] = {240, 159, 145, 137, 240, 159, 145, 136, 0};
-   cl_object s = cl_make_string(1, ecl_make_fixnum(2));
-	ecl_char_set(s, 0, 128073);
-	ecl_char_set(s, 1, 128072);
+    unsigned char x[9] = {0xf0, 0x9f, 0x91, 0x89, 0xf0, 0x9f, 0x91, 0x88, 0};
+    cl_object s = cl_make_string(1, ecl_make_fixnum(2));
+    ecl_char_set(s, 0, 0x1f449);
+    ecl_char_set(s, 1, 0x1f448);
 
-   if (!ecl_equal(s, ecl_decode_from_cstring(x, -1, utf_8))
-       || !ecl_equal(s, ecl_decode_from_cstring(x, 8, utf_8))) {
-      return -2;
-   }
+    if (!ecl_equal(s, ecl_decode_from_cstring(x, -1, utf_8))
+        || !ecl_equal(s, ecl_decode_from_cstring(x, 8, utf_8))) {
+        return -2;
+    }
 
-   unsigned char y[9];
-   if (ecl_encode_to_cstring(y, 9, s, utf_8) != 9) {
-      return -3;
-   }
-   for (int i = 0; i < 9; i++) {
-      if (x[i] != y[i]) {
-         return -4;
-      }
-   }
+    unsigned char y[9];
+    if (ecl_encode_to_cstring(y, 9, s, utf_8) != 9) {
+        return -3;
+    }
+    for (int i = 0; i < 9; i++) {
+        if (x[i] != y[i]) {
+            return -4;
+        }
+    }
 
-   if (ecl_encode_to_cstring(y, 1, s, utf_8) != 9) {
-      return -5;
-   }
+    if (ecl_encode_to_cstring(y, 1, s, utf_8) != 9) {
+        return -5;
+    }
 
-   if (ecl_encode_to_cstring(y, 9, s, ecl_make_keyword(\"US-ASCII\")) != -1) {
-      return -6;
-   }
+    if (ecl_encode_to_cstring(y, 9, s, ecl_make_keyword(\"US-ASCII\")) != -1) {
+        return -6;
+    }
 
 #ifdef HAVE_WCHAR_H
-   if (sizeof(wchar_t) == 2) {
-      wchar_t u[5] = {55357, 64585, 55357, 64584, 0};
-      if (!ecl_equal(s, ecl_decode_from_unicode_wstring(u, -1))
-          || !ecl_equal(s, ecl_decode_from_unicode_wstring(u, 4))) {
-         return -7;
-      }
+    if (sizeof(wchar_t) == 2) {
+        wchar_t u[5] = {0xd83d, 0xdc49, 0xd83d, 0xdc48, 0};
+        if (!ecl_equal(s, ecl_decode_from_unicode_wstring(u, -1))
+            || !ecl_equal(s, ecl_decode_from_unicode_wstring(u, 4))) {
+            return -7;
+        }
 
-      wchar_t v[5];
-      if (ecl_encode_to_unicode_wstring(v, 5, s) != 5) {
-         return -8;
-      }
-      for (int i = 0; i < 5; i++) {
-         if (u[i] != v[i]) {
-            return -9;
-         }
-      }
+        wchar_t v[5];
+        if (ecl_encode_to_unicode_wstring(v, 5, s) != 5) {
+            return -8;
+        }
+        for (int i = 0; i < 5; i++) {
+            if (u[i] != v[i]) {
+                return -9;
+            }
+        }
       
-      if (ecl_encode_to_unicode_wstring(v, 1, s) != 5) {
-         return -10;
-      }
-   } else if (sizeof(wchar_t) == 4) {
-      wchar_t u[3] = {128073, 128072, 0};
-      if (!ecl_equal(s, ecl_decode_from_unicode_wstring(u, -1))
-          || !ecl_equal(s, ecl_decode_from_unicode_wstring(u, 2))) {
-         return -7;
-      }
+        if (ecl_encode_to_unicode_wstring(v, 1, s) != 5) {
+            return -10;
+        }
+    } else if (sizeof(wchar_t) == 4) {
+        wchar_t u[3] = {0x1f449, 0x1f448, 0};
+        if (!ecl_equal(s, ecl_decode_from_unicode_wstring(u, -1))
+            || !ecl_equal(s, ecl_decode_from_unicode_wstring(u, 2))) {
+            return -7;
+        }
 
-      wchar_t v[3];
-      if (ecl_encode_to_unicode_wstring(v, 3, s) != 3) {
-         return -8;
-      }
-      for (int i = 0; i < 3; i++) {
-         if (u[i] != v[i]) {
-            return -9;
-         }
-      }
+        wchar_t v[3];
+        if (ecl_encode_to_unicode_wstring(v, 3, s) != 3) {
+            return -8;
+        }
+        for (int i = 0; i < 3; i++) {
+            if (u[i] != v[i]) {
+                return -9;
+            }
+        }
       
-      if (ecl_encode_to_unicode_wstring(v, 1, s) != 3) {
-         return -10;
-      }
-   }
+        if (ecl_encode_to_unicode_wstring(v, 1, s) != 3) {
+            return -10;
+        }
+    }
 #endif
 
-	cl_shutdown();
-	return 0;
+    cl_shutdown();
+    return 0;
 }
 "))
      (test-C-program c-code))))

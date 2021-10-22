@@ -311,6 +311,10 @@ extern cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1];
 extern void ecl_init_bignum_registers(cl_env_ptr env);
 extern void ecl_clear_bignum_registers(cl_env_ptr env);
 
+/* threads/mutex.d */
+
+extern cl_object si_mutex_timeout();
+
 /* print.d */
 
 extern cl_object _ecl_stream_or_default_output(cl_object stream);
@@ -336,67 +340,12 @@ extern void _ecl_string_push_c_string(cl_object s, const char *c);
 
 extern void cl_write_object(cl_object x, cl_object stream);
 
-/* global locks */
+/* threads/rwlock.d */
 
 #ifdef ECL_THREADS
-# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)                    \
-        ECL_WITH_LOCK_BEGIN(the_env, cl_core.global_lock)
-# define ECL_WITH_GLOBAL_LOCK_END               \
-        ECL_WITH_LOCK_END
-# define ECL_WITH_LOCK_BEGIN(the_env,lock) {             \
-        const cl_env_ptr __ecl_the_env = the_env;        \
-        const cl_object __ecl_the_lock = lock;           \
-        ecl_disable_interrupts_env(__ecl_the_env);       \
-        mp_get_lock_wait(__ecl_the_lock);                \
-        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
-        ecl_enable_interrupts_env(__ecl_the_env);
-# define ECL_WITH_LOCK_END                               \
-        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
-                mp_giveup_lock(__ecl_the_lock);          \
-        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
-# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {         \
-        const cl_env_ptr __ecl_the_env = (the_env);      \
-        cl_object *__ecl_the_lock = (lock);              \
-        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
-        ecl_get_spinlock(__ecl_the_env, __ecl_the_lock);
-# define ECL_WITH_SPINLOCK_END                           \
-        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
-                ecl_giveup_spinlock(__ecl_the_lock);     \
-        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
-#else
-# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_LOCK_END
-# define ECL_WITH_LOCK_BEGIN(the_env,lock)
-# define ECL_WITH_LOCK_END
-# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock)
-# define ECL_WITH_SPINLOCK_END
-#endif /* ECL_THREADS */
-
-#ifdef ECL_RWLOCK
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {            \
-        const cl_env_ptr __ecl_pack_env = the_env;              \
-        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
-        mp_get_rwlock_read_wait(cl_core.global_env_lock);
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_END                   \
-        mp_giveup_rwlock_read(cl_core.global_env_lock);   \
-        ecl_bds_unwind1(__ecl_pack_env);                  \
-        ecl_check_pending_interrupts(__ecl_pack_env); }
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {            \
-        const cl_env_ptr __ecl_pack_env = the_env;              \
-        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
-        mp_get_rwlock_write_wait(cl_core.global_env_lock);
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_END                    \
-        mp_giveup_rwlock_write(cl_core.global_env_lock);   \
-        ecl_bds_unwind1(__ecl_pack_env);                   \
-        ecl_check_pending_interrupts(__ecl_pack_env); }
-#else
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_END
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_END
-#endif /* ECL_RWLOCK */
-
-#include <ecl/ecl_atomics.h>
+extern cl_object mp_get_rwlock_read_wait(cl_object lock);
+extern cl_object mp_get_rwlock_write_wait(cl_object lock);
+#endif
 
 /* read.d */
 #ifdef ECL_UNICODE
@@ -464,29 +413,6 @@ extern void ecl_musleep(double time, bool alertable);
 
 #define UTC_time_to_universal_time(x) ecl_plus(ecl_make_integer(x),cl_core.Jan1st1970UT)
 extern cl_fixnum ecl_runtime(void);
-
-/* threads/mutex.d */
-
-#ifdef ECL_THREADS
-typedef cl_object (*mp_wait_test)(cl_env_ptr, cl_object);
-
-extern void ecl_process_yield(void);
-extern void print_lock(char *s, cl_object lock, ...);
-#define print_lock(...) ((void)0)
-extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
-extern void ecl_giveup_spinlock(cl_object *lock);
-extern cl_object ecl_wait_on(cl_env_ptr env, mp_wait_test test, cl_object object);
-extern void ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, int flags);
-extern void ecl_wakeup_process(cl_object process);
-extern cl_object ecl_waiter_pop(cl_env_ptr the_env, cl_object q);
-#endif
-
-/* threads/rwlock.d */
-
-#ifdef ECL_THREADS
-extern cl_object mp_get_rwlock_read_wait(cl_object lock);
-extern cl_object mp_get_rwlock_write_wait(cl_object lock);
-#endif
 
 /* unixfsys.d */
 
@@ -637,6 +563,68 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 #  define WIFCONTINUED(x) 0
 # endif
 #endif /* ECL_MS_WINDOWS_HOST */
+
+/* global locks */
+
+#include <ecl/threads.h>
+
+#ifdef ECL_THREADS
+# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)                    \
+        ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.global_lock)
+# define ECL_WITH_GLOBAL_LOCK_END               \
+        ECL_WITH_NATIVE_LOCK_END
+# define ECL_WITH_LOCK_BEGIN(the_env,lock) {             \
+        const cl_env_ptr __ecl_the_env = the_env;        \
+        const cl_object __ecl_the_lock = lock;           \
+        ecl_disable_interrupts_env(__ecl_the_env);       \
+        mp_get_lock_wait(__ecl_the_lock);                \
+        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
+        ecl_enable_interrupts_env(__ecl_the_env);
+# define ECL_WITH_LOCK_END                               \
+        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
+                mp_giveup_lock(__ecl_the_lock);          \
+        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
+# define ECL_WITH_NATIVE_LOCK_BEGIN(the_env,lock) {      \
+        const cl_env_ptr __ecl_the_env = (the_env);      \
+        ecl_mutex_t* __ecl_the_lock = (lock);            \
+        ecl_disable_interrupts_env(__ecl_the_env);       \
+        ecl_mutex_lock(__ecl_the_lock);                  \
+        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
+        ecl_enable_interrupts_env(__ecl_the_env);
+# define ECL_WITH_NATIVE_LOCK_END                        \
+        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
+                ecl_mutex_unlock(__ecl_the_lock);        \
+        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {      \
+        const cl_env_ptr __ecl_pack_env = the_env;        \
+        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
+        ecl_rwlock_lock_read(&cl_core.global_env_lock);
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_END                   \
+        ecl_rwlock_unlock_read(&cl_core.global_env_lock); \
+        ecl_bds_unwind1(__ecl_pack_env);                  \
+        ecl_check_pending_interrupts(__ecl_pack_env); }
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {      \
+        const cl_env_ptr __ecl_pack_env = the_env;        \
+        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
+        ecl_rwlock_lock_write(&cl_core.global_env_lock);
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_END                    \
+        ecl_rwlock_unlock_write(&cl_core.global_env_lock); \
+        ecl_bds_unwind1(__ecl_pack_env);                   \
+        ecl_check_pending_interrupts(__ecl_pack_env); }
+#else
+# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_LOCK_END
+# define ECL_WITH_LOCK_BEGIN(the_env,lock)
+# define ECL_WITH_LOCK_END
+# define ECL_WITH_NATIVE_LOCK_BEGIN(the_env,lock)
+# define ECL_WITH_NATIVE_LOCK_END
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_END
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_END
+#endif /* ECL_THREADS */
+
+#include <ecl/ecl_atomics.h>
 
 /*
  * Fake several ISO C99 mathematical functions if not available

@@ -131,6 +131,8 @@
 #undef HAVE_SEM_INIT
 /* whether we have read/write locks                                     */
 #undef HAVE_POSIX_RWLOCK
+/* whether we have mutex lock operations with timeout                   */
+#undef HAVE_PTHREAD_MUTEX_TIMEDLOCK
 /* uname() for system identification                                    */
 #undef HAVE_UNAME
 #undef HAVE_UNISTD_H

@@ -46,8 +46,9 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h          \
 	$(HDIR)/number.h $(HDIR)/page.h $(HDIR)/bytecodes.h             \
    $(HDIR)/cache.h $(HDIR)/config-internal.h $(HDIR)/ecl_atomics.h \
    $(HDIR)/ecl-inl.h $(HDIR)/internal.h $(HDIR)/stack-resize.h     \
-   $(HDIR)/impl/math_dispatch2.h $(HDIR)/impl/math_dispatch.h      \
-   $(HDIR)/impl/math_fenv.h $(HDIR)/impl/math_fenv_msvc.h
+   $(HDIR)/threads.h $(HDIR)/impl/math_dispatch2.h                 \
+   $(HDIR)/impl/math_dispatch.h  $(HDIR)/impl/math_fenv.h          \
+   $(HDIR)/impl/math_fenv_msvc.h
 CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
 OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o      \
 	interpreter.o compiler.o disassembler.o $(CLOS_OBJS)            \

@@ -45,9 +45,6 @@
 /* Define if your newline is CRLF */
 #undef ECL_NEWLINE_IS_CRLF
 
-/* ECL_RWLOCK */
-#undef ECL_RWLOCK
-
 /* ECL_SIGNED_ZERO */
 #undef ECL_SIGNED_ZERO
 
@@ -439,6 +436,9 @@
 /* Define to 1 if you have the `powf' function. */
 #undef HAVE_POWF
 
+/* Define to 1 if you have the `pthread_mutex_timedlock' function. */
+#undef HAVE_PTHREAD_MUTEX_TIMEDLOCK
+
 /* Define to 1 if the system has the type `pthread_rwlock_t'. */
 #undef HAVE_PTHREAD_RWLOCK_T
 
@@ -463,9 +463,6 @@
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
-
-/* Define to 1 if you have the <semaphore.h> header file. */
-#undef HAVE_SEMAPHORE_H
 
 /* Define to 1 if you have the `setenv' function. */
 #undef HAVE_SETENV

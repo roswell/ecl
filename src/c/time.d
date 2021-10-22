@@ -193,7 +193,7 @@ cl_sleep(cl_object z)
       time = 1e-9;
     }
   } ECL_WITHOUT_FPE_END;
-  ecl_musleep(time, 0);
+  ecl_musleep(time, 1);
   @(return ECL_NIL);
 }
 

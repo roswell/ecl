@@ -26,9 +26,23 @@ Creates a condition variable.
 @end deftypefun
 
 @defun mp:condition-variable-wait cv lock
-Release @var{lock} and suspend thread until condition
-@coderef{mp:condition-variable-signal} is called on @var{cv}. When thread
-resumes re-aquire @var{lock}.
+Release @var{lock} and suspend thread until
+@coderef{mp:condition-variable-signal} or
+@coderef{mp:condition-variable-broadcast} is called on @var{cv}. When
+thread resumes re-aquire @var{lock}. May signal an error if @var{lock}
+is not owned by the current thread.
+
+@strong{Note:} In some circumstances, the thread may wake up even if no
+call to @coderef{mp:condition-variable-signal} or
+@coderef{mp:condition-variable-broadcast} has happened. It is
+recommended to check for the condition that triggered the wait in a loop
+around any @code{mp:condition-variable-wait} call.
+
+@strong{Note:} While the condition variable is blocked waiting for a
+signal or broadcast event, calling @code{mp:condition-variable-wait}
+from further threads must be done using the same mutex as that used by
+the threads that are already waiting on this condition variable. The
+behaviour is undefined if this constraint is violated.
 @end defun
 
 
@@ -40,7 +54,8 @@ resumes re-aquire @var{lock}.
 
 @defun mp:condition-variable-timedwait cv lock seconds
 @coderef{mp:condition-variable-wait} which timeouts after @var{seconds}
-seconds.
+seconds. May signal an error if @var{lock} is not owned by the current
+thread.
 @end defun
 
 
@@ -51,8 +66,8 @@ seconds.
 @end deftypefun
 
 @defun mp:condition-variable-signal cv
-Signal @var{cv} (wakes up only one waiter). After signal, signaling
-thread keeps lock, waking thread goes on the queue waiting for the lock.
+Wake up at least one of the waiters of @var{cv}. Usually, this will wake
+up only a single thread, but it may also wake up multiple threads.
 
 See @coderef{mp:condition-variable-wait}.
 @end defun
@@ -65,7 +80,7 @@ See @coderef{mp:condition-variable-wait}.
 @end deftypefun
 
 @defun mp:condition-variable-broadcast cv
-Signal @var{cv} (wakes up all waiters).
+Wake up all waiters of @var{cv}.
 
 See @coderef{mp:condition-variable-wait}.  
 @end defun

@@ -12,12 +12,11 @@
   (ext:with-unique-names (lock wait-p)
     `(let ((,lock (external-process-%lock ,process))
            (,wait-p ,wait))
-       (mp:without-interrupts
-         (unwind-protect (mp::with-restored-interrupts
-                             (when (mp:get-lock ,lock ,wait-p)
-                               (locally ,@body)))
-           (when (mp:holding-lock-p ,lock)
-             (mp:giveup-lock ,lock))))))
+       (when (mp:get-lock ,lock ,wait-p)
+         (mp:without-interrupts
+             (unwind-protect (mp::with-restored-interrupts
+                                 (locally ,@body))
+               (mp:giveup-lock ,lock))))))
   #-threads `(progn ,@body))
 
 (defstruct (external-process (:constructor make-external-process ()))

@@ -928,12 +928,40 @@ struct ecl_dummy {
 };
 
 #ifdef ECL_THREADS
+
+#ifdef ECL_WINDOWS_THREADS
+typedef HANDLE ecl_mutex_t;
+typedef struct ecl_cond_var_t {
+        HANDLE broadcast_event;
+        HANDLE signal_event;
+        cl_index state;
+} ecl_cond_var_t;
+typedef SRWLOCK ecl_rwlock_t;
+#else
+typedef pthread_mutex_t ecl_mutex_t;
+typedef pthread_cond_t ecl_cond_var_t;
+# ifdef HAVE_POSIX_RWLOCK
+typedef pthread_rwlock_t ecl_rwlock_t;
+# else
+typedef struct ecl_rwlock_t {
+        pthread_mutex_t mutex;
+        pthread_cond_t reader_cv;
+        pthread_cond_t writer_cv;
+        /* reader_count = 0: lock is free
+         * reader_count =-1: writer holds the lock
+         * reader_count > 0: number of readers */
+        cl_fixnum reader_count;
+} ecl_rwlock_t;
+# endif
+#endif
+
 enum {
         ECL_PROCESS_INACTIVE = 0,
         ECL_PROCESS_BOOTING,
         ECL_PROCESS_ACTIVE,
         ECL_PROCESS_EXITING
 };
+
 struct ecl_process {
         _ECL_HDR;
         cl_object name;
@@ -943,11 +971,11 @@ struct ecl_process {
         cl_object interrupt;
         cl_object initial_bindings;
         cl_object parent;
-        cl_object exit_barrier;
         cl_object exit_values;
         cl_object woken_up;
         cl_object queue_record;
-        cl_object start_stop_spinlock;
+        ecl_mutex_t start_stop_lock; /* phase is updated only when we hold this lock */
+        ecl_cond_var_t exit_barrier; /* process-join waits on this barrier */
         cl_index phase;
 #ifdef ECL_WINDOWS_THREADS
         HANDLE thread;
@@ -965,33 +993,30 @@ enum {
         ECL_WAKEUP_DELETE = 8
 };
 
-struct ecl_queue {
-        _ECL_HDR;
-        cl_object list;
-        cl_object spinlock;
-};
-
 struct ecl_semaphore {
         _ECL_HDR;
-        cl_object queue_list;
-        cl_object queue_spinlock;
         cl_object name;
         cl_fixnum counter;
+        cl_fixnum wait_count;
+        ecl_mutex_t mutex;
+        ecl_cond_var_t cv;
 };
 
+#define ECL_BARRIER_WAKEUP_NORMAL 1
+#define ECL_BARRIER_WAKEUP_KILL 2
+
 struct ecl_barrier {
-        _ECL_HDR;
-        cl_object queue_list;
-        cl_object queue_spinlock;
+        _ECL_HDR2(disabled,wakeup);
         cl_object name;
-        cl_fixnum count;
-        cl_fixnum arrivers_count;
+        cl_index count;
+        cl_index arrivers_count;
+        ecl_mutex_t mutex;
+        ecl_cond_var_t cv;
 };
 
 struct ecl_lock {
         _ECL_HDR1(recursive);
-        cl_object queue_list;
-        cl_object queue_spinlock;
+        ecl_mutex_t mutex;
         cl_object owner;       /* thread holding the lock or NIL */
         cl_object name;
         cl_fixnum counter;
@@ -1001,28 +1026,23 @@ struct ecl_mailbox {
         _ECL_HDR;
         cl_object name;
         cl_object data;
-        cl_object reader_semaphore;
-        cl_object writer_semaphore;
+        ecl_mutex_t mutex;
+        ecl_cond_var_t reader_cv;
+        ecl_cond_var_t writer_cv;
+        cl_index message_count;
         cl_index read_pointer;
         cl_index write_pointer;
-        cl_index mask;
 };
 
 struct ecl_rwlock {
         _ECL_HDR;
         cl_object name;
-#ifdef ECL_RWLOCK
-        pthread_rwlock_t mutex;
-#else
-        cl_object mutex;
-#endif
+        ecl_rwlock_t mutex;
 };
 
 struct ecl_condition_variable {
         _ECL_HDR;
-        cl_object queue_list;
-        cl_object queue_spinlock;
-        cl_object lock;
+        ecl_cond_var_t cv;
 };
 #endif /* ECL_THREADS */
 
@@ -1127,7 +1147,6 @@ union cl_lispunion {
         struct ecl_instance     instance;       /*  clos instance */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
-        struct ecl_queue        queue;          /*  lock  */
         struct ecl_lock         lock;           /*  lock  */
         struct ecl_rwlock       rwlock;         /*  read/write lock  */
         struct ecl_condition_variable condition_variable; /*  condition-variable */

@@ -1609,6 +1609,7 @@ cl_symbols[] = {
 {MP_ "LOCK-COUNT" ECL_FUN("mp_lock_count", IF_MP(mp_lock_count), 1) ECL_VAR(MP_ORDINARY, OBJNULL)},
 {MP_ "GET-LOCK" ECL_FUN("mp_get_lock", IF_MP(mp_get_lock), -2) ECL_VAR(MP_ORDINARY, OBJNULL)},
 {MP_ "GIVEUP-LOCK" ECL_FUN("mp_giveup_lock", IF_MP(mp_giveup_lock), 1) ECL_VAR(MP_ORDINARY, OBJNULL)},
+{SYS_ "MUTEX-TIMEOUT" ECL_FUN("si_mutex_timeout", IF_MP(si_mutex_timeout), 3) ECL_VAR(SI_SPECIAL, OBJNULL)},
 {MP_ "MAKE-CONDITION-VARIABLE" ECL_FUN("mp_make_condition_variable", IF_MP(mp_make_condition_variable), 0) ECL_VAR(MP_ORDINARY, OBJNULL)},
 {MP_ "CONDITION-VARIABLE-WAIT" ECL_FUN("mp_condition_variable_wait", IF_MP(mp_condition_variable_wait), 2) ECL_VAR(MP_ORDINARY, OBJNULL)},
 {MP_ "CONDITION-VARIABLE-TIMEDWAIT" ECL_FUN("mp_condition_variable_timedwait", IF_MP(mp_condition_variable_timedwait), 3) ECL_VAR(MP_ORDINARY, OBJNULL)},
