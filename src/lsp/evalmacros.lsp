@@ -131,7 +131,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
       (setq function `(si::bc-disassemble ,function)))
     `(progn
        (put-sysprop ',name 'sys::compiler-macro ,function)
-       ,@(si::expand-set-documentation name 'function doc-string)
+       ,@(si::expand-set-documentation name 'compiler-macro doc-string)
        ,(ext:register-with-pde whole)
        ',name)))
 
