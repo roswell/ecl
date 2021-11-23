@@ -25,7 +25,7 @@
                ((keywordp form)
                 (make-c1form* 'LOCATION :type (object-type form)
                               :args (add-symbol form)))
-               ((constantp form)
+               ((constantp form *cmp-env*)
                 (or (c1constant-value (symbol-value form) :only-small-values t)
                     (c1var form)))
                (t (c1var form))))

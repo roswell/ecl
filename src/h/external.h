@@ -506,6 +506,7 @@ extern ECL_API cl_object cl_class_of(cl_object x);
 /* cmpaux.c */
 
 extern ECL_API cl_object si_specialp(cl_object sym);
+extern ECL_API cl_object si_constp(cl_object sym);
 
 extern ECL_API cl_fixnum ecl_ifloor(cl_fixnum x, cl_fixnum y);
 extern ECL_API cl_fixnum ecl_imod(cl_fixnum x, cl_fixnum y);

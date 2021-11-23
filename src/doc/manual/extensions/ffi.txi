@@ -169,6 +169,85 @@ documentation, the string @var{name} is automatically deallocated
         (error "gethostname() failed.")))
 @end lisp
 
+@subsubsection C Reference
+
+@cppindex ecl_make_pointer
+@cppdef ecl_make_foreign_data
+@deftypefun cl_object ecl_make_foreign_data (cl_object tag, cl_index size, void *data)
+
+@paragraph Description
+This function creates a Lisp ``foreign object'' that points to a C data. Use
+this function to pass a data from C to Lisp.
+
+@var{tag} denotes the data type (@xref{Primitive Types})
+@var{size} is a number of elements in @var{data} (or 0 for a raw pointer)
+@var{data} is a pointer to C data (either an object or an array)
+
+The C macro @code{ecl_make_pointer(pointer)} expands to
+@code{ecl_make_foreign_data(ECL_NIL, 0, (pointer))}.
+@end deftypefun
+
+@cppdef ecl_to_pointer
+@cppdef ecl_foreign_data_pointer_safe
+@deftypefun void *ecl_foreign_data_pointer_safe(cl_object f)
+
+@paragraph Description
+This function returns a C pointer for the given Lisp foreign object. Lisp
+foreign objects are constructed with functions @code{ecl_make_foreign_data}
+and @code{ecl_allocate_foreign_data}.
+
+This data is a subject of the garbage collection (unlike lisp functions like
+@code{si:allocate-foreign-object}). This is because the data producer here is
+the "C world" and the data consumer is the "Lisp world".
+@end deftypefun
+
+@cppdef ecl_base_string_pointer_safe
+
+@deftypefun char *ecl_base_string_pointer_safe(cl_object f)
+
+@paragraph Description
+This function returns a pointer to a simple base string @var{f}. If @var{f} is
+not a simple base string this function signals an error.
+
+@end deftypefun
+
+@cppdef ecl_null_terminated_base_string
+@deftypefun cl_object ecl_null_terminated_base_string(cl_object s)
+
+@paragraph Description
+Tries to coerce a string to a simple base string suitable for
+@code{ecl_base_string_pointer_safe}. This function may cons data.
+
+@end deftypefun
+
+@c FIXME these functions operate on the enum ecl_ffi_tag but other functions
+@c operate on keyword tags (see ecl_make_foreign_data). Also both functions
+@c are part of the exported interface, but conversion keyword->ecl_ffi_tag is
+@c done by the function ecl_foreign_type_code that is declared in internal.h.
+@c
+@c Do one of either:
+@c 1. move ecl_foreign_data_*_elt to internal.h
+@c 2. move ecl_foreign_type_code from internal.h to external.h
+@c 3. document the ecl_ffi_tag enum and change the ecl_make_foreign_data
+@c 4. change functions ecl_foreign_data_*_elt to work on tags
+@c
+@c The cleanest solution will be 4. Perhaps to remain backward compatible with
+@c people who used ecl_foreign_data_*_elt we should make these two C macros
+@c and expand to a new function interface using tags. Until this is fixed
+@c let's not advertise these functions in the documentation. -- jd 2021-11-22
+
+@c @cppdef ecl_foreign_data_ref_elt
+@c @cppdef ecl_foreign_data_set_elt
+@c @deftypefun cl_object ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag tag)
+@c @deftypefunx cl_object ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag tag, cl_object value)
+
+@c @paragraph Description
+@c These functions are used to operate directly on C data in @var{p}.
+@c The referenced C object is coerced to a Lisp type and returned.
+@c The Lisp value that is set to C object is coerced to a C type.
+
+@c @end deftypefun
+
 @node Higher level interfaces
 @subsection Higher level interfaces
 Up to now we have only discussed vague ideas about how a FFI works, but you are probably more

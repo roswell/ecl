@@ -1284,6 +1284,7 @@ cl_symbols[] = {
 {SYS_ "SIGNAL-SIMPLE-ERROR" ECL_FUN("si_signal_simple_error", si_signal_simple_error, -5) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "SIGNAL-TYPE-ERROR" ECL_FUN("si_signal_type_error", si_signal_type_error, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "SPECIALP" ECL_FUN("si_specialp", si_specialp, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "CONSTP" ECL_FUN("si_constp", si_constp, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "STANDARD-READTABLE" ECL_FUN("si_standard_readtable", si_standard_readtable, 0) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "STEPPER" ECL_FUN("OBJNULL", OBJNULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "BASE-STRING-CONCATENATE" ECL_FUN("si_base_string_concatenate", si_base_string_concatenate, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},

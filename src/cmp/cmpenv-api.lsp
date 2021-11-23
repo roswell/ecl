@@ -152,7 +152,7 @@ the closure in let/flet forms for variables/functions it closes over."
                                           env))
 
 (defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*))
-  (when (or (constantp name) (special-variable-p name))
+  (when (or (constant-variable-p name) (special-variable-p name))
     (cmperr "Cannot bind the special or constant variable ~A with symbol-macrolet." name))
   (push (list name 'si::symbol-macro function)
         (cmp-env-variables env))
