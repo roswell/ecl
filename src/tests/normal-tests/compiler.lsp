@@ -2046,3 +2046,18 @@
   (is (equal '((quote) (quote a b c))
              (funcall
               (compile nil '(lambda () (let ((x '(quote)) (y '(quote a b c))) (list x y))))))))
+
+;;; Date 2021-11-19
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/662
+;;; Description
+;;;
+;;;     In ccmp a global symbol macro cannot be lexically rebound.
+;;;
+(test cmp.0089.symbol-macro
+  (when (finishes
+         (with-compiler ("cmp.0089.symbol-macro.lsp" :load t)
+           `(define-symbol-macro cmp.0089.sym 42)
+           `(defun cmp.0089.fun1 (cmp.0089.sym) cmp.0089.sym)
+           `(defun cmp.0089.fun2 () cmp.0089.sym)))
+    (is (= 15 (cmp.0089.fun1 15)))
+    (is (= 42 (cmp.0089.fun2)))))

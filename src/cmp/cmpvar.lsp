@@ -222,6 +222,9 @@
         ;; we also have to consider 'GLOBAL here.
         (and v (eq (var-kind v) 'SPECIAL)))))
 
+(defun constant-variable-p (name)
+  (si::constp name))
+
 (defun local-variable-p (name &optional (env *cmp-env*))
   (let ((record (cmp-env-search-var name env)))
     (and record (var-p record))))

@@ -20,7 +20,13 @@ cl_object
 si_specialp(cl_object sym)
 {
   @(return ((ecl_symbol_type(sym) & ecl_stp_special)? ECL_T : ECL_NIL))
-    }
+}
+
+cl_object
+si_constp(cl_object sym)
+{
+  @(return ((ecl_symbol_type(sym) & ecl_stp_constant)? ECL_T : ECL_NIL))
+}
 
 cl_fixnum
 ecl_ifloor(cl_fixnum x, cl_fixnum y)

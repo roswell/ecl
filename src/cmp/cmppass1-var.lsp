@@ -221,7 +221,7 @@
 
 (defun c1make-var (name specials ignores types)
   (cmpck (not (symbolp name)) "The variable ~s is not a symbol." name)
-  (cmpck (constantp name) "The constant ~s is being bound." name)
+  (cmpck (constant-variable-p name) "The constant ~s is being bound." name)
   (let ((ignorable (cdr (assoc name ignores)))
         (kind 'LEXICAL)                 ; we rely on check-vref to fix it
         (type (assoc name types)))
