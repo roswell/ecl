@@ -84,6 +84,10 @@ we are currently using with ECL."
     (loop with list = (mapcar #'list (mapcar #'first macros))
        with lines = (run-and-collect c::*cc*
                                      (append (c::split-program-options c::*cc-flags*)
+                                             #+msvc
+                                             (list "-P" (namestring fc)
+                                                   "-Fi" (namestring fs))
+                                             #-msvc
                                              (list "-E" (namestring fc)
                                                    "-o" (namestring fs)))
                                      fs)
@@ -107,6 +111,7 @@ we are currently using with ECL."
     ("__SUNPRO_C" :sun-c-compiler)
     ("__xlc__" :ibm-c-compiler)
     ("__xlC__" :ibm-c++-compiler)
+    ("_MSC_VER" :msvc-compiler)
 
     ;; Processor features
     ("__MMX__" :mmx)
@@ -118,6 +123,7 @@ we are currently using with ECL."
     ("__amd64" :amd64)
     ("__x86_64__" :x86-64)
     ("__X86_64__" :x86-64)
+    ("_WIN64" :x86-64)
     ("__LP64__" :lp64)
     ("_LP64" :lp64)
     ("__ILP32__" :ilp32)
