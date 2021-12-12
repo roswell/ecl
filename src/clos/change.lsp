@@ -251,6 +251,10 @@
   (si::instance-new-stamp class)
   class)
 
+;;; Structures can't be redefined in an incompatible way.
+(defmethod make-instances-obsolete ((class structure-class))
+  class)
+
 (defun remove-optional-slot-accessors (class)
   (declare (class class)
            (optimize (safety 0))

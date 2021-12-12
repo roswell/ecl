@@ -359,10 +359,10 @@
   (let ((form (compute-effective-method gf method-combination applicable-methods)))
     (let ((aux form) f)
       (if (and (listp aux)
-                 (eq (pop aux) 'funcall)
-                 (functionp (setf f (pop aux)))
-                 (eq (pop aux) '.combined-method-args.)
-                 (eq (pop aux) '*next-methods*))
+               (eq (pop aux) 'funcall)
+               (functionp (setf f (pop aux)))
+               (eq (pop aux) '.combined-method-args.)
+               (eq (pop aux) '*next-methods*))
           f
           (effective-method-function form t)))))
 

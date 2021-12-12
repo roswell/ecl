@@ -98,13 +98,10 @@
 
 (defmethod allocate-instance ((class class) &rest initargs)
   (declare (ignore initargs))
-  ;; As pointed out in the CLASP source code (after Dr. Strandh), the
-  ;; class is already finalized, because initargs can't be computed
-  ;; without finalizing the class. We keep the next form to be on a
-  ;; safe side, but under normal circumstances it is never executed.
-  (unless (class-finalized-p class)
-    ;; FIXME! Inefficient! We should keep a list of dependent classes.
-    (finalize-inheritance class))
+  ;; As pointed out in the CLASP source code (after Dr. Strandh), the class is
+  ;; already finalized, because initargs can't be computed without finalizing
+  ;; the class. -- jd 2021-12-10
+  (assert (class-finalized-p class))
   (let ((x (si::allocate-raw-instance nil class (class-size class))))
     (si::instance-sig-set x)
     x))
@@ -307,8 +304,9 @@ because it contains a reference to the undefined class~%  ~A"
           (finalize-inheritance x))))
 
     (setf (class-precedence-list class) cpl)
-    (let ((oslotds (and (slot-boundp class 'slots) (class-slots class)))
-          (nslotds (compute-slots class)))
+    (let* ((oslotds-p (slot-boundp class 'slots))
+           (oslotds (and oslotds-p (class-slots class)))
+           (nslotds (compute-slots class)))
       (setf (class-slots class) nslotds
             (class-size class) (compute-instance-size nslotds)
             (class-default-initargs class) (compute-default-initargs class)
@@ -356,8 +354,13 @@ because it contains a reference to the undefined class~%  ~A"
       ;; Make all class instances obsolete when slot definitions are
       ;; not compatible.
       ;;
-      (unless (slot-definitions-compatible-p oslotds nslotds)
-        (make-instances-obsolete class)))
+      (cond ((null oslotds-p)
+             ;; Assign the initial class stamp when the class had no slots.
+             ;; That is because for structure class MAKE-INSTANCES-OBSOLETE
+             ;; doesn't update the stamp.
+             (si::instance-new-stamp class))
+            ((not (slot-definitions-compatible-p oslotds nslotds))
+             (make-instances-obsolete class))))
     ;;
     ;; Clear the different type caches for type comparisons and so on.
     ;;
