@@ -69,8 +69,8 @@
     "src:cmp;cmpopt-printer.lsp"
     "src:cmp;cmpopt-sequence.lsp"
     "src:cmp;cmpopt-type.lsp"
-    "src:cmp;cmpclos.lsp"
-    "src:cmp;cmpstructures.lsp"
+    "src:cmp;cmpclos.lsp"               ;unused
+    "src:cmp;cmpstructures.lsp"         ;unused
     "src:cmp;cmparray.lsp"
     "src:cmp;sysfun.lsp"
     ;; Other

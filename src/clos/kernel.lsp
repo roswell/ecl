@@ -168,11 +168,10 @@
   ;;
   (declare (notinline compute-discriminating-function))
   (multiple-value-bind (default-function optimizable)
-      ;;
-      ;; If the class is not a standard-generic-function, we must honor whatever function
-      ;; the user provides. However, we still recognize the case without user-computed
-      ;; function, where we can replace the output of COMPUTE-DISCRIMINATING-FUNCTION with
-      ;; a similar implementation in C
+      ;; If the class is not a standard-generic-function, we must honor
+      ;; whatever function the user provides. However, we still recognize the
+      ;; case without user-computed function, where we can replace the output
+      ;; of COMPUTE-DISCRIMINATING-FUNCTION with a similar implementation in C
       (compute-discriminating-function gfun)
     (let ((methods (slot-value gfun 'methods)))
       (set-funcallable-instance-function
@@ -192,12 +191,12 @@
           'standard-generic-function)
          ;; Cases 3*
          ((loop with class = (find-class 'standard-optimized-reader-method nil)
-             for m in methods
-             always (eq class (class-of m)))
+                for m in methods
+                always (eq class (class-of m)))
           'standard-optimized-reader-method)
          ((loop with class = (find-class 'standard-optimized-writer-method nil)
-             for m in methods
-             always (eq class (class-of m)))
+                for m in methods
+                always (eq class (class-of m)))
           'standard-optimized-writer-method)
          ;; Case 4*
          (t
@@ -225,8 +224,6 @@
                            (applicable-method-list gf args)
                            (mapcar #'class-of args)))
 
-(setf (fdefinition 'compute-applicable-methods) #'std-compute-applicable-methods)
-
 (defun applicable-method-list (gf args)
   (declare (optimize (speed 3))
            (si::c-local))
@@ -246,7 +243,9 @@
 
 (defun std-compute-applicable-methods-using-classes (gf classes)
   (declare (optimize (speed 3)))
-  (with-early-accessors (+standard-method-slots+ +eql-specializer-slots+ +standard-generic-function-slots+)
+  (with-early-accessors (+standard-method-slots+
+                         +eql-specializer-slots+
+                         +standard-generic-function-slots+)
     (flet ((applicable-method-p (method classes)
              (loop for spec in (method-specializers method)
                 for class in classes
@@ -265,6 +264,12 @@
                   collect method)
                classes)
               t))))
+
+(setf (fdefinition 'compute-applicable-methods)
+      #'std-compute-applicable-methods)
+
+(setf (fdefinition 'compute-applicable-methods-using-classes)
+      #'std-compute-applicable-methods-using-classes)
 
 (defun sort-applicable-methods (gf applicable-list args-specializers)
   (declare (optimize (safety 0) (speed 3)))

@@ -220,8 +220,7 @@
 (defun define-simple-method-combination (name &key documentation
                                          identity-with-one-argument
                                          (operator name))
-  `(define-method-combination
-     ,name (&optional (order :MOST-SPECIFIC-FIRST))
+  `(define-method-combination ,name (&optional (order :MOST-SPECIFIC-FIRST))
      ((around (:AROUND))
       (principal (,name) :REQUIRED t))
      ,documentation
@@ -335,12 +334,14 @@
 ;;; COMPUTE-EFFECTIVE-METHOD
 ;;;
 
-(eval-when (compile)
+(eval-when (:compile-toplevel)
   (let* ((class (find-class 'method-combination)))
     (define-compiler-macro method-combination-compiler (o)
-      `(si::instance-ref ,o ,(slot-definition-location (gethash 'compiler (slot-table class)))))
+      `(si::instance-ref
+        ,o ,(slot-definition-location (gethash 'compiler (slot-table class)))))
     (define-compiler-macro method-combination-options (o)
-      `(si::instance-ref ,o ,(slot-definition-location (gethash 'options (slot-table class)))))))
+      `(si::instance-ref
+        ,o ,(slot-definition-location (gethash 'options (slot-table class)))))))
 
 (defun std-compute-effective-method (gf method-combination applicable-methods)
   (declare (type method-combination method-combination)
