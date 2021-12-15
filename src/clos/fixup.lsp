@@ -166,22 +166,16 @@ their lambda lists ~A and ~A are not congruent."
   ;;  i) Adding it to the list of methods
   (push method (generic-function-methods gf))
   (setf (method-generic-function method) gf)
-  ;;  ii) Updating the specializers list of the generic
-  ;;  function. Notice that we should call add-direct-method for each
-  ;;  specializer but specializer objects are not yet implemented
-  #+(or)
+  ;;  ii) Updating the specializers list of the generic function.
   (dolist (spec (method-specializers method))
     (add-direct-method spec method))
-  ;;  iii) Computing a new discriminating function... Well, since the
-  ;;  core ECL does not need the discriminating function because we
-  ;;  always use the same one, we just update the spec-how list of the
-  ;;  generic function.
+  ;;  iii) Computing a new discriminating function... Well, since the core ECL
+  ;;  does not need the discriminating function because we always use the same
+  ;;  one, we just update the spec-how list of the generic function..
   (compute-g-f-spec-list gf)
   (set-generic-function-dispatch gf)
   ;;  iv) Update dependents.
   (update-dependents gf (list 'add-method method))
-  ;;  v) Register with specializers
-  (register-method-with-specializers method)
   gf)
 
 (defun remove-method (gf method)
