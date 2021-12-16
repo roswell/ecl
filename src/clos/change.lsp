@@ -211,10 +211,12 @@
     (dolist (l (setf (class-direct-superclasses class)
                      direct-superclasses))
       (add-direct-subclass l class)))
-  ;; if there are no forward references, we can just finalize the class here
-  (setf (class-finalized-p class) nil)
-  (finalize-unless-forward class)
-
+  ;; Per "Reinitialization of Class Metaobjects" we must finalize the
+  ;; inheritance here. Note that this means that already finalized class can't
+  ;; be reinitialized to have a forward-referenced-class as a superclass.
+  (if (class-finalized-p class)
+      (finalize-inheritance class)
+      (finalize-unless-forward class))
   class)
 
 (defun slot-definitions-compatible-p (old-slotds new-slotds)
