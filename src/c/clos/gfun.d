@@ -128,10 +128,9 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
       FEwrong_num_arguments(gf);
     unlikely_if (spec_no >= vector->vector.dim)
       ecl_internal_error("Too many arguments to fill_spec_vector()");
-    /* Need to differentiate between EQL specializers and
-       class specializers, because the EQL value can be a
-       class, and may clash with a class specializer.
-       Store the cons cell containing the EQL value. */
+    /* Need to differentiate between EQL specializers and class specializers,
+       because the EQL value can be a class, and may clash with a class
+       specializer.  Store the cons cell containing the EQL value. */
     if (ECL_LISTP(spec_type) &&
         !Null(eql_spec = ecl_memql(args[spec_position], spec_type))) {
       argtype[spec_no++] = eql_spec;
@@ -170,10 +169,9 @@ static cl_object
 generic_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
 {
   /* method not cached */
-  cl_object memoize;
   cl_object methods = _ecl_funcall3(@'clos::compute-applicable-methods-using-classes',
                                     gf, frame_to_classes(frame));
-  unlikely_if (Null(memoize = env->values[1])) {
+  unlikely_if (Null(env->values[1])) {
     cl_object arglist = frame_to_list(frame);
     methods = _ecl_funcall3(@'compute-applicable-methods',
                             gf, arglist);
@@ -253,8 +251,9 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   } ECL_WITHOUT_INTERRUPTS_END;
   if (func == ECL_NIL)
     func = cl_apply(3, @'no-applicable-method', gf, frame);
-  else
+  else {
     func = _ecl_funcall3(func, frame, ECL_NIL);
+  }
 
   /* Only need to close the copy */
   if (frame == (cl_object)&frame_aux)
