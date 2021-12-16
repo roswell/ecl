@@ -379,6 +379,9 @@ because it contains a reference to the undefined class~%  ~A"
   (call-next-method)
   (std-class-generate-accessors class))
 
+(defmethod finalize-inheritance ((class forward-referenced-class))
+  (error "FINALIZE-INHERITANCE was called on a forward referenced class ~a." class))
+
 (defmethod compute-class-precedence-list ((class class))
   (compute-clos-class-precedence-list class (class-direct-superclasses class)))
 
