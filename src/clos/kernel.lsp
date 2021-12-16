@@ -118,89 +118,61 @@
       (reinitialize-instance gf :name new-name)
       (setf (slot-value gf 'name) new-name)))
 
-(defun default-dispatch (generic-function)
-  (cond ((null *clos-booted*)
-         'standard-generic-function)
-        ((eq (class-id (class-of generic-function))
-             'standard-generic-function)
-         'standard-generic-function)
-        (t)))
-
-(defun compute-discriminating-function (generic-function)
-  (values #'(lambda (&rest args)
-              (multiple-value-bind (method-list ok)
-                  (compute-applicable-methods-using-classes
-                   generic-function
-                   (mapcar #'class-of args))
-                (unless ok
-                  (setf method-list
-                        (compute-applicable-methods generic-function args))
-                  (unless method-list
-                    (apply #'no-applicable-method generic-function args)))
-                (funcall (compute-effective-method-function
-                          generic-function
-                          (generic-function-method-combination generic-function)
-                          method-list)
-                         args
-                         nil)))
+(defun std-compute-discriminating-function (generic-function)
+  (values (if (eq (slot-value (class-of generic-function) 'name)
+                  'standard-generic-function)
+              (standard-gf-discriminator generic-function)
+              (unoptimized-discriminator generic-function))
           t))
 
-(defun set-generic-function-dispatch (gfun)
-  ;;
+(defun compute-discriminating-function (gf)
+  (declare (notinline std-compute-discriminating-function))
+  (std-compute-discriminating-function gf))
+
+(defun set-generic-function-dispatch (gf)
   ;; We have to decide which discriminating function to install:
-  ;;    1* One supplied by the user
-  ;;    2* One coded in C that follows the MOP
-  ;;    3* One in C specialized for slot accessors
-  ;;    4* One in C that does not use generic versions of compute-applicable-...
-  ;; Respectively
-  ;;    1* The user supplies a discriminating function, or the number of arguments
-  ;;       is so large that they cannot be handled by the C dispatchers with
-  ;;       with memoization.
-  ;;    2* The generic function is not a s-g-f but takes less than 64 arguments
-  ;;    3* The generic function is a standard-generic-function and all its slots
-  ;;       are standard-{reader,writer}-slots
-  ;;    4* The generic function is a standard-generic-function with less
-  ;;       than 64 arguments
+  ;;   1. One supplied by the user (or not possible to optimize in C)
+  ;;   2. One coded in C that follows the MOP
+  ;;   3. One in C specialized for slot accessors
+  ;;   4. One in C specialized for standard-generic-function
+  ;; Respectively:
+  ;;   1. The user supplies the discriminating function[1]
+  ;;   2. The function is not STANDARD-GENERIC-FUNCTION
+  ;;   3. The class of all function methods is STANDARD-OPTIMIZED-*-METHOD
+  ;;   4. The function is a STANDARD-GENERIC-FUNCTION
   ;;
-  ;; This chain of reasoning uses the fact that the user cannot override methods
-  ;; such as COMPUTE-APPLICABLE-METHODS, or COMPUTE-EFFECTIVE-METHOD, or
-  ;; COMPUTE-DISCRIMINATING-FUNCTION acting on STANDARD-GENERIC-FUNCTION.
+  ;; This chain of reasoning uses the fact that the user is not allowed to
+  ;; override standard methods specialized on standard classes.
+  ;;
+  ;; [1] We recognize that the user didn't overwrite our function by examining
+  ;;     the second value returned from C-D-F; It is also possible that C-D-F
+  ;;     disables the C optimization because it has more efficient strategy.
   ;;
   (declare (notinline compute-discriminating-function))
-  (multiple-value-bind (default-function optimizable)
-      ;; If the class is not a standard-generic-function, we must honor
-      ;; whatever function the user provides. However, we still recognize the
-      ;; case without user-computed function, where we can replace the output
-      ;; of COMPUTE-DISCRIMINATING-FUNCTION with a similar implementation in C
-      (compute-discriminating-function gfun)
-    (let ((methods (slot-value gfun 'methods)))
-      (set-funcallable-instance-function
-       gfun
-       (cond
-         ;; Case 1*
-         ((or (not optimizable)
-              (> (length (slot-value gfun 'spec-list))
-                 si::c-arguments-limit))
-          default-function)
-         ;; Case 2*
-         ((and (not (eq (slot-value (class-of gfun) 'name)
-                        'standard-generic-function))
-               *clos-booted*)
-          t)
-         ((null methods)
-          'standard-generic-function)
-         ;; Cases 3*
-         ((loop with class = (find-class 'standard-optimized-reader-method nil)
-                for m in methods
-                always (eq class (class-of m)))
-          'standard-optimized-reader-method)
-         ((loop with class = (find-class 'standard-optimized-writer-method nil)
-                for m in methods
-                always (eq class (class-of m)))
-          'standard-optimized-writer-method)
-         ;; Case 4*
-         (t
-          'standard-generic-function))))))
+  (multiple-value-bind (computed-discriminator optimizable)
+      (compute-discriminating-function gf)
+    (unless (not (> (length (slot-value gf 'spec-list)) 63))
+      ;; Code in C caches effective methods; the cache key length is 64 and
+      ;; can't handle functions with more specializable arguments. The first
+      ;; argument is the generic function itself.
+      (setf optimizable nil))
+    (let ((methods  (slot-value gf 'methods))
+          (standard-generic-function-p
+            (eq (slot-value (class-of gf) 'name) 'standard-generic-function)))
+      (flet ((only-slot-accessors-p (class-name)
+               (and methods
+                    (loop with class = (find-class class-name nil)
+                          for m in methods
+                          always (eq class (class-of m)))
+                    class-name)))
+        (set-funcallable-instance-function
+         gf
+         (cond
+           ((not optimizable)                 computed-discriminator)
+           ((not standard-generic-function-p)                     't)
+           ((only-slot-accessors-p 'standard-optimized-reader-method))
+           ((only-slot-accessors-p 'standard-optimized-writer-method))
+           (t                             'standard-generic-function)))))))
 
 ;;; ----------------------------------------------------------------------
 ;;; COMPUTE-APPLICABLE-METHODS
@@ -301,9 +273,10 @@
   (with-early-accessors (+standard-method-slots+)
     (let* ((specializers-list-1 (method-specializers method-1))
            (specializers-list-2 (method-specializers method-2)))
-      (compare-specializers-lists (if f (funcall f specializers-list-1) specializers-list-1)
-                                  (if f (funcall f specializers-list-2) specializers-list-2)
-                                  args-specializers))))
+      (compare-specializers-lists
+       (if f (funcall f specializers-list-1) specializers-list-1)
+       (if f (funcall f specializers-list-2) specializers-list-2)
+       args-specializers))))
 
 (defun compare-specializers-lists (spec-list-1 spec-list-2 args-specializers)
   (declare (si::c-local))
@@ -349,7 +322,7 @@
       (cond ((eq spec-1 spec-2) '=)
             ((fast-subtypep spec-1 spec-2) '1)
             ((fast-subtypep spec-2 spec-1) '2)
-            ((eql-specializer-flag spec-1) '1) ; is this engough?
+            ((eql-specializer-flag spec-1) '1) ; is this enough?
             ((eql-specializer-flag spec-2) '2) ; Beppe
             ((member spec-1 (member spec-2 cpl)) '2)
             ((member spec-2 (member spec-1 cpl)) '1)
