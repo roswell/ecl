@@ -119,11 +119,7 @@
       (setf (slot-value gf 'name) new-name)))
 
 (defun std-compute-discriminating-function (generic-function)
-  (values (if (eq (slot-value (class-of generic-function) 'name)
-                  'standard-generic-function)
-              (standard-gf-discriminator generic-function)
-              (unoptimized-discriminator generic-function))
-          t))
+  (values (unoptimized-discriminator generic-function) t))
 
 (defun compute-discriminating-function (gf)
   (declare (notinline std-compute-discriminating-function))
