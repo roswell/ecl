@@ -29,6 +29,9 @@
 
 * Pending changes since 21.2.1
 ** Enhancements
+- Allow real-valued columns in Gray stream method stream-line-column and
+  stream-advance-to-column. Use floor where needed to prevent breaking
+  existing code which depends on sys:file-column.
 - Support for non-ascii characters in pathnames. Pathname encoding defaults
   to utf-8 on Unix and may be changed using ~ext:*default-external-format*~
   (Windows always uses the utf-16 format provided by the OS).
