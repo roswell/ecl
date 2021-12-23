@@ -1330,7 +1330,7 @@ static int
 clos_stream_column(cl_object strm)
 {
   cl_object col = _ecl_funcall2(@'gray::stream-line-column', strm);
-  return Null(col)? -1 : ecl_to_size(col);
+  return Null(col)? -1 : ecl_to_size(ecl_floor1(col));
 }
 
 static cl_object

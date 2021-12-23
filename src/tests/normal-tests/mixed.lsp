@@ -395,3 +395,30 @@
     (signals simple-error (ed "qux"))
     (signals file-error (ed "baz"))))
 
+;;;; Author:   Tarn W. Burton
+;;;; Created:  2021-12-21
+;;;; Contains: pretty printer tests for real valued columns
+(defclass pp-stream-test (gray:fundamental-character-output-stream)
+  ((column :accessor gray:stream-line-column
+           :initform (random .5))
+   (value :accessor pp-stream-test-value
+          :initform (make-array 10 :adjustable t :fill-pointer 0
+                                :element-type 'character))))
+(defmethod gray:stream-write-char ((stream pp-stream-test) char)
+  (if (eql char #\Newline)
+      (setf (gray:stream-line-column stream) (random .5))
+      (incf (gray:stream-line-column stream)))
+  (vector-push-extend char (pp-stream-test-value stream)))
+(test mix.0021.pretty-printer
+  (let ((stream (make-instance 'pp-stream-test))
+        (*print-right-margin* 15))
+    (pprint '(let ((fu 1) (bar 2)) (+ fu bar 7))
+            stream)
+    (is-eql (sys:file-column stream) 15)
+    (is (gray:stream-advance-to-column stream 20))
+    (write-char #\A stream)
+    (is-equal (pp-stream-test-value stream)
+            "
+(LET ((FU 1)
+      (BAR 2))
+  (+ FU BAR 7))    A")))
