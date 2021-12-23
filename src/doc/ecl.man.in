@@ -73,9 +73,9 @@ so that you can debug your files.
 .BI \-\-nodebug
 Run without debugging setup phase, meaning that errors prevent ECL from starting up.
 .TP
-.BI \-\-eval " file"
+.BI \-\-eval " form"
 Evaluate the
-.I file
+.I form
 before loading the .rc file and starting the Top Level.
 .TP
 .BI \-\-shell " file"
