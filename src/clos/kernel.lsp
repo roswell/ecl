@@ -329,50 +329,52 @@
             ;; This will force an error in the caller
             (t nil)))))
 
+;;; The specialization profile is a sequence with as many elements as the
+;;; generic function has required arguments. Each element is a cons:
+;;;
+;;; (CLASS-SPECIALIZED-P . EQL-SPECIALIZERS)
+;;;
+;;; CLASS-SPECIALIZED-P is used to determine whether the argument has a
+;;; specializer for any class other than the builtin-class T.
+;;;
+;;; EQL-SPECIALIZERS is a list of all EQL-SPECIALIZER-OBJECTs
 (defun compute-g-f-spec-list (gf)
   (with-early-accessors (+standard-generic-function-slots+
                          +eql-specializer-slots+
                          +standard-method-slots+)
-    (flet ((nupdate-spec-how-list (spec-how-list specializers)
-             ;; update the spec-how of the gfun 
-             ;; computing the or of the previous value and the new one
-             (setf spec-how-list (or spec-how-list
-                                     (copy-list specializers)))
-             (do* ((l specializers (cdr l))
-                   (l2 spec-how-list (cdr l2))
-                   (spec-how)
-                   (spec-how-old))
-                  ((null l))
-               (setq spec-how (first l) spec-how-old (first l2))
-               (setf (first l2)
-                     (if (eql-specializer-flag spec-how)
-                         (list* (eql-specializer-object spec-how)
-                                (and (consp spec-how-old) spec-how-old))
-                         (if (consp spec-how-old)
-                             spec-how-old
-                             spec-how))))
-             spec-how-list))
-      (let* ((spec-how-list nil)
-             (function nil)
-             (a-p-o (generic-function-argument-precedence-order gf)))
-        (dolist (method (generic-function-methods gf))
-          (setf spec-how-list
-                (nupdate-spec-how-list spec-how-list (method-specializers method))))
-        (setf (generic-function-spec-list gf)
-              (loop for type in spec-how-list
-                 for i from 0
-                 when type collect (cons type i)))
-        (let* ((g-f-l-l (generic-function-lambda-list gf)))
-          (when (consp g-f-l-l)
-            (let ((required-arguments (rest (si::process-lambda-list g-f-l-l t))))
-              (unless (equal a-p-o required-arguments)
-                (setf function
-                      (coerce `(lambda (%list)
-                                 (destructuring-bind ,required-arguments %list
-                                   (list ,@a-p-o)))
-                              'function))))))
-        (setf (generic-function-a-p-o-function gf) function)
-        (si:clear-gfun-hash gf)))))
+    (flet ((nupdate-profile (spec-how-list specializers)
+             (if (null spec-how-list)
+                 (loop for spec in specializers
+                       collect (if (eql-specializer-flag spec)
+                                   (list nil (eql-specializer-object spec))
+                                   (if (eq spec (find-class t))
+                                       (cons nil nil)
+                                       (cons   t nil))))
+                 (loop for spec in specializers
+                       for (arg-profile) on spec-how-list
+                       do (if (eql-specializer-flag spec)
+                              (push (eql-specializer-object spec)
+                                    (cdr arg-profile))
+                              (when (and (not (car arg-profile))
+                                         (not (eq spec (find-class t))))
+                                (setf (car arg-profile) t)))
+                       finally (return spec-how-list)))))
+      (setf (generic-function-spec-list gf)
+            (reduce #'nupdate-profile (generic-function-methods gf)
+                    :key #'method-specializers :initial-value nil))
+      (let ((function nil)
+            (a-p-o (generic-function-argument-precedence-order gf))
+            (gf-ll (generic-function-lambda-list gf)))
+        (when (consp gf-ll)
+          (let ((required-arguments (rest (si::process-lambda-list gf-ll t))))
+            (unless (equal a-p-o required-arguments)
+              (setf function
+                    (coerce `(lambda (%list)
+                               (destructuring-bind ,required-arguments %list
+                                 (list ,@a-p-o)))
+                            'function)))))
+        (setf (generic-function-a-p-o-function gf) function))
+      (si:clear-gfun-hash gf))))
 
 (defun print-object (object stream)
   (print-unreadable-object (object stream)))
