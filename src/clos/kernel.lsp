@@ -219,23 +219,29 @@
                          +eql-specializer-slots+
                          +standard-generic-function-slots+)
     (flet ((applicable-method-p (method classes)
-             (loop for spec in (method-specializers method)
-                for class in classes
-                always (cond ((eql-specializer-flag spec)
-                              ;; EQL specializer invalidate computation
-                              ;; we return NIL
-                              (when (si::of-class-p (eql-specializer-object spec) class)
-                                (return-from std-compute-applicable-methods-using-classes
-                                  (values nil nil)))
-                              nil)
-                             ((si::subclassp class spec))))))
-      (values (sort-applicable-methods
-               gf
-               (loop for method in (generic-function-methods gf)
-                  when (applicable-method-p method classes)
-                  collect method)
-               classes)
-              t))))
+             ;; EQL specializer invalidates the computation. We still check
+             ;; other classes because maybe later specializer will make this
+             ;; method not applicable. -- jd 2022-01-05
+             (loop with eql-spec-p = nil
+                   for spec in (method-specializers method)
+                   for class in classes
+                   do (if (eql-specializer-flag spec)
+                          (let ((object (eql-specializer-object spec)))
+                            (if (si::of-class-p object class)
+                                (setf eql-spec-p t)
+                                (return-from applicable-method-p nil)))
+                          (unless (si::subclassp class spec)
+                            (return-from applicable-method-p nil)))
+                   finally
+                      (if eql-spec-p
+                          (return-from std-compute-applicable-methods-using-classes
+                            (values nil nil))
+                          (return t)))))
+      (let* ((methods (loop for method in (generic-function-methods gf)
+                            when (applicable-method-p method classes)
+                              collect method))
+             (sorted-methods (sort-applicable-methods gf methods classes)))
+        (values sorted-methods t)))))
 
 (setf (fdefinition 'compute-applicable-methods)
       #'std-compute-applicable-methods)
