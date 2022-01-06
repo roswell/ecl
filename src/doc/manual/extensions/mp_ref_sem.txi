@@ -62,28 +62,53 @@ Returns the number of threads waiting on @var{semaphore}.
 @end defun
 
 
+@cppdef mp_semaphore_wait
+@lspdef mp:semaphore-wait
+
+@deftypefun cl_object mp_sempahore_wait(cl_object semaphore, cl_object count, cl_object timeout)
+@end deftypefun
+
+@defun mp:semaphore-wait semaphore count timeout
+Decrement the count of @var{semaphore} by @var{count} if the count
+would not be negative.
+
+Else blocks until the semaphore can be decremented. Returns the old
+count of @var{semaphore} on success.
+
+If timeout is not @code{niL}, it is the maximum number of seconds to
+wait. If the count cannot be decremented in that time, returns
+@code{nil} without decrementing the count.
+@end defun
+
+
 @cppdef mp_wait_on_semaphore
 @lspdef mp:wait-on-semaphore
 
-@deftypefun cl_object mp_wait_on_semaphore (cl_object semaphore)
+@deftypefun cl_object mp_wait_on_semaphore (cl_narg n, cl_object sem, ...)
 @end deftypefun
 
-@defun mp:wait-on-semaphore semaphore
-Waits on semaphore until it can grab the resource (blocking). Returns
-resource count before semaphore was acquired.
+@defun mp:wait-on-semaphore semaphore &key count timeout
+Waits on semaphore until it can grab @var{count} resources.
+
+Returns resource count before semaphore was acquired.
+
+This function is equivalent to @code{(mp:semaphore-wait semaphore count timeout)}
 @end defun
 
 
 @cppdef mp_try_get_semaphore
 @lspdef mp:try-get-semaphore
 
-@deftypefun cl_object mp_try_get_semaphore (cl_object semaphore)
+@deftypefun cl_object mp_try_get_semaphore (cl_narg n, cl_object sem, ...)
 @end deftypefun
 
-@defun mp:try-get-semaphore semaphore
-Tries to get a semaphore (non-blocking). If there is no resource left
-returns @code{nil}, otherwise returns resource count before semaphore
-was acquired.
+@defun mp:try-get-semaphore semaphore &optional count
+Tries to get a semaphore (non-blocking).
+
+If there is no enough resource returns @code{nil}, otherwise returns
+resource count before semaphore was acquired.
+
+This function is equivalent to @code{(mp:semaphore-wait semaphore count 0)}
 @end defun
 
 
