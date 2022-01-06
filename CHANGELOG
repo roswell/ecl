@@ -37,6 +37,15 @@
   (Windows always uses the utf-16 format provided by the OS).
 - Add hook functions for cl:ed via ext:*ed-functions* list)
 - Signal type-error in condition readers for WSCL conformance.
+- Remove homegrown mutex implementation - all multithreading
+  synchronization objects are now implemented on top of mutex and condition
+  variable primitives from the operating system (no api changes)
+- Timeouts for condition variables and mutex locking and semaphore wait
+  operations
+** API changes
+- A new function ~(mp:semaphore-wait semaphore count timeout)~
+- Deprecate Functions ~mp:wait-on-semaphore~ and ~mp:try-get-semphore~
+
 * 21.2.1 changes since 20.4.24
 ** Announcement
 Dear Community,

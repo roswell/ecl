@@ -411,6 +411,25 @@
           (is (zerop (mp:semaphore-count sem)))
           (is (zerop (mp:semaphore-wait-count sem)))))
 
+;;; Date: 2021-10-19
+;;;
+;;;     A smoke test for the new function wait-semaphore.
+;;;
+(test-with-timeout mp.sem.semaphore-wait/smoke
+  (let ((sem (mp:make-semaphore :name "sem.semaphore-wait" :count 3)))
+    (flet ((signal-after-fn (count seconds)
+             (lambda ()
+               (sleep seconds)
+               (mp:signal-semaphore sem count))))
+      (is (null (mp:semaphore-wait sem 4 0)))
+      (is (null (mp:semaphore-wait sem 4 0.1)))
+      (is (= 3  (mp:semaphore-wait sem 2 nil)))
+      (mp:process-run-function nil (signal-after-fn 1 0.2))
+      (is (null (mp:semaphore-wait sem 2 0.1)))
+      (is (= 2  (mp:semaphore-wait sem 2 0.2)))
+      (mp:process-run-function nil (signal-after-fn 2 0.2))
+      (is (= 2  (mp:semaphore-wait sem 1 nil))))))
+
 
 ;; Mailbox
 
