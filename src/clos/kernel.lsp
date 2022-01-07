@@ -188,26 +188,21 @@
 ;;;   3. Subclasses of specified classes preserve the slot order in ECL.
 ;;;
 (defun std-compute-applicable-methods (gf args)
-  (sort-applicable-methods gf
-                           (applicable-method-list gf args)
-                           (mapcar #'class-of args)))
-
-(defun applicable-method-list (gf args)
-  (declare (optimize (speed 3))
-           (si::c-local))
+  (declare (optimize (speed 3)))
   (with-early-accessors (+standard-method-slots+
                          +standard-generic-function-slots+
                          +eql-specializer-slots+
                          +standard-class-slots+)
     (flet ((applicable-method-p (method args)
              (loop for spec in (method-specializers method)
-                for arg in args
-                always (if (eql-specializer-flag spec)
-                           (eql arg (eql-specializer-object spec))
-                           (si::of-class-p arg spec)))))
-      (loop for method in (generic-function-methods gf)
-         when (applicable-method-p method args)
-         collect method))))
+                   for arg in args
+                   always (if (eql-specializer-flag spec)
+                              (eql arg (eql-specializer-object spec))
+                              (si::of-class-p arg spec)))))
+      (let ((methods (loop for method in (generic-function-methods gf)
+                           when (applicable-method-p method args)
+                             collect method)))
+        (sort-applicable-methods gf methods (mapcar #'class-of args))))))
 
 (defun std-compute-applicable-methods-using-classes (gf classes)
   (declare (optimize (speed 3)))
@@ -264,8 +259,8 @@
               (nreverse
                (push most-specific ordered-list))))
         (dolist (meth (cdr scan))
-          (when (eq (compare-methods most-specific
-                                     meth args-specializers f) 2)
+          (when (eq (compare-methods most-specific meth args-specializers f)
+                    2)
             (setq most-specific meth)))
         (setq scan (delete most-specific scan))
         (push most-specific ordered-list)))))
