@@ -242,58 +242,66 @@
 
 (defun sort-applicable-methods (gf applicable-list args-specializers)
   (declare (optimize (safety 0) (speed 3)))
-  (with-early-accessors (+standard-method-slots+ +standard-generic-function-slots+)
-    (let ((f (generic-function-a-p-o-function gf)))
+  (with-early-accessors (+standard-method-slots+
+                         +standard-generic-function-slots+
+                         +eql-specializer-slots+
+                         +standard-class-slots+)
+    (let ((f (generic-function-a-p-o-function gf))
+          (args-classes
+            (loop for arg-spec in args-specializers
+                  for req-args in (generic-function-argument-precedence-order gf)
+                  collect (if (eql-specializer-flag arg-spec)
+                              (class-of (eql-specializer-object arg-spec))
+                              arg-spec))))
       ;; reorder args to match the precedence order
       (when f
-        (setf args-specializers
-              (funcall f (subseq args-specializers 0
-                                 (length (generic-function-argument-precedence-order gf))))))
+        (setf args-classes (funcall f args-classes)))
       ;; then order the list
       (do* ((scan applicable-list)
             (most-specific (first scan) (first scan))
-            (ordered-list))
+            (ordered-list '()))
            ((null (cdr scan))
             (when most-specific
               ;; at least one method
               (nreverse
                (push most-specific ordered-list))))
-        (dolist (meth (cdr scan))
-          (when (eq (compare-methods most-specific meth args-specializers f)
+        (dolist (method (cdr scan))
+          (when (eq (compare-methods most-specific method args-classes f)
                     2)
-            (setq most-specific meth)))
+            (setq most-specific method)))
         (setq scan (delete most-specific scan))
         (push most-specific ordered-list)))))
 
-(defun compare-methods (method-1 method-2 args-specializers f)
+(defun compare-methods (method-1 method-2 args-classes f)
   (declare (si::c-local))
   (with-early-accessors (+standard-method-slots+)
-    (let* ((specializers-list-1 (method-specializers method-1))
-           (specializers-list-2 (method-specializers method-2)))
-      (compare-specializers-lists
-       (if f (funcall f specializers-list-1) specializers-list-1)
-       (if f (funcall f specializers-list-2) specializers-list-2)
-       args-specializers))))
+    (let ((specializers-list-1 (method-specializers method-1))
+          (specializers-list-2 (method-specializers method-2)))
+      (when f
+        (setf specializers-list-1 (funcall f specializers-list-1))
+        (setf specializers-list-2 (funcall f specializers-list-2)))
+      (compare-specializers-lists specializers-list-1
+                                  specializers-list-2
+                                  args-classes))))
 
-(defun compare-specializers-lists (spec-list-1 spec-list-2 args-specializers)
+(defun compare-specializers-lists (spec-list-1 spec-list-2 args-classes)
   (declare (si::c-local))
   (when (or spec-list-1 spec-list-2)
     (ecase (compare-specializers (first spec-list-1)
                                  (first spec-list-2)
-                                 (first args-specializers))
+                                 (first args-classes))
       (1 '1)
       (2 '2)
       (= 
        (compare-specializers-lists (cdr spec-list-1)
                                    (cdr spec-list-2)
-                                   (cdr args-specializers)))
+                                   (cdr args-classes)))
       ((nil)
        (error "The type specifiers ~S and ~S can not be disambiguated~
                   with respect to the argument specializer: ~S"
               (or (car spec-list-1) t)
               (or (car spec-list-2) t)
-              (car args-specializers)))))
-  )
+              (car args-classes))))))
 
 (defun fast-subtypep (spec1 spec2)
   (declare (si::c-local))
@@ -315,7 +323,7 @@
 (defun compare-specializers (spec-1 spec-2 arg-class)
   (declare (si::c-local))
   (with-early-accessors (+standard-class-slots+ +standard-class-slots+)
-    (let* ((cpl (class-precedence-list arg-class)))
+    (let ((cpl (class-precedence-list arg-class)))
       (cond ((eq spec-1 spec-2) '=)
             ((fast-subtypep spec-1 spec-2) '1)
             ((fast-subtypep spec-2 spec-1) '2)
