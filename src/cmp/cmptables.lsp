@@ -182,7 +182,7 @@
 
     (temp . wt-temp)
     (lcl . wt-lcl-loc)
-    (fixnum-value . wt-number)
+    (fixnum-value . wt-fixnum)
     (long-float-value . wt-number)
     (double-float-value . wt-number)
     (single-float-value . wt-number)

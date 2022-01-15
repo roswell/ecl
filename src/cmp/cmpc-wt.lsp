@@ -19,18 +19,7 @@
 (defun wt1 (form)
   (cond ((not (floatp form))
          (typecase form
-           (INTEGER
-            (princ form *compiler-output1*)
-            (princ
-             (cond ((typep form (rep-type->lisp-type :int)) "")
-                   ((typep form (rep-type->lisp-type :unsigned-int)) "U")
-                   ((typep form (rep-type->lisp-type :long)) "L")
-                   ((typep form (rep-type->lisp-type :unsigned-long)) "UL")
-                   ((typep form (rep-type->lisp-type :long-long)) "LL")
-                   ((typep form (rep-type->lisp-type :unsigned-long-long)) "ULL")
-                   (t (baboon :format-control "wt1: The number ~A doesn't fit any integer type." form)))
-             *compiler-output1*))
-           ((or STRING CHARACTER)
+           ((or INTEGER STRING CHARACTER)
             (princ form *compiler-output1*))
            (VAR (wt-var form))
            (t (wt-loc form))))
