@@ -119,6 +119,7 @@ static int compile_body(cl_env_ptr env, cl_object args, int flags);
 static int compile_form(cl_env_ptr env, cl_object args, int push);
 static int compile_with_load_time_forms(cl_env_ptr env, cl_object form, int flags);
 static int compile_constant(cl_env_ptr env, cl_object stmt, int flags);
+static void maybe_make_load_forms(cl_env_ptr env, cl_object constant);
 
 static int c_cons(cl_env_ptr env, cl_object args, int push);
 static int c_endp(cl_env_ptr env, cl_object args, int push);
@@ -1034,6 +1035,7 @@ perform_c_case(cl_env_ptr env, cl_object args, int flags) {
       while (n-- > 1) {
         cl_object v = pop(&test);
         asm_op(env, OP_JEQL);
+        maybe_make_load_forms(env, v);
         asm_c(env, v);
         asm_arg(env, n * (OPCODE_SIZE + OPARG_SIZE * 2)
                 + OPARG_SIZE);
@@ -1041,6 +1043,7 @@ perform_c_case(cl_env_ptr env, cl_object args, int flags) {
       test = ECL_CONS_CAR(test);
     }
     asm_op(env, OP_JNEQL);
+    maybe_make_load_forms(env, test);
     asm_c(env, test);
     labeln = current_pc(env);
     asm_arg(env, 0);
