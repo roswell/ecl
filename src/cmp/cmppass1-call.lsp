@@ -256,6 +256,25 @@
       (setf apply-list (first (last arguments))
             apply-var (gensym)
             arguments (butlast arguments)))
+    ;; 1. check number of arguments
+    (let* ((n-args-wanted-min (first requireds))
+           (n-args-wanted-max (if (or key-flag allow-other-keys rest)
+                                  call-arguments-limit
+                                  (+ (first requireds) (first optionals))))
+           (apply-constant-args-p (and apply-p (constantp apply-list)
+                                       (listp (constant-form-value apply-list))))
+           (n-args-got-min (if apply-constant-args-p
+                               (+ (length arguments)
+                                  (length (constant-form-value apply-list)))
+                               (length arguments)))
+           (n-args-got-max (cond ((and apply-p (not apply-constant-args-p))
+                                  nil)  ; unknown maximum number of arguments
+                                 (t n-args-got-min))))
+      (when (and n-args-got-max (< n-args-got-max n-args-wanted-min))
+        (too-few-args lambda-form n-args-wanted-min n-args-got-min))
+      (when (> n-args-got-min n-args-wanted-max)
+        (too-many-args lambda-form n-args-wanted-max n-args-got-max)))
+    ;; 2. construct forms to evaluate arguments in order
     (setf arguments (copy-list arguments))
     (do ((scan arguments (cdr scan)))
         ((endp scan))
@@ -266,6 +285,7 @@
             (setf (car scan) aux-var)))))
     (when apply-var
       (push `(,apply-var ,apply-list) let-vars))
+    ;; 3. process required parameters
     (dolist (i (cdr requireds))
       (push (list i
                   (cond (arguments
@@ -273,11 +293,9 @@
                         (apply-p
                          `(if ,apply-var
                               (pop ,apply-var)
-                              (si::dm-too-few-arguments nil)))
-                        (t
-                         (cmperr "Too few arguments for lambda form ~S"
-                                 (cons 'LAMBDA lambda-form)))))
+                              (si::dm-too-few-arguments nil)))))
             let-vars))
+    ;; 4. process optional parameters
     (do ((scan (cdr optionals) (cdddr scan)))
         ((endp scan))
       (let ((opt-var (first scan))
@@ -300,16 +318,22 @@
                      (list* `(,opt-var ,opt-value)
                             `(,opt-flag nil)
                             let-vars))))))
+    ;; 5. process rest parameter
     (when (or key-flag allow-other-keys)
       (unless rest
         (setf rest (gensym))))
-    (when rest
-      (push `(,rest ,(if arguments
-                         (if apply-p
-                             `(list* ,@arguments ,apply-var)
-                             `(list ,@arguments))
-                         (if apply-p apply-var nil)))
-            let-vars))
+    (cond (rest
+           (push `(,rest ,(if arguments
+                              (if apply-p
+                                  `(list* ,@arguments ,apply-var)
+                                  `(list ,@arguments))
+                              (if apply-p apply-var nil)))
+                 let-vars))
+          (apply-p
+           (push `(when ,apply-var
+                    (si::dm-too-many-arguments nil))
+                 extra-stmts)))
+    ;; 6. process keyword parameters
     (do ((scan (cdr keywords) (cddddr scan)))
         ((endp scan))
       (let ((keyword (first scan))
@@ -328,6 +352,7 @@
                let-vars))))
     (when (and key-flag (not allow-other-keys))
       (push `(si::check-keyword ,rest ',all-keys) extra-stmts))
+    ;; 7. construct body
     (loop while aux-vars
        do (push (list (pop aux-vars) (pop aux-vars)) let-vars))
     (values (nreverse (delete-if-not #'first let-vars))
