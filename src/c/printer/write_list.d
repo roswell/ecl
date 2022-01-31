@@ -27,51 +27,6 @@ _ecl_write_list(cl_object x, cl_object stream)
     _ecl_write_symbol(x, stream);
     return;
   }
-  if (CAR(x) == @'si::#!') {
-    writestr_stream("#!", stream);
-    x = CDR(x);
-    si_write_object(x, stream);
-    return;
-  }
-  if (CONSP(CDR(x)) && Null(CDDR(x))) {
-    if (CAR(x) == @'quote') {
-      ecl_write_char('\'', stream);
-      x = CADR(x);
-      si_write_object(x, stream);
-      return;
-    }
-    if (CAR(x) == @'function') {
-      ecl_write_char('#', stream);
-      ecl_write_char('\'', stream);
-      x = CADR(x);
-      si_write_object(x, stream);
-      return;
-    }
-    if (CAR(x) == @'si::quasiquote') {
-      ecl_write_char('`', stream);
-      x = CADR(x);
-      si_write_object(x, stream);
-      return;
-    }
-    if (CAR(x) == @'si::unquote') {
-      ecl_write_char(',', stream);
-      x = CADR(x);
-      si_write_object(x, stream);
-      return;
-    }
-    if (CAR(x) == @'si::unquote-splice') {
-      writestr_stream(",@@", stream);
-      x = CADR(x);
-      si_write_object(x, stream);
-      return;
-    }
-    if (CAR(x) == @'si::unquote-nsplice') {
-      writestr_stream(",.", stream);
-      x = CADR(x);
-      si_write_object(x, stream);
-      return;
-    }
-  }
   circle = ecl_print_circle();
   if (ecl_print_readably()) {
     print_level = MOST_POSITIVE_FIXNUM;
