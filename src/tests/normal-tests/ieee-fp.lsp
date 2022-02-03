@@ -509,8 +509,8 @@ Common Lisp type contagion rules."
       (for-all-infinities -infinity +infinity
         (type-and-value-check (asinh -infinity) -infinity)
         (type-and-value-check (asinh +infinity) +infinity)
-        (without-fpe-traps
-          (complex-equality #'approx= (acosh -infinity) +infinity pi))
+        #| (without-fpe-traps
+          (complex-equality #'approx= (acosh -infinity) +infinity pi))|#
         (type-and-value-check (acosh +infinity) +infinity)
         #| (complex-equality #'approx= (atanh -infinity) 0 (/ pi 2))
         (complex-equality #'approx= (atanh +infinity) 0 (/ pi 2))|#))
@@ -733,3 +733,52 @@ Common Lisp type contagion rules."
         (is (approx= (phase (complex -infinity +infinity)) (+ (* pi 3/4))))
         (is (approx= (phase (complex +infinity -infinity)) (- (* pi 1/4))))
         (is (approx= (phase (complex +infinity +infinity)) (+ (* pi 1/4)))) |#))
+
+
+
+(test ieee-fp.0031.brach-cuts-signed-zero
+  (for-all-number-subtypes (x float (+ 1.0 (random 10.0)))
+    ;; branch cuts in [1,infinity)
+    (let ((z-above (complex x +0.0))
+          (z-below (complex x -0.0)))
+      (is (plusp (imagpart (asin z-above))))
+      (is (minusp (imagpart (asin z-below))))
+      (is (minusp (imagpart (acos z-above))))
+      (is (plusp (imagpart (acos z-below))))
+      (is (plusp (imagpart (atanh z-above))))
+      (is (minusp (imagpart (atanh z-below)))))
+    ;; branch cuts in (-infinity,-1]
+    (let ((z-above (complex (- x) +0.0))
+          (z-below (complex (- x) -0.0)))
+      (is (plusp (imagpart (asin z-above))))
+      (is (minusp (imagpart (asin z-below))))
+      (is (minusp (imagpart (acos z-above))))
+      (is (plusp (imagpart (acos z-below))))
+      (is (plusp (imagpart (atanh z-above))))
+      (is (minusp (imagpart (atanh z-below)))))
+    ;; branch cuts in [i,i*infinity)
+    (let ((z-left (complex -0.0 x))
+          (z-right (complex +0.0 x)))
+      (is (minusp (realpart (atan z-left))))
+      (is (plusp (realpart (atan z-right))))
+      (is (minusp (realpart (asinh z-left))))
+      (is (plusp (realpart (asinh z-right)))))
+    ;; branch cuts in (-i*infinity,-i]
+    (let ((z-left (complex -0.0 (- x)))
+          (z-right (complex +0.0 (- x))))
+      (is (minusp (realpart (atan z-left))))
+      (is (plusp (realpart (atan z-right))))
+      (is (minusp (realpart (asinh z-left))))
+      (is (plusp (realpart (asinh z-right))))))
+  (for-all-number-subtypes (x float (- 1.0 (random 10.0)))
+    ;; branch cuts in (-infinity,1]
+    (let ((z-above (complex x +0.0))
+          (z-below (complex x -0.0)))
+      (is (plusp (imagpart (acosh z-above))))
+      (is (minusp (imagpart (acosh z-below))))))
+  (for-all-number-subtypes (x float (- (random 10.0)))
+    ;; branch cuts in (-infinity,0]
+    (let ((z-above (complex x +0.0))
+          (z-below (complex x -0.0)))
+      (is (plusp (imagpart (sqrt z-above))))
+      (is (minusp (imagpart (sqrt z-below)))))))

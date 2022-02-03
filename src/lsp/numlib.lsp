@@ -212,6 +212,21 @@ RADIANS) and (SIN RADIANS) respectively."
         (otherwise
          (error 'type-error :datum ,arg :expected-type 'number))))))
 
+;;; Branch cuts and signed zeros
+;;;
+;;; The value of the following multi-valued complex functions along
+;;; their branch cuts is chosen depending on the sign of zero when
+;;; applicable. For example, the imaginary part of (asin (complex x y))
+;;; for x real and x>1 is positive for y=+0.0 and negative for
+;;; y=-0.0, consistent with approaching the branch cut at y=0 from
+;;; above and respectively below.
+;;; Note that this differs from the specification in the ANSI
+;;; standard, which gives only one value (the ANSI standard is silent
+;;; about signed zeros with regards to branch cuts). We take this
+;;; approach because it is mathematically more sensible and consistent
+;;; with the specification for complex numbers in the C programming
+;;; language. -- mg 2022-01-06
+
 (defun asin (x)
   "Args: (number)
 Returns the arc sine of NUMBER."
@@ -227,11 +242,14 @@ Returns the arc sine of NUMBER."
 (defun complex-asin (z)
   (declare (number z)
            (si::c-local))
-  (let ((sqrt-1-z (sqrt (- 1 z)))
-        (sqrt-1+z (sqrt (+ 1 z))))
+  (let* ((re-z (realpart z))
+         (im-z (imagpart z))
+         ;; add real and imaginary parts separately for correct signed
+         ;; zero handling around the branch cuts
+         (sqrt-1+z (sqrt (complex (+ 1 re-z) im-z)))
+         (sqrt-1-z (sqrt (complex (- 1 re-z) (- im-z)))))
     (complex (atan (realpart z) (realpart (* sqrt-1-z sqrt-1+z)))
-             (asinh (imagpart (* (conjugate sqrt-1-z)
-                                 sqrt-1+z))))))
+             (asinh (imagpart (* (conjugate sqrt-1-z) sqrt-1+z))))))
 
 (defun acos (x)
   "Args: (number)
@@ -248,11 +266,14 @@ Returns the arc cosine of NUMBER."
 (defun complex-acos (z)
   (declare (number z)
            (si::c-local))
-  (let ((sqrt-1+z (sqrt (+ 1 z)))
-        (sqrt-1-z (sqrt (- 1 z))))
+  (let* ((re-z (realpart z))
+         (im-z (imagpart z))
+         ;; add real and imaginary parts separately for correct signed
+         ;; zero handling around the branch cuts
+         (sqrt-1+z (sqrt (complex (+ 1 re-z) im-z)))
+         (sqrt-1-z (sqrt (complex (- 1 re-z) (- im-z)))))
     (complex (* 2 (atan (realpart sqrt-1-z) (realpart sqrt-1+z)))
-             (asinh (imagpart (* (conjugate sqrt-1+z)
-                                 sqrt-1-z))))))
+             (asinh (imagpart (* (conjugate sqrt-1+z) sqrt-1-z))))))
 
 (defun asinh (x)
   "Args: (number)
@@ -289,8 +310,12 @@ Returns the hyperbolic arc cosine of NUMBER."
 #+(or ecl-min (not complex-float))
 (defun complex-acosh (z)
   (declare (number z) (si::c-local))
-  (let ((sqrt-z-1 (sqrt (- z 1)))
-        (sqrt-z+1 (sqrt (+ z 1))))
+  (let* ((re-z (realpart z))
+         (im-z (imagpart z))
+         ;; add real and imaginary parts separately for correct signed
+         ;; zero handling around the branch cuts
+         (sqrt-z+1 (sqrt (complex (+ re-z 1) im-z)))
+         (sqrt-z-1 (sqrt (complex (- re-z 1) im-z))))
     (complex (asinh (realpart (* (conjugate sqrt-z-1)
                                  sqrt-z+1)))
              (* 2 (atan (imagpart sqrt-z-1) (realpart sqrt-z+1))))))
@@ -309,7 +334,13 @@ Returns the hyperbolic arc tangent of NUMBER."
 #+(or ecl-min (not complex-float))
 (defun complex-atanh (z)
   (declare (number z) (si::c-local))
-  (/ (- (log (1+ z)) (log (- 1 z))) 2))
+  (let* ((re-z (realpart z))
+         (im-z (imagpart z))
+         ;; add real and imaginary parts separately for correct signed
+         ;; zero handling around the branch cuts
+         (log-1+z (log (complex (+ 1 re-z) im-z)))
+         (log-1-z (log (complex (- 1 re-z) (- im-z)))))
+    (/ (- log-1+z log-1-z) 2)))
 
 (defun ffloor (x &optional (y 1.0f0))
   "Args: (number &optional (divisor 1))
