@@ -113,14 +113,14 @@
 
 (eval-when (:compile-toplevel :execute)
   (defparameter +standard-generic-function-slots+
-    '((name :initarg :name :initform nil
-       :reader generic-function-name)
+    ;; INV: some of these slots are expected to have fixed positions. See
+    ;; src/h/internal.h:GFUN_NAME etc.
+    '((name :initarg :name :initform nil :reader generic-function-name)
       (spec-list :initform nil :accessor generic-function-spec-list)
       (method-combination 
        :initarg :method-combination :initform (find-method-combination (class-prototype (find-class 'standard-generic-function)) 'standard nil)
        :accessor generic-function-method-combination)
-      (lambda-list :initarg :lambda-list
-       :accessor generic-function-lambda-list)
+      (lambda-list :initarg :lambda-list :accessor generic-function-lambda-list)
       (argument-precedence-order 
        :initarg :argument-precedence-order
        :initform nil
