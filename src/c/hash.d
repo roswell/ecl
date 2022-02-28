@@ -1239,7 +1239,7 @@ cl_hash_table_test(cl_object ht)
   case ecl_htt_equal:   output = @'equal';  break;
   case ecl_htt_equalp:  output = @'equalp'; break;
   case ecl_htt_pack:    output = @'equal';  break;
-  case ecl_htt_generic: output = ht->hash.generic_test;
+  case ecl_htt_generic: output = ht->hash.generic_test; break;
   default: FEerror("hash-table-test: unknown test.", 0);
   }
   @(return output);
