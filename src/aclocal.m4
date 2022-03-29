@@ -420,7 +420,7 @@ case "${host_os}" in
                 shared='yes'
                 SHAREDEXT='dylib'
                 PICFLAG='-fPIC -fno-common'
-                SHARED_LDFLAGS="-dynamiclib -flat_namespace -undefined suppress ${LDFLAGS}"
+                SHARED_LDFLAGS="-dynamiclib ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,-rpath,~A'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
