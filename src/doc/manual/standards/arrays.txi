@@ -114,12 +114,18 @@ Creating array and vectors
 @cppdef ecl_alloc_simple_vector
 @cppdef si_make_vector
 @cppdef si_make_array
+@cppdef si_adjust_vector
 @deftypefun cl_object ecl_alloc_simple_vector (cl_index length, cl_elttype element_type);
 @deftypefunx cl_object si_make_vector (cl_object element_type, cl_object length, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
 @deftypefunx cl_object si_make_array (cl_object element_type, cl_object dimensions, cl_object adjustablep, cl_object fill_pointerp, cl_object displaced_to, cl_object displacement);
+@deftypefunx cl_object si_adjust_vector (cl_object vector, cl_object length);
 
 @paragraph Description
-The function @coderef{ecl_alloc_simple_vector} is the simplest constructor, creating a simple vector (i.e. non-adjustable and without a fill pointer), of the given size, preallocating the memory for the array data. The first argument, @emph{element_type}, is a C constant that represents a valid array element type (See @coderef{cl_elttype}).
+The function @coderef{ecl_alloc_simple_vector} is the simplest
+constructor, creating a simple vector (i.e. non-adjustable and without
+a fill pointer), of the given size, preallocating the memory for the
+array data. The first argument, @emph{element_type}, is a C constant
+that represents a valid array element type (See @coderef{cl_elttype}).
 
 The function @coderef{si_make_vector} does the same job but allows creating an array with fill pointer, which is adjustable or displaced to another array.
 @itemize
@@ -130,7 +136,11 @@ The function @coderef{si_make_vector} does the same job but allows creating an a
 @item displacement is either ECL_NIL or a non-negative value with the array displacement.
 @end itemize
 
-Finally, the function @coderef{si_make_array} does a similar job to @coderef{si_make_vector} but its second argument, @emph{dimension}, can be a list of dimensions, to create a multidimensional array.
+Adjustable vector may be adjusted with the function @coderef{si_adjust_vector}.
+
+Finally, the function @coderef{si_make_array} does a similar job to
+@coderef{si_make_vector} but its second argument, @emph{dimension},
+can be a list of dimensions, to create a multidimensional array.
 
 @paragraph Examples
 Create one-dimensional @code{base-string} with room for 11 characters:
