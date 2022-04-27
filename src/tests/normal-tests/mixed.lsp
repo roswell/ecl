@@ -422,3 +422,10 @@
 (LET ((FU 1)
       (BAR 2))
   (+ FU BAR 7))    A")))
+
+;; Created: 2022-04-27
+;; Contains: a smoke test for a new operator si:adjust-vector
+(test mix.0022.adjust-vector
+  (let ((vector (si:make-vector t 10 t nil nil nil)))
+    (si:adjust-vector vector 20)
+    (is (= 20 (array-total-size vector)))))

@@ -874,6 +874,7 @@
 ;; ECL extensions
 (proclamation si:make-pure-array (t t t t t t) array)
 (proclamation si:make-vector (t t t t t t) vector)
+(proclamation si:adjust-vector (vector ext:array-index) vector)
 (proclamation si:aset (array t &rest t) t)
 (proclamation si:row-major-aset (array ext:array-index t) t)
 (proclamation si:svset (simple-vector ext:array-index t) t)

@@ -97,8 +97,7 @@ alloc(pool_t pool, cl_index size)
   cl_index next_fillp = fillp + bytes;
   if (next_fillp >= pool->data->vector.dim) {
     cl_index new_dim = next_fillp + next_fillp / 2;
-    pool->data = _ecl_funcall3(@'adjust-array', pool->data,
-                               ecl_make_fixnum(new_dim));
+    pool->data = si_adjust_vector(pool->data, ecl_make_fixnum(new_dim));
   }
   pool->data->vector.fillp = next_fillp;
   return fillp;
