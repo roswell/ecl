@@ -922,10 +922,9 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
     if (output_size < output->base_string.dim) {
       break;
     }
-    output = _ecl_funcall3(@'adjust-array', output,
-                           ecl_make_fixnum(input_size > output_size
-                                           ? input_size
-                                           : output_size + 128));
+    output = si_adjust_vector(output, ecl_make_fixnum(input_size > output_size
+                                                      ? input_size
+                                                      : output_size + 128));
   } while (1);
   output->base_string.fillp = output_size;
   if (ecl_fits_in_base_string(output)) {

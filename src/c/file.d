@@ -4667,11 +4667,7 @@ static void
 seq_out_enlarge_vector(cl_object strm)
 {
   cl_object vector = SEQ_OUTPUT_VECTOR(strm);
-  if (!ECL_ADJUSTABLE_ARRAY_P(vector)) {
-    FEerror("Can't adjust the dimensions of the sequence of sequence stream ~A", 1, strm);
-  }
-  vector = _ecl_funcall3(@'adjust-array', vector,
-                         ecl_ash(ecl_make_fixnum(vector->vector.dim), 1));
+  si_adjust_vector(vector, ecl_ash(ecl_make_fixnum(vector->vector.dim), 1));
   SEQ_OUTPUT_VECTOR(strm) = vector;
 }
 
