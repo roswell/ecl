@@ -420,7 +420,7 @@ ecl_aset1(cl_object x, cl_index index, cl_object value)
 /*
   Internal function for making arrays of more than one dimension:
 
-  (si:make-pure-array dimension-list element-type adjustable
+  (si:make-pure-array element-type dimension-list adjustable
   displaced-to displaced-index-offset)
 */
 cl_object
@@ -548,6 +548,23 @@ si_make_vector(cl_object etype, cl_object dim, cl_object adj,
   else
     ecl_displace(x, displ, disploff);
   @(return x);
+}
+
+cl_object
+si_adjust_vector(cl_object vector, cl_object new_dim) {
+  cl_object new_vector;
+  if (!ECL_ADJUSTABLE_ARRAY_P(vector)) {
+    FEerror("The vector is not adjustable.", 0);
+  }
+  new_vector = si_make_vector(ecl_elttype_to_symbol(ecl_array_elttype(vector)),
+                              new_dim,
+                              ECL_T,
+                              ecl_make_fixnum(vector->vector.fillp),
+                              ECL_NIL,
+                              ECL_NIL);
+  ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
+  si_replace_array(vector, new_vector);
+  return vector;
 }
 
 cl_object *
@@ -1187,7 +1204,7 @@ si_fill_pointer_set(cl_object a, cl_object fp)
 
   (si:replace-array old-array new-array).
 
-  Used in ADJUST-ARRAY.
+  Used in ADJUST-ARRAY and SI:ADJUST-VECTOR.
 */
 cl_object
 si_replace_array(cl_object olda, cl_object newa)
