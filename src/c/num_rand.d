@@ -232,7 +232,7 @@ random_integer(cl_object limit, cl_object state)
   if (bit_length <= ECL_FIXNUM_BITS)
     bit_length = ECL_FIXNUM_BITS;
   buffer = ecl_ash(ecl_make_fixnum(1), bit_length);
-  for (bit_length = mpz_size(buffer->big.big_num); bit_length; ) {
+  for (bit_length = mpz_size(ecl_bignum(buffer)); bit_length; ) {
     ECL_BIGNUM_LIMBS(buffer)[--bit_length] =
       generate_limb(state);
   }

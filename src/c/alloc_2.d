@@ -1329,9 +1329,9 @@ si_gc_stats(cl_object enable)
   }
   if (cl_core.bytes_consed == ECL_NIL) {
     cl_core.bytes_consed = ecl_alloc_object(t_bignum);
-    mpz_init2(cl_core.bytes_consed->big.big_num, 128);
+    mpz_init2(ecl_bignum(cl_core.bytes_consed), 128);
     cl_core.gc_counter = ecl_alloc_object(t_bignum);
-    mpz_init2(cl_core.gc_counter->big.big_num, 128);
+    mpz_init2(ecl_bignum(cl_core.gc_counter), 128);
   }
 
   update_bytes_consed();
@@ -1343,8 +1343,8 @@ si_gc_stats(cl_object enable)
     GC_print_stats = 0;
     cl_core.gc_stats = 0;
   } else if (enable == ecl_make_fixnum(0)) {
-    mpz_set_ui(cl_core.bytes_consed->big.big_num, 0);
-    mpz_set_ui(cl_core.gc_counter->big.big_num, 0);
+    mpz_set_ui(ecl_bignum(cl_core.bytes_consed), 0);
+    mpz_set_ui(ecl_bignum(cl_core.gc_counter), 0);
   } else {
     cl_core.gc_stats = 1;
     GC_print_stats = (enable == @':full');
@@ -1361,8 +1361,8 @@ gather_statistics()
   /* GC stats rely on bignums */
   if (cl_core.gc_stats) {
     update_bytes_consed();
-    mpz_add_ui(cl_core.gc_counter->big.big_num,
-               cl_core.gc_counter->big.big_num,
+    mpz_add_ui(ecl_bignum(cl_core.gc_counter),
+               ecl_bignum(cl_core.gc_counter),
                1);
   }
   if (GC_old_start_callback)
@@ -1372,8 +1372,8 @@ gather_statistics()
 static void
 update_bytes_consed () {
 #if GBC_BOEHM == 0
-  mpz_add_ui(cl_core.bytes_consed->big.big_num,
-             cl_core.bytes_consed->big.big_num,
+  mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+             ecl_bignum(cl_core.bytes_consed),
              GC_get_bytes_since_gc());
 #else
   /* This is not accurate and may wrap around. We try to detect this
@@ -1384,15 +1384,15 @@ update_bytes_consed () {
   if (bytes > new_bytes) {
     cl_index wrapped;
     wrapped = ~((cl_index)0) - bytes;
-    mpz_add_ui(cl_core.bytes_consed->big.big_num,
-               cl_core.bytes_consed->big.big_num,
+    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+               ecl_bignum(cl_core.bytes_consed),
                wrapped);
-    mpz_add_ui(cl_core.bytes_consed->big.big_num,
-               cl_core.bytes_consed->big.big_num,
+    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+               ecl_bignum(cl_core.bytes_consed),
                new_bytes);
   } else {
-    mpz_add_ui(cl_core.bytes_consed->big.big_num,
-               cl_core.bytes_consed->big.big_num,
+    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+               ecl_bignum(cl_core.bytes_consed),
                new_bytes - bytes);
   }
   bytes = new_bytes;

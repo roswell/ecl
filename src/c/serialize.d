@@ -241,13 +241,13 @@ serialize_one(pool_t pool, cl_object what)
   case t_longfloat:
     break;
   case t_bignum: {
-    int8_t sign = mpz_sgn(buffer->big.big_num);
+    int8_t sign = mpz_sgn(ecl_bignum(buffer));
     serialize_bits(pool, &sign, 1);
-    cl_index bytes = (mpz_sizeinbase(buffer->big.big_num, 2) + 7) / 8;
+    cl_index bytes = (mpz_sizeinbase(ecl_bignum(buffer), 2) + 7) / 8;
     serialize_bits(pool, &bytes, sizeof(cl_index));
     cl_index index = alloc(pool, bytes);
     cl_index bytes_written;
-    mpz_export(pool->data->vector.self.b8 + index, &bytes_written, 1, 1, 1, 0, buffer->big.big_num);
+    mpz_export(pool->data->vector.self.b8 + index, &bytes_written, 1, 1, 1, 0, ecl_bignum(buffer));
     break;
   }
   case t_ratio: {
@@ -459,10 +459,10 @@ reconstruct_one(uint8_t *data, cl_object *output)
     data += ROUND_TO_WORD(1);
     cl_index bytes = (cl_index) *data;
     data += ROUND_TO_WORD(sizeof(cl_index));
-    mpz_init((*output)->big.big_num);
-    mpz_import((*output)->big.big_num, bytes, 1, 1, 1, 0, data);
+    mpz_init(ecl_bignum(*output));
+    mpz_import(ecl_bignum(*output), bytes, 1, 1, 1, 0, data);
     if (sign == -1) {
-      mpz_neg((*output)->big.big_num, (*output)->big.big_num);
+      mpz_neg(ecl_bignum(*output), ecl_bignum(*output));
     }
     data += ROUND_TO_WORD(bytes);
     break;

@@ -216,14 +216,12 @@ struct ecl_long_float {
 };
 #define ecl_long_float(o) ((o)->longfloat.value)
 
+typedef mpz_t big_num_t;
 struct ecl_bignum {
         _ECL_HDR;
-        mpz_t big_num;
+        big_num_t value;
 };
-
-#define ECL_BIGNUM_DIM(x)       ((x)->big.big_num->_mp_alloc) /* number of allocated limbs */
-#define ECL_BIGNUM_SIZE(x)      ((x)->big.big_num->_mp_size)  /* number of limbs in use times sign of the bignum */
-#define ECL_BIGNUM_LIMBS(x)     ((x)->big.big_num->_mp_d)     /* pointer to array of allocated limbs */
+#define ecl_bignum(o) ((o)->big.value)
 
 struct ecl_ratio {
         _ECL_HDR;
