@@ -31,9 +31,13 @@
 #endif
 #include <ecl/ecl-inl.h>
 
+/* Shared libraries do not have direct access to environ on Darwin */
+#if defined(__APPLE__)
+# include <crt_externs.h>
+# define environ (*_NSGetEnviron())
 /* Mingw defines 'environ' to be a macro instead of a global variable. */
-#ifdef environ
-# undef environ
+#elif !defined(environ) && defined(HAVE_ENVIRON)
+extern char **environ;
 #endif
 
 cl_object
@@ -107,7 +111,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   cl_object p;
   cl_index i, j, total_size = 0, nstrings = 0;
   cl_object buffer;
-  char **environ;
+  char **my_environ;
   for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
     total_size += s->base_string.fillp + 1;
@@ -116,12 +120,12 @@ from_list_to_execve_argument(cl_object l, char ***environp)
   /* Extra place for ending null */
   total_size++;
   buffer = ecl_alloc_simple_base_string(++total_size);
-  environ = ecl_alloc_atomic((nstrings + 1) * sizeof(char*));
+  my_environ = ecl_alloc_atomic((nstrings + 1) * sizeof(char*));
   for (j = i = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
     cl_index l = s->base_string.fillp;
 
-    environ[j++] = (char*)(buffer->base_string.self + i);
+    my_environ[j++] = (char*)(buffer->base_string.self + i);
     memcpy(buffer->base_string.self + i,
            s->base_string.self,
            l);
@@ -129,8 +133,8 @@ from_list_to_execve_argument(cl_object l, char ***environp)
     buffer->base_string.self[i++] = 0;
   }
   buffer->base_string.self[i++] = 0;
-  environ[j] = 0;
-  if (environp) *environp = environ;
+  my_environ[j] = 0;
+  if (environp) *environp = my_environ;
   return buffer;
 }
 
@@ -347,7 +351,7 @@ create_descriptor(cl_object stream, cl_object direction,
 
 
 cl_object
-si_run_program_inner(cl_object command, cl_object argv, cl_object environ, cl_object wait)
+si_run_program_inner(cl_object command, cl_object argv, cl_object my_environ, cl_object wait)
 {
   cl_env_ptr the_env = ecl_process_env();
   int parent_write = 0, parent_read = 0, parent_error = 0;
@@ -364,7 +368,7 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ, cl_ob
   argv = CONS(command, cl_mapcar(2, @'si::copy-to-simple-base-string', argv));
 #endif
 
-  pid = si_spawn_subprocess(command, argv, environ, @':stream', @':stream', @':output');
+  pid = si_spawn_subprocess(command, argv, my_environ, @':stream', @':stream', @':output');
   parent_write = ecl_fixnum(ecl_nth_value(the_env, 1));
   parent_read = ecl_fixnum(ecl_nth_value(the_env, 2));
   parent_error = ecl_fixnum(ecl_nth_value(the_env, 3));
@@ -390,17 +394,17 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ, cl_ob
 }
 
 cl_object
-si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
+si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
                     cl_object input, cl_object output, cl_object error) {
 
   int parent_write = 0, parent_read = 0, parent_error = 0;
   int child_pid;
   cl_object pid;
 
-  /* environ is either a list or `:default'. */
-  if (ECL_LISTP(environ)) {
-    environ = cl_mapcar(2, @'si::copy-to-simple-base-string', environ);
-  } else if (!ecl_eql(environ, @':default')) {
+  /* my_environ is either a list or `:default'. */
+  if (ECL_LISTP(my_environ)) {
+    my_environ = cl_mapcar(2, @'si::copy-to-simple-base-string', my_environ);
+  } else if (!ecl_eql(my_environ, @':default')) {
     FEerror("Malformed :ENVIRON argument to EXT:RUN-PROGRAM.", 0);
   }
   
@@ -414,8 +418,8 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     cl_object env_buffer;
     char *env = NULL;
 
-    if (ECL_LISTP(environ)) {
-      env_buffer = from_list_to_execve_argument(environ, NULL);
+    if (ECL_LISTP(my_environ)) {
+      env_buffer = from_list_to_execve_argument(my_environ, NULL);
       env = env_buffer->base_string.self;
     }
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
@@ -510,10 +514,15 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
           argv_ptr[j] = arg->base_string.self;
         }
       }
-      if (ECL_LISTP(environ)) {
+      if (ECL_LISTP(my_environ)) {
         char **pstrings;
-        from_list_to_execve_argument(environ, &pstrings);
+        from_list_to_execve_argument(my_environ, &pstrings);
+#if defined(HAVE_ENVIRON)
+        environ = pstrings;
+        execvp((char*)command->base_string.self, (char **)argv_ptr);
+#else
         execve((char*)command->base_string.self, (char **)argv_ptr, pstrings);
+#endif
       } else {
         execvp((char*)command->base_string.self, (char **)argv_ptr);
       }
