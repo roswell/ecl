@@ -176,9 +176,13 @@
 
 #-windows
 (test process-environ
-  (is (read-line (ext:run-program "env" nil)                       nil nil))
-  (is (read-line (ext:run-program "env" nil :environ '("foo=bar")) nil nil))
-  (is (read-line (ext:run-program "env" nil :environ :default)     nil nil))
+  (is-equal 0 (nth-value 1 (ext:run-program "env" nil)))
+  (is-equal 0 (nth-value 1 (ext:run-program "env" nil :environ :default)))
+  (is-equal "bar"
+            (read-line (ext:run-program "printenv" '("foo")
+                                        :environ (list "foo=bar"
+                                                       (format nil "PATH=~A" (ext:getenv "PATH"))))
+                       nil nil))
   (signals simple-error (ext:run-program "env" nil :environ :bam)  nil nil)
   #-cygwin ;; Cygwin always injects `WINDIR=C:\\Windows' variable.
   (is (null (slurp (ext:run-program "/usr/bin/env" nil :environ nil)))))
