@@ -150,7 +150,9 @@ struct cl_env_struct {
 struct ecl_interrupt_struct {
         cl_object pending_interrupt;
         cl_object signal_queue;
+#ifdef ECL_THREADS
         ecl_mutex_t signal_queue_lock;
+#endif
 };
 
 #ifndef __GNUC__

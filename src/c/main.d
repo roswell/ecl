@@ -181,7 +181,9 @@ ecl_init_env(cl_env_ptr env)
   env->slot_cache = ecl_make_cache(3, 4096);
   env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
   env->interrupt_struct->pending_interrupt = ECL_NIL;
+#ifdef ECL_THREADS
   ecl_mutex_init(&env->interrupt_struct->signal_queue_lock, FALSE);
+#endif
   {
     int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
     env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
@@ -208,7 +210,9 @@ _ecl_dealloc_env(cl_env_ptr env)
    * a lisp environment set up -- the allocator assumes one -- and we
    * may have already cleaned up the value of ecl_process_env()
    */
+#ifdef ECL_THREADS
   ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
+#endif
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
