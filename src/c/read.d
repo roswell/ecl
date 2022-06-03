@@ -615,7 +615,7 @@ single_quote_reader(cl_object in, cl_object c)
 }
 
 static cl_object
-void_reader(cl_object in, cl_object c)
+void_reader3(cl_object in, cl_object c, cl_object f)
 {
   /*  no result  */
   @(return);
@@ -1101,9 +1101,6 @@ sharp_R_reader(cl_object in, cl_object c, cl_object d)
   @(return (read_number(in, radix, ECL_CODE_CHAR('R'))));
 }
 
-#define sharp_A_reader void_reader
-#define sharp_S_reader void_reader
-
 static cl_object
 sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 {
@@ -1281,11 +1278,8 @@ patch_sharp(const cl_env_ptr the_env, cl_object x)
   }
 }
 
-#define sharp_plus_reader void_reader
-#define sharp_minus_reader void_reader
-#define sharp_less_than_reader void_reader
-#define sharp_whitespace_reader void_reader
-#define sharp_right_parenthesis_reader void_reader
+#define sharp_plus_reader void_reader3
+#define sharp_minus_reader void_reader3
 
 static cl_object
 sharp_vertical_bar_reader(cl_object in, cl_object ch, cl_object d)
