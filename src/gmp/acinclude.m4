@@ -3773,6 +3773,7 @@ AC_CACHE_CHECK([for build system compiler math library],
                gmp_cv_check_libm_for_build,
 [cat >conftest.c <<EOF
 #include <stdlib.h>
+#include <math.h>
 int
 main ()
 {
