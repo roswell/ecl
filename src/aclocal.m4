@@ -254,6 +254,7 @@ AC_SUBST(INSTALL_TARGET)dnl Which type of installation: flat directory or unix l
 AC_SUBST(thehost)
 AC_SUBST(ECL_GC_DIR)dnl Which version of the Boehm-Weiser library to use
 AC_SUBST(ECL_DEFAULT_C_STACK_SIZE)dnl Default size of the C stack in bytes
+AC_SUBST(ECL_MIN,ecl_min)
 ECL_DEFAULT_C_STACK_SIZE=1048576 dnl Default to 1 MB if we can't set the stack size at runtime
 ECL_GC_DIR=bdwgc
 ECL_LDRPATH=''
@@ -518,6 +519,17 @@ case "${host}" in
                 THREAD_LIBS=''
                 CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DNO_GETCONTEXT -DHAVE_GETTIMEOFDAY -DHAVE_SIGPROCMASK ${CFLAGS}"
                 ECL_ADD_FEATURE([android])
+                ;;
+        wasm32-unknown-emscripten)
+                # Binaryen miscompiles ECL at non-zero optimization levels.
+                CFLAGS="${CFLAGS} -DECL_C_COMPATIBLE_VARIADIC_DISPATCH -O0"
+                # The default stack size is 64KB, that's too little for ECL.
+                LDFLAGS="${LDFLAGS} -sSTACK_SIZE=1048576"
+                ECL_MIN="ecl_min.html"
+                EXEEXT=".html"
+                enable_threads='no'
+                enable_libffi='no'
+                enable_gmp='portable'
                 ;;
 esac
 

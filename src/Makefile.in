@@ -36,8 +36,8 @@ CTAGS	= @CTAGS@
 ETAGS	= @ETAGS@
 RANLIB	= @RANLIB@
 AR	= @AR@
+ECL_MIN = @ECL_MIN@
 DPP	= dpp$(EXE)
-ECL_MIN = ecl_min$(EXE)
 ECL     = ecl$(EXE)
 
 # ==================== Where To Install Things ====================
