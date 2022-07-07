@@ -427,3 +427,26 @@ specified bits of INTEGER2 with the specified bits of INTEGER1."
          (mask (ash (lognot (ash -1 size)) pos)))
     (logior (logandc2 integer mask)
             (logand newbyte mask))))
+
+(defun single-float-bits (num)
+  (ffi:c-inline (num) (:float) :uint32-t "ecl_float_bits(#0)" :one-liner t))
+
+(defun bits-single-float (num)
+  (ffi:c-inline (num) (:uint32-t) :float "ecl_bits_float(#0)" :one-liner t))
+
+(defun double-float-bits (num)
+  (ffi:c-inline (num) (:double) :uint64-t "ecl_double_bits(#0)" :one-liner t))
+
+(defun bits-double-float (num)
+  (ffi:c-inline (num) (:uint64-t) :double "ecl_bits_double(#0)" :one-liner t))
+
+;;; XXX long double may have 64, 80, 96 or 128 bits (possibly more). The layout
+;;; in the memory is also an unknown, so we punt here. -- jd 2022-07-07
+
+(defun long-float-bits (num)
+  #+long-float (error "Operation not supported.")
+  #-long-float (double-float-bits num))
+
+(defun bits-long-float (num)
+  #+long-float (error "Operation not supported.")
+  #-long-float (bits-double-float num))

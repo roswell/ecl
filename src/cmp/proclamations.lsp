@@ -618,6 +618,13 @@
 #+complex-float (proclamation si:complex-float (float float) si:complex-float :pure)
 #+complex-float (proclamation si:complex-float-p (t) gen-bool :pure)
 
+(proclamation si:single-float-bits (single-float) integer :pure)
+(proclamation si:bits-single-float (integer) single-float :pure)
+(proclamation si:double-float-bits (double-float) integer :pure)
+(proclamation si:bits-double-float (integer) double-float :pure)
+(proclamation si:long-float-bits (long-float) integer :pure)
+(proclamation si:bits-long-float (integer) long-float :pure)
+
 ;; Virtual functions added by the compiler
 (proclamation shift>> (*) nil :pure)
 (proclamation shift<< (*) nil :pure)

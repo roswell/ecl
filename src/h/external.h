@@ -1197,6 +1197,10 @@ extern ECL_API cl_object ecl_ceiling2(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_truncate2(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_round2(cl_object x, cl_object y);
 
+extern ECL_API uint32_t ecl_float_bits(float num);
+extern ECL_API float    ecl_bits_float(uint32_t num);
+extern ECL_API uint64_t ecl_double_bits(double num);
+extern ECL_API double   ecl_bits_double(uint64_t num);
 
 /* num_comp.c */
 

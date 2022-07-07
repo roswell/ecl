@@ -476,3 +476,31 @@ cl_imagpart(cl_object x)
   }
   @(return x);
 }
+
+uint32_t
+ecl_float_bits(float num)
+{
+  union { float f; uint32_t u; } fu = { .f = num };
+  return fu.u;
+}
+
+uint64_t
+ecl_double_bits(double num)
+{
+  union { double f; uint64_t u; } fu = { .f = num };
+  return fu.u;
+}
+
+float
+ecl_bits_float(uint32_t num)
+{
+  union { float f; uint32_t u; } fu = { .u = num };
+  return fu.f;
+}
+
+double
+ecl_bits_double(uint64_t num)
+{
+  union { double f; uint64_t u; } fu = { .u = num };
+  return fu.f;
+}

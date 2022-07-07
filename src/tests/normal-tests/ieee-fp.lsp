@@ -782,3 +782,12 @@ Common Lisp type contagion rules."
           (z-below (complex x -0.0)))
       (is (plusp (imagpart (sqrt z-above))))
       (is (minusp (imagpart (sqrt z-below)))))))
+
+(test ieee-fp.0032.bit-conversion/smoke
+  (is (= 3.14 (si:bits-single-float (si:single-float-bits 3.14))))
+  (is (= 3.14 (si:bits-double-float (si:double-float-bits 3.14))))
+  #-long-float
+  (is (= 3.14 (si:bits-long-float (si:long-float-bits 3.14))))
+  #+long-float
+  (progn (signals error (si:long-float-bits 3.14))
+         (signals error (si:bits-long-float 3.14))))
