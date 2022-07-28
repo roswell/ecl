@@ -1261,6 +1261,9 @@ si_trap_fpe(cl_object condition, cl_object flag)
                         bits = FE_INEXACT;
                 else if (ECL_FIXNUMP(condition))
                         bits = ecl_fixnum(condition) & all;
+                else
+                        FEerror("Unknown condition to EXT:TRAP-FPE: ~s", 1, condition);
+
                 if (flag == ECL_NIL) {
                         bits = the_env->trap_fpe_bits & ~bits;
                 } else {

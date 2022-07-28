@@ -82,10 +82,10 @@ Control the signaling of the floating point exceptions
 @paragraph Synopsis
 @table @var
 @item condition
-a symbol - one of @code{last}, @code{t}, @code{division-by-zero},
-@code{floating-point-overflow}, @code{floating-point-underflow},
-@code{floating-point-invalid-operation},
-@code{floating-point-inexact} or an integer.
+a symbol - one of @code{cl:last}, @code{cl:t}, @code{cl:division-by-zero},
+@code{cl:floating-point-overflow}, @code{cl:floating-point-underflow},
+@code{cl:floating-point-invalid-operation},
+@code{cl:floating-point-inexact} or an integer.
 @item flag
 a generalized boolean
 @end table

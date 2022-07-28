@@ -791,3 +791,25 @@ Common Lisp type contagion rules."
   #+long-float
   (progn (signals error (si:long-float-bits 3.14))
          (signals error (si:bits-long-float 3.14))))
+
+(test ieee-fp.0033.trap-fpe-smoke-test
+      (let ((bits (si:trap-fpe 'cl:last t)))
+        (unwind-protect
+             (dolist (flag '(t nil t))
+               (finishes (si:trap-fpe t flag))
+               (finishes (si:trap-fpe bits flag))
+               (finishes (si:trap-fpe 'last flag))
+               (loop for sym in '(division-by-zero
+                                  floating-point-overflow
+                                  floating-point-underflow
+                                  floating-point-invalid-operation
+                                  floating-point-inexact)
+                     do (finishes (si:trap-fpe sym flag) "~s should be a valid EXT:FPE-TRAP condition." sym))
+               (loop for sym in '(:last
+                                  :division-by-zero
+                                  :floating-point-overflow
+                                  :floating-point-underflow
+                                  :floating-point-invalid-operation
+                                  :floating-point-inexact)
+                     do (signals error (si:trap-fpe sym flag) "~s should be an invalid EXT:FPE-TRAP condition." sym)))
+          (si:trap-fpe bits t))))
