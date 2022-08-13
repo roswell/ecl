@@ -795,7 +795,7 @@ Common Lisp type contagion rules."
 (test ieee-fp.0033.trap-fpe-smoke-test
       (let ((bits (si:trap-fpe 'cl:last t)))
         (unwind-protect
-             (dolist (flag '(t nil t))
+             (dolist (flag '(t nil))
                (finishes (si:trap-fpe t flag))
                (finishes (si:trap-fpe bits flag))
                (finishes (si:trap-fpe 'last flag))
