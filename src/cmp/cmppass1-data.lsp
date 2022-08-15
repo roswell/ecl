@@ -97,7 +97,7 @@
     ;; temporary storage from being created (we can't move objects from the
     ;; temporary into the permanent storage once they have been created).
     (setf load-form-p t permanent t))
-  (let* ((test (if *compiler-constants* 'eq 'equal))
+  (let* ((test (if *compiler-constants* 'eq 'equal-with-circularity))
          (item (if permanent
                    (find object *permanent-objects* :test test :key #'vv-value)
                    (or (find object *permanent-objects* :test test :key #'vv-value)
