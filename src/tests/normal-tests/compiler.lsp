@@ -2095,3 +2095,20 @@
     (signals error (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1 2 3))))))
     (is (equal (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1))))) '(1 nil)))
     (is (equal (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1 2))))) '(1 2)))))
+
+;;; Date 2022-08-13
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/630
+;;; Description
+;;;
+;;;     The compiler would run into an infinite loop when two lists
+;;;     with the same circular structure were contained as literal
+;;;     data in the same file.
+;;;
+(test cmp.0091.infinite-loop-circular-data
+  (finishes (with-compiler ("infinite-loop-circular-data.lsp")
+              '(eq '#1=(a . #1#) '#2=(a . #2#))
+              '(eq '#3=(a b . #3#) '#4=(a b . #4#))
+              '(eq '#5=(#5# . a) '#6=(#6# . a))
+              '(eq '#7=((#7# . a) . b) '#8=((#8# . a) . b))
+              '(eq '#9=((a . #9#) . b) '#10=((a . #10#) . b))
+              '(eq '#11=(#11# . #11#) '#12=(#12# . #12#)))))

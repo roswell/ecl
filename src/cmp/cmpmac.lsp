@@ -18,7 +18,7 @@
          (hash-function (case test
                           (EQ 'SI::HASH-EQ)
                           (EQL 'SI::HASH-EQL)
-                          (EQUAL 'SI::HASH-EQUAL)
+                          ((EQUAL EQUAL-WITH-CIRCULARITY) 'SI::HASH-EQUAL)
                           (t (setf test 'EQUALP) 'SI::HASH-EQUALP))))
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -39,7 +39,7 @@
                    output))))))))
 
 (defmacro defun-equal-cached (name lambda-list &body body)
-  `(defun-cached ,name ,lambda-list equal ,@body))
+  `(defun-cached ,name ,lambda-list equal-with-circularity ,@body))
 
 ;;; ----------------------------------------------------------------------
 ;;; CONVENIENCE FUNCTIONS / MACROS

@@ -632,3 +632,51 @@ keyword argument, the compiler-macro declines to provide an expansion.
                        ;; create bindings for the arguments passed to the compiler-macro
                        `(let ,(nreverse ,bindings-for-expansion)
                           ,,output)))))))))))
+
+(defun equal-with-circularity (x y)
+  "A version of equal which does not run into an infinite loop when
+comparing circular objects."
+  ;; x0 and y0 hold pointers to previous list elements. By stepping
+  ;; through x0 and y0 only at every other invocation of
+  ;; equal-recursive, we will eventually call equal-recursive with all
+  ;; possible combinations of x and x0 respectively y and y0. The
+  ;; integer path-spec records whether we have recursively descended
+  ;; into car or cdr slots of the list structure depending on whether
+  ;; its bits are zero or one. The integer n tells us which bit of
+  ;; path-spec we have to check in order to determine whether we have
+  ;; to follow a car or cdr slot in x0 respectively y0 to follow the
+  ;; same path that lead us to x respectively y.
+  ;;
+  ;; Optimization note: the algorithm is optimized for common cases:
+  ;; it runs in linear time for non-circular lists, does not overflow
+  ;; the stack for large lists (due to the cdr cases descending
+  ;; recursively in the tail position) and does not create large
+  ;; path-spec integers for circular lists of the form #1=(a1 ... an .
+  ;; #1#) (due to the zero-bit being used to record a descent into the
+  ;; cdr slot).
+  (labels ((equal-recursive (x y x0 y0 switch path-spec n)
+             (declare (optimize (safety 0)) (ext:check-stack-overflow)
+                      (fixnum n)        ; INV: the number of elements is a fixnum
+                      (type integer path-spec))
+             (cond ((or (not (consp x)) (not (consp y)))
+                    (equal x y))
+                   ((eq x y)
+                    t)
+                   ((and (eq x x0) (eq y y0))
+                    t)
+                   ((or (eq x x0) (eq y y0))
+                    nil)
+                   ;; INV: The compiler will perform tail call elimination here
+                   ((= n -1)
+                    (and (equal-recursive (car x) (car y) x y nil 1 0)
+                         (equal-recursive (cdr x) (cdr y) x y nil 0 0)))
+                   (switch
+                    (let* ((mask (ash 1 n))
+                           (x0 (if (zerop (logand path-spec mask)) (cdr x0) (car x0)))
+                           (y0 (if (zerop (logand path-spec mask)) (cdr y0) (car y0))))
+                      (and (equal-recursive (car x) (car y) x0 y0 nil (logior (ash (logandc2 path-spec mask) 1) 1) n)
+                           (equal-recursive (cdr x) (cdr y) x0 y0 nil (ash (logandc2 path-spec mask) 1) n))))
+                   (t
+                    (and (equal-recursive (car x) (car y) x0 y0 t (logior (ash path-spec 1) 1) (the fixnum (1+ n)))
+                         (equal-recursive (cdr x) (cdr y) x0 y0 t (ash path-spec 1) (the fixnum (1+ n))))))))
+    (equal-recursive x y nil nil t 0 -1)))
