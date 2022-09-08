@@ -389,7 +389,7 @@ or a loadable module."
                 pathname)
           :object))))
 
-(defun guess-ld-flags (pathname &key (kind (guess-kind pathname)))
+(defun guess-ld-libs (pathname &key (kind (guess-kind pathname)))
   "Given a file name, return the compiler command line argument to link this file in."
   (case kind
     ((:object :c)
@@ -532,11 +532,11 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
                                    '(:shared-library :static-library))
                                  :object :c))
           (error "C::BUILDER does not accept a file ~s of kind ~s for target ~s" item kind target))
-
-        (let* ((init-fn (guess-init-name path kind))
-               (flags (guess-ld-flags path)))
+        (let ((init-fn (guess-init-name path kind))
+              (guessed-libs (guess-ld-libs path)))
           ;; We should give a warning that we cannot link this module in
-          (when flags (push flags ld-libs))
+          (when guessed-libs
+            (push guessed-libs ld-libs))
           (when init-fn
             (push (list init-fn path) submodules)))))
     (setq c-file (open c-name :direction :output :external-format :default))
