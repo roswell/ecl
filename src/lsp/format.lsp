@@ -127,19 +127,20 @@
                                    nil))
                 ((null width)
                  (float-to-digits* nil x nil nil))
-                (T (let ((w (multiple-value-list
+                (T (let (;; w: the width-1 leading non-zero digits
+                         (w (multiple-value-list
                              (float-to-digits* nil x
                                                (max 0
                                                     (+ (- width 2)
-                                                       (if (minusp scale)
-                                                           scale 0)))
+                                                       (max 0 scale)))
                                                t)))
+                         ;; f: the fmin+1 leading non-zero digits; this
+                         ;; is used if w is empty (not enough space)
                          (f (multiple-value-list
                              (float-to-digits* nil x
                                                (- (+ fmin scale))
                                                nil))))
-                     (if (>= (length (cadr w))
-                             (length (cadr f)))
+                     (if (>= (first f) (first w))
                          (values-list w)
                          (values-list f)))))
         (let* ((exp (+ e scale))
