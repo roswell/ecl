@@ -231,6 +231,17 @@
     (is-equal expected-2 (format nil "~1,v:/fmt/" nil t))
     (is-equal expected-2 (format nil "~1,v,:/fmt/" nil t))))
 
+;;; Tests for correct rounding in ~e directive with k parameter
+(test ansi.22.format-e
+  (is-equal (format nil "~,2,,-1e" 0.9) "0.09e+1")
+  (is-equal (format nil "~,2,,-1e" 0.99) "0.01e+2")
+  (is-equal (format nil "~,1,,0e" 0.9) "0.9e+0")
+  (is-equal (format nil "~,1,,0e" 0.99) "0.1e+1")
+  (is-equal (format nil "~,1,,1e" 9.9) "9.9e+0")
+  (is-equal (format nil "~,1,,1e" 9.99) "1.0e+1")
+  (is-equal (format nil "~6e" 9.9) "9.9e+0")
+  (is-equal (format nil "~6e" 9.99) "1.0e+1"))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; 23.* Reader tests ;;

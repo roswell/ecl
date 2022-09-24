@@ -66,7 +66,7 @@
 ;;; used by the printer.
 ;;;
 ;;; Returns:
-;;; (VALUES DIGIT-STRING DIGIT-LENGTH LEADING-POINT TRAILING-POINT DECPNT)
+;;; (VALUES DIGIT-STRING DIGIT-LENGTH LEADING-POINT TRAILING-POINT POINT-POS EXPONENT)
 ;;; where the results have the following interpretation:
 ;;;
 ;;;     DIGIT-STRING    - The decimal representation of X, with decimal point.
@@ -77,6 +77,8 @@
 ;;;                       decimal point.
 ;;;     POINT-POS       - The position of the digit preceding the decimal
 ;;;                       point.  Zero indicates point before first digit.
+;;;     EXPONENT        - The exponent of the number in base 10 after rounding
+;;;                       (excluding the scale factor)
 ;;;
 ;;; NOTE:  FLONUM-TO-STRING goes to a lot of trouble to guarantee accuracy.
 ;;; Specifically, the decimal number printed is the closest possible 
@@ -114,11 +116,11 @@
   (declare (type float x))
   (if (zerop x)
       ;; Zero is a special case which FLOAT-STRING cannot handle.
-      (cond ((null fdigits)  (values ".0" 2 t nil 0))
-            ((zerop fdigits) (values "0." 2 nil t 1))
+      (cond ((null fdigits)  (values ".0" 2 t nil 0 1))
+            ((zerop fdigits) (values "0." 2 nil t 1 1))
             (T (let ((s (make-string (1+ fdigits) :initial-element #\0)))
                  (setf (schar s 0) #\.)
-                 (values s (length s) t nil 0))))
+                 (values s (length s) t nil 0 1))))
       (multiple-value-bind (e string zero?)
           (cond (fdigits
                  (float-to-digits* nil x
@@ -127,19 +129,20 @@
                                    nil))
                 ((null width)
                  (float-to-digits* nil x nil nil))
-                (T (let ((w (multiple-value-list
+                (T (let (;; w: the width-1 leading non-zero digits
+                         (w (multiple-value-list
                              (float-to-digits* nil x
                                                (max 0
                                                     (+ (- width 2)
-                                                       (if (minusp scale)
-                                                           scale 0)))
+                                                       (max 0 scale)))
                                                t)))
+                         ;; f: the fmin+1 leading non-zero digits; this
+                         ;; is used if w is empty (not enough space)
                          (f (multiple-value-list
                              (float-to-digits* nil x
                                                (- (+ fmin scale))
                                                nil))))
-                     (if (>= (length (cadr w))
-                             (length (cadr f)))
+                     (if (>= (first f) (first w))
                          (values-list w)
                          (values-list f)))))
         (let* ((exp (+ e scale))
@@ -188,7 +191,8 @@
                     length
                     (= position 0)
                     (= position (1- length))
-                    position))))))
+                    position
+                    e))))))
 
 (defun exponent-in-base10 (x)
   (if (= x 0)
@@ -1381,8 +1385,9 @@
            (or (float-infinity-p number)
                (float-nan-p number)))
       (prin1 number stream)
-      (let* ((expt (- (sys::exponent-in-base10 number) k))
-             (estr (decimal-string (abs expt)))
+      (let* ((expt (sys::exponent-in-base10 number))
+             (rescaled-expt (- expt k))
+             (estr (decimal-string (abs rescaled-expt)))
              (elen (if e (max (length estr) e) (length estr)))
              (fdig (if d (if (plusp k) (1+ (- d k)) d) nil))
              (fmin (if (minusp k) (- 1 k) 0))
@@ -1393,14 +1398,31 @@
                             nil)))
         (if (and w ovf e (> elen e))   ;exponent overflow
             (dotimes (i w) (write-char ovf stream))
-            (multiple-value-bind (fstr flen lpoint)
-                (sys::flonum-to-string number spaceleft fdig (- expt) fmin)
+            (multiple-value-bind (fstr flen lpoint tpoint ppos expt-after-rounding)
+                (sys::flonum-to-string number spaceleft fdig (- rescaled-expt) fmin)
+              (declare (ignore ppos))
+              (when (/= expt-after-rounding expt)
+                (setf rescaled-expt (- expt-after-rounding k)
+                      estr (decimal-string (abs rescaled-expt))
+                      elen (if e (max (length estr) e) (length estr))
+                      spaceleft (if w
+                                    (- w 2 elen
+                                       (if (or atsign (minusp number))
+                                           1 0))
+                                    nil)
+                      (values fstr flen lpoint tpoint)
+                       (sys::flonum-to-string number spaceleft fdig (- rescaled-expt) fmin)))
+              (when (eql fdig 0) (setq tpoint nil))
               (when w
                 (decf spaceleft flen)
                 (when lpoint
                   (if (> spaceleft 0)
                       (decf spaceleft)
-                      (setq lpoint nil))))
+                      (setq lpoint nil)))
+                (when tpoint
+                  (if (<= spaceleft 0)
+                      (setq tpoint nil)
+                      (decf spaceleft))))
               (cond ((and w (< spaceleft 0) ovf)
                      ;;significand overflow
                      (dotimes (i w) (write-char ovf stream)))
@@ -1411,11 +1433,12 @@
                            (if atsign (write-char #\+ stream)))
                        (when lpoint (write-char #\0 stream))
                        (write-string fstr stream)
+                       (when tpoint (write-char #\0 stream))
                        (write-char (if marker
                                        marker
                                        (format-exponent-marker number))
                                    stream)
-                       (write-char (if (minusp expt) #\- #\+) stream)
+                       (write-char (if (minusp rescaled-expt) #\- #\+) stream)
                        (when e
                          ;;zero-fill before exponent if necessary
                          (dotimes (i (- e (length estr)))
