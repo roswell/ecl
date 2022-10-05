@@ -813,3 +813,18 @@ Common Lisp type contagion rules."
                                   :floating-point-inexact)
                      do (signals error (si:trap-fpe sym flag) "~s should be an invalid EXT:FPE-TRAP condition." sym)))
           (si:trap-fpe bits t))))
+
+(test ieee-fp.0034.decode-float
+      (labels ((test-float (proto num res exp sign)
+                 (equal (multiple-value-list (decode-float (float num proto)))
+                        (list (float res proto) exp (float sign proto))))
+               (test-float* (num res exp sign)
+                 (is (test-float 1.0f0 num res exp sign))
+                 (is (test-float 1.0d0 num res exp sign))
+                 (is (test-float 1.0l0 num res exp sign))))
+        (test-float* -10.0 0.625 4 -1.0)
+        (test-float*  -1.0 0.5   1 -1.0)
+        (test-float*  -0.0 0.0   0 -1.0)
+        (test-float*  +0.0 0.0   0 +1.0)
+        (test-float*  +1.0 0.5   1 +1.0)
+        (test-float* +10.0 0.625 4 +1.0)))
