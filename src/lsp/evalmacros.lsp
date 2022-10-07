@@ -90,18 +90,17 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
     ',var))
 
 (defparameter *defun-inline-hook*
-  #'(lambda (fname form env)
+  #'(lambda (fname form)
       ;; To prevent inlining of stale function definitions by the native
       ;; compiler after a new definition has been established by the
       ;; bytecodes compiler, we save function definitions in the global
       ;; environment when the function has been proclaimed inline.
-      (declare (ignore env))
       (let ((proclaimed (si:get-sysprop fname 'inline)))
         (when proclaimed
-          `(eval-when (:compile-toplevel :load-toplevel :execute)
+          `(eval-when (:load-toplevel :execute)
              (si:put-sysprop ',fname 'inline ',form))))))
 
-(defmacro defun (&whole whole name vl &body body &environment env &aux doc-string)
+(defmacro defun (&whole whole name vl &body body &aux doc-string)
   ;; Documentation in help.lsp
   (multiple-value-setq (body doc-string) (remove-documentation body))
   (let* ((function `#'(ext::lambda-block ,name ,vl ,@body))
@@ -115,7 +114,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
        ,(ext:register-with-pde whole `(si::fset ',name ,global-function))
        ,@(si::expand-set-documentation name 'function doc-string)
        ,(let ((hook *defun-inline-hook*))
-          (and hook (funcall hook name global-function env)))
+          (and hook (funcall hook name global-function)))
        ',name)))
 
 ;;;
