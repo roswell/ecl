@@ -127,12 +127,11 @@
     (c1let-optimize-read-only-vars vars forms body))
   ;; Verify that variables are referenced and assign final boxed / unboxed type
   (mapc #'check-vref vars)
-  (let ((sp-change (some #'global-var-p vars)))
-    (make-c1form* let/let*
-                  :type (c1form-type body)
-                  :volatile (not (eql setjmps *setjmps*))
-                  :local-vars vars
-                  :args vars forms body)))
+  (make-c1form* let/let*
+                :type (c1form-type body)
+                :volatile (not (eql setjmps *setjmps*))
+                :local-vars vars
+                :args vars forms body))
 
 (defun c1let-optimize-read-only-vars (all-vars all-forms body)
   (loop with base = (list body)
@@ -147,10 +146,10 @@
                             (null (var-functions-setting var))
                             (not (global-var-p var)))
      when read-only-p
-     do (fix-read-only-variable-type var form rest-forms)
+     do (fix-read-only-variable-type var form)
      unless (and read-only-p
                 (or (c1let-unused-variable-p var form)
-                    (c1let-constant-value-p var form rest-vars rest-forms)
+                    (c1let-constant-value-p var form)
                     (c1let-constant-variable-p var form rest-vars rest-forms)
                     #+(or)
                     (c1let-can-move-variable-value-p var form rest-vars rest-forms)))
@@ -158,7 +157,7 @@
      collect form into used-forms
      finally (return (values used-vars used-forms))))
 
-(defun fix-read-only-variable-type (var form rest-forms)
+(defun fix-read-only-variable-type (var form)
   (and-form-type (var-type var) form (var-name var) :unsafe "In LET body")
   (let ((form-type (c1form-primary-type form)))
     (setf (var-type var) form-type)
@@ -177,7 +176,7 @@
     (delete-c1forms form)
     t))
 
-(defun c1let-constant-value-p (var form rest-vars rest-forms)
+(defun c1let-constant-value-p (var form)
   ;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
   ;;  - v2 is a read only variable
   ;;  - the value of e2 is not modified in e3 nor in following expressions

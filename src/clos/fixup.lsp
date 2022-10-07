@@ -246,7 +246,7 @@ their lambda lists ~A and ~A are not congruent."
   (do-function-to-method generic-function-method-class
     ((gf standard-generic-function)))
   (do-function-to-method (setf generic-function-name)
-    ((name t) (gf generic-function)))
+    (name (gf generic-function)))
   (do-function-to-method find-method-combination
     ((gf standard-generic-function)
      method-combination-type-name
@@ -257,7 +257,7 @@ their lambda lists ~A and ~A are not congruent."
   (do-function-to-method compute-applicable-methods-using-classes
     ((gf standard-generic-function) classes))
   (do-function-to-method compute-applicable-methods
-    ((gf standard-generic-function) args))
+    ((gf standard-generic-function) arguments))
   (do-function-to-method compute-effective-method
     ((gf standard-generic-function) method-combination applicable-methods)))
 

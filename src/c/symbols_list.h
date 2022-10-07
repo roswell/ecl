@@ -1648,6 +1648,7 @@ cl_symbols[] = {
 {MP_ "SEMAPHORE-NAME" ECL_FUN("mp_semaphore_name", IF_MP(mp_semaphore_name), 1) ECL_VAR(MP_ORDINARY, OBJNULL)},
 {MP_ "SEMAPHORE-WAIT-COUNT" ECL_FUN("mp_semaphore_wait_count", IF_MP(mp_semaphore_wait_count), 1) ECL_VAR(MP_ORDINARY, OBJNULL)},
 {KEY_ "COUNT" ECL_FUN(NULL, NULL, -1) ECL_VAR(KEYWORD, OBJNULL)},
+{KEY_ "TIMEOUT" ECL_FUN(NULL, NULL, -1) ECL_VAR(KEYWORD, OBJNULL)},
 
 {MP_ "BARRIER" ECL_FUN(NULL, NULL, -1) ECL_VAR(MP_ORDINARY, OBJNULL)},
 {MP_ "MAKE-BARRIER" ECL_FUN("mp_make_barrier", IF_MP(mp_make_barrier), -2) ECL_VAR(MP_ORDINARY, OBJNULL)},

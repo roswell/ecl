@@ -172,8 +172,7 @@
       (when (eq (c1form-name fun-form) 'LOCALS)
         (let* ((function-list (c1form-arg 0 fun-form))
                (fun-object (pop function-list))
-               (form (c1form-arg 1 fun-form))
-               (labels (c1form-arg 2 fun-form)))
+               (form (c1form-arg 1 fun-form)))
           (when (and
                  ;; Only 1 function
                  (null function-list)

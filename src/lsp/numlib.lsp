@@ -443,10 +443,13 @@ specified bits of INTEGER2 with the specified bits of INTEGER1."
 ;;; XXX long double may have 64, 80, 96 or 128 bits (possibly more). The layout
 ;;; in the memory is also an unknown, so we punt here. -- jd 2022-07-07
 
+
 (defun long-float-bits (num)
+  #+long-float (declare (ignore num))
   #+long-float (error "Operation not supported.")
-  #-long-float (double-float-bits num))
+  #-long-float (bits-double-float num))
 
 (defun bits-long-float (num)
+  #+long-float (declare (ignore num))
   #+long-float (error "Operation not supported.")
   #-long-float (bits-double-float num))

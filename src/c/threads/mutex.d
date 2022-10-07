@@ -47,6 +47,8 @@
  *
  */
 
+static void FEerror_not_a_recursive_lock(cl_object lock) ecl_attr_noreturn;
+
 static void
 FEerror_not_a_recursive_lock(cl_object lock)
 {

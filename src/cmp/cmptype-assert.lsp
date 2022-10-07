@@ -138,6 +138,7 @@
                            :args type form (c1expr full-check)))))))
 
 (defun c2checked-value (c1form type value let-form)
+  (declare (ignore c1form))
   (c2expr (if (subtypep (c1form-primary-type value) type)
               value
               let-form)))

@@ -234,7 +234,7 @@
     (and record (not (var-p record)))))
 
 (defun variable-type-in-env (name &optional (env *cmp-env*))
-  (let ((var (cmp-env-search-var name)))
+  (let ((var (cmp-env-search-var name env)))
     (cond ((var-p var)
            (var-type var))
           ((si:get-sysprop name 'CMP-TYPE))
