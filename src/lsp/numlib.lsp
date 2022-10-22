@@ -447,7 +447,7 @@ specified bits of INTEGER2 with the specified bits of INTEGER1."
 (defun long-float-bits (num)
   #+long-float (declare (ignore num))
   #+long-float (error "Operation not supported.")
-  #-long-float (bits-double-float num))
+  #-long-float (double-float-bits num))
 
 (defun bits-long-float (num)
   #+long-float (declare (ignore num))
