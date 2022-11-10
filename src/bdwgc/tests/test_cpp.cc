@@ -1,20 +1,21 @@
+/*
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
+ */
+
 /****************************************************************************
-Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
-
-THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
-OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
-
-Permission is hereby granted to use or copy this program for any
-purpose, provided the above notices are retained on all copies.
-Permission to modify the code and to distribute modified code is
-granted, provided the above notices are retained, and a notice that
-the code was modified is included with the above copyright notice.
-****************************************************************************
-
 usage: test_cpp number-of-iterations
 
 This program tries to test the specific C++ functionality provided by
-gc_c++.h that isn't tested by the more general test routines of the
+gc_cpp.h that isn't tested by the more general test routines of the
 collector.
 
 A recommended value for number-of-iterations is 10, which will take a
@@ -28,25 +29,21 @@ few minutes to complete.
 
 #undef GC_BUILD
 
+#define GC_DONT_INCL_WINDOWS_H
 #include "gc_cpp.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef DONT_USE_STD_ALLOCATOR
-# include "gc_allocator.h"
-#else
-  /* Note: This works only for ancient STL versions.    */
-# include "new_gc_alloc.h"
-#endif
+#include "gc_allocator.h"
 
-extern "C" {
 # include "private/gcconfig.h"
 
 # ifndef GC_API_PRIV
 #   define GC_API_PRIV GC_API
 # endif
+extern "C" {
   GC_API_PRIV void GC_printf(const char * format, ...);
   /* Use GC private output to reach the same log file.  */
   /* Don't include gc_priv.h, since that may include Windows system     */
@@ -54,6 +51,10 @@ extern "C" {
 }
 
 #ifdef MSWIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
 #endif
 
@@ -70,21 +71,21 @@ extern "C" {
                     __LINE__ ); \
         exit( 1 ); }
 
-#ifndef GC_ATTR_EXPLICIT
-# if (__cplusplus >= 201103L) || defined(CPPCHECK)
-#   define GC_ATTR_EXPLICIT explicit
-# else
-#   define GC_ATTR_EXPLICIT /* empty */
-# endif
+#if defined(__powerpc64__) && !defined(__clang__) && GC_GNUC_PREREQ(10, 0)
+  /* Suppress "layout of aggregates ... has changed" GCC note. */
+# define A_I_TYPE short
+#else
+# define A_I_TYPE int
 #endif
 
 class A {public:
     /* An uncollectible class. */
 
-    GC_ATTR_EXPLICIT A( int iArg ): i( iArg ) {}
+    GC_ATTR_EXPLICIT A( int iArg ): i((A_I_TYPE)iArg) {}
     void Test( int iArg ) {
         my_assert( i == iArg );}
-    int i;};
+    virtual ~A() {}
+    A_I_TYPE i; };
 
 
 class B: public GC_NS_QUALIFY(gc), public A { public:
@@ -152,7 +153,16 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
         left = right = 0;
         level = -123456;}
     static void Test() {
-        my_assert( nFreed <= nAllocated && nFreed >= .8 * nAllocated );}
+        if (GC_is_incremental_mode() && nFreed < (nAllocated / 5) * 4) {
+          // An explicit GC might be needed to reach the expected number
+          // of the finalized objects.
+          GC_gcollect();
+        }
+        my_assert(nFreed <= nAllocated);
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       endif
+    }
 
     static int nFreed;
     static int nAllocated;
@@ -175,7 +185,10 @@ class D: public GC_NS_QUALIFY(gc) { public:
         nFreed++;
         my_assert( (GC_word)self->i == (GC_word)data );}
     static void Test() {
-        my_assert( nFreed >= .8 * nAllocated );}
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       endif
+    }
 
     int i;
     static int nFreed;
@@ -213,7 +226,9 @@ class F: public E {public:
     }
 
     static void Test() {
-        my_assert(nFreedF >= .8 * nAllocatedF);
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreedF >= (nAllocatedF / 5) * 4 || GC_get_find_leak());
+#       endif
         my_assert(2 * nFreedF == nFreed);
     }
 
@@ -231,6 +246,14 @@ GC_word Disguise( void* p ) {
 
 void* Undisguise( GC_word i ) {
     return (void*) ~ i;}
+
+#define GC_CHECKED_DELETE(p) \
+    { \
+      size_t freed_before = GC_get_expl_freed_bytes_since_gc(); \
+      delete p; /* the operator should invoke GC_FREE() */ \
+      size_t freed_after = GC_get_expl_freed_bytes_since_gc(); \
+      my_assert(freed_before != freed_after); \
+    }
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
@@ -253,7 +276,6 @@ void* Undisguise( GC_word i ) {
           argv[argc] = NULL;
           break;
         }
-        argv[argc] = cmd;
         for (; *cmd != '\0'; cmd++) {
           if (*cmd != ' ' && *cmd != '\t')
             break;
@@ -285,35 +307,38 @@ void* Undisguise( GC_word i ) {
     GC_set_all_interior_pointers(1);
                         /* needed due to C++ multiple inheritance used  */
 
+#   ifdef TEST_MANUAL_VDB
+      GC_set_manual_vdb_allowed(1);
+#   endif
     GC_INIT();
+#   ifndef NO_INCREMENTAL
+      GC_enable_incremental();
+#   endif
+    if (GC_get_find_leak())
+      GC_printf("This test program is not designed for leak detection mode\n");
 
     int i, iters, n;
-#   ifndef DONT_USE_STD_ALLOCATOR
-      int *x = gc_allocator<int>().allocate(1);
-      int *xio;
-      xio = gc_allocator_ignore_off_page<int>().allocate(1);
-      (void)xio;
-      int **xptr = traceable_allocator<int *>().allocate(1);
-#   else
-      int *x = (int *)gc_alloc::allocate(sizeof(int));
-#   endif
+    int *x = gc_allocator<int>().allocate(1);
+    int *xio;
+    xio = gc_allocator_ignore_off_page<int>().allocate(1);
+    GC_reachable_here(xio);
+    int **xptr = traceable_allocator<int *>().allocate(1);
     *x = 29;
-#   ifndef DONT_USE_STD_ALLOCATOR
-      if (!xptr) {
-        fprintf(stderr, "Out of memory!\n");
-        exit(3);
-      }
-      *xptr = x;
-      GC_END_STUBBORN_CHANGE(xptr);
-      GC_reachable_here(x);
-      x = 0;
-#   endif
+    if (!xptr) {
+      fprintf(stderr, "Out of memory!\n");
+      exit(3);
+    }
+    GC_PTR_STORE_AND_DIRTY(xptr, x);
+    x = 0;
     if (argc != 2
-        || (n = (int)COVERT_DATAFLOW(atoi(argv[1]))) <= 0) {
+        || (n = atoi(argv[1])) <= 0) {
       GC_printf("usage: test_cpp number-of-iterations\n"
                 "Assuming 10 iters\n");
       n = 10;
     }
+#   ifdef LINT2
+      if (n > 100 * 1000) n = 100 * 1000;
+#   endif
 
     for (iters = 1; iters <= n; iters++) {
         GC_printf( "Starting iteration %d\n", iters );
@@ -335,13 +360,15 @@ void* Undisguise( GC_word i ) {
             D* d;
             F* f;
             d = ::new (USE_GC, D::CleanUp, (void*)(GC_word)i) D( i );
-            (void)d;
+            GC_reachable_here(d);
             f = new F;
             F** fa = new F*[1];
             fa[0] = f;
             (void)fa;
             delete[] fa;
-            if (0 == i % 10) delete c;}
+            if (0 == i % 10)
+                GC_CHECKED_DELETE(c);
+        }
 
             /* Allocate a very large number of collectible As and Bs and
             drop the references to them immediately, forcing many
@@ -349,16 +376,16 @@ void* Undisguise( GC_word i ) {
         for (i = 0; i < 1000000; i++) {
             A* a;
             a = new (USE_GC) A( i );
-            (void)a;
+            GC_reachable_here(a);
             B* b;
             b = new B( i );
             (void)b;
             b = new (USE_GC) B( i );
             if (0 == i % 10) {
                 B::Deleting( 1 );
-                delete b;
+                GC_CHECKED_DELETE(b);
                 B::Deleting( 0 );}
-#           ifdef FINALIZE_ON_DEMAND
+#           if defined(FINALIZE_ON_DEMAND) && !defined(GC_NO_FINALIZATION)
               GC_invoke_finalizers();
 #           endif
             }
@@ -374,13 +401,13 @@ void* Undisguise( GC_word i ) {
               // causing incompatible alloc/free).
               GC_FREE(a);
 #           else
-              delete a;
+              GC_CHECKED_DELETE(a);
 #           endif
             b->Test( i );
             B::Deleting( 1 );
-            delete b;
+            GC_CHECKED_DELETE(b);
             B::Deleting( 0 );
-#           ifdef FINALIZE_ON_DEMAND
+#           if defined(FINALIZE_ON_DEMAND) && !defined(GC_NO_FINALIZATION)
                  GC_invoke_finalizers();
 #           endif
             }
@@ -391,9 +418,7 @@ void* Undisguise( GC_word i ) {
         D::Test();
         F::Test();}
 
-#   ifndef DONT_USE_STD_ALLOCATOR
-      x = *xptr;
-#   endif
+    x = *xptr;
     my_assert (29 == x[0]);
     GC_printf( "The test appears to have succeeded.\n" );
     return( 0 );

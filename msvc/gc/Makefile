@@ -27,7 +27,7 @@ THREADS_FLAGS= -D_CRT_SECURE_NO_WARNINGS -DGC_DLL -DGC_BUILD -DLARGE_CONFIG
 AO_SRC_DIR=$(srcdir)/libatomic_ops/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
-OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj win32_threads.obj msvc_dbg.obj thread_local_alloc.obj
+OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj win32_threads.obj msvc_dbg.obj thread_local_alloc.obj
 
 all: gc.lib
 

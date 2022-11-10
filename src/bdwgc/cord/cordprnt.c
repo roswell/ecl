@@ -10,6 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
+
 /* An sprintf implementation that understands cords.  This is probably  */
 /* not terribly portable.  It assumes an ANSI stdarg.h.  It further     */
 /* assumes that I can make copies of va_list variables, and read        */
@@ -43,19 +44,26 @@
 #define CONV_RESULT_LEN 50      /* Maximum length of any        */
                                 /* conversion with default      */
                                 /* width and prec.              */
+#if defined(CPPCHECK)
+# define MACRO_BLKSTMT_BEGIN {
+# define MACRO_BLKSTMT_END   }
+#else
+# define MACRO_BLKSTMT_BEGIN do {
+# define MACRO_BLKSTMT_END   } while (0)
+#endif
 
-#define OUT_OF_MEMORY do { \
+#define OUT_OF_MEMORY MACRO_BLKSTMT_BEGIN \
                         if (CORD_oom_fn != 0) (*CORD_oom_fn)(); \
                         fprintf(stderr, "Out of memory\n"); \
                         abort(); \
-                      } while (0)
+                      MACRO_BLKSTMT_END
 
 static int ec_len(CORD_ec x)
 {
-    return(CORD_len(x[0].ec_cord) + (x[0].ec_bufptr - x[0].ec_buf));
+    return (int)(CORD_len(x[0].ec_cord) + (x[0].ec_bufptr - x[0].ec_buf));
 }
 
-/* Possible nonumeric precision values. */
+/* Possible non-numeric precision values.   */
 # define NONE -1
 # define VARIABLE -2
 /* Copy the conversion specification from CORD_pos into the buffer buf  */
@@ -66,16 +74,16 @@ static int ec_len(CORD_ec x)
 /* If width or prec is *, VARIABLE is assigned.                         */
 /* Set *left to 1 if left adjustment flag is present.                   */
 /* Set *long_arg to 1 if long flag ('l' or 'L') is present, or to       */
-/* -1 if 'h' is present.                                                */
+/* -1 if 'h' is present, or to 2 if 'z' is present.                     */
 static int extract_conv_spec(CORD_pos source, char *buf,
                              int * width, int *prec, int *left, int * long_arg)
 {
-    register int result = 0;
-    register int current_number = 0;
-    register int saw_period = 0;
-    register int saw_number = 0;
-    register int chars_so_far = 0;
-    register char current;
+    int result = 0;
+    int current_number = 0;
+    int saw_period = 0;
+    int saw_number = 0;
+    int chars_so_far = 0;
+    char current;
 
     *width = NONE;
     buf[chars_so_far++] = '%';
@@ -119,6 +127,10 @@ static int extract_conv_spec(CORD_pos source, char *buf,
           case 'l':
           case 'L':
             *long_arg = 1;
+            current_number = 0;
+            break;
+          case 'z':
+            *long_arg = 2;
             current_number = 0;
             break;
           case 'h':
@@ -174,11 +186,11 @@ static int extract_conv_spec(CORD_pos source, char *buf,
     return(result);
 }
 
-#if defined(DJGPP) || defined(__STRICT_ANSI__)
+#if defined(__DJGPP__) || defined(__STRICT_ANSI__)
   /* vsnprintf is missing in DJGPP (v2.0.3) */
 # define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
 #elif defined(_MSC_VER)
-# ifdef MSWINCE
+# if defined(_WIN32_WCE)
     /* _vsnprintf is deprecated in WinCE */
 #   define GC_VSNPRINTF StringCchVPrintfA
 # else
@@ -191,8 +203,8 @@ static int extract_conv_spec(CORD_pos source, char *buf,
 int CORD_vsprintf(CORD * out, CORD format, va_list args)
 {
     CORD_ec result;
-    register int count;
-    register char current;
+    int count;
+    char current;
     CORD_pos pos;
     char conv_spec[CONV_SPEC_LEN + 1];
 
@@ -225,6 +237,9 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             int * pos_ptr;
                             pos_ptr = va_arg(args, int *);
                             *pos_ptr = ec_len(result);
+                        } else if (long_arg == 2) {
+                            size_t * pos_ptr = va_arg(args, size_t *);
+                            *pos_ptr = (size_t)(unsigned)ec_len(result);
                         } else if (long_arg > 0) {
                             long * pos_ptr;
                             pos_ptr = va_arg(args, long *);
@@ -232,7 +247,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         } else {
                             short * pos_ptr;
                             pos_ptr = va_arg(args, short *);
-                            *pos_ptr = ec_len(result);
+                            *pos_ptr = (short)ec_len(result);
                         }
                         goto done;
                     case 'r':
@@ -241,17 +256,18 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         if (prec == VARIABLE) prec = va_arg(args, int);
                         arg = va_arg(args, CORD);
                         len = CORD_len(arg);
-                        if (prec != NONE && len > (size_t)prec) {
+                        if (prec != NONE && len > (unsigned)prec) {
                           if (prec < 0) return(-1);
-                          arg = CORD_substr(arg, 0, prec);
+                          arg = CORD_substr(arg, 0, (unsigned)prec);
                           len = (unsigned)prec;
                         }
-                        if (width != NONE && len < (size_t)width) {
-                          char * blanks = GC_MALLOC_ATOMIC(width-len+1);
+                        if (width != NONE && len < (unsigned)width) {
+                          char * blanks = (char *)GC_MALLOC_ATOMIC(
+                                                (unsigned)width - len + 1);
 
                           if (NULL == blanks) OUT_OF_MEMORY;
-                          memset(blanks, ' ', width-len);
-                          blanks[width-len] = '\0';
+                          memset(blanks, ' ', (unsigned)width - len);
+                          blanks[(unsigned)width - len] = '\0';
                           if (left_adj) {
                             arg = CORD_cat(arg, blanks);
                           } else {
@@ -262,7 +278,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         goto done;
                     case 'c':
                         if (width == NONE && prec == NONE) {
-                            register char c;
+                            char c;
 
                             c = (char)va_arg(args, int);
                             CORD_ec_append(result, c);
@@ -272,7 +288,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     case 's':
                         if (width == NONE && prec == NONE) {
                             char * str = va_arg(args, char *);
-                            register char c;
+                            char c;
 
                             while ((c = *str++) != '\0') {
                                 CORD_ec_append(result, c);
@@ -285,7 +301,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                 }
                 /* Use standard sprintf to perform conversion */
                 {
-                    register char * buf;
+                    char * buf;
                     va_list vsprintf_args;
                     int max_size = 0;
                     int res = 0;
@@ -306,7 +322,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     if (prec != NONE && prec > max_size) max_size = prec;
                     max_size += CONV_RESULT_LEN;
                     if (max_size >= CORD_BUFSZ) {
-                        buf = GC_MALLOC_ATOMIC(max_size + 1);
+                        buf = (char *)GC_MALLOC_ATOMIC((unsigned)max_size + 1);
                         if (NULL == buf) OUT_OF_MEMORY;
                     } else {
                         if (CORD_BUFSZ - (result[0].ec_bufptr-result[0].ec_buf)
@@ -325,7 +341,9 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         case 'c':
                             if (long_arg <= 0) {
                               (void) va_arg(args, int);
-                            } else /* long_arg > 0 */ {
+                            } else if (long_arg == 2) {
+                              (void) va_arg(args, size_t);
+                            } else /* long_arg == 1 */ {
                               (void) va_arg(args, long);
                             }
                             break;
@@ -351,7 +369,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                            && !defined(__EMX__))
                       va_end(vsprintf_args);
 #                   endif
-                    len = (size_t)res;
+                    len = (unsigned)res;
                     if ((char *)(GC_word)res == buf) {
                         /* old style vsprintf */
                         len = strlen(buf);
@@ -359,7 +377,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         return(-1);
                     }
                     if (buf != result[0].ec_bufptr) {
-                        register char c;
+                        char c;
 
                         while ((c = *buf++) != '\0') {
                             CORD_ec_append(result, c);

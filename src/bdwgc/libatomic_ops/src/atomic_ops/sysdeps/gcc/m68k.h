@@ -8,7 +8,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -18,7 +18,7 @@
 /* The cas instruction causes an emulation trap for the */
 /* 060 with a misaligned pointer, so let's avoid this.  */
 #undef AO_t
-typedef unsigned long AO_t __attribute__ ((aligned (4)));
+typedef unsigned long AO_t __attribute__((__aligned__(4)));
 
 /* FIXME.  Very incomplete.  */
 #include "../all_aligned_atomic_load_store.h"

@@ -31,14 +31,9 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     return(TRUE);
 }
 
-GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
-                                      GC_bool ignore_off_page,
-                                      GC_bool retry); /* from alloc.c */
-
-/* Allocate a large block of size lb bytes.     */
-/* The block is not cleared.                    */
-/* Flags is 0 or IGNORE_OFF_PAGE.               */
-/* EXTRA_BYTES were already added to lb.        */
+/* Allocate a large block of size lb bytes.  The block is not cleared.  */
+/* flags argument should be 0 or IGNORE_OFF_PAGE.  EXTRA_BYTES value    */
+/* was already added to lb.                                             */
 GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 {
     struct hblk * h;
@@ -56,8 +51,11 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
       LOCK();
     }
     /* Do our share of marking work */
-        if (GC_incremental && !GC_dont_gc)
+        if (GC_incremental && !GC_dont_gc) {
+            ENTER_GC();
             GC_collect_a_little_inner((int)n_blocks);
+            EXIT_GC();
+        }
     h = GC_allochblk(lb, k, flags);
 #   ifdef USE_MUNMAP
         if (0 == h) {
@@ -102,10 +100,62 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
     return result;
 }
 
-/* allocate lb bytes for an object of kind k.   */
-/* Should not be used to directly to allocate   */
-/* objects such as STUBBORN objects that        */
-/* require special handling on allocation.      */
+/* Fill in additional entries in GC_size_map, including the i-th one.   */
+/* Note that a filled in section of the array ending at n always        */
+/* has the length of at least n/4.                                      */
+STATIC void GC_extend_size_map(size_t i)
+{
+  size_t orig_granule_sz = ROUNDED_UP_GRANULES(i);
+  size_t granule_sz;
+  size_t byte_sz = GRANULES_TO_BYTES(orig_granule_sz);
+                        /* The size we try to preserve.         */
+                        /* Close to i, unless this would        */
+                        /* introduce too many distinct sizes.   */
+  size_t smaller_than_i = byte_sz - (byte_sz >> 3);
+  size_t low_limit; /* The lowest indexed entry we initialize.  */
+  size_t number_of_objs;
+
+  GC_ASSERT(I_HOLD_LOCK());
+  GC_ASSERT(0 == GC_size_map[i]);
+  if (0 == GC_size_map[smaller_than_i]) {
+    low_limit = byte_sz - (byte_sz >> 2); /* much smaller than i */
+    granule_sz = orig_granule_sz;
+    while (GC_size_map[low_limit] != 0)
+      low_limit++;
+  } else {
+    low_limit = smaller_than_i + 1;
+    while (GC_size_map[low_limit] != 0)
+      low_limit++;
+
+    granule_sz = ROUNDED_UP_GRANULES(low_limit);
+    granule_sz += granule_sz >> 3;
+    if (granule_sz < orig_granule_sz)
+      granule_sz = orig_granule_sz;
+  }
+
+  /* For these larger sizes, we use an even number of granules.         */
+  /* This makes it easier to, e.g., construct a 16-byte-aligned         */
+  /* allocator even if GRANULE_BYTES is 8.                              */
+  granule_sz = (granule_sz + 1) & ~1;
+  if (granule_sz > MAXOBJGRANULES)
+    granule_sz = MAXOBJGRANULES;
+
+  /* If we can fit the same number of larger objects in a block, do so. */
+  number_of_objs = HBLK_GRANULES / granule_sz;
+  GC_ASSERT(number_of_objs != 0);
+  granule_sz = (HBLK_GRANULES / number_of_objs) & ~1;
+
+  byte_sz = GRANULES_TO_BYTES(granule_sz) - EXTRA_BYTES;
+                        /* We may need one extra byte; do not always    */
+                        /* fill in GC_size_map[byte_sz].                */
+
+  for (; low_limit <= byte_sz; low_limit++)
+    GC_size_map[low_limit] = granule_sz;
+}
+
+/* Allocate lb bytes for an object of kind k.           */
+/* Should not be used to directly allocate objects      */
+/* that require special handling on allocation.         */
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 {
     void *op;
@@ -149,9 +199,11 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
         obj_link(op) = 0;
         GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
     } else {
-        op = (ptr_t)GC_alloc_large_and_clear(ADD_SLOP(lb), k, 0);
+        size_t lb_adjusted = ADD_SLOP(lb);
+
+        op = (ptr_t)GC_alloc_large_and_clear(lb_adjusted, k, 0 /* flags */);
         if (op != NULL)
-            GC_bytes_allocd += lb;
+            GC_bytes_allocd += lb_adjusted;
     }
 
     return op;
@@ -160,10 +212,10 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 #if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
     || !defined(GC_NO_FINALIZATION)
   /* Allocate a composite object of size n bytes.  The caller           */
-  /* guarantees that pointers past the first page are not relevant.     */
+  /* guarantees that pointers past the first hblk are not relevant.     */
   GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
   {
-    word lb_adjusted;
+    size_t lb_adjusted;
     void * op;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -194,7 +246,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
     DCL_LOCK_STATE;
 
     GC_ASSERT(k < MAXOBJKINDS);
-    if (EXPECT(GC_have_errors, FALSE))
+    if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);
@@ -215,7 +267,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
         LOCK();
         result = (ptr_t)GC_alloc_large(lb_rounded, k, 0);
         if (0 != result) {
-          if (GC_debugging_started) {
+          if (GC_debugging_started
+#             ifndef THREADS
+                || init
+#             endif
+             ) {
             BZERO(result, n_blocks * HBLKSIZE);
           } else {
 #           ifdef THREADS
@@ -230,9 +286,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
           GC_bytes_allocd += lb_rounded;
         }
         UNLOCK();
-        if (init && !GC_debugging_started && 0 != result) {
-            BZERO(result, n_blocks * HBLKSIZE);
-        }
+#       ifdef THREADS
+          if (init && !GC_debugging_started && result != NULL) {
+            /* Clear the rest (i.e. excluding the initial 2 words). */
+            BZERO((word *)result + 2,
+                  n_blocks * HBLKSIZE - 2 * sizeof(word));
+          }
+#       endif
     }
     if (0 == result) {
         return((*GC_get_oom_fn())(lb));
@@ -247,11 +307,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
     if (SMALL_OBJ(lb)) {
         void *op;
         void **opp;
-        size_t lg = GC_size_map[lb];
+        size_t lg;
         DCL_LOCK_STATE;
 
         GC_DBG_COLLECT_AT_MALLOC(lb);
         LOCK();
+        lg = GC_size_map[lb];
         opp = &GC_obj_kinds[k].ok_freelist[lg];
         op = *opp;
         if (EXPECT(op != NULL, TRUE)) {
@@ -272,7 +333,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
         }
         UNLOCK();
     }
-    return GENERAL_MALLOC(lb, k);
+
+    /* We make the GC_clear_stack() call a tail one, hoping to get more */
+    /* of the stack.                                                    */
+    return GC_clear_stack(GC_generic_malloc(lb, k));
 }
 
 #if defined(THREADS) && !defined(THREAD_LOCAL_ALLOC)
@@ -309,8 +373,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         if (EXTRA_BYTES != 0 && lb != 0) lb--;
                   /* We don't need the extra byte, since this won't be  */
                   /* collected anyway.                                  */
-        lg = GC_size_map[lb];
         LOCK();
+        lg = GC_size_map[lb];
         opp = &GC_obj_kinds[k].ok_freelist[lg];
         op = *opp;
         if (EXPECT(op != NULL, TRUE)) {
@@ -329,14 +393,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         }
         GC_ASSERT(0 == op || GC_is_marked(op));
     } else {
-        hdr * hhdr;
-
-        op = GC_generic_malloc(lb, k);
-        if (NULL == op)
-            return NULL;
+      op = GC_generic_malloc(lb, k);
+      if (op /* != NULL */) { /* CPPCHECK */
+        hdr * hhdr = HDR(op);
 
         GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0); /* large block */
-        hhdr = HDR(op);
         /* We don't need the lock here, since we have an undisguised    */
         /* pointer.  We do need to hold the lock while we adjust        */
         /* mark bits.                                                   */
@@ -349,6 +410,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
 #       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
+      }
     }
     return op;
 }
@@ -418,9 +480,19 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       GC_init(); /* if not called yet */
       if (!GC_text_mapping("libpthread-",
                            &GC_libpthread_start, &GC_libpthread_end)) {
+        /* Some libc implementations like bionic, musl and glibc 2.34   */
+        /* do not have libpthread.so because the pthreads-related code  */
+        /* is located in libc.so, thus potential calloc calls from such */
+        /* code are forwarded to real (libc) calloc without any special */
+        /* handling on the libgc side.  Checking glibc version at       */
+        /* compile time to turn off the warning seems to be fine.       */
+        /* TODO: Remove GC_text_mapping() call for this case.           */
+#       if defined(__GLIBC__) \
+           && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 34))
           WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
           /* This might still work with some versions of libpthread,      */
-          /* so we don't abort.  Perhaps we should.                       */
+          /* so we do not abort.                                          */
+#       endif
           /* Generate message only once:                                  */
             GC_libpthread_start = (ptr_t)1;
       }
@@ -490,7 +562,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
         errno = ENOMEM;
         return NULL;
       }
-      BCOPY(str, copy, len);
+      if (EXPECT(len > 0, TRUE))
+        BCOPY(str, copy, len);
       copy[len] = '\0';
       return copy;
     }
@@ -511,8 +584,13 @@ GC_API void GC_CALL GC_free(void * p)
     struct obj_kind * ok;
     DCL_LOCK_STATE;
 
-    if (p == 0) return;
+    if (p /* != NULL */) {
+        /* CPPCHECK */
+    } else {
         /* Required by ANSI.  It's not my fault ...     */
+        return;
+    }
+
 #   ifdef LOG_ALLOCS
       GC_log_printf("GC_free(%p) after GC #%lu\n",
                     p, (unsigned long)GC_gc_no);
@@ -532,7 +610,7 @@ GC_API void GC_CALL GC_free(void * p)
         if (0 == hhdr) return;
 #   endif
     GC_ASSERT(GC_base(p) == p);
-    sz = hhdr -> hb_sz;
+    sz = (size_t)hhdr->hb_sz;
     ngranules = BYTES_TO_GRANULES(sz);
     knd = hhdr -> hb_obj_kind;
     ok = &GC_obj_kinds[knd];
@@ -542,10 +620,10 @@ GC_API void GC_CALL GC_free(void * p)
         LOCK();
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
-                /* Its unnecessary to clear the mark bit.  If the       */
+                /* It's unnecessary to clear the mark bit.  If the      */
                 /* object is reallocated, it doesn't matter.  O.w. the  */
                 /* collector will do it, since it's on a free list.     */
-        if (ok -> ok_init) {
+        if (ok -> ok_init && EXPECT(sz > sizeof(word), TRUE)) {
             BZERO((word *)p + 1, sz-sizeof(word));
         }
         flh = &(ok -> ok_freelist[ngranules]);
@@ -582,7 +660,7 @@ GC_API void GC_CALL GC_free(void * p)
     h = HBLKPTR(p);
     hhdr = HDR(h);
     knd = hhdr -> hb_obj_kind;
-    sz = hhdr -> hb_sz;
+    sz = (size_t)hhdr->hb_sz;
     ngranules = BYTES_TO_GRANULES(sz);
     ok = &GC_obj_kinds[knd];
     if (ngranules <= MAXOBJGRANULES) {
@@ -590,7 +668,7 @@ GC_API void GC_CALL GC_free(void * p)
 
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
-        if (ok -> ok_init) {
+        if (ok -> ok_init && EXPECT(sz > sizeof(word), TRUE)) {
             BZERO((word *)p + 1, sz-sizeof(word));
         }
         flh = &(ok -> ok_freelist[ngranules]);
