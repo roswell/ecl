@@ -54,6 +54,7 @@ typedef cl_object (*math_one_arg_fn)(cl_object);
         }                                                               \
         return name##dispatch[t](arg);                                  \
     }
+
 #define MATH_DEF_DISPATCH1(name,id,type,fix,big,ratio,                  \
                            single_float,double_float,long_float,        \
                            complex,csfloat,cdfloat,clfloat)             \
