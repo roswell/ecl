@@ -110,3 +110,82 @@ Hint provided by Pascal J. Bourguignon.
    #+END_SRC
 4. Library and assets in the ecl-iOS directory are ready to run on
    the iOS system.
+
+* Cross-compile for the WASM platform (via emscripten)
+
+Emscripten target is a little fickle so keep in mind that:
+
+- disable-shared is needed, because emcc does not recognize libecl.so (?)
+
+- disable-tcp is needed, because accept can't be found (related to
+  disable-shared? lack of -lsockets or something in this spirit?)
+
+- select for interactive streams does not work, because reading operations are
+  blocking (as they should be!), so there is no EOF returned -- clear-input will
+  hang without a proper file-cnt
+
+- to build emscripten you need to use their SDK that provides the toolchain, and
+  set the environment variable EMSDK_PATH
+
+- the optimization level -O0 is forced because otherwsise binaryen miscompiles
+  ECL
+
+1. Build the host ECL
+
+#+begin_src shell-script
+  ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2" \
+              --prefix=`pwd`/ecl-emscripten-host --disable-threads
+
+  make -j16 && make install
+  rm -rf build/
+#+end_src
+
+2. Configure the toolchain
+
+Install the Emscripten SDK using the official instructions:
+
+        https://emscripten.org/docs/getting_started/downloads.html
+
+These build instructions were tested against ~emsdk 3.1.41~. If things doesn't
+work try that version instead of ~latest~.
+
+After that activate the toolchain and configure build flags:
+
+#+begin_src shell-script
+  source ${EMSDK_PATH}/emsdk_env.sh
+  export ECL_TO_RUN=`pwd`/ecl-emscripten-host/bin/ecl
+  # You may customize various emscripten flags here, i.e:
+  # export LDFLAGS="-sASYNCIFY=1"
+#+end_src
+
+3. Build the core environment and install it
+
+#+begin_src shell-script
+  emconfigure ./configure \
+              --host=wasm32-unknown-emscripten \
+              --build=x86_64-pc-linux-gnu \
+              --with-cross-config=`pwd`/src/util/wasm32-unknown-emscripten.cross_config \
+              --prefix=`pwd`/ecl-emscripten \
+              --disable-shared \
+              --with-tcp=no \
+              --with-cmp=no
+
+  emmake make && emmake make install
+
+  # some files need to be copied manually
+  cp build/bin/ecl.js build/bin/ecl.wasm ecl-emscripten/bin
+#+end_src
+
+4. ECL may be hosted on a web page. Assuming that you have quicklisp installed:
+
+#+begin_src shell-script
+  export WEBSERVER=`pwd`/src/util/webserver.lisp
+  pushd ecl-emscripten/bin
+  lisp --load $WEBSERVER
+  # After the server is loaded run:
+  # firefox localhost:8888/ecl.html
+  popd
+#+end_src
+
+If the output does not show on the webpage then open the javascript console.
+This is a default html website produced by emscripten.
