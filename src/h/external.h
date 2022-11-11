@@ -691,6 +691,7 @@ extern ECL_API void ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag type, cl_
 #define ECL_LISTEN_NO_CHAR      0
 #define ECL_LISTEN_AVAILABLE    1
 #define ECL_LISTEN_EOF          -1
+#define ECL_LISTEN_FALLBACK     -3
 
 extern ECL_API cl_object cl_make_synonym_stream(cl_object sym);
 extern ECL_API cl_object cl_synonym_stream_symbol(cl_object strm);
