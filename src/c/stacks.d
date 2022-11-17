@@ -22,7 +22,7 @@
 #include <ecl/internal.h>
 #include <ecl/stack-resize.h>
 
-/************************ C STACK ***************************/
+/* ------------------------- C STACK ---------------------------------- */
 
 static void
 cs_set_size(cl_env_ptr env, cl_index new_size)
@@ -133,8 +133,151 @@ ecl_cs_set_org(cl_env_ptr env)
   cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
 }
 
+/* ------------------------- LISP STACK ------------------------------- */
 
-/********************* BINDING STACK ************************/
+cl_object *
+ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
+{
+  cl_index top = env->stack_top - env->stack;
+  cl_object *new_stack, *old_stack;
+  cl_index safety_area = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
+  cl_index new_size = tentative_new_size + 2*safety_area;
+
+  /* Round to page size */
+  new_size = ((new_size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
+
+  if (ecl_unlikely(top > new_size)) {
+    FEerror("Internal error: cannot shrink stack below stack top.",0);
+  }
+
+  old_stack = env->stack;
+  new_stack = (cl_object *)ecl_alloc_atomic(new_size * sizeof(cl_object));
+
+  ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
+  memcpy(new_stack, old_stack, env->stack_size * sizeof(cl_object));
+  env->stack_size = new_size;
+  env->stack_limit_size = new_size - 2*safety_area;
+  env->stack = new_stack;
+  env->stack_top = env->stack + top;
+  env->stack_limit = env->stack + (new_size - 2*safety_area);
+
+  /* A stack always has at least one element. This is assumed by cl__va_start
+   * and friends, which take a sp=0 to have no arguments.
+   */
+  if (top == 0) {
+    *(env->stack_top++) = ecl_make_fixnum(0);
+  }
+  ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
+
+  return env->stack_top;
+}
+
+void
+FEstack_underflow(void)
+{
+  FEerror("Internal error: stack underflow.",0);
+}
+
+void
+FEstack_advance(void)
+{
+  FEerror("Internal error: stack advance beyond current point.",0);
+}
+
+cl_object *
+ecl_stack_grow(cl_env_ptr env)
+{
+  return ecl_stack_set_size(env, env->stack_size + env->stack_size / 2);
+}
+
+cl_index
+ecl_stack_push_values(cl_env_ptr env) {
+  cl_index i = env->nvalues;
+  cl_object *b = env->stack_top;
+  cl_object *p = b + i;
+  if (p >= env->stack_limit) {
+    b = ecl_stack_grow(env);
+    p = b + i;
+  }
+  env->stack_top = p;
+  memcpy(b, env->values, i * sizeof(cl_object));
+  return i;
+}
+
+void
+ecl_stack_pop_values(cl_env_ptr env, cl_index n) {
+  cl_object *p = env->stack_top - n;
+  if (ecl_unlikely(p < env->stack))
+    FEstack_underflow();
+  env->nvalues = n;
+  env->stack_top = p;
+  memcpy(env->values, p, n * sizeof(cl_object));
+}
+
+cl_object
+ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
+{
+  cl_object *base = env->stack_top;
+  if (size) {
+    if ((env->stack_limit - base) < size) {
+      base = ecl_stack_set_size(env, env->stack_size + size);
+    }
+  }
+  f->frame.t = t_frame;
+  f->frame.stack = env->stack;
+  f->frame.base = base;
+  f->frame.size = size;
+  f->frame.env = env;
+  env->stack_top = (base + size);
+  return f;
+}
+
+void
+ecl_stack_frame_push(cl_object f, cl_object o)
+{
+  cl_env_ptr env = f->frame.env;
+  cl_object *top = env->stack_top;
+  if (top >= env->stack_limit) {
+    top = ecl_stack_grow(env);
+  }
+  env->stack_top = ++top;
+  *(top-1) = o;
+  f->frame.base = top - (++(f->frame.size));
+  f->frame.stack = env->stack;
+}
+
+void
+ecl_stack_frame_push_values(cl_object f)
+{
+  cl_env_ptr env = f->frame.env;
+  ecl_stack_push_values(env);
+  f->frame.base = env->stack_top - (f->frame.size += env->nvalues);
+  f->frame.stack = env->stack;
+}
+
+cl_object
+ecl_stack_frame_pop_values(cl_object f)
+{
+  cl_env_ptr env = f->frame.env;
+  cl_index n = f->frame.size % ECL_MULTIPLE_VALUES_LIMIT;
+  cl_object o;
+  env->nvalues = n;
+  env->values[0] = o = ECL_NIL;
+  while (n--) {
+    env->values[n] = o = f->frame.base[n];
+  }
+  return o;
+}
+
+void
+ecl_stack_frame_close(cl_object f)
+{
+  if (f->frame.stack) {
+    ECL_STACK_SET_INDEX(f->frame.env, f->frame.base - f->frame.stack);
+  }
+}
+
+/* ------------------------- BINDING STACK ---------------------------- */
 
 void
 ecl_bds_unwind_n(cl_env_ptr env, int n)
@@ -435,7 +578,7 @@ ecl_bds_set(cl_env_ptr env, cl_object s, cl_object value)
 }
 #endif /* ECL_THREADS */
 
-/******************** INVOCATION STACK **********************/
+/* ------------------------- INVOCATION STACK ------------------------- */
 
 static ecl_ihs_ptr
 get_ihs_ptr(cl_index n)
@@ -491,7 +634,7 @@ si_ihs_env(cl_object arg)
   ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lex_env);
 }
 
-/********************** FRAME STACK *************************/
+/* ------------------------- FRAME STACK ------------------------------ */
 
 static void
 frs_set_size(cl_env_ptr env, cl_index new_size)
@@ -643,7 +786,7 @@ si_sch_frs_base(cl_object fr, cl_object ihs)
   ecl_return1(env, ((x > env->frs_top) ? ECL_NIL : ecl_make_fixnum(x - env->frs_org)));
 }
 
-/********************* INITIALIZATION ***********************/
+/* ------------------------- INITIALIZATION --------------------------- */
 
 cl_object
 si_set_limit(cl_object type, cl_object limit)
