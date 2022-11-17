@@ -248,20 +248,22 @@ cl_object
 si_bds_top()
 {
   cl_env_ptr env = ecl_process_env();
-  @(return ecl_make_fixnum(env->bds_top - env->bds_org));
+  ecl_return1(env, ecl_make_fixnum(env->bds_top - env->bds_org));
 }
 
 cl_object
 si_bds_var(cl_object arg)
 {
-  @(return get_bds_ptr(arg)->symbol);
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_bds_ptr(arg)->symbol);
 }
 
 cl_object
 si_bds_val(cl_object arg)
 {
+  cl_env_ptr env = ecl_process_env();
   cl_object v = get_bds_ptr(arg)->value;
-  @(return ((v == OBJNULL || v == ECL_NO_TL_BINDING)? ECL_UNBOUND : v));
+  ecl_return1(env, ((v == OBJNULL || v == ECL_NO_TL_BINDING)? ECL_UNBOUND : v));
 }
 
 #ifdef ecl_bds_bind
@@ -451,37 +453,42 @@ cl_object
 si_ihs_top(void)
 {
   cl_env_ptr env = ecl_process_env();
-  @(return ecl_make_fixnum(env->ihs_top->index));
+  ecl_return1(env, ecl_make_fixnum(env->ihs_top->index));
 }
 
 cl_object
 si_ihs_prev(cl_object x)
 {
-  @(return cl_1M(x));
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, cl_1M(x));
 }
 
 cl_object
 si_ihs_next(cl_object x)
 {
-  @(return cl_1P(x));
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, cl_1P(x));
 }
 
 cl_object
 si_ihs_bds(cl_object arg)
 {
-  @(return ecl_make_fixnum(get_ihs_ptr(ecl_to_size(arg))->bds));
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, ecl_make_fixnum(get_ihs_ptr(ecl_to_size(arg))->bds));
 }
 
 cl_object
 si_ihs_fun(cl_object arg)
 {
-  @(return get_ihs_ptr(ecl_to_size(arg))->function);
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->function);
 }
 
 cl_object
 si_ihs_env(cl_object arg)
 {
-  @(return get_ihs_ptr(ecl_to_size(arg))->lex_env);
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lex_env);
 }
 
 /********************** FRAME STACK *************************/
@@ -600,25 +607,28 @@ cl_object
 si_frs_top()
 {
   cl_env_ptr env = ecl_process_env();
-  @(return ecl_make_fixnum(env->frs_top - env->frs_org));
+  ecl_return1(env, ecl_make_fixnum(env->frs_top - env->frs_org));
 }
 
 cl_object
 si_frs_bds(cl_object arg)
 {
-  @(return ecl_make_fixnum(get_frame_ptr(arg)->frs_bds_top_index));
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, ecl_make_fixnum(get_frame_ptr(arg)->frs_bds_top_index));
 }
 
 cl_object
 si_frs_tag(cl_object arg)
 {
-  @(return get_frame_ptr(arg)->frs_val);
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_frame_ptr(arg)->frs_val);
 }
 
 cl_object
 si_frs_ihs(cl_object arg)
 {
-  @(return ecl_make_fixnum(get_frame_ptr(arg)->frs_ihs->index));
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, ecl_make_fixnum(get_frame_ptr(arg)->frs_ihs->index));
 }
 
 cl_object
@@ -630,7 +640,7 @@ si_sch_frs_base(cl_object fr, cl_object ihs)
   for (x = get_frame_ptr(fr); 
        x <= env->frs_top && x->frs_ihs->index < y;
        x++);
-  @(return ((x > env->frs_top) ? ECL_NIL : ecl_make_fixnum(x - env->frs_org)));
+  ecl_return1(env, ((x > env->frs_top) ? ECL_NIL : ecl_make_fixnum(x - env->frs_org)));
 }
 
 /********************* INITIALIZATION ***********************/
@@ -664,7 +674,7 @@ si_set_limit(cl_object type, cl_object limit)
     _ecl_set_max_heap_size(the_size);
   }
 
-  return si_get_limit(type);
+  ecl_return1(env, si_get_limit(type));
 }
 
 cl_object
@@ -682,10 +692,10 @@ si_get_limit(cl_object type)
     output = env->stack_limit_size;
   else {
     /* size_t can be larger than cl_index */
-    @(return ecl_make_unsigned_integer(cl_core.max_heap_size));
+    ecl_return1(env, ecl_make_unsigned_integer(cl_core.max_heap_size));
   }
 
-  @(return ecl_make_unsigned_integer(output));
+  ecl_return1(env, ecl_make_unsigned_integer(output));
 }
 
 cl_object
@@ -699,9 +709,9 @@ si_reset_margin(cl_object type)
   else if (type == @'ext::c-stack')
     cs_set_size(env, env->cs_size);
   else
-    return ECL_NIL;
+    ecl_return1(env, ECL_NIL);
 
-  return ECL_T;
+  ecl_return1(env, ECL_T);
 }
 
 void
