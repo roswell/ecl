@@ -17,6 +17,7 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 #include <complex.h>
+#include <float.h>
 #include <ecl/impl/math_dispatch.h>
 
 #pragma STDC FENV_ACCESS ON
@@ -86,6 +87,22 @@ ecl_log1_simple(cl_object x)
 #endif
   }
   return ecl_make_single_float(logf(ecl_to_float(x)));
+}
+
+static cl_object
+ecl_log1_ratio(cl_object x)
+{
+  cl_object num = x->ratio.num;
+  cl_object den = x->ratio.den;
+  cl_index lnum = ecl_integer_length(num);
+  cl_index lden = ecl_integer_length(den);
+  if ((lnum > lden) ? (lnum - lden >= FLT_MAX_EXP) : (lden - lnum >= -FLT_MIN_EXP)) {
+    cl_object numlog = ecl_log1(num);
+    cl_object denlog = ecl_log1(den);
+    return ecl_minus(numlog, denlog);
+  } else {
+    return ecl_log1_simple(x);
+  }
 }
 
 static cl_object
@@ -182,7 +199,7 @@ ecl_log1_clfloat(cl_object x)
 #endif
 
 MATH_DEF_DISPATCH1(log1, @[log], @[number],
-                   ecl_log1_simple, ecl_log1_bignum, ecl_log1_simple,
+                   ecl_log1_simple, ecl_log1_bignum, ecl_log1_ratio,
                    ecl_log1_single_float, ecl_log1_double_float, ecl_log1_long_float,
                    ecl_log1_complex,
                    ecl_log1_csfloat, ecl_log1_cdfloat, ecl_log1_clfloat);
