@@ -429,3 +429,8 @@
   (let ((vector (si:make-vector t 10 t nil nil nil)))
     (si:adjust-vector vector 20)
     (is (= 20 (array-total-size vector)))))
+
+;;; Created: 2022-11-10
+;;; Contains: a test for a logarithm of a very small ratio
+(test mix.0023.log-small-ratio
+  (finishes (log (/ 1 6319748715279270675921934218987893281199411530039296))))
