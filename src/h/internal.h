@@ -37,9 +37,7 @@ extern void init_clos(void);
 extern void init_error(void);
 extern void init_eval(void);
 extern void init_file(void);
-#ifndef GBC_BOEHM
 extern void init_GC(void);
-#endif
 extern void init_macros(void);
 extern void init_read(void);
 extern void init_stacks(cl_env_ptr);

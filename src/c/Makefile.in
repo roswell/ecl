@@ -52,7 +52,8 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h $(HDIR)/object.h      
 
 NUCL_OBJS = nucleus/error.o nucleus/backtrace.o nucleus/runtime.o
 
-MEM_OBJS = memory/allocation.o memory/finalization.o memory/weak_pointers.o
+MEM_OBJS = memory/allocation.o memory/collection.o                      \
+           memory/finalization.o memory/weak_pointers.o
 
 CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
 
