@@ -52,6 +52,8 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h $(HDIR)/object.h      
 
 NUCL_OBJS = nucleus/error.o nucleus/backtrace.o nucleus/runtime.o
 
+MEM_OBJS = memory/allocation.o memory/finalization.o memory/weak_pointers.o
+
 CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
 
 NUM_OBJS = number.o num_pred.o num_arith.o num_co.o num_log.o num_rand.o        \
@@ -81,7 +83,7 @@ OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o interpreter.o     
 	unixint.o mapfun.o multival.o hash.o format.o pathname.o structure.o    \
 	load.o unixfsys.o unixsys.o serialize.o sse2.o threads/atomic.o         \
 	$(CLOS_OBJS) $(NUM_OBJS) $(WRITER_OBJS) $(READER_OBJS) $(FFI_OBJS)      \
-	$(NUCL_OBJS) @EXTRA_OBJS@ memory/allocation.o
+	$(NUCL_OBJS) $(MEM_OBJS) @EXTRA_OBJS@
 
 .PHONY: all
 
