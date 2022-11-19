@@ -452,8 +452,10 @@ static void
 maybe_fix_console_stream(cl_object stream)
 {
   cl_object external_format;
-  if (stream->stream.mode != ecl_smm_io_wcon)
+  if (stream->stream.mode != ecl_smm_io_wcon) {
+    si_stream_external_format_set(stream, cl_list(2, ecl_symbol_value(@'ext::*default-external-format*'), @':crlf'));
     return;
+  }
   external_format = si_windows_codepage_encoding();
   if (external_format == @':pass-through')
     fprintf(stderr,
