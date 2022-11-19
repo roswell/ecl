@@ -630,10 +630,7 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-#if !defined(GBC_BOEHM)
   /* We need this because a lot of stuff is to be created */
-  init_GC();
-#endif
   GC_enable();
 
   /*

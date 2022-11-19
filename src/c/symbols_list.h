@@ -1569,21 +1569,7 @@ cl_symbols[] = {
 {EXT_ "GC" ECL_FUN("si_gc", si_gc, -1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 {SYS_ "GC-DUMP" ECL_FUN("si_gc_dump", si_gc_dump, 0) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "GC-STATS" ECL_FUN("si_gc_stats", si_gc_stats, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-#else
-{EXT_ "GC" ECL_FUN("si_gc", si_gc, -2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
-{SYS_ "ALLOCATE" ECL_FUN("si_allocate", si_allocate, -3) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "ALLOCATED-PAGES" ECL_FUN("si_allocated_pages", si_allocated_pages, -2) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "MAXIMUM-ALLOCATABLE-PAGES" ECL_FUN("si_maximum_allocatable_pages", si_maximum_allocatable_pages, -2) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "ALLOCATE-CONTIGUOUS-PAGES" ECL_FUN("si_allocate_contiguous_pages", si_allocate_contiguous_pages, -2) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "ALLOCATED-CONTIGUOUS-PAGES" ECL_FUN("si_allocated_contiguous_pages", si_allocated_contiguous_pages, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "MAXIMUM-CONTIGUOUS-PAGES" ECL_FUN("si_maximum_contiguous_pages", si_maximum_contiguous_pages, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "GC-TIME" ECL_FUN("si_gc_time", si_gc_time, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "GET-HOLE-SIZE" ECL_FUN("si_get_hole_size", si_get_hole_size, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "SET-HOLE-SIZE" ECL_FUN("si_set_hole_size", si_set_hole_size, -2) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "IGNORE-MAXIMUM-PAGES" ECL_FUN("si_ignore_maximum_pages", si_ignore_maximum_pages, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "ROOM-REPORT" ECL_FUN("si_room_report", si_room_report, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "RESET-GC-COUNT" ECL_FUN("si_reset_gc_count", si_reset_gc_count, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-#endif /* !GBC_BOEHM */
+#endif
 {EXT_ "TIMEOUT" ECL_FUN(NULL, NULL, -1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 /* #ifdef ECL_THREADS */
 {MP_ "PROCESS" ECL_FUN(NULL, NULL, -1) ECL_VAR(MP_ORDINARY, OBJNULL)},

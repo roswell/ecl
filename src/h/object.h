@@ -917,6 +917,7 @@ struct ecl_weak_pointer {       /*  weak pointer to value  */
         _ECL_HDR;
         cl_object value;
 };
+#define ecl_weak_pointer(o) ((o)->weak.value)
 
 /*
         dummy type

@@ -1243,7 +1243,7 @@ si_gc_dump()
  * WEAK POINTERS
  */
 
-static cl_object
+cl_object
 ecl_alloc_weak_pointer(cl_object o)
 {
   const cl_env_ptr the_env = ecl_process_env();
@@ -1260,6 +1260,12 @@ ecl_alloc_weak_pointer(cl_object o)
   return (cl_object)obj;
 }
 
+static cl_object
+ecl_weak_pointer_value(cl_object o)
+{
+  return ecl_weak_pointer(o);
+}
+
 cl_object
 si_make_weak_pointer(cl_object o)
 {
@@ -1267,24 +1273,19 @@ si_make_weak_pointer(cl_object o)
   @(return pointer);
 }
 
-static cl_object
-ecl_weak_pointer_value(cl_object o)
-{
-  return o->weak.value;
-}
-
 cl_object
 si_weak_pointer_value(cl_object o)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_object value;
   if (ecl_unlikely(ecl_t_of(o) != t_weak_pointer))
     FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
                           @[ext::weak-pointer]);
   value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
   if (value) {
-    @(return value ECL_T);
+    ecl_return2(the_env, value, ECL_T);
   } else {
-    @(return ECL_NIL ECL_NIL);
+    ecl_return2(the_env, ECL_NIL, ECL_NIL);
   }
 }
 
