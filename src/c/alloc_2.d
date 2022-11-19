@@ -388,26 +388,6 @@ ecl_cons(cl_object a, cl_object d)
 }
 
 cl_object
-ecl_list1(cl_object a)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  struct ecl_cons *obj;
-  ecl_disable_interrupts_env(the_env);
-  obj = GC_MALLOC(sizeof(struct ecl_cons));
-  ecl_enable_interrupts_env(the_env);
-#ifdef ECL_SMALL_CONS
-  obj->car = a;
-  obj->cdr = ECL_NIL;
-  return ECL_PTR_CONS(obj);
-#else
-  obj->t = t_list;
-  obj->car = a;
-  obj->cdr = ECL_NIL;
-  return (cl_object)obj;
-#endif
-}
-
-cl_object
 ecl_alloc_instance(cl_index slots)
 {
   cl_object i;

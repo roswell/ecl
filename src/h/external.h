@@ -265,7 +265,7 @@ extern ECL_API struct cl_core_struct cl_core;
 extern ECL_API cl_object ecl_alloc_object(cl_type t);
 extern ECL_API cl_object ecl_alloc_instance(cl_index slots);
 extern ECL_API cl_object ecl_cons(cl_object a, cl_object d);
-extern ECL_API cl_object ecl_list1(cl_object a);
+#define ecl_list1(x) ecl_cons(x, ECL_NIL)
 #ifdef GBC_BOEHM
 extern ECL_API cl_object si_gc(cl_narg narg, ...);
 extern ECL_API cl_object si_gc_dump(void);
