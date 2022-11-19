@@ -468,10 +468,6 @@ ecl_dealloc(void *ptr)
 
 static int alloc_initialized = FALSE;
 
-extern void (*GC_push_other_roots)();
-static void (*old_GC_push_other_roots)();
-static void stacks_scanner();
-
 #ifdef GBC_BOEHM_PRECISE
 static cl_index
 to_bitmap(void *x, void *y)
@@ -484,73 +480,17 @@ to_bitmap(void *x, void *y)
 }
 #endif
 
-void
-init_alloc(void)
+void init_type_info (void)
 {
-#ifdef GBC_BOEHM_PRECISE
-  union cl_lispunion o;
-  struct ecl_cons c;
-#endif
   int i;
-  if (alloc_initialized) return;
-  alloc_initialized = TRUE;
-  /*
-   * Garbage collector restrictions: we set up the garbage collector
-   * library to work as follows
-   *
-   * 1) The garbage collector shall not scan shared libraries
-   *    explicitely.
-   * 2) We only detect objects that are referenced by a pointer to
-   *    the begining or to the first byte.
-   * 3) Out of the incremental garbage collector, we only use the
-   *    generational component.
-   */
-  GC_set_no_dls(1);
-  GC_set_all_interior_pointers(0);
-  GC_set_time_limit(GC_TIME_UNLIMITED);
-  GC_init();
-#ifdef ECL_THREADS
-# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
-  GC_allow_register_threads();
-# endif
-#endif
-  if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
-    GC_enable_incremental();
-  }
-  GC_register_displacement(1);
-#ifdef GBC_BOEHM_PRECISE
-  GC_init_explicit_typing();
-#endif
-  GC_clear_roots();
-  GC_disable();
-
-#ifdef GBC_BOEHM_PRECISE
-# ifdef GBC_BOEHM_OWN_MARKER
-  cl_object_free_list = (void **)GC_new_free_list_inner();
-  cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
-  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
-                                     GC_MAKE_PROC(cl_object_mark_proc_index, 0),
-                                     FALSE, TRUE);
-# endif
-#endif /* !GBC_BOEHM_PRECISE */
-
-  GC_set_max_heap_size(cl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE]);
-  /* Save some memory for the case we get tight. */
-  if (cl_core.max_heap_size == 0) {
-    cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-    cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
-  } else if (cl_core.safety_region) {
-    cl_core.safety_region = 0;
-  }
-
-#define init_tm(/* cl_type  */ type,                                    \
-                /* char*    */ name,                                    \
-                /* cl_index */ object_size,                             \
-                /* cl_index */ maxpage) {                               \
-    type_info[type].size = (object_size);                               \
-    if ((maxpage) == 0) {                                               \
-      type_info[type].allocator = allocate_object_atomic;               \
-    }                                                                   \
+#define init_tm(/* cl_type  */ type,                            \
+                /* char*    */ name,                            \
+                /* cl_index */ object_size,                     \
+                /* cl_index */ maxpage) {                       \
+    type_info[type].size = (object_size);                       \
+    if ((maxpage) == 0) {                                       \
+      type_info[type].allocator = allocate_object_atomic;       \
+    }                                                           \
   }
   for (i = 0; i < t_end; i++) {
     type_info[i].t = i;
@@ -792,6 +732,67 @@ init_alloc(void)
     type_info[i].descriptor = descriptor;
   }
 #endif /* GBC_BOEHM_PRECISE */
+}
+
+extern void (*GC_push_other_roots)();
+static void (*old_GC_push_other_roots)();
+static void stacks_scanner();
+
+void
+init_alloc(void)
+{
+  if (alloc_initialized) return;
+  alloc_initialized = TRUE;
+  init_type_info();
+  /*
+   * Garbage collector restrictions: we set up the garbage collector
+   * library to work as follows
+   *
+   * 1) The garbage collector shall not scan shared libraries
+   *    explicitely.
+   * 2) We only detect objects that are referenced by a pointer to
+   *    the begining or to the first byte.
+   * 3) Out of the incremental garbage collector, we only use the
+   *    generational component.
+   */
+  GC_set_no_dls(1);
+  GC_set_all_interior_pointers(0);
+  GC_set_time_limit(GC_TIME_UNLIMITED);
+  GC_init();
+#ifdef ECL_THREADS
+# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
+  GC_allow_register_threads();
+# endif
+#endif
+  if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
+    GC_enable_incremental();
+  }
+  GC_register_displacement(1);
+#ifdef GBC_BOEHM_PRECISE
+  GC_init_explicit_typing();
+#endif
+  GC_clear_roots();
+  GC_disable();
+
+#ifdef GBC_BOEHM_PRECISE
+# ifdef GBC_BOEHM_OWN_MARKER
+  cl_object_free_list = (void **)GC_new_free_list_inner();
+  cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
+  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
+                                     GC_MAKE_PROC(cl_object_mark_proc_index, 0),
+                                     FALSE, TRUE);
+# endif
+#endif /* !GBC_BOEHM_PRECISE */
+
+  GC_set_max_heap_size(cl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE]);
+  /* Save some memory for the case we get tight. */
+  if (cl_core.max_heap_size == 0) {
+    cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
+    cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+  } else if (cl_core.safety_region) {
+    cl_core.safety_region = 0;
+  }
+
   old_GC_push_other_roots = GC_push_other_roots;
   GC_push_other_roots = stacks_scanner;
   GC_old_start_callback = GC_get_start_callback();
