@@ -561,7 +561,7 @@ ecl_file_len(int f)
            @':supersede', /* continuable */
            /* format */
            ecl_make_constant_base_string(msg,strlen(msg)),
-           cl_list(2, oldn, new_filename), /* format args */
+           cl_list(2, oldn, newn), /* format args */
            @':pathname', /* file-error options */
            new_filename);
         if (if_exists == ECL_T) if_exists= @':error';
