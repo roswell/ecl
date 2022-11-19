@@ -4,9 +4,6 @@
 @subsection src/c
 
 @multitable {aaaaaaaaaaaaaaa}{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
-@item @file{alloc_2.d}
-@tab memory allocation based on the Boehm GC
-
 @item @file{all_symbols.d}
 @tab name mangler and symbol initialization
 
@@ -132,6 +129,9 @@
 
 @item @file{mapfun.d}
 @tab mapping
+
+@item @file{memory/allocation.d}
+@tab memory allocation based on the Boehm GC
 
 @item @file{multival.d}
 @tab multiple values

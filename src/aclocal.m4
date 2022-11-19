@@ -1102,7 +1102,6 @@ if test "${enable_boehm}" = auto -o "${enable_boehm}" = system; then
    fi
  else
    FASL_LIBS="${FASL_LIBS} -lgc"
-   EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
    AC_DEFINE(GBC_BOEHM, [1], [Use Boehm's garbage collector])
  fi
 fi
@@ -1133,7 +1132,6 @@ if test "${enable_boehm}" = "included"; then
      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
      SUBDIRS="${SUBDIRS} gc"
      CORE_LIBS="-leclgc ${CORE_LIBS}"
-     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
      if test "${enable_shared}" = "no"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
      fi
@@ -1208,7 +1206,6 @@ if test "${enable_libffi}" = "included"; then
      ECL_LIBFFI_HEADER='ecl/ffi.h'
      SUBDIRS="${SUBDIRS} libffi"
      CORE_LIBS="-leclffi ${CORE_LIBS}"
-     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
      if test "${enable_shared}" = "no"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclffi.${LIBEXT}"
      fi

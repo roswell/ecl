@@ -81,7 +81,7 @@ OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o interpreter.o     
 	unixint.o mapfun.o multival.o hash.o format.o pathname.o structure.o    \
 	load.o unixfsys.o unixsys.o serialize.o sse2.o threads/atomic.o         \
 	$(CLOS_OBJS) $(NUM_OBJS) $(WRITER_OBJS) $(READER_OBJS) $(FFI_OBJS)      \
-	$(NUCL_OBJS) @EXTRA_OBJS@
+	$(NUCL_OBJS) @EXTRA_OBJS@ memory/allocation.o
 
 .PHONY: all
 

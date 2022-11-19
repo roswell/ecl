@@ -45,8 +45,7 @@
  * The Boehm-Demers-Weiser garbage collector contains wrappers for
  * dlopen and similar functions. These wrappers explicitely deactivate
  * garbage collection. Since we have explicitely deactivated scanning
- * shared libraries (alloc_2.d), we can get rid of this performance
- * penalty.
+ * shared libraries, we can get rid of this performance penalty.
  */
 #if defined(GBC_BOEHM_GENGC)
 #ifdef dlopen

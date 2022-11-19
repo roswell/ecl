@@ -6486,7 +6486,6 @@ $as_echo "${system_boehm} " >&6; }
    fi
  else
    FASL_LIBS="${FASL_LIBS} -lgc"
-   EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
 
 $as_echo "#define GBC_BOEHM 1" >>confdefs.h
 
@@ -6515,7 +6514,6 @@ $as_echo "$as_me: Configuring included Boehm GC library:" >&6;}
      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
      SUBDIRS="${SUBDIRS} gc"
      CORE_LIBS="-leclgc ${CORE_LIBS}"
-     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
      if test "${enable_shared}" = "no"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
      fi
@@ -6653,7 +6651,6 @@ $as_echo "$as_me: Configuring included libffi library:" >&6;}
      ECL_LIBFFI_HEADER='ecl/ffi.h'
      SUBDIRS="${SUBDIRS} libffi"
      CORE_LIBS="-leclffi ${CORE_LIBS}"
-     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
      if test "${enable_shared}" = "no"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclffi.${LIBEXT}"
      fi

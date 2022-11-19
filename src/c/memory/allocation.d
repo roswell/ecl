@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * alloc_2.c - memory allocation based on the Boehm GC
+ * allocation.c - memory allocation based on the Boehm GC
  *
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
  *

@@ -97,7 +97,6 @@
 		(concat (subseq (buffer-file-name (current-buffer)) 0 -13) x))
 	      '(
 "c/all_symbols.d"
-"c/alloc_2.d"
 "c/apply.d"
 "c/array.d"
 "c/assignment.d"
@@ -138,6 +137,7 @@
 "c/main.d"
 "c/Makefile.in"
 "c/mapfun.d"
+"c/memory/allocation.d"
 "c/multival.d"
 "c/newhash.h"
 "c/num_arith.d"
