@@ -434,7 +434,6 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
       new_index = ecl_atomic_index_incf(&cl_core.last_var_index);
     }
     symbol->symbol.binding = new_index;
-    symbol->symbol.dynamic |= 1;
   }
   ecl_set_finalizer_unprotected(symbol, ECL_T);
   return new_index;

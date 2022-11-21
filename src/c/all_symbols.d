@@ -235,7 +235,6 @@ make_this_symbol(int i, cl_object s, int code,
   default: printf("%d\n", code & ~(int)3); ecl_internal_error("Unknown package code in init_all_symbols()");
   }
   s->symbol.t = t_symbol;
-  s->symbol.dynamic = 0;
 #ifdef ECL_THREADS
   s->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif

@@ -275,7 +275,7 @@ enum ecl_stype {                /*  symbol type  */
 #define ECL_NO_TL_BINDING       ((cl_object)(1 << ECL_TAG_BITS))
 
 struct ecl_symbol {
-        _ECL_HDR2(stype, dynamic);/*  symbol type, special-variable-p */
+        _ECL_HDR1(stype);       /*  symbol type */
         cl_object value;        /*  global value of the symbol  */
                                 /*  Coincides with cons.car  */
         cl_object gfdef;        /*  global function definition  */

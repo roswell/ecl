@@ -514,7 +514,6 @@ cl_boot(int argc, char **argv)
    */
 
   ECL_NIL_SYMBOL->symbol.t = t_symbol;
-  ECL_NIL_SYMBOL->symbol.dynamic = 0;
   ECL_NIL_SYMBOL->symbol.value = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.name = str_NIL;
   ECL_NIL_SYMBOL->symbol.gfdef = ECL_NIL;
@@ -527,7 +526,6 @@ cl_boot(int argc, char **argv)
   cl_num_symbols_in_core=1;
 
   ECL_T->symbol.t = (short)t_symbol;
-  ECL_T->symbol.dynamic = 0;
   ECL_T->symbol.value = ECL_T;
   ECL_T->symbol.name = str_T;
   ECL_T->symbol.gfdef = ECL_NIL;
