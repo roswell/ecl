@@ -18,7 +18,6 @@
 
 static void (*GC_old_start_callback)(void) = NULL;
 static void gather_statistics(void);
-static void update_bytes_consed(void);
 static void ecl_mark_env(struct cl_env_struct *env);
 
 extern void (*GC_push_other_roots)();
@@ -118,62 +117,16 @@ init_GC(void)
   GC_enable();
 }
 
-/* If we do not build our own version of the library, we do not have
- * control over the existence of this variable. */
-#if GBC_BOEHM == 0
-extern int GC_print_stats;
-#else
-static int GC_print_stats;
-#endif
-
-cl_object
-si_gc_stats(cl_object enable)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object old_status;
-  cl_object size1;
-  cl_object size2;
-  if (cl_core.gc_stats == 0) {
-    old_status = ECL_NIL;
-  } else if (GC_print_stats) {
-    old_status = @':full';
-  } else {
-    old_status = ECL_T;
-  }
-  if (cl_core.bytes_consed == ECL_NIL) {
-    cl_core.bytes_consed = ecl_alloc_object(t_bignum);
-    mpz_init2(ecl_bignum(cl_core.bytes_consed), 128);
-    cl_core.gc_counter = ecl_alloc_object(t_bignum);
-    mpz_init2(ecl_bignum(cl_core.gc_counter), 128);
-  }
-
-  update_bytes_consed();
-  /* We need fresh copies of the bignums */
-  size1 = _ecl_big_register_copy(cl_core.bytes_consed);
-  size2 = _ecl_big_register_copy(cl_core.gc_counter);
-
-  if (enable == ECL_NIL) {
-    GC_print_stats = 0;
-    cl_core.gc_stats = 0;
-  } else if (enable == ecl_make_fixnum(0)) {
-    mpz_set_ui(ecl_bignum(cl_core.bytes_consed), 0);
-    mpz_set_ui(ecl_bignum(cl_core.gc_counter), 0);
-  } else {
-    cl_core.gc_stats = 1;
-    GC_print_stats = (enable == @':full');
-  }
-  ecl_return3(the_env, size1, size2, old_status);
-}
-
-/* This procedure is invoked after garbage collection. Note that we
- * cannot cons because this procedure is invoked with the garbage
- * collection lock on. */
+/* This procedure is invoked after garbage collection. Note that we can't cons
+ * because this procedure is invoked with the garbage collection lock on. */
 static void
 gather_statistics()
 {
   /* GC stats rely on bignums */
   if (cl_core.gc_stats) {
-    update_bytes_consed();
+    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+               ecl_bignum(cl_core.bytes_consed),
+               ecl_get_bytes_since_gc());
     mpz_add_ui(ecl_bignum(cl_core.gc_counter),
                ecl_bignum(cl_core.gc_counter),
                1);
@@ -182,33 +135,26 @@ gather_statistics()
     GC_old_start_callback();
 }
 
-static void
-update_bytes_consed () {
+cl_index
+ecl_get_bytes_since_gc (void)
+{
 #if GBC_BOEHM == 0
-  mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
-             ecl_bignum(cl_core.bytes_consed),
-             GC_get_bytes_since_gc());
+  return GC_get_bytes_since_gc();
 #else
-  /* This is not accurate and may wrap around. We try to detect this
-     assuming that an overflow in an unsigned integer will produce
-     a smaller integer.*/
+  /* This is not accurate and may wrap around. We try to detect this assuming
+     that an overflow in an unsigned integer will produce a smaller integer.*/
   static cl_index bytes = 0;
   cl_index new_bytes = GC_get_total_bytes();
+  cl_index result = 0;
   if (bytes > new_bytes) {
     cl_index wrapped;
     wrapped = ~((cl_index)0) - bytes;
-    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
-               ecl_bignum(cl_core.bytes_consed),
-               wrapped);
-    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
-               ecl_bignum(cl_core.bytes_consed),
-               new_bytes);
+    result = wrapped + new_bytes;
   } else {
-    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
-               ecl_bignum(cl_core.bytes_consed),
-               new_bytes - bytes);
+    result = new_bytes - bytes;
   }
   bytes = new_bytes;
+  return result;
 #endif
 }
 
@@ -285,24 +231,13 @@ ecl_register_root(cl_object *p)
   ecl_enable_interrupts_env(the_env);
 }
 
-cl_object
-si_gc(cl_narg narg, ...)
+void
+ecl_collect_garbage(void)
 {
   const cl_env_ptr the_env = ecl_process_env();
   ecl_disable_interrupts_env(the_env);
   GC_gcollect();
   ecl_enable_interrupts_env(the_env);
-  ecl_return0(the_env);
-}
-
-cl_object
-si_gc_dump()
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  ecl_disable_interrupts_env(the_env);
-  GC_dump();
-  ecl_enable_interrupts_env(the_env);
-  ecl_return0(the_env);
 }
 
 static int failure;
@@ -381,10 +316,11 @@ out_of_memory(size_t requested_bytes)
   ecl_bds_unwind1(the_env);
   ecl_check_pending_interrupts(the_env);
   switch (method) {
-  case 0: cl_error(1, @'ext::storage-exhausted');
+  case 0:
+    cl_error(1, @'ext::storage-exhausted');
     break;
-  case 1: cl_cerror(2, @"Extend heap size",
-                    @'ext::storage-exhausted');
+  case 1:
+    cl_cerror(2, @"Extend heap size", @'ext::storage-exhausted');
     break;
   case 2:
     return output;
@@ -394,8 +330,7 @@ out_of_memory(size_t requested_bytes)
   }
   if (!interrupts)
     ecl_disable_interrupts_env(the_env);
-  GC_set_max_heap_size(cl_core.max_heap_size +=
-                       cl_core.max_heap_size / 2);
+  GC_set_max_heap_size(cl_core.max_heap_size += cl_core.max_heap_size / 2);
   /* Default allocation. Note that we do not allocate atomic. */
   return GC_MALLOC(requested_bytes);
 }

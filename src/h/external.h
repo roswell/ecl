@@ -764,16 +764,18 @@ extern ECL_API cl_object si_set_finalizer(cl_object o, cl_object finalizer);
 
 extern ECL_API cl_object cl_format _ECL_ARGS((cl_narg narg, cl_object stream, cl_object string, ...));
 
-/* gbc.c */
+/* garbage.c */
+
+extern ECL_API void ecl_register_root(cl_object *p);
+extern ECL_API void ecl_collect_garbage(void);
+extern ECL_API cl_index ecl_get_bytes_since_gc(void);
+extern ECL_API cl_object si_gc(cl_narg narg, ...);
+extern ECL_API cl_object si_gc_stats(cl_object enable);
 
 #ifdef GBC_BOEHM
 #define GC_enabled() !GC_is_disabled()
 #define GC_enable() GC_enable()
 #define GC_disable() GC_disable()
-extern ECL_API void ecl_register_root(cl_object *p);
-extern ECL_API cl_object si_gc(cl_narg narg, ...);
-extern ECL_API cl_object si_gc_dump(void);
-extern ECL_API cl_object si_gc_stats(cl_object enable);
 #else
 # error "IMPLEMENT ME!"
 #endif /* GBC_BOEHM */

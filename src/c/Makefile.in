@@ -77,8 +77,8 @@ READER_OBJS = read.o reader/parse_integer.o reader/parse_number.o
 FFI_OBJS = ffi.o ffi/libraries.o ffi/backtrace.o ffi/mmap.o ffi/cdata.o
 
 OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o interpreter.o     \
-	compiler.o disassembler.o reference.o character.o file.o error.o        \
-	string.o cfun.o typespec.o assignment.o predicate.o array.o             \
+	compiler.o disassembler.o garbage.o reference.o character.o file.o      \
+	error.o string.o cfun.o typespec.o assignment.o predicate.o array.o     \
 	vector_push.o sequence.o cmpaux.o macros.o backq.o stacks.o time.o      \
 	unixint.o mapfun.o multival.o hash.o format.o pathname.o structure.o    \
 	load.o unixfsys.o unixsys.o serialize.o sse2.o finalize.o               \
