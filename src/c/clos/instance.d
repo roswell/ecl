@@ -20,6 +20,8 @@ ecl_allocate_instance(cl_object clas, cl_index size)
 {
   cl_object x = ecl_alloc_instance(size);
   cl_index i;
+  x->instance.entry = FEnot_funcallable_vararg;
+  x->instance.slotds = ECL_UNBOUND;
   ECL_CLASS_OF(x) = clas;
   for (i = 0;  i < size;  i++)
     x->instance.slots[i] = ECL_UNBOUND;
@@ -252,9 +254,10 @@ si_instancep(cl_object x)
 cl_object
 si_unbound()
 {
+  const cl_env_ptr the_env = ecl_process_env();
   /* Returns an object that cannot be read or written and which
      is used to represent an unitialized slot */
-  @(return ECL_UNBOUND);
+  ecl_return1(the_env, ECL_UNBOUND);
 }
 
 cl_object
