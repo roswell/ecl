@@ -59,26 +59,6 @@ static int ARGC;
 static char **ARGV;
 
 void
-ecl_init_bignum_registers(cl_env_ptr env)
-{
-  int i;
-  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
-    cl_object x = ecl_alloc_object(t_bignum);
-    _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
-    env->big_register[i] = x;
-  }
-}
-
-void
-ecl_clear_bignum_registers(cl_env_ptr env)
-{
-  int i;
-  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
-    _ecl_big_clear(env->big_register[i]);
-  }
-}
-
-void
 ecl_init_env(cl_env_ptr env)
 {
   env->c_env = NULL;
@@ -424,8 +404,6 @@ cl_boot(int argc, char **argv)
 #endif
   cl_core.gensym_prefix = (cl_object)&str_G_data;
   cl_core.gentemp_prefix = (cl_object)&str_T_data;
-
-  env->packages_to_be_created = ECL_NIL;
 
 #ifdef ECL_THREADS
   env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
