@@ -23,6 +23,7 @@
 #endif
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
+#include <ecl/stacks.h>
 
 void
 ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
@@ -65,6 +66,87 @@ cl_symbol_or_object(cl_object x)
   if (ECL_FIXNUMP(x))
     return (cl_object)(cl_symbols + ecl_fixnum(x));
   return x;
+}
+
+static cl_object
+ecl_pop_unsafe(cl_env_ptr the_env, cl_object symbol)
+{
+  cl_object val = ECL_SYM_VAL(the_env, symbol);
+  cl_object car = ECL_CONS_CAR(val);
+  cl_object cdr = ECL_CONS_CDR(val);
+  ECL_SETQ(the_env, symbol, cdr);
+  return car;
+}
+
+/* Low level signals work slightly different from Common Lisp. There are no
+   handler clusters nor restarts. si_signal is called with two arguments:
+
+   - the condition to signal (may be any cl_object);
+   - the continuation for continuable conditions, ECL_NIL otherwise
+
+   The signal invokes all handlers bound with with-handler in turn and call
+   them with the condition and the continuation. The handler may either:
+
+   - decline :: return, si_signal proceeds to the next handler
+   - handle :: invoke the continuation or do other transfer of control
+   - defer :: signal a condition, invoke a debugger etc.
+
+   The called handler is not bound as an active signal handler during its
+   execution (i.e to avoid infinite recursion while resignaling).
+
+   si_signal must never return. If there are no more handlers then we abort
+   the program by means of invoking the function _ecl_unexpected_return. */
+
+cl_object
+si_signal(cl_object condition, cl_object continuation) {
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object handler = ECL_NIL;
+  cl_object clusters = ECL_SYM_VAL(the_env, ecl_ct_signal_handlers);
+  ecl_bds_bind(the_env, ecl_ct_signal_handlers, clusters);
+  loop_for_on_unsafe(clusters) {
+    handler = ecl_pop_unsafe(the_env, ecl_ct_signal_handlers);
+    cl_funcall(3, handler, condition, continuation);
+  } end_loop_for_on_unsafe(clusters);
+  ecl_bds_unwind1(the_env);
+  _ecl_unexpected_return();
+}
+
+cl_object
+si_call_with_handler(cl_object handler, cl_object continuation) {
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object result;
+  cl_object clusters = ECL_SYM_VAL(the_env, ecl_ct_signal_handlers);
+  ecl_bds_bind(the_env, ecl_ct_signal_handlers, ecl_cons(handler, clusters));
+  result = cl_funcall(1, continuation);
+  ecl_bds_unwind1(the_env);
+  return result;
+}
+
+cl_object
+si_continue(cl_object condition, cl_object continuation)
+{
+  if (continuation != ECL_NIL) {
+    ecl_frame_ptr fr = frs_sch(continuation);
+    if (!fr) ecl_internal_error("si_fear_handler: continuation not found!");
+    ecl_unwind(ecl_process_env(), fr);
+  }
+  return ECL_NIL;
+}
+
+cl_object
+XFerror (cl_object condition) {
+  cl_env_ptr the_env = ecl_process_env();
+  si_signal(@'error', ECL_NIL);
+}
+
+cl_object
+XCerror (cl_object condition) {
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_frs_push(the_env,@'continue');
+  if (__ecl_frs_push_result == 0)
+    si_signal(@'cerror', @'continue');
+  ecl_frs_pop(the_env);
+  return ECL_NIL;
 }
 
 void
@@ -431,8 +513,7 @@ FEunknown_lock_error(cl_object lock)
 static int recursive_error = 0;
 
 static cl_object
-universal_error_handler(cl_object continue_string, cl_object datum,
-                        cl_object args)
+universal_error_handler(cl_object continue_string, cl_object datum, cl_object args)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object stream;
@@ -446,8 +527,7 @@ universal_error_handler(cl_object continue_string, cl_object datum,
     ecl_bds_bind(the_env, @'*print-length*', ecl_make_fixnum(3));
     ecl_bds_bind(the_env, @'*print-circle*', ECL_NIL);
     ecl_bds_bind(the_env, @'*print-base*', ecl_make_fixnum(10));
-    writestr_stream("\n;;; Unhandled lisp initialization error",
-                    stream);
+    writestr_stream("\n;;; Unhandled lisp initialization error", stream);
     writestr_stream("\n;;; Message:\n", stream);
     si_write_ugly_object(datum, stream);
     writestr_stream("\n;;; Arguments:\n", stream);

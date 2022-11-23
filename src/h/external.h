@@ -261,6 +261,15 @@ extern ECL_API const cl_object ecl_ct_minus_half;
 
 extern ECL_API const cl_object ecl_ct_protect_tag;
 extern ECL_API const cl_object ecl_ct_dummy_tag;
+extern ECL_API cl_object ecl_ct_signal_handlers;
+
+extern ECL_API cl_object si_signal(cl_object,cl_object) ecl_attr_noreturn;
+extern ECL_API cl_object si_call_with_handler(cl_object,cl_object);
+extern ECL_API cl_object si_continue(cl_object,cl_object);
+
+extern ECL_API cl_object XFerror(cl_object) ecl_attr_noreturn;
+extern ECL_API cl_object XCerror(cl_object);
+
 
 /* alloc.c / alloc_2.c */
 

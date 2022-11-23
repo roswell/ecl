@@ -33,6 +33,12 @@ ecl_def_ct_base_string(ecl_ct_dtag_string,"DUMMY-TAG",9,static,const);
 ecl_def_ct_token(ecl_ct_protect_tag,ecl_stp_constant,ecl_ct_ptag_string,ECL_NIL,,const);
 ecl_def_ct_token(ecl_ct_dummy_tag  ,ecl_stp_constant,ecl_ct_dtag_string,ECL_NIL,,const);
 
+/* Special bindigns are stored in the environment for multiple threads, but
+   not so much for a single thread. If we want mutliple envs in a single
+   thread then we need to introduce an uniform implementation of these. */
+
+ecl_def_ct_base_string(ecl_ct_htag_string,"*SIGNAL-HANDLERS*",9,static,const);
+ecl_def_ct_token(ecl_ct_signal_handlers,ecl_stp_special,ecl_ct_htag_string,ECL_NIL,,);
 
 /* -- implementation ------------------------------------------------ */
 

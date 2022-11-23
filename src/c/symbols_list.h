@@ -1348,6 +1348,10 @@ cl_symbols[] = {
 {EXT_ "GET-SIGNAL-HANDLER" ECL_FUN("si_get_signal_handler", si_get_signal_handler, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 {EXT_ "SET-SIGNAL-HANDLER" ECL_FUN("si_set_signal_handler", si_set_signal_handler, 2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 
+{SYS_ "%SIGNAL" ECL_FUN("si_signal", si_signal, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "%CALL-WITH-HANDLER" ECL_FUN("si_call_with_handler", si_call_with_handler, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "%CONTINUE" ECL_FUN("si_continue", si_continue, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
+
 /* KEYWORD PACKAGE */
 {KEY_ "ADJUSTABLE" ECL_FUN(NULL, NULL, -1) ECL_VAR(KEYWORD, OBJNULL)},
 {KEY_ "ABORT" ECL_FUN(NULL, NULL, -1) ECL_VAR(KEYWORD, OBJNULL)},
