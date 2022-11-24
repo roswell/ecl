@@ -861,23 +861,29 @@ init_stacks(cl_env_ptr env)
 {
   static struct ecl_ihs_frame ihs_org = { NULL, NULL, NULL, 0};
   cl_index size, margin;
-
+  /* frame stack */
   margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
   size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE] + 2 * margin;
   env->frs_size = size;
   env->frs_org = (ecl_frame_ptr)ecl_alloc_atomic(size * sizeof(*env->frs_org));
   env->frs_top = env->frs_org-1;
   env->frs_limit = &env->frs_org[size - 2*margin];
-
+  /* bind stack */
   margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
   size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
   env->bds_size = size;
   env->bds_org = (ecl_bds_ptr)ecl_alloc_atomic(size * sizeof(*env->bds_org));
   env->bds_top = env->bds_org-1;
   env->bds_limit = &env->bds_org[size - 2*margin];
-
+  /* ihs stack */
   env->ihs_top = &ihs_org;
   ihs_org.function = ECL_NIL;
   ihs_org.lex_env = ECL_NIL;
   ihs_org.index = 0;
+  /* lisp stack */
+  env->stack = NULL;
+  env->stack_top = NULL;
+  env->stack_limit = NULL;
+  env->stack_size = 0;
+  ecl_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
 }
