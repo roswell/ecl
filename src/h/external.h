@@ -978,7 +978,7 @@ typedef enum {
 } ecl_option;
 
 extern ECL_API const char *ecl_self;
-extern ECL_API void ecl_set_option(int option, cl_fixnum value);
+extern ECL_API cl_fixnum ecl_set_option(int option, cl_fixnum value);
 extern ECL_API cl_fixnum ecl_get_option(int option);
 extern ECL_API int cl_boot(int argc, char **argv);
 extern ECL_API void cl_shutdown(void);
