@@ -55,80 +55,8 @@ const char *ecl_self;
 
 /************************ GLOBAL INITIALIZATION ***********************/
 
-
-/* HEAP */
-
-#if ECL_FIXNUM_BITS <= 32
-/* 1GB */
-#define HEAP_SIZE_DEFAULT 1073741824L
-#else
-/* 4GB */
-#define HEAP_SIZE_DEFAULT 4294967296L
-#endif
-
-
 static int ARGC;
 static char **ARGV;
-/* INV: see ecl_option enum in external.h */
-cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
-#ifdef GBC_BOEHM_GENGC
-  1,              /* ECL_OPT_INCREMENTAL_GC */
-#else
-  0,              /* ECL_OPT_INCREMENTAL_GC */
-#endif
-  1,              /* ECL_OPT_TRAP_SIGSEGV */
-  1,              /* ECL_OPT_TRAP_SIGFPE */
-  1,              /* ECL_OPT_TRAP_SIGINT */
-  1,              /* ECL_OPT_TRAP_SIGILL */
-  1,              /* ECL_OPT_TRAP_SIGBUS */
-  1,              /* ECL_OPT_TRAP_SIGPIPE */
-  1,              /* ECL_OPT_TRAP_INTERRUPT_SIGNAL */
-  1,              /* ECL_OPT_SIGNAL_HANDLING_THREAD */
-  16,             /* ECL_OPT_SIGNAL_QUEUE_SIZE */
-  0,              /* ECL_OPT_BOOTED */
-  8192,           /* ECL_OPT_BIND_STACK_SIZE */
-  1024,           /* ECL_OPT_BIND_STACK_SAFETY_AREA */
-  2048,           /* ECL_OPT_FRAME_STACK_SIZE */
-  128,            /* ECL_OPT_FRAME_STACK_SAFETY_AREA */
-  32768,          /* ECL_OPT_LISP_STACK_SIZE */
-  128,            /* ECL_OPT_LISP_STACK_SAFETY_AREA */
-  ECL_DEFAULT_C_STACK_SIZE, /* ECL_OPT_C_STACK_SIZE */
-  4*sizeof(cl_index)*1024, /* ECL_OPT_C_STACK_SAFETY_AREA */
-  HEAP_SIZE_DEFAULT, /* ECL_OPT_HEAP_SIZE */
-  1024*1024,      /* ECL_OPT_HEAP_SAFETY_AREA */
-  0,              /* ECL_OPT_THREAD_INTERRUPT_SIGNAL */
-  1,              /* ECL_OPT_SET_GMP_MEMORY_FUNCTIONS */
-  1,              /* ECL_OPT_USE_SETMODE_ON_FILES */
-  0};
-
-#if !defined(GBC_BOEHM)
-static char stdin_buf[BUFSIZ];
-static char stdout_buf[BUFSIZ];
-#endif
-
-cl_fixnum
-ecl_get_option(int option)
-{
-  if (option >= ECL_OPT_LIMIT || option < 0) {
-    FEerror("Invalid boot option ~D", 1, ecl_make_fixnum(option));
-  }
-  return ecl_option_values[option];
-}
-
-void
-ecl_set_option(int option, cl_fixnum value)
-{
-  if (option > ECL_OPT_LIMIT || option < 0) {
-    FEerror("Invalid boot option ~D", 1, ecl_make_fixnum(option));
-  } else {
-    if (option < ECL_OPT_BOOTED &&
-        ecl_option_values[ECL_OPT_BOOTED]) {
-      FEerror("Cannot change option ~D while ECL is running",
-              1, ecl_make_fixnum(option));
-    } 
-    ecl_option_values[option] = value;
-  }
-}
 
 void
 ecl_init_bignum_registers(cl_env_ptr env)
