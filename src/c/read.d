@@ -1264,8 +1264,8 @@ patch_sharp(const cl_env_ptr the_env, cl_object x)
   } else {
     cl_object table = 
       cl__make_hash_table(@'eq', ecl_make_fixnum(20), /* size */
-                          cl_core.rehash_size,
-                          cl_core.rehash_threshold);
+                          ecl_ct_default_rehash_size,
+                          ecl_ct_default_rehash_threshold);
     do {
       cl_object pair = ECL_CONS_CAR(pairs);
       _ecl_sethash(pair, table, ECL_CONS_CDR(pair));
@@ -1846,8 +1846,8 @@ ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
     cl_object hash = readtable->readtable.hash;
     if (Null(hash)) {
       hash = cl__make_hash_table(@'eql', ecl_make_fixnum(128),
-                                 cl_core.rehash_size,
-                                 cl_core.rehash_threshold);
+                                 ecl_ct_default_rehash_size,
+                                 ecl_ct_default_rehash_threshold);
       readtable->readtable.hash = hash;
     }
     _ecl_sethash(ECL_CODE_CHAR(c), hash,
@@ -1924,8 +1924,8 @@ ecl_invalid_character_p(int c)
   c = ecl_char_code(chr);
   cat = Null(non_terminating_p)? cat_terminating : cat_non_terminating;
   table = cl__make_hash_table(@'eql', ecl_make_fixnum(128),
-                              cl_core.rehash_size,
-                              cl_core.rehash_threshold);
+                              ecl_ct_default_rehash_size,
+                              ecl_ct_default_rehash_threshold);
   ecl_readtable_set(readtable, c, cat, table);
   @(return ECL_T);
   @)

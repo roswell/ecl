@@ -76,7 +76,7 @@ ecl_sqrt_long_float(cl_object x)
 static cl_object
 ecl_sqrt_complex(cl_object x)
 {
-  return ecl_expt(x, cl_core.plus_half);
+  return ecl_expt(x, ecl_ct_plus_half);
 }
 
 #ifdef ECL_COMPLEX_FLOAT

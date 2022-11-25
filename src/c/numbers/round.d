@@ -87,12 +87,12 @@ ecl_round2_integer(const cl_env_ptr the_env, cl_object x, cl_object y, cl_object
   cl_object q1 = ecl_integer_divide(q->ratio.num, q->ratio.den);
   cl_object r = ecl_minus(q, q1);
   if (ecl_minusp(r)) {
-    int c = ecl_number_compare(cl_core.minus_half, r);
+    int c = ecl_number_compare(ecl_ct_minus_half, r);
     if (c > 0 || (c == 0 && ecl_oddp(q1))) {
       q1 = ecl_one_minus(q1);
     }
   } else {
-    int c = ecl_number_compare(r, cl_core.plus_half);
+    int c = ecl_number_compare(r, ecl_ct_plus_half);
     if (c > 0 || (c == 0 && ecl_oddp(q1))) {
       q1 = ecl_one_plus(q1);
     }
