@@ -130,28 +130,19 @@ ecl_set_option(int option, cl_fixnum value)
   }
 }
 
-void
-ecl_init_env(cl_env_ptr env)
+static void
+init_env_mp(cl_env_ptr env)
 {
-  env->c_env = NULL;
 #if defined(ECL_THREADS)
   env->cleanup = 0;
 #else
   env->own_process = ECL_NIL;
 #endif
-  env->string_pool = ECL_NIL;
-#if !defined(ECL_CMU_FORMAT)
-  env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
-#endif
-#ifdef HAVE_LIBFFI
-  env->ffi_args_limit = 0;
-  env->ffi_types = 0;
-  env->ffi_values = 0;
-  env->ffi_values_ptrs = 0;
-#endif
+}
 
-  env->method_cache = ecl_make_cache(64, 4096);
-  env->slot_cache = ecl_make_cache(3, 4096);
+static void
+init_env_int(cl_env_ptr env)
+{
   env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
   env->interrupt_struct->pending_interrupt = ECL_NIL;
 #ifdef ECL_THREADS
@@ -161,16 +152,49 @@ ecl_init_env(cl_env_ptr env)
     int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
     env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
   }
-
-  init_stacks(env);
-
-  ecl_init_bignum_registers(env);
-
+  env->fault_address = env;
   env->trap_fpe_bits = 0;
+}
 
+static void
+init_env_ffi(cl_env_ptr env)
+{
+#ifdef HAVE_LIBFFI
+  env->ffi_args_limit = 0;
+  env->ffi_types = 0;
+  env->ffi_values = 0;
+  env->ffi_values_ptrs = 0;
+#endif
+}
+
+static void
+init_env_aux(cl_env_ptr env)
+{
+  /* Reader */
+  env->string_pool = ECL_NIL;
   env->packages_to_be_created = ECL_NIL;
   env->packages_to_be_created_p = ECL_NIL;
-  env->fault_address = env;
+  /* Format (written in C) */
+#if !defined(ECL_CMU_FORMAT)
+  env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
+#endif
+  /* Bignum arithmetic */
+  ecl_init_bignum_registers(env);
+  /* Bytecodes compiler environment */
+  env->c_env = NULL;
+  /* CLOS caches */
+  env->method_cache = ecl_make_cache(64, 4096);
+  env->slot_cache = ecl_make_cache(3, 4096);
+}
+
+void
+ecl_init_env(cl_env_ptr env)
+{
+  init_env_mp(env);
+  init_env_int(env);
+  init_env_aux(env);
+  init_env_ffi(env);
+  init_stacks(env);
 }
 
 void
