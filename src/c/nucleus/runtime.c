@@ -2,9 +2,30 @@
 /* -- imports ------------------------------------------------------- */
 
 #include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 
-/* -- implementation------------------------------------------------- */
+/* -- constants ----------------------------------------------------- */
+
+const cl_object ecl_ct_Jan1st1970UT = ecl_make_fixnum(39052800);
+
+ecl_def_ct_base_string(ecl_ct_null_string,"",0,,const);
+
+ecl_def_ct_single_float(ecl_ct_default_rehash_size,1.5f,,const);
+ecl_def_ct_single_float(ecl_ct_default_rehash_threshold,0.75f,,const);
+
+ecl_def_ct_single_float(ecl_ct_singlefloat_zero,0,,const);
+ecl_def_ct_double_float(ecl_ct_doublefloat_zero,0,,const);
+ecl_def_ct_long_float(ecl_ct_longfloat_zero,0,,const);
+
+ecl_def_ct_single_float(ecl_ct_singlefloat_minus_zero,-0.0,,const);
+ecl_def_ct_double_float(ecl_ct_doublefloat_minus_zero,-0.0,,const);
+ecl_def_ct_long_float(ecl_ct_longfloat_minus_zero,-0.0l,,const);
+
+ecl_def_ct_ratio(ecl_ct_plus_half,ecl_make_fixnum(1),ecl_make_fixnum(2),,const);
+ecl_def_ct_ratio(ecl_ct_minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),,const);
+
+/* -- implementation ------------------------------------------------ */
 
 #if ECL_FIXNUM_BITS <= 32
 /* 1GB */
