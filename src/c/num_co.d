@@ -431,21 +431,21 @@ cl_imagpart(cl_object x)
     break;
   case t_singlefloat:
     if (signbit(ecl_single_float(x)))
-      x = cl_core.singlefloat_minus_zero;
+      x = ecl_ct_singlefloat_minus_zero;
     else
-      x = cl_core.singlefloat_zero;
+      x = ecl_ct_singlefloat_zero;
     break;
   case t_doublefloat:
     if (signbit(ecl_double_float(x)))
-      x = cl_core.doublefloat_minus_zero;
+      x = ecl_ct_doublefloat_minus_zero;
     else
-      x = cl_core.doublefloat_zero;
+      x = ecl_ct_doublefloat_zero;
     break;
   case t_longfloat:
     if (signbit(ecl_long_float(x)))
-      x = cl_core.longfloat_minus_zero;
+      x = ecl_ct_longfloat_minus_zero;
     else
-      x = cl_core.longfloat_zero;
+      x = ecl_ct_longfloat_zero;
     break;
   case t_complex:
     x = x->gencomplex.imag;

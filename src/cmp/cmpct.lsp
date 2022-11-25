@@ -54,12 +54,12 @@
    '(
      ;; Order is important: on platforms where 0.0 and -0.0 are the same
      ;; the last one is prioritized.
-     (#.(coerce 0 'single-float) "cl_core.singlefloat_zero")
-     (#.(coerce 0 'double-float) "cl_core.doublefloat_zero")
-     (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
-     (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
-     (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
-     (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
+     (#.(coerce 0 'single-float) "ecl_ct_singlefloat_zero")
+     (#.(coerce 0 'double-float) "ecl_ct_doublefloat_zero")
+     (#.(coerce -0.0 'single-float) "ecl_ct_singlefloat_minus_zero")
+     (#.(coerce -0.0 'double-float) "ecl_ct_doublefloat_minus_zero")
+     (#.(coerce 0 'long-float) "ecl_ct_longfloat_zero")
+     (#.(coerce -0.0 'long-float) "ecl_ct_longfloat_minus_zero")
 
      ;; We temporarily remove this constant, because the bytecodes compiler
      ;; does not know how to externalize it.

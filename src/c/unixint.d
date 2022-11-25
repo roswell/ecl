@@ -1473,8 +1473,8 @@ create_signal_code_constants()
         cl_object hash =
                 cl_core.known_signals =
                 cl__make_hash_table(@'eql', ecl_make_fixnum(128),
-                                    cl_core.rehash_size,
-                                    cl_core.rehash_threshold);
+                                    ecl_ct_default_rehash_size,
+                                    ecl_ct_default_rehash_threshold);
         int i;
         for (i = 0; known_signals[i].code >= 0; i++) {
                 add_one_signal(hash, known_signals[i].code,

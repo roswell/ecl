@@ -940,8 +940,8 @@ ecl_extend_hashtable(cl_object hashtable)
                          (weakness ECL_NIL)
                          (synchronized ECL_NIL)
                          (size ecl_make_fixnum(1024))
-                         (rehash_size cl_core.rehash_size)
-                         (rehash_threshold cl_core.rehash_threshold))
+                         (rehash_size ecl_ct_default_rehash_size)
+                         (rehash_threshold ecl_ct_default_rehash_threshold))
 @ {
     cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
     if (hash->hash.test == ecl_htt_generic) {
