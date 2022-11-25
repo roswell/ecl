@@ -229,8 +229,6 @@ cl_shutdown(void)
   ecl_set_option(ECL_OPT_BOOTED, -1);
 }
 
-ecl_def_ct_single_float(default_rehash_size,1.5f,static,const);
-ecl_def_ct_single_float(default_rehash_threshold,0.75f,static,const);
 ecl_def_ct_base_string(str_common_lisp,"COMMON-LISP",11,static,const);
 ecl_def_ct_base_string(str_common_lisp_user,"COMMON-LISP-USER",16,static,const);
 ecl_def_ct_base_string(str_cl,"CL",2,static,const);
@@ -253,7 +251,6 @@ ecl_def_ct_base_string(str_gray,"GRAY",4,static,const);
 #endif
 ecl_def_ct_base_string(str_star_dot_star,"*.*",3,static,const);
 ecl_def_ct_base_string(str_rel_star_dot_star,"./*.*",5,static,const);
-ecl_def_ct_base_string(str_empty,"",0,static,const);
 ecl_def_ct_base_string(str_G,"G",1,static,const);
 ecl_def_ct_base_string(str_T,"T",1,static,const);
 #ifdef ENABLE_DLOPEN
@@ -268,22 +265,6 @@ ecl_def_ct_base_string(str_lsp,"lsp",3,static,const);
 ecl_def_ct_base_string(str_LSP,"LSP",3,static,const);
 ecl_def_ct_base_string(str_lisp,"lisp",4,static,const);
 ecl_def_ct_base_string(str_NIL,"NIL",3,static,const);
-ecl_def_ct_base_string(str_slash,"/",1,static,const);
-
-ecl_def_ct_single_float(flt_zero,0,static,const);
-ecl_def_ct_single_float(flt_zero_neg,-0.0,static,const);
-ecl_def_ct_double_float(dbl_zero,0,static,const);
-ecl_def_ct_double_float(dbl_zero_neg,-0.0,static,const);
-ecl_def_ct_long_float(ldbl_zero,0,static,const);
-ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
-ecl_def_ct_ratio(plus_half,ecl_make_fixnum(1),ecl_make_fixnum(2),static,const);
-ecl_def_ct_ratio(minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),static,const);
-ecl_def_ct_single_float(flt_one,1,static,const);
-ecl_def_ct_single_float(flt_one_neg,-1,static,const);
-ecl_def_ct_single_float(flt_two,2,static,const);
-ecl_def_ct_complex(flt_imag_unit,&flt_zero_data,&flt_one_data,static,const);
-ecl_def_ct_complex(flt_imag_unit_neg,&flt_zero_data,&flt_one_neg_data,static,const);
-ecl_def_ct_complex(flt_imag_two,&flt_zero_data,&flt_two_data,static,const);
 
 struct cl_core_struct cl_core = {
   .packages = ECL_NIL,
@@ -312,25 +293,10 @@ struct cl_core_struct cl_core = {
   .dispatch_reader = ECL_NIL,
 
   .char_names = ECL_NIL,
-  .null_string = (cl_object)&str_empty_data,
 
-  .plus_half = (cl_object)&plus_half_data,
-  .minus_half = (cl_object)&minus_half_data,
-  .imag_unit = (cl_object)&flt_imag_unit_data,
-  .minus_imag_unit = (cl_object)&flt_imag_unit_neg_data,
-  .imag_two = (cl_object)&flt_imag_two_data,
-  .singlefloat_zero = (cl_object)&flt_zero_data,
-  .doublefloat_zero = (cl_object)&dbl_zero_data,
-  .singlefloat_minus_zero = (cl_object)&flt_zero_neg_data,
-  .doublefloat_minus_zero = (cl_object)&dbl_zero_neg_data,
-  .longfloat_zero = (cl_object)&ldbl_zero_data,
-  .longfloat_minus_zero = (cl_object)&ldbl_zero_neg_data,
-
-  .gensym_prefix = (cl_object)&str_G_data,
-  .gentemp_prefix = (cl_object)&str_T_data,
+  .gensym_prefix = ECL_NIL,
+  .gentemp_prefix = ECL_NIL,
   .gentemp_counter = ecl_make_fixnum(0),
-
-  .Jan1st1970UT = ECL_NIL,
 
   .system_properties = ECL_NIL,
   .setf_definitions = ECL_NIL,
@@ -338,9 +304,8 @@ struct cl_core_struct cl_core = {
 #ifdef ECL_THREADS
   .processes = ECL_NIL,
 #endif
-  /* LIBRARIES is an adjustable vector of objects. It behaves as
-     a vector of weak pointers thanks to the magic in
-     gbc.d/alloc_2.d */
+  /* LIBRARIES is an adjustable vector of objects. It behaves as a vector of
+     weak pointers thanks to the magic in the garbage collector. */
   .libraries = ECL_NIL,
 
   .max_heap_size = 0,
@@ -359,12 +324,7 @@ struct cl_core_struct cl_core = {
   .last_var_index = 0,
   .reused_indices = ECL_NIL,
 #endif
-  .slash = (cl_object)&str_slash_data,
-
   .compiler_dispatch = ECL_NIL,
-
-  .rehash_size = (cl_object)&default_rehash_size_data,
-  .rehash_threshold = (cl_object)&default_rehash_threshold_data,
 
   .known_signals = ECL_NIL
 };
@@ -462,6 +422,8 @@ cl_boot(int argc, char **argv)
 #else
   cl_core.path_max = MAXPATHLEN;
 #endif
+  cl_core.gensym_prefix = (cl_object)&str_G_data;
+  cl_core.gentemp_prefix = (cl_object)&str_T_data;
 
   env->packages_to_be_created = ECL_NIL;
 
@@ -571,8 +533,8 @@ cl_boot(int argc, char **argv)
    */
   cl_core.char_names = aux =
     cl__make_hash_table(@'equalp', ecl_make_fixnum(128), /* size */
-                        cl_core.rehash_size,
-                        cl_core.rehash_threshold);
+                        ecl_ct_default_rehash_size,
+                        ecl_ct_default_rehash_threshold);
   for (i = 0; char_names[i].elt.self; i++) {
     cl_object name = (cl_object)(char_names + i);
     cl_object code = ecl_make_fixnum(i);
@@ -598,12 +560,12 @@ cl_boot(int argc, char **argv)
    */
   cl_core.system_properties =
     cl__make_hash_table(@'equal', ecl_make_fixnum(1024), /* size */
-                        cl_core.rehash_size,
-                        cl_core.rehash_threshold);
+                        ecl_ct_default_rehash_size,
+                        ecl_ct_default_rehash_threshold);
   cl_core.setf_definitions =
     cl__make_hash_table(@'eq', ecl_make_fixnum(256), /* size */
-                        cl_core.rehash_size,
-                        cl_core.rehash_threshold);
+                        ecl_ct_default_rehash_size,
+                        ecl_ct_default_rehash_threshold);
 
   ECL_SET(@'*random-state*', ecl_make_random_state(ECL_T));
 
@@ -668,8 +630,8 @@ cl_boot(int argc, char **argv)
    */
   ECL_SET(@'si::*class-name-hash-table*',
           cl__make_hash_table(@'eq', ecl_make_fixnum(1024), /* size */
-                              cl_core.rehash_size,
-                              cl_core.rehash_threshold));
+                              ecl_ct_default_rehash_size,
+                              ecl_ct_default_rehash_threshold));
 
   /*
    * Features.
@@ -798,7 +760,7 @@ si_setenv(cl_object var, cl_object value)
     unsetenv((char*)var->base_string.self);
 #else
 #if defined(ECL_MS_WINDOWS_HOST)
-    si_setenv(var, cl_core.null_string);
+    si_setenv(var, ecl_ct_null_string);
 #else
     putenv((char*)var->base_string.self);
 #endif
