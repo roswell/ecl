@@ -198,7 +198,6 @@ struct cl_core_struct {
         cl_object error_output;
         cl_object standard_readtable;
         cl_object dispatch_reader;
-        cl_object default_dispatch_macro;
 
         cl_object char_names;
         cl_object null_string;
