@@ -259,6 +259,9 @@ extern ECL_API const cl_object ecl_ct_longfloat_minus_zero;
 extern ECL_API const cl_object ecl_ct_plus_half;
 extern ECL_API const cl_object ecl_ct_minus_half;
 
+extern ECL_API const cl_object ecl_ct_protect_tag;
+extern ECL_API const cl_object ecl_ct_dummy_tag;
+
 /* alloc.c / alloc_2.c */
 
 extern ECL_API cl_object ecl_alloc_object(cl_type t);

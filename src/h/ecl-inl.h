@@ -91,35 +91,50 @@
 #define ecl_cast_ptr(type,n) ((type)(n))
 #endif
 
+#ifdef ECL_THREADS
+#define ecl_def_ct_token(name,stype,sname,value,static,const)           \
+        static const struct ecl_symbol name ## _data = {                \
+                (int8_t)t_symbol, 0, stype, 0,                          \
+                value, ECL_NIL, ECL_NIL, sname, ECL_NIL, ECL_NIL,       \
+                ECL_MISSING_SPECIAL_BINDING };                          \
+        static const cl_object name = (cl_object)(& name ## _data)
+#else
+#define ecl_def_ct_token(name,stype,sname,value,static,const)           \
+        static const struct ecl_symbol name ## _data = {                \
+                (int8_t)t_symbol, 0, stype, 0,                          \
+                value, ECL_NIL, ECL_NIL, sname, ECL_NIL, ECL_NIL };     \
+        static const cl_object name = (cl_object)(& name ## _data)
+#endif
+
 #define ecl_def_string_array(name,static,const)                         \
         static const union {                                            \
                 struct ecl_base_string elt;                             \
                 cl_fixnum padding[(sizeof(struct ecl_base_string)+3)/4*4]; \
         } name[]
 
-#define ecl_def_string_array_elt(chars) { {                      \
-                (int8_t)t_base_string, 0, ecl_aet_bc, 0,            \
-                        ECL_NIL, (cl_index)(sizeof(chars))-1,      \
-                        (cl_index)(sizeof(chars))-1,            \
+#define ecl_def_string_array_elt(chars) { {                         \
+                        (int8_t)t_base_string, 0, ecl_aet_bc, 0,    \
+                        ECL_NIL, (cl_index)(sizeof(chars))-1,       \
+                        (cl_index)(sizeof(chars))-1,                \
                         (ecl_base_char*)(chars) } }
 
-#define ecl_def_ct_base_string(name,chars,len,static,const)     \
-        static const struct ecl_base_string name ## _data = {    \
+#define ecl_def_ct_base_string(name,chars,len,static,const)         \
+        static const struct ecl_base_string name ## _data = {       \
                 (int8_t)t_base_string, 0, ecl_aet_bc, 0,            \
-                ECL_NIL, (cl_index)(len), (cl_index)(len),         \
-                (ecl_base_char*)(chars) };                      \
+                ECL_NIL, (cl_index)(len), (cl_index)(len),          \
+                (ecl_base_char*)(chars) };                          \
         static const cl_object name = (cl_object)(& name ## _data)
 
-#define ecl_def_ct_single_float(name,f,static,const)            \
-        static const struct ecl_singlefloat name ## _data = {    \
-                (int8_t)t_singlefloat, 0, 0, 0,                 \
-                (float)(f) };                                   \
+#define ecl_def_ct_single_float(name,f,static,const)                    \
+        static const struct ecl_singlefloat name ## _data = {           \
+                (int8_t)t_singlefloat, 0, 0, 0,                         \
+                (float)(f) };                                           \
         static const cl_object name = (cl_object)(& name ## _data)
 
-#define ecl_def_ct_double_float(name,f,static,const)            \
-        static const struct ecl_doublefloat name ## _data = {    \
-                (int8_t)t_doublefloat, 0, 0, 0,                 \
-                (double)(f) };                                  \
+#define ecl_def_ct_double_float(name,f,static,const)                    \
+        static const struct ecl_doublefloat name ## _data = {           \
+                (int8_t)t_doublefloat, 0, 0, 0,                         \
+                (double)(f) };                                          \
         static const cl_object name = (cl_object)(& name ## _data)
 
 #define ecl_def_ct_long_float(name,f,static,const)                      \
