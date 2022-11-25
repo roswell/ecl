@@ -398,6 +398,13 @@ extern void ecl_cs_set_org(cl_env_ptr env);
 #ifdef ECL_THREADS
 extern ECL_API cl_object mp_suspend_loop();
 extern ECL_API cl_object mp_break_suspend_loop();
+
+# ifdef ECL_WINDOWS_THREADS
+#  define ecl_thread_exit() ExitThread(0);
+# else
+#  define ecl_thread_exit() pthread_exit(NULL);
+# endif  /* ECL_WINDOWS_THREADS */
+
 #endif
 
 /* time.d */
