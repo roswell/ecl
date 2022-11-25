@@ -499,11 +499,7 @@ cl_boot(int argc, char **argv)
   init_alloc();
   GC_disable();
   env = _ecl_alloc_env(0);
-#ifdef ECL_THREADS
   init_threads(env);
-#else
-  cl_env_p = env;
-#endif
 
   /*
    * 1) Initialize symbols and packages

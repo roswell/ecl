@@ -17,8 +17,6 @@
 #include <time.h>
 #include <signal.h>
 #include <string.h>
-#define ECL_INCLUDE_MATH_H
-#include <ecl/ecl.h>
 #ifdef ECL_WINDOWS_THREADS
 # include <windows.h>
 #else
@@ -30,101 +28,76 @@
 #ifdef HAVE_SCHED_H
 # include <sched.h>
 #endif
+
+#define ECL_INCLUDE_MATH_H
+#include <ecl/ecl.h>
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 
-#ifdef ECL_WINDOWS_THREADS
-DWORD cl_env_key;
-#else
-static pthread_key_t cl_env_key;
-#endif /* ECL_WINDOWS_THREADS */
+/* -- Macros -------------------------------------------------------- */
 
-extern void ecl_init_env(struct cl_env_struct *env);
+#ifdef ECL_WINDOWS_THREAD
+# define ecl_process_key_t DWORD
+# define ecl_process_key_create(key) key = TlsAlloc()
+# define ecl_process_get_tls(key) TlsGetValue(key)
+# define ecl_process_set_tls(key,val) (TlsSetValue(key,val)!=0)
+# define ecl_process_eq(t1, t2) (GetThreadId(t1) == GetThreadId(t2))
+# define ecl_set_process_self(var)              \
+  {                                             \
+    HANDLE aux = GetCurrentThread();            \
+    DuplicateHandle(GetCurrentProcess(),        \
+                    aux,                        \
+                    GetCurrentProcess(),        \
+                    &var,                       \
+                    0,                          \
+                    FALSE,                      \
+                    DUPLICATE_SAME_ACCESS);     \
+  }
+#else
+# define ecl_process_key_t static pthread_key_t
+# define ecl_process_key_create(key) pthread_key_create(&key, NULL)
+# define ecl_process_get_tls(key) pthread_getspecific(key)
+# define ecl_process_set_tls(key,val) (pthread_setspecific(key,val)==0)
+# define ecl_process_eq(t1, t2) (t1 == t2)
+# define ecl_set_process_self(var) (var = pthread_self())
+#endif  /* ECL_WINDOWS_THREAD */
+
+/* -- Core ---------------------------------------------------------- */
+
+/* Accessing a thread-local variable representing the environment. */
+
+ecl_process_key_t cl_env_key;
 
 cl_env_ptr
 ecl_process_env_unsafe(void)
 {
-#ifdef ECL_WINDOWS_THREADS
-  return TlsGetValue(cl_env_key);
-#else
-  return pthread_getspecific(cl_env_key);
-#endif
+  return ecl_process_get_tls(cl_env_key);
 }
 
 cl_env_ptr
 ecl_process_env(void)
 {
-#ifdef ECL_WINDOWS_THREADS
-  return TlsGetValue(cl_env_key);
-#else
-  struct cl_env_struct *rv = pthread_getspecific(cl_env_key);
-  if (rv)
-    return rv;
-  ecl_thread_internal_error("pthread_getspecific() failed.");
-  return NULL;
-#endif
+  cl_env_ptr rv = ecl_process_get_tls(cl_env_key);
+  if(!rv) {
+    ecl_thread_internal_error("pthread_getspecific() failed.");
+  }
+  return rv;
 }
 
 static void
 ecl_set_process_env(cl_env_ptr env)
 {
-#ifdef ECL_WINDOWS_THREADS
-  TlsSetValue(cl_env_key, env);
-#else
-  if (pthread_setspecific(cl_env_key, env)) {
+  if(!ecl_process_set_tls(cl_env_key, env)) {
     ecl_thread_internal_error("pthread_setspecific() failed.");
   }
-#endif
 }
 
-cl_object
-mp_current_process(void)
-{
-  return ecl_process_env()->own_process;
-}
-
-/*----------------------------------------------------------------------
- * PROCESS LIST
- */
-
-static void
-extend_process_vector()
-{
-  cl_object v = cl_core.processes;
-  cl_index new_size = v->vector.dim + v->vector.dim/2;
-  cl_env_ptr the_env = ecl_process_env();
-  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-    cl_object other = cl_core.processes;
-    if (new_size > other->vector.dim) {
-      cl_object new = si_make_vector(ECL_T,
-                                     ecl_make_fixnum(new_size),
-                                     ecl_make_fixnum(other->vector.fillp),
-                                     ECL_NIL, ECL_NIL, ECL_NIL);
-      ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
-      cl_core.processes = new;
-    }
-  } ECL_WITH_NATIVE_LOCK_END;
-}
+/* Managing the collection of processes. */
 
 static void
 ecl_list_process(cl_object process)
 {
-  cl_env_ptr the_env = ecl_process_env();
-  bool ok = 0;
-  do {
-    ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-      cl_object vector = cl_core.processes;
-      cl_index size = vector->vector.dim;
-      cl_index ndx = vector->vector.fillp;
-      if (ndx < size) {
-        vector->vector.self.t[ndx++] = process;
-        vector->vector.fillp = ndx;
-        ok = 1;
-      }
-    } ECL_WITH_NATIVE_LOCK_END;
-    if (ok) break;
-    extend_process_vector();
-  } while (1);
+  ecl_atomic_push(&cl_core.processes, process);
 }
 
 /* Must be called with disabled interrupts to prevent race conditions
@@ -133,42 +106,43 @@ static void
 ecl_unlist_process(cl_object process)
 {
   ecl_mutex_lock(&cl_core.processes_lock);
-  cl_object vector = cl_core.processes;
-  cl_index i;
-  for (i = 0; i < vector->vector.fillp; i++) {
-    if (vector->vector.self.t[i] == process) {
-      vector->vector.fillp--;
-      do {
-        vector->vector.self.t[i] =
-          vector->vector.self.t[i+1];
-      } while (++i < vector->vector.fillp);
-      break;
-    }
-  }
+  cl_core.processes = ecl_delete_eq(process, cl_core.processes);
   ecl_mutex_unlock(&cl_core.processes_lock);
 }
 
 static cl_object
 ecl_process_list()
 {
-  cl_env_ptr the_env = ecl_process_env();
-  cl_object output = ECL_NIL;
-  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-    cl_object vector = cl_core.processes;
-    cl_object *data = vector->vector.self.t;
-    cl_index i;
-    for (i = 0; i < vector->vector.fillp; i++) {
-      cl_object p = data[i];
-      if (p != ECL_NIL)
-        output = ecl_cons(p, output);
-    }
-  } ECL_WITH_NATIVE_LOCK_END;
-  return output;
+  cl_object result;
+  ecl_mutex_lock(&cl_core.processes_lock);
+  result = cl_copy_list(cl_core.processes);
+  ecl_mutex_unlock(&cl_core.processes_lock);
+  return result;
 }
 
-/*----------------------------------------------------------------------
- * THREAD OBJECT
- */
+/* Initialiation */
+
+static void
+init_process(void)
+{
+  ecl_process_key_create(cl_env_key);
+  ecl_mutex_init(&cl_core.processes_lock, 1);
+  ecl_mutex_init(&cl_core.global_lock, 1);
+  ecl_mutex_init(&cl_core.error_lock, 1);
+  ecl_rwlock_init(&cl_core.global_env_lock);
+}
+
+/* -- Environment --------------------------------------------------- */
+
+extern void ecl_init_env(struct cl_env_struct *env);
+
+cl_object
+mp_current_process(void)
+{
+  return ecl_process_env()->own_process;
+}
+
+/* -- Thread object ------------------------------------------------- */
 
 static void
 assert_type_process(cl_object o)
@@ -223,11 +197,11 @@ thread_cleanup(void *aux)
 }
 
 #ifdef ECL_WINDOWS_THREADS
-static DWORD WINAPI thread_entry_point(void *arg)
+static DWORD WINAPI
 #else
-  static void *
-  thread_entry_point(void *arg)
+static void *
 #endif
+thread_entry_point(void *arg)
 {
   cl_object process = (cl_object)arg;
   cl_env_ptr env = process->process.env;
@@ -333,27 +307,11 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 {
   struct cl_env_struct env_aux[1];
   cl_object process;
-  pthread_t current;
+  ecl_thread_t current;
   cl_env_ptr env;
   int registered;
   struct GC_stack_base stack;
-#ifdef ECL_WINDOWS_THREADS
-  {
-    HANDLE aux = GetCurrentThread();
-    if ( !DuplicateHandle(GetCurrentProcess(),
-                          aux,
-                          GetCurrentProcess(),
-                          &current,
-                          0,
-                          FALSE,
-                          DUPLICATE_SAME_ACCESS) )
-    {
-	   return 0;
-    }
-  }
-#else
-  current = pthread_self();
-#endif
+  ecl_set_process_self(current);
 #ifdef GBC_BOEHM
   GC_get_stack_base(&stack);
   switch (GC_register_my_thread(&stack)) {
@@ -371,19 +329,12 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 #endif
   {
     cl_object processes = cl_core.processes;
-    cl_index i, size;
-    for (i = 0, size = processes->vector.fillp; i < size; i++) {
-      cl_object p = processes->vector.self.t[i];
-      if (!Null(p)
-          &&
-#ifdef ECL_WINDOWS_THREADS
-          GetThreadId(p->process.thread) == GetThreadId(current)
-#else
-	      p->process.thread == current
-#endif
-	      )
+    loop_for_on_unsafe(processes) {
+      cl_object p = ECL_CONS_CAR(processes);
+      if (!Null(p) && ecl_process_eq(p->process.thread, current)) {
         return 0;
-    }
+      }
+    } end_loop_for_on_unsafe (processes);
   }
   /* We need a fake env to allow for interrupts blocking and to set up
    * frame stacks or other stuff which may be needed by alloc_process
@@ -790,41 +741,16 @@ mp_restore_signals(cl_object sigmask)
 #endif
 }
 
-/*----------------------------------------------------------------------
- * INITIALIZATION
- */
+/* -- Initialization ------------------------------------------------ */
 
 void
 init_threads(cl_env_ptr env)
 {
   cl_object process;
-  pthread_t main_thread;
-
-  cl_core.processes = OBJNULL;
-
-  /* We have to set the environment before any allocation takes place,
-   * so that the interrupt handling code works. */
-#if defined(ECL_WINDOWS_THREADS)
-  cl_env_key = TlsAlloc();
-#else
-  pthread_key_create(&cl_env_key, NULL);
-#endif
+  ecl_thread_t main_thread;
+  init_process();
   ecl_set_process_env(env);
-
-#ifdef ECL_WINDOWS_THREADS
-  {
-    HANDLE aux = GetCurrentThread();
-    DuplicateHandle(GetCurrentProcess(),
-                    aux,
-                    GetCurrentProcess(),
-                    &main_thread,
-                    0,
-                    FALSE,
-                    DUPLICATE_SAME_ACCESS);
-  }
-#else
-  main_thread = pthread_self();
-#endif
+  ecl_set_process_self(main_thread);
   process = ecl_alloc_object(t_process);
   process->process.phase = ECL_PROCESS_ACTIVE;
   process->process.name = @'si::top-level';
@@ -837,18 +763,5 @@ init_threads(cl_env_ptr env)
   ecl_cond_var_init(&process->process.exit_barrier);
 
   env->own_process = process;
-
-  {
-    cl_object v = si_make_vector(ECL_T, /* Element type */
-                                 ecl_make_fixnum(256), /* Size */
-                                 ecl_make_fixnum(0), /* fill pointer */
-                                 ECL_NIL, ECL_NIL, ECL_NIL);
-    v->vector.self.t[0] = process;
-    v->vector.fillp = 1;
-    cl_core.processes = v;
-    ecl_mutex_init(&cl_core.processes_lock, 1);
-    ecl_mutex_init(&cl_core.global_lock, 1);
-    ecl_mutex_init(&cl_core.error_lock, 1);
-    ecl_rwlock_init(&cl_core.global_env_lock);
-  }
+  ecl_list_process(process);
 }
