@@ -675,8 +675,7 @@ void init_type_info (void)
     to_bitmap(&o, &(o.process.initial_bindings)) |
     to_bitmap(&o, &(o.process.parent)) |
     to_bitmap(&o, &(o.process.exit_values)) |
-    to_bitmap(&o, &(o.process.woken_up)) |
-    to_bitmap(&o, &(o.process.queue_record));
+    to_bitmap(&o, &(o.process.woken_up));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
     to_bitmap(&o, &(o.lock.owner));

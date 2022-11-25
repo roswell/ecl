@@ -320,7 +320,6 @@ alloc_process(cl_object name, cl_object initial_bindings)
   }
   process->process.initial_bindings = array;
   process->process.woken_up = ECL_NIL;
-  process->process.queue_record = ecl_list1(process);
   ecl_disable_interrupts_env(env);
   ecl_mutex_init(&process->process.start_stop_lock, TRUE);
   ecl_cond_var_init(&process->process.exit_barrier);
@@ -834,7 +833,6 @@ init_threads(cl_env_ptr env)
   process->process.thread = main_thread;
   process->process.env = env;
   process->process.woken_up = ECL_NIL;
-  process->process.queue_record = ecl_list1(process);
   ecl_mutex_init(&process->process.start_stop_lock, TRUE);
   ecl_cond_var_init(&process->process.exit_barrier);
 

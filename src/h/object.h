@@ -972,7 +972,6 @@ struct ecl_process {
         cl_object parent;
         cl_object exit_values;
         cl_object woken_up;
-        cl_object queue_record;
         ecl_mutex_t start_stop_lock; /* phase is updated only when we hold this lock */
         ecl_cond_var_t exit_barrier; /* process-join waits on this barrier */
         cl_index phase;
