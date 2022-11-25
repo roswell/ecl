@@ -95,43 +95,9 @@ ecl_set_process_env(cl_env_ptr env)
 /* Managing the collection of processes. */
 
 static void
-extend_process_vector()
-{
-  cl_object v = cl_core.processes;
-  cl_index new_size = v->vector.dim + v->vector.dim/2;
-  cl_env_ptr the_env = ecl_process_env();
-  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-    cl_object other = cl_core.processes;
-    if (new_size > other->vector.dim) {
-      cl_object new = si_make_vector(ECL_T,
-                                     ecl_make_fixnum(new_size),
-                                     ecl_make_fixnum(other->vector.fillp),
-                                     ECL_NIL, ECL_NIL, ECL_NIL);
-      ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
-      cl_core.processes = new;
-    }
-  } ECL_WITH_NATIVE_LOCK_END;
-}
-
-static void
 ecl_list_process(cl_object process)
 {
-  cl_env_ptr the_env = ecl_process_env();
-  bool ok = 0;
-  do {
-    ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-      cl_object vector = cl_core.processes;
-      cl_index size = vector->vector.dim;
-      cl_index ndx = vector->vector.fillp;
-      if (ndx < size) {
-        vector->vector.self.t[ndx++] = process;
-        vector->vector.fillp = ndx;
-        ok = 1;
-      }
-    } ECL_WITH_NATIVE_LOCK_END;
-    if (ok) break;
-    extend_process_vector();
-  } while (1);
+  ecl_atomic_push(&cl_core.processes, process);
 }
 
 /* Must be called with disabled interrupts to prevent race conditions
@@ -140,37 +106,18 @@ static void
 ecl_unlist_process(cl_object process)
 {
   ecl_mutex_lock(&cl_core.processes_lock);
-  cl_object vector = cl_core.processes;
-  cl_index i;
-  for (i = 0; i < vector->vector.fillp; i++) {
-    if (vector->vector.self.t[i] == process) {
-      vector->vector.fillp--;
-      do {
-        vector->vector.self.t[i] =
-          vector->vector.self.t[i+1];
-      } while (++i < vector->vector.fillp);
-      break;
-    }
-  }
+  cl_core.processes = ecl_delete_eq(process, cl_core.processes);
   ecl_mutex_unlock(&cl_core.processes_lock);
 }
 
 static cl_object
 ecl_process_list()
 {
-  cl_env_ptr the_env = ecl_process_env();
-  cl_object output = ECL_NIL;
-  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-    cl_object vector = cl_core.processes;
-    cl_object *data = vector->vector.self.t;
-    cl_index i;
-    for (i = 0; i < vector->vector.fillp; i++) {
-      cl_object p = data[i];
-      if (p != ECL_NIL)
-        output = ecl_cons(p, output);
-    }
-  } ECL_WITH_NATIVE_LOCK_END;
-  return output;
+  cl_object result;
+  ecl_mutex_lock(&cl_core.processes_lock);
+  result = cl_copy_list(cl_core.processes);
+  ecl_mutex_unlock(&cl_core.processes_lock);
+  return result;
 }
 
 /* Initialiation */
@@ -382,13 +329,12 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 #endif
   {
     cl_object processes = cl_core.processes;
-    cl_index i, size;
-    for (i = 0, size = processes->vector.fillp; i < size; i++) {
-      cl_object p = processes->vector.self.t[i];
+    loop_for_on_unsafe(processes) {
+      cl_object p = ECL_CONS_CAR(processes);
       if (!Null(p) && ecl_process_eq(p->process.thread, current)) {
-          return 0;
+        return 0;
       }
-    }
+    } end_loop_for_on_unsafe (processes);
   }
   /* We need a fake env to allow for interrupts blocking and to set up
    * frame stacks or other stuff which may be needed by alloc_process
@@ -819,13 +765,5 @@ init_threads(cl_env_ptr env)
   ecl_cond_var_init(&process->process.exit_barrier);
 
   env->own_process = process;
-  {
-    cl_object v = si_make_vector(ECL_T, /* Element type */
-                                 ecl_make_fixnum(256), /* Size */
-                                 ecl_make_fixnum(0), /* fill pointer */
-                                 ECL_NIL, ECL_NIL, ECL_NIL);
-    v->vector.self.t[0] = process;
-    v->vector.fillp = 1;
-    cl_core.processes = v;
-  }
+  ecl_list_process(process);
 }
