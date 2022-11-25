@@ -632,8 +632,9 @@ mp_process_active_p(cl_object process)
 cl_object
 mp_process_whostate(cl_object process)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   assert_type_process(process);
-  @(return (cl_core.null_string));
+  ecl_return1(the_env, ecl_ct_null_string);
 }
 
 cl_object

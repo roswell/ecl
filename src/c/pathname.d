@@ -461,7 +461,7 @@ parse_word(cl_object s, delim_fn delim, int flags, cl_index start,
   case 0:
     if (flags & WORD_EMPTY_IS_NIL)
       return ECL_NIL;
-    return cl_core.null_string;
+    return ecl_ct_null_string;
   case 1:
     if (ecl_char(s,j) == '*')
       return @':wild';
@@ -505,7 +505,7 @@ parse_directories(cl_object s, int flags, cl_index start, cl_index end,
     cl_object part = parse_word(s, delim, flags, j, end, &i);
     if (part == @':error' || part == ECL_NIL)
       break;
-    if (part == cl_core.null_string) {  /* "/", ";" */
+    if (part == ecl_ct_null_string) {  /* "/", ";" */
       if (j != start) {
         if (flags & WORD_LOGICAL)
           return @':error';
@@ -1330,7 +1330,7 @@ cl_host_namestring(cl_object pname)
   pname = cl_pathname(pname);
   pname = pname->pathname.host;
   if (Null(pname) || pname == @':wild')
-    pname = cl_core.null_string;
+    pname = ecl_ct_null_string;
   @(return pname);
 }
 

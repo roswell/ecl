@@ -501,9 +501,9 @@ ecl_make_single_float(float f)
   if (f == (float)0.0) {
 #if defined(ECL_SIGNED_ZERO)
     if (signbit(f))
-      return cl_core.singlefloat_minus_zero;
+      return ecl_ct_singlefloat_minus_zero;
 #endif
-    return cl_core.singlefloat_zero;
+    return ecl_ct_singlefloat_zero;
   }
   x = ecl_alloc_object(t_singlefloat);
   ecl_single_float(x) = f;
@@ -519,9 +519,9 @@ ecl_make_double_float(double f)
   if (f == (double)0.0) {
 #if defined(ECL_SIGNED_ZERO)
     if (signbit(f))
-      return cl_core.doublefloat_minus_zero;
+      return ecl_ct_doublefloat_minus_zero;
 #endif
-    return cl_core.doublefloat_zero;
+    return ecl_ct_doublefloat_zero;
   }
   x = ecl_alloc_object(t_doublefloat);
   ecl_double_float(x) = f;
@@ -537,9 +537,9 @@ ecl_make_long_float(long double f)
   if (f == (long double)0.0) {
 #if defined(ECL_SIGNED_ZERO)
     if (signbit(f))
-      return cl_core.longfloat_minus_zero;
+      return ecl_ct_longfloat_minus_zero;
 #endif
-    return cl_core.longfloat_zero;
+    return ecl_ct_longfloat_zero;
   }
   x = ecl_alloc_object(t_longfloat);
   x->longfloat.value = f;
