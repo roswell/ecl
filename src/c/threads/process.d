@@ -112,7 +112,7 @@ ecl_set_process_env(cl_env_ptr env)
 static void
 ecl_list_process(cl_object process)
 {
-  ecl_atomic_push(&cl_core.processes, process);
+  ecl_atomic_push(&ecl_core.processes, process);
 }
 
 /* Must be called with disabled interrupts to prevent race conditions
@@ -120,18 +120,18 @@ ecl_list_process(cl_object process)
 static void
 ecl_unlist_process(cl_object process)
 {
-  ecl_mutex_lock(&cl_core.processes_lock);
-  cl_core.processes = ecl_delete_eq(process, cl_core.processes);
-  ecl_mutex_unlock(&cl_core.processes_lock);
+  ecl_mutex_lock(&ecl_core.processes_lock);
+  ecl_core.processes = ecl_delete_eq(process, ecl_core.processes);
+  ecl_mutex_unlock(&ecl_core.processes_lock);
 }
 
 static cl_object
 ecl_process_list()
 {
   cl_object result;
-  ecl_mutex_lock(&cl_core.processes_lock);
-  result = cl_copy_list(cl_core.processes);
-  ecl_mutex_unlock(&cl_core.processes_lock);
+  ecl_mutex_lock(&ecl_core.processes_lock);
+  result = cl_copy_list(ecl_core.processes);
+  ecl_mutex_unlock(&ecl_core.processes_lock);
   return result;
 }
 
@@ -141,10 +141,10 @@ static void
 init_process(void)
 {
   ecl_process_key_create(cl_env_key);
-  ecl_mutex_init(&cl_core.processes_lock, 1);
-  ecl_mutex_init(&cl_core.global_lock, 1);
-  ecl_mutex_init(&cl_core.error_lock, 1);
-  ecl_rwlock_init(&cl_core.global_env_lock);
+  ecl_mutex_init(&ecl_core.processes_lock, 1);
+  ecl_mutex_init(&ecl_core.global_lock, 1);
+  ecl_mutex_init(&ecl_core.error_lock, 1);
+  ecl_rwlock_init(&ecl_core.global_env_lock);
 }
 
 /* -- Environment --------------------------------------------------- */
@@ -343,7 +343,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   }
 #endif
   {
-    cl_object processes = cl_core.processes;
+    cl_object processes = ecl_core.processes;
     loop_for_on_unsafe(processes) {
       cl_object p = ECL_CONS_CAR(processes);
       if (!Null(p) && ecl_process_eq(p->process.thread, current)) {

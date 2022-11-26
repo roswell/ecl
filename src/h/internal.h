@@ -578,8 +578,8 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 #include <ecl/threads.h>
 
 #ifdef ECL_THREADS
-# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)                    \
-        ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.global_lock)
+# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)                            \
+        ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &ecl_core.global_lock)
 # define ECL_WITH_GLOBAL_LOCK_END               \
         ECL_WITH_NATIVE_LOCK_END
 # define ECL_WITH_LOCK_BEGIN(the_env,lock) {             \
@@ -604,21 +604,21 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
         ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
                 ecl_mutex_unlock(__ecl_the_lock);        \
         } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {      \
-        const cl_env_ptr __ecl_pack_env = the_env;        \
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {                    \
+        const cl_env_ptr __ecl_pack_env = the_env;                      \
         ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
-        ecl_rwlock_lock_read(&cl_core.global_env_lock);
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_END                   \
-        ecl_rwlock_unlock_read(&cl_core.global_env_lock); \
-        ecl_bds_unwind1(__ecl_pack_env);                  \
+        ecl_rwlock_lock_read(&ecl_core.global_env_lock);
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_END                    \
+        ecl_rwlock_unlock_read(&ecl_core.global_env_lock); \
+        ecl_bds_unwind1(__ecl_pack_env);                   \
         ecl_check_pending_interrupts(__ecl_pack_env); }
 # define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {      \
         const cl_env_ptr __ecl_pack_env = the_env;        \
         ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
-        ecl_rwlock_lock_write(&cl_core.global_env_lock);
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_END                    \
-        ecl_rwlock_unlock_write(&cl_core.global_env_lock); \
-        ecl_bds_unwind1(__ecl_pack_env);                   \
+        ecl_rwlock_lock_write(&ecl_core.global_env_lock);
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_END                     \
+        ecl_rwlock_unlock_write(&ecl_core.global_env_lock); \
+        ecl_bds_unwind1(__ecl_pack_env);                    \
         ecl_check_pending_interrupts(__ecl_pack_env); }
 #else
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
