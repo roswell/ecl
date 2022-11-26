@@ -15,26 +15,13 @@
 /******************************** IMPORTS *****************************/
 
 #include <ecl/ecl.h>
-#include <limits.h>
-#if defined(ECL_MS_WINDOWS_HOST)
-# include <windows.h>
-# include <shellapi.h>
-# define MAXPATHLEN 512
-#endif
-#ifndef MAXPATHLEN
-# ifdef PATH_MAX
-#   define MAXPATHLEN PATH_MAX
-# else
-#   define NO_PATH_MAX
-#   include <unistd.h>
-# endif
-#endif
 #ifdef ECL_USE_MPROTECT
 # include <sys/mman.h>
 # ifndef MAP_FAILED
 #  define MAP_FAILED -1
 # endif
 #endif
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -160,7 +147,7 @@ _ecl_alloc_env(cl_env_ptr parent)
    * Note that at this point we are not allocating any other memory
    * which is stored via a pointer in the environment. If we would do
    * that, an unlucky interrupt by the gc before the allocated
-   * environment is registered in cl_core.processes could lead to
+   * environment is registered in ecl_core.processes could lead to
    * memory being freed because the gc is not aware of the pointer to
    * the allocated memory in the environment.
    */
@@ -189,7 +176,7 @@ _ecl_alloc_env(cl_env_ptr parent)
 # endif
 #endif
   {
-    size_t bytes = cl_core.default_sigmask_bytes;
+    size_t bytes = ecl_core.default_sigmask_bytes;
     if (bytes == 0) {
       output->default_sigmask = 0;
     } else if (parent) {
@@ -198,7 +185,7 @@ _ecl_alloc_env(cl_env_ptr parent)
              parent->default_sigmask,
              bytes);
     } else {
-      output->default_sigmask = cl_core.default_sigmask;
+      output->default_sigmask = ecl_core.default_sigmask;
     }
   }
   output->method_cache = output->slot_cache = NULL;
@@ -285,9 +272,6 @@ struct cl_core_struct cl_core = {
   .c_package = ECL_NIL,
   .ffi_package = ECL_NIL,
 
-  .pathname_translations = ECL_NIL,
-  .library_pathname = ECL_NIL,
-
   .terminal_io = ECL_NIL,
   .null_stream = ECL_NIL,
   .standard_input = ECL_NIL,
@@ -305,32 +289,7 @@ struct cl_core_struct cl_core = {
   .system_properties = ECL_NIL,
   .setf_definitions = ECL_NIL,
 
-#ifdef ECL_THREADS
-  .processes = ECL_NIL,
-#endif
-  /* LIBRARIES is an adjustable vector of objects. It behaves as a vector of
-     weak pointers thanks to the magic in the garbage collector. */
-  .libraries = ECL_NIL,
-
-  .max_heap_size = 0,
-  .bytes_consed = ECL_NIL,
-  .gc_counter = ECL_NIL,
-  .gc_stats = 0,
-  .path_max = 0,
-#ifdef GBC_BOEHM
-  .safety_region = NULL,
-#endif
-
-  .default_sigmask = NULL,
-  .default_sigmask_bytes = 0,
-
-#ifdef ECL_THREADS
-  .last_var_index = 0,
-  .reused_indices = ECL_NIL,
-#endif
   .compiler_dispatch = ECL_NIL,
-
-  .known_signals = ECL_NIL
 };
 
 #if !defined(ECL_MS_WINDOWS_HOST)
@@ -363,21 +322,8 @@ cl_boot(int argc, char **argv)
   int i;
   cl_env_ptr env;
 
-  i = ecl_option_values[ECL_OPT_BOOTED];
-  if (i) {
-    if (i < 0) {
-      /* We have called cl_shutdown and want to use ECL again. */
-      ecl_set_option(ECL_OPT_BOOTED, 1);
-    }
-    return 1;
-  }
-
-  /*ecl_set_option(ECL_OPT_SIGNAL_HANDLING_THREAD, 0);*/
-
-#if !defined(GBC_BOEHM)
-  setbuf(stdin,  stdin_buf);
-  setbuf(stdout, stdout_buf);
-#endif
+  i = ecl_boot();
+  if (i==1) return 1;
 
   ARGC = argc;
   ARGV = argv;
@@ -417,11 +363,6 @@ cl_boot(int argc, char **argv)
 #endif
   cl_num_symbols_in_core=2;
 
-#ifdef NO_PATH_MAX
-  cl_core.path_max = sysconf(_PC_PATH_MAX);
-#else
-  cl_core.path_max = MAXPATHLEN;
-#endif
   cl_core.gensym_prefix = (cl_object)&str_G_data;
   cl_core.gentemp_prefix = (cl_object)&str_T_data;
 

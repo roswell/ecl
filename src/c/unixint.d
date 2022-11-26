@@ -535,7 +535,7 @@ handler_fn_prototype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void 
   unlikely_if (zombie_process(the_env))
     return;
   signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
-                                   cl_core.known_signals,
+                                   ecl_core.known_signals,
                                    ECL_NIL);
   handle_or_queue(the_env, signal_object, sig);
   errno = old_errno;
@@ -553,7 +553,7 @@ handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *dat
   unlikely_if (zombie_process(the_env))
     return;
   signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
-                                   cl_core.known_signals,
+                                   ecl_core.known_signals,
                                    ECL_NIL);
   handle_signal_now(signal_object);
   errno = old_errno;
@@ -648,7 +648,7 @@ asynchronous_signal_servicing_thread()
       break;
     }
     signal_code = ecl_gethash_safe(ecl_make_fixnum(signal_thread_msg.signo),
-                                   cl_core.known_signals,
+                                   ecl_core.known_signals,
                                    ECL_NIL);
     if (!Null(signal_code)) {
       mp_process_run_function(3, @'si::handle-signal',
@@ -960,7 +960,7 @@ cl_object
 si_get_signal_handler(cl_object code)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  cl_object handler = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
+  cl_object handler = ecl_gethash_safe(code, ecl_core.known_signals, OBJNULL);
   unlikely_if (handler == OBJNULL) {
     illegal_signal_code(code);
   }
@@ -971,11 +971,11 @@ cl_object
 si_set_signal_handler(cl_object code, cl_object handler)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  cl_object action = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
+  cl_object action = ecl_gethash_safe(code, ecl_core.known_signals, OBJNULL);
   unlikely_if (action == OBJNULL) {
     illegal_signal_code(code);
   }
-  ecl_sethash(code, cl_core.known_signals, handler);
+  ecl_sethash(code, ecl_core.known_signals, handler);
   si_catch_signal(2, code, ECL_T);
   ecl_return0(the_env);
 }
@@ -985,7 +985,7 @@ si_set_signal_handler(cl_object code, cl_object handler)
   {
     const cl_env_ptr the_env = ecl_process_env();
     int code_int;
-    unlikely_if (ecl_gethash_safe(code, cl_core.known_signals, OBJNULL) == OBJNULL) {
+    unlikely_if (ecl_gethash_safe(code, ecl_core.known_signals, OBJNULL) == OBJNULL) {
       illegal_signal_code(code);
     }
     code_int = ecl_fixnum(code);
@@ -1312,8 +1312,8 @@ install_asynchronous_signal_handlers()
 # endif
 #endif
 #ifdef HAVE_SIGPROCMASK
-  sigset_t *sigmask = cl_core.default_sigmask = &main_thread_sigmask;
-  cl_core.default_sigmask_bytes = sizeof(sigset_t);
+  sigset_t *sigmask = ecl_core.default_sigmask = &main_thread_sigmask;
+  ecl_core.default_sigmask_bytes = sizeof(sigset_t);
 # ifdef ECL_THREADS
   pthread_sigmask(SIG_SETMASK, NULL, sigmask);
 # else
@@ -1472,7 +1472,7 @@ static void
 create_signal_code_constants()
 {
   cl_object hash =
-    cl_core.known_signals =
+    ecl_core.known_signals =
     cl__make_hash_table(@'eql', ecl_make_fixnum(128),
                         ecl_ct_default_rehash_size,
                         ecl_ct_default_rehash_threshold);

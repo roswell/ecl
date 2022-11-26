@@ -1044,7 +1044,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
 cl_object
 si_get_library_pathname(void)
 {
-  cl_object s = cl_core.library_pathname;
+  cl_object s = ecl_core.library_pathname;
   if (!Null(s)) {
     goto OUTPUT_UNCHANGED;
   } else {
@@ -1059,11 +1059,11 @@ si_get_library_pathname(void)
     ecl_filename_char *buffer;
     HMODULE hnd;
     cl_index len, ep;
-    s = ecl_alloc_adjustable_filename(cl_core.path_max);
+    s = ecl_alloc_adjustable_filename(ecl_core.path_max);
     buffer = ecl_filename_self(s);
     ecl_disable_interrupts();
     hnd = GetModuleHandle("ecl.dll");
-    len = ecl_GetModuleFileName(hnd, buffer, cl_core.path_max-1);
+    len = ecl_GetModuleFileName(hnd, buffer, ecl_core.path_max-1);
     ecl_enable_interrupts();
     if (len == 0) {
       FEerror("GetModuleFileName failed (last error = ~S)",
@@ -1084,9 +1084,9 @@ si_get_library_pathname(void)
       s = current_dir();
     }
   }
-  cl_core.library_pathname = ecl_decode_filename(s, ECL_NIL);
+  ecl_core.library_pathname = ecl_decode_filename(s, ECL_NIL);
  OUTPUT_UNCHANGED:
-  @(return cl_core.library_pathname);
+  @(return ecl_core.library_pathname);
 }
 
 @(defun ext::chdir (directory &optional (change_d_p_d ECL_T))

@@ -48,7 +48,7 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h $(HDIR)/object.h      
 	$(HDIR)/ecl-inl.h $(HDIR)/internal.h $(HDIR)/stack-resize.h             \
 	$(HDIR)/threads.h $(HDIR)/impl/math_dispatch2.h                         \
 	$(HDIR)/impl/math_dispatch.h $(HDIR)/impl/math_fenv.h                   \
-	$(HDIR)/impl/math_fenv_msvc.h
+	$(HDIR)/impl/math_fenv_msvc.h $(HDIR)/nucleus.h
 
 NUCL_OBJS = nucleus/error.o nucleus/runtime.o
 
