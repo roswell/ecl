@@ -63,7 +63,6 @@ ecl_miscompilation_error()
                      "*** \n");
 }
 
-
 /* Max number of frames dumped by _ecl_dump_c_backtrace */
 #define MAX_BACKTRACE_SIZE 128
 /* Max length of symbols printed */

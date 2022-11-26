@@ -427,11 +427,11 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
   cl_object pool;
   cl_index new_index = symbol->symbol.binding;
   if (new_index == ECL_MISSING_SPECIAL_BINDING) {
-    pool = ecl_atomic_pop(&cl_core.reused_indices);
+    pool = ecl_atomic_pop(&ecl_core.reused_indices);
     if (!Null(pool)) {
       new_index = ecl_fixnum(ECL_CONS_CAR(pool));
     } else {
-      new_index = ecl_atomic_index_incf(&cl_core.last_var_index);
+      new_index = ecl_atomic_index_incf(&ecl_core.last_var_index);
     }
     symbol->symbol.binding = new_index;
   }
@@ -442,7 +442,7 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
 static cl_object
 ecl_extend_bindings_array(cl_object vector)
 {
-  cl_index new_size = cl_core.last_var_index * 1.25;
+  cl_index new_size = ecl_core.last_var_index * 1.25;
   cl_object new_vector = si_make_vector(ECL_T, ecl_make_fixnum(new_size), ECL_NIL,
                                         ECL_NIL, ECL_NIL, ECL_NIL);
   si_fill_array_with_elt(new_vector, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
@@ -834,7 +834,7 @@ si_get_limit(cl_object type)
     output = env->stack_limit_size;
   else if (type == @'ext::heap-size') {
     /* size_t can be larger than cl_index */
-    ecl_return1(env, ecl_make_unsigned_integer(cl_core.max_heap_size));
+    ecl_return1(env, ecl_make_unsigned_integer(ecl_core.max_heap_size));
   }
 
   ecl_return1(env, ecl_make_unsigned_integer(output));

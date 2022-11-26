@@ -1,9 +1,25 @@
 
-/* -- imports ------------------------------------------------------- */
+/* -- imports --------------------------------------------------------------- */
+
+#include <limits.h>
+#if defined(ECL_MS_WINDOWS_HOST)
+# include <windows.h>
+# include <shellapi.h>
+# define MAXPATHLEN 512
+#endif
+#ifndef MAXPATHLEN
+# ifdef PATH_MAX
+#   define MAXPATHLEN PATH_MAX
+# else
+#   define MAXPATHLEN sysconf(_PC_PATH_MAX)
+#   include <unistd.h>
+# endif
+#endif
 
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <ecl/external.h>
 
 /* -- constants ----------------------------------------------------- */
 
@@ -110,4 +126,59 @@ ecl_set_option(int option, cl_fixnum value)
     ecl_option_values[option] = value;
   }
   return ecl_option_values[option];
+}
+
+/* -- core runtime ---------------------------------------------------------- */
+
+/* The root environment is a default execution context. */
+static struct cl_env_struct first_env;
+
+struct ecl_core_struct ecl_core = {
+  .first_env = &first_env,
+  /* processes */
+#ifdef ECL_THREADS
+  .processes = ECL_NIL,
+  .last_var_index = 0,
+  .reused_indices = ECL_NIL,
+#endif
+  /* signals */
+  .default_sigmask_bytes = 0,
+  .known_signals = ECL_NIL,
+  /* allocation */
+  .max_heap_size = 0,
+  .bytes_consed = ECL_NIL,
+  .gc_counter = ECL_NIL,
+  .gc_stats = 0,
+  .safety_region = NULL,
+  /* pathnames */
+  .path_max = 0,
+  .pathname_translations = ECL_NIL,
+  /* LIBRARIES is a list of objects. It behaves as a sequence of weak pointers
+     thanks to the magic in the garbage collector. */
+  .libraries = ECL_NIL,
+  .library_pathname = ECL_NIL
+};
+
+/* note that this function does not create any environment */
+int
+ecl_boot(void)
+{
+  int i;
+
+  i = ecl_option_values[ECL_OPT_BOOTED];
+  if (i) {
+    if (i < 0) {
+      /* We have called cl_shutdown and want to use ECL again. */
+      ecl_set_option(ECL_OPT_BOOTED, 1);
+    }
+    return 1;
+  }
+
+  init_process();
+  /* init_unixint(); */
+  /* init_garbage(); */
+
+  ecl_core.path_max = MAXPATHLEN;
+
+  return 0;
 }

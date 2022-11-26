@@ -79,6 +79,7 @@
 #endif
 
 #include <ecl/object.h>
+#include <ecl/nucleus.h>
 #include <ecl/external.h>
 #include <ecl/cons.h>
 #include <ecl/stacks.h>

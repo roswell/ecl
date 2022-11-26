@@ -525,7 +525,7 @@ ecl_logical_hostname_p(cl_object host)
 {
   if (!ecl_stringp(host))
     return FALSE;
-  return !Null(ecl_assqlp(host, cl_core.pathname_translations));
+  return !Null(ecl_assqlp(host, ecl_core.pathname_translations));
 }
 
 /*
@@ -900,8 +900,8 @@ si_coerce_to_filename(cl_object pathname_orig)
             pathname_orig->pathname.type,
             pathname_orig->pathname.version);
   }
-  if (cl_core.path_max != -1 &&
-      ecl_length(namestring) >= cl_core.path_max - 16)
+  if (ecl_core.path_max != -1 &&
+      ecl_length(namestring) >= ecl_core.path_max - 16)
     FEerror("Too long filename: ~S.", 1, namestring);
   return namestring;
 }
@@ -1542,7 +1542,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
     FEerror("Wrong host syntax ~S", 1, host);
   }
   /* Find its translation list */
-  pair = ecl_assqlp(host, cl_core.pathname_translations);
+  pair = ecl_assqlp(host, ecl_core.pathname_translations);
   if (set == OBJNULL) {
     @(return ((pair == ECL_NIL)? ECL_NIL : CADR(pair)));
   }
@@ -1552,7 +1552,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
   }
   if (pair == ECL_NIL) {
     pair = CONS(host, CONS(ECL_NIL, ECL_NIL));
-    cl_core.pathname_translations = CONS(pair, cl_core.pathname_translations);
+    ecl_core.pathname_translations = CONS(pair, ecl_core.pathname_translations);
   }
   for (l = set, set = ECL_NIL; !ecl_endp(l); l = CDR(l)) {
     cl_object item = CAR(l);
