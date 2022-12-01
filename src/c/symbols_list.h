@@ -1336,6 +1336,15 @@ cl_symbols[] = {
 {SYS_ "DISPLAY-PROFILE" ECL_FUN("si_display_profile", IF_PROFILE(si_display_profile), -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 /* #endif PROFILE */
 
+/* stack */
+{SYS_ "STACK" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "MAKE-STACK" ECL_FUN("si_make_stack", si_make_stack, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "STACK-SIZE" ECL_FUN("si_stack_size", si_stack_size, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "STACK-PUSH" ECL_FUN("si_stack_push", si_stack_push, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "STACK-DROP" ECL_FUN("si_stack_drop", si_stack_drop, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "STACK-POP"   ECL_FUN("si_stack_pop", si_stack_pop,  1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "STACK-TOP"   ECL_FUN("si_stack_top", si_stack_top,  1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+
 /* #ifdef ECL_TCP */
 {SYS_ "*PROFILE-ARRAY*" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_SPECIAL, OBJNULL)},
 {SYS_ "OPEN-CLIENT-STREAM" ECL_FUN("si_open_client_stream", IF_TCP(si_open_client_stream), 2) ECL_VAR(SI_ORDINARY, OBJNULL)},

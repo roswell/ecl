@@ -209,6 +209,22 @@ struct cl_core_struct {
 extern ECL_API struct ecl_core_struct ecl_core;
 extern ECL_API struct cl_core_struct cl_core;
 
+/* auxiliary.c */
+extern ECL_API void _ecl_stack_set_size(cl_object object, cl_index new_size, cl_index slip);
+extern ECL_API void _ecl_stack_grow(cl_object object);
+extern ECL_API void _ecl_stack_push(cl_object object, cl_object value);
+extern ECL_API void _ecl_stack_drop(cl_object object, cl_index count);
+extern ECL_API cl_object _ecl_stack_pop(cl_object object);
+extern ECL_API cl_object _ecl_stack_top(cl_object object);
+extern ECL_API cl_object ecl_make_stack(cl_index size, cl_index slip);
+
+extern ECL_API cl_object si_make_stack(cl_object size);
+extern ECL_API cl_object si_stack_size(cl_object stack);
+extern ECL_API cl_object si_stack_push(cl_object stack, cl_object value);
+extern ECL_API cl_object si_stack_drop(cl_object stack, cl_object n);
+extern ECL_API cl_object si_stack_pop(cl_object stack);
+extern ECL_API cl_object si_stack_top(cl_object stack);
+
 /* runtime.c */
 extern ECL_API const int ecl_boot(void);
 

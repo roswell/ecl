@@ -4,6 +4,8 @@
 #ifndef ECL_NUCLEUS_H
 #define ECL_NUCLEUS_H
 
+/* auxiliary functions that do not depend on the environment */
+
 struct ecl_core_struct {
 #ifdef ECL_THREADS
         cl_object processes;

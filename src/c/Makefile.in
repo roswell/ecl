@@ -50,7 +50,7 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h $(HDIR)/object.h      
 	$(HDIR)/impl/math_dispatch.h $(HDIR)/impl/math_fenv.h                   \
 	$(HDIR)/impl/math_fenv_msvc.h $(HDIR)/nucleus.h
 
-NUCL_OBJS = nucleus/error.o nucleus/runtime.o
+NUCL_OBJS = nucleus/error.o nucleus/runtime.o nucleus/auxiliary.o
 
 CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
 
@@ -76,7 +76,7 @@ FFI_OBJS = ffi.o ffi/libraries.o ffi/backtrace.o ffi/mmap.o ffi/cdata.o
 
 OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o interpreter.o     \
 	compiler.o disassembler.o reference.o character.o file.o error.o        \
-	string.o cfun.o typespec.o assignment.o predicate.o array.o             \
+	string.o stack.o cfun.o typespec.o assignment.o predicate.o array.o     \
 	vector_push.o sequence.o cmpaux.o macros.o backq.o stacks.o time.o      \
 	unixint.o mapfun.o multival.o hash.o format.o pathname.o structure.o    \
 	load.o unixfsys.o unixsys.o serialize.o sse2.o threads/atomic.o         \
