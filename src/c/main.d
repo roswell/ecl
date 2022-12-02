@@ -302,6 +302,14 @@ maybe_fix_console_stream(cl_object stream)
 }
 #endif
 
+static void
+adopt_symbol(cl_object symbol, cl_object package)
+{
+  symbol->symbol.hpack = package;
+  cl_import2(symbol, package);
+  cl_export2(symbol, package);
+}
+
 int
 cl_boot(int argc, char **argv)
 {
@@ -425,13 +433,14 @@ cl_boot(int argc, char **argv)
                              cl_core.ext_package),
                      ECL_NIL);
 
+  /* ECL_NIL is special because it is an immediate object. */
   ECL_NIL_SYMBOL->symbol.hpack = cl_core.lisp_package;
   cl_import2(ECL_NIL, cl_core.lisp_package);
   cl_export2(ECL_NIL, cl_core.lisp_package);
 
-  ECL_T->symbol.hpack = cl_core.lisp_package;
-  cl_import2(ECL_T, cl_core.lisp_package);
-  cl_export2(ECL_T, cl_core.lisp_package);
+  adopt_symbol(ECL_T, cl_core.lisp_package);
+  adopt_symbol(ecl_ct_handlers, cl_core.system_package);
+  adopt_symbol(ecl_ct_restarts, cl_core.system_package);
 
   /* At exit, clean up */
   atexit(cl_shutdown);

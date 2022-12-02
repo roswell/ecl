@@ -34,4 +34,7 @@ struct ecl_core_struct {
         cl_object library_pathname;
 };
 
+extern ECL_API void             /* try all handlers and abort */
+ecl_signal(cl_object condition, cl_object continuation, cl_object thread);
+
 #endif  /* ECL_NUCLEUS_H */

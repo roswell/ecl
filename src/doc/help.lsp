@@ -116,6 +116,19 @@
 ;;;     Ordered alphabetically for binary search
 ;;;----------------------------------------------------------------------
 
+(docvar si:*handlers* variable "
+ECL specific.
+This variable contains all handlers to be used by SI:%SIGNAL.
+A handler is a function with a lambda list (CONDITION CONTINUATION).")
+
+(docvar si:*restarts* variable "
+ECL specific.
+This variable contents are unspecified.")
+
+(docfun si:%signal function (condition continuation thread) "
+ECL specific.
+Invokes handlers in si:*handlers*. This function never exits.")
+
 (docvar + variable "
 The last top-level form.")
 

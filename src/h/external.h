@@ -234,6 +234,12 @@ extern ECL_API const cl_object ecl_ct_minus_half;
 extern ECL_API const cl_object ecl_ct_protect_tag;
 extern ECL_API const cl_object ecl_ct_dummy_tag;
 
+extern ECL_API cl_object ecl_ct_handlers;
+extern ECL_API cl_object ecl_ct_restarts;
+
+extern ECL_API cl_object
+si_signal(cl_object condition, cl_object continuation, cl_object thread);
+
 /* alloc.c / alloc_2.c */
 
 extern ECL_API cl_object ecl_alloc_object(cl_type t);

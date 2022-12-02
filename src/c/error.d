@@ -55,6 +55,53 @@ ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
   }
 }
 
+/* -- Support for ecl_signal ----------------------------------------------- */
+
+/* Signals are implemented with a mechanism simpler than the one defined in
+ * Common Lisp. Most notably we don't define the condition class and the
+ * handler is expected to decide whether to and how the condition should be
+ * handled.
+ *
+ * The idea is simple: ecl_signal invokes each handler from the most recent
+ * one with a "continue" continuation (or nil) as the argument.  The first
+ * handler is removed from the list of active handlers and then it is
+ * invoked. The function may:
+ *
+ * 1. call the next handler (this is implicitly done by returning)
+ * 2. signal a condition (resignal or signal a different one)
+ * 3. perform a non-local exit (invoke the continuation or otherwise)
+ *
+ * All signals should be handled. If ecl_signal exhausts the list of signal
+ * handlers then it aborts the process. Since at this level there condition
+ * classes are not defined yet, is a responsibility of the system to provide a
+ * debugger and continue on warnings. */
+
+void
+ecl_signal(cl_object condition, cl_object continuation, cl_object thread)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object handlers;
+  if(!Null(thread)) {
+    ecl_internal_error("Not yet.");
+  }
+  handlers = ECL_SYM_VAL(the_env, ecl_ct_handlers);
+  /* Rebind handlers so we may safely modify the value. */
+  ecl_bds_bind(the_env, ecl_ct_handlers, handlers);
+  loop_for_on_unsafe(handlers) {
+    cl_object handler = ECL_CONS_CAR(handlers);
+    ECL_SETQ(the_env, ecl_ct_handlers, ECL_CONS_CDR(handlers));
+    cl_funcall(3, handler, condition, continuation);
+  } end_loop_for_on_unsafe(handlers);
+  ecl_bds_unwind1(the_env);
+}
+
+cl_object
+si_signal(cl_object condition, cl_object continuation, cl_object thread)
+{
+  ecl_signal(condition, continuation, thread);
+  return ECL_NIL;
+}
+
 /*****************************************************************************/
 /*              Support for Lisp Error Handler                               */
 /*****************************************************************************/

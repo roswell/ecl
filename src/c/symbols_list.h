@@ -1330,6 +1330,9 @@ cl_symbols[] = {
 {EXT_ "*REGISTER-WITH-PDE-HOOK*" ECL_FUN(NULL, NULL, -1) ECL_VAR(EXT_SPECIAL, ECL_NIL)},
 {EXT_ "REGISTER-WITH-PDE" ECL_FUN(NULL, NULL, -1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 
+/* Low-level signal. */
+{SYS_ "%SIGNAL" ECL_FUN("si_signal", si_signal, 3) ECL_VAR(SI_ORDINARY, OBJNULL)},
+
 /* #ifdef PROFILE */
 {SYS_ "PROFILE" ECL_FUN("si_profile", IF_PROFILE(si_profile), -3) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "CLEAR-PROFILE" ECL_FUN("si_clear_profile", IF_PROFILE(si_clear_profile), -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
