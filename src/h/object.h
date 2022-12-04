@@ -929,6 +929,7 @@ struct ecl_dummy {
 #ifdef ECL_THREADS
 
 #ifdef ECL_WINDOWS_THREADS
+typedef HANDLE ecl_thread_t;
 typedef HANDLE ecl_mutex_t;
 typedef struct ecl_cond_var_t {
         HANDLE broadcast_event;
@@ -937,6 +938,7 @@ typedef struct ecl_cond_var_t {
 } ecl_cond_var_t;
 typedef SRWLOCK ecl_rwlock_t;
 #else
+typedef pthread_t ecl_thread_t;
 typedef pthread_mutex_t ecl_mutex_t;
 typedef pthread_cond_t ecl_cond_var_t;
 # ifdef HAVE_POSIX_RWLOCK
@@ -975,11 +977,7 @@ struct ecl_process {
         ecl_mutex_t start_stop_lock; /* phase is updated only when we hold this lock */
         ecl_cond_var_t exit_barrier; /* process-join waits on this barrier */
         cl_index phase;
-#ifdef ECL_WINDOWS_THREADS
-        HANDLE thread;
-#else
-        pthread_t thread;
-#endif
+        ecl_thread_t thread;
         int trap_fpe_bits;
 };
 

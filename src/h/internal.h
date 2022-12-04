@@ -48,6 +48,8 @@ extern void init_unixtime(void);
 extern void init_compiler(void);
 #ifdef ECL_THREADS
 extern void init_threads(cl_env_ptr);
+#else
+#define init_threads(env) cl_env_p = env
 #endif
 extern void ecl_init_env(cl_env_ptr);
 extern void init_lib_LSP(cl_object);
