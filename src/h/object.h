@@ -275,7 +275,7 @@ enum ecl_stype {                /*  symbol type  */
 #define ECL_NO_TL_BINDING       ((cl_object)(1 << ECL_TAG_BITS))
 
 struct ecl_symbol {
-        _ECL_HDR2(stype, dynamic);/*  symbol type, special-variable-p */
+        _ECL_HDR1(stype);       /*  symbol type */
         cl_object value;        /*  global value of the symbol  */
                                 /*  Coincides with cons.car  */
         cl_object gfdef;        /*  global function definition  */
@@ -917,6 +917,7 @@ struct ecl_weak_pointer {       /*  weak pointer to value  */
         _ECL_HDR;
         cl_object value;
 };
+#define ecl_weak_pointer(o) ((o)->weak.value)
 
 /*
         dummy type
@@ -928,6 +929,7 @@ struct ecl_dummy {
 #ifdef ECL_THREADS
 
 #ifdef ECL_WINDOWS_THREADS
+typedef HANDLE ecl_thread_t;
 typedef HANDLE ecl_mutex_t;
 typedef struct ecl_cond_var_t {
         HANDLE broadcast_event;
@@ -936,6 +938,7 @@ typedef struct ecl_cond_var_t {
 } ecl_cond_var_t;
 typedef SRWLOCK ecl_rwlock_t;
 #else
+typedef pthread_t ecl_thread_t;
 typedef pthread_mutex_t ecl_mutex_t;
 typedef pthread_cond_t ecl_cond_var_t;
 # ifdef HAVE_POSIX_RWLOCK
@@ -971,15 +974,10 @@ struct ecl_process {
         cl_object parent;
         cl_object exit_values;
         cl_object woken_up;
-        cl_object queue_record;
         ecl_mutex_t start_stop_lock; /* phase is updated only when we hold this lock */
         ecl_cond_var_t exit_barrier; /* process-join waits on this barrier */
         cl_index phase;
-#ifdef ECL_WINDOWS_THREADS
-        HANDLE thread;
-#else
-        pthread_t thread;
-#endif
+        ecl_thread_t thread;
         int trap_fpe_bits;
 };
 

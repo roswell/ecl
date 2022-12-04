@@ -72,7 +72,7 @@
 int main (int argc, char **argv) {
   cl_object x;
   cl_boot(argc, argv);
-  si_safe_eval(3, x = c_string_to_object(~S), Cnil, Cnil);
+  si_safe_eval(3, x = c_string_to_object(~S), ECL_NIL, ECL_NIL);
   cl_shutdown();
   exit(0);
 }")

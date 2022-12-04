@@ -48,6 +48,8 @@ extern void init_unixtime(void);
 extern void init_compiler(void);
 #ifdef ECL_THREADS
 extern void init_threads(cl_env_ptr);
+#else
+#define init_threads(env) cl_env_p = env
 #endif
 extern void ecl_init_env(cl_env_ptr);
 extern void init_lib_LSP(cl_object);
@@ -398,6 +400,13 @@ extern void ecl_cs_set_org(cl_env_ptr env);
 #ifdef ECL_THREADS
 extern ECL_API cl_object mp_suspend_loop();
 extern ECL_API cl_object mp_break_suspend_loop();
+
+# ifdef ECL_WINDOWS_THREADS
+#  define ecl_thread_exit() ExitThread(0);
+# else
+#  define ecl_thread_exit() pthread_exit(NULL);
+# endif  /* ECL_WINDOWS_THREADS */
+
 #endif
 
 /* time.d */

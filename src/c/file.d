@@ -5628,39 +5628,10 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
  * BACKEND
  */
 
+#if defined(ECL_MS_WINDOWS_HOST)
 static int
 file_listen(cl_object stream, int fileno)
 {
-#if !defined(ECL_MS_WINDOWS_HOST)
-# if defined(HAVE_SELECT)
-  fd_set fds;
-  int retv;
-  struct timeval tv = { 0, 0 };
-  /*
-   * Note that the following code is fragile. If the file is closed (/dev/null)
-   * then select() may return 1 (at least on OS X), so that we return a flag
-   * saying characters are available but will find none to read. See also the
-   * code in cl_clear_input().
-   */
-  FD_ZERO(&fds);
-  FD_SET(fileno, &fds);
-  retv = select(fileno + 1, &fds, NULL, NULL, &tv);
-  if (ecl_unlikely(retv < 0))
-    file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
-  /* XXX: for FIFO there should be also peek-byte (not implemented and peek-char
-     doesn't work for binary streams). */
-  else if ((retv > 0) /* && (generic_peek_byte(stream) != EOF) */)
-    return ECL_LISTEN_AVAILABLE;
-  else
-    return ECL_LISTEN_NO_CHAR;
-# elif defined(FIONREAD)
-  {
-    long c = 0;
-    ioctl(fileno, FIONREAD, &c);
-    return (c > 0)? ECL_LISTEN_AVAILABLE : ECL_LISTEN_NO_CHAR;
-  }
-# endif
-#else
   HANDLE hnd = (HANDLE)_get_osfhandle(fileno);
   switch (GetFileType(hnd)) {
   case FILE_TYPE_CHAR: {
@@ -5690,8 +5661,9 @@ file_listen(cl_object stream, int fileno)
         }
       }
       return ECL_LISTEN_NO_CHAR;
-    } else
+    } else {
       FEwin32_error("GetNumberOfConsoleInputEvents() failed", 0);
+    }
     break;
   }
   case FILE_TYPE_DISK:
@@ -5711,9 +5683,45 @@ file_listen(cl_object stream, int fileno)
     FEerror("Unsupported Windows file type: ~A", 1, ecl_make_fixnum(GetFileType(hnd)));
     break;
   }
-#endif
-  return -3;
+  return ECL_LISTEN_FALLBACK;
 }
+#else
+static int
+file_listen(cl_object stream, int fileno)
+{
+# if defined(HAVE_SELECT)
+  fd_set fds;
+  int retv;
+  struct timeval tv = { 0, 0 };
+  /*
+   * Note that the following code is fragile. If the file is closed (/dev/null)
+   * then select() may return 1 (at least on OS X), so that we return a flag
+   * saying characters are available but will find none to read. See also the
+   * code in cl_clear_input().
+   */
+  FD_ZERO(&fds);
+  FD_SET(fileno, &fds);
+  retv = select(fileno + 1, &fds, NULL, NULL, &tv);
+  if (ecl_unlikely(retv < 0))
+    file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
+  /* XXX: for FIFO there should be also peek-byte (not implemented and peek-char
+     doesn't work for binary streams). */
+  else if ((retv > 0) /* && (generic_peek_char(stream) != EOF) */) {
+    return ECL_LISTEN_AVAILABLE;
+  }
+  else {
+    return ECL_LISTEN_NO_CHAR;
+  }
+# elif defined(FIONREAD)
+  {
+    long c = 0;
+    ioctl(fileno, FIONREAD, &c);
+    return (c > 0)? ECL_LISTEN_AVAILABLE : ECL_LISTEN_NO_CHAR;
+  }
+# endif
+  return ECL_LISTEN_FALLBACK;
+}
+#endif
 
 static int
 flisten(cl_object stream, FILE *fp)
@@ -5726,7 +5734,7 @@ flisten(cl_object stream, FILE *fp)
     return ECL_LISTEN_AVAILABLE;
 #endif
   aux = file_listen(stream, fileno(fp));
-  if (aux != -3)
+  if (aux != ECL_LISTEN_FALLBACK)
     return aux;
   /* This code is portable, and implements the expected behavior for regular files.
      It will fail on noninteractive streams. */

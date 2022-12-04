@@ -629,6 +629,26 @@ _ecl_big_boole_operator(int op)
 }
 
 void
+ecl_init_bignum_registers(cl_env_ptr env)
+{
+  int i;
+  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    cl_object x = ecl_alloc_object(t_bignum);
+    _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
+    env->big_register[i] = x;
+  }
+}
+
+void
+ecl_clear_bignum_registers(cl_env_ptr env)
+{
+  int i;
+  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    _ecl_big_clear(env->big_register[i]);
+  }
+}
+
+void
 init_big()
 {
   if (ecl_option_values[ECL_OPT_SET_GMP_MEMORY_FUNCTIONS])

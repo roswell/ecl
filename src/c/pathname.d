@@ -525,7 +525,7 @@ ecl_logical_hostname_p(cl_object host)
 {
   if (!ecl_stringp(host))
     return FALSE;
-  return !Null(@assoc(4, host, cl_core.pathname_translations, @':test', @'string-equal'));
+  return !Null(ecl_assqlp(host, cl_core.pathname_translations));
 }
 
 /*
@@ -1559,7 +1559,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
     FEerror("Wrong host syntax ~S", 1, host);
   }
   /* Find its translation list */
-  pair = @assoc(4, host, cl_core.pathname_translations, @':test', @'string-equal');
+  pair = ecl_assqlp(host, cl_core.pathname_translations);
   if (set == OBJNULL) {
     @(return ((pair == ECL_NIL)? ECL_NIL : CADR(pair)));
   }

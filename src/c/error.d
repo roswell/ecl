@@ -50,8 +50,7 @@ ecl_internal_error(const char *s)
   int saved_errno = errno;
   fprintf(stderr, "\nInternal or unrecoverable error in:\n%s\n", s);
   if (saved_errno) {
-    fprintf(stderr, "  [%d: %s]\n", saved_errno,
-            strerror(saved_errno));
+    fprintf(stderr, "  [%d: %s]\n", saved_errno, strerror(saved_errno));
   }
   fflush(stderr);
   _ecl_dump_c_backtrace();
@@ -68,19 +67,14 @@ ecl_thread_internal_error(const char *s)
   int saved_errno = errno;
   fprintf(stderr, "\nInternal thread error in:\n%s\n", s);
   if (saved_errno) {
-    fprintf(stderr, "  [%d: %s]\n", saved_errno,
-            strerror(saved_errno));
+    fprintf(stderr, "  [%d: %s]\n", saved_errno, strerror(saved_errno));
   }
   _ecl_dump_c_backtrace();
   fprintf(stderr,
           "\nDid you forget to call `ecl_import_current_thread'?\n"
           "Exitting thread.\n");
   fflush(stderr);
-#ifdef ECL_WINDOWS_THREADS
-  ExitThread(0);
-#else
-  pthread_exit(NULL);
-#endif
+  ecl_thread_exit();
 }
 #endif
 
