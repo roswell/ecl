@@ -104,8 +104,6 @@ cl_symbols[] = {
 {"NIL" ECL_FUN(NULL, NULL, -1) ECL_VAR(CL_ORDINARY, OBJNULL)},
 {"T" ECL_FUN(NULL, NULL, -1) ECL_VAR(CL_ORDINARY, OBJNULL)},
 {SYS_ "UNBOUND" ECL_FUN("si_unbound", si_unbound, 0) ECL_VAR(SI_CONSTANT, ECL_UNBOUND)},
-{SYS_ "*RESTART-CLUSTERS*" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_SPECIAL, ECL_NIL)},
-{SYS_ "*HANDLER-CLUSTERS*" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_SPECIAL, ECL_NIL)},
 {EXT_ "*INTERRUPTS-ENABLED*" ECL_FUN(NULL, NULL, 1) ECL_VAR(EXT_SPECIAL, ECL_T)},
 
 /* LISP PACKAGE */
@@ -2445,8 +2443,8 @@ cl_symbols[] = {
 {FFI_ "WITH-FOREIGN-STRING" ECL_FUN(NULL, NULL, -1) ECL_VAR(FFI_ORDINARY, OBJNULL)},
 {FFI_ "WITH-FOREIGN-STRINGS" ECL_FUN(NULL, NULL, -1) ECL_VAR(FFI_ORDINARY, OBJNULL)},
 
-{SYS_ "BIND-SIMPLE-RESTARTS" ECL_FUN("si_bind_simple_restarts", ECL_NAME(si_bind_simple_restarts), 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "BIND-SIMPLE-HANDLERS" ECL_FUN("si_bind_simple_handlers", ECL_NAME(si_bind_simple_handlers), 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "BIND-SIMPLE-RESTART" ECL_FUN("si_bind_simple_restart", ECL_NAME(si_bind_simple_restart), 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "BIND-SIMPLE-HANDLER" ECL_FUN("si_bind_simple_handler", ECL_NAME(si_bind_simple_handler), 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {EXT_ "CONSTANT-FORM-VALUE" ECL_FUN("si_constant_form_value", si_constant_form_value, -2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 {EXT_ "CONSTANTP-INNER" ECL_FUN("si_constantp_inner", si_constantp_inner, -2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 {SYS_ "MAKE-BACKQ-VECTOR" ECL_FUN("si_make_backq_vector", si_make_backq_vector, 3) ECL_VAR(SI_ORDINARY, OBJNULL)},

@@ -48,7 +48,7 @@
     si:setf-definition
     ;; conditions.lsp
     si:safe-eval cl:abort cl:continue cl:muffle-warning cl:store-value cl:use-value
-    si:bind-simple-restarts si:bind-simple-handlers
+    si:bind-simple-restart si:bind-simple-handler
     si:assert-failure cl:compute-restarts cl:find-restart cl:invoke-restart
     cl:invoke-restart-interactively cl:make-condition
     ;; describe.lsp

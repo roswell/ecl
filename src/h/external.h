@@ -2243,8 +2243,8 @@ extern ECL_API cl_object cl_make_condition _ECL_ARGS((cl_narg narg, cl_object ty
 extern ECL_API cl_object cl_muffle_warning _ECL_ARGS((cl_narg narg, ...));
 extern ECL_API cl_object cl_store_value _ECL_ARGS((cl_narg narg, cl_object value, ...));
 extern ECL_API cl_object cl_use_value _ECL_ARGS((cl_narg narg, cl_object value, ...));
-extern ECL_API cl_object si_bind_simple_restarts(cl_object tag, cl_object names);
-extern ECL_API cl_object si_bind_simple_handlers(cl_object tag, cl_object names);
+extern ECL_API cl_object si_bind_simple_restart(cl_object tag);
+extern ECL_API cl_object si_bind_simple_handler(cl_object tag);
 extern ECL_API cl_object si_assert_failure _ECL_ARGS((cl_narg narg, cl_object V1, ...));
 
 /* assert.lsp */

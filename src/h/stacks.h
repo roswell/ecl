@@ -489,8 +489,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
 #define ECL_RESTART_CASE_BEGIN(the_env, names) do {                     \
         const cl_env_ptr __the_env = (the_env);                         \
         const cl_object __ecl_tag = ecl_list1(names);                   \
-        ecl_bds_bind(__the_env, ECL_RESTART_CLUSTERS,                   \
-                     si_bind_simple_restarts(__ecl_tag, names));        \
+        ecl_bds_bind(__the_env, ecl_ct_restarts,                        \
+                     si_bind_simple_restart(__ecl_tag));                \
         ecl_frs_push(__the_env,__ecl_tag);                              \
         if (__ecl_frs_push_result == 0) {
 
@@ -506,8 +506,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
 #define ECL_HANDLER_CASE_BEGIN(the_env, names) do {                     \
         const cl_env_ptr __the_env = (the_env);                         \
         const cl_object __ecl_tag = ecl_list1(names);                   \
-        ecl_bds_bind(__the_env, ECL_HANDLER_CLUSTERS,                   \
-                     si_bind_simple_handlers(__ecl_tag, names));        \
+        ecl_bds_bind(__the_env, ecl_ct_handlers,                        \
+                     si_bind_simple_handler(__ecl_tag));                \
         ecl_frs_push(__the_env,__ecl_tag);                              \
         if (__ecl_frs_push_result == 0) {
 

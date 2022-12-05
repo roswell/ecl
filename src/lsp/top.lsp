@@ -966,7 +966,7 @@ Use special code 0 to cancel this operation.")
                                            collect (cons v (symbol-value v)))
                                         output)))))))
            (extract-restarts (variables-alist)
-             (let ((record (assoc '*restart-clusters* variables-alist)))
+             (let ((record (assoc '*restarts* variables-alist)))
                (if record
                    (let* ((bindings (cdr record))
                           (new-bindings (first bindings)))

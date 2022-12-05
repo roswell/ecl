@@ -2,16 +2,13 @@
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;;;
-;;;;  Copyright (c) 2001, Juan Jose Garcia-Ripoll
 ;;;;  Copyright (c) 1992, Giuseppe Attardi.
 ;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll.
+;;;;  Copyright (c) 2022, Daniel Kochmański.
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
+;;;;      See file 'LICENSE' for the copyright details.
 ;;;;
-;;;;    See file '../Copyright' for full details.
+
 ;;;
 ;;; conditions.lsp
 ;;;
@@ -28,20 +25,217 @@
 
 (in-package "SYSTEM")
 
-;;; ----------------------------------------------------------------------
-;;; Unique Ids
+;;; -- Unique Ids --------------------------------------------------------------
 
 (defmacro unique-id (obj)
   "Generates a unique integer ID for its argument."
   `(sys:pointer ,obj))
 
-
-;;; Restarts
+;;; -- Signal ------------------------------------------------------------------
 
-(defparameter *restart-clusters* ())
+(defun signal (datum &rest arguments)
+  (let ((condition (coerce-to-condition datum arguments 'simple-condition 'signal)))
+    (when (typep condition *break-on-signals*)
+      (break "~A~%Break entered because of *BREAK-ON-SIGNALS*." condition))
+    (%signal condition nil nil)
+    nil))
+
+
+;;; -- Handlers ----------------------------------------------------------------
+
+;;; The cool kids macro.
+(defmacro with-handler (handler-function &body body)
+  `(let ((*handlers* (list* ,handler-function *handlers*)))
+     ,@body))
+
+;;; This operator is used by a C macro ECL_HANDLER_CASE to allow estabilishing
+;;; handlers in the C code. The TAG value is (list (list ,@typespec)).
+(defun bind-simple-handler (tag)
+  (list* (lambda (condition continuation)
+           (declare (ignore continuation))
+           (loop with name1 = (car tag)
+                 with names = (if (atom name1) (list name1) name1)
+                 for code from 1
+                 for type in names
+                 when (typep condition type)
+                   do (throw tag (values code condition))))
+         *handlers*))
+
+;;; The low-level operator %SIGNAL calls each handler in *HANDLERS* and it is
+;;; up to the handler function to decide if the condition should be handled.
+(defmacro handler-bind (bindings &body body)
+  (with-gensyms (condition continuation)
+    `(with-handler
+         (lambda (,condition ,continuation)
+           (declare (ignore ,continuation))
+           ,@(loop for (typespec function) in bindings
+                   collect `(when (typep ,condition (quote ,typespec))
+                              (funcall ,function ,condition))))
+       ,@body)))
+
+(defmacro handler-case (form &rest cases)
+  (if-let ((no-error-clause (assoc ':NO-ERROR cases)))
+    (with-gensyms (normal-return error-return)
+      `(block ,error-return
+         (multiple-value-call #'(lambda ,@(cdr no-error-clause))
+           (block ,normal-return
+             (return-from ,error-return
+               (handler-case (return-from ,normal-return ,form)
+                 ,@(remove no-error-clause cases)))))))
+    (with-gensyms (tag var)
+      (let* ((annotated-cases (mapcar #'(lambda (case) (cons (gensym) case))
+                                      cases))
+             (binds (mapcar #'(lambda (annotated-case)
+                                (list (cadr annotated-case)
+                                      `#'(lambda (temp)
+                                           (declare (ignorable temp))
+                                           ,@(if (caddr annotated-case)
+                                                 `((setq ,var temp)))
+                                           (go ,(car annotated-case)))))
+                            annotated-cases))
+             (forms (mapcan #'(lambda (annotated-case)
+                                (list (car annotated-case)
+                                      (let ((body (cdddr annotated-case)))
+                                        `(return-from ,tag
+                                           ,(if (caddr annotated-case)
+                                                `(let ((,(caaddr annotated-case)
+                                                         ,var))
+                                                   ,@body)
+                                                ;; We must allow declarations!
+                                                `(locally ,@body))))))
+                            annotated-cases)))
+        `(block ,tag
+           (let ((,var nil))
+             (declare (ignorable ,var))
+             (tagbody (handler-bind ,binds
+                        (return-from ,tag ,form))
+                ,@forms)))))))
+
+
+;;; -- Restarts ----------------------------------------------------------------
+
+(defparameter *restarts* ())
 (defparameter *condition-restarts* ())
 
-;;; do we need copy-list if *restart-clusters* has only one element? Beppe
+(defmacro with-condition-restarts (condition restarts &body forms)
+  `(let ((*condition-restarts* (cons (cons ,condition ,restarts)
+                                     *condition-restarts*)))
+     ,@forms))
+
+;;; While this macro is unopinionated regarding the nature of restarts, all code
+;;; below assumes that it is a list of clusters (lists) of restarts.
+(defmacro with-restart (restart-functoid &body body)
+  `(let ((*restarts* (list* ,restart-functoid *restarts*)))
+     ,@body))
+
+;;; This operator is used by a C macro ECL_RESTART_CASE to allow estabilishing
+;;; restarts in the C code. A nature of restart is unspecified but Common Lisp
+;;; has certain expectations about the protocol of the "restart object".
+(defun bind-simple-restart (tag)
+  (flet ((simple-restart-function (tag code)
+           #'(lambda (&rest args) (throw tag (values code args)))))
+    (cons (loop with name1 = (car tag)
+                with names = (if (atom name1) (list name1) name1)
+                for code from 1
+                for name in names
+                for function = (simple-restart-function tag code)
+                collect (make-restart :name name :function function))
+          *restarts*)))
+
+(defmacro restart-bind (bindings &body forms)
+  `(with-restart (list ,@(mapcar #'(lambda (binding)
+                                     `(make-restart
+                                       :name     ',(car binding)
+                                       :function ,(cadr binding)
+                                       ,@(cddr binding)))
+                                 bindings))
+     ,@forms))
+
+(defmacro restart-case (expression &body clauses &environment env)
+  (flet ((process-clause (clause)
+           (do ((name (pop clause))
+                (args (pop clause))
+                (opts '(:test :report :interactive))
+                (keys '())
+                (forms clause (cddr forms)))
+               ((or (null forms) (not (member (car forms) opts)))
+                ;; name=0, tag=1, keys=2, bvl=3, body=4
+                (list name (gensym) keys args forms))
+             (let ((key (first forms))
+                   (val (second forms)))
+               (setf opts (remove key opts)
+                     keys (ecase key
+                            (:test
+                             (list* :test-function `(function ,val)
+                                    keys))
+                            (:interactive
+                             (list* :interactive-function `(function ,val)
+                                    keys))
+                            (:report
+                             (list* :report-function
+                                    (if (stringp val)
+                                        `(lambda (stream)
+                                           (write-string ,val stream))
+                                        `(function ,val))
+                                    keys))))))))
+    (let* ((block-tag (gensym))
+           (temp-var  (gensym))
+           (data (mapcar #'process-clause clauses)))
+      (let ((expression2 (macroexpand expression env)))
+        (when (consp expression2)
+          (let* ((condition-form nil)
+                 (condition-var (gensym))
+                 (name (first expression2)))
+            (case name
+              (SIGNAL
+               (setq condition-form `(coerce-to-condition ,(second expression2)
+                                                          (list ,@ (cddr expression2))
+                                                          'simple-condition 'signal)))
+              (ERROR
+               (setq condition-form `(coerce-to-condition ,(second expression2)
+                                                          (list ,@(cddr expression2))
+                                                          'simple-error 'ERROR)))
+              (CERROR
+               (setq condition-form `(coerce-to-condition ,(third expression2)
+                                                          (list ,@(cdddr expression2))
+                                                          'SIMPLE-ERROR 'CERROR)))
+              (WARN
+               (setq condition-form `(coerce-to-condition ,(second expression2)
+                                                          (list ,@(cddr expression2))
+                                                          'SIMPLE-WARNING 'WARN))))
+            (when condition-form
+              (setq expression
+                    `(let ((,condition-var ,condition-form))
+                       (with-condition-restarts ,condition-var
+                           (first *restarts*)
+                         ,(if (eq name 'CERROR)
+                              `(cerror ,(second expression2) ,condition-var)
+                              (list name condition-var)))))))))
+      `(block ,block-tag
+         (let ((,temp-var nil))
+           (tagbody
+              (restart-bind
+                  ,(mapcar #'(lambda (datum)
+                               (let*((name (nth 0 datum))
+                                     (tag  (nth 1 datum))
+                                     (keys (nth 2 datum)))
+                                 `(,name #'(lambda (&rest temp)
+                                             (setq ,temp-var temp)
+                                             (go ,tag))
+                                         ,@keys)))
+                    data)
+                (return-from ,block-tag ,expression))
+              ,@(mapcan #'(lambda (datum)
+                            (let*((tag  (nth 1 datum))
+                                  (bvl  (nth 3 datum))
+                                  (body (nth 4 datum)))
+                              (list tag
+                                    `(return-from ,block-tag
+                                       (apply #'(lambda ,bvl ,@body)
+                                              ,temp-var)))))
+                        data)))))))
+
+;;; do we need copy-list if *restarts* has only one element? Beppe
 (defun compute-restarts (&optional condition)
   (let* ((assoc-restart ())
          (other ())
@@ -51,7 +245,7 @@
         (if (eq (first i) condition)
             (setq assoc-restart (append (rest i) assoc-restart))
             (setq other (append (rest i) other)))))
-    (dolist (restart-cluster *restart-clusters*)
+    (dolist (restart-cluster *restarts*)
       (dolist (restart restart-cluster)
         (when (and (or (not condition)
                        (member restart assoc-restart)
@@ -81,37 +275,6 @@
         (funcall fn stream)
         (format stream "~s" (or (restart-name restart) restart)))))
 
-(defun bind-simple-restarts (tag names)
-  (flet ((simple-restart-function (tag code)
-           #'(lambda (&rest args) (throw tag (values code args)))))
-    (cons (loop for i from 1
-             for n in (if (atom names) (list names) names)
-             for f = (simple-restart-function tag i)
-             collect (let ((v i))
-                       (make-restart :name n
-                                     :function f)))
-          *restart-clusters*)))
-
-(defun bind-simple-handlers (tag names)
-  (flet ((simple-handler-function (tag code)
-           #'(lambda (c) (throw tag (values code c)))))
-    (cons (loop for i from 1
-             for n in (if (atom names) (list names) names)
-             for f = (simple-handler-function tag i)
-             collect (cons n f))
-          *handler-clusters*)))
-
-(defmacro restart-bind (bindings &body forms)
-  `(let ((*restart-clusters*
-          (cons (list ,@(mapcar #'(lambda (binding)
-                                    `(make-restart
-                                      :NAME     ',(car binding)
-                                      :FUNCTION ,(cadr binding)
-                                      ,@(cddr binding)))
-                                bindings))
-                *restart-clusters*)))
-     ,@forms))
-
 (defun find-restart (name &optional condition)
   (dolist (restart (compute-restarts condition))
     (when (or (eq restart name) (eq (restart-name restart) name))
@@ -137,91 +300,6 @@
                  (funcall interactive-function)
                  '())))))
 
-
-(defmacro restart-case (expression &body clauses &environment env)
-  (flet ((process-clause (clause)
-           (do ((name (pop clause))
-                (args (pop clause))
-                (opts '(:test :report :interactive))
-                (keys '())
-                (forms clause (cddr forms)))
-               ((or (null forms) (not (member (car forms) opts)))
-                ;; name=0, tag=1, keys=2, bvl=3, body=4
-                (list name (gensym) keys args forms))
-             (let ((key (first forms))
-                   (val (second forms)))
-               (setf opts (remove key opts)
-                     keys (ecase key
-                            (:test
-                             (list* :test-function `(function ,val)
-                                    keys))
-                            (:interactive
-                             (list* :interactive-function `(function ,val)
-                                    keys))
-                            (:report
-                             (list* :report-function
-                                    (if (stringp val)
-                                        `(lambda (stream)
-                                           (write-string ,val stream))
-                                        `(function ,val))
-                                    keys))))))))
-    (let*((block-tag (gensym))
-          (temp-var  (gensym))
-          (data (mapcar #'process-clause clauses)))
-      (let ((expression2 (macroexpand expression env)))
-        (when (consp expression2)
-          (let* ((condition-form nil)
-                 (condition-var (gensym))
-                 (name (first expression2)))
-            (case name
-              (SIGNAL
-               (setq condition-form `(coerce-to-condition ,(second expression2)
-                                      (list ,@ (cddr expression2))
-                                      'simple-condition 'signal)))
-              (ERROR
-               (setq condition-form `(coerce-to-condition ,(second expression2)
-                                      (list ,@(cddr expression2))
-                                      'simple-error 'ERROR)))
-              (CERROR
-               (setq condition-form `(coerce-to-condition ,(third expression2)
-                                      (list ,@(cdddr expression2))
-                                      'SIMPLE-ERROR 'CERROR)))
-              (WARN
-               (setq condition-form `(coerce-to-condition ,(second expression2)
-                                      (list ,@(cddr expression2))
-                                      'SIMPLE-WARNING 'WARN))))
-            (when condition-form
-              (setq expression
-                    `(let ((,condition-var ,condition-form))
-                      (with-condition-restarts ,condition-var
-                        (first *restart-clusters*)
-                        ,(if (eq name 'CERROR)
-                             `(cerror ,(second expression2) ,condition-var)
-                             (list name condition-var)))))))))
-      `(block ,block-tag
-         (let ((,temp-var nil))
-           (tagbody
-             (restart-bind
-               ,(mapcar #'(lambda (datum)
-                            (let*((name (nth 0 datum))
-                                  (tag  (nth 1 datum))
-                                  (keys (nth 2 datum)))
-                              `(,name #'(lambda (&rest temp)
-                                          (setq ,temp-var temp)
-                                          (go ,tag))
-                                ,@keys)))
-                        data)
-               (return-from ,block-tag ,expression))
-             ,@(mapcan #'(lambda (datum)
-                           (let*((tag  (nth 1 datum))
-                                 (bvl  (nth 3 datum))
-                                 (body (nth 4 datum)))
-                             (list tag
-                                   `(return-from ,block-tag
-                                      (apply #'(lambda ,bvl ,@body)
-                                             ,temp-var)))))
-                       data)))))))
-
 (defmacro with-simple-restart ((restart-name format-control
                                              &rest format-arguments)
                                &body forms)
@@ -231,14 +309,8 @@
                   (format stream ,format-control ,@format-arguments))
       (values nil t))))
 
-(defmacro with-condition-restarts (condition restarts &body forms)
-  `(let ((*condition-restarts* (cons (cons ,condition ,restarts)
-                                     *condition-restarts*)))
-    ,@forms))
-
 
-;;; ----------------------------------------------------------------------
-;;; Condition Data Type
+;;; -- Condition Data Type -----------------------------------------------------
 
 (defclass condition ()
   ((report-function :allocation :class :initform nil)))
@@ -384,31 +456,6 @@
                    (go ,tag2))))))))))
 
 |#
-
-
-(defparameter *handler-clusters* nil)
-
-(defmacro handler-bind (bindings &body forms)
-  (unless (every #'(lambda (x) (and (listp x) (= (length x) 2))) bindings)
-    (error "Ill-formed handler bindings."))
-  `(let ((*handler-clusters*
-          (cons (list ,@(mapcar #'(lambda (x) `(cons ',(car x) ,(cadr x)))
-                                bindings))
-                *handler-clusters*)))
-     ,@forms))
-
-(defun signal (datum &rest arguments)
-  (let* ((condition
-           (coerce-to-condition datum arguments 'SIMPLE-CONDITION 'SIGNAL))
-         (*handler-clusters* *handler-clusters*))
-    (when (typep condition *break-on-signals*)
-      (break "~A~%Break entered because of *BREAK-ON-SIGNALS*." condition))
-    (loop (unless *handler-clusters* (return))
-          (let ((cluster (pop *handler-clusters*)))
-            (dolist (handler cluster)
-              (when (typep condition (car handler))
-                (funcall (cdr handler) condition)))))
-    nil))
 
 
 
@@ -732,48 +779,6 @@ memory limits before executing the program again."))
         (apply #'error simple-error-name :format-control format-control
                :format-arguments format-args args))))
            
-
-
-(defmacro handler-case (form &rest cases)
-  (let ((no-error-clause (assoc ':NO-ERROR cases)))
-    (if no-error-clause
-        (let* ((normal-return (make-symbol "NORMAL-RETURN"))
-               (error-return  (make-symbol "ERROR-RETURN")))
-          `(block ,error-return
-            (multiple-value-call #'(lambda ,@(cdr no-error-clause))
-              (block ,normal-return
-                (return-from ,error-return
-                  (handler-case (return-from ,normal-return ,form)
-                     ,@(remove no-error-clause cases)))))))
-        (let* ((tag (gensym))
-               (var (gensym))
-               (annotated-cases (mapcar #'(lambda (case) (cons (gensym) case))
-                                        cases)))
-          `(block ,tag
-             (let ((,var nil))
-               (declare (ignorable ,var))
-               (tagbody
-                 (handler-bind ,(mapcar #'(lambda (annotated-case)
-                                            (list (cadr annotated-case)
-                                                  `#'(lambda (temp)
-                                                       (declare (ignorable temp))
-                                                       ,@(if (caddr annotated-case)
-                                                             `((setq ,var temp)))
-                                                       (go ,(car annotated-case)))))
-                                        annotated-cases)
-                               (return-from ,tag ,form))
-                 ,@(mapcan #'(lambda (annotated-case)
-                               (list (car annotated-case)
-                                     (let ((body (cdddr annotated-case)))
-                                       `(return-from ,tag
-                                          ,(if (caddr annotated-case)
-                                               `(let ((,(caaddr annotated-case)
-                                                       ,var))
-                                                 ,@body)
-                                               ;; We must allow declarations!
-                                               `(locally ,@body))))))
-                           annotated-cases))))))))
-
 (defmacro ignore-errors (&rest forms)
   `(handler-case (progn ,@forms)
      (error (condition) (values nil condition))))
