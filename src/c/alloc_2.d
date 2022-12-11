@@ -39,14 +39,9 @@ static void ecl_mark_env(struct cl_env_struct *env);
 #  undef GBC_BOEHM_PRECISE
 # else
 #  include <gc/gc_typed.h>
-#  ifdef GBC_BOEHM_OWN_ALLOCATOR
-#  include <gc/private/gc_priv.h>
-#  endif
 #  define GBC_BOEHM_OWN_MARKER
-#  if defined(GBC_BOEHM_OWN_MARKER) || defined(GBC_BOEHM_OWN_ALLOCATOR)
 static int cl_object_kind, cl_object_mark_proc_index;
 static void **cl_object_free_list;
-#  endif
 extern void GC_init_explicit_typing(void);
 # endif
 #endif
@@ -166,10 +161,6 @@ out_of_memory(size_t requested_bytes)
   return GC_MALLOC(requested_bytes);
 }
 
-#ifdef alloc_object
-#undef alloc_object
-#endif
-
 static struct ecl_type_information {
   size_t size;
 #ifdef GBC_BOEHM_PRECISE
@@ -237,58 +228,12 @@ allocate_object_typed(struct ecl_type_information *type_info)
 }
 #endif
 
-#ifdef GBC_BOEHM_OWN_ALLOCATOR
-#error
-static cl_object
-allocate_object_own(struct ecl_type_information *type_info)
-{
-#define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
-#define GENERAL_MALLOC(lb,k) (void *)GC_generic_malloc(lb, k)
-  const cl_env_ptr the_env = ecl_process_env();
-  typedef void *ptr_t;
-  ptr_t op;
-  ptr_t * opp;
-  size_t lg, lb;
-  DCL_LOCK_STATE;
-
-  ecl_disable_interrupts_env(the_env);
-  lb = type_info->size + TYPD_EXTRA_BYTES;
-  if (ecl_likely(SMALL_OBJ(lb))) {
-    lg = GC_size_map[lb];
-    opp = &(cl_object_free_list[lg]);
-    LOCK();
-    if( (op = *opp) == 0 ) {
-      UNLOCK();
-      op = (ptr_t)GENERAL_MALLOC((word)lb, cl_object_kind);
-      if (0 == op) {
-        ecl_enable_interrupts_env(the_env);
-        return 0;
-      }
-      lg = GC_size_map[lb];   /* May have been uninitialized. */
-    } else {
-      *opp = obj_link(op);
-      obj_link(op) = 0;
-      GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-      UNLOCK();
-    }
-  } else {
-    op = (ptr_t)GENERAL_MALLOC((word)lb, cl_object_kind);
-    lg = BYTES_TO_GRANULES(GC_size(op));
-  }
-  ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = type_info->descriptor;
-  ((cl_object)op)->d.t = type_info->t;
-  ecl_enable_interrupts_env(the_env);
-  return (cl_object)op;
-}
-#endif /* GBC_BOEHM_OWN_ALLOCATOR */
-
 #ifdef GBC_BOEHM_OWN_MARKER
 
 static struct GC_ms_entry *
 cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl,
                     GC_word env)
 {
-#if 1
   cl_type t = ((cl_object)addr)->d.t;
   if (ecl_likely(t > t_start && t < t_end)) {
     struct ecl_type_information *info = type_info + t;
@@ -306,185 +251,6 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
       }
     }
   }
-#else
-#define MAYBE_MARK2(ptr) {                                      \
-    GC_word aux = (GC_word)(ptr);                               \
-    if (!(aux & 2) &&                                           \
-        aux >= (GC_word)GC_least_plausible_heap_addr &&         \
-        aux <= (GC_word)GC_greatest_plausible_heap_addr)        \
-      msp = GC_mark_and_push((void*)aux, msp, msl, (void*)o);   \
-  }
-#define MAYBE_MARK(ptr) {                                       \
-    GC_word aux = (GC_word)(ptr);                               \
-    if (!(aux & 2) &&                                           \
-        aux >= (GC_word)lpa &&                                  \
-        aux <= (GC_word)gpa)                                    \
-      msp = GC_mark_and_push((void*)aux, msp, msl, (void*)o);   \
-  }
-  cl_object o = (cl_object)addr;
-  const GC_word lpa = (GC_word)GC_least_plausible_heap_addr;
-  const GC_word gpa = (GC_word)GC_greatest_plausible_heap_addr;
-  switch (o->d.t) {
-  case t_bignum:
-    MAYBE_MARK(ECL_BIGNUN_LIMBS(o));
-    break;
-  case t_ratio:
-    MAYBE_MARK(o->ratio.num);
-    MAYBE_MARK(o->ratio.den);
-    break;
-  case t_complex:
-    MAYBE_MARK(o->gencomplex.real);
-    MAYBE_MARK(o->gencomplex.imag);
-    break;
-  case t_symbol:
-    MAYBE_MARK(o->symbol.hpack);
-    MAYBE_MARK(o->symbol.name);
-    MAYBE_MARK(o->symbol.plist);
-    MAYBE_MARK(o->symbol.gfdef);
-    MAYBE_MARK(o->symbol.value);
-    break;
-  case t_package:
-    MAYBE_MARK(o->pack.external);
-    MAYBE_MARK(o->pack.internal);
-    MAYBE_MARK(o->pack.usedby);
-    MAYBE_MARK(o->pack.uses);
-    MAYBE_MARK(o->pack.shadowings);
-    MAYBE_MARK(o->pack.nicknames);
-    MAYBE_MARK(o->pack.name);
-    break;
-  case t_hashtable:
-    MAYBE_MARK(o->hash.threshold);
-    MAYBE_MARK(o->hash.rehash_size);
-    MAYBE_MARK(o->hash.data);
-    break;
-  case t_array:
-    MAYBE_MARK(o->array.dims);
-  case t_vector:
-# ifdef ECL_UNICODE
-  case t_string:
-# endif
-  case t_base_string:
-  case t_bitvector:
-    MAYBE_MARK(o->vector.self.t);
-    MAYBE_MARK(o->vector.displaced);
-    break;
-  case t_stream:
-    MAYBE_MARK(o->stream.format_table);
-    MAYBE_MARK(o->stream.format);
-    MAYBE_MARK(o->stream.buffer);
-    MAYBE_MARK(o->stream.byte_stack);
-    MAYBE_MARK(o->stream.object1);
-    MAYBE_MARK(o->stream.object0);
-    MAYBE_MARK(o->stream.ops);
-    break;
-  case t_random:
-    MAYBE_MARK(o->random.value);
-    break;
-  case t_readtable:
-# ifdef ECL_UNICODE
-    MAYBE_MARK(o->readtable.hash);
-# endif
-    MAYBE_MARK(o->readtable.table);
-    break;
-  case t_pathname:
-    MAYBE_MARK(o->pathname.version);
-    MAYBE_MARK(o->pathname.type);
-    MAYBE_MARK(o->pathname.name);
-    MAYBE_MARK(o->pathname.directory);
-    MAYBE_MARK(o->pathname.device);
-    MAYBE_MARK(o->pathname.host);
-    break;
-  case t_bytecodes:
-    MAYBE_MARK(o->bytecodes.file_position);
-    MAYBE_MARK(o->bytecodes.file);
-    MAYBE_MARK(o->bytecodes.data);
-    MAYBE_MARK(o->bytecodes.code);
-    MAYBE_MARK(o->bytecodes.definition);
-    MAYBE_MARK(o->bytecodes.name);
-    break;
-  case t_bclosure:
-    MAYBE_MARK(o->bclosure.lex);
-    MAYBE_MARK(o->bclosure.code);
-    break;
-  case t_cfun:
-    MAYBE_MARK(o->cfun.file_position);
-    MAYBE_MARK(o->cfun.file);
-    MAYBE_MARK(o->cfun.block);
-    MAYBE_MARK(o->cfun.name);
-    break;
-  case t_cfunfixed:
-    MAYBE_MARK(o->cfunfixed.file_position);
-    MAYBE_MARK(o->cfunfixed.file);
-    MAYBE_MARK(o->cfunfixed.block);
-    MAYBE_MARK(o->cfunfixed.name);
-    break;
-  case t_cclosure:
-    MAYBE_MARK(o->cclosure.file_position);
-    MAYBE_MARK(o->cclosure.file);
-    MAYBE_MARK(o->cclosure.block);
-    MAYBE_MARK(o->cclosure.env);
-    break;
-  case t_instance:
-    MAYBE_MARK(o->instance.slots);
-    MAYBE_MARK(o->instance.slotds);
-    MAYBE_MARK(o->instance.clas);
-    break;
-# ifdef ECL_THREADS
-  case t_process:
-    MAYBE_MARK(o->process.queue_record);
-    MAYBE_MARK(o->process.woken_up);
-    MAYBE_MARK(o->process.exit_values);
-    MAYBE_MARK(o->process.parent);
-    MAYBE_MARK(o->process.initial_bindings);
-    MAYBE_MARK(o->process.interrupt);
-    MAYBE_MARK(o->process.args);
-    MAYBE_MARK(o->process.function);
-    MAYBE_MARK(o->process.name);
-    if (o->process.env && o->process.env != ECL_NIL)
-      ecl_mark_env(o->process.env);
-    break;
-  case t_lock:
-    MAYBE_MARK(o->lock.owner);
-    MAYBE_MARK(o->lock.name);
-    break;
-  case t_condition_variable:
-    break;
-  case t_rwlock:
-    MAYBE_MARK(o->rwlock.name);
-    break;
-  case t_semaphore:
-    MAYBE_MARK(o->semaphore.name);
-    break;
-  case t_barrier:
-    MAYBE_MARK(o->barrier.name);
-    break;
-  case t_mailbox:
-    MAYBE_MARK(o->mailbox.data);
-    MAYBE_MARK(o->mailbox.name);
-    break;
-# endif
-  case t_codeblock:
-    MAYBE_MARK(o->cblock.error);
-    MAYBE_MARK(o->cblock.source);
-    MAYBE_MARK(o->cblock.links);
-    MAYBE_MARK(o->cblock.name);
-    MAYBE_MARK(o->cblock.next);
-    MAYBE_MARK(o->cblock.temp_data);
-    MAYBE_MARK(o->cblock.data);
-    break;
-  case t_foreign:
-    MAYBE_MARK(o->foreign.tag);
-    MAYBE_MARK(o->foreign.data);
-    break;
-  case t_frame:
-    MAYBE_MARK(o->frame.env);
-    MAYBE_MARK(o->frame.base);
-    MAYBE_MARK(o->frame.stack);
-    break;
-  default:
-    break;
-  }
-#endif
   return msp;
 }
 
@@ -622,26 +388,6 @@ ecl_cons(cl_object a, cl_object d)
 }
 
 cl_object
-ecl_list1(cl_object a)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  struct ecl_cons *obj;
-  ecl_disable_interrupts_env(the_env);
-  obj = GC_MALLOC(sizeof(struct ecl_cons));
-  ecl_enable_interrupts_env(the_env);
-#ifdef ECL_SMALL_CONS
-  obj->car = a;
-  obj->cdr = ECL_NIL;
-  return ECL_PTR_CONS(obj);
-#else
-  obj->t = t_list;
-  obj->car = a;
-  obj->cdr = ECL_NIL;
-  return (cl_object)obj;
-#endif
-}
-
-cl_object
 ecl_alloc_instance(cl_index slots)
 {
   cl_object i;
@@ -725,12 +471,6 @@ ecl_dealloc(void *ptr)
   ecl_enable_interrupts_env(the_env);
 }
 
-static int alloc_initialized = FALSE;
-
-extern void (*GC_push_other_roots)();
-static void (*old_GC_push_other_roots)();
-static void stacks_scanner();
-
 #ifdef GBC_BOEHM_PRECISE
 static cl_index
 to_bitmap(void *x, void *y)
@@ -743,80 +483,17 @@ to_bitmap(void *x, void *y)
 }
 #endif
 
-void
-init_alloc(void)
+void init_type_info (void)
 {
-#ifdef GBC_BOEHM_PRECISE
-  union cl_lispunion o;
-  struct ecl_cons c;
-#endif
   int i;
-  if (alloc_initialized) return;
-  alloc_initialized = TRUE;
-  /*
-   * Garbage collector restrictions: we set up the garbage collector
-   * library to work as follows
-   *
-   * 1) The garbage collector shall not scan shared libraries
-   *    explicitely.
-   * 2) We only detect objects that are referenced by a pointer to
-   *    the begining or to the first byte.
-   * 3) Out of the incremental garbage collector, we only use the
-   *    generational component.
-   */
-  GC_set_no_dls(1);
-  GC_set_all_interior_pointers(0);
-  GC_set_time_limit(GC_TIME_UNLIMITED);
-  GC_init();
-#ifdef ECL_THREADS
-# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
-  GC_allow_register_threads();
-# endif
-#endif
-  if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
-    GC_enable_incremental();
-  }
-  GC_register_displacement(1);
-#ifdef GBC_BOEHM_PRECISE
-  GC_init_explicit_typing();
-#endif
-  GC_clear_roots();
-  GC_disable();
-
-#ifdef GBC_BOEHM_PRECISE
-# ifdef GBC_BOEHM_OWN_ALLOCATOR
-  cl_object_free_list = (void **)GC_new_free_list_inner();
-  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
-                                     (((word)WORDS_TO_BYTES(-1)) | GC_DS_PER_OBJECT),
-                                     TRUE, TRUE);
-# else
-#  ifdef GBC_BOEHM_OWN_MARKER
-  cl_object_free_list = (void **)GC_new_free_list_inner();
-  cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
-  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
-                                     GC_MAKE_PROC(cl_object_mark_proc_index, 0),
-                                     FALSE, TRUE);
-#  endif
-# endif
-#endif /* !GBC_BOEHM_PRECISE */
-
-  GC_set_max_heap_size(cl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE]);
-  /* Save some memory for the case we get tight. */
-  if (cl_core.max_heap_size == 0) {
-    cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-    cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
-  } else if (cl_core.safety_region) {
-    cl_core.safety_region = 0;
-  }
-
-#define init_tm(/* cl_type  */ type,                                    \
-                /* char*    */ name,                                    \
-                /* cl_index */ object_size,                             \
-                /* cl_index */ maxpage) {                               \
-    type_info[type].size = (object_size);                               \
-    if ((maxpage) == 0) {                                               \
-      type_info[type].allocator = allocate_object_atomic;               \
-    }                                                                   \
+#define init_tm(/* cl_type  */ type,                            \
+                /* char*    */ name,                            \
+                /* cl_index */ object_size,                     \
+                /* cl_index */ maxpage) {                       \
+    type_info[type].size = (object_size);                       \
+    if ((maxpage) == 0) {                                       \
+      type_info[type].allocator = allocate_object_atomic;       \
+    }                                                           \
   }
   for (i = 0; i < t_end; i++) {
     type_info[i].t = i;
@@ -998,8 +675,7 @@ init_alloc(void)
     to_bitmap(&o, &(o.process.initial_bindings)) |
     to_bitmap(&o, &(o.process.parent)) |
     to_bitmap(&o, &(o.process.exit_values)) |
-    to_bitmap(&o, &(o.process.woken_up)) |
-    to_bitmap(&o, &(o.process.queue_record));
+    to_bitmap(&o, &(o.process.woken_up));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
     to_bitmap(&o, &(o.lock.owner));
@@ -1058,6 +734,69 @@ init_alloc(void)
     type_info[i].descriptor = descriptor;
   }
 #endif /* GBC_BOEHM_PRECISE */
+}
+
+extern void (*GC_push_other_roots)();
+static void (*old_GC_push_other_roots)();
+static void stacks_scanner();
+
+static int alloc_initialized = FALSE;
+
+void
+init_alloc(void)
+{
+  if (alloc_initialized) return;
+  alloc_initialized = TRUE;
+  init_type_info();
+  /*
+   * Garbage collector restrictions: we set up the garbage collector
+   * library to work as follows
+   *
+   * 1) The garbage collector shall not scan shared libraries
+   *    explicitely.
+   * 2) We only detect objects that are referenced by a pointer to
+   *    the begining or to the first byte.
+   * 3) Out of the incremental garbage collector, we only use the
+   *    generational component.
+   */
+  GC_set_no_dls(1);
+  GC_set_all_interior_pointers(0);
+  GC_set_time_limit(GC_TIME_UNLIMITED);
+  GC_init();
+#ifdef ECL_THREADS
+# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
+  GC_allow_register_threads();
+# endif
+#endif
+  if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
+    GC_enable_incremental();
+  }
+  GC_register_displacement(1);
+#ifdef GBC_BOEHM_PRECISE
+  GC_init_explicit_typing();
+#endif
+  GC_clear_roots();
+  GC_disable();
+
+#ifdef GBC_BOEHM_PRECISE
+# ifdef GBC_BOEHM_OWN_MARKER
+  cl_object_free_list = (void **)GC_new_free_list_inner();
+  cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
+  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
+                                     GC_MAKE_PROC(cl_object_mark_proc_index, 0),
+                                     FALSE, TRUE);
+# endif
+#endif /* !GBC_BOEHM_PRECISE */
+
+  GC_set_max_heap_size(cl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE]);
+  /* Save some memory for the case we get tight. */
+  if (cl_core.max_heap_size == 0) {
+    cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
+    cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+  } else if (cl_core.safety_region) {
+    cl_core.safety_region = 0;
+  }
+
   old_GC_push_other_roots = GC_push_other_roots;
   GC_push_other_roots = stacks_scanner;
   GC_old_start_callback = GC_get_start_callback();
@@ -1504,7 +1243,7 @@ si_gc_dump()
  * WEAK POINTERS
  */
 
-static cl_object
+cl_object
 ecl_alloc_weak_pointer(cl_object o)
 {
   const cl_env_ptr the_env = ecl_process_env();
@@ -1521,6 +1260,12 @@ ecl_alloc_weak_pointer(cl_object o)
   return (cl_object)obj;
 }
 
+static cl_object
+ecl_weak_pointer_value(cl_object o)
+{
+  return ecl_weak_pointer(o);
+}
+
 cl_object
 si_make_weak_pointer(cl_object o)
 {
@@ -1528,24 +1273,19 @@ si_make_weak_pointer(cl_object o)
   @(return pointer);
 }
 
-static cl_object
-ecl_weak_pointer_value(cl_object o)
-{
-  return o->weak.value;
-}
-
 cl_object
 si_weak_pointer_value(cl_object o)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_object value;
   if (ecl_unlikely(ecl_t_of(o) != t_weak_pointer))
     FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
                           @[ext::weak-pointer]);
   value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
   if (value) {
-    @(return value ECL_T);
+    ecl_return2(the_env, value, ECL_T);
   } else {
-    @(return ECL_NIL ECL_NIL);
+    ecl_return2(the_env, ECL_NIL, ECL_NIL);
   }
 }
 

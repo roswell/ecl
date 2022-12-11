@@ -257,8 +257,7 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
         */
         cl_object name = cl_copy_seq(token);
         unlikely_if (Null(the_env->packages_to_be_created_p)) {
-          FEerror("There is no package with the name ~A.",
-                  1, name);
+          FEerror("There is no package with the name ~A.", 1, name);
         }
         p = _ecl_package_to_be_created(the_env, name);
       }
@@ -307,8 +306,7 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
       break;
     }
     unlikely_if (ecl_invalid_character_p(c) && !suppress) {
-      FEreader_error("Found invalid character ~:C", in,
-                     1, ECL_CODE_CHAR(c));
+      FEreader_error("Found invalid character ~:C", in, 1, ECL_CODE_CHAR(c));
     }
     if (read_case != ecl_case_preserve) {
       if (ecl_upper_case_p(c)) {
@@ -562,8 +560,7 @@ dispatch_reader_fun(cl_object in, cl_object dc)
   int c = ecl_char_code(dc);
   ecl_readtable_get(readtable, c, &dispatch_table);
   unlikely_if (!ECL_HASH_TABLE_P(dispatch_table))
-    FEreader_error("~C is not a dispatching macro character",
-                   in, 1, dc);
+    FEreader_error("~C is not a dispatching macro character", in, 1, dc);
   return dispatch_macro_character(dispatch_table, in, c, TRUE);
 }
 
@@ -615,7 +612,7 @@ single_quote_reader(cl_object in, cl_object c)
 }
 
 static cl_object
-void_reader(cl_object in, cl_object c)
+void_reader3(cl_object in, cl_object c, cl_object f)
 {
   /*  no result  */
   @(return);
@@ -1101,9 +1098,6 @@ sharp_R_reader(cl_object in, cl_object c, cl_object d)
   @(return (read_number(in, radix, ECL_CODE_CHAR('R'))));
 }
 
-#define sharp_A_reader void_reader
-#define sharp_S_reader void_reader
-
 static cl_object
 sharp_eq_reader(cl_object in, cl_object c, cl_object d)
 {
@@ -1281,11 +1275,8 @@ patch_sharp(const cl_env_ptr the_env, cl_object x)
   }
 }
 
-#define sharp_plus_reader void_reader
-#define sharp_minus_reader void_reader
-#define sharp_less_than_reader void_reader
-#define sharp_whitespace_reader void_reader
-#define sharp_right_parenthesis_reader void_reader
+#define sharp_plus_reader void_reader3
+#define sharp_minus_reader void_reader3
 
 static cl_object
 sharp_vertical_bar_reader(cl_object in, cl_object ch, cl_object d)
@@ -1315,12 +1306,6 @@ sharp_vertical_bar_reader(cl_object in, cl_object ch, cl_object d)
   }
   /*  no result  */
   @(return);
-}
-
-static cl_object
-default_dispatch_macro_fun(cl_object in, cl_object c, cl_object d)
-{
-  FEreader_error("No dispatch function defined for character ~s.", in, 1, c);
 }
 
 /*
@@ -1423,8 +1408,7 @@ ecl_current_readtable(void)
   r = ECL_SYM_VAL(the_env, @'*readtable*');
   unlikely_if (!ECL_READTABLEP(r)) {
     ECL_SETQ(the_env, @'*readtable*', cl_core.standard_readtable);
-    FEerror("The value of *READTABLE*, ~S, was not a readtable.",
-            1, r);
+    FEerror("The value of *READTABLE*, ~S, was not a readtable.", 1, r);
   }
   return r;
 }
@@ -1790,9 +1774,7 @@ cl_readtable_case(cl_object r)
 static void
 error_locked_readtable(cl_object r)
 {
-  cl_error(2,
-           @"Cannot modify locked readtable ~A.",
-           r);
+  cl_error(2, @"Cannot modify locked readtable ~A.", r);
 }
 
 cl_object
@@ -2076,8 +2058,6 @@ init_read(void)
   ecl_readtable_set(r, '`', cat_terminating,
                     make_cf2(backquote_reader));
   ecl_readtable_set(r, '|', cat_multiple_escape, ECL_NIL);
-
-  cl_core.default_dispatch_macro = make_cf3(default_dispatch_macro_fun);
 
   cl_make_dispatch_macro_character(3, ECL_CODE_CHAR('#'),
                                    ECL_T /* non terminating */, r);
@@ -2375,13 +2355,11 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
     {
       unlikely_if (block->cblock.data_text == NULL) {
         unlikely_if (len > 0)
-          FEreader_error("Not enough data while loading"
-                         "binary file", in, 0);
+          FEreader_error("Not enough data while loading binary file", in, 0);
       } else {
         cl_object v = si_deserialize(*(block->cblock.data_text));
         unlikely_if (v->vector.dim < len)
-          FEreader_error("Not enough data while loading"
-                         "binary file", in, 0);
+          FEreader_error("Not enough data while loading binary file", in, 0);
         memcpy(VV, v->vector.self.t, perm_len * sizeof(cl_object));
         memcpy(VVtemp, v->vector.self.t + perm_len, temp_len * sizeof(cl_object));
       }
@@ -2411,8 +2389,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
     }
     ecl_bds_unwind(env, bds_ndx);
     unlikely_if (i < len)
-      FEreader_error("Not enough data while loading"
-                     "binary file", in, 0);
+      FEreader_error("Not enough data while loading binary file", in, 0);
     cl_close(1,in);
     in = OBJNULL;
 #endif

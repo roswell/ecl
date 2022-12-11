@@ -130,72 +130,71 @@ ecl_set_option(int option, cl_fixnum value)
   }
 }
 
-void
-ecl_init_bignum_registers(cl_env_ptr env)
+static void
+init_env_mp(cl_env_ptr env)
 {
-  int i;
-  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
-    cl_object x = ecl_alloc_object(t_bignum);
-    _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
-    env->big_register[i] = x;
-  }
-}
-
-void
-ecl_clear_bignum_registers(cl_env_ptr env)
-{
-  int i;
-  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
-    _ecl_big_clear(env->big_register[i]);
-  }
-}
-
-void
-ecl_init_env(cl_env_ptr env)
-{
-  env->c_env = NULL;
 #if defined(ECL_THREADS)
   env->cleanup = 0;
 #else
   env->own_process = ECL_NIL;
 #endif
-  env->string_pool = ECL_NIL;
+}
 
-  env->stack = NULL;
-  env->stack_top = NULL;
-  env->stack_limit = NULL;
-  env->stack_size = 0;
-  ecl_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
-
-#if !defined(ECL_CMU_FORMAT)
-  env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
+static void
+init_env_int(cl_env_ptr env)
+{
+  env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
+  env->interrupt_struct->pending_interrupt = ECL_NIL;
+#ifdef ECL_THREADS
+  ecl_mutex_init(&env->interrupt_struct->signal_queue_lock, FALSE);
 #endif
+  {
+    int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
+    env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
+  }
+  env->fault_address = env;
+  env->trap_fpe_bits = 0;
+}
+
+static void
+init_env_ffi(cl_env_ptr env)
+{
 #ifdef HAVE_LIBFFI
   env->ffi_args_limit = 0;
   env->ffi_types = 0;
   env->ffi_values = 0;
   env->ffi_values_ptrs = 0;
 #endif
+}
 
-  env->method_cache = ecl_make_cache(64, 4096);
-  env->slot_cache = ecl_make_cache(3, 4096);
-  env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
-  env->interrupt_struct->pending_interrupt = ECL_NIL;
-  ecl_mutex_init(&env->interrupt_struct->signal_queue_lock, FALSE);
-  {
-    int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
-    env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
-  }
-
-  init_stacks(env);
-
-  ecl_init_bignum_registers(env);
-
-  env->trap_fpe_bits = 0;
-
+static void
+init_env_aux(cl_env_ptr env)
+{
+  /* Reader */
+  env->string_pool = ECL_NIL;
   env->packages_to_be_created = ECL_NIL;
   env->packages_to_be_created_p = ECL_NIL;
-  env->fault_address = env;
+  /* Format (written in C) */
+#if !defined(ECL_CMU_FORMAT)
+  env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
+#endif
+  /* Bignum arithmetic */
+  ecl_init_bignum_registers(env);
+  /* Bytecodes compiler environment */
+  env->c_env = NULL;
+  /* CLOS caches */
+  env->method_cache = ecl_make_cache(64, 4096);
+  env->slot_cache = ecl_make_cache(3, 4096);
+}
+
+void
+ecl_init_env(cl_env_ptr env)
+{
+  init_env_mp(env);
+  init_env_int(env);
+  init_env_aux(env);
+  init_env_ffi(env);
+  init_stacks(env);
 }
 
 void
@@ -208,7 +207,9 @@ _ecl_dealloc_env(cl_env_ptr env)
    * a lisp environment set up -- the allocator assumes one -- and we
    * may have already cleaned up the value of ecl_process_env()
    */
+#ifdef ECL_THREADS
   ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
+#endif
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
@@ -385,7 +386,6 @@ struct cl_core_struct cl_core = {
   .error_output = ECL_NIL,
   .standard_readtable = ECL_NIL,
   .dispatch_reader = ECL_NIL,
-  .default_dispatch_macro = ECL_NIL,
 
   .char_names = ECL_NIL,
   .null_string = (cl_object)&str_empty_data,
@@ -499,18 +499,13 @@ cl_boot(int argc, char **argv)
   init_alloc();
   GC_disable();
   env = _ecl_alloc_env(0);
-#ifdef ECL_THREADS
   init_threads(env);
-#else
-  cl_env_p = env;
-#endif
 
   /*
    * 1) Initialize symbols and packages
    */
 
   ECL_NIL_SYMBOL->symbol.t = t_symbol;
-  ECL_NIL_SYMBOL->symbol.dynamic = 0;
   ECL_NIL_SYMBOL->symbol.value = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.name = str_NIL;
   ECL_NIL_SYMBOL->symbol.gfdef = ECL_NIL;
@@ -523,7 +518,6 @@ cl_boot(int argc, char **argv)
   cl_num_symbols_in_core=1;
 
   ECL_T->symbol.t = (short)t_symbol;
-  ECL_T->symbol.dynamic = 0;
   ECL_T->symbol.value = ECL_T;
   ECL_T->symbol.name = str_T;
   ECL_T->symbol.gfdef = ECL_NIL;
@@ -540,8 +534,6 @@ cl_boot(int argc, char **argv)
 #else
   cl_core.path_max = MAXPATHLEN;
 #endif
-
-  env->packages_to_be_created = ECL_NIL;
 
 #ifdef ECL_THREADS
   env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
@@ -626,10 +618,7 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-#if !defined(GBC_BOEHM)
   /* We need this because a lot of stuff is to be created */
-  init_GC();
-#endif
   GC_enable();
 
   /*

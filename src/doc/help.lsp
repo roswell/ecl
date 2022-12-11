@@ -397,20 +397,6 @@ Otherwise, returns LIST.")
 (docfun adjustable-array-p function (array) "
 Returns T if ARRAY is adjustable; NIL otherwise.")
 
-#-boehm-gc
-(docfun allocate function (type number &optional (really-allocate nil)) "
-ECL specific.
-Sets the maximum number of pages for the type class of the ECL implementation
-type TYPE to NUMBER.  If REALLY-ALLOCATE is non-NIL, then the specified number
-of pages will be allocated immediately.")
-
-#-boehm-gc
-(docfun si::allocate-contiguous-pages function (number &optional (really-allocate nil)) "
-ECL specific.
-Sets the maximum number of pages for contiguous blocks to NUMBER.  If REALLY-
-ALLOCATE is non-NIL, then the specified number of pages will be allocated
-immediately.")
-
 #+clos
 (docfun si::allocate-gfun function (name arity hash-table) "
 ECL/CLOS specific.
@@ -422,17 +408,6 @@ methods.")
 (docfun si::allocate-instance function (class length) "
 ECL/CLOS specific.
 Allocates an istance of CLASS with LENGTH slots.")
-
-#-boehm-gc
-(docfun si::allocated-contiguous-pages function () "
-ECL specific.
-Returns the number of pages currently allocated for contiguous blocks.")
-
-#-boehm-gc
-(docfun si::allocated-pages function (type) "
-ECL specific.
-Returns the number of pages currently allocated for the type class of the ECL
-implementation type TYPE.")
 
 (docfun alpha-char-p function (char) "
 Returns T if CHAR is alphabetic; NIL otherwise.")
@@ -1495,11 +1470,6 @@ ECL specific.
 Starts garbage collection with the specified collection level.  If X is NIL,
 collects only cells.  If X is T, collects everything.")
 
-#-boehm-gc
-(docfun si::gc-time function () "
-ECL specific.
-Returns the amount of time (in 1/100 seconds) spent during garbage collection.")
-
 (docfun gcd function (&rest integers) "
 Returns the greatest common divisor of the args.")
 
@@ -1522,11 +1492,6 @@ If found, returns the value of the property.  Otherwise, returns DEFAULT.")
 (docfun get-dispatch-macro-character function (char subchar &optional (readtable *readtable*)) "
 Returns the read macro for SUBCHAR associated with the dispatch macro
 character CHAR in READTABLE.")
-
-#-boehm-gc
-(docfun si::get-hole-size function () "
-ECL specific.
-Returns as a fixnum the size of the memory hole (in pages).")
 
 (docfun get-internal-real-time function () "
 Returns the time (in 1/100 seconds) since the invocation of ECL.")
@@ -2111,11 +2076,6 @@ ECL specific.
 Returns the current maximum number of pages for the type class of the ECL
 implementation type TYPE.")
 
-#-boehm-gc
-(docfun si::maximum-contiguous-pages function () "
-ECL specific.
-Returns the current maximum number of pages for contiguous blocks.")
-
 (docfun member function (item list &key (key '#'identity) (test '#'eql) test-not) "
 Searches LIST for an element that is equal to ITEM in the sense of the TEST.
 If found, returns the sublist of LIST that begins with the element.
@@ -2661,12 +2621,6 @@ See MAKE-PACKAGE.")
             (start2 0) (end2 (length sequence2))) "
 Replaces elements of SEQUENCE1 with the corresponding elements of SEQUENCE2.
 SEQUENCE1 may be destroyed and is returned.")
-
-#-boehm-gc
-(docfun si::reset-gc-count function () "
-ECL specific.
-Resets the counter of the garbage collector that records how many times the
-garbage collector has been called for each implementation type.")
 
 (docfun rest function (x) "
 Equivalent to CDR.")

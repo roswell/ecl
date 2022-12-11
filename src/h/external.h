@@ -150,7 +150,9 @@ struct cl_env_struct {
 struct ecl_interrupt_struct {
         cl_object pending_interrupt;
         cl_object signal_queue;
+#ifdef ECL_THREADS
         ecl_mutex_t signal_queue_lock;
+#endif
 };
 
 #ifndef __GNUC__
@@ -196,7 +198,6 @@ struct cl_core_struct {
         cl_object error_output;
         cl_object standard_readtable;
         cl_object dispatch_reader;
-        cl_object default_dispatch_macro;
 
         cl_object char_names;
         cl_object null_string;
@@ -262,12 +263,15 @@ extern ECL_API struct cl_core_struct cl_core;
 
 extern ECL_API cl_object ecl_alloc_object(cl_type t);
 extern ECL_API cl_object ecl_alloc_instance(cl_index slots);
+extern ECL_API cl_object ecl_alloc_weak_pointer(cl_object o);
+extern ECL_API cl_object ecl_alloc_compact_object(cl_type t, cl_index extra_space);
 extern ECL_API cl_object ecl_cons(cl_object a, cl_object d);
-extern ECL_API cl_object ecl_list1(cl_object a);
+#define ecl_list1(x) ecl_cons(x, ECL_NIL)
+
+extern ECL_API cl_object si_make_weak_pointer(cl_object o);
+extern ECL_API cl_object si_weak_pointer_value(cl_object o);
+
 #ifdef GBC_BOEHM
-extern ECL_API cl_object si_gc(cl_narg narg, ...);
-extern ECL_API cl_object si_gc_dump(void);
-extern ECL_API cl_object si_gc_stats(cl_object enable);
 extern ECL_API void *ecl_alloc_unprotected(cl_index n);
 extern ECL_API void *ecl_alloc_atomic_unprotected(cl_index n);
 extern ECL_API void *ecl_alloc(cl_index n);
@@ -277,30 +281,8 @@ extern ECL_API void ecl_free_uncollectable(void *);
 extern ECL_API void ecl_dealloc(void *);
 #define ecl_alloc_align(s,d) ecl_alloc(s)
 #define ecl_alloc_atomic_align(s,d) ecl_alloc_atomic(s)
-#define ecl_register_static_root(x) ecl_register_root(x)
-extern ECL_API cl_object ecl_alloc_compact_object(cl_type t, cl_index extra_space);
-
-extern ECL_API cl_object si_make_weak_pointer(cl_object o);
-extern ECL_API cl_object si_weak_pointer_value(cl_object o);
-#else
-extern ECL_API cl_object si_allocate _ECL_ARGS((cl_narg narg, cl_object type, cl_object qty, ...));
-extern ECL_API cl_object si_maximum_allocatable_pages _ECL_ARGS((cl_narg narg, cl_object type, ...));
-extern ECL_API cl_object si_allocated_pages _ECL_ARGS((cl_narg narg, cl_object type, ...));
-extern ECL_API cl_object si_alloc_contpage _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_allocated_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_maximum_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_allocate_contiguous_pages _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_get_hole_size _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_set_hole_size _ECL_ARGS((cl_narg narg, cl_object size, ...));
-extern ECL_API cl_object si_ignore_maximum_pages _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API void *ecl_alloc(cl_index n);
-extern ECL_API void *ecl_alloc_align(cl_index size, cl_index align);
-extern ECL_API void *ecl_alloc_uncollectable(size_t size);
-extern ECL_API void ecl_free_uncollectable(void *);
-extern ECL_API void ecl_dealloc(void *p);
-#define ecl_alloc_atomic(x) ecl_alloc(x)
-#define ecl_alloc_atomic_align(x,s) ecl_alloc_align(x,s)
-#define ecl_register_static_root(x) ecl_register_root(x);
+#else  /* Ideally the core would not depend on these. */
+# error "IMPLEMENT ME!"
 #endif /* GBC_BOEHM */
 
 /* all_symbols */
@@ -689,6 +671,7 @@ extern ECL_API void ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag type, cl_
 #define ECL_LISTEN_NO_CHAR      0
 #define ECL_LISTEN_AVAILABLE    1
 #define ECL_LISTEN_EOF          -1
+#define ECL_LISTEN_FALLBACK     -3
 
 extern ECL_API cl_object cl_make_synonym_stream(cl_object sym);
 extern ECL_API cl_object cl_synonym_stream_symbol(cl_object strm);
@@ -773,26 +756,16 @@ extern ECL_API cl_object cl_format _ECL_ARGS((cl_narg narg, cl_object stream, cl
 
 /* gbc.c */
 
-#if !defined(GBC_BOEHM)
-extern ECL_API cl_object si_room_report _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_reset_gc_count _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_gc_time _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_gc(cl_object area, ...);
-#define GC_enabled() GC_enable
-#define GC_enable() GC_enable = TRUE;
-#define GC_disable() GC_enable = FALSE;
-extern ECL_API bool GC_enable;
-extern ECL_API cl_object (*GC_enter_hook)(void);
-extern ECL_API cl_object (*GC_exit_hook)(void);
-extern ECL_API void ecl_register_root(cl_object *p);
-extern ECL_API void ecl_gc(cl_type t);
-#endif
-
 #ifdef GBC_BOEHM
 #define GC_enabled() !GC_is_disabled()
 #define GC_enable() GC_enable()
 #define GC_disable() GC_disable()
 extern ECL_API void ecl_register_root(cl_object *p);
+extern ECL_API cl_object si_gc(cl_narg narg, ...);
+extern ECL_API cl_object si_gc_dump(void);
+extern ECL_API cl_object si_gc_stats(cl_object enable);
+#else
+# error "IMPLEMENT ME!"
 #endif /* GBC_BOEHM */
 
 

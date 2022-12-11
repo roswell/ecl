@@ -401,9 +401,8 @@
   (let* ((condition
            (coerce-to-condition datum arguments 'SIMPLE-CONDITION 'SIGNAL))
          (*handler-clusters* *handler-clusters*))
-    (if (typep condition *break-on-signals*)
-        (break "~A~%Break entered because of *BREAK-ON-SIGNALS*."
-               condition))
+    (when (typep condition *break-on-signals*)
+      (break "~A~%Break entered because of *BREAK-ON-SIGNALS*." condition))
     (loop (unless *handler-clusters* (return))
           (let ((cluster (pop *handler-clusters*)))
             (dolist (handler cluster)
@@ -872,13 +871,12 @@ strings."
        ; from CEerror
        (with-simple-restart (accept "Accept the error, returning NIL")
          (multiple-value-bind (rv used-restart)
-           (with-simple-restart (ignore "Ignore the error, and try the operation again")
-             (multiple-value-bind (rv used-restart)
-               (with-simple-restart (continue "Continue, using ~S" continue-string)
-                 (signal condition)
-                 (invoke-debugger condition))
-
-               (if used-restart continue-string rv)))
+             (with-simple-restart (ignore "Ignore the error, and try the operation again")
+               (multiple-value-bind (rv used-restart)
+                   (with-simple-restart (continue "Continue, using ~S" continue-string)
+                     (signal condition)
+                     (invoke-debugger condition))
+                 (if used-restart continue-string rv)))
            (if used-restart t rv))))
       (t
         (progn

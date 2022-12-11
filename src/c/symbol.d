@@ -102,7 +102,6 @@ cl_make_symbol(cl_object str)
   }
   x = ecl_alloc_object(t_symbol);
   x->symbol.name = str;
-  x->symbol.dynamic = 0;
 #ifdef ECL_THREADS
   x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif  /*  */
@@ -323,7 +322,6 @@ cl_symbol_name(cl_object x)
   sym = ECL_NIL_SYMBOL;
   x = cl_make_symbol(ecl_symbol_name(sym));
   if (!Null(cp)) {
-    x->symbol.dynamic = 0;
     x->symbol.stype = sym->symbol.stype;
     x->symbol.value = sym->symbol.value;
     x->symbol.gfdef = sym->symbol.gfdef;
