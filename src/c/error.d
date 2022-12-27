@@ -345,11 +345,11 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
 {
   const char *message1 =
     "In ~:[an anonymous function~;~:*function ~A~], "
-    "the ~*index into the object~% ~A.~%"
+    "the ~*index into the object~% ~S~%"
     "takes a value ~D out of the range ~A.";
   const char *message2 =
     "In ~:[an anonymous function~;~:*function ~A~], "
-    "the ~:R index into the object~% ~A~%"
+    "the ~:R index into the object~% ~S~%"
     "takes a value ~D out of the range ~A.";
   cl_object limit = ecl_make_integer(nonincl_limit-1);
   cl_object type = ecl_make_integer_type(ecl_make_fixnum(0), limit);
