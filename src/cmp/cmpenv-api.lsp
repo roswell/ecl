@@ -182,7 +182,7 @@ the closure in let/flet forms for variables/functions it closes over."
             ((eq record 'SI:UNWIND-PROTECT-BOUNDARY)
              (setf unw t))
             ((atom record)
-             (baboon :format-control "Uknown record found in environment~%~S"
+             (baboon :format-control "Unknown record found in environment~%~S"
                      :format-arguments (list record)))
             ;; We have to use EQUAL because the name can be a list (SETF whatever)
             ((equal (first record) name)
@@ -200,7 +200,7 @@ the closure in let/flet forms for variables/functions it closes over."
             ((eq record 'SI:UNWIND-PROTECT-BOUNDARY)
              (setf unw t))
             ((atom record)
-             (baboon :format-control "Uknown record found in environment~%~S"
+             (baboon :format-control "Unknown record found in environment~%~S"
                      :format-arguments (list record)))
             ((not (eq (first record) type)))
             ((eq type :block)
