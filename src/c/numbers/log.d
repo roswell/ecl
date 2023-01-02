@@ -348,7 +348,7 @@ static cl_object
 ecl_log1_complex_long_precision(cl_object x)
 {
 #ifdef ECL_COMPLEX_FLOAT
-  cl_object result = ecl_alloc_object(t_cdfloat);
+  cl_object result = ecl_alloc_object(t_clfloat);
   long double _Complex fc = ecl_to_long_double(x->gencomplex.real) + I * ecl_to_long_double(x->gencomplex.real);
   ecl_clfloat(result) = clogl(fc);
   return result;
