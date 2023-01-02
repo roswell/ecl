@@ -189,9 +189,136 @@ MATH_DEF_DISPATCH1(log1, @[log], @[number],
                    ecl_log1_complex,
                    ecl_log1_csfloat, ecl_log1_cdfloat, ecl_log1_clfloat);
 
+static cl_object ecl_log1_double_precision(cl_object x);
+
+static cl_object
+ecl_log1_bignum_double_precision(cl_object x)
+{
+  cl_fixnum l = ecl_integer_length(x) - 1;
+  cl_object r = ecl_make_ratio(x, ecl_ash(ecl_make_fixnum(1), l));
+  double f = ecl_to_double(r);
+  if (f < 0) {
+#ifdef ECL_COMPLEX_FLOAT
+    return ecl_make_cdfloat(clog(f) + l * log(2.0));
+#else
+    return ecl_make_complex(ecl_make_double_float(log(-f) + l * log(2.0)), ecl_make_double_float(ECL_PI_D));
+#endif
+  } else {
+    return ecl_make_double_float(log(f) + l * log(2.0));
+  }
+}
+
+static cl_object
+ecl_log1_simple_double_precision(cl_object x)
+{
+  double f = ecl_to_double(x);
+  if (f < 0) {
+#ifdef ECL_COMPLEX_FLOAT
+    return ecl_make_cdfloat(clog(f));
+#else
+    return ecl_make_complex(ecl_make_double_float(log(-f)), ecl_make_double_float(ECL_PI_D));
+#endif
+  }
+  return ecl_make_double_float(log(f));
+}
+
+static cl_object
+ecl_log1_ratio_double_precision(cl_object x)
+{
+  cl_object num = x->ratio.num;
+  cl_object den = x->ratio.den;
+  cl_index lnum = ecl_integer_length(num);
+  cl_index lden = ecl_integer_length(den);
+  if ((lnum > lden) ? (lnum - lden >= DBL_MAX_EXP) : (lden - lnum >= -DBL_MIN_EXP)) {
+    cl_object numlog = ecl_log1_double_precision(num);
+    cl_object denlog = ecl_log1_double_precision(den);
+    return ecl_minus(numlog, denlog);
+  } else {
+    return ecl_log1_simple_double_precision(x);
+  }
+}
+
+MATH_DEF_DISPATCH1(log1_double_precision, @[log], @[number],
+                   ecl_log1_simple_double_precision, ecl_log1_bignum_double_precision, ecl_log1_ratio_double_precision,
+                   ecl_log1_single_float, ecl_log1_double_float, ecl_log1_long_float,
+                   ecl_log1_complex,
+                   ecl_log1_csfloat, ecl_log1_cdfloat, ecl_log1_clfloat);
+
+static cl_object ecl_log1_long_precision(cl_object x);
+
+static cl_object
+ecl_log1_bignum_long_precision(cl_object x)
+{
+  cl_fixnum l = ecl_integer_length(x) - 1;
+  cl_object r = ecl_make_ratio(x, ecl_ash(ecl_make_fixnum(1), l));
+  long double f = ecl_to_long_double(r);
+  if (f < 0) {
+#ifdef ECL_COMPLEX_FLOAT
+    return ecl_make_clfloat(clogl(f) + l * logl(2.0));
+#else
+    return ecl_make_complex(ecl_make_long_float(logl(-f) + l * logl(2.0)), ecl_make_long_float(ECL_PI_L));
+#endif
+  } else {
+    return ecl_make_long_float(logl(f) + l * logl(2.0));
+  }
+}
+
+static cl_object
+ecl_log1_simple_long_precision(cl_object x)
+{
+  long double f = ecl_to_long_double(x);
+  if (f < 0) {
+#ifdef ECL_COMPLEX_FLOAT
+    return ecl_make_clfloat(clogl(f));
+#else
+    return ecl_make_complex(ecl_make_long_float(logl(-f)), ecl_make_long_float(ECL_PI_L));
+#endif
+  }
+  return ecl_make_long_float(logl(f));
+}
+
+static cl_object
+ecl_log1_ratio_long_precision(cl_object x)
+{
+  cl_object num = x->ratio.num;
+  cl_object den = x->ratio.den;
+  cl_index lnum = ecl_integer_length(num);
+  cl_index lden = ecl_integer_length(den);
+  if ((lnum > lden) ? (lnum - lden >= LDBL_MAX_EXP) : (lden - lnum >= -LDBL_MIN_EXP)) {
+    cl_object numlog = ecl_log1_long_precision(num);
+    cl_object denlog = ecl_log1_long_precision(den);
+    return ecl_minus(numlog, denlog);
+  } else {
+    return ecl_log1_simple_long_precision(x);
+  }
+}
+
+MATH_DEF_DISPATCH1(log1_long_precision, @[log], @[number],
+                   ecl_log1_simple_long_precision, ecl_log1_bignum_long_precision, ecl_log1_ratio_long_precision,
+                   ecl_log1_single_float, ecl_log1_double_float, ecl_log1_long_float,
+                   ecl_log1_complex,
+                   ecl_log1_csfloat, ecl_log1_cdfloat, ecl_log1_clfloat);
+
 cl_object
 ecl_log2(cl_object x, cl_object y)
 {
+  cl_type tx = ecl_t_of(x);
+  cl_type ty = ecl_t_of(y);
+  /* Prevent loss of precision from intermediate single float results */
+  if (tx == t_doublefloat || ty == t_doublefloat
+#ifdef ECL_COMPLEX_FLOAT
+      || tx == t_cdfloat || ty == t_cdfloat
+#endif
+      ) {
+    return ecl_divide(ecl_log1_double_precision(y), ecl_log1_double_precision(x));
+  }
+  if (tx == t_longfloat || ty == t_longfloat
+#ifdef ECL_COMPLEX_FLOAT
+      || tx == t_clfloat || ty == t_clfloat
+#endif
+      ) {
+    return ecl_divide(ecl_log1_long_precision(y), ecl_log1_long_precision(x));
+  }
   return ecl_divide(ecl_log1(y), ecl_log1(x));
 }
 

@@ -441,3 +441,22 @@
     (finishes (log (- x)))
     (finishes (log (/ 1 x)))
     (finishes (log (- (/ 1 x))))))
+
+;;; Created: 2023-01-02
+;;; Contains: tests checking that (log x y) does not unnecessarily
+;;; lose precision through intermediate single-float calculations when
+;;; the final result is a double or long float.
+(test mix.0024.log-loss-of-precision
+  (is (eql (log 2 2d0) 1d0))
+  (is (eql (realpart (log -2 2d0)) 1d0))
+  (is (eql (log (ash 1 1024) 2d0) 1024d0))
+  (is (eql (realpart (log (- (ash 1 1024)) 2d0)) 1024d0))
+  (is (eql (log 1/2 2d0) -1d0))
+  (is (eql (realpart (log -1/2 2d0)) -1d0))
+
+  (is (eql (log 2 2l0) 1l0))
+  (is (eql (realpart (log -2 2l0)) 1l0))
+  (is (eql (log (ash 1 1024) 2l0) 1024l0))
+  (is (eql (realpart (log (- (ash 1 1024)) 2l0)) 1024l0))
+  (is (eql (log 1/2 2l0) -1l0))
+  (is (eql (realpart (log -1/2 2l0)) -1l0)))
