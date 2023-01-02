@@ -431,6 +431,13 @@
     (is (= 20 (array-total-size vector)))))
 
 ;;; Created: 2022-11-10
-;;; Contains: a test for a logarithm of a very small ratio
-(test mix.0023.log-small-ratio
-  (finishes (log (/ 1 6319748715279270675921934218987893281199411530039296))))
+;;; Contains: tests for the logarithm of very small or very large
+;;; numbers where the number coerced to a single-float is 0 or
+;;; infinity but its logarithm can be represented as a finite
+;;; single-float.
+(test mix.0023.log-floating-point-overflow
+  (let ((x (ash 1 1024)))
+    (finishes (log x))
+    (finishes (log (- x)))
+    (finishes (log (/ 1 x)))
+    (finishes (log (- (/ 1 x))))))

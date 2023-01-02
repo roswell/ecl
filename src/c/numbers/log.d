@@ -55,20 +55,17 @@ ecl_log1_complex_inner(cl_object r, cl_object i)
 static cl_object
 ecl_log1_bignum(cl_object x)
 {
-  if (ecl_minusp(x)) {
+  cl_fixnum l = ecl_integer_length(x) - 1;
+  cl_object r = ecl_make_ratio(x, ecl_ash(ecl_make_fixnum(1), l));
+  float f = ecl_to_float(r);
+  if (f < 0) {
 #ifdef ECL_COMPLEX_FLOAT
-    cl_object result = ecl_alloc_object(t_csfloat);
-    float _Complex fc = ecl_to_float(x);
-    ecl_csfloat(result) = clogf(fc);
-    return result;
+    return ecl_make_csfloat(clogf(f) + l * logf(2.0));
 #else
-    return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
+    return ecl_make_complex(ecl_make_single_float(logf(-f) + l * logf(2.0)), ecl_make_single_float(ECL_PI_D));
 #endif
   } else {
-    cl_fixnum l = ecl_integer_length(x) - 1;
-    cl_object r = ecl_make_ratio(x, ecl_ash(ecl_make_fixnum(1), l));
-    float d = logf(ecl_to_float(r)) + l * logf(2.0);
-    return ecl_make_single_float(d);
+    return ecl_make_single_float(logf(f) + l * logf(2.0));
   }
 }
 
@@ -78,15 +75,12 @@ ecl_log1_simple(cl_object x)
   float f = ecl_to_float(x);
   if (f < 0) {
 #ifdef ECL_COMPLEX_FLOAT
-    cl_object result = ecl_alloc_object(t_csfloat);
-    float _Complex fc = ecl_to_float(x);
-    ecl_csfloat(result) = clogf(fc);
-    return result;
+    return ecl_make_csfloat(clogf(f));
 #else
-    return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
+    return ecl_make_complex(ecl_make_single_float(logf(-f)), ecl_make_single_float(ECL_PI_D));
 #endif
   }
-  return ecl_make_single_float(logf(ecl_to_float(x)));
+  return ecl_make_single_float(logf(f));
 }
 
 static cl_object
@@ -112,12 +106,9 @@ ecl_log1_single_float(cl_object x)
   if (isnan(f)) return x;
   if (f < 0) {
 #ifdef ECL_COMPLEX_FLOAT
-    cl_object result = ecl_alloc_object(t_csfloat);
-    float _Complex fc = f;
-    ecl_csfloat(result) = clogf(fc);
-    return result;
+    return ecl_make_csfloat(clogf(f));
 #else
-    return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
+    return ecl_make_complex(ecl_make_single_float(logf(-f)), ecl_make_single_float(ECL_PI_D));
 #endif
   }
   return ecl_make_single_float(logf(f));
@@ -130,12 +121,9 @@ ecl_log1_double_float(cl_object x)
   if (isnan(f)) return x;
   if (f < 0) {
 #ifdef ECL_COMPLEX_FLOAT
-    cl_object result = ecl_alloc_object(t_cdfloat);
-    double _Complex fc = f;
-    ecl_cdfloat(result) = clog(fc);
-    return result;
+    return ecl_make_cdfloat(clog(f));
 #else
-    return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
+    return ecl_make_complex(ecl_make_double_float(log(-f)), ecl_make_double_float(ECL_PI_D));
 #endif
   }
   return ecl_make_double_float(log(f));
@@ -148,12 +136,9 @@ ecl_log1_long_float(cl_object x)
   if (isnan(f)) return x;
   if (f < 0) {
 #ifdef ECL_COMPLEX_FLOAT
-    cl_object result = ecl_alloc_object(t_clfloat);
-    long double _Complex fc = f;
-    ecl_clfloat(result) = clogl(fc);
-    return result;
+    return ecl_make_clfloat(clogl(f));
 #else
-    return ecl_log1_complex_inner(x, ecl_make_fixnum(0));
+    return ecl_make_complex(ecl_make_long_float(logl(-f)), ecl_make_long_float(ECL_PI_L));
 #endif
   }
   return ecl_make_long_float(logl(f));
