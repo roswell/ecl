@@ -40,10 +40,14 @@
 extern char **environ;
 #endif
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h> /* for TARGET_OS_IPHONE */
+#endif
+
 cl_object
 si_system(cl_object cmd_string)
 {
-#if !defined(HAVE_SYSTEM)
+#if !defined(HAVE_SYSTEM) || defined(TARGET_OS_IPHONE)
   FElibc_error("si_system not implemented",1);
   @(return ECL_NIL);
 #else
