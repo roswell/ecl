@@ -425,9 +425,9 @@ case "${host_os}" in
                 ECL_LDRPATH='-Wl,-rpath,~A'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
                 THREAD_LIBS='-lpthread'
-                # The GMP library has not yet been ported to Intel-OSX
+                # The GMP library has not yet been ported to Intel or Arm-OSX
                 case "`uname -m`" in
-                i386*|x86_64) gmp_build=none-apple-${host_os};;
+                i386*|x86_64|arm) gmp_build=none-apple-${host_os};;
                 *) ABI=32;;
                 esac
                 if test "x$ABI" = "x64"; then
