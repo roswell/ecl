@@ -466,3 +466,16 @@
   (is (eql (realpart (log -2s0 2l0)) 1l0))
   (is (eql (log 2d0 2l0) 1l0))
   (is (eql (realpart (log -2d0 2l0)) 1l0)))
+
+;;; Created: 2023-01-07
+;;; Contains: tests checking for illegal format parameters that occur
+;;; after at signs or colons.
+(test mix.0025.illegal-format-parameters
+  (signals error (format nil "a~@4A" nil))
+  (signals error (format nil "a~:4A" nil))
+  (signals error (format nil "a~:@4A" nil))
+  (signals error (format nil "a~@:4A" nil))
+  (is (equal (format nil "a~4@A" nil) "a NIL"))
+  (is (equal (format nil "a~4:A" nil) "a()  "))
+  (is (equal (format nil "a~4:@A" nil) "a  ()"))
+  (is (equal (format nil "a~4@:A" nil) "a  ()")))
