@@ -466,3 +466,15 @@
   (is (eql (realpart (log -2s0 2l0)) 1l0))
   (is (eql (log 2d0 2l0) 1l0))
   (is (eql (realpart (log -2d0 2l0)) 1l0)))
+
+(test mix.0026.file-listen
+  (is (equal (progn
+               (with-open-file (blah "nada.txt" :direction :output
+                               :if-does-not-exist :create
+                               :if-exists :supersede)
+                 (write-char #\a blah))
+               (with-open-file (blah "nada.txt" :direction :input)
+                 (list (listen blah)
+                       (read-char blah)
+                       (listen blah))))
+             (list t #\a nil))))
