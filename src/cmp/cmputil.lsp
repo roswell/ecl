@@ -613,9 +613,9 @@ keyword argument, the compiler-macro declines to provide an expansion.
                   parse-forms-pass2))
           ;; 5. &aux vars: these are simply set to their initforms after
           ;; parsing of keywords has finished
-          (loop for a on auxs
-                do (push (first auxs) bindings-for-body)
-                   (push `(setf ,(first auxs) ,(second auxs)) aux-setf-forms))
+          (loop for a on auxs by #'cddr
+                do (push (first a) bindings-for-body)
+                   (push `(setf ,(first a) ,(second a)) aux-setf-forms))
           ;; 6. Finally, we are ready to create the compiler-macro definition
           `(define-compiler-macro ,name ,(nreverse new-lambda-list)
              (let* ,(nreverse bindings-for-body)
