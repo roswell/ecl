@@ -2885,16 +2885,15 @@ si_process_lambda(cl_object lambda)
  * VALUES(5) = allow-other-keys                 ; flag &allow-other-keys
  * VALUES(6) = (N aux1 init1 ... )              ; auxiliary variables
  *
- * 1°) The prefix "N" is an integer value denoting the number of
- * variables which are declared within this section of the lambda
- * list.
+ * 1) The prefix "N" is an integer value denoting the number of variables
+ * which are declared within this section of the lambda list.
  *
- * 2°) The INIT* arguments are lisp forms which are evaluated when
- * no value is provided.
+ * 2) The INIT* arguments are lisp forms which are evaluated when no value is
+ * provided.
  *
- * 3°) The FLAG* arguments is the name of a variable which holds a
- * boolean value in case an optional or keyword argument was
- * provided. If it is NIL, no such variable exists.
+ * 3) The FLAG* arguments is the name of a variable which holds a boolean
+ * value in case an optional or keyword argument was provided. If it is NIL,
+ * no such variable exists.
  */
 
 cl_object
@@ -3088,15 +3087,16 @@ si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 
  OUTPUT:
   if ((nreq+nopt+(!Null(rest))+nkey) >= ECL_CALL_ARGUMENTS_LIMIT)
-    FEprogram_error("LAMBDA: Argument list is too long, ~S.", 1,
-                             org_lambda_list);
-  @(return CONS(ecl_make_fixnum(nreq), lists[0])
+    FEprogram_error("LAMBDA: Argument list is too long, ~S.", 1, org_lambda_list);
+
+  @(return
+    CONS(ecl_make_fixnum(nreq), lists[0])
     CONS(ecl_make_fixnum(nopt), lists[1])
     rest
     key_flag
     CONS(ecl_make_fixnum(nkey), lists[2])
     allow_other_keys
-    lists[3]);
+    CONS(ecl_make_fixnum(naux), lists[3]))
 
  ILLEGAL_LAMBDA:
   FEprogram_error("LAMBDA: Illegal lambda list ~S.", 1, org_lambda_list);
@@ -3195,7 +3195,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
     }
     ECL_RPLACD(aux, names);
   }
-
+  auxs = ECL_CONS_CDR(auxs);
   while (!Null(auxs)) {                   /* Local bindings */
     cl_object var = pop(&auxs);
     cl_object value = pop(&auxs);
