@@ -360,11 +360,28 @@
           (generic-function-lambda-list ,generic-function)
           result)))))
 
+(defun parse-qualifier-pattern (pattern)
+  (declare (si::c-local))
+  (cond ((eq pattern '*)   't)
+        ((eq pattern nil)  '(null .method-qualifiers.))
+        ((symbolp pattern) `(,pattern .method-qualifiers.))
+        ((listp pattern)
+         `(do ((pattern ',pattern (cdr pattern))
+               (qualifiers .method-qualifiers. (cdr qualifiers)))
+              ((or (eq pattern '*)
+                   (and (null pattern)
+                        (null qualifiers)))
+               t)
+            (unless (and pattern qualifiers
+                         (or (eq (car pattern) '*)
+                             (eq (car pattern) (car qualifiers))))
+              (return nil))))
+        (t nil)))
+
 (defun define-complex-method-combination (form)
   (declare (si::c-local))
   (flet ((syntax-error ()
-           (error "~S is not a valid DEFINE-METHOD-COMBINATION form"
-                  form)))
+           (error "~S is not a valid DEFINE-METHOD-COMBINATION form." form)))
     (destructuring-bind (name lambda-list method-groups &rest body &aux
                          (group-names '())
                          (group-checks '())
@@ -373,7 +390,8 @@
                          (method-arguments '())
                          decls documentation arguments-lambda-list)
         form
-      (unless (symbolp name) (syntax-error))
+      (unless (symbolp name)
+        (syntax-error))
       (let ((x (first body)))
         (when (and (consp x) (eql (first x) :ARGUMENTS))
           (setf body (rest body)
@@ -392,23 +410,13 @@
           (if (symbolp group-name)
               (push group-name group-names)
               (syntax-error))
-          (let ((condition
-                (cond ((eql predicate '*) 'T)
-                      ((and predicate (symbolp predicate))
-                       `(,predicate .METHOD-QUALIFIERS.))
-                      ((and (listp predicate)
-                            (let* ((q (last predicate 0))
-                                   (p (copy-list (butlast predicate 0))))
-                              (when (every #'symbolp p)
-                                (if (eql q '*)
-                                    `(every #'equal ',p .METHOD-QUALIFIERS.)
-                                    `(equal ',p .METHOD-QUALIFIERS.))))))
-                      (t (syntax-error)))))
-            (push `(,condition (push .METHOD. ,group-name)) group-checks))
+          (if-let ((condition (parse-qualifier-pattern predicate)))
+            (push `(,condition (push .METHOD. ,group-name)) group-checks)
+            (syntax-error))
           (when required
             (push `(unless ,group-name
-                    (error "Method combination: ~S. No methods ~
-                            in required group ~S." ',name ,group-name))
+                     (error "Method combination: ~S. No methods ~
+                             in required group ~S." ',name ,group-name))
                   group-after))
           (case order
             (:most-specific-first
@@ -433,10 +441,11 @@
                    `(let (,@group-names)
                       (dolist (.method. .methods-list.)
                         (let ((.method-qualifiers. (method-qualifiers .method.)))
+                          (declare (ignorable .method-qualifiers.))
                           (cond ,@(nreverse group-checks)
                                 (t (invalid-method-error .method.
-                                                         "Method qualifiers ~S are not allowed in the method-~
-                                  combination ~S." .method-qualifiers. ',name)))))
+                                    "Method qualifiers ~S are not allowed in the ~
+                                     method combination ~S." .method-qualifiers. ',name)))))
                       ,@group-after
                       ,@body))
                  t))))))))
