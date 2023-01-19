@@ -13,6 +13,7 @@
                         :default-component-class asdf:cl-source-file.lsp
                         :components
                         ((:file "ansi")
+                         (:file "clos")
                          (:file "mixed")
                          (:file "compiler")
                          (:file "executable-cli")
