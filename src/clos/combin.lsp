@@ -316,7 +316,8 @@
                       ,body))
                 .combined-method-args.)))))
 
-(defun process-define-method-combination-arguments-lambda-list (lambda-list generic-function body)
+(defun process-define-method-combination-arguments-lambda-list
+    (lambda-list generic-function body)
   (declare (si::c-local))
   (when (null lambda-list)
     (return-from process-define-method-combination-arguments-lambda-list body))
@@ -360,74 +361,78 @@
           (generic-function-lambda-list ,generic-function)
           result)))))
 
-(defun parse-qualifier-pattern (pattern)
-  (declare (si::c-local))
-  (cond ((eq pattern '*)   't)
-        ((eq pattern nil)  '(null .method-qualifiers.))
-        ((symbolp pattern) `(,pattern .method-qualifiers.))
-        ((listp pattern)
-         `(do ((pattern ',pattern (cdr pattern))
-               (qualifiers .method-qualifiers. (cdr qualifiers)))
-              ((or (eq pattern '*)
-                   (and (null pattern)
-                        (null qualifiers)))
-               t)
-            (unless (and pattern qualifiers
-                         (or (eq (car pattern) '*)
-                             (eq (car pattern) (car qualifiers))))
-              (return nil))))
-        (t nil)))
+(defmacro with-method-groups ((&rest method-groups) &body body)
+  (let (group-names matchers cleanup)
+    (flet ((parse-qualifier-pattern (pattern)
+             (cond ((eq pattern '*)   't)
+                   ((eq pattern nil)  '(null .method-qualifiers.))
+                   ((symbolp pattern) `(,pattern .method-qualifiers.))
+                   ((listp pattern)
+                    `(do ((pattern ',pattern (cdr pattern))
+                          (qualifiers .method-qualifiers. (cdr qualifiers)))
+                         ((or (eq pattern '*)
+                              (and (null pattern)
+                                   (null qualifiers)))
+                          t)
+                       (unless (and pattern qualifiers
+                                    (or (eq (car pattern) '*)
+                                        (eq (car pattern) (car qualifiers))))
+                         (return nil))))
+                   (t
+                    (error "Invalid method group pattern ~s." pattern)))))
+      (dolist (group method-groups)
+        (destructuring-bind (name pattern &key description
+                                               (order :most-specific-first)
+                                               (required nil))
+            group
+          (declare (ignore description))
+          (push name group-names)
+          (push `(,(parse-qualifier-pattern pattern) (push .method. ,name))
+                matchers)
+          (when required
+            (push `(unless ,name
+                     (error "No methods in required group ~S." ',name))
+                  cleanup))
+          (case order
+            (:most-specific-first
+             (push `(setf ,name (nreverse ,name)) cleanup))
+            (:most-specific-last)
+            (otherwise
+             (push `(when (eq ,order :most-specific-first)
+                      (setf ,name (nreverse ,name)))
+                   cleanup))))))
+    `(let ,group-names
+       (dolist (.method. .methods-list.)
+         (let ((.method-qualifiers. (method-qualifiers .method.)))
+           (declare (ignorable .method-qualifiers.))
+           (cond ,@(nreverse matchers)
+                 ,@(unless (member t matchers :key #'car)
+                     `((t (invalid-method-error
+                           .method.
+                           "Method qualifiers ~s are not allowed." .method-qualifiers.)))))))
+       ,@cleanup
+       ,@body)))
 
 (defun define-complex-method-combination (form)
   (declare (si::c-local))
   (flet ((syntax-error ()
            (error "~S is not a valid DEFINE-METHOD-COMBINATION form." form)))
-    (destructuring-bind (name lambda-list method-groups &rest body &aux
-                         (group-names '())
-                         (group-checks '())
-                         (group-after '())
-                         (generic-function '.generic-function.)
-                         (method-arguments '())
-                         decls documentation arguments-lambda-list)
+    (destructuring-bind (name lambda-list method-groups &rest body
+                         &aux (generic-function '.generic-function.)
+                              (arguments nil))
         form
-      (unless (symbolp name)
-        (syntax-error))
       (let ((x (first body)))
         (when (and (consp x) (eql (first x) :ARGUMENTS))
-          (setf body (rest body)
-                arguments-lambda-list (rest x))))
+          (setf body (rest body))
+          (setf arguments (rest x))))
       (let ((x (first body)))
         (when (and (consp x) (eql (first x) :GENERIC-FUNCTION))
           (setf body (rest body))
-          (unless (symbolp (setf generic-function (second x)))
-            (syntax-error))))
+          (setf generic-function (second x))))
+      (unless (and (symbolp name) (symbolp generic-function))
+        (error "~S is not a valid DEFINE-METHOD-COMBINATION form." form))
       (multiple-value-setq (decls body documentation)
         (si::find-declarations body t))
-      (dolist (group method-groups)
-        (destructuring-bind (group-name predicate &key description
-                                  (order :most-specific-first) (required nil))
-            group
-          (if (symbolp group-name)
-              (push group-name group-names)
-              (syntax-error))
-          (if-let ((condition (parse-qualifier-pattern predicate)))
-            (push `(,condition (push .METHOD. ,group-name)) group-checks)
-            (syntax-error))
-          (when required
-            (push `(unless ,group-name
-                     (error "Method combination: ~S. No methods ~
-                             in required group ~S." ',name ,group-name))
-                  group-after))
-          (case order
-            (:most-specific-first
-             (push `(setf ,group-name (nreverse ,group-name)) group-after))
-            (:most-specific-last)
-            (otherwise
-             (let ((order-var (gensym)))
-               (setf group-names (append group-names (list (list order-var order)))
-                     group-after (list* `(when (eq ,order-var :most-specific-first)
-                                           (setf ,group-name (nreverse ,group-name)))
-                                        group-after)))))))
       `(progn
          ,@(si::expand-set-documentation name 'method-combination documentation)
          (install-method-combination ',name
@@ -437,17 +442,8 @@
               (block ,name
                 (effective-method-function
                  ,(process-define-method-combination-arguments-lambda-list
-                   arguments-lambda-list generic-function
-                   `(let (,@group-names)
-                      (dolist (.method. .methods-list.)
-                        (let ((.method-qualifiers. (method-qualifiers .method.)))
-                          (declare (ignorable .method-qualifiers.))
-                          (cond ,@(nreverse group-checks)
-                                (t (invalid-method-error .method.
-                                    "Method qualifiers ~S are not allowed in the ~
-                                     method combination ~S." .method-qualifiers. ',name)))))
-                      ,@group-after
-                      ,@body))
+                   arguments generic-function
+                   `(with-method-groups ,method-groups ,@body))
                  t))))))))
 
 (defmacro define-method-combination (name &body body)
