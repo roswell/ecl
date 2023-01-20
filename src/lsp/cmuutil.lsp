@@ -43,7 +43,7 @@
       ,@(mapcar #'(lambda (form)
                     `(let ((,n-res (cons ,form nil)))
                        (cond (,n-tail
-                              (setf (cdr ,n-tail) ,n-res)
+                              (rplacd ,n-tail ,n-res)
                               (setq ,n-tail ,n-res))
                              (t
                               (setq ,n-tail ,n-res  ,n-value ,n-res)))))
@@ -95,7 +95,7 @@ Example:
   (let (macros binds)
     (dolist (spec collections)
       (cond ((atom spec)
-             (setf spec (list spec)))
+             (setq spec (list spec)))
             ((not (<= 1 (length spec) 3))
              (error "Malformed collection specifier: ~S." spec)))
       (let ((n-value (gensym))
@@ -150,7 +150,7 @@ Example:
                  `(progn ,@body)
                  (let ((spec (first specs)))
                    (cond ((atom spec)
-                          (setf spec (list spec spec)))
+                          (setq spec (list spec spec)))
                          ((/= (length spec) 2)
                           (error "Malformed Once-Only binding spec: ~S." spec)))
                    (let ((name (first spec))
