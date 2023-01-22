@@ -238,6 +238,128 @@
               main-effective-method)
              (t (second main-effective-method))))))
 
+(defun method-combination-arguments-reshuffling (mc-whole-arg mc-lambda-list gf-lambda-list body)
+  ;; Implement the reshuffling of arguments to the generic function
+  ;; into arguments for a method-combination arguments lambda list
+  ;; required for the long form of DEFINE-METHOD-COMBINATION. The
+  ;; generic function arguments are stored in the variable
+  ;; .COMBINED-METHOD-ARGS. of type STACK-FRAME. To extract the
+  ;; arguments we apply to this stack frame a function whose
+  ;; lambda-list is built below by reshaping the method-combination
+  ;; lambda-list to fit the form of the generic-function lambda-list.
+  (let ((lambda-list '())
+        (let-statements '())
+        (ignored-vars '())
+        n-gf-requireds n-gf-optionals)
+    (multiple-value-bind (mc-requireds mc-optionals mc-rest mc-key-flag mc-keywords
+                          mc-allow-other-keys mc-aux-vars)
+        (si::process-lambda-list mc-lambda-list 'function)
+      (declare (ignore mc-allow-other-keys))
+      (multiple-value-bind (gf-requireds gf-optionals)
+          (si::process-lambda-list gf-lambda-list 'function)
+        (setf n-gf-requireds (first gf-requireds)
+              n-gf-optionals (first gf-optionals))
+        (when mc-whole-arg
+          (push `(,mc-whole-arg (apply #'list .combined-method-args.))
+                let-statements))
+        (loop for r in (rest mc-requireds) by #'cdr
+              for i from 0
+              if (< i n-gf-requireds)
+                do (push r lambda-list)
+              else ; excess required args of the method-combination
+                   ; are set to nil
+              do (push `(,r nil) let-statements))
+        ;; excess required args of the generic-function are ignored
+        (loop repeat (- n-gf-requireds (first mc-requireds))
+              for v = (gensym)
+              do (push v lambda-list)
+                 (push v ignored-vars))
+        (push '&optional lambda-list)
+        (loop for o on (rest mc-optionals) by #'cdddr
+              for i from 0
+              if (< i n-gf-optionals)
+                do (push (if (third o)
+                             `(,(first o) ,(second o) ,(third o))
+                             `(,(first o) ,(second o)))
+                         lambda-list)
+              else ; excess optional args of the method-combination
+                   ; are set to their init forms
+                do (push `(,(first o) ,(second o)) let-statements)
+                   (when (third o)
+                     (push `(,(third o) nil) let-statements)))
+        ;; excess args of the generic-function are ignored
+        (loop repeat (- n-gf-optionals (first mc-optionals))
+              for v = (gensym)
+              do (push v lambda-list)
+                 (push v ignored-vars))
+        (unless mc-rest
+          (setf mc-rest (gensym))
+          (push mc-rest ignored-vars))
+        ;; rest, keyword and aux args are treated as usual
+        (push '&rest lambda-list)
+        (push mc-rest lambda-list)
+        (when mc-key-flag
+          (push '&key lambda-list)
+          (loop for k on (rest mc-keywords) by #'cddddr
+                do (push (if (fourth k)
+                             `((,(first k) ,(second k)) ,(third k) ,(fourth k))
+                             `((,(first k) ,(second k)) ,(third k)))
+                         lambda-list))
+          (push '&allow-other-keys lambda-list))
+        (when mc-aux-vars
+          (push '&aux lambda-list)
+          (loop for a on mc-aux-vars by #'cddr
+                do (push `(,(first a) ,(second a)) lambda-list)))
+        `(apply #'(lambda ,(nreverse lambda-list)
+                    (declare (ignore ,@ignored-vars))
+                    (let ,(nreverse let-statements)
+                      ,body))
+                .combined-method-args.)))))
+
+(defun process-define-method-combination-arguments-lambda-list (lambda-list generic-function body)
+  (declare (si::c-local))
+  (when (null lambda-list)
+    (return-from process-define-method-combination-arguments-lambda-list body))
+  (let ((whole (when (eq (first lambda-list) '&whole)
+                 (prog1 (second lambda-list)
+                   (setf lambda-list (cddr lambda-list))))))
+    (multiple-value-bind (requireds optionals rest key-flag keywords
+                          allow-other-keys aux-vars)
+        (si::process-lambda-list lambda-list 'function)
+      (declare (ignore allow-other-keys key-flag))
+      ;; This is a little complicated. We are constructing a form
+      ;; which when evaluated constructs another form that finally
+      ;; implements the desired destructuring of arguments supplied to
+      ;; the generic function.
+      ;;
+      ;; First evaluate the body form containing the grouping of the
+      ;; methods and the user-supplied method-combination body in a
+      ;; context in which all free variables are bound to fresh
+      ;; symbols (we use the name of the free variable itself). This
+      ;; part happens when the method combination is defined.
+      `(let ((result (let ,(mapcar #'(lambda (v) `(,v ',v))
+                                   (append (when whole (list whole))
+                                           (rest requireds)
+                                           (loop for o on (rest optionals) by #'cdddr
+                                                 collect (first o)
+                                                 when (third o) collect (third o))
+                                           (when rest (list rest))
+                                           (loop for k on (rest keywords) by #'cddddr
+                                                 collect (second k)
+                                                 when (fourth k) collect (fourth k))
+                                           (loop for a on (rest aux-vars) by #'cddr
+                                                 collect (first a))))
+                       ,body)))
+         ;; Second, construct a form which implements the required
+         ;; complex reshuffling of arguments. This part happens after
+         ;; a generic function using the method combination is
+         ;; defined.
+         (method-combination-arguments-reshuffling
+          ',whole
+          ',lambda-list
+          (generic-function-lambda-list ,generic-function)
+          result)))))
+
 (defun define-complex-method-combination (form)
   (declare (si::c-local))
   (flet ((syntax-error ()
@@ -249,12 +371,13 @@
                          (group-after '())
                          (generic-function '.generic-function.)
                          (method-arguments '())
-                         decls documentation)
+                         decls documentation arguments-lambda-list)
         form
       (unless (symbolp name) (syntax-error))
       (let ((x (first body)))
         (when (and (consp x) (eql (first x) :ARGUMENTS))
-          (error "Option :ARGUMENTS is not supported in DEFINE-METHOD-COMBINATION.")))
+          (setf body (rest body)
+                arguments-lambda-list (rest x))))
       (let ((x (first body)))
         (when (and (consp x) (eql (first x) :GENERIC-FUNCTION))
           (setf body (rest body))
@@ -304,16 +427,19 @@
               (declare (ignorable ,generic-function))
               ,@decls
               (block ,name
-                (let (,@group-names)
-                  (dolist (.method. .methods-list.)
-                    (let ((.method-qualifiers. (method-qualifiers .method.)))
-                      (cond ,@(nreverse group-checks)
-                            (t (invalid-method-error .method.
-                                 "Method qualifiers ~S are not allowed in the method~
+                (effective-method-function
+                 ,(process-define-method-combination-arguments-lambda-list
+                   arguments-lambda-list generic-function
+                   `(let (,@group-names)
+                      (dolist (.method. .methods-list.)
+                        (let ((.method-qualifiers. (method-qualifiers .method.)))
+                          (cond ,@(nreverse group-checks)
+                                (t (invalid-method-error .method.
+                                                         "Method qualifiers ~S are not allowed in the method-~
                                   combination ~S." .method-qualifiers. ',name)))))
-                  ,@group-after
-                  (effective-method-function (progn ,@body) t))))))
-      )))
+                      ,@group-after
+                      ,@body))
+                 t))))))))
 
 (defmacro define-method-combination (name &body body)
   (if (and body (listp (first body)))
