@@ -273,7 +273,8 @@
                  (schar string posn))))
       (loop
          (let ((char (get-char)))
-           (cond ((or (char<= #\0 char #\9) (char= char #\+) (char= char #\-))
+           (cond ((and (not colonp) (not atsignp)
+                       (or (char<= #\0 char #\9) (char= char #\+) (char= char #\-)))
                   (multiple-value-bind
                         (param new-posn)
                       (parse-integer string :start posn :junk-allowed t)
@@ -285,7 +286,8 @@
                        (decf posn))
                       (t
                        (return)))))
-                 ((or (char= char #\v) (char= char #\V))
+                 ((and (not colonp) (not atsignp)
+                       (or (char= char #\v) (char= char #\V)))
                   (push (cons posn :arg) params)
                   (incf posn)
                   (case (get-char)
@@ -294,7 +296,8 @@
                      (decf posn))
                     (t
                      (return))))
-                 ((char= char #\#)
+                 ((and (not colonp) (not atsignp)
+                       (char= char #\#))
                   (push (cons posn :remaining) params)
                   (incf posn)
                   (case (get-char)
@@ -303,13 +306,15 @@
                      (decf posn))
                     (t
                      (return))))
-                 ((char= char #\')
+                 ((and (not colonp) (not atsignp)
+                       (char= char #\'))
                   (incf posn)
                   (push (cons posn (get-char)) params)
                   (incf posn)
                   (unless (char= (get-char) #\,)
 		   (decf posn)))
-                 ((char= char #\,)
+                 ((and (not colonp) (not atsignp)
+                       (char= char #\,))
                   (push (cons posn nil) params))
                  ((char= char #\:)
                   (if colonp
