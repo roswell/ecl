@@ -53,9 +53,6 @@
 
 (defun same-fname-p (name1 name2) (equal name1 name2))
 
-;;; from cmpenv.lsp
-(defmacro next-cmacro () '(incf *next-cmacro*))
-
 ;;; from cmplabel.lsp
 (defun next-label ()
   (cons (incf *last-label*) nil))

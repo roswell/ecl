@@ -27,7 +27,6 @@
 (defun t1expr* (form &aux
                      (*current-toplevel-form* (list* form *current-toplevel-form*))
                      (*current-form* form)
-                     (*first-error* t)
                      (*setjmps* 0))
   (setq form (chk-symbol-macrolet form))
   (when (consp form)

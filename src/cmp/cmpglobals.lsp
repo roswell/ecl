@@ -45,7 +45,6 @@
 (defvar *current-form* '|compiler preprocess|)
 (defvar *current-toplevel-form* '|compiler preprocess|)
 (defvar *compile-file-position* -1)
-(defvar *first-error* t)
 (defvar *active-protection* nil)
 (defvar *pending-actions* nil)
 
@@ -99,9 +98,6 @@ running the compiler. It may be updated by running ")
 (defvar *space* 0)
 (defvar *debug* 0)
 
-;;; Emit automatic CHECK-TYPE forms for function arguments in lambda forms.
-(defvar *automatic-check-type-in-lambda* t)
-
 ;;;
 ;;; Compiled code uses the following kinds of variables:
 ;;; 1. Vi, declared explicitely, either unboxed or not (*lcl*, next-lcl)
@@ -125,7 +121,6 @@ running the compiler. It may be updated by running ")
 (defvar *aux-closure* nil)      ; stack allocated closure needed for indirect calls
 (defvar *ihs-used-p* nil)       ; function must be registered in IHS?
 
-(defvar *next-cmacro* 0)        ; holds the last cmacro number used.
 (defvar *next-cfun* 0)          ; holds the last cfun used.
 
 ;;;
@@ -135,8 +130,6 @@ running the compiler. It may be updated by running ")
 ;;; where each required-arg is a var-object.
 ;;;
 (defvar *tail-recursion-info* nil)
-
-(defvar *allow-c-local-declaration* t)
 
 ;;; --cmpexit.lsp--
 ;;;
@@ -278,10 +271,6 @@ lines are inserted, but the order is preserved")
 (defvar *compiler-constants* nil)       ; a vector with all constants
                                         ; only used in COMPILE
 
-(defvar *proclaim-fixed-args* nil)      ; proclaim automatically functions
-                                        ; with fixed number of arguments.
-                                        ; watch out for multiple values.
-
 (defvar *global-vars* nil)              ; variables declared special
 (defvar *global-funs* nil)              ; holds { fun }*
 (defvar *use-c-global* nil)             ; honor si::c-global declaration
@@ -324,7 +313,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*cmp-env* nil)
     (*max-temp* 0)
     (*temp* 0)
-    (*next-cmacro* 0)
     (*next-cfun* 0)
     (*last-label* 0)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
