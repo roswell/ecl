@@ -166,11 +166,13 @@ variable-record = (:block block-name) |
                   (:function function-name) |
                   (var-name {:special | nil} bound-p) |
                   (symbol si::symbol-macro macro-function) |
+                  (:declare type arguments) |
                   SI:FUNCTION-BOUNDARY |
                   SI:UNWIND-PROTECT-BOUNDARY
 
 macro-record    = (function-name function) |
-                  (macro-name si::macro macro-function)
+                  (macro-name si::macro macro-function) |
+                  (:declare name declaration) |
                   SI:FUNCTION-BOUNDARY |
                   SI:UNWIND-PROTECT-BOUNDARY
 
