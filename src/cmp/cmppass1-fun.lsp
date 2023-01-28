@@ -303,7 +303,7 @@
           (extract-lambda-type-checks function-name requireds optionals
                                       keywords ts other-decls)
         (let* ((declarations other-decls)
-               (let-vars (loop for spec on (nconc new-auxs aux-vars)
+               (let-vars (loop for spec on (nconc new-auxs (rest aux-vars))
                             by #'cddr
                             for name = (first spec)
                             for init = (second spec)

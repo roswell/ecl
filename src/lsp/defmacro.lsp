@@ -155,7 +155,7 @@
                      (dm-v v `(if (eq ,temp 'missing-keyword) ,init ,temp))
                      (when sv (dm-v sv `(not (eq ,temp 'missing-keyword))))
                      (push k all-keywords)))
-                 (do ((l auxs (cddr l))) ((endp l))
+                 (do ((l (rest auxs) (cddr l))) ((endp l))
                    (let* ((v (first l))
                           (init (second l)))
                      (dm-v v init)))

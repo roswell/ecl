@@ -353,8 +353,9 @@
     (when (and key-flag (not allow-other-keys))
       (push `(si::check-keyword ,rest ',all-keys) extra-stmts))
     ;; 7. construct body
+    (pop aux-vars)
     (loop while aux-vars
-       do (push (list (pop aux-vars) (pop aux-vars)) let-vars))
+          do (push (list (pop aux-vars) (pop aux-vars)) let-vars))
     (values (nreverse (delete-if-not #'first let-vars))
             `(,@(and apply-var `((declare (ignorable ,apply-var))))
               ,@(multiple-value-bind (decl body)
