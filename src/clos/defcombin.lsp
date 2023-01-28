@@ -150,7 +150,7 @@
           (push '&allow-other-keys lambda-list))
         (when mc-aux-vars
           (push '&aux lambda-list)
-          (loop for a on mc-aux-vars by #'cddr
+          (loop for a on (rest mc-aux-vars) by #'cddr
                 do (push `(,(first a) ,(second a)) lambda-list)))
         `(apply #'(lambda ,(nreverse lambda-list)
                     (declare (ignore ,@ignored-vars))
@@ -261,7 +261,8 @@
            (error "~S is not a valid DEFINE-METHOD-COMBINATION form." form)))
     (destructuring-bind (name lambda-list method-groups &rest body
                          &aux (generic-function '.generic-function.)
-                              (arguments nil))
+                              (arguments nil)
+                              decls documentation)
         form
       (let ((x (first body)))
         (when (and (consp x) (eql (first x) :ARGUMENTS))
