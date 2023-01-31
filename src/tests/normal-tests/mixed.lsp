@@ -479,3 +479,15 @@
   (is (equal (format nil "a~4:A" nil) "a()  "))
   (is (equal (format nil "a~4:@A" nil) "a  ()"))
   (is (equal (format nil "a~4@:A" nil) "a  ()")))
+
+(test mix.0026.file-listen
+  (is (equal (progn
+               (with-open-file (blah "nada.txt" :direction :output
+                               :if-does-not-exist :create
+                               :if-exists :supersede)
+                 (write-char #\a blah))
+               (with-open-file (blah "nada.txt" :direction :input)
+                 (list (listen blah)
+                       (read-char blah)
+                       (listen blah))))
+             (list t #\a nil))))
