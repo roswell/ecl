@@ -116,6 +116,10 @@
             (t
              (default-apply fun arguments))))))
 
+(defun not-a-closure-p (fname)
+  (declare (si::c-local))
+  (not (and (fboundp fname) (nth-value 1 (function-lambda-expression (fdefinition fname))))))
+
 (defun c1call (fname args macros-allowed &aux fd success can-inline)
   (cond ((> (length args) si::c-arguments-limit)
          (if (and macros-allowed
@@ -147,13 +151,19 @@
               (setq fd (macro-function fname)))
          (cmp-expand-macro fd (list* fname args)))
         ((and (setq can-inline (declared-inline-p fname))
-              (consp can-inline)
-              (eq (first can-inline) 'function)
               (plusp *inline-max-depth*)
               (<= (cmp-env-optimization 'space) 1))
-         (let ((*inline-max-depth* (1- *inline-max-depth*)))
-           (cmpnote "Inlining ~a" fname)
-           `(funcall ,can-inline ,@args)))
+         (cond ((and (setq fd (find fname *global-funs* :key #'fun-name :test #'same-fname-p))
+                     (not (fun-closure fd)))
+                (cmpnote "Inlining ~a" fname)
+                (inline-local (fun-lambda-expression fd) fd args))
+               ((and (consp can-inline)
+                     (not-a-closure-p fname)
+                     (eq (first can-inline) 'function))
+                (let ((*inline-max-depth* (1- *inline-max-depth*)))
+                  (cmpnote "Inlining ~a" fname)
+                  `(funcall ,can-inline ,@args)))
+               (t (c1call-global fname args))))
         (t (c1call-global fname args))))
 
 (defun inline-local (lambda fun args)

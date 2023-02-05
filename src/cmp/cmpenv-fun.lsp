@@ -11,7 +11,7 @@
 ;;;;
 ;;;;    See file '../Copyright' for full details.
 ;;;;
-;;;; CMPTYPE-PROP -- Type propagation basic routines and database
+;;;; CMPENV-FUN -- Declarations concerning function types and inlining
 ;;;;
 
 (in-package "COMPILER")
@@ -159,25 +159,21 @@
 (defun inline-possible (fname &optional (env *cmp-env*))
   (not (declared-notinline-p fname env)))
 
-;;; Install inline expansion of function. If the function is
-;;; PROCLAIMED inline, then we keep a copy of the definition as a
-;;; symbol property. If the function is DECLAIMED inline, then we keep
-;;; the definition in the compiler environment during compilation and
-;;; install it as a symbol property during loading of the compiled
-;;; file.
-(defun maybe-install-inline-function (fname form env)
-  (let* ((x (cmp-env-search-declaration 'inline env))
-         (flag (assoc fname x :test #'same-fname-p))
-         (declared (and flag (cdr flag)))
-         (proclaimed (sys:get-sysprop fname 'inline)))
-    `(progn
-       ,(when declared
-          `(progn
-             (eval-when (:compile-toplevel)
-               (c::declare-inline ',fname *cmp-env-root* ',form))
-             (eval-when (:load-toplevel :execute)
-               (si:put-sysprop ',fname 'inline ',form))))
-       ,(when proclaimed
-          `(eval-when (:compile-toplevel :load-toplevel :execute)
-             (si:put-sysprop ',fname 'inline ',form))))))
+;;; Install inline expansion of function.
+(defun maybe-install-inline-function (fname form)
+  (when (declared-inline-p fname *cmp-env-root*)
+    ;; The function was already PROCLAIMED inline and might be
+    ;; redefined in the file we are currently compiling. Declare it as
+    ;; inline in the compiler environment and remove the symbol
+    ;; property so that if we can't inline the new definition (e.g.
+    ;; because it is a closure) we don't accidentally inline an old
+    ;; definition from the symbol property.
+    (declare-inline fname *cmp-env-root*)
+    (si:rem-sysprop fname 'inline)
+    ;; If the function is PROCLAIMED or DECLAIMED inline, then we
+    ;; install the definition as a symbol property during loading of
+    ;; the compiled file. If the function was only DECLARED inline
+    ;; locally we don't keep the definition.
+    `(eval-when (:load-toplevel :execute)
+       (si:put-sysprop ',fname 'inline ',form))))
 

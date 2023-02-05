@@ -1874,24 +1874,48 @@
   ;; global function in same file, declaimed inline
   (load (with-compiler ("inline-closure.lsp")
           '(in-package #:cl-test)
-          '(declaim (inline set-b.0079 get-b.0079))
+          '(declaim (inline set-b.0079a get-b.0079a))
           '(let ((b 123))
-            (defun set-b.0079 (x)
-              (setf b x))
-            (defun get-b.0079 () b))
-          '(defun foo.0079 ()
+             (defun set-b.0079a (x)
+               (setf b x))
+             (defun get-b.0079a () b))
+          '(defun foo.0079a ()
             (let (results)
-              (push (get-b.0079) results)
+              (push (get-b.0079a) results)
               (let ((b 345))
-                (push (get-b.0079) results)
+                (push (get-b.0079a) results)
                 (push b results)
-                (set-b.0079 0)
-                (push (get-b.0079) results)
+                (set-b.0079a 0)
+                (push (get-b.0079a) results)
                 (push b results))
-              (push (get-b.0079) results)
+              (push (get-b.0079a) results)
               (nreverse results)))))
   (is (equal
-       (funcall 'foo.0079)
+       (funcall 'foo.0079a)
+       '(123 123 345 0 345 0)))
+  ;; global function in different file, proclaimed inline
+  (proclaim '(inline set-b.0079b get-b.0079b))
+  (load (with-compiler ("inline-closure-1.lsp")
+          '(in-package #:cl-test)
+          '(let ((b 123))
+             (defun set-b.0079b (x)
+               (setf b x))
+             (defun get-b.0079b () b))))
+  (load (with-compiler ("inline-closure-2.lsp")
+          '(in-package #:cl-test)
+          '(defun foo.0079b ()
+            (let (results)
+              (push (get-b.0079b) results)
+              (let ((b 345))
+                (push (get-b.0079b) results)
+                (push b results)
+                (set-b.0079b 0)
+                (push (get-b.0079b) results)
+                (push b results))
+              (push (get-b.0079b) results)
+              (nreverse results)))))
+  (is (equal
+       (funcall 'foo.0079b)
        '(123 123 345 0 345 0))))
 
 ;;; Date 2020-05-08
@@ -2112,3 +2136,26 @@
               '(eq '#7=((#7# . a) . b) '#8=((#8# . a) . b))
               '(eq '#9=((a . #9#) . b) '#10=((a . #10#) . b))
               '(eq '#11=(#11# . #11#) '#12=(#12# . #12#)))))
+
+;;; Date 2022-12-30
+;;; Description
+;;;
+;;;     Check that function redefinitions for functions which are
+;;;     declared as inline are picked up correctly even if we can't
+;;;     inline the new definition (e.g. because it is a closure).
+;;;
+(test cmp.0092.inline-redefinition
+  (setf (compiler-macro-function 'foo) nil)
+  (finishes (with-compiler ("inline-redefinition-1.lsp" :load t)
+              '(declaim (inline foo))
+              '(defun foo () 1)
+              '(defun bar () (foo))))
+  (is (eql (bar) 1))
+  (finishes (with-compiler ("inline-redefinition-2.lsp" :load t)
+              '(let ((a 2))
+                (defun ensure-compiler-cannot-optimize-away-the-let-statement (x)
+                  (setf a x))
+                (defun foo ()
+                  a))
+              '(defun bar () (foo))))
+  (is (eql (bar) 2)))
