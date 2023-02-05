@@ -51,7 +51,8 @@
 # define STDOUT_FILENO 1
 # define STDERR_FILENO 2
 # define HAVE_SELECT
-#elif defined(HAVE_SYS_IOCTL_H) && !defined(cygwin)
+#endif
+#if defined(HAVE_SYS_IOCTL_H) && !defined(ECL_MS_WINDOWS_HOST) && !defined(cygwin)
 # include <sys/ioctl.h>
 #endif
 
@@ -69,8 +70,8 @@ static cl_index ecl_write_byte8(cl_object stream, unsigned char *c, cl_index n);
 struct ecl_file_ops *duplicate_dispatch_table(const struct ecl_file_ops *ops);
 const struct ecl_file_ops *stream_dispatch_table(cl_object strm);
 
-static int flisten(cl_object, FILE *);
-static int file_listen(cl_object, int);
+static int file_listen(cl_object, FILE *);
+static int fd_listen(cl_object, int);
 
 static cl_object alloc_stream();
 
@@ -2725,7 +2726,7 @@ io_file_listen(cl_object strm)
       }
     }
   }
-  return file_listen(strm, IO_FILE_DESCRIPTOR(strm));
+  return fd_listen(strm, IO_FILE_DESCRIPTOR(strm));
 }
 
 #if defined(ECL_MS_WINDOWS_HOST)
@@ -2751,7 +2752,7 @@ io_file_clear_input(cl_object strm)
     /* Do not stop here: the FILE structure needs also to be flushed */
   }
 #endif
-  while (file_listen(strm, f) == ECL_LISTEN_AVAILABLE) {
+  while (fd_listen(strm, f) == ECL_LISTEN_AVAILABLE) {
     ecl_character c = eformat_read_char(strm);
     if (c == EOF) return;
   }
@@ -3553,7 +3554,7 @@ io_stream_listen(cl_object strm)
 {
   if (strm->stream.byte_stack != ECL_NIL)
     return ECL_LISTEN_AVAILABLE;
-  return flisten(strm, IO_STREAM_FILE(strm));
+  return file_listen(strm, IO_STREAM_FILE(strm));
 }
 
 static void
@@ -3569,7 +3570,7 @@ io_stream_clear_input(cl_object strm)
     /* Do not stop here: the FILE structure needs also to be flushed */
   }
 #endif
-  while (flisten(strm, fp) == ECL_LISTEN_AVAILABLE) {
+  while (file_listen(strm, fp) == ECL_LISTEN_AVAILABLE) {
     ecl_disable_interrupts();
     getc(fp);
     ecl_enable_interrupts();
@@ -5630,7 +5631,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
 
 #if defined(ECL_MS_WINDOWS_HOST)
 static int
-file_listen(cl_object stream, int fileno)
+fd_listen(cl_object stream, int fileno)
 {
   HANDLE hnd = (HANDLE)_get_osfhandle(fileno);
   switch (GetFileType(hnd)) {
@@ -5687,44 +5688,93 @@ file_listen(cl_object stream, int fileno)
 }
 #else
 static int
-file_listen(cl_object stream, int fileno)
+fd_listen(cl_object stream, int fileno)
 {
-# if defined(HAVE_SELECT)
-  fd_set fds;
-  int retv;
-  struct timeval tv = { 0, 0 };
-  /*
-   * Note that the following code is fragile. If the file is closed (/dev/null)
-   * then select() may return 1 (at least on OS X), so that we return a flag
-   * saying characters are available but will find none to read. See also the
-   * code in cl_clear_input().
-   */
-  FD_ZERO(&fds);
-  FD_SET(fileno, &fds);
-  retv = select(fileno + 1, &fds, NULL, NULL, &tv);
-  if (ecl_unlikely(retv < 0))
-    file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
-  /* XXX: for FIFO there should be also peek-byte (not implemented and peek-char
-     doesn't work for binary streams). */
-  else if ((retv > 0) /* && (generic_peek_char(stream) != EOF) */) {
-    return ECL_LISTEN_AVAILABLE;
+  /* Method 1: poll, see POLL(2)
+     Method 2: select, see SELECT(2)
+     Method 3: ioctl FIONREAD, see FILIO(4)
+     Method 4: read a byte. Use non-blocking I/O if poll or select were not
+               available. */
+  int result;
+#if defined(HAVE_POLL)
+  struct pollfd fd = {fileno, POLLIN, 0};
+restart_poll:
+  result = poll(&fd, 1, 0);
+  if (ecl_unlikely(result < 0)) {
+    if (errno == EINTR)
+      goto restart_poll;
+    else
+      goto listen_error;
   }
-  else {
+  if (fd.revents == 0) {
     return ECL_LISTEN_NO_CHAR;
   }
-# elif defined(FIONREAD)
-  {
-    long c = 0;
-    ioctl(fileno, FIONREAD, &c);
-    return (c > 0)? ECL_LISTEN_AVAILABLE : ECL_LISTEN_NO_CHAR;
+  /* When read() returns a result without blocking, this can also be
+     EOF! (Example: Linux and pipes.) We therefore refrain from simply
+     doing  { return ECL_LISTEN_AVAILABLE; }  and instead try methods
+     3 and 4. */
+#elif defined(HAVE_SELECT)
+  fd_set fds;
+  struct timeval tv = {0, 0};
+  FD_ZERO(&fds);
+  FD_SET(fileno, &fds);
+restart_select:
+  result = select(fileno + 1, &fds, NULL, NULL, &tv);
+  if (ecl_unlikely(result < 0)) {
+    if (errno == EINTR)
+      goto restart_select;
+    if (errno != EBADF) /* UNIX_LINUX returns EBADF for files! */
+      goto listen_error;
+  } else if (result == 0) {
+    return ECL_LISTEN_NO_CHAR;
   }
-# endif
-  return ECL_LISTEN_FALLBACK;
+#endif
+#ifdef FIONREAD
+  long c = 0;
+  result = ioctl(fileno, FIONREAD, &c);
+  if (result == 0) {
+    return (c > 0) ? ECL_LISTEN_AVAILABLE : ECL_LISTEN_EOF;
+  } else if (result < 0 && errno != ENOTTY && errno != EINVAL) {
+    goto listen_error;
+  }
+#endif
+  cl_index byte;
+restart_read:
+#if !defined(HAVE_POLL) && !defined(HAVE_SELECT)
+  {
+    int flags = fcntl(fileno, F_GETFL, 0);
+    int read_errno;
+    fcntl(fileno, F_SETFL, flags | O_NONBLOCK);
+    result = read(fileno, &byte, 1);
+    read_errno = errno;
+    fcntl(fileno, F_SETFL, flags);
+    errno = read_errno;
+  }
+#else
+  result = read(fileno, &byte, 1);
+#endif
+  if (result < 0) {
+    if (errno == EINTR)
+      goto restart_read;
+    if (errno == EAGAIN || errno == EWOULDBLOCK)
+      return ECL_LISTEN_NO_CHAR;
+    else
+      goto listen_error;
+  }
+
+  if (result == 0) {
+    return ECL_LISTEN_EOF;
+  }
+
+  stream->stream.byte_stack = CONS(ecl_make_fixnum(byte), stream->stream.byte_stack);
+  return ECL_LISTEN_AVAILABLE;
+listen_error:
+  file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
 }
 #endif
 
 static int
-flisten(cl_object stream, FILE *fp)
+file_listen(cl_object stream, FILE *fp)
 {
   int aux;
   if (feof(fp) || ferror(fp))
@@ -5733,7 +5783,7 @@ flisten(cl_object stream, FILE *fp)
   if (FILE_CNT(fp) > 0)
     return ECL_LISTEN_AVAILABLE;
 #endif
-  aux = file_listen(stream, fileno(fp));
+  aux = fd_listen(stream, fileno(fp));
   if (aux != ECL_LISTEN_FALLBACK)
     return aux;
   /* This code is portable, and implements the expected behavior for regular files.
