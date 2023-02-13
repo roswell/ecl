@@ -17,8 +17,8 @@
 (in-package "COMPILER")
 
 (defun data-dump-array ()
-  (cond (*compiler-constants*
-         (setf *compiler-constants* (concatenate 'vector (data-get-all-objects)))
+  (cond (si:*compiler-constants*
+         (setf si:*compiler-constants* (concatenate 'vector (data-get-all-objects)))
          "")
         #+externalizable
         ((plusp (data-size))
@@ -219,7 +219,7 @@
   ;; fields. SSE uses always unboxed static constants. No reference is kept to
   ;; them -- it is thus safe to use them even on code that might be unloaded.
   (unless (or #+msvc t
-              *compiler-constants*
+              si:*compiler-constants*
               (and (not *use-static-constants-p*)
                    #+sse2
                    (not (typep object 'ext:sse-pack)))

@@ -158,13 +158,13 @@ variable-record = (:block block-name) |
                   (:tag ({tag-name}*)) |
                   (:function function-name) |
                   (var-name {:special | nil} bound-p) |
-                  (symbol si::symbol-macro macro-function) |
+                  (symbol si:symbol-macro macro-function) |
                   (:declare type arguments) |
                   SI:FUNCTION-BOUNDARY |
                   SI:UNWIND-PROTECT-BOUNDARY
 
 macro-record    = (function-name function) |
-                  (macro-name si::macro macro-function) |
+                  (macro-name si:macro macro-function) |
                   (:declare name declaration) |
                   SI:FUNCTION-BOUNDARY |
                   SI:UNWIND-PROTECT-BOUNDARY
@@ -179,7 +179,7 @@ that compared with the bytecodes compiler, these records contain an additional
 variable, block, tag or function object at the end.")
 
 (defvar *cmp-env-root*
-  (cons nil (list (list '#:no-macro 'si::macro (constantly nil))))
+  (cons nil (list (list '#:no-macro 'si:macro (constantly nil))))
 "This is the common environment shared by all toplevel forms. It can
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
@@ -268,7 +268,7 @@ lines are inserted, but the order is preserved")
 (defvar *static-constants* nil)         ; constants that can be built as C values
                                         ; holds { ( object c-variable constant ) }*
 
-(defvar *compiler-constants* nil)       ; a vector with all constants
+(defvar si:*compiler-constants* nil)    ; a vector with all constants
                                         ; only used in COMPILE
 
 (defvar *global-vars* nil)              ; variables declared special

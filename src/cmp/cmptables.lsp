@@ -152,7 +152,7 @@
   '((ext:with-backend . c1with-backend) ; t1
 
     (defmacro . t1defmacro)
-    (compiler-let . c1compiler-let)
+    (si:compiler-let . c1compiler-let)
     (eval-when . c1eval-when)
     (progn . c1progn)
     (macrolet . c1macrolet)
@@ -235,7 +235,7 @@
     (multiple-value-bind . c2multiple-value-bind)
 
     (function . c2function)
-    (ext:compiler-let . c2compiler-let)
+    (si:compiler-let . c2compiler-let)
 
     (with-stack . c2with-stack)
     (stack-push-values . c2stack-push-values)
@@ -256,7 +256,7 @@
     ))
 
 (defconstant +t2-dispatch-alist+
-  '((compiler-let . t2compiler-let)
+  '((si:compiler-let . t2compiler-let)
     (progn . t2progn)
     (ordinary . t2ordinary)
     (load-time-value . t2load-time-value)

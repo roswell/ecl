@@ -53,9 +53,9 @@ the closure in let/flet forms for variables/functions it closes over."
                                    ,@record-def))
                           ,definition))))
               ((and (listp record) (symbolp (car record)))
-               (cond ((eq (car record) 'si::macro)
+               (cond ((eq (car record) 'si:macro)
                       (cmp-env-register-macro (cddr record) (cadr record) env))
-                     ((eq (car record) 'si::symbol-macro)
+                     ((eq (car record) 'si:symbol-macro)
                       (cmp-env-register-symbol-macro-function (cddr record) (cadr record) env))
                      (t
                       (setf definition
@@ -137,7 +137,7 @@ the closure in let/flet forms for variables/functions it closes over."
   (values))
 
 (defun cmp-env-register-macro (name function &optional (env *cmp-env*))
-  (push (list name 'si::macro function)
+  (push (list name 'si:macro function)
         (cmp-env-functions env))
   env)
 
@@ -154,7 +154,7 @@ the closure in let/flet forms for variables/functions it closes over."
 (defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*))
   (when (or (constant-variable-p name) (special-variable-p name))
     (cmperr "Cannot bind the special or constant variable ~A with symbol-macrolet." name))
-  (push (list name 'si::symbol-macro function)
+  (push (list name 'si:symbol-macro function)
         (cmp-env-variables env))
   env)
 
@@ -211,12 +211,12 @@ the closure in let/flet forms for variables/functions it closes over."
              (when (member name (second record) :test #'eql)
                (setf found record)
                (return)))
-            ((eq name 'si::symbol-macro)
-             (when (eq (second record) 'si::symbol-macro)
+            ((eq name 'si:symbol-macro)
+             (when (eq (second record) 'si:symbol-macro)
                (setf found record))
              (return))
             (t
-             (when (not (eq (second record) 'si::symbol-macro))
+             (when (not (eq (second record) 'si:symbol-macro))
                (setf found record))
              (return))))
     (values (first (last found)) cfb unw)))
@@ -228,7 +228,7 @@ the closure in let/flet forms for variables/functions it closes over."
   (cmp-env-search-variables :tag name env))
 
 (defun cmp-env-search-symbol-macro (name &optional (env *cmp-env*))
-  (cmp-env-search-variables name 'si::symbol-macro env))
+  (cmp-env-search-variables name 'si:symbol-macro env))
 
 (defun cmp-env-search-var (name &optional (env *cmp-env*))
   (cmp-env-search-variables name t env))

@@ -72,7 +72,7 @@
         (when may-be-global
           (let ((fun (cmp-env-search-function fname env)))
             (when (or (null fun) (and (fun-p fun) (fun-global fun)))
-              (sys:get-sysprop fname 'PROCLAIMED-ARG-TYPES)))))))
+              (si:get-sysprop fname 'PROCLAIMED-ARG-TYPES)))))))
 
 (defun get-return-type (fname &optional (env *cmp-env*))
   (let ((x (cmp-env-search-ftype fname env)))
@@ -82,7 +82,7 @@
             (values return-types t)))
         (let ((fun (cmp-env-search-function fname env)))
           (when (or (null fun) (and (fun-p fun) (fun-global fun)))
-            (sys:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))))
+            (si:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))))
 
 (defun get-local-arg-types (fun &optional (env *cmp-env*))
   (let ((x (cmp-env-search-ftype (fun-name fun) env)))
@@ -131,30 +131,30 @@
   (dolist (fun fname-list)
     (unless (si::valid-function-name-p fun)
       (error "Not a valid function name ~s in INLINE proclamation" fun))
-    (unless (sys:get-sysprop fun 'INLINE)
-      (sys:put-sysprop fun 'INLINE t)
-      (sys:rem-sysprop fun 'NOTINLINE))))
+    (unless (si:get-sysprop fun 'INLINE)
+      (si:put-sysprop fun 'INLINE t)
+      (si:rem-sysprop fun 'NOTINLINE))))
 
 (defun proclaim-notinline (fname-list)
   (dolist (fun fname-list)
     (unless (si::valid-function-name-p fun)
       (error "Not a valid function name ~s in NOTINLINE proclamation" fun))
-    (sys:rem-sysprop fun 'INLINE)
-    (sys:put-sysprop fun 'NOTINLINE t)))
+    (si:rem-sysprop fun 'INLINE)
+    (si:put-sysprop fun 'NOTINLINE t)))
 
 (defun declared-inline-p (fname &optional (env *cmp-env*))
   (let* ((x (cmp-env-search-declaration 'inline env))
          (flag (assoc fname x :test #'same-fname-p)))
     (if flag
         (cdr flag)
-        (sys:get-sysprop fname 'INLINE))))
+        (si:get-sysprop fname 'INLINE))))
 
 (defun declared-notinline-p (fname &optional (env *cmp-env*))
   (let* ((x (cmp-env-search-declaration 'inline env))
          (flag (assoc fname x :test #'same-fname-p)))
     (if flag
         (null (cdr flag))
-        (sys:get-sysprop fname 'NOTINLINE))))
+        (si:get-sysprop fname 'NOTINLINE))))
 
 (defun inline-possible (fname &optional (env *cmp-env*))
   (not (declared-notinline-p fname env)))
@@ -176,4 +176,3 @@
     ;; locally we don't keep the definition.
     `(eval-when (:load-toplevel :execute)
        (si:put-sysprop ',fname 'inline ',form))))
-

@@ -745,7 +745,7 @@ compiled successfully, returns the pathname of the compiled file"
                       (*package* *package*)
                       (*compile-print* nil)
                       (*print-pretty* nil)
-                      (*compiler-constants* t))
+                      (si:*compiler-constants* t))
   "Args: (name &optional definition)
 
 If DEFINITION is NIL, NAME must be the name of a not-yet-compiled function.

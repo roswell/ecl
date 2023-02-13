@@ -51,10 +51,6 @@
    #:compiler-message-form
    ;; Other operators.
    #:install-c-compiler
-   #:update-compiler-features)
-  (:import-from #:si
-                #:get-sysprop #:put-sysprop #:rem-sysprop #:macro
-                #:*compiler-constants* #:register-global
-                #:cmp-env-register-macrolet #:compiler-let))
+   #:update-compiler-features))
 
 (ext:package-lock '#:cl nil)

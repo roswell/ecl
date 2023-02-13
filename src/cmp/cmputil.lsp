@@ -517,7 +517,7 @@ keyword argument, the compiler-macro declines to provide an expansion.
         (setq lambda-list (nconc (ldiff lambda-list env) (cddr env))))
       ;; 2. parse the remaining lambda-list
       (multiple-value-bind (reqs opts rest key-flag keywords allow-other-keys auxs)
-          (si::process-lambda-list lambda-list 'si::macro)
+          (si::process-lambda-list lambda-list 'si:macro)
         (when (and rest (or key-flag allow-other-keys))
           (error "define-compiler-macro* can't deal with lambda-lists with both &key and &rest arguments"))
         ;; utility functions

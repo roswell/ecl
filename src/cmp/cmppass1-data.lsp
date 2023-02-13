@@ -90,14 +90,14 @@
     (when used-p
       (setf (vv-used-p vv) t))
     (return-from add-object vv))
-  (when (and (null *compiler-constants*)
-             (si::need-to-make-load-form-p object))
+  (when (and (null si:*compiler-constants*)
+             (si:need-to-make-load-form-p object))
     ;; All objects created with MAKE-LOAD-FORM go into the permanent storage to
     ;; prevent two non-eq instances of the same object in the permanent and
     ;; temporary storage from being created (we can't move objects from the
     ;; temporary into the permanent storage once they have been created).
     (setf load-form-p t permanent t))
-  (let* ((test (if *compiler-constants* 'eq 'equal-with-circularity))
+  (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
          (item (if permanent
                    (find object *permanent-objects* :test test :key #'vv-value)
                    (or (find object *permanent-objects* :test test :key #'vv-value)
