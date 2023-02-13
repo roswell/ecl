@@ -120,7 +120,7 @@
 (defun c1constant-value (val &key always only-small-values)
   (cond
     ;; FIXME includes in c1 pass.
-    ((when-let ((x (assoc val *optimizable-constants*)))
+    ((ext:when-let ((x (assoc val *optimizable-constants*)))
        (pushnew "#include <float.h>" *clines-string-list*)
        (pushnew "#include <complex.h>" *clines-string-list*)
        (setf x (cdr x))

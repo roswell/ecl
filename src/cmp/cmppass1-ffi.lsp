@@ -134,7 +134,7 @@
                     (:void               . "ECL_FFI_VOID")))
 
 (defun foreign-elt-type-code (type)
-  (if-let ((x (assoc type +foreign-elt-type-codes+)))
+  (ext:if-let ((x (assoc type +foreign-elt-type-codes+)))
     (cdr x)
     (cmperr "DEFCALLBACK: ~a is not a valid elementary FFI type." type)))
 

@@ -86,7 +86,7 @@
                                            *permanent-data*))
                    &aux load-form-p)
   ;; FIXME add-static-constant is tied to the C target.
-  (when-let ((vv (add-static-constant object)))
+  (ext:when-let ((vv (add-static-constant object)))
     (when used-p
       (setf (vv-used-p vv) t))
     (return-from add-object vv))
@@ -147,7 +147,7 @@
   ;; can reuse keywords lists from other functions when they coincide with ours.
   ;; We search for keyword lists that are similar. However, the list *OBJECTS*
   ;; contains elements in decreasing order!!!
-  (if-let ((x (search keywords *permanent-objects*
+  (ext:if-let ((x (search keywords *permanent-objects*
                       :test #'(lambda (k record) (eq k (vv-value record))))))
     (elt *permanent-objects* x)
     (prog1 (add-object (pop keywords) :duplicate t :permanent t)

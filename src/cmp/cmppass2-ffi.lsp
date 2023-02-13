@@ -23,7 +23,7 @@
   (gethash rep-type (machine-rep-type-hash *machine*)))
 
 (defun rep-type-record (rep-type)
-  (if-let ((record (gethash rep-type (machine-rep-type-hash *machine*))))
+  (ext:if-let ((record (gethash rep-type (machine-rep-type-hash *machine*))))
     record
     (cmperr "Not a valid C type name ~A" rep-type)))
 

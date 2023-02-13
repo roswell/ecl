@@ -511,7 +511,7 @@ keyword argument, the compiler-macro declines to provide an expansion.
       (when (eq (first lambda-list) '&whole)
         (push `(,(second lambda-list) ,whole) bindings-for-body)
         (setf lambda-list (cddr lambda-list)))
-      (when-let ((env (member '&environment lambda-list)))
+      (ext:when-let ((env (member '&environment lambda-list)))
         (push '&environment new-lambda-list)
         (push (second env) new-lambda-list)
         (setq lambda-list (nconc (ldiff lambda-list env) (cddr env))))

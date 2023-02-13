@@ -37,7 +37,7 @@
           (*current-form* (c1form-form form))
           (*current-toplevel-form* (c1form-toplevel-form form))
           (name (c1form-name form)))
-      (when-let ((propagator (gethash name *p1-dispatch-table*)))
+      (ext:when-let ((propagator (gethash name *p1-dispatch-table*)))
         (prop-message "~&;;; Entering type propagation for ~A" name)
         (multiple-value-bind (new-type assumptions)
             (apply propagator form assumptions (c1form-args form))

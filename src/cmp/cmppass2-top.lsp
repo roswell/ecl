@@ -5,7 +5,7 @@
 
 (defun t2expr (form)
   (when form
-    (if-let ((def (gethash (c1form-name form) *t2-dispatch-table*)))
+    (ext:if-let ((def (gethash (c1form-name form) *t2-dispatch-table*)))
       (let ((*compile-file-truename* (c1form-file form))
             (*compile-file-position* (c1form-file-position form))
             (*current-toplevel-form* (c1form-form form))

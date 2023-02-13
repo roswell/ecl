@@ -224,9 +224,9 @@
                    #+sse2
                    (not (typep object 'ext:sse-pack)))
               (not (listp *static-constants*)))
-    (if-let ((record (find object *static-constants* :key #'first :test #'equal)))
+    (ext:if-let ((record (find object *static-constants* :key #'first :test #'equal)))
       (second record)
-      (when-let ((builder (static-constant-expression object)))
+      (ext:when-let ((builder (static-constant-expression object)))
         (let ((c-name (format nil "_ecl_static_~D" (length *static-constants*))))
           (push (list object c-name builder) *static-constants*)
           (make-vv :location c-name :value object))))))
