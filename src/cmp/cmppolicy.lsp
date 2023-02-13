@@ -160,9 +160,6 @@
     (intern (concatenate 'string "POLICY-" (symbol-name base))
             (find-package "C")))
   (defmacro define-policy (&whole whole name &rest conditions)
-    (unintern name)
-    (import name (find-package "EXT")) 
-    (export name (find-package "EXT"))
     (let* ((test (ash 1 +last-optimization-bit+))
            (declaration-name (policy-declaration-name name))
            (function-name (policy-function-name name))
@@ -240,76 +237,76 @@
 ;; ERROR CHECKING POLICY
 ;;
 
-(define-policy assume-no-errors :off safety 1)
+(define-policy ext:assume-no-errors :off safety 1)
 
-(define-policy assume-right-type :alias assume-no-errors)
+(define-policy ext:assume-right-type :alias ext:assume-no-errors)
 
-(define-policy type-assertions :anti-alias assume-no-errors
+(define-policy ext:type-assertions :anti-alias ext:assume-no-errors
   "Generate type assertions when inlining accessors and other functions.")
 
-(define-policy check-stack-overflow :on safety 2
+(define-policy ext:check-stack-overflow :on safety 2
   "Add a stack check to every function")
 
-(define-policy check-arguments-type :on safety 1
+(define-policy ext:check-arguments-type :on safety 1
   "Generate CHECK-TYPE forms for function arguments with type declarations")
 
-(define-policy array-bounds-check :on safety 1
+(define-policy ext:array-bounds-check :on safety 1
   "Check out of bounds access to arrays")
 
-(define-policy global-var-checking :on safety 3
+(define-policy ext:global-var-checking :on safety 3
   "Read the value of a global variable even if it is discarded, ensuring it is bound")
 
-(define-policy global-function-checking :on safety 3
+(define-policy ext:global-function-checking :on safety 3
   "Read the binding of a global function even if it is discarded")
 
-(define-policy check-nargs :on safety 1 :only-on check-arguments-type 1
+(define-policy ext:check-nargs :on safety 1 :only-on ext:check-arguments-type 1
   "Check that the number of arguments a function receives is within bounds")
 
-(define-policy the-is-checked :on safety 1
+(define-policy ext:the-is-checked :on safety 1
   "THE is equivalent to EXT:CHECKED-VALUE. Otherwise THE is equivalent to EXT:TRULY-THE.")
 
 ;;
 ;; INLINING POLICY
 ;;
 
-(define-policy assume-types-dont-change :off safety 1
+(define-policy ext:assume-types-dont-change :off safety 1
   "Assume that type and class definitions will not change")
 
-(define-policy inline-slot-access :on speed 1 :off debug 2 :off safety 2
+(define-policy ext:inline-slot-access :on speed 1 :off debug 2 :off safety 2
   "Inline access to structures and sealed classes")
 
-(define-policy inline-accessors :off debug 2 :off space 2
+(define-policy ext:inline-accessors :off debug 2 :off space 2
   "Inline access to object slots, including conses and arrays")
 
-(define-policy inline-bit-operations :off space 2
+(define-policy ext:inline-bit-operations :off space 2
   "Inline LDB and similar functions")
 
-(define-policy open-code-aref/aset :alias inline-accessors
+(define-policy ext:open-code-aref/aset :alias ext:inline-accessors
   "Inline access to arrays")
 
-(define-policy evaluate-forms :off debug 1
+(define-policy ext:evaluate-forms :off debug 1
   "Pre-evaluate a function that takes constant arguments")
 
-(define-policy use-direct-C-call :off debug 2
+(define-policy ext:use-direct-C-call :off debug 2
   "Emit direct calls to a function whose C name is known")
 
-(define-policy inline-type-checks :off space 2
+(define-policy ext:inline-type-checks :off space 2
   "Expand TYPEP and similar forms in terms of simpler functions, such as FLOATP,
 INTGERP, STRINGP.")
 
-(define-policy inline-sequence-functions :off space 2
+(define-policy ext:inline-sequence-functions :off space 2
   "Inline functions such as MAP, MEMBER, FIND, etc")
 
 ;;
 ;; DEBUG POLICY
 ;;
 
-(define-policy debug-variable-bindings :on debug 3
+(define-policy ext:debug-variable-bindings :on debug 3
   :requires (policy-debug-ihs-frame env)
   ;; We can only create variable bindings when the function has an IHS frame!!!
   "Create a debug vector with the bindings of each LET/LET*/LAMBDA form?")
 
-(define-policy debug-ihs-frame :on debug 3
+(define-policy ext:debug-ihs-frame :on debug 3
   "Let the functions appear in backtraces")
 
 ); eval-when
