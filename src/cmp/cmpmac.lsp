@@ -61,7 +61,7 @@
   (cons (incf *last-label*) t))
 
 (defun labelp (x)
-  (and (consp x) (integerp (si::cons-car x))))
+  (and (consp x) (integerp (si:cons-car x))))
 
 (defun maybe-next-label ()
   (if (labelp *exit*)

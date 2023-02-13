@@ -232,21 +232,21 @@
 ;(trace c::expand-row-major-index c::expand-aset c::expand-aref)
 
 (defmacro check-expected-rank (a expected-rank)
-  `(c-inline
+  `(ffi:c-inline
     (,a ,expected-rank) (:object :fixnum) :void
     "if (ecl_unlikely((#0)->array.rank != (#1)))
             FEwrong_dimensions(#0,#1);"
     :one-liner nil))
 
 (defmacro check-index-in-bounds (array index limit)
-  `(c-inline
+  `(ffi:c-inline
     (,array ,index ,limit) (:object :fixnum :fixnum) :void
     "if (ecl_unlikely((#1)>=(#2)))
            FEwrong_index(ECL_NIL,#0,-1,ecl_make_fixnum(#1),#2);"
     :one-liner nil))
 
 (defmacro check-vector-in-bounds (vector index)
-  `(c-inline
+  `(ffi:c-inline
     (,vector ,index) (:object :fixnum) :void
     "if (ecl_unlikely((#1)>=(#0)->vector.dim))
            FEwrong_index(ECL_NIL,#0,-1,ecl_make_fixnum(#1),(#0)->vector.dim);"
@@ -262,7 +262,7 @@
                       for c-code = (format nil "(#0)->array.dims[~D]" i)
                       collect `((:object) :fixnum ,c-code :one-liner t
                                 :side-effects nil)))))
-    `(c-inline (,array) ,@(aref tails n))))
+    `(ffi:c-inline (,array) ,@(aref tails n))))
 
 (defmacro array-dimension-fast (array n)
   (if (typep n '(integer 0 #.(1- array-rank-limit)))

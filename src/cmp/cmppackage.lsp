@@ -16,7 +16,7 @@
 
 (defpackage #:c
   (:nicknames #:compiler)
-  (:use #:ffi #:ext #+threads #:mp #:cl)
+  (:use #:cl #:ext)
   (:export
    ;; Flags controlling the compiler behavior.
    #:*compiler-break-enable*

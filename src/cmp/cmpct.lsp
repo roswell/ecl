@@ -24,8 +24,8 @@
   (cond ((symbolp name)
          (let* ((value (symbol-value name))
                 (type (lisp-type->rep-type (type-of value))))
-           (cons value `(c-inline () () ,type ,c-value
-                                  :one-liner t :side-effects nil))))
+           (cons value `(ffi:c-inline () () ,type ,c-value
+                                      :one-liner t :side-effects nil))))
         ((floatp name)
          (let* ((value name)
                       (type (type-of value))
@@ -54,12 +54,12 @@
    '(
      ;; Order is important: on platforms where 0.0 and -0.0 are the same
      ;; the last one is prioritized.
-     (#.(coerce 0 'single-float) "cl_core.singlefloat_zero")
-     (#.(coerce 0 'double-float) "cl_core.doublefloat_zero")
-     (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
-     (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
-     (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
-     (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
+     (#.(coerce 0 'cl:single-float) "cl_core.singlefloat_zero")
+     (#.(coerce 0 'cl:double-float) "cl_core.doublefloat_zero")
+     (#.(coerce -0.0 'cl:single-float) "cl_core.singlefloat_minus_zero")
+     (#.(coerce -0.0 'cl:double-float) "cl_core.doublefloat_minus_zero")
+     (#.(coerce 0 'cl:long-float) "cl_core.longfloat_zero")
+     (#.(coerce -0.0 'cl:long-float) "cl_core.longfloat_minus_zero")
 
      ;; We temporarily remove this constant, because the bytecodes compiler
      ;; does not know how to externalize it.

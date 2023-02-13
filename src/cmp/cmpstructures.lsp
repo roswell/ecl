@@ -61,7 +61,7 @@
           (t
            `(,args ',structure-type ,slot-index)))))))
 
-(define-compiler-macro si::structure-ref (&whole whole object structure-name index
+(define-compiler-macro si:structure-ref (&whole whole object structure-name index
                                           &environment env)
   (if (and (policy-inline-slot-access env)
            (constantp structure-name env)

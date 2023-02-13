@@ -61,7 +61,7 @@
            ;; Fixnum iterators are always fine
            (aref %seq %iterator)
            ;; Error check in case we may have been passed an improper list
-           (cons-car (checked-value cons %iterator))))))
+           (si:cons-car (checked-value cons %iterator))))))
 
 #+(or)
 (define-compiler-macro si::seq-iterator-next (seq iterator)
@@ -74,7 +74,7 @@
              (declare (fixnum %iterator))
              (and (< %iterator (length (truly-the vector %seq)))
                   %iterator))
-           (cons-cdr %iterator)))))
+           (si:cons-cdr %iterator)))))
 
 (defmacro do-in-seq ((%elt %sequence &key %start %end end output) &body body)
   (ext:with-unique-names (%iterator %counter)
@@ -102,10 +102,10 @@
 ;;;
 
 (defmacro do-in-list ((%elt %sublist %list &rest output) &body body)
-  `(do* ((,%sublist ,%list (cons-cdr ,%sublist)))
+  `(do* ((,%sublist ,%list (si:cons-cdr ,%sublist)))
         ((null ,%sublist) ,@output)
      (let* ((,%sublist (optional-type-check ,%sublist cons))
-            (,%elt (cons-car ,%sublist)))
+            (,%elt (si:cons-car ,%sublist)))
        ,@body)))
 
 (defmacro define-seq-compiler-macro (name lambda-list &body body)
@@ -184,7 +184,7 @@
   (ext:with-unique-names (%sublist %elt %car)
     `(do-in-list (,%elt ,%sublist ,%list)
        (when ,%elt
-         (let ((,%car (cons-car (optional-type-check ,%elt cons))))
+         (let ((,%car (si:cons-car (optional-type-check ,%elt cons))))
            (when ,(funcall test-function %value
                            (funcall key-function %car))
              (return ,%elt)))))))

@@ -32,7 +32,7 @@
 ;;;     ( FRAME ndx )                   variable in local frame stack
 ;;;     ( CALL-NORMAL fun locs 1st-type ) similar as CALL, but number of arguments is fixed
 ;;;     ( CALL-INDIRECT fun narg args)  similar as CALL, but unknown function
-;;;     ( C-INLINE output-type fun/string locs side-effects output-var )
+;;;     ( FFI:C-INLINE output-type fun/string locs side-effects output-var )
 ;;;     ( COERCE-LOC representation-type location)
 ;;;     ( FDEFINITION vv-index )
 ;;;     ( MAKE-CCLOSURE cfun )
@@ -107,8 +107,8 @@
 (defun uses-values (loc)
   (and (consp loc)
        (or (member (car loc) '(CALL CALL-NORMAL CALL-INDIRECT) :test #'eq)
-           (and (eq (car loc) 'C-INLINE)
-                (eq (sixth loc) 'VALUES)))))
+           (and (eq (car loc) 'ffi:C-INLINE)
+                (eq (sixth loc) 'cl:VALUES)))))
 
 (defun loc-immediate-value-p (loc)
   (cond ((eq loc t)
@@ -226,7 +226,7 @@
          (loc-refers-to-special (third loc)))
         ((eq (setf loc (first loc)) 'BIND)
          t)
-        ((eq loc 'C-INLINE)
+        ((eq loc 'ffi:C-INLINE)
          t) ; We do not know, so guess yes
         (t nil)))
 
@@ -299,12 +299,12 @@
         ((member (setf name (first loc)) '(CALL CALL-NORMAL CALL-INDIRECT)
                  :test #'eq)
          t)
-        ((eq name 'THE)
+        ((eq name 'cl:THE)
          (loc-with-side-effects-p (third loc)))
-        ((eq name 'FDEFINITION)
+        ((eq name 'cl:FDEFINITION)
          (policy-global-function-checking))
-        ((eq name 'C-INLINE)
-         (or (eq (sixth loc) 'VALUES) ;; Uses VALUES
+        ((eq name 'ffi:C-INLINE)
+         (or (eq (sixth loc) 'cl:VALUES) ;; Uses VALUES
              (fifth loc))))) ;; or side effects
 
 (defun set-trash-loc (loc)

@@ -64,37 +64,33 @@
   env)
 
 (defun get-arg-types (fname &optional (env *cmp-env*) (may-be-global t))
-  (let ((x (cmp-env-search-ftype fname env)))
-    (if x
-        (let ((arg-types (first x)))
-          (unless (eq arg-types '*)
-            (values arg-types t)))
-        (when may-be-global
-          (let ((fun (cmp-env-search-function fname env)))
-            (when (or (null fun) (and (fun-p fun) (fun-global fun)))
-              (si:get-sysprop fname 'PROCLAIMED-ARG-TYPES)))))))
+  (ext:if-let ((x (cmp-env-search-ftype fname env)))
+    (let ((arg-types (first x)))
+      (unless (eq arg-types '*)
+        (values arg-types t)))
+    (when may-be-global
+      (let ((fun (cmp-env-search-function fname env)))
+        (when (or (null fun) (and (fun-p fun) (fun-global fun)))
+          (si:get-sysprop fname 'PROCLAIMED-ARG-TYPES))))))
 
 (defun get-return-type (fname &optional (env *cmp-env*))
-  (let ((x (cmp-env-search-ftype fname env)))
-    (if x
-        (let ((return-types (second x)))
-          (unless (eq return-types '*)
-            (values return-types t)))
-        (let ((fun (cmp-env-search-function fname env)))
-          (when (or (null fun) (and (fun-p fun) (fun-global fun)))
-            (si:get-sysprop fname 'PROCLAIMED-RETURN-TYPE))))))
+  (ext:if-let ((x (cmp-env-search-ftype fname env)))
+    (let ((return-types (second x)))
+      (unless (eq return-types '*)
+        (values return-types t)))
+    (let ((fun (cmp-env-search-function fname env)))
+      (when (or (null fun) (and (fun-p fun) (fun-global fun)))
+        (si:get-sysprop fname 'PROCLAIMED-RETURN-TYPE)))))
 
 (defun get-local-arg-types (fun &optional (env *cmp-env*))
-  (let ((x (cmp-env-search-ftype (fun-name fun) env)))
-    (if x
-        (values (first x) t)
-        (values nil nil))))
+  (ext:if-let ((x (cmp-env-search-ftype (fun-name fun) env)))
+    (values (first x) t)
+    (values nil nil)))
 
 (defun get-local-return-type (fun &optional (env *cmp-env*))
-  (let ((x (cmp-env-search-ftype (fun-name fun) env)))
-    (if x
-        (values (second x) t)
-        (values nil nil))))
+  (ext:if-let ((x (cmp-env-search-ftype (fun-name fun) env)))
+    (values (second x) t)
+    (values nil nil)))
 
 (defun get-proclaimed-narg (fun &optional (env *cmp-env*))
   (multiple-value-bind (arg-list found)

@@ -113,7 +113,7 @@
       t
       (case (first loc)
         ((CALL CALL-LOCAL) NIL)
-        ((C-INLINE) (not (fifth loc))) ; side effects?
+        ((ffi:c-inline) (not (fifth loc))) ; side effects?
         (otherwise t))))
 
 (defun loc-type (loc)
@@ -132,10 +132,10 @@
            (CSFLOAT-VALUE 'SI:COMPLEX-SINGLE-FLOAT)
            (CDFLOAT-VALUE 'SI:COMPLEX-DOUBLE-FLOAT)
            (CLFLOAT-VALUE 'SI:COMPLEX-LONG-FLOAT)
-           (C-INLINE (let ((type (first (second loc))))
-                       (cond ((and (consp type) (eq (first type) 'VALUES)) T)
-                             ((lisp-type-p type) type)
-                             (t (rep-type->lisp-type type)))))
+           (FFI:C-INLINE (let ((type (first (second loc))))
+                           (cond ((and (consp type) (eq (first type) 'VALUES)) T)
+                                 ((lisp-type-p type) type)
+                                 (t (rep-type->lisp-type type)))))
            (BIND (var-type (second loc)))
            (LCL (or (third loc) T))
            (THE (second loc))
@@ -159,10 +159,10 @@
            (CSFLOAT-VALUE :csfloat)
            (CDFLOAT-VALUE :cdfloat)
            (CLFLOAT-VALUE :clfloat)
-           (C-INLINE (let ((type (first (second loc))))
-                       (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
-                             ((lisp-type-p type) (lisp-type->rep-type type))
-                             (t type))))
+           (FFI:C-INLINE (let ((type (first (second loc))))
+                           (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
+                                 ((lisp-type-p type) (lisp-type->rep-type type))
+                                 (t type))))
            (BIND (var-rep-type (second loc)))
            (LCL (lisp-type->rep-type (or (third loc) T)))
            ((JUMP-TRUE JUMP-FALSE) :bool)
@@ -378,9 +378,9 @@
     ;; place where the value is used.
     (when one-liner
       (return-from produce-inline-loc
-        `(C-INLINE ,output-rep-type ,c-expression ,coerced-arguments ,side-effects
-                   ,(if (equalp output-rep-type '((VALUES &REST T)))
-                        'VALUES NIL))))
+        `(ffi:c-inline ,output-rep-type ,c-expression ,coerced-arguments ,side-effects
+                       ,(if (equalp output-rep-type '((VALUES &REST T)))
+                            'VALUES NIL))))
 
     ;; If the output is a in the VALUES vector, just write down the form and output
     ;; the location of the data.

@@ -199,7 +199,7 @@
   (when (and (eq *destination* 'RETURN-OBJECT)
              (rest forms)
              (consp *current-form*)
-             (eq 'DEFUN (first *current-form*)))
+             (eq 'cl:DEFUN (first *current-form*)))
     (cmpwarn "Trying to return multiple values. ~
               ~%;But ~a was proclaimed to have single value.~
               ~%;Only first one will be assured."

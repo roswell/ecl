@@ -30,13 +30,13 @@
                   :args body)))
 
 (defun c1innermost-stack-frame (args)
-  `(c-inline () () :object "_ecl_inner_frame"
-                   :one-liner t :side-effects nil))
+  `(ffi:c-inline () () :object "_ecl_inner_frame"
+                       :one-liner t :side-effects nil))
 
 (defun c1stack-push (args)
   `(progn
-     (c-inline ,args (t t) :void "ecl_stack_frame_push(#0,#1)"
-                           :one-liner t :side-effects t)
+     (ffi:c-inline ,args (t t) :void "ecl_stack_frame_push(#0,#1)"
+                               :one-liner t :side-effects t)
      1))
 
 (defun c1stack-push-values (args)
@@ -45,16 +45,16 @@
     (make-c1form* 'STACK-PUSH-VALUES :type '(VALUES)
                   :args
                   (c1expr form)
-                  (c1expr `(c-inline (,frame-var) (t)
-                                     :void "ecl_stack_frame_push_values(#0)"
-                                     :one-liner t :side-effects t)))))
+                  (c1expr `(ffi:c-inline (,frame-var) (t)
+                                         :void "ecl_stack_frame_push_values(#0)"
+                                         :one-liner t :side-effects t)))))
 
 (defun c1stack-pop (args)
-  `(c-inline ,args (t) (values &rest t)
-             "cl_env_copy->values[0]=ecl_stack_frame_pop_values(#0);"
-             :one-liner nil :side-effects t))
+  `(ffi:c-inline ,args (t) (values &rest t)
+                 "cl_env_copy->values[0]=ecl_stack_frame_pop_values(#0);"
+                 :one-liner nil :side-effects t))
 
 (defun c1apply-from-stack-frame (args)
-  `(c-inline ,args (t t) (values &rest t)
-             "cl_env_copy->values[0]=ecl_apply_from_stack_frame(#0,#1);"
-             :one-liner nil :side-effects t))
+  `(ffi:c-inline ,args (t t) (values &rest t)
+                 "cl_env_copy->values[0]=ecl_apply_from_stack_frame(#0,#1);"
+                 :one-liner nil :side-effects t))
