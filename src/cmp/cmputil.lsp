@@ -211,7 +211,7 @@
                         (compiler-error #'handle-compiler-error)
                         (compiler-internal-error #'handle-compiler-internal-error)
                         (serious-condition #'handle-compiler-internal-error))
-           (mp:with-lock (+load-compile-lock+)
+           (mp:with-lock (mp:+load-compile-lock+)
              (let ,+init-env-form+
                (with-compilation-unit ()
                  ,@body))))
