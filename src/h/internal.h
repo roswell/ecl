@@ -127,6 +127,7 @@ struct cl_compiler_env {
         cl_index env_size;
         int mode;
         bool stepping;
+        bool function_boundary_crossed;
 };
 
 typedef struct cl_compiler_env *cl_compiler_env_ptr;

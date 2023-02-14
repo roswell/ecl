@@ -390,8 +390,7 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  * local macro or symbol macro. BOUND-P is true when the variable has been bound
  * by an enclosing form, while it is NIL if the variable-record corresponds just
  * to a special declaration. SI:FUNCTION-BOUNDARY and SI:UNWIND-PROTECT-BOUNDARY
- * are only used by the C compiler and they denote function and unwind-protect
- * boundaries.
+ * denote function and unwind-protect boundaries.
  *
  * The brackets [] denote differences between the bytecodes and C compiler
  * environments, with the first option belonging to the interpreter and the
@@ -569,6 +568,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
       }
     }
     new->mode = FLAG_EXECUTE;
+    new->function_boundary_crossed = 0;
   }
   new->env_size = 0;
 }
@@ -590,10 +590,13 @@ static cl_object
 c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
 {
   cl_fixnum n = 0;
-  cl_object l;
+  cl_object l, output = ECL_NIL;
+  bool function_boundary_crossed = 0;
   const cl_compiler_ptr c_env = env->c_env;
   for (l = c_env->variables; CONSP(l); l = ECL_CONS_CDR(l)) {
     cl_object type, name, record = ECL_CONS_CAR(l);
+    if (record == @'si::function-boundary')
+      function_boundary_crossed = 1;
     if (ECL_ATOM(record))
       continue;
     type = ECL_CONS_CAR(record);
@@ -603,7 +606,8 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
       if (type == the_type) {
         cl_object label = ecl_assql(the_tag, name);
         if (!Null(label)) {
-          return CONS(ecl_make_fixnum(n), ECL_CONS_CDR(label));
+          output = CONS(ecl_make_fixnum(n), ECL_CONS_CDR(label));
+          break;
         }
       }
       n++;
@@ -613,7 +617,8 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
         /* Mark as used */
         record = ECL_CONS_CDR(record);
         ECL_RPLACA(record, ECL_T);
-        return ecl_make_fixnum(n);
+        output = ecl_make_fixnum(n);
+        break;
       }
       n++;
     } else if (Null(name)) {
@@ -623,7 +628,9 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
        * and other declarations */
     }
   }
-  return ECL_NIL;
+  if (function_boundary_crossed && !Null(output))
+    c_env->function_boundary_crossed = 1;
+  return output;
 }
 
 ecl_def_ct_base_string(undefined_variable,
@@ -633,11 +640,14 @@ ecl_def_ct_base_string(undefined_variable,
 static cl_fixnum
 c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_defined)
 {
-  cl_fixnum n = 0;
+  cl_fixnum n = 0, output = ECL_UNDEFINED_VAR_REF;
   cl_object l, record, special, name;
+  bool function_boundary_crossed = 0;
   const cl_compiler_ptr c_env = env->c_env;
   for (l = c_env->variables; CONSP(l); l = ECL_CONS_CDR(l)) {
     record = ECL_CONS_CAR(l);
+    if (record == @'si::function-boundary')
+      function_boundary_crossed = 1;
     if (ECL_ATOM(record))
       continue;
     name = ECL_CONS_CAR(record);
@@ -653,14 +663,18 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
     } else if (special == @'si::symbol-macro') {
       /* We can only get here when we try to redefine a
          symbol macro */
-      if (allow_symbol_macro)
-        return -1;
+      if (allow_symbol_macro) {
+        output = -1;
+        break;
+      }
       FEprogram_error("Internal error: symbol macro ~S used as variable",
                                1, var);
     } else if (Null(special)) {
-      return n;
+      output = n;
+      break;
     } else {
-      return ECL_SPECIAL_VAR_REF;
+      output = ECL_SPECIAL_VAR_REF;
+      break;
     }
   }
   if (ensure_defined) {
@@ -669,7 +683,9 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
       funcall(3, l, undefined_variable, var);
     }
   }
-  return ECL_UNDEFINED_VAR_REF;
+  if (function_boundary_crossed && output >= 0)
+    c_env->function_boundary_crossed = 1;
+  return output;
 }
 
 static bool
@@ -1472,24 +1488,19 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
 
     const cl_compiler_ptr c_env = env->c_env;
     cl_object lambda = ecl_make_lambda(env, name, body);
+    cl_object cfb = ecl_nth_value(env, 1);
     cl_object macro_lexenv = create_macro_lexenv(c_env);
-    if (Null(macro_lexenv)) {
-      if (Null(c_env->variables)) {
-        /* No closure */
-        asm_op2c(env, OP_QUOTE, lambda);
-      } else {
-        /* Close only around functions and variables */
-        asm_op2c(env, OP_CLOSE, lambda);
-      }
-    } else {
+    if (!Null(macro_lexenv)) {
+      /* Close around macros to allow calling compile on the function
+       * in the future */
       lambda = ecl_close_around(lambda, macro_lexenv);
-      if (Null(c_env->variables)) {
-        /* Close only around macros */
-        asm_op2c(env, OP_QUOTE, lambda);
-      } else {
-        /* Close around macros, functions and variables */
-        asm_op2c(env, OP_CLOSE, lambda);
-      }
+    }
+    if (Null(cfb)) {
+      /* No closure */
+      asm_op2c(env, OP_QUOTE, lambda);
+    } else {
+      /* Close around functions and variables */
+      asm_op2c(env, OP_CLOSE, lambda);
     }
     return FLAG_REG0;
   }
@@ -3126,6 +3137,7 @@ cl_object
 ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   cl_object reqs, opts, rest, key, keys, auxs, allow_other_keys;
   cl_object specials, decl, body, output;
+  cl_object cfb = ECL_NIL;
   cl_index handle;
   struct cl_compiler_env *old_c_env, new_c_env;
 
@@ -3135,6 +3147,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   old_c_env = env->c_env;
   c_new_env(env, &new_c_env, ECL_NIL, old_c_env);
   new_c_env.lexical_level++;
+  new_c_env.function_boundary_crossed = 0;
 
   reqs = si_process_lambda(lambda);
   opts = env->values[1];
@@ -3229,11 +3242,15 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   output->bytecodes.name = name;
 
   old_c_env->load_time_forms = env->c_env->load_time_forms;
+  if (env->c_env->function_boundary_crossed) {
+    old_c_env->function_boundary_crossed = 1;
+    cfb = ECL_T;
+  }
   c_restore_env(env, &new_c_env, old_c_env);
 
   ecl_bds_unwind1(env);
 
-  return output;
+  ecl_return2(env, output, cfb);
 }
 
 static cl_object
