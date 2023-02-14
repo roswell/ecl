@@ -49,7 +49,7 @@ the closure in let/flet forms for variables/functions it closes over."
                                                   `(progn ,@(rest record-def)))
                                               record-lexenv env)))
                  (setf definition
-                       `(flet ((,(compiled-function-name record)
+                       `(flet ((,(ext:compiled-function-name record)
                                    ,@record-def))
                           ,definition))))
               ((and (listp record) (symbolp (car record)))

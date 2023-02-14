@@ -41,7 +41,7 @@
 
 #+(or)
 (define-compiler-macro si::make-seq-iterator (seq &optional (start 0))
-  (with-clean-symbols (%seq %start)
+  (ext:with-clean-symbols (%seq %start)
     `(let ((%seq (optional-type-check ,seq sequence))
            (%start ,start))
        (cond ((consp %seq)
@@ -53,7 +53,7 @@
 
 #+(or)
 (define-compiler-macro si::seq-iterator-ref (seq iterator)
-  (with-clean-symbols (%seq %iterator)
+  (ext:with-clean-symbols (%seq %iterator)
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
        (declare (optimize (safety 0)))
@@ -61,18 +61,18 @@
            ;; Fixnum iterators are always fine
            (aref %seq %iterator)
            ;; Error check in case we may have been passed an improper list
-           (si:cons-car (checked-value cons %iterator))))))
+           (si:cons-car (ext:checked-value cons %iterator))))))
 
 #+(or)
 (define-compiler-macro si::seq-iterator-next (seq iterator)
-  (with-clean-symbols (%seq %iterator)
+  (ext:with-clean-symbols (%seq %iterator)
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
        (declare (optimize (safety 0)))
-       (if (si::fixnump %iterator)
-           (let ((%iterator (1+ (truly-the fixnum %iterator))))
+       (if (ext:fixnump %iterator)
+           (let ((%iterator (1+ (ext:truly-the fixnum %iterator))))
              (declare (fixnum %iterator))
-             (and (< %iterator (length (truly-the vector %seq)))
+             (and (< %iterator (length (ext:truly-the vector %seq)))
                   %iterator))
            (si:cons-cdr %iterator)))))
 

@@ -272,10 +272,10 @@
                                   call-arguments-limit
                                   (+ (first requireds) (first optionals))))
            (apply-constant-args-p (and apply-p (constantp apply-list)
-                                       (listp (constant-form-value apply-list))))
+                                       (listp (ext:constant-form-value apply-list))))
            (n-args-got-min (if apply-constant-args-p
                                (+ (length arguments)
-                                  (length (constant-form-value apply-list)))
+                                  (length (ext:constant-form-value apply-list)))
                                (length arguments)))
            (n-args-got-max (cond ((and apply-p (not apply-constant-args-p))
                                   nil)  ; unknown maximum number of arguments

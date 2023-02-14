@@ -138,7 +138,7 @@
                          (type ,first ,var2))
                 (AND (TYPEP ,var1 ',first)
                      (locally (declare (optimize (speed 3) (safety 0) (space 0)))
-                       (setf ,var2 (truly-the ,first ,var1))
+                       (setf ,var2 (ext:truly-the ,first ,var1))
                        (AND ,@(expand-in-interval-p var2 rest)))))))
           ;;
           ;; Compound COMPLEX types.
@@ -188,7 +188,7 @@
            (list-var (gensym))
            (typed-var (if (policy-assume-no-errors env)
                           list-var
-                          `(truly-the cons ,list-var))))
+                          `(ext:truly-the cons ,list-var))))
       `(block nil
          (let* ((,list-var ,expression))
            (si::while ,list-var
@@ -351,7 +351,7 @@
                (c-type (lisp-type->rep-type float)))
           `(let ((value ,value))
              (declare (:read-only value))
-             (compiler-typecase value
+             (ext:compiler-typecase value
                (,float value)
                (t
                 (ffi:c-inline (value) (:object) ,c-type

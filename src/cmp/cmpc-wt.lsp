@@ -178,7 +178,7 @@
                              :element-type 'base-char
                              :adjustable t
                              :fill-pointer 0))
-         (stream (make-sequence-output-stream output :external-format format)))
+         (stream (ext:make-sequence-output-stream output :external-format format)))
     (write-string string stream)
     output))
 

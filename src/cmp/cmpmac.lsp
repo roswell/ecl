@@ -32,8 +32,8 @@
              (declare (type (integer 0 1023) hash)
                       (type (array t (*)) ,cache-name))
              (if (and elt ,@(loop for arg in lambda-list
-                               collect `(,test (pop (truly-the cons elt)) ,arg)))
-                 (first (truly-the cons elt))
+                               collect `(,test (pop (ext:truly-the cons elt)) ,arg)))
+                 (first (ext:truly-the cons elt))
                  (let ((output (,name ,@lambda-list)))
                    (setf (aref ,cache-name hash) (list ,@lambda-list output))
                    output))))))))

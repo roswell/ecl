@@ -22,7 +22,7 @@
                       (loop for v in values
                          for value-and-type in arg-types
                          collect (if (consp value-and-type)
-                                     `(checked-value ,(second value-and-type) ,v)
+                                     `(ext:checked-value ,(second value-and-type) ,v)
                                      v)))
                  ,@inline-form))
 

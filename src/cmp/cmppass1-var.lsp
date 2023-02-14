@@ -96,7 +96,7 @@
                            ((trivial-type-p type)
                             (c1expr (first form)))
                            (t
-                            (c1expr `(checked-value ,type ,(first form)))))))
+                            (c1expr `(ext:checked-value ,type ,(first form)))))))
           ;; :read-only variable handling. Beppe
           (when (read-only-variable-p name other-decls)
             (if (global-var-p var)
@@ -309,7 +309,7 @@
              (type (var-type name))
              (form (c1expr (if (trivial-type-p type)
                                form
-                               `(checked-value ,type ,form)))))
+                               `(ext:checked-value ,type ,form)))))
         (add-to-set-nodes name (make-c1form* 'SETQ
                                              :type (c1form-type form)
                                              :args name form)))
@@ -356,7 +356,7 @@
       (push vref vrefs)
       (push (c1expr (if (trivial-type-p type)
                         form
-                        `(checked-value ,type ,form)))
+                        `(ext:checked-value ,type ,form)))
             forms))))
 
 (defun c1multiple-value-bind (args)
@@ -402,7 +402,7 @@
                 (let ((new-var (gensym)))
                   (push new-var vars)
                   (push new-var value-bindings)
-                  (push `(setf ,var-or-form (checked-value ,type ,new-var)) storing-forms))))
+                  (push `(setf ,var-or-form (ext:checked-value ,type ,new-var)) storing-forms))))
           (multiple-value-bind (setf-vars setf-vals stores storing-form get-form)
               (get-setf-expansion var-or-form *cmp-env*)
             (push (first stores) vars)

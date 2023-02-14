@@ -30,7 +30,7 @@
 
 (define-compiler-macro ldb (&whole whole bytespec integer)
   (if (inline-bytespec bytespec)
-      (with-clean-symbols (%pos %size)
+      (ext:with-clean-symbols (%pos %size)
         `(with-let*-type-check ((%size ,(second bytespec) unsigned-byte)
                                 (%pos ,(third bytespec) unsigned-byte))
            (logand (lognot (ash -1 %size)) (ash ,integer (- %pos)))))
@@ -43,7 +43,7 @@
 
 (define-compiler-macro mask-field (&whole whole bytespec integer)
   (if (inline-bytespec bytespec)
-      (with-clean-symbols (%pos %size)
+      (ext:with-clean-symbols (%pos %size)
         `(with-let*-type-check ((%size ,(second bytespec) unsigned-byte)
                                 (%pos ,(third bytespec) unsigned-byte))
            (logand (ash (lognot (ash -1 %size)) %pos)
@@ -52,7 +52,7 @@
 
 (define-compiler-macro dpb (&whole whole newbyte bytespec integer)
   (if (inline-bytespec bytespec)
-      (with-clean-symbols (%pos %size %mask)
+      (ext:with-clean-symbols (%pos %size %mask)
         `(with-let*-type-check ((%size ,(second bytespec) unsigned-byte)
                                 (%pos ,(third bytespec) unsigned-byte)
                                 (%mask (ash (lognot (ash -1 %size)) %pos) t))
@@ -62,7 +62,7 @@
 
 (define-compiler-macro deposit-field (&whole whole newbyte bytespec integer)
   (if (inline-bytespec bytespec)
-      (with-clean-symbols (%pos %size %mask)
+      (ext:with-clean-symbols (%pos %size %mask)
         `(with-let*-type-check ((%size ,(second bytespec) unsigned-byte)
                                 (%pos ,(third bytespec) unsigned-byte)
                                 (%mask (ash (lognot (ash -1 %size)) %pos) t))
