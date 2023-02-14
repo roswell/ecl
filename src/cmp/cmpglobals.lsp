@@ -51,11 +51,11 @@
 (defvar *compiler-conditions* '()
   "This variable determines whether conditions are printed or just accumulated.")
 
-(defvar cl:*compile-print* nil
+(defvar *compile-print* nil
   "This variable controls whether the compiler displays messages about
 each form it processes. The default value is NIL.")
 
-(defvar cl:*compile-verbose* nil
+(defvar *compile-verbose* nil
   "This variable controls whether the compiler should display messages about its
 progress. The default value is T.")
 
@@ -305,7 +305,7 @@ be deleted if they have been opened with LoadLibrary.")
 ;;; If (safe-compile) is ON, some kind of run-time checks are not
 ;;; included in the compiled code.  The default value is OFF.
 
-(defconstant +init-env-form+
+(defvar +init-env-form+
   '((*gensym-counter* 0)
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
@@ -336,7 +336,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*machine* (or *machine* *default-machine*))
     (*optimizable-constants* (make-optimizable-constants *machine*))
     (*inline-information*
-     (let ((r (machine-inline-information *machine*)))
-       (if r (si::copy-hash-table r) (make-inline-information *machine*))))
-    ))
+     (ext:if-let ((r (machine-inline-information *machine*)))
+       (si:copy-hash-table r)
+       (make-inline-information *machine*)))))
 

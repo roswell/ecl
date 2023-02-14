@@ -32,7 +32,7 @@
     (cl:SPECIAL
      (dolist (var (cdr decl))
        (if (symbolp var)
-           (sys:*make-special var)
+           (si:*make-special var)
            (error "Syntax error in proclamation ~s" decl))))
     (cl:OPTIMIZE
      (dolist (x (cdr decl))

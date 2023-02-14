@@ -39,7 +39,7 @@
        for fun-name = (intern (concatenate 'string
                                            "POLICY-TO-" (symbol-name name) "-LEVEL"))
        collect `(defun ,fun-name (policy)
-                  (declare (declaration ext:assume-right-type))
+                  (declare (ext:assume-right-type))
                   (loop for level from 0 to 3
                      when (logbitp (+ level ,i) policy)
                      return level))))
@@ -54,9 +54,9 @@
     (dolist (x arguments)
       (let (flags name value)
         (cond ((symbolp x)
-               (setq flags (optimization-quality-switches x 3)
+               (setq name x
                      value 3
-                     name x))
+                     flags (optimization-quality-switches name value)))
               ((or (not (consp x))
                    (not (consp (cdr x)))
                    (not (numberp (second x)))
@@ -64,9 +64,9 @@
               (t
                (setf name (first x)
                      value (second x)
-                     flags (optimization-quality-switches name (second x)))))
+                     flags (optimization-quality-switches name value))))
         (if (null flags)
-            (cmpwarn "Illegal or unknown OPTIMIZE proclamation ~s" x)
+            (cmpwarn "Illegal or unknown OPTIMIZE proclamation ~s." x)
             (setf on (logior on (car flags))
                   off (logior off (cdr flags))))))
     ;;(format t "~%*~64b" bits)

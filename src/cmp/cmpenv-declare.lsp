@@ -18,10 +18,10 @@
 ;;;; compiled file and do not propagate beyond it.
 ;;;;
 
-(in-package #-ecl-new "COMPILER" #+ecl-new "C-ENV")
+(in-package "COMPILER")
 
 (defun valid-form-p (x &optional test)
-  (and (si::proper-list-p x)
+  (and (si:proper-list-p x)
        (or (null test)
            (every test x))))
 

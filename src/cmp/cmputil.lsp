@@ -40,9 +40,9 @@
   (when (wild-pathname-p path)
     (error "Cannot coerce ~A to a physical filename~%" path))
   #+windows
-  (namestring (si::coerce-to-file-pathname path))
+  (namestring (si:coerce-to-file-pathname path))
   #-windows
-  (enough-namestring (si::coerce-to-file-pathname path)))
+  (enough-namestring (si:coerce-to-file-pathname path)))
 
 (defun normalize-build-target-name (target)
   (ecase target
