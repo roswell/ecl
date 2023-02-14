@@ -29,7 +29,7 @@
          (let* ((*wt-string-size* 0)
                 (*wt-data-column* 80)
                 (data (data-get-all-objects))
-                (data-string (si::with-ecl-io-syntax
+                (data-string (si:with-ecl-io-syntax
                                (prin1-to-string data)))
                 (l (length data-string)))
            (subseq data-string 1 (1- l))))
@@ -119,19 +119,19 @@
   (let* ((*read-default-float-format* 'single-float)
          (*print-readably* t))
     (format stream "ecl_def_ct_single_float(~A,~S,static,const);"
-            name value stream)))
+            name value)))
 
 (defun static-double-float-builder (name value stream)
   (let* ((*read-default-float-format* 'double-float)
          (*print-readably* t))
     (format stream "ecl_def_ct_double_float(~A,~S,static,const);"
-            name value stream)))
+            name value)))
 
 (defun static-long-float-builder (name value stream)
   (let* ((*read-default-float-format* 'long-float)
          (*print-readably* t))
     (format stream "ecl_def_ct_long_float(~A,~SL,static,const);"
-            name value stream)))
+            name value)))
 
 (defun static-rational-builder (name value stream)
   (let* ((*read-default-float-format* 'double-float)
