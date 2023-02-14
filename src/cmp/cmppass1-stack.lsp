@@ -30,6 +30,7 @@
                   :args body)))
 
 (defun c1innermost-stack-frame (args)
+  (declare (ignore args))
   `(ffi:c-inline () () :object "_ecl_inner_frame"
                        :one-liner t :side-effects nil))
 

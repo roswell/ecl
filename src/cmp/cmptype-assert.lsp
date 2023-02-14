@@ -143,7 +143,7 @@
               value
               let-form)))
 
-(defmacro optional-type-assertion (&whole whole value type &environment env)
+(defmacro optional-type-assertion (value type &environment env)
   "If safety settings are high enough, generates a type check on an
 expression, ensuring that it is satisfied."
   (when (and (policy-type-assertions env)
@@ -151,7 +151,7 @@ expression, ensuring that it is satisfied."
     (cmpdebug "Checking type of ~A to be ~A" value type)
     `(ext:checked-value ,type ,value)))
 
-(defmacro type-assertion (&whole whole value type &environment env)
+(defmacro type-assertion (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (cmpdebug "Checking type of ~A to be ~A" value type)
   (unless (trivial-type-p type)

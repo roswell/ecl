@@ -117,7 +117,7 @@
   (destructuring-bind (name lambda-list &rest body)
       args
     (multiple-value-bind (function pprint doc-string)
-        (sys::expand-defmacro name lambda-list body)
+        (si:expand-defmacro name lambda-list body)
       (declare (ignore pprint doc-string))
       (let ((fn (cmp-eval function *cmp-env*)))
         (cmp-env-register-global-macro name fn))

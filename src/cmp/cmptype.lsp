@@ -182,7 +182,7 @@
        "if (ecl_unlikely(!(#0)))
          FEwrong_type_argument(#1,#2);" :one-liner nil))))
 
-(defmacro assert-type-if-known (&whole whole value type &environment env)
+(defmacro assert-type-if-known (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (multiple-value-bind (trivial valid)
       (subtypep 't type)
@@ -211,8 +211,7 @@
           (otherwise
            type)))))
 
-(defmacro optional-type-check (&whole whole value type &environment env)
-  (declare (ignore env))
+(defmacro optional-type-check (value type)
   (if (policy-assume-right-type)
       value
       `(assert-type-if-known ,value ,type)))

@@ -278,6 +278,7 @@
              (var (c1make-var name ss is ts))
              (init (third specs))
              (flag (fourth specs)))
+        (declare (ignore key))
         (setq init (if init
                        (and-form-type (var-type var) (c1expr init) init
                                       :safe "In (LAMBDA ~a...)" function-name)

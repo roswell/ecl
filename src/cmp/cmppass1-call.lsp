@@ -24,7 +24,7 @@
 
 (defun unoptimized-funcall (fun arguments)
   (let ((l (length arguments)))
-    (if (<= l si::c-arguments-limit)
+    (if (<= l si:c-arguments-limit)
         (make-c1form* 'FUNCALL :sp-change t :side-effects t
                                :args (c1expr fun) (c1args* arguments))
         (unoptimized-long-call fun arguments))))
@@ -101,7 +101,7 @@
              form)))
     (let* ((fun (first args))
            (arguments (rest args)))
-      (cond ((eql (first (last arguments)) 'clos::.combined-method-args.)
+      (cond ((eql (first (last arguments)) 'clos:.combined-method-args.)
              ;; Uses frames instead of lists as last argumennt
              (default-apply fun arguments))
             ((and (consp fun)
@@ -257,7 +257,7 @@
 ;;; arguments) expression into an equivalent let* statement. Returns
 ;;; the bindings and body as two values.
 (defun transform-funcall/apply-into-let* (lambda-form arguments apply-p
-                                          &aux body apply-list apply-var
+                                          &aux apply-list apply-var
                                           let-vars extra-stmts all-keys)
   (multiple-value-bind (requireds optionals rest key-flag keywords
                                   allow-other-keys aux-vars)

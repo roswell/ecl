@@ -64,14 +64,16 @@
   (mapc #'wt1 forms))
 
 ;;; Blocks beyond this value will not be indented
-(defvar +max-depth+ 10)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar +max-depth+ 10))
+
 (defvar +c-newline-indent-strings+
   #.(coerce (let ((basis (make-array (1+ +max-depth+)
                                      :initial-element #\Space
                                      :element-type 'base-char)))
               (setf (aref basis 0) #\Newline)
               (loop for i from 0 to +max-depth+
-                 collect (subseq basis 0 (1+ i))))
+                    collect (subseq basis 0 (1+ i))))
             'vector))
 
 (defun wt-nl-indent ()
@@ -136,7 +138,7 @@
           ((or (eq c #\Newline) (eq c #\Tab))
            (princ c stream))
           ((or (< code 32) (> code 127))
-           (format stream "\ux" code))
+           (format stream "\u~x" code))
           ((and (char= c #\*) (char= (schar text (1+ n)) #\/))
            (princ #\\ stream))
           (t
@@ -184,6 +186,7 @@
 
 (defun wt-filtered-data (string stream &key one-liner
                          (external-format #-unicode :default #+unicode :utf-8))
+  (declare (ignorable external-format))
   #+unicode
   (setf string (encode-string string external-format))
   (let ((N (length string))

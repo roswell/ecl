@@ -61,7 +61,7 @@
   (setq args (progv symbols values (c1progn (cdr args))))
   (make-c1form 'ext:compiler-let args symbols values args))
 
-(defun c1function (args &aux fd)
+(defun c1function (args)
   (check-args-number 'FUNCTION args 1 1)
   (let ((fun (car args)))
     (cond ((si::valid-function-name-p fun)

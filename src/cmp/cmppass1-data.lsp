@@ -121,7 +121,7 @@
                    ;; inconsistent.
                    ((and (not item) (not duplicate) (symbolp object)
                          (multiple-value-bind (foundp symbol)
-                             (si::mangle-name object)
+                             (si:mangle-name object)
                            (and foundp
                                 (return-from add-object symbol)))))
                    (t
