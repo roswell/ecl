@@ -87,7 +87,7 @@
 
 (defun compute-instance-size (slots)
   (loop for slotd in slots
-     with last-location = 0
+     with last-location = -1
      with num-slots = 0
      when (eq (slot-definition-allocation slotd) :instance)
      do (let ((new-loc (safe-slot-definition-location slotd)))
