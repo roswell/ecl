@@ -10,6 +10,7 @@
     "src:cmp;cmpcond.lsp"
     ;; Environment
     "src:cmp;cmpenv-api.lsp"
+    "src:cmp;cmpenv-var.lsp"
     "src:cmp;cmpenv-fun.lsp"
     "src:cmp;cmpenv-declare.lsp"
     "src:cmp;cmpenv-proclaim.lsp"

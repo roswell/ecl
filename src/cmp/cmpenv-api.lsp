@@ -19,7 +19,7 @@
 (defun cmp-env-root (&optional (env *cmp-env-root*))
   "Provide a root environment for toplevel forms storing all declarations
 that are susceptible to be changed by PROCLAIM."
-  (let* ((env (cmp-env-copy env)))
+  (let ((env (cmp-env-copy env)))
     (add-default-optimizations env)))
 
 (defun cmp-env-copy (&optional (env *cmp-env*))
@@ -39,13 +39,6 @@ that are susceptible to be changed by PROCLAIM."
               boundp
               var)
         (cmp-env-variables env))
-  env)
-
-(defun cmp-env-declare-special (name &optional (env *cmp-env*))
-  (when (cmp-env-search-symbol-macro name env)
-    (cmperr "Symbol ~A cannot be declared special and appear in a symbol-macrolet." name))
-  (cmp-env-register-var (c::c1make-global-variable name :warn nil :kind 'SPECIAL)
-                        env nil)
   env)
 
 (defun cmp-env-add-declaration (type arguments &optional (env *cmp-env*))

@@ -71,7 +71,7 @@
     (let ((*cmp-env* new-env))
       (multiple-value-bind (body ss ts is other-decl)
           (c1body (rest args) t)
-        (mapc #'cmp-env-declare-special ss)
+        (mapc #'declare-special ss)
         (check-vdecl nil ts is)
         (setq body-c1form (c1decl-body other-decl body))))
 

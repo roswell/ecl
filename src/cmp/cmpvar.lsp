@@ -99,6 +99,19 @@
     (setq type 'T))
   (make-var :kind rep-type :type type :loc (next-lcl)))
 
+(defun make-global-var (name &key
+                               (type (or (si:get-sysprop name 'CMP-TYPE) t))
+                               (kind 'GLOBAL)
+                               (warn nil))
+  (let ((var (make-var :name name :kind kind :type type :loc (add-symbol name))))
+    (when warn
+      (unless (or (constantp name)
+                  (special-variable-p name)
+                  (member name *undefined-vars*))
+        (undefined-variable name)
+        (push name *undefined-vars*)))
+    var))
+
 (defun make-temp-var (&optional (type 'T))
   (make-var :kind :object :type type :loc `(TEMP ,(next-temp))))
 

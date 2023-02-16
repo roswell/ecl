@@ -85,7 +85,7 @@
       (c1body args t)
     (if (or ss ts is other-decl)
         (let ((*cmp-env* (cmp-env-copy)))
-          (mapc #'cmp-env-declare-special ss)
+          (mapc #'declare-special ss)
           (check-vdecl nil ts is)
           (c1decl-body other-decl body))
         (c1progn body))))

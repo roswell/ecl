@@ -120,7 +120,7 @@
       (values vars forms specials other-decls body))))
 
 (defun process-let-body (let/let* vars forms specials other-decls body setjmps)
-  (mapc #'cmp-env-declare-special specials)
+  (mapc #'declare-special specials)
   (setf body (c1decl-body other-decls body))
   ;; Try eliminating unused variables, replace constant ones, etc.
   (multiple-value-setq (vars forms)
@@ -235,7 +235,7 @@
                      name type))
            (when (eq type 'T)
              (setf type (or (si:get-sysprop name 'CMP-TYPE) 'T)))
-           (c1make-global-variable name :kind 'SPECIAL :type type))
+           (make-global-var name :kind 'SPECIAL :type type))
           (t
            (make-var :name name :type type :loc 'OBJECT
                      :kind kind :ignorable ignorable
@@ -257,8 +257,8 @@
       (cmp-env-search-var name)
     (declare (ignore unw))
     (cond ((null var)
-           (c1make-global-variable name :warn t
-                                        :type (or (si:get-sysprop name 'CMP-TYPE) t)))
+           (make-global-var name :warn t
+                                 :type (or (si:get-sysprop name 'CMP-TYPE) t)))
           ((not (var-p var))
            ;; symbol-macrolet
            (baboon :format-control "c1vref: ~s is not a variable."
@@ -276,19 +276,6 @@
                 (cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."
                         (var-name var)))))
            var))))
-
-(defun c1make-global-variable (name &key
-                               (type (or (si:get-sysprop name 'CMP-TYPE) t))
-                               (kind 'GLOBAL)
-                               (warn nil))
-  (let* ((var (make-var :name name :kind kind :type type :loc (add-symbol name))))
-    (when warn
-      (unless (or (constantp name)
-                  (special-variable-p name)
-                  (member name *undefined-vars*))
-        (undefined-variable name)
-        (push name *undefined-vars*)))
-    var))
 
 (defun c1setq (args)
   (let ((l (length args)))
@@ -370,7 +357,7 @@
            ,@args)))
     (multiple-value-bind (body ss ts is other-decls)
         (c1body args nil)
-      (mapc #'cmp-env-declare-special ss)
+      (mapc #'declare-special ss)
       (let* ((vars (loop for name in variables
                          collect (c1make-var name ss is ts))))
         (setq init-form (c1expr init-form))
