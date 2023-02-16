@@ -488,18 +488,20 @@ comparing circular objects."
                           ((EQUAL EQUAL-WITH-CIRCULARITY) 'SI::HASH-EQUAL)
                           (t (setf test 'EQUALP) 'SI::HASH-EQUALP))))
     `(progn
-       (eval-when (:compile-toplevel :load-toplevel :execute)
-         (defparameter ,cache-name (make-array 1024 :element-type t :adjustable nil)))
-       (defun ,reset-name ()
+       (defvar ,cache-name
          (make-array 1024 :element-type t :adjustable nil))
+       (defun ,reset-name ()
+         (setf ,cache-name
+               (make-array 1024 :element-type t :adjustable nil)))
        (defun ,name ,lambda-list
          (flet ((,name ,lambda-list ,@body))
            (let* ((hash (logand (,hash-function ,@lambda-list) 1023))
-                  (elt (aref ,cache-name hash)))
+                  (cache ,cache-name)
+                  (elt (aref cache hash)))
              (declare (type (integer 0 1023) hash)
-                      (type (array t (*)) ,cache-name))
+                      (type (array t (*)) cache))
              (if (and elt ,@(loop for arg in lambda-list
-                               collect `(,test (pop (ext:truly-the cons elt)) ,arg)))
+                                  collect `(,test (pop (ext:truly-the cons elt)) ,arg)))
                  (first (ext:truly-the cons elt))
                  (let ((output (,name ,@lambda-list)))
                    (setf (aref ,cache-name hash) (list ,@lambda-list output))
