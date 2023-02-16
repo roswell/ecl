@@ -44,7 +44,7 @@
       ((method-list *))
       (:arguments &whole args)
       (:generic-function gf)
-      `(list ,gf ,args))
+      `(list* ,gf ,args))
     (defgeneric f1 (a &key key-1)
       (:method-combination combin)
       (:method (a &key key-1 key-2)
