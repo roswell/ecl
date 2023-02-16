@@ -31,26 +31,6 @@ that are susceptible to be changed by PROCLAIM."
 (defmacro cmp-env-functions (&optional (env '*cmp-env*))
   `(cdr ,env))
 
-(defun cmp-env-cleanups (env)
-  (loop with specials = '()
-        with end = (cmp-env-variables env)
-        with cleanup-forms = '()
-        with aux
-        for records-list on (cmp-env-variables *cmp-env*)
-        until (eq records-list end)
-        do (let ((record (first records-list)))
-             (cond ((atom record))
-                   ((and (symbolp (first record))
-                         (eq (second record) :special))
-                    (push (fourth record) specials))
-                   ((eq (first record) :cleanup)
-                    (push (second record) cleanup-forms))))
-        finally (progn
-                  (unless (eq records-list end)
-                    (error "Inconsistency in environment."))
-                  (return (values specials
-                                  (apply #'nconc (mapcar #'copy-list cleanup-forms)))))))
-
 (defun cmp-env-register-var (var &optional (env *cmp-env*) (boundp t))
   (push (list (var-name var)
               (if (member (var-kind var) '(special global))
@@ -118,10 +98,6 @@ that are susceptible to be changed by PROCLAIM."
 (defun cmp-env-register-tag (name tag &optional (env *cmp-env*))
   (push (list :tag (list name) tag)
         (cmp-env-variables env))
-  env)
-
-(defun cmp-env-register-cleanup (form &optional (env *cmp-env*))
-  (push (list :cleanup (copy-list form)) (cmp-env-variables env))
   env)
 
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
