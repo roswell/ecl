@@ -255,6 +255,7 @@
     (when fname (wt-comment fname))))
 
 (defun wt-call-normal (fun args type)
+  (declare (ignore type))
   (unless (fun-cfun fun)
     (baboon "Function without a C name: ~A" (fun-name fun)))
   (let* ((minarg (fun-minarg fun))

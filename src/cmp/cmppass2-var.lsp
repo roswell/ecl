@@ -97,6 +97,7 @@
          (nr (make-lcl-var :type :int))
          (*inline-blocks* 0)
          min-values max-values)
+    (declare (ignore nr))
     ;; 1) Retrieve the number of output values
     (multiple-value-setq (min-values max-values)
       (c1form-values-number init-form))
@@ -300,6 +301,7 @@
   ;; many they are.
   (multiple-value-bind (min-values max-values)
       (c1form-values-number form)
+    (declare (ignore max-values))
 
     ;; We save the values in the value stack + value0
     (let ((*destination* 'RETURN))

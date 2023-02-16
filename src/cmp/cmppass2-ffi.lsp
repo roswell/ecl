@@ -326,12 +326,13 @@
 ;;
 
 (defun c2c-progn (c1form variables statements)
+  (declare (ignore c1form))
   (loop with *destination* = 'TRASH
         for form in statements
         do (cond ((stringp form)
                   (wt-nl)
                   (wt-c-inline-loc :void form variables
-                                   t ; side effects
+                                   t    ; side effects
                                    nil) ; no output variables
                   )
                  (t
@@ -445,6 +446,7 @@
                `(COERCE-LOC ,rep-type ,loc)))))
 
 (defun wt-c-inline-loc (output-rep-type c-expression coerced-arguments side-effects output-vars)
+  (declare (ignore output-rep-type side-effects))
   (with-input-from-string (s c-expression)
     (when (and output-vars (not (eq output-vars 'VALUES)))
       (wt-nl))
@@ -495,6 +497,7 @@
 
 (defun t3-defcallback (lisp-name c-name c-name-constant return-type return-type-code
                        arg-types arg-type-constants call-type &aux (return-p t))
+  (declare (ignore lisp-name))
   (when (eql return-type :void)
     (setf return-p nil))
   (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))

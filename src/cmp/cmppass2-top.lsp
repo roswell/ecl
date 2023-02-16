@@ -236,7 +236,7 @@
     (wt-label *exit*)))
 
 (defun t2init-form (c1form vv-loc form)
-  (declare (ignore c1form))
+  (declare (ignore c1form vv-loc))
   (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
          (*destination* 'TRASH))
     (c2expr form)
@@ -473,9 +473,11 @@
           (format stream "~%};")))))
 
 (defun t2fset (c1form &rest args)
+  (declare (ignore args))
   (t2ordinary nil c1form))
 
 (defun c2fset (c1form fun fname macro pprint c1forms)
+  (declare (ignore pprint))
   (when (fun-no-entry fun)
     (wt-nl "(void)0; /* No entry created for "
            (format nil "~A" (fun-name fun))

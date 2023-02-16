@@ -174,8 +174,10 @@
   (wt "v" lcl))
 
 (defun wt-lcl-loc (lcl &optional type name)
-  (unless (numberp lcl) (baboon :format-control "wt-lcl-loc: ~s NaN"
-                                :format-arguments (list lcl)))
+  (declare (ignore type))
+  (unless (numberp lcl)
+    (baboon :format-control "wt-lcl-loc: ~s NaN"
+            :format-arguments (list lcl)))
   (wt "v" lcl name))
 
 (defun wt-temp (temp)

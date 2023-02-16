@@ -217,6 +217,7 @@ the environment variable TMPDIR to a different value." template))
 
 #+dlopen
 (defun bundle-cc (o-pathname init-name object-files)
+  (declare (ignore init-name))
   (let ((ld-flags (split-program-options *ld-bundle-flags*))
         (ld-libs (split-program-options *ld-libs*)))
     #+msvc
@@ -236,7 +237,7 @@ the environment variable TMPDIR to a different value." template))
     #+mingw32
     (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags))
     (linker-cc o-pathname object-files :type :fasl
-               :ld-flags ld-flags :ld-libs ld-libs)))
+                                       :ld-flags ld-flags :ld-libs ld-libs)))
 
 (defconstant +lisp-program-header+ "
 #include <ecl/ecl.h>
@@ -637,7 +638,8 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
        (ext:*source-location* (cons source-truename 0))
        (*suppress-compiler-messages* (or *suppress-compiler-messages*
                                          (not *compile-verbose*))))
-  (declare (notinline compiler-cc))
+  (declare (ignore output-file)
+           (notinline compiler-cc))
   "Compiles the file specified by INPUT-PATHNAME and generates a fasl file
 specified by OUTPUT-FILE.  If the filetype is not specified in INPUT-PATHNAME,
 then \".lsp\" is used as the default file type for the source file.  LOAD
