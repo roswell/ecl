@@ -17,32 +17,18 @@
 (in-package "COMPILER")
 
 (eval-when (:compile-toplevel :execute)
-  (defconstant +optimization-quality-orders+ '(debug safety speed space)))
-
-(eval-when (:compile-toplevel :execute)
   (defparameter *optimization-quality-switches*
     (loop with hash = (make-hash-table :size 64 :test #'eq)
-       for name in +optimization-quality-orders+
-       for i from 0 by 4
-       for list = (loop with mask = (ash #b1111 i)
-                     for level from 0 to 3
-                     for bits = (ash 1 (+ level i))
-                     collect (cons bits (logxor bits mask)))
-       do (setf (gethash name hash) list)
-       finally (return hash)))
-  (setf (gethash 'compilation-speed *optimization-quality-switches*)
-        '#1=((0 . 0) . #1#)))
-
-#.`(eval-when (:compile-toplevel :execute :load-toplevel)
-  ,@(loop for name in +optimization-quality-orders+
-       for i from 0 by 4
-       for fun-name = (intern (concatenate 'string
-                                           "POLICY-TO-" (symbol-name name) "-LEVEL"))
-       collect `(defun ,fun-name (policy)
-                  (declare (ext:assume-right-type))
-                  (loop for level from 0 to 3
-                     when (logbitp (+ level ,i) policy)
-                     return level))))
+          for name in '(debug safety speed space)
+          for i from 0 by 4
+          for list = (loop with mask = (ash #b1111 i)
+                           for level from 0 to 3
+                           for bits = (ash 1 (+ level i))
+                           collect (cons bits (logxor bits mask)))
+          do (setf (gethash name hash) list)
+          finally (setf (gethash 'compilation-speed hash)
+                        '#1=((0 . 0) . #1#))
+                  (return hash))))
 
 (defun optimization-quality-switches (type index)
   (nth index (gethash type *optimization-quality-switches*)))
@@ -107,58 +93,45 @@
       env
       (cmp-env-add-declaration 'optimization (list (default-policy)) env)))
 
-(defun cmp-env-all-optimizations (&optional (env *cmp-env*))
-  (let ((o (cmp-env-policy env)))
-    (list (policy-to-debug-level o)
-          (policy-to-safety-level o)
-          (policy-to-space-level o)
-          (policy-to-speed-level o))))
-
-(defun cmp-env-optimization (property &optional (env *cmp-env*))
-  (let ((o (cmp-env-policy env)))
-    (case property
-      (debug (policy-to-debug-level o))
-      (safety (policy-to-safety-level o))
-      (space (policy-to-space-level o))
-      (speed (policy-to-speed-level o)))))
-
 (eval-when (:compile-toplevel :execute)
   (defparameter +last-optimization-bit+ 17)
   (defun augment-policy (quality level on-off flag)
     #+(or)
     (if (eq on-off :on)
         (loop for i from 0 to 3
-           for bits = (optimization-quality-switches quality i)
-           if (>= i level)
-           do (rplaca bits (logior (car bits) flag))
-           else do (rplacd bits (logior (cdr bits) flag)))
+              for bits = (optimization-quality-switches quality i)
+              if (>= i level)
+                do (rplaca bits (logior (car bits) flag))
+              else do (rplacd bits (logior (cdr bits) flag)))
         (loop for i from 0 to 3
-           for bits = (optimization-quality-switches quality i)
-           when (>= i level)
-           do (rplacd bits (logior (cdr bits) flag))))
+              for bits = (optimization-quality-switches quality i)
+              when (>= i level)
+                do (rplacd bits (logior (cdr bits) flag))))
     #+(or)
     (loop for i from level to 3
-       for bits = (optimization-quality-switches quality i)
-       if (eq on-off :on)
-       do (rplaca bits (logior (car bits) flag))
-       else do (rplacd bits (logior (cdr bits) flag)))
+          for bits = (optimization-quality-switches quality i)
+          if (eq on-off :on)
+            do (rplaca bits (logior (car bits) flag))
+          else do (rplacd bits (logior (cdr bits) flag)))
     (loop for i from 0 to 3
-       for bits = (optimization-quality-switches quality i)
-       if (< i level)
-       do
-         (case on-off
-           (:on (rplacd bits (logior (cdr bits) flag)))
-           (:off (rplaca bits (logior (car bits) flag))))
-       else do
-         (case on-off
-            ((:only-on :on) (rplaca bits (logior (car bits) flag)))
-            ((:only-off :off) (rplacd bits (logior (cdr bits) flag)))))
-    )
+          for bits = (optimization-quality-switches quality i)
+          if (< i level)
+            do
+               (case on-off
+                 (:on (rplacd bits (logior (cdr bits) flag)))
+                 (:off (rplaca bits (logior (car bits) flag))))
+          else do
+            (case on-off
+              ((:only-on :on) (rplaca bits (logior (car bits) flag)))
+              ((:only-off :off) (rplacd bits (logior (cdr bits) flag))))))
+
   (defun policy-declaration-name (base)
     (intern (symbol-name base) (find-package "EXT")))
+
   (defun policy-function-name (base)
     (intern (concatenate 'string "POLICY-" (symbol-name base))
             (find-package "C")))
+
   (defmacro define-policy (&whole whole name &rest conditions)
     (let* ((test (ash 1 +last-optimization-bit+))
            (declaration-name (policy-declaration-name name))
@@ -175,141 +148,165 @@
               flags-list))
       ;; Scan the definition and correct the flags
       (loop with extra = '()
-         with slow = '()
-         with conditions = (remove doc conditions)
-         for case = (pop conditions)
-         while case
-         do
-           (case case
-             (:no-function
-              (setf emit-function nil))
-             (:alias
-              (let* ((alias (first conditions)))
-                (setf (gethash declaration-name *optimization-quality-switches*)
-                      (gethash (policy-declaration-name alias)
-                               *optimization-quality-switches*))
-                (return `(defun ,function-name (&optional (env *cmp-env*))
+            with slow = '()
+            with conditions = (remove doc conditions)
+            for case = (pop conditions)
+            while case
+            do
+               (case case
+                 (:no-function
+                  (setf emit-function nil))
+                 (:alias
+                  (let* ((alias (first conditions)))
+                    (setf (gethash declaration-name *optimization-quality-switches*)
+                          (gethash (policy-declaration-name alias)
+                                   *optimization-quality-switches*))
+                    (return `(defun ,function-name (&optional (env *cmp-env*))
+                               ,@(and doc (list doc))
+                               (,(policy-function-name alias) env)))))
+                 (:anti-alias
+                  (let* ((alias (first conditions))
+                         (bits (gethash (policy-declaration-name alias)
+                                        *optimization-quality-switches*)))
+                    (setf bits (list (second bits)
+                                     (first bits)))
+                    (rplacd (cdr bits) (cdr bits))
+                    (setf (gethash declaration-name *optimization-quality-switches*)
+                          bits)
+                    (return `(defun ,function-name (&optional (env *cmp-env*))
+                               ,@(and doc (list doc))
+                               (not (,(policy-function-name alias) env))))))
+                 ((:only-on :on)
+                  (push `(>= (cmp-env-optimization ',(first conditions) env)
+                             ,(second conditions))
+                        slow)
+                  (augment-policy (pop conditions) (pop conditions)
+                                  case test))
+                 ((:only-off :off)
+                  (push `(< (cmp-env-optimization ',(first conditions) env)
+                            ,(second conditions))
+                        slow)
+                  (augment-policy (pop conditions) (pop conditions)
+                                  case test))
+                 (:requires
+                  (push (pop conditions) extra))
+                 (otherwise
+                  (error "Syntax error in macro~%  ~A"
+                         `(define-policy ,@whole))))
+            finally
+               (progn
+                 (incf +last-optimization-bit+)
+                 (return
+                   (and emit-function
+                        `(defun ,function-name (&optional (env *cmp-env*))
                            ,@(and doc (list doc))
-                           (,(policy-function-name alias) env)))))
-             (:anti-alias
-              (let* ((alias (first conditions))
-                     (bits (gethash (policy-declaration-name alias)
-                                    *optimization-quality-switches*)))
-                (setf bits (list (second bits)
-                                 (first bits)))
-                (rplacd (cdr bits) (cdr bits))
-                (setf (gethash declaration-name *optimization-quality-switches*)
-                      bits)
-                (return `(defun ,function-name (&optional (env *cmp-env*))
-                           ,@(and doc (list doc))
-                           (not (,(policy-function-name alias) env))))))
-             ((:only-on :on)
-              (push `(>= (cmp-env-optimization ',(first conditions) env)
-                         ,(second conditions))
-                    slow)
-              (augment-policy (pop conditions) (pop conditions)
-                              case test))
-             ((:only-off :off)
-              (push `(< (cmp-env-optimization ',(first conditions) env)
-                        ,(second conditions))
-                    slow)
-              (augment-policy (pop conditions) (pop conditions)
-                              case test))
-             (:requires
-              (push (pop conditions) extra))
-             (otherwise
-              (error "Syntax error in macro~%  ~A"
-                     `(define-policy ,@whole))))
-         finally
-           (progn
-             (incf +last-optimization-bit+)
-             (return
-               (and emit-function
-               `(defun ,function-name (&optional (env *cmp-env*))
-                  ,@(and doc (list doc))
-                  (let ((bits (cmp-env-policy env)))
-                    (and (logtest bits ,test)
-                         ,@extra))))))))))
+                           (let ((bits (cmp-env-policy env)))
+                             (and (logtest bits ,test)
+                                  ,@extra))))))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
-;;
-;; ERROR CHECKING POLICY
-;;
+  ;;
+  ;; ERROR CHECKING POLICY
+  ;;
 
-(define-policy ext:assume-no-errors :off safety 1)
+  (define-policy ext:assume-no-errors :off safety 1)
 
-(define-policy ext:assume-right-type :alias ext:assume-no-errors)
+  (define-policy ext:assume-right-type :alias ext:assume-no-errors)
 
-(define-policy ext:type-assertions :anti-alias ext:assume-no-errors
-  "Generate type assertions when inlining accessors and other functions.")
+  (define-policy ext:type-assertions :anti-alias ext:assume-no-errors
+    "Generate type assertions when inlining accessors and other functions.")
 
-(define-policy ext:check-stack-overflow :on safety 2
-  "Add a stack check to every function")
+  (define-policy ext:check-stack-overflow :on safety 2
+    "Add a stack check to every function")
 
-(define-policy ext:check-arguments-type :on safety 1
-  "Generate CHECK-TYPE forms for function arguments with type declarations")
+  (define-policy ext:check-arguments-type :on safety 1
+    "Generate CHECK-TYPE forms for function arguments with type declarations")
 
-(define-policy ext:array-bounds-check :on safety 1
-  "Check out of bounds access to arrays")
+  (define-policy ext:array-bounds-check :on safety 1
+    "Check out of bounds access to arrays")
 
-(define-policy ext:global-var-checking :on safety 3
-  "Read the value of a global variable even if it is discarded, ensuring it is bound")
+  (define-policy ext:global-var-checking :on safety 3
+    "Read the value of a global variable even if it is discarded, ensuring it is bound")
 
-(define-policy ext:global-function-checking :on safety 3
-  "Read the binding of a global function even if it is discarded")
+  (define-policy ext:global-function-checking :on safety 3
+    "Read the binding of a global function even if it is discarded")
 
-(define-policy ext:check-nargs :on safety 1 :only-on ext:check-arguments-type 1
-  "Check that the number of arguments a function receives is within bounds")
+  (define-policy ext:check-nargs :on safety 1 :only-on ext:check-arguments-type 1
+    "Check that the number of arguments a function receives is within bounds")
 
-(define-policy ext:the-is-checked :on safety 1
-  "THE is equivalent to EXT:CHECKED-VALUE. Otherwise THE is equivalent to EXT:TRULY-THE.")
+  (define-policy ext:the-is-checked :on safety 1
+    "THE is equivalent to EXT:CHECKED-VALUE. Otherwise THE is equivalent to EXT:TRULY-THE.")
 
-;;
-;; INLINING POLICY
-;;
+  ;;
+  ;; INLINING POLICY
+  ;;
 
-(define-policy ext:assume-types-dont-change :off safety 1
-  "Assume that type and class definitions will not change")
+  (define-policy ext:assume-types-dont-change :off safety 1
+    "Assume that type and class definitions will not change")
 
-(define-policy ext:inline-slot-access :on speed 1 :off debug 2 :off safety 2
-  "Inline access to structures and sealed classes")
+  (define-policy ext:inline-slot-access :on speed 1 :off debug 2 :off safety 2
+    "Inline access to structures and sealed classes")
 
-(define-policy ext:inline-accessors :off debug 2 :off space 2
-  "Inline access to object slots, including conses and arrays")
+  (define-policy ext:inline-accessors :off debug 2 :off space 2
+    "Inline access to object slots, including conses and arrays")
 
-(define-policy ext:inline-bit-operations :off space 2
-  "Inline LDB and similar functions")
+  (define-policy ext:inline-bit-operations :off space 2
+    "Inline LDB and similar functions")
 
-(define-policy ext:open-code-aref/aset :alias ext:inline-accessors
-  "Inline access to arrays")
+  (define-policy ext:open-code-aref/aset :alias ext:inline-accessors
+    "Inline access to arrays")
 
-(define-policy ext:evaluate-forms :off debug 1
-  "Pre-evaluate a function that takes constant arguments")
+  (define-policy ext:evaluate-forms :off debug 1
+    "Pre-evaluate a function that takes constant arguments")
 
-(define-policy ext:use-direct-C-call :off debug 2
-  "Emit direct calls to a function whose C name is known")
+  (define-policy ext:use-direct-C-call :off debug 2
+    "Emit direct calls to a function whose C name is known")
 
-(define-policy ext:inline-type-checks :off space 2
-  "Expand TYPEP and similar forms in terms of simpler functions, such as FLOATP,
+  (define-policy ext:inline-type-checks :off space 2
+    "Expand TYPEP and similar forms in terms of simpler functions, such as FLOATP,
 INTGERP, STRINGP.")
 
-(define-policy ext:inline-sequence-functions :off space 2
-  "Inline functions such as MAP, MEMBER, FIND, etc")
+  (define-policy ext:inline-sequence-functions :off space 2
+    "Inline functions such as MAP, MEMBER, FIND, etc")
 
-;;
-;; DEBUG POLICY
-;;
+  ;;
+  ;; DEBUG POLICY
+  ;;
 
-(define-policy ext:debug-variable-bindings :on debug 3
-  :requires (policy-debug-ihs-frame env)
-  ;; We can only create variable bindings when the function has an IHS frame!!!
-  "Create a debug vector with the bindings of each LET/LET*/LAMBDA form?")
+  (define-policy ext:debug-variable-bindings :on debug 3
+    :requires (policy-debug-ihs-frame env)
+    ;; We can only create variable bindings when the function has an IHS frame!!!
+    "Create a debug vector with the bindings of each LET/LET*/LAMBDA form?")
 
-(define-policy ext:debug-ihs-frame :on debug 3
-  "Let the functions appear in backtraces")
+  (define-policy ext:debug-ihs-frame :on debug 3
+    "Let the functions appear in backtraces"))
 
-); eval-when
+(macrolet ((define-function (fun-name offset)
+             `(defun ,fun-name (policy)
+                (declare (ext:assume-right-type))
+                (loop for level from 0 to 3
+                      when (logbitp (+ level ,offset) policy)
+                        return level))))
+  (define-function policy-to-debug-level  0)
+  (define-function policy-to-safety-level 4)
+  (define-function policy-to-speed-level  8)
+  (define-function policy-to-space-level 12))
+
+(defun cmp-env-all-optimizations (&optional (env *cmp-env*))
+  (let ((o (cmp-env-policy env)))
+    (list (policy-to-debug-level o)
+          (policy-to-safety-level o)
+          (policy-to-space-level o)
+          (policy-to-speed-level o))))
+
+(defun cmp-env-optimization (property &optional (env *cmp-env*))
+  (let ((o (cmp-env-policy env)))
+    (case property
+      (debug (policy-to-debug-level o))
+      (safety (policy-to-safety-level o))
+      (space (policy-to-space-level o))
+      (speed (policy-to-speed-level o)))))
 
 (defun safe-compile ()
   (>= (cmp-env-optimization 'safety) 2))
