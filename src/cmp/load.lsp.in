@@ -5,7 +5,6 @@
   '("src:cmp;cmppackage.lsp"
     "src:cmp;cmpglobals.lsp"
     "build:cmp;cmpdefs.lsp"
-    "src:cmp;cmpmac.lsp"
     "src:cmp;cmputil.lsp"
     "src:cmp;cmpcond.lsp"
     ;; Environment
