@@ -25,54 +25,6 @@ that are susceptible to be changed by PROCLAIM."
 (defun cmp-env-copy (&optional (env *cmp-env*))
   (cons (car env) (cdr env)))
 
-(defun set-closure-env (definition lexenv &optional (env *cmp-env*))
-  "Set up an environment for compilation of closures: Register closed
-over macros in the compiler environment and enclose the definition of
-the closure in let/flet forms for variables/functions it closes over."
-  (loop for record in lexenv
-     do (cond ((not (listp record))
-               (multiple-value-bind (record-def record-lexenv)
-                   (function-lambda-expression record)
-                 (cond ((eql (car record-def) 'LAMBDA)
-                        (setf record-def (cdr record-def)))
-                       ((eql (car record-def) 'EXT:LAMBDA-BLOCK)
-                        (setf record-def (cddr record-def)))
-                       (t
-                        (error "~&;;; Error: Not a valid lambda expression: ~s." record-def)))
-                 ;; allow for closures which close over closures.
-                 ;; (first record-def) is the lambda list, (rest
-                 ;; record-def) the definition of the local function
-                 ;; in record
-                 (setf (rest record-def)
-                       (list (set-closure-env (if (= (length record-def) 2)
-                                                  (second record-def)
-                                                  `(progn ,@(rest record-def)))
-                                              record-lexenv env)))
-                 (setf definition
-                       `(flet ((,(ext:compiled-function-name record)
-                                   ,@record-def))
-                          ,definition))))
-              ((and (listp record) (symbolp (car record)))
-               (cond ((eq (car record) 'si:macro)
-                      (cmp-env-register-macro (cddr record) (cadr record) env))
-                     ((eq (car record) 'si:symbol-macro)
-                      (cmp-env-register-symbol-macro-function (cddr record) (cadr record) env))
-                     (t
-                      (setf definition
-                            `(let ((,(car record) ',(cdr record)))
-                               ,definition)))
-                     ))
-              ;; ((and (integerp (cdr record)) (= (cdr record) 0))
-              ;;  Tags: We have lost the information, which tag
-              ;;  corresponds to the lex-env record. If we are
-              ;;  compiling a closure over a tag, we will get an
-              ;;  error later on.
-              ;;  )
-              ;; (t
-              ;;  Blocks: Not yet implemented
-              )
-     finally (return definition)))
-
 (defmacro cmp-env-variables (&optional (env '*cmp-env*))
   `(car ,env))
 
