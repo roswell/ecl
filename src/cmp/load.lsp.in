@@ -7,6 +7,9 @@
     "build:cmp;cmpdefs.lsp"
     "src:cmp;cmputil.lsp"
     "src:cmp;cmpcond.lsp"
+    ;; Internal representation
+    "src:cmp;cmpmach.lsp"
+    "src:cmp;cmplocs.lsp"
     ;; Environment
     "src:cmp;cmpenv-api.lsp"
     "src:cmp;cmpenv-var.lsp"
@@ -28,7 +31,6 @@
     "src:cmp;cmptype.lsp"
     "src:cmp;cmptype-assert.lsp"
     ;; Abstract C machine
-    "src:cmp;cmpc-machine.lsp"
     "src:cmp;cmpc-wt.lsp"
     "src:cmp;cmpc-inliner.lsp"
     ;; AST building pass

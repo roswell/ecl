@@ -282,7 +282,9 @@
 
 (defun values-loc-or-value0 (i)
   (declare (si::c-local))
-  (if (plusp i) (values-loc i) 'VALUE0))
+  (if (plusp i)
+      (list 'VALUE i)
+      'VALUE0))
 
 (defun do-m-v-setq (vars form use-bind)
   ;; This routine moves values from the multiple-value stack into the

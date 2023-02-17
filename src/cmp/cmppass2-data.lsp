@@ -252,8 +252,3 @@
   (setf (vv-used-p vv-loc) t)
   (set-vv-index loc (vv-location vv-loc) (vv-permanent-p vv-loc)))
 
-(defun vv-type (loc)
-  (let ((value (vv-value loc)))
-    (if (and value (not (ext:fixnump value)))
-        (type-of value)
-        t)))
