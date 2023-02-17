@@ -181,7 +181,7 @@
         ;; environment in which the function was defined to get
         ;; inlining of closures right.
         (let ((*cmp-env* (cmp-env-copy (fun-cmp-env fun))))
-          (mapc #'push-vars let-vars)
+          (mapc #'cmp-env-register-var let-vars)
           (process-let-body 'LET* let-vars let-inits specials other-decls body setjmps))))))
 
 (defun c1call-local (fname fun args)

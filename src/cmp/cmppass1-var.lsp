@@ -111,11 +111,12 @@
           (when var
             (push var vars)
             (push init forms)
-            (when (eq let/let* 'LET*) (push-vars var)))))
+            (when (eq let/let* 'LET*)
+              (cmp-env-register-var var)))))
       (setf vars (nreverse vars)
             forms (nreverse forms))
       (when (eq let/let* 'LET)
-        (mapc #'push-vars vars))
+        (mapc #'cmp-env-register-var vars))
       (check-vdecl (mapcar #'var-name vars) types ignoreds)
       (values vars forms specials other-decls body))))
 
@@ -361,7 +362,7 @@
       (let* ((vars (loop for name in variables
                          collect (c1make-var name ss is ts))))
         (setq init-form (c1expr init-form))
-        (mapc #'push-vars vars)
+        (mapc #'cmp-env-register-var vars)
         (check-vdecl variables ts is)
         (setq body (c1decl-body other-decls body))
         (mapc #'check-vref vars)

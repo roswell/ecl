@@ -239,7 +239,3 @@
 (defun useful-var-p (var)
   (or (plusp (var-ref var))
       (global-var-p var)))
-
-(defun push-vars (v)
-  (setf (var-index v) (length (cmp-env-variables)))
-  (cmp-env-register-var v))

@@ -248,7 +248,7 @@
              (var (c1make-var name ss is ts)))
         (push var type-checks)
         (setf (first specs) var)
-        (push-vars var)))
+        (cmp-env-register-var var)))
 
     (do ((specs (setq optionals (cdr optionals)) (cdddr specs)))
         ((endp specs))
@@ -261,15 +261,17 @@
                                       :safe "In (LAMBDA ~a...)" function-name)
                        (default-init var)))
         (push var type-checks)
-        (push-vars var)
+        (cmp-env-register-var var)
         (when flag
-          (push-vars (setq flag (c1make-var flag ss is ts))))
+          (setq flag (c1make-var flag ss is ts))
+          (cmp-env-register-var flag))
         (setf (first specs) var
               (second specs) init
               (third specs) flag)))
 
     (when rest
-      (push-vars (setq rest (c1make-var rest ss is ts))))
+      (setq rest (c1make-var rest ss is ts))
+      (cmp-env-register-var rest))
 
     (do ((specs (setq keywords (cdr keywords)) (cddddr specs)))
         ((endp specs))
@@ -284,9 +286,10 @@
                                       :safe "In (LAMBDA ~a...)" function-name)
                        (default-init var)))
         (push var type-checks)
-        (push-vars var)
+        (cmp-env-register-var var)
         (when flag
-          (push-vars (setq flag (c1make-var flag ss is ts))))
+          (setq flag (c1make-var flag ss is ts))
+          (cmp-env-register-var flag))
         (setf (second specs) var
               (third specs) init
               (fourth specs) flag)))
