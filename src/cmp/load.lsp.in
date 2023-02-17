@@ -7,8 +7,10 @@
     "build:cmp;cmpdefs.lsp"
     "src:cmp;cmputil.lsp"
     "src:cmp;cmpcond.lsp"
+    "src:cmp;cmptype-arith.lsp"
     ;; Internal representation
     "src:cmp;cmpmach.lsp"
+    "src:cmp;cmprefs.lsp"
     "src:cmp;cmplocs.lsp"
     ;; Environment
     "src:cmp;cmpenv-api.lsp"
@@ -26,7 +28,6 @@
     "src:cmp;cmptables.lsp"
     "src:cmp;cmpinline.lsp"
     ;; Types
-    "src:cmp;cmptype-arith.lsp"
     "src:cmp;cmptype-prop.lsp"
     "src:cmp;cmptype.lsp"
     "src:cmp;cmptype-assert.lsp"

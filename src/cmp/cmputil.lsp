@@ -80,26 +80,6 @@
        (abort ()))
      (setf ,compiler-conditions *compiler-conditions*)))
 
-(defvar *c1form-level* 0)
-(defun print-c1forms (form)
-  (cond ((consp form)
-         (let ((*c1form-level* (1+ *c1form-level*)))
-           (mapc #'print-c1forms form)))
-        ((c1form-p form)
-         (format t "~% ~D > ~A, parent ~A" *c1form-level* form (c1form-parent form))
-         (print-c1forms (c1form-args form))
-         form
-         )))
-
-(defun print-ref (ref-object stream)
-  (let ((name (ref-name ref-object)))
-    (if name
-        (format stream "#<a ~A: ~A>" (type-of ref-object) name)
-        (format stream "#<a ~A>" (type-of ref-object)))))
-
-(defun print-var (var-object stream)
-  (format stream "#<a VAR: ~A KIND: ~A>" (var-name var-object) (var-kind var-object)))
-
 (defun safe-list-length (l)
   ;; Computes the length of a proper list or returns NIL if it
   ;; is a circular list or terminates with a non-NIL atom.
