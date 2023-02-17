@@ -156,7 +156,15 @@ that are susceptible to be changed by PROCLAIM."
 
 (defun cmp-env-search-macro (name &optional (env *cmp-env*))
   (let ((f (cmp-env-search-function name env)))
-    (if (functionp f) f nil)))
+    (if (functionp f)
+        f
+        nil)))
+
+;;; Like macro-function except it searches the lexical environment,
+;;; to determine if the macro is shadowed by a function or a macro.
+(defun cmp-macro-function (name)
+  (or (cmp-env-search-macro name)
+      (macro-function name)))
 
 (defun cmp-env-search-ftype (name &optional (env *cmp-env*))
   (dolist (i env nil)

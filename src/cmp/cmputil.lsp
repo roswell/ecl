@@ -121,12 +121,6 @@
               (innermost-non-expanded-form *current-toplevel-form*))))
   nil)
 
-(defun print-emitting (f)
-  (when *compile-print*
-    (let* ((name (or (fun-name f) (fun-description f))))
-      (when name
-        (format t "~&;;; Emitting code for ~s.~%" name)))))
-
 (defun cmpprogress (&rest args)
   (when *compile-verbose*
     (apply #'format t args)))
@@ -139,12 +133,6 @@
       (cmperr "The form ~s was not evaluated successfully.~%Error detected:~%~A"
               form c)
       nil)))
-
-;;; Like macro-function except it searches the lexical environment,
-;;; to determine if the macro is shadowed by a function or a macro.
-(defun cmp-macro-function (name)
-  (or (cmp-env-search-macro name)
-      (macro-function name)))
 
 (defun cmp-expand-macro (fd form &optional (env *cmp-env*))
   (handler-case
@@ -518,10 +506,6 @@ comparing circular objects."
       *exit*
       (next-label)))
 
-(defun maybe-wt-label (label)
-  (unless (eq label *exit*)
-    (wt-label label)))
-
 (defmacro with-exit-label ((label) &body body)
   `(let* ((,label (next-label))
           (*unwind-exit* (cons ,label *unwind-exit*)))
@@ -532,7 +516,8 @@ comparing circular objects."
   `(let* ((,label (maybe-next-label))
           (*unwind-exit* (adjoin ,label *unwind-exit*)))
      ,@body
-     (maybe-wt-label ,label)))
+     (unless (eq ,label *exit*)
+       (wt-label ,label))))
 
 (defun next-lcl (&optional name)
   (list 'LCL (incf *lcl*) T
@@ -559,6 +544,13 @@ comparing circular objects."
     (incf *env*)
     (setq *max-env* (max *env* *max-env*))))
 
-(defmacro reckless (&rest body)
-  `(locally (declare (optimize (safety 0)))
-     ,@body))
+(defun env-grows (possibily)
+  ;; if additional closure variables are introduced and this is not
+  ;; last form, we must use a new env.
+  (and possibily
+       (plusp *env*)
+       (dolist (exit *unwind-exit*)
+         (case exit
+           (RETURN (return NIL))
+           (BDS-BIND)
+           (t (return T))))))

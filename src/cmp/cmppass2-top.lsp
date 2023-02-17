@@ -304,7 +304,9 @@
   (declare (type fun fun))
 
   ;; Compiler note about compiling this function
-  (print-emitting fun)
+  (when *compile-print*
+    (ext:when-let ((name (or (fun-name fun) (fun-description fun))))
+      (format t "~&;;; Emitting code for ~s.~%" name)))
 
   (let* ((lambda-expr (fun-lambda fun))
          (*cmp-env* (c1form-env lambda-expr))

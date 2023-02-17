@@ -14,17 +14,6 @@
 
 (in-package #:compiler)
 
-(defun env-grows (possibily)
-  ;; if additional closure variables are introduced and this is not
-  ;; last form, we must use a new env.
-  (and possibily
-       (plusp *env*)
-       (dolist (exit *unwind-exit*)
-         (case exit
-           (RETURN (return NIL))
-           (BDS-BIND)
-           (t (return T))))))
-
 ;; should check whether a form before var causes a side-effect
 ;; exactly one occurrence of var is present in forms
 (defun replaceable (var form)

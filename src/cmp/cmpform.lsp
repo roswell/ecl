@@ -204,7 +204,8 @@
     (baboon :format-control "Attempted to move a form with side-effects"))
   ;; The following protocol is only valid for VAR references.
   (unless (eq (c1form-name dest) 'VAR)
-    (baboon :format-control "Cannot replace forms other than VARs:~%~4I~A" dest))
+    (baboon :format-control "Cannot replace forms other than VARs:~%~4I~A"
+            :format-arguments (list dest)))
   ;; We have to relocate the children nodes of NEW-FIELDS in
   ;; the new branch. This implies rewriting the parents chain,
   ;; but only for non-location nodes (these are reused). The only
