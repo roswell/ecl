@@ -736,7 +736,7 @@ Common Lisp type contagion rules."
 
 
 
-(test ieee-fp.0031.brach-cuts-signed-zero
+(test ieee-fp.0031.branch-cuts-signed-zero
   (for-all-number-subtypes (x float (+ 1.0 (random 10.0)))
     ;; branch cuts in [1,infinity)
     (let ((z-above (complex x +0.0))

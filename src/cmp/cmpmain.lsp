@@ -128,7 +128,7 @@ the environment variable TMPDIR to a different value." template))
 (defun get-deprecated-user-ld-flags ()
   (let ((flags (split-program-options *user-ld-flags*)))
     (when flags
-      (cmwarn "The variable ~s is deprecated, please use ~s and ~s instead."
+      (cmpwarn "The variable ~s is deprecated, please use ~s and ~s instead."
               '*user-ld-flags* '*user-linker-flags* '*user-linker-libs*))
     flags))
 
