@@ -415,6 +415,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
 #if defined(ECL_MS_WINDOWS_HOST)
   {
     BOOL ok;
+    DWORD saved_errno;
     STARTUPINFO st_info;
     PROCESS_INFORMATION pr_info;
     HANDLE child_stdout, child_stdin, child_stderr;
@@ -469,21 +470,26 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
       CloseHandle(pr_info.hThread);
       pid = make_windows_handle(pr_info.hProcess);
     } else {
-      char *message;
-      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-                    FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                    0, GetLastError(), 0, (void*)&message, 0, NULL);
-      printf("%s\n", message);
-      LocalFree(message);
       pid = ECL_NIL;
+      saved_errno = GetLastError();
     }
+
     if (child_stdin) CloseHandle(child_stdin);
     if (child_stdout) CloseHandle(child_stdout);
     if (child_stderr) CloseHandle(child_stderr);
+
+    if (Null(pid)) {
+      if (parent_write) close(parent_write);
+      if (parent_read) close(parent_read);
+      if (parent_error > 0) close(parent_error);
+      SetLastError(saved_errno);
+      FEwin32_error("Could not spawn subprocess to run ~S.", 1, command);
+    }
   }
 #elif !defined(NACL) /* All POSIX but NaCL/pNaCL */
   {
     int child_stdin, child_stdout, child_stderr;
+    int saved_errno;
     argv = ecl_nconc(argv, ecl_list1(ECL_NIL));
     argv = _ecl_funcall3(@'coerce', argv, @'vector');
 
@@ -533,33 +539,31 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
       /* at this point exec has failed */
       perror("exec");
       _exit(EXIT_FAILURE);
+    } else if (child_pid > 0) {
+      pid = ecl_make_fixnum(child_pid);
+    } else {
+      pid = ECL_NIL;
+      saved_errno = errno;
     }
+
     close(child_stdin);
     close(child_stdout);
     if (!(error == @':output')) close(child_stderr);
 
-    if (child_pid < 0) {
-      pid = ECL_NIL;
-    } else {
-      pid = ecl_make_fixnum(child_pid);
+    if (Null(pid)) {
+      if (parent_write) close(parent_write);
+      if (parent_read) close(parent_read);
+      if (parent_error > 0) close(parent_error);
+      errno = saved_errno;
+      FElibc_error("Could not spawn subprocess to run ~S.", 1, command);
     }
   }
 #else  /* NACL */
   {
-    FElibc_error("ext::run-program-inner not implemented",1);
+    FEerror("ext:run-program not implemented", 0);
     @(return ECL_NIL);
   }
 #endif
-
-  if (Null(pid)) {
-    if (parent_write) close(parent_write);
-    if (parent_read) close(parent_read);
-    if (parent_error > 0) close(parent_error);
-    parent_write = 0;
-    parent_read = 0;
-    parent_error = 0;
-    FEerror("Could not spawn subprocess to run ~S.", 1, command);
-  }
 
   @(return pid
     ecl_make_fixnum(parent_write)
