@@ -60,38 +60,12 @@
     ;;(format t "~% ~64b" off)
     (logandc2 (logior bits on) off)))
 
-(defun default-policy ()
-  (compute-policy `((space ,*space*)
-                    (safety ,*safety*)
-                    (debug ,*debug*)
-                    (speed ,*speed*))
-                  0))
-
 (defun cmp-env-policy (env)
   (or (first (cmp-env-search-declaration 'optimization env))
       (default-policy)))
 
-(defun cmp-env-add-optimizations (decl &optional (env *cmp-env*))
-  (let* ((old (cmp-env-policy env))
-         (new (compute-policy decl old)))
-    (cmp-env-add-declaration 'optimization (list new) env)))
-
 (defun policy-declaration-name-p (name)
   (and (gethash name *optimization-quality-switches*) t))
-
-(defun maybe-add-policy (decl &optional (env *cmp-env*))
-  (when (and (consp decl)
-             (<= (list-length decl) 2)
-             (gethash (first decl) *optimization-quality-switches*))
-    (let* ((old (cmp-env-policy env))
-           (flag (if (or (endp (rest decl)) (second decl)) 3 0))
-           (new (compute-policy (list (list (first decl) flag)) old)))
-      (cmp-env-add-declaration 'optimization (list new) env))))
-
-(defun add-default-optimizations (env)
-  (if (cmp-env-search-declaration 'optimization env)
-      env
-      (cmp-env-add-declaration 'optimization (list (default-policy)) env)))
 
 (eval-when (:compile-toplevel :execute)
   (defparameter +last-optimization-bit+ 17)
@@ -292,27 +266,6 @@ INTGERP, STRINGP.")
   (define-function policy-to-safety-level 4)
   (define-function policy-to-speed-level  8)
   (define-function policy-to-space-level 12))
-
-(defun cmp-env-all-optimizations (&optional (env *cmp-env*))
-  (let ((o (cmp-env-policy env)))
-    (list (policy-to-debug-level o)
-          (policy-to-safety-level o)
-          (policy-to-space-level o)
-          (policy-to-speed-level o))))
-
-(defun cmp-env-optimization (property &optional (env *cmp-env*))
-  (let ((o (cmp-env-policy env)))
-    (case property
-      (debug (policy-to-debug-level o))
-      (safety (policy-to-safety-level o))
-      (space (policy-to-space-level o))
-      (speed (policy-to-speed-level o)))))
-
-(defun safe-compile ()
-  (>= (cmp-env-optimization 'safety) 2))
-
-(defun compiler-push-events ()
-  (>= (cmp-env-optimization 'safety) 3))
 
 (eval-when (:load-toplevel)
   (defparameter *optimization-quality-switches*

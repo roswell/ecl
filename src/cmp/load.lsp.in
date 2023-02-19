@@ -12,14 +12,15 @@
     "src:cmp;cmpmach.lsp"
     "src:cmp;cmprefs.lsp"
     "src:cmp;cmplocs.lsp"
+    "src:cmp;cmppolicy.lsp"
     ;; Environment
     "src:cmp;cmpenv-api.lsp"
     "src:cmp;cmpenv-var.lsp"
     "src:cmp;cmpenv-fun.lsp"
+    "src:cmp;cmpenv-optimize.lsp"
     "src:cmp;cmpenv-declare.lsp"
     "src:cmp;cmpenv-proclaim.lsp"
     "src:cmp;cmpenv-declaim.lsp"
-    "src:cmp;cmppolicy.lsp"
     ;; Internal representation
     "src:cmp;cmptypes.lsp"
     "src:cmp;cmpform.lsp"
