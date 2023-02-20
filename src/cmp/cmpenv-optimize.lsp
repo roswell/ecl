@@ -66,74 +66,100 @@
 ;; ERROR CHECKING POLICY
 ;;
 
-(define-policy ext:assume-no-errors :off safety 1)
+(define-policy ext:assume-no-errors
+  "All bets are off."
+  (:off safety 1))
 
-(define-policy ext:assume-right-type :alias ext:assume-no-errors)
+(define-policy-alias ext:assume-right-type
+  "Don't insert optional runtime type checks for known types."
+  (:alias ext:assume-no-errors))
 
-(define-policy ext:type-assertions :anti-alias ext:assume-no-errors
-  "Generate type assertions when inlining accessors and other functions.")
+(define-policy-alias ext:type-assertions
+  "Generate type assertions when inlining accessors and other functions."
+  (:anti-alias ext:assume-no-errors))
 
-(define-policy ext:check-stack-overflow :on safety 2
-  "Add a stack check to every function")
+(define-policy ext:check-stack-overflow
+  "Add a stack check to every function"
+  (:on safety 2))
 
-(define-policy ext:check-arguments-type :on safety 1
-  "Generate CHECK-TYPE forms for function arguments with type declarations")
+(define-policy ext:check-arguments-type
+  "Generate CHECK-TYPE forms for function arguments with type declarations."
+  (:on safety 1))
 
-(define-policy ext:array-bounds-check :on safety 1
-  "Check out of bounds access to arrays")
+(define-policy ext:array-bounds-check
+  "Check out of bounds access to arrays."
+  (:on safety 1))
 
-(define-policy ext:global-var-checking :on safety 3
-  "Read the value of a global variable even if it is discarded, ensuring it is bound")
+(define-policy ext:global-var-checking
+  "Read the value of a global variable even if it is discarded, ensuring it is bound."
+  (:on safety 3))
 
-(define-policy ext:global-function-checking :on safety 3
-  "Read the binding of a global function even if it is discarded")
+(define-policy ext:global-function-checking
+  "Read the binding of a global function even if it is discarded."
+  (:on safety 3))
 
-(define-policy ext:check-nargs :on safety 1 :only-on ext:check-arguments-type 1
-  "Check that the number of arguments a function receives is within bounds")
+(define-policy ext:check-nargs
+  "Check that the number of arguments a function receives is within bounds."
+  (:on safety 1)
+  (:only-on ext:check-arguments-type))
 
-(define-policy ext:the-is-checked :on safety 1
-  "THE is equivalent to EXT:CHECKED-VALUE. Otherwise THE is equivalent to EXT:TRULY-THE.")
+(define-policy ext:the-is-checked
+  "THE is equivalent to EXT:CHECKED-VALUE. Otherwise THE is equivalent to EXT:TRULY-THE."
+  (:on safety 1))
 
 ;;
 ;; INLINING POLICY
 ;;
 
-(define-policy ext:assume-types-dont-change :off safety 1
-  "Assume that type and class definitions will not change")
+(define-policy ext:assume-types-dont-change
+  "Assume that type and class definitions will not change."
+  (:off safety 1))
 
-(define-policy ext:inline-slot-access :on speed 1 :off debug 2 :off safety 2
-  "Inline access to structures and sealed classes")
+(define-policy ext:inline-slot-access
+  "Inline access to structures and sealed classes."
+  (:on speed 1)
+  (:off debug 2)
+  (:off safety 2))
 
-(define-policy ext:inline-accessors :off debug 2 :off space 2
-  "Inline access to object slots, including conses and arrays")
+(define-policy ext:inline-accessors
+  "Inline access to object slots, including conses and arrays."
+  (:off debug 2)
+  (:off space 2))
 
-(define-policy ext:inline-bit-operations :off space 2
-  "Inline LDB and similar functions")
+(define-policy ext:inline-bit-operations
+  "Inline LDB and similar functions."
+  (:off space 2))
 
-(define-policy ext:open-code-aref/aset :alias ext:inline-accessors
-  "Inline access to arrays")
+(define-policy-alias ext:open-code-aref/aset
+  "Inline access to arrays."
+  (:alias ext:inline-accessors))
 
-(define-policy ext:evaluate-forms :off debug 1
-  "Pre-evaluate a function that takes constant arguments")
+(define-policy ext:evaluate-forms
+  "Pre-evaluate a function that takes constant arguments."
+  (:off debug 1))
 
-(define-policy ext:use-direct-C-call :off debug 2
-  "Emit direct calls to a function whose C name is known")
+(define-policy ext:use-direct-C-call
+  "Emit direct calls to a function whose C name is known."
+  (:off debug 2))
 
-(define-policy ext:inline-type-checks :off space 2
-  "Expand TYPEP and similar forms in terms of simpler functions, such as FLOATP,
-INTGERP, STRINGP.")
+(define-policy ext:inline-type-checks
+  "Expand TYPEP and similar forms in terms of simpler functions, such as FLOATP, INTGERP, STRINGP."
+  (:off space 2))
 
-(define-policy ext:inline-sequence-functions :off space 2
-  "Inline functions such as MAP, MEMBER, FIND, etc")
+(define-policy ext:inline-sequence-functions
+  "Inline functions such as MAP, MEMBER, FIND, etc."
+  (:off space 2))
 
 ;;
 ;; DEBUG POLICY
 ;;
 
-(define-policy ext:debug-variable-bindings :on debug 3
-  :requires (policy-debug-ihs-frame env)
+(define-policy ext:debug-variable-bindings
+  "Create a debug vector with the bindings of each LET/LET*/LAMBDA form."
   ;; We can only create variable bindings when the function has an IHS frame!!!
-  "Create a debug vector with the bindings of each LET/LET*/LAMBDA form?")
+  (:requires (policy-debug-ihs-frame env))
+  (:on debug 3))
 
-(define-policy ext:debug-ihs-frame :on debug 3
-  "Let the functions appear in backtraces")
+(define-policy ext:debug-ihs-frame
+  "Let the functions appear in backtraces."
+  (:on debug 3))
