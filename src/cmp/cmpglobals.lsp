@@ -92,12 +92,13 @@ running the compiler. It may be updated by running ")
 
 ;;; --cmpenv.lsp--
 ;;;
-;;; These default settings are equivalent to (optimize (speed 3) (space 0) (safety 2))
+;;; Default optimization settings.
 ;;;
 (defvar *safety* 2)
 (defvar *speed* 3)
 (defvar *space* 0)
 (defvar *debug* 0)
+(defvar *compilation-speed* 2)
 
 ;;;
 ;;; Compiled code uses the following kinds of variables:

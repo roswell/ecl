@@ -43,16 +43,19 @@
        (member name (cmp-env-search-declaration 'alien env si::*alien-declarations*)
                :test 'eq)))
 
+(defun policy-declaration-p (name)
+  (and (gethash name *optimization-quality-switches*) t))
+
 (defun parse-ignore-declaration (decl-args expected-ref-number tail)
   (declare (si::c-local))
   (loop for name in decl-args
-     do (if (symbolp name)
-            (push (cons name expected-ref-number) tail)
-            (cmpassert (and (consp name)
-                            (= (length name) 2)
-                            (eq (first name) 'function))
-                       "Invalid argument to IGNORE/IGNORABLE declaration:~&~A"
-                       name)))
+        do (if (symbolp name)
+               (push (cons name expected-ref-number) tail)
+               (cmpassert (and (consp name)
+                               (= (length name) 2)
+                               (eq (first name) 'function))
+                          "Invalid argument to IGNORE/IGNORABLE declaration:~&~A"
+                          name)))
   tail)
 
 (defun collect-declared (type var-list tail)
@@ -107,7 +110,7 @@ and a possible documentation string (only accepted when DOC-P is true)."
             (SI:FUNCTION-BLOCK-NAME)
             (otherwise
              (if (or (alien-declaration-p decl-name)
-                     (policy-declaration-name-p decl-name))
+                     (policy-declaration-p decl-name))
                  (push decl others)
                  (multiple-value-bind (ok type)
                      (if (machine-c-type-p decl-name)
