@@ -23,10 +23,10 @@
     "src:cmp;cmpenv-declaim.lsp"
     ;; Internal representation
     "src:cmp;cmptypes.lsp"
+    "src:cmp;cmptables.lsp"
     "src:cmp;cmpform.lsp"
     "src:cmp;cmpvar.lsp"
     "src:cmp;cmpfun.lsp"
-    "src:cmp;cmptables.lsp"
     "src:cmp;cmpinline.lsp"
     ;; Types
     "src:cmp;cmptype-prop.lsp"
