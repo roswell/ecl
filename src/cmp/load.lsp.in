@@ -8,11 +8,11 @@
     "src:cmp;cmputil.lsp"
     "src:cmp;cmpcond.lsp"
     "src:cmp;cmptype-arith.lsp"
+    "src:cmp;cmppolicy.lsp"
     ;; Internal representation
     "src:cmp;cmpmach.lsp"
     "src:cmp;cmprefs.lsp"
     "src:cmp;cmplocs.lsp"
-    "src:cmp;cmppolicy.lsp"
     ;; Environment
     "src:cmp;cmpenv-api.lsp"
     "src:cmp;cmpenv-var.lsp"

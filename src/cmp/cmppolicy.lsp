@@ -14,9 +14,73 @@
 
 (in-package "COMPILER")
 
+;;;
+;;; ECL encodes the compiler policy an integer. Each bit represents a single
+;;; optimization choice. Lowest twenty bits encode the standard optimization
+;;; qualities DEBUG, SAFETY, SPEED, SPACE and COMPILATION-SPEED - four bits for
+;;; each level. Levels are mutually exclusive for a single quality. Then each
+;;; defined policy occupies one bit. For example:
+;;;
+;;;     X Y Z COMPILATION-SPEED SPACE SPEED SAFETY DEBUG
+;;;     0 1 0              0010  0010  1000   0001  0010
+;;;
+;;; Represents the following optimization settings:
+;;;
+;;;     (OPTIMIZE (DEBUG 1) (SAFETY 0) (SPEED 3) (COMPILATION-SPEED 2) Y)
+;;;
+;;; New optimization qualities are defined with DEFINE-POLICY. Such definition
+;;; adds one more bit tot he compilation policy and defines a function to test
+;;; whether the quality is applicable under the compilation policy of the env.
+;;; This functions first checks whether the quality bit is "1" and then may
+;;; perform additional tests defined with clauses :REQUIRES.
+;;;
+;;; Each optimization quality (level) has associated two numbers. When it is
+;;; declared in the environment the first number added to the compilation policy
+;;; with LOGIOR and the second number is removed from the compilation policy
+;;; with LOGANDC2.  Thanks to that it is possible for declaration of one policy
+;;; to enable other policies associated with it. For example (DEBUG 1) may be:
+;;;
+;;;     X Y Z COMPILATION-SPEED SPACE SPEED SAFETY DEBUG
+;;;     1 1 0              0000  0000  0000   0000  0010  "on"
+;;;     0 0 1              0000  0000  0000   0000  1101  "off"
+;;;
+;;; When (DEBUG 1) is declared then bits representing X, Y and (DEBUG 1) are set
+;;; to 1 and bits representing Z and other DEBUG levels are set to 0. Everything
+;;; else remains unchanged. These pairs are "optimization quality switches".
+;;;
+;;; When a new policy is defined it may contain multiple :ON and :OFF clauses
+;;; with an optional parameter representing the "cut off" level. For example:
+;;;
+;;;   (define-policy W
+;;;      ; (SAFETY 0) and (SAFETY 1) "off" flags for W = 1
+;;;      ; (SAFETY 2) and (SAFETY 3) "on"  flags for W = 1
+;;;     (:on safety 2)
+;;;      ; (DEBUG 0)  and (DEBUG 1)  "on"  flags for W = 1
+;;;      ; (DEBUG 2)  and (DEBUG 3)  "off" flags for W = 1
+;;;     (:off debug 2))
+;;;
+;;; With this example declaring (SAFETY 2) will enable the policy W and
+;;; declaring (SAFETY 1) will disable it. Consider the following example:
+;;;
+;;;     (locally (declare (safety 2) (debug 2))
+;;;       (do-something))
+;;;
+;;; The optimization (SAFETY 2) enables the policy W while the optimization
+;;; (DEBUG 2) disables it. It is apparent from this example that the order in
+;;; which we apply quality switches to the compilation policy is important.
+;;; COMPUTE-POLICY prioritizes "off" flags over "on" flags so in this case the
+;;; policy W will be disabled.
+;;;
+;;; Only standard optimization qualities have levels. User defined policies may
+;;; be also references but the level must not be specified, i.e (:ON CHECK-FOO).
+;;;
 
-(defconstant *standard-optimization-quality-names*
-  '(debug safety speed space compilation-speed))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant *standard-optimization-quality-names*
+    '(debug safety speed space compilation-speed)))
+
+(defun standard-optimization-quality-p (name)
+  (member name *standard-optimization-quality-names* :test #'eq))
 
 (eval-when (:compile-toplevel :execute)
   (defvar *last-optimization-bit* 20)
@@ -54,7 +118,9 @@
 (defun compute-policy (arguments old-bits &aux (on 0) (off 0))
   (flet ((get-flags (x)
            (if (atom x)
-               (optimization-quality-switches x 3)
+               (if (standard-optimization-quality-p x)
+                   (optimization-quality-switches x 3)
+                   (optimization-quality-switches x 1))
                (destructuring-bind (name value) x
                  (when (typep value '(integer 0 3))
                    (optimization-quality-switches name value))))))
@@ -65,25 +131,27 @@
         (cmpwarn "Illegal or unknown OPTIMIZE proclamation ~s." x))))
   (logandc2 (logior old-bits on) off))
 
-;;; for example        debug   2     :on    #x10
-(defun augment-policy (quality level on-off flag)
-  (flet ((flip (on-off switches flag)
-           (ecase on-off
-             (:on  (rplaca switches (logior (car switches) flag)))
-             (:off (rplacd switches (logior (cdr switches) flag))))))
-    (loop for i from 0 to 3
-          for bits = (optimization-quality-switches quality i)
-          do (if (< i level)
-                 (ecase on-off
-                   (:on       (flip :off bits flag))
-                   (:off      (flip :on  bits flag))
-                   (:only-on  nil)
-                   (:only-off nil))
-                 (ecase on-off
-                   (:on       (flip :on  bits flag))
-                   (:off      (flip :off bits flag))
-                   (:only-on  (flip :on  bits flag))
-                   (:only-off (flip :off bits flag)))))))
+(defun augment-policy-switch (on-off switches flag)
+  (ecase on-off
+    (:on  (rplaca switches (logior (car switches) flag)))
+    (:off (rplacd switches (logior (cdr switches) flag)))))
+
+(defun augment-standard-policy (quality level on-off flag)
+  (loop for i from 0 to 3
+        for bits = (optimization-quality-switches quality i)
+        do (if (< i level)
+               (ecase on-off
+                 (:on  (augment-policy-switch :off bits flag))
+                 (:off (augment-policy-switch :on  bits flag)))
+               (ecase on-off
+                 (:on  (augment-policy-switch :on  bits flag))
+                 (:off (augment-policy-switch :off bits flag))))))
+
+(defun augment-extended-policy (quality on-off flag)
+  (let ((bits (optimization-quality-switches quality 1)))
+    (ecase on-off
+      (:only-on  (augment-policy-switch :on  bits flag))
+      (:only-off (augment-policy-switch :off bits flag)))))
 
 (defun policy-function-name (base)
   (intern (concatenate 'string "POLICY-" (symbol-name base))
@@ -94,20 +162,19 @@
         (test (ash 1 (take-optimization-bit name)))
         (function-name (policy-function-name name)))
     ;; Register as an optimization quality with its own flags.
-    (let* ((circular-list (list (cons test 0)))
-           (flags-list (list* (cons 0 test) circular-list)))
-      (rplacd circular-list circular-list)
-      (setf (gethash name *optimization-quality-switches*) flags-list))
+    (setf (gethash name *optimization-quality-switches*)
+          ;;    switched off   switched on    | two levels
+          (list (cons 0 test) (cons test 0)))
     ;; Scan the definition and propagate flags of dependent policies.
     (loop with extra = '()
           for case in conditions
           do (case (car case)
                ((:on :off)
                 (destructuring-bind (op quality level) case
-                  (augment-policy quality level op test)))
+                  (augment-standard-policy quality level op test)))
                ((:only-on :only-off)
                 (destructuring-bind (op quality) case
-                  (augment-policy quality 1 op test)))
+                  (augment-extended-policy quality op test)))
                (:requires
                 (destructuring-bind (op form) case
                   (declare (ignore op))
@@ -131,9 +198,7 @@
           ,doc
           (,(policy-function-name alias) env)))
       (:anti-alias
-       (rotatef (first bits) (second bits))
-       (rplacd (cdr bits) (cdr bits))
-       (setf (gethash name *optimization-quality-switches*) bits)
+       (setf (gethash name *optimization-quality-switches*) (reverse bits))
        `(defun ,(policy-function-name name) (&optional (env *cmp-env*))
           ,doc
           (not (,(policy-function-name alias) env)))))))
