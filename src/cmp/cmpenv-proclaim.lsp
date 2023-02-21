@@ -47,7 +47,7 @@
                  (SAFETY (setq *safety* (second x)))
                  (SPACE (setq *space* (second x)))
                  (SPEED (setq *speed* (second x)))
-                 (COMPILATION-SPEED (setq *speed* (- 3 (second x))))
+                 (COMPILATION-SPEED (setq *compilation-speed* (second x)))
                  (t (warn "The OPTIMIZE quality ~s is unknown." (car x)))))))
     (cl:TYPE
      (if (consp (cdr decl))
