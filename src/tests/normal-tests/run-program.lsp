@@ -193,3 +193,57 @@
   ;; is granted (before the release). Program to use is `set', not
   ;; sure if it is part of Windows shell or something we can run.
   (is (null "IMPLEMENT ME!")))
+
+;;; Date: 2022-10-22
+;;; From: Marius Gerbershagen
+;;; Description:
+;;;
+;;;     Check that run-program works correctly with different
+;;;     encodings
+;;;
+(test run-program-encoding
+  (let* ((skeleton "
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define expected_length ~S
+
+int main (int argc, char **argv) {
+  char expected[expected_length+1] = {~{~S,~}};
+  if (argc != 2) {
+    return 1;
+  }
+  if (strlen(argv[1]) != expected_length) {
+    return 2;
+  }
+  if (strcmp(argv[1], expected) != 0) {
+    return 3;
+  }
+  if (strcmp(getenv(\"ECLTESTVAR\"), expected) != 0) {
+    return 4;
+  }
+  printf(\"%s\", argv[1]);
+  return 0;
+}"))
+    (flet ((test-with-encoding (encoding test-string)
+             (let* ((ext:*default-external-format* encoding)
+                    (encoded-test-string
+                     (coerce (ext:string-to-octets test-string
+  				                                       :null-terminate t
+  				                                       :external-format encoding)
+  	                          'list)))
+               (multiple-value-bind (return-code output)
+                   (test-C-program (format nil skeleton
+  			                                  (1- (length encoded-test-string))
+  			                                  encoded-test-string)
+  		                             :args (list test-string)
+  		                             :environ (list (concatenate 'string "ECLTESTVAR=" test-string))
+  		                             :capture-output :string)
+                 (is (zerop return-code))
+                 (is (string= test-string (delete #\newline output)))))))
+      (test-with-encoding ext:*default-external-format* "default-äöüλ🙋")
+      (test-with-encoding :utf8 "utf8-äöüλ🙋")
+      (test-with-encoding :latin-1 "latin-1-äöü")
+      (test-with-encoding :greek "greek-λ"))))
+

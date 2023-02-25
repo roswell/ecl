@@ -113,30 +113,24 @@ static cl_object
 from_list_to_execve_argument(cl_object l, char ***environp)
 {
   cl_object p;
-  cl_index i, j, total_size = 0, nstrings = 0;
-  cl_object buffer;
+  cl_index j, total_size = 0, nstrings = 0;
+  cl_object buffer, buffer_stream;
   char **my_environ;
   for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
     total_size += s->base_string.fillp + 1;
     nstrings++;
   }
-  /* Extra place for ending null */
-  total_size++;
-  buffer = ecl_alloc_simple_base_string(++total_size);
+  buffer = ecl_alloc_adjustable_base_string(total_size + 1);
   my_environ = ecl_alloc_atomic((nstrings + 1) * sizeof(char*));
-  for (j = i = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
+  buffer_stream = si_make_sequence_output_stream(1, buffer);
+  for (j = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
-    cl_index l = s->base_string.fillp;
-
-    my_environ[j++] = (char*)(buffer->base_string.self + i);
-    memcpy(buffer->base_string.self + i,
-           s->base_string.self,
-           l);
-    i += l;
-    buffer->base_string.self[i++] = 0;
+    my_environ[j++] = (char*)buffer->base_string.self + buffer->base_string.fillp;
+    si_do_write_sequence(s, buffer_stream, ecl_make_fixnum(0), ECL_NIL);
+    ecl_write_char(0, buffer_stream);
   }
-  buffer->base_string.self[i++] = 0;
+  ecl_write_char(0, buffer_stream);
   my_environ[j] = 0;
   if (environp) *environp = my_environ;
   return buffer;
@@ -361,15 +355,12 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object my_environ, cl
   int parent_write = 0, parent_read = 0, parent_error = 0;
   cl_object pid, stream_read, exit_status;
 
-  command = si_copy_to_simple_base_string(command);
-
 #if defined(ECL_MS_WINDOWS_HOST)
   argv = cl_format(4, ECL_NIL,
                    @"~A~{ ~A~}",
                    command, argv);
-  argv = si_copy_to_simple_base_string(argv);
 #else
-  argv = CONS(command, cl_mapcar(2, @'si::copy-to-simple-base-string', argv));
+  argv = CONS(command, argv);
 #endif
 
   pid = si_spawn_subprocess(command, argv, my_environ, @':stream', @':stream', @':output');
@@ -402,13 +393,10 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
                     cl_object input, cl_object output, cl_object error) {
 
   int parent_write = 0, parent_read = 0, parent_error = 0;
-  int child_pid;
   cl_object pid;
 
   /* my_environ is either a list or `:default'. */
-  if (ECL_LISTP(my_environ)) {
-    my_environ = cl_mapcar(2, @'si::copy-to-simple-base-string', my_environ);
-  } else if (!ecl_eql(my_environ, @':default')) {
+  if (!ECL_LISTP(my_environ) && !ecl_eql(my_environ, @':default')) {
     FEerror("Malformed :ENVIRON argument to EXT:RUN-PROGRAM.", 0);
   }
   
@@ -423,10 +411,14 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
     cl_object env_buffer;
     char *env = NULL;
 
+    argv = si_string_to_octets(5, argv,
+                               @':null-terminate', ECL_T,
+                               @':element-type', @'base-char');
     if (ECL_LISTP(my_environ)) {
       env_buffer = from_list_to_execve_argument(my_environ, NULL);
-      env = env_buffer->base_string.self;
+      env = (char*)env_buffer->base_string.self;
     }
+
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
     create_descriptor(output, @':output', &child_stdout, &parent_read);
     if (error == @':output') {
@@ -453,12 +445,10 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
     /* Command is passed as is from argv. It is responsibility of
        higher level interface to decide, whenever arguments should be
        quoted or left as-is. */
-    /* ecl_null_terminated_base_string(argv); */
-    ok = CreateProcess(NULL, argv->base_string.self,
+    ok = CreateProcess(NULL, (char*)argv->base_string.self,
                        NULL, NULL, /* lpProcess/ThreadAttributes */
                        TRUE, /* Inherit handles (for files) */
-                       /*CREATE_NEW_CONSOLE |*/
-                       0 /*(input == ECL_T || output == ECL_T || error == ECL_T ? 0 : CREATE_NO_WINDOW)*/,
+                       0, /* dwCreationFlags */
                        env, /* Inherit environment */
                        NULL, /* Current directory */
                        &st_info, /* Startup info */
@@ -488,25 +478,31 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
   }
 #elif !defined(NACL) /* All POSIX but NaCL/pNaCL */
   {
+    cl_object command_encoded = si_string_to_octets(3, command, @':null-terminate', ECL_T);
+    int child_pid;
     int child_stdin, child_stdout, child_stderr;
     int saved_errno;
-    argv = ecl_nconc(argv, ecl_list1(ECL_NIL));
-    argv = _ecl_funcall3(@'coerce', argv, @'vector');
 
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
     create_descriptor(output, @':output', &child_stdout, &parent_read);
     if (error == @':output') {
       child_stderr = child_stdout;
       parent_error = dup(parent_read);
-    }
-    else
+    } else {
       create_descriptor(error,  @':output', &child_stderr, &parent_error);
+    }
 
     child_pid = fork();
     if (child_pid == 0) {
       /* Child */
       int j;
-      void **argv_ptr = (void **)argv->vector.self.t;
+      cl_object p;
+      char **argv_ptr = ecl_alloc_atomic((ecl_length(argv) + 1) * sizeof(char*));
+      for (p = argv, j = 0; p != ECL_NIL; p = ECL_CONS_CDR(p)) {
+        cl_object arg = si_string_to_octets(3, ECL_CONS_CAR(p), @':null-terminate', ECL_T);
+        argv_ptr[j++] = (char*)arg->base_string.self;
+      }
+      argv_ptr[j] = NULL;
 
       if (parent_write) close(parent_write);
       if (parent_read)  close(parent_read);
@@ -516,25 +512,17 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
       dup2(child_stdout, STDOUT_FILENO);
       dup2(child_stderr, STDERR_FILENO);
 
-      for (j = 0; j < argv->vector.fillp; j++) {
-        cl_object arg = argv->vector.self.t[j];
-        if (arg == ECL_NIL) {
-          argv_ptr[j] = NULL;
-        } else {
-          argv_ptr[j] = arg->base_string.self;
-        }
-      }
       if (ECL_LISTP(my_environ)) {
         char **pstrings;
         from_list_to_execve_argument(my_environ, &pstrings);
 #if defined(HAVE_ENVIRON)
         environ = pstrings;
-        execvp((char*)command->base_string.self, (char **)argv_ptr);
+        execvp((char*)command_encoded->base_string.self, argv_ptr);
 #else
-        execve((char*)command->base_string.self, (char **)argv_ptr, pstrings);
+        execve((char*)command_encoded->base_string.self, argv_ptr, pstrings);
 #endif
       } else {
-        execvp((char*)command->base_string.self, (char **)argv_ptr);
+        execvp((char*)command_encoded->base_string.self, argv_ptr);
       }
       /* at this point exec has failed */
       perror("exec");
