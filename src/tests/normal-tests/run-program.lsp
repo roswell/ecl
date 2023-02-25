@@ -89,7 +89,10 @@
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process))
-              (finishes (ext:terminate-process process)) ; no-op
+	           ;; terminating an exited process is a no-op on Unix, but
+	           ;; gives a generic `access denied` error on Windows so
+	           ;; we skip this test on Windows
+              #-windows (finishes (ext:terminate-process process))
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
               #+windows(is-eql :exited (ext:external-process-wait process nil))
@@ -99,7 +102,7 @@
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process t))
-              (finishes (ext:terminate-process process t)) ; no-op
+              #-windows (finishes (ext:terminate-process process t))
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
               #+windows(is-eql :exited (ext:external-process-wait process nil))
