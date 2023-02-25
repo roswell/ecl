@@ -174,25 +174,32 @@
       (is (null (zerop (length (get-output-stream-string error-stream)))))
       (mapc #'close (list output-stream error-stream)))))
 
-#-windows
 (test process-environ
-  (is-equal 0 (nth-value 1 (ext:run-program "env" nil)))
-  (is-equal 0 (nth-value 1 (ext:run-program "env" nil :environ :default)))
-  (is-equal "bar"
-            (read-line (ext:run-program "printenv" '("foo")
-                                        :environ (list "foo=bar"
-                                                       (format nil "PATH=~A" (ext:getenv "PATH"))))
-                       nil nil))
-  (signals simple-error (ext:run-program "env" nil :environ :bam)  nil nil)
-  #-cygwin ;; Cygwin always injects `WINDIR=C:\\Windows' variable.
-  (is (null (slurp (ext:run-program "/usr/bin/env" nil :environ nil)))))
-
-#+windows
-(test process-environ
-  ;; This tests need to be implemented when access to Windows platform
-  ;; is granted (before the release). Program to use is `set', not
-  ;; sure if it is part of Windows shell or something we can run.
-  (is (null "IMPLEMENT ME!")))
+  (flet ((run-env-program (&rest args)
+           ;; use :input nil :output nil :error nil as default to stop
+           ;; pipes from filling up and the process deadlocking
+           (setf args (append args '(:input nil :output nil :error nil)))
+           #-windows (apply #'ext:run-program "env" nil args)
+           #+windows (apply #'ext:run-program "cmd" '("/k" "set" "&" "exit") args))
+         (run-printenv-program (var &rest args)
+           #-windows (apply #'ext:run-program "printenv" (list var) args)
+           #+windows (apply #'ext:run-program "cmd"
+  	                       (list "/k" (concatenate 'string "echo %" var "%")
+  		                          "&" "exit")
+  	                       args)))
+    (is-equal 0 (nth-value 1 (run-env-program)))
+    (is-equal 0 (nth-value 1 (run-env-program :environ :default)))
+    (is-equal "bar"
+              (delete #\Space
+                      (read-line
+                       (run-printenv-program
+  	                     "foo"
+  	                     :environ (list "foo=bar"
+  		                                 (format nil "PATH=~A" (ext:getenv "PATH"))))
+                       nil nil)))
+    (signals simple-error (run-env-program :environ :bam) nil nil)
+    #-cygwin ;; Cygwin always injects `WINDIR=C:\\Windows' variable.
+    (is (null (slurp (run-env-program :environ nil))))))
 
 ;;; Date: 2022-10-22
 ;;; From: Marius Gerbershagen
