@@ -89,25 +89,18 @@
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process))
-	           ;; terminating an exited process is a no-op on Unix, but
-	           ;; gives a generic `access denied` error on Windows so
-	           ;; we skip this test on Windows
-              #-windows (finishes (ext:terminate-process process))
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
-              #+windows(is-eql :exited (ext:external-process-wait process nil))
-              (finishes (ext:terminate-process process))))
+              #+windows(is-eql :exited (ext:external-process-wait process nil))))
   (is-equal #-windows `(t :signaled ,ext:+sigkill+)
 	    #+windows `(t :exited -1)
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process t))
-              #-windows (finishes (ext:terminate-process process t))
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
               #+windows(is-eql :exited (ext:external-process-wait process nil))
-              (finishes (ext:external-process-status process))
-              (finishes (ext:terminate-process process t)))))
+              (finishes (ext:external-process-status process)))))
 
 ;;; We may want to craft it into an interface. Suspend/Resume *is* possible on Windows:
 ;;; http://stackoverflow.com/questions/11010165/how-to-suspend-resume-a-process-in-windows
