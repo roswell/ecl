@@ -171,7 +171,7 @@ Updates process status. @coderef{ext:external-process-status} calls
 @coderef{ext:external-process-wait} if process has not finished yet
 (non-blocking call).  Returns two values:
 
-@code{status} - member of @code{(:abort :error :exited :signalled
+@code{status} - member of @code{(:abort :error :exited :signaled
 :stopped :resumed :running)}
 
 @code{code} - if process exited it is a returned value, if terminated
