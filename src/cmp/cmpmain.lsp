@@ -38,7 +38,7 @@
             (setf base (list (truename output) (truename base)))
             (progn (delete-file base) (setf base nil)))))
     (unless base
-      (error "Unable to create temporay file~%~
+      (error "Unable to create temporary file~%~
         ~AXXXXXX
 Make sure you have enough free space in disk, check permissions or set~%~
 the environment variable TMPDIR to a different value." template))
