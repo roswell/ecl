@@ -71,7 +71,7 @@
          (process pid) (:object :object) :void
          "HANDLE *ph = (HANDLE*)ecl_foreign_data_pointer_safe(#1);
          int ret = TerminateProcess(*ph, -1);
-         if (ret == 0) FEerror(\"Cannot terminate the process ~A\", 1, #0);")
+         if (ret == 0) FEwin32_error(\"Cannot terminate the process ~A\", 1, #0);")
         #-windows
         (unless (zerop (si:killpid pid (if force +sigkill+ +sigterm+)))
           (error "Cannot terminate the process ~A" process))))))
@@ -143,19 +143,18 @@
                    (T (error "Invalid ~S argument to EXT:RUN-PROGRAM" which))))
            (prepare-args (args)
              #-windows
-             (mapcar #'si:copy-to-simple-base-string args)
+	          args
              #+windows
-             (si:copy-to-simple-base-string
-              (with-output-to-string (str)
-                (loop for (arg . rest) on args
-                   do (if (and escape-arguments
-                               (find-if (lambda (c)
-                                          (find c '(#\Space #\Tab #\")))
-                                        arg))
-                          (escape-arg arg str)
-                          (princ arg str))
-                     (when rest
-                       (write-char #\Space str))))))
+             (with-output-to-string (str)
+               (loop for (arg . rest) on args
+                  do (if (and escape-arguments
+                              (find-if (lambda (c)
+                                         (find c '(#\Space #\Tab #\")))
+                                       arg))
+                         (escape-arg arg str)
+                         (princ arg str))
+                    (when rest
+                      (write-char #\Space str)))))
            (null-stream (direction)
              (open #-windows "/dev/null"
                    #+windows "nul"
@@ -174,8 +173,7 @@
                                  :input)))
                (:virtual-stream :stream)
                (otherwise stream))))
-    (let ((progname (si:copy-to-simple-base-string command))
-          (args (prepare-args (cons command argv)))
+    (let ((args (prepare-args (cons command argv)))
           (process (make-external-process))
           (process-input (process-stream input
                                          :direction :input
@@ -191,7 +189,7 @@
           pid parent-write parent-read parent-error)
 
       (multiple-value-setq (pid parent-write parent-read parent-error)
-        (si:spawn-subprocess progname args environ
+        (si:spawn-subprocess command args environ
                              (verify-stream process-input :input)
                              (verify-stream process-output :output)
                              (verify-stream process-error :error)))

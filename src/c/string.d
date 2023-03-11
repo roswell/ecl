@@ -944,10 +944,12 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
                                (element_type @'ext::byte8'))
   cl_object output;
   cl_object output_stream;
+  cl_fixnum length;
   @
-  output = si_make_vector(element_type, /* element-type */
-                          cl_length(input), /* length */
-                          ECL_T,             /* adjustable */
+  length = (Null(end) ? ecl_length(input) : ecl_to_fixnum(end)) - ecl_to_fixnum(start) + 1;
+  output = si_make_vector(element_type,       /* element-type */
+                          ecl_make_fixnum(length), /* length */
+                          ECL_T,              /* adjustable */
                           ecl_make_fixnum(0), /* fillp */
                           ECL_NIL,            /* displaced */
                           ECL_NIL);           /* displaced-offset */
