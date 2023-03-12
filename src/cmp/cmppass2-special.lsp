@@ -19,7 +19,7 @@
   (progv symbols values (c2expr body)))
 
 (defun c2function (c1form kind funob fun)
-  (declare (ignore c1form))
+  (declare (ignore c1form funob))
   (case kind
     (GLOBAL
      (unwind-exit (list 'FDEFINITION fun)))
@@ -37,12 +37,11 @@
     (CLOSURE
      (setf (fun-level fun) 0 (fun-env fun) *env*))
     (LEXICAL
-     (let ((parent (fun-parent fun)))
-       ;; Only increase the lexical level if there have been some
-       ;; new variables created. This way, the same lexical environment
-       ;; can be propagated through nested FLET/LABELS.
-       (setf (fun-level fun) (if (plusp *lex*) (1+ *level*) *level*)
-             (fun-env fun) 0)))
+     ;; Only increase the lexical level if there have been some
+     ;; new variables created. This way, the same lexical environment
+     ;; can be propagated through nested FLET/LABELS.
+     (setf (fun-level fun) (if (plusp *lex*) (1+ *level*) *level*)
+           (fun-env fun) 0))
     (otherwise
      (setf (fun-env fun) 0 (fun-level fun) 0)))
   (let ((previous

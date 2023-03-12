@@ -14,23 +14,6 @@
 
 (in-package #:compiler)
 
-(defun read-only-variable-p (v other-decls)
-  (dolist (i other-decls nil)
-    (when (and (eq (car i) :READ-ONLY)
-               (member v (rest i)))
-      (return t))))
-
-(defun env-grows (possibily)
-  ;; if additional closure variables are introduced and this is not
-  ;; last form, we must use a new env.
-  (and possibily
-       (plusp *env*)
-       (dolist (exit *unwind-exit*)
-         (case exit
-           (RETURN (return NIL))
-           (BDS-BIND)
-           (t (return T))))))
-
 ;; should check whether a form before var causes a side-effect
 ;; exactly one occurrence of var is present in forms
 (defun replaceable (var form)
@@ -99,6 +82,19 @@
     (setq type 'T))
   (make-var :kind rep-type :type type :loc (next-lcl)))
 
+(defun make-global-var (name &key
+                               (type (or (si:get-sysprop name 'CMP-TYPE) t))
+                               (kind 'GLOBAL)
+                               (warn nil))
+  (let ((var (make-var :name name :kind kind :type type :loc (add-symbol name))))
+    (when warn
+      (unless (or (constantp name)
+                  (special-variable-p name)
+                  (member name *undefined-vars*))
+        (undefined-variable name)
+        (push name *undefined-vars*)))
+    var))
+
 (defun make-temp-var (&optional (type 'T))
   (make-var :kind :object :type type :loc `(TEMP ,(next-temp))))
 
@@ -108,7 +104,7 @@
 
 (defun var-changed-in-form-list (var form-list)
   (loop for f in form-list
-     thereis (var-changed-in-form var f)))
+          thereis (var-changed-in-form var f)))
 
 ;;; FIXME! VAR-REFERENCED-IN-FORM and VAR-CHANGED-IN-FORM are too
 ;;; pessimistic. One should check whether the functions reading/setting the
@@ -200,46 +196,6 @@
     (add-to-set-nodes v form))
   form)
 
-;;; A special binding creates a var object with the kind field SPECIAL,
-;;; whereas a special declaration without binding creates a var object with
-;;; the kind field GLOBAL.  Thus a reference to GLOBAL may need to make sure
-;;; that the variable has a value.
-
-;;;  Bootstrap problem: proclaim needs this function:
-;;;
-;;; Check if a variable has been declared as a special variable with a global
-;;; value.
-
-(defun check-global (name)
-  (member name *global-vars*))
-
-(defun special-variable-p (name)
-  "Return true if NAME is associated to a special variable in the lexical environment."
-  (or (si::specialp name)
-      (check-global name)
-      (let ((v (cmp-env-search-var name *cmp-env-root*)))
-        ;; Fixme! Revise the declamation code to ensure whether
-        ;; we also have to consider 'GLOBAL here.
-        (and v (eq (var-kind v) 'SPECIAL)))))
-
-(defun constant-variable-p (name)
-  (si::constp name))
-
-(defun local-variable-p (name &optional (env *cmp-env*))
-  (let ((record (cmp-env-search-var name env)))
-    (and record (var-p record))))
-
-(defun symbol-macro-p (name &optional (env *cmp-env*))
-  (let ((record (cmp-env-search-var name env)))
-    (and record (not (var-p record)))))
-
-(defun variable-type-in-env (name &optional (env *cmp-env*))
-  (let ((var (cmp-env-search-var name env)))
-    (cond ((var-p var)
-           (var-type var))
-          ((si:get-sysprop name 'CMP-TYPE))
-          (t))))
-
 (defun var-rep-type (var)
   (case (var-kind var)
     ((LEXICAL CLOSURE SPECIAL GLOBAL) :object)
@@ -257,10 +213,6 @@
                 (lisp-type->rep-type (var-type var))
                 :OBJECT)))))
 
-(defun push-vars (v)
-  (setf (var-index v) (length (cmp-env-variables)))
-  (cmp-env-register-var v))
-
 (defun unboxed (var)
   (not (eq (var-rep-type var) :object)))
 
@@ -276,7 +228,3 @@
 (defun useful-var-p (var)
   (or (plusp (var-ref var))
       (global-var-p var)))
-
-(defun si::register-global (name)
-  (pushnew name *global-vars*)
-  (values))

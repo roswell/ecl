@@ -26,9 +26,6 @@
 ;;;     lambda-list =   (requireds optionals rest key-flag keywords allow-other-keys)
 ;;;
 
-(defun print-c1form (form stream)
-  (format stream "#<form ~A ~X>" (c1form-name form) (si:pointer form)))
-
 (defun make-c1form (name subform &rest args)
   (let ((form (do-make-c1form :name name :args args
                               :type (info-type subform)
@@ -99,9 +96,6 @@
       (unless (or (null length) (= length (length (c1form-args form))))
         (error "Internal error: illegal number of arguments in ~A" form))))
   (c1form-add-info-loop form dependents))
-
-(defun copy-c1form (form)
-  (copy-structure form))
 
 (defmacro c1form-arg (nth form)
   (case nth
@@ -210,7 +204,8 @@
     (baboon :format-control "Attempted to move a form with side-effects"))
   ;; The following protocol is only valid for VAR references.
   (unless (eq (c1form-name dest) 'VAR)
-    (baboon :format-control "Cannot replace forms other than VARs:~%~4I~A" dest))
+    (baboon :format-control "Cannot replace forms other than VARs:~%~4I~A"
+            :format-arguments (list dest)))
   ;; We have to relocate the children nodes of NEW-FIELDS in
   ;; the new branch. This implies rewriting the parents chain,
   ;; but only for non-location nodes (these are reused). The only

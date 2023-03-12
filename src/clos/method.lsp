@@ -64,6 +64,7 @@
         (parse-specialized-lambda-list specialized-lambda-list)
       (multiple-value-bind (lambda-form declarations documentation)
           (make-raw-lambda name lambda-list required-parameters specializers body env)
+        (declare (ignore declarations))
         (multiple-value-bind (proto-gf proto-method)
             (prototypes-for-make-method-lambda name)
           (multiple-value-bind (fn-form options)
@@ -181,6 +182,7 @@
   (declare (ignore method gf))
   (multiple-value-bind (call-next-method-p next-method-p-p in-closure-p)
       (walk-method-lambda method-lambda env)
+    (declare (ignore call-next-method-p next-method-p-p))
     (values `(lambda (.combined-method-args. *next-methods*)
                (declare (special .combined-method-args. *next-methods*))
                (apply ,(if in-closure-p

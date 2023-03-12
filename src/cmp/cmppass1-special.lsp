@@ -32,7 +32,7 @@
         (c1truly-the args))))
 
 (defun c1truly-the (args)
-  (check-args-number 'TRULY-THE args 2 2)
+  (check-args-number 'ext:truly-the args 2 2)
   (let* ((form (c1expr (second args)))
          (the-type (first args))
          type)
@@ -43,7 +43,7 @@
     form))
 
 (defun c1compiler-let (args &aux (symbols nil) (values nil))
-  (when (endp args) (too-few-args 'COMPILER-LET 1 0))
+  (when (endp args) (too-few-args 'ext:compiler-let 1 0))
   (dolist (spec (car args))
     (cond ((consp spec)
            (cmpck (not (and (symbolp (car spec))
@@ -59,9 +59,9 @@
   (setq symbols (nreverse symbols))
   (setq values (nreverse values))
   (setq args (progv symbols values (c1progn (cdr args))))
-  (make-c1form 'COMPILER-LET args symbols values args))
+  (make-c1form 'ext:compiler-let args symbols values args))
 
-(defun c1function (args &aux fd)
+(defun c1function (args)
   (check-args-number 'FUNCTION args 1 1)
   (let ((fun (car args)))
     (cond ((si::valid-function-name-p fun)

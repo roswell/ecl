@@ -1,20 +1,65 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
-;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
+;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
+;;;;  Copyright (c) 1990, Giuseppe Attardi
+;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
-;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll.
-;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
-;;;;
-;;;; CMPC-MACHINE -- Abstract target machine details
-;;;;
+;;;;    See file 'LICENSE' for the copyright details.
 
-(in-package "COMPILER")
+(in-package #:compiler)
+
+;;; Abstract target machine details
+
+(defstruct machine
+  (c-types '())
+  rep-type-hash
+  sorted-types
+  inline-information)
+
+;;; FIXME currently all definitions assume C machine (see cmpc-machine.lsp).
+
+(defstruct (rep-type (:constructor %make-rep-type))
+  (index 0)                             ; Precedence order in the type list
+  (name t)
+  (lisp-type t)
+  (bits nil)
+  (numberp nil)
+  (integerp nil)
+  (c-name nil)
+  (to-lisp nil)
+  (from-lisp nil)
+  (from-lisp-unsafe nil))
+
+(defun lisp-type-p (type)
+  (subtypep type 'T))
+
+(defun rep-type-record-unsafe (rep-type)
+  (gethash rep-type (machine-rep-type-hash *machine*)))
+
+(defun rep-type-record (rep-type)
+  (ext:if-let ((record (gethash rep-type (machine-rep-type-hash *machine*))))
+    record
+    (cmperr "Not a valid C type name ~A" rep-type)))
+
+(defun rep-type->lisp-type (name)
+  (let ((output (rep-type-record-unsafe name)))
+    (cond (output
+           (rep-type-lisp-type output))
+          ((lisp-type-p name) name)
+          (t (error "Unknown representation type ~S" name)))))
+
+(defun lisp-type->rep-type (type)
+  (cond
+    ;; We expect type = NIL when we have no information. Should be fixed. FIXME!
+    ((null type)
+     :object)
+    ((let ((r (rep-type-record-unsafe type)))
+       (and r (rep-type-name r))))
+    (t
+     ;; Find the most specific type that fits
+     (dolist (record (machine-sorted-types *machine*) :object)
+       (when (subtypep type (rep-type-lisp-type record))
+         (return-from lisp-type->rep-type (rep-type-name record)))))))
 
 ;; These types can be used by ECL to unbox data They are sorted from
 ;; the most specific, to the least specific one.  All functions must

@@ -78,6 +78,11 @@
           ((or (consp ue) (eq ue 'JUMP) (eq ue 'IHS-ENV)))
           (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
 
+(defun last-call-p ()
+  (member *exit*
+          '(RETURN RETURN-FIXNUM RETURN-CHARACTER RETURN-SINGLE-FLOAT
+            RETURN-DOUBLE-FLOAT RETURN-LONG-FLOAT RETURN-OBJECT)))
+
 (defun c2try-tail-recursive-call (fun args)
   (when (and *tail-recursion-info*
              (eq fun (first *tail-recursion-info*))
@@ -255,6 +260,7 @@
     (when fname (wt-comment fname))))
 
 (defun wt-call-normal (fun args type)
+  (declare (ignore type))
   (unless (fun-cfun fun)
     (baboon "Function without a C name: ~A" (fun-name fun)))
   (let* ((minarg (fun-minarg fun))

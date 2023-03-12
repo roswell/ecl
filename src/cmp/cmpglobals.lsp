@@ -45,22 +45,22 @@
 (defvar *current-form* '|compiler preprocess|)
 (defvar *current-toplevel-form* '|compiler preprocess|)
 (defvar *compile-file-position* -1)
-(defvar *first-error* t)
 (defvar *active-protection* nil)
 (defvar *pending-actions* nil)
 
 (defvar *compiler-conditions* '()
   "This variable determines whether conditions are printed or just accumulated.")
 
-(defvar cl:*compile-print* nil
+(defvar *compile-print* nil
   "This variable controls whether the compiler displays messages about
 each form it processes. The default value is NIL.")
 
-(defvar cl:*compile-verbose* nil
+(defvar *compile-verbose* nil
   "This variable controls whether the compiler should display messages about its
 progress. The default value is T.")
 
-(defvar *compiler-features* #+ecl-min nil #-ecl-min '#.*compiler-features*
+(defvar *compiler-features*
+  '#.(if (not (boundp '*compiler-features*)) nil *compiler-features*)
   "This alternative list of features contains keywords that were gathered from
 running the compiler. It may be updated by running ")
 
@@ -92,15 +92,13 @@ running the compiler. It may be updated by running ")
 
 ;;; --cmpenv.lsp--
 ;;;
-;;; These default settings are equivalent to (optimize (speed 3) (space 0) (safety 2))
+;;; Default optimization settings.
 ;;;
 (defvar *safety* 2)
 (defvar *speed* 3)
 (defvar *space* 0)
 (defvar *debug* 0)
-
-;;; Emit automatic CHECK-TYPE forms for function arguments in lambda forms.
-(defvar *automatic-check-type-in-lambda* t)
+(defvar *compilation-speed* 2)
 
 ;;;
 ;;; Compiled code uses the following kinds of variables:
@@ -125,7 +123,6 @@ running the compiler. It may be updated by running ")
 (defvar *aux-closure* nil)      ; stack allocated closure needed for indirect calls
 (defvar *ihs-used-p* nil)       ; function must be registered in IHS?
 
-(defvar *next-cmacro* 0)        ; holds the last cmacro number used.
 (defvar *next-cfun* 0)          ; holds the last cfun used.
 
 ;;;
@@ -135,8 +132,6 @@ running the compiler. It may be updated by running ")
 ;;; where each required-arg is a var-object.
 ;;;
 (defvar *tail-recursion-info* nil)
-
-(defvar *allow-c-local-declaration* t)
 
 ;;; --cmpexit.lsp--
 ;;;
@@ -165,12 +160,14 @@ variable-record = (:block block-name) |
                   (:tag ({tag-name}*)) |
                   (:function function-name) |
                   (var-name {:special | nil} bound-p) |
-                  (symbol si::symbol-macro macro-function) |
+                  (symbol si:symbol-macro macro-function) |
+                  (:declare type arguments) |
                   SI:FUNCTION-BOUNDARY |
                   SI:UNWIND-PROTECT-BOUNDARY
 
 macro-record    = (function-name function) |
-                  (macro-name si::macro macro-function)
+                  (macro-name si:macro macro-function) |
+                  (:declare name declaration) |
                   SI:FUNCTION-BOUNDARY |
                   SI:UNWIND-PROTECT-BOUNDARY
 
@@ -184,7 +181,7 @@ that compared with the bytecodes compiler, these records contain an additional
 variable, block, tag or function object at the end.")
 
 (defvar *cmp-env-root*
-  (cons nil (list (list '#:no-macro 'si::macro (constantly nil))))
+  (cons nil (list (list '#:no-macro 'si:macro (constantly nil))))
 "This is the common environment shared by all toplevel forms. It can
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
@@ -273,12 +270,8 @@ lines are inserted, but the order is preserved")
 (defvar *static-constants* nil)         ; constants that can be built as C values
                                         ; holds { ( object c-variable constant ) }*
 
-(defvar *compiler-constants* nil)       ; a vector with all constants
+(defvar si:*compiler-constants* nil)    ; a vector with all constants
                                         ; only used in COMPILE
-
-(defvar *proclaim-fixed-args* nil)      ; proclaim automatically functions
-                                        ; with fixed number of arguments.
-                                        ; watch out for multiple values.
 
 (defvar *global-vars* nil)              ; variables declared special
 (defvar *global-funs* nil)              ; holds { fun }*
@@ -313,7 +306,7 @@ be deleted if they have been opened with LoadLibrary.")
 ;;; If (safe-compile) is ON, some kind of run-time checks are not
 ;;; included in the compiled code.  The default value is OFF.
 
-(defconstant +init-env-form+
+(defvar +init-env-form+
   '((*gensym-counter* 0)
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
@@ -322,7 +315,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*cmp-env* nil)
     (*max-temp* 0)
     (*temp* 0)
-    (*next-cmacro* 0)
     (*next-cfun* 0)
     (*last-label* 0)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
@@ -345,7 +337,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*machine* (or *machine* *default-machine*))
     (*optimizable-constants* (make-optimizable-constants *machine*))
     (*inline-information*
-     (let ((r (machine-inline-information *machine*)))
-       (if r (si::copy-hash-table r) (make-inline-information *machine*))))
-    ))
+     (ext:if-let ((r (machine-inline-information *machine*)))
+       (si:copy-hash-table r)
+       (make-inline-information *machine*)))))
 

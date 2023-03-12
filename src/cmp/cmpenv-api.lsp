@@ -19,85 +19,17 @@
 (defun cmp-env-root (&optional (env *cmp-env-root*))
   "Provide a root environment for toplevel forms storing all declarations
 that are susceptible to be changed by PROCLAIM."
-  (let* ((env (cmp-env-copy env)))
+  (let ((env (cmp-env-copy env)))
     (add-default-optimizations env)))
 
 (defun cmp-env-copy (&optional (env *cmp-env*))
   (cons (car env) (cdr env)))
-
-(defun set-closure-env (definition lexenv &optional (env *cmp-env*))
-  "Set up an environment for compilation of closures: Register closed
-over macros in the compiler environment and enclose the definition of
-the closure in let/flet forms for variables/functions it closes over."
-  (loop for record in lexenv
-     do (cond ((not (listp record))
-               (multiple-value-bind (record-def record-lexenv)
-                   (function-lambda-expression record)
-                 (cond ((eql (car record-def) 'LAMBDA)
-                        (setf record-def (cdr record-def)))
-                       ((eql (car record-def) 'EXT:LAMBDA-BLOCK)
-                        (setf record-def (cddr record-def)))
-                       (t
-                        (error "~&;;; Error: Not a valid lambda expression: ~s." record-def)))
-                 ;; allow for closures which close over closures.
-                 ;; (first record-def) is the lambda list, (rest
-                 ;; record-def) the definition of the local function
-                 ;; in record
-                 (setf (rest record-def)
-                       (list (set-closure-env (if (= (length record-def) 2)
-                                                  (second record-def)
-                                                  `(progn ,@(rest record-def)))
-                                              record-lexenv env)))
-                 (setf definition
-                       `(flet ((,(compiled-function-name record)
-                                   ,@record-def))
-                          ,definition))))
-              ((and (listp record) (symbolp (car record)))
-               (cond ((eq (car record) 'si::macro)
-                      (cmp-env-register-macro (cddr record) (cadr record) env))
-                     ((eq (car record) 'si::symbol-macro)
-                      (cmp-env-register-symbol-macro-function (cddr record) (cadr record) env))
-                     (t
-                      (setf definition
-                            `(let ((,(car record) ',(cdr record)))
-                               ,definition)))
-                     ))
-              ;; ((and (integerp (cdr record)) (= (cdr record) 0))
-              ;;  Tags: We have lost the information, which tag
-              ;;  corresponds to the lex-env record. If we are
-              ;;  compiling a closure over a tag, we will get an
-              ;;  error later on.
-              ;;  )
-              ;; (t
-              ;;  Blocks: Not yet implemented
-              )
-     finally (return definition)))
 
 (defmacro cmp-env-variables (&optional (env '*cmp-env*))
   `(car ,env))
 
 (defmacro cmp-env-functions (&optional (env '*cmp-env*))
   `(cdr ,env))
-
-(defun cmp-env-cleanups (env)
-  (loop with specials = '()
-        with end = (cmp-env-variables env)
-        with cleanup-forms = '()
-        with aux
-        for records-list on (cmp-env-variables *cmp-env*)
-        until (eq records-list end)
-        do (let ((record (first records-list)))
-             (cond ((atom record))
-                   ((and (symbolp (first record))
-                         (eq (second record) :special))
-                    (push (fourth record) specials))
-                   ((eq (first record) :cleanup)
-                    (push (second record) cleanup-forms))))
-        finally (progn
-                  (unless (eq records-list end)
-                    (error "Inconsistency in environment."))
-                  (return (values specials
-                                  (apply #'nconc (mapcar #'copy-list cleanup-forms)))))))
 
 (defun cmp-env-register-var (var &optional (env *cmp-env*) (boundp t))
   (push (list (var-name var)
@@ -107,13 +39,6 @@ the closure in let/flet forms for variables/functions it closes over."
               boundp
               var)
         (cmp-env-variables env))
-  env)
-
-(defun cmp-env-declare-special (name &optional (env *cmp-env*))
-  (when (cmp-env-search-symbol-macro name env)
-    (cmperr "Symbol ~A cannot be declared special and appear in a symbol-macrolet." name))
-  (cmp-env-register-var (c::c1make-global-variable name :warn nil :kind 'SPECIAL)
-                        env nil)
   env)
 
 (defun cmp-env-add-declaration (type arguments &optional (env *cmp-env*))
@@ -137,7 +62,7 @@ the closure in let/flet forms for variables/functions it closes over."
   (values))
 
 (defun cmp-env-register-macro (name function &optional (env *cmp-env*))
-  (push (list name 'si::macro function)
+  (push (list name 'si:macro function)
         (cmp-env-functions env))
   env)
 
@@ -154,7 +79,7 @@ the closure in let/flet forms for variables/functions it closes over."
 (defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*))
   (when (or (constant-variable-p name) (special-variable-p name))
     (cmperr "Cannot bind the special or constant variable ~A with symbol-macrolet." name))
-  (push (list name 'si::symbol-macro function)
+  (push (list name 'si:symbol-macro function)
         (cmp-env-variables env))
   env)
 
@@ -166,10 +91,6 @@ the closure in let/flet forms for variables/functions it closes over."
 (defun cmp-env-register-tag (name tag &optional (env *cmp-env*))
   (push (list :tag (list name) tag)
         (cmp-env-variables env))
-  env)
-
-(defun cmp-env-register-cleanup (form &optional (env *cmp-env*))
-  (push (list :cleanup (copy-list form)) (cmp-env-variables env))
   env)
 
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
@@ -211,12 +132,12 @@ the closure in let/flet forms for variables/functions it closes over."
              (when (member name (second record) :test #'eql)
                (setf found record)
                (return)))
-            ((eq name 'si::symbol-macro)
-             (when (eq (second record) 'si::symbol-macro)
+            ((eq name 'si:symbol-macro)
+             (when (eq (second record) 'si:symbol-macro)
                (setf found record))
              (return))
             (t
-             (when (not (eq (second record) 'si::symbol-macro))
+             (when (not (eq (second record) 'si:symbol-macro))
                (setf found record))
              (return))))
     (values (first (last found)) cfb unw)))
@@ -228,14 +149,22 @@ the closure in let/flet forms for variables/functions it closes over."
   (cmp-env-search-variables :tag name env))
 
 (defun cmp-env-search-symbol-macro (name &optional (env *cmp-env*))
-  (cmp-env-search-variables name 'si::symbol-macro env))
+  (cmp-env-search-variables name 'si:symbol-macro env))
 
 (defun cmp-env-search-var (name &optional (env *cmp-env*))
   (cmp-env-search-variables name t env))
 
 (defun cmp-env-search-macro (name &optional (env *cmp-env*))
   (let ((f (cmp-env-search-function name env)))
-    (if (functionp f) f nil)))
+    (if (functionp f)
+        f
+        nil)))
+
+;;; Like macro-function except it searches the lexical environment,
+;;; to determine if the macro is shadowed by a function or a macro.
+(defun cmp-macro-function (name)
+  (or (cmp-env-search-macro name)
+      (macro-function name)))
 
 (defun cmp-env-search-ftype (name &optional (env *cmp-env*))
   (dolist (i env nil)

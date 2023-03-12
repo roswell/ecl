@@ -67,10 +67,11 @@
 
 (defun valid-type-specifier (type)
   (handler-case
-     (if (subtypep type 'T)
-         (values t type)
-         (values nil nil))
-    (error (c) (values nil nil))))
+      (if (subtypep type 'T)
+          (values t type)
+          (values nil nil))
+    (error ()
+      (values nil nil))))
 
 (defun known-type-p (type)
   (subtypep type T))
@@ -264,8 +265,8 @@
                     (opt2 (push (type-and t1 (pop opt2)) opt))
                     (rest2 (push (type-and t1 (first rest2)) opt))
                     (t (setf opt1 nil rest1 nil) (return))))
-        (when rest
-          (let ((t1 (first rest)))
+        (when rest1
+          (let ((t1 (first rest1)))
             (loop for t2 in req2
                do (push (type-and t1 t2) req))
             (loop for t2 in opt2

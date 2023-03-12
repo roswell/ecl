@@ -18,10 +18,10 @@
 ;;;; compiled file and do not propagate beyond it.
 ;;;;
 
-(in-package #-ecl-new "COMPILER" #+ecl-new "C-ENV")
+(in-package "COMPILER")
 
 (defun valid-form-p (x &optional test)
-  (and (si::proper-list-p x)
+  (and (si:proper-list-p x)
        (or (null test)
            (every test x))))
 
@@ -43,16 +43,19 @@
        (member name (cmp-env-search-declaration 'alien env si::*alien-declarations*)
                :test 'eq)))
 
+(defun policy-declaration-p (name)
+  (and (gethash name *optimization-quality-switches*) t))
+
 (defun parse-ignore-declaration (decl-args expected-ref-number tail)
   (declare (si::c-local))
   (loop for name in decl-args
-     do (if (symbolp name)
-            (push (cons name expected-ref-number) tail)
-            (cmpassert (and (consp name)
-                            (= (length name) 2)
-                            (eq (first name) 'function))
-                       "Invalid argument to IGNORE/IGNORABLE declaration:~&~A"
-                       name)))
+        do (if (symbolp name)
+               (push (cons name expected-ref-number) tail)
+               (cmpassert (and (consp name)
+                               (= (length name) 2)
+                               (eq (first name) 'function))
+                          "Invalid argument to IGNORE/IGNORABLE declaration:~&~A"
+                          name)))
   tail)
 
 (defun collect-declared (type var-list tail)
@@ -80,16 +83,16 @@ and a possible documentation string (only accepted when DOC-P is true)."
                                    (valid-type-specifier decl-name))))
                      "Syntax error in declaration ~s" decl)
        do (case decl-name
-            (SPECIAL)
-            (IGNORE
+            (cl:SPECIAL)
+            (cl:IGNORE
              (cmpassert (valid-form-p decl-args)
                         "Syntax error in declaration ~s" decl)
              (setf ignored (parse-ignore-declaration decl-args -1 ignored)))
-            (IGNORABLE
+            (cl:IGNORABLE
              (cmpassert (valid-form-p decl-args)
                         "Syntax error in declaration ~s" decl)
              (setf ignored (parse-ignore-declaration decl-args 0 ignored)))
-            (TYPE
+            (cl:TYPE
              (cmpassert (and (consp decl-args)
                              (valid-form-p (rest decl-args) #'symbolp))
                         "Syntax error in declaration ~s" decl)
@@ -100,14 +103,14 @@ and a possible documentation string (only accepted when DOC-P is true)."
              (cmpassert (valid-form-p decl-args #'symbolp)
                         "Syntax error in declaration ~s" decl)
              (setf types (collect-declared 'OBJECT decl-args types)))
-            ((OPTIMIZE FTYPE INLINE NOTINLINE DECLARATION SI::C-LOCAL
-              SI::C-GLOBAL DYNAMIC-EXTENT IGNORABLE VALUES
+            ((cl:OPTIMIZE cl:FTYPE cl:INLINE cl:NOTINLINE cl:DECLARATION SI::C-LOCAL
+              SI::C-GLOBAL cl:DYNAMIC-EXTENT cl:VALUES
               SI::NO-CHECK-TYPE POLICY-DEBUG-IHS-FRAME :READ-ONLY)
              (push decl others))
             (SI:FUNCTION-BLOCK-NAME)
             (otherwise
              (if (or (alien-declaration-p decl-name)
-                     (policy-declaration-name-p decl-name))
+                     (policy-declaration-p decl-name))
                  (push decl others)
                  (multiple-value-bind (ok type)
                      (if (machine-c-type-p decl-name)
@@ -123,7 +126,7 @@ and a possible documentation string (only accepted when DOC-P is true)."
   "Add to the environment one declarations which is not type, ignorable or
 special variable declarations, as these have been extracted before."
   (case (car decl)
-    (OPTIMIZE
+    (cl:OPTIMIZE
      (cmp-env-add-optimizations (rest decl) env))
     (POLICY-DEBUG-IHS-FRAME
      (let ((flag (or (rest decl) '(t))))
@@ -134,7 +137,7 @@ special variable declarations, as these have been extracted before."
              env)
            (cmp-env-add-declaration 'policy-debug-ihs-frame
                                     flag env))))
-    (FTYPE
+    (cl:FTYPE
      (if (atom (rest decl))
          (cmpwarn "Syntax error in declaration ~a" decl)
          (multiple-value-bind (type-name args)
@@ -145,18 +148,18 @@ special variable declarations, as these have been extracted before."
                (cmpwarn "In an FTYPE declaration, found ~A which is not a function type."
                         (second decl)))))
      env)
-    (INLINE
+    (cl:INLINE
       (loop for name in (rest decl) do (setf env (declare-inline name env)))
       env)
-    (NOTINLINE
+    (cl:NOTINLINE
       (loop for name in (rest decl) do (setf env (declare-notinline name env)))
       env)
-    (DECLARATION
+    (cl:DECLARATION
      (validate-alien-declaration (rest decl) #'cmperr)
      (cmp-env-extend-declaration 'alien (rest decl) env si::*alien-declarations*))
     ((SI::C-LOCAL SI::C-GLOBAL SI::NO-CHECK-TYPE :READ-ONLY)
      env)
-    ((DYNAMIC-EXTENT IGNORABLE SI:FUNCTION-BLOCK-NAME)
+    ((cl:DYNAMIC-EXTENT cl:IGNORABLE SI:FUNCTION-BLOCK-NAME)
      ;; FIXME! SOME ARE IGNORED!
      env)
     (otherwise
@@ -168,7 +171,7 @@ special variable declarations, as these have been extracted before."
             env)))))
 
 (defun symbol-macro-declaration-p (name type)
-  (when-let ((record (cmp-env-search-symbol-macro name)))
+  (ext:when-let ((record (cmp-env-search-symbol-macro name)))
     (let* ((expression (funcall record name nil)))
       (cmp-env-register-symbol-macro name `(the ,type ,expression)))
     t))

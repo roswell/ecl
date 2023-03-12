@@ -110,7 +110,7 @@
           (c2expr* form)
           (list type temp))
         (list type
-              (list 'SYS:STRUCTURE-REF
+              (list 'si:STRUCTURE-REF
                     (first (coerce-locs
                             (inline-args (list (c1form-arg 0 form)))))
                     (c1form-arg 1 form)
@@ -125,7 +125,7 @@
           (c2expr* form)
           (list type temp))
         (list type
-              (list 'SYS:INSTANCE-REF
+              (list 'si:instance-ref
                     (first (coerce-locs
                             (inline-args (list (c1form-arg 0 form)))))
                     (c1form-arg 1 form)
@@ -140,10 +140,10 @@
        (emit-inlined-variable form forms))
       (CALL-GLOBAL
        (emit-inlined-call-global form (c1form-primary-type form)))
-      (SYS:STRUCTURE-REF
+      (si:STRUCTURE-REF
        (emit-inlined-structure-ref form forms))
       #+clos
-      (SYS:INSTANCE-REF
+      (si:INSTANCE-REF
        (emit-inlined-instance-ref form forms))
       (SETQ
        (emit-inlined-setq form forms))

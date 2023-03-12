@@ -30,7 +30,7 @@
                     (c1var form)))
                (t (c1var form))))
         ((consp form)
-         (cmpck (not (si::proper-list-p form))
+         (cmpck (not (si:proper-list-p form))
                 "Improper list found in lisp form~%~A" form)
          (let ((fun (car form)))
            (cond ((let ((fd (gethash fun *c1-dispatch-table*)))
@@ -85,7 +85,7 @@
       (c1body args t)
     (if (or ss ts is other-decl)
         (let ((*cmp-env* (cmp-env-copy)))
-          (mapc #'cmp-env-declare-special ss)
+          (mapc #'declare-special ss)
           (check-vdecl nil ts is)
           (c1decl-body other-decl body))
         (c1progn body))))
@@ -120,7 +120,7 @@
 (defun c1constant-value (val &key always only-small-values)
   (cond
     ;; FIXME includes in c1 pass.
-    ((when-let ((x (assoc val *optimizable-constants*)))
+    ((ext:when-let ((x (assoc val *optimizable-constants*)))
        (pushnew "#include <float.h>" *clines-string-list*)
        (pushnew "#include <complex.h>" *clines-string-list*)
        (setf x (cdr x))
@@ -129,7 +129,7 @@
            x)))
     ((eq val nil) (c1nil))
     ((eq val t) (c1t))
-    ((sys::fixnump val)
+    ((ext:fixnump val)
      (make-c1form* 'LOCATION :type 'FIXNUM :args (list 'FIXNUM-VALUE val)))
     ((characterp val)
      (make-c1form* 'LOCATION :type 'CHARACTER
@@ -164,13 +164,13 @@
          (elt-type (ext:sse-pack-element-type value)))
     (multiple-value-bind (wrapper rtype)
         (case elt-type
-          (single-float (values "_mm_castsi128_ps" :float-sse-pack))
-          (double-float (values "_mm_castsi128_pd" :double-sse-pack))
-          (otherwise    (values ""                 :int-sse-pack)))
-      `(c-inline () () ,rtype
-                 ,(format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
-                          wrapper (coerce bytes 'list))
-                 :one-liner t :side-effects nil))))
+          (cl:single-float (values "_mm_castsi128_ps" :float-sse-pack))
+          (cl:double-float (values "_mm_castsi128_pd" :double-sse-pack))
+          (otherwise       (values ""                 :int-sse-pack)))
+      `(ffi:c-inline () () ,rtype
+                     ,(format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
+                              wrapper (coerce bytes 'list))
+                     :one-liner t :side-effects nil))))
 
 (defun c1if (args)
   (check-args-number 'IF args 2 3)

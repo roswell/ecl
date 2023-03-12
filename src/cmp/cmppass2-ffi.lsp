@@ -15,38 +15,6 @@
 
 (in-package "COMPILER")
 
-;; ----------------------------------------------------------------------
-;; REPRESENTATION TYPES
-;;
-
-(defun rep-type-record-unsafe (rep-type)
-  (gethash rep-type (machine-rep-type-hash *machine*)))
-
-(defun rep-type-record (rep-type)
-  (if-let ((record (gethash rep-type (machine-rep-type-hash *machine*))))
-    record
-    (cmperr "Not a valid C type name ~A" rep-type)))
-
-(defun rep-type->lisp-type (name)
-  (let ((output (rep-type-record-unsafe name)))
-    (cond (output
-           (rep-type-lisp-type output))
-          ((lisp-type-p name) name)
-          (t (error "Unknown representation type ~S" name)))))
-
-(defun lisp-type->rep-type (type)
-  (cond
-    ;; We expect type = NIL when we have no information. Should be fixed. FIXME!
-    ((null type)
-     :object)
-    ((let ((r (rep-type-record-unsafe type)))
-       (and r (rep-type-name r))))
-    (t
-     ;; Find the most specific type that fits
-     (dolist (record (machine-sorted-types *machine*) :object)
-       (when (subtypep type (rep-type-lisp-type record))
-         (return-from lisp-type->rep-type (rep-type-name record)))))))
-
 (defun c-number-rep-type-p (rep-type)
   (let ((r (rep-type-record-unsafe rep-type)))
     (and r (rep-type-numberp r))))
@@ -70,9 +38,6 @@
 
 (defun rep-type->c-name (type)
   (rep-type-c-name (rep-type-record type)))
-
-(defun lisp-type-p (type)
-  (subtypep type 'T))
 
 (defun wt-to-object-conversion (loc-rep-type loc)
   (when (and (consp loc) (member (first loc)
@@ -99,75 +64,6 @@
             (rep-type-from-lisp-unsafe record)
             coercer)
         "(" loc ")")))
-
-;; ----------------------------------------------------------------------
-;; LOCATIONS and representation types
-;;
-;; Locations are lisp expressions which represent actual C data. To each
-;; location we can associate a representation type, which is the type of
-;; the C data. The following routines help in determining these types,
-;; and also in moving data from one location to another.
-
-(defun loc-movable-p (loc)
-  (if (atom loc)
-      t
-      (case (first loc)
-        ((CALL CALL-LOCAL) NIL)
-        ((C-INLINE) (not (fifth loc))) ; side effects?
-        (otherwise t))))
-
-(defun loc-type (loc)
-  (cond ((eq loc NIL) 'NULL)
-        ((var-p loc) (var-type loc))
-        ((vv-p loc) (vv-type loc))
-        ((numberp loc) (lisp-type->rep-type (type-of loc)))
-        ((atom loc) 'T)
-        (t
-         (case (first loc)
-           (FIXNUM-VALUE 'FIXNUM)
-           (CHARACTER-VALUE (type-of (code-char (second loc))))
-           (DOUBLE-FLOAT-VALUE 'DOUBLE-FLOAT)
-           (SINGLE-FLOAT-VALUE 'SINGLE-FLOAT)
-           (LONG-FLOAT-VALUE 'LONG-FLOAT)
-           (CSFLOAT-VALUE 'SI:COMPLEX-SINGLE-FLOAT)
-           (CDFLOAT-VALUE 'SI:COMPLEX-DOUBLE-FLOAT)
-           (CLFLOAT-VALUE 'SI:COMPLEX-LONG-FLOAT)
-           (C-INLINE (let ((type (first (second loc))))
-                       (cond ((and (consp type) (eq (first type) 'VALUES)) T)
-                             ((lisp-type-p type) type)
-                             (t (rep-type->lisp-type type)))))
-           (BIND (var-type (second loc)))
-           (LCL (or (third loc) T))
-           (THE (second loc))
-           (CALL-NORMAL (fourth loc))
-           (otherwise T)))))
-
-(defun loc-representation-type (loc)
-  (cond ((member loc '(NIL T)) :object)
-        ((var-p loc) (var-rep-type loc))
-        ((vv-p loc) :object)
-        ((numberp loc) (lisp-type->rep-type (type-of loc)))
-        ((eq loc 'TRASH) :void)
-        ((atom loc) :object)
-        (t
-         (case (first loc)
-           (FIXNUM-VALUE :fixnum)
-           (CHARACTER-VALUE (if (<= (second loc) 255) :unsigned-char :wchar))
-           (DOUBLE-FLOAT-VALUE :double)
-           (SINGLE-FLOAT-VALUE :float)
-           (LONG-FLOAT-VALUE :long-double)
-           (CSFLOAT-VALUE :csfloat)
-           (CDFLOAT-VALUE :cdfloat)
-           (CLFLOAT-VALUE :clfloat)
-           (C-INLINE (let ((type (first (second loc))))
-                       (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
-                             ((lisp-type-p type) (lisp-type->rep-type type))
-                             (t type))))
-           (BIND (var-rep-type (second loc)))
-           (LCL (lisp-type->rep-type (or (third loc) T)))
-           ((JUMP-TRUE JUMP-FALSE) :bool)
-           (THE (loc-representation-type (third loc)))
-           (otherwise :object)))))
 
 (defun wt-coerce-loc (dest-rep-type loc)
   (setq dest-rep-type (lisp-type->rep-type dest-rep-type))
@@ -326,12 +222,13 @@
 ;;
 
 (defun c2c-progn (c1form variables statements)
+  (declare (ignore c1form))
   (loop with *destination* = 'TRASH
         for form in statements
         do (cond ((stringp form)
                   (wt-nl)
                   (wt-c-inline-loc :void form variables
-                                   t ; side effects
+                                   t    ; side effects
                                    nil) ; no output variables
                   )
                  (t
@@ -378,9 +275,9 @@
     ;; place where the value is used.
     (when one-liner
       (return-from produce-inline-loc
-        `(C-INLINE ,output-rep-type ,c-expression ,coerced-arguments ,side-effects
-                   ,(if (equalp output-rep-type '((VALUES &REST T)))
-                        'VALUES NIL))))
+        `(ffi:c-inline ,output-rep-type ,c-expression ,coerced-arguments ,side-effects
+                       ,(if (equalp output-rep-type '((VALUES &REST T)))
+                            'VALUES NIL))))
 
     ;; If the output is a in the VALUES vector, just write down the form and output
     ;; the location of the data.
@@ -445,6 +342,7 @@
                `(COERCE-LOC ,rep-type ,loc)))))
 
 (defun wt-c-inline-loc (output-rep-type c-expression coerced-arguments side-effects output-vars)
+  (declare (ignore output-rep-type side-effects))
   (with-input-from-string (s c-expression)
     (when (and output-vars (not (eq output-vars 'VALUES)))
       (wt-nl))
@@ -495,6 +393,7 @@
 
 (defun t3-defcallback (lisp-name c-name c-name-constant return-type return-type-code
                        arg-types arg-type-constants call-type &aux (return-p t))
+  (declare (ignore lisp-name))
   (when (eql return-type :void)
     (setf return-p nil))
   (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))

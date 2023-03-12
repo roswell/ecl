@@ -75,7 +75,7 @@
              (symbol-macro-p value))
          ;; If multiple references to the value cost time and space,
          ;; or may cause side effects, we save it.
-         (with-clean-symbols (%asserted-value)
+         (ext:with-clean-symbols (%asserted-value)
            `(let* ((%asserted-value ,value))
               (declare (:read-only %asserted-value))
               ,(expand-type-assertion '%asserted-value type env compulsory))))
@@ -126,14 +126,14 @@
                         value type)
                (cmpdebug "Checking type of ~S to be ~S" value type))
            (let ((full-check
-                  (with-clean-symbols (%checked-value)
+                  (ext:with-clean-symbols (%checked-value)
                     `(let* ((%checked-value ,value))
                        (declare (:read-only %checked-value))
                        ,(expand-type-assertion '%checked-value type *cmp-env* nil)
                        ,(if (null and-type)
                             '%checked-value
-                            `(truly-the ,type %checked-value))))))
-             (make-c1form* 'CHECKED-VALUE
+                            `(ext:truly-the ,type %checked-value))))))
+             (make-c1form* 'ext:CHECKED-VALUE
                            :type type
                            :args type form (c1expr full-check)))))))
 
@@ -143,15 +143,15 @@
               value
               let-form)))
 
-(defmacro optional-type-assertion (&whole whole value type &environment env)
+(defmacro optional-type-assertion (value type &environment env)
   "If safety settings are high enough, generates a type check on an
 expression, ensuring that it is satisfied."
   (when (and (policy-type-assertions env)
              (not (trivial-type-p type)))
     (cmpdebug "Checking type of ~A to be ~A" value type)
-    `(checked-value ,type ,value)))
+    `(ext:checked-value ,type ,value)))
 
-(defmacro type-assertion (&whole whole value type &environment env)
+(defmacro type-assertion (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (cmpdebug "Checking type of ~A to be ~A" value type)
   (unless (trivial-type-p type)

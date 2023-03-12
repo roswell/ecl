@@ -5,7 +5,7 @@
 
 (defun t2expr (form)
   (when form
-    (if-let ((def (gethash (c1form-name form) *t2-dispatch-table*)))
+    (ext:if-let ((def (gethash (c1form-name form) *t2-dispatch-table*)))
       (let ((*compile-file-truename* (c1form-file form))
             (*compile-file-position* (c1form-file-position form))
             (*current-toplevel-form* (c1form-form form))
@@ -236,7 +236,7 @@
     (wt-label *exit*)))
 
 (defun t2init-form (c1form vv-loc form)
-  (declare (ignore c1form))
+  (declare (ignore c1form vv-loc))
   (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
          (*destination* 'TRASH))
     (c2expr form)
@@ -304,7 +304,9 @@
   (declare (type fun fun))
 
   ;; Compiler note about compiling this function
-  (print-emitting fun)
+  (when *compile-print*
+    (ext:when-let ((name (or (fun-name fun) (fun-description fun))))
+      (format t "~&;;; Emitting code for ~s.~%" name)))
 
   (let* ((lambda-expr (fun-lambda fun))
          (*cmp-env* (c1form-env lambda-expr))
@@ -473,9 +475,11 @@
           (format stream "~%};")))))
 
 (defun t2fset (c1form &rest args)
+  (declare (ignore args))
   (t2ordinary nil c1form))
 
 (defun c2fset (c1form fun fname macro pprint c1forms)
+  (declare (ignore pprint))
   (when (fun-no-entry fun)
     (wt-nl "(void)0; /* No entry created for "
            (format nil "~A" (fun-name fun))

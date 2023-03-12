@@ -46,7 +46,7 @@
         (MAPCAN (setf do-or-collect 'NCONC))
         (MAPCON (setf in-or-on :ON do-or-collect 'NCONC)))
       (when (eq in-or-on :ON)
-        (setf args (mapcar #'(lambda (arg) `(checked-value list ,arg)) args)))
+        (setf args (mapcar #'(lambda (arg) `(ext:checked-value list ,arg)) args)))
       (when (eq do-or-collect :DO)
         (let ((var (gensym)))
           (setf list-1-form `(with ,var = ,(first args))

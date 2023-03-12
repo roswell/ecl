@@ -128,21 +128,21 @@
   ;; Split forms according to the tag they are preceded by and compile
   ;; them grouped by PROGN. This help us use the optimizations in
   ;; C1PROGN to recognize transfers of control.
-  (loop for form in body
-     with output = '()
-     with tag-body = nil
-     with this-tag = (make-var :name 'tagbody-beginnnig :kind nil)
-     do (cond ((tag-p form)
-               (when tag-body
-                 (setf output (cons (c1progn (nreconc tag-body '(nil))) output)
-                       tag-body nil))
-               (push form output))
-              (t
-               (push form tag-body)))
-     finally (setf body
-                   (if tag-body
-                       (cons (c1progn (nreconc tag-body '(nil))) output)
-                       output)))
+  (make-var :name 'tagbody-beginnnig :kind nil) ; "this-tag"
+  (loop with output = '()
+        with tag-body = nil
+        for form in body
+        do (cond ((tag-p form)
+                  (when tag-body
+                    (setf output (cons (c1progn (nreconc tag-body '(nil))) output)
+                          tag-body nil))
+                  (push form output))
+                 (t
+                  (push form tag-body)))
+        finally (setf body
+                      (if tag-body
+                          (cons (c1progn (nreconc tag-body '(nil))) output)
+                          output)))
 
   ;;; Reverse the body list, deleting unused tags.
   (loop for form in body

@@ -32,7 +32,8 @@
                          ,@declarations)
                 (si::while (< ,variable ,%limit)
                   ,@body
-                  (reckless (setq ,variable (1+ ,variable))))
+                  (locally (declare (optimize (safety 0)))
+                    (setq ,variable (1+ ,variable))))
                 ,@output))
              (t
               (let ((,variable 0))

@@ -377,11 +377,13 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  *                      (:function function-name used-p [location]) |
  *                      (var-name {:special | nil} bound-p [location]) |
  *                      (symbol si::symbol-macro macro-function) |
+ *                      (:declare type arguments) |
  *                      SI:FUNCTION-BOUNDARY |
  *                      SI:UNWIND-PROTECT-BOUNDARY
  *                      (:declare declaration-arguments*)
  * macro-record =       (function-name FUNCTION [| function-object]) |
  *                      (macro-name si::macro macro-function) |
+ *                      (:declare name declaration) |
  *                      SI:FUNCTION-BOUNDARY |
  *                      SI:UNWIND-PROTECT-BOUNDARY
  *

@@ -24,15 +24,15 @@
   (cond ((symbolp name)
          (let* ((value (symbol-value name))
                 (type (lisp-type->rep-type (type-of value))))
-           (cons value `(c-inline () () ,type ,c-value
-                                  :one-liner t :side-effects nil))))
+           (cons value `(ffi:c-inline () () ,type ,c-value
+                                      :one-liner t :side-effects nil))))
         ((floatp name)
          (let* ((value name)
                       (type (type-of value))
                 (loc-type (case type
-                            (single-float 'single-float-value)
-                            (double-float 'double-float-value)
-                            (long-float 'long-float-value)
+                            (cl:single-float 'single-float-value)
+                            (cl:double-float 'double-float-value)
+                            (cl:long-float 'long-float-value)
                             (si:complex-single-float 'csfloat-value)
                             (si:complex-double-float 'cdfloat-value)
                             (si:complex-long-float 'clfloat-value)))
@@ -54,12 +54,12 @@
    '(
      ;; Order is important: on platforms where 0.0 and -0.0 are the same
      ;; the last one is prioritized.
-     (#.(coerce 0 'single-float) "cl_core.singlefloat_zero")
-     (#.(coerce 0 'double-float) "cl_core.doublefloat_zero")
-     (#.(coerce -0.0 'single-float) "cl_core.singlefloat_minus_zero")
-     (#.(coerce -0.0 'double-float) "cl_core.doublefloat_minus_zero")
-     (#.(coerce 0 'long-float) "cl_core.longfloat_zero")
-     (#.(coerce -0.0 'long-float) "cl_core.longfloat_minus_zero")
+     (#.(coerce 0 'cl:single-float) "cl_core.singlefloat_zero")
+     (#.(coerce 0 'cl:double-float) "cl_core.doublefloat_zero")
+     (#.(coerce -0.0 'cl:single-float) "cl_core.singlefloat_minus_zero")
+     (#.(coerce -0.0 'cl:double-float) "cl_core.doublefloat_minus_zero")
+     (#.(coerce 0 'cl:long-float) "cl_core.longfloat_zero")
+     (#.(coerce -0.0 'cl:long-float) "cl_core.longfloat_minus_zero")
 
      ;; We temporarily remove this constant, because the bytecodes compiler
      ;; does not know how to externalize it.
@@ -74,45 +74,45 @@
      )
    (when (eq machine *default-machine*)
      ;; Constants which are not portable
-     `((MOST-POSITIVE-SHORT-FLOAT "FLT_MAX")
-       (MOST-POSITIVE-SINGLE-FLOAT "FLT_MAX")
-       
-       (MOST-NEGATIVE-SHORT-FLOAT "-FLT_MAX")
-       (MOST-NEGATIVE-SINGLE-FLOAT "-FLT_MAX")
+     `((cl:most-positive-short-float "FLT_MAX")
+       (cl:most-positive-single-float "FLT_MAX")
 
-       (LEAST-POSITIVE-SHORT-FLOAT "FLT_TRUE_MIN")
-       (LEAST-POSITIVE-SINGLE-FLOAT "FLT_TRUE_MIN")
-       (LEAST-POSITIVE-NORMALIZED-SHORT-FLOAT "FLT_MIN")
-       (LEAST-POSITIVE-NORMALIZED-SINGLE-FLOAT" FLT_MIN")
+       (cl:most-negative-short-float "-FLT_MAX")
+       (cl:most-negative-single-float "-FLT_MAX")
 
-       (LEAST-NEGATIVE-SHORT-FLOAT "-FLT_TRUE_MIN")
-       (LEAST-NEGATIVE-SINGLE-FLOAT "-FLT_TRUE_MIN")
-       (LEAST-NEGATIVE-NORMALIZED-SHORT-FLOAT "-FLT_MIN")
-       (LEAST-NEGATIVE-NORMALIZED-SINGLE-FLOAT "-FLT_MIN")
+       (cl:least-positive-short-float "FLT_TRUE_MIN")
+       (cl:least-positive-single-float "FLT_TRUE_MIN")
+       (cl:least-positive-normalized-short-float "FLT_MIN")
+       (cl:least-positive-normalized-single-float" FLT_MIN")
 
-       (MOST-POSITIVE-DOUBLE-FLOAT "DBL_MAX")
-       (MOST-NEGATIVE-DOUBLE-FLOAT "-DBL_MAX")
-       (LEAST-POSITIVE-DOUBLE-FLOAT "DBL_TRUE_MIN")
-       (LEAST-POSITIVE-NORMALIZED-DOUBLE-FLOAT "DBL_MIN")
-       (LEAST-NEGATIVE-DOUBLE-FLOAT "-DBL_TRUE_MIN")
-       (LEAST-NEGATIVE-NORMALIZED-DOUBLE-FLOAT "-DBL_MIN")
+       (cl:least-negative-short-float "-FLT_TRUE_MIN")
+       (cl:least-negative-single-float "-FLT_TRUE_MIN")
+       (cl:least-negative-normalized-short-float "-FLT_MIN")
+       (cl:least-negative-normalized-single-float "-FLT_MIN")
+
+       (cl:most-positive-double-float "DBL_MAX")
+       (cl:most-negative-double-float "-DBL_MAX")
+       (cl:least-positive-double-float "DBL_TRUE_MIN")
+       (cl:least-positive-normalized-double-float "DBL_MIN")
+       (cl:least-negative-double-float "-DBL_TRUE_MIN")
+       (cl:least-negative-normalized-double-float "-DBL_MIN")
 
        #+ieee-floating-point
-       ,@'((SHORT-FLOAT-POSITIVE-INFINITY  "INFINITY")
-           (SINGLE-FLOAT-POSITIVE-INFINITY "INFINITY")
-           (DOUBLE-FLOAT-POSITIVE-INFINITY "INFINITY")
+       ,@'((ext:short-float-positive-infinity  "INFINITY")
+           (ext:single-float-positive-infinity "INFINITY")
+           (ext:double-float-positive-infinity "INFINITY")
 
-           (SHORT-FLOAT-NEGATIVE-INFINITY  "-INFINITY")
-           (SINGLE-FLOAT-NEGATIVE-INFINITY "-INFINITY")
-           (DOUBLE-FLOAT-NEGATIVE-INFINITY "-INFINITY"))
+           (ext:short-float-negative-infinity  "-INFINITY")
+           (ext:single-float-negative-infinity "-INFINITY")
+           (ext:double-float-negative-infinity "-INFINITY"))
 
-       ,@'((MOST-POSITIVE-LONG-FLOAT "LDBL_MAX")
-           (MOST-NEGATIVE-LONG-FLOAT "-LDBL_MAX")
-           (LEAST-POSITIVE-LONG-FLOAT "LDBL_TRUE_MIN")
-           (LEAST-POSITIVE-NORMALIZED-LONG-FLOAT" LDBL_MIN")
-           (LEAST-NEGATIVE-LONG-FLOAT "-LDBL_TRUE_MIN")
-           (LEAST-NEGATIVE-NORMALIZED-LONG-FLOAT "-LDBL_MIN")
+       ,@'((cl:most-positive-long-float "LDBL_MAX")
+           (cl:most-negative-long-float "-LDBL_MAX")
+           (cl:least-positive-long-float "LDBL_TRUE_MIN")
+           (cl:least-positive-normalized-long-float" LDBL_MIN")
+           (cl:least-negative-long-float "-LDBL_TRUE_MIN")
+           (cl:least-negative-normalized-long-float "-LDBL_MIN")
            #+ieee-floating-point
-           (LONG-FLOAT-POSITIVE-INFINITY   "INFINITY")
+           (ext:long-float-positive-infinity   "INFINITY")
            #+ieee-floating-point
-           (LONG-FLOAT-NEGATIVE-INFINITY   "-INFINITY"))))))
+           (ext:long-float-negative-infinity   "-INFINITY"))))))

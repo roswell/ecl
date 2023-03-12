@@ -46,19 +46,19 @@
 
 (defun parse-function-proclamation
     (name arg-types return-type &rest properties)
-  (when (sys:get-sysprop name 'proclaimed-arg-types)
+  (when (si:get-sysprop name 'proclaimed-arg-types)
     (warn "Duplicate proclamation for ~A" name))
   (proclaim-function
    name (list arg-types return-type))
   (loop for p in properties
      do (case p
           (:no-sp-change
-           (sys:put-sysprop name 'no-sp-change t))
+           (si:put-sysprop name 'no-sp-change t))
           ((:predicate :pure)
-           (sys:put-sysprop name 'pure t)
-           (sys:put-sysprop name 'no-side-effects t))
+           (si:put-sysprop name 'pure t)
+           (si:put-sysprop name 'no-side-effects t))
           ((:no-side-effects :reader)
-           (sys:put-sysprop name 'no-side-effects t))
+           (si:put-sysprop name 'no-side-effects t))
           (otherwise
            (error "Unknown property ~S in function proclamation for ~S"
                   p name)))))

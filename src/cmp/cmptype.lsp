@@ -119,7 +119,7 @@
              ;; later due to this assertion...
              (setf (var-type var) t
                    checks (list* `(type-assertion ,name ,type) checks)
-                   new-auxs (list* `(truly-the ,type ,name) name new-auxs))
+                   new-auxs (list* `(ext:truly-the ,type ,name) name new-auxs))
              ;; Or simply enforce the variable's type.
              (setf (var-type var) (type-and (var-type var) type))))
      finally
@@ -182,7 +182,7 @@
        "if (ecl_unlikely(!(#0)))
          FEwrong_type_argument(#1,#2);" :one-liner nil))))
 
-(defmacro assert-type-if-known (&whole whole value type &environment env)
+(defmacro assert-type-if-known (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (multiple-value-bind (trivial valid)
       (subtypep 't type)
@@ -191,10 +191,10 @@
           ((multiple-value-setq (valid value) (constant-value-p value env))
            (si::maybe-quote value))
           (t
-           (with-clean-symbols (%value)
+           (ext:with-clean-symbols (%value)
              `(let* ((%value ,value))
                 ,(type-error-check '%value (replace-invalid-types type))
-                (truly-the ,type %value)))))))
+                (ext:truly-the ,type %value)))))))
 
 (defun replace-invalid-types (type)
   ;; Some types which are acceptable in DECLARE are not
@@ -211,8 +211,7 @@
           (otherwise
            type)))))
 
-(defmacro optional-type-check (&whole whole value type &environment env)
-  (declare (ignore env))
+(defmacro optional-type-check (value type)
   (if (policy-assume-right-type)
       value
       `(assert-type-if-known ,value ,type)))

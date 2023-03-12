@@ -41,7 +41,7 @@
 
 #+(or)
 (define-compiler-macro si::make-seq-iterator (seq &optional (start 0))
-  (with-clean-symbols (%seq %start)
+  (ext:with-clean-symbols (%seq %start)
     `(let ((%seq (optional-type-check ,seq sequence))
            (%start ,start))
        (cond ((consp %seq)
@@ -53,7 +53,7 @@
 
 #+(or)
 (define-compiler-macro si::seq-iterator-ref (seq iterator)
-  (with-clean-symbols (%seq %iterator)
+  (ext:with-clean-symbols (%seq %iterator)
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
        (declare (optimize (safety 0)))
@@ -61,20 +61,20 @@
            ;; Fixnum iterators are always fine
            (aref %seq %iterator)
            ;; Error check in case we may have been passed an improper list
-           (cons-car (checked-value cons %iterator))))))
+           (si:cons-car (ext:checked-value cons %iterator))))))
 
 #+(or)
 (define-compiler-macro si::seq-iterator-next (seq iterator)
-  (with-clean-symbols (%seq %iterator)
+  (ext:with-clean-symbols (%seq %iterator)
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
        (declare (optimize (safety 0)))
-       (if (si::fixnump %iterator)
-           (let ((%iterator (1+ (truly-the fixnum %iterator))))
+       (if (ext:fixnump %iterator)
+           (let ((%iterator (1+ (ext:truly-the fixnum %iterator))))
              (declare (fixnum %iterator))
-             (and (< %iterator (length (truly-the vector %seq)))
+             (and (< %iterator (length (ext:truly-the vector %seq)))
                   %iterator))
-           (cons-cdr %iterator)))))
+           (si:cons-cdr %iterator)))))
 
 (defmacro do-in-seq ((%elt %sequence &key %start %end end output) &body body)
   (ext:with-unique-names (%iterator %counter)
@@ -102,10 +102,10 @@
 ;;;
 
 (defmacro do-in-list ((%elt %sublist %list &rest output) &body body)
-  `(do* ((,%sublist ,%list (cons-cdr ,%sublist)))
+  `(do* ((,%sublist ,%list (si:cons-cdr ,%sublist)))
         ((null ,%sublist) ,@output)
      (let* ((,%sublist (optional-type-check ,%sublist cons))
-            (,%elt (cons-car ,%sublist)))
+            (,%elt (si:cons-car ,%sublist)))
        ,@body)))
 
 (defmacro define-seq-compiler-macro (name lambda-list &body body)
@@ -184,7 +184,7 @@
   (ext:with-unique-names (%sublist %elt %car)
     `(do-in-list (,%elt ,%sublist ,%list)
        (when ,%elt
-         (let ((,%car (cons-car (optional-type-check ,%elt cons))))
+         (let ((,%car (si:cons-car (optional-type-check ,%elt cons))))
            (when ,(funcall test-function %value
                            (funcall key-function %car))
              (return ,%elt)))))))
