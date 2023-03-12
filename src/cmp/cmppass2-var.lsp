@@ -97,6 +97,7 @@
          (nr (make-lcl-var :type :int))
          (*inline-blocks* 0)
          min-values max-values)
+    (declare (ignore nr))
     ;; 1) Retrieve the number of output values
     (multiple-value-setq (min-values max-values)
       (c1form-values-number init-form))
@@ -281,7 +282,9 @@
 
 (defun values-loc-or-value0 (i)
   (declare (si::c-local))
-  (if (plusp i) (values-loc i) 'VALUE0))
+  (if (plusp i)
+      (list 'VALUE i)
+      'VALUE0))
 
 (defun do-m-v-setq (vars form use-bind)
   ;; This routine moves values from the multiple-value stack into the
@@ -300,6 +303,7 @@
   ;; many they are.
   (multiple-value-bind (min-values max-values)
       (c1form-values-number form)
+    (declare (ignore max-values))
 
     ;; We save the values in the value stack + value0
     (let ((*destination* 'RETURN))

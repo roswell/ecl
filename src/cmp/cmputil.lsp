@@ -16,19 +16,6 @@
 
 (in-package "COMPILER")
 
-#+cmu-format
-(progn
-  (defconstant +note-format+ "~&~@<  ~;~?~;~:@>")
-  (defconstant +warn-format+ "~&~@<  ! ~;~?~;~:@>")
-  (defconstant +error-format+ "~&~@<  * ~;~?~;~:@>")
-  (defconstant +fatal-format+ "~&~@<  ** ~;~?~;~:@>"))
-#-cmu-format
-(progn
-  (defconstant +note-format+ "~&  ~?")
-  (defconstant +warn-format+ "~&  ! ~?")
-  (defconstant +error-format+ "~&  * ~?")
-  (defconstant +fatal-format+ "~&  ** ~?"))
-
 ;; Return a namestring for a path that is sufficiently
 ;; unambiguous (hopefully) for the C compiler (and associates)
 ;; to decipher.
@@ -40,9 +27,9 @@
   (when (wild-pathname-p path)
     (error "Cannot coerce ~A to a physical filename~%" path))
   #+windows
-  (namestring (si::coerce-to-file-pathname path))
+  (namestring (si:coerce-to-file-pathname path))
   #-windows
-  (enough-namestring (si::coerce-to-file-pathname path)))
+  (enough-namestring (si:coerce-to-file-pathname path)))
 
 (defun normalize-build-target-name (target)
   (ecase target
@@ -60,131 +47,6 @@
                 ((null output)
                  (setf output f)))
        finally (return output))))
-
-;; For indirect use in :REPORT functions
-(defun compiler-message-report (stream c format-control &rest format-arguments)
-    (let ((position (compiler-message-file-position c))
-        (prefix (compiler-message-prefix c))
-        (file (compiler-message-file c))
-        (form (innermost-non-expanded-form (compiler-message-toplevel-form c))))
-    (if (and form
-             position
-             (not (minusp position))
-             (not (equalp form '|compiler preprocess|)))
-        (let* ((*print-length* 2)
-               (*print-level* 2))
-          (format stream
-                  "~A:~%  in file ~A, position ~D~&  at ~A"
-                  prefix
-                  (make-pathname :name (pathname-name file)
-                                 :type (pathname-type file)
-                                 :version (pathname-version file))
-                  position
-                  form))
-        (format stream "~A:" prefix))
-    (format stream (compiler-message-format c)
-            format-control
-            format-arguments)))
-
-(define-condition compiler-message (simple-condition)
-  ((prefix :initform "Note" :accessor compiler-message-prefix)
-   (format :initform +note-format+ :accessor compiler-message-format)
-   (file :initarg :file :initform *compile-file-pathname*
-         :accessor compiler-message-file)
-   (position :initarg :file :initform *compile-file-position*
-             :accessor compiler-message-file-position)
-   (toplevel-form :initarg :form :initform *current-toplevel-form*
-                  :accessor compiler-message-toplevel-form)
-   (form :initarg :form :initform *current-form*
-         :accessor compiler-message-form))
-  (:report (lambda (c stream)
-             (apply #'compiler-message-report stream c
-                    (simple-condition-format-control c)
-                    (simple-condition-format-arguments c)))))
-
-(define-condition compiler-note (compiler-message) ())
-
-(define-condition compiler-debug-note (compiler-note) ())
-
-(define-condition compiler-warning (compiler-message style-warning)
-  ((prefix :initform "Warning")
-   (format :initform +warn-format+)))
-
-(define-condition compiler-macro-expansion-failed (compiler-warning)
-  ())
-
-(define-condition compiler-error (compiler-message)
-  ((prefix :initform "Error")
-   (format :initform +error-format+)))
-
-(define-condition compiler-fatal-error (compiler-error)
-  ((format :initform +fatal-format+)))
-
-(define-condition compiler-internal-error (compiler-fatal-error)
-  ((prefix :initform "Internal error")))
-
-(define-condition compiler-style-warning (compiler-message style-warning)
-  ((prefix :initform "Style warning")
-   (format :initform +warn-format+)))
-
-(define-condition compiler-undefined-variable (compiler-style-warning)
-  ((variable :initarg :name :initform nil))
-  (:report
-   (lambda (c stream)
-     (compiler-message-report stream c
-                              "Variable ~A was undefined. ~
-                               Compiler assumes it is a global."
-                              (slot-value c 'variable)))))
-
-(define-condition circular-dependency (compiler-error)
-  ()
-  (:report
-   (lambda (c stream)
-     (compiler-message-report stream c
-                              "Circular references in creation form for ~S."
-                              (compiler-message-form c)))))
-
-(defun print-compiler-message (c stream)
-  (unless (typep c *suppress-compiler-messages*)
-    #+cmu-format
-    (format stream "~&~@<;;; ~@;~A~:>" c)
-    #-cmu-format
-    (format stream "~&;;; ~A" c)))
-
-;;; A few notes about the following handlers. We want the user to be
-;;; able to capture, collect and perhaps abort on the different
-;;; conditions signaled by the compiler. Since the compiler uses
-;;; HANDLER-BIND, the only way to let this happen is either let the
-;;; handler return or use SIGNAL at the beginning of the handler and
-;;; let the outer handler intercept.
-;;;
-;;; In neither case do we want to enter the the debugger. That means
-;;; we can not derive the compiler conditions from SERIOUS-CONDITION.
-;;;
-(defun handle-compiler-note (c)
-  (declare (ignore c))
-  nil)
-
-(defun handle-compiler-warning (c)
-  (push c *compiler-conditions*)
-  nil)
-
-(defun handle-compiler-error (c)
-  (signal c)
-  (push c *compiler-conditions*)
-  (print-compiler-message c t)
-  (abort))
-
-(defun handle-compiler-internal-error (c)
-  (when *compiler-break-enable*
-    (invoke-debugger c))
-  (setf c (make-condition 'compiler-internal-error
-                          :format-control "~A"
-                          :format-arguments (list c)))
-  (push c *compiler-conditions*)
-  (signal c)
-  (print-compiler-message c t)
-  (abort))
 
 (defun do-compilation-unit (closure &key override)
   (cond (override
@@ -211,50 +73,12 @@
                         (compiler-error #'handle-compiler-error)
                         (compiler-internal-error #'handle-compiler-internal-error)
                         (serious-condition #'handle-compiler-internal-error))
-           (mp:with-lock (+load-compile-lock+)
+           (mp:with-lock (mp:+load-compile-lock+)
              (let ,+init-env-form+
                (with-compilation-unit ()
                  ,@body))))
        (abort ()))
      (setf ,compiler-conditions *compiler-conditions*)))
-
-(defvar *c1form-level* 0)
-(defun print-c1forms (form)
-  (cond ((consp form)
-         (let ((*c1form-level* (1+ *c1form-level*)))
-           (mapc #'print-c1forms form)))
-        ((c1form-p form)
-         (format t "~% ~D > ~A, parent ~A" *c1form-level* form (c1form-parent form))
-         (print-c1forms (c1form-args form))
-         form
-         )))
-
-(defun print-ref (ref-object stream)
-  (let ((name (ref-name ref-object)))
-    (if name
-        (format stream "#<a ~A: ~A>" (type-of ref-object) name)
-        (format stream "#<a ~A>" (type-of ref-object)))))
-
-(defun print-var (var-object stream)
-  (format stream "#<a VAR: ~A KIND: ~A>" (var-name var-object) (var-kind var-object)))
-
-(defun cmpprogress (&rest args)
-  (when *compile-verbose*
-    (apply #'format t args)))
-
-(defmacro cmpck (condition string &rest args)
-  `(if ,condition (cmperr ,string ,@args)))
-
-(defmacro cmpassert (condition string &rest args)
-  `(unless ,condition (cmperr ,string ,@args)))
-
-(defun cmperr (string &rest args)
-  (let ((c (make-condition 'compiler-error
-                           :format-control string
-                           :format-arguments args)))
-    (signal c)
-    (print-compiler-message c t)
-    (abort)))
 
 (defun safe-list-length (l)
   ;; Computes the length of a proper list or returns NIL if it
@@ -270,17 +94,16 @@
                   (return nil))
                  (flag
                   (setf flag nil
-                        fast (cdr (truly-the cons fast))))
+                        fast (cdr (ext:truly-the cons fast))))
                  ((eq slow fast)
                   (return nil))
                  (t
                   (setf flag t
-                        slow (cdr (truly-the cons slow))
-                        fast (cdr (truly-the cons fast)))))
+                        slow (cdr (ext:truly-the cons slow))
+                        fast (cdr (ext:truly-the cons fast)))))
         finally (return l)))
 
 (defun check-args-number (operator args &optional (min 0) (max most-positive-fixnum))
-
   (let ((l (safe-list-length args)))
     (when (null l)
       (let ((*print-circle* t))
@@ -290,39 +113,6 @@
     (when (and max (> l max))
       (too-many-args operator max l))))
 
-(defun too-many-args (name upper-bound n &aux (*print-case* :upcase))
-  (cmperr "~S requires at most ~R argument~:p, but ~R ~:*~[were~;was~:;were~] supplied.~%"
-          name
-          upper-bound
-          n))
-
-(defun too-few-args (name lower-bound n)
-  (cmperr "~S requires at least ~R argument~:p, but only ~R ~:*~[were~;was~:;were~] supplied.~%"
-          name
-          lower-bound
-          n))
-
-(defun do-cmpwarn (&rest args)
-  (declare (si::c-local))
-  (let ((condition (apply #'make-condition args)))
-    (restart-case (signal condition)
-      (muffle-warning ()
-        :REPORT "Skip warning"
-        (return-from do-cmpwarn nil)))
-    (print-compiler-message condition t)))
-
-(defun cmpwarn-style (string &rest args)
-  (do-cmpwarn 'compiler-style-warning :format-control string :format-arguments args))
-
-(defun cmpwarn (string &rest args)
-  (do-cmpwarn 'compiler-warning :format-control string :format-arguments args))
-
-(defun cmpnote (string &rest args)
-  (do-cmpwarn 'compiler-note :format-control string :format-arguments args))
-
-(defun cmpdebug (string &rest args)
-  (do-cmpwarn 'compiler-debug-note :format-control string :format-arguments args))
-
 (defun print-current-form ()
   (when *compile-print*
     (let ((*print-length* 2)
@@ -331,32 +121,9 @@
               (innermost-non-expanded-form *current-toplevel-form*))))
   nil)
 
-(defun print-emitting (f)
-  (when *compile-print*
-    (let* ((name (or (fun-name f) (fun-description f))))
-      (when name
-        (format t "~&;;; Emitting code for ~s.~%" name)))))
-
-(defun undefined-variable (sym)
-  (do-cmpwarn 'compiler-undefined-variable :name sym))
-  
-(defun baboon (&key (format-control "A bug was found in the compiler")
-               format-arguments)
-  (signal 'compiler-internal-error
-          :format-control format-control
-          :format-arguments format-arguments))
-  
-(defmacro with-cmp-protection (main-form error-form)
-  `(let* ((si::*break-enable* *compiler-break-enable*)
-          (throw-flag t))
-     (unwind-protect
-         (multiple-value-prog1
-             (if *compiler-break-enable*
-                 (handler-bind ((error #'invoke-debugger))
-                   ,main-form)
-                 ,main-form)
-           (setf throw-flag nil))
-       (when throw-flag ,error-form))))
+(defun cmpprogress (&rest args)
+  (when *compile-verbose*
+    (apply #'format t args)))
 
 (defun cmp-eval (form &optional (env *cmp-env*))
   (handler-case (si::eval-with-env form env nil t :execute)
@@ -366,12 +133,6 @@
       (cmperr "The form ~s was not evaluated successfully.~%Error detected:~%~A"
               form c)
       nil)))
-
-;;; Like macro-function except it searches the lexical environment,
-;;; to determine if the macro is shadowed by a function or a macro.
-(defun cmp-macro-function (name)
-  (or (cmp-env-search-macro name)
-      (macro-function name)))
 
 (defun cmp-expand-macro (fd form &optional (env *cmp-env*))
   (handler-case
@@ -511,13 +272,13 @@ keyword argument, the compiler-macro declines to provide an expansion.
       (when (eq (first lambda-list) '&whole)
         (push `(,(second lambda-list) ,whole) bindings-for-body)
         (setf lambda-list (cddr lambda-list)))
-      (when-let ((env (member '&environment lambda-list)))
+      (ext:when-let ((env (member '&environment lambda-list)))
         (push '&environment new-lambda-list)
         (push (second env) new-lambda-list)
         (setq lambda-list (nconc (ldiff lambda-list env) (cddr env))))
       ;; 2. parse the remaining lambda-list
       (multiple-value-bind (reqs opts rest key-flag keywords allow-other-keys auxs)
-          (si::process-lambda-list lambda-list 'si::macro)
+          (si:process-lambda-list lambda-list 'si:macro)
         (when (and rest (or key-flag allow-other-keys))
           (error "define-compiler-macro* can't deal with lambda-lists with both &key and &rest arguments"))
         ;; utility functions
@@ -680,3 +441,116 @@ comparing circular objects."
                     (and (equal-recursive (car x) (car y) x0 y0 t (logior (ash path-spec 1) 1) (the fixnum (1+ n)))
                          (equal-recursive (cdr x) (cdr y) x0 y0 t (ash path-spec 1) (the fixnum (1+ n))))))))
     (equal-recursive x y nil nil t 0 -1)))
+
+;; ----------------------------------------------------------------------
+;; CACHED FUNCTIONS
+;;
+(defmacro defun-cached (name lambda-list test &body body)
+  (let* ((cache-name (intern (concatenate 'string "*" (string name) "-CACHE*")
+                             (symbol-package name)))
+         (reset-name (intern (concatenate 'string (string name) "-EMPTY-CACHE")
+                             (symbol-package name)))
+         (hash-function (case test
+                          (EQ 'SI::HASH-EQ)
+                          (EQL 'SI::HASH-EQL)
+                          ((EQUAL EQUAL-WITH-CIRCULARITY) 'SI::HASH-EQUAL)
+                          (t (setf test 'EQUALP) 'SI::HASH-EQUALP))))
+    `(progn
+       (defvar ,cache-name
+         (make-array 1024 :element-type t :adjustable nil))
+       (defun ,reset-name ()
+         (setf ,cache-name
+               (make-array 1024 :element-type t :adjustable nil)))
+       (defun ,name ,lambda-list
+         (flet ((,name ,lambda-list ,@body))
+           (let* ((hash (logand (,hash-function ,@lambda-list) 1023))
+                  (cache ,cache-name)
+                  (elt (aref cache hash)))
+             (declare (type (integer 0 1023) hash)
+                      (type (array t (*)) cache))
+             (if (and elt ,@(loop for arg in lambda-list
+                                  collect `(,test (pop (ext:truly-the cons elt)) ,arg)))
+                 (first (ext:truly-the cons elt))
+                 (let ((output (,name ,@lambda-list)))
+                   (setf (aref ,cache-name hash) (list ,@lambda-list output))
+                   output))))))))
+
+(defmacro defun-equal-cached (name lambda-list &body body)
+  `(defun-cached ,name ,lambda-list equal-with-circularity ,@body))
+
+;;; ----------------------------------------------------------------------
+;;; CONVENIENCE FUNCTIONS / MACROS
+;;;
+
+(defun-cached env-var-name (n) eql
+  (format nil "env~D" n))
+
+(defun-cached lex-env-var-name (n) eql
+  (format nil "lex~D" n))
+
+(defun same-fname-p (name1 name2)
+  (equal name1 name2))
+
+;;; from cmplabel.lsp
+(defun next-label ()
+  (cons (incf *last-label*) nil))
+
+(defun next-label* ()
+  (cons (incf *last-label*) t))
+
+(defun labelp (x)
+  (and (consp x) (integerp (si:cons-car x))))
+
+(defun maybe-next-label ()
+  (if (labelp *exit*)
+      *exit*
+      (next-label)))
+
+(defmacro with-exit-label ((label) &body body)
+  `(let* ((,label (next-label))
+          (*unwind-exit* (cons ,label *unwind-exit*)))
+     ,@body
+     (wt-label ,label)))
+
+(defmacro with-optional-exit-label ((label) &body body)
+  `(let* ((,label (maybe-next-label))
+          (*unwind-exit* (adjoin ,label *unwind-exit*)))
+     ,@body
+     (unless (eq ,label *exit*)
+       (wt-label ,label))))
+
+(defun next-lcl (&optional name)
+  (list 'LCL (incf *lcl*) T
+        (if (and name (symbol-package name))
+            (lisp-to-c-name name)
+            "")))
+
+(defun next-cfun (&optional (prefix "L~D~A") (lisp-name nil))
+  (let ((code (incf *next-cfun*)))
+    (format nil prefix code (lisp-to-c-name lisp-name))))
+
+(defun next-temp ()
+  (prog1 *temp*
+         (incf *temp*)
+         (setq *max-temp* (max *temp* *max-temp*))))
+
+(defun next-lex ()
+  (prog1 (cons *level* *lex*)
+         (incf *lex*)
+         (setq *max-lex* (max *lex* *max-lex*))))
+
+(defun next-env ()
+  (prog1 *env*
+    (incf *env*)
+    (setq *max-env* (max *env* *max-env*))))
+
+(defun env-grows (possibily)
+  ;; if additional closure variables are introduced and this is not
+  ;; last form, we must use a new env.
+  (and possibily
+       (plusp *env*)
+       (dolist (exit *unwind-exit*)
+         (case exit
+           (RETURN (return NIL))
+           (BDS-BIND)
+           (t (return T))))))

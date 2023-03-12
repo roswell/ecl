@@ -20,18 +20,18 @@
 ;;;; stem from.
 ;;;;
  
-(in-package #-ecl-new "COMPILER" #+ecl-new "C-ENV")
+(in-package "COMPILER")
 
 (defun process-declaim-args (args)
   (flet ((add-variables (env types specials)
            (loop for name in specials
               unless (assoc name types)
-              do (let ((v (c1make-global-variable name :kind 'special)))
+              do (let ((v (make-global-var name :kind 'special)))
                    (setf env (cmp-env-register-var v env nil))))
            (loop for (name . type) in types
-              for specialp = (or (sys:specialp name) (member name specials))
+              for specialp = (or (si:specialp name) (member name specials))
               for kind = (if specialp 'SPECIAL 'GLOBAL)
-              for v = (c1make-global-variable name :type type :kind kind)
+              for v = (make-global-var name :type type :kind kind)
               do (setf env (cmp-env-register-var v env nil)))
            env))
     (multiple-value-bind (body specials types ignored others doc all)

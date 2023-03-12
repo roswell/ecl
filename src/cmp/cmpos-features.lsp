@@ -64,6 +64,7 @@
      thereis (pathname-match-p base pattern-path)))
 
 (defun gather-keywords (strings patterns)
+  (declare (ignore patterns))
   (let ((strings (reduce #'append (mapcar #'split-words strings))))
     (mapcar (lambda (s)
               (intern (string-upcase s) (find-package :keyword)))

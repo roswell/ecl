@@ -96,7 +96,7 @@
                            ((trivial-type-p type)
                             (c1expr (first form)))
                            (t
-                            (c1expr `(checked-value ,type ,(first form)))))))
+                            (c1expr `(ext:checked-value ,type ,(first form)))))))
           ;; :read-only variable handling. Beppe
           (when (read-only-variable-p name other-decls)
             (if (global-var-p var)
@@ -111,16 +111,17 @@
           (when var
             (push var vars)
             (push init forms)
-            (when (eq let/let* 'LET*) (push-vars var)))))
+            (when (eq let/let* 'LET*)
+              (cmp-env-register-var var)))))
       (setf vars (nreverse vars)
             forms (nreverse forms))
       (when (eq let/let* 'LET)
-        (mapc #'push-vars vars))
+        (mapc #'cmp-env-register-var vars))
       (check-vdecl (mapcar #'var-name vars) types ignoreds)
       (values vars forms specials other-decls body))))
 
 (defun process-let-body (let/let* vars forms specials other-decls body setjmps)
-  (mapc #'cmp-env-declare-special specials)
+  (mapc #'declare-special specials)
   (setf body (c1decl-body other-decls body))
   ;; Try eliminating unused variables, replace constant ones, etc.
   (multiple-value-setq (vars forms)
@@ -235,7 +236,7 @@
                      name type))
            (when (eq type 'T)
              (setf type (or (si:get-sysprop name 'CMP-TYPE) 'T)))
-           (c1make-global-variable name :kind 'SPECIAL :type type))
+           (make-global-var name :kind 'SPECIAL :type type))
           (t
            (make-var :name name :type type :loc 'OBJECT
                      :kind kind :ignorable ignorable
@@ -257,8 +258,8 @@
       (cmp-env-search-var name)
     (declare (ignore unw))
     (cond ((null var)
-           (c1make-global-variable name :warn t
-                                        :type (or (si:get-sysprop name 'CMP-TYPE) t)))
+           (make-global-var name :warn t
+                                 :type (or (si:get-sysprop name 'CMP-TYPE) t)))
           ((not (var-p var))
            ;; symbol-macrolet
            (baboon :format-control "c1vref: ~s is not a variable."
@@ -276,19 +277,6 @@
                 (cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."
                         (var-name var)))))
            var))))
-
-(defun c1make-global-variable (name &key
-                               (type (or (si:get-sysprop name 'CMP-TYPE) t))
-                               (kind 'GLOBAL)
-                               (warn nil))
-  (let* ((var (make-var :name name :kind kind :type type :loc (add-symbol name))))
-    (when warn
-      (unless (or (constantp name)
-                  (special-variable-p name)
-                  (member name *undefined-vars*))
-        (undefined-variable name)
-        (push name *undefined-vars*)))
-    var))
 
 (defun c1setq (args)
   (let ((l (length args)))
@@ -309,7 +297,7 @@
              (type (var-type name))
              (form (c1expr (if (trivial-type-p type)
                                form
-                               `(checked-value ,type ,form)))))
+                               `(ext:checked-value ,type ,form)))))
         (add-to-set-nodes name (make-c1form* 'SETQ
                                              :type (c1form-type form)
                                              :args name form)))
@@ -356,7 +344,7 @@
       (push vref vrefs)
       (push (c1expr (if (trivial-type-p type)
                         form
-                        `(checked-value ,type ,form)))
+                        `(ext:checked-value ,type ,form)))
             forms))))
 
 (defun c1multiple-value-bind (args)
@@ -370,11 +358,11 @@
            ,@args)))
     (multiple-value-bind (body ss ts is other-decls)
         (c1body args nil)
-      (mapc #'cmp-env-declare-special ss)
+      (mapc #'declare-special ss)
       (let* ((vars (loop for name in variables
                          collect (c1make-var name ss is ts))))
         (setq init-form (c1expr init-form))
-        (mapc #'push-vars vars)
+        (mapc #'cmp-env-register-var vars)
         (check-vdecl variables ts is)
         (setq body (c1decl-body other-decls body))
         (mapc #'check-vref vars)
@@ -402,7 +390,7 @@
                 (let ((new-var (gensym)))
                   (push new-var vars)
                   (push new-var value-bindings)
-                  (push `(setf ,var-or-form (checked-value ,type ,new-var)) storing-forms))))
+                  (push `(setf ,var-or-form (ext:checked-value ,type ,new-var)) storing-forms))))
           (multiple-value-bind (setf-vars setf-vals stores storing-form get-form)
               (get-setf-expansion var-or-form *cmp-env*)
             (push (first stores) vars)

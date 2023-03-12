@@ -86,18 +86,18 @@
                                            *permanent-data*))
                    &aux load-form-p)
   ;; FIXME add-static-constant is tied to the C target.
-  (when-let ((vv (add-static-constant object)))
+  (ext:when-let ((vv (add-static-constant object)))
     (when used-p
       (setf (vv-used-p vv) t))
     (return-from add-object vv))
-  (when (and (null *compiler-constants*)
-             (si::need-to-make-load-form-p object))
+  (when (and (null si:*compiler-constants*)
+             (si:need-to-make-load-form-p object))
     ;; All objects created with MAKE-LOAD-FORM go into the permanent storage to
     ;; prevent two non-eq instances of the same object in the permanent and
     ;; temporary storage from being created (we can't move objects from the
     ;; temporary into the permanent storage once they have been created).
     (setf load-form-p t permanent t))
-  (let* ((test (if *compiler-constants* 'eq 'equal-with-circularity))
+  (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
          (item (if permanent
                    (find object *permanent-objects* :test test :key #'vv-value)
                    (or (find object *permanent-objects* :test test :key #'vv-value)
@@ -121,7 +121,7 @@
                    ;; inconsistent.
                    ((and (not item) (not duplicate) (symbolp object)
                          (multiple-value-bind (foundp symbol)
-                             (si::mangle-name object)
+                             (si:mangle-name object)
                            (and foundp
                                 (return-from add-object symbol)))))
                    (t
@@ -147,7 +147,7 @@
   ;; can reuse keywords lists from other functions when they coincide with ours.
   ;; We search for keyword lists that are similar. However, the list *OBJECTS*
   ;; contains elements in decreasing order!!!
-  (if-let ((x (search keywords *permanent-objects*
+  (ext:if-let ((x (search keywords *permanent-objects*
                       :test #'(lambda (k record) (eq k (vv-value record))))))
     (elt *permanent-objects* x)
     (prog1 (add-object (pop keywords) :duplicate t :permanent t)

@@ -22,9 +22,11 @@
       `(format *standard-output* ,string ,@args))))
 
 (defun p1ordinary (c1form assumptions form)
+  (declare (ignore c1form))
   (p1propagate form assumptions))
 
 (defun p1fset (c1form assumptions fun fname macro pprint c1forms)
+  (declare (ignore c1form fun fname macro pprint c1forms))
   (values 'function assumptions))
 
 (defun p1propagate (form assumptions)
@@ -37,7 +39,7 @@
           (*current-form* (c1form-form form))
           (*current-toplevel-form* (c1form-toplevel-form form))
           (name (c1form-name form)))
-      (when-let ((propagator (gethash name *p1-dispatch-table*)))
+      (ext:when-let ((propagator (gethash name *p1-dispatch-table*)))
         (prop-message "~&;;; Entering type propagation for ~A" name)
         (multiple-value-bind (new-type assumptions)
             (apply propagator form assumptions (c1form-args form))
@@ -67,13 +69,14 @@
     (values type assumptions)))
 
 (defun p1values (form assumptions values)
+  (declare (ignore form))
   (loop for v in values
-     collect (multiple-value-bind (type new-assumptions)
-                 (p1propagate v assumptions)
-               (setf assumptions new-assumptions)
-               (values-type-primary-type type))
-     into all-values
-     finally (return (values `(values ,@all-values) assumptions))))
+        collect (multiple-value-bind (type new-assumptions)
+                    (p1propagate v assumptions)
+                  (setf assumptions new-assumptions)
+                  (values-type-primary-type type))
+          into all-values
+        finally (return (values `(values ,@all-values) assumptions))))
 
 (defun p1propagate-list (list assumptions)
   (loop with final-type = t
@@ -91,10 +94,12 @@ of the occurrences in those lists."
     (baboon :format-control "P1MERGE-BRANCHES got a non-empty list of assumptions")))
 
 (defun revise-var-type (variable assumptions where-to-stop)
+  (declare (ignore variable))
   (unless (and (null assumptions) (null where-to-stop))
     (baboon :format-control "REVISE-VAR-TYPE got a non-empty list of assumptions")))
 
 (defun p1block (c1form assumptions blk body)
+  (declare (ignore c1form))
   (setf (blk-type blk) nil)
   (multiple-value-bind (normal-type assumptions)
       (p1propagate body assumptions)
@@ -103,6 +108,7 @@ of the occurrences in those lists."
               assumptions))))
 
 (defun p1return-from (c1form assumptions blk return-type value)
+  (declare (ignore c1form return-type))
   (let* ((values-type (p1propagate value assumptions))
          (blk-type (blk-type blk)))
     (setf (blk-type blk) (if blk-type
@@ -111,39 +117,49 @@ of the occurrences in those lists."
     (values values-type assumptions)))
 
 (defun p1call-global (c1form assumptions fname args)
+  (declare (ignore c1form))
   (loop for v in args
-     do (multiple-value-bind (arg-type local-ass)
-            (p1propagate v assumptions)
-          (setf assumptions local-ass))
-     finally (let ((type (propagate-types fname args)))
-               (prop-message "~&;;; Computing output of function ~A with args~&;;;  ~{ ~A~}~&;;; gives ~A, while before ~A"
-                       fname (mapcar #'c1form-primary-type args)
-                       type (c1form-type c1form))
-               (return (values type assumptions)))))
+        do (multiple-value-bind (arg-type local-ass)
+               (p1propagate v assumptions)
+             (declare (ignore arg-type))
+             (setf assumptions local-ass))
+        finally (let ((type (propagate-types fname args)))
+                  (prop-message "~&;;; Computing output of function ~A with args~&;;;  ~{ ~A~}~&;;; gives ~A, while before ~A"
+                                fname (mapcar #'c1form-primary-type args)
+                                type (c1form-type c1form))
+                  (return (values type assumptions)))))
 
 (defun p1call-local (c1form assumptions fun args)
+  (declare (ignore c1form))
   (loop for v in args
-     do (multiple-value-bind (arg-type local-ass)
-            (p1propagate v assumptions)
-          (setf assumptions local-ass))
-     finally (return (values (fun-return-type fun)
-                             assumptions))))
+        do (multiple-value-bind (arg-type local-ass)
+               (p1propagate v assumptions)
+             (declare (ignore arg-type))
+             (setf assumptions local-ass))
+        finally (return (values (fun-return-type fun)
+                                assumptions))))
 
 (defun p1catch (c1form assumptions tag body)
+  (declare (ignore c1form))
   (multiple-value-bind (tag-type assumptions)
       (p1propagate tag assumptions)
+    (declare (ignore tag-type))
     (p1propagate body assumptions))
   (values t assumptions))
 
 (defun p1throw (c1form assumptions catch-value output-value)
+  (declare (ignore c1form))
   (multiple-value-bind (type new-assumptions)
       (p1propagate catch-value assumptions)
+    (declare (ignore type))
     (p1propagate output-value new-assumptions))
   (values t assumptions))
 
 (defun p1if (c1form assumptions fmla true-branch false-branch)
+  (declare (ignore c1form))
   (multiple-value-bind (fmla-type base-assumptions)
       (p1propagate fmla assumptions)
+    (declare (ignore fmla-type))
     (multiple-value-bind (t1 a1)
         (p1propagate true-branch base-assumptions)
       (multiple-value-bind (t2 a2)
@@ -152,40 +168,45 @@ of the occurrences in those lists."
                 (p1merge-branches base-assumptions (list a1 a2)))))))
 
 (defun p1fmla-not (c1form assumptions form)
+  (declare (ignore c1form))
   (multiple-value-bind (type assumptions)
       (p1propagate form assumptions)
+    (declare (ignore type))
     (values '(member t nil) assumptions)))
 
 (defun p1fmla-and (c1form orig-assumptions butlast last)
+  (declare (ignore c1form))
   (loop with type = t
-     with assumptions = orig-assumptions
-     for form in (append butlast (list last))
-     collect (progn
-               (multiple-value-setq (type assumptions)
-                 (p1propagate form assumptions))
-               assumptions)
-     into assumptions-list
-     finally (return (values (type-or 'null (values-type-primary-type type))
-                             (p1merge-branches orig-assumptions
-                                               assumptions-list)))))
+        with assumptions = orig-assumptions
+        for form in (append butlast (list last))
+        collect (progn
+                  (multiple-value-setq (type assumptions)
+                    (p1propagate form assumptions))
+                  assumptions)
+          into assumptions-list
+        finally (return (values (type-or 'null (values-type-primary-type type))
+                                (p1merge-branches orig-assumptions
+                                                  assumptions-list)))))
 
 (defun p1fmla-or (c1form orig-assumptions butlast last)
+  (declare (ignore c1form))
   (loop with type
-     with output-type = t
-     with assumptions = orig-assumptions
-     for form in (append butlast (list last))
-     collect (progn
-               (multiple-value-setq (type assumptions)
-                 (p1propagate form assumptions))
-               (setf output-type (type-or (values-type-primary-type type)
-                                          output-type))
-               assumptions)
-     into assumptions-list
-     finally (return (values output-type
-                             (p1merge-branches orig-assumptions
-                                               assumptions-list)))))
+        with output-type = t
+        with assumptions = orig-assumptions
+        for form in (append butlast (list last))
+        collect (progn
+                  (multiple-value-setq (type assumptions)
+                    (p1propagate form assumptions))
+                  (setf output-type (type-or (values-type-primary-type type)
+                                             output-type))
+                  assumptions)
+          into assumptions-list
+        finally (return (values output-type
+                                (p1merge-branches orig-assumptions
+                                                  assumptions-list)))))
 
 (defun p1lambda (c1form assumptions lambda-list doc body &rest not-used)
+  (declare (ignore c1form lambda-list doc not-used))
   (prop-message "~&;;;~&;;; Propagating function~&;;;")
   (let ((type (p1propagate body assumptions)))
     (values type assumptions)))
@@ -197,66 +218,75 @@ of the occurrences in those lists."
             assumptions)))
 
 (defun p1let* (c1form base-assumptions vars forms body)
+  (declare (ignore c1form))
   (let ((assumptions base-assumptions))
     (loop with type
-       for v in vars
-       for f in forms
-       unless (or (global-var-p v) (var-set-nodes v))
-       do (progn
-            (multiple-value-setq (type assumptions) (p1propagate f assumptions))
-            (setf (var-type v) (type-and (values-type-primary-type type)
-                                         (var-type v)))
-            (prop-message "~&;;; Variable ~A assigned type ~A"
-                          (var-name v) (var-type v))))
+          for v in vars
+          for f in forms
+          unless (or (global-var-p v) (var-set-nodes v))
+            do (progn
+                 (multiple-value-setq (type assumptions) (p1propagate f assumptions))
+                 (setf (var-type v) (type-and (values-type-primary-type type)
+                                              (var-type v)))
+                 (prop-message "~&;;; Variable ~A assigned type ~A"
+                               (var-name v) (var-type v))))
     (multiple-value-bind (type assumptions)
         (p1propagate body assumptions)
       (loop for v in vars
-         do (revise-var-type v assumptions base-assumptions))
+            do (revise-var-type v assumptions base-assumptions))
       (values type assumptions))))
 
 (defun p1locals (c1form assumptions funs body labels)
+  (declare (ignore c1form labels))
   (loop for f in funs
-     do (p1propagate-function f assumptions))
+        do (p1propagate-function f assumptions))
   (p1propagate body assumptions))
 
 (defun p1multiple-value-bind (c1form assumptions vars-list init-c1form body)
+  (declare (ignore c1form))
   (multiple-value-bind (init-form-type assumptions)
       (p1propagate init-c1form assumptions)
     (loop for v in vars-list
-       for type in (values-type-to-n-types init-form-type (length vars-list))
-       unless (or (global-var-p v)
-                  (var-set-nodes v))
-       do (setf (var-type v) (type-and (var-type v) type)) and
-       do (prop-message "~&;;; Variable ~A assigned type ~A"
-                          (var-name v) (var-type v)))
+          for type in (values-type-to-n-types init-form-type (length vars-list))
+          unless (or (global-var-p v)
+                     (var-set-nodes v))
+            do (setf (var-type v) (type-and (var-type v) type)) and
+          do (prop-message "~&;;; Variable ~A assigned type ~A"
+                           (var-name v) (var-type v)))
     (p1propagate body assumptions)))
 
 (defun p1multiple-value-setq (c1form assumptions vars-list value-c1form)
+  (declare (ignore c1form vars-list))
   (multiple-value-bind (init-form-type assumptions)
       (p1propagate value-c1form assumptions)
     (values init-form-type assumptions)))
 
 (defun p1progn (c1form assumptions forms)
+  (declare (ignore c1form))
   (p1propagate-list forms assumptions))
 
 (defun p1compiler-typecase (c1form assumptions variable expressions)
+  (declare (ignore c1form))
   (let ((var-type (var-type variable)))
     (loop with output-type = t
-       for (a-type c1form) in expressions
-       for c1form-type = (p1propagate c1form assumptions)
-       when (or (member a-type '(t otherwise))
-                (subtypep var-type a-type))
-       do (setf output-type c1form-type)
-       finally (return (values output-type assumptions)))))
+          for (a-type c1form) in expressions
+          for c1form-type = (p1propagate c1form assumptions)
+          when (or (member a-type '(t otherwise))
+                   (subtypep var-type a-type))
+            do (setf output-type c1form-type)
+          finally (return (values output-type assumptions)))))
 
 (defun p1checked-value (c1form assumptions type value let-form)
-  (let* ((value-type (p1propagate value assumptions))
-         (alt-type (p1propagate let-form assumptions)))
+  (declare (ignore c1form let-form))
+  (let ((value-type (p1propagate value assumptions))
+         ;;(alt-type (p1propagate let-form assumptions))
+        )
     (if (subtypep value-type type)
         value-type
         type)))
 
 (defun p1progv (c1form assumptions variables values body)
+  (declare (ignore c1form))
   (let (type)
     (multiple-value-setq (type assumptions)
       (p1propagate variables assumptions))
@@ -272,17 +302,20 @@ of the occurrences in those lists."
             assumptions)))
 
 (defun p1psetq (c1form assumptions vars c1forms)
+  (declare (ignore c1form vars))
   (loop for form in c1forms
-     do (multiple-value-bind (new-type assumptions)
-          (p1propagate form assumptions)))
+        do (p1propagate form assumptions))
   (values 'null assumptions))
 
 (defun p1with-stack (c1form assumptions body)
+  (declare (ignore c1form))
   (p1propagate body assumptions))
 
 (defun p1stack-push-values (c1form assumptions form inline)
+  (declare (ignore c1form inline))
   (multiple-value-bind (form-type assumptions)
       (p1propagate form assumptions)
+    (declare (ignore form-type))
     (values nil assumptions)))
 
 (defvar *tagbody-depth* -1
@@ -291,6 +324,7 @@ of the occurrences in those lists."
 as 2^*tagbody-limit* in the worst cases.")
 
 (defun p1go (c1form assumptions tag-var return-type)
+  (declare (ignore c1form tag-var return-type))
   (values t assumptions))
 
 (defun filter-only-declarations (assumptions)
@@ -305,7 +339,7 @@ as 2^*tagbody-limit* in the worst cases.")
     (values 'null (append (p1merge-branches nil ass-list) orig-assumptions))))
 
 (defun p1tagbody-one-pass (c1form assumptions tag-loc body)
-  (declare (ignore tag-loc))
+  (declare (ignore c1form tag-loc))
   (loop with local-ass = assumptions
      with ass-list = '()
      with aux

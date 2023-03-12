@@ -51,14 +51,14 @@
   ;; the variable *INLINE-BLOCKS*.
   (and (inline-possible fname)
        (not (gethash fname *c2-dispatch-table*))
-       (let* ((dest-rep-type (loc-representation-type *destination*))
+       (let* (;; (dest-rep-type (loc-representation-type *destination*))
               (ii (get-inline-info fname arg-types return-type return-rep-type)))
          ii)))
 
 (defun apply-inline-info (ii inlined-locs)
   (let* ((arg-types (inline-info-arg-types ii))
          (out-rep-type (inline-info-return-rep-type ii))
-         (out-type (inline-info-return-type ii))
+         ;; (out-type (inline-info-return-type ii))
          (side-effects-p (function-may-have-side-effects (inline-info-name ii)))
          (fun (inline-info-expansion ii))
          (one-liner (inline-info-one-liner ii)))

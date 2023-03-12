@@ -17,8 +17,8 @@
 (in-package "COMPILER")
 
 (defun data-dump-array ()
-  (cond (*compiler-constants*
-         (setf *compiler-constants* (concatenate 'vector (data-get-all-objects)))
+  (cond (si:*compiler-constants*
+         (setf si:*compiler-constants* (concatenate 'vector (data-get-all-objects)))
          "")
         #+externalizable
         ((plusp (data-size))
@@ -29,7 +29,7 @@
          (let* ((*wt-string-size* 0)
                 (*wt-data-column* 80)
                 (data (data-get-all-objects))
-                (data-string (si::with-ecl-io-syntax
+                (data-string (si:with-ecl-io-syntax
                                (prin1-to-string data)))
                 (l (length data-string)))
            (subseq data-string 1 (1- l))))
@@ -119,19 +119,19 @@
   (let* ((*read-default-float-format* 'single-float)
          (*print-readably* t))
     (format stream "ecl_def_ct_single_float(~A,~S,static,const);"
-            name value stream)))
+            name value)))
 
 (defun static-double-float-builder (name value stream)
   (let* ((*read-default-float-format* 'double-float)
          (*print-readably* t))
     (format stream "ecl_def_ct_double_float(~A,~S,static,const);"
-            name value stream)))
+            name value)))
 
 (defun static-long-float-builder (name value stream)
   (let* ((*read-default-float-format* 'long-float)
          (*print-readably* t))
     (format stream "ecl_def_ct_long_float(~A,~SL,static,const);"
-            name value stream)))
+            name value)))
 
 (defun static-rational-builder (name value stream)
   (let* ((*read-default-float-format* 'double-float)
@@ -219,14 +219,14 @@
   ;; fields. SSE uses always unboxed static constants. No reference is kept to
   ;; them -- it is thus safe to use them even on code that might be unloaded.
   (unless (or #+msvc t
-              *compiler-constants*
+              si:*compiler-constants*
               (and (not *use-static-constants-p*)
                    #+sse2
                    (not (typep object 'ext:sse-pack)))
               (not (listp *static-constants*)))
-    (if-let ((record (find object *static-constants* :key #'first :test #'equal)))
+    (ext:if-let ((record (find object *static-constants* :key #'first :test #'equal)))
       (second record)
-      (when-let ((builder (static-constant-expression object)))
+      (ext:when-let ((builder (static-constant-expression object)))
         (let ((c-name (format nil "_ecl_static_~D" (length *static-constants*))))
           (push (list object c-name builder) *static-constants*)
           (make-vv :location c-name :value object))))))
@@ -252,8 +252,3 @@
   (setf (vv-used-p vv-loc) t)
   (set-vv-index loc (vv-location vv-loc) (vv-permanent-p vv-loc)))
 
-(defun vv-type (loc)
-  (let ((value (vv-value loc)))
-    (if (and value (not (ext:fixnump value)))
-        (type-of value)
-        t)))

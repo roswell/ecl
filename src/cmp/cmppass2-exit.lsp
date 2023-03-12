@@ -89,8 +89,8 @@
                      (set-loc loc))
                     ;; Save the value if LOC may possibly refer
                     ;; to special binding.
-                    ((or (loc-refers-to-special loc)
-                         (loc-refers-to-special *destination*))
+                    ((or (loc-refers-to-special-p loc)
+                         (loc-refers-to-special-p *destination*))
                      (let* ((*temp* *temp*)
                             (temp (make-temp-var)))
                        (let ((*destination* temp))

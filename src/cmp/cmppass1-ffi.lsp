@@ -18,7 +18,7 @@
 ;;; cmppass2-ffi and pushes directly to a backend-specific variable.
 #+ (or)
 (defun c1clines (args)
-  (make-c1form* 'clines :args args))
+  (make-c1form* 'ffi:clines :args args))
 
 (defun c1c-inline (args)
   ;; We are on the safe side by assuming that the form has side effects
@@ -29,23 +29,22 @@
       args
     (unless (= (length arguments) (length arg-types))
       (cmperr "In a C-INLINE form the number of declare arguments and the number of supplied ones do not match:~%~S"
-              `(C-INLINE ,@args)))
+              `(ffi:c-inline ,@args)))
     ;; We cannot handle :cstrings as input arguments. :cstrings are
     ;; null-terminated strings, but not all of our lisp strings will
     ;; be null terminated. In particular, those with a fill pointer
     ;; will not.
-    (let ((ndx (position :cstring arg-types)))
-      (when ndx
-        (let* ((var (gensym))
-               (arguments (copy-list arguments))
-               (value (elt arguments ndx)))
-          (setf (elt arguments ndx) var
-                (elt arg-types ndx) :char*)
-          (return-from c1c-inline
-            (c1expr
-             `(ffi::with-cstring (,var ,value)
-               (c-inline ,arguments ,arg-types ,output-type ,c-expression
-                ,@rest)))))))
+    (ext:when-let ((ndx (position :cstring arg-types)))
+      (let* ((var (gensym))
+             (arguments (copy-list arguments))
+             (value (elt arguments ndx)))
+        (setf (elt arguments ndx) var
+              (elt arg-types ndx) :char*)
+        (return-from c1c-inline
+          (c1expr
+           `(ffi::with-cstring (,var ,value)
+              (ffi:c-inline ,arguments ,arg-types ,output-type ,c-expression
+                            ,@rest))))))
     ;; Find out the output types of the inline form. The syntax is rather relaxed
     ;;  output-type = lisp-type | c-type | (values {lisp-type | c-type}*)
     (flet ((produce-type-pair (type)
@@ -69,13 +68,13 @@
                  (listp arg-types)
                  (stringp c-expression))
       (cmperr "C-INLINE: syntax error in ~S"
-              (list* 'c-inline args)))
+              (list* 'ffi:c-inline args)))
     (unless (= (length arguments)
                (length arg-types))
       (cmperr "C-INLINE: wrong number of arguments in ~S"
-              (list* 'c-inline args)))
+              (list* 'ffi:c-inline args)))
     (let* ((arguments (mapcar #'c1expr arguments))
-           (form (make-c1form* 'C-INLINE :type output-type
+           (form (make-c1form* 'ffi:c-inline :type output-type
                                :side-effects side-effects
                                :args arguments arg-types
                                output-rep-type
@@ -134,7 +133,7 @@
                     (:void               . "ECL_FFI_VOID")))
 
 (defun foreign-elt-type-code (type)
-  (if-let ((x (assoc type +foreign-elt-type-codes+)))
+  (ext:if-let ((x (assoc type +foreign-elt-type-codes+)))
     (cdr x)
     (cmperr "DEFCALLBACK: ~a is not a valid elementary FFI type." type)))
 
