@@ -280,5 +280,5 @@
          (serious-condition (c)
            (failed (make-condition 'test-failure
                                    :name *test-name*
-                                   :format-control "Expected to finish, but got ~s"
-                                   :format-arguments (list (type-of c))))))))
+                                   :format-control "Expected to finish, but got ~s:~%~a"
+                                   :format-arguments (list (type-of c) c)))))))

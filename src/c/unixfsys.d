@@ -119,7 +119,6 @@ ecl_alloc_filename(cl_index len, cl_object adjustable)
                                  ECL_NIL,               /* displaced */
                                  ECL_NIL);              /* displaced-offset */
   ret->vector.self.b16[len] = 0;
-  ret->vector.fillp = ret->vector.dim = len;
   return ret;
 }
 

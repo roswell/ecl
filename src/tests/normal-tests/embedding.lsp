@@ -9,51 +9,6 @@
 
 (suite 'emb)
 
-(defun test-C-program (c-code &key capture-output)
-  (ensure-directories-exist "tmp/")
-  (with-open-file (s "tmp/ecl-aux.c" :direction :output :if-exists :supersede
-                     :if-does-not-exist :create)
-    (princ c-code s))
-  (c::compiler-cc "tmp/ecl-aux.c" "tmp/ecl-aux.o")
-  (c::linker-cc "tmp/ecl-aux.exe" '("tmp/ecl-aux.o"))
-  (let ((environment 
-         (append #+windows (list (format nil "PATH=~a;~a"
-                                         (ext:getenv "PATH")
-                                         c::*ecl-library-directory*))
-                 #+cygwin (list (format nil "PATH=~a:~a"
-                                        (ext:getenv "PATH")
-                                        c::*ecl-library-directory*))
-                 #-(or windows cygwin) (list (format nil "LD_LIBRARY_PATH=~a:~a"
-                                                     (ext:getenv "LD_LIBRARY_PATH")
-                                                     c::*ecl-library-directory*))
-                 (ext:environ))))
-    (ecase capture-output
-      ((nil)
-       (multiple-value-bind (stream return-code)
-           (si::run-program "tmp/ecl-aux.exe" '()
-                            :output t :error t
-                            :environ environment)
-         (declare (ignore stream))
-         (zerop return-code)))
-      ((string :string)
-       (with-output-to-string (s)
-         (let ((in (si::run-program "tmp/ecl-aux.exe" '() :output :stream
-                                    :environ environment))
-               line)
-           (loop
-            (setf line (read-line in nil))
-            (unless line (return))
-            (write-line line s)))))
-      ((t forms :forms)
-       (do* ((all '())
-             (x t)
-             (in (si::run-program "tmp/ecl-aux.exe" '() :output :stream
-                                  :environ environment)))
-            ((null in) all)
-         (setf x (ignore-errors (read in nil nil)))
-         (unless x (return all))
-         (push x all))))))
-
 ;;; Date: 21/06/2006 (goffioul)
 ;;; Fixed: 23/06/2006 (juanjo)
 ;;; Description:
