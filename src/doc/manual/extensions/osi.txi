@@ -187,8 +187,8 @@ process is finished. Otherwise status is updated. Returns two values
 
 @lspdef ext:terminate-process
 @defun ext:terminate-process process &optional force
-Terminates external process. The consequences are undefined if the
-process has already finished.
+Terminates external process. May signal an error if the process has
+already finished.
 @end defun
 
 @lspdef ext:external-process-input
