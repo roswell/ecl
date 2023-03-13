@@ -81,6 +81,7 @@
     ;; Other
     "src:cmp;cmpos-run.lsp"
     "src:cmp;cmpos-features.lsp"
+    "src:cmp;cmpbackend-cxx.lsp"
     "src:cmp;cmpmain.lsp"
     "src:cmp;proclamations.lsp"))
 
