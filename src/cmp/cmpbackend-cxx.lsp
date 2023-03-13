@@ -530,8 +530,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 ;;; Code generation
 
-(defun compiler-pass/generate-cxx (c-pathname h-pathname data-pathname init-name
-                                   &key input-designator)
+(defun compiler-pass/generate-cxx (c-pathname h-pathname data-pathname init-name source)
 
   (setq *compiler-phase* 't2)
   (with-open-file (*compiler-output1* c-pathname :direction :output
@@ -544,7 +543,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
       (declare (ignore second))
       (wt-comment-nl "Date: ~D/~D/~D ~2,'0D:~2,'0D (yyyy/mm/dd)" year month day hour minute)
       (wt-comment-nl "Machine: ~A ~A ~A" (software-type) (software-version) (machine-type)))
-    (wt-comment-nl "Source: ~A" input-designator)
+    (wt-comment-nl "Source: ~A" source)
     (with-open-file (*compiler-output2* h-pathname :direction :output
                                                    :if-does-not-exist :create
                                                    :if-exists :supersede)
@@ -553,6 +552,32 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
       (terpri *compiler-output1*)
       (terpri *compiler-output2*)))
   (data-c-dump data-pathname))
+
+(defun compiler-pass/assemble-cxx (input-file output-file
+                                   &key
+                                     (c-file nil)
+                                     (h-file nil)
+                                     (data-file nil)
+                                     (system-p nil)
+                                   &allow-other-keys)
+  (let* ((cpath (compile-file-pathname output-file :output-file c-file :type :c))
+         (hpath (compile-file-pathname output-file :output-file h-file :type :h))
+         (dpath (compile-file-pathname output-file :output-file data-file :type :data))
+         (opath (compile-file-pathname output-file :type :object))
+         (to-delete (nconc (unless c-file (list cpath))
+                           (unless h-file (list hpath))
+                           (unless data-file (list dpath))
+                           (unless system-p (list opath))))
+         (init-name (compute-init-name output-file :kind (if system-p :object :fasl))))
+    (compiler-pass/generate-cxx cpath hpath dpath init-name input-file)
+    (if system-p
+        (compiler-cc cpath opath)
+        (progn
+          (compiler-cc cpath opath)
+          (bundle-cc (brief-namestring output-file)
+                     init-name
+                     (list (brief-namestring opath)))))
+    (mapc 'cmp-delete-file to-delete)))
 
 
 ;;; The builder.
