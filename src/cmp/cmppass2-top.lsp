@@ -341,7 +341,7 @@
         (wt-nl-close-many-braces 0)))))
 
 (defun t3local-fun-body (fun)
-  (let ((string (make-array 2048 :element-type 'base-char
+  (let ((string (make-array 2048 :element-type 'character
                             :adjustable t
                             :fill-pointer 0)))
     (with-output-to-string (*compiler-output1* string)

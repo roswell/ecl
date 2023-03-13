@@ -849,7 +849,12 @@ Use special code 0 to cancel this operation.")
         cl_index ndx = #1;
         typedef struct ecl_var_debug_info *pinfo;
         pinfo d = (pinfo)(v->vector.self.t[1]) + ndx;
-        cl_object name = ecl_make_constant_base_string(d->name,-1);
+        cl_object name;
+#ifdef ECL_UNICODE
+        name = ecl_decode_from_cstring(d->name,-1,@:utf-8);
+        if (!name)
+#endif
+                name = ecl_make_constant_base_string(d->name,-1);
         void *value = (void*)(v->vector.self.t[2+ndx]);
         cl_object output;
         switch (d->type) {
