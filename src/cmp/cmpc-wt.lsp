@@ -174,21 +174,12 @@
 
 (defvar *wt-string-size* 0)
 
-#+unicode
-(defun encode-string (string format)
-  (let* ((output (make-array (round (* 1.2 (length string)))
-                             :element-type 'base-char
-                             :adjustable t
-                             :fill-pointer 0))
-         (stream (ext:make-sequence-output-stream output :external-format format)))
-    (write-string string stream)
-    output))
-
 (defun wt-filtered-data (string stream &key one-liner
                          (external-format #-unicode :default #+unicode :utf-8))
   (declare (ignorable external-format))
   #+unicode
-  (setf string (encode-string string external-format))
+  (setf string (ext:string-to-octets string :external-format external-format
+                                            :element-type 'base-char))
   (let ((N (length string))
         (wt-data-column 80))
     (incf *wt-string-size* N) ; 1+ accounts for a blank space
