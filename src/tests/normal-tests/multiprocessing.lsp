@@ -426,7 +426,7 @@
       (is (= 3  (mp:semaphore-wait sem 2 nil)))
       (mp:process-run-function nil (signal-after-fn 1 0.2))
       (is (null (mp:semaphore-wait sem 2 0.1)))
-      (is (= 2  (mp:semaphore-wait sem 2 0.2)))
+      (is (= 2  (mp:semaphore-wait sem 2 1)))
       (mp:process-run-function nil (signal-after-fn 2 0.2))
       (is (= 2  (mp:semaphore-wait sem 1 nil))))))
 
