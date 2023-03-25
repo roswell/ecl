@@ -159,7 +159,7 @@ ecl_log1_complex(cl_object x)
 {
 #ifdef ECL_COMPLEX_FLOAT
   cl_object result = ecl_alloc_object(t_csfloat);
-  float _Complex fc = ecl_to_float(x->gencomplex.real) + I * ecl_to_float(x->gencomplex.real);
+  float _Complex fc = ecl_to_float(x->gencomplex.real) + I * ecl_to_float(x->gencomplex.imag);
   ecl_csfloat(result) = clogf(fc);
   return result;
 #else
