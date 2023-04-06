@@ -409,6 +409,12 @@ ecl_log2(cl_object x, cl_object y)
   if (y == OBJNULL) {
     @(return ecl_log1(x));
   }
+  /* If base is zero, log returns zero. Using ecl_times takes care of
+     the type checking and floating point contagion rules. */
+  if (ecl_unlikely(ecl_zerop(y))) {
+    @(return ecl_times(x, y));
+  }
+
   @(return ecl_log2(y, x))
   @)
 
