@@ -384,6 +384,9 @@ MATH_DEF_DISPATCH1(log1_long_precision, @[log], @[number],
 cl_object
 ecl_log2(cl_object x, cl_object y)
 {
+  /* The spec says "If base is zero, log returns zero" */
+  if (ecl_zerop(x)) return ecl_make_fixnum(0);
+
   cl_type tx = ecl_t_of(x);
   cl_type ty = ecl_t_of(y);
   /* Prevent loss of precision from intermediate single float results */
