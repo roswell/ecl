@@ -122,6 +122,7 @@
   nil)
 
 (defun cmpprogress (&rest args)
+  #+ (or)
   (when *compile-verbose*
     (apply #'format t args)))
 
