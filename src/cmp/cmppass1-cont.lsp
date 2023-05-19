@@ -43,7 +43,7 @@
           body))))
 
 (defun c1return-from (args)
-  (check-args-number 'RETURN-FROM args 1 2)
+  (check-args-number 'CL:RETURN-FROM args 1 2)
   (let ((name (first args)))
     (unless (symbolp name)
       (cmperr "The block name ~s is not a symbol." name))
@@ -53,13 +53,12 @@
         (cmperr "The block ~s is undefined." name))
       (let* ((val (c1expr (second args)))
              (var (blk-var blk))
-             (type T))
-        (cond (cfb (setf type 'CLB
-                         (var-ref-clb var) T))
-              (unw (setf type 'UNWIND-PROTECT)))
+             (nonlocal (or cfb unw)))
+        (when cfb
+          (setf (var-ref-ccb var) T))
         (incf (blk-ref blk))
         (setf (blk-type blk) (values-type-or (blk-type blk) (c1form-type val)))
-        (let ((output (make-c1form* 'RETURN-FROM :type 'T :args blk type val)))
+        (let ((output (make-c1form* 'CL:RETURN-FROM :type 'T :args blk nonlocal val)))
           (when (or cfb unw)
             (add-to-read-nodes var output))
           output)))))
