@@ -101,7 +101,7 @@ compiled successfully, returns the pathname of the compiled file."
             (return)))))
   (when (and system-p load)
     (error "Cannot load system files."))
-  (cmpprogress "~&;;;~%;;; Compiling ~a." (namestring input-pathname))
+  (cmpprogress "~&;;; Compiling ~a." (namestring input-pathname))
   (let* ((input-file (truename *compile-file-pathname*))
          (*compile-file-truename* input-file)
          (*compiler-in-use* *compiler-in-use*)
@@ -116,8 +116,12 @@ compiled successfully, returns the pathname of the compiled file."
       (with-open-file (stream *compile-file-pathname* :external-format external-format)
         (unless source-truename
           (setf (car ext:*source-location*) *compile-file-pathname*))
+
+        ;; ast, construct vars, funs and other locs
         (compiler-pass1 stream source-offset))
+      ;(compiler-pass/custom-pass)
       (compiler-pass/propagate-types)
+
       (apply #'compiler-pass/assemble-cxx input-file output-file args)
       (if (setf true-output-file (probe-file output-file))
           (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%" (namestring input-pathname))
@@ -330,6 +334,7 @@ from the C language code.  NIL means \"do not create the file\"."
   ;; Type propagation phase
   (when *do-type-propagation*
     (setq *compiler-phase* 'p1propagate)
+    ;; XXX what about make-forms???
     (dolist (form *top-level-forms*)
       (p1propagate form))))
 
