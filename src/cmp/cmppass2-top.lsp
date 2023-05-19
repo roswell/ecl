@@ -90,8 +90,11 @@
 
     (wt-nl "ECL_DEFINE_SETF_FUNCTIONS")
 
-    (loop for form in (nconc *make-forms* *top-level-forms*)
-       do (emit-toplevel-form form c-output-file))
+    (dolist (form *make-forms*)
+      (emit-toplevel-form form c-output-file))
+    (dolist (form *top-level-forms*)
+      (emit-toplevel-form form c-output-file))
+
     (wt-nl-close-many-braces 0)
     (setq top-output-string (get-output-stream-string *compiler-output1*)))
 
