@@ -79,6 +79,19 @@
 (defun data-empty-loc ()
   (add-object 0 :duplicate t :permanent t))
 
+;;; Note that we can't use GET-OBJECT to probe for referenced objects because
+;;; ADD-OBJECT (when failed and :DUPLICATE is T) may return an object that is
+;;; not in any storage when the object is a known ECL symbol.
+(defun get-object (object &key permanent (errorp t))
+  (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
+         (item (if permanent
+                   (find object *permanent-objects* :test test :key #'vv-value)
+                   (or (find object *permanent-objects* :test test :key #'vv-value)
+                       (find object *temporary-objects* :test test :key #'vv-value)))))
+    (when (and (null item) errorp)
+      (cmperr "Unable to find object ~s." object))
+    item))
+
 (defun add-object (object &key
                             (duplicate nil)
                             (used-p nil)
@@ -97,11 +110,7 @@
     ;; temporary storage from being created (we can't move objects from the
     ;; temporary into the permanent storage once they have been created).
     (setf load-form-p t permanent t))
-  (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
-         (item (if permanent
-                   (find object *permanent-objects* :test test :key #'vv-value)
-                   (or (find object *permanent-objects* :test test :key #'vv-value)
-                       (find object *temporary-objects* :test test :key #'vv-value))))
+  (let* ((item (get-object object :permanent permanent :errorp nil))
          (array (if permanent
                     *permanent-objects*
                     *temporary-objects*))
