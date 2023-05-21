@@ -82,9 +82,9 @@
     (:csfloat            si::complex-single-float "_Complex float"       "ecl_make_csfloat"                  "ecl_to_csfloat"            "ecl_csfloat")
     (:cdfloat            si::complex-double-float "_Complex double"      "ecl_make_cdfloat"                  "ecl_to_cdfloat"            "ecl_cdfloat")
     (:clfloat            si::complex-long-float   "_Complex long double" "ecl_make_clfloat"                  "ecl_to_clfloat"            "ecl_clfloat")
-    (:unsigned-char      base-char                "unsigned char"        "CODE_CHAR"                         "ecl_base_char_code"        "CHAR_CODE")
-    (:char               base-char                "char"                 "CODE_CHAR"                         "ecl_base_char_code"        "CHAR_CODE")
-    (:wchar              character                "ecl_character"        "CODE_CHAR"                         "ecl_char_code"             "CHAR_CODE")
+    (:unsigned-char      base-char                "unsigned char"        "ECL_CODE_CHAR"                     "ecl_base_char_code"        "ECL_CHAR_CODE")
+    (:char               base-char                "char"                 "ECL_CODE_CHAR"                     "ecl_base_char_code"        "ECL_CHAR_CODE")
+    (:wchar              character                "ecl_character"        "ECL_CODE_CHAR"                     "ecl_char_code"             "ECL_CHAR_CODE")
     (:float-sse-pack     ext::float-sse-pack      "__m128"               "ecl_make_float_sse_pack"           "ecl_unbox_float_sse_pack"  "ecl_unbox_float_sse_pack_unsafe")
     (:double-sse-pack    ext::double-sse-pack     "__m128d"              "ecl_make_double_sse_pack"          "ecl_unbox_double_sse_pack" "ecl_unbox_double_sse_pack_unsafe")
     ;; intentional       v
