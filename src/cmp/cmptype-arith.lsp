@@ -50,7 +50,7 @@
 ;;; Depends on the implementation of TYPE-OF.
 ;;; (only used for saving constants?)
 (defun object-type (thing)
-  (let ((type (if thing (type-of thing) 'SYMBOL)))
+  (let ((type (type-of thing)))
     (case type
       ((FIXNUM SHORT-FLOAT SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT SYMBOL NULL) type)
       ((BASE-CHAR STANDARD-CHAR CHARACTER EXTENDED-CHAR) 'CHARACTER)
