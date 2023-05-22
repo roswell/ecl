@@ -1,0 +1,115 @@
+#+title: The ECL compiler
+#+author: Daniel Kochmański
+#+description: This document tries to summarize how the ECL compiler works.
+
+* Dispatch tables
+
+ECL maintains a set of dispatch tables used during different phases of the
+compiler. The internal representation is build during the first pass of the
+compiler by using entries in ~*c1-dispatch-table*~. Dispatch tables are stored
+in the file ~cmptables.lsp~.
+
+* Compiler environment
+
+The env api is defined in ~cmpenv-api.lsp~ to hide the representation details.
+That said the compiler environment is represented as a cons:
+
+- car :: variable record (variables, blocks, tags etc)
+- cdr :: macro record (functions and macros)
+
+Variable records may contain also functions because the bytecodes compiler
+written in C is less sophisticated and performs only the minimal compilation.
+The compiler environment representation is shared between both compilers.
+
+Records elements are usually lists but they may additionally contain atoms
+~si:function-boundary~ and ~si:unwind-protect-boundary~ to mark boundaries.
+
+* Compiler structures
+
+The compiler structures are defined in the file ~cmptypes.lsp~.
+
+** Nodes
+
+The internal representation is a tree of nodes of type ~c1form~. Each node is
+created and suppliemented with the following information:
+
+Initialized:
+
+- introspection :: current form, toplevel form, file and file position
+- the node name :: this is used for dispatch
+- the node args :: dependent on the operator, i.e (vars forms body) for LET
+- the node env  :: environment in which the form is compiled
+
+Inferred by ~c1form-add-info~:
+
+- parents :: the node parents
+- side-effects :: does the form have side effects
+
+Additionally the structure ~c1form~ includes the structure ~info~ and its values
+may be either provided during initialization or/and propagated later:
+
+- local-vars :: the set of variables created directly in the form
+- type       :: what are types of returned values by the form
+- sp-change  :: flag whether the execution may change a special variable
+- volatile   :: flag whether there is a possibility of setjmp
+
+** References
+
+There are a few objects that may be referenced in nodes as arguments. They all
+share the common structure ~ref~ with the following information:
+
+- name :: identifier
+- ref  :: number of references (to this object)
+- ref-ccb :: flag - cross closure reference
+- ref-clb :: flag - cross local function reference
+- read-nodes :: a list of nodes in which the reference occurs
+
+Currently we define the following references: ~var~, ~fun~, ~blk~ and ~tag~.
+Each individual structure contains its own specific information.
+
+** Data segment locations
+
+The structure ~vv~ represents a single object in a data segment. We maintain two
+data segments: the permanent segment that is always present with the module and
+the temporary segment that is deallocated after the module is initialized. The
+structure ~vv~ contains the following fields:
+
+- location :: index in the segment array
+- used-p :: flag denoting whether the element is used
+- permanent-p :: there are permanent and temporary segment
+- value :: the object in the data segment
+
+** Inline-info
+
+This structure stores the information about a direct C expansion of the call to
+a standard function. This information is propagated by the function ~def-inline~
+and is used for ECL core functions. It contains formation about arguments and
+return values along with types and other useful information.
+
+** Target-dependent structures
+
+Currently the compiler targets only the C source code but are various
+compilers - for not all compilers implement the type "_Complex". The structure
+~machine~ contains the following fields:
+
+- c-types :: supported types (keywords) and optionally integer bits and signess
+- rep-type-hash :: entries contain lisp and c types and conversion functions
+- sorted-types :: the same as above but sorted from the most specific to least
+
+~rep-type~ objects are entries in ~rep-type-hash~ and ~sorted-types~. Contains
+the specifity index number, the name (a keyword), the lisp type, the type
+details, the type C name and conversion functions.
+
+* Compilation process
+
+This description is only a sketchy outline of what's going on. When compiling a
+form the compiler environment is estabilished along with a load-compile lock.
+
+The compiler runs in three passes (fixme: pass2 is an inacurate name):
+
+1. compiler-pass1 walks sexpressions and populates *toplevel-forms* with nodes
+2. compiler-pass/propagate-types recursively propagates types among nodes
+3. compiler-pass2 generates the target code (C and H files)
+4. data-c-dump generates the C code (data segment included in the above)
+5. compiler-cc invokes the C compiler and produces an object file
+6. bundle-cc invokes the linker and produces the fasl file (a shared library)
