@@ -4,6 +4,7 @@
 \#*
 
 /build
+/local
 cov-int
 
 *.data
