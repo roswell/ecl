@@ -330,9 +330,9 @@ from the C language code.  NIL means \"do not create the file\"."
   (when *do-type-propagation*
     (setq *compiler-phase* 'p1propagate)
     (dolist (form *top-level-forms*)
-      (p1propagate form nil))
+      (p1propagate form))
     (dolist (fun *local-funs*)
-      (p1propagate (fun-lambda fun) nil))))
+      (p1propagate (fun-lambda fun)))))
 
 (defun print-compiler-info ()
   (cmpprogress "~&;;; OPTIMIZE levels: Safety=~d, Space=~d, Speed=~d, Debug=~d~%;;;~%"
