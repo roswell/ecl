@@ -26,7 +26,8 @@
   (p1propagate form))
 
 (defun p1fset (c1form fun fname macro pprint c1forms)
-  (declare (ignore c1form fun fname macro pprint c1forms))
+  (declare (ignore c1form fname macro pprint c1forms))
+  (p1propagate-function fun)
   'function)
 
 (defun p1propagate (form)
