@@ -103,10 +103,7 @@ compiled successfully, returns the pathname of the compiled file."
             (return)))))
   (when (and system-p load (not *cross-compiling*))
     (error "Cannot load system files."))
-  (cmpprogress "~&;;;~%;;; Compiling ~a~:[~; for target ~a~]."
-               (namestring input-pathname)
-               *cross-compiling*
-               *target-identifier*)
+  (cmpprogress "~&;;; Compiling ~a." (namestring input-pathname))
   (let* ((input-file (truename *compile-file-pathname*))
          (*compile-file-truename* input-file)
          (*compiler-in-use* *compiler-in-use*)
