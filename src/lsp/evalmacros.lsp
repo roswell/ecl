@@ -105,6 +105,8 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
     (when *dump-defun-definitions*
       (print function)
       (setq function `(si::bc-disassemble ,function)))
+    `(si::fset ',name ,global-function)
+    #+ (or)
     `(progn
        ,(ext:register-with-pde whole `(si::fset ',name ,global-function))
        ,@(si::expand-set-documentation name 'function doc-string)

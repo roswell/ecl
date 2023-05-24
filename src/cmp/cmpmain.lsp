@@ -97,7 +97,7 @@ compiled successfully, returns the pathname of the compiled file."
             (return)))))
   (when (and system-p load)
     (error "Cannot load system files."))
-  (cmpprogress "~&;;;~%;;; Compiling ~a." (namestring input-pathname))
+  (cmpprogress "~&;;; Compiling ~a." (namestring input-pathname))
   (let* ((input-file (truename *compile-file-pathname*))
          (*compile-file-truename* input-file)
          (*compiler-in-use* *compiler-in-use*)
