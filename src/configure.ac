@@ -754,7 +754,7 @@ dnl !!! end autoscan
 
 AC_CHECK_FUNCS( [nanosleep alarm times select setenv putenv] \
                 [lstat mkstemp sigprocmask isatty tzset] \
-                [gettimeofday getrusage system] )
+                [gettimeofday getrusage system clock_gettime] )
 
 AC_CHECK_FUNCS( [expf powf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
                 [floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \

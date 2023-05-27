@@ -37,6 +37,12 @@
 #define ECL_MUTEX_TIMEOUT ETIMEDOUT
 #define ECL_MUTEX_DEADLOCK EDEADLK
 
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+# define COND_VAR_CLOCK CLOCK_MONOTONIC
+#else
+# define COND_VAR_CLOCK CLOCK_REALTIME
+#endif
+
 /* MUTEX */
 
 /* Non-recursive locks are only provided as an optimization; on
@@ -83,15 +89,21 @@ ecl_mutex_lock(ecl_mutex_t *mutex)
 /* CONDITION VARIABLE */
 
 static inline void
-add_timeout_delta(struct timespec *ts, double seconds)
+add_timeout_delta(struct timespec *ts, double seconds, clockid_t preferred_clock)
 {
-#if defined(HAVE_GETTIMEOFDAY)
+#if defined(HAVE_CLOCK_GETTIME)
+  clock_gettime(preferred_clock, ts);
+#elif defined(HAVE_GETTIMEOFDAY)
   struct timeval tp;
 
   gettimeofday(&tp, NULL);
   /* Convert from timeval to timespec */
   ts->tv_sec  = tp.tv_sec;
   ts->tv_nsec = tp.tv_usec * 1000;
+#else
+  ts->tv_sec = time(NULL);
+  ts->tv_nsec = 0;
+#endif
 
   /* Add `seconds' delta */
   ts->tv_sec += (time_t)floor(seconds);
@@ -100,10 +112,6 @@ add_timeout_delta(struct timespec *ts, double seconds)
     ts->tv_nsec -= 1e9;
     ts->tv_sec++;
   }
-#else
-  ts->tv_sec = time(NULL) + (time_t)floor(seconds);
-  ts->tv_nsec = 0;
-#endif
 }
 
 static inline int
@@ -111,7 +119,12 @@ ecl_mutex_timedlock(ecl_mutex_t *mutex, double seconds)
 {
 #if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK)
   struct timespec ts;
-  add_timeout_delta(&ts, seconds);
+  /* Ideally we would like to use CLOCK_MONOTONIC here to prevent
+     wrong timeouts when the system clock is adjusted while we are
+     waiting. However the posix spec says that pthread_mutex_timedlock
+     always uses CLOCK_REALTIME and does not define a way to set the
+     clock for mutexes. */
+  add_timeout_delta(&ts, seconds, CLOCK_REALTIME);
   return pthread_mutex_timedlock(mutex, &ts);
 #else
   /* Not implemented, see mutex.d for alternative implementation using interrupts */
@@ -122,7 +135,13 @@ ecl_mutex_timedlock(ecl_mutex_t *mutex, double seconds)
 static inline void
 ecl_cond_var_init(ecl_cond_var_t *cv)
 {
-  pthread_cond_init(cv, NULL);
+  pthread_condattr_t attr;
+  pthread_condattr_init(&attr);
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+  pthread_condattr_setclock(&attr, COND_VAR_CLOCK);
+#endif
+  pthread_cond_init(cv, &attr);
+  pthread_condattr_destroy(&attr);
 }
 
 static inline void
@@ -141,7 +160,7 @@ static inline int
 ecl_cond_var_timedwait(ecl_cond_var_t *cv, ecl_mutex_t *mutex, double seconds)
 {
   struct timespec ts;
-  add_timeout_delta(&ts, seconds);
+  add_timeout_delta(&ts, seconds, COND_VAR_CLOCK);
   return pthread_cond_timedwait(cv, mutex, &ts);
 }
 
