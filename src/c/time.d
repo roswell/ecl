@@ -61,8 +61,7 @@ ecl_get_internal_real_time(struct ecl_timeval *tv)
   tv->tv_sec = system_time.hundred_ns / 1000;
   tv->tv_usec = (system_time.hundred_ns % 1000) * 1000;
 # else
-  time_t = time(0);
-  tv->tv_sec = time_t;
+  tv->tv_sec = time(NULL);
   tv->tv_usec = 0;
 # endif
 #endif

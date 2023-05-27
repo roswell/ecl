@@ -85,6 +85,7 @@ ecl_mutex_lock(ecl_mutex_t *mutex)
 static inline void
 add_timeout_delta(struct timespec *ts, double seconds)
 {
+#if defined(HAVE_GETTIMEOFDAY)
   struct timeval tp;
 
   gettimeofday(&tp, NULL);
@@ -99,6 +100,10 @@ add_timeout_delta(struct timespec *ts, double seconds)
     ts->tv_nsec -= 1e9;
     ts->tv_sec++;
   }
+#else
+  ts->tv_sec = time(NULL) + (time_t)floor(seconds);
+  ts->tv_nsec = 0;
+#endif
 }
 
 static inline int
