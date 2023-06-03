@@ -98,7 +98,7 @@ semaphore_wait_unprotected(cl_object semaphore, cl_object count, cl_object timeo
     } while (semaphore->semaphore.counter < counter);
   } else {
     cl_object deadline = ecl_plus(cl_get_internal_real_time(),
-                                  ecl_times(timeout, ecl_make_fixnum(1000)));
+                                  ecl_times(timeout, ecl_make_fixnum(1000000)));
     double seconds = ecl_to_double(timeout);
     do {
       ecl_setq(the_env, ECL_INTERRUPTS_ENABLED, ECL_T);

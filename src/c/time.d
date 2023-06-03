@@ -50,9 +50,9 @@ ecl_get_internal_real_time(struct ecl_timeval *tv)
     DWORDLONG hundred_ns;
   } system_time;
   GetSystemTimeAsFileTime(&system_time.filetime);
-  system_time.hundred_ns /= 10000;
-  tv->tv_sec = system_time.hundred_ns / 1000;
-  tv->tv_usec = (system_time.hundred_ns % 1000) * 1000;
+  system_time.hundred_ns /= 10;
+  tv->tv_sec = system_time.hundred_ns / 1000000;
+  tv->tv_usec = system_time.hundred_ns % 1000000;
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -82,7 +82,7 @@ ecl_get_internal_run_time(struct ecl_timeval *tv)
   struct tms buf;
   times(&buf);
   tv->tv_sec = buf.tms_utime / CLK_TCK;
-  tv->tv_usec = (buf.tms_utime % CLK_TCK) * 1000000;
+  tv->tv_usec = ((buf.tms_utime % CLK_TCK) * 1000000) / CLK_TCK;
 # else
 #  if defined(ECL_MS_WINDOWS_HOST)
   union {
@@ -96,9 +96,9 @@ ecl_get_internal_run_time(struct ecl_timeval *tv)
                        &user_time.filetime))
     FEwin32_error("GetProcessTimes() failed", 0);
   kernel_time.hundred_ns += user_time.hundred_ns;
-  kernel_time.hundred_ns /= 10000;
-  tv->tv_sec = kernel_time.hundred_ns / 1000;
-  tv->tv_usec = (kernel_time.hundred_ns % 1000) * 1000;
+  kernel_time.hundred_ns /= 10;
+  tv->tv_sec = kernel_time.hundred_ns / 1000000;
+  tv->tv_usec = kernel_time.hundred_ns % 1000000;
 #  else
   ecl_get_internal_real_time(tv);
 #  endif
@@ -172,7 +172,7 @@ ecl_runtime(void)
 {
   struct ecl_timeval tv;
   ecl_get_internal_run_time(&tv);
-  return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+  return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 cl_object
@@ -202,8 +202,8 @@ static cl_object
 timeval_to_time(long sec, long usec)
 {
   cl_object milliseconds = ecl_plus(ecl_times(ecl_make_integer(sec),
-                                              ecl_make_fixnum(1000)),
-                                    ecl_make_integer(usec / 1000));
+                                              ecl_make_fixnum(1000000)),
+                                    ecl_make_integer(usec));
   @(return milliseconds);
 }
 
@@ -236,7 +236,7 @@ init_unixtime(void)
 {
   ecl_get_internal_real_time(&beginning);
 
-  ECL_SET(@'internal-time-units-per-second', ecl_make_fixnum(1000));
+  ECL_SET(@'internal-time-units-per-second', ecl_make_fixnum(1000000));
 
   cl_core.Jan1st1970UT =
     ecl_times(ecl_make_fixnum(24 * 60 * 60),
