@@ -44,14 +44,7 @@ static struct ecl_timeval beginning;
 void
 ecl_get_internal_real_time(struct ecl_timeval *tv)
 {
-#if defined(HAVE_GETTIMEOFDAY) && !defined(ECL_MS_WINDOWS_HOST)
-  struct timezone tz;
-  struct timeval aux;
-  gettimeofday(&aux, &tz);
-  tv->tv_usec = aux.tv_usec;
-  tv->tv_sec = aux.tv_sec;
-#else
-# if defined(ECL_MS_WINDOWS_HOST)
+#if defined(ECL_MS_WINDOWS_HOST)
   union {
     FILETIME filetime;
     DWORDLONG hundred_ns;
@@ -60,10 +53,19 @@ ecl_get_internal_real_time(struct ecl_timeval *tv)
   system_time.hundred_ns /= 10000;
   tv->tv_sec = system_time.hundred_ns / 1000;
   tv->tv_usec = (system_time.hundred_ns % 1000) * 1000;
-# else
+#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  tv->tv_usec = ts.tv_nsec / 1000;
+  tv->tv_sec = ts.tv_sec;
+#elif defined(HAVE_GETTIMEOFDAY)
+  struct timeval aux;
+  gettimeofday(&aux, NULL);
+  tv->tv_usec = aux.tv_usec;
+  tv->tv_sec = aux.tv_sec;
+#else
   tv->tv_sec = time(NULL);
   tv->tv_usec = 0;
-# endif
 #endif
 }
 
