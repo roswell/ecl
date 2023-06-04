@@ -148,7 +148,8 @@
                                         ;#+ ()
   (format-graph-from-roots (list (c::top-level object))
                            #'present*
-                           #'c::outputs
+                           (lambda (obj)
+                             (node-children obj nil))
                            ;:maximize-generations t
                            :merge-duplicates t
                            ;; :graph-type :dot-digraph
@@ -160,12 +161,12 @@
   (declare (ignore type view acceptably for-context-type))
   ;(terpri stream)
   (clim:surrounding-output-with-border (stream)
-    (format stream "~a :in ~a :out ~a :instr ~a~%" (c::name object)
-            (length (c::inputs object))
-            (length (c::outputs object))
-            (length (c::instructions object)))
+    (format stream "~a :in ~a :out ~a :instr ~a~%" (c::iblock-name object)
+            (length (c::iblock-inputs object))
+            (length (c::iblock-outputs object))
+            (length (c::iblock-instructions object)))
     ;; #+ (or)
-    (clim:format-textual-list (c::instructions object)
+    (clim:format-textual-list (c::iblock-instructions object)
                               #'present*
                               :stream stream :separator #\newline)))
 
@@ -217,7 +218,9 @@
   (:method (node name)
     nil)
   (:method ((node c::iblock) name)
-    (c::outputs node))
+    (c::iblock-outputs node))
+  (:method ((node c::bir-result) name)
+    (list (c::bir-enter node)))
   (:method ((node c::c1form) (name null))
     (node-children node (c::c1form-name node)))
   (:method ((node c::c1form) (name symbol))
@@ -251,14 +254,15 @@
 (defun show-c1forms (frame stream)
   (clim:surrounding-output-with-border (stream :ink clim:+light-green+)
     (present* (module frame) stream))
-  (terpri stream)
-  (clim:surrounding-output-with-border (stream :ink clim:+light-pink+)
-    (format stream "make forms~%")
-    (show-c1form (makes frame) stream))
-  (terpri stream)
-  (clim:surrounding-output-with-border (stream :ink clim:+light-blue+)
-    (format stream "top-level forms~%")
-    (show-c1form (forms frame) stream)))
+  ;; (terpri stream)
+  ;; (clim:surrounding-output-with-border (stream :ink clim:+light-pink+)
+  ;;   (format stream "make forms~%")
+  ;;   (show-c1form (makes frame) stream))
+  ;; (terpri stream)
+  ;; (clim:surrounding-output-with-border (stream :ink clim:+light-blue+)
+  ;;   (format stream "top-level forms~%")
+  ;;   (show-c1form (forms frame) stream))
+  )
 
 (defun show-selected (frame stream)
   (show-c1form (selected frame) stream))
@@ -306,7 +310,7 @@
 (define-c1form-frame-command (remake-file :menu t) ()
   (clim:with-application-frame (frame)
     (destructuring-bind (module makes forms)
-        (do-it "/home/jack/Warsztat/Repo/ecl/hacks/test-file.lisp")
+        (do-it "/home/jack/Warsztat/cl-source/ecl/hacks/test-file.lisp")
       (setf (module frame) module
             (makes frame) makes
             (forms frame) forms))))
@@ -331,9 +335,9 @@
           makes forms)
     ))
 
-(defun make-it-happen ()
+(defun make-it-happen (src)
   (destructuring-bind (module makes forms)
-      (do-it "/home/jack/Warsztat/Repo/ecl/hacks/test-file.lisp")
+      (do-it src)
     (clim:run-frame-top-level
      (clim:make-application-frame 'c1form-frame
                                   :module module
@@ -341,9 +345,5 @@
                                   :forms forms))))
 
 #+ (or)
-(ecl-cmp/ir::make-it-happen)
-
-
-
-
+(ecl-cmp/ir::make-it-happen "/home/jack/Warsztat/cl-source/ecl/hacks/test-file.lisp")
 
