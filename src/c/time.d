@@ -107,7 +107,7 @@ ecl_get_internal_run_time(struct ecl_timeval *tv)
 }
 
 void
-ecl_musleep(double time, bool alertable)
+ecl_musleep(double time)
 {
 #ifdef HAVE_NANOSLEEP
   struct timespec tm;
@@ -118,7 +118,7 @@ ecl_musleep(double time, bool alertable)
   code = nanosleep(&tm, &tm);
   {
     int old_errno = errno;
-    if (code < 0 && old_errno == EINTR && !alertable) {
+    if (code < 0 && old_errno == EINTR) {
       goto AGAIN;
     }
   }
@@ -133,10 +133,8 @@ ecl_musleep(double time, bool alertable)
     FILETIME filetime;
     DWORDLONG hundred_ns;
   } end, now;
-  if (alertable) {
-    GetSystemTimeAsFileTime(&end.filetime);
-    end.hundred_ns += wait;
-  }
+  GetSystemTimeAsFileTime(&end.filetime);
+  end.hundred_ns += wait;
   do {
     DWORDLONG interval;
     if (wait > maxtime) {
@@ -146,16 +144,12 @@ ecl_musleep(double time, bool alertable)
       interval = wait;
       wait = 0;
     }
-    if (SleepEx(interval/10000, alertable) != 0) {
-      if (alertable) {
+    if (SleepEx(interval/10000, 1) != 0) {
+      GetSystemTimeAsFileTime(&now.filetime);
+      if (now.hundred_ns >= end.hundred_ns)
         break;
-      } else {
-        GetSystemTimeAsFileTime(&now.filetime);
-        if (now.hundred_ns >= end.hundred_ns)
-          break;
-        else
-          wait = end.hundred_ns - now.hundred_ns;
-      }
+      else
+        wait = end.hundred_ns - now.hundred_ns;
     }
   } while (wait);
 #else
@@ -194,7 +188,7 @@ cl_sleep(cl_object z)
       time = 1e-9;
     }
   } ECL_WITHOUT_FPE_END;
-  ecl_musleep(time, 1);
+  ecl_musleep(time);
   @(return ECL_NIL);
 }
 
