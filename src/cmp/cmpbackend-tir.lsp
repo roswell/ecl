@@ -89,6 +89,9 @@
 (defun bir-return (iblock bir)
   (setf (bir-trail bir) iblock))
 
+(defun bir-rewind (iblock bir)
+  (connect-iblocks (bir-trail bir) iblock))
+
 ;;; Notice that until now we've treated the dynamic environment as an opaque
 ;;; object. It is not clear yet whether we should introduce an "extra"
 ;;; environment for analysis beyond the current *cmp-env* stored in c1form.
@@ -108,13 +111,19 @@
      (vector-push-extend instruction (iblock-instructions
                                       (bir-trail target))))))
 
+;;; poor-man's fold.
+(defun add-something (something target)
+  (add-instruction something target)
+  ;(bir-insert something target)
+  )
+
 ;;; C1FORMS have a single class and are distinguished by a name, that's why we
 ;;; trampoline to the handler by expanding the name. Handlers are defined with
 ;;; the macro DEFINE-BIR-METHOD.
 (defgeneric %bir-from-c1form (name form bir-result)
   ;; This default method should ERROR before merging this pass to develop.
   (:method ((name t) (form c1form) (bir bir-result))
-    (bir-insert (make-iblock :unknown bir) bir)
+    (bir-insert (make-iblock `(:unknown ,name) bir) bir)
     (add-instruction form bir)))
 
 (defun bir-from-c1form (form bir)
@@ -136,10 +145,40 @@
 (define-bir-method ordinary (form bir) (c1form)
   (bir-from-c1form c1form bir))
 
+(define-bir-method call-global (form bir) (fun-name arg-values)
+  (declare (ignore arg-values))
+  (add-something (make-iblock `(:call-global ,fun-name) bir) bir))
+
+(define-bir-method ffi:c-inline (form bir) (args types return c-expression se-p ol-p)
+  (declare (ignorable args types return c-expression se-p ol-p))
+  (add-something (make-iblock `(:c-inline ,c-expression) bir) bir))
+
 (define-bir-method progn (form bir) (body)
   (loop while (bir-trail bir)
         for form in body
         do (bir-from-c1form form bir)))
+
+(define-bir-method if (form bir) (fmla-c1form true-c1form false-c1form)
+  (bir-from-c1form fmla-c1form bir)
+  (let ((entry (bir-trail bir))
+        (denv (dynamic-environment bir)))
+    (when entry
+      (flet ((go-path (name form)
+               (bir-insert (make-iblock name denv) bir)
+               (bir-from-c1form form bir)
+               (prog1 (bir-trail bir)
+                 (bir-return entry bir))))
+        (let ((a-returns (go-path :if-true true-c1form))
+              (b-returns (go-path :if-false false-c1form)))
+          (if (and a-returns b-returns)
+              (let ((join (make-iblock :if-join bir)))
+                ;; Connect "true"
+                (bir-return a-returns bir)
+                (bir-insert join bir)
+                ;; Connect "false"
+                (bir-return b-returns bir)
+                (bir-insert join bir))
+              (bir-return (or a-returns b-returns) bir)))))))
 
 ;;; The IR maintains nodes that are defined in `cmptables.lsp:+all-c1-forms+'.
 ;;; Common Lisp treats some forms specially when they are top-level. That is
@@ -158,4 +197,6 @@
          (mod (make-instance 'module :top-level bir)))
     (dolist (form forms)
       (bir-from-c1form form bir))
+    (when (bir-trail bir)
+      (bir-insert (make-iblock :leave mod) bir))
     mod))
