@@ -526,7 +526,7 @@ mp_process_yield(void)
 #elif defined(HAVE_SCHED_H)
   sched_yield();
 #else
-  ecl_musleep(0.0, 1);
+  ecl_musleep(0.0);
 #endif
   @(return);
 }

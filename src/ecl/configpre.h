@@ -192,6 +192,9 @@
 /* Define to 1 if you have the `cimagl' function. */
 #undef HAVE_CIMAGL
 
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
 /* Define to 1 if you have the `clog' function. */
 #undef HAVE_CLOG
 
@@ -435,6 +438,9 @@
 
 /* Define to 1 if you have the `powf' function. */
 #undef HAVE_POWF
+
+/* Define to 1 if you have the `pthread_condattr_setclock' function. */
+#undef HAVE_PTHREAD_CONDATTR_SETCLOCK
 
 /* Define to 1 if you have the `pthread_mutex_timedlock' function. */
 #undef HAVE_PTHREAD_MUTEX_TIMEDLOCK

@@ -934,7 +934,7 @@ AC_CHECK_FUNC( [pthread_rwlock_init], [
     AC_DEFINE([HAVE_POSIX_RWLOCK], [], [HAVE_POSIX_RWLOCK])
   ], [])
 ], [])
-AC_CHECK_FUNCS([pthread_mutex_timedlock])
+AC_CHECK_FUNCS([pthread_mutex_timedlock pthread_condattr_setclock])
 ])
 
 

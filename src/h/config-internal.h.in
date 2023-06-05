@@ -72,6 +72,8 @@
 #endif
 /* gettimeofday() and sys/time.h					*/
 #undef HAVE_GETTIMEOFDAY
+/* clock_gettime()							*/
+#undef HAVE_CLOCK_GETTIME
 /* getrusage() and sys/resource.h					*/
 #ifndef NACL
 #undef HAVE_GETRUSAGE
@@ -133,6 +135,8 @@
 #undef HAVE_POSIX_RWLOCK
 /* whether we have mutex lock operations with timeout                   */
 #undef HAVE_PTHREAD_MUTEX_TIMEDLOCK
+/* whether we can set the clock for timed waits on condition variables  */
+#undef HAVE_PTHREAD_CONDATTR_SETCLOCK
 /* uname() for system identification                                    */
 #undef HAVE_UNAME
 #undef HAVE_UNISTD_H
