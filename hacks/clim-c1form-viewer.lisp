@@ -332,8 +332,7 @@
         (setf makes c::*make-forms*
               forms c::*top-level-forms*)))
     (list (c::compiler-pass/custom-pass (append makes forms))
-          makes forms)
-    ))
+          makes forms)))
 
 (defun make-it-happen (src)
   (destructuring-bind (module makes forms)

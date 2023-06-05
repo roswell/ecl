@@ -112,33 +112,6 @@
 (define-bir-method call (form bir) (&rest args)
   (add-instruction `(:call ,@args) bir))
 
-(define-bir-method progn (form bir) (body)
-  (loop while (bir-trail bir)
-        for form in body
-        do (bir-from-c1form form bir)))
-
-(define-bir-method if (form bir) (fmla-c1form true-c1form false-c1form)
-  (bir-from-c1form fmla-c1form bir)
-  (let ((entry (bir-trail bir))
-        (denv (dynamic-environment bir)))
-    (when entry
-      (flet ((go-path (name form)
-               (bir-insert (make-iblock name denv) bir)
-               (bir-from-c1form form bir)
-               (prog1 (bir-trail bir)
-                 (bir-return entry bir))))
-        (let ((a-returns (go-path :if-true true-c1form))
-              (b-returns (go-path :if-false false-c1form)))
-          (if (and a-returns b-returns)
-              (let ((join (make-iblock :if-join bir)))
-                ;; Connect "true"
-                (bir-return a-returns bir)
-                (bir-insert join bir)
-                ;; Connect "false"
-                (bir-return b-returns bir)
-                (bir-insert join bir))
-              (bir-return (or a-returns b-returns) bir)))))))
-
 (define-bir-method block (form bir) (blk-var progn-c1form)
   (let* ((old-env (dynamic-environment bir))
          (new-env (make-dynamic-environment old-env))
@@ -220,7 +193,7 @@
 ;;; [return ???] <-+- [unwind-join]  <-- [cleanup form] <---+
 ;;; [escape ???] <-+
 
-(define-bir-method unwind-protect (form bir) (protected cleanup)
+(define-bir-method unwind-protect (form bir) (protected body)
   ;;(add-instruction '(:call (print "UNWIND-PROTECT START")) bir)
   (let* ((old-env (dynamic-environment bir))
          (new-env (make-dynamic-environment old-env)))
@@ -229,188 +202,224 @@
     (bir-from-c1form protected bir)
     (let* ((join (make-iblock :unwind-protect-cleanup new-env)))
       (bir-insert join bir)
-      (dolist (form-1 cleanup)
-        (bir-from-c1form form-1 bir))
-      (bir-escape (make-iblock :unwind-protect-escape new-env) bir)
-      (bir-return join bir)
+      (bir-from-c1form body bir)
+      (bir-rewind (make-iblock :unwind-protect-escape old-env) bir)
       (bir-insert (make-iblock :unwind-protect-return old-env) bir))))
 
 
-(defvar *trash*
-  (make-hash-table :test #'equalp))
+(defun do-it (file)
+  (let* ((c::*compile-file-pathname* (pathname file))
+         (c::*compile-file-truename* (pathname file))
+         (c::*compiler-in-use* c::*compiler-in-use*)
+         (c::*load-time-values* nil)
+         (ext::*source-location* (cons c::*compile-file-pathname* 0))
+         (conditions nil)
+         (foo 42)
+         makes
+         forms
+         module)
+    (c::with-compiler-env (conditions)
+      (with-open-file (stream file)
+        (c::compiler-pass1 stream 0)
+        (setf makes c::*make-forms*
+              forms c::*top-level-forms*)))
+    (list (c::compiler-pass/custom-pass (append makes forms))
+          makes forms)))
 
-(defun make-fake-ast (form)
-  (when (atom form)
-    (return-from make-fake-ast form))
-  (case (first form)
-    (cl:progn
-      (make-c1form 'progn (mapcar #'make-fake-ast (rest form))))
-    (cl:if
-     (destructuring-bind (test p1 &optional p2) (rest form)
-       (make-c1form 'if
-                    (make-fake-ast test)
-                    (make-fake-ast p1)
-                    (make-fake-ast p2))))
-    (cl:block
-        (destructuring-bind (name &body body) (rest form)
-          (make-c1form 'block
-                       (climi::ensure-gethash (cons :block name) *trash*
-                         (make-blk name))
-                       (make-fake-ast `(progn ,@body)))))
-    (cl:return-from
-     (destructuring-bind (name &optional result) (rest form)
-       (make-c1form 'return-from
-                    (climi::ensure-gethash (cons :block name) *trash*
-                      (make-blk name))
-                    t
-                    (make-fake-ast result))))
-    (cl:tagbody
-       (make-c1form 'tagbody
-                    :tag-var
-                    (loop for form in (rest form)
-                          collect (if (consp form)
-                                      (make-fake-ast form)
-                                      (climi::ensure-gethash (cons :tag form) *trash*
-                                        (make-tag form))))))
-    (cl:go
-     (destructuring-bind (tag) (rest form)
-       (make-c1form 'go (climi::ensure-gethash (cons :tag tag) *trash*
-                          (make-tag form))
-                    nil)))
-    (cl:unwind-protect
-         (destructuring-bind (protected &body cleanup) (rest form)
-           (make-c1form 'unwind-protect
-                        (make-fake-ast protected)
-                        (mapcar #'make-fake-ast cleanup))))
-    (ordinary
-     (destructuring-bind (form-1) (rest form)
-       (make-c1form 'ordinary form-1)))
-    (otherwise
-     (make-c1form 'call form))))
+(defmethod cl-dot:graph-object-node ((graph bir-result) (object iblock))
+  (make-instance 'cl-dot:node :attributes (list :label (format nil "~s" (iblock-name object))
+                                                :shape :box)))
 
+(defmethod cl-dot:graph-object-points-to ((graph bir-result) (object iblock))
+  (iblock-outputs object))
+
+(defun show-bir (module)
+  (let ((bir (top-level module)))
+    (cl-dot:dot-graph
+     (cl-dot:generate-graph-from-roots bir (list (bir-enter bir)))
+     "/tmp/foo.pdf"
+     :format :pdf)))
+
+(show-bir (first (do-it "/home/jack/Documents/Warsztat/Lisps/ecl/hacks/test-file.lisp")))
 
-(defun present* (object stream)
-  (clim:present object (clim:presentation-type-of object) :stream stream :single-box t))
+#+mcclim
+(progn
+  (defvar *trash*
+    (make-hash-table :test #'equalp))
 
-(defmacro defpresent ((object type) &body body)
-  `(clim:define-presentation-method clim:present (,object (type ,type) stream view &key)
-     ,@body))
+  (defun make-fake-ast (form)
+    (when (atom form)
+      (return-from make-fake-ast form))
+    (case (first form)
+      (cl:progn
+        (make-c1form 'progn (mapcar #'make-fake-ast (rest form))))
+      (cl:if
+       (destructuring-bind (test p1 &optional p2) (rest form)
+         (make-c1form 'if
+                      (make-fake-ast test)
+                      (make-fake-ast p1)
+                      (make-fake-ast p2))))
+      (cl:block
+          (destructuring-bind (name &body body) (rest form)
+            (make-c1form 'block
+                         (climi::ensure-gethash (cons :block name) *trash*
+                           (make-blk name))
+                         (make-fake-ast `(progn ,@body)))))
+      (cl:return-from
+       (destructuring-bind (name &optional result) (rest form)
+         (make-c1form 'return-from
+                      (climi::ensure-gethash (cons :block name) *trash*
+                        (make-blk name))
+                      t
+                      (make-fake-ast result))))
+      (cl:tagbody
+         (make-c1form 'tagbody
+                      :tag-var
+                      (loop for form in (rest form)
+                            collect (if (consp form)
+                                        (make-fake-ast form)
+                                        (climi::ensure-gethash (cons :tag form) *trash*
+                                          (make-tag form))))))
+      (cl:go
+       (destructuring-bind (tag) (rest form)
+         (make-c1form 'go (climi::ensure-gethash (cons :tag tag) *trash*
+                            (make-tag form))
+                      nil)))
+      (cl:unwind-protect
+           (destructuring-bind (protected &body cleanup) (rest form)
+             (make-c1form 'unwind-protect
+                          (make-fake-ast protected)
+                          (make-fake-ast `(progn ,@cleanup)))))
+      (ordinary
+       (destructuring-bind (form-1) (rest form)
+         (make-c1form 'ordinary form-1)))
+      (otherwise
+       (make-c1form 'call form))))
 
-(defpresent (iblock iblock)
-  (clim:surrounding-output-with-border (stream)
-    (format stream "~a [denv ~a]" (iblock-name iblock)
-            (length (denv-variables (dynamic-environment iblock))))
-    (clim:with-text-size (stream :normal)
-      (flet ((pp (arg) (format stream "~&~s" arg)))
-        (map nil #'pp (iblock-instructions iblock))))))
+  
+  (defun present* (object stream)
+    (clim:present object (clim:presentation-type-of object) :stream stream :single-box t))
 
-(defun display (frame stream)
-  (flet ((print-src ()
-           (pprint (src frame) stream))
-         (print-cfg ()
-           (let* ((bir (cfg frame))
-                  (enter (bir-enter bir)))
-             (clim:format-graph-from-roots (list enter) #'present* #'iblock-outputs
-                                           :orientation :vertical
-                                           :merge-duplicates t
-                                           :maximize-generations t
-                                           :stream stream
-                                           :graph-type :dot-digraph))))
-    ;; (print-cfg)
-    ;; (terpri stream)
-    ;; (print-src)
-    ;; #+ (or)
-    (clim:formatting-table (stream)
-      (clim:formatting-column (stream)
-        (clim:formatting-cell (stream)
-          (print-src)))
-      (clim:formatting-column (stream)
-        (clim:formatting-cell (stream)
-          (print-cfg))))))
+  (defmacro defpresent ((object type) &body body)
+    `(clim:define-presentation-method clim:present (,object (type ,type) stream view &key)
+       ,@body))
 
-(clim:define-application-frame cfg-explorer ()
-  ((src :initform nil :accessor src)
-   (cfg :initform nil :accessor cfg))
-  (:pane :application
-   :text-style (clim:make-text-style :fix nil :normal)
-   :text-margins '(:left 20 :top 10)
-   :end-of-line-action :allow
-   :display-function 'display))
+  (defpresent (iblock iblock)
+    (clim:surrounding-output-with-border (stream)
+      (format stream "~a [denv ~a]" (iblock-name iblock)
+              (length (denv-variables (dynamic-environment iblock))))
+      (clim:with-text-size (stream :normal)
+        (flet ((pp (arg) (format stream "~&~s" arg)))
+          (map nil #'pp (iblock-instructions iblock))))))
 
-(define-cfg-explorer-command com-new-cfg ((new-src 'list) (new-cfg 'bir-result))
-  (clim:with-application-frame (frame)
-    (setf (src frame) new-src
-          (cfg frame) new-cfg)))
+  (defun display (frame stream)
+    (flet ((print-src ()
+             (pprint (src frame) stream))
+           (print-cfg ()
+             (let* ((bir (cfg frame))
+                    (enter (bir-enter bir)))
+               (clim:format-graph-from-roots (list enter) #'present* #'iblock-outputs
+                                             :orientation :vertical
+                                             :merge-duplicates t
+                                             :maximize-generations t
+                                             :stream stream
+                                             :graph-type :dot-digraph))))
+      ;; (print-cfg)
+      ;; (terpri stream)
+      ;; (print-src)
+      ;; #+ (or)
+      (clim:formatting-table (stream)
+        (clim:formatting-column (stream)
+          (clim:formatting-cell (stream)
+            (print-src)))
+        (clim:formatting-column (stream)
+          (clim:formatting-cell (stream)
+            (print-cfg))))))
 
-(defparameter *src-tagbody*
-  `(progn (ordinary 1)
-          (ordinary 2)
-          (print "HELLO")
-          (if (> x 3)
-              42
-              15)
-          (tagbody
-             (print "Top 1")
-           :tag-1
-             (print "Top 2")
-           :tag-2
-             (print "top 3")
-             (if (zerop (random 2))
-               (go :tag-1)))))
+  (clim:define-application-frame cfg-explorer ()
+    ((src :initform nil :accessor src)
+     (cfg :initform nil :accessor cfg))
+    (:pane :application
+     :text-style (clim:make-text-style :fix nil :normal)
+     :text-margins '(:left 20 :top 10)
+     :end-of-line-action :allow
+     :display-function 'display))
 
-(defparameter *src-tagbody-2*
-  `(progn (ordinary 1)
-          (ordinary 2)
-          (print "HELLO")
-          (if (> x 3)
-              42
-              15)
-          (tagbody
-             (print "Top 1")
-           :tag-1
-             (print "Top 2")
-             (unwind-protect
-                  (if (not (null t))
-                      (progn
-                        (print "Escape!")
-                        (go :tag-1)
-                        (print "Dead code!")
-                        (print "Truly dead!"))
-                      (if (testp "thing")
-                          (if (cosmicp "thing")
-                              (go :tag-2)
-                              (print "Thing is rad!"))
-                          (print "Thing ain't rad!")))
-               (print "Leaving truly yours!"))
-             (print "Top 3")
-           :tag-2
-             (print "Top 4")
-             (print "Top 5"))))
+  (define-cfg-explorer-command com-new-cfg ((new-src 'list) (new-cfg 'bir-result))
+    (clim:with-application-frame (frame)
+      (setf (src frame) new-src
+            (cfg frame) new-cfg)))
 
-(defparameter *src-block*
-  `(block foobar
-     (print "HELLO")
-     (if (= x 3)
-         (return-from foobar (identity :returned-value))
-         (print "CONTINUE"))
-     (print "GOOD BYE")))
+  (defparameter *src-tagbody*
+    `(progn (ordinary 1)
+            (ordinary 2)
+            (print "HELLO")
+            (if (> x 3)
+                42
+                15)
+            (tagbody
+               (print "Top 1")
+             :tag-1
+               (print "Top 2")
+             :tag-2
+               (print "top 3")
+               (if (zerop (random 2))
+                   (go :tag-1)))))
 
-(defparameter *src-unwind*
-  `(block foobar
-     (print "HELLO")
-     (unwind-protect (if (zerop (random 2))
-                         (return-from foobar)
-                         (print "Carry on"))
-       (print "Cleanup"))
-     (print "Good Bye!")))
+  (defparameter *src-tagbody-2*
+    `(progn (ordinary 1)
+            (ordinary 2)
+            (print "HELLO")
+            (if (> x 3)
+                42
+                15)
+            (tagbody
+               (print "Top 1")
+             :tag-1
+               (print "Top 2")
+               (unwind-protect
+                    (if (not (null t))
+                        (progn
+                          (print "Escape!")
+                          (go :tag-1)
+                          (print "Dead code!")
+                          (print "Truly dead!"))
+                        (if (testp "thing")
+                            (if (cosmicp "thing")
+                                (go :tag-2)
+                                (print "Thing is rad!"))
+                            (print "Thing ain't rad!")))
+                 (print "Leaving truly yours!"))
+               (print "Top 3")
+             :tag-2
+               (print "Top 4")
+               (print "Top 5"))))
+
+  (defparameter *src-block*
+    `(block foobar
+       (print "HELLO")
+       (if (= x 3)
+           (return-from foobar (identity :returned-value))
+           (print "CONTINUE"))
+       (print "GOOD BYE")))
+
+  (defparameter *src-unwind*
+    `(block foobar
+       (print "HELLO")
+       (unwind-protect (if (zerop (random 2))
+                           (return-from foobar)
+                           (print "Carry on"))
+         (print "Cleanup"))
+       (print "Good Bye!")))
 
 
-(defun make-fake-cfg ()
-  (let* ((src *src-tagbody*)
-         (ast (make-fake-ast src))
-         (bir (make-bir-result (make-dynamic-environment))))
-    (bir-from-c1form ast bir)
-    (clim:execute-frame-command (clim:find-application-frame 'cfg-explorer :activate t)
-                                `(com-new-cfg ,src ,bir))))
+  (defun make-fake-cfg ()
+    (let* ((src *src-tagbody*)
+           (ast (make-fake-ast src))
+           (bir (make-bir-result (make-dynamic-environment))))
+      (bir-from-c1form ast bir)
+      (clim:execute-frame-command (clim:find-application-frame 'cfg-explorer :activate t)
+                                  `(com-new-cfg ,src ,bir))))
 
-(make-fake-cfg)
+  (make-fake-cfg)
+  )
