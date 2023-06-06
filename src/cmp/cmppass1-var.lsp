@@ -171,7 +171,7 @@
   ;;   - e2 produces no side effects
   (when (and (= 0 (var-ref var))
              (not (member (var-kind var) '(special global)))
-             (not (form-causes-side-effect form)))
+             (not (c1form-side-effects form)))
     (unless (var-ignorable var)
       (cmpdebug "Removing unused variable ~A" (var-name var)))
     (delete-c1forms form)
@@ -210,7 +210,7 @@
   ;;  - e2 does not affect v1 nor e3, e3 does not affect e2
   ;;  - e4 does not affect e2
   (when (and (= 1 (var-ref var))
-             (not (form-causes-side-effect form))
+             (not (c1form-side-effects form))
              ;; it does not refer to special variables which
              ;; are changed in the LET form
              (notany #'(lambda (v) (var-referenced-in-form v form)) rest-vars)

@@ -2,17 +2,13 @@
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;;;
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
+;;;;  Copyright (c) 1990, Giuseppe Attardi
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
-;;;;    See file '../Copyright' for full details.
 
-;;;; CMPINLINE  Open coding optimizer.
+;;;; Open coding optimizer.
 
 (in-package "COMPILER")
 
@@ -49,11 +45,6 @@
          (*destination* temp))
     (set-loc loc)
     temp))
-
-(defmacro with-inlined-loc ((temp-loc loc) &rest body)
-  `(let ((,temp-loc (save-inline-loc ,loc)))
-     (setf ,temp-loc (list (var-type ,temp-loc) ,temp-loc))
-     ,@body))
 
 (defun emit-inlined-variable (form rest-forms)
   (let ((var (c1form-arg 0 form))
@@ -104,7 +95,7 @@
 
 (defun emit-inlined-structure-ref (form rest-forms)
   (let ((type (c1form-primary-type form)))
-    (if (args-cause-side-effect rest-forms)
+    (if (some #'c1form-side-effects rest-forms)
         (let* ((temp (make-inline-temp-var type :object))
                (*destination* temp))
           (c2expr* form)
@@ -119,7 +110,7 @@
 
 (defun emit-inlined-instance-ref (form rest-forms)
   (let ((type (c1form-primary-type form)))
-    (if (args-cause-side-effect rest-forms)
+    (if (some #'c1form-side-effects rest-forms)
         (let* ((temp (make-inline-temp-var type :object))
                (*destination* temp))
           (c2expr* form)
@@ -185,16 +176,3 @@
 (defun close-inline-blocks ()
   (loop for i of-type fixnum from 0 below *inline-blocks*
      do (wt-nl-close-brace)))
-
-(defun form-causes-side-effect (form)
-  (c1form-side-effects form))
-
-(defun args-cause-side-effect (forms)
-  (some #'c1form-side-effects forms))
-
-(defun function-may-have-side-effects (fname)
-  (not (si:get-sysprop fname 'no-side-effects)))
-
-(defun function-may-change-sp (fname)
-  (not (or (si:get-sysprop fname 'no-side-effects)
-           (si:get-sysprop fname 'no-sp-change))))

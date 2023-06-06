@@ -26,7 +26,6 @@
     "src:cmp;cmpform.lsp"
     "src:cmp;cmpvar.lsp"
     "src:cmp;cmpfun.lsp"
-    "src:cmp;cmpinline.lsp"
     ;; Types
     "src:cmp;cmptype-prop.lsp"
     "src:cmp;cmptype.lsp"
@@ -50,7 +49,9 @@
     "src:cmp;cmpbackend-cxx;cmpc-mach.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-wt.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-inliner.lsp"
+    "src:cmp;cmpbackend-cxx;cmpc-opt-inl.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-opt-num.lsp"
+    "src:cmp;cmpbackend-cxx;cmpc-opt-ct.lsp"
     ;; Code generation pass
     "src:cmp;cmpbackend-cxx;cmppass2-data.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-top.lsp"
@@ -66,7 +67,6 @@
     "src:cmp;cmpbackend-cxx;cmppass2-ffi.lsp"
     "src:cmp;cmpbackend-cxx;cmpbackend-cxx.lsp"
     ;; Optimizations
-    "src:cmp;cmpct.lsp"
     "src:cmp;cmpmap.lsp"
     "src:cmp;cmpname.lsp"
     "src:cmp;cmpopt.lsp"
