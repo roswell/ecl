@@ -45,7 +45,7 @@
     "src:cmp;cmpprop.lsp"
     "src:cmp;cmpprop-num.lsp"
     ;; C/C++ backend
-    ;; Abstract C machine
+    "src:cmp;cmpbackend-cxx;cmpc-util.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-mach.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-wt.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-inliner.lsp"
