@@ -125,10 +125,9 @@
          (if (and macros-allowed
                   (setf fd (cmp-macro-function fname)))
              (cmp-expand-macro fd (list* fname args))
-             ;; When it is a function and takes many arguments, we will
-             ;; need a special C form to call it. It takes extra code for
-             ;; handling the stack
-             (unoptimized-long-call `#',fname args)))
+             ;; When it is a function and takes too many arguments, we need a
+             ;; special C form to call it with the stack (see with-stack).
+             (unoptimized-long-call `(function ,fname) args)))
         ((setq fd (local-function-ref fname))
          (c1call-local fname fd args))
         ((and macros-allowed            ; macrolet
