@@ -135,18 +135,12 @@
      (make-c1form* 'LOCATION :type 'CHARACTER
                              :args (list 'CHARACTER-VALUE (char-code val))))
     ((typep val 'DOUBLE-FLOAT)
-     (when (and (ext:float-nan-p val) (not only-small-values))
-       (cmperr "Cannot externalize value ~A" val))
      (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT
                              :args (list 'DOUBLE-FLOAT-VALUE val (add-object val))))
     ((typep val 'SINGLE-FLOAT)
-     (when (and (ext:float-nan-p val) (not only-small-values))
-       (cmperr "Cannot externalize value ~A" val))
      (make-c1form* 'LOCATION :type 'SINGLE-FLOAT
                              :args (list 'SINGLE-FLOAT-VALUE val (add-object val))))
     ((typep val 'LONG-FLOAT)
-     (when (and (ext:float-nan-p val) (not only-small-values))
-       (cmperr "Cannot externalize value ~A" val))
      (make-c1form* 'LOCATION :type 'LONG-FLOAT
                              :args (list 'LONG-FLOAT-VALUE val (add-object val))))
     #+sse2
