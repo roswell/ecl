@@ -62,6 +62,30 @@
        (when (subtypep type (rep-type-lisp-type record))
          (return-from lisp-type->rep-type (rep-type-name record)))))))
 
+(defun c-number-rep-type-p (rep-type)
+  (let ((r (rep-type-record-unsafe rep-type)))
+    (and r (rep-type-numberp r))))
+
+(defun c-integer-rep-type-p (rep-type)
+  (let ((r (rep-type-record-unsafe rep-type)))
+    (and r (rep-type-integerp r))))
+
+(defun c-integer-rep-type-bits (rep-type)
+  (let ((r (rep-type-record-unsafe rep-type)))
+    (and r (rep-type-bits r))))
+
+(defun c-number-type-p (type)
+  (c-number-rep-type-p (lisp-type->rep-type type)))
+
+(defun c-integer-type-p (type)
+  (c-integer-rep-type-p (lisp-type->rep-type type)))
+
+(defun c-integer-type-bits (type)
+  (c-number-rep-type-bits (lisp-type->rep-type type)))
+
+(defun rep-type->c-name (type)
+  (rep-type-c-name (rep-type-record type)))
+
 ;; These types can be used by ECL to unbox data They are sorted from
 ;; the most specific, to the least specific one.  All functions must
 ;; be declared in external.h (not internal.h) header file.
