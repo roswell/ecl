@@ -25,9 +25,8 @@
                ((keywordp form)
                 (make-c1form* 'LOCATION :type (object-type form)
                               :args (add-symbol form)))
-               ((constantp form *cmp-env*)
-                (or (c1constant-value (symbol-value form) :only-small-values t)
-                    (c1var form)))
+               ((and (constantp form *cmp-env*)
+                     (c1constant-value (symbol-value form))))
                (t (c1var form))))
         ((consp form)
          (cmpck (not (si:proper-list-p form))
@@ -117,7 +116,7 @@
        (return form))
      (setf form new-form))))
 
-(defun c1constant-value (val &key always only-small-values)
+(defun c1constant-value (val &key always)
   (cond
     ;; FIXME includes in c1 pass.
     ((ext:when-let ((x (assoc val *optimizable-constants*)))
@@ -146,7 +145,6 @@
     #+sse2
     ((typep val 'EXT:SSE-PACK)
      (c1constant-value/sse val))
-    (only-small-values nil)
     (always
      (make-c1form* 'LOCATION :type `(eql ,val)
                              :args (add-object val)))
