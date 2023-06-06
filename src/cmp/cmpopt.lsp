@@ -361,3 +361,15 @@
                                       (:long-double "ecl_to_long_double(#0)"))
                               :one-liner t :side-effects nil))))))))
    form))
+
+(define-compiler-macro princ (&whole whole expression &optional stream &environment env)
+  (if (constantp expression env)
+      (let ((value (ext:constant-form-value expression env)))
+        (typecase value
+          ((eql #\newline)
+           `(terpri ,stream))
+          ((string 1)
+           `(princ ,(aref value 0) ,stream))
+          (otherwise
+           whole)))
+      whole))
