@@ -44,11 +44,13 @@
     "src:cmp;cmppass1-ffi.lsp"
     ;; Type propagation pass
     "src:cmp;cmpprop.lsp"
+    "src:cmp;cmpprop-num.lsp"
     ;; C/C++ backend
     ;; Abstract C machine
     "src:cmp;cmpbackend-cxx;cmpc-mach.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-wt.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-inliner.lsp"
+    "src:cmp;cmpbackend-cxx;cmpc-opt-num.lsp"
     ;; Code generation pass
     "src:cmp;cmpbackend-cxx;cmppass2-data.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-top.lsp"
@@ -66,10 +68,9 @@
     ;; Optimizations
     "src:cmp;cmpct.lsp"
     "src:cmp;cmpmap.lsp"
-    "src:cmp;cmpnum.lsp"
     "src:cmp;cmpname.lsp"
     "src:cmp;cmpopt.lsp"
-    "src:cmp;cmpopt-bits.lsp"
+    "src:cmp;cmpopt-num.lsp"
     "src:cmp;cmpopt-clos.lsp"
     "src:cmp;cmpopt-constant.lsp"
     "src:cmp;cmpopt-cons.lsp"
