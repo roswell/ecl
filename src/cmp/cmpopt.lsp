@@ -339,29 +339,6 @@
 (define-compiler-macro coerce (&whole form value type &environment env)
   (expand-coerce form value type env))
 
-(define-compiler-macro float (&whole form value &optional float &environment env)
-  (or 
-   (and
-    float
-    (policy-inline-type-checks env)
-    (multiple-value-bind (constant-p float)
-        (constant-value-p float env)
-      (when (and constant-p (floatp float))
-        (let* ((float (type-of float))
-               (c-type (lisp-type->rep-type float)))
-          `(let ((value ,value))
-             (declare (:read-only value))
-             (ext:compiler-typecase value
-               (,float value)
-               (t
-                (ffi:c-inline (value) (:object) ,c-type
-                              ,(ecase c-type
-                                      (:double "ecl_to_double(#0)")
-                                      (:float "ecl_to_float(#0)")
-                                      (:long-double "ecl_to_long_double(#0)"))
-                              :one-liner t :side-effects nil))))))))
-   form))
-
 (define-compiler-macro princ (&whole whole expression &optional stream &environment env)
   (if (constantp expression env)
       (let ((value (ext:constant-form-value expression env)))

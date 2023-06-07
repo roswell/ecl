@@ -135,3 +135,18 @@
      do (if arguments
             (setf arg1 (save-inline-loc result))
             (return result))))
+
+(define-c-inliner float (return-type arg &optional float)
+  (let ((arg-c-type (lisp-type->rep-type (inlined-arg-type arg)))
+        (flt-c-type (lisp-type->rep-type (inlined-arg-type float))))
+    (when (member flt-c-type '(:float :double :long-double))
+      (if (eq arg-c-type flt-c-type)
+          (inlined-arg-loc arg)
+          (produce-inline-loc (list arg)
+                              (list :object)
+                              (list flt-c-type)
+                              (ecase flt-c-type
+                                (:float       "ecl_to_float(#0)")
+                                (:double      "ecl_to_double(#0)")
+                                (:long-double "ecl_to_long_double(#0)"))
+                              nil t)))))
