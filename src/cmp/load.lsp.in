@@ -48,6 +48,8 @@
     "src:cmp;cmpbackend-cxx;cmpc-util.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-mach.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-wt.lsp"
+    "src:cmp;cmpbackend-cxx;cmpc-inl-sysfun.lsp"
+    "src:cmp;cmpbackend-cxx;cmpc-inl-lspfun.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-inliner.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-opt-inl.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-opt-num.lsp"
@@ -80,7 +82,6 @@
     "src:cmp;cmpclos.lsp"               ;unused
     "src:cmp;cmpstructures.lsp"         ;unused
     "src:cmp;cmparray.lsp"
-    "src:cmp;sysfun.lsp"
     ;; Other
     "src:cmp;cmpos-run.lsp"
     "src:cmp;cmpos-features.lsp"

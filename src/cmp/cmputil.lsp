@@ -153,12 +153,6 @@
         :format-control "The expansion of the compiler macro~%~T~A~%was aborted because of a serious condition~%~A" :format-arguments (list fname c))
       (values nil nil))))
 
-(defun si::compiler-clear-compiler-properties (symbol)
-  (si:rem-sysprop symbol 't1)
-  (si:rem-sysprop symbol 't2)
-  (si:rem-sysprop symbol 't3)
-  (si:rem-sysprop symbol 'lfun))
-
 (defun lisp-to-c-name (obj)
   "Translate Lisp object prin1 representation to valid C identifier name"
   (and obj 
