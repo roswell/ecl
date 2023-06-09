@@ -67,6 +67,7 @@
 
     (WITH-STACK         body :side-effects)
     (STACK-PUSH-VALUES  value-c1form push-statement-c1form :side-effects)
+    (MV-PROG1           form body :side-effects)
 
     (ext:COMPILER-TYPECASE var expressions)
     (ext:CHECKED-VALUE  type value-c1form let-form))))
@@ -241,6 +242,7 @@
 
     (with-stack . c2with-stack)
     (stack-push-values . c2stack-push-values)
+    (mv-prog1 . c2mv-prog1)
 
     (cl:tagbody . c2tagbody)
     (cl:go . c2go)
@@ -302,8 +304,10 @@
     (cl:load-time-value . p1trivial)
     (make-form . p1trivial)
     (init-form . p1trivial)
-    (c::with-stack . p1with-stack)
-    (c::stack-push-values . p1stack-push-values)
+    (with-stack . p1with-stack)
+    (stack-push-values . p1stack-push-values)
+    (mv-prog1 . p1mv-prog1)
+
     (ext:compiler-typecase . p1compiler-typecase)
     (ext:checked-value . p1checked-value)
     ))

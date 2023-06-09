@@ -236,6 +236,11 @@
   (declare (ignore c1form))
   (p1propagate body))
 
+(defun p1mv-prog1 (c1form form body)
+  (declare (ignore c1form))
+  (prog1 (p1propagate form)
+    (p1propagate-list body)))
+
 (defun p1stack-push-values (c1form form inline)
   (declare (ignore c1form inline))
   (p1propagate form)
