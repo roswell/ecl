@@ -44,27 +44,28 @@ static struct ecl_timeval beginning;
 void
 ecl_get_internal_real_time(struct ecl_timeval *tv)
 {
-#if defined(HAVE_GETTIMEOFDAY) && !defined(ECL_MS_WINDOWS_HOST)
-  struct timezone tz;
-  struct timeval aux;
-  gettimeofday(&aux, &tz);
-  tv->tv_usec = aux.tv_usec;
-  tv->tv_sec = aux.tv_sec;
-#else
-# if defined(ECL_MS_WINDOWS_HOST)
+#if defined(ECL_MS_WINDOWS_HOST)
   union {
     FILETIME filetime;
     DWORDLONG hundred_ns;
   } system_time;
   GetSystemTimeAsFileTime(&system_time.filetime);
-  system_time.hundred_ns /= 10000;
-  tv->tv_sec = system_time.hundred_ns / 1000;
-  tv->tv_usec = (system_time.hundred_ns % 1000) * 1000;
-# else
-  time_t = time(0);
-  tv->tv_sec = time_t;
+  system_time.hundred_ns /= 10;
+  tv->tv_sec = system_time.hundred_ns / 1000000;
+  tv->tv_usec = system_time.hundred_ns % 1000000;
+#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  tv->tv_usec = ts.tv_nsec / 1000;
+  tv->tv_sec = ts.tv_sec;
+#elif defined(HAVE_GETTIMEOFDAY)
+  struct timeval aux;
+  gettimeofday(&aux, NULL);
+  tv->tv_usec = aux.tv_usec;
+  tv->tv_sec = aux.tv_sec;
+#else
+  tv->tv_sec = time(NULL);
   tv->tv_usec = 0;
-# endif
 #endif
 }
 
@@ -81,7 +82,7 @@ ecl_get_internal_run_time(struct ecl_timeval *tv)
   struct tms buf;
   times(&buf);
   tv->tv_sec = buf.tms_utime / CLK_TCK;
-  tv->tv_usec = (buf.tms_utime % CLK_TCK) * 1000000;
+  tv->tv_usec = ((buf.tms_utime % CLK_TCK) * 1000000) / CLK_TCK;
 # else
 #  if defined(ECL_MS_WINDOWS_HOST)
   union {
@@ -95,9 +96,9 @@ ecl_get_internal_run_time(struct ecl_timeval *tv)
                        &user_time.filetime))
     FEwin32_error("GetProcessTimes() failed", 0);
   kernel_time.hundred_ns += user_time.hundred_ns;
-  kernel_time.hundred_ns /= 10000;
-  tv->tv_sec = kernel_time.hundred_ns / 1000;
-  tv->tv_usec = (kernel_time.hundred_ns % 1000) * 1000;
+  kernel_time.hundred_ns /= 10;
+  tv->tv_sec = kernel_time.hundred_ns / 1000000;
+  tv->tv_usec = kernel_time.hundred_ns % 1000000;
 #  else
   ecl_get_internal_real_time(tv);
 #  endif
@@ -106,7 +107,7 @@ ecl_get_internal_run_time(struct ecl_timeval *tv)
 }
 
 void
-ecl_musleep(double time, bool alertable)
+ecl_musleep(double time)
 {
 #ifdef HAVE_NANOSLEEP
   struct timespec tm;
@@ -117,7 +118,7 @@ ecl_musleep(double time, bool alertable)
   code = nanosleep(&tm, &tm);
   {
     int old_errno = errno;
-    if (code < 0 && old_errno == EINTR && !alertable) {
+    if (code < 0 && old_errno == EINTR) {
       goto AGAIN;
     }
   }
@@ -132,10 +133,8 @@ ecl_musleep(double time, bool alertable)
     FILETIME filetime;
     DWORDLONG hundred_ns;
   } end, now;
-  if (alertable) {
-    GetSystemTimeAsFileTime(&end.filetime);
-    end.hundred_ns += wait;
-  }
+  GetSystemTimeAsFileTime(&end.filetime);
+  end.hundred_ns += wait;
   do {
     DWORDLONG interval;
     if (wait > maxtime) {
@@ -145,16 +144,12 @@ ecl_musleep(double time, bool alertable)
       interval = wait;
       wait = 0;
     }
-    if (SleepEx(interval/10000, alertable) != 0) {
-      if (alertable) {
+    if (SleepEx(interval/10000, 1) != 0) {
+      GetSystemTimeAsFileTime(&now.filetime);
+      if (now.hundred_ns >= end.hundred_ns)
         break;
-      } else {
-        GetSystemTimeAsFileTime(&now.filetime);
-        if (now.hundred_ns >= end.hundred_ns)
-          break;
-        else
-          wait = end.hundred_ns - now.hundred_ns;
-      }
+      else
+        wait = end.hundred_ns - now.hundred_ns;
     }
   } while (wait);
 #else
@@ -171,7 +166,7 @@ ecl_runtime(void)
 {
   struct ecl_timeval tv;
   ecl_get_internal_run_time(&tv);
-  return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+  return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 cl_object
@@ -193,7 +188,7 @@ cl_sleep(cl_object z)
       time = 1e-9;
     }
   } ECL_WITHOUT_FPE_END;
-  ecl_musleep(time, 1);
+  ecl_musleep(time);
   @(return ECL_NIL);
 }
 
@@ -201,8 +196,8 @@ static cl_object
 timeval_to_time(long sec, long usec)
 {
   cl_object milliseconds = ecl_plus(ecl_times(ecl_make_integer(sec),
-                                              ecl_make_fixnum(1000)),
-                                    ecl_make_integer(usec / 1000));
+                                              ecl_make_fixnum(1000000)),
+                                    ecl_make_integer(usec));
   @(return milliseconds);
 }
 
@@ -235,7 +230,7 @@ init_unixtime(void)
 {
   ecl_get_internal_real_time(&beginning);
 
-  ECL_SET(@'internal-time-units-per-second', ecl_make_fixnum(1000));
+  ECL_SET(@'internal-time-units-per-second', ecl_make_fixnum(1000000));
 
   cl_core.Jan1st1970UT =
     ecl_times(ecl_make_fixnum(24 * 60 * 60),

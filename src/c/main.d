@@ -806,7 +806,7 @@ cl_boot(int argc, char **argv)
        * When the thread exits, sometimes the dyld library gets
        * called, and if we call dlopen() at the same time we
        * cause ECL to hang */
-      ecl_musleep(1e-3, 1);
+      ecl_musleep(1e-3);
     }
 #endif
     ECL_SET(@'ext::*program-exit-code*', code);
