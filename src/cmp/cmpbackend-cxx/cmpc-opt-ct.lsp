@@ -2,16 +2,12 @@
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;;;
-;;;; CMPCT --  Optimizer for several constant values
-
 ;;;;  Copyright (c) 2003, Juan Jose Garcia Ripoll.
 ;;;;
-;;;;    ECoLisp is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
-;;;;    See file '../Copyright' for full details.
+
+;;;;  Optimizer for several constant values
 
 (in-package "COMPILER")
 
