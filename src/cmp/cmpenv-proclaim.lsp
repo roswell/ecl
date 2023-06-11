@@ -79,14 +79,14 @@
      (dolist (x (cdr decl))
        (cond ((symbolp x)
               (multiple-value-bind (found c-name)
-                  (si::mangle-name x t)
+                  (si:mangle-name x t)
                 (if found
-                    (warn "The function ~s is already in the runtime.~%C-EXPORT-FNAME declaration ignored." x)
+                    (error "The function ~s is already in the runtime.~%C-EXPORT-FNAME declaration ignored." x)
                     (si:put-sysprop x 'Lfun c-name))))
              ((consp x)
               (destructuring-bind (c-name lisp-name) x
-                (if (si::mangle-name lisp-name)
-                    (warn "The function ~s is already in the runtime.~%C-EXPORT-FNAME declaration ignored." lisp-name)
+                (if (si:mangle-name lisp-name)
+                    (error "The function ~s is already in the runtime.~%C-EXPORT-FNAME declaration ignored." lisp-name)
                     (si:put-sysprop lisp-name 'Lfun c-name))))
              (t
               (error "Syntax error in proclamation ~s" decl)))))

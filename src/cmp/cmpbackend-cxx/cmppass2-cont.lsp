@@ -45,18 +45,17 @@
         (wt-nl-close-brace))
       (c2expr body)))
 
-(defun c2return-from (c1form blk type val)
+(defun c2return-from (c1form blk nonlocal val)
   (declare (ignore c1form))
-  (case type
-    (CCB
-     (let ((*destination* 'VALUES)) (c2expr* val))
-     (wt-nl "cl_return_from(" (blk-var blk) "," (add-symbol (blk-name blk)) ");"))
-    ((CLB UNWIND-PROTECT)
-     (let ((*destination* 'VALUES)) (c2expr* val))
-     (wt-nl "cl_return_from(" (blk-var blk) ",ECL_NIL);"))
-    (T (let ((*destination* (blk-destination blk))
-             (*exit* (blk-exit blk)))
-         (c2expr val)))))
+  (if nonlocal
+      (progn
+        (let ((*destination* 'VALUES))
+          (c2expr* val))
+        (let ((name (add-symbol (blk-name blk))))
+          (wt-nl "cl_return_from(" (blk-var blk) "," name ");")))
+      (let ((*destination* (blk-destination blk))
+            (*exit* (blk-exit blk)))
+        (c2expr val))))
 
 
 (defun c2tagbody (c1form tag-loc body)

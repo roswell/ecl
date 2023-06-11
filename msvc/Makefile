@@ -231,7 +231,7 @@ c\cut$(EXE): $(top_srcdir)\util\cut.c
 	$(MAKE) cut$(EXE)
 	cd ..
 
-$(TARGETS): $(UCDDAT) ecl_min$(EXE) compile.lsp sysfun.lsp BUILD-STAMP
+$(TARGETS): $(UCDDAT) ecl_min$(EXE) compile.lsp BUILD-STAMP
 	set ECLDIR=./
 	ecl_min compile
 BUILD-STAMP: Makefile
@@ -377,9 +377,6 @@ eclgmp.lib:
 	$(CP) gmp.h ..\ecl\gmp.h
 	cd ..
 
-sysfun.lsp:
-	$(CP) $(srcdir)\cmp\sysfun.lsp .\
-
 install:
 	IF NOT EXIST "$(prefix)" $(MKDIR) "$(prefix)"
 	IF NOT EXIST "$(bindir)" $(MKDIR) "$(bindir)"
@@ -454,7 +451,7 @@ clean: clean_ecl clean_lisp
 clean_ecl:
 	-for %i in (eclgc.lib eclgmp.lib lsp\config.lsp compile.lsp bare.lsp \
 	            lsp\load.lsp clos\load.lsp cmp\load.lsp cmp\cmpdefs.lsp \
-		    ecl.lib ecl.dll ecl_min$(EXE) eclmin.lib help.doc sysfun.lsp \
+		    ecl.lib ecl.dll ecl_min$(EXE) eclmin.lib help.doc \
 		    BUILD-STAMP $(TARGETS) *.exp *.ilk *.manifest *.pdb *.c *.obj \
 		    ecl-config.bat ecl-static.lib *.tmp *.implib *.lib ecl.ico \
 		    ecl-cc.bat ecl.rc ecl.res) \

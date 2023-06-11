@@ -176,3 +176,10 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
     (if (and (symbolp name) (setf cname (si:get-sysprop name 'Lfun)))
         (values cname t)
         (values (next-cfun "L~D~A" name) nil))))
+
+(defun function-may-have-side-effects (fname)
+  (not (si:get-sysprop fname 'no-side-effects)))
+
+(defun function-may-change-sp (fname)
+  (not (or (si:get-sysprop fname 'no-side-effects)
+           (si:get-sysprop fname 'no-sp-change))))

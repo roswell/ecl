@@ -1,20 +1,39 @@
 ;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
+;;;;  Copyright (c) 2010, Juan Jose Garcia Ripoll
 ;;;;
-;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
-;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
-;;;;
-;;;;  CMPOPT-BITS  -- Optimize operations acting on bits
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
 
+;;;; Optimizer for numerical expressions.
+
 (in-package "COMPILER")
+
+;;;
+;;; We transform BOOLE into the individual operations, which have inliners
+;;;
+
+(define-compiler-macro boole (&whole form op-code op1 op2)
+  (or (and (constantp op-code *cmp-env*)
+           (case (ext:constant-form-value op-code *cmp-env*)
+             (#. boole-clr `(progn (ext:checked-value integer ,op1) (ext:checked-value integer ,op2) 0))
+             (#. boole-set `(progn (ext:checked-value integer ,op1) (ext:checked-value integer ,op2) -1))
+             (#. boole-1 `(prog1 (ext:checked-value integer ,op1) (ext:checked-value integer ,op2)))
+             (#. boole-2 `(progn (ext:checked-value integer ,op1) (ext:checked-value integer ,op2)))
+             (#. boole-c1 `(prog1 (lognot ,op1) (ext:checked-value integer ,op2)))
+             (#. boole-c2 `(progn (ext:checked-value integer ,op1) (lognot ,op2)))
+             (#. boole-and `(logand ,op1 ,op2))
+             (#. boole-ior `(logior ,op1 ,op2))
+             (#. boole-xor `(logxor ,op1 ,op2))
+             (#. boole-eqv `(logeqv ,op1 ,op2))
+             (#. boole-nand `(lognand ,op1 ,op2))
+             (#. boole-nor `(lognor ,op1 ,op2))
+             (#. boole-andc1 `(logandc1 ,op1 ,op2))
+             (#. boole-andc2 `(logandc2 ,op1 ,op2))
+             (#. boole-orc1 `(logorc1 ,op1 ,op2))
+             (#. boole-orc2 `(logorc2 ,op1 ,op2))))
+      form))
 
 ;;;
 ;;; LDB
@@ -123,9 +142,6 @@
 
 ;;;
 ;;; ASH
-;;; Bit fiddling. It is a bit tricky because C does not allow
-;;; shifts in << or >> which exceed the integer size. In those
-;;; cases the compiler may do whatever it wants (and gcc does!)
 ;;;
 
 (define-compiler-macro ash (&whole whole argument shift)
@@ -140,39 +156,42 @@
         (t
          whole)))
 
-(define-c-inliner shift (return-type argument orig-shift)
-  (let* ((arg-type (inlined-arg-type argument))
-         (arg-c-type (lisp-type->rep-type arg-type))
-         (return-c-type (lisp-type->rep-type return-type))
-         (shift (loc-immediate-value (inlined-arg-loc orig-shift))))
-    (if (or (not (c-integer-rep-type-p arg-c-type))
-            (not (c-integer-rep-type-p return-c-type)))
-        (produce-inline-loc (list argument orig-shift) '(:object :fixnum) '(:object)
-                            "ecl_ash(#0,#1)" nil t)
-        (let* ((arg-bits (c-integer-rep-type-bits arg-c-type))
-               (return-bits (c-integer-rep-type-bits return-c-type))
-               (max-type (if (and (plusp shift)
-                                  (< arg-bits return-bits))
-                           return-c-type
-                           arg-c-type)))
-          (produce-inline-loc (list argument) (list max-type) (list return-type)
-                              (format nil
-                                      (if (minusp shift)
-                                          "((#0) >> (~D))"
-                                          "((#0) << (~D))")
-                                      (abs shift))
-                              nil t)))))
+(defun simplify-arithmetic (operator args whole)
+  (if (every #'numberp args)
+      (apply operator args)
+      (let ((l (length args)))
+        (cond ((> l 2)
+               (simplify-arithmetic
+                operator
+                (list* (simplify-arithmetic operator
+                                            (list (first args) (second args))
+                                            nil)
+                       (cddr args))
+                nil))
+              ((= l 2)
+               (or whole (list* operator args)))
+              ((= l 1)
+               (if (or (eq operator '*) (eq operator '+))
+                   (first args)
+                   (or whole (list* operator args))))
+              ((eq operator '*)
+               1)
+              ((eq operator '+)
+               0)
+              (t
+               (error 'simple-program-error
+                      :format-error "Wrong number of arguments for operator ~a in ~a"
+                      :format-arguments (list operator (or whole
+                                                           (list* operator args)))))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; TYPE PROPAGATION
-;;;
+(define-compiler-macro * (&whole all &rest args)
+  (simplify-arithmetic '* args all))
 
-(def-type-propagator logand (fname &rest args)
-  (values args
-          (if args
-              (dolist (int-type '((UNSIGNED-BYTE 8) FIXNUM) 'integer)
-                (when (loop for value in args
-                         always (subtypep value int-type))
-                  (return int-type)))
-              'fixnum)))
+(define-compiler-macro + (&whole all &rest args)
+  (simplify-arithmetic '+ args all))
+
+(define-compiler-macro / (&whole all &rest args)
+  (simplify-arithmetic '/ args all))
+
+(define-compiler-macro - (&whole all &rest args)
+  (simplify-arithmetic '- args all))

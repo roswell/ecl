@@ -25,9 +25,8 @@
                ((keywordp form)
                 (make-c1form* 'LOCATION :type (object-type form)
                               :args (add-symbol form)))
-               ((constantp form *cmp-env*)
-                (or (c1constant-value (symbol-value form) :only-small-values t)
-                    (c1var form)))
+               ((and (constantp form *cmp-env*)
+                     (c1constant-value (symbol-value form))))
                (t (c1var form))))
         ((consp form)
          (cmpck (not (si:proper-list-p form))
@@ -117,7 +116,7 @@
        (return form))
      (setf form new-form))))
 
-(defun c1constant-value (val &key always only-small-values)
+(defun c1constant-value (val &key always)
   (cond
     ;; FIXME includes in c1 pass.
     ((ext:when-let ((x (assoc val *optimizable-constants*)))
@@ -135,24 +134,17 @@
      (make-c1form* 'LOCATION :type 'CHARACTER
                              :args (list 'CHARACTER-VALUE (char-code val))))
     ((typep val 'DOUBLE-FLOAT)
-     (when (and (ext:float-nan-p val) (not only-small-values))
-       (cmperr "Cannot externalize value ~A" val))
      (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT
                              :args (list 'DOUBLE-FLOAT-VALUE val (add-object val))))
     ((typep val 'SINGLE-FLOAT)
-     (when (and (ext:float-nan-p val) (not only-small-values))
-       (cmperr "Cannot externalize value ~A" val))
      (make-c1form* 'LOCATION :type 'SINGLE-FLOAT
                              :args (list 'SINGLE-FLOAT-VALUE val (add-object val))))
     ((typep val 'LONG-FLOAT)
-     (when (and (ext:float-nan-p val) (not only-small-values))
-       (cmperr "Cannot externalize value ~A" val))
      (make-c1form* 'LOCATION :type 'LONG-FLOAT
                              :args (list 'LONG-FLOAT-VALUE val (add-object val))))
     #+sse2
     ((typep val 'EXT:SSE-PACK)
      (c1constant-value/sse val))
-    (only-small-values nil)
     (always
      (make-c1form* 'LOCATION :type `(eql ,val)
                              :args (add-object val)))

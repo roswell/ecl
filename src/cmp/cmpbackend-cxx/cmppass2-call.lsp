@@ -72,7 +72,8 @@
 (defun tail-recursion-possible ()
   (dolist (ue *unwind-exit*
               (baboon :format-control "tail-recursion-possible: should never return."))
-    (cond ((eq ue 'TAIL-RECURSION-MARK) (return t))
+    (cond ((eq ue 'TAIL-RECURSION-MARK)
+           (return t))
           ((or (numberp ue) (eq ue 'BDS-BIND) (eq ue 'FRAME))
            (return nil))
           ((or (consp ue) (eq ue 'JUMP) (eq ue 'IHS-ENV)))
@@ -155,33 +156,29 @@
   ;; either because it has been proclaimed so, or because it belongs
   ;; to the runtime.
   (multiple-value-bind (found fd minarg maxarg)
-      (si::mangle-name fname t)
+      (si:mangle-name fname t)
     (when found
       (return-from call-global-loc
-        (call-exported-function-loc fname args fd minarg maxarg t
-                                    return-type))))
+        (call-exported-function-loc fname args fd minarg maxarg t return-type))))
 
   (when (policy-use-direct-C-call)
-    (let ((fd (si:get-sysprop fname 'Lfun)))
-      (when fd
-        (multiple-value-bind (minarg maxarg found) (get-proclaimed-narg fname)
+    (ext:when-let ((fd (si:get-sysprop fname 'Lfun)))
+      (multiple-value-bind (minarg maxarg found) (get-proclaimed-narg fname)
+        (unless found
+          ;; Without knowing the number of arguments we cannot call the C
+          ;; function. When compiling ECL itself, we get this information
+          ;; through si::mangle-name from symbols_list.h for core functions
+          ;; defined in Lisp code.
           #+ecl-min
+          (let (ignored)
+            (multiple-value-setq (found ignored minarg maxarg)
+              (si:mangle-name fname)))
           (unless found
-            ;; Without knowing the number of arguments we cannot call
-            ;; the C function. When compiling ECL itself, we get this
-            ;; information through si::mangle-name from symbols_list.h
-            ;; for core functions defined in Lisp code.
-            (let (ignored)
-              (multiple-value-setq (found ignored minarg maxarg)
-                (si::mangle-name fname))))
-          (unless found
-            (cmperr "Can not call the function ~A using its exported C name ~A because its function type has not been proclaimed"
-                    fname fd))
-          (return-from call-global-loc
-            (call-exported-function-loc
-             fname args fd minarg maxarg
-             (si::mangle-name fname)
-             return-type))))))
+            (cmperr "Can not call the function ~A using its exported C name ~A because its function type has not been proclaimed."
+                    fname fd)))
+        (return-from call-global-loc
+          (call-exported-function-loc fname args fd minarg maxarg
+                                      (si:mangle-name fname) return-type)))))
 
   (call-unknown-global-loc fname nil args))
 
@@ -230,58 +227,4 @@
               function-p t)))
   `(CALL-INDIRECT ,loc ,(coerce-locs args) ,fname ,function-p))
 
-
-;;; wt routines
 
-(defun wt-call (fun args &optional fname env)
-  (if env
-      (progn
-        (setf *aux-closure* t)
-        (wt "(aux_closure.env="env",cl_env_copy->function=(cl_object)&aux_closure,")
-        (wt-call fun args)
-        (wt ")"))
-      (progn
-        (wt fun "(")
-        (let ((comma ""))
-          (dolist (arg args)
-            (wt comma arg)
-            (setf comma ", ")))
-        (wt ")")))
-  (when fname (wt-comment fname)))
-
-(defun wt-call-indirect (fun-loc args fname function-p)
-  (let ((narg (length args)))
-    (if function-p
-        (wt "(cl_env_copy->function=" fun-loc ")->cfun.entry(" narg)
-        (wt "ecl_function_dispatch(cl_env_copy," fun-loc ")(" narg))
-    (dolist (arg args)
-      (wt ", " arg))
-    (wt ")")
-    (when fname (wt-comment fname))))
-
-(defun wt-call-normal (fun args type)
-  (declare (ignore type))
-  (unless (fun-cfun fun)
-    (baboon "Function without a C name: ~A" (fun-name fun)))
-  (let* ((minarg (fun-minarg fun))
-         (maxarg (fun-maxarg fun))
-         (fun-c-name (fun-cfun fun))
-         (fun-lisp-name (fun-name fun))
-         (narg (length args))
-         (env nil))
-    (case (fun-closure fun)
-      (CLOSURE
-       (when (plusp *max-env*)
-         (setf env (environment-accessor fun))))
-      (LEXICAL
-       (let ((lex-lvl (fun-level fun)))
-         (dotimes (n lex-lvl)
-           (let* ((j (- lex-lvl n 1))
-                  (x (lex-env-var-name j)))
-             (push x args))))))
-    (unless (<= minarg narg maxarg)
-      (cmperr "Wrong number of arguments for function ~S"
-              (or fun-lisp-name 'ANONYMOUS)))
-    (when (fun-needs-narg fun)
-      (push narg args))
-    (wt-call fun-c-name args nil env)))

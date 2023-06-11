@@ -4,12 +4,7 @@
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
 ;;;;  Copyright (c) 2021, Daniel Kochmański
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
 
 (in-package #:compiler)
@@ -125,10 +120,9 @@
          (if (and macros-allowed
                   (setf fd (cmp-macro-function fname)))
              (cmp-expand-macro fd (list* fname args))
-             ;; When it is a function and takes many arguments, we will
-             ;; need a special C form to call it. It takes extra code for
-             ;; handling the stack
-             (unoptimized-long-call `#',fname args)))
+             ;; When it is a function and takes too many arguments, we need a
+             ;; special C form to call it with the stack (see with-stack).
+             (unoptimized-long-call `(function ,fname) args)))
         ((setq fd (local-function-ref fname))
          (c1call-local fname fd args))
         ((and macros-allowed            ; macrolet
@@ -245,10 +239,8 @@
                  (return
                    (let ((results (multiple-value-list (apply fname (nreverse all-values)))))
                      (if (endp (rest results))
-                         (c1constant-value (first results) :only-small-values nil)
-                         (let ((results (mapcar (lambda (r)
-                                                  (c1constant-value r :only-small-values nil))
-                                                results)))
+                         (c1constant-value (first results))
+                         (let ((results (mapcar #'c1constant-value results)))
                            (when (every #'identity results)
                              (make-c1form* 'values :args results)))))))
       (error (c) (cmpdebug "Can't constant-fold ~s ~s: ~a~%" fname forms c)))))

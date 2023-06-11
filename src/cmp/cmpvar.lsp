@@ -37,7 +37,7 @@
                 (last-form (car (last args))))
                (VAR (c1form-arg 0 x))
                (t x))))
-    (and (not (form-causes-side-effect form))
+    (and (not (c1form-side-effects form))
          (or (< (var-ref var) 1)
              (and (= (var-ref var) 1)
                   (eq var (last-form body))

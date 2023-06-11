@@ -20,23 +20,9 @@
 ;;; VARIABLES
 ;;;
 
-;;; --cmpinline.lsp--
-;;;
-;;; Empty info struct
-;;;
-;; (defvar *info* (make-info)) ;unused
-
-(defvar *inline-blocks* 0)
-(defvar *opened-c-braces* 0)
-;;; *inline-blocks* holds the number of C blocks opened for declaring
-;;; temporaries for intermediate results of the evaluation of inlined
-;;; function calls.
-
 (defvar *inline-max-depth* 3
   "Depth at which inlining of functions stops.")
 (defvar *inline-information* nil)
-
-(defvar *emitted-local-funs* nil)
 
 ;;; --cmputil.lsp--
 ;;;
@@ -99,55 +85,6 @@ running the compiler. It may be updated by running ")
 (defvar *space* 0)
 (defvar *debug* 0)
 (defvar *compilation-speed* 2)
-
-;;;
-;;; Compiled code uses the following kinds of variables:
-;;; 1. Vi, declared explicitely, either unboxed or not (*lcl*, next-lcl)
-;;; 2. Ti, declared collectively, of type object, may be reused (*temp*, next-temp)
-;;; 4. lexi[j], for lexical variables in local functions
-;;; 5. CLVi, for lexical variables in closures
-
-(defvar *lcl* 0)                ; number of local variables
-
-(defvar *temp* 0)               ; number of temporary variables
-(defvar *max-temp* 0)           ; maximum *temp* reached
-
-(defvar *level* 0)              ; nesting level for local functions
-
-(defvar *lex* 0)                ; number of lexical variables in local functions
-(defvar *max-lex* 0)            ; maximum *lex* reached
-
-(defvar *env* 0)                ; number of variables in current form
-(defvar *max-env* 0)            ; maximum *env* in whole function
-(defvar *env-lvl* 0)            ; number of levels of environments
-(defvar *aux-closure* nil)      ; stack allocated closure needed for indirect calls
-(defvar *ihs-used-p* nil)       ; function must be registered in IHS?
-
-(defvar *next-cfun* 0)          ; holds the last cfun used.
-
-;;;
-;;; *tail-recursion-info* holds NIL, if tail recursion is impossible.
-;;; If possible, *tail-recursion-info* holds
-;;      ( c1-lambda-form  required-arg .... required-arg ),
-;;; where each required-arg is a var-object.
-;;;
-(defvar *tail-recursion-info* nil)
-
-;;; --cmpexit.lsp--
-;;;
-;;; *last-label* holds the label# of the last used label.
-;;; *exit* holds an 'exit', which is
-;;      ( label# . ref-flag ) or one of RETURNs (i.e. RETURN, RETURN-FIXNUM,
-;;      RETURN-CHARACTER, RETURN-LONG-FLOAT, RETURN-DOUBLE-FLOAT, RETURN-SINGLE-FLOAT,
-;;      RETURN-CSFLOAT, RETURN-CDFLOAT, RETURN-CLFLOAT or RETURN-OBJECT).
-;;; *unwind-exit* holds a list consisting of:
-;;      ( label# . ref-flag ), one of RETURNs, TAIL-RECURSION-MARK, FRAME,
-;;      JUMP, BDS-BIND (each pushed for a single special binding), or a
-;;      LCL (which holds the bind stack pointer used to unbind).
-;;;
-(defvar *last-label* 0)
-(defvar *exit*)
-(defvar *unwind-exit*)
 
 (defvar *current-function* nil)
 
@@ -313,10 +250,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*callbacks* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* nil)
-    (*max-temp* 0)
-    (*temp* 0)
-    (*next-cfun* 0)
-    (*last-label* 0)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
     (*setf-definitions* nil)
     (*make-forms* nil)
@@ -331,8 +264,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*top-level-forms* nil)
     (*compile-time-too* nil)
     (*clines-string-list* '())
-    (*inline-blocks* 0)
-    (*open-c-braces* 0)
     (si::*defun-inline-hook* 'maybe-install-inline-function)
     (*machine* (or *machine* *default-machine*))
     (*optimizable-constants* (make-optimizable-constants *machine*))
