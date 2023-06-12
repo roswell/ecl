@@ -1,4 +1,119 @@
 
+== [7.8.0] 2023-03-26 ==
+
+* Add AUTHORS file to the list of installed documentation
+* Add goal to Makefile.msft to build all tests but not execute them
+* Allocate marks[] dynamically and report all found errors in test_stack
+* Always export stack_init/push_release/pop_acquire from atomic_ops_gpl
+* Always use 'mfence' for nop_full if target CPU supports SSE2 (MS VC/x86)
+* Avoid 'cast increases required alignment' warnings in atomic_ops_malloc.c
+* Avoid breaking strict-aliasing rules in test_malloc and test_stack
+* Avoid code duplication in AO_stack_push_explicit_aux_release
+* Better document test_stack internals
+* Build atomic_ops.lib by Makefile.msft (MS VC)
+* Build test object and executable files in tests folder (MS VC)
+* Define AO_stack_t uniformly
+* Define double_compare_and_swap_full if MS VS 2017+ (x86)
+* Do not expose AO_REAL_HEAD/NEXT_PTR implementation in header by default
+* Document config macros in README_win32 and remove them from configure
+* Eliminate 'function is never used' cppcheck warning for AO_stack_init
+* Enforce most strict level of compiler warnings (MS VC)
+* Ensure atomic_ops.c global symbols are always declared as extern 'C'
+* Explicitly outline symbols exported in AO shared libraries with AO_API
+* Hide AO_free_list symbol
+* Implement AO_stack_init using memset
+* Implement AO_test_and_set using InterlockedExchange8 (MS VC)
+* Implement and/or/xor for AO_t, short and int types (MS VC)
+* Implement nf/acq/rel variants of primitives on Windows RT (MS VC)
+* Mention MIT near core library licensing terms in LICENSE file
+* Move all README_*.txt and license files to the top folder
+* Move all non-double intrinsic-based primitives to msftc/common32_defs.h
+* Move gcc-4/alpha workaround outside AO_stack_pop_explicit_aux_acquire
+* New AO_stack_is_lock_free API function
+* New configure option (--disable-gpl) to skip building of libatomic_ops_gpl
+* Print message of almost-lock-free implementation in test_stack if used
+* Refine LICENSE and README about code parts covered by MIT and GPL-2.0
+* Refine copyright terms in GPL source files
+* Reformat atomic_ops_stack.c/h files
+* Remove 'lib' prefix for atomic_ops_gpl.lib in Makefile.msft
+* Remove redundant assert in AO_stack_pop_explicit_aux_acquire
+* Remove redundant cast to AO_t in lock-free AO_stack_pop_acquire
+* Rename LICENSING.txt to LICENSE file
+* Rename VERBOSE macro to VERBOSE_STACK in test_stack (refactoring)
+* Rename fetch_and_add to fetch_then_add in test_stack (refactoring)
+* Replace obsolete AC_HELP_STRING with AS_HELP_STRING in configure
+* Replace obsolete AC_TRY_COMPILE with AC_COMPILE_IFELSE in configure
+* Split test_stack main into several functions (refactoring)
+* Support Elbrus 2000 (gcc/e2k)
+* Support build with CMake
+* Support double-wide CAS on armv7+ and UWP/arm64 (MS VC)
+* Support test_atomic with MS build w/o the need to run GNU make first
+* Use GCC atomic intrinsics for SPARC
+* Use builtin_expect in AO_stack_push_explicit_aux_release
+
+
+== [7.6.14] 2022-08-25 ==
+
+* Add note to README that AO malloc code has same license as AO stack
+* Adjust/reformat content of LICENSING.txt
+* Avoid AO_stack_t to cross CPU cache line boundary
+* Do not assume 'ordered except earlier write' for UWP/arm64
+* Do not name GCC intrinsics as C11 ones in ChangeLog and configure
+* Eliminate '-pedantic is not option that controls warnings' GCC-6.3 message
+* Ensure result of AO_test_and_set is always AO_TS_CLEAR or AO_TS_SET
+* Fix 'AO_malloc redefinition' MS VC warning caused by attributes mismatch
+* Fix 'use of undeclared SIG_BLOCK' Clang error if -std=c89 on Cygwin
+* Fix AO_compare_and_swap_full asm code for clang on sparc
+* Fix a typo in comment of AO_stack_push_explicit_aux_release
+* Fix code indentation in main() of test_stack.c
+* Refine AO_UNIPROCESSOR macro description in configure
+* Remove outdated comment about unsupported Win64 in atomic_ops_stack.h
+* Repeat black list check on CAS fail in stack_push_explicit_aux_release
+
+
+== [7.6.12] 2021-09-13 ==
+
+* Allow to generalize bool-CAS for sparc (gcc)
+* Declare argument of AO_load_next with const in atomic_ops_stack
+* Describe double_compare_and_swap operation in README_details
+* Document CAS operations better in README_details
+* Fix gcc/sunc x86 AO_compare_double_and_swap_double missing side effect
+* Fix library name in README_details
+* Fix link fail caused by missing GCC char/short atomic primitives on riscv64
+* Fix size of local variable passed to cas[x] (gcc/sparc)
+* Implement fetch-CAS for sparc (gcc)
+* Refactor gcc x86 memory constraints
+* Refine and reformat description of size prefix in README_details
+* Remove outdated notes in README_details
+* Replace x86 setz instruction by asm flag output operand (gcc)
+* Support MSYS host (configure)
+* Turn off compare_double_and_swap_double_full PIC hack for GCC 5+ (x86)
+* Update README_win32 to match Makefile.msft
+* Use GCC atomic intrinsics for s390x (clang 8.0+ and gcc 5.4+)
+* Use __alignof__ instead of sizeof in atomic variable alignment assertions
+* Workaround assertion violation in AO_load/store on m68k
+
+
+== [7.6.10] 2019-03-01 ==
+
+* Eliminate 'my_chunk_ptr-AO_initial_heap out of bounds' cppcheck warning
+* Fix 'AO_*_TS_T is not defined' compiler warnings (GCC-8)
+* Fix 'duplicate symbol' error for test_malloc/stack with static libs (OS X)
+* Workaround 'argument to function assert is always 1' cppcheck warnings
+
+
+== [7.6.8] 2018-12-11 ==
+
+* Eliminate 'casting signed to bigger unsigned int' CSA warning (test_stack)
+* Eliminate 'redundant blank line at start/end of block' CodeFactor warning
+* Fix 'Cannot implement CAS_full on this architecture' build error (nios2)
+* Fix a typo in arm_v6.h
+* Support aarch64-ilp32 (GCC) and UWP/arm64 (MS VC) targets
+* Undefine AO_ARM_HAVE_* private macros after their usage
+* Use standalone private macro to guard against AO_GCC_BARRIER redefinition
+* Workaround 'condition my_chunk_ptr is always false' cppcheck false positive
+
+
 == [7.6.6] 2018-08-07 ==
 
 * COPYING: sync with FSF's gpl-2.0.txt
@@ -91,16 +206,16 @@ Also, includes 7.4.8 changes
 * Fix missing double_compare_and_swap_dd_acquire_read
 * Fix reporting about missing and/or/xor_dd_acquire_read (test_atomic)
 * Hide AO_locks symbol
-* Implement AO_CLEAR using C11 atomic intrinsic (GCC)
+* Implement AO_CLEAR using atomic intrinsic (GCC)
 * Implement CAS_acquire/release/full using __atomic_compare_exchange_n (gcc)
 * Implement char and/or/xor and short CAS for msftc ARM and X86[_64]
 * Implement char CAS and char/short add for msftc X86[_64] (VS 2013+)
-* Implement compiler_barrier using C11 __atomic_signal_fence (GCC)
+* Implement compiler_barrier using __atomic_signal_fence (GCC)
 * Implement int CAS/inc/dec for msftc/x86_64
 * Implement short inc/dec directly for msftc ARM and X86[_64]
 * Initial ibmc/powerpc (xlc) support
 * New configure option (--enable-werror) to treat warnings as compiler errors
-* New macro AO_PREFER_BUILTIN_ATOMICS to rely on C11 atomics fully (AArch64)
+* New macro AO_PREFER_BUILTIN_ATOMICS to rely on GCC atomics fully (AArch64)
 * Refine AO_nop_write comment for ARM big.LITTLE architecture
 * Refine configure messages when checking for compiler options
 * Refine documentation about _full memory ordering suffix
@@ -128,6 +243,40 @@ Also, includes 7.4.8 changes
 * Workaround a bug in double-wide intrinsics of Clang/x64 with ASan enabled
 * Workaround MSan warning about uninitialized data read by generalized store
 Also, includes 7.4.6 changes
+
+
+== [7.4.18] 2022-08-25 ==
+
+* Avoid AO_stack_t to cross CPU cache line boundary
+* Do not assume 'ordered except earlier write' for UWP/arm64
+* Ensure result of AO_test_and_set is always AO_TS_CLEAR or AO_TS_SET
+* Fix 'use of undeclared SIG_BLOCK' Clang error if -std=c89 on Cygwin
+* Fix a typo in comment of AO_stack_push_explicit_aux_release
+* Fix code indentation in main of test_stack.c
+* Remove outdated comment about unsupported Win64 in atomic_ops_stack.h
+* Repeat black list check on CAS fail in stack_push_explicit_aux_release
+
+
+== [7.4.16] 2021-09-13 ==
+
+* Fix gcc/sunc x86 AO_compare_double_and_swap_double missing side effect
+* Fix library name in README_details
+* Fix size of local variable passed to cas[x] (gcc/sparc)
+* Workaround assertion violation in AO_load/store on m68k
+
+
+== [7.4.14] 2019-03-01 ==
+
+* Fix 'AO_*_TS_T is not defined' compiler warnings (GCC-8)
+
+
+== [7.4.12] 2018-12-11 ==
+
+* COPYING: sync with FSF's gpl-2.0.txt
+* Fix a typo in arm_v6.h
+* Fix a typo in the overview section of README
+* Support ILP32 in AArch64 assembly routines (GCC)
+* Support UWP/arm64 target
 
 
 == [7.4.10] 2017-12-22 ==
@@ -331,6 +480,25 @@ Also, includes 7.2e changes
 * Turn off AO primitives inlining if AO_NO_INLINE defined
 * Use __builtin_expect in CAS failure loop condition checks (GCC only)
 Also, includes 7.2 changes
+
+
+== [7.2k] 2022-08-24 ==
+
+* Avoid AO_stack_t to cross CPU cache line boundary
+* Fix a typo in comment of AO_stack_push_explicit_aux_release
+* Fix code indentation in main of test_stack.c
+* Remove outdated comment about unsupported Win64 in atomic_ops_stack.h
+* Repeat black list check on CAS fail in stack_push_explicit_aux_release
+
+
+== [7.2j] 2021-09-12 ==
+
+* Fix a typo in arm_v6.h
+* Fix asm constraints of primitives in sunc/x86_64.h
+* Fix gcc/sunc x86 AO_compare_double_and_swap_double missing side effect
+* Fix library name in README details
+* Fix size of local variable passed to cas[x] (gcc/sparc)
+* Workaround assertion violation in AO_load/store on m68k
 
 
 == [7.2i] 2017-12-21 ==

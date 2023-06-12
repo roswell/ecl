@@ -1,14 +1,19 @@
 /*
  * Copyright (c) 2003-2005 Hewlett-Packard Development Company, L.P.
  *
- * This file may be redistributed and/or modified under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2, or (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * It is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License in the
- * file COPYING for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -192,11 +197,12 @@ int test_and_set_test(void)
     extern "C" {
 # endif
 
-  void AO_store_full_emulation(volatile AO_t *addr, AO_t val);
-  AO_t AO_fetch_compare_and_swap_emulation(volatile AO_t *addr, AO_t old_val,
-                                           AO_t new_val);
+  AO_API void AO_store_full_emulation(volatile AO_t *addr, AO_t val);
+  AO_API AO_t AO_fetch_compare_and_swap_emulation(volatile AO_t *addr,
+                                                  AO_t old_val, AO_t new_val);
 # ifdef AO_HAVE_double_t
-    int AO_compare_double_and_swap_double_emulation(volatile AO_double_t *,
+    AO_API int
+    AO_compare_double_and_swap_double_emulation(volatile AO_double_t *,
                                                 AO_t old_val1, AO_t old_val2,
                                                 AO_t new_val1, AO_t new_val2);
 # endif

@@ -15,7 +15,7 @@
  * A really simple-minded text editor based on cords.
  * Things it does right:
  *      No size bounds.
- *      Inbounded undo.
+ *      Unbounded undo.
  *      Shouldn't crash no matter what file you invoke it on (e.g. /vmunix)
  *              (Make sure /vmunix is not writable before you try this.)
  *      Scrolls horizontally.
@@ -37,13 +37,17 @@
 #endif
 #include <ctype.h>
 
-#if (defined(__BORLANDC__) || defined(__CYGWIN__)) && !defined(WIN32)
+#if (defined(__BORLANDC__) || defined(__CYGWIN__) || defined(__MINGW32__) \
+     || defined(__NT__) || defined(_WIN32)) && !defined(WIN32)
     /* If this is DOS or win16, we'll fail anyway.      */
-    /* Might as well assume win32.                      */
 #   define WIN32
 #endif
 
 #if defined(WIN32)
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN 1
+#  endif
+#  define NOSERVICE
 #  include <windows.h>
 #  include "de_win.h"
 #elif defined(MACINTOSH)
@@ -70,10 +74,18 @@
 #endif
 #include "de_cmds.h"
 
-#define OUT_OF_MEMORY do { \
+#if defined(CPPCHECK)
+# define MACRO_BLKSTMT_BEGIN {
+# define MACRO_BLKSTMT_END   }
+#else
+# define MACRO_BLKSTMT_BEGIN do {
+# define MACRO_BLKSTMT_END   } while (0)
+#endif
+
+#define OUT_OF_MEMORY MACRO_BLKSTMT_BEGIN \
                         fprintf(stderr, "Out of memory\n"); \
                         exit(3); \
-                      } while (0)
+                      MACRO_BLKSTMT_END
 
 /* List of line number to position mappings, in descending order. */
 /* There may be holes.                                            */
@@ -116,7 +128,9 @@ size_t file_pos = 0;    /* Character position corresponding to cursor.  */
 /* Invalidate line map for lines > i */
 void invalidate_map(int i)
 {
-    while(current_map -> line > i) {
+    for (;;) {
+        if (NULL == current_map) exit(4); /* for CSA, should not happen */
+        if (current_map -> line <= i) break;
         current_map = current_map -> previous;
         current_map_size--;
     }
@@ -135,9 +149,7 @@ void prune_map(void)
         if (map -> line < start_line - LINES && map -> previous != 0) {
             line_map pred = map -> previous -> previous;
 
-            map -> previous = pred;
-            GC_END_STUBBORN_CHANGE(map);
-            GC_reachable_here(pred);
+            GC_PTR_STORE_AND_DIRTY(&map->previous, pred);
         }
         map = map -> previous;
     } while (map != 0);
@@ -154,14 +166,10 @@ void add_map(int line_arg, size_t pos)
     new_map -> line = line_arg;
     new_map -> pos = pos;
     cur_map = current_map;
-    new_map -> previous = cur_map;
-    GC_END_STUBBORN_CHANGE(new_map);
-    GC_reachable_here(cur_map);
+    GC_PTR_STORE_AND_DIRTY(&new_map->previous, cur_map);
     current_map = new_map;
     current_map_size++;
 }
-
-
 
 /* Return position of column *c of ith line in   */
 /* current file. Adjust *c to be within the line.*/
@@ -225,7 +233,7 @@ int screen_size = 0;
 # ifndef WIN32
 /* Replace a line in the curses stdscr. All control characters are      */
 /* displayed as upper case characters in standout mode.  This isn't     */
-/* terribly appropriate for tabs.                                                                       */
+/* terribly appropriate for tabs.                                       */
 void replace_line(int i, CORD s)
 {
     CORD_pos p;
@@ -256,9 +264,7 @@ void replace_line(int i, CORD s)
                 addch(c);
             }
         }
-        screen[i] = s;
-        GC_END_STUBBORN_CHANGE(screen + i);
-        GC_reachable_here(s);
+        GC_PTR_STORE_AND_DIRTY(screen + i, s);
     }
 }
 #else
@@ -285,7 +291,7 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
 
     CORD retrieve_screen_line(int i)
     {
-        register size_t pos;
+        size_t pos;
 
         invalidate_map(dis_line + LINES);       /* Prune search */
         pos = line_pos(dis_line + i, 0);
@@ -297,12 +303,12 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
 /* Display the visible section of the current file       */
 void redisplay(void)
 {
-    register int i;
+    int i;
 
     invalidate_map(dis_line + LINES);   /* Prune search */
     for (i = 0; i < LINES; i++) {
         if (need_redisplay == ALL || need_redisplay == i) {
-            register size_t pos = line_pos(dis_line + i, 0);
+            size_t pos = line_pos(dis_line + i, 0);
 
             if (pos == CORD_NOT_FOUND) break;
             replace_line(i, retrieve_line(current, pos, dis_col));
@@ -376,7 +382,7 @@ void fix_pos(void)
 }
 
 #if defined(WIN32)
-#  define beep() Beep(1000 /* Hz */, 300 /* msecs */)
+#  define beep() Beep(1000 /* Hz */, 300 /* ms */)
 #elif defined(MACINTOSH)
 #  define beep() SysBeep(1)
 #else
@@ -597,7 +603,11 @@ int main(int argc, char **argv)
         cshow(stdout);
         argc = ccommand(&argv);
 #   endif
+    GC_set_find_leak(0); /* app is not for testing leak detection mode */
     GC_INIT();
+#   ifndef NO_INCREMENTAL
+      GC_enable_incremental();
+#   endif
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s file\n", argv[0]);
@@ -610,7 +620,7 @@ int main(int argc, char **argv)
     arg_file_name = argv[1];
     buf = GC_MALLOC_ATOMIC(8192);
     if (NULL == buf) OUT_OF_MEMORY;
-    setvbuf(stdout, buf, _IOFBF, 8192);
+    setvbuf(stdout, (char *)buf, _IOFBF, 8192);
     initscr();
     noecho(); nonl(); cbreak();
     generic_init();

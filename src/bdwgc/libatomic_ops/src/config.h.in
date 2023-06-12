@@ -1,15 +1,9 @@
 /* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Inline assembly available (only VC/x86_64) */
-#undef AO_ASM_X64_AVAILABLE
-
-/* Assume Windows Server 2003, Vista or later target (only VC/x86) */
-#undef AO_ASSUME_VISTA
-
 /* Assume target is not old AMD Opteron chip (only x86_64) */
 #undef AO_CMPXCHG16B_AVAILABLE
 
-/* Define to avoid C11 atomic intrinsics even if available. */
+/* Define to avoid GCC atomic intrinsics even if available. */
 #undef AO_DISABLE_GCC_ATOMICS
 
 /* Force test_and_set to use SWP instruction instead of LDREX/STREX (only arm
@@ -25,12 +19,9 @@
 /* Assume target is not sparc v9+ (only sparc) */
 #undef AO_NO_SPARC_V9
 
-/* Assume ancient MS VS Win32 headers (only VC/arm v6+, VC/x86) */
-#undef AO_OLD_STYLE_INTERLOCKED_COMPARE_EXCHANGE
-
-/* Prefer C11 atomic intrinsics over assembly-based implementation even in
+/* Prefer GCC atomic intrinsics over assembly-based implementation even in
    case of inefficient implementation (do not use assembly for any atomic_ops
-   primitive if C11/GCC atomic intrinsics available) */
+   primitive if the atomic intrinsics are available) */
 #undef AO_PREFER_BUILTIN_ATOMICS
 
 /* Prefer generalized definitions to direct assembly-based ones */
@@ -39,12 +30,8 @@
 /* Trace AO_malloc/free calls (for debug only) */
 #undef AO_TRACE_MALLOC
 
-/* Assume single-core target (only arm v6+) */
+/* Assume single-core target (only arm v6+ or GCC intrinsics) */
 #undef AO_UNIPROCESSOR
-
-/* Assume Win32 _Interlocked primitives available as intrinsics (only VC/arm)
-   */
-#undef AO_USE_INTERLOCKED_INTRINSICS
 
 /* Use nanosleep() instead of select() (only if atomic operations are
    emulated) */
@@ -82,14 +69,14 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
 /* Define to 1 if you have a working `mmap' system call. */
 #undef HAVE_MMAP
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -139,7 +126,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Version number of package */
