@@ -2,7 +2,7 @@
 # compiler from www.digitalmars.com
 # Written by Walter Bright
 
-DEFINES=-D_WINDOWS -DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS -DALL_INTERIOR_POINTERS
+DEFINES=-D_WINDOWS -DGC_DLL -DGC_THREADS -DGC_DISCOVER_TASK_THREADS -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DUSE_MUNMAP
 CFLAGS=-Iinclude -Ilibatomic_ops\src $(DEFINES) -wx -g
 LFLAGS=/ma/implib/co
 CC=sc
@@ -22,7 +22,9 @@ OBJS=	\
 	fnlz_mlc.obj\
 	dyn_load.obj\
 	finalize.obj\
+	gc_badalc.obj\
 	gc_cpp.obj\
+	gcj_mlc.obj\
 	headers.obj\
 	mach_dep.obj\
 	malloc.obj\
@@ -35,11 +37,16 @@ OBJS=	\
 	os_dep.obj\
 	ptr_chck.obj\
 	reclaim.obj\
-	stubborn.obj\
 	typd_mlc.obj\
 	win32_threads.obj
 
-targets: gc.dll gc.lib gctest.exe test_cpp.exe
+targets: gc.dll gc.lib
+
+check: gctest.exe test_cpp.exe
+	gctest.exe
+	test_cpp.exe
+
+gc.lib: gc.dll
 
 gc.dll: $(OBJS) gc.def digimars.mak
 	$(CC) -ogc.dll $(OBJS) -L$(LFLAGS) gc.def kernel32.lib user32.lib
@@ -77,6 +84,7 @@ dbg_mlc.obj: dbg_mlc.c
 dyn_load.obj: dyn_load.c
 finalize.obj: finalize.c
 fnlz_mlc.obj: fnlz_mlc.c
+gc_badalc.obj: gc_badalc.cc gc_badalc.cpp
 gc_cpp.obj: gc_cpp.cc gc_cpp.cpp
 headers.obj: headers.c
 mach_dep.obj: mach_dep.c
@@ -90,6 +98,5 @@ obj_map.obj: obj_map.c
 os_dep.obj: os_dep.c
 ptr_chck.obj: ptr_chck.c
 reclaim.obj: reclaim.c
-stubborn.obj: stubborn.c
 typd_mlc.obj: typd_mlc.c
 win32_threads.obj: win32_threads.c

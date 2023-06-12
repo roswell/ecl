@@ -1,8 +1,12 @@
 # The atomic_ops library (`libatomic_ops`)
 
-IN NEW CODE, PLEASE USE C11 OR C++14 STANDARD ATOMICS INSTEAD OF THIS PACKAGE.
+IN NEW CODE, PLEASE USE C11 OR C++14 STANDARD ATOMICS INSTEAD OF THE CORE
+LIBRARY IN THIS PACKAGE.
 
-This is version 7.6.6 of libatomic_ops.
+This is version 7.8.0 of libatomic_ops.
+
+License: [MIT](LICENSE) for core library / [GPL-2.0](COPYING) for gpl
+extension.
 
 
 ## Download
@@ -31,8 +35,15 @@ allow you to write code:
 
 * To experiment with new and much better thread programming paradigms, etc.
 
-For details and licensing restrictions see the files in the "doc"
-subdirectory.
+Please see other README files for the details:
+
+* [README_details.txt](README_details.txt) - details about atomic_ops.h
+
+* [README_malloc.txt](README_malloc.txt) - a simple almost-lock-free malloc
+  implementation (part of libatomic_ops_gpl)
+
+* [README_stack.txt](README_stack.txt) -  an almost lock-free LIFO linked
+  lists (stack) implementation (part of libatomic_ops_gpl)
 
 
 ## Installation and Usage
@@ -43,24 +54,34 @@ directory should work.  For a more customized build, see the output of
 `./configure --help`.  To build it from the development repository,
 `./autogen.sh` should be executed first.
 
+Alternatively, CMake could be use to build this package, e.g.
+`cmake . && cmake --build .` in this directory should work.
+
 Note that much of the content of this library is in the header files.
 However, two small libraries are built and installed:
 
-* `libatomic_ops.a` is a support library, which is not needed on some
+* `libatomic_ops.a` is a support (core) library, which is not needed on some
   platforms. This is intended to be usable, under some mild restrictions,
   in free or proprietary code, as are all the header files.
-  See doc/LICENSING.txt.
+  See [LICENSE](LICENSE) for more details about the licensing.
 
-* `libatomic_ops_gpl.a` contains some higher level facilities.  This code is
-  currently covered by the GPL.  The contents currently correspond to
-  the headers `atomic_ops_stack.h` and `atomic_ops_malloc.h`.
+* `libatomic_ops_gpl.a` is a so called gpl extension library containing some
+  higher level facilities.  This code is covered by the GPL.  The contents
+  correspond to the headers `atomic_ops_malloc.h` and `atomic_ops_stack.h`.
+  Not built and not installed if `--disable-gpl` option is passed to
+  `configure` (or if `-Denable_gpl=OFF` option is passed to `cmake` if the
+  latter is used to build the package).  The licensing details are given in
+  [COPYING](COPYING) and [LICENSE](LICENSE) files.
 
 
 ## Platform Specific Notes
 
 Win32/64: src/Makefile.msft contains a very simple Makefile for building
 and running tests and building the gpl library.  The core `libatomic_ops`
-implementation is entirely in header files.
+implementation is entirely in header files (libatomic_ops.lib is built anyway
+to match that of the configure-based build process, but libatomic_ops.lib has
+only the implementation of the internal AO_pause() used by the gpl library).
+More information is provided in [README_win32.txt](README_win32.txt) file.
 
 HP-UX/PA-RISC: `aCC -Ae` won't work as a C compiler, since it doesn't support
 inline assembly code.  Use cc.
@@ -94,27 +115,16 @@ To be notified on all issues, please
 GitHub.
 
 
-## Copyright & Warranty
+## Copyright & Warranty, Contributors
 
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
- * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
- * Copyright (c) 1999-2011 Hewlett-Packard Development Company, L.P.
- * Copyright (c) 2008-2018 Ivan Maidanski
+Please be aware of the dual nature of the license of libatomic_ops:
 
-The file armcc/arm_v6.h is also
+* the core part (implementing semi-portable access to hardware-provided
+  atomic memory operations) is released under MIT license
 
- * Copyright (c) 2007 by NEC LE-IT.  All rights reserved.
+* the gpl extension (almost lock-free malloc and stack implementations) and
+  the tests are released under GPL-2.0 license
 
-The file gcc/avr32.h is
+The exact licensing information is provided in [LICENSE](LICENSE) file.
 
- * Copyright (c) 2009 Bradley Smith <brad@brad-smith.co.uk>
-
-The file gcc/mips.h is
-
- * Copyright (c) 2005, 2007 Thiemo Seufer <ths@networkno.de>
-
-The file gcc/sh.h is
-
- * Copyright (c) 2009 by Takashi YOSHII. All rights reserved.
-
-See doc/LICENSING.txt for the details.
+The library contributors are listed in [AUTHORS](AUTHORS) file.

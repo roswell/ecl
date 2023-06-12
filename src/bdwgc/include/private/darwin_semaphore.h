@@ -18,14 +18,17 @@
 #ifndef GC_DARWIN_SEMAPHORE_H
 #define GC_DARWIN_SEMAPHORE_H
 
-#if !defined(GC_DARWIN_THREADS)
-# error darwin_semaphore.h included with GC_DARWIN_THREADS not defined
+#if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_THREADS)
+# error darwin_semaphore.h included for improper target
 #endif
 
-/* This is a very simple semaphore implementation for Darwin.  It is    */
-/* implemented in terms of pthread calls so it is not async signal      */
-/* safe.  But this is not a problem because signals are not used to     */
-/* suspend threads on Darwin.                                           */
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
+/* This is a very simple semaphore implementation based on pthreads.    */
+/* It is not async-signal safe.  But this is not a problem because      */
+/* signals are not used to suspend threads on the target.               */
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -76,5 +79,9 @@ GC_INLINE int sem_destroy(sem_t *sem) {
     return pthread_cond_destroy(&sem->cond) != 0
            || pthread_mutex_destroy(&sem->mutex) != 0 ? -1 : 0;
 }
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif

@@ -28,9 +28,9 @@
 /* The version here should match that in configure/configure.ac */
 /* Eventually this one may become unnecessary.  For now we need */
 /* it to keep the old-style build process working.              */
-#define GC_TMP_VERSION_MAJOR 7
-#define GC_TMP_VERSION_MINOR 6
-#define GC_TMP_VERSION_MICRO 8 /* 7.6.8 */
+#define GC_TMP_VERSION_MAJOR 8
+#define GC_TMP_VERSION_MINOR 2
+#define GC_TMP_VERSION_MICRO 4 /* 8.2.4 */
 
 #ifdef GC_VERSION_MAJOR
 # if GC_TMP_VERSION_MAJOR != GC_VERSION_MAJOR \

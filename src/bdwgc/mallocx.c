@@ -3,6 +3,7 @@
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2009-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -27,19 +28,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef MSWINCE
-# ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN 1
-# endif
-# define NOSERVICE
-# include <windows.h>
-#else
+#ifndef MSWINCE
 # include <errno.h>
 #endif
 
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h        */
 /* or introducing dependencies on internal data structure layouts.       */
+#include "private/gc_alloc_ptrs.h"
 void ** const GC_objfreelist_ptr = GC_objfreelist;
 void ** const GC_aobjfreelist_ptr = GC_aobjfreelist;
 void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
@@ -52,7 +48,7 @@ GC_API int GC_CALL GC_get_kind_and_size(const void * p, size_t * psize)
     hdr * hhdr = HDR(p);
 
     if (psize != NULL) {
-        *psize = hhdr -> hb_sz;
+        *psize = (size_t)hhdr->hb_sz;
     }
     return hhdr -> hb_obj_kind;
 }
@@ -61,10 +57,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_or_special_malloc(size_t lb,
                                                                   int knd)
 {
     switch(knd) {
-#     ifdef STUBBORN_ALLOC
-        case STUBBORN:
-            return GC_malloc_stubborn(lb);
-#     endif
         case PTRFREE:
         case NORMAL:
             return GC_malloc_kind(lb, knd);
@@ -87,6 +79,12 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     struct hblk * h;
     hdr * hhdr;
     void * result;
+#   if defined(_FORTIFY_SOURCE) && defined(__GNUC__) && !defined(__clang__)
+      volatile  /* Use cleared_p instead of p as a workaround to avoid  */
+                /* passing alloc_size(lb) attribute associated with p   */
+                /* to memset (including memset call inside GC_free).    */
+#   endif
+      word cleared_p = (word)p;
     size_t sz;      /* Current size in bytes    */
     size_t orig_sz; /* Original sz in bytes     */
     int obj_kind;
@@ -100,22 +98,49 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     }
     h = HBLKPTR(p);
     hhdr = HDR(h);
-    sz = hhdr -> hb_sz;
+    sz = (size_t)hhdr->hb_sz;
     obj_kind = hhdr -> hb_obj_kind;
     orig_sz = sz;
 
     if (sz > MAXOBJBYTES) {
         /* Round it up to the next whole heap block */
-          word descr;
+        word descr = GC_obj_kinds[obj_kind].ok_descriptor;
 
-          sz = (sz+HBLKSIZE-1) & (~HBLKMASK);
-          hhdr -> hb_sz = sz;
-          descr = GC_obj_kinds[obj_kind].ok_descriptor;
-          if (GC_obj_kinds[obj_kind].ok_relocate_descr) descr += sz;
-          hhdr -> hb_descr = descr;
+        sz = (sz + HBLKSIZE-1) & ~HBLKMASK;
+        if (GC_obj_kinds[obj_kind].ok_relocate_descr)
+          descr += sz;
+        /* GC_realloc might be changing the block size while            */
+        /* GC_reclaim_block or GC_clear_hdr_marks is examining it.      */
+        /* The change to the size field is benign, in that GC_reclaim   */
+        /* (and GC_clear_hdr_marks) would work correctly with either    */
+        /* value, since we are not changing the number of objects in    */
+        /* the block.  But seeing a half-updated value (though unlikely */
+        /* to occur in practice) could be probably bad.                 */
+        /* Using unordered atomic accesses on the size and hb_descr     */
+        /* fields would solve the issue.  (The alternate solution might */
+        /* be to initially overallocate large objects, so we do not     */
+        /* have to adjust the size in GC_realloc, if they still fit.    */
+        /* But that is probably more expensive, since we may end up     */
+        /* scanning a bunch of zeros during GC.)                        */
+#       ifdef AO_HAVE_store
+          GC_STATIC_ASSERT(sizeof(hhdr->hb_sz) == sizeof(AO_t));
+          AO_store((volatile AO_t *)&hhdr->hb_sz, (AO_t)sz);
+          AO_store((volatile AO_t *)&hhdr->hb_descr, (AO_t)descr);
+#       else
+          {
+            DCL_LOCK_STATE;
+
+            LOCK();
+            hhdr -> hb_sz = sz;
+            hhdr -> hb_descr = descr;
+            UNLOCK();
+          }
+#       endif
+
 #         ifdef MARK_BIT_PER_OBJ
             GC_ASSERT(hhdr -> hb_inv_sz == LARGE_INV_SZ);
-#         else
+#         endif
+#         ifdef MARK_BIT_PER_GRANULE
             GC_ASSERT((hhdr -> hb_flags & LARGE_BLOCK) != 0
                         && hhdr -> hb_map[ANY_INDEX] == 1);
 #         endif
@@ -124,14 +149,10 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     }
     if (ADD_SLOP(lb) <= sz) {
         if (lb >= (sz >> 1)) {
-#           ifdef STUBBORN_ALLOC
-                if (obj_kind == STUBBORN) GC_change_stubborn(p);
-#           endif
             if (orig_sz > lb) {
               /* Clear unneeded part of object to avoid bogus pointer */
               /* tracing.                                             */
-              /* Safe for stubborn objects.                           */
-                BZERO(((ptr_t)p) + lb, orig_sz - lb);
+                BZERO((ptr_t)cleared_p + lb, orig_sz - lb);
             }
             return(p);
         }
@@ -144,7 +165,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
       /* But this gives the client warning of imminent disaster.        */
       BCOPY(p, result, sz);
 #     ifndef IGNORE_FREE
-        GC_free(p);
+        GC_free((ptr_t)cleared_p);
 #     endif
     }
     return result;
@@ -190,7 +211,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     lb_rounded = GRANULES_TO_BYTES(lg);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
     init = GC_obj_kinds[k].ok_init;
-    if (EXPECT(GC_have_errors, FALSE))
+    if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);
@@ -235,15 +256,20 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 
 /* Increment GC_bytes_allocd from code that doesn't have direct access  */
 /* to GC_arrays.                                                        */
-GC_API void GC_CALL GC_incr_bytes_allocd(size_t n)
+void GC_CALL GC_incr_bytes_allocd(size_t n)
 {
     GC_bytes_allocd += n;
 }
 
 /* The same for GC_bytes_freed.                         */
-GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
+void GC_CALL GC_incr_bytes_freed(size_t n)
 {
     GC_bytes_freed += n;
+}
+
+GC_API size_t GC_CALL GC_get_expl_freed_bytes_since_gc(void)
+{
+    return (size_t)GC_bytes_freed;
 }
 
 # ifdef PARALLEL_MARK
@@ -286,21 +312,17 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     DCL_LOCK_STATE;
 
     GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
-    if (!SMALL_OBJ(lb)
-#     ifdef MANUAL_VDB
-        /* Currently a single object is allocated.                      */
-        /* TODO: GC_dirty should be called for each linked object (but  */
-        /* the last one) to support multiple objects allocation.        */
-        || GC_incremental
-#     endif
-       ) {
+    /* Currently a single object is always allocated if manual VDB. */
+    /* TODO: GC_dirty should be called for each linked object (but  */
+    /* the last one) to support multiple objects allocation.        */
+    if (!SMALL_OBJ(lb) || GC_manual_vdb) {
         op = GC_generic_malloc(lb, k);
         if (EXPECT(0 != op, TRUE))
             obj_link(op) = 0;
         *result = op;
-#       ifdef MANUAL_VDB
-          if (GC_is_heap_ptr(result)) {
-            GC_dirty(result);
+#       ifndef GC_DISABLE_INCREMENTAL
+          if (GC_manual_vdb && GC_is_heap_ptr(result)) {
+            GC_dirty_inner(result);
             REACHABLE_AFTER_DIRTY(op);
           }
 #       endif
@@ -309,7 +331,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     GC_ASSERT(k < MAXOBJKINDS);
     lw = BYTES_TO_WORDS(lb);
     lg = BYTES_TO_GRANULES(lb);
-    if (EXPECT(GC_have_errors, FALSE))
+    if (EXPECT(get_have_errors(), FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     GC_DBG_COLLECT_AT_MALLOC(lb);
@@ -328,10 +350,9 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         struct hblk * hbp;
         hdr * hhdr;
 
-        rlh += lg;
-        while ((hbp = *rlh) != 0) {
+        while ((hbp = rlh[lg]) != NULL) {
             hhdr = HDR(hbp);
-            *rlh = hhdr -> hb_next;
+            rlh[lg] = hhdr -> hb_next;
             GC_ASSERT(hhdr -> hb_sz == lb);
             hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
 #           ifdef PARALLEL_MARK
@@ -357,11 +378,6 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
             op = GC_reclaim_generic(hbp, hhdr, lb,
                                     ok -> ok_init, 0, &my_bytes_allocd);
             if (op != 0) {
-              /* We also reclaimed memory, so we need to adjust         */
-              /* that count.                                            */
-              /* This should be atomic, so the results may be           */
-              /* inaccurate.                                            */
-              GC_bytes_found += my_bytes_allocd;
 #             ifdef PARALLEL_MARK
                 if (GC_parallel) {
                   *result = op;
@@ -370,11 +386,23 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                   GC_acquire_mark_lock();
                   -- GC_fl_builder_count;
                   if (GC_fl_builder_count == 0) GC_notify_all_builder();
-                  GC_release_mark_lock();
+#                 ifdef THREAD_SANITIZER
+                    GC_release_mark_lock();
+                    LOCK();
+                    GC_bytes_found += my_bytes_allocd;
+                    UNLOCK();
+#                 else
+                    GC_bytes_found += my_bytes_allocd;
+                                        /* The result may be inaccurate. */
+                    GC_release_mark_lock();
+#                 endif
                   (void) GC_clear_stack(0);
                   return;
                 }
 #             endif
+              /* We also reclaimed memory, so we need to adjust       */
+              /* that count.                                          */
+              GC_bytes_found += my_bytes_allocd;
               GC_bytes_allocd += my_bytes_allocd;
               goto out;
             }
@@ -388,6 +416,9 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                 /* GC lock is needed for reclaim list access.   We      */
                 /* must decrement fl_builder_count before reacquiring   */
                 /* the lock.  Hopefully this path is rare.              */
+
+                rlh = ok -> ok_reclaim_list; /* reload rlh after locking */
+                if (NULL == rlh) break;
               }
 #           endif
         }
@@ -413,7 +444,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     /* Next try to allocate a new block worth of objects of this size.  */
     {
         struct hblk *h = GC_allochblk(lb, k, 0);
-        if (h != 0) {
+        if (h /* != NULL */) { /* CPPCHECK */
           if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));
           GC_bytes_allocd += HBLKSIZE - HBLKSIZE % lb;
 #         ifdef PARALLEL_MARK
@@ -485,7 +516,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
     /* We could also try to make sure that the real rounded-up object size */
     /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
     new_lb = SIZET_SAT_ADD(lb, align - 1);
-    result = GC_malloc(new_lb);
+    result = (ptr_t)GC_malloc(new_lb);
             /* It is OK not to check result for NULL as in that case    */
             /* GC_memalign returns NULL too since (0 + 0 % align) is 0. */
     offset = (word)result % align;
@@ -497,7 +528,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
             GC_register_displacement(offset);
         }
     }
-    result = (void *) ((ptr_t)result + offset);
+    result += offset;
     GC_ASSERT((word)result % align == 0);
     return result;
 }
@@ -533,7 +564,8 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strdup(const char *s)
   size_t lb;
   if (s == NULL) return NULL;
   lb = strlen(s) + 1;
-  if ((copy = GC_malloc_atomic(lb)) == NULL) {
+  copy = (char *)GC_malloc_atomic(lb);
+  if (NULL == copy) {
 #   ifndef MSWINCE
       errno = ENOMEM;
 #   endif
@@ -549,14 +581,15 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
   size_t len = strlen(str); /* str is expected to be non-NULL  */
   if (len > size)
     len = size;
-  copy = GC_malloc_atomic(len + 1);
+  copy = (char *)GC_malloc_atomic(len + 1);
   if (copy == NULL) {
 #   ifndef MSWINCE
       errno = ENOMEM;
 #   endif
     return NULL;
   }
-  BCOPY(str, copy, len);
+  if (EXPECT(len > 0, TRUE))
+    BCOPY(str, copy, len);
   copy[len] = '\0';
   return copy;
 }
@@ -567,7 +600,8 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
   GC_API GC_ATTR_MALLOC wchar_t * GC_CALL GC_wcsdup(const wchar_t *str)
   {
     size_t lb = (wcslen(str) + 1) * sizeof(wchar_t);
-    wchar_t *copy = GC_malloc_atomic(lb);
+    wchar_t *copy = (wchar_t *)GC_malloc_atomic(lb);
+
     if (copy == NULL) {
 #     ifndef MSWINCE
         errno = ENOMEM;
@@ -578,3 +612,27 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
     return copy;
   }
 #endif /* GC_REQUIRE_WCSDUP */
+
+#ifndef CPPCHECK
+  GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
+  {
+    return GC_malloc(lb);
+  }
+
+  GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
+  {
+    /* Empty. */
+  }
+#endif /* !CPPCHECK */
+
+GC_API void GC_CALL GC_end_stubborn_change(const void *p)
+{
+  GC_dirty(p); /* entire object */
+}
+
+GC_API void GC_CALL GC_ptr_store_and_dirty(void *p, const void *q)
+{
+  *(const void **)p = q;
+  GC_dirty(p);
+  REACHABLE_AFTER_DIRTY(q);
+}

@@ -12,14 +12,19 @@
  */
 
 /*
- * The MS Windows specific part of de.
+ * The Windows specific part of de.
  * This started as the generic Windows application template
  * but significant parts didn't survive to the final version.
- *
- * This was written by a nonexpert windows programmer.
  */
+#if defined(__BORLANDC__) || defined(__CYGWIN__) || defined(__MINGW32__) \
+    || defined(__NT__) || defined(_WIN32) || defined(WIN32)
 
-#include "windows.h"
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
+#endif
+#define NOSERVICE
+#include <windows.h>
+
 #include "gc.h"
 #include "cord.h"
 #include "de_cmds.h"
@@ -32,7 +37,7 @@ int COLS = 0;
 
 HWND        hwnd;
 
-void de_error(char *s)
+void de_error(const char *s)
 {
     (void)MessageBoxA(hwnd, s, "Demonstration Editor",
                       MB_ICONINFORMATION | MB_OK);
@@ -44,9 +49,13 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
    MSG         msg;
    WNDCLASS    wndclass;
-   HANDLE      hAccel;
+   HACCEL      hAccel;
 
+   GC_set_find_leak(0);
    GC_INIT();
+#  ifndef NO_INCREMENTAL
+     GC_enable_incremental();
+#  endif
 #  if defined(CPPCHECK)
      GC_noop1((GC_word)&WinMain);
 #  endif
@@ -60,7 +69,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
       wndclass.hInstance      = hInstance;
       wndclass.hIcon          = LoadIcon (hInstance, szAppName);
       wndclass.hCursor        = LoadCursor (NULL, IDC_ARROW);
-      wndclass.hbrBackground  = GetStockObject(WHITE_BRUSH);
+      wndclass.hbrBackground  = (HBRUSH)GetStockObject(WHITE_BRUSH);
       wndclass.lpszMenuName   = TEXT("DE");
       wndclass.lpszClassName  = szAppName;
 
@@ -120,8 +129,8 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 /* Return the argument with all control characters replaced by blanks.  */
 char * plain_chars(char * text, size_t len)
 {
-    char * result = GC_MALLOC_ATOMIC(len + 1);
-    register size_t i;
+    char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
+    size_t i;
 
     if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
@@ -136,16 +145,16 @@ char * plain_chars(char * text, size_t len)
 }
 
 /* Return the argument with all non-control-characters replaced by      */
-/* blank, and all control characters c replaced by c + 32.              */
+/* blank, and all control characters c replaced by c + 64.              */
 char * control_chars(char * text, size_t len)
 {
-    char * result = GC_MALLOC_ATOMIC(len + 1);
-    register size_t i;
+    char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
+    size_t i;
 
     if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
        if (iscntrl(((unsigned char *)text)[i])) {
-           result[i] = text[i] + 0x40;
+           result[i] = (char)(text[i] + 0x40);
        } else {
            result[i] = ' ';
        }
@@ -201,14 +210,14 @@ INT_PTR CALLBACK AboutBoxCallback( HWND hDlg, UINT message,
 LRESULT CALLBACK WndProc (HWND hwnd_arg, UINT message,
                           WPARAM wParam, LPARAM lParam)
 {
-   static HANDLE  hInstance;
+   static HINSTANCE hInstance;
    HDC dc;
    PAINTSTRUCT ps;
    RECT client_area;
    RECT this_line;
    RECT dummy;
    TEXTMETRIC tm;
-   register int i;
+   int i;
    int id;
 
    switch (message)
@@ -366,3 +375,11 @@ void invalidate_line(int i)
     get_line_rect(i, COLS*char_width, &line_r);
     InvalidateRect(hwnd, &line_r, FALSE);
 }
+
+#else
+
+  extern int GC_quiet;
+        /* ANSI C doesn't allow translation units to be empty.  */
+        /* So we guarantee this one is nonempty.                */
+
+#endif /* !WIN32 */
