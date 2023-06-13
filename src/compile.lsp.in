@@ -35,7 +35,7 @@
   (c::update-compiler-features
    :executable
    #+(or windows cygwin mingw32) "build:ecl_min.exe"
-   #-(or windows cygwin mingw32) "build:ecl_min")
+   #-(or windows cygwin mingw32) "build:@ECL_MIN@")
   (format t "~&;;; System features: ~A~%" c::*compiler-features*))
 
 ;;;
