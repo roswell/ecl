@@ -67,8 +67,6 @@
     (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
     (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
 
-    (WITH-STACK         body :side-effects)
-    (STACK-PUSH-VALUES  value-c1form push-statement-c1form :side-effects)
     (MV-PROG1           form body :side-effects)
 
     (ext:COMPILER-TYPECASE var expressions)
@@ -133,13 +131,6 @@
     (cl:eval-when . c1eval-when) ; c1special
     (cl:declare . c1declare) ; c1special
     (ext:compiler-let . c1compiler-let) ; c1special
-
-    (with-stack . c1with-stack) ; c1
-    (innermost-stack-frame . c1innermost-stack-frame) ; c1
-    (stack-push . c1stack-push) ; c1
-    (stack-push-values . c1stack-push-values) ; c1
-    (stack-pop . c1stack-pop) ; c1
-    (si:apply-from-stack-frame . c1apply-from-stack-frame) ; c1
 
     (cl:tagbody . c1tagbody) ; c1special
     (cl:go . c1go) ; c1special
@@ -244,8 +235,6 @@
     (cl:function . c2function)
     (ext:compiler-let . c2compiler-let)
 
-    (with-stack . c2with-stack)
-    (stack-push-values . c2stack-push-values)
     (mv-prog1 . c2mv-prog1)
 
     (cl:tagbody . c2tagbody)
@@ -310,8 +299,6 @@
     (cl:load-time-value . p1trivial)
     (make-form . p1trivial)
     (init-form . p1trivial)
-    (with-stack . p1with-stack)
-    (stack-push-values . p1stack-push-values)
     (mv-prog1 . p1mv-prog1)
 
     (ext:compiler-typecase . p1compiler-typecase)

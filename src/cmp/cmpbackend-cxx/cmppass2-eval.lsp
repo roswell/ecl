@@ -225,9 +225,8 @@
    ((eq *destination* 'TRASH)
     (mapc #'c2expr* forms)
     ;; We really pass no value, but we need UNWIND-EXIT to trigger all the
-    ;; frame-pop, stack-pop and all other exit forms.
-    (unwind-exit 'VALUE0)
-    )
+    ;; frame-pop and all other exit forms.
+    (unwind-exit 'VALUE0))
    ;; For (VALUES) we can replace the output with either NIL (if the value
    ;; is actually used) and set only NVALUES when the value is the output
    ;; of a function.

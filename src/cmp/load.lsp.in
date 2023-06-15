@@ -33,7 +33,6 @@
     ;; AST building pass
     "src:cmp;cmppass1-data.lsp"
     "src:cmp;cmppass1-top.lsp"
-    "src:cmp;cmppass1-stack.lsp"
     "src:cmp;cmppass1-special.lsp"
     "src:cmp;cmppass1-cont.lsp"
     "src:cmp;cmppass1-eval.lsp"
@@ -59,7 +58,6 @@
     ;; Code generation pass
     "src:cmp;cmpbackend-cxx;cmppass2-data.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-top.lsp"
-    "src:cmp;cmpbackend-cxx;cmppass2-stack.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-special.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-exit.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-cont.lsp"
