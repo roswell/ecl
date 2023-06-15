@@ -89,13 +89,9 @@
      (c1funcall (list* (first args) (rest forms))))
     ;; More complicated case.
     (t
-     (let ((function (gensym))
-           (frame (gensym)))
-       `(with-stack ,frame
-          (let* ((,function ,(first args)))
-            ,@(loop for i in (rest args)
-                    collect `(stack-push-values ,frame ,i))
-            (si::apply-from-stack-frame ,frame ,function)))))))
+     (make-c1form* 'MCALL
+                   :sp-change t :side-effects t :args (c1expr (first args))
+                   (c1args* (rest args))))))
 
 (defun c1apply (args)
   (check-args-number 'CL:APPLY args 2)
