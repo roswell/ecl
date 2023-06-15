@@ -9,20 +9,12 @@
 
 (in-package #:compiler)
 
-(defun unoptimized-long-call (fun arguments)
-  (let ((frame (gensym))
-        (f-arg (gensym)))
-    `(with-stack ,frame
-       (let ((,f-arg ,fun))
-         ,@(loop for i in arguments collect `(stack-push ,frame ,i))
-         (si::apply-from-stack-frame ,frame ,f-arg)))))
-
 (defun unoptimized-funcall (fun arguments)
-  (let ((l (length arguments)))
-    (if (<= l si:c-arguments-limit)
-        (make-c1form* 'CL:FUNCALL :sp-change t :side-effects t
-                                  :args (c1expr fun) (c1args* arguments))
-        (unoptimized-long-call fun arguments))))
+  (if (<= (length arguments) si:c-arguments-limit)
+      (make-c1form* 'CL:FUNCALL
+                    :sp-change t :side-effects t :args (c1expr fun) (c1args* arguments))
+      (make-c1form* 'FCALL
+                    :sp-change t :side-effects t :args (c1expr fun) (c1args* arguments))))
 
 (defun optimized-lambda-call (lambda-form arguments apply-p)
   (multiple-value-bind (bindings body)
@@ -125,13 +117,12 @@
               (default-apply fun arguments))))))
 
 (defun c1call (fname args macros-allowed &aux fd success can-inline)
-  (cond ((> (length args) si::c-arguments-limit)
+  ;; XXX: try to remove the first condition
+  (cond ((> (length args) si:c-arguments-limit)
          (if (and macros-allowed
                   (setf fd (cmp-macro-function fname)))
              (cmp-expand-macro fd (list* fname args))
-             ;; When it is a function and takes too many arguments, we need a
-             ;; special C form to call it with the stack (see with-stack).
-             (unoptimized-long-call `(function ,fname) args)))
+             (unoptimized-funcall `(function ,fname) args)))
         ((setq fd (local-function-ref fname))
          (c1call-local fname fd args))
         ((and macros-allowed            ; macrolet

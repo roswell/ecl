@@ -40,6 +40,23 @@
     (unwind-exit (call-unknown-global-loc nil loc (inline-args args) function-p))
     (close-inline-blocks)))
 
+(defun c2fcall (c1form form args)
+  (declare (ignore c1form))
+  (let ((fun-var (make-temp-var)))
+    (wt-nl-open-brace)
+    (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
+    (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
+    (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
+      (let ((*destination* fun-var))
+        (c2expr* form))
+      (dolist (inlined-arg (inline-args args))
+        (wt-nl (produce-inline-loc (list inlined-arg) '(t) :void
+                                   "ecl_stack_frame_push(_ecl_inner_frame,#0);" t t)))
+      (wt-nl "cl_env_copy->values[0]=ecl_apply_from_stack_frame(_ecl_inner_frame," fun-var ");"))
+    (wt-nl "ecl_stack_frame_close(_ecl_inner_frame);")
+    (wt-nl-close-brace)
+    (unwind-exit 'values)))
+
 ;;;
 ;;; c2call-global:
 ;;;   ARGS is the list of arguments
