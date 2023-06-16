@@ -32,10 +32,9 @@
     (CL:PROGV           symbols values form :side-effects)
     (CL:TAGBODY         tag-var tag-body :pure)
     (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
-    (FCALL              fun-value (arg-value*) :side-effects)
-    (MCALL              fun-value (arg-value*) :side-effects)
-    (CALL-LOCAL         obj-fun (arg-value*) :side-effects)
-    (CALL-GLOBAL        fun-name (arg-value*))
+    (FCALL              fun-form (arg-value*) fun-val call-type :side-effects)
+    (MCALL              fun-form (arg-value*) :side-effects)
+
     (CL:CATCH           catch-value body :side-effects)
     (CL:UNWIND-PROTECT  protected-c1form body :side-effects)
     (CL:THROW           catch-value output-value :side-effects)
@@ -210,7 +209,7 @@
     (cl:return-from . c2return-from)
     (fcall . c2fcall)
     (mcall . c2mcall)
-    (call-global . c2call-global)
+
     (cl:catch . c2catch)
     (cl:unwind-protect . c2unwind-protect)
     (cl:throw . c2throw)
@@ -218,7 +217,6 @@
     (ffi:c-inline . c2c-inline)
     (ffi:c-progn . c2c-progn)
     (locals . c2locals)
-    (call-local . c2call-local)
 
     (cl:if . c2if)
     (fmla-not . c2fmla-not)
@@ -264,10 +262,8 @@
 (defconstant +p1-dispatch-alist+
   '((cl:block . p1block)
     (cl:return-from . p1return-from)
-    (fcall . p1trivial)
+    (fcall . p1fcall)
     (mcall . p1trivial)
-    (call-global . p1call-global)
-    (call-local . p1call-local)
     (cl:catch . p1catch)
     (cl:throw . p1throw)
     (cl:if . p1if)

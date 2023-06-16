@@ -90,21 +90,8 @@
                              values-type))
     values-type))
 
-(defun p1call-global (c1form fname args)
-  (declare (ignore c1form))
-  (loop for v in args
-        do (p1propagate v)
-        finally (let ((type (propagate-types fname args)))
-                  (prop-message "~&;;; Computing output of function ~A with args~&;;;  ~{ ~A~}~&;;; gives ~A, while before ~A"
-                                fname (mapcar #'c1form-primary-type args)
-                                type (c1form-type c1form))
-                  (return type))))
-
-(defun p1call-local (c1form fun args)
-  (declare (ignore c1form))
-  (loop for v in args
-        do (p1propagate v)
-        finally (return (fun-return-type fun))))
+(defun p1fcall (c1form fun args fun-val call-type)
+  (p1trivial c1form fun args fun-val call-type))
 
 (defun p1catch (c1form tag body)
   (declare (ignore c1form))

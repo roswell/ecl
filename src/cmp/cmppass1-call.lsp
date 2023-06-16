@@ -10,8 +10,10 @@
 (in-package #:compiler)
 
 (defun unoptimized-funcall (fun arguments)
-  (make-c1form* 'FCALL :sp-change t :side-effects t
-                       :args (c1expr fun) (c1args* arguments)))
+  (let ((fun-form (c1expr fun))
+        (fun-args (c1args* arguments)))
+    (make-c1form* 'FCALL :sp-change t :side-effects t
+                         :args fun-form fun-args nil :unknown)))
 
 (defun optimized-lambda-call (lambda-form arguments apply-p)
   (multiple-value-bind (bindings body)
@@ -87,8 +89,8 @@
     ;; More complicated case.
     (t
      (make-c1form* 'MCALL
-                   :sp-change t :side-effects t :args (c1expr (first args))
-                   (c1args* (rest args))))))
+                   :sp-change t :side-effects t
+                   :args (c1expr (first args)) (c1args* (rest args))))))
 
 (defun c1apply (args)
   (check-args-number 'CL:APPLY args 2)
@@ -190,11 +192,11 @@
                    (pop arg-types)
                    (pop args))))
         (setq forms (nreverse fl))))
-    (make-c1form* 'CALL-LOCAL
+    (make-c1form* 'FCALL
                   :sp-change t ; conservative estimate
                   :side-effects t ; conservative estimate
                   :type return-type
-                  :args fun forms)))
+                  :args (c1expr `(function ,fname)) forms fun :local)))
 
 (defun c1call-global (fname args)
   (let* ((forms (c1args* args)))
@@ -205,11 +207,11 @@
       (when value
         (return-from c1call-global value)))
     ;; Otherwise emit a global function call
-    (make-c1form* 'CALL-GLOBAL
+    (make-c1form* 'FCALL
                   :sp-change (function-may-change-sp fname)
                   :side-effects (function-may-have-side-effects fname)
                   :type (propagate-types fname forms)
-                  :args fname forms
+                  :args (c1expr `(function ,fname)) forms fname :global
                   ;; loc and type are filled by c2expr
                   )))
 
@@ -233,7 +235,7 @@
                          (c1constant-value (first results))
                          (let ((results (mapcar #'c1constant-value results)))
                            (when (every #'identity results)
-                             (make-c1form* 'values :args results)))))))
+                             (make-c1form* 'CL:VALUES :args results)))))))
       (error (c) (cmpdebug "Can't constant-fold ~s ~s: ~a~%" fname forms c)))))
 
 ;;; Transform a (funcall lambda-form arguments) or (apply lambda-form

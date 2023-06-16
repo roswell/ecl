@@ -25,16 +25,35 @@
              (c2expr* value)
              temp)))))
 
-(defun c2fcall (c1form form args)
-  (if (> (length args) si:c-arguments-limit)
-      (c2call-stack c1form form args nil)
-      (c2call-unknown c1form form args)))
+;;; FIXME functions declared as SI::C-LOCAL can't be called from the stack
+;;; because they are not installed in the environment. That means that if we
+;;; have such function and call it with too many arguments it will be
+;;; "undefined". This is a defect (but not a regression). -- jd 2023-06-16
 
+;;;
+;;; c2fcall:
+;;;
+;;;   FUN the function to be called
+;;;   ARGS is the list of arguments
+;;;   FUN-VAL depends on the particular call type
+;;;   CALL-TYPE is (member :LOCAL :GLOBAL :UKNOWN)
+;;;
+(defun c2fcall (c1form fun args fun-val call-type)
+  (if (> (length args) si:c-arguments-limit)
+      (c2call-stack c1form fun args nil)
+      (ecase call-type
+        (:local (c2call-local c1form fun-val args))
+        (:global (c2call-global c1form fun-val args))
+        (:unknown (c2call-unknown c1form fun args)))))
+
+;;; FIXME now we could incorporate the call type for MCALL to faciliate the
+;;; type propagation.
 (defun c2mcall (c1form form args)
   (c2call-stack c1form form args t))
 
 ;;;
 ;;; c2call-global:
+;;;
 ;;;   ARGS is the list of arguments
 ;;;   LOC is either NIL or the location of the function object
 ;;;
