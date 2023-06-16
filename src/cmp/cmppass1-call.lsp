@@ -2,7 +2,7 @@
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
 ;;;;  Copyright (c) 1990, Giuseppe Attardi
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
-;;;;  Copyright (c) 2021, Daniel Kochmański
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
 ;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
@@ -10,11 +10,8 @@
 (in-package #:compiler)
 
 (defun unoptimized-funcall (fun arguments)
-  (if (<= (length arguments) si:c-arguments-limit)
-      (make-c1form* 'CL:FUNCALL
-                    :sp-change t :side-effects t :args (c1expr fun) (c1args* arguments))
-      (make-c1form* 'FCALL
-                    :sp-change t :side-effects t :args (c1expr fun) (c1args* arguments))))
+  (make-c1form* 'FCALL :sp-change t :side-effects t
+                       :args (c1expr fun) (c1args* arguments)))
 
 (defun optimized-lambda-call (lambda-form arguments apply-p)
   (multiple-value-bind (bindings body)
@@ -96,7 +93,7 @@
 (defun c1apply (args)
   (check-args-number 'CL:APPLY args 2)
   (flet ((default-apply (fun arguments)
-           (let ((form (c1funcall (list* '#'APPLY fun arguments))))
+           (let ((form (c1funcall (list* '(function CL:APPLY) fun arguments))))
              (when (function-form-p fun)
                (let* ((fname (second fun))
                       (type (get-return-type fname)))

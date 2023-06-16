@@ -2,20 +2,16 @@
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
 ;;;;  Copyright (c) 1990, Giuseppe Attardi
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
-;;;;  Copyright (c) 2021, Daniel Kochmański
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
 
 (in-package #:compiler)
 
-;;; Functions that use MAYBE-SAVE-VALUE should rebind *temp*.
+;;; Functions that use MAYBE-SAVE-VALUE should rebind *TEMP*.
 (defun maybe-save-value (value &optional (other-forms nil other-forms-flag))
+  (declare (si::c-local))
   (let ((name (c1form-name value)))
     (cond ((eq name 'LOCATION)
            (c1form-arg 0 value))
@@ -29,19 +25,10 @@
              (c2expr* value)
              temp)))))
 
-(defun c2funcall (c1form form args)
-  (declare (ignore c1form))
-  (let* ((*inline-blocks* 0)
-         (*temp* *temp*)
-         (form-type (c1form-primary-type form))
-         (function-p (and (subtypep form-type 'function)
-                          (policy-assume-right-type)))
-         (loc (maybe-save-value form args)))
-    (unwind-exit (call-unknown-global-loc nil loc (inline-args args) function-p))
-    (close-inline-blocks)))
-
 (defun c2fcall (c1form form args)
-  (c2call-stack c1form form args nil))
+  (if (> (length args) si:c-arguments-limit)
+      (c2call-stack c1form form args nil)
+      (c2call-unknown c1form form args)))
 
 (defun c2mcall (c1form form args)
   (c2call-stack c1form form args t))
@@ -117,6 +104,17 @@
       (unwind-exit (call-loc (fun-name fun) fun (inline-args args)
                              (c1form-primary-type c1form)))
       (close-inline-blocks))))
+
+(defun c2call-unknown (c1form form args)
+  (declare (ignore c1form))
+  (let* ((*inline-blocks* 0)
+         (*temp* *temp*)
+         (form-type (c1form-primary-type form))
+         (function-p (and (subtypep form-type 'function)
+                          (policy-assume-right-type)))
+         (loc (maybe-save-value form args)))
+    (unwind-exit (call-unknown-global-loc nil loc (inline-args args) function-p))
+    (close-inline-blocks)))
 
 (defun c2call-stack (c1form form args values-p)
   (declare (ignore c1form))

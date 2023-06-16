@@ -32,7 +32,6 @@
     (CL:PROGV           symbols values form :side-effects)
     (CL:TAGBODY         tag-var tag-body :pure)
     (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
-    (CL:FUNCALL         fun-value (arg-value*) :side-effects)
     (FCALL              fun-value (arg-value*) :side-effects)
     (MCALL              fun-value (arg-value*) :side-effects)
     (CALL-LOCAL         obj-fun (arg-value*) :side-effects)
@@ -209,7 +208,6 @@
 (defconstant +c2-dispatch-alist+
   '((cl:block . c2block)
     (cl:return-from . c2return-from)
-    (cl:funcall . c2funcall)
     (fcall . c2fcall)
     (mcall . c2mcall)
     (call-global . c2call-global)
@@ -266,7 +264,6 @@
 (defconstant +p1-dispatch-alist+
   '((cl:block . p1block)
     (cl:return-from . p1return-from)
-    (cl:funcall . p1trivial)
     (fcall . p1trivial)
     (mcall . p1trivial)
     (call-global . p1call-global)
