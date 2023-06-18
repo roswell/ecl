@@ -156,32 +156,6 @@
     (values (nreverse (car checks)) (nreverse (cadr checks))
             (nreverse (caddr checks)) (nreverse new-auxs))))
 
-(defun type-error-check (value type)
-  (case type
-    (cons
-     `(ffi:c-inline (,value) (:object) :void
-        "@0;if (ecl_unlikely(ECL_ATOM(#0))) FEtype_error_cons(#0);"
-        :one-liner nil))
-    (array
-     `(ffi:c-inline (,value) (:object) :void
-        "if (ecl_unlikely(!ECL_ARRAYP(#0))) FEtype_error_array(#0);"
-        :one-liner nil))
-    (list
-     `(ffi:c-inline (,value) (:object) :void
-        "if (ecl_unlikely(!ECL_LISTP(#0))) FEtype_error_list(#0);"
-        :one-liner nil))
-    (sequence
-     `(ffi:c-inline (,value) (:object) :void
-        "if (ecl_unlikely(!(ECL_LISTP(#0) || ECL_VECTORP(#0))))
-           FEtype_error_sequence(#0);"
-        :one-liner nil))
-    (otherwise
-     `(ffi:c-inline
-       ((typep ,value ',type) ',type ,value)
-       (:bool :object :object) :void
-       "if (ecl_unlikely(!(#0)))
-         FEwrong_type_argument(#1,#2);" :one-liner nil))))
-
 (defmacro assert-type-if-known (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (multiple-value-bind (trivial valid)
@@ -193,7 +167,7 @@
           (t
            (ext:with-clean-symbols (%value)
              `(let* ((%value ,value))
-                ,(type-error-check '%value (replace-invalid-types type))
+                ,(simple-type-assertion '%value (replace-invalid-types type))
                 (ext:truly-the ,type %value)))))))
 
 (defun replace-invalid-types (type)
