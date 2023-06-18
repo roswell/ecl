@@ -184,7 +184,7 @@
                 ;; case of BOA lists we remove some of these checks for
                 ;; uninitialized slots.
                 (unless (eq 'T slot-type)
-                  (push `(unless (typep ,var-name ',slot-type)
+                  (push `(unless (typep ,var-name ',(flatten-function-types slot-type))
                            (structure-type-error ,var-name ',slot-type ',name ',slot-name))
                         assertions))
                 var-name)))

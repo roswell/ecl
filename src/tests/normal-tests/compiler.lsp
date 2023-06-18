@@ -2159,3 +2159,116 @@
                   a))
               '(defun bar () (foo))))
   (is (eql (bar) 2)))
+
+;;; Date 2023-06-18
+;;; Description
+;;;
+;;;     Compound function types in type declarations must not end up
+;;;     as arguments to TYPEP.
+;;;
+(deftype fun-type.0093a () '(function (integer) integer))
+(deftype fun-type.0093b (tp) `(function (,tp) ,tp))
+
+(defstruct struct.0093
+  (f1 #'(lambda (x) (+ x 2)) :type (function (integer) integer))
+  (f2 #'(lambda (x) (+ x 2)) :type fun-type.0093a)
+  (f3 #'(lambda (x) (+ x 2)) :type (fun-type.0093b integer)))
+
+(defclass class.0093 ()
+  ((f1 :initform #'(lambda (x) (+ x 2)) :initarg :f1 :reader class.0093-f1
+       :type (function (integer) integer))
+   (f2 :initform #'(lambda (x) (+ x 2)) :initarg :f2 :reader class.0093-f2
+       :type fun-type.0093a)
+   (f3 :initform #'(lambda (x) (+ x 2)) :initarg :f3 :reader class.0093-f3
+       :type (fun-type.0093b integer))))
+
+(test cmp.0093.declare-compound-function-types
+  ;; type declarations for function arguments
+  (is (= 5 (funcall (compile nil (lambda (f)
+                                   (declare (ext:check-arguments-type) (ext:type-assertions)
+                                            (type (function (integer) integer) f))
+                                   (funcall f 3)))
+                    #'(lambda (x) (+ x 2)))))
+  (is (= 5 (funcall (compile nil (lambda (f)
+                                   (declare (ext:check-arguments-type) (ext:type-assertions)
+                                            (type fun-type.0093a f))
+                                   (funcall f 3)))
+                    #'(lambda (x) (+ x 2)))))
+  (is (= 5 (funcall (compile nil (lambda (f)
+                                   (declare (ext:check-arguments-type) (ext:type-assertions)
+                                            (type (fun-type.0093b integer) f))
+                                   (funcall f 3)))
+                    #'(lambda (x) (+ x 2)))))
+  ;; type declarations for local variables
+  (is (= 5 (funcall (compile nil (lambda ()
+                                   (declare (ext:evaluate-forms) (ext:type-assertions))
+                                   (let ((f #'(lambda (x) (+ x 2))))
+                                     (declare (type (function (integer) integer) f))
+                                     (funcall f 3)))))))
+  (is (= 5 (funcall (compile nil (lambda ()
+                                   (declare (ext:evaluate-forms) (ext:type-assertions))
+                                   (let ((f #'(lambda (x) (+ x 2))))
+                                     (declare (type fun-type.0093a f))
+                                     (funcall f 3)))))))
+  (is (= 5 (funcall (compile nil (lambda ()
+                                   (declare (ext:evaluate-forms) (ext:type-assertions))
+                                   (let ((f #'(lambda (x) (+ x 2))))
+                                     (declare (type (fun-type.0093b integer) f))
+                                     (funcall f 3)))))))
+  ;; type declarations using THE with constant argument
+  (is (typep (funcall (compile nil (lambda ()
+                                     (declare (ext:evaluate-forms) (ext:type-assertions))
+                                     (the (function (integer) integer)
+                                          #.#'(lambda (x) (+ x 2))))))
+             'function))
+  (is (typep (funcall (compile nil (lambda ()
+                                     (declare (ext:evaluate-forms) (ext:type-assertions))
+                                     (the fun-type.0093a
+                                          #.#'(lambda (x) (+ x 2))))))
+             'function))
+  (is (typep (funcall (compile nil (lambda ()
+                                     (declare (ext:evaluate-forms) (ext:type-assertions))
+                                     (the (fun-type.0093b integer)
+                                          #.#'(lambda (x) (+ x 2))))))
+             'function))
+  ;; type declarations in DEFSTRUCT
+  (let ((s (make-struct.0093)))
+    (is (typep (struct.0093-f1 s) 'function))
+    (is (typep (struct.0093-f2 s) 'function))
+    (is (typep (struct.0093-f3 s) 'function)))
+  (let ((s (make-struct.0093 :f1 #'(lambda (x) (+ x 3))
+                             :f2 #'(lambda (x) (+ x 3))
+                             :f3 #'(lambda (x) (+ x 3)))))
+    (is (typep (struct.0093-f1 s) 'function))
+    (is (typep (struct.0093-f2 s) 'function))
+    (is (typep (struct.0093-f3 s) 'function)))
+  ;; type declarations in DEFCLASS
+  (let ((i (make-instance 'class.0093)))
+    (is (typep (class.0093-f1 i) 'function))
+    (is (typep (class.0093-f2 i) 'function))
+    (is (typep (class.0093-f3 i) 'function)))
+  (let ((i (make-instance 'class.0093
+                          :f1 #'(lambda (x) (+ x 3))
+                          :f2 #'(lambda (x) (+ x 3))
+                          :f3 #'(lambda (x) (+ x 3)))))
+    (is (typep (class.0093-f1 i) 'function))
+    (is (typep (class.0093-f2 i) 'function))
+    (is (typep (class.0093-f3 i) 'function))))
+
+
+;;; Date 2023-06-18
+;;; Description
+;;;
+;;;     TYPEP with a compound function type as argument must not be
+;;;     simplified to FUNCTIONP.
+;;;
+(deftype fun-type.0094a () '(function (integer) integer))
+(deftype fun-type.0094b (tp) `(function (,tp) ,tp))
+
+(test cmp.0094.typep-compound-function-type
+  (signals error (funcall (compile nil (lambda (x) (typep x '(function (integer) integer))))
+                          #'(lambda (x) (+ x 2))))
+  (signals error (funcall (compile nil (lambda (x) (typep x 'fun-type.0094a)))
+                          #'(lambda (x) (+ x 2))))
+  (signals error (funcall (compile nil (lambda (x) (typep x '(fun-type.0094b integer))))
+                          #'(lambda (x) (+ x 2)))))

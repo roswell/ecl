@@ -64,7 +64,7 @@
         `(ffi:c-inline (,value) (:object) :void ,simple-form
                        :one-liner nil)
         `(ffi:c-inline
-          ((typep ,value ',type) ',type ,value)
+          ((typep ,value ',(si::flatten-function-types type)) ',type ,value)
           (:bool :object :object) :void
           "if (ecl_unlikely(!(#0)))
          FEwrong_type_argument(#1,#2);" :one-liner nil))))
@@ -101,7 +101,8 @@
            (c1checked-value (list (values-type-primary-type type)
                                   value)))
           ((and (policy-evaluate-forms) (constantp value *cmp-env*))
-           (if (typep (ext:constant-form-value value *cmp-env*) type)
+           (if (typep (ext:constant-form-value value *cmp-env*)
+                      (si::flatten-function-types type))
                value
                (progn
                  ;; warn and generate error.

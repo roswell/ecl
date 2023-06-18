@@ -40,6 +40,12 @@
               forms)))
     forms))
 
+(defun contains-compound-function-type (type)
+  (and (consp type)
+       (or (eq (first type) 'FUNCTION)
+           (and (member (first type) '(NOT OR AND CONS))
+                (some #'contains-compound-function-type (rest type))))))
+
 (defun expand-typep (form object type env)
   ;; This function is reponsible for expanding (TYPEP object type)
   ;; forms into a reasonable set of system calls. When it fails to
@@ -54,7 +60,11 @@
     (if (constantp type env)
         (setf type (ext:constant-form-value type env))
         (return-from expand-typep form))
-    (cond ;; Variable declared with a given type
+    (cond ;; compound function type specifier: signals an error
+          ((contains-compound-function-type type)
+           (cmpwarn "~S is not a valid type specifier for TYPEP" type)
+           form)
+          ;; Variable declared with a given type
           ((and (symbolp object)
                 (setf aux (cmp-env-search-var object env))
                 (subtypep (var-type aux) type))
@@ -69,6 +79,19 @@
            (cmpwarn "TYPEP form contains an empty type ~S and cannot be optimized" type)
            form)
           ;;
+          ;; Derived types defined with DEFTYPE. These are expanded
+          ;; first so that we can sort out compound function types
+          ;; which are equal under si::type= to the atomic function
+          ;; type but not allowed in TYPEP.
+          ((setq function (si:get-sysprop (if (atom type)
+                                              type
+                                              (first type))
+                                          'SI::DEFTYPE-DEFINITION))
+           (expand-typep form object `',(funcall function (if (atom type)
+                                                              nil
+                                                              (rest type)))
+                         env))
+          ;;
           ;; There exists a function which checks for this type?
           ((setf function (si:get-sysprop type 'si::type-predicate))
            `(,function ,object))
@@ -78,11 +101,6 @@
           ((loop for (a-type . function-name) in si::+known-typep-predicates+
               when (si::type= type a-type)
               do (return `(,function-name ,object))))
-          ;;
-          ;; Derived types defined with DEFTYPE.
-          ((and (atom type)
-                (setq function (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
-           (expand-typep form object `',(funcall function nil) env))
           ;;
           ;; No optimizations that take up too much space unless requested.
           ((not (policy-inline-type-checks))
@@ -152,10 +170,6 @@
                 (= (list-length type) 2)
                 (symbolp (setf function (second type))))
            `(,function ,object))
-          ;;
-          ;; Derived compound types.
-          ((setf function (si:get-sysprop first 'SI::DEFTYPE-DEFINITION))
-           (expand-typep form object `',(funcall function rest) env))
           (t
            form))))
 
