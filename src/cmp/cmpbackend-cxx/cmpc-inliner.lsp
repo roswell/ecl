@@ -96,10 +96,6 @@
         (let ((other (inline-type-matches x types return-type)))
           (when other
             (setf output (choose-inline-info output other return-type return-rep-type))))))
-    (dolist (x (inline-information fname ':INLINE-SAFE))
-      (let ((other (inline-type-matches x types return-type)))
-        (when other
-          (setf output (choose-inline-info output other return-type return-rep-type)))))
     (dolist (x (inline-information fname ':INLINE-ALWAYS))
       (let ((other (inline-type-matches x types return-type)))
         (when other
