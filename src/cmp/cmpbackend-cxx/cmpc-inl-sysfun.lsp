@@ -23,9 +23,9 @@
 ;;; Here, ARG-TYPE is the list of argument types belonging to the lisp family,
 ;;; while RETURN-REP-TYPE is a representation type, i.e. the C type of the
 ;;; output expression. EXPANSION-STRING is a C/C++ expression template, like the
-;;; ones used by C-INLINE. Finally, KIND can be :ALWAYS, :SAFE or :UNSAFE,
-;;; depending on whether the inline expression should be applied always, in safe
-;;; or in unsafe compilation mode, respectively.
+;;; ones used by C-INLINE. Finally, KIND can be :ALWAYS or :UNSAFE, depending on
+;;; whether the inline expression should be applied always or only in the unsafe
+;;; compilation mode, respectively.
 ;;;
 
 (defun inline-information (name safety)
@@ -41,9 +41,8 @@
   (setf safety
         (case safety
           (:unsafe :inline-unsafe)
-          (:safe :inline-safe)
           (:always :inline-always)
-          (t (error "In DEF-INLINE, wrong value of SAFETY"))))
+          (t (error "In DEF-INLINE, ~s is a wrong value of SAFETY." safety))))
   ;; Ensure we can inline this form. We only inline when the features are
   ;; there (checked above) and when the C types are part of this machine
   ;; (checked here).
@@ -333,7 +332,7 @@
 
     (def-inline cl:cons :always (t t) t "CONS(#0,#1)")
 
-    (def-inline cl:endp :safe (t) :bool "ecl_endp(#0)")
+    (def-inline cl:endp :always (t) :bool "ecl_endp(#0)")
     (def-inline cl:endp :unsafe (t) :bool "#0==ECL_NIL")
 
     (def-inline cl:nth :always (t t) t "ecl_nth(ecl_to_size(#0),#1)")
