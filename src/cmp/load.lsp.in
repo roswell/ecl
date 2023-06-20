@@ -44,6 +44,7 @@
     ;; Type propagation pass
     "src:cmp;cmpprop.lsp"
     "src:cmp;cmpprop-num.lsp"
+    "src:cmp;cmpprop-array.lsp"
     ;; C/C++ backend
     "src:cmp;cmpbackend-cxx;cmpc-util.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-mach.lsp"
