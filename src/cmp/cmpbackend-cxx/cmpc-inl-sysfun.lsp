@@ -806,3 +806,8 @@
       (def-inline clos:funcallable-standard-instance-access :unsafe (clos:funcallable-standard-object fixnum) t "(#0)->instance.slots[#1]"))
 
     *inline-information*))
+
+;;; XXX this should be part of the initializer for the compiler instance (but
+;;; currently the compiler is a singleton).
+(setf (machine-inline-information *default-machine*)
+      (make-inline-information *default-machine*))
