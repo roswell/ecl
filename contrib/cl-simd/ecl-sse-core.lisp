@@ -137,8 +137,7 @@
              `((defun ,name ,asyms
                  (declare (optimize (speed 0) (debug 0) (safety 1)))
                  (ffi:c-inline ,asyms ,aftypes ,rftype ,(or defun-body call-str) :one-liner t))))
-       (def-inline ,name :always ,(mapcar #'inline-arg-type-of arg-types) ,rftype
-                   ,call-str :inline-or-warn t))))
+       (def-inline ,name :always ,(mapcar #'inline-arg-type-of arg-types) ,rftype ,call-str))))
 
 (defmacro def-unary-intrinsic (name ret-type insn cost c-name
                                &key (arg-type ret-type) partial result-size immediate-arg)
@@ -211,8 +210,7 @@
              :one-liner t))
          ;; AREF
          (def-inline ,rm-aref-name :always (t t) ,rftype
-                     ,(fmtr "ecl_row_major_ptr(#0,fixint(#1),~A)" bsize)
-                     :inline-or-warn t)
+                     ,(fmtr "ecl_row_major_ptr(#0,fixint(#1),~A)" bsize))
          (def-inline ,rm-aref-name :always (t fixnum) ,rftype
                      ,(fmtr "ecl_row_major_ptr(#0,#1,~A)" bsize))
          ;; AREF unsafe
@@ -237,8 +235,7 @@
                  (defsetf ,rm-aref-name ,rm-aset-name)
                  ;; ASET
                  (def-inline ,rm-aset-name :always (t t ,val-type) ,rftype
-                             ,(fmtw "ecl_row_major_ptr(#0,fixint(#1),~A)" bsize)
-                             :inline-or-warn t)
+                             ,(fmtw "ecl_row_major_ptr(#0,fixint(#1),~A)" bsize))
                  (def-inline ,rm-aset-name :always (t fixnum ,val-type) ,rftype
                              ,(fmtw "ecl_row_major_ptr(#0,#1,~A)" bsize))
                  ;; ASET unsafe
@@ -290,8 +287,7 @@
              ,(fmt "(((char*)#~A) + #~A)")
              :one-liner t))
          (def-inline ,name :always (,@prefix-itypes t ,@postfix-itypes) ,rftype
-                     ,(fmt "ecl_to_pointer(#~A)")
-                     :inline-or-warn t)
+                     ,(fmt "ecl_to_pointer(#~A)"))
          (def-inline ,name :always (,@prefix-itypes t ,@postfix-itypes t) ,rftype
                      ,(fmt "(((char*)ecl_to_pointer(#~A)) + fixint(#~A))"))
          (def-inline ,name :always (,@prefix-itypes t ,@postfix-itypes fixnum) ,rftype
