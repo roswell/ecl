@@ -10,6 +10,7 @@
 (defvar *opened-c-braces* 0)
 
 (defvar *emitted-local-funs* nil)
+(defvar *inline-information* nil)
 
 ;;; Compiled code uses the following kinds of variables:
 ;;; 1. Vi, declared explicitely, either unboxed or not (*lcl*, next-lcl)
@@ -67,7 +68,11 @@
          (*temp* 0)
          (*max-temp* 0)
          (*next-cfun* 0)
-         (*last-label* 0))
+         (*last-label* 0)
+         (*inline-information*
+           (ext:if-let ((r (machine-inline-information *machine*)))
+             (si:copy-hash-table r)
+             (make-inline-information *machine*))))
      ,@body))
 
 (defun-cached env-var-name (n) eql

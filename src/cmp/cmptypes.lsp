@@ -49,16 +49,3 @@
          (format t "~% ~D > ~A, parent ~A" *c1form-level* form (c1form-parents form))
          (print-c1forms (c1form-args form))
          form)))
-
-(defstruct (inline-info)
-  name                  ;;; Function name
-  arg-rep-types         ;;; List of representation types for the arguments
-  return-rep-type       ;;; Representation type for the output
-  arg-types             ;;; List of lisp types for the arguments
-  return-type           ;;; Lisp type for the output
-  exact-return-type     ;;; Only use this expansion when the output is
-                        ;;; declared to have a subtype of RETURN-TYPE
-  multiple-values       ;;; Works with all destinations, including VALUES / RETURN
-  expansion             ;;; C template containing the expansion
-  one-liner             ;;; Whether the expansion spans more than one line
-)

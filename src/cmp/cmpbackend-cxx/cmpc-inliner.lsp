@@ -14,8 +14,18 @@
 
 (in-package "COMPILER")
 
-(setf (machine-inline-information *default-machine*)
-      (make-inline-information *default-machine*))
+(defstruct (inline-info)
+  name                  ;;; Function name
+  arg-rep-types         ;;; List of representation types for the arguments
+  return-rep-type       ;;; Representation type for the output
+  arg-types             ;;; List of lisp types for the arguments
+  return-type           ;;; Lisp type for the output
+  exact-return-type     ;;; Only use this expansion when the output is
+                        ;;; declared to have a subtype of RETURN-TYPE
+  multiple-values       ;;; Works with all destinations, including VALUES / RETURN
+  expansion             ;;; C template containing the expansion
+  one-liner             ;;; Whether the expansion spans more than one line
+)
 
 (defun inlined-arg-loc (arg)
   (second arg))
@@ -47,8 +57,8 @@
 ;;;   returns NIL if inline expansion of the function is not possible
 ;;;
 (defun inline-function (fname arg-types return-type &optional (return-rep-type 'any))
-  ;; Those functions that use INLINE-FUNCTION must rebind
-  ;; the variable *INLINE-BLOCKS*.
+  ;; Those functions that use INLINE-FUNCTION must rebind the variable
+  ;; *INLINE-BLOCKS*.
   (and (inline-possible fname)
        (not (gethash fname *c2-dispatch-table*))
        (let* (;; (dest-rep-type (loc-representation-type *destination*))
