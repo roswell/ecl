@@ -35,7 +35,7 @@
   (setf (gethash (list name safety) *inline-information*) value))
 
 (defun %def-inline (name safety arg-types return-rep-type expansion
-                    &key (one-liner t) (exact-return-type nil) (inline-or-warn nil)
+                    &key (one-liner t) (exact-return-type nil)
                       (multiple-values t)
                     &aux arg-rep-types)
   (setf safety
@@ -58,8 +58,6 @@
                 arg-types))
   (when (eq return-rep-type t)
     (setf return-rep-type :object))
-  (when inline-or-warn
-    (setf (inline-information name 'should-be-inlined) t))
   (let* ((return-type (if (and (consp return-rep-type)
                                (eq (first return-rep-type) 'values))
                           t
@@ -75,12 +73,6 @@
                              ;; :side-effects (not (si:get-sysprop name 'no-side-effects))
                              :one-liner one-liner
                              :expansion expansion)))
-    #+(or)
-    (loop for i in (inline-information name safety)
-          when (and (equalp (inline-info-arg-types i) arg-types)
-                    (not (equalp return-type (inline-info-return-type i))))
-            do (format t "~&;;; Redundand inline definition for ~A~&;;; ~<~A~>~&;;; ~<~A~>"
-                       name i inline-info))
     (push inline-info (gethash (list name safety) *inline-information*))))
 
 (defmacro def-inline (&rest args)

@@ -210,3 +210,13 @@
 (defun c-filtered-string (string &rest args)
   (with-output-to-string (aux-stream)
     (apply #'wt-filtered-data string aux-stream :one-liner t args)))
+
+(defun c-inline-safe-string (constant-string)
+  ;; Produce a text representation of a string that can be used in a C-INLINE
+  ;; form, without triggering the @ or # escape characters
+  (c-filtered-string
+   (concatenate 'string
+                (loop for c across constant-string
+                      when (member c '(#\# #\@))
+                        collect c
+                      collect c))))

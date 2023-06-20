@@ -100,30 +100,22 @@
       (let ((other (inline-type-matches x types return-type)))
         (when other
           (setf output (choose-inline-info output other return-type return-rep-type)))))
-    (when (and (null output)
-               (inline-information fname 'should-be-inlined)
-               (>= (cmp-env-optimization 'speed) 1))
-      (cmpwarn-style "Could not inline call to ~S ~S - performance may be degraded."
-                     fname types))
     output))
 
 (defun to-fixnum-float-type (type)
-  (dolist (i '(FIXNUM DOUBLE-FLOAT SINGLE-FLOAT LONG-FLOAT)
-           nil)
+  (dolist (i '(CL:FIXNUM CL:DOUBLE-FLOAT CL:SINGLE-FLOAT CL:LONG-FLOAT) nil)
     (when (type>= i type)
       (return i))))
 
 (defun maximum-float-type (t1 t2)
-  (cond ((null t1)
-         t2)
-        ((or (eq t1 'LONG-FLOAT) (eq t2 'LONG-FLOAT))
-         'LONG-FLOAT)
-        ((or (eq t1 'DOUBLE-FLOAT) (eq t2 'DOUBLE-FLOAT))
-         'DOUBLE-FLOAT)
-        ((or (eq t1 'SINGLE-FLOAT) (eq t2 'SINGLE-FLOAT))
-         'SINGLE-FLOAT)
-        (T
-         'FIXNUM)))
+  (macrolet ((try-type (type)
+               `(and (or (eq t1 ,type) (eq t2 ,type))
+                     ,type)))
+    (or (and (null t1) t2)
+        (try-type 'CL:LONG-FLOAT)
+        (try-type 'CL:DOUBLE-FLOAT)
+        (try-type 'CL:SINGLE-FLOAT)
+        'CL:FIXNUM)))
 
 (defun inline-type-matches (inline-info arg-types return-type)
   (when (and (not (inline-info-multiple-values inline-info))
@@ -180,17 +172,6 @@
         (setf (inline-info-arg-types inline-info)
               (nreverse rts))
         inline-info))))
-
-(defun c-inline-safe-string (constant-string)
-  ;; Produce a text representation of a string that can be used
-  ;; in a C-INLINE form, without triggering the @ or # escape
-  ;; characters
-  (c-filtered-string
-   (concatenate 'string
-                (loop for c across constant-string
-                      when (member c '(#\# #\@))
-                        collect c
-                      collect c))))
 
 (defun produce-inline-loc (inlined-arguments arg-types output-rep-type
                            c-expression side-effects one-liner)

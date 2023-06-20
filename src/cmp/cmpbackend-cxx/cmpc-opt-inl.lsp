@@ -159,8 +159,8 @@
 ;;;
 (defun inline-args (forms)
   (loop for form-list on forms
-     for form = (first form-list)
-     collect (emit-inline-form form (rest form-list))))
+        for form = (first form-list)
+        collect (emit-inline-form form (rest form-list))))
 
 (defun destination-type ()
   (rep-type->lisp-type (loc-representation-type *destination*))
