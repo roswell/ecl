@@ -101,7 +101,7 @@
         (when (typep reader 'clos:standard-reader-method)
           (let* ((slotd (clos:accessor-method-slot-definition reader))
                  (index (clos::safe-slot-definition-location slotd)))
-            (when (si::fixnump index)
+            (when (ext:fixnump index)
               `(clos::safe-instance-ref ,object ,index))))))))
 
 (defun try-optimize-slot-writer (orig-writers args)
@@ -113,7 +113,7 @@
         (when (typep writer 'clos:standard-writer-method)
           (let* ((slotd (clos:accessor-method-slot-definition writer))
                  (index (clos::safe-slot-definition-location slotd)))
-            (when (si::fixnump index)
+            (when (ext:fixnump index)
               `(si::instance-set ,(second args) ,index ,(first args)))))))))
 
 #+(or)

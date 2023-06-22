@@ -77,7 +77,7 @@
                         (maybe-init location init-form)))))))
 
 (defun data-empty-loc ()
-  (add-object 0 :duplicate t :permanent t))
+  (add-object *empty-loc* :duplicate t :permanent t))
 
 ;;; Note that we can't use GET-OBJECT to probe for referenced objects because
 ;;; ADD-OBJECT (when failed and :DUPLICATE is T) may return an object that is
