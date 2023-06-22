@@ -33,6 +33,7 @@
 (defvar *compile-file-position* -1)
 (defvar *active-protection* nil)
 (defvar *pending-actions* nil)
+(defvar *empty-loc* (gensym))
 
 (defvar *compiler-conditions* '()
   "This variable determines whether conditions are printed or just accumulated.")
