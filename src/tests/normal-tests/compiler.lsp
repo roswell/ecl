@@ -2272,3 +2272,26 @@
                           #'(lambda (x) (+ x 2))))
   (signals error (funcall (compile nil (lambda (x) (typep x '(fun-type.0094b integer))))
                           #'(lambda (x) (+ x 2)))))
+
+;;; Date 2023-06-24
+;;; Description
+;;;
+;;;     The compiler produced invalid C code when unable to coerce
+;;;     between incompatible C types. This situation typically
+;;;     indicates a bug but it can also happen because of a failure of
+;;;     the dead code elimination step. In this case we were
+;;;     outputting invalid C code for the dead part and thus the
+;;;     compilation could fail for valid Lisp code.
+;;;
+(test cmp.0095.unreachable-code-unboxed-value
+  (is (eql
+       (funcall (compile nil
+                         (lambda (y)
+                           (declare (optimize (safety 0) (speed 3))
+                                    (fixnum y))
+                           (funcall (lambda (x)
+                                      (cond ((typep x 'fixnum) (1+ x))
+                                            ((characterp x) (char-code x))))
+                                    (the fixnum (1+ y)))))
+                2)
+       4)))

@@ -249,13 +249,20 @@
   (let* ((dest-type (rep-type->lisp-type dest-rep-type))
          (loc-type (loc-type loc))
          (loc-rep-type (loc-representation-type loc)))
-    (labels ((coercion-error ()
+    (labels ((coercion-error (&optional (write-zero t))
                (cmpwarn "Unable to coerce lisp object from type (~S,~S)~%~
                         to C/C++ type (~S,~S)"
-                        loc-type loc-rep-type dest-type dest-rep-type))
+                        loc-type loc-rep-type dest-type dest-rep-type)
+               (when write-zero
+                 ;; It is possible to reach this point due to a bug
+                 ;; but also due to a failure of the dead code
+                 ;; elimination. Write a zero to ensure that the
+                 ;; output is syntactically valid C code and hope for
+                 ;; the latter case.
+                 (wt "0")))
              (ensure-valid-object-type (a-lisp-type)
                (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
-                 (coercion-error))))
+                 (coercion-error nil))))
       (when (eq dest-rep-type loc-rep-type)
         (wt loc)
         (return-from wt-coerce-loc))
