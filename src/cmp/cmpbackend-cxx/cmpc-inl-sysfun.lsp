@@ -648,7 +648,7 @@
     (def-inline cl:finish-output :always (stream) NULL "(ecl_force_output(#0),ECL_NIL)")
     (def-inline cl:write-char :always (t) t "@0;(ecl_princ_char(ecl_char_code(#0),ECL_NIL),(#0))")
     (def-inline cl:clear-input :always (stream) NULL "(ecl_clear_input(#0),ECL_NIL)")
-    (def-inline cl:copy-readtable :always (null null) t "standard_readtable")
+    (def-inline cl:copy-readtable :always (null null) t "cl_core.standard_readtable")
 
     (def-inline cl:boundp :always (t) :bool "ecl_boundp(cl_env_copy,#0)")
     (def-inline cl:boundp :unsafe ((and symbol (not null))) :bool "ECL_SYM_VAL(cl_env_copy,#0)!=OBJNULL")
