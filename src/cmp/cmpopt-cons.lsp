@@ -40,13 +40,14 @@
                (expand-simple-optimizer (rest whole) args inline-form env)
                whole)))))
 
-(defmacro si:cons-car (x)
-  `(ffi:c-inline (,x) (:object) :object "ECL_CONS_CAR(#0)"
-                 :one-liner t :side-effects nil))
+(defun si:cons-car (x)
+  (declare (type cons x) (optimize (safety 0) (speed 3)))
+  (car x))
 
-(defmacro si:cons-cdr (x)
-  `(ffi:c-inline (,x) (:object) :object "ECL_CONS_CDR(#0)"
-                 :one-liner t :side-effects nil))
+(defun si:cons-cdr (x)
+  (declare (type cons x) (optimize (safety 0) (speed 3)))
+  (cdr x))
+
 ;;;
 ;;; CONS
 ;;; turn repetitious cons's into a list*
