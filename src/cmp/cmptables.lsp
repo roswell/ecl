@@ -187,7 +187,6 @@
     (csfloat-value . wt-number)
     (cdfloat-value . wt-number)
     (clfloat-value . wt-number)
-    (character-value . wt-character)
     (value . wt-value)
     (keyvars . wt-keyvars)
     (cl:the . wt-the)

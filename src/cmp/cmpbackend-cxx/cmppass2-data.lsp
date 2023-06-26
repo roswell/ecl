@@ -241,7 +241,8 @@
 
 (defun wt-vv-value (vv value)
   (etypecase value
-    (fixnum (wt-fixnum value vv))))
+    (fixnum (wt-fixnum value vv))
+    (character (wt-character value vv))))
 
 (defun wt-vv (vv-loc)
   (setf (vv-used-p vv-loc) t)

@@ -136,9 +136,10 @@
     ((eq val t) (c1t))
     ((ext:fixnump val)
      (make-c1form* 'LOCATION :type 'FIXNUM :args (make-vv :rep-type :fixnum :value val)))
+    ((si:base-char-p val)
+     (make-c1form* 'LOCATION :type 'BASE-CHAR :args (make-vv :rep-type :unsigned-char :value val)))
     ((characterp val)
-     (make-c1form* 'LOCATION :type 'CHARACTER
-                             :args (list 'CHARACTER-VALUE (char-code val))))
+     (make-c1form* 'LOCATION :type 'CHARACTER :args (make-vv :rep-type :wchar :value val)))
     ((typep val 'DOUBLE-FLOAT)
      (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT
                              :args (list 'DOUBLE-FLOAT-VALUE val (add-object val))))
