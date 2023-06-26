@@ -95,7 +95,7 @@
 
 (define-c-inliner + (return-type &rest arguments &aux arg1 arg2)
   (when (null arguments)
-    (return '(fixnum-value 0)))
+    (return (make-vv :rep-type :fixnum :value 0)))
   (setf arg1 (pop arguments))
   (when (null arguments)
     (return (inlined-arg-loc arg1)))
@@ -116,7 +116,7 @@
 
 (define-c-inliner * (return-type &rest arguments &aux arg1 arg2)
   (when (null arguments)
-    (return '(fixnum-value 1)))
+    (return (make-vv :rep-type :fixnum :value 1)))
   (setf arg1 (pop arguments))
   (when (null arguments)
     (return (inlined-arg-loc arg1)))
