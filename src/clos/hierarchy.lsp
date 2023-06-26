@@ -76,13 +76,12 @@
       (dependents :initform nil :accessor class-dependents)
       (valid-initargs :accessor class-valid-initargs)
       (slot-table :accessor slot-table)
-      (location-table :initform nil :accessor class-location-table)
-      ))
-
-  (defconstant +class-name-ndx+
-    (position 'name +class-slots+ :key #'first))
-  (defconstant +class-precedence-list-ndx+
-    (position 'precedence-list +class-slots+ :key #'first)))
+      (location-table :initform nil :accessor class-location-table)))
+  ;; INV these assertions validate constants hardcoded in symbols_list.h.
+  (assert (= +class-name-ndx+
+             (position 'name +class-slots+ :key #'first)))
+  (assert (= +class-precedence-list-ndx+
+             (position 'precedence-list +class-slots+ :key #'first))))
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-CLASS
