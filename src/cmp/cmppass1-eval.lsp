@@ -24,10 +24,11 @@
                ((eq form t) (c1t))
                ((keywordp form)
                 (make-c1form* 'LOCATION :type (object-type form)
-                              :args (add-symbol form)))
-               ((and (constantp form *cmp-env*)
-                     (c1constant-value (symbol-value form))))
-               (t (c1var form))))
+                                        :args (add-symbol form)))
+               ((constantp form *cmp-env*)
+                (c1var form (c1constant-symbol-value form (symbol-value form))))
+               (t
+                (c1var form nil))))
         ((consp form)
          (cmpck (not (si:proper-list-p form))
                 "Improper list found in lisp form~%~A" form)
@@ -149,6 +150,12 @@
      (make-c1form* 'LOCATION :type `(eql ,val)
                              :args (add-object val)))
     (t nil)))
+
+;;; To inline a constant it must be possible to externalize its value or copies
+;;; of the value must be EQL to each other.
+(defun c1constant-symbol-value (name val)
+  (declare (ignore name))
+  (c1constant-value val))
 
 #+sse2
 (defun c1constant-value/sse (value)
