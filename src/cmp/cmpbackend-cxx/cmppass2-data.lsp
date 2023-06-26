@@ -239,14 +239,21 @@
         (t
          (wt "VVtemp[" index "]"))))
 
+(defun wt-vv-value (vv value)
+  (etypecase value
+    (fixnum (wt-fixnum value vv))))
+
+(defun wt-vv (vv-loc)
+  (setf (vv-used-p vv-loc) t)
+  (let ((index (vv-location vv-loc)))
+    (if (null index)
+        (wt-vv-value vv-loc (vv-value vv-loc))
+        (wt-vv-index index (vv-permanent-p vv-loc)))))
+
 (defun set-vv-index (loc index permanent-p)
   (wt-nl) (wt-vv-index index permanent-p) (wt "= ")
   (wt-coerce-loc :object loc)
   (wt ";"))
-
-(defun wt-vv (vv-loc)
-  (setf (vv-used-p vv-loc) t)
-  (wt-vv-index (vv-location vv-loc) (vv-permanent-p vv-loc)))
 
 (defun set-vv (loc vv-loc)
   (setf (vv-used-p vv-loc) t)

@@ -22,7 +22,8 @@
   (location nil)
   (used-p nil)
   (permanent-p t)
-  (value nil))
+  (value nil)
+  (rep-type :object))
 
 ;;; When the value is the "empty location" then it was created to be filled
 ;;; later and the real type of the object is not known. See DATA-EMPTY-LOC.
@@ -48,7 +49,6 @@
         ((atom loc) 'T)
         (t
          (case (first loc)
-           (FIXNUM-VALUE 'FIXNUM)
            (CHARACTER-VALUE (type-of (code-char (second loc))))
            (DOUBLE-FLOAT-VALUE 'DOUBLE-FLOAT)
            (SINGLE-FLOAT-VALUE 'SINGLE-FLOAT)
@@ -69,13 +69,12 @@
 (defun loc-representation-type (loc)
   (cond ((member loc '(NIL T)) :object)
         ((var-p loc) (var-rep-type loc))
-        ((vv-p loc) :object)
+        ((vv-p loc) (vv-rep-type loc))
         ((numberp loc) (lisp-type->rep-type (type-of loc)))
         ((eq loc 'TRASH) :void)
         ((atom loc) :object)
         (t
          (case (first loc)
-           (FIXNUM-VALUE :fixnum)
            (CHARACTER-VALUE (if (<= (second loc) 255) :unsigned-char :wchar))
            (DOUBLE-FLOAT-VALUE :double)
            (SINGLE-FLOAT-VALUE :float)
@@ -144,7 +143,6 @@
 ;;;     ( COERCE-LOC representation-type location)
 ;;;     ( FDEFINITION vv-index )
 ;;;     ( MAKE-CCLOSURE cfun )
-;;;     ( FIXNUM-VALUE fixnum-value )
 ;;;     ( CHARACTER-VALUE character-code )
 ;;;     ( LONG-FLOAT-VALUE long-float-value vv )
 ;;;     ( DOUBLE-FLOAT-VALUE double-float-value vv )
@@ -201,7 +199,7 @@
         ((eq (first loc) 'THE)
          (loc-in-c1form-movable-p (third loc)))
         ((member (setf loc (car loc))
-                 '(VV VV-TEMP FIXNUM-VALUE CHARACTER-VALUE
+                 '(VV VV-TEMP CHARACTER-VALUE
                    DOUBLE-FLOAT-VALUE SINGLE-FLOAT-VALUE LONG-FLOAT-VALUE
                    #+complex-float CSFLOAT-VALUE
                    #+complex-float CDFLOAT-VALUE
@@ -235,8 +233,7 @@
         ((eq (first loc) 'THE)
          (loc-immediate-value-p (third loc)))
         ((member (first loc)
-                 '(fixnum-value long-float-value
-                   double-float-value single-float-value
+                 '(long-float-value double-float-value single-float-value
                    csfloat-value cdfloat-value clfloat-value))
          (values t (second loc)))
         ((eq (first loc) 'character-value)
