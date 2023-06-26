@@ -127,7 +127,7 @@
     ((eq val nil) (c1nil))
     ((eq val t) (c1t))
     ((ext:fixnump val)
-     (make-c1form* 'LOCATION :type 'FIXNUM :args (list 'FIXNUM-VALUE val)))
+     (make-c1form* 'LOCATION :type 'FIXNUM :args (make-vv :rep-type :fixnum :value val)))
     ((characterp val)
      (make-c1form* 'LOCATION :type 'CHARACTER
                              :args (list 'CHARACTER-VALUE (char-code val))))
