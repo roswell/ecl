@@ -132,15 +132,13 @@
      (make-c1form* 'LOCATION :type 'BASE-CHAR :args (make-vv :rep-type :unsigned-char :value val)))
     ((characterp val)
      (make-c1form* 'LOCATION :type 'CHARACTER :args (make-vv :rep-type :wchar :value val)))
-    ((typep val 'DOUBLE-FLOAT)
-     (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT
-                             :args (list 'DOUBLE-FLOAT-VALUE val (add-object val))))
     ((typep val 'SINGLE-FLOAT)
-     (make-c1form* 'LOCATION :type 'SINGLE-FLOAT
-                             :args (list 'SINGLE-FLOAT-VALUE val (add-object val))))
+     (make-c1form* 'LOCATION :type 'SINGLE-FLOAT :args (make-vv :rep-type :float :value val)))
+    ((typep val 'DOUBLE-FLOAT)
+     (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT :args (make-vv :rep-type :double :value val)))
     ((typep val 'LONG-FLOAT)
-     (make-c1form* 'LOCATION :type 'LONG-FLOAT
-                             :args (list 'LONG-FLOAT-VALUE val (add-object val))))
+     (make-c1form* 'LOCATION :type 'LONG-FLOAT :args (make-vv :rep-type :long-double :value val)))
+    ;; FIXME C?FLOAT
     #+sse2
     ((typep val 'EXT:SSE-PACK)
      (c1constant-value/sse val))

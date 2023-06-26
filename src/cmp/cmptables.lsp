@@ -180,13 +180,6 @@
 
     (temp . wt-temp)
     (lcl . wt-lcl-loc)
-    (long-float-value . wt-number)
-    (double-float-value . wt-number)
-    (single-float-value . wt-number)
-    (short-float-value . wt-number)
-    (csfloat-value . wt-number)
-    (cdfloat-value . wt-number)
-    (clfloat-value . wt-number)
     (value . wt-value)
     (keyvars . wt-keyvars)
     (cl:the . wt-the)

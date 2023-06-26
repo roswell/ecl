@@ -25,20 +25,19 @@
         ((floatp name)
          (let* ((value name)
                 (type (type-of value))
+                #+ (or) ;; FIXME see WT-TO-OBJECT-CONVERSION
                 (loc-type (case type
-                            (cl:single-float 'single-float-value)
-                            (cl:double-float 'double-float-value)
-                            (cl:long-float 'long-float-value)
-                            (si:complex-single-float 'csfloat-value)
-                            (si:complex-double-float 'cdfloat-value)
-                            (si:complex-long-float 'clfloat-value)))
-                (location (make-vv :location c-value :value value)))
-           (cons value (make-c1form* 'LOCATION :type type
-                                     :args (list loc-type value location)))))
+                            (cl:single-float :float)
+                            (cl:double-float :double)
+                            (cl:long-float ':long-double)
+                            (si:complex-single-float :csfloat)
+                            (si:complex-double-float :cdfloat)
+                            (si:complex-long-float :clfloat)))
+                (location (make-vv :location c-value :value value :rep-type :object)))
+           (cons value (make-c1form* 'LOCATION :type type :args location))))
         (t
          (cons name (make-c1form* 'LOCATION :type (type-of name)
-                                  :args (make-vv :location c-value
-                                                 :value name))))))
+                                            :args (make-vv :location c-value :value name))))))
 
 (defun make-optimizable-constants (machine)
   (loop for (value name) in (optimizable-constants-list machine)
