@@ -79,7 +79,7 @@
   (declare (ignore vv))
   ;; We do not use the '...' format because this creates objects of type
   ;; 'char' which have sign problems
-  (wt value))
+  (wt (char-code value)))
 
 (defun wt-value (i)
   (wt "cl_env_copy->values[" i "]"))
