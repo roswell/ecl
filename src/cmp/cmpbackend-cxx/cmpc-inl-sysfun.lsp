@@ -251,12 +251,14 @@
     (def-inline cl:car :unsafe (cons) t "ECL_CONS_CAR(#0)")
     (def-inline cl:car :unsafe (t) t "_ecl_car(#0)")
 
-    (def-inline si:cons-car :always (t) t "ECL_CONS_CAR(#0)")
+    (def-inline si:cons-car :always (t) t "_ecl_car(#0)")
+    (def-inline si:cons-car :unsafe (t) t "ECL_CONS_CAR(#0)")
 
     (def-inline cl:cdr :unsafe (cons) t "ECL_CONS_CDR(#0)")
     (def-inline cl:cdr :unsafe (t) t "_ecl_cdr(#0)")
 
-    (def-inline si:cons-cdr :always (t) t "ECL_CONS_CDR(#0)")
+    (def-inline si:cons-cdr :always (t) t "_ecl_cdr(#0)")
+    (def-inline si:cons-cdr :unsafe (t) t "ECL_CONS_CDR(#0)")
 
     ;; BEGIN-GENERATED (gen-cons-sysfun)
 
