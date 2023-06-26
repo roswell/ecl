@@ -222,15 +222,7 @@
 ;;;
 
 (defun wt-to-object-conversion (loc-rep-type loc)
-  (when (and (consp loc) (member (first loc)
-                                 '(single-float-value
-                                   double-float-value
-                                   long-float-value
-                                   csfloat-value
-                                   cdfloat-value
-                                   clfloat-value)))
-    (wt (third loc)) ;; VV index
-    (return-from wt-to-object-conversion))
+  ;; FIXME we can do better for constant locations.
   (let* ((record (rep-type-record loc-rep-type))
          (coercer (and record (rep-type-to-lisp record))))
     (unless coercer

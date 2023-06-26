@@ -49,12 +49,6 @@
         ((atom loc) 'T)
         (t
          (case (first loc)
-           (DOUBLE-FLOAT-VALUE 'DOUBLE-FLOAT)
-           (SINGLE-FLOAT-VALUE 'SINGLE-FLOAT)
-           (LONG-FLOAT-VALUE 'LONG-FLOAT)
-           (CSFLOAT-VALUE 'SI:COMPLEX-SINGLE-FLOAT)
-           (CDFLOAT-VALUE 'SI:COMPLEX-DOUBLE-FLOAT)
-           (CLFLOAT-VALUE 'SI:COMPLEX-LONG-FLOAT)
            (FFI:C-INLINE (let ((type (first (second loc))))
                            (cond ((and (consp type) (eq (first type) 'VALUES)) T)
                                  ((lisp-type-p type) type)
@@ -74,12 +68,6 @@
         ((atom loc) :object)
         (t
          (case (first loc)
-           (DOUBLE-FLOAT-VALUE :double)
-           (SINGLE-FLOAT-VALUE :float)
-           (LONG-FLOAT-VALUE :long-double)
-           (CSFLOAT-VALUE :csfloat)
-           (CDFLOAT-VALUE :cdfloat)
-           (CLFLOAT-VALUE :clfloat)
            (FFI:C-INLINE (let ((type (first (second loc))))
                            (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
                                  ((lisp-type-p type) (lisp-type->rep-type type))
@@ -141,12 +129,6 @@
 ;;;     ( COERCE-LOC representation-type location)
 ;;;     ( FDEFINITION vv-index )
 ;;;     ( MAKE-CCLOSURE cfun )
-;;;     ( LONG-FLOAT-VALUE long-float-value vv )
-;;;     ( DOUBLE-FLOAT-VALUE double-float-value vv )
-;;;     ( SINGLE-FLOAT-VALUE single-float-value vv )
-;;;     ( CSFLOAT-VALUE csfloat-value vv )
-;;;     ( CDFLOAT-VALUE cdfloat-value vv )
-;;;     ( CLFLOAT-VALUE clfloat-value vv )
 ;;;     ( STACK-POINTER index ) retrieve a value from the stack
 ;;;     ( SYS:STRUCTURE-REF loc slot-name-vv slot-index )
 ;;;     ( THE type location )
@@ -196,12 +178,7 @@
         ((eq (first loc) 'THE)
          (loc-in-c1form-movable-p (third loc)))
         ((member (setf loc (car loc))
-                 '(VV VV-TEMP
-                   DOUBLE-FLOAT-VALUE SINGLE-FLOAT-VALUE LONG-FLOAT-VALUE
-                   #+complex-float CSFLOAT-VALUE
-                   #+complex-float CDFLOAT-VALUE
-                   #+complex-float CLFLOAT-VALUE
-                   KEYVARS))
+                 '(VV VV-TEMP KEYVARS))
          t)
         (t
          (baboon :format-control "Unknown location ~A found in C1FORM"
@@ -229,10 +206,6 @@
          (values nil nil))
         ((eq (first loc) 'THE)
          (loc-immediate-value-p (third loc)))
-        ((member (first loc)
-                 '(long-float-value double-float-value single-float-value
-                   csfloat-value cdfloat-value clfloat-value))
-         (values t (second loc)))
         (t
          (values nil nil))))
 
