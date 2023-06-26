@@ -68,7 +68,7 @@
            (let ((funob (local-function-ref fun t)))
              (if funob
                  (let* ((var (fun-var funob)))
-                   (add-to-read-nodes var (make-c1form* 'VAR :args var)))
+                   (add-to-read-nodes var (make-c1form* 'VAR :args var nil)))
                  (make-c1form* 'FUNCTION
                                :type 'FUNCTION
                                :sp-change (not (and (symbolp fun)

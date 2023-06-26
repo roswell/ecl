@@ -58,10 +58,11 @@
 (defun emit-inlined-setq (form rest-forms)
   (let ((vref (c1form-arg 0 form))
         (form1 (c1form-arg 1 form)))
-    (let ((*destination* vref)) (c2expr* form1))
+    (let ((*destination* vref))
+      (c2expr* form1))
     (if (eq (c1form-name form1) 'LOCATION)
         (list (c1form-primary-type form1) (c1form-arg 0 form1))
-        (emit-inlined-variable (make-c1form 'VAR form vref) rest-forms))))
+        (emit-inlined-variable (make-c1form 'VAR form vref nil) rest-forms))))
 
 (defun emit-inlined-call-global (form expected-type)
   (let* ((fname (c1form-arg 0 form))

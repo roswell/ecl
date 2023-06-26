@@ -24,7 +24,7 @@
     (CL:PROGN           body :pure)
     ;; sub-level forms
     (LOCATION           loc :pure :single-valued)
-    (VAR                var :single-valued)
+    (VAR                var value :single-valued)
     (CL:SETQ            var value-c1form :side-effects)
     (CL:PSETQ           var-list value-c1form-list :side-effects)
     (CL:BLOCK           blk-var progn-c1form :pure)
@@ -240,8 +240,8 @@
     (cl:tagbody . c2tagbody)
     (cl:go . c2go)
 
-    (var . c2var/location)
-    (location . c2var/location)
+    (var . c2var)
+    (location . c2location)
     (cl:setq . c2setq)
     (cl:progv . c2progv)
     (cl:psetq . c2psetq)
