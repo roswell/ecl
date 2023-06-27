@@ -288,21 +288,22 @@ from the C language code.  NIL means \"do not create the file\"."
          (compiler-conditions nil)
          (*cmp-env-root* *cmp-env-root*))
     (with-compiler-env (compiler-conditions)
-      (setf disassembled-form (set-closure-env disassembled-form lexenv *cmp-env-root*))
-      (unwind-protect
-           (progn
-             (setf (symbol-function 'T3LOCAL-FUN)
-                   #'(lambda (&rest args)
-                       (let ((*compiler-output1* *standard-output*))
-                         (apply t3local-fun args))))
-             (compiler-pass1 disassembled-form)
-             (ctop-write (compute-init-name "foo" :kind :fasl)
-                         (if h-file h-file "")
-                         (if data-file data-file ""))
-             (when data-file
-               (data-c-dump data-file)))
-        (setf (symbol-function 'T3LOCAL-FUN) t3local-fun)
-        (when h-file (close *compiler-output2*)))))
+      (with-cxx-env ()
+        (setf disassembled-form (set-closure-env disassembled-form lexenv *cmp-env-root*))
+        (unwind-protect
+             (progn
+               (setf (symbol-function 'T3LOCAL-FUN)
+                     #'(lambda (&rest args)
+                         (let ((*compiler-output1* *standard-output*))
+                           (apply t3local-fun args))))
+               (compiler-pass1 disassembled-form)
+               (ctop-write (compute-init-name "foo" :kind :fasl)
+                           (if h-file h-file "")
+                           (if data-file data-file ""))
+               (when data-file
+                 (data-c-dump data-file)))
+          (setf (symbol-function 'T3LOCAL-FUN) t3local-fun)
+          (when h-file (close *compiler-output2*))))))
   nil)
 
 ;;; FIXME source-offset and source-truename are used by swanks string
