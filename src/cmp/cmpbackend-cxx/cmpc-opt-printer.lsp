@@ -13,6 +13,8 @@
 (in-package "COMPILER")
 
 (define-c-inliner cl:princ (return-type expression &optional stream)
+  (unless stream
+    (setf stream (emit-inline-form *c1nil* nil)))
   (multiple-value-bind (foundp value)
       (loc-immediate-value-p (inlined-arg-loc expression))
     (cond

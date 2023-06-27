@@ -196,7 +196,7 @@
         (let ((*destination* var)) (c2expr* form))))
   (dolist (save saves) (set-var (cdr save) (car save)))
   (wt-nl-close-many-braces braces)
-  (unwind-exit nil))
+  (unwind-exit *vv-nil*))
 
 ;;; bind must be called for each variable in a lambda or let, once the value
 ;;; to be bound has been placed in loc.
