@@ -19,9 +19,9 @@
 (defun make-single-constant-optimizer (name c-value)
   (cond ((symbolp name)
          (let* ((value (symbol-value name))
-                (type (lisp-type->rep-type (type-of value))))
-           (cons value `(ffi:c-inline () () ,type ,c-value
-                                      :one-liner t :side-effects nil))))
+                (type (lisp-type->rep-type (type-of value)))
+                (location (make-vv :location c-value :value value :rep-type type)))
+           (cons value (make-c1form* 'LOCATION :type type :args location))))
         ((floatp name)
          (let* ((value name)
                 (type (type-of value))
