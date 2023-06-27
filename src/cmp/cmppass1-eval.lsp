@@ -50,9 +50,19 @@
        (when (c1form-p form)
          (return form)))))
 
-(defvar *c1nil* (make-c1form* 'LOCATION :type (object-type nil) :args nil))
+(defvar *vv-nil*
+  (make-vv :value CL:NIL))
+
+(defvar *vv-t*
+  (make-vv :value CL:T))
+
+(defvar *c1nil*
+  (make-c1form* 'LOCATION :type (object-type nil) :args *vv-nil*))
+
+(defvar *c1t*
+  (make-c1form* 'LOCATION :type (object-type t) :args *vv-t*))
+
 (defun c1nil () *c1nil*)
-(defvar *c1t* (make-c1form* 'LOCATION :type (object-type t) :args t))
 (defun c1t () *c1t*)
 
 (defun c1with-backend (forms)

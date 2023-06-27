@@ -129,7 +129,7 @@
           (let ((*destination* `(JUMP-FALSE ,false-label)))
             (mapc #'c2expr* butlast))
           (c2expr last))
-        (unwind-exit nil))))
+        (unwind-exit *vv-nil*))))
 
 (defun c2fmla-or (c1form butlast last)
   (declare (ignore c1form))
@@ -141,7 +141,7 @@
            (let ((*destination* `(JUMP-TRUE ,true-label)))
              (mapc #'c2expr* butlast))
            (c2expr last))
-         (unwind-exit t))
+         (unwind-exit *vv-t*))
         (t
          (with-exit-label (common-exit)
            (with-exit-label (normal-exit)
@@ -240,7 +240,7 @@
            (wt-nl "cl_env_copy->nvalues = 0;")
            (unwind-exit 'VALUES))
           (t
-           (unwind-exit 'NIL))))
+           (unwind-exit *vv-nil*))))
    ;; For a single form, we must simply ensure that we only take a single
    ;; value of those that the function may output.
    ((endp (rest forms))

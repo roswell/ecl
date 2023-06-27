@@ -67,10 +67,12 @@
     (case (car *destination*)
       (JUMP-TRUE
        (set-jump-true loc (second *destination*))
-       (when (eq loc t) (return-from unwind-exit)))
+       (when (eq loc *vv-t*)
+         (return-from unwind-exit)))
       (JUMP-FALSE
        (set-jump-false loc (second *destination*))
-       (when (eq loc nil) (return-from unwind-exit)))))
+       (when (eq loc *vv-nil*)
+         (return-from unwind-exit)))))
   (dolist (ue *unwind-exit* (baboon-improper-*exit*))
     ;; perform all unwind-exit's which precede *exit*
     (cond

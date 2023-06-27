@@ -175,15 +175,6 @@
               (wt "ecl_fdefinition(" vv ")")))
         ;; #'(SETF symbol)
         (if safe
-            #+(or)
-            (let ((set-loc (assoc name *setf-definitions*)))
-              (unless set-loc
-                (let* ((setf-vv (data-empty-loc))
-                       (name-vv (add-symbol name))
-                       (setf-form-vv (add-object fun-name)))
-                  (setf set-loc (list name setf-vv name-vv setf-form-vv))
-                  (push set-loc *setf-definitions*)))
-              (wt "ECL_SETF_DEFINITION(" (second set-loc) "," (fourth set-loc) ")"))
             (let ((set-loc (assoc name *setf-definitions*)))
               (unless set-loc
                 (let* ((setf-vv (data-empty-loc))
