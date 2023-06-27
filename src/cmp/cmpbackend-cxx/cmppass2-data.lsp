@@ -241,6 +241,8 @@
 
 (defun wt-vv-value (vv value)
   (etypecase value
+    ((eql CL:T)      (wt "ECL_T"))
+    ((eql CL:NIL)    (wt "ECL_NIL"))
     (fixnum          (wt-fixnum value vv))
     (character       (wt-character value vv))
     (float           (wt-number value vv))

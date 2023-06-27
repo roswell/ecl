@@ -44,7 +44,7 @@
            (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
      ;; bind closed locations because of possible circularities
        (loop for var in closed-vars
-          do (bind nil var)))
+          do (bind *vv-nil* var)))
   ;; create the functions:
   (mapc #'new-local funs)
   ;; - then assign to it
@@ -207,7 +207,8 @@
         (wt-nl "if (i >= narg) {")
         (let ((*opened-c-braces* (1+ *opened-c-braces*)))
           (bind-init (second opt) (first opt))
-          (when (third opt) (bind nil (third opt))))
+          (when (third opt)
+            (bind *vv-nil* (third opt))))
         (wt-nl "} else {")
         (let ((*opened-c-braces* (1+ *opened-c-braces*))
               (*unwind-exit* *unwind-exit*))
@@ -215,7 +216,8 @@
           (bind va-arg-loc (first opt))
           (if (car type-check)
               (c2expr* (car type-check)))
-          (when (third opt) (bind t (third opt))))
+          (when (third opt)
+            (bind *vv-t* (third opt))))
         (wt-nl "}"))
       (wt-nl-close-brace)))
 
@@ -233,7 +235,8 @@
            ;; declaration on some variables.
            (if rest (wt ",(cl_object*)&" rest-loc) (wt ",NULL"))
            (wt (if allow-other-keys ",TRUE);" ",FALSE);"))))
-    (when rest (bind rest-loc rest)))
+    (when rest
+      (bind rest-loc rest)))
 
   (when varargs
     (wt-nl (if simple-varargs "va_end(args);" "ecl_va_end(args);")))

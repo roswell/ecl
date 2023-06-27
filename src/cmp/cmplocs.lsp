@@ -162,9 +162,7 @@
 
 (defun loc-in-c1form-movable-p (loc)
   "A location that is in a C1FORM and can be moved"
-  (cond ((member loc '(t nil))
-         t)
-        ((numberp loc)
+  (cond ((numberp loc)
          t)
         ((stringp loc)
          t)
@@ -191,11 +189,7 @@
                 (eq (sixth loc) 'cl:VALUES)))))
 
 (defun loc-immediate-value-p (loc)
-  (cond ((eq loc t)
-         (values t t))
-        ((eq loc nil)
-         (values t nil))
-        ((numberp loc)
+  (cond ((numberp loc)
          (values t loc))
         ((vv-p loc)
          (let ((value (vv-value loc)))
