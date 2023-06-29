@@ -129,11 +129,6 @@
 
 (defun c1constant-value (val &key always)
   (cond
-    ;; FIXME includes in c1 pass.
-    ((ext:when-let ((x (assoc val *optimizable-constants*)))
-       (pushnew "#include <float.h>" *clines-string-list*)
-       (pushnew "#include <complex.h>" *clines-string-list*)
-       (cdr x)))
     ((eq val nil) (c1nil))
     ((eq val t) (c1t))
     ((ext:fixnump val)
