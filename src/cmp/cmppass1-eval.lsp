@@ -26,12 +26,7 @@
                 (make-c1form* 'LOCATION :type (object-type form)
                                         :args (add-symbol form)))
                ((constantp form *cmp-env*)
-                ;; FIXME the compiler inlines some constants in the first pass.
-                ;; This is about to be addressed soon. For now we respect that.
-                (let ((value (symbol-value form)))
-                  (if (assoc value *optimizable-constants*)
-                      (c1constant-symbol-value form value)
-                      (c1var form (c1constant-symbol-value form value)))))
+                (c1var form (c1constant-symbol-value form (symbol-value form))))
                (t
                 (c1var form nil))))
         ((consp form)
@@ -134,11 +129,6 @@
 
 (defun c1constant-value (val &key always)
   (cond
-    ;; FIXME includes in c1 pass.
-    ((ext:when-let ((x (assoc val *optimizable-constants*)))
-       (pushnew "#include <float.h>" *clines-string-list*)
-       (pushnew "#include <complex.h>" *clines-string-list*)
-       (cdr x)))
     ((eq val nil) (c1nil))
     ((eq val t) (c1t))
     ((ext:fixnump val)

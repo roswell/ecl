@@ -135,13 +135,17 @@
 
 (defun c2location (c1form loc)
   (unwind-exit (precise-loc-type
-                loc
+                (or (try-value-c-inliner loc)
+                    loc)
                 (c1form-primary-type c1form))))
 
 ;;; When LOC is not NIL, then the variable is a constant.
 (defun c2var (c1form var loc)
   (unwind-exit (precise-loc-type
-                (or loc var)
+                (or (try-value-c-inliner loc)
+                    (try-const-c-inliner var)
+                    loc
+                    var)
                 (c1form-primary-type c1form))))
 
 (defun c2setq (c1form vref form)
