@@ -159,7 +159,7 @@
 ;;; FDEFINITION, MAKE-CLOSURE
 ;;; 
 (defun wt-fdefinition (fun-name)
-  (let* ((name (si::function-block-name fun-name))
+  (let* ((name (si:function-block-name fun-name))
          (package (symbol-package name))
          (safe (or (not (safe-compile))
                    (and (or (eq package (find-package "CL"))
