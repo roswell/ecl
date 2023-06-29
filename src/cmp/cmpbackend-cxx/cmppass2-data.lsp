@@ -231,6 +231,33 @@
           (push (list object c-name builder) *static-constants*)
           (make-vv :location c-name :value object))))))
 
+
+;;; Inlineable constants
+
+;;; When we inline an immediate value, then sometimes it is expected to be a
+;;; lisp object (:object), and somtimes it is unboxed (:fixnum, :float, ...).
+;;;
+;;; TODO implement handling of unboxed values.
+
+(defun try-value-c-inliner (val)
+  (unless (vv-p val)
+    (return-from try-value-c-inliner))
+  (let ((value (vv-value val)))
+    (ext:when-let ((x (assoc value *optimizable-constants*)))
+      (when (typep value '(or float (complex float)))
+        (pushnew "#include <float.h>" *clines-string-list*)
+        (pushnew "#include <complex.h>" *clines-string-list*))
+      (c1form-arg 0 (cdr x)))))
+
+(defun try-const-c-inliner (var)
+  (unless (var-p var)
+    (return-from try-const-c-inliner))
+  (let ((name (var-name var)))
+    (when (constant-variable-p name)
+      (ext:when-let ((x (assoc name *optimizable-constants*)))
+        (c1form-arg 0 (cdr x))))))
+
+
 (defun wt-vv-index (index permanent-p)
   (cond ((not (numberp index))
          (wt index))
