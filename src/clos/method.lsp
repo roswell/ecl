@@ -143,38 +143,39 @@
                (not (member '&allow-other-keys lambda-list)))
       (let ((x (position '&aux lambda-list)))
         (setf lambda-list
-                (append (subseq lambda-list 0 x)
-                        '(&allow-other-keys)
-                        (and x (subseq lambda-list x))
-                        nil))))
+              (append (subseq lambda-list 0 x)
+                      '(&allow-other-keys)
+                      (and x (subseq lambda-list x))
+                      nil))))
     (let* ((copied-variables '())
            (ignorable `(declare (ignorable ,@required-parameters)))
+           (block-name (si:function-block-name name))
            (class-declarations
-            (nconc (when *add-method-argument-declarations*
-                     (loop for name in required-parameters
-                        for type in specializers
-                        when (and (not (eq type t)) (symbolp type))
-                        do (push `(,name ,name) copied-variables) and
-                        nconc `((type ,type ,name)
-                                (si::no-check-type ,name))))
-                   (list (list 'si::function-block-name name))
-                   (cdar declarations)))
-           (block `(block ,(si::function-block-name name) ,@real-body))
+             (nconc (when *add-method-argument-declarations*
+                      (loop for name in required-parameters
+                            for type in specializers
+                            when (and (not (eq type t)) (symbolp type))
+                              do (push `(,name ,name) copied-variables) and
+                            nconc `((type ,type ,name)
+                                    (si::no-check-type ,name))))
+                    (list (list 'si:function-block-name block-name))
+                    (cdar declarations)))
+           (block `(block ,block-name ,@real-body))
            (method-lambda
-            ;; Remove the documentation string and insert the
-            ;; appropriate class declarations.  The documentation
-            ;; string is removed to make it easy for us to insert
-            ;; new declarations later, they will just go after the
-            ;; second of the method lambda.  The class declarations
-            ;; are inserted to communicate the class of the method's
-            ;; arguments to the code walk.
-            `(lambda ,lambda-list
-               ,@(and class-declarations `((declare ,@class-declarations)))
-               ,ignorable
-               ,(if copied-variables
-                    `(let* ,copied-variables
-                       ,ignorable
-                       ,block)
+             ;; Remove the documentation string and insert the
+             ;; appropriate class declarations.  The documentation
+             ;; string is removed to make it easy for us to insert
+             ;; new declarations later, they will just go after the
+             ;; second of the method lambda.  The class declarations
+             ;; are inserted to communicate the class of the method's
+             ;; arguments to the code walk.
+             `(lambda ,lambda-list
+                ,@(and class-declarations `((declare ,@class-declarations)))
+                ,ignorable
+                ,(if copied-variables
+                     `(let* ,copied-variables
+                        ,ignorable
+                        ,block)
                      block))))
       (values method-lambda declarations documentation))))
 
