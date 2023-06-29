@@ -55,7 +55,6 @@
     "src:cmp;cmpbackend-cxx;cmpc-opt-inl.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-opt-num.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-opt-ct.lsp"
-    "src:cmp;cmpbackend-cxx;cmpc-opt-printer.lsp"
     ;; Code generation pass
     "src:cmp;cmpbackend-cxx;cmppass2-data.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-top.lsp"
