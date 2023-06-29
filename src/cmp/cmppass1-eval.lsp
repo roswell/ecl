@@ -166,7 +166,8 @@
 ;;; of the value must be EQL to each other.
 (defun c1constant-symbol-value (name val)
   (declare (ignore name))
-  (c1constant-value val))
+  (let ((form (c1constant-value val)))
+    (and form (c1form-arg 0 form))))
 
 #+sse2
 (defun c1constant-value/sse (value)
