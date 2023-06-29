@@ -53,7 +53,7 @@
 
 (defun p1var (form var loc)
   ;; Use the type of C1FORM because it might have been coerced by a THE form.
-  (let* ((loc-type (if loc (p1propagate loc) t))
+  (let* ((loc-type (if loc (object-type (vv-value loc)) t))
          (var-type (var-type var))
          (type (type-and (type-and loc-type var-type) (c1form-primary-type form))))
     (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type)
