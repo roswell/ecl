@@ -33,25 +33,13 @@
   '(progn))
 
 (defun output-clines (output-stream)
-  (flet ((parse-one-string (s output-stream)
-           (with-input-from-string (stream s)
-             (loop for c = (read-char stream nil nil)
-                   while c
-                   do (if (eq c #\@)
-                          (let ((object (handler-case (read stream)
-                                          (serious-condition (c)
-                                            (cmperr "Unable to parse FFI:CLINES string~& ~S"
-                                                    s)))))
-                            (let ((*compiler-output1* output-stream))
-                              (wt (add-object object :permanent t))))
-                          (write-char c output-stream))))))
-    (loop for s in *clines-string-list*
-          do (terpri output-stream)
-          do (if (find #\@ s)
-                 (parse-one-string s output-stream)
-                 (write-string s output-stream)))
-    (terpri output-stream)
-    (setf *clines-string-list* nil)))
+  (loop for s in *clines-string-list*
+        do (terpri output-stream)
+        do (if (find #\@ s)
+               (cmperr "The character #\\@ is not allowed in ~s." 'FFI:CLINES)
+               (write-string s output-stream)))
+  (terpri output-stream)
+  (setf *clines-string-list* nil))
 
 ;; ----------------------------------------------------------------------
 ;; C/C++ INLINE CODE
