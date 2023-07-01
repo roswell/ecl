@@ -112,6 +112,17 @@ ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
   }
 }
 
+void
+ecl_miscompilation_error()
+{
+  ecl_internal_error(
+                     "***\n"
+                     "*** Encountered a code path that should have never been taken.\n"
+                     "*** This likely indicates a bug in the ECL compiler. Please contact\n"
+                     "*** the maintainers.\n"
+                     "***\n");
+}
+
 /*****************************************************************************/
 /*              Support for Lisp Error Handler                               */
 /*****************************************************************************/

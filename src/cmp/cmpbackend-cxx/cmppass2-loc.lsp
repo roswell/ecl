@@ -259,7 +259,7 @@
                  ;; elimination. Write a zero to ensure that the
                  ;; output is syntactically valid C code and hope for
                  ;; the latter case.
-                 (wt "0")))
+                 (wt "(ecl_miscompilation_error(),0)")))
              (ensure-valid-object-type (a-lisp-type)
                (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
                  (coercion-error nil))))
