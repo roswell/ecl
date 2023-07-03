@@ -258,7 +258,7 @@
     (if (and (symbolp fname)
              (not (eql (symbol-package fname) 
                        (find-package "CL"))))
-        (setf loc (add-symbol fname)
+        (setf loc (add-fname fname)
               function-p nil)
         (setf loc (list 'FDEFINITION fname)
               function-p t)))
