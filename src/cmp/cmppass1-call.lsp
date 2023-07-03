@@ -112,13 +112,7 @@
               (default-apply fun arguments))))))
 
 (defun c1call (fname args macros-allowed &aux fd success can-inline)
-  ;; XXX: try to remove the first condition
-  (cond ((> (length args) si:c-arguments-limit)
-         (if (and macros-allowed
-                  (setf fd (cmp-macro-function fname)))
-             (cmp-expand-macro fd (list* fname args))
-             (unoptimized-funcall `(function ,fname) args)))
-        ((setq fd (local-function-ref fname))
+  (cond ((setq fd (local-function-ref fname))
          (c1call-local fname fd args))
         ((and macros-allowed            ; macrolet
               (setq fd (cmp-env-search-macro fname)))
