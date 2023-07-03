@@ -102,6 +102,7 @@ cl_make_symbol(cl_object str)
   }
   x = ecl_alloc_object(t_symbol);
   x->symbol.name = str;
+  x->symbol.cname = ECL_NIL;
 #ifdef ECL_THREADS
   x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif  /*  */
