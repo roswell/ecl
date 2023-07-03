@@ -130,7 +130,7 @@
          (function-p (and (subtypep form-type 'function)
                           (policy-assume-right-type)))
          (loc (maybe-save-value form args)))
-    (unwind-exit (call-unknown-global-loc nil loc (inline-args args) function-p))
+    (unwind-exit (call-unknown-global-loc loc (inline-args args) function-p))
     (close-inline-blocks)))
 
 (defun c2call-stack (c1form form args values-p)
@@ -165,7 +165,7 @@
   ;; Check whether it is a global function that we cannot call directly.
   (when (and (or (null fun) (fun-global fun)) (not (inline-possible fname)))
     (return-from call-global-loc
-      (call-unknown-global-loc fname nil (inline-args args))))
+      (call-unknown-global-fun fname (inline-args args))))
 
   (setf args (inline-args args))
 
@@ -187,7 +187,8 @@
 
   ;; Call to a global (SETF ...) function
   (when (not (symbolp fname))
-    (return-from call-global-loc (call-unknown-global-loc fname nil args)))
+    (return-from call-global-loc
+      (call-unknown-global-fun fname args)))
 
   ;; Call to a function whose C language function name is known,
   ;; either because it has been proclaimed so, or because it belongs
@@ -217,7 +218,7 @@
           (call-exported-function-loc fname args fd minarg maxarg
                                       (si:mangle-name fname) return-type)))))
 
-  (call-unknown-global-loc fname nil args))
+  (call-unknown-global-fun fname args))
 
 (defun call-loc (fname fun args type)
   (declare (ignore fname))
@@ -253,16 +254,22 @@
 ;;;   LOC is NIL or location containing function
 ;;;   ARGS is the list of typed locations for arguments
 ;;;
-(defun call-unknown-global-loc (fname loc args &optional function-p)
-  (unless loc
-    (if (and (symbolp fname)
-             (not (eql (symbol-package fname) 
-                       (find-package "CL"))))
-        (setf loc (add-fname fname)
-              function-p nil)
-        (setf loc (list 'FDEFINITION fname)
-              function-p t)))
-  `(CALL-INDIRECT ,loc ,(coerce-locs args) ,fname ,function-p))
+(defun call-unknown-global-loc (loc args &optional function-p)
+  `(CALL-INDIRECT ,loc ,(coerce-locs args) nil ,function-p))
+
+;;;
+;;; call-unknown-global-fun
+;;;   FNAME is the name of the global function
+;;;   ARGS is the list of typed locations for arguments
+;;;
+(defun call-unknown-global-fun (fname args)
+  `(CALL-INDIRECT (FDEFINITION ,fname) ,(coerce-locs args) ,fname t))
+
+#+ (or)
+;;; This version is correct but unnecessarily slow - it goes through
+;;; ecl_function_dispatch. wt-fdefinition handles all proper names.
+(defun call-unknown-global-fun (fname args)
+  `(CALL-INDIRECT ,(add-fname fname) ,(coerce-locs args) ,fname nil))
 
 ;;;
 ;;; call-stack-loc
