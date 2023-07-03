@@ -120,7 +120,8 @@
     (dolist (arg args)
       (wt ", " arg))
     (wt ")")
-    (when fname (wt-comment fname))))
+    (when fname
+      (wt-comment fname))))
 
 (defun wt-call-stack (loc fname)
   (wt "ecl_apply_from_stack_frame(_ecl_inner_frame," loc ")")
@@ -167,23 +168,23 @@
                             (eq package (find-package "SI")))
                         (fboundp fun-name)
                         (functionp (fdefinition fun-name))))))
-    (if (eq name fun-name)
-        ;; #'symbol
-        (let ((vv (add-symbol name)))
-          (if safe
-              (wt "(" vv "->symbol.gfdef)")
-              (wt "ecl_fdefinition(" vv ")")))
-        ;; #'(SETF symbol)
-        (if safe
-            (let ((set-loc (assoc name *setf-definitions*)))
-              (unless set-loc
-                (let* ((setf-vv (data-empty-loc))
-                       (name-vv (add-symbol name)))
-                  (setf set-loc (list name setf-vv name-vv))
-                  (push set-loc *setf-definitions*)))
-              (wt "ECL_CONS_CAR(" (second set-loc) ")"))
-            (let ((vv (add-symbol fun-name)))
-              (wt "ecl_fdefinition(" vv ")"))))))
+    (cond
+      ((not safe)
+       (let ((vv (add-fname fun-name)))
+         (wt "ecl_fdefinition(" vv ")")))
+      ((eq name fun-name)
+       ;; #'symbol
+       (let ((vv (add-fname name)))
+         (wt "(" vv "->symbol.gfdef)")))
+      (t
+       ;; #'(SETF symbol)
+       (let ((set-loc (assoc name *setf-definitions*)))
+         (unless set-loc
+           (let* ((setf-vv (data-empty-loc))
+                  (name-vv (add-symbol name)))
+             (setf set-loc (list name setf-vv name-vv))
+             (push set-loc *setf-definitions*)))
+         (wt "ECL_CONS_CAR(" (second set-loc) ")"))))))
 
 (defun environment-accessor (fun)
   (let* ((env-var (env-var-name *env-lvl*))
