@@ -146,7 +146,12 @@
       (setf (vv-used-p vv) t))
     vv))
 
+(defun add-fname (fname)
+  (check-type fname function-name)
+  (add-object fname :duplicate nil :permanent t))
+
 (defun add-symbol (symbol)
+  (check-type symbol symbol)
   (add-object symbol :duplicate nil :permanent t))
 
 (defun add-keywords (keywords)
