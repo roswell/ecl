@@ -195,12 +195,11 @@
               (return-from c1fset
                 (make-c1form* 'SI:FSET :args
                               fun-object ;; Function object
-                              (let* ((fname (second fname))
-                                     (in-cl-symbols-p (and (symbolp fname)
-                                                           (si::mangle-name fname))))
+                              (let ((fname (second fname)))
                                 (add-object fname :permanent t
-                                            :duplicate in-cl-symbols-p
-                                            :used-p t))
+                                                  :duplicate t
+                                                  :always t
+                                                  :used-p t))
                               macro
                               pprint
                               ;; The c1form, when we do not optimize

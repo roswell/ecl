@@ -198,13 +198,13 @@
   (mapc #'bind required-lcls requireds)
 
   (when fname-in-ihs-p
-    (open-inline-block)
-    (setf *ihs-used-p* t)
-    (push 'IHS *unwind-exit*)
-    (when (policy-debug-variable-bindings)
-      (build-debug-lexical-env (reverse requireds) t))
-    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-fname (or description fname))
-           ",_ecl_debug_env);"))
+    (let ((fname (get-object (or description fname))))
+      (open-inline-block)
+      (setf *ihs-used-p* t)
+      (push 'IHS *unwind-exit*)
+      (when (policy-debug-variable-bindings)
+        (build-debug-lexical-env (reverse requireds) t))
+      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname ",_ecl_debug_env);")))
 
   ;; Bind optional parameters as long as there remain arguments.
   (when optionals
@@ -309,7 +309,7 @@
  (when (and (policy-check-nargs) use-narg)
    (flet ((wrong-num-arguments ()
             (if fname
-                (wt " FEwrong_num_arguments(" (add-symbol fname) ");")
+                (wt " FEwrong_num_arguments(" (get-object fname) ");")
                 (wt " FEwrong_num_arguments_anonym();"))))
      (if (and maxarg (= minarg maxarg))
          (progn (wt-nl "if (ecl_unlikely(narg!=" minarg "))")

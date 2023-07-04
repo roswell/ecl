@@ -16,6 +16,30 @@
 
 (in-package "COMPILER")
 
+(defun data-permanent-storage-size ()
+  (length *permanent-objects*))
+
+(defun data-temporary-storage-size ()
+  (length *temporary-objects*))
+
+(defun data-size ()
+  (+ (data-permanent-storage-size)
+     (data-temporary-storage-size)))
+
+(defun data-get-all-objects ()
+  ;; We collect all objects that are to be externalized, but filter out
+  ;; those which will be created by a lisp form.
+  (loop for array in (list *permanent-objects* *temporary-objects*)
+        nconc (loop for vv-record across array
+                    for object = (vv-value vv-record)
+                    collect (cond ((gethash object *load-objects*)
+                                   0)
+                                  ((vv-used-p vv-record)
+                                   object)
+                                  (t
+                                   ;; Value optimized away or not used
+                                   0)))))
+
 (defun data-dump-array ()
   (cond (si:*compiler-constants*
          (setf si:*compiler-constants* (concatenate 'vector (data-get-all-objects)))
@@ -218,6 +242,8 @@
   ;; FIXME! The MSVC compiler does not allow static initialization of bit
   ;; fields. SSE uses always unboxed static constants. No reference is kept to
   ;; them -- it is thus safe to use them even on code that might be unloaded.
+  ;;
+  ;; NOTE *use-static-constants-p* is T only when :ecl-min is a feature.
   (unless (or #+msvc t
               si:*compiler-constants*
               (and (not *use-static-constants-p*)
@@ -227,9 +253,10 @@
     (ext:if-let ((record (find object *static-constants* :key #'first :test #'equal)))
       (second record)
       (ext:when-let ((builder (static-constant-expression object)))
-        (let ((c-name (format nil "_ecl_static_~D" (length *static-constants*))))
-          (push (list object c-name builder) *static-constants*)
-          (make-vv :location c-name :value object))))))
+        (let* ((c-name (format nil "_ecl_static_~D" (length *static-constants*)))
+               (vv (make-vv :location c-name :value object)))
+          (push (list object vv builder) *static-constants*)
+          vv)))))
 
 
 ;;; Inlineable constants
@@ -256,6 +283,72 @@
     (when (constant-variable-p name)
       (ext:when-let ((x (assoc name *optimizable-constants*)))
         (c1form-arg 0 (cdr x))))))
+
+(defun try-inline-core-sym (object)
+  (when (symbolp object)
+    (multiple-value-bind (foundp cname)
+        (si:mangle-name object)
+      (when foundp
+        (make-vv :value object :location cname)))))
+
+
+
+(defun data-empty-loc* ()
+  (insert-vv (make-vv :value *empty-loc* :permanent-p t :used-p t)))
+
+;;; VV is emitted depending on the location and the representation type.
+(defun update-vv (target source)
+  (assert (eql (vv-value target) (vv-value source)))
+  (setf (vv-location target) (vv-location source)
+        (vv-rep-type target) (vv-rep-type source)))
+
+(defun insert-vv (vv)
+  (let* ((arr (if (vv-permanent-p vv)
+                  *permanent-objects*
+                  *temporary-objects*))
+         (ndx (vector-push-extend vv arr)))
+    (setf (vv-location vv) ndx)
+    vv))
+
+(defun search-vv (object &key permanent (errorp t))
+  (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
+         (item (if permanent
+                   (or (find object *permanent-objects* :test test :key #'vv-value)
+                       (find object *temporary-objects* :test test :key #'vv-value)))))
+    (when (and (null item) errorp)
+      (cmperr "Unable to find object ~s." object))
+    item))
+
+(defun get-object (object &key (permanent t) (errorp t))
+  (or (search-vv object :permanent permanent :errorp nil)
+      (try-inline-core-sym object)
+      (and errorp
+           (cmperr "Unable to find object ~s." object))))
+
+(defun optimize-cxx-data (objects)
+  (flet ((optimize-vv (object)
+           (let ((value (vv-value object)))
+             (ext:if-let ((vv (and (not (vv-always object))
+                                   (or (add-static-constant value)
+                                       (try-inline-core-sym value)))))
+               (update-vv object vv)
+               (insert-vv object)))))
+    (map nil #'optimize-vv objects)))
+
+(defun add-keywords (keywords)
+  ;; We have to build, in the vector VV[], a sequence with all the keywords
+  ;; that this function uses. It does not matter whether each keyword has
+  ;; appeared separately before, because cl_parse_key() needs the whole
+  ;; sequence. However, we can reuse keywords sequences from other functions
+  ;; when they coincide with ours. See C2LAMBDA-EXPR.
+  (ext:if-let ((x (search keywords *permanent-objects*
+                          :test #'(lambda (k record)
+                                    (and (vv-always record)
+                                         (eq k (vv-value record)))))))
+    (elt *permanent-objects* x)
+    (prog1 (insert-vv (make-vv :value (pop keywords) :always t :used-p t))
+      (dolist (k keywords)
+        (insert-vv (make-vv :value k :always t :used-p t))))))
 
 
 (defun wt-vv-index (index permanent-p)
