@@ -62,7 +62,7 @@
     (CL:MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
     (CL:MULTIPLE-VALUE-BIND vars-list init-c1form body :pure)
 
-    (CL:FUNCTION        (GLOBAL/CLOSURE) lambda-form fun-object :single-valued)
+    (CL:FUNCTION        fname :single-valued)
     (CL:RPLACD          (dest-c1form value-c1form) :side-effects)
 
     (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
