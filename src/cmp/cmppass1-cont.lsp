@@ -28,6 +28,7 @@
   (let ((block-name (first args)))
     (unless (symbolp block-name)
       (cmperr "The block name ~s is not a symbol." block-name))
+    (add-symbol block-name)
     (let* ((blk-var (make-var :name block-name :kind 'LEXICAL))
            (blk (make-blk :var blk-var :name block-name))
            (body (let ((*cmp-env* (cmp-env-copy)))

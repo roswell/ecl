@@ -124,9 +124,9 @@
     (wt-nl-h "/*")
     (wt-nl-h " * Statically defined constants")
     (wt-nl-h " */")
-    (loop for (value name builder) in (reverse *static-constants*)
+    (loop for (value vv builder) in (reverse *static-constants*)
           do (terpri *compiler-output2*)
-          do (funcall builder name value *compiler-output2*)))
+          do (funcall builder (vv-location vv) value *compiler-output2*)))
 
   (output-cfuns *compiler-output2*)
 
@@ -494,7 +494,7 @@
     (return-from c2fset
       (c2call-global c1form 'SI:FSET c1forms)))
   (let ((*inline-blocks* 0)
-        (loc (data-empty-loc)))
+        (loc (data-empty-loc*)))
     (push (list loc fname fun) *global-cfuns-array*)
     ;; FIXME! Look at C2LOCALS!
     (new-local fun)

@@ -532,6 +532,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 (defun compiler-pass/generate-cxx (c-pathname h-pathname data-pathname init-name source)
   (with-cxx-env ()
+    ;; After this step we still can add new objects, but objects that are
+    ;; already stored in VV or VVtemp must not change the location.
+    (optimize-cxx-data *referenced-objects*)
     (setq *compiler-phase* 't2)
     (with-open-file (*compiler-output1* c-pathname :direction :output
                                                    :if-does-not-exist :create

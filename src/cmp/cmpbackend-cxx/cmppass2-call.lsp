@@ -269,7 +269,7 @@
 ;;; This version is correct but unnecessarily slow - it goes through
 ;;; ecl_function_dispatch. wt-fdefinition handles all proper names.
 (defun call-unknown-global-fun (fname args)
-  `(CALL-INDIRECT ,(add-fname fname) ,(coerce-locs args) ,fname nil))
+  `(CALL-INDIRECT ,(get-object fname) ,(coerce-locs args) ,fname nil))
 
 ;;;
 ;;; call-stack-loc
