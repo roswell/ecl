@@ -18,16 +18,9 @@
   (declare (ignore c1form))
   (progv symbols values (c2expr body)))
 
-(defun c2function (c1form kind funob fun)
-  (declare (ignore c1form funob))
-  (case kind
-    (GLOBAL
-     (unwind-exit `(FDEFINITION ,fun)))
-    (CLOSURE
-     ;; XXX: we have some code after baboon – is CLOSURE legal or not?
-     (baboon :format-control "c2function: c1form is of unexpected kind.")
-     (new-local fun)
-     (unwind-exit `(MAKE-CCLOSURE ,fun)))))
+(defun c2function (c1form fname)
+  (declare (ignore c1form))
+  (unwind-exit `(FDEFINITION ,fname)))
 
 ;;; Mechanism for sharing code.
 (defun new-local (fun)
