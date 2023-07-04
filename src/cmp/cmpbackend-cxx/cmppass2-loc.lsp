@@ -170,18 +170,18 @@
                         (functionp (fdefinition fun-name))))))
     (cond
       ((not safe)
-       (let ((vv (add-fname fun-name)))
+       (let ((vv (get-object fun-name)))
          (wt "ecl_fdefinition(" vv ")")))
       ((eq name fun-name)
        ;; #'symbol
-       (let ((vv (add-fname name)))
+       (let ((vv (get-object name)))
          (wt "(" vv "->symbol.gfdef)")))
       (t
        ;; #'(SETF symbol)
        (let ((set-loc (assoc name *setf-definitions*)))
          (unless set-loc
-           (let* ((setf-vv (data-empty-loc))
-                  (name-vv (add-symbol name)))
+           (let* ((setf-vv (data-empty-loc*))
+                  (name-vv (get-object name)))
              (setf set-loc (list name setf-vv name-vv))
              (push set-loc *setf-definitions*)))
          (wt "ECL_CONS_CAR(" (second set-loc) ")"))))))

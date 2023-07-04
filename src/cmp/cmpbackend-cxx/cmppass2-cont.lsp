@@ -51,7 +51,7 @@
       (progn
         (let ((*destination* 'VALUES))
           (c2expr* val))
-        (let ((name (add-symbol (blk-name blk))))
+        (let ((name (get-object (blk-name blk))))
           (wt-nl "cl_return_from(" (blk-var blk) "," name ");")))
       (let ((*destination* (blk-destination blk))
             (*exit* (blk-exit blk)))

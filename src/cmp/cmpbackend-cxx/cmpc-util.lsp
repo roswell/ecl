@@ -58,6 +58,26 @@
 (defvar *exit*)
 (defvar *unwind-exit*)
 
+;; T/NIL flag to determine whether one may generate lisp constant values as C
+;; structs.
+(defvar *use-static-constants-p*
+  #+ecl-min t #-ecl-min nil)
+
+;;; Constants that can be built as C values.
+(defvar *static-constants*)          ; holds { ( object c-variable constant ) }*
+
+;;; Pairs for inlining constants.
+(defvar *optimizable-constants*)        ; hoolds { (value . c1form) }*
+
+
+;;; Permanent objects are stored in VV[] that is available for the whole module
+;;; during the whole lifetime of the FASL. Temporary objects are stored in
+;;; VVtemp[] that is allocated in the initialization function and released after
+;;; the FASL is initialized.
+
+(defvar *permanent-objects*)            ; holds { vv-record }*
+(defvar *temporary-objects*)            ; holds { vv-record }*
+
 ;;; ----------------------------------------------------------------------
 ;;; CONVENIENCE FUNCTIONS / MACROS
 ;;;
@@ -72,7 +92,11 @@
          (*inline-information*
            (ext:if-let ((r (machine-inline-information *machine*)))
              (si:copy-hash-table r)
-             (make-inline-information *machine*))))
+             (make-inline-information *machine*)))
+         (*static-constants* nil)
+         (*optimizable-constants* (make-optimizable-constants *machine*))
+         (*permanent-objects* (make-array 128 :adjustable t :fill-pointer 0))
+         (*temporary-objects* (make-array 128 :adjustable t :fill-pointer 0)))
      ,@body))
 
 (defun-cached env-var-name (n) eql

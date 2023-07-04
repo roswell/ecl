@@ -160,6 +160,7 @@
               (default-apply fun arguments))))))
 
 (defun c1call (fname args macros-allowed &aux fd success can-inline)
+  (add-fname fname)
   (cond ((setq fd (local-function-ref fname))
          (c1call-local fname fd args))
         ((and macros-allowed            ; macrolet

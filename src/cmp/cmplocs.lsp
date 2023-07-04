@@ -21,6 +21,7 @@
 (defstruct vv
   (location nil)
   (used-p nil)
+  (always nil)       ; when true then vv is never optimized
   (permanent-p t)
   (value nil)
   (rep-type :object))
