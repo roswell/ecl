@@ -131,7 +131,8 @@
            ;; When using COMPILE, we set *load-time-values* to 'VALUES and
            ;; thus signal that we do not want to compile these forms, but
            ;; just to retain their value.
-           (return-from c1load-time-value (c1constant-value (cmp-eval form) :always t)))
+           (return-from c1load-time-value
+             (c1constant-value (cmp-eval form) :always t)))
           ((typep form '(or list symbol))
            (setf loc (data-empty-loc))
            (push (make-c1form* 'LOAD-TIME-VALUE :args loc (c1expr form))

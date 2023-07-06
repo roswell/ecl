@@ -55,6 +55,24 @@
   (c2expr body)
   (close-inline-blocks))
 
+;;; Mechanism for sharing code.
+(defun new-local (fun)
+  (declare (type fun fun))
+  (case (fun-closure fun)
+    (CLOSURE
+     (setf (fun-level fun) 0
+           (fun-env fun) *env*))
+    (LEXICAL
+     ;; Only increase the lexical level if there have been some
+     ;; new variables created. This way, the same lexical environment
+     ;; can be propagated through nested FLET/LABELS.
+     (setf (fun-level fun) (if (plusp *lex*) (1+ *level*) *level*)
+           (fun-env fun) 0))
+    (otherwise
+     (setf (fun-level fun) 0
+           (fun-env fun) 0)))
+  (push fun *local-funs*))
+
 #| Steps:
  1. defun creates declarations for requireds + va_alist
  2. c2lambda-expr adds declarations for:
