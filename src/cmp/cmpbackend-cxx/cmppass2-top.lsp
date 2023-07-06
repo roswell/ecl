@@ -484,9 +484,8 @@
 (defun c2fset (c1form fun fname macro pprint c1forms)
   (declare (ignore pprint))
   (when (fun-no-entry fun)
-    (wt-nl "(void)0; /* No entry created for "
-           (format nil "~A" (fun-name fun))
-           " */")
+    (wt-nl "(void)0; "
+           (format nil "/* No entry created for ~A */" (fun-name fun)))
     ;; FIXME! Look at C2LOCALS!
     (new-local fun)
     (return-from c2fset))
@@ -499,7 +498,8 @@
     (push (list loc fname fun) *global-cfuns-array*)
     ;; FIXME! Look at C2LOCALS!
     (new-local fun)
-    (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
-           loc ");")
+    (if macro
+        (wt-nl "ecl_cmp_defmacro(" loc ");")
+        (wt-nl "ecl_cmp_defun(" loc ");"))
     (wt-comment (loc-immediate-value fname))
     (close-inline-blocks)))
