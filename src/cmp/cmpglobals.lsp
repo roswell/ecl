@@ -198,7 +198,6 @@ lines are inserted, but the order is preserved")
 (defvar *load-time-values* nil)         ; holds { ( vv-index form ) }*,
 ;;;  where each vv-index should be given an object before
 ;;;  defining the current function during loading process.
-(defvar *setf-definitions* nil)         ; C forms to find out (SETF fname) locations
 
 (defvar si:*compiler-constants* nil)    ; a vector with all constants only used
                                         ; in COMPILE
@@ -206,8 +205,6 @@ lines are inserted, but the order is preserved")
 (defvar *global-vars* nil)              ; variables declared special
 (defvar *global-funs* nil)              ; holds { fun }*
 (defvar *use-c-global* nil)             ; honor si::c-global declaration
-(defvar *global-cfuns-array* nil)       ; holds { fun }*
-(defvar *local-funs* nil)               ; holds { fun }*
 (defvar *top-level-forms* nil)          ; holds { top-level-form }*
 (defvar *make-forms* nil)               ; holds { top-level-form }*
 
@@ -244,13 +241,10 @@ be deleted if they have been opened with LoadLibrary.")
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* nil)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
-    (*setf-definitions* nil)
     (*make-forms* nil)
     (*referenced-objects* (make-array 256 :adjustable t :fill-pointer 0))
-    (*local-funs* nil)
     (*global-vars* nil)
     (*global-funs* nil)
-    (*global-cfuns-array* nil)
     (*undefined-vars* nil)
     (*top-level-forms* nil)
     (*compile-time-too* nil)
