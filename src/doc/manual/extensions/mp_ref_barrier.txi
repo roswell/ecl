@@ -55,8 +55,11 @@ Returns the number of threads waiting on @var{barrier}.
 @lspdef mp:barrier-wait
 
 @defun mp:barrier-wait barrier
-The caller thread waits on @var{barrier}. When the barrier is
-saturated then all threads waiting on it are unblocked.
+The caller thread waits on @var{barrier}. When the barrier is saturated
+then all threads waiting on it are unblocked. Returns @code{t} if the
+calling thread had to wait to pass the barrier, @code{:unblocked} if the
+barrier is enabled but could be passed without waiting and @code{nil} if
+the barrier is disabled.
 @end defun
 
 
@@ -73,5 +76,7 @@ disabled then all calls to @coderef{mp:barrier-wait} immedietely
 return.
 
 @var{kill-waiting} is used to kill all woken threads.
+
+Returns no values.
 @end defun
 

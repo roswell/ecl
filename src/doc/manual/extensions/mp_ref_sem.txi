@@ -75,7 +75,7 @@ would not be negative.
 Else blocks until the semaphore can be decremented. Returns the old
 count of @var{semaphore} on success.
 
-If timeout is not @code{niL}, it is the maximum number of seconds to
+If timeout is not @code{nil}, it is the maximum number of seconds to
 wait. If the count cannot be decremented in that time, returns
 @code{nil} without decrementing the count.
 @end defun
@@ -119,5 +119,6 @@ This function is equivalent to @code{(mp:semaphore-wait semaphore count 0)}
 @end deftypefun
 
 @defun mp:signal-semaphore semaphore &optional (count 1)
-Releases @var{count} units of a resource on @var{semaphore}.
+Releases @var{count} units of a resource on @var{semaphore}. Returns no
+values.
 @end defun
