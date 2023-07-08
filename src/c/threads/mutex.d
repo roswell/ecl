@@ -172,9 +172,9 @@ mp_get_lock_nowait(cl_object lock)
   }
   ecl_enable_interrupts_env(env);
   if (rc == ECL_MUTEX_SUCCESS) {
-    ecl_return1(env,lock);
+    ecl_return1(env, ECL_T);
   } else if (rc == ECL_MUTEX_LOCKED) {
-    ecl_return1(env,ECL_NIL);
+    ecl_return1(env, ECL_NIL);
 #if defined(ECL_MUTEX_DEADLOCK)
   } else if (ecl_unlikely(rc == ECL_MUTEX_DEADLOCK)) {
     FEerror_not_a_recursive_lock(lock);
@@ -205,7 +205,7 @@ mp_get_lock_wait(cl_object lock)
     lock->lock.counter++;
     lock->lock.owner = own_process;
     ecl_enable_interrupts_env(env);
-    ecl_return1(env, lock);
+    ecl_return1(env, ECL_T);
 #if defined(ECL_MUTEX_DEADLOCK)
   } else if (ecl_unlikely(rc == ECL_MUTEX_DEADLOCK)) {
     FEerror_not_a_recursive_lock(lock);
@@ -301,9 +301,9 @@ mp_get_lock_timedwait(cl_object lock, cl_object timeout)
     lock->lock.counter++;
     lock->lock.owner = own_process;
     ecl_enable_interrupts_env(env);
-    ecl_return1(env, lock);
+    ecl_return1(env, ECL_T);
   } else if (rc == ECL_MUTEX_TIMEOUT) {
-    ecl_return1(env,ECL_NIL);
+    ecl_return1(env, ECL_NIL);
 #if defined(ECL_MUTEX_DEADLOCK)
   } else if (ecl_unlikely(rc == ECL_MUTEX_DEADLOCK)) {
     FEerror_not_a_recursive_lock(lock);
