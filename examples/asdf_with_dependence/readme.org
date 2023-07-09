@@ -31,6 +31,8 @@ already recognized by ASDF).
 Use this in REPL to make an executable:
 
 #+BEGIN_SRC common-lisp
+(asdf:load-asd "example-with-dep.asd")
+(asdf:load-system :example-with-dep)
 (asdf:make-build :example-with-dep
                  :type :program
                  :move-here #P"./"
@@ -74,7 +76,7 @@ To use it, we write a simple C program:
 
 int main (int argc, char **argv) {
   extern void init_dll_example(cl_object);
-  
+
   cl_boot(argc, argv);
   ecl_init_module(NULL, init_dll_example);
 
@@ -160,7 +162,7 @@ extern void init_alexandria(cl_object);
 extern void init_bt(cl_object);
 extern void init_example(cl_object);
 
-/* call these *after* cl_boot(argc, argv); 
+/* call these *after* cl_boot(argc, argv);
    if B depends on A, you should first init A then B. */
 ecl_init_module(NULL, init_bt);
 ecl_init_module(NULL, init_fad);
@@ -208,4 +210,3 @@ build all dependent libraries separately as static libraries.
 
 [fn:1] You may also link ECL runtime statically. That is not covered
 in this walkthrough.
-
