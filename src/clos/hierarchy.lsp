@@ -247,6 +247,8 @@
 
 ;;; FROM AMOP:
 ;;;
+;;; Class hierachy: (entries marked with `*` are abstract base classes)
+;;;
 ;;;     Metaobject Class                Direct Superclasses
 ;;;     standard-object                 (t)
 ;;;     funcallable-standard-object     (standard-object function)
@@ -343,6 +345,7 @@
                          :index index
                          :direct-superclasses (or rest '(t))))
       (funcallable-standard-object
+       :metaclass funcallable-standard-class
        :direct-superclasses (standard-object function))
       (generic-function
        :metaclass funcallable-standard-class
