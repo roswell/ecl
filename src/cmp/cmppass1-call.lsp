@@ -261,7 +261,8 @@
                          (let ((results (mapcar #'c1constant-value results)))
                            (when (every #'identity results)
                              (make-c1form* 'CL:VALUES :args results)))))))
-      (error (c) (cmpdebug "Can't constant-fold ~s ~s: ~a~%" fname forms c)))))
+      (error (c)
+        (cmpdebug "Can't constant-fold ~s ~s: ~a~%" fname forms c)))))
 
 ;;; Transform a (funcall lambda-form arguments) or (apply lambda-form
 ;;; arguments) expression into an equivalent let* statement. Returns
