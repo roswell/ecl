@@ -53,7 +53,7 @@
                                        (si:complex-single-float . #c(0.0l0 0.0l0)))))
                                :test #'subtypep))))
     (if new-value
-        (c1constant-value new-value :always t)
+        (c1constant-value new-value)
         (c1nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

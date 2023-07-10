@@ -41,7 +41,7 @@
                  ((and (consp fun) (eq (car fun) 'LAMBDA))
                   (c1funcall form))
                  (t (cmperr "~s is not a legal function name." fun)))))
-        (t (c1constant-value form :always t))))
+        (t (c1constant-value form))))
 
 (defun c1expr (form)
   (let ((*current-form* form))
@@ -127,51 +127,19 @@
        (return form))
      (setf form new-form))))
 
-(defun c1constant-value (val &key always)
+(defun c1constant-value (val)
   (cond
     ((eq val nil) (c1nil))
     ((eq val t) (c1t))
-    ((ext:fixnump val)
-     (make-c1form* 'LOCATION :type 'FIXNUM :args (make-vv :rep-type :fixnum :value val)))
-    ((si:base-char-p val)
-     (make-c1form* 'LOCATION :type 'BASE-CHAR :args (make-vv :rep-type :unsigned-char :value val)))
-    ((characterp val)
-     (make-c1form* 'LOCATION :type 'CHARACTER :args (make-vv :rep-type :wchar :value val)))
-    ((typep val 'SINGLE-FLOAT)
-     (make-c1form* 'LOCATION :type 'SINGLE-FLOAT :args (make-vv :rep-type :float :value val)))
-    ((typep val 'DOUBLE-FLOAT)
-     (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT :args (make-vv :rep-type :double :value val)))
-    ((typep val 'LONG-FLOAT)
-     (make-c1form* 'LOCATION :type 'LONG-FLOAT :args (make-vv :rep-type :long-double :value val)))
-    ;; FIXME C?FLOAT
-    #+sse2
-    ((typep val 'EXT:SSE-PACK)
-     (c1constant-value/sse val))
-    (always
-     (make-c1form* 'LOCATION :type `(eql ,val)
-                             :args (add-object val)))
-    (t nil)))
+    ((make-c1form* 'LOCATION :type `(eql ,val)
+                             :args (add-object val)))))
 
 ;;; To inline a constant it must be possible to externalize its value or copies
 ;;; of the value must be EQL to each other.
 (defun c1constant-symbol-value (name val)
   (declare (ignore name))
-  (let ((form (c1constant-value val)))
-    (and form (c1form-arg 0 form))))
-
-#+sse2
-(defun c1constant-value/sse (value)
-  (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
-         (elt-type (ext:sse-pack-element-type value)))
-    (multiple-value-bind (wrapper rtype)
-        (case elt-type
-          (cl:single-float (values "_mm_castsi128_ps" :float-sse-pack))
-          (cl:double-float (values "_mm_castsi128_pd" :double-sse-pack))
-          (otherwise       (values ""                 :int-sse-pack)))
-      `(ffi:c-inline () () ,rtype
-                     ,(format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
-                              wrapper (coerce bytes 'list))
-                     :one-liner t :side-effects nil))))
+  (let ((si:*compiler-constants* t))    ; don't create make-load forms
+    (add-object val)))
 
 (defun c1if (args)
   (check-args-number 'IF args 2 3)
