@@ -266,19 +266,15 @@
 ;;;
 ;;; TODO implement handling of unboxed values.
 
-(defun try-value-c-inliner (val)
-  (unless (vv-p val)
-    (return-from try-value-c-inliner))
-  (let ((value (vv-value val)))
-    (ext:when-let ((x (assoc value *optimizable-constants*)))
-      (when (typep value '(or float (complex float)))
-        (pushnew "#include <float.h>" *clines-string-list*)
-        (pushnew "#include <complex.h>" *clines-string-list*))
-      (c1form-arg 0 (cdr x)))))
+(defun try-value-c-inliner (value)
+  (ext:when-let ((x (assoc value *optimizable-constants*)))
+    (when (typep value '(or float (complex float)))
+      (pushnew "#include <float.h>" *clines-string-list*)
+      (pushnew "#include <complex.h>" *clines-string-list*))
+    (c1form-arg 0 (cdr x))))
 
 (defun try-const-c-inliner (var)
-  (unless (var-p var)
-    (return-from try-const-c-inliner))
+  (check-type var var)
   (let ((name (var-name var)))
     (when (constant-variable-p name)
       (ext:when-let ((x (assoc name *optimizable-constants*)))
@@ -290,6 +286,30 @@
         (si:mangle-name object)
       (when foundp
         (make-vv :value object :location cname)))))
+
+(defun try-immediate-value (value)
+  ;; FIXME we could inline here also (COMPLEX FLOAT). That requires adding an
+  ;; emmiter of C complex floats in the function WT1.
+  (typecase value
+    ((or fixnum character float #|#+complex-float (complex float)|#)
+     (make-vv :value value
+              :location nil
+              :rep-type (lisp-type->rep-type (type-of value))))
+    #+sse2
+    (ext:sse-pack
+     (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
+            (elt-type (ext:sse-pack-element-type value)))
+       (multiple-value-bind (wrapper rtype)
+           (case elt-type
+             (cl:single-float (values "_mm_castsi128_ps" :float-sse-pack))
+             (cl:double-float (values "_mm_castsi128_pd" :double-sse-pack))
+             (otherwise       (values ""                 :int-sse-pack)))
+         (make-vv :value value
+                  :location (format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
+                                    wrapper (coerce bytes 'list))
+                  :rep-type rtype))))
+    (otherwise
+     nil)))
 
 
 
@@ -330,7 +350,9 @@
            (let ((value (vv-value object)))
              (ext:if-let ((vv (and (not (vv-always object))
                                    (or (add-static-constant value)
-                                       (try-inline-core-sym value)))))
+                                       (try-inline-core-sym value)
+                                       (try-value-c-inliner value)
+                                       (try-immediate-value value)))))
                (update-vv object vv)
                (insert-vv object)))))
     (map nil #'optimize-vv objects)))
