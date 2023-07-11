@@ -141,16 +141,16 @@ MOST-POSITIVE-FIXNUM inclusive.  Other integers are bignums."
 (deftype bignum ()
   '(OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
 
-(deftype ext::byte8 () '(INTEGER 0 255))
-(deftype ext::integer8 () '(INTEGER -128 127))
-(deftype ext::byte16 () '(INTEGER 0 #xFFFF))
-(deftype ext::integer16 () '(INTEGER #x-8000 #x7FFF))
-(deftype ext::byte32 () '(INTEGER 0 #xFFFFFFFF))
-(deftype ext::integer32 () '(INTEGER #x-80000000 #x7FFFFFFF))
-(deftype ext::byte64 () '(INTEGER 0 #xFFFFFFFFFFFFFFFF))
-(deftype ext::integer64 () '(INTEGER #x-8000000000000000 #x7FFFFFFFFFFFFFFF))
-(deftype ext::cl-fixnum () '(SIGNED-BYTE #.CL-FIXNUM-BITS))
-(deftype ext::cl-index () '(UNSIGNED-BYTE #.CL-FIXNUM-BITS))
+(deftype ext:byte8 () '(INTEGER 0 255))
+(deftype ext:integer8 () '(INTEGER -128 127))
+(deftype ext:byte16 () '(INTEGER 0 #xFFFF))
+(deftype ext:integer16 () '(INTEGER #x-8000 #x7FFF))
+(deftype ext:byte32 () '(INTEGER 0 #xFFFFFFFF))
+(deftype ext:integer32 () '(INTEGER #x-80000000 #x7FFFFFFF))
+(deftype ext:byte64 () '(INTEGER 0 #xFFFFFFFFFFFFFFFF))
+(deftype ext:integer64 () '(INTEGER #x-8000000000000000 #x7FFFFFFFFFFFFFFF))
+(deftype ext:cl-fixnum () '(SIGNED-BYTE #.CL-FIXNUM-BITS))
+(deftype ext:cl-index () '(UNSIGNED-BYTE #.CL-FIXNUM-BITS))
 
 (deftype real (&optional (start '* start-p) (end '*))
   (if start-p
@@ -460,9 +460,11 @@ and is not adjustable."
   '#.(append '(NIL BASE-CHAR #+unicode CHARACTER BIT EXT:BYTE8 EXT:INTEGER8)
              #+:uint16-t '(EXT:BYTE16 EXT:INTEGER16)
              #+:uint32-t '(EXT:BYTE32 EXT:INTEGER32)
-             (when (< 32 cl-fixnum-bits 64) '(EXT::CL-INDEX FIXNUM))
+             (when (< 32 cl-fixnum-bits 64)
+               '(EXT::CL-INDEX FIXNUM))
              #+:uint64-t '(EXT:BYTE64 EXT:INTEGER64)
-             (when (< 64 cl-fixnum-bits) '(EXT::CL-INDEX FIXNUM))
+             (when (< 64 cl-fixnum-bits)
+               '(EXT::CL-INDEX FIXNUM))
              '(SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT)
              #+complex-float '(si:complex-single-float
                                si:complex-double-float
@@ -817,40 +819,48 @@ if not possible."
             (t
              (fail))))))
 
-;;************************************************************
-;;                      SUBTYPEP
-;;************************************************************
-;;
-;; TYPES LATTICE (Following Henry Baker's paper)
-;;
-;; The algorithm works as follows. Types are identified with sets. Some sets
-;; are elementary, in the sense that other types may be expressed as
-;; combination of them. We partition these sets into FAMILIES
-;;
-;;      Built-in objects --- Hash tables, etc
-;;      Intervals --- (INTEGER a b), (REAL a b), etc
-;;      Arrays --- (ARRAY * (2)), etc
-;;      Classes
-;;
-;; When passed a type specifier, ECL canonicalizes it: it decomposes the
-;; type into the most elementary sets, assigns a unique bit pattern (TAG) to
-;; each of these sets, and builds a composite tag for the type by LOGIOR.
-;; Operations between these sets reduce to logical operations between these
-;; bit patterns. Given types T1, T2 and a function which produces tags f(T)
-;;
-;;      f((AND T1 T2)) = (LOGIAND f(T1) f(T2))
-;;      f((OR T1 T2)) = (LOGIOR f(T1) f(T2))
-;;      f((NOT T1)) = (LOGNOT f(T2))
-;;
-;; However, tags are not permanent: whenever a new type is registered, the
-;; tag associated to a type may be changed (for instance, because new
-;; elementary sets are discovered, which also belong to existing types).
+;;; ----------------------------------------------------------------------------
+;;; SUBTYPEP
+;;; ----------------------------------------------------------------------------
+;;;
+;;; TYPES LATTICE
+;;;
+;;; Following the paper written by Henry G. Baker: "A Decision Procedure for
+;;; Common Lisp's SUBTYPEP Predicate".
+;;;
+;;; The algorithm works as follows. Types are identified with sets. Some sets
+;;; are elementary, in the sense that other types may be expressed as
+;;; combination of them. We partition these sets into FAMILIES (kingdoms):
+;;;
+;;;     Built-in objects --- Hash tables, etc
+;;;     Intervals        --- (INTEGER a b), (REAL a b), etc
+;;;     Arrays           --- (ARRAY * (2)), etc
+;;;     Classes
+;;;
+;;; When passed a type specifier, ECL canonicalizes it: it decomposes the type
+;;; into the most elementary sets, assigns a unique bit pattern (TAG) to each
+;;; of these sets, and builds a composite tag for the type by LOGIOR.
+;;; Operations between these sets reduce to logical operations between these
+;;; bit patterns. Given types T1, T2 and a function which produces tags f(T)
+;;;
+;;;     f((AND T1 T2)) = (LOGIAND f(T1) f(T2))
+;;;     f((OR T1 T2))  = (LOGIOR  f(T1) f(T2))
+;;;     f((NOT T1))    = (LOGNOT  f(T1))
+;;;
+;;; However, tags are not permanent: whenever a new type is registered, the
+;;; tag associated to a type may be changed (for instance, because new
+;;; elementary sets are discovered, which also belong to existing types).
+;;; ----------------------------------------------------------------------------
 
 (defparameter *save-types-database* nil)
 
 (defparameter *highest-type-tag*
   #+ecl-min #B1
   #-ecl-min '#.*highest-type-tag*)
+
+;;; Built-in tags for the top and the bottom types.
+(defconstant +built-in-tag-t+ -1)
+(defconstant +built-in-tag-nil+ 0)
 
 (defparameter *member-types*
   #+ecl-min NIL
@@ -917,7 +927,7 @@ if not possible."
            (function in-our-family-p type-<=)) 
   (let* ((subtype-tag 0)
          (disjoint-tag 0)
-         (supertype-tag (if minimize-super -1 0)))
+         (supertype-tag (if minimize-super +built-in-tag-t+ +built-in-tag-nil+)))
     (dolist (i *elementary-types*)
       (declare (cons i))
       (let ((other-type (car i))
@@ -932,7 +942,8 @@ if not possible."
                  (setq subtype-tag (logior other-tag subtype-tag)))
                 (t
                  (setq disjoint-tag (logior disjoint-tag other-tag)))))))
-    (values (if (= supertype-tag -1) 0
+    (values (if (= supertype-tag +built-in-tag-t+)
+                +built-in-tag-nil+
                 (logandc2 supertype-tag (logior disjoint-tag subtype-tag)))
             subtype-tag)))
 
@@ -1040,7 +1051,9 @@ if not possible."
       (and (not (clos::class-finalized-p class))
            (throw '+canonical-type-failure+ nil))
       (register-type class
-                     #'(lambda (c) (or (si::instancep c) (symbolp c)))
+                     #'(lambda (c)
+                         (or (si::instancep c)
+                             (symbolp c)))
                      #'(lambda (c1 c2)
                          (when (symbolp c1)
                            (setq c1 (find-class c1 nil)))
@@ -1056,11 +1069,12 @@ if not possible."
   (multiple-value-bind (array-class elt-type dimensions)
       (parse-array-type type)
     (cond ((eq elt-type '*)
-           (canonical-type `(OR ,@(mapcar #'(lambda (type) `(,array-class ,type ,dimensions))
+           (canonical-type `(OR ,@(mapcar #'(lambda (type)
+                                              `(,array-class ,type ,dimensions))
                                           +upgraded-array-element-types+))))
           ((find-registered-tag (setq type (list array-class elt-type dimensions))))
           (t
-           #+nil
+           #+ (or)
            (when (and (consp dimensions) (> (count-if #'numberp dimensions) 1))
              (dotimes (i (length dimensions))
                (when (numberp (elt dimensions i))
@@ -1143,6 +1157,7 @@ if not possible."
 ;; Arbitrary intervals may be defined as the union or intersection of
 ;; semi-infinite intervals, of the form (number-type b *), where B is
 ;; either a real number, a list with one real number or *.
+;;
 ;; Any other interval, may be defined using these. For instance
 ;;  (INTEGER 0 2) = (AND (INTEGER 0 *) (NOT (INTEGER (2) *)))
 ;;  (SHORT-FLOAT (0.2) (2)) = (AND (SHORT-FLOAT (0.2) *) (NOT (SHORT-FLOAT 2 *)))
@@ -1172,7 +1187,7 @@ if not possible."
          (low (if i (pop i) '*))
          (high (if i (pop i) '*))
          (tag-high (cond ((eq high '*)
-                          0)
+                          +built-in-tag-nil+)
                          ((eq type 'INTEGER)
                           (setq high (if (consp high)
                                          (ceiling (first high))
@@ -1272,11 +1287,11 @@ if not possible."
   ;; of whether the arguments are valid types or not!
   #+(or)
   (canonical-type 'CONS)
-  (let ((car-tag (if (eq car-type '*) -1 (canonical-type car-type)))
-        (cdr-tag (if (eq cdr-type '*) -1 (canonical-type cdr-type))))
-    (cond ((or (zerop car-tag) (zerop cdr-tag))
-           0)
-          ((and (= car-tag -1) (= cdr-tag -1))
+  (let ((car-tag (if (eq car-type '*) +built-in-tag-t+ (canonical-type car-type)))
+        (cdr-tag (if (eq cdr-type '*) +built-in-tag-t+ (canonical-type cdr-type))))
+    (cond ((or (= car-tag +built-in-tag-nil+) (= cdr-tag +built-in-tag-nil+))
+           +built-in-tag-nil+)
+          ((and (= car-tag +built-in-tag-t+) (= cdr-tag +built-in-tag-t+))
            (canonical-type 'CONS))
           (t
            (throw '+canonical-type-failure+ 'CONS)))))
@@ -1403,7 +1418,9 @@ if not possible."
   (declare (si::c-local))
   (let (record)
     (cond ((eq name T)
-           -1)
+           +built-in-tag-t+)
+          ((eq name NIL)
+           +built-in-tag-nil+)
           ((eq (setf record (gethash name +built-in-types+ name))
                name)
            nil)
@@ -1434,7 +1451,7 @@ if not possible."
 ;; readable representation of the type in terms of elementary types,
 ;; intervals, arrays and classes.
 ;;
-#+nil
+#+ (or)
 (defun canonicalize (type)
   (let ((*highest-type-tag* *highest-type-tag*)
         (*save-types-database* t)
@@ -1467,8 +1484,8 @@ if not possible."
 (defun canonical-type (type)
   (declare (notinline clos::classp))
   (cond ((find-registered-tag type))
-        ((eq type 'T) -1)
-        ((eq type 'NIL) 0)
+        ((eq type 'T) +built-in-tag-t+)
+        ((eq type 'NIL) +built-in-tag-nil+)
         ((symbolp type)
          (let ((expander (get-sysprop type 'DEFTYPE-DEFINITION)))
            (cond (expander
