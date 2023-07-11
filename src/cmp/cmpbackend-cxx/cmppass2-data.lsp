@@ -271,14 +271,14 @@
     (when (typep value '(or float (complex float)))
       (pushnew "#include <float.h>" *clines-string-list*)
       (pushnew "#include <complex.h>" *clines-string-list*))
-    (c1form-arg 0 (cdr x))))
+    (cdr x)))
 
 (defun try-const-c-inliner (var)
   (check-type var var)
   (let ((name (var-name var)))
     (when (constant-variable-p name)
       (ext:when-let ((x (assoc name *optimizable-constants*)))
-        (c1form-arg 0 (cdr x))))))
+        (cdr x)))))
 
 (defun try-inline-core-sym (object)
   (when (symbolp object)

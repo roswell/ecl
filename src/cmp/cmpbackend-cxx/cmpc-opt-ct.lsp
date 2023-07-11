@@ -19,30 +19,23 @@
 (defun make-single-constant-optimizer (name c-value)
   (cond ((symbolp name)
          (let* ((value (symbol-value name))
-                (type (lisp-type->rep-type (type-of value)))
-                (location (make-vv :location c-value :value value :rep-type type)))
-           (cons value (make-c1form* 'LOCATION :type type :args location))))
+                (rep-type (lisp-type->rep-type (type-of value)))
+                (location (make-vv :location c-value :value value :rep-type rep-type)))
+           (cons value location)))
         ((floatp name)
          (let* ((value name)
-                (type (type-of value))
-                #+ (or) ;; FIXME see WT-TO-OBJECT-CONVERSION
-                (loc-type (case type
-                            (cl:single-float :float)
-                            (cl:double-float :double)
-                            (cl:long-float ':long-double)
-                            (si:complex-single-float :csfloat)
-                            (si:complex-double-float :cdfloat)
-                            (si:complex-long-float :clfloat)))
                 (location (make-vv :location c-value :value value :rep-type :object)))
-           (cons value (make-c1form* 'LOCATION :type type :args location))))
+           (cons value location)))
         (t
-         (cons name (make-c1form* 'LOCATION :type (type-of name)
-                                            :args (make-vv :location c-value :value name))))))
+         (cons name (make-vv :location c-value :value name)))))
 
 (defun make-optimizable-constants (machine)
   (loop for (value name) in (optimizable-constants-list machine)
      collect (make-single-constant-optimizer value name)))
 
+;;; FIXME this is messy - numbers are lisp objects and symbols are native
+;;; types. We should provide both alternatives for different expected types.
+;;; See WT-TO-OBJECT-CONVERSION
 (defun optimizable-constants-list (machine)
   (append
    ;; Constants that appear everywhere
