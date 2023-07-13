@@ -868,11 +868,16 @@ if not possible."
 
 (defparameter *intervals-mask* #B1)
 
+;;; CHECKME it seems that we never mutate *ELEMENTARY-TYPES* - all exported
+;;; operators that access it, dynamically rebind the variable and after the
+;;; operator returns it has the same value as before. See the comment before
+;;; FIND-BUILT-IN-TAG. -- jd 2023-07-13
 (defparameter *elementary-types*
   #+ecl-min
-  '()
+  `((t   . ,+built-in-tag-t+)
+    (nil . ,+built-in-tag-nil+))
   #-ecl-min
-  '#.*elementary-types*)
+  (quote #.*elementary-types*))
 
 (defun new-type-tag ()
   (declare (si::c-local))
@@ -883,7 +888,7 @@ if not possible."
 ;;
 (defun find-registered-tag (type &optional (test #'equal))
   (declare (si::c-local))
-  (let* ((pos (assoc type *elementary-types* :test test)))
+  (let ((pos (assoc type *elementary-types* :test test)))
     (and pos (cdr pos))))
 
 ;; We are going to make changes in the types database. Save a copy if this
@@ -1299,19 +1304,25 @@ if not possible."
 ;;----------------------------------------------------------------------
 ;; FIND-BUILT-IN-TAG
 ;;
-;; This function computes the tags for all builtin types. We used to
-;; do this computation and save it. However, for most cases it seems
-;; faster if we just repeat it every time we need it, because the list of
-;; *elementary-types* is kept smaller and *highest-type-tag* may be just
-;; a fixnum.
+;; This function computes the tags for all builtin types. We used to do this
+;; computation and save it. However, for most cases it seems faster if we just
+;; repeat it every time we need it, because the list of *elementary-types* is
+;; kept smaller and *highest-type-tag* may be just a fixnum.
 ;;
-;; Note 1: There is some redundancy between this and the built-in
-;; classes definitions. REGISTER-CLASS knows this and calls
-;; FIND-BUILT-IN-TAG, which has priority. This is because some built-in
-;; classes are also interpreted as intervals, arrays, etc.
-;;
-;; Note 2: All built in types listed here have to be symbols.
-;;
+;; Note 1: There is some redundancy between this and the built-in classes
+;; definitions. REGISTER-CLASS knows this and calls FIND-BUILT-IN-TAG, which has
+;; priority. This is because some built-in classes are also interpreted as
+;; intervals, arrays, etc.
+;;;
+;;; Note 2: All built in types listed here have to be symbols.
+;;;
+;;; Note 3: Each element of +BUILT-IN-TYPE-LIST+ is:
+;;;
+;;;         (TYPE-NAME &optional ALIAS-TO SUPERTYPE)
+;;;
+;;; Note 4: The function FIND-BUILT-IN-TAG is always called _after_ the function
+;;; FIND-REGISTERED-TAG. This invariant implies that FIND-BUILT-IN-TAG won't add
+;;; the same type twice to *ELEMENTARY-TYPES*.
 #+ecl-min
 (defconstant +built-in-type-list+
              '((SYMBOL)
@@ -1338,19 +1349,17 @@ if not possible."
 
                (REAL (OR RATIONAL FLOAT))
 
-               #+complex-float(SI:COMPLEX-SINGLE-FLOAT (COMPLEX SINGLE-FLOAT))
-               #+complex-float(SI:COMPLEX-DOUBLE-FLOAT (COMPLEX DOUBLE-FLOAT))
-               #+complex-float(SI:COMPLEX-LONG-FLOAT (COMPLEX LONG-FLOAT))
-               #+complex-float(SI:COMPLEX-FLOAT (COMPLEX FLOAT))
+               #+complex-float (SI:COMPLEX-SINGLE-FLOAT (COMPLEX SINGLE-FLOAT))
+               #+complex-float (SI:COMPLEX-DOUBLE-FLOAT (COMPLEX DOUBLE-FLOAT))
+               #+complex-float (SI:COMPLEX-LONG-FLOAT (COMPLEX LONG-FLOAT))
+               #+complex-float (SI:COMPLEX-FLOAT (COMPLEX FLOAT))
 
                (COMPLEX (COMPLEX *))
                (NUMBER (OR REAL COMPLEX))
 
                (CHARACTER)
-               #-unicode
-               (BASE-CHAR CHARACTER)
-               #+unicode
-               (BASE-CHAR NIL CHARACTER)
+               #-unicode (BASE-CHAR CHARACTER)
+               #+unicode (BASE-CHAR NIL CHARACTER)
                (STANDARD-CHAR NIL BASE-CHAR)
 
                (CONS)
@@ -1387,8 +1396,7 @@ if not possible."
                (EXT:ANSI-STREAM (OR BROADCAST-STREAM CONCATENATED-STREAM ECHO-STREAM
                                  FILE-STREAM STRING-STREAM SYNONYM-STREAM TWO-WAY-STREAM
                                  EXT:SEQUENCE-STREAM))
-               (STREAM (OR EXT:ANSI-STREAM
-                        #+clos-streams GRAY:FUNDAMENTAL-STREAM))
+               (STREAM (OR EXT:ANSI-STREAM #+clos-streams GRAY:FUNDAMENTAL-STREAM))
                (EXT:VIRTUAL-STREAM (OR STRING-STREAM #+clos-streams GRAY:FUNDAMENTAL-STREAM))
 
                (READTABLE)
@@ -1416,25 +1424,19 @@ if not possible."
 
 (defun find-built-in-tag (name)
   (declare (si::c-local))
-  (let (record)
-    (cond ((eq name T)
-           +built-in-tag-t+)
-          ((eq name NIL)
-           +built-in-tag-nil+)
-          ((eq (setf record (gethash name +built-in-types+ name))
-               name)
-           nil)
-          (t
-           (let* ((alias (pop record))
-                  tag)
-             (if alias
-                 (setq tag (canonical-type alias))
-                 (let* ((strict-supertype (or (first record) 'T))
-                        (strict-supertype-tag (canonical-type strict-supertype)))
-                   (setq tag (new-type-tag))
-                   (unless (eq strict-supertype 't)
-                     (extend-type-tag tag strict-supertype-tag))))
-             (push-type name tag))))))
+  ;(assert (null (find-registered-tag name)))
+  (multiple-value-bind (record foundp)
+      (gethash name +built-in-types+)
+    (when (null foundp)
+      (return-from find-built-in-tag))
+    (ext:if-let ((alias (pop record)))
+      (push-type name (canonical-type alias))
+      (let* ((strict-supertype (or (first record) 'T))
+             (strict-supertype-tag (canonical-type strict-supertype))
+             (new-type-tag (new-type-tag)))
+        (unless (eq strict-supertype 't)
+          (extend-type-tag new-type-tag strict-supertype-tag))
+        (push-type name new-type-tag)))))
 
 (defun extend-type-tag (tag minimal-supertype-tag)
   (declare (si::c-local)
@@ -1484,8 +1486,6 @@ if not possible."
 (defun canonical-type (type)
   (declare (notinline clos::classp))
   (cond ((find-registered-tag type))
-        ((eq type 'T) +built-in-tag-t+)
-        ((eq type 'NIL) +built-in-tag-nil+)
         ((symbolp type)
          (let ((expander (get-sysprop type 'DEFTYPE-DEFINITION)))
            (cond (expander
@@ -1526,10 +1526,9 @@ if not possible."
             (canonical-type `(OR (INTEGER ,@(rest type))
                                  (RATIO ,@(rest type)))))
            (COMPLEX
-            (or (find-built-in-tag type)
-                (canonical-complex-type (if (endp (rest type))
-                                            'real
-                                            (second type)))))
+            (canonical-complex-type (if (endp (rest type))
+                                        'real
+                                        (second type))))
            (CONS (apply #'register-cons-type (rest type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))
@@ -1537,11 +1536,10 @@ if not possible."
            ;;(FUNCTION (register-function-type type))
            ;;(VALUES (register-values-type type))
            (FUNCTION (canonical-type 'FUNCTION))
-           (t (let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
-                (if expander
-                    (canonical-type (funcall expander (rest type)))
-                    (unless (assoc (first type) *elementary-types*)
-                      (throw '+canonical-type-failure+ nil)))))))
+           (t (ext:if-let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
+                (canonical-type (funcall expander (rest type)))
+                (unless (assoc (first type) *elementary-types*)
+                  (throw '+canonical-type-failure+ nil))))))
         ((clos::classp type)
          (register-class type))
         ((and (fboundp 'function-type-p) (function-type-p type))
