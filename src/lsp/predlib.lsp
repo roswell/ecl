@@ -891,6 +891,15 @@ if not possible."
   (let ((pos (assoc type *elementary-types* :test test)))
     (and pos (cdr pos))))
 
+;;; Make and register a new tag for a certain type.
+(defun make-registered-tag (type same-kingdom-p type-<= minimize-super)
+  (multiple-value-bind (tag-super tag-sub)
+      (find-type-bounds type same-kingdom-p type-<= minimize-super)
+    (let ((tag (new-type-tag)))
+      (update-types tag-super tag)
+      (setf tag (logior tag tag-sub))
+      (push-type type tag))))
+
 ;; We are going to make changes in the types database. Save a copy if this
 ;; will cause trouble.
 ;;
@@ -930,9 +939,9 @@ if not possible."
   (declare (si::c-local)
            (optimize (safety 0))
            (function in-our-family-p type-<=)) 
-  (let* ((subtype-tag 0)
-         (disjoint-tag 0)
-         (supertype-tag (if minimize-super +built-in-tag-t+ +built-in-tag-nil+)))
+  (let ((subtype-tag 0)
+        (disjoint-tag 0)
+        (supertype-tag (if minimize-super +built-in-tag-t+ +built-in-tag-nil+)))
     (dolist (i *elementary-types*)
       (declare (cons i))
       (let ((other-type (car i))
@@ -965,12 +974,7 @@ if not possible."
            (optimize (safety 0))
            (function in-our-family-p type-<=))
   (or (find-registered-tag type)
-      (multiple-value-bind (tag-super tag-sub)
-          (find-type-bounds type in-our-family-p type-<= nil)
-        (let ((tag (new-type-tag)))
-          (update-types (logandc2 tag-super tag-sub) tag)
-          (setf tag (logior tag tag-sub))
-          (push-type type tag)))))
+      (make-registered-tag type in-our-family-p type-<= nil)))
 
 ;;----------------------------------------------------------------------
 ;; MEMBER types. We register this object in a separate list, *MEMBER-TYPES*,
@@ -1011,9 +1015,8 @@ if not possible."
           (setf (cdr i) (logior tag (cdr i))))))
     tag))
 
-;; We convert number into intervals, so that (AND INTEGER (NOT (EQL
-;; 10))) is detected as a subtype of (OR (INTEGER * 9) (INTEGER 11
-;; *)).
+;; We convert number into intervals, so that (AND INTEGER (NOT (EQL 10))) is
+;; detected as a subtype of (OR (INTEGER * 9) (INTEGER 11 *)).
 (defun number-member-type (object)
   (let* ((base-type (if (integerp object) 'INTEGER (type-of object)))
          (type (list base-type object object)))
@@ -1156,34 +1159,29 @@ if not possible."
   (and (consp type)
        (member (first type) '(COMPLEX-ARRAY SIMPLE-ARRAY))))
 
-;;----------------------------------------------------------------------
-;; INTERVALS:
-;;
-;; Arbitrary intervals may be defined as the union or intersection of
-;; semi-infinite intervals, of the form (number-type b *), where B is
-;; either a real number, a list with one real number or *.
-;;
-;; Any other interval, may be defined using these. For instance
-;;  (INTEGER 0 2) = (AND (INTEGER 0 *) (NOT (INTEGER (2) *)))
-;;  (SHORT-FLOAT (0.2) (2)) = (AND (SHORT-FLOAT (0.2) *) (NOT (SHORT-FLOAT 2 *)))
+;;; ----------------------------------------------------------------------------
+;;; INTERVALS:
+;;;
+;;; Arbitrary intervals may be defined as the union or intersection of intervals
+;;; that are semi-infinite, of the form (NUMBER-TYPE B *), where B is either a
+;;; real number, a list with one real number or a symbol *.
+;;;
+;;; Any other interval, may be defined using these. For instance:
+;;;
+;;;  (INTEGER 0 2) = (AND (INTEGER 0 *) (NOT (INTEGER (2) *)))
+;;;  (SHORT-FLOAT (0.2) (2)) = (AND (SHORT-FLOAT (0.2) *) (NOT (SHORT-FLOAT 2 *)))
+;;;
+
+;;; FIXME this predicate could be improved.
+(defun numeric-range-p (type)
+  (and (consp type)
+       (null (cddr type))))
 
 (defun register-elementary-interval (type b)
   (declare (si::c-local))
   (setq type (list type b))
   (or (find-registered-tag type #'equalp)
-      (multiple-value-bind (tag-super tag-sub)
-          (find-type-bounds type
-                            #'(lambda (other-type)
-                                (and (consp other-type)
-                                     (null (cddr other-type))))
-                            #'(lambda (i1 i2)
-                                (and (eq (first i1) (first i2))
-                                     (bounds-<= (second i2) (second i1))))
-                            t)
-        (let ((tag (new-type-tag)))
-          (update-types (logandc2 tag-super tag-sub) tag)
-          (setq tag (logior tag tag-sub))
-          (push-type type tag)))))
+      (make-registered-tag type #'numeric-range-p #'numeric-range-<= t)))
 
 (defun register-interval-type (interval)
   (declare (si::c-local))
@@ -1214,6 +1212,13 @@ if not possible."
       (push-type interval tag))
     tag))
 
+;;; Numeric ranges are decided separately depending on the type actual type.
+;;; If two ranges belong to two different sub-families then they are disjoint
+;;; and can't be ordered.
+(defun numeric-range-<= (i1 i2)
+  (and (eq (first i1) (first i2))
+       (bounds-<= (second i2) (second i1))))
+
 ;; All comparisons between intervals operations may be defined in terms of
 ;;
 ;;      (BOUNDS-<= b1 b2)       and     (BOUNDS-< b1 b2)
@@ -1222,6 +1227,7 @@ if not possible."
 ;; second one checks whether (REAL b2 *) is strictly contained in (REAL b1 *)
 ;; (i.e., (AND (REAL b1 *) (NOT (REAL b2 *))) is not empty).
 ;;
+
 (defun bounds-<= (b1 b2)
   (cond ((eq b1 '*) t)
         ((eq b2 '*) nil)
@@ -1591,10 +1597,10 @@ if not possible."
     (when (and elt (eq (caar elt) t1) (eq (cdar elt) t2))
       (setf elt (cdr elt))
       (return-from subtypep (values (car elt) (cdr elt))))
-    (let* ((*highest-type-tag* *highest-type-tag*)
-           (*save-types-database* t)
-           (*member-types* *member-types*)
-           (*elementary-types* *elementary-types*))
+    (let ((*highest-type-tag* *highest-type-tag*)
+          (*save-types-database* t)
+          (*member-types* *member-types*)
+          (*elementary-types* *elementary-types*))
       (multiple-value-bind (test confident)
           (fast-subtypep t1 t2)
         (setf (aref cache hash) (cons (cons t1 t2) (cons test confident)))
