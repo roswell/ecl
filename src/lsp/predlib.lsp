@@ -2,18 +2,14 @@
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;;;
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
-;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll.
+;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
+;;;;  Copyright (c) 1990, Giuseppe Attardi
+;;;;  Copyright (c) 2001, Juan Jose Garcia Ripoll
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See file 'LICENSE' for the copyright details.
 
-;;;;                              predicate routines
+;;;; Predicate routines.
 
 (in-package "SYSTEM")
 
@@ -323,9 +319,9 @@ and is not adjustable."
   '(or string-stream
     #+clos-streams gray:fundamental-stream))
 
-;;************************************************************
-;;                      TYPEP
-;;************************************************************
+;;; ----------------------------------------------------------------------------
+;;; TYPEP
+;;; ----------------------------------------------------------------------------
 
 (defun simple-array-p (x)
   (and (arrayp x)
@@ -714,13 +710,13 @@ For example (flatten-function-types '(function (symbol) symbol)) ->
                    flattened-type))
              type)))))
 
-;;************************************************************
-;;                      NORMALIZE-TYPE
-;;************************************************************
-;; NORMALIZE-TYPE normalizes the type using the DEFTYPE definitions.
-;; The result is a pair of values
-;;  VALUE-1 = normalized type name or object
-;;  VALUE-2 = normalized type arguments or nil
+;;; ----------------------------------------------------------------------------
+;;; NORMALIZE-TYPE
+;;; ----------------------------------------------------------------------------
+;;; NORMALIZE-TYPE normalizes the type using the DEFTYPE definitions.
+;;; The result is a pair of values
+;;;  VALUE-1 = normalized type name or object
+;;;  VALUE-2 = normalized type arguments or nil
 (defun normalize-type (type &aux tp i fd)
   ;; Loops until the car of type has no DEFTYPE definition.
   (cond ((symbolp type)
@@ -750,9 +746,9 @@ For example (flatten-function-types '(function (symbol) symbol)) ->
           (expand-deftype (funcall fn args))
           type))))
 
-;;************************************************************
-;;                      COERCE
-;;************************************************************
+;;; ----------------------------------------------------------------------------
+;;; COERCE
+;;; ----------------------------------------------------------------------------
 
 (defun coerce (object type &aux aux)
   "Args: (x type)
@@ -922,19 +918,26 @@ if not possible."
     (unless (zerop (logand (cdr i) type-mask))
       (setf (cdr i) (logior new-tag (cdr i))))))
 
-;; FIND-TYPE-BOUNDS => (VALUES TAG-SUPER TAG-SUB)
-;;
-;; This function outputs two values: TAG-SUB, the tag for the union-type of all
-;; types which are subtypes of the supplied one; and TAG-SUPER, which is either
-;; the tag for the union-type of all types which a supertype of the supplied
-;; one (MINIMIZE-SUPER = NIL) or the tag for the smallest type which is a
-;; supertype of the given one (MINIMIZE-SUPER = TRUE). The search process is
-;; restricted to types in the same family class.
-;;
-;; A value of MINIMIZE-SUPER = TRUE only makes sense for some families (such
-;; as semi-infinite intervals), for which (SUBTYPEP T1 T2) = T and (SUBTYPEP T1
-;; T3) = T implies either (SUBTYPEP T2 T3) = T or (SUBTYPEP T3 T2) = T.
-;;
+;;; FIND-TYPE-BOUNDS => (VALUES TAG-SUPER TAG-SUB)
+;;;
+;;; This function outputs two values: TAG-SUB, the tag for the union-type of all
+;;; types which are subtypes of the supplied one; and TAG-SUPER, which is either
+;;; the tag for the union-type of all types which a supertype of the supplied one
+;;; (MINIMIZE-SUPER = NIL) or the tag for the smallest type which is a supertype
+;;; of the given one (MINIMIZE-SUPER = TRUE). The search process is restricted to
+;;; types in the same family class.
+;;;
+;;; A value of MINIMIZE-SUPER = TRUE only makes sense for families that have a
+;;; strict total order - most notably for our implementation of intervals. In
+;;; that case the TAG-SUPER is the previous element in the chain.
+;;;
+;;; Example:
+;;; - family: (INTEGER 2) (INTEGER 8) (INTEGER 16) (INTEGER 32) (RATIO 3/4)
+;;; - input type: (INTEGER 15)
+;;;
+;;; TAG-SUB: tag of (OR (RATIO 3/4) (INTEGER 2) (INTEGER 8))
+;;; TAG-SUP minimize=n: tag of (OR (INTEGER 16) (INTEGER 32))
+;;; TAG-SUP minimize=y: tag of     (INTEGER 16)
 (defun find-type-bounds (type in-our-family-p type-<= minimize-super)
   (declare (si::c-local)
            (optimize (safety 0))
@@ -961,14 +964,14 @@ if not possible."
                 (logandc2 supertype-tag (logior disjoint-tag subtype-tag)))
             subtype-tag)))
 
-;; A new type is to be registered, which is not simply a composition of
-;; previous types. A new tag has to be created, and all supertypes are to be
-;; tagged. Here we have to distinguish two possibilities: first, a supertype
-;; may belong to the same family (intervals, arrays, etc); second, some
-;; supertypes may be basic types (NUMBER is a supertype for (INTEGER 0 2),
-;; for instance). The first possibility is detected with the comparison
-;; procedure, TYPE-<=; the second possibility is detected by means of tags.
-;;
+;;; A new type is to be registered, which is not simply a composition of
+;;; previous types. A new tag has to be created, and all supertypes are to be
+;;; tagged. Here we have to distinguish two possibilities: first, a supertype
+;;; may belong to the same family (intervals, arrays, etc); second, some
+;;; supertypes may be basic types (NUMBER is a supertype for (INTEGER 0 2),
+;;; for instance). The first possibility is detected with the comparison
+;;; procedure, TYPE-<=; the second possibility is detected by means of tags.
+;;;
 (defun register-type (type in-our-family-p type-<=)
   (declare (si::c-local)
            (optimize (safety 0))
@@ -976,17 +979,22 @@ if not possible."
   (or (find-registered-tag type)
       (make-registered-tag type in-our-family-p type-<= nil)))
 
-;;----------------------------------------------------------------------
-;; MEMBER types. We register this object in a separate list, *MEMBER-TYPES*,
-;; and tag all types to which it belongs. We need to treat three cases
-;; separately
-;;      - Ordinary types, via simple-member-type, check the objects
-;;        against all pre-registered types, adding their tags.
-;;      - Ordinary numbers, are translated into intervals.
-;;      - Floating point zeros, have to be treated separately. This
-;;        is done by assigning a special tag to -0.0 and translating
-;;        (MEMBER 0.0) = (AND (float-type 0.0 0.0) (NOT (MEMBER -0.0)))
-;;
+;;; ----------------------------------------------------------------------------
+;;; MEMBER types.
+;;;
+;;; We register this object in a separate list, *MEMBER-TYPES*, and tag all
+;;; types to which it belongs. We need to treat three cases separately:
+;;;
+;;; 1. Ordinary types, via simple-member-type, check the objects against all
+;;;    pre-registered types, adding their tags.
+;;;
+;;; 2. Ordinary numbers, are translated into intervals.
+;;;
+;;; 3. Floating point zeros, have to be treated separately. This
+;;;    is done by assigning a special tag to -0.0 and translating
+;;;
+;;;        (MEMBER 0.0) = (AND (float-type 0.0 0.0) (NOT (MEMBER -0.0)))
+;;;
 (defun register-member-type (object)
   ;(declare (si::c-local))
   (let ((pos (assoc object *member-types*)))
@@ -1033,18 +1041,18 @@ if not possible."
   (push (cons type tag) *elementary-types*)
   tag)
 
-;;----------------------------------------------------------------------
-;; SATISFIES types. Here we should signal some error which is caught
-;; somewhere up, to denote failure of the decision procedure.
-;;
+;;; ----------------------------------------------------------------------------
+;;; SATISFIES types. Here we should signal some error which is caught somewhere
+;;; up, to denote failure of the decision procedure.
+;;;
 (defun register-satisfies-type (type)
   (declare (si::c-local)
            (ignore type))
   (throw '+canonical-type-failure+ 'satisfies))
 
-;;----------------------------------------------------------------------
-;; CLOS classes and structures.
-;;
+;;; ----------------------------------------------------------------------------
+;;; CLOS classes and structures.
+;;;
 (defun register-class (class)
   (declare (si::c-local)
            (notinline class-name))
@@ -1069,9 +1077,9 @@ if not possible."
                            (setq c2 (find-class c2 nil)))
                          (and c1 c2 (si::subclassp c1 c2))))))
 
-;;----------------------------------------------------------------------
-;; ARRAY types.
-;;
+;;; ----------------------------------------------------------------------------
+;;; ARRAY types.
+;;;
 (defun register-array-type (type)
   (declare (si::c-local))
   (multiple-value-bind (array-class elt-type dimensions)
@@ -1092,12 +1100,12 @@ if not possible."
                                   #'array-type-p #'array-type-<=)))))
            (register-type type #'array-type-p #'array-type-<=)))))
 
-;;
-;; We look for the most specialized type which is capable of containing
-;; this object. LIST always contains 'T, so that this procedure never
-;; fails. It is faster than UPGRADED-... because we use the tags of types
-;; that have been already registered.
-;;
+;;;
+;;; We look for the most specialized type which is capable of containing this
+;;; object. LIST always contains 'T, so that this procedure never fails. It is
+;;; faster than UPGRADED-... because we use the tags of types that have been
+;;; already registered.
+;;;
 (defun fast-upgraded-array-element-type (type)
   (declare (si::c-local))
   (cond ((eql type '*) '*)
@@ -1108,12 +1116,13 @@ if not possible."
            (when (fast-subtypep type other-type)
              (return other-type))))))
 
-;;
-;; This canonicalizes the array type into the form
-;;      ({COMPLEX-ARRAY | SIMPLE-ARRAY} {elt-type | '*} {'* | (['*]*)})
-;;
-;; ELT-TYPE is the upgraded element type of the input.
-;;
+;;;
+;;; This canonicalizes the array type into the form
+;;;
+;;;      ({COMPLEX-ARRAY | SIMPLE-ARRAY} {elt-type | '*} {'* | (['*]*)})
+;;;
+;;; ELT-TYPE is the upgraded element type of the input.
+;;;
 (defun parse-array-type (input)
   (declare (si::c-local))
   (let* ((type input)
@@ -1134,10 +1143,10 @@ if not possible."
                (error "Wrong dimension size in array type ~S." input)))))
     (values name elt-type dims)))
 
-;;
-;; This function checks whether the array type T1 is a subtype of the array
-;; type T2.
-;;
+;;;
+;;; This function checks whether the array type T1 is a subtype of the array
+;;; type T2.
+;;;
 (defun array-type-<= (t1 t2)
   (unless (and (eq (first t1) (first t2))
                (eq (second t1) (second t2)))
@@ -1219,15 +1228,14 @@ if not possible."
   (and (eq (first i1) (first i2))
        (bounds-<= (second i2) (second i1))))
 
-;; All comparisons between intervals operations may be defined in terms of
-;;
-;;      (BOUNDS-<= b1 b2)       and     (BOUNDS-< b1 b2)
-;;
-;; The first one checks whether (REAL b2 *) is contained in (REAL b1 *). The
-;; second one checks whether (REAL b2 *) is strictly contained in (REAL b1 *)
-;; (i.e., (AND (REAL b1 *) (NOT (REAL b2 *))) is not empty).
-;;
-
+;;; All comparisons between intervals operations may be defined in terms of
+;;;
+;;;      (BOUNDS-<= b1 b2)       and     (BOUNDS-< b1 b2)
+;;;
+;;; The first one checks whether (REAL b2 *) is contained in (REAL b1 *). The
+;;; second one checks whether (REAL b2 *) is strictly contained in (REAL b1 *)
+;;; (i.e., (AND (REAL b1 *) (NOT (REAL b2 *))) is not empty).
+;;;
 (defun bounds-<= (b1 b2)
   (cond ((eq b1 '*) t)
         ((eq b2 '*) nil)
@@ -1252,17 +1260,20 @@ if not possible."
         (t
          (< b1 b2))))
 
-;;----------------------------------------------------------------------
-;; COMPLEX types. We do not need to register anything, because all
-;; possibilities have been covered by the definitions above. We only have to
-;; bring the type to canonical form, which is a union of all specialized
-;; complex types that can store an element of the corresponding type.
-;;
-;; Don't be tempted to do "better" than that. CANONICAL-COMPLEX-TYPE
-;; yields results for use of SUBTYPEP which has clearly specified to
-;; return true when: T1 is a subtype of T2 or when the upgraded type
-;; specifiers refer to the same sets of objects. TYPEP has a different
-;; specification and TYPECASE should use it. -- jd 2019-04-19
+;;; ----------------------------------------------------------------------------
+;;; COMPLEX types.
+;;;
+;;; We do not need to register anything, because all possibilities have been
+;;; covered by the definitions above. We only have to bring the type to
+;;; canonical form, which is a union of all specialized complex types that can
+;;; store an element of the corresponding type.
+;;;
+;;; Don't be tempted to do "better" than that. CANONICAL-COMPLEX-TYPE yields
+;;; results for use of SUBTYPEP which has clearly specified to return true when:
+;;; T1 is a subtype of T2 or when the upgraded type specifiers refer to the same
+;;; sets of objects. TYPEP has a different specification and TYPECASE should use
+;;; it. -- jd 2019-04-19
+;;;
 (defun canonical-complex-type (real-type)
   (declare (si::c-local))
   ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not
@@ -1288,10 +1299,12 @@ if not possible."
         (let ((tag (new-type-tag)))
           (push-type type tag)))))
 
-;;----------------------------------------------------------------------
-;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
-;; are strictly supported.
-;;
+;;; ----------------------------------------------------------------------------
+;;; CONS types.
+;;;
+;;; Only (CONS T T) and variants, as well as (CONS NIL *), etc are strictly
+;;; supported.
+;;;
 (defun register-cons-type (&optional (car-type '*) (cdr-type '*))
   ;; The problem with the code below is that it does not suport infinite
   ;; recursion. Instead we just canonicalize everything to CONS, irrespective
@@ -1307,28 +1320,29 @@ if not possible."
           (t
            (throw '+canonical-type-failure+ 'CONS)))))
 
-;;----------------------------------------------------------------------
-;; FIND-BUILT-IN-TAG
-;;
-;; This function computes the tags for all builtin types. We used to do this
-;; computation and save it. However, for most cases it seems faster if we just
-;; repeat it every time we need it, because the list of *elementary-types* is
-;; kept smaller and *highest-type-tag* may be just a fixnum.
-;;
-;; Note 1: There is some redundancy between this and the built-in classes
-;; definitions. REGISTER-CLASS knows this and calls FIND-BUILT-IN-TAG, which has
-;; priority. This is because some built-in classes are also interpreted as
-;; intervals, arrays, etc.
+;;; ----------------------------------------------------------------------------
+;;; FIND-BUILT-IN-TAG
+;;;
+;;; This function computes the tags for all builtin types. We used to do this
+;;; computation and save it. However, for most cases it seems faster if we just
+;;; repeat it every time we need it, because the list of *elementary-types* is
+;;; kept smaller and *highest-type-tag* may be just a fixnum.
+;;;
+;;; Note 1: There is some redundancy between this and the built-in classes
+;;; definitions. REGISTER-CLASS knows this and calls FIND-BUILT-IN-TAG, which
+;;; has priority. This is because some built-in classes are also interpreted as
+;;; intervals, arrays, etc.
 ;;;
 ;;; Note 2: All built in types listed here have to be symbols.
 ;;;
 ;;; Note 3: Each element of +BUILT-IN-TYPE-LIST+ is:
 ;;;
-;;;         (TYPE-NAME &optional ALIAS-TO SUPERTYPE)
+;;;     (TYPE-NAME &optional ALIAS-TO SUPERTYPE)
 ;;;
 ;;; Note 4: The function FIND-BUILT-IN-TAG is always called _after_ the function
 ;;; FIND-REGISTERED-TAG. This invariant implies that FIND-BUILT-IN-TAG won't add
 ;;; the same type twice to *ELEMENTARY-TYPES*.
+;;;
 #+ecl-min
 (defconstant +built-in-type-list+
              '((SYMBOL)
@@ -1452,13 +1466,13 @@ if not possible."
       (when (zerop (logandc2 minimal-supertype-tag other-tag))
         (setf (cdr type) (logior tag other-tag))))))
 
-;;----------------------------------------------------------------------
-;; CANONICALIZE (removed)
-;;
-;; This function takes a type tag and produces a more or less human
-;; readable representation of the type in terms of elementary types,
-;; intervals, arrays and classes.
-;;
+;;; ----------------------------------------------------------------------------
+;;; CANONICALIZE (removed)
+;;;
+;;; This function takes a type tag and produces a more or less human
+;;; readable representation of the type in terms of elementary types,
+;;; intervals, arrays and classes.
+;;;
 #+ (or)
 (defun canonicalize (type)
   (let ((*highest-type-tag* *highest-type-tag*)
@@ -1481,14 +1495,14 @@ if not possible."
           (push (car i) out)))
         (values tag `(OR ,@out)))))
 
-;;----------------------------------------------------------------------
-;; (CANONICAL-TYPE TYPE)
-;;
-;; This function registers all types mentioned in the given expression,
-;; and outputs a code corresponding to the represented type. This
-;; function has side effects: it destructively modifies the content of
-;; *ELEMENTARY-TYPES* and *MEMBER-TYPES*.
-;;
+;;; ----------------------------------------------------------------------------
+;;; (CANONICAL-TYPE TYPE)
+;;;
+;;; This function registers all types mentioned in the given expression, and
+;;; outputs a code corresponding to the represented type. This function has side
+;;; effects: it destructively modifies the content of *ELEMENTARY-TYPES* and
+;;; *MEMBER-TYPES*.
+;;;
 (defun canonical-type (type)
   (declare (notinline clos::classp))
   (cond ((find-registered-tag type))
