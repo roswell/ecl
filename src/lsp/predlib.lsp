@@ -920,30 +920,49 @@ if not possible."
 
 ;;; FIND-TYPE-BOUNDS => (VALUES TAG-SUPER TAG-SUB)
 ;;;
-;;; This function outputs two values: TAG-SUB, the tag for the union-type of all
-;;; types which are subtypes of the supplied one; and TAG-SUPER, which is either
-;;; the tag for the union-type of all types which a supertype of the supplied one
-;;; (MINIMIZE-SUPER = NIL) or the tag for the smallest type which is a supertype
-;;; of the given one (MINIMIZE-SUPER = TRUE). The search process is restricted to
-;;; types in the same family class.
+;;; This function computes two tags:
 ;;;
-;;; A value of MINIMIZE-SUPER = TRUE only makes sense for families that have a
-;;; strict total order - most notably for our implementation of intervals. In
-;;; that case the TAG-SUPER is the previous element in the chain.
+;;; TAG-SUPER is the union-type which is a supertype of the supplied one within
+;;; its own kingdom. To achieve that we compute the union of all supertypes and
+;;; then remove from it unions of all subtypes and all disjoint types.
 ;;;
-;;; Example:
-;;; - family: (INTEGER 2) (INTEGER 8) (INTEGER 16) (INTEGER 32) (RATIO 3/4)
-;;; - input type: (INTEGER 15)
+;;; TAG-SUB is the union-type which is a subtype of the supplied one within its
+;;; own kingdom.
+;;; ----------------------------------------------------------------------------
+;;; When MINIMIZE-SUPER is true, then TAG-SUPER is the "closest" supertype
+;;; within the family. This is to account for intervals. Consider the follwoing:
 ;;;
-;;; TAG-SUB: tag of (OR (RATIO 3/4) (INTEGER 2) (INTEGER 8))
-;;; TAG-SUP minimize=n: tag of (OR (INTEGER 16) (INTEGER 32))
-;;; TAG-SUP minimize=y: tag of     (INTEGER 16)
+;;;     (I 10 20) (I 15)
+;;;
+;;; That produces five canonical types:
+;;;
+;;;     (I 10 20) -> (I 10), (I (20)), (I 20)
+;;;     (I 15)    -> (I 15), (I (15))
+;;;
+;;; And two derived types (ranges):
+;;;
+;;;     (I 10 20) === (AND (I 10) (NOT (I (20))))
+;;;     (I 15)    === (AND (I 15) (NOT (I (15))))
+;;;
+;;; Canonical types have a strict total order, but ranges do not. The crux is
+;;; that both are within the same family, so we can't return a union. This is
+;;; salvaged by the following observations:
+;;;
+;;; 1. FIND-TYPE-BOUNDS is always called with a canonical type (left-bound)
+;;; 2. Ranges are never supertypes of canonical types
+;;; 3. The supertype relation is transitive between canonical types
+;;;
+;;; That implies, that if we compute the minimized super type then:
+;;;
+;;; - for every range type: ( = 0 (logand tag-super-min tag-range))
+;;; - for every super type: (/= 0 (logand tag-super-min tag-canon))
+;;;
 (defun find-type-bounds (type in-our-family-p type-<= minimize-super)
   (declare (si::c-local)
            (optimize (safety 0))
            (function in-our-family-p type-<=)) 
-  (let ((subtype-tag 0)
-        (disjoint-tag 0)
+  (let ((subtype-tag +built-in-tag-nil+)
+        (disjoint-tag +built-in-tag-nil+)
         (supertype-tag (if minimize-super +built-in-tag-t+ +built-in-tag-nil+)))
     (dolist (i *elementary-types*)
       (declare (cons i))
