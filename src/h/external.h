@@ -555,6 +555,7 @@ extern ECL_API void ecl_internal_error(const char *s) ecl_attr_noreturn;
 extern ECL_API void ecl_thread_internal_error(const char *s) ecl_attr_noreturn;
 #endif
 extern ECL_API void ecl_unrecoverable_error(cl_env_ptr the_env, const char *message) ecl_attr_noreturn;
+extern ECL_API void ecl_miscompilation_error(void) ecl_attr_noreturn;
 extern ECL_API void ecl_cs_overflow(void) /*ecl_attr_noreturn*/;
 extern ECL_API void FEprogram_error(const char *s, int narg, ...) ecl_attr_noreturn;
 extern ECL_API void FEcontrol_error(const char *s, int narg, ...) ecl_attr_noreturn;

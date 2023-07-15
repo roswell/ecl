@@ -62,8 +62,6 @@ struct ecl_var_debug_info {
         uint8_t type;
 };
 
-extern void ecl_miscompilation_error() ecl_attr_noreturn;
-
 #define _ecl_check_narg(n) \
         do { if (ecl_unlikely(narg != (n))) FEwrong_num_arguments_anonym();} while(0)
 
