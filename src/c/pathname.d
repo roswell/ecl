@@ -848,22 +848,18 @@ cl_logical_pathname(cl_object x)
  * INV: Wildcards are allowed.
  * INV: A fresh new copy of the pathname is created.
  * INV: The pathname is absolute.
+ * INV: The device component is copied from getcwd if necessary.
  */
 cl_object
 si_coerce_to_file_pathname(cl_object pathname)
 {
   pathname = si_coerce_to_physical_pathname(pathname);
   pathname = cl_merge_pathnames(1, pathname);
-#if 0
-#if !defined(cygwin) && !defined(ECL_MS_WINDOWS_HOST)
-  if (pathname->pathname.device != ECL_NIL)
-    FEerror("Device ~S not yet supported.", 1,
-            pathname->pathname.device);
-  if (pathname->pathname.host != ECL_NIL)
-    FEerror("Access to remote files not yet supported.", 0);
+  if (
+#ifdef ECL_MS_WINDOWS_HOST
+      pathname->pathname.device == ECL_NIL ||
 #endif
-#endif
-  if (pathname->pathname.directory == ECL_NIL ||
+      pathname->pathname.directory == ECL_NIL ||
       ECL_CONS_CAR(pathname->pathname.directory) == @':relative') {
     pathname = cl_merge_pathnames(2, pathname, si_getcwd(0));
   }
