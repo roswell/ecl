@@ -204,7 +204,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
               (if_does_not_exist @':error')
               (external_format @':default')
               (search_list ecl_symbol_value(@'si::*load-search-list*'))
-              &aux pathname pntype hooks filename function ok)
+              &aux pathname pntype hooks filename function ok file_kind)
   bool not_a_filename = 0;
 @
   /* If source is a stream, read conventional lisp code from it */
@@ -243,10 +243,9 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   if (!Null(pntype) && (pntype != @':wild')) {
     /* If filename already has an extension, make sure
        that the file exists */
-    cl_object kind;
     filename = pathname;
-    kind = si_file_kind(pathname, ECL_T);
-    if (kind != @':file' && kind != @':special') {
+    file_kind = si_file_kind(pathname, ECL_T);
+    if (file_kind != @':file' && file_kind != @':special') {
       filename = ECL_NIL;
     } else {
       function = cl_cdr(ecl_assoc(pathname->pathname.type, hooks));
@@ -254,12 +253,11 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   } else loop_for_in(hooks) {
       /* Otherwise try with known extensions until a matching
          file is found */
-      cl_object kind;
       filename = pathname;
       filename->pathname.type = CAAR(hooks);
       function = CDAR(hooks);
-      kind = si_file_kind(filename, ECL_T);
-      if (kind == @':file' || kind == @':special')
+      file_kind = si_file_kind(filename, ECL_T);
+      if (file_kind == @':file' || file_kind == @':special')
         break;
       else
         filename = ECL_NIL;
@@ -267,9 +265,17 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   if (Null(filename)) {
     if (Null(if_does_not_exist)) {
       @(return ECL_NIL);
-    }
-    else {
-        FEcannot_open(source);
+    } else {
+      if (file_kind == @':directory') {
+        errno = EISDIR;
+#ifdef ECL_MS_WINDOWS_HOST
+      } else {
+        /* The functions used by si_file_kind report no useful errors
+         * on Windows, so just stick with ENOENT here. */
+        errno = ENOENT;
+#endif
+      }
+      FEcannot_open(source);
     }
   }
  NOT_A_FILENAME:
