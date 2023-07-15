@@ -5499,13 +5499,10 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
       return ECL_NIL;
     } else if (errno == EEXIST) {
       if (if_exists == ECL_NIL) {
-        safe_close(fd);
         return ECL_NIL;
       } else if (if_exists == @':error') {
-        safe_close(fd);
         FEcannot_open(fn);
       } else if (if_exists == @':rename') {
-        safe_close(fd);
         fd = ecl_backup_open(fname, smmode_to_open_flag(smm)|O_CREAT, mode);
         unlikely_if (fd < 0) FEcannot_open(fn);
       }
