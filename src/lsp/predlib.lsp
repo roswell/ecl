@@ -1335,20 +1335,43 @@ if not possible."
 ;;; Only (CONS T T) and variants, as well as (CONS NIL *), etc are strictly
 ;;; supported.
 ;;;
-(defun register-cons-type (&optional (car-type '*) (cdr-type '*))
+(defun register-cons-type (type)
   ;; The problem with the code below is that it does not suport infinite
   ;; recursion. Instead we just canonicalize everything to CONS, irrespective
   ;; of whether the arguments are valid types or not!
-  #+(or)
-  (canonical-type 'CONS)
-  (let ((car-tag (if (eq car-type '*) +built-in-tag-t+ (canonical-type car-type)))
-        (cdr-tag (if (eq cdr-type '*) +built-in-tag-t+ (canonical-type cdr-type))))
+  (multiple-value-bind (car-tag cdr-tag)
+      (cons-compound-tags type)
     (cond ((or (= car-tag +built-in-tag-nil+) (= cdr-tag +built-in-tag-nil+))
            +built-in-tag-nil+)
           ((and (= car-tag +built-in-tag-t+) (= cdr-tag +built-in-tag-t+))
-           (canonical-type 'CONS))
+           (canonical-type 'cons))
           (t
-           (throw '+canonical-type-failure+ 'CONS)))))
+           (make-registered-tag type #'cons-type-p #'cons-type-<= nil)))))
+
+(defun cons-type-p (cons-type)
+  (if (atom cons-type)
+      (eq cons-type 'cons)
+      (eq (car cons-type) 'cons)))
+
+(defun cons-type-<= (i1 i2)
+  (multiple-value-bind (i1-car-tag i1-cdr-tag)
+      (cons-compound-tags i1)
+    (multiple-value-bind (i2-car-tag i2-cdr-tag)
+        (cons-compound-tags i2)
+      (and (zerop (logandc2 i1-car-tag i2-car-tag))
+           (zerop (logandc2 i1-cdr-tag i2-cdr-tag))))))
+
+(defun cons-compound-tags (cons-type)
+  (if (atom cons-type)
+      (values +built-in-tag-t+ +built-in-tag-t+)
+      (destructuring-bind (cons &optional (car-type '*) (cdr-type '*)) cons-type
+        (unless (eq car-type '*)
+          (canonical-type car-type))
+        (unless (eq cdr-type '*)
+          (canonical-type car-type))
+        ;; (assert (eq cons 'cons))
+        (values (if (eq car-type '*) +built-in-tag-t+ (canonical-type car-type))
+                (if (eq cdr-type '*) +built-in-tag-t+ (canonical-type cdr-type))))))
 
 ;;; ----------------------------------------------------------------------------
 ;;; FIND-BUILT-IN-TAG
@@ -1544,7 +1567,7 @@ if not possible."
                  (t (let ((class (find-class type nil)))
                       (if class
                           (register-class class)
-                          (throw '+canonical-type-failure+ nil)))))))
+                          (throw '+canonical-type-failure+ type)))))))
         ((consp type)
          (case (first type)
            (AND (apply #'logand (mapcar #'canonical-type (rest type))))
@@ -1579,7 +1602,7 @@ if not possible."
             (canonical-complex-type (if (endp (rest type))
                                         'real
                                         (second type))))
-           (CONS (apply #'register-cons-type (rest type)))
+           (CONS (register-cons-type type))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))
            ((COMPLEX-ARRAY SIMPLE-ARRAY) (register-array-type type))
