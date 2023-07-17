@@ -78,12 +78,8 @@
 ;;;
 (defclass gray-stream-test (gray:fundamental-character-output-stream) ())
 (test cmp.0005.subtypep-stream
-  (is (equal (multiple-value-list
-              (subtypep (find-class 'gray:fundamental-stream) 'stream))
-             (list t t)))
-  (is (equal (multiple-value-list
-              (subtypep (find-class 'gray-stream-test) 'stream))
-             (list t t))))
+  (is-subtypep (t t) gray:fundamental-stream stream)
+  (is-subtypep (t t) gray-stream-test stream))
 
 ;;; Date: 09/07/2006 (Tim S)
 ;;; Fixed: 09/07/2006 (Tim S)
@@ -2276,12 +2272,11 @@
 ;;; Date 2023-06-24
 ;;; Description
 ;;;
-;;;     The compiler produced invalid C code when unable to coerce
-;;;     between incompatible C types. This situation typically
-;;;     indicates a bug but it can also happen because of a failure of
-;;;     the dead code elimination step. In this case we were
-;;;     outputting invalid C code for the dead part and thus the
-;;;     compilation could fail for valid Lisp code.
+;;;     The compiler produced invalid C code when unable to coerce between
+;;;     incompatible C types. This situation typically indicates a bug but it
+;;;     can also happen because of a failure of the dead code elimination
+;;;     step. In this case we were outputting invalid C code for the dead part
+;;;     and thus the compilation could fail for valid Lisp code.
 ;;;
 (test cmp.0095.unreachable-code-unboxed-value
   (is (eql
@@ -2295,3 +2290,27 @@
                                     (the fixnum (1+ y)))))
                 2)
        4)))
+
+;;; Date 2023-07-17
+;;; Description
+;;;
+;;;     The SUBTYPEP procedure did not process correctly specialized CONS
+;;;     types. This is because the original specification was done before
+;;;     standardization and Common Lisp had no compound CONS specifiers.
+;;;
+;;; FIXME add randomized tests.
+(test cmp.0096.subtypep-cons.smoke
+      ;; pretty basic
+      (is-subtypep (t t) (cons integer integer)    (cons integer t))
+      (is-subtypep (t t) (cons fixnum integer)     (cons integer t))
+      (is-subtypep (t t) (cons (or fixnum bignum)) (cons integer))
+      (is-subtypep (t t) (cons integer)            (cons (or fixnum bignum)))
+      ;; more complex
+      (is-subtypep (t t)   (cons integer) (cons (or fixnum bignum character)))
+      (is-subtypep (nil t) (cons (or fixnum bignum character)) (cons integer))
+      ;; nested
+      (is-subtypep (t t)   (cons (cons integer integer)) (cons (cons (or fixnum bignum) integer)))
+      (is-subtypep (nil t) (cons (cons integer t)) (cons (cons (or fixnum bignum) integer))))
+
+
+
