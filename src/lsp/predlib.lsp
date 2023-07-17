@@ -1542,10 +1542,9 @@ if not possible."
             (canonical-type `(OR (INTEGER ,@(rest type))
                                  (RATIO ,@(rest type)))))
            (COMPLEX
-            (or (find-built-in-tag type)
-                (canonical-complex-type (if (endp (rest type))
-                                            'real
-                                            (second type)))))
+            (canonical-complex-type (if (endp (rest type))
+                                        'real
+                                        (second type))))
            (CONS (apply #'register-cons-type (rest type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))
