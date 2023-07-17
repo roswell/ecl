@@ -45,6 +45,14 @@
   (ext:once-only (what form)
     `(is (eql ,what ,form) "EQL: ~s to ~a" ,what ,form)))
 
+(defmacro is-subtypep (what sub super)
+  (ext:with-gensyms (yes surep)
+    `(multiple-value-bind (,yes ,surep)
+         (subtypep (quote ,sub) (quote ,super))
+       (is (equal (quote ,what) (list ,yes ,surep))
+           "SUBTYPEP: ~s to ~s, expected ~s, but got (~s ~s)"
+           (quote ,sub) (quote ,super) (quote ,what) ,yes ,surep))))
+
 (defmacro pass (form &rest args)
   (declare (ignore form args))
   `(passed))

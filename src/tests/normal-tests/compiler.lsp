@@ -78,12 +78,8 @@
 ;;;
 (defclass gray-stream-test (gray:fundamental-character-output-stream) ())
 (test cmp.0005.subtypep-stream
-  (is (equal (multiple-value-list
-              (subtypep (find-class 'gray:fundamental-stream) 'stream))
-             (list t t)))
-  (is (equal (multiple-value-list
-              (subtypep (find-class 'gray-stream-test) 'stream))
-             (list t t))))
+  (is-subtypep (t t) gray:fundamental-stream stream)
+  (is-subtypep (t t) gray-stream-test stream))
 
 ;;; Date: 09/07/2006 (Tim S)
 ;;; Fixed: 09/07/2006 (Tim S)
@@ -2273,12 +2269,11 @@
 ;;; Date 2023-06-24
 ;;; Description
 ;;;
-;;;     The compiler produced invalid C code when unable to coerce
-;;;     between incompatible C types. This situation typically
-;;;     indicates a bug but it can also happen because of a failure of
-;;;     the dead code elimination step. In this case we were
-;;;     outputting invalid C code for the dead part and thus the
-;;;     compilation could fail for valid Lisp code.
+;;;     The compiler produced invalid C code when unable to coerce between
+;;;     incompatible C types. This situation typically indicates a bug but it
+;;;     can also happen because of a failure of the dead code elimination
+;;;     step. In this case we were outputting invalid C code for the dead part
+;;;     and thus the compilation could fail for valid Lisp code.
 ;;;
 (test cmp.0095.unreachable-code-unboxed-value
   (is (eql
@@ -2571,3 +2566,101 @@
                                   (symbol-macrolet ((value -27))
                                     (load-time-value
                                      (block b4 (woosh b4 value))))))))))
+
+;;; Date 2023-07-17
+;;; Description
+;;;
+;;;     The SUBTYPEP procedure did not process correctly specialized CONS
+;;;     types. This is because the original specification was done before
+;;;     standardization and Common Lisp had no compound CONS specifiers.
+;;;
+
+;;; Smoke test.
+(deftest cmp.0110.subtypep-cons.smoke ()
+  (is-subtypep (t t)
+               (cons integer integer)
+               (cons integer t))
+  (is-subtypep (t t)
+               (cons fixnum integer)
+               (cons integer t))
+  (is-subtypep (t t)
+               (cons (or fixnum bignum))
+               (cons integer))
+  (is-subtypep (t t)
+               (cons integer)
+               (cons (or fixnum bignum))))
+
+;;; Tests with unions of disjoint types.
+(deftest cmp.0111.subtypep-cons.disjoint ()
+  (is-subtypep (t t)
+               (cons integer)
+               (cons (or fixnum bignum character)))
+  (is-subtypep (nil t)
+               (cons (or fixnum bignum character))
+               (cons integer)))
+
+;;; Tests with nested cons typespecs.
+(deftest cmp.0112.subtypep-cons.recursive ()
+  (is-subtypep (t t)
+               (cons (cons integer integer))
+               (cons (cons (or fixnum bignum) integer)))
+  (is-subtypep (nil t)
+               (cons (cons integer t))
+               (cons (cons (or fixnum bignum) integer)))
+  (is-subtypep (nil t)
+               (cons integer)
+               (cons (cons integer))))
+
+(deftest cmp.0113.subtypep-cons.member ()
+  (is-subtypep (t t)
+               (cons (member 3 4 5) *)
+               (cons (integer 3 5)))
+  (is-subtypep (t t)
+               (cons (integer 3 5))
+               (cons (member 3 4 5) *))
+  (is-subtypep (t t)
+               (cons (eql 3.14) (eql #\s))
+               (cons float character))
+  (is-subtypep (t t)
+               (cons nil (cons (eql 3.14) (eql #\s)))
+               (cons nil (cons float character))))
+
+(deftest cmp.0113.subtypep-cons.wildcards ()
+  ;; T component.
+  (is-subtypep (t t) (cons * *) (cons t t))
+  (is-subtypep (t t) (cons (cons * t)) (cons (cons t *)))
+  (is-subtypep (t t) (cons (cons * t) (eql 42)) (cons * *))
+  ;; NIL component.
+  (is-subtypep (t t) (cons nil t) nil)
+  (is-subtypep (t t) (cons t nil) nil)
+  (is-subtypep (t t) nil (cons nil t))
+  (is-subtypep (t t) nil (cons t nil)))
+
+(deftest cmp.0114.subtypep-cons.list-eql-is-cons ()
+  (is-subtypep (t t) (eql (* * * * *)) list)
+  (is-subtypep (t t)
+               (member (* * * * *)
+                       (x x x x x))
+               list)
+  ;; Mean tests.
+  (is-subtypep (t t)
+               (eql (1 2 3 4))
+               (cons integer (cons integer (cons (eql 3)))))
+  (is-subtypep (t t)
+               (eql (1 2 3))
+               (cons integer (cons fixnum (cons (eql 3) null))))
+  ;; Less convoluted.
+  (is-subtypep (t t) (eql (a)) (cons symbol t))
+  (is-subtypep (t t) (eql (a)) (cons symbol null))
+  (is-subtypep (t t) (eql (a)) (cons symbol symbol))
+  (is-subtypep (t t) (eql (a)) (cons symbol atom))
+  (is-subtypep (nil t) (eql (a)) (cons symbol integer))
+  (is-subtypep (nil t) (eql (a)) (cons symbol cons)))
+
+(deftest cmp.0115.typep-cons ()
+  (is (not (typep 34 'cons)))
+  (is (not (typep "hello" 'cons)))
+  (is (typep (cons 1 2) 'cons))
+  (is (typep (cons 1 2) '(cons integer integer)))
+  (is (not (typep (cons 1 2) '(cons integer float))))
+  (is (typep (list 1 2 3) '(cons integer t))))
