@@ -890,10 +890,12 @@ if not possible."
 (defun make-registered-tag (type same-kingdom-p type-<= minimize-super)
   (multiple-value-bind (tag-super tag-sub)
       (find-type-bounds type same-kingdom-p type-<= minimize-super)
-    (let ((tag (new-type-tag)))
-      (update-types tag-super tag)
-      (setf tag (logior tag tag-sub))
-      (push-type type tag))))
+    (if (null tag-super)
+        (push-type type tag-sub)
+        (let ((tag (new-type-tag)))
+          (update-types tag-super tag)
+          (setf tag (logior tag tag-sub))
+          (push-type type tag)))))
 
 ;; We are going to make changes in the types database. Save a copy if this
 ;; will cause trouble.
@@ -919,16 +921,46 @@ if not possible."
 
 ;;; FIND-TYPE-BOUNDS => (VALUES TAG-SUPER TAG-SUB)
 ;;;
-;;; This function outputs two values: TAG-SUB, the tag for the union-type of
-;;; all types which are subtypes of the supplied one; and TAG-SUPER, which is
-;;; either the tag for the union-type of all types which a supertype of the
-;;; supplied one (MINIMIZE-SUPER = NIL) or the tag for the smallest type which
-;;; is a supertype of the given one (MINIMIZE-SUPER = TRUE). The search
-;;; process is restricted to types in the same family class.
+;;; This function computes two tags:
 ;;;
-;;; A value of MINIMIZE-SUPER = TRUE only makes sense for some families (such
-;;; as semi-infinite intervals), for which (SUBTYPEP T1 T2) = T and (SUBTYPEP
-;;; T1 T3) = T implies either (SUBTYPEP T2 T3) = T or (SUBTYPEP T3 T2) = T.
+;;; TAG-SUPER is the union-type which is a supertype of the supplied one within
+;;; its own kingdom. To achieve that we compute the union of all supertypes and
+;;; then remove from it unions of all subtypes and all disjoint types.
+;;;
+;;; TAG-SUB is the union-type which is a subtype of the supplied one within its
+;;; own kingdom.
+;;;
+;;; If the function finds an equivalent type with a different name, then it
+;;; returns (VALUES NIL EQUIVALENT-TYPE-TAG). This is a clue that there is no
+;;; need to extend the type's bit-vector.
+;;; ----------------------------------------------------------------------------
+;;; When MINIMIZE-SUPER is true, then TAG-SUPER is the "closest" supertype
+;;; within the family. This is to account for intervals. Consider the follwoing:
+;;;
+;;;     (I 10 20) (I 15)
+;;;
+;;; That produces five canonical types:
+;;;
+;;;     (I 10 20) -> (I 10), (I (20)), (I 20)
+;;;     (I 15)    -> (I 15), (I (15))
+;;;
+;;; And two derived types (ranges):
+;;;
+;;;     (I 10 20) === (AND (I 10) (NOT (I (20))))
+;;;     (I 15)    === (AND (I 15) (NOT (I (15))))
+;;;
+;;; Canonical types have a strict total order, but ranges do not. The crux is
+;;; that both are within the same family, so we can't return a union. This is
+;;; salvaged by the following observations:
+;;;
+;;; 1. FIND-TYPE-BOUNDS is always called with a canonical type (left-bound)
+;;; 2. Ranges are never supertypes of canonical types
+;;; 3. The supertype relation is transitive between canonical types
+;;;
+;;; That implies, that if we compute the minimized super type then:
+;;;
+;;; - for every range type: ( = 0 (logand tag-super-min tag-range))
+;;; - for every super type: (/= 0 (logand tag-super-min tag-canon))
 ;;;
 (defun find-type-bounds (type in-our-family-p type-<= minimize-super)
   (declare (si::c-local)
@@ -942,15 +974,20 @@ if not possible."
       (let ((other-type (car i))
             (other-tag (cdr i)))
         (when (funcall in-our-family-p other-type)
-          (cond ((funcall type-<= type other-type)
-                 (if minimize-super
-                     (when (zerop (logandc2 other-tag supertype-tag))
-                       (setq supertype-tag other-tag))
-                     (setq supertype-tag (logior other-tag supertype-tag))))
-                ((funcall type-<= other-type type)
-                 (setq subtype-tag (logior other-tag subtype-tag)))
-                (t
-                 (setq disjoint-tag (logior disjoint-tag other-tag)))))))
+          (let ((other-sup-p (funcall type-<= type other-type))
+                (other-sub-p (funcall type-<= other-type type)))
+            (cond ((and other-sup-p other-sub-p)
+                   (return-from find-type-bounds
+                     (values nil other-tag)))
+                  (other-sup-p
+                   (if minimize-super
+                       (when (zerop (logandc2 other-tag supertype-tag))
+                         (setq supertype-tag other-tag))
+                       (setq supertype-tag (logior other-tag supertype-tag))))
+                  (other-sub-p
+                   (setq subtype-tag (logior other-tag subtype-tag)))
+                  (t
+                   (setq disjoint-tag (logior disjoint-tag other-tag))))))))
     (values (if (= supertype-tag +built-in-tag-t+)
                 +built-in-tag-nil+
                 (logandc2 supertype-tag (logior disjoint-tag subtype-tag)))
