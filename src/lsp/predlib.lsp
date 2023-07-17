@@ -1309,22 +1309,40 @@ if not possible."
 ;;; CONS types.
 ;;;
 ;;; Only (CONS T T) and variants, as well as (CONS NIL *), etc are strictly
-;;; supported.
+;;; supported. Other variants are supported too but in a naive way.
 ;;;
-(defun register-cons-type (&optional (car-type '*) (cdr-type '*))
-  ;; The problem with the code below is that it does not suport infinite
-  ;; recursion. Instead we just canonicalize everything to CONS, irrespective
-  ;; of whether the arguments are valid types or not!
-  #+(or)
-  (canonical-type 'CONS)
-  (let ((car-tag (if (eq car-type '*) +built-in-tag-t+ (canonical-type car-type)))
-        (cdr-tag (if (eq cdr-type '*) +built-in-tag-t+ (canonical-type cdr-type))))
-    (cond ((or (= car-tag +built-in-tag-nil+) (= cdr-tag +built-in-tag-nil+))
-           +built-in-tag-nil+)
-          ((and (= car-tag +built-in-tag-t+) (= cdr-tag +built-in-tag-t+))
-           (canonical-type 'CONS))
-          (t
-           (throw '+canonical-type-failure+ 'CONS)))))
+(defun register-cons-type (type)
+  (multiple-value-bind (car-tag cdr-tag)
+      (cons-compound-tags type)
+    (if (or (= car-tag +built-in-tag-nil+) (= cdr-tag +built-in-tag-nil+))
+        +built-in-tag-nil+
+        (make-registered-tag type #'cons-type-p #'cons-type-<=))))
+
+(defun cons-type-p (type)
+  (and (consp type)
+       (eq (car type) 'cons)))
+
+(defun cons-type-<= (i1 i2)
+  (multiple-value-bind (i1-car-tag i1-cdr-tag)
+      (cons-compound-tags i1)
+    (multiple-value-bind (i2-car-tag i2-cdr-tag)
+        (cons-compound-tags i2)
+      (and (zerop (logandc2 i1-car-tag i2-car-tag))
+           (zerop (logandc2 i1-cdr-tag i2-cdr-tag))))))
+
+(defun cons-compound-tag (type)
+  (if (eq type '*)
+      +built-in-tag-t+
+      (canonical-type type)))
+
+(defun cons-compound-tags (cons-type)
+  (destructuring-bind (cons &optional (car-type '*) (cdr-type '*)) cons-type
+    ;(assert (eq cons 'cons))
+    (cons-compound-tag car-type)
+    (cons-compound-tag cdr-type)
+    (values (cons-compound-tag car-type)
+            (cons-compound-tag cdr-type))))
+
 
 ;;; ----------------------------------------------------------------------------
 ;;; FIND-BUILT-IN-TAG
@@ -1388,9 +1406,9 @@ if not possible."
                #+unicode (BASE-CHAR NIL CHARACTER)
                (STANDARD-CHAR NIL BASE-CHAR)
 
-               (CONS)
+               (CONS (CONS * *))
                (NULL (MEMBER NIL))
-               (LIST (OR CONS (MEMBER NIL)))
+               (LIST (OR (CONS * *) (MEMBER NIL)))
 
                (ARRAY (ARRAY * *))
                (SIMPLE-ARRAY (SIMPLE-ARRAY * *))
@@ -1404,7 +1422,7 @@ if not possible."
                #+unicode (SIMPLE-BASE-STRING (SIMPLE-ARRAY BASE-CHAR (*)))
                (BIT-VECTOR (ARRAY BIT (*)))
 
-               (SEQUENCE (OR CONS (MEMBER NIL) (ARRAY * (*))))
+               (SEQUENCE (OR (CONS * *) (MEMBER NIL) (ARRAY * (*))))
 
                (HASH-TABLE)
                (PATHNAME)
@@ -1556,7 +1574,7 @@ if not possible."
             (canonical-complex-type (if (endp (rest type))
                                         'real
                                         (second type))))
-           (CONS (apply #'register-cons-type (rest type)))
+           (CONS (register-cons-type type))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))
            ((COMPLEX-ARRAY SIMPLE-ARRAY) (register-array-type type))
