@@ -886,6 +886,15 @@ if not possible."
   (let ((pos (assoc type *elementary-types* :test test)))
     (and pos (cdr pos))))
 
+;;; Make and register a new tag for a certain type.
+(defun make-registered-tag (type same-kingdom-p type-<= minimize-super)
+  (multiple-value-bind (tag-super tag-sub)
+      (find-type-bounds type same-kingdom-p type-<= minimize-super)
+    (let ((tag (new-type-tag)))
+      (update-types tag-super tag)
+      (setf tag (logior tag tag-sub))
+      (push-type type tag))))
+
 ;; We are going to make changes in the types database. Save a copy if this
 ;; will cause trouble.
 ;;
@@ -960,12 +969,7 @@ if not possible."
            (optimize (safety 0))
            (function in-our-family-p type-<=))
   (or (find-registered-tag type)
-      (multiple-value-bind (tag-super tag-sub)
-          (find-type-bounds type in-our-family-p type-<= nil)
-        (let ((tag (new-type-tag)))
-          (update-types (logandc2 tag-super tag-sub) tag)
-          (setf tag (logior tag tag-sub))
-          (push-type type tag)))))
+      (make-registered-tag type in-our-family-p type-<= nil)))
 
 ;;; ----------------------------------------------------------------------------
 ;;; MEMBER types.
@@ -1169,23 +1173,16 @@ if not possible."
 ;;;  (SHORT-FLOAT (0.2) (2)) = (AND (SHORT-FLOAT (0.2) *) (NOT (SHORT-FLOAT 2 *)))
 ;;;
 
+;;; FIXME this predicate could be improved.
+(defun numeric-range-p (type)
+  (and (consp type)
+       (null (cddr type))))
+
 (defun register-elementary-interval (type b)
   (declare (si::c-local))
   (setq type (list type b))
   (or (find-registered-tag type #'equalp)
-      (multiple-value-bind (tag-super tag-sub)
-          (find-type-bounds type
-                            #'(lambda (other-type)
-                                (and (consp other-type)
-                                     (null (cddr other-type))))
-                            #'(lambda (i1 i2)
-                                (and (eq (first i1) (first i2))
-                                     (bounds-<= (second i2) (second i1))))
-                            t)
-        (let ((tag (new-type-tag)))
-          (update-types (logandc2 tag-super tag-sub) tag)
-          (setq tag (logior tag tag-sub))
-          (push-type type tag)))))
+      (make-registered-tag type #'numeric-range-p #'numeric-range-<= t)))
 
 (defun register-interval-type (interval)
   (declare (si::c-local))
@@ -1219,6 +1216,13 @@ if not possible."
     (unless (eq high '*)
       (push-type interval tag))
     tag))
+
+;;; Numeric ranges are decided separately depending on the type actual type.
+;;; If two ranges belong to two different sub-families then they are disjoint
+;;; and can't be ordered.
+(defun numeric-range-<= (i1 i2)
+  (and (eq (first i1) (first i2))
+       (bounds-<= (second i2) (second i1))))
 
 ;;; All comparisons between intervals operations may be defined in terms of
 ;;;
