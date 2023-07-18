@@ -1047,7 +1047,7 @@ if not possible."
   (or (find-registered-tag class)
       ;; We do not need to register classes which belong to the core type
       ;; system of LISP (ARRAY, NUMBER, etc).
-      (let* ((name (class-name class)))
+      (let ((name (class-name class)))
         (and name
              (eq class (find-class name 'nil))
              (or (find-registered-tag name)
@@ -1212,6 +1212,10 @@ if not possible."
                           (t
                            (ceiling low)))))
          (tag (logandc2 tag-low tag-high)))
+    ;; Here we do a rather peculiar thing - we register an interval that is
+    ;; right-bound. We could do without reigstering it, and then juggling with
+    ;; MINIMIZE-SUPERTYPE in FIND-TYPE-BOUNDS would not be necessary because all
+    ;; types in the kingdom would have a strict total order. -- jd 2023-07-18
     (unless (eq high '*)
       (push-type interval tag))
     tag))
