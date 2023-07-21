@@ -867,12 +867,21 @@ if not possible."
 ;;; CHECKME it seems that we never mutate *ELEMENTARY-TYPES* - all exported
 ;;; operators that access it, dynamically rebind the variable and after the
 ;;; operator returns it has the same value as before. See the comment before
-;;; FIND-BUILT-IN-TAG. -- jd 2023-07-13
+;;; FIND-BUILT-IN-TAG and the macro WITH-TYPE-DATABASE. -- jd 2023-07-21
 (defparameter *elementary-types*
   #+ecl-min
   '()
   #-ecl-min
   (quote #.*elementary-types*))
+
+;;; INV The function MAYBE-SAVE-TYPES ensures that we operate on fresh conses
+;;; instead of modifying *MEMBER-TYPES* and *ELEMENTARY-TYPES*.
+(defmacro with-type-database (() &body body)
+  `(let ((*highest-type-tag* *highest-type-tag*)
+         (*save-types-database* t)
+         (*member-types* *member-types*)
+         (*elementary-types* *elementary-types*))
+     ,@body))
 
 (defun new-type-tag ()
   (declare (si::c-local))
@@ -1474,10 +1483,7 @@ if not possible."
 ;;;
 #+ (or)
 (defun canonicalize (type)
-  (let ((*highest-type-tag* *highest-type-tag*)
-        (*save-types-database* t)
-        (*member-types* *member-types*)
-        (*elementary-types* *elementary-types*))
+  (with-type-database ()
     (let ((tag (canonical-type type))
           (out))
       (setq tag (canonical-type type))
@@ -1492,7 +1498,7 @@ if not possible."
         (unless (zerop (logand (cdr i) tag))
           ;;(print (list tag (cdr i) (logand tag (cdr i))))
           (push (car i) out)))
-        (values tag `(OR ,@out)))))
+      (values tag `(OR ,@out)))))
 
 ;;; ----------------------------------------------------------------------------
 ;;; (CANONICAL-TYPE TYPE)
@@ -1612,10 +1618,7 @@ if not possible."
     (when (and elt (eq (caar elt) t1) (eq (cdar elt) t2))
       (setf elt (cdr elt))
       (return-from subtypep (values (car elt) (cdr elt))))
-    (let ((*highest-type-tag* *highest-type-tag*)
-          (*save-types-database* t)
-          (*member-types* *member-types*)
-          (*elementary-types* *elementary-types*))
+    (with-type-database ()
       (multiple-value-bind (test confident)
           (fast-subtypep t1 t2)
         (setf (aref cache hash) (cons (cons t1 t2) (cons test confident)))
@@ -1648,8 +1651,5 @@ if not possible."
            (values nil nil)))))
 
 (defun type= (t1 t2)
-  (let ((*highest-type-tag* *highest-type-tag*)
-        (*save-types-database* t)
-        (*member-types* *member-types*)
-        (*elementary-types* *elementary-types*))
+  (with-type-database ()
     (fast-type= t1 t2)))
