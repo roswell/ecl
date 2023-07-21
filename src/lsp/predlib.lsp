@@ -1424,12 +1424,11 @@ if not possible."
                (SIMPLE-VECTOR (SIMPLE-ARRAY T (*)))
                (SIMPLE-BIT-VECTOR (SIMPLE-ARRAY BIT (*)))
                (VECTOR (ARRAY * (*)))
-               (STRING (ARRAY CHARACTER (*)))
-               #+unicode
-               (BASE-STRING (ARRAY BASE-CHAR (*)))
+               #-unicode (STRING (ARRAY CHARACTER (*)))
+               #+unicode (STRING (OR (ARRAY CHARACTER (*)) (ARRAY BASE-CHAR (*))))
+               #+unicode (BASE-STRING (ARRAY BASE-CHAR (*)))
                (SIMPLE-STRING (SIMPLE-ARRAY CHARACTER (*)))
-               #+unicode
-               (SIMPLE-BASE-STRING (SIMPLE-ARRAY BASE-CHAR (*)))
+               #+unicode (SIMPLE-BASE-STRING (SIMPLE-ARRAY BASE-CHAR (*)))
                (BIT-VECTOR (ARRAY BIT (*)))
 
                (SEQUENCE (OR CONS (MEMBER NIL) (ARRAY * (*))))
