@@ -28,9 +28,6 @@
 /* Allow loading dynamically linked code                                */
 #undef ENABLE_DLOPEN
 
-/* Undefine this if you do not want ECL to check for circular lists     */
-#define ECL_SAFE
-
 /* Activate Boehm-Weiser incremental garbage collector                  */
 #undef GBC_BOEHM_GENGC
 
