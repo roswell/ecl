@@ -765,7 +765,7 @@ mp_block_signals(void)
 {
 #ifdef ECL_WINDOWS_THREADS
   cl_env_ptr the_env = ecl_process_env();
-  cl_object previous = ecl_symbol_value(@'ext::*interrupts-enabled*');
+  cl_object previous = ecl_cmp_symbol_value(the_env, @'ext::*interrupts-enabled*');
   ECL_SETQ(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
   @(return previous);
 #else

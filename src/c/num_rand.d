@@ -320,7 +320,7 @@ ecl_make_random_state(cl_object rs)
   return z;
 }
 
-@(defun random (x &optional (rs ecl_symbol_value(@'*random-state*')))
+@(defun random (x &optional (rs ecl_cmp_symbol_value(the_env, @'*random-state*')))
 @
   rs = ecl_check_cl_type(@'random', rs, t_random);
   @(return rando(x, rs));

@@ -34,10 +34,31 @@ cl_set(cl_object var, cl_object value)
   unlikely_if (ecl_t_of(var) != t_symbol) {
     FEwrong_type_nth_arg(@[set], 1, var, @[symbol]);
   }
+  ecl_return1(env, ecl_cmp_setq(env, var, value));
+}
+
+cl_object
+ecl_setq(cl_env_ptr env, cl_object var, cl_object value)
+{
+  unlikely_if (Null(var)) {
+    FEconstant_assignment(var);
+  }
+  unlikely_if (ecl_t_of(var) != t_symbol) {
+    FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
+  }
+  return ecl_cmp_setq(env, var, value);
+}
+
+/* ecl_cmp_setq does the minimal amount of checking necessary to
+ * implement SETQ for objects that have been checked to be non-null
+ * symbols by the compiler. */
+cl_object
+ecl_cmp_setq(cl_env_ptr env, cl_object var, cl_object value)
+{
   unlikely_if (var->symbol.stype & ecl_stp_constant) {
     FEconstant_assignment(var);
   }
-  ecl_return1(env, ECL_SETQ(env, var, value));
+  return ECL_SETQ(env, var, value);
 }
 
 #ifdef ECL_THREADS
@@ -71,18 +92,6 @@ mp_atomic_incf_symbol_value(cl_object var, cl_object increment)
   return ecl_atomic_incf(ecl_bds_ref(ecl_process_env(), var), increment);
 }
 #endif /* ECL_THREADS */
-
-cl_object
-ecl_setq(cl_env_ptr env, cl_object var, cl_object value)
-{
-  unlikely_if (Null(var)) {
-    FEconstant_assignment(var);
-  }
-  unlikely_if (ecl_t_of(var) != t_symbol) {
-    FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
-  }
-  return ECL_SETQ(env, var, value);
-}
 
 static cl_object
 unbound_setf_function_error(cl_narg narg, ...)

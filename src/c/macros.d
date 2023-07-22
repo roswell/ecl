@@ -102,7 +102,7 @@ search_macro_function(cl_object name, cl_object env)
       exp_fun = search_macro_function(head, env);
   }
   if (!Null(exp_fun)) {
-    cl_object hook = ecl_symbol_value(@'*macroexpand-hook*');
+    cl_object hook = ecl_cmp_symbol_value(the_env, @'*macroexpand-hook*');
     if (hook == @'funcall')
       form = _ecl_funcall3(exp_fun, form, env);
     else

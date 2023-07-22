@@ -29,10 +29,11 @@ _ecl_stream_or_default_output(cl_object stream)
 int
 ecl_print_base(void)
 {
-  cl_object object = ecl_symbol_value(@'*print-base*');
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object object = ecl_cmp_symbol_value(the_env, @'*print-base*');
   cl_fixnum base;
   unlikely_if (!ECL_FIXNUMP(object) || (base = ecl_fixnum(object)) < 2 || base > 36) {
-    ECL_SETQ(ecl_process_env(), @'*print-base*', ecl_make_fixnum(10));
+    ECL_SETQ(the_env, @'*print-base*', ecl_make_fixnum(10));
     FEerror("The value of *PRINT-BASE*~%  ~S~%"
             "is not of the expected type (INTEGER 2 36)", 1, object);
   }
@@ -42,14 +43,15 @@ ecl_print_base(void)
 cl_fixnum
 ecl_print_level(void)
 {
-  cl_object object = ecl_symbol_value(@'*print-level*');
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object object = ecl_cmp_symbol_value(the_env, @'*print-level*');
   cl_fixnum level;
   if (object == ECL_NIL) {
     level = MOST_POSITIVE_FIXNUM;
   } else if (ECL_FIXNUMP(object)) {
     level = ecl_fixnum(object);
     if (level < 0) {
-    ERROR:  ECL_SETQ(ecl_process_env(), @'*print-level*', ECL_NIL);
+    ERROR:  ECL_SETQ(the_env, @'*print-level*', ECL_NIL);
       FEerror("The value of *PRINT-LEVEL*~%  ~S~%"
               "is not of the expected type (OR NULL (INTEGER 0 *))",
               1, object);
@@ -65,14 +67,15 @@ ecl_print_level(void)
 cl_fixnum
 ecl_print_length(void)
 {
-  cl_object object = ecl_symbol_value(@'*print-length*');
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object object = ecl_cmp_symbol_value(the_env, @'*print-length*');
   cl_fixnum length;
   if (object == ECL_NIL) {
     length = MOST_POSITIVE_FIXNUM;
   } else if (ECL_FIXNUMP(object)) {
     length = ecl_fixnum(object);
     unlikely_if (length < 0) {
-    ERROR:  ECL_SETQ(ecl_process_env(), @'*print-length*', ECL_NIL);
+    ERROR:  ECL_SETQ(the_env, @'*print-length*', ECL_NIL);
       FEerror("The value of *PRINT-LENGTH*~%  ~S~%"
               "is not of the expected type (OR NULL (INTEGER 0 *))",
               1, object);
@@ -94,12 +97,13 @@ ecl_print_radix(void)
 cl_object
 ecl_print_case(void)
 {
-  cl_object output = ecl_symbol_value(@'*print-case*');
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object output = ecl_cmp_symbol_value(the_env, @'*print-case*');
   unlikely_if (output != @':upcase' &&
                output != @':downcase' &&
                output != @':capitalize')
     {
-      ECL_SETQ(ecl_process_env(), @'*print-case*', @':downcase');
+      ECL_SETQ(the_env, @'*print-case*', @':downcase');
       FEerror("The value of *PRINT-CASE*~%  ~S~%"
               "is not of the expected type "
               "(MEMBER :UPCASE :DOWNCASE :CAPITALIZE)", 1, output);
@@ -139,21 +143,21 @@ ecl_print_circle(void)
 
 @(defun write (x
                &key ((:stream strm) ECL_NIL)
-               (array ecl_symbol_value(@'*print-array*'))
-               (base ecl_symbol_value(@'*print-base*'))
-               ((:case cas) ecl_symbol_value(@'*print-case*'))
-               (circle ecl_symbol_value(@'*print-circle*'))
-               (escape ecl_symbol_value(@'*print-escape*'))
-               (gensym ecl_symbol_value(@'*print-gensym*'))
-               (length ecl_symbol_value(@'*print-length*'))
-               (level ecl_symbol_value(@'*print-level*'))
-               (lines ecl_symbol_value(@'*print-lines*'))
-               (miser_width ecl_symbol_value(@'*print-miser-width*'))
-               (pprint_dispatch ecl_symbol_value(@'*print-pprint-dispatch*'))
-               (pretty ecl_symbol_value(@'*print-pretty*'))
-               (radix ecl_symbol_value(@'*print-radix*'))
-               (readably ecl_symbol_value(@'*print-readably*'))
-               (right_margin ecl_symbol_value(@'*print-right-margin*')))
+               (array ecl_cmp_symbol_value(the_env, @'*print-array*'))
+               (base ecl_cmp_symbol_value(the_env, @'*print-base*'))
+               ((:case cas) ecl_cmp_symbol_value(the_env, @'*print-case*'))
+               (circle ecl_cmp_symbol_value(the_env, @'*print-circle*'))
+               (escape ecl_cmp_symbol_value(the_env, @'*print-escape*'))
+               (gensym ecl_cmp_symbol_value(the_env, @'*print-gensym*'))
+               (length ecl_cmp_symbol_value(the_env, @'*print-length*'))
+               (level ecl_cmp_symbol_value(the_env, @'*print-level*'))
+               (lines ecl_cmp_symbol_value(the_env, @'*print-lines*'))
+               (miser_width ecl_cmp_symbol_value(the_env, @'*print-miser-width*'))
+               (pprint_dispatch ecl_cmp_symbol_value(the_env, @'*print-pprint-dispatch*'))
+               (pretty ecl_cmp_symbol_value(the_env, @'*print-pretty*'))
+               (radix ecl_cmp_symbol_value(the_env, @'*print-radix*'))
+               (readably ecl_cmp_symbol_value(the_env, @'*print-readably*'))
+               (right_margin ecl_cmp_symbol_value(the_env, @'*print-right-margin*')))
   @
   ecl_bds_bind(the_env, @'*print-array*', array);
   ecl_bds_bind(the_env, @'*print-base*', base);

@@ -1023,7 +1023,7 @@ sharp_dot_reader(cl_object in, cl_object c, cl_object d)
   if (read_suppress) {
     @(return ECL_NIL);
   }
-  unlikely_if (ecl_symbol_value(@'*read-eval*') == ECL_NIL)
+  unlikely_if (ecl_cmp_symbol_value(env, @'*read-eval*') == ECL_NIL)
     FEreader_error("Cannot evaluate the form #.~A", in, 1, c);
   /* FIXME! We should do something here to ensure that the #.
    * only uses the #n# that have been defined */
