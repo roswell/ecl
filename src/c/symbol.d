@@ -171,9 +171,6 @@ ecl_getf(cl_object place, cl_object indicator, cl_object deflt)
 {
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   for (l = place; CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
     if (!CONSP(cdr_l))
@@ -203,9 +200,6 @@ si_put_f(cl_object place, cl_object value, cl_object indicator)
 {
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   /* This loop guarantees finishing for circular lists */
   for (l = place; CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
@@ -295,9 +289,6 @@ cl_get_properties(cl_object place, cl_object indicator_list)
   const cl_env_ptr the_env = ecl_process_env();
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   for (l = place;  CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
     if (!CONSP(cdr_l))
