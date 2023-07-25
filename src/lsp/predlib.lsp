@@ -850,6 +850,14 @@ if not possible."
 ;;; elementary sets are discovered, which also belong to existing types).
 ;;; ----------------------------------------------------------------------------
 
+(defparameter *subtypep-debug* nil)
+
+(defmacro dbg (fmt &rest args)
+  `(when *subtypep-debug*
+     #+ecl-min (print (list "XXX: " ,fmt ,@args) *debug-io*)
+     #-ecl-min (format *debug-io* (concatenate 'string "XXX: " ,fmt "~%") ,@args)))
+
+
 (defparameter *save-types-database* nil)
 
 (defparameter *highest-type-tag*
@@ -976,6 +984,9 @@ if not possible."
                    (setq subtype-tag (logior other-tag subtype-tag)))
                   (t
                    (setq disjoint-tag (logior disjoint-tag other-tag))))))))
+    #+not-yet
+    (unless (logand disjoint-tag subtype-tag)
+      (error "Some types in the family does not have a strict total order."))
     (values (logandc2 supertype-tag (logior disjoint-tag subtype-tag))
             subtype-tag)))
 
@@ -1571,6 +1582,7 @@ if not possible."
 ;;;
 (defun canonical-type (type)
   (declare (notinline clos::classp))
+  (dbg "--- canonical type ~s" type)
   (cond ((find-registered-tag type))
         ((eq type 'T) +built-in-tag-t+)
         ((eq type 'NIL) +built-in-tag-nil+)
@@ -1635,12 +1647,24 @@ if not possible."
          (error-type-specifier type))))
 
 (defun safe-canonical-type (type)
+  (dbg "----------- safe-canonical-type ~s" type)
   (catch '+canonical-type-failure+
     (canonical-type type)))
 
+(defun dump-elementary-types ()
+  (when *subtypep-debug*
+    (dolist (type *member-types*)
+      (dbg "m ~40a ~16,'-b" (car type) (cdr type)))
+    (dolist (type *cons-types*)
+      (dbg "c ~40a ~16,'-b" (car type) (cdr type)))
+    (dolist (type *elementary-types*)
+      (dbg "* ~40a ~16,'-b" (car type) (cdr type)))))
+
 (defun fast-subtypep (t1 t2)
   (declare (si::c-local))
+  (dbg "------------------------------------------------------------")
   (when (eq t1 t2)
+    (dbg "types are eq ~s, return." t1)
     (return-from fast-subtypep (values t t)))
   (let* ((tag1 (safe-canonical-type t1))
          (tag2 (safe-canonical-type t2)))
@@ -1649,6 +1673,9 @@ if not possible."
       ;; the calls above could have called UPDATE-TYPES.
       (setf tag1 (safe-canonical-type t1)
             tag2 (safe-canonical-type t2)))
+    (dump-elementary-types)
+    (dbg "  ~40a ~16,'-b" t1 (if (numberp tag1) tag1 0))
+    (dbg "  ~40a ~16,'-b" t2 (if (numberp tag2) tag2 0))
     (cond ((and (numberp tag1) (numberp tag2))
            (values (zerop (logandc2 tag1 tag2)) t))
           #+nil
@@ -1673,9 +1700,10 @@ if not possible."
   (let* ((cache *subtypep-cache*)
          (hash (truly-the (integer 0 255) (logand (hash-eql t1 t2) 255)))
          (elt (aref cache hash)))
-    (when (and elt (eq (caar elt) t1) (eq (cdar elt) t2))
-      (setf elt (cdr elt))
-      (return-from subtypep (values (car elt) (cdr elt))))
+    (unless *subtypep-debug*
+      (when (and elt (eq (caar elt) t1) (eq (cdar elt) t2))
+        (setf elt (cdr elt))
+        (return-from subtypep (values (car elt) (cdr elt)))))
     (with-type-database ()
       (multiple-value-bind (test confident)
           (fast-subtypep t1 t2)

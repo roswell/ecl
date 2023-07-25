@@ -153,7 +153,9 @@
         (si:get-sysprop fname 'NOTINLINE))))
 
 (defun inline-possible (fname &optional (env *cmp-env*))
-  (not (declared-notinline-p fname env)))
+  nil
+  ;(not (declared-notinline-p fname env))
+  )
 
 ;;; Install inline expansion of function.
 (defun maybe-install-inline-function (fname form)

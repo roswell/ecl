@@ -145,7 +145,8 @@
          (global (and *use-c-global*
                       (assoc 'SI::C-GLOBAL decl)
                       (setf (fun-global fun) T)))
-         (no-entry (assoc 'SI::C-LOCAL decl))
+         (no-entry nil;(assoc 'SI::C-LOCAL decl)
+                   )
          cfun exported minarg maxarg proclamation-found-p)
     (multiple-value-bind (lambda-expr optional-type-checks keyword-type-checks)
         (c1lambda-expr lambda-list-and-body name
