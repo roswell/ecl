@@ -606,6 +606,8 @@ Returns T if X belongs to TYPE; NIL otherwise."
                (or (endp (cdr i))
                    (let ((cdr-type (second i)))
                      (or (eq cdr-type '*) (typep (cdr object) cdr-type))))))
+    (CONS-CAR nil)                      ;bazinga
+    (CONS-CDR nil)                      ;bazinga
     (BASE-STRING
      (and (base-string-p object)
           (or (null i) (match-dimensions object i))))
@@ -862,6 +864,10 @@ if not possible."
   #+ecl-min NIL
   #-ecl-min '#.*member-types*)
 
+(defparameter *cons-types*
+  #+ecl-min NIL
+  #-ecl-min '#.*cons-types*)
+
 (defparameter *intervals-mask* #B1)
 
 ;;; CHECKME it seems that we never mutate *ELEMENTARY-TYPES* - all exported
@@ -880,6 +886,7 @@ if not possible."
   `(let ((*highest-type-tag* *highest-type-tag*)
          (*save-types-database* t)
          (*member-types* *member-types*)
+         (*cons-types* *cons-types*)
          (*elementary-types* *elementary-types*))
      ,@body))
 
@@ -914,7 +921,8 @@ if not possible."
   (when *save-types-database*
     (setf *save-types-database* nil
           *elementary-types* (copy-tree *elementary-types*)
-          *member-types* (copy-tree *member-types*))))
+          *member-types* (copy-tree *member-types*)
+          *cons-types* (copy-tree *cons-types*))))
 
 ;; We have created and tagged a new type (NEW-TAG). However, there are
 ;; composite and synonym types registered around which are supertypes of
@@ -1021,14 +1029,24 @@ if not possible."
 (defun simple-member-type (object)
   (declare (si::c-local)
            (ext:assume-no-errors))
-  (let* ((tag (new-type-tag)))
+  (let ((tag (new-type-tag)))
     (maybe-save-types)
     (setq *member-types* (acons object tag *member-types*))
-    (dolist (i *elementary-types*)
-      (let ((type (car i)))
-        (when (typep object type)
-          (setf (cdr i) (logior tag (cdr i))))))
+    (if (consp object)
+        (cons-member-type object tag)
+        (dolist (i *elementary-types*)
+          (let ((type (car i)))
+            (when (typep object type)
+              (setf (cdr i) (logior tag (cdr i)))))))
     tag))
+
+(defun cons-member-type (object tag)
+  (declare (si::c-local)
+           (ext:assume-no-errors))
+  (dolist (i *cons-types*)
+    (let ((type (car i)))
+      (when (typep object type)
+        (setf (cdr i) (logior tag (cdr i)))))))
 
 ;;; We convert number into intervals, so that (AND INTEGER (NOT (EQL 10))) is
 ;;; detected as a subtype of (OR (INTEGER * 9) (INTEGER 11 *)).
@@ -1046,6 +1064,14 @@ if not possible."
     (when (typep (car i) type)
       (setq tag (logior tag (cdr i)))))
   (push (cons type tag) *elementary-types*)
+  tag)
+
+(defun push-cons-type (type &aux (tag 0))
+  (dolist (i *member-types*)
+    (declare (cons i))
+    (when (typep (car i) type)
+      (setq tag (logior tag (cdr i)))))
+  (push (cons type tag) *cons-types*)
   tag)
 
 ;;; ----------------------------------------------------------------------------
@@ -1308,40 +1334,70 @@ if not possible."
 ;;; ----------------------------------------------------------------------------
 ;;; CONS types.
 ;;;
-;;; Only (CONS T T) and variants, as well as (CONS NIL *), etc are strictly
-;;; supported. Other variants are supported too but in a naive way.
+;;; (CONS T1 T2) may contain arbitrary type specifiers including recursive
+;;; definitions. To ensure that boolean algebra holds we convert the type to its
+;;; canonical form:
 ;;;
-(defun register-cons-type (type)
-  (multiple-value-bind (car-tag cdr-tag)
-      (cons-compound-tags type)
-    (if (or (= car-tag +built-in-tag-nil+) (= cdr-tag +built-in-tag-nil+))
-        +built-in-tag-nil+
-        (make-registered-tag type #'cons-type-p #'cons-type-<=))))
+;;; (CONS T1 T2) --> (OR (CONS T1 NIL) (CONS NIL T2))
+;;;
+;;; Then for disjoint types with CAR and CDR typespecs we expand them. The
+;;; operation is symmetrical, so only CAR canonical form is shown below:
+;;;
+;;; (CONS (AND t1 t2 ... tn)) ;-> (AND (CONS t1) (CONS t2) ... (CONS tn))
+;;; (CONS (OR  t1 t2 ... tn)) ;-> (OR  (CONS t1) (CONS t2) ... (CONS tn))
+;;; (CONS (NOT typespec))     ;-> (AND CONS (NOT (CONS typespec)))
+;;;
+;;; Because one of type specifiers may be another CONS, we need to expand types
+;;; recursively.
+;;;
+;;; (CONS (CONS X Y) *) ;-> (CONS (OR (CONS X NIL) (CONS NIL Y)) *)
+;;; (CONS X *)          ;-> ...
+;;; (CONS * Y)          ;-> ...
+;;;
+;;; From the canonical form we may proceed to compute the canonical type using
+;;; the "normal" SUBTYPEP procedure.
 
 (defun cons-type-p (type)
   (and (consp type)
-       (eq (car type) 'cons)))
+       (or (and (eq (car type) 'CONS-CAR) 'CONS-CAR)
+           (and (eq (car type) 'CONS-CDR) 'CONS-CDR))))
 
 (defun cons-type-<= (i1 i2)
-  (multiple-value-bind (i1-car-tag i1-cdr-tag)
-      (cons-compound-tags i1)
-    (multiple-value-bind (i2-car-tag i2-cdr-tag)
-        (cons-compound-tags i2)
-      (and (zerop (logandc2 i1-car-tag i2-car-tag))
-           (zerop (logandc2 i1-cdr-tag i2-cdr-tag))))))
+  (when (eq (first i1) (first i2))
+    (canonical-type (second i1))
+    (canonical-type (second i2))
+    (let ((t1 (canonical-type (second i1)))
+          (t2 (canonical-type (second i2))))
+      (logandc2 t1 t2))))
 
-(defun cons-compound-tag (type)
+(defun canonical-cons-type (type)
+  (canonical-type (expand-cons-type type)))
+
+(defun expand-cons-type (type)
+  (destructuring-bind (&optional (car-type '*) (cdr-type '*)) (rest type)
+    `(OR (CONS-CAR ,car-type)
+         (CONS-CDR ,cdr-type)
+         (CONS-EQL ,type))))
+
+(defun register-cons-type (type)
+  (register-type type #'cons-type-p #'cons-type-<=))
+
+(defun register-cons-car-type (type)
   (if (eq type '*)
-      +built-in-tag-t+
-      (canonical-type type)))
+      (register-cons-type `(cons-car t))
+      (register-cons-type `(cons-car ,type))))
 
-(defun cons-compound-tags (cons-type)
-  (destructuring-bind (cons &optional (car-type '*) (cdr-type '*)) cons-type
-    ;(assert (eq cons 'cons))
-    (cons-compound-tag car-type)
-    (cons-compound-tag cdr-type)
-    (values (cons-compound-tag car-type)
-            (cons-compound-tag cdr-type))))
+(defun register-cons-cdr-type (type)
+  (if (eq type '*)
+      (register-cons-type `(cons-cdr t))
+      (register-cons-type `(cons-cdr ,type))))
+
+(defun register-cons-eql-type (type)
+  (ext:if-let ((pos (assoc type *cons-types* :test #'equal)))
+    (cdr pos)
+    (push-cons-type type)))
+
+
 
 
 ;;; ----------------------------------------------------------------------------
@@ -1574,7 +1630,10 @@ if not possible."
             (canonical-complex-type (if (endp (rest type))
                                         'real
                                         (second type))))
-           (CONS (register-cons-type type))
+           (CONS (canonical-cons-type type))
+           (CONS-CAR (register-cons-car-type (second type)))
+           (CONS-CDR (register-cons-cdr-type (second type)))
+           (CONS-EQL (register-cons-eql-type (second type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))
            ((COMPLEX-ARRAY SIMPLE-ARRAY) (register-array-type type))
