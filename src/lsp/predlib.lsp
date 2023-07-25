@@ -1054,7 +1054,7 @@ if not possible."
   (let* ((base-type (if (integerp object) 'INTEGER (type-of object)))
          (type (list base-type object object)))
     (or (find-registered-tag type)
-        (register-interval-type type))))
+        (canonical-interval-type type))))
 
 (defun push-type (type tag)
   (declare (si::c-local)
@@ -1220,7 +1220,7 @@ if not possible."
   (or (find-registered-tag type #'equalp)
       (make-registered-tag type #'numeric-range-p #'numeric-range-<=)))
 
-(defun register-interval-type (interval)
+(defun canonical-interval-type (interval)
   (declare (si::c-local))
   (destructuring-bind (type &optional (low '*) (high '*)) interval
     (let ((tag-high
@@ -1262,13 +1262,8 @@ if not possible."
        (bounds-<= (second i2) (second i1))))
 
 ;;; All comparisons between intervals operations may be defined in terms of
-;;;
-;;;      (BOUNDS-<= b1 b2)       and     (BOUNDS-< b1 b2)
-;;;
-;;; The first one checks whether (REAL b2 *) is contained in (REAL b1 *). The
-;;; second one checks whether (REAL b2 *) is strictly contained in (REAL b1 *)
-;;; (i.e., (AND (REAL b1 *) (NOT (REAL b2 *))) is not empty).
-;;;
+;;;      (BOUNDS-<= b1 b2)
+;;; that checks whether (REAL b2 *) is contained in (REAL b1 *).
 (defun bounds-<= (b1 b2)
   (cond ((eq b1 '*) t)
         ((eq b2 '*) nil)
@@ -1280,18 +1275,6 @@ if not possible."
          (<= b1 (first b2)))
         (t
          (<= b1 b2))))
-
-(defun bounds-< (b1 b2)
-  (cond ((eq b1 '*) (not (eq b2 '*)))
-        ((eq b2 '*) nil)
-        ((consp b1)
-         (if (consp b2)
-             (< (first b1) (first b2))
-             (< (first b1) b2)))
-        ((consp b2)
-         (<= b1 (first b2)))
-        (t
-         (< b1 b2))))
 
 ;;; ----------------------------------------------------------------------------
 ;;; COMPLEX types.
@@ -1307,30 +1290,33 @@ if not possible."
 ;;; sets of objects. TYPEP has a different specification and TYPECASE should use
 ;;; it. -- jd 2019-04-19
 ;;;
-(defun canonical-complex-type (real-type)
+(defun canonical-complex-type (complex-type)
   (declare (si::c-local))
-  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not
-  ;; a subtype of REAL.
-  (when (eq real-type '*)
-    (setq real-type 'real))
-  (let* ((ucpt (upgraded-complex-part-type real-type))
-         (type `(complex ,ucpt)))
-    (or (find-registered-tag type)
-        #+complex-float
-        (case ucpt
-          (real
-           (logior (canonical-complex-type 'float)
-                   (canonical-complex-type 'rational)))
-          (float
-           (logior (canonical-complex-type 'single-float)
-                   (canonical-complex-type 'double-float)
-                   (canonical-complex-type 'long-float)))
-          (otherwise
-           (let ((tag (new-type-tag)))
-             (push-type type tag))))
-        #-complex-float
-        (let ((tag (new-type-tag)))
-          (push-type type tag)))))
+  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not a
+  ;; subtype of REAL.
+  (destructuring-bind (&optional (real-type 'real)) (rest complex-type)
+    (when (eq real-type '*)
+      (setq real-type 'real))
+    (let* ((upgraded-real (upgraded-complex-part-type real-type))
+           (upgraded-type `(complex ,upgraded-real)))
+      (or (find-registered-tag upgraded-type)
+          #+complex-float
+          (case upgraded-real
+            (real
+             (logior (canonical-complex-type '(complex single-float))
+                     (canonical-complex-type '(complex double-float))
+                     (canonical-complex-type '(complex long-float))
+                     (canonical-complex-type '(complex rational))))
+            (float
+             (logior (canonical-complex-type '(complex single-float))
+                     (canonical-complex-type '(complex double-float))
+                     (canonical-complex-type '(complex long-float)))))
+          (register-complex-type upgraded-type)))))
+
+(defun register-complex-type (upgraded-type)
+  (declare (si::c-local))
+  (let ((tag (new-type-tag)))
+    (push-type upgraded-type tag)))
 
 ;;; ----------------------------------------------------------------------------
 ;;; CONS types.
@@ -1604,12 +1590,8 @@ if not possible."
            (NOT (lognot (canonical-type (second type))))
            ((EQL MEMBER) (apply #'logior (mapcar #'register-member-type (rest type))))
            (SATISFIES (register-satisfies-type type))
-           ((INTEGER #+short-float SHORT-FLOAT
-                     SINGLE-FLOAT
-                     DOUBLE-FLOAT
-                     RATIO
-                     LONG-FLOAT)
-            (register-interval-type type))
+           ((INTEGER RATIO #+short-float SHORT-FLOAT SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT)
+            (canonical-interval-type type))
            ((FLOAT)
             (canonical-type `(OR #+short-float
                                  (SHORT-FLOAT ,@(rest type))
@@ -1628,9 +1610,7 @@ if not possible."
             (canonical-type `(OR (INTEGER ,@(rest type))
                                  (RATIO ,@(rest type)))))
            (COMPLEX
-            (canonical-complex-type (if (endp (rest type))
-                                        'real
-                                        (second type))))
+            (canonical-complex-type type))
            (CONS (canonical-cons-type type))
            (CONS-CAR (register-cons-car-type (second type)))
            (CONS-CDR (register-cons-cdr-type (second type)))
