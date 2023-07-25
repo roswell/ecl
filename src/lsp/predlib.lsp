@@ -1222,29 +1222,30 @@ if not possible."
 
 (defun register-interval-type (interval)
   (declare (si::c-local))
-  (let* ((i interval)
-         (type (pop i))
-         (low (if i (pop i) '*))
-         (high (if i (pop i) '*))
-         (tag-high (cond ((eq high '*)
-                          +built-in-tag-nil+)
-                         ((eq type 'INTEGER)
-                          (setq high (if (consp high)
-                                         (ceiling (first high))
-                                         (floor (1+ high))))
-                          (register-elementary-interval type high))
-                         ((consp high)
-                          (register-elementary-interval type (first high)))
-                         (t
-                          (register-elementary-interval type (list high)))))
-         (tag-low (register-elementary-interval type
-                    (cond ((or (eq '* low) (not (eq type 'INTEGER)) (integerp low))
-                           low)
-                          ((consp low)
-                           (floor (1+ (first low))))
-                          (t
-                           (ceiling low))))))
-    (logandc2 tag-low tag-high)))
+  (destructuring-bind (type &optional (low '*) (high '*)) interval
+    (let ((tag-high
+            (cond ((eq high '*)
+                   +built-in-tag-nil+)
+                  ((eq type 'INTEGER)
+                   (setq high (if (consp high)
+                                  (ceiling (first high))
+                                  (floor (1+ high))))
+                   (register-elementary-interval type high))
+                  ((consp high)
+                   (register-elementary-interval type (first high)))
+                  (t
+                   (register-elementary-interval type (list high)))))
+          (tag-low
+            (cond ((eq low '*)
+                   (register-elementary-interval type low))
+                  ((eq type 'INTEGER)
+                   (setq low (if (consp low)
+                                 (floor (1+ (first low)))
+                                 (ceiling low)))
+                   (register-elementary-interval type low))
+                  (t
+                   (register-elementary-interval type low)))))
+      (logandc2 tag-low tag-high))))
 
 (defun numeric-range-p (type)
   (and (consp type)
