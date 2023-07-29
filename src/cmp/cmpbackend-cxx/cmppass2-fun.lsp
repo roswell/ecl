@@ -105,16 +105,13 @@
     (setf *tail-recursion-info* (cons *tail-recursion-info* requireds))
     (setf *tail-recursion-info* nil))
 
-  ;; check arguments
-  (when (policy-check-nargs)
-    (if (and use-narg (not varargs))
-        (wt-nl "if (ecl_unlikely(narg!=" nreq ")) FEwrong_num_arguments_anonym();")
-        (when varargs
-          (when requireds
-            (wt-nl "if (ecl_unlikely(narg<" nreq ")) FEwrong_num_arguments_anonym();"))
-          (unless (or rest key-flag allow-other-keys)
-            (wt-nl "if (ecl_unlikely(narg>" (+ nreq nopt) ")) FEwrong_num_arguments_anonym();"))))
-    (open-inline-block))
+  ;; check number of arguments
+  (wt-maybe-check-num-arguments use-narg
+                                nreq
+                                (if (or rest key-flag allow-other-keys)
+                                    nil
+                                    (+ nreq nopt))
+                                fname)
 
   ;; If the number of required arguments exceeds the number of variables we
   ;; want to pass on the C stack, we pass some of the arguments to the list
@@ -286,3 +283,21 @@
   (c2expr body)
 
   (close-inline-blocks))
+
+(defun wt-maybe-check-num-arguments (use-narg minarg maxarg fname)
+ (when (and (policy-check-nargs) use-narg)
+   (flet ((wrong-num-arguments ()
+            (if fname
+                (wt " FEwrong_num_arguments(" (add-symbol fname) ");")
+                (wt " FEwrong_num_arguments_anonym();"))))
+     (if (and maxarg (= minarg maxarg))
+         (progn (wt-nl "if (ecl_unlikely(narg!=" minarg "))")
+                (wrong-num-arguments))
+         (progn
+           (when (plusp minarg)
+             (wt-nl "if (ecl_unlikely(narg<" minarg "))")
+             (wrong-num-arguments))
+           (when maxarg
+             (wt-nl "if (ecl_unlikely(narg>" maxarg "))")
+             (wrong-num-arguments)))))
+   (open-inline-block)))
