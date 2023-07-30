@@ -1395,7 +1395,18 @@ if not possible."
     (cdr pos)
     (push-cons-type type)))
 
+(defun expand-integer-low (low)
+  (cond ((eq low '*) `(integer ,low))
+        ((consp low) `(integer ,(floor (1+ (first low)))))
+        (t           `(integer ,(ceiling low)))))
+
+(defun expand-integer-high (high)
+  (cond ((eq high '*)  nil)
+        ((consp high)  `(not (integer (ceiling (first high)))))
+        (t             `(not (integer (floor (1+ high)))))))
+
 (defun expand-cons-compound (type constructor)
+  (dbg "--- ~s" type)
   (flet ((rec (type*) (expand-cons-compound type* constructor)))
     (cond
       ((symbolp type)
@@ -1406,12 +1417,18 @@ if not possible."
              (funcall constructor type))))
       ((consp type)
        (case (first type)
-         (AND  `(AND (mapcar #'rec (rest type))))
-         (OR   `(OR  (mapcar #'rec (rest type))))
+         (AND  `(AND ,@(mapcar #'rec (rest type))))
+         (OR   `(OR  ,@(mapcar #'rec (rest type))))
          (NOT  `(AND ,(funcall constructor t)
-                     (NOT ,(expand-cons-compound (second type)))))
+                     (NOT ,(rec (second type)))))
          (CONS (rec (expand-cons-type type)))
-         (otherwise (funcall constructor type))))
+         (INTEGER
+          `(and ,(expand-integer-low  (or (nth 1 type) '*))
+                ,(expand-integer-high (or (nth 2 type) '*))))
+         (otherwise
+          (ext:if-let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
+            (rec (funcall expander (rest type)))
+            (funcall constructor type)))))
       (t
        (funcall constructor type)))))
 
