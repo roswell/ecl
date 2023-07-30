@@ -1373,8 +1373,8 @@ if not possible."
 
 (defun expand-cons-type (type)
   (destructuring-bind (&optional (car-type '*) (cdr-type '*)) (rest type)
-    `(OR (CONS-CAR ,car-type)
-         (CONS-CDR ,cdr-type)
+    `(OR ,(expand-cons-compound car-type (lambda (x) `(CONS-CAR ,x)))
+         ,(expand-cons-compound cdr-type (lambda (x) `(CONS-CDR ,x)))
          (CONS-EQL ,type))))
 
 (defun register-cons-type (type)
@@ -1395,8 +1395,25 @@ if not possible."
     (cdr pos)
     (push-cons-type type)))
 
-
-
+(defun expand-cons-compound (type constructor)
+  (flet ((rec (type*) (expand-cons-compound type* constructor)))
+    (cond
+      ((symbolp type)
+       (if (member type '(* t))
+           (funcall constructor t)
+           (ext:if-let ((expander (get-sysprop type 'DEFTYPE-DEFINITION)))
+             (expand-cons-compound (funcall expander nil) constructor)
+             (funcall constructor type))))
+      ((consp type)
+       (case (first type)
+         (AND  `(AND (mapcar #'rec (rest type))))
+         (OR   `(OR  (mapcar #'rec (rest type))))
+         (NOT  `(AND ,(funcall constructor t)
+                     (NOT ,(expand-cons-compound (second type)))))
+         (CONS (rec (expand-cons-type type)))
+         (otherwise (funcall constructor type))))
+      (t
+       (funcall constructor type)))))
 
 ;;; ----------------------------------------------------------------------------
 ;;; FIND-BUILT-IN-TAG
