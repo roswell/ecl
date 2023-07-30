@@ -264,8 +264,8 @@ FORM returns no value, NIL."
     (declare (fixnum n))
     (push `(SETQ ,(car vl) (NTH ,n ,sym)) forms)))
 
-;; We do not use this macroexpanso, and thus we do not care whether
-;; it is efficiently compiled by ECL or not.
+;; We do not use this macroexpanso, and thus we do not care whether it is
+;; efficiently compiled by ECL or not.
 (defmacro multiple-value-bind (vars form &rest body)
   "Syntax: (multiple-value-bind ({var}*) init {decl}* {form}*)
 
@@ -273,7 +273,10 @@ Evaluates INIT and binds the N-th VAR to the N-th value of INIT or, if INIT
 returns less than N values, to NIL.  Then evaluates FORMs, and returns all
 values of the last FORM.  If no FORM is given, returns NIL."
   (declare (notinline mapcar))
-  `(multiple-value-call #'(lambda (&optional ,@(mapcar #'list vars)) ,@body) ,form))
+  (let ((args (mapcar #'list vars))
+        (rest (gensym)))
+    `(multiple-value-call #'(lambda (&optional ,@args &rest ,rest) ,@body)
+       ,form)))
 
 (defun while-until (test body jmp-op)
   (declare (si::c-local))
