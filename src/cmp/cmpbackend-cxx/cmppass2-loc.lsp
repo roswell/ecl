@@ -180,18 +180,23 @@
         (format nil "ecl_nthcdr(~D,~A)" (- *env* expected-env-size) env-var)
         env-var)))
 
-(defun wt-make-closure (fun &aux (cfun (fun-cfun fun)))
+(defun wt-make-closure (fun &aux (cfun (fun-cfun fun))
+                                 (variadic-entrypoint (fun-variadic-entrypoint fun)))
   (declare (type fun fun))
   (let* ((closure (fun-closure fun))
-         narg)
+         (narg (fun-fixed-narg fun))
+         (narg-fixed (min (fun-minarg fun) si:c-arguments-limit)))
     (cond ((eq closure 'CLOSURE)
            (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
                (environment-accessor fun)
                ",Cblock," (min (fun-minarg fun) si:c-arguments-limit) ")"))
           ((eq closure 'LEXICAL)
            (baboon :format-control "wt-make-closure: lexical closure detected."))
-          ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
-           (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",ECL_NIL,Cblock," narg ")"))
+          (narg               ; empty environment fixed number of args
+           (wt (if variadic-entrypoint
+                   "ecl_make_cfun_va((cl_objectfn)"
+                   "ecl_make_cfun((cl_objectfn_fixed)")
+               entrypoint ",ECL_NIL,Cblock," narg-fixed ")"))
           (t ; empty environment variable number of args
            (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock,"
                (min (fun-minarg fun) si:c-arguments-limit) ")")))))

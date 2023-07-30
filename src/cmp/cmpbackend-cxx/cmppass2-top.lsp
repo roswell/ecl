@@ -332,7 +332,9 @@
           (when (eq (fun-closure fun) 'CLOSURE)
             (t3function-closure-scan fun))
           (write-sequence body *compiler-output1*)
-          (wt-nl-close-many-braces 0))))))
+          (wt-nl-close-many-braces 0))
+        (when (fun-variadic-entrypoint fun)
+          (t3function-variadic-entrypoint fun))))))
 
 (defun t3function-body (fun)
   (let ((string (make-array 2048 :element-type 'character
@@ -352,34 +354,53 @@
                        (fun-keyword-type-check-forms fun))))
     string))
 
-(defun t3function-declaration (fun)
-  (declare (type fun fun))
-  (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
-                       ((eq (fun-closure fun) 'CLOSURE) "closure ~a")
-                       (t "local function ~a"))
-                 (or (fun-name fun) (fun-description fun) 'CLOSURE))
+;;; Variadic entrypoints
+;;;
+;;; For functions which only take required arguments, we can generate
+;;; an entrypoint with variadic signature and narg parameter. This
+;;; entrypoint checks the number of arguments and then calls the
+;;; entrypoint without narg parameter. Callers using direct C calls
+;;; can then skip the check for the number of parameters. If no direct
+;;; C calls exist, the C compiler will usually inline the fixed
+;;; entrypoint and thus optimize away the overhead that this method
+;;; incurs over only generating a variadic entrypoint.
+(defun fun-variadic-entrypoint (fun)
+  (let ((result (fun-variadic-entrypoint-cfun fun)))
+    (if (not (eq result :unknown))
+        result
+        (setf (fun-variadic-entrypoint-cfun fun)
+              (and (policy-inline-nargs-check)
+                   (not (fun-no-entry fun))
+                   (not (fun-needs-narg fun))
+                   ;; lexical closures will never be called via a
+                   ;; variadic entrypoint, no need to create one
+                   (not (eq (fun-closure fun) 'lexical))
+                   (concatenate 'string (fun-cfun fun) "_va"))))))
+
+(defun t3function-variadic-entrypoint (fun)
+  (t3function-header fun (fun-variadic-entrypoint-cfun fun) t)
+  (wt-nl-open-brace)
+  (wt-maybe-check-num-arguments t (fun-minarg fun) (fun-maxarg fun) (fun-name fun))
+  (wt-nl "return ")
+  (wt-call (fun-cfun fun) (fun-required-lcls fun))
+  (wt ";")
+  (wt-nl-close-many-braces 0))
+
+(defun t3function-header (fun cfun needs-narg)
   (let* ((comma "")
          (lambda-expr (fun-lambda fun))
          (lambda-list (c1form-arg 0 lambda-expr))
          (requireds (loop
-                      repeat si::c-arguments-limit
-                      for arg in (car lambda-list)
-                      collect (next-lcl (var-name arg))))
-         (narg (fun-needs-narg fun)))
-    (let ((cmp-env (c1form-env lambda-expr)))
-      (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
-                     (cmp-env-optimization 'speed cmp-env)
-                     (cmp-env-optimization 'debug cmp-env)
-                     (cmp-env-optimization 'space cmp-env)
-                     (cmp-env-optimization 'safety cmp-env)))
-    (let ((cfun (fun-cfun fun)))
-      (cond ((fun-exported fun)
-             (wt-nl-h "ECL_DLLEXPORT cl_object " cfun "(")
-             (wt-nl "cl_object " cfun "("))
-            (t
-             (wt-nl-h "static cl_object " cfun "(")
-             (wt-nl "static cl_object " cfun "("))))
-    (when narg
+                       repeat si::c-arguments-limit
+                       for arg in (car lambda-list)
+                       collect (next-lcl (var-name arg)))))
+    (cond ((fun-exported fun)
+           (wt-nl-h "ECL_DLLEXPORT cl_object " cfun "(")
+           (wt-nl "cl_object " cfun "("))
+          (t
+           (wt-nl-h "static cl_object " cfun "(")
+           (wt-nl "static cl_object " cfun "(")))
+    (when needs-narg
       (wt-h *volatile* "cl_narg")
       (wt *volatile* "cl_narg narg")
       (setf comma ", "))
@@ -391,11 +412,27 @@
           do (wt-h comma "cl_object " *volatile*)
              (wt comma "cl_object " *volatile* lcl)
              (setf comma ", "))
-    (when narg
+    (when needs-narg
       (wt-h ", ...")
       (wt ", ..."))
     (wt-h ");")
     (wt ")")))
+
+(defun t3function-declaration (fun)
+  (declare (type fun fun))
+  (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
+                       ((eq (fun-closure fun) 'CLOSURE) "closure ~a")
+                       (t "local function ~a"))
+                 (or (fun-name fun) (fun-description fun) 'CLOSURE))
+  (let* ((lambda-expr (fun-lambda fun))
+         (cmp-env (c1form-env lambda-expr)))
+    (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
+                   (cmp-env-optimization 'speed cmp-env)
+                   (cmp-env-optimization 'debug cmp-env)
+                   (cmp-env-optimization 'space cmp-env)
+                   (cmp-env-optimization 'safety cmp-env))
+    (t3function-header fun (fun-cfun fun) (fun-needs-narg fun)))
+  t)
 
 (defun fun-closure-variables (fun)
   (sort (remove-if
@@ -449,18 +486,21 @@
           (format stream "~%static const struct ecl_cfunfixed compiler_cfuns[] = {~
 ~%~t/*t,m,narg,padding,name=function-location,block=name-location,entry,entry_fixed,file,file_position*/")
           (loop for (loc fname-loc fun) in (nreverse *global-cfuns-array*)
-                do (let* ((cfun (fun-cfun fun))
-                          (minarg (fun-minarg fun))
-                          (maxarg (fun-maxarg fun))
-                          (narg (if (and (= minarg maxarg)
-                                         (<= maxarg si:c-arguments-limit))
-                                    maxarg
-                                    (1- (- (min minarg si:c-arguments-limit))))))
-                     (format stream "~%{0,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,NULL,ECL_NIL,ecl_make_fixnum(~D)},"
+                do (let* ((variadic-entrypoint (fun-variadic-entrypoint-cfun fun))
+                          (cfun (or variadic-entrypoint (fun-cfun fun)))
+                          (needs-narg (or variadic-entrypoint (fun-needs-narg fun)))
+                          (narg (if needs-narg
+                                    (if variadic-entrypoint
+                                        0
+                                        (min (fun-minarg fun) si:c-arguments-limit))
+                                    (fun-fixed-narg fun))))
+                     (format stream "~%{~A,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,NULL,ECL_NIL,ecl_make_fixnum(~D)},"
+                             (if needs-narg "t_cfun" "t_cfunfixed")
                              narg
                              (vv-location loc)
                              (vv-location fname-loc)
-                             cfun (fun-file-position fun))))
+                             cfun
+                             (fun-file-position fun))))
           (format stream "~%};")))))
 
 (defun wt-install-function (fname fun macro-p)

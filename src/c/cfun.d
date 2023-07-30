@@ -29,6 +29,7 @@ ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, in
                     : @"function requires too many arguments.");
   }
 
+
   cf = ecl_alloc_object(t_cfunfixed);
   cf->cfunfixed.entry = fixed_dispatch_table[narg];
   cf->cfunfixed.entry_fixed = c_function;
