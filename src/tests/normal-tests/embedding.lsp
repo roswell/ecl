@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
     cl_object utf_8 = ecl_make_keyword(\"UTF-8\");
 
     unsigned char invalid[3] = {0xff, 0xfe, 0};
-    if (ecl_decode_from_cstring(invalid, -1, utf_8) != NULL) {
+    if (ecl_decode_from_cstring((char*)invalid, -1, utf_8) != NULL) {
          return -1;
     }
 
@@ -285,13 +285,13 @@ int main(int argc, char** argv) {
     ecl_char_set(s, 0, 0x1f449);
     ecl_char_set(s, 1, 0x1f448);
 
-    if (!ecl_equal(s, ecl_decode_from_cstring(x, -1, utf_8))
-        || !ecl_equal(s, ecl_decode_from_cstring(x, 8, utf_8))) {
+    if (!ecl_equal(s, ecl_decode_from_cstring((char*)x, -1, utf_8))
+        || !ecl_equal(s, ecl_decode_from_cstring((char*)x, 8, utf_8))) {
         return -2;
     }
 
     unsigned char y[9];
-    if (ecl_encode_to_cstring(y, 9, s, utf_8) != 9) {
+    if (ecl_encode_to_cstring((char*)y, 9, s, utf_8) != 9) {
         return -3;
     }
     for (int i = 0; i < 9; i++) {
@@ -300,11 +300,11 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (ecl_encode_to_cstring(y, 1, s, utf_8) != 9) {
+    if (ecl_encode_to_cstring((char*)y, 1, s, utf_8) != 9) {
         return -5;
     }
 
-    if (ecl_encode_to_cstring(y, 9, s, ecl_make_keyword(\"US-ASCII\")) != -1) {
+    if (ecl_encode_to_cstring((char*)y, 9, s, ecl_make_keyword(\"US-ASCII\")) != -1) {
         return -6;
     }
 

@@ -213,17 +213,17 @@
 #define expected_length ~S
 
 int main (int argc, char **argv) {
-  char expected[expected_length+1] = {~{~S,~}};
+  unsigned char expected[expected_length+1] = {~{~S,~}};
   if (argc != 2) {
     return 1;
   }
   if (strlen(argv[1]) != expected_length) {
     return 2;
   }
-  if (strcmp(argv[1], expected) != 0) {
+  if (strcmp(argv[1], (char*)expected) != 0) {
     return 3;
   }
-  if (strcmp(getenv(\"ECLTESTVAR\"), expected) != 0) {
+  if (strcmp(getenv(\"ECLTESTVAR\"), (char*)expected) != 0) {
     return 4;
   }
   printf(\"%s\", argv[1]);
