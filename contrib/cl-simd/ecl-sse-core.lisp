@@ -108,7 +108,7 @@
      ;; FIXME: We should think of a way to achieve this without using
      ;; internal compiler functions
      (let ((c::*inline-information* (c::machine-inline-information c::*default-machine*)))
-       (c::def-inline ',name ',mode ',arg-types ',ret-type ,call-str ,@flags)
+       (c::def-inline ,name ,mode ,arg-types ,ret-type ,call-str ,@flags)
        (setf (c::machine-inline-information c::*default-machine*)
              c::*inline-information*))))
 
