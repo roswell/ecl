@@ -42,7 +42,6 @@ static void ecl_mark_env(struct cl_env_struct *env);
 #  define GBC_BOEHM_OWN_MARKER
 static int cl_object_kind, cl_object_mark_proc_index;
 static void **cl_object_free_list;
-extern void GC_init_explicit_typing(void);
 # endif
 #endif
 
@@ -485,6 +484,10 @@ to_bitmap(void *x, void *y)
 
 void init_type_info (void)
 {
+#ifdef GBC_BOEHM_PRECISE
+  union cl_lispunion o;
+  struct ecl_cons c;
+#endif
   int i;
 #define init_tm(/* cl_type  */ type,                            \
                 /* char*    */ name,                            \
@@ -747,7 +750,6 @@ init_alloc(void)
 {
   if (alloc_initialized) return;
   alloc_initialized = TRUE;
-  init_type_info();
   /*
    * Garbage collector restrictions: we set up the garbage collector
    * library to work as follows
@@ -772,9 +774,6 @@ init_alloc(void)
     GC_enable_incremental();
   }
   GC_register_displacement(1);
-#ifdef GBC_BOEHM_PRECISE
-  GC_init_explicit_typing();
-#endif
   GC_clear_roots();
   GC_disable();
 
@@ -796,6 +795,8 @@ init_alloc(void)
   } else if (cl_core.safety_region) {
     cl_core.safety_region = 0;
   }
+
+  init_type_info();
 
   old_GC_push_other_roots = GC_push_other_roots;
   GC_push_other_roots = stacks_scanner;
