@@ -14,6 +14,7 @@
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <errno.h>
 
 #ifdef ENABLE_DLOPEN
 cl_object
