@@ -22,7 +22,7 @@
   "List of files automatically loaded when ECL is invoked.")
 
 (defparameter *help-message* "
-Usage: ecl [-? | --help]
+Usage: ecl [-? | --help] [-v | --version] [--debug | --nodebug]
            [--dir dir] [--load file] [--shell file] [--eval expr] [--rc | --norc]
            [--c-stack size] [--lisp-stack size] [--heap-size size] [--frame-stack size]
            [[-o ofile] [-c [cfile]] [-h [hfile]] [--data [datafile]] [-s] [-q]
