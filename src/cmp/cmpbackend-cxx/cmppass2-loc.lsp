@@ -226,10 +226,11 @@
                                    clfloat-value)))
     (wt (third loc)) ;; VV index
     (return-from wt-to-object-conversion))
-  (let ((record (rep-type-record loc-rep-type)))
-    (unless record
-      (cmperr "Cannot coerce C variable of type ~A to lisp object" loc-rep-type))
-    (wt (rep-type-to-lisp record) "(" loc ")")))
+  (let* ((record (rep-type-record loc-rep-type))
+         (coercer (and record (rep-type-to-lisp record))))
+    (unless coercer
+      (cmperr "Cannot coerce C variable of type ~S to lisp object" loc-rep-type))
+    (wt coercer "(" loc ")")))
 
 (defun wt-from-object-conversion (dest-type loc-type rep-type loc)
   (let* ((record (rep-type-record rep-type))

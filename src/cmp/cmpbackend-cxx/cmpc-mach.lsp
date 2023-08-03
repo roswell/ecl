@@ -114,11 +114,11 @@
     (:double-sse-pack    ext::double-sse-pack     "__m128d"              "ecl_make_double_sse_pack"          "ecl_unbox_double_sse_pack" "ecl_unbox_double_sse_pack_unsafe")
     ;; intentional       v
     (:int-sse-pack       ext::sse-pack            "__m128i"              "ecl_make_int_sse_pack"             "ecl_unbox_int_sse_pack"    "ecl_unbox_int_sse_pack_unsafe")
-    (:object             t                        "cl_object"            nil                                 nil                         nil)
+    (:object             t                        "cl_object"            ""                                  ""                          "")
     (:bool               t                        "bool"                 "ecl_make_bool"                     "ecl_to_bool"               "ecl_to_bool")
     ;; These types are never selected to unbox data.
     ;; They are here, because we need to know how to print them.
-    (:void               nil                      "void"                 nil                                 nil                         nil)
+    (:void               t                        "void"                 nil                                 nil                         nil)
     (:pointer-void       si::foreign-data         "void*"                "ecl_make_pointer"                  "ecl_to_pointer"            "ecl_to_pointer")
     (:cstring            string                   "char*"                "ecl_cstring_to_base_string_or_nil" nil                         nil)
     (:char*              string                   "char*"                nil                                 nil                         nil)
