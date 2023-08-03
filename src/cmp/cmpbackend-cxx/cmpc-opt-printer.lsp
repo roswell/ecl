@@ -44,11 +44,11 @@
                            '(:wchar :object) '(:wchar)
                            "ecl_princ_char(#0,#1)" t t))
       ((and foundp (typep value 'base-string) (< (length value) 80))
-       (produce-inline-loc (list stream)
-                           '(:object) '(:void)
-                           (concatenate 'string "ecl_princ_str("
+       (produce-inline-loc (list expression stream)
+                           '(:object :object) '(:object)
+                           (concatenate 'string "(ecl_princ_str("
                                         (c-inline-safe-string value)
-                                        ",#0)")
+                                        ",#1),#0)")
                            t t))
       (t
        (produce-inline-loc (list expression stream)
