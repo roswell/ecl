@@ -246,7 +246,7 @@ int main (int argc, char **argv) {
                  (is (zerop return-code))
                  (is (string= test-string (delete #\newline output)))))))
       (test-with-encoding ext:*default-external-format* "default-äöüλ🙋")
-      (test-with-encoding :utf8 "utf8-äöüλ🙋")
-      (test-with-encoding :latin-1 "latin-1-äöü")
-      (test-with-encoding :greek "greek-λ"))))
+      #+unicode (progn (test-with-encoding :utf8 "utf8-äöüλ🙋")
+                       (test-with-encoding :latin-1 "latin-1-äöü")
+                       (test-with-encoding :greek "greek-λ")))))
 
