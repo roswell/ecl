@@ -1,42 +1,43 @@
-.TH ECL 1 2016-09-17
-.UC 4
+.TH ecl 1 2021-02-01
+
 .SH NAME
-ecl \- Embeddable Common Lisp
+ecl -- Embeddable Common Lisp
+
 .SH SYNOPSIS
 
 \fBecl\fP
-[\fB-?\fP | \fB--help\fP]
+[\fB-?\fP | \fB--help\fP]  [\fB-v\fP | \fB--version\fP] [\fB--debug\fP | \fB--nodebug\fP]
 .br
-[\fB--dir\fP \fIdir\fP] [\fB--load\fP \fIfile\fP] [\fB--shell\fP \fIfile\fP] [\fB--eval\fP \fIexpr\fP]
+[\fB--dir\fP \fIdir\fP] [\fB--load\fP \fIfile\fP] [\fB--shell\fP \fIfile\fP] [\fB--eval\fP \fIexpr\fP] [\fB--rc\fP | \fB--norc\fP]
 .br
-[\fB--norc\fP] [\fB--hp\fP | \fB--nohp\fP]
+[\fB--c-stack\fP \fIsize\fP] [\fB--lisp-stack\fP \fIsize\fP] [\fB--heap-size\fP \fIsize\fP]
 .br
-[\fB--debug\fP | \fB--nodevbug\fP]
+[\fB--frame-stack\fP \fIsize\fP]
 .br
-[\fB--c-stack\fP \fIsize\fP] [\fB--lisp-stack\fP \fIsize\fP]
+[[\fB-o\fP \fIofile\fP] [\fB-c\fP [\fIcfile\fP]] [\fB-h\fP [\fIhfile\fP]] [\fB--data\fP [\fIdatafile\fP]] [\fB-s\fP] [\fB-q\fP]
 .br
-[\fB--heap-size\fP \fIsize\fP] [\fB--frame-stack\fP \fIsize\fP]
+ \fB--compile\fP \fIfile\fP]
 .br
-[[\fB-o\fP \fIofile\fP] [\fB-c\fP [\fIcfile\fP]] [\fB-h\fP [\fIhfile\fP]] [\fB--data\fP [\fIdatafile\fP]]
-.br
- [\fB-s\fP] [\fB-q\fP] \fB--compile\fP \fIfile\fP]
-.br
-[[\fB-o\fP \fIofile\fP] \fB--link\fP \fIfile\fP+]
+[[\fB-o\fP \fIofile\fP] \fB--link\fP \fIfile+\fP]
 .br
 [\fB--input-encoding\fP \fIexternal-format\fP] [\fB--output-encoding\fP \fIexternal-format\fP]
 .br
 [\fB--error-encoding\fP \fIexternal-format\fP] [\fB--encoding\fP \fIexternal-format\fP]
 .br
-\fBDEPRECATION NOTE:\fP one-dash versions of long flags(e.g. \fB-eval\fP or \fB-data\fP) are deprecated; you should use two-dash versions (e.g. \fB--eval\fP or \fB--data\fP) now.
+[\fB--trap-fpe\fP | \fB--no-trap-fpe\fP]
+.br
 
+\" \fBDEPRECATION NOTE:\fP one-dash versions of long flags(e.g. \fB-eval\fP or \fB-data\fP) are deprecated; you should use two-dash versions (e.g. \fB--eval\fP or \fB--data\fP) now.
 
 .SH DESCRIPTION
-.sp
-ECL (Embeddable Common-Lisp) is an interpreter of the Common-Lisp language as described in the X3J13 Ansi specification,
-featuring CLOS (Common-Lisp Object System), conditions, loops,
+
+ECL (Embeddable Common-Lisp) is an interpreter of the Common-Lisp language as described in the
+X3J13 ANSI specification, featuring CLOS (Common-Lisp Object System), conditions, loops,
 etc. plus a translator to C, which can produce standalone executables.
 
-ECL supports the operating systems Linux, FreeBSD, NetBSD, OpenBSD, OS X, Solaris and Windows, running on top of the Intel, Sparc, Alpha, PowerPC and ARM processors.
+ECL supports the operating systems Linux, FreeBSD, NetBSD, OpenBSD, OS\~X, Solaris and Windows,
+running on top of the Intel, Sparc, Alpha, PowerPC and ARM processors.
+
 .PP
 The current ECL implementation features:
 .IP \(bu
@@ -55,167 +56,137 @@ A reasonable license
 \fBecl\fP without any argument starts the interactive lisp session.
 
 .SH OPTIONS
-.TP 1i
-
+.TP 3
 .B \-?, \-\-help
 Shows the help prompt without running the ECL.
-.TP
-.BI \-\-norc
-Do not load configuration files at startup.
-.TP
-.BI \-\-version
+.TP 3
+.B \-v, \-\-version,
 Prints the current version of ECL, without running the ECL.
-.TP
-.BI \-debug
+.TP 3
+.B \-\-debug
 Turned on by default, this enables the debugging in the setup phase,
 so that you can debug your files.
-.TP
-.BI \-\-nodebug
+.TP 3
+.B \-\-nodebug
 Run without debugging setup phase, meaning that errors prevent ECL from starting up.
-.TP
-.BI \-\-eval " form"
-Evaluate the
-.I form
-before loading the .rc file and starting the Top Level.
-.TP
-.BI \-\-shell " file"
-Executes the given
-.I file
-and exits, without providing a read-eval-print loop.
+.TP 3
+.B \-\-dir\~\fIdirectory\fP
+Use \fIdirectory\fP as a system directory.
+.TP 3
+.B \-\-load\~\fIfile\fP
+Load source \fIfile\fP before loading the \fB.rc\fP file and starting the toplevel.
+.TP 3
+.B \-\-shell\~\fIfile\fP
+Executes the given \fIfile\fP and exits, without providing a read-eval-print loop.
 If you want to use lisp as a scripting language, you can write
 .BR "#!@bindir@/ecl --shell"
 on the first line of the file to be executed, and then ECL will be
 automatically invoked.
-.TP
-.BI \-\-load " file"
-Load source
-.I file
-before loading the .rc file and starting the Top Level.
-.TP
-.BI \-\-dir " directory"
-Use
-.I directory
-as a system directory.
-.TP
-.BI \-\-heap-size " size"
-Specify heap
-.I size
-in kilobytes.
-.TP
-.BI \-\-lisp-stack " size"
-Specify stack
-.I size
-in kilobytes for bytecodes interpreter.
-.TP
-.BI \-\-frame-stack " size"
-Specify frame stack
-.I size
-in kilobytes for runtime control structures.
-.TP
-.BI \-\-c-stack " size"
-Specify stack
-.I size
-in kilobytes for C compiler.
-.TP
-.BI \-\-trap-fpe
-Make ECL debugger catch floating point exception.
-.TP
-.BI \-\-no-trap-fpe
-Make ECL debugger not catch floating point exception.
-.TP
-.BI \-\-encoding " encoding"
-Specify the external
-.I encoding
-for standard input, output, trace and error.
-.TP
-.BI \-\-input-encoding " encoding"
-Specify the external
-.I encoding
-for standard input.
-.TP
-.BI \-\-output-encoding " encoding"
-Specify the external
-.I encoding
-for standard output.
-.TP
-.BI \-\-error-encoding " encoding"
-Specify the external
-.I encoding
-for standard error.
-.TP
-
-.BI \-o " file"
-Provide the output target
-.I file
-for compilation.
-.TP
-.BI \-c " cfile"
-When compiling name the intermediary C file
-.I cfile
-and do not delete it afterwards.
-.TP
-.BI \-h " cfile"
-When compiling name the intermediary C file
-.I cfile
-and do not delete it afterwards.
-.TP
-.BI \-\-data " [datafile]"
+.TP 3
+.B \-\-eval\~\fIfile\fP
+Evaluate the \fIfile\fP before loading the \fB.rc\fP file and starting the Top Level.
+.TP 3
+.B \-\-rc
+Load configuration files at startup (default).
+.TP 3
+.B \-\-norc
+Do not load configuration files at startup.
+.TP 3
+.B \-\-c\-stack\~\fIsize\fP
+Set C stack \fIsize\fP in kilobytes for C compiler.
+.TP 3
+.B \-\-lisp\-stack\~\fIsize\fP
+Set stack \fIsize\fP in kilobytes for bytecodes interpreter.
+.TP 3
+.B \-\-heap\-stack\~\fIsize\fP
+Set heap \fIsize\fP in kilobytes.
+.TP 3
+.B \-\-frame\-stack\~\fIsize\fP
+Set frame \fIsize\fP in kilobytes for runtime control structures.
+.TP 3
+.B \-o\~\fIfile\fP
+Provide the output target \fIfile\fP for compilation.
+.TP 3
+.B \-c\~\fIcfile\fP
+When compiling name the intermediary \fI*.c\fP file \fIcfile\fP and do not delete it afterwards.
+.TP 3
+.B \-h\~\fIhfile\fP
+When compiling name the intermediary \fI*.h\fP file \fIhfile\fP and do not delete it afterwards.
+.TP 3
+.B \-\-data\~[\fIdatafile\fP]
 Dumps compiler data into \fIdatafile\fP or, if not
 supplied, into a file named after the source file, but
-with .data as extension.
-.TP
-.BI \-\-compile " file"
-Translates
-.I file
-to C and invokes the local C compiler to produce a
-native code program.
-.TP
-.BI \-q
-Short for quiet - produce less notes.
-.TP
-.BI \-\-hp
-This option is deprecated and doesn't do anything.
-.TP
-.BI \-\-nodp
-This option is deprecated and doesn't do anything.
-.TP
-.BI \-s
+with \fI.data\fP as extension.
+.TP 3
+.B \-s
 Produce a linkable object file. It cannot be loaded
-with load, but it can be used to build libraries
+with \fB(load)\fP, but it can be used to build libraries
 or standalone executable programs.
-.TP
+.TP 3
+.B \-q
+Short for quiet -- produce less notes.
+.TP 3
+.B \-\-compile\~\fIfile\fP
+Translates \fIfile\fP to C and invokes the local C compiler to produce
+a native code program.
+.TP 3
+.B \-\-link\~\fIfile+\fP
+Create standalone executable from Lisp files \fIfile+\fP.
+.TP 3
+.B \-\-input-encoding\~\fIencoding\fP
+Specify the external \~\fIencoding\fP for standard input.
+.TP 3
+.B \-\-output-encoding\~\fIencoding\fP
+Specify the external \~\fIencoding\fP for standard output.
+.TP 3
+.B \-\-error-encoding\~\fIencoding\fP
+Specify the external \~\fIencoding\fP for standard error.
+.TP 3
+.B \-\-encoding\~\fIencoding\fP
+Specify the external \~\fIencoding\fP for standard input, output, trace and error.
+.TP 3
+.B \-\-trap-fpe
+Make ECL debugger catch floating point exception.
+.TP 3
+.B \-\-no-trap-fpe
+Disable ECL debugger floating point exception catching.
 
 .SH AUTHORS
 
 The original version was developed by Giuseppe Attardi starting from
 the Kyoto Common Lisp implementation by Taiichi Yuasa, Masami
 Hagiya. Further development was lead by Juan Jose Garcia Ripoll.  The
-current maintainer of ECL is Daniel Kochmański, who can be reached at
-the ECL mailing list.
+current maintainers of ECL are Daniel Kochmański and Marius Gerbershagen,
+who can be reached at the ECL mailing list.
 
 .SH FILES
+
 .TP
-.BR "~/.ecl, ~/.eclrc"
-Default initialization files loaded at startup unless the option
-.BR \-\-norc
-is provided.
-(if they exist).
+.I ~/.ecl, ~/.eclrc
+Default initialization files loaded at startup unless the option \fB\-\-norc\fP
+is provided (if they exist).
 
 .SH SEE ALSO
-.IP ANSI Common Lisp standard X3.226-1994
-.IP The Common Lisp HyperSpec
+.IP
+ANSI Common Lisp standard X3.226-1994
+.IP
+The Common Lisp HyperSpec
 
-.SH "BUGS"
+.SH BUGS
 Unfortunately it is possible that there are some bugs in the program.
 In case you find any bug, please report it as an issue (after making sure that it hasn't been reported or fixed)
-to official gitlab repository: https://gitlab.com/embeddable-common-lisp/ecl/issues .
+to official gitlab repository:
+.UR https://gitlab.com/embeddable-common-lisp/ecl/issues
+.UE
+.
 
-.SH "LICENSE"
-ECL is free software; you can redistribute it and/or modify it under the terms of the GNU Library General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version; see file 'Copying'.
+.SH LICENSE
+ECL is free software; you can redistribute it and/or modify it under the terms of the GNU Library General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version; see file \fICOPYING\fP.
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for more details.
 
 You should have received a copy of the GNU Library General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 Please report bugs, comments, suggestions to the ecl mailing list:
-.B ecl-devel@common-lisp.net
+.MT ecl-devel@common-lisp.net
+.ME
 (or use gitlab).
