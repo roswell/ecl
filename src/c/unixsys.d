@@ -122,7 +122,7 @@ from_list_to_execve_argument(cl_object l, char ***environp)
     nstrings++;
   }
   buffer = ecl_alloc_adjustable_base_string(total_size + 1);
-  my_environ = ecl_alloc_atomic((nstrings + 1) * sizeof(char*));
+  my_environ = ecl_alloc((nstrings + 1) * sizeof(char*));
   buffer_stream = si_make_sequence_output_stream(1, buffer);
   for (j = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
@@ -497,7 +497,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
       /* Child */
       int j;
       cl_object p;
-      char **argv_ptr = ecl_alloc_atomic((ecl_length(argv) + 1) * sizeof(char*));
+      char **argv_ptr = ecl_alloc((ecl_length(argv) + 1) * sizeof(char*));
       for (p = argv, j = 0; p != ECL_NIL; p = ECL_CONS_CDR(p)) {
         cl_object arg = si_string_to_octets(3, ECL_CONS_CAR(p), @':null-terminate', ECL_T);
         argv_ptr[j++] = (char*)arg->base_string.self;
