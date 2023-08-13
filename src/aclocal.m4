@@ -341,6 +341,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -351,6 +352,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -362,6 +364,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="-lpthread ${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -1132,6 +1135,7 @@ if test "${enable_boehm}" = "included"; then
     autoreconf -vif
     automake --add-missing
  fi;
+ CFLAGS="$CFLAGS $GC_CFLAGS";
  cd $currentdir;
  if mkdir gc; then
    if (destdir=`${PWDCMD}`; cd gc; \

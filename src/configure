@@ -6042,6 +6042,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED"
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -6052,6 +6053,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED"
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -6063,6 +6065,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED"
                 clibs="-lpthread ${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -7111,6 +7114,7 @@ printf "%s\n" "$as_me: Configuring included Boehm GC library:" >&6;}
     autoreconf -vif
     automake --add-missing
  fi;
+ CFLAGS="$CFLAGS $GC_CFLAGS";
  cd $currentdir;
  if mkdir gc; then
    if (destdir=`${PWDCMD}`; cd gc; \
@@ -12614,4 +12618,3 @@ fi
 
 
 for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done
-
