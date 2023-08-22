@@ -47,7 +47,7 @@ extern char **environ;
 cl_object
 si_system(cl_object cmd_string)
 {
-#if !defined(HAVE_SYSTEM) || defined(TARGET_OS_IPHONE)
+#if !defined(HAVE_SYSTEM) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
   FElibc_error("si_system not implemented",1);
   @(return ECL_NIL);
 #else
