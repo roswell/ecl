@@ -322,3 +322,5 @@
 (defun type>= (type1 type2)
   (subtypep type2 type1))
 
+(defun type-false-p (type) (subtypep type 'null))
+(defun type-true-p (type) (subtypep type '(not null)))
