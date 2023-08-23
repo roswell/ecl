@@ -297,6 +297,7 @@ from the C language code.  NIL means \"do not create the file\"."
                          (let ((*compiler-output1* *standard-output*))
                            (apply t3local-fun args))))
                (compiler-pass1 disassembled-form)
+               (compiler-pass/propagate-types)
                (ctop-write (compute-init-name "foo" :kind :fasl)
                            (if h-file h-file "")
                            (if data-file data-file ""))
