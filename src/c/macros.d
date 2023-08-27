@@ -68,7 +68,6 @@ search_macro_function(cl_object name, cl_object env)
           return CADDR(record);
         if (tag == @'function')
           return ECL_NIL;
-        break;
       }
     }
   }
