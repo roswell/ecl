@@ -384,6 +384,7 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  * macro-record =       (function-name FUNCTION [| function-object]) |
  *                      (macro-name si::macro macro-function) |
  *                      (:declare name declaration) |
+ *                      (compiler-macro-name si::compiler-macro macro-function) |
  *                      SI:FUNCTION-BOUNDARY |
  *                      SI:UNWIND-PROTECT-BOUNDARY
  *

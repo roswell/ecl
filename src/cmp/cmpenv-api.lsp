@@ -93,6 +93,11 @@ that are susceptible to be changed by PROCLAIM."
         (cmp-env-variables env))
   env)
 
+(defun cmp-env-register-compiler-macro (name macro-function)
+  (push (list name 'si::compiler-macro macro-function)
+        (cmp-env-functions *cmp-env-root*))
+  (values))
+
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
   (let ((cfb nil)
         (unw nil)
@@ -106,7 +111,7 @@ that are susceptible to be changed by PROCLAIM."
              (baboon :format-control "Unknown record found in environment~%~S"
                      :format-arguments (list record)))
             ;; We have to use EQUAL because the name can be a list (SETF whatever)
-            ((equal (first record) name)
+            ((and (equal (first record) name) (not (eq (second record) 'si::compiler-macro)))
              (setf found (first (last record)))
              (return))))
     (values found cfb unw)))
@@ -165,6 +170,17 @@ that are susceptible to be changed by PROCLAIM."
 (defun cmp-macro-function (name)
   (or (cmp-env-search-macro name)
       (macro-function name)))
+
+(defun cmp-env-search-compiler-macro (name &optional (env *cmp-env*))
+  (dolist (record (cmp-env-functions env))
+    (when (and (consp record)
+               (equal (first record) name)
+               (eq (second record) 'si::compiler-macro))
+      (return-from cmp-env-search-compiler-macro (third record)))))
+
+(defun cmp-compiler-macro-function (name)
+  (or (cmp-env-search-compiler-macro name)
+      (compiler-macro-function name)))
 
 (defun cmp-env-search-ftype (name &optional (env *cmp-env*))
   (dolist (i env nil)
