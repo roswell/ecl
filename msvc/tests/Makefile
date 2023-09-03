@@ -15,5 +15,8 @@ check: config.lsp
 
 config.lsp: $(top_srcdir)\src\tests\config.lsp.in ..\c\cut.exe Makefile
 	..\c\cut.exe "@builddir@" "./" \
-	          "@true_srcdir@" "../src" \
+	          "@true_srcdir@" "../../src" \
 	  < $(top_srcdir)\src\tests\config.lsp.in > config.lsp
+
+clean:
+	rd /s /q temporary

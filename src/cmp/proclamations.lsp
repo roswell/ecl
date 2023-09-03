@@ -46,19 +46,19 @@
 
 (defun parse-function-proclamation
     (name arg-types return-type &rest properties)
-  (when (sys:get-sysprop name 'proclaimed-arg-types)
+  (when (si:get-sysprop name 'proclaimed-arg-types)
     (warn "Duplicate proclamation for ~A" name))
   (proclaim-function
    name (list arg-types return-type))
   (loop for p in properties
      do (case p
           (:no-sp-change
-           (sys:put-sysprop name 'no-sp-change t))
+           (si:put-sysprop name 'no-sp-change t))
           ((:predicate :pure)
-           (sys:put-sysprop name 'pure t)
-           (sys:put-sysprop name 'no-side-effects t))
+           (si:put-sysprop name 'pure t)
+           (si:put-sysprop name 'no-side-effects t))
           ((:no-side-effects :reader)
-           (sys:put-sysprop name 'no-side-effects t))
+           (si:put-sysprop name 'no-side-effects t))
           (otherwise
            (error "Unknown property ~S in function proclamation for ~S"
                   p name)))))
@@ -432,20 +432,20 @@
 ;;; 11. PACKAGES
 ;;;
 
-(proclamation export (list &optional package-designator) t)
+(proclamation export ((or list symbol) &optional package-designator) t)
 (proclamation find-symbol (string &optional package-designator)
               (values symbol (member :inherited :external :internal nil)))
 (proclamation find-package (package-designator) (or package null))
 (proclamation find-all-symbols (string-designator) list)
-(proclamation import (list &optional package-designator) t)
+(proclamation import ((or list symbol) &optional package-designator) t)
 (proclamation list-all-packages () list)
 (proclamation rename-package (package-designator package-designator
                               &optional list) package)
-(proclamation shadow (list &optional package-designator) t)
-(proclamation shadowing-import (list &optional package-designator) t)
+(proclamation shadow ((or list string-designator) &optional package-designator) t)
+(proclamation shadowing-import ((or symbol list) &optional package-designator) t)
 (proclamation delete-package (package-designator) gen-bool)
 (proclamation make-package (string-designator &rest t) package)
-(proclamation unexport (list &optional package-designator) t)
+(proclamation unexport ((or list symbol) &optional package-designator) t)
 (proclamation unintern (symbol &optional package-designator) gen-bool)
 (proclamation unuse-package (list &optional package-designator) t)
 (proclamation use-package (list &optional package-designator) t)
@@ -617,6 +617,13 @@
 (proclamation si:long-float-p (t) gen-bool :pure)
 #+complex-float (proclamation si:complex-float (float float) si:complex-float :pure)
 #+complex-float (proclamation si:complex-float-p (t) gen-bool :pure)
+
+(proclamation si:single-float-bits (single-float) integer :pure)
+(proclamation si:bits-single-float (integer) single-float :pure)
+(proclamation si:double-float-bits (double-float) integer :pure)
+(proclamation si:bits-double-float (integer) double-float :pure)
+(proclamation si:long-float-bits (long-float) integer :pure)
+(proclamation si:bits-long-float (integer) long-float :pure)
 
 ;; Virtual functions added by the compiler
 (proclamation shift>> (*) nil :pure)
@@ -874,6 +881,7 @@
 ;; ECL extensions
 (proclamation si:make-pure-array (t t t t t t) array)
 (proclamation si:make-vector (t t t t t t) vector)
+(proclamation si:adjust-vector (vector ext:array-index) vector)
 (proclamation si:aset (array t &rest t) t)
 (proclamation si:row-major-aset (array ext:array-index t) t)
 (proclamation si:svset (simple-vector ext:array-index t) t)
@@ -1363,8 +1371,7 @@
 (proclamation get-internal-run-time () unsigned-byte :no-side-effects)
 (proclamation disassemble ((or function-designator list)) null)
 (proclamation room (&optional (member t nil :default)) (values &rest t))
-(proclamation ed (&optional (or null pathname string function-name))
-              (values &rest t))
+(proclamation ed (&optional t) (values &rest t))
 (proclamation inspect (t) (values &rest t))
 (proclamation dribble (&optional pathname-designator) (values &rest t))
 (proclamation lisp-implementation-type () (or string null) :pure)
@@ -1514,8 +1521,9 @@
 #+threads (proclamation mp:semaphore-name (mp:semaphore) t :reader)
 #+threads (proclamation mp:semaphore-count (mp:semaphore) fixnum :reader)
 #+threads (proclamation mp:semaphore-wait-count (mp:semaphore) natural :reader)
-#+threads (proclamation mp:wait-on-semaphore (mp:semaphore) fixnum)
-#+threads (proclamation mp:try-get-semaphore (mp:semaphore) t)
+#+threads (proclamation mp:semaphore-wait (mp:semaphore fixnum real) t)
+#+threads (proclamation mp:wait-on-semaphore (mp:semaphore &key) t)
+#+threads (proclamation mp:try-get-semaphore (mp:semaphore &optional fixnum) t)
 #+threads (proclamation mp:signal-semaphore (mp:semaphore &optional fixnum) t)
 
 ;;;

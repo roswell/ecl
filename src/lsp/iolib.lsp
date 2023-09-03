@@ -303,7 +303,8 @@ the one used internally by ECL compiled files."
   #-unicode
   (warn "EXT:LOAD-ENCODING not available when ECL is built without support for Unicode")
   #+unicode
-  (let ((filename (make-pathname :name (symbol-name name) :defaults "sys:encodings;")))
+  (let ((ext:*default-external-format* t) ; circularity: processing filenames needs encodings itself
+        (filename (make-pathname :name (symbol-name name) :defaults "sys:encodings;")))
     (cond ((probe-file filename)
            (load filename :verbose nil)
            name)

@@ -97,20 +97,20 @@ si_dump_c_backtrace(cl_object size)
     pSymbol->MaxNameLen = MAX_SYMBOL_LENGTH;
 # endif
     int i;
-    cl_format(2, ECL_T, ecl_make_constant_base_string("~&C Backtrace:~%",-1));
+    cl_format(2, ECL_T, @"~&C Backtrace:~%");
     for (i = 0; i < nframes; i++) {
 # if defined(ECL_UNIX_BACKTRACE)
-      cl_format(3, ECL_T, ecl_make_constant_base_string("  > ~a~%",-1),
+      cl_format(3, ECL_T, @"  > ~a~%",
                 ecl_make_constant_base_string(names[i],-1));
 # elif defined(ECL_WINDOWS_BACKTRACE)
       DWORD64 displacement;
       if (SymFromAddr(process, (DWORD64) pointers[i], &displacement, pSymbol)) {
-        cl_format(5, ECL_T, ecl_make_constant_base_string("  > (~a+0x~x) [0x~x]~%",-1),
+        cl_format(5, ECL_T, @"  > (~a+0x~x) [0x~x]~%",
                   ecl_make_constant_base_string(pSymbol->Name,-1),
                   ecl_make_unsigned_integer(displacement),
                   ecl_make_unsigned_integer((cl_index)pointers[i]));
       } else {
-        cl_format(3, ECL_T, ecl_make_constant_base_string("  > (unknown) [0x~x]~%",-1),
+        cl_format(3, ECL_T, @"  > (unknown) [0x~x]~%",
                   ecl_make_unsigned_integer((cl_index)pointers[i]));
       }
 # endif

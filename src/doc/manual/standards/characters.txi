@@ -23,7 +23,7 @@ When no option is specified ECL builds with support for a larger character set, 
 @lspindex extended-char
 If ECL is compiled without Unicode support, all characters are implemented using 8-bit codes and the type @code{extended-char} is empty. If compiled with Unicode support, characters are implemented using 24 bits and the @code{extended-char} type covers characters above code 255.
 @multitable @columnfractions .33 .33 .33
-@headitem Type @tab With Unicode @tab Without Unicode
+@headitem Type @tab Without Unicode @tab With Unicode
 @item standard-char @tab #\Newline,32-126 @tab #\Newline,32-126
 @item base-char @tab 0-255 @tab 0-255
 @item extended-char @tab - @tab 256-16777215

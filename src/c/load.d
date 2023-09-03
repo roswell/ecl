@@ -14,6 +14,7 @@
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <errno.h>
 
 #ifdef ENABLE_DLOPEN
 cl_object
@@ -52,7 +53,7 @@ si_load_binary(cl_object filename, cl_object verbose,
     prefix = @si::base-string-concatenate(3,
                                           init_prefix,
                                           prefix,
-                                          ecl_make_constant_base_string("_",-1));
+                                          @"_");
   }
   basename = cl_pathname_name(1,filename);
   basename = @si::base-string-concatenate(2, prefix, @string-upcase(1, funcall(4, @'nsubstitute', ECL_CODE_CHAR('_'), ECL_CODE_CHAR('-'), basename)));
@@ -122,6 +123,15 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
   @(return ECL_NIL);
 }
 
+static cl_object
+read_forms(cl_object stream, cl_object errorp) {
+  cl_env_ptr env = ecl_process_env();
+  cl_object forms;
+  env->packages_to_be_created_p = ECL_T;
+  forms = cl_read(3, stream, errorp, ECL_NIL);
+  env->packages_to_be_created_p = ECL_NIL;
+  return forms;
+}
 
 cl_object
 si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_object external_format)
@@ -146,9 +156,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
       cl_object progv_list = ECL_SYM_VAL(env, @'si::+ecl-syntax-progv-list+');
       cl_index bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
                                    ECL_CONS_CDR(progv_list));
-      env->packages_to_be_created_p = ECL_T;
-      forms = cl_read(1, strm);
-      env->packages_to_be_created_p = ECL_NIL;
+      forms = read_forms(strm, ECL_T);
       ecl_bds_unwind(env, bds_ndx);
     }
     while (!Null(forms)) {
@@ -157,6 +165,9 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
         forms = ECL_CONS_CDR(forms);
         if (ecl_t_of(x) == t_bytecodes) {
           _ecl_funcall1(x);
+          if (Null(forms)) {
+            forms = read_forms(strm, ECL_NIL);
+          }
           continue;
         }
       }
@@ -181,8 +192,9 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
        therefore, first we frs_pop() current jump point, then
        try to close the stream, and then jump to next catch
        point */
-    if (strm != source)
+    if (strm != source) {
       cl_close(3, strm, @':abort', @'t');
+    }
   } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   @(return ECL_NIL);
 }
@@ -193,7 +205,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
               (if_does_not_exist @':error')
               (external_format @':default')
               (search_list ecl_symbol_value(@'si::*load-search-list*'))
-              &aux pathname pntype hooks filename function ok)
+              &aux pathname pntype hooks filename function ok file_kind)
   bool not_a_filename = 0;
 @
   /* If source is a stream, read conventional lisp code from it */
@@ -206,7 +218,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   }
   /* INV: coerce_to_file_pathname() creates a fresh new pathname object */
   source   = cl_merge_pathnames(1, source);
-  pathname = coerce_to_file_pathname(source);
+  pathname = si_coerce_to_file_pathname(source);
   pntype   = pathname->pathname.type;
 
   filename = ECL_NIL;
@@ -232,10 +244,9 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   if (!Null(pntype) && (pntype != @':wild')) {
     /* If filename already has an extension, make sure
        that the file exists */
-    cl_object kind;
-    filename = si_coerce_to_filename(pathname);
-    kind = si_file_kind(filename, ECL_T);
-    if (kind != @':file' && kind != @':special') {
+    filename = pathname;
+    file_kind = si_file_kind(pathname, ECL_T);
+    if (file_kind != @':file' && file_kind != @':special') {
       filename = ECL_NIL;
     } else {
       function = cl_cdr(ecl_assoc(pathname->pathname.type, hooks));
@@ -243,12 +254,11 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   } else loop_for_in(hooks) {
       /* Otherwise try with known extensions until a matching
          file is found */
-      cl_object kind;
       filename = pathname;
       filename->pathname.type = CAAR(hooks);
       function = CDAR(hooks);
-      kind = si_file_kind(filename, ECL_T);
-      if (kind == @':file' || kind == @':special')
+      file_kind = si_file_kind(filename, ECL_T);
+      if (file_kind == @':file' || file_kind == @':special')
         break;
       else
         filename = ECL_NIL;
@@ -256,14 +266,22 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   if (Null(filename)) {
     if (Null(if_does_not_exist)) {
       @(return ECL_NIL);
-    }
-    else {
-        FEcannot_open(source);
+    } else {
+      if (file_kind == @':directory') {
+        errno = EISDIR;
+#ifdef ECL_MS_WINDOWS_HOST
+      } else {
+        /* The functions used by si_file_kind report no useful errors
+         * on Windows, so just stick with ENOENT here. */
+        errno = ENOENT;
+#endif
+      }
+      FEcannot_open(source);
     }
   }
  NOT_A_FILENAME:
   if (verbose != ECL_NIL) {
-    cl_format(3, ECL_T, ecl_make_constant_base_string("~&;;; Loading ~s~%",-1),
+    cl_format(3, ECL_T, @"~&;;; Loading ~s~%",
               filename);
   }
   ecl_bds_bind(the_env, @'*package*', ecl_symbol_value(@'*package*'));
@@ -297,7 +315,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
     FEerror("LOAD: Could not load file ~S (Error: ~S)",
             2, filename, ok);
   if (print != ECL_NIL) {
-    cl_format(3, ECL_T, ecl_make_constant_base_string("~&;;; Loading ~s~%",-1),
+    cl_format(3, ECL_T, @"~&;;; Loading ~s~%",
               filename);
   }
   @(return filename);

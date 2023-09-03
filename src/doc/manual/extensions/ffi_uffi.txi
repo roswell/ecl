@@ -27,12 +27,12 @@ and pointers. They are all symbols in the keyword package.
 @lspindex :unsigned-int
 @lspindex :long
 @lspindex :unsigned-long
-@lspindex :int16_t
-@lspindex :uint16_t
-@lspindex :int32_t
-@lspindex :uint32_t
-@lspindex :int64_t
-@lspindex :uint64_t
+@lspindex :int16-t
+@lspindex :uint16-t
+@lspindex :int32-t
+@lspindex :uint32-t
+@lspindex :int64-t
+@lspindex :uint64-t
 @lspindex :float
 @lspindex :double
 @lspindex :long-double
@@ -66,12 +66,12 @@ Signed/unsigned 8-bits. Dereferenced pointer returns an integer.
 @itemx :long
 @itemx :unsigned-long
 Standard integer types (16-bit, 32-bit and 32/64-bit).
-@item  :int16_t
-@itemx :uint16_t
-@itemx :int32_t
-@itemx :uint32_t
-@itemx :int64_t
-@itemx :uint64_t
+@item  :int16-t
+@itemx :uint16-t
+@itemx :int32-t
+@itemx :uint32-t
+@itemx :int64-t
+@itemx :uint64-t
 Integer types with guaranteed bitness.
 
 @item :float

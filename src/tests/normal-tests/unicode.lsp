@@ -67,3 +67,66 @@
     "(defun unicode.0004 (x¹ y²)
        (+ x¹ y²))")
   (is (= 7 (unicode.0004 5 2))))
+
+;;; Date: 2021-02-28
+;;; From: Marius Gerbershagen
+;;; Description:
+;;;
+;;;     Check that various pathname functions work correctly with
+;;;     unicode characters
+;;;
+(test unicode.0005.pathnames
+  ;; ensure-directories-exist
+  (multiple-value-bind (pathspec created)
+      (ensure-directories-exist #P"рецепты/")
+    (is (equal pathspec #P"рецепты/")))
+  (let ((files '(#P"рецепты/Spätzle-mit-Soß.txt"
+                 #P"рецепты/Kartoffelklöße.txt"
+                 #P"рецепты/Thüringer-Klöße.txt")))
+    ;; open, truename
+    (with-open-file (s (first files) :if-does-not-exist :create :if-exists :supersede :direction :output)
+      (is (equal (truename s) (merge-pathnames (first files)))))
+    (with-open-file (s (second files) :if-does-not-exist :create :if-exists :supersede :direction :output)
+      (is (equal (truename s) (merge-pathnames (second files)))))
+    ;; ext:copy-file
+    (is (ext:copy-file (second files) (third files)))
+    ;; directory
+    (is (equal (sort (directory "рецепты/*.txt") #'string< :key #'pathname-name)
+               (sort (mapcar #'merge-pathnames files) #'string< :key #'pathname-name)))
+    (is (equal (sort (directory "рецепты/*löße.txt") #'string< :key #'pathname-name)
+               (mapcar #'merge-pathnames (rest files))))
+    ;; probe-file
+    (is (equal (mapcar #'probe-file files) (mapcar #'merge-pathnames files)))
+    (is (null (probe-file #P"рецепты/Dosenkohl.txt")))
+    ;; file-author
+    (finishes (mapcar #'file-author files))
+    ;; file-write-date
+    (finishes (mapcar #'file-write-date files))
+    ;; rename-file
+    (let ((truename-2nd-file (truename (second files))))
+      (multiple-value-bind (default-new-name old-truename new-truename)
+          (rename-file (second files) #P"Semmelknödel.txt")
+        (is (equal default-new-name #P"рецепты/Semmelknödel.txt"))
+        (is (equal old-truename truename-2nd-file))
+        (is (equal new-truename (truename #P"рецепты/Semmelknödel.txt")))))
+    ;; delete-file
+    (is (delete-file #P"рецепты/Semmelknödel.txt"))
+    ;; file-error-pathname
+    (is (handler-case
+            (progn (open #P"рецепты/Semmelknödel.txt" :if-does-not-exist :error :if-exists nil)
+                   nil)
+          (file-error (f)
+            (equal (file-error-pathname f) #P"рецепты/Semmelknödel.txt"))))
+    ;; check that we respect ext:*default-external-format*
+    #-windows
+    (let ((ext:*default-external-format* :pass-through))
+      (is (member (ext:string-to-octets "рецепты" :external-format :utf-8)
+                  (directory "*/")
+                  :test #'equalp
+                  :key #'(lambda (p)
+                           (map 'vector #'char-code
+                                (first (last (pathname-directory p))))))))
+    ;; clean up
+    (is (delete-file (first files)))
+    (is (delete-file (third files)))
+    (is (delete-file #P"рецепты/"))))

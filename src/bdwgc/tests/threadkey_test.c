@@ -24,7 +24,7 @@
 
 #ifdef SKIP_THREADKEY_TEST
 
-int main (void)
+int main(void)
 {
   printf("threadkey_test skipped\n");
   return 0;
@@ -80,21 +80,25 @@ void make_key (void)
   pthread_key_create (&key, on_thread_exit);
 }
 
-#ifndef LIMIT
-# define LIMIT 30
+#ifndef NTHREADS
+# define NTHREADS 5
 #endif
 
-int main (void)
+#define NTHREADS_INNER (NTHREADS * 6) /* number of threads to create */
+
+int main(void)
 {
   int i;
-  GC_INIT ();
 
+  GC_INIT();
+  if (GC_get_find_leak())
+    printf("This test program is not designed for leak detection mode\n");
 # ifdef GC_SOLARIS_THREADS
     pthread_key_create (&key, on_thread_exit);
 # else
     pthread_once (&key_once, make_key);
 # endif
-  for (i = 0; i < LIMIT; i++) {
+  for (i = 0; i < NTHREADS_INNER; i++) {
     pthread_t t;
 
     if (GC_pthread_create(&t, NULL, entry, NULL) == 0) {
@@ -103,7 +107,7 @@ int main (void)
                                 : GC_pthread_detach(t);
 
       if (code != 0) {
-        fprintf(stderr, "Thread %s failed %d\n",
+        fprintf(stderr, "Thread %s failed, errno= %d\n",
                 (i & 1) != 0 ? "join" : "detach", code);
         exit(2);
       }

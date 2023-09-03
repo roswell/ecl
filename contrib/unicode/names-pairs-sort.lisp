@@ -11,17 +11,17 @@
   ;; used anywhere else
   ;;
   (loop with used-code = (make-array (1+ last-code) :initial-element nil)
-     for line in translated-data
-     for pair-code = (third line)
-     do (cond ((/= (length line) 3)
-               (error "Error in compressed data: too long code ~A" line))
-              ((or (aref used-code pair-code)
-                   (< pair-code first-code))
-               (let ((new-pair (cons pair-code 0)))
-                 (setf pairs (acons (incf last-code) new-pair pairs)
-                       (third line) last-code)))
-              (t
-               (setf (aref used-code pair-code) t))))
+        for line in translated-data
+        for pair-code = (third line)
+        do (cond ((/= (length line) 3)
+                  (error "Error in compressed data: too long code ~A" line))
+                 ((or (aref used-code pair-code)
+                      (< pair-code first-code))
+                  (let ((new-pair (cons pair-code 0)))
+                    (setf pairs (acons (incf last-code) new-pair pairs)
+                          (third line) last-code)))
+                 (t
+                  (setf (aref used-code pair-code) t))))
   ;;
   ;; We now renumber all pairs.
   ;;
@@ -35,18 +35,18 @@
                  (error "Unknown code ~A" old-code))))
       ;; First of all we add the words
       (loop for i from 0 below first-code
-         do (add-code i))
+            do (add-code i))
       ;; Then we add all pairs that represent characters, so that they
       ;; are consecutive, too.
       (loop for line in translated-data
-         do (setf (third line) (add-code (third line))))
+            do (setf (third line) (add-code (third line))))
       ;; Finally, we add the remaining pairs
       (loop for record in pairs
-         do (setf (car record) (add-code (car record))))
+            do (setf (car record) (add-code (car record))))
       ;; ... and we fix the definitions
       (loop for (code . pair) in pairs
-         do (setf (car pair) (translate (car pair))
-                  (cdr pair) (translate (cdr pair))))))
+            do (setf (car pair) (translate (car pair))
+                     (cdr pair) (translate (cdr pair))))))
   (defparameter *sorted-compressed-data* translated-data)
   (defparameter *sorted-pairs* (sort pairs #'< :key #'car))
   (print 'finished)
@@ -82,6 +82,8 @@
                    :if-exists :supersede)
   (format s "/*
  * UNICODE NAMES DATABASE
+ *
+ * auto-generated, do not edit! (see contrib/unicode/)
  */
 #ifndef ECL_UCD_NAMES_H
 #define ECL_UCD_NAMES_H 1
@@ -93,7 +95,7 @@
 #define ECL_UCD_TOTAL_NAMES ~D
 
 typedef struct {
-  unsigned char codes[4];
+  unsigned char codes[6];
 } ecl_ucd_names_pair_type;
 
 typedef struct {
@@ -125,6 +127,8 @@ extern const ecl_ucd_code_and_pair ecl_ucd_sorted_pairs[ECL_UCD_TOTAL_NAMES];
                    :if-exists :supersede)
   (format s "/*
  * Pairs of symbols.
+ *
+ * auto-generated, do not edit! (see contrib/unicode/)
  */
 
 #include <ecl/ecl.h>
@@ -134,12 +138,13 @@ const ecl_ucd_names_pair_type ecl_ucd_names_pair[ECL_UCD_TOTAL_PAIRS] = {
 "
           (length *sorted-pairs*) (length *sorted-pairs*))
   (loop for i from 0
-     for (pair-code . (a . b)) in *sorted-pairs*
-     do (format s "~A{~D, ~D, ~D, ~D}~%"
-                (if (plusp i) "," "")
-                (logand a #xff) (ash a -8)
-                (logand b #xff) (ash b -8)
-                ))
+        for (pair-code . (a . b)) in *sorted-pairs*
+        do (assert (< a (ash 1 24)))
+           (assert (< b (ash 1 24)))
+           (format s "~A{~D, ~D, ~D, ~D, ~D, ~D}~%"
+                   (if (plusp i) "," "")
+                   (logand a #xff) (logand (ash a -8) #xff) (ash a -16)
+                   (logand b #xff) (logand (ash b -8) #xff) (ash b -16)))
   (format s "};~%"))
 
 (with-open-file (s (merge-pathnames "ucd_names_codes.c" *destination*)
@@ -147,6 +152,8 @@ const ecl_ucd_names_pair_type ecl_ucd_names_pair[ECL_UCD_TOTAL_PAIRS] = {
                    :if-exists :supersede)
   (format s "/*
  * Sorted character names.
+ *
+ * auto-generated, do not edit! (see contrib/unicode/)
  */
 
 #include <ecl/ecl.h>
@@ -155,13 +162,15 @@ const ecl_ucd_names_pair_type ecl_ucd_names_pair[ECL_UCD_TOTAL_PAIRS] = {
 const ecl_ucd_code_and_pair ecl_ucd_sorted_pairs[ECL_UCD_TOTAL_NAMES] = {
 ")
   (loop with l = (sort (copy-tree *sorted-compressed-data*) #'string<= :key #'second)
-     for (ucd-code name code) in l
-     for i from 0
-     do (format s "~A{{~D, ~D}, {~D, ~D, ~D}}~%"
-                (if (plusp i) "," "")
-                (logand code #xff) (ash code -8)
-                (logand ucd-code #xff) (logand (ash ucd-code -8) #xff)
-                (logand (ash ucd-code -16) #xff)))
+        for (ucd-code name code) in l
+        for i from 0
+        do (assert (< code (ash 1 16)))
+           (assert (< ucd-code (ash 1 24)))
+           (format s "~A{{~D, ~D}, {~D, ~D, ~D}}~%"
+                   (if (plusp i) "," "")
+                   (logand code #xff) (ash code -8)
+                   (logand ucd-code #xff) (logand (ash ucd-code -8) #xff)
+                   (logand (ash ucd-code -16) #xff)))
   (format s "};"))
 
 (with-open-file (s (merge-pathnames "ucd_names_str.c" *destination*)
@@ -169,6 +178,8 @@ const ecl_ucd_code_and_pair ecl_ucd_sorted_pairs[ECL_UCD_TOTAL_NAMES] = {
                    :if-exists :supersede)
   (format s "/*
  * Dictionary words.
+ *
+ * auto-generated, do not edit! (see contrib/unicode/)
  */
 
 #include <ecl/ecl.h>
@@ -186,6 +197,8 @@ const char *ecl_ucd_names_word[ECL_UCD_FIRST_PAIR] = {
                    :if-exists :supersede)
   (format s "/*
  * Dictionary words.
+ *
+ * auto-generated, do not edit! (see contrib/unicode/)
  */
 
 #include <string.h>
@@ -234,9 +247,11 @@ fill_pair_name(char *buffer, int pair)
     printf(\"c1=%d\\n\", ecl_ucd_names_pair[pair - ECL_UCD_FIRST_PAIR].codes[1]);
     printf(\"c2=%d\\n\", ecl_ucd_names_pair[pair - ECL_UCD_FIRST_PAIR].codes[2]);
     printf(\"c3=%d\\n\", ecl_ucd_names_pair[pair - ECL_UCD_FIRST_PAIR].codes[3]);
+    printf(\"c4=%d\\n\", ecl_ucd_names_pair[pair - ECL_UCD_FIRST_PAIR].codes[4]);
+    printf(\"c5=%d\\n\", ecl_ucd_names_pair[pair - ECL_UCD_FIRST_PAIR].codes[5]);
  */
-    fill_pair_name(buffer, (((unsigned int)p.codes[1]) << 8) | p.codes[0]);
-    fill_pair_name(buffer, (((unsigned int)p.codes[3]) << 8) | p.codes[2]);
+    fill_pair_name(buffer, (((unsigned int)p.codes[2]) << 16) | (((unsigned int)p.codes[1]) << 8) | p.codes[0]);
+    fill_pair_name(buffer, (((unsigned int)p.codes[5]) << 16) | (((unsigned int)p.codes[4]) << 8) | p.codes[3]);
   }
 }
 
@@ -294,5 +309,3 @@ _ecl_ucd_name_to_code(cl_object name)
 }
 
 "))
-
-;(ext:run-program "/bin/sh" '("-c" "cp *.c *.h ~/devel/ecl/src/c/unicode/"))

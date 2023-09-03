@@ -319,7 +319,7 @@ cl_eql(cl_object x, cl_object y)
 }
 
 bool
-ecl_equal(register cl_object x, cl_object y)
+ecl_equal(cl_object x, cl_object y)
 {
   cl_type tx, ty;
  BEGIN:

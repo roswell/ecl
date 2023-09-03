@@ -102,7 +102,7 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_SEMAPHORES
   ecl_def_string_array_elt("SEMAPHORES"),
 #endif
-#ifdef ECL_RWLOCK
+#if defined(HAVE_POSIX_RWLOCK) || defined(ECL_WINDOWS_THREADS)
   ecl_def_string_array_elt("ECL-READ-WRITE-LOCK"),
 #endif
 #ifdef WORDS_BIGENDIAN

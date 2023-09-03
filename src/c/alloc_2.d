@@ -39,15 +39,9 @@ static void ecl_mark_env(struct cl_env_struct *env);
 #  undef GBC_BOEHM_PRECISE
 # else
 #  include <gc/gc_typed.h>
-#  ifdef GBC_BOEHM_OWN_ALLOCATOR
-#  include <gc/private/gc_priv.h>
-#  endif
 #  define GBC_BOEHM_OWN_MARKER
-#  if defined(GBC_BOEHM_OWN_MARKER) || defined(GBC_BOEHM_OWN_ALLOCATOR)
 static int cl_object_kind, cl_object_mark_proc_index;
 static void **cl_object_free_list;
-#  endif
-extern void GC_init_explicit_typing(void);
 # endif
 #endif
 
@@ -102,7 +96,7 @@ out_of_memory(size_t requested_bytes)
   /* The out of memory condition may happen in more than one thread */
   /* But then we have to ensure the error has not been solved */
 #ifdef ECL_THREADS
-  mp_get_lock_wait(cl_core.error_lock);
+  ecl_mutex_lock(&cl_core.error_lock);
   ECL_UNWIND_PROTECT_BEGIN(the_env)
 #endif
   {
@@ -141,7 +135,7 @@ out_of_memory(size_t requested_bytes)
   }
 #ifdef ECL_THREADS
   ECL_UNWIND_PROTECT_EXIT {
-    mp_giveup_lock(cl_core.error_lock);
+    ecl_mutex_unlock(&cl_core.error_lock);
   } ECL_UNWIND_PROTECT_END;
 #endif
   ecl_bds_unwind1(the_env);
@@ -149,7 +143,7 @@ out_of_memory(size_t requested_bytes)
   switch (method) {
   case 0: cl_error(1, @'ext::storage-exhausted');
     break;
-  case 1: cl_cerror(2, ecl_make_constant_base_string("Extend heap size",-1),
+  case 1: cl_cerror(2, @"Extend heap size",
                     @'ext::storage-exhausted');
     break;
   case 2:
@@ -166,16 +160,12 @@ out_of_memory(size_t requested_bytes)
   return GC_MALLOC(requested_bytes);
 }
 
-#ifdef alloc_object
-#undef alloc_object
-#endif
-
 static struct ecl_type_information {
   size_t size;
 #ifdef GBC_BOEHM_PRECISE
   GC_word descriptor;
 #endif
-  cl_object (*allocator)(register struct ecl_type_information *);
+  cl_object (*allocator)(struct ecl_type_information *);
   size_t t;
 } type_info[t_end];
 
@@ -200,7 +190,7 @@ ecl_object_byte_size(cl_type t)
 }
 
 static cl_object
-allocate_object_atomic(register struct ecl_type_information *type_info)
+allocate_object_atomic(struct ecl_type_information *type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
@@ -212,7 +202,7 @@ allocate_object_atomic(register struct ecl_type_information *type_info)
 }
 
 static cl_object
-allocate_object_full(register struct ecl_type_information *type_info)
+allocate_object_full(struct ecl_type_information *type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
@@ -225,7 +215,7 @@ allocate_object_full(register struct ecl_type_information *type_info)
 
 #ifdef GBC_BOEHM_PRECISE
 static cl_object
-allocate_object_typed(register struct ecl_type_information *type_info)
+allocate_object_typed(struct ecl_type_information *type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
@@ -237,58 +227,12 @@ allocate_object_typed(register struct ecl_type_information *type_info)
 }
 #endif
 
-#ifdef GBC_BOEHM_OWN_ALLOCATOR
-#error
-static cl_object
-allocate_object_own(register struct ecl_type_information *type_info)
-{
-#define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
-#define GENERAL_MALLOC(lb,k) (void *)GC_generic_malloc(lb, k)
-  const cl_env_ptr the_env = ecl_process_env();
-  typedef void *ptr_t;
-  ptr_t op;
-  ptr_t * opp;
-  size_t lg, lb;
-  DCL_LOCK_STATE;
-
-  ecl_disable_interrupts_env(the_env);
-  lb = type_info->size + TYPD_EXTRA_BYTES;
-  if (ecl_likely(SMALL_OBJ(lb))) {
-    lg = GC_size_map[lb];
-    opp = &(cl_object_free_list[lg]);
-    LOCK();
-    if( (op = *opp) == 0 ) {
-      UNLOCK();
-      op = (ptr_t)GENERAL_MALLOC((word)lb, cl_object_kind);
-      if (0 == op) {
-        ecl_enable_interrupts_env(the_env);
-        return 0;
-      }
-      lg = GC_size_map[lb];   /* May have been uninitialized. */
-    } else {
-      *opp = obj_link(op);
-      obj_link(op) = 0;
-      GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-      UNLOCK();
-    }
-  } else {
-    op = (ptr_t)GENERAL_MALLOC((word)lb, cl_object_kind);
-    lg = BYTES_TO_GRANULES(GC_size(op));
-  }
-  ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = type_info->descriptor;
-  ((cl_object)op)->d.t = type_info->t;
-  ecl_enable_interrupts_env(the_env);
-  return (cl_object)op;
-}
-#endif /* GBC_BOEHM_OWN_ALLOCATOR */
-
 #ifdef GBC_BOEHM_OWN_MARKER
 
 static struct GC_ms_entry *
 cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl,
                     GC_word env)
 {
-#if 1
   cl_type t = ((cl_object)addr)->d.t;
   if (ecl_likely(t > t_start && t < t_end)) {
     struct ecl_type_information *info = type_info + t;
@@ -306,206 +250,11 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
       }
     }
   }
-#else
-#define MAYBE_MARK2(ptr) {                                      \
-    GC_word aux = (GC_word)(ptr);                               \
-    if (!(aux & 2) &&                                           \
-        aux >= (GC_word)GC_least_plausible_heap_addr &&         \
-        aux <= (GC_word)GC_greatest_plausible_heap_addr)        \
-      msp = GC_mark_and_push((void*)aux, msp, msl, (void*)o);   \
-  }
-#define MAYBE_MARK(ptr) {                                       \
-    GC_word aux = (GC_word)(ptr);                               \
-    if (!(aux & 2) &&                                           \
-        aux >= (GC_word)lpa &&                                  \
-        aux <= (GC_word)gpa)                                    \
-      msp = GC_mark_and_push((void*)aux, msp, msl, (void*)o);   \
-  }
-  cl_object o = (cl_object)addr;
-  const GC_word lpa = (GC_word)GC_least_plausible_heap_addr;
-  const GC_word gpa = (GC_word)GC_greatest_plausible_heap_addr;
-  switch (o->d.t) {
-  case t_bignum:
-    MAYBE_MARK(ECL_BIGNUN_LIMBS(o));
-    break;
-  case t_ratio:
-    MAYBE_MARK(o->ratio.num);
-    MAYBE_MARK(o->ratio.den);
-    break;
-  case t_complex:
-    MAYBE_MARK(o->gencomplex.real);
-    MAYBE_MARK(o->gencomplex.imag);
-    break;
-  case t_symbol:
-    MAYBE_MARK(o->symbol.hpack);
-    MAYBE_MARK(o->symbol.name);
-    MAYBE_MARK(o->symbol.plist);
-    MAYBE_MARK(o->symbol.gfdef);
-    MAYBE_MARK(o->symbol.value);
-    break;
-  case t_package:
-    MAYBE_MARK(o->pack.external);
-    MAYBE_MARK(o->pack.internal);
-    MAYBE_MARK(o->pack.usedby);
-    MAYBE_MARK(o->pack.uses);
-    MAYBE_MARK(o->pack.shadowings);
-    MAYBE_MARK(o->pack.nicknames);
-    MAYBE_MARK(o->pack.name);
-    break;
-  case t_hashtable:
-    MAYBE_MARK(o->hash.threshold);
-    MAYBE_MARK(o->hash.rehash_size);
-    MAYBE_MARK(o->hash.data);
-    break;
-  case t_array:
-    MAYBE_MARK(o->array.dims);
-  case t_vector:
-# ifdef ECL_UNICODE
-  case t_string:
-# endif
-  case t_base_string:
-  case t_bitvector:
-    MAYBE_MARK(o->vector.self.t);
-    MAYBE_MARK(o->vector.displaced);
-    break;
-  case t_stream:
-    MAYBE_MARK(o->stream.format_table);
-    MAYBE_MARK(o->stream.format);
-    MAYBE_MARK(o->stream.buffer);
-    MAYBE_MARK(o->stream.byte_stack);
-    MAYBE_MARK(o->stream.object1);
-    MAYBE_MARK(o->stream.object0);
-    MAYBE_MARK(o->stream.ops);
-    break;
-  case t_random:
-    MAYBE_MARK(o->random.value);
-    break;
-  case t_readtable:
-# ifdef ECL_UNICODE
-    MAYBE_MARK(o->readtable.hash);
-# endif
-    MAYBE_MARK(o->readtable.table);
-    break;
-  case t_pathname:
-    MAYBE_MARK(o->pathname.version);
-    MAYBE_MARK(o->pathname.type);
-    MAYBE_MARK(o->pathname.name);
-    MAYBE_MARK(o->pathname.directory);
-    MAYBE_MARK(o->pathname.device);
-    MAYBE_MARK(o->pathname.host);
-    break;
-  case t_bytecodes:
-    MAYBE_MARK(o->bytecodes.file_position);
-    MAYBE_MARK(o->bytecodes.file);
-    MAYBE_MARK(o->bytecodes.data);
-    MAYBE_MARK(o->bytecodes.code);
-    MAYBE_MARK(o->bytecodes.definition);
-    MAYBE_MARK(o->bytecodes.name);
-    break;
-  case t_bclosure:
-    MAYBE_MARK(o->bclosure.lex);
-    MAYBE_MARK(o->bclosure.code);
-    break;
-  case t_cfun:
-    MAYBE_MARK(o->cfun.file_position);
-    MAYBE_MARK(o->cfun.file);
-    MAYBE_MARK(o->cfun.block);
-    MAYBE_MARK(o->cfun.name);
-    break;
-  case t_cfunfixed:
-    MAYBE_MARK(o->cfunfixed.file_position);
-    MAYBE_MARK(o->cfunfixed.file);
-    MAYBE_MARK(o->cfunfixed.block);
-    MAYBE_MARK(o->cfunfixed.name);
-    break;
-  case t_cclosure:
-    MAYBE_MARK(o->cclosure.file_position);
-    MAYBE_MARK(o->cclosure.file);
-    MAYBE_MARK(o->cclosure.block);
-    MAYBE_MARK(o->cclosure.env);
-    break;
-  case t_instance:
-    MAYBE_MARK(o->instance.slots);
-    MAYBE_MARK(o->instance.slotds);
-    MAYBE_MARK(o->instance.clas);
-    break;
-# ifdef ECL_THREADS
-  case t_process:
-    MAYBE_MARK(o->process.queue_record);
-    MAYBE_MARK(o->process.start_stop_spinlock);
-    MAYBE_MARK(o->process.woken_up);
-    MAYBE_MARK(o->process.exit_values);
-    MAYBE_MARK(o->process.exit_barrier);
-    MAYBE_MARK(o->process.parent);
-    MAYBE_MARK(o->process.initial_bindings);
-    MAYBE_MARK(o->process.interrupt);
-    MAYBE_MARK(o->process.args);
-    MAYBE_MARK(o->process.function);
-    MAYBE_MARK(o->process.name);
-    if (o->process.env && o->process.env != ECL_NIL)
-      ecl_mark_env(o->process.env);
-    break;
-  case t_lock:
-    MAYBE_MARK(o->lock.queue_list);
-    MAYBE_MARK(o->lock.queue_spinlock);
-    MAYBE_MARK(o->lock.owner);
-    MAYBE_MARK(o->lock.name);
-    break;
-  case t_condition_variable:
-    MAYBE_MARK(o->condition_variable.queue_spinlock);
-    MAYBE_MARK(o->condition_variable.queue_list);
-    MAYBE_MARK(o->condition_variable.lock);
-    break;
-  case t_rwlock:
-    MAYBE_MARK(o->rwlock.name);
-#  ifndef ECL_RWLOCK
-    MAYBE_MARK(o->rwlock.mutex);
-    break;
-#  endif
-  case t_semaphore:
-    MAYBE_MARK(o->semaphore.queue_list);
-    MAYBE_MARK(o->semaphore.queue_spinlock);
-    MAYBE_MARK(o->semaphore.name);
-    break;
-  case t_barrier:
-    MAYBE_MARK(o->barrier.queue_list);
-    MAYBE_MARK(o->barrier.queue_spinlock);
-    MAYBE_MARK(o->barrier.name);
-    break;
-  case t_mailbox:
-    MAYBE_MARK(o->mailbox.data);
-    MAYBE_MARK(o->mailbox.name);
-    MAYBE_MARK(o->mailbox.reader_semaphore);
-    MAYBE_MARK(o->mailbox.writer_semaphore);
-    break;
-# endif
-  case t_codeblock:
-    MAYBE_MARK(o->cblock.error);
-    MAYBE_MARK(o->cblock.source);
-    MAYBE_MARK(o->cblock.links);
-    MAYBE_MARK(o->cblock.name);
-    MAYBE_MARK(o->cblock.next);
-    MAYBE_MARK(o->cblock.temp_data);
-    MAYBE_MARK(o->cblock.data);
-    break;
-  case t_foreign:
-    MAYBE_MARK(o->foreign.tag);
-    MAYBE_MARK(o->foreign.data);
-    break;
-  case t_frame:
-    MAYBE_MARK(o->frame.env);
-    MAYBE_MARK(o->frame.base);
-    MAYBE_MARK(o->frame.stack);
-    break;
-  default:
-    break;
-  }
-#endif
   return msp;
 }
 
 static cl_object
-allocate_object_marked(register struct ecl_type_information *type_info)
+allocate_object_marked(struct ecl_type_information *type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
@@ -638,26 +387,6 @@ ecl_cons(cl_object a, cl_object d)
 }
 
 cl_object
-ecl_list1(cl_object a)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  struct ecl_cons *obj;
-  ecl_disable_interrupts_env(the_env);
-  obj = GC_MALLOC(sizeof(struct ecl_cons));
-  ecl_enable_interrupts_env(the_env);
-#ifdef ECL_SMALL_CONS
-  obj->car = a;
-  obj->cdr = ECL_NIL;
-  return ECL_PTR_CONS(obj);
-#else
-  obj->t = t_list;
-  obj->car = a;
-  obj->cdr = ECL_NIL;
-  return (cl_object)obj;
-#endif
-}
-
-cl_object
 ecl_alloc_instance(cl_index slots)
 {
   cl_object i;
@@ -741,12 +470,6 @@ ecl_dealloc(void *ptr)
   ecl_enable_interrupts_env(the_env);
 }
 
-static int alloc_initialized = FALSE;
-
-extern void (*GC_push_other_roots)();
-static void (*old_GC_push_other_roots)();
-static void stacks_scanner();
-
 #ifdef GBC_BOEHM_PRECISE
 static cl_index
 to_bitmap(void *x, void *y)
@@ -759,80 +482,21 @@ to_bitmap(void *x, void *y)
 }
 #endif
 
-void
-init_alloc(void)
+void init_type_info (void)
 {
 #ifdef GBC_BOEHM_PRECISE
   union cl_lispunion o;
   struct ecl_cons c;
 #endif
   int i;
-  if (alloc_initialized) return;
-  alloc_initialized = TRUE;
-  /*
-   * Garbage collector restrictions: we set up the garbage collector
-   * library to work as follows
-   *
-   * 1) The garbage collector shall not scan shared libraries
-   *    explicitely.
-   * 2) We only detect objects that are referenced by a pointer to
-   *    the begining or to the first byte.
-   * 3) Out of the incremental garbage collector, we only use the
-   *    generational component.
-   */
-  GC_set_no_dls(1);
-  GC_set_all_interior_pointers(0);
-  GC_set_time_limit(GC_TIME_UNLIMITED);
-  GC_init();
-#ifdef ECL_THREADS
-# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
-  GC_allow_register_threads();
-# endif
-#endif
-  if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
-    GC_enable_incremental();
-  }
-  GC_register_displacement(1);
-#ifdef GBC_BOEHM_PRECISE
-  GC_init_explicit_typing();
-#endif
-  GC_clear_roots();
-  GC_disable();
-
-#ifdef GBC_BOEHM_PRECISE
-# ifdef GBC_BOEHM_OWN_ALLOCATOR
-  cl_object_free_list = (void **)GC_new_free_list_inner();
-  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
-                                     (((word)WORDS_TO_BYTES(-1)) | GC_DS_PER_OBJECT),
-                                     TRUE, TRUE);
-# else
-#  ifdef GBC_BOEHM_OWN_MARKER
-  cl_object_free_list = (void **)GC_new_free_list_inner();
-  cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
-  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
-                                     GC_MAKE_PROC(cl_object_mark_proc_index, 0),
-                                     FALSE, TRUE);
-#  endif
-# endif
-#endif /* !GBC_BOEHM_PRECISE */
-
-  GC_set_max_heap_size(cl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE]);
-  /* Save some memory for the case we get tight. */
-  if (cl_core.max_heap_size == 0) {
-    cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-    cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
-  } else if (cl_core.safety_region) {
-    cl_core.safety_region = 0;
-  }
-
-#define init_tm(/* cl_type  */ type,                                    \
-                /* char*    */ name,                                    \
-                /* cl_index */ object_size,                             \
-                /* cl_index */ maxpage) {                               \
-    type_info[type].size = (object_size);                               \
-    if ((maxpage) == 0) {                                               \
-      type_info[type].allocator = allocate_object_atomic;               \
-    }                                                                   \
+#define init_tm(/* cl_type  */ type,                            \
+                /* char*    */ name,                            \
+                /* cl_index */ object_size,                     \
+                /* cl_index */ maxpage) {                       \
+    type_info[type].size = (object_size);                       \
+    if ((maxpage) == 0) {                                       \
+      type_info[type].allocator = allocate_object_atomic;       \
+    }                                                           \
   }
   for (i = 0; i < t_end; i++) {
     type_info[i].t = i;
@@ -1013,41 +677,21 @@ init_alloc(void)
     to_bitmap(&o, &(o.process.interrupt)) |
     to_bitmap(&o, &(o.process.initial_bindings)) |
     to_bitmap(&o, &(o.process.parent)) |
-    to_bitmap(&o, &(o.process.exit_barrier)) |
     to_bitmap(&o, &(o.process.exit_values)) |
-    to_bitmap(&o, &(o.process.woken_up)) |
-    to_bitmap(&o, &(o.process.start_stop_spinlock)) |
-    to_bitmap(&o, &(o.process.queue_record));
+    to_bitmap(&o, &(o.process.woken_up));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
-    to_bitmap(&o, &(o.lock.owner)) |
-    to_bitmap(&o, &(o.lock.queue_spinlock)) |
-    to_bitmap(&o, &(o.lock.queue_list));
-#  ifdef ECL_RWLOCK
+    to_bitmap(&o, &(o.lock.owner));
   type_info[t_rwlock].descriptor =
     to_bitmap(&o, &(o.rwlock.name));
-#  else
-  type_info[t_rwlock].descriptor =
-    to_bitmap(&o, &(o.rwlock.name)) |
-    to_bitmap(&o, &(o.rwlock.mutex));
-#  endif
-  type_info[t_condition_variable].descriptor =
-    to_bitmap(&o, &(o.condition_variable.lock)) |
-    to_bitmap(&o, &(o.condition_variable.queue_list)) |
-    to_bitmap(&o, &(o.condition_variable.queue_spinlock));
+  type_info[t_condition_variable].descriptor = 0;
   type_info[t_semaphore].descriptor = 
-    to_bitmap(&o, &(o.semaphore.name)) |
-    to_bitmap(&o, &(o.semaphore.queue_list)) |
-    to_bitmap(&o, &(o.semaphore.queue_spinlock));
+    to_bitmap(&o, &(o.semaphore.name));
   type_info[t_barrier].descriptor = 
-    to_bitmap(&o, &(o.barrier.name)) |
-    to_bitmap(&o, &(o.barrier.queue_list)) |
-    to_bitmap(&o, &(o.barrier.queue_spinlock));
+    to_bitmap(&o, &(o.barrier.name));
   type_info[t_mailbox].descriptor = 
     to_bitmap(&o, &(o.mailbox.name)) |
-    to_bitmap(&o, &(o.mailbox.data)) |
-    to_bitmap(&o, &(o.mailbox.reader_semaphore)) |
-    to_bitmap(&o, &(o.mailbox.writer_semaphore));
+    to_bitmap(&o, &(o.mailbox.data));
 # endif
   type_info[t_codeblock].descriptor =
     to_bitmap(&o, &(o.cblock.data)) |
@@ -1093,6 +737,67 @@ init_alloc(void)
     type_info[i].descriptor = descriptor;
   }
 #endif /* GBC_BOEHM_PRECISE */
+}
+
+extern void (*GC_push_other_roots)();
+static void (*old_GC_push_other_roots)();
+static void stacks_scanner();
+
+static int alloc_initialized = FALSE;
+
+void
+init_alloc(void)
+{
+  if (alloc_initialized) return;
+  alloc_initialized = TRUE;
+  /*
+   * Garbage collector restrictions: we set up the garbage collector
+   * library to work as follows
+   *
+   * 1) The garbage collector shall not scan shared libraries
+   *    explicitely.
+   * 2) We only detect objects that are referenced by a pointer to
+   *    the begining or to the first byte.
+   * 3) Out of the incremental garbage collector, we only use the
+   *    generational component.
+   */
+  GC_set_no_dls(1);
+  GC_set_all_interior_pointers(0);
+  GC_set_time_limit(GC_TIME_UNLIMITED);
+  GC_init();
+#ifdef ECL_THREADS
+# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
+  GC_allow_register_threads();
+# endif
+#endif
+  if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
+    GC_enable_incremental();
+  }
+  GC_register_displacement(1);
+  GC_clear_roots();
+  GC_disable();
+
+#ifdef GBC_BOEHM_PRECISE
+# ifdef GBC_BOEHM_OWN_MARKER
+  cl_object_free_list = (void **)GC_new_free_list_inner();
+  cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
+  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
+                                     GC_MAKE_PROC(cl_object_mark_proc_index, 0),
+                                     FALSE, TRUE);
+# endif
+#endif /* !GBC_BOEHM_PRECISE */
+
+  GC_set_max_heap_size(cl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE]);
+  /* Save some memory for the case we get tight. */
+  if (cl_core.max_heap_size == 0) {
+    cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
+    cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+  } else if (cl_core.safety_region) {
+    cl_core.safety_region = 0;
+  }
+
+  init_type_info();
+
   old_GC_push_other_roots = GC_push_other_roots;
   GC_push_other_roots = stacks_scanner;
   GC_old_start_callback = GC_get_start_callback();
@@ -1123,18 +828,64 @@ standard_finalizer(cl_object o)
     GC_unregister_disappearing_link((void**)&(o->weak.value));
     break;
 #ifdef ECL_THREADS
-# ifdef ECL_RWLOCK
-  case t_rwlock: {
+  case t_lock: {
     const cl_env_ptr the_env = ecl_process_env();
     ecl_disable_interrupts_env(the_env);
-    pthread_rwlock_destroy(&o->rwlock.mutex);
+    ecl_mutex_destroy(&o->lock.mutex);
     ecl_enable_interrupts_env(the_env);
     break;
   }
-# endif
+  case t_condition_variable: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_cond_var_destroy(&o->condition_variable.cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_barrier: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->barrier.mutex);
+    ecl_cond_var_destroy(&o->barrier.cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_semaphore: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->semaphore.mutex);
+    ecl_cond_var_destroy(&o->semaphore.cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_mailbox: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->mailbox.mutex);
+    ecl_cond_var_destroy(&o->mailbox.reader_cv);
+    ecl_cond_var_destroy(&o->mailbox.writer_cv);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_rwlock: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_rwlock_destroy(&o->rwlock.mutex);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
+  case t_process: {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_disable_interrupts_env(the_env);
+    ecl_mutex_destroy(&o->process.start_stop_lock);
+    ecl_cond_var_destroy(&o->process.exit_barrier);
+    ecl_enable_interrupts_env(the_env);
+    break;
+  }
   case t_symbol: {
     ecl_atomic_push(&cl_core.reused_indices,
                     ecl_make_fixnum(o->symbol.binding));
+    o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
   }
 #endif /* ECL_THREADS */
   default:;
@@ -1145,12 +896,68 @@ static void
 wrapped_finalizer(cl_object o, cl_object finalizer);
 
 static void
+register_finalizer(cl_object o, void *finalized_object,
+                   GC_finalization_proc fn, void *cd,
+                   GC_finalization_proc *ofn, void **ocd)
+{
+  /* Finalizers for some builtin objects are only run when the object is not
+   * reachable by any means, including through other finalizers which might
+   * make the object reachable again. The objects must not contain any cyclic
+   * references for which finalizers are registered.
+   *
+   * We don't use this type of finalizer for user-defined finalizers, because
+   * those might contain cyclic references which would prevent the objects
+   * from being garbage collected. It is instead the duty of the user to write
+   * the finalizers in a consistent way.
+   *
+   * case t_symbol: is not finalized with the "unreachable" finalizer because
+   * it might contain cyclic references; Also running the finalizer too early
+   * doesn't lead to any problems, we will simply choose a new binding index
+   * the next time a binding is established. */
+  switch (o->d.t) {
+#ifdef ENABLE_DLOPEN
+  case t_codeblock:
+#endif
+  case t_stream:
+#if defined(ECL_THREADS)
+  case t_lock:
+  case t_condition_variable:
+  case t_barrier:
+  case t_semaphore:
+  case t_mailbox:
+  case t_rwlock:
+  case t_process:
+#endif  /* ECL_THREADS */
+    /* Don't delete the standard finalizer. */
+    if (fn == NULL) {
+      fn = (GC_finalization_proc)wrapped_finalizer;
+      cd = ECL_T;
+    }
+    GC_REGISTER_FINALIZER_UNREACHABLE(finalized_object, fn, cd, ofn, ocd);
+    break;
+  case t_weak_pointer:
+#if defined(ECL_THREADS)
+  case t_symbol:
+#endif
+    /* Don't delete the standard finalizer. */
+    if (fn == NULL) {
+      fn = (GC_finalization_proc)wrapped_finalizer;
+      cd = ECL_T;
+    }
+    /* fallthrough */
+  default:
+    GC_REGISTER_FINALIZER_NO_ORDER(finalized_object, fn, cd, ofn, ocd);
+    break;
+  }
+}
+
+static void
 deferred_finalizer(cl_object* x)
 {
   wrapped_finalizer(x[0], x[1]);
 }
 
-void
+static void
 wrapped_finalizer(cl_object o, cl_object finalizer)
 {
   if (finalizer != ECL_NIL && finalizer != NULL) {
@@ -1178,9 +985,10 @@ wrapped_finalizer(cl_object o, cl_object finalizer)
        cl_object* wrapper = GC_MALLOC(2*sizeof(cl_object));
        wrapper[0] = o;
        wrapper[1] = finalizer;
-       GC_REGISTER_FINALIZER_NO_ORDER(wrapper,
-                                      (GC_finalization_proc)deferred_finalizer, 0,
-                                      &ofn, &odata);
+
+       register_finalizer(o, wrapper,
+                          (GC_finalization_proc)deferred_finalizer, 0,
+                          &ofn, &odata);
        return;
     }
 #endif /* ECL_THREADS */
@@ -1201,7 +1009,7 @@ si_get_finalizer(cl_object o)
   GC_finalization_proc ofn;
   void *odata;
   ecl_disable_interrupts_env(the_env);
-  GC_REGISTER_FINALIZER_NO_ORDER(o, (GC_finalization_proc)0, 0, &ofn, &odata);
+  register_finalizer(o, o, (GC_finalization_proc)0, 0, &ofn, &odata);
   if (ofn == 0) {
     output = ECL_NIL;
   } else if (ofn == (GC_finalization_proc)wrapped_finalizer) {
@@ -1209,7 +1017,7 @@ si_get_finalizer(cl_object o)
   } else {
     output = ECL_NIL;
   }
-  GC_REGISTER_FINALIZER_NO_ORDER(o, ofn, odata, &ofn, &odata);
+  register_finalizer(o, o, ofn, odata, &ofn, &odata);
   ecl_enable_interrupts_env(the_env);
   @(return output);
 }
@@ -1220,13 +1028,11 @@ ecl_set_finalizer_unprotected(cl_object o, cl_object finalizer)
   GC_finalization_proc ofn;
   void *odata;
   if (finalizer == ECL_NIL) {
-    GC_REGISTER_FINALIZER_NO_ORDER(o, (GC_finalization_proc)0,
-                                   0, &ofn, &odata);
+    register_finalizer(o, o, (GC_finalization_proc)0, 0, &ofn, &odata);
   } else {
     GC_finalization_proc newfn;
     newfn = (GC_finalization_proc)wrapped_finalizer;
-    GC_REGISTER_FINALIZER_NO_ORDER(o, newfn, finalizer,
-                                   &ofn, &odata);
+    register_finalizer(o, o, newfn, finalizer, &ofn, &odata);
   }
 }
 
@@ -1263,9 +1069,9 @@ si_gc_stats(cl_object enable)
   }
   if (cl_core.bytes_consed == ECL_NIL) {
     cl_core.bytes_consed = ecl_alloc_object(t_bignum);
-    mpz_init2(cl_core.bytes_consed->big.big_num, 128);
+    mpz_init2(ecl_bignum(cl_core.bytes_consed), 128);
     cl_core.gc_counter = ecl_alloc_object(t_bignum);
-    mpz_init2(cl_core.gc_counter->big.big_num, 128);
+    mpz_init2(ecl_bignum(cl_core.gc_counter), 128);
   }
 
   update_bytes_consed();
@@ -1277,8 +1083,8 @@ si_gc_stats(cl_object enable)
     GC_print_stats = 0;
     cl_core.gc_stats = 0;
   } else if (enable == ecl_make_fixnum(0)) {
-    mpz_set_ui(cl_core.bytes_consed->big.big_num, 0);
-    mpz_set_ui(cl_core.gc_counter->big.big_num, 0);
+    mpz_set_ui(ecl_bignum(cl_core.bytes_consed), 0);
+    mpz_set_ui(ecl_bignum(cl_core.gc_counter), 0);
   } else {
     cl_core.gc_stats = 1;
     GC_print_stats = (enable == @':full');
@@ -1295,8 +1101,8 @@ gather_statistics()
   /* GC stats rely on bignums */
   if (cl_core.gc_stats) {
     update_bytes_consed();
-    mpz_add_ui(cl_core.gc_counter->big.big_num,
-               cl_core.gc_counter->big.big_num,
+    mpz_add_ui(ecl_bignum(cl_core.gc_counter),
+               ecl_bignum(cl_core.gc_counter),
                1);
   }
   if (GC_old_start_callback)
@@ -1306,8 +1112,8 @@ gather_statistics()
 static void
 update_bytes_consed () {
 #if GBC_BOEHM == 0
-  mpz_add_ui(cl_core.bytes_consed->big.big_num,
-             cl_core.bytes_consed->big.big_num,
+  mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+             ecl_bignum(cl_core.bytes_consed),
              GC_get_bytes_since_gc());
 #else
   /* This is not accurate and may wrap around. We try to detect this
@@ -1318,15 +1124,15 @@ update_bytes_consed () {
   if (bytes > new_bytes) {
     cl_index wrapped;
     wrapped = ~((cl_index)0) - bytes;
-    mpz_add_ui(cl_core.bytes_consed->big.big_num,
-               cl_core.bytes_consed->big.big_num,
+    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+               ecl_bignum(cl_core.bytes_consed),
                wrapped);
-    mpz_add_ui(cl_core.bytes_consed->big.big_num,
-               cl_core.bytes_consed->big.big_num,
+    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+               ecl_bignum(cl_core.bytes_consed),
                new_bytes);
   } else {
-    mpz_add_ui(cl_core.bytes_consed->big.big_num,
-               cl_core.bytes_consed->big.big_num,
+    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
+               ecl_bignum(cl_core.bytes_consed),
                new_bytes - bytes);
   }
   bytes = new_bytes;
@@ -1438,7 +1244,7 @@ si_gc_dump()
  * WEAK POINTERS
  */
 
-static cl_object
+cl_object
 ecl_alloc_weak_pointer(cl_object o)
 {
   const cl_env_ptr the_env = ecl_process_env();
@@ -1455,6 +1261,12 @@ ecl_alloc_weak_pointer(cl_object o)
   return (cl_object)obj;
 }
 
+static cl_object
+ecl_weak_pointer_value(cl_object o)
+{
+  return ecl_weak_pointer(o);
+}
+
 cl_object
 si_make_weak_pointer(cl_object o)
 {
@@ -1462,24 +1274,19 @@ si_make_weak_pointer(cl_object o)
   @(return pointer);
 }
 
-static cl_object
-ecl_weak_pointer_value(cl_object o)
-{
-  return o->weak.value;
-}
-
 cl_object
 si_weak_pointer_value(cl_object o)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_object value;
   if (ecl_unlikely(ecl_t_of(o) != t_weak_pointer))
     FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
                           @[ext::weak-pointer]);
   value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
   if (value) {
-    @(return value ECL_T);
+    ecl_return2(the_env, value, ECL_T);
   } else {
-    @(return ECL_NIL ECL_NIL);
+    ecl_return2(the_env, ECL_NIL, ECL_NIL);
   }
 }
 

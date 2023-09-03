@@ -1328,6 +1328,18 @@
         (quote
          (write-char #\' stream)
          (write-object (cadr list) stream))
+        (si:quasiquote
+         (write-char #\` stream)
+         (write-object (cadr list) stream))
+        (si:unquote
+         (write-char #\, stream)
+         (write-object (cadr list) stream))
+        (si:unquote-splice
+         (write-string ",@" stream)
+         (write-object (cadr list) stream))
+        (si:unquote-nsplice
+         (write-string ",." stream)
+         (write-object (cadr list) stream))
         (t
          (pprint-fill stream list)))
       (pprint-fill stream list)))
@@ -1476,12 +1488,16 @@
     (multiple-value-prog1 pprint-block)
     (progn pprint-progn)
     (progv pprint-progv)
+    (si:quasiquote pprint-quote)
     (quote pprint-quote)
     (return-from pprint-block)
     (setq pprint-setq)
     (symbol-macrolet pprint-let)
     (tagbody pprint-tagbody)
     (throw pprint-block)
+    (si:unquote pprint-quote)
+    (si:unquote-nsplice pprint-quote)
+    (si:unquote-splice pprint-quote)
     (unwind-protect pprint-block)
     
     ;; Macros.

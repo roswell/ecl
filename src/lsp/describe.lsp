@@ -16,6 +16,8 @@
 
 (in-package "SYSTEM")
 
+(pushnew :cdr-6 *features*)
+
 (defparameter *inspect-level* 0)
 (defparameter *inspect-history* nil)
 (defparameter *inspect-mode* nil)

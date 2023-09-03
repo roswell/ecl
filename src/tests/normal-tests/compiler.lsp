@@ -1874,24 +1874,48 @@
   ;; global function in same file, declaimed inline
   (load (with-compiler ("inline-closure.lsp")
           '(in-package #:cl-test)
-          '(declaim (inline set-b.0079 get-b.0079))
+          '(declaim (inline set-b.0079a get-b.0079a))
           '(let ((b 123))
-            (defun set-b.0079 (x)
-              (setf b x))
-            (defun get-b.0079 () b))
-          '(defun foo.0079 ()
+             (defun set-b.0079a (x)
+               (setf b x))
+             (defun get-b.0079a () b))
+          '(defun foo.0079a ()
             (let (results)
-              (push (get-b.0079) results)
+              (push (get-b.0079a) results)
               (let ((b 345))
-                (push (get-b.0079) results)
+                (push (get-b.0079a) results)
                 (push b results)
-                (set-b.0079 0)
-                (push (get-b.0079) results)
+                (set-b.0079a 0)
+                (push (get-b.0079a) results)
                 (push b results))
-              (push (get-b.0079) results)
+              (push (get-b.0079a) results)
               (nreverse results)))))
   (is (equal
-       (funcall 'foo.0079)
+       (funcall 'foo.0079a)
+       '(123 123 345 0 345 0)))
+  ;; global function in different file, proclaimed inline
+  (proclaim '(inline set-b.0079b get-b.0079b))
+  (load (with-compiler ("inline-closure-1.lsp")
+          '(in-package #:cl-test)
+          '(let ((b 123))
+             (defun set-b.0079b (x)
+               (setf b x))
+             (defun get-b.0079b () b))))
+  (load (with-compiler ("inline-closure-2.lsp")
+          '(in-package #:cl-test)
+          '(defun foo.0079b ()
+            (let (results)
+              (push (get-b.0079b) results)
+              (let ((b 345))
+                (push (get-b.0079b) results)
+                (push b results)
+                (set-b.0079b 0)
+                (push (get-b.0079b) results)
+                (push b results))
+              (push (get-b.0079b) results)
+              (nreverse results)))))
+  (is (equal
+       (funcall 'foo.0079b)
        '(123 123 345 0 345 0))))
 
 ;;; Date 2020-05-08
@@ -2002,3 +2026,272 @@
                   (compile nil fun)))
       (is (null errors-p))
       (is (= (funcall compiled-fun 0) 2)))))
+
+;;; Date 2020-08-14
+;;; Description
+;;;
+;;;     (values (values)) was miscompiled and returned no value
+;;;     instead of the correct nil
+(test cmp.0085.values-values
+  (is (equal '(nil)
+             (multiple-value-list
+              (funcall
+               (compile nil '(lambda () (values (values)))))))))
+
+;;; Date 2021-03-25
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/633
+;;; Description
+;;;
+;;;     The order of function arguments was wrong when inlining a
+;;;     function with &key and &aux arguments. This test checks
+;;;     correct ordering in general.
+(test cmp.0086.inline-ordering-function-arguments
+  (is (equal (multiple-value-list
+              (funcall (compile nil '(lambda ()
+                                      (flet ((f (a
+                                                 &optional (b a)
+                                                 &rest c
+                                                 &key (d c)
+                                                 &aux (e d))
+                                               (list a b c d e)))
+                                        (declare (inline f))
+                                        (values (f 1)
+                                                (f 1 2)
+                                                (f 1 2 :d 3)))))))
+             '((1 1 nil nil nil)
+               (1 2 nil nil nil)
+               (1 2 (:d 3) 3 3)))))
+
+;;; Date 2021-03-30
+;;; Description
+;;;
+;;;     let bindings of lists like '(quote ...) were miscompiled
+(test cmp.0087.let-list-containing-quote
+  (is (equal '((quote) (quote a b c))
+             (funcall
+              (compile nil '(lambda () (let ((x '(quote)) (y '(quote a b c))) (list x y))))))))
+
+;;; Date 2021-11-19
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/662
+;;; Description
+;;;
+;;;     In ccmp a global symbol macro cannot be lexically rebound.
+;;;
+(test cmp.0089.symbol-macro
+  (when (finishes
+         (with-compiler ("cmp.0089.symbol-macro.lsp" :load t)
+           `(define-symbol-macro cmp.0089.sym 42)
+           `(defun cmp.0089.fun1 (cmp.0089.sym) cmp.0089.sym)
+           `(defun cmp.0089.fun2 () cmp.0089.sym)))
+    (is (= 15 (cmp.0089.fun1 15)))
+    (is (= 42 (cmp.0089.fun2)))))
+
+;;; Date 2022-01-29
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/672
+;;; Description
+;;;
+;;;     Apply, funcall and multiple-value-call did not check the
+;;;     number of arguments when lambda expressions. This test fairly
+;;;     comprehensively checks that we signal an error if we get wrong
+;;;     number of arguments and also includes some non-error cases.
+;;;
+(test cmp.0090.funcall/apply-inline-and-number-of-arguments
+  (let ((*standard-output* (make-broadcast-stream)))
+    (signals error (funcall (compile nil '(lambda () (funcall (lambda (a b) (list a b)) 1)))))
+    (signals error (funcall (compile nil '(lambda () (funcall (lambda (a b) (list a b)) 1 2 3)))))
+    (signals error (funcall (compile nil '(lambda () (funcall (lambda (a &optional b) (list a b)) 1 2 3)))))
+    (is (equal (funcall (compile nil '(lambda () (funcall (lambda (a &optional b) (list a b)) 1)))) '(1 nil)))
+    (is (equal (funcall (compile nil '(lambda () (funcall (lambda (a &optional b) (list a b)) 1 2)))) '(1 2)))
+    (signals error (funcall (compile nil '(lambda () (apply (lambda (a b) (list a b)) '(1))))))
+    (signals error (funcall (compile nil '(lambda () (apply (lambda (a b) (list a b)) '(1 2 3))))))
+    (signals error (funcall (compile nil '(lambda () (apply (lambda (a b) (list a b)) 1 '(2 3))))))
+    (is (equal (funcall (compile nil '(lambda (x) (apply (lambda (a b) (list a b)) x))) '(1 2)) '(1 2)))
+    (is (equal (funcall (compile nil '(lambda (x) (apply (lambda (a b) (list a b)) 1 x))) '(2)) '(1 2)))
+    (signals error (funcall (compile nil '(lambda (x) (apply (lambda (a b) (list a b)) 1 x))) '(2 3)))
+    (is (equal (funcall (compile nil '(lambda () (apply (lambda (a &optional b) (list a b)) '(1))))) '(1 nil)))
+    (signals error (funcall (compile nil '(lambda () (apply (lambda (a &optional b) (list a b)) '(1 2 3))))))
+    (signals error (funcall (compile nil '(lambda () (apply (lambda (a &optional b) (list a b)) 1 '(2 3))))))
+    (is (equal (funcall (compile nil '(lambda (x) (apply (lambda (a &optional b) (list a b)) x))) '(1 2)) '(1 2)))
+    (is (equal (funcall (compile nil '(lambda (x) (apply (lambda (a &optional b) (list a b)) 1 x))) '(2)) '(1 2)))
+    (signals error (funcall (compile nil '(lambda (x) (apply (lambda (a &optional b) (list a b)) 1 x))) '(2 3)))
+    (signals error (funcall (compile nil '(lambda () (multiple-value-call (lambda (a b) (list a b)) (values 1))))))
+    (signals error (funcall (compile nil '(lambda () (multiple-value-call (lambda (a b) (list a b)) (values  1 2 3))))))
+    (signals error (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1 2 3))))))
+    (is (equal (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1))))) '(1 nil)))
+    (is (equal (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1 2))))) '(1 2)))))
+
+;;; Date 2022-08-13
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/630
+;;; Description
+;;;
+;;;     The compiler would run into an infinite loop when two lists
+;;;     with the same circular structure were contained as literal
+;;;     data in the same file.
+;;;
+(test cmp.0091.infinite-loop-circular-data
+  (finishes (with-compiler ("infinite-loop-circular-data.lsp")
+              '(eq '#1=(a . #1#) '#2=(a . #2#))
+              '(eq '#3=(a b . #3#) '#4=(a b . #4#))
+              '(eq '#5=(#5# . a) '#6=(#6# . a))
+              '(eq '#7=((#7# . a) . b) '#8=((#8# . a) . b))
+              '(eq '#9=((a . #9#) . b) '#10=((a . #10#) . b))
+              '(eq '#11=(#11# . #11#) '#12=(#12# . #12#)))))
+
+;;; Date 2022-12-30
+;;; Description
+;;;
+;;;     Check that function redefinitions for functions which are
+;;;     declared as inline are picked up correctly even if we can't
+;;;     inline the new definition (e.g. because it is a closure).
+;;;
+(test cmp.0092.inline-redefinition
+  (setf (compiler-macro-function 'foo) nil)
+  (finishes (with-compiler ("inline-redefinition-1.lsp" :load t)
+              '(declaim (inline foo))
+              '(defun foo () 1)
+              '(defun bar () (foo))))
+  (is (eql (bar) 1))
+  (finishes (with-compiler ("inline-redefinition-2.lsp" :load t)
+              '(let ((a 2))
+                (defun ensure-compiler-cannot-optimize-away-the-let-statement (x)
+                  (setf a x))
+                (defun foo ()
+                  a))
+              '(defun bar () (foo))))
+  (is (eql (bar) 2)))
+
+;;; Date 2023-06-18
+;;; Description
+;;;
+;;;     Compound function types in type declarations must not end up
+;;;     as arguments to TYPEP.
+;;;
+(deftype fun-type.0093a () '(function (integer) integer))
+(deftype fun-type.0093b (tp) `(function (,tp) ,tp))
+
+(defstruct struct.0093
+  (f1 #'(lambda (x) (+ x 2)) :type (function (integer) integer))
+  (f2 #'(lambda (x) (+ x 2)) :type fun-type.0093a)
+  (f3 #'(lambda (x) (+ x 2)) :type (fun-type.0093b integer)))
+
+(defclass class.0093 ()
+  ((f1 :initform #'(lambda (x) (+ x 2)) :initarg :f1 :reader class.0093-f1
+       :type (function (integer) integer))
+   (f2 :initform #'(lambda (x) (+ x 2)) :initarg :f2 :reader class.0093-f2
+       :type fun-type.0093a)
+   (f3 :initform #'(lambda (x) (+ x 2)) :initarg :f3 :reader class.0093-f3
+       :type (fun-type.0093b integer))))
+
+(test cmp.0093.declare-compound-function-types
+  ;; type declarations for function arguments
+  (is (= 5 (funcall (compile nil (lambda (f)
+                                   (declare (ext:check-arguments-type) (ext:type-assertions)
+                                            (type (function (integer) integer) f))
+                                   (funcall f 3)))
+                    #'(lambda (x) (+ x 2)))))
+  (is (= 5 (funcall (compile nil (lambda (f)
+                                   (declare (ext:check-arguments-type) (ext:type-assertions)
+                                            (type fun-type.0093a f))
+                                   (funcall f 3)))
+                    #'(lambda (x) (+ x 2)))))
+  (is (= 5 (funcall (compile nil (lambda (f)
+                                   (declare (ext:check-arguments-type) (ext:type-assertions)
+                                            (type (fun-type.0093b integer) f))
+                                   (funcall f 3)))
+                    #'(lambda (x) (+ x 2)))))
+  ;; type declarations for local variables
+  (is (= 5 (funcall (compile nil (lambda ()
+                                   (declare (ext:evaluate-forms) (ext:type-assertions))
+                                   (let ((f #'(lambda (x) (+ x 2))))
+                                     (declare (type (function (integer) integer) f))
+                                     (funcall f 3)))))))
+  (is (= 5 (funcall (compile nil (lambda ()
+                                   (declare (ext:evaluate-forms) (ext:type-assertions))
+                                   (let ((f #'(lambda (x) (+ x 2))))
+                                     (declare (type fun-type.0093a f))
+                                     (funcall f 3)))))))
+  (is (= 5 (funcall (compile nil (lambda ()
+                                   (declare (ext:evaluate-forms) (ext:type-assertions))
+                                   (let ((f #'(lambda (x) (+ x 2))))
+                                     (declare (type (fun-type.0093b integer) f))
+                                     (funcall f 3)))))))
+  ;; type declarations using THE with constant argument
+  (is (typep (funcall (compile nil (lambda ()
+                                     (declare (ext:evaluate-forms) (ext:type-assertions))
+                                     (the (function (integer) integer)
+                                          #.#'(lambda (x) (+ x 2))))))
+             'function))
+  (is (typep (funcall (compile nil (lambda ()
+                                     (declare (ext:evaluate-forms) (ext:type-assertions))
+                                     (the fun-type.0093a
+                                          #.#'(lambda (x) (+ x 2))))))
+             'function))
+  (is (typep (funcall (compile nil (lambda ()
+                                     (declare (ext:evaluate-forms) (ext:type-assertions))
+                                     (the (fun-type.0093b integer)
+                                          #.#'(lambda (x) (+ x 2))))))
+             'function))
+  ;; type declarations in DEFSTRUCT
+  (let ((s (make-struct.0093)))
+    (is (typep (struct.0093-f1 s) 'function))
+    (is (typep (struct.0093-f2 s) 'function))
+    (is (typep (struct.0093-f3 s) 'function)))
+  (let ((s (make-struct.0093 :f1 #'(lambda (x) (+ x 3))
+                             :f2 #'(lambda (x) (+ x 3))
+                             :f3 #'(lambda (x) (+ x 3)))))
+    (is (typep (struct.0093-f1 s) 'function))
+    (is (typep (struct.0093-f2 s) 'function))
+    (is (typep (struct.0093-f3 s) 'function)))
+  ;; type declarations in DEFCLASS
+  (let ((i (make-instance 'class.0093)))
+    (is (typep (class.0093-f1 i) 'function))
+    (is (typep (class.0093-f2 i) 'function))
+    (is (typep (class.0093-f3 i) 'function)))
+  (let ((i (make-instance 'class.0093
+                          :f1 #'(lambda (x) (+ x 3))
+                          :f2 #'(lambda (x) (+ x 3))
+                          :f3 #'(lambda (x) (+ x 3)))))
+    (is (typep (class.0093-f1 i) 'function))
+    (is (typep (class.0093-f2 i) 'function))
+    (is (typep (class.0093-f3 i) 'function))))
+
+
+;;; Date 2023-06-18
+;;; Description
+;;;
+;;;     TYPEP with a compound function type as argument must not be
+;;;     simplified to FUNCTIONP.
+;;;
+(deftype fun-type.0094a () '(function (integer) integer))
+(deftype fun-type.0094b (tp) `(function (,tp) ,tp))
+
+(test cmp.0094.typep-compound-function-type
+  (signals error (funcall (compile nil (lambda (x) (typep x '(function (integer) integer))))
+                          #'(lambda (x) (+ x 2))))
+  (signals error (funcall (compile nil (lambda (x) (typep x 'fun-type.0094a)))
+                          #'(lambda (x) (+ x 2))))
+  (signals error (funcall (compile nil (lambda (x) (typep x '(fun-type.0094b integer))))
+                          #'(lambda (x) (+ x 2)))))
+
+;;; Date 2023-06-24
+;;; Description
+;;;
+;;;     The compiler produced invalid C code when unable to coerce
+;;;     between incompatible C types. This situation typically
+;;;     indicates a bug but it can also happen because of a failure of
+;;;     the dead code elimination step. In this case we were
+;;;     outputting invalid C code for the dead part and thus the
+;;;     compilation could fail for valid Lisp code.
+;;;
+(test cmp.0095.unreachable-code-unboxed-value
+  (is (eql
+       (funcall (compile nil
+                         (lambda (y)
+                           (declare (optimize (safety 0) (speed 3))
+                                    (fixnum y))
+                           (funcall (lambda (x)
+                                      (cond ((typep x 'fixnum) (1+ x))
+                                            ((characterp x) (char-code x))))
+                                    (the fixnum (1+ y)))))
+                2)
+       4)))

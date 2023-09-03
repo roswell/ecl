@@ -90,18 +90,17 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
     ',var))
 
 (defparameter *defun-inline-hook*
-  #'(lambda (fname form env)
+  #'(lambda (fname form)
       ;; To prevent inlining of stale function definitions by the native
       ;; compiler after a new definition has been established by the
       ;; bytecodes compiler, we save function definitions in the global
       ;; environment when the function has been proclaimed inline.
-      (declare (ignore env))
       (let ((proclaimed (si:get-sysprop fname 'inline)))
         (when proclaimed
-          `(eval-when (:compile-toplevel :load-toplevel :execute)
+          `(eval-when (:load-toplevel :execute)
              (si:put-sysprop ',fname 'inline ',form))))))
 
-(defmacro defun (&whole whole name vl &body body &environment env &aux doc-string)
+(defmacro defun (&whole whole name vl &body body &aux doc-string)
   ;; Documentation in help.lsp
   (multiple-value-setq (body doc-string) (remove-documentation body))
   (let* ((function `#'(ext::lambda-block ,name ,vl ,@body))
@@ -115,7 +114,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
        ,(ext:register-with-pde whole `(si::fset ',name ,global-function))
        ,@(si::expand-set-documentation name 'function doc-string)
        ,(let ((hook *defun-inline-hook*))
-          (and hook (funcall hook name global-function env)))
+          (and hook (funcall hook name global-function)))
        ',name)))
 
 ;;;
@@ -123,7 +122,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
 ;;;
 (defmacro define-compiler-macro (&whole whole name vl &rest body)
   (multiple-value-bind (function pprint doc-string)
-      (sys::expand-defmacro name vl body 'cl:define-compiler-macro)
+      (si:expand-defmacro name vl body 'cl:define-compiler-macro)
     (declare (ignore pprint))
     (setq function `(function ,function))
     (when *dump-defun-definitions*
@@ -131,7 +130,7 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
       (setq function `(si::bc-disassemble ,function)))
     `(progn
        (put-sysprop ',name 'sys::compiler-macro ,function)
-       ,@(si::expand-set-documentation name 'function doc-string)
+       ,@(si::expand-set-documentation name 'compiler-macro doc-string)
        ,(ext:register-with-pde whole)
        ',name)))
 
@@ -233,10 +232,9 @@ to NIL) sequentially, and executes STATEMENTs.  Returns NIL."
 (defmacro prog1 (first &rest body &aux (sym (gensym)))
   "Syntax: (prog1 first-form {form}*)
 Evaluates FIRST-FORM and FORMs in order.  Returns the value of FIRST-FORM."
-  (if (null body) first
   `(LET ((,sym ,first))
 ;    (DECLARE (:READ-ONLY ,sym)) ; Beppe
-    ,@body ,sym)))
+     ,@body ,sym))
 
 (defmacro prog2 (first second &rest body &aux (sym (gensym)))
   "Syntax: (prog2 first-form second-form {forms}*)
@@ -266,8 +264,8 @@ FORM returns no value, NIL."
     (declare (fixnum n))
     (push `(SETQ ,(car vl) (NTH ,n ,sym)) forms)))
 
-;; We do not use this macroexpanso, and thus we do not care whether
-;; it is efficiently compiled by ECL or not.
+;; We do not use this macroexpanso, and thus we do not care whether it is
+;; efficiently compiled by ECL or not.
 (defmacro multiple-value-bind (vars form &rest body)
   "Syntax: (multiple-value-bind ({var}*) init {decl}* {form}*)
 
@@ -275,7 +273,10 @@ Evaluates INIT and binds the N-th VAR to the N-th value of INIT or, if INIT
 returns less than N values, to NIL.  Then evaluates FORMs, and returns all
 values of the last FORM.  If no FORM is given, returns NIL."
   (declare (notinline mapcar))
-  `(multiple-value-call #'(lambda (&optional ,@(mapcar #'list vars)) ,@body) ,form))
+  (let ((args (mapcar #'list vars))
+        (rest (gensym)))
+    `(multiple-value-call #'(lambda (&optional ,@args &rest ,rest) ,@body)
+       ,form)))
 
 (defun while-until (test body jmp-op)
   (declare (si::c-local))

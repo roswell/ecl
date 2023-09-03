@@ -45,8 +45,8 @@ int getpagesize(void)
     }
     return((int)(result[0]));
 }
+
 #elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-# include <windows.h>
   int getpagesize(void)
   {
     SYSTEM_INFO sysinfo;
@@ -55,14 +55,14 @@ int getpagesize(void)
   }
 #endif
 
-struct {
+struct a_s {
   char a_a;
   char * a_b;
 } a;
 
 word nested_sp(void)
 {
-# if defined(__GNUC__) && (__GNUC__ >= 4)
+# if GC_GNUC_PREREQ(4, 0)
     return (word)__builtin_frame_address(0);
 # else
     volatile word sp;
@@ -76,12 +76,21 @@ word (*volatile nested_sp_fn)(void) = nested_sp;
 
 int g(int x);
 
+#if defined(CPPCHECK) || !defined(__cplusplus)
+  const char *a_str = "a";
+#else
+# define a_str "a"
+#endif
+
 int main(void)
 {
     volatile word sp;
     unsigned ps = GETPAGESIZE();
-    jmp_buf b;
-    register int x = (int)strlen("a");  /* 1, slightly disguised */
+    JMP_BUF b;
+#   if !defined(__cplusplus) || __cplusplus < 201703L /* before c++17 */
+      register
+#   endif
+      int x = (int)strlen(a_str); /* 1, slightly disguised */
     static volatile int y = 0;
 
     sp = (word)(&sp);
@@ -95,7 +104,7 @@ int main(void)
              ((unsigned long)sp + ps) & ~(ps-1));
     } else {
       printf("Stack appears to grow up.\n");
-      printf("Define STACK_GROWS_UP in gc_private.h\n");
+      printf("Define STACK_GROWS_UP in gc_priv.h\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
              ((unsigned long)sp + ps) & ~(ps-1));
     }
@@ -112,7 +121,7 @@ int main(void)
     x = 2*x-1;
     printf("\n");
     x = 2*x-1;
-    setjmp(b);
+    (void)SETJMP(b);
     if (y == 1) {
       if (x == 2) {
         printf("Setjmp-based generic mark_regs code probably won't work.\n");
@@ -126,7 +135,7 @@ int main(void)
     }
     y++;
     x = 2;
-    if (y == 1) longjmp(b,1);
+    if (y == 1) LONGJMP(b, 1);
     printf("Some GC internal configuration stuff: \n");
     printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
            (unsigned long)WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);

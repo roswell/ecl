@@ -509,8 +509,8 @@ Common Lisp type contagion rules."
       (for-all-infinities -infinity +infinity
         (type-and-value-check (asinh -infinity) -infinity)
         (type-and-value-check (asinh +infinity) +infinity)
-        (without-fpe-traps
-          (complex-equality #'approx= (acosh -infinity) +infinity pi))
+        #| (without-fpe-traps
+          (complex-equality #'approx= (acosh -infinity) +infinity pi))|#
         (type-and-value-check (acosh +infinity) +infinity)
         #| (complex-equality #'approx= (atanh -infinity) 0 (/ pi 2))
         (complex-equality #'approx= (atanh +infinity) 0 (/ pi 2))|#))
@@ -733,3 +733,98 @@ Common Lisp type contagion rules."
         (is (approx= (phase (complex -infinity +infinity)) (+ (* pi 3/4))))
         (is (approx= (phase (complex +infinity -infinity)) (- (* pi 1/4))))
         (is (approx= (phase (complex +infinity +infinity)) (+ (* pi 1/4)))) |#))
+
+
+
+(test ieee-fp.0031.branch-cuts-signed-zero
+  (for-all-number-subtypes (x float (+ 1.0 (random 10.0)))
+    ;; branch cuts in [1,infinity)
+    (let ((z-above (complex x +0.0))
+          (z-below (complex x -0.0)))
+      (is (plusp (imagpart (asin z-above))))
+      (is (minusp (imagpart (asin z-below))))
+      (is (minusp (imagpart (acos z-above))))
+      (is (plusp (imagpart (acos z-below))))
+      (is (plusp (imagpart (atanh z-above))))
+      (is (minusp (imagpart (atanh z-below)))))
+    ;; branch cuts in (-infinity,-1]
+    (let ((z-above (complex (- x) +0.0))
+          (z-below (complex (- x) -0.0)))
+      (is (plusp (imagpart (asin z-above))))
+      (is (minusp (imagpart (asin z-below))))
+      (is (minusp (imagpart (acos z-above))))
+      (is (plusp (imagpart (acos z-below))))
+      (is (plusp (imagpart (atanh z-above))))
+      (is (minusp (imagpart (atanh z-below)))))
+    ;; branch cuts in [i,i*infinity)
+    (let ((z-left (complex -0.0 x))
+          (z-right (complex +0.0 x)))
+      (is (minusp (realpart (atan z-left))))
+      (is (plusp (realpart (atan z-right))))
+      (is (minusp (realpart (asinh z-left))))
+      (is (plusp (realpart (asinh z-right)))))
+    ;; branch cuts in (-i*infinity,-i]
+    (let ((z-left (complex -0.0 (- x)))
+          (z-right (complex +0.0 (- x))))
+      (is (minusp (realpart (atan z-left))))
+      (is (plusp (realpart (atan z-right))))
+      (is (minusp (realpart (asinh z-left))))
+      (is (plusp (realpart (asinh z-right))))))
+  (for-all-number-subtypes (x float (- 1.0 (random 10.0)))
+    ;; branch cuts in (-infinity,1]
+    (let ((z-above (complex x +0.0))
+          (z-below (complex x -0.0)))
+      (is (plusp (imagpart (acosh z-above))))
+      (is (minusp (imagpart (acosh z-below))))))
+  (for-all-number-subtypes (x float (- (random 10.0)))
+    ;; branch cuts in (-infinity,0]
+    (let ((z-above (complex x +0.0))
+          (z-below (complex x -0.0)))
+      (is (plusp (imagpart (sqrt z-above))))
+      (is (minusp (imagpart (sqrt z-below)))))))
+
+(test ieee-fp.0032.bit-conversion/smoke
+  (is (= 3.14 (si:bits-single-float (si:single-float-bits 3.14))))
+  (is (= 3.14 (si:bits-double-float (si:double-float-bits 3.14))))
+  #-long-float
+  (is (= 3.14 (si:bits-long-float (si:long-float-bits 3.14))))
+  #+long-float
+  (progn (signals error (si:long-float-bits 3.14))
+         (signals error (si:bits-long-float 3.14))))
+
+(test ieee-fp.0033.trap-fpe-smoke-test
+      (let ((bits (si:trap-fpe 'cl:last t)))
+        (unwind-protect
+             (dolist (flag '(t nil))
+               (finishes (si:trap-fpe t flag))
+               (finishes (si:trap-fpe bits flag))
+               (finishes (si:trap-fpe 'last flag))
+               (loop for sym in '(division-by-zero
+                                  floating-point-overflow
+                                  floating-point-underflow
+                                  floating-point-invalid-operation
+                                  floating-point-inexact)
+                     do (finishes (si:trap-fpe sym flag) "~s should be a valid EXT:FPE-TRAP condition." sym))
+               (loop for sym in '(:last
+                                  :division-by-zero
+                                  :floating-point-overflow
+                                  :floating-point-underflow
+                                  :floating-point-invalid-operation
+                                  :floating-point-inexact)
+                     do (signals error (si:trap-fpe sym flag) "~s should be an invalid EXT:FPE-TRAP condition." sym)))
+          (si:trap-fpe bits t))))
+
+(test ieee-fp.0034.decode-float
+      (labels ((test-float (proto num res exp sign)
+                 (equal (multiple-value-list (decode-float (float num proto)))
+                        (list (float res proto) exp (float sign proto))))
+               (test-float* (num res exp sign)
+                 (is (test-float 1.0f0 num res exp sign))
+                 (is (test-float 1.0d0 num res exp sign))
+                 (is (test-float 1.0l0 num res exp sign))))
+        (test-float* -10.0 0.625 4 -1.0)
+        (test-float*  -1.0 0.5   1 -1.0)
+        (test-float*  -0.0 0.0   0 -1.0)
+        (test-float*  +0.0 0.0   0 +1.0)
+        (test-float*  +1.0 0.5   1 +1.0)
+        (test-float* +10.0 0.625 4 +1.0)))

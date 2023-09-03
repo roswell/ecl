@@ -11,10 +11,15 @@
 #include "leak_detector.h"
 
 #ifdef GC_PTHREADS
+# include <errno.h> /* for EAGAIN */
 # include <pthread.h>
 #else
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
-#endif
+#endif /* !GC_PTHREADS */
 
 #include <stdio.h>
 
@@ -27,7 +32,7 @@
     int *p[10];
     int i;
     for (i = 0; i < 10; ++i) {
-        p[i] = malloc(sizeof(int)+i);
+        p[i] = (int *)malloc(sizeof(int) + i);
     }
     CHECK_LEAKS();
     for (i = 1; i < 10; ++i) {
@@ -46,7 +51,7 @@
 
 int main(void) {
 # if NTHREADS > 0
-    int i;
+    int i, n;
 #   ifdef GC_PTHREADS
       pthread_t t[NTHREADS];
 #   else
@@ -69,12 +74,15 @@ int main(void) {
           code = t[i] != NULL ? 0 : (int)GetLastError();
 #       endif
         if (code != 0) {
-            fprintf(stderr, "Thread creation failed %d\n", code);
+            fprintf(stderr, "Thread creation failed, errcode= %d\n", code);
+#           ifdef GC_PTHREADS
+              if (i > 1 && EAGAIN == code) break;
+#           endif
             exit(2);
         }
     }
-
-    for (i = 0; i < NTHREADS; ++i) {
+    n = i;
+    for (i = 0; i < n; ++i) {
 #       ifdef GC_PTHREADS
           code = pthread_join(t[i], 0);
 #       else
@@ -82,7 +90,7 @@ int main(void) {
                                                         (int)GetLastError();
 #       endif
         if (code != 0) {
-            fprintf(stderr, "Thread join failed %d\n", code);
+            fprintf(stderr, "Thread join failed, errcode= %d\n", code);
             exit(2);
         }
     }

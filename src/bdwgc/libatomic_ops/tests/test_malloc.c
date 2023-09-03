@@ -1,14 +1,19 @@
 /*
  * Copyright (c) 2005 Hewlett-Packard Development Company, L.P.
  *
- * This file may be redistributed and/or modified under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2, or (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * It is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License in the
- * file COPYING for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -27,7 +32,7 @@
 
 #ifndef DEFAULT_NTHREADS
 # ifdef HAVE_MMAP
-#   define DEFAULT_NTHREADS 16
+#   define DEFAULT_NTHREADS 16 /* must be <= MAX_NTHREADS */
 # else
 #   define DEFAULT_NTHREADS 3
 # endif
@@ -78,7 +83,7 @@ ln *cons(int d, ln *tail)
     size_t my_extra = (extra++) % 101;
 # endif
   ln *result;
-  int * extras;
+  char *extras;
   unsigned i;
 
   result = (ln *)AO_malloc(sizeof(ln) + sizeof(int)*my_extra);
@@ -91,8 +96,9 @@ ln *cons(int d, ln *tail)
 
   result -> data = d;
   result -> next = tail;
-  extras = (int *)(result+1);
-  for (i = 0; i < my_extra; ++i) extras[i] = 42;
+  extras = (char *)(result+1);
+  for (i = 0; i < my_extra; ++i)
+    extras[i*sizeof(int)] = 42;
   return result;
 }
 
@@ -229,7 +235,6 @@ int main(int argc, char **argv) {
 
     if (1 == argc) {
       nthreads = DEFAULT_NTHREADS;
-      assert(nthreads <= MAX_NTHREADS);
     } else if (2 == argc) {
       nthreads = atoi(argv[1]);
       if (nthreads < 1 || nthreads > MAX_NTHREADS) {

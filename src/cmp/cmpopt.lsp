@@ -40,6 +40,12 @@
               forms)))
     forms))
 
+(defun contains-compound-function-type (type)
+  (and (consp type)
+       (or (eq (first type) 'FUNCTION)
+           (and (member (first type) '(NOT OR AND CONS))
+                (some #'contains-compound-function-type (rest type))))))
+
 (defun expand-typep (form object type env)
   ;; This function is reponsible for expanding (TYPEP object type)
   ;; forms into a reasonable set of system calls. When it fails to
@@ -54,7 +60,11 @@
     (if (constantp type env)
         (setf type (ext:constant-form-value type env))
         (return-from expand-typep form))
-    (cond ;; Variable declared with a given type
+    (cond ;; compound function type specifier: signals an error
+          ((contains-compound-function-type type)
+           (cmpwarn "~S is not a valid type specifier for TYPEP" type)
+           form)
+          ;; Variable declared with a given type
           ((and (symbolp object)
                 (setf aux (cmp-env-search-var object env))
                 (subtypep (var-type aux) type))
@@ -69,6 +79,19 @@
            (cmpwarn "TYPEP form contains an empty type ~S and cannot be optimized" type)
            form)
           ;;
+          ;; Derived types defined with DEFTYPE. These are expanded
+          ;; first so that we can sort out compound function types
+          ;; which are equal under si::type= to the atomic function
+          ;; type but not allowed in TYPEP.
+          ((setq function (si:get-sysprop (if (atom type)
+                                              type
+                                              (first type))
+                                          'SI::DEFTYPE-DEFINITION))
+           (expand-typep form object `',(funcall function (if (atom type)
+                                                              nil
+                                                              (rest type)))
+                         env))
+          ;;
           ;; There exists a function which checks for this type?
           ((setf function (si:get-sysprop type 'si::type-predicate))
            `(,function ,object))
@@ -78,11 +101,6 @@
           ((loop for (a-type . function-name) in si::+known-typep-predicates+
               when (si::type= type a-type)
               do (return `(,function-name ,object))))
-          ;;
-          ;; Derived types defined with DEFTYPE.
-          ((and (atom type)
-                (setq function (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
-           (expand-typep form object `',(funcall function nil) env))
           ;;
           ;; No optimizations that take up too much space unless requested.
           ((not (policy-inline-type-checks))
@@ -138,7 +156,7 @@
                          (type ,first ,var2))
                 (AND (TYPEP ,var1 ',first)
                      (locally (declare (optimize (speed 3) (safety 0) (space 0)))
-                       (setf ,var2 (truly-the ,first ,var1))
+                       (setf ,var2 (ext:truly-the ,first ,var1))
                        (AND ,@(expand-in-interval-p var2 rest)))))))
           ;;
           ;; Compound COMPLEX types.
@@ -152,10 +170,6 @@
                 (= (list-length type) 2)
                 (symbolp (setf function (second type))))
            `(,function ,object))
-          ;;
-          ;; Derived compound types.
-          ((setf function (si:get-sysprop first 'SI::DEFTYPE-DEFINITION))
-           (expand-typep form object `',(funcall function rest) env))
           (t
            form))))
 
@@ -188,7 +202,7 @@
            (list-var (gensym))
            (typed-var (if (policy-assume-no-errors env)
                           list-var
-                          `(truly-the cons ,list-var))))
+                          `(ext:truly-the cons ,list-var))))
       `(block nil
          (let* ((,list-var ,expression))
            (si::while ,list-var
@@ -339,25 +353,14 @@
 (define-compiler-macro coerce (&whole form value type &environment env)
   (expand-coerce form value type env))
 
-(define-compiler-macro float (&whole form value &optional float &environment env)
-  (or 
-   (and
-    float
-    (policy-inline-type-checks env)
-    (multiple-value-bind (constant-p float)
-        (constant-value-p float env)
-      (when (and constant-p (floatp float))
-        (let* ((float (type-of float))
-               (c-type (lisp-type->rep-type float)))
-          `(let ((value ,value))
-             (declare (:read-only value))
-             (compiler-typecase value
-               (,float value)
-               (t
-                (ffi:c-inline (value) (:object) ,c-type
-                              ,(ecase c-type
-                                      (:double "ecl_to_double(#0)")
-                                      (:float "ecl_to_float(#0)")
-                                      (:long-double "ecl_to_long_double(#0)"))
-                              :one-liner t :side-effects nil))))))))
-   form))
+(define-compiler-macro princ (&whole whole expression &optional stream &environment env)
+  (if (constantp expression env)
+      (let ((value (ext:constant-form-value expression env)))
+        (typecase value
+          ((eql #\newline)
+           `(terpri ,stream))
+          ((string 1)
+           `(princ ,(aref value 0) ,stream))
+          (otherwise
+           whole)))
+      whole))

@@ -123,6 +123,7 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
     word sz;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
+    if (NULL == p) return NULL;
     hhdr = HDR((word)p);
     if (hhdr == 0) return(p);
     h = HBLKPTR(p);
@@ -159,7 +160,7 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
 
 #ifndef THREADS
 /* Could p be a stack address? */
-   STATIC GC_bool GC_on_stack(ptr_t p)
+   STATIC GC_bool GC_on_stack(void *p)
    {
 #    ifdef STACK_GROWS_DOWN
        if ((word)p >= (word)GC_approx_sp()
@@ -207,9 +208,10 @@ GC_API void * GC_CALL GC_is_visible(void *p)
             /* Else do it again correctly:      */
 #           if defined(DYNAMIC_LOADING) || defined(MSWIN32) \
                 || defined(MSWINCE) || defined(CYGWIN32) || defined(PCR)
-              GC_register_dynamic_libraries();
-              if (GC_is_static_root(p))
-                return(p);
+              if (!GC_no_dls) {
+                GC_register_dynamic_libraries();
+                if (GC_is_static_root(p)) return p;
+              }
 #           endif
             goto fail;
         } else {

@@ -8,7 +8,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -719,6 +719,11 @@ AO_fetch_compare_and_swap(volatile AO_t *addr, AO_t old_val, AO_t new_val)
 
 #endif /* AO_GCC_ATOMIC_TEST_AND_SET */
 
+#undef AO_ARM_HAVE_DMB
+#undef AO_ARM_HAVE_LDREX
+#undef AO_ARM_HAVE_LDREXBH
+#undef AO_ARM_HAVE_LDREXD
+#undef AO_ARM_HAVE_SWP
 #undef AO_BR_ALIGN
 #undef AO_MASK_PTR
 #undef AO_SKIPATOMIC_ANY_and_ANY

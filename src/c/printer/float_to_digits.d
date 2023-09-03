@@ -2,6 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
+ * float_to_digits.d: floating point printer functions
  *
  * Copyright (c) 2010 Juan Jose Garcia Ripoll
  *
@@ -13,6 +14,11 @@
 #include <float.h>
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
+
+/*
+ * The following algorithm is based on Burger, Dybvig (1996)
+ * (available at http://www.cs.indiana.edu/~dyb/pubs/FP-Printing-PLDI96.pdf)
+ */
 
 #define PRINT_BASE ecl_make_fixnum(10)
 #define EXPT_RADIX(x) ecl_ash(ecl_make_fixnum(1),x)
@@ -195,6 +201,42 @@ change_precision(float_approx *approx, cl_object position, cl_object relativep)
     }
   }
 }
+
+/*
+ * si_float_to_digits: create a correctly rounded approximation for a
+ * floating point number in the form of a string of (base 10) digits.
+ * Zero digits at the end or beginning of the string are omitted.
+ *
+ * Arguments:
+ *
+ * - digits: an adjustable base-string to store the digits in or NIL
+ *   to allocate a new base-string
+ * - number: the floating point number to approximate
+ * - position: specifies the number of digits to generate. If position
+ *   is NIL create as many digits as necessary to reconstruct the
+ *   number without error; otherwise:
+ *   - if relativep is false, position specifies the position relative
+ *     to the decimal point up to which to generate digits. Example: a
+ *     number of the form (d_n)...(d_0).(d_{-1})...*10^0 is translated
+ *     into a string (d_n)...(d_{position}) and then rounded. Here,
+ *     (d_i) is the digit at position i relative to the decimal point.
+ *   - if replativep is true, the number is normalized such that the
+ *     decimal point lies behind the first digit and position
+ *     specifies the number of digits to generate after this shifted
+ *     decimal point. Example: for k >= 0, a number of the form
+ *     (d_1).(d_2)...(d_n)*10^(-k) is translated into a string
+ *     (d_1)(d_2)...(d_{position+1}) and then rounded irrespective of
+ *     the value of k. For k < 0, the result is a string of the form
+ *     (d_1)(d_2)..(d_{position-k+1}) (k leading zeros are omitted).
+ * - relativep: a generalized boolean
+ *
+ * Return values:
+ *
+ * - k: a scale factor such that the string of digits multiplied with
+ *   10^k is (up to rounding) equal to number. To be precise, for
+ *   return values k and (d_1)...(d_n), number ≅ 10^(k-n)*int((d_1)...(d_n)).
+ * - digits: the created digits
+ */
 
 cl_object
 si_float_to_digits(cl_object digits, cl_object number, cl_object position,

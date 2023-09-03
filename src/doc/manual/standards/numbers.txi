@@ -6,6 +6,7 @@
 * Numbers - Floating point exceptions::
 * Numbers - Random-States::
 * Numbers - Infinity and Not a Number::
+* Numbers - Branch cuts and signed zero::
 * Numbers - Dictionary::
 * Numbers - C Reference::
 @end menu
@@ -81,10 +82,10 @@ Control the signaling of the floating point exceptions
 @paragraph Synopsis
 @table @var
 @item condition
-a symbol - one of @code{last}, @code{t}, @code{division-by-zero},
-@code{floating-point-overflow}, @code{floating-point-underflow},
-@code{floating-point-invalid-operation},
-@code{floating-point-inexact} or an integer.
+a symbol - one of @code{cl:last}, @code{cl:t}, @code{cl:division-by-zero},
+@code{cl:floating-point-overflow}, @code{cl:floating-point-underflow},
+@code{cl:floating-point-invalid-operation},
+@code{cl:floating-point-inexact} or an integer.
 @item flag
 a generalized boolean
 @end table
@@ -155,6 +156,27 @@ the number valued parameters.
 All rounding functions signal an @code{arithmetic-error} if any of the
 given parameters are not number valued or infinite.
 @end table
+
+@node Numbers - Branch cuts and signed zero
+@subsection Branch cuts and signed zero
+For multi-valued complex functions like @code{asin}, @code{acos}, etc.
+the @ansi{} standard specifies in detail the location of the branch cuts
+and in particular the value of these functions on the branch cuts. ECL
+diverges from the standard in that the sign of zero distinguishes two
+sides of a branch cut. For example, the @code{asin} function includes a
+branch cut running from 1 to ∞ on the real axis. The ANSI standard
+specifies a negative imaginary part for @code{asin} on this branch cut
+consistent with approaching the cut from below. Evaluating @code{(asin
+z)} in ECL, on the other hand, returns a result with positive imaginary
+part if the imaginary part of @code{z} is @code{+0.0} (consistent with
+approaching the cut from above) and a result with negative imaginary
+part if the imaginary part of @code{z} is @code{-0.0} (consistent with
+approaching the cut from below)@footnote{The reason for this behaviour
+is twofold: first, the approach taken by ECL is mathematically more
+sensible in a number system with signed zero and second, it is
+consistent with the specification of multi-valued complex functions in
+the C programming language.}. This applies to @code{sqrt}, @code{asin},
+@code{acos}, @code{atan}, @code{asinh}, @code{acosh} and @code{atanh}.
 
 @node Numbers - Dictionary
 @subsection Dictionary

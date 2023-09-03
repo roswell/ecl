@@ -1,3 +1,17 @@
+;;; Load names of all unicode characters from the Unicode Character
+;;; Database
+;;;
+;;; The names are compressed by splitting up the name into words and
+;;; encoding each word by an index in a hash table. The data is then
+;;; stored in the list *data* in the following format
+;;;
+;;; (char-code name index1 index2 ...)
+;;;
+;;; For example `0` and `1` are encoded as
+;;; (48 "DIGIT_ZERO" 22 23)
+;;; (49 "DIGIT_ONE" 22 24)
+;;; in *data*. 22 is the index for the word "DIGIT" while 23 and 24
+;;; are the indices for "ZERO" and "ONE" respectively
 (defun split-words (text &key (set '(#\Space)) (exclude t))
   (loop with start = 0
      with output = '()
@@ -63,7 +77,7 @@
 (defvar *words*)
 
 (defparameter *data*
-  (with-open-file (in "~/src/sbcl/tools-for-build/UnicodeData.txt" :direction :input)
+  (with-open-file (in "UnicodeData.txt" :direction :input)
     (loop with words = (setf *words* (make-hash-table :size 1024 :test #'equal))
        for ucd-line = (read-line in nil nil nil)
        while ucd-line

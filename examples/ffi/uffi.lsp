@@ -5,11 +5,10 @@ Load it with (load "uffi.fas")
 ;;
 ;; This toplevel statement notifies the compiler that we will
 ;; need this shared library at runtime. We do not need this
-;; statement in windows.
+;; statement in windows and macOS.
 ;;
-#-windows
-(uffi:load-foreign-library #+darwin "/usr/lib/libm.dylib"
-			   #-darwin "/usr/lib/libm.so")
+#-(or windows darwin)
+(uffi:load-foreign-library "/lib64/libm.so.6") ;; adjust the library path/name as needed
 ;;
 ;; With this other statement, we import the C function sin(),
 ;; which operates on IEEE doubles.

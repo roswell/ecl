@@ -130,72 +130,71 @@ ecl_set_option(int option, cl_fixnum value)
   }
 }
 
-void
-ecl_init_bignum_registers(cl_env_ptr env)
+static void
+init_env_mp(cl_env_ptr env)
 {
-  int i;
-  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
-    cl_object x = ecl_alloc_object(t_bignum);
-    _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
-    env->big_register[i] = x;
-  }
-}
-
-void
-ecl_clear_bignum_registers(cl_env_ptr env)
-{
-  int i;
-  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
-    _ecl_big_clear(env->big_register[i]);
-  }
-}
-
-void
-ecl_init_env(cl_env_ptr env)
-{
-  env->c_env = NULL;
 #if defined(ECL_THREADS)
   env->cleanup = 0;
 #else
   env->own_process = ECL_NIL;
 #endif
-  env->string_pool = ECL_NIL;
+}
 
-  env->stack = NULL;
-  env->stack_top = NULL;
-  env->stack_limit = NULL;
-  env->stack_size = 0;
-  ecl_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
-
-#if !defined(ECL_CMU_FORMAT)
-  env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
+static void
+init_env_int(cl_env_ptr env)
+{
+  env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
+  env->interrupt_struct->pending_interrupt = ECL_NIL;
+#ifdef ECL_THREADS
+  ecl_mutex_init(&env->interrupt_struct->signal_queue_lock, FALSE);
 #endif
+  {
+    int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
+    env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
+  }
+  env->fault_address = env;
+  env->trap_fpe_bits = 0;
+}
+
+static void
+init_env_ffi(cl_env_ptr env)
+{
 #ifdef HAVE_LIBFFI
   env->ffi_args_limit = 0;
   env->ffi_types = 0;
   env->ffi_values = 0;
   env->ffi_values_ptrs = 0;
 #endif
+}
 
-  env->method_cache = ecl_make_cache(64, 4096);
-  env->slot_cache = ecl_make_cache(3, 4096);
-  env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
-  env->interrupt_struct->pending_interrupt = ECL_NIL;
-  env->interrupt_struct->signal_queue_spinlock = ECL_NIL;
-  {
-    int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
-    env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
-  }
-
-  init_stacks(env);
-
-  ecl_init_bignum_registers(env);
-
-  env->trap_fpe_bits = 0;
-
+static void
+init_env_aux(cl_env_ptr env)
+{
+  /* Reader */
+  env->string_pool = ECL_NIL;
   env->packages_to_be_created = ECL_NIL;
   env->packages_to_be_created_p = ECL_NIL;
-  env->fault_address = env;
+  /* Format (written in C) */
+#if !defined(ECL_CMU_FORMAT)
+  env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
+#endif
+  /* Bignum arithmetic */
+  ecl_init_bignum_registers(env);
+  /* Bytecodes compiler environment */
+  env->c_env = NULL;
+  /* CLOS caches */
+  env->method_cache = ecl_make_cache(64, 4096);
+  env->slot_cache = ecl_make_cache(3, 4096);
+}
+
+void
+ecl_init_env(cl_env_ptr env)
+{
+  init_env_mp(env);
+  init_env_int(env);
+  init_env_aux(env);
+  init_env_ffi(env);
+  init_stacks(env);
 }
 
 void
@@ -208,6 +207,9 @@ _ecl_dealloc_env(cl_env_ptr env)
    * a lisp environment set up -- the allocator assumes one -- and we
    * may have already cleaned up the value of ecl_process_env()
    */
+#ifdef ECL_THREADS
+  ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
+#endif
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
@@ -360,92 +362,87 @@ ecl_def_ct_complex(flt_imag_unit_neg,&flt_zero_data,&flt_one_neg_data,static,con
 ecl_def_ct_complex(flt_imag_two,&flt_zero_data,&flt_two_data,static,const);
 
 struct cl_core_struct cl_core = {
-  ECL_NIL, /* packages */
-  ECL_NIL, /* lisp_package */
-  ECL_NIL, /* user_package */
-  ECL_NIL, /* keyword_package */
-  ECL_NIL, /* system_package */
-  ECL_NIL, /* ext_package */
-  ECL_NIL, /* clos_package */
+  .packages = ECL_NIL,
+  .lisp_package = ECL_NIL,
+  .user_package = ECL_NIL,
+  .keyword_package = ECL_NIL,
+  .system_package = ECL_NIL,
+  .ext_package = ECL_NIL,
+  .clos_package = ECL_NIL,
 # ifdef ECL_CLOS_STREAMS
-  ECL_NIL, /* gray_package */
+  .gray_package = ECL_NIL,
 # endif
-  ECL_NIL, /* mp_package */
-  ECL_NIL, /* c_package */
-  ECL_NIL, /* ffi_package */
+  .mp_package = ECL_NIL,
+  .c_package = ECL_NIL,
+  .ffi_package = ECL_NIL,
 
-  ECL_NIL, /* pathname_translations */
-  ECL_NIL, /* library_pathname */
+  .pathname_translations = ECL_NIL,
+  .library_pathname = ECL_NIL,
 
-  ECL_NIL, /* terminal_io */
-  ECL_NIL, /* null_stream */
-  ECL_NIL, /* standard_input */
-  ECL_NIL, /* standard_output */
-  ECL_NIL, /* error_output */
-  ECL_NIL, /* standard_readtable */
-  ECL_NIL, /* dispatch_reader */
-  ECL_NIL, /* default_dispatch_macro */
+  .terminal_io = ECL_NIL,
+  .null_stream = ECL_NIL,
+  .standard_input = ECL_NIL,
+  .standard_output = ECL_NIL,
+  .error_output = ECL_NIL,
+  .standard_readtable = ECL_NIL,
+  .dispatch_reader = ECL_NIL,
 
-  ECL_NIL, /* char_names */
-  (cl_object)&str_empty_data, /* null_string */
+  .char_names = ECL_NIL,
+  .null_string = (cl_object)&str_empty_data,
 
-  (cl_object)&plus_half_data, /* plus_half */
-  (cl_object)&minus_half_data, /* minus_half */
-  (cl_object)&flt_imag_unit_data, /* imag_unit */
-  (cl_object)&flt_imag_unit_neg_data, /* minus_imag_unit */
-  (cl_object)&flt_imag_two_data, /* imag_two */
-  (cl_object)&flt_zero_data, /* singlefloat_zero */
-  (cl_object)&dbl_zero_data, /* doublefloat_zero */
-  (cl_object)&flt_zero_neg_data, /* singlefloat_minus_zero */
-  (cl_object)&dbl_zero_neg_data, /* doublefloat_minus_zero */
-  (cl_object)&ldbl_zero_data, /* longfloat_zero */
-  (cl_object)&ldbl_zero_neg_data, /* longfloat_minus_zero */
+  .plus_half = (cl_object)&plus_half_data,
+  .minus_half = (cl_object)&minus_half_data,
+  .imag_unit = (cl_object)&flt_imag_unit_data,
+  .minus_imag_unit = (cl_object)&flt_imag_unit_neg_data,
+  .imag_two = (cl_object)&flt_imag_two_data,
+  .singlefloat_zero = (cl_object)&flt_zero_data,
+  .doublefloat_zero = (cl_object)&dbl_zero_data,
+  .singlefloat_minus_zero = (cl_object)&flt_zero_neg_data,
+  .doublefloat_minus_zero = (cl_object)&dbl_zero_neg_data,
+  .longfloat_zero = (cl_object)&ldbl_zero_data,
+  .longfloat_minus_zero = (cl_object)&ldbl_zero_neg_data,
 
-  (cl_object)&str_G_data, /* gensym_prefix */
-  (cl_object)&str_T_data, /* gentemp_prefix */
-  ecl_make_fixnum(0), /* gentemp_counter */
+  .gensym_prefix = (cl_object)&str_G_data,
+  .gentemp_prefix = (cl_object)&str_T_data,
+  .gentemp_counter = ecl_make_fixnum(0),
 
-  ECL_NIL, /* Jan1st1970UT */
+  .Jan1st1970UT = ECL_NIL,
 
-  ECL_NIL, /* system_properties */
-  ECL_NIL, /* setf_definition */
+  .system_properties = ECL_NIL,
+  .setf_definitions = ECL_NIL,
 
 #ifdef ECL_THREADS
-  ECL_NIL, /* processes */
-  ECL_NIL, /* processes_spinlock */
-  ECL_NIL, /* global_lock */
-  ECL_NIL, /* error_lock */
-  ECL_NIL, /* global_env_lock */
+  .processes = ECL_NIL,
 #endif
   /* LIBRARIES is an adjustable vector of objects. It behaves as
      a vector of weak pointers thanks to the magic in
      gbc.d/alloc_2.d */
-  ECL_NIL, /* libraries */
+  .libraries = ECL_NIL,
 
-  0, /* max_heap_size */
-  ECL_NIL, /* bytes_consed */
-  ECL_NIL, /* gc_counter */
-  0, /* gc_stats */
-  0, /* path_max */
+  .max_heap_size = 0,
+  .bytes_consed = ECL_NIL,
+  .gc_counter = ECL_NIL,
+  .gc_stats = 0,
+  .path_max = 0,
 #ifdef GBC_BOEHM
-  NULL, /* safety_region */
+  .safety_region = NULL,
 #endif
 
-  NULL, /* default_sigmask */
-  0, /* default_sigmask_bytes */
+  .default_sigmask = NULL,
+  .default_sigmask_bytes = 0,
 
 #ifdef ECL_THREADS
-  0, /* last_var_index */
-  ECL_NIL, /* reused_indices */
+  .last_var_index = 0,
+  .reused_indices = ECL_NIL,
 #endif
-  (cl_object)&str_slash_data, /* slash */
+  .slash = (cl_object)&str_slash_data,
 
-  ECL_NIL, /* compiler_dispatch */
+  .compiler_dispatch = ECL_NIL,
 
-  (cl_object)&default_rehash_size_data, /* rehash_size */
-  (cl_object)&default_rehash_threshold_data, /* rehash_threshold */
+  .rehash_size = (cl_object)&default_rehash_size_data,
+  .rehash_threshold = (cl_object)&default_rehash_threshold_data,
 
-  ECL_NIL /* known_signals */
+  .known_signals = ECL_NIL
 };
 
 #if !defined(ECL_MS_WINDOWS_HOST)
@@ -455,8 +452,10 @@ static void
 maybe_fix_console_stream(cl_object stream)
 {
   cl_object external_format;
-  if (stream->stream.mode != ecl_smm_io_wcon)
+  if (stream->stream.mode != ecl_smm_io_wcon) {
+    si_stream_external_format_set(stream, cl_list(2, ecl_symbol_value(@'ext::*default-external-format*'), @':crlf'));
     return;
+  }
   external_format = si_windows_codepage_encoding();
   if (external_format == @':pass-through')
     fprintf(stderr,
@@ -500,18 +499,13 @@ cl_boot(int argc, char **argv)
   init_alloc();
   GC_disable();
   env = _ecl_alloc_env(0);
-#ifdef ECL_THREADS
   init_threads(env);
-#else
-  cl_env_p = env;
-#endif
 
   /*
    * 1) Initialize symbols and packages
    */
 
   ECL_NIL_SYMBOL->symbol.t = t_symbol;
-  ECL_NIL_SYMBOL->symbol.dynamic = 0;
   ECL_NIL_SYMBOL->symbol.value = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.name = str_NIL;
   ECL_NIL_SYMBOL->symbol.gfdef = ECL_NIL;
@@ -524,7 +518,6 @@ cl_boot(int argc, char **argv)
   cl_num_symbols_in_core=1;
 
   ECL_T->symbol.t = (short)t_symbol;
-  ECL_T->symbol.dynamic = 0;
   ECL_T->symbol.value = ECL_T;
   ECL_T->symbol.name = str_T;
   ECL_T->symbol.gfdef = ECL_NIL;
@@ -541,8 +534,6 @@ cl_boot(int argc, char **argv)
 #else
   cl_core.path_max = MAXPATHLEN;
 #endif
-
-  env->packages_to_be_created = ECL_NIL;
 
 #ifdef ECL_THREADS
   env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
@@ -627,21 +618,17 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-#if !defined(GBC_BOEHM)
   /* We need this because a lot of stuff is to be created */
-  init_GC();
-#endif
   GC_enable();
 
   /*
-   * Initialize default pathnames
+   * Set *default-pathname-defaults* to a temporary fake value. We
+   * will fix this when we have access to the condition system to
+   * allow for error recovery when we can't parse the output of
+   * getcwd.
    */
-#if 1
-  ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
-#else
   ECL_SET(@'*default-pathname-defaults*',
           ecl_make_pathname(ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL, @':local'));
-#endif
 
 #ifdef ECL_THREADS
   ECL_SET(@'mp::*current-process*', env->own_process);
@@ -779,6 +766,12 @@ cl_boot(int argc, char **argv)
 
   ecl_init_module(OBJNULL,init_lib_LSP);
 
+  ECL_HANDLER_CASE_BEGIN(env, ecl_list1(@'ext::stream-decoding-error')) {
+    ECL_SET(@'*default-pathname-defaults*', si_getcwd(0));
+  } ECL_HANDLER_CASE(1, c) {
+    _ecl_funcall3(@'warn', @"Cannot initialize *DEFAULT-PATHNAME-DEFAULTS* with the current directory:~%~A~%", c);
+  } ECL_HANDLER_CASE_END;
+
   if (cl_fboundp(@'ext::make-encoding') != ECL_NIL) {
     maybe_fix_console_stream(cl_core.standard_input);
     maybe_fix_console_stream(cl_core.standard_output);
@@ -813,7 +806,7 @@ cl_boot(int argc, char **argv)
        * When the thread exits, sometimes the dyld library gets
        * called, and if we call dlopen() at the same time we
        * cause ECL to hang */
-      ecl_musleep(1e-3, 1);
+      ecl_musleep(1e-3);
     }
 #endif
     ECL_SET(@'ext::*program-exit-code*', code);
@@ -887,7 +880,7 @@ si_setenv(cl_object var, cl_object value)
     ret_val = setenv((char*)var->base_string.self,
                      (char*)value->base_string.self, 1);
 #else
-    value = cl_format(4, ECL_NIL, ecl_make_constant_base_string("~A=~A",-1), var,
+    value = cl_format(4, ECL_NIL, @"~A=~A", var,
                       value);
     value = si_copy_to_simple_base_string(value);
     putenv((char*)value->base_string.self);

@@ -212,6 +212,21 @@ RADIANS) and (SIN RADIANS) respectively."
         (otherwise
          (error 'type-error :datum ,arg :expected-type 'number))))))
 
+;;; Branch cuts and signed zeros
+;;;
+;;; The value of the following multi-valued complex functions along
+;;; their branch cuts is chosen depending on the sign of zero when
+;;; applicable. For example, the imaginary part of (asin (complex x y))
+;;; for x real and x>1 is positive for y=+0.0 and negative for
+;;; y=-0.0, consistent with approaching the branch cut at y=0 from
+;;; above and respectively below.
+;;; Note that this differs from the specification in the ANSI
+;;; standard, which gives only one value (the ANSI standard is silent
+;;; about signed zeros with regards to branch cuts). We take this
+;;; approach because it is mathematically more sensible and consistent
+;;; with the specification for complex numbers in the C programming
+;;; language. -- mg 2022-01-06
+
 (defun asin (x)
   "Args: (number)
 Returns the arc sine of NUMBER."
@@ -227,11 +242,14 @@ Returns the arc sine of NUMBER."
 (defun complex-asin (z)
   (declare (number z)
            (si::c-local))
-  (let ((sqrt-1-z (sqrt (- 1 z)))
-        (sqrt-1+z (sqrt (+ 1 z))))
+  (let* ((re-z (realpart z))
+         (im-z (imagpart z))
+         ;; add real and imaginary parts separately for correct signed
+         ;; zero handling around the branch cuts
+         (sqrt-1+z (sqrt (complex (+ 1 re-z) im-z)))
+         (sqrt-1-z (sqrt (complex (- 1 re-z) (- im-z)))))
     (complex (atan (realpart z) (realpart (* sqrt-1-z sqrt-1+z)))
-             (asinh (imagpart (* (conjugate sqrt-1-z)
-                                 sqrt-1+z))))))
+             (asinh (imagpart (* (conjugate sqrt-1-z) sqrt-1+z))))))
 
 (defun acos (x)
   "Args: (number)
@@ -248,11 +266,14 @@ Returns the arc cosine of NUMBER."
 (defun complex-acos (z)
   (declare (number z)
            (si::c-local))
-  (let ((sqrt-1+z (sqrt (+ 1 z)))
-        (sqrt-1-z (sqrt (- 1 z))))
+  (let* ((re-z (realpart z))
+         (im-z (imagpart z))
+         ;; add real and imaginary parts separately for correct signed
+         ;; zero handling around the branch cuts
+         (sqrt-1+z (sqrt (complex (+ 1 re-z) im-z)))
+         (sqrt-1-z (sqrt (complex (- 1 re-z) (- im-z)))))
     (complex (* 2 (atan (realpart sqrt-1-z) (realpart sqrt-1+z)))
-             (asinh (imagpart (* (conjugate sqrt-1+z)
-                                 sqrt-1-z))))))
+             (asinh (imagpart (* (conjugate sqrt-1+z) sqrt-1-z))))))
 
 (defun asinh (x)
   "Args: (number)
@@ -289,8 +310,12 @@ Returns the hyperbolic arc cosine of NUMBER."
 #+(or ecl-min (not complex-float))
 (defun complex-acosh (z)
   (declare (number z) (si::c-local))
-  (let ((sqrt-z-1 (sqrt (- z 1)))
-        (sqrt-z+1 (sqrt (+ z 1))))
+  (let* ((re-z (realpart z))
+         (im-z (imagpart z))
+         ;; add real and imaginary parts separately for correct signed
+         ;; zero handling around the branch cuts
+         (sqrt-z+1 (sqrt (complex (+ re-z 1) im-z)))
+         (sqrt-z-1 (sqrt (complex (- re-z 1) im-z))))
     (complex (asinh (realpart (* (conjugate sqrt-z-1)
                                  sqrt-z+1)))
              (* 2 (atan (imagpart sqrt-z-1) (realpart sqrt-z+1))))))
@@ -309,7 +334,13 @@ Returns the hyperbolic arc tangent of NUMBER."
 #+(or ecl-min (not complex-float))
 (defun complex-atanh (z)
   (declare (number z) (si::c-local))
-  (/ (- (log (1+ z)) (log (- 1 z))) 2))
+  (let* ((re-z (realpart z))
+         (im-z (imagpart z))
+         ;; add real and imaginary parts separately for correct signed
+         ;; zero handling around the branch cuts
+         (log-1+z (log (complex (+ 1 re-z) im-z)))
+         (log-1-z (log (complex (- 1 re-z) (- im-z)))))
+    (/ (- log-1+z log-1-z) 2)))
 
 (defun ffloor (x &optional (y 1.0f0))
   "Args: (number &optional (divisor 1))
@@ -396,3 +427,29 @@ specified bits of INTEGER2 with the specified bits of INTEGER1."
          (mask (ash (lognot (ash -1 size)) pos)))
     (logior (logandc2 integer mask)
             (logand newbyte mask))))
+
+(defun single-float-bits (num)
+  (ffi:c-inline (num) (:float) :uint32-t "ecl_float_bits(#0)" :one-liner t))
+
+(defun bits-single-float (num)
+  (ffi:c-inline (num) (:uint32-t) :float "ecl_bits_float(#0)" :one-liner t))
+
+(defun double-float-bits (num)
+  (ffi:c-inline (num) (:double) :uint64-t "ecl_double_bits(#0)" :one-liner t))
+
+(defun bits-double-float (num)
+  (ffi:c-inline (num) (:uint64-t) :double "ecl_bits_double(#0)" :one-liner t))
+
+;;; XXX long double may have 64, 80, 96 or 128 bits (possibly more). The layout
+;;; in the memory is also an unknown, so we punt here. -- jd 2022-07-07
+
+
+(defun long-float-bits (num)
+  #+long-float (declare (ignore num))
+  #+long-float (error "Operation not supported.")
+  #-long-float (double-float-bits num))
+
+(defun bits-long-float (num)
+  #+long-float (declare (ignore num))
+  #+long-float (error "Operation not supported.")
+  #-long-float (bits-double-float num))

@@ -232,6 +232,9 @@ typedef unsigned char ecl_base_char;
 /* feenableexcept is available */
 #undef HAVE_FEENABLEEXCEPT
 
+/* wide-strings are available */
+#undef HAVE_WCHAR_H
+
 /*
  * C macros for inlining, denoting probable code paths and other stuff
  * that makes better code. Most of it is GCC specific.

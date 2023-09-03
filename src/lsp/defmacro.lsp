@@ -80,15 +80,15 @@
            (setq err head)))))
 
 (defun dm-too-many-arguments (*current-form*)
-  (error "Too many arguments supplied to a macro or a destructuring-bind form:~%~s"
-         *current-form*))
+  (simple-program-error "Too many arguments supplied to a macro or a destructuring-bind form:~%~s"
+                        *current-form*))
 
 (defun dm-too-few-arguments (form-or-nil)
   (if form-or-nil
       (let ((*current-form* form-or-nil))
-        (error "Too few arguments supplied to a macro or a destructuring-bind form:~%~S"
-               *current-form*))
-      (error "Too few arguments supplied to a inlined lambda form.")))
+        (simple-program-error "Too few arguments supplied to a macro or a destructuring-bind form:~%~S"
+                              *current-form*))
+      (simple-program-error "Too few arguments supplied to a inlined lambda form.")))
 
 (defun sys::destructure (vl context &aux
                                       (basis-form (gensym))
@@ -102,7 +102,7 @@
              (multiple-value-bind (reqs opts rest key-flag keys allow-other-keys auxs)
                  (si::process-lambda-list
                   vl (case context
-                       ((defmacro define-compiler-macro)
+                       ((defmacro define-compiler-macro define-setf-expander)
                         'macro)
                        (otherwise 'destructuring-bind)))
                (let* ((pointer (tempsym))
@@ -120,7 +120,7 @@
                                             (eq (caadr ,whole) 'cl:function))
                                        (cddr (truly-the cons ,whole))
                                        (cdr (truly-the cons ,whole))))
-                                 (defmacro
+                                 ((defmacro define-setf-expander)
                                      `(cdr (truly-the cons ,whole)))
                                  (otherwise whole)))
                  (dolist (v (cdr reqs))
@@ -155,7 +155,7 @@
                      (dm-v v `(if (eq ,temp 'missing-keyword) ,init ,temp))
                      (when sv (dm-v sv `(not (eq ,temp 'missing-keyword))))
                      (push k all-keywords)))
-                 (do ((l auxs (cddr l))) ((endp l))
+                 (do ((l (rest auxs) (cddr l))) ((endp l))
                    (let* ((v (first l))
                           (init (second l)))
                      (dm-v v init)))
@@ -250,7 +250,8 @@
     (values (if decls `((declare ,@decls)) nil)
             body doc)))
 
-;; Optional argument context can be 'cl:define-compiler-macro or 'cl:defmacro (default)
+;; Optional argument context can be 'cl:define-setf-expander,
+;; 'cl:define-compiler-macro or 'cl:defmacro (default)
 (defun sys::expand-defmacro (name vl body &optional (context 'cl:defmacro))
   (multiple-value-bind (decls body doc)
       (find-declarations body)

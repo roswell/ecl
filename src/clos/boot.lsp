@@ -117,6 +117,7 @@
     ;;
     ;; 3) Finalize
     ;;
+    (mapc #'si::instance-new-stamp all-classes)
     (mapc #'si::instance-sig-set all-classes)
     ;;
     ;; 4) This is needed for further optimization

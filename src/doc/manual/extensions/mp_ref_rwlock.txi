@@ -7,11 +7,8 @@
 
 Readers-writer (or shared-exclusive ) locks allow concurrent access
 for read-only operations, while write operations require exclusive
-access. @code{mp:rwlock} is non-recursive.
-
-Readers-writers locks are an optional feature, which is available if
-@code{*features*} includes @code{:ecl-read-write-lock}.
-
+access. @code{mp:rwlock} is non-recursive and cannot be used together
+with condition variables.
 
 @node Readers-writer locks dictionary
 @subsection Read-Write locks dictionary

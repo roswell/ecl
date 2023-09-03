@@ -67,8 +67,9 @@ Returns the name of @var{lock}.
 @end deftypefun
 
 @defun mp:lock-owner lock
-Returns the process owning @var{lock}. For testing whether the current
-thread is holding a lock see @coderef{mp:holding-lock-p}.
+Returns the process owning @var{lock} or @code{nil} if the mutex is not
+owned by any process. For testing whether the current thread
+is holding a lock see @coderef{mp:holding-lock-p}.
 @end defun
 
 
@@ -79,7 +80,7 @@ thread is holding a lock see @coderef{mp:holding-lock-p}.
 @end deftypefun
 
 @defun mp:lock-count lock
-Returns number of processes waiting for @var{lock}.
+Returns number of times @var{lock} has been locked.
 @end defun
 
 
@@ -100,8 +101,11 @@ returns @code{ECL_NIL}, otherwise @code{ECL_T}.
 @defun mp:get-lock lock &optional (wait t)
 Tries to acquire a lock. @var{wait} indicates whether function should
 block or give up if @var{lock} is already taken. If @var{wait} is
-@code{nil} and @var{lock} can't be acquired returns
-@code{nil}. Succesful operation returns @code{t}.
+@code{nil}, immediately return, if @var{wait} is a real number
+@var{wait} specifies a timeout in seconds and otherwise block until the
+lock becomes available. If @var{lock} can't be acquired return
+@code{nil}. Successful operation returns @code{t}. Will signal an error
+if the mutex is non-recursive and current thread already owns the lock.
 @end defun
 
 
@@ -112,15 +116,17 @@ block or give up if @var{lock} is already taken. If @var{wait} is
 @end deftypefun
 
 @defun mp:giveup-lock lock
-Releases @var{lock}.
+Releases @var{lock} and returns @code{t}. May signal an error if the
+lock is not owned by the current thread.
 @end defun
 
 
 @lspdef mp:with-lock
 
 @defmac mp:with-lock (lock-form) &body body
-Acquire lock for the dynamic scope of @var{body}, which is executed
-with the lock held by current thread. Returns the values of body.
+Acquire lock for the dynamic scope of @var{body}, which is executed with
+the lock held by current thread. Returns the values of
+body.
 
 @c (lock-form &key wait-p timeout)
 

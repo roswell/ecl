@@ -43,11 +43,6 @@ si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size)
 cl_object
 si_instance_obsolete_p(cl_object x)
 {
-  /* Each class has a slot class_stamp and each instance has a slot
-     stamp. When an instance stamp its class class_stamp don't match,
-     then the instance is obsolete. Structure stamp is always 0. */
-  if (x->instance.stamp == 0)
-    return ECL_NIL;
   return (x->instance.stamp != ECL_CLASS_OF(x)->instance.class_stamp)
     ? ECL_T : ECL_NIL;
 }

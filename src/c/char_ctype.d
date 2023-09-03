@@ -65,6 +65,8 @@ ecl_char_downcase(ecl_character code)
 
 #else /* ECL_UNICODE */
 
+#include "unicode/ucd.h"
+
 extern const unsigned char ecl_ucd_misc_table[];
 extern const unsigned char *ecl_ucd_page_table[];
 extern const unsigned char ecl_ucd_page_table_1[];
@@ -136,39 +138,41 @@ ecl_graphic_char_p(ecl_character code)
 bool
 ecl_alpha_char_p(ecl_character code)
 {
-  return ucd_general_category(code) < 5;
+  return ucd_general_category(code) <= ECL_UCD_GENERAL_CATEGORY_Lo;
 }
 
 bool
 ecl_upper_case_p(ecl_character code)
 {
-  return ucd_value_0(code) == 0;
+  return ucd_value_0(code) < ECL_UCD_UPPERCASE_LIMIT;
 }
 
 bool
 ecl_lower_case_p(ecl_character code)
 {
-  return ucd_value_0(code) == 1;
+  return ucd_value_0(code) >= ECL_UCD_UPPERCASE_LIMIT
+    && ucd_value_0(code) < ECL_UCD_LOWERCASE_LIMIT;
 }
 
 bool
 ecl_both_case_p(ecl_character code)
 {
-  return ucd_value_0(code) < 2;
+  /* Does code have both lower and uppercase variants? */
+  return ucd_value_0(code) < ECL_UCD_LOWERCASE_LIMIT;
 }
 
 bool
 ecl_alphanumericp(ecl_character i)
 {
   int gc = ucd_general_category(i);
-  return (gc < 5) || (gc == 12);
+  return gc <= ECL_UCD_GENERAL_CATEGORY_Lo || gc == ECL_UCD_GENERAL_CATEGORY_Nd;
 }
 
 ecl_character
 ecl_char_upcase(ecl_character code)
 {
   const unsigned char *c = ucd_char_data(code);
-  if (c[0] == 1) {
+  if (c[0] >= ECL_UCD_UPPERCASE_LIMIT && c[0] < ECL_UCD_LOWERCASE_LIMIT) {
     return read_case_bytes(c);
   } else {
     return code;
@@ -179,7 +183,7 @@ ecl_character
 ecl_char_downcase(ecl_character code)
 {
   const unsigned char *c = ucd_char_data(code);
-  if (c[0] == 0) {
+  if (c[0] < ECL_UCD_UPPERCASE_LIMIT) {
     return read_case_bytes(c);
   } else {
     return code;

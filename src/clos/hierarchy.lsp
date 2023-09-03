@@ -59,7 +59,7 @@
   (defparameter +class-slots+
     `(,@+specializer-slots+
       (name :initarg :name :initform nil :accessor class-id)
-      (direct-superclasses :initarg :direct-superclasses
+      (direct-superclasses :initarg :direct-superclasses :initform nil
        :accessor class-direct-superclasses)
       (direct-subclasses :initform nil :accessor class-direct-subclasses)
       (slots :accessor class-slots)
@@ -113,14 +113,14 @@
 
 (eval-when (:compile-toplevel :execute)
   (defparameter +standard-generic-function-slots+
-    '((name :initarg :name :initform nil
-       :reader generic-function-name)
+    ;; INV: some of these slots are expected to have fixed positions. See
+    ;; src/h/internal.h:GFUN_NAME etc.
+    '((name :initarg :name :initform nil :reader generic-function-name)
       (spec-list :initform nil :accessor generic-function-spec-list)
       (method-combination 
        :initarg :method-combination :initform (find-method-combination (class-prototype (find-class 'standard-generic-function)) 'standard nil)
        :accessor generic-function-method-combination)
-      (lambda-list :initarg :lambda-list
-       :accessor generic-function-lambda-list)
+      (lambda-list :initarg :lambda-list :accessor generic-function-lambda-list)
       (argument-precedence-order 
        :initarg :argument-precedence-order
        :initform nil
@@ -247,6 +247,8 @@
 
 ;;; FROM AMOP:
 ;;;
+;;; Class hierachy: (entries marked with `*` are abstract base classes)
+;;;
 ;;;     Metaobject Class                Direct Superclasses
 ;;;     standard-object                 (t)
 ;;;     funcallable-standard-object     (standard-object function)
@@ -343,6 +345,7 @@
                          :index index
                          :direct-superclasses (or rest '(t))))
       (funcallable-standard-object
+       :metaclass funcallable-standard-class
        :direct-superclasses (standard-object function))
       (generic-function
        :metaclass funcallable-standard-class

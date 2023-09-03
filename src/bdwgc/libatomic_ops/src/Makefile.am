@@ -2,16 +2,16 @@
 # Info (current:revision:age) for the Libtool versioning system.
 # These numbers should be updated at most once just before the release,
 # and, optionally, at most once during the development (after the release).
-LIBATOMIC_OPS_VER_INFO = 2:1:1
-LIBATOMIC_OPS_GPL_VER_INFO = 2:2:1
+LIBATOMIC_OPS_VER_INFO = 3:0:2
+LIBATOMIC_OPS_GPL_VER_INFO = 3:0:2
 
 AM_CFLAGS=@PICFLAG@
 AM_CPPFLAGS = -I$(top_builddir)/src -I$(top_srcdir)/src
 
 CFLAGS += $(CFLAGS_EXTRA)
 
-include_HEADERS = atomic_ops.h atomic_ops_stack.h atomic_ops_malloc.h
-lib_LTLIBRARIES = libatomic_ops.la libatomic_ops_gpl.la
+include_HEADERS = atomic_ops.h
+lib_LTLIBRARIES = libatomic_ops.la
 if NEED_ASM
 libatomic_ops_la_SOURCES = atomic_ops.c atomic_ops_sysdeps.S
 else
@@ -20,10 +20,14 @@ endif
 libatomic_ops_la_LDFLAGS = -version-info $(LIBATOMIC_OPS_VER_INFO) \
                             -no-undefined
 
+if ENABLE_GPL
+include_HEADERS += atomic_ops_malloc.h atomic_ops_stack.h
+lib_LTLIBRARIES += libatomic_ops_gpl.la
 libatomic_ops_gpl_la_SOURCES = atomic_ops_stack.c atomic_ops_malloc.c
 libatomic_ops_gpl_la_LDFLAGS = -version-info $(LIBATOMIC_OPS_GPL_VER_INFO) \
                                 -no-undefined
 libatomic_ops_gpl_la_LIBADD = libatomic_ops.la
+endif
 
 EXTRA_DIST = Makefile.msft atomic_ops/sysdeps/README \
         atomic_ops/generalize-arithm.template \
@@ -84,6 +88,7 @@ nobase_private_HEADERS = atomic_ops/ao_version.h \
           atomic_ops/sysdeps/gcc/arm.h \
           atomic_ops/sysdeps/gcc/avr32.h \
           atomic_ops/sysdeps/gcc/cris.h \
+          atomic_ops/sysdeps/gcc/e2k.h \
           atomic_ops/sysdeps/gcc/generic.h \
           atomic_ops/sysdeps/gcc/hexagon.h \
           atomic_ops/sysdeps/gcc/hppa.h \
@@ -108,6 +113,7 @@ nobase_private_HEADERS = atomic_ops/ao_version.h \
           atomic_ops/sysdeps/loadstore/double_atomic_load_store.h \
         \
           atomic_ops/sysdeps/msftc/arm.h \
+          atomic_ops/sysdeps/msftc/arm64.h \
           atomic_ops/sysdeps/msftc/common32_defs.h \
           atomic_ops/sysdeps/msftc/x86.h \
           atomic_ops/sysdeps/msftc/x86_64.h \

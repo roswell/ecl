@@ -10,6 +10,11 @@
  *
  */
 
+#define ECL_INCLUDE_MATH_H
+#include <ecl/ecl.h>            /* includes ECL_WINDOWS_THREADS */
+#include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
+
 #ifndef __sun__ /* See unixinit.d for this */
 #define _XOPEN_SOURCE 600       /* For pthread mutex attributes */
 #endif
@@ -17,8 +22,6 @@
 #include <time.h>
 #include <signal.h>
 #include <string.h>
-#define ECL_INCLUDE_MATH_H
-#include <ecl/ecl.h>
 #ifdef ECL_WINDOWS_THREADS
 # include <windows.h>
 #else
@@ -27,62 +30,69 @@
 #ifdef HAVE_GETTIMEOFDAY
 # include <sys/time.h>
 #endif
-#include <ecl/internal.h>
-#include <ecl/ecl-inl.h>
+#ifdef HAVE_SCHED_H
+# include <sched.h>
+#endif
+
+/* -- Macros -------------------------------------------------------- */
 
 #ifdef ECL_WINDOWS_THREADS
-DWORD cl_env_key;
+# define ecl_process_key_t DWORD
+# define ecl_process_key_create(key) key = TlsAlloc()
+# define ecl_process_get_tls(key) TlsGetValue(key)
+# define ecl_process_set_tls(key,val) (TlsSetValue(key,val)!=0)
+# define ecl_process_eq(t1, t2) (GetThreadId(t1) == GetThreadId(t2))
+# define ecl_set_process_self(var)              \
+  {                                             \
+    HANDLE aux = GetCurrentThread();            \
+    DuplicateHandle(GetCurrentProcess(),        \
+                    aux,                        \
+                    GetCurrentProcess(),        \
+                    &var,                       \
+                    0,                          \
+                    FALSE,                      \
+                    DUPLICATE_SAME_ACCESS);     \
+  }
 #else
-static pthread_key_t cl_env_key;
-#endif /* ECL_WINDOWS_THREADS */
+# define ecl_process_key_t static pthread_key_t
+# define ecl_process_key_create(key) pthread_key_create(&key, NULL)
+# define ecl_process_get_tls(key) pthread_getspecific(key)
+# define ecl_process_set_tls(key,val) (pthread_setspecific(key,val)==0)
+# define ecl_process_eq(t1, t2) (t1 == t2)
+# define ecl_set_process_self(var) (var = pthread_self())
+#endif  /* ECL_WINDOWS_THREADS */
 
-extern void ecl_init_env(struct cl_env_struct *env);
+/* -- Core ---------------------------------------------------------- */
+
+/* Accessing a thread-local variable representing the environment. */
+
+ecl_process_key_t cl_env_key;
 
 cl_env_ptr
 ecl_process_env_unsafe(void)
 {
-#ifdef ECL_WINDOWS_THREADS
-  return TlsGetValue(cl_env_key);
-#else
-  return pthread_getspecific(cl_env_key);
-#endif
+  return ecl_process_get_tls(cl_env_key);
 }
 
 cl_env_ptr
 ecl_process_env(void)
 {
-#ifdef ECL_WINDOWS_THREADS
-  return TlsGetValue(cl_env_key);
-#else
-  struct cl_env_struct *rv = pthread_getspecific(cl_env_key);
-  if (rv)
-    return rv;
-  ecl_thread_internal_error("pthread_getspecific() failed.");
-  return NULL;
-#endif
+  cl_env_ptr rv = ecl_process_get_tls(cl_env_key);
+  if(!rv) {
+    ecl_thread_internal_error("pthread_getspecific() failed.");
+  }
+  return rv;
 }
 
 static void
 ecl_set_process_env(cl_env_ptr env)
 {
-#ifdef ECL_WINDOWS_THREADS
-  TlsSetValue(cl_env_key, env);
-#else
-  if (pthread_setspecific(cl_env_key, env)) {
+  if(!ecl_process_set_tls(cl_env_key, env)) {
     ecl_thread_internal_error("pthread_setspecific() failed.");
   }
-#endif
 }
 
-cl_object
-mp_current_process(void)
-{
-  return ecl_process_env()->own_process;
-}
-
-/*----------------------------------------------------------------------
- * PROCESS LIST
- */
+/* Managing the collection of processes. */
 
 static void
 extend_process_vector()
@@ -90,7 +100,7 @@ extend_process_vector()
   cl_object v = cl_core.processes;
   cl_index new_size = v->vector.dim + v->vector.dim/2;
   cl_env_ptr the_env = ecl_process_env();
-  ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
+  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
     cl_object other = cl_core.processes;
     if (new_size > other->vector.dim) {
       cl_object new = si_make_vector(ECL_T,
@@ -100,7 +110,7 @@ extend_process_vector()
       ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
       cl_core.processes = new;
     }
-  } ECL_WITH_SPINLOCK_END;
+  } ECL_WITH_NATIVE_LOCK_END;
 }
 
 static void
@@ -109,7 +119,7 @@ ecl_list_process(cl_object process)
   cl_env_ptr the_env = ecl_process_env();
   bool ok = 0;
   do {
-    ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
+    ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
       cl_object vector = cl_core.processes;
       cl_index size = vector->vector.dim;
       cl_index ndx = vector->vector.fillp;
@@ -118,7 +128,7 @@ ecl_list_process(cl_object process)
         vector->vector.fillp = ndx;
         ok = 1;
       }
-    } ECL_WITH_SPINLOCK_END;
+    } ECL_WITH_NATIVE_LOCK_END;
     if (ok) break;
     extend_process_vector();
   } while (1);
@@ -129,8 +139,7 @@ ecl_list_process(cl_object process)
 static void
 ecl_unlist_process(cl_object process)
 {
-  cl_env_ptr the_env = ecl_process_env();
-  ecl_get_spinlock(the_env, &cl_core.processes_spinlock);
+  ecl_mutex_lock(&cl_core.processes_lock);
   cl_object vector = cl_core.processes;
   cl_index i;
   for (i = 0; i < vector->vector.fillp; i++) {
@@ -143,7 +152,7 @@ ecl_unlist_process(cl_object process)
       break;
     }
   }
-  ecl_giveup_spinlock(&cl_core.processes_spinlock);
+  ecl_mutex_unlock(&cl_core.processes_lock);
 }
 
 static cl_object
@@ -151,7 +160,7 @@ ecl_process_list()
 {
   cl_env_ptr the_env = ecl_process_env();
   cl_object output = ECL_NIL;
-  ECL_WITH_SPINLOCK_BEGIN(the_env, &cl_core.processes_spinlock) {
+  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
     cl_object vector = cl_core.processes;
     cl_object *data = vector->vector.self.t;
     cl_index i;
@@ -160,13 +169,33 @@ ecl_process_list()
       if (p != ECL_NIL)
         output = ecl_cons(p, output);
     }
-  } ECL_WITH_SPINLOCK_END;
+  } ECL_WITH_NATIVE_LOCK_END;
   return output;
 }
 
-/*----------------------------------------------------------------------
- * THREAD OBJECT
- */
+/* Initialiation */
+
+static void
+init_process(void)
+{
+  ecl_process_key_create(cl_env_key);
+  ecl_mutex_init(&cl_core.processes_lock, 1);
+  ecl_mutex_init(&cl_core.global_lock, 1);
+  ecl_mutex_init(&cl_core.error_lock, 1);
+  ecl_rwlock_init(&cl_core.global_env_lock);
+}
+
+/* -- Environment --------------------------------------------------- */
+
+extern void ecl_init_env(struct cl_env_struct *env);
+
+cl_object
+mp_current_process(void)
+{
+  return ecl_process_env()->own_process;
+}
+
+/* -- Thread object ------------------------------------------------- */
 
 static void
 assert_type_process(cl_object o)
@@ -193,13 +222,11 @@ thread_cleanup(void *aux)
 
   /* The following flags will disable all interrupts. */
   if (env) {
-    ecl_get_spinlock(env, &process->process.start_stop_spinlock);
-  }
-  AO_store_full((AO_t*)&process->process.phase, ECL_PROCESS_EXITING);
-  if (env) {
-    ecl_clear_bignum_registers(env);
     ecl_disable_interrupts_env(env);
+    ecl_clear_bignum_registers(env);
   }
+  ecl_mutex_lock(&process->process.start_stop_lock);
+  process->process.phase = ECL_PROCESS_EXITING;
 #ifdef HAVE_SIGPROCMASK
   /* ...but we might get stray signals. */
   {
@@ -214,20 +241,20 @@ thread_cleanup(void *aux)
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(process->process.thread);
 #endif
-  mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
   ecl_set_process_env(NULL);
   if (env) _ecl_dealloc_env(env);
 
-  AO_store_release((AO_t*)&process->process.phase, ECL_PROCESS_INACTIVE);
-  ecl_giveup_spinlock(&process->process.start_stop_spinlock);
+  process->process.phase = ECL_PROCESS_INACTIVE;
+  ecl_cond_var_broadcast(&process->process.exit_barrier);
+  ecl_mutex_unlock(&process->process.start_stop_lock);
 }
 
 #ifdef ECL_WINDOWS_THREADS
-static DWORD WINAPI thread_entry_point(void *arg)
+static DWORD WINAPI
 #else
-  static void *
-  thread_entry_point(void *arg)
+static void *
 #endif
+thread_entry_point(void *arg)
 {
   cl_object process = (cl_object)arg;
   cl_env_ptr env = process->process.env;
@@ -249,9 +276,7 @@ static DWORD WINAPI thread_entry_point(void *arg)
   pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
   ecl_cs_set_org(env);
-  ecl_get_spinlock(env, &process->process.start_stop_spinlock);
-  print_lock("ENVIRON %p %p %p %p", ECL_NIL, process,
-             env->bds_org, env->bds_top, env->bds_limit);
+  ecl_mutex_lock(&process->process.start_stop_lock);
 
   /* 2) Execute the code. The CATCH_ALL point is the destination
    *     provides us with an elegant way to exit the thread: we just
@@ -264,8 +289,8 @@ static DWORD WINAPI thread_entry_point(void *arg)
       pthread_sigmask(SIG_SETMASK, new, NULL);
     }
 #endif
-    ecl_giveup_spinlock(&process->process.start_stop_spinlock);
     process->process.phase = ECL_PROCESS_ACTIVE;
+    ecl_mutex_unlock(&process->process.start_stop_lock);
     ecl_enable_interrupts_env(env);
     si_trap_fpe(@'last', ECL_T);
     ecl_bds_bind(env, @'mp::*current-process*', process);
@@ -285,7 +310,6 @@ static DWORD WINAPI thread_entry_point(void *arg)
       /* ABORT restart. */
       process->process.exit_values = args;
     } ECL_RESTART_CASE_END;
-    process->process.phase = ECL_PROCESS_EXITING;
     ecl_bds_unwind1(env);
   } ECL_CATCH_ALL_END;
 
@@ -305,6 +329,7 @@ static DWORD WINAPI thread_entry_point(void *arg)
 static cl_object
 alloc_process(cl_object name, cl_object initial_bindings)
 {
+  cl_env_ptr env = ecl_process_env();
   cl_object process = ecl_alloc_object(t_process), array;
   process->process.phase = ECL_PROCESS_INACTIVE;
   process->process.name = name;
@@ -322,12 +347,11 @@ alloc_process(cl_object name, cl_object initial_bindings)
   }
   process->process.initial_bindings = array;
   process->process.woken_up = ECL_NIL;
-  process->process.start_stop_spinlock = ECL_NIL;
-  process->process.queue_record = ecl_list1(process);
-  /* Creates the exit barrier so that processes can wait for termination,
-   * but it is created in a disabled state. */
-  process->process.exit_barrier = ecl_make_barrier(name, MOST_POSITIVE_FIXNUM);
-  mp_barrier_unblock(3, process->process.exit_barrier, @':disable', ECL_T);
+  ecl_disable_interrupts_env(env);
+  ecl_mutex_init(&process->process.start_stop_lock, TRUE);
+  ecl_cond_var_init(&process->process.exit_barrier);
+  ecl_set_finalizer_unprotected(process, ECL_T);
+  ecl_enable_interrupts_env(env);
   return process;
 }
 
@@ -336,27 +360,11 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 {
   struct cl_env_struct env_aux[1];
   cl_object process;
-  pthread_t current;
+  ecl_thread_t current;
   cl_env_ptr env;
   int registered;
   struct GC_stack_base stack;
-#ifdef ECL_WINDOWS_THREADS
-  {
-    HANDLE aux = GetCurrentThread();
-    if ( !DuplicateHandle(GetCurrentProcess(),
-                          aux,
-                          GetCurrentProcess(),
-                          &current,
-                          0,
-                          FALSE,
-                          DUPLICATE_SAME_ACCESS) )
-    {
-	   return 0;
-    }
-  }
-#else
-  current = pthread_self();
-#endif
+  ecl_set_process_self(current);
 #ifdef GBC_BOEHM
   GC_get_stack_base(&stack);
   switch (GC_register_my_thread(&stack)) {
@@ -377,15 +385,9 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
     cl_index i, size;
     for (i = 0, size = processes->vector.fillp; i < size; i++) {
       cl_object p = processes->vector.self.t[i];
-      if (!Null(p)
-          &&
-#ifdef ECL_WINDOWS_THREADS
-          GetThreadId(p->process.thread) == GetThreadId(current)
-#else
-	      p->process.thread == current
-#endif
-	      )
-        return 0;
+      if (!Null(p) && ecl_process_eq(p->process.thread, current)) {
+          return 0;
+      }
     }
   }
   /* We need a fake env to allow for interrupts blocking and to set up
@@ -396,7 +398,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   env_aux->disable_interrupts = 1;
   env_aux->interrupt_struct = ecl_alloc_unprotected(sizeof(*env_aux->interrupt_struct));
   env_aux->interrupt_struct->pending_interrupt = ECL_NIL;
-  env_aux->interrupt_struct->signal_queue_spinlock = ECL_NIL;
+  ecl_mutex_init(&env_aux->interrupt_struct->signal_queue_lock, FALSE);
   env_aux->interrupt_struct->signal_queue = ECL_NIL;
   ecl_set_process_env(env_aux);
   ecl_init_env(env_aux);
@@ -421,8 +423,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   ecl_list_process(process);
   ecl_enable_interrupts_env(env);
 
-  /* Activate the barrier so that processes can immediately start waiting. */
-  mp_barrier_unblock(1, process->process.exit_barrier);
   process->process.phase = ECL_PROCESS_ACTIVE;
 
   ecl_bds_bind(env, @'mp::*current-process*', process);
@@ -470,11 +470,11 @@ mp_interrupt_process(cl_object process, cl_object function)
 {
   cl_env_ptr env = ecl_process_env();
   /* Make sure we don't interrupt an exiting process */
-  ECL_WITH_SPINLOCK_BEGIN(env, &process->process.start_stop_spinlock) {
+  ECL_WITH_NATIVE_LOCK_BEGIN(env, &process->process.start_stop_lock) {
     unlikely_if (mp_process_active_p(process) == ECL_NIL)
       FEerror("Cannot interrupt the inactive process ~A", 1, process);
     ecl_interrupt_process(process, function);
-  } ECL_WITH_SPINLOCK_END;
+  } ECL_WITH_NATIVE_LOCK_END;
   @(return ECL_T);
 }
 
@@ -521,7 +521,13 @@ mp_process_kill(cl_object process)
 cl_object
 mp_process_yield(void)
 {
-  ecl_process_yield();
+#if defined(ECL_WINDOWS_THREADS)
+  Sleep(0);
+#elif defined(HAVE_SCHED_H)
+  sched_yield();
+#else
+  ecl_musleep(0.0);
+#endif
   @(return);
 }
 
@@ -532,17 +538,19 @@ mp_process_enable(cl_object process)
    * ECL_UNWIND_PROTECT_BEGIN, so they need to be declared volatile */
   volatile cl_env_ptr process_env = NULL;
   cl_env_ptr the_env = ecl_process_env();
-  volatile int ok = 0;
+  volatile int ok = 1;
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
-    /* Try to gain exclusive access to the process at the same
-     * time we ensure that it is inactive. This prevents two
-     * concurrent calls to process-enable from different threads
-     * on the same process */
-    unlikely_if (!AO_compare_and_swap_full((AO_t*)&process->process.phase,
-                                           ECL_PROCESS_INACTIVE,
-                                           ECL_PROCESS_BOOTING)) {
+    /* Try to gain exclusive access to the process. This prevents two
+     * concurrent calls to process-enable from different threads on
+     * the same process */
+    ecl_mutex_lock(&process->process.start_stop_lock);
+    /* Ensure that the process is inactive. */
+    if (process->process.phase != ECL_PROCESS_INACTIVE) {
       FEerror("Cannot enable the running process ~A.", 1, process);
     }
+    ok = 0;
+    process->process.phase = ECL_PROCESS_BOOTING;
+
     process->process.parent = mp_current_process();
     process->process.trap_fpe_bits =
       process->process.parent->process.env->trap_fpe_bits;
@@ -566,12 +574,6 @@ mp_process_enable(cl_object process)
       process_env->bindings_array->vector.dim;
     process_env->thread_local_bindings =
       process_env->bindings_array->vector.self.t;
-
-    /* Activate the barrier so that processes can immediately start waiting. */
-    mp_barrier_unblock(1, process->process.exit_barrier);
-
-    /* Block the thread with this spinlock until it is ready */
-    process->process.start_stop_spinlock = ECL_T;
 
     ecl_disable_interrupts_env(the_env);
 #ifdef ECL_WINDOWS_THREADS
@@ -618,16 +620,15 @@ mp_process_enable(cl_object process)
       /* INV: interrupts are already disabled through thread safe
        * unwind-protect */
       ecl_unlist_process(process);
-      /* Disable the barrier and alert possible waiting processes. */
-      mp_barrier_unblock(3, process->process.exit_barrier,
-                         @':disable', ECL_T);
       process->process.phase = ECL_PROCESS_INACTIVE;
+      /* Alert possible waiting processes. */
+      ecl_cond_var_broadcast(&process->process.exit_barrier);
       process->process.env = NULL;
       if (process_env != NULL)
         _ecl_dealloc_env(process_env);
     }
     /* Unleash the thread */
-    ecl_giveup_spinlock(&process->process.start_stop_spinlock);
+    ecl_mutex_unlock(&process->process.start_stop_lock);
   } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
 
   @(return (ok? process : ECL_NIL));
@@ -677,13 +678,20 @@ mp_process_whostate(cl_object process)
 cl_object
 mp_process_join(cl_object process)
 {
+  cl_env_ptr the_env = ecl_process_env();
+  volatile cl_object values;
+
   assert_type_process(process);
-  if (process->process.phase) {
-    /* We try to acquire a lock that is only owned by the process
-     * while it is active. */
-    mp_barrier_wait(process->process.exit_barrier);
-  }
-  return cl_values_list(process->process.exit_values);
+  ECL_UNWIND_PROTECT_BEGIN(the_env) {
+    ecl_mutex_lock(&process->process.start_stop_lock);
+    while (process->process.phase != ECL_PROCESS_INACTIVE) {
+      ecl_cond_var_wait(&process->process.exit_barrier, &process->process.start_stop_lock);
+    }
+    values = cl_values_list(process->process.exit_values);
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
+    ecl_mutex_unlock(&process->process.start_stop_lock);
+  } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
+  return values;
 }
 
 cl_object
@@ -787,41 +795,18 @@ mp_restore_signals(cl_object sigmask)
 #endif
 }
 
-/*----------------------------------------------------------------------
- * INITIALIZATION
- */
+/* -- Initialization ------------------------------------------------ */
 
 void
 init_threads(cl_env_ptr env)
 {
   cl_object process;
-  pthread_t main_thread;
-
-  cl_core.processes = OBJNULL;
-
+  ecl_thread_t main_thread;
+  init_process();
   /* We have to set the environment before any allocation takes place,
    * so that the interrupt handling code works. */
-#if defined(ECL_WINDOWS_THREADS)
-  cl_env_key = TlsAlloc();
-#else
-  pthread_key_create(&cl_env_key, NULL);
-#endif
   ecl_set_process_env(env);
-
-#ifdef ECL_WINDOWS_THREADS
-  {
-    HANDLE aux = GetCurrentThread();
-    DuplicateHandle(GetCurrentProcess(),
-                    aux,
-                    GetCurrentProcess(),
-                    &main_thread,
-                    0,
-                    FALSE,
-                    DUPLICATE_SAME_ACCESS);
-  }
-#else
-  main_thread = pthread_self();
-#endif
+  ecl_set_process_self(main_thread);
   process = ecl_alloc_object(t_process);
   process->process.phase = ECL_PROCESS_ACTIVE;
   process->process.name = @'si::top-level';
@@ -830,12 +815,10 @@ init_threads(cl_env_ptr env)
   process->process.thread = main_thread;
   process->process.env = env;
   process->process.woken_up = ECL_NIL;
-  process->process.queue_record = ecl_list1(process);
-  process->process.start_stop_spinlock = ECL_NIL;
-  process->process.exit_barrier = ecl_make_barrier(process->process.name, MOST_POSITIVE_FIXNUM);
+  ecl_mutex_init(&process->process.start_stop_lock, TRUE);
+  ecl_cond_var_init(&process->process.exit_barrier);
 
   env->own_process = process;
-
   {
     cl_object v = si_make_vector(ECL_T, /* Element type */
                                  ecl_make_fixnum(256), /* Size */
@@ -844,8 +827,5 @@ init_threads(cl_env_ptr env)
     v->vector.self.t[0] = process;
     v->vector.fillp = 1;
     cl_core.processes = v;
-    cl_core.global_lock = ecl_make_lock(@'mp::global-lock', 1);
-    cl_core.error_lock = ecl_make_lock(@'mp::error-lock', 1);
-    cl_core.global_env_lock = ecl_make_rwlock(@'ext::package-lock');
   }
 }

@@ -171,7 +171,7 @@ Updates process status. @coderef{ext:external-process-status} calls
 @coderef{ext:external-process-wait} if process has not finished yet
 (non-blocking call).  Returns two values:
 
-@code{status} - member of @code{(:abort :error :exited :signalled
+@code{status} - member of @code{(:abort :error :exited :signaled
 :stopped :resumed :running)}
 
 @code{code} - if process exited it is a returned value, if terminated
@@ -187,7 +187,8 @@ process is finished. Otherwise status is updated. Returns two values
 
 @lspdef ext:terminate-process
 @defun ext:terminate-process process &optional force
-Terminates external process.
+Terminates external process. May signal an error if the process has
+already finished.
 @end defun
 
 @lspdef ext:external-process-input
@@ -293,11 +294,11 @@ Controls escaping of the arguments passed to @code{CreateProcess}.
 @subsection FIFO files (named pipes)
 
 Named pipe (known as fifo) may be created on UNIX with a shell command
-mkfifo. ECL opens such files in non-blocking
-mode. @coderef{ext:file-kind} will return for such file
-@code{:fifo}. Since it is impossible to guess how many characters are
-available in this special file @code{file-length} function will return
-NIL.
+mkfifo. They can be opened in non-blocking mode by using @code{:nonblock
+t} option for @coderef{open}. @coderef{ext:file-kind} will return for
+such file @code{:fifo}. Since it is impossible to guess how many
+characters are available in this special file @code{file-length}
+function will return @code{nil}.
 
 @node Operating System Interface Reference
 @subsection Operating System Interface Reference

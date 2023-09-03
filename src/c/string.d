@@ -70,7 +70,7 @@ do_make_string(cl_index s, ecl_character code)
   @)
 
 /*
-  Make a string of a certain size, with some eading zeros to
+  Make a string of a certain size, with some leading zeros to
   keep C happy. The string must be adjustable, to allow further
   growth. (See unixfsys.c for its use).
 */
@@ -895,3 +895,175 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
   }
   @(return output);
   @)
+
+@(defun ext::octets-to-string (input &key
+                               (external_format @':default')
+                               (start ecl_make_fixnum(0))
+                               (end ECL_NIL))
+  cl_object output;
+  cl_index input_size;
+  cl_object input_stream;
+  cl_index output_size;
+  cl_object ret;
+  @
+  output = si_get_buffer_string();
+  input_stream = si_make_sequence_input_stream(7, input,
+                                               @':external-format', external_format,
+                                               @':start', start,
+                                               @':end', end);
+  /* INV: MAKE-SEQUENCE-INPUT-STREAM checks types of start and end indices */
+  input_size = (Null(end) ? ecl_length(input) : ecl_fixnum(end)) - ecl_fixnum(start);
+  output_size = 0;
+  do {
+    output->base_string.fillp = output->base_string.dim;
+    output_size += ecl_to_unsigned_integer(si_do_read_sequence(output, input_stream,
+                                                               ecl_make_fixnum(output_size),
+                                                               ecl_make_fixnum(output->base_string.dim)));
+    if (output_size < output->base_string.dim) {
+      break;
+    }
+    output = si_adjust_vector(output, ecl_make_fixnum(input_size > output_size
+                                                      ? input_size
+                                                      : output_size + 128));
+  } while (1);
+  output->base_string.fillp = output_size;
+  if (ecl_fits_in_base_string(output)) {
+    ret = si_copy_to_simple_base_string(output);
+  } else {
+    ret = cl_copy_seq(output);
+  }
+  si_put_buffer_string(output);
+  @(return ret);
+@)
+
+@(defun ext::string-to-octets (input &key
+                               (external_format @':default')
+                               (start ecl_make_fixnum(0))
+                               (end ECL_NIL)
+                               (null_terminate ECL_NIL)
+                               (element_type @'ext::byte8'))
+  cl_object output;
+  cl_object output_stream;
+  cl_fixnum length;
+  @
+  length = (Null(end) ? ecl_length(input) : ecl_to_fixnum(end)) - ecl_to_fixnum(start) + 1;
+  output = si_make_vector(element_type,       /* element-type */
+                          ecl_make_fixnum(length), /* length */
+                          ECL_T,              /* adjustable */
+                          ecl_make_fixnum(0), /* fillp */
+                          ECL_NIL,            /* displaced */
+                          ECL_NIL);           /* displaced-offset */
+  output_stream = si_make_sequence_output_stream(3, output,
+                                                 @':external-format', external_format);
+  si_do_write_sequence(input, output_stream, start, end);
+  if (!Null(null_terminate)) {
+    ecl_write_char(0, output_stream);
+  }
+  @(return output);
+@)
+
+cl_object
+ecl_decode_from_cstring(const char *s, cl_fixnum len, cl_object encoding)
+{
+  volatile cl_object ret;
+  ECL_HANDLER_CASE_BEGIN(ecl_process_env(), ecl_list1(@'ext::character-decoding-error')) {
+    ret = si_octets_to_string(3, ecl_make_constant_base_string(s, len), @':external-format', encoding);
+  } ECL_HANDLER_CASE(1, c) {
+    ret = c; /* suppress "unused variable `c`" warning */
+    ret = OBJNULL;
+  } ECL_HANDLER_CASE_END;
+  return ret;
+}
+
+cl_fixnum
+ecl_encode_to_cstring(char *output, cl_fixnum output_len, cl_object input, cl_object encoding)
+{
+  volatile cl_fixnum ret;
+  ECL_HANDLER_CASE_BEGIN(ecl_process_env(), ecl_list1(@'ext::character-encoding-error')) {
+    cl_object output_vec = si_string_to_octets(3, input, @':external-format', encoding);
+    ret = output_vec->vector.fillp + 1;
+    if (ret <= output_len) {
+      memcpy(output, output_vec->vector.self.b8, (ret-1)*sizeof(char));
+      output[ret-1] = 0; /* null-terminator */
+    }
+  } ECL_HANDLER_CASE(1, c) {
+    input = c; /* suppress "unused variable `c`" warning */
+    ret = -1;
+  } ECL_HANDLER_CASE_END;
+  return ret;
+}
+
+#ifdef HAVE_WCHAR_H
+cl_object
+ecl_decode_from_unicode_wstring(const wchar_t *s, cl_fixnum len)
+{
+  cl_object input;
+  cl_object elttype;
+  cl_object encoding;
+  volatile cl_object ret;
+  if (len < 0) {
+    len = wcslen(s);
+  }
+  switch (sizeof(wchar_t)) {
+  case 1:
+    elttype = @'ext::byte8';
+    encoding = @':utf-8';
+    break;
+  case 2:
+    elttype = @'ext::byte16';
+    encoding = @':ucs-2';
+    break;
+  case 4:
+    elttype = @'ext::byte32';
+    encoding = @':ucs-4';
+    break;
+  default:
+    ecl_internal_error("Unexpected sizeof(wchar_t)");
+  }
+  input = si_make_vector(elttype, ecl_make_fixnum(len), ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  memcpy(input->vector.self.b8, s, len*sizeof(wchar_t));
+  ECL_HANDLER_CASE_BEGIN(ecl_process_env(), ecl_list1(@'ext::character-decoding-error')) {
+    ret = si_octets_to_string(3, input, @':external-format', encoding);
+  } ECL_HANDLER_CASE(1, c) {
+    ret = c; /* suppress "unused variable `c`" warning */
+    ret = OBJNULL;
+  } ECL_HANDLER_CASE_END;
+  return ret;
+}
+
+cl_fixnum
+ecl_encode_to_unicode_wstring(wchar_t *output, cl_fixnum output_len, cl_object input)
+{
+  cl_object elttype;
+  cl_object encoding;
+  volatile cl_fixnum ret;
+  switch (sizeof(wchar_t)) {
+  case 1:
+    elttype = @'ext::byte8';
+    encoding = @':utf-8';
+    break;
+  case 2:
+    elttype = @'ext::byte16';
+    encoding = @':ucs-2';
+    break;
+  case 4:
+    elttype = @'ext::byte32';
+    encoding = @':ucs-4';
+    break;
+  default:
+    ecl_internal_error("Unexpected sizeof(wchar_t)");
+  }
+  ECL_HANDLER_CASE_BEGIN(ecl_process_env(), ecl_list1(@'ext::character-encoding-error')) {
+    cl_object output_vec = si_string_to_octets(5, input, @':external-format', encoding, @':element-type', elttype);
+    ret = output_vec->vector.fillp + 1;
+    if (ret <= output_len) {
+      memcpy(output, output_vec->vector.self.b8, (ret-1)*sizeof(wchar_t));
+      output[ret-1] = 0; /* null-terminator */
+    }
+  } ECL_HANDLER_CASE(1, c) {
+    input = c; /* suppress "unused variable `c`" warning */
+    ret = -1;
+  } ECL_HANDLER_CASE_END;
+  return ret;
+}
+#endif

@@ -1,7 +1,7 @@
 @node Building ECL
 @section Building ECL
 
-Due to its portable nature ECL works on every (at least) 32-bit
+Due to its portable nature, ECL works on every (at least) 32-bit
 architecture which provides a proper C99 compliant compiler.
 
 Operating systems on which ECL is reported to work: Linux, Darwin (Mac
@@ -159,3 +159,55 @@ make install
 
 Library and assets are installed in the "ecl-android" directory
 and are ready to run on the Android system.
+
+@subsubsection iOS
+
+The cross-compilation steps for iOS are similar to those for Android.
+
+Build the host ECL:
+@example
+@verbatim
+./configure --prefix=`pwd`/ecl-iOS-host --disable-c99complex
+make -j9
+make install
+rm -r build
+export ECL_TO_RUN=`pwd`/ecl-iOS-host/bin/ecl
+@end verbatim
+@end example
+
+Configure the toolchain:
+@example
+@verbatim
+export IOS_VERSION_MIN="8.0"
+export IOS_SDK_DIR="`xcode-select --print-path`/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/"
+
+export CC="clang"
+export CXX="clang++"
+
+export CFLAGS="-arch arm64 -miphoneos-version-min=${IOS_VERSION_MIN} -isysroot ${IOS_SDK_DIR}"
+export CFLAGS="$CFLAGS -pipe -Wno-trigraphs -Wreturn-type -Wunused-variable"
+export CFLAGS="$CFLAGS -fpascal-strings -fasm-blocks -fmessage-length=0 -fvisibility=hidden"
+export CFLAGS="$CFLAGS -O2 -DNO_ASM"
+
+export LD="ld"
+export LDFLAGS="-arch arm64 -pipe -std=c99 -gdwarf-2 -isysroot ${IOS_SDK_DIR}"
+export LIBS="-framework Foundation"
+@end verbatim
+@end example
+
+Build and install the target library:
+@example
+@verbatim
+export CFLAGS="$CFLAGS -DGC_DISABLE_INCREMENTAL -DECL_RWLOCK"
+export CXXFLAGS="$CFLAGS"
+./configure --host=aarch64-apple-darwin \
+            --prefix=`pwd`/ecl-iOS \
+            --disable-c99complex \
+            --disable-shared \
+            --with-cross-config=`pwd`/src/util/iOS-arm64.cross_config
+make -j9
+make install
+@end verbatim
+@end example
+
+Library and assets in the "ecl-iOS" directory are ready to run on the iOS system.

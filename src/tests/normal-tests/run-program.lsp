@@ -89,22 +89,18 @@
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process))
-              (finishes (ext:terminate-process process)) ; no-op
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
-              #+windows(is-eql :exited (ext:external-process-wait process nil))
-              (finishes (ext:terminate-process process))))
+              #+windows(is-eql :exited (ext:external-process-wait process nil))))
   (is-equal #-windows `(t :signaled ,ext:+sigkill+)
 	    #+windows `(t :exited -1)
             (with-run-program (terminate nil)
               (is-eql :running (ext:external-process-wait process nil))
               (finishes (ext:terminate-process process t))
-              (finishes (ext:terminate-process process t)) ; no-op
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
               #+windows(is-eql :exited (ext:external-process-wait process nil))
-              (finishes (ext:external-process-status process))
-              (finishes (ext:terminate-process process t)))))
+              (finishes (ext:external-process-status process)))))
 
 ;;; We may want to craft it into an interface. Suspend/Resume *is* possible on Windows:
 ;;; http://stackoverflow.com/questions/11010165/how-to-suspend-resume-a-process-in-windows
@@ -174,18 +170,83 @@
       (is (null (zerop (length (get-output-stream-string error-stream)))))
       (mapc #'close (list output-stream error-stream)))))
 
-#-windows
 (test process-environ
-  (is (read-line (ext:run-program "env" nil)                       nil nil))
-  (is (read-line (ext:run-program "env" nil :environ '("foo=bar")) nil nil))
-  (is (read-line (ext:run-program "env" nil :environ :default)     nil nil))
-  (signals simple-error (ext:run-program "env" nil :environ :bam)  nil nil)
-  #-cygwin ;; Cygwin always injects `WINDIR=C:\\Windows' variable.
-  (is (null (slurp (ext:run-program "/usr/bin/env" nil :environ nil)))))
+  (flet ((run-env-program (&rest args)
+           ;; use :input nil :output nil :error nil as default to stop
+           ;; pipes from filling up and the process deadlocking
+           (setf args (append args '(:input nil :output nil :error nil)))
+           #-windows (apply #'ext:run-program "env" nil args)
+           #+windows (apply #'ext:run-program "cmd" '("/k" "set" "&" "exit") args))
+         (run-printenv-program (var &rest args)
+           #-windows (apply #'ext:run-program "printenv" (list var) args)
+           #+windows (apply #'ext:run-program "cmd"
+  	                       (list "/k" (concatenate 'string "echo %" var "%")
+  		                          "&" "exit")
+  	                       args)))
+    (is-equal 0 (nth-value 1 (run-env-program)))
+    (is-equal 0 (nth-value 1 (run-env-program :environ :default)))
+    (is-equal "bar"
+              (delete #\Space
+                      (read-line
+                       (run-printenv-program
+  	                     "foo"
+  	                     :environ (list "foo=bar"
+  		                                 (format nil "PATH=~A" (ext:getenv "PATH"))))
+                       nil nil)))
+    (signals simple-error (run-env-program :environ :bam) nil nil)
+    #-cygwin ;; Cygwin always injects `WINDIR=C:\\Windows' variable.
+    (is (null (slurp (run-env-program :environ nil))))))
 
-#+windows
-(test process-environ
-  ;; This tests need to be implemented when access to Windows platform
-  ;; is granted (before the release). Program to use is `set', not
-  ;; sure if it is part of Windows shell or something we can run.
-  (is (null "IMPLEMENT ME!")))
+;;; Date: 2022-10-22
+;;; From: Marius Gerbershagen
+;;; Description:
+;;;
+;;;     Check that run-program works correctly with different
+;;;     encodings
+;;;
+(test run-program-encoding
+  (let* ((skeleton "
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define expected_length ~S
+
+int main (int argc, char **argv) {
+  unsigned char expected[expected_length+1] = {~{~S,~}};
+  if (argc != 2) {
+    return 1;
+  }
+  if (strlen(argv[1]) != expected_length) {
+    return 2;
+  }
+  if (strcmp(argv[1], (char*)expected) != 0) {
+    return 3;
+  }
+  if (strcmp(getenv(\"ECLTESTVAR\"), (char*)expected) != 0) {
+    return 4;
+  }
+  printf(\"%s\", argv[1]);
+  return 0;
+}"))
+    (flet ((test-with-encoding (encoding test-string)
+             (let* ((ext:*default-external-format* encoding)
+                    (encoded-test-string
+                     (coerce (ext:string-to-octets test-string
+  				                                       :null-terminate t
+  				                                       :external-format encoding)
+  	                          'list)))
+               (multiple-value-bind (return-code output)
+                   (test-C-program (format nil skeleton
+  			                                  (1- (length encoded-test-string))
+  			                                  encoded-test-string)
+  		                             :args (list test-string)
+  		                             :environ (list (concatenate 'string "ECLTESTVAR=" test-string))
+  		                             :capture-output :string)
+                 (is (zerop return-code))
+                 (is (string= test-string (delete #\newline output)))))))
+      (test-with-encoding ext:*default-external-format* "default-äöüλ🙋")
+      #+unicode (progn (test-with-encoding :utf8 "utf8-äöüλ🙋")
+                       (test-with-encoding :latin-1 "latin-1-äöü")
+                       (test-with-encoding :greek "greek-λ")))))
+

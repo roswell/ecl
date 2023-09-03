@@ -48,6 +48,8 @@ extern void init_unixtime(void);
 extern void init_compiler(void);
 #ifdef ECL_THREADS
 extern void init_threads(cl_env_ptr);
+#else
+#define init_threads(env) cl_env_p = env
 #endif
 extern void ecl_init_env(cl_env_ptr);
 extern void init_lib_LSP(cl_object);
@@ -125,6 +127,7 @@ struct cl_compiler_env {
         cl_index env_size;
         int mode;
         bool stepping;
+        bool function_boundary_crossed;
 };
 
 typedef struct cl_compiler_env *cl_compiler_env_ptr;
@@ -220,22 +223,16 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
 /* file.d */
 
-/*
- * POSIX specifies that the "b" flag is ignored. This is good, because
- * under MSDOS and Apple's OS we need to open text files in binary mode,
- * so that we get both the carriage return and the linefeed characters.
- * Otherwise, it would be complicated to implement file-position and
- * seek operations.
- */
-#define OPEN_R  "rb"
-#define OPEN_W  "wb"
-#define OPEN_RW "r+b"
-#define OPEN_A  "ab"
-#define OPEN_RA "a+b"
-
 /* Windows does not have this flag (POSIX thing) */
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
 #ifndef O_NONBLOCK
 #define O_NONBLOCK 0
+#endif
+/* Windows needs to be told explicitely to open files in binary mode */
+#ifndef O_BINARY
+#define O_BINARY 0
 #endif
 
 #define ECL_FILE_STREAM_P(strm) \
@@ -317,6 +314,10 @@ extern cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1];
 extern void ecl_init_bignum_registers(cl_env_ptr env);
 extern void ecl_clear_bignum_registers(cl_env_ptr env);
 
+/* threads/mutex.d */
+
+extern cl_object si_mutex_timeout();
+
 /* print.d */
 
 extern cl_object _ecl_stream_or_default_output(cl_object stream);
@@ -342,67 +343,12 @@ extern void _ecl_string_push_c_string(cl_object s, const char *c);
 
 extern void cl_write_object(cl_object x, cl_object stream);
 
-/* global locks */
+/* threads/rwlock.d */
 
 #ifdef ECL_THREADS
-# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)                    \
-        ECL_WITH_LOCK_BEGIN(the_env, cl_core.global_lock)
-# define ECL_WITH_GLOBAL_LOCK_END               \
-        ECL_WITH_LOCK_END
-# define ECL_WITH_LOCK_BEGIN(the_env,lock) {             \
-        const cl_env_ptr __ecl_the_env = the_env;        \
-        const cl_object __ecl_the_lock = lock;           \
-        ecl_disable_interrupts_env(__ecl_the_env);       \
-        mp_get_lock_wait(__ecl_the_lock);                \
-        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
-        ecl_enable_interrupts_env(__ecl_the_env);
-# define ECL_WITH_LOCK_END                               \
-        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
-                mp_giveup_lock(__ecl_the_lock);          \
-        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
-# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock) {         \
-        const cl_env_ptr __ecl_the_env = (the_env);      \
-        cl_object *__ecl_the_lock = (lock);              \
-        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
-        ecl_get_spinlock(__ecl_the_env, __ecl_the_lock);
-# define ECL_WITH_SPINLOCK_END                           \
-        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
-                ecl_giveup_spinlock(__ecl_the_lock);     \
-        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
-#else
-# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_LOCK_END
-# define ECL_WITH_LOCK_BEGIN(the_env,lock)
-# define ECL_WITH_LOCK_END
-# define ECL_WITH_SPINLOCK_BEGIN(the_env,lock)
-# define ECL_WITH_SPINLOCK_END
-#endif /* ECL_THREADS */
-
-#ifdef ECL_RWLOCK
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {            \
-        const cl_env_ptr __ecl_pack_env = the_env;              \
-        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
-        mp_get_rwlock_read_wait(cl_core.global_env_lock);
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_END                   \
-        mp_giveup_rwlock_read(cl_core.global_env_lock);   \
-        ecl_bds_unwind1(__ecl_pack_env);                  \
-        ecl_check_pending_interrupts(__ecl_pack_env); }
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {            \
-        const cl_env_ptr __ecl_pack_env = the_env;              \
-        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
-        mp_get_rwlock_write_wait(cl_core.global_env_lock);
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_END                    \
-        mp_giveup_rwlock_write(cl_core.global_env_lock);   \
-        ecl_bds_unwind1(__ecl_pack_env);                   \
-        ecl_check_pending_interrupts(__ecl_pack_env); }
-#else
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_ENV_RDLOCK_END
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env)
-# define ECL_WITH_GLOBAL_ENV_WRLOCK_END
-#endif /* ECL_RWLOCK */
-
-#include <ecl/ecl_atomics.h>
+extern cl_object mp_get_rwlock_read_wait(cl_object lock);
+extern cl_object mp_get_rwlock_write_wait(cl_object lock);
+#endif
 
 /* read.d */
 #ifdef ECL_UNICODE
@@ -410,7 +356,6 @@ extern void cl_write_object(cl_object x, cl_object stream);
 #else
 #define RTABSIZE        ECL_CHAR_CODE_LIMIT     /*  read table size  */
 #endif
-extern cl_object si_make_backq_vector(cl_object dim, cl_object data, cl_object stream);
 
 /* package.d */
 
@@ -456,6 +401,13 @@ extern void ecl_cs_set_org(cl_env_ptr env);
 #ifdef ECL_THREADS
 extern ECL_API cl_object mp_suspend_loop();
 extern ECL_API cl_object mp_break_suspend_loop();
+
+# ifdef ECL_WINDOWS_THREADS
+#  define ecl_thread_exit() ExitThread(0);
+# else
+#  define ecl_thread_exit() pthread_exit(NULL);
+# endif  /* ECL_WINDOWS_THREADS */
+
 #endif
 
 /* time.d */
@@ -467,33 +419,127 @@ struct ecl_timeval {
 
 extern void ecl_get_internal_real_time(struct ecl_timeval *time);
 extern void ecl_get_internal_run_time(struct ecl_timeval *time);
-extern void ecl_musleep(double time, bool alertable);
+extern void ecl_musleep(double time);
 
 #define UTC_time_to_universal_time(x) ecl_plus(ecl_make_integer(x),cl_core.Jan1st1970UT)
 extern cl_fixnum ecl_runtime(void);
 
-/* threads/mutex.d */
+/* unixfsys.d */
 
-#ifdef ECL_THREADS
-typedef cl_object (*mp_wait_test)(cl_env_ptr, cl_object);
+/* Filename encodings: on Unix we use ordinary chars encoded in a user
+ * specified format (usually utf8), while on Windows we use a wchar_t
+ * type.
+ *
+ * Naming conventions:
+ *  fstr: null-terminated raw C array with element type char or wchar_t
+ *  filename: Lisp base string or vector with element type byte16,
+ *            also null-terminated
+ */
+#if defined(ECL_MS_WINDOWS_HOST) && defined(ECL_UNICODE)
+#include <wchar.h>
 
-extern void ecl_process_yield(void);
-extern void print_lock(char *s, cl_object lock, ...);
-#define print_lock(...) ((void)0)
-extern void ecl_get_spinlock(cl_env_ptr env, cl_object *lock);
-extern void ecl_giveup_spinlock(cl_object *lock);
-extern cl_object ecl_wait_on(cl_env_ptr env, mp_wait_test test, cl_object object);
-extern void ecl_wakeup_waiters(cl_env_ptr the_env, cl_object o, int flags);
-extern void ecl_wakeup_process(cl_object process);
-extern cl_object ecl_waiter_pop(cl_env_ptr the_env, cl_object q);
+typedef wchar_t ecl_filename_char;
+#define ecl_fstrlen(x) wcslen(x)
+#define ecl_fstrcpy(x,y) wcscpy(x,y)
+#define ecl_fstrcat(x,y) wcscat(x,y)
+#define ecl_fstr(x) L ## x      /* wchar_t string constructor prefixed with L */
+
+cl_object ecl_make_simple_filename(const ecl_filename_char *x, cl_fixnum size);
+#define ecl_make_constant_filename(x,y) ecl_make_simple_filename(x,y)
+cl_object ecl_alloc_filename(cl_index len, cl_object adjustable);
+#define ecl_alloc_adjustable_filename(len) ecl_alloc_filename(len, ECL_T)
+#define ecl_alloc_simple_filename(len) ecl_alloc_filename(len, ECL_NIL)
+cl_object ecl_concatenate_filename(cl_object x, cl_object y);
+#define ecl_filename_self(x) ((ecl_filename_char*)((x)->vector.self.b16))
+
+#define ecl_chdir _wchdir
+#define ecl_stat _wstat64
+#define ecl_fstat _fstat64
+typedef struct __stat64 ecl_stat_struct;
+#define ecl_getcwd _wgetcwd
+#define ecl_access _waccess
+#define ecl_unlink _wunlink
+#define ecl_rename _wrename
+#define ecl_open _wopen
+#define ecl_fopen _wfopen
+#define ecl_fdopen _wfdopen
+#define ecl_rmdir _wrmdir
+#define ecl_mkdir _wmkdir
+#define ecl_chmod _wchmod
+#define ecl_getenv _wgetenv
+#define ecl_GetFileAttributes GetFileAttributesW
+#define ecl_MoveFile MoveFileW
+#define ecl_MoveFileEx MoveFileExW
+#define ecl_DeleteFile DeleteFileW
+#define ecl_FindFirstFile FindFirstFileW
+#define ecl_FindNextFile FindNextFileW
+#define ecl_WIN32_FIND_DATA WIN32_FIND_DATAW
+#define ecl_GetTempFileName GetTempFileNameW
+#define ecl_CopyFile CopyFileW
+#define ecl_LoadLibrary LoadLibraryW
+#define ecl_GetModuleFileName GetModuleFileNameW
+
+#else
+
+typedef char ecl_filename_char;
+#define ecl_fstrlen(x) strlen(x)
+#define ecl_fstrcpy(x,y) strcpy(x,y)
+#define ecl_fstrcat(x,y) strcat(x,y)
+#define ecl_fstr(x) x
+
+#define ecl_make_simple_filename(x,y) ecl_make_simple_base_string((char *)x,y)
+#define ecl_make_constant_filename(x,y) ecl_make_constant_base_string((char *)x,y)
+#define ecl_alloc_adjustable_filename(len) ecl_alloc_adjustable_base_string(len)
+#define ecl_alloc_simple_filename(len) ecl_alloc_simple_base_string(len)
+#define ecl_concatenate_filename(x,y) si_base_string_concatenate(2,x,y)
+#define ecl_filename_self(x) ((ecl_filename_char*)((x)->base_string.self))
+
+#define ecl_chdir chdir
+#define ecl_stat stat
+#define ecl_fstat fstat
+typedef struct stat ecl_stat_struct;
+#define ecl_getcwd getcwd
+#define ecl_access access
+#define ecl_unlink unlink
+#define ecl_rename rename
+#define ecl_open open
+#define ecl_fopen fopen
+#define ecl_fdopen fdopen
+#define ecl_rmdir rmdir
+#define ecl_mkdir mkdir
+#define ecl_chmod chmod
+#define ecl_getenv getenv
+#define ecl_GetFileAttributes GetFileAttributesA
+#define ecl_MoveFile MoveFileA
+#define ecl_MoveFileEx MoveFileExA
+#define ecl_DeleteFile DeleteFileA
+#define ecl_FindFirstFile FindFirstFileA
+#define ecl_FindNextFile FindNextFileA
+#define ecl_WIN32_FIND_DATA WIN32_FIND_DATAA
+#define ecl_GetTempFileName GetTempFileNameA
+#define ecl_CopyFile CopyFileA
+#define ecl_LoadLibrary LoadLibraryA
+#define ecl_GetModuleFileName GetModuleFileNameA
+
 #endif
 
-/* threads/rwlock.d */
+/*
+ * POSIX specifies that the "b" flag is ignored. This is good, because
+ * under MSDOS and Apple's OS we need to open text files in binary mode,
+ * so that we get both the carriage return and the linefeed characters.
+ * Otherwise, it would be complicated to implement file-position and
+ * seek operations.
+ */
+#define OPEN_R  ecl_fstr("rb")
+#define OPEN_W  ecl_fstr("wb")
+#define OPEN_RW ecl_fstr("r+b")
+#define OPEN_A  ecl_fstr("ab")
+#define OPEN_RA ecl_fstr("a+b")
 
-#ifdef ECL_THREADS
-extern cl_object mp_get_rwlock_read_wait(cl_object lock);
-extern cl_object mp_get_rwlock_write_wait(cl_object lock);
-#endif
+int ecl_backup_open(const ecl_filename_char *filename, int option, int mode);
+cl_object ecl_decode_filename(cl_object x, cl_object len);
+cl_object ecl_encode_filename(cl_object x, cl_object len);
+
 
 /* unixint.d */
 
@@ -527,6 +573,68 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 #  define WIFCONTINUED(x) 0
 # endif
 #endif /* ECL_MS_WINDOWS_HOST */
+
+/* global locks */
+
+#include <ecl/threads.h>
+
+#ifdef ECL_THREADS
+# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)                    \
+        ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.global_lock)
+# define ECL_WITH_GLOBAL_LOCK_END               \
+        ECL_WITH_NATIVE_LOCK_END
+# define ECL_WITH_LOCK_BEGIN(the_env,lock) {             \
+        const cl_env_ptr __ecl_the_env = the_env;        \
+        const cl_object __ecl_the_lock = lock;           \
+        ecl_disable_interrupts_env(__ecl_the_env);       \
+        mp_get_lock_wait(__ecl_the_lock);                \
+        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
+        ecl_enable_interrupts_env(__ecl_the_env);
+# define ECL_WITH_LOCK_END                               \
+        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
+                mp_giveup_lock(__ecl_the_lock);          \
+        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
+# define ECL_WITH_NATIVE_LOCK_BEGIN(the_env,lock) {      \
+        const cl_env_ptr __ecl_the_env = (the_env);      \
+        ecl_mutex_t* __ecl_the_lock = (lock);            \
+        ecl_disable_interrupts_env(__ecl_the_env);       \
+        ecl_mutex_lock(__ecl_the_lock);                  \
+        ECL_UNWIND_PROTECT_BEGIN(__ecl_the_env);         \
+        ecl_enable_interrupts_env(__ecl_the_env);
+# define ECL_WITH_NATIVE_LOCK_END                        \
+        ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {            \
+                ecl_mutex_unlock(__ecl_the_lock);        \
+        } ECL_UNWIND_PROTECT_THREAD_SAFE_END; }
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {      \
+        const cl_env_ptr __ecl_pack_env = the_env;        \
+        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
+        ecl_rwlock_lock_read(&cl_core.global_env_lock);
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_END                   \
+        ecl_rwlock_unlock_read(&cl_core.global_env_lock); \
+        ecl_bds_unwind1(__ecl_pack_env);                  \
+        ecl_check_pending_interrupts(__ecl_pack_env); }
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {      \
+        const cl_env_ptr __ecl_pack_env = the_env;        \
+        ecl_bds_bind(__ecl_pack_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);  \
+        ecl_rwlock_lock_write(&cl_core.global_env_lock);
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_END                    \
+        ecl_rwlock_unlock_write(&cl_core.global_env_lock); \
+        ecl_bds_unwind1(__ecl_pack_env);                   \
+        ecl_check_pending_interrupts(__ecl_pack_env); }
+#else
+# define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_LOCK_END
+# define ECL_WITH_LOCK_BEGIN(the_env,lock)
+# define ECL_WITH_LOCK_END
+# define ECL_WITH_NATIVE_LOCK_BEGIN(the_env,lock)
+# define ECL_WITH_NATIVE_LOCK_END
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_ENV_RDLOCK_END
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env)
+# define ECL_WITH_GLOBAL_ENV_WRLOCK_END
+#endif /* ECL_THREADS */
+
+#include <ecl/ecl_atomics.h>
 
 /*
  * Fake several ISO C99 mathematical functions if not available

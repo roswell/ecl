@@ -84,6 +84,8 @@
 /* Foreign functions interface						*/
 #define ECL_FFI
 
+#define HAVE_WCHAR_H
+
 /* Support for Unicode strings */
 #define ECL_UNICODE @ECL_UNICODE@
 #if !ECL_UNICODE

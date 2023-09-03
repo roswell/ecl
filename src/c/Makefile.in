@@ -40,12 +40,17 @@ includedir=@includedir@
 # Files
 
 HDIR	= ../ecl
-HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h               \
+HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h          \
 	$(HDIR)/object.h $(HDIR)/cs.h $(HDIR)/stacks.h                  \
 	$(HDIR)/external.h $(HDIR)/cons.h $(HDIR)/legacy.h              \
-	$(HDIR)/number.h $(HDIR)/page.h
+	$(HDIR)/number.h $(HDIR)/page.h $(HDIR)/bytecodes.h             \
+   $(HDIR)/cache.h $(HDIR)/config-internal.h $(HDIR)/ecl_atomics.h \
+   $(HDIR)/ecl-inl.h $(HDIR)/internal.h $(HDIR)/stack-resize.h     \
+   $(HDIR)/threads.h $(HDIR)/impl/math_dispatch2.h                 \
+   $(HDIR)/impl/math_dispatch.h  $(HDIR)/impl/math_fenv.h          \
+   $(HDIR)/impl/math_fenv_msvc.h
 CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
-OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o           \
+OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o      \
 	interpreter.o compiler.o disassembler.o $(CLOS_OBJS)            \
 	reference.o character.o file.o read.o print.o error.o           \
 	string.o cfun.o reader/parse_integer.o reader/parse_number.o    \
@@ -72,7 +77,6 @@ OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o           \
 	unixfsys.o unixsys.o serialize.o ffi.o sse2.o @EXTRA_OBJS@      \
 	threads/atomic.o
 
-.SUFFIXES: .c .o .d .s
 .PHONY: all
 
 ifndef VERBOSE
@@ -81,16 +85,20 @@ endif
 
 all: $(DPP) ../libeclmin.a ../cinit.o
 
-.d.c: $(DPP)
+$(HDIR)/impl/%.h: $(top_srcdir)/h/impl/%.h
+	mkdir -p $(HDIR)/impl
+	cp $< $@
+
+$(HDIR)/%.h: $(top_srcdir)/h/%.h
+	cp $< $@
+
+%.c: %.d $(DPP)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
-.d.o: $(DPP)
+%.o: %.d $(DPP) $(HFILES)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
-.c.o: $(HFILES)
+%.o: %.c $(HFILES)
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
-# .d.s: $(HFILES)
-# 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
-# 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -S -o $@ $@.c
 
 ../libeclmin.a: $(OBJS) all_symbols.o all_symbols2.o
 	$(RM) $@
@@ -103,8 +111,8 @@ clean:
 # Build rules
 
 $(DPP): $(srcdir)/dpp.c $(srcdir)/symbols_list.h
-	if test -f ../CROSS-DPP; then touch dpp; else \
-	$(TRUE_CC) -I$(srcdir) -I@true_builddir@ -I./ $(srcdir)/dpp.c @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -o $@ ; \
+	if test -f ../CROSS-DPP; then touch $(DPP); else \
+	$(TRUE_CC) -I$(srcdir) -I@true_builddir@ -I./ $(srcdir)/dpp.c @CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ @LDFLAGS@ -o $@ ; \
 	fi
 
 $(OBJS): $(DPP)

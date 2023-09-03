@@ -8,7 +8,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -138,7 +138,7 @@ AO_store_release(volatile AO_t *addr, AO_t value)
 /* only cost us a load immediate instruction.                           */
 AO_INLINE AO_TS_VAL_t
 AO_test_and_set(volatile AO_TS_t *addr) {
-/* Completely untested.  And we should be using smaller objects anyway. */
+  /* TODO: And we should be using smaller objects anyway.       */
   AO_t oldval;
   AO_t temp = 1; /* locked value */
 

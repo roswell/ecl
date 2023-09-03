@@ -38,8 +38,8 @@
 static cl_index
 hash_string(cl_index initval, const unsigned char *k, cl_index length)
 {
-  register cl_index a = GOLDEN_RATIO, b = GOLDEN_RATIO, c = initval;
-  register cl_index len;
+  cl_index a = GOLDEN_RATIO, b = GOLDEN_RATIO, c = initval;
+  cl_index len;
   for (len = length; len >= 24; len -= 24) {
     a += extract_word(k); k+=8;
     b += extract_word(k); k+=8;
@@ -107,8 +107,8 @@ hash_string(cl_index initval, const unsigned char *k, cl_index length)
 static cl_index
 hash_string(cl_index initval, const unsigned char *k, cl_index length)
 {
-  register cl_index a = GOLDEN_RATIO, b = GOLDEN_RATIO, c = initval;
-  register cl_index len;
+  cl_index a = GOLDEN_RATIO, b = GOLDEN_RATIO, c = initval;
+  cl_index len;
   for (len = length; len >= 12; len -= 12) {
     a += extract_word(k); k += 4;
     b += extract_word(k); k += 4;

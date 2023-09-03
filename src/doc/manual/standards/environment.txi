@@ -9,6 +9,7 @@
 @node Environment - Dictionary
 @subsection Dictionary
 @lspindex disassemble
+@lspindex ed
 @lspindex trace
 
 @defun disassemble function-designator*
@@ -27,6 +28,23 @@ ECL only has a particular difference: it has two different compilers, one based 
 @item If the argument is a bytecompiled function or a lambda form, it will be processed by the active compiler and the appropriate output (bytecodes or C) will be shown.
 @item If the argument is a C-compiled form, disassembling the function by showing its C source code is not possible, since that would require saving not only the lambda form of the function, but also the precise configuration of the compiler when the function was compiled. Hence no output will be shown.
 @end itemize
+@end defun
+
+@defun ed x?
+Invoke an editor on the file or object specified by @var{x}.
+@paragraph Synopsis
+(ed @var{x?})
+@table @var
+@item x
+@code{nil}, a file path, or an object to edit.
+@end table
+
+@paragraph Description
+Starts the editor (on a file or an object if named).  Functions from the list @var{ext:*ed-functions*} are called in order with @var{x} as an argument until one of them returns non-@code{nil}; these functions are responsible for signalling a @code{file-error} to indicate failure to perform an operation on the file system. If no function returns a non-@code{nil} value or @var{ext:*ed-functions*} is @code{nil} then a @code{simple-error} will be signalled.
+
+The Common Lisp specification states that the @var{x} argument is either @code{nil}, a function name, or an instance of @var{string} or @var{pathname} and that a @var{type-error} may be signalled if is not one of these types. ECL does not check the type of @var{x} and thus permits any object to be passed to the hook functions. This allows for the possibility of editing other objects that have a representation in source code such as class definitions. Therefore, the hook functions should not make any assumptions about the type of @var{x} and should instead return @code{nil} if there is not an approriate edit method for a specific value of @var{x}.
+
+By default @var{ext:*ed-functions*} contains a single function that attempts to run the program named in the environment variable @code{EDITOR}. If this environment variable is not set then the fallback program is @code{vi}.
 @end defun
 
 @defmac trace function-name*

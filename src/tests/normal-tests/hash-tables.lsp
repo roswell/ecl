@@ -147,6 +147,7 @@
           (signals error (gethash "foobar" ht))
           (signals error (setf (gethash "foobar" ht) 15))
           (finishes (remhash 3 ht))
+          (finishes (hash-table-test ht))
           (is (null (gethash 1 ht)))
           (finishes (setf (gethash 55 ht) 0))
           (is (= (gethash 13 ht) 0)))))

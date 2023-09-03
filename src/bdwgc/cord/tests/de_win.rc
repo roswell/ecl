@@ -4,8 +4,11 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
 
 #include "windows.h"
@@ -16,9 +19,7 @@ ABOUTBOX DIALOG 19, 21, 163, 47
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Demonstration Text Editor"
 BEGIN
-    /* ICON "DE", -1, 8, 8, 13, 13, WS_CHILD | WS_VISIBLE */
     LTEXT "Demonstration Text Editor", -1, 44, 8, 118, 8, WS_CHILD | WS_VISIBLE | WS_GROUP
-    LTEXT "Version 4.1", -1, 44, 16, 60, 8, WS_CHILD | WS_VISIBLE | WS_GROUP
     PUSHBUTTON "OK", IDOK, 118, 27, 24, 14, WS_CHILD | WS_VISIBLE | WS_TABSTOP
 END
 
@@ -67,5 +68,3 @@ BEGIN
     VK_DELETE, IDM_EDITDEL, VIRTKEY
     VK_BACK, IDM_EDITBS, VIRTKEY
 END
-
-/* DE ICON cord\de_win.ICO */

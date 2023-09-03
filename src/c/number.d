@@ -236,15 +236,15 @@ ecl_to_uint64_t(cl_object x) {
       return (ecl_uint64_t)ecl_fixnum(x);
     } else if (!ECL_BIGNUMP(x)) {
       (void)0;
-    } else if (mpz_fits_ulong_p(x->big.big_num)) {
-      return (ecl_uint64_t)mpz_get_ui(x->big.big_num);
+    } else if (mpz_fits_ulong_p(ecl_bignum(x))) {
+      return (ecl_uint64_t)mpz_get_ui(ecl_bignum(x));
     } else {
       cl_object copy = _ecl_big_register0();
-      mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
-      if (mpz_fits_ulong_p(copy->big.big_num)) {
+      mpz_fdiv_q_2exp(ecl_bignum(copy), ecl_bignum(x), 32);
+      if (mpz_fits_ulong_p(ecl_bignum(copy))) {
         ecl_uint64_t output;
-        output = (ecl_uint64_t)mpz_get_ui(copy->big.big_num);
-        output = (output << 32) + (ecl_uint64_t)mpz_get_ui(x->big.big_num);
+        output = (ecl_uint64_t)mpz_get_ui(ecl_bignum(copy));
+        output = (output << 32) + (ecl_uint64_t)mpz_get_ui(ecl_bignum(x));
         _ecl_big_register_free(copy);
         return output;
       }
@@ -262,16 +262,16 @@ ecl_to_int64_t(cl_object x) {
     return (ecl_int64_t)ecl_fixnum(x);
   } else if (!ECL_BIGNUMP(x)) {
     (void)0;
-  } else if (mpz_fits_slong_p(x->big.big_num)) {
-    return (ecl_int64_t)mpz_get_si(x->big.big_num);
+  } else if (mpz_fits_slong_p(ecl_bignum(x))) {
+    return (ecl_int64_t)mpz_get_si(ecl_bignum(x));
   } else {
     cl_object copy = _ecl_big_register0();
-    mpz_fdiv_q_2exp(copy->big.big_num, x->big.big_num, 32);
-    if (mpz_fits_slong_p(copy->big.big_num)) {
+    mpz_fdiv_q_2exp(ecl_bignum(copy), ecl_bignum(x), 32);
+    if (mpz_fits_slong_p(ecl_bignum(copy))) {
       ecl_int64_t output;
-      output = (ecl_int64_t)mpz_get_si(copy->big.big_num);
-      mpz_fdiv_r_2exp(copy->big.big_num, x->big.big_num, 32);
-      output = (output << 32) + mpz_get_ui(copy->big.big_num);
+      output = (ecl_int64_t)mpz_get_si(ecl_bignum(copy));
+      mpz_fdiv_r_2exp(ecl_bignum(copy), ecl_bignum(x), 32);
+      output = (output << 32) + mpz_get_ui(ecl_bignum(copy));
       _ecl_big_register_free(copy);
       return output;
     }
@@ -354,19 +354,19 @@ ecl_to_ulong_long(cl_object x) {
       return (ecl_ulong_long_t)ecl_fixnum(x);
     } else if (!ECL_BIGNUMP(x)) {
       (void)0;
-    } else if (mpz_fits_ulong_p(x->big.big_num)) {
-      return (ecl_ulong_long_t)mpz_get_ui(x->big.big_num);
+    } else if (mpz_fits_ulong_p(ecl_bignum(x))) {
+      return (ecl_ulong_long_t)mpz_get_ui(ecl_bignum(x));
     } else {
       cl_object copy = _ecl_big_register0();
       int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
-      mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
-      if (mpz_fits_ulong_p(copy->big.big_num)) {
+      mpz_fdiv_q_2exp(copy->bit.big_num, ecl_bignum(x), i);
+      if (mpz_fits_ulong_p(ecl_bignum(copy))) {
         ecl_ulong_long_t output;
-        output = mpz_get_ui(copy->big.big_num);
+        output = mpz_get_ui(ecl_bignum(copy));
         for (i -= ECL_FIXNUM_BITS; i;
              i-= ECL_FIXNUM_BITS) {
           output = (output << ECL_FIXNUM_BITS);
-          output += mpz_get_ui(x->big.big_num);
+          output += mpz_get_ui(ecl_bignum(x));
         }
         _ecl_big_register_free(copy);
         return output;
@@ -387,18 +387,18 @@ ecl_to_long_long(cl_object x)
     return (ecl_long_long_t)ecl_fixnum(x);
   } else if (!ECL_BIGNUMP(x)) {
     (void)0;
-  } else if (mpz_fits_slong_p(x->big.big_num)) {
-    return (ecl_long_long_t)mpz_get_si(x->big.big_num);
+  } else if (mpz_fits_slong_p(ecl_bignum(x))) {
+    return (ecl_long_long_t)mpz_get_si(ecl_bignum(x));
   } else {
     cl_object copy = _ecl_big_register0();
     int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
-    mpz_fdiv_q_2exp(copy->bit.big_num, x->big.big_num, i);
-    if (mpz_fits_ulong_p(copy->big.big_num)) {
+    mpz_fdiv_q_2exp(copy->bit.big_num, ecl_bignum(x), i);
+    if (mpz_fits_ulong_p(ecl_bignum(copy))) {
       ecl_long_long_t output;
-      output = mpz_get_si(copy->big.big_num);
+      output = mpz_get_si(ecl_bignum(copy));
       for (i -= ECL_FIXNUM_BITS; i; i-= ECL_FIXNUM_BITS) {
         output = (output << ECL_FIXNUM_BITS);
-        output += mpz_get_ui(x->big.big_num);
+        output += mpz_get_ui(ecl_bignum(x));
       }
       _ecl_big_register_free(copy);
       return output;

@@ -64,6 +64,7 @@
         (parse-specialized-lambda-list specialized-lambda-list)
       (multiple-value-bind (lambda-form declarations documentation)
           (make-raw-lambda name lambda-list required-parameters specializers body env)
+        (declare (ignore declarations))
         (multiple-value-bind (proto-gf proto-method)
             (prototypes-for-make-method-lambda name)
           (multiple-value-bind (fn-form options)
@@ -181,6 +182,7 @@
   (declare (ignore method gf))
   (multiple-value-bind (call-next-method-p next-method-p-p in-closure-p)
       (walk-method-lambda method-lambda env)
+    (declare (ignore call-next-method-p next-method-p-p))
     (values `(lambda (.combined-method-args. *next-methods*)
                (declare (special .combined-method-args. *next-methods*))
                (apply ,(if in-closure-p
@@ -368,9 +370,8 @@ have disappeared."
 
 (defun make-method (method-class qualifiers specializers lambda-list fun options)
   (declare (ignore options))
-  (with-early-make-instance
-      ;; We choose the largest list of slots
-      +standard-accessor-method-slots+
+  ;; We choose the largest list of slots
+  (with-early-make-instance +standard-accessor-method-slots+
     (method (if (si::instancep method-class)
                 method-class
                 (find-class method-class))
@@ -388,23 +389,26 @@ have disappeared."
 
 ;;; early version used during bootstrap
 (defun add-method (gf method)
-  (with-early-accessors (+standard-method-slots+ +standard-generic-function-slots+ +standard-class-slots+)
-    (let* ((name (slot-value gf 'name))
-           (method-entry (assoc name *early-methods*)))
-      (unless method-entry
-        (setq method-entry (list name))
-        (push method-entry *early-methods*))
-      (push method (cdr method-entry))
-      (push method (generic-function-methods gf))
-      (setf (method-generic-function method) gf)
-      (unless (si::sl-boundp (generic-function-lambda-list gf))
-        (setf (generic-function-lambda-list gf) (implicit-generic-lambda
-                                                 (method-lambda-list method)))
-        (setf (generic-function-argument-precedence-order gf)
-              (rest (si::process-lambda-list (method-lambda-list method) t))))
-      (compute-g-f-spec-list gf)
-      (set-generic-function-dispatch gf)
-      method)))
+  ;; Add the method to *EARLY-METHODS*.
+  (let* ((name (slot-value gf 'name))
+         (method-entry (assoc name *early-methods*)))
+    (unless method-entry
+      (setq method-entry (list name))
+      (push method-entry *early-methods*))
+    (push method (cdr method-entry)))
+  ;; Add the method to the generic function.
+  (with-early-accessors
+      (+standard-method-slots+ +standard-generic-function-slots+)
+    (push method (generic-function-methods gf))
+    (setf (method-generic-function method) gf)
+    (unless (si::sl-boundp (generic-function-lambda-list gf))
+      (setf (generic-function-lambda-list gf)
+            (implicit-generic-lambda (method-lambda-list method)))
+      (setf (generic-function-argument-precedence-order gf)
+            (rest (si::process-lambda-list (method-lambda-list method) t))))
+    (compute-g-f-spec-list gf)
+    (set-generic-function-dispatch gf)
+    method))
 
 (defun find-method (gf qualifiers specializers &optional (errorp t))
   (declare (notinline method-qualifiers))

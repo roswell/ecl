@@ -32,6 +32,12 @@
 # include "thread_local_alloc.h"
 #endif
 
+#ifdef THREAD_SANITIZER
+# include "dbg_mlc.h" /* for oh type */
+#endif
+
+EXTERN_C_BEGIN
+
 /* We use the allocation lock to protect thread-related data structures. */
 
 /* The set of all known threads.  We intercept thread creation and      */
@@ -40,6 +46,14 @@
 /* Some of this should be declared volatile, but that's inconsistent    */
 /* with some library routine declarations.                              */
 typedef struct GC_Thread_Rep {
+#   ifdef THREAD_SANITIZER
+      char dummy[sizeof(oh)];     /* A dummy field to avoid TSan false  */
+                                  /* positive about the race between    */
+                                  /* GC_has_other_debug_info and        */
+                                  /* GC_suspend_handler_inner (which    */
+                                  /* sets stop_info.stack_ptr).         */
+#   endif
+
     struct GC_Thread_Rep * next;  /* More recently allocated threads    */
                                   /* with a given pthread id come       */
                                   /* first.  (All but the first are     */
@@ -52,12 +66,7 @@ typedef struct GC_Thread_Rep {
     /* Extra bookkeeping information the stopping code uses */
     struct thread_stop_info stop_info;
 
-#   if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
-        && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
-      volatile AO_t suspended_ext;  /* Thread was suspended externally. */
-#   endif
-
-    unsigned char flags;
+    unsigned char flags;        /* Protected by GC lock.                */
 #       define FINISHED 1       /* Thread has exited.                   */
 #       define DETACHED 2       /* Thread is treated as detached.       */
                                 /* Thread may really be detached, or    */
@@ -79,12 +88,14 @@ typedef struct GC_Thread_Rep {
                                 /* not need to be sent a signal to stop */
                                 /* it.                                  */
 
-    unsigned short finalizer_skipped;
-    unsigned char finalizer_nested;
+#   ifndef GC_NO_FINALIZATION
+      unsigned short finalizer_skipped;
+      unsigned char finalizer_nested;
                                 /* Used by GC_check_finalizer_nested()  */
                                 /* to minimize the level of recursion   */
                                 /* when a client finalizer allocates    */
                                 /* memory (initially both are 0).       */
+#   endif
 
     ptr_t stack_end;            /* Cold end of the stack (except for    */
                                 /* main thread).                        */
@@ -99,8 +110,8 @@ typedef struct GC_Thread_Rep {
                                 /* valid only if the thread is blocked; */
                                 /* non-NULL value means already set.    */
 #   endif
-#   ifdef IA64
-        ptr_t backing_store_end;
+#   if defined(E2K) || defined(IA64)
+        ptr_t backing_store_end; /* Note: may reference data in GC heap */
         ptr_t backing_store_ptr;
 #   endif
 
@@ -118,13 +129,26 @@ typedef struct GC_Thread_Rep {
                                 /* and detach.                          */
 
 #   ifdef THREAD_LOCAL_ALLOC
-        struct thread_local_freelists tlfs;
+        struct thread_local_freelists tlfs GC_ATTR_WORD_ALIGNED;
 #   endif
 } * GC_thread;
 
 #ifndef THREAD_TABLE_SZ
 # define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
+
+#if CPP_WORDSZ == 64
+# define THREAD_TABLE_INDEX(id) \
+    (int)(((((NUMERIC_THREAD_ID(id) >> 8) ^ NUMERIC_THREAD_ID(id)) >> 16) \
+          ^ ((NUMERIC_THREAD_ID(id) >> 8) ^ NUMERIC_THREAD_ID(id))) \
+         % THREAD_TABLE_SZ)
+#else
+# define THREAD_TABLE_INDEX(id) \
+                (int)(((NUMERIC_THREAD_ID(id) >> 16) \
+                       ^ (NUMERIC_THREAD_ID(id) >> 8) \
+                       ^ NUMERIC_THREAD_ID(id)) % THREAD_TABLE_SZ)
+#endif
+
 GC_EXTERN volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
 GC_EXTERN GC_bool GC_thr_initialized;
@@ -141,17 +165,31 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id);
   GC_INNER void GC_unblock_gc_signals(void);
 #endif
 
+#if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+    && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
+    && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+  GC_INNER void GC_suspend_self_inner(GC_thread me, word suspend_cnt);
+
+  GC_INNER void GC_suspend_self_blocked(ptr_t thread_me, void *context);
+                                /* Wrapper over GC_suspend_self_inner.  */
+#endif
+
 #ifdef GC_PTHREAD_START_STANDALONE
 # define GC_INNER_PTHRSTART /* empty */
 #else
 # define GC_INNER_PTHRSTART GC_INNER
 #endif
 
+GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
+                                        struct GC_stack_base *sb, void *arg);
+
 GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg);
 GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
+
+EXTERN_C_END
 
 #endif /* GC_PTHREADS && !GC_WIN32_THREADS */
 

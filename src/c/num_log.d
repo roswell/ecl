@@ -219,11 +219,11 @@ count_bits(cl_object x)
   }
   case t_bignum:
     if (_ecl_big_sign(x) >= 0)
-      count = mpz_popcount(x->big.big_num);
+      count = mpz_popcount(ecl_bignum(x));
     else {
       cl_object z = _ecl_big_register0();
-      mpz_com(z->big.big_num, x->big.big_num);
-      count = mpz_popcount(z->big.big_num);
+      mpz_com(ecl_bignum(z), ecl_bignum(x));
+      count = mpz_popcount(ecl_bignum(z));
       _ecl_big_register_free(z);
     }
     break;
@@ -262,13 +262,13 @@ ecl_ash(cl_object x, cl_fixnum w)
       }
       return ecl_make_fixnum(y);
     }
-    mpz_div_2exp(y->big.big_num, x->big.big_num, bits);
+    mpz_div_2exp(ecl_bignum(y), ecl_bignum(x), bits);
   } else {
     if (ECL_FIXNUMP(x)) {
       _ecl_big_set_fixnum(y, ecl_fixnum(x));
       x = y;
     }
-    mpz_mul_2exp(y->big.big_num, x->big.big_num, (unsigned long)w);
+    mpz_mul_2exp(ecl_bignum(y), ecl_bignum(x), (unsigned long)w);
   }
   return _ecl_big_register_normalize(y);
 }
@@ -388,7 +388,7 @@ cl_logbitp(cl_object p, cl_object x)
         i = ((y >> n) & 1);
       }
     } else {
-      i = mpz_tstbit(x->big.big_num, n);
+      i = mpz_tstbit(ecl_bignum(x), n);
     }
   } else {
     assert_type_non_negative_integer(p);
@@ -458,7 +458,7 @@ ecl_integer_length(cl_object x)
   case t_bignum:
     if (_ecl_big_sign(x) < 0)
       x = cl_lognot(x);
-    count = mpz_sizeinbase(x->big.big_num, 2);
+    count = mpz_sizeinbase(ecl_bignum(x), 2);
     break;
   default:
     FEwrong_type_only_arg(@[integer-length], x, @[integer]);

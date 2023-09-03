@@ -19,150 +19,6 @@
 #include <ecl/internal.h>
 #include <ecl/stack-resize.h>
 
-/* -------------------- INTERPRETER STACK -------------------- */
-
-cl_object *
-ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
-{
-  cl_index top = env->stack_top - env->stack;
-  cl_object *new_stack, *old_stack;
-  cl_index safety_area = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
-  cl_index new_size = tentative_new_size + 2*safety_area;
-
-  /* Round to page size */
-  new_size = ((new_size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
-
-  if (ecl_unlikely(top > new_size)) {
-    FEerror("Internal error: cannot shrink stack below stack top.",0);
-  }
-
-  old_stack = env->stack;
-  new_stack = (cl_object *)ecl_alloc_atomic(new_size * sizeof(cl_object));
-
-  ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  memcpy(new_stack, old_stack, env->stack_size * sizeof(cl_object));
-  env->stack_size = new_size;
-  env->stack_limit_size = new_size - 2*safety_area;
-  env->stack = new_stack;
-  env->stack_top = env->stack + top;
-  env->stack_limit = env->stack + (new_size - 2*safety_area);
-
-  /* A stack always has at least one element. This is assumed by cl__va_start
-   * and friends, which take a sp=0 to have no arguments.
-   */
-  if (top == 0) {
-    *(env->stack_top++) = ecl_make_fixnum(0);
-  }
-  ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-
-  return env->stack_top;
-}
-
-void
-FEstack_underflow(void)
-{
-  FEerror("Internal error: stack underflow.",0);
-}
-
-void
-FEstack_advance(void)
-{
-  FEerror("Internal error: stack advance beyond current point.",0);
-}
-
-cl_object *
-ecl_stack_grow(cl_env_ptr env)
-{
-  return ecl_stack_set_size(env, env->stack_size + env->stack_size / 2);
-}
-
-cl_index
-ecl_stack_push_values(cl_env_ptr env) {
-  cl_index i = env->nvalues;
-  cl_object *b = env->stack_top;
-  cl_object *p = b + i;
-  if (p >= env->stack_limit) {
-    b = ecl_stack_grow(env);
-    p = b + i;
-  }
-  env->stack_top = p;
-  memcpy(b, env->values, i * sizeof(cl_object));
-  return i;
-}
-
-void
-ecl_stack_pop_values(cl_env_ptr env, cl_index n) {
-  cl_object *p = env->stack_top - n;
-  if (ecl_unlikely(p < env->stack))
-    FEstack_underflow();
-  env->nvalues = n;
-  env->stack_top = p;
-  memcpy(env->values, p, n * sizeof(cl_object));
-}
-
-cl_object
-ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
-{
-  cl_object *base = env->stack_top;
-  if (size) {
-    if ((env->stack_limit - base) < size) {
-      base = ecl_stack_set_size(env, env->stack_size + size);
-    }
-  }
-  f->frame.t = t_frame;
-  f->frame.stack = env->stack;
-  f->frame.base = base;
-  f->frame.size = size;
-  f->frame.env = env;
-  env->stack_top = (base + size);
-  return f;
-}
-
-void
-ecl_stack_frame_push(cl_object f, cl_object o)
-{
-  cl_env_ptr env = f->frame.env;
-  cl_object *top = env->stack_top;
-  if (top >= env->stack_limit) {
-    top = ecl_stack_grow(env);
-  }
-  env->stack_top = ++top;
-  *(top-1) = o;
-  f->frame.base = top - (++(f->frame.size));
-  f->frame.stack = env->stack;
-}
-
-void
-ecl_stack_frame_push_values(cl_object f)
-{
-  cl_env_ptr env = f->frame.env;
-  ecl_stack_push_values(env);
-  f->frame.base = env->stack_top - (f->frame.size += env->nvalues); 
-  f->frame.stack = env->stack;
-}
-
-cl_object
-ecl_stack_frame_pop_values(cl_object f)
-{
-  cl_env_ptr env = f->frame.env;
-  cl_index n = f->frame.size % ECL_MULTIPLE_VALUES_LIMIT;
-  cl_object o;
-  env->nvalues = n;
-  env->values[0] = o = ECL_NIL;
-  while (n--) {
-    env->values[n] = o = f->frame.base[n];
-  }
-  return o;
-}
-
-void
-ecl_stack_frame_close(cl_object f)
-{
-  if (f->frame.stack) {
-    ECL_STACK_SET_INDEX(f->frame.env, f->frame.base - f->frame.stack);
-  }
-}
-
 /* ------------------------------ LEXICAL ENV. ------------------------------ */
 /*
  * A lexical environment is a list of pairs, each one containing
@@ -184,7 +40,7 @@ ecl_stack_frame_close(cl_object f)
 #define bind_frame(env, id, name)       CONS(CONS(id, name), (env))
 
 static cl_object
-ecl_lex_env_get_record(register cl_object env, register int s)
+ecl_lex_env_get_record(cl_object env, int s)
 {
   do {
     if (s-- == 0) return ECL_CONS_CAR(env);
@@ -268,7 +124,7 @@ static void odd_number_of_keywords(cl_object bytecodes) ecl_attr_noreturn;
 static void unknown_keyword(cl_object bytecodes, cl_object frame) ecl_attr_noreturn;
 
 static void
-too_many_arguments(register cl_object bytecodes, register cl_object frame)
+too_many_arguments(cl_object bytecodes, cl_object frame)
 {
   FEprogram_error("Too many arguments passed to "
                   "function ~A~&Argument list: ~S",
@@ -276,7 +132,7 @@ too_many_arguments(register cl_object bytecodes, register cl_object frame)
 }
 
 static void
-odd_number_of_keywords(register cl_object bytecodes)
+odd_number_of_keywords(cl_object bytecodes)
 {
   FEprogram_error("Function ~A called with odd number "
                   "of keyword arguments.",
@@ -284,7 +140,7 @@ odd_number_of_keywords(register cl_object bytecodes)
 }
 
 static void
-unknown_keyword(register cl_object bytecodes, register cl_object frame)
+unknown_keyword(cl_object bytecodes, cl_object frame)
 {
   FEprogram_error("Unknown keyword argument passed to function ~S.~&"
                   "Argument list: ~S", 2, bytecodes,
@@ -656,20 +512,23 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         if (flag != ECL_NIL) ECL_STACK_PUSH(the_env, value);
         ECL_STACK_PUSH(the_env, flag);
       }
-      if (count) {
-        if (Null(aok)) {
-          int aok = 0, mask = 1;
-          cl_object *p = first;
-          for (; p != last; ++p) {
-            if (*(p++) == @':allow-other-keys') {
-              if (!Null(*p)) aok |= mask;
-              mask <<= 1;
+      if (count && Null(aok)) {
+        cl_object *p = first;
+        for (; p != last; ++p) {
+          if (*(p++) == @':allow-other-keys') {
+            aok = *p;
+            count -= 2;
+            /* only the first :allow-other-keys argument is considered */
+            for (++p; p != last; ++p) {
+              if (*(p++) != @':allow-other-keys')
+                break;
               count -= 2;
             }
+            break;
           }
-          if (ecl_unlikely(count && (aok & 1) == 0)) {
-            unknown_keyword(bytecodes, frame);
-          }
+        }
+        if (ecl_likely(count && Null(aok))) {
+          unknown_keyword(bytecodes, frame);
         }
       }
       THREAD_NEXT;

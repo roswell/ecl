@@ -303,7 +303,7 @@ typedef struct ecl_frame {
         cl_index        frs_sp;
 } *ecl_frame_ptr;
 
-extern ECL_API ecl_frame_ptr _ecl_frs_push(register cl_env_ptr);
+extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
 #define ecl_frs_push(env,val) \
         ecl_frame_ptr __frame = _ecl_frs_push(env); \
         ecl_disable_interrupts_env(env); \

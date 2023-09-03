@@ -22,13 +22,15 @@
  * included from header files that are frequently included by clients.
  */
 
-#ifndef _DBG_MLC_H
-#define _DBG_MLC_H
+#ifndef GC_DBG_MLC_H
+#define GC_DBG_MLC_H
 
 #include "gc_priv.h"
 #ifdef KEEP_BACK_PTRS
 # include "gc_backptr.h"
 #endif
+
+EXTERN_C_BEGIN
 
 #if CPP_WORDSZ == 32
 # define START_FLAG (word)0xfedcedcb
@@ -93,8 +95,8 @@ typedef struct {
       word oh_dummy;
 #   endif
 # endif
-  const char * oh_string;       /* object descriptor string     */
-  word oh_int;                  /* object descriptor integers   */
+  const char * oh_string;       /* object descriptor string (file name)    */
+  signed_word oh_int;           /* object descriptor integer (line number) */
 # ifdef NEED_CALLINFO
     struct callinfo oh_ci[NFRAMES];
 # endif
@@ -156,14 +158,25 @@ typedef struct {
 #endif
 
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
-# ifdef SHORT_DBG_HDRS
+# if defined(SHORT_DBG_HDRS) && !defined(CPPCHECK)
 #   error Non-ptr stored in object results in GC_HAS_DEBUG_INFO malfunction
     /* We may mistakenly conclude that p has a debugging wrapper.       */
 # endif
-# define GC_HAS_DEBUG_INFO(p) \
-        ((*((word *)p) & 1) && GC_has_other_debug_info(p) > 0)
+# if defined(PARALLEL_MARK) && defined(KEEP_BACK_PTRS)
+#   define GC_HAS_DEBUG_INFO(p) \
+                ((AO_load((volatile AO_t *)(p)) & 1) != 0 \
+                 && GC_has_other_debug_info(p) > 0)
+                        /* Atomic load is used as GC_store_back_pointer */
+                        /* stores oh_back_ptr atomically (p might point */
+                        /* to the field); this prevents a TSan warning. */
+# else
+#   define GC_HAS_DEBUG_INFO(p) \
+                ((*(word *)(p) & 1) && GC_has_other_debug_info(p) > 0)
+# endif
 #else
 # define GC_HAS_DEBUG_INFO(p) (GC_has_other_debug_info(p) > 0)
-#endif
+#endif /* !KEEP_BACK_PTRS && !MAKE_BACK_GRAPH */
 
-#endif /* _DBG_MLC_H */
+EXTERN_C_END
+
+#endif /* GC_DBG_MLC_H */

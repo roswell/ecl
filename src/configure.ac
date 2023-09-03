@@ -8,7 +8,7 @@ dnl  AUTOCONF configuration for ECL
 dnl  Giuseppe Attardi 25.1.1994
 dnl
 
-AC_INIT([ecl],[21.2.1],[])
+AC_INIT([ecl],[23.9.9],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
@@ -584,7 +584,7 @@ if test "${enable_threads}" = "yes" ; then
   else
     LIBS="${THREAD_LIBS} ${LIBS}"
     CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
-    ECL_POSIX_RWLOCK
+    ECL_PTHREAD_EXTENSIONS
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
     for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
     AC_MSG_CHECKING([for thread object files])
@@ -676,7 +676,7 @@ dnl !!! end autoscan
 
 AC_CHECK_HEADERS( [sys/utsname.h float.h pwd.h dlfcn.h link.h] \
                   [mach-o/dyld.h dirent.h sys/ioctl.h sys/select.h] \
-                  [sys/wait.h semaphore.h] )
+                  [sys/wait.h] )
 
 
 AC_CHECK_HEADERS([ulimit.h], [], [],
@@ -754,7 +754,7 @@ dnl !!! end autoscan
 
 AC_CHECK_FUNCS( [nanosleep alarm times select setenv putenv] \
                 [lstat mkstemp sigprocmask isatty tzset] \
-                [gettimeofday getrusage system] )
+                [gettimeofday getrusage system clock_gettime] )
 
 AC_CHECK_FUNCS( [expf powf logf sqrtf cosf sinf tanf sinhf coshf tanhf] \
                 [floorf ceilf fabsf frexpf ldexpf log1p log1pf log1pl] \
@@ -904,10 +904,11 @@ if test "x${enable_unicode}" != "xno"; then
       AC_DEFINE([ECL_UNICODE], [21], [Support for Unicode])
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
-      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o"
+      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o unicode/ucd-0112.o unicode/ucd-0128.o unicode/ucd-0144.o"
    fi
    AC_DEFINE([ECL_UNICODE_NAMES], [1], [Link in the database of Unicode names])
    EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
+	AC_CHECK_HEADERS([wchar.h])
 else
    CHAR_CODE_LIMIT=256
    ECL_CHARACTER="int"

@@ -65,7 +65,7 @@ type of object. For instance, a cons cell consists of three words:
 
 @cfindex --enable-small-cons [YES|no]
 
-Note, that this is on of the possible implementations of
+Note, that this is one of the possible implementation of
 @code{cons}. The second one (currently default) uses the immediate value
 for the @code{list} and consumes two words instead of three. Such
 implementation is more memory and speed efficient (according to the
