@@ -27,22 +27,43 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 21.2.1
+* 23.9.9 changes since 21.2.1
+
 ** Enhancements
-- Allow real-valued columns in Gray stream method stream-line-column and
-  stream-advance-to-column. Use floor where needed to prevent breaking
-  existing code which depends on sys:file-column.
+- Better type propagation (improves performance)
+- More strict compile-time checking of arguments in standard operators
+- Update the Unicode character database to a version 13.0.0
+- Numerous minor conformity improvements in CLOS / MOP implementaiton
+- Files compiled by the bytecode compiler may be concatenated
+- Signal type-error in condition readers for WSCL conformance.
 - Support for non-ascii characters in pathnames. Pathname encoding defaults
   to utf-8 on Unix and may be changed using ~ext:*default-external-format*~
   (Windows always uses the utf-16 format provided by the OS).
-- Add hook functions for cl:ed via ext:*ed-functions* list)
-- Signal type-error in condition readers for WSCL conformance.
+- Add hook functions for ~cl:ed~ via ~ext:*ed-functions*~ list
 - Remove homegrown mutex implementation - all multithreading
   synchronization objects are now implemented on top of mutex and condition
   variable primitives from the operating system (no api changes)
 - Timeouts for condition variables and mutex locking and semaphore wait
   operations
+- Document the C FFI functions that are part of the ECL public interface
+- Allow real-valued columns in Gray stream method ~stream-line-column~ and
+  ~stream-advance-to-column~. Use floor where needed to prevent breaking
+  existing code which depends on ~sys:file-column~
+- Better conformance of the bytecodes compiler
+- More consistent handling of signed zeros wrt branch cuts
+- ~defstruct~ is better at checking whether a new definition is compatible
+- faster hash table operations (especially removal)
+- ~log~ returns more precise results for small ratios
+- improve numerous error messages
+- update bundled bdwgc to 8.2.4
+- preliminary support for the Emscripten target (bytecodes compiler only)
+
 ** API changes
+- ~open~ accepts new keyword arguments ~:nonblock~ and ~close-on-exec~
+- ~ed~ consults the variable ~ext:*ed-functions*~ to find the editor
+- New functions ~ext:octets-to-string~ and ~ext:string-to-octets~
+- New C functions ~ecl_decode_from_cstring~, ~ecl_encode_to_cstring~ and
+  ~ecl_decode_from_unicode_wstring~
 - A new function ~(mp:semaphore-wait semaphore count timeout)~
 - Deprecate Functions ~mp:wait-on-semaphore~ and ~mp:try-get-semphore~
 - The variable ~c:*user-ld-flags*~ is deprecated in favor of
@@ -53,6 +74,47 @@
   may be removed in future releases - it may cause option flags to be added
   in the wrong place in the commandline when invoking the C compiler
   program.
+- ~funcallable-standard-object~ has a metaclass
+  ~funcallable-standard-class~ instead of a ~standard-class~ - the latter
+  was an apparent typo in AMOP - this interpretation is widely agreed with
+
+** Bugs fixed
+- ~define-setf-expander~ accepts &body in its lambda list (#627)
+- ~make-load-form~ coalasces correctly temporary and permanent objects
+- ~prog1~ returns only a single value (#617)
+- ~destructuring-bind~ signals ~program-error~ (per ANSI standard)
+- ~function-keywords~ is a generic function (per ANSI standard)
+- fix inlining of functions with mutually dependent keyword arguments
+- handle a literal ~:allow-other-keys~ argument (per ANSI standard)
+- ~symbol-macrolet~ signals ~program-error~ when due (per ANSI standard)
+- ~(values (values))~ returns nil (per ANSI standard)
+- ~multiple-value-setq~ evaluates args in correct order (per ANSI standard)
+- ~elt~ compiler macro honors the ~fill-pointer~ (per ANSI standard)
+- fix the invalid evaluation order in numerous compiler macros
+- ~let~ fix incorrect expansion of a value in form ~(quote (quote value))~
+- msvc now correctly reports ~:x86-64~ feature on 64bit builds
+- ~define-compiler-macro~ does not set the function documentation (#658)
+- hash tables with a custom test function does not error in a reader
+- ~trap-fpe~ signals a condition when an unknown symbol is passed (#681)
+- compiler does not loop infinitely on constants with circular structure
+- ~format~ more conformant handling of the "~e" directive
+- ~define-method-combination~ correctly handles long form and * qualifier
+- ~(log n 0)~ returns 0 (per ANSI standard)
+- ~multiple-value-bind~ code walkers have a correct macro expansion (#709)
+
+** Credits
+
+We'd like to thank all people who contributed to ECL with code, testing,
+issue reports and otherwise.
+
+People listed here contributed code in this iteration: Caleb Xu, Catherine
+Tower, Daniel Kochmański, Dima Pasechnik, Dmitry Solomennikov, Eric
+Timmons, Florian Margaine, Jeronimo Pellegrini, Kevin Zheng, Kirill
+A. Korinsky, Marius Gerbershagen, Nick Faro, Tarn W. Burton, Ulrich Müller,
+Yuguo Zhang, Yuri D. Lensky.
+
+People listed here tested ECL extensively before the release: Kirill
+A. Korinsky, Marius Gerbershagen and Paul Ruetz.
 
 * 21.2.1 changes since 20.4.24
 ** Announcement
