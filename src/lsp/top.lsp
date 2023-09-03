@@ -415,7 +415,7 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
 Copyright (C) 1993 Giuseppe Attardi~@
 Copyright (C) 2013 Juan J. Garcia-Ripoll~@
 Copyright (C) 2018 Daniel Kochmanski~@
-Copyright (C) 2021 Daniel Kochmanski and Marius Gerbershagen~@
+Copyright (C) 2023 Daniel Kochmanski and Marius Gerbershagen~@
 ECL is free software, and you are welcome to redistribute it~@
 under certain conditions; see file 'Copyright' for details.")
         (format *standard-output* "~%Type :h for Help.  "))
