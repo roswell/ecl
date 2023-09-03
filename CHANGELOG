@@ -30,7 +30,43 @@
 * Pending changes since 23.9.9
 * 23.9.9 changes since 21.2.1
 ** Announcement
-# WRITEME!
+Dear Community,
+
+We are happy to announce a new stable ECL release tagged `23.9.9`. The new
+release includes many bug fixes, some new features, improvements to the
+compiler and more. Changes include but are not limited to:
+
+- Complete overhaul of thread synchronization primitives (mutexes,
+  condition variables, etc.). Users of bordeaux-threads will have to update
+  as this breaks workarounds for missing timeouts on condition variable
+  wait operations in version 0.9.1 and earlier of this library.
+- Better unicode support: add new functions to convert between Lisp strings
+  and byte arrays in different encodings, allow non-ascii characters in
+  pathnames and as arguments to ext:run-program.
+- Preliminary support for the Emscripten target (bytecodes compiler only).
+- Various bug fixes and internal improvements to the compiler.
+- Better conformance to the ANSI standard.
+
+We'd like to thank all people who contributed to ECL with code, testing,
+issue reports and otherwise.
+
+People listed here contributed code in this iteration: Caleb Xu, Catherine
+Tower, Daniel Kochmański, Dima Pasechnik, Dmitry Solomennikov, Eric
+Timmons, Florian Margaine, Jeronimo Pellegrini, Kevin Zheng, Kirill
+A. Korinsky, Marius Gerbershagen, Nick Faro, Tarn W. Burton, Ulrich Müller,
+Yuguo Zhang, Yuri D. Lensky.
+
+People listed here tested ECL extensively before the release: Kirill
+A. Korinsky, Marius Gerbershagen and Paul Ruetz.
+
+This release is available for download in a form of a source code archive
+(we do not ship prebuilt binaries):
+
+- [ECL 23.9.9 tarball archive](https://common-lisp.net/project/ecl/static/files/release/ecl-23.9.9.tgz)
+- [The ECL Manual](https://common-lisp.net/project/ecl/static/manual/)
+
+Happy Hacking,
+The ECL Developers
 
 ** Enhancements
 - Better type propagation (improves performance)
@@ -42,6 +78,7 @@
 - Support for non-ascii characters in pathnames. Pathname encoding defaults
   to utf-8 on Unix and may be changed using ~ext:*default-external-format*~
   (Windows always uses the utf-16 format provided by the OS).
+- Support non-ascii characters as arguments to ~ext:run-program~
 - Add hook functions for ~cl:ed~ via ~ext:*ed-functions*~ list
 - Remove homegrown mutex implementation - all multithreading
   synchronization objects are now implemented on top of mutex and condition
@@ -55,14 +92,15 @@
 - Better conformance of the bytecodes compiler
 - More consistent handling of signed zeros wrt branch cuts
 - ~defstruct~ is better at checking whether a new definition is compatible
-- faster hash table operations (especially removal)
+- faster hash table operations in specific cases (continuously adding and
+  removing elements without the hash table size changing)
 - ~log~ returns more precise results for small ratios
 - improve numerous error messages
 - update bundled bdwgc to 8.2.4
 - preliminary support for the Emscripten target (bytecodes compiler only)
 
 ** API changes
-- ~open~ accepts new keyword arguments ~:nonblock~ and ~close-on-exec~
+- ~open~ accepts new keyword arguments ~:nonblock~ and ~:close-on-exec~
 - ~ed~ consults the variable ~ext:*ed-functions*~ to find the editor
 - New functions ~ext:octets-to-string~ and ~ext:string-to-octets~
 - New C functions ~ecl_decode_from_cstring~, ~ecl_encode_to_cstring~ and
@@ -101,24 +139,10 @@
 - ~trap-fpe~ signals a condition when an unknown symbol is passed (#681)
 - compiler does not loop infinitely on constants with circular structure
 - ~format~ more conformant handling of the "~e" directive
-- ~define-method-combination~ correctly handles long form and * qualifier
+- the ~define-method-combination~ long form correctly handles the
+  ~:arguments~ option and * qualifier
 - ~(log n 0)~ returns 0 (per ANSI standard)
 - ~multiple-value-bind~ code walkers have a correct macro expansion (#709)
-
-** Credits
-
-We'd like to thank all people who contributed to ECL with code, testing,
-issue reports and otherwise.
-
-People listed here contributed code in this iteration: Caleb Xu, Catherine
-Tower, Daniel Kochmański, Dima Pasechnik, Dmitry Solomennikov, Eric
-Timmons, Florian Margaine, Jeronimo Pellegrini, Kevin Zheng, Kirill
-A. Korinsky, Marius Gerbershagen, Nick Faro, Tarn W. Burton, Ulrich Müller,
-Yuguo Zhang, Yuri D. Lensky.
-
-People listed here tested ECL extensively before the release: Kirill
-A. Korinsky, Marius Gerbershagen and Paul Ruetz.
-
 * 21.2.1 changes since 20.4.24
 ** Announcement
 Dear Community,
