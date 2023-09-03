@@ -27,7 +27,10 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
+* Pending changes since 23.9.9
 * 23.9.9 changes since 21.2.1
+** Announcement
+# WRITEME!
 
 ** Enhancements
 - Better type propagation (improves performance)
