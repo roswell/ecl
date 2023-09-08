@@ -525,7 +525,7 @@ ecl_logical_hostname_p(cl_object host)
 {
   if (!ecl_stringp(host))
     return FALSE;
-  return !Null(@assoc(4, host, cl_core.pathname_translations, @':test', @'string-equal'));
+  return !Null(ecl_assqlp(host, cl_core.pathname_translations));
 }
 
 /*
@@ -777,7 +777,7 @@ cl_logical_pathname(cl_object x)
   x = cl_pathname(x);
   if (!x->pathname.logical) {
     cl_error(9, @'simple-type-error', @':format-control',
-             ecl_make_constant_base_string("~S cannot be coerced to a logical pathname.",-1),
+             @"~S cannot be coerced to a logical pathname.",
              @':format-arguments', cl_list(1, x),
              @':expected-type', @'logical-pathname',
              @':datum', x);
@@ -843,27 +843,23 @@ cl_logical_pathname(cl_object x)
 @)
 
 /*
- * coerce_to_file_pathname(P) converts P to a physical pathname,
- * for a file which is accesible in our filesystem.
+ * si_coerce_to_file_pathname(P) converts P to a physical pathname,
+ * for a file which is accessible in our filesystem.
  * INV: Wildcards are allowed.
  * INV: A fresh new copy of the pathname is created.
  * INV: The pathname is absolute.
+ * INV: The device component is copied from getcwd if necessary.
  */
 cl_object
-coerce_to_file_pathname(cl_object pathname)
+si_coerce_to_file_pathname(cl_object pathname)
 {
-  pathname = coerce_to_physical_pathname(pathname);
+  pathname = si_coerce_to_physical_pathname(pathname);
   pathname = cl_merge_pathnames(1, pathname);
-#if 0
-#if !defined(cygwin) && !defined(ECL_MS_WINDOWS_HOST)
-  if (pathname->pathname.device != ECL_NIL)
-    FEerror("Device ~S not yet supported.", 1,
-            pathname->pathname.device);
-  if (pathname->pathname.host != ECL_NIL)
-    FEerror("Access to remote files not yet supported.", 0);
+  if (
+#ifdef ECL_MS_WINDOWS_HOST
+      pathname->pathname.device == ECL_NIL ||
 #endif
-#endif
-  if (pathname->pathname.directory == ECL_NIL ||
+      pathname->pathname.directory == ECL_NIL ||
       ECL_CONS_CAR(pathname->pathname.directory) == @':relative') {
     pathname = cl_merge_pathnames(2, pathname, si_getcwd(0));
   }
@@ -871,11 +867,11 @@ coerce_to_file_pathname(cl_object pathname)
 }
 
 /*
- * coerce_to_physical_pathname(P) converts P to a physical pathname,
+ * si_coerce_to_physical_pathname(P) converts P to a physical pathname,
  * performing the appropriate transformation if P was a logical pathname.
  */
 cl_object
-coerce_to_physical_pathname(cl_object x)
+si_coerce_to_physical_pathname(cl_object x)
 {
   x = cl_pathname(x);
   if (x->pathname.logical)
@@ -884,9 +880,9 @@ coerce_to_physical_pathname(cl_object x)
 }
 
 /*
- * si_coerce_to_filename(P) converts P to a physical pathname and then to
- * a namestring. The output must always be a new simple-string which can
- * be used by the C library.
+ * si_coerce_to_filename(P) converts P to a physical pathname and then
+ * to a properly encoded namestring. The output is a new simple-string
+ * or vector of utf-16 characters which can be used by the C library.
  * INV: No wildcards are allowed.
  */
 cl_object
@@ -896,7 +892,7 @@ si_coerce_to_filename(cl_object pathname_orig)
 
   /* We always go through the pathname representation and thus
    * cl_namestring() always outputs a fresh new string */
-  pathname = coerce_to_file_pathname(pathname_orig);
+  pathname = si_coerce_to_file_pathname(pathname_orig);
   if (cl_wild_pathname_p(1,pathname) != ECL_NIL)
     cl_error(3, @'file-error', @':pathname', pathname_orig);
   namestring = ecl_namestring(pathname,
@@ -1000,16 +996,38 @@ ecl_namestring(cl_object x, int flags)
 {
   bool logical;
   cl_object l, y;
-  cl_object buffer, host;
+  cl_object buffer_string, buffer, host;
   bool truncate_if_unreadable = flags & ECL_NAMESTRING_TRUNCATE_IF_ERROR;
 
   x = cl_pathname(x);
 
-  /* INV: Pathnames can only be created by mergin, parsing namestrings
+  /* INV: Pathnames can only be created by merging, parsing namestrings
    * or using ecl_make_pathname(). In all of these cases ECL will complain
    * at creation time if the pathname has wrong components.
    */
-  buffer = ecl_make_string_output_stream(128, 1);
+#ifdef ECL_UNICODE
+  if (flags & ECL_NAMESTRING_FORCE_BASE_STRING) {
+# ifdef ECL_MS_WINDOWS_HOST
+    buffer_string = si_make_vector(@'ext::byte16', /* element-type */
+                                   ecl_make_fixnum(128), /* size */
+                                   ECL_T,                /* adjustable */
+                                   ecl_make_fixnum(0),   /* fillp */
+                                   ECL_NIL,              /* displaced */
+                                   ECL_NIL);             /* displaced-offset */
+    buffer = si_make_sequence_output_stream(3, buffer_string,
+                                            @':external-format', @':ucs-2');
+# else
+    buffer_string = ecl_alloc_adjustable_base_string(128);
+    buffer = si_make_sequence_output_stream(1, buffer_string);
+# endif
+  } else {
+    buffer_string = ecl_alloc_adjustable_extended_string(128);
+    buffer = si_make_string_output_stream_from_string(buffer_string);
+  }
+#else
+  buffer_string = ecl_alloc_adjustable_base_string(128);
+  buffer = si_make_string_output_stream_from_string(buffer_string);
+#endif
   logical = x->pathname.logical;
   host = x->pathname.host;
   if (logical) {
@@ -1132,18 +1150,17 @@ ecl_namestring(cl_object x, int flags)
       return ECL_NIL;
     }
   }
-  buffer = cl_get_output_stream_string(buffer);
 #ifdef ECL_UNICODE
-  if (ECL_EXTENDED_STRING_P(buffer) &&
-      (flags & ECL_NAMESTRING_FORCE_BASE_STRING)) {
-    unlikely_if (!ecl_fits_in_base_string(buffer))
-      FEerror("The filesystem does not accept filenames "
-              "with extended characters: ~S",
-              1, buffer);
-    buffer = si_copy_to_simple_base_string(buffer);
+  if (flags & ECL_NAMESTRING_FORCE_BASE_STRING) {
+#endif
+    /* add null terminator */
+    ecl_write_char('\0', buffer);
+    buffer_string->base_string.fillp--;
+    buffer_string->base_string.dim--;
+#ifdef ECL_UNICODE
   }
 #endif
-  return buffer;
+  return buffer_string;
 }
 
 cl_object
@@ -1530,7 +1547,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
 @
   /* Check that host is a valid host name */
   if (ecl_unlikely(!ECL_STRINGP(host)))
-  FEwrong_type_nth_arg(@[si::pathname-translations], 1, host, @[string]);
+    FEwrong_type_nth_arg(@[si::pathname-translations], 1, host, @[string]);
   host = cl_string_upcase(1, host);
   len = ecl_length(host);
   parse_word(host, is_null, WORD_LOGICAL, 0, len, &parsed_len);
@@ -1538,7 +1555,7 @@ coerce_to_from_pathname(cl_object x, cl_object host)
     FEerror("Wrong host syntax ~S", 1, host);
   }
   /* Find its translation list */
-  pair = @assoc(4, host, cl_core.pathname_translations, @':test', @'string-equal');
+  pair = ecl_assqlp(host, cl_core.pathname_translations);
   if (set == OBJNULL) {
     @(return ((pair == ECL_NIL)? ECL_NIL : CADR(pair)));
   }

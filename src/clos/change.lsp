@@ -132,6 +132,7 @@
 (defmethod update-instance-for-redefined-class
     ((instance std-class) added-slots discarded-slots property-list
      &rest initargs)
+  (declare (ignore initargs))
   ;; If the metaclass of this class changed, so did probably that of its
   ;; subclasses. We need those subclasses to be up-to-date. This prevents
   ;; errors when loading twice the following
@@ -140,8 +141,7 @@
   ;;   (defclass y (y) ...)
   ;; because X might be redefined with Y not being up-to-date on the second
   ;; pass.
-  (prog1
-      (call-next-method)
+  (prog1 (call-next-method)
     (dolist (class (class-direct-subclasses instance))
       (ensure-up-to-date-instance class))))
 
@@ -188,22 +188,19 @@
 (defmethod reinitialize-instance ((class class) &rest initargs
                                   &key (direct-superclasses () direct-superclasses-p)
                                        (direct-slots nil direct-slots-p))
+  (declare (ignore initargs))
   (let ((name (class-name class)))
     (when (member name '(CLASS BUILT-IN-CLASS) :test #'eq)
       (error "The kernel CLOS class ~S cannot be changed." name)))
-
   ;; remove previous defined accessor methods
   (when (class-finalized-p class)
     (remove-optional-slot-accessors class))
-
   (call-next-method)
-
   ;; the list of direct slots is converted to direct-slot-definitions
   (when direct-slots-p
     (setf (class-direct-slots class)
           (loop for s in direct-slots
                 collect (canonical-slot-to-direct-slot class s))))
-
   ;; set up inheritance checking that it makes sense
   (when direct-superclasses-p
     (setf direct-superclasses 
@@ -214,11 +211,12 @@
     (dolist (l (setf (class-direct-superclasses class)
                      direct-superclasses))
       (add-direct-subclass l class)))
-
-  ;; if there are no forward references, we can just finalize the class here
-  (setf (class-finalized-p class) nil)
-  (finalize-unless-forward class)
-
+  ;; Per "Reinitialization of Class Metaobjects" we must finalize the
+  ;; inheritance here. Note that this means that already finalized class can't
+  ;; be reinitialized to have a forward-referenced-class as a superclass.
+  (if (class-finalized-p class)
+      (finalize-inheritance class)
+      (finalize-unless-forward class))
   class)
 
 (defun slot-definitions-compatible-p (old-slotds new-slotds)
@@ -249,6 +247,10 @@
 
 (defmethod make-instances-obsolete ((class class))
   (si::instance-new-stamp class)
+  class)
+
+;;; Structures can't be redefined in an incompatible way.
+(defmethod make-instances-obsolete ((class structure-class))
   class)
 
 (defun remove-optional-slot-accessors (class)

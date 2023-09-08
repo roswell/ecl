@@ -67,6 +67,56 @@ The counterpart of the previous function is @coderef{ecl_char_set}, which implem
 Both functions check the type of their arguments and verify that the indices do not exceed the string boundaries. Otherwise they signal a @code{serious-condition}.
 @end deftypefun
 
+@subsubsection Converting Unicode strings
+Converting between different encodings. See @ref{Streams - External formats} for a list of supported encodings (external formats).
+
+@subsubheading Functions
+@cppdef si_octets_to_string
+@lspdef ext:octets-to-string
+@defun ext:octets-to-string octets &key (external-format :default) (start 0) (end nil)
+Decode a sequence of octets (i.e. 8-bit bytes) into a string according
+to the given external format. @var{octets} must be a vector whose
+elements have a size of 8-bit. The bounding index designators
+@var{start} and @var{end} optionally denote a subsequence to be decoded.
+Signals an @coderef{ext:character-decoding-error} if the decoding fails.
+@end defun
+
+@cppdef si_string_to_octets
+@lspdef ext:string-to-octets
+@defun ext:string-to-octets string &key (external-format :default) (start 0) (end nil) (null-terminate nil)
+Encode a string into a sequence of octets according to the given
+external format. The bounding index designators @var{start} and
+@var{end} optionally denote a subsequence to be encoded. If
+@var{null-terminate} is true, add a terminating null byte. Signals an
+@coderef{ext:character-encoding-error} if the encoding fails.
+@end defun
+
+@cppdef ecl_decode_from_cstring
+@deftypefun cl_object ecl_decode_from_cstring (const char *string, cl_fixnum length, cl_object external_format)
+Decode a C string of the given length into a Lisp string using the
+specified external format. If @var{length} is -1, the length is
+determined by @code{strlen}. Returns @code{NULL} if the decoding fails.
+@end deftypefun
+
+@cppdef ecl_encode_to_cstring
+@deftypefun cl_fixnum ecl_encode_to_cstring (char *output, cl_fixnum output_length, cl_object input, cl_object external_format)
+Encode the Lisp string @var{input} into a C string of the given length
+using the specified external format. Returns the number of characters
+necessary to encode the Lisp string (including the null terminator). If
+this is larger than @var{output_length}, @var{output} is unchanged.
+Returns -1 if the encoding fails.
+@end deftypefun
+
+@cppdef ecl_decode_from_unicode_wstring
+@cppdef ecl_encode_to_unicode_wstring
+@deftypefun cl_object ecl_decode_from_unicode_wstring (const wchar_t *string, cl_fixnum length)
+@deftypefunx cl_fixnum ecl_encode_to_unicode_wstring (wchar_t *output, cl_fixnum output_length, cl_object input)
+These functions work the same as @coderef{ecl_decode_from_cstring},
+@coderef{ecl_encode_to_cstring}, except that the external format used is
+either utf-8, utf-16 or utf-32 depending on whether
+@code{sizeof(wchar_t)} is 1, 2, or 4 respectively.
+@end deftypefun
+
 @subsubsection ANSI dictionary
 Common Lisp and C equivalence
 

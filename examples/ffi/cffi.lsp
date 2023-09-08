@@ -4,11 +4,10 @@ Build and load this module with (compile-file "cffi.lsp" :load t)
 ;;
 ;; This toplevel statement notifies the compiler that we will
 ;; need this shared library at runtime. We do not need this
-;; statement in windows.
+;; statement in windows or macOS.
 ;;
-#-(or ming32 windows)
-(cffi:load-foreign-library #+darwin "/usr/lib/libm.dylib"
-			   #-darwin "/usr/lib/libm.so")
+#-(or ming32 windows darwin)
+(cffi:load-foreign-library "/usr/lib/libm.so")
 ;;
 ;; With this other statement, we import the C function sin(),
 ;; which operates on IEEE doubles.

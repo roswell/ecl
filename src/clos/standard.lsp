@@ -87,7 +87,7 @@
 
 (defun compute-instance-size (slots)
   (loop for slotd in slots
-     with last-location = 0
+     with last-location = -1
      with num-slots = 0
      when (eq (slot-definition-allocation slotd) :instance)
      do (let ((new-loc (safe-slot-definition-location slotd)))
@@ -98,13 +98,10 @@
 
 (defmethod allocate-instance ((class class) &rest initargs)
   (declare (ignore initargs))
-  ;; As pointed out in the CLASP source code (after Dr. Strandh), the
-  ;; class is already finalized, because initargs can't be computed
-  ;; without finalizing the class. We keep the next form to be on a
-  ;; safe side, but under normal circumstances it is never executed.
-  (unless (class-finalized-p class)
-    ;; FIXME! Inefficient! We should keep a list of dependent classes.
-    (finalize-inheritance class))
+  ;; As pointed out in the CLASP source code (after Dr. Strandh), the class is
+  ;; already finalized, because initargs can't be computed without finalizing
+  ;; the class. -- jd 2021-12-10
+  (assert (class-finalized-p class))
   (let ((x (si::allocate-raw-instance nil class (class-size class))))
     (si::instance-sig-set x)
     x))
@@ -239,24 +236,29 @@
         (remove child (class-direct-subclasses parent))))
 
 (defun check-direct-superclasses (class supplied-superclasses)
-  (if supplied-superclasses
-      (loop for superclass in supplied-superclasses
-         ;; Until we process streams.lsp there are some invalid combinations
-         ;; using built-in-class, which here we simply ignore.
-         unless (or (validate-superclass class superclass)
-                    (not (eq *clos-booted* T)))
-         do (error "Class ~A is not a valid superclass for ~A" superclass class))
-      (setf supplied-superclasses
-            (list (find-class (typecase class
-                                (STANDARD-CLASS 'STANDARD-OBJECT)
-                                (STRUCTURE-CLASS 'STRUCTURE-OBJECT)
-                                (FUNCALLABLE-STANDARD-CLASS 'FUNCALLABLE-STANDARD-OBJECT)
-                                (otherwise (error "No :DIRECT-SUPERCLASS ~
-argument was supplied for metaclass ~S." (class-of class))))))))
-  ;; FIXME!!! Here should come the invocation of VALIDATE-SUPERCLASS!
-  ;; FIXME!!! We should check that structures and standard objects are
-  ;; not mixed, and that STANDARD-CLASS, or STANDARD-GENERIC-FUNCTION,
-  ;; etc, are the first classes.
+  (unless supplied-superclasses
+    (setf supplied-superclasses
+          (typecase class
+            (standard-class
+             (list (find-class 'standard-object)))
+            (structure-class
+             (list (find-class 'structure-object)))
+            (funcallable-standard-class
+             (list (find-class 'funcallable-standard-object)))
+            (forward-referenced-class
+             nil)
+            (otherwise
+             (error "No :DIRECT-SUPERCLASS argument was supplied for the ~
+                     metaclass ~S." (class-of class))))))
+  ;; Until we process streams.lsp there are some invalid combinations using
+  ;; built-in-class, which here we simply ignore.
+  (when (eq *clos-booted* T)
+    (loop for superclass in supplied-superclasses
+          unless (validate-superclass class superclass)
+            do (error "Class ~A is not a valid superclass for ~A" superclass class)))
+  ;; FIXME!!! We should check that structures and standard objects are not
+  ;; mixed, and that STANDARD-CLASS, or STANDARD-GENERIC-FUNCTION, etc, are
+  ;; the first classes.
   supplied-superclasses)
 
 (defmethod validate-superclass ((class class) (superclass class))
@@ -302,8 +304,9 @@ because it contains a reference to the undefined class~%  ~A"
           (finalize-inheritance x))))
 
     (setf (class-precedence-list class) cpl)
-    (let ((oslotds (and (slot-boundp class 'slots) (class-slots class)))
-          (nslotds (compute-slots class)))
+    (let* ((oslotds-p (slot-boundp class 'slots))
+           (oslotds (and oslotds-p (class-slots class)))
+           (nslotds (compute-slots class)))
       (setf (class-slots class) nslotds
             (class-size class) (compute-instance-size nslotds)
             (class-default-initargs class) (compute-default-initargs class)
@@ -351,8 +354,13 @@ because it contains a reference to the undefined class~%  ~A"
       ;; Make all class instances obsolete when slot definitions are
       ;; not compatible.
       ;;
-      (unless (slot-definitions-compatible-p oslotds nslotds)
-        (make-instances-obsolete class)))
+      (cond ((null oslotds-p)
+             ;; Assign the initial class stamp when the class had no slots.
+             ;; That is because for structure class MAKE-INSTANCES-OBSOLETE
+             ;; doesn't update the stamp.
+             (si::instance-new-stamp class))
+            ((not (slot-definitions-compatible-p oslotds nslotds))
+             (make-instances-obsolete class))))
     ;;
     ;; Clear the different type caches for type comparisons and so on.
     ;;
@@ -370,6 +378,9 @@ because it contains a reference to the undefined class~%  ~A"
 (defmethod finalize-inheritance ((class std-class))
   (call-next-method)
   (std-class-generate-accessors class))
+
+(defmethod finalize-inheritance ((class forward-referenced-class))
+  (error "FINALIZE-INHERITANCE was called on a forward referenced class ~a." class))
 
 (defmethod compute-class-precedence-list ((class class))
   (compute-clos-class-precedence-list class (class-direct-superclasses class)))

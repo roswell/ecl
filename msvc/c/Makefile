@@ -13,7 +13,7 @@ ECL_FPE_CODE=fpe_x86.c
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
 THREADS_OBJ= process.obj mutex.obj condition_variable.obj rwlock.obj \
-             semaphore.obj barrier.obj mailbox.obj atomic.obj queue.obj
+             semaphore.obj barrier.obj mailbox.obj atomic.obj
 !else
 ECL_THREADS_FLAG=0
 THREADS_OBJ=
@@ -23,7 +23,8 @@ THREADS_OBJ=
 ECL_UNICODE_FLAG=21
 ECL_UCD_OBJ = ucd.obj ucd-0000.obj ucd-0016.obj \
 	      ucd-0032.obj ucd-0048.obj ucd-0064.obj \
-	      ucd-0080.obj ucd-0096.obj ucd_names_char.obj ucd_names_codes.obj ucd_names_pair.obj ucd_names_str.obj
+	      ucd-0080.obj ucd-0096.obj ucd-0112.obj \
+         ucd-0128.obj ucd-0144.obj ucd_names_char.obj ucd_names_codes.obj ucd_names_pair.obj ucd_names_str.obj
 
 !else
 ECL_UNICODE_FLAG=0
@@ -183,6 +184,7 @@ $(HFILES): ../ecl/config.h.msvc6 ../ecl/config-internal.h.msvc6 Makefile
 		"@ECL_UNICODE@" "$(ECL_UNICODE_FLAG)" \
 		"@ECL_SSE2@" "$(ECL_SSE_FLAG)" \
 		"@ECL_USE_DBGHELP@" "$(ECL_USE_DBGHELP_FLAG)" \
+		"@ARCHITECTURE@" "$(ECL_ARCHITECTURE)" \
 	        < ..\ecl\config-internal.h.msvc6 > ..\ecl\config-internal.h
 	xcopy /SYI $(top_srcdir)\h\*.h ..\ecl
 	-mkdir ..\ecl\atomic_ops

@@ -22,7 +22,7 @@
   "List of files automatically loaded when ECL is invoked.")
 
 (defparameter *help-message* "
-Usage: ecl [-? | --help]
+Usage: ecl [-? | --help] [-v | --version] [--debug | --nodebug]
            [--dir dir] [--load file] [--shell file] [--eval expr] [--rc | --norc]
            [--c-stack size] [--lisp-stack size] [--heap-size size] [--frame-stack size]
            [[-o ofile] [-c [cfile]] [-h [hfile]] [--data [datafile]] [-s] [-q]
@@ -82,9 +82,11 @@ appeared after a '--'.")
     ("--c-stack" 1 (ext:set-limit 'ext:c-stack (read-from-string 1)))
     ("--trap-fpe" 0 (si::trap-fpe t t))
     ("--no-trap-fpe" 0 (si::trap-fpe t nil))
-    ("--encoding" 1 (dolist (i (list *standard-input* *standard-output*
-                                     *error-output* *trace-output*))
-                      (setf (stream-external-format i) (read-from-string 1))))
+    ("--encoding" 1 (let ((enc (read-from-string 1)))
+                      (setf ext::*default-external-format* enc)
+                      (dolist (i (list *standard-input* *standard-output*
+                                       *error-output* *trace-output*))
+                       (setf (stream-external-format i) enc))))
     ("--input-encoding" 1
      (setf (stream-external-format *standard-input*) (read-from-string 1)))
     ("--output-encoding" 1

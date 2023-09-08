@@ -14,39 +14,44 @@
 ;;;;  CMPPACKAGE -- Package definitions and exported symbols
 ;;;;
 
-(defpackage "C"
-  (:nicknames "COMPILER")
-  (:use "FFI" "EXT" #+threads "MP" "CL")
-  (:export "*COMPILER-BREAK-ENABLE*"
-           "*COMPILE-PRINT*"
-           "*COMPILE-TO-LINKING-CALL*"
-           "*COMPILE-VERBOSE*"
-           "*COMPILER-FEATURES*"
-           "*CC*"
-           "*CC-OPTIMIZE*"
-           "*USER-CC-FLAGS*"
-           "*USER-LD-FLAGS*"
-           "*SUPPRESS-COMPILER-MESSAGES*"
-           "BUILD-ECL"
-           "BUILD-PROGRAM"
-           "BUILD-FASL"
-           "BUILD-STATIC-LIBRARY"
-           "BUILD-SHARED-LIBRARY"
-           "COMPILER-WARNING"
-           "COMPILER-NOTE"
-           "COMPILER-MESSAGE"
-           "COMPILER-ERROR"
-           "COMPILER-FATAL-ERROR"
-           "COMPILER-INTERNAL-ERROR"
-           "COMPILER-UNDEFINED-VARIABLE"
-           "COMPILER-MESSAGE-FILE"
-           "COMPILER-MESSAGE-FILE-POSITION"
-           "COMPILER-MESSAGE-FORM"
-           "*SUPPRESS-COMPILER-MESSAGES*"
-           "INSTALL-C-COMPILER"
-           "UPDATE-COMPILER-FEATURES")
-  (:import-from "SI" "GET-SYSPROP" "PUT-SYSPROP" "REM-SYSPROP" "MACRO"
-                "*COMPILER-CONSTANTS*" "REGISTER-GLOBAL" "CMP-ENV-REGISTER-MACROLET"
-                "COMPILER-LET"))
+(defpackage #:c
+  (:nicknames #:compiler)
+  (:use #:cl)
+  (:import-from #:ext #:install-c-compiler)
+  (:export
+   ;; Flags controlling the compiler behavior.
+   #:*compiler-break-enable*
+   #:*compile-print*
+   #:*compile-to-linking-call*
+   #:*compile-verbose*
+   #:*compiler-features*
+   #:*cc*
+   #:*cc-optimize*
+   #:*user-cc-flags*
+   #:*user-ld-flags*                    ; deprecated
+   #:*user-linker-flags*
+   #:*user-linker-libs*
+   #:*suppress-compiler-messages*
+   ;; Build targets. BUILD-ECL is not defined, preasumbly it was meant
+   ;; for cross compilation.
+   #:build-ecl
+   #:build-program
+   #:build-fasl
+   #:build-static-library
+   #:build-shared-library
+   ;; Conditions (and their accessors).
+   #:compiler-warning
+   #:compiler-note
+   #:compiler-message
+   #:compiler-error
+   #:compiler-fatal-error
+   #:compiler-internal-error
+   #:compiler-undefined-variable
+   #:compiler-message-file
+   #:compiler-message-file-position
+   #:compiler-message-form
+   ;; Other operators.
+   #:install-c-compiler
+   #:update-compiler-features))
 
-(ext:package-lock "CL" nil)
+(ext:package-lock '#:cl nil)

@@ -25,8 +25,8 @@ ecl_make_cfun(cl_objectfn_fixed c_function, cl_object name, cl_object cblock, in
   if (ecl_unlikely(narg < 0 || narg > ECL_C_ARGUMENTS_LIMIT)) {
     FEprogram_error("ecl_make_cfun: ~a", 1,
                     (narg < 0)
-                    ? ecl_make_constant_base_string("number of arguments must be greater than 0.",-1)
-                    : ecl_make_constant_base_string("function requires too many arguments.",-1));
+                    ? @"number of arguments must be greater than 0."
+                    : @"function requires too many arguments.");
   }
 
   cf = ecl_alloc_object(t_cfunfixed);
@@ -48,8 +48,8 @@ ecl_make_cfun_va(cl_objectfn c_function, cl_object name, cl_object cblock, int n
   if (ecl_unlikely(narg_fixed < 0 || narg_fixed > ECL_C_ARGUMENTS_LIMIT)) {
     FEprogram_error("ecl_make_cfun_va: ~a", 1,
                     (narg_fixed < 0)
-                    ? ecl_make_constant_base_string("number of arguments must be greater than 0.",-1)
-                    : ecl_make_constant_base_string("function requires too many arguments.",-1));
+                    ? @"number of arguments must be greater than 0."
+                    : @"function requires too many arguments.");
   }
 
   cf = ecl_alloc_object(t_cfun);
@@ -75,8 +75,8 @@ ecl_make_cclosure_va(cl_objectfn c_function, cl_object env, cl_object block, int
   if (ecl_unlikely(narg_fixed < 0 || narg_fixed > ECL_C_ARGUMENTS_LIMIT)) {
     FEprogram_error("ecl_make_cclosure_va: ~a", 1,
                     (narg_fixed < 0)
-                    ? ecl_make_constant_base_string("number of arguments must be greater than 0.",-1)
-                    : ecl_make_constant_base_string("function requires too many arguments.",-1));
+                    ? @"number of arguments must be greater than 0."
+                    : @"function requires too many arguments.");
   }
 
   cc = ecl_alloc_object(t_cclosure);

@@ -2201,7 +2201,7 @@ format(format_stack fmt, cl_index start, cl_index end)
     if (!ECL_ARRAY_HAS_FILL_POINTER_P(output)) {
       cl_error(7, @'si::format-error',
                @':format-control',
-               ecl_make_constant_base_string("Cannot output to a non adjustable string.",-1),
+               @"Cannot output to a non adjustable string.",
                @':control-string', string,
                @':offset', ecl_make_fixnum(0));
     }

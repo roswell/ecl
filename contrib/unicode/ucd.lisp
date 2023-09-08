@@ -1,5 +1,9 @@
 ;;; Common
 
+(defparameter *destination*
+  (merge-pathnames "../../src/c/unicode/"
+                   (or *load-truename* *compile-pathname*)))
+
 (defvar *extension-directory*
   (make-pathname :directory (pathname-directory *load-truename*)))
 
@@ -130,12 +134,22 @@
     hash))
 
 (defparameter *general-categories*
+  ;; Do not change the order of this list!
+
+  ;; As an optimization, the categories for ordinary lower and
+  ;; uppercase characters are put first in ecl_ucd_misc_table. This
+  ;; allows us to check whether a character is lower or uppercase
+  ;; simply by checking the index without having to consult the table
+  ;; itself.
+
+  ;; Moreover, order of the categories is used in src/c/char_ctype.d
   (init-indices '("Lu" "Ll" "Lt" "Lm" "Lo" "Cc" "Cf" "Co" "Cs" "Mc"
                   "Me" "Mn" "Nd" "Nl" "No" "Pc" "Pd" "Pe" "Pf" "Pi"
                   "Po" "Ps" "Sc" "Sk" "Sm" "So" "Zl" "Zp" "Zs")))
 (defparameter *bidi-classes*
-  (init-indices '("AL" "AN" "B" "BN" "CS" "EN" "ES" "ET" "L" "LRE" "LRO"
-                  "NSM" "ON" "PDF" "R" "RLE" "RLO" "S" "WS")))
+  (init-indices '("AL" "AN" "B" "BN" "CS" "EN" "ES" "ET" "FSI" "L"
+                  "LRE" "LRI" "LRO" "NSM" "ON" "PDF" "PDI" "R" "RLE"
+                  "RLI" "RLO" "S" "WS")))
 
 
 (defparameter *block-first* nil)
@@ -411,13 +425,23 @@
                                  collect i)))))
   (values))
 
-(defmacro with-c-file ((stream-var name) &rest body)
+(defmacro with-c-file ((stream-var name) &body body)
   `(with-open-file (,stream-var ,name
                                 :direction :output
                                 :external-format #-unicode :default #+unicode :us-ascii
                                 :if-exists :supersede
                                 :if-does-not-exist :create)
      ,@body))
+
+(defun write-enums (hash-table name-creator stream)
+  (let (enums)
+    (format stream "~%enum {~%")
+    (maphash #'(lambda (k v)
+                 (push (cons v (funcall name-creator k)) enums))
+             hash-table)
+    (setf enums (sort enums #'< :key #'car))
+    (mapc #'(lambda (e) (format stream "~A,~%" (cdr e))) enums)
+    (format stream "};~%")))
 
 (defun output-c (&optional small-unicode)
   (let* ((num-pages (/ (if small-unicode #x10000 *unicode-char-limit*)
@@ -427,16 +451,52 @@
          (index 0)
          array)
     (with-c-file (stream (make-pathname :name ucd-file-name
+                                        :type "h"
+                                        :defaults *destination*))
+      (format stream "/*
+ * Unicode character database.
+ *
+ * auto-generated, do not edit! (see contrib/unicode/)
+ */")
+      (write-enums *general-categories*
+                   #'(lambda (name) (format nil "ECL_UCD_GENERAL_CATEGORY_~A" name))
+                   stream)
+      (write-enums *bidi-classes*
+                   #'(lambda (name) (format nil "ECL_UCD_BIDIRECTIONAL_CLASS_~A" name))
+                   stream)
+      (assert (and (= (gethash "Lu" *general-categories*) 0)
+                   (= (gethash "Ll" *general-categories*) 1)))
+      (let* ((uppercase-limit
+               (position-if-not #'(lambda (entry)
+                                    ;; gc-index = 0, both-case-p = t
+                                    (and (= (first entry) 0) (first (last entry))))
+                                *misc-table*))
+             (lowercase-limit
+               (position-if-not #'(lambda (entry)
+                                    ;; gc-index = 1, both-case-p = t
+                                    (and (= (first entry) 1) (first (last entry))))
+                                *misc-table*
+                                :start uppercase-limit)))
+        (format stream "#define ECL_UCD_UPPERCASE_LIMIT ~D~%"
+                uppercase-limit)
+        (format stream "#define ECL_UCD_LOWERCASE_LIMIT ~D~%"
+                lowercase-limit)))
+    (with-c-file (stream (make-pathname :name ucd-file-name
                                         :type "c"
-                                        :defaults *extension-directory*))
-      (format stream "~%extern const char ecl_ucd_page_table_0[];")
+                                        :defaults *destination*))
+      (format stream "/*
+ * Unicode character database.
+ *
+ * auto-generated, do not edit! (see contrib/unicode/)
+ */")
+      (format stream "~%extern const unsigned char ecl_ucd_page_table_0[];")
       (loop for page across *ucd-base*
          for i from 0 below num-pages
          do (when page
               (unless (gethash page hash)
                 (setf (gethash page hash) (incf index))
                 (print index)
-                (format stream "~%extern const char ecl_ucd_page_table_~D[];" index))))
+                (format stream "~%extern const unsigned char ecl_ucd_page_table_~D[];" index))))
       (setf array (make-array (incf index)))
       (maphash #'(lambda (key value)
                    (setf (aref array value) key))
@@ -481,7 +541,7 @@
        for c-file = (format nil "~A-~4,'0D" ucd-file-name i)
        do (with-c-file (stream (make-pathname :name c-file
                                               :type "c"
-                                              :defaults *extension-directory*))
+                                              :defaults *destination*))
             (loop for j from i below next
                for page = (aref array j)
                do (format stream "~%const unsigned char ecl_ucd_page_table_~D[] = {" j)

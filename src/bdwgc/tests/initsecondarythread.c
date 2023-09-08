@@ -31,8 +31,12 @@
 #ifdef GC_PTHREADS
 # include <pthread.h>
 #else
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
 # include <windows.h>
-#endif
+#endif /* !GC_PTHREADS */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -72,7 +76,7 @@ int main(void)
        || defined(CYGWIN32) || defined(GC_OPENBSD_UTHREADS) \
        || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
        || ((defined(FREEBSD) || defined(LINUX) || defined(NETBSD) \
-            || defined(PLATFORM_ANDROID)) && !defined(NO_PTHREAD_GETATTR_NP) \
+            || defined(HOST_ANDROID)) && !defined(NO_PTHREAD_GETATTR_NP) \
            && !defined(NO_PTHREAD_ATTR_GET_NP)) \
        || (defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)) \
        || (!defined(STACKBOTTOM) && (defined(HEURISTIC1) \
@@ -81,23 +85,27 @@ int main(void)
     GC_INIT();
 # endif
   (void)GC_get_parallel(); /* linking fails if no threads support */
+  if (GC_get_find_leak())
+    printf("This test program is not designed for leak detection mode\n");
 # ifdef GC_PTHREADS
     if ((code = pthread_create (&t, NULL, thread, NULL)) != 0) {
-      fprintf(stderr, "Thread creation failed %d\n", code);
+      fprintf(stderr, "Thread creation failed, errno= %d\n", code);
       return 1;
     }
     if ((code = pthread_join (t, NULL)) != 0) {
-      fprintf(stderr, "Thread join failed %d\n", code);
+      fprintf(stderr, "Thread join failed, errno= %d\n", code);
       return 1;
     }
 # else
     t = CreateThread(NULL, 0, thread, 0, 0, &thread_id);
     if (t == NULL) {
-      fprintf(stderr, "Thread creation failed %d\n", (int)GetLastError());
+      fprintf(stderr, "Thread creation failed, errcode= %d\n",
+              (int)GetLastError());
       return 1;
     }
     if (WaitForSingleObject(t, INFINITE) != WAIT_OBJECT_0) {
-      fprintf(stderr, "Thread join failed %d\n", (int)GetLastError());
+      fprintf(stderr, "Thread join failed, errcode= %d\n",
+              (int)GetLastError());
       CloseHandle(t);
       return 1;
     }

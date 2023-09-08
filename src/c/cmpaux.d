@@ -20,7 +20,13 @@ cl_object
 si_specialp(cl_object sym)
 {
   @(return ((ecl_symbol_type(sym) & ecl_stp_special)? ECL_T : ECL_NIL))
-    }
+}
+
+cl_object
+si_constp(cl_object sym)
+{
+  @(return ((ecl_symbol_type(sym) & ecl_stp_constant)? ECL_T : ECL_NIL))
+}
 
 cl_fixnum
 ecl_ifloor(cl_fixnum x, cl_fixnum y)
@@ -216,6 +222,12 @@ cl_parse_key(
     FEprogram_error("Odd number of keys", 0);
   if (ecl_unlikely(unknown_keyword != OBJNULL && !allow_other_keys &&
                    (supplied_allow_other_keys == ECL_NIL ||
-                    supplied_allow_other_keys == OBJNULL)))
+                    supplied_allow_other_keys == OBJNULL))) {
+    for (i = 0; i < nkey; i++) {
+      if (keys[i] == @':allow-other-keys' && vars[nkey+i] == ECL_T && !Null(vars[i])) {
+        return;
+      }
+    }
     FEprogram_error("Unknown keyword ~S", 1, unknown_keyword);
+  }
 }

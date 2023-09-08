@@ -107,7 +107,12 @@ si_float_to_string_free(cl_object buffer_or_nil, cl_object number,
   }
   /* Do we have to print in exponent notation? */
   if (ecl_lowereq(exp, e_min) || ecl_lowereq(e_max, exp)) {
-    insert_char(buffer, base+1, '.');
+    if (ecl_length(buffer) == base+1) {
+      insert_char(buffer, base+1, '.');
+      insert_char(buffer, base+2, '0');
+    } else {
+      insert_char(buffer, base+1, '.');
+    }
     print_float_exponent(buffer, number, e-1);
   } else if (e > 0) {
     cl_fixnum l = buffer->base_string.fillp - base;

@@ -102,7 +102,6 @@ cl_make_symbol(cl_object str)
   }
   x = ecl_alloc_object(t_symbol);
   x->symbol.name = str;
-  x->symbol.dynamic = 0;
 #ifdef ECL_THREADS
   x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif  /*  */
@@ -160,7 +159,7 @@ static void
 FEtype_error_plist(cl_object x)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("Not a valid property list ~D",-1),
+           @"Not a valid property list ~D",
            @':format-arguments', cl_list(1, x),
            @':expected-type', @'si::property-list',
            @':datum', x);
@@ -323,7 +322,6 @@ cl_symbol_name(cl_object x)
   sym = ECL_NIL_SYMBOL;
   x = cl_make_symbol(ecl_symbol_name(sym));
   if (!Null(cp)) {
-    x->symbol.dynamic = 0;
     x->symbol.stype = sym->symbol.stype;
     x->symbol.value = sym->symbol.value;
     x->symbol.gfdef = sym->symbol.gfdef;

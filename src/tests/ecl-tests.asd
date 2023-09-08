@@ -13,6 +13,7 @@
                         :default-component-class asdf:cl-source-file.lsp
                         :components
                         ((:file "ansi")
+                         (:file "clos")
                          (:file "mixed")
                          (:file "compiler")
                          (:file "executable-cli")
@@ -26,11 +27,13 @@
 			 (:file "hash-tables")
                          (:file "external-formats" :if-feature :unicode)
                          (:file "unicode" :if-feature :unicode)
-                         (:file "complex")))
+                         (:file "complex")
+                         (:file "wscl")))
                (:module stress-tests
                         :default-component-class asdf:cl-source-file.lsp
                         :components
-                        ((:file "multiprocessing" :if-feature :threads)))))
+                        ((:file "multiprocessing" :if-feature :threads)
+			 (:file "thread-sync-interrupt" :if-feature :threads)))))
 
 (asdf:defsystem #:ecl-tests/stress
   :serial t

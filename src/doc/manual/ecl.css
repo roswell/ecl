@@ -19,6 +19,8 @@
     pre.programlisting { background: #2A2A2A;
                          border-left: 1px solid lightgray;
                          border-top: 1px solid lightgray; }
+	 /* we need a light background in order for the images to be readable */
+	 img { background: white }
 }
 @media (prefers-color-scheme: light) {
     /* light theme */

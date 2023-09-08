@@ -10,8 +10,8 @@ srcdir	= ..\src
 
 SHORT_SITE_NAME   =
 LONG_SITE_NAME    =
-ECL_VERSION       = 21.2.1
-ECL_VERSION_NUMBER= 210201
+ECL_VERSION       = 23.9.9
+ECL_VERSION_NUMBER= 230909
 ARCHITECTURE      = PENTIUM4
 SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
@@ -101,7 +101,7 @@ MKNSI   = makensis.exe
 !if "$(ECL_WIN64)" != ""
 GMP_BITS=64
 GC_CPU=AMD64
-ARCHITECTURE=AMD64
+ARCHITECTURE=X86-64
 VCREDIST=vcredist_x64.exe
 !else
 GMP_BITS=32
@@ -134,7 +134,7 @@ GCFLAGS = nodebug=1
 CLIBS = $(CLIBS) DbgHelp.lib
 !endif
 
-CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
+CFLAGS  = /EHsc /DGC_DLL /DGC_BUILD /nologo /wd4068 /wd4715 /wd4716 /D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_CONFIG)
 LDFLAGS	= /link /incremental:no /nologo $(LDFLAGS_CONFIG) /STACK:$(ECL_DEFAULT_C_STACK_SIZE)
 
 
@@ -231,9 +231,9 @@ c\cut$(EXE): $(top_srcdir)\util\cut.c
 	$(MAKE) cut$(EXE)
 	cd ..
 
-$(TARGETS): $(UCDDAT) ecl_min$(EXE) compile.lsp sysfun.lsp BUILD-STAMP
+$(TARGETS): $(UCDDAT) ecl_min$(EXE) compile.lsp BUILD-STAMP
 	set ECLDIR=./
-	ecl_min < compile.lsp
+	ecl_min compile
 BUILD-STAMP: Makefile
 	date /t > $@
 
@@ -353,6 +353,7 @@ eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
 	        ECL_THREADS=$(ECL_THREADS) ECL_UNICODE=$(ECL_UNICODE) \
 		ECL_SSE=$(ECL_SSE) ECL_WIN64=$(ECL_WIN64) \
 		ECL_USE_DBGHELP=$(ECL_USE_DBGHELP) \
+		ECL_ARCHITECTURE=$(ARCHITECTURE) \
 		"ECL_CFLAGS=$(CFLAGS) -DGC_BUILD"
 	cd ..
 eclgc.lib:
@@ -375,9 +376,6 @@ eclgmp.lib:
 	$(CP) gmp.lib ..\eclgmp.lib
 	$(CP) gmp.h ..\ecl\gmp.h
 	cd ..
-
-sysfun.lsp:
-	$(CP) $(srcdir)\cmp\sysfun.lsp .\
 
 install:
 	IF NOT EXIST "$(prefix)" $(MKDIR) "$(prefix)"
@@ -453,7 +451,7 @@ clean: clean_ecl clean_lisp
 clean_ecl:
 	-for %i in (eclgc.lib eclgmp.lib lsp\config.lsp compile.lsp bare.lsp \
 	            lsp\load.lsp clos\load.lsp cmp\load.lsp cmp\cmpdefs.lsp \
-		    ecl.lib ecl.dll ecl_min$(EXE) eclmin.lib help.doc sysfun.lsp \
+		    ecl.lib ecl.dll ecl_min$(EXE) eclmin.lib help.doc \
 		    BUILD-STAMP $(TARGETS) *.exp *.ilk *.manifest *.pdb *.c *.obj \
 		    ecl-config.bat ecl-static.lib *.tmp *.implib *.lib ecl.ico \
 		    ecl-cc.bat ecl.rc ecl.res) \

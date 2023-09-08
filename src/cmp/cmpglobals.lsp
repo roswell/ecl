@@ -20,18 +20,6 @@
 ;;; VARIABLES
 ;;;
 
-;;; --cmpinline.lsp--
-;;;
-;;; Empty info struct
-;;;
-;; (defvar *info* (make-info)) ;unused
-
-(defvar *inline-blocks* 0)
-(defvar *opened-c-braces* 0)
-;;; *inline-blocks* holds the number of C blocks opened for declaring
-;;; temporaries for intermediate results of the evaluation of inlined
-;;; function calls.
-
 (defvar *inline-max-depth* 3
   "Depth at which inlining of functions stops.")
 (defvar *inline-information* nil)
@@ -43,22 +31,22 @@
 (defvar *current-form* '|compiler preprocess|)
 (defvar *current-toplevel-form* '|compiler preprocess|)
 (defvar *compile-file-position* -1)
-(defvar *first-error* t)
 (defvar *active-protection* nil)
 (defvar *pending-actions* nil)
 
 (defvar *compiler-conditions* '()
   "This variable determines whether conditions are printed or just accumulated.")
 
-(defvar cl:*compile-print* nil
+(defvar *compile-print* nil
   "This variable controls whether the compiler displays messages about
 each form it processes. The default value is NIL.")
 
-(defvar cl:*compile-verbose* nil
+(defvar *compile-verbose* nil
   "This variable controls whether the compiler should display messages about its
 progress. The default value is T.")
 
-(defvar *compiler-features* #+ecl-min nil #-ecl-min '#.*compiler-features*
+(defvar *compiler-features*
+  '#.(if (not (boundp '*compiler-features*)) nil *compiler-features*)
   "This alternative list of features contains keywords that were gathered from
 running the compiler. It may be updated by running ")
 
@@ -90,67 +78,13 @@ running the compiler. It may be updated by running ")
 
 ;;; --cmpenv.lsp--
 ;;;
-;;; These default settings are equivalent to (optimize (speed 3) (space 0) (safety 2))
+;;; Default optimization settings.
 ;;;
 (defvar *safety* 2)
 (defvar *speed* 3)
 (defvar *space* 0)
 (defvar *debug* 0)
-
-;;; Emit automatic CHECK-TYPE forms for function arguments in lambda forms.
-(defvar *automatic-check-type-in-lambda* t)
-
-;;;
-;;; Compiled code uses the following kinds of variables:
-;;; 1. Vi, declared explicitely, either unboxed or not (*lcl*, next-lcl)
-;;; 2. Ti, declared collectively, of type object, may be reused (*temp*, next-temp)
-;;; 4. lexi[j], for lexical variables in local functions
-;;; 5. CLVi, for lexical variables in closures
-
-(defvar *lcl* 0)                ; number of local variables
-
-(defvar *temp* 0)               ; number of temporary variables
-(defvar *max-temp* 0)           ; maximum *temp* reached
-
-(defvar *level* 0)              ; nesting level for local functions
-
-(defvar *lex* 0)                ; number of lexical variables in local functions
-(defvar *max-lex* 0)            ; maximum *lex* reached
-
-(defvar *env* 0)                ; number of variables in current form
-(defvar *max-env* 0)            ; maximum *env* in whole function
-(defvar *env-lvl* 0)            ; number of levels of environments
-(defvar *aux-closure* nil)      ; stack allocated closure needed for indirect calls
-(defvar *ihs-used-p* nil)       ; function must be registered in IHS?
-
-(defvar *next-cmacro* 0)        ; holds the last cmacro number used.
-(defvar *next-cfun* 0)          ; holds the last cfun used.
-
-;;;
-;;; *tail-recursion-info* holds NIL, if tail recursion is impossible.
-;;; If possible, *tail-recursion-info* holds
-;;      ( c1-lambda-form  required-arg .... required-arg ),
-;;; where each required-arg is a var-object.
-;;;
-(defvar *tail-recursion-info* nil)
-
-(defvar *allow-c-local-declaration* t)
-
-;;; --cmpexit.lsp--
-;;;
-;;; *last-label* holds the label# of the last used label.
-;;; *exit* holds an 'exit', which is
-;;      ( label# . ref-flag ) or one of RETURNs (i.e. RETURN, RETURN-FIXNUM,
-;;      RETURN-CHARACTER, RETURN-LONG-FLOAT, RETURN-DOUBLE-FLOAT, RETURN-SINGLE-FLOAT,
-;;      RETURN-CSFLOAT, RETURN-CDFLOAT, RETURN-CLFLOAT or RETURN-OBJECT).
-;;; *unwind-exit* holds a list consisting of:
-;;      ( label# . ref-flag ), one of RETURNs, TAIL-RECURSION-MARK, FRAME,
-;;      JUMP, BDS-BIND (each pushed for a single special binding), or a
-;;      LCL (which holds the bind stack pointer used to unbind).
-;;;
-(defvar *last-label* 0)
-(defvar *exit*)
-(defvar *unwind-exit*)
+(defvar *compilation-speed* 2)
 
 (defvar *current-function* nil)
 
@@ -163,12 +97,14 @@ variable-record = (:block block-name) |
                   (:tag ({tag-name}*)) |
                   (:function function-name) |
                   (var-name {:special | nil} bound-p) |
-                  (symbol si::symbol-macro macro-function) |
+                  (symbol si:symbol-macro macro-function) |
+                  (:declare type arguments) |
                   SI:FUNCTION-BOUNDARY |
                   SI:UNWIND-PROTECT-BOUNDARY
 
 macro-record    = (function-name function) |
-                  (macro-name si::macro macro-function)
+                  (macro-name si:macro macro-function) |
+                  (:declare name declaration) |
                   SI:FUNCTION-BOUNDARY |
                   SI:UNWIND-PROTECT-BOUNDARY
 
@@ -182,7 +118,7 @@ that compared with the bytecodes compiler, these records contain an additional
 variable, block, tag or function object at the end.")
 
 (defvar *cmp-env-root*
-  (cons nil (list (list '#:no-macro 'si::macro (constantly nil))))
+  (cons nil (list (list '#:no-macro 'si:macro (constantly nil))))
 "This is the common environment shared by all toplevel forms. It can
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
@@ -203,9 +139,21 @@ value of *CMP-ENV*.")
 (defvar *files-to-be-deleted* '())
 
 (defvar *user-ld-flags* '()
-"Flags and options to be passed to the linker when building FASL, shared libraries
-and standalone programs. It is not required to surround values with quotes or use
-slashes before special characters.")
+"DEPRECATED Flags and options to be passed to the linker when building FASL,
+shared libraries and standalone programs. It is not required to surround values
+with quotes or use slashes before special characters.")
+
+(defvar *user-linker-flags* '()
+  "Command line flags for additional options (e.g. \"-Wl,foo\" flags) to
+be passed to the linker when building FASL, shared libraries and
+standalone programs. It is not required to surround values with quotes
+or use slashes before special characters.")
+
+(defvar *user-linker-libs* '()
+"Command line flags for additional libraries (e.g. \"-lfoo\" flags) to
+be passed to the linker when building FASL, shared libraries and
+standalone programs. It is not required to surround values with quotes
+or use slashes before special characters.")
 
 (defvar *user-cc-flags* '()
 "Flags and options to be passed to the C compiler when building FASL, shared libraries
@@ -244,8 +192,8 @@ lines are inserted, but the order is preserved")
 
 (defvar *permanent-data* nil)           ; detemines whether we use *permanent-objects*
                                         ; or *temporary-objects*
-(defvar *permanent-objects* nil)        ; holds { ( object (VV vv-index) ) }*
-(defvar *temporary-objects* nil)        ; holds { ( object (VV vv-index) ) }*
+(defvar *permanent-objects* nil)        ; holds { vv-record }*
+(defvar *temporary-objects* nil)        ; holds { vv-record }*
 (defvar *load-objects* nil)             ; hash with association object -> vv-location
 (defvar *load-time-values* nil)         ; holds { ( vv-index form ) }*,
 ;;;  where each vv-index should be given an object before
@@ -253,17 +201,14 @@ lines are inserted, but the order is preserved")
 (defvar *setf-definitions* nil)         ; C forms to find out (SETF fname) locations
 
 (defvar *optimizable-constants* nil)    ; (value . c1form) pairs for inlining constants
-(defvar *use-static-constants-p*        ; T/NIL flag to determine whether one may
+
+(defvar *use-static-constants-p*    ; T/NIL flag to determine whether one may
   #+ecl-min t #-ecl-min nil)            ; generate lisp constant values as C structs
 (defvar *static-constants* nil)         ; constants that can be built as C values
                                         ; holds { ( object c-variable constant ) }*
 
-(defvar *compiler-constants* nil)       ; a vector with all constants
+(defvar si:*compiler-constants* nil)    ; a vector with all constants
                                         ; only used in COMPILE
-
-(defvar *proclaim-fixed-args* nil)      ; proclaim automatically functions
-                                        ; with fixed number of arguments.
-                                        ; watch out for multiple values.
 
 (defvar *global-vars* nil)              ; variables declared special
 (defvar *global-funs* nil)              ; holds { fun }*
@@ -298,18 +243,13 @@ be deleted if they have been opened with LoadLibrary.")
 ;;; If (safe-compile) is ON, some kind of run-time checks are not
 ;;; included in the compiled code.  The default value is OFF.
 
-(defconstant +init-env-form+
+(defvar +init-env-form+
   '((*gensym-counter* 0)
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
     (*callbacks* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* nil)
-    (*max-temp* 0)
-    (*temp* 0)
-    (*next-cmacro* 0)
-    (*next-cfun* 0)
-    (*last-label* 0)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
     (*setf-definitions* nil)
     (*make-forms* nil)
@@ -324,13 +264,11 @@ be deleted if they have been opened with LoadLibrary.")
     (*top-level-forms* nil)
     (*compile-time-too* nil)
     (*clines-string-list* '())
-    (*inline-blocks* 0)
-    (*open-c-braces* 0)
     (si::*defun-inline-hook* 'maybe-install-inline-function)
     (*machine* (or *machine* *default-machine*))
     (*optimizable-constants* (make-optimizable-constants *machine*))
     (*inline-information*
-     (let ((r (machine-inline-information *machine*)))
-       (if r (si::copy-hash-table r) (make-inline-information *machine*))))
-    ))
+     (ext:if-let ((r (machine-inline-information *machine*)))
+       (si:copy-hash-table r)
+       (make-inline-information *machine*)))))
 

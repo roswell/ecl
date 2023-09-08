@@ -31,15 +31,23 @@
 #endif
 #include <ecl/ecl-inl.h>
 
+/* Shared libraries do not have direct access to environ on Darwin */
+#if defined(__APPLE__)
+# include <crt_externs.h>
+# define environ (*_NSGetEnviron())
 /* Mingw defines 'environ' to be a macro instead of a global variable. */
-#ifdef environ
-# undef environ
+#elif !defined(environ) && defined(HAVE_ENVIRON)
+extern char **environ;
+#endif
+
+#if defined(__APPLE__)
+#include <TargetConditionals.h> /* for TARGET_OS_IPHONE */
 #endif
 
 cl_object
 si_system(cl_object cmd_string)
 {
-#if !defined(HAVE_SYSTEM)
+#if !defined(HAVE_SYSTEM) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
   FElibc_error("si_system not implemented",1);
   @(return ECL_NIL);
 #else
@@ -105,32 +113,26 @@ static cl_object
 from_list_to_execve_argument(cl_object l, char ***environp)
 {
   cl_object p;
-  cl_index i, j, total_size = 0, nstrings = 0;
-  cl_object buffer;
-  char **environ;
+  cl_index j, total_size = 0, nstrings = 0;
+  cl_object buffer, buffer_stream;
+  char **my_environ;
   for (p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
     total_size += s->base_string.fillp + 1;
     nstrings++;
   }
-  /* Extra place for ending null */
-  total_size++;
-  buffer = ecl_alloc_simple_base_string(++total_size);
-  environ = ecl_alloc_atomic((nstrings + 1) * sizeof(char*));
-  for (j = i = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
+  buffer = ecl_alloc_adjustable_base_string(total_size + 1);
+  my_environ = ecl_alloc((nstrings + 1) * sizeof(char*));
+  buffer_stream = si_make_sequence_output_stream(1, buffer);
+  for (j = 0, p = l; !Null(p); p = ECL_CONS_CDR(p)) {
     cl_object s = ECL_CONS_CAR(p);
-    cl_index l = s->base_string.fillp;
-
-    environ[j++] = (char*)(buffer->base_string.self + i);
-    memcpy(buffer->base_string.self + i,
-           s->base_string.self,
-           l);
-    i += l;
-    buffer->base_string.self[i++] = 0;
+    my_environ[j++] = (char*)buffer->base_string.self + buffer->base_string.fillp;
+    si_do_write_sequence(s, buffer_stream, ecl_make_fixnum(0), ECL_NIL);
+    ecl_write_char(0, buffer_stream);
   }
-  buffer->base_string.self[i++] = 0;
-  environ[j] = 0;
-  if (environp) *environp = environ;
+  ecl_write_char(0, buffer_stream);
+  my_environ[j] = 0;
+  if (environp) *environp = my_environ;
   return buffer;
 }
 
@@ -214,15 +216,6 @@ si_killpid(cl_object pid, cl_object signal) {
 #endif
 
 #if defined(ECL_MS_WINDOWS_HOST)
-cl_object
-si_close_windows_handle(cl_object h)
-{
-  if (ecl_t_of(h) == t_foreign) {
-    HANDLE *ph = (HANDLE*)h->foreign.data;
-    if (ph) CloseHandle(*ph);
-  }
-}
-
 static cl_object
 make_windows_handle(HANDLE h)
 {
@@ -230,7 +223,6 @@ make_windows_handle(HANDLE h)
                                                 sizeof(HANDLE*));
   HANDLE *ph = (HANDLE*)foreign->foreign.data;
   *ph = h;
-  si_set_finalizer(foreign, @'si::close-windows-handle');
   return foreign;
 }
 #endif
@@ -304,7 +296,7 @@ create_descriptor(cl_object stream, cl_object direction,
     HANDLE stream_handle = ecl_stream_to_HANDLE
       (stream, direction != @':input');
     if (stream_handle == INVALID_HANDLE_VALUE) {
-      CEerror(ecl_make_constant_base_string("Create a new stream.",-1),
+      CEerror(@"Create a new stream.",
               "~S argument to RUN-PROGRAM does not have a file handle:~%~S",
               2, direction, stream);
       create_descriptor(@':stream', direction, child, parent);
@@ -342,7 +334,7 @@ create_descriptor(cl_object stream, cl_object direction,
     if (*child >= 0) {
       *child = dup(*child);
     } else {
-      CEerror(ecl_make_constant_base_string("Create a new stream.",-1),
+      CEerror(@"Create a new stream.",
               "~S argument to RUN-PROGRAM does not have a file handle:~%~S",
               2, direction, stream);
       create_descriptor(@':stream', direction, child, parent);
@@ -357,24 +349,21 @@ create_descriptor(cl_object stream, cl_object direction,
 
 
 cl_object
-si_run_program_inner(cl_object command, cl_object argv, cl_object environ, cl_object wait)
+si_run_program_inner(cl_object command, cl_object argv, cl_object my_environ, cl_object wait)
 {
   cl_env_ptr the_env = ecl_process_env();
   int parent_write = 0, parent_read = 0, parent_error = 0;
   cl_object pid, stream_read, exit_status;
 
-  command = si_copy_to_simple_base_string(command);
-
 #if defined(ECL_MS_WINDOWS_HOST)
   argv = cl_format(4, ECL_NIL,
-                   ecl_make_constant_base_string("~A~{ ~A~}",-1),
+                   @"~A~{ ~A~}",
                    command, argv);
-  argv = si_copy_to_simple_base_string(argv);
 #else
-  argv = CONS(command, cl_mapcar(2, @'si::copy-to-simple-base-string', argv));
+  argv = CONS(command, argv);
 #endif
 
-  pid = si_spawn_subprocess(command, argv, environ, @':stream', @':stream', @':output');
+  pid = si_spawn_subprocess(command, argv, my_environ, @':stream', @':stream', @':output');
   parent_write = ecl_fixnum(ecl_nth_value(the_env, 1));
   parent_read = ecl_fixnum(ecl_nth_value(the_env, 2));
   parent_error = ecl_fixnum(ecl_nth_value(the_env, 3));
@@ -400,23 +389,21 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object environ, cl_ob
 }
 
 cl_object
-si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
+si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
                     cl_object input, cl_object output, cl_object error) {
 
   int parent_write = 0, parent_read = 0, parent_error = 0;
-  int child_pid;
   cl_object pid;
 
-  /* environ is either a list or `:default'. */
-  if (ECL_LISTP(environ)) {
-    environ = cl_mapcar(2, @'si::copy-to-simple-base-string', environ);
-  } else if (!ecl_eql(environ, @':default')) {
+  /* my_environ is either a list or `:default'. */
+  if (!ECL_LISTP(my_environ) && !ecl_eql(my_environ, @':default')) {
     FEerror("Malformed :ENVIRON argument to EXT:RUN-PROGRAM.", 0);
   }
   
 #if defined(ECL_MS_WINDOWS_HOST)
   {
     BOOL ok;
+    DWORD saved_errno;
     STARTUPINFO st_info;
     PROCESS_INFORMATION pr_info;
     HANDLE child_stdout, child_stdin, child_stderr;
@@ -424,10 +411,14 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     cl_object env_buffer;
     char *env = NULL;
 
-    if (ECL_LISTP(environ)) {
-      env_buffer = from_list_to_execve_argument(environ, NULL);
-      env = env_buffer->base_string.self;
+    argv = si_string_to_octets(5, argv,
+                               @':null-terminate', ECL_T,
+                               @':element-type', @'base-char');
+    if (ECL_LISTP(my_environ)) {
+      env_buffer = from_list_to_execve_argument(my_environ, NULL);
+      env = (char*)env_buffer->base_string.self;
     }
+
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
     create_descriptor(output, @':output', &child_stdout, &parent_read);
     if (error == @':output') {
@@ -454,12 +445,10 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
     /* Command is passed as is from argv. It is responsibility of
        higher level interface to decide, whenever arguments should be
        quoted or left as-is. */
-    /* ecl_null_terminated_base_string(argv); */
-    ok = CreateProcess(NULL, argv->base_string.self,
+    ok = CreateProcess(NULL, (char*)argv->base_string.self,
                        NULL, NULL, /* lpProcess/ThreadAttributes */
                        TRUE, /* Inherit handles (for files) */
-                       /*CREATE_NEW_CONSOLE |*/
-                       0 /*(input == ECL_T || output == ECL_T || error == ECL_T ? 0 : CREATE_NO_WINDOW)*/,
+                       0, /* dwCreationFlags */
                        env, /* Inherit environment */
                        NULL, /* Current directory */
                        &st_info, /* Startup info */
@@ -471,38 +460,49 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
       CloseHandle(pr_info.hThread);
       pid = make_windows_handle(pr_info.hProcess);
     } else {
-      char *message;
-      FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-                    FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                    0, GetLastError(), 0, (void*)&message, 0, NULL);
-      printf("%s\n", message);
-      LocalFree(message);
       pid = ECL_NIL;
+      saved_errno = GetLastError();
     }
+
     if (child_stdin) CloseHandle(child_stdin);
     if (child_stdout) CloseHandle(child_stdout);
     if (child_stderr) CloseHandle(child_stderr);
+
+    if (Null(pid)) {
+      if (parent_write) close(parent_write);
+      if (parent_read) close(parent_read);
+      if (parent_error > 0) close(parent_error);
+      SetLastError(saved_errno);
+      FEwin32_error("Could not spawn subprocess to run ~S.", 1, command);
+    }
   }
 #elif !defined(NACL) /* All POSIX but NaCL/pNaCL */
   {
+    cl_object command_encoded = si_string_to_octets(3, command, @':null-terminate', ECL_T);
+    int child_pid;
     int child_stdin, child_stdout, child_stderr;
-    argv = ecl_nconc(argv, ecl_list1(ECL_NIL));
-    argv = _ecl_funcall3(@'coerce', argv, @'vector');
+    int saved_errno;
 
     create_descriptor(input,  @':input',  &child_stdin,  &parent_write);
     create_descriptor(output, @':output', &child_stdout, &parent_read);
     if (error == @':output') {
       child_stderr = child_stdout;
       parent_error = dup(parent_read);
-    }
-    else
+    } else {
       create_descriptor(error,  @':output', &child_stderr, &parent_error);
+    }
 
     child_pid = fork();
     if (child_pid == 0) {
       /* Child */
       int j;
-      void **argv_ptr = (void **)argv->vector.self.t;
+      cl_object p;
+      char **argv_ptr = ecl_alloc((ecl_length(argv) + 1) * sizeof(char*));
+      for (p = argv, j = 0; p != ECL_NIL; p = ECL_CONS_CDR(p)) {
+        cl_object arg = si_string_to_octets(3, ECL_CONS_CAR(p), @':null-terminate', ECL_T);
+        argv_ptr[j++] = (char*)arg->base_string.self;
+      }
+      argv_ptr[j] = NULL;
 
       if (parent_write) close(parent_write);
       if (parent_read)  close(parent_read);
@@ -512,51 +512,46 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object environ,
       dup2(child_stdout, STDOUT_FILENO);
       dup2(child_stderr, STDERR_FILENO);
 
-      for (j = 0; j < argv->vector.fillp; j++) {
-        cl_object arg = argv->vector.self.t[j];
-        if (arg == ECL_NIL) {
-          argv_ptr[j] = NULL;
-        } else {
-          argv_ptr[j] = arg->base_string.self;
-        }
-      }
-      if (ECL_LISTP(environ)) {
+      if (ECL_LISTP(my_environ)) {
         char **pstrings;
-        from_list_to_execve_argument(environ, &pstrings);
-        execve((char*)command->base_string.self, (char **)argv_ptr, pstrings);
+        from_list_to_execve_argument(my_environ, &pstrings);
+#if defined(HAVE_ENVIRON)
+        environ = pstrings;
+        execvp((char*)command_encoded->base_string.self, argv_ptr);
+#else
+        execve((char*)command_encoded->base_string.self, argv_ptr, pstrings);
+#endif
       } else {
-        execvp((char*)command->base_string.self, (char **)argv_ptr);
+        execvp((char*)command_encoded->base_string.self, argv_ptr);
       }
       /* at this point exec has failed */
       perror("exec");
       _exit(EXIT_FAILURE);
+    } else if (child_pid > 0) {
+      pid = ecl_make_fixnum(child_pid);
+    } else {
+      pid = ECL_NIL;
+      saved_errno = errno;
     }
+
     close(child_stdin);
     close(child_stdout);
     if (!(error == @':output')) close(child_stderr);
 
-    if (child_pid < 0) {
-      pid = ECL_NIL;
-    } else {
-      pid = ecl_make_fixnum(child_pid);
+    if (Null(pid)) {
+      if (parent_write) close(parent_write);
+      if (parent_read) close(parent_read);
+      if (parent_error > 0) close(parent_error);
+      errno = saved_errno;
+      FElibc_error("Could not spawn subprocess to run ~S.", 1, command);
     }
   }
 #else  /* NACL */
   {
-    FElibc_error("ext::run-program-inner not implemented",1);
+    FEerror("ext:run-program not implemented", 0);
     @(return ECL_NIL);
   }
 #endif
-
-  if (Null(pid)) {
-    if (parent_write) close(parent_write);
-    if (parent_read) close(parent_read);
-    if (parent_error > 0) close(parent_error);
-    parent_write = 0;
-    parent_read = 0;
-    parent_error = 0;
-    FEerror("Could not spawn subprocess to run ~S.", 1, command);
-  }
 
   @(return pid
     ecl_make_fixnum(parent_write)

@@ -20,15 +20,22 @@
   THE SOFTWARE.
 */
 
-#if !defined(_M_AMD64) && defined(_MSC_VER)
+#if !defined(_M_ARM) && !defined(_M_ARM64) \
+    && !defined(_M_X64) && defined(_MSC_VER)
 
-/* X86_64 is currently missing some meachine-dependent code below.  */
+/* TODO: arm[64], x64 currently miss some machine-dependent code below.     */
+/* See also GC_HAVE_BUILTIN_BACKTRACE in gc_config_macros.h.                */
 
 #define GC_BUILD
 #include "private/msvc_dbg.h"
 #include "gc.h"
 
-#define WIN32_LEAN_AND_MEAN
+#include <stdio.h>
+
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
+#endif
+#define NOSERVICE
 #include <windows.h>
 
 #pragma pack(push, 8)
@@ -37,6 +44,10 @@
 
 #pragma comment(lib, "dbghelp.lib")
 #pragma optimize("gy", off)
+
+/* Disable a warning that /GS can not protect parameters and local      */
+/* variables from local buffer overrun because optimizations are off.   */
+#pragma warning(disable:4748)
 
 typedef GC_word word;
 #define GC_ULONG_PTR word
@@ -72,7 +83,7 @@ static ULONG_ADDR CALLBACK GetModuleBase(HANDLE hProcess, ULONG_ADDR dwAddress)
 {
   MEMORY_BASIC_INFORMATION memoryInfo;
   ULONG_ADDR dwAddrBase = SymGetModuleBase(hProcess, dwAddress);
-  if (dwAddrBase) {
+  if (dwAddrBase != 0) {
     return dwAddrBase;
   }
   if (VirtualQueryEx(hProcess, (void*)(GC_ULONG_PTR)dwAddress, &memoryInfo,
@@ -87,12 +98,11 @@ static ULONG_ADDR CALLBACK GetModuleBase(HANDLE hProcess, ULONG_ADDR dwAddress)
     /* article Q189780.                                                 */
     GetCurrentDirectoryA(sizeof(curDir), curDir);
     GetModuleFileNameA(NULL, exePath, sizeof(exePath));
-#if defined(_MSC_VER) && _MSC_VER == 1200
-    /* use strcat for VC6 */
-    strcat(exePath, "\\..");
-#else
+#if _MSC_VER > 1200
     strcat_s(exePath, sizeof(exePath), "\\..");
-#endif /* _MSC_VER >= 1200 */
+#else /* VC6 or earlier */
+    strcat(exePath, "\\..");
+#endif
     SetCurrentDirectoryA(exePath);
 #ifdef _DEBUG
     GetCurrentDirectoryA(sizeof(exePath), exePath);
@@ -209,6 +219,11 @@ size_t GetModuleNameFromStack(size_t skip, char* moduleName, size_t size)
   return 0;
 }
 
+union sym_namebuf_u {
+  IMAGEHLP_SYMBOL sym;
+  char symNameBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
+};
+
 size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
                                 size_t* offsetBytes)
 {
@@ -216,10 +231,8 @@ size_t GetSymbolNameFromAddress(void* address, char* symbolName, size_t size,
   if (offsetBytes) *offsetBytes = 0;
   __try {
     ULONG_ADDR dwOffset = 0;
-    union {
-      IMAGEHLP_SYMBOL sym;
-      char symNameBuffer[sizeof(IMAGEHLP_SYMBOL) + MAX_SYM_NAME];
-    } u;
+    union sym_namebuf_u u;
+
     u.sym.SizeOfStruct  = sizeof(u.sym);
     u.sym.MaxNameLength = sizeof(u.symNameBuffer) - sizeof(u.sym);
 
@@ -302,13 +315,16 @@ size_t GetFileLineFromStack(size_t skip, char* fileName, size_t size,
   return 0;
 }
 
+#define GC_SNPRINTF _snprintf
+
 size_t GetDescriptionFromAddress(void* address, const char* format,
                                  char* buffer, size_t size)
 {
-  char*const begin = buffer;
-  char*const end = buffer + size;
+  char* const begin = buffer;
+  char* const end = buffer + size;
   size_t line_number = 0;
 
+  (void)format;
   if (size) {
     *buffer = 0;
   }
@@ -316,9 +332,10 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   if (line_number) {
-    char str[128];
+    char str[20];
 
-    wsprintf(str, "(%d) : ", (int)line_number);
+    (void)GC_SNPRINTF(str, sizeof(str), "(%d) : ", (int)line_number);
+    str[sizeof(str) - 1] = '\0';
     if (size) {
       strncpy(buffer, str, size)[size - 1] = 0;
     }
@@ -329,7 +346,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   if (size) {
     strncpy(buffer, "at ", size)[size - 1] = 0;
   }
-  buffer += strlen("at ");
+  buffer += sizeof("at ") - 1;
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetSymbolNameFromAddress(address, buffer, size, NULL);
@@ -338,7 +355,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   if (size) {
     strncpy(buffer, " in ", size)[size - 1] = 0;
   }
-  buffer += strlen(" in ");
+  buffer += sizeof(" in ") - 1;
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetModuleNameFromAddress(address, buffer, size);
@@ -349,23 +366,23 @@ size_t GetDescriptionFromStack(void* const frames[], size_t count,
                                const char* format, char* description[],
                                size_t size)
 {
-  char*const begin = (char*)description;
-  char*const end = begin + size;
-  char* buffer = begin + (count + 1) * sizeof(char*);
+  const GC_ULONG_PTR begin = (GC_ULONG_PTR)description;
+  const GC_ULONG_PTR end = begin + size;
+  GC_ULONG_PTR buffer = begin + (count + 1) * sizeof(char*);
   size_t i;
-  (void)format;
+
   for (i = 0; i < count; ++i) {
-    if (size)
-      description[i] = buffer;
-    size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
-    buffer += 1 + GetDescriptionFromAddress(frames[i], NULL, buffer, size);
+    if (description)
+      description[i] = (char*)buffer;
+    buffer += 1 + GetDescriptionFromAddress(frames[i], format, (char*)buffer,
+                                            end < buffer ? 0 : end - buffer);
   }
-  if (size)
+  if (description)
     description[count] = NULL;
   return buffer - begin;
 }
 
-/* Compatibility with <execinfo.h> */
+/* Compatibility with execinfo.h:       */
 
 int backtrace(void* addresses[], int count)
 {
@@ -386,4 +403,4 @@ char** backtrace_symbols(void*const* addresses, int count)
   extern int GC_quiet;
         /* ANSI C does not allow translation units to be empty. */
 
-#endif /* _M_AMD64 */
+#endif

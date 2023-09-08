@@ -256,42 +256,29 @@
 ;;; Date: 2018-05-08
 ;;; Description:
 ;;;
-;;;   Better handling of fifos. This test will most likely fail on Windows (this
-;;;   is not confirmed yet) because it does not support non-blocking
-;;;   operations.
-;;;
-;;;   When we figure out what would be correct semantics for Windows this test
-;;;   should be disabled for that platform and a separate test case ought to be
-;;;   created. It is possible that it won't fail (because cygwin will handle it
-;;;   gracefully and/or WinAPI does not support file-pipes).
+;;;   Better handling of fifos.
 ;;;
 ;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/242
+#-windows
 (test mix.0016.fifo-tests
   (ext:run-program "mkfifo" '("my-fifo") :output t)
   ;; 1) reader (first) and writer (inside)
-  (with-open-file (stream "my-fifo")
+  (with-open-file (stream "my-fifo" :nonblock t)
     (is (null (file-length stream)))
     (is (null (listen stream)))
     (is (eql :foo (read-line stream nil :foo)))
     (is (eql :fifo (ext:file-kind stream nil)))
-    (with-open-file (stream2 "my-fifo" :direction :output)
-      ;; Even for output it should not block on Linux.
+    (with-open-file (stream2 "my-fifo" :direction :output :nonblock t)
+      ;; Even for output it should not block on Unix.
       (finishes (write-line "foobar" stream2)))
-    (is (equal "foobar" (read-line stream nil :foo))))
-  ;; 2) writer (first) and reader (second)
-  (with-open-file (stream "my-fifo" :direction :output)
-    (finishes (write-line "foobar" stream)))
-  (with-open-file (stream "my-fifo" :direction :input)
     ;; there is nobody on the other side, data is lost
+    (is (equal :foo (read-line stream nil :foo))))
+  ;; 2) writer (first) and reader (second)
+  (signals file-error (open "my-fifo" :direction :output :nonblock t))
+  (with-open-file (stream "my-fifo" :direction :input :nonblock t)
     (is (eql :foo (read-line stream nil :foo))))
-  ;; 3) writer (first) and reader (inside)
-  (with-open-file (stream "my-fifo" :direction :output)
-    (finishes (write-line "foobar" stream))
-    (with-open-file (stream2 "my-fifo" :direction :input)
-      ;; Even for output it should not block on Linux.
-      (is (equal "foobar" (read-line stream2 nil :foo)))))
   ;; clean up
-  (ext:run-program "rm" '("-rf" "my-fifo") :output t))
+  (delete-file "my-fifo"))
 
 
 ;;; Date: 2018-12-02
@@ -391,3 +378,136 @@
       (setf stream-var inner-stream-var)
       (is (open-stream-p stream-var)))
     (is (not (open-stream-p stream-var)))))
+
+;;;; Author:   Tarn W. Burton
+;;;; Created:  2021-06-05
+;;;; Contains: *ed-functions* tests
+(test mix.0020.ed-functions
+  (let ((ext:*ed-functions* (list (lambda (x)
+                                    (equal x "foo"))
+                                  (lambda (x)
+                                    (equal x "bar"))
+                                  (lambda (x)
+                                    (when (equal x "baz")
+                                      (error 'file-error :pathname x))))))
+    (is (ed "foo"))
+    (is (ed "bar"))
+    (signals simple-error (ed "qux"))
+    (signals file-error (ed "baz"))))
+
+;;;; Author:   Tarn W. Burton
+;;;; Created:  2021-12-21
+;;;; Contains: pretty printer tests for real valued columns
+(defclass pp-stream-test (gray:fundamental-character-output-stream)
+  ((column :accessor gray:stream-line-column
+           :initform (random .5))
+   (value :accessor pp-stream-test-value
+          :initform (make-array 10 :adjustable t :fill-pointer 0
+                                :element-type 'character))))
+(defmethod gray:stream-write-char ((stream pp-stream-test) char)
+  (if (eql char #\Newline)
+      (setf (gray:stream-line-column stream) (random .5))
+      (incf (gray:stream-line-column stream)))
+  (vector-push-extend char (pp-stream-test-value stream)))
+(test mix.0021.pretty-printer
+  (let ((stream (make-instance 'pp-stream-test))
+        (*print-right-margin* 15))
+    (pprint '(let ((fu 1) (bar 2)) (+ fu bar 7))
+            stream)
+    (is-eql (sys:file-column stream) 15)
+    (is (gray:stream-advance-to-column stream 20))
+    (write-char #\A stream)
+    (is-equal (pp-stream-test-value stream)
+            "
+(LET ((FU 1)
+      (BAR 2))
+  (+ FU BAR 7))    A")))
+
+;; Created: 2022-04-27
+;; Contains: a smoke test for a new operator si:adjust-vector
+(test mix.0022.adjust-vector
+  (let ((vector (si:make-vector t 10 t nil nil nil)))
+    (si:adjust-vector vector 20)
+    (is (= 20 (array-total-size vector)))))
+
+;;; Created: 2022-11-10
+;;; Contains: tests for the logarithm of very small or very large
+;;; numbers where the number coerced to a single-float is 0 or
+;;; infinity but its logarithm can be represented as a finite
+;;; single-float.
+(test mix.0023.log-floating-point-overflow
+  (let ((x (ash 1 1024)))
+    (finishes (log x))
+    (finishes (log (- x)))
+    (finishes (log (/ 1 x)))
+    (finishes (log (- (/ 1 x))))))
+
+;;; Created: 2023-01-02
+;;; Contains: tests checking that (log x y) does not unnecessarily
+;;; lose precision through intermediate single-float calculations when
+;;; the final result is a double or long float.
+(test mix.0024.log-loss-of-precision
+  (is (eql (log 2 2d0) 1d0))
+  (is (eql (realpart (log -2 2d0)) 1d0))
+  (is (eql (log (ash 1 1024) 2d0) 1024d0))
+  (is (eql (realpart (log (- (ash 1 1024)) 2d0)) 1024d0))
+  (is (eql (log 1/2 2d0) -1d0))
+  (is (eql (realpart (log -1/2 2d0)) -1d0))
+  (is (eql (log 2s0 2d0) 1d0))
+  (is (eql (realpart (log -2s0 2d0)) 1d0))
+
+  (is (eql (log 2 2l0) 1l0))
+  (is (eql (realpart (log -2 2l0)) 1l0))
+  (is (eql (log (ash 1 1024) 2l0) 1024l0))
+  (is (eql (realpart (log (- (ash 1 1024)) 2l0)) 1024l0))
+  (is (eql (log 1/2 2l0) -1l0))
+  (is (eql (realpart (log -1/2 2l0)) -1l0))
+  (is (eql (log 2s0 2l0) 1l0))
+  (is (eql (realpart (log -2s0 2l0)) 1l0))
+  (is (eql (log 2d0 2l0) 1l0))
+  (is (eql (realpart (log -2d0 2l0)) 1l0)))
+
+;;; Created: 2023-01-07
+;;; Contains: tests checking for illegal format parameters that occur
+;;; after at signs or colons.
+(test mix.0025.illegal-format-parameters
+  (signals error (format nil "a~@4A" nil))
+  (signals error (format nil "a~:4A" nil))
+  (signals error (format nil "a~:@4A" nil))
+  (signals error (format nil "a~@:4A" nil))
+  (is (equal (format nil "a~4@A" nil) "a NIL"))
+  (is (equal (format nil "a~4:A" nil) "a()  "))
+  (is (equal (format nil "a~4:@A" nil) "a  ()"))
+  (is (equal (format nil "a~4@:A" nil) "a  ()")))
+
+;;; Created: 2023-01-16
+;;; Contains: tests checking that listen returns nil if we are at the
+;;; end of a file
+(test mix.0026.file-listen
+  (is (equal (progn
+               (with-open-file (blah "nada.txt" :direction :output
+                               :if-does-not-exist :create
+                               :if-exists :supersede)
+                 (write-char #\a blah))
+               (with-open-file (blah "nada.txt" :direction :input)
+                 (list (listen blah)
+                       (read-char blah)
+                       (listen blah))))
+             (list t #\a nil))))
+
+;;; Created: 2023-02-20
+;;; Contains: test to look for NIL in format directive forms.
+;;;
+;;; Simple LOOP requires only compound forms. Hence NIL is not
+;;; permitted. Some FORMAT directives (like newline) return NIL
+;;; as the form when they have nothing to add to the body.
+;;; Normally this is fine since BLOCK accepts NIL as a form. On
+;;; the other hand, when the newline directive is inside of an
+;;; iteration directive this will produce something like
+;;; (LOOP (fu) nil (bar)) which is not acceptable. To verify
+;;; that this is not happening we make sure we are not getting
+;;; (BLOCK NIL NIL) since this is easier to test for.
+(test mixed.0027.format-no-nil-form
+  (is (equal (third (second (macroexpand-1 '(formatter "~
+"))))
+      '(block nil))))

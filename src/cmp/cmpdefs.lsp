@@ -52,17 +52,16 @@ coprocessor).")
 			  (t
 			   "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")))
 
+(defvar *ld-flags* "@LDFLAGS@")
 #-dlopen
-(defvar *ld-flags* "@LDFLAGS@ -lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
+(defvar *ld-libs* "-lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
 #+dlopen
-(defvar *ld-flags* #-msvc "@LDFLAGS@ -lecl @FASL_LIBS@ @LIBS@"
-                   #+msvc "@LDFLAGS@ ecl.lib @CLIBS@")
+(defvar *ld-libs* #-msvc "-lecl @FASL_LIBS@ @LIBS@"
+                  #+msvc "ecl.lib @CLIBS@")
 #+dlopen
-(defvar *ld-shared-flags* #-msvc "@SHARED_LDFLAGS@ @LDFLAGS@ -lecl @FASL_LIBS@ @LIBS@"
-                          #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@ ecl.lib @CLIBS@")
+(defvar *ld-shared-flags* "@SHARED_LDFLAGS@ @LDFLAGS@")
 #+dlopen
-(defvar *ld-bundle-flags* #-msvc "@BUNDLE_LDFLAGS@ @LDFLAGS@ -lecl @FASL_LIBS@ @LIBS@"
-                          #+msvc "@BUNDLE_LDFLAGS@ @LDFLAGS@ ecl.lib @CLIBS@")
+(defvar *ld-bundle-flags* "@BUNDLE_LDFLAGS@ @LDFLAGS@")
 
 (defvar +shared-library-prefix+ "@SHAREDPREFIX@")
 (defvar +shared-library-extension+ "@SHAREDEXT@")

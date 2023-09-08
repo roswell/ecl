@@ -235,7 +235,7 @@ This function implements a variable assignment, not a variable binding. It is th
 
 
 @cppdef ecl_symbol_value
-@deftypefun cl_object ecl_symbol_value (cl_env_ptr cl_env, cl_object var); 
+@deftypefun cl_object ecl_symbol_value (cl_object var);
 @paragraph Description
 Retrieves the value of the special variable or constant denoted by the symbol @var{var}, in the Common Lisp environment @var{cl_env}.
 

@@ -33,7 +33,8 @@
                 ,output
                 (associate-methods-to-gfun
                  ',function-specifier
-                 ,@(loop for m in method-list collect `(defmethod ,function-specifier ,@m))))
+                 ,@(loop for m in method-list
+                         collect `(defmethod ,function-specifier ,@m))))
             output))))))
 
 (defun parse-defgeneric (args)

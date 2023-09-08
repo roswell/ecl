@@ -61,16 +61,19 @@
 ;;;
 (eval-when (:compile-toplevel :execute)
   (defmacro with-early-accessors ((&rest slot-definitions) &rest body)
-    `(macrolet
-         ,(loop for slots in slot-definitions
-             nconc (loop for (name . slotd) in (if (symbolp slots)
-                                                   (symbol-value slots)
-                                                   slots)
-                      for index from 0
-                      for accessor = (getf slotd :accessor)
-                      when accessor
-                      collect `(,accessor (object) `(si::instance-ref ,object ,,index))))
-       ,@body)))
+    (let (functions)
+      (loop for slots in slot-definitions
+            do (loop for (name . slotd) in (if (symbolp slots)
+                                               (symbol-value slots)
+                                               slots)
+                     for index from 0
+                     for accessor = (getf slotd :accessor)
+                     when (and accessor (not (member accessor functions :key #'first)))
+                       do (push `(,accessor (object) (si::instance-ref object ,index)) functions)
+                          (push `((setf ,accessor) (value object) (si::instance-set object ,index value)) functions)))
+      `(flet ,functions
+         (declare (inline ,@(mapcar #'first functions)))
+         ,@body))))
 
 ;;;
 ;;; The following macro is also used at bootstap for instantiating

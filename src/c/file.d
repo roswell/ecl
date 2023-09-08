@@ -51,7 +51,8 @@
 # define STDOUT_FILENO 1
 # define STDERR_FILENO 2
 # define HAVE_SELECT
-#elif defined(HAVE_SYS_IOCTL_H) && !defined(cygwin)
+#endif
+#if defined(HAVE_SYS_IOCTL_H) && !defined(ECL_MS_WINDOWS_HOST) && !defined(cygwin)
 # include <sys/ioctl.h>
 #endif
 
@@ -69,8 +70,8 @@ static cl_index ecl_write_byte8(cl_object stream, unsigned char *c, cl_index n);
 struct ecl_file_ops *duplicate_dispatch_table(const struct ecl_file_ops *ops);
 const struct ecl_file_ops *stream_dispatch_table(cl_object strm);
 
-static int flisten(cl_object, FILE *);
-static int file_listen(cl_object, int);
+static int file_listen(cl_object, FILE *);
+static int fd_listen(cl_object, int);
 
 static cl_object alloc_stream();
 
@@ -832,12 +833,12 @@ ucs_2be_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_
         return EOF;
       } else {
         ecl_character aux;
-        if (((*buffer)[3] & 0xFC) != 0xDC) {
+        if (((*buffer)[2] & 0xFC) != 0xDC) {
           return decoding_error(stream, buffer, 4, buffer_end);
         }
         aux = ((ecl_character)(*buffer)[2] << 8) | (*buffer)[3];
         *buffer += 4;
-        return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
+        return ((c & 0x3FF) << 10) + (aux & 0x3FF) + 0x10000;
       }
     }
     *buffer += 2;
@@ -851,7 +852,7 @@ ucs_2be_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
   if (c >= 0x10000) {
     c -= 0x10000;
     ucs_2be_encoder(stream, buffer, (c >> 10) | 0xD800);
-    ucs_2be_encoder(stream, buffer+2, (c & 0x3FFF) | 0xDC00);
+    ucs_2be_encoder(stream, buffer+2, (c & 0x3FF) | 0xDC00);
     return 4;
   } else {
     buffer[1] = c & 0xFF; c >>= 8;
@@ -881,7 +882,7 @@ ucs_2le_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_
         }
         aux = ((ecl_character)(*buffer)[3] << 8) | (*buffer)[2];
         *buffer += 4;
-        return ((c & 0x3FFF) << 10) + (aux & 0x3FFF) + 0x10000;
+        return ((c & 0x3FF) << 10) + (aux & 0x3FF) + 0x10000;
       }
     }
     *buffer += 2;
@@ -894,8 +895,8 @@ ucs_2le_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 {
   if (c >= 0x10000) {
     c -= 0x10000;
-    ucs_2le_encoder(stream, buffer, (c >> 10) | 0xD8000);
-    ucs_2le_encoder(stream, buffer+2, (c & 0x3FFF) | 0xD800);
+    ucs_2le_encoder(stream, buffer, (c >> 10) | 0xD800);
+    ucs_2le_encoder(stream, buffer+2, (c & 0x3FF) | 0xDC00);
     return 4;
   } else {
     buffer[0] = c & 0xFF; c >>= 8;
@@ -1330,7 +1331,7 @@ static int
 clos_stream_column(cl_object strm)
 {
   cl_object col = _ecl_funcall2(@'gray::stream-line-column', strm);
-  return Null(col)? -1 : ecl_to_size(col);
+  return Null(col)? -1 : ecl_to_size(ecl_floor1(col));
 }
 
 static cl_object
@@ -2594,12 +2595,12 @@ cl_synonym_stream_symbol(cl_object strm)
 #endif
 
 static int
-safe_open(const char *filename, int flags, ecl_mode_t mode)
+safe_open(const ecl_filename_char *filename, int flags, ecl_mode_t mode)
 {
   const cl_env_ptr the_env = ecl_process_env();
   int output;
   ecl_disable_interrupts_env(the_env);
-  output = open(filename, flags, mode);
+  output = ecl_open(filename, flags, mode);
   ecl_enable_interrupts_env(the_env);
   return output;
 }
@@ -2616,23 +2617,12 @@ safe_close(int f)
 }
 
 static FILE *
-safe_fopen(const char *filename, const char *mode)
+safe_fdopen(int fildes, const ecl_filename_char *mode)
 {
   const cl_env_ptr the_env = ecl_process_env();
   FILE *output;
   ecl_disable_interrupts_env(the_env);
-  output = fopen(filename, mode);
-  ecl_enable_interrupts_env(the_env);
-  return output;
-}
-
-static FILE *
-safe_fdopen(int fildes, const char *mode)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  FILE *output;
-  ecl_disable_interrupts_env(the_env);
-  output = fdopen(fildes, mode);
+  output = ecl_fdopen(fildes, mode);
   ecl_enable_interrupts_env(the_env);
   return output;
 }
@@ -2736,7 +2726,7 @@ io_file_listen(cl_object strm)
       }
     }
   }
-  return file_listen(strm, IO_FILE_DESCRIPTOR(strm));
+  return fd_listen(strm, IO_FILE_DESCRIPTOR(strm));
 }
 
 #if defined(ECL_MS_WINDOWS_HOST)
@@ -2762,7 +2752,7 @@ io_file_clear_input(cl_object strm)
     /* Do not stop here: the FILE structure needs also to be flushed */
   }
 #endif
-  while (file_listen(strm, f) == ECL_LISTEN_AVAILABLE) {
+  while (fd_listen(strm, f) == ECL_LISTEN_AVAILABLE) {
     ecl_character c = eformat_read_char(strm);
     if (c == EOF) return;
   }
@@ -3564,7 +3554,7 @@ io_stream_listen(cl_object strm)
 {
   if (strm->stream.byte_stack != ECL_NIL)
     return ECL_LISTEN_AVAILABLE;
-  return flisten(strm, IO_STREAM_FILE(strm));
+  return file_listen(strm, IO_STREAM_FILE(strm));
 }
 
 static void
@@ -3580,7 +3570,7 @@ io_stream_clear_input(cl_object strm)
     /* Do not stop here: the FILE structure needs also to be flushed */
   }
 #endif
-  while (flisten(strm, fp) == ECL_LISTEN_AVAILABLE) {
+  while (file_listen(strm, fp) == ECL_LISTEN_AVAILABLE) {
     ecl_disable_interrupts();
     getc(fp);
     ecl_enable_interrupts();
@@ -4334,7 +4324,7 @@ cl_object
 ecl_make_stream_from_fd(cl_object fname, int fd, enum ecl_smmode smm,
                         cl_fixnum byte_size, int flags, cl_object external_format)
 {
-  char *mode;                     /* file open mode */
+  ecl_filename_char *mode;        /* file open mode */
   FILE *fp;                       /* file pointer */
   switch(smm) {
   case ecl_smm_input:
@@ -4468,6 +4458,77 @@ seq_in_unread_char(cl_object strm, ecl_character c)
   strm->stream.byte_stack = ECL_NIL;
 }
 
+#ifdef ecl_uint16_t
+static ecl_character
+seq_in_ucs2_read_char(cl_object strm)
+{
+  cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
+  cl_fixnum last = SEQ_INPUT_LIMIT(strm);
+  if (curr_pos >= last) {
+    return EOF;
+  }
+  cl_object vector = SEQ_INPUT_VECTOR(strm);
+  ecl_character c = vector->vector.self.b16[curr_pos++];
+  cl_object err;
+  if (c >= 0xD800 && c <= 0xDBFF) {
+    if (curr_pos >= last) {
+      err = ecl_list1(ecl_make_fixnum(c));
+      goto DECODING_ERROR;
+    }
+    ecl_character aux = vector->vector.self.b16[curr_pos++];
+    if (aux < 0xDC00 || aux > 0xDFFF) {
+      err = cl_list(2, ecl_make_fixnum(c), ecl_make_fixnum(aux));
+      goto DECODING_ERROR;
+    }
+    c = ((c & 0x3FF) << 10) + (aux & 0x3FF) + 0x10000;
+  }
+  SEQ_INPUT_POSITION(strm) = curr_pos;
+  return c;
+  cl_object code;
+ DECODING_ERROR:
+  code = _ecl_funcall4(@'ext::decoding-error', strm,
+                       cl_stream_external_format(strm),
+                       err);
+  if (Null(code)) {
+    /* Go for next character */
+    return seq_in_ucs2_read_char(strm);
+  } else {
+    /* Return supplied character */
+    return ecl_char_code(code);
+  }
+}
+
+static void
+seq_in_ucs2_unread_char(cl_object strm, ecl_character c)
+{
+  if (c >= 0x10000) {
+    SEQ_INPUT_POSITION(strm) -= 2;
+  } else {
+    SEQ_INPUT_POSITION(strm) -= 1;
+  }
+}
+#endif
+
+#ifdef ecl_uint32_t
+static ecl_character
+seq_in_ucs4_read_char(cl_object strm)
+{
+  cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
+  if (curr_pos >= SEQ_INPUT_LIMIT(strm)) {
+    return EOF;
+  }
+  cl_object vector = SEQ_INPUT_VECTOR(strm);
+  SEQ_INPUT_POSITION(strm) += 1;
+  return vector->vector.self.b32[curr_pos];
+}
+
+static void
+seq_in_ucs4_unread_char(cl_object strm, ecl_character c)
+{
+  SEQ_INPUT_POSITION(strm) -= 1;
+}
+#endif
+
 static int
 seq_in_listen(cl_object strm)
 {
@@ -4541,11 +4602,10 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
   cl_object type_name;
   int byte_size;
   int flags = 0;
-  if (!ECL_VECTORP(vector) ||
-      ecl_aet_size[type = ecl_array_elttype(vector)] != 1)
-    {
-      FEerror("MAKE-SEQUENCE-INPUT-STREAM only accepts vectors whose element has a size of 1 byte.~%~A", 1, vector);
-    }
+  if (!ECL_VECTORP(vector)) {
+    FEwrong_type_nth_arg(@[ext::make-sequence-input-stream], 1, vector, @[vector]);
+  }
+  type = ecl_array_elttype(vector);
   type_name = ecl_elttype_to_symbol(type);
   byte_size = ecl_normalize_stream_element_type(type_name);
   /* Character streams always get some external format. For binary
@@ -4556,9 +4616,32 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
   if (!byte_size && Null(external_format)) {
     external_format = @':default';
   }
-  set_stream_elt_type(strm, byte_size, flags, external_format);
-  /* Override byte size */
-  if (byte_size) strm->stream.byte_size = 8;
+  if (ecl_aet_size[type] == 1) {
+    set_stream_elt_type(strm, byte_size, flags, external_format);
+    /* Override byte size */
+    if (byte_size) strm->stream.byte_size = 8;
+  }
+#ifdef ecl_uint16_t
+  else if (ecl_aet_size[type] == 2 && external_format == @':ucs-2') {
+    IO_STREAM_ELT_TYPE(strm) = @'character';
+    strm->stream.format = @':ucs-2';
+    strm->stream.byte_size = 2*8;
+    strm->stream.ops->read_char = seq_in_ucs2_read_char;
+    strm->stream.ops->unread_char = seq_in_ucs2_unread_char;
+  }
+#endif
+#ifdef ecl_uint32_t
+  else if (ecl_aet_size[type] == 4 && external_format == @':ucs-4') {
+    IO_STREAM_ELT_TYPE(strm) = @'character';
+    strm->stream.format = @':ucs-4';
+    strm->stream.byte_size = 4*8;
+    strm->stream.ops->read_char = seq_in_ucs4_read_char;
+    strm->stream.ops->unread_char = seq_in_ucs4_unread_char;
+  }
+#endif
+  else {
+    FEerror("Illegal combination of external-format ~A and input vector ~A for MAKE-SEQUENCE-INPUT-STREAM.~%", 2, external_format, vector);
+  }
   SEQ_INPUT_VECTOR(strm) = vector;
   SEQ_INPUT_POSITION(strm) = istart;
   SEQ_INPUT_LIMIT(strm) = iend;
@@ -4581,6 +4664,14 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
  * SEQUENCE OUTPUT STREAMS
  */
 
+static void
+seq_out_enlarge_vector(cl_object strm)
+{
+  cl_object vector = SEQ_OUTPUT_VECTOR(strm);
+  si_adjust_vector(vector, ecl_ash(ecl_make_fixnum(vector->vector.dim), 1));
+  SEQ_OUTPUT_VECTOR(strm) = vector;
+}
+
 static cl_index
 seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
@@ -4591,13 +4682,7 @@ seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
     cl_fixnum last = vector->vector.dim;
     cl_fixnum delta = last - curr_pos;
     if (delta < n) {
-      /* Not enough space, enlarge */
-      if (!ECL_ADJUSTABLE_ARRAY_P(vector)) {
-        FEerror("Can't adjust the dimensions of the sequence of sequence stream ~A", 1, strm);
-      }
-      vector = _ecl_funcall3(@'adjust-array', vector,
-                             ecl_ash(ecl_make_fixnum(last), 1));
-      SEQ_OUTPUT_VECTOR(strm) = vector;
+      seq_out_enlarge_vector(strm);
       goto AGAIN;
     }
     memcpy(vector->vector.self.bc + curr_pos, c, n);
@@ -4607,6 +4692,55 @@ seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
   }
   return n;
 }
+
+#ifdef ecl_uint16_t
+static ecl_character
+seq_out_ucs2_write_char(cl_object strm, ecl_character c)
+{
+ AGAIN:
+  {
+    cl_object vector = SEQ_OUTPUT_VECTOR(strm);
+    cl_fixnum curr_pos = SEQ_OUTPUT_POSITION(strm);
+    cl_fixnum n = (c >= 0x10000) ? 2 : 1;
+    if (vector->vector.dim - curr_pos < n) {
+      seq_out_enlarge_vector(strm);
+      goto AGAIN;
+    }
+    if (c >= 0x10000) {
+      c -= 0x10000;
+      vector->vector.self.b16[curr_pos++] = (c >> 10) | 0xD800;
+      vector->vector.self.b16[curr_pos++] = (c & 0x3FF) | 0xDC00;
+    } else {
+      vector->vector.self.b16[curr_pos++] = c;
+    }
+    SEQ_OUTPUT_POSITION(strm) = curr_pos;
+    if (vector->vector.fillp < curr_pos)
+      vector->vector.fillp = curr_pos;
+  }
+  return c;
+}
+#endif
+
+#ifdef ecl_uint32_t
+static ecl_character
+seq_out_ucs4_write_char(cl_object strm, ecl_character c)
+{
+ AGAIN:
+  {
+    cl_object vector = SEQ_OUTPUT_VECTOR(strm);
+    cl_fixnum curr_pos = SEQ_OUTPUT_POSITION(strm);
+    if (vector->vector.dim - curr_pos < 1) {
+      seq_out_enlarge_vector(strm);
+      goto AGAIN;
+    }
+    vector->vector.self.b32[curr_pos++] = c;
+    SEQ_OUTPUT_POSITION(strm) = curr_pos;
+    if (vector->vector.fillp < curr_pos)
+      vector->vector.fillp = curr_pos;
+  }
+  return c;
+}
+#endif
 
 static cl_object
 seq_out_get_position(cl_object strm)
@@ -4672,11 +4806,10 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
   cl_object type_name;
   int byte_size;
   int flags = 0;
-  if (!ECL_VECTORP(vector) ||
-      ecl_aet_size[type = ecl_array_elttype(vector)] != 1)
-    {
-      FEerror("MAKE-SEQUENCE-OUTPUT-STREAM only accepts vectors whose element has a size of 1 byte.~%~A", 1, vector);
-    }
+  if (!ECL_VECTORP(vector)) {
+    FEwrong_type_nth_arg(@[ext::make-sequence-output-stream], 1, vector, @[vector]);
+  }
+  type = ecl_array_elttype(vector);
   type_name = ecl_elttype_to_symbol(type);
   byte_size = ecl_normalize_stream_element_type(type_name);
   /* Character streams always get some external format. For binary
@@ -4687,9 +4820,30 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
   if (!byte_size && Null(external_format)) {
     external_format = @':default';
   }
-  set_stream_elt_type(strm, byte_size, flags, external_format);
-  /* Override byte size */
-  if (byte_size) strm->stream.byte_size = 8;
+  if (ecl_aet_size[type] == 1) {
+    set_stream_elt_type(strm, byte_size, flags, external_format);
+    /* Override byte size */
+    if (byte_size) strm->stream.byte_size = 8;
+  }
+#ifdef ecl_uint16_t
+  else if (ecl_aet_size[type] == 2 && external_format == @':ucs-2') {
+    IO_STREAM_ELT_TYPE(strm) = @'character';
+    strm->stream.format = @':ucs-2';
+    strm->stream.byte_size = 2*8;
+    strm->stream.ops->write_char = seq_out_ucs2_write_char;
+  }
+#endif
+#ifdef ecl_uint32_t
+  else if (ecl_aet_size[type] == 4 && external_format == @':ucs-4') {
+    IO_STREAM_ELT_TYPE(strm) = @'character';
+    strm->stream.format = @':ucs-4';
+    strm->stream.byte_size = 4*8;
+    strm->stream.ops->write_char = seq_out_ucs4_write_char;
+  }
+#endif
+  else {
+    FEerror("Illegal combination of external-format ~A and output vector ~A for MAKE-SEQUENCE-OUTPUT-STREAM.~%", 2, external_format, vector);
+  }
   SEQ_OUTPUT_VECTOR(strm) = vector;
   SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp;
   return strm;
@@ -5214,7 +5368,29 @@ ecl_normalize_stream_element_type(cl_object element_type)
     return -8;
   } else if (element_type == @'unsigned-byte' || element_type == @'ext::byte8') {
     return 8;
-  } else if (element_type == @':default') {
+  }
+#ifdef ecl_uint16_t
+  else if (element_type == @'ext::integer16') {
+    return -16;
+  } else if (element_type == @'ext::byte16') {
+    return 16;
+  }
+#endif
+#ifdef ecl_uint32_t
+  else if (element_type == @'ext::integer32') {
+    return -32;
+  } else if (element_type == @'ext::byte32') {
+    return 32;
+  }
+#endif
+#ifdef ecl_uint64_t
+  else if (element_type == @'ext::integer64') {
+    return -64;
+  } else if (element_type == @'ext::byte64') {
+    return 64;
+  }
+#endif
+  else if (element_type == @':default') {
     return 0;
   } else if (element_type == @'base-char' || element_type == @'character') {
     return 0;
@@ -5250,14 +5426,30 @@ FEinvalid_option(cl_object option, cl_object value)
   FEerror("Invalid value op option ~A: ~A", 2, option, value);
 }
 
+static int
+smmode_to_open_flag(enum ecl_smmode smm)
+{
+  switch (smm) {
+  case ecl_smm_probe:
+  case ecl_smm_input:
+    return O_RDONLY;
+  case ecl_smm_output:
+    return O_WRONLY;
+  case ecl_smm_io:
+    return O_RDWR;
+  default:
+    FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
+  }
+}
+
 cl_object
 ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
                 cl_object if_does_not_exist, cl_fixnum byte_size,
                 int flags, cl_object external_format)
 {
-  cl_object output, file_kind;
-  int fd;
-  bool appending = 0, exists;
+  cl_object output;
+  int fd, open_flags = smmode_to_open_flag(smm) | O_BINARY;
+  bool appending = 0;
 #if defined(ECL_MS_WINDOWS_HOST)
   ecl_mode_t mode = _S_IREAD | _S_IWRITE;
 #else
@@ -5266,92 +5458,91 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
   /* FILENAME is used only to access the actual file while a stream
      remembers the original pathname FN. -- jd 2020-03-27 */
   cl_object filename = si_coerce_to_filename(fn);
-  char *fname = (char*)filename->base_string.self;
-  file_kind = si_file_kind(filename, ECL_T);
-  exists = file_kind != ECL_NIL;
-  if (!exists) {
-    if (if_does_not_exist == ECL_NIL) return ECL_NIL;
-    if (if_does_not_exist == @':error') FEcannot_open(fn);
-    if (if_does_not_exist != @':create')
-      FEinvalid_option(@':if-does-not-exist', if_does_not_exist);
-    fd = safe_open(fname, O_WRONLY|O_CREAT, mode);
-    unlikely_if (fd < 0) FEcannot_open(fn);
-    safe_close(fd);
-    fd = -1;
+  ecl_filename_char *fname = ecl_filename_self(filename);
+
+  if (if_does_not_exist == @':create') {
+    open_flags |= O_CREAT;
+    if ((smm == ecl_smm_output || smm == ecl_smm_io) &&
+        (if_exists == ECL_NIL || if_exists == @':error' || if_exists == @':rename')) {
+      open_flags |= O_EXCL;
+    }
+  } else if (if_does_not_exist != ECL_NIL && if_does_not_exist != @':error') {
+    FEinvalid_option(@':if-does-not-exist', if_does_not_exist);
   }
-  switch (smm) {
-  case ecl_smm_probe:
+  if (if_exists == @':rename_and_delete' ||
+      if_exists == @':new_version' ||
+      if_exists == @':supersede' ||
+      if_exists == @':truncate') {
+    if (smm == ecl_smm_output || smm == ecl_smm_io) {
+      open_flags |= O_TRUNC;
+    }
+  } else if (if_exists == @':append') {
+    if (smm == ecl_smm_output || smm == ecl_smm_io) {
+      appending = 1;
+    }
+  } else if (if_exists != ECL_NIL &&
+             if_exists != @':error' &&
+             if_exists != @':rename' &&
+             if_exists != @':overwrite') {
+    FEinvalid_option(@':if-exists', if_exists);
+  }
+  if (flags & ECL_STREAM_CLOSE_ON_EXEC) {
+    open_flags |= O_CLOEXEC;
+  }
+  if (flags & ECL_STREAM_NONBLOCK) {
+    open_flags |= O_NONBLOCK;
+  }
+
+  fd = safe_open(fname, open_flags, mode);
+  if (fd < 0) {
+    if (errno == ENOENT && if_does_not_exist == ECL_NIL) {
+      return ECL_NIL;
+    } else if (errno == EEXIST) {
+      if (if_exists == ECL_NIL) {
+        return ECL_NIL;
+      } else if (if_exists == @':error') {
+        FEcannot_open(fn);
+      } else if (if_exists == @':rename') {
+        fd = ecl_backup_open(fname, smmode_to_open_flag(smm)|O_CREAT, mode);
+        unlikely_if (fd < 0) FEcannot_open(fn);
+      }
+    } else {
+      FEcannot_open(fn);
+    }
+  }
+
+  if (smm == ecl_smm_probe) {
+    safe_close(fd);
     output = ecl_make_file_stream_from_fd(fn, -1, smm, byte_size, flags, external_format);
     generic_close(output);
     return output;
-  case ecl_smm_input:
-    fd = safe_open(fname, O_RDONLY|O_NONBLOCK, mode);
-    unlikely_if (fd < 0) FEcannot_open(fn);
-    break;
-  case ecl_smm_output:
-    /* For output we could have used O_WRONLY, but this doesn't matter because
-       we fopen with OPEN_RW later anyway. stream opts enforce things. */
-  case ecl_smm_io: {
-    if (exists) {
-      if (if_exists == ECL_NIL) return ECL_NIL;
-      if (if_exists == @':error') FEcannot_open(fn);
-      if (if_exists == @':rename') {
-        fd = ecl_backup_open(fname, O_RDWR|O_CREAT, mode);
-        unlikely_if (fd < 0) FEcannot_open(fn);
-      } else if (if_exists == @':rename_and_delete' ||
-                 if_exists == @':new_version' ||
-                 if_exists == @':supersede' ||
-                 if_exists == @':truncate') {
-        fd = safe_open(fname, O_RDWR|O_TRUNC, mode);
-        unlikely_if (fd < 0) FEcannot_open(fn);
-      } else if (if_exists == @':overwrite' || if_exists == @':append') {
-        fd = safe_open(fname, O_RDWR, mode);
-        unlikely_if (fd < 0) FEcannot_open(fn);
-        appending = (if_exists == @':append');
-      } else {
-        FEinvalid_option(@':if-exists', if_exists);
-      }
-    }
-    break;
-  }
-  default:
-    FEerror("Illegal stream mode ~S", 1, ecl_make_fixnum(smm));
   }
   if (flags & ECL_STREAM_C_STREAM) {
     FILE *fp = 0;
-    /* We do not use fdopen() because Windows seems to have problems with the
-     * resulting streams. Furthermore, even for output we open with w+ because
-     * we do not want to overwrite the file. */
     switch (smm) {
     case ecl_smm_probe:
       /* never happens (returns earlier) */
     case ecl_smm_input:
-      if (file_kind == @':fifo') {
-        fp = safe_fdopen(fd, OPEN_R);
-      } else {
-        if (fd >= 0)
-          safe_close(fd);
-        fp = safe_fopen(fname, OPEN_R);
-      }
+      fp = safe_fdopen(fd, OPEN_R);
       break;
     case ecl_smm_output:
+      fp = safe_fdopen(fd, OPEN_W);
+      break;
     case ecl_smm_io:
-      if (file_kind == @':fifo') {
-        fp = safe_fdopen(fd, OPEN_RW);
-      } else {
-        if (fd >= 0)
-          safe_close(fd);
-        fp = safe_fopen(fname, OPEN_RW);
-      }
+      fp = safe_fdopen(fd, OPEN_RW);
       break;
     default:;
       /* never reached (errors earlier) */
+    }
+    if (fp == NULL) {
+      FEcannot_open(fn);
     }
     output = ecl_make_stream_from_FILE(fn, fp, smm, byte_size, flags, external_format);
     si_set_buffering_mode(output, byte_size? @':full' : @':line');
   } else {
     output = ecl_make_file_stream_from_fd(fn, fd, smm, byte_size, flags, external_format);
   }
+
   output->stream.flags |= ECL_STREAM_MIGHT_SEEK;
   si_set_finalizer(output, ECL_T);
   /* Set file pointer to the correct position */
@@ -5366,6 +5557,8 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
               (if_does_not_exist ECL_NIL idnesp)
               (external_format @':default')
               (cstream ECL_T)
+              (close_on_exec ECL_T)
+              (nonblock ECL_NIL)
               &aux strm)
   enum ecl_smmode smm;
   int flags = 0;
@@ -5413,6 +5606,12 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
   if (!Null(cstream)) {
     flags |= ECL_STREAM_C_STREAM;
   }
+  if (!Null(close_on_exec)) {
+    flags |= ECL_STREAM_CLOSE_ON_EXEC;
+  }
+  if (!Null(nonblock)) {
+    flags |= ECL_STREAM_NONBLOCK;
+  }
   strm = ecl_open_stream(filename, smm, if_exists, if_does_not_exist,
                          byte_size, flags, external_format);
   @(return strm);
@@ -5427,39 +5626,10 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
  * BACKEND
  */
 
+#if defined(ECL_MS_WINDOWS_HOST)
 static int
-file_listen(cl_object stream, int fileno)
+fd_listen(cl_object stream, int fileno)
 {
-#if !defined(ECL_MS_WINDOWS_HOST)
-# if defined(HAVE_SELECT)
-  fd_set fds;
-  int retv;
-  struct timeval tv = { 0, 0 };
-  /*
-   * Note that the following code is fragile. If the file is closed (/dev/null)
-   * then select() may return 1 (at least on OS X), so that we return a flag
-   * saying characters are available but will find none to read. See also the
-   * code in cl_clear_input().
-   */
-  FD_ZERO(&fds);
-  FD_SET(fileno, &fds);
-  retv = select(fileno + 1, &fds, NULL, NULL, &tv);
-  if (ecl_unlikely(retv < 0))
-    file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
-  /* XXX: for FIFO there should be also peek-byte (not implemented and peek-char
-     doesn't work for binary streams). */
-  else if ((retv > 0) /* && (generic_peek_byte(stream) != EOF) */)
-    return ECL_LISTEN_AVAILABLE;
-  else
-    return ECL_LISTEN_NO_CHAR;
-# elif defined(FIONREAD)
-  {
-    long c = 0;
-    ioctl(fileno, FIONREAD, &c);
-    return (c > 0)? ECL_LISTEN_AVAILABLE : ECL_LISTEN_NO_CHAR;
-  }
-# endif
-#else
   HANDLE hnd = (HANDLE)_get_osfhandle(fileno);
   switch (GetFileType(hnd)) {
   case FILE_TYPE_CHAR: {
@@ -5489,8 +5659,9 @@ file_listen(cl_object stream, int fileno)
         }
       }
       return ECL_LISTEN_NO_CHAR;
-    } else
+    } else {
       FEwin32_error("GetNumberOfConsoleInputEvents() failed", 0);
+    }
     break;
   }
   case FILE_TYPE_DISK:
@@ -5510,12 +5681,97 @@ file_listen(cl_object stream, int fileno)
     FEerror("Unsupported Windows file type: ~A", 1, ecl_make_fixnum(GetFileType(hnd)));
     break;
   }
-#endif
-  return -3;
+  return ECL_LISTEN_FALLBACK;
 }
+#else
+static int
+fd_listen(cl_object stream, int fileno)
+{
+  /* Method 1: poll, see POLL(2)
+     Method 2: select, see SELECT(2)
+     Method 3: ioctl FIONREAD, see FILIO(4)
+     Method 4: read a byte. Use non-blocking I/O if poll or select were not
+               available. */
+  int result;
+#if defined(HAVE_POLL)
+  struct pollfd fd = {fileno, POLLIN, 0};
+restart_poll:
+  result = poll(&fd, 1, 0);
+  if (ecl_unlikely(result < 0)) {
+    if (errno == EINTR)
+      goto restart_poll;
+    else
+      goto listen_error;
+  }
+  if (fd.revents == 0) {
+    return ECL_LISTEN_NO_CHAR;
+  }
+  /* When read() returns a result without blocking, this can also be
+     EOF! (Example: Linux and pipes.) We therefore refrain from simply
+     doing  { return ECL_LISTEN_AVAILABLE; }  and instead try methods
+     3 and 4. */
+#elif defined(HAVE_SELECT)
+  fd_set fds;
+  struct timeval tv = {0, 0};
+  FD_ZERO(&fds);
+  FD_SET(fileno, &fds);
+restart_select:
+  result = select(fileno + 1, &fds, NULL, NULL, &tv);
+  if (ecl_unlikely(result < 0)) {
+    if (errno == EINTR)
+      goto restart_select;
+    if (errno != EBADF) /* UNIX_LINUX returns EBADF for files! */
+      goto listen_error;
+  } else if (result == 0) {
+    return ECL_LISTEN_NO_CHAR;
+  }
+#endif
+#ifdef FIONREAD
+  long c = 0;
+  result = ioctl(fileno, FIONREAD, &c);
+  if (result == 0) {
+    return (c > 0) ? ECL_LISTEN_AVAILABLE : ECL_LISTEN_EOF;
+  } else if (result < 0 && errno != ENOTTY && errno != EINVAL) {
+    goto listen_error;
+  }
+#endif
+  cl_index byte;
+restart_read:
+#if !defined(HAVE_POLL) && !defined(HAVE_SELECT)
+  {
+    int flags = fcntl(fileno, F_GETFL, 0);
+    int read_errno;
+    fcntl(fileno, F_SETFL, flags | O_NONBLOCK);
+    result = read(fileno, &byte, 1);
+    read_errno = errno;
+    fcntl(fileno, F_SETFL, flags);
+    errno = read_errno;
+  }
+#else
+  result = read(fileno, &byte, 1);
+#endif
+  if (result < 0) {
+    if (errno == EINTR)
+      goto restart_read;
+    if (errno == EAGAIN || errno == EWOULDBLOCK)
+      return ECL_LISTEN_NO_CHAR;
+    else
+      goto listen_error;
+  }
+
+  if (result == 0) {
+    return ECL_LISTEN_EOF;
+  }
+
+  stream->stream.byte_stack = CONS(ecl_make_fixnum(byte), stream->stream.byte_stack);
+  return ECL_LISTEN_AVAILABLE;
+listen_error:
+  file_libc_error(@[stream-error], stream, "Error while listening to stream.", 0);
+}
+#endif
 
 static int
-flisten(cl_object stream, FILE *fp)
+file_listen(cl_object stream, FILE *fp)
 {
   int aux;
   if (feof(fp) || ferror(fp))
@@ -5524,8 +5780,8 @@ flisten(cl_object stream, FILE *fp)
   if (FILE_CNT(fp) > 0)
     return ECL_LISTEN_AVAILABLE;
 #endif
-  aux = file_listen(stream, fileno(fp));
-  if (aux != -3)
+  aux = fd_listen(stream, fileno(fp));
+  if (aux != ECL_LISTEN_FALLBACK)
     return aux;
   /* This code is portable, and implements the expected behavior for regular files.
      It will fail on noninteractive streams. */
@@ -5639,7 +5895,7 @@ static cl_object
 not_a_file_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("~A is not an file stream",-1),
+           @"~A is not an file stream",
            @':format-arguments', cl_list(1, strm),
            @':expected-type', @'file-stream',
            @':datum', strm);
@@ -5649,7 +5905,7 @@ static void
 not_an_input_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("~A is not an input stream",-1),
+           @"~A is not an input stream",
            @':format-arguments', cl_list(1, strm),
            @':expected-type',
            cl_list(2, @'satisfies', @'input-stream-p'),
@@ -5660,7 +5916,7 @@ static void
 not_an_output_stream(cl_object strm)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("~A is not an output stream",-1),
+           @"~A is not an output stream",
            @':format-arguments', cl_list(1, strm),
            @':expected-type', cl_list(2, @'satisfies', @'output-stream-p'),
            @':datum', strm);
@@ -5670,7 +5926,7 @@ static void
 not_a_character_stream(cl_object s)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("~A is not a character stream",-1),
+           @"~A is not a character stream",
            @':format-arguments', cl_list(1, s),
            @':expected-type', @'character',
            @':datum', cl_stream_element_type(s));
@@ -5680,7 +5936,7 @@ static void
 not_a_binary_stream(cl_object s)
 {
   cl_error(9, @'simple-type-error', @':format-control',
-           ecl_make_constant_base_string("~A is not a binary stream",-1),
+           @"~A is not a binary stream",
            @':format-arguments', cl_list(1, s),
            @':expected-type', @'integer',
            @':datum', cl_stream_element_type(s));
@@ -5703,8 +5959,8 @@ file_libc_error(cl_object error_type, cl_object stream,
   rest = cl_grab_rest_args(args);
   ecl_va_end(args);
 
-  si_signal_simple_error(4, (cl_object)(cl_symbols + ecl_fixnum(error_type)), Cnil,
-                         ecl_make_constant_base_string("~?~%C library explanation: ~A.",-1),
+  si_signal_simple_error(4, (cl_object)(cl_symbols + ecl_fixnum(error_type)), ECL_NIL,
+                         @"~?~%C library explanation: ~A.",
                          cl_list(3, ecl_make_constant_base_string(msg,-1), rest,
                                  error));
   _ecl_unexpected_return();
@@ -5847,7 +6103,7 @@ init_file(void)
   flags = ECL_STREAM_DEFAULT_FORMAT;
 #endif
 
-  null_stream = ecl_make_stream_from_FILE(ecl_make_constant_base_string("/dev/null",-1),
+  null_stream = ecl_make_stream_from_FILE(@"/dev/null",
                                           NULL, ecl_smm_io, 8, flags, external_format);
   generic_close(null_stream);
   null_stream = cl_make_two_way_stream(null_stream, cl_make_broadcast_stream(0));
@@ -5856,20 +6112,20 @@ init_file(void)
   /* We choose C streams by default only when _not_ using threads.
    * The reason is that C streams block on I/O operations. */
 #if !defined(ECL_THREADS)
-  standard_input = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stdin",-1),
+  standard_input = maybe_make_windows_console_FILE(@"stdin",
                                                    stdin, ecl_smm_input, 8, flags, external_format);
-  standard_output = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stdout",-1),
+  standard_output = maybe_make_windows_console_FILE(@"stdout",
                                                     stdout, ecl_smm_output, 8, flags, external_format);
-  error_output = maybe_make_windows_console_FILE(ecl_make_constant_base_string("stderr",-1),
+  error_output = maybe_make_windows_console_FILE(@"stderr",
                                                  stderr, ecl_smm_output, 8, flags, external_format);
 #else
-  standard_input = maybe_make_windows_console_fd(ecl_make_constant_base_string("stdin",-1),
+  standard_input = maybe_make_windows_console_fd(@"stdin",
                                                  STDIN_FILENO, ecl_smm_input_file, 8, flags,
                                                  external_format);
-  standard_output = maybe_make_windows_console_fd(ecl_make_constant_base_string("stdout",-1),
+  standard_output = maybe_make_windows_console_fd(@"stdout",
                                                   STDOUT_FILENO, ecl_smm_output_file, 8, flags,
                                                   external_format);
-  error_output = maybe_make_windows_console_fd(ecl_make_constant_base_string("stderr",-1),
+  error_output = maybe_make_windows_console_fd(@"stderr",
                                                STDERR_FILENO, ecl_smm_output_file, 8, flags,
                                                external_format);
 #endif

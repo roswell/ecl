@@ -254,6 +254,7 @@ AC_SUBST(INSTALL_TARGET)dnl Which type of installation: flat directory or unix l
 AC_SUBST(thehost)
 AC_SUBST(ECL_GC_DIR)dnl Which version of the Boehm-Weiser library to use
 AC_SUBST(ECL_DEFAULT_C_STACK_SIZE)dnl Default size of the C stack in bytes
+AC_SUBST(ECL_MIN,ecl_min)
 ECL_DEFAULT_C_STACK_SIZE=1048576 dnl Default to 1 MB if we can't set the stack size at runtime
 ECL_GC_DIR=bdwgc
 ECL_LDRPATH=''
@@ -266,7 +267,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/queue threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox"
+THREAD_OBJ="$THREAD_OBJ threads/process threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
@@ -340,6 +341,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -350,6 +352,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -361,6 +364,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
+		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="-lpthread ${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -420,14 +424,14 @@ case "${host_os}" in
                 shared='yes'
                 SHAREDEXT='dylib'
                 PICFLAG='-fPIC -fno-common'
-                SHARED_LDFLAGS="-dynamiclib -flat_namespace -undefined suppress ${LDFLAGS}"
+                SHARED_LDFLAGS="-dynamiclib ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,-rpath,~A'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
                 THREAD_LIBS='-lpthread'
-                # The GMP library has not yet been ported to Intel-OSX
+                # The GMP library has not yet been ported to Intel or Arm-OSX
                 case "`uname -m`" in
-                i386*|x86_64) gmp_build=none-apple-${host_os};;
+                i386*|x86_64|arm64) gmp_build=none-apple-${host_os};;
                 *) ABI=32;;
                 esac
                 if test "x$ABI" = "x64"; then
@@ -518,6 +522,17 @@ case "${host}" in
                 THREAD_LIBS=''
                 CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DNO_GETCONTEXT -DHAVE_GETTIMEOFDAY -DHAVE_SIGPROCMASK ${CFLAGS}"
                 ECL_ADD_FEATURE([android])
+                ;;
+        wasm32-unknown-emscripten)
+                # Binaryen miscompiles ECL at non-zero optimization levels.
+                CFLAGS="${CFLAGS} -DECL_C_COMPATIBLE_VARIADIC_DISPATCH -O0"
+                # The default stack size is 64KB, that's too little for ECL.
+                LDFLAGS="${LDFLAGS} -sSTACK_SIZE=1048576"
+                ECL_MIN="ecl_min.html"
+                EXEEXT=".html"
+                enable_threads='no'
+                enable_libffi='no'
+                enable_gmp='portable'
                 ;;
 esac
 
@@ -928,14 +943,13 @@ fi
 
 dnl ----------------------------------------------------------------------
 dnl Check whether we have POSIX read/write locks are available
-AC_DEFUN([ECL_POSIX_RWLOCK],[
+AC_DEFUN([ECL_PTHREAD_EXTENSIONS],[
 AC_CHECK_FUNC( [pthread_rwlock_init], [
   AC_CHECK_TYPES([pthread_rwlock_t], [
-    AC_DEFINE([ECL_RWLOCK], [], [ECL_RWLOCK])
     AC_DEFINE([HAVE_POSIX_RWLOCK], [], [HAVE_POSIX_RWLOCK])
   ], [])
 ], [])
-THREAD_OBJ="$THREAD_OBJ threads/rwlock"
+AC_CHECK_FUNCS([pthread_mutex_timedlock pthread_condattr_setclock])
 ])
 
 
@@ -1121,6 +1135,7 @@ if test "${enable_boehm}" = "included"; then
     autoreconf -vif
     automake --add-missing
  fi;
+ CFLAGS="$CFLAGS $GC_CFLAGS";
  cd $currentdir;
  if mkdir gc; then
    if (destdir=`${PWDCMD}`; cd gc; \

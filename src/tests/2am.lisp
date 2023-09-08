@@ -24,21 +24,26 @@
 #| to avoid conflict with the library name package 2am-ecl |#
 (defpackage #:2am-ecl
   (:use #:cl)
-  (:export #:test #:is #:signals #:finishes #:run #:suite))
+  (:export #:test #:test-with-timeout #:is #:signals #:finishes
+           #:run #:suite))
 
 (in-package #:2am-ecl)
 
 (defvar *tests* nil "A name of the default tests suite.")
 (defvar *suites* (make-hash-table) "A collection of test suites.")
 (defvar *hierarchy* (make-hash-table) "A hierarchy of test suites.")
-(defvar *failures* nil)
-(defvar *crashes* nil)
-(defvar *test-name* nil)
-(defvar *test-count* nil)
-(defvar *pass-count* nil)
-(defvar *fail-count* nil)
+(defvar *stats* nil "Collection of test statistics.")
 (defvar *running* nil)
+(defvar *test-name* nil)
 (defvar *last-fail* nil)
+(defvar *default-timeout* 60.0 "Default timeout in seconds.")
+
+(defstruct test-stats
+  (failures (make-hash-table))
+  (crashes 0)
+  (test-count 0)
+  (pass-count 0)
+  (fail-count 0))
 
 (define-condition test-failure (simple-condition)
   ((test-name :initarg :name
@@ -71,7 +76,12 @@
 (defun shuffle (sequence)
   (%shuffle (map 'vector #'identity sequence)))
 
-(defun report (test-count pass-count fail-count crashes)
+(defun report (stats &aux
+                       (test-count (test-stats-test-count stats))
+                       (pass-count (test-stats-pass-count stats))
+                       (fail-count (test-stats-fail-count stats))
+                       (crashes (test-stats-crashes stats))
+                       (failures (test-stats-failures stats)))
   (let ((num-check (+ pass-count fail-count)))
     (if *running*
         (format t "~&Did ~s test~:p (~s crashed), ~s check~:p.~%" test-count crashes num-check)
@@ -92,16 +102,12 @@
                      (format t "   CRASH [~A]: " (type-of fail)))
                  (format t "~A~%" fail))
                (format t "~&--------------------------------~%"))
-             *failures*)))
+             failures)))
 
 (defun %run (fn)
-  (let ((*test-count* 0)
-        (*pass-count* 0)
-        (*fail-count* 0)
-        (*failures* (make-hash-table))
-        (*crashes* 0))
+  (let ((*stats* (make-test-stats)))
     (multiple-value-prog1 (funcall fn)
-      (report *test-count* *pass-count* *fail-count* *crashes*))))
+      (report *stats*))))
 
 (defun %run-suite (name)
   (let ((visited nil)
@@ -131,41 +137,90 @@
                (map nil #'funcall (shuffle tests)))))))
   (values))
 
-(defun call-test (fn)
-  (format t "~&Running test ~s " *test-name*)
-  (finish-output)
-  (if *running*
-      (handler-case
-          (progn (incf *test-count*)
-                 (funcall fn))
-        (serious-condition (c)
-          (write-char #\X)
-          (incf *crashes*)
-          (push c (gethash *test-name* *failures*))))
-      (%run fn))
-  (values))
+(defun call-test (name fn)
+  (let ((*test-name* name))
+    (format t "~&Running test ~s " *test-name*)
+    (finish-output)
+    (if *running*
+        (handler-case
+            (progn (incf (test-stats-test-count *stats*))
+                   (funcall fn))
+          (serious-condition (c)
+            (write-char #\X)
+            (incf (test-stats-crashes *stats*))
+            (push c (gethash *test-name* (test-stats-failures *stats*)))))
+        (%run fn))
+    (values)))
 
 (defmacro test (name &body body)
-  "Define a test function and add it to `*tests*'."
   `(progn
      (defun ,name ()
-       (let ((*test-name* ',name))
-         (call-test (lambda () ,@body))))
+       (call-test ',name (lambda () ,@body)))
      (pushnew ',name (gethash *tests* *suites*))
      ',name))
 
+(defun kill-processes (process-list &optional original)
+  "Kills a list of processes, which may be the difference between two lists."
+  (let ((process-list (set-difference process-list original)))
+    (when (member mp:*current-process* process-list)
+      (error "Found myself in the kill list"))
+    (mapc #'mp:process-kill process-list)
+    process-list))
+
+#+threads
+(defun call-test-with-timeout (name timeout fn)
+  (let* ((all-processes (mp:all-processes))
+         (finished nil)
+         (runner (mp:process-run-function
+                  "runner"
+                  #'(lambda (stats running)
+                      (let ((*stats* stats)
+                            (*running* running))
+                        (call-test name fn)
+                        (setf finished t)))
+                  *stats* *running*)))
+    (loop with *test-name* = name
+          with timestep = 0.2
+          for time from 0.0 upto timeout by timestep
+          do (if finished
+                 (return)
+                 (sleep timestep))
+          finally (mp:process-kill runner)
+                  (failed (make-condition 'test-failure
+                                          :name name
+                                          :format-control "Timeout after ~A seconds"
+                                          :format-arguments (list timeout)))
+                  (return-from call-test-with-timeout))
+    (mp:process-join runner)
+    (let ((leftovers (kill-processes (mp:all-processes) all-processes)))
+      (when leftovers
+        (format t "~%;;; Stray processes: ~A~%" leftovers)))))
+
+#+threads
+(defmacro test-with-timeout (name-and-timeout &body body)
+  (let (name timeout)
+    (if (listp name-and-timeout)
+        (setf name (first name-and-timeout)
+              timeout (second name-and-timeout))
+        (setf name name-and-timeout
+              timeout '*default-timeout*))
+    `(progn
+       (defun ,name ()
+         (call-test-with-timeout ',name ,timeout (lambda () ,@body)))
+       (pushnew ',name (gethash *tests* *suites*))
+       ',name)))
+
 (defun passed ()
   (write-char #\.)
-  (when *pass-count*
-    (incf *pass-count*))
+  (when *stats*
+    (incf (test-stats-pass-count *stats*)))
   T)
 
 (defun failed (c)
   (write-char #\f)
-  (when *fail-count*
-    (incf *fail-count*))
-  (when *failures*
-    (push c (gethash *test-name* *failures*)))
+  (when *stats*
+    (incf (test-stats-fail-count *stats*))
+    (push c (gethash *test-name* (test-stats-failures *stats*))))
   (setf *last-fail* c)
   nil)
 
@@ -225,5 +280,5 @@
          (serious-condition (c)
            (failed (make-condition 'test-failure
                                    :name *test-name*
-                                   :format-control "Expected to finish, but got ~s"
-                                   :format-arguments (list (type-of c))))))))
+                                   :format-control "Expected to finish, but got ~s:~%~a"
+                                   :format-arguments (list (type-of c) c)))))))

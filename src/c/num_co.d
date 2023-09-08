@@ -115,51 +115,47 @@ cl_object
 cl_decode_float(cl_object x)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  int e, s;
-  cl_type tx = ecl_t_of(x);
-  float f;
+  int e, s = 1;
+  cl_object y = ECL_NIL;
 
-  switch (tx) {
-  case t_singlefloat: {
-    f = ecl_single_float(x);
-    if (f >= 0.0) {
-      s = 1;
-    } else {
-      f = -f;
-      s = 0;
+  switch (ecl_t_of(x)) {
+  case t_longfloat: {
+    long double d = ecl_long_float(x);
+    if (signbit(d)) {
+      s = -1;
+      d = -d;
     }
-    f = frexpf(f, &e);
-    x = ecl_make_single_float(f);
+    d = frexpl(d, &e);
+    x = ecl_make_long_float(d);
+    y = ecl_make_long_float(s);
     break;
   }
   case t_doublefloat: {
     double d = ecl_double_float(x);
-    if (d >= 0.0) {
-      s = 1;
-    } else {
+    if (signbit(d)) {
+      s = -1;
       d = -d;
-      s = 0;
     }
     d = frexp(d, &e);
     x = ecl_make_double_float(d);
+    y = ecl_make_double_float(s);
     break;
   }
-  case t_longfloat: {
-    long double d = ecl_long_float(x);
-    if (d >= 0.0)
-      s = 1;
-    else {
+  case t_singlefloat: {
+    float d = ecl_single_float(x);
+    if (signbit(d)) {
+      s = -1;
       d = -d;
-      s = 0;
     }
-    d = frexpl(d, &e);
-    x = ecl_make_long_float(d);
+    d = frexpf(d, &e);
+    x = ecl_make_single_float(d);
+    y = ecl_make_single_float(s);
     break;
   }
   default:
     FEwrong_type_only_arg(@[decode-float],x,@[float]);
   }
-  ecl_return3(the_env, x, ecl_make_fixnum(e), ecl_make_single_float(s));
+  ecl_return3(the_env, x, ecl_make_fixnum(e), y);
 }
 
 cl_object
@@ -475,4 +471,32 @@ cl_imagpart(cl_object x)
     FEwrong_type_only_arg(@[imagpart],x,@[number]);
   }
   @(return x);
+}
+
+uint32_t
+ecl_float_bits(float num)
+{
+  union { float f; uint32_t u; } fu = { .f = num };
+  return fu.u;
+}
+
+uint64_t
+ecl_double_bits(double num)
+{
+  union { double f; uint64_t u; } fu = { .f = num };
+  return fu.u;
+}
+
+float
+ecl_bits_float(uint32_t num)
+{
+  union { float f; uint32_t u; } fu = { .u = num };
+  return fu.f;
+}
+
+double
+ecl_bits_double(uint64_t num)
+{
+  union { double f; uint64_t u; } fu = { .u = num };
+  return fu.f;
 }

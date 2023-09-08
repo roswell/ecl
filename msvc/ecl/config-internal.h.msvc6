@@ -163,7 +163,7 @@
 #  define PATH_SEPARATOR	':'
 #endif
 
-#define ECL_ARCHITECTURE "PENTIUM4"
+#define ECL_ARCHITECTURE "@ARCHITECTURE@"
 
 #ifdef ECL_AVOID_FPE_H
 # define ecl_detect_fpe()

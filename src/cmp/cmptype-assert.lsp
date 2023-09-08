@@ -64,7 +64,7 @@
         `(ffi:c-inline (,value) (:object) :void ,simple-form
                        :one-liner nil)
         `(ffi:c-inline
-          ((typep ,value ',type) ',type ,value)
+          ((typep ,value ',(si::flatten-function-types type)) ',type ,value)
           (:bool :object :object) :void
           "if (ecl_unlikely(!(#0)))
          FEwrong_type_argument(#1,#2);" :one-liner nil))))
@@ -75,7 +75,7 @@
              (symbol-macro-p value))
          ;; If multiple references to the value cost time and space,
          ;; or may cause side effects, we save it.
-         (with-clean-symbols (%asserted-value)
+         (ext:with-clean-symbols (%asserted-value)
            `(let* ((%asserted-value ,value))
               (declare (:read-only %asserted-value))
               ,(expand-type-assertion '%asserted-value type env compulsory))))
@@ -94,14 +94,15 @@
   (let* ((type (pop args))
          (value (pop args))
          form form-type and-type)
-    (cond ((or (trivial-type-p args) (not (policy-type-assertions)))
+    (cond ((or (trivial-type-p type) (not (policy-type-assertions)))
            value)
           ((and (consp type)
                 (eq (first type) 'values))
            (c1checked-value (list (values-type-primary-type type)
                                   value)))
           ((and (policy-evaluate-forms) (constantp value *cmp-env*))
-           (if (typep (ext:constant-form-value value *cmp-env*) type)
+           (if (typep (ext:constant-form-value value *cmp-env*)
+                      (si::flatten-function-types type))
                value
                (progn
                  ;; warn and generate error.
@@ -119,38 +120,39 @@
                    and-type (type-and form-type type))
              (eq and-type form-type))
            form)
-          ;; Are the form type and the test disjoint types?
-          ((null and-type)
-           (cmpwarn "The expression ~S is not of the expected type ~S"
-                    value type)
-           form)
           ;; Otherwise, emit a full test
           (t
-           (cmpdebug "Checking type of ~S to be ~S" value type)
+           (if (null and-type) ; Are the form type and the test disjoint types?
+               (cmpwarn "The expression ~S is not of the expected type ~S"
+                        value type)
+               (cmpdebug "Checking type of ~S to be ~S" value type))
            (let ((full-check
-                  (with-clean-symbols (%checked-value)
+                  (ext:with-clean-symbols (%checked-value)
                     `(let* ((%checked-value ,value))
                        (declare (:read-only %checked-value))
                        ,(expand-type-assertion '%checked-value type *cmp-env* nil)
-                       (truly-the ,type %checked-value)))))
-             (make-c1form* 'CHECKED-VALUE
+                       ,(if (null and-type)
+                            '%checked-value
+                            `(ext:truly-the ,type %checked-value))))))
+             (make-c1form* 'ext:CHECKED-VALUE
                            :type type
                            :args type form (c1expr full-check)))))))
 
 (defun c2checked-value (c1form type value let-form)
+  (declare (ignore c1form))
   (c2expr (if (subtypep (c1form-primary-type value) type)
               value
               let-form)))
 
-(defmacro optional-type-assertion (&whole whole value type &environment env)
+(defmacro optional-type-assertion (value type &environment env)
   "If safety settings are high enough, generates a type check on an
 expression, ensuring that it is satisfied."
   (when (and (policy-type-assertions env)
              (not (trivial-type-p type)))
     (cmpdebug "Checking type of ~A to be ~A" value type)
-    `(checked-value ,type ,value)))
+    `(ext:checked-value ,type ,value)))
 
-(defmacro type-assertion (&whole whole value type &environment env)
+(defmacro type-assertion (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (cmpdebug "Checking type of ~A to be ~A" value type)
   (unless (trivial-type-p type)

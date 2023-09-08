@@ -49,7 +49,7 @@
                                  (si:complex-single-float . #c(0.0l0 0.0l0)))
                                :test #'subtypep))))
     (if new-value
-        (c1constant-value new-value :only-small-values t)
+        (c1constant-value new-value)
         (c1nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -119,7 +119,7 @@
              ;; later due to this assertion...
              (setf (var-type var) t
                    checks (list* `(type-assertion ,name ,type) checks)
-                   new-auxs (list* `(truly-the ,type ,name) name new-auxs))
+                   new-auxs (list* `(ext:truly-the ,type ,name) name new-auxs))
              ;; Or simply enforce the variable's type.
              (setf (var-type var) (type-and (var-type var) type))))
      finally
@@ -156,33 +156,7 @@
     (values (nreverse (car checks)) (nreverse (cadr checks))
             (nreverse (caddr checks)) (nreverse new-auxs))))
 
-(defun type-error-check (value type)
-  (case type
-    (cons
-     `(ffi:c-inline (,value) (:object) :void
-        "@0;if (ecl_unlikely(ECL_ATOM(#0))) FEtype_error_cons(#0);"
-        :one-liner nil))
-    (array
-     `(ffi:c-inline (,value) (:object) :void
-        "if (ecl_unlikely(!ECL_ARRAYP(#0))) FEtype_error_array(#0);"
-        :one-liner nil))
-    (list
-     `(ffi:c-inline (,value) (:object) :void
-        "if (ecl_unlikely(!ECL_LISTP(#0))) FEtype_error_list(#0);"
-        :one-liner nil))
-    (sequence
-     `(ffi:c-inline (,value) (:object) :void
-        "if (ecl_unlikely(!(ECL_LISTP(#0) || ECL_VECTORP(#0))))
-           FEtype_error_sequence(#0);"
-        :one-liner nil))
-    (otherwise
-     `(ffi:c-inline
-       ((typep ,value ',type) ',type ,value)
-       (:bool :object :object) :void
-       "if (ecl_unlikely(!(#0)))
-         FEwrong_type_argument(#1,#2);" :one-liner nil))))
-
-(defmacro assert-type-if-known (&whole whole value type &environment env)
+(defmacro assert-type-if-known (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (multiple-value-bind (trivial valid)
       (subtypep 't type)
@@ -191,28 +165,12 @@
           ((multiple-value-setq (valid value) (constant-value-p value env))
            (si::maybe-quote value))
           (t
-           (with-clean-symbols (%value)
+           (ext:with-clean-symbols (%value)
              `(let* ((%value ,value))
-                ,(type-error-check '%value (replace-invalid-types type))
-                (truly-the ,type %value)))))))
+                ,(simple-type-assertion '%value (si::flatten-function-types type))
+                (ext:truly-the ,type %value)))))))
 
-(defun replace-invalid-types (type)
-  ;; Some types which are acceptable in DECLARE are not
-  ;; accepted by TYPEP. We thus simplify the type replacing
-  ;; the offending ones by more general types. No problem
-  ;; doing this since the type checks are optional.
-  (if (atom type)
-      type
-      (let ((name (car type)))
-        (case name
-          (FUNCTION 'FUNCTION)
-          ((OR AND NOT CONS)
-           (list* name (mapcar #'replace-invalid-types (rest type))))
-          (otherwise
-           type)))))
-
-(defmacro optional-type-check (&whole whole value type &environment env)
-  (declare (ignore env))
+(defmacro optional-type-check (value type)
   (if (policy-assume-right-type)
       value
       `(assert-type-if-known ,value ,type)))

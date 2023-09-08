@@ -691,6 +691,27 @@ Returns T if X belongs to TYPE; NIL otherwise."
   (declare (ignore foo))
   nil)
 
+(defun flatten-function-types (type)
+  "Replace all compound function types by the atomic function type.
+For example (flatten-function-types '(function (symbol) symbol)) ->
+'function."
+  (cond ((and (consp type) (eq (first type) 'FUNCTION))
+         'FUNCTION)
+        ((and (consp type) (member (first type) '(NOT OR AND CONS)))
+         (list* (first type) (mapcar #'flatten-function-types (rest type))))
+        (t
+         (let ((type-name (if (consp type) (first type) type))
+               (type-args (if (consp type) (rest type) nil)))
+           (ext:if-let ((fd (get-sysprop type-name 'DEFTYPE-DEFINITION)))
+             ;; In the case of custom types, we expand the type
+             ;; definition only if necessary.
+             (let* ((type-alias (funcall fd type-args))
+                    (flattened-type (flatten-function-types type-alias)))
+               (if (eq flattened-type type-alias)
+                   type
+                   flattened-type))
+             type)))))
+
 ;;************************************************************
 ;;                      NORMALIZE-TYPE
 ;;************************************************************

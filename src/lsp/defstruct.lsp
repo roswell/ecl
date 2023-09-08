@@ -184,7 +184,7 @@
                 ;; case of BOA lists we remove some of these checks for
                 ;; uninitialized slots.
                 (unless (eq 'T slot-type)
-                  (push `(unless (typep ,var-name ',slot-type)
+                  (push `(unless (typep ,var-name ',(flatten-function-types slot-type))
                            (structure-type-error ,var-name ',slot-type ',name ',slot-name))
                         assertions))
                 var-name)))
@@ -301,42 +301,58 @@
 (defun %struct-layout-compatible-p (old-slot-descriptions new-slot-descriptions)
   (declare (si::c-local))
   (do* ((old-defs old-slot-descriptions (cdr old-defs))
-        (new-defs new-slot-descriptions (cdr new-defs)))
+        (new-defs new-slot-descriptions (cdr new-defs))
+        (old-def (car old-defs))
+        (new-def (car new-defs)))
        ((or (null old-defs) (null new-defs))
         ;; Structures must have the same number of compatible slots.
         (and (null old-defs)
              (null new-defs)))
-    (let ((old-def (car old-defs))
-          (new-def (car new-defs)))
-      ;; We need equal first because slot-description may be a list with
-      ;; (slot-name init …), a list (typed-structure-name ,name) or NIL.
-      (or (equal old-def new-def)
-          (destructuring-bind (old-slot-name old-init old-type old-read-only old-offset old-ac)
-              old-def
-            (declare (ignore old-slot-name old-init old-read-only old-ac))
-            (destructuring-bind (new-slot-name new-init new-type new-read-only new-offset new-ac)
-                new-def
-              (declare (ignore new-slot-name new-init new-read-only new-ac))
-              ;; Name EQL is not enforced because structures may be
-              ;; constructed by code generators and it is likely they
-              ;; will have gensymed names. -- jd 2019-05-22
-              (and #+ (or) (eql old-slot-name new-slot-name)
-                   (= old-offset new-offset)
-                   (and (multiple-value-bind (subtypep certain)
-                            (subtypep old-type new-type)
-                          (or (not certain) subtypep))
-                        (multiple-value-bind (subtypep certain)
-                            (subtypep new-type old-type)
-                          (or (not certain) subtypep))))))
-          (return-from %struct-layout-compatible-p nil)))))
+    (or (cond ((or (null old-def)
+                   (null new-def))
+               (eql old-def new-def))
+              ((or (eql (car old-def) 'typed-structure-name)
+                   (eql (car new-def) 'typed-structure-name))
+               (and (null (cddr old-def))
+                    (equal old-def new-def)))
+              (t
+               (destructuring-bind (old-slot-name old-init old-type
+                                    old-read-only old-offset old-ac)
+                   old-def
+                 (declare (ignore old-init old-read-only old-ac))
+                 (destructuring-bind (new-slot-name new-init new-type
+                                      new-read-only new-offset new-ac)
+                     new-def
+                   (declare (ignore new-init new-read-only new-ac))
+                   ;; Names are compared with STRING= because:
+                   ;; a) structure may be macroexpanded with gensym's
+                   ;; b) keyword initargs and accessor names ignore the package
+                   ;; -- jd 2021-12-10
+                   (and (string= old-slot-name new-slot-name)
+                        (= old-offset new-offset)
+                        (and (multiple-value-bind (subtypep certain)
+                                 (subtypep old-type new-type)
+                               (or (not certain) subtypep))
+                             (multiple-value-bind (subtypep certain)
+                                 (subtypep new-type old-type)
+                               (or (not certain) subtypep))))))))
+        (return-from %struct-layout-compatible-p nil))))
 
 (defun define-structure (name conc-name type named slots slot-descriptions
                          copier include print-function print-object constructors
                          offset name-offset documentation predicate)
-  (let ((old-slot-descriptions (get-sysprop name 'structure-slot-descriptions)))
-    (when (and old-slot-descriptions
-               (null (%struct-layout-compatible-p old-slot-descriptions slot-descriptions)))
-      (error "Attempt to redefine the structure ~S incompatibly with the current definition." name)))
+  (mapl (lambda (descriptions)
+          (destructuring-bind (arg-desc . descs) descriptions
+            (let ((name (car arg-desc)))
+              (when (and arg-desc
+                         (not (eql name 'typed-structure-name))
+                         (member name descs :key #'car :test #'equal))
+                (error "Duplicate slot name ~a." name)))))
+        slot-descriptions)
+  (when (get-sysprop name 'is-a-structure)
+    (let ((old-slot-descriptions (get-sysprop name 'structure-slot-descriptions)))
+      (unless (%struct-layout-compatible-p old-slot-descriptions slot-descriptions)
+        (error "Attempt to redefine the structure ~S incompatibly with the current definition." name))))
   (create-type-name name)
   ;; We are going to modify this list!!!
   (setf slot-descriptions (copy-tree slot-descriptions))

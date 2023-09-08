@@ -167,180 +167,20 @@
                                       (nconc (rest around) main)))
           (if (or before after)
               (standard-main-effective-method before primary after)
-              (combine-method-functions (first primary) (rest primary))))
-      )))
-
-;; ----------------------------------------------------------------------
-;; DEFINE-METHOD-COMBINATION
-;;
-;; METHOD-COMBINATION objects are just a list
-;;      (name arg*)
-;; where NAME is the name of the method combination type defined with
-;; DEFINE-METHOD-COMBINATION, and ARG* is zero or more arguments.
-;;
-;; For each method combination type there is an associated function,
-;; and the list of all known method combination types is kept in
-;; *METHOD-COMBINATIONS* in the form of property list:
-;;      (mc-type-name1 function1 mc-type-name2 function2 ....)
-;;
-;; FUNCTIONn is the function associated to a method combination. It
-;; is of type (FUNCTION (generic-function method-list) FUNCTION),
-;; and it outputs an anonymous function which is the effective method.
-;;
-
-#+threads
-(defparameter *method-combinations-lock* (mp:make-lock :name 'find-method-combination))
-(defparameter *method-combinations* (make-hash-table :size 32 :test 'eq))
-
-(defun search-method-combination (name)
-  (mp:with-lock (*method-combinations-lock*)
-    (or (gethash name *method-combinations*)
-        (error "~A does not name a method combination" name))))
-
-(defun install-method-combination (name function)
-  (mp:with-lock (*method-combinations-lock*)
-    (setf (gethash name *method-combinations*) function))
-  name)
-
-(defun make-method-combination (name compiler options)
-  (with-early-make-instance +method-combination-slots+
-    (o (find-class 'method-combination)
-       :name name
-       :compiler compiler
-       :options options)
-    o))
-
-(defun find-method-combination (gf method-combination-type-name method-combination-options)
-  (declare (ignore gf))
-  (make-method-combination method-combination-type-name
-                           (search-method-combination method-combination-type-name)
-                           method-combination-options
-                           ))
-
-(defun define-simple-method-combination (name &key documentation
-                                         identity-with-one-argument
-                                         (operator name))
-  `(define-method-combination
-     ,name (&optional (order :MOST-SPECIFIC-FIRST))
-     ((around (:AROUND))
-      (principal (,name) :REQUIRED t))
-     ,documentation
-     (let ((main-effective-method
-            `(,',operator ,@(mapcar #'(lambda (x) `(CALL-METHOD ,x NIL))
-                                    (if (eql order :MOST-SPECIFIC-LAST)
-                                        (reverse principal)
-                                        principal)))))
-       (cond (around
-              `(call-method ,(first around)
-                (,@(rest around) (make-method ,main-effective-method))))
-             (,(if identity-with-one-argument
-                   '(rest principal)
-                   t)
-              main-effective-method)
-             (t (second main-effective-method))))))
-
-(defun define-complex-method-combination (form)
-  (declare (si::c-local))
-  (flet ((syntax-error ()
-           (error "~S is not a valid DEFINE-METHOD-COMBINATION form"
-                  form)))
-    (destructuring-bind (name lambda-list method-groups &rest body &aux
-                         (group-names '())
-                         (group-checks '())
-                         (group-after '())
-                         (generic-function '.generic-function.)
-                         (method-arguments '())
-                         decls documentation)
-        form
-      (unless (symbolp name) (syntax-error))
-      (let ((x (first body)))
-        (when (and (consp x) (eql (first x) :ARGUMENTS))
-          (error "Option :ARGUMENTS is not supported in DEFINE-METHOD-COMBINATION.")))
-      (let ((x (first body)))
-        (when (and (consp x) (eql (first x) :GENERIC-FUNCTION))
-          (setf body (rest body))
-          (unless (symbolp (setf generic-function (second x)))
-            (syntax-error))))
-      (multiple-value-setq (decls body documentation)
-        (si::find-declarations body t))
-      (dolist (group method-groups)
-        (destructuring-bind (group-name predicate &key description
-                                  (order :most-specific-first) (required nil))
-            group
-          (if (symbolp group-name)
-              (push group-name group-names)
-              (syntax-error))
-          (let ((condition
-                (cond ((eql predicate '*) 'T)
-                      ((and predicate (symbolp predicate))
-                       `(,predicate .METHOD-QUALIFIERS.))
-                      ((and (listp predicate)
-                            (let* ((q (last predicate 0))
-                                   (p (copy-list (butlast predicate 0))))
-                              (when (every #'symbolp p)
-                                (if (eql q '*)
-                                    `(every #'equal ',p .METHOD-QUALIFIERS.)
-                                    `(equal ',p .METHOD-QUALIFIERS.))))))
-                      (t (syntax-error)))))
-            (push `(,condition (push .METHOD. ,group-name)) group-checks))
-          (when required
-            (push `(unless ,group-name
-                    (error "Method combination: ~S. No methods ~
-                            in required group ~S." ',name ,group-name))
-                  group-after))
-          (case order
-            (:most-specific-first
-             (push `(setf ,group-name (nreverse ,group-name)) group-after))
-            (:most-specific-last)
-            (otherwise
-             (let ((order-var (gensym)))
-               (setf group-names (append group-names (list (list order-var order)))
-                     group-after (list* `(when (eq ,order-var :most-specific-first)
-                                           (setf ,group-name (nreverse ,group-name)))
-                                        group-after)))))))
-      `(progn
-         ,@(si::expand-set-documentation name 'method-combination documentation)
-         (install-method-combination ',name
-            (lambda (,generic-function .methods-list. ,@lambda-list)
-              (declare (ignorable ,generic-function))
-              ,@decls
-              (block ,name
-                (let (,@group-names)
-                  (dolist (.method. .methods-list.)
-                    (let ((.method-qualifiers. (method-qualifiers .method.)))
-                      (cond ,@(nreverse group-checks)
-                            (t (invalid-method-error .method.
-                                 "Method qualifiers ~S are not allowed in the method~
-                                  combination ~S." .method-qualifiers. ',name)))))
-                  ,@group-after
-                  (effective-method-function (progn ,@body) t))))))
-      )))
-
-(defmacro define-method-combination (name &body body)
-  (if (and body (listp (first body)))
-      (define-complex-method-combination (list* name body))
-      (apply #'define-simple-method-combination name body)))
-
-(defun method-combination-error (format-control &rest args)
-  ;; FIXME! We should emit a more detailed error!
-  (error "Method-combination error:~%~S"
-         (apply #'format nil format-control args)))
-
-(defun invalid-method-error (method format-control &rest args)
-  (error "Invalid method error for ~A~%~S"
-         method
-         (apply #'format nil format-control args)))
+              (combine-method-functions (first primary) (rest primary)))) )))
 
 ;;; ----------------------------------------------------------------------
 ;;; COMPUTE-EFFECTIVE-METHOD
 ;;;
 
-(eval-when (compile)
+(eval-when (:compile-toplevel)
   (let* ((class (find-class 'method-combination)))
     (define-compiler-macro method-combination-compiler (o)
-      `(si::instance-ref ,o ,(slot-definition-location (gethash 'compiler (slot-table class)))))
+      `(si::instance-ref
+        ,o ,(slot-definition-location (gethash 'compiler (slot-table class)))))
     (define-compiler-macro method-combination-options (o)
-      `(si::instance-ref ,o ,(slot-definition-location (gethash 'options (slot-table class)))))))
+      `(si::instance-ref
+        ,o ,(slot-definition-location (gethash 'options (slot-table class)))))))
 
 (defun std-compute-effective-method (gf method-combination applicable-methods)
   (declare (type method-combination method-combination)
@@ -359,26 +199,13 @@
   (let ((form (compute-effective-method gf method-combination applicable-methods)))
     (let ((aux form) f)
       (if (and (listp aux)
-                 (eq (pop aux) 'funcall)
-                 (functionp (setf f (pop aux)))
-                 (eq (pop aux) '.combined-method-args.)
-                 (eq (pop aux) '*next-methods*))
+               (eq (pop aux) 'funcall)
+               (functionp (setf f (pop aux)))
+               (eq (pop aux) '.combined-method-args.)
+               (eq (pop aux) '*next-methods*))
           f
           (effective-method-function form t)))))
 
 (defun compute-effective-method (gf method-combination applicable-methods)
   `(funcall ,(std-compute-effective-method gf method-combination applicable-methods)
             .combined-method-args. *next-methods*))
-
-(install-method-combination 'standard 'standard-compute-effective-method)
-(progn
-  (define-method-combination progn :identity-with-one-argument t)
-  (define-method-combination and :identity-with-one-argument t)
-  (define-method-combination max :identity-with-one-argument t)
-  (define-method-combination + :identity-with-one-argument t)
-  (define-method-combination nconc :identity-with-one-argument t)
-  (define-method-combination append :identity-with-one-argument nil)
-  (define-method-combination list :identity-with-one-argument nil)
-  (define-method-combination min :identity-with-one-argument t)
-  (define-method-combination or :identity-with-one-argument t))
-

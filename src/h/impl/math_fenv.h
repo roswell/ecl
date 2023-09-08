@@ -55,6 +55,21 @@
 #ifdef HAVE_FENV_H
 # define ECL_WITHOUT_FPE_BEGIN do { fenv_t env; feholdexcept(&env);
 # define ECL_WITHOUT_FPE_END        fesetenv(&env); } while (0)
+# if !defined(FE_DIVBYZERO)
+#  define FE_DIVBYZERO 0
+# endif
+# if !defined(FE_INVALID)
+#  define FE_INVALID 0
+# endif
+# if !defined(FE_OVERFLOW)
+#  define FE_OVERFLOW 0
+# endif
+# if !defined(FE_UNDERFLOW)
+#  define FE_UNDERFLOW 0
+# endif
+# if !defined(FE_INEXACT)
+#  define FE_INEXACT 0
+# endif
 #else
 # define FE_INVALID 1
 # define FE_DIVBYZERO 2

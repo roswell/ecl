@@ -150,7 +150,9 @@ struct cl_env_struct {
 struct ecl_interrupt_struct {
         cl_object pending_interrupt;
         cl_object signal_queue;
-        cl_object signal_queue_spinlock;
+#ifdef ECL_THREADS
+        ecl_mutex_t signal_queue_lock;
+#endif
 };
 
 #ifndef __GNUC__
@@ -196,7 +198,6 @@ struct cl_core_struct {
         cl_object error_output;
         cl_object standard_readtable;
         cl_object dispatch_reader;
-        cl_object default_dispatch_macro;
 
         cl_object char_names;
         cl_object null_string;
@@ -224,10 +225,10 @@ struct cl_core_struct {
 
 #ifdef ECL_THREADS
         cl_object processes;
-        cl_object processes_spinlock;
-        cl_object global_lock;
-        cl_object error_lock;
-        cl_object global_env_lock;
+        ecl_mutex_t processes_lock;
+        ecl_mutex_t global_lock;
+        ecl_mutex_t error_lock;
+        ecl_rwlock_t global_env_lock;
 #endif
         cl_object libraries;
 
@@ -262,12 +263,15 @@ extern ECL_API struct cl_core_struct cl_core;
 
 extern ECL_API cl_object ecl_alloc_object(cl_type t);
 extern ECL_API cl_object ecl_alloc_instance(cl_index slots);
+extern ECL_API cl_object ecl_alloc_weak_pointer(cl_object o);
+extern ECL_API cl_object ecl_alloc_compact_object(cl_type t, cl_index extra_space);
 extern ECL_API cl_object ecl_cons(cl_object a, cl_object d);
-extern ECL_API cl_object ecl_list1(cl_object a);
+#define ecl_list1(x) ecl_cons(x, ECL_NIL)
+
+extern ECL_API cl_object si_make_weak_pointer(cl_object o);
+extern ECL_API cl_object si_weak_pointer_value(cl_object o);
+
 #ifdef GBC_BOEHM
-extern ECL_API cl_object si_gc(cl_narg narg, ...);
-extern ECL_API cl_object si_gc_dump(void);
-extern ECL_API cl_object si_gc_stats(cl_object enable);
 extern ECL_API void *ecl_alloc_unprotected(cl_index n);
 extern ECL_API void *ecl_alloc_atomic_unprotected(cl_index n);
 extern ECL_API void *ecl_alloc(cl_index n);
@@ -277,30 +281,8 @@ extern ECL_API void ecl_free_uncollectable(void *);
 extern ECL_API void ecl_dealloc(void *);
 #define ecl_alloc_align(s,d) ecl_alloc(s)
 #define ecl_alloc_atomic_align(s,d) ecl_alloc_atomic(s)
-#define ecl_register_static_root(x) ecl_register_root(x)
-extern ECL_API cl_object ecl_alloc_compact_object(cl_type t, cl_index extra_space);
-
-extern ECL_API cl_object si_make_weak_pointer(cl_object o);
-extern ECL_API cl_object si_weak_pointer_value(cl_object o);
-#else
-extern ECL_API cl_object si_allocate _ECL_ARGS((cl_narg narg, cl_object type, cl_object qty, ...));
-extern ECL_API cl_object si_maximum_allocatable_pages _ECL_ARGS((cl_narg narg, cl_object type, ...));
-extern ECL_API cl_object si_allocated_pages _ECL_ARGS((cl_narg narg, cl_object type, ...));
-extern ECL_API cl_object si_alloc_contpage _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_allocated_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_maximum_contiguous_pages _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_allocate_contiguous_pages _ECL_ARGS((cl_narg narg, cl_object qty, ...));
-extern ECL_API cl_object si_get_hole_size _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_set_hole_size _ECL_ARGS((cl_narg narg, cl_object size, ...));
-extern ECL_API cl_object si_ignore_maximum_pages _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API void *ecl_alloc(cl_index n);
-extern ECL_API void *ecl_alloc_align(cl_index size, cl_index align);
-extern ECL_API void *ecl_alloc_uncollectable(size_t size);
-extern ECL_API void ecl_free_uncollectable(void *);
-extern ECL_API void ecl_dealloc(void *p);
-#define ecl_alloc_atomic(x) ecl_alloc(x)
-#define ecl_alloc_atomic_align(x,s) ecl_alloc_align(x,s)
-#define ecl_register_static_root(x) ecl_register_root(x);
+#else  /* Ideally the core would not depend on these. */
+# error "IMPLEMENT ME!"
 #endif /* GBC_BOEHM */
 
 /* all_symbols */
@@ -334,6 +316,7 @@ extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn, cl_object *x);
 extern ECL_API cl_object cl_row_major_aref(cl_object x, cl_object i);
 extern ECL_API cl_object si_row_major_aset(cl_object x, cl_object i, cl_object v);
 extern ECL_API cl_object si_make_vector(cl_object etype, cl_object dim, cl_object adj, cl_object fillp, cl_object displ, cl_object disploff);
+extern ECL_API cl_object si_adjust_vector(cl_object vector, cl_object dim);
 
 /* for open-coding the access while preserving the bounds and type check: */
 extern ECL_API void *ecl_row_major_ptr(cl_object arr, cl_index index, cl_index bytes);
@@ -506,6 +489,7 @@ extern ECL_API cl_object cl_class_of(cl_object x);
 /* cmpaux.c */
 
 extern ECL_API cl_object si_specialp(cl_object sym);
+extern ECL_API cl_object si_constp(cl_object sym);
 
 extern ECL_API cl_fixnum ecl_ifloor(cl_fixnum x, cl_fixnum y);
 extern ECL_API cl_fixnum ecl_imod(cl_fixnum x, cl_fixnum y);
@@ -571,6 +555,7 @@ extern ECL_API void ecl_internal_error(const char *s) ecl_attr_noreturn;
 extern ECL_API void ecl_thread_internal_error(const char *s) ecl_attr_noreturn;
 #endif
 extern ECL_API void ecl_unrecoverable_error(cl_env_ptr the_env, const char *message) ecl_attr_noreturn;
+extern ECL_API void ecl_miscompilation_error(void) ecl_attr_noreturn;
 extern ECL_API void ecl_cs_overflow(void) /*ecl_attr_noreturn*/;
 extern ECL_API void FEprogram_error(const char *s, int narg, ...) ecl_attr_noreturn;
 extern ECL_API void FEcontrol_error(const char *s, int narg, ...) ecl_attr_noreturn;
@@ -598,6 +583,8 @@ extern ECL_API void FEinvalid_function(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function_name(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEprint_not_readable(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEtimeout() ecl_attr_noreturn;
+extern ECL_API void FEerror_not_owned(cl_object lock) ecl_attr_noreturn;
+extern ECL_API void FEunknown_lock_error(cl_object lock) ecl_attr_noreturn;
 extern ECL_API cl_object CEerror(cl_object c, const char *err_str, int narg, ...);
 extern ECL_API void FElibc_error(const char *msg, int narg, ...) ecl_attr_noreturn;
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
@@ -685,6 +672,7 @@ extern ECL_API void ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag type, cl_
 #define ECL_LISTEN_NO_CHAR      0
 #define ECL_LISTEN_AVAILABLE    1
 #define ECL_LISTEN_EOF          -1
+#define ECL_LISTEN_FALLBACK     -3
 
 extern ECL_API cl_object cl_make_synonym_stream(cl_object sym);
 extern ECL_API cl_object cl_synonym_stream_symbol(cl_object strm);
@@ -769,26 +757,16 @@ extern ECL_API cl_object cl_format _ECL_ARGS((cl_narg narg, cl_object stream, cl
 
 /* gbc.c */
 
-#if !defined(GBC_BOEHM)
-extern ECL_API cl_object si_room_report _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_reset_gc_count _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_gc_time _ECL_ARGS((cl_narg narg, ...));
-extern ECL_API cl_object si_gc(cl_object area, ...);
-#define GC_enabled() GC_enable
-#define GC_enable() GC_enable = TRUE;
-#define GC_disable() GC_enable = FALSE;
-extern ECL_API bool GC_enable;
-extern ECL_API cl_object (*GC_enter_hook)(void);
-extern ECL_API cl_object (*GC_exit_hook)(void);
-extern ECL_API void ecl_register_root(cl_object *p);
-extern ECL_API void ecl_gc(cl_type t);
-#endif
-
 #ifdef GBC_BOEHM
 #define GC_enabled() !GC_is_disabled()
 #define GC_enable() GC_enable()
 #define GC_disable() GC_disable()
 extern ECL_API void ecl_register_root(cl_object *p);
+extern ECL_API cl_object si_gc(cl_narg narg, ...);
+extern ECL_API cl_object si_gc_dump(void);
+extern ECL_API cl_object si_gc_stats(cl_object enable);
+#else
+# error "IMPLEMENT ME!"
 #endif /* GBC_BOEHM */
 
 
@@ -1193,6 +1171,10 @@ extern ECL_API cl_object ecl_ceiling2(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_truncate2(cl_object x, cl_object y);
 extern ECL_API cl_object ecl_round2(cl_object x, cl_object y);
 
+extern ECL_API uint32_t ecl_float_bits(float num);
+extern ECL_API float    ecl_bits_float(uint32_t num);
+extern ECL_API uint64_t ecl_double_bits(double num);
+extern ECL_API double   ecl_bits_double(uint64_t num);
 
 /* num_comp.c */
 
@@ -1406,8 +1388,8 @@ extern ECL_API cl_object cl_wild_pathname_p _ECL_ARGS((cl_narg narg, cl_object p
 
 extern ECL_API cl_object ecl_make_pathname(cl_object host, cl_object device, cl_object directory, cl_object name, cl_object type, cl_object version, cl_object scase);
 extern ECL_API cl_object ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep, cl_object default_host);
-extern ECL_API cl_object coerce_to_physical_pathname(cl_object x);
-extern ECL_API cl_object coerce_to_file_pathname(cl_object pathname);
+extern ECL_API cl_object si_coerce_to_physical_pathname(cl_object x);
+extern ECL_API cl_object si_coerce_to_file_pathname(cl_object pathname);
 #define ECL_NAMESTRING_TRUNCATE_IF_ERROR 1
 #define ECL_NAMESTRING_FORCE_BASE_STRING 2
 extern ECL_API cl_object ecl_namestring(cl_object pname, int truncate_if_impossible);
@@ -1452,7 +1434,7 @@ extern ECL_API bool floatp(cl_object x);
 extern ECL_API bool ecl_numberp(cl_object x);
 extern ECL_API bool ecl_realp(cl_object x);
 extern ECL_API bool ecl_eql(cl_object x, cl_object y);
-extern ECL_API bool ecl_equal(register cl_object x, cl_object y);
+extern ECL_API bool ecl_equal(cl_object x, cl_object y);
 extern ECL_API bool ecl_equalp(cl_object x, cl_object y);
 extern ECL_API bool ecl_stringp(cl_object x);
 
@@ -1552,6 +1534,7 @@ extern ECL_API cl_object cl_set_dispatch_macro_character _ECL_ARGS((cl_narg narg
 extern ECL_API cl_object cl_get_dispatch_macro_character _ECL_ARGS((cl_narg narg, cl_object dspchr, cl_object subchr, ...));
 extern ECL_API cl_object si_read_object_or_ignore(cl_object stream, cl_object eof);
 extern ECL_API cl_object si_readtable_lock _ECL_ARGS((cl_narg narg, cl_object readtable, ...));
+extern ECL_API cl_object si_make_backq_vector(cl_object dim, cl_object data, cl_object stream);
 
 extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro);
 extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro_or_table);
@@ -1696,6 +1679,15 @@ extern ECL_API bool ecl_member_char(ecl_character c, cl_object char_bag);
 extern ECL_API bool ecl_fits_in_base_string(cl_object s);
 extern ECL_API ecl_character ecl_char(cl_object s, cl_index i);
 extern ECL_API ecl_character ecl_char_set(cl_object s, cl_index i, ecl_character c);
+extern ECL_API cl_object si_octets_to_string _ECL_ARGS((cl_narg narg, cl_object input, ...));
+extern ECL_API cl_object si_string_to_octets _ECL_ARGS((cl_narg narg, cl_object input, ...));
+extern ECL_API cl_object ecl_decode_from_cstring(const char *s, cl_fixnum len, cl_object encoding);
+extern ECL_API cl_fixnum ecl_encode_to_cstring(char *output, cl_fixnum output_len, cl_object input, cl_object encoding);
+#ifdef HAVE_WCHAR_H
+#include <wchar.h>
+extern ECL_API cl_object ecl_decode_from_unicode_wstring(const wchar_t *s, cl_fixnum len);
+extern ECL_API cl_fixnum ecl_encode_to_unicode_wstring(wchar_t *output, cl_fixnum output_len, cl_object input);
+#endif
 
 /* structure.c */
 
@@ -1803,9 +1795,10 @@ extern ECL_API cl_object mp_make_semaphore _ECL_ARGS((cl_narg, ...));
 extern ECL_API cl_object mp_semaphore_count(cl_object);
 extern ECL_API cl_object mp_semaphore_name(cl_object);
 extern ECL_API cl_object mp_semaphore_wait_count(cl_object);
-extern ECL_API cl_object mp_wait_on_semaphore(cl_object);
-extern ECL_API cl_object mp_try_get_semaphore(cl_object);
-extern ECL_API cl_object mp_signal_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_semaphore_wait(cl_object, cl_object, cl_object);
+extern ECL_API cl_object mp_wait_on_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_try_get_semaphore _ECL_ARGS((cl_narg, cl_object, ...));
+extern ECL_API cl_object mp_signal_semaphore  _ECL_ARGS((cl_narg, cl_object, ...));
 extern ECL_API cl_object ecl_make_semaphore(cl_object name, cl_fixnum count);
 
 /* threads/barrier.d */
@@ -1913,8 +1906,6 @@ extern ECL_API cl_object cl_user_homedir_pathname _ECL_ARGS((cl_narg narg, ...))
 extern ECL_API cl_object si_mkstemp(cl_object templ);
 extern ECL_API cl_object si_rmdir(cl_object directory);
 
-extern ECL_API cl_object ecl_cstring_to_pathname(char *s);
-extern ECL_API int ecl_backup_open(const char *filename, int option, int mode);
 extern ECL_API cl_object ecl_file_len(int f);
 extern ECL_API cl_object ecl_homedir_pathname(cl_object user);
 extern ECL_API cl_object si_get_library_pathname(void);
@@ -1954,7 +1945,6 @@ extern ECL_API void ecl_check_pending_interrupts(cl_env_ptr env);
 extern ECL_API cl_object si_system(cl_object cmd);
 extern ECL_API cl_object si_make_pipe();
 extern ECL_API cl_object si_run_program _ECL_ARGS((cl_narg narg, cl_object command, cl_object args, ...));
-extern ECL_API cl_object si_close_windows_handle(cl_object h);
 extern ECL_API cl_object si_terminate_process _ECL_ARGS((cl_narg narg, cl_object process, ...));
 extern ECL_API cl_object si_waitpid(cl_object pid, cl_object wait);
 extern ECL_API cl_object si_killpid(cl_object pid, cl_object signal);

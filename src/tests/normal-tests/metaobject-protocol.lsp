@@ -58,6 +58,8 @@
    (= 3
       (eval '(progn
               (defclass foo-metaclass (standard-class) ())
+              (defmethod mop:validate-superclass ((c1 foo-metaclass) (c2 standard-class))
+                t)
               (defclass faa () ((a :initform 2 :initarg :a)) (:metaclass foo-metaclass))
               (prog1 (slot-value (make-instance 'faa :a 3) 'a)
                 (cl-test::delete-class 'foo-metaclass 'faa)))))))
@@ -136,6 +138,8 @@
     (eval '(let ((*aux* 5))
             (declare (special *aux*))
             (defclass foo-metaclass (standard-class) ())
+            (defmethod mop:validate-superclass ((c1 foo-metaclass) (c2 standard-class))
+              t)
             (defmethod shared-initialize ((class foo-metaclass) slot-names
                                           &rest initargs &key option)
               (prog1 (call-next-method)
@@ -261,6 +265,8 @@ the metaclass")
   (eval '(let ((*aux* 5))
           (declare (special *aux*))
           (defclass foo-metaclass (standard-class) ())
+          (defmethod mop:validate-superclass ((c1 foo-metaclass) (c2 standard-class))
+            t)
           (defmethod shared-initialize ((class foo-metaclass) slot-names
                                         &rest initargs &key ((cl-user::option option)))
             (prog1 (call-next-method)
