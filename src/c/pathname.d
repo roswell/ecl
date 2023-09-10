@@ -785,7 +785,6 @@ cl_logical_pathname(cl_object x)
   @(return x);
 }
 
-/* FIXME! WILD-PATHNAME-P is missing! */
 @(defun wild-pathname-p (pathname &optional component)
   bool checked = 0;
 @

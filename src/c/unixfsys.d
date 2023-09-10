@@ -1012,7 +1012,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
      * for the file part.
      */
     if (Null(base_dir))
-      return ECL_NIL;
+      return output;
     directory = ECL_CONS_CDR(directory);
     goto AGAIN;
   }
