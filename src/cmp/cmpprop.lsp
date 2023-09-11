@@ -115,6 +115,15 @@
     (:unknown
      (p1trivial c1form))))
 
+(defun p1mcall (c1form fun args fun-val call-type)
+  (declare (ignore fun))
+  (p1propagate fun)
+  (p1propagate-list args)
+  (ecase call-type
+    (:global (or (get-return-type fun-val) '(VALUES &REST T)))
+    (:local (or (get-local-return-type fun-val) '(VALUES &REST T)))
+    (:unknown (p1trivial c1form))))
+
 (defun p1catch (c1form tag body)
   (declare (ignore c1form))
   (p1propagate tag)

@@ -46,9 +46,7 @@
         (:global (c2call-global c1form fun-val args))
         (:unknown (c2call-unknown c1form fun args)))))
 
-;;; FIXME now we could incorporate the call type for MCALL to faciliate the
-;;; type propagation.
-(defun c2mcall (c1form form args)
+(defun c2mcall (c1form form args fun-val call-type)
   (c2call-stack c1form form args t))
 
 ;;;

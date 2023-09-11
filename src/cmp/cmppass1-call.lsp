@@ -80,23 +80,76 @@
         ;; (FUNCALL lisp-expression ...) or (FUNCALL atomic-expression ...)
         (unoptimized-funcall fun arguments))))
 
+;;; Further optimization opportunities:
+;;; - expand macros
+;;; - expand compiler macros
+;;; - rely on the function proclamations
+;;; - rely on the inferred argument type
+(defun try-spill-values-funcall (fun arguments)
+  (flet ((values-form (arg)
+           (setq arg (chk-symbol-macrolet arg))
+           (if (or (atom arg)
+                   (eq (car arg) 'CL:VALUES))
+               arg
+               (return-from try-spill-values-funcall nil))))
+    (loop for arg in arguments
+          for val = (values-form arg)
+          if (atom val)
+            collect val into values
+          else
+            append (cdr val) into values
+          finally (return (c1funcall (list* fun values))))))
+
+(defun try-macro-expression-mvc (fun arguments)
+  (unless (consp fun)
+    (return-from try-macro-expression-mvc nil))
+  (let* ((name (first fun))
+         (fd (and (symbolp name)
+                  ;; We do not want to macroexpand 'CL:THE
+                  (not (eq name 'CL:THE))
+                  (cmp-macro-function name))))
+    (if fd
+        (c1multiple-value-call (list* (cmp-expand-macro fd fun) arguments))
+        nil)))
+
+(defun try-function-special-mvc (fun arguments)
+  (unless (function-form-p fun)
+    (return-from try-function-special-mvc nil))
+  (let ((fname (second fun)))
+    (if (si:valid-function-name-p fname)
+        (ext:if-let ((funob (local-function-ref fname)))
+          (make-c1form* 'MCALL
+                        :sp-change t ; conservative estimate
+                        :side-effects t ; conservative estimate
+                        :args (c1expr fun) (c1args* arguments) funob :local)
+          (make-c1form* 'MCALL
+                        :sp-change (function-may-change-sp fname)
+                        :side-effects (function-may-have-side-effects fname)
+                        :args (c1expr fun) (c1args* arguments) fname :global))
+        (if (lambda-form-p fun)
+            nil
+            (cmperr "Malformed function name: ~A." fname)))))
+
+(defun unoptimized-mvc (fun arguments)
+  (let ((fun-form (c1expr fun))
+        (fun-args (c1args* arguments)))
+    (make-c1form* 'MCALL
+                  :sp-change t
+                  :side-effects t
+                  :args fun-form fun-args nil :unknown)))
+
 (defun c1multiple-value-call (args &aux forms)
   (check-args-number 'CL:MULTIPLE-VALUE-CALL args 1)
-  (cond
-    ;; (M-V-C #'FUNCTION) => (FUNCALL #'FUNCTION)
-    ((endp (rest args))
-     (c1funcall args))
-    ;; (M-V-C #'FUNCTION (VALUES A ... Z)) => (FUNCALL #'FUNCTION A ... Z)
-    ((and (= (length args) 2)
-          (consp (setq forms (second args)))
-          (eq 'CL:VALUES (first forms)))
-     (c1funcall (list* (first args) (rest forms))))
-    ;; More complicated case.
-    (t
-     (make-c1form* 'MCALL
-                   :sp-change t
-                   :side-effects t
-                   :args (c1expr (first args)) (c1args* (rest args))))))
+  (destructuring-bind (fun . arguments) args
+    (or ;; (M-V-C expression (VALUES A B) (VALUES X Y Z) ...)
+        ;; => (FUNCALL expression A B X Y Z ...)
+        (try-spill-values-funcall fun arguments)
+        ;; (M-V-C macro-expression ...)
+        (try-macro-expression-mvc fun arguments)
+        ;; (M-V-C (FUNCTION function-name) ...)
+        (try-function-special-mvc fun arguments)
+        ;; (M-V-C lisp-expression ...) or (M-V-C atomic-expression ...)
+        (unoptimized-mvc fun arguments))))
 
 (defun c1apply (args)
   (check-args-number 'CL:APPLY args 2)
