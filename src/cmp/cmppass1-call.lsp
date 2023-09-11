@@ -9,6 +9,26 @@
 
 (in-package #:compiler)
 
+(defun not-a-closure-p (fname)
+  (declare (si::c-local))
+  (not (and (fboundp fname) (nth-value 1 (function-lambda-expression (fdefinition fname))))))
+
+(defun function-form-p (form)
+  (declare (si::c-local))
+  (if (and (consp form)
+           (eq (first form) 'CL:FUNCTION))
+      (prog1 t
+        (check-args-number 'CL:FUNCTION (rest form) 1 1))
+      nil))
+
+(defun lambda-form-p (form)
+  (if (function-form-p form)
+      (let ((fval (second form)))
+        (and (consp fval)
+             (member (car fval) '(CL:LAMBDA EXT:LAMBDA-BLOCK))
+             t))
+      nil))
+
 (defun unoptimized-funcall (fun arguments)
   (let ((fun-form (c1expr fun))
         (fun-args (c1args* arguments)))
@@ -23,13 +43,8 @@
     `(let* ,bindings ,@body)))
 
 (defun try-optimized-lambda-call (fun args apply-p)
-  (unless (consp fun)
-    (return-from try-optimized-lambda-call nil))
-  (when (function-form-p fun)
-    (setf fun (second fun)))
-  (if (and (consp fun)
-           (member (first fun) '(cl:lambda ext:lambda-block)))
-      (optimized-lambda-call fun args apply-p)
+  (if (lambda-form-p fun)
+      (optimized-lambda-call (second fun) args apply-p)
       nil))
 
 (defun try-macro-expression-call (fun args)
@@ -50,19 +65,7 @@
   (let ((fname (second fun)))
     (if (si:valid-function-name-p fname)
         (c1call fname args nil)
-        (cmperr "Malformed function name: ~A." fun))))
-
-(defun not-a-closure-p (fname)
-  (declare (si::c-local))
-  (not (and (fboundp fname) (nth-value 1 (function-lambda-expression (fdefinition fname))))))
-
-(defun function-form-p (form)
-  (declare (si::c-local))
-  (if (and (consp form)
-           (eq (first form) 'CL:FUNCTION))
-      (prog1 t
-        (check-args-number 'CL:FUNCTION (rest form) 1 1))
-      nil))
+        (cmperr "Malformed function name: ~A." fname))))
 
 (defun c1funcall (args)
   (check-args-number 'CL:FUNCALL args 1)
