@@ -103,7 +103,7 @@
   '(or symbol function))
 (deftype function-name ()
   "Valid name of a function, typically a symbol or (SETF symbol)."
-  '(or list symbol))
+  '(or symbol (cons (eql setf) (cons symbol null))))
 (deftype gen-bool ()
   "Generalized boolean type."
   't)
