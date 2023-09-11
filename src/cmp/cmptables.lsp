@@ -33,7 +33,7 @@
     (CL:TAGBODY         tag-var tag-body :pure)
     (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
     (FCALL              fun-form (arg-value*) fun-val call-type :side-effects)
-    (MCALL              fun-form (arg-value*) :side-effects)
+    (MCALL              fun-form (arg-value*) fun-val call-type :side-effects)
 
     (CL:CATCH           catch-value body :side-effects)
     (CL:UNWIND-PROTECT  protected-c1form body :side-effects)
@@ -263,7 +263,7 @@
   '((cl:block . p1block)
     (cl:return-from . p1return-from)
     (fcall . p1fcall)
-    (mcall . p1trivial)
+    (mcall . p1mcall)
     (cl:catch . p1catch)
     (cl:throw . p1throw)
     (cl:if . p1if)
