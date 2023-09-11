@@ -91,7 +91,29 @@
     values-type))
 
 (defun p1fcall (c1form fun args fun-val call-type)
-  (p1trivial c1form fun args fun-val call-type))
+  (declare (ignore fun))
+  (p1propagate fun)
+  (p1propagate-list args)
+  (ecase call-type
+    (:global
+     (propagate-types fun-val args))
+    (:local
+     (flet ((and-form-type (type form)
+              (and-form-type type form (c1form-form form)
+                             :safe "In a call to ~a" (fun-name fun-val))))
+       (loop with local-arg-types = (get-local-arg-types fun-val)
+             for arg-form in args
+             for arg-type = (pop local-arg-types)
+             when arg-type
+               do (and-form-type arg-type arg-form)
+             do (p1propagate arg-form))
+       (let ((dcl-return (or (get-local-return-type fun-val) '(VALUES &REST T)))
+             (fun-return (fun-return-type fun-val)))
+         (and-call-type dcl-return c1form)
+         (and-call-type fun-return c1form)
+         (p1trivial c1form))))
+    (:unknown
+     (p1trivial c1form))))
 
 (defun p1catch (c1form tag body)
   (declare (ignore c1form))

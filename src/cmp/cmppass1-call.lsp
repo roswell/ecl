@@ -12,8 +12,10 @@
 (defun unoptimized-funcall (fun arguments)
   (let ((fun-form (c1expr fun))
         (fun-args (c1args* arguments)))
-    (make-c1form* 'FCALL :sp-change t :side-effects t
-                         :args fun-form fun-args nil :unknown)))
+    (make-c1form* 'FCALL
+                  :sp-change t
+                  :side-effects t
+                  :args fun-form fun-args nil :unknown)))
 
 (defun optimized-lambda-call (lambda-form arguments apply-p)
   (multiple-value-bind (bindings body)
@@ -89,7 +91,8 @@
     ;; More complicated case.
     (t
      (make-c1form* 'MCALL
-                   :sp-change t :side-effects t
+                   :sp-change t
+                   :side-effects t
                    :args (c1expr (first args)) (c1args* (rest args))))))
 
 (defun c1apply (args)
@@ -172,25 +175,10 @@
                (declared-inline-p fname)
                (plusp *inline-max-depth*))
       (return-from c1call-local (inline-local lambda fun args))))
-  (let* ((forms (c1args* args))
-         (return-type (or (get-local-return-type fun) 'T))
-         (arg-types (get-local-arg-types fun)))
-    ;; Add type information to the arguments.
-    (when arg-types
-      (let ((fl nil))
-        (dolist (form forms)
-          (cond ((endp arg-types) (push form fl))
-                (t (push (and-form-type (car arg-types) form (car args)
-                                        :safe "In a call to ~a" fname)
-                         fl)
-                   (pop arg-types)
-                   (pop args))))
-        (setq forms (nreverse fl))))
-    (make-c1form* 'FCALL
-                  :sp-change t ; conservative estimate
-                  :side-effects t ; conservative estimate
-                  :type return-type
-                  :args (c1expr `(function ,fname)) forms fun :local)))
+  (make-c1form* 'FCALL
+                :sp-change t ; conservative estimate
+                :side-effects t ; conservative estimate
+                :args (c1expr `(function ,fname)) (c1args* args) fun :local))
 
 (defun c1call-global (fname args)
   (let* ((forms (c1args* args)))
@@ -204,10 +192,7 @@
     (make-c1form* 'FCALL
                   :sp-change (function-may-change-sp fname)
                   :side-effects (function-may-have-side-effects fname)
-                  :type (propagate-types fname forms)
-                  :args (c1expr `(function ,fname)) forms fname :global
-                  ;; loc and type are filled by c2expr
-                  )))
+                  :args (c1expr `(function ,fname)) forms fname :global)))
 
 (defun c1call-constant-fold (fname forms)
   (when (and (si:get-sysprop fname 'pure)
