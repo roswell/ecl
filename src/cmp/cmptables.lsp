@@ -32,6 +32,9 @@
     (CL:PROGV           symbols values form :side-effects)
     (CL:TAGBODY         tag-var tag-body :pure)
     (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
+
+    ;; Both nodes FCALL and MCALL are function call variants that implement
+    ;; semantics of Common Lisp operators FUNCALL and MULTIPLE-VALUE-CALL.
     (FCALL              fun-form (arg-value*) fun-val call-type :side-effects)
     (MCALL              fun-form (arg-value*) fun-val call-type :side-effects)
 
