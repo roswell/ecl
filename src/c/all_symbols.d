@@ -17,6 +17,8 @@
 #define ORDINARY_SYMBOL 0
 #define CONSTANT_SYMBOL 1
 #define SPECIAL_SYMBOL 2
+/* FIXME */
+/* #define GLOBAL_SYMBOL 3 */
 #define FORM_SYMBOL 3
 #define PRIVATE 256
 
@@ -218,6 +220,8 @@ make_this_symbol(int i, cl_object s, int code,
   switch (code & 3) {
   case ORDINARY_SYMBOL: stp = ecl_stp_ordinary; break;
   case SPECIAL_SYMBOL: stp = ecl_stp_special; break;
+    /* fiXME */
+  /* case GLOBAL_SYMBOL: stp = ecl_stp_global; break; */
   case CONSTANT_SYMBOL: stp = ecl_stp_constant; break;
   case FORM_SYMBOL: form = 1; stp = ecl_stp_ordinary;
   }

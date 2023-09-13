@@ -259,6 +259,10 @@ its constant value.")
 ECL specific.
 Declares the variable named by NAME as a special variable.")
 
+(docfun si::*make-global function (symbol) "
+ECL specific.
+Declares the variable named by NAME as a global variable.")
+
 (docvar *package* variable "
 The current package.  The initial value is the USER package.")
 

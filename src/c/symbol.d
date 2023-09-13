@@ -456,22 +456,34 @@ cl_object
 @si::*make-special(cl_object sym)
 {
   int type = ecl_symbol_type(sym);
-  if (type & ecl_stp_constant)
-    FEerror("~S is a constant.", 1, sym);
+  if (type & (ecl_stp_constant | ecl_stp_global))
+    FEerror("~S is a constant or global variable.", 1, sym);
   ecl_symbol_type_set(sym, type | ecl_stp_special);
   cl_remprop(sym, @'si::symbol-macro');
   @(return sym);
 }
 
 cl_object
+@si::*make-global(cl_object sym)
+{
+  int type = ecl_symbol_type(sym);
+  if (type & (ecl_stp_constant | ecl_stp_special))
+    FEerror("~S is a constant or special variable.", 1, sym);
+  ecl_symbol_type_set(sym, type | ecl_stp_global);
+  cl_remprop(sym, @'si::symbol-macro');
+  @(return sym);
+}
+
+/* FIXME we allow redefining constants with different values. */
+cl_object
 @si::*make-constant(cl_object sym, cl_object val)
 {
   int type = ecl_symbol_type(sym);
-  if (type & ecl_stp_special)
-    FEerror("The argument ~S to DEFCONSTANT is a special variable.",
-            1, sym);
+  if (type & (ecl_stp_special | ecl_stp_global))
+    FEerror("~S is a special or global variable.", 1, sym);
   ecl_symbol_type_set(sym, type | ecl_stp_constant);
   ECL_SET(sym, val);
+  cl_remprop(sym, @'si::symbol-macro');
   @(return sym);
 }
 

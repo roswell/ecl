@@ -425,11 +425,9 @@ ecl_intern(cl_object name, cl_object p, int *intern_flag)
       if (p == cl_core.keyword_package) {
         ecl_symbol_type_set(s, ecl_symbol_type(s) | ecl_stp_constant);
         ECL_SET(s, s);
-        p->pack.external =
-          _ecl_sethash(name, p->pack.external, s);
+        p->pack.external = _ecl_sethash(name, p->pack.external, s);
       } else {
-        p->pack.internal =
-          _ecl_sethash(name, p->pack.internal, s);
+        p->pack.internal = _ecl_sethash(name, p->pack.internal, s);
       }
       error = 0;
     }

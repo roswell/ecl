@@ -34,60 +34,78 @@ last FORM.  If not, simply returns NIL."
        ,@(si::expand-set-documentation name 'function doc-string)
        ',name)))
 
-(defmacro defvar (&whole whole var &optional (form nil form-sp) doc-string)
+(defmacro defvar (&whole whole name &optional (form nil form-sp) doc)
   "Syntax: (defvar name [form [doc]])
 Declares the variable named by NAME as a special variable.  If the variable
 does not have a value, then evaluates FORM and assigns the value to the
 variable.  FORM defaults to NIL.  The doc-string DOC, if supplied, is saved
 as a VARIABLE doc and can be retrieved by (documentation 'NAME 'variable)."
-  `(LOCALLY (DECLARE (SPECIAL ,var))
-    (SYS:*MAKE-SPECIAL ',var)
+  `(LOCALLY (DECLARE (SPECIAL ,name))
+    (SYS:*MAKE-SPECIAL ',name)
     ,@(when form-sp
-          `((UNLESS (BOUNDP ',var)
-              (SETQ ,var ,form))))
-    ,@(si::expand-set-documentation var 'variable doc-string)
+          `((UNLESS (BOUNDP ',name)
+              (SETQ ,name ,form))))
+    ,@(si::expand-set-documentation name 'variable doc)
     ,(ext:register-with-pde whole)
     ,(if *bytecodes-compiler*
          `(eval-when (:compile-toplevel)
-            (sys:*make-special ',var))
+            (sys:*make-special ',name))
          `(eval-when (:compile-toplevel)
-            (si::register-global ',var)))
-    ',var))
+            (si::register-global ',name)))
+    ',name))
 
-(defmacro defparameter (&whole whole var form &optional doc-string)
+(defmacro defparameter (&whole whole name form &optional doc)
   "Syntax: (defparameter name form [doc])
-Declares the global variable named by NAME as a special variable and assigns
+Declares the variable named by NAME as a special variable and assigns
 the value of FORM to the variable.  The doc-string DOC, if supplied, is saved
 as a VARIABLE doc and can be retrieved by (documentation 'NAME 'variable)."
-  `(LOCALLY (DECLARE (SPECIAL ,var))
-    (SYS:*MAKE-SPECIAL ',var)
-    (SETQ ,var ,form)
-    ,@(si::expand-set-documentation var 'variable doc-string)
+  `(LOCALLY (DECLARE (SPECIAL ,name))
+    (SYS:*MAKE-SPECIAL ',name)
+    (SETQ ,name ,form)
+    ,@(si::expand-set-documentation name 'variable doc)
     ,(ext:register-with-pde whole)
     ,(if *bytecodes-compiler*
          `(eval-when (:compile-toplevel)
-            (sys:*make-special ',var))
+            (sys:*make-special ',name))
          `(eval-when (:compile-toplevel)
-            (si::register-global ',var)))
-    ',var))
+            (si::register-global ',name)))
+    ',name))
 
-(defmacro defconstant (&whole whole var form &optional doc-string)
-  "Syntax: (defconstant symbol form [doc])
-
-Declares that the global variable named by SYMBOL is a constant with the value
-of FORM as its constant value.  The doc-string DOC, if supplied, is saved as a
-VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
+(defmacro ext::defglobal (&whole whole name form &optional doc)
+  "Syntax: (ext:defglobal symbol form [doc])
+Declares the variable named by NAME as a global variable and assigns
+the value of FORM to the variable.
+The doc-string DOC, if supplied, is saved as a VARIABLE doc and can be
+retrieved by (documentation 'NAME 'variable)."
   `(PROGN
-     (SYS:*MAKE-CONSTANT ',var ,form)
-    ,@(si::expand-set-documentation var 'variable doc-string)
+     (SYS:*MAKE-GLOBAL ',name)
+     (SETQ ,name ,form)
+     ,@(si::expand-set-documentation name 'variable doc)
+     ,(ext:register-with-pde whole)
+     ,(if *bytecodes-compiler*
+          `(eval-when (:compile-toplevel)
+             (sys:*make-global ',name))
+          `(eval-when (:compile-toplevel)
+             (si::register-global ',name)))
+     ',name))
+
+(defmacro defconstant (&whole whole name form &optional doc)
+  "Syntax: (defconstant symbol form [doc])
+Declares the variable named by NAME as a constant variable with the value of
+FORM as its constant value.
+The doc-string DOC, if supplied, is saved as a VARIABLE doc and can be
+retrieved by (DOCUMENTATION 'NAME 'variable)."
+  `(PROGN
+     (SYS:*MAKE-CONSTANT ',name ,form)
+    ,@(si::expand-set-documentation name 'variable doc)
     ,(ext:register-with-pde whole)
     ,(if *bytecodes-compiler*
          `(eval-when (:compile-toplevel)
-            (sys:*make-constant ',var ,form))
+            (sys:*make-constant ',name ,form))
          `(eval-when (:compile-toplevel)
-            (sys:*make-constant ',var ,form)
-            (si::register-global ',var)))
-    ',var))
+            (sys:*make-constant ',name ,form)
+            (si::register-global ',name)))
+    ',name))
 
 (defparameter *defun-inline-hook*
   #'(lambda (fname form)
