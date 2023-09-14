@@ -100,6 +100,9 @@ $(HDIR)/%.h: $(top_srcdir)/h/%.h
 %.o: %.c $(HFILES)
 	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
 
+nucl: $(NUCL_OBJS) nucleus/nucl.o
+	$(CC) -I$(srcdir) -I/home/jack/Warsztat/cl-source/ecl/build -I./ -g3 -rdynamic -o $@ $^
+
 ../libeclmin.a: $(OBJS) all_symbols.o all_symbols2.o
 	$(RM) $@
 	$(AR) cr $@ $(OBJS)
