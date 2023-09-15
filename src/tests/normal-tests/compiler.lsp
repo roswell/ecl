@@ -557,13 +557,13 @@
 ;;;
 (test cmp.0023.block
   (is
-   (= (funcall (compile nil
-                        '(lambda ()
-                          (block nil
-                            (funcall 'mapcar
-                                     #'(lambda (x)
-                                         (when x (return x)))
-                                     '(1 2 3 4)))))))))
+   (eql (funcall (cmplambda ()
+                   (block nil
+                     (funcall 'mapcar
+                              #'(lambda (x)
+                                  (when x (return x)))
+                              '(1 2 3 4)))))
+        1)))
 
 ;;; Fixed: 12/01/2006 (juanjo)
 ;;; Description:
@@ -2295,3 +2295,48 @@
                                     (the fixnum (1+ y)))))
                 2)
        4)))
+
+;;; Date 2023-09-15
+;;; Description
+;;;
+;;;     The compiler may optimize away MULTIPLE-VALUE-CALL when all forms are
+;;;     known to be (VALUES ,@things) or /atom/. This test verify the correct
+;;;     result. The last value is NIL as a gotcha for an atom that is a list.
+;;;
+(test cmp.0095.multiple-value-call-with-values
+  (flet ((check-fun (fun)
+           (is-equal '(1 2 3 nil) (funcall fun 1 2 3 nil))))
+    (check-fun (cmplambda (a b c d) (multiple-value-call #'list a b c d)))
+    (check-fun (cmplambda (a b c d) (multiple-value-call #'list (values a b) c d)))
+    (check-fun (cmplambda (a b c d) (multiple-value-call #'list (values a b) (values c d))))
+    (check-fun (cmplambda (a b c d) (multiple-value-call #'list (values a b c d)))))
+  ;; Let's throw SYMBOL-MACROLET into the mix.
+  (macrolet ((cmplambda* (args &body body)
+               `(cmplambda ,args
+                  (symbol-macrolet ((y-vals (values 3 nil))
+                                    (n-vals (list   3 nil))
+                                    (nth-v3 3)
+                                    (nth-v4 nil))
+                    ,@body))))
+    (flet ((check-yfn (fun) (is-equal '(1 2 3 nil)   (funcall fun 1 2)))
+           (check-nfn (fun) (is-equal '(1 2 (3 nil)) (funcall fun 1 2))))
+      (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) nth-v3 nth-v4)))
+      (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) y-vals)))
+      (check-nfn (cmplambda* (a b) (multiple-value-call #'list (values a b) n-vals)))))
+  ;; And add MACROLET. We could go out on a limb here to check functions with a
+  ;; compiler macro, but that'd be an overkill. We don't currently optimize for
+  ;; normal macros in the first place.
+  (macrolet ((cmplambda* (args &body body)
+               `(cmplambda ,args
+                  (let ((v3 3)
+                        (v4 nil))
+                    (macrolet ((y-vals () `(values v3 v4))
+                               (n-vals () `(list   v3 v4))
+                               (nth-v3 () `v3)
+                               (nth-v4 () `v4))
+                      ,@body)))))
+    (flet ((check-yfn (fun) (is-equal '(1 2 3 nil)   (funcall fun 1 2)))
+           (check-nfn (fun) (is-equal '(1 2 (3 nil)) (funcall fun 1 2))))
+      (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (nth-v3) (nth-v4))))
+      (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (y-vals))))
+      (check-nfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (n-vals)))))))
