@@ -18,8 +18,7 @@
 
 ;;;
 ;;; and-form-type
-;;;   returns a copy of form whose type is the type-and of type and the form's
-;;;   type
+;;;   updates the FORM type to its intersection with TYPE
 ;;;
 (defun and-form-type (type form original-form &optional (mode :safe)
                       (format-string "") &rest format-args)
@@ -32,6 +31,13 @@
                  "~?, the type of the form ~s is ~s, not ~s." format-string
                  format-args original-form type2 type))
     form))
+
+;;;
+;;; and-call-type
+;;;   updates the FORM type to its many-values intersection with TYPE
+;;; 
+(defun and-call-type (type form)
+  (setf (c1form-type form) (values-type-and type (c1form-type form))))
 
 (defun default-init (var &optional warn)
   (declare (ignore warn))

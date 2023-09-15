@@ -97,7 +97,7 @@
               (policy-global-var-checking)))
         ((atom loc)
          nil)
-        ((member (setf name (first loc)) '(CALL CALL-NORMAL CALL-INDIRECT)
+        ((member (setf name (first loc)) '(CALL CALL-NORMAL CALL-INDIRECT CALL-STACK)
                  :test #'eq)
          t)
         ((eq name 'cl:THE)
@@ -137,6 +137,7 @@
 ;;;     ( FRAME ndx )                   variable in local frame stack
 ;;;     ( CALL-NORMAL fun locs 1st-type ) similar as CALL, but number of arguments is fixed
 ;;;     ( CALL-INDIRECT fun narg args)  similar as CALL, but unknown function
+;;;     ( CALL-STACK fun)  similar as CALL-INDIRECT, but args are on the stack
 ;;;     ( FFI:C-INLINE output-type fun/string locs side-effects output-var )
 ;;;     ( COERCE-LOC representation-type location)
 ;;;     ( FDEFINITION vv-index )
@@ -211,7 +212,7 @@
 
 (defun uses-values (loc)
   (and (consp loc)
-       (or (member (car loc) '(CALL CALL-NORMAL CALL-INDIRECT) :test #'eq)
+       (or (member (car loc) '(CALL CALL-NORMAL CALL-INDIRECT CALL-STACK) :test #'eq)
            (and (eq (car loc) 'ffi:C-INLINE)
                 (eq (sixth loc) 'cl:VALUES)))))
 

@@ -15,9 +15,6 @@
 
 (in-package "COMPILER")
 
-(defun valid-array-index-p (x)
-  (typep x 'ext:array-index))
-
 ;;;
 ;;; MAKE-ARRAY
 ;;;
@@ -38,7 +35,7 @@
   (let ((dimensions (extract-constant-value orig-dimensions :failed)))
     (cond ((eq dimensions ':failed)
            '*)
-          ((valid-array-index-p dimensions)
+          ((typep dimensions 'ext:array-index)
            (list dimensions))
           ((and (listp dimensions)
                 (let ((rank (list-length dimensions)))
@@ -69,11 +66,11 @@
       ;; Now we choose between making a vector or making a general array.
       ;; It only saves some time, since MAKE-PURE-ARRAY will call MAKE-VECTOR
       ;; if a one-dimensional array is to be created.
-      (let ((function 'si::make-pure-array))
+      (let ((function 'si:make-pure-array))
         (when (and (listp dimensions-type)
                    (null (rest dimensions-type))
                    (integerp (first dimensions-type)))
-          (setf function 'si::make-vector
+          (setf function 'si:make-vector
                 dimensions (first dimensions-type)))
         (setf form
               `(,function ,%element-type ,%dimensions ,%adjustable ,%fill-pointer
@@ -82,7 +79,7 @@
       (when initial-element-supplied-p
         (setf form `(si:fill-array-with-elt ,form ,%initial-element 0 nil)))
       (setf form `(ext:truly-the (array ,guessed-element-type ,dimensions-type)
-                    ,form))))
+                                 ,form))))
   form)
 
 ;;;
@@ -102,7 +99,7 @@
                 (if extend 3 2))
       (cmpwarn "Wrong number of arguments passed to function ~A in form: ~A" (first whole) whole)
       (return-from expand-vector-push
-        `(si::simple-program-error
+        `(si:simple-program-error
           "Wrong number of arguments passed to function ~A in form: ~A" ',(first whole) ',whole)))
     `(let* ((value ,(car args))
             (vector ,(second args)))
@@ -144,11 +141,10 @@
        (row-major-aref %array
                        ,(expand-row-major-index '%array indices env)))))
 
-(define-compiler-macro si::aset (&whole form array &rest indices-and-value
-                                        &environment env)
+(define-compiler-macro si:aset (&whole form array &rest indices-and-value
+                                &environment env)
   (cond ((null indices-and-value)
-         (cmpwarn "Too few arguments to SI::ASET form~%~4I~A"
-                  form)
+         (cmpwarn "Too few arguments to SI:ASET form~%~4I~A" form)
          form)
         ((policy-open-code-aref/aset env)
          (let* ((indices (butlast indices-and-value))
@@ -228,8 +224,6 @@
                          (setf %output-var
                                (ext:truly-the ext:array-index (+ %output-var %ndx-var)))))
          %output-var))))
-
-;(trace c::expand-row-major-index c::expand-aset c::expand-aref)
 
 (defmacro check-expected-rank (a expected-rank)
   `(ffi:c-inline

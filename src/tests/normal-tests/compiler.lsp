@@ -557,13 +557,13 @@
 ;;;
 (test cmp.0023.block
   (is
-   (= (funcall (compile nil
-                        '(lambda ()
-                          (block nil
-                            (funcall 'mapcar
-                                     #'(lambda (x)
-                                         (when x (return x)))
-                                     '(1 2 3 4)))))))))
+   (eql (funcall (cmplambda ()
+                   (block nil
+                     (funcall 'mapcar
+                              #'(lambda (x)
+                                  (when x (return x)))
+                              '(1 2 3 4)))))
+        1)))
 
 ;;; Fixed: 12/01/2006 (juanjo)
 ;;; Description:
@@ -915,9 +915,9 @@
              (compiler.float-function . nil)
              (compiler.float . t))
          always (let ((form1 `(proclaim '(ftype ,type foo)))
-                      (form2 `(compile nil '(lambda ()
-                                             (declare (ftype ,type foo))
-                                             (foo)))))
+                      (form2 `(cmplambda ()
+                                (declare (ftype ,type foo))
+                                (foo))))
                   (cond (fails
                          (signals simple-error (eval form1))
                          (signals warning (eval form2)))
@@ -1010,22 +1010,29 @@
   (let ((c::*suppress-compiler-messages* t))
     ;; Issue a warning for unused variables
     (is-true
-     (handler-case (and (compile nil '(lambda (x y) (print x))) nil)
+     (handler-case (prog1 nil
+                     (cmplambda (x y) (print x)) nil)
        (warning (c) t)))
     ;; Do not issue a warning for unused variables declared IGNORE
     (is-true
-     (handler-case (and (compile nil '(lambda (x y) (declare (ignore y))
-                                       (print x))) t)
+     (handler-case (prog1 t
+                     (cmplambda (x y)
+                       (declare (ignore y))
+                       (print x)))
        (warning (c) nil)))
     ;; Do not issue a warning for unused variables declared IGNORABLE
     (is-true
-     (handler-case (and (compile nil '(lambda (x y) (declare (ignorable y))
-                                       (print x))) t)
+     (handler-case (prog1 t
+                     (cmplambda (x y)
+                       (declare (ignorable y))
+                       (print x)))
        (warning (c) nil)))
     ;; Do not issue a warning for used variables declared IGNORABLE
     (is-true
-     (handler-case (and (compile nil '(lambda (x y) (declare (ignorable x y))
-                                       (print x))) t)
+     (handler-case (prog1 t
+                     (cmplambda (x y)
+                       (declare (ignorable x y))
+                       (print x)))
        (warning (c) nil)))))
 
 ;;; Date: 29/11/2009 (P. Costanza)
@@ -1038,9 +1045,8 @@
 ;;;
 #-ecl-bytecmp
 (test cmp.0040.bytecodes-entry-position
-  (let ((indices (funcall (compile nil
-                                   '(lambda ()
-                                     (ffi:c-inline () () list "
+  (let ((indices (funcall (cmplambda ()
+                            (ffi:c-inline () () list "
         union cl_lispunion x[1];
         cl_index bytecodes = (char*)(&(x->bytecodes.entry)) - (char*)x;
         cl_index bclosure  = (char*)(&(x->bclosure.entry)) - (char*)x;
@@ -1051,7 +1057,7 @@
                             MAKE_FIXNUM(bclosure),
                             MAKE_FIXNUM(cfun),
                             MAKE_FIXNUM(cfunfixed),
-                            MAKE_FIXNUM(cclosure));" :one-liner nil))))))
+                            MAKE_FIXNUM(cclosure));" :one-liner nil)))))
     (is-true (apply #'= indices)) t))
 
 ;;; Date: 07/02/2010 (W. Hebich)
@@ -1062,7 +1068,7 @@
 ;;;
 (test cmp.0041.the-and-values
   (is
-   (handler-case (compile nil '(lambda () (the (values t) (faa))))
+   (handler-case (cmplambda () (the (values t) (faa)))
      (warning (c) nil))))
 
 
@@ -1073,11 +1079,10 @@
 ;;;
 (test cmp.0042.symbol-macro-declaration
   (is
-   (handler-case (compile 'nil
-                          '(lambda (x)
-                            (symbol-macrolet ((y x))
-                              (declare (fixnum y))
-                              (+ y x))))
+   (handler-case (cmplambda (x)
+                   (symbol-macrolet ((y x))
+                     (declare (fixnum y))
+                     (+ y x)))
      (warning (c) nil))))
 
 ;;; Date: 24/04/2010 (Juanjo)
@@ -1214,14 +1219,14 @@
 ;;;     variables
 (test cmp.0049.cmptop/call
   (finishes
-    (funcall (compile nil '(lambda ()
-                            (labels
-                                ((fun-2 () (fun-3 'cool))
-                                 (fun-3 (clause-var)
-                                   (flet ((fun-4 () clause-var))
-                                     (fun-4))))
-                              (let ((fun-1 (lambda () (fun-2))))
-                                (funcall fun-1))))))))
+    (funcall (cmplambda ()
+               (labels
+                   ((fun-2 () (fun-3 'cool))
+                    (fun-3 (clause-var)
+                      (flet ((fun-4 () clause-var))
+                        (fun-4))))
+                 (let ((fun-1 (lambda () (fun-2))))
+                   (funcall fun-1)))))))
 
 
 ;;; Date 2016-04-21
@@ -1266,12 +1271,11 @@
 ;;;
 ;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
 (test cmp.0053.check-values-type-on-constant
-      (handler-case 
-          (funcall (compile nil
-                            '(lambda () (rplaca 'A 1))))
-        (simple-type-error () t)
-        (error () nil)
-        (:no-error (v) (declare (ignore v)) nil)))
+  (handler-case (funcall (cmplambda ()
+                           (rplaca 'A 1)))
+    (simple-type-error () t)
+    (error () nil)
+    (:no-error (v) (declare (ignore v)) nil)))
 
 ;;; Date 2017-06-28
 ;;; Reported by Fabrizio Fabbri
@@ -1282,9 +1286,8 @@
 ;;;
 ;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
 (test cmp.0054.invalid-argument-type
-      (handler-case 
-          (funcall (compile nil
-                            '(lambda () (assoc 'z '((a . b) :bad (c . d))))))
+      (handler-case (funcall (cmplambda ()
+                               (assoc 'z '((a . b) :bad (c . d)))))
         (simple-type-error () t)
         (error () nil)
         (:no-error (v) (declare (ignore v)) nil)))
@@ -1300,9 +1303,8 @@
 ;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/353
 (test cmp.0055.invalid-argument-type
   (is-true
-   (handler-case
-       (funcall (compile nil
-                         '(lambda () (vector-push))))
+   (handler-case (funcall (cmplambda ()
+                            (vector-push)))
      (program-error () t)
      (error () nil)
      (:no-error (v) (declare (ignore v)) nil))))
@@ -1315,9 +1317,8 @@
 #+ieee-floating-point
 (test cmp.0056.artificial-fpe
   (finishes
-    (funcall (compile nil
-                      '(lambda ()
-                        (eql 10d0 ext:double-float-positive-infinity))))))
+    (funcall (cmplambda ()
+               (eql 10d0 ext:double-float-positive-infinity)))))
 
 ;;; Date 2017-08-10
 ;;; Description
@@ -1327,10 +1328,10 @@
 (test cmp.0057.expand
   (let (fun)
     ;; expand-mapcar
-    (is (setf fun (compile nil '(lambda () (mapcar)))))
+    (is (setf fun (cmplambda () (mapcar))))
     (signals program-error (funcall fun))
     ;; expand-vector-push
-    (is (setf fun (compile nil '(lambda () (vector-push)))))
+    (is (setf fun (cmplambda () (vector-push))))
     (signals program-error (funcall fun))))
 
 ;;; Date 2017-08-16
@@ -1362,8 +1363,7 @@
 ;;;
 ;;; Bug https://gitlab.com/embeddable-common-lisp/ecl/issues/418
 (test cmp.0060.loop-on-dotted-list
-  (finishes (funcall (compile nil
-                              '(lambda () (loop for (i) on '(1 2 . 3)))))))
+  (finishes (funcall (cmplambda () (loop for (i) on '(1 2 . 3))))))
 
 ;;; Date 2017-12-02
 ;;; Description
@@ -1418,9 +1418,9 @@
 (test cmp.0063.lexical-macrolet
   (defun foo () :function)
   (define-compiler-macro foo () :compiler-macro)
-  (let ((result (funcall (compile nil '(lambda ()
-                                        (macrolet ((foo () :macrolet))
-                                          (foo)))))))
+  (let ((result (funcall (cmplambda ()
+                           (macrolet ((foo () :macrolet))
+                             (foo))))))
     (is (eq :macrolet result) "Expected :MACROLET, got ~s." result)))
 
 ;;; Date 2018-02-11
@@ -1611,8 +1611,8 @@
 ;;;     test checks if both cases are compiled correctly.
 (test cmp.0072.cmp-constant-fold
   (let (f1 f2)
-    (finishes (setq f1  (compile nil '(lambda () (byte 0 0)))))
-    (finishes (setq f2  (compile nil '(lambda () (truncate 2 1)))))
+    (finishes (setq f1 (cmplambda () (byte 0 0))))
+    (finishes (setq f2 (cmplambda () (truncate 2 1))))
     (is (equal '(0 . 0) (funcall f1)))
     (is (equal '(2 0) (multiple-value-list (funcall f2))))))
 
@@ -1690,19 +1690,16 @@
 (test cmp.0075.local-fun.closure-type
   (ext:with-clean-symbols (*function*)
     (defvar *function*)
-    (let ((result
-           (funcall
-            (compile nil
-                     (lambda (b)
-                       (flet ((%f10 () b))
-                         (flet ((%f4 () (%f10)))
-                           (incf b)
-                           (setf *function* #'%f10) ; makes a global
-                                                    ; closure out of %f10
-                           (%f4)))))
-            3)))
-    (is (eq result 4))
-    (is (eq (funcall *function*) 4)))))
+    (let* ((fun (lambda (b)
+                  (flet ((%f10 () b))
+                    (flet ((%f4 () (%f10)))
+                      (incf b)
+                      ;; makes a global closure out of %f10
+                      (setf *function* #'%f10)
+                      (%f4)))))
+           (result (funcall (compile nil fun) 3)))
+      (is (eq result 4))
+      (is (eq (funcall *function*) 4)))))
 
 ;;; Date 2020-03-13
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/565
@@ -1977,19 +1974,16 @@
 (ext:with-clean-symbols (*s*)
   (test cmp.0083.progv-return
     (proclaim '(special *s*))
-    (is (eql 0 (funcall (compile nil
-                                 '(lambda ()
-                                   (block nil
-                                     (progv (list (return 0)) (list 1))))))))
-    (is (eql 0 (funcall (compile nil
-                                 '(lambda ()
-                                   (block nil
-                                     (progv '(*s*) (list (return 0)))))))))
+    (is (eql 0 (funcall (cmplambda ()
+                          (block nil
+                            (progv (list (return 0)) (list 1)))))))
+    (is (eql 0 (funcall (cmplambda ()
+                          (block nil
+                            (progv '(*s*) (list (return 0))))))))
     (is (not (boundp '*s*)))
-    (is (eql 1 (funcall (compile nil
-                                 '(lambda ()
-                                   (block nil
-                                     (progv '(*s*) (list 0) (return 1) *s*)))))))
+    (is (eql 1 (funcall (cmplambda ()
+                          (block nil
+                            (progv '(*s*) (list 0) (return 1) *s*))))))
     (is (not (boundp '*s*)))))
 
 ;;; Date 2021-01-16
@@ -2036,7 +2030,7 @@
   (is (equal '(nil)
              (multiple-value-list
               (funcall
-               (compile nil '(lambda () (values (values)))))))))
+               (cmplambda () (values (values))))))))
 
 ;;; Date 2021-03-25
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/633
@@ -2047,17 +2041,17 @@
 ;;;     correct ordering in general.
 (test cmp.0086.inline-ordering-function-arguments
   (is (equal (multiple-value-list
-              (funcall (compile nil '(lambda ()
-                                      (flet ((f (a
-                                                 &optional (b a)
-                                                 &rest c
-                                                 &key (d c)
-                                                 &aux (e d))
-                                               (list a b c d e)))
-                                        (declare (inline f))
-                                        (values (f 1)
-                                                (f 1 2)
-                                                (f 1 2 :d 3)))))))
+              (funcall (cmplambda ()
+                         (flet ((f (a
+                                    &optional (b a)
+                                    &rest c
+                                    &key (d c)
+                                    &aux (e d))
+                                  (list a b c d e)))
+                           (declare (inline f))
+                           (values (f 1)
+                                   (f 1 2)
+                                   (f 1 2 :d 3))))))
              '((1 1 nil nil nil)
                (1 2 nil nil nil)
                (1 2 (:d 3) 3 3)))))
@@ -2069,7 +2063,10 @@
 (test cmp.0087.let-list-containing-quote
   (is (equal '((quote) (quote a b c))
              (funcall
-              (compile nil '(lambda () (let ((x '(quote)) (y '(quote a b c))) (list x y))))))))
+              (cmplambda ()
+                (let ((x '(quote))
+                      (y '(quote a b c)))
+                  (list x y)))))))
 
 ;;; Date 2021-11-19
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/662
@@ -2097,28 +2094,28 @@
 ;;;
 (test cmp.0090.funcall/apply-inline-and-number-of-arguments
   (let ((*standard-output* (make-broadcast-stream)))
-    (signals error (funcall (compile nil '(lambda () (funcall (lambda (a b) (list a b)) 1)))))
-    (signals error (funcall (compile nil '(lambda () (funcall (lambda (a b) (list a b)) 1 2 3)))))
-    (signals error (funcall (compile nil '(lambda () (funcall (lambda (a &optional b) (list a b)) 1 2 3)))))
-    (is (equal (funcall (compile nil '(lambda () (funcall (lambda (a &optional b) (list a b)) 1)))) '(1 nil)))
-    (is (equal (funcall (compile nil '(lambda () (funcall (lambda (a &optional b) (list a b)) 1 2)))) '(1 2)))
-    (signals error (funcall (compile nil '(lambda () (apply (lambda (a b) (list a b)) '(1))))))
-    (signals error (funcall (compile nil '(lambda () (apply (lambda (a b) (list a b)) '(1 2 3))))))
-    (signals error (funcall (compile nil '(lambda () (apply (lambda (a b) (list a b)) 1 '(2 3))))))
-    (is (equal (funcall (compile nil '(lambda (x) (apply (lambda (a b) (list a b)) x))) '(1 2)) '(1 2)))
-    (is (equal (funcall (compile nil '(lambda (x) (apply (lambda (a b) (list a b)) 1 x))) '(2)) '(1 2)))
-    (signals error (funcall (compile nil '(lambda (x) (apply (lambda (a b) (list a b)) 1 x))) '(2 3)))
-    (is (equal (funcall (compile nil '(lambda () (apply (lambda (a &optional b) (list a b)) '(1))))) '(1 nil)))
-    (signals error (funcall (compile nil '(lambda () (apply (lambda (a &optional b) (list a b)) '(1 2 3))))))
-    (signals error (funcall (compile nil '(lambda () (apply (lambda (a &optional b) (list a b)) 1 '(2 3))))))
-    (is (equal (funcall (compile nil '(lambda (x) (apply (lambda (a &optional b) (list a b)) x))) '(1 2)) '(1 2)))
-    (is (equal (funcall (compile nil '(lambda (x) (apply (lambda (a &optional b) (list a b)) 1 x))) '(2)) '(1 2)))
-    (signals error (funcall (compile nil '(lambda (x) (apply (lambda (a &optional b) (list a b)) 1 x))) '(2 3)))
-    (signals error (funcall (compile nil '(lambda () (multiple-value-call (lambda (a b) (list a b)) (values 1))))))
-    (signals error (funcall (compile nil '(lambda () (multiple-value-call (lambda (a b) (list a b)) (values  1 2 3))))))
-    (signals error (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1 2 3))))))
-    (is (equal (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1))))) '(1 nil)))
-    (is (equal (funcall (compile nil '(lambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1 2))))) '(1 2)))))
+    (signals error (funcall (cmplambda () (funcall (lambda (a b) (list a b)) 1))))
+    (signals error (funcall (cmplambda () (funcall (lambda (a b) (list a b)) 1 2 3))))
+    (signals error (funcall (cmplambda () (funcall (lambda (a &optional b) (list a b)) 1 2 3))))
+    (is (equal (funcall (cmplambda () (funcall (lambda (a &optional b) (list a b)) 1))) '(1 nil)))
+    (is (equal (funcall (cmplambda () (funcall (lambda (a &optional b) (list a b)) 1 2))) '(1 2)))
+    (signals error (funcall (cmplambda () (apply (lambda (a b) (list a b)) '(1)))))
+    (signals error (funcall (cmplambda () (apply (lambda (a b) (list a b)) '(1 2 3)))))
+    (signals error (funcall (cmplambda () (apply (lambda (a b) (list a b)) 1 '(2 3)))))
+    (is (equal (funcall (cmplambda (x) (apply (lambda (a b) (list a b)) x)) '(1 2)) '(1 2)))
+    (is (equal (funcall (cmplambda (x) (apply (lambda (a b) (list a b)) 1 x)) '(2)) '(1 2)))
+    (signals error (funcall (cmplambda (x) (apply (lambda (a b) (list a b)) 1 x)) '(2 3)))
+    (is (equal (funcall (cmplambda () (apply (lambda (a &optional b) (list a b)) '(1)))) '(1 nil)))
+    (signals error (funcall (cmplambda () (apply (lambda (a &optional b) (list a b)) '(1 2 3)))))
+    (signals error (funcall (cmplambda () (apply (lambda (a &optional b) (list a b)) 1 '(2 3)))))
+    (is (equal (funcall (cmplambda (x) (apply (lambda (a &optional b) (list a b)) x)) '(1 2)) '(1 2)))
+    (is (equal (funcall (cmplambda (x) (apply (lambda (a &optional b) (list a b)) 1 x)) '(2)) '(1 2)))
+    (signals error (funcall (cmplambda (x) (apply (lambda (a &optional b) (list a b)) 1 x)) '(2 3)))
+    (signals error (funcall (cmplambda () (multiple-value-call (lambda (a b) (list a b)) (values 1)))))
+    (signals error (funcall (cmplambda () (multiple-value-call (lambda (a b) (list a b)) (values  1 2 3)))))
+    (signals error (funcall (cmplambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1 2 3)))))
+    (is (equal (funcall (cmplambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1)))) '(1 nil)))
+    (is (equal (funcall (cmplambda () (multiple-value-call (lambda (a &optional b) (list a b)) (values  1 2)))) '(1 2)))))
 
 ;;; Date 2022-08-13
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/630
@@ -2295,3 +2292,48 @@
                                     (the fixnum (1+ y)))))
                 2)
        4)))
+
+;;; Date 2023-09-15
+;;; Description
+;;;
+;;;     The compiler may optimize away MULTIPLE-VALUE-CALL when all forms are
+;;;     known to be (VALUES ,@things) or /atom/. This test verify the correct
+;;;     result. The last value is NIL as a gotcha for an atom that is a list.
+;;;
+(test cmp.0095.multiple-value-call-with-values
+  (flet ((check-fun (fun)
+           (is-equal '(1 2 3 nil) (funcall fun 1 2 3 nil))))
+    (check-fun (cmplambda (a b c d) (multiple-value-call #'list a b c d)))
+    (check-fun (cmplambda (a b c d) (multiple-value-call #'list (values a b) c d)))
+    (check-fun (cmplambda (a b c d) (multiple-value-call #'list (values a b) (values c d))))
+    (check-fun (cmplambda (a b c d) (multiple-value-call #'list (values a b c d)))))
+  ;; Let's throw SYMBOL-MACROLET into the mix.
+  (macrolet ((cmplambda* (args &body body)
+               `(cmplambda ,args
+                  (symbol-macrolet ((y-vals (values 3 nil))
+                                    (n-vals (list   3 nil))
+                                    (nth-v3 3)
+                                    (nth-v4 nil))
+                    ,@body))))
+    (flet ((check-yfn (fun) (is-equal '(1 2 3 nil)   (funcall fun 1 2)))
+           (check-nfn (fun) (is-equal '(1 2 (3 nil)) (funcall fun 1 2))))
+      (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) nth-v3 nth-v4)))
+      (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) y-vals)))
+      (check-nfn (cmplambda* (a b) (multiple-value-call #'list (values a b) n-vals)))))
+  ;; And add MACROLET. We could go out on a limb here to check functions with a
+  ;; compiler macro, but that'd be an overkill. We don't currently optimize for
+  ;; normal macros in the first place.
+  (macrolet ((cmplambda* (args &body body)
+               `(cmplambda ,args
+                  (let ((v3 3)
+                        (v4 nil))
+                    (macrolet ((y-vals () `(values v3 v4))
+                               (n-vals () `(list   v3 v4))
+                               (nth-v3 () `v3)
+                               (nth-v4 () `v4))
+                      ,@body)))))
+    (flet ((check-yfn (fun) (is-equal '(1 2 3 nil)   (funcall fun 1 2)))
+           (check-nfn (fun) (is-equal '(1 2 (3 nil)) (funcall fun 1 2))))
+      (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (nth-v3) (nth-v4))))
+      (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (y-vals))))
+      (check-nfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (n-vals)))))))

@@ -36,6 +36,7 @@
 #define MP_CONSTANT     MP_PACKAGE | CONSTANT_SYMBOL
 #define CLOS_ORDINARY   CLOS_PACKAGE | ORDINARY_SYMBOL
 #define CLOS_SPECIAL    CLOS_PACKAGE | SPECIAL_SYMBOL
+#define CLOS_CONSTANT   CLOS_PACKAGE | CONSTANT_SYMBOL
 #define KEYWORD         KEYWORD_PACKAGE | CONSTANT_SYMBOL
 #define GRAY_ORDINARY   GRAY_PACKAGE | ORDINARY_SYMBOL
 #define FFI_ORDINARY    FFI_PACKAGE | ORDINARY_SYMBOL
@@ -83,7 +84,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
 @(defun si::mangle-name (symbol &optional as_function)
   cl_index l;
   unsigned char c, *source, *dest;
-  cl_object output;
+  cl_object output = ECL_NIL;
   cl_object package;
   cl_object found = ECL_NIL;
   cl_object maxarg = ecl_make_fixnum(ECL_CALL_ARGUMENTS_LIMIT);

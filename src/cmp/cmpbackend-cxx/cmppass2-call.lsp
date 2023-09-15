@@ -2,20 +2,16 @@
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
 ;;;;  Copyright (c) 1990, Giuseppe Attardi
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
-;;;;  Copyright (c) 2021, Daniel Kochmański
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
 
 (in-package #:compiler)
 
-;;; Functions that use MAYBE-SAVE-VALUE should rebind *temp*.
+;;; Functions that use MAYBE-SAVE-VALUE should rebind *TEMP*.
 (defun maybe-save-value (value &optional (other-forms nil other-forms-flag))
+  (declare (si::c-local))
   (let ((name (c1form-name value)))
     (cond ((eq name 'LOCATION)
            (c1form-arg 0 value))
@@ -29,19 +25,33 @@
              (c2expr* value)
              temp)))))
 
-(defun c2funcall (c1form form args)
-  (declare (ignore c1form))
-  (let* ((*inline-blocks* 0)
-         (*temp* *temp*)
-         (form-type (c1form-primary-type form))
-         (function-p (and (subtypep form-type 'function)
-                          (policy-assume-right-type)))
-         (loc (maybe-save-value form args)))
-    (unwind-exit (call-unknown-global-loc nil loc (inline-args args) function-p))
-    (close-inline-blocks)))
+;;; FIXME functions declared as SI::C-LOCAL can't be called from the stack
+;;; because they are not installed in the environment. That means that if we
+;;; have such function and call it with too many arguments it will be
+;;; "undefined". This is a defect (but not a regression). -- jd 2023-06-16
+
+;;;
+;;; c2fcall:
+;;;
+;;;   FUN the function to be called
+;;;   ARGS is the list of arguments
+;;;   FUN-VAL depends on the particular call type
+;;;   CALL-TYPE is (member :LOCAL :GLOBAL :UKNOWN)
+;;;
+(defun c2fcall (c1form fun args fun-val call-type)
+  (if (> (length args) si:c-arguments-limit)
+      (c2call-stack c1form fun args nil)
+      (ecase call-type
+        (:local (c2call-local c1form fun-val args))
+        (:global (c2call-global c1form fun-val args))
+        (:unknown (c2call-unknown c1form fun args)))))
+
+(defun c2mcall (c1form form args fun-val call-type)
+  (c2call-stack c1form form args t))
 
 ;;;
 ;;; c2call-global:
+;;;
 ;;;   ARGS is the list of arguments
 ;;;   LOC is either NIL or the location of the function object
 ;;;
@@ -103,7 +113,6 @@
               (fun-name fun))
     t))
 
-
 (defun c2call-local (c1form fun args)
   (declare (type fun fun))
   (unless (c2try-tail-recursive-call fun args)
@@ -112,6 +121,34 @@
       (unwind-exit (call-loc (fun-name fun) fun (inline-args args)
                              (c1form-primary-type c1form)))
       (close-inline-blocks))))
+
+(defun c2call-unknown (c1form form args)
+  (declare (ignore c1form))
+  (let* ((*inline-blocks* 0)
+         (*temp* *temp*)
+         (form-type (c1form-primary-type form))
+         (function-p (and (subtypep form-type 'function)
+                          (policy-assume-right-type)))
+         (loc (maybe-save-value form args)))
+    (unwind-exit (call-unknown-global-loc nil loc (inline-args args) function-p))
+    (close-inline-blocks)))
+
+(defun c2call-stack (c1form form args values-p)
+  (declare (ignore c1form))
+  (let* ((*temp* *temp*)
+         (loc (maybe-save-value form args)))
+    (wt-nl-open-brace)
+    (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
+    (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
+    (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
+      (let ((*destination* (if values-p 'values 'return)))
+        (dolist (arg args)
+          (c2expr* arg)
+          (if values-p
+              (wt-nl "ecl_stack_frame_push_values(_ecl_inner_frame);")
+              (wt-nl "ecl_stack_frame_push(_ecl_inner_frame,value0);"))))
+      (unwind-exit (call-stack-loc nil loc)))
+    (wt-nl-close-brace)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -227,4 +264,10 @@
               function-p t)))
   `(CALL-INDIRECT ,loc ,(coerce-locs args) ,fname ,function-p))
 
-
+;;;
+;;; call-stack-loc
+;;;   LOC is NIL or location containing function
+;;;   ARGS is the list of typed locations for arguments
+;;;
+(defun call-stack-loc (fname loc)
+  `(CALL-STACK ,loc ,fname))

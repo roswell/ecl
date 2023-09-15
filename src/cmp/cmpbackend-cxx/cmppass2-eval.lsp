@@ -194,6 +194,21 @@
            (unwind-no-exit label)
            (wt-nl) (wt-go label)))))
 
+(defun c2mv-prog1 (c1form form body)
+  (wt-nl-open-brace)
+  (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
+  (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
+  (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
+    (let ((*destination* 'VALUES))
+      (c2expr* form))
+    (wt-nl "ecl_stack_frame_push_values(_ecl_inner_frame);")
+    (let ((*destination* 'TRASH))
+      (mapc #'c2expr* body))
+    (wt-nl "ecl_stack_frame_pop_values(_ecl_inner_frame);"))
+  (wt-nl "ecl_stack_frame_close(_ecl_inner_frame);")
+  (wt-nl-close-brace)
+  (unwind-exit 'values))
+
 (defun c2values (c1form forms)
   (declare (ignore c1form))
   (when (and (eq *destination* 'RETURN-OBJECT)
@@ -210,9 +225,8 @@
    ((eq *destination* 'TRASH)
     (mapc #'c2expr* forms)
     ;; We really pass no value, but we need UNWIND-EXIT to trigger all the
-    ;; frame-pop, stack-pop and all other exit forms.
-    (unwind-exit 'VALUE0)
-    )
+    ;; frame-pop and all other exit forms.
+    (unwind-exit 'VALUE0))
    ;; For (VALUES) we can replace the output with either NIL (if the value
    ;; is actually used) and set only NVALUES when the value is the output
    ;; of a function.
