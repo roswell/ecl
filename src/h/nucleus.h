@@ -4,7 +4,10 @@
 #ifndef ECL_NUCLEUS_H
 #define ECL_NUCLEUS_H
 
+#include "external.h"
+
 struct ecl_core_struct {
+        cl_env_ptr first_env;
 #ifdef ECL_THREADS
         cl_object processes;
         ecl_mutex_t processes_lock;
@@ -20,7 +23,6 @@ struct ecl_core_struct {
         bool gc_stats;
         char *safety_region;
 
-        void *default_sigmask;
         cl_index default_sigmask_bytes;
         cl_object known_signals;
 

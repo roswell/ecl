@@ -1312,7 +1312,7 @@ install_asynchronous_signal_handlers()
 # endif
 #endif
 #ifdef HAVE_SIGPROCMASK
-  sigset_t *sigmask = ecl_core.default_sigmask = &main_thread_sigmask;
+  sigset_t *sigmask = ecl_core.first_env->default_sigmask = &main_thread_sigmask;
   ecl_core.default_sigmask_bytes = sizeof(sigset_t);
 # ifdef ECL_THREADS
   pthread_sigmask(SIG_SETMASK, NULL, sigmask);

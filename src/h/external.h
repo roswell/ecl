@@ -162,10 +162,12 @@ struct ecl_interrupt_struct {
 # define cl_env (*ecl_process_env())
   extern ECL_API cl_env_ptr ecl_process_env(void) __attribute__((const));
   extern ECL_API cl_env_ptr ecl_process_env_unsafe(void);
+  extern ECL_API void ecl_set_process_env(cl_env_ptr env);
 #else
 # define cl_env (*cl_env_p)
 # define ecl_process_env() cl_env_p
 # define ecl_process_env_unsafe() cl_env_p
+# define ecl_set_process_env(env) cl_env_p = env
   extern ECL_API cl_env_ptr cl_env_p;
 #endif
 

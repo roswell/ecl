@@ -63,6 +63,22 @@ ecl_miscompilation_error()
                      "*** \n");
 }
 
+#ifdef ECL_THREADS
+void
+ecl_thread_internal_error(const char *s)
+{
+  int saved_errno = errno;
+  fprintf(stderr, "\nInternal thread error in:\n%s\n", s);
+  if (saved_errno) {
+    fprintf(stderr, "  [%d: %s]\n", saved_errno, strerror(saved_errno));
+  }
+  _ecl_dump_c_backtrace();
+  fprintf(stderr, "\nDid you forget to call `ecl_import_current_thread'?\n"
+                  "Exitting thread.\n");
+  fflush(stderr);
+  ecl_thread_exit();
+}
+#endif
 
 /* Max number of frames dumped by _ecl_dump_c_backtrace */
 #define MAX_BACKTRACE_SIZE 128
