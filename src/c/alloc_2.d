@@ -1174,30 +1174,26 @@ ecl_mark_env(struct cl_env_struct *env)
 static void
 stacks_scanner()
 {
-  cl_env_ptr the_env = ecl_process_env_unsafe();
   cl_object l;
   l = ecl_core.libraries;
-  if (l) {
-    for (; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
-      cl_object dll = ECL_CONS_CAR(l);
-      if (dll->cblock.locked) {
-        GC_push_conditional((void *)dll, (void *)(&dll->cblock + 1), 1);
-        GC_set_mark_bit((void *)dll);
-      }
+  loop_for_on_unsafe(l) {
+    cl_object dll = ECL_CONS_CAR(l);
+    if (dll->cblock.locked) {
+      GC_push_conditional((void *)dll, (void *)(&dll->cblock + 1), 1);
+      GC_set_mark_bit((void *)dll);
     }
-  }
+  } end_loop_for_on_unsafe(l);
   GC_push_all((void *)(&ecl_core), (void *)(&ecl_core + 1));
   GC_push_all((void *)(&cl_core), (void *)(&ecl_core + 1));
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
-  if (the_env != NULL)
-    ecl_mark_env(the_env);
+  ecl_mark_env(ecl_core.first_env);
 #ifdef ECL_THREADS
   l = ecl_core.processes;
   loop_for_on_unsafe(l) {
     cl_object process = ECL_CONS_CAR(l);
     if (!Null(process)) {
       cl_env_ptr env = process->process.env;
-      if (env && (env != the_env)) ecl_mark_env(env);
+      if (env != ecl_core.first_env) ecl_mark_env(env);
     }
   } end_loop_for_on_unsafe(l);
 #endif

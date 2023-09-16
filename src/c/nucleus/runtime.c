@@ -19,6 +19,7 @@
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <ecl/external.h>
 
 /* -- constants ----------------------------------------------------- */
 
@@ -129,7 +130,11 @@ ecl_set_option(int option, cl_fixnum value)
 
 /* -- core runtime ---------------------------------------------------------- */
 
+/* The root environment is a default execution context. */
+static struct cl_env_struct first_env;
+
 struct ecl_core_struct ecl_core = {
+  .first_env = &first_env,
   /* processes */
 #ifdef ECL_THREADS
   .processes = ECL_NIL,
@@ -149,8 +154,8 @@ struct ecl_core_struct ecl_core = {
   /* pathnames */
   .path_max = 0,
   .pathname_translations = ECL_NIL,
-  /* LIBRARIES is an adjustable vector of objects. It behaves as a vector of
-     weak pointers thanks to the magic in the garbage collector. */
+  /* LIBRARIES is a list of objects. It behaves as a sequence of weak pointers
+     thanks to the magic in the garbage collector. */
   .libraries = ECL_NIL,
   .library_pathname = ECL_NIL
 };
@@ -170,7 +175,7 @@ ecl_boot(void)
     return 1;
   }
 
-  /* init_process(); */
+  init_process();
   /* init_unixint(); */
   /* init_garbage(); */
 

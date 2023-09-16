@@ -35,9 +35,6 @@
 
 /******************************* EXPORTS ******************************/
 
-#if !defined(ECL_THREADS)
-cl_env_ptr cl_env_p = NULL;
-#endif
 const char *ecl_self;
 
 /************************ GLOBAL INITIALIZATION ***********************/
@@ -159,20 +156,13 @@ _ecl_alloc_env(cl_env_ptr parent)
     ecl_internal_error("Unable to allocate environment structure.");
 #else
 # if defined(ECL_USE_GUARD_PAGE)
-  output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT,
-                        PAGE_READWRITE);
+  output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT, PAGE_READWRITE);
   if (output == NULL)
     ecl_internal_error("Unable to allocate environment structure.");
 # else
-  static struct cl_env_struct first_env;
-  if (!ecl_option_values[ECL_OPT_BOOTED]) {
-    /* We have not set up any environment. Hence, we cannot call ecl_alloc()
-     * because it will need to stop interrupts and currently we rely on
-     * the environment for that */
-    output = ecl_alloc_unprotected(sizeof(*output));
-  } else {
-    output = ecl_alloc(sizeof(*output));
-  }
+  output = ecl_alloc(sizeof(*output));
+  if (output == NULL)
+    ecl_internal_error("Unable to allocate environment structure.");
 # endif
 #endif
   {
@@ -181,9 +171,7 @@ _ecl_alloc_env(cl_env_ptr parent)
       output->default_sigmask = 0;
     } else if (parent) {
       output->default_sigmask = ecl_alloc_atomic(bytes);
-      memcpy(output->default_sigmask,
-             parent->default_sigmask,
-             bytes);
+      memcpy(output->default_sigmask, parent->default_sigmask, bytes);
     } else {
       output->default_sigmask = ecl_core.default_sigmask;
     }
@@ -332,8 +320,10 @@ cl_boot(int argc, char **argv)
   init_unixint(0);
   init_alloc();
   GC_disable();
-  env = _ecl_alloc_env(0);
-  init_threads(env);
+  env = ecl_core.first_env;
+#ifdef ECL_THREADS
+  init_threads();
+#endif
 
   /*
    * 1) Initialize symbols and packages

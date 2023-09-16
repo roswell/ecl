@@ -34,7 +34,7 @@
 # include <sched.h>
 #endif
 
-/* -- Macros -------------------------------------------------------- */
+/* -- Macros ---------------------------------------------------------------- */
 
 #ifdef ECL_WINDOWS_THREADS
 # define ecl_process_key_t DWORD
@@ -64,49 +64,6 @@
 
 /* -- Core ---------------------------------------------------------- */
 
-void
-ecl_thread_internal_error(const char *s)
-{
-  int saved_errno = errno;
-  fprintf(stderr, "\nInternal thread error in:\n%s\n", s);
-  if (saved_errno) {
-    fprintf(stderr, "  [%d: %s]\n", saved_errno, strerror(saved_errno));
-  }
-  _ecl_dump_c_backtrace();
-  fprintf(stderr, "\nDid you forget to call `ecl_import_current_thread'?\n"
-                  "Exitting thread.\n");
-  fflush(stderr);
-  ecl_thread_exit();
-}
-
-/* Accessing a thread-local variable representing the environment. */
-
-ecl_process_key_t cl_env_key;
-
-cl_env_ptr
-ecl_process_env_unsafe(void)
-{
-  return ecl_process_get_tls(cl_env_key);
-}
-
-cl_env_ptr
-ecl_process_env(void)
-{
-  cl_env_ptr rv = ecl_process_get_tls(cl_env_key);
-  if(!rv) {
-    ecl_thread_internal_error("pthread_getspecific() failed.");
-  }
-  return rv;
-}
-
-static void
-ecl_set_process_env(cl_env_ptr env)
-{
-  if(!ecl_process_set_tls(cl_env_key, env)) {
-    ecl_thread_internal_error("pthread_setspecific() failed.");
-  }
-}
-
 /* Managing the collection of processes. */
 
 static void
@@ -133,18 +90,6 @@ ecl_process_list()
   result = cl_copy_list(ecl_core.processes);
   ecl_mutex_unlock(&ecl_core.processes_lock);
   return result;
-}
-
-/* Initialiation */
-
-static void
-init_process(void)
-{
-  ecl_process_key_create(cl_env_key);
-  ecl_mutex_init(&ecl_core.processes_lock, 1);
-  ecl_mutex_init(&ecl_core.global_lock, 1);
-  ecl_mutex_init(&ecl_core.error_lock, 1);
-  ecl_rwlock_init(&ecl_core.global_env_lock);
 }
 
 /* -- Environment --------------------------------------------------- */
@@ -334,8 +279,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
     registered = 1;
     break;
   case GC_DUPLICATE:
-    /* Thread was probably created using the GC hooks
-     * for thread creation */
+    /* Thread was probably created using the GC hooks for thread creation. */
     registered = 0;
     break;
   default:
@@ -760,14 +704,14 @@ mp_restore_signals(cl_object sigmask)
 /* -- Initialization ------------------------------------------------ */
 
 void
-init_threads(cl_env_ptr env)
+init_threads()
 {
+  cl_env_ptr the_env = ecl_process_env();
   cl_object process;
   ecl_thread_t main_thread;
   init_process();
   /* We have to set the environment before any allocation takes place,
    * so that the interrupt handling code works. */
-  ecl_set_process_env(env);
   ecl_set_process_self(main_thread);
   process = ecl_alloc_object(t_process);
   process->process.phase = ECL_PROCESS_ACTIVE;
@@ -775,11 +719,11 @@ init_threads(cl_env_ptr env)
   process->process.function = ECL_NIL;
   process->process.args = ECL_NIL;
   process->process.thread = main_thread;
-  process->process.env = env;
+  process->process.env = the_env;
   process->process.woken_up = ECL_NIL;
   ecl_mutex_init(&process->process.start_stop_lock, TRUE);
   ecl_cond_var_init(&process->process.exit_barrier);
 
-  env->own_process = process;
+  the_env->own_process = process;
   ecl_list_process(process);
 }
