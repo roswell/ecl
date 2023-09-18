@@ -226,11 +226,8 @@
 
 (defun c1multiple-value-prog1 (args)
   (check-args-number 'MULTIPLE-VALUE-PROG1 args 1)
-  (let ((frame (gensym)))
-    `(with-stack ,frame
-       (stack-push-values ,frame ,(first args))
-       ,@(rest args)
-       (stack-pop ,frame))))
+  (destructuring-bind (form . body) args
+    (make-c1form* 'MV-PROG1 :args (c1expr form) (c1args* body))))
 
 ;;; Beppe:
 ;;; this is the WRONG way to handle 1 value problem.

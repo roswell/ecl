@@ -122,6 +122,11 @@
     (wt ")")
     (when fname (wt-comment fname))))
 
+(defun wt-call-stack (loc fname)
+  (wt "ecl_apply_from_stack_frame(_ecl_inner_frame," loc ")")
+  (when fname
+    (wt-comment fname)))
+
 (defun wt-call-normal (fun args type)
   (declare (ignore type))
   (unless (fun-cfun fun)

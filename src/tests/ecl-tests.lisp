@@ -112,6 +112,9 @@ as a second value."
          (error "Compiling file ~a failed:~%~a" ,filename output))
        (values compiled-file output))))
 
+(defmacro cmplambda (args &body body)
+  `(compile nil '(lambda ,args ,@body)))
+
 (defmacro with-temporary-file ((var string &rest args) &body body)
   (ext:with-unique-names (stream)
     `(let ((,var (ext:mkstemp "ecl-tests")))

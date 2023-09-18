@@ -32,9 +32,12 @@
     (CL:PROGV           symbols values form :side-effects)
     (CL:TAGBODY         tag-var tag-body :pure)
     (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
-    (CL:FUNCALL         fun-value (arg-value*) :side-effects)
-    (CALL-LOCAL         obj-fun (arg-value*) :side-effects)
-    (CALL-GLOBAL        fun-name (arg-value*))
+
+    ;; Both nodes FCALL and MCALL are function call variants that implement
+    ;; semantics of Common Lisp operators FUNCALL and MULTIPLE-VALUE-CALL.
+    (FCALL              fun-form (arg-value*) fun-val call-type :side-effects)
+    (MCALL              fun-form (arg-value*) fun-val call-type :side-effects)
+
     (CL:CATCH           catch-value body :side-effects)
     (CL:UNWIND-PROTECT  protected-c1form body :side-effects)
     (CL:THROW           catch-value output-value :side-effects)
@@ -65,8 +68,7 @@
     (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
     (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
 
-    (WITH-STACK         body :side-effects)
-    (STACK-PUSH-VALUES  value-c1form push-statement-c1form :side-effects)
+    (MV-PROG1           form body :side-effects)
 
     (ext:COMPILER-TYPECASE var expressions)
     (ext:CHECKED-VALUE  type value-c1form let-form))))
@@ -131,13 +133,6 @@
     (cl:declare . c1declare) ; c1special
     (ext:compiler-let . c1compiler-let) ; c1special
 
-    (with-stack . c1with-stack) ; c1
-    (innermost-stack-frame . c1innermost-stack-frame) ; c1
-    (stack-push . c1stack-push) ; c1
-    (stack-push-values . c1stack-push-values) ; c1
-    (stack-pop . c1stack-pop) ; c1
-    (si:apply-from-stack-frame . c1apply-from-stack-frame) ; c1
-
     (cl:tagbody . c1tagbody) ; c1special
     (cl:go . c1go) ; c1special
 
@@ -179,6 +174,7 @@
 (defconstant +wt-loc-dispatch-alist+
   '((call-normal . wt-call-normal)
     (call-indirect . wt-call-indirect)
+    (call-stack . wt-call-stack)
     (ffi:c-inline . wt-c-inline-loc)
     (coerce-loc . wt-coerce-loc)
 
@@ -214,8 +210,9 @@
 (defconstant +c2-dispatch-alist+
   '((cl:block . c2block)
     (cl:return-from . c2return-from)
-    (cl:funcall . c2funcall)
-    (call-global . c2call-global)
+    (fcall . c2fcall)
+    (mcall . c2mcall)
+
     (cl:catch . c2catch)
     (cl:unwind-protect . c2unwind-protect)
     (cl:throw . c2throw)
@@ -223,7 +220,6 @@
     (ffi:c-inline . c2c-inline)
     (ffi:c-progn . c2c-progn)
     (locals . c2locals)
-    (call-local . c2call-local)
 
     (cl:if . c2if)
     (fmla-not . c2fmla-not)
@@ -239,8 +235,7 @@
     (cl:function . c2function)
     (ext:compiler-let . c2compiler-let)
 
-    (with-stack . c2with-stack)
-    (stack-push-values . c2stack-push-values)
+    (mv-prog1 . c2mv-prog1)
 
     (cl:tagbody . c2tagbody)
     (cl:go . c2go)
@@ -270,8 +265,8 @@
 (defconstant +p1-dispatch-alist+
   '((cl:block . p1block)
     (cl:return-from . p1return-from)
-    (call-global . p1call-global)
-    (call-local . p1call-local)
+    (fcall . p1fcall)
+    (mcall . p1mcall)
     (cl:catch . p1catch)
     (cl:throw . p1throw)
     (cl:if . p1if)
@@ -298,12 +293,11 @@
     (ffi:c-inline . p1trivial)
     (ffi:c-progn . p1trivial)
     (cl:function . p1trivial)
-    (cl:funcall . p1trivial)
     (cl:load-time-value . p1trivial)
     (make-form . p1trivial)
     (init-form . p1trivial)
-    (c::with-stack . p1with-stack)
-    (c::stack-push-values . p1stack-push-values)
+    (mv-prog1 . p1mv-prog1)
+
     (ext:compiler-typecase . p1compiler-typecase)
     (ext:checked-value . p1checked-value)
     ))
