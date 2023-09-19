@@ -235,6 +235,9 @@ typedef unsigned char ecl_base_char;
 /* wide-strings are available */
 #undef HAVE_WCHAR_H
 
+/* whether we have read/write locks                                     */
+#undef HAVE_POSIX_RWLOCK
+
 /*
  * C macros for inlining, denoting probable code paths and other stuff
  * that makes better code. Most of it is GCC specific.
