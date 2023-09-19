@@ -83,7 +83,11 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
   1,              /* ECL_OPT_TRAP_SIGBUS */
   1,              /* ECL_OPT_TRAP_SIGPIPE */
   1,              /* ECL_OPT_TRAP_INTERRUPT_SIGNAL */
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
   1,              /* ECL_OPT_SIGNAL_HANDLING_THREAD */
+#else
+  0,              /* ECL_OPT_SIGNAL_HANDLING_THREAD */
+#endif
   16,             /* ECL_OPT_SIGNAL_QUEUE_SIZE */
   0,              /* ECL_OPT_BOOTED */
   8192,           /* ECL_OPT_BIND_STACK_SIZE */
