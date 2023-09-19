@@ -131,8 +131,6 @@
 #undef HAVE_SCHED_YIELD
 /* whether we have a working sem_init()                                 */
 #undef HAVE_SEM_INIT
-/* whether we have read/write locks                                     */
-#undef HAVE_POSIX_RWLOCK
 /* whether we have mutex lock operations with timeout                   */
 #undef HAVE_PTHREAD_MUTEX_TIMEDLOCK
 /* whether we can set the clock for timed waits on condition variables  */
