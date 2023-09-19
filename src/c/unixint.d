@@ -1444,13 +1444,13 @@ install_fpe_signal_handlers()
     /* Don't trap underflows */
     si_trap_fpe(@'floating-point-underflow', ECL_NIL);
 
-    # if 0 && defined(ECL_IEEE_FP)
+# if 0 && defined(ECL_IEEE_FP)
     /* By default deactivate errors and accept denormals
      * in floating point computations. */
     si_trap_fpe(@'floating-point-invalid-operation', ECL_NIL);
     si_trap_fpe(@'division-by-zero', ECL_NIL);
     si_trap_fpe(@'floating-point-overflow', ECL_NIL);
-    # endif
+# endif
   }
 #endif
 }
