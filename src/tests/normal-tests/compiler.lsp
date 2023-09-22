@@ -2344,3 +2344,11 @@
   (is (floatp (funcall (cmplambda ()
                          (let ((x most-positive-single-float))
                            x))))))
+
+(test cmp.0097.wt-loc-regressions
+  ;; Baseline (this works)
+  (is (null (nth-value 1 (compile nil '(lambda (x) (not (the integer x)))))))
+  ;; Unreleased regressions (** Unknown location found in WT-LOC: NIL)
+  (is (null (nth-value 1 (compile nil '(lambda (x) (not (the single-float x)))))))
+  (is (null (nth-value 1 (compile nil '(lambda (x) (not (the double-float x)))))))
+  (is (null (nth-value 1 (compile nil '(lambda (x) (not (the long-float x))))))))
