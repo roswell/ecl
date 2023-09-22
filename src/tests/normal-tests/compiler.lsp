@@ -2352,3 +2352,67 @@
   (is (null (nth-value 1 (compile nil '(lambda (x) (not (the single-float x)))))))
   (is (null (nth-value 1 (compile nil '(lambda (x) (not (the double-float x)))))))
   (is (null (nth-value 1 (compile nil '(lambda (x) (not (the long-float x))))))))
+
+(test cmp.0097.cmp-regression
+  (let ((fun (cmplambda (A B C D E F G H)
+               (DECLARE (TYPE (INTEGER -2016726144 234357120) A))
+               (DECLARE (TYPE (INTEGER -10569521299456 -1307998945280) B))
+               (DECLARE (TYPE (INTEGER -45429002240 -17228484608) C))
+               (DECLARE (TYPE (INTEGER 228451840 1454976512) D))
+               (DECLARE (TYPE (INTEGER -4797 -2609) E))
+               (DECLARE (TYPE (INTEGER -21 36300536) F))
+               (DECLARE (TYPE (INTEGER -15983530 31646604) G))
+               (DECLARE (TYPE (INTEGER -208720272 -357) H))
+               (DECLARE (IGNORABLE A B C D E F G H))
+               (DECLARE
+                (OPTIMIZE (SPEED 1) (SPACE 3) (SAFETY 3) (DEBUG 0)
+                          (COMPILATION-SPEED 3)))
+               (EXPT
+                (LABELS ((%F14 (F14-1 F14-2)
+                           (PROGN
+                             (TAGBODY
+                                (+
+                                 (UNWIND-PROTECT
+                                      (LABELS ((%F1 (F1-1)
+                                                 (GO TAG1)))
+                                        (LET ((*S6* (%F1 D)))
+                                          0))))
+                              TAG1
+                                (+
+                                 (COMMON-LISP:HANDLER-BIND NIL
+                                   (IF
+                                    (<= -11215713
+                                        -819)
+                                    (INTEGER-LENGTH
+                                     (FLOOR
+                                      (CONJUGATE
+                                       F14-1)
+                                      (MAX 12
+                                           (CEILING
+                                            (BLOCK B2
+                                              (CATCH
+                                                  'CT2
+                                                (IGNORE-ERRORS
+                                                 (FLET ((%F13
+                                                            (F13-1)
+                                                          (LOGIOR
+                                                           87
+                                                           F14-2)))
+                                                   F14-1))))))))
+                                    (PROGV
+                                        '(*S8*)
+                                        (LIST
+                                         472865632)
+                                      *S8*)))))
+                             0)))
+                  (%F14 0 0))
+                0))))
+    (is (= 1 (FUNCALL fun
+                      -28594854
+                      -3859203606860
+                      -40757449218
+                      894599577
+                      -4163
+                      11621230
+                      29558853
+                      -92216802)))))
