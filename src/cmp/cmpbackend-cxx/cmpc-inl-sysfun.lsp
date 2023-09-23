@@ -644,6 +644,11 @@
     (def-inline cl:boundp :always (t) :bool "ecl_boundp(cl_env_copy,#0)")
     (def-inline cl:boundp :unsafe ((and symbol (not null))) :bool "ECL_SYM_VAL(cl_env_copy,#0)!=OBJNULL")
 
+    (def-inline cl:terpri :always (t) :object "(ecl_terpri(#0))")
+    (def-inline cl:print :always (t t) :object "(ecl_print(#0,#1))")
+    (def-inline cl:prin1 :always (t t) :object "(ecl_prin1(#0,#1))")
+    (def-inline cl:princ :always (t t) :object "(ecl_princ(#0,#1))")
+
     ;; file unixsys.d
 
     ;; file sequence.d
