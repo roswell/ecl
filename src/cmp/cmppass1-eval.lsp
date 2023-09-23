@@ -127,10 +127,33 @@
        (return form))
      (setf form new-form))))
 
+
+#+ (or)
 (defun c1constant-value (val)
   (cond
     ((eq val nil) (c1nil))
     ((eq val t) (c1t))
+    ((ext:fixnump val)
+     (make-c1form* 'LOCATION :type 'FIXNUM :args (make-vv :rep-type :fixnum :value val)))
+    ((si:base-char-p val)
+     (make-c1form* 'LOCATION :type 'BASE-CHAR :args (make-vv :rep-type :unsigned-char :value val)))
+    ((characterp val)
+     (make-c1form* 'LOCATION :type 'CHARACTER :args (make-vv :rep-type :wchar :value val)))
+    ((typep val 'SINGLE-FLOAT)
+     (make-c1form* 'LOCATION :type 'SINGLE-FLOAT :args (make-vv :rep-type :float :value val)))
+    ((typep val 'DOUBLE-FLOAT)
+     (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT :args (make-vv :rep-type :double :value val)))
+    ((typep val 'LONG-FLOAT)
+     (make-c1form* 'LOCATION :type 'LONG-FLOAT :args (make-vv :rep-type :long-double :value val)))
+    ((make-c1form* 'LOCATION :type `(eql ,val)
+                             :args (add-object val)))))
+
+(defun c1constant-value (val)
+  (cond
+    ((eq val nil) (c1nil))
+    ((eq val t) (c1t))
+    ((ext:fixnump val)                  ;this here is necessary(!)
+     (make-c1form* 'LOCATION :type 'FIXNUM :args (make-vv :rep-type :fixnum :value val)))
     ((make-c1form* 'LOCATION :type `(eql ,val)
                              :args (add-object val)))))
 
