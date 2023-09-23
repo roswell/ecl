@@ -6,39 +6,10 @@
 ;;;;
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
-;;;;    See file '../Copyright' for full details.
 
 (in-package "COMPILER")
-
-(defun expand-simple-optimizer (values arg-types inline-form env)
-  (declare (si::c-local))
-  `(ffi:c-inline ,(if (policy-assume-right-type env)
-                      values
-                      (loop for v in values
-                         for value-and-type in arg-types
-                         collect (if (consp value-and-type)
-                                     `(ext:checked-value ,(second value-and-type) ,v)
-                                     v)))
-                 ,@inline-form))
-
-(defun simple-optimizer-function (name args inline-form)
-  (declare (si::c-local))
-  (si:put-sysprop
-   name 'si::compiler-macro
-   (if (every #'symbolp args)
-       #'(lambda (whole env)
-           (if (policy-inline-accessors env)
-               `(ffi:c-inline ,(rest whole) ,@inline-form)
-               whole))
-       #'(lambda (whole env)
-           (if (policy-inline-accessors env)
-               (expand-simple-optimizer (rest whole) args inline-form env)
-               whole)))))
 
 (defun si:cons-car (x)
   (declare (type cons x) (optimize (safety 0) (speed 3)))
@@ -74,16 +45,25 @@
 ;;; RPLACA / RPLACD
 ;;;
 
-(defmacro define-simple-optimizer (name args &rest inline-form)
-  `(simple-optimizer-function ',name ',args ',inline-form))
+(define-compiler-macro rplaca (&whole whole place value)
+  (if (policy-inline-accessors)
+      `(ffi:c-inline (,(if (policy-assume-right-type)
+                           place
+                           `(ext:checked-value cons ,place))
+                      ,value)
+                     (:object :object) :object
+                     "(ECL_CONS_CAR(#0)=#1,#0)" :one-liner t)
+      whole))
 
-(define-simple-optimizer rplaca ((c cons) value)
-  (:object :object) :object
-  "@0;(ECL_CONS_CAR(#0)=#1,#0)" :one-liner t)
-
-(define-simple-optimizer rplacd ((c cons) value)
-  (:object :object) :object
-  "@0;(ECL_CONS_CDR(#0)=#1,#0)" :one-liner t)
+(define-compiler-macro rplacd (&whole whole place value)
+  (if (policy-inline-accessors)
+      `(ffi:c-inline (,(if (policy-assume-right-type)
+                           place
+                           `(ext:checked-value cons ,place))
+                      ,value)
+                     (:object :object) :object
+                     "(ECL_CONS_CDR(#0)=#1,#0)" :one-liner t)
+      whole))
 
 ;;;
 ;;; NTH / NTHCDR
