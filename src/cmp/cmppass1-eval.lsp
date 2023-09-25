@@ -26,7 +26,12 @@
                 (make-c1form* 'LOCATION :type (object-type form)
                                         :args (add-symbol form)))
                ((constantp form *cmp-env*)
-                (c1var form (c1constant-symbol-value form (symbol-value form))))
+                ;; FIXME the compiler inlines some constants in the first pass.
+                ;; This is about to be addressed soon. For now we respect that.
+                (let ((value (symbol-value form)))
+                  (if (assoc value *optimizable-constants*)
+                      (c1constant-symbol-value form value)
+                      (c1var form (c1constant-symbol-value form value)))))
                (t
                 (c1var form nil))))
         ((consp form)
