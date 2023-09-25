@@ -242,11 +242,12 @@
                      :kind kind :ignorable ignorable
                      :ref 0)))))
 
-(defun c1var (name)
+;;; When LOC is not NIL then we deal with a constant.
+(defun c1var (name loc)
   (let* ((var (c1vref name))
          (output (make-c1form* 'VAR
                                :type (var-type var)
-                               :args var)))
+                               :args var loc)))
       (add-to-read-nodes var output)
       output))
 

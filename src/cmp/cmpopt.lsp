@@ -87,9 +87,9 @@
                                               type
                                               (first type))
                                           'SI::DEFTYPE-DEFINITION))
-           (expand-typep form object `',(funcall function (if (atom type)
-                                                              nil
-                                                              (rest type)))
+           (expand-typep form object `(quote ,(funcall function (if (atom type)
+                                                                    nil
+                                                                    (rest type))))
                          env))
           ;;
           ;; There exists a function which checks for this type?
@@ -162,7 +162,8 @@
           ;; Compound COMPLEX types.
           ((and (eq first 'COMPLEX)
                 (= (list-length type) 2))
-           `(and (typep (realpart ,object) ',(second type))
+           `(and (complexp ,object)
+                 (typep (realpart ,object) ',(second type))
                  (typep (imagpart ,object) ',(second type))))
           ;;
           ;; (SATISFIES predicate)

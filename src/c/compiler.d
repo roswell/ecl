@@ -2768,6 +2768,9 @@ si_need_to_make_load_form_p(cl_object object)
   case t_cdfloat:
   case t_clfloat:
 #endif
+#ifdef ECL_SSE2
+  case t_sse_pack:
+#endif
   case t_symbol:
   case t_pathname:
 #ifdef ECL_UNICODE

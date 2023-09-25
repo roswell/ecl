@@ -24,7 +24,7 @@
     (CL:PROGN           body :pure)
     ;; sub-level forms
     (LOCATION           loc :pure :single-valued)
-    (VAR                var :single-valued)
+    (VAR                var value :single-valued)
     (CL:SETQ            var value-c1form :side-effects)
     (CL:PSETQ           var-list value-c1form-list :side-effects)
     (CL:BLOCK           blk-var progn-c1form :pure)
@@ -62,7 +62,7 @@
     (CL:MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
     (CL:MULTIPLE-VALUE-BIND vars-list init-c1form body :pure)
 
-    (CL:FUNCTION        (GLOBAL/CLOSURE) lambda-form fun-object :single-valued)
+    (CL:FUNCTION        fname :single-valued)
     (CL:RPLACD          (dest-c1form value-c1form) :side-effects)
 
     (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
@@ -240,8 +240,8 @@
     (cl:tagbody . c2tagbody)
     (cl:go . c2go)
 
-    (var . c2var/location)
-    (location . c2var/location)
+    (var . c2var)
+    (location . c2location)
     (cl:setq . c2setq)
     (cl:progv . c2progv)
     (cl:psetq . c2psetq)

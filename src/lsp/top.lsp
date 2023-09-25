@@ -843,7 +843,7 @@ Use special code 0 to cancel this operation.")
 
 #-ecl-min
 (defun decode-env-elt (env ndx)
-  (ffi:c-inline (env ndx) (:object :fixnum) :object
+  (ffi:c-inline (env ndx :utf-8) (:object :fixnum :object) :object
                 "
         cl_object v = #0;
         cl_index ndx = #1;
@@ -851,7 +851,7 @@ Use special code 0 to cancel this operation.")
         pinfo d = (pinfo)(v->vector.self.t[1]) + ndx;
         cl_object name;
 #ifdef ECL_UNICODE
-        name = ecl_decode_from_cstring(d->name,-1,@:utf-8);
+        name = ecl_decode_from_cstring(d->name,-1,#2);
         if (!name)
 #endif
                 name = ecl_make_constant_base_string(d->name,-1);

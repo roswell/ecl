@@ -159,7 +159,7 @@
 ;;; FDEFINITION, MAKE-CLOSURE
 ;;; 
 (defun wt-fdefinition (fun-name)
-  (let* ((name (si::function-block-name fun-name))
+  (let* ((name (si:function-block-name fun-name))
          (package (symbol-package name))
          (safe (or (not (safe-compile))
                    (and (or (eq package (find-package "CL"))
@@ -385,19 +385,16 @@
       (case c
         (#\@
          (let ((object (read s)))
-           (cond ((and (consp object) (equal (first object) 'RETURN))
-                  (if (eq output-vars 'VALUES)
-                      (cmperr "User @(RETURN ...) in a C-INLINE form with no output values")
-                      (let ((ndx (or (second object) 0))
-                            (l (length output-vars)))
-                        (if (< ndx l)
-                            (wt (nth ndx output-vars))
-                            (cmperr "Used @(RETURN ~D) in a C-INLINE form with ~D output values"
-                                    ndx l)))))
-                 (t
-                  (when (and (consp object) (eq (first object) 'QUOTE))
-                    (setq object (second object)))
-                  (wt (add-object object :permanent t))))))
+           (unless (and (consp object) (eq (car object) 'RETURN))
+             (cmperr "Used @~s in C-INLINE form. Expected syntax is @(RETURN ...)." object))
+           (if (eq output-vars 'VALUES)
+               (cmperr "Used @(RETURN ...) in a C-INLINE form with no output values.")
+               (let ((ndx (or (second object) 0))
+                     (l (length output-vars)))
+                 (if (< ndx l)
+                     (wt (nth ndx output-vars))
+                     (cmperr "Used @(RETURN ~D) in a C-INLINE form with ~D output values."
+                             ndx l))))))
         (#\#
          (let* ((k (read-char s))
                 (next-char (peek-char nil s nil nil))

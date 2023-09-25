@@ -210,7 +210,7 @@ containing the whole rest of the given `string', if any."
 HOST-NAME may also be an IP address in dotted quad notation or some
 other weird stuff - see getaddrinfo(3) for details."
   (multiple-value-bind (errno canonical-name addresses aliases)
-      (c-inline (host-name) (:cstring)
+      (c-inline (host-name :test #'equalp) (:cstring :object :object)
                 (values :int :object :object :object)
                 "
 {
@@ -247,7 +247,7 @@ other weird stuff - see getaddrinfo(3) for details."
             ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
             ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
             ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
-            addresses = cl_adjoin(4, vector, addresses, @':test, @'equalp);
+            addresses = cl_adjoin(4, vector, addresses, #1, #2);
             if ( rp->ai_canonname != 0 ) {
                 cl_object alias = ecl_make_simple_base_string( rp->ai_canonname, -1 );
                 aliases = CONS(alias, aliases);

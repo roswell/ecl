@@ -17,8 +17,6 @@
   sorted-types
   inline-information)
 
-;;; FIXME currently all definitions assume C machine (see cmpc-machine.lsp).
-
 (defstruct (rep-type (:constructor %make-rep-type))
   (index 0)                             ; Precedence order in the type list
   (name t)

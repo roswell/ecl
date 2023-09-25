@@ -477,12 +477,13 @@ translate ASCII and binary strings."
 
 Converts a Lisp string to a foreign string. Memory should be freed
 with free-foreign-object."
-  (let ((lisp-string (string string-designator)))
-    (c-inline (lisp-string) (t) t
+  (let ((lisp-string (string string-designator))
+        (foreign-type '(* :char)))
+    (c-inline (lisp-string foreign-type) (t t) t
        "{
         cl_object lisp_string = #0;
         cl_index size = lisp_string->base_string.fillp;
-        cl_object output = ecl_allocate_foreign_data(@(* :char), size+1);
+        cl_object output = ecl_allocate_foreign_data(#1, size+1);
         memcpy(output->foreign.data, lisp_string->base_string.self, size);
         output->foreign.data[size] = '\\0';
         @(return) = output;

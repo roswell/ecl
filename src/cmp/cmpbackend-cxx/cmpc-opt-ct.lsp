@@ -24,7 +24,7 @@
                                       :one-liner t :side-effects nil))))
         ((floatp name)
          (let* ((value name)
-                      (type (type-of value))
+                (type (type-of value))
                 (loc-type (case type
                             (cl:single-float 'single-float-value)
                             (cl:double-float 'double-float-value)

@@ -2337,3 +2337,10 @@
       (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (nth-v3) (nth-v4))))
       (check-yfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (y-vals))))
       (check-nfn (cmplambda* (a b) (multiple-value-call #'list (values a b) (n-vals)))))))
+
+;;; Unreleased refactor branch had a regression where constants were not
+;;; properly initialized in the LET form.
+(test cmp.0096.c1var/location
+  (is (floatp (funcall (cmplambda ()
+                         (let ((x most-positive-single-float))
+                           x))))))

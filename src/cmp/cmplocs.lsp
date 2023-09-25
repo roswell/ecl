@@ -24,11 +24,13 @@
   (permanent-p t)
   (value nil))
 
+;;; When the value is the "empty location" then it was created to be filled
+;;; later and the real type of the object is not known. See DATA-EMPTY-LOC.
 (defun vv-type (loc)
   (let ((value (vv-value loc)))
-    (if (and value (not (ext:fixnump value)))
-        (type-of value)
-        t)))
+    (if (eq value *empty-loc*)
+        t
+        (type-of value))))
 
 (defun loc-movable-p (loc)
   (if (atom loc)
@@ -225,7 +227,7 @@
          (values t loc))
         ((vv-p loc)
          (let ((value (vv-value loc)))
-           (if (or (null value) (ext:fixnump value))
+           (if (eq value *empty-loc*)
                (values nil nil)
                (values t value))))
         ((atom loc)
