@@ -177,7 +177,7 @@
               (setq fd (cmp-env-search-macro fname)))
          (cmp-expand-macro fd (list* fname args)))
         ((and (setq can-inline (inline-possible fname))
-              (setq fd (compiler-macro-function fname))
+              (setq fd (cmp-compiler-macro-function fname))
               (progn
                 (multiple-value-setq (fd success)
                   (cmp-expand-compiler-macro fd fname args))

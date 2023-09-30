@@ -129,6 +129,9 @@ VARIABLE doc and can be retrieved by (DOCUMENTATION 'SYMBOL 'VARIABLE)."
       (print function)
       (setq function `(si::bc-disassemble ,function)))
     `(progn
+       ,(unless *bytecodes-compiler*
+          `(eval-when (:compile-toplevel)
+             (c::cmp-env-register-compiler-macro ',name ,function)))
        (put-sysprop ',name 'sys::compiler-macro ,function)
        ,@(si::expand-set-documentation name 'compiler-macro doc-string)
        ,(ext:register-with-pde whole)

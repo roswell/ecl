@@ -43,7 +43,7 @@
          (funcall fd args))
         ((gethash fun *c1-dispatch-table*)
          (t1ordinary form))
-        ((and (setq fd (compiler-macro-function fun))
+        ((and (setq fd (cmp-compiler-macro-function fun))
               (inline-possible fun)
               (let ((success nil))
                 (multiple-value-setq (fd success)

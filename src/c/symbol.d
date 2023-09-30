@@ -135,7 +135,7 @@ ecl_make_symbol(const char *s, const char *p)
 }
 
 cl_object
-ecl_symbol_value(cl_object s)
+ecl_symbol_value_nonnull(cl_env_ptr the_env, cl_object s)
 {
 #ifndef ECL_FINAL
   /* Symbols are not initialized yet. This test is issued only during ECL
@@ -144,16 +144,24 @@ ecl_symbol_value(cl_object s)
     ecl_internal_error("SYMBOL-VALUE: symbols are not initialized yet.");
   }
 #endif
-  if (Null(s)) {
-    return s;
-  } else {
-    /* FIXME: Should we check symbol type? */
-    const cl_env_ptr the_env = ecl_process_env();
-    cl_object value = ECL_SYM_VAL(the_env, s);
-    unlikely_if (value == OBJNULL)
-      FEunbound_variable(s);
-    return value;
+  /* FIXME: Should we check symbol type? */
+  cl_object value = ECL_SYM_VAL(the_env, s);
+  if (ecl_unlikely(value == OBJNULL)) {
+    FEunbound_variable(s);
   }
+  return value;
+}
+
+cl_object
+ecl_symbol_value(cl_object s)
+{
+  if (ecl_unlikely(Null(s))) {
+    return s;
+  }
+  if (ecl_unlikely(ecl_t_of(s) != t_symbol)) {
+    FEwrong_type_nth_arg(@[symbol-value], 1, s, @[symbol]);
+  }
+  return ecl_symbol_value_nonnull(ecl_process_env(), s);
 }
 
 static void
@@ -171,9 +179,6 @@ ecl_getf(cl_object place, cl_object indicator, cl_object deflt)
 {
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   for (l = place; CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
     if (!CONSP(cdr_l))
@@ -203,9 +208,6 @@ si_put_f(cl_object place, cl_object value, cl_object indicator)
 {
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   /* This loop guarantees finishing for circular lists */
   for (l = place; CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
@@ -295,9 +297,6 @@ cl_get_properties(cl_object place, cl_object indicator_list)
   const cl_env_ptr the_env = ecl_process_env();
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   for (l = place;  CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
     if (!CONSP(cdr_l))
