@@ -14,7 +14,6 @@
 
 ;;; Valid property names for open coded functions are:
 ;;;  :INLINE-ALWAYS
-;;;  :INLINE-SAFE       safe-compile only
 ;;;  :INLINE-UNSAFE     non-safe-compile only
 ;;;
 ;;; Each property is a list of 'inline-info's, where each inline-info is:
@@ -22,12 +21,14 @@
 ;;;
 ;;; For each open-codable function, open coding will occur only if there exits
 ;;; an appropriate property with the argument types equal to 'types' and with
-;;; the return-type equal to 'type'.  The third element
-;;; is T if and only if side effects may occur by the call of the function.
-;;; Even if *DESTINATION* is TRASH, open code for such a function with side
-;;; effects must be included in the compiled code.
-;;; The forth element is T if and only if the result value is a new Lisp
-;;; object, i.e., it must be explicitly protected against GBC.
+;;; the return-type equal to 'type'.
+;;;
+;;; The third element is T if and only if side effects may occur by the call of
+;;; the function.  Even if *DESTINATION* is TRASH, open code for such a function
+;;; with side effects must be included in the compiled code.
+;;;
+;;; The forth element is T if and only if the result value is a new Lisp object,
+;;; i.e., it must be explicitly protected against GBC.
 
 (defun make-inline-temp-var (value-type &optional rep-type)
   (let ((out-rep-type (or rep-type (lisp-type->rep-type value-type))))
@@ -58,10 +59,11 @@
 (defun emit-inlined-setq (form rest-forms)
   (let ((vref (c1form-arg 0 form))
         (form1 (c1form-arg 1 form)))
-    (let ((*destination* vref)) (c2expr* form1))
+    (let ((*destination* vref))
+      (c2expr* form1))
     (if (eq (c1form-name form1) 'LOCATION)
         (list (c1form-primary-type form1) (c1form-arg 0 form1))
-        (emit-inlined-variable (make-c1form 'VAR form vref) rest-forms))))
+        (emit-inlined-variable (make-c1form 'VAR form vref nil) rest-forms))))
 
 (defun emit-inlined-call-global (form expected-type)
   (let* ((fname (c1form-arg 0 form))
@@ -157,8 +159,8 @@
 ;;;
 (defun inline-args (forms)
   (loop for form-list on forms
-     for form = (first form-list)
-     collect (emit-inline-form form (rest form-list))))
+        for form = (first form-list)
+        collect (emit-inline-form form (rest form-list))))
 
 (defun destination-type ()
   (rep-type->lisp-type (loc-representation-type *destination*))

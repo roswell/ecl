@@ -57,7 +57,7 @@
     `(let* ((%seq ,seq)
             (%iterator ,iterator))
        (declare (optimize (safety 0)))
-       (if (si::fixnump %iterator)
+       (if (ext:fixnump %iterator)
            ;; Fixnum iterators are always fine
            (aref %seq %iterator)
            ;; Error check in case we may have been passed an improper list

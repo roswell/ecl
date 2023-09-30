@@ -22,7 +22,6 @@
 
 (defvar *inline-max-depth* 3
   "Depth at which inlining of functions stops.")
-(defvar *inline-information* nil)
 
 ;;; --cmputil.lsp--
 ;;;
@@ -33,6 +32,7 @@
 (defvar *compile-file-position* -1)
 (defvar *active-protection* nil)
 (defvar *pending-actions* nil)
+(defvar *empty-loc* (gensym))
 
 (defvar *compiler-conditions* '()
   "This variable determines whether conditions are printed or just accumulated.")
@@ -266,9 +266,5 @@ be deleted if they have been opened with LoadLibrary.")
     (*clines-string-list* '())
     (si::*defun-inline-hook* 'maybe-install-inline-function)
     (*machine* (or *machine* *default-machine*))
-    (*optimizable-constants* (make-optimizable-constants *machine*))
-    (*inline-information*
-     (ext:if-let ((r (machine-inline-information *machine*)))
-       (si:copy-hash-table r)
-       (make-inline-information *machine*)))))
+    (*optimizable-constants* (make-optimizable-constants *machine*))))
 

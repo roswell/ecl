@@ -175,6 +175,6 @@
        `(progn
           (defun ,name ,(reverse arg-variables) ,@body)
           (si:put-sysprop ',name :callback
-                          (ffi:c-inline () () :object
-                                        ,(format nil "ecl_make_foreign_data(@':pointer-void,0,(void*)~a)" c-name)
+                          (ffi:c-inline (:pointer-void) (:object) :object
+                                        ,(format nil "ecl_make_foreign_data(#0,0,(void*)~a)" c-name)
                                         :one-liner t)))))))

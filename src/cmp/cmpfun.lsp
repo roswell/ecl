@@ -166,10 +166,12 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 ;;; searches for a (FUNCTION-BLOCK-NAME ...) declaration
 (defun function-block-name-declaration (declarations)
   (loop for i in declarations
-        if (and (consp i) (eql (car i) 'si::function-block-name)
-                (consp (cdr i)))
-          return (cadr i)
-        finally (return nil)))
+        do (when (and (consp i) (eql (car i) 'si:function-block-name))
+             (let ((name (second i))
+                   (rest (cddr i)))
+               (unless (and (symbolp name) (null rest))
+                 (cmperr "Invalid ~s declaration:~%~s" 'si:function-block-name i))
+               (return name)))))
 
 (defun exported-fname (name)
   (let (cname)
