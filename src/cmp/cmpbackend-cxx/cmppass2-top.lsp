@@ -124,9 +124,9 @@
     (wt-nl-h "/*")
     (wt-nl-h " * Statically defined constants")
     (wt-nl-h " */")
-    (loop for (value name builder) in (reverse *static-constants*)
+    (loop for (value vv builder) in (reverse *static-constants*)
           do (terpri *compiler-output2*)
-          do (funcall builder name value *compiler-output2*)))
+          do (funcall builder (vv-location vv) value *compiler-output2*)))
 
   (output-cfuns *compiler-output2*)
 
@@ -484,9 +484,8 @@
 (defun c2fset (c1form fun fname macro pprint c1forms)
   (declare (ignore pprint))
   (when (fun-no-entry fun)
-    (wt-nl "(void)0; /* No entry created for "
-           (format nil "~A" (fun-name fun))
-           " */")
+    (wt-nl "(void)0; "
+           (format nil "/* No entry created for ~A */" (fun-name fun)))
     ;; FIXME! Look at C2LOCALS!
     (new-local fun)
     (return-from c2fset))
@@ -495,11 +494,12 @@
     (return-from c2fset
       (c2call-global c1form 'SI:FSET c1forms)))
   (let ((*inline-blocks* 0)
-        (loc (data-empty-loc)))
+        (loc (data-empty-loc*)))
     (push (list loc fname fun) *global-cfuns-array*)
     ;; FIXME! Look at C2LOCALS!
     (new-local fun)
-    (wt-nl (if macro "ecl_cmp_defmacro(" "ecl_cmp_defun(")
-           loc ");")
+    (if macro
+        (wt-nl "ecl_cmp_defmacro(" loc ");")
+        (wt-nl "ecl_cmp_defun(" loc ");"))
     (wt-comment (loc-immediate-value fname))
     (close-inline-blocks)))

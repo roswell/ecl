@@ -130,6 +130,8 @@
   nil)
 
 (defun handle-compiler-error (c)
+  (when *compiler-break-enable*
+    (invoke-debugger c))
   (signal c)
   (push c *compiler-conditions*)
   (print-compiler-message c t)

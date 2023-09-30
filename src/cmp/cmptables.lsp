@@ -180,15 +180,6 @@
 
     (temp . wt-temp)
     (lcl . wt-lcl-loc)
-    (fixnum-value . wt-fixnum)
-    (long-float-value . wt-number)
-    (double-float-value . wt-number)
-    (single-float-value . wt-number)
-    (short-float-value . wt-number)
-    (csfloat-value . wt-number)
-    (cdfloat-value . wt-number)
-    (clfloat-value . wt-number)
-    (character-value . wt-character)
     (value . wt-value)
     (keyvars . wt-keyvars)
     (cl:the . wt-the)
@@ -198,14 +189,11 @@
 
     (si:structure-ref . wt-structure-ref)
 
-    (cl:nil . "ECL_NIL")
-    (cl:t . "ECL_T")
     (cl:return . "value0")
     (cl:values . "cl_env_copy->values[0]")
     (va-arg . "va_arg(args,cl_object)")
     (cl-va-arg . "ecl_va_arg(args)")
-    (value0 . "value0")
-    ))
+    (value0 . "value0")))
 
 (defconstant +c2-dispatch-alist+
   '((cl:block . c2block)

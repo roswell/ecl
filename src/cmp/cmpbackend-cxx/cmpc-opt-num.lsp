@@ -95,7 +95,7 @@
 
 (define-c-inliner + (return-type &rest arguments &aux arg1 arg2)
   (when (null arguments)
-    (return '(fixnum-value 0)))
+    (return (make-vv :rep-type :fixnum :value 0)))
   (setf arg1 (pop arguments))
   (when (null arguments)
     (return (inlined-arg-loc arg1)))
@@ -116,7 +116,7 @@
 
 (define-c-inliner * (return-type &rest arguments &aux arg1 arg2)
   (when (null arguments)
-    (return '(fixnum-value 1)))
+    (return (make-vv :rep-type :fixnum :value 1)))
   (setf arg1 (pop arguments))
   (when (null arguments)
     (return (inlined-arg-loc arg1)))
@@ -138,10 +138,11 @@
 
 (define-c-inliner float (return-type arg &optional float)
   (let ((arg-c-type (lisp-type->rep-type (inlined-arg-type arg)))
-        (flt-c-type (lisp-type->rep-type (inlined-arg-type float))))
-    (when (member flt-c-type '(:float :double :long-double))
-      (if (eq arg-c-type flt-c-type)
-          (inlined-arg-loc arg)
+        (flt-c-type (and float (lisp-type->rep-type (inlined-arg-type float)))))
+    (if (member arg-c-type '(:float :double :long-double))
+        (when (or (null float) (eq arg-c-type flt-c-type))
+          (inlined-arg-loc arg))
+        (when (member flt-c-type '(:float :double :long-double))
           (produce-inline-loc (list arg)
                               (list :object)
                               (list flt-c-type)

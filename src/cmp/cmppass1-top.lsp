@@ -131,7 +131,8 @@
            ;; When using COMPILE, we set *load-time-values* to 'VALUES and
            ;; thus signal that we do not want to compile these forms, but
            ;; just to retain their value.
-           (return-from c1load-time-value (c1constant-value (cmp-eval form) :always t)))
+           (return-from c1load-time-value
+             (c1constant-value (cmp-eval form))))
           ((typep form '(or list symbol))
            (setf loc (data-empty-loc))
            (push (make-c1form* 'LOAD-TIME-VALUE :args loc (c1expr form))
@@ -194,12 +195,11 @@
               (return-from c1fset
                 (make-c1form* 'SI:FSET :args
                               fun-object ;; Function object
-                              (let* ((fname (second fname))
-                                     (in-cl-symbols-p (and (symbolp fname)
-                                                           (si::mangle-name fname))))
+                              (let ((fname (second fname)))
                                 (add-object fname :permanent t
-                                            :duplicate in-cl-symbols-p
-                                            :used-p t))
+                                                  :duplicate t
+                                                  :always t
+                                                  :used-p t))
                               macro
                               pprint
                               ;; The c1form, when we do not optimize

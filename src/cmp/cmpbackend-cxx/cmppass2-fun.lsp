@@ -44,7 +44,7 @@
            (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
      ;; bind closed locations because of possible circularities
        (loop for var in closed-vars
-          do (bind nil var)))
+          do (bind *vv-nil* var)))
   ;; create the functions:
   (mapc #'new-local funs)
   ;; - then assign to it
@@ -54,6 +54,24 @@
      do (set-var (list 'MAKE-CCLOSURE fun) var))
   (c2expr body)
   (close-inline-blocks))
+
+;;; Mechanism for sharing code.
+(defun new-local (fun)
+  (declare (type fun fun))
+  (case (fun-closure fun)
+    (CLOSURE
+     (setf (fun-level fun) 0
+           (fun-env fun) *env*))
+    (LEXICAL
+     ;; Only increase the lexical level if there have been some
+     ;; new variables created. This way, the same lexical environment
+     ;; can be propagated through nested FLET/LABELS.
+     (setf (fun-level fun) (if (plusp *lex*) (1+ *level*) *level*)
+           (fun-env fun) 0))
+    (otherwise
+     (setf (fun-level fun) 0
+           (fun-env fun) 0)))
+  (push fun *local-funs*))
 
 #| Steps:
  1. defun creates declarations for requireds + va_alist
@@ -183,13 +201,13 @@
   (mapc #'bind required-lcls requireds)
 
   (when fname-in-ihs-p
-    (open-inline-block)
-    (setf *ihs-used-p* t)
-    (push 'IHS *unwind-exit*)
-    (when (policy-debug-variable-bindings)
-      (build-debug-lexical-env (reverse requireds) t))
-    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol (or description fname))
-           ",_ecl_debug_env);"))
+    (let ((fname (get-object (or description fname))))
+      (open-inline-block)
+      (setf *ihs-used-p* t)
+      (push 'IHS *unwind-exit*)
+      (when (policy-debug-variable-bindings)
+        (build-debug-lexical-env (reverse requireds) t))
+      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname ",_ecl_debug_env);")))
 
   ;; Bind optional parameters as long as there remain arguments.
   (when optionals
@@ -207,7 +225,8 @@
         (wt-nl "if (i >= narg) {")
         (let ((*opened-c-braces* (1+ *opened-c-braces*)))
           (bind-init (second opt) (first opt))
-          (when (third opt) (bind nil (third opt))))
+          (when (third opt)
+            (bind *vv-nil* (third opt))))
         (wt-nl "} else {")
         (let ((*opened-c-braces* (1+ *opened-c-braces*))
               (*unwind-exit* *unwind-exit*))
@@ -215,7 +234,8 @@
           (bind va-arg-loc (first opt))
           (if (car type-check)
               (c2expr* (car type-check)))
-          (when (third opt) (bind t (third opt))))
+          (when (third opt)
+            (bind *vv-t* (third opt))))
         (wt-nl "}"))
       (wt-nl-close-brace)))
 
@@ -233,7 +253,8 @@
            ;; declaration on some variables.
            (if rest (wt ",(cl_object*)&" rest-loc) (wt ",NULL"))
            (wt (if allow-other-keys ",TRUE);" ",FALSE);"))))
-    (when rest (bind rest-loc rest)))
+    (when rest
+      (bind rest-loc rest)))
 
   (when varargs
     (wt-nl (if simple-varargs "va_end(args);" "ecl_va_end(args);")))

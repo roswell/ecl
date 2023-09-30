@@ -79,7 +79,7 @@
   (declare (ignore vv))
   ;; We do not use the '...' format because this creates objects of type
   ;; 'char' which have sign problems
-  (wt value))
+  (wt (char-code value)))
 
 (defun wt-value (i)
   (wt "cl_env_copy->values[" i "]"))
@@ -120,7 +120,8 @@
     (dolist (arg args)
       (wt ", " arg))
     (wt ")")
-    (when fname (wt-comment fname))))
+    (when fname
+      (wt-comment fname))))
 
 (defun wt-call-stack (loc fname)
   (wt "ecl_apply_from_stack_frame(_ecl_inner_frame," loc ")")
@@ -167,32 +168,23 @@
                             (eq package (find-package "SI")))
                         (fboundp fun-name)
                         (functionp (fdefinition fun-name))))))
-    (if (eq name fun-name)
-        ;; #'symbol
-        (let ((vv (add-symbol name)))
-          (if safe
-              (wt "(" vv "->symbol.gfdef)")
-              (wt "ecl_fdefinition(" vv ")")))
-        ;; #'(SETF symbol)
-        (if safe
-            #+(or)
-            (let ((set-loc (assoc name *setf-definitions*)))
-              (unless set-loc
-                (let* ((setf-vv (data-empty-loc))
-                       (name-vv (add-symbol name))
-                       (setf-form-vv (add-object fun-name)))
-                  (setf set-loc (list name setf-vv name-vv setf-form-vv))
-                  (push set-loc *setf-definitions*)))
-              (wt "ECL_SETF_DEFINITION(" (second set-loc) "," (fourth set-loc) ")"))
-            (let ((set-loc (assoc name *setf-definitions*)))
-              (unless set-loc
-                (let* ((setf-vv (data-empty-loc))
-                       (name-vv (add-symbol name)))
-                  (setf set-loc (list name setf-vv name-vv))
-                  (push set-loc *setf-definitions*)))
-              (wt "ECL_CONS_CAR(" (second set-loc) ")"))
-            (let ((vv (add-symbol fun-name)))
-              (wt "ecl_fdefinition(" vv ")"))))))
+    (cond
+      ((not safe)
+       (let ((vv (get-object fun-name)))
+         (wt "ecl_fdefinition(" vv ")")))
+      ((eq name fun-name)
+       ;; #'symbol
+       (let ((vv (get-object name)))
+         (wt "(" vv "->symbol.gfdef)")))
+      (t
+       ;; #'(SETF symbol)
+       (let ((set-loc (assoc name *setf-definitions*)))
+         (unless set-loc
+           (let* ((setf-vv (data-empty-loc*))
+                  (name-vv (get-object name)))
+             (setf set-loc (list name setf-vv name-vv))
+             (push set-loc *setf-definitions*)))
+         (wt "ECL_CONS_CAR(" (second set-loc) ")"))))))
 
 (defun environment-accessor (fun)
   (let* ((env-var (env-var-name *env-lvl*))
@@ -222,15 +214,7 @@
 ;;;
 
 (defun wt-to-object-conversion (loc-rep-type loc)
-  (when (and (consp loc) (member (first loc)
-                                 '(single-float-value
-                                   double-float-value
-                                   long-float-value
-                                   csfloat-value
-                                   cdfloat-value
-                                   clfloat-value)))
-    (wt (third loc)) ;; VV index
-    (return-from wt-to-object-conversion))
+  ;; FIXME we can do better for constant locations.
   (let* ((record (rep-type-record loc-rep-type))
          (coercer (and record (rep-type-to-lisp record))))
     (unless coercer
