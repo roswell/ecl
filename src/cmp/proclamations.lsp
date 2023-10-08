@@ -414,6 +414,7 @@
 
 ;; ECL extensions:
 (proclamation si:*make-special (symbol) symbol)
+(proclamation si:*make-global (symbol) symbol)
 (proclamation si:*make-constant (symbol t) symbol)
 (proclamation si:put-f (list t t) list)
 (proclamation si:rem-f (list t) (values list boolean))

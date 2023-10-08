@@ -489,7 +489,9 @@ extern ECL_API cl_object cl_class_of(cl_object x);
 /* cmpaux.c */
 
 extern ECL_API cl_object si_specialp(cl_object sym);
+extern ECL_API cl_object si_globalp(cl_object sym);
 extern ECL_API cl_object si_constp(cl_object sym);
+extern ECL_API bool ecl_symbol_unbindable_p(cl_object sym);
 
 extern ECL_API cl_fixnum ecl_ifloor(cl_fixnum x, cl_fixnum y);
 extern ECL_API cl_fixnum ecl_imod(cl_fixnum x, cl_fixnum y);
@@ -577,7 +579,8 @@ extern ECL_API void FEinvalid_macro_call(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_variable(const char *s, cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEillegal_variable_name(cl_object) ecl_attr_noreturn;
 extern ECL_API void FEassignment_to_constant(cl_object v) ecl_attr_noreturn;
-extern ECL_API void FEbinding_a_constant(cl_object v) ecl_attr_noreturn;
+extern ECL_API void FEbinding_impossible(cl_object v) ecl_attr_noreturn;
+#define FEbinding_a_constant FEbinding_impossible
 extern ECL_API void FEundefined_function(cl_object fname) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function(cl_object obj) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_function_name(cl_object obj) ecl_attr_noreturn;
@@ -1720,6 +1723,7 @@ extern ECL_API cl_object si_rem_f(cl_object plist, cl_object indicator);
 extern ECL_API cl_object si_set_symbol_plist(cl_object sym, cl_object plist);
 extern ECL_API cl_object si_putprop(cl_object sym, cl_object value, cl_object indicator);
 extern ECL_API cl_object si_Xmake_special(cl_object sym);
+extern ECL_API cl_object si_Xmake_global(cl_object sym);
 extern ECL_API cl_object si_Xmake_constant(cl_object sym, cl_object val);
 extern ECL_API cl_object cl_get _ECL_ARGS((cl_narg narg, cl_object sym, cl_object indicator, ...));
 extern ECL_API cl_object cl_getf _ECL_ARGS((cl_narg narg, cl_object place, cl_object indicator, ...));

@@ -23,9 +23,21 @@ si_specialp(cl_object sym)
 }
 
 cl_object
+si_globalp(cl_object sym)
+{
+  @(return ((ecl_symbol_type(sym) & ecl_stp_global)? ECL_T : ECL_NIL))
+}
+
+cl_object
 si_constp(cl_object sym)
 {
   @(return ((ecl_symbol_type(sym) & ecl_stp_constant)? ECL_T : ECL_NIL))
+}
+
+bool
+ecl_symbol_unbindable_p(cl_object sym)
+{
+  return (ecl_symbol_type(sym) & (ecl_stp_constant | ecl_stp_global));
 }
 
 cl_fixnum
