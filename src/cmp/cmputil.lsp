@@ -126,7 +126,7 @@
     (apply #'format t args)))
 
 (defun cmp-eval (form &optional (env *cmp-env*))
-  (handler-case (si::eval-with-env form env nil t :execute)
+  (handler-case (si:eval-with-env form env nil t :execute)
     (serious-condition (c)
       (when *compiler-break-enable*
         (invoke-debugger c))

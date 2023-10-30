@@ -92,7 +92,6 @@
     values-type))
 
 (defun p1fcall (c1form fun args fun-val call-type)
-  (declare (ignore fun))
   (p1propagate fun)
   (p1propagate-list args)
   (ecase call-type
@@ -117,7 +116,6 @@
      (p1trivial c1form))))
 
 (defun p1mcall (c1form fun args fun-val call-type)
-  (declare (ignore fun))
   (p1propagate fun)
   (p1propagate-list args)
   (ecase call-type
