@@ -103,13 +103,11 @@
   (let ((output nil))
     (unless (safe-compile)
       (dolist (x (inline-information fname ':INLINE-UNSAFE))
-        (let ((other (inline-type-matches x types return-type)))
-          (when other
-            (setf output (choose-inline-info output other return-type return-rep-type))))))
-    (dolist (x (inline-information fname ':INLINE-ALWAYS))
-      (let ((other (inline-type-matches x types return-type)))
-        (when other
+        (ext:when-let ((other (inline-type-matches x types return-type)))
           (setf output (choose-inline-info output other return-type return-rep-type)))))
+    (dolist (x (inline-information fname ':INLINE-ALWAYS))
+      (ext:when-let ((other (inline-type-matches x types return-type)))
+        (setf output (choose-inline-info output other return-type return-rep-type))))
     output))
 
 (defun to-fixnum-float-type (type)
