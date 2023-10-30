@@ -92,9 +92,9 @@ semaphore_wait_unprotected(cl_object semaphore, cl_object count, cl_object timeo
   ecl_cond_var_t *cv = &semaphore->semaphore.cv;
   if (timeout == ECL_NIL) {
     do {
-      ecl_setq(the_env, ECL_INTERRUPTS_ENABLED, ECL_T);
+      ECL_SETQ(the_env, ECL_INTERRUPTS_ENABLED, ECL_T);
       ecl_cond_var_wait(cv, mutex);
-      ecl_setq(the_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);
+      ECL_SETQ(the_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);
     } while (semaphore->semaphore.counter < counter);
   } else {
     cl_object deadline = ecl_plus(cl_get_internal_real_time(),

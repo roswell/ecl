@@ -724,9 +724,9 @@ si_default_pathname_defaults(void)
    * coerced to type PATHNAME. Special care is taken so that we do
    * not enter an infinite loop when using PARSE-NAMESTRING, because
    * this routine might itself try to use the value of this variable. */
-  cl_object path = ecl_symbol_value(@'*default-pathname-defaults*');
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object path = ecl_cmp_symbol_value(the_env, @'*default-pathname-defaults*');
   unlikely_if (!ECL_PATHNAMEP(path)) {
-    const cl_env_ptr the_env = ecl_process_env();
     ecl_bds_bind(the_env, @'*default-pathname-defaults*', si_getcwd(0));
     FEwrong_type_key_arg(@[pathname], @[*default-pathname-defaults*],
                          path, @'pathname');

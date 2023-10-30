@@ -384,6 +384,7 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  * macro-record =       (function-name FUNCTION [| function-object]) |
  *                      (macro-name si::macro macro-function) |
  *                      (:declare name declaration) |
+ *                      (compiler-macro-name si::compiler-macro macro-function) |
  *                      SI:FUNCTION-BOUNDARY |
  *                      SI:UNWIND-PROTECT-BOUNDARY
  *
@@ -680,7 +681,7 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
     }
   }
   if (ensure_defined) {
-    l = ecl_symbol_value(@'ext::*action-on-undefined-variable*');
+    l = ecl_cmp_symbol_value(env, @'ext::*action-on-undefined-variable*');
     if (l != ECL_NIL) {
       funcall(3, l, undefined_variable, var);
     }
@@ -3241,7 +3242,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   c_undo_bindings(env, old_c_env->variables, 1);
   asm_op(env, OP_EXIT);
 
-  if (Null(ecl_symbol_value(@'si::*keep-definitions*')))
+  if (Null(ecl_cmp_symbol_value(env, @'si::*keep-definitions*')))
     lambda = ECL_NIL;
   output = asm_end(env, handle, lambda);
   output->bytecodes.name = name;

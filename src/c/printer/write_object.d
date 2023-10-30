@@ -19,8 +19,9 @@
 bool
 _ecl_will_print_as_hash(cl_object x)
 {
-  cl_object circle_counter = ecl_symbol_value(@'si::*circle-counter*');
-  cl_object circle_stack = ecl_symbol_value(@'si::*circle-stack*');
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object circle_counter = ecl_cmp_symbol_value(the_env, @'si::*circle-counter*');
+  cl_object circle_stack = ecl_cmp_symbol_value(the_env, @'si::*circle-stack*');
   cl_object code = ecl_gethash_safe(x, circle_stack, OBJNULL);
   if (ECL_FIXNUMP(circle_counter)) {
     return !(code == OBJNULL || code == ECL_NIL);
@@ -44,8 +45,9 @@ _ecl_will_print_as_hash(cl_object x)
 cl_object
 si_search_print_circle(cl_object x)
 {
-  cl_object circle_counter = ecl_symbol_value(@'si::*circle-counter*');
-  cl_object circle_stack = ecl_symbol_value(@'si::*circle-stack*');
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object circle_counter = ecl_cmp_symbol_value(the_env, @'si::*circle-counter*');
+  cl_object circle_stack = ecl_cmp_symbol_value(the_env, @'si::*circle-stack*');
   cl_object code;
 
   code = ecl_gethash_safe(x, circle_stack, OBJNULL);
@@ -69,8 +71,7 @@ si_search_print_circle(cl_object x)
       /* This object is referenced twice, but has no code yet */
       circle_counter = ecl_make_fixnum(ecl_fixnum(circle_counter) + 1);
       _ecl_sethash(x, circle_stack, circle_counter);
-      ECL_SETQ(ecl_process_env(), @'si::*circle-counter*',
-               circle_counter);
+      ECL_SETQ(the_env, @'si::*circle-counter*', circle_counter);
       return ecl_make_fixnum(-ecl_fixnum(circle_counter));
     } else {
       return code;
@@ -89,9 +90,9 @@ si_write_object_with_circle(cl_object x, cl_object stream, cl_object print_funct
          possibly contain cycles */
       cl_object circle_counter;
       cl_fixnum code;
-      circle_counter = ecl_symbol_value(@'si::*circle-counter*');
+      const cl_env_ptr env = ecl_process_env();
+      circle_counter = ecl_cmp_symbol_value(env, @'si::*circle-counter*');
       if (circle_counter == ECL_NIL) {
-        cl_env_ptr env = ecl_process_env();
         cl_object hash =
           cl__make_hash_table(@'eq',
                               ecl_make_fixnum(1024),

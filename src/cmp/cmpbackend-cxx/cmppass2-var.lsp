@@ -357,14 +357,14 @@
       (LEXICAL (wt-lex var-loc))
       ((SPECIAL GLOBAL)
        (if (safe-compile)
-           (wt "ecl_symbol_value(" var-loc ")")
+           (wt "ecl_cmp_symbol_value(cl_env_copy," var-loc ")")
            (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
       (t (wt var-loc))
       )))
 
 (defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
   (unless (var-p var)
-    (baboon :format-control "set-var: ~s is not a vairable."
+    (baboon :format-control "set-var: ~s is not a variable."
             :format-arguments (list var)))
   (case (var-kind var)
     (CLOSURE
@@ -377,7 +377,7 @@
      (wt #\;))
     ((SPECIAL GLOBAL)
      (if (safe-compile)
-         (wt-nl "cl_set(" var-loc ",")
+         (wt-nl "ecl_cmp_setq(cl_env_copy," var-loc ",")
          (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
      (wt-coerce-loc (var-rep-type var) loc)
      (wt ");"))

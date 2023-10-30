@@ -79,7 +79,7 @@
 (defun trivial-type-p (type)
   (subtypep T type))
 
-(defun-equal-cached type-and (t1 t2)
+(defun-cached type-and (t1 t2) type-specifier=
   ;; FIXME! Should we allow "*" as type name???
   (when (or (eq t1 t2) (eq t2 '*))
     (return-from type-and t1))
@@ -128,7 +128,7 @@
          (let ((l (1- (length type))))
            (values l l)))))
 
-(defun-equal-cached values-type-primary-type (type)
+(defun-cached values-type-primary-type (type) type-specifier=
   ;; Extract the type of the first value returned by this form. We are
   ;; pragmatic and thus (VALUES) => NULL  [CHECKME!]
   (let (aux)
@@ -144,7 +144,7 @@
           (t
            aux))))
 
-(defun-equal-cached values-type-to-n-types (type length)
+(defun-cached values-type-to-n-types (type length) type-specifier=
   (when (plusp length)
     (do-values-type-to-n-types type length)))
 
@@ -195,7 +195,7 @@
           (return (values (nreverse required) (nreverse optional)
                           rest a-o-k)))))
 
-(defun-equal-cached values-type-or (t1 t2)
+(defun-cached values-type-or (t1 t2) type-specifier=
   (when (or (eq t2 'T) (equalp t2 '(VALUES &REST T)))
     (return-from values-type-or t2))
   (when (or (eq t1 'T) (equalp t1 '(VALUES &REST T)))
@@ -241,7 +241,7 @@
                  ,@(and opt (cons '&optional (nreverse opt)))
                  ,@(and rest (cons '&optional rest)))))))
 
-(defun-equal-cached values-type-and (t1 t2)
+(defun-cached values-type-and (t1 t2) type-specifier=
   (when (or (eq t2 'T) (equalp t2 '(VALUES &REST T)))
     (return-from values-type-and t1))
   (when (or (eq t1 'T) (equalp t1 '(VALUES &REST T)))
@@ -277,7 +277,7 @@
                  ,@(and opt (cons '&optional (nreverse opt)))
                  ,@(and rest (cons '&optional rest)))))))
 
-(defun-equal-cached type-or (t1 t2)
+(defun-cached type-or (t1 t2) type-specifier=
   ;; FIXME! Should we allow "*" as type name???
   (when (or (eq t1 t2) (eq t2 '*))
     (return-from type-or t1))
