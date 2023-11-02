@@ -3,6 +3,7 @@
 
 ;;;;
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
 ;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
@@ -17,61 +18,56 @@
     (ORDINARY           c1form :pure)
     (MAKE-FORM          vv-loc value-c1form :side-effects)
     (INIT-FORM          vv-loc value-c1form :side-effects)
-    ;; both-level forms (different semantics)
-    (EXT:COMPILER-LET   symbols values body)
+    ;; Forms that have different semantics when they are top-level
+    (CL:PROGN           body :pure)
     (SI:FSET            function-object vv-loc macro-p pprint-p lambda-form :side-effects)
     (CL:LOAD-TIME-VALUE dest-loc value-c1form :pure :single-valued)
-    (CL:PROGN           body :pure)
-    ;; sub-level forms
+    (EXT:COMPILER-LET   symbols values body)
+    ;; Places, assignment and binding
     (LOCATION           loc :pure :single-valued)
     (VAR                var value :single-valued)
     (CL:SETQ            var value-c1form :side-effects)
     (CL:PSETQ           var-list value-c1form-list :side-effects)
-    (CL:BLOCK           blk-var progn-c1form :pure)
-
     (CL:PROGV           symbols values form :side-effects)
-    (CL:TAGBODY         tag-var tag-body :pure)
-    (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
-
-    ;; Both nodes FCALL and MCALL are function call variants that implement
-    ;; semantics of Common Lisp operators FUNCALL and MULTIPLE-VALUE-CALL.
-    (FCALL              fun-form (arg-value*) fun-val call-type :side-effects)
-    (MCALL              fun-form (arg-value*) fun-val call-type :side-effects)
-
-    (CL:CATCH           catch-value body :side-effects)
-    (CL:UNWIND-PROTECT  protected-c1form body :side-effects)
-    (CL:THROW           catch-value output-value :side-effects)
-    (CL:GO              tag-var nonlocal :side-effects)
-
-    (FFI:C-INLINE       (arg-c1form*)
-                        (arg-type-symbol*)
-                        output-rep-type
-                        c-expression-string
-                        side-effects-p
-                        one-liner-p)
-    (FFI:C-PROGN        variables forms)
-
+    (CL:LET*            vars-list var-init-c1form-list decl-body-c1form :pure)
+    (CL:MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
+    (CL:MULTIPLE-VALUE-BIND vars-list init-c1form body :pure)
+    ;; Function namespace (should include also FSET)
+    (CL:FUNCTION        fname :single-valued)
     (LOCALS             local-fun-list body labels-p :pure)
+    ;; Specialized accessors
+    (CL:RPLACD          (dest-c1form value-c1form) :side-effects)
+    (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
+    (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
+    ;; Control structures
+    (CL:BLOCK           blk-var progn-c1form :pure)
+    (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
+    (CL:TAGBODY         tag-var tag-body :pure)
+    (CL:GO              tag-var nonlocal :side-effects)
+    (CL:CATCH           catch-value body :side-effects)
+    (CL:THROW           catch-value output-value :side-effects)
+    (CL:UNWIND-PROTECT  protected-c1form body :side-effects)
+    ;;
     (CL:IF              fmla-c1form true-c1form false-c1form :pure)
     (FMLA-NOT           fmla-c1form :pure)
     (FMLA-AND           * :pure)
     (FMLA-OR            * :pure)
+    ;; Both nodes FCALL and MCALL are function call variants that implement
+    ;; semantics of Common Lisp operators FUNCALL and MULTIPLE-VALUE-CALL.
+    (FCALL              fun-form (arg-value*) fun-val call-type :side-effects)
+    (MCALL              fun-form (arg-value*) fun-val call-type :side-effects)
+    ;; Other operators
     (CL:LAMBDA          lambda-list doc body-c1form)
-    (CL:LET*            vars-list var-init-c1form-list decl-body-c1form :pure)
     (CL:VALUES          values-c1form-list :pure)
-    (CL:MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
-    (CL:MULTIPLE-VALUE-BIND vars-list init-c1form body :pure)
-
-    (CL:FUNCTION        fname :single-valued)
-    (CL:RPLACD          (dest-c1form value-c1form) :side-effects)
-
-    (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
-    (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
-
     (MV-PROG1           form body :side-effects)
-
+    ;; Extensions
     (ext:COMPILER-TYPECASE var expressions)
-    (ext:CHECKED-VALUE  type value-c1form let-form))))
+    (ext:CHECKED-VALUE  type value-c1form let-form)
+    ;; Backend-specific operators
+    (FFI:C-INLINE (arg-c1form*) (arg-type-symbol*) output-rep-type
+                  c-expression-string
+                  side-effects-p one-liner-p)
+    (FFI:C-PROGN  variables forms))))
 
 (defconstant +c1-form-hash+
   #.(loop with hash = (make-hash-table :size 128 :test #'eq)
