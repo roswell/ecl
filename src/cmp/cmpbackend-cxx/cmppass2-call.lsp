@@ -15,7 +15,7 @@
   (let ((name (c1form-name value)))
     (cond ((eq name 'LOCATION)
            (c1form-arg 0 value))
-          ((and (eq name 'VAR)
+          ((and (eq name 'VARIABLE)
                 other-forms-flag
                 (not (var-changed-in-form-list (c1form-arg 0 value) other-forms)))
            (c1form-arg 0 value))

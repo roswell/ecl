@@ -191,7 +191,7 @@
   ;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
   ;;  - v2 is a read only variable
   ;;  - the value of e2 is not modified in e3 nor in following expressions
-  (when (eq (c1form-name form) 'VAR)
+  (when (eq (c1form-name form) 'VARIABLE)
     (let ((other-var (c1form-arg 0 form)))
       (unless (or (global-var-p other-var)
                   (member other-var rest-vars)
@@ -245,7 +245,7 @@
 ;;; When LOC is not NIL then we deal with a constant.
 (defun c1var (name loc)
   (let* ((var (c1vref name))
-         (output (make-c1form* 'VAR
+         (output (make-c1form* 'VARIABLE
                                :type (var-type var)
                                :args var loc)))
       (add-to-read-nodes var output)

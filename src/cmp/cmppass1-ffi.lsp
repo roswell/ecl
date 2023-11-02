@@ -82,7 +82,7 @@
                                side-effects
                                one-liner)))
       (loop for form in arguments
-         when (eq (c1form-name form) 'VAR)
+         when (eq (c1form-name form) 'VARIABLE)
          do (let ((var (c1form-arg 0 form)))
               (add-to-set-nodes var form)))
       form)))

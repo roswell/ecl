@@ -15,7 +15,7 @@
 (in-package #:compiler)
 
 (defun c2let-replaceable-var-ref-p (var form rest-forms)
-  (when (and (eq (c1form-name form) 'VAR)
+  (when (and (eq (c1form-name form) 'VARIABLE)
              (null (var-set-nodes var))
              (local var))
     (let ((var1 (c1form-arg 0 form)))
@@ -67,7 +67,7 @@
           ((LEXICAL CLOSURE SPECIAL GLOBAL)
            (case (c1form-name form)
              (LOCATION (bind (c1form-arg 0 form) var))
-             (VAR (bind (c1form-arg 0 form) var))
+             (VARIABLE (bind (c1form-arg 0 form) var))
              (t (bind-init form var))))
           (t ; local var
            (let ((*destination* var)) ; nil (ccb)

@@ -25,7 +25,7 @@
     (EXT:COMPILER-LET   symbols values body)
     ;; Places, assignment and binding
     (LOCATION           loc :pure :single-valued)
-    (VAR                var value :single-valued)
+    (VARIABLE           var value :single-valued)
     (CL:SETQ            var value-c1form :side-effects)
     (CL:PSETQ           var-list value-c1form-list :side-effects)
     (CL:PROGV           symbols values form :side-effects)
@@ -224,7 +224,7 @@
     (cl:tagbody . c2tagbody)
     (cl:go . c2go)
 
-    (var . c2var)
+    (variable . c2var)
     (location . c2location)
     (cl:setq . c2setq)
     (cl:progv . c2progv)
@@ -271,7 +271,7 @@
     (cl:unwind-protect . p1unwind-protect)
     (ordinary . p1ordinary)
     (si:fset . p1fset)
-    (var . p1var)
+    (variable . p1var)
     (cl:values . p1values)
     (location . p1trivial) ;; Some of these can be improved
     (ffi:c-inline . p1trivial)

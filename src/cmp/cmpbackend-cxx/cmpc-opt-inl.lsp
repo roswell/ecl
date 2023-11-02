@@ -63,7 +63,7 @@
       (c2expr* form1))
     (if (eq (c1form-name form1) 'LOCATION)
         (list (c1form-primary-type form1) (c1form-arg 0 form1))
-        (emit-inlined-variable (make-c1form 'VAR form vref nil) rest-forms))))
+        (emit-inlined-variable (make-c1form 'VARIABLE form vref nil) rest-forms))))
 
 (defun emit-inlined-call-global (form expected-type)
   (let* ((fname (c1form-arg 0 form))
@@ -129,7 +129,7 @@
     (case (c1form-name form)
       (LOCATION
        (list (c1form-primary-type form) (c1form-arg 0 form)))
-      (VAR
+      (VARIABLE
        (emit-inlined-variable form forms))
       (CALL-GLOBAL
        (emit-inlined-call-global form (c1form-primary-type form)))

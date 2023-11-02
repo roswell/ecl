@@ -179,7 +179,7 @@
                  ;; Not closed over anything
                  (every #'global-var-p (fun-referenced-vars fun-object))
                  ;; Referencing the function variable
-                 (eq (c1form-name form) 'VAR)
+                 (eq (c1form-name form) 'VARIABLE)
                  (eq (c1form-arg 0 form)
                      (fun-var fun-object)))
             (when (fun-no-entry fun-object)
