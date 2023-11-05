@@ -345,6 +345,22 @@
       (and errorp
            (cmperr "Unable to find object ~s." object))))
 
+;;; The vector *REFERENCED-OBJECTS* contains all referenced objects collected in
+;;; the first pass. The function OPTIMIZE-CXX-DATA is responsible for inlining
+;;; them when possible, and putting them in a temporary/permanent data segments
+;;; otherwise. Objects in data segment require an explicit initialization when
+;;; the the module is loaded. The following inline strategies are tried:
+;;;
+;;; - using a symbol from the core :: ECL_SYM(\"*BREAK-ON-SIGNALS*\",27)
+;;; - using a cvalue inline value  :: cl_core.single_float_zero, FLT_MAX
+;;; - using a static constructor   :: ecl_def_ct_single_float -> _ecl_static_7
+;;; - coercing an immediate value  :: ecl_make_fixnum(42)
+;;;
+;;; Otherwise the object is put in VV or VVtemp vector, and is created when the
+;;; module is loaded. Then the code refers to such objects as VV[13].
+;;;
+;;; TODO we could further optimize immediate values by duplicating some entries
+;;; depending on the expected rep-type, to avoid unnecessary coercions.
 (defun optimize-cxx-data (objects)
   (flet ((optimize-vv (object)
            (let ((value (vv-value object)))
