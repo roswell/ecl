@@ -18,6 +18,11 @@
 ;;; The following routines help in determining these types, and also in moving
 ;;; data from one location to another.
 
+;;; VV represents an object referenced in the compiled program. In the first
+;;; pass VV instances are added to the vector *REFERENCED-OBJECT*, and in the
+;;; second pass the backend decides if the referenced object can be inlined, or
+;;; if it needs to be put in the data segment and initialized at load-time.
+
 (defstruct vv
   (location nil)
   (used-p nil)
