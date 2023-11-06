@@ -18,8 +18,6 @@
 
 ;;; UNWIND-EXIT TAGS       PURPOSE
 ;;;
-;;; number              -> unknown purpose
-;;; JUMP                -> unknown purpose
 ;;; FRAME               -> ecl_frs_push()
 ;;; IHS                 -> ihs push
 ;;; IHS-ENV             -> ihs push
@@ -28,10 +26,11 @@
 ;;; (LCL n)             -> n local variables
 ;;; (STACK n)           -> n elements pushed in stack
 ;;; TAIL-RECURSION-MARK -> TTL: label created
-;;; RETURN*             -> outermost location
+;;; RETURN              -> outermost location (*)
 ;;;
-;;; (*) also RETURN-FIXNUM, -CHARACTER, -SINGLE-FLOAT
-;;;     -DOUBLE-FLOAT, -OBJECT.
+;;; (*) also RETURN-{FIXNUM,CHARACTER,OBJECT}
+;;;          RETURN-{SINGLE-FLOAT,DOUBLE-FLOAT,LONG-FLOAT}
+;;;          RETURN-{CSFLOAT,CDFLOAT,CLFLOAT}
 ;;;
 (defun unwind-bds (bds-lcl bds-bind stack-frame ihs-p)
   (declare (fixnum bds-bind))
@@ -102,18 +101,18 @@
                     (t
                      (set-loc loc)
                      (unwind-bds bds-lcl bds-bind stack-frame ihs-p)))
-              (when jump-p (wt-nl) (wt-go *exit*))
+              (when jump-p
+                (wt-nl)
+                (wt-go *exit*))
               (return))
              (t (setq jump-p t))))
-      ((numberp ue)
-       (baboon-unwind-exit ue)
-       (setq bds-lcl ue bds-bind 0))
       (t (case ue
            (IHS (setf ihs-p ue))
            (IHS-ENV (setf ihs-p (or ihs-p ue)))
            (BDS-BIND (incf bds-bind))
            (RETURN
-             (unless (eq *exit* 'RETURN) (baboon-unwind-exit ue))
+             (unless (eq *exit* 'RETURN)
+               (baboon-unwind-exit ue))
              ;; *destination* must be either RETURN or TRASH.
              (cond ((eq loc 'VALUES)
                     ;; from multiple-value-prog1 or values
@@ -131,7 +130,7 @@
              (return))
            ((RETURN-FIXNUM RETURN-CHARACTER RETURN-OBJECT
              RETURN-DOUBLE-FLOAT RETURN-SINGLE-FLOAT RETURN-LONG-FLOAT
-             RETURN-CSFLOAT RETURN-CSFLOAT RETURN-CSFLOAT)
+             RETURN-CSFLOAT RETURN-CDFLOAT RETURN-CLFLOAT)
             (when (eq *exit* ue)
               ;; *destination* must be RETURN-FIXNUM
               (setq loc (list 'COERCE-LOC
@@ -161,7 +160,6 @@
               (setq loc *destination*))
             (wt-nl "ecl_frs_pop(cl_env_copy);"))
            (TAIL-RECURSION-MARK)
-           (JUMP (setq jump-p t))
            (t (baboon-unwind-exit ue))))))
   ;;; Never reached
   )
@@ -186,13 +184,10 @@
           ((consp ue)
            (when (eq (first ue) 'STACK)
              (setf stack-frame (second ue))))
-          ((numberp ue)
-           (setq bds-lcl ue bds-bind 0))
           ((eq ue 'BDS-BIND)
            (incf bds-bind))
           ((eq ue 'FRAME)
            (wt-nl "ecl_frs_pop(cl_env_copy);"))
-          ((eq ue 'JUMP))
           ((eq ue 'IHS-ENV)
            (setf ihs-p ue))
           (t (baboon-unwind-exit ue)))
