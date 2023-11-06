@@ -31,9 +31,6 @@
 
 /********************* EXPORTS *********************/
 
-#define REGISTER_SPECIALS       1
-#define IGNORE_DECLARATIONS     0
-
 /* Flags for the compilation routines: */
 /* + Push the output of this form */
 #define FLAG_PUSH               1
@@ -50,8 +47,6 @@
 #define FLAG_EXECUTE            16
 #define FLAG_LOAD               32
 #define FLAG_COMPILE            64
-
-#define ENV_RECORD_LOCATION(r)  CADDDR(r)
 
 #define ECL_SPECIAL_VAR_REF     -2
 #define ECL_UNDEFINED_VAR_REF   -1
@@ -350,9 +345,7 @@ static int
 c_register_constant(cl_env_ptr env, cl_object c)
 {
   int n = c_search_constant(env, c);
-  return (n < 0)?
-    asm_constant(env, c) :
-    n;
+  return (n < 0) ? asm_constant(env, c) : n;
 }
 
 static void
