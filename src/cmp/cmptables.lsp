@@ -36,7 +36,6 @@
     (CL:FUNCTION        fname :single-valued)
     (LOCALS             local-fun-list body labels-p :pure)
     ;; Specialized accessors
-    (CL:RPLACD          (dest-c1form value-c1form) :side-effects)
     (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
     (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
     ;; Control structures
