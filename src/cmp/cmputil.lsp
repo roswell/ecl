@@ -489,3 +489,9 @@ comparing circular objects."
 
 (defun same-fname-p (name1 name2)
   (equal name1 name2))
+
+(defun emptyp (item)
+  (etypecase item
+    (list (null item))
+    (vector (zerop (length item)))
+    (hash-table (zerop (hash-table-count item)))))
