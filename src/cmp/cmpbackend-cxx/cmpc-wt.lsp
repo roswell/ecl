@@ -127,7 +127,7 @@
   (if single-line
       (progn
         (fresh-line stream)
-        (princ "/*      " stream))
+        (princ "/* " stream))
       (format stream "~50T/*  "))
   (let* ((l (1- (length text))))
     (declare (fixnum l))
@@ -144,8 +144,7 @@
           (t
            (princ c stream)))))
     (princ (schar text l) stream))
-  (format stream "~70T*/")
-  )
+  (format stream "~78T*/"))
 
 (defun do-wt-comment (message-or-format args single-line-p)
   (unless (and (symbolp message-or-format) (not (symbol-package message-or-format)))
