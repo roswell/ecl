@@ -188,7 +188,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
        VAR is the name of the variable for readability purposes.
     */
     CASE(OP_VAR); {
-      int lex_env_index;
+      cl_fixnum lex_env_index;
       GET_OPARG(lex_env_index, vector);
       reg0 = ecl_lex_env_get_var(lex_env, lex_env_index);
       THREAD_NEXT;
@@ -258,7 +258,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     }
 
     /* OP_PUSH
-       Pushes the object in VALUES(0).
+       Pushes the object in REG0.
     */
     CASE(OP_PUSH); {
       ECL_STACK_PUSH(the_env, reg0);
@@ -439,8 +439,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       THREAD_NEXT;
     }
     /* OP_POPREQ
-       Checks the arguments list. If there are remaining arguments,
-       REG0 = T and the value is on the stack, otherwise REG0 = NIL.
+       Checks the arguments list.
+       If there are remaining arguments, REG0 = ARG, otherwise signal an error.
     */
     CASE(OP_POPREQ); {
       if (ecl_unlikely(frame_index >= frame->frame.size)) {
@@ -450,8 +450,9 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       THREAD_NEXT;
     }
     /* OP_POPOPT
-       Checks the arguments list. If there are remaining arguments,
-       REG0 = T and the value is on the stack, otherwise REG0 = NIL.
+       Checks the arguments list.
+       If there are remaining arguments, REG0 = T and the value is on the stack,
+       otherwise REG0 = NIL.
     */
     CASE(OP_POPOPT); {
       if (frame_index >= frame->frame.size) {
@@ -463,7 +464,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       THREAD_NEXT;
     }
     /* OP_NOMORE
-       No more arguments.
+       Asserts that there are no more arguments in the frame.
     */
     CASE(OP_NOMORE); {
       if (ecl_unlikely(frame_index < frame->frame.size))

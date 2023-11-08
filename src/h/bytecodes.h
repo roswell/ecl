@@ -1,16 +1,13 @@
 /* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
-/**********************************************************************
- ***
- ***  IMPORTANT: ANY CHANGE IN THIS FILE MUST BE MATCHED BY
- ***             APPROPRIATE CHANGES IN THE INTERPRETER AND COMPILER
- ***             IN PARTICULAR, IT MAY HURT THE THREADED INTERPRETER
- ***             CODE.
- **********************************************************************/
-/*
- * See ecl/src/c/interpreter.d for a detailed explanation of all opcodes
- */
+/* -----------------------------------------------------------------------------
+ ***  IMPORTANT: ANY CHANGE IN THIS FILE MUST BE MATCHED BY APPROPRIATE CHANGES
+ ***  IN THE INTERPRETER AND COMPILER IN PARTICULAR, IT MAY HURT THE THREADED
+ ***  INTERPRETER CODE.
+ ----------------------------------------------------------------------------- */
+
+/* See ecl/src/c/interpreter.d for a detailed explanation of all opcodes. */
 enum {
   OP_NOP,
   OP_QUOTE,
