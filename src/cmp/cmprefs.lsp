@@ -49,14 +49,7 @@
   (functions-setting nil)
   (functions-reading nil)
                 ;;; Functions in which the variable has been modified or read.
-  (loc 'OBJECT) ;;; During Pass 1: indicates whether the variable can
-                ;;; be allocated on the c-stack: OBJECT means
-                ;;; the variable is declared as OBJECT, and CLB means
-                ;;; the variable is referenced across Level Boundary and thus
-                ;;; cannot be allocated on the C stack.  Note that OBJECT is
-                ;;; set during variable binding and CLB is set when the
-                ;;; variable is used later, and therefore CLB may supersede
-                ;;; OBJECT.
+  (loc 'OBJECT) ;;; During Pass 1: OBJECT
                 ;;; During Pass 2:
                 ;;; For :FIXNUM, :CHAR, :FLOAT, :DOUBLE, :OBJECT:
                 ;;;   the cvar for the C variable that holds the value.

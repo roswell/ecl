@@ -271,8 +271,7 @@
              ((CLOSURE))
              ((LEXICAL)
               (when cfb
-                (setf (var-ref-clb var) t
-                      (var-loc var) 'OBJECT)))
+                (setf (var-ref-clb var) t)))
              (t
               (when cfb
                 (cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."

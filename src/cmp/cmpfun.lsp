@@ -86,7 +86,6 @@
             (setf (var-ref-clb var) nil
                   (var-ref-ccb var) t
                   (var-kind var) 'CLOSURE
-                  (var-loc var) 'OBJECT
                   to-be-updated
                   (prepend-new (var-functions-reading var)
                                (prepend-new (var-functions-setting var)
