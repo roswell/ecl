@@ -51,7 +51,7 @@
   (let ((var (c1form-arg 0 form))
         (value-type (c1form-primary-type form)))
     (if (var-changed-in-form-list var rest-forms)
-        (let* ((temp (make-inline-temp-var value-type (var-rep-type var))))
+        (let ((temp (make-inline-temp-var value-type (var-rep-type var))))
           (let ((*destination* temp)) (set-loc var))
           (list value-type temp))
         (list value-type var))))

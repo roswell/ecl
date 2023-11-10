@@ -114,7 +114,7 @@
 
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
   (loop for (name setf-vv name-vv) in *setf-definitions*
-     do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",ECL_T);"))
+        do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",ECL_T);"))
 
   (wt-nl-h "#ifdef __cplusplus")
   (wt-nl-h "}")
@@ -226,21 +226,24 @@
 
 (defun t2load-time-value (c1form vv-loc form)
   (declare (ignore c1form))
-  (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
+  (let* ((*exit* (next-label))
+         (*unwind-exit* (list *exit*))
          (*destination* vv-loc))
     (c2expr form)
     (wt-label *exit*)))
 
 (defun t2make-form (c1form vv-loc form)
   (declare (ignore c1form))
-  (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
+  (let* ((*exit* (next-label))
+         (*unwind-exit* (list *exit*))
          (*destination* vv-loc))
     (c2expr form)
     (wt-label *exit*)))
 
 (defun t2init-form (c1form vv-loc form)
   (declare (ignore c1form vv-loc))
-  (let* ((*exit* (next-label)) (*unwind-exit* (list *exit*))
+  (let* ((*exit* (next-label))
+         (*unwind-exit* (list *exit*))
          (*destination* 'TRASH))
     (c2expr form)
     (wt-label *exit*)))
@@ -265,21 +268,20 @@
   #-:msvc ;; FIXME! Problem with initialization of statically defined vectors
   (let* ((filtered-locations '())
          (filtered-codes '()))
-    ;; Filter out variables that we know how to store in the
-    ;; debug information table. This excludes among other things
-    ;; closures and special variables.
+    ;; Filter out variables that we know how to store in the debug information
+    ;; table. This excludes among other things closures and special variables.
     (loop for var in var-locations
           for name = (let ((*package* (find-package "KEYWORD")))
                        (format nil "\"~S\"" (var-name var)))
           for code = (locative-type-from-var-kind (var-kind var))
           for loc = (var-loc var)
           when (and code (consp loc) (eq (first loc) 'LCL))
-          do (progn
-               (push (cons name code) filtered-codes)
-               (push loc filtered-locations)))
-    ;; Generate two tables, a static one with information about the
-    ;; variables, including name and type, and dynamic one, which is
-    ;; a vector of pointer to the variables.
+            do (progn
+                 (push (cons name code) filtered-codes)
+                 (push loc filtered-locations)))
+    ;; Generate two tables, a static one with information about the variables,
+    ;; including name and type, and dynamic one, which is a vector of pointer to
+    ;; the variables.
     (when filtered-codes
       (setf *ihs-used-p* t)
       (wt-nl "static const struct ecl_var_debug_info _ecl_descriptors[]={")
@@ -345,8 +347,8 @@
 
 (defun t3local-fun-body (fun)
   (let ((string (make-array 2048 :element-type 'character
-                            :adjustable t
-                            :fill-pointer 0)))
+                                 :adjustable t
+                                 :fill-pointer 0)))
     (with-output-to-string (*compiler-output1* string)
       (let ((lambda-expr (fun-lambda fun)))
         (c2lambda-expr (c1form-arg 0 lambda-expr)
@@ -375,9 +377,9 @@
          (volatile (c1form-volatile* lambda-expr))
          (lambda-list (c1form-arg 0 lambda-expr))
          (requireds (loop
-                       repeat si::c-arguments-limit
-                       for arg in (car lambda-list)
-                       collect (next-lcl (var-name arg))))
+                      repeat si::c-arguments-limit
+                      for arg in (car lambda-list)
+                      collect (next-lcl (var-name arg))))
          (narg (fun-needs-narg fun)))
     (let ((cmp-env (c1form-env lambda-expr)))
       (wt-comment-nl "optimize speed ~D, debug ~D, space ~D, safety ~D "
@@ -401,9 +403,9 @@
       (wt comma "volatile cl_object *lex" n)
       (setf comma ", "))
     (loop for lcl in (setf (fun-required-lcls fun) requireds)
-       do (wt-h comma "cl_object " volatile)
-         (wt comma "cl_object " volatile lcl)
-         (setf comma ", "))
+          do (wt-h comma "cl_object " volatile)
+             (wt comma "cl_object " volatile lcl)
+             (setf comma ", "))
     (when narg
       (wt-h ", ...")
       (wt ", ..."))

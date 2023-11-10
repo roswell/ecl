@@ -149,6 +149,9 @@
   (let ((code (incf *next-cfun*)))
     (format nil prefix code (lisp-to-c-name lisp-name))))
 
+;;; (CAR label) is a an unique id of the label in the compilation unit.
+;;; (CDR label) is a flag signaling whether the label is referenced.
+
 (defun next-label ()
   (cons (incf *last-label*) nil))
 
