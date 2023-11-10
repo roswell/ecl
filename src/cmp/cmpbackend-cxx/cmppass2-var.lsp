@@ -137,7 +137,7 @@
   (unwind-exit (precise-loc-type loc (c1form-primary-type c1form))))
 
 ;;; When LOC is not NIL, then the variable is a constant.
-(defun c2var (c1form var loc)
+(defun c2variable (c1form var loc)
   (unwind-exit (precise-loc-type
                 (if (and loc (not (numberp (vv-location loc))))
                     loc

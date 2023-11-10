@@ -224,7 +224,7 @@
     (cl:tagbody . c2tagbody)
     (cl:go . c2go)
 
-    (variable . c2var)
+    (variable . c2variable)
     (location . c2location)
     (cl:setq . c2setq)
     (cl:progv . c2progv)
