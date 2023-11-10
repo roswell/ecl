@@ -65,6 +65,7 @@ running the compiler. It may be updated by running ")
 ;;; List of callbacks to be generated
 ;;;
 (defvar *callbacks* nil)
+(defvar *functions* nil)
 
 ;;; --cmpc-machine.lsp, cmpffi.lsp ---
 (defvar *machine* nil)
@@ -238,6 +239,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
     (*callbacks* nil)
+    (*functions* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* nil)
     (*load-objects* (make-hash-table :size 128 :test #'equal))

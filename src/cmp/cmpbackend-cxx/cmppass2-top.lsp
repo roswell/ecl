@@ -44,20 +44,20 @@
         (apply def form (c1form-args form)))
       (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A" form))))
 
-(defun emit-local-funs ()
+(defun emit-functions ()
   (declare (si::c-local))
   ;; Local functions and closure functions
   (do ((*compile-time-too* nil)
        (*compile-toplevel* nil))
-      ;; repeat until t3local-fun generates no more
-      ((eq *emitted-local-funs* *local-funs*))
-    ;; scan *local-funs* backwards
-    (do ((lfs *local-funs* (cdr lfs)))
-        ((eq (cdr lfs) *emitted-local-funs*)
-         (setq *emitted-local-funs* lfs)
-         (locally (declare (notinline t3local-fun))
+      ;; repeat until t3function generates no more
+      ((eq *emitted-functions* *functions*))
+    ;; scan *functions* backwards
+    (do ((lfs *functions* (cdr lfs)))
+        ((eq (cdr lfs) *emitted-functions*)
+         (setq *emitted-functions* lfs)
+         (locally (declare (notinline t3function))
            ;; so disassemble can redefine it
-           (t3local-fun (first lfs)))))))
+           (t3function (first lfs)))))))
 
 (defun ctop-write (name h-pathname data-pathname
                         &aux def top-output-string
@@ -81,7 +81,7 @@
          (*aux-closure* nil)
          (c-output-file *compiler-output1*)
          (*compiler-output1* (make-string-output-stream))
-         (*emitted-local-funs* nil)
+         (*emitted-functions* nil)
          (*compiler-declared-globals* (make-hash-table)))
     (wt-nl "#include \"" (brief-namestring data-pathname) "\"")
     (wt-nl "#ifdef __cplusplus")
@@ -201,7 +201,7 @@
             (wt-nl-close-brace))
           (write-sequence body *compiler-output1*)))
     (let ((*compiler-output1* c-output-file))
-      (emit-local-funs))))
+      (emit-functions))))
 
 (defun t2compiler-let (c1form symbols values body)
   (declare (ignore c1form))
@@ -335,7 +335,7 @@
 (defun pop-debug-lexical-env ()
   (wt-nl "ihs.lex_env = _ecl_debug_env;"))
 
-(defun t3local-fun (fun)
+(defun t3function (fun)
   (declare (type fun fun))
 
   ;; Compiler note about compiling this function
@@ -359,9 +359,9 @@
          (*opened-c-braces* 0)
          (*tail-recursion-info* fun)
          (*volatile* (c1form-volatile* lambda-expr)))
-    (t3local-fun-declaration fun)
+    (t3function-declaration fun)
     (wt-nl-open-brace)
-    (let ((body (t3local-fun-body fun)))
+    (let ((body (t3function-body fun)))
       (wt-function-locals (fun-closure fun))
       (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
       (when (eq (fun-closure fun) 'CLOSURE)
@@ -370,11 +370,11 @@
       (when (policy-check-stack-overflow)
         (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
       (when (eq (fun-closure fun) 'CLOSURE)
-        (t3local-fun-closure-scan fun))
+        (t3function-closure-scan fun))
       (write-sequence body *compiler-output1*)
       (wt-nl-close-many-braces 0))))
 
-(defun t3local-fun-body (fun)
+(defun t3function-body (fun)
   (let ((string (make-array 2048 :element-type 'character
                                  :adjustable t
                                  :fill-pointer 0)))
@@ -392,7 +392,7 @@
                        (fun-keyword-type-check-forms fun))))
     string))
 
-(defun t3local-fun-declaration (fun)
+(defun t3function-declaration (fun)
   (declare (type fun fun))
   (wt-comment-nl (cond ((fun-global fun) "function definition for ~a")
                        ((eq (fun-closure fun) 'CLOSURE) "closure ~a")
@@ -461,7 +461,7 @@
       (fun-level fun)
       0))
 
-(defun t3local-fun-closure-scan (fun)
+(defun t3function-closure-scan (fun)
   (let ((clv-used (fun-closure-variables fun)))
     (wt-nl "/* Scanning closure data ... */")
     (do ((n (1- (fun-env fun)) (1- n))
@@ -511,10 +511,9 @@
 (defun c2fset (c1form fun fname macro pprint c1forms)
   (declare (ignore pprint))
   (when (fun-no-entry fun)
-    (wt-nl "(void)0; "
-           (format nil "/* No entry created for ~A */" (fun-name fun)))
+    (wt-nl "(void)0; " (format nil "/* No entry created for ~A */" (fun-name fun)))
     ;; FIXME! Look at C2LOCALS!
-    (new-local fun)
+    (update-function-env fun)
     (return-from c2fset))
   (unless (and (not (fun-closure fun))
                (eq *destination* 'TRASH))
@@ -524,7 +523,7 @@
         (loc (data-empty-loc*)))
     (push (list loc fname fun) *global-cfuns-array*)
     ;; FIXME! Look at C2LOCALS!
-    (new-local fun)
+    (update-function-env fun)
     (if macro
         (wt-nl "ecl_cmp_defmacro(" loc ");")
         (wt-nl "ecl_cmp_defun(" loc ");"))

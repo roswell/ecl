@@ -14,6 +14,9 @@
 
 (in-package #:compiler)
 
+(defun register-function (fun)
+  (push fun *functions*))
+
 (defun child-function-p (presumed-parent fun)
   (declare (optimize speed))
   (loop for real-parent = (fun-parent fun)

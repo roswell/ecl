@@ -16,47 +16,47 @@
 
 (defun c2locals (c1form funs body labels ;; labels is T when deriving from labels
                  &aux
-                 (*env* *env*)
-                 (*inline-blocks* 0)
-                 (*env-lvl* *env-lvl*))
+                   (*env* *env*)
+                   (*inline-blocks* 0)
+                   (*env-lvl* *env-lvl*))
   (declare (ignore c1form labels))
   ;; create location for each function which is returned,
   ;; either in lexical:
   (loop with env-grows = nil
-     with closed-vars = '()
-     for fun in funs
-     for var = (fun-var fun)
-     when (plusp (var-ref var))
-     do (case (var-kind var)
-          ((lexical closure)
-           (push var closed-vars)
-           (unless env-grows
-             (setq env-grows (var-ref-ccb var))))
-          (otherwise
-           (maybe-open-inline-block)
-           (bind (next-lcl) var)
-           (wt-nl "cl_object " *volatile* var ";")))
-     finally
-     ;; if we have closed variables
-       (when (env-grows env-grows)
-         (maybe-open-inline-block)
-         (let ((env-lvl *env-lvl*))
-           (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
-     ;; bind closed locations because of possible circularities
-       (loop for var in closed-vars
-          do (bind *vv-nil* var)))
+        with closed-vars = '()
+        for fun in funs
+        for var = (fun-var fun)
+        when (plusp (var-ref var))
+          do (case (var-kind var)
+               ((lexical closure)
+                (push var closed-vars)
+                (unless env-grows
+                  (setq env-grows (var-ref-ccb var))))
+               (otherwise
+                (maybe-open-inline-block)
+                (bind (next-lcl) var)
+                (wt-nl "cl_object " *volatile* var ";")))
+        finally
+           ;; if we have closed variables
+           (when (env-grows env-grows)
+             (maybe-open-inline-block)
+             (let ((env-lvl *env-lvl*))
+               (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
+           ;; bind closed locations because of possible circularities
+           (loop for var in closed-vars
+                 do (bind *vv-nil* var)))
   ;; create the functions:
-  (mapc #'new-local funs)
+  (map nil #'update-function-env funs)
   ;; - then assign to it
   (loop for fun in funs
-     for var = (fun-var fun)
-     when (plusp (var-ref var))
-     do (set-var (list 'MAKE-CCLOSURE fun) var))
+        for var = (fun-var fun)
+        when (plusp (var-ref var))
+          do (set-var (list 'MAKE-CCLOSURE fun) var))
   (c2expr body)
   (close-inline-blocks))
 
 ;;; Mechanism for sharing code.
-(defun new-local (fun)
+(defun update-function-env (fun)
   (declare (type fun fun))
   (case (fun-closure fun)
     (CLOSURE
@@ -71,7 +71,7 @@
     (otherwise
      (setf (fun-level fun) 0
            (fun-env fun) 0)))
-  (push fun *local-funs*))
+  (register-function fun))
 
 #| Steps:
  1. defun creates declarations for requireds + va_alist

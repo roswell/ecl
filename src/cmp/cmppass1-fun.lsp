@@ -49,8 +49,7 @@
       (dolist (def (nreverse defs))
         (let ((fun (first def)))
           ;; The closure type will be fixed later on by COMPUTE-...
-          (push (c1compile-function (rest def) :fun fun)
-                local-funs))))
+          (push (c1compile-function (rest def) :fun fun) local-funs))))
 
     ;; When we are in a LABELs form, we have to propagate the external
     ;; variables from one function to the other functions that use it.

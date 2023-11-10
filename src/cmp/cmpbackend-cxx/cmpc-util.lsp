@@ -9,7 +9,7 @@
 (defvar *inline-blocks* 0)
 (defvar *opened-c-braces* 0)
 
-(defvar *emitted-local-funs* nil)
+(defvar *emitted-functions* nil)
 (defvar *inline-information* nil)
 
 ;;; Compiled code uses the following kinds of variables:
@@ -61,7 +61,6 @@
 ;;; C forms to find out (SETF fname) locations
 (defvar *setf-definitions*)             ; holds { name fun-vv name-vv  }*
 (defvar *global-cfuns-array*)           ; holds { fun-vv fname-loc fun }*
-(defvar *local-funs*)                   ; holds { fun }*
 
 ;;; T/NIL flag to determine whether one may generate lisp constant values as C
 ;;; structs.
@@ -100,7 +99,6 @@
              (make-inline-information *machine*)))
          (*setf-definitions* nil)
          (*global-cfuns-array* nil)
-         (*local-funs* nil)
          (*static-constants* nil)
          (*optimizable-constants* (make-optimizable-constants *machine*))
          (*permanent-objects* (make-array 128 :adjustable t :fill-pointer 0))
