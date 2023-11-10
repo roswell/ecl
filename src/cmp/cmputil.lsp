@@ -70,8 +70,8 @@
      (restart-case
          (handler-bind ((compiler-note #'handle-compiler-note)
                         (warning #'handle-compiler-warning)
-                        (compiler-error #'handle-compiler-error)
                         (compiler-internal-error #'handle-compiler-internal-error)
+                        (compiler-error #'handle-compiler-error)
                         (serious-condition #'handle-compiler-internal-error))
            (mp:with-lock (mp:+load-compile-lock+)
              (let ,+init-env-form+
