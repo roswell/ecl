@@ -44,11 +44,12 @@
         (apply def form (c1form-args form)))
       (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A" form))))
 
-(defun emit-functions ()
+(defun emit-functions (*compiler-output1*)
   (declare (si::c-local))
   ;; Local functions and closure functions
   (do ((*compile-time-too* nil)
-       (*compile-toplevel* nil))
+       (*compile-toplevel* nil)
+       (*emitted-functions* nil))
       ;; repeat until t3function generates no more
       ((eq *emitted-functions* *functions*))
     ;; scan *functions* backwards
@@ -81,7 +82,6 @@
          (*aux-closure* nil)
          (c-output-file *compiler-output1*)
          (*compiler-output1* (make-string-output-stream))
-         (*emitted-functions* nil)
          (*compiler-declared-globals* (make-hash-table)))
     (wt-nl "#include \"" (brief-namestring data-pathname) "\"")
     (wt-nl "#ifdef __cplusplus")
@@ -115,16 +115,15 @@
     ;; With this we ensure creating a constant with the tag
     ;; and the initialization file
     (wt-nl "Cblock->cblock.data_text = (const cl_object *)\"" (init-name-tag name) "\";")
-
     (wt-nl "VVtemp = Cblock->cblock.temp_data;")
-
     (wt-nl "ECL_DEFINE_SETF_FUNCTIONS")
-
     (dolist (form *make-forms*)
-      (emit-toplevel-form form c-output-file))
+      (emit-toplevel-form form))
     (dolist (form *top-level-forms*)
-      (emit-toplevel-form form c-output-file))
-
+      (emit-toplevel-form form))
+    ;; We process top-level forms before functions to update their
+    ;; environments. Then we emit functions before top level forms.
+    (emit-functions c-output-file)
     (wt-nl-close-many-braces 0)
     (setq top-output-string (get-output-stream-string *compiler-output1*)))
 
@@ -170,7 +169,7 @@
 
   (wt-nl top-output-string))
 
-(defun emit-toplevel-form (form c-output-file)
+(defun emit-toplevel-form (form)
   (declare (si::c-local))
   (let ((*ihs-used-p* nil)
         (*max-lex* 0)
@@ -199,9 +198,7 @@
             (wt-function-locals)
             (write-sequence body *compiler-output1*)
             (wt-nl-close-brace))
-          (write-sequence body *compiler-output1*)))
-    (let ((*compiler-output1* c-output-file))
-      (emit-functions))))
+          (write-sequence body *compiler-output1*)))))
 
 (defun t2compiler-let (c1form symbols values body)
   (declare (ignore c1form))

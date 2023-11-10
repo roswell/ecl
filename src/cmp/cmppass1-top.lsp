@@ -141,7 +141,7 @@
            (setf loc (add-object (cmp-eval form)))))
     (make-c1form* 'LOCATION :type t :args loc)))
 
-;;; ----------------------------------------------------------------------
+;;; ----------------------------------------------------------------------------
 ;;; Optimizer for FSET. Removes the need for a special handling of DEFUN as a
 ;;; toplevel form and also allows optimizing calls to DEFUN or DEFMACRO which
 ;;; are not toplevel, but which create no closures.
@@ -152,9 +152,13 @@
 ;;; the compiler we do not know whether a function is a closure, hence the need
 ;;; for a c2fset.
 ;;;
-;;; We optimize (SYS:FSET #'(LAMBDA ...) ..) and also, accidentally,
-;;; (SYS:FSET (FLET ((FOO ...)) #'FOO) ...) which is to what LAMBDA gets
-;;; translated in c1function.
+;;; We optimize:
+;;;
+;;;     (SYS:FSET NAME #'(LAMBDA ...) ...)
+;;;
+;;; where LAMBDA is expanded by C1FUNCTION to:
+;;;
+;;;     (SYS:FSET NAME (FLET ((FOO ...)) #'FOO))
 ;;;
 (defun t1fset (args)
   (let ((form `(si::fset ,@args)))

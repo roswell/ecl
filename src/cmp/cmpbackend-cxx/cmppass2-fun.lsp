@@ -55,7 +55,6 @@
   (c2expr body)
   (close-inline-blocks))
 
-;;; Mechanism for sharing code.
 (defun update-function-env (fun)
   (declare (type fun fun))
   (case (fun-closure fun)
