@@ -203,6 +203,10 @@
   (:documentation
    "This is like CL:FILE-POSITION, but for Gray streams."))
 
+(defgeneric stream-file-length (stream &optional position)
+  (:documentation
+   "This is like CL:FILE-LENGTH, but for Gray streams."))
+
 (defgeneric stream-file-descriptor (stream &optional direction)
   (:documentation
    "Return the file-descriptor underlaying STREAM, or NIL if not
@@ -593,6 +597,14 @@
   (declare (ignore stream position))
   nil)
 
+;; FILE-LENGTH
+
+(defmethod stream-file-length ((stream ansi-stream))
+  (file-length stream))
+
+(defmethod stream-file-length ((stream t))
+  (error 'type-error :datum stream :expected-type 'file-stream))
+
 ;; STREAM-P
 
 (defmethod streamp ((stream stream))
@@ -820,6 +832,9 @@ them so."
     ;; things that are called differently
     (%redefine-cl-functions 'cl:file-position
                             'gray:stream-file-position
+                            gray-package)
+    (%redefine-cl-functions 'cl:file-length
+                            'gray:stream-file-length
                             gray-package)
     (si::package-lock "COMMON-LISP" x)
     nil))
