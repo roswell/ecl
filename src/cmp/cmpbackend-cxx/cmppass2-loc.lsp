@@ -37,22 +37,6 @@
         (t
          (unknown-location 'wt-loc loc))))
 
-(defun wt-lcl (lcl)
-  (unless (numberp lcl)
-    (baboon :format-control "wt-lcl: ~s NaN"
-            :format-arguments (list lcl)))
-  (wt "v" lcl))
-
-(defun wt-lcl-loc (lcl &optional type name)
-  (declare (ignore type))
-  (unless (numberp lcl)
-    (baboon :format-control "wt-lcl-loc: ~s NaN"
-            :format-arguments (list lcl)))
-  (wt "v" lcl name))
-
-(defun wt-temp (temp)
-  (wt "T" temp))
-
 (defun wt-fixnum (value &optional vv)
   (declare (ignore vv))
   (princ value *compiler-output1*)

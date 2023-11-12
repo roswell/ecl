@@ -20,12 +20,11 @@
              (local var))
     (let ((var1 (c1form-arg 0 form)))
       (declare (type var var1))
-      (when (and ;; Fixme! We should be able to replace variable
-             ;; even if they are referenced across functions.
-             ;; We just need to keep track of their uses.
-             (local var1)
-             (eq (unboxed var) (unboxed var1))
-             (not (var-changed-in-form-list var1 rest-forms)))
+      ;; FIXME We should be able to replace variable even if they are referenced
+      ;; across functions.  We just need to keep track of their uses.
+      (when (and (local var1)
+                 (eq (unboxed var) (unboxed var1))
+                 (not (var-changed-in-form-list var1 rest-forms)))
         (cmpdebug "Replacing variable ~a by its value" (var-name var))
         (nsubst-var var form)
         t))))
@@ -354,8 +353,7 @@
        (if (safe-compile)
            (wt "ecl_cmp_symbol_value(cl_env_copy," var-loc ")")
            (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
-      (t (wt var-loc))
-      )))
+      (t (wt var-loc)))))
 
 (defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
   (unless (var-p var)
@@ -382,10 +380,26 @@
      (wt #\;))
     ))
 
+(defun wt-lcl (lcl)
+  (unless (numberp lcl)
+    (baboon :format-control "wt-lcl: ~s NaN"
+            :format-arguments (list lcl)))
+  (wt "v" lcl))
+
+(defun wt-lcl-loc (lcl &optional type name)
+  (declare (ignore type))
+  (unless (numberp lcl)
+    (baboon :format-control "wt-lcl-loc: ~s NaN"
+            :format-arguments (list lcl)))
+  (wt "v" lcl name))
+
 (defun wt-lex (lex)
   (if (consp lex)
       (wt "lex" (car lex) "[" (cdr lex) "]")
       (wt-lcl lex)))
+
+(defun wt-temp (temp)
+  (wt "T" temp))
 
 ;;; reference to variable of inner closure.
 (defun wt-env (clv) (wt "ECL_CONS_CAR(CLV" clv ")"))
