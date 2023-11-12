@@ -124,10 +124,10 @@ variable, block, tag or function object at the end.")
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
 
-;;; --cmplog.lsp--
+;;; --cmplocs.lsp--
 ;;;
-;;; Destination of output of different forms. See cmploc.lsp for types
-;;; of destinations.
+;;; Destination of output of different forms. See cmplocs.lsp for types of
+;;; destinations.
 ;;;
 (defvar *destination*)
 

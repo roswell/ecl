@@ -211,14 +211,6 @@
 
 (defun c2values (c1form forms)
   (declare (ignore c1form))
-  (when (and (eq *destination* 'RETURN-OBJECT)
-             (rest forms)
-             (consp *current-form*)
-             (eq 'cl:DEFUN (first *current-form*)))
-    (cmpwarn "Trying to return multiple values. ~
-              ~%;But ~a was proclaimed to have single value.~
-              ~%;Only first one will be assured."
-             (second *current-form*)))
   (cond
    ;; When the values are not going to be used, then just
    ;; process each form separately.

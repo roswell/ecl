@@ -140,13 +140,13 @@
 
 ;;; Valid *DESTINATION* locations are:
 ;;;
-;;;     VALUE0
-;;;     RETURN                          Object returned from current function.
+;;;     var-object                      Variable
+;;;     loc-object                      VV Location
 ;;;     TRASH                           Value may be thrown away.
+;;;     RETURN                          Object returned from current function.
 ;;;     VALUES                          Values vector.
-;;;     var-object
-;;;     ( LCL lcl )
-;;;     ( LEX lex-address )
+;;;     VALUE0
+;;;     ( VALUE i )                     Nth value
 ;;;     ( BIND var alternative )        Alternative is optional
 ;;;     ( JUMP-TRUE label )
 ;;;     ( JUMP-FALSE label )
