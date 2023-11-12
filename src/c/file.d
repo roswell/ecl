@@ -1313,7 +1313,11 @@ clos_stream_element_type(cl_object strm)
   return _ecl_funcall2(@'gray::stream-element-type', strm);
 }
 
-#define clos_stream_length not_a_file_stream
+static cl_object
+clos_stream_length(cl_object strm)
+{
+  return _ecl_funcall2(@'gray::stream-file-length', strm);
+}
 
 static cl_object
 clos_stream_get_position(cl_object strm)
