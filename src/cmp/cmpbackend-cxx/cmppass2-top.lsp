@@ -34,15 +34,15 @@
 ;;;;  CMPTOP  --  Compiler top-level.
 
 (defun t2expr (form)
-  (when form
-    (ext:if-let ((def (gethash (c1form-name form) *t2-dispatch-table*)))
-      (let ((*compile-file-truename* (c1form-file form))
-            (*compile-file-position* (c1form-file-position form))
-            (*current-toplevel-form* (c1form-form form))
-            (*current-form* (c1form-form form))
-            (*cmp-env* (c1form-env form)))
-        (apply def form (c1form-args form)))
-      (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A" form))))
+  (check-type form c1form)
+  (ext:if-let ((def (gethash (c1form-name form) *t2-dispatch-table*)))
+    (let ((*compile-file-truename* (c1form-file form))
+          (*compile-file-position* (c1form-file-position form))
+          (*current-toplevel-form* (c1form-form form))
+          (*current-form* (c1form-form form))
+          (*cmp-env* (c1form-env form)))
+      (apply def form (c1form-args form)))
+    (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A" form)))
 
 (defun emit-functions (*compiler-output1*)
   (declare (si::c-local))
