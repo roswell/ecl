@@ -94,16 +94,13 @@
          (*lcl* *lcl*)
          (labels nil)
          (env-grows nil)
-         (nr (make-lcl-var :type :int))
          (*inline-blocks* 0)
          min-values max-values)
-    (declare (ignore nr))
-    ;; 1) Retrieve the number of output values
+    ;; 1) Retrieve the number of output values.
     (multiple-value-setq (min-values max-values)
       (c1form-values-number init-form))
-
-    ;; 2) For all variables which are not special and do not belong to
-    ;;    a closure, make a local C variable.
+    ;; 2) For all variables which are not special and do not belong to a
+    ;;    closure, make a local C variable.
     (dolist (var vars)
       (declare (type var var))
       (let ((kind (local var)))
@@ -114,22 +111,18 @@
               (wt-nl (rep-type->c-name kind) " " *volatile* var ";")
               (wt-comment (var-name var)))
             (unless env-grows (setq env-grows (var-ref-ccb var))))))
-
     ;; 3) If there are closure variables, set up an environment.
     (when (setq env-grows (env-grows env-grows))
       (let ((env-lvl *env-lvl*))
         (maybe-open-inline-block)
         (wt-nl "volatile cl_object env" (incf *env-lvl*)
                " = env" env-lvl ";")))
-
-    ;; 4) Assign the values to the variables, compiling the form
-    ;;    and binding the variables in the process.
+    ;; 4) Assign the values to the variables, compiling the form and binding the
+    ;;    variables in the process.
     (do-m-v-setq vars init-form t)
-
-    ;; 5) Compile the body. If there are bindings of special variables,
-    ;;    these bindings are undone here.
+    ;; 5) Compile the body. If there are bindings of special variables, these
+    ;;    bindings are undone here.
     (c2expr body)
-
     ;; 6) Close the C expression.
     (close-inline-blocks)))
 
