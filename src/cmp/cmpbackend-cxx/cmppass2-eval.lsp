@@ -26,12 +26,10 @@
   ;; other expressions will follow this one. We must thus create
   ;; a possible label so that the compiled forms exit right at
   ;; the point where the next form will be compiled.
-  (with-exit-label (label)
-    (let* ((*exit* label)
-           (*unwind-exit* (cons *exit* *unwind-exit*))
-           ;;(*lex* *lex*)
-           (*lcl* *lcl*)
-           (*temp* *temp*))
+  (with-exit-label (*exit*)
+    (let (;;(*lex* *lex*)
+          (*lcl* *lcl*)
+          (*temp* *temp*))
       (c2expr form))))
 
 (defun c2progn (c1form forms)

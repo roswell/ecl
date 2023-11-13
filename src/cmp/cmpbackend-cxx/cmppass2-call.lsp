@@ -101,12 +101,10 @@
              (tail-recursion-possible)
              (inline-possible (fun-name fun))
              (= (length args) (length (rest *tail-recursion-info*))))
-    (let* ((*destination* 'TRASH)
-           (*exit* (next-label))
-           (*unwind-exit* (cons *exit* *unwind-exit*)))
-      (c2psetq nil ;; We do not provide any C2FORM
-               (cdr *tail-recursion-info*) args)
-      (wt-label *exit*))
+    (with-exit-label (*exit*)
+      (let ((*destination* 'TRASH))
+        ;; We do not provide any C2FORM.
+        (c2psetq nil (cdr *tail-recursion-info*) args)))
     (unwind-no-exit 'TAIL-RECURSION-MARK)
     (wt-nl "goto TTL;")
     (cmpdebug "Tail-recursive call of ~s was replaced by iteration."

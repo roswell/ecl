@@ -93,6 +93,7 @@
          (*max-temp* 0)
          (*next-cfun* 0)
          (*last-label* 0)
+         (*unwind-exit* nil)
          (*inline-information*
            (ext:if-let ((r (machine-inline-information *machine*)))
              (si:copy-hash-table r)

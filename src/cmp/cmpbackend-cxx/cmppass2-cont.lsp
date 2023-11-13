@@ -164,9 +164,8 @@
             (wt-nl "if (__ecl_frs_push_result) {")
             (wt-comment "BEGIN CATCH ~A" code)
             (with-indentation
-              (with-exit-label (label)
-                (let ((*exit* label))
-                  (unwind-exit 'VALUES))))
+              (with-exit-label (*exit*)
+                (unwind-exit 'VALUES)))
             (wt-nl "} else {")
             (with-indentation
               (c2expr* body)))))
