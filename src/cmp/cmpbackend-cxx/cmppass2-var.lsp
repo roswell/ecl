@@ -29,6 +29,63 @@
         (nsubst-var var form)
         t))))
 
+(defun locative-type-from-var-kind (kind)
+  (cdr (assoc kind
+              '((:object . "_ecl_object_loc")
+                (:fixnum . "_ecl_fixnum_loc")
+                (:char . "_ecl_base_char_loc")
+                (:float . "_ecl_float_loc")
+                (:double . "_ecl_double_loc")
+                (:long-double . "_ecl_long_double_loc")
+                #+complex-float (:csfloat . "_ecl_csfloat_loc")
+                #+complex-float (:cdfloat . "_ecl_cdfloat_loc")
+                #+complex-float (:clfloat . "_ecl_clfloat_loc")
+                #+sse2 (:int-sse-pack . "_ecl_int_sse_pack_loc")
+                #+sse2 (:float-sse-pack . "_ecl_float_sse_pack_loc")
+                #+sse2 (:double-sse-pack . "_ecl_double_sse_pack_loc")
+                ((special global closure lexical) . NIL)))))
+
+(defun build-debug-lexical-env (var-locations &optional first)
+  #-:msvc ;; FIXME! Problem with initialization of statically defined vectors
+  (let* ((filtered-locations '())
+         (filtered-codes '()))
+    ;; Filter out variables that we know how to store in the debug information
+    ;; table. This excludes among other things closures and special variables.
+    (loop for var in var-locations
+          for name = (let ((*package* (find-package "KEYWORD")))
+                       (format nil "\"~S\"" (var-name var)))
+          for code = (locative-type-from-var-kind (var-kind var))
+          for loc = (var-loc var)
+          when (and code (consp loc) (eq (first loc) 'LCL))
+            do (progn
+                 (push (cons name code) filtered-codes)
+                 (push loc filtered-locations)))
+    ;; Generate two tables, a static one with information about the variables,
+    ;; including name and type, and dynamic one, which is a vector of pointer to
+    ;; the variables.
+    (when filtered-codes
+      (setf *ihs-used-p* t)
+      (wt-nl "static const struct ecl_var_debug_info _ecl_descriptors[]={")
+      (loop for (name . code) in filtered-codes
+            for i from 0
+            do (wt-nl (if (zerop i) "{" ",{") name "," code "}"))
+      (wt "};")
+      (wt-nl "const cl_index _ecl_debug_info_raw[]={")
+      (wt-nl (if first "(cl_index)(ECL_NIL)," "(cl_index)(_ecl_debug_env),")
+             "(cl_index)(_ecl_descriptors)")
+      (loop for var-loc in filtered-locations
+            do (wt ",(cl_index)(&" var-loc ")"))
+      (wt "};")
+      (wt-nl "ecl_def_ct_vector(_ecl_debug_env,ecl_aet_index,_ecl_debug_info_raw,"
+             (+ 2 (length filtered-locations))
+             ",,);")
+      (unless first
+        (wt-nl "ihs.lex_env = _ecl_debug_env;")))
+    filtered-codes))
+
+(defun pop-debug-lexical-env ()
+  (wt-nl "ihs.lex_env = _ecl_debug_env;"))
+
 (defun c2let* (c1form vars forms body
                &aux
                (*volatile* (c1form-volatile* c1form))
