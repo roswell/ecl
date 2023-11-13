@@ -434,28 +434,30 @@
                              cfun (fun-file-position fun))))
           (format stream "~%};")))))
 
+(defun wt-install-function (fname fun macro-p)
+  (let ((*inline-blocks* 0)
+        (loc (data-empty-loc*)))
+    (push (list loc fname fun) *global-cfuns-array*)
+    ;; FIXME! Look at C2LOCALS!
+    (update-function-env fun)
+    (if macro-p
+        (wt-nl "ecl_cmp_defmacro(" loc ");")
+        (wt-nl "ecl_cmp_defun(" loc ");"))
+    (wt-comment (loc-immediate-value fname))
+    (close-inline-blocks)))
+
 (defun t2fset (c1form &rest args)
   (declare (ignore args))
-  (t2ordinary nil c1form))
+  (t2ordinary c1form c1form))
 
-(defun c2fset (c1form fun fname macro pprint c1forms)
+(defun c2fset (c1form fun fname macro-p pprint c1forms)
   (declare (ignore pprint))
   (when (fun-no-entry fun)
     (wt-nl "(void)0; " (format nil "/* No entry created for ~A */" (fun-name fun)))
     ;; FIXME! Look at C2LOCALS!
     (update-function-env fun)
     (return-from c2fset))
-  (unless (and (not (fun-closure fun))
-               (eq *destination* 'TRASH))
-    (return-from c2fset
+  (if (and (not (fun-closure fun))
+           (eq *destination* 'TRASH))
+      (wt-install-function fname fun macro-p)
       (c2call-global c1form 'SI:FSET c1forms)))
-  (let ((*inline-blocks* 0)
-        (loc (data-empty-loc*)))
-    (push (list loc fname fun) *global-cfuns-array*)
-    ;; FIXME! Look at C2LOCALS!
-    (update-function-env fun)
-    (if macro
-        (wt-nl "ecl_cmp_defmacro(" loc ");")
-        (wt-nl "ecl_cmp_defun(" loc ");"))
-    (wt-comment (loc-immediate-value fname))
-    (close-inline-blocks)))
