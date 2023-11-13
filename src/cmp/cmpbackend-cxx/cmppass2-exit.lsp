@@ -60,7 +60,7 @@
        (wt-nl "ihs.lex_env = _ecl_debug_env;")))
     some))
 
-(defun unwind-exit (loc &optional (jump-p nil) &aux (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
+(defun unwind-exit (loc &aux (jump-p nil) (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
   (declare (fixnum bds-bind))
   (when (consp *destination*)
     (case (car *destination*)

@@ -57,7 +57,7 @@
                   )
                  (t
                   (c2expr* form)))
-        finally (unwind-exit nil)))
+        finally (unwind-exit *vv-nil*)))
 
 (defun c2c-inline (c1form arguments &rest rest)
   (declare (ignore c1form))

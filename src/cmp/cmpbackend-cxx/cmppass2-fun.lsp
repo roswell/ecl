@@ -20,8 +20,7 @@
                    (*inline-blocks* 0)
                    (*env-lvl* *env-lvl*))
   (declare (ignore c1form labels))
-  ;; create location for each function which is returned,
-  ;; either in lexical:
+  ;; create location for each function which is returned, either in lexical:
   (loop with env-grows = nil
         with closed-vars = '()
         for fun in funs
