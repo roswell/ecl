@@ -44,17 +44,16 @@
 
 ;;; --cmpexit.lsp--
 ;;;
-;;; *last-label* holds the label# of the last used label.
 ;;; *exit* holds an 'exit', which is
-;;      ( label# . ref-flag ) or one of RETURNs (i.e. RETURN, RETURN-FIXNUM,
+;;      LABEL instance or one of RETURNs (i.e. RETURN, RETURN-FIXNUM,
 ;;      RETURN-CHARACTER, RETURN-LONG-FLOAT, RETURN-DOUBLE-FLOAT, RETURN-SINGLE-FLOAT,
 ;;      RETURN-CSFLOAT, RETURN-CDFLOAT, RETURN-CLFLOAT or RETURN-OBJECT).
 ;;; *unwind-exit* holds a list consisting of:
-;;      ( label# . ref-flag ), one of RETURNs, TAIL-RECURSION-MARK, FRAME,
+;;      LABEL instance, one of RETURNs, TAIL-RECURSION-MARK, FRAME,
 ;;      JUMP, BDS-BIND (each pushed for a single special binding), or a
 ;;      LCL (which holds the bind stack pointer used to unbind).
 ;;;
-(defvar *last-label* 0)
+
 (defvar *exit*)
 (defvar *unwind-exit*)
 
@@ -148,25 +147,26 @@
   (let ((code (incf *next-cfun*)))
     (format nil prefix code (lisp-to-c-name lisp-name))))
 
-;;; (CAR label) is a an unique id of the label in the compilation unit.
-;;; (CDR label) is a flag signaling whether the label is referenced.
+
+;;; *LAST-LABEL* holds the label# of the last used label. This is used by the
+;;; code generator to avoid duplicated labels in the same scope.
 
-(defun next-label ()
-  (cons (incf *last-label*) nil))
+(defvar *last-label* 0)
 
-(defun next-label* ()
-  (cons (incf *last-label*) t))
+(defstruct (label (:predicate labelp))
+  id
+  used-p)
 
-(defun labelp (x)
-  (and (consp x) (integerp (si:cons-car x))))
+(defun next-label (used-p)
+  (make-label :id (incf *last-label*) :used-p used-p))
 
 (defun maybe-next-label ()
   (if (labelp *exit*)
       *exit*
-      (next-label)))
+      (next-label nil)))
 
 (defmacro with-exit-label ((label) &body body)
-  `(let* ((,label (next-label))
+  `(let* ((,label (next-label nil))
           (*unwind-exit* (cons ,label *unwind-exit*)))
      ,@body
      (wt-label ,label)))

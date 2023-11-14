@@ -66,7 +66,7 @@
       (dolist (x body (c2tagbody-body body))
         ;; Allocate labels.
         (when (and (tag-p x) (plusp (tag-ref x)))
-          (setf (tag-label x) (next-label*))
+          (setf (tag-label x) (next-label t))
           (setf (tag-unwind-exit x) *unwind-exit*)))
       ;; some tag used non locally or inside an unwind-protect
       (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
@@ -90,7 +90,7 @@
         ;; Allocate labels.
         (dolist (tag body)
           (when (and (tag-p tag) (plusp (tag-ref tag)))
-            (setf (tag-label tag) (next-label))
+            (setf (tag-label tag) (next-label nil))
             (setf (tag-unwind-exit tag) *unwind-exit*)
             (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
             (wt-go (tag-label tag))))
@@ -116,7 +116,7 @@
              (let* ((next-form (second l))
                     (*exit* (if (tag-p next-form)
                                 (tag-label next-form)
-                                (next-label)))
+                                (next-label nil)))
                     (*unwind-exit* (cons *exit* *unwind-exit*))
                     (*destination* 'TRASH))
                (c2expr this-form)

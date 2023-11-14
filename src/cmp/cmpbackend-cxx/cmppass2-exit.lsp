@@ -22,7 +22,7 @@
 ;;; IHS                 -> ihs push
 ;;; IHS-ENV             -> ihs push
 ;;; BDS-BIND            -> binding of 1 special variable
-;;; (number . {T|NIL})  -> label
+;;; #<label id used-p>  -> label (basic block leader)
 ;;; (LCL n)             -> n local variables
 ;;; (STACK n)           -> n elements pushed in stack
 ;;; TAIL-RECURSION-MARK -> TTL: label created
@@ -75,37 +75,39 @@
   (dolist (ue *unwind-exit* (baboon-improper-*exit*))
     ;; perform all unwind-exit's which precede *exit*
     (cond
-      ((consp ue)                   ; ( label# . ref-flag )| (STACK n) |(LCL n)
+      ((consp ue)                   ; (STACK n) | (LCL n)
        (cond ((eq (car ue) 'STACK)
               (setf stack-frame (second ue)))
              ((eq (car ue) 'LCL)
               (setq bds-lcl ue bds-bind 0))
-             ((eq ue *exit*)
-              ;; all body forms except the last (returning) are dealt here
-              (cond ((and (consp *destination*)
-                          (or (eq (car *destination*) 'JUMP-TRUE)
-                              (eq (car *destination*) 'JUMP-FALSE)))
-                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p))
-                    ((not (or bds-lcl (plusp bds-bind) stack-frame))
-                     (set-loc loc))
-                    ;; Save the value if LOC may possibly refer
-                    ;; to special binding.
-                    ((or (loc-refers-to-special-p loc)
-                         (loc-refers-to-special-p *destination*))
-                     (let* ((*temp* *temp*)
-                            (temp (make-temp-var)))
-                       (let ((*destination* temp))
-                         (set-loc loc)) ; temp <- loc
-                       (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                       (set-loc temp))) ; *destination* <- temp
-                    (t
-                     (set-loc loc)
-                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p)))
-              (when jump-p
-                (wt-nl)
-                (wt-go *exit*))
-              (return))
-             (t (setq jump-p t))))
+             (t (baboon-unwind-exit ue))))
+      ((labelp ue)
+       (when (eq ue *exit*)
+         ;; all body forms except the last (returning) are dealt here
+         (cond ((and (consp *destination*)
+                     (or (eq (car *destination*) 'JUMP-TRUE)
+                         (eq (car *destination*) 'JUMP-FALSE)))
+                (unwind-bds bds-lcl bds-bind stack-frame ihs-p))
+               ((not (or bds-lcl (plusp bds-bind) stack-frame))
+                (set-loc loc))
+               ;; Save the value if LOC may possibly refer to special binding.
+               ((or (loc-refers-to-special-p loc)
+                    (loc-refers-to-special-p *destination*))
+                (let* ((*temp* *temp*)
+                       (temp (make-temp-var)))
+                  (let ((*destination* temp))
+                    (set-loc loc)) ; temp <- loc
+                  (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
+                  (set-loc temp))) ; *destination* <- temp
+               (t
+                (set-loc loc)
+                (unwind-bds bds-lcl bds-bind stack-frame ihs-p)))
+         (when jump-p
+           (wt-nl)
+           (wt-go *exit*))
+         (return))
+       ;; We are crossing the block boundary.
+       (setq jump-p t))
       (t (case ue
            (IHS (setf ihs-p ue))
            (IHS-ENV (setf ihs-p (or ihs-p ue)))
@@ -174,24 +176,25 @@
 
 (defun unwind-no-exit-until (last-cons)
   (loop with bds-lcl = nil
-     with bds-bind = 0
-     with stack-frame = nil
-     with ihs-p = nil
-     for unwind-exit on *unwind-exit*
-     for ue = (car unwind-exit)
-     until (eq unwind-exit last-cons)
-     do (cond
-          ((consp ue)
-           (when (eq (first ue) 'STACK)
-             (setf stack-frame (second ue))))
-          ((eq ue 'BDS-BIND)
-           (incf bds-bind))
-          ((eq ue 'FRAME)
-           (wt-nl "ecl_frs_pop(cl_env_copy);"))
-          ((eq ue 'IHS-ENV)
-           (setf ihs-p ue))
-          (t (baboon-unwind-exit ue)))
-     finally (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p))))
+        with bds-bind = 0
+        with stack-frame = nil
+        with ihs-p = nil
+        for unwind-exit on *unwind-exit*
+        for ue = (car unwind-exit)
+        until (eq unwind-exit last-cons)
+        do (cond
+             ((consp ue)
+              (when (eq (first ue) 'STACK)
+                (setf stack-frame (second ue))))
+             ((labelp ue))
+             ((eq ue 'BDS-BIND)
+              (incf bds-bind))
+             ((eq ue 'FRAME)
+              (wt-nl "ecl_frs_pop(cl_env_copy);"))
+             ((eq ue 'IHS-ENV)
+              (setf ihs-p ue))
+             (t (baboon-unwind-exit ue)))
+        finally (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p))))
 
 (defun unwind-no-exit (exit)
   (let ((where (member exit *unwind-exit* :test #'eq)))

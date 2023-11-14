@@ -84,9 +84,9 @@
               (baboon :format-control "tail-recursion-possible: should never return."))
     (cond ((eq ue 'TAIL-RECURSION-MARK)
            (return t))
-          ((or (numberp ue) (eq ue 'BDS-BIND) (eq ue 'FRAME))
+          ((or (eq ue 'BDS-BIND) (eq ue 'FRAME))
            (return nil))
-          ((or (consp ue) (eq ue 'JUMP) (eq ue 'IHS-ENV)))
+          ((or (consp ue) (labelp ue) (eq ue 'IHS-ENV)))
           (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
 
 (defun last-call-p ()

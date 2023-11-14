@@ -111,12 +111,12 @@
 ;;;
 
 (defun wt-go (label)
-  (setf (cdr label) t
-        label (car label))
-  (wt "goto L" label ";"))
+  (setf (label-used-p label) t)
+  (wt "goto L" (label-id label) ";"))
 
 (defun wt-label (label)
-  (when (cdr label) (wt-nl1 "L" (car label) ":;")))
+  (when (label-used-p label)
+    (wt-nl1 "L" (label-id label) ":;")))
 
 ;;;
 ;;; C/C++ COMMENTS
