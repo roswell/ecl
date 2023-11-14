@@ -146,7 +146,7 @@
 (defun c2catch (c1form tag body)
   (declare (ignore c1form))
   (let* ((new-destination (tmp-destination *destination*))
-         (code (incf *last-label*)))
+         (code (gensym "CATCH")))
     (let ((*destination* 'VALUE0))
       (c2expr* tag))
     (let* ((*destination* new-destination)
