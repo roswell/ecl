@@ -16,6 +16,18 @@
 
 (in-package "COMPILER")
 
+(defun baboon-exit-not-found (exit)
+  (baboon :format-control "The value of exit~%~A~%is not found in *UNWIND-EXIT*~%~A"
+          :format-arguments (list exit *unwind-exit*)))
+
+(defun baboon-unwind-invalid (unwind-exit)
+  (baboon :format-control "The value~%~A~%is not a tail of *UNWIND-EXIT*~%~A"
+          :format-arguments (list unwind-exit *unwind-exit*)))
+
+(defun baboon-unwind-exit (exit)
+  (baboon :format-control "The value of exit~%~A~%found in *UNWIND-EXIT*~%~A~%is not valid."
+          :format-arguments (list exit *unwind-exit*)))
+
 ;;; UNWIND-EXIT TAGS       PURPOSE
 ;;;
 ;;; FRAME               -> ecl_frs_push()
@@ -72,7 +84,7 @@
        (set-jump-false loc (second *destination*))
        (when (eq loc *vv-nil*)
          (return-from unwind-exit)))))
-  (dolist (ue *unwind-exit* (baboon-improper-*exit*))
+  (dolist (ue *unwind-exit* (baboon-exit-not-found *exit*))
     ;; perform all unwind-exit's which precede *exit*
     (cond
       ((consp ue)                   ; (STACK n) | (LCL n)
@@ -166,14 +178,6 @@
   ;;; Never reached
   )
 
-(defun baboon-improper-*exit* ()
-  (baboon :format-control "The value of *EXIT*~%~A~%is not found in *UNWIND-EXIT*~%~A"
-          :format-arguments (list *exit* *unwind-exit*)))
-
-(defun baboon-unwind-exit (ue)
-  (baboon :format-control "The value of unwind exit~%~A~%found in *UNWIND-EXIT*~%~A~%is not valid."
-          :format-arguments (list ue *unwind-exit*)))
-
 (defun unwind-no-exit-until (last-cons)
   (loop with bds-lcl = nil
         with bds-bind = 0
@@ -199,6 +203,5 @@
 (defun unwind-no-exit (exit)
   (let ((where (member exit *unwind-exit* :test #'eq)))
     (unless where
-      (baboon :format-control "Unwind-exit label ~A not found"
-              :format-arguments (list exit)))
+      (baboon-exit-not-found exit))
     (unwind-no-exit-until where)))
