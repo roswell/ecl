@@ -45,13 +45,11 @@
 ;;; --cmpexit.lsp--
 ;;;
 ;;; *exit* holds an 'exit', which is
-;;      LABEL instance or one of RETURNs (i.e. RETURN, RETURN-FIXNUM,
-;;      RETURN-CHARACTER, RETURN-LONG-FLOAT, RETURN-DOUBLE-FLOAT, RETURN-SINGLE-FLOAT,
-;;      RETURN-CSFLOAT, RETURN-CDFLOAT, RETURN-CLFLOAT or RETURN-OBJECT).
+;;      LABEL instance or RETURN.
 ;;; *unwind-exit* holds a list consisting of:
-;;      LABEL instance, one of RETURNs, TAIL-RECURSION-MARK, FRAME,
-;;      JUMP, BDS-BIND (each pushed for a single special binding), or a
-;;      LCL (which holds the bind stack pointer used to unbind).
+;;      LABEL instance, RETURN, TAIL-RECURSION-MARK, FRAME, JUMP, BDS-BIND (each
+;;      pushed for a single special binding), or a LCL (which holds the bind
+;;      stack pointer used to unbind).
 ;;;
 
 (defvar *exit*)

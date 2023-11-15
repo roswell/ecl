@@ -38,12 +38,8 @@
 ;;; (LCL n)             -> n local variables
 ;;; (STACK n)           -> n elements pushed in stack
 ;;; TAIL-RECURSION-MARK -> TTL: label created
-;;; RETURN              -> outermost location (*)
-;;;
-;;; (*) also RETURN-{FIXNUM,CHARACTER,OBJECT}
-;;;          RETURN-{SINGLE-FLOAT,DOUBLE-FLOAT,LONG-FLOAT}
-;;;          RETURN-{CSFLOAT,CDFLOAT,CLFLOAT}
-;;;
+;;; RETURN              -> outermost location
+
 (defun unwind-bds (bds-lcl bds-bind stack-frame ihs-p)
   (declare (fixnum bds-bind))
   (let ((some nil))
@@ -124,6 +120,11 @@
            (IHS (setf ihs-p ue))
            (IHS-ENV (setf ihs-p (or ihs-p ue)))
            (BDS-BIND (incf bds-bind))
+           (FRAME
+            (let ((*destination* (tmp-destination *destination*)))
+              (set-loc loc)
+              (setq loc *destination*))
+            (wt-nl "ecl_frs_pop(cl_env_copy);"))
            (RETURN
              (unless (eq *exit* 'RETURN)
                (baboon-unwind-exit ue))
@@ -142,37 +143,6 @@
                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
                     (wt-nl "return value0;")))
              (return))
-           ((RETURN-FIXNUM RETURN-CHARACTER RETURN-OBJECT
-             RETURN-DOUBLE-FLOAT RETURN-SINGLE-FLOAT RETURN-LONG-FLOAT
-             RETURN-CSFLOAT RETURN-CDFLOAT RETURN-CLFLOAT)
-            (when (eq *exit* ue)
-              ;; *destination* must be RETURN-FIXNUM
-              (setq loc (list 'COERCE-LOC
-                              (getf '(RETURN-FIXNUM :fixnum
-                                      RETURN-CHARACTER :char
-                                      RETURN-SINGLE-FLOAT :float
-                                      RETURN-DOUBLE-FLOAT :double
-                                      RETURN-CSFLOAT :csfloat
-                                      RETURN-CDFLOAT :cdfloat
-                                      RETURN-CLFLOAT :clfloat
-                                      RETURN-OBJECT :object)
-                                    ue)
-                              loc))
-              (if (or bds-lcl (plusp bds-bind))
-                  (let ((lcl (make-lcl-var :type (second loc))))
-                    (wt-nl-open-brace)
-                    (wt-nl "cl_fixnum " lcl "= " loc ";")
-                    (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                    (wt-nl "return(" lcl ");")
-                    (wt-nl-close-brace))
-                  (progn
-                    (wt-nl "return(" loc ");")))
-              (return)))
-           (FRAME
-            (let ((*destination* (tmp-destination *destination*)))
-              (set-loc loc)
-              (setq loc *destination*))
-            (wt-nl "ecl_frs_pop(cl_env_copy);"))
            (TAIL-RECURSION-MARK)
            (t (baboon-unwind-exit ue))))))
   ;;; Never reached

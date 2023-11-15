@@ -90,9 +90,7 @@
           (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
 
 (defun last-call-p ()
-  (member *exit*
-          '(RETURN RETURN-FIXNUM RETURN-CHARACTER RETURN-SINGLE-FLOAT
-            RETURN-DOUBLE-FLOAT RETURN-LONG-FLOAT RETURN-OBJECT)))
+  (eq *exit* 'RETURN))
 
 (defun c2try-tail-recursive-call (fun args)
   (when (and *tail-recursion-info*
