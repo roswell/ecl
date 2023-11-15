@@ -105,8 +105,7 @@
         (c2psetq nil (cdr *tail-recursion-info*) args)))
     (unwind-no-exit 'TAIL-RECURSION-MARK)
     (wt-nl "goto TTL;")
-    (cmpdebug "Tail-recursive call of ~s was replaced by iteration."
-              (fun-name fun))
+    (cmpdebug "Tail-recursive call of ~s was replaced by iteration." (fun-name fun))
     t))
 
 (defun c2call-local (c1form fun args)

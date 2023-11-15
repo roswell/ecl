@@ -153,10 +153,11 @@
 
 (defstruct (label (:predicate labelp))
   id
+  denv
   used-p)
 
 (defun next-label (used-p)
-  (make-label :id (incf *last-label*) :used-p used-p))
+  (make-label :id (incf *last-label*) :denv *unwind-exit* :used-p used-p))
 
 (defun maybe-next-label ()
   (if (labelp *exit*)

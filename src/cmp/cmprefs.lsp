@@ -150,7 +150,7 @@
   ref-clb               ;;; Unused (see blk-var).
   read-nodes            ;;; Unused (see blk-var).
 |#
-  exit                  ;;; Where to return.  A label.
+  exit                  ;;; Where to return. A label.
   destination           ;;; Where the value of the block to go.
   var                   ;;; Variable containing the block id and its references.
   (type '(VALUES &REST T)) ;;; Estimated type.
@@ -164,8 +164,7 @@
    ref-clb              ;;; Unused (see tag-var).
    read-nodes           ;;; Unused (see tag-var).
 |#
-  label                 ;;; Where to jump: a label.
-  unwind-exit           ;;; Where to unwind-no-exit.
+  jump                  ;;; Where to escape. A label.
   var                   ;;; Variable containing frame ID.
   index                 ;;; An integer denoting the label.
   )

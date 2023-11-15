@@ -66,8 +66,7 @@
       (dolist (x body (c2tagbody-body body))
         ;; Allocate labels.
         (when (and (tag-p x) (plusp (tag-ref x)))
-          (setf (tag-label x) (next-label t))
-          (setf (tag-unwind-exit x) *unwind-exit*)))
+          (setf (tag-jump x) (next-label t))))
       ;; some tag used non locally or inside an unwind-protect
       (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
             (*env* *env*) (*env-lvl* *env-lvl*)
@@ -90,10 +89,9 @@
         ;; Allocate labels.
         (dolist (tag body)
           (when (and (tag-p tag) (plusp (tag-ref tag)))
-            (setf (tag-label tag) (next-label nil))
-            (setf (tag-unwind-exit tag) *unwind-exit*)
+            (setf (tag-jump tag) (next-label nil))
             (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
-            (wt-go (tag-label tag))))
+            (wt-go (tag-jump tag))))
         (when (var-ref-ccb tag-loc)
           (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");"))
         (wt-nl "}")
@@ -108,14 +106,14 @@
       ((null l))
     (let* ((this-form (first l)))
       (cond ((tag-p this-form)
-             (wt-label (tag-label this-form)))
+             (wt-label (tag-jump this-form)))
             ((endp (rest l))
              ;; Last form, it is never a label!
              (c2expr this-form))
             (t
              (let* ((next-form (second l))
                     (*exit* (if (tag-p next-form)
-                                (tag-label next-form)
+                                (tag-jump next-form)
                                 (next-label nil)))
                     (*unwind-exit* (cons *exit* *unwind-exit*))
                     (*destination* 'TRASH))
@@ -130,8 +128,8 @@
         (wt-nl "cl_go(" var ",ecl_make_fixnum(" (tag-index tag) "));"))
       ;; local go
       (progn
-        (unwind-no-exit-until (tag-unwind-exit tag))
-        (wt-nl) (wt-go (tag-label tag)))))
+        (unwind-no-exit* (tag-jump tag))
+        (wt-nl) (wt-go (tag-jump tag)))))
 
 
 (defun c2throw (c1form tag val &aux loc)

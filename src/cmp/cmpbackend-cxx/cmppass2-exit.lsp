@@ -92,6 +92,10 @@
              (t (baboon-unwind-exit ue)))
         finally (return (values frs-bind bds-lcl bds-bind stack-frame ihs-p jump-p exit-p))))
 
+(defun unwind-delta* (exit)
+  (unwind-delta (or (member exit *unwind-exit* :test #'eq)
+                    (baboon-exit-not-found exit))))
+
 (defun unwind-exit (loc &aux (jump-p nil) (frs-bind 0) (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
   (declare (fixnum frs-bind bds-bind))
   (when (consp *destination*)
@@ -105,7 +109,7 @@
        (when (eq loc *vv-nil*)
          (return-from unwind-exit)))))
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p jump-p exit-p)
-      (unwind-delta (member *exit* *unwind-exit*))
+      (unwind-delta* *exit*)
     (assert (null exit-p)) ; this operator does not cross the function boundary.
     (when (eq *exit* 'LEAVE)
       ;; *destination* must be either LEAVE or TRASH.
@@ -147,13 +151,12 @@
       (wt-nl)
       (wt-go *exit*))))
 
-(defun unwind-no-exit-until (last-cons)
+(defun unwind-no-exit (exit)
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
-      (unwind-delta last-cons)
+      (unwind-delta* exit)
     (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)))
 
-(defun unwind-no-exit (exit)
-  (let ((where (member exit *unwind-exit* :test #'eq)))
-    (unless where
-      (baboon-exit-not-found exit))
-    (unwind-no-exit-until where)))
+(defun unwind-no-exit* (exit)
+  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
+      (unwind-delta (label-denv exit))
+    (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)))
