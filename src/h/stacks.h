@@ -312,6 +312,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
         ecl_enable_interrupts_env(env)
 
 #define ecl_frs_pop(env) ((env)->frs_top--)
+#define ecl_frs_pop_n(env,n) ((env)->frs_top-=n)
 
 /*******************
  * ARGUMENTS STACK
