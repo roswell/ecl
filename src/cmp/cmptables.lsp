@@ -160,7 +160,7 @@
 
     (cl:values . set-values-loc)
     (value0 . set-value0-loc)
-    (cl:return . set-return-loc)
+    (leave . set-leave-loc)
     (trash . set-trash-loc)
 
     (cl:the . set-the-loc)
@@ -184,7 +184,7 @@
 
     (si:structure-ref . wt-structure-ref)
 
-    (cl:return . "value0")
+    (leave . "value0")
     (cl:values . "cl_env_copy->values[0]")
     (va-arg . "va_arg(args,cl_object)")
     (cl-va-arg . "ecl_va_arg(args)")

@@ -38,7 +38,7 @@
 ;;; (LCL n)             -> n local variables
 ;;; (STACK n)           -> n elements pushed in stack
 ;;; TAIL-RECURSION-MARK -> TTL: label created
-;;; RETURN              -> outermost location
+;;; LEAVE               -> outermost location
 
 (defun unwind-bds (bds-lcl bds-bind stack-frame ihs-p)
   (declare (fixnum bds-bind))
@@ -125,20 +125,20 @@
               (set-loc loc)
               (setq loc *destination*))
             (wt-nl "ecl_frs_pop(cl_env_copy);"))
-           (RETURN
-             (unless (eq *exit* 'RETURN)
+           (LEAVE
+             (unless (eq *exit* 'LEAVE)
                (baboon-unwind-exit ue))
-             ;; *destination* must be either RETURN or TRASH.
+             ;; *destination* must be either LEAVE or TRASH.
              (cond ((eq loc 'VALUES)
                     ;; from multiple-value-prog1 or values
                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
                     (wt-nl "return cl_env_copy->values[0];"))
-                   ((eq loc 'RETURN)
+                   ((eq loc 'LEAVE)
                     ;; from multiple-value-prog1 or values
                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
                     (wt-nl "return value0;"))      
                    (t
-                    (let* ((*destination* 'RETURN))
+                    (let* ((*destination* 'LEAVE))
                       (set-loc loc))
                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
                     (wt-nl "return value0;")))

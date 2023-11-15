@@ -143,7 +143,7 @@
 ;;;     var-object                      Variable
 ;;;     loc-object                      VV Location
 ;;;     TRASH                           Value may be thrown away.
-;;;     RETURN                          Object returned from current function.
+;;;     LEAVE                           Object returned from current function.
 ;;;     VALUES                          Values vector.
 ;;;     VALUE0
 ;;;     ( VALUE i )                     Nth value
@@ -155,7 +155,7 @@
   (case loc
     (VALUES 'VALUES)
     (TRASH 'TRASH)
-    (T 'RETURN)))
+    (T 'LEAVE)))
 
 (defun precise-loc-type (loc new-type)
   (if (subtypep (loc-type loc) new-type)

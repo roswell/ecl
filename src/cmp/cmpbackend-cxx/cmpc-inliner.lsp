@@ -22,7 +22,7 @@
   return-type           ;;; Lisp type for the output
   exact-return-type     ;;; Only use this expansion when the output is
                         ;;; declared to have a subtype of RETURN-TYPE
-  multiple-values       ;;; Works with all destinations, including VALUES / RETURN
+  multiple-values       ;;; Works with all destinations, including VALUES / LEAVE
   expansion             ;;; C template containing the expansion
   one-liner             ;;; Whether the expansion spans more than one line
 )
@@ -127,7 +127,7 @@
 
 (defun inline-type-matches (inline-info arg-types return-type)
   (when (and (not (inline-info-multiple-values inline-info))
-             (member *destination* '(VALUES RETURN)))
+             (member *destination* '(VALUES LEAVE)))
     (return-from inline-type-matches nil))
   (let* ((rts nil)
          (number-max nil))
@@ -215,7 +215,7 @@
           (cmpnote "Ignoring form ~S" c-expression))
       (wt-nl "value0 = ECL_NIL;")
       (wt-nl "cl_env_copy->nvalues = 0;")
-      (return-from produce-inline-loc 'RETURN))
+      (return-from produce-inline-loc 'LEAVE))
 
     ;; If the form is a one-liner, we can simply propagate this expression until the
     ;; place where the value is used.

@@ -362,7 +362,7 @@
     (declare (ignore max-values))
 
     ;; We save the values in the value stack + value0
-    (let ((*destination* 'RETURN))
+    (let ((*destination* 'LEAVE))
       (c2expr* form))
 
     ;; At least we always have NIL value0

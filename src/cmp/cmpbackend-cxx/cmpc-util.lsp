@@ -45,9 +45,9 @@
 ;;; --cmpexit.lsp--
 ;;;
 ;;; *exit* holds an 'exit', which is
-;;      LABEL instance or RETURN.
+;;      LABEL instance or LEAVE.
 ;;; *unwind-exit* holds a list consisting of:
-;;      LABEL instance, RETURN, TAIL-RECURSION-MARK, FRAME, JUMP, BDS-BIND (each
+;;      LABEL instance, LEAVE, TAIL-RECURSION-MARK, FRAME, JUMP, BDS-BIND (each
 ;;      pushed for a single special binding), or a LCL (which holds the bind
 ;;      stack pointer used to unbind).
 ;;;
@@ -137,7 +137,7 @@
        (plusp *env*)
        (dolist (exit *unwind-exit*)
          (case exit
-           (RETURN (return NIL))
+           (LEAVE (return NIL))
            (BDS-BIND)
            (t (return T))))))
 

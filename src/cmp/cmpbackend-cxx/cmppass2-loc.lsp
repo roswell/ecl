@@ -353,7 +353,7 @@
       (case c
         (#\@
          (let ((object (read s)))
-           (unless (and (consp object) (eq (car object) 'RETURN))
+           (unless (and (consp object) (eq (car object) 'CL:RETURN))
              (cmperr "Used @~s in C-INLINE form. Expected syntax is @(RETURN ...)." object))
            (if (eq output-vars 'VALUES)
                (cmperr "Used @(RETURN ...) in a C-INLINE form with no output values.")
@@ -427,12 +427,12 @@
 (defun set-value0-loc (loc)
   (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
 
-(defun set-return-loc (loc)
+(defun set-leave-loc (loc)
   (cond ((or (eq loc 'VALUES) (uses-values loc))
          (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
         ((eq loc 'VALUE0)
          (wt-nl "cl_env_copy->nvalues = 1;"))
-        ((eq loc 'RETURN))
+        ((eq loc 'LEAVE))
         (t
          (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))

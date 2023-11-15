@@ -46,7 +46,7 @@
       (setq *lex* lex)  ; recycle lex locations
       ;; Since PROGN does not have tags, any transfer of control means
       ;; leaving the current PROGN statement.
-      (when (or (eq name 'GO) (eq name 'RETURN-FROM))
+      (when (or (eq name 'CL:GO) (eq name 'CL:RETURN-FROM))
         (return)))))
 
 (defun c2if (c1form fmla form1 form2)
@@ -221,10 +221,10 @@
    ;; is actually used) and set only NVALUES when the value is the output
    ;; of a function.
    ((endp forms)
-    (cond ((eq *destination* 'RETURN)
+    (cond ((eq *destination* 'LEAVE)
            (wt-nl "value0 = ECL_NIL;")
            (wt-nl "cl_env_copy->nvalues = 0;")
-           (unwind-exit 'RETURN))
+           (unwind-exit 'LEAVE))
           ((eq *destination* 'VALUES)
            (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
            (wt-nl "cl_env_copy->nvalues = 0;")
@@ -235,7 +235,7 @@
    ;; value of those that the function may output.
    ((endp (rest forms))
     (let ((form (first forms)))
-      (if (or (not (member *destination* '(RETURN VALUES)))
+      (if (or (not (member *destination* '(LEAVE VALUES)))
               (c1form-single-valued-p form))
           (c2expr form)
           (progn

@@ -90,7 +90,7 @@
           (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
 
 (defun last-call-p ()
-  (eq *exit* 'RETURN))
+  (eq *exit* 'LEAVE))
 
 (defun c2try-tail-recursive-call (fun args)
   (when (and *tail-recursion-info*
@@ -137,7 +137,7 @@
     (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
     (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
     (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
-      (let ((*destination* (if values-p 'values 'return)))
+      (let ((*destination* (if values-p 'VALUES 'LEAVE)))
         (dolist (arg args)
           (c2expr* arg)
           (if values-p
