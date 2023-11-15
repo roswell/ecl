@@ -293,14 +293,12 @@
       (when flag
         (setf (second KEYVARS[i]) (+ nkey i))
         (bind KEYVARS[i] flag))))
-
   (when *tail-recursion-info*
-    (push 'TAIL-RECURSION-MARK *unwind-exit*)
-    (wt-nl1 "TTL:"))
-
+    (setf *tail-recursion-mark* (next-label t))
+    (push *tail-recursion-mark* *unwind-exit*)
+    (wt-label *tail-recursion-mark*))
   ;;; Now the parameters are ready, after all!
   (c2expr body)
-
   (close-inline-blocks))
 
 (defun wt-maybe-check-num-arguments (use-narg minarg maxarg fname)

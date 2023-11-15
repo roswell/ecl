@@ -37,7 +37,6 @@
 ;;; #<label id used-p>  -> label (basic block leader)
 ;;; (LCL n)             -> n local variables
 ;;; (STACK n)           -> n elements pushed in stack
-;;; TAIL-RECURSION-MARK -> TTL: label created
 ;;; LEAVE               -> outermost location
 
 (defun unwind-stacks (frs-bind bds-lcl bds-bind stack-frame ihs-p)
@@ -52,7 +51,7 @@
     (wt-nl "ecl_bds_unwind(cl_env_copy," bds-lcl ");"))
   (if (< bds-bind 4)
       (dotimes (n bds-bind)
-        (declare (ignore n))
+        (declare (ignorable n))
         (wt-nl "ecl_bds_unwind1(cl_env_copy);"))
       (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");"))
   (case ihs-p
@@ -88,7 +87,6 @@
               (setf ihs-p (or ihs-p ue)))
              ((eq ue 'LEAVE)
               (setf exit-p t))
-             ((eq ue 'TAIL-RECURSION-MARK))
              (t (baboon-unwind-exit ue)))
         finally (return (values frs-bind bds-lcl bds-bind stack-frame ihs-p jump-p exit-p))))
 
@@ -96,8 +94,7 @@
   (unwind-delta (or (member exit *unwind-exit* :test #'eq)
                     (baboon-exit-not-found exit))))
 
-(defun unwind-exit (loc &aux (jump-p nil) (frs-bind 0) (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
-  (declare (fixnum frs-bind bds-bind))
+(defun unwind-exit (loc)
   (when (consp *destination*)
     (case (car *destination*)
       (JUMP-TRUE
@@ -110,6 +107,7 @@
          (return-from unwind-exit)))))
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p jump-p exit-p)
       (unwind-delta* *exit*)
+    (declare (fixnum frs-bind bds-bind))
     (assert (null exit-p)) ; this operator does not cross the function boundary.
     (when (eq *exit* 'LEAVE)
       ;; *destination* must be either LEAVE or TRASH.
@@ -148,15 +146,10 @@
            (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)))
     ;; When JUMP-P is NULL then we "fall through" onto the exit block.
     (when jump-p
-      (wt-nl)
-      (wt-go *exit*))))
+      (wt-nl-go *exit*))))
 
-(defun unwind-no-exit (exit)
-  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
-      (unwind-delta* exit)
-    (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)))
-
-(defun unwind-no-exit* (exit)
+(defun unwind-jump (exit)
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
       (unwind-delta (label-denv exit))
-    (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)))
+    (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)
+    (wt-nl-go exit)))

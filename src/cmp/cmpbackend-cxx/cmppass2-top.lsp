@@ -288,6 +288,7 @@
          (*ihs-used-p* nil)
          (*opened-c-braces* 0)
          (*tail-recursion-info* fun)
+         (*tail-recursion-mark* nil)
          (*volatile* (c1form-volatile* lambda-expr)))
     (t3function-declaration fun)
     (wt-nl-open-brace)

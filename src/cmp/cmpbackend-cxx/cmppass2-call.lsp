@@ -82,7 +82,7 @@
 (defun tail-recursion-possible ()
   (dolist (ue *unwind-exit*
               (baboon :format-control "tail-recursion-possible: should never return."))
-    (cond ((eq ue 'TAIL-RECURSION-MARK)
+    (cond ((eq ue *tail-recursion-mark*)
            (return t))
           ((or (eq ue 'BDS-BIND) (eq ue 'FRAME))
            (return nil))
@@ -103,8 +103,7 @@
       (let ((*destination* 'TRASH))
         ;; We do not provide any C2FORM.
         (c2psetq nil (cdr *tail-recursion-info*) args)))
-    (unwind-no-exit 'TAIL-RECURSION-MARK)
-    (wt-nl "goto TTL;")
+    (unwind-jump *tail-recursion-mark*)
     (cmpdebug "Tail-recursive call of ~s was replaced by iteration." (fun-name fun))
     t))
 

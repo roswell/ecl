@@ -110,6 +110,10 @@
 ;;; LABELS AND JUMPS
 ;;;
 
+(defun wt-nl-go (label)
+  (wt-nl-indent)
+  (wt-go label))
+
 (defun wt-go (label)
   (setf (label-used-p label) t)
   (wt "goto L" (label-id label) ";"))

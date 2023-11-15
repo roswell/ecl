@@ -38,18 +38,19 @@
 
 ;;; *tail-recursion-info* holds NIL, if tail recursion is impossible.
 ;;; If possible, *tail-recursion-info* holds
-;;;     ( c1-lambda-form  required-arg .... required-arg ),
+;;;     ( c1-lambda-form required-arg .... required-arg ),
 ;;; where each required-arg is a var-object.
 (defvar *tail-recursion-info* nil)
+(defvar *tail-recursion-mark* nil)
 
 ;;; --cmpexit.lsp--
 ;;;
 ;;; *exit* holds an 'exit', which is
 ;;      LABEL instance or LEAVE.
 ;;; *unwind-exit* holds a list consisting of:
-;;      LABEL instance, LEAVE, TAIL-RECURSION-MARK, FRAME, JUMP, BDS-BIND (each
-;;      pushed for a single special binding), or a LCL (which holds the bind
-;;      stack pointer used to unbind).
+;;      LABEL instance, LEAVE, FRAME, JUMP, BDS-BIND (each pushed for a single
+;;      special binding), or a LCL (which holds the bind stack pointer used to
+;;      unbind).
 ;;;
 
 (defvar *exit*)

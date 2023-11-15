@@ -124,12 +124,8 @@
 (defun c2go (c1form tag nonlocal)
   (declare (ignore c1form))
   (if nonlocal
-      (let ((var (tag-var tag)))
-        (wt-nl "cl_go(" var ",ecl_make_fixnum(" (tag-index tag) "));"))
-      ;; local go
-      (progn
-        (unwind-no-exit* (tag-jump tag))
-        (wt-nl) (wt-go (tag-jump tag)))))
+      (wt-nl "cl_go(" (tag-var tag) ",ecl_make_fixnum(" (tag-index tag) "));")
+      (unwind-jump (tag-jump tag))))
 
 
 (defun c2throw (c1form tag val &aux loc)
