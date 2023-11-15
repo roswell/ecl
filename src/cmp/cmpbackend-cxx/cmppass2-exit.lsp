@@ -40,36 +40,60 @@
 ;;; TAIL-RECURSION-MARK -> TTL: label created
 ;;; LEAVE               -> outermost location
 
-(defun unwind-bds (bds-lcl bds-bind stack-frame ihs-p)
-  (declare (fixnum bds-bind))
-  (let ((some nil))
-    (when stack-frame
-      (setf some t)
-      (if (stringp stack-frame)
-          (wt-nl "ecl_stack_frame_close(" stack-frame ");")
-          (wt-nl "ECL_STACK_SET_INDEX(cl_env_copy," stack-frame ");")))
-    (when bds-lcl
-      (setf some t)
-      (wt-nl "ecl_bds_unwind(cl_env_copy," bds-lcl ");"))
-    (cond ((< bds-bind 4)
-           (dotimes (n bds-bind)
-             (declare (fixnum n))
-             (setf some t)
-             (wt-nl "ecl_bds_unwind1(cl_env_copy);")))
-          (t
-           (setf some t)
-           (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");")))
-    (case ihs-p
-      (IHS
-       (setf some t)
-       (wt-nl "ecl_ihs_pop(cl_env_copy);"))
-      (IHS-ENV
-       (setf some t)
-       (wt-nl "ihs.lex_env = _ecl_debug_env;")))
-    some))
+(defun unwind-stacks (frs-bind bds-lcl bds-bind stack-frame ihs-p)
+  (declare (fixnum frs-bind bds-bind))
+  (when (plusp frs-bind)
+    (wt-nl "ecl_frs_pop_n(cl_env_copy, " frs-bind ");"))
+  (when stack-frame
+    (if (stringp stack-frame)
+        (wt-nl "ecl_stack_frame_close(" stack-frame ");")
+        (wt-nl "ECL_STACK_SET_INDEX(cl_env_copy," stack-frame ");")))
+  (when bds-lcl
+    (wt-nl "ecl_bds_unwind(cl_env_copy," bds-lcl ");"))
+  (if (< bds-bind 4)
+      (dotimes (n bds-bind)
+        (declare (ignore n))
+        (wt-nl "ecl_bds_unwind1(cl_env_copy);"))
+      (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");"))
+  (case ihs-p
+    (IHS     (wt-nl "ecl_ihs_pop(cl_env_copy);"))
+    (IHS-ENV (wt-nl "ihs.lex_env = _ecl_debug_env;"))))
 
-(defun unwind-exit (loc &aux (jump-p nil) (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
-  (declare (fixnum bds-bind))
+(defun unwind-delta (last-cons)
+  (loop with bds-lcl = nil
+        with bds-bind = 0
+        with stack-frame = nil
+        with ihs-p = nil
+        with frs-bind = 0
+        with jump-p = nil
+        with exit-p = nil
+        for unwind-exit on *unwind-exit*
+        for ue = (car unwind-exit)
+        until (eq unwind-exit last-cons)
+        do (cond
+             ((consp ue)
+              (case (first ue)
+                (STACK (setq stack-frame (second ue)))
+                (LCL (setq bds-lcl ue bds-bind 0))
+                (otherwise (baboon-unwind-exit ue))))
+             ((labelp ue)
+              (setf jump-p t))
+             ((eq ue 'BDS-BIND)
+              (incf bds-bind))
+             ((eq ue 'FRAME)
+              (incf frs-bind))
+             ((eq ue 'IHS)
+              (setf ihs-p ue))
+             ((eq ue 'IHS-ENV)
+              (setf ihs-p (or ihs-p ue)))
+             ((eq ue 'LEAVE)
+              (setf exit-p t))
+             ((eq ue 'TAIL-RECURSION-MARK))
+             (t (baboon-unwind-exit ue)))
+        finally (return (values frs-bind bds-lcl bds-bind stack-frame ihs-p jump-p exit-p))))
+
+(defun unwind-exit (loc &aux (jump-p nil) (frs-bind 0) (bds-lcl nil) (bds-bind 0) (stack-frame nil) (ihs-p nil))
+  (declare (fixnum frs-bind bds-bind))
   (when (consp *destination*)
     (case (car *destination*)
       (JUMP-TRUE
@@ -80,95 +104,53 @@
        (set-jump-false loc (second *destination*))
        (when (eq loc *vv-nil*)
          (return-from unwind-exit)))))
-  (dolist (ue *unwind-exit* (baboon-exit-not-found *exit*))
-    ;; perform all unwind-exit's which precede *exit*
-    (cond
-      ((consp ue)                   ; (STACK n) | (LCL n)
-       (cond ((eq (car ue) 'STACK)
-              (setf stack-frame (second ue)))
-             ((eq (car ue) 'LCL)
-              (setq bds-lcl ue bds-bind 0))
-             (t (baboon-unwind-exit ue))))
-      ((labelp ue)
-       (when (eq ue *exit*)
-         ;; all body forms except the last (returning) are dealt here
-         (cond ((and (consp *destination*)
-                     (or (eq (car *destination*) 'JUMP-TRUE)
-                         (eq (car *destination*) 'JUMP-FALSE)))
-                (unwind-bds bds-lcl bds-bind stack-frame ihs-p))
-               ((not (or bds-lcl (plusp bds-bind) stack-frame))
-                (set-loc loc))
-               ;; Save the value if LOC may possibly refer to special binding.
-               ((or (loc-refers-to-special-p loc)
-                    (loc-refers-to-special-p *destination*))
-                (let* ((*temp* *temp*)
-                       (temp (make-temp-var)))
-                  (let ((*destination* temp))
-                    (set-loc loc)) ; temp <- loc
-                  (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                  (set-loc temp))) ; *destination* <- temp
-               (t
-                (set-loc loc)
-                (unwind-bds bds-lcl bds-bind stack-frame ihs-p)))
-         (when jump-p
-           (wt-nl)
-           (wt-go *exit*))
-         (return))
-       ;; We are crossing the block boundary.
-       (setq jump-p t))
-      (t (case ue
-           (IHS (setf ihs-p ue))
-           (IHS-ENV (setf ihs-p (or ihs-p ue)))
-           (BDS-BIND (incf bds-bind))
-           (FRAME
-            (let ((*destination* (tmp-destination *destination*)))
-              (set-loc loc)
-              (setq loc *destination*))
-            (wt-nl "ecl_frs_pop(cl_env_copy);"))
-           (LEAVE
-             (unless (eq *exit* 'LEAVE)
-               (baboon-unwind-exit ue))
-             ;; *destination* must be either LEAVE or TRASH.
-             (cond ((eq loc 'VALUEZ)
-                    ;; from multiple-value-prog1 or values
-                    (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                    (wt-nl "return cl_env_copy->values[0];"))
-                   ((eq loc 'LEAVE)
-                    ;; from multiple-value-prog1 or values
-                    (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                    (wt-nl "return value0;"))      
-                   (t
-                    (let* ((*destination* 'LEAVE))
-                      (set-loc loc))
-                    (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
-                    (wt-nl "return value0;")))
-             (return))
-           (TAIL-RECURSION-MARK)
-           (t (baboon-unwind-exit ue))))))
-  ;;; Never reached
-  )
+  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p jump-p exit-p)
+      (unwind-delta (member *exit* *unwind-exit*))
+    (assert (null exit-p)) ; this operator does not cross the function boundary.
+    (when (eq *exit* 'LEAVE)
+      ;; *destination* must be either LEAVE or TRASH.
+      (cond ((eq loc 'VALUEZ)
+             ;; from multiple-value-prog1 or values
+             (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)
+             (wt-nl "return cl_env_copy->values[0];"))
+            ((eq loc 'LEAVE)
+             ;; from multiple-value-prog1 or values
+             (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)
+             (wt-nl "return value0;"))
+            (t
+             (let* ((*destination* 'LEAVE))
+               (set-loc loc))
+             (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)
+             (wt-nl "return value0;")))
+      (return-from unwind-exit))
+    ;; All body forms except the last (returning) are dealt here
+    (cond ((and (consp *destination*)
+                (or (eq (car *destination*) 'JUMP-TRUE)
+                    (eq (car *destination*) 'JUMP-FALSE)))
+           (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p))
+          ((not (or (plusp frs-bind) bds-lcl (plusp bds-bind) stack-frame))
+           (set-loc loc))
+          ;; Save the value if LOC may possibly refer to special binding.
+          ((or (loc-refers-to-special-p loc)
+               (loc-refers-to-special-p *destination*))
+           (let* ((*temp* *temp*)
+                  (temp (make-temp-var)))
+             (let ((*destination* temp))
+               (set-loc loc)) ; temp <- loc
+             (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)
+             (set-loc temp))) ; *destination* <- temp
+          (t
+           (set-loc loc)
+           (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)))
+    ;; When JUMP-P is NULL then we "fall through" onto the exit block.
+    (when jump-p
+      (wt-nl)
+      (wt-go *exit*))))
 
 (defun unwind-no-exit-until (last-cons)
-  (loop with bds-lcl = nil
-        with bds-bind = 0
-        with stack-frame = nil
-        with ihs-p = nil
-        for unwind-exit on *unwind-exit*
-        for ue = (car unwind-exit)
-        until (eq unwind-exit last-cons)
-        do (cond
-             ((consp ue)
-              (when (eq (first ue) 'STACK)
-                (setf stack-frame (second ue))))
-             ((labelp ue))
-             ((eq ue 'BDS-BIND)
-              (incf bds-bind))
-             ((eq ue 'FRAME)
-              (wt-nl "ecl_frs_pop(cl_env_copy);"))
-             ((eq ue 'IHS-ENV)
-              (setf ihs-p ue))
-             (t (baboon-unwind-exit ue)))
-        finally (return (unwind-bds bds-lcl bds-bind stack-frame ihs-p))))
+  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
+      (unwind-delta last-cons)
+    (unwind-stacks frs-bind bds-lcl bds-bind stack-frame ihs-p)))
 
 (defun unwind-no-exit (exit)
   (let ((where (member exit *unwind-exit* :test #'eq)))
