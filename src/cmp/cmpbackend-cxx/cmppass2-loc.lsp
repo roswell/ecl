@@ -415,20 +415,19 @@
   (let ((*destination* orig-loc))
     (set-loc loc)))
                  
-(defun set-values-loc (loc)
-  (cond ((eq loc 'VALUES))
+(defun set-valuez-loc (loc)
+  (cond ((eq loc 'VALUEZ))
         ((uses-values loc)
          (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc) (wt ";"))
         (t
-         (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc)
-         (wt ";")
+         (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc) (wt ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
 (defun set-value0-loc (loc)
   (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
 
 (defun set-leave-loc (loc)
-  (cond ((or (eq loc 'VALUES) (uses-values loc))
+  (cond ((or (eq loc 'VALUEZ) (uses-values loc))
          (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
         ((eq loc 'VALUE0)
          (wt-nl "cl_env_copy->nvalues = 1;"))

@@ -137,7 +137,7 @@
     (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
     (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
     (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
-      (let ((*destination* (if values-p 'VALUES 'LEAVE)))
+      (let ((*destination* (if values-p 'VALUEZ 'LEAVE)))
         (dolist (arg args)
           (c2expr* arg)
           (if values-p

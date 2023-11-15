@@ -213,4 +213,4 @@
 ;;; if this occurred in a proclaimed fun.
 
 (defun c1values (args)
-  (make-c1form* 'VALUES :args (c1args* args)))
+  (make-c1form* 'CL:VALUES :args (c1args* args)))

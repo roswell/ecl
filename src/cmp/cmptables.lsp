@@ -158,7 +158,7 @@
     (jump-true . set-jump-true)
     (jump-false . set-jump-false)
 
-    (cl:values . set-values-loc)
+    (valuez . set-valuez-loc)
     (value0 . set-value0-loc)
     (leave . set-leave-loc)
     (trash . set-trash-loc)
@@ -185,9 +185,9 @@
     (si:structure-ref . wt-structure-ref)
 
     (leave . "value0")
-    (cl:values . "cl_env_copy->values[0]")
     (va-arg . "va_arg(args,cl_object)")
     (cl-va-arg . "ecl_va_arg(args)")
+    (valuez . "cl_env_copy->values[0]")
     (value0 . "value0")))
 
 (defconstant +c2-dispatch-alist+

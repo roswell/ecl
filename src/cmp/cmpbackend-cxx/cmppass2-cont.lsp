@@ -36,7 +36,7 @@
         (wt-nl "ecl_frs_push(cl_env_copy," blk-var ");")
         (wt-nl "if (__ecl_frs_push_result!=0) {")
         (let ((*unwind-exit* (cons 'FRAME *unwind-exit*)))
-          (unwind-exit 'VALUES)
+          (unwind-exit 'VALUEZ)
           (wt-nl "} else {")
           (c2expr body)
           (wt "}"))
@@ -49,7 +49,7 @@
   (declare (ignore c1form))
   (if nonlocal
       (progn
-        (let ((*destination* 'VALUES))
+        (let ((*destination* 'VALUEZ))
           (c2expr* val))
         (let ((name (get-object (blk-name blk))))
           (wt-nl "cl_return_from(" (blk-var blk) "," name ");")))
@@ -140,7 +140,7 @@
     ((VARIABLE LOCATION) (setq loc (c1form-arg 0 tag)))
     (t (setq loc (make-temp-var))
      (let ((*destination* loc)) (c2expr* tag))))
-  (let ((*destination* 'VALUES)) (c2expr* val))
+  (let ((*destination* 'VALUEZ)) (c2expr* val))
   (wt-nl "cl_throw(" loc ");"))
 
 (defun c2catch (c1form tag body)
@@ -152,7 +152,7 @@
     (let* ((*destination* new-destination)
            (*unwind-exit* (cons 'FRAME *unwind-exit*)))
       (wt-nl-open-brace)
-      (if (member new-destination '(TRASH VALUES))
+      (if (member new-destination '(TRASH VALUEZ))
           (progn
             (wt-nl "ecl_frs_push(cl_env_copy," 'VALUE0 ");")
             (wt-nl "if (__ecl_frs_push_result==0) {")
@@ -165,7 +165,7 @@
             (wt-comment "BEGIN CATCH ~A" code)
             (with-indentation
               (with-exit-label (*exit*)
-                (unwind-exit 'VALUES)))
+                (unwind-exit 'VALUEZ)))
             (wt-nl "} else {")
             (with-indentation
               (c2expr* body)))))
@@ -191,7 +191,7 @@
     (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->nlj_fr;")
     (wt-nl "} else {")
     (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
-          (*destination* 'VALUES))
+          (*destination* 'VALUEZ))
       (c2expr* form))
     (wt-nl "}")
     (wt-nl "ecl_frs_pop(cl_env_copy);")
@@ -206,5 +206,5 @@
     ;; next catch point...
     (wt-nl "if (unwinding) ecl_unwind(cl_env_copy,next_fr);")
     ;; ... or simply return the values of the protected form.
-    (unwind-exit 'VALUES)
+    (unwind-exit 'VALUEZ)
     (wt-nl-close-brace)))

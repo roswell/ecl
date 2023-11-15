@@ -22,7 +22,7 @@
   return-type           ;;; Lisp type for the output
   exact-return-type     ;;; Only use this expansion when the output is
                         ;;; declared to have a subtype of RETURN-TYPE
-  multiple-values       ;;; Works with all destinations, including VALUES / LEAVE
+  multiple-values       ;;; Works with all destinations, including VALUEZ / LEAVE
   expansion             ;;; C template containing the expansion
   one-liner             ;;; Whether the expansion spans more than one line
 )
@@ -127,7 +127,7 @@
 
 (defun inline-type-matches (inline-info arg-types return-type)
   (when (and (not (inline-info-multiple-values inline-info))
-             (member *destination* '(VALUES LEAVE)))
+             (member *destination* '(VALUEZ LEAVE)))
     (return-from inline-type-matches nil))
   (let* ((rts nil)
          (number-max nil))
@@ -225,12 +225,12 @@
                        ,(if (equalp output-rep-type '((VALUES &REST T)))
                             'VALUES NIL))))
 
-    ;; If the output is a in the VALUES vector, just write down the form and output
-    ;; the location of the data.
+    ;; If the output is a in the VALUES vector, just write down the form and
+    ;; output the location of the data.
     (when (equalp output-rep-type '((VALUES &REST T)))
       (wt-c-inline-loc output-rep-type c-expression coerced-arguments side-effects
                        'VALUES)
-      (return-from produce-inline-loc 'VALUES))
+      (return-from produce-inline-loc 'VALUEZ))
 
     ;; Otherwise we have to set up variables for holding the output.
     (flet ((make-output-var (type)
@@ -247,7 +247,7 @@
                      for i from 0
                      do (let ((*destination* `(VALUE ,i))) (set-loc v)))
                (wt "cl_env_copy->nvalues = " (length output-vars) ";")
-               'VALUES))))))
+               'VALUEZ))))))
 
 (defun coerce-locs (inlined-args &optional types args-to-be-saved)
   ;; INLINED-ARGS is a list of (TYPE LOCATION) produced by the

@@ -197,7 +197,7 @@
   (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
   (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
   (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
-    (let ((*destination* 'VALUES))
+    (let ((*destination* 'VALUEZ))
       (c2expr* form))
     (wt-nl "ecl_stack_frame_push_values(_ecl_inner_frame);")
     (let ((*destination* 'TRASH))
@@ -205,7 +205,7 @@
     (wt-nl "ecl_stack_frame_pop_values(_ecl_inner_frame);"))
   (wt-nl "ecl_stack_frame_close(_ecl_inner_frame);")
   (wt-nl-close-brace)
-  (unwind-exit 'values))
+  (unwind-exit 'VALUEZ))
 
 (defun c2values (c1form forms)
   (declare (ignore c1form))
@@ -217,25 +217,25 @@
     ;; We really pass no value, but we need UNWIND-EXIT to trigger all the
     ;; frame-pop and all other exit forms.
     (unwind-exit 'VALUE0))
-   ;; For (VALUES) we can replace the output with either NIL (if the value
-   ;; is actually used) and set only NVALUES when the value is the output
-   ;; of a function.
+   ;; For (VALUES) we can replace the output with either NIL (if the value is
+   ;; actually used) and set only NVALUES when the value is the output of a
+   ;; function.
    ((endp forms)
     (cond ((eq *destination* 'LEAVE)
            (wt-nl "value0 = ECL_NIL;")
            (wt-nl "cl_env_copy->nvalues = 0;")
            (unwind-exit 'LEAVE))
-          ((eq *destination* 'VALUES)
+          ((eq *destination* 'VALUEZ)
            (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
            (wt-nl "cl_env_copy->nvalues = 0;")
-           (unwind-exit 'VALUES))
+           (unwind-exit 'VALUEZ))
           (t
            (unwind-exit *vv-nil*))))
    ;; For a single form, we must simply ensure that we only take a single
    ;; value of those that the function may output.
    ((endp (rest forms))
     (let ((form (first forms)))
-      (if (or (not (member *destination* '(LEAVE VALUES)))
+      (if (or (not (member *destination* '(LEAVE VALUEZ)))
               (c1form-single-valued-p form))
           (c2expr form)
           (progn
@@ -256,5 +256,5 @@
           ((null vl))
         (declare (fixnum i))
         (wt-nl "cl_env_copy->values[" i "] = " (first vl) ";"))
-      (unwind-exit 'VALUES)
+      (unwind-exit 'VALUEZ)
       (close-inline-blocks)))))

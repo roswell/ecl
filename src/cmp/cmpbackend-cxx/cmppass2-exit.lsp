@@ -129,7 +129,7 @@
              (unless (eq *exit* 'LEAVE)
                (baboon-unwind-exit ue))
              ;; *destination* must be either LEAVE or TRASH.
-             (cond ((eq loc 'VALUES)
+             (cond ((eq loc 'VALUEZ)
                     ;; from multiple-value-prog1 or values
                     (unwind-bds bds-lcl bds-bind stack-frame ihs-p)
                     (wt-nl "return cl_env_copy->values[0];"))

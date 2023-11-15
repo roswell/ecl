@@ -111,11 +111,8 @@
     (otherwise NIL)))
 
 ;;; Valid locations are:
-;;;     NIL
-;;;     T
-;;;     fixnum
 ;;;     VALUE0
-;;;     VALUES
+;;;     VALUEZ
 ;;;     var-object
 ;;;     a string                        designating a C expression
 ;;;     ( VALUE i )                     VALUES(i)
@@ -144,7 +141,7 @@
 ;;;     loc-object                      VV Location
 ;;;     TRASH                           Value may be thrown away.
 ;;;     LEAVE                           Object returned from current function.
-;;;     VALUES                          Values vector.
+;;;     VALUEZ                          Values vector.
 ;;;     VALUE0
 ;;;     ( VALUE i )                     Nth value
 ;;;     ( BIND var alternative )        Alternative is optional
@@ -153,7 +150,7 @@
 
 (defun tmp-destination (loc)
   (case loc
-    (VALUES 'VALUES)
+    (VALUEZ 'VALUEZ)
     (TRASH 'TRASH)
     (T 'LEAVE)))
 
@@ -170,7 +167,7 @@
          t)
         ((vv-p loc)
          t)
-        ((member loc '(value0 values va-arg cl-va-arg))
+        ((member loc '(VALUE0 VALUEZ VA-ARG CL-VA-ARG))
          nil)
         ((atom loc)
          (baboon :format-control "Unknown location ~A found in C1FORM"
