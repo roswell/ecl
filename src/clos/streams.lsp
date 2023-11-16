@@ -203,7 +203,7 @@
   (:documentation
    "This is like CL:FILE-POSITION, but for Gray streams."))
 
-(defgeneric stream-file-length (stream &optional position)
+(defgeneric stream-file-length (stream)
   (:documentation
    "This is like CL:FILE-LENGTH, but for Gray streams."))
 
