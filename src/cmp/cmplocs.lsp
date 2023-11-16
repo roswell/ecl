@@ -85,34 +85,30 @@
            (otherwise :object)))))
 
 (defun loc-with-side-effects-p (loc &aux name)
-  (cond ((var-p loc)
-         (and (global-var-p loc)
-              (policy-global-var-checking)))
-        ((atom loc)
-         nil)
-        ((member (setf name (first loc)) '(CALL CALL-NORMAL CALL-INDIRECT CALL-STACK)
-                 :test #'eq)
-         t)
-        ((eq name 'cl:THE)
-         (loc-with-side-effects-p (third loc)))
-        ((eq name 'cl:FDEFINITION)
-         (policy-global-function-checking))
-        ((eq name 'ffi:C-INLINE)
-         (or (eq (sixth loc) 'cl:VALUES) ;; Uses VALUES
-             (fifth loc)))))             ;; or side effects
+  (when (atom loc)
+    (return-from loc-with-side-effects-p
+      (and (var-p loc)
+           (global-var-p loc)
+           (policy-global-var-checking))))
+  (case (first loc)
+    ((CALL CALL-NORMAL CALL-INDIRECT CALL-STACK) T)
+    (CL:THE (loc-with-side-effects-p (third loc)))
+    (CL:FDEFINITION (policy-global-function-checking))
+    ;; Uses VALUES or has side effects.
+    (FFI:C-INLINE (or (eq (sixth loc) 'CL:VALUES) (fifth loc)))
+    (otherwise NIL)))
 
 (defun loc-refers-to-special-p (loc)
-  (cond ((var-p loc)
-         (member (var-kind loc) '(SPECIAL GLOBAL)))
-        ((atom loc)
-         nil)
-        ((eq (first loc) 'THE)
-         (loc-refers-to-special-p (third loc)))
-        ((eq (setf loc (first loc)) 'BIND)
-         t)
-        ((eq loc 'ffi:C-INLINE)
-         t)                             ; We do not know, so guess yes
-        (t nil)))
+  (when (atom loc)
+    (return-from loc-refers-to-special-p
+      (and (var-p loc)
+           (member (var-kind loc) '(SPECIAL GLOBAL)))))
+  (case (first loc)
+    (CL:THE (loc-refers-to-special-p (third loc)))
+    (BIND T)
+     ;; We do not know, so guess yes.
+    (FFI:C-INLINE T)
+    (otherwise NIL)))
 
 ;;; Valid locations are:
 ;;;     NIL
