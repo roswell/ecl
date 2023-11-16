@@ -822,6 +822,15 @@ them so."
                             'gray:stream-file-position
                             gray-package)
     (si::package-lock "COMMON-LISP" x)
+    (provide '#:gray-streams)
     nil))
+
+(pushnew :gray-streams-module *features*)
+
+(pushnew #'(lambda (module)
+             (when (string-equal module '#:gray-streams)
+               (redefine-cl-functions)
+               t))
+         sys:*module-provider-functions*)
 
 (setf clos::*clos-booted* t)
