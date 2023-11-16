@@ -154,17 +154,14 @@
     ))
 
 (defconstant +set-loc-dispatch-alist+
-  '((bind . bind)
-    (jump-true . set-jump-true)
-    (jump-false . set-jump-false)
-
+  '((bind   . bind)
+    (cl:the . set-the-loc)
     (valuez . set-valuez-loc)
     (value0 . set-value0-loc)
-    (leave . set-leave-loc)
-    (trash . set-trash-loc)
-
-    (cl:the . set-the-loc)
-    ))
+    (leave  . set-leave-loc)
+    (trash  . set-trash-loc)
+    (jump-true  . set-trash-loc)
+    (jump-false . set-trash-loc)))
 
 (defconstant +wt-loc-dispatch-alist+
   '((call-normal . wt-call-normal)

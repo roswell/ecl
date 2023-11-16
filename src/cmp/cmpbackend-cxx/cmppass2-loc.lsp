@@ -436,7 +436,8 @@
          (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
-(defun set-trash-loc (loc)
+(defun set-trash-loc (loc &rest args)
+  (declare (ignore args))
   (when (loc-with-side-effects-p loc)
     (wt-nl loc ";")
     t))

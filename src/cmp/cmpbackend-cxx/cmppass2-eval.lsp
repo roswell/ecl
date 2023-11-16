@@ -2,14 +2,9 @@
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
 ;;;;  Copyright (c) 1990, Giuseppe Attardi
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
-;;;;  Copyright (c) 2021, Daniel Kochmański
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
 
 (in-package #:compiler)
@@ -75,6 +70,14 @@
            (c2expr form1))
          (c2expr form2))))
 
+(defun jump-true-destination-p (dest)
+  (declare (si::c-local))
+  (and (consp dest) (eq (si:cons-car dest) 'JUMP-TRUE)))
+
+(defun jump-false-destination-p (dest)
+  (declare (si::c-local))
+  (and (consp dest) (eq (si:cons-car dest) 'JUMP-FALSE)))
+
 (defun negate-argument (inlined-arg dest-loc)
   (declare (si::c-local))
   (let* ((loc (second inlined-arg))
@@ -103,18 +106,8 @@
           (t
            (let ((*inline-blocks* 0)
                  (*temp* *temp*))
-             (unwind-exit (negate-argument
-                           (emit-inline-form arg nil)
-                           dest))
+             (unwind-exit (negate-argument (emit-inline-form arg nil) dest))
              (close-inline-blocks))))))
-
-(defun jump-true-destination-p (dest)
-  (declare (si::c-local))
-  (and (consp dest) (eq (si:cons-car dest) 'JUMP-TRUE)))
-
-(defun jump-false-destination-p (dest)
-  (declare (si::c-local))
-  (and (consp dest) (eq (si:cons-car dest) 'JUMP-FALSE)))
 
 (defun c2fmla-and (c1form butlast last)
   (declare (ignore c1form))
@@ -146,35 +139,13 @@
              (dolist (f butlast)
                (let ((*destination* 'VALUE0))
                  (c2expr* f))
-               (set-jump-true 'VALUE0 normal-exit))
+               (wt-nl "if (" 'VALUE0 "!=ECL_NIL) ")
+               (wt-open-brace) (unwind-jump normal-exit) (wt-nl-close-brace))
              (c2expr last))
            (unwind-exit 'VALUE0)))))
 
-(defun set-jump-true (loc label)
-  (multiple-value-bind (constantp value)
-      (loc-immediate-value-p loc)
-    (cond ((not constantp)
-           (case (loc-representation-type loc)
-             (:bool     (wt-nl "if (" loc ")"))
-             (:object   (wt-nl "if (" loc "!=ECL_NIL)"))
-             (otherwise (wt-nl "if ((") (wt-coerce-loc :object loc) (wt ")!=ECL_NIL)")))
-           (wt-open-brace) (unwind-jump label) (wt-nl-close-brace))
-          ((not (null value))
-           (unwind-jump label)))))
-
-(defun set-jump-false (loc label)
-  (multiple-value-bind (constantp value)
-      (loc-immediate-value-p loc)
-    (cond ((not constantp)
-           (case (loc-representation-type loc)
-             (:bool     (wt-nl "if (!(" loc "))"))
-             (:object   (wt-nl "if (Null(" loc "))"))
-             (otherwise (wt-nl "if (Null(") (wt-coerce-loc :object loc) (wt "))")))
-           (wt-open-brace) (unwind-jump label) (wt-nl-close-brace))
-          ((null value)
-           (unwind-jump label)))))
-
 (defun c2mv-prog1 (c1form form body)
+  (declare (ignore c1form))
   (wt-nl-open-brace)
   (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
   (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
