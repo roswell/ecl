@@ -20,10 +20,17 @@
 (in-package "COMPILER")
 
 (defun unwind-exit (loc)
-  (or (unwind-cond loc)
-      (if (eq *exit* 'LEAVE)
-          (unwind-leave loc)
-          (unwind-label loc))))
+  (flet ((unwind-cond-p ()
+           (and (consp *destination*)
+                (member (si:cons-car *destination*) '(JUMP-FALSE JUMP-TRUE))))
+         (unwind-jump-p ()
+           (labelp *exit*))
+         (unwind-exit-p ()
+           (eq *exit* 'LEAVE)))
+    (cond ((unwind-cond-p) (unwind-cjump loc))
+          ((unwind-jump-p) (unwind-label loc))
+          ((unwind-exit-p) (unwind-leave loc))
+          (t (baboon-exit-invalid *exit*)))))
 
 (defun unwind-jump (exit)
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
@@ -37,6 +44,10 @@
   (baboon :format-control "The value of exit~%~A~%is not found in *UNWIND-EXIT*~%~A"
           :format-arguments (list exit *unwind-exit*)))
 
+(defun baboon-exit-invalid (exit)
+  (baboon :format-control "The value of exit~%~A~%is not valid."
+          :format-arguments (list exit)))
+
 (defun baboon-unwind-invalid (unwind-exit)
   (baboon :format-control "The value~%~A~%is not a tail of *UNWIND-EXIT*~%~A"
           :format-arguments (list unwind-exit *unwind-exit*)))
@@ -44,11 +55,6 @@
 (defun baboon-unwind-exit (exit)
   (baboon :format-control "The value of exit~%~A~%found in *UNWIND-EXIT*~%~A~%is not valid."
           :format-arguments (list exit *unwind-exit*)))
-
-(defun jump-cond-destination-p (dest)
-  (declare (si::c-local))
-  (and (consp dest)
-       (member (si:cons-car dest) '(JUMP-FALSE JUMP-TRUE))))
 
 (defun destination-value-matters-p (dest)
   (declare (si::c-local))
@@ -160,24 +166,19 @@
              (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
              (set-loc temp))) ; *destination* <- temp
           (t
-           (unless (jump-cond-destination-p *destination*)
-             (set-loc loc))
+           (set-loc loc)
            (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)))
     ;; When JUMP-P is NULL then we "fall through" onto the exit block.
     (when jump-p
       (wt-nl-go *exit*))))
 
-;;; Conditional JUMP based on the value of *DESTINATION*. This allows FMLA
-;;; jumping over *EXIT* to skip the dead part of the computation.
-;;;
-;;; Returns T when optimized to an unconditional jump. -- jd 2023-11-16
-(defun unwind-cond (loc)
+;;; Conditional JUMP based on the value of *DESTINATION*. This allows FMLA to
+;;; jump over *EXIT* to skip the dead part of the computation. -- jd 2023-11-16
+(defun unwind-cjump (loc)
   (declare (si::c-local))
-  (unless (jump-cond-destination-p *destination*)
-    (return-from unwind-cond nil))
   (multiple-value-bind (constantp value) (loc-immediate-value-p loc)
     (destructuring-bind (target label) *destination*
-      (case target
+      (ecase target
         (JUMP-TRUE
          (cond ((not constantp)
                 (case (loc-representation-type loc)
@@ -187,7 +188,9 @@
                 (wt-open-brace) (unwind-jump label) (wt-nl-close-brace))
                ((not (null value))
                 (unwind-jump label)))
-         (and constantp (not (null value))))
+         (unless (and constantp (not (null value)))
+           (let ((*destination* 'TRASH))
+             (unwind-exit *vv-nil*))))
         (JUMP-FALSE
          (cond ((not constantp)
                 (case (loc-representation-type loc)
@@ -197,4 +200,6 @@
                 (wt-open-brace) (unwind-jump label) (wt-nl-close-brace))
                ((null value)
                 (unwind-jump label)))
-         (and constantp (null value)))))))
+         (unless (and constantp (null value))
+           (let ((*destination* 'TRASH))
+             (unwind-exit *vv-t*))))))))
