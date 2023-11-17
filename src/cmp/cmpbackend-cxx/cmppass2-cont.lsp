@@ -102,21 +102,15 @@
 (defun c2tagbody-body (body)
   ;;; INV: BODY is a list of tags and forms. We have processed the body
   ;;; so that the last element is always a form producing NIL.
-  (do ((l body (cdr l)))
-      ((null l))
-    (let* ((this-form (first l)))
-      (cond ((tag-p this-form)
-             (wt-label (tag-jump this-form)))
-            ((endp (rest l))
-             ;; Last form, it is never a label!
-             (c2expr this-form))
-            (t
-             (let* ((next-form (second l))
-                    (maybe-tag (when (tag-p next-form)
-                                 (tag-jump next-form))))
-               (with-exit-label (*exit* maybe-tag)
-                 (let ((*destination* 'TRASH))
-                   (c2expr this-form)))))))))
+  (loop for (this-form next-form . rest) on body do
+    (cond ((tag-p this-form)
+           (wt-label (tag-jump this-form)))
+          ((tag-p next-form)
+           (with-exit-label (*exit* (tag-jump next-form))
+             (let ((*destination* 'TRASH))
+               (c2expr this-form))))
+          (t
+           (c2expr this-form)))))
 
 (defun c2go (c1form tag nonlocal)
   (declare (ignore c1form))
