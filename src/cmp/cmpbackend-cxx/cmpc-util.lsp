@@ -101,7 +101,8 @@
          (*static-constants* nil)
          (*optimizable-constants* (make-optimizable-constants *machine*))
          (*permanent-objects* (make-array 128 :adjustable t :fill-pointer 0))
-         (*temporary-objects* (make-array 128 :adjustable t :fill-pointer 0)))
+         (*temporary-objects* (make-array 128 :adjustable t :fill-pointer 0))
+         (*compiler-declared-globals* (make-hash-table)))
      ,@body))
 
 (defun-cached env-var-name (n) eql

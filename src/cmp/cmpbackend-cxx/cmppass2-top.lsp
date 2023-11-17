@@ -60,33 +60,9 @@
            ;; so disassemble can redefine it
            (t3function (first lfs)))))))
 
-(defun ctop-write (name h-pathname data-pathname
-                        &aux def top-output-string
-                        (*volatile* "volatile "))
-
-  (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
-
-  ;; VV might be needed by functions in CLINES.
-  (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
-  (wt-nl-h "static cl_object *VV;")
-  (wt-nl-h "#else")
-  (wt-nl-h "static cl_object VV[VM];")
-  (wt-nl-h "#endif")
-  (output-clines *compiler-output2*)
-
-  (wt-nl-h "#ifdef __cplusplus")
-  (wt-nl-h "extern \"C\" {")
-  (wt-nl-h "#endif")
-  ;;; Initialization function.
+(defun emit-entry-fun (name *compiler-output1*)
   (let* ((*opened-c-braces* 0)
-         (*aux-closure* nil)
-         (c-output-file *compiler-output1*)
-         (*compiler-output1* (make-string-output-stream))
-         (*compiler-declared-globals* (make-hash-table)))
-    (wt-nl "#include \"" (brief-namestring data-pathname) "\"")
-    (wt-nl "#ifdef __cplusplus")
-    (wt-nl "extern \"C\"")
-    (wt-nl "#endif")
+         (*aux-closure* nil))
     (wt-nl "ECL_DLLEXPORT void " name "(cl_object flag)")
     (wt-nl-open-brace)
     (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
@@ -123,10 +99,29 @@
       (emit-toplevel-form form))
     ;; We process top-level forms before functions to update their
     ;; environments. Then we emit functions before top level forms.
-    (emit-functions c-output-file)
-    (wt-nl-close-many-braces 0)
-    (setq top-output-string (get-output-stream-string *compiler-output1*)))
+    (wt-nl-close-many-braces 0)))
 
+(defun ctop-write (init-name h-pathname data-pathname
+                   &aux def top-output-string (*volatile* "volatile "))
+  (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
+
+  ;; VV might be needed by functions in CLINES.
+  (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
+  (wt-nl-h "static cl_object *VV;")
+  (wt-nl-h "#else")
+  (wt-nl-h "static cl_object VV[VM];")
+  (wt-nl-h "#endif")
+  (output-clines *compiler-output2*)
+
+  (wt-nl-h "#ifdef __cplusplus")
+  (wt-nl-h "extern \"C\" {")
+  (wt-nl-h "#endif")
+  ;;; We rebind the output to ensure that the initialization function is
+  ;;; processed first and added last.
+  (let ((output (make-string-output-stream)))
+    (emit-entry-fun init-name output)
+    (emit-functions *compiler-output1*)
+    (setq top-output-string (get-output-stream-string output)))
   ;; Declarations in h-file.
   (wt-nl-h "static cl_object Cblock;")
   (let ((num-objects (data-size)))
@@ -167,6 +162,10 @@
     (dolist (x *callbacks*)
       (apply #'t3-defcallback x)))
 
+  (wt-nl "#include \"" (brief-namestring data-pathname) "\"")
+  (wt-nl "#ifdef __cplusplus")
+  (wt-nl "extern \"C\"")
+  (wt-nl "#endif")
   (wt-nl top-output-string))
 
 (defun emit-toplevel-form (form)
