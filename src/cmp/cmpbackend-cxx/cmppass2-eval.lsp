@@ -51,7 +51,7 @@
               (eq (c1form-name form2) 'LOCATION))
          ;; Optimize (IF condition true-branch) or a situation in which
          ;; the false branch can be discarded.
-         (with-optional-exit-label (false-label)
+         (with-exit-label (false-label *exit*)
            (let ((*destination* `(JUMP-FALSE ,false-label)))
              (c2expr* fmla))
            (c2expr form1)))
@@ -59,7 +59,7 @@
               (eq (c1form-name form1) 'LOCATION))
          ;; Optimize (IF condition useless-value false-branch) when
          ;; the true branch can be discarded.
-         (with-optional-exit-label (true-label)
+         (with-exit-label (true-label *exit*)
            (let ((*destination* `(JUMP-TRUE ,true-label)))
              (c2expr* fmla))
            (c2expr form2)))

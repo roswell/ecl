@@ -161,20 +161,14 @@
 (defun next-label (used-p)
   (make-label :id (incf *last-label*) :denv *unwind-exit* :used-p used-p))
 
-(defun maybe-next-label ()
-  (if (labelp *exit*)
-      *exit*
-      (next-label nil)))
-
-(defmacro with-exit-label ((label) &body body)
-  `(let* ((,label (next-label nil))
-          (*unwind-exit* (cons ,label *unwind-exit*)))
-     ,@body
-     (wt-label ,label)))
-
-(defmacro with-optional-exit-label ((label) &body body)
-  `(let* ((,label (maybe-next-label))
-          (*unwind-exit* (adjoin ,label *unwind-exit*)))
-     ,@body
-     (unless (eq ,label *exit*)
-       (wt-label ,label))))
+;;; This macro binds VAR to a label where forms may exit or jump.
+;;; LABEL may be supplied to reuse a label when it exists.
+(defmacro with-exit-label ((var &optional exit) &body body)
+  (ext:with-gensyms (reuse label)
+    `(let* ((,label ,exit)
+            (,reuse (labelp ,label))
+            (,var (if ,reuse ,label (next-label nil)))
+            (*unwind-exit* (adjoin ,var *unwind-exit*)))
+       ,@body
+       (unless ,reuse
+         (wt-label ,var)))))
