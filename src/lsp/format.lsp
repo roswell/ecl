@@ -221,6 +221,8 @@
                   :start (format-directive-start struct)
                   :end (format-directive-end struct))))
 
+(defconstant default-line-length 80)
+
 (defconstant +format-directive-limit+ (1+ (char-code #\~)))
 
 #+formatter
@@ -2518,7 +2520,9 @@
                             ,@(expand-directive-list (pop segments))))
                     ,(expand-bind-defaults
                       ((extra 0)
-                       (line-len '(or #-ecl (sys::line-length stream) 72)))
+                       (line-len '(or *print-right-margin*
+                                      (gray:stream-line-length stream)
+                                      default-line-length)))
                       (format-directive-params first-semi)
                       `(setf extra-space ,extra line-len ,line-len))))
           ,@(mapcar #'(lambda (segment)
@@ -2549,7 +2553,9 @@
                (check-output-layout-mode 2)
                (interpret-bind-defaults
                 ((extra 0)
-                 (len (or #-ecl (sys::line-length stream) 72)))
+                 (len (or *print-right-margin*
+                          (gray:stream-line-length stream)
+                          default-line-length)))
                 (format-directive-params first-semi)
                 (setf newline-string
                       (with-output-to-string (stream)
