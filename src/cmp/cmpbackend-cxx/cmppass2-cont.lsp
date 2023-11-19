@@ -142,11 +142,7 @@
 
 (defun c2unwind-protect (c1form form body)
   (declare (ignore c1form))
-  (let* ((sp (make-lcl-var :rep-type :cl-index))
-         (nargs (make-lcl-var :rep-type :cl-index))
-         (*unwind-exit* `((STACK ,sp) ,@*unwind-exit*)))
-    (wt-nl-open-brace)
-    (wt-nl "cl_index " sp "=ECL_STACK_INDEX(cl_env_copy)," nargs ";")
+  (with-stack-frame (frame)
     ;; Here we compile the form which is protected. When this form is aborted,
     ;; it continues with unwinding=TRUE. We call ecl_frs_pop() manually because
     ;; we use C2EXPR* in the body.
@@ -160,13 +156,12 @@
     ;; Here we save the values of the form which might have been
     ;; aborted, and execute some cleanup code. This code may also
     ;; be aborted by some control structure, but is not protected.
-    (wt-nl nargs "=ecl_stack_push_values(cl_env_copy);")
+    (wt-nl "ecl_stack_frame_push_values(" frame ");")
     (let ((*destination* 'TRASH))
       (c2expr* body))
-    (wt-nl "ecl_stack_pop_values(cl_env_copy," nargs ");")
+    (wt-nl "ecl_stack_frame_pop_values(" frame ");")
     ;; Finally, if the protected form was aborted, jump to the
     ;; next catch point...
     (wt-nl "if (unwinding) ecl_unwind(cl_env_copy,next_fr);")
     ;; ... or simply return the values of the protected form.
-    (unwind-exit 'VALUEZ)
-    (wt-nl-close-brace)))
+    (unwind-exit 'VALUEZ)))

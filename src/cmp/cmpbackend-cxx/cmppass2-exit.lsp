@@ -65,7 +65,7 @@
 ;;; UNWIND-EXIT TAGS       PURPOSE
 ;;;
 ;;; FRAME               -> ecl_frs_push()
-;;; (STACK n)           -> n elements pushed in stack
+;;; (STACK frame)       -> ecl_stack_frame_open(env, frame, initial_size)
 ;;; IHS                 -> ihs push
 ;;; IHS-ENV             -> ihs push
 ;;; BDS-BIND            -> binding of 1 special variable
@@ -79,9 +79,7 @@
   (when (plusp frs-bind)
     (wt-nl "ecl_frs_pop_n(cl_env_copy, " frs-bind ");"))
   (when stack-frame
-    (if (stringp stack-frame)
-        (wt-nl "ecl_stack_frame_close(" stack-frame ");")
-        (wt-nl "ECL_STACK_SET_INDEX(cl_env_copy," stack-frame ");")))
+    (wt-nl "ecl_stack_frame_close(" stack-frame ");"))
   (when bds-lcl
     (wt-nl "ecl_bds_unwind(cl_env_copy," bds-lcl ");"))
   (if (< bds-bind 4)

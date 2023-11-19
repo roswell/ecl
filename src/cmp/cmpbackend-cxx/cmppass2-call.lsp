@@ -131,18 +131,14 @@
   (declare (ignore c1form))
   (let* ((*temp* *temp*)
          (loc (maybe-save-value form args)))
-    (wt-nl-open-brace)
-    (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
-    (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
-    (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
+    (with-stack-frame (frame)
       (let ((*destination* (if values-p 'VALUEZ 'LEAVE)))
         (dolist (arg args)
           (c2expr* arg)
           (if values-p
-              (wt-nl "ecl_stack_frame_push_values(_ecl_inner_frame);")
-              (wt-nl "ecl_stack_frame_push(_ecl_inner_frame,value0);"))))
-      (unwind-exit (call-stack-loc nil loc)))
-    (wt-nl-close-brace)))
+              (wt-nl "ecl_stack_frame_push_values(" frame ");")
+              (wt-nl "ecl_stack_frame_push(" frame ",value0);"))))
+      (unwind-exit (call-stack-loc nil loc)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

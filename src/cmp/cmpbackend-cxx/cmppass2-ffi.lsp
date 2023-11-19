@@ -93,16 +93,16 @@
       (wt-nl return-type-name " output;"))
     (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
     (wt-nl "cl_object aux;")
-    (wt-nl "ECL_BUILD_STACK_FRAME(cl_env_copy, frame, helper)")
-    (loop for n from 0
-          and type in arg-types
-          and ct in arg-type-constants
-          do (wt-nl "ecl_stack_frame_push("
-                    "frame,ecl_foreign_data_ref_elt(" "&var" n "," ct ")"
-                    ");"))
-    (wt-nl "aux = ecl_apply_from_stack_frame(frame,"
-           "ecl_fdefinition(" c-name-constant "));")
-    (wt-nl "ecl_stack_frame_close(frame);")
+    (with-stack-frame (frame)
+      (loop for n from 0
+            and type in arg-types
+            and ct in arg-type-constants
+            do (wt-nl "ecl_stack_frame_push(" frame ","
+                      "ecl_foreign_data_ref_elt(" "&var" n "," ct ")" ");"))
+      (wt-nl "aux = ecl_apply_from_stack_frame(" frame ","
+             "ecl_fdefinition(" c-name-constant "));")
+      ;; No UNWIND-EXIT, so we must close the frame manually.
+      (wt-nl "ecl_stack_frame_close(" frame ");"))
     (when return-p
       (wt-nl "ecl_foreign_data_set_elt(&output," return-type-code ",aux);")
       (wt-nl "return output;"))

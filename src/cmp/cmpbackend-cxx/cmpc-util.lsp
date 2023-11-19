@@ -188,3 +188,14 @@
      (wt-nl "}")
      (wt-nl-close-brace)))
 
+(defmacro with-stack-frame ((var &optional loc) &body body)
+  (ext:with-gensyms (hlp)
+    `(let* ((,var ,(or loc "_ecl_inner_frame"))
+            (,hlp "_ecl_inner_frame_aux")
+            (*unwind-exit* (list* (list 'STACK ,var) *unwind-exit*)))
+       (wt-nl-open-brace)
+       (wt-nl "struct ecl_stack_frame " ,hlp ";")
+       (wt-nl *volatile* "cl_object " ,var
+              "=ecl_stack_frame_open(cl_env_copy,(cl_object)&" ,hlp ",0);")
+       ,@body
+       (wt-nl-close-brace))))
