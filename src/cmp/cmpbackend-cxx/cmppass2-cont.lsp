@@ -32,16 +32,11 @@
           (let ((env-lvl *env-lvl*))
             (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
         (bind "ECL_NEW_FRAME_ID(cl_env_copy)" blk-var)
-        (wt-nl-open-brace)
-        (wt-nl "ecl_frs_push(cl_env_copy," blk-var ");")
-        (wt-nl "if (__ecl_frs_push_result!=0) {")
-        (let ((*unwind-exit* (cons 'FRAME *unwind-exit*)))
+        (with-unwind-frame (blk-var)
           (unwind-exit 'VALUEZ)
-          (wt-nl "} else {")
-          (c2expr body)
-          (wt "}"))
-        (wt-nl-close-brace)
-        (when (var-ref-ccb blk-var) (decf *env*))
+          (c2expr body))
+        (when (var-ref-ccb blk-var)
+          (decf *env*))
         (wt-nl-close-brace))
       (c2expr body)))
 
@@ -68,8 +63,7 @@
         (when (and (tag-p x) (plusp (tag-ref x)))
           (setf (tag-jump x) (next-label t))))
       ;; some tag used non locally or inside an unwind-protect
-      (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
-            (*env* *env*) (*env-lvl* *env-lvl*)
+      (let ((*env* *env*) (*env-lvl* *env-lvl*)
             (*lex* *lex*) (*lcl* *lcl*)
             (*inline-blocks* 0)
             (env-grows (env-grows (var-ref-ccb tag-loc))))
@@ -83,20 +77,17 @@
           (maybe-open-inline-block)
           (wt-nl "cl_object " tag-loc ";"))
         (bind "ECL_NEW_FRAME_ID(cl_env_copy)" tag-loc)
-        (wt-nl-open-brace)
-        (wt-nl "ecl_frs_push(cl_env_copy," tag-loc ");")
-        (wt-nl "if (__ecl_frs_push_result) {")
-        ;; Allocate labels.
-        (dolist (tag body)
-          (when (and (tag-p tag) (plusp (tag-ref tag)))
-            (setf (tag-jump tag) (next-label nil))
-            (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
-            (wt-go (tag-jump tag))))
-        (when (var-ref-ccb tag-loc)
-          (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");"))
-        (wt-nl "}")
-        (wt-nl-close-brace)
-        (c2tagbody-body body)
+        (with-unwind-frame (tag-loc)
+          (progn
+            ;; Allocate labels.
+            (dolist (tag body)
+              (when (and (tag-p tag) (plusp (tag-ref tag)))
+                (setf (tag-jump tag) (next-label nil))
+                (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
+                (wt-go (tag-jump tag))))
+            (when (var-ref-ccb tag-loc)
+              (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");")))
+          (c2tagbody-body body))
         (close-inline-blocks))))
 
 (defun c2tagbody-body (body)
@@ -136,30 +127,17 @@
          (code (gensym "CATCH")))
     (let ((*destination* 'VALUE0))
       (c2expr* tag))
-    (let* ((*destination* new-destination)
-           (*unwind-exit* (cons 'FRAME *unwind-exit*)))
-      (wt-nl-open-brace)
-      (if (member new-destination '(TRASH VALUEZ))
-          (progn
-            (wt-nl "ecl_frs_push(cl_env_copy," 'VALUE0 ");")
-            (wt-nl "if (__ecl_frs_push_result==0) {")
-            (wt-comment "BEGIN CATCH ~A" code)
-            (with-indentation
-              (c2expr* body)))
-          (progn
-            (wt-nl "ecl_frs_push(cl_env_copy," 'VALUE0 ");")
-            (wt-nl "if (__ecl_frs_push_result) {")
-            (wt-comment "BEGIN CATCH ~A" code)
-            (with-indentation
-              (with-exit-label (*exit*)
-                (unwind-exit 'VALUEZ)))
-            (wt-nl "} else {")
-            (with-indentation
-              (c2expr* body)))))
-    (wt-nl "}")
-    (wt-nl "ecl_frs_pop(cl_env_copy);")
-    (wt-comment "END CATCH ~A" code)
-    (wt-nl-close-brace)
+    (let ((*destination* new-destination))
+      (wt-comment "BEGIN CATCH ~A" code)
+      (with-unwind-frame ('VALUE0)
+        (unless (member new-destination '(TRASH VALUEZ))
+          (with-indentation
+            (with-exit-label (*exit*)
+              (unwind-exit 'VALUEZ))))
+        (with-indentation
+          (c2expr* body)))
+      (wt-nl "ecl_frs_pop(cl_env_copy);")
+      (wt-comment "END CATCH ~A" code))
     (unwind-exit new-destination)))
 
 (defun c2unwind-protect (c1form form body)
@@ -168,19 +146,16 @@
          (nargs (make-lcl-var :rep-type :cl-index))
          (*unwind-exit* `((STACK ,sp) ,@*unwind-exit*)))
     (wt-nl-open-brace)
-    (wt-nl "volatile bool unwinding = FALSE;")
     (wt-nl "cl_index " sp "=ECL_STACK_INDEX(cl_env_copy)," nargs ";")
+    ;; Here we compile the form which is protected. When this form is aborted,
+    ;; it continues with unwinding=TRUE. We call ecl_frs_pop() manually because
+    ;; we use C2EXPR* in the body.
+    (wt-nl "volatile bool unwinding = FALSE;")
     (wt-nl "ecl_frame_ptr next_fr;")
-    ;; Here we compile the form which is protected. When this form
-    ;; is aborted, it continues at the ecl_frs_pop() with unwinding=TRUE.
-    (wt-nl "ecl_frs_push(cl_env_copy,ECL_PROTECT_TAG);")
-    (wt-nl "if (__ecl_frs_push_result) {")
-    (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->nlj_fr;")
-    (wt-nl "} else {")
-    (let ((*unwind-exit* (cons 'FRAME *unwind-exit*))
-          (*destination* 'VALUEZ))
-      (c2expr* form))
-    (wt-nl "}")
+    (with-unwind-frame ("ECL_PROTECT_TAG")
+      (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->nlj_fr;")
+      (let ((*destination* 'VALUEZ))
+        (c2expr* form)))
     (wt-nl "ecl_frs_pop(cl_env_copy);")
     ;; Here we save the values of the form which might have been
     ;; aborted, and execute some cleanup code. This code may also

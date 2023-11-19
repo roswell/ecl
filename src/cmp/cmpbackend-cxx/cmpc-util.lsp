@@ -172,3 +172,19 @@
        ,@body
        (unless ,reuse
          (wt-label ,var)))))
+
+;;; This macro estabilishes a frame to handle dynamic escapes like GO, THROW and
+;;; RETURN-FROM to intercept the control and eval UNWIND-PROTECT cleanup forms.
+;;; ecl_frs_pop is emited by the exit manager or the caller. -- jd 2023-11-19
+(defmacro with-unwind-frame ((tag) handler-form &body body)
+  `(let ((*unwind-exit* (list* 'FRAME *unwind-exit*)))
+     (wt-nl-open-brace)
+     (wt-nl "ecl_frs_push(cl_env_copy," ,tag ");")
+     (wt-nl "if (__ecl_frs_push_result!=0) {")
+     ,handler-form
+     ,@(when body
+         `((wt-nl "} else {")
+           ,@body))
+     (wt-nl "}")
+     (wt-nl-close-brace)))
+
