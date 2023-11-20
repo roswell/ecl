@@ -441,3 +441,13 @@
   (when (loc-with-side-effects-p loc)
     (wt-nl loc ";")
     t))
+
+;;;
+;;; Foreign data
+;;;
+
+(defun wt-ffi-data-ref (data ffi-tag)
+  (wt "ecl_foreign_data_ref_elt(&" data "," ffi-tag ")"))
+
+(defun wt-ffi-data-set (value data ffi-tag)
+  (wt "ecl_foreign_data_set_elt(&" data "," ffi-tag "," value ");"))

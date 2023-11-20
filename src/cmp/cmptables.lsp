@@ -161,7 +161,8 @@
     (leave  . set-leave-loc)
     (trash  . set-trash-loc)
     (jump-true  . set-trash-loc)
-    (jump-false . set-trash-loc)))
+    (jump-false . set-trash-loc)
+    (ffi-data-ref . wt-ffi-data-set)))
 
 (defconstant +wt-loc-dispatch-alist+
   '((call-normal . wt-call-normal)
@@ -180,6 +181,7 @@
     (make-cclosure . wt-make-closure)
 
     (si:structure-ref . wt-structure-ref)
+    (ffi-data-ref . wt-ffi-data-ref)
 
     (leave . "value0")
     (va-arg . "va_arg(args,cl_object)")
