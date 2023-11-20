@@ -29,20 +29,18 @@
 
 (defun c2progn (c1form forms)
   (declare (ignore c1form))
-  ;; c1progn ensures that the length of forms is not less than 1.
-  (do ((l forms (cdr l))
-       (lex *lex*))
-      ((endp (cdr l))
-       (c2expr (car l)))
-    (let* ((this-form (first l))
-           (name (c1form-name this-form)))
-      (let ((*destination* 'TRASH))
-        (c2expr* (car l)))
-      (setq *lex* lex)  ; recycle lex locations
-      ;; Since PROGN does not have tags, any transfer of control means
-      ;; leaving the current PROGN statement.
-      (when (or (eq name 'CL:GO) (eq name 'CL:RETURN-FROM))
-        (return)))))
+  ;; INV C1PROGN ensures that the length of forms is not less than 1.
+  (loop with lex = *lex*
+        for (form next . rest) on forms do
+          (if (null next)
+              (c2expr form)
+              (let ((*destination* 'TRASH))
+                (c2expr* form)
+                ;; recycle lex locations
+                (setq *lex* lex)))
+        ;; Since PROGN does not have tags, any transfer of control means leaving
+        ;; the current PROGN statement.
+        until (member (c1form-name form) '(CL:GO CL:RETURN-FROM))))
 
 (defun c2if (c1form fmla form1 form2)
   (declare (ignore c1form))
