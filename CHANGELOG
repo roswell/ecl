@@ -28,6 +28,17 @@
     parameter given to configure script).
 
 * Pending changes since 23.9.9
+
+- Add gray-streams module. This makes it possible to load Gray stream
+  support via ~(require '#:gray-streams)~ versus calling the internal
+  function ~gray::redefine-cl-functions~.
+- Add support for some Gray stream extensions. Specifically, the generic
+  functions ~gray-streams:stream-line-length~ and
+  ~gray-streams:stream-file-length~ have been added. The former allows
+  stream specific line lengths when ~cl:*print-right-margin*~ is NIL. The
+  latter allows Gray streams to implement ~cl:file-length~.
+- Various bug fixes for Gray streams.
+    
 * 23.9.9 changes since 21.2.1
 ** Announcement
 Dear Community,
