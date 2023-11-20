@@ -1,9 +1,8 @@
-@node Gray streams
-@section Gray streams
+@node Gray Streams
+@section Gray Streams
 
-@defun{close} {@var{stream} @keys{} :abort}
-
-Unlike the other Gray stream functions, @code{close} is not
-specialized on @code{t} for @var{stream}. This decision has been taken
-mainly for the compatibility reasons with some libraries.
+@defun {close} stream &key abort
+Unlike the other Gray stream functions, @code{close} is not specialized
+on @code{t} for @var{stream}. This decision has been taken mainly for
+the compatibility reasons with some libraries.
 @end defun

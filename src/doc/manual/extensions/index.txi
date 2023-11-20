@@ -53,8 +53,7 @@
 @c @node Extensible Sequences
 @c @section Extensible Sequences
 
-@node Gray Streams
-@section Gray Streams
+@include extensions/gray-streams.txi
 
 @c @node Series
 @c @section Series
