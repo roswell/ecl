@@ -46,24 +46,30 @@
 (defun member-type (type disjoint-supertypes)
   (member type disjoint-supertypes :test #'subtypep))
 
-;;; Check if THING is an object of the type TYPE.
-;;; Depends on the implementation of TYPE-OF.
-;;; (only used for saving constants?)
+;;; Canonicalize the object type to a type recognized by the compiler.
+;;; Depends on the implementation of TYPECASE.
 (defun object-type (thing)
-  (let ((type (type-of thing)))
-    (case type
-      ((FIXNUM SHORT-FLOAT SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT SYMBOL NULL) type)
-      ((BASE-CHAR STANDARD-CHAR CHARACTER EXTENDED-CHAR) 'CHARACTER)
-      ((STRING BASE-STRING BIT-VECTOR) type)
-      (VECTOR (list 'VECTOR (array-element-type thing)))
-      (ARRAY (list 'ARRAY (array-element-type thing)))
-      #+clos
-      (STANDARD-OBJECT 'STANDARD-OBJECT)
-      #+clos
-      (STRUCTURE-OBJECT 'STRUCTURE-OBJECT)
-      #+sse2
-      ((EXT:SSE-PACK EXT:INT-SSE-PACK EXT:FLOAT-SSE-PACK EXT:DOUBLE-SSE-PACK) type)
-      (t t))))
+  (typecase thing
+    (FIXNUM 'FIXNUM)
+    (SHORT-FLOAT 'SHORT-FLOAT)
+    (SINGLE-FLOAT 'SINGLE-FLOAT)
+    (DOUBLE-FLOAT 'DOUBLE-FLOAT)
+    (LONG-FLOAT 'LONG-FLOAT)
+    (SYMBOL 'SYMBOL)
+    (NULL 'NULL)
+    ((OR BASE-CHAR STANDARD-CHAR CHARACTER EXTENDED-CHAR) 'CHARACTER)
+    (BASE-STRING 'BASE-STRING)
+    (STRING 'STRING)
+    (BIT-VECTOR 'BIT-VECTOR)
+    (VECTOR (list 'VECTOR (array-element-type thing)))
+    (ARRAY (list 'ARRAY (array-element-type thing)))
+    #+clos (STANDARD-OBJECT 'STANDARD-OBJECT)
+    #+clos (STRUCTURE-OBJECT 'STRUCTURE-OBJECT)
+    #+sse2 (EXT:SSE-PACK 'EXT:SSE-PACK)
+    #+sse2 (EXT:INT-SSE-PACK 'EXT:INT-SSE-PACK)
+    #+sse2 (EXT:FLOAT-SSE-PACK 'EXT:FLOAT-SSE-PACK)
+    #+sse2 (EXT:DOUBLE-SSE-PACK 'EXT:DOUBLE-SSE-PACK)
+    (t t)))
 
 (defun valid-type-specifier (type)
   (handler-case

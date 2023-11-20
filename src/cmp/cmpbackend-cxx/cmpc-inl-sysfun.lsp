@@ -512,6 +512,9 @@
 
     (def-inline cl:expt :always (t t) t "ecl_expt(#0,#1)")
     (def-inline cl:expt :always ((integer 2 2) (integer 0 29)) :fixnum "(1<<(#1))")
+    ;; Note that the following two inlines are conflicting. CHOOSE-INLINE-INFO
+    ;; assumes the one that has more specific types.
+    (def-inline cl:expt :always ((integer 0 0) (integer 0 0)) :fixnum "1")
     (def-inline cl:expt :always ((integer 0 0) t) :fixnum "0")
     (def-inline cl:expt :always ((integer 1 1) t) :fixnum "1")
     (def-inline cl:expt :always ((long-float 0.0l0 *) long-float) :long-double "powl((long double)#0,(long double)#1)")

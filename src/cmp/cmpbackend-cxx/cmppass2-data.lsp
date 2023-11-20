@@ -16,6 +16,30 @@
 
 (in-package "COMPILER")
 
+(defun data-permanent-storage-size ()
+  (length *permanent-objects*))
+
+(defun data-temporary-storage-size ()
+  (length *temporary-objects*))
+
+(defun data-size ()
+  (+ (data-permanent-storage-size)
+     (data-temporary-storage-size)))
+
+(defun data-get-all-objects ()
+  ;; We collect all objects that are to be externalized, but filter out
+  ;; those which will be created by a lisp form.
+  (loop for array in (list *permanent-objects* *temporary-objects*)
+        nconc (loop for vv-record across array
+                    for object = (vv-value vv-record)
+                    collect (cond ((gethash object *load-objects*)
+                                   0)
+                                  ((vv-used-p vv-record)
+                                   object)
+                                  (t
+                                   ;; Value optimized away or not used
+                                   0)))))
+
 (defun data-dump-array ()
   (cond (si:*compiler-constants*
          (setf si:*compiler-constants* (concatenate 'vector (data-get-all-objects)))
@@ -218,6 +242,8 @@
   ;; FIXME! The MSVC compiler does not allow static initialization of bit
   ;; fields. SSE uses always unboxed static constants. No reference is kept to
   ;; them -- it is thus safe to use them even on code that might be unloaded.
+  ;;
+  ;; NOTE *use-static-constants-p* is T only when :ecl-min is a feature.
   (unless (or #+msvc t
               si:*compiler-constants*
               (and (not *use-static-constants-p*)
@@ -227,10 +253,142 @@
     (ext:if-let ((record (find object *static-constants* :key #'first :test #'equal)))
       (second record)
       (ext:when-let ((builder (static-constant-expression object)))
-        (let ((c-name (format nil "_ecl_static_~D" (length *static-constants*))))
-          (push (list object c-name builder) *static-constants*)
-          (make-vv :location c-name :value object))))))
+        (let* ((c-name (format nil "_ecl_static_~D" (length *static-constants*)))
+               (vv (make-vv :location c-name :value object)))
+          (push (list object vv builder) *static-constants*)
+          vv)))))
 
+
+;;; Inlineable constants
+
+;;; When we inline an immediate value, then sometimes it is expected to be a
+;;; lisp object (:object), and somtimes it is unboxed (:fixnum, :float, ...).
+;;;
+;;; TODO implement handling of unboxed values.
+
+(defun try-value-c-inliner (value)
+  (ext:when-let ((x (assoc value *optimizable-constants*)))
+    (when (typep value '(or float (complex float)))
+      (pushnew "#include <float.h>" *clines-string-list*)
+      (pushnew "#include <complex.h>" *clines-string-list*))
+    (cdr x)))
+
+(defun try-const-c-inliner (var)
+  (check-type var var)
+  (let ((name (var-name var)))
+    (when (constant-variable-p name)
+      (ext:when-let ((x (assoc name *optimizable-constants*)))
+        (cdr x)))))
+
+(defun try-inline-core-sym (object)
+  (when (symbolp object)
+    (multiple-value-bind (foundp cname)
+        (si:mangle-name object)
+      (when foundp
+        (make-vv :value object :location cname)))))
+
+(defun try-immediate-value (value)
+  ;; FIXME we could inline here also (COMPLEX FLOAT). That requires adding an
+  ;; emmiter of C complex floats in the function WT1.
+  (typecase value
+    ((or fixnum character float #|#+complex-float (complex float)|#)
+     (make-vv :value value
+              :location nil
+              :rep-type (lisp-type->rep-type (type-of value))))
+    #+sse2
+    (ext:sse-pack
+     (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
+            (elt-type (ext:sse-pack-element-type value)))
+       (multiple-value-bind (wrapper rtype)
+           (case elt-type
+             (cl:single-float (values "_mm_castsi128_ps" :float-sse-pack))
+             (cl:double-float (values "_mm_castsi128_pd" :double-sse-pack))
+             (otherwise       (values ""                 :int-sse-pack)))
+         (make-vv :value value
+                  :location (format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
+                                    wrapper (coerce bytes 'list))
+                  :rep-type rtype))))
+    (otherwise
+     nil)))
+
+
+
+(defun data-empty-loc* ()
+  (insert-vv (make-vv :value *empty-loc* :permanent-p t :used-p t)))
+
+;;; VV is emitted depending on the location and the representation type.
+(defun update-vv (target source)
+  (assert (eql (vv-value target) (vv-value source)))
+  (setf (vv-location target) (vv-location source)
+        (vv-rep-type target) (vv-rep-type source)))
+
+(defun insert-vv (vv)
+  (let* ((arr (if (vv-permanent-p vv)
+                  *permanent-objects*
+                  *temporary-objects*))
+         (ndx (vector-push-extend vv arr)))
+    (setf (vv-location vv) ndx)
+    vv))
+
+(defun search-vv (object &key permanent (errorp t))
+  (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
+         (item (if permanent
+                   (or (find object *permanent-objects* :test test :key #'vv-value)
+                       (find object *temporary-objects* :test test :key #'vv-value)))))
+    (when (and (null item) errorp)
+      (cmperr "Unable to find object ~s." object))
+    item))
+
+(defun get-object (object &key (permanent t) (errorp t))
+  (or (search-vv object :permanent permanent :errorp nil)
+      (try-inline-core-sym object)
+      (and errorp
+           (cmperr "Unable to find object ~s." object))))
+
+;;; The vector *REFERENCED-OBJECTS* contains all referenced objects collected in
+;;; the first pass. The function OPTIMIZE-CXX-DATA is responsible for inlining
+;;; them when possible, and putting them in a temporary/permanent data segments
+;;; otherwise. Objects in data segment require an explicit initialization when
+;;; the the module is loaded. The following inline strategies are tried:
+;;;
+;;; - using a symbol from the core :: ECL_SYM(\"*BREAK-ON-SIGNALS*\",27)
+;;; - using a cvalue inline value  :: cl_core.single_float_zero, FLT_MAX
+;;; - using a static constructor   :: ecl_def_ct_single_float -> _ecl_static_7
+;;; - coercing an immediate value  :: ecl_make_fixnum(42)
+;;;
+;;; Otherwise the object is put in VV or VVtemp vector, and is created when the
+;;; module is loaded. Then the code refers to such objects as VV[13].
+;;;
+;;; TODO we could further optimize immediate values by duplicating some entries
+;;; depending on the expected rep-type, to avoid unnecessary coercions.
+(defun optimize-cxx-data (objects)
+  (flet ((optimize-vv (object)
+           (let ((value (vv-value object)))
+             (ext:if-let ((vv (and (not (vv-always object))
+                                   (or (try-inline-core-sym value)
+                                       (try-value-c-inliner value)
+                                       (add-static-constant value)
+                                       (try-immediate-value value)))))
+               (update-vv object vv)
+               (insert-vv object)))))
+    (map nil #'optimize-vv objects)))
+
+(defun add-keywords (keywords)
+  ;; We have to build, in the vector VV[], a sequence with all the keywords
+  ;; that this function uses. It does not matter whether each keyword has
+  ;; appeared separately before, because cl_parse_key() needs the whole
+  ;; sequence. However, we can reuse keywords sequences from other functions
+  ;; when they coincide with ours. See C2LAMBDA-EXPR.
+  (ext:if-let ((x (search keywords *permanent-objects*
+                          :test #'(lambda (k record)
+                                    (and (vv-always record)
+                                         (eq k (vv-value record)))))))
+    (elt *permanent-objects* x)
+    (prog1 (insert-vv (make-vv :value (pop keywords) :always t :used-p t))
+      (dolist (k keywords)
+        (insert-vv (make-vv :value k :always t :used-p t))))))
+
+
 (defun wt-vv-index (index permanent-p)
   (cond ((not (numberp index))
          (wt index))
@@ -239,14 +397,26 @@
         (t
          (wt "VVtemp[" index "]"))))
 
+(defun wt-vv-value (vv value)
+  (etypecase value
+    ((eql CL:T)      (wt "ECL_T"))
+    ((eql CL:NIL)    (wt "ECL_NIL"))
+    (fixnum          (wt-fixnum value vv))
+    (character       (wt-character value vv))
+    (float           (wt-number value vv))
+    ((complex float) (wt-number value vv))))
+
+(defun wt-vv (vv-loc)
+  (setf (vv-used-p vv-loc) t)
+  (let ((index (vv-location vv-loc)))
+    (if (null index)
+        (wt-vv-value vv-loc (vv-value vv-loc))
+        (wt-vv-index index (vv-permanent-p vv-loc)))))
+
 (defun set-vv-index (loc index permanent-p)
   (wt-nl) (wt-vv-index index permanent-p) (wt "= ")
   (wt-coerce-loc :object loc)
   (wt ";"))
-
-(defun wt-vv (vv-loc)
-  (setf (vv-used-p vv-loc) t)
-  (wt-vv-index (vv-location vv-loc) (vv-permanent-p vv-loc)))
 
 (defun set-vv (loc vv-loc)
   (setf (vv-used-p vv-loc) t)

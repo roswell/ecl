@@ -18,11 +18,18 @@
 ;;; The following routines help in determining these types, and also in moving
 ;;; data from one location to another.
 
+;;; VV represents an object referenced in the compiled program. In the first
+;;; pass VV instances are added to the vector *REFERENCED-OBJECT*, and in the
+;;; second pass the backend decides if the referenced object can be inlined, or
+;;; if it needs to be put in the data segment and initialized at load-time.
+
 (defstruct vv
   (location nil)
   (used-p nil)
+  (always nil)       ; when true then vv is never optimized
   (permanent-p t)
-  (value nil))
+  (value nil)
+  (rep-type :object))
 
 ;;; When the value is the "empty location" then it was created to be filled
 ;;; later and the real type of the object is not known. See DATA-EMPTY-LOC.
@@ -48,14 +55,6 @@
         ((atom loc) 'T)
         (t
          (case (first loc)
-           (FIXNUM-VALUE 'FIXNUM)
-           (CHARACTER-VALUE (type-of (code-char (second loc))))
-           (DOUBLE-FLOAT-VALUE 'DOUBLE-FLOAT)
-           (SINGLE-FLOAT-VALUE 'SINGLE-FLOAT)
-           (LONG-FLOAT-VALUE 'LONG-FLOAT)
-           (CSFLOAT-VALUE 'SI:COMPLEX-SINGLE-FLOAT)
-           (CDFLOAT-VALUE 'SI:COMPLEX-DOUBLE-FLOAT)
-           (CLFLOAT-VALUE 'SI:COMPLEX-LONG-FLOAT)
            (FFI:C-INLINE (let ((type (first (second loc))))
                            (cond ((and (consp type) (eq (first type) 'VALUES)) T)
                                  ((lisp-type-p type) type)
@@ -69,20 +68,12 @@
 (defun loc-representation-type (loc)
   (cond ((member loc '(NIL T)) :object)
         ((var-p loc) (var-rep-type loc))
-        ((vv-p loc) :object)
+        ((vv-p loc) (vv-rep-type loc))
         ((numberp loc) (lisp-type->rep-type (type-of loc)))
         ((eq loc 'TRASH) :void)
         ((atom loc) :object)
         (t
          (case (first loc)
-           (FIXNUM-VALUE :fixnum)
-           (CHARACTER-VALUE (if (<= (second loc) 255) :unsigned-char :wchar))
-           (DOUBLE-FLOAT-VALUE :double)
-           (SINGLE-FLOAT-VALUE :float)
-           (LONG-FLOAT-VALUE :long-double)
-           (CSFLOAT-VALUE :csfloat)
-           (CDFLOAT-VALUE :cdfloat)
-           (CLFLOAT-VALUE :clfloat)
            (FFI:C-INLINE (let ((type (first (second loc))))
                            (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
                                  ((lisp-type-p type) (lisp-type->rep-type type))
@@ -144,14 +135,6 @@
 ;;;     ( COERCE-LOC representation-type location)
 ;;;     ( FDEFINITION vv-index )
 ;;;     ( MAKE-CCLOSURE cfun )
-;;;     ( FIXNUM-VALUE fixnum-value )
-;;;     ( CHARACTER-VALUE character-code )
-;;;     ( LONG-FLOAT-VALUE long-float-value vv )
-;;;     ( DOUBLE-FLOAT-VALUE double-float-value vv )
-;;;     ( SINGLE-FLOAT-VALUE single-float-value vv )
-;;;     ( CSFLOAT-VALUE csfloat-value vv )
-;;;     ( CDFLOAT-VALUE cdfloat-value vv )
-;;;     ( CLFLOAT-VALUE clfloat-value vv )
 ;;;     ( STACK-POINTER index ) retrieve a value from the stack
 ;;;     ( SYS:STRUCTURE-REF loc slot-name-vv slot-index )
 ;;;     ( THE type location )
@@ -185,9 +168,7 @@
 
 (defun loc-in-c1form-movable-p (loc)
   "A location that is in a C1FORM and can be moved"
-  (cond ((member loc '(t nil))
-         t)
-        ((numberp loc)
+  (cond ((numberp loc)
          t)
         ((stringp loc)
          t)
@@ -201,12 +182,7 @@
         ((eq (first loc) 'THE)
          (loc-in-c1form-movable-p (third loc)))
         ((member (setf loc (car loc))
-                 '(VV VV-TEMP FIXNUM-VALUE CHARACTER-VALUE
-                   DOUBLE-FLOAT-VALUE SINGLE-FLOAT-VALUE LONG-FLOAT-VALUE
-                   #+complex-float CSFLOAT-VALUE
-                   #+complex-float CDFLOAT-VALUE
-                   #+complex-float CLFLOAT-VALUE
-                   KEYVARS))
+                 '(VV VV-TEMP KEYVARS))
          t)
         (t
          (baboon :format-control "Unknown location ~A found in C1FORM"
@@ -219,11 +195,7 @@
                 (eq (sixth loc) 'cl:VALUES)))))
 
 (defun loc-immediate-value-p (loc)
-  (cond ((eq loc t)
-         (values t t))
-        ((eq loc nil)
-         (values t nil))
-        ((numberp loc)
+  (cond ((numberp loc)
          (values t loc))
         ((vv-p loc)
          (let ((value (vv-value loc)))
@@ -234,13 +206,6 @@
          (values nil nil))
         ((eq (first loc) 'THE)
          (loc-immediate-value-p (third loc)))
-        ((member (first loc)
-                 '(fixnum-value long-float-value
-                   double-float-value single-float-value
-                   csfloat-value cdfloat-value clfloat-value))
-         (values t (second loc)))
-        ((eq (first loc) 'character-value)
-         (values t (code-char (second loc))))
         (t
          (values nil nil))))
 

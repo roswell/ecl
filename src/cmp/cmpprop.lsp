@@ -53,7 +53,7 @@
 
 (defun p1var (form var loc)
   ;; Use the type of C1FORM because it might have been coerced by a THE form.
-  (let* ((loc-type (if loc (values-type-primary-type (p1propagate loc)) t))
+  (let* ((loc-type (if loc (object-type (vv-value loc)) t))
          (var-type (var-type var))
          (type (type-and (type-and loc-type var-type)
                          (c1form-primary-type form))))
@@ -92,7 +92,6 @@
     values-type))
 
 (defun p1fcall (c1form fun args fun-val call-type)
-  (declare (ignore fun))
   (p1propagate fun)
   (p1propagate-list args)
   (ecase call-type
@@ -117,7 +116,6 @@
      (p1trivial c1form))))
 
 (defun p1mcall (c1form fun args fun-val call-type)
-  (declare (ignore fun))
   (p1propagate fun)
   (p1propagate-list args)
   (ecase call-type

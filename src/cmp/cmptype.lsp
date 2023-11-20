@@ -50,10 +50,10 @@
                                  ,@(when (member :complex-float *features*)
                                      '((si:complex-single-float . #c(0.0f0 0.0f0))
                                        (si:complex-double-float . #c(0.0d0 0.0d0))
-                                       (si:complex-single-float . #c(0.0l0 0.0l0)))))
+                                       (si:complex-long-float . #c(0.0l0 0.0l0)))))
                                :test #'subtypep))))
     (if new-value
-        (c1constant-value new-value :always t)
+        (c1constant-value new-value)
         (c1nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,7 +67,7 @@
     (if found
         (multiple-value-bind (req-types opt-types rest-flag key-flag
                                         key-types allow-other-keys)
-            (si::process-lambda-list arg-types 'ftype)
+            (si:process-lambda-list arg-types 'ftype)
           (declare (ignore rest-flag key-flag allow-other-keys))
           (list
            (loop for var in requireds
@@ -167,7 +167,7 @@
     (cond ((and trivial valid)
            value)
           ((multiple-value-setq (valid value) (constant-value-p value env))
-           (si::maybe-quote value))
+           (si:maybe-quote value))
           (t
            (ext:with-clean-symbols (%value)
              `(let* ((%value ,value))

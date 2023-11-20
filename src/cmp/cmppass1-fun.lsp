@@ -141,7 +141,7 @@
   (let* ((*current-function* fun)
          (*cmp-env* (setf (fun-cmp-env fun) (cmp-env-mark 'SI:FUNCTION-BOUNDARY)))
          (setjmps *setjmps*)
-         (decl (si::process-declarations (rest lambda-list-and-body)))
+         (decl (si:process-declarations (rest lambda-list-and-body)))
          (global (and *use-c-global*
                       (assoc 'SI::C-GLOBAL decl)
                       (setf (fun-global fun) T)))
@@ -149,7 +149,7 @@
          cfun exported minarg maxarg proclamation-found-p)
     (multiple-value-bind (lambda-expr optional-type-checks keyword-type-checks)
         (c1lambda-expr lambda-list-and-body name
-                       (si::function-block-name name))
+                       (si:function-block-name name))
       (when (and no-entry (policy-debug-ihs-frame))
         (setf no-entry nil)
         (cmpnote "Ignoring SI::C-LOCAL declaration for~%~4I~A~%because the debug level is large" name))
@@ -223,7 +223,6 @@
 (defun c1lambda-expr (lambda-expr function-name block-name
                       &aux doc body ss is ts
                            other-decls
-                           new-variables
                            (type-checks '())
                            (*permanent-data* t)
                            (old-env *cmp-env*)
@@ -355,7 +354,7 @@
                        keyword-type-check-forms))))))
 
 (defun cmp-process-lambda-list (list)
-  (handler-case (si::process-lambda-list list 'function)
+  (handler-case (si:process-lambda-list list 'function)
     (error (c) (cmperr "Illegal lambda list ~S:~%~A" list c))))
 
 (defun lambda-form-allowed-nargs (lambda)

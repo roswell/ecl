@@ -134,7 +134,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (let (narg)
     (and (not (eq (fun-closure fun) 'CLOSURE))
          (= (fun-minarg fun) (setf narg (fun-maxarg fun)))
-         (<= narg si::c-arguments-limit)
+         (<= narg si:c-arguments-limit)
          narg)))
 
 (defun add-to-fun-referenced-vars (fun var-list)

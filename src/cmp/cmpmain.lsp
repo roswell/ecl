@@ -298,6 +298,7 @@ from the C language code.  NIL means \"do not create the file\"."
                            (apply t3local-fun args))))
                (compiler-pass1 disassembled-form)
                (compiler-pass/propagate-types)
+               (optimize-cxx-data *referenced-objects*)
                (ctop-write (compute-init-name "foo" :kind :fasl)
                            (if h-file h-file "")
                            (if data-file data-file ""))
@@ -312,7 +313,6 @@ from the C language code.  NIL means \"do not create the file\"."
 ;;; using WITH-COMPILATION-UNIT macro what seems to be a much better
 ;;; place to customize the source location. -- jd 2019-11-25
 (defun compiler-pass1 (object &optional source-offset)
-  (data-init)
   (if (streamp object)
       (do* ((eof '(NIL))
             (*compile-file-position* 0 (file-position object))

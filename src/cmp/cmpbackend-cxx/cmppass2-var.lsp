@@ -15,7 +15,7 @@
 (in-package #:compiler)
 
 (defun c2let-replaceable-var-ref-p (var form rest-forms)
-  (when (and (eq (c1form-name form) 'VAR)
+  (when (and (eq (c1form-name form) 'VARIABLE)
              (null (var-set-nodes var))
              (local var))
     (let ((var1 (c1form-arg 0 form)))
@@ -67,7 +67,7 @@
           ((LEXICAL CLOSURE SPECIAL GLOBAL)
            (case (c1form-name form)
              (LOCATION (bind (c1form-arg 0 form) var))
-             (VAR (bind (c1form-arg 0 form) var))
+             (VARIABLE (bind (c1form-arg 0 form) var))
              (t (bind-init form var))))
           (t ; local var
            (let ((*destination* var)) ; nil (ccb)
@@ -138,9 +138,11 @@
 
 ;;; When LOC is not NIL, then the variable is a constant.
 (defun c2var (c1form var loc)
-  (if loc
-      (c2location loc (c1form-arg 0 loc))
-      (c2location c1form var)))
+  (unwind-exit (precise-loc-type
+                (if (and loc (not (numberp (vv-location loc))))
+                    loc
+                    (or (try-const-c-inliner var) var))
+                (c1form-primary-type c1form))))
 
 (defun c2setq (c1form vref form)
   (declare (ignore c1form))
@@ -196,7 +198,7 @@
         (let ((*destination* var)) (c2expr* form))))
   (dolist (save saves) (set-var (cdr save) (car save)))
   (wt-nl-close-many-braces braces)
-  (unwind-exit nil))
+  (unwind-exit *vv-nil*))
 
 ;;; bind must be called for each variable in a lambda or let, once the value
 ;;; to be bound has been placed in loc.

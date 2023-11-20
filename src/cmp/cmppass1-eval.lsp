@@ -26,12 +26,7 @@
                 (make-c1form* 'LOCATION :type (object-type form)
                                         :args (add-symbol form)))
                ((constantp form *cmp-env*)
-                ;; FIXME the compiler inlines some constants in the first pass.
-                ;; This is about to be addressed soon. For now we respect that.
-                (let ((value (symbol-value form)))
-                  (if (assoc value *optimizable-constants*)
-                      (c1constant-symbol-value form value)
-                      (c1var form (c1constant-symbol-value form value)))))
+                (c1var form (c1constant-symbol-value form (symbol-value form))))
                (t
                 (c1var form nil))))
         ((consp form)
@@ -46,7 +41,7 @@
                  ((and (consp fun) (eq (car fun) 'LAMBDA))
                   (c1funcall form))
                  (t (cmperr "~s is not a legal function name." fun)))))
-        (t (c1constant-value form :always t))))
+        (t (c1constant-value form))))
 
 (defun c1expr (form)
   (let ((*current-form* form))
@@ -55,9 +50,19 @@
        (when (c1form-p form)
          (return form)))))
 
-(defvar *c1nil* (make-c1form* 'LOCATION :type (object-type nil) :args nil))
+(defvar *vv-nil*
+  (make-vv :value CL:NIL))
+
+(defvar *vv-t*
+  (make-vv :value CL:T))
+
+(defvar *c1nil*
+  (make-c1form* 'LOCATION :type (object-type nil) :args *vv-nil*))
+
+(defvar *c1t*
+  (make-c1form* 'LOCATION :type (object-type t) :args *vv-t*))
+
 (defun c1nil () *c1nil*)
-(defvar *c1t* (make-c1form* 'LOCATION :type (object-type t) :args t))
 (defun c1t () *c1t*)
 
 (defun c1with-backend (forms)
@@ -122,59 +127,19 @@
        (return form))
      (setf form new-form))))
 
-(defun c1constant-value (val &key always)
+(defun c1constant-value (val)
   (cond
-    ;; FIXME includes in c1 pass.
-    ((ext:when-let ((x (assoc val *optimizable-constants*)))
-       (pushnew "#include <float.h>" *clines-string-list*)
-       (pushnew "#include <complex.h>" *clines-string-list*)
-       (setf x (cdr x))
-       (if (listp x)
-           (c1expr x)
-           x)))
     ((eq val nil) (c1nil))
     ((eq val t) (c1t))
-    ((ext:fixnump val)
-     (make-c1form* 'LOCATION :type 'FIXNUM :args (list 'FIXNUM-VALUE val)))
-    ((characterp val)
-     (make-c1form* 'LOCATION :type 'CHARACTER
-                             :args (list 'CHARACTER-VALUE (char-code val))))
-    ((typep val 'DOUBLE-FLOAT)
-     (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT
-                             :args (list 'DOUBLE-FLOAT-VALUE val (add-object val))))
-    ((typep val 'SINGLE-FLOAT)
-     (make-c1form* 'LOCATION :type 'SINGLE-FLOAT
-                             :args (list 'SINGLE-FLOAT-VALUE val (add-object val))))
-    ((typep val 'LONG-FLOAT)
-     (make-c1form* 'LOCATION :type 'LONG-FLOAT
-                             :args (list 'LONG-FLOAT-VALUE val (add-object val))))
-    #+sse2
-    ((typep val 'EXT:SSE-PACK)
-     (c1constant-value/sse val))
-    (always
-     (make-c1form* 'LOCATION :type `(eql ,val)
-                             :args (add-object val)))
-    (t nil)))
+    ((make-c1form* 'LOCATION :type `(eql ,val)
+                             :args (add-object val)))))
 
 ;;; To inline a constant it must be possible to externalize its value or copies
 ;;; of the value must be EQL to each other.
 (defun c1constant-symbol-value (name val)
   (declare (ignore name))
-  (c1constant-value val))
-
-#+sse2
-(defun c1constant-value/sse (value)
-  (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
-         (elt-type (ext:sse-pack-element-type value)))
-    (multiple-value-bind (wrapper rtype)
-        (case elt-type
-          (cl:single-float (values "_mm_castsi128_ps" :float-sse-pack))
-          (cl:double-float (values "_mm_castsi128_pd" :double-sse-pack))
-          (otherwise       (values ""                 :int-sse-pack)))
-      `(ffi:c-inline () () ,rtype
-                     ,(format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
-                              wrapper (coerce bytes 'list))
-                     :one-liner t :side-effects nil))))
+  (let ((si:*compiler-constants* t))    ; don't create make-load forms
+    (add-object val)))
 
 (defun c1if (args)
   (check-args-number 'IF args 2 3)

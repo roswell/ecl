@@ -40,7 +40,7 @@
 
 (defun alien-declaration-p (name &optional (env *cmp-env*))
   (and (symbolp name)
-       (member name (cmp-env-search-declaration 'alien env si::*alien-declarations*)
+       (member name (cmp-env-search-declaration 'alien env si:*alien-declarations*)
                :test 'eq)))
 
 (defun policy-declaration-p (name)
@@ -156,7 +156,7 @@ special variable declarations, as these have been extracted before."
       env)
     (cl:DECLARATION
      (validate-alien-declaration (rest decl) #'cmperr)
-     (cmp-env-extend-declaration 'alien (rest decl) env si::*alien-declarations*))
+     (cmp-env-extend-declaration 'alien (rest decl) env si:*alien-declarations*))
     ((SI::C-LOCAL SI::C-GLOBAL SI::NO-CHECK-TYPE :READ-ONLY)
      env)
     ((cl:DYNAMIC-EXTENT cl:IGNORABLE SI:FUNCTION-BLOCK-NAME)

@@ -16,7 +16,7 @@
 
 (defun c1quote (args)
   (check-args-number 'QUOTE args 1 1)
-  (c1constant-value (car args) :always t))
+  (c1constant-value (car args)))
 
 (defun c1declare (args)
   (cmperr "The declaration ~s was found in a bad place." (cons 'DECLARE args)))
@@ -65,9 +65,10 @@
   (check-args-number 'FUNCTION args 1 1)
   (let ((fun (car args)))
     (cond ((si:valid-function-name-p fun)
+           (add-fname fun)
            (ext:if-let ((funob (local-function-ref fun t)))
              (let ((var (fun-var funob)))
-               (add-to-read-nodes var (make-c1form* 'VAR :args var nil)))
+               (add-to-read-nodes var (make-c1form* 'VARIABLE :args var nil)))
              (make-c1form* 'FUNCTION
                            :type 'FUNCTION
                            :sp-change (not (and (symbolp fun)
@@ -78,7 +79,7 @@
                   "The lambda expression ~s is illegal." fun)
            (let (name body)
              (if (eq (first fun) 'lambda)
-                 (let ((decl (si::process-declarations (cddr fun))))
+                 (let ((decl (si:process-declarations (cddr fun))))
                    (setf name (or (function-block-name-declaration decl)
                                   (gensym "LAMBDA"))
                          body (rest fun)))

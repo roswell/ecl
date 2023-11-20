@@ -190,31 +190,21 @@ lines are inserted, but the order is preserved")
 (defvar *compile-time-too* nil)
 (defvar *not-compile-time* nil)
 
-(defvar *permanent-data* nil)           ; detemines whether we use *permanent-objects*
-                                        ; or *temporary-objects*
-(defvar *permanent-objects* nil)        ; holds { vv-record }*
-(defvar *temporary-objects* nil)        ; holds { vv-record }*
+;;; Determines whether the object may be released after the initialization
+(defvar *permanent-data* nil)
+(defvar *referenced-objects* nil)       ; holds { vv-record }*
+
 (defvar *load-objects* nil)             ; hash with association object -> vv-location
 (defvar *load-time-values* nil)         ; holds { ( vv-index form ) }*,
 ;;;  where each vv-index should be given an object before
 ;;;  defining the current function during loading process.
-(defvar *setf-definitions* nil)         ; C forms to find out (SETF fname) locations
 
-(defvar *optimizable-constants* nil)    ; (value . c1form) pairs for inlining constants
-
-(defvar *use-static-constants-p*    ; T/NIL flag to determine whether one may
-  #+ecl-min t #-ecl-min nil)            ; generate lisp constant values as C structs
-(defvar *static-constants* nil)         ; constants that can be built as C values
-                                        ; holds { ( object c-variable constant ) }*
-
-(defvar si:*compiler-constants* nil)    ; a vector with all constants
-                                        ; only used in COMPILE
+(defvar si:*compiler-constants* nil)    ; a vector with all constants only used
+                                        ; in COMPILE
 
 (defvar *global-vars* nil)              ; variables declared special
 (defvar *global-funs* nil)              ; holds { fun }*
 (defvar *use-c-global* nil)             ; honor si::c-global declaration
-(defvar *global-cfuns-array* nil)       ; holds { fun }*
-(defvar *local-funs* nil)               ; holds { fun }*
 (defvar *top-level-forms* nil)          ; holds { top-level-form }*
 (defvar *make-forms* nil)               ; holds { top-level-form }*
 
@@ -251,20 +241,14 @@ be deleted if they have been opened with LoadLibrary.")
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* nil)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
-    (*setf-definitions* nil)
     (*make-forms* nil)
-    (*static-constants* nil)
-    (*permanent-objects* nil)
-    (*temporary-objects* nil)
-    (*local-funs* nil)
+    (*referenced-objects* (make-array 256 :adjustable t :fill-pointer 0))
     (*global-vars* nil)
     (*global-funs* nil)
-    (*global-cfuns-array* nil)
     (*undefined-vars* nil)
     (*top-level-forms* nil)
     (*compile-time-too* nil)
     (*clines-string-list* '())
     (si::*defun-inline-hook* 'maybe-install-inline-function)
-    (*machine* (or *machine* *default-machine*))
-    (*optimizable-constants* (make-optimizable-constants *machine*))))
+    (*machine* (or *machine* *default-machine*))))
 

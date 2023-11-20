@@ -51,7 +51,7 @@
       (progn
         (let ((*destination* 'VALUES))
           (c2expr* val))
-        (let ((name (add-symbol (blk-name blk))))
+        (let ((name (get-object (blk-name blk))))
           (wt-nl "cl_return_from(" (blk-var blk) "," name ");")))
       (let ((*destination* (blk-destination blk))
             (*exit* (blk-exit blk)))
@@ -137,7 +137,7 @@
 (defun c2throw (c1form tag val &aux loc)
   (declare (ignore c1form))
   (case (c1form-name tag)
-    ((VAR LOCATION) (setq loc (c1form-arg 0 tag)))
+    ((VARIABLE LOCATION) (setq loc (c1form-arg 0 tag)))
     (t (setq loc (make-temp-var))
      (let ((*destination* loc)) (c2expr* tag))))
   (let ((*destination* 'VALUES)) (c2expr* val))

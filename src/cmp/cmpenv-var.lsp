@@ -32,7 +32,7 @@
 
 (defun special-variable-p (name)
   "Return true if NAME is associated to a special variable in the lexical environment."
-  (or (si::specialp name)
+  (or (si:specialp name)
       (check-global name)
       (let ((v (cmp-env-search-var name *cmp-env-root*)))
         ;; Fixme! Revise the declamation code to ensure whether
@@ -40,7 +40,7 @@
         (and v (eq (var-kind v) 'SPECIAL)))))
 
 (defun constant-variable-p (name)
-  (si::constp name))
+  (si:constp name))
 
 (defun local-variable-p (name &optional (env *cmp-env*))
   (let ((record (cmp-env-search-var name env)))

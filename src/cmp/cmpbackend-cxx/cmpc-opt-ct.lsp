@@ -19,31 +19,23 @@
 (defun make-single-constant-optimizer (name c-value)
   (cond ((symbolp name)
          (let* ((value (symbol-value name))
-                (type (lisp-type->rep-type (type-of value))))
-           (cons value `(ffi:c-inline () () ,type ,c-value
-                                      :one-liner t :side-effects nil))))
+                (rep-type (lisp-type->rep-type (type-of value)))
+                (location (make-vv :location c-value :value value :rep-type rep-type)))
+           (cons value location)))
         ((floatp name)
          (let* ((value name)
-                (type (type-of value))
-                (loc-type (case type
-                            (cl:single-float 'single-float-value)
-                            (cl:double-float 'double-float-value)
-                            (cl:long-float 'long-float-value)
-                            (si:complex-single-float 'csfloat-value)
-                            (si:complex-double-float 'cdfloat-value)
-                            (si:complex-long-float 'clfloat-value)))
-                (location (make-vv :location c-value :value value)))
-           (cons value (make-c1form* 'LOCATION :type type
-                                     :args (list loc-type value location)))))
+                (location (make-vv :location c-value :value value :rep-type :object)))
+           (cons value location)))
         (t
-         (cons name (make-c1form* 'LOCATION :type (type-of name)
-                                  :args (make-vv :location c-value
-                                                 :value name))))))
+         (cons name (make-vv :location c-value :value name)))))
 
 (defun make-optimizable-constants (machine)
   (loop for (value name) in (optimizable-constants-list machine)
      collect (make-single-constant-optimizer value name)))
 
+;;; FIXME this is messy - numbers are lisp objects and symbols are native
+;;; types. We should provide both alternatives for different expected types.
+;;; See WT-TO-OBJECT-CONVERSION
 (defun optimizable-constants-list (machine)
   (append
    ;; Constants that appear everywhere
