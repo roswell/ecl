@@ -6,3 +6,56 @@ Unlike the other Gray stream functions, @code{close} is not specialized
 on @code{t} for @var{stream}. This decision has been taken mainly for
 the compatibility reasons with some libraries.
 @end defun
+
+@defun {stream-file-position} stream &optional position
+This is used to implement @code{file-position}. When @code{position}
+is not provided it should return the current file position of the
+stream as non-negative integer or @code{nil} if the file position
+cannot be determined. When @code{position} is supplied the file
+position of the stream should be set to that value. If setting the
+position is successful then @code{t} should be returned, otherwise
+@code{nil} should be returned. The default method always returns
+@code{nil}.
+@end defun
+
+@defun {stream-file-length} stream
+This is used to implement @code{file-length}. It returns either a
+non-negative integer or @code{nil} if the concept of file length is
+not meaningful for the stream. The default method will signal a
+@code{type-error} with an expected type of @code{file-stream}. This is
+required to conform with the ``Exceptional Situations'' section of
+@code{file-length} in the ANSI specification.
+@end defun
+
+@defun {stream-interactive-p} stream
+This is used to implement @code{interactive-stream-p}. It returns a
+boolean indicating if the stream is interactive. The default method
+always returns @code{nil}.
+@end defun
+
+@defun {stream-line-length} stream
+Allows the default line length to be specified for the stream. It
+returns either a non-negative integer or @code{nil} if the concept of
+line length is not meaningful for the stream. This value is only used
+if @code{*print-right-margin*} is @code{nil}. The line length is used
+by the pretty printer and by the format justification directive. The
+default method returns @code{nil}.
+@end defun
+
+@defun {stream-read-sequence} stream sequence &optional start end
+This is used to implement @code{read-sequence}. It should follow the
+semantics in the ANSI specification. It returns the position of the
+first element in the sequence that was not updated. The default method
+calls @code{stream-read-char} or @code{stream-read-byte} repeatedly
+based on the type returned by @code{stream-element-type}. Element
+access to the sequence is done via @code{elt}.
+@end defun
+
+@defun {stream-write-sequence} stream sequence &optional start end
+This is used to implement @code{write-sequence}. It should follow the
+semantics in the ANSI specification. It returns sequence without
+modification. The default method calls @code{stream-wrte-char} or
+@code{stream-write-byte} repeatedly based on the type returned by
+@code{stream-element-type}. Element access to the sequence is done via
+@code{elt}.
+@end defun
