@@ -245,7 +245,7 @@
               (t
                (loop for v in output-vars
                      for i from 0
-                     do (let ((*destination* `(VALUE ,i))) (set-loc v)))
+                     do (set-loc `(VALUE ,i) v))
                (wt "cl_env_copy->nvalues = " (length output-vars) ";")
                'VALUEZ))))))
 

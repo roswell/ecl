@@ -139,8 +139,7 @@
            (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
            (wt-nl "return value0;"))
           (t
-           (let ((*destination* 'LEAVE))
-             (set-loc loc))
+           (set-loc 'LEAVE loc)
            (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
            (wt-nl "return value0;")))))
 
@@ -159,12 +158,11 @@
            ;; Save the value if LOC may possibly refer to special binding.
            (let* ((*temp* *temp*)
                   (temp (make-temp-var)))
-             (let ((*destination* temp))
-               (set-loc loc)) ; temp <- loc
+             (set-loc temp loc)
              (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
-             (set-loc temp))) ; *destination* <- temp
+             (set-loc *destination* temp)))
           (t
-           (set-loc loc)
+           (set-loc *destination* loc)
            (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)))
     ;; When JUMP-P is NULL then we "fall through" onto the exit block.
     (when jump-p

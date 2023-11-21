@@ -105,7 +105,6 @@
       ;; No UNWIND-EXIT, so we must close the frame manually.
       (wt-nl "ecl_stack_frame_close(" frame ");"))
     (when return-p
-      (let ((*destination* `(ffi-data-ref "output" ,return-type-code)))
-        (set-loc "aux"))
+      (set-loc `(ffi-data-ref "output" ,return-type-code) "aux")
       (wt-nl "return output;"))
     (wt-nl-close-brace)))

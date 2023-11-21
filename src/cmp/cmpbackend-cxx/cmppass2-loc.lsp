@@ -162,13 +162,13 @@
          (wt "(" vv "->symbol.gfdef)")))
       (t
        ;; #'(SETF symbol)
-       (let ((set-loc (assoc name *setf-definitions*)))
-         (unless set-loc
+       (let ((setf-loc (assoc name *setf-definitions*)))
+         (unless setf-loc
            (let* ((setf-vv (data-empty-loc*))
                   (name-vv (get-object name)))
-             (setf set-loc (list name setf-vv name-vv))
-             (push set-loc *setf-definitions*)))
-         (wt "ECL_CONS_CAR(" (second set-loc) ")"))))))
+             (setf setf-loc (list name setf-vv name-vv))
+             (push setf-loc *setf-definitions*)))
+         (wt "ECL_CONS_CAR(" (second setf-loc) ")"))))))
 
 (defun environment-accessor (fun)
   (let* ((env-var (env-var-name *env-lvl*))
@@ -383,37 +383,32 @@
 ;;; SET-LOC
 ;;;
 
-(defun set-unknown-loc (loc)
-  (declare (ignore loc))
-  (unknown-location 'set-loc *destination*))
+(defun set-unknown-loc (destination loc)
+  (unknown-location 'set-loc destination))
 
-(defun set-loc (loc &aux fd)
-  (let ((destination *destination*))
-    (cond ((eq destination loc))
-          ((symbolp destination)
-           (funcall (gethash destination *set-loc-dispatch-table*
-                             'set-unknown-loc)
-                    loc))
-          ((var-p destination)
-           (set-var loc destination))
-          ((vv-p destination)
-           (set-vv loc destination))
-          ((atom destination)
-           (unknown-location 'set-loc destination))
-          (t
-           (let ((fd (gethash (first destination) *set-loc-dispatch-table*)))
-             (if fd
-                 (apply fd loc (rest destination))
-                 (progn
-                   (wt-nl)
-                   (wt-loc destination) (wt " = ")
-                   (wt-coerce-loc (loc-representation-type *destination*) loc)
-                   (wt ";"))))))))
+(defun set-loc (destination loc &aux fd)
+  (cond ((eq destination loc))
+        ((symbolp destination)
+         (funcall (gethash destination *set-loc-dispatch-table* 'set-unknown-loc)
+                  loc))
+        ((var-p destination)
+         (set-var loc destination))
+        ((vv-p destination)
+         (set-vv loc destination))
+        ((atom destination)
+         (unknown-location 'set-loc destination loc))
+        (t
+         (ext:if-let ((fd (gethash (first destination) *set-loc-dispatch-table*)))
+           (apply fd loc (rest destination))
+           (progn
+             (wt-nl)
+             (wt-loc destination) (wt " = ")
+             (wt-coerce-loc (loc-representation-type *destination*) loc)
+             (wt ";"))))))
 
 (defun set-the-loc (loc type orig-loc)
   (declare (ignore type))
-  (let ((*destination* orig-loc))
-    (set-loc loc)))
+  (set-loc orig-loc loc))
                  
 (defun set-valuez-loc (loc)
   (cond ((eq loc 'VALUEZ))

@@ -244,8 +244,10 @@
                 (let ((*destination* (make-temp-var)))
                   (c2expr* form)
                   (push (cons var *destination*) saves)))))
-        (let ((*destination* var)) (c2expr* form))))
-  (dolist (save saves) (set-var (cdr save) (car save)))
+        (let ((*destination* var))
+          (c2expr* form))))
+  (dolist (save saves)
+    (set-var (cdr save) (car save)))
   (wt-nl-close-many-braces braces)
   (unwind-exit *vv-nil*))
 
