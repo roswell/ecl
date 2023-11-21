@@ -132,14 +132,14 @@
   ;; Optionally register the variables with the IHS frame for debugging
   (if (policy-debug-variable-bindings)
       (let ((*unwind-exit* *unwind-exit*))
-        (wt-nl-open-brace)
-        (let* ((env (build-debug-lexical-env vars)))
-          (when env (push 'IHS-ENV *unwind-exit*))
-          (c2expr body)
-          (wt-nl-close-brace)
-          (when env (pop-debug-lexical-env))))
+        (with-lexical-scope ()
+          (ext:if-let ((env (build-debug-lexical-env vars)))
+            (progn
+              (push 'IHS-ENV *unwind-exit*)
+              (c2expr body)
+              (pop-debug-lexical-env))
+            (c2expr body))))
       (c2expr body))
-
   (close-inline-blocks))
 
 (defun c2multiple-value-bind (c1form vars init-form body)
@@ -209,14 +209,13 @@
          (lcl (next-lcl))
          (sym-loc (make-lcl-var))
          (val-loc (make-lcl-var)))
-    (wt-nl-open-brace)
-    (wt-nl "cl_object " sym-loc ", " val-loc "; cl_index " lcl ";")
-    (let ((*destination* sym-loc)) (c2expr* symbols))
-    (let ((*destination* val-loc)) (c2expr* values))
-    (let ((*unwind-exit* (cons lcl *unwind-exit*)))
-      (wt-nl lcl " = ecl_progv(cl_env_copy, " sym-loc ", " val-loc ");")
-      (c2expr body)
-      (wt-nl-close-brace))))
+    (with-lexical-scope ()
+      (wt-nl "cl_object " sym-loc ", " val-loc "; cl_index " lcl ";")
+      (let ((*destination* sym-loc)) (c2expr* symbols))
+      (let ((*destination* val-loc)) (c2expr* values))
+      (let ((*unwind-exit* (cons lcl *unwind-exit*)))
+        (wt-nl lcl " = ecl_progv(cl_env_copy, " sym-loc ", " val-loc ");")
+        (c2expr body)))))
 
 (defun c2psetq (c1form vrefs forms
                 &aux (*lcl* *lcl*) (saves nil) (braces *opened-c-braces*))
@@ -373,29 +372,28 @@
     (let* ((*lcl* *lcl*)
            (useful-extra-vars (some #'useful-var-p (nthcdr min-values vars)))
            (nr (make-lcl-var :type :int)))
-      (wt-nl-open-brace)
-      (when useful-extra-vars
-        ;; Make a copy of env->nvalues before assigning to any variables
-        (wt-nl "const int " nr " = cl_env_copy->nvalues;"))
+      (with-lexical-scope ()
+        (when useful-extra-vars
+          ;; Make a copy of env->nvalues before assigning to any variables
+          (wt-nl "const int " nr " = cl_env_copy->nvalues;"))
 
-      ;; We know that at least MIN-VALUES variables will get a value
-      (dotimes (i min-values)
-        (when vars
-          (let ((v (pop vars))
-                (loc (values-loc-or-value0 i)))
-            (bind-or-set loc v use-bind))))
+        ;; We know that at least MIN-VALUES variables will get a value
+        (dotimes (i min-values)
+          (when vars
+            (let ((v (pop vars))
+                  (loc (values-loc-or-value0 i)))
+              (bind-or-set loc v use-bind))))
 
-      ;; Assign to other variables only when the form returns enough values
-      (when useful-extra-vars
-        (let ((tmp (make-lcl-var)))
-          (wt-nl "cl_object " tmp ";")
-          (loop for v in vars
-             for i from min-values
-             for loc = (values-loc-or-value0 i)
-             do (when (useful-var-p v)
-                  (wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
-                  (bind-or-set tmp v use-bind)))))
-      (wt-nl-close-brace))
+        ;; Assign to other variables only when the form returns enough values
+        (when useful-extra-vars
+          (let ((tmp (make-lcl-var)))
+            (wt-nl "cl_object " tmp ";")
+            (loop for v in vars
+                  for i from min-values
+                  for loc = (values-loc-or-value0 i)
+                  do (when (useful-var-p v)
+                       (wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
+                       (bind-or-set tmp v use-bind)))))))
     'VALUE0))
 
 (defun c2multiple-value-setq (c1form vars form)

@@ -90,21 +90,20 @@
              (setf comma ","))
     (wt ")")
     (wt-h ");")
-    (wt-nl-open-brace)
-    (when return-p
-      (wt-nl return-type-name " output;"))
-    (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
-    (wt-nl "cl_object aux;")
-    (with-stack-frame (frame)
-      (loop for var in vars
-            and type in arg-types
-            and ct in arg-type-constants
-            do (wt-nl "ecl_stack_frame_push(" frame "," `(ffi-data-ref ,var ,ct) ");"))
-      (wt-nl "aux = ecl_apply_from_stack_frame(" frame ","
-             "ecl_fdefinition(" c-name-constant "));")
-      ;; No UNWIND-EXIT, so we must close the frame manually.
-      (wt-nl "ecl_stack_frame_close(" frame ");"))
-    (when return-p
-      (set-loc `(ffi-data-ref "output" ,return-type-code) "aux")
-      (wt-nl "return output;"))
-    (wt-nl-close-brace)))
+    (with-lexical-scope ()
+      (when return-p
+        (wt-nl return-type-name " output;"))
+      (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
+      (wt-nl "cl_object aux;")
+      (with-stack-frame (frame)
+        (loop for var in vars
+              and type in arg-types
+              and ct in arg-type-constants
+              do (wt-nl "ecl_stack_frame_push(" frame "," `(ffi-data-ref ,var ,ct) ");"))
+        (wt-nl "aux = ecl_apply_from_stack_frame(" frame ","
+               "ecl_fdefinition(" c-name-constant "));")
+        ;; No UNWIND-EXIT, so we must close the frame manually.
+        (wt-nl "ecl_stack_frame_close(" frame ");"))
+      (when return-p
+        (set-loc `(ffi-data-ref "output" ,return-type-code) "aux")
+        (wt-nl "return output;")))))

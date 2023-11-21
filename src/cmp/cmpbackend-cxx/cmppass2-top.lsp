@@ -192,11 +192,9 @@
               (plusp *max-temp*)
               (plusp *max-env*)
               *ihs-used-p*)
-          (progn
-            (wt-nl-open-brace)
+          (with-lexical-scope ()
             (wt-function-locals)
-            (write-sequence body *compiler-output1*)
-            (wt-nl-close-brace))
+            (write-sequence body *compiler-output1*))
           (write-sequence body *compiler-output1*)))))
 
 (defun t2compiler-let (c1form symbols values body)

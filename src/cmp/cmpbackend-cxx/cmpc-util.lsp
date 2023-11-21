@@ -147,6 +147,12 @@
   (let ((code (incf *next-cfun*)))
     (format nil prefix code (lisp-to-c-name lisp-name))))
 
+(defmacro with-lexical-scope (() &body body)
+  `(progn
+     (wt-nl-open-brace)
+     ,@body
+     (wt-nl-close-brace)))
+
 
 ;;; *LAST-LABEL* holds the label# of the last used label. This is used by the
 ;;; code generator to avoid duplicated labels in the same scope.
@@ -177,25 +183,23 @@
 ;;; RETURN-FROM to intercept the control and eval UNWIND-PROTECT cleanup forms.
 ;;; ecl_frs_pop is emited by the exit manager or the caller. -- jd 2023-11-19
 (defmacro with-unwind-frame ((tag) handler-form &body body)
-  `(let ((*unwind-exit* (list* 'FRAME *unwind-exit*)))
-     (wt-nl-open-brace)
-     (wt-nl "ecl_frs_push(cl_env_copy," ,tag ");")
-     (wt-nl "if (__ecl_frs_push_result!=0) {")
-     ,handler-form
-     ,@(when body
-         `((wt-nl "} else {")
-           ,@body))
-     (wt-nl "}")
-     (wt-nl-close-brace)))
+  `(with-lexical-scope ()
+     (let ((*unwind-exit* (list* 'FRAME *unwind-exit*)))
+       (wt-nl "ecl_frs_push(cl_env_copy," ,tag ");")
+       (wt-nl "if (__ecl_frs_push_result!=0) {")
+       ,handler-form
+       ,@(when body
+           `((wt-nl "} else {")
+             ,@body))
+       (wt-nl "}"))))
 
 (defmacro with-stack-frame ((var &optional loc) &body body)
   (ext:with-gensyms (hlp)
-    `(let* ((,var ,(or loc "_ecl_inner_frame"))
-            (,hlp "_ecl_inner_frame_aux")
-            (*unwind-exit* (list* (list 'STACK ,var) *unwind-exit*)))
-       (wt-nl-open-brace)
-       (wt-nl "struct ecl_stack_frame " ,hlp ";")
-       (wt-nl *volatile* "cl_object " ,var
-              "=ecl_stack_frame_open(cl_env_copy,(cl_object)&" ,hlp ",0);")
-       ,@body
-       (wt-nl-close-brace))))
+    `(with-lexical-scope ()
+       (let* ((,var ,(or loc "_ecl_inner_frame"))
+              (,hlp "_ecl_inner_frame_aux")
+              (*unwind-exit* (list* (list 'STACK ,var) *unwind-exit*)))
+         (wt-nl "struct ecl_stack_frame " ,hlp ";")
+         (wt-nl *volatile* "cl_object " ,var
+                "=ecl_stack_frame_open(cl_env_copy,(cl_object)&" ,hlp ",0);")
+         ,@body))))
