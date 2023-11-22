@@ -54,7 +54,7 @@ access to the sequence is done via @code{elt}.
 @defun {stream-write-sequence} stream sequence &optional start end
 This is used to implement @code{write-sequence}. It should follow the
 semantics in the ANSI specification. It returns sequence without
-modification. The default method calls @code{stream-wrte-char} or
+modification. The default method calls @code{stream-write-char} or
 @code{stream-write-byte} repeatedly based on the type returned by
 @code{stream-element-type}. Element access to the sequence is done via
 @code{elt}.
