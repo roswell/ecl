@@ -19,7 +19,6 @@
    ;; Flags controlling the compiler behavior.
    "*COMPILER-BREAK-ENABLE*"
    "*COMPILE-PRINT*"
-   "*COMPILE-TO-LINKING-CALL*"
    "*COMPILE-VERBOSE*"
    "*COMPILER-FEATURES*"
    "*CC*"

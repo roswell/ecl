@@ -125,8 +125,8 @@
                                     :system-p t :c-file t :data-file t :h-file t
                                     ;;:shared-data-file "build:ecl.sdat"
                                     )))
-  #+CLOS
-  (let* ((c::*compile-to-linking-call* nil))
+  #+clos
+  (progn
     (mapc #'proclaim +ecl-optimization-settings+)
     (setq lsp-objects (append lsp-objects
                               (compile-if-old "build:clos;" +clos-module-files+

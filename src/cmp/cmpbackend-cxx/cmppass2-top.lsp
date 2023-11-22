@@ -179,10 +179,7 @@
         (*level* 0)
         (*env* 0)
         (*env-lvl* 0)
-        (*temp* 0)
-        (*compile-to-linking-call* nil)
-        (*compile-file-truename* (and form (c1form-file form)))
-        (*compile-file-position* (and form (c1form-file-position form))))
+        (*temp* 0))
     ;; We save the C body of the statement, indented, just in case
     ;; we need to add a {} section with the environment variables.
     (let ((body (let ((*opened-c-braces* (1+ *opened-c-braces*)))

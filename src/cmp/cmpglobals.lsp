@@ -71,10 +71,6 @@ running the compiler. It may be updated by running ")
 (defvar *machine* nil)
 
 ;;; --cmpcall.lsp--
-;;;
-;;; Whether to use linking calls.
-;;;
-(defvar *compile-to-linking-call* t)
 (defvar *compiler-declared-globals*)
 
 ;;; --cmpenv.lsp--
