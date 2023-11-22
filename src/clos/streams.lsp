@@ -95,6 +95,11 @@
   stream class that is defined, a method must be defined for this
   function, although it is permissible for it to always return NIL."))
 
+;; Extension from CLASP, CMUCL, SBCL, Mezzano and SICL
+
+(defgeneric stream-line-length (stream)
+  (:documentation "Return the stream line length or NIL."))
+
 (defgeneric stream-listen (stream)
   #+sb-doc
   (:documentation
@@ -411,6 +416,16 @@
   (declare (ignore stream))
   nil)
 
+;; LINE-LENGTH
+
+(defmethod stream-line-length ((stream fundamental-character-output-stream))
+  nil)
+
+(defmethod stream-line-length ((stream ansi-stream))
+  nil)
+
+(defmethod stream-line-length ((stream t))
+  (bug-or-error stream 'stream-line-length))
 
 ;; LISTEN
 
