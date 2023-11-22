@@ -85,13 +85,9 @@
 ;;;
 
 (defmacro with-cxx-env (() &body body)
-  `(let ((*inline-blocks* 0)
-         (*open-c-braces* 0)
-         (*temp* 0)
-         (*max-temp* 0)
+  `(let ((*opened-c-braces* 0)
+         (*inline-blocks* 0)
          (*next-cfun* 0)
-         (*last-label* 0)
-         (*unwind-exit* nil)
          (*inline-information*
            (ext:if-let ((r (machine-inline-information *machine*)))
              (si:copy-hash-table r)
@@ -103,6 +99,29 @@
          (*permanent-objects* (make-array 128 :adjustable t :fill-pointer 0))
          (*temporary-objects* (make-array 128 :adjustable t :fill-pointer 0))
          (*compiler-declared-globals* (make-hash-table)))
+     ,@body))
+
+;;; Block IR creation environment.
+;;; FIXME Still mixed with CXX bits. Clean this up while separating the backend.
+(defmacro with-bir-env ((&key env level volatile) &body body)
+  `(let* ((*lcl* 0)
+          (*temp* 0)
+          (*max-temp* 0)
+          (*lex* 0)
+          (*max-lex* 0)
+          (*env-lvl* 0)
+          (*env* ,env)
+          (*max-env* *env*)
+          (*level* ,level)
+          (*last-label* 0)
+          (*volatile* ,volatile)
+          ;;
+          (*ihs-used-p* nil)
+          (*aux-closure* nil)
+          ;;
+          (*exit* 'LEAVE)
+          (*unwind-exit* '(LEAVE))
+          (*destination* *exit*))
      ,@body))
 
 (defun-cached env-var-name (n) eql
