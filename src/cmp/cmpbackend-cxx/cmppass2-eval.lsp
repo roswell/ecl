@@ -138,7 +138,7 @@
                (let ((*destination* 'VALUE0))
                  (c2expr* f))
                (wt-nl "if (" 'VALUE0 "!=ECL_NIL) ")
-               (wt-open-brace) (unwind-jump normal-exit) (wt-nl-close-brace))
+               (unwind-cond normal-exit))
              (c2expr last))
            (unwind-exit 'VALUE0)))))
 

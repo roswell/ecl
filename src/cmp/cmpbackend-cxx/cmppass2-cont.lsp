@@ -45,8 +45,7 @@
       (progn
         (let ((*destination* 'VALUEZ))
           (c2expr* val))
-        (let ((name (get-object (blk-name blk))))
-          (wt-nl "cl_return_from(" (blk-var blk) "," name ");")))
+        (unwind-flee blk :return-from))
       (let ((*destination* (blk-destination blk))
             (*exit* (blk-exit blk)))
         (c2expr val))))
@@ -81,9 +80,10 @@
             ;; Allocate labels.
             (dolist (tag body)
               (when (and (tag-p tag) (plusp (tag-ref tag)))
-                (setf (tag-jump tag) (next-label nil))
-                (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
-                (wt-go (tag-jump tag))))
+                (let ((target (next-label nil)))
+                  (setf (tag-jump tag) target)
+                  (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
+                  (unwind-cond target))))
             (when (var-ref-ccb tag-loc)
               (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");")))
           (c2tagbody-body body))
@@ -105,20 +105,22 @@
 (defun c2go (c1form tag nonlocal)
   (declare (ignore c1form))
   (if nonlocal
-      (wt-nl "cl_go(" (tag-var tag) ",ecl_make_fixnum(" (tag-index tag) "));")
+      (unwind-flee tag :go)
       (unwind-jump (tag-jump tag))))
 
 
 (defun c2throw (c1form tag val &aux loc)
   (declare (ignore c1form))
   (case (c1form-name tag)
-    ((VARIABLE LOCATION) (setq loc (c1form-arg 0 tag)))
-    (t (setq loc (make-temp-var))
+    ((VARIABLE LOCATION)
+     (setq loc (c1form-arg 0 tag)))
+    (t
+     (setq loc (make-temp-var))
      (let ((*destination* loc))
        (c2expr* tag))))
   (let ((*destination* 'VALUEZ))
     (c2expr* val))
-  (wt-nl "cl_throw(" loc ");"))
+  (unwind-flee loc :throw))
 
 (defun c2catch (c1form tag body)
   (declare (ignore c1form))

@@ -13,8 +13,10 @@
 ;;;;
 ;;;; The exit manager has two main operators that unwind the dynamic context:
 ;;;;
-;;;;     (UNWIND-EXIT value) carries VALUE to *DESTINATION* and unwinds to *EXIT*.
-;;;;     (UNWIND-JUMP label) unwinds to LABEL.
+;;;;     (UNWIND-EXIT value) carries VALUE to *DESTINATION* and unwinds to *EXIT*
+;;;;     (UNWIND-JUMP label) unwinds to LABEL
+;;;;     (UNWIND-COND label) unwinds to LABEL (conditionally)
+;;;;     (UNWIND-FLEE label) escapes to LABEL (runtime unwind)
 ;;;;
 
 (in-package "COMPILER")
@@ -37,6 +39,31 @@
       (compute-unwind (label-denv exit))
     (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
     (wt-nl-go exit)))
+
+;;; A conditional jump that is meant to be used as the IF statement body.
+;;; FIXME we want UNWIND-JEQL and UNWIND-JNOT and open-code the test too.
+(defun unwind-cond (exit)
+  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
+      (compute-unwind (label-denv exit))
+    (with-lexical-scope ()
+      (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
+      (wt-nl-go exit))))
+
+(defun unwind-flee (exit kind)
+  ;; All these boil down to calling ecl_unwind which unwinds stacks dynamically.
+  ;; If we want to implement call/cc, then this is the place where we dispatch.
+  #+ (or) (wt-nl "ecl_unwind(cl_env_copy," frs-id ");")
+  (ecase kind
+    (:go
+     ;; The second argument is passed as a value (index for jump).
+     (wt-nl "cl_go(" (tag-var exit) ",ecl_make_fixnum(" (tag-index exit) "));"))
+    (:throw
+     ;; Unlike GO and RETURN-FROM, the destination is not known at compile time.
+     ;; TODO in some cases it is possible to prove the destination CATCH form.
+     (wt-nl "cl_throw(" exit ");"))
+    (:return-from
+     ;; The second argument is used only to signal the error.
+     (wt-nl "cl_return_from(" (blk-var exit) "," (get-object (blk-name exit)) ");"))))
 
 ;;;
 
@@ -177,10 +204,10 @@
         (JUMP-TRUE
          (cond ((not constantp)
                 (case (loc-representation-type loc)
-                  (:bool     (wt-nl "if (" loc ") "))
-                  (:object   (wt-nl "if (" loc "!=ECL_NIL) "))
-                  (otherwise (wt-nl "if ((") (wt-coerce-loc :object loc) (wt ")!=ECL_NIL) ")))
-                (wt-open-brace) (unwind-jump label) (wt-nl-close-brace))
+                  (:bool     (wt-nl "if (" loc ")"))
+                  (:object   (wt-nl "if (" loc "!=ECL_NIL)"))
+                  (otherwise (wt-nl "if ((") (wt-coerce-loc :object loc) (wt ")!=ECL_NIL)")))
+                (unwind-cond label))
                ((not (null value))
                 (unwind-jump label)))
          (unless (and constantp (not (null value)))
@@ -189,10 +216,10 @@
         (JUMP-FALSE
          (cond ((not constantp)
                 (case (loc-representation-type loc)
-                  (:bool     (wt-nl "if (!(" loc ")) "))
-                  (:object   (wt-nl "if (Null(" loc ")) "))
-                  (otherwise (wt-nl "if (Null(") (wt-coerce-loc :object loc) (wt ")) ")))
-                (wt-open-brace) (unwind-jump label) (wt-nl-close-brace))
+                  (:bool     (wt-nl "if (!(" loc "))"))
+                  (:object   (wt-nl "if (Null(" loc "))"))
+                  (otherwise (wt-nl "if (Null(") (wt-coerce-loc :object loc) (wt "))")))
+                (unwind-cond label))
                ((null value)
                 (unwind-jump label)))
          (unless (and constantp (null value))
