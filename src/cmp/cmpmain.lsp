@@ -114,7 +114,7 @@ compiled successfully, returns the pathname of the compiled file."
           (setf (car ext:*source-location*) *compile-file-pathname*))
         (compiler-pass1 stream source-offset))
       (compiler-pass/propagate-types)
-      (compiler-pass/custom-pass)
+      ;; (compiler-pass/custom-pass)
       (apply #'compiler-pass/assemble-cxx input-file output-file args)
       (if (setf true-output-file (probe-file output-file))
           (cmpprogress "~&;;; Finished compiling ~a.~%;;;~%" (namestring input-pathname))

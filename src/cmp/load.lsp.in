@@ -68,7 +68,7 @@
     "src:cmp;cmpbackend-cxx;cmppass2-loc.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-fun.lsp"
     "src:cmp;cmpbackend-cxx;cmppass2-ffi.lsp"
-    "src:cmp;cmpbackend-cxx;cmppass2-bir.lsp" ;wip bir->cxx
+    ;"src:cmp;cmpbackend-cxx;cmppass2-bir.lsp" ;wip bir->cxx
     "src:cmp;cmpbackend-cxx;cmpbackend-cxx.lsp"
     ;; Optimizations
     "src:cmp;cmpmap.lsp"
@@ -86,7 +86,7 @@
     ;; Other
     "src:cmp;cmpos-run.lsp"
     "src:cmp;cmpos-features.lsp"
-    "src:cmp;cmpbackend-tir.lsp"        ; playground
+    ;"src:cmp;cmpbackend-tir.lsp"        ; playground
     "src:cmp;cmpmain.lsp"
     "src:cmp;proclamations.lsp"))
 
