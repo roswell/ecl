@@ -135,25 +135,6 @@
 ;;;     VA-ARG
 ;;;     CL-VA-ARG
 
-;;; Valid *DESTINATION* locations are:
-;;;
-;;;     var-object                      Variable
-;;;     loc-object                      VV Location
-;;;     TRASH                           Value may be thrown away.
-;;;     LEAVE                           Object returned from current function.
-;;;     VALUEZ                          Values vector.
-;;;     VALUE0
-;;;     ( VALUE i )                     Nth value
-;;;     ( BIND var alternative )        Alternative is optional
-;;;     ( JUMP-TRUE label )
-;;;     ( JUMP-FALSE label )
-
-(defun tmp-destination (loc)
-  (case loc
-    (VALUEZ 'VALUEZ)
-    (TRASH 'TRASH)
-    (T 'LEAVE)))
-
 (defun precise-loc-type (loc new-type)
   (if (subtypep (loc-type loc) new-type)
       loc

@@ -56,6 +56,29 @@
 (defvar *exit*)
 (defvar *unwind-exit*)
 
+;;; Destination of output of different forms.
+;;;
+;;; Valid *DESTINATION* locations are:
+;;;
+;;;     var-object                      Variable
+;;;     loc-object                      VV Location
+;;;     TRASH                           Value may be thrown away.
+;;;     LEAVE                           Object returned from current function.
+;;;     VALUEZ                          Values vector.
+;;;     VALUE0
+;;;     ( VALUE i )                     Nth value
+;;;     ( BIND var alternative )        Alternative is optional
+;;;     ( JUMP-TRUE label )
+;;;     ( JUMP-FALSE label )
+
+(defvar *destination*)
+
+(defun tmp-destination (loc)
+  (case loc
+    (VALUEZ 'VALUEZ)
+    (TRASH 'TRASH)
+    (T 'LEAVE)))
+
 ;;; C forms to find out (SETF fname) locations
 (defvar *setf-definitions*)             ; holds { name fun-vv name-vv  }*
 (defvar *global-cfuns-array*)           ; holds { fun-vv fname-loc fun }*

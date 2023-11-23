@@ -120,13 +120,6 @@ variable, block, tag or function object at the end.")
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
 
-;;; --cmplocs.lsp--
-;;;
-;;; Destination of output of different forms. See cmplocs.lsp for types of
-;;; destinations.
-;;;
-(defvar *destination*)
-
 ;;; --cmpmain.lsp--
 ;;;
 ;;; Do we debug the compiler? Then we need files not to be deleted.
