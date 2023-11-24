@@ -20,6 +20,8 @@
     #+complex-float t
     #-complex-float nil)
 
+(defvar *bir*)
+
 ;;; Compiled code uses the following kinds of variables:
 ;;; 1. Vi, declared explicitely, either unboxed or not (*lcl*, next-lcl)
 ;;; 2. Ti, declared collectively, of type object, may be reused (*temp*, next-temp)
@@ -152,7 +154,8 @@
           ;;
           (*exit* 'LEAVE)
           (*unwind-exit* '(LEAVE))
-          (*destination* *exit*))
+          (*destination* *exit*)
+          (*bir* (make-bir)))
      ,@body))
 
 (defun-cached env-var-name (n) eql

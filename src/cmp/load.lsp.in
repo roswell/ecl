@@ -23,9 +23,10 @@
     ;; Internal representation
     "src:cmp;cmptypes.lsp"
     "src:cmp;cmptables.lsp"
-    "src:cmp;cmpform.lsp"
+    "src:cmp;cmpform.lsp"               ;AST
     "src:cmp;cmpvar.lsp"
     "src:cmp;cmpfun.lsp"
+    "src:cmp;cmpbir.lsp"                ;CFG
     ;; Types
     "src:cmp;cmptype-prop.lsp"
     "src:cmp;cmptype.lsp"
