@@ -159,6 +159,11 @@
 
 (defvar *last-label* 0)
 
+;;; LABEL represents a destination for a possible control transfer. An unique ID
+;;; is assigned to ensure that there are no two labels of the same name. DENV
+;;; captures the dynamic environment of the label, so when we jump to the label
+;;; we may unwind the dynamic state (see the exit manager). USED-P is a flag is
+;;; set to T when the code "jumps" to the label. -- jd 2023-11-25
 (defstruct (label (:predicate labelp))
   id
   denv
