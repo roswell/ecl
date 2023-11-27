@@ -58,7 +58,7 @@
                ;; Allocate labels.
                `(dolist (,tag ,forms ,result)
                   (when (and (tag-p ,tag) (plusp (tag-ref ,tag)))
-                    (setf (tag-jump ,tag) (next-label t))
+                    (setf (tag-jump ,tag) (next-label t (tag-name ,tag)))
                     ,@body))))
     (if (null (var-kind tag-loc))
         ;; only local goto's
@@ -93,6 +93,9 @@
   ;;; so that the last element is always a form producing NIL.
   (loop for (this-form next-form . rest) on body do
     (cond ((tag-p this-form)
+           (let ((tag-block (label-iblock (tag-jump this-form))))
+             (unless (eq tag-block (bir-trail *bir*))
+               (bir-insert *bir* tag-block)))
            (wt-label (tag-jump this-form)))
           ((tag-p next-form)
            (with-exit-label (*exit* (tag-jump next-form))

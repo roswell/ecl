@@ -148,7 +148,9 @@
           (*unwind-exit* '(LEAVE))
           (*destination* *exit*)
           (*bir* (make-bir)))
-     ,@body))
+     (bir-embark *bir*)
+     ,@body
+     (bir-finish *bir*)))
 
 (defun-cached env-var-name (n) eql
   (format nil "env~D" n))
@@ -221,10 +223,17 @@
 (defstruct (label (:predicate labelp))
   id
   denv
-  used-p)
+  used-p
+  iblock)
 
-(defun next-label (used-p)
-  (make-label :id (incf *last-label*) :denv *unwind-exit* :used-p used-p))
+(defun next-label (used-p &optional name)
+  (make-label :id (incf *last-label*) :denv *unwind-exit* :used-p used-p
+              :iblock (make-iblock name)))
+
+(defun exit-iblock (exit)
+  (if (labelp exit)
+      (label-iblock exit)
+      (bir-leave *bir*)))
 
 ;;; This macro binds VAR to a label where forms may exit or jump.
 ;;; LABEL may be supplied to reuse a label when it exists.
@@ -236,6 +245,7 @@
             (*unwind-exit* (adjoin ,var *unwind-exit*)))
        ,@body
        (unless ,reuse
+         (bir-rewind *bir* (exit-iblock ,var))
          (wt-label ,var)))))
 
 ;;; This macro estabilishes a frame to handle dynamic escapes like GO, THROW and

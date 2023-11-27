@@ -36,17 +36,22 @@
 
 (defun unwind-jump (exit)
   (%unwind (label-denv exit) *unwind-exit*)
-  (%goto exit))
+  (%goto exit)
+  (bir-return *bir* (exit-iblock exit)))
 
 (defun unwind-cont (exit)
   (%unwind (label-denv exit) *unwind-exit*)
-  (%goto exit))
+  (%goto exit)
+  (bir-insert *bir* (exit-iblock exit)))
 
 (defun unwind-flee (exit kind)
-  (%escape exit kind))
+  (%escape exit kind)
+  (bir-escape *bir* (exit-iblock exit)))
 
 (defun unwind-cond (exit kind &rest args)
-  (%branch exit *unwind-exit* kind args))
+  (%branch exit *unwind-exit* kind args)
+  (bir-branch *bir* (exit-iblock exit))
+  (bir-insert *bir* (make-iblock :cont)))
 
 ;;;
 
@@ -125,7 +130,8 @@
     (set-loc 'LEAVE loc)
     (setf loc 'LEAVE))
   (%unwind nil *unwind-exit*)
-  (%exit loc))
+  (%exit loc)
+  (bir-return *bir* (bir-leave *bir*)))
 
 (defun unwind-label (loc)
   (declare (si::c-local))
@@ -147,7 +153,8 @@
         (progn
           (set-loc dest loc)
           (%unwind exit-denv from)))
-    (%jump exit from)))
+    (%jump exit from)
+    (bir-insert *bir* (exit-iblock exit))))
 
 ;;; Conditional JUMP based on the value of *DESTINATION*. This allows FMLA to
 ;;; jump over *EXIT* to skip the dead part of the computation. -- jd 2023-11-16
@@ -160,7 +167,7 @@
          (cond ((not constantp)
                 (unwind-cond label :jump-t loc))
                ((not (null value))
-                (unwind-jump label)))
+                (unwind-cont label)))
          (unless (and constantp (not (null value)))
            (let ((*destination* 'TRASH))
              (if (labelp *exit*)
@@ -170,7 +177,7 @@
          (cond ((not constantp)
                 (unwind-cond label :jump-f loc))
                ((null value)
-                (unwind-jump label)))
+                (unwind-cont label)))
          (unless (and constantp (null value))
            (let ((*destination* 'TRASH))
              (if (labelp *exit*)
