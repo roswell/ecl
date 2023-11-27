@@ -108,6 +108,7 @@
 
 ;;; The current cfg graph.
 (defvar *bir*)
+(defvar *last-bir*)                     ;debug
 
 ;;; IBLOCK is a block of instructions that may be executed without changing the
 ;;; dynamic environment and corresponds to a basic block in a contemporary CFG.

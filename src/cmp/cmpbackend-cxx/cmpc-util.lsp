@@ -153,6 +153,7 @@
           (*unwind-exit* '(LEAVE))
           (*destination* *exit*)
           (*bir* (make-bir)))
+     (setf *last-bir* *bir*)
      (bir-embark *bir*)
      ,@body
      (bir-finish *bir*)))
