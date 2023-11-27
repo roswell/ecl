@@ -212,7 +212,9 @@
                 (unwind-jump label)))
          (unless (and constantp (not (null value)))
            (let ((*destination* 'TRASH))
-             (unwind-exit *vv-nil*))))
+             (if (labelp *exit*)
+                 (unwind-label *vv-nil*)
+                 (unwind-leave *vv-nil*)))))
         (JUMP-FALSE
          (cond ((not constantp)
                 (case (loc-representation-type loc)
@@ -224,4 +226,6 @@
                 (unwind-jump label)))
          (unless (and constantp (null value))
            (let ((*destination* 'TRASH))
-             (unwind-exit *vv-t*))))))))
+             (if (labelp *exit*)
+                 (unwind-label *vv-t*)
+                 (unwind-leave *vv-t*)))))))))
