@@ -13,6 +13,7 @@
 (defvar *inline-information* nil)
 
 (defvar *bir*)
+(defvar *last-bir*)                     ;debug
 
 ;;; Compiled code uses the following kinds of variables:
 ;;; 1. Vi, declared explicitely, either unboxed or not (*lcl*, next-lcl)
@@ -148,6 +149,7 @@
           (*unwind-exit* '(LEAVE))
           (*destination* *exit*)
           (*bir* (make-bir)))
+     (setf *last-bir* *bir*)
      (bir-embark *bir*)
      ,@body
      (bir-finish *bir*)))
