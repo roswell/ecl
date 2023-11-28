@@ -27,6 +27,7 @@
     "src:cmp;cmpvar.lsp"
     "src:cmp;cmpfun.lsp"
     "src:cmp;cmpbir.lsp"                ;CFG
+    "src:cmp;cmppass3-codegen.lsp"      ;WIP
     ;; Types
     "src:cmp;cmptype-prop.lsp"
     "src:cmp;cmptype.lsp"

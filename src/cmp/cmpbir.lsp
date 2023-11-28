@@ -88,6 +88,14 @@
                               :inputs inputs
                               :output *destination*))
 
+(defun dunk-instruction (instruction)
+  (bir-extend *bir* instruction)
+  ;; FIXME currently we are interleaving CFG building and codegen.
+  (codegen :cxx (instruction-opcode instruction) instruction))
+
+(defun push-instruction (opcode &rest inputs)
+  (dunk-instruction (make-instruction opcode inputs)))
+
 
 ;;; iblock operators
 (defun make-iblock (name)
