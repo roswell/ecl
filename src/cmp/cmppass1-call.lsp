@@ -238,14 +238,12 @@
                 :args (c1expr `(function ,fname)) (c1args* args) fun :local))
 
 (defun c1call-global (fname args)
-  (let* ((forms (c1args* args)))
-    ;; If all arguments are constants, try to precompute the function
-    ;; value. We abort when the function signals an error or the value
-    ;; is not printable.
-    (let ((value (c1call-constant-fold fname forms)))
-      (when value
-        (return-from c1call-global value)))
-    ;; Otherwise emit a global function call
+  (let ((forms (c1args* args)))
+    ;; If all arguments are constants, try to precompute the function value. We
+    ;; abort when the function signals an error or the value is not printable.
+    (ext:when-let ((value (c1call-constant-fold fname forms)))
+      (return-from c1call-global value))
+    ;; Otherwise emit a global function call.
     (make-c1form* 'FCALL
                   :sp-change (function-may-change-sp fname)
                   :side-effects (function-may-have-side-effects fname)

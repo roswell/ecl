@@ -36,6 +36,9 @@
 ;;;   FUN the function to be called
 ;;;   ARGS is the list of arguments
 ;;;   FUN-VAL depends on the particular call type
+;;;       :LOCAL   structure FUN [see cmprefs.lsp]
+;;;       :GLOBAL  function name [symbol or (SETF symbol)]
+;;;       :UNKNOWN the value NIL
 ;;;   CALL-TYPE is (member :LOCAL :GLOBAL :UKNOWN)
 ;;;
 (defun c2fcall (c1form fun args fun-val call-type)
