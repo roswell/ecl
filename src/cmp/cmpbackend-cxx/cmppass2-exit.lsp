@@ -36,7 +36,7 @@
 
 (defun unwind-jump (exit)
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
-      (compute-unwind (label-denv exit))
+      (compute-unwind (label-denv exit) *unwind-exit*)
     (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
     (wt-nl-go exit)))
 
@@ -44,7 +44,7 @@
 ;;; FIXME we want UNWIND-JEQL and UNWIND-JNOT and open-code the test too.
 (defun unwind-cond (exit)
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
-      (compute-unwind (label-denv exit))
+      (compute-unwind (label-denv exit) *unwind-exit*)
     (with-lexical-scope ()
       (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
       (wt-nl-go exit))))
@@ -75,9 +75,9 @@
   (baboon :format-control "The value of exit~%~A~%is not valid."
           :format-arguments (list exit)))
 
-(defun baboon-unwind-invalid (unwind-exit)
-  (baboon :format-control "The value~%~A~%is not a tail of *UNWIND-EXIT*~%~A"
-          :format-arguments (list unwind-exit *unwind-exit*)))
+(defun baboon-unwind-invalid (unwind-to unwind-from)
+  (baboon :format-control "The unwind value~%~A~%is not a tail of the unwind value~%~A"
+          :format-arguments (list unwind-to unwind-from)))
 
 (defun baboon-unwind-exit (exit)
   (baboon :format-control "The value of exit~%~A~%found in *UNWIND-EXIT*~%~A~%is not valid."
@@ -118,8 +118,10 @@
     (IHS     (wt-nl "ecl_ihs_pop(cl_env_copy);"))
     (IHS-ENV (wt-nl "ihs.lex_env = _ecl_debug_env;"))))
 
-(defun compute-unwind (last-cons)
+(defun compute-unwind (unwind-to unwind-from)
   (declare (si::c-local))
+  (unless (tailp unwind-to unwind-from)
+    (baboon-unwind-invalid unwind-to unwind-from))
   (loop with bds-lcl = nil
         with bds-bind = 0
         with stack-frame = nil
@@ -127,9 +129,9 @@
         with frs-bind = 0
         with jump-p = nil
         with exit-p = nil
-        for unwind-exit on *unwind-exit*
+        for unwind-exit on unwind-from
         for ue = (car unwind-exit)
-        until (eq unwind-exit last-cons)
+        until (eq unwind-exit unwind-to)
         do (cond
              ((consp ue)
               (case (first ue)
@@ -154,7 +156,7 @@
 (defun unwind-leave (loc)
   (declare (si::c-local))
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
-      (compute-unwind nil)
+      (compute-unwind nil *unwind-exit*)
     (declare (fixnum frs-bind bds-bind))
     ;; *destination* must be either LEAVE or TRASH.
     (cond ((eq loc 'VALUEZ)
@@ -174,7 +176,8 @@
   (declare (si::c-local))
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p jump-p exit-p)
       (compute-unwind (or (member *exit* *unwind-exit* :test #'eq)
-                          (baboon-exit-not-found *exit*)))
+                          (baboon-exit-not-found *exit*))
+                      *unwind-exit*)
     (declare (fixnum frs-bind bds-bind))
     ;; This operator does not cross the function boundary.
     (assert (null exit-p))
