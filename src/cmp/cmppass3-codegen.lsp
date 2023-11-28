@@ -12,6 +12,34 @@
   (destructuring-bind (into from) (instruction-inputs instruction)
     (set-loc into from)))
 
+(define-codegen (:cxx :clear-values) (instruction)
+  (case (instruction-output instruction)
+    (VALUEZ
+     (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
+     (wt-nl "cl_env_copy->nvalues = 0;"))
+    (LEAVE
+     (wt-nl "value0 = ECL_NIL;")
+     (wt-nl "cl_env_copy->nvalues = 0;"))))
+
+;;; CHECKME do we still need to reverse forms if they are inlined?
+(define-codegen (:cxx :store-values) (instruction)
+  ;; To avoid clobbering VALUES vector inputs are inlined arguments (to avoid
+  ;; funcalls) and slots are written from end to write VALUES[0] last.
+  (let* ((forms (reverse (instruction-inputs instruction)))
+         (nv (length forms)))
+    (wt-nl "cl_env_copy->nvalues = " nv ";")
+    (loop for v in forms
+          for i from (1- nv) by -1 do
+            (wt-nl "cl_env_copy->values[" i "] = " v ";"))))
+
+(define-codegen (:cxx :frame-push-values) (instruction)
+  (destructuring-bind (frame) (instruction-inputs instruction)
+    (wt-nl "ecl_stack_frame_push_values(" frame ");")))
+
+(define-codegen (:cxx :frame-pop-values) (instruction)
+  (destructuring-bind (frame) (instruction-inputs instruction)
+    (wt-nl "ecl_stack_frame_pop_values(" frame ");")))
+
 
 ;;; Unwinding
 
