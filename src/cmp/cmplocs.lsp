@@ -183,7 +183,7 @@
 
 (defun uses-values (loc)
   (and (consp loc)
-       (or (member (car loc) '(CALL CALL-NORMAL CALL-INDIRECT CALL-STACK) :test #'eq)
+       (or (member (car loc) '(CALL-NORMAL CALL-INDIRECT CALL-STACK) :test #'eq)
            (and (eq (car loc) 'ffi:C-INLINE)
                 (eq (sixth loc) 'cl:VALUES)))))
 
