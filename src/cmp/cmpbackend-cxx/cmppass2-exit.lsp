@@ -152,10 +152,9 @@
     ;; This operator does not cross the function boundary.
     (assert (null exit-p))
     (cond ((and (destination-value-matters-p *destination*)
-                (or (plusp frs-bind) bds-lcl (plusp bds-bind) stack-frame)
-                (or (loc-refers-to-special-p loc)
-                    (loc-refers-to-special-p *destination*)))
-           ;; Save the value if LOC may possibly refer to special binding.
+                (loc-refers-to-special-p *destination*))
+           ;; Save the value if *DESTINATION* may possibly refer to special
+           ;; binding. Otherwise we may set *DESTINATION* /before/ the unwind.
            (let* ((*temp* *temp*)
                   (temp (make-temp-var)))
              (set-loc temp loc)
