@@ -160,11 +160,6 @@
         for form = (first form-list)
         collect (emit-inline-form form (rest form-list))))
 
-(defun destination-type ()
-  (rep-type->lisp-type (loc-representation-type *destination*))
-  ;;(loc-type *destination*)
-)
-
 (defun maybe-open-inline-block ()
   (unless (plusp *inline-blocks*)
     (open-inline-block)))
