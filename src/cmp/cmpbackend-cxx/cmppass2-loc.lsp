@@ -403,7 +403,7 @@
            (progn
              (wt-nl)
              (wt-loc destination) (wt " = ")
-             (wt-coerce-loc (loc-representation-type *destination*) loc)
+             (wt-coerce-loc (loc-representation-type destination) loc)
              (wt ";"))))))
 
 (defun set-the-loc (loc type orig-loc)
