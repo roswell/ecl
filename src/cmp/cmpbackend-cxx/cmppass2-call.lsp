@@ -9,22 +9,6 @@
 
 (in-package #:compiler)
 
-;;; Functions that use MAYBE-SAVE-VALUE should rebind *TEMP*.
-(defun maybe-save-value (value &optional (other-forms nil other-forms-flag))
-  (declare (si::c-local))
-  (let ((name (c1form-name value)))
-    (cond ((eq name 'LOCATION)
-           (c1form-arg 0 value))
-          ((and (eq name 'VARIABLE)
-                other-forms-flag
-                (not (var-changed-in-form-list (c1form-arg 0 value) other-forms)))
-           (c1form-arg 0 value))
-          (t
-           (let* ((temp (make-temp-var))
-                  (*destination* temp))
-             (c2expr* value)
-             temp)))))
-
 ;;; FIXME functions declared as SI::C-LOCAL can't be called from the stack
 ;;; because they are not installed in the environment. That means that if we
 ;;; have such function and call it with too many arguments it will be
@@ -51,6 +35,28 @@
 
 (defun c2mcall (c1form form args fun-val call-type)
   (c2call-stack c1form form args t))
+
+;;;
+;;; c2call-stack:
+;;;
+;;;   This is the most generic way of calling functions. First we push them on
+;;;   the stack, and then we apply from the stack frame. Other variants call
+;;;   inline-args and put results directly in the function call.
+;;;
+(defun c2call-stack (c1form form args values-p)
+  (declare (ignore c1form))
+  (let* ((*inline-blocks* 0)
+         (*temp* *temp*)
+         (loc (inlined-arg-loc (inline-arg0 form args))))
+    (with-stack-frame (frame)
+      (let ((*destination* (if values-p 'VALUEZ 'LEAVE)))
+        (dolist (arg args)
+          (c2expr* arg)
+          (if values-p
+              (wt-nl "ecl_stack_frame_push_values(" frame ");")
+              (wt-nl "ecl_stack_frame_push(" frame ",value0);"))))
+      (unwind-exit (call-stack-loc nil loc)))
+    (close-inline-blocks)))
 
 ;;;
 ;;; c2call-global:
@@ -126,22 +132,9 @@
          (form-type (c1form-primary-type form))
          (function-p (and (subtypep form-type 'function)
                           (policy-assume-right-type)))
-         (loc (maybe-save-value form args)))
+         (loc (inlined-arg-loc (inline-arg0 form args))))
     (unwind-exit (call-unknown-global-loc loc (inline-args args) function-p))
     (close-inline-blocks)))
-
-(defun c2call-stack (c1form form args values-p)
-  (declare (ignore c1form))
-  (let* ((*temp* *temp*)
-         (loc (maybe-save-value form args)))
-    (with-stack-frame (frame)
-      (let ((*destination* (if values-p 'VALUEZ 'LEAVE)))
-        (dolist (arg args)
-          (c2expr* arg)
-          (if values-p
-              (wt-nl "ecl_stack_frame_push_values(" frame ");")
-              (wt-nl "ecl_stack_frame_push(" frame ",value0);"))))
-      (unwind-exit (call-stack-loc nil loc)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -266,8 +259,8 @@
 
 ;;;
 ;;; call-stack-loc
-;;;   LOC is NIL or location containing function
-;;;   ARGS is the list of typed locations for arguments
+;;;   LOC is the location containing function
+;;;   FNAME is NIL or a name of the function
 ;;;
 (defun call-stack-loc (fname loc)
   `(CALL-STACK ,loc ,fname))

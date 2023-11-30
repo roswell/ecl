@@ -83,7 +83,7 @@
           (c2expr* form)
           (list type temp))
         (list type
-              (list 'si:STRUCTURE-REF
+              (list 'SI:STRUCTURE-REF
                     (first (coerce-locs
                             (inline-args (list (c1form-arg 0 form)))))
                     (c1form-arg 1 form)
@@ -113,20 +113,21 @@
        (emit-inlined-variable form forms))
       (CALL-GLOBAL
        (emit-inlined-call-global form (c1form-primary-type form)))
-      (si:STRUCTURE-REF
+      (SI:STRUCTURE-REF
        (emit-inlined-structure-ref form forms))
       #+clos
-      (si:INSTANCE-REF
+      (SI:INSTANCE-REF
        (emit-inlined-instance-ref form forms))
       (SETQ
        (emit-inlined-setq form forms))
       (PROGN
-        (emit-inlined-progn form forms))
+       (emit-inlined-progn form forms))
       (VALUES
        (emit-inlined-values form forms))
       (t (let* ((type (c1form-primary-type form))
-                (temp (make-inline-temp-var type)))
-           (let ((*destination* temp)) (c2expr* form))
+                (temp (make-inline-temp-var type))
+                (*destination* temp))
+           (c2expr* form)
            (list type temp))))))
 
 ;;;
@@ -135,12 +136,22 @@
 ;;;   side effects: emits code for temporary variables
 ;;;
 ;;; Whoever calls inline-args must bind *inline-blocks* to 0 and afterwards
-;;; call close-inline-blocks
+;;; call close-inline-blocks.
 ;;;
 (defun inline-args (forms)
   (loop for form-list on forms
         for form = (first form-list)
         collect (emit-inline-form form (rest form-list))))
+
+;;;
+;;; inline-arg0:
+;;;   returns a location that contains the function
+;;;   side effects: emits code for a temporary variable
+;;;
+;;; Whoever calls inline-arg0 must rebind *TEMP*.
+;;;
+(defun inline-arg0 (value-form other-forms)
+  (emit-inline-form value-form other-forms))
 
 (defun maybe-open-inline-block ()
   (unless (plusp *inline-blocks*)
