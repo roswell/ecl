@@ -64,12 +64,9 @@
       (t (t1ordinary form)))))
 
 (defun t1/c1expr (form)
-  (cond ((not *compile-toplevel*)
-         (c1expr form))
-        ((atom form)
-         (t1ordinary form))
-        (t
-         (t1expr* form))))
+  (if (not *compile-toplevel*)
+      (c1expr form)
+      (t1expr* form)))
 
 (defun c1eval-when (args)
   (check-args-number 'EVAL-WHEN args 1)
