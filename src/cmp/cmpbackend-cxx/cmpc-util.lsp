@@ -189,11 +189,19 @@
   (let ((code (incf *next-cfun*)))
     (format nil prefix code (lisp-to-c-name lisp-name))))
 
-(defmacro with-lexical-scope (() &body body)
-  `(progn
-     (wt-nl-open-brace)
+;;; The macro WITH-INLINE-BLOCKS is used by callers who may optionally need to
+;;; introduce inner lexical scope to create variables. Most notably it is used
+;;; for temporary variables that are bound to local evaluation results.
+(defmacro with-inline-blocks (() &body body)
+  `(let ((*inline-blocks* 0)
+         (*temp* *temp*))
      ,@body
-     (wt-nl-close-brace)))
+     (close-inline-blocks)))
+
+(defmacro with-lexical-scope (() &body body)
+  `(with-inline-blocks ()
+     (open-inline-block)
+     ,@body))
 
 
 ;;; *LAST-LABEL* holds the label# of the last used label. This is used by the

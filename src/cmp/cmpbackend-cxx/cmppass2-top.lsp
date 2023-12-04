@@ -466,13 +466,12 @@
           (format stream "~%};")))))
 
 (defun wt-install-function (fname fun macro-p)
-  (let ((*inline-blocks* 0)
-        (loc (data-empty-loc*)))
-    (push (list loc fname fun) *global-cfuns-array*)
-    ;; FIXME! Look at C2LOCALS!
-    (update-function-env fun)
-    (if macro-p
-        (wt-nl "ecl_cmp_defmacro(" loc ");")
-        (wt-nl "ecl_cmp_defun(" loc ");"))
-    (wt-comment (loc-immediate-value fname))
-    (close-inline-blocks)))
+  (with-inline-blocks ()
+    (let ((loc (data-empty-loc*)))
+      (push (list loc fname fun) *global-cfuns-array*)
+      ;; FIXME! Look at C2LOCALS!
+      (update-function-env fun)
+      (if macro-p
+          (wt-nl "ecl_cmp_defmacro(" loc ");")
+          (wt-nl "ecl_cmp_defun(" loc ");"))
+      (wt-comment (loc-immediate-value fname)))))

@@ -188,8 +188,7 @@
 ;;;   returns a list of pairs (type loc)
 ;;;   side effects: emits code for temporary variables
 ;;;
-;;; Whoever calls this function must bind *INLINE-BLOCKS* to 0 and afterwards
-;;; call CLOSE-INLINE-BLOCKS.
+;;; Whoever calls this function must wrap the body in WITH-INLINE-BLOCKS.
 ;;;
 (defun inline-args (forms)
   (loop for form-list on forms
@@ -201,8 +200,7 @@
 ;;;   returns a location that contains the function
 ;;;   side effects: emits code for a temporary variable
 ;;;
-;;; Whoever calls this function must bind *INLINE-BLOCKS* to 0 and afterwards
-;;; call CLOSE-INLINE-BLOCKS, and must rebind *TEMP*.
+;;; Whoever calls this function must wrap the body in WITH-INLINE-BLOCKS.
 ;;;
 (defun inline-arg0 (value-form other-forms)
   (emit-inline-form value-form other-forms))

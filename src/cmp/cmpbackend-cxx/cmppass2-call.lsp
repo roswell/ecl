@@ -28,12 +28,14 @@
 (defun c2fcall (c1form fun args fun-val call-type)
   (if (> (length args) si:c-arguments-limit)
       (c2call-stack c1form fun args nil)
-      (ecase call-type
-        (:local (c2call-local c1form fun-val args))
-        (:global (c2call-global c1form fun-val args))
-        (:unknown (c2call-unknown c1form fun args)))))
+      (with-inline-blocks ()
+        (ecase call-type
+          (:local (c2call-local c1form fun-val args))
+          (:global (c2call-global c1form fun-val args))
+          (:unknown (c2call-unknown c1form fun args))))))
 
 (defun c2mcall (c1form form args fun-val call-type)
+  (declare (ignore fun-val call-type))
   (c2call-stack c1form form args t))
 
 ;;;
@@ -45,18 +47,15 @@
 ;;;
 (defun c2call-stack (c1form form args values-p)
   (declare (ignore c1form))
-  (let* ((*inline-blocks* 0)
-         (*temp* *temp*)
-         (loc (inlined-arg-loc (inline-arg0 form args))))
-    (with-stack-frame (frame)
+  (with-stack-frame (frame)
+    (let ((loc (inlined-arg-loc (inline-arg0 form args))))
       (let ((*destination* (if values-p 'VALUEZ 'LEAVE)))
         (dolist (arg args)
           (c2expr* arg)
           (if values-p
               (wt-nl "ecl_stack_frame_push_values(" frame ");")
               (wt-nl "ecl_stack_frame_push(" frame ",value0);"))))
-      (unwind-exit (call-stack-loc nil loc)))
-    (close-inline-blocks)))
+      (unwind-exit (call-stack-loc nil loc)))))
 
 ;;;
 ;;; c2call-global:
@@ -68,11 +67,8 @@
   (let ((fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p)))
     (when (and fun (c2try-tail-recursive-call fun args))
       (return-from c2call-global))
-    (let* ((*inline-blocks* 0)
-           (*temp* *temp*))
-      (unwind-exit (call-global-loc fname fun args (c1form-primary-type c1form)
-                                    (loc-type *destination*)))
-      (close-inline-blocks))))
+    (unwind-exit (call-global-loc fname fun args (c1form-primary-type c1form)
+                                  (loc-type *destination*)))))
 
 ;;; Tail-recursion optimization for a function F is possible only if
 ;;;     1. F receives only required parameters, and
@@ -119,22 +115,16 @@
 (defun c2call-local (c1form fun args)
   (declare (type fun fun))
   (unless (c2try-tail-recursive-call fun args)
-    (let ((*inline-blocks* 0)
-          (*temp* *temp*))
-      (unwind-exit (call-loc (fun-name fun) fun (inline-args args)
-                             (c1form-primary-type c1form)))
-      (close-inline-blocks))))
+    (unwind-exit (call-loc (fun-name fun) fun (inline-args args)
+                           (c1form-primary-type c1form)))))
 
 (defun c2call-unknown (c1form form args)
   (declare (ignore c1form))
-  (let* ((*inline-blocks* 0)
-         (*temp* *temp*)
-         (form-type (c1form-primary-type form))
+  (let* ((form-type (c1form-primary-type form))
          (function-p (and (subtypep form-type 'function)
                           (policy-assume-right-type)))
          (loc (inlined-arg-loc (inline-arg0 form args))))
-    (unwind-exit (call-unknown-global-loc loc (inline-args args) function-p))
-    (close-inline-blocks)))
+    (unwind-exit (call-unknown-global-loc loc (inline-args args) function-p))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

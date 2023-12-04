@@ -304,14 +304,12 @@
         ;; Binding these variables is complicated and involves lexical
         ;; environments, global environments, etc. If we use `(BIND var)
         ;; as destination, BIND might receive the wrong environment.
-        (let* ((*inline-blocks* 0)
-               (*temp* *temp*)
-               (locs (coerce-locs (inline-args (list form)))))
-          (bind (first locs) var)
-          (close-inline-blocks)
-          ;; Notice that we do not need to update *UNWIND-EXIT*
-          ;; because BIND does it for us.
-          )
+        (with-inline-blocks ()
+          (let ((locs (coerce-locs (inline-args (list form)))))
+            (bind (first locs) var)
+            ;; Notice that we do not need to update *UNWIND-EXIT* because BIND
+            ;; does it for us.
+            ))
         ;; The simple case of a variable which is local to a function.
         (let ((*destination* `(BIND ,var)))
           (c2expr* form)))))

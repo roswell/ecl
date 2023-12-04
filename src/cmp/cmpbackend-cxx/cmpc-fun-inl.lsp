@@ -240,8 +240,7 @@
                (wt "cl_env_copy->nvalues = " (length output-vars) ";")
                'VALUEZ))))))
 
-;;; Whoever calls this function must bind *INLINE-BLOCKS* to 0 and afterwards
-;;; call CLOSE-INLINE-BLOCKS, and must rebind *TEMP*.
+;;; Whoever calls this function must wrap the body in WITH-INLINE-BLOCKS.
 (defun negate-argument (argument dest-loc)
   (let* ((inlined-arg (emit-inline-form argument nil))
          (rep-type (inlined-arg-rep-type inlined-arg)))
