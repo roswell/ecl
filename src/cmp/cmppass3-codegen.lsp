@@ -8,6 +8,9 @@
                        (,instruction instruction))
      ,@body))
 
+
+;;; Data
+
 (define-codegen (:cxx :move) (instruction)
   (destructuring-bind (into from) (instruction-inputs instruction)
     (set-loc into from)))
@@ -39,6 +42,30 @@
 (define-codegen (:cxx :frame-pop-values) (instruction)
   (destructuring-bind (frame) (instruction-inputs instruction)
     (wt-nl "ecl_stack_frame_pop_values(" frame ");")))
+
+
+;;; Functions
+
+(define-codegen (:cxx :declare-c-fun) (instruction)
+  (destructuring-bind (fun-c-name minarg maxarg)
+      (instruction-inputs instruction)
+    (multiple-value-bind (val declared)
+        (gethash fun-c-name *compiler-declared-globals*)
+      (declare (ignore val))
+      (unless declared
+        (if (= maxarg minarg)
+            (progn
+              (wt-nl-h "extern cl_object " fun-c-name "(")
+              (dotimes (i maxarg)
+                (when (> i 0) (wt-h1 ","))
+                (wt-h1 "cl_object"))
+              (wt-h1 ");"))
+            (progn
+              (wt-nl-h "extern cl_object " fun-c-name "(cl_narg")
+              (dotimes (i (min minarg si:c-arguments-limit))
+                (wt-h1 ",cl_object"))
+              (wt-h1 ",...);")))
+        (setf (gethash fun-c-name *compiler-declared-globals*) 1)))))
 
 
 ;;; Unwinding

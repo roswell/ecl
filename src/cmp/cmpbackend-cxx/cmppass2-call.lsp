@@ -223,23 +223,7 @@
 (defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core type)
   (unless in-core
     ;; We only write declarations for functions which are not in lisp_external.h
-    (multiple-value-bind (val declared)
-        (gethash fun-c-name *compiler-declared-globals*)
-      (declare (ignore val))
-      (unless declared
-        (if (= maxarg minarg)
-            (progn
-              (wt-nl-h "extern cl_object " fun-c-name "(")
-              (dotimes (i maxarg)
-                (when (> i 0) (wt-h1 ","))
-                (wt-h1 "cl_object"))
-              (wt-h1 ");"))
-            (progn
-              (wt-nl-h "extern cl_object " fun-c-name "(cl_narg")
-              (dotimes (i (min minarg si:c-arguments-limit))
-                (wt-h1 ",cl_object"))
-              (wt-h1 ",...);")))
-        (setf (gethash fun-c-name *compiler-declared-globals*) 1))))
+    (push-instruction :declare-c-fun fun-c-name minarg maxarg))
   (let ((fun (make-fun :name fname :global t :cfun fun-c-name :lambda 'NIL
                        :minarg minarg :maxarg maxarg)))
     (call-loc fname fun args type)))
