@@ -31,7 +31,7 @@
 
 (defun close-inline-blocks ()
   (loop for i of-type fixnum from 0 below *inline-blocks*
-     do (wt-nl-close-brace)))
+        do (wt-nl-close-brace)))
 
 (defun coerce-locs (inlined-args &optional types args-to-be-saved)
   ;; INLINED-ARGS is a list of INLINED-ARG produced by the argument inliner.
@@ -82,12 +82,6 @@
           (wt-nl (rep-type->c-name out-rep-type) " " var ";")
           var))))
 
-(defun save-inline-loc (loc)
-  (let* ((rep-type (loc-representation-type (second loc)))
-         (temp (make-inline-temp-var (first loc) rep-type)))
-    (set-loc temp loc)
-    temp))
-
 (defun emit-inlined-variable (form rest-forms)
   (let ((var (c1form-arg 0 form))
         (lisp-type (c1form-primary-type form)))
@@ -120,8 +114,8 @@
 (defun emit-inlined-progn (form forms)
   (let ((args (c1form-arg 0 form)))
     (loop with *destination* = 'TRASH
-       while (rest args)
-       do (c2expr* (pop args)))
+          while (rest args)
+          do (c2expr* (pop args)))
     (emit-inline-form (first args) forms)))
 
 (defun emit-inlined-values (form forms)
@@ -132,8 +126,8 @@
                              ;; effects in the correct order
                              (append args forms))
       (loop with *destination* = 'TRASH
-         for form in args
-         do (c2expr* form)))))
+            for form in args
+            do (c2expr* form)))))
 
 (defun emit-inlined-structure-ref (form rest-forms)
   (let ((type (c1form-primary-type form)))
