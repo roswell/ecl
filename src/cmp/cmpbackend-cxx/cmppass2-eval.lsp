@@ -76,22 +76,6 @@
   (declare (si::c-local))
   (and (consp dest) (eq (si:cons-car dest) 'JUMP-FALSE)))
 
-(defun negate-argument (inlined-arg dest-loc)
-  (declare (si::c-local))
-  (let* ((loc (second inlined-arg))
-         (rep-type (loc-representation-type loc)))
-    (apply #'produce-inline-loc
-           (list inlined-arg)
-           (if (eq (loc-representation-type dest-loc) :bool)
-               (case rep-type
-                 (:bool '((:bool) (:bool) "(#0)==ECL_NIL" nil t))
-                 (:object '((:object) (:bool) "(#0)!=ECL_NIL" nil t))
-                 (otherwise (return-from negate-argument nil)))
-               (case rep-type
-                 (:bool '((:bool) (:object) "(#0)?ECL_NIL:ECL_T" nil t))
-                 (:object '((:object) (:object) "Null(#0)?ECL_T:ECL_NIL" nil t))
-                 (otherwise (return-from negate-argument *vv-nil*)))))))
-
 (defun c2fmla-not (c1form arg)
   (declare (ignore c1form))
   (let ((dest *destination*))
@@ -104,7 +88,7 @@
           (t
            (let ((*inline-blocks* 0)
                  (*temp* *temp*))
-             (unwind-exit (negate-argument (emit-inline-form arg nil) dest))
+             (unwind-exit (negate-argument arg dest))
              (close-inline-blocks))))))
 
 (defun c2fmla-and (c1form butlast last)

@@ -2,8 +2,9 @@
 ;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
 
 ;;;;
-;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-;;;;  Copyright (c) 1990, Giuseppe Attardi.
+;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
+;;;;  Copyright (c) 1990, Giuseppe Attardi
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
 ;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
@@ -27,27 +28,17 @@
   one-liner             ;;; Whether the expansion spans more than one line
 )
 
-(defun inlined-arg-loc (arg)
-  (second arg))
-
-(defun inlined-arg-type (arg)
-  (first arg))
-
-(defun inlined-arg-rep-type (arg)
-  (loc-representation-type (second arg)))
-
 (defmacro define-c-inliner (fname lambda-list &body body)
   `(setf (gethash ',fname *cinline-dispatch-table*)
          #'(lambda ,lambda-list (block nil ,@body))))
 
 (defun apply-inliner (fname return-type inlined-args)
-  (let ((fd (gethash fname *cinline-dispatch-table*)))
-    (if fd
-        (apply fd return-type inlined-args)
-        (default-c-inliner fname return-type inlined-args))))
+  (ext:if-let ((fd (gethash fname *cinline-dispatch-table*)))
+    (apply fd return-type inlined-args)
+    (default-c-inliner fname return-type inlined-args)))
 
 (defun default-c-inliner (fname return-type inlined-args)
-  (let* ((arg-types (mapcar #'first inlined-args))
+  (let* ((arg-types (mapcar #'inlined-arg-type inlined-args))
          (ii (inline-function fname arg-types return-type)))
     (and ii (apply-inline-info ii inlined-args))))
 
@@ -249,33 +240,19 @@
                (wt "cl_env_copy->nvalues = " (length output-vars) ";")
                'VALUEZ))))))
 
-(defun coerce-locs (inlined-args &optional types args-to-be-saved)
-  ;; INLINED-ARGS is a list of (TYPE LOCATION) produced by the
-  ;; inline code. ARGS-TO-BE-SAVED is a positional list created by
-  ;; C-INLINE, instructing that the value should be saved in a temporary
-  ;; variable. Finally, TYPES is a list of destination types, to which
-  ;; the former values are coerced. The destination types can be
-  ;;    - A lisp type (:OBJECT, :FINXUM, etc)
-  ;;    - A machine representation type (T, INTEGER, etc)
-  (loop with block-opened = nil
-        for (lisp-type loc) in inlined-args
-        for type in (or types '#1=(:object . #1#))
-        for i from 0
-        for rep-type = (lisp-type->rep-type type)
-        collect
-        (cond ((and args-to-be-saved
-                    (member i args-to-be-saved :test #'eql)
-                    (not (loc-movable-p loc)))
-               (let ((lcl (make-lcl-var :rep-type rep-type)))
-                 (wt-nl)
-                 (unless block-opened
-                   (setf block-opened t)
-                   (open-inline-block))
-                 (wt (rep-type->c-name rep-type) " " lcl "= ")
-                 (wt-coerce-loc rep-type loc)
-                 (wt ";")
-                 lcl))
-              ((equal rep-type (loc-representation-type loc))
-               loc)
-              (t
-               `(COERCE-LOC ,rep-type ,loc)))))
+;;; Whoever calls this function must bind *INLINE-BLOCKS* to 0 and afterwards
+;;; call CLOSE-INLINE-BLOCKS, and must rebind *TEMP*.
+(defun negate-argument (argument dest-loc)
+  (let* ((inlined-arg (emit-inline-form argument nil))
+         (rep-type (inlined-arg-rep-type inlined-arg)))
+    (apply #'produce-inline-loc
+           (list inlined-arg)
+           (if (eq (loc-representation-type dest-loc) :bool)
+               (case rep-type
+                 (:bool '((:bool) (:bool) "(#0)==ECL_NIL" nil t))
+                 (:object '((:object) (:bool) "(#0)!=ECL_NIL" nil t))
+                 (otherwise (return-from negate-argument nil)))
+               (case rep-type
+                 (:bool '((:bool) (:object) "(#0)?ECL_NIL:ECL_T" nil t))
+                 (:object '((:object) (:object) "Null(#0)?ECL_T:ECL_NIL" nil t))
+                 (otherwise (return-from negate-argument *vv-nil*)))))))

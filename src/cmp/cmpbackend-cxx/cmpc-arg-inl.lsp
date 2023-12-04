@@ -1,17 +1,77 @@
-;;;; -*- Mode: Lisp; Syntax: Common-Lisp; indent-tabs-mode: nil; Package: C -*-
-;;;; vim: set filetype=lisp tabstop=8 shiftwidth=2 expandtab:
-
 ;;;;
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
 ;;;;  Copyright (c) 1990, Giuseppe Attardi
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
 ;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
 
-;;;; Open coding optimizer.
+;;;; Open coding nested forms as C expressions while preserving the order of
+;;;; evaluation. Resulting locations stored in the INLINE-ARG structure may be
+;;;; used inline in C expressions (locs still must to be coerced appropriately).
 
 (in-package "COMPILER")
 
+(defstruct (inlined-arg (:constructor %make-inlined-arg))
+  loc
+  type
+  rep-type)
+
+(defun make-inlined-arg (loc lisp-type)
+  (%make-inlined-arg :loc loc :type lisp-type
+                     :rep-type (loc-representation-type loc)))
+
+(defun maybe-open-inline-block ()
+  (unless (plusp *inline-blocks*)
+    (open-inline-block)))
+
+(defun open-inline-block ()
+  (wt-nl-open-brace)
+  (incf *inline-blocks*))
+
+(defun close-inline-blocks ()
+  (loop for i of-type fixnum from 0 below *inline-blocks*
+     do (wt-nl-close-brace)))
+
+(defun coerce-locs (inlined-args &optional types args-to-be-saved)
+  ;; INLINED-ARGS is a list of INLINED-ARG produced by the argument inliner.
+  ;; The structure contains a location, a lisp type, and the mach rep type.
+  ;;
+  ;; ARGS-TO-BE-SAVED is a positional list created by C-INLINE, instructing that
+  ;; the value should be saved in a temporary variable.
+  ;;
+  ;; TYPES is a list of destination types, to which the former values are
+  ;; coerced. The destination type can be:
+  ;;
+  ;;   - A machine rep type (:OBJECT, :FIXNUM, :INT, ...)
+  ;;   - A lisp type (T, INTEGER, STRING, CHARACTER, ...))
+  ;;
+  (loop with block-opened = nil
+        for arg in inlined-args
+        for loc = (inlined-arg-loc arg)
+        for arg-rep-type = (inlined-arg-rep-type arg)
+        for type in (or types '#1=(:object . #1#))
+        for i from 0
+        for rep-type = (lisp-type->rep-type type)
+        collect
+        (cond ((and args-to-be-saved
+                    (member i args-to-be-saved :test #'eql)
+                    (not (loc-movable-p loc)))
+               (let ((lcl (make-lcl-var :rep-type rep-type)))
+                 (wt-nl)
+                 (unless block-opened
+                   (setf block-opened t)
+                   (open-inline-block))
+                 (wt (rep-type->c-name rep-type) " " lcl "= ")
+                 (wt-coerce-loc rep-type loc)
+                 (wt ";")
+                 lcl))
+              ((equal rep-type arg-rep-type)
+               loc)
+              (t
+               `(COERCE-LOC ,rep-type ,loc)))))
+
+
 (defun make-inline-temp-var (value-type &optional rep-type)
   (let ((out-rep-type (or rep-type (lisp-type->rep-type value-type))))
     (if (eq out-rep-type :object)
@@ -30,12 +90,12 @@
 
 (defun emit-inlined-variable (form rest-forms)
   (let ((var (c1form-arg 0 form))
-        (value-type (c1form-primary-type form)))
+        (lisp-type (c1form-primary-type form)))
     (if (var-changed-in-form-list var rest-forms)
-        (let ((temp (make-inline-temp-var value-type (var-rep-type var))))
+        (let ((temp (make-inline-temp-var lisp-type (var-rep-type var))))
           (set-loc temp var)
-          (list value-type temp))
-        (list value-type var))))
+          (make-inlined-arg temp lisp-type))
+        (make-inlined-arg var lisp-type))))
 
 (defun emit-inlined-setq (form rest-forms)
   (let ((vref (c1form-arg 0 form))
@@ -43,7 +103,7 @@
     (let ((*destination* vref))
       (c2expr* form1))
     (if (eq (c1form-name form1) 'LOCATION)
-        (list (c1form-primary-type form1) (c1form-arg 0 form1))
+        (make-inlined-arg (c1form-arg 0 form1) (c1form-primary-type form1))
         (emit-inlined-variable (make-c1form 'VARIABLE form vref nil) rest-forms))))
 
 (defun emit-inlined-call-global (form expected-type)
@@ -55,7 +115,7 @@
          (type (type-and return-type (loc-type loc)))
          (temp (make-inline-temp-var type (loc-representation-type loc))))
     (set-loc temp loc)
-    (list type temp)))
+    (make-inlined-arg temp type)))
 
 (defun emit-inlined-progn (form forms)
   (let ((args (c1form-arg 0 form)))
@@ -81,14 +141,14 @@
         (let* ((temp (make-inline-temp-var type :object))
                (*destination* temp))
           (c2expr* form)
-          (list type temp))
-        (list type
-              (list 'SI:STRUCTURE-REF
-                    (first (coerce-locs
-                            (inline-args (list (c1form-arg 0 form)))))
-                    (c1form-arg 1 form)
-                    (c1form-arg 2 form)
-                    (c1form-arg 3 form))))))
+          (make-inlined-arg temp type))
+        (make-inlined-arg (list 'SI:STRUCTURE-REF
+                                (first (coerce-locs
+                                        (inline-args (list (c1form-arg 0 form)))))
+                                (c1form-arg 1 form)
+                                (c1form-arg 2 form)
+                                (c1form-arg 3 form))
+                          type))))
 
 (defun emit-inlined-instance-ref (form rest-forms)
   (let ((type (c1form-primary-type form)))
@@ -96,26 +156,25 @@
         (let* ((temp (make-inline-temp-var type :object))
                (*destination* temp))
           (c2expr* form)
-          (list type temp))
-        (list type
-              (list 'si:instance-ref
-                    (first (coerce-locs
-                            (inline-args (list (c1form-arg 0 form)))))
-                    (c1form-arg 1 form)
-                    #+nil (c1form-arg 2 form))))))
+          (make-inlined-arg temp type))
+        (make-inlined-arg (list 'SI:INSTANCE-REF
+                                (first (coerce-locs
+                                        (inline-args (list (c1form-arg 0 form)))))
+                                (c1form-arg 1 form)
+                                #+ (or) (c1form-arg 2 form))
+                          type))))
 
 (defun emit-inline-form (form forms)
   (with-c1form-env (form form)
     (case (c1form-name form)
       (LOCATION
-       (list (c1form-primary-type form) (c1form-arg 0 form)))
+       (make-inlined-arg (c1form-arg 0 form) (c1form-primary-type form)))
       (VARIABLE
        (emit-inlined-variable form forms))
       (CALL-GLOBAL
        (emit-inlined-call-global form (c1form-primary-type form)))
       (SI:STRUCTURE-REF
        (emit-inlined-structure-ref form forms))
-      #+clos
       (SI:INSTANCE-REF
        (emit-inlined-instance-ref form forms))
       (SETQ
@@ -128,15 +187,15 @@
                 (temp (make-inline-temp-var type))
                 (*destination* temp))
            (c2expr* form)
-           (list type temp))))))
+           (make-inlined-arg temp type))))))
 
 ;;;
 ;;; inline-args:
 ;;;   returns a list of pairs (type loc)
 ;;;   side effects: emits code for temporary variables
 ;;;
-;;; Whoever calls inline-args must bind *inline-blocks* to 0 and afterwards
-;;; call close-inline-blocks.
+;;; Whoever calls this function must bind *INLINE-BLOCKS* to 0 and afterwards
+;;; call CLOSE-INLINE-BLOCKS.
 ;;;
 (defun inline-args (forms)
   (loop for form-list on forms
@@ -148,19 +207,8 @@
 ;;;   returns a location that contains the function
 ;;;   side effects: emits code for a temporary variable
 ;;;
-;;; Whoever calls inline-arg0 must rebind *TEMP*.
+;;; Whoever calls this function must bind *INLINE-BLOCKS* to 0 and afterwards
+;;; call CLOSE-INLINE-BLOCKS, and must rebind *TEMP*.
 ;;;
 (defun inline-arg0 (value-form other-forms)
   (emit-inline-form value-form other-forms))
-
-(defun maybe-open-inline-block ()
-  (unless (plusp *inline-blocks*)
-    (open-inline-block)))
-
-(defun open-inline-block ()
-  (wt-nl-open-brace)
-  (incf *inline-blocks*))
-
-(defun close-inline-blocks ()
-  (loop for i of-type fixnum from 0 below *inline-blocks*
-     do (wt-nl-close-brace)))
