@@ -137,8 +137,7 @@
              (dolist (f butlast)
                (let ((*destination* 'VALUE0))
                  (c2expr* f))
-               (wt-nl "if (" 'VALUE0 "!=ECL_NIL) ")
-               (unwind-cond normal-exit))
+               (unwind-cond normal-exit :jump-t 'VALUE0))
              (c2expr last))
            (unwind-exit 'VALUE0)))))
 

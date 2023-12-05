@@ -79,10 +79,12 @@
             (wt-nl "cl_object " tag-loc ";"))
           (bind "ECL_NEW_FRAME_ID(cl_env_copy)" tag-loc)
           (with-unwind-frame (tag-loc)
-            (do-tags (tag body (when (var-ref-ccb tag-loc)
-                                 (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");")))
-              (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
-              (unwind-cond (tag-jump tag)))
+            (progn
+              (do-tags (tag body nil)
+                (unwind-cond (tag-jump tag) :jump-eq
+                             'VALUEZ  (tag-index tag)))
+              (when (var-ref-ccb tag-loc)
+                (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");")))
             (c2tagbody-body body))
           (close-inline-blocks)))))
 
