@@ -29,46 +29,44 @@
                      (*current-form* form)
                      (*setjmps* 0))
   (setq form (chk-symbol-macrolet form))
-  (when (consp form)
-    (let ((fun (car form)) (args (cdr form)) fd)
-      (when (member fun *toplevel-forms-to-print*)
-        (print-current-form))
-      (cond
-        ((consp fun) (t1ordinary form))
-        ((not (symbolp fun))
-         (cmperr "~s is illegal function." fun))
-        ((eq fun 'QUOTE)
-         (t1ordinary 'NIL))
-        ((setq fd (gethash fun *t1-dispatch-table*))
-         (funcall fd args))
-        ((gethash fun *c1-dispatch-table*)
-         (t1ordinary form))
-        ((and (setq fd (cmp-compiler-macro-function fun))
-              (inline-possible fun)
-              (let ((success nil))
-                (multiple-value-setq (fd success)
-                  (cmp-expand-macro fd form))
-                success))
-         (when *compile-time-too*
-           ;; Ignore compiler macros during compile time evaluation
-           ;; (they may expand in ffi:c-inline which the bytecodes
-           ;; compiler can't execute).
-           (cmp-eval form))
-         (let ((*compile-time-too* nil))
-           (push 'macroexpand *current-toplevel-form*)
-           (t1expr* fd)))
-        ((setq fd (cmp-macro-function fun))
+  (unless (consp form)
+    (return-from t1expr* (t1ordinary 'NIL)))
+  (let ((fun (car form)) (args (cdr form)) fd)
+    (when (member fun *toplevel-forms-to-print*)
+      (print-current-form))
+    (cond
+      ((consp fun) (t1ordinary form))
+      ((not (symbolp fun))
+       (cmperr "~s is illegal function." fun))
+      ((eq fun 'QUOTE)
+       (t1ordinary 'NIL))
+      ((setq fd (gethash fun *t1-dispatch-table*))
+       (funcall fd args))
+      ((gethash fun *c1-dispatch-table*)
+       (t1ordinary form))
+      ((and (setq fd (cmp-compiler-macro-function fun))
+            (inline-possible fun)
+            (let ((success nil))
+              (multiple-value-setq (fd success)
+                (cmp-expand-macro fd form))
+              success))
+       (when *compile-time-too*
+         ;; Ignore compiler macros during compile time evaluation
+         ;; (they may expand in ffi:c-inline which the bytecodes
+         ;; compiler can't execute).
+         (cmp-eval form))
+       (let ((*compile-time-too* nil))
          (push 'macroexpand *current-toplevel-form*)
-         (t1expr* (cmp-expand-macro fd form)))
-        (t (t1ordinary form))))))
+         (t1expr* fd)))
+      ((setq fd (cmp-macro-function fun))
+       (push 'macroexpand *current-toplevel-form*)
+       (t1expr* (cmp-expand-macro fd form)))
+      (t (t1ordinary form)))))
 
 (defun t1/c1expr (form)
-  (cond ((not *compile-toplevel*)
-         (c1expr form))
-        ((atom form)
-         (t1ordinary form))
-        (t
-         (t1expr* form))))
+  (if (not *compile-toplevel*)
+      (c1expr form)
+      (t1expr* form)))
 
 (defun c1eval-when (args)
   (check-args-number 'EVAL-WHEN args 1)
@@ -141,7 +139,7 @@
            (setf loc (add-object (cmp-eval form)))))
     (make-c1form* 'LOCATION :type t :args loc)))
 
-;;; ----------------------------------------------------------------------
+;;; ----------------------------------------------------------------------------
 ;;; Optimizer for FSET. Removes the need for a special handling of DEFUN as a
 ;;; toplevel form and also allows optimizing calls to DEFUN or DEFMACRO which
 ;;; are not toplevel, but which create no closures.
@@ -152,9 +150,13 @@
 ;;; the compiler we do not know whether a function is a closure, hence the need
 ;;; for a c2fset.
 ;;;
-;;; We optimize (SYS:FSET #'(LAMBDA ...) ..) and also, accidentally,
-;;; (SYS:FSET (FLET ((FOO ...)) #'FOO) ...) which is to what LAMBDA gets
-;;; translated in c1function.
+;;; We optimize:
+;;;
+;;;     (SYS:FSET NAME #'(LAMBDA ...) ...)
+;;;
+;;; where LAMBDA is expanded by C1FUNCTION to:
+;;;
+;;;     (SYS:FSET NAME (FLET ((FOO ...)) #'FOO))
 ;;;
 (defun t1fset (args)
   (let ((form `(si::fset ,@args)))
@@ -180,12 +182,10 @@
                  (every #'global-var-p (fun-referenced-vars fun-object))
                  ;; Referencing the function variable
                  (eq (c1form-name form) 'VARIABLE)
-                 (eq (c1form-arg 0 form)
-                     (fun-var fun-object)))
+                 (eq (c1form-arg 0 form) (fun-var fun-object)))
             (when (fun-no-entry fun-object)
               (when macro
-                (cmperr "Declaration C-LOCAL used in macro ~a"
-                        (fun-name fun-object)))
+                (cmperr "Declaration C-LOCAL used in macro ~a." fname))
               (return-from c1fset
                 (make-c1form* 'SI:FSET :args fun-object nil nil nil nil)))
             (when (and (typep macro 'boolean)

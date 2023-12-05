@@ -528,33 +528,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 ")
 
 
-;;; Code generation
-
-(defun compiler-pass/generate-cxx (c-pathname h-pathname data-pathname init-name source)
-  (with-cxx-env ()
-    ;; After this step we still can add new objects, but objects that are
-    ;; already stored in VV or VVtemp must not change the location.
-    (optimize-cxx-data *referenced-objects*)
-    (setq *compiler-phase* 't2)
-    (with-open-file (*compiler-output1* c-pathname :direction :output
-                                                   :if-does-not-exist :create
-                                                   :if-exists :supersede)
-      (wt-comment-nl "Compiler: ~A ~A" (lisp-implementation-type) (lisp-implementation-version))
-      #-ecl-min
-      (multiple-value-bind (second minute hour day month year)
-          (get-decoded-time)
-        (declare (ignore second))
-        (wt-comment-nl "Date: ~D/~D/~D ~2,'0D:~2,'0D (yyyy/mm/dd)" year month day hour minute)
-        (wt-comment-nl "Machine: ~A ~A ~A" (software-type) (software-version) (machine-type)))
-      (wt-comment-nl "Source: ~A" source)
-      (with-open-file (*compiler-output2* h-pathname :direction :output
-                                                     :if-does-not-exist :create
-                                                     :if-exists :supersede)
-        (wt-nl1 "#include " *cmpinclude*)
-        (ctop-write init-name h-pathname data-pathname)
-        (terpri *compiler-output1*)
-        (terpri *compiler-output2*)))
-    (data-c-dump data-pathname)))
+;;; Code assembly
 
 (defun compiler-pass/assemble-cxx (input-file output-file
                                    &key

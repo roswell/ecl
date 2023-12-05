@@ -57,7 +57,7 @@
                   )
                  (t
                   (c2expr* form)))
-        finally (unwind-exit nil)))
+        finally (unwind-exit *vv-nil*)))
 
 (defun c2c-inline (c1form arguments &rest rest)
   (declare (ignore c1form))
@@ -72,6 +72,8 @@
   (when (eql return-type :void)
     (setf return-p nil))
   (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))
+        (vars (loop for n from 0 below (length arg-types)
+                    collect (format nil "var~d" n)))
         (fmod (case call-type
                 ((:cdecl :default) "")
                 (:stdcall "__stdcall ")
@@ -80,30 +82,28 @@
     (wt-nl-h "static " return-type-name " " fmod c-name "(")
     (wt-nl1  "static " return-type-name " " fmod c-name "(")
     (loop with comma = ""
-          for n from 0
+          for var in vars
           for type in arg-types
           for arg-type-name = (rep-type->c-name (ffi::%convert-to-arg-type type))
-          do (wt-h comma arg-type-name " var" n)
-             (wt   comma arg-type-name " var" n)
+          do (wt-h comma arg-type-name " " var)
+             (wt   comma arg-type-name " " var)
              (setf comma ","))
     (wt ")")
     (wt-h ");")
-    (wt-nl-open-brace)
-    (when return-p
-      (wt-nl return-type-name " output;"))
-    (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
-    (wt-nl "cl_object aux;")
-    (wt-nl "ECL_BUILD_STACK_FRAME(cl_env_copy, frame, helper)")
-    (loop for n from 0
-          and type in arg-types
-          and ct in arg-type-constants
-          do (wt-nl "ecl_stack_frame_push("
-                    "frame,ecl_foreign_data_ref_elt(" "&var" n "," ct ")"
-                    ");"))
-    (wt-nl "aux = ecl_apply_from_stack_frame(frame,"
-           "ecl_fdefinition(" c-name-constant "));")
-    (wt-nl "ecl_stack_frame_close(frame);")
-    (when return-p
-      (wt-nl "ecl_foreign_data_set_elt(&output," return-type-code ",aux);")
-      (wt-nl "return output;"))
-    (wt-nl-close-brace)))
+    (with-lexical-scope ()
+      (when return-p
+        (wt-nl return-type-name " output;"))
+      (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
+      (wt-nl "cl_object aux;")
+      (with-stack-frame (frame)
+        (loop for var in vars
+              and type in arg-types
+              and ct in arg-type-constants
+              do (wt-nl "ecl_stack_frame_push(" frame "," `(ffi-data-ref ,var ,ct) ");"))
+        (wt-nl "aux = ecl_apply_from_stack_frame(" frame ","
+               "ecl_fdefinition(" c-name-constant "));")
+        ;; No UNWIND-EXIT, so we must close the frame manually.
+        (wt-nl "ecl_stack_frame_close(" frame ");"))
+      (when return-p
+        (set-loc `(ffi-data-ref "output" ,return-type-code) "aux")
+        (wt-nl "return output;")))))

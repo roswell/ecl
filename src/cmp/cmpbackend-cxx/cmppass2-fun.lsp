@@ -16,47 +16,45 @@
 
 (defun c2locals (c1form funs body labels ;; labels is T when deriving from labels
                  &aux
-                 (*env* *env*)
-                 (*inline-blocks* 0)
-                 (*env-lvl* *env-lvl*))
+                   (*env* *env*)
+                   (*inline-blocks* 0)
+                   (*env-lvl* *env-lvl*))
   (declare (ignore c1form labels))
-  ;; create location for each function which is returned,
-  ;; either in lexical:
+  ;; create location for each function which is returned, either in lexical:
   (loop with env-grows = nil
-     with closed-vars = '()
-     for fun in funs
-     for var = (fun-var fun)
-     when (plusp (var-ref var))
-     do (case (var-kind var)
-          ((lexical closure)
-           (push var closed-vars)
-           (unless env-grows
-             (setq env-grows (var-ref-ccb var))))
-          (otherwise
-           (maybe-open-inline-block)
-           (bind (next-lcl) var)
-           (wt-nl "cl_object " *volatile* var ";")))
-     finally
-     ;; if we have closed variables
-       (when (env-grows env-grows)
-         (maybe-open-inline-block)
-         (let ((env-lvl *env-lvl*))
-           (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
-     ;; bind closed locations because of possible circularities
-       (loop for var in closed-vars
-          do (bind *vv-nil* var)))
+        with closed-vars = '()
+        for fun in funs
+        for var = (fun-var fun)
+        when (plusp (var-ref var))
+          do (case (var-kind var)
+               ((lexical closure)
+                (push var closed-vars)
+                (unless env-grows
+                  (setq env-grows (var-ref-ccb var))))
+               (otherwise
+                (maybe-open-inline-block)
+                (bind (next-lcl) var)
+                (wt-nl "cl_object " *volatile* var ";")))
+        finally
+           ;; if we have closed variables
+           (when (env-grows env-grows)
+             (maybe-open-inline-block)
+             (let ((env-lvl *env-lvl*))
+               (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
+           ;; bind closed locations because of possible circularities
+           (loop for var in closed-vars
+                 do (bind *vv-nil* var)))
   ;; create the functions:
-  (mapc #'new-local funs)
+  (map nil #'update-function-env funs)
   ;; - then assign to it
   (loop for fun in funs
-     for var = (fun-var fun)
-     when (plusp (var-ref var))
-     do (set-var (list 'MAKE-CCLOSURE fun) var))
+        for var = (fun-var fun)
+        when (plusp (var-ref var))
+          do (set-var (list 'MAKE-CCLOSURE fun) var))
   (c2expr body)
   (close-inline-blocks))
 
-;;; Mechanism for sharing code.
-(defun new-local (fun)
+(defun update-function-env (fun)
   (declare (type fun fun))
   (case (fun-closure fun)
     (CLOSURE
@@ -71,7 +69,7 @@
     (otherwise
      (setf (fun-level fun) 0
            (fun-env fun) 0)))
-  (push fun *local-funs*))
+  (register-function fun))
 
 #| Steps:
  1. defun creates declarations for requireds + va_alist
@@ -214,27 +212,26 @@
     ;; which is what we do here.
     (let ((va-arg-loc (if simple-varargs 'VA-ARG 'CL-VA-ARG)))
       ;; counter for optionals
-      (wt-nl-open-brace)
-      (wt-nl "int i = " nreq ";")
-      (do ((opt optionals (cdddr opt))
-           (type-check optional-type-check-forms (cdr type-check)))
-          ((endp opt))
-        (wt-nl "if (i >= narg) {")
-        (let ((*opened-c-braces* (1+ *opened-c-braces*)))
-          (bind-init (second opt) (first opt))
-          (when (third opt)
-            (bind *vv-nil* (third opt))))
-        (wt-nl "} else {")
-        (let ((*opened-c-braces* (1+ *opened-c-braces*))
-              (*unwind-exit* *unwind-exit*))
-          (wt-nl "i++;")
-          (bind va-arg-loc (first opt))
-          (if (car type-check)
-              (c2expr* (car type-check)))
-          (when (third opt)
-            (bind *vv-t* (third opt))))
-        (wt-nl "}"))
-      (wt-nl-close-brace)))
+      (with-lexical-scope ()
+        (wt-nl "int i = " nreq ";")
+        (do ((opt optionals (cdddr opt))
+             (type-check optional-type-check-forms (cdr type-check)))
+            ((endp opt))
+          (wt-nl "if (i >= narg) {")
+          (let ((*opened-c-braces* (1+ *opened-c-braces*)))
+            (bind-init (second opt) (first opt))
+            (when (third opt)
+              (bind *vv-nil* (third opt))))
+          (wt-nl "} else {")
+          (let ((*opened-c-braces* (1+ *opened-c-braces*))
+                (*unwind-exit* *unwind-exit*))
+            (wt-nl "i++;")
+            (bind va-arg-loc (first opt))
+            (if (car type-check)
+                (c2expr* (car type-check)))
+            (when (third opt)
+              (bind *vv-t* (third opt))))
+          (wt-nl "}")))))
 
   (when (or rest key-flag allow-other-keys)
     (cond ((not (or key-flag allow-other-keys))
@@ -295,14 +292,12 @@
       (when flag
         (setf (second KEYVARS[i]) (+ nkey i))
         (bind KEYVARS[i] flag))))
-
   (when *tail-recursion-info*
-    (push 'TAIL-RECURSION-MARK *unwind-exit*)
-    (wt-nl1 "TTL:"))
-
+    (setf *tail-recursion-mark* (next-label t))
+    (push *tail-recursion-mark* *unwind-exit*)
+    (wt-label *tail-recursion-mark*))
   ;;; Now the parameters are ready, after all!
   (c2expr body)
-
   (close-inline-blocks))
 
 (defun wt-maybe-check-num-arguments (use-narg minarg maxarg fname)

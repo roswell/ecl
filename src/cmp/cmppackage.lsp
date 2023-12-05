@@ -3,55 +3,54 @@
 
 ;;;;
 ;;;;  Copyright (c) 2009, Juan Jose Garcia-Ripoll
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
-;;;;
-;;;;  CMPPACKAGE -- Package definitions and exported symbols
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
 
-(defpackage #:c
-  (:nicknames #:compiler)
-  (:use #:cl)
-  (:import-from #:ext #:install-c-compiler)
+;;;;  CMPPACKAGE -- Package definitions and exported symbols
+
+(defpackage "C"
+  (:nicknames "ECL-CMP" "COMPILER")
+  (:local-nicknames ("OP" "ECL-CMP/OP"))
+  (:use "CL")
+  (:import-from "EXT" "INSTALL-C-COMPILER")
   (:export
    ;; Flags controlling the compiler behavior.
-   #:*compiler-break-enable*
-   #:*compile-print*
-   #:*compile-to-linking-call*
-   #:*compile-verbose*
-   #:*compiler-features*
-   #:*cc*
-   #:*cc-optimize*
-   #:*user-cc-flags*
-   #:*user-ld-flags*                    ; deprecated
-   #:*user-linker-flags*
-   #:*user-linker-libs*
-   #:*suppress-compiler-messages*
+   "*COMPILER-BREAK-ENABLE*"
+   "*COMPILE-PRINT*"
+   "*COMPILE-TO-LINKING-CALL*"
+   "*COMPILE-VERBOSE*"
+   "*COMPILER-FEATURES*"
+   "*CC*"
+   "*CC-OPTIMIZE*"
+   "*USER-CC-FLAGS*"
+   "*USER-LD-FLAGS*"                    ; deprecated
+   "*USER-LINKER-FLAGS*"
+   "*USER-LINKER-LIBS*"
+   "*SUPPRESS-COMPILER-MESSAGES*"
    ;; Build targets. BUILD-ECL is not defined, preasumbly it was meant
    ;; for cross compilation.
-   #:build-ecl
-   #:build-program
-   #:build-fasl
-   #:build-static-library
-   #:build-shared-library
+   "BUILD-ECL"
+   "BUILD-PROGRAM"
+   "BUILD-FASL"
+   "BUILD-STATIC-LIBRARY"
+   "BUILD-SHARED-LIBRARY"
    ;; Conditions (and their accessors).
-   #:compiler-warning
-   #:compiler-note
-   #:compiler-message
-   #:compiler-error
-   #:compiler-fatal-error
-   #:compiler-internal-error
-   #:compiler-undefined-variable
-   #:compiler-message-file
-   #:compiler-message-file-position
-   #:compiler-message-form
+   "COMPILER-WARNING"
+   "COMPILER-NOTE"
+   "COMPILER-MESSAGE"
+   "COMPILER-ERROR"
+   "COMPILER-FATAL-ERROR"
+   "COMPILER-INTERNAL-ERROR"
+   "COMPILER-UNDEFINED-VARIABLE"
+   "COMPILER-MESSAGE-FILE"
+   "COMPILER-MESSAGE-FILE-POSITION"
+   "COMPILER-MESSAGE-FORM"
    ;; Other operators.
-   #:install-c-compiler
-   #:update-compiler-features))
+   "INSTALL-C-COMPILER"
+   "UPDATE-COMPILER-FEATURES"))
+
+
 
 (ext:package-lock '#:cl nil)

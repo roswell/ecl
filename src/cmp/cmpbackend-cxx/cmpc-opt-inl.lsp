@@ -42,17 +42,16 @@
 
 (defun save-inline-loc (loc)
   (let* ((rep-type (loc-representation-type (second loc)))
-         (temp (make-inline-temp-var (first loc) rep-type))
-         (*destination* temp))
-    (set-loc loc)
+         (temp (make-inline-temp-var (first loc) rep-type)))
+    (set-loc temp loc)
     temp))
 
 (defun emit-inlined-variable (form rest-forms)
   (let ((var (c1form-arg 0 form))
         (value-type (c1form-primary-type form)))
     (if (var-changed-in-form-list var rest-forms)
-        (let* ((temp (make-inline-temp-var value-type (var-rep-type var))))
-          (let ((*destination* temp)) (set-loc var))
+        (let ((temp (make-inline-temp-var value-type (var-rep-type var))))
+          (set-loc temp var)
           (list value-type temp))
         (list value-type var))))
 
@@ -72,9 +71,8 @@
          (fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p))
          (loc (call-global-loc fname fun args return-type expected-type))
          (type (type-and return-type (loc-type loc)))
-         (temp (make-inline-temp-var type (loc-representation-type loc)))
-         (*destination* temp))
-    (set-loc loc)
+         (temp (make-inline-temp-var type (loc-representation-type loc))))
+    (set-loc temp loc)
     (list type temp)))
 
 (defun emit-inlined-progn (form forms)

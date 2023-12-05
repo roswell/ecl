@@ -26,9 +26,9 @@
                 (make-c1form* 'LOCATION :type (object-type form)
                                         :args (add-symbol form)))
                ((constantp form *cmp-env*)
-                (c1var form (c1constant-symbol-value form (symbol-value form))))
+                (c1variable form (c1constant-symbol-value form (symbol-value form))))
                (t
-                (c1var form nil))))
+                (c1variable form nil))))
         ((consp form)
          (cmpck (not (si:proper-list-p form))
                 "Improper list found in lisp form~%~A" form)
@@ -213,4 +213,4 @@
 ;;; if this occurred in a proclaimed fun.
 
 (defun c1values (args)
-  (make-c1form* 'VALUES :args (c1args* args)))
+  (make-c1form* 'CL:VALUES :args (c1args* args)))

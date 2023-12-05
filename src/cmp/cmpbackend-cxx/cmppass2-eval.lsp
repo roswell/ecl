@@ -2,14 +2,9 @@
 ;;;;  Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya
 ;;;;  Copyright (c) 1990, Giuseppe Attardi
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
-;;;;  Copyright (c) 2021, Daniel Kochmański
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
 
 (in-package #:compiler)
@@ -26,30 +21,26 @@
   ;; other expressions will follow this one. We must thus create
   ;; a possible label so that the compiled forms exit right at
   ;; the point where the next form will be compiled.
-  (with-exit-label (label)
-    (let* ((*exit* label)
-           (*unwind-exit* (cons *exit* *unwind-exit*))
-           ;;(*lex* *lex*)
-           (*lcl* *lcl*)
-           (*temp* *temp*))
+  (with-exit-label (*exit*)
+    (let (;;(*lex* *lex*)
+          (*lcl* *lcl*)
+          (*temp* *temp*))
       (c2expr form))))
 
 (defun c2progn (c1form forms)
   (declare (ignore c1form))
-  ;; c1progn ensures that the length of forms is not less than 1.
-  (do ((l forms (cdr l))
-       (lex *lex*))
-      ((endp (cdr l))
-       (c2expr (car l)))
-    (let* ((this-form (first l))
-           (name (c1form-name this-form)))
-      (let ((*destination* 'TRASH))
-        (c2expr* (car l)))
-      (setq *lex* lex)  ; recycle lex locations
-      ;; Since PROGN does not have tags, any transfer of control means
-      ;; leaving the current PROGN statement.
-      (when (or (eq name 'GO) (eq name 'RETURN-FROM))
-        (return)))))
+  ;; INV C1PROGN ensures that the length of forms is not less than 1.
+  (loop with lex = *lex*
+        for (form next . rest) on forms do
+          (if (null next)
+              (c2expr form)
+              (let ((*destination* 'TRASH))
+                (c2expr* form)
+                ;; recycle lex locations
+                (setq *lex* lex)))
+        ;; Since PROGN does not have tags, any transfer of control means leaving
+        ;; the current PROGN statement.
+        until (member (c1form-name form) '(CL:GO CL:RETURN-FROM))))
 
 (defun c2if (c1form fmla form1 form2)
   (declare (ignore c1form))
@@ -58,7 +49,7 @@
               (eq (c1form-name form2) 'LOCATION))
          ;; Optimize (IF condition true-branch) or a situation in which
          ;; the false branch can be discarded.
-         (with-optional-exit-label (false-label)
+         (with-exit-label (false-label *exit*)
            (let ((*destination* `(JUMP-FALSE ,false-label)))
              (c2expr* fmla))
            (c2expr form1)))
@@ -66,7 +57,7 @@
               (eq (c1form-name form1) 'LOCATION))
          ;; Optimize (IF condition useless-value false-branch) when
          ;; the true branch can be discarded.
-         (with-optional-exit-label (true-label)
+         (with-exit-label (true-label *exit*)
            (let ((*destination* `(JUMP-TRUE ,true-label)))
              (c2expr* fmla))
            (c2expr form2)))
@@ -76,6 +67,14 @@
              (c2expr* fmla))
            (c2expr form1))
          (c2expr form2))))
+
+(defun jump-true-destination-p (dest)
+  (declare (si::c-local))
+  (and (consp dest) (eq (si:cons-car dest) 'JUMP-TRUE)))
+
+(defun jump-false-destination-p (dest)
+  (declare (si::c-local))
+  (and (consp dest) (eq (si:cons-car dest) 'JUMP-FALSE)))
 
 (defun negate-argument (inlined-arg dest-loc)
   (declare (si::c-local))
@@ -105,18 +104,8 @@
           (t
            (let ((*inline-blocks* 0)
                  (*temp* *temp*))
-             (unwind-exit (negate-argument
-                           (emit-inline-form arg nil)
-                           dest))
+             (unwind-exit (negate-argument (emit-inline-form arg nil) dest))
              (close-inline-blocks))))))
-
-(defun jump-true-destination-p (dest)
-  (declare (si::c-local))
-  (and (consp dest) (eq (si:cons-car dest) 'JUMP-TRUE)))
-
-(defun jump-false-destination-p (dest)
-  (declare (si::c-local))
-  (and (consp dest) (eq (si:cons-car dest) 'JUMP-FALSE)))
 
 (defun c2fmla-and (c1form butlast last)
   (declare (ignore c1form))
@@ -148,77 +137,24 @@
              (dolist (f butlast)
                (let ((*destination* 'VALUE0))
                  (c2expr* f))
-               (set-jump-true 'VALUE0 normal-exit))
+               (wt-nl "if (" 'VALUE0 "!=ECL_NIL) ")
+               (wt-open-brace) (unwind-jump normal-exit) (wt-nl-close-brace))
              (c2expr last))
            (unwind-exit 'VALUE0)))))
 
-(defun set-jump-true (loc label)
-  (multiple-value-bind (constantp value)
-      (loc-immediate-value-p loc)
-    (cond ((not constantp)
-           (cond ((eq (loc-representation-type loc) :bool)
-                  (wt-nl "if (" loc ") {"))
-                 (t
-                  (wt-nl "if ((")
-                  (wt-coerce-loc :object loc)
-                  (wt ")!=ECL_NIL) {")))
-           (cond ((unwind-no-exit label)
-                  (incf *opened-c-braces*)
-                  (wt-nl) (wt-go label)
-                  (wt-nl-close-brace))
-                 (t
-                  (wt " ") (wt-go label) (wt " }"))))
-          ((null value))
-          (t
-           (unwind-no-exit label)
-           (wt-nl) (wt-go label)))))
-
-(defun set-jump-false (loc label)
-  (multiple-value-bind (constantp value)
-      (loc-immediate-value-p loc)
-    (cond ((not constantp)
-           (cond ((eq (loc-representation-type loc) :bool)
-                  (wt-nl "if (!(" loc ")) {"))
-                 (t
-                  (wt-nl "if (Null(")
-                  (wt-coerce-loc :object loc)
-                  (wt ")) {")))
-           (cond ((unwind-no-exit label)
-                  (incf *opened-c-braces*)
-                  (wt-nl) (wt-go label)
-                  (wt-nl-close-brace))
-                 (t
-                  (wt " ") (wt-go label) (wt " }"))))
-          (value)
-          (t
-           (unwind-no-exit label)
-           (wt-nl) (wt-go label)))))
-
 (defun c2mv-prog1 (c1form form body)
-  (wt-nl-open-brace)
-  (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
-  (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
-  (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
-    (let ((*destination* 'VALUES))
+  (declare (ignore c1form))
+  (with-stack-frame (frame)
+    (let ((*destination* 'VALUEZ))
       (c2expr* form))
-    (wt-nl "ecl_stack_frame_push_values(_ecl_inner_frame);")
+    (wt-nl "ecl_stack_frame_push_values(" frame ");")
     (let ((*destination* 'TRASH))
       (mapc #'c2expr* body))
-    (wt-nl "ecl_stack_frame_pop_values(_ecl_inner_frame);"))
-  (wt-nl "ecl_stack_frame_close(_ecl_inner_frame);")
-  (wt-nl-close-brace)
-  (unwind-exit 'values))
+    (wt-nl "ecl_stack_frame_pop_values(" frame ");")
+    (unwind-exit 'VALUEZ)))
 
 (defun c2values (c1form forms)
   (declare (ignore c1form))
-  (when (and (eq *destination* 'RETURN-OBJECT)
-             (rest forms)
-             (consp *current-form*)
-             (eq 'cl:DEFUN (first *current-form*)))
-    (cmpwarn "Trying to return multiple values. ~
-              ~%;But ~a was proclaimed to have single value.~
-              ~%;Only first one will be assured."
-             (second *current-form*)))
   (cond
    ;; When the values are not going to be used, then just
    ;; process each form separately.
@@ -227,25 +163,25 @@
     ;; We really pass no value, but we need UNWIND-EXIT to trigger all the
     ;; frame-pop and all other exit forms.
     (unwind-exit 'VALUE0))
-   ;; For (VALUES) we can replace the output with either NIL (if the value
-   ;; is actually used) and set only NVALUES when the value is the output
-   ;; of a function.
+   ;; For (VALUES) we can replace the output with either NIL (if the value is
+   ;; actually used) and set only NVALUES when the value is the output of a
+   ;; function.
    ((endp forms)
-    (cond ((eq *destination* 'RETURN)
+    (cond ((eq *destination* 'LEAVE)
            (wt-nl "value0 = ECL_NIL;")
            (wt-nl "cl_env_copy->nvalues = 0;")
-           (unwind-exit 'RETURN))
-          ((eq *destination* 'VALUES)
+           (unwind-exit 'LEAVE))
+          ((eq *destination* 'VALUEZ)
            (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
            (wt-nl "cl_env_copy->nvalues = 0;")
-           (unwind-exit 'VALUES))
+           (unwind-exit 'VALUEZ))
           (t
            (unwind-exit *vv-nil*))))
    ;; For a single form, we must simply ensure that we only take a single
    ;; value of those that the function may output.
    ((endp (rest forms))
     (let ((form (first forms)))
-      (if (or (not (member *destination* '(RETURN VALUES)))
+      (if (or (not (member *destination* '(LEAVE VALUEZ)))
               (c1form-single-valued-p form))
           (c2expr form)
           (progn
@@ -266,5 +202,5 @@
           ((null vl))
         (declare (fixnum i))
         (wt-nl "cl_env_copy->values[" i "] = " (first vl) ";"))
-      (unwind-exit 'VALUES)
+      (unwind-exit 'VALUEZ)
       (close-inline-blocks)))))

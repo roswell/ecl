@@ -9,7 +9,7 @@
 (defvar *inline-blocks* 0)
 (defvar *opened-c-braces* 0)
 
-(defvar *emitted-local-funs* nil)
+(defvar *emitted-functions* nil)
 (defvar *inline-information* nil)
 
 ;;; Compiled code uses the following kinds of variables:
@@ -38,30 +38,27 @@
 
 ;;; *tail-recursion-info* holds NIL, if tail recursion is impossible.
 ;;; If possible, *tail-recursion-info* holds
-;;;     ( c1-lambda-form  required-arg .... required-arg ),
+;;;     ( c1-lambda-form required-arg .... required-arg ),
 ;;; where each required-arg is a var-object.
 (defvar *tail-recursion-info* nil)
+(defvar *tail-recursion-mark* nil)
 
 ;;; --cmpexit.lsp--
 ;;;
-;;; *last-label* holds the label# of the last used label.
 ;;; *exit* holds an 'exit', which is
-;;      ( label# . ref-flag ) or one of RETURNs (i.e. RETURN, RETURN-FIXNUM,
-;;      RETURN-CHARACTER, RETURN-LONG-FLOAT, RETURN-DOUBLE-FLOAT, RETURN-SINGLE-FLOAT,
-;;      RETURN-CSFLOAT, RETURN-CDFLOAT, RETURN-CLFLOAT or RETURN-OBJECT).
+;;      LABEL instance or LEAVE.
 ;;; *unwind-exit* holds a list consisting of:
-;;      ( label# . ref-flag ), one of RETURNs, TAIL-RECURSION-MARK, FRAME,
-;;      JUMP, BDS-BIND (each pushed for a single special binding), or a
-;;      LCL (which holds the bind stack pointer used to unbind).
+;;      LABEL instance, LEAVE, FRAME, JUMP, BDS-BIND (each pushed for a single
+;;      special binding), or a LCL (which holds the bind stack pointer used to
+;;      unbind).
 ;;;
-(defvar *last-label* 0)
+
 (defvar *exit*)
 (defvar *unwind-exit*)
 
 ;;; C forms to find out (SETF fname) locations
 (defvar *setf-definitions*)             ; holds { name fun-vv name-vv  }*
 (defvar *global-cfuns-array*)           ; holds { fun-vv fname-loc fun }*
-(defvar *local-funs*)                   ; holds { fun }*
 
 ;;; T/NIL flag to determine whether one may generate lisp constant values as C
 ;;; structs.
@@ -94,17 +91,18 @@
          (*max-temp* 0)
          (*next-cfun* 0)
          (*last-label* 0)
+         (*unwind-exit* nil)
          (*inline-information*
            (ext:if-let ((r (machine-inline-information *machine*)))
              (si:copy-hash-table r)
              (make-inline-information *machine*)))
          (*setf-definitions* nil)
          (*global-cfuns-array* nil)
-         (*local-funs* nil)
          (*static-constants* nil)
          (*optimizable-constants* (make-optimizable-constants *machine*))
          (*permanent-objects* (make-array 128 :adjustable t :fill-pointer 0))
-         (*temporary-objects* (make-array 128 :adjustable t :fill-pointer 0)))
+         (*temporary-objects* (make-array 128 :adjustable t :fill-pointer 0))
+         (*compiler-declared-globals* (make-hash-table)))
      ,@body))
 
 (defun-cached env-var-name (n) eql
@@ -141,7 +139,7 @@
        (plusp *env*)
        (dolist (exit *unwind-exit*)
          (case exit
-           (RETURN (return NIL))
+           (LEAVE (return NIL))
            (BDS-BIND)
            (t (return T))))))
 
@@ -149,29 +147,64 @@
   (let ((code (incf *next-cfun*)))
     (format nil prefix code (lisp-to-c-name lisp-name))))
 
-(defun next-label ()
-  (cons (incf *last-label*) nil))
-
-(defun next-label* ()
-  (cons (incf *last-label*) t))
-
-(defun labelp (x)
-  (and (consp x) (integerp (si:cons-car x))))
-
-(defun maybe-next-label ()
-  (if (labelp *exit*)
-      *exit*
-      (next-label)))
-
-(defmacro with-exit-label ((label) &body body)
-  `(let* ((,label (next-label))
-          (*unwind-exit* (cons ,label *unwind-exit*)))
+(defmacro with-lexical-scope (() &body body)
+  `(progn
+     (wt-nl-open-brace)
      ,@body
-     (wt-label ,label)))
+     (wt-nl-close-brace)))
 
-(defmacro with-optional-exit-label ((label) &body body)
-  `(let* ((,label (maybe-next-label))
-          (*unwind-exit* (adjoin ,label *unwind-exit*)))
-     ,@body
-     (unless (eq ,label *exit*)
-       (wt-label ,label))))
+
+;;; *LAST-LABEL* holds the label# of the last used label. This is used by the
+;;; code generator to avoid duplicated labels in the same scope.
+
+(defvar *last-label* 0)
+
+;;; LABEL represents a destination for a possible control transfer. An unique ID
+;;; is assigned to ensure that there are no two labels of the same name. DENV
+;;; captures the dynamic environment of the label, so when we jump to the label
+;;; we may unwind the dynamic state (see the exit manager). USED-P is a flag is
+;;; set to T when the code "jumps" to the label. -- jd 2023-11-25
+(defstruct (label (:predicate labelp))
+  id
+  denv
+  used-p)
+
+(defun next-label (used-p)
+  (make-label :id (incf *last-label*) :denv *unwind-exit* :used-p used-p))
+
+;;; This macro binds VAR to a label where forms may exit or jump.
+;;; LABEL may be supplied to reuse a label when it exists.
+(defmacro with-exit-label ((var &optional exit) &body body)
+  (ext:with-gensyms (reuse label)
+    `(let* ((,label ,exit)
+            (,reuse (labelp ,label))
+            (,var (if ,reuse ,label (next-label nil)))
+            (*unwind-exit* (adjoin ,var *unwind-exit*)))
+       ,@body
+       (unless ,reuse
+         (wt-label ,var)))))
+
+;;; This macro estabilishes a frame to handle dynamic escapes like GO, THROW and
+;;; RETURN-FROM to intercept the control and eval UNWIND-PROTECT cleanup forms.
+;;; ecl_frs_pop is emited by the exit manager or the caller. -- jd 2023-11-19
+(defmacro with-unwind-frame ((tag) handler-form &body body)
+  `(with-lexical-scope ()
+     (let ((*unwind-exit* (list* 'FRAME *unwind-exit*)))
+       (wt-nl "ecl_frs_push(cl_env_copy," ,tag ");")
+       (wt-nl "if (__ecl_frs_push_result!=0) {")
+       ,handler-form
+       ,@(when body
+           `((wt-nl "} else {")
+             ,@body))
+       (wt-nl "}"))))
+
+(defmacro with-stack-frame ((var &optional loc) &body body)
+  (ext:with-gensyms (hlp)
+    `(with-lexical-scope ()
+       (let* ((,var ,(or loc "_ecl_inner_frame"))
+              (,hlp "_ecl_inner_frame_aux")
+              (*unwind-exit* (list* (list 'STACK ,var) *unwind-exit*)))
+         (wt-nl "struct ecl_stack_frame " ,hlp ";")
+         (wt-nl *volatile* "cl_object " ,var
+                "=ecl_stack_frame_open(cl_env_copy,(cl_object)&" ,hlp ",0);")
+         ,@body))))

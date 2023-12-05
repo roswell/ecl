@@ -65,6 +65,7 @@ running the compiler. It may be updated by running ")
 ;;; List of callbacks to be generated
 ;;;
 (defvar *callbacks* nil)
+(defvar *functions* nil)
 
 ;;; --cmpc-machine.lsp, cmpffi.lsp ---
 (defvar *machine* nil)
@@ -123,10 +124,10 @@ variable, block, tag or function object at the end.")
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
 
-;;; --cmplog.lsp--
+;;; --cmplocs.lsp--
 ;;;
-;;; Destination of output of different forms. See cmploc.lsp for types
-;;; of destinations.
+;;; Destination of output of different forms. See cmplocs.lsp for types of
+;;; destinations.
 ;;;
 (defvar *destination*)
 
@@ -238,6 +239,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
     (*callbacks* nil)
+    (*functions* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* nil)
     (*load-objects* (make-hash-table :size 128 :test #'equal))

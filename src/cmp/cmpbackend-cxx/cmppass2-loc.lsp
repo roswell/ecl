@@ -37,22 +37,6 @@
         (t
          (unknown-location 'wt-loc loc))))
 
-(defun wt-lcl (lcl)
-  (unless (numberp lcl)
-    (baboon :format-control "wt-lcl: ~s NaN"
-            :format-arguments (list lcl)))
-  (wt "v" lcl))
-
-(defun wt-lcl-loc (lcl &optional type name)
-  (declare (ignore type))
-  (unless (numberp lcl)
-    (baboon :format-control "wt-lcl-loc: ~s NaN"
-            :format-arguments (list lcl)))
-  (wt "v" lcl name))
-
-(defun wt-temp (temp)
-  (wt "T" temp))
-
 (defun wt-fixnum (value &optional vv)
   (declare (ignore vv))
   (princ value *compiler-output1*)
@@ -178,13 +162,13 @@
          (wt "(" vv "->symbol.gfdef)")))
       (t
        ;; #'(SETF symbol)
-       (let ((set-loc (assoc name *setf-definitions*)))
-         (unless set-loc
+       (let ((setf-loc (assoc name *setf-definitions*)))
+         (unless setf-loc
            (let* ((setf-vv (data-empty-loc*))
                   (name-vv (get-object name)))
-             (setf set-loc (list name setf-vv name-vv))
-             (push set-loc *setf-definitions*)))
-         (wt "ECL_CONS_CAR(" (second set-loc) ")"))))))
+             (setf setf-loc (list name setf-vv name-vv))
+             (push setf-loc *setf-definitions*)))
+         (wt "ECL_CONS_CAR(" (second setf-loc) ")"))))))
 
 (defun environment-accessor (fun)
   (let* ((env-var (env-var-name *env-lvl*))
@@ -369,7 +353,7 @@
       (case c
         (#\@
          (let ((object (read s)))
-           (unless (and (consp object) (eq (car object) 'RETURN))
+           (unless (and (consp object) (eq (car object) 'CL:RETURN))
              (cmperr "Used @~s in C-INLINE form. Expected syntax is @(RETURN ...)." object))
            (if (eq output-vars 'VALUES)
                (cmperr "Used @(RETURN ...) in a C-INLINE form with no output values.")
@@ -399,61 +383,66 @@
 ;;; SET-LOC
 ;;;
 
-(defun set-unknown-loc (loc)
-  (declare (ignore loc))
-  (unknown-location 'set-loc *destination*))
+(defun set-unknown-loc (destination loc)
+  (unknown-location 'set-loc destination))
 
-(defun set-loc (loc &aux fd)
-  (let ((destination *destination*))
-    (cond ((eq destination loc))
-          ((symbolp destination)
-           (funcall (gethash destination *set-loc-dispatch-table*
-                             'set-unknown-loc)
-                    loc))
-          ((var-p destination)
-           (set-var loc destination))
-          ((vv-p destination)
-           (set-vv loc destination))
-          ((atom destination)
-           (unknown-location 'set-loc destination))
-          (t
-           (let ((fd (gethash (first destination) *set-loc-dispatch-table*)))
-             (if fd
-                 (apply fd loc (rest destination))
-                 (progn
-                   (wt-nl)
-                   (wt-loc destination) (wt " = ")
-                   (wt-coerce-loc (loc-representation-type *destination*) loc)
-                   (wt ";"))))))))
+(defun set-loc (destination loc &aux fd)
+  (cond ((eq destination loc))
+        ((symbolp destination)
+         (funcall (gethash destination *set-loc-dispatch-table* 'set-unknown-loc)
+                  loc))
+        ((var-p destination)
+         (set-var loc destination))
+        ((vv-p destination)
+         (set-vv loc destination))
+        ((atom destination)
+         (unknown-location 'set-loc destination loc))
+        (t
+         (ext:if-let ((fd (gethash (first destination) *set-loc-dispatch-table*)))
+           (apply fd loc (rest destination))
+           (progn
+             (wt-nl)
+             (wt-loc destination) (wt " = ")
+             (wt-coerce-loc (loc-representation-type *destination*) loc)
+             (wt ";"))))))
 
 (defun set-the-loc (loc type orig-loc)
   (declare (ignore type))
-  (let ((*destination* orig-loc))
-    (set-loc loc)))
+  (set-loc orig-loc loc))
                  
-(defun set-values-loc (loc)
-  (cond ((eq loc 'VALUES))
+(defun set-valuez-loc (loc)
+  (cond ((eq loc 'VALUEZ))
         ((uses-values loc)
          (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc) (wt ";"))
         (t
-         (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc)
-         (wt ";")
+         (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc) (wt ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
 (defun set-value0-loc (loc)
   (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
 
-(defun set-return-loc (loc)
-  (cond ((or (eq loc 'VALUES) (uses-values loc))
+(defun set-leave-loc (loc)
+  (cond ((or (eq loc 'VALUEZ) (uses-values loc))
          (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
         ((eq loc 'VALUE0)
          (wt-nl "cl_env_copy->nvalues = 1;"))
-        ((eq loc 'RETURN))
+        ((eq loc 'LEAVE))
         (t
          (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
-(defun set-trash-loc (loc)
+(defun set-trash-loc (loc &rest args)
+  (declare (ignore args))
   (when (loc-with-side-effects-p loc)
     (wt-nl loc ";")
     t))
+
+;;;
+;;; Foreign data
+;;;
+
+(defun wt-ffi-data-ref (data ffi-tag)
+  (wt "ecl_foreign_data_ref_elt(&" data "," ffi-tag ")"))
+
+(defun wt-ffi-data-set (value data ffi-tag)
+  (wt "ecl_foreign_data_set_elt(&" data "," ffi-tag "," value ");"))

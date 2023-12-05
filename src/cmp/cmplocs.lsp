@@ -85,41 +85,34 @@
            (otherwise :object)))))
 
 (defun loc-with-side-effects-p (loc &aux name)
-  (cond ((var-p loc)
-         (and (global-var-p loc)
-              (policy-global-var-checking)))
-        ((atom loc)
-         nil)
-        ((member (setf name (first loc)) '(CALL CALL-NORMAL CALL-INDIRECT CALL-STACK)
-                 :test #'eq)
-         t)
-        ((eq name 'cl:THE)
-         (loc-with-side-effects-p (third loc)))
-        ((eq name 'cl:FDEFINITION)
-         (policy-global-function-checking))
-        ((eq name 'ffi:C-INLINE)
-         (or (eq (sixth loc) 'cl:VALUES) ;; Uses VALUES
-             (fifth loc)))))             ;; or side effects
+  (when (atom loc)
+    (return-from loc-with-side-effects-p
+      (and (var-p loc)
+           (global-var-p loc)
+           (policy-global-var-checking))))
+  (case (first loc)
+    ((CALL CALL-NORMAL CALL-INDIRECT CALL-STACK) T)
+    (CL:THE (loc-with-side-effects-p (third loc)))
+    (CL:FDEFINITION (policy-global-function-checking))
+    ;; Uses VALUES or has side effects.
+    (FFI:C-INLINE (or (eq (sixth loc) 'CL:VALUES) (fifth loc)))
+    (otherwise NIL)))
 
 (defun loc-refers-to-special-p (loc)
-  (cond ((var-p loc)
-         (member (var-kind loc) '(SPECIAL GLOBAL)))
-        ((atom loc)
-         nil)
-        ((eq (first loc) 'THE)
-         (loc-refers-to-special-p (third loc)))
-        ((eq (setf loc (first loc)) 'BIND)
-         t)
-        ((eq loc 'ffi:C-INLINE)
-         t)                             ; We do not know, so guess yes
-        (t nil)))
+  (when (atom loc)
+    (return-from loc-refers-to-special-p
+      (and (var-p loc)
+           (member (var-kind loc) '(SPECIAL GLOBAL)))))
+  (case (first loc)
+    (CL:THE (loc-refers-to-special-p (third loc)))
+    (BIND T)
+     ;; We do not know, so guess yes.
+    (FFI:C-INLINE T)
+    (otherwise NIL)))
 
 ;;; Valid locations are:
-;;;     NIL
-;;;     T
-;;;     fixnum
 ;;;     VALUE0
-;;;     VALUES
+;;;     VALUEZ
 ;;;     var-object
 ;;;     a string                        designating a C expression
 ;;;     ( VALUE i )                     VALUES(i)
@@ -144,22 +137,22 @@
 
 ;;; Valid *DESTINATION* locations are:
 ;;;
-;;;     VALUE0
-;;;     RETURN                          Object returned from current function.
+;;;     var-object                      Variable
+;;;     loc-object                      VV Location
 ;;;     TRASH                           Value may be thrown away.
-;;;     VALUES                          Values vector.
-;;;     var-object
-;;;     ( LCL lcl )
-;;;     ( LEX lex-address )
+;;;     LEAVE                           Object returned from current function.
+;;;     VALUEZ                          Values vector.
+;;;     VALUE0
+;;;     ( VALUE i )                     Nth value
 ;;;     ( BIND var alternative )        Alternative is optional
 ;;;     ( JUMP-TRUE label )
 ;;;     ( JUMP-FALSE label )
 
 (defun tmp-destination (loc)
   (case loc
-    (VALUES 'VALUES)
+    (VALUEZ 'VALUEZ)
     (TRASH 'TRASH)
-    (T 'RETURN)))
+    (T 'LEAVE)))
 
 (defun precise-loc-type (loc new-type)
   (if (subtypep (loc-type loc) new-type)
@@ -174,7 +167,7 @@
          t)
         ((vv-p loc)
          t)
-        ((member loc '(value0 values va-arg cl-va-arg))
+        ((member loc '(VALUE0 VALUEZ VA-ARG CL-VA-ARG))
          nil)
         ((atom loc)
          (baboon :format-control "Unknown location ~A found in C1FORM"

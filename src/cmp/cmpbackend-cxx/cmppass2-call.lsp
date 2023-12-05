@@ -82,17 +82,15 @@
 (defun tail-recursion-possible ()
   (dolist (ue *unwind-exit*
               (baboon :format-control "tail-recursion-possible: should never return."))
-    (cond ((eq ue 'TAIL-RECURSION-MARK)
+    (cond ((eq ue *tail-recursion-mark*)
            (return t))
-          ((or (numberp ue) (eq ue 'BDS-BIND) (eq ue 'FRAME))
+          ((or (eq ue 'BDS-BIND) (eq ue 'FRAME))
            (return nil))
-          ((or (consp ue) (eq ue 'JUMP) (eq ue 'IHS-ENV)))
+          ((or (consp ue) (labelp ue) (eq ue 'IHS-ENV)))
           (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
 
 (defun last-call-p ()
-  (member *exit*
-          '(RETURN RETURN-FIXNUM RETURN-CHARACTER RETURN-SINGLE-FLOAT
-            RETURN-DOUBLE-FLOAT RETURN-LONG-FLOAT RETURN-OBJECT)))
+  (eq *exit* 'LEAVE))
 
 (defun c2try-tail-recursive-call (fun args)
   (when (and *tail-recursion-info*
@@ -101,16 +99,12 @@
              (tail-recursion-possible)
              (inline-possible (fun-name fun))
              (= (length args) (length (rest *tail-recursion-info*))))
-    (let* ((*destination* 'TRASH)
-           (*exit* (next-label))
-           (*unwind-exit* (cons *exit* *unwind-exit*)))
-      (c2psetq nil ;; We do not provide any C2FORM
-               (cdr *tail-recursion-info*) args)
-      (wt-label *exit*))
-    (unwind-no-exit 'TAIL-RECURSION-MARK)
-    (wt-nl "goto TTL;")
-    (cmpdebug "Tail-recursive call of ~s was replaced by iteration."
-              (fun-name fun))
+    (with-exit-label (*exit*)
+      (let ((*destination* 'TRASH))
+        ;; We do not provide any C2FORM.
+        (c2psetq nil (cdr *tail-recursion-info*) args)))
+    (unwind-jump *tail-recursion-mark*)
+    (cmpdebug "Tail-recursive call of ~s was replaced by iteration." (fun-name fun))
     t))
 
 (defun c2call-local (c1form fun args)
@@ -137,18 +131,14 @@
   (declare (ignore c1form))
   (let* ((*temp* *temp*)
          (loc (maybe-save-value form args)))
-    (wt-nl-open-brace)
-    (wt-nl "struct ecl_stack_frame _ecl_inner_frame_aux;")
-    (wt-nl *volatile* "cl_object _ecl_inner_frame = ecl_stack_frame_open(cl_env_copy,(cl_object)&_ecl_inner_frame_aux,0);")
-    (let ((*unwind-exit* `((STACK "_ecl_inner_frame") ,@*unwind-exit*)))
-      (let ((*destination* (if values-p 'values 'return)))
+    (with-stack-frame (frame)
+      (let ((*destination* (if values-p 'VALUEZ 'LEAVE)))
         (dolist (arg args)
           (c2expr* arg)
           (if values-p
-              (wt-nl "ecl_stack_frame_push_values(_ecl_inner_frame);")
-              (wt-nl "ecl_stack_frame_push(_ecl_inner_frame,value0);"))))
-      (unwind-exit (call-stack-loc nil loc)))
-    (wt-nl-close-brace)))
+              (wt-nl "ecl_stack_frame_push_values(" frame ");")
+              (wt-nl "ecl_stack_frame_push(" frame ",value0);"))))
+      (unwind-exit (call-stack-loc nil loc)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

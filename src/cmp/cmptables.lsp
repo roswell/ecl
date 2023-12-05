@@ -36,7 +36,6 @@
     (CL:FUNCTION        fname :single-valued)
     (LOCALS             local-fun-list body labels-p :pure)
     ;; Specialized accessors
-    (CL:RPLACD          (dest-c1form value-c1form) :side-effects)
     (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
     (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
     ;; Control structures
@@ -155,17 +154,15 @@
     ))
 
 (defconstant +set-loc-dispatch-alist+
-  '((bind . bind)
-    (jump-true . set-jump-true)
-    (jump-false . set-jump-false)
-
-    (cl:values . set-values-loc)
-    (value0 . set-value0-loc)
-    (cl:return . set-return-loc)
-    (trash . set-trash-loc)
-
+  '((bind   . bind)
     (cl:the . set-the-loc)
-    ))
+    (valuez . set-valuez-loc)
+    (value0 . set-value0-loc)
+    (leave  . set-leave-loc)
+    (trash  . set-trash-loc)
+    (jump-true  . set-trash-loc)
+    (jump-false . set-trash-loc)
+    (ffi-data-ref . wt-ffi-data-set)))
 
 (defconstant +wt-loc-dispatch-alist+
   '((call-normal . wt-call-normal)
@@ -184,11 +181,12 @@
     (make-cclosure . wt-make-closure)
 
     (si:structure-ref . wt-structure-ref)
+    (ffi-data-ref . wt-ffi-data-ref)
 
-    (cl:return . "value0")
-    (cl:values . "cl_env_copy->values[0]")
+    (leave . "value0")
     (va-arg . "va_arg(args,cl_object)")
     (cl-va-arg . "ecl_va_arg(args)")
+    (valuez . "cl_env_copy->values[0]")
     (value0 . "value0")))
 
 (defconstant +c2-dispatch-alist+
@@ -224,7 +222,7 @@
     (cl:tagbody . c2tagbody)
     (cl:go . c2go)
 
-    (variable . c2var)
+    (variable . c2variable)
     (location . c2location)
     (cl:setq . c2setq)
     (cl:progv . c2progv)

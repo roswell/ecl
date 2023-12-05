@@ -49,14 +49,7 @@
   (functions-setting nil)
   (functions-reading nil)
                 ;;; Functions in which the variable has been modified or read.
-  (loc 'OBJECT) ;;; During Pass 1: indicates whether the variable can
-                ;;; be allocated on the c-stack: OBJECT means
-                ;;; the variable is declared as OBJECT, and CLB means
-                ;;; the variable is referenced across Level Boundary and thus
-                ;;; cannot be allocated on the C stack.  Note that OBJECT is
-                ;;; set during variable binding and CLB is set when the
-                ;;; variable is used later, and therefore CLB may supersede
-                ;;; OBJECT.
+  (loc 'OBJECT) ;;; During Pass 1: OBJECT
                 ;;; During Pass 2:
                 ;;; For :FIXNUM, :CHAR, :FLOAT, :DOUBLE, :OBJECT:
                 ;;;   the cvar for the C variable that holds the value.
@@ -122,8 +115,6 @@
   (no-entry nil)        ;;; NIL if declared as C-LOCAL. Then we create no
                         ;;; function object and the C function is called
                         ;;; directly
-  (shares-with nil)     ;;; T if this function shares the C code with another one.
-                        ;;; In that case we need not emit this one.
   closure               ;;; During Pass2, T if env is used inside the function
   var                   ;;; the variable holding the funob
   description           ;;; Text for the object, in case NAME == NIL.
@@ -159,7 +150,7 @@
   ref-clb               ;;; Unused (see blk-var).
   read-nodes            ;;; Unused (see blk-var).
 |#
-  exit                  ;;; Where to return.  A label.
+  exit                  ;;; Where to return. A label.
   destination           ;;; Where the value of the block to go.
   var                   ;;; Variable containing the block id and its references.
   (type '(VALUES &REST T)) ;;; Estimated type.
@@ -173,8 +164,7 @@
    ref-clb              ;;; Unused (see tag-var).
    read-nodes           ;;; Unused (see tag-var).
 |#
-  label                 ;;; Where to jump: a label.
-  unwind-exit           ;;; Where to unwind-no-exit.
+  jump                  ;;; Where to escape. A label.
   var                   ;;; Variable containing frame ID.
   index                 ;;; An integer denoting the label.
   )

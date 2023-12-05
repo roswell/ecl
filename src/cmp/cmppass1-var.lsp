@@ -243,7 +243,7 @@
                      :ref 0)))))
 
 ;;; When LOC is not NIL then we deal with a constant.
-(defun c1var (name loc)
+(defun c1variable (name loc)
   (let* ((var (c1vref name))
          (output (make-c1form* 'VARIABLE
                                :type (var-type var)
@@ -271,8 +271,7 @@
              ((CLOSURE))
              ((LEXICAL)
               (when cfb
-                (setf (var-ref-clb var) t
-                      (var-loc var) 'OBJECT)))
+                (setf (var-ref-clb var) t)))
              (t
               (when cfb
                 (cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."

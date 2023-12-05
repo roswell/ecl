@@ -284,7 +284,7 @@ from the C language code.  NIL means \"do not create the file\"."
          (*compiler-output2* (if h-file
                                  (open h-file :direction :output :external-format :default)
                                  null-stream))
-         (t3local-fun (symbol-function 'T3LOCAL-FUN))
+         (t3function (symbol-function 'T3FUNCTION))
          (compiler-conditions nil)
          (*cmp-env-root* *cmp-env-root*))
     (with-compiler-env (compiler-conditions)
@@ -292,10 +292,10 @@ from the C language code.  NIL means \"do not create the file\"."
         (setf disassembled-form (set-closure-env disassembled-form lexenv *cmp-env-root*))
         (unwind-protect
              (progn
-               (setf (symbol-function 'T3LOCAL-FUN)
+               (setf (symbol-function 'T3FUNCTION)
                      #'(lambda (&rest args)
                          (let ((*compiler-output1* *standard-output*))
-                           (apply t3local-fun args))))
+                           (apply t3function args))))
                (compiler-pass1 disassembled-form)
                (compiler-pass/propagate-types)
                (optimize-cxx-data *referenced-objects*)
@@ -304,7 +304,7 @@ from the C language code.  NIL means \"do not create the file\"."
                            (if data-file data-file ""))
                (when data-file
                  (data-c-dump data-file)))
-          (setf (symbol-function 'T3LOCAL-FUN) t3local-fun)
+          (setf (symbol-function 'T3FUNCTION) t3function)
           (when h-file (close *compiler-output2*))))))
   nil)
 

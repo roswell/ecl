@@ -27,22 +27,6 @@
     (baboon :format-control "In REPLACEABLE, variable ~A not found. Form:~%~A"
             :format-arguments (list (var-name var) *current-form*))))
 
-#+not-used
-(defun discarded (var form body &aux last)
-  (labels ((last-form (x &aux (args (c1form-args x)))
-             (case (c1form-name x)
-               (PROGN
-                 (last-form (car (last (first args)))))
-               ((LET LET* FLET LABELS BLOCK CATCH)
-                (last-form (car (last args))))
-               (VARIABLE (c1form-arg 0 x))
-               (t x))))
-    (and (not (c1form-side-effects form))
-         (or (< (var-ref var) 1)
-             (and (= (var-ref var) 1)
-                  (eq var (last-form body))
-                  (eq 'TRASH *destination*))))))
-
 (defun nsubst-var (var form)
   (when (var-set-nodes var)
     (baboon :format-control "Cannot replace a variable that is to be changed"))
@@ -55,16 +39,6 @@
     (delete-from-read-nodes var where)
     (c1form-replace-with where form))
   (setf (var-ignorable var) 0))
-
-#+not-used
-(defun member-var (var list)
-  (let ((kind (var-kind var)))
-    (if (member kind '(SPECIAL GLOBAL))
-        (member var list :test
-                #'(lambda (v1 v2)
-                    (and (member (var-kind v2) '(SPECIAL GLOBAL))
-                         (eql (var-name v1) (var-name v2)))))
-        (member var list))))
 
 ;;;
 

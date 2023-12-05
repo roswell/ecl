@@ -14,6 +14,9 @@
 
 (in-package #:compiler)
 
+(defun register-function (fun)
+  (push fun *functions*))
+
 (defun child-function-p (presumed-parent fun)
   (declare (optimize speed))
   (loop for real-parent = (fun-parent fun)
@@ -86,7 +89,6 @@
             (setf (var-ref-clb var) nil
                   (var-ref-ccb var) t
                   (var-kind var) 'CLOSURE
-                  (var-loc var) 'OBJECT
                   to-be-updated
                   (prepend-new (var-functions-reading var)
                                (prepend-new (var-functions-setting var)
