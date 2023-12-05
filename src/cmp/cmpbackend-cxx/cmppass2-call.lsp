@@ -17,13 +17,13 @@
 ;;;
 ;;; c2fcall:
 ;;;
-;;;   FUN the function to be called
-;;;   ARGS is the list of arguments
+;;;   FUN: the function to be called
+;;;   ARGS: the list of arguments
 ;;;   FUN-VAL depends on the particular call type
 ;;;       :LOCAL   structure FUN [see cmprefs.lsp]
 ;;;       :GLOBAL  function name [symbol or (SETF symbol)]
 ;;;       :UNKNOWN the value NIL
-;;;   CALL-TYPE is (member :LOCAL :GLOBAL :UKNOWN)
+;;;   CALL-TYPE: (member :LOCAL :GLOBAL :UKNOWN)
 ;;;
 (defun c2fcall (c1form fun args fun-val call-type)
   (if (> (length args) si:c-arguments-limit)
@@ -60,15 +60,39 @@
 ;;;
 ;;; c2call-global:
 ;;;
-;;;   ARGS is the list of arguments
-;;;   LOC is either NIL or the location of the function object
+;;;   LOC: the location of the function object or NIL
+;;;   ARGS: the list of arguments
 ;;;
 (defun c2call-global (c1form fname args)
   (let ((fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p)))
     (when (and fun (c2try-tail-recursive-call fun args))
       (return-from c2call-global))
-    (unwind-exit (call-global-loc fname fun args (c1form-primary-type c1form)
+    (unwind-exit (call-global-loc fname fun
+                                  (inline-args args)
+                                  (c1form-primary-type c1form)
                                   (loc-type *destination*)))))
+
+;;;
+;;; c2call-local:
+;;;
+;;;   FUN: the function object
+;;;   ARGS: the list of arguments
+;;;
+(defun c2call-local (c1form fun args)
+  (declare (type fun fun))
+  (unless (c2try-tail-recursive-call fun args)
+    (unwind-exit (call-loc (fun-name fun) fun
+                           (inline-args args)
+                           (c1form-primary-type c1form)))))
+
+(defun c2call-unknown (c1form form args)
+  (declare (ignore c1form))
+  (let* ((form-type (c1form-primary-type form))
+         (function-p (and (subtypep form-type 'function)
+                          (policy-assume-right-type)))
+         (loc (inlined-arg-loc (inline-arg0 form args)))
+         (args (inline-args args)))
+    (unwind-exit (call-unknown-global-loc loc args function-p))))
 
 ;;; Tail-recursion optimization for a function F is possible only if
 ;;;     1. F receives only required parameters, and
@@ -94,13 +118,10 @@
           ((or (consp ue) (labelp ue) (eq ue 'IHS-ENV)))
           (t (baboon :format-control "tail-recursion-possible: unexpected situation.")))))
 
-(defun last-call-p ()
-  (eq *exit* 'LEAVE))
-
 (defun c2try-tail-recursive-call (fun args)
   (when (and *tail-recursion-info*
              (eq fun (first *tail-recursion-info*))
-             (last-call-p)
+             (eq *exit* 'LEAVE)
              (tail-recursion-possible)
              (inline-possible (fun-name fun))
              (= (length args) (length (rest *tail-recursion-info*))))
@@ -112,45 +133,51 @@
     (cmpdebug "Tail-recursive call of ~s was replaced by iteration." (fun-name fun))
     t))
 
-(defun c2call-local (c1form fun args)
-  (declare (type fun fun))
-  (unless (c2try-tail-recursive-call fun args)
-    (unwind-exit (call-loc (fun-name fun) fun (inline-args args)
-                           (c1form-primary-type c1form)))))
-
-(defun c2call-unknown (c1form form args)
-  (declare (ignore c1form))
-  (let* ((form-type (c1form-primary-type form))
-         (function-p (and (subtypep form-type 'function)
-                          (policy-assume-right-type)))
-         (loc (inlined-arg-loc (inline-arg0 form args))))
-    (unwind-exit (call-unknown-global-loc loc (inline-args args) function-p))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; CALL LOCATIONS
 ;;;
+
+;;;
+;;; call-stack-loc
+;;;
+;;;   FNAME: the name of the function or NIL
+;;;   LOC: the location containing function
+;;;
+(defun call-stack-loc (fname loc)
+  `(CALL-STACK ,loc ,fname))
+
+;;;
+;;; call-loc
+;;;
+;;;   FNAME: the name of the function
+;;;   FUN: a function object
+;;;   ARGS: a list of INLINED-ARGs
+;;;   TYPE: the type to which the output is coerced
+;;;
+(defun call-loc (fname fun args type)
+  (declare (ignore fname))
+  `(CALL-NORMAL ,fun ,(coerce-locs args) ,type))
+
 ;;;
 ;;; call-global:
 ;;;   FNAME: the name of the function
-;;;   LOC: either a function object or NIL
+;;;   FUN: either a function object or NIL
 ;;;   ARGS: a list of typed locs with arguments
 ;;;   RETURN-TYPE: the type to which the output is coerced
+;;;   EXPECTED-TYPE: the type of the destination location
 ;;;
 (defun call-global-loc (fname fun args return-type expected-type)
   ;; Check whether it is a global function that we cannot call directly.
   (when (and (or (null fun) (fun-global fun)) (not (inline-possible fname)))
     (return-from call-global-loc
-      (call-unknown-global-fun fname (inline-args args))))
-
-  (setf args (inline-args args))
+      (call-unknown-global-fun fname args)))
 
   ;; Try with a function that has a C-INLINE expansion
-  (let ((inline-loc (apply-inliner fname
-                                   (type-and return-type expected-type)
-                                   args)))
-    (when inline-loc
-      (return-from call-global-loc inline-loc)))
+  (ext:when-let ((inline-loc (apply-inliner fname
+                                            (type-and return-type expected-type)
+                                            args)))
+    (return-from call-global-loc inline-loc))
 
   ;; Call to a function defined in the same file. Direct calls are
   ;; only emitted for low or neutral values of DEBUG is >= 2.
@@ -188,17 +215,14 @@
             (multiple-value-setq (found ignored minarg maxarg)
               (si:mangle-name fname)))
           (unless found
-            (cmperr "Can not call the function ~A using its exported C name ~A because its function type has not been proclaimed."
+            (cmperr "Can not call the function ~A using its exported C name ~A ~
+                     because its function type has not been proclaimed."
                     fname fd)))
         (return-from call-global-loc
           (call-exported-function-loc fname args fd minarg maxarg
                                       (si:mangle-name fname) return-type)))))
 
   (call-unknown-global-fun fname args))
-
-(defun call-loc (fname fun args type)
-  (declare (ignore fname))
-  `(CALL-NORMAL ,fun ,(coerce-locs args) ,type))
 
 (defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core
                                    return-type)
@@ -227,16 +251,19 @@
 
 ;;;
 ;;; call-unknown-global-loc
-;;;   LOC is NIL or location containing function
-;;;   ARGS is the list of typed locations for arguments
 ;;;
-(defun call-unknown-global-loc (loc args &optional function-p)
+;;;   LOC: the location containing the function or NIL
+;;;   ARGS: a list of INLINED-ARGs
+;;;   FUNCTION-P: true when we can assume that LOC is the function
+;;;
+(defun call-unknown-global-loc (loc args function-p)
   `(CALL-INDIRECT ,loc ,(coerce-locs args) nil ,function-p))
 
 ;;;
 ;;; call-unknown-global-fun
-;;;   FNAME is the name of the global function
-;;;   ARGS is the list of typed locations for arguments
+;;;
+;;;   FNAME: the name of the global function
+;;;   ARGS: a list of INLINED-ARGs
 ;;;
 (defun call-unknown-global-fun (fname args)
   `(CALL-INDIRECT (FDEFINITION ,fname) ,(coerce-locs args) ,fname t))
@@ -246,11 +273,3 @@
 ;;; ecl_function_dispatch. wt-fdefinition handles all proper names.
 (defun call-unknown-global-fun (fname args)
   `(CALL-INDIRECT ,(get-object fname) ,(coerce-locs args) ,fname nil))
-
-;;;
-;;; call-stack-loc
-;;;   LOC is the location containing function
-;;;   FNAME is NIL or a name of the function
-;;;
-(defun call-stack-loc (fname loc)
-  `(CALL-STACK ,loc ,fname))
