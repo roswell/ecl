@@ -71,11 +71,10 @@
               (t
                `(COERCE-LOC ,rep-type ,loc)))))
 
-
 (defun make-inline-temp-var (value-type &optional rep-type)
   (let ((out-rep-type (or rep-type (lisp-type->rep-type value-type))))
     (if (eq out-rep-type :object)
-        (make-temp-var)
+        (make-temp-var value-type)
         (let ((var (make-lcl-var :rep-type out-rep-type
                                  :type value-type)))
           (open-inline-block)
