@@ -69,8 +69,8 @@
       (return-from c2call-global))
     (unwind-exit (call-global-loc fname fun
                                   (inline-args args)
-                                  (c1form-primary-type c1form)
-                                  (loc-type *destination*)))))
+                                  (type-and (c1form-primary-type c1form)
+                                            (loc-type *destination*))))))
 
 ;;;
 ;;; c2call-local:
@@ -164,44 +164,40 @@
 ;;;   FNAME: the name of the function
 ;;;   FUN: either a function object or NIL
 ;;;   ARGS: a list of typed locs with arguments
-;;;   RETURN-TYPE: the type to which the output is coerced
-;;;   EXPECTED-TYPE: the type of the destination location
+;;;   TYPE: the type to which the output is coerced
 ;;;
-(defun call-global-loc (fname fun args return-type expected-type)
+(defun call-global-loc (fname fun args type)
+
   ;; Check whether it is a global function that we cannot call directly.
-  (when (and (or (null fun) (fun-global fun)) (not (inline-possible fname)))
+  (when (not (inline-possible fname))
     (return-from call-global-loc
       (call-unknown-global-fun fname args)))
 
   ;; Try with a function that has a C-INLINE expansion
-  (ext:when-let ((inline-loc (apply-inliner fname
-                                            (type-and return-type expected-type)
-                                            args)))
+  (ext:when-let ((inline-loc (apply-inliner fname type args)))
     (return-from call-global-loc inline-loc))
 
-  ;; Call to a function defined in the same file. Direct calls are
-  ;; only emitted for low or neutral values of DEBUG is >= 2.
-  (when (and (policy-use-direct-C-call)
-             (or (fun-p fun)
-                 (and (null fun)
-                      (setf fun (find fname *global-funs* :test #'same-fname-p
-                                                          :key #'fun-name)))))
-    (return-from call-global-loc (call-loc fname fun args return-type)))
+  ;; Call to a function defined in the same file. Direct calls are only emitted
+  ;; for low or neutral values of DEBUG, that is DEBUG < 2.
+  (when (and fun (policy-use-direct-C-call))
+    (return-from call-global-loc
+      (call-loc fname fun args type)))
 
   ;; Call to a global (SETF ...) function
   (when (not (symbolp fname))
     (return-from call-global-loc
       (call-unknown-global-fun fname args)))
 
-  ;; Call to a function whose C language function name is known,
-  ;; either because it has been proclaimed so, or because it belongs
-  ;; to the runtime.
+  ;; Call to a function whose C language function name is known because it
+  ;; belongs to the runtime.
   (multiple-value-bind (found fd minarg maxarg)
       (si:mangle-name fname t)
     (when found
       (return-from call-global-loc
-        (call-exported-function-loc fname args fd minarg maxarg t return-type))))
+        (call-exported-function-loc fname args fd minarg maxarg t type))))
 
+  ;; Call to a function whose C language function name is known because it has
+  ;; been proclaimed so.
   (when (policy-use-direct-C-call)
     (ext:when-let ((fd (si:get-sysprop fname 'Lfun)))
       (multiple-value-bind (minarg maxarg found) (get-proclaimed-narg fname)
@@ -220,12 +216,11 @@
                     fname fd)))
         (return-from call-global-loc
           (call-exported-function-loc fname args fd minarg maxarg
-                                      (si:mangle-name fname) return-type)))))
+                                      (si:mangle-name fname) type)))))
 
   (call-unknown-global-fun fname args))
 
-(defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core
-                                   return-type)
+(defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core type)
   (unless in-core
     ;; We only write declarations for functions which are not in lisp_external.h
     (multiple-value-bind (val declared)
@@ -247,7 +242,7 @@
         (setf (gethash fun-c-name *compiler-declared-globals*) 1))))
   (let ((fun (make-fun :name fname :global t :cfun fun-c-name :lambda 'NIL
                        :minarg minarg :maxarg maxarg)))
-    (call-loc fname fun args return-type)))
+    (call-loc fname fun args type)))
 
 ;;;
 ;;; call-unknown-global-loc
