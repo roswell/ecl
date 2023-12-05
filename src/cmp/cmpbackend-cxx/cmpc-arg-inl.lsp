@@ -99,10 +99,12 @@
         (make-inlined-arg (c1form-arg 0 form1) (c1form-primary-type form1))
         (emit-inlined-variable (make-c1form 'VARIABLE form vref nil) rest-forms))))
 
-(defun emit-inlined-call-global (form expected-type)
+(defun emit-inlined-call-global (form rest-forms)
+  (declare (ignore rest-forms))
   (let* ((fname (c1form-arg 0 form))
          (args (c1form-arg 1 form))
          (return-type (c1form-primary-type form))
+         (expected-type (loc-type *destination*))
          (fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p))
          (loc (call-global-loc fname fun args return-type expected-type))
          (type (type-and return-type (loc-type loc)))
@@ -164,8 +166,9 @@
        (make-inlined-arg (c1form-arg 0 form) (c1form-primary-type form)))
       (VARIABLE
        (emit-inlined-variable form forms))
+      ;; FIXME this c1form was incorporated into FCALL.
       (CALL-GLOBAL
-       (emit-inlined-call-global form (c1form-primary-type form)))
+       (emit-inlined-call-global form forms))
       (SI:STRUCTURE-REF
        (emit-inlined-structure-ref form forms))
       (SI:INSTANCE-REF
