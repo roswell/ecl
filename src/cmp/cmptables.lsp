@@ -63,7 +63,7 @@
     (ext:COMPILER-TYPECASE var expressions)
     (ext:CHECKED-VALUE  type value-c1form let-form)
     ;; Backend-specific operators
-    (FFI:C-INLINE (arg-c1form*) (arg-type-symbol*) output-rep-type
+    (FFI:C-INLINE (arg-c1form*) (arg-type-symbol*) output-host-type
                   c-expression-string
                   side-effects-p one-liner-p)
     (FFI:C-PROGN  variables forms))))

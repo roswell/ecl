@@ -15,11 +15,11 @@
 (defstruct (inlined-arg (:constructor %make-inlined-arg))
   loc
   type
-  rep-type)
+  host-type)
 
 (defun make-inlined-arg (loc lisp-type)
   (%make-inlined-arg :loc loc :type lisp-type
-                     :rep-type (loc-representation-type loc)))
+                     :host-type (loc-host-type loc)))
 
 (defun maybe-open-inline-block ()
   (unless (plusp *inline-blocks*)
@@ -49,43 +49,43 @@
   (loop with block-opened = nil
         for arg in inlined-args
         for loc = (inlined-arg-loc arg)
-        for arg-rep-type = (inlined-arg-rep-type arg)
+        for arg-host-type = (inlined-arg-host-type arg)
         for type in (or types '#1=(:object . #1#))
         for i from 0
-        for rep-type = (lisp-type->rep-type type)
+        for host-type = (lisp-type->host-type type)
         collect
         (cond ((and args-to-be-saved
                     (member i args-to-be-saved :test #'eql)
                     (not (loc-movable-p loc)))
-               (let ((lcl (make-lcl-var :rep-type rep-type)))
+               (let ((lcl (make-lcl-var :host-type host-type)))
                  (wt-nl)
                  (unless block-opened
                    (setf block-opened t)
                    (open-inline-block))
-                 (wt (rep-type->c-name rep-type) " " lcl "= ")
-                 (wt-coerce-loc rep-type loc)
+                 (wt (host-type->c-name host-type) " " lcl "= ")
+                 (wt-coerce-loc host-type loc)
                  (wt ";")
                  lcl))
-              ((equal rep-type arg-rep-type)
+              ((equal host-type arg-host-type)
                loc)
               (t
-               `(COERCE-LOC ,rep-type ,loc)))))
+               `(COERCE-LOC ,host-type ,loc)))))
 
-(defun make-inline-temp-var (value-type &optional rep-type)
-  (let ((out-rep-type (or rep-type (lisp-type->rep-type value-type))))
-    (if (eq out-rep-type :object)
+(defun make-inline-temp-var (value-type &optional host-type)
+  (let ((out-host-type (or host-type (lisp-type->host-type value-type))))
+    (if (eq out-host-type :object)
         (make-temp-var value-type)
-        (let ((var (make-lcl-var :rep-type out-rep-type
+        (let ((var (make-lcl-var :host-type out-host-type
                                  :type value-type)))
           (open-inline-block)
-          (wt-nl (rep-type->c-name out-rep-type) " " var ";")
+          (wt-nl (host-type->c-name out-host-type) " " var ";")
           var))))
 
 (defun emit-inlined-variable (form rest-forms)
   (let ((var (c1form-arg 0 form))
         (lisp-type (c1form-primary-type form)))
     (if (var-changed-in-form-list var rest-forms)
-        (let ((temp (make-inline-temp-var lisp-type (var-rep-type var))))
+        (let ((temp (make-inline-temp-var lisp-type (var-host-type var))))
           (set-loc temp var)
           (make-inlined-arg temp lisp-type))
         (make-inlined-arg var lisp-type))))

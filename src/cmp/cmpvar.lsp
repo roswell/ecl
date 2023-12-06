@@ -44,12 +44,12 @@
         (push var (fun-local-vars *current-function*))))
     var))
 
-(defun make-lcl-var (&key rep-type (type 'T))
-  (unless rep-type
-    (setq rep-type (if type (lisp-type->rep-type type) :object)))
+(defun make-lcl-var (&key host-type (type 'T))
+  (unless host-type
+    (setq host-type (if type (lisp-type->host-type type) :object)))
   (unless type
     (setq type 'T))
-  (make-var :kind rep-type :type type :loc (next-lcl)))
+  (make-var :kind host-type :type type :loc (next-lcl)))
 
 (defun make-global-var (name &key
                                (type (or (si:get-sysprop name 'CMP-TYPE) t))
@@ -165,7 +165,7 @@
     (add-to-set-nodes v form))
   form)
 
-(defun var-rep-type (var)
+(defun var-host-type (var)
   (case (var-kind var)
     ((LEXICAL CLOSURE SPECIAL GLOBAL) :object)
     (t (var-kind var))))
@@ -179,11 +179,11 @@
       ;; if the variable can be stored locally, set it var-kind to its type
       (setf (var-kind var)
             (if (plusp (var-ref var))
-                (lisp-type->rep-type (var-type var))
+                (lisp-type->host-type (var-type var))
                 :OBJECT)))))
 
 (defun unboxed (var)
-  (not (eq (var-rep-type var) :object)))
+  (not (eq (var-host-type var) :object)))
 
 (defun local (var)
   (and (not (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL)))

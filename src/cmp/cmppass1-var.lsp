@@ -224,7 +224,7 @@
            (setq type 'T))
           ((machine-c-type-p (setq type (cdr type)))
            (setf kind type
-                 type (rep-type->lisp-type type))))
+                 type (host-type->lisp-type type))))
     (cond ((or (member name specials) (special-variable-p name))
            (unless (eq kind 'LEXICAL)
              (cmperr "Special variable ~A cannot be declared to have C type ~A"

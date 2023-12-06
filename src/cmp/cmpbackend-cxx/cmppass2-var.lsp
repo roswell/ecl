@@ -103,7 +103,7 @@
      do (when kind
           (maybe-open-inline-block)
           (bind (next-lcl (var-name var)) var)
-          (wt-nl *volatile* (rep-type->c-name kind) " " var ";")))
+          (wt-nl *volatile* (host-type->c-name kind) " " var ";")))
 
   ;; Create closure bindings for closed-over variables
   (when (some #'var-ref-ccb vars)
@@ -159,7 +159,7 @@
             (when (useful-var-p var)
               (maybe-open-inline-block)
               (bind (next-lcl) var)
-              (wt-nl (rep-type->c-name kind) " " *volatile* var ";")
+              (wt-nl (host-type->c-name kind) " " *volatile* var ";")
               (wt-comment (var-name var)))
             (unless env-grows (setq env-grows (var-ref-ccb var))))))
     ;; 3) If there are closure variables, set up an environment.
@@ -228,11 +228,11 @@
           (LOCATION (push (cons var (c1form-arg 0 form)) saves))
           (otherwise
             (if (local var)
-                (let* ((rep-type (var-rep-type var))
-                       (rep-type-c-name (rep-type->c-name rep-type))
-                       (temp (make-lcl-var :rep-type rep-type)))
+                (let* ((host-type (var-host-type var))
+                       (host-type-c-name (host-type->c-name host-type))
+                       (temp (make-lcl-var :host-type host-type)))
                   (wt-nl-open-brace)
-                  (wt-nl rep-type-c-name " " *volatile* temp ";")
+                  (wt-nl host-type-c-name " " *volatile* temp ";")
                   (let ((*destination* temp)) (c2expr* form))
                   (push (cons var temp) saves))
                 (let ((*destination* (make-temp-var)))
@@ -283,7 +283,7 @@
             ;; check they are not the same
             (unless (equal (var-loc var) loc)
               (wt-nl var " = ")
-              (wt-coerce-loc (var-rep-type var) loc)
+              (wt-coerce-loc (var-host-type var) loc)
               (wt ";")))
            ((and (consp loc) (eql (car loc) 'LCL))
             ;; set location for lambda list requireds
@@ -412,21 +412,21 @@
   (case (var-kind var)
     (CLOSURE
      (wt-nl)(wt-env var-loc)(wt " = ")
-     (wt-coerce-loc (var-rep-type var) loc)
+     (wt-coerce-loc (var-host-type var) loc)
      (wt #\;))
     (LEXICAL
      (wt-nl)(wt-lex var-loc)(wt " = ")
-     (wt-coerce-loc (var-rep-type var) loc)
+     (wt-coerce-loc (var-host-type var) loc)
      (wt #\;))
     ((SPECIAL GLOBAL)
      (if (safe-compile)
          (wt-nl "ecl_cmp_setq(cl_env_copy," var-loc ",")
          (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
-     (wt-coerce-loc (var-rep-type var) loc)
+     (wt-coerce-loc (var-host-type var) loc)
      (wt ");"))
     (t
      (wt-nl var-loc " = ")
-     (wt-coerce-loc (var-rep-type var) loc)
+     (wt-coerce-loc (var-host-type var) loc)
      (wt #\;))
     ))
 

@@ -271,7 +271,7 @@
   (with-bir-env (:env 0 :level 0 :volatile "volatile ")
     (when (eql return-type :void)
       (setf return-p nil))
-    (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))
+    (let ((return-type-name (host-type->c-name (ffi::%convert-to-arg-type return-type)))
           (vars (loop for n from 0 below (length arg-types)
                       collect (format nil "var~d" n)))
           (fmod (case call-type
@@ -284,7 +284,7 @@
       (loop with comma = ""
             for var in vars
             for type in arg-types
-            for arg-type-name = (rep-type->c-name (ffi::%convert-to-arg-type type))
+            for arg-type-name = (host-type->c-name (ffi::%convert-to-arg-type type))
             do (wt-h comma arg-type-name " " var)
                (wt   comma arg-type-name " " var)
                (setf comma ","))

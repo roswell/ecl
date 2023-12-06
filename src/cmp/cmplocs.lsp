@@ -29,7 +29,7 @@
   (always nil)       ; when true then vv is never optimized
   (permanent-p t)
   (value nil)
-  (rep-type :object))
+  (host-type :object))
 
 ;;; When the value is the "empty location" then it was created to be filled
 ;;; later and the real type of the object is not known. See DATA-EMPTY-LOC.
@@ -51,37 +51,37 @@
   (cond ((eq loc NIL) 'NULL)
         ((var-p loc) (var-type loc))
         ((vv-p loc) (vv-type loc))
-        ((numberp loc) (lisp-type->rep-type (type-of loc)))
+        ((numberp loc) (lisp-type->host-type (type-of loc)))
         ((atom loc) 'T)
         (t
          (case (first loc)
            (FFI:C-INLINE (let ((type (first (second loc))))
                            (cond ((and (consp type) (eq (first type) 'VALUES)) T)
                                  ((lisp-type-p type) type)
-                                 (t (rep-type->lisp-type type)))))
+                                 (t (host-type->lisp-type type)))))
            (BIND (var-type (second loc)))
            (LCL (or (third loc) T))
            (THE (second loc))
            (CALL-NORMAL (fourth loc))
            (otherwise T)))))
 
-(defun loc-representation-type (loc)
+(defun loc-host-type (loc)
   (cond ((member loc '(NIL T)) :object)
-        ((var-p loc) (var-rep-type loc))
-        ((vv-p loc) (vv-rep-type loc))
-        ((numberp loc) (lisp-type->rep-type (type-of loc)))
+        ((var-p loc) (var-host-type loc))
+        ((vv-p loc) (vv-host-type loc))
+        ((numberp loc) (lisp-type->host-type (type-of loc)))
         ((eq loc 'TRASH) :void)
         ((atom loc) :object)
         (t
          (case (first loc)
            (FFI:C-INLINE (let ((type (first (second loc))))
                            (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
-                                 ((lisp-type-p type) (lisp-type->rep-type type))
+                                 ((lisp-type-p type) (lisp-type->host-type type))
                                  (t type))))
-           (BIND (var-rep-type (second loc)))
-           (LCL (lisp-type->rep-type (or (third loc) T)))
+           (BIND (var-host-type (second loc)))
+           (LCL (lisp-type->host-type (or (third loc) T)))
            ((JUMP-TRUE JUMP-FALSE) :bool)
-           (THE (loc-representation-type (third loc)))
+           (THE (loc-host-type (third loc)))
            (otherwise :object)))))
 
 (defun loc-with-side-effects-p (loc &aux name)
@@ -119,14 +119,14 @@
 ;;;     ( VALUE i )                     VALUES(i)
 ;;;     ( VV vv-index )
 ;;;     ( VV-temp vv-index )
-;;;     ( LCL lcl [representation-type]) local variable, type unboxed
+;;;     ( LCL lcl [host-type]) local variable, type unboxed
 ;;;     ( TEMP temp )                   local variable, type object
 ;;;     ( FRAME ndx )                   variable in local frame stack
 ;;;     ( CALL-NORMAL fun locs 1st-type ) similar as CALL, but number of arguments is fixed
 ;;;     ( CALL-INDIRECT fun narg args)  similar as CALL, but unknown function
 ;;;     ( CALL-STACK fun)  similar as CALL-INDIRECT, but args are on the stack
 ;;;     ( FFI:C-INLINE output-type fun/string locs side-effects output-var )
-;;;     ( COERCE-LOC representation-type location)
+;;;     ( COERCE-LOC host-type location)
 ;;;     ( FDEFINITION vv-index )
 ;;;     ( MAKE-CCLOSURE cfun )
 ;;;     ( STACK-POINTER index ) retrieve a value from the stack
