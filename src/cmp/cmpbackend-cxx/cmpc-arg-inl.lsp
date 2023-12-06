@@ -99,19 +99,6 @@
         (make-inlined-arg (c1form-arg 0 form1) (c1form-primary-type form1))
         (emit-inlined-variable (make-c1form 'VARIABLE form vref nil) rest-forms))))
 
-(defun emit-inlined-call-global (form rest-forms)
-  (declare (ignore rest-forms))
-  (let* ((fname (c1form-arg 0 form))
-         (args (c1form-arg 1 form))
-         (return-type (c1form-primary-type form))
-         (expected-type (loc-type *destination*))
-         (fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p))
-         (loc (call-global-loc fname fun args return-type expected-type))
-         (type (type-and return-type (loc-type loc)))
-         (temp (make-inline-temp-var type (loc-representation-type loc))))
-    (set-loc temp loc)
-    (make-inlined-arg temp type)))
-
 (defun emit-inlined-progn (form forms)
   (let ((args (c1form-arg 0 form)))
     (loop with *destination* = 'TRASH
@@ -130,35 +117,6 @@
             for form in args
             do (c2expr* form)))))
 
-(defun emit-inlined-structure-ref (form rest-forms)
-  (let ((type (c1form-primary-type form)))
-    (if (some #'c1form-side-effects rest-forms)
-        (let* ((temp (make-inline-temp-var type :object))
-               (*destination* temp))
-          (c2expr* form)
-          (make-inlined-arg temp type))
-        (make-inlined-arg (list 'SI:STRUCTURE-REF
-                                (first (coerce-locs
-                                        (inline-args (list (c1form-arg 0 form)))))
-                                (c1form-arg 1 form)
-                                (c1form-arg 2 form)
-                                (c1form-arg 3 form))
-                          type))))
-
-(defun emit-inlined-instance-ref (form rest-forms)
-  (let ((type (c1form-primary-type form)))
-    (if (some #'c1form-side-effects rest-forms)
-        (let* ((temp (make-inline-temp-var type :object))
-               (*destination* temp))
-          (c2expr* form)
-          (make-inlined-arg temp type))
-        (make-inlined-arg (list 'SI:INSTANCE-REF
-                                (first (coerce-locs
-                                        (inline-args (list (c1form-arg 0 form)))))
-                                (c1form-arg 1 form)
-                                #+ (or) (c1form-arg 2 form))
-                          type))))
-
 (defun emit-inline-form (form forms)
   (with-c1form-env (form form)
     (case (c1form-name form)
@@ -166,13 +124,6 @@
        (make-inlined-arg (c1form-arg 0 form) (c1form-primary-type form)))
       (VARIABLE
        (emit-inlined-variable form forms))
-      ;; FIXME this c1form was incorporated into FCALL.
-      (CALL-GLOBAL
-       (emit-inlined-call-global form forms))
-      (SI:STRUCTURE-REF
-       (emit-inlined-structure-ref form forms))
-      (SI:INSTANCE-REF
-       (emit-inlined-instance-ref form forms))
       (SETQ
        (emit-inlined-setq form forms))
       (PROGN

@@ -35,9 +35,6 @@
     ;; Function namespace (should include also FSET)
     (CL:FUNCTION        fname :single-valued)
     (LOCALS             local-fun-list body labels-p :pure)
-    ;; Specialized accessors
-    (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
-    (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
     ;; Control structures
     (CL:BLOCK           blk-var progn-c1form :pure)
     (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
@@ -180,7 +177,6 @@
     (cl:fdefinition . wt-fdefinition)
     (make-cclosure . wt-make-closure)
 
-    (si:structure-ref . wt-structure-ref)
     (ffi-data-ref . wt-ffi-data-ref)
 
     (leave . "value0")
