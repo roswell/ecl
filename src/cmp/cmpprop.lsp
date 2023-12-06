@@ -53,7 +53,7 @@
 
 (defun p1var (form var loc)
   ;; Use the type of C1FORM because it might have been coerced by a THE form.
-  (let* ((loc-type (if loc (object-type (vv-value loc)) t))
+  (let* ((loc-type (if loc (vv-type loc) t))
          (var-type (var-type var))
          (type (type-and (type-and loc-type var-type)
                          (c1form-primary-type form))))

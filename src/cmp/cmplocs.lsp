@@ -23,21 +23,22 @@
 ;;; second pass the backend decides if the referenced object can be inlined, or
 ;;; if it needs to be put in the data segment and initialized at load-time.
 
-(defstruct vv
+(defstruct (vv (:constructor %make-vv))
   (location nil)
   (used-p nil)
   (always nil)       ; when true then vv is never optimized
   (permanent-p t)
   (value nil)
+  (type nil)
   (host-type :object))
 
-;;; When the value is the "empty location" then it was created to be filled
-;;; later and the real type of the object is not known. See DATA-EMPTY-LOC.
-(defun vv-type (loc)
-  (let ((value (vv-value loc)))
-    (if (eq value *empty-loc*)
-        t
-        (type-of value))))
+(defun make-vv (&rest args &key location used-p always permanent-p value type host-type)
+  (declare (ignore location used-p always permanent-p host-type))
+  (unless type
+    ;; When the value is the "empty location" then it was created to be filled
+    ;; later and the real type of the object is not known. See DATA-EMPTY-LOC.
+    (setf type (if (eq value *empty-loc*) t (type-of value))))
+  (apply #'%make-vv :type type args))
 
 (defun loc-movable-p (loc)
   (if (atom loc)
