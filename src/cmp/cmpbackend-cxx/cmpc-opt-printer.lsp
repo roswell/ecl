@@ -16,7 +16,7 @@
   (unless stream
     (setf stream (emit-inline-form (c1nil) nil)))
   (multiple-value-bind (foundp value)
-      (loc-immediate-value-p (inlined-arg-loc expression))
+      (loc-immediate-value-p expression)
     (cond
       ((and foundp (characterp value))
        (produce-inline-loc (list expression stream)

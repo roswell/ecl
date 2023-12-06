@@ -175,9 +175,13 @@
          (values t loc))
         ((vv-p loc)
          (let ((value (vv-value loc)))
-           (if (eq value *empty-loc*)
-               (values nil nil)
-               (values t value))))
+           (cond
+             ((eq value *empty-loc*)
+              (values nil nil))
+             ((eq value *inline-loc*)
+              (loc-immediate-value-p (vv-location loc)))
+             (t
+              (values t value)))))
         ((atom loc)
          (values nil nil))
         ((eq (first loc) 'THE)

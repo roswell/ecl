@@ -38,7 +38,7 @@
     (default-c-inliner fname return-type inlined-args)))
 
 (defun default-c-inliner (fname return-type inlined-args)
-  (let* ((arg-types (mapcar #'inlined-arg-type inlined-args))
+  (let* ((arg-types (mapcar #'loc-type inlined-args))
          (ii (inline-function fname arg-types return-type)))
     (and ii (apply-inline-info ii inlined-args))))
 
@@ -243,7 +243,7 @@
 ;;; Whoever calls this function must wrap the body in WITH-INLINE-BLOCKS.
 (defun negate-argument (argument dest-loc)
   (let* ((inlined-arg (emit-inline-form argument nil))
-         (host-type (inlined-arg-host-type inlined-arg)))
+         (host-type (loc-host-type inlined-arg)))
     (apply #'produce-inline-loc
            (list inlined-arg)
            (if (eq (loc-host-type dest-loc) :bool)

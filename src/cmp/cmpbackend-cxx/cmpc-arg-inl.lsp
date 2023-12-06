@@ -12,14 +12,11 @@
 
 (in-package "COMPILER")
 
-(defstruct (inlined-arg (:constructor %make-inlined-arg))
-  loc
-  type
-  host-type)
-
 (defun make-inlined-arg (loc lisp-type)
-  (%make-inlined-arg :loc loc :type lisp-type
-                     :host-type (loc-host-type loc)))
+  (make-vv :location loc
+           :value *inline-loc*
+           :type lisp-type
+           :host-type (loc-host-type loc)))
 
 (defun maybe-open-inline-block ()
   (unless (plusp *inline-blocks*)
@@ -35,7 +32,7 @@
 
 (defun coerce-locs (inlined-args &optional types args-to-be-saved)
   ;; INLINED-ARGS is a list of INLINED-ARG produced by the argument inliner.
-  ;; The structure contains a location, a lisp type, and the mach rep type.
+  ;; Each arg is a location, "inlined" means "evaluated in the correct order".
   ;;
   ;; ARGS-TO-BE-SAVED is a positional list created by C-INLINE, instructing that
   ;; the value should be saved in a temporary variable.
@@ -47,9 +44,8 @@
   ;;   - A lisp type (T, INTEGER, STRING, CHARACTER, ...))
   ;;
   (loop with block-opened = nil
-        for arg in inlined-args
-        for loc = (inlined-arg-loc arg)
-        for arg-host-type = (inlined-arg-host-type arg)
+        for loc in inlined-args
+        for arg-host-type = (loc-host-type loc)
         for type in (or types '#1=(:object . #1#))
         for i from 0
         for host-type = (lisp-type->host-type type)
@@ -138,7 +134,7 @@
 
 ;;;
 ;;; inline-args:
-;;;   returns a list of pairs (type loc)
+;;;   returns locations that contain results of evaluating forms
 ;;;   side effects: emits code for temporary variables
 ;;;
 ;;; Whoever calls this function must wrap the body in WITH-INLINE-BLOCKS.
