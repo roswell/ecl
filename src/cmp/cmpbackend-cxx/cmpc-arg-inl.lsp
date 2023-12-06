@@ -23,7 +23,14 @@
   (loop for i of-type fixnum from 0 below *inline-blocks*
         do (wt-nl-close-brace)))
 
-(defun coerce-locs (inlined-args &optional types args-to-be-saved)
+(defun coerce-args (inlined-args)
+  (mapcar (lambda (loc)
+            (if (eq (loc-host-type loc) :object)
+                loc
+                `(COERCE-LOC :object ,LOC)))
+          inlined-args))
+
+(defun coerce-locs (inlined-args types args-to-be-saved)
   ;; INLINED-ARGS is a list of INLINED-ARG produced by the argument inliner.
   ;; Each arg is a location, "inlined" means "evaluated in the correct order".
   ;;
@@ -33,18 +40,17 @@
   ;; TYPES is a list of destination types, to which the former values are
   ;; coerced. The destination type can be:
   ;;
-  ;;   - A machine rep type (:OBJECT, :FIXNUM, :INT, ...)
+  ;;   - A host type (:OBJECT, :FIXNUM, :INT, :CHAR, ...)
   ;;   - A lisp type (T, INTEGER, STRING, CHARACTER, ...))
   ;;
   (loop with block-opened = nil
         for loc in inlined-args
         for arg-host-type = (loc-host-type loc)
-        for type in (or types '#1=(:object . #1#))
+        for type in types
         for i from 0
         for host-type = (lisp-type->host-type type)
         collect
-        (cond ((and args-to-be-saved
-                    (member i args-to-be-saved :test #'eql)
+        (cond ((and (member i args-to-be-saved :test #'eql)
                     (not (loc-movable-p loc)))
                (let ((lcl (make-lcl-var :host-type host-type)))
                  (wt-nl)

@@ -220,7 +220,7 @@
     (t
      (with-inline-blocks ()
        (let* ((nv (length forms))
-              (forms (nreverse (coerce-locs (inline-args forms)))))
+              (forms (nreverse (coerce-args (inline-args forms)))))
          ;; By inlining arguments we make sure that VL has no call to funct.
          ;; Reverse args to avoid clobbering VALUES(0)
          (wt-nl "cl_env_copy->nvalues = " nv ";")

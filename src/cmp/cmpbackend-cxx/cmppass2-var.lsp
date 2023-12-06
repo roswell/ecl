@@ -300,7 +300,7 @@
         ;; environments, global environments, etc. If we use `(BIND var)
         ;; as destination, BIND might receive the wrong environment.
         (with-inline-blocks ()
-          (let ((locs (coerce-locs (inline-args (list form)))))
+          (let ((locs (coerce-args (inline-args (list form)))))
             (bind (first locs) var)
             ;; Notice that we do not need to update *UNWIND-EXIT* because BIND
             ;; does it for us.
