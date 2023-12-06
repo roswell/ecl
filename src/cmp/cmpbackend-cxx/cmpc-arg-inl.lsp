@@ -7,16 +7,9 @@
 ;;;;
 
 ;;;; Open coding nested forms as C expressions while preserving the order of
-;;;; evaluation. Resulting locations stored in the INLINE-ARG structure may be
-;;;; used inline in C expressions (locs still must to be coerced appropriately).
+;;;; evaluation. Resulting locations may be used inline in C expressions.
 
 (in-package "COMPILER")
-
-(defun make-inlined-arg (loc lisp-type)
-  (make-vv :location loc
-           :value *inline-loc*
-           :type lisp-type
-           :host-type (loc-host-type loc)))
 
 (defun maybe-open-inline-block ()
   (unless (plusp *inline-blocks*)
@@ -67,48 +60,67 @@
               (t
                `(COERCE-LOC ,host-type ,loc)))))
 
-(defun make-inline-temp-var (value-type &optional host-type)
-  (let ((out-host-type (or host-type (lisp-type->host-type value-type))))
-    (if (eq out-host-type :object)
-        (make-temp-var value-type)
-        (let ((var (make-lcl-var :host-type out-host-type
-                                 :type value-type)))
-          (open-inline-block)
-          (wt-nl (host-type->c-name out-host-type) " " var ";")
-          var))))
+;;; We could use VV to represent inlined args, but the most specific for our
+;;; purposes is the location (THE LISP-TYPE LOCATION) which is created when
+;;; necessary by the function PRECISE-LOC-TYPE. -- jd 2023-12-06
+#+ (or)
+(defun make-inlined-arg (loc lisp-type)
+  (make-vv :location loc
+           :value *inline-loc*
+           :type lisp-type
+           :host-type (loc-host-type loc)))
+
+(defun make-inlined-temp-var (lisp-type host-type)
+  (declare (si::c-local))
+  (if (eq host-type :object)
+      (make-temp-var lisp-type)
+      (let ((var (make-lcl-var :host-type host-type
+                               :type lisp-type)))
+        (open-inline-block)
+        (wt-nl (host-type->c-name host-type) " " var ";")
+        var)))
+
+(defun emit-inlined-temp-var (form lisp-type host-type)
+  (let ((*destination* (make-inlined-temp-var lisp-type host-type)))
+    (c2expr* form)
+    *destination*))
 
 (defun emit-inlined-variable (form rest-forms)
   (let ((var (c1form-arg 0 form))
         (lisp-type (c1form-primary-type form)))
     (if (var-changed-in-form-list var rest-forms)
-        (let ((temp (make-inline-temp-var lisp-type (var-host-type var))))
-          (set-loc temp var)
-          (make-inlined-arg temp lisp-type))
-        (make-inlined-arg var lisp-type))))
+        (emit-inlined-temp-var form lisp-type (var-host-type var))
+        (precise-loc-type var lisp-type))))
 
 (defun emit-inlined-setq (form rest-forms)
-  (let ((vref (c1form-arg 0 form))
-        (form1 (c1form-arg 1 form)))
-    (let ((*destination* vref))
-      (c2expr* form1))
-    (if (eq (c1form-name form1) 'LOCATION)
-        (make-inlined-arg (c1form-arg 0 form1) (c1form-primary-type form1))
-        (emit-inlined-variable (make-c1form 'VARIABLE form vref nil) rest-forms))))
+  (let ((var (c1form-arg 0 form))
+        (val-form (c1form-arg 1 form))
+        (lisp-type (c1form-primary-type form)))
+    (let ((*destination* var))
+      (c2expr* val-form))
+    (cond
+      ((eq (c1form-name val-form) 'LOCATION)
+       (precise-loc-type (c1form-arg 0 val-form) lisp-type))
+      ((not (var-changed-in-form-list var rest-forms))
+       (precise-loc-type var lisp-type))
+      (t
+       (let ((var-form (make-c1form 'VARIABLE form var nil)))
+         (emit-inlined-temp-var var-form lisp-type (var-host-type var)))))))
 
-(defun emit-inlined-progn (form forms)
+(defun emit-inlined-progn (form rest-forms)
   (let ((args (c1form-arg 0 form)))
     (loop with *destination* = 'TRASH
           while (rest args)
           do (c2expr* (pop args)))
-    (emit-inline-form (first args) forms)))
+    (emit-inline-form (first args) rest-forms)))
 
-(defun emit-inlined-values (form forms)
+(defun emit-inlined-values (form rest-forms)
   (let ((args (c1form-arg 0 form)))
     (prog1 (emit-inline-form (or (pop args) (c1nil))
-                             ;; the rest of the values args need to be
-                             ;; added to the rest forms to execute side
-                             ;; effects in the correct order
-                             (append args forms))
+                             ;; The rest of the values args need to be added to
+                             ;; the rest forms to execute side effects in the
+                             ;; correct order.
+                             (append args rest-forms))
       (loop with *destination* = 'TRASH
             for form in args
             do (c2expr* form)))))
@@ -117,7 +129,7 @@
   (with-c1form-env (form form)
     (case (c1form-name form)
       (LOCATION
-       (make-inlined-arg (c1form-arg 0 form) (c1form-primary-type form)))
+       (precise-loc-type (c1form-arg 0 form) (c1form-primary-type form)))
       (VARIABLE
        (emit-inlined-variable form forms))
       (SETQ
@@ -126,11 +138,8 @@
        (emit-inlined-progn form forms))
       (VALUES
        (emit-inlined-values form forms))
-      (t (let* ((type (c1form-primary-type form))
-                (temp (make-inline-temp-var type))
-                (*destination* temp))
-           (c2expr* form)
-           (make-inlined-arg temp type))))))
+      (t
+       (emit-inlined-temp-var form (c1form-primary-type form) :object)))))
 
 ;;;
 ;;; inline-args:
