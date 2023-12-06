@@ -194,7 +194,8 @@
 ;;; for temporary variables that are bound to local evaluation results.
 (defmacro with-inline-blocks (() &body body)
   `(let ((*inline-blocks* 0)
-         (*temp* *temp*))
+         (*temp* *temp*)
+         (*lcl* *lcl*))
      ,@body
      (close-inline-blocks)))
 

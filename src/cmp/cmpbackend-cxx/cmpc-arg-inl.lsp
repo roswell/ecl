@@ -77,7 +77,6 @@
            :host-type (loc-host-type loc)))
 
 (defun make-inlined-temp-var (lisp-type host-type)
-  (declare (si::c-local))
   (if (eq host-type :object)
       (make-temp-var lisp-type)
       (let ((var (make-lcl-var :host-type host-type
