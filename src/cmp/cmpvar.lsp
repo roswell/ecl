@@ -182,10 +182,10 @@
                 (lisp-type->host-type (var-type var))
                 :OBJECT)))))
 
-(defun unboxed (var)
+(defun unboxed-var-p (var)
   (not (eq (var-host-type var) :object)))
 
-(defun local (var)
+(defun local-var-p (var)
   (and (not (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL)))
        (var-kind var)))
 

@@ -12,13 +12,13 @@
 (defun c2let-replaceable-var-ref-p (var form rest-forms)
   (when (and (eq (c1form-name form) 'VARIABLE)
              (null (var-set-nodes var))
-             (local var))
+             (local-var-p var))
     (let ((var1 (c1form-arg 0 form)))
       (declare (type var var1))
       ;; FIXME We should be able to replace variable even if they are referenced
       ;; across functions.  We just need to keep track of their uses.
-      (when (and (local var1)
-                 (eq (unboxed var) (unboxed var1))
+      (when (and (local-var-p var1)
+                 (eq (unboxed-var-p var) (unboxed-var-p var1))
                  (not (var-changed-in-form-list var1 rest-forms)))
         (cmpdebug "Replacing variable ~a by its value" (var-name var))
         (nsubst-var var form)
@@ -90,20 +90,20 @@
                (*inline-blocks* 0))
   ;; Replace read-only variables when it is worth doing it.
   (loop for var in vars
-     for rest-forms on (append forms (list body))
-     for form = (first rest-forms)
-     unless (c2let-replaceable-var-ref-p var form rest-forms)
-     collect var into used-vars and
-     collect form into used-forms
-     finally (setf vars used-vars forms used-forms))
+        for rest-forms on (append forms (list body))
+        for form = (first rest-forms)
+        unless (c2let-replaceable-var-ref-p var form rest-forms)
+          collect var into used-vars and
+        collect form into used-forms
+        finally (setf vars used-vars forms used-forms))
 
   ;; Emit C definitions of local variables
   (loop for var in vars
-     for kind = (local var)
-     do (when kind
-          (maybe-open-inline-block)
-          (bind (next-lcl (var-name var)) var)
-          (wt-nl *volatile* (host-type->c-name kind) " " var ";")))
+        for kind = (local-var-p var)
+        do (when kind
+             (maybe-open-inline-block)
+             (bind (next-lcl (var-name var)) var)
+             (wt-nl *volatile* (host-type->c-name kind) " " var ";")))
 
   ;; Create closure bindings for closed-over variables
   (when (some #'var-ref-ccb vars)
@@ -154,14 +154,14 @@
     ;;    closure, make a local C variable.
     (dolist (var vars)
       (declare (type var var))
-      (let ((kind (local var)))
-        (if kind
-            (when (useful-var-p var)
-              (maybe-open-inline-block)
-              (bind (next-lcl) var)
-              (wt-nl (host-type->c-name kind) " " *volatile* var ";")
-              (wt-comment (var-name var)))
-            (unless env-grows (setq env-grows (var-ref-ccb var))))))
+      (ext:if-let ((kind (local-var-p var)))
+        (when (useful-var-p var)
+          (maybe-open-inline-block)
+          (bind (next-lcl) var)
+          (wt-nl (host-type->c-name kind) " " *volatile* var ";")
+          (wt-comment (var-name var)))
+        (unless env-grows
+          (setq env-grows (var-ref-ccb var)))))
     ;; 3) If there are closure variables, set up an environment.
     (when (setq env-grows (env-grows env-grows))
       (let ((env-lvl *env-lvl*))
@@ -227,7 +227,7 @@
         (case (c1form-name form)
           (LOCATION (push (cons var (c1form-arg 0 form)) saves))
           (otherwise
-            (if (local var)
+            (if (local-var-p var)
                 (let* ((host-type (var-host-type var))
                        (host-type-c-name (host-type->c-name host-type))
                        (temp (make-lcl-var :host-type host-type)))
