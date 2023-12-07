@@ -138,7 +138,7 @@
 ;;; of the value must be EQL to each other.
 (defun c1constant-symbol-value (name val)
   (declare (ignore name))
-  (let ((si:*compiler-constants* t))    ; don't create make-load forms
+  (unless (si:need-to-make-load-form-p val)
     (add-object val)))
 
 (defun c1if (args)
