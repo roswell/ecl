@@ -18,7 +18,7 @@
 ;;; cases the compiler may do whatever it wants (and gcc does!)
 ;;;
 (define-c-inliner shift (return-type argument orig-shift)
-  (let* ((arg-type (loc-type argument))
+  (let* ((arg-type (loc-lisp-type argument))
          (arg-c-type (lisp-type->host-type arg-type))
          (return-c-type (lisp-type->host-type return-type))
          (shift (loc-immediate-value orig-shift)))
@@ -52,8 +52,8 @@
                        r1))))
 
 (defun inline-binop (expected-type arg1 arg2 consing non-consing)
-  (let ((arg1-type (loc-type arg1))
-        (arg2-type (loc-type arg2)))
+  (let ((arg1-type (loc-lisp-type arg1))
+        (arg2-type (loc-lisp-type arg2)))
     (if (and (policy-assume-right-type)
              (c-number-type-p expected-type)
              (c-number-type-p arg1-type)
@@ -82,7 +82,7 @@
                             consing nil t))))
 
 (defun inline-arith-unop (expected-type arg1 consing non-consing)
-  (let ((arg1-type (loc-type arg1)))
+  (let ((arg1-type (loc-lisp-type arg1)))
     (if (and (policy-assume-right-type)
              (c-number-type-p expected-type)
              (c-number-type-p arg1-type))
@@ -133,8 +133,8 @@
   (cmperr "The C inliner for (FUNCTION /) expected at most 2 arguments."))
 
 (define-c-inliner float (return-type arg &optional float)
-  (let ((arg-c-type (lisp-type->host-type (loc-type arg)))
-        (flt-c-type (and float (lisp-type->host-type (loc-type float)))))
+  (let ((arg-c-type (lisp-type->host-type (loc-lisp-type arg)))
+        (flt-c-type (and float (lisp-type->host-type (loc-lisp-type float)))))
     (if (member arg-c-type '(:float :double :long-double))
         (when (or (null float) (eq arg-c-type flt-c-type))
           arg)

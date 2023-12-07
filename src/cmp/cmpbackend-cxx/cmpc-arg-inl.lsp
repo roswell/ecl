@@ -95,7 +95,7 @@
         (lisp-type (c1form-primary-type form)))
     (if (var-changed-in-form-list var rest-forms)
         (emit-inlined-temp-var form lisp-type (var-host-type var))
-        (precise-loc-type var lisp-type))))
+        (precise-loc-lisp-type var lisp-type))))
 
 (defun emit-inlined-setq (form rest-forms)
   (let ((var (c1form-arg 0 form))
@@ -105,9 +105,9 @@
       (c2expr* val-form))
     (cond
       ((eq (c1form-name val-form) 'LOCATION)
-       (precise-loc-type (c1form-arg 0 val-form) lisp-type))
+       (precise-loc-lisp-type (c1form-arg 0 val-form) lisp-type))
       ((not (var-changed-in-form-list var rest-forms))
-       (precise-loc-type var lisp-type))
+       (precise-loc-lisp-type var lisp-type))
       (t
        (let ((var-form (make-c1form 'VARIABLE form var nil)))
          (emit-inlined-temp-var var-form lisp-type (var-host-type var)))))))
@@ -134,7 +134,7 @@
   (with-c1form-env (form form)
     (case (c1form-name form)
       (LOCATION
-       (precise-loc-type (c1form-arg 0 form) (c1form-primary-type form)))
+       (precise-loc-lisp-type (c1form-arg 0 form) (c1form-primary-type form)))
       (VARIABLE
        (emit-inlined-variable form forms))
       (SETQ

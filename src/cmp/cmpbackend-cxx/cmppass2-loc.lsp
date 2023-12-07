@@ -221,7 +221,7 @@
                                         ;(print dest-host-type)
                                         ;(print loc)
   (let* ((dest-type (host-type->lisp-type dest-host-type))
-         (loc-type (loc-type loc))
+         (loc-type (loc-lisp-type loc))
          (loc-host-type (loc-host-type loc)))
     (labels ((coercion-error (&optional (write-zero t))
                (cmpwarn "Unable to coerce lisp object from type (~S,~S)~%~

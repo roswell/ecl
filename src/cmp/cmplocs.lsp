@@ -40,6 +40,60 @@
     (setf type (if (eq value *empty-loc*) t (type-of value))))
   (apply #'%make-vv :type type args))
 
+;;; TODO investigate where raw numbers are stemming from and change them to VV
+;;; TODO tighter checks for compound locations (cons)
+;;; TODO baboon on locations that are unknown (for now we signal a warning)
+;;;
+;;; -- jd 2023-12-07
+
+(defun loc-lisp-type (loc)
+  (typecase loc
+    (var    (var-type loc))
+    (vv     (vv-type loc))
+    (number (type-of loc))
+    (atom
+     (case loc
+       (FRAME++ 'FIXNUM)
+       ((TRASH LEAVE VALUE0 VA-ARG VALUEZ CL-VA-ARG) T)
+       (otherwise
+        (cmpwarn "LOC-LISP-TYPE: unknown location ~s." loc)
+        T)))
+    (otherwise
+     (case (first loc)
+       (FFI:C-INLINE (let ((type (first (second loc))))
+                       (cond ((and (consp type) (eq (first type) 'VALUES)) T)
+                             ((lisp-type-p type) type)
+                             (t (host-type->lisp-type type)))))
+       (BIND (var-type (second loc)))
+       (LCL (or (third loc) T))
+       (THE (second loc))
+       (CALL-NORMAL (fourth loc))
+       (otherwise T)))))
+
+(defun loc-host-type (loc)
+  (typecase loc
+    (var    (var-host-type loc))
+    (vv     (vv-host-type loc))
+    (number (lisp-type->host-type (type-of loc)))
+    (atom
+     (case loc
+       (TRASH :void)
+       ((FRAME++ LEAVE VALUE0 VA-ARG VALUEZ CL-VA-ARG) :object)
+       (otherwise
+        (cmpwarn "LOC-LISP-TYPE: unknown location ~s." loc)
+        :object)))
+    (otherwise
+     (case (first loc)
+       (FFI:C-INLINE (let ((type (first (second loc))))
+                       (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
+                             ((lisp-type-p type) (lisp-type->host-type type))
+                             (t type))))
+       (BIND (var-host-type (second loc)))
+       (LCL (lisp-type->host-type (or (third loc) T)))
+       ((JUMP-TRUE JUMP-FALSE) :bool)
+       (THE (loc-host-type (third loc)))
+       (otherwise :object)))))
+
 (defun loc-movable-p (loc)
   (if (atom loc)
       t
@@ -47,43 +101,6 @@
         ((CALL CALL-LOCAL) NIL)
         ((ffi:c-inline) (not (fifth loc))) ; side effects?
         (otherwise t))))
-
-(defun loc-type (loc)
-  (cond ((eq loc NIL) 'NULL)
-        ((var-p loc) (var-type loc))
-        ((vv-p loc) (vv-type loc))
-        ((numberp loc) (lisp-type->host-type (type-of loc)))
-        ((atom loc) 'T)
-        (t
-         (case (first loc)
-           (FFI:C-INLINE (let ((type (first (second loc))))
-                           (cond ((and (consp type) (eq (first type) 'VALUES)) T)
-                                 ((lisp-type-p type) type)
-                                 (t (host-type->lisp-type type)))))
-           (BIND (var-type (second loc)))
-           (LCL (or (third loc) T))
-           (THE (second loc))
-           (CALL-NORMAL (fourth loc))
-           (otherwise T)))))
-
-(defun loc-host-type (loc)
-  (cond ((member loc '(NIL T)) :object)
-        ((var-p loc) (var-host-type loc))
-        ((vv-p loc) (vv-host-type loc))
-        ((numberp loc) (lisp-type->host-type (type-of loc)))
-        ((eq loc 'TRASH) :void)
-        ((atom loc) :object)
-        (t
-         (case (first loc)
-           (FFI:C-INLINE (let ((type (first (second loc))))
-                           (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
-                                 ((lisp-type-p type) (lisp-type->host-type type))
-                                 (t type))))
-           (BIND (var-host-type (second loc)))
-           (LCL (lisp-type->host-type (or (third loc) T)))
-           ((JUMP-TRUE JUMP-FALSE) :bool)
-           (THE (loc-host-type (third loc)))
-           (otherwise :object)))))
 
 (defun loc-with-side-effects-p (loc &aux name)
   (when (atom loc)
@@ -137,8 +154,8 @@
 ;;;     VA-ARG
 ;;;     CL-VA-ARG
 
-(defun precise-loc-type (loc new-type)
-  (if (subtypep (loc-type loc) new-type)
+(defun precise-loc-lisp-type (loc new-type)
+  (if (subtypep (loc-lisp-type loc) new-type)
       loc
       `(the ,new-type ,loc)))
 

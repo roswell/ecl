@@ -178,11 +178,11 @@
     (close-inline-blocks)))
 
 (defun c2location (c1form loc)
-  (unwind-exit (precise-loc-type loc (c1form-primary-type c1form))))
+  (unwind-exit (precise-loc-lisp-type loc (c1form-primary-type c1form))))
 
 ;;; When LOC is not NIL, then the variable is a constant.
 (defun c2variable (c1form var loc)
-  (unwind-exit (precise-loc-type
+  (unwind-exit (precise-loc-lisp-type
                 (if (and loc (not (numberp (vv-location loc))))
                     loc
                     (or (try-const-c-inliner var) var))

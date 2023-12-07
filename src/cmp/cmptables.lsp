@@ -179,6 +179,7 @@
 
     (ffi-data-ref . wt-ffi-data-ref)
 
+    (frame++ . "ECL_NEW_FRAME_ID(cl_env_copy)")
     (leave . "value0")
     (va-arg . "va_arg(args,cl_object)")
     (cl-va-arg . "ecl_va_arg(args)")

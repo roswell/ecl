@@ -70,7 +70,7 @@
     (unwind-exit (call-global-loc fname fun
                                   (inline-args args)
                                   (type-and (c1form-primary-type c1form)
-                                            (loc-type *destination*))))))
+                                            (loc-lisp-type *destination*))))))
 
 ;;;
 ;;; c2call-local:

@@ -38,7 +38,7 @@
     (default-c-inliner fname return-type inlined-args)))
 
 (defun default-c-inliner (fname return-type inlined-args)
-  (let* ((arg-types (mapcar #'loc-type inlined-args))
+  (let* ((arg-types (mapcar #'loc-lisp-type inlined-args))
          (ii (inline-function fname arg-types return-type)))
     (and ii (apply-inline-info ii inlined-args))))
 
