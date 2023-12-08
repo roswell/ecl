@@ -132,19 +132,15 @@
 
 (defun emit-inline-form (form forms)
   (with-c1form-env (form form)
-    (case (c1form-name form)
-      (LOCATION
-       (precise-loc-lisp-type (c1form-arg 0 form) (c1form-primary-type form)))
-      (VARIABLE
-       (emit-inlined-variable form forms))
-      (SETQ
-       (emit-inlined-setq form forms))
-      (PROGN
-       (emit-inlined-progn form forms))
-      (VALUES
-       (emit-inlined-values form forms))
-      (t
-       (emit-inlined-temp-var form (c1form-primary-type form) :object)))))
+    (precise-loc-lisp-type
+     (case (c1form-name form)
+       (LOCATION (c1form-arg 0 form) )
+       (VARIABLE (emit-inlined-variable form forms))
+       (SETQ     (emit-inlined-setq form forms))
+       (PROGN    (emit-inlined-progn form forms))
+       (VALUES   (emit-inlined-values form forms))
+       (t        (emit-inlined-temp-var form t :object)))
+     (c1form-primary-type form))))
 
 ;;;
 ;;; inline-args:

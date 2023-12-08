@@ -155,9 +155,10 @@
 ;;;     CL-VA-ARG
 
 (defun precise-loc-lisp-type (loc new-type)
-  (if (subtypep (loc-lisp-type loc) new-type)
-      loc
-      `(the ,new-type ,loc)))
+  (let ((loc-type (loc-lisp-type loc)))
+    (if (subtypep loc-type new-type)
+        loc
+        `(the ,(type-and loc-type new-type) ,loc))))
 
 (defun loc-in-c1form-movable-p (loc)
   "A location that is in a C1FORM and can be moved"
