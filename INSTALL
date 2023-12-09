@@ -189,3 +189,13 @@ After that activate the toolchain and configure build flags:
 
 If the output does not show on the webpage then open the javascript console.
 This is a default html website produced by emscripten.
+
+5. Build an external program linked against libecl.a
+
+The default stack size proposed by emscripten is 64KB. This is too little for
+ECL, so when you build a program that is linked against libecl.a, then it is
+imoprtant to specify a different size. For example:
+
+#+begin_src shell-script
+  emcc program.c -sSTACK_SIZE=1048576 lib/*.a -I./include -o program.o
+#+end_src
