@@ -178,6 +178,7 @@
 
 (defmacro with-c1form-env ((form value) &rest body)
   `(let* ((,form ,value)
+          (*current-c1form* ,form)
           (*compile-file-truename* (c1form-file ,form))
           (*compile-file-position* (c1form-file-position ,form))
           (*current-toplevel-form* (c1form-toplevel-form ,form))

@@ -14,7 +14,9 @@
     (let* ((name (c1form-name form))
            (args (c1form-args form))
            (dispatch (gethash name *c2-dispatch-table*)))
-      (apply dispatch form args))))
+      (if dispatch
+          (apply dispatch form args)
+          (cmperr "Unhandled C2FORM found at the:~%~4I~A" form)))))
 
 (defun c2expr* (form)
   ;; C2EXPR* compiles the giving expression in a context in which
