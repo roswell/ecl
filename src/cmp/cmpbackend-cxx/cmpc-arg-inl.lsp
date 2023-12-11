@@ -23,12 +23,13 @@
   (loop for i of-type fixnum from 0 below *inline-blocks*
         do (wt-nl-close-brace)))
 
+(defun coerce-loc (host-type location)
+  (if (eq (loc-host-type location) host-type)
+      location
+      `(COERCE-LOC ,host-type ,location)))
+
 (defun coerce-args (inlined-args)
-  (mapcar (lambda (loc)
-            (if (eq (loc-host-type loc) :object)
-                loc
-                `(COERCE-LOC :object ,LOC)))
-          inlined-args))
+  (mapcar (lambda (loc) (coerce-loc :object loc)) inlined-args))
 
 (defun coerce-locs (inlined-args types args-to-be-saved)
   ;; INLINED-ARGS is a list of INLINED-ARG produced by the argument inliner.
@@ -45,26 +46,21 @@
   ;;
   (loop with block-opened = nil
         for loc in inlined-args
-        for arg-host-type = (loc-host-type loc)
         for type in types
         for i from 0
         for host-type = (lisp-type->host-type type)
         collect
-        (cond ((and (member i args-to-be-saved :test #'eql)
-                    (not (loc-movable-p loc)))
-               (let ((lcl (make-lcl-var :host-type host-type)))
-                 (wt-nl)
-                 (unless block-opened
-                   (setf block-opened t)
-                   (open-inline-block))
-                 (wt (host-type->c-name host-type) " " lcl "= ")
-                 (wt-coerce-loc host-type loc)
-                 (wt ";")
-                 lcl))
-              ((equal host-type arg-host-type)
-               loc)
-              (t
-               `(COERCE-LOC ,host-type ,loc)))))
+        (if (and (member i args-to-be-saved :test #'eql)
+                 (not (loc-movable-p loc)))
+            (let ((lcl (make-lcl-var :host-type host-type)))
+              (wt-nl)
+              (unless block-opened
+                (setf block-opened t)
+                (open-inline-block))
+              (wt (host-type->c-name host-type) " " lcl "= "
+                  (coerce-loc host-type loc) ";")
+              lcl)
+            (coerce-loc host-type loc))))
 
 ;;; We could use VV to represent inlined args, but the most specific for our
 ;;; purposes is the location (THE LISP-TYPE LOCATION) which is created when

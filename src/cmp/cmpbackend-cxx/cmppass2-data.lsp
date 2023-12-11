@@ -409,9 +409,7 @@
         (wt-vv-index index (vv-permanent-p vv-loc)))))
 
 (defun set-vv-index (loc index permanent-p)
-  (wt-nl) (wt-vv-index index permanent-p) (wt "= ")
-  (wt-coerce-loc :object loc)
-  (wt ";"))
+  (wt-nl) (wt-vv-index index permanent-p) (wt "=" (coerce-loc :object loc) ";"))
 
 (defun set-vv (loc vv-loc)
   (setf (vv-used-p vv-loc) t)

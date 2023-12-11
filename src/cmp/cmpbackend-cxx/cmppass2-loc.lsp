@@ -402,9 +402,8 @@
            (apply fd loc (rest destination))
            (progn
              (wt-nl)
-             (wt-loc destination) (wt " = ")
-             (wt-coerce-loc (loc-host-type destination) loc)
-             (wt ";"))))))
+             (wt-loc destination)
+             (wt " = " (coerce-loc (loc-host-type destination) loc) ";"))))))
 
 (defun set-the-loc (loc type orig-loc)
   (declare (ignore type))
@@ -413,22 +412,22 @@
 (defun set-valuez-loc (loc)
   (cond ((eq loc 'VALUEZ))
         ((uses-values loc)
-         (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc) (wt ";"))
+         (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";"))
         (t
-         (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc) (wt ";")
+         (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
 (defun set-value0-loc (loc)
-  (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
+  (wt-nl "value0 = " (coerce-loc :object loc) ";"))
 
 (defun set-leave-loc (loc)
   (cond ((or (eq loc 'VALUEZ) (uses-values loc))
-         (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
+         (wt-nl "value0 = " (coerce-loc :object loc) ";"))
         ((eq loc 'VALUE0)
          (wt-nl "cl_env_copy->nvalues = 1;"))
         ((eq loc 'LEAVE))
         (t
-         (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";")
+         (wt-nl "value0 = " (coerce-loc :object loc) ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
 (defun set-trash-loc (loc &rest args)
