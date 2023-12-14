@@ -60,22 +60,22 @@
 
 (defun c1form-add-info-loop (form dependents)
   (loop with subform
-     while (consp dependents)
-     when (c1form-p (setf subform (pop dependents)))
-     do (progn
-          (when (c1form-sp-change subform)
-            (setf (c1form-sp-change form) t
-                  (c1form-side-effects form) t))
-          (when (c1form-side-effects subform)
-            (setf (c1form-side-effects form) t))
-          (unless (eq (c1form-name subform) 'LOCATION)
-            (when (rest (c1form-parents subform))
-              (error "Running twice through same form"))
-            (setf (c1form-parents subform)
-                  (nconc (c1form-parents subform)
-                         (c1form-parents form)))))
-     when (consp subform)
-     do (c1form-add-info-loop form subform)))
+        while (consp dependents)
+        when (c1form-p (setf subform (pop dependents)))
+          do (progn
+               (when (c1form-sp-change subform)
+                 (setf (c1form-sp-change form) t
+                       (c1form-side-effects form) t))
+               (when (c1form-side-effects subform)
+                 (setf (c1form-side-effects form) t))
+               (unless (eq (c1form-name subform) 'LOCATION)
+                 (when (rest (c1form-parents subform))
+                   (error "Running twice through same form"))
+                 (setf (c1form-parents subform)
+                       (nconc (c1form-parents subform)
+                              (c1form-parents form)))))
+        when (consp subform)
+          do (c1form-add-info-loop form subform)))
 
 (defun c1form-add-info (form dependents)
   (let ((record (gethash (c1form-name form) +c1-form-hash+)))
@@ -137,6 +137,9 @@
             do (traverse-c1form-tree f function))
          (funcall function tree))))
 
+(defun c1form-pure-p (form)
+  (third (gethash (c1form-name form) +c1-form-hash+)))
+
 (defun c1form-movable-p (form)
   (flet ((abort-on-not-pure (form)
            (let ((name (c1form-name form)))
@@ -146,20 +149,16 @@
                                 (var-set-nodes var))
                         (return-from c1form-movable-p nil))))
                    ((or (c1form-side-effects form)
-                        (not (third (gethash name +c1-form-hash+))))
+                        (not (c1form-pure-p form)))
                     (return-from c1form-movable-p nil))))))
     (abort-on-not-pure form)))
-
-(defun c1form-pure-p (form)
-  (third (gethash (c1form-name form) +c1-form-hash+)))
 
 (defun c1form-unmodified-p (form rest-form)
   (flet ((abort-on-not-pure (form)
            (let ((name (c1form-name form)))
              (cond ((eq name 'VARIABLE)
                     (let ((var (c1form-arg 0 form)))
-                      (when (or (global-var-p var)
-                                (var-changed-in-form-list var rest-form))
+                      (when (var-changed-in-form-list var rest-form)
                         (return-from c1form-unmodified-p nil))))
                    ((or (c1form-side-effects form)
                         (not (c1form-pure-p form)))
