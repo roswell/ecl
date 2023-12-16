@@ -113,7 +113,7 @@
            (,%count (- ,end ,index) (1- ,%count)))
           ((<= ,%count 0) ,output)
        (declare (fixnum ,index ,%count)
-                (cons ,%sublist))
+                (list ,%sublist))
        (let ((,elt (car ,%sublist)))
          ,@body))))
 
