@@ -56,14 +56,12 @@
 (defvar *vv-t*
   (make-vv :value CL:T))
 
-(defvar *c1nil*
-  (make-c1form* 'LOCATION :type (object-type nil) :args *vv-nil*))
-
-(defvar *c1t*
-  (make-c1form* 'LOCATION :type (object-type t) :args *vv-t*))
-
-(defun c1nil () *c1nil*)
-(defun c1t () *c1t*)
+(defun c1nil ()
+  (let ((*current-form* nil))
+    (make-c1form* 'LOCATION :type 'null :args *vv-nil*)))
+(defun c1t ()
+  (let ((*current-form* t))
+    (make-c1form* 'LOCATION :type '(eql t) :args *vv-t*)))
 
 (defun c1with-backend (forms)
   (c1progn (loop for tag = (pop forms)
