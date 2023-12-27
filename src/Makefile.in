@@ -83,7 +83,7 @@ endif
 %Makefile: $(srcdir)/%Makefile.in config.status
 	./config.status
 
-bin/$(ECL): $(ECL_MIN) compile.lsp build-stamp $(top_srcdir)/h/*.h $(top_srcdir)/h/impl/*.h $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp
+bin/$(ECL): $(ECL_MIN) compile.lsp build-stamp $(top_srcdir)/h/*.h $(top_srcdir)/h/impl/*.h $(top_srcdir)/lsp/*.lsp $(top_srcdir)/clos/*.lsp $(top_srcdir)/*cmp/*.lsp $(top_srcdir)/*cmp/*/*.lsp
 	if [ -f CROSS-COMPILER ]; then \
 		./CROSS-COMPILER compile; \
 	else \
