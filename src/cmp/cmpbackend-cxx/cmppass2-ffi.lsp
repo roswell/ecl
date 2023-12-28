@@ -61,49 +61,5 @@
 
 (defun c2c-inline (c1form arguments &rest rest)
   (declare (ignore c1form))
-  (let ((*inline-blocks* 0)
-        (*temp* *temp*))
-    (unwind-exit (apply #'produce-inline-loc (inline-args arguments) rest))
-    (close-inline-blocks)))
-
-(defun t3-defcallback (lisp-name c-name c-name-constant return-type return-type-code
-                       arg-types arg-type-constants call-type &aux (return-p t))
-  (declare (ignore lisp-name))
-  (when (eql return-type :void)
-    (setf return-p nil))
-  (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))
-        (vars (loop for n from 0 below (length arg-types)
-                    collect (format nil "var~d" n)))
-        (fmod (case call-type
-                ((:cdecl :default) "")
-                (:stdcall "__stdcall ")
-                (t (cmperr "DEFCALLBACK does not support ~A as calling convention"
-                           call-type)))))
-    (wt-nl-h "static " return-type-name " " fmod c-name "(")
-    (wt-nl1  "static " return-type-name " " fmod c-name "(")
-    (loop with comma = ""
-          for var in vars
-          for type in arg-types
-          for arg-type-name = (rep-type->c-name (ffi::%convert-to-arg-type type))
-          do (wt-h comma arg-type-name " " var)
-             (wt   comma arg-type-name " " var)
-             (setf comma ","))
-    (wt ")")
-    (wt-h ");")
-    (with-lexical-scope ()
-      (when return-p
-        (wt-nl return-type-name " output;"))
-      (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
-      (wt-nl "cl_object aux;")
-      (with-stack-frame (frame)
-        (loop for var in vars
-              and type in arg-types
-              and ct in arg-type-constants
-              do (wt-nl "ecl_stack_frame_push(" frame "," `(ffi-data-ref ,var ,ct) ");"))
-        (wt-nl "aux = ecl_apply_from_stack_frame(" frame ","
-               "ecl_fdefinition(" c-name-constant "));")
-        ;; No UNWIND-EXIT, so we must close the frame manually.
-        (wt-nl "ecl_stack_frame_close(" frame ");"))
-      (when return-p
-        (set-loc `(ffi-data-ref "output" ,return-type-code) "aux")
-        (wt-nl "return output;")))))
+  (with-inline-blocks ()
+    (unwind-exit (apply #'produce-inline-loc (inline-args arguments) rest))))

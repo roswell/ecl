@@ -71,10 +71,6 @@ running the compiler. It may be updated by running ")
 (defvar *machine* nil)
 
 ;;; --cmpcall.lsp--
-;;;
-;;; Whether to use linking calls.
-;;;
-(defvar *compile-to-linking-call* t)
 (defvar *compiler-declared-globals*)
 
 ;;; --cmpenv.lsp--
@@ -123,13 +119,6 @@ variable, block, tag or function object at the end.")
 "This is the common environment shared by all toplevel forms. It can
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
-
-;;; --cmplocs.lsp--
-;;;
-;;; Destination of output of different forms. See cmplocs.lsp for types of
-;;; destinations.
-;;;
-(defvar *destination*)
 
 ;;; --cmpmain.lsp--
 ;;;

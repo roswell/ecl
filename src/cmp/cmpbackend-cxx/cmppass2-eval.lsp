@@ -76,22 +76,6 @@
   (declare (si::c-local))
   (and (consp dest) (eq (si:cons-car dest) 'JUMP-FALSE)))
 
-(defun negate-argument (inlined-arg dest-loc)
-  (declare (si::c-local))
-  (let* ((loc (second inlined-arg))
-         (rep-type (loc-representation-type loc)))
-    (apply #'produce-inline-loc
-           (list inlined-arg)
-           (if (eq (loc-representation-type dest-loc) :bool)
-               (case rep-type
-                 (:bool '((:bool) (:bool) "(#0)==ECL_NIL" nil t))
-                 (:object '((:object) (:bool) "(#0)!=ECL_NIL" nil t))
-                 (otherwise (return-from negate-argument nil)))
-               (case rep-type
-                 (:bool '((:bool) (:object) "(#0)?ECL_NIL:ECL_T" nil t))
-                 (:object '((:object) (:object) "Null(#0)?ECL_T:ECL_NIL" nil t))
-                 (otherwise (return-from negate-argument *vv-nil*)))))))
-
 (defun c2fmla-not (c1form arg)
   (declare (ignore c1form))
   (let ((dest *destination*))
@@ -102,10 +86,8 @@
            (let ((*destination* `(JUMP-TRUE ,@(cdr dest))))
              (c2expr arg)))
           (t
-           (let ((*inline-blocks* 0)
-                 (*temp* *temp*))
-             (unwind-exit (negate-argument (emit-inline-form arg nil) dest))
-             (close-inline-blocks))))))
+           (with-inline-blocks ()
+             (unwind-exit (negate-argument arg dest)))))))
 
 (defun c2fmla-and (c1form butlast last)
   (declare (ignore c1form))
@@ -137,8 +119,7 @@
              (dolist (f butlast)
                (let ((*destination* 'VALUE0))
                  (c2expr* f))
-               (wt-nl "if (" 'VALUE0 "!=ECL_NIL) ")
-               (wt-open-brace) (unwind-jump normal-exit) (wt-nl-close-brace))
+               (unwind-cond normal-exit :jump-t 'VALUE0))
              (c2expr last))
            (unwind-exit 'VALUE0)))))
 
@@ -156,51 +137,50 @@
 (defun c2values (c1form forms)
   (declare (ignore c1form))
   (cond
-   ;; When the values are not going to be used, then just
-   ;; process each form separately.
-   ((eq *destination* 'TRASH)
-    (mapc #'c2expr* forms)
-    ;; We really pass no value, but we need UNWIND-EXIT to trigger all the
-    ;; frame-pop and all other exit forms.
-    (unwind-exit 'VALUE0))
-   ;; For (VALUES) we can replace the output with either NIL (if the value is
-   ;; actually used) and set only NVALUES when the value is the output of a
-   ;; function.
-   ((endp forms)
-    (cond ((eq *destination* 'LEAVE)
-           (wt-nl "value0 = ECL_NIL;")
-           (wt-nl "cl_env_copy->nvalues = 0;")
-           (unwind-exit 'LEAVE))
-          ((eq *destination* 'VALUEZ)
-           (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
-           (wt-nl "cl_env_copy->nvalues = 0;")
-           (unwind-exit 'VALUEZ))
-          (t
-           (unwind-exit *vv-nil*))))
-   ;; For a single form, we must simply ensure that we only take a single
-   ;; value of those that the function may output.
-   ((endp (rest forms))
-    (let ((form (first forms)))
-      (if (or (not (member *destination* '(LEAVE VALUEZ)))
-              (c1form-single-valued-p form))
-          (c2expr form)
-          (progn
-            (let ((*destination* 'VALUE0)) (c2expr* form))
-            (unwind-exit 'VALUE0)))))
-   ;; In all other cases, we store the values in the VALUES vector,
-   ;; and force the compiler to retrieve anything out of it.
-   (t
-    (let* ((nv (length forms))
-           (*inline-blocks* 0)
-           (*temp* *temp*)
-           (forms (nreverse (coerce-locs (inline-args forms)))))
-      ;; By inlining arguments we make sure that VL has no call to funct.
-      ;; Reverse args to avoid clobbering VALUES(0)
-      (wt-nl "cl_env_copy->nvalues = " nv ";")
-      (do ((vl forms (rest vl))
-           (i (1- (length forms)) (1- i)))
-          ((null vl))
-        (declare (fixnum i))
-        (wt-nl "cl_env_copy->values[" i "] = " (first vl) ";"))
-      (unwind-exit 'VALUEZ)
-      (close-inline-blocks)))))
+    ;; When the values are not going to be used, then just process each form
+    ;; separately.
+    ((eq *destination* 'TRASH)
+     (mapc #'c2expr* forms)
+     ;; We really pass no value, but we need UNWIND-EXIT to trigger all the
+     ;; frame-pop and all other exit forms.
+     (unwind-exit 'VALUE0))
+    ;; For (VALUES) we can replace the output with either NIL (if the value is
+    ;; actually used) and set only NVALUES when the value is the output of a
+    ;; function.
+    ((endp forms)
+     (case *destination*
+       (VALUEZ
+        (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
+        (wt-nl "cl_env_copy->nvalues = 0;")
+        (unwind-exit 'VALUEZ))
+       (LEAVE
+        (wt-nl "value0 = ECL_NIL;")
+        (wt-nl "cl_env_copy->nvalues = 0;")
+        (unwind-exit 'LEAVE))
+       (otherwise (unwind-exit *vv-nil*))))
+    ;; For a single form, we must simply ensure that we only take a single
+    ;; value of those that the function may output.
+    ((endp (rest forms))
+     (let ((form (first forms)))
+       (if (or (not (member *destination* '(LEAVE VALUEZ)))
+               (c1form-single-valued-p form))
+           (c2expr form)
+           (progn
+             (let ((*destination* 'VALUE0))
+               (c2expr* form))
+             (unwind-exit 'VALUE0)))))
+    ;; In all other cases, we store the values in the VALUES vector,
+    ;; and force the compiler to retrieve anything out of it.
+    (t
+     (with-inline-blocks ()
+       (let* ((nv (length forms))
+              (forms (nreverse (coerce-locs (inline-args forms)))))
+         ;; By inlining arguments we make sure that VL has no call to funct.
+         ;; Reverse args to avoid clobbering VALUES(0)
+         (wt-nl "cl_env_copy->nvalues = " nv ";")
+         (do ((vl forms (rest vl))
+              (i (1- (length forms)) (1- i)))
+             ((null vl))
+           (declare (fixnum i))
+           (wt-nl "cl_env_copy->values[" i "] = " (first vl) ";"))
+         (unwind-exit 'VALUEZ))))))

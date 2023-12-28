@@ -45,8 +45,7 @@
       (progn
         (let ((*destination* 'VALUEZ))
           (c2expr* val))
-        (let ((name (get-object (blk-name blk))))
-          (wt-nl "cl_return_from(" (blk-var blk) "," name ");")))
+        (unwind-flee blk :return-from))
       (let ((*destination* (blk-destination blk))
             (*exit* (blk-exit blk)))
         (c2expr val))))
@@ -55,39 +54,39 @@
 (defun c2tagbody (c1form tag-loc body)
   (declare (type var tag-loc)
            (ignore c1form))
-  (if (null (var-kind tag-loc))
-      ;; only local goto's
-      (dolist (x body (c2tagbody-body body))
-        ;; Allocate labels.
-        (when (and (tag-p x) (plusp (tag-ref x)))
-          (setf (tag-jump x) (next-label t))))
-      ;; some tag used non locally or inside an unwind-protect
-      (let ((*env* *env*) (*env-lvl* *env-lvl*)
-            (*lex* *lex*) (*lcl* *lcl*)
-            (*inline-blocks* 0)
-            (env-grows (env-grows (var-ref-ccb tag-loc))))
-        (when env-grows
-          (let ((env-lvl *env-lvl*))
+  (macrolet ((do-tags ((tag forms result) &body body)
+               ;; Allocate labels.
+               `(dolist (,tag ,forms ,result)
+                  (when (and (tag-p ,tag) (plusp (tag-ref ,tag)))
+                    (setf (tag-jump ,tag) (next-label t))
+                    ,@body))))
+    (if (null (var-kind tag-loc))
+        ;; only local goto's
+        (do-tags (tag body (c2tagbody-body body)))
+        ;; some tag used non locally or inside an unwind-protect
+        (let ((*env* *env*) (*env-lvl* *env-lvl*)
+              (*lex* *lex*) (*lcl* *lcl*)
+              (*inline-blocks* 0)
+              (env-grows (env-grows (var-ref-ccb tag-loc))))
+          (when env-grows
+            (let ((env-lvl *env-lvl*))
+              (maybe-open-inline-block)
+              (wt-nl "volatile cl_object env" (incf *env-lvl*)
+                     " = env" env-lvl ";")))
+          (when (eq :OBJECT (var-kind tag-loc))
+            (setf (var-loc tag-loc) (next-lcl))
             (maybe-open-inline-block)
-            (wt-nl "volatile cl_object env" (incf *env-lvl*)
-                   " = env" env-lvl ";")))
-        (when (eq :OBJECT (var-kind tag-loc))
-          (setf (var-loc tag-loc) (next-lcl))
-          (maybe-open-inline-block)
-          (wt-nl "cl_object " tag-loc ";"))
-        (bind "ECL_NEW_FRAME_ID(cl_env_copy)" tag-loc)
-        (with-unwind-frame (tag-loc)
-          (progn
-            ;; Allocate labels.
-            (dolist (tag body)
-              (when (and (tag-p tag) (plusp (tag-ref tag)))
-                (setf (tag-jump tag) (next-label nil))
-                (wt-nl "if (cl_env_copy->values[0]==ecl_make_fixnum(" (tag-index tag) "))")
-                (wt-go (tag-jump tag))))
-            (when (var-ref-ccb tag-loc)
-              (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");")))
-          (c2tagbody-body body))
-        (close-inline-blocks))))
+            (wt-nl "cl_object " tag-loc ";"))
+          (bind "ECL_NEW_FRAME_ID(cl_env_copy)" tag-loc)
+          (with-unwind-frame (tag-loc)
+            (progn
+              (do-tags (tag body nil)
+                (unwind-cond (tag-jump tag) :jump-eq
+                             'VALUEZ  (tag-index tag)))
+              (when (var-ref-ccb tag-loc)
+                (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");")))
+            (c2tagbody-body body))
+          (close-inline-blocks)))))
 
 (defun c2tagbody-body (body)
   ;;; INV: BODY is a list of tags and forms. We have processed the body
@@ -105,20 +104,22 @@
 (defun c2go (c1form tag nonlocal)
   (declare (ignore c1form))
   (if nonlocal
-      (wt-nl "cl_go(" (tag-var tag) ",ecl_make_fixnum(" (tag-index tag) "));")
+      (unwind-flee tag :go)
       (unwind-jump (tag-jump tag))))
 
 
 (defun c2throw (c1form tag val &aux loc)
   (declare (ignore c1form))
   (case (c1form-name tag)
-    ((VARIABLE LOCATION) (setq loc (c1form-arg 0 tag)))
-    (t (setq loc (make-temp-var))
+    ((VARIABLE LOCATION)
+     (setq loc (c1form-arg 0 tag)))
+    (t
+     (setq loc (make-temp-var))
      (let ((*destination* loc))
        (c2expr* tag))))
   (let ((*destination* 'VALUEZ))
     (c2expr* val))
-  (wt-nl "cl_throw(" loc ");"))
+  (unwind-flee loc :throw))
 
 (defun c2catch (c1form tag body)
   (declare (ignore c1form))

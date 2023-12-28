@@ -44,6 +44,55 @@
       (apply def form (c1form-args form)))
     (cmperr "Unhandled T2FORM found at the toplevel:~%~4I~A" form)))
 
+(defun t2compiler-let (c1form symbols values body)
+  (declare (ignore c1form))
+  (progv symbols values (c2expr body)))
+
+(defun t2progn (c1form args)
+  (declare (ignore c1form))
+  (mapc #'t2expr args))
+
+(defun t2ordinary (c1form form)
+  (declare (ignore c1form))
+  (with-exit-label (*exit*)
+    (let ((*destination* 'TRASH))
+      (c2expr form))))
+
+(defun t2load-time-value (c1form vv-loc form)
+  (declare (ignore c1form))
+  (with-exit-label (*exit*)
+    (let ((*destination* vv-loc))
+      (c2expr form))))
+
+(defun t2make-form (c1form vv-loc form)
+  (declare (ignore c1form))
+  (with-exit-label (*exit*)
+    (let ((*destination* vv-loc))
+      (c2expr form))))
+
+(defun t2init-form (c1form vv-loc form)
+  (declare (ignore c1form vv-loc))
+  (with-exit-label (*exit*)
+    (let ((*destination* 'TRASH))
+      (c2expr form))))
+
+(defun t2fset (c1form &rest args)
+  (declare (ignore args))
+  (t2ordinary c1form c1form))
+
+(defun c2fset (c1form fun fname macro-p pprint c1forms)
+  (declare (ignore pprint))
+  (when (fun-no-entry fun)
+    (wt-nl "(void)0; " (format nil "/* No entry created for ~A */" (fun-name fun)))
+    ;; FIXME! Look at C2LOCALS!
+    (update-function-env fun)
+    (return-from c2fset))
+  (if (and (not (fun-closure fun))
+           (eq *destination* 'TRASH))
+      (wt-install-function fname fun macro-p)
+      (c2call-global c1form 'SI:FSET c1forms)))
+
+
 (defun emit-functions (*compiler-output1*)
   (declare (si::c-local))
   ;; Local functions and closure functions
@@ -60,49 +109,7 @@
            ;; so disassemble can redefine it
            (t3function (first lfs)))))))
 
-(defun emit-entry-fun (name *compiler-output1*)
-  (let* ((*opened-c-braces* 0)
-         (*aux-closure* nil))
-    (wt-nl "ECL_DLLEXPORT void " name "(cl_object flag)")
-    (wt-nl-open-brace)
-    (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
-    (wt-nl "cl_object value0;")
-    (wt-nl "cl_object *VVtemp;")
-
-    (wt-nl "if (flag != OBJNULL){")
-    (wt-nl "Cblock = flag;")
-    (wt-nl "#ifndef ECL_DYNAMIC_VV")
-    (wt-nl "flag->cblock.data = VV;")
-    (wt-nl "#endif")
-    (when *self-destructing-fasl*
-      (wt-nl "flag->cblock.self_destruct=1;"))
-    (wt-nl "flag->cblock.data_size = VM;")
-    (wt-nl "flag->cblock.temp_data_size = VMtemp;")
-    (wt-nl "flag->cblock.data_text = compiler_data_text;")
-    (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
-    (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
-    (when ext:*source-location*
-      (wt-nl "flag->cblock.source = ecl_make_constant_base_string(\""
-             (namestring (car ext:*source-location*)) "\",-1);"))
-    (wt-nl "return;}")
-    (wt-nl "#ifdef ECL_DYNAMIC_VV")
-    (wt-nl "VV = Cblock->cblock.data;")
-    (wt-nl "#endif")
-    ;; With this we ensure creating a constant with the tag
-    ;; and the initialization file
-    (wt-nl "Cblock->cblock.data_text = (const cl_object *)\"" (init-name-tag name) "\";")
-    (wt-nl "VVtemp = Cblock->cblock.temp_data;")
-    (wt-nl "ECL_DEFINE_SETF_FUNCTIONS")
-    (dolist (form *make-forms*)
-      (emit-toplevel-form form))
-    (dolist (form *top-level-forms*)
-      (emit-toplevel-form form))
-    ;; We process top-level forms before functions to update their
-    ;; environments. Then we emit functions before top level forms.
-    (wt-nl-close-many-braces 0)))
-
-(defun ctop-write (init-name h-pathname data-pathname
-                   &aux def top-output-string (*volatile* "volatile "))
+(defun ctop-write (init-name h-pathname data-pathname &aux top-output-string)
   (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
 
   ;; VV might be needed by functions in CLINES.
@@ -119,7 +126,7 @@
   ;;; We rebind the output to ensure that the initialization function is
   ;;; processed first and added last.
   (let ((output (make-string-output-stream)))
-    (emit-entry-fun init-name output)
+    (t3entry-fun init-name output)
     (emit-functions *compiler-output1*)
     (setq top-output-string (get-output-stream-string output)))
   ;; Declarations in h-file.
@@ -160,50 +167,13 @@
   (when *callbacks*
     (wt-nl-h "#include <ecl/internal.h>")
     (dolist (x *callbacks*)
-      (apply #'t3-defcallback x)))
+      (apply #'t3callback x)))
 
   (wt-nl "#include \"" (brief-namestring data-pathname) "\"")
   (wt-nl "#ifdef __cplusplus")
   (wt-nl "extern \"C\"")
   (wt-nl "#endif")
   (wt-nl top-output-string))
-
-(defun emit-toplevel-form (form)
-  (declare (si::c-local))
-  (let ((*ihs-used-p* nil)
-        (*max-lex* 0)
-        (*max-env* 0)
-        (*max-temp* 0)
-        (*lcl* 0)
-        (*lex* 0)
-        (*level* 0)
-        (*env* 0)
-        (*env-lvl* 0)
-        (*temp* 0)
-        (*compile-to-linking-call* nil)
-        (*compile-file-truename* (and form (c1form-file form)))
-        (*compile-file-position* (and form (c1form-file-position form))))
-    ;; We save the C body of the statement, indented, just in case
-    ;; we need to add a {} section with the environment variables.
-    (let ((body (let ((*opened-c-braces* (1+ *opened-c-braces*)))
-                  (with-output-to-string (*compiler-output1*)
-                    (t2expr form)))))
-      (if (or (plusp *max-lex*)
-              (plusp *max-temp*)
-              (plusp *max-env*)
-              *ihs-used-p*)
-          (with-lexical-scope ()
-            (wt-function-locals)
-            (write-sequence body *compiler-output1*))
-          (write-sequence body *compiler-output1*)))))
-
-(defun t2compiler-let (c1form symbols values body)
-  (declare (ignore c1form))
-  (progv symbols values (c2expr body)))
-
-(defun t2progn (c1form args)
-  (declare (ignore c1form))
-  (mapc #'t2expr args))
 
 (defun wt-function-locals (&optional closure-type)
   ;; FIXME! Are we careful enough with temporary variables that
@@ -239,30 +209,104 @@
           do (wt comma "CLV" i)
           finally (wt ";"))))
 
+
+(defun t3entry-fun (name *compiler-output1*)
+  (with-bir-env (:env 0 :level 0 :volatile "volatile ")
+    (wt-nl "ECL_DLLEXPORT void " name "(cl_object flag)")
+    (wt-nl-open-brace)
+    (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
+    (wt-nl "cl_object value0;")
+    (wt-nl "cl_object *VVtemp;")
 
-(defun t2ordinary (c1form form)
-  (declare (ignore c1form))
-  (with-exit-label (*exit*)
-    (let ((*destination* 'TRASH))
-      (c2expr form))))
+    (wt-nl "if (flag != OBJNULL){")
+    (wt-nl "Cblock = flag;")
+    (wt-nl "#ifndef ECL_DYNAMIC_VV")
+    (wt-nl "flag->cblock.data = VV;")
+    (wt-nl "#endif")
+    (when *self-destructing-fasl*
+      (wt-nl "flag->cblock.self_destruct=1;"))
+    (wt-nl "flag->cblock.data_size = VM;")
+    (wt-nl "flag->cblock.temp_data_size = VMtemp;")
+    (wt-nl "flag->cblock.data_text = compiler_data_text;")
+    (wt-nl "flag->cblock.cfuns_size = compiler_cfuns_size;")
+    (wt-nl "flag->cblock.cfuns = compiler_cfuns;")
+    (when ext:*source-location*
+      (wt-nl "flag->cblock.source = ecl_make_constant_base_string(\""
+             (namestring (car ext:*source-location*)) "\",-1);"))
+    (wt-nl "return;}")
+    (wt-nl "#ifdef ECL_DYNAMIC_VV")
+    (wt-nl "VV = Cblock->cblock.data;")
+    (wt-nl "#endif")
+    ;; With this we ensure creating a constant with the tag
+    ;; and the initialization file
+    (wt-nl "Cblock->cblock.data_text = (const cl_object *)\"" (init-name-tag name) "\";")
+    (wt-nl "VVtemp = Cblock->cblock.temp_data;")
+    (wt-nl "ECL_DEFINE_SETF_FUNCTIONS")
+    ;; We save the C body of the statement, indented, just in case we need to
+    ;; add a {} section with the environment variables.
+    (let ((body (let ((*opened-c-braces* (1+ *opened-c-braces*)))
+                  (with-output-to-string (*compiler-output1*)
+                    (terpri *compiler-output1*)
+                    (wt-comment-nl "MAKE-LOAD-FORMs")
+                    (dolist (form *make-forms*)
+                      (t2expr form))
+                    (wt-comment-nl "TOP-LEVEL-FORMs")
+                    (dolist (form *top-level-forms*)
+                      (t2expr form))))))
+      (if (or (plusp *max-lex*)
+              (plusp *max-temp*)
+              (plusp *max-env*)
+              *ihs-used-p*)
+          (with-lexical-scope ()
+            (wt-function-locals)
+            (write-sequence body *compiler-output1*))
+          (write-sequence body *compiler-output1*)))
+    ;; We process top-level forms before functions to update their
+    ;; environments. Then we emit functions before top level forms.
+    (wt-nl-close-many-braces 0)))
 
-(defun t2load-time-value (c1form vv-loc form)
-  (declare (ignore c1form))
-  (with-exit-label (*exit*)
-    (let ((*destination* vv-loc))
-      (c2expr form))))
-
-(defun t2make-form (c1form vv-loc form)
-  (declare (ignore c1form))
-  (with-exit-label (*exit*)
-    (let ((*destination* vv-loc))
-      (c2expr form))))
-
-(defun t2init-form (c1form vv-loc form)
-  (declare (ignore c1form vv-loc))
-  (with-exit-label (*exit*)
-    (let ((*destination* 'TRASH))
-      (c2expr form))))
+(defun t3callback (lisp-name c-name c-name-constant return-type return-type-code
+                       arg-types arg-type-constants call-type &aux (return-p t))
+  (declare (ignore lisp-name))
+  (with-bir-env (:env 0 :level 0 :volatile "volatile ")
+    (when (eql return-type :void)
+      (setf return-p nil))
+    (let ((return-type-name (rep-type->c-name (ffi::%convert-to-arg-type return-type)))
+          (vars (loop for n from 0 below (length arg-types)
+                      collect (format nil "var~d" n)))
+          (fmod (case call-type
+                  ((:cdecl :default) "")
+                  (:stdcall "__stdcall ")
+                  (t (cmperr "DEFCALLBACK does not support ~A as calling convention"
+                             call-type)))))
+      (wt-nl-h "static " return-type-name " " fmod c-name "(")
+      (wt-nl1  "static " return-type-name " " fmod c-name "(")
+      (loop with comma = ""
+            for var in vars
+            for type in arg-types
+            for arg-type-name = (rep-type->c-name (ffi::%convert-to-arg-type type))
+            do (wt-h comma arg-type-name " " var)
+               (wt   comma arg-type-name " " var)
+               (setf comma ","))
+      (wt ")")
+      (wt-h ");")
+      (with-lexical-scope ()
+        (when return-p
+          (wt-nl return-type-name " output;"))
+        (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
+        (wt-nl "cl_object aux;")
+        (with-stack-frame (frame)
+          (loop for var in vars
+                and type in arg-types
+                and ct in arg-type-constants
+                do (wt-nl "ecl_stack_frame_push(" frame "," `(ffi-data-ref ,var ,ct) ");"))
+          (wt-nl "aux = ecl_apply_from_stack_frame(" frame ","
+                 "ecl_fdefinition(" c-name-constant "));")
+          ;; No UNWIND-EXIT, so we must close the frame manually.
+          (wt-nl "ecl_stack_frame_close(" frame ");"))
+        (when return-p
+          (set-loc `(ffi-data-ref "output" ,return-type-code) "aux")
+          (wt-nl "return output;"))))))
 
 (defun t3function (fun)
   (declare (type fun fun))
@@ -272,35 +316,25 @@
       (format t "~&;;; Emitting code for ~s.~%" name)))
   (let* ((lambda-expr (fun-lambda fun))
          (*cmp-env* (c1form-env lambda-expr))
-         (*lcl* 0) (*temp* 0) (*max-temp* 0)
-         (*last-label* 0)
-         (*lex* 0) (*max-lex* 0)
-         (*env* (fun-env fun))          ; continue growing env
-         (*max-env* *env*) (*env-lvl* 0)
-         (*aux-closure* nil)
-         (*level* (fun-lexical-levels fun))
-         (*exit* 'LEAVE)
-         (*unwind-exit* '(LEAVE))
-         (*destination* *exit*)
-         (*ihs-used-p* nil)
-         (*opened-c-braces* 0)
          (*tail-recursion-info* fun)
-         (*tail-recursion-mark* nil)
-         (*volatile* (c1form-volatile* lambda-expr)))
-    (t3function-declaration fun)
-    (wt-nl-open-brace)
-    (let ((body (t3function-body fun)))
-      (wt-function-locals (fun-closure fun))
-      (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
-      (when (eq (fun-closure fun) 'CLOSURE)
-        (wt-nl "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
-      (wt-nl "cl_object " *volatile* "value0;")
-      (when (policy-check-stack-overflow)
-        (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
-      (when (eq (fun-closure fun) 'CLOSURE)
-        (t3function-closure-scan fun))
-      (write-sequence body *compiler-output1*)
-      (wt-nl-close-many-braces 0))))
+         (*tail-recursion-mark* nil))
+    (with-bir-env (:env (fun-env fun)
+                   :level (fun-lexical-levels fun)
+                   :volatile (c1form-volatile* lambda-expr))
+      (t3function-declaration fun)
+      (wt-nl-open-brace)
+      (let ((body (t3function-body fun)))
+        (wt-function-locals (fun-closure fun))
+        (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
+        (when (eq (fun-closure fun) 'CLOSURE)
+          (wt-nl "cl_object " *volatile* "env0 = cl_env_copy->function->cclosure.env;"))
+        (wt-nl "cl_object " *volatile* "value0;")
+        (when (policy-check-stack-overflow)
+          (wt-nl "ecl_cs_check(cl_env_copy,value0);"))
+        (when (eq (fun-closure fun) 'CLOSURE)
+          (t3function-closure-scan fun))
+        (write-sequence body *compiler-output1*)
+        (wt-nl-close-many-braces 0)))))
 
 (defun t3function-body (fun)
   (let ((string (make-array 2048 :element-type 'character
@@ -328,7 +362,6 @@
                  (or (fun-name fun) (fun-description fun) 'CLOSURE))
   (let* ((comma "")
          (lambda-expr (fun-lambda fun))
-         (volatile (c1form-volatile* lambda-expr))
          (lambda-list (c1form-arg 0 lambda-expr))
          (requireds (loop
                       repeat si::c-arguments-limit
@@ -349,16 +382,16 @@
              (wt-nl-h "static cl_object " cfun "(")
              (wt-nl "static cl_object " cfun "("))))
     (when narg
-      (wt-h volatile "cl_narg")
-      (wt volatile "cl_narg narg")
+      (wt-h *volatile* "cl_narg")
+      (wt *volatile* "cl_narg narg")
       (setf comma ", "))
     (dotimes (n (fun-lexical-levels fun))
       (wt-h comma "volatile cl_object  *")
       (wt comma "volatile cl_object *lex" n)
       (setf comma ", "))
     (loop for lcl in (setf (fun-required-lcls fun) requireds)
-          do (wt-h comma "cl_object " volatile)
-             (wt comma "cl_object " volatile lcl)
+          do (wt-h comma "cl_object " *volatile*)
+             (wt comma "cl_object " *volatile* lcl)
              (setf comma ", "))
     (when narg
       (wt-h ", ...")
@@ -433,29 +466,12 @@
           (format stream "~%};")))))
 
 (defun wt-install-function (fname fun macro-p)
-  (let ((*inline-blocks* 0)
-        (loc (data-empty-loc*)))
-    (push (list loc fname fun) *global-cfuns-array*)
-    ;; FIXME! Look at C2LOCALS!
-    (update-function-env fun)
-    (if macro-p
-        (wt-nl "ecl_cmp_defmacro(" loc ");")
-        (wt-nl "ecl_cmp_defun(" loc ");"))
-    (wt-comment (loc-immediate-value fname))
-    (close-inline-blocks)))
-
-(defun t2fset (c1form &rest args)
-  (declare (ignore args))
-  (t2ordinary c1form c1form))
-
-(defun c2fset (c1form fun fname macro-p pprint c1forms)
-  (declare (ignore pprint))
-  (when (fun-no-entry fun)
-    (wt-nl "(void)0; " (format nil "/* No entry created for ~A */" (fun-name fun)))
-    ;; FIXME! Look at C2LOCALS!
-    (update-function-env fun)
-    (return-from c2fset))
-  (if (and (not (fun-closure fun))
-           (eq *destination* 'TRASH))
-      (wt-install-function fname fun macro-p)
-      (c2call-global c1form 'SI:FSET c1forms)))
+  (with-inline-blocks ()
+    (let ((loc (data-empty-loc*)))
+      (push (list loc fname fun) *global-cfuns-array*)
+      ;; FIXME! Look at C2LOCALS!
+      (update-function-env fun)
+      (if macro-p
+          (wt-nl "ecl_cmp_defmacro(" loc ");")
+          (wt-nl "ecl_cmp_defun(" loc ");"))
+      (wt-comment (loc-immediate-value fname)))))

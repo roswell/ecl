@@ -56,6 +56,29 @@
 (defvar *exit*)
 (defvar *unwind-exit*)
 
+;;; Destination of output of different forms.
+;;;
+;;; Valid *DESTINATION* locations are:
+;;;
+;;;     var-object                      Variable
+;;;     loc-object                      VV Location
+;;;     TRASH                           Value may be thrown away.
+;;;     LEAVE                           Object returned from current function.
+;;;     VALUEZ                          Values vector.
+;;;     VALUE0
+;;;     ( VALUE i )                     Nth value
+;;;     ( BIND var alternative )        Alternative is optional
+;;;     ( JUMP-TRUE label )
+;;;     ( JUMP-FALSE label )
+
+(defvar *destination*)
+
+(defun tmp-destination (loc)
+  (case loc
+    (VALUEZ 'VALUEZ)
+    (TRASH 'TRASH)
+    (T 'LEAVE)))
+
 ;;; C forms to find out (SETF fname) locations
 (defvar *setf-definitions*)             ; holds { name fun-vv name-vv  }*
 (defvar *global-cfuns-array*)           ; holds { fun-vv fname-loc fun }*
@@ -85,13 +108,9 @@
 ;;;
 
 (defmacro with-cxx-env (() &body body)
-  `(let ((*inline-blocks* 0)
-         (*open-c-braces* 0)
-         (*temp* 0)
-         (*max-temp* 0)
+  `(let ((*opened-c-braces* 0)
+         (*inline-blocks* 0)
          (*next-cfun* 0)
-         (*last-label* 0)
-         (*unwind-exit* nil)
          (*inline-information*
            (ext:if-let ((r (machine-inline-information *machine*)))
              (si:copy-hash-table r)
@@ -103,6 +122,29 @@
          (*permanent-objects* (make-array 128 :adjustable t :fill-pointer 0))
          (*temporary-objects* (make-array 128 :adjustable t :fill-pointer 0))
          (*compiler-declared-globals* (make-hash-table)))
+     ,@body))
+
+;;; Block IR creation environment.
+;;; FIXME Still mixed with CXX bits. Clean this up while separating the backend.
+(defmacro with-bir-env ((&key env level volatile) &body body)
+  `(let* ((*lcl* 0)
+          (*temp* 0)
+          (*max-temp* 0)
+          (*lex* 0)
+          (*max-lex* 0)
+          (*env-lvl* 0)
+          (*env* ,env)
+          (*max-env* *env*)
+          (*level* ,level)
+          (*last-label* 0)
+          (*volatile* ,volatile)
+          ;;
+          (*ihs-used-p* nil)
+          (*aux-closure* nil)
+          ;;
+          (*exit* 'LEAVE)
+          (*unwind-exit* '(LEAVE))
+          (*destination* *exit*))
      ,@body))
 
 (defun-cached env-var-name (n) eql
@@ -147,11 +189,19 @@
   (let ((code (incf *next-cfun*)))
     (format nil prefix code (lisp-to-c-name lisp-name))))
 
-(defmacro with-lexical-scope (() &body body)
-  `(progn
-     (wt-nl-open-brace)
+;;; The macro WITH-INLINE-BLOCKS is used by callers who may optionally need to
+;;; introduce inner lexical scope to create variables. Most notably it is used
+;;; for temporary variables that are bound to local evaluation results.
+(defmacro with-inline-blocks (() &body body)
+  `(let ((*inline-blocks* 0)
+         (*temp* *temp*))
      ,@body
-     (wt-nl-close-brace)))
+     (close-inline-blocks)))
+
+(defmacro with-lexical-scope (() &body body)
+  `(with-inline-blocks ()
+     (open-inline-block)
+     ,@body))
 
 
 ;;; *LAST-LABEL* holds the label# of the last used label. This is used by the

@@ -48,11 +48,11 @@
     "src:cmp;cmpbackend-cxx;cmpc-util.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-mach.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-wt.lsp"
-    "src:cmp;cmpbackend-cxx;cmpc-inliner.lsp"
+    "src:cmp;cmpbackend-cxx;cmpc-arg-inl.lsp"
+    "src:cmp;cmpbackend-cxx;cmpc-fun-inl.lsp"
     ;; Inliner definitions
     "src:cmp;cmpbackend-cxx;cmpc-inl-lspfun.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-inl-sysfun.lsp"
-    "src:cmp;cmpbackend-cxx;cmpc-opt-inl.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-opt-num.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-opt-ct.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-opt-printer.lsp"

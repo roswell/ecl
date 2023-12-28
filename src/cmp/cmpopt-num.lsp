@@ -184,6 +184,9 @@
                       :format-arguments (list operator (or whole
                                                            (list* operator args)))))))))
 
+;;; INV These compiler macros are expected to be in effect by C inliners
+;;; defined for corresponding operators. -- jd 2023-12-04
+
 (define-compiler-macro * (&whole all &rest args)
   (simplify-arithmetic '* args all))
 

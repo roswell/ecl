@@ -38,7 +38,7 @@
              "~s: The function ~s was already defined." origin (car def))
       (push (car def) fnames)
       (let* ((name (car def))
-             (var (make-var :name name :kind :object))
+             (var (make-var :name (gensym) :kind :object))
              (fun (make-fun :name name :var var)))
         (cmp-env-register-function fun new-env)
         (push (cons fun (cdr def)) defs)))

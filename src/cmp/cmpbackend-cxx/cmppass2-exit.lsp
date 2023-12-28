@@ -13,8 +13,10 @@
 ;;;;
 ;;;; The exit manager has two main operators that unwind the dynamic context:
 ;;;;
-;;;;     (UNWIND-EXIT value) carries VALUE to *DESTINATION* and unwinds to *EXIT*.
-;;;;     (UNWIND-JUMP label) unwinds to LABEL.
+;;;;     (UNWIND-EXIT value) carries VALUE to *DESTINATION* and unwinds to *EXIT*
+;;;;     (UNWIND-JUMP label) unwinds to LABEL
+;;;;     (UNWIND-COND label) unwinds to LABEL (conditionally)
+;;;;     (UNWIND-FLEE label) escapes to LABEL (runtime unwind)
 ;;;;
 
 (in-package "COMPILER")
@@ -33,10 +35,18 @@
           (t (baboon-exit-invalid *exit*)))))
 
 (defun unwind-jump (exit)
-  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
-      (compute-unwind (label-denv exit))
-    (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
-    (wt-nl-go exit)))
+  (%unwind (label-denv exit) *unwind-exit*)
+  (%goto exit))
+
+(defun unwind-cont (exit)
+  (%unwind (label-denv exit) *unwind-exit*)
+  (%goto exit))
+
+(defun unwind-flee (exit kind)
+  (%escape exit kind))
+
+(defun unwind-cond (exit kind &rest args)
+  (%branch exit *unwind-exit* kind args))
 
 ;;;
 
@@ -48,9 +58,9 @@
   (baboon :format-control "The value of exit~%~A~%is not valid."
           :format-arguments (list exit)))
 
-(defun baboon-unwind-invalid (unwind-exit)
-  (baboon :format-control "The value~%~A~%is not a tail of *UNWIND-EXIT*~%~A"
-          :format-arguments (list unwind-exit *unwind-exit*)))
+(defun baboon-unwind-invalid (unwind-to unwind-from)
+  (baboon :format-control "The unwind value~%~A~%is not a tail of the unwind value~%~A"
+          :format-arguments (list unwind-to unwind-from)))
 
 (defun baboon-unwind-exit (exit)
   (baboon :format-control "The value of exit~%~A~%found in *UNWIND-EXIT*~%~A~%is not valid."
@@ -73,26 +83,10 @@
 ;;; LEAVE               -> outermost location
 ;;; #<label id used-p>  -> label (basic block leader)
 
-(defun perform-unwind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
-  (declare (si::c-local)
-           (fixnum frs-bind bds-bind))
-  (when (plusp frs-bind)
-    (wt-nl "ecl_frs_pop_n(cl_env_copy, " frs-bind ");"))
-  (when stack-frame
-    (wt-nl "ecl_stack_frame_close(" stack-frame ");"))
-  (when bds-lcl
-    (wt-nl "ecl_bds_unwind(cl_env_copy," bds-lcl ");"))
-  (if (< bds-bind 4)
-      (dotimes (n bds-bind)
-        (declare (ignorable n))
-        (wt-nl "ecl_bds_unwind1(cl_env_copy);"))
-      (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");"))
-  (case ihs-p
-    (IHS     (wt-nl "ecl_ihs_pop(cl_env_copy);"))
-    (IHS-ENV (wt-nl "ihs.lex_env = _ecl_debug_env;"))))
-
-(defun compute-unwind (last-cons)
+(defun compute-unwind (unwind-to unwind-from)
   (declare (si::c-local))
+  (unless (tailp unwind-to unwind-from)
+    (baboon-unwind-invalid unwind-to unwind-from))
   (loop with bds-lcl = nil
         with bds-bind = 0
         with stack-frame = nil
@@ -100,9 +94,9 @@
         with frs-bind = 0
         with jump-p = nil
         with exit-p = nil
-        for unwind-exit on *unwind-exit*
+        for unwind-exit on unwind-from
         for ue = (car unwind-exit)
-        until (eq unwind-exit last-cons)
+        until (eq unwind-exit unwind-to)
         do (cond
              ((consp ue)
               (case (first ue)
@@ -126,47 +120,34 @@
 
 (defun unwind-leave (loc)
   (declare (si::c-local))
-  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
-      (compute-unwind nil)
-    (declare (fixnum frs-bind bds-bind))
-    ;; *destination* must be either LEAVE or TRASH.
-    (cond ((eq loc 'VALUEZ)
-           ;; from multiple-value-prog1 or values
-           (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
-           (wt-nl "return cl_env_copy->values[0];"))
-          ((eq loc 'LEAVE)
-           ;; from multiple-value-prog1 or values
-           (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
-           (wt-nl "return value0;"))
-          (t
-           (set-loc 'LEAVE loc)
-           (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
-           (wt-nl "return value0;")))))
+  ;; *destination* must be either LEAVE or TRASH.
+  (unless (member loc '(VALUEZ LEAVE))
+    (set-loc 'LEAVE loc)
+    (setf loc 'LEAVE))
+  (%unwind nil *unwind-exit*)
+  (%exit loc))
 
 (defun unwind-label (loc)
   (declare (si::c-local))
-  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p jump-p exit-p)
-      (compute-unwind (or (member *exit* *unwind-exit* :test #'eq)
-                          (baboon-exit-not-found *exit*)))
-    (declare (fixnum frs-bind bds-bind))
-    ;; This operator does not cross the function boundary.
-    (assert (null exit-p))
-    (cond ((and (destination-value-matters-p *destination*)
-                (or (plusp frs-bind) bds-lcl (plusp bds-bind) stack-frame)
-                (or (loc-refers-to-special-p loc)
-                    (loc-refers-to-special-p *destination*)))
-           ;; Save the value if LOC may possibly refer to special binding.
-           (let* ((*temp* *temp*)
-                  (temp (make-temp-var)))
-             (set-loc temp loc)
-             (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
-             (set-loc *destination* temp)))
-          (t
-           (set-loc *destination* loc)
-           (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)))
-    ;; When JUMP-P is NULL then we "fall through" onto the exit block.
-    (when jump-p
-      (wt-nl-go *exit*))))
+  (let* ((exit *exit*)
+         (dest *destination*)
+         (from *unwind-exit*)
+         (exit-denv (member exit from :test #'eq)))
+    (unless exit-denv
+      (baboon-exit-not-found exit))
+    (if (and (destination-value-matters-p dest)
+             (loc-refers-to-special-p dest))
+        ;; Save the value if destination may possibly refer to a special
+        ;; binding. Otherwise we set the destination /before/ the unwind.
+        (let* ((*temp* *temp*)
+               (temp (make-temp-var)))
+          (set-loc temp loc)
+          (%unwind exit-denv from)
+          (set-loc dest temp))
+        (progn
+          (set-loc dest loc)
+          (%unwind exit-denv from)))
+    (%jump exit from)))
 
 ;;; Conditional JUMP based on the value of *DESTINATION*. This allows FMLA to
 ;;; jump over *EXIT* to skip the dead part of the computation. -- jd 2023-11-16
@@ -177,25 +158,102 @@
       (ecase target
         (JUMP-TRUE
          (cond ((not constantp)
-                (case (loc-representation-type loc)
-                  (:bool     (wt-nl "if (" loc ") "))
-                  (:object   (wt-nl "if (" loc "!=ECL_NIL) "))
-                  (otherwise (wt-nl "if ((") (wt-coerce-loc :object loc) (wt ")!=ECL_NIL) ")))
-                (wt-open-brace) (unwind-jump label) (wt-nl-close-brace))
+                (unwind-cond label :jump-t loc))
                ((not (null value))
                 (unwind-jump label)))
          (unless (and constantp (not (null value)))
            (let ((*destination* 'TRASH))
-             (unwind-exit *vv-nil*))))
+             (if (labelp *exit*)
+                 (unwind-label *vv-nil*)
+                 (unwind-leave *vv-nil*)))))
         (JUMP-FALSE
          (cond ((not constantp)
-                (case (loc-representation-type loc)
-                  (:bool     (wt-nl "if (!(" loc ")) "))
-                  (:object   (wt-nl "if (Null(" loc ")) "))
-                  (otherwise (wt-nl "if (Null(") (wt-coerce-loc :object loc) (wt ")) ")))
-                (wt-open-brace) (unwind-jump label) (wt-nl-close-brace))
+                (unwind-cond label :jump-f loc))
                ((null value)
                 (unwind-jump label)))
          (unless (and constantp (null value))
            (let ((*destination* 'TRASH))
-             (unwind-exit *vv-t*))))))))
+             (if (labelp *exit*)
+                 (unwind-label *vv-t*)
+                 (unwind-leave *vv-t*)))))))))
+
+
+;;; Helper functions
+;;;
+;;; These functions will be moved to codegen.
+
+;;; INV this function arguments are procured by COMPUTE-UNWIND.
+(defun perform-unwind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
+  (declare (si::c-local)
+           (fixnum frs-bind bds-bind))
+  (when (plusp frs-bind)
+    (wt-nl "ecl_frs_pop_n(cl_env_copy, " frs-bind ");"))
+  (when stack-frame
+    (wt-nl "ecl_stack_frame_close(" stack-frame ");"))
+  (when bds-lcl
+    (wt-nl "ecl_bds_unwind(cl_env_copy," bds-lcl ");"))
+  (if (< bds-bind 4)
+      (dotimes (n bds-bind)
+        (declare (ignorable n))
+        (wt-nl "ecl_bds_unwind1(cl_env_copy);"))
+      (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");"))
+  (case ihs-p
+    (IHS     (wt-nl "ecl_ihs_pop(cl_env_copy);"))
+    (IHS-ENV (wt-nl "ihs.lex_env = _ecl_debug_env;"))))
+
+(defun %unwind (into from)
+  (declare (si::c-local))
+  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
+      (compute-unwind into from)
+    (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)))
+
+(defun %branch (exit from kind args)
+  (ecase kind
+    (:jump-t
+     (destructuring-bind (loc) args
+       (case (loc-representation-type loc)
+         (:bool     (wt-nl "if (" loc ") "))
+         (:object   (wt-nl "if (" loc "!=ECL_NIL) "))
+         (otherwise (wt-nl "if ((") (wt-coerce-loc :object loc) (wt ")!=ECL_NIL) ")))))
+    (:jump-f
+     (destructuring-bind (loc) args
+       (case (loc-representation-type loc)
+         (:bool     (wt-nl "if (!(" loc ")) "))
+         (:object   (wt-nl "if (Null(" loc ")) "))
+         (otherwise (wt-nl "if (Null(") (wt-coerce-loc :object loc) (wt ")) ")))))
+    (:jump-eq
+     (destructuring-bind (x y) args
+       (wt-nl "if (" `(coerce-loc :object ,x) "==" `(coerce-loc :object ,y) ") "))))
+  (wt-open-brace)
+  (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
+      (compute-unwind (label-denv exit) from)
+    (perform-unwind frs-bind bds-lcl bds-bind stack-frame ihs-p)
+    (wt-nl-go exit))
+  (wt-nl-close-brace))
+
+(defun %escape (exit kind)
+  ;; All these boil down to calling ecl_unwind which unwinds stacks dynamically.
+  ;; If we want to implement call/cc, then this is the place where we dispatch.
+  #+ (or) (wt-nl "ecl_unwind(cl_env_copy," frs-id ");")
+  (ecase kind
+    (:go
+     ;; The second argument is passed as a value (index for jump).
+     (wt-nl "cl_go(" (tag-var exit) ",ecl_make_fixnum(" (tag-index exit) "));"))
+    (:throw
+        ;; Unlike GO and RETURN-FROM, the destination is not known at compile time.
+        ;; TODO in some cases it is possible to prove the destination CATCH form.
+        (wt-nl "cl_throw(" exit ");"))
+    (:return-from
+     ;; The second argument is used only to signal the error.
+     (wt-nl "cl_return_from(" (blk-var exit) "," (get-object (blk-name exit)) ");"))))
+
+;;; JUMP is similar to %GOTO, but it allows a fallthough.
+(defun %jump (label from)
+  (unless (eq label (find-if #'labelp from))
+    (wt-nl-go label)))
+
+(defun %goto (label)
+  (wt-nl-go label))
+
+(defun %exit (loc)
+  (wt-nl "return " loc ";"))
