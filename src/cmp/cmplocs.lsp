@@ -99,16 +99,17 @@
     (otherwise NIL)))
 
 (defun loc-refers-to-special-p (loc)
-  (when (atom loc)
-    (return-from loc-refers-to-special-p
-      (and (var-p loc)
-           (member (var-kind loc) '(SPECIAL GLOBAL)))))
-  (case (first loc)
-    (CL:THE (loc-refers-to-special-p (third loc)))
-    (BIND T)
-     ;; We do not know, so guess yes.
-    (FFI:C-INLINE T)
-    (otherwise NIL)))
+  (flet ((special-var-p (loc)
+           (and (var-p loc)
+                (member (var-kind loc) '(SPECIAL GLOBAL)))))
+    (if (atom loc)
+        (special-var-p loc)
+        (case (first loc)
+          (CL:THE (loc-refers-to-special-p (third loc)))
+          (BIND (special-var-p (second loc)))
+          ;; We do not know, so guess yes.
+          (FFI:C-INLINE T)
+          (otherwise NIL)))))
 
 ;;; Valid locations are:
 ;;;     VALUE0
