@@ -43,20 +43,29 @@
         until (member (c1form-name form) '(CL:GO CL:RETURN-FROM))))
 
 (defun c2if (c1form fmla form1 form2)
-  (declare (ignore c1form))
   ;; FIXME! Optimize when FORM1 or FORM2 are constants
-  (cond ((and (eq *destination* 'TRASH)
+  (cond ((type-true-p (c1form-primary-type fmla))
+         ;; The true branch is always taken
+         (warn-dead-code form2 c1form "the test ~S always evaluates to true" fmla)
+         (let ((*destination* 'TRASH))
+           (c2expr* fmla))
+         (c2expr form1))
+        ((type-false-p (c1form-primary-type fmla))
+         ;; The false branch is always taken
+         (warn-dead-code form1 c1form "the test ~S always evaluates to false" fmla)
+         (let ((*destination* 'TRASH))
+           (c2expr* fmla))
+         (c2expr form2))
+        ((and (eq *destination* 'TRASH)
               (eq (c1form-name form2) 'LOCATION))
-         ;; Optimize (IF condition true-branch) or a situation in which
-         ;; the false branch can be discarded.
+         ;; The value produced by the false branch is not used
          (with-exit-label (false-label *exit*)
            (let ((*destination* `(JUMP-FALSE ,false-label)))
              (c2expr* fmla))
            (c2expr form1)))
         ((and (eq *destination* 'TRASH)
               (eq (c1form-name form1) 'LOCATION))
-         ;; Optimize (IF condition useless-value false-branch) when
-         ;; the true branch can be discarded.
+         ;; The value produced by the true branch is not used
          (with-exit-label (true-label *exit*)
            (let ((*destination* `(JUMP-TRUE ,true-label)))
              (c2expr* fmla))
@@ -79,7 +88,15 @@
 (defun c2fmla-not (c1form arg)
   (declare (ignore c1form))
   (let ((dest *destination*))
-    (cond ((jump-true-destination-p dest)
+    (cond ((type-true-p (c1form-primary-type arg))
+           (let ((*destination* 'TRASH))
+             (c2expr* arg))
+           (c2expr (c1nil)))
+          ((type-false-p (c1form-primary-type arg))
+           (let ((*destination* 'TRASH))
+             (c2expr* arg))
+           (c2expr (c1t)))
+          ((jump-true-destination-p dest)
            (let ((*destination* `(JUMP-FALSE ,@(cdr dest))))
              (c2expr arg)))
           ((jump-false-destination-p dest)
@@ -90,38 +107,67 @@
              (unwind-exit (negate-argument arg dest)))))))
 
 (defun c2fmla-and (c1form butlast last)
-  (declare (ignore c1form))
-  (if (jump-false-destination-p *destination*)
-      (progn
-        (mapc #'c2expr* butlast)
-        (c2expr last))
-      (with-exit-label (normal-exit)
-        (with-exit-label (false-label)
-          (let ((*destination* `(JUMP-FALSE ,false-label)))
-            (mapc #'c2expr* butlast))
-          (c2expr last))
-        (unwind-exit *vv-nil*))))
+  (flet ((c2expr-and-arguments (eval-dest exit-dest)
+           (loop with *destination* = eval-dest
+                 for expr in butlast
+                 for remaining-exprs on butlast
+                 for type = (c1form-primary-type expr)
+                 do (cond ((type-false-p type)
+                           (warn-dead-code (append (rest remaining-exprs) (list last)) c1form
+                                           "the test ~S always evaluates to false" expr)
+                           (let ((*destination* exit-dest))
+                             (c2expr* expr))
+                           (return-from c2expr-and-arguments))
+                          ((type-true-p type)
+                           (let ((*destination* 'TRASH))
+                             (c2expr* expr)))
+                          (t
+                           (c2expr* expr)))
+                 finally
+                    (let ((*destination* exit-dest))
+                      (c2expr last)))))
+    (if (jump-false-destination-p *destination*)
+        (c2expr-and-arguments *destination* *destination*)
+        (with-exit-label (normal-exit)
+          (with-exit-label (false-label)
+            (c2expr-and-arguments `(JUMP-FALSE ,false-label) *destination*))
+          (unwind-exit *vv-nil*)))))
 
 (defun c2fmla-or (c1form butlast last)
-  (declare (ignore c1form))
-  (cond ((jump-true-destination-p *destination*)
-         (mapc #'c2expr* butlast)
-         (c2expr last))
-        ((jump-false-destination-p *destination*)
-         (with-exit-label (true-label)
-           (let ((*destination* `(JUMP-TRUE ,true-label)))
-             (mapc #'c2expr* butlast))
-           (c2expr last))
-         (unwind-exit *vv-t*))
-        (t
-         (with-exit-label (common-exit)
-           (with-exit-label (normal-exit)
-             (dolist (f butlast)
-               (let ((*destination* 'VALUE0))
-                 (c2expr* f))
-               (unwind-cond normal-exit :jump-t 'VALUE0))
-             (c2expr last))
-           (unwind-exit 'VALUE0)))))
+  (flet ((c2expr-or-arguments (eval-dest exit-dest operation)
+           (loop with *destination* = eval-dest
+                 for expr in butlast
+                 for remaining-exprs on butlast
+                 for type = (c1form-primary-type expr)
+                 do (cond ((type-true-p type)
+                           (warn-dead-code (append (rest remaining-exprs) (list last)) c1form
+                                           "the test ~S always evaluates to true" expr)
+                           (let ((*destination* 'VALUE0))
+                             (c2expr* expr))
+                           (return-from c2expr-or-arguments))
+                          ((type-false-p type)
+                           (let ((*destination* 'TRASH))
+                             (c2expr* expr)))
+                          (t
+                           (funcall operation expr)))
+                 finally
+                    (let ((*destination* exit-dest))
+                      (c2expr last)))))
+    (cond ((jump-true-destination-p *destination*)
+           (c2expr-or-arguments *destination* *destination* #'c2expr*))
+          ((jump-false-destination-p *destination*)
+           (with-exit-label (true-label)
+             (c2expr-or-arguments `(JUMP-TRUE ,true-label) *destination* #'c2expr*))
+           (unwind-exit *vv-t*))
+          (t
+           (with-exit-label (common-exit)
+             (with-exit-label (normal-exit)
+               (c2expr-or-arguments *destination* *destination*
+                                    (lambda (expr)
+                                      (let ((*destination* 'VALUE0))
+                                        (c2expr* expr))
+                                      (unwind-cond normal-exit :jump-t 'VALUE0))))
+             (unwind-exit 'VALUE0))))))
 
 (defun c2mv-prog1 (c1form form body)
   (declare (ignore c1form))

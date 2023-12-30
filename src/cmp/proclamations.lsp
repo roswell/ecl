@@ -367,7 +367,7 @@
 (proclamation compute-restarts (&optional (or null condition)) list)
 (proclamation find-restart
                    (restart-designator &optional (or null condition))
-                   restart)
+                   (or null restart))
 (proclamation invoke-restart (restart-designator &rest t)
                    (values &rest t))
 (proclamation invoke-restart-interactively (restart-designator)
@@ -562,7 +562,7 @@
 (proclamation integer-length (integer) integer-length :pure)
 (proclamation integerp (t) gen-bool :pure)
 (proclamation parse-integer (string &rest t)
-              (values integer ext:array-index)
+              (values (or integer null) ext:array-index)
               :no-side-effects)
 (proclamation boole ((integer 0 15) integer integer) integer :pure)
 (proclamation logand (&rest integer) integer :pure)

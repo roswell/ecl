@@ -104,6 +104,22 @@
                               "Circular references in creation form for ~S."
                               (compiler-message-form c)))))
 
+(define-condition dead-code (compiler-note style-warning)
+  ((dead-forms :initarg :dead-forms :initform nil)
+   (context :initarg :context :initform nil)
+   (explanation :initarg :explanation :initform "")
+   (explanation-args :initarg :explanation-args :initform nil))
+  (:report
+   (lambda (c stream)
+     (let ((dead-forms (slot-value c 'dead-forms)))
+       (compiler-message-report stream c
+                                "Eliminating the form~P ~{~S~^, ~} in ~S: ~?."
+                                (length dead-forms)
+                                (mapcar #'c1form-form dead-forms)
+                                (c1form-form (slot-value c 'context))
+                                (slot-value c 'explanation)
+                                (mapcar #'c1form-form (slot-value c 'explanation-args)))))))
+
 (defun print-compiler-message (c stream)
   (unless (typep c *suppress-compiler-messages*)
     #+cmu-format
@@ -193,6 +209,15 @@
 
 (defun undefined-variable (sym)
   (do-cmpwarn 'compiler-undefined-variable :name sym))
+
+(defun warn-dead-code (dead-forms context explanation &rest explanation-args)
+  (do-cmpwarn 'dead-code
+    :dead-forms (if (listp dead-forms)
+                    dead-forms
+                    (list dead-forms))
+    :context context
+    :explanation explanation
+    :explanation-args explanation-args))
 
 (defun baboon (&key (format-control "A bug was found in the compiler")
                format-arguments)

@@ -137,32 +137,58 @@
 
 (defun p1if (c1form fmla true-branch false-branch)
   (declare (ignore c1form))
-  (p1propagate fmla)
-  (let ((t1 (p1propagate true-branch))
-        (t2 (p1propagate false-branch)))
-    (values-type-or t1 t2)))
+  (let ((t0 (values-type-primary-type (p1propagate fmla))))
+    (cond ((type-true-p t0)
+           (p1propagate true-branch))
+          ((type-false-p t0)
+           (p1propagate false-branch))
+          (t (let ((t1 (p1propagate true-branch))
+                   (t2 (p1propagate false-branch)))
+               (values-type-or t1 t2))))))
 
 (defun p1fmla-not (c1form form)
   (declare (ignore c1form))
-  (p1propagate form)
-  '(member t nil))
+  (let ((t0 (values-type-primary-type (p1propagate form))))
+    (cond ((type-true-p t0)
+           '(eql nil))
+          ((type-false-p t0)
+           '(eql t))
+          (t
+           '(member t nil)))))
 
 (defun p1fmla-and (c1form butlast last)
   (declare (ignore c1form))
-  (loop with type = t
-        for form in (append butlast (list last))
-        do (setf type (p1propagate form))
-        finally (return (type-or 'null (values-type-primary-type type)))))
+  (loop with all-true = t
+        for form in butlast
+        for type = (p1propagate form)
+        for primary-type = (values-type-primary-type type)
+        do (when (type-false-p primary-type)
+             (return-from p1fmla-and primary-type))
+           (unless (type-true-p primary-type)
+             (setf all-true nil))
+        finally
+           (setf type (p1propagate last)
+                 primary-type (values-type-primary-type type))
+           (return (if (or (type-false-p primary-type)
+                           (and (type-true-p primary-type) all-true))
+                       type
+                       (values-type-or 'null type)))))
 
 (defun p1fmla-or (c1form butlast last)
   (declare (ignore c1form))
-  (loop with type
-        with output-type = t
-        for form in (append butlast (list last))
-        do (setf type (p1propagate form)
-                 output-type (type-or (values-type-primary-type type)
-                                      output-type))
-        finally (return output-type)))
+  (loop for form in butlast
+        for type = (p1propagate form)
+        for primary-type = (values-type-primary-type type)
+        for output-type = primary-type then (type-or primary-type output-type)
+        do (when (type-true-p primary-type)
+             (return-from p1fmla-or (type-and output-type '(not null))))
+        finally
+           (setf type (p1propagate last)
+                 primary-type (values-type-primary-type type)
+                 output-type (values-type-or type output-type))
+           (return (if (type-true-p primary-type)
+                       (values-type-and output-type '(not null))
+                       output-type))))
 
 (defun p1lambda (c1form lambda-list doc body &rest not-used)
   (declare (ignore c1form lambda-list doc not-used))

@@ -55,8 +55,8 @@
     (SINGLE-FLOAT 'SINGLE-FLOAT)
     (DOUBLE-FLOAT 'DOUBLE-FLOAT)
     (LONG-FLOAT 'LONG-FLOAT)
-    (SYMBOL 'SYMBOL)
     (NULL 'NULL)
+    (SYMBOL 'SYMBOL)
     ((OR BASE-CHAR STANDARD-CHAR CHARACTER EXTENDED-CHAR) 'CHARACTER)
     (BASE-STRING 'BASE-STRING)
     (STRING 'STRING)
@@ -322,3 +322,5 @@
 (defun type>= (type1 type2)
   (subtypep type2 type1))
 
+(defun type-false-p (type) (subtypep type 'null))
+(defun type-true-p (type) (subtypep type '(not null)))
