@@ -95,7 +95,9 @@
       c::*ld-shared-flags*
       "@SHARED_LDFLAGS@ @LDFLAGS@"
       c::*ld-bundle-flags*
-      "@BUNDLE_LDFLAGS@ @LDFLAGS@")
+      "@BUNDLE_LDFLAGS@ @LDFLAGS@"
+      c::*ld-program-flags*
+      "@PROGRAM_LDFLAGS@ @LDFLAGS@")
 ;;; FIXME: The nonstop platform does not support soname
 #+(and :wants-dlopen nonstop)
 (setf c::*ld-libs*
@@ -182,7 +184,7 @@
       (push "@LIBPREFIX@eclgmp.@LIBEXT@" extra-args)))
   (print extra-args)
   (c::shared-cc (compile-file-pathname "ecl" :type :dll)
-                (list* "c/main.@OBJEXT@"
+                (list* #-emscripten "c/main.@OBJEXT@"
                        "c/all_symbols2.@OBJEXT@"
                        "@LIBPREFIX@lsp.@LIBEXT@"
                        "@LIBPREFIX@eclmin.@LIBEXT@"
