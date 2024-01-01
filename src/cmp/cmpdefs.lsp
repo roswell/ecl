@@ -57,6 +57,7 @@ coprocessor).")
 (defvar *ld-shared-flags* "@SHARED_LDFLAGS@ @LDFLAGS@")
 #+dlopen
 (defvar *ld-bundle-flags* "@BUNDLE_LDFLAGS@ @LDFLAGS@")
+(defvar *ld-program-flags* "@PROGRAM_LDFLAGS@ @LDFLAGS@")
 
 (defvar +shared-library-prefix+ "@SHAREDPREFIX@")
 (defvar +shared-library-extension+ "@SHAREDEXT@")
