@@ -77,6 +77,14 @@
   (si::dump-documentation "@true_builddir@/help.doc"))
 
 ;;;
+;;; * Dump compiler configuration (for cross compilation)
+;;;
+#+cross
+(let ((*features* '(:cross @LSP_FEATURES@)))
+  (setf c::*cmp-env-root* (c::register-all-known-types c::*cmp-env-root*))
+  (c::write-target-info #P"build:target-info.lsp"))
+
+;;;
 ;;; * Trick to make names shorter in C files
 ;;;
 (si::package-lock "CL" nil)

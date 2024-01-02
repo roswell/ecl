@@ -22,7 +22,7 @@
            (every test x))))
 
 (defun type-name-p (name)
-  (or (cmp-env-search-type name *cmp-env* nil)
+  (or (cmp-env-search-type name *cmp-env*)
       (si:get-sysprop name 'SI::DEFTYPE-DEFINITION)
       (find-class name nil)
       (si:get-sysprop name 'SI::STRUCTURE-TYPE)))

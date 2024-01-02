@@ -66,7 +66,7 @@ running the compiler. It may be updated by running ")
 (defvar *functions* nil)
 
 ;;; --cmpc-machine.lsp, cmpffi.lsp ---
-(defvar *machine* nil)
+(defconfig *machine* nil)
 
 ;;; --cmpcall.lsp--
 (defvar *compiler-declared-globals*)
@@ -112,8 +112,8 @@ by the C compiler and they denote function and unwind-protect boundaries. Note
 that compared with the bytecodes compiler, these records contain an additional
 variable, block, tag or function object at the end.")
 
-(defvar *cmp-env-root*
-  (cons nil (list (list '#:no-macro 'si:macro (constantly nil))))
+(defconfig *cmp-env-root*
+  (cons nil (list (list '#:no-macro 'si:macro 'si::constantly-nil)))
 "This is the common environment shared by all toplevel forms. It can
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
@@ -152,6 +152,9 @@ slashes before special characters.")
 "This variable controls whether the C compiler uses precompiled header files.")
 (defvar *precompiled-header-flags* nil)
 (defvar *precompiled-header-cc-config* nil)
+
+(defvar *cross-compiling* nil
+  "Are we cross compiling?")
 
 ;;;
 ;;; Compiler program and flags.

@@ -104,6 +104,18 @@ that are susceptible to be changed by PROCLAIM."
     (setf env (cmp-env-register-type (car def) (cdr def) env)))
   env)
 
+(defun register-all-known-types (&optional (env *cmp-env*))
+  ;; Used during cross-compilation in compile.lsp.in to populate the
+  ;; lexical environment with type definitions
+  (do-all-symbols (type)
+    (ext:when-let ((deftype-form (si:get-sysprop type 'SI::DEFTYPE-FORM)))
+      (unless (cmp-env-search-type type env)
+        (let ((type-definition (eval (destructuring-bind (name lambda-list &rest body)
+                                         (rest deftype-form)
+                                       (si::expand-defmacro name lambda-list body 'DEFTYPE)))))
+          (setf env (cmp-env-register-type type type-definition env))))))
+  env)
+
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
   (let ((cfb nil)
         (unw nil)
@@ -213,11 +225,11 @@ that are susceptible to be changed by PROCLAIM."
      return (cddr i)
      finally (return default)))
 
-(defun cmp-env-search-type (name &optional (env *cmp-env*) (default name))
+(defun cmp-env-search-type (name &optional (env *cmp-env*))
   (loop for i in (car env)
         when (and (consp i)
                   (eq (first i) :type)
                   (eq (second i) name))
           return (third i)
-        finally (return default)))
+        finally (return nil)))
 

@@ -1687,6 +1687,6 @@ if not possible."
                  (eq (second record) type-name))
         (return-from search-type-in-env
           (if (typep (third record) 'function)
-              (funcall (third record) type-args)
+              (funcall (third record) (cons type-name type-args) env)
               (third record))))))
   type)

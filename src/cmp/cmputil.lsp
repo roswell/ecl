@@ -43,22 +43,6 @@
                  (setf output f)))
        finally (return output))))
 
-(defun do-compilation-unit (closure &key override)
-  (cond (override
-         (let* ((*active-protection* nil))
-           (do-compilation-unit closure)))
-        ((null *active-protection*)
-         (let* ((*active-protection* t)
-                (*pending-actions* nil))
-           (unwind-protect (do-compilation-unit closure)
-             (loop for action in *pending-actions*
-                do (funcall action)))))
-        (t
-         (funcall closure))))
-
-(defmacro with-compilation-unit ((&rest options) &body body)
- `(do-compilation-unit #'(lambda () ,@body) ,@options))
-
 (defmacro with-compiler-env ((compiler-conditions) &body body)
   `(let ((*compiler-conditions* nil))
      (declare (special *compiler-conditions*))
@@ -490,3 +474,26 @@ comparing circular objects."
     (list (null item))
     (vector (zerop (length item)))
     (hash-table (zerop (hash-table-count item)))))
+
+(defun read-target-info (filename)
+  (unless (pathname-name filename)
+    (let* ((path1 (merge-pathnames "target-info.lsp" filename)) ; flat install
+           (path2 (merge-pathnames "*/*/target-info.lsp" filename)) ; file in lib/ecl-x.x.x/
+           (files-found (nconc (directory path1) (directory path2))))
+      (when (null files-found)
+        (cmperror "Can't find the target information for cross compilation at ~s or ~s." path1 path2))
+      (setf filename (first files-found))))
+  (with-open-file (s filename)
+    (with-standard-io-syntax
+      (read s))))
+
+(defun write-target-info (filename)
+  (with-open-file (s filename
+                     :direction :output
+                     :if-exists :supersede
+                     :if-does-not-exist :create)
+    (with-standard-io-syntax
+      (let ((*print-circle* t))
+        (format s "~S~%"
+                (mapcar #'(lambda (option) (cons option (symbol-value option)))
+                        c::*config-options*))))))

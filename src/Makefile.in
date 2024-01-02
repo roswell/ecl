@@ -201,9 +201,12 @@ install:
 	  $(INSTALL_DATA) ecl/$$i $(DESTDIR)$(includedir)/ecl/$$i; \
 	done
 	$(INSTALL_SCRIPT) bin/ecl-config $(DESTDIR)$(bindir)
-	for i in build-stamp help.doc TAGS ; do \
+	for i in build-stamp help.doc TAGS; do \
 	  $(INSTALL_DATA) $$i $(DESTDIR)$(ecldir); \
 	done
+	if [ -f target-info.lsp ]; then \
+	  $(INSTALL_DATA) target-info.lsp $(DESTDIR)$(ecldir); \
+	fi
 	for i in $(LSP_LIBRARIES) $(LIBRARIES); do \
 	  if test -s $$i ; then \
 	   if echo $$i | grep dll; then \

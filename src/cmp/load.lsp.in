@@ -3,8 +3,8 @@
 
 (defconstant +cmp-module-files+
   '("src:cmp;cmppackage.lsp"
-    "src:cmp;cmpglobals.lsp"
     "build:cmp;cmpdefs.lsp"
+    "src:cmp;cmpglobals.lsp"
     "src:cmp;cmputil.lsp"
     "src:cmp;cmpcond.lsp"
     "src:cmp;cmptype-arith.lsp"

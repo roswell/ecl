@@ -697,6 +697,7 @@ SHAREDEXT
 LIBEXT
 LIBPREFIX
 ECL_LDRPATH
+TARGET_IDENTIFIER
 MACHINE_VERSION
 SOFTWARE_VERSION
 SOFTWARE_TYPE
@@ -6377,6 +6378,7 @@ printf "%s\n" "${clibs}" >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for architecture" >&5
 printf %s "checking for architecture... " >&6; }
 ARCHITECTURE=`echo "${host_cpu}" | tr a-z A-Z` # i386 -> I386
+TARGET_IDENTIFIER="${host}"
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${ARCHITECTURE}" >&5
 printf "%s\n" "${ARCHITECTURE}" >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for software type" >&5
@@ -12834,3 +12836,4 @@ fi
 
 
 for i in $srcdir/c/*/; do mkdir -p c/`basename $i`; done
+

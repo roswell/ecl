@@ -53,7 +53,7 @@
          first rest function)
     ;; Type must be constant to optimize
     (if (constantp type env)
-        (setf type (cmp-env-search-type (ext:constant-form-value type env) env))
+        (setf type (si::search-type-in-env (ext:constant-form-value type env) env))
         (return-from expand-typep form))
     (cond ;; compound function type specifier: signals an error
           ((contains-compound-function-type type)
@@ -261,7 +261,7 @@
          first rest)
     ;; Type must be constant to optimize
     (if (constantp type env)
-        (setf type (cmp-env-search-type (ext:constant-form-value type env) env))
+        (setf type (si::search-type-in-env (ext:constant-form-value type env) env))
         (return-from expand-coerce form))
     (cond ;; Trivial case
           ((subtypep 't type *cmp-env*)
