@@ -1,19 +1,15 @@
 /* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
-/*
-    internal.h -- safe stack resizing
-*/
-/*
-    Copyright (c) 2001, Juan Jose Garcia Ripoll.
 
-    ECL is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
+/*
+ * Copyright (c) 2001, Juan Jose Garcia Ripoll.
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
-    See file '../Copyright' for full details.
-*/
+/* internal.h -- safe stack resizing */
 
 #ifndef ECL_STACK_RESIZE_H
 #define ECL_STACK_RESIZE_H

@@ -2,19 +2,13 @@
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
 /*
-    internal.h -- Structures and functions that are not meant for the end user
-*/
-/*
-    Copyright (c) 2001, Juan Jose Garcia Ripoll.
+ * Copyright (c) 2001, Juan Jose Garcia Ripoll.
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
-    ECL is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../Copyright' for full details.
-*/
-
+/* internal.h -- Structures and functions that are not meant for the end user */
 #ifndef ECL_INTERNAL_H
 #define ECL_INTERNAL_H
 
