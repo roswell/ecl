@@ -2,15 +2,11 @@
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
 /*
-    Copyright (c) 2010, Juan Jose Garcia Ripoll.
-
-    ECL is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../../Copyright' for full details.
-*/
+ * Copyright (c) 2010, Juan Jose Garcia Ripoll.
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
 #define ECL_INCLUDE_MATH_H
 #include <float.h>

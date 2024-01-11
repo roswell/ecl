@@ -2,19 +2,13 @@
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
 /*
-    number.h  -- GMP interface.
-*/
-/*
-    Copyright (c) 1995, Giuseppe Attardi.
+ * Copyright (c) 1995, Giuseppe Attardi.
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
-    ECoLisp is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../Copyright' for full details.
-*/
-
+/* number.h  -- GMP interface. */
 #ifndef ECL_NUMBER_H
 #define ECL_NUMBER_H
 

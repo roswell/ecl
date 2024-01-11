@@ -2,18 +2,13 @@
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
 /*
-    cache.h -- thread-local cache for a variety of operations
-*/
-/*
-    Copyright (c) 2011, Juan Jose Garcia Ripoll.
+ * Copyright (c) 2011, Juan Jose Garcia Ripoll.
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
-    ECL is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../Copyright' for full details.
-*/
+/* cache.h -- thread-local cache for a variety of operations */
 
 #ifndef ECL_CACHE_H
 #define ECL_CACHE_H
