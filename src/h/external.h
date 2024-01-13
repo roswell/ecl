@@ -738,6 +738,7 @@ extern ECL_API bool ecl_listen_stream(cl_object strm);
 extern ECL_API cl_object ecl_file_position(cl_object strm);
 extern ECL_API cl_object ecl_file_position_set(cl_object strm, cl_object disp);
 extern ECL_API cl_object ecl_file_length(cl_object strm);
+extern ECL_API cl_object ecl_file_string_length(cl_object strm, cl_object string);
 extern ECL_API int ecl_file_column(cl_object strm);
 extern ECL_API cl_fixnum ecl_normalize_stream_element_type(cl_object element);
 extern ECL_API cl_object ecl_make_stream_from_FILE(cl_object fname, void *fd, enum ecl_smmode smm, cl_fixnum byte_size, int flags, cl_object external_format);
