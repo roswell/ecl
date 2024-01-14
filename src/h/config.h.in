@@ -2,19 +2,14 @@
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
 /*
-    config.h.in -- Template configuration file.
-*/
-/*
-    Copyright (c) 1990, Giuseppe Attardi.
-    Copyright (c) 2001, Juan Jose Garcia Ripoll.
+ * Copyright (c) 1990, Giuseppe Attardi.
+ * Copyright (c) 2001, Juan Jose Garcia Ripoll.
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
-    ECoLisp is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../Copyright' for full details.
-*/
+/* config.h.in -- Template configuration file. */
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || __WIN32__ || __WIN64__
 #define ECL_MS_WINDOWS_HOST
