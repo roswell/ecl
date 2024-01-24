@@ -109,3 +109,36 @@
     (format t "~%Known fails: ~%~{~a~%~}~%"
             '(SEM-SIGNAL-N-PROCESSES
               SEM-SIGNAL-ONLY-N-PROCESSES))))
+
+;;;
+;;; RUNNING ANSI-TEST
+;;;
+(defun run-ansi-test (&optional (suite (ext:getenv "ANSI_TEST_SUITE")))
+  (ext:setenv "TEST_IMAGE" *test-image*)
+  (zerop
+   (nth-value
+    1
+    (ext:run-program
+     *test-image*
+     `("-norc"
+       "-eval" "(print (ext:getenv \"ECLDIR\"))"
+       "-eval" "(ext:install-bytecodes-compiler)"
+       "-eval" ,(if (ext:getenv "BYTECMP")
+                    "t"
+                    "(ignore-errors (ext:install-c-compiler))")
+       ,@(cond (suite
+                `("-eval" ,(format nil "(setf *default-pathname-defaults* ~s)"
+                                   (truename #P"ansi-test/"))
+                          "-load" "gclload1.lsp"
+                          "-load" ,(namestring (make-pathname
+                                                :directory (list :relative suite)
+                                                :name "load"
+                                                :type "lsp"))))
+               (t
+                `("-load" "ansi-test/init.lsp")))
+       "-eval" ,(format nil "(rt:do-tests :exit t :expected-failures ~s)"
+                        (merge-pathnames #P"tests/ansi-test-expected-failures.sexp"
+                                         *ecl-sources*)))
+     :input nil
+     :output t
+     :error :output))))
