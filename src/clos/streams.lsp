@@ -206,6 +206,10 @@
   (:documentation
    "This is like CL:FILE-LENGTH, but for Gray streams."))
 
+(defgeneric stream-file-string-length (stream string)
+  (:documentation
+   "This is like CL:FILE-STRING-LENGTH, but for Gray streams."))
+
 (defgeneric stream-file-descriptor (stream &optional direction)
   (:documentation
    "Return the file-descriptor underlaying STREAM, or NIL if not
@@ -611,6 +615,14 @@
 
 (defmethod stream-file-length ((stream t))
   (error 'type-error :datum stream :expected-type 'file-stream))
+
+;; FILE-STRING-LENGTH
+
+(defmethod stream-file-string-length ((stream ansi-stream) string)
+  (file-string-length stream string))
+
+(defmethod stream-file-string-length ((stream fundamental-character-output-stream) string)
+  nil)
 
 ;; STREAM-P
 
