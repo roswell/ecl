@@ -1404,6 +1404,18 @@ clos_stream_column(cl_object strm)
 }
 
 static cl_object
+clos_stream_pathname(cl_object strm)
+{
+  return _ecl_funcall2(@'gray::pathname', strm);
+}
+
+static cl_object
+clos_stream_truename(cl_object strm)
+{
+  return _ecl_funcall2(@'gray::truename', strm);
+}
+
+static cl_object
 clos_stream_close(cl_object strm)
 {
   return _ecl_funcall2(@'gray::close', strm);
@@ -1440,6 +1452,10 @@ const struct ecl_file_ops clos_stream_ops = {
   clos_stream_set_position,
   clos_stream_string_length,
   clos_stream_column,
+
+  clos_stream_pathname,
+  clos_stream_truename,
+
   clos_stream_close
 };
 #endif /* ECL_CLOS_STREAMS */
@@ -1542,6 +1558,10 @@ const struct ecl_file_ops str_out_ops = {
   str_out_set_position,
   str_out_string_length,
   generic_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   generic_close
 };
 
@@ -1731,6 +1751,10 @@ const struct ecl_file_ops str_in_ops = {
   str_in_set_position,
   not_output_string_length,
   unknown_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   generic_close
 };
 
@@ -1928,6 +1952,10 @@ const struct ecl_file_ops two_way_ops = {
   generic_set_position,
   not_file_string_length,
   two_way_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   two_way_close
 };
 
@@ -2122,6 +2150,10 @@ const struct ecl_file_ops broadcast_ops = {
   broadcast_set_position,
   broadcast_string_length,
   broadcast_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   broadcast_close
 };
 
@@ -2308,6 +2340,10 @@ const struct ecl_file_ops echo_ops = {
   generic_set_position,
   not_file_string_length,
   echo_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   echo_close
 };
 
@@ -2455,6 +2491,10 @@ const struct ecl_file_ops concatenated_ops = {
   generic_set_position,
   not_output_string_length,
   unknown_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   concatenated_close
 };
 
@@ -2640,6 +2680,18 @@ synonym_column(cl_object strm)
   return ecl_file_column(SYNONYM_STREAM_STREAM(strm));
 }
 
+static cl_object
+synonym_pathname(cl_object strm)
+{
+  return ecl_stream_pathname(SYNONYM_STREAM_STREAM(strm));
+}
+
+static cl_object
+synonym_truename(cl_object strm)
+{
+  return ecl_stream_truename(SYNONYM_STREAM_STREAM(strm));
+}
+
 const struct ecl_file_ops synonym_ops = {
   synonym_write_byte8,
   synonym_read_byte8,
@@ -2671,6 +2723,10 @@ const struct ecl_file_ops synonym_ops = {
   synonym_set_position,
   synonym_string_length,
   synonym_column,
+
+  synonym_pathname,
+  synonym_truename,
+
   generic_close
 };
 
@@ -3165,6 +3221,18 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
   return generic_write_vector(strm, data, start, end);
 }
 
+static cl_object
+io_file_pathname(cl_object strm)
+{
+  return IO_STREAM_FILENAME(strm);
+}
+
+static cl_object
+io_file_truename(cl_object strm)
+{
+  return cl_truename(IO_STREAM_FILENAME(strm));
+}
+
 const struct ecl_file_ops io_file_ops = {
   io_file_write_byte8,
   io_file_read_byte8,
@@ -3196,6 +3264,10 @@ const struct ecl_file_ops io_file_ops = {
   io_file_set_position,
   file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_file_close
 };
 
@@ -3230,6 +3302,10 @@ const struct ecl_file_ops output_file_ops = {
   io_file_set_position,
   file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_file_close
 };
 
@@ -3264,6 +3340,10 @@ const struct ecl_file_ops input_file_ops = {
   io_file_set_position,
   not_output_string_length,
   unknown_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_file_close
 };
 
@@ -3851,6 +3931,10 @@ const struct ecl_file_ops io_stream_ops = {
   io_stream_set_position,
   file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_stream_close
 };
 
@@ -3885,6 +3969,10 @@ const struct ecl_file_ops output_stream_ops = {
   io_stream_set_position,
   file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_stream_close
 };
 
@@ -3919,6 +4007,10 @@ const struct ecl_file_ops input_stream_ops = {
   io_stream_set_position,
   not_output_string_length,
   unknown_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_stream_close
 };
 
@@ -4065,6 +4157,9 @@ const struct ecl_file_ops winsock_stream_io_ops = {
   file_string_length,
   generic_column,
 
+  not_a_file_stream,
+  not_a_file_stream,
+
   winsock_stream_close
 };
 
@@ -4100,6 +4195,9 @@ const struct ecl_file_ops winsock_stream_output_ops = {
   file_string_length,
   generic_column,
 
+  not_a_file_stream,
+  not_a_file_stream,
+
   winsock_stream_close
 };
 
@@ -4134,6 +4232,9 @@ const struct ecl_file_ops winsock_stream_input_ops = {
   generic_set_position,
   not_output_string_length,
   unknown_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
 
   winsock_stream_close
 };
@@ -4240,6 +4341,9 @@ const struct ecl_file_ops wcon_stream_io_ops = {
   generic_set_position,
   file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
 
   generic_close,
 };
@@ -4434,7 +4538,7 @@ ecl_make_stream_from_FILE(cl_object fname, void *f, enum ecl_smmode smm,
     FEerror("Not a valid mode ~D for ecl_make_stream_from_FILE", 1, ecl_make_fixnum(smm));
   }
   set_stream_elt_type(stream, byte_size, flags, external_format);
-  IO_STREAM_FILENAME(stream) = fname; /* not really used */
+  IO_STREAM_FILENAME(stream) = fname;
   stream->stream.column = 0;
   IO_STREAM_FILE(stream) = f;
   stream->stream.last_op = 0;
@@ -4713,6 +4817,10 @@ const struct ecl_file_ops seq_in_ops = {
   seq_in_set_position,
   not_output_string_length,
   unknown_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   generic_close
 };
 
@@ -4919,6 +5027,10 @@ const struct ecl_file_ops seq_out_ops = {
   seq_out_set_position,
   not_output_string_length,
   generic_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   generic_close
 };
 
@@ -5136,6 +5248,18 @@ bool
 ecl_interactive_stream_p(cl_object strm)
 {
   return stream_dispatch_table(strm)->interactive_p(strm);
+}
+
+cl_object
+ecl_stream_pathname(cl_object strm)
+{
+  return stream_dispatch_table(strm)->pathname(strm);
+}
+
+cl_object
+ecl_stream_truename(cl_object strm)
+{
+  return stream_dispatch_table(strm)->truename(strm);
 }
 
 /*
