@@ -225,6 +225,14 @@
    error is signaled. That is, users must add methods to explicitly
    decline by returning NIL."))
 
+(defgeneric pathname (pathspec)
+  (:documentation
+   "Returns the pathname denoted by pathspec."))
+
+(defgeneric truename (pathspec)
+  (:documentation
+   "truename tries to find the file indicated by filespec and returns its truename."))
+
 
 ;;;
 ;;; Our class hierarchy looks like the one from Gray streams
@@ -773,12 +781,45 @@
   (si:file-stream-fd stream))
 
 
+;;; PATHNAME
+
+(defmethod pathname ((pathspec string))
+  (cl:pathname pathspec))
+
+(defmethod pathname ((pathspec cl:pathname))
+  pathspec)
+
+(defmethod pathname ((pathspec ansi-stream))
+  (cl:pathname pathspec))
+
+(defmethod pathname (pathspec)
+  (error 'type-error :datum pathspec
+                     :expected-type '(or string cl:pathname file-stream)))
+
+
+;;; TRUENAME
+
+(defmethod truename ((filespec string))
+  (cl:truename filespec))
+
+(defmethod truename ((filespec cl:pathname))
+  (cl:truename filespec))
+
+(defmethod truename ((filespec ansi-stream))
+  (cl:truename filespec))
+
+(defmethod truename (filespec)
+  (error 'type-error :datum filespec
+                     :expected-type '(or string cl:pathname file-stream)))
+
+
 ;;; Setup
 
 (eval-when (:compile-toplevel :execute)
   (defconstant +conflicting-symbols+
     '(cl:close cl:stream-element-type cl:input-stream-p
-      cl:open-stream-p cl:output-stream-p cl:streamp)))
+      cl:open-stream-p cl:output-stream-p cl:streamp
+      cl:pathname cl:truename)))
 
 (let ((p (find-package "GRAY")))
   (export '(nil) p)
