@@ -4,13 +4,11 @@
 ECL=@prefix@/@bindir@/ecl@EXEEXT@
 SHELL=/bin/bash -o pipefail
 
-.PHONY: all check test ansi-test
+.PHONY: all check ansi-test
 
 all: check
 
-check: test ansi-test
-
-test: config.lsp
+check: config.lsp
 	$(ECL) --norc \
                --load config.lsp \
                --eval "(ecl-tests::run-tests '($(TESTS)))" \

@@ -115,6 +115,9 @@ realclean: distclean
 check:
 	cd build && $(MAKE) check TESTS="$(TESTS)"
 
+ansi-test:
+	cd build && $(MAKE) ansi-test
+
 # ==================== Various means of distribution ====================
 
 TAR_DIR=ecl-$(VERSION)
