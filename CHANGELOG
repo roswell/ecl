@@ -32,11 +32,15 @@
 - Add gray-streams module. This makes it possible to load Gray stream
   support via ~(require '#:gray-streams)~ versus calling the internal
   function ~gray::redefine-cl-functions~.
-- Add support for some Gray stream extensions. Specifically, the generic
-  functions ~gray-streams:stream-line-length~ and
-  ~gray-streams:stream-file-length~ have been added. The former allows
-  stream specific line lengths when ~cl:*print-right-margin*~ is NIL. The
-  latter allows Gray streams to implement ~cl:file-length~.
+- Add support for some Gray stream extensions by adding the following
+  generic functions.
+  1) ~gray:stream-line-length~ which allows stream specific line lengths
+     when ~cl:*print-right-margin*~ is NIL.
+  2) ~gray:stream-file-length~ which allows Gray streams to implement
+     ~cl:file-length~.
+  3) ~gray:stream-file-string-length~ which allows Gray streams to
+     implement ~cl:file-string-length~.
+  4) Generic versions of ~cl:pathname~ and ~cl:truename~.
 - Various bug fixes for Gray streams.
     
 * 23.9.9 changes since 21.2.1

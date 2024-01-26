@@ -224,6 +224,20 @@ not_output_finish_output(cl_object strm)
   not_an_output_stream(strm);
 }
 
+static cl_object
+not_output_string_length(cl_object strm, cl_object string)
+{
+  not_an_output_stream(strm);
+  return 0;
+}
+
+static cl_object
+not_file_string_length(cl_object strm, cl_object string)
+{
+  not_a_file_stream(strm);
+  return 0;
+}
+
 static int
 unknown_column(cl_object strm)
 {
@@ -1158,6 +1172,51 @@ utf_8_encoder(cl_object stream, unsigned char *buffer, ecl_character c)
 }
 #endif
 
+static cl_index
+compute_char_size(cl_object stream, ecl_character c)
+{
+  unsigned char buffer[5];
+  int l = 0;
+  if (c == ECL_CHAR_CODE_NEWLINE) {
+    int flags = stream->stream.flags;
+    if (flags & ECL_STREAM_CR) {
+      l += stream->stream.encoder(stream, buffer, ECL_CHAR_CODE_RETURN);
+      if (flags & ECL_STREAM_LF)
+        l += stream->stream.encoder(stream, buffer,
+                                    ECL_CHAR_CODE_LINEFEED);
+    } else {
+      l += stream->stream.encoder(stream, buffer, ECL_CHAR_CODE_LINEFEED);
+    }
+  } else {
+    l += stream->stream.encoder(stream, buffer, c);
+  }
+  return l;
+}
+
+cl_object
+file_string_length(cl_object stream, cl_object string)
+{
+  cl_fixnum l = 0;
+  switch (ecl_t_of(string)) {
+#ifdef ECL_UNICODE
+  case t_string:
+#endif
+  case t_base_string: {
+    cl_index i;
+    for (i = 0; i < string->base_string.fillp; i++) {
+      l += compute_char_size(stream, ecl_char(string, i));
+    }
+    break;
+  }
+  case t_character:
+    l = compute_char_size(stream, ECL_CHAR_CODE(string));
+    break;
+  default:
+    FEwrong_type_nth_arg(@[file-string-length], 2, string, @[string]);
+  }
+  return ecl_make_fixnum(l);
+}
+
 /********************************************************************************
  * CLOS STREAMS
  */
@@ -1331,11 +1390,29 @@ clos_stream_set_position(cl_object strm, cl_object pos)
   return _ecl_funcall3(@'gray::stream-file-position', strm, pos);
 }
 
+static cl_object
+clos_stream_string_length(cl_object strm, cl_object string)
+{
+  return _ecl_funcall3(@'gray::stream-file-string-length', strm, string);
+}
+
 static int
 clos_stream_column(cl_object strm)
 {
   cl_object col = _ecl_funcall2(@'gray::stream-line-column', strm);
   return Null(col)? -1 : ecl_to_size(ecl_floor1(col));
+}
+
+static cl_object
+clos_stream_pathname(cl_object strm)
+{
+  return _ecl_funcall2(@'gray::pathname', strm);
+}
+
+static cl_object
+clos_stream_truename(cl_object strm)
+{
+  return _ecl_funcall2(@'gray::truename', strm);
 }
 
 static cl_object
@@ -1373,7 +1450,12 @@ const struct ecl_file_ops clos_stream_ops = {
   clos_stream_length,
   clos_stream_get_position,
   clos_stream_set_position,
+  clos_stream_string_length,
   clos_stream_column,
+
+  clos_stream_pathname,
+  clos_stream_truename,
+
   clos_stream_close
 };
 #endif /* ECL_CLOS_STREAMS */
@@ -1403,6 +1485,26 @@ static cl_object
 str_out_get_position(cl_object strm)
 {
   return ecl_make_unsigned_integer(STRING_OUTPUT_STRING(strm)->base_string.fillp);
+}
+
+static cl_object
+str_out_string_length(cl_object strm, cl_object string)
+{
+  cl_fixnum l = 0;
+  switch (ecl_t_of(string)) {
+#ifdef ECL_UNICODE
+  case t_string:
+#endif
+  case t_base_string:
+    l = string->base_string.fillp;
+    break;
+  case t_character:
+    l = 1;
+    break;
+  default:
+    FEwrong_type_nth_arg(@[file-string-length], 2, string, @[string]);
+  }
+  return ecl_make_fixnum(l);
 }
 
 static cl_object
@@ -1454,7 +1556,12 @@ const struct ecl_file_ops str_out_ops = {
   not_a_file_stream, /* length */
   str_out_get_position,
   str_out_set_position,
+  str_out_string_length,
   generic_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   generic_close
 };
 
@@ -1642,7 +1749,12 @@ const struct ecl_file_ops str_in_ops = {
   not_a_file_stream, /* length */
   str_in_get_position,
   str_in_set_position,
+  not_output_string_length,
   unknown_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   generic_close
 };
 
@@ -1838,7 +1950,12 @@ const struct ecl_file_ops two_way_ops = {
   not_a_file_stream, /* length */
   generic_always_nil, /* get_position */
   generic_set_position,
+  not_file_string_length,
   two_way_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   two_way_close
 };
 
@@ -1975,6 +2092,15 @@ broadcast_set_position(cl_object strm, cl_object pos)
   return ecl_file_position_set(ECL_CONS_CAR(l), pos);
 }
 
+cl_object
+broadcast_string_length(cl_object strm, cl_object string)
+{
+  cl_object l = BROADCAST_STREAM_LIST(strm);
+  if (Null(l))
+    return ecl_make_fixnum(1);
+  return ecl_file_string_length(ECL_CONS_CAR(ecl_last(l, 1)), string);
+}
+
 static int
 broadcast_column(cl_object strm)
 {
@@ -2022,7 +2148,12 @@ const struct ecl_file_ops broadcast_ops = {
   broadcast_length,
   broadcast_get_position,
   broadcast_set_position,
+  broadcast_string_length,
   broadcast_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   broadcast_close
 };
 
@@ -2207,7 +2338,12 @@ const struct ecl_file_ops echo_ops = {
   not_a_file_stream, /* length */
   generic_always_nil, /* get_position */
   generic_set_position,
+  not_file_string_length,
   echo_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   echo_close
 };
 
@@ -2353,7 +2489,12 @@ const struct ecl_file_ops concatenated_ops = {
   not_a_file_stream, /* length */
   generic_always_nil, /* get_position */
   generic_set_position,
+  not_output_string_length,
   unknown_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   concatenated_close
 };
 
@@ -2527,10 +2668,28 @@ synonym_set_position(cl_object strm, cl_object pos)
   return ecl_file_position_set(SYNONYM_STREAM_STREAM(strm), pos);
 }
 
+static cl_object
+synonym_string_length(cl_object strm, cl_object string)
+{
+  return ecl_file_string_length(SYNONYM_STREAM_STREAM(strm), string);
+}
+
 static int
 synonym_column(cl_object strm)
 {
   return ecl_file_column(SYNONYM_STREAM_STREAM(strm));
+}
+
+static cl_object
+synonym_pathname(cl_object strm)
+{
+  return ecl_stream_pathname(SYNONYM_STREAM_STREAM(strm));
+}
+
+static cl_object
+synonym_truename(cl_object strm)
+{
+  return ecl_stream_truename(SYNONYM_STREAM_STREAM(strm));
 }
 
 const struct ecl_file_ops synonym_ops = {
@@ -2562,7 +2721,12 @@ const struct ecl_file_ops synonym_ops = {
   synonym_length,
   synonym_get_position,
   synonym_set_position,
+  synonym_string_length,
   synonym_column,
+
+  synonym_pathname,
+  synonym_truename,
+
   generic_close
 };
 
@@ -3057,6 +3221,18 @@ io_file_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
   return generic_write_vector(strm, data, start, end);
 }
 
+static cl_object
+io_file_pathname(cl_object strm)
+{
+  return IO_STREAM_FILENAME(strm);
+}
+
+static cl_object
+io_file_truename(cl_object strm)
+{
+  return cl_truename(IO_STREAM_FILENAME(strm));
+}
+
 const struct ecl_file_ops io_file_ops = {
   io_file_write_byte8,
   io_file_read_byte8,
@@ -3086,7 +3262,12 @@ const struct ecl_file_ops io_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
+  file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_file_close
 };
 
@@ -3119,7 +3300,12 @@ const struct ecl_file_ops output_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
+  file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_file_close
 };
 
@@ -3152,7 +3338,12 @@ const struct ecl_file_ops input_file_ops = {
   io_file_length,
   io_file_get_position,
   io_file_set_position,
+  not_output_string_length,
   unknown_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_file_close
 };
 
@@ -3738,7 +3929,12 @@ const struct ecl_file_ops io_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
+  file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_stream_close
 };
 
@@ -3771,7 +3967,12 @@ const struct ecl_file_ops output_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
+  file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_stream_close
 };
 
@@ -3804,7 +4005,12 @@ const struct ecl_file_ops input_stream_ops = {
   io_stream_length,
   io_stream_get_position,
   io_stream_set_position,
+  not_output_string_length,
   unknown_column,
+
+  io_file_pathname,
+  io_file_truename,
+
   io_stream_close
 };
 
@@ -3948,7 +4154,11 @@ const struct ecl_file_ops winsock_stream_io_ops = {
   not_a_file_stream,
   generic_always_nil, /* get_position */
   generic_set_position,
+  file_string_length,
   generic_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
 
   winsock_stream_close
 };
@@ -3982,7 +4192,11 @@ const struct ecl_file_ops winsock_stream_output_ops = {
   not_a_file_stream,
   generic_always_nil, /* get_position */
   generic_set_position,
+  file_string_length,
   generic_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
 
   winsock_stream_close
 };
@@ -4016,7 +4230,11 @@ const struct ecl_file_ops winsock_stream_input_ops = {
   not_a_file_stream,
   generic_always_nil, /* get_position */
   generic_set_position,
+  not_output_string_length,
   unknown_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
 
   winsock_stream_close
 };
@@ -4121,7 +4339,11 @@ const struct ecl_file_ops wcon_stream_io_ops = {
   not_a_file_stream,
   generic_always_nil, /* get_position */
   generic_set_position,
+  file_string_length,
   generic_column,
+
+  io_file_pathname,
+  io_file_truename,
 
   generic_close,
 };
@@ -4316,7 +4538,7 @@ ecl_make_stream_from_FILE(cl_object fname, void *f, enum ecl_smmode smm,
     FEerror("Not a valid mode ~D for ecl_make_stream_from_FILE", 1, ecl_make_fixnum(smm));
   }
   set_stream_elt_type(stream, byte_size, flags, external_format);
-  IO_STREAM_FILENAME(stream) = fname; /* not really used */
+  IO_STREAM_FILENAME(stream) = fname;
   stream->stream.column = 0;
   IO_STREAM_FILE(stream) = f;
   stream->stream.last_op = 0;
@@ -4593,7 +4815,12 @@ const struct ecl_file_ops seq_in_ops = {
   not_a_file_stream, /* length */
   seq_in_get_position,
   seq_in_set_position,
+  not_output_string_length,
   unknown_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   generic_close
 };
 
@@ -4798,7 +5025,12 @@ const struct ecl_file_ops seq_out_ops = {
   not_a_file_stream, /* length */
   seq_out_get_position,
   seq_out_set_position,
+  not_output_string_length,
   generic_column,
+
+  not_a_file_stream,
+  not_a_file_stream,
+
   generic_close
 };
 
@@ -4988,6 +5220,12 @@ ecl_file_position_set(cl_object strm, cl_object pos)
   return stream_dispatch_table(strm)->set_position(strm, pos);
 }
 
+cl_object
+ecl_file_string_length(cl_object strm, cl_object string)
+{
+  return stream_dispatch_table(strm)->string_length(strm, string);
+}
+
 bool
 ecl_input_stream_p(cl_object strm)
 {
@@ -5010,6 +5248,18 @@ bool
 ecl_interactive_stream_p(cl_object strm)
 {
   return stream_dispatch_table(strm)->interactive_p(strm);
+}
+
+cl_object
+ecl_stream_pathname(cl_object strm)
+{
+  return stream_dispatch_table(strm)->pathname(strm);
+}
+
+cl_object
+ecl_stream_truename(cl_object strm)
+{
+  return stream_dispatch_table(strm)->truename(strm);
 }
 
 /*
@@ -5050,74 +5300,10 @@ writestr_stream(const char *s, cl_object strm)
   si_put_buffer_string(buffer);
 }
 
-static cl_index
-compute_char_size(cl_object stream, ecl_character c)
-{
-  unsigned char buffer[5];
-  int l = 0;
-  if (c == ECL_CHAR_CODE_NEWLINE) {
-    int flags = stream->stream.flags;
-    if (flags & ECL_STREAM_CR) {
-      l += stream->stream.encoder(stream, buffer, ECL_CHAR_CODE_RETURN);
-      if (flags & ECL_STREAM_LF)
-        l += stream->stream.encoder(stream, buffer,
-                                    ECL_CHAR_CODE_LINEFEED);
-    } else {
-      l += stream->stream.encoder(stream, buffer, ECL_CHAR_CODE_LINEFEED);
-    }
-  } else {
-    l += stream->stream.encoder(stream, buffer, c);
-  }
-  return l;
-}
-
 cl_object
 cl_file_string_length(cl_object stream, cl_object string)
 {
-  cl_fixnum l = 0;
-  /* This is a stupid requirement from the spec. Why returning 1???
-   * Why not simply leaving the value unspecified, as with other
-   * streams one cannot write to???
-   */
- BEGIN:
-#ifdef ECL_CLOS_STREAMS
-  if (ECL_INSTANCEP(stream)) {
-    @(return ECL_NIL);
-  }
-#endif
-  unlikely_if (!ECL_ANSI_STREAM_P(stream)) {
-    FEwrong_type_only_arg(@[file-string-length], stream, @[stream]);
-  }
-  if (stream->stream.mode == ecl_smm_broadcast) {
-    stream = BROADCAST_STREAM_LIST(stream);
-    if (Null(stream)) {
-      @(return ecl_make_fixnum(1));
-    } else {
-      stream = ECL_CONS_CAR(ecl_last(stream, 1));
-      goto BEGIN;
-    }
-  }
-  unlikely_if (!ECL_FILE_STREAM_P(stream)) {
-    not_a_file_stream(stream);
-  }
-  switch (ecl_t_of(string)) {
-#ifdef ECL_UNICODE
-  case t_string:
-#endif
-  case t_base_string: {
-    cl_index i;
-    for (i = 0; i < string->base_string.fillp; i++) {
-      l += compute_char_size(stream, ecl_char(string, i));
-    }
-    break;
-  }
-  case t_character:
-    l = compute_char_size(stream, ECL_CHAR_CODE(string));
-    break;
-  default:
-    FEwrong_type_nth_arg(@[file-string-length], 2, string, @[string]);
-  }
-  @(return ecl_make_fixnum(l));
+  @(return ecl_file_string_length(stream, string));
 }
 
 cl_object
