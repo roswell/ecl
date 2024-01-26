@@ -273,6 +273,9 @@ test_changes:
 check:
 	cd tests && $(MAKE) clean && $(MAKE) check TESTS="$(TESTS)"
 
+ansi-test:
+	cd tests && $(MAKE) clean && $(MAKE) ansi-test
+
 #
 # Rebuild ECL using its own image and compare. Does not work
 # right now.
