@@ -600,6 +600,9 @@ struct ecl_file_ops {
         cl_object (*string_length)(cl_object strm, cl_object string);
         int (*column)(cl_object strm);
 
+        cl_object (*pathname)(cl_object strm);
+        cl_object (*truename)(cl_object strm);
+
         cl_object (*close)(cl_object strm);
 };
 

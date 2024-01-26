@@ -746,27 +746,14 @@ cl_pathname(cl_object x)
     x = cl_parse_namestring(1, x);
   case t_pathname:
     break;
-  case t_stream:
-    switch ((enum ecl_smmode)x->stream.mode) {
-    case ecl_smm_input:
-    case ecl_smm_output:
-    case ecl_smm_probe:
-    case ecl_smm_io:
-    case ecl_smm_input_file:
-    case ecl_smm_output_file:
-    case ecl_smm_io_file:
-      x = IO_STREAM_FILENAME(x);
-      goto L;
-    case ecl_smm_synonym:
-      x = SYNONYM_STREAM_STREAM(x);
-      goto L;
-    default:
-      ;/* Fall through to error message */
+  default:
+    if (!Null(cl_streamp(x))) {
+      x = ecl_stream_pathname(x);
+    } else {
+      const char *type = "(OR FILE-STREAM STRING PATHNAME)";
+      FEwrong_type_only_arg(@[pathname], x, ecl_read_from_cstring(type));
     }
-  default: {
-    const char *type = "(OR FILE-STREAM STRING PATHNAME)";
-    FEwrong_type_only_arg(@[pathname], x, ecl_read_from_cstring(type));
-  }
+    break;
   }
   @(return x);
 }

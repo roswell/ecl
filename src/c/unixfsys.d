@@ -460,6 +460,9 @@ file_truename(cl_object pathname, cl_object filename, int flags)
 cl_object
 cl_truename(cl_object orig_pathname)
 {
+  if (!Null(cl_streamp(orig_pathname)))
+    @(return ecl_stream_truename(orig_pathname));
+
   cl_object pathname = make_absolute_pathname(orig_pathname);
   cl_object base_dir = make_base_pathname(pathname);
   cl_object dir;

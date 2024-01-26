@@ -20,6 +20,7 @@
                                      (type nil type-supplied-p)
                                      (system-p nil)
                               &allow-other-keys)
+  (setf name (pathname name))
   (let* ((format '())
          (extension '()))
     (unless type-supplied-p
