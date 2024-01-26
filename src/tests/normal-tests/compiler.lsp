@@ -2361,3 +2361,36 @@
                 0))))
     (let ((res (FUNCALL fun)))
       (is (= 1 res) "Res is ~s, should be 1." res))))
+
+;;; Date 2023-12-23
+;;; Description
+;;;
+;;;     The compiler trusted proclaimed types for optional or keyword
+;;;     arguments even if their init-forms did not match the
+;;;     proclaimed types, leading to unsafe code even in safe mode.
+;;;     While technically incorrect, init-forms not matching the
+;;;     proclaimed type of the corresponding argument is common enough
+;;;     that we allow it, only signaling a style-warning.
+;;;
+(test cmp.0098.init-forms-type-check
+  (proclaim '(ftype (function (&optional number) t) foo.0098a))
+  (defun foo.0098a (&optional x) (if x (list x) :good))
+  (is (nth-value 1 (compile 'foo.0098a))) ; check that we get a style-warning
+  (is (eql (funcall 'foo.0098a) :good))
+  (is (eql (funcall 'foo.0098a nil) :good)) ; the type of x is (or number null)
+  (is (equal (funcall 'foo.0098a 0) (list 0)))
+  (signals type-error (funcall 'foo.0098a :bad-arg))
+
+  (proclaim '(ftype (function (&key (:x string) (:y integer)) t) foo.0098b))
+  (defun foo.0098b (&key x (y 1.0)) (if x (1+ y) :good))
+  (is (nth-value 1 (compile 'foo.0098b))) ; check that we get a style-warning
+  (is (eql (funcall 'foo.0098b) :good))
+  (is (eql (funcall 'foo.0098b :x nil) :good))
+  (is (eql (funcall 'foo.0098b :x "") 2.0))
+  (is (eql (funcall 'foo.0098b :y 0) :good))
+  (is (eql (funcall 'foo.0098b :y 1.0) :good))
+  (is (eql (funcall 'foo.0098b :x "" :y 0) 1))
+  (signals type-error (funcall 'foo.0098b :x :bad-arg))
+  (signals type-error (funcall 'foo.0098b :y :bad-arg))
+  (signals type-error (funcall 'foo.0098b :x nil :y :bad-arg))
+  (signals type-error (funcall 'foo.0098b :x "" :y :bad-arg)))

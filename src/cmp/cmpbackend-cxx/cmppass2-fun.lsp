@@ -269,7 +269,9 @@
              ;; no initform
              ;; ECL_NIL has been set in keyvars if keyword parameter is not supplied.
              (setf (second KEYVARS[i]) i)
-             (bind KEYVARS[i] var))
+             (bind KEYVARS[i] var)
+             (when (car type-check)
+               (c2expr* (car type-check))))
             (t
              ;; with initform
              (setf (second KEYVARS[i]) (+ nkey i))
@@ -281,8 +283,8 @@
              (let ((*opened-c-braces* (1+ *opened-c-braces*)))
                (setf (second KEYVARS[i]) i)
                (bind KEYVARS[i] var)
-               (if (car type-check)
-                   (c2expr* (car type-check))))
+               (when (car type-check)
+                 (c2expr* (car type-check))))
              (wt-nl "}")))
       (when flag
         (setf (second KEYVARS[i]) (+ nkey i))
