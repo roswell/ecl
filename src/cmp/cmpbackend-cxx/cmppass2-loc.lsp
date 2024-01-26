@@ -383,6 +383,29 @@
 ;;; SET-LOC
 ;;;
 
+;;; Setting the location requires some cooperation between the code that returns
+;;; the location and the code that assigns it. By default we treat all RVALs as
+;;; having a single value (that's how wt-loc dispatches all known locations).
+;;;
+;;; This "default" changes when the LVAL expects multiple values. In that case
+;;; the SET-LOC method checks whether the RVAL may return multiple values:
+;;;
+;;; - when it does, then we use these values and do nothing
+;;; - when unknown, then we update values[0] and leave nvalues as is
+;;; - otherwise we update values[0] and reset nvalues = 1
+;;;
+;;; The "unknown" requires some explanation. The predicate (USES-VALUES loc)
+;;; returns true for locations that possibly can return multiple values. The
+;;; most representative example are function calls - the number of returned
+;;; values may even change at runtime, because the function may be recompiled.
+;;;
+;;; The contract between the caller and the callee is that the callee will
+;;; ensure upon exit, that nvalues contains the correct value, and that the
+;;; returned value is the primary value. When the callee returns only a single
+;;; value then it does not update VALUES vector to avoid global memory writes.
+;;; This is why LVALs that accept multiple values must assign VALUES[0] when the
+;;; (USES-VALUES RVAL) returns T. -- jd 2023-12-14
+
 (defun set-unknown-loc (destination loc)
   (unknown-location 'set-loc destination))
 
@@ -405,20 +428,18 @@
              (wt-loc destination)
              (wt " = " (coerce-loc (loc-host-type destination) loc) ";"))))))
 
-(defun set-the-loc (loc type orig-loc)
-  (declare (ignore type))
-  (set-loc orig-loc loc))
-                 
-(defun set-valuez-loc (loc)
-  (cond ((eq loc 'VALUEZ))
-        ((uses-values loc)
-         (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";"))
-        (t
-         (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";")
-         (wt-nl "cl_env_copy->nvalues = 1;"))))
+(defun set-trash-loc (loc &rest args)
+  (declare (ignore args))
+  (when (loc-with-side-effects-p loc)
+    (wt-nl loc ";")
+    t))
 
 (defun set-value0-loc (loc)
   (wt-nl "value0 = " (coerce-loc :object loc) ";"))
+
+(defun set-the-loc (loc type orig-loc)
+  (declare (ignore type))
+  (set-loc orig-loc loc))
 
 (defun set-leave-loc (loc)
   (cond ((or (eq loc 'VALUEZ) (uses-values loc))
@@ -430,11 +451,13 @@
          (wt-nl "value0 = " (coerce-loc :object loc) ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
-(defun set-trash-loc (loc &rest args)
-  (declare (ignore args))
-  (when (loc-with-side-effects-p loc)
-    (wt-nl loc ";")
-    t))
+(defun set-valuez-loc (loc)
+  (cond ((eq loc 'VALUEZ))
+        ((uses-values loc)
+         (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";"))
+        (t
+         (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";")
+         (wt-nl "cl_env_copy->nvalues = 1;"))))
 
 ;;;
 ;;; Foreign data

@@ -48,7 +48,7 @@
 (defun c2call-stack (c1form form args values-p)
   (declare (ignore c1form))
   (with-stack-frame (frame)
-    (let ((loc (inline-arg0 form args)))
+    (let ((loc (emit-inline-form form args)))
       (let ((*destination* (if values-p 'VALUEZ 'LEAVE)))
         (dolist (arg args)
           (c2expr* arg)
@@ -90,7 +90,7 @@
   (let* ((form-type (c1form-primary-type form))
          (function-p (and (subtypep form-type 'function)
                           (policy-assume-right-type)))
-         (loc (inline-arg0 form args))
+         (loc (emit-inline-form form args))
          (args (inline-args args)))
     (unwind-exit (call-unknown-global-loc loc args function-p))))
 

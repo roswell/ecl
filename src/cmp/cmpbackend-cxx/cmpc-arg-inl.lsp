@@ -126,6 +126,13 @@
             for form in args
             do (c2expr* form)))))
 
+;;;
+;;; emit-inline-form:
+;;;   returns a location that contains a moveable argument
+;;;   side effects: emits code for a temporary variable
+;;;
+;;; Whoever calls this function must wrap the body in WITH-INLINE-BLOCKS.
+;;;
 (defun emit-inline-form (form forms)
   (with-c1form-env (form form)
     (precise-loc-lisp-type
@@ -149,13 +156,3 @@
   (loop for form-list on forms
         for form = (first form-list)
         collect (emit-inline-form form (rest form-list))))
-
-;;;
-;;; inline-arg0:
-;;;   returns a location that contains the function
-;;;   side effects: emits code for a temporary variable
-;;;
-;;; Whoever calls this function must wrap the body in WITH-INLINE-BLOCKS.
-;;;
-(defun inline-arg0 (value-form other-forms)
-  (emit-inline-form value-form other-forms))
