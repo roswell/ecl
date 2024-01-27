@@ -24,11 +24,13 @@
 ;;; Variables and constants for error handling
 ;;;
 (defvar *current-form* '|compiler preprocess|)
+(defvar *current-c1form*)
 (defvar *current-toplevel-form* '|compiler preprocess|)
 (defvar *compile-file-position* -1)
 (defvar *active-protection* nil)
 (defvar *pending-actions* nil)
 (defvar *empty-loc* (gensym))
+(defvar *inline-loc* (gensym))
 
 (defvar *compiler-conditions* '()
   "This variable determines whether conditions are printed or just accumulated.")

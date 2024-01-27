@@ -48,7 +48,7 @@
 (defun c2call-stack (c1form form args values-p)
   (declare (ignore c1form))
   (with-stack-frame (frame)
-    (let ((loc (inlined-arg-loc (inline-arg0 form args))))
+    (let ((loc (emit-inline-form form args)))
       (let ((*destination* (if values-p 'VALUEZ 'LEAVE)))
         (dolist (arg args)
           (c2expr* arg)
@@ -70,7 +70,7 @@
     (unwind-exit (call-global-loc fname fun
                                   (inline-args args)
                                   (type-and (c1form-primary-type c1form)
-                                            (loc-type *destination*))))))
+                                            (loc-lisp-type *destination*))))))
 
 ;;;
 ;;; c2call-local:
@@ -90,7 +90,7 @@
   (let* ((form-type (c1form-primary-type form))
          (function-p (and (subtypep form-type 'function)
                           (policy-assume-right-type)))
-         (loc (inlined-arg-loc (inline-arg0 form args)))
+         (loc (emit-inline-form form args))
          (args (inline-args args)))
     (unwind-exit (call-unknown-global-loc loc args function-p))))
 
@@ -157,7 +157,7 @@
 ;;;
 (defun call-loc (fname fun args type)
   (declare (ignore fname))
-  `(CALL-NORMAL ,fun ,(coerce-locs args) ,type))
+  `(CALL-NORMAL ,fun ,(coerce-args args) ,type))
 
 ;;;
 ;;; call-global:
@@ -252,7 +252,7 @@
 ;;;   FUNCTION-P: true when we can assume that LOC is the function
 ;;;
 (defun call-unknown-global-loc (loc args function-p)
-  `(CALL-INDIRECT ,loc ,(coerce-locs args) nil ,function-p))
+  `(CALL-INDIRECT ,loc ,(coerce-args args) nil ,function-p))
 
 ;;;
 ;;; call-unknown-global-fun
@@ -261,10 +261,10 @@
 ;;;   ARGS: a list of INLINED-ARGs
 ;;;
 (defun call-unknown-global-fun (fname args)
-  `(CALL-INDIRECT (FDEFINITION ,fname) ,(coerce-locs args) ,fname t))
+  `(CALL-INDIRECT (FDEFINITION ,fname) ,(coerce-args args) ,fname t))
 
 #+ (or)
 ;;; This version is correct but unnecessarily slow - it goes through
 ;;; ecl_function_dispatch. wt-fdefinition handles all proper names.
 (defun call-unknown-global-fun (fname args)
-  `(CALL-INDIRECT ,(get-object fname) ,(coerce-locs args) ,fname nil))
+  `(CALL-INDIRECT ,(get-object fname) ,(coerce-args args) ,fname nil))

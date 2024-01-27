@@ -31,7 +31,7 @@
             ;; var is referenced from a closure which may escape.
             (let ((env-lvl *env-lvl*))
               (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
-          (bind "ECL_NEW_FRAME_ID(cl_env_copy)" blk-var)
+          (bind 'FRAME++ blk-var)
           (with-unwind-frame (blk-var)
                              (unwind-exit 'VALUEZ)
             (c2expr body))
@@ -77,7 +77,7 @@
             (setf (var-loc tag-loc) (next-lcl))
             (maybe-open-inline-block)
             (wt-nl "cl_object " tag-loc ";"))
-          (bind "ECL_NEW_FRAME_ID(cl_env_copy)" tag-loc)
+          (bind 'FRAME++ tag-loc)
           (with-unwind-frame (tag-loc)
             (progn
               (do-tags (tag body nil)

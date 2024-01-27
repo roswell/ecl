@@ -35,9 +35,6 @@
     ;; Function namespace (should include also FSET)
     (CL:FUNCTION        fname :single-valued)
     (LOCALS             local-fun-list body labels-p :pure)
-    ;; Specialized accessors
-    (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
-    (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
     ;; Control structures
     (CL:BLOCK           blk-var progn-c1form :pure)
     (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
@@ -63,7 +60,7 @@
     (ext:COMPILER-TYPECASE var expressions)
     (ext:CHECKED-VALUE  type value-c1form let-form)
     ;; Backend-specific operators
-    (FFI:C-INLINE (arg-c1form*) (arg-type-symbol*) output-rep-type
+    (FFI:C-INLINE (arg-c1form*) (arg-type-symbol*) output-host-type
                   c-expression-string
                   side-effects-p one-liner-p)
     (FFI:C-PROGN  variables forms))))
@@ -180,9 +177,9 @@
     (cl:fdefinition . wt-fdefinition)
     (make-cclosure . wt-make-closure)
 
-    (si:structure-ref . wt-structure-ref)
     (ffi-data-ref . wt-ffi-data-ref)
 
+    (frame++ . "ECL_NEW_FRAME_ID(cl_env_copy)")
     (leave . "value0")
     (va-arg . "va_arg(args,cl_object)")
     (cl-va-arg . "ecl_va_arg(args)")

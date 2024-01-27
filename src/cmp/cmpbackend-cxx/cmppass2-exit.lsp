@@ -211,19 +211,19 @@
   (ecase kind
     (:jump-t
      (destructuring-bind (loc) args
-       (case (loc-representation-type loc)
+       (case (loc-host-type loc)
          (:bool     (wt-nl "if (" loc ") "))
          (:object   (wt-nl "if (" loc "!=ECL_NIL) "))
-         (otherwise (wt-nl "if ((") (wt-coerce-loc :object loc) (wt ")!=ECL_NIL) ")))))
+         (otherwise (wt-nl "if ((" (coerce-loc :object loc) ")!=ECL_NIL) ")))))
     (:jump-f
      (destructuring-bind (loc) args
-       (case (loc-representation-type loc)
-         (:bool     (wt-nl "if (!(" loc ")) "))
-         (:object   (wt-nl "if (Null(" loc ")) "))
-         (otherwise (wt-nl "if (Null(") (wt-coerce-loc :object loc) (wt ")) ")))))
+       (case (loc-host-type loc)
+         (:bool     (wt-nl "if (!(" loc "))"))
+         (:object   (wt-nl "if (Null(" loc "))"))
+         (otherwise (wt-nl "if (Null(" (coerce-loc :object loc) "))")))))
     (:jump-eq
      (destructuring-bind (x y) args
-       (wt-nl "if (" `(coerce-loc :object ,x) "==" `(coerce-loc :object ,y) ") "))))
+       (wt-nl "if (" (coerce-loc :object x) "==" (coerce-loc :object y) ") "))))
   (wt-open-brace)
   (multiple-value-bind (frs-bind bds-lcl bds-bind stack-frame ihs-p)
       (compute-unwind (label-denv exit) from)

@@ -12,13 +12,13 @@
 (defun c2let-replaceable-var-ref-p (var form rest-forms)
   (when (and (eq (c1form-name form) 'VARIABLE)
              (null (var-set-nodes var))
-             (local var))
+             (local-var-p var))
     (let ((var1 (c1form-arg 0 form)))
       (declare (type var var1))
       ;; FIXME We should be able to replace variable even if they are referenced
       ;; across functions.  We just need to keep track of their uses.
-      (when (and (local var1)
-                 (eq (unboxed var) (unboxed var1))
+      (when (and (local-var-p var1)
+                 (eq (unboxed-var-p var) (unboxed-var-p var1))
                  (not (var-changed-in-form-list var1 rest-forms)))
         (cmpdebug "Replacing variable ~a by its value" (var-name var))
         (nsubst-var var form)
@@ -90,20 +90,20 @@
                (*inline-blocks* 0))
   ;; Replace read-only variables when it is worth doing it.
   (loop for var in vars
-     for rest-forms on (append forms (list body))
-     for form = (first rest-forms)
-     unless (c2let-replaceable-var-ref-p var form rest-forms)
-     collect var into used-vars and
-     collect form into used-forms
-     finally (setf vars used-vars forms used-forms))
+        for rest-forms on (append forms (list body))
+        for form = (first rest-forms)
+        unless (c2let-replaceable-var-ref-p var form rest-forms)
+          collect var into used-vars and
+        collect form into used-forms
+        finally (setf vars used-vars forms used-forms))
 
   ;; Emit C definitions of local variables
   (loop for var in vars
-     for kind = (local var)
-     do (when kind
-          (maybe-open-inline-block)
-          (bind (next-lcl (var-name var)) var)
-          (wt-nl *volatile* (rep-type->c-name kind) " " var ";")))
+        for kind = (local-var-p var)
+        do (when kind
+             (maybe-open-inline-block)
+             (bind (next-lcl (var-name var)) var)
+             (wt-nl *volatile* (host-type->c-name kind) " " var ";")))
 
   ;; Create closure bindings for closed-over variables
   (when (some #'var-ref-ccb vars)
@@ -154,14 +154,14 @@
     ;;    closure, make a local C variable.
     (dolist (var vars)
       (declare (type var var))
-      (let ((kind (local var)))
-        (if kind
-            (when (useful-var-p var)
-              (maybe-open-inline-block)
-              (bind (next-lcl) var)
-              (wt-nl (rep-type->c-name kind) " " *volatile* var ";")
-              (wt-comment (var-name var)))
-            (unless env-grows (setq env-grows (var-ref-ccb var))))))
+      (ext:if-let ((kind (local-var-p var)))
+        (when (useful-var-p var)
+          (maybe-open-inline-block)
+          (bind (next-lcl) var)
+          (wt-nl (host-type->c-name kind) " " *volatile* var ";")
+          (wt-comment (var-name var)))
+        (unless env-grows
+          (setq env-grows (var-ref-ccb var)))))
     ;; 3) If there are closure variables, set up an environment.
     (when (setq env-grows (env-grows env-grows))
       (let ((env-lvl *env-lvl*))
@@ -178,11 +178,11 @@
     (close-inline-blocks)))
 
 (defun c2location (c1form loc)
-  (unwind-exit (precise-loc-type loc (c1form-primary-type c1form))))
+  (unwind-exit (precise-loc-lisp-type loc (c1form-primary-type c1form))))
 
 ;;; When LOC is not NIL, then the variable is a constant.
 (defun c2variable (c1form var loc)
-  (unwind-exit (precise-loc-type
+  (unwind-exit (precise-loc-lisp-type
                 (if (and loc (not (numberp (vv-location loc))))
                     loc
                     (or (try-const-c-inliner var) var))
@@ -212,37 +212,24 @@
         (wt-nl lcl " = ecl_progv(cl_env_copy, " sym-loc ", " val-loc ");")
         (c2expr body)))))
 
-(defun c2psetq (c1form vrefs forms
-                &aux (*lcl* *lcl*) (saves nil) (braces *opened-c-braces*))
+(defun c2psetq (c1form vrefs forms &aux (saves nil))
   (declare (ignore c1form))
   ;; similar to inline-args
-  (do ((vrefs vrefs (cdr vrefs))
-       (forms forms (cdr forms))
-       (var) (form))
-      ((null vrefs))
-    (setq var (first vrefs)
-          form (car forms))
-    (if (or (var-changed-in-form-list var (rest forms))
-            (var-referenced-in-form-list var (rest forms)))
-        (case (c1form-name form)
-          (LOCATION (push (cons var (c1form-arg 0 form)) saves))
-          (otherwise
-            (if (local var)
-                (let* ((rep-type (var-rep-type var))
-                       (rep-type-c-name (rep-type->c-name rep-type))
-                       (temp (make-lcl-var :rep-type rep-type)))
-                  (wt-nl-open-brace)
-                  (wt-nl rep-type-c-name " " *volatile* temp ";")
-                  (let ((*destination* temp)) (c2expr* form))
-                  (push (cons var temp) saves))
-                (let ((*destination* (make-temp-var)))
-                  (c2expr* form)
-                  (push (cons var *destination*) saves)))))
-        (let ((*destination* var))
-          (c2expr* form))))
-  (dolist (save saves)
-    (set-var (cdr save) (car save)))
-  (wt-nl-close-many-braces braces)
+  (with-inline-blocks ()
+    (loop for var in vrefs
+          for (form . rest-forms) on forms
+          do (if (or (var-changed-in-form-list var rest-forms)
+                     (var-referenced-in-form-list var rest-forms))
+                 (if (eq (c1form-name form) 'LOCATION)
+                     (push (cons var (c1form-arg 0 form)) saves)
+                     (let* ((typ (c1form-primary-type form))
+                            (rep (var-host-type var))
+                            (tmp (emit-inlined-temp-var form typ rep)))
+                       (push (cons var tmp) saves)))
+                 (let ((*destination* var))
+                   (c2expr* form))))
+    (dolist (save saves)
+      (set-var (cdr save) (car save))))
   (unwind-exit *vv-nil*))
 
 ;;; bind must be called for each variable in a lambda or let, once the value
@@ -261,9 +248,8 @@
          (setq var-loc (next-env))
          (setf (var-loc var) var-loc))
        (when (zerop var-loc) (wt-nl "env" *env-lvl* " = ECL_NIL;"))
-       (wt-nl "CLV" var-loc " = env" *env-lvl* " = CONS(")
-       (wt-coerce-loc :object loc)
-       (wt ",env" *env-lvl* ");")
+       (wt-nl "CLV" var-loc " = env" *env-lvl*
+              " = CONS(" (coerce-loc :object loc) ",env" *env-lvl* ");")
        (wt-comment (var-name var))))
     (LEXICAL
      (let ((var-loc (var-loc var)))
@@ -271,9 +257,7 @@
          ;; first binding: assign location
          (setq var-loc (next-lex))
          (setf (var-loc var) var-loc))
-       (wt-nl) (wt-lex var-loc) (wt " = ")
-       (wt-coerce-loc :object loc)
-       (wt ";"))
+       (wt-nl) (wt-lex var-loc) (wt " = " (coerce-loc :object loc) ";"))
      (wt-comment (var-name var)))
     ((SPECIAL GLOBAL)
      (bds-bind loc var))
@@ -282,9 +266,7 @@
             ;; already has location (e.g. optional in lambda list)
             ;; check they are not the same
             (unless (equal (var-loc var) loc)
-              (wt-nl var " = ")
-              (wt-coerce-loc (var-rep-type var) loc)
-              (wt ";")))
+              (wt-nl var " = " (coerce-loc (var-host-type var) loc) ";")))
            ((and (consp loc) (eql (car loc) 'LCL))
             ;; set location for lambda list requireds
             (setf (var-loc var) loc))
@@ -300,7 +282,7 @@
         ;; environments, global environments, etc. If we use `(BIND var)
         ;; as destination, BIND might receive the wrong environment.
         (with-inline-blocks ()
-          (let ((locs (coerce-locs (inline-args (list form)))))
+          (let ((locs (coerce-args (inline-args (list form)))))
             (bind (first locs) var)
             ;; Notice that we do not need to update *UNWIND-EXIT* because BIND
             ;; does it for us.
@@ -316,9 +298,8 @@
               (eq (var-name loc) (var-name var)))
          (wt-nl "ecl_bds_push(cl_env_copy," (var-loc var) ");"))
         (t
-         (wt-nl "ecl_bds_bind(cl_env_copy," (var-loc var) ",")
-         (wt-coerce-loc :object loc)
-         (wt ");")))
+         (wt-nl "ecl_bds_bind(cl_env_copy," (var-loc var) ","
+                (coerce-loc :object loc) ");")))
   (push 'BDS-BIND *unwind-exit*)
   (wt-comment (var-name var)))
 
@@ -411,24 +392,16 @@
             :format-arguments (list var)))
   (case (var-kind var)
     (CLOSURE
-     (wt-nl)(wt-env var-loc)(wt " = ")
-     (wt-coerce-loc (var-rep-type var) loc)
-     (wt #\;))
+     (wt-nl)(wt-env var-loc)(wt " = " (coerce-loc (var-host-type var) loc) ";"))
     (LEXICAL
-     (wt-nl)(wt-lex var-loc)(wt " = ")
-     (wt-coerce-loc (var-rep-type var) loc)
-     (wt #\;))
+     (wt-nl)(wt-lex var-loc)(wt " = " (coerce-loc (var-host-type var) loc) ";"))
     ((SPECIAL GLOBAL)
      (if (safe-compile)
          (wt-nl "ecl_cmp_setq(cl_env_copy," var-loc ",")
          (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
-     (wt-coerce-loc (var-rep-type var) loc)
-     (wt ");"))
+     (wt (coerce-loc (var-host-type var) loc) ");"))
     (t
-     (wt-nl var-loc " = ")
-     (wt-coerce-loc (var-rep-type var) loc)
-     (wt #\;))
-    ))
+     (wt-nl var-loc " = " (coerce-loc (var-host-type var) loc) ";"))))
 
 (defun wt-lcl (lcl)
   (unless (numberp lcl)

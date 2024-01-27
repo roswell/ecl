@@ -18,16 +18,16 @@
 ;;; cases the compiler may do whatever it wants (and gcc does!)
 ;;;
 (define-c-inliner shift (return-type argument orig-shift)
-  (let* ((arg-type (inlined-arg-type argument))
-         (arg-c-type (lisp-type->rep-type arg-type))
-         (return-c-type (lisp-type->rep-type return-type))
-         (shift (loc-immediate-value (inlined-arg-loc orig-shift))))
-    (if (or (not (c-integer-rep-type-p arg-c-type))
-            (not (c-integer-rep-type-p return-c-type)))
+  (let* ((arg-type (loc-lisp-type argument))
+         (arg-c-type (lisp-type->host-type arg-type))
+         (return-c-type (lisp-type->host-type return-type))
+         (shift (loc-immediate-value orig-shift)))
+    (if (or (not (c-integer-host-type-p arg-c-type))
+            (not (c-integer-host-type-p return-c-type)))
         (produce-inline-loc (list argument orig-shift) '(:object :fixnum) '(:object)
                             "ecl_ash(#0,#1)" nil t)
-        (let* ((arg-bits (c-integer-rep-type-bits arg-c-type))
-               (return-bits (c-integer-rep-type-bits return-c-type))
+        (let* ((arg-bits (c-integer-host-type-bits arg-c-type))
+               (return-bits (c-integer-host-type-bits return-c-type))
                (max-type (if (and (plusp shift)
                                   (< arg-bits return-bits))
                              return-c-type
@@ -44,16 +44,16 @@
 ;;; Inliners for arithmetic operations.
 ;;;
 
-(defun most-generic-number-rep-type (r1 r2)
-  (let* ((r1 (rep-type-record r1))
-         (r2 (rep-type-record r2)))
-    (rep-type-name (if (< (rep-type-index r1) (rep-type-index r2))
+(defun most-generic-number-host-type (r1 r2)
+  (let* ((r1 (host-type-record r1))
+         (r2 (host-type-record r2)))
+    (host-type-name (if (< (host-type-index r1) (host-type-index r2))
                        r2
                        r1))))
 
 (defun inline-binop (expected-type arg1 arg2 consing non-consing)
-  (let ((arg1-type (inlined-arg-type arg1))
-        (arg2-type (inlined-arg-type arg2)))
+  (let ((arg1-type (loc-lisp-type arg1))
+        (arg2-type (loc-lisp-type arg2)))
     (if (and (policy-assume-right-type)
              (c-number-type-p expected-type)
              (c-number-type-p arg1-type)
@@ -62,13 +62,13 @@
         ;; type that fits the output, to avoid overflow which
         ;; would happen if we used say, long c = (int)a * (int)b
         ;; as the output would be an integer, not a long.
-        (let* ((arg1-rep (lisp-type->rep-type arg1-type))
-               (arg2-rep (lisp-type->rep-type arg2-type))
-               (out-rep (lisp-type->rep-type expected-type))
-               (max-rep (most-generic-number-rep-type
-                         (most-generic-number-rep-type
+        (let* ((arg1-rep (lisp-type->host-type arg1-type))
+               (arg2-rep (lisp-type->host-type arg2-type))
+               (out-rep (lisp-type->host-type expected-type))
+               (max-rep (most-generic-number-host-type
+                         (most-generic-number-host-type
                           arg1-rep arg2-rep) out-rep))
-               (max-name (rep-type->c-name max-rep)))
+               (max-name (host-type->c-name max-rep)))
           (produce-inline-loc
            (list arg1 arg2)
            (list arg1-rep arg2-rep)
@@ -82,23 +82,23 @@
                             consing nil t))))
 
 (defun inline-arith-unop (expected-type arg1 consing non-consing)
-  (let ((arg1-type (inlined-arg-type arg1)))
+  (let ((arg1-type (loc-lisp-type arg1)))
     (if (and (policy-assume-right-type)
              (c-number-type-p expected-type)
              (c-number-type-p arg1-type))
         (produce-inline-loc (list arg1)
-                            (list (lisp-type->rep-type arg1-type))
-                            (list (lisp-type->rep-type expected-type))
+                            (list (lisp-type->host-type arg1-type))
+                            (list (lisp-type->host-type expected-type))
                             non-consing nil t)
         (produce-inline-loc (list arg1) '(:object :object) '(:object)
                             consing nil t))))
 
 (define-c-inliner * (return-type &rest arguments &aux arg1 arg2)
   (when (null arguments)
-    (return (make-vv :rep-type :fixnum :value 1)))
+    (return (make-vv :host-type :fixnum :value 1)))
   (setf arg1 (pop arguments))
   (when (null arguments)
-    (return (inlined-arg-loc arg1)))
+    (return arg1))
   (setf arg2 (pop arguments))
   (when (null arguments)
     (return (inline-binop return-type arg1 arg2 "ecl_times(#0,#1)" #\*)))
@@ -106,10 +106,10 @@
 
 (define-c-inliner + (return-type &rest arguments &aux arg1 arg2)
   (when (null arguments)
-    (return (make-vv :rep-type :fixnum :value 0)))
+    (return (make-vv :host-type :fixnum :value 0)))
   (setf arg1 (pop arguments))
   (when (null arguments)
-    (return (inlined-arg-loc arg1)))
+    (return arg1))
   (setf arg2 (pop arguments))
   (when (null arguments)
     (return (inline-binop return-type arg1 arg2 "ecl_plus(#0,#1)" #\+)))
@@ -133,11 +133,11 @@
   (cmperr "The C inliner for (FUNCTION /) expected at most 2 arguments."))
 
 (define-c-inliner float (return-type arg &optional float)
-  (let ((arg-c-type (lisp-type->rep-type (inlined-arg-type arg)))
-        (flt-c-type (and float (lisp-type->rep-type (inlined-arg-type float)))))
+  (let ((arg-c-type (lisp-type->host-type (loc-lisp-type arg)))
+        (flt-c-type (and float (lisp-type->host-type (loc-lisp-type float)))))
     (if (member arg-c-type '(:float :double :long-double))
         (when (or (null float) (eq arg-c-type flt-c-type))
-          (inlined-arg-loc arg))
+          arg)
         (when (member flt-c-type '(:float :double :long-double))
           (produce-inline-loc (list arg)
                               (list :object)

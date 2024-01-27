@@ -48,8 +48,8 @@
   ;; overflow if we use a smaller integer type (overflows in long long
   ;; computations are taken care of by the compiler before we get to
   ;; this point).
-  #+msvc (princ (cond ((typep value (rep-type->lisp-type :long-long)) "LL")
-                      ((typep value (rep-type->lisp-type :unsigned-long-long)) "ULL")
+  #+msvc (princ (cond ((typep value (host-type->lisp-type :long-long)) "LL")
+                      ((typep value (host-type->lisp-type :unsigned-long-long)) "ULL")
                       (t (baboon :format-control
                                  "wt-fixnum: The number ~A doesn't fit any integer type."
                                  value)))
@@ -197,36 +197,36 @@
 ;;; COERCE-LOC
 ;;;
 
-(defun wt-to-object-conversion (loc-rep-type loc)
+(defun wt-to-object-conversion (loc-host-type loc)
   ;; FIXME we can do better for constant locations.
-  (let* ((record (rep-type-record loc-rep-type))
-         (coercer (and record (rep-type-to-lisp record))))
+  (let* ((record (host-type-record loc-host-type))
+         (coercer (and record (host-type-to-lisp record))))
     (unless coercer
-      (cmperr "Cannot coerce C variable of type ~S to lisp object" loc-rep-type))
+      (cmperr "Cannot coerce C variable of type ~S to lisp object" loc-host-type))
     (wt coercer "(" loc ")")))
 
-(defun wt-from-object-conversion (dest-type loc-type rep-type loc)
-  (let* ((record (rep-type-record rep-type))
-         (coercer (and record (rep-type-from-lisp record))))
+(defun wt-from-object-conversion (dest-type loc-type host-type loc)
+  (let* ((record (host-type-record host-type))
+         (coercer (and record (host-type-from-lisp record))))
     (unless coercer
-      (cmperr "Cannot coerce lisp object to C type ~A" rep-type))
+      (cmperr "Cannot coerce lisp object to C type ~A" host-type))
     (wt (if (or (policy-assume-no-errors)
                 (subtypep loc-type dest-type))
-            (rep-type-from-lisp-unsafe record)
+            (host-type-from-lisp-unsafe record)
             coercer)
         "(" loc ")")))
 
-(defun wt-coerce-loc (dest-rep-type loc)
-  (setq dest-rep-type (lisp-type->rep-type dest-rep-type))
-                                        ;(print dest-rep-type)
+(defun wt-coerce-loc (dest-host-type loc)
+  (setq dest-host-type (lisp-type->host-type dest-host-type))
+                                        ;(print dest-host-type)
                                         ;(print loc)
-  (let* ((dest-type (rep-type->lisp-type dest-rep-type))
-         (loc-type (loc-type loc))
-         (loc-rep-type (loc-representation-type loc)))
+  (let* ((dest-type (host-type->lisp-type dest-host-type))
+         (loc-type (loc-lisp-type loc))
+         (loc-host-type (loc-host-type loc)))
     (labels ((coercion-error (&optional (write-zero t))
                (cmpwarn "Unable to coerce lisp object from type (~S,~S)~%~
                         to C/C++ type (~S,~S)"
-                        loc-type loc-rep-type dest-type dest-rep-type)
+                        loc-type loc-host-type dest-type dest-host-type)
                (when write-zero
                  ;; It is possible to reach this point due to a bug
                  ;; but also due to a failure of the dead code
@@ -237,60 +237,60 @@
              (ensure-valid-object-type (a-lisp-type)
                (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
                  (coercion-error nil))))
-      (when (eq dest-rep-type loc-rep-type)
+      (when (eq dest-host-type loc-host-type)
         (wt loc)
         (return-from wt-coerce-loc))
-      (case dest-rep-type
+      (case dest-host-type
         ((:char :unsigned-char :wchar)
-         (case loc-rep-type
+         (case loc-host-type
            ((:char :unsigned-char :wchar)
-            (wt "(" (rep-type->c-name dest-rep-type) ")(" loc ")"))
+            (wt "(" (host-type->c-name dest-host-type) ")(" loc ")"))
            ((:object)
             (ensure-valid-object-type dest-type)
-            (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
+            (wt-from-object-conversion dest-type loc-type dest-host-type loc))
            (otherwise
             (coercion-error))))
         ((:float :double :long-double)
          (cond
-           ((c-number-rep-type-p loc-rep-type)
-            (wt "(" (rep-type->c-name dest-rep-type) ")(" loc ")"))
-           ((eq loc-rep-type :object)
+           ((c-number-host-type-p loc-host-type)
+            (wt "(" (host-type->c-name dest-host-type) ")(" loc ")"))
+           ((eq loc-host-type :object)
             ;; We relax the check a bit, because it is valid in C to coerce
             ;; between floats of different types.
             (ensure-valid-object-type 'FLOAT)
-            (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
+            (wt-from-object-conversion dest-type loc-type dest-host-type loc))
            (t
             (coercion-error))))
         ((:csfloat :cdfloat :clfloat)
          (cond
-           ((c-number-rep-type-p loc-rep-type)
-            (wt "(" (rep-type->c-name dest-rep-type) ")(" loc ")"))
-           ((eq loc-rep-type :object)
+           ((c-number-host-type-p loc-host-type)
+            (wt "(" (host-type->c-name dest-host-type) ")(" loc ")"))
+           ((eq loc-host-type :object)
             ;; We relax the check a bit, because it is valid in C to coerce
             ;; between COMPLEX floats of different types.
             (ensure-valid-object-type 'SI:COMPLEX-FLOAT)
-            (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
+            (wt-from-object-conversion dest-type loc-type dest-host-type loc))
            (t
             (coercion-error))))
         ((:bool)
          (cond
-           ((c-number-rep-type-p loc-rep-type)
+           ((c-number-host-type-p loc-host-type)
             (wt "1"))
-           ((eq loc-rep-type :object)
+           ((eq loc-host-type :object)
             (wt "(" loc ")!=ECL_NIL"))
            (t
             (coercion-error))))
         ((:object)
-         (case loc-rep-type
+         (case loc-host-type
            ((:int-sse-pack :float-sse-pack :double-sse-pack)
             (when (>= (cmp-env-optimization 'speed) 1)
               (cmpwarn-style "Boxing a value of type ~S - performance degraded."
-                             loc-rep-type))))
-         (wt-to-object-conversion loc-rep-type loc))
+                             loc-host-type))))
+         (wt-to-object-conversion loc-host-type loc))
         ((:pointer-void)
-         (case loc-rep-type
+         (case loc-host-type
            ((:object)
-            (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
+            (wt-from-object-conversion dest-type loc-type dest-host-type loc))
            ((:cstring)
             (wt "(char *)(" loc ")"))
            (otherwise
@@ -298,7 +298,7 @@
         ((:cstring)
          (coercion-error))
         ((:char*)
-         (case loc-rep-type
+         (case loc-host-type
            ((:object)
             (wt "ecl_base_string_pointer_safe(" loc ")"))
            ((:pointer-void)
@@ -306,19 +306,19 @@
            (otherwise
             (coercion-error))))
         ((:int-sse-pack :float-sse-pack :double-sse-pack)
-         (case loc-rep-type
+         (case loc-host-type
            ((:object)
-            (wt-from-object-conversion 'ext:sse-pack loc-type dest-rep-type loc))
+            (wt-from-object-conversion 'ext:sse-pack loc-type dest-host-type loc))
            ;; Implicitly cast between SSE subtypes
            ((:int-sse-pack :float-sse-pack :double-sse-pack)
-            (wt (ecase dest-rep-type
-                  (:int-sse-pack (ecase loc-rep-type
+            (wt (ecase dest-host-type
+                  (:int-sse-pack (ecase loc-host-type
                                    (:float-sse-pack "_mm_castps_si128")
                                    (:double-sse-pack "_mm_castpd_si128")))
-                  (:float-sse-pack (ecase loc-rep-type
+                  (:float-sse-pack (ecase loc-host-type
                                      (:int-sse-pack "_mm_castsi128_ps")
                                      (:double-sse-pack "_mm_castpd_ps")))
-                  (:double-sse-pack (ecase loc-rep-type
+                  (:double-sse-pack (ecase loc-host-type
                                       (:int-sse-pack "_mm_castsi128_pd")
                                       (:float-sse-pack "_mm_castps_pd"))))
                 "(" loc ")"))
@@ -327,13 +327,13 @@
         (t
          ;; At this point we only have coercions to integers
          (cond
-           ((not (c-integer-rep-type-p dest-rep-type))
+           ((not (c-integer-host-type-p dest-host-type))
             (coercion-error))
-           ((c-number-rep-type-p loc-rep-type)
-            (wt "(" (rep-type->c-name dest-rep-type) ")(" loc ")"))
-           ((eq :object loc-rep-type)
+           ((c-number-host-type-p loc-host-type)
+            (wt "(" (host-type->c-name dest-host-type) ")(" loc ")"))
+           ((eq :object loc-host-type)
             (ensure-valid-object-type dest-type)
-            (wt-from-object-conversion dest-type loc-type dest-rep-type loc))
+            (wt-from-object-conversion dest-type loc-type dest-host-type loc))
            (t
             (coercion-error))))))))
 
@@ -342,8 +342,8 @@
 ;;; INLINE-LOC
 ;;;
 
-(defun wt-c-inline-loc (output-rep-type c-expression coerced-arguments side-effects output-vars)
-  (declare (ignore output-rep-type side-effects))
+(defun wt-c-inline-loc (output-host-type c-expression coerced-arguments side-effects output-vars)
+  (declare (ignore output-host-type side-effects))
   (with-input-from-string (s c-expression)
     (when (and output-vars (not (eq output-vars 'VALUES)))
       (wt-nl))
@@ -383,6 +383,29 @@
 ;;; SET-LOC
 ;;;
 
+;;; Setting the location requires some cooperation between the code that returns
+;;; the location and the code that assigns it. By default we treat all RVALs as
+;;; having a single value (that's how wt-loc dispatches all known locations).
+;;;
+;;; This "default" changes when the LVAL expects multiple values. In that case
+;;; the SET-LOC method checks whether the RVAL may return multiple values:
+;;;
+;;; - when it does, then we use these values and do nothing
+;;; - when unknown, then we update values[0] and leave nvalues as is
+;;; - otherwise we update values[0] and reset nvalues = 1
+;;;
+;;; The "unknown" requires some explanation. The predicate (USES-VALUES loc)
+;;; returns true for locations that possibly can return multiple values. The
+;;; most representative example are function calls - the number of returned
+;;; values may even change at runtime, because the function may be recompiled.
+;;;
+;;; The contract between the caller and the callee is that the callee will
+;;; ensure upon exit, that nvalues contains the correct value, and that the
+;;; returned value is the primary value. When the callee returns only a single
+;;; value then it does not update VALUES vector to avoid global memory writes.
+;;; This is why LVALs that accept multiple values must assign VALUES[0] when the
+;;; (USES-VALUES RVAL) returns T. -- jd 2023-12-14
+
 (defun set-unknown-loc (destination loc)
   (unknown-location 'set-loc destination))
 
@@ -402,40 +425,39 @@
            (apply fd loc (rest destination))
            (progn
              (wt-nl)
-             (wt-loc destination) (wt " = ")
-             (wt-coerce-loc (loc-representation-type destination) loc)
-             (wt ";"))))))
-
-(defun set-the-loc (loc type orig-loc)
-  (declare (ignore type))
-  (set-loc orig-loc loc))
-                 
-(defun set-valuez-loc (loc)
-  (cond ((eq loc 'VALUEZ))
-        ((uses-values loc)
-         (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc) (wt ";"))
-        (t
-         (wt-nl "cl_env_copy->values[0] = ") (wt-coerce-loc :object loc) (wt ";")
-         (wt-nl "cl_env_copy->nvalues = 1;"))))
-
-(defun set-value0-loc (loc)
-  (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
-
-(defun set-leave-loc (loc)
-  (cond ((or (eq loc 'VALUEZ) (uses-values loc))
-         (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";"))
-        ((eq loc 'VALUE0)
-         (wt-nl "cl_env_copy->nvalues = 1;"))
-        ((eq loc 'LEAVE))
-        (t
-         (wt-nl "value0 = ") (wt-coerce-loc :object loc) (wt ";")
-         (wt-nl "cl_env_copy->nvalues = 1;"))))
+             (wt-loc destination)
+             (wt " = " (coerce-loc (loc-host-type destination) loc) ";"))))))
 
 (defun set-trash-loc (loc &rest args)
   (declare (ignore args))
   (when (loc-with-side-effects-p loc)
     (wt-nl loc ";")
     t))
+
+(defun set-value0-loc (loc)
+  (wt-nl "value0 = " (coerce-loc :object loc) ";"))
+
+(defun set-the-loc (loc type orig-loc)
+  (declare (ignore type))
+  (set-loc orig-loc loc))
+
+(defun set-leave-loc (loc)
+  (cond ((or (eq loc 'VALUEZ) (uses-values loc))
+         (wt-nl "value0 = " (coerce-loc :object loc) ";"))
+        ((eq loc 'VALUE0)
+         (wt-nl "cl_env_copy->nvalues = 1;"))
+        ((eq loc 'LEAVE))
+        (t
+         (wt-nl "value0 = " (coerce-loc :object loc) ";")
+         (wt-nl "cl_env_copy->nvalues = 1;"))))
+
+(defun set-valuez-loc (loc)
+  (cond ((eq loc 'VALUEZ))
+        ((uses-values loc)
+         (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";"))
+        (t
+         (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";")
+         (wt-nl "cl_env_copy->nvalues = 1;"))))
 
 ;;;
 ;;; Foreign data

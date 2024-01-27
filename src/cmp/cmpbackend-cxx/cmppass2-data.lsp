@@ -289,7 +289,7 @@
     ((or fixnum character float #|#+complex-float (complex float)|#)
      (make-vv :value value
               :location nil
-              :rep-type (lisp-type->rep-type (type-of value))))
+              :host-type (lisp-type->host-type (type-of value))))
     #+sse2
     (ext:sse-pack
      (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
@@ -302,7 +302,7 @@
          (make-vv :value value
                   :location (format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
                                     wrapper (coerce bytes 'list))
-                  :rep-type rtype))))
+                  :host-type rtype))))
     (otherwise
      nil)))
 
@@ -315,7 +315,7 @@
 (defun update-vv (target source)
   (assert (eql (vv-value target) (vv-value source)))
   (setf (vv-location target) (vv-location source)
-        (vv-rep-type target) (vv-rep-type source)))
+        (vv-host-type target) (vv-host-type source)))
 
 (defun insert-vv (vv)
   (let* ((arr (if (vv-permanent-p vv)
@@ -355,7 +355,7 @@
 ;;; module is loaded. Then the code refers to such objects as VV[13].
 ;;;
 ;;; TODO we could further optimize immediate values by duplicating some entries
-;;; depending on the expected rep-type, to avoid unnecessary coercions.
+;;; depending on the expected host-type, to avoid unnecessary coercions.
 (defun optimize-cxx-data (objects)
   (flet ((optimize-vv (object)
            (let ((value (vv-value object)))
@@ -409,9 +409,7 @@
         (wt-vv-index index (vv-permanent-p vv-loc)))))
 
 (defun set-vv-index (loc index permanent-p)
-  (wt-nl) (wt-vv-index index permanent-p) (wt "= ")
-  (wt-coerce-loc :object loc)
-  (wt ";"))
+  (wt-nl) (wt-vv-index index permanent-p) (wt "=" (coerce-loc :object loc) ";"))
 
 (defun set-vv (loc vv-loc)
   (setf (vv-used-p vv-loc) t)

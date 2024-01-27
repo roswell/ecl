@@ -17,7 +17,7 @@
 ;;;
 ;;; DATABASE OF INLINE EXPANSIONS
 ;;;
-;;;     (DEF-INLINE function-name kind ([arg-type]*) return-rep-type
+;;;     (DEF-INLINE function-name kind ([arg-type]*) return-host-type
 ;;;             expansion-string)
 ;;;
 ;;; Here, ARG-TYPE is the list of argument types belonging to the lisp family,
@@ -52,10 +52,10 @@
 (defun (setf inline-information) (value name safety)
   (setf (gethash (list name safety) *inline-information*) value))
 
-(defun %def-inline (name safety arg-types return-rep-type expansion
+(defun %def-inline (name safety arg-types return-host-type expansion
                     &key (one-liner t) (exact-return-type nil)
                       (multiple-values t)
-                    &aux arg-rep-types)
+                    &aux arg-host-types)
   (setf safety
         (case safety
           (:unsafe :inline-unsafe)
@@ -64,26 +64,26 @@
   ;; Ensure we can inline this form. We only inline when the features are
   ;; there (checked above) and when the C types are part of this machine
   ;; (checked here).
-  (loop for type in (list* return-rep-type arg-types)
+  (loop for type in (list* return-host-type arg-types)
         unless (or (eq type 'fixnum-float)
                    (and (consp type) (eq (car type) 'values))
                    (lisp-type-p type)
                    (machine-c-type-p type))
           do (warn "Dropping inline form for ~A because of missing type ~A" name type)
              (return-from %def-inline))
-  (setf arg-rep-types
-        (mapcar #'(lambda (x) (if (eq x '*) x (lisp-type->rep-type x)))
+  (setf arg-host-types
+        (mapcar #'(lambda (x) (if (eq x '*) x (lisp-type->host-type x)))
                 arg-types))
-  (when (eq return-rep-type t)
-    (setf return-rep-type :object))
-  (let* ((return-type (if (and (consp return-rep-type)
-                               (eq (first return-rep-type) 'values))
+  (when (eq return-host-type t)
+    (setf return-host-type :object))
+  (let* ((return-type (if (and (consp return-host-type)
+                               (eq (first return-host-type) 'values))
                           t
-                          (rep-type->lisp-type return-rep-type)))
+                          (host-type->lisp-type return-host-type)))
          (inline-info
            (make-inline-info :name name
-                             :arg-rep-types arg-rep-types
-                             :return-rep-type return-rep-type
+                             :arg-host-types arg-host-types
+                             :return-host-type return-host-type
                              :return-type return-type
                              :arg-types arg-types
                              :exact-return-type exact-return-type

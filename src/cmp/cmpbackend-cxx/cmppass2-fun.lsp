@@ -143,14 +143,14 @@
   (labels ((wt-decl (var)
              (let ((lcl (next-lcl (var-name var))))
                (wt-nl)
-               (wt (rep-type->c-name (var-rep-type var)) " " *volatile* lcl ";")
+               (wt (host-type->c-name (var-host-type var)) " " *volatile* lcl ";")
                lcl))
            (do-decl (var)
-             (when (local var) ; no LCL needed for SPECIAL or LEX
+             (when (local-var-p var) ; no LCL needed for SPECIAL or LEX
                (setf (var-loc var) (wt-decl var)))))
     ;; Declare unboxed required arguments
     (loop for var in requireds
-       when (unboxed var)
+       when (unboxed-var-p var)
        do (setf (var-loc var) (wt-decl var)))
     ;; dont create rest or varargs if not used
     (when (and rest (< (var-ref rest) 1)

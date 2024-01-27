@@ -13,11 +13,11 @@
 
 (defstruct machine
   (c-types '())
-  rep-type-hash
+  host-type-hash
   sorted-types
   inline-information)
 
-(defstruct (rep-type (:constructor %make-rep-type))
+(defstruct (host-type (:constructor %make-host-type))
   (index 0)                             ; Precedence order in the type list
   (name t)
   (lisp-type t)
@@ -32,63 +32,63 @@
 (defun lisp-type-p (type)
   (subtypep type 'T))
 
-(defun rep-type-record-unsafe (rep-type)
-  (gethash rep-type (machine-rep-type-hash *machine*)))
+(defun host-type-record-unsafe (host-type)
+  (gethash host-type (machine-host-type-hash *machine*)))
 
-(defun rep-type-record (rep-type)
-  (ext:if-let ((record (gethash rep-type (machine-rep-type-hash *machine*))))
+(defun host-type-record (host-type)
+  (ext:if-let ((record (gethash host-type (machine-host-type-hash *machine*))))
     record
-    (cmperr "Not a valid C type name ~A" rep-type)))
+    (cmperr "Not a valid C type name ~A" host-type)))
 
-(defun rep-type->lisp-type (name)
-  (let ((output (rep-type-record-unsafe name)))
+(defun host-type->lisp-type (name)
+  (let ((output (host-type-record-unsafe name)))
     (cond (output
-           (rep-type-lisp-type output))
+           (host-type-lisp-type output))
           ((lisp-type-p name) name)
           (t (error "Unknown representation type ~S" name)))))
 
-(defun lisp-type->rep-type (type)
+(defun lisp-type->host-type (type)
   (cond
     ;; We expect type = NIL when we have no information. Should be fixed. FIXME!
     ((null type)
      :object)
-    ((let ((r (rep-type-record-unsafe type)))
-       (and r (rep-type-name r))))
+    ((let ((r (host-type-record-unsafe type)))
+       (and r (host-type-name r))))
     (t
      ;; Find the most specific type that fits
      (dolist (record (machine-sorted-types *machine*) :object)
-       (when (subtypep type (rep-type-lisp-type record))
-         (return-from lisp-type->rep-type (rep-type-name record)))))))
+       (when (subtypep type (host-type-lisp-type record))
+         (return-from lisp-type->host-type (host-type-name record)))))))
 
-(defun c-number-rep-type-p (rep-type)
-  (let ((r (rep-type-record-unsafe rep-type)))
-    (and r (rep-type-numberp r))))
+(defun c-number-host-type-p (host-type)
+  (let ((r (host-type-record-unsafe host-type)))
+    (and r (host-type-numberp r))))
 
-(defun c-integer-rep-type-p (rep-type)
-  (let ((r (rep-type-record-unsafe rep-type)))
-    (and r (rep-type-integerp r))))
+(defun c-integer-host-type-p (host-type)
+  (let ((r (host-type-record-unsafe host-type)))
+    (and r (host-type-integerp r))))
 
-(defun c-integer-rep-type-bits (rep-type)
-  (let ((r (rep-type-record-unsafe rep-type)))
-    (and r (rep-type-bits r))))
+(defun c-integer-host-type-bits (host-type)
+  (let ((r (host-type-record-unsafe host-type)))
+    (and r (host-type-bits r))))
 
 (defun c-number-type-p (type)
-  (c-number-rep-type-p (lisp-type->rep-type type)))
+  (c-number-host-type-p (lisp-type->host-type type)))
 
 (defun c-integer-type-p (type)
-  (c-integer-rep-type-p (lisp-type->rep-type type)))
+  (c-integer-host-type-p (lisp-type->host-type type)))
 
 (defun c-integer-type-bits (type)
-  (c-number-rep-type-bits (lisp-type->rep-type type)))
+  (c-number-host-type-bits (lisp-type->host-type type)))
 
-(defun rep-type->c-name (type)
-  (rep-type-c-name (rep-type-record type)))
+(defun host-type->c-name (type)
+  (host-type-c-name (host-type-record type)))
 
 ;; These types can be used by ECL to unbox data They are sorted from
 ;; the most specific, to the least specific one.  All functions must
 ;; be declared in external.h (not internal.h) header file.
-(defconstant +representation-types+
-  ;; ffi-type            lisp type                c type                 convert C->Lisp                     convert Lisp->C             unbox Lisp->C (unsafe)
+(defconstant +host-types+
+  ;; host type           lisp type                c type                 convert C->Lisp                     convert Lisp->C             unbox Lisp->C (unsafe)
   '((:byte             . #1=((signed-byte 8)      "int8_t"               "ecl_make_int8_t"                   "ecl_to_int8_t"             "ecl_fixnum"))
     (:unsigned-byte    . #2=((unsigned-byte 8)    "uint8_t"              "ecl_make_uint8_t"                  "ecl_to_uint8_t"            "ecl_fixnum"))
     (:fixnum             integer                  "cl_fixnum"            "ecl_make_fixnum"                   "ecl_to_fixnum"             "ecl_fixnum")
@@ -177,7 +177,7 @@
     (:void)
     (:pointer-void)))
 
-(defun make-rep-type (all-c-types name lisp-type c-name &optional to-lisp from-lisp from-lisp-unsafe)
+(defun make-host-type (all-c-types name lisp-type c-name &optional to-lisp from-lisp from-lisp-unsafe)
   (let* ((record (assoc name all-c-types))
          (bits (cdr record)))
     (when record
@@ -187,7 +187,7 @@
             (setf lisp-type `(unsigned-byte ,bits))
             (setf bits (- bits)
                   lisp-type `(signed-byte ,bits))))
-      (%make-rep-type
+      (%make-host-type
        :name name
        :lisp-type lisp-type
        :bits bits
@@ -201,34 +201,34 @@
 (defun default-machine ()
   (let* ((all-c-types (append +this-machine-c-types+ +all-machines-c-types+))
          (table (make-hash-table :size 128 :test 'eq))
-         (sorted-rep-types
-          ;; Create the rep-type objects
+         (sorted-host-types
+          ;; Create the host-type objects
           (loop for i from 0
-             for record in +representation-types+
-             for rep-type = (apply #'make-rep-type all-c-types record)
-             when rep-type
-             do (setf (rep-type-index rep-type) i)
-             and collect (setf (gethash (rep-type-name rep-type) table) rep-type))))
+             for record in +host-types+
+             for host-type = (apply #'make-host-type all-c-types record)
+             when host-type
+             do (setf (host-type-index host-type) i)
+             and collect (setf (gethash (host-type-name host-type) table) host-type))))
     ;; hack: sse-pack -> int, but int -> int-sse-pack
     (let ((r (gethash :int-sse-pack table)))
       (when r
-        (setf (rep-type-index r) 'ext:int-sse-pack)))
+        (setf (host-type-index r) 'ext:int-sse-pack)))
     ;; On a second pass, we replace types with more general ones
-    (loop with fixnum-rep-type = (gethash ':fixnum table)
-       with fixnum-lisp-type = (rep-type-lisp-type fixnum-rep-type)
-       for (name . rest) in +representation-types+
+    (loop with fixnum-host-type = (gethash ':fixnum table)
+       with fixnum-lisp-type = (host-type-lisp-type fixnum-host-type)
+       for (name . rest) in +host-types+
        for r = (gethash name table)
-       when (and r (subtypep (rep-type-lisp-type r) fixnum-lisp-type))
-       do (setf (rep-type-from-lisp-unsafe r) "ecl_fixnum"))
+       when (and r (subtypep (host-type-lisp-type r) fixnum-lisp-type))
+       do (setf (host-type-from-lisp-unsafe r) "ecl_fixnum"))
     ;; Create machine object
     (make-machine :c-types all-c-types
-                  :rep-type-hash table
-                  :sorted-types sorted-rep-types)))
+                  :host-type-hash table
+                  :sorted-types sorted-host-types)))
 
 (defun machine-c-type-p (name)
-  (gethash name (machine-rep-type-hash *machine*)))
+  (gethash name (machine-host-type-hash *machine*)))
 
 (defun machine-fixnump (number)
-  (typep number (rep-type-lisp-type (gethash :fixnum number))))
+  (typep number (host-type-lisp-type (gethash :fixnum number))))
 
 (defvar *default-machine* (setf *machine* (default-machine)))

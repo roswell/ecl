@@ -23,21 +23,76 @@
 ;;; second pass the backend decides if the referenced object can be inlined, or
 ;;; if it needs to be put in the data segment and initialized at load-time.
 
-(defstruct vv
+(defstruct (vv (:constructor %make-vv))
   (location nil)
   (used-p nil)
   (always nil)       ; when true then vv is never optimized
   (permanent-p t)
   (value nil)
-  (rep-type :object))
+  (type nil)
+  (host-type :object))
 
-;;; When the value is the "empty location" then it was created to be filled
-;;; later and the real type of the object is not known. See DATA-EMPTY-LOC.
-(defun vv-type (loc)
-  (let ((value (vv-value loc)))
-    (if (eq value *empty-loc*)
-        t
-        (type-of value))))
+(defun make-vv (&rest args &key location used-p always permanent-p value type host-type)
+  (declare (ignore location used-p always permanent-p host-type))
+  (unless type
+    ;; When the value is the "empty location" then it was created to be filled
+    ;; later and the real type of the object is not known. See DATA-EMPTY-LOC.
+    (setf type (if (eq value *empty-loc*) t (type-of value))))
+  (apply #'%make-vv :type type args))
+
+;;; TODO investigate where raw numbers are stemming from and change them to VV
+;;; TODO tighter checks for compound locations (cons)
+;;; TODO baboon on locations that are unknown (for now we signal a warning)
+;;;
+;;; -- jd 2023-12-07
+
+(defun loc-lisp-type (loc)
+  (typecase loc
+    (var    (var-type loc))
+    (vv     (vv-type loc))
+    (number (type-of loc))
+    (atom
+     (case loc
+       (FRAME++ 'FIXNUM)
+       ((TRASH LEAVE VALUE0 VA-ARG VALUEZ CL-VA-ARG) T)
+       (otherwise
+        (cmpwarn "LOC-LISP-TYPE: unknown location ~s." loc)
+        T)))
+    (otherwise
+     (case (first loc)
+       (FFI:C-INLINE (let ((type (first (second loc))))
+                       (cond ((and (consp type) (eq (first type) 'VALUES)) T)
+                             ((lisp-type-p type) type)
+                             (t (host-type->lisp-type type)))))
+       (BIND (var-type (second loc)))
+       (LCL (or (third loc) T))
+       (THE (second loc))
+       (CALL-NORMAL (fourth loc))
+       (otherwise T)))))
+
+(defun loc-host-type (loc)
+  (typecase loc
+    (var    (var-host-type loc))
+    (vv     (vv-host-type loc))
+    (number (lisp-type->host-type (type-of loc)))
+    (atom
+     (case loc
+       (TRASH :void)
+       ((FRAME++ LEAVE VALUE0 VA-ARG VALUEZ CL-VA-ARG) :object)
+       (otherwise
+        (cmpwarn "LOC-LISP-TYPE: unknown location ~s." loc)
+        :object)))
+    (otherwise
+     (case (first loc)
+       (FFI:C-INLINE (let ((type (first (second loc))))
+                       (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
+                             ((lisp-type-p type) (lisp-type->host-type type))
+                             (t type))))
+       (BIND (var-host-type (second loc)))
+       (LCL (lisp-type->host-type (or (third loc) T)))
+       ((JUMP-TRUE JUMP-FALSE) :bool)
+       (THE (loc-host-type (third loc)))
+       (otherwise :object)))))
 
 (defun loc-movable-p (loc)
   (if (atom loc)
@@ -46,43 +101,6 @@
         ((CALL CALL-LOCAL) NIL)
         ((ffi:c-inline) (not (fifth loc))) ; side effects?
         (otherwise t))))
-
-(defun loc-type (loc)
-  (cond ((eq loc NIL) 'NULL)
-        ((var-p loc) (var-type loc))
-        ((vv-p loc) (vv-type loc))
-        ((numberp loc) (lisp-type->rep-type (type-of loc)))
-        ((atom loc) 'T)
-        (t
-         (case (first loc)
-           (FFI:C-INLINE (let ((type (first (second loc))))
-                           (cond ((and (consp type) (eq (first type) 'VALUES)) T)
-                                 ((lisp-type-p type) type)
-                                 (t (rep-type->lisp-type type)))))
-           (BIND (var-type (second loc)))
-           (LCL (or (third loc) T))
-           (THE (second loc))
-           (CALL-NORMAL (fourth loc))
-           (otherwise T)))))
-
-(defun loc-representation-type (loc)
-  (cond ((member loc '(NIL T)) :object)
-        ((var-p loc) (var-rep-type loc))
-        ((vv-p loc) (vv-rep-type loc))
-        ((numberp loc) (lisp-type->rep-type (type-of loc)))
-        ((eq loc 'TRASH) :void)
-        ((atom loc) :object)
-        (t
-         (case (first loc)
-           (FFI:C-INLINE (let ((type (first (second loc))))
-                           (cond ((and (consp type) (eq (first type) 'VALUES)) :object)
-                                 ((lisp-type-p type) (lisp-type->rep-type type))
-                                 (t type))))
-           (BIND (var-rep-type (second loc)))
-           (LCL (lisp-type->rep-type (or (third loc) T)))
-           ((JUMP-TRUE JUMP-FALSE) :bool)
-           (THE (loc-representation-type (third loc)))
-           (otherwise :object)))))
 
 (defun loc-with-side-effects-p (loc &aux name)
   (when (atom loc)
@@ -119,14 +137,14 @@
 ;;;     ( VALUE i )                     VALUES(i)
 ;;;     ( VV vv-index )
 ;;;     ( VV-temp vv-index )
-;;;     ( LCL lcl [representation-type]) local variable, type unboxed
+;;;     ( LCL lcl [host-type]) local variable, type unboxed
 ;;;     ( TEMP temp )                   local variable, type object
 ;;;     ( FRAME ndx )                   variable in local frame stack
 ;;;     ( CALL-NORMAL fun locs 1st-type ) similar as CALL, but number of arguments is fixed
 ;;;     ( CALL-INDIRECT fun narg args)  similar as CALL, but unknown function
 ;;;     ( CALL-STACK fun)  similar as CALL-INDIRECT, but args are on the stack
 ;;;     ( FFI:C-INLINE output-type fun/string locs side-effects output-var )
-;;;     ( COERCE-LOC representation-type location)
+;;;     ( COERCE-LOC host-type location)
 ;;;     ( FDEFINITION vv-index )
 ;;;     ( MAKE-CCLOSURE cfun )
 ;;;     ( STACK-POINTER index ) retrieve a value from the stack
@@ -136,10 +154,11 @@
 ;;;     VA-ARG
 ;;;     CL-VA-ARG
 
-(defun precise-loc-type (loc new-type)
-  (if (subtypep (loc-type loc) new-type)
-      loc
-      `(the ,new-type ,loc)))
+(defun precise-loc-lisp-type (loc new-type)
+  (let ((loc-type (loc-lisp-type loc)))
+    (if (subtypep loc-type new-type)
+        loc
+        `(the ,(type-and loc-type new-type) ,loc))))
 
 (defun loc-in-c1form-movable-p (loc)
   "A location that is in a C1FORM and can be moved"
@@ -174,9 +193,13 @@
          (values t loc))
         ((vv-p loc)
          (let ((value (vv-value loc)))
-           (if (eq value *empty-loc*)
-               (values nil nil)
-               (values t value))))
+           (cond
+             ((eq value *empty-loc*)
+              (values nil nil))
+             ((eq value *inline-loc*)
+              (loc-immediate-value-p (vv-location loc)))
+             (t
+              (values t value)))))
         ((atom loc)
          (values nil nil))
         ((eq (first loc) 'THE)

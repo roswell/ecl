@@ -17,8 +17,8 @@
 
 (defstruct (inline-info)
   name                  ;;; Function name
-  arg-rep-types         ;;; List of representation types for the arguments
-  return-rep-type       ;;; Representation type for the output
+  arg-host-types        ;;; List of representation types for the arguments
+  return-host-type      ;;; Representation type for the output
   arg-types             ;;; List of lisp types for the arguments
   return-type           ;;; Lisp type for the output
   exact-return-type     ;;; Only use this expansion when the output is
@@ -38,7 +38,7 @@
     (default-c-inliner fname return-type inlined-args)))
 
 (defun default-c-inliner (fname return-type inlined-args)
-  (let* ((arg-types (mapcar #'inlined-arg-type inlined-args))
+  (let* ((arg-types (mapcar #'loc-lisp-type inlined-args))
          (ii (inline-function fname arg-types return-type)))
     (and ii (apply-inline-info ii inlined-args))))
 
@@ -47,33 +47,33 @@
 ;;;   locs are typed locs as produced by inline-args
 ;;;   returns NIL if inline expansion of the function is not possible
 ;;;
-(defun inline-function (fname arg-types return-type &optional (return-rep-type 'any))
+(defun inline-function (fname arg-types return-type &optional (return-host-type 'any))
   ;; Those functions that use INLINE-FUNCTION must rebind the variable
   ;; *INLINE-BLOCKS*.
   (and (inline-possible fname)
        (not (gethash fname *c2-dispatch-table*))
-       (let* (;; (dest-rep-type (loc-representation-type *destination*))
-              (ii (get-inline-info fname arg-types return-type return-rep-type)))
+       (let* (;; (dest-host-type (loc-host-type *destination*))
+              (ii (get-inline-info fname arg-types return-type return-host-type)))
          ii)))
 
 (defun apply-inline-info (ii inlined-locs)
   (let* ((arg-types (inline-info-arg-types ii))
-         (out-rep-type (inline-info-return-rep-type ii))
+         (out-host-type (inline-info-return-host-type ii))
          ;; (out-type (inline-info-return-type ii))
          (side-effects-p (function-may-have-side-effects (inline-info-name ii)))
          (fun (inline-info-expansion ii))
          (one-liner (inline-info-one-liner ii)))
-    (produce-inline-loc inlined-locs arg-types (list out-rep-type)
+    (produce-inline-loc inlined-locs arg-types (list out-host-type)
                         fun side-effects-p one-liner)))
 
-(defun choose-inline-info (ia ib return-type return-rep-type)
+(defun choose-inline-info (ia ib return-type return-host-type)
   (declare (ignore return-type))
   (cond
     ;; Only accept inliners that have the right rep type
-    ((not (or (eq return-rep-type 'any)
-              (eq return-rep-type :void)
-              (let ((info-type (inline-info-return-rep-type ib)))
-                (or (eq return-rep-type info-type)
+    ((not (or (eq return-host-type 'any)
+              (eq return-host-type :void)
+              (let ((info-type (inline-info-return-host-type ib)))
+                (or (eq return-host-type info-type)
                     ;; :bool can be coerced to any other location type
                     (eq info-type :bool)))))
      ia)
@@ -89,16 +89,16 @@
     (t
      ia)))
 
-(defun get-inline-info (fname types return-type return-rep-type)
+(defun get-inline-info (fname types return-type return-host-type)
   (declare (si::c-local))
   (let ((output nil))
     (unless (safe-compile)
       (dolist (x (inline-information fname ':INLINE-UNSAFE))
         (ext:when-let ((other (inline-type-matches x types return-type)))
-          (setf output (choose-inline-info output other return-type return-rep-type)))))
+          (setf output (choose-inline-info output other return-type return-host-type)))))
     (dolist (x (inline-information fname ':INLINE-ALWAYS))
       (ext:when-let ((other (inline-type-matches x types return-type)))
-        (setf output (choose-inline-info output other return-type return-rep-type))))
+        (setf output (choose-inline-info output other return-type return-host-type))))
     output))
 
 (defun to-fixnum-float-type (type)
@@ -150,7 +150,7 @@
     ;; Now there is an optional check of the return type. This check is
     ;; only used when enforced by the inliner.
     ;;
-    (when (or (eq (inline-info-return-rep-type inline-info) :bool)
+    (when (or (eq (inline-info-return-host-type inline-info) :bool)
               (null (inline-info-exact-return-type inline-info))
               (and (policy-assume-right-type)
                    (let ((inline-return-type (inline-info-return-type inline-info)))
@@ -172,7 +172,7 @@
               (nreverse rts))
         inline-info))))
 
-(defun produce-inline-loc (inlined-arguments arg-types output-rep-type
+(defun produce-inline-loc (inlined-arguments arg-types output-host-type
                            c-expression side-effects one-liner)
   (let* (args-to-be-saved
          coerced-arguments)
@@ -193,15 +193,15 @@
                 args-to-be-saved))))
 
     (setf coerced-arguments (coerce-locs inlined-arguments arg-types args-to-be-saved))
-    ;;(setf output-rep-type (lisp-type->rep-type output-rep-type))
+    ;;(setf output-host-type (lisp-type->host-type output-host-type))
 
     ;; If the form does not output any data, and there are no side
     ;; effects, try to omit it.
-    (when (null output-rep-type)
+    (when (null output-host-type)
       (if side-effects
           (progn
             (wt-nl)
-            (wt-c-inline-loc output-rep-type c-expression coerced-arguments t nil)
+            (wt-c-inline-loc output-host-type c-expression coerced-arguments t nil)
             (when one-liner (wt ";")))
           (cmpnote "Ignoring form ~S" c-expression))
       (wt-nl "value0 = ECL_NIL;")
@@ -212,25 +212,25 @@
     ;; place where the value is used.
     (when one-liner
       (return-from produce-inline-loc
-        `(ffi:c-inline ,output-rep-type ,c-expression ,coerced-arguments ,side-effects
-                       ,(if (equalp output-rep-type '((VALUES &REST T)))
+        `(ffi:c-inline ,output-host-type ,c-expression ,coerced-arguments ,side-effects
+                       ,(if (equalp output-host-type '((VALUES &REST T)))
                             'VALUES NIL))))
 
     ;; If the output is a in the VALUES vector, just write down the form and
     ;; output the location of the data.
-    (when (equalp output-rep-type '((VALUES &REST T)))
-      (wt-c-inline-loc output-rep-type c-expression coerced-arguments side-effects
+    (when (equalp output-host-type '((VALUES &REST T)))
+      (wt-c-inline-loc output-host-type c-expression coerced-arguments side-effects
                        'VALUES)
       (return-from produce-inline-loc 'VALUEZ))
 
     ;; Otherwise we have to set up variables for holding the output.
     (flet ((make-output-var (type)
-             (let ((var (make-lcl-var :rep-type type)))
-               (wt-nl (rep-type->c-name type) " " var ";")
+             (let ((var (make-lcl-var :host-type type)))
+               (wt-nl (host-type->c-name type) " " var ";")
                var)))
       (open-inline-block)
-      (let ((output-vars (mapcar #'make-output-var output-rep-type)))
-        (wt-c-inline-loc output-rep-type c-expression coerced-arguments side-effects output-vars)
+      (let ((output-vars (mapcar #'make-output-var output-host-type)))
+        (wt-c-inline-loc output-host-type c-expression coerced-arguments side-effects output-vars)
         (cond ((= (length output-vars) 1)
                (first output-vars))
               (t
@@ -243,15 +243,15 @@
 ;;; Whoever calls this function must wrap the body in WITH-INLINE-BLOCKS.
 (defun negate-argument (argument dest-loc)
   (let* ((inlined-arg (emit-inline-form argument nil))
-         (rep-type (inlined-arg-rep-type inlined-arg)))
+         (host-type (loc-host-type inlined-arg)))
     (apply #'produce-inline-loc
            (list inlined-arg)
-           (if (eq (loc-representation-type dest-loc) :bool)
-               (case rep-type
+           (if (eq (loc-host-type dest-loc) :bool)
+               (case host-type
                  (:bool '((:bool) (:bool) "(#0)==ECL_NIL" nil t))
                  (:object '((:object) (:bool) "(#0)!=ECL_NIL" nil t))
                  (otherwise (return-from negate-argument nil)))
-               (case rep-type
+               (case host-type
                  (:bool '((:bool) (:object) "(#0)?ECL_NIL:ECL_T" nil t))
                  (:object '((:object) (:object) "Null(#0)?ECL_T:ECL_NIL" nil t))
                  (otherwise (return-from negate-argument *vv-nil*)))))))
