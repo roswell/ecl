@@ -169,14 +169,14 @@ After that activate the toolchain and configure build flags:
   emmake make && emmake make install
 
   # some files need to be copied manually
-  cp build/bin/ecl.js build/bin/ecl.wasm ecl-emscripten/bin
+  cp build/bin/ecl.js build/bin/ecl.wasm ecl-emscripten/
 #+end_src
 
 4. ECL may be hosted on a web page. Assuming that you have quicklisp installed:
 
 #+begin_src shell-script
   export WEBSERVER=`pwd`/src/util/webserver.lisp
-  pushd ecl-emscripten/bin
+  pushd ecl-emscripten/
   lisp --load $WEBSERVER
   # After the server is loaded run:
   # firefox localhost:8888/ecl.html
@@ -193,5 +193,5 @@ ECL, so when you build a program that is linked against libecl.so, then it is
 imoprtant to specify a different size. For example:
 
 #+begin_src shell-script
-  emcc program.c -sSTACK_SIZE=1048576 lib/libecl.so -I./include -o program.o
+  emcc program.c -sSTACK_SIZE=1048576 libecl.so -I./ -o program.o
 #+end_src
