@@ -77,6 +77,8 @@ INSTALL_TARGET = @INSTALL_TARGET@
 
 install: build/Makefile
 	cd build; $(MAKE) $(INSTALL_TARGET)
+flatinstall: build/Makefile
+	cd build; $(MAKE) flatinstall
 uninstall:
 	cd build; $(MAKE) uninstall
 
