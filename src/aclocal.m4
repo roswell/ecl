@@ -537,6 +537,7 @@ case "${host}" in
                 SHARED_LDFLAGS="-shared -sSIDE_MODULE ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared -sSIDE_MODULE ${LDFLAGS}"
                 PROGRAM_LDFLAGS="-sMAIN_MODULE -sERROR_ON_UNDEFINED_SYMBOLS=0 ${LDFLAGS}"
+                INSTALL_TARGET='flatinstall'
                 ;;
 esac
 
