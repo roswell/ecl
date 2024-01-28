@@ -752,10 +752,10 @@ ecl_homedir_pathname(cl_object user)
 #ifdef HAVE_PWD_H
     pwent = getpwnam(p);
     if (pwent == NULL)
-      FEerror("Unknown user ~S.", 1, p);
+      FEerror("Unknown user ~S.", 1, user);
     namestring = ecl_make_simple_filename(pwent->pw_dir,-1);
 #endif
-    FEerror("Unknown user ~S.", 1, p);
+    FEerror("Unknown user ~S.", 1, user);
   } else if ((h = ecl_getenv(ecl_fstr("HOME")))) {
     namestring = ecl_make_simple_filename(h,-1);
 #if defined(ECL_MS_WINDOWS_HOST)
