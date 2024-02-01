@@ -202,8 +202,9 @@ the data producer is ``C world'' and the consumer is ``Lisp world''.
 
 This is different from @code{si:allocate-foreign-object} where the
 data producer is ``Lisp world'' and the consumer is ``C world''. In
-this case the wrapper is not collected unless explicitly freed, and in
-that case the allocate foreign data is also released.
+that case the wrapper is not collected unless explicitly released with
+@code{si:free-foreign-object} in which case the allocated foreign data
+is also released.
 @end deftypefun
 
 @cppdef ecl_base_string_pointer_safe
