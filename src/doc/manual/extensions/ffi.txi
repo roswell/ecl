@@ -196,9 +196,14 @@ This function returns a C pointer for the given Lisp foreign object. Lisp
 foreign objects are constructed with functions @code{ecl_make_foreign_data}
 and @code{ecl_allocate_foreign_data}.
 
-This data is a subject of the garbage collection (unlike lisp functions like
-@code{si:allocate-foreign-object}). This is because the data producer here is
-the "C world" and the data consumer is the "Lisp world".
+The wrapper created with @code{ecl_make_foreign_data} is a subject of
+garbage collection, but the pointer itself is not ``freed'', because
+the data producer is ``C world'' and the consumer is ``Lisp world''.
+
+This is different from @code{si:allocate-foreign-object} where the
+data producer is ``Lisp world'' and the consumer is ``C world''. In
+this case the wrapper is not collected unless explicitly freed, and in
+that case the allocate foreign data is also released.
 @end deftypefun
 
 @cppdef ecl_base_string_pointer_safe
