@@ -11,10 +11,10 @@ IF NOT "%1" == "" (
 	goto LOOP
 )
 
-IF %CMDTYPE% == --compile (
+IF "%CMDTYPE%" == "--compile" (
 	cl @ECL_CFLAGS@ -I@includedir@ %CMDARGS%
 	GOTO END
-) ELSE IF %CMDTYPE% == --link (
+) ELSE IF "%CMDTYPE%" == "--link" (
 	cl %CMDARGS% @LDFLAGS@ @libdir@/ecl.lib
 	GOTO END
 )
