@@ -274,6 +274,7 @@ compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
+	    "@PROGRAM_LDFLAGS@" "" \
 	    "@CLIBS@" "$(CLIBS)" \
 	    "@STATICLIBS@" "$(STATICLIBS)" \
 	    "@LIBS@" "$(LIBS)" \
@@ -316,6 +317,7 @@ cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
+	    "@PROGRAM_LDFLAGS@" "" \
 	    "@CLIBS@" "$(CLIBS)" \
 	    "@STATICLIBS@" "$(STATICLIBS)" \
 	    "@OBJEXT@" "obj" \
