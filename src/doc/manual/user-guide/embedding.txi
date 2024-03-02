@@ -5,8 +5,15 @@
 * Embedding ECL - Embedding Reference::
 @end menu
 
-@c @node Embedding ECL - Introduction
-@c @subsection Introduction
+@subsection Minimal Example
+
+An example project is included in the ECL source distribution in the
+@code{examples/embed/} directory.
+
+This example consists of a Common Lisp library (@code{hello-lisp.lisp}) and a
+system definition (@code{hello-lisp.asd}, @xref{Compiling with ASDF}) that is
+called from a C program (@code{hello.c}). The example @code{Makefile} shows how
+to build a static library from the Lisp library and link it with the C program.
 
 @node Embedding ECL - Embedding Reference
 @subsection Embedding Reference

@@ -302,12 +302,15 @@ format. In case of @emph{Portable FASL} the bytecodes compiler is needed.
 @node Compiling with ASDF
 @subsection Compiling with ASDF
 
-First, let's disregard the simple situation in which we write Lisp
-without depending on any other Lisp libraries. A more practical example
-is to build a library that depends on other
-@uref{https://common-lisp.net/project/asdf/,asdf}, systems. ECL provides
-a useful extension for asdf called @code{asdf:make-build}, which offers
-an abstraction for building libraries directly from system definitions.
+For larger systems involving more complex file dependencies, or for systems
+that are portable across different Common Lisp implementations, it may be
+better to define systems using @uref{https://common-lisp.net/project/asdf/,asdf}.
+
+ECL provides a useful extension for asdf called @code{asdf:make-build}, which
+offers an abstraction for building libraries directly from system definitions.
+Note that this extension is only available in the ASDF that is shipped with
+ECL; it may not be available from an ASDF installed from the system or from
+Quicklisp.
 
 To download dependencies you may use
 @uref{https://www.quicklisp.org,Quicklisp} to load your system (with
@@ -328,14 +331,22 @@ the fact that other libraries may be loaded).
 @node Example code to build
 @subsubsection Example code to build
 
-We use a simple project that depends on @code{alexandria} to
-demonstrate the interface. The example consists of
-@code{example-with-dep.asd}, @code{package.lisp} and
-@code{example.lisp} (included in the
-@code{examples/asdf_with_dependence/} directory in the ECL source
-tree).  Before any kind of build you need to push the full path of
-this directory to @code{asdf:*central-registry*} (or link it in a
-location already recognized by ASDF).
+An example project is included in the ECL source distribution in the
+@code{examples/asdf_with_dependence/} directory.
+
+This project depends on the @code{alexandria} library and consists of a system
+definition (@code{example-with-dep.asd}), package definition
+(@code{package.lisp}), and the actual library code (@code{example.lisp}).
+
+Before following the steps below, you must
+@uref{https://asdf.common-lisp.dev/asdf/Configuring-ASDF-to-find-your-systems.html,configure ASDF to find your systems}.
+You can either copy or symlink the example directory in one of the standard
+ASDF locations, or push the path of the example directory to your
+@code{asdf:*central-registry*}, for example:
+
+@lisp
+(push "./" asdf:*central-registry*)
+@end lisp
 
 @node Build it as an single executable
 @subsubsection Build it as an single executable
