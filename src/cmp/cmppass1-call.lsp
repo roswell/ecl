@@ -235,7 +235,7 @@
   (make-c1form* 'FCALL
                 :sp-change t ; conservative estimate
                 :side-effects t ; conservative estimate
-                :args (c1expr `(function ,fname)) (c1args* args) fun :local))
+                :args nil (c1args* args) fun :local))
 
 (defun c1call-global (fname args)
   (let ((forms (c1args* args)))
