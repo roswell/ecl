@@ -73,7 +73,7 @@ Hint provided by Pascal J. Bourguignon.
 * Cross-compile for the iOS platform (needs Xcode 11 or higher)
 1. Build the host ECL
    #+BEGIN_SRC shell-script
-     ./configure --prefix=`pwd`/ecl-iOS-host --disable-c99complex
+     ./configure CFLAGS="-DECL_C_COMPATIBLE_VARIADIC_DISPATCH" --prefix=`pwd`/ecl-iOS-host --disable-c99complex
      make -j9
      make install
      rm -r build
@@ -130,7 +130,7 @@ Emscripten target is a little fickle so keep in mind that:
 1. Build the host ECL
 
 #+begin_src shell-script
-  ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2" \
+  ./configure ABI=32 CFLAGS="-m32 -g -O2 -DECL_C_COMPATIBLE_VARIADIC_DISPATCH" LDFLAGS="-m32 -g -O2" \
               --prefix=`pwd`/ecl-emscripten-host --disable-threads
 
   make -j16 && make install

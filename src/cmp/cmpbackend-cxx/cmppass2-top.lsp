@@ -351,7 +351,8 @@
                        (fun-required-lcls fun)
                        (fun-closure fun)
                        (fun-optional-type-check-forms fun)
-                       (fun-keyword-type-check-forms fun))))
+                       (fun-keyword-type-check-forms fun)
+                       (fun-variadic-entrypoint fun))))
     string))
 
 ;;; Variadic entrypoints
@@ -364,6 +365,19 @@
 ;;; C calls exist, the C compiler will usually inline the fixed
 ;;; entrypoint and thus optimize away the overhead that this method
 ;;; incurs over only generating a variadic entrypoint.
+;;;
+;;; If we use C compatible variadic dispatch, we can likewise generate
+;;; an entrypoint with the signature expected by the caller, i.e. a
+;;; function with only the narg argument as a fixed parameter and all
+;;; other arguments as variadic parameters. This function then checks
+;;; the number of arguments and dispatches to the entrypoint where the
+;;; required arguments appear as fixed parameters. The advantage over
+;;; only generating a variadic entrypoint with generic signature is
+;;; again that callers using direct C calls can skip some work.
+;;; Typically, C compatible variadic dispatch is used when fixed
+;;; arguments can be passed in registers while variadic arguments must
+;;; be pushed onto the stack. Thus, direct C calls can skip pushing
+;;; the required arguments onto the stack.
 (defun fun-variadic-entrypoint (fun)
   (let ((result (fun-variadic-entrypoint-cfun fun)))
     (if (not (eq result :unknown))
@@ -371,22 +385,57 @@
         (setf (fun-variadic-entrypoint-cfun fun)
               (and (policy-inline-nargs-check)
                    (not (fun-no-entry fun))
-                   (not (fun-needs-narg fun))
+                   (or (not (fun-needs-narg fun))
+                       #+c-compatible-variadic-dispatch t)
                    ;; lexical closures will never be called via a
                    ;; variadic entrypoint, no need to create one
                    (not (eq (fun-closure fun) 'lexical))
                    (concatenate 'string (fun-cfun fun) "_va"))))))
 
 (defun t3function-variadic-entrypoint (fun)
-  (t3function-header fun (fun-variadic-entrypoint-cfun fun) t)
-  (wt-nl-open-brace)
-  (wt-maybe-check-num-arguments t (fun-minarg fun) (fun-maxarg fun) (fun-name fun))
-  (wt-nl "return ")
-  (wt-call (fun-cfun fun) (fun-required-lcls fun))
-  (wt ";")
-  (wt-nl-close-many-braces 0))
+  (flet ((wt-return (args)
+           (wt-nl "return ")
+           (wt-call (fun-cfun fun) args)
+           (wt ";")
+           (wt-nl-close-many-braces 0)))
+    (t3function-header fun
+                       (fun-variadic-entrypoint-cfun fun)
+                       t
+                       #+c-compatible-variadic-dispatch t)
+    (wt-nl-open-brace)
+    (wt-maybe-check-num-arguments t
+                                  (fun-minarg fun)
+                                  (fun-maxarg fun)
+                                  (fun-name fun))
+    #-c-compatible-variadic-dispatch
+    (wt-return (fun-required-lcls fun))
+    #+c-compatible-variadic-dispatch
+    (let ((maxargs (min (fun-maxarg fun) (1+ si:c-arguments-limit))))
+      ;; For C compatible variadic dispatch, we handle both functions
+      ;; with variadic and with fixed number of arguments
+      (wt-nl "cl_object x[" maxargs "];")
+      (wt-nl "va_list args; va_start(args,narg);")
+      (loop for i below (fun-minarg fun)
+            do (wt-nl "x[" i "] = ") (wt-coerce-loc :object 'VA-ARG) (wt ";"))
+      (unless (= (fun-minarg fun) (fun-maxarg fun))
+        (wt-nl "for (int i = " (fun-minarg fun) "; i < ")
+        (if (<= maxargs si:c-arguments-limit)
+            (wt "narg")
+            (wt "(narg < " maxargs " ? narg : " maxargs ")"))
+        (wt "; i++)")
+        (wt-open-brace)
+        (wt-nl "x[i] = ")
+        (wt-coerce-loc :object 'VA-ARG)
+        (wt ";")
+        (wt-nl-close-brace))
+      (wt-nl "va_end(args);")
+      (let ((args (loop for i below maxargs
+                        collect (concatenate 'string "x[" (write-to-string i) "]"))))
+        (when (fun-needs-narg fun)
+          (push "narg" args))
+        (wt-return args)))))
 
-(defun t3function-header (fun cfun needs-narg)
+(defun t3function-header (fun cfun needs-narg &optional omit-requireds)
   (let* ((comma "")
          (lambda-expr (fun-lambda fun))
          (lambda-list (c1form-arg 0 lambda-expr))
@@ -394,6 +443,7 @@
                        repeat si::c-arguments-limit
                        for arg in (car lambda-list)
                        collect (next-lcl (var-name arg)))))
+    (setf (fun-required-lcls fun) requireds)
     (cond ((fun-exported fun)
            (wt-nl-h "ECL_DLLEXPORT cl_object " cfun "(")
            (wt-nl "cl_object " cfun "("))
@@ -408,10 +458,11 @@
       (wt-h comma "volatile cl_object  *")
       (wt comma "volatile cl_object *lex" n)
       (setf comma ", "))
-    (loop for lcl in (setf (fun-required-lcls fun) requireds)
-          do (wt-h comma "cl_object " *volatile*)
-             (wt comma "cl_object " *volatile* lcl)
-             (setf comma ", "))
+    (unless omit-requireds
+      (loop for lcl in requireds
+            do (wt-h comma "cl_object " *volatile*)
+               (wt comma "cl_object " *volatile* lcl)
+               (setf comma ", ")))
     (when needs-narg
       (wt-h ", ...")
       (wt ", ..."))

@@ -115,7 +115,7 @@
   (when fname
     (wt-comment fname)))
 
-(defun wt-call-normal (fun args type)
+(defun wt-call-normal (fun args type &optional (narg (length args)))
   (declare (ignore type))
   (unless (fun-cfun fun)
     (baboon "Function without a C name: ~A" (fun-name fun)))
@@ -123,7 +123,6 @@
          (maxarg (fun-maxarg fun))
          (fun-c-name (fun-cfun fun))
          (fun-lisp-name (fun-name fun))
-         (narg (length args))
          (env nil))
     (case (fun-closure fun)
       (CLOSURE
@@ -135,7 +134,7 @@
            (let* ((j (- lex-lvl n 1))
                   (x (lex-env-var-name j)))
              (push x args))))))
-    (unless (<= minarg narg maxarg)
+    (when (not (<= minarg narg maxarg))
       (cmperr "Wrong number of arguments for function ~S"
               (or fun-lisp-name 'ANONYMOUS)))
     (when (fun-needs-narg fun)
@@ -180,16 +179,18 @@
         (format nil "ecl_nthcdr(~D,~A)" (- *env* expected-env-size) env-var)
         env-var)))
 
-(defun wt-make-closure (fun &aux (cfun (fun-cfun fun))
-                                 (variadic-entrypoint (fun-variadic-entrypoint fun)))
+(defun wt-make-closure (fun)
   (declare (type fun fun))
   (let* ((closure (fun-closure fun))
          (narg (fun-fixed-narg fun))
-         (narg-fixed (min (fun-minarg fun) si:c-arguments-limit)))
+         (variadic-entrypoint (fun-variadic-entrypoint fun))
+         (cfun (fun-cfun fun))
+         (entrypoint (or variadic-entrypoint cfun))
+         (narg-fixed (if variadic-entrypoint
+                         0
+                         (min (fun-minarg fun) si:c-arguments-limit))))
     (cond ((eq closure 'CLOSURE)
-           (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
-               (environment-accessor fun)
-               ",Cblock," (min (fun-minarg fun) si:c-arguments-limit) ")"))
+           (wt "ecl_make_cclosure_va((cl_objectfn)" entrypoint "," (environment-accessor fun) ",Cblock," narg-fixed ")"))
           ((eq closure 'LEXICAL)
            (baboon :format-control "wt-make-closure: lexical closure detected."))
           (narg               ; empty environment fixed number of args
@@ -198,8 +199,7 @@
                    "ecl_make_cfun((cl_objectfn_fixed)")
                entrypoint ",ECL_NIL,Cblock," narg-fixed ")"))
           (t ; empty environment variable number of args
-           (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock,"
-               (min (fun-minarg fun) si:c-arguments-limit) ")")))))
+           (wt "ecl_make_cfun_va((cl_objectfn)" entrypoint ",ECL_NIL,Cblock," narg-fixed ")")))))
 
 ;;;
 ;;; COERCE-LOC

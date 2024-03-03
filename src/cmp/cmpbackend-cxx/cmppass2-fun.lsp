@@ -83,26 +83,27 @@
 
 (defun c2lambda-expr
     (lambda-list body cfun fname description use-narg required-lcls closure-type
-                 optional-type-check-forms keyword-type-check-forms
-                 &aux (requireds (first lambda-list))
-                 (optionals (second lambda-list))
-                 (rest (third lambda-list)) rest-loc
-                 (key-flag (fourth lambda-list))
-                 (keywords (fifth lambda-list))
-                 (allow-other-keys (sixth lambda-list))
-                 (nreq (length requireds))
-                 (nopt (/ (length optionals) 3))
-                 (nkey (/ (length keywords) 4))
-                 (varargs (or optionals rest key-flag allow-other-keys))
-                 (fname-in-ihs-p (or (policy-debug-variable-bindings)
-                                     (and (policy-debug-ihs-frame)
-                                          (or description fname))))
-                 simple-varargs
-                 (*permanent-data* t)
-                 (*unwind-exit* *unwind-exit*)
-                 (*env* *env*)
-                 (*inline-blocks* 0)
-                 (last-arg))
+     optional-type-check-forms keyword-type-check-forms
+     variadic-entrypoint
+     &aux (requireds (first lambda-list))
+       (optionals (second lambda-list))
+       (rest (third lambda-list)) rest-loc
+       (key-flag (fourth lambda-list))
+       (keywords (fifth lambda-list))
+       (allow-other-keys (sixth lambda-list))
+       (nreq (length requireds))
+       (nopt (/ (length optionals) 3))
+       (nkey (/ (length keywords) 4))
+       (varargs (or optionals rest key-flag allow-other-keys))
+       (fname-in-ihs-p (or (policy-debug-variable-bindings)
+                           (and (policy-debug-ihs-frame)
+                                (or description fname))))
+       simple-varargs
+       (*permanent-data* t)
+       (*unwind-exit* *unwind-exit*)
+       (*env* *env*)
+       (*inline-blocks* 0)
+       (last-arg))
   (declare (fixnum nreq nkey))
 
   (if (and fname ;; named function
@@ -118,7 +119,11 @@
 
   ;; check number of arguments
   (wt-maybe-check-num-arguments use-narg
-                                nreq
+                                (if variadic-entrypoint
+                                    nil ; minimum number of arguments
+                                        ; already checked in the
+                                        ; varargs entrypoint
+                                    nreq)
                                 (if (or rest key-flag allow-other-keys)
                                     nil
                                     (+ nreq nopt))
@@ -303,11 +308,11 @@
             (if fname
                 (wt " FEwrong_num_arguments(" (get-object fname) ");")
                 (wt " FEwrong_num_arguments_anonym();"))))
-     (if (and maxarg (= minarg maxarg))
+     (if (and minarg maxarg (= minarg maxarg))
          (progn (wt-nl "if (ecl_unlikely(narg!=" minarg "))")
                 (wrong-num-arguments))
          (progn
-           (when (plusp minarg)
+           (when (and minarg (plusp minarg))
              (wt-nl "if (ecl_unlikely(narg<" minarg "))")
              (wrong-num-arguments))
            (when maxarg
