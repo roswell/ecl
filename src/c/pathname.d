@@ -749,6 +749,7 @@ cl_pathname(cl_object x)
   default:
     if (!Null(cl_streamp(x))) {
       x = ecl_stream_pathname(x);
+      goto L;
     } else {
       const char *type = "(OR FILE-STREAM STRING PATHNAME)";
       FEwrong_type_only_arg(@[pathname], x, ecl_read_from_cstring(type));
