@@ -196,7 +196,7 @@
   (mapc #'bind required-lcls requireds)
 
   (when fname-in-ihs-p
-    (let ((fname (get-object (or description fname))))
+    (let ((fname (get-object (or description fname) :test #'equal)))
       (open-inline-block)
       (setf *ihs-used-p* t)
       (push 'IHS *unwind-exit*)
@@ -306,7 +306,7 @@
  (when (and (policy-check-nargs) use-narg)
    (flet ((wrong-num-arguments ()
             (if fname
-                (wt " FEwrong_num_arguments(" (get-object fname) ");")
+                (wt " FEwrong_num_arguments(" (get-object fname :test #'equal) ");")
                 (wt " FEwrong_num_arguments_anonym();"))))
      (if (and minarg maxarg (= minarg maxarg))
          (progn (wt-nl "if (ecl_unlikely(narg!=" minarg "))")

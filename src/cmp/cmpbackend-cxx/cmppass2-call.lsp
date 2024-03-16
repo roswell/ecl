@@ -267,4 +267,4 @@
 ;;; This version is correct but unnecessarily slow - it goes through
 ;;; ecl_function_dispatch. wt-fdefinition handles all proper names.
 (defun call-unknown-global-fun (fname args)
-  `(CALL-INDIRECT ,(get-object fname) ,(coerce-args args) ,fname nil))
+  `(CALL-INDIRECT ,(get-object fname :test #'equal) ,(coerce-args args) ,fname nil))

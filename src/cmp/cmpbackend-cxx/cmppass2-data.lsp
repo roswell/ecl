@@ -325,8 +325,8 @@
     (setf (vv-location vv) ndx)
     vv))
 
-(defun search-vv (object &key permanent (errorp t))
-  (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
+(defun search-vv (object &key permanent (errorp t) test)
+  (let* ((test (or test (if si:*compiler-constants* 'eq 'equal-with-circularity)))
          (item (if permanent
                    (find object *permanent-objects* :test test :key #'vv-value)
                    (or (find object *permanent-objects* :test test :key #'vv-value)
@@ -335,8 +335,8 @@
       (cmperr "Unable to find object ~s." object))
     item))
 
-(defun get-object (object &key (permanent t) (errorp t))
-  (or (search-vv object :permanent permanent :errorp nil)
+(defun get-object (object &key (permanent t) (errorp t) test)
+  (or (search-vv object :permanent permanent :errorp nil :test test)
       (try-inline-core-sym object)
       (and errorp
            (cmperr "Unable to find object ~s." object))))
