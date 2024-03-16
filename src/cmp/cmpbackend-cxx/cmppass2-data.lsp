@@ -328,6 +328,7 @@
 (defun search-vv (object &key permanent (errorp t))
   (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
          (item (if permanent
+                   (find object *permanent-objects* :test test :key #'vv-value)
                    (or (find object *permanent-objects* :test test :key #'vv-value)
                        (find object *temporary-objects* :test test :key #'vv-value)))))
     (when (and (null item) errorp)
