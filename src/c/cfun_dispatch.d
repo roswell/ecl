@@ -1095,7 +1095,6 @@ static cl_objectfn fixed_dispatch_table[ECL_C_ARGUMENTS_LIMIT+1] = {
 
 #ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
 
-typedef cl_object (*cl_objectfn0)(cl_narg narg, ...);
 typedef cl_object (*cl_objectfn1)(cl_narg narg, cl_object, ...);
 typedef cl_object (*cl_objectfn2)(cl_narg narg, cl_object, cl_object, ...);
 typedef cl_object (*cl_objectfn3)(cl_narg narg, cl_object, cl_object, cl_object, ...);
@@ -1175,7 +1174,6 @@ typedef cl_object (*cl_objectfn63)(cl_narg narg, cl_object, cl_object, cl_object
     return ((cl_objectfn ## n) fun->cfun.entry_variadic)(narg, x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15], x[16], x[17], x[18], x[19], x[20], x[21], x[22], x[23], x[24], x[25], x[26], x[27], x[28], x[29], x[30], x[31], x[32], x[33], x[34], x[35], x[36], x[37], x[38], x[39], x[40], x[41], x[42], x[43], x[44], x[45], x[46], x[47], x[48], x[49], x[50], x[51], x[52], x[53], x[54], x[55], x[56], x[57], x[58], x[59], x[60], x[61], x[62], x[63]); \
 }
 
-DEFINE_VARIADIC_DISPATCH(0)
 DEFINE_VARIADIC_DISPATCH(1)
 DEFINE_VARIADIC_DISPATCH(2)
 DEFINE_VARIADIC_DISPATCH(3)
@@ -1241,7 +1239,7 @@ DEFINE_VARIADIC_DISPATCH(62)
 DEFINE_VARIADIC_DISPATCH(63)
 
 static cl_objectfn variadic_dispatch_table[ECL_C_ARGUMENTS_LIMIT+1] = {
-(cl_objectfn)variadic_dispatch0,
+NULL,
 (cl_objectfn)variadic_dispatch1,
 (cl_objectfn)variadic_dispatch2,
 (cl_objectfn)variadic_dispatch3,
