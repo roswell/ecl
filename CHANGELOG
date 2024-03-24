@@ -42,6 +42,9 @@
      implement ~cl:file-string-length~.
   4) Generic versions of ~cl:pathname~ and ~cl:truename~.
 - Various bug fixes for Gray streams.
+- Reduced function call overhead
+- The cross-compilation instructions for iOS and emscripten have changed
+  slightly
     
 * 23.9.9 changes since 21.2.1
 ** Announcement
