@@ -149,7 +149,7 @@
     (wt-nl "volatile bool unwinding = FALSE;")
     (wt-nl "ecl_frame_ptr next_fr;")
     (with-unwind-frame ("ECL_PROTECT_TAG")
-      (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->nlj_fr;")
+      (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->frs_stack.nlj_fr;")
       (let ((*destination* 'VALUEZ))
         (c2expr* form)))
     (wt-nl "ecl_frs_pop(cl_env_copy);")

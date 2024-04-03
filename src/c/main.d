@@ -635,8 +635,8 @@ cl_boot(int argc, char **argv)
     }
 #endif
     ECL_SET(@'ext::*program-exit-code*', code);
-    if (the_env->frs_org <= the_env->frs_top)
-      ecl_unwind(the_env, the_env->frs_org);
+    if (the_env->frs_stack.org <= the_env->frs_stack.top)
+      ecl_unwind(the_env, the_env->frs_stack.org);
     si_exit(1, code);
   }
 @)

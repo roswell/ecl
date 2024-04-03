@@ -638,23 +638,23 @@ si_ihs_env(cl_object arg)
 static void
 frs_set_size(cl_env_ptr env, cl_index new_size)
 {
-  ecl_frame_ptr old_org = env->frs_org;
-  cl_index limit = env->frs_top - old_org;
+  ecl_frame_ptr old_org = env->frs_stack.org;
+  cl_index limit = env->frs_stack.top - old_org;
   if (new_size <= limit) {
     FEerror("Cannot shrink frame stack below ~D.", 1,
             ecl_make_unsigned_integer(limit));
   } else {
     cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
     ecl_frame_ptr org;
-    env->frs_limit_size = new_size - 2*margin;
+    env->frs_stack.limit_size = new_size - 2*margin;
     org = ecl_alloc_atomic(new_size * sizeof(*org));
 
     ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
     memcpy(org, old_org, (limit + 1) * sizeof(*org));
-    env->frs_top = org + limit;
-    env->frs_org = org;
-    env->frs_limit = org + (new_size - 2*margin);
-    env->frs_size = new_size;
+    env->frs_stack.top = org + limit;
+    env->frs_stack.org = org;
+    env->frs_stack.limit = org + (new_size - 2*margin);
+    env->frs_stack.size = new_size;
     ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 
     ecl_dealloc(old_org);
@@ -670,13 +670,13 @@ frs_overflow(void)              /* used as condition in list.d */
     ";;;\n\n";
   cl_env_ptr env = ecl_process_env();
   cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
-  cl_index size = env->frs_size;
-  ecl_frame_ptr org = env->frs_org;
+  cl_index size = env->frs_stack.size;
+  ecl_frame_ptr org = env->frs_stack.org;
   ecl_frame_ptr last = org + size;
-  if (env->frs_limit >= last) {
+  if (env->frs_stack.limit >= last) {
     ecl_unrecoverable_error(env, stack_overflow_msg);
   }
-  env->frs_limit += margin;
+  env->frs_stack.limit += margin;
   si_serror(6, @"Extend stack size",
             @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
             @':type', @'ext::frame-stack');
@@ -691,14 +691,14 @@ _ecl_frs_push(cl_env_ptr env)
    * stray ECL_PROTECT_TAG will lead to segfaults. AO_nop_full is
    * needed to ensure that the CPU doesn't reorder the memory
    * stores. */
-  ecl_frame_ptr output = env->frs_top+1;
-  if (output >= env->frs_limit) {
+  ecl_frame_ptr output = env->frs_stack.top+1;
+  if (output >= env->frs_stack.limit) {
     frs_overflow();
-    output = env->frs_top+1;
+    output = env->frs_stack.top+1;
   }
   output->frs_val = ECL_DUMMY_TAG;
   AO_nop_full();
-  ++env->frs_top;
+  ++env->frs_stack.top;
   output->frs_bds_top_index = env->bds_stack.top - env->bds_stack.org;
   output->frs_ihs = env->ihs_top;
   output->frs_sp = ECL_STACK_INDEX(env);
@@ -708,8 +708,8 @@ _ecl_frs_push(cl_env_ptr env)
 void
 ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
 {
-  env->nlj_fr = fr;
-  ecl_frame_ptr top = env->frs_top;
+  env->frs_stack.nlj_fr = fr;
+  ecl_frame_ptr top = env->frs_stack.top;
   while (top != fr && top->frs_val != ECL_PROTECT_TAG){
     top->frs_val = ECL_DUMMY_TAG;
     --top;
@@ -717,8 +717,8 @@ ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
   env->ihs_top = top->frs_ihs;
   ecl_bds_unwind(env, top->frs_bds_top_index);
   ECL_STACK_SET_INDEX(env, top->frs_sp);
-  env->frs_top = top;
-  ecl_longjmp(env->frs_top->frs_jmpbuf, 1);
+  env->frs_stack.top = top;
+  ecl_longjmp(env->frs_stack.top->frs_jmpbuf, 1);
   /* never reached */
 }
 
@@ -727,7 +727,7 @@ frs_sch (cl_object frame_id)
 {
   cl_env_ptr env = ecl_process_env();
   ecl_frame_ptr top;
-  for (top = env->frs_top;  top >= env->frs_org;  top--)
+  for (top = env->frs_stack.top;  top >= env->frs_stack.org;  top--)
     if (top->frs_val == frame_id)
       return(top);
   return(NULL);
@@ -738,8 +738,8 @@ get_frame_ptr(cl_object x)
 {
   if (ECL_FIXNUMP(x)) {
     cl_env_ptr env = ecl_process_env();
-    ecl_frame_ptr p = env->frs_org + ecl_fixnum(x);
-    if (env->frs_org <= p && p <= env->frs_top)
+    ecl_frame_ptr p = env->frs_stack.org + ecl_fixnum(x);
+    if (env->frs_stack.org <= p && p <= env->frs_stack.top)
       return p;
   }
   FEerror("~S is an illegal frs index.", 1, x);
@@ -749,7 +749,7 @@ cl_object
 si_frs_top()
 {
   cl_env_ptr env = ecl_process_env();
-  ecl_return1(env, ecl_make_fixnum(env->frs_top - env->frs_org));
+  ecl_return1(env, ecl_make_fixnum(env->frs_stack.top - env->frs_stack.org));
 }
 
 cl_object
@@ -780,9 +780,11 @@ si_sch_frs_base(cl_object fr, cl_object ihs)
   ecl_frame_ptr x;
   cl_index y = ecl_to_size(ihs);
   for (x = get_frame_ptr(fr); 
-       x <= env->frs_top && x->frs_ihs->index < y;
+       x <= env->frs_stack.top && x->frs_ihs->index < y;
        x++);
-  ecl_return1(env, ((x > env->frs_top) ? ECL_NIL : ecl_make_fixnum(x - env->frs_org)));
+  ecl_return1(env, ((x > env->frs_stack.top)
+                    ? ECL_NIL
+                    : ecl_make_fixnum(x - env->frs_stack.org)));
 }
 
 /* ------------------------- INITIALIZATION --------------------------- */
@@ -825,7 +827,7 @@ si_get_limit(cl_object type)
   cl_env_ptr env = ecl_process_env();
   cl_index output = 0;
   if (type == @'ext::frame-stack')
-    output = env->frs_limit_size;
+    output = env->frs_stack.limit_size;
   else if (type == @'ext::binding-stack')
     output = env->bds_stack.limit_size;
   else if (type == @'ext::c-stack')
@@ -845,7 +847,7 @@ si_reset_margin(cl_object type)
 {
   cl_env_ptr env = ecl_process_env();
   if (type == @'ext::frame-stack')
-    frs_set_size(env, env->frs_size);
+    frs_set_size(env, env->frs_stack.size);
   else if (type == @'ext::binding-stack')
     ecl_bds_set_size(env, env->bds_stack.size);
   else if (type == @'ext::c-stack')
@@ -864,10 +866,10 @@ init_stacks(cl_env_ptr env)
   /* frame stack */
   margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
   size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE] + 2 * margin;
-  env->frs_size = size;
-  env->frs_org = (ecl_frame_ptr)ecl_alloc_atomic(size * sizeof(*env->frs_org));
-  env->frs_top = env->frs_org-1;
-  env->frs_limit = &env->frs_org[size - 2*margin];
+  env->frs_stack.size = size;
+  env->frs_stack.org = (ecl_frame_ptr)ecl_alloc_atomic(size * sizeof(*env->frs_stack.org));
+  env->frs_stack.top = env->frs_stack.org-1;
+  env->frs_stack.limit = &env->frs_stack.org[size - 2*margin];
   /* bind stack */
   margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
   size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;

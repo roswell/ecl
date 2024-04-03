@@ -47,8 +47,8 @@ ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
       ecl_unwind(the_env, destination);
     }
   }
-  if (the_env->frs_org <= the_env->frs_top) {
-    destination = ecl_process_env()->frs_org;
+  if (the_env->frs_stack.org <= the_env->frs_stack.top) {
+    destination = ecl_process_env()->frs_stack.org;
     ecl_unwind(the_env, destination);
   } else {
     ecl_internal_error("\n;;;\n;;; No frame to jump to\n;;; Aborting ECL\n;;;");

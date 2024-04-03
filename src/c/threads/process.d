@@ -593,7 +593,7 @@ mp_exit_process(void)
      UNWIND-PROTECT.
   */
   const cl_env_ptr the_env = ecl_process_env();
-  ecl_unwind(the_env, the_env->frs_org);
+  ecl_unwind(the_env, the_env->frs_stack.org);
   /* Never reached */
 }
 

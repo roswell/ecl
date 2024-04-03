@@ -306,8 +306,8 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
         int __ecl_frs_push_result = ecl_setjmp(__frame->frs_jmpbuf); \
         ecl_enable_interrupts_env(env)
 
-#define ecl_frs_pop(env) ((env)->frs_top--)
-#define ecl_frs_pop_n(env,n) ((env)->frs_top-=n)
+#define ecl_frs_pop(env) ((env)->frs_stack.top--)
+#define ecl_frs_pop_n(env,n) ((env)->frs_stack.top-=n)
 
 /*******************
  * ARGUMENTS STACK
@@ -438,7 +438,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
         cl_index __nr; \
         ecl_frs_push(__the_env,ECL_PROTECT_TAG);   \
         if (__ecl_frs_push_result) {      \
-                __unwinding=1; __next_fr=__the_env->nlj_fr; \
+                __unwinding=1; __next_fr=__the_env->frs_stack.nlj_fr; \
         } else {
 
 #define ECL_UNWIND_PROTECT_EXIT \
@@ -463,7 +463,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
         ecl_check_pending_interrupts(__the_env); \
         if (__unwinding) ecl_unwind(__the_env,__next_fr); } while(0)
 
-#define ECL_NEW_FRAME_ID(env) ecl_make_fixnum(env->frame_id++)
+#define ECL_NEW_FRAME_ID(env) ecl_make_fixnum(env->frs_stack.frame_id++)
 
 #define ECL_BLOCK_BEGIN(the_env,id) do {                        \
         const cl_object __id = ECL_NEW_FRAME_ID(the_env);       \

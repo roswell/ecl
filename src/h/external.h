@@ -19,9 +19,23 @@ struct ecl_binding_stack {
 #endif
         cl_index size;
         cl_index limit_size;
-        struct ecl_bds_frame * org;
-        struct ecl_bds_frame * top;
-        struct ecl_bds_frame * limit;
+        struct ecl_bds_frame *org;
+        struct ecl_bds_frame *top;
+        struct ecl_bds_frame *limit;
+};
+
+/* The FRames Stack (FRS) is a list of frames or jump points, and it is used by
+ * different high-level constructs (BLOCK, TAGBODY, CATCH...)  to set return
+ * points. */
+struct ecl_frames_stack {
+        struct ecl_frame *nlj_fr;
+        cl_index frame_id;
+
+        cl_index size;
+        cl_index limit_size;
+        struct ecl_frame *org;
+        struct ecl_frame *top;
+        struct ecl_frame *limit;
 };
 
 /*
@@ -57,6 +71,7 @@ struct cl_env_struct {
         cl_object *stack_limit;
 
         struct ecl_binding_stack bds_stack;
+        struct ecl_frames_stack  frs_stack;
 
         /*
          * The Invocation History Stack (IHS) keeps a list of the names of the
@@ -65,18 +80,6 @@ struct cl_env_struct {
          */
         struct ecl_ihs_frame *ihs_top;
 
-        /*
-         * The FRames Stack (FRS) is a list of frames or jump points, and it
-         * is used by different high-level constructs (BLOCK, TAGBODY, CATCH...)
-         * to set return points.
-         */
-        cl_index frs_size;
-        cl_index frs_limit_size;
-        struct ecl_frame *frs_org;
-        struct ecl_frame *frs_top;
-        struct ecl_frame *frs_limit;
-        struct ecl_frame *nlj_fr;
-        cl_index frame_id;
 
         /*
          * The following pointers to the C Stack are used to ensure that a
