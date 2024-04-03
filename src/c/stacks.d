@@ -138,7 +138,7 @@ ecl_cs_set_org(cl_env_ptr env)
 cl_object *
 ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
 {
-  cl_index top = env->stack_top - env->stack;
+  cl_index top = env->run_stack.top - env->run_stack.org;
   cl_object *new_stack, *old_stack;
   cl_index safety_area = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
   cl_index new_size = tentative_new_size + 2*safety_area;
@@ -150,27 +150,27 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
     FEerror("Internal error: cannot shrink stack below stack top.",0);
   }
 
-  old_stack = env->stack;
+  old_stack = env->run_stack.org;
   new_stack = (cl_object *)ecl_alloc_atomic(new_size * sizeof(cl_object));
 
   ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  memcpy(new_stack, old_stack, env->stack_size * sizeof(cl_object));
-  env->stack_size = new_size;
-  env->stack_limit_size = new_size - 2*safety_area;
-  env->stack = new_stack;
-  env->stack_top = env->stack + top;
-  env->stack_limit = env->stack + (new_size - 2*safety_area);
+  memcpy(new_stack, old_stack, env->run_stack.size * sizeof(cl_object));
+  env->run_stack.size = new_size;
+  env->run_stack.limit_size = new_size - 2*safety_area;
+  env->run_stack.org = new_stack;
+  env->run_stack.top = env->run_stack.org + top;
+  env->run_stack.limit = env->run_stack.org + (new_size - 2*safety_area);
 
   /* A stack always has at least one element. This is assumed by cl__va_start
    * and friends, which take a sp=0 to have no arguments.
    */
   if (top == 0) {
-    *(env->stack_top++) = ecl_make_fixnum(0);
+    *(env->run_stack.top++) = ecl_make_fixnum(0);
   }
   ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 
   ecl_dealloc(old_stack);
-  return env->stack_top;
+  return env->run_stack.top;
 }
 
 void
@@ -188,41 +188,41 @@ FEstack_advance(void)
 cl_object *
 ecl_stack_grow(cl_env_ptr env)
 {
-  return ecl_stack_set_size(env, env->stack_size + env->stack_size / 2);
+  return ecl_stack_set_size(env, env->run_stack.size + env->run_stack.size / 2);
 }
 
 cl_index
 ecl_stack_push_values(cl_env_ptr env) {
   cl_index i = env->nvalues;
-  cl_object *b = env->stack_top;
+  cl_object *b = env->run_stack.top;
   cl_object *p = b + i;
-  if (p >= env->stack_limit) {
+  if (p >= env->run_stack.limit) {
     b = ecl_stack_grow(env);
     p = b + i;
   }
-  env->stack_top = p;
+  env->run_stack.top = p;
   memcpy(b, env->values, i * sizeof(cl_object));
   return i;
 }
 
 void
 ecl_stack_pop_values(cl_env_ptr env, cl_index n) {
-  cl_object *p = env->stack_top - n;
-  if (ecl_unlikely(p < env->stack))
+  cl_object *p = env->run_stack.top - n;
+  if (ecl_unlikely(p < env->run_stack.org))
     FEstack_underflow();
   env->nvalues = n;
-  env->stack_top = p;
+  env->run_stack.top = p;
   memcpy(env->values, p, n * sizeof(cl_object));
 }
 
 cl_object
 ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
 {
-  cl_object *base = env->stack_top;
+  cl_object *base = env->run_stack.top;
   cl_index bindex;
   if (size) {
-    if ((env->stack_limit - base) < size) {
-      base = ecl_stack_set_size(env, env->stack_size + size);
+    if ((env->run_stack.limit - base) < size) {
+      base = ecl_stack_set_size(env, env->run_stack.size + size);
     }
   }
   bindex = ECL_STACK_INDEX(env);
@@ -232,7 +232,7 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
   f->frame.size = size;
   f->frame.sp = bindex;
   f->frame.env = env;
-  env->stack_top = (base + size);
+  env->run_stack.top = (base + size);
   return f;
 }
 
@@ -240,11 +240,11 @@ void
 ecl_stack_frame_push(cl_object f, cl_object o)
 {
   cl_env_ptr env = f->frame.env;
-  cl_object *top = env->stack_top;
-  if (top >= env->stack_limit) {
+  cl_object *top = env->run_stack.top;
+  if (top >= env->run_stack.limit) {
     top = ecl_stack_grow(env);
   }
-  env->stack_top = ++top;
+  env->run_stack.top = ++top;
   *(top-1) = o;
   f->frame.size++;
 }
@@ -835,7 +835,7 @@ si_get_limit(cl_object type)
   else if (type == @'ext::c-stack')
     output = env->c_stack.limit_size;
   else if (type == @'ext::lisp-stack')
-    output = env->stack_limit_size;
+    output = env->run_stack.limit_size;
   else if (type == @'ext::heap-size') {
     /* size_t can be larger than cl_index */
     ecl_return1(env, ecl_make_unsigned_integer(cl_core.max_heap_size));
@@ -885,9 +885,9 @@ init_stacks(cl_env_ptr env)
   ihs_org.lex_env = ECL_NIL;
   ihs_org.index = 0;
   /* lisp stack */
-  env->stack = NULL;
-  env->stack_top = NULL;
-  env->stack_limit = NULL;
-  env->stack_size = 0;
+  env->run_stack.org = NULL;
+  env->run_stack.top = NULL;
+  env->run_stack.limit = NULL;
+  env->run_stack.size = 0;
   ecl_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
 }
