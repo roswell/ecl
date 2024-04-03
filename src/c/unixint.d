@@ -400,11 +400,11 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
   struct ecl_frame top_frame;
   memcpy(&top_frame, env->frs_top+1, sizeof(struct ecl_frame));
   struct ecl_bds_frame top_binding;
-  memcpy(&top_binding, env->bds_top+1, sizeof(struct ecl_bds_frame));
+  memcpy(&top_binding, env->bds_stack.top+1, sizeof(struct ecl_bds_frame));
   /* Finally we can handle the queued signals ... */
   handle_all_queued(env);
   /* ... and restore everything again */
-  memcpy(env->bds_top+1, &top_binding, sizeof(struct ecl_bds_frame));
+  memcpy(env->bds_stack.top+1, &top_binding, sizeof(struct ecl_bds_frame));
   memcpy(env->frs_top+1, &top_frame, sizeof(struct ecl_frame));
   env->stack_top--;
   ecl_clear_bignum_registers(env);

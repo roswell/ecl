@@ -196,11 +196,11 @@ ecl_init_first_env(cl_env_ptr env)
   init_threads();
 #endif
 #ifdef ECL_THREADS
-  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
-                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
+  env->bds_stack.bindings_array
+    = si_make_vector(ECL_T, ecl_make_fixnum(1024), ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  si_fill_array_with_elt(env->bds_stack.bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
+  env->bds_stack.thread_local_bindings_size = env->bds_stack.bindings_array->vector.dim;
+  env->bds_stack.thread_local_bindings = env->bds_stack.bindings_array->vector.self.t;
 #endif
   init_env_mp(env);
   init_env_int(env);
