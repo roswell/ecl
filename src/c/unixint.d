@@ -829,16 +829,16 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 # endif /* ECL_USE_MPROTECT */
 # ifdef ECL_DOWN_STACK
   if (sig == SIGSEGV &&
-      (char*)info->si_addr > the_env->cs_barrier &&
-      (char*)info->si_addr <= the_env->cs_org) {
+      (char*)info->si_addr > the_env->c_stack.max &&
+      (char*)info->si_addr <= the_env->c_stack.org) {
     unblock_signal(the_env, sig);
     ecl_unrecoverable_error(the_env, stack_overflow_msg);
     return;
   }
 # else
   if (sig == SIGSEGV &&
-      (char*)info->si_addr < the_env->cs_barrier &&
-      (char*)info->si_addr >= the_env->cs_org) {
+      (char*)info->si_addr < the_env->c_stack.max &&
+      (char*)info->si_addr >= the_env->c_stack.org) {
     unblock_signal(the_env, sig);
     ecl_unrecoverable_error(the_env, stack_overflow_msg);
     return;
