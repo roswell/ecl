@@ -10,6 +10,17 @@ extern "C" {
 
 #define _ECL_ARGS(x) x
 
+/* The runtime stack, which is used mainly for keeping the arguments of a
+ * function before it is invoked, and also by the compiler and by the reader
+ * when they are building some data structure. */
+struct ecl_runtime_stack {
+        cl_index size;
+        cl_index limit_size;
+        cl_object *org;
+        cl_object *top;
+        cl_object *limit;
+};
+
 /* The BinDing Stack stores the bindings of special variables. */
 struct ecl_binding_stack {
 #ifdef ECL_THREADS
@@ -80,21 +91,11 @@ struct cl_env_struct {
 
         /* The four stacks in ECL. */
 
-        /*
-         * The lisp stack, which is used mainly for keeping the arguments of a
-         * function before it is invoked, and also by the compiler and by the
-         * reader when they are building some data structure.
-         */
-        cl_index stack_size;
-        cl_index stack_limit_size;
-        cl_object *stack;
-        cl_object *stack_top;
-        cl_object *stack_limit;
-
+        struct ecl_runtime_stack run_stack;
         struct ecl_binding_stack bds_stack;
         struct ecl_frames_stack frs_stack;
         struct ecl_history_stack ihs_stack;
-        struct ecl_c_stack c_stack;
+        struct ecl_c_stack c_stack; /* shadow stack */
 
         /* Private variables used by different parts of ECL: */
         /* ... the reader and printer ... */

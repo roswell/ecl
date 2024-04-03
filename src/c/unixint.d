@@ -389,10 +389,10 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
   cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
   memcpy(big_register, env->big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
   ecl_init_bignum_registers(env);
-  /* We might have been interrupted while we push/pop in the
-   * stack. Increasing env->stack_top ensures that we don't
-   * overwrite the topmost stack value. */
-  env->stack_top++;
+  /* We might have been interrupted while we push/pop in the stack. Increasing
+   * env->run_stack.top ensures that we don't overwrite the topmost stack
+   * value. */
+  env->run_stack.top++;
   /* We also need to save and restore the (top+1)'th frame and
    * binding stack value to prevent overwriting it.
    * INV: Due to the stack safety areas we don't need to check
@@ -406,7 +406,7 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
   /* ... and restore everything again */
   memcpy(env->bds_stack.top+1, &top_binding, sizeof(struct ecl_bds_frame));
   memcpy(env->frs_stack.top+1, &top_frame, sizeof(struct ecl_frame));
-  env->stack_top--;
+  env->run_stack.top--;
   ecl_clear_bignum_registers(env);
   memcpy(env->big_register, big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
   env->packages_to_be_created_p = packages_to_be_created_p;

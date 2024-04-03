@@ -114,10 +114,10 @@ ecl_close_around(cl_object fun, cl_object lex) {
 #define INTERPRET_FUNCALL(reg0, the_env, frame, narg, fun) {    \
     cl_index __n = narg;                                        \
     SETUP_ENV(the_env);                                         \
-    frame.stack = the_env->stack;                               \
-    frame.base = the_env->stack_top - (frame.size = __n);       \
+    frame.stack = the_env->run_stack.org;                               \
+    frame.base = the_env->run_stack.top - (frame.size = __n);       \
     reg0 = ecl_apply_from_stack_frame((cl_object)&frame, fun);  \
-    the_env->stack_top -= __n; }
+    the_env->run_stack.top -= __n; }
 
 static void too_many_arguments(cl_object bytecodes, cl_object frame) ecl_attr_noreturn;
 static void odd_number_of_keywords(cl_object bytecodes) ecl_attr_noreturn;
@@ -366,7 +366,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       cl_object x = reg0;
       cl_object frame = (cl_object)&frame_aux;
       frame_aux.size = narg;
-      frame_aux.base = the_env->stack_top - narg;
+      frame_aux.base = the_env->run_stack.top - narg;
       the_env->stack_frame = frame;
       SETUP_ENV(the_env);
     AGAIN:

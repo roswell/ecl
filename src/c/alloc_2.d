@@ -1153,9 +1153,9 @@ static void
 ecl_mark_env(struct cl_env_struct *env)
 {
 #if 1
-  if (env->stack) {
-    GC_push_conditional((void *)env->stack, (void *)env->stack_top, 1);
-    GC_set_mark_bit((void *)env->stack);
+  if (env->run_stack.org) {
+    GC_push_conditional((void *)env->run_stack.org, (void *)env->run_stack.top, 1);
+    GC_set_mark_bit((void *)env->run_stack.org);
   }
   if (env->frs_stack.top) {
     GC_push_conditional((void *)env->frs_stack.org, (void *)(env->frs_stack.top+1), 1);

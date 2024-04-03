@@ -329,7 +329,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                 va_end(args);                                           \
                 frame->frame.stack = (cl_object*)0x1;                   \
         } else {                                                        \
-                frame->frame.base = env->stack_top - narg;              \
+                frame->frame.base = env->run_stack.top - narg;          \
                 frame->frame.stack = 0;                                 \
         }
 #define ECL_STACK_FRAME_VARARGS_END(frame)      \

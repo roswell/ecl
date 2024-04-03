@@ -377,45 +377,45 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
  * LISP STACK
  *************/
 
-#define ECL_STACK_INDEX(env) ((env)->stack_top - (env)->stack)
+#define ECL_STACK_INDEX(env) ((env)->run_stack.top - (env)->run_stack.org)
 
 #define ECL_STACK_PUSH(the_env,o) do {                                  \
                 const cl_env_ptr __env = (the_env);                     \
-                cl_object *__new_top = __env->stack_top;                \
-                if (ecl_unlikely(__new_top >= __env->stack_limit)) {    \
+                cl_object *__new_top = __env->run_stack.top;                \
+                if (ecl_unlikely(__new_top >= __env->run_stack.limit)) {    \
                         __new_top = ecl_stack_grow(__env);              \
                 }                                                       \
-                __env->stack_top = __new_top+1;                         \
+                __env->run_stack.top = __new_top+1;                         \
                 *__new_top = (o); } while (0)
 
-#define ECL_STACK_POP_UNSAFE(env) *(--((env)->stack_top))
+#define ECL_STACK_POP_UNSAFE(env) *(--((env)->run_stack.top))
 
-#define ECL_STACK_REF(env,n) ((env)->stack_top[n])
+#define ECL_STACK_REF(env,n) ((env)->run_stack.top[n])
 
 #define ECL_STACK_SET_INDEX(the_env,ndx) do {                   \
                 const cl_env_ptr __env = (the_env);             \
-                cl_object *__new_top = __env->stack + (ndx);    \
-                if (ecl_unlikely(__new_top > __env->stack_top)) \
+                cl_object *__new_top = __env->run_stack.org + (ndx);    \
+                if (ecl_unlikely(__new_top > __env->run_stack.top)) \
                         FEstack_advance();                      \
-                __env->stack_top = __new_top; } while (0)
+                __env->run_stack.top = __new_top; } while (0)
 
 #define ECL_STACK_POP_N(the_env,n) do {                         \
                 const cl_env_ptr __env = (the_env);             \
-                cl_object *__new_top = __env->stack_top - (n);  \
-                if (ecl_unlikely(__new_top < __env->stack))     \
+                cl_object *__new_top = __env->run_stack.top - (n);  \
+                if (ecl_unlikely(__new_top < __env->run_stack.org))     \
                         FEstack_underflow();                    \
-                __env->stack_top = __new_top; } while (0)
+                __env->run_stack.top = __new_top; } while (0)
 
-#define ECL_STACK_POP_N_UNSAFE(the_env,n) ((the_env)->stack_top -= (n))
+#define ECL_STACK_POP_N_UNSAFE(the_env,n) ((the_env)->run_stack.top -= (n))
 
 #define ECL_STACK_PUSH_N(the_env,n) do {                                \
                 const cl_env_ptr __env = (the_env) ;                    \
                 cl_index __aux = (n);                                   \
-                cl_object *__new_top = __env->stack_top;                \
-                while (ecl_unlikely((__env->stack_limit - __new_top) <= __aux)) { \
+                cl_object *__new_top = __env->run_stack.top;                \
+                while (ecl_unlikely((__env->run_stack.limit - __new_top) <= __aux)) { \
                         __new_top = ecl_stack_grow(__env);              \
                 }                                                       \
-                __env->stack_top = __new_top + __aux; } while (0)
+                __env->run_stack.top = __new_top + __aux; } while (0)
 
 #define ECL_STACK_FRAME_COPY(dest,orig) do {                            \
                 cl_object __dest = (dest);                              \

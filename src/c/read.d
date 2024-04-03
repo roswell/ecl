@@ -944,7 +944,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
   last = ECL_STACK_REF(env,-1);
   x = ecl_alloc_simple_vector(dim, ecl_aet_bit);
   for (i = 0; i < dim; i++) {
-    elt = (i < dimcount) ? env->stack[sp+i] : last;
+    elt = (i < dimcount) ? env->run_stack.org[sp+i] : last;
     if (elt == ecl_make_fixnum(0))
       x->vector.self.bit[i/CHAR_BIT] &= ~(0200 >> i%CHAR_BIT);
     else
