@@ -583,7 +583,7 @@ static ecl_ihs_ptr
 get_ihs_ptr(cl_index n)
 {
   cl_env_ptr env = ecl_process_env();
-  ecl_ihs_ptr p = env->ihs_top;
+  ecl_ihs_ptr p = env->ihs_stack.top;
   if (n > p->index)
     FEerror("~D is an illegal IHS index.", 1, ecl_make_fixnum(n));
   while (n < p->index)
@@ -595,7 +595,7 @@ cl_object
 si_ihs_top(void)
 {
   cl_env_ptr env = ecl_process_env();
-  ecl_return1(env, ecl_make_fixnum(env->ihs_top->index));
+  ecl_return1(env, ecl_make_fixnum(env->ihs_stack.top->index));
 }
 
 cl_object
@@ -700,7 +700,7 @@ _ecl_frs_push(cl_env_ptr env)
   AO_nop_full();
   ++env->frs_stack.top;
   output->frs_bds_top_index = env->bds_stack.top - env->bds_stack.org;
-  output->frs_ihs = env->ihs_top;
+  output->frs_ihs = env->ihs_stack.top;
   output->frs_sp = ECL_STACK_INDEX(env);
   return output;
 }
@@ -714,7 +714,7 @@ ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
     top->frs_val = ECL_DUMMY_TAG;
     --top;
   }
-  env->ihs_top = top->frs_ihs;
+  env->ihs_stack.top = top->frs_ihs;
   ecl_bds_unwind(env, top->frs_bds_top_index);
   ECL_STACK_SET_INDEX(env, top->frs_sp);
   env->frs_stack.top = top;
@@ -878,7 +878,7 @@ init_stacks(cl_env_ptr env)
   env->bds_stack.top = env->bds_stack.org-1;
   env->bds_stack.limit = &env->bds_stack.org[size - 2*margin];
   /* ihs stack */
-  env->ihs_top = &ihs_org;
+  env->ihs_stack.top = &ihs_org;
   ihs_org.function = ECL_NIL;
   ihs_org.lex_env = ECL_NIL;
   ihs_org.index = 0;

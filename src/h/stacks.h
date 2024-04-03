@@ -253,18 +253,18 @@ typedef struct ecl_ihs_frame {
 #define ecl_ihs_push(env,rec,fun,lisp_env) do { \
         const cl_env_ptr __the_env = (env);     \
         ecl_ihs_ptr const r = (ecl_ihs_ptr const)(rec); \
-        r->next=__the_env->ihs_top;             \
-        r->function=(fun);                      \
-        r->lex_env=(lisp_env);                  \
-        r->index=__the_env->ihs_top->index+1;   \
+        r->next=__the_env->ihs_stack.top;             \
+        r->function=(fun);                            \
+        r->lex_env=(lisp_env);                        \
+        r->index=__the_env->ihs_stack.top->index+1;   \
         r->bds=__the_env->bds_stack.top - __the_env->bds_stack.org; \
-        __the_env->ihs_top = r;                 \
+        __the_env->ihs_stack.top = r;                               \
 } while(0)
 
 #define ecl_ihs_pop(env) do {                           \
         const cl_env_ptr __the_env = (env);             \
-        ecl_ihs_ptr r = __the_env->ihs_top;     \
-        if (r) __the_env->ihs_top = r->next;            \
+        ecl_ihs_ptr r = __the_env->ihs_stack.top;       \
+        if (r) __the_env->ihs_stack.top = r->next;      \
 } while(0)
 
 /***************

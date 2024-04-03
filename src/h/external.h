@@ -38,6 +38,12 @@ struct ecl_frames_stack {
         struct ecl_frame *limit;
 };
 
+/* The Invocation History Stack (IHS) keeps a list of the names of the functions
+ * that are invoked, together with their lexical environments. */
+struct ecl_history_stack {
+        struct ecl_ihs_frame *top;
+};
+
 /*
  * Per-thread data.
  */
@@ -71,15 +77,8 @@ struct cl_env_struct {
         cl_object *stack_limit;
 
         struct ecl_binding_stack bds_stack;
-        struct ecl_frames_stack  frs_stack;
-
-        /*
-         * The Invocation History Stack (IHS) keeps a list of the names of the
-         * functions that are invoked, together with their lexical
-         * environments.
-         */
-        struct ecl_ihs_frame *ihs_top;
-
+        struct ecl_frames_stack frs_stack;
+        struct ecl_history_stack ihs_stack;
 
         /*
          * The following pointers to the C Stack are used to ensure that a
