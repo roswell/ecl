@@ -34,7 +34,7 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
     struct rlimit rl;
 
     if (!getrlimit(RLIMIT_STACK, &rl)) {
-      env->cs_max_size = rl.rlim_max;
+      env->c_stack.max_size = rl.rlim_max;
       if (new_size > rl.rlim_cur) {
         rl.rlim_cur = (new_size > rl.rlim_max) ? rl.rlim_max : new_size;
         if (setrlimit(RLIMIT_STACK, &rl))
@@ -52,29 +52,29 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
       new_size = rl.rlim_cur;
     }
 #ifdef ECL_DOWN_STACK
-    env->cs_barrier = env->cs_org - new_size;
+    env->c_stack.max = env->c_stack.org - new_size;
 #else
-    env->cs_barrier = env->cs_org + new_size;
+    env->c_stack.max = env->c_stack.org + new_size;
 #endif
   }
 #endif
-  env->cs_limit_size = new_size - (2*margin);
+  env->c_stack.limit_size = new_size - (2*margin);
 #ifdef ECL_DOWN_STACK
-  if (&foo > (env->cs_org - new_size) + 16) {
-    env->cs_limit = (env->cs_org - new_size) + (2*margin);
-    if (env->cs_limit < env->cs_barrier)
-      env->cs_barrier = env->cs_limit;
+  if (&foo > (env->c_stack.org - new_size) + 16) {
+    env->c_stack.limit = (env->c_stack.org - new_size) + (2*margin);
+    if (env->c_stack.limit < env->c_stack.max)
+      env->c_stack.max = env->c_stack.limit;
   }
 #else
-  if (&foo < (env->cs_org + new_size) - 16) {
-    env->cs_limit = (env->cs_org + new_size) - (2*margin);
-    if (env->cs_limit > env->cs_barrier)
-      env->cs_barrier = env->cs_limit;
+  if (&foo < (env->c_stack.org + new_size) - 16) {
+    env->c_stack.limit = (env->c_stack.org + new_size) - (2*margin);
+    if (env->c_stack.limit > env->c_stack.max)
+      env->c_stack.max = env->c_stack.limit;
   }
 #endif
   else
     ecl_internal_error("Can't set the size of the C stack: sanity check failed");
-  env->cs_size = new_size;
+  env->c_stack.size = new_size;
 }
 
 void
@@ -86,18 +86,18 @@ ecl_cs_overflow(void)
     ";;;\n\n";
   cl_env_ptr env = ecl_process_env();
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
-  cl_index size = env->cs_size;
+  cl_index size = env->c_stack.size;
 #ifdef ECL_DOWN_STACK
-  if (env->cs_limit > env->cs_org - size)
-    env->cs_limit -= margin;
+  if (env->c_stack.limit > env->c_stack.org - size)
+    env->c_stack.limit -= margin;
 #else
-  if (env->cs_limit < env->cs_org + size)
-    env->cs_limit += margin;
+  if (env->c_stack.limit < env->c_stack.org + size)
+    env->c_stack.limit += margin;
 #endif
   else
     ecl_unrecoverable_error(env, stack_overflow_msg);
 
-  if (env->cs_max_size == (cl_index)0 || env->cs_size < env->cs_max_size)
+  if (env->c_stack.max_size == (cl_index)0 || env->c_stack.size < env->c_stack.max_size)
     si_serror(6, @"Extend stack size",
               @'ext::stack-overflow',
               @':size', ecl_make_fixnum(size),
@@ -108,8 +108,8 @@ ecl_cs_overflow(void)
               @':size', ECL_NIL,
               @':type', @'ext::c-stack');
   size += size/2;
-  if (size > env->cs_max_size)
-    size = env->cs_max_size;
+  if (size > env->c_stack.max_size)
+    size = env->c_stack.max_size;
   cs_set_size(env, size);
 }
 
@@ -119,17 +119,17 @@ ecl_cs_set_org(cl_env_ptr env)
 #ifdef GBC_BOEHM
   struct GC_stack_base base;
   if (GC_get_stack_base(&base) == GC_SUCCESS)
-    env->cs_org = (char*)base.mem_base;
+    env->c_stack.org = (char*)base.mem_base;
   else
 #endif
     {
       /* Rough estimate. Not very safe. We assume that cl_boot()
        * is invoked from the main() routine of the program.
        */
-      env->cs_org = (char*)(&env);
+      env->c_stack.org = (char*)(&env);
     }
-  env->cs_barrier = env->cs_org;
-  env->cs_max_size = 0;
+  env->c_stack.max = env->c_stack.org;
+  env->c_stack.max_size = 0;
   cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
 }
 
@@ -831,7 +831,7 @@ si_get_limit(cl_object type)
   else if (type == @'ext::binding-stack')
     output = env->bds_stack.limit_size;
   else if (type == @'ext::c-stack')
-    output = env->cs_limit_size;
+    output = env->c_stack.limit_size;
   else if (type == @'ext::lisp-stack')
     output = env->stack_limit_size;
   else if (type == @'ext::heap-size') {
@@ -851,7 +851,7 @@ si_reset_margin(cl_object type)
   else if (type == @'ext::binding-stack')
     ecl_bds_set_size(env, env->bds_stack.size);
   else if (type == @'ext::c-stack')
-    cs_set_size(env, env->cs_size);
+    cs_set_size(env, env->c_stack.size);
   else
     ecl_return1(env, ECL_NIL);
 

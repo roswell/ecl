@@ -44,6 +44,21 @@ struct ecl_history_stack {
         struct ecl_ihs_frame *top;
 };
 
+/* The following pointers to the C Stack are used to ensure that a recursive
+ * function does not enter an infinite loop and exhausts all memory. They will
+ * eventually disappear, because most operating systems already take care of
+ * this. */
+struct ecl_c_stack {
+        cl_index max_size;      /* maximum possible size */
+
+        cl_index size;          /* current size */
+        cl_index limit_size;    /* maximum size minus safety area */
+        char *org;              /* origin address */
+        char *max;              /* overflow address (real maximum address) */
+        char *limit;            /* overflow address (spares recovery area) */
+};
+
+
 /*
  * Per-thread data.
  */
@@ -79,24 +94,7 @@ struct cl_env_struct {
         struct ecl_binding_stack bds_stack;
         struct ecl_frames_stack frs_stack;
         struct ecl_history_stack ihs_stack;
-
-        /*
-         * The following pointers to the C Stack are used to ensure that a
-         * recursive function does not enter an infinite loop and exhausts all
-         * memory. They will eventually disappear, because most operating
-         * systems already take care of this.
-         */
-        cl_index cs_size;       /* current size */
-        cl_index cs_limit_size; /* current size minus safety area */
-        cl_index cs_max_size;   /* maximum possible size */
-        char *cs_org;           /* origin address */
-        char *cs_limit;         /* limit address; if the stack pointer
-                                   goes beyond this value, a stack
-                                   overflow will be signaled ... */
-        char *cs_barrier;       /* ... but the area up to cs_barrier
-                                   is still available to allow
-                                   programs to recover from the
-                                   stack overflow */
+        struct ecl_c_stack c_stack;
 
         /* Private variables used by different parts of ECL: */
         /* ... the reader and printer ... */
