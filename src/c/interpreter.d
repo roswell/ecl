@@ -1089,13 +1089,13 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
 
     CASE(OP_BLOCK); {
       GET_DATA(reg0, vector, data);
-      reg1 = ecl_make_fixnum(the_env->frame_id++);
+      reg1 = ecl_make_fixnum(the_env->frs_stack.frame_id++);
       bind_frame(lcl_env, reg1, reg0);
       THREAD_NEXT;
     }
     CASE(OP_DO); {
       reg0 = ECL_NIL;
-      reg1 = ecl_make_fixnum(the_env->frame_id++);
+      reg1 = ecl_make_fixnum(the_env->frs_stack.frame_id++);
       bind_frame(lcl_env, reg1, reg0);
       THREAD_NEXT;
     }
@@ -1270,13 +1270,13 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
         vector = (cl_opcode *)ECL_STACK_POP_UNSAFE(the_env);
         unwind_lcl(lcl_env, ECL_STACK_POP_UNSAFE(the_env));
         reg0 = the_env->values[0];
-        ECL_STACK_PUSH(the_env, ecl_make_fixnum(the_env->nlj_fr - the_env->frs_top));
+        ECL_STACK_PUSH(the_env, ecl_make_fixnum(the_env->frs_stack.nlj_fr - the_env->frs_stack.top));
         goto PUSH_VALUES;
       }
       THREAD_NEXT;
     }
     CASE(OP_PROTECT_NORMAL); {
-      ecl_bds_unwind(the_env, the_env->frs_top->frs_bds_top_index);
+      ecl_bds_unwind(the_env, the_env->frs_stack.top->frs_bds_top_index);
       ecl_frs_pop(the_env);
       (void)ECL_STACK_POP_UNSAFE(the_env);
       unwind_lcl(lcl_env, ECL_STACK_POP_UNSAFE(the_env));
@@ -1290,7 +1290,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       reg0 = the_env->values[0];
       n = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
       if (n <= 0)
-        ecl_unwind(the_env, the_env->frs_top + n);
+        ecl_unwind(the_env, the_env->frs_stack.top + n);
       THREAD_NEXT;
     }
 
