@@ -167,7 +167,7 @@ The cross-compilation steps for iOS are similar to those for Android.
 Build the host ECL:
 @example
 @verbatim
-./configure --prefix=`pwd`/ecl-iOS-host --disable-c99complex
+./configure CFLAGS="-DECL_C_COMPATIBLE_VARIADIC_DISPATCH" --prefix=`pwd`/ecl-iOS-host --disable-c99complex
 make -j9
 make install
 rm -r build

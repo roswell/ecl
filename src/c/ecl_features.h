@@ -116,6 +116,9 @@ ecl_def_string_array(feature_names,static,const) = {
 #ifdef ECL_WSOCK
   ecl_def_string_array_elt("WSOCK"),
 #endif
+#ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
+  ecl_def_string_array_elt("C-COMPATIBLE-VARIADIC-DISPATCH"),
+#endif
   ecl_def_string_array_elt(0)
 };
 

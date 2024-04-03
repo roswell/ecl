@@ -98,9 +98,12 @@
 
 (defun wt-call-indirect (fun-loc args fname function-p)
   (let ((narg (length args)))
-    (if function-p
-        (wt "(cl_env_copy->function=" fun-loc ")->cfun.entry(" narg)
-        (wt "ecl_function_dispatch(cl_env_copy," fun-loc ")(" narg))
+    (cond (function-p
+           (wt "(cl_env_copy->function=" fun-loc ")->cfun.entry(" narg))
+          ((and fname (symbolp fname))
+           (wt "(cl_env_copy->function=" fun-loc "->symbol.gfdef)->cfun.entry(" narg))
+          (t
+           (wt "ecl_function_dispatch(cl_env_copy," fun-loc ")(" narg)))
     (dolist (arg args)
       (wt ", " arg))
     (wt ")")
@@ -112,7 +115,7 @@
   (when fname
     (wt-comment fname)))
 
-(defun wt-call-normal (fun args type)
+(defun wt-call-normal (fun args type &optional (narg (length args)))
   (declare (ignore type))
   (unless (fun-cfun fun)
     (baboon "Function without a C name: ~A" (fun-name fun)))
@@ -120,7 +123,6 @@
          (maxarg (fun-maxarg fun))
          (fun-c-name (fun-cfun fun))
          (fun-lisp-name (fun-name fun))
-         (narg (length args))
          (env nil))
     (case (fun-closure fun)
       (CLOSURE
@@ -132,7 +134,7 @@
            (let* ((j (- lex-lvl n 1))
                   (x (lex-env-var-name j)))
              (push x args))))))
-    (unless (<= minarg narg maxarg)
+    (when (not (<= minarg narg maxarg))
       (cmperr "Wrong number of arguments for function ~S"
               (or fun-lisp-name 'ANONYMOUS)))
     (when (fun-needs-narg fun)
@@ -154,7 +156,7 @@
                         (functionp (fdefinition fun-name))))))
     (cond
       ((not safe)
-       (let ((vv (get-object fun-name)))
+       (let ((vv (get-object fun-name :test #'equal)))
          (wt "ecl_fdefinition(" vv ")")))
       ((eq name fun-name)
        ;; #'symbol
@@ -165,7 +167,7 @@
        (let ((setf-loc (assoc name *setf-definitions*)))
          (unless setf-loc
            (let* ((setf-vv (data-empty-loc*))
-                  (name-vv (get-object name)))
+                  (name-vv (get-object name :test #'equal)))
              (setf setf-loc (list name setf-vv name-vv))
              (push setf-loc *setf-definitions*)))
          (wt "ECL_CONS_CAR(" (second setf-loc) ")"))))))
@@ -177,21 +179,27 @@
         (format nil "ecl_nthcdr(~D,~A)" (- *env* expected-env-size) env-var)
         env-var)))
 
-(defun wt-make-closure (fun &aux (cfun (fun-cfun fun)))
+(defun wt-make-closure (fun)
   (declare (type fun fun))
   (let* ((closure (fun-closure fun))
-         narg)
+         (narg (fun-fixed-narg fun))
+         (variadic-entrypoint (fun-variadic-entrypoint fun))
+         (cfun (fun-cfun fun))
+         (entrypoint (or variadic-entrypoint cfun))
+         (narg-fixed (if variadic-entrypoint
+                         0
+                         (min (fun-minarg fun) si:c-arguments-limit))))
     (cond ((eq closure 'CLOSURE)
-           (wt "ecl_make_cclosure_va((cl_objectfn)" cfun ","
-               (environment-accessor fun)
-               ",Cblock," (min (fun-minarg fun) si:c-arguments-limit) ")"))
+           (wt "ecl_make_cclosure_va((cl_objectfn)" entrypoint "," (environment-accessor fun) ",Cblock," narg-fixed ")"))
           ((eq closure 'LEXICAL)
            (baboon :format-control "wt-make-closure: lexical closure detected."))
-          ((setf narg (fun-fixed-narg fun)) ; empty environment fixed number of args
-           (wt "ecl_make_cfun((cl_objectfn_fixed)" cfun ",ECL_NIL,Cblock," narg ")"))
+          (narg               ; empty environment fixed number of args
+           (wt (if variadic-entrypoint
+                   "ecl_make_cfun_va((cl_objectfn)"
+                   "ecl_make_cfun((cl_objectfn_fixed)")
+               entrypoint ",ECL_NIL,Cblock," narg-fixed ")"))
           (t ; empty environment variable number of args
-           (wt "ecl_make_cfun_va((cl_objectfn)" cfun ",ECL_NIL,Cblock,"
-               (min (fun-minarg fun) si:c-arguments-limit) ")")))))
+           (wt "ecl_make_cfun_va((cl_objectfn)" entrypoint ",ECL_NIL,Cblock," narg-fixed ")")))))
 
 ;;;
 ;;; COERCE-LOC

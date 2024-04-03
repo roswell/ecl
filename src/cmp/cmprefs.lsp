@@ -108,6 +108,7 @@
   read-nodes            ;;; Nodes (c1forms) in which the reference occurs.
 |#
   cfun                  ;;; The cfun for the function.
+  (variadic-entrypoint-cfun :unknown) ;;; The cfun for an entrypoint with variadic signature.
   (level 0)             ;;; Level of lexical nesting for a function.
   (env 0)               ;;; Size of env of closure.
   (global nil)          ;;; Global lisp function.

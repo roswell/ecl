@@ -65,7 +65,7 @@ clos_std_compute_applicable_methods(cl_object gf, cl_object arglist)
 extern cl_object
 si_bind_simple_restarts(cl_object tag, cl_object names)
 {
-  if (ECL_SYM_FUN(@'si::bind-simple-restarts') != ECL_NIL)
+  if (ECL_FBOUNDP(@'si::bind-simple-restarts'))
     return _ecl_funcall3(@'si::bind-simple-restarts', tag, names);
   else
     return ECL_SYM_VAL(ecl_process_env(), @'si::*restart-clusters*');
@@ -74,7 +74,7 @@ si_bind_simple_restarts(cl_object tag, cl_object names)
 extern cl_object
 si_bind_simple_handlers(cl_object tag, cl_object names)
 {
-  if (ECL_SYM_FUN(@'si::bind-simple-handlers') != ECL_NIL)
+  if (ECL_FBOUNDP(@'si::bind-simple-handlers'))
     return _ecl_funcall3(@'si::bind-simple-handlers', tag, names);
   else
     return ECL_SYM_VAL(ecl_process_env(), @'si::*handler-clusters*');

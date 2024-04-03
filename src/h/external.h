@@ -373,6 +373,7 @@ extern ECL_API cl_object si_fset _ECL_ARGS((cl_narg narg, cl_object fun, cl_obje
 extern ECL_API cl_object si_get_sysprop(cl_object sym, cl_object prop);
 extern ECL_API cl_object si_put_sysprop(cl_object sym, cl_object prop, cl_object value);
 extern ECL_API cl_object si_rem_sysprop(cl_object sym, cl_object prop);
+extern ECL_API cl_object si_copy_sysprop(cl_object sym_old, cl_object sym_new);
 extern ECL_API cl_object ecl_setf_definition(cl_object fname, cl_object createp);
 extern ECL_API cl_object si_setf_definition(cl_object fname, cl_object createp);
 

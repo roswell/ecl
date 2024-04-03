@@ -302,7 +302,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       cl_object s;
       cl_objectfn f;
       GET_DATA(s, vector, data);
-      f = ecl_function_dispatch(the_env, ECL_SYM_FUN(s));
+      the_env->function = ECL_SYM_FUN(s);
+      f = ECL_SYM_FUN(s)->cfun.entry;
       SETUP_ENV(the_env);
       reg0 = f(1, reg0);
       THREAD_NEXT;
@@ -312,7 +313,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       cl_object s;
       cl_objectfn f;
       GET_DATA(s, vector, data);
-      f = ecl_function_dispatch(the_env, ECL_SYM_FUN(s));
+      the_env->function = ECL_SYM_FUN(s);
+      f = ECL_SYM_FUN(s)->cfun.entry;
       SETUP_ENV(the_env);
       reg0 = f(2, ECL_STACK_POP_UNSAFE(the_env), reg0);
       THREAD_NEXT;
@@ -368,7 +370,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       the_env->stack_frame = frame;
       SETUP_ENV(the_env);
     AGAIN:
-      if (ecl_unlikely(reg0 == OBJNULL || reg0 == ECL_NIL))
+      if (ecl_unlikely(reg0 == ECL_NIL))
         FEundefined_function(x);
       switch (ecl_t_of(reg0)) {
       case t_cfunfixed:
@@ -406,7 +408,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         }
         break;
       case t_symbol:
-        if (ecl_unlikely(reg0->symbol.stype & ecl_stp_macro))
+        if (ecl_unlikely(!ECL_FBOUNDP(x)))
           FEundefined_function(x);
         reg0 = ECL_SYM_FUN(reg0);
         goto AGAIN;

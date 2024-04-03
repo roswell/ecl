@@ -270,25 +270,43 @@ enum ecl_stype {                /*  symbol type  */
 #define ECL_NO_TL_BINDING       ((cl_object)(1 << ECL_TAG_BITS))
 
 struct ecl_symbol {
-        _ECL_HDR1(stype);       /*  symbol type */
-        cl_object value;        /*  global value of the symbol  */
-                                /*  Coincides with cons.car  */
-        cl_object gfdef;        /*  global function definition  */
-                                /*  For a macro,  */
-                                /*  its expansion function  */
-                                /*  is to be stored.  */
-                                /*  Coincides with cons.cdr  */
-        cl_object plist;        /*  property list  */
-                                /*  This field coincides with cons.car  */
-        cl_object name;         /*  print name  */
-        cl_object cname;        /*  associated C name (or NIL)  */
-        cl_object hpack;        /*  home package  */
-                                /*  ECL_NIL for uninterned symbols  */
+        _ECL_HDR1(stype);        /*  symbol type */
+        cl_object value;         /*  global value of the symbol  */
+        cl_object gfdef;         /*  global function definition  */
+        cl_objectfn undef_entry; /*  entry point for not fboundp
+                                  *  symbols (must match the position
+                                  *  of cfun.entry); see below for
+                                  *  more explanation */
+        cl_object macfun;        /*  macro expansion function  */
+        cl_object plist;         /*  property list  */
+        cl_object name;          /*  print name  */
+        cl_object cname;         /*  associated C name for function
+                                  *  with exported C interface */
+        cl_object hpack;         /*  home package  */
+                                 /*  ECL_NIL for uninterned symbols  */
 #ifdef ECL_THREADS
-        cl_index binding;       /*  index into the bindings array  */
+        cl_index binding;        /*  index into the bindings array  */
 #endif
 };
+/*
+ * Undefined functions are implemented as follows.
+ *
+ * For a symbols s with a global function binding: s->symbol.gfdef
+ * points to a cfun object, f->symbol.undef_entry is unused.
+ *
+ * For a symbol without a global function binding: s->symbol.gfdef
+ * points back to s itself, s->symbol.undef_entry is set. When an
+ * attempt is made to funcall s, the entry point in
+ * s->symbol.undef_entry is called which signals an undefined-function
+ * condition. Since the_env->function is set to s->symbol.gfdef which
+ * in this case is just s itself, we know which symbol caused the
+ * error and can signal accordingly. This construction enables us to
+ * skip the check for whether a function is bound or not when
+ * funcalling.
+ */
 #define ECL_SYM_FUN(sym)        ((sym)->symbol.gfdef)
+#define ECL_FBOUNDP(sym)        ((sym)->symbol.gfdef != (sym))
+#define ECL_FMAKUNBOUND(sym)    ((sym)->symbol.gfdef = (sym))
 
 struct ecl_package {
         _ECL_HDR1(locked);

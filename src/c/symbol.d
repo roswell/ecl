@@ -105,9 +105,10 @@ cl_make_symbol(cl_object str)
   x->symbol.cname = ECL_NIL;
 #ifdef ECL_THREADS
   x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
-#endif  /*  */
+#endif
   ECL_SET(x,OBJNULL);
-  ECL_SYM_FUN(x) = ECL_NIL;
+  ECL_FMAKUNBOUND(x);
+  x->symbol.undef_entry = ecl_undefined_function_entry;
   x->symbol.plist = ECL_NIL;
   x->symbol.hpack = ECL_NIL;
   x->symbol.stype = ecl_stp_ordinary;
@@ -321,18 +322,25 @@ cl_symbol_name(cl_object x)
 
 @(defun copy_symbol (sym &optional cp &aux x)
   @
-  if (Null(sym))
-  sym = ECL_NIL_SYMBOL;
+  if (Null(sym)) {
+    sym = ECL_NIL_SYMBOL;
+  }
   x = cl_make_symbol(ecl_symbol_name(sym));
   if (!Null(cp)) {
     x->symbol.stype = sym->symbol.stype;
     x->symbol.value = sym->symbol.value;
-    x->symbol.gfdef = sym->symbol.gfdef;
     x->symbol.plist = cl_copy_list(sym->symbol.plist);
+    x->symbol.undef_entry = sym->symbol.undef_entry;
+    x->symbol.macfun = sym->symbol.macfun;
+    if (ECL_FBOUNDP(sym)) {
+      x->symbol.gfdef = sym->symbol.gfdef;
+    } else {
+      ECL_FMAKUNBOUND(x);
+    }
 #ifdef ECL_THREADS
     x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
-    /* FIXME!!! We should also copy the system property list */
+    si_copy_sysprop(sym, x);
   }
   @(return x);
   @)
