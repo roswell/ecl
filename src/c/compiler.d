@@ -1122,7 +1122,7 @@ c_catch(cl_env_ptr env, cl_object args, int flags) {
 static int
 c_compiler_let(cl_env_ptr env, cl_object args, int flags) {
   cl_object bindings;
-  cl_index old_bds_top_index = env->bds_top - env->bds_org;
+  cl_index old_bds_top_index = env->bds_stack.top - env->bds_stack.org;
 
   for (bindings = pop(&args); !Null(bindings); ) {
     cl_object form = pop(&bindings);

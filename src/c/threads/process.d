@@ -295,7 +295,7 @@ alloc_process(cl_object name, cl_object initial_bindings)
                            ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
     si_fill_array_with_elt(array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
   } else {
-    array = cl_copy_seq(ecl_process_env()->bindings_array);
+    array = cl_copy_seq(ecl_process_env()->bds_stack.bindings_array);
   }
   process->process.initial_bindings = array;
   process->process.woken_up = ECL_NIL;
@@ -363,9 +363,9 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 
   /* Copy initial bindings from process to the fake environment */
   env_aux->cleanup = registered;
-  env_aux->bindings_array = process->process.initial_bindings;
-  env_aux->thread_local_bindings_size = env_aux->bindings_array->vector.dim;
-  env_aux->thread_local_bindings = env_aux->bindings_array->vector.self.t;
+  env_aux->bds_stack.bindings_array = process->process.initial_bindings;
+  env_aux->bds_stack.thread_local_bindings_size = env_aux->bds_stack.bindings_array->vector.dim;
+  env_aux->bds_stack.thread_local_bindings = env_aux->bds_stack.bindings_array->vector.self.t;
 
   /* Switch over to the real environment */
   memcpy(env, env_aux, sizeof(*env));
@@ -520,11 +520,11 @@ mp_process_enable(cl_object process)
     ecl_init_env(process_env);
 
     process_env->trap_fpe_bits = process->process.trap_fpe_bits;
-    process_env->bindings_array = process->process.initial_bindings;
-    process_env->thread_local_bindings_size = 
-      process_env->bindings_array->vector.dim;
-    process_env->thread_local_bindings =
-      process_env->bindings_array->vector.self.t;
+    process_env->bds_stack.bindings_array = process->process.initial_bindings;
+    process_env->bds_stack.thread_local_bindings_size = 
+      process_env->bds_stack.bindings_array->vector.dim;
+    process_env->bds_stack.thread_local_bindings =
+      process_env->bds_stack.bindings_array->vector.self.t;
 
     ecl_disable_interrupts_env(the_env);
 #ifdef ECL_WINDOWS_THREADS

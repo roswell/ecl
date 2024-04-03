@@ -288,23 +288,23 @@ ecl_bds_unwind_n(cl_env_ptr env, int n)
 static void
 ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
 {
-  ecl_bds_ptr old_org = env->bds_org;
-  cl_index limit = env->bds_top - old_org;
+  ecl_bds_ptr old_org = env->bds_stack.org;
+  cl_index limit = env->bds_stack.top - old_org;
   if (new_size <= limit) {
     FEerror("Cannot shrink the binding stack below ~D.", 1,
             ecl_make_unsigned_integer(limit));
   } else {
     cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
     ecl_bds_ptr org;
-    env->bds_limit_size = new_size - 2*margin;
+    env->bds_stack.limit_size = new_size - 2*margin;
     org = ecl_alloc_atomic(new_size * sizeof(*org));
 
     ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
     memcpy(org, old_org, (limit + 1) * sizeof(*org));
-    env->bds_top = org + limit;
-    env->bds_org = org;
-    env->bds_limit = org + (new_size - 2*margin);
-    env->bds_size = new_size;
+    env->bds_stack.top = org + limit;
+    env->bds_stack.org = org;
+    env->bds_stack.limit = org + (new_size - 2*margin);
+    env->bds_stack.size = new_size;
     ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 
     ecl_dealloc(old_org);
@@ -320,39 +320,39 @@ ecl_bds_overflow(void)
     ";;;\n\n";
   cl_env_ptr env = ecl_process_env();
   cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
-  cl_index size = env->bds_size;
-  ecl_bds_ptr org = env->bds_org;
+  cl_index size = env->bds_stack.size;
+  ecl_bds_ptr org = env->bds_stack.org;
   ecl_bds_ptr last = org + size;
-  if (env->bds_limit >= last) {
+  if (env->bds_stack.limit >= last) {
     ecl_unrecoverable_error(env, stack_overflow_msg);
   }
-  env->bds_limit += margin;
+  env->bds_stack.limit += margin;
   si_serror(6, @"Extend stack size",
             @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
             @':type', @'ext::binding-stack');
   ecl_bds_set_size(env, size + (size / 2));
-  return env->bds_top;
+  return env->bds_stack.top;
 }
 
 void
 ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index)
 {
-  ecl_bds_ptr new_bds_top = new_bds_top_index + env->bds_org;
-  ecl_bds_ptr bds = env->bds_top;
+  ecl_bds_ptr new_bds_top = new_bds_top_index + env->bds_stack.org;
+  ecl_bds_ptr bds = env->bds_stack.top;
   for (;  bds > new_bds_top;  bds--)
 #ifdef ECL_THREADS
     ecl_bds_unwind1(env);
 #else
     bds->symbol->symbol.value = bds->value;
 #endif
-  env->bds_top = new_bds_top;
+  env->bds_stack.top = new_bds_top;
 }
 
 cl_index
 ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
 {
   cl_object vars = vars0, values = values0;
-  cl_index n = env->bds_top - env->bds_org;
+  cl_index n = env->bds_stack.top - env->bds_stack.org;
   for (; LISTP(vars) && LISTP(values); vars = ECL_CONS_CDR(vars)) {
     if (Null(vars)) {
       return n;
@@ -380,8 +380,8 @@ get_bds_ptr(cl_object x)
 {
   if (ECL_FIXNUMP(x)) {
     cl_env_ptr env = ecl_process_env();
-    ecl_bds_ptr p = env->bds_org + ecl_fixnum(x);
-    if (env->bds_org <= p && p <= env->bds_top)
+    ecl_bds_ptr p = env->bds_stack.org + ecl_fixnum(x);
+    if (env->bds_stack.org <= p && p <= env->bds_stack.top)
       return(p);
   }
   FEerror("~S is an illegal bds index.", 1, x);
@@ -391,7 +391,7 @@ cl_object
 si_bds_top()
 {
   cl_env_ptr env = ecl_process_env();
-  ecl_return1(env, ecl_make_fixnum(env->bds_top - env->bds_org));
+  ecl_return1(env, ecl_make_fixnum(env->bds_stack.top - env->bds_stack.org));
 }
 
 cl_object
@@ -457,11 +457,11 @@ invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
   if (index == ECL_MISSING_SPECIAL_BINDING) {
     index = ecl_new_binding_index(env, s);
   }
-  if (index >= env->thread_local_bindings_size) {
-    cl_object vector = env->bindings_array;
-    env->bindings_array = vector = ecl_extend_bindings_array(vector);
-    env->thread_local_bindings_size = vector->vector.dim;
-    env->thread_local_bindings = vector->vector.self.t;
+  if (index >= env->bds_stack.thread_local_bindings_size) {
+    cl_object vector = env->bds_stack.bindings_array;
+    env->bds_stack.bindings_array = vector = ecl_extend_bindings_array(vector);
+    env->bds_stack.thread_local_bindings_size = vector->vector.dim;
+    env->bds_stack.thread_local_bindings = vector->vector.self.t;
   }
   return index;
 }
@@ -477,15 +477,15 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
   cl_object *location;
   ecl_bds_ptr slot;
   cl_index index = s->symbol.binding;
-  if (index >= env->thread_local_bindings_size) {
+  if (index >= env->bds_stack.thread_local_bindings_size) {
     index = invalid_or_too_large_binding_index(env,s);
   }
-  location = env->thread_local_bindings + index;
-  slot = env->bds_top+1;
-  if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  location = env->bds_stack.thread_local_bindings + index;
+  slot = env->bds_stack.top+1;
+  if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
   slot->symbol = ECL_DUMMY_TAG;
   AO_nop_full();
-  ++env->bds_top;
+  ++env->bds_stack.top;
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
@@ -493,7 +493,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
   ecl_enable_interrupts_env(env);
 #else
   ecl_bds_check(env);
-  ecl_bds_ptr slot = ++(env->bds_top);
+  ecl_bds_ptr slot = ++(env->bds_stack.top);
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = s->symbol.value;
@@ -509,15 +509,15 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
   cl_object *location;
   ecl_bds_ptr slot;
   cl_index index = s->symbol.binding;
-  if (index >= env->thread_local_bindings_size) {
+  if (index >= env->bds_stack.thread_local_bindings_size) {
     index = invalid_or_too_large_binding_index(env,s);
   }
-  location = env->thread_local_bindings + index;
-  slot = env->bds_top+1;
-  if (slot >= env->bds_limit) slot = ecl_bds_overflow();
+  location = env->bds_stack.thread_local_bindings + index;
+  slot = env->bds_stack.top+1;
+  if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
   slot->symbol = ECL_DUMMY_TAG;
   AO_nop_full();
-  ++env->bds_top;
+  ++env->bds_stack.top;
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = *location;
@@ -525,7 +525,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
   ecl_enable_interrupts_env(env);
 #else
   ecl_bds_check(env);
-  ecl_bds_ptr slot = ++(env->bds_top);
+  ecl_bds_ptr slot = ++(env->bds_stack.top);
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
   slot->value = s->symbol.value;
@@ -536,14 +536,14 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
 void
 ecl_bds_unwind1(cl_env_ptr env)
 {
-  cl_object s = env->bds_top->symbol;
+  cl_object s = env->bds_stack.top->symbol;
 #ifdef ECL_THREADS
-  cl_object *location = env->thread_local_bindings + s->symbol.binding;
-  *location = env->bds_top->value;
+  cl_object *location = env->bds_stack.thread_local_bindings + s->symbol.binding;
+  *location = env->bds_stack.top->value;
 #else
-  s->symbol.value = env->bds_top->value;
+  s->symbol.value = env->bds_stack.top->value;
 #endif
-  --env->bds_top;
+  --env->bds_stack.top;
 }
 
 #ifdef ECL_THREADS
@@ -551,8 +551,8 @@ cl_object
 ecl_bds_read(cl_env_ptr env, cl_object s)
 {
   cl_index index = s->symbol.binding;
-  if (index < env->thread_local_bindings_size) {
-    cl_object x = env->thread_local_bindings[index];
+  if (index < env->bds_stack.thread_local_bindings_size) {
+    cl_object x = env->bds_stack.thread_local_bindings[index];
     if (x != ECL_NO_TL_BINDING) return x;
   }
   return s->symbol.value;
@@ -562,8 +562,8 @@ cl_object *
 ecl_bds_ref(cl_env_ptr env, cl_object s)
 {
   cl_index index = s->symbol.binding;
-  if (index < env->thread_local_bindings_size) {
-    cl_object *location = env->thread_local_bindings + index;
+  if (index < env->bds_stack.thread_local_bindings_size) {
+    cl_object *location = env->bds_stack.thread_local_bindings + index;
     if (*location != ECL_NO_TL_BINDING)
       return location;
   }
@@ -699,7 +699,7 @@ _ecl_frs_push(cl_env_ptr env)
   output->frs_val = ECL_DUMMY_TAG;
   AO_nop_full();
   ++env->frs_top;
-  output->frs_bds_top_index = env->bds_top - env->bds_org;
+  output->frs_bds_top_index = env->bds_stack.top - env->bds_stack.org;
   output->frs_ihs = env->ihs_top;
   output->frs_sp = ECL_STACK_INDEX(env);
   return output;
@@ -827,7 +827,7 @@ si_get_limit(cl_object type)
   if (type == @'ext::frame-stack')
     output = env->frs_limit_size;
   else if (type == @'ext::binding-stack')
-    output = env->bds_limit_size;
+    output = env->bds_stack.limit_size;
   else if (type == @'ext::c-stack')
     output = env->cs_limit_size;
   else if (type == @'ext::lisp-stack')
@@ -847,7 +847,7 @@ si_reset_margin(cl_object type)
   if (type == @'ext::frame-stack')
     frs_set_size(env, env->frs_size);
   else if (type == @'ext::binding-stack')
-    ecl_bds_set_size(env, env->bds_size);
+    ecl_bds_set_size(env, env->bds_stack.size);
   else if (type == @'ext::c-stack')
     cs_set_size(env, env->cs_size);
   else
@@ -871,10 +871,10 @@ init_stacks(cl_env_ptr env)
   /* bind stack */
   margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
   size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
-  env->bds_size = size;
-  env->bds_org = (ecl_bds_ptr)ecl_alloc_atomic(size * sizeof(*env->bds_org));
-  env->bds_top = env->bds_org-1;
-  env->bds_limit = &env->bds_org[size - 2*margin];
+  env->bds_stack.size = size;
+  env->bds_stack.org = (ecl_bds_ptr)ecl_alloc_atomic(size * sizeof(*env->bds_stack.org));
+  env->bds_stack.top = env->bds_stack.org-1;
+  env->bds_stack.limit = &env->bds_stack.org[size - 2*margin];
   /* ihs stack */
   env->ihs_top = &ihs_org;
   ihs_org.function = ECL_NIL;

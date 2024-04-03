@@ -1161,9 +1161,9 @@ ecl_mark_env(struct cl_env_struct *env)
     GC_push_conditional((void *)env->frs_org, (void *)(env->frs_top+1), 1);
     GC_set_mark_bit((void *)env->frs_org);
   }
-  if (env->bds_top) {
-    GC_push_conditional((void *)env->bds_org, (void *)(env->bds_top+1), 1);
-    GC_set_mark_bit((void *)env->bds_org);
+  if (env->bds_stack.top) {
+    GC_push_conditional((void *)env->bds_stack.org, (void *)(env->bds_stack.top+1), 1);
+    GC_set_mark_bit((void *)env->bds_stack.org);
   }
 #endif
   /*memset(env->values[env->nvalues], 0, (64-env->nvalues)*sizeof(cl_object));*/

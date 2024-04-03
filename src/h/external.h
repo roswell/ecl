@@ -10,6 +10,20 @@ extern "C" {
 
 #define _ECL_ARGS(x) x
 
+/* The BinDing Stack stores the bindings of special variables. */
+struct ecl_binding_stack {
+#ifdef ECL_THREADS
+        cl_index thread_local_bindings_size;
+        cl_object *thread_local_bindings;
+        cl_object bindings_array;
+#endif
+        cl_index size;
+        cl_index limit_size;
+        struct ecl_bds_frame * org;
+        struct ecl_bds_frame * top;
+        struct ecl_bds_frame * limit;
+};
+
 /*
  * Per-thread data.
  */
@@ -42,19 +56,7 @@ struct cl_env_struct {
         cl_object *stack_top;
         cl_object *stack_limit;
 
-        /*
-         * The BinDing Stack stores the bindings of special variables.
-         */
-#ifdef ECL_THREADS
-        cl_index thread_local_bindings_size;
-        cl_object *thread_local_bindings;
-        cl_object bindings_array;
-#endif
-        cl_index bds_size;
-        cl_index bds_limit_size;
-        struct ecl_bds_frame *bds_org;
-        struct ecl_bds_frame *bds_top;
-        struct ecl_bds_frame *bds_limit;
+        struct ecl_binding_stack bds_stack;
 
         /*
          * The Invocation History Stack (IHS) keeps a list of the names of the
