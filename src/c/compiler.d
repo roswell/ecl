@@ -56,7 +56,7 @@
 typedef struct cl_compiler_env *cl_compiler_ptr;
 
 #define asm_begin(env) current_pc(env)
-#define current_pc(env) ECL_STACK_INDEX(env)
+#define current_pc(env) ecl_stack_index(env)
 #define set_pc(env,n) asm_clear(env,n)
 #define asm_ref(env,n) (cl_fixnum)((env)->run_stack.org[n])
 static void asm_clear(cl_env_ptr env, cl_index h);
@@ -199,12 +199,12 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 static void
 asm_op(cl_env_ptr env, cl_fixnum code) {
   cl_object v = (cl_object)code;
-  ECL_STACK_PUSH(env,v);
+  ecl_stack_push(env,v);
 }
 
 static void
 asm_clear(cl_env_ptr env, cl_index h) {
-  ECL_STACK_SET_INDEX(env, h);
+  ecl_stack_set_index_unsafe(env, h);
 }
 
 static void
@@ -2479,7 +2479,7 @@ save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
   cl_object bytecodes = ecl_alloc_simple_vector(l, ecl_aet_index);
   cl_index *p;
   for (p = bytecodes->vector.self.index; end > start; end--, p++) {
-    *p = (cl_index)ECL_STACK_POP_UNSAFE(env);
+    *p = (cl_index)ecl_stack_pop_unsafe(env);
   }
   return bytecodes;
 }
@@ -2490,7 +2490,7 @@ restore_bytecodes(cl_env_ptr env, cl_object bytecodes)
   cl_index *p = bytecodes->vector.self.index;
   cl_index l;
   for (l = bytecodes->vector.dim; l; l--) {
-    ECL_STACK_PUSH(env, (cl_object)p[l-1]);
+    ecl_stack_push(env, (cl_object)p[l-1]);
   }
   ecl_dealloc(bytecodes);
 }

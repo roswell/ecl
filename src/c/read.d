@@ -900,7 +900,7 @@ static cl_object
 sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 {
   cl_env_ptr env = ecl_process_env();
-  cl_index sp = ECL_STACK_INDEX(env);
+  cl_index sp = ecl_stack_index(env);
   cl_object last, elt, x;
   cl_fixnum dim, dimcount, i;
   cl_object rtbl = ecl_current_readtable();
@@ -925,7 +925,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
         FEreader_error("Character ~:C is not allowed after #*",
                        in, 1, ECL_CODE_CHAR(x));
       }
-    ECL_STACK_PUSH(env, ecl_make_fixnum(x == '1'));
+    ecl_stack_push(env, ecl_make_fixnum(x == '1'));
   }
   if (Null(d)) {
     dim = dimcount;
@@ -950,7 +950,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
     else
       x->vector.self.bit[i/CHAR_BIT] |= 0200 >> i%CHAR_BIT;
   }
-  ECL_STACK_POP_N_UNSAFE(env, dimcount);
+  ecl_stack_pop_n_unsafe(env, dimcount);
   @(return x);
 }
 
