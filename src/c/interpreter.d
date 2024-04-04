@@ -421,7 +421,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        Inlined forms for some functions which act on reg0 and stack.
     */
     CASE(OP_CONS); {
-      cl_object car = ECL_STACK_POP_UNSAFE(the_env);
+      cl_object car = ecl_stack_pop_unsafe(the_env);
       reg0 = CONS(car, reg0);
       THREAD_NEXT;
     }
@@ -447,7 +447,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       cl_index n;
       GET_OPARG(n, vector);
       while (--n) {
-        reg0 = CONS(ECL_STACK_POP_UNSAFE(the_env), reg0);
+        reg0 = CONS(ecl_stack_pop_unsafe(the_env), reg0);
       }
       THREAD_NEXT;
     }
@@ -475,7 +475,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PINT); {
       cl_fixnum n;
       GET_OPARG(n, vector);
-      ECL_STACK_PUSH(the_env, ecl_make_fixnum(n));
+      ecl_stack_push(the_env, ecl_make_fixnum(n));
       THREAD_NEXT;
     }
 
@@ -483,7 +483,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        Pushes the object in REG0.
     */
     CASE(OP_PUSH); {
-      ECL_STACK_PUSH(the_env, reg0);
+      ecl_stack_push(the_env, reg0);
       THREAD_NEXT;
     }
     /* OP_PUSHV     n{lcl}
@@ -494,13 +494,13 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PUSHV); {
       int ndx;
       GET_OPARG(ndx, vector);
-      ECL_STACK_PUSH(the_env, ecl_lcl_env_get_var(lcl_env, ndx));
+      ecl_stack_push(the_env, ecl_lcl_env_get_var(lcl_env, ndx));
       THREAD_NEXT;
     }
     CASE(OP_PUSHVC); {
       int ndx;
       GET_OPARG(ndx, vector);
-      ECL_STACK_PUSH(the_env, ecl_lex_env_get_var(lex_env, ndx));
+      ecl_stack_push(the_env, ecl_lex_env_get_var(lex_env, ndx));
       THREAD_NEXT;
     }
     CASE(OP_PUSHVS); {
@@ -509,7 +509,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       value = ECL_SYM_VAL(the_env, var_name);
       if (ecl_unlikely(value == OBJNULL))
         VEunbound_variable(var_name);
-      ECL_STACK_PUSH(the_env, value);
+      ecl_stack_push(the_env, value);
       THREAD_NEXT;
     }
     /* OP_PUSHQ     n{arg}
@@ -518,7 +518,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PUSHQ); {
       cl_object aux;
       GET_DATA(aux, vector, data);
-      ECL_STACK_PUSH(the_env, aux);
+      ecl_stack_push(the_env, aux);
       THREAD_NEXT;
     }
 
@@ -540,7 +540,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       the_env->function = ECL_SYM_FUN(s);
       f = ECL_SYM_FUN(s)->cfun.entry;
       SETUP_ENV(the_env);
-      reg0 = f(2, ECL_STACK_POP_UNSAFE(the_env), reg0);
+      reg0 = f(2, ecl_stack_pop_unsafe(the_env), reg0);
       THREAD_NEXT;
     }
 
@@ -584,7 +584,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        the stack (They all have been deposited by OP_PUSHVALUES)
     */
     CASE(OP_MCALL); {
-      narg = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
+      narg = ecl_fixnum(ecl_stack_pop_unsafe(the_env));
       reg0 = ECL_STACK_REF(the_env,-narg-1);
       INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
       THREAD_NEXT;
@@ -594,14 +594,14 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        Pops a single value pushed by a OP_PUSH* operator.
     */
     CASE(OP_POP); {
-      reg0 = ECL_STACK_POP_UNSAFE(the_env);
+      reg0 = ecl_stack_pop_unsafe(the_env);
       THREAD_NEXT;
     }
     /* OP_POP1
        Pops a single value pushed by a OP_PUSH* operator, ignoring it.
     */
     CASE(OP_POP1); {
-      (void)ECL_STACK_POP_UNSAFE(the_env);
+      (void)ecl_stack_pop_unsafe(the_env);
       THREAD_NEXT;
     }
     /* OP_POPREQ
@@ -624,7 +624,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       if (frame_index >= frame->frame.size) {
         reg0 = ECL_NIL;
       } else {
-        ECL_STACK_PUSH(the_env, ECL_STACK_FRAME_REF(frame, frame_index++));
+        ecl_stack_push(the_env, ECL_STACK_FRAME_REF(frame, frame_index++));
         reg0 = ECL_T;
       }
       THREAD_NEXT;
@@ -676,8 +676,8 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
             }
           }
         }
-        if (flag != ECL_NIL) ECL_STACK_PUSH(the_env, value);
-        ECL_STACK_PUSH(the_env, flag);
+        if (flag != ECL_NIL) ecl_stack_push(the_env, value);
+        ecl_stack_push(the_env, flag);
       }
       if (count && Null(aok)) {
         cl_object *p = first;
@@ -859,7 +859,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        output values are left in VALUES(...).
     */
     CASE(OP_THROW); {
-      cl_object tag_name = ECL_STACK_POP_UNSAFE(the_env);
+      cl_object tag_name = ecl_stack_pop_unsafe(the_env);
       the_env->values[0] = reg0;
       cl_throw(tag_name);
       THREAD_NEXT;
@@ -954,7 +954,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PBIND); {
       cl_object var_name;
       GET_DATA(var_name, vector, data);
-      bind_var(lcl_env, var_name, ECL_STACK_POP_UNSAFE(the_env));
+      bind_var(lcl_env, var_name, ecl_stack_pop_unsafe(the_env));
       THREAD_NEXT;
     }
     CASE(OP_VBIND); {
@@ -975,7 +975,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PBINDS); {
       cl_object var_name;
       GET_DATA(var_name, vector, data);
-      ecl_bds_bind(the_env, var_name, ECL_STACK_POP_UNSAFE(the_env));
+      ecl_bds_bind(the_env, var_name, ecl_stack_pop_unsafe(the_env));
       THREAD_NEXT;
     }
     CASE(OP_VBINDS); {
@@ -1027,20 +1027,20 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PSETQ); {
       int ndx;
       GET_OPARG(ndx, vector);
-      ecl_lcl_env_set_var(lcl_env, ndx, ECL_STACK_POP_UNSAFE(the_env));
+      ecl_lcl_env_set_var(lcl_env, ndx, ecl_stack_pop_unsafe(the_env));
       THREAD_NEXT;
     }
     CASE(OP_PSETQC); {
       int ndx;
       GET_OPARG(ndx, vector);
-      ecl_lex_env_set_var(lex_env, ndx, ECL_STACK_POP_UNSAFE(the_env));
+      ecl_lex_env_set_var(lex_env, ndx, ecl_stack_pop_unsafe(the_env));
       THREAD_NEXT;
     }
     CASE(OP_PSETQS); {
       cl_object var;
       GET_DATA(var, vector, data);
       /* INV: Not NIL, and of type t_symbol */
-      ECL_SETQ(the_env, var, ECL_STACK_POP_UNSAFE(the_env));
+      ECL_SETQ(the_env, var, ecl_stack_pop_unsafe(the_env));
       THREAD_NEXT;
     }
     CASE(OP_VSETQ); {
@@ -1107,8 +1107,8 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_FRAME); {
       cl_opcode *exit;
       GET_LABEL(exit, vector);
-      ECL_STACK_PUSH(the_env, tangle_lcl(lcl_env));
-      ECL_STACK_PUSH(the_env, (cl_object)exit);
+      ecl_stack_push(the_env, tangle_lcl(lcl_env));
+      ecl_stack_push(the_env, (cl_object)exit);
       ecl_frs_push(the_env,reg1);
       if (__ecl_frs_push_result != 0) {
         reg0 = the_env->values[0];
@@ -1136,8 +1136,8 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_TAGBODY); {
       int n;
       GET_OPARG(n, vector);
-      ECL_STACK_PUSH(the_env, tangle_lcl(lcl_env));
-      ECL_STACK_PUSH(the_env, (cl_object)vector); /* FIXME! */
+      ecl_stack_push(the_env, tangle_lcl(lcl_env));
+      ecl_stack_push(the_env, (cl_object)vector); /* FIXME! */
       vector += n * OPARG_SIZE;
       ecl_frs_push(the_env,reg1);
       if (__ecl_frs_push_result != 0) {
@@ -1158,7 +1158,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_EXIT_FRAME); {
     DO_EXIT_FRAME:
       ecl_frs_pop(the_env);
-      ECL_STACK_POP_N_UNSAFE(the_env, 2);
+      ecl_stack_pop_n_unsafe(the_env, 2);
       THREAD_NEXT;
     }
     CASE(OP_NIL); {
@@ -1166,7 +1166,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       THREAD_NEXT;
     }
     CASE(OP_PUSHNIL); {
-      ECL_STACK_PUSH(the_env, ECL_NIL);
+      ecl_stack_push(the_env, ECL_NIL);
       THREAD_NEXT;
     }
     CASE(OP_VALUEREG0); {
@@ -1181,7 +1181,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   PUSH_VALUES:
     CASE(OP_PUSHVALUES); {
       cl_index i = the_env->nvalues;
-      ECL_STACK_PUSH_N(the_env, i+1);
+      ecl_stack_push_n(the_env, i+1);
       the_env->values[0] = reg0;
       memcpy(&ECL_STACK_REF(the_env, -(i+1)), the_env->values, i * sizeof(cl_object));
       ECL_STACK_REF(the_env, -1) = ecl_make_fixnum(the_env->nvalues);
@@ -1193,7 +1193,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PUSHMOREVALUES); {
       cl_index n = ecl_fixnum(ECL_STACK_REF(the_env,-1));
       cl_index i = the_env->nvalues;
-      ECL_STACK_PUSH_N(the_env, i);
+      ecl_stack_push_n(the_env, i);
       the_env->values[0] = reg0;
       memcpy(&ECL_STACK_REF(the_env, -(i+1)), the_env->values, i * sizeof(cl_object));
       ECL_STACK_REF(the_env, -1) = ecl_make_fixnum(n + i);
@@ -1204,15 +1204,15 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_POPVALUES); {
       cl_object *dest = the_env->values;
-      int n = the_env->nvalues = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
+      int n = the_env->nvalues = ecl_fixnum(ecl_stack_pop_unsafe(the_env));
       if (n == 0) {
         *dest = reg0 = ECL_NIL;
         THREAD_NEXT;
       } else if (n == 1) {
-        *dest = reg0 = ECL_STACK_POP_UNSAFE(the_env);
+        *dest = reg0 = ecl_stack_pop_unsafe(the_env);
         THREAD_NEXT;
       } else {
-        ECL_STACK_POP_N_UNSAFE(the_env,n);
+        ecl_stack_pop_n_unsafe(the_env,n);
         memcpy(dest, &ECL_STACK_REF(the_env,0), n * sizeof(cl_object));
         reg0 = *dest;
         THREAD_NEXT;
@@ -1226,7 +1226,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       cl_fixnum n;
       GET_OPARG(n, vector);
       the_env->nvalues = n;
-      ECL_STACK_POP_N_UNSAFE(the_env, n);
+      ecl_stack_pop_n_unsafe(the_env, n);
       memcpy(the_env->values, &ECL_STACK_REF(the_env, 0), n * sizeof(cl_object));
       reg0 = the_env->values[0];
       THREAD_NEXT;
@@ -1236,7 +1236,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        The index N-th is extracted from the top of the stack.
     */
     CASE(OP_NTHVAL); {
-      cl_fixnum n = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
+      cl_fixnum n = ecl_fixnum(ecl_stack_pop_unsafe(the_env));
       if (ecl_unlikely(n < 0)) {
         VEwrong_arg_type_nth_val(n);
       } else if ((cl_index)n >= the_env->nvalues) {
@@ -1262,15 +1262,15 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PROTECT); {
       cl_opcode *exit;
       GET_LABEL(exit, vector);
-      ECL_STACK_PUSH(the_env, tangle_lcl(lcl_env));
-      ECL_STACK_PUSH(the_env, (cl_object)exit);
+      ecl_stack_push(the_env, tangle_lcl(lcl_env));
+      ecl_stack_push(the_env, (cl_object)exit);
       ecl_frs_push(the_env,ECL_PROTECT_TAG);
       if (__ecl_frs_push_result != 0) {
         ecl_frs_pop(the_env);
-        vector = (cl_opcode *)ECL_STACK_POP_UNSAFE(the_env);
-        unwind_lcl(lcl_env, ECL_STACK_POP_UNSAFE(the_env));
+        vector = (cl_opcode *)ecl_stack_pop_unsafe(the_env);
+        unwind_lcl(lcl_env, ecl_stack_pop_unsafe(the_env));
         reg0 = the_env->values[0];
-        ECL_STACK_PUSH(the_env, ecl_make_fixnum(the_env->frs_stack.nlj_fr - the_env->frs_stack.top));
+        ecl_stack_push(the_env, ecl_make_fixnum(the_env->frs_stack.nlj_fr - the_env->frs_stack.top));
         goto PUSH_VALUES;
       }
       THREAD_NEXT;
@@ -1278,17 +1278,17 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PROTECT_NORMAL); {
       ecl_bds_unwind(the_env, the_env->frs_stack.top->frs_bds_top_index);
       ecl_frs_pop(the_env);
-      (void)ECL_STACK_POP_UNSAFE(the_env);
-      unwind_lcl(lcl_env, ECL_STACK_POP_UNSAFE(the_env));
-      ECL_STACK_PUSH(the_env, ecl_make_fixnum(1));
+      (void)ecl_stack_pop_unsafe(the_env);
+      unwind_lcl(lcl_env, ecl_stack_pop_unsafe(the_env));
+      ecl_stack_push(the_env, ecl_make_fixnum(1));
       goto PUSH_VALUES;
     }
     CASE(OP_PROTECT_EXIT); {
-      volatile cl_fixnum n = the_env->nvalues = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
+      volatile cl_fixnum n = the_env->nvalues = ecl_fixnum(ecl_stack_pop_unsafe(the_env));
       while (n--)
-        the_env->values[n] = ECL_STACK_POP_UNSAFE(the_env);
+        the_env->values[n] = ecl_stack_pop_unsafe(the_env);
       reg0 = the_env->values[0];
-      n = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
+      n = ecl_fixnum(ecl_stack_pop_unsafe(the_env));
       if (n <= 0)
         ecl_unwind(the_env, the_env->frs_stack.top + n);
       THREAD_NEXT;
@@ -1302,13 +1302,13 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_PROGV); {
       cl_object values = reg0;
-      cl_object vars = ECL_STACK_POP_UNSAFE(the_env);
+      cl_object vars = ecl_stack_pop_unsafe(the_env);
       cl_index n = ecl_progv(the_env, vars, values);
-      ECL_STACK_PUSH(the_env, ecl_make_fixnum(n));
+      ecl_stack_push(the_env, ecl_make_fixnum(n));
       THREAD_NEXT;
     }
     CASE(OP_EXIT_PROGV); {
-      cl_index n = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
+      cl_index n = ecl_fixnum(ecl_stack_pop_unsafe(the_env));
       ecl_bds_unwind(the_env, n);
       THREAD_NEXT;
     }

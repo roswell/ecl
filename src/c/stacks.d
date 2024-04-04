@@ -179,12 +179,6 @@ FEstack_underflow(void)
   FEerror("Internal error: stack underflow.",0);
 }
 
-void
-FEstack_advance(void)
-{
-  FEerror("Internal error: stack advance beyond current point.",0);
-}
-
 cl_object *
 ecl_stack_grow(cl_env_ptr env)
 {
@@ -276,7 +270,7 @@ ecl_stack_frame_close(cl_object f)
 {
   if (f->frame.opened) {
     f->frame.opened = 0;
-    ECL_STACK_SET_INDEX(f->frame.env, f->frame.base);
+    ecl_stack_set_index_unsafe(f->frame.env, f->frame.base);
   }
 }
 
@@ -703,7 +697,7 @@ _ecl_frs_push(cl_env_ptr env)
   ++env->frs_stack.top;
   output->frs_bds_top_index = env->bds_stack.top - env->bds_stack.org;
   output->frs_ihs = env->ihs_stack.top;
-  output->frs_sp = ECL_STACK_INDEX(env);
+  output->frs_sp = ecl_stack_index(env);
   return output;
 }
 
@@ -718,7 +712,7 @@ ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
   }
   env->ihs_stack.top = top->frs_ihs;
   ecl_bds_unwind(env, top->frs_bds_top_index);
-  ECL_STACK_SET_INDEX(env, top->frs_sp);
+  ecl_stack_set_index_unsafe(env, top->frs_sp);
   env->frs_stack.top = top;
   ecl_longjmp(env->frs_stack.top->frs_jmpbuf, 1);
   /* never reached */
