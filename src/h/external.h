@@ -237,6 +237,13 @@ extern ECL_API const cl_object ecl_ct_minus_half;
 extern ECL_API const cl_object ecl_ct_protect_tag;
 extern ECL_API const cl_object ecl_ct_dummy_tag;
 
+/* memory.c */
+extern ECL_API void *ecl_malloc(cl_index n);
+extern ECL_API void *ecl_realloc(void *ptr, cl_index n);
+extern ECL_API void ecl_free(void *ptr);
+extern ECL_API void ecl_copy(void *dst, void *src, cl_index ndx);
+#define ecl_free_unsafe(x) ecl_free(x);
+
 /* alloc.c / alloc_2.c */
 
 extern ECL_API cl_object ecl_alloc_object(cl_type t);
