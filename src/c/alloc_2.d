@@ -744,13 +744,13 @@ extern void (*GC_push_other_roots)();
 static void (*old_GC_push_other_roots)();
 static void stacks_scanner();
 
-static int alloc_initialized = FALSE;
-
 void
-init_alloc(void)
+init_alloc(int pass)
 {
-  if (alloc_initialized) return;
-  alloc_initialized = TRUE;
+  if (pass == 1) {
+    GC_enable();
+    return;
+  }
   /*
    * Garbage collector restrictions: we set up the garbage collector
    * library to work as follows
@@ -811,7 +811,6 @@ init_alloc(void)
   GC_set_java_finalization(1);
   GC_set_oom_fn(out_of_memory);
   GC_set_warn_proc(no_warnings);
-  GC_enable();
 }
 
 /**********************************************************
