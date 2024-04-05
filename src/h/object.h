@@ -952,7 +952,8 @@ struct ecl_process {
         cl_object args;
         struct cl_env_struct *env;
         cl_object interrupt;
-        cl_object initial_bindings;
+        cl_object *initial_bindings;
+        cl_index initial_bindings_size;
         cl_object parent;
         cl_object exit_values;
         cl_object woken_up;

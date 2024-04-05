@@ -227,7 +227,7 @@ thread_entry_point(void *arg)
 #ifndef ECL_WINDOWS_THREADS
   pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
-  ecl_cs_set_org(env);
+  ecl_cs_init(env);
   ecl_mutex_lock(&process->process.start_stop_lock);
 
   /* 2) Execute the code. The CATCH_ALL point is the destination
@@ -279,10 +279,12 @@ thread_entry_point(void *arg)
 }
 
 static cl_object
-alloc_process(cl_object name, cl_object initial_bindings)
+alloc_process(cl_object name, cl_object initial_bindings_p)
 {
   cl_env_ptr env = ecl_process_env();
-  cl_object process = ecl_alloc_object(t_process), array;
+  cl_object process = ecl_alloc_object(t_process);
+  cl_index bindings_size;
+  cl_object* bindings;
   process->process.phase = ECL_PROCESS_INACTIVE;
   process->process.name = name;
   process->process.function = ECL_NIL;
@@ -290,14 +292,20 @@ alloc_process(cl_object name, cl_object initial_bindings)
   process->process.interrupt = ECL_NIL;
   process->process.exit_values = ECL_NIL;
   process->process.env = NULL;
-  if (initial_bindings != ECL_NIL) {
-    array = si_make_vector(ECL_T, ecl_make_fixnum(256),
-                           ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-    si_fill_array_with_elt(array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
+  if (initial_bindings_p != ECL_NIL) {
+    cl_index idx = 0;
+    bindings_size = 256;
+    bindings = (cl_object *)ecl_malloc(bindings_size*sizeof(cl_object*));
+    for(idx=0; idx<256; idx++) {
+      bindings[idx] = ECL_NO_TL_BINDING;
+    }
   } else {
-    array = cl_copy_seq(ecl_process_env()->bds_stack.bindings_array);
+    bindings_size = env->bds_stack.tl_bindings_size;
+    bindings = (cl_object *)ecl_malloc(bindings_size*sizeof(cl_object*));
+    ecl_copy(bindings, env->bds_stack.tl_bindings, bindings_size*sizeof(cl_object*));
   }
-  process->process.initial_bindings = array;
+  process->process.initial_bindings = bindings;
+  process->process.initial_bindings_size = bindings_size;
   process->process.woken_up = ECL_NIL;
   ecl_disable_interrupts_env(env);
   ecl_mutex_init(&process->process.start_stop_lock, TRUE);
@@ -363,9 +371,8 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
 
   /* Copy initial bindings from process to the fake environment */
   env_aux->cleanup = registered;
-  env_aux->bds_stack.bindings_array = process->process.initial_bindings;
-  env_aux->bds_stack.thread_local_bindings_size = env_aux->bds_stack.bindings_array->vector.dim;
-  env_aux->bds_stack.thread_local_bindings = env_aux->bds_stack.bindings_array->vector.self.t;
+  env_aux->bds_stack.tl_bindings = process->process.initial_bindings;
+  env_aux->bds_stack.tl_bindings_size = process->process.initial_bindings_size;
 
   /* Switch over to the real environment */
   memcpy(env, env_aux, sizeof(*env));
@@ -395,10 +402,10 @@ ecl_release_current_thread(void)
 #endif
 }
 
-@(defun mp::make-process (&key name ((:initial-bindings initial_bindings) ECL_T))
+@(defun mp::make-process (&key name ((:initial-bindings initial_bindings_p) ECL_T))
   cl_object process;
   @
-  process = alloc_process(name, initial_bindings);
+  process = alloc_process(name, initial_bindings_p);
   @(return process);
   @)
 
@@ -520,11 +527,8 @@ mp_process_enable(cl_object process)
     ecl_init_env(process_env);
 
     process_env->trap_fpe_bits = process->process.trap_fpe_bits;
-    process_env->bds_stack.bindings_array = process->process.initial_bindings;
-    process_env->bds_stack.thread_local_bindings_size = 
-      process_env->bds_stack.bindings_array->vector.dim;
-    process_env->bds_stack.thread_local_bindings =
-      process_env->bds_stack.bindings_array->vector.self.t;
+    process_env->bds_stack.tl_bindings = process->process.initial_bindings;
+    process_env->bds_stack.tl_bindings_size = process->process.initial_bindings_size;
 
     ecl_disable_interrupts_env(the_env);
 #ifdef ECL_WINDOWS_THREADS
@@ -757,6 +761,7 @@ init_threads()
   ecl_thread_t main_thread;
   /* We have to set the environment before any allocation takes place,
    * so that the interrupt handling code works. */
+  ecl_cs_init(the_env);
   ecl_set_process_self(main_thread);
   process = ecl_alloc_object(t_process);
   process->process.phase = ECL_PROCESS_ACTIVE;

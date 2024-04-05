@@ -107,10 +107,10 @@ static inline void ecl_bds_bind_inl(cl_env_ptr env, cl_object s, cl_object v)
 # ifdef ECL_THREADS
         cl_object *location;
         const cl_index index = s->symbol.binding;
-        if (index >= env->bds_stack.thread_local_bindings_size) {
+        if (index >= env->bds_stack.tl_bindings_size) {
                 ecl_bds_bind(env,s,v);
         } else {
-                location = env->bds_stack.thread_local_bindings + index;
+                location = env->bds_stack.tl_bindings + index;
                 slot = env->bds_stack.top+1;
                 if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
                 /* First, we push a dummy symbol in the stack to
@@ -145,10 +145,10 @@ static inline void ecl_bds_push_inl(cl_env_ptr env, cl_object s)
 # ifdef ECL_THREADS
         cl_object *location;
         const cl_index index = s->symbol.binding;
-        if (index >= env->bds_stack.thread_local_bindings_size) {
+        if (index >= env->bds_stack.tl_bindings_size) {
                 ecl_bds_push(env, s);
         } else {
-                location = env->bds_stack.thread_local_bindings + index;
+                location = env->bds_stack.tl_bindings + index;
                 slot = env->bds_stack.top+1;
                 if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
                 slot->symbol = ECL_DUMMY_TAG;
@@ -174,7 +174,7 @@ static inline void ecl_bds_unwind1_inl(cl_env_ptr env)
 {
         cl_object s = env->bds_stack.top->symbol;
 # ifdef ECL_THREADS
-        cl_object *location = env->bds_stack.thread_local_bindings + s->symbol.binding;
+        cl_object *location = env->bds_stack.tl_bindings + s->symbol.binding;
         *location = env->bds_stack.top->value;
 # else
         s->symbol.value = env->bds_stack.top->value;
@@ -186,8 +186,8 @@ static inline void ecl_bds_unwind1_inl(cl_env_ptr env)
 static inline cl_object ecl_bds_read_inl(cl_env_ptr env, cl_object s)
 {
         cl_index index = s->symbol.binding;
-        if (index < env->bds_stack.thread_local_bindings_size) {
-                cl_object x = env->bds_stack.thread_local_bindings[index];
+        if (index < env->bds_stack.tl_bindings_size) {
+                cl_object x = env->bds_stack.tl_bindings[index];
                 if (x != ECL_NO_TL_BINDING) return x;
         }
         return s->symbol.value;
@@ -195,8 +195,8 @@ static inline cl_object ecl_bds_read_inl(cl_env_ptr env, cl_object s)
 static inline cl_object *ecl_bds_ref_inl(cl_env_ptr env, cl_object s)
 {
         cl_index index = s->symbol.binding;
-        if (index < env->bds_stack.thread_local_bindings_size) {
-                cl_object *location = env->bds_stack.thread_local_bindings + index;
+        if (index < env->bds_stack.tl_bindings_size) {
+                cl_object *location = env->bds_stack.tl_bindings + index;
                 if (*location != ECL_NO_TL_BINDING) return location;
         }
         return &s->symbol.value;

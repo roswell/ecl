@@ -512,7 +512,7 @@ extern cl_object ecl_deserialize(uint8_t *data);
 #define CL_NEWENV_END \
         ecl_stack_pop_values(the_env,__i); }
 
-extern void ecl_cs_set_org(cl_env_ptr env);
+extern void ecl_cs_init(cl_env_ptr env);
 
 #ifndef RLIM_SAVED_MAX
 # define RLIM_SAVED_MAX RLIM_INFINITY

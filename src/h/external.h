@@ -24,9 +24,8 @@ struct ecl_runtime_stack {
 /* The BinDing Stack stores the bindings of special variables. */
 struct ecl_binding_stack {
 #ifdef ECL_THREADS
-        cl_index thread_local_bindings_size;
-        cl_object *thread_local_bindings;
-        cl_object bindings_array;
+        cl_index tl_bindings_size;
+        cl_object *tl_bindings;
 #endif
         cl_index size;
         cl_index limit_size;

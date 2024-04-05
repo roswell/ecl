@@ -25,6 +25,28 @@
 /* ------------------------- C STACK ---------------------------------- */
 
 static void
+cs_set_size(cl_env_ptr env, cl_index new_size);
+
+void
+ecl_cs_init(cl_env_ptr env)
+{
+#ifdef GBC_BOEHM
+  struct GC_stack_base base;
+  if (GC_get_stack_base(&base) == GC_SUCCESS)
+    env->c_stack.org = (char*)base.mem_base;
+  else
+#endif
+    {
+      /* Rough estimate. Not very safe. We assume that cl_boot()
+       * is invoked from the main() routine of the program. */
+      env->c_stack.org = (char*)(&env);
+    }
+  env->c_stack.max = env->c_stack.org;
+  env->c_stack.max_size = 0;
+  cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
+}
+
+static void
 cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
@@ -113,27 +135,24 @@ ecl_cs_overflow(void)
   cs_set_size(env, size);
 }
 
-void
-ecl_cs_set_org(cl_env_ptr env)
-{
-#ifdef GBC_BOEHM
-  struct GC_stack_base base;
-  if (GC_get_stack_base(&base) == GC_SUCCESS)
-    env->c_stack.org = (char*)base.mem_base;
-  else
-#endif
-    {
-      /* Rough estimate. Not very safe. We assume that cl_boot()
-       * is invoked from the main() routine of the program.
-       */
-      env->c_stack.org = (char*)(&env);
-    }
-  env->c_stack.max = env->c_stack.org;
-  env->c_stack.max_size = 0;
-  cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
-}
-
 /* ------------------------- LISP STACK ------------------------------- */
+
+static void
+run_init(cl_env_ptr env)
+{
+  cl_index size, margin;
+  margin = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
+  size = ecl_option_values[ECL_OPT_LISP_STACK_SIZE];
+  size = ((size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
+  env->run_stack.size = size;
+  env->run_stack.limit_size = size - 2*margin;
+  env->run_stack.org = (cl_object *)ecl_malloc(size * sizeof(cl_object));
+  env->run_stack.top = env->run_stack.org;
+  env->run_stack.limit = &env->run_stack.org[limit_size];
+  /* A stack always has at least one element. This is assumed by cl__va_start
+     and friends, which take a sp=0 to have no arguments. */
+  *(env->run_stack.top++) = ecl_make_fixnum(0);
+}
 
 cl_object *
 ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
@@ -151,10 +170,9 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   }
 
   old_stack = env->run_stack.org;
-  new_stack = (cl_object *)ecl_alloc_atomic(new_size * sizeof(cl_object));
+  new_stack = (cl_object *)ecl_realloc(old_stack, new_size * sizeof(cl_object));
 
   ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  memcpy(new_stack, old_stack, env->run_stack.size * sizeof(cl_object));
   env->run_stack.size = new_size;
   env->run_stack.limit_size = new_size - 2*safety_area;
   env->run_stack.org = new_stack;
@@ -168,7 +186,6 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
     *(env->run_stack.top++) = ecl_make_fixnum(0);
   }
   ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-
   return env->run_stack.top;
 }
 
@@ -286,6 +303,18 @@ ecl_bds_unwind_n(cl_env_ptr env, int n)
 }
 
 static void
+bds_init(cl_env_ptr env)
+{
+  cl_index size, margin;
+  margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
+  size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
+  env->bds_stack.size = size;
+  env->bds_stack.org = (ecl_bds_ptr)ecl_malloc(size * sizeof(*env->bds_stack.org));
+  env->bds_stack.top = env->bds_stack.org-1;
+  env->bds_stack.limit = &env->bds_stack.org[size - 2*margin];
+}
+
+static void
 ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
 {
   ecl_bds_ptr old_org = env->bds_stack.org;
@@ -296,8 +325,7 @@ ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
   } else {
     cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
     ecl_bds_ptr org;
-    env->bds_stack.limit_size = new_size - 2*margin;
-    org = ecl_alloc_atomic(new_size * sizeof(*org));
+    org = ecl_realloc(old_org, new_size * sizeof(*org));
 
     ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
     memcpy(org, old_org, (limit + 1) * sizeof(*org));
@@ -305,9 +333,8 @@ ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
     env->bds_stack.org = org;
     env->bds_stack.limit = org + (new_size - 2*margin);
     env->bds_stack.size = new_size;
+    env->bds_stack.limit_size = new_size - 2*margin;
     ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-
-    ecl_dealloc(old_org);
   }
 }
 
@@ -439,17 +466,6 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
   return new_index;
 }
 
-static cl_object
-ecl_extend_bindings_array(cl_object vector)
-{
-  cl_index new_size = ecl_core.last_var_index * 1.25;
-  cl_object new_vector = si_make_vector(ECL_T, ecl_make_fixnum(new_size), ECL_NIL,
-                                        ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(new_vector, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
-  return new_vector;
-}
-
 static cl_index
 invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
 {
@@ -457,11 +473,16 @@ invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
   if (index == ECL_MISSING_SPECIAL_BINDING) {
     index = ecl_new_binding_index(env, s);
   }
-  if (index >= env->bds_stack.thread_local_bindings_size) {
-    cl_object vector = env->bds_stack.bindings_array;
-    env->bds_stack.bindings_array = vector = ecl_extend_bindings_array(vector);
-    env->bds_stack.thread_local_bindings_size = vector->vector.dim;
-    env->bds_stack.thread_local_bindings = vector->vector.self.t;
+  if (index >= env->bds_stack.tl_bindings_size) {
+    cl_index old_size = env->bds_stack.tl_bindings_size;
+    cl_index new_size = ecl_core.last_var_index * 1.25;
+    cl_object *old_vector = env->bds_stack.tl_bindings;
+    cl_object *new_vector = ecl_realloc(old_vector, new_size*sizeof(cl_object*));
+    while(old_size < new_size) {
+      new_vector[old_size++] = ECL_NO_TL_BINDING;
+    }
+    env->bds_stack.tl_bindings = new_vector;
+    env->bds_stack.tl_bindings_size = new_size;
   }
   return index;
 }
@@ -477,10 +498,10 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
   cl_object *location;
   ecl_bds_ptr slot;
   cl_index index = s->symbol.binding;
-  if (index >= env->bds_stack.thread_local_bindings_size) {
+  if (index >= env->bds_stack.tl_bindings_size) {
     index = invalid_or_too_large_binding_index(env,s);
   }
-  location = env->bds_stack.thread_local_bindings + index;
+  location = env->bds_stack.tl_bindings + index;
   slot = env->bds_stack.top+1;
   if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
   slot->symbol = ECL_DUMMY_TAG;
@@ -509,10 +530,10 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
   cl_object *location;
   ecl_bds_ptr slot;
   cl_index index = s->symbol.binding;
-  if (index >= env->bds_stack.thread_local_bindings_size) {
+  if (index >= env->bds_stack.tl_bindings_size) {
     index = invalid_or_too_large_binding_index(env,s);
   }
-  location = env->bds_stack.thread_local_bindings + index;
+  location = env->bds_stack.tl_bindings + index;
   slot = env->bds_stack.top+1;
   if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
   slot->symbol = ECL_DUMMY_TAG;
@@ -538,7 +559,7 @@ ecl_bds_unwind1(cl_env_ptr env)
 {
   cl_object s = env->bds_stack.top->symbol;
 #ifdef ECL_THREADS
-  cl_object *location = env->bds_stack.thread_local_bindings + s->symbol.binding;
+  cl_object *location = env->bds_stack.tl_bindings + s->symbol.binding;
   *location = env->bds_stack.top->value;
 #else
   s->symbol.value = env->bds_stack.top->value;
@@ -551,8 +572,8 @@ cl_object
 ecl_bds_read(cl_env_ptr env, cl_object s)
 {
   cl_index index = s->symbol.binding;
-  if (index < env->bds_stack.thread_local_bindings_size) {
-    cl_object x = env->bds_stack.thread_local_bindings[index];
+  if (index < env->bds_stack.tl_bindings_size) {
+    cl_object x = env->bds_stack.tl_bindings[index];
     if (x != ECL_NO_TL_BINDING) return x;
   }
   return s->symbol.value;
@@ -562,8 +583,8 @@ cl_object *
 ecl_bds_ref(cl_env_ptr env, cl_object s)
 {
   cl_index index = s->symbol.binding;
-  if (index < env->bds_stack.thread_local_bindings_size) {
-    cl_object *location = env->bds_stack.thread_local_bindings + index;
+  if (index < env->bds_stack.tl_bindings_size) {
+    cl_object *location = env->bds_stack.tl_bindings + index;
     if (*location != ECL_NO_TL_BINDING)
       return location;
   }
@@ -578,6 +599,16 @@ ecl_bds_set(cl_env_ptr env, cl_object s, cl_object value)
 #endif /* ECL_THREADS */
 
 /* ------------------------- INVOCATION STACK ------------------------- */
+
+static void
+ihs_init(cl_env_ptr env)
+{
+  static struct ecl_ihs_frame ihs_org = { NULL, NULL, NULL, 0};
+  env->ihs_stack.top = &ihs_org;
+  ihs_org.function = ECL_NIL;
+  ihs_org.lex_env = ECL_NIL;
+  ihs_org.index = 0;
+}
 
 static ecl_ihs_ptr
 get_ihs_ptr(cl_index n)
@@ -636,6 +667,18 @@ si_ihs_env(cl_object arg)
 /* ------------------------- FRAME STACK ------------------------------ */
 
 static void
+frs_init(cl_env_ptr env)
+{
+  cl_index size, margin;
+  margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
+  size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE] + 2 * margin;
+  env->frs_stack.size = size;
+  env->frs_stack.org = (ecl_frame_ptr)ecl_malloc(size * sizeof(*env->frs_stack.org));
+  env->frs_stack.top = env->frs_stack.org-1;
+  env->frs_stack.limit = &env->frs_stack.org[size - 2*margin];
+}
+
+static void
 frs_set_size(cl_env_ptr env, cl_index new_size)
 {
   ecl_frame_ptr old_org = env->frs_stack.org;
@@ -646,18 +689,15 @@ frs_set_size(cl_env_ptr env, cl_index new_size)
   } else {
     cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
     ecl_frame_ptr org;
-    env->frs_stack.limit_size = new_size - 2*margin;
-    org = ecl_alloc_atomic(new_size * sizeof(*org));
 
+    org = ecl_realloc(old_org, new_size * sizeof(*org));
     ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-    memcpy(org, old_org, (limit + 1) * sizeof(*org));
     env->frs_stack.top = org + limit;
     env->frs_stack.org = org;
     env->frs_stack.limit = org + (new_size - 2*margin);
     env->frs_stack.size = new_size;
+    env->frs_stack.limit_size = new_size - 2*margin;
     ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-
-    ecl_dealloc(old_org);
   }
 }
 
@@ -861,31 +901,8 @@ si_reset_margin(cl_object type)
 void
 init_stacks(cl_env_ptr env)
 {
-  static struct ecl_ihs_frame ihs_org = { NULL, NULL, NULL, 0};
-  cl_index size, margin;
-  /* frame stack */
-  margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
-  size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE] + 2 * margin;
-  env->frs_stack.size = size;
-  env->frs_stack.org = (ecl_frame_ptr)ecl_alloc_atomic(size * sizeof(*env->frs_stack.org));
-  env->frs_stack.top = env->frs_stack.org-1;
-  env->frs_stack.limit = &env->frs_stack.org[size - 2*margin];
-  /* bind stack */
-  margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
-  size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
-  env->bds_stack.size = size;
-  env->bds_stack.org = (ecl_bds_ptr)ecl_alloc_atomic(size * sizeof(*env->bds_stack.org));
-  env->bds_stack.top = env->bds_stack.org-1;
-  env->bds_stack.limit = &env->bds_stack.org[size - 2*margin];
-  /* ihs stack */
-  env->ihs_stack.top = &ihs_org;
-  ihs_org.function = ECL_NIL;
-  ihs_org.lex_env = ECL_NIL;
-  ihs_org.index = 0;
-  /* lisp stack */
-  env->run_stack.org = NULL;
-  env->run_stack.top = NULL;
-  env->run_stack.limit = NULL;
-  env->run_stack.size = 0;
-  ecl_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
+  frs_init(env);
+  bds_init(env);
+  ihs_init(env);
+  run_init(env);
 }
