@@ -132,24 +132,19 @@ ecl_init_env(cl_env_ptr env)
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
-  /*
-   * Environment cleanup. This is only required when the environment is
-   * allocated using mmap or some other method. We could do more, cleaning
-   * up stacks, etc, but we actually do not do it because that would need
-   * a lisp environment set up -- the allocator assumes one -- and we
-   * may have already cleaned up the value of ecl_process_env()
-   */
+  /* Environment cleanup. This is required becauyse the environment is allocated
+   * using mmap or some other method. We could do more cleaning here.*/
 #ifdef ECL_THREADS
   ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
 #endif
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
-#else
-# if defined(ECL_USE_GUARD_PAGE)
+#elif defined(ECL_USE_GUARD_PAGE)
   if (!VirtualFree(env, 0, MEM_RELEASE))
     ecl_internal_error("Unable to deallocate environment structure.");
-# endif
+#else
+  ecl_free_unsafe(env);
 #endif
 }
 
@@ -180,7 +175,7 @@ _ecl_alloc_env(cl_env_ptr parent)
   if (output == NULL)
     ecl_internal_error("Unable to allocate environment structure.");
 # else
-  output = ecl_alloc(sizeof(*output));
+  output = ecl_malloc(sizeof(*output));
   if (output == NULL)
     ecl_internal_error("Unable to allocate environment structure.");
 # endif
