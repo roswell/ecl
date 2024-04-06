@@ -1215,7 +1215,7 @@ cl_symbols[] = {
 {SYS_ "IHS-NEXT" ECL_FUN("si_ihs_next", si_ihs_next, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "IHS-PREV" ECL_FUN("si_ihs_prev", si_ihs_prev, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "IHS-TOP" ECL_FUN("si_ihs_top", si_ihs_top, 0) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "INTERPRETER-STACK" ECL_FUN("si_interpreter_stack", si_interpreter_stack, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "INTERPRETER-STACK" ECL_FUN("si_interpreter_stack", si_interpreter_stack, 0) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "LINK-FROM" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "LINK-TO" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "LOAD-SOURCE" ECL_FUN("si_load_source", si_load_source, 4) ECL_VAR(SI_ORDINARY, OBJNULL)},
@@ -1843,6 +1843,7 @@ cl_symbols[] = {
 
 {SYS_ "CODE-BLOCK" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 
+{SYS_ "STACK" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "FRAME" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "APPLY-FROM-STACK-FRAME" ECL_FUN("si_apply_from_stack_frame", si_apply_from_stack_frame, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 

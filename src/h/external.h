@@ -10,17 +10,6 @@ extern "C" {
 
 #define _ECL_ARGS(x) x
 
-/* The runtime stack, which is used mainly for keeping the arguments of a
- * function before it is invoked, and also by the compiler and by the reader
- * when they are building some data structure. */
-struct ecl_runtime_stack {
-        cl_index size;
-        cl_index limit_size;
-        cl_object *org;
-        cl_object *top;
-        cl_object *limit;
-};
-
 /* The BinDing Stack stores the bindings of special variables. */
 struct ecl_binding_stack {
 #ifdef ECL_THREADS
@@ -90,7 +79,10 @@ struct cl_env_struct {
 
         /* The four stacks in ECL. */
 
-        struct ecl_runtime_stack run_stack;
+        /* The runtime stack, which is used mainly for keeping the arguments of
+         * a function before it is invoked, and also by the compiler and by the
+         * reader when they are building some data structure. */
+        struct ecl_stack run_stack;
         struct ecl_binding_stack bds_stack;
         struct ecl_frames_stack frs_stack;
         struct ecl_history_stack ihs_stack;
@@ -506,7 +498,7 @@ extern ECL_API cl_object si_eval_with_env _ECL_ARGS((cl_narg narg, cl_object for
 
 /* interpreter.c */
 
-extern ECL_API cl_object si_interpreter_stack _ECL_ARGS((cl_narg narg, ...));
+extern ECL_API cl_object si_interpreter_stack();
 extern ECL_API cl_object ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size);
 extern ECL_API void ecl_stack_frame_push(cl_object f, cl_object o);
 extern ECL_API void ecl_stack_frame_push_values(cl_object f);

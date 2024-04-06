@@ -1165,7 +1165,9 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
   }
 }
 
-@(defun si::interpreter-stack ()
-@
-  @(return ECL_NIL);
-@)
+cl_object
+si_interpreter_stack ()
+{
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, &env->run_stack);
+}

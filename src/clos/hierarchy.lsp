@@ -228,6 +228,7 @@
             (readtable)
             (si::code-block)
             (si::foreign-data)
+            (si::stack)
             (si::frame)
             (si::weak-pointer)
             #+threads (mp::process)

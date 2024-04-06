@@ -86,6 +86,7 @@ typedef enum {
 #endif
         t_codeblock,
         t_foreign,
+        t_stack,
         t_frame,
         t_weak_pointer,
 #ifdef ECL_SSE2
@@ -887,6 +888,15 @@ struct ecl_foreign {            /*  user defined datatype  */
         char *data;             /*  the data itself  */
 };
 
+struct ecl_stack {              /* general-purpose stack */
+        _ECL_HDR;
+        cl_index size;
+        cl_index limit_size;
+        cl_object *org;
+        cl_object *top;
+        cl_object *limit;
+};
+
 struct ecl_stack_frame {
         _ECL_HDR;
         cl_object *stack;       /*  Is this relative to the lisp stack?  */
@@ -1133,6 +1143,7 @@ union cl_lispunion {
 #endif
         struct ecl_codeblock    cblock;         /*  codeblock  */
         struct ecl_foreign      foreign;        /*  user defined data type */
+        struct ecl_stack        stack;          /*  stack */
         struct ecl_stack_frame  frame;          /*  stack frame  */
         struct ecl_weak_pointer weak;           /*  weak pointers  */
 #ifdef ECL_SSE2

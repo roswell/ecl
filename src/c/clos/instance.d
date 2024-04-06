@@ -382,6 +382,7 @@ enum ecl_built_in_classes {
   ECL_BUILTIN_READTABLE,
   ECL_BUILTIN_CODE_BLOCK,
   ECL_BUILTIN_FOREIGN_DATA,
+  ECL_BUILTIN_STACK,
   ECL_BUILTIN_FRAME,
   ECL_BUILTIN_WEAK_POINTER
 #ifdef ECL_THREADS
@@ -503,6 +504,8 @@ cl_class_of(cl_object x)
     index = ECL_BUILTIN_CODE_BLOCK; break;
   case t_foreign:
     index = ECL_BUILTIN_FOREIGN_DATA; break;
+  case t_stack:
+    index = ECL_BUILTIN_STACK; break;
   case t_frame:
     index = ECL_BUILTIN_FRAME; break;
   case t_weak_pointer:

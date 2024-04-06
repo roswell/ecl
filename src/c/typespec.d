@@ -179,6 +179,8 @@ ecl_type_to_symbol(cl_type t)
     return @'si::code-block';
   case t_foreign:
     return @'si::foreign-data';
+  case t_stack:
+    return @'si::stack';
   case t_frame:
     return @'si::frame';
   case t_weak_pointer:

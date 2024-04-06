@@ -545,6 +545,7 @@ void init_type_info (void)
 #endif
   init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
   init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
+  init_tm(t_stack, "STACK", sizeof(struct ecl_stack), 2);
   init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 2);
   init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
 #ifdef ECL_SSE2
@@ -699,6 +700,10 @@ void init_type_info (void)
   type_info[t_foreign].descriptor =
     to_bitmap(&o, &(o.foreign.data)) |
     to_bitmap(&o, &(o.foreign.tag));
+  type_info[t_stack].descriptor =
+    to_bitmap(&o, &(o.stack.org)) |
+    to_bitmap(&o, &(o.stack.top)) |
+    to_bitmap(&o, &(o.stack.limit));
   type_info[t_frame].descriptor =
     to_bitmap(&o, &(o.frame.stack)) |
     to_bitmap(&o, &(o.frame.base)) |

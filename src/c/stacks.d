@@ -144,6 +144,7 @@ run_init(cl_env_ptr env)
   margin = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
   size = ecl_option_values[ECL_OPT_LISP_STACK_SIZE];
   size = ((size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
+  env->run_stack.t = t_stack;
   env->run_stack.size = size;
   env->run_stack.limit_size = size - 2*margin;
   env->run_stack.org = (cl_object *)ecl_malloc(size * sizeof(cl_object));
