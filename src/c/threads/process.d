@@ -338,7 +338,7 @@ alloc_process(cl_object name, cl_object initial_bindings)
   process->process.interrupt = ECL_NIL;
   process->process.exit_values = ECL_NIL;
   process->process.env = NULL;
-  if (initial_bindings != OBJNULL) {
+  if (initial_bindings != ECL_NIL) {
     array = si_make_vector(ECL_T, ecl_make_fixnum(256),
                            ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
     si_fill_array_with_elt(array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
