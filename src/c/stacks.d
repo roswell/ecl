@@ -195,12 +195,6 @@ FEstack_underflow(void)
   FEerror("Internal error: stack underflow.",0);
 }
 
-void
-FEstack_advance(void)
-{
-  FEerror("Internal error: stack advance beyond current point.",0);
-}
-
 cl_object *
 ecl_stack_grow(cl_env_ptr env)
 {
