@@ -204,7 +204,7 @@ asm_op(cl_env_ptr env, cl_fixnum code) {
 
 static void
 asm_clear(cl_env_ptr env, cl_index h) {
-  ecl_vms_set_index_unsafe(env, h);
+  ecl_vms_unwind(env, h);
 }
 
 static void

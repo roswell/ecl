@@ -942,7 +942,7 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
   ffi_call(&cif, cfun, the_env->ffi_values, (void **)the_env->ffi_values_ptrs);
   object = ecl_foreign_data_ref_elt(the_env->ffi_values,
                                     ecl_foreign_type_code(return_type));
-  ecl_vms_set_index_unsafe(the_env, sp);
+  ecl_vms_unwind(the_env, sp);
   if (object != ECL_NIL) {
     @(return object);
   } else {

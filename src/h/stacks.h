@@ -416,7 +416,7 @@ ecl_vms_index(cl_env_ptr env) {
 }
 
 static inline void
-ecl_vms_set_index_unsafe(cl_env_ptr env, cl_index ndx)
+ecl_vms_unwind(cl_env_ptr env, cl_index ndx)
 {
   env->vms_stack.top = env->vms_stack.org + (ndx);
 }
