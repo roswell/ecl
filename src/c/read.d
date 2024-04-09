@@ -900,7 +900,7 @@ static cl_object
 sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
 {
   cl_env_ptr env = ecl_process_env();
-  cl_index sp = ecl_stack_index(env);
+  cl_index sp = ecl_vms_index(env);
   cl_object last, elt, x;
   cl_fixnum dim, dimcount, i;
   cl_object rtbl = ecl_current_readtable();
@@ -925,7 +925,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
         FEreader_error("Character ~:C is not allowed after #*",
                        in, 1, ECL_CODE_CHAR(x));
       }
-    ecl_stack_push(env, ecl_make_fixnum(x == '1'));
+    ecl_vms_push(env, ecl_make_fixnum(x == '1'));
   }
   if (Null(d)) {
     dim = dimcount;
@@ -941,16 +941,16 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
     unlikely_if (dim && (dimcount == 0))
       FEreader_error("Cannot fill the bit-vector #*.", in, 0);
   }
-  last = ECL_STACK_REF(env,-1);
+  last = ECL_VMS_REF(env,-1);
   x = ecl_alloc_simple_vector(dim, ecl_aet_bit);
   for (i = 0; i < dim; i++) {
-    elt = (i < dimcount) ? env->run_stack.org[sp+i] : last;
+    elt = (i < dimcount) ? env->vms_stack.org[sp+i] : last;
     if (elt == ecl_make_fixnum(0))
       x->vector.self.bit[i/CHAR_BIT] &= ~(0200 >> i%CHAR_BIT);
     else
       x->vector.self.bit[i/CHAR_BIT] |= 0200 >> i%CHAR_BIT;
   }
-  ecl_stack_pop_n_unsafe(env, dimcount);
+  ecl_vms_pop_n_unsafe(env, dimcount);
   @(return x);
 }
 

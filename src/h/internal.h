@@ -329,7 +329,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                 va_end(args);                                           \
                 frame->frame.stack = (cl_object*)0x1;                   \
         } else {                                                        \
-                frame->frame.base = env->run_stack.top - narg;          \
+                frame->frame.base = env->vms_stack.top - narg;          \
                 frame->frame.stack = 0;                                 \
         }
 #define ECL_STACK_FRAME_VARARGS_END(frame)      \
@@ -507,10 +507,10 @@ extern cl_object ecl_deserialize(uint8_t *data);
 /* stacks.d */
 #define CL_NEWENV_BEGIN {\
         const cl_env_ptr the_env = ecl_process_env(); \
-        cl_index __i = ecl_stack_push_values(the_env); \
+        cl_index __i = ecl_vms_push_values(the_env); \
 
 #define CL_NEWENV_END \
-        ecl_stack_pop_values(the_env,__i); }
+        ecl_vms_pop_values(the_env,__i); }
 
 extern void ecl_cs_init(cl_env_ptr env);
 

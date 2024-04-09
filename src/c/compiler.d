@@ -56,9 +56,9 @@
 typedef struct cl_compiler_env *cl_compiler_ptr;
 
 #define asm_begin(env) current_pc(env)
-#define current_pc(env) ecl_stack_index(env)
+#define current_pc(env) ecl_vms_index(env)
 #define set_pc(env,n) asm_clear(env,n)
-#define asm_ref(env,n) (cl_fixnum)((env)->run_stack.org[n])
+#define asm_ref(env,n) (cl_fixnum)((env)->vms_stack.org[n])
 static void asm_clear(cl_env_ptr env, cl_index h);
 static void asm_op(cl_env_ptr env, cl_fixnum op);
 static void asm_op2(cl_env_ptr env, int op, int arg);
@@ -185,7 +185,7 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
   bytecodes->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
   bytecodes->bytecodes.data = c_env->constants;
   for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
-    code[i] = (cl_opcode)(cl_fixnum)(env->run_stack.org[beginning+i]);
+    code[i] = (cl_opcode)(cl_fixnum)(env->vms_stack.org[beginning+i]);
   }
   bytecodes->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
   ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? ECL_NIL : file,
@@ -199,12 +199,12 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 static void
 asm_op(cl_env_ptr env, cl_fixnum code) {
   cl_object v = (cl_object)code;
-  ecl_stack_push(env,v);
+  ecl_vms_push(env,v);
 }
 
 static void
 asm_clear(cl_env_ptr env, cl_index h) {
-  ecl_stack_set_index_unsafe(env, h);
+  ecl_vms_set_index_unsafe(env, h);
 }
 
 static void
@@ -241,7 +241,7 @@ asm_complete(cl_env_ptr env, int op, cl_index pc) {
   else if (ecl_unlikely(delta < -MAX_OPARG || delta > MAX_OPARG))
     FEprogram_error("Too large jump", 0);
   else {
-    env->run_stack.org[pc] = (cl_object)(cl_fixnum)delta;
+    env->vms_stack.org[pc] = (cl_object)(cl_fixnum)delta;
   }
 }
 
@@ -2479,7 +2479,7 @@ save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
   cl_object bytecodes = ecl_alloc_simple_vector(l, ecl_aet_index);
   cl_index *p;
   for (p = bytecodes->vector.self.index; end > start; end--, p++) {
-    *p = (cl_index)ecl_stack_pop_unsafe(env);
+    *p = (cl_index)ecl_vms_pop_unsafe(env);
   }
   return bytecodes;
 }
@@ -2490,7 +2490,7 @@ restore_bytecodes(cl_env_ptr env, cl_object bytecodes)
   cl_index *p = bytecodes->vector.self.index;
   cl_index l;
   for (l = bytecodes->vector.dim; l; l--) {
-    ecl_stack_push(env, (cl_object)p[l-1]);
+    ecl_vms_push(env, (cl_object)p[l-1]);
   }
   ecl_dealloc(bytecodes);
 }

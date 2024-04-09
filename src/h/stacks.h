@@ -377,48 +377,48 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
  * LISP STACK
  *************/
 
-#define ECL_STACK_REF(env,n) ((env)->run_stack.top[n])
+#define ECL_VMS_REF(env,n) ((env)->vms_stack.top[n])
 
 static inline void
-ecl_stack_push(cl_env_ptr env, cl_object o) {
-  cl_object *new_top = env->run_stack.top;
-  if (ecl_unlikely(new_top >= env->run_stack.limit)) {
-    new_top = ecl_stack_grow(env);
+ecl_vms_push(cl_env_ptr env, cl_object o) {
+  cl_object *new_top = env->vms_stack.top;
+  if (ecl_unlikely(new_top >= env->vms_stack.limit)) {
+    new_top = ecl_vms_grow(env);
   }
-  env->run_stack.top = new_top+1;
+  env->vms_stack.top = new_top+1;
   *new_top = (o);
 }
 
 static inline void
-ecl_stack_push_n(cl_env_ptr env, cl_index n) {
-  cl_object *new_top = env->run_stack.top;
-  while (ecl_unlikely((env->run_stack.limit - new_top) <= n)) {
-    new_top = ecl_stack_grow(env);
+ecl_vms_push_n(cl_env_ptr env, cl_index n) {
+  cl_object *new_top = env->vms_stack.top;
+  while (ecl_unlikely((env->vms_stack.limit - new_top) <= n)) {
+    new_top = ecl_vms_grow(env);
   }
-  env->run_stack.top = new_top + n;
+  env->vms_stack.top = new_top + n;
 }
 
 static inline cl_object
-ecl_stack_pop_unsafe(cl_env_ptr env)
+ecl_vms_pop_unsafe(cl_env_ptr env)
 {
-  return *(--((env)->run_stack.top));
+  return *(--((env)->vms_stack.top));
 }
 
 static inline void
-ecl_stack_pop_n_unsafe(cl_env_ptr env, cl_index n)
+ecl_vms_pop_n_unsafe(cl_env_ptr env, cl_index n)
 {
-  env->run_stack.top -= n;
+  env->vms_stack.top -= n;
 }
 
 static inline cl_index
-ecl_stack_index(cl_env_ptr env) {
-  return (env)->run_stack.top - (env)->run_stack.org;
+ecl_vms_index(cl_env_ptr env) {
+  return (env)->vms_stack.top - (env)->vms_stack.org;
 }
 
 static inline void
-ecl_stack_set_index_unsafe(cl_env_ptr env, cl_index ndx)
+ecl_vms_set_index_unsafe(cl_env_ptr env, cl_index ndx)
 {
-  env->run_stack.top = env->run_stack.org + (ndx);
+  env->vms_stack.top = env->vms_stack.org + (ndx);
 }
 
 #define ECL_STACK_FRAME_COPY(dest,orig) do {                            \
@@ -448,10 +448,10 @@ ecl_stack_set_index_unsafe(cl_env_ptr env, cl_index ndx)
 #define ECL_UNWIND_PROTECT_EXIT \
         __unwinding=0; } \
         ecl_frs_pop(__the_env); \
-        __nr = ecl_stack_push_values(__the_env);
+        __nr = ecl_vms_push_values(__the_env);
 
 #define ECL_UNWIND_PROTECT_END \
-        ecl_stack_pop_values(__the_env,__nr);   \
+        ecl_vms_pop_values(__the_env,__nr);   \
         if (__unwinding) ecl_unwind(__the_env,__next_fr); } while(0)
 
 /* unwind-protect variant which disables interrupts during cleanup */
@@ -459,10 +459,10 @@ ecl_stack_set_index_unsafe(cl_env_ptr env, cl_index ndx)
         __unwinding=0; } \
         ecl_bds_bind(__the_env,ECL_INTERRUPTS_ENABLED,ECL_NIL); \
         ecl_frs_pop(__the_env); \
-        __nr = ecl_stack_push_values(__the_env);
+        __nr = ecl_vms_push_values(__the_env);
 
 #define ECL_UNWIND_PROTECT_THREAD_SAFE_END      \
-        ecl_stack_pop_values(__the_env,__nr);   \
+        ecl_vms_pop_values(__the_env,__nr);   \
         ecl_bds_unwind1(__the_env); \
         ecl_check_pending_interrupts(__the_env); \
         if (__unwinding) ecl_unwind(__the_env,__next_fr); } while(0)

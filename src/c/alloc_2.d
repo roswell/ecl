@@ -1151,8 +1151,8 @@ static void
 ecl_mark_env(struct cl_env_struct *env)
 {
   /* Environments and stacks are allocated without GC */
-  if (env->run_stack.org)
-    GC_push_all((void *)env->run_stack.org, (void *)env->run_stack.top);
+  if (env->vms_stack.org)
+    GC_push_all((void *)env->vms_stack.org, (void *)env->vms_stack.top);
   if (env->frs_stack.org)
     GC_push_all((void *)env->frs_stack.org, (void *)(env->frs_stack.top+1));
   if (env->bds_stack.org)

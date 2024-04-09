@@ -138,27 +138,28 @@ ecl_cs_overflow(void)
 /* ------------------------- LISP STACK ------------------------------- */
 
 static void
-run_init(cl_env_ptr env)
+vms_init(cl_env_ptr env)
 {
-  cl_index size, margin;
+  cl_index size, margin, limit_size;
   margin = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
   size = ecl_option_values[ECL_OPT_LISP_STACK_SIZE];
   size = ((size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
-  env->run_stack.t = t_stack;
-  env->run_stack.size = size;
-  env->run_stack.limit_size = size - 2*margin;
-  env->run_stack.org = (cl_object *)ecl_malloc(size * sizeof(cl_object));
-  env->run_stack.top = env->run_stack.org;
-  env->run_stack.limit = &env->run_stack.org[limit_size];
+  limit_size = size - 2*margin;
+  env->vms_stack.t = t_stack;
+  env->vms_stack.size = size;
+  env->vms_stack.limit_size = limit_size;
+  env->vms_stack.org = (cl_object *)ecl_malloc(size * sizeof(cl_object));
+  env->vms_stack.top = env->vms_stack.org;
+  env->vms_stack.limit = &env->vms_stack.org[limit_size];
   /* A stack always has at least one element. This is assumed by cl__va_start
      and friends, which take a sp=0 to have no arguments. */
-  *(env->run_stack.top++) = ecl_make_fixnum(0);
+  *(env->vms_stack.top++) = ecl_make_fixnum(0);
 }
 
 cl_object *
-ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
+ecl_vms_set_size(cl_env_ptr env, cl_index tentative_new_size)
 {
-  cl_index top = env->run_stack.top - env->run_stack.org;
+  cl_index top = env->vms_stack.top - env->vms_stack.org;
   cl_object *new_stack, *old_stack;
   cl_index safety_area = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
   cl_index new_size = tentative_new_size + 2*safety_area;
@@ -170,24 +171,24 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
     FEerror("Internal error: cannot shrink stack below stack top.",0);
   }
 
-  old_stack = env->run_stack.org;
+  old_stack = env->vms_stack.org;
   new_stack = (cl_object *)ecl_realloc(old_stack, new_size * sizeof(cl_object));
 
   ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  env->run_stack.size = new_size;
-  env->run_stack.limit_size = new_size - 2*safety_area;
-  env->run_stack.org = new_stack;
-  env->run_stack.top = env->run_stack.org + top;
-  env->run_stack.limit = env->run_stack.org + (new_size - 2*safety_area);
+  env->vms_stack.size = new_size;
+  env->vms_stack.limit_size = new_size - 2*safety_area;
+  env->vms_stack.org = new_stack;
+  env->vms_stack.top = env->vms_stack.org + top;
+  env->vms_stack.limit = env->vms_stack.org + (new_size - 2*safety_area);
 
   /* A stack always has at least one element. This is assumed by cl__va_start
    * and friends, which take a sp=0 to have no arguments.
    */
   if (top == 0) {
-    *(env->run_stack.top++) = ecl_make_fixnum(0);
+    *(env->vms_stack.top++) = ecl_make_fixnum(0);
   }
   ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-  return env->run_stack.top;
+  return env->vms_stack.top;
 }
 
 void
@@ -197,50 +198,50 @@ FEstack_underflow(void)
 }
 
 cl_object *
-ecl_stack_grow(cl_env_ptr env)
+ecl_vms_grow(cl_env_ptr env)
 {
-  return ecl_stack_set_size(env, env->run_stack.size + env->run_stack.size / 2);
+  return ecl_vms_set_size(env, env->vms_stack.size + env->vms_stack.size / 2);
 }
 
 cl_index
-ecl_stack_push_values(cl_env_ptr env) {
+ecl_vms_push_values(cl_env_ptr env) {
   cl_index i = env->nvalues;
-  cl_object *b = env->run_stack.top;
+  cl_object *b = env->vms_stack.top;
   cl_object *p = b + i;
-  if (p >= env->run_stack.limit) {
-    b = ecl_stack_grow(env);
+  if (p >= env->vms_stack.limit) {
+    b = ecl_vms_grow(env);
     p = b + i;
   }
-  env->run_stack.top = p;
+  env->vms_stack.top = p;
   memcpy(b, env->values, i * sizeof(cl_object));
   return i;
 }
 
 void
-ecl_stack_pop_values(cl_env_ptr env, cl_index n) {
-  cl_object *p = env->run_stack.top - n;
-  if (ecl_unlikely(p < env->run_stack.org))
+ecl_vms_pop_values(cl_env_ptr env, cl_index n) {
+  cl_object *p = env->vms_stack.top - n;
+  if (ecl_unlikely(p < env->vms_stack.org))
     FEstack_underflow();
   env->nvalues = n;
-  env->run_stack.top = p;
+  env->vms_stack.top = p;
   memcpy(env->values, p, n * sizeof(cl_object));
 }
 
 cl_object
 ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
 {
-  cl_object *base = env->run_stack.top;
+  cl_object *base = env->vms_stack.top;
   if (size) {
-    if ((env->run_stack.limit - base) < size) {
-      base = ecl_stack_set_size(env, env->run_stack.size + size);
+    if ((env->vms_stack.limit - base) < size) {
+      base = ecl_vms_set_size(env, env->vms_stack.size + size);
     }
   }
   f->frame.t = t_frame;
-  f->frame.stack = env->run_stack.org;
+  f->frame.stack = env->vms_stack.org;
   f->frame.base = base;
   f->frame.size = size;
   f->frame.env = env;
-  env->run_stack.top = (base + size);
+  env->vms_stack.top = (base + size);
   return f;
 }
 
@@ -248,23 +249,23 @@ void
 ecl_stack_frame_push(cl_object f, cl_object o)
 {
   cl_env_ptr env = f->frame.env;
-  cl_object *top = env->run_stack.top;
-  if (top >= env->run_stack.limit) {
-    top = ecl_stack_grow(env);
+  cl_object *top = env->vms_stack.top;
+  if (top >= env->vms_stack.limit) {
+    top = ecl_vms_grow(env);
   }
-  env->run_stack.top = ++top;
+  env->vms_stack.top = ++top;
   *(top-1) = o;
   f->frame.base = top - (++(f->frame.size));
-  f->frame.stack = env->run_stack.org;
+  f->frame.stack = env->vms_stack.org;
 }
 
 void
 ecl_stack_frame_push_values(cl_object f)
 {
   cl_env_ptr env = f->frame.env;
-  ecl_stack_push_values(env);
-  f->frame.base = env->run_stack.top - (f->frame.size += env->nvalues);
-  f->frame.stack = env->run_stack.org;
+  ecl_vms_push_values(env);
+  f->frame.base = env->vms_stack.top - (f->frame.size += env->nvalues);
+  f->frame.stack = env->vms_stack.org;
 }
 
 cl_object
@@ -285,7 +286,7 @@ void
 ecl_stack_frame_close(cl_object f)
 {
   if (f->frame.stack) {
-    ecl_stack_set_index_unsafe(f->frame.env, f->frame.base - f->frame.stack);
+    ecl_vms_set_index_unsafe(f->frame.env, f->frame.base - f->frame.stack);
   }
 }
 
@@ -736,7 +737,7 @@ _ecl_frs_push(cl_env_ptr env)
   ++env->frs_stack.top;
   output->frs_bds_top_index = env->bds_stack.top - env->bds_stack.org;
   output->frs_ihs = env->ihs_stack.top;
-  output->frs_sp = ecl_stack_index(env);
+  output->frs_sp = ecl_vms_index(env);
   return output;
 }
 
@@ -751,7 +752,7 @@ ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
   }
   env->ihs_stack.top = top->frs_ihs;
   ecl_bds_unwind(env, top->frs_bds_top_index);
-  ecl_stack_set_index_unsafe(env, top->frs_sp);
+  ecl_vms_set_index_unsafe(env, top->frs_sp);
   env->frs_stack.top = top;
   ecl_longjmp(env->frs_stack.top->frs_jmpbuf, 1);
   /* never reached */
@@ -843,7 +844,7 @@ si_set_limit(cl_object type, cl_object limit)
     cs_set_size(env, the_size + 2*margin);
   } else if (type == @'ext::lisp-stack') {
     cl_index the_size = ecl_to_size(limit);
-    ecl_stack_set_size(env, the_size);
+    ecl_vms_set_size(env, the_size);
   } else if (type == @'ext::heap-size') {
     /*
      * size_t can be larger than cl_index, and ecl_to_size()
@@ -868,7 +869,7 @@ si_get_limit(cl_object type)
   else if (type == @'ext::c-stack')
     output = env->c_stack.limit_size;
   else if (type == @'ext::lisp-stack')
-    output = env->run_stack.limit_size;
+    output = env->vms_stack.limit_size;
   else if (type == @'ext::heap-size') {
     /* size_t can be larger than cl_index */
     ecl_return1(env, ecl_make_unsigned_integer(ecl_core.max_heap_size));
@@ -899,5 +900,5 @@ init_stacks(cl_env_ptr env)
   frs_init(env);
   bds_init(env);
   ihs_init(env);
-  run_init(env);
+  vms_init(env);
 }

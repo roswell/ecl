@@ -138,7 +138,7 @@ _ecl_dealloc_env(cl_env_ptr env)
 {
   /* Environment cleanup. This is required because the environment is allocated
    * using mmap or some other method. */
-  ecl_free(env->run_stack.org);
+  ecl_free(env->vms_stack.org);
   ecl_free(env->frs_stack.org);
   ecl_free(env->bds_stack.org);
 #ifdef ECL_THREADS

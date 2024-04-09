@@ -904,7 +904,7 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
         /* Push the newly allocated object onto the stack so that it
          * is reachable by the garbage collector */
         if (ECL_CONS_CAR(args) != object) {
-          ecl_stack_push(the_env, object);
+          ecl_vms_push(the_env, object);
         }
       }
       args = ECL_CONS_CDR(args);
@@ -937,12 +937,12 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
   volatile cl_index sp;
   ffi_cif cif;
 @ {
-  sp = ecl_stack_index(the_env);
+  sp = ecl_vms_index(the_env);
   prepare_cif(the_env, &cif, return_type, arg_types, args, cc_type, NULL);
   ffi_call(&cif, cfun, the_env->ffi_values, (void **)the_env->ffi_values_ptrs);
   object = ecl_foreign_data_ref_elt(the_env->ffi_values,
                                     ecl_foreign_type_code(return_type));
-  ecl_stack_set_index_unsafe(the_env, sp);
+  ecl_vms_set_index_unsafe(the_env, sp);
   if (object != ECL_NIL) {
     @(return object);
   } else {

@@ -79,10 +79,10 @@ struct cl_env_struct {
 
         /* The four stacks in ECL. */
 
-        /* The runtime stack, which is used mainly for keeping the arguments of
-         * a function before it is invoked, and also by the compiler and by the
-         * reader when they are building some data structure. */
-        struct ecl_stack run_stack;
+        /* The Virtual MachineS stack is used mainly for keeping the arguments
+         * of a function before it is invoked, and also by the compiler and by
+         * the reader when they are building some data structure. */
+        struct ecl_stack vms_stack;
         struct ecl_binding_stack bds_stack;
         struct ecl_frames_stack frs_stack;
         struct ecl_history_stack ihs_stack;
@@ -507,10 +507,10 @@ extern ECL_API void ecl_stack_frame_close(cl_object f);
 #define si_apply_from_stack_frame ecl_apply_from_stack_frame
 
 extern ECL_API void FEstack_underflow(void) ecl_attr_noreturn;
-extern ECL_API cl_object *ecl_stack_grow(cl_env_ptr env);
-extern ECL_API cl_object *ecl_stack_set_size(cl_env_ptr env, cl_index new_size);
-extern ECL_API cl_index ecl_stack_push_values(cl_env_ptr env);
-extern ECL_API void ecl_stack_pop_values(cl_env_ptr env, cl_index n);
+extern ECL_API cl_object *ecl_vms_grow(cl_env_ptr env);
+extern ECL_API cl_object *ecl_vms_set_size(cl_env_ptr env, cl_index new_size);
+extern ECL_API cl_index ecl_vms_push_values(cl_env_ptr env);
+extern ECL_API void ecl_vms_pop_values(cl_env_ptr env, cl_index n);
 extern ECL_API cl_object ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes);
 extern ECL_API cl_object _ecl_bytecodes_dispatch(cl_narg narg, ...);
 extern ECL_API cl_object _ecl_bclosure_dispatch(cl_narg narg, ...);
