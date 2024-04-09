@@ -156,7 +156,7 @@ run_init(cl_env_ptr env)
 }
 
 cl_object *
-ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
+ecl_vms_set_size(cl_env_ptr env, cl_index tentative_new_size)
 {
   cl_index top = env->run_stack.top - env->run_stack.org;
   cl_object *new_stack, *old_stack;
@@ -200,18 +200,18 @@ FEstack_underflow(void)
 }
 
 cl_object *
-ecl_stack_grow(cl_env_ptr env)
+ecl_vms_grow(cl_env_ptr env)
 {
-  return ecl_stack_set_size(env, env->run_stack.size + env->run_stack.size / 2);
+  return ecl_vms_set_size(env, env->run_stack.size + env->run_stack.size / 2);
 }
 
 cl_index
-ecl_stack_push_values(cl_env_ptr env) {
+ecl_vms_push_values(cl_env_ptr env) {
   cl_index i = env->nvalues;
   cl_object *b = env->run_stack.top;
   cl_object *p = b + i;
   if (p >= env->run_stack.limit) {
-    b = ecl_stack_grow(env);
+    b = ecl_vms_grow(env);
     p = b + i;
   }
   env->run_stack.top = p;
@@ -220,7 +220,7 @@ ecl_stack_push_values(cl_env_ptr env) {
 }
 
 void
-ecl_stack_pop_values(cl_env_ptr env, cl_index n) {
+ecl_vms_pop_values(cl_env_ptr env, cl_index n) {
   cl_object *p = env->run_stack.top - n;
   if (ecl_unlikely(p < env->run_stack.org))
     FEstack_underflow();
@@ -236,7 +236,7 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
   cl_index bindex;
   if (size) {
     if ((env->run_stack.limit - base) < size) {
-      base = ecl_stack_set_size(env, env->run_stack.size + size);
+      base = ecl_vms_set_size(env, env->run_stack.size + size);
     }
   }
   bindex = ECL_STACK_INDEX(env);
@@ -256,7 +256,7 @@ ecl_stack_frame_push(cl_object f, cl_object o)
   cl_env_ptr env = f->frame.env;
   cl_object *top = env->run_stack.top;
   if (top >= env->run_stack.limit) {
-    top = ecl_stack_grow(env);
+    top = ecl_vms_grow(env);
   }
   env->run_stack.top = ++top;
   *(top-1) = o;
@@ -267,7 +267,7 @@ void
 ecl_stack_frame_push_values(cl_object f)
 {
   cl_env_ptr env = f->frame.env;
-  ecl_stack_push_values(env);
+  ecl_vms_push_values(env);
   f->frame.size += env->nvalues;
 }
 
@@ -290,7 +290,7 @@ ecl_stack_frame_close(cl_object f)
 {
   if (f->frame.opened) {
     f->frame.opened = 0;
-    ecl_stack_set_index_unsafe(f->frame.env, f->frame.base);
+    ecl_vms_unwind(f->frame.env, f->frame.base);
   }
 }
 
@@ -746,7 +746,7 @@ _ecl_frs_push(cl_env_ptr env)
   ++env->frs_stack.top;
   output->frs_bds_top_index = env->bds_stack.top - env->bds_stack.org;
   output->frs_ihs = env->ihs_stack.top;
-  output->frs_sp = ecl_stack_index(env);
+  output->frs_sp = ecl_vms_index(env);
   return output;
 }
 
@@ -761,7 +761,7 @@ ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
   }
   env->ihs_stack.top = top->frs_ihs;
   ecl_bds_unwind(env, top->frs_bds_top_index);
-  ecl_stack_set_index_unsafe(env, top->frs_sp);
+  ecl_vms_unwind(env, top->frs_sp);
   env->frs_stack.top = top;
   ecl_longjmp(env->frs_stack.top->frs_jmpbuf, 1);
   /* never reached */
@@ -853,7 +853,7 @@ si_set_limit(cl_object type, cl_object limit)
     cs_set_size(env, the_size + 2*margin);
   } else if (type == @'ext::lisp-stack') {
     cl_index the_size = ecl_to_size(limit);
-    ecl_stack_set_size(env, the_size);
+    ecl_vms_set_size(env, the_size);
   } else if (type == @'ext::heap-size') {
     /*
      * size_t can be larger than cl_index, and ecl_to_size()
