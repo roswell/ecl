@@ -1276,7 +1276,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       THREAD_NEXT;
     }
     CASE(OP_PROTECT_NORMAL); {
-      ecl_bds_unwind(the_env, the_env->frs_stack.top->frs_bds_top_index);
+      ecl_bds_unwind(the_env, the_env->frs_stack.top->frs_bds_ndx);
       ecl_frs_pop(the_env);
       (void)ECL_STACK_POP_UNSAFE(the_env);
       unwind_lcl(lcl_env, ECL_STACK_POP_UNSAFE(the_env));

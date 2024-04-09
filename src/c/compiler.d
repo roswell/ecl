@@ -211,7 +211,7 @@ asm_op(cl_env_ptr env, cl_fixnum code) {
 
 static void
 asm_clear(cl_env_ptr env, cl_index h) {
-  ECL_STACK_SET_INDEX(env, h);
+  ECL_STACK_UNWIND(env, h);
 }
 
 static void
@@ -1446,7 +1446,7 @@ c_catch(cl_env_ptr env, cl_object args, int flags) {
 static int
 c_compiler_let(cl_env_ptr env, cl_object args, int flags) {
   cl_object bindings;
-  cl_index old_bds_top_index = env->bds_stack.top - env->bds_stack.org;
+  cl_index old_bds_ndx = env->bds_stack.top - env->bds_stack.org;
 
   for (bindings = pop(&args); !Null(bindings); ) {
     cl_object form = pop(&bindings);
@@ -1455,7 +1455,7 @@ c_compiler_let(cl_env_ptr env, cl_object args, int flags) {
     ecl_bds_bind(env, var, value);
   }
   flags = compile_toplevel_body(env, args, flags);
-  ecl_bds_unwind(env, old_bds_top_index);
+  ecl_bds_unwind(env, old_bds_ndx);
   return flags;
 }
 

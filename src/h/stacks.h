@@ -280,9 +280,9 @@ typedef struct ecl_ihs_frame {
 typedef struct ecl_frame {
         jmp_buf         frs_jmpbuf;
         cl_object       frs_val;
-        cl_index        frs_bds_top_index;
         ecl_ihs_ptr     frs_ihs;
-        cl_index        frs_sp;
+        cl_index        frs_bds_ndx;
+        cl_index        frs_run_ndx;
 } *ecl_frame_ptr;
 
 extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
@@ -408,9 +408,9 @@ ecl_data_stack_set_index(cl_env_ptr env, cl_index ndx)
 
 #define ECL_STACK_REF(env,n)          ((env)->run_stack.top[n])
 #define ECL_STACK_INDEX(env)          ecl_data_stack_index(env)
-#define ECL_STACK_SET_INDEX(env,ndx)  ecl_data_stack_set_index(env,ndx)
-#define ECL_STACK_PUSH(env,o)         ecl_data_stack_push(env,o)
+#define ECL_STACK_UNWIND(env,ndx)     ecl_data_stack_set_index(env,ndx)
 #define ECL_STACK_PUSH_N(env,n)       ecl_data_stack_push_n(env,n)
+#define ECL_STACK_PUSH(env,o)         ecl_data_stack_push(env,o)
 #define ECL_STACK_POP_UNSAFE(env)     ecl_data_stack_pop_unsafe(env)
 #define ECL_STACK_POP_N_UNSAFE(env,o) ecl_data_stack_pop_n_unsafe(env,o)
 
