@@ -56,7 +56,7 @@
 typedef struct cl_compiler_env *cl_compiler_ptr;
 
 #define asm_begin(env) current_pc(env)
-#define current_pc(env) ecl_vms_index(env)
+#define current_pc(env) ECL_VMS_NDX(env)
 #define set_pc(env,n) asm_clear(env,n)
 #define asm_ref(env,n) (cl_fixnum)((env)->vms_stack.org[n])
 static void asm_clear(cl_env_ptr env, cl_index h);
@@ -199,12 +199,14 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 static void
 asm_op(cl_env_ptr env, cl_fixnum code) {
   cl_object v = (cl_object)code;
-  ecl_vms_push(env,v);
+  cl_object vms = ecl_cast_ptr(cl_object,&env->vms_stack);
+  ecl_stack_push(vms,v);
 }
 
 static void
 asm_clear(cl_env_ptr env, cl_index h) {
-  ecl_vms_unwind(env, h);
+  cl_object vms = ecl_cast_ptr(cl_object,&env->vms_stack);
+  ecl_stack_unwind(vms, h);
 }
 
 static void
@@ -2475,11 +2477,12 @@ execute_each_form(cl_env_ptr env, cl_object body)
 static cl_object
 save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
 {
+  cl_object vms = ecl_cast_ptr(cl_object,&env->vms_stack);
   cl_index l = end - start;
   cl_object bytecodes = ecl_alloc_simple_vector(l, ecl_aet_index);
   cl_index *p;
   for (p = bytecodes->vector.self.index; end > start; end--, p++) {
-    *p = (cl_index)ecl_vms_pop_unsafe(env);
+    *p = (cl_index)ecl_stack_popu(vms);
   }
   return bytecodes;
 }
@@ -2487,10 +2490,11 @@ save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
 static void
 restore_bytecodes(cl_env_ptr env, cl_object bytecodes)
 {
+  cl_object vms = ecl_cast_ptr(cl_object,&env->vms_stack);
   cl_index *p = bytecodes->vector.self.index;
   cl_index l;
   for (l = bytecodes->vector.dim; l; l--) {
-    ecl_vms_push(env, (cl_object)p[l-1]);
+    ecl_stack_push(vms, (cl_object)p[l-1]);
   }
   ecl_dealloc(bytecodes);
 }

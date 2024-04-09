@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * stacks.d - binding/history/frame stacks
+ * stacks.d - ECL stacks
  *
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
@@ -19,8 +19,53 @@
 # include <sys/time.h>
 # include <sys/resource.h>
 #endif
+#include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/stack-resize.h>
+
+/* -- General purpose LISP stack --------------------------------------------- **
+
+This structure is most notably used by the VMS stack. When we make environments
+cl_object instances then other stacks will use this code too.
+
+FIXME / TODO:
+- add operators CREATE and RESIZE
+- add restarts for overflow and better errors
+- add more operators (c.f. forth)
+- implement extensible sequences protocol
+- add stack frames as first-class citizen
+
+** ----------------------------------------------------------------------------*/
+
+cl_object
+si_stack_push(cl_object self, cl_object elt)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  if (self->stack.top >= self->stack.limit) {
+    FEerror("Stack overflow.",0);
+  }
+  ecl_return1(the_env, ecl_stack_push(self, elt));
+}
+
+cl_object
+si_stack_pop(cl_object self)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  if (self->stack.top <= self->stack.org) {
+    FEerror("Stack underflow.",0);
+  }
+  ecl_return1(the_env, ecl_stack_popu(self));
+}
+
+cl_object
+si_stack_top(cl_object self)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  if (self->stack.top <= self->stack.org) {
+    FEerror("Stack is empty.",0);
+  }
+  ecl_return1(the_env, ECL_STACK_TOP(self));
+}
 
 /* ------------------------- C STACK ---------------------------------- */
 
@@ -161,7 +206,7 @@ vms_init(cl_env_ptr env)
 }
 
 cl_object *
-ecl_vms_set_size(cl_env_ptr env, cl_index tentative_new_size)
+vms_set_size(cl_env_ptr env, cl_index tentative_new_size)
 {
   cl_index top = env->vms_stack.top - env->vms_stack.org;
   cl_object *new_stack, *old_stack;
@@ -184,27 +229,14 @@ ecl_vms_set_size(cl_env_ptr env, cl_index tentative_new_size)
   env->vms_stack.org = new_stack;
   env->vms_stack.top = env->vms_stack.org + top;
   env->vms_stack.limit = env->vms_stack.org + (new_size - 2*safety_area);
-
-  /* A stack always has at least one element. This is assumed by cl__va_start
-   * and friends, which take a sp=0 to have no arguments.
-   */
-  if (top == 0) {
-    *(env->vms_stack.top++) = ecl_make_fixnum(0);
-  }
   ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
   return env->vms_stack.top;
 }
 
-void
-FEstack_underflow(void)
+static cl_object *
+vms_grow(cl_env_ptr env)
 {
-  FEerror("Internal error: stack underflow.",0);
-}
-
-cl_object *
-ecl_vms_grow(cl_env_ptr env)
-{
-  return ecl_vms_set_size(env, env->vms_stack.size + env->vms_stack.size / 2);
+  return vms_set_size(env, env->vms_stack.size + env->vms_stack.size / 2);
 }
 
 cl_index
@@ -213,7 +245,7 @@ ecl_vms_push_values(cl_env_ptr env) {
   cl_object *b = env->vms_stack.top;
   cl_object *p = b + i;
   if (p >= env->vms_stack.limit) {
-    b = ecl_vms_grow(env);
+    b = vms_grow(env);
     p = b + i;
   }
   env->vms_stack.top = p;
@@ -225,7 +257,7 @@ void
 ecl_vms_pop_values(cl_env_ptr env, cl_index n) {
   cl_object *p = env->vms_stack.top - n;
   if (ecl_unlikely(p < env->vms_stack.org))
-    FEstack_underflow();
+    FEerror("Internal error: stack underflow.",0);
   env->nvalues = n;
   env->vms_stack.top = p;
   memcpy(env->values, p, n * sizeof(cl_object));
@@ -237,7 +269,7 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
   cl_object *base = env->vms_stack.top;
   if (size) {
     if ((env->vms_stack.limit - base) < size) {
-      base = ecl_vms_set_size(env, env->vms_stack.size + size);
+      base = vms_set_size(env, env->vms_stack.size + size);
     }
   }
   f->frame.t = t_frame;
@@ -255,7 +287,7 @@ ecl_stack_frame_push(cl_object f, cl_object o)
   cl_env_ptr env = f->frame.env;
   cl_object *top = env->vms_stack.top;
   if (top >= env->vms_stack.limit) {
-    top = ecl_vms_grow(env);
+    top = vms_grow(env);
   }
   env->vms_stack.top = ++top;
   *(top-1) = o;
@@ -290,7 +322,9 @@ void
 ecl_stack_frame_close(cl_object f)
 {
   if (f->frame.stack) {
-    ecl_vms_unwind(f->frame.env, f->frame.base - f->frame.stack);
+    cl_env_ptr the_env = f->frame.env;
+    cl_object vms = ecl_cast_ptr(cl_object,&the_env->vms_stack);
+    ecl_stack_unwind(vms, f->frame.base - f->frame.stack);
   }
 }
 
@@ -750,7 +784,7 @@ _ecl_frs_push(cl_env_ptr env)
   AO_nop_full();
   ++env->frs_stack.top;
   output->frs_bds_ndx = env->bds_stack.top - env->bds_stack.org;
-  output->frs_vms_ndx = ecl_vms_index(env);
+  output->frs_vms_ndx = ECL_VMS_NDX(env);
   output->frs_ihs = env->ihs_stack.top;
   return output;
 }
@@ -760,13 +794,14 @@ ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
 {
   env->frs_stack.nlj_fr = fr;
   ecl_frame_ptr top = env->frs_stack.top;
+  cl_object vms = ecl_cast_ptr(cl_object,&env->vms_stack);
   while (top != fr && top->frs_val != ECL_PROTECT_TAG){
     top->frs_val = ECL_DUMMY_TAG;
     --top;
   }
   env->ihs_stack.top = top->frs_ihs;
   ecl_bds_unwind(env, top->frs_bds_ndx);
-  ecl_vms_unwind(env, top->frs_vms_ndx);
+  ecl_stack_unwind(vms, top->frs_vms_ndx);
   env->frs_stack.top = top;
   ecl_longjmp(env->frs_stack.top->frs_jmpbuf, 1);
   /* never reached */
@@ -858,7 +893,7 @@ si_set_limit(cl_object type, cl_object limit)
     cs_set_size(env, the_size + 2*margin);
   } else if (type == @'ext::lisp-stack') {
     cl_index the_size = ecl_to_size(limit);
-    ecl_vms_set_size(env, the_size);
+    vms_set_size(env, the_size);
   } else if (type == @'ext::heap-size') {
     /*
      * size_t can be larger than cl_index, and ecl_to_size()

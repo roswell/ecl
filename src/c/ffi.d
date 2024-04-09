@@ -13,6 +13,7 @@
 #include <string.h>
 #define ECL_INCLUDE_FFI_H
 #include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 
 static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
@@ -883,6 +884,7 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
   ffi_type **types;
   enum ecl_ffi_tag type;
   cl_object arg_type;
+  cl_object vms = ecl_cast_ptr(cl_object,&the_env->vms_stack);
   if (!the_env->ffi_args_limit)
     resize_call_stack(the_env, 32);
   the_env->ffi_types[0] = ecl_type_to_libffi_type(return_type);
@@ -904,7 +906,7 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
         /* Push the newly allocated object onto the stack so that it
          * is reachable by the garbage collector */
         if (ECL_CONS_CAR(args) != object) {
-          ecl_vms_push(the_env, object);
+          ecl_stack_push(vms, object);
         }
       }
       args = ECL_CONS_CDR(args);
@@ -933,16 +935,17 @@ prepare_cif(cl_env_ptr the_env, ffi_cif *cif, cl_object return_type,
 
 @(defun si::call-cfun (fun return_type arg_types args &optional (cc_type @':default'))
   void *cfun = ecl_foreign_data_pointer_safe(fun);
-  cl_object object;
+  cl_object object, vms;
   volatile cl_index sp;
   ffi_cif cif;
 @ {
-  sp = ecl_vms_index(the_env);
+  vms = ecl_cast_ptr(cl_object,&the_env->vms_stack);
+  sp = ecl_stack_index(vms);
   prepare_cif(the_env, &cif, return_type, arg_types, args, cc_type, NULL);
   ffi_call(&cif, cfun, the_env->ffi_values, (void **)the_env->ffi_values_ptrs);
   object = ecl_foreign_data_ref_elt(the_env->ffi_values,
                                     ecl_foreign_type_code(return_type));
-  ecl_vms_unwind(the_env, sp);
+  ecl_stack_unwind(vms, sp);
   if (object != ECL_NIL) {
     @(return object);
   } else {

@@ -506,9 +506,6 @@ extern ECL_API cl_object ecl_stack_frame_pop_values(cl_object f);
 extern ECL_API void ecl_stack_frame_close(cl_object f);
 #define si_apply_from_stack_frame ecl_apply_from_stack_frame
 
-extern ECL_API void FEstack_underflow(void) ecl_attr_noreturn;
-extern ECL_API cl_object *ecl_vms_grow(cl_env_ptr env);
-extern ECL_API cl_object *ecl_vms_set_size(cl_env_ptr env, cl_index new_size);
 extern ECL_API cl_index ecl_vms_push_values(cl_env_ptr env);
 extern ECL_API void ecl_vms_pop_values(cl_env_ptr env, cl_index n);
 extern ECL_API cl_object ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes);
@@ -1590,6 +1587,11 @@ extern ECL_API __m128d ecl_unbox_double_sse_pack(cl_object value);
 #define ecl_unbox_double_sse_pack_unsafe(x) ((x)->sse.data.vd)
 
 #endif
+
+/* stack.c (data structure) */
+extern ECL_API cl_object si_stack_push(cl_object self, cl_object elt);
+extern ECL_API cl_object si_stack_pop(cl_object self);
+extern ECL_API cl_object si_stack_top(cl_object self);
 
 /* stacks.c */
 

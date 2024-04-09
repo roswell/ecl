@@ -364,49 +364,28 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
  * LISP STACK
  *************/
 
+cl_object *ecl_stack_init  (cl_object self, cl_index size, cl_index margin);
+cl_object *ecl_stack_resize(cl_object self, cl_index size, cl_index margin);
+
+cl_index ecl_stack_index(cl_object self);
+cl_object *ecl_stack_unwind(cl_object self, cl_index ndx);
+cl_object *ecl_stack_tangle(cl_object self, cl_object them);
+
+cl_object ecl_stack_push(cl_object self, cl_object elt);
+cl_object ecl_stack_pop(cl_object self);
+cl_object ecl_stack_dup(cl_object self);
+cl_object ecl_stack_del(cl_object self, cl_object elt);
+cl_object ecl_stack_popu(cl_object self);
+
+void ecl_stack_grow(cl_object self, cl_index n);
+void ecl_stack_drop(cl_object self, cl_index n);
+
+#define ECL_STACK_REF(self,n) (self->stack.top[n])
+#define ECL_STACK_TOP(self) (self->stack.top[-1])
+#define ECL_STACK_NDX(self) (self->stack.top - self->stack.org)
+
 #define ECL_VMS_REF(env,n) ((env)->vms_stack.top[n])
-
-static inline void
-ecl_vms_push(cl_env_ptr env, cl_object o) {
-  cl_object *new_top = env->vms_stack.top;
-  if (ecl_unlikely(new_top >= env->vms_stack.limit)) {
-    new_top = ecl_vms_grow(env);
-  }
-  env->vms_stack.top = new_top+1;
-  *new_top = (o);
-}
-
-static inline void
-ecl_vms_push_n(cl_env_ptr env, cl_index n) {
-  cl_object *new_top = env->vms_stack.top;
-  while (ecl_unlikely((env->vms_stack.limit - new_top) <= n)) {
-    new_top = ecl_vms_grow(env);
-  }
-  env->vms_stack.top = new_top + n;
-}
-
-static inline cl_object
-ecl_vms_pop_unsafe(cl_env_ptr env)
-{
-  return *(--((env)->vms_stack.top));
-}
-
-static inline void
-ecl_vms_pop_n_unsafe(cl_env_ptr env, cl_index n)
-{
-  env->vms_stack.top -= n;
-}
-
-static inline cl_index
-ecl_vms_index(cl_env_ptr env) {
-  return (env)->vms_stack.top - (env)->vms_stack.org;
-}
-
-static inline void
-ecl_vms_unwind(cl_env_ptr env, cl_index ndx)
-{
-  env->vms_stack.top = env->vms_stack.org + (ndx);
-}
+#define ECL_VMS_NDX(env) ((env)->vms_stack.top - (env)->vms_stack.org)
 
 #define ECL_STACK_FRAME_COPY(dest,orig) do {                            \
                 cl_object __dest = (dest);                              \

@@ -446,8 +446,7 @@ universal_error_handler(cl_object continue_string, cl_object datum,
     ecl_bds_bind(the_env, @'*print-length*', ecl_make_fixnum(3));
     ecl_bds_bind(the_env, @'*print-circle*', ECL_NIL);
     ecl_bds_bind(the_env, @'*print-base*', ecl_make_fixnum(10));
-    writestr_stream("\n;;; Unhandled lisp initialization error",
-                    stream);
+    writestr_stream("\n;;; Unhandled lisp initialization error", stream);
     writestr_stream("\n;;; Message:\n", stream);
     si_write_ugly_object(datum, stream);
     writestr_stream("\n;;; Arguments:\n", stream);
