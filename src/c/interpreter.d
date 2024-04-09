@@ -1055,7 +1055,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       THREAD_NEXT;
     }
     CASE(OP_PROTECT_NORMAL); {
-      ecl_bds_unwind(the_env, the_env->frs_stack.top->frs_bds_top_index);
+      ecl_bds_unwind(the_env, the_env->frs_stack.top->frs_bds_ndx);
       ecl_frs_pop(the_env);
       (void)ecl_vms_pop_unsafe(the_env);
       lex_env = ecl_vms_pop_unsafe(the_env);

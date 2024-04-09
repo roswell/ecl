@@ -293,9 +293,9 @@ typedef struct ecl_ihs_frame {
 typedef struct ecl_frame {
         jmp_buf         frs_jmpbuf;
         cl_object       frs_val;
-        cl_index        frs_bds_top_index;
         ecl_ihs_ptr     frs_ihs;
-        cl_index        frs_sp;
+        cl_index        frs_bds_ndx;
+        cl_index        frs_vms_ndx;
 } *ecl_frame_ptr;
 
 extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);

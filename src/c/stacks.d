@@ -358,9 +358,9 @@ ecl_bds_overflow(void)
 }
 
 void
-ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index)
+ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_ndx)
 {
-  ecl_bds_ptr new_bds_top = new_bds_top_index + env->bds_stack.org;
+  ecl_bds_ptr new_bds_top = env->bds_stack.org + new_bds_ndx;
   ecl_bds_ptr bds = env->bds_stack.top;
   for (;  bds > new_bds_top;  bds--)
 #ifdef ECL_THREADS
@@ -735,9 +735,9 @@ _ecl_frs_push(cl_env_ptr env)
   output->frs_val = ECL_DUMMY_TAG;
   AO_nop_full();
   ++env->frs_stack.top;
-  output->frs_bds_top_index = env->bds_stack.top - env->bds_stack.org;
+  output->frs_bds_ndx = env->bds_stack.top - env->bds_stack.org;
+  output->frs_vms_ndx = ecl_vms_index(env);
   output->frs_ihs = env->ihs_stack.top;
-  output->frs_sp = ecl_vms_index(env);
   return output;
 }
 
@@ -751,8 +751,8 @@ ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
     --top;
   }
   env->ihs_stack.top = top->frs_ihs;
-  ecl_bds_unwind(env, top->frs_bds_top_index);
-  ecl_vms_unwind(env, top->frs_sp);
+  ecl_bds_unwind(env, top->frs_bds_ndx);
+  ecl_vms_unwind(env, top->frs_vms_ndx);
   env->frs_stack.top = top;
   ecl_longjmp(env->frs_stack.top->frs_jmpbuf, 1);
   /* never reached */
@@ -792,7 +792,7 @@ cl_object
 si_frs_bds(cl_object arg)
 {
   cl_env_ptr env = ecl_process_env();
-  ecl_return1(env, ecl_make_fixnum(get_frame_ptr(arg)->frs_bds_top_index));
+  ecl_return1(env, ecl_make_fixnum(get_frame_ptr(arg)->frs_bds_ndx));
 }
 
 cl_object

@@ -1613,7 +1613,7 @@ extern ECL_API cl_object si_set_limit(cl_object type, cl_object size);
 extern ECL_API cl_object si_get_limit(cl_object type);
 
 extern ECL_API cl_index ecl_progv(cl_env_ptr env, cl_object vars, cl_object values);
-extern ECL_API void ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index);
+extern ECL_API void ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_ndx);
 extern ECL_API void ecl_unwind(cl_env_ptr env, struct ecl_frame *fr) ecl_attr_noreturn;
 extern ECL_API struct ecl_frame *frs_sch(cl_object frame_id);
 
