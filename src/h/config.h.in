@@ -206,9 +206,6 @@ typedef unsigned char ecl_base_char;
 /* do we want NaNs and Infs                                             */
 #undef ECL_IEEE_FP
 
-/* We can use small, two-words conses, without type information         */
-#undef ECL_SMALL_CONS
-
 /* Do we use C or C++ compiler to compile ecl? */
 #undef ECL_CXX_CORE
 

@@ -605,9 +605,6 @@ if test ${enable_boehm} = "no" ; then
 else
   ECL_BOEHM_GC
 fi
-if test ${enable_smallcons} = "yes" ; then
-   AC_DEFINE([ECL_SMALL_CONS], [], [ECL_SMALL_CONS])
-fi
 
 ECL_LIBFFI
 

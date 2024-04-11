@@ -63,35 +63,6 @@ type of object. For instance, a cons cell consists of three words:
 +--------------------+
 @end verbatim
 
-@cfindex --enable-small-cons [YES|no]
-
-Note, that this is one of the possible implementation of
-@code{cons}. The second one (currently default) uses the immediate value
-for the @code{list} and consumes two words instead of three. Such
-implementation is more memory and speed efficient (according to the
-comments in the source code):
-
-@verbatim
-/*
- * CONSES
- *
- * We implement two variants. The "small cons" type carries the type
- * information in the least significant bits of the pointer. We have
- * to do some pointer arithmetics to find out the CAR / CDR of the
- * cons but the overall result is faster and memory efficient, only
- * using two words per cons.
- *
- * The other scheme stores conses as three-words objects, the first
- * word carrying the type information. This is kept for backward
- * compatibility and also because the oldest garbage collector does
- * not yet support the smaller datatype.
- *
- * To make code portable and independent of the representation, only
- * access the objects using the common macros below (that is all
- * except ECL_CONS_PTR or ECL_PTR_CONS).
- */
-@end verbatim
-
 @cppdef cl_object
 @deftp @cind{} cl_object
 This is the type of a lisp object. For your C/C++ program, a cl_object

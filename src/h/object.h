@@ -332,43 +332,8 @@ enum {
         ECL_INHERITED
 };
 
-/*
- * CONSES
- *
- * We implement two variants. The "small cons" type carries the type
- * information in the least significant bits of the pointer. We have
- * to do some pointer arithmetics to find out the CAR / CDR of the
- * cons but the overall result is faster and memory efficient, only
- * using two words per cons.
- *
- * The other scheme stores conses as three-words objects, the first
- * word carrying the type information. This is kept for backward
- * compatibility and also because the oldest garbage collector does
- * not yet support the smaller datatype.
- *
- * To make code portable and independent of the representation, only
- * access the objects using the common macros below (that is all
- * except ECL_CONS_PTR or ECL_PTR_CONS).
- */
+/* CONSES */
 
-#ifdef ECL_SMALL_CONS
-#define ECL_LISTP(x)    (ECL_IMMEDIATE(x) == t_list)
-#define ECL_CONSP(x)    (LISTP(x) && !Null(x))
-#define ECL_ATOM(x)     (Null(x) || !LISTP(x))
-#define ECL_SYMBOLP(x)  (Null(x) || ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_symbol)))
-
-#define ECL_PTR_CONS(x) (cl_object)((char*)(x) + t_list)
-#define ECL_CONS_PTR(x) ((struct ecl_cons *)((char *)(x) - t_list))
-#define ECL_CONS_CAR(x) (*(cl_object*)((char *)(x) - t_list))
-#define ECL_CONS_CDR(x) (*(cl_object*)((char *)(x) + sizeof(cl_object) - t_list))
-#define ECL_RPLACA(x,v) (ECL_CONS_CAR(x)=(v))
-#define ECL_RPLACD(x,v) (ECL_CONS_CDR(x)=(v))
-
-struct ecl_cons {
-        cl_object car;          /*  car  */
-        cl_object cdr;          /*  cdr  */
-};
-#else
 #define ECL_LISTP(x)    (ECL_IMMEDIATE(x)? Null(x) : ((x)->d.t == t_list))
 #define ECL_CONSP(x)    ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_list))
 #define ECL_ATOM(x)     (ECL_IMMEDIATE(x) || ((x)->d.t != t_list))
@@ -384,7 +349,6 @@ struct ecl_cons {
         cl_object car;          /*  car  */
         cl_object cdr;          /*  cdr  */
 };
-#endif
 
 enum ecl_httest {               /*  hash table key test function  */
         ecl_htt_eq,             /*  eq  */
@@ -1125,9 +1089,7 @@ struct ecl_sse_pack {
         Definition of lispunion.
 */
 union cl_lispunion {
-#ifndef ECL_SMALL_CONS
-        struct ecl_cons         cons;           /*  unoptimized cons  */
-#endif
+        struct ecl_cons         cons;           /*  cons  */
         struct ecl_bignum       big;            /*  bignum  */
         struct ecl_ratio        ratio;          /*  ratio  */
         struct ecl_singlefloat  SF;             /*  single floating-point number  */
