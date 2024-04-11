@@ -88,15 +88,6 @@
                                      :function f)))
           *restart-clusters*)))
 
-(defun bind-simple-handlers (tag names)
-  (flet ((simple-handler-function (tag code)
-           #'(lambda (c) (throw tag (values code c)))))
-    (cons (loop for i from 1
-             for n in (if (atom names) (list names) names)
-             for f = (simple-handler-function tag i)
-             collect (cons n f))
-          *handler-clusters*)))
-
 (defmacro restart-bind (bindings &body forms)
   `(let ((*restart-clusters*
           (cons (list ,@(mapcar #'(lambda (binding)
@@ -382,16 +373,27 @@
 |#
 
 
-(defparameter *handler-clusters* nil)
+(defvar *handler-clusters* nil)
 
-(defmacro handler-bind (bindings &body forms)
-  (unless (every #'(lambda (x) (and (listp x) (= (length x) 2))) bindings)
-    (error "Ill-formed handler bindings."))
-  `(let ((*handler-clusters*
-          (cons (list ,@(mapcar #'(lambda (x) `(cons ',(car x) ,(cadr x)))
-                                bindings))
-                *handler-clusters*)))
-     ,@forms))
+(defmacro handler-bind (bindings &body body)
+  (with-gensyms (handler condition)
+    `(flet ((,handler (,condition)
+              (typecase ,condition
+                ,@(loop for (type func . rest) in bindings
+                        when rest do
+                          (error "Ill-formed handler bindings.")
+                        collect `(,type (funcall ,func ,condition))))))
+       (declare (dynamic-extent (function ,handler)))
+       (let ((*handler-clusters* (cons (function ,handler) *handler-clusters*)))
+         ,@body))))
+
+(defun bind-simple-handlers (tag names)
+  (flet ((simple-handler (condition)
+           (loop for code from 1
+                 for type in (if (atom names) (list names) names)
+                 when (typep condition type) do
+                   (throw tag (values code condition)))))
+    (cons #'simple-handler *handler-clusters*)))
 
 (defun signal (datum &rest arguments)
   (let* ((condition
@@ -400,10 +402,8 @@
     (when (typep condition *break-on-signals*)
       (break "~A~%Break entered because of *BREAK-ON-SIGNALS*." condition))
     (loop (unless *handler-clusters* (return))
-          (let ((cluster (pop *handler-clusters*)))
-            (dolist (handler cluster)
-              (when (typep condition (car handler))
-                (funcall (cdr handler) condition)))))
+          (let ((handler (pop *handler-clusters*)))
+            (funcall handler condition)))
     nil))
 
 
