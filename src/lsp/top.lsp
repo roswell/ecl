@@ -667,22 +667,13 @@ Use special code 0 to cancel this operation.")
 (defparameter *debug-tpl-commands* nil)
 
 (defun harden-command (cmd-form)
-  `(block 
-    tpl-command
-    (handler-bind 
-     ((error (lambda (condition)
-               (unless *debug-tpl-commands*
-                 (format t "~&Command aborted.~%Received condition of type: ~A~%~A"
-                         (type-of condition) condition)
-                 (clear-input)
-                 (return-from tpl-command nil)
-                 )
-               )
-             ))
-     ,cmd-form
-     )
-    )
-  )
+  `(if *debug-tpl-commands*
+       ,cmd-form
+       (handler-case ,cmd-form
+         (error (condition)
+           (format t "~&Command aborted.~%Received condition of type: ~A~%~A"
+                   (type-of condition) condition)
+           (clear-input)))))
 
 (defun tpl-make-command (name line &aux (c nil))
   (dolist (commands *tpl-commands*)
