@@ -1,16 +1,7 @@
 /* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
-/*
- * memory.c - manual memory managament
- *
- * Copyright (c) 2024 Daniel Kochmański
- *
- * See file 'LICENSE' for the copyright details.
- *
- */
-
-/* -- imports --------------------------------------------------------------- */
+/* heap.c - manual heap managament */
 
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>

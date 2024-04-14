@@ -1,3 +1,7 @@
+/* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
+
+/* cold_boot.c - initializing ecl internal data */
 
 /* -- imports --------------------------------------------------------------- */
 

@@ -1,9 +1,13 @@
+/* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
-/* -- imports ------------------------------------------------------- */
+/* control.c - signaling conditions and transfering program control */
 
 #include <ecl/ecl.h>
-#include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
+#include <ecl/external.h>
+#include <ecl/nucleus.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +28,11 @@
 # include <DbgHelp.h>
 #endif
 
-/* -- implementation------------------------------------------------- */
+/* -- Fatal errors ---------------------------------------------------------- **
+
+Fatal errors that can't be recovered from and result in the program abortion.
+
+** ---------------------------------------------------------------------------*/
 
 void
 ecl_internal_error(const char *s)
