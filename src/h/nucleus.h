@@ -33,4 +33,27 @@ struct ecl_core_struct {
   cl_object library_pathname;
 };
 
+/* control.c */
+cl_object ecl_escape(cl_object continuation) ecl_attr_noreturn;
+cl_object ecl_signal(cl_object condition, cl_object returns, cl_object thread);
+cl_object ecl_call_with_handler(cl_object handler, cl_object continuation);
+
+#define ECL_WITH_HANDLER_BEGIN(the_env, handler) do {                   \
+  cl_object __ecl_hnd = ecl_cast_ptr(cl_object,&the_env->hnd_stack);    \
+  cl_object __ecl_sym = ECL_HANDLER_CLUSTERS;                           \
+  cl_object __ecl_hnd = ECL_SYM_VAL(the_env, symbol);                   \
+  struct ecl_cons __ecl_hnds = { .t = t_list,                           \
+                                 .car = __ecl_hnd,                      \
+                                 .cdr = __ecl_sym };                    \
+  ecl_bds_bind(__the_env, __ecl_sym, ecl_cast_ptr(cl_object,__ecl_hnds);
+
+#define ECL_WITH_HANDLER_END ecl_bds_unwind1(the_env); } while(0)
+
+cl_object ecl_raise(ecl_ex_type type, cl_object returns,
+                    cl_object arg1, cl_object arg2, cl_object arg3);
+
+cl_object ecl_ferror(cl_object type, cl_object args);
+cl_object ecl_cerror(cl_object type, cl_object args, cl_object cmsg);
+cl_object ecl_serror(cl_object type, cl_object size, cl_object resz);
+
 #endif  /* ECL_NUCLEUS_H */
