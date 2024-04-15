@@ -33,4 +33,28 @@ struct ecl_core_struct {
   cl_object library_pathname;
 };
 
+/* control.c */
+cl_object ecl_escape(cl_object continuation) ecl_attr_noreturn;
+cl_object ecl_signal(cl_object condition, cl_object returns, cl_object thread);
+cl_object ecl_call_with_handler(cl_object handler, cl_object continuation);
+
+/* Binding a handler conses a new list, but at this stage we don't assume the
+   the garbage collector to work! Luckily the extent of the binding is dynamic
+   and we can allocate cons on the stack. */
+#define ECL_WITH_HANDLER_BEGIN(the_env, handler) do {                   \
+  const cl_env_ptr __the_env = the_env;                                 \
+  cl_object __ecl_sym = ECL_HANDLER_CLUSTERS;                           \
+  cl_object __ecl_hnd = ECL_SYM_VAL(__the_env, __ecl_sym);              \
+  cl_object __ecl_hnds = ecl_cons_stack(handler, __ecl_hnd);            \
+  ecl_bds_bind(__the_env, __ecl_sym, __ecl_hnds);
+
+#define ECL_WITH_HANDLER_END ecl_bds_unwind1(__the_env); } while(0)
+
+cl_object ecl_raise(ecl_ex_type type, cl_object returns,
+                    cl_object arg1, cl_object arg2, cl_object arg3);
+
+cl_object ecl_ferror(cl_object type, cl_object args);
+cl_object ecl_cerror(cl_object type, cl_object args, cl_object cmsg);
+cl_object ecl_serror(cl_object type, cl_object size, cl_object resz);
+
 #endif  /* ECL_NUCLEUS_H */
