@@ -19,6 +19,7 @@
 # include <sys/time.h>
 # include <sys/resource.h>
 #endif
+#include <ecl/nucleus.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/stack-resize.h>
@@ -165,15 +166,9 @@ ecl_cs_overflow(void)
     ecl_unrecoverable_error(env, stack_overflow_msg);
   ECL_UNWIND_PROTECT_BEGIN(env) {
     if (env->c_stack.max_size == (cl_index)0 || env->c_stack.size < env->c_stack.max_size)
-      cl_cerror(6, @"Extend stack size",
-                @'ext::stack-overflow',
-                @':size', ecl_make_fixnum(size),
-                @':type', @'ext::c-stack');
+      ecl_cerror(ECL_EX_CS_OVR, ecl_make_fixnum(size), ECL_T);
     else
-      cl_error(5,
-               @'ext::stack-overflow',
-               @':size', ECL_NIL,
-               @':type', @'ext::c-stack');
+      ecl_ferror(ECL_EX_CS_OVR, ecl_make_fixnum(size), ECL_NIL);
   } ECL_UNWIND_PROTECT_EXIT {
     /* reset margin */
     cs_set_size(env, size);
@@ -191,52 +186,45 @@ vms_init(cl_env_ptr env)
 {
   cl_index size, margin, limit_size;
   margin = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
-  size = ecl_option_values[ECL_OPT_LISP_STACK_SIZE];
-  size = ((size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
-  limit_size = size - 2*margin;
+  limit_size = ecl_option_values[ECL_OPT_LISP_STACK_SIZE];
+  size = limit_size + 2 * margin;
   env->vms_stack.t = t_stack;
-  env->vms_stack.size = size;
-  env->vms_stack.limit_size = limit_size;
   env->vms_stack.org = (cl_object *)ecl_malloc(size * sizeof(cl_object));
   env->vms_stack.top = env->vms_stack.org;
   env->vms_stack.limit = &env->vms_stack.org[limit_size];
+  env->vms_stack.size = size;
+  env->vms_stack.limit_size = limit_size;
   /* A stack always has at least one element. This is assumed by cl__va_start
      and friends, which take a sp=0 to have no arguments. */
   *(env->vms_stack.top++) = ecl_make_fixnum(0);
 }
 
-cl_object *
-vms_set_size(cl_env_ptr env, cl_index tentative_new_size)
+void
+vms_set_limit(cl_env_ptr env, cl_index new_lim_size)
 {
-  cl_index top = env->vms_stack.top - env->vms_stack.org;
-  cl_object *new_stack, *old_stack;
-  cl_index safety_area = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
-  cl_index new_size = tentative_new_size + 2*safety_area;
-
-  /* Round to page size */
-  new_size = ((new_size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
-
-  if (ecl_unlikely(top > new_size)) {
-    FEerror("Internal error: cannot shrink stack below stack top.",0);
-  }
-
-  old_stack = env->vms_stack.org;
-  new_stack = (cl_object *)ecl_realloc(old_stack, new_size * sizeof(cl_object));
-
+  cl_index margin = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
+  cl_object *old_org = env->vms_stack.org;
+  cl_object *new_org = NULL;
+  cl_index new_max_size = new_lim_size + 2*margin;
+  cl_index current_size = env->vms_stack.top - old_org;
+  if (current_size > new_lim_size)
+    ecl_internal_error("Cannot shrink frame stack below its minimal element");
+  new_org = ecl_realloc(old_org, new_max_size * sizeof(*old_org));
   ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  env->vms_stack.size = new_size;
-  env->vms_stack.limit_size = new_size - 2*safety_area;
-  env->vms_stack.org = new_stack;
-  env->vms_stack.top = env->vms_stack.org + top;
-  env->vms_stack.limit = env->vms_stack.org + (new_size - 2*safety_area);
+  env->vms_stack.org = new_org;
+  env->vms_stack.top = new_org + current_size;
+  env->vms_stack.limit = new_org + new_lim_size;
+  /* Update indexes */
+  env->vms_stack.size = new_max_size;
+  env->vms_stack.limit_size = new_lim_size;
   ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-  return env->vms_stack.top;
 }
 
 static cl_object *
 vms_grow(cl_env_ptr env)
 {
-  return vms_set_size(env, env->vms_stack.size + env->vms_stack.size / 2);
+  vms_set_limit(env, env->vms_stack.limit_size + env->vms_stack.limit_size / 2);
+  return env->vms_stack.top;
 }
 
 cl_index
@@ -249,7 +237,7 @@ ecl_vms_push_values(cl_env_ptr env) {
     p = b + i;
   }
   env->vms_stack.top = p;
-  memcpy(b, env->values, i * sizeof(cl_object));
+  ecl_copy(b, env->values, i * sizeof(cl_object));
   return i;
 }
 
@@ -257,10 +245,10 @@ void
 ecl_vms_pop_values(cl_env_ptr env, cl_index n) {
   cl_object *p = env->vms_stack.top - n;
   if (ecl_unlikely(p < env->vms_stack.org))
-    FEerror("Internal error: stack underflow.",0);
+    ecl_internal_error("vms: stack underflow.");
   env->nvalues = n;
   env->vms_stack.top = p;
-  memcpy(env->values, p, n * sizeof(cl_object));
+  ecl_copy(env->values, p, n * sizeof(cl_object));
 }
 
 cl_object
@@ -269,7 +257,8 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
   cl_object *base = env->vms_stack.top;
   if (size) {
     if ((env->vms_stack.limit - base) < size) {
-      base = vms_set_size(env, env->vms_stack.size + size);
+      vms_set_limit(env, env->vms_stack.limit_size + size);
+      base = env->vms_stack.top;
     }
   }
   f->frame.t = t_frame;
@@ -339,37 +328,36 @@ ecl_bds_unwind_n(cl_env_ptr env, int n)
 static void
 bds_init(cl_env_ptr env)
 {
-  cl_index size, margin;
+  cl_index size, margin, limit_size;
   margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
-  size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
-  env->bds_stack.size = size;
+  limit_size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE];
+  size = limit_size + 2 * margin;
   env->bds_stack.org = (ecl_bds_ptr)ecl_malloc(size * sizeof(*env->bds_stack.org));
   env->bds_stack.top = env->bds_stack.org-1;
-  env->bds_stack.limit = &env->bds_stack.org[size - 2*margin];
+  env->bds_stack.limit = &env->bds_stack.org[limit_size];
+  env->bds_stack.size = size;
+  env->bds_stack.limit_size = limit_size;
 }
 
 static void
-bds_set_size(cl_env_ptr env, cl_index new_size)
+bds_set_limit(cl_env_ptr env, cl_index new_lim_size)
 {
+  cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
   ecl_bds_ptr old_org = env->bds_stack.org;
-  cl_index limit = env->bds_stack.top - old_org;
-  if (new_size <= limit) {
-    FEerror("Cannot shrink the binding stack below ~D.", 1,
-            ecl_make_unsigned_integer(limit));
-  } else {
-    cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
-    ecl_bds_ptr org;
-    org = ecl_realloc(old_org, new_size * sizeof(*org));
-
-    ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-    memcpy(org, old_org, (limit + 1) * sizeof(*org));
-    env->bds_stack.top = org + limit;
-    env->bds_stack.org = org;
-    env->bds_stack.limit = org + (new_size - 2*margin);
-    env->bds_stack.size = new_size;
-    env->bds_stack.limit_size = new_size - 2*margin;
-    ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-  }
+  ecl_bds_ptr new_org = NULL;
+  cl_index new_max_size = new_lim_size + 2*margin;
+  cl_index current_size = env->bds_stack.top - old_org;
+  if (current_size > new_lim_size)
+    ecl_internal_error("Cannot shrink frame stack below its minimal element");
+  new_org = ecl_realloc(old_org, new_max_size * sizeof(*old_org));
+  ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
+  env->bds_stack.org = new_org;
+  env->bds_stack.top = new_org + current_size;
+  env->bds_stack.limit = new_org + new_lim_size;
+  /* Update indexes */
+  env->bds_stack.size = new_max_size;
+  env->bds_stack.limit_size = new_lim_size;
+  ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 }
 
 ecl_bds_ptr 
@@ -382,6 +370,7 @@ ecl_bds_overflow(void)
   cl_env_ptr env = ecl_process_env();
   cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
   cl_index size = env->bds_stack.size;
+  cl_index limit_size = env->bds_stack.limit_size;
   ecl_bds_ptr org = env->bds_stack.org;
   ecl_bds_ptr last = org + size;
   if (env->bds_stack.limit >= last) {
@@ -389,14 +378,12 @@ ecl_bds_overflow(void)
   }
   env->bds_stack.limit += margin;
   ECL_UNWIND_PROTECT_BEGIN(env) {
-    cl_cerror(6, @"Extend stack size",
-              @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
-              @':type', @'ext::binding-stack');
+    ecl_cerror(ECL_EX_BDS_OVR, ecl_make_fixnum(limit_size), ECL_T);
   } ECL_UNWIND_PROTECT_EXIT {
     /* reset margin */
-    bds_set_size(env, size);
+    bds_set_limit(env, limit_size);
   } ECL_UNWIND_PROTECT_END;
-  bds_set_size(env, size + (size / 2));
+  bds_set_limit(env, limit_size + (limit_size / 2));
   return env->bds_stack.top;
 }
 
@@ -708,36 +695,36 @@ si_ihs_env(cl_object arg)
 static void
 frs_init(cl_env_ptr env)
 {
-  cl_index size, margin;
+  cl_index size, margin, limit_size;
   margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
-  size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE] + 2 * margin;
-  env->frs_stack.size = size;
+  limit_size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE];
+  size = limit_size + 2 * margin;
   env->frs_stack.org = (ecl_frame_ptr)ecl_malloc(size * sizeof(*env->frs_stack.org));
   env->frs_stack.top = env->frs_stack.org-1;
-  env->frs_stack.limit = &env->frs_stack.org[size - 2*margin];
+  env->frs_stack.limit = &env->frs_stack.org[limit_size];
+  env->frs_stack.size = size;
+  env->frs_stack.limit_size = limit_size;
 }
 
 static void
-frs_set_size(cl_env_ptr env, cl_index new_size)
+frs_set_limit(cl_env_ptr env, cl_index new_lim_size)
 {
+  cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
   ecl_frame_ptr old_org = env->frs_stack.org;
-  cl_index limit = env->frs_stack.top - old_org;
-  if (new_size <= limit) {
-    FEerror("Cannot shrink frame stack below ~D.", 1,
-            ecl_make_unsigned_integer(limit));
-  } else {
-    cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
-    ecl_frame_ptr org;
-
-    org = ecl_realloc(old_org, new_size * sizeof(*org));
-    ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-    env->frs_stack.top = org + limit;
-    env->frs_stack.org = org;
-    env->frs_stack.limit = org + (new_size - 2*margin);
-    env->frs_stack.size = new_size;
-    env->frs_stack.limit_size = new_size - 2*margin;
-    ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-  }
+  ecl_frame_ptr new_org = NULL;
+  cl_index new_max_size = new_lim_size + 2*margin;
+  cl_index current_size = env->frs_stack.top - old_org;
+  if(current_size > new_lim_size)
+    ecl_internal_error("Cannot shrink frame stack below its minimal element");
+  new_org = ecl_realloc(old_org, new_max_size * sizeof(*old_org));
+  ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
+  env->frs_stack.org = new_org;
+  env->frs_stack.top = new_org + current_size;
+  env->frs_stack.limit = new_org + new_lim_size;
+  /* Update indexes. */
+  env->frs_stack.size = new_max_size;
+  env->frs_stack.limit_size = new_lim_size;
+  ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 }
 
 static void
@@ -750,6 +737,7 @@ frs_overflow(void)              /* used as condition in list.d */
   cl_env_ptr env = ecl_process_env();
   cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
   cl_index size = env->frs_stack.size;
+  cl_index limit_size = env->frs_stack.limit_size;
   ecl_frame_ptr org = env->frs_stack.org;
   ecl_frame_ptr last = org + size;
   if (env->frs_stack.limit >= last) {
@@ -757,14 +745,12 @@ frs_overflow(void)              /* used as condition in list.d */
   }
   env->frs_stack.limit += margin;
   ECL_UNWIND_PROTECT_BEGIN(env) {
-    cl_cerror(6, @"Extend stack size",
-              @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
-              @':type', @'ext::frame-stack');
+    ecl_cerror(ECL_EX_FRS_OVR, ecl_make_fixnum(limit_size), ECL_T);
   } ECL_UNWIND_PROTECT_EXIT {
     /* reset margin */
-    frs_set_size(env, size);
+    frs_set_limit(env, limit_size);
   } ECL_UNWIND_PROTECT_END;
-  frs_set_size(env, size + size / 2);
+  frs_set_limit(env, limit_size + limit_size / 2);
 }
 
 ecl_frame_ptr
@@ -880,20 +866,27 @@ si_set_limit(cl_object type, cl_object limit)
   cl_env_ptr env = ecl_process_env();
   cl_index margin;
   if (type == @'ext::frame-stack') {
-    cl_index the_size = ecl_to_size(limit);
-    margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
-    frs_set_size(env, the_size + 2*margin);
+    cl_index current_size = env->frs_stack.top - env->frs_stack.org;
+    cl_index request_size = ecl_to_size(limit);
+    if(current_size > request_size)
+      FEerror("Cannot shrink FRS stack below ~D.", 1, limit);
+    frs_set_limit(env, request_size);
   } else if (type == @'ext::binding-stack') {
-    cl_index the_size = ecl_to_size(limit);
-    margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
-    bds_set_size(env, the_size + 2*margin);
+    cl_index current_size = env->bds_stack.top - env->bds_stack.org;
+    cl_index request_size = ecl_to_size(limit);
+    if(current_size > request_size)
+      FEerror("Cannot shrink BDS stack below ~D.", 1, limit);
+    bds_set_limit(env, request_size);
+  } else if (type == @'ext::lisp-stack') {
+    cl_index current_size = env->vms_stack.top - env->vms_stack.org;
+    cl_index request_size = ecl_to_size(limit);
+    if(current_size > request_size)
+      FEerror("Cannot shrink VMS stack below ~D.", 1, limit);
+    vms_set_limit(env, request_size);
   } else if (type == @'ext::c-stack') {
     cl_index the_size = ecl_to_size(limit);
     margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
     cs_set_size(env, the_size + 2*margin);
-  } else if (type == @'ext::lisp-stack') {
-    cl_index the_size = ecl_to_size(limit);
-    vms_set_size(env, the_size);
   } else if (type == @'ext::heap-size') {
     /*
      * size_t can be larger than cl_index, and ecl_to_size()
@@ -915,10 +908,10 @@ si_get_limit(cl_object type)
     output = env->frs_stack.limit_size;
   else if (type == @'ext::binding-stack')
     output = env->bds_stack.limit_size;
-  else if (type == @'ext::c-stack')
-    output = env->c_stack.limit_size;
   else if (type == @'ext::lisp-stack')
     output = env->vms_stack.limit_size;
+  else if (type == @'ext::c-stack')
+    output = env->c_stack.limit_size;
   else if (type == @'ext::heap-size') {
     /* size_t can be larger than cl_index */
     ecl_return1(env, ecl_make_unsigned_integer(ecl_core.max_heap_size));
