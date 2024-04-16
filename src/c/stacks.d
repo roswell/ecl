@@ -20,6 +20,7 @@
 # include <sys/time.h>
 # include <sys/resource.h>
 #endif
+#include <ecl/nucleus.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/stack-resize.h>
@@ -162,9 +163,9 @@ ecl_cs_overflow(void)
   else
     ecl_internal_error(stack_overflow_msg);
   if (env->c_stack.max_size == (cl_index)0 || env->c_stack.size < env->c_stack.max_size)
-    CEstack_overflow(@'ext::c-stack', ecl_make_fixnum(size), ECL_T);
+    ecl_cerror(ECL_EX_CS_OVR, ecl_make_fixnum(size), ECL_T);
   else
-    CEstack_overflow(@'ext::c-stack', ecl_make_fixnum(size), ECL_NIL);
+    ecl_ferror(ECL_EX_CS_OVR, ecl_make_fixnum(size), ECL_NIL);
 }
 
 /* -- ByteVM stack ----------------------------------------------------------- */
@@ -340,7 +341,7 @@ ecl_bds_overflow(void)
     ecl_internal_error(stack_overflow_msg);
   }
   env->bds_stack.limit += margin;
-  CEstack_overflow(@'ext::binding-stack', ecl_make_fixnum(size), ECL_T);
+  ecl_cerror(ECL_EX_BDS_OVR, ecl_make_fixnum(limit_size), ECL_T);
   return env->bds_stack.top;
 }
 
@@ -619,7 +620,7 @@ frs_overflow(void)
     ecl_internal_error(stack_overflow_msg);
   }
   env->frs_stack.limit += margin;
-  CEstack_overflow(@'ext::frame-stack', ecl_make_fixnum(limit_size), ECL_T);
+  ecl_cerror(ECL_EX_FRS_OVR, ecl_make_fixnum(limit_size), ECL_T);
 }
 
 ecl_frame_ptr
