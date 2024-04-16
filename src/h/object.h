@@ -88,6 +88,7 @@ typedef enum {
         t_foreign,
         t_stack,
         t_frame,
+        t_exception,
         t_weak_pointer,
 #ifdef ECL_SSE2
         t_sse_pack,
@@ -905,6 +906,25 @@ struct ecl_stack_frame {
         struct cl_env_struct *env;
 };
 
+typedef enum {
+        ECL_EX_FERROR,          /* general purpose fatal error */
+        ECL_EX_CERROR,          /* general purpose continuable error */
+        ECL_EX_CS_OVR,          /* stack overflow */
+        ECL_EX_FRS_OVR,         /* stack overflow */
+        ECL_EX_BDS_OVR,         /* stack overflow */
+        ECL_EX_F_UNDEF,         /* undefined function */
+        ECL_EX_F_INVAL          /* non-function passed as function */
+} ecl_ex_type;
+
+#define ECL_EXCEPTIONP(x) ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_exception))
+
+struct ecl_exception {
+        _ECL_HDR1(ex_type);
+        /* Slots for storing contextual data. Depends on the exception type. */
+        cl_object arg1;         /* usually the offending object or the type. */
+        cl_object arg2;         /* usually additional arguments or the flag. */
+};
+
 struct ecl_weak_pointer {       /*  weak pointer to value  */
         _ECL_HDR;
         cl_object value;
@@ -1132,6 +1152,7 @@ union cl_lispunion {
         struct ecl_cclosure     cclosure;       /*  compiled closure  */
         struct ecl_dummy        d;              /*  dummy  */
         struct ecl_instance     instance;       /*  clos instance */
+        struct ecl_exception    exception;      /*  exception */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
         struct ecl_lock         lock;           /*  lock  */

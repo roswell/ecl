@@ -384,6 +384,7 @@ enum ecl_built_in_classes {
   ECL_BUILTIN_FOREIGN_DATA,
   ECL_BUILTIN_STACK,
   ECL_BUILTIN_FRAME,
+  ECL_BUILTIN_EXCEPTION,
   ECL_BUILTIN_WEAK_POINTER
 #ifdef ECL_THREADS
   ,
@@ -508,6 +509,8 @@ cl_class_of(cl_object x)
     index = ECL_BUILTIN_STACK; break;
   case t_frame:
     index = ECL_BUILTIN_FRAME; break;
+  case t_exception:
+    index = ECL_BUILTIN_EXCEPTION; break;
   case t_weak_pointer:
     index = ECL_BUILTIN_WEAK_POINTER; break;
 #ifdef ECL_SSE2

@@ -55,6 +55,43 @@ ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
   }
 }
 
+/* -- Integration with low-level exceptions */
+cl_object
+ecl_exception_handler(cl_object o)
+{
+  if (ECL_EXCEPTIONP(o)) {
+    cl_object arg1 = o->exception.arg1;
+    cl_object arg2 = o->exception.arg2;
+    cl_object hand = @'si::universal-error-handler';
+    switch (o->exception.ex_type) {
+    case ECL_EX_FERROR:
+      ecl_enable_interrupts();
+      return _ecl_funcall4(hand, ECL_NIL, arg1, arg2);
+    case ECL_EX_CERROR:
+      ecl_enable_interrupts();
+      return _ecl_funcall4(hand, ECL_T, arg1, arg2);
+    case ECL_EX_CS_OVR:
+      CEstack_overflow(@'ext::c-stack', arg1, arg2);
+      break;
+    case ECL_EX_FRS_OVR:
+      CEstack_overflow(@'ext::frame-stack', arg1, arg2);
+      break;
+    case ECL_EX_BDS_OVR:
+      CEstack_overflow(@'ext::binding-stack', arg1, arg2);
+      break;
+    case ECL_EX_F_UNDEF:
+      FEundefined_function(arg1);
+      break;
+    case ECL_EX_F_INVAL:
+      FEinvalid_function(arg1);
+      break;
+    default:
+      ecl_internal_error("Unknown exception type.");
+    }
+  }
+  return ECL_NIL;
+}
+
 /*****************************************************************************/
 /*              Support for Lisp Error Handler                               */
 /*****************************************************************************/
@@ -101,6 +138,14 @@ CEerror(cl_object c, const char *err, int narg, ...)
 /***********************
  * Conditions signaler *
  ***********************/
+
+void
+CEstack_overflow(cl_object type, cl_object size, cl_object resume)
+{
+  if(resume==ECL_T)
+    resume = @"Extend stack size";
+  cl_cerror(6, resume, @'ext::stack-overflow', @':type', type, @':size', size);
+}
 
 void
 FEprogram_error(const char *s, int narg, ...)
@@ -544,6 +589,5 @@ void
 init_error(void)
 {
   ecl_def_c_function(@'si::universal-error-handler',
-                     (cl_objectfn_fixed)universal_error_handler,
-                     3);
+                     (cl_objectfn_fixed)universal_error_handler, 3);
 }

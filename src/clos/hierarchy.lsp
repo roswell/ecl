@@ -230,6 +230,7 @@
             (si::foreign-data)
             (si::stack)
             (si::frame)
+            (si::exception)
             (si::weak-pointer)
             #+threads (mp::process)
             #+threads (mp::lock)

@@ -49,11 +49,9 @@ cl_object ecl_call_with_handler(cl_object handler, cl_object continuation);
 
 #define ECL_WITH_HANDLER_END ecl_bds_unwind1(the_env); } while(0)
 
-cl_object ecl_raise(ecl_ex_type type, cl_object returns,
-                    cl_object arg1, cl_object arg2, cl_object arg3);
+cl_object ecl_raise(ecl_ex_type t, bool ret, cl_object a1, cl_object a2);
 
-cl_object ecl_ferror(cl_object type, cl_object args);
-cl_object ecl_cerror(cl_object type, cl_object args, cl_object cmsg);
-cl_object ecl_serror(cl_object type, cl_object size, cl_object resz);
+cl_object ecl_ferror(ecl_ex_type extype, cl_object type, cl_object args);
+cl_object ecl_cerror(ecl_ex_type extype, cl_object type, cl_object args);
 
 #endif  /* ECL_NUCLEUS_H */
