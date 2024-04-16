@@ -1608,7 +1608,6 @@ extern ECL_API cl_object si_bds_var(cl_object arg);
 extern ECL_API cl_object si_bds_val(cl_object arg);
 extern ECL_API cl_object si_sch_frs_base(cl_object fr, cl_object ihs);
 extern ECL_API cl_object si_reset_stack_limits(void);
-extern ECL_API cl_object si_reset_margin(cl_object type);
 extern ECL_API cl_object si_set_limit(cl_object type, cl_object size);
 extern ECL_API cl_object si_get_limit(cl_object type);
 

@@ -15,11 +15,6 @@
 ;;; ---------------------------------------------------------------------
 ;;; Fixup
 
-;;; Early version of the stack handler.
-(defun sys::stack-error-handler (continue-string datum args)
-  (declare (ignore continue-string))
-  (apply #'error datum args))
-
 (defun register-method-with-specializers (method)
   (declare (si::c-local))
   (with-early-accessors (+standard-method-slots+ +specializer-slots+)
