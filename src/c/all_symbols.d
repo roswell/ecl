@@ -90,9 +90,7 @@ mangle_name(cl_object output, unsigned char *source, int l)
   cl_object maxarg = ecl_make_fixnum(ECL_CALL_ARGUMENTS_LIMIT);
   cl_object minarg = ecl_make_fixnum(0);
   bool is_symbol;
-  cl_object name;
 @
-  name = ecl_symbol_name(symbol);
   is_symbol = Null(as_function);
   if (is_symbol) {
     cl_fixnum p;
@@ -106,9 +104,8 @@ mangle_name(cl_object output, unsigned char *source, int l)
     p  = (cl_symbol_initializer*)symbol - cl_symbols;
     if (p >= 0 && p <= cl_num_symbols_in_core) {
       found = ECL_T;
-      output = cl_format(4, ECL_NIL,
-                         @"ECL_SYM(~S,~D)",
-                         name, ecl_make_fixnum(p));
+      output = cl_format(4, ECL_NIL, @"ECL_SYM(~S,~D)",
+                         ecl_symbol_name(symbol), ecl_make_fixnum(p));
 #ifndef ECL_FINAL
       /* XXX to allow the Lisp compiler to check that the narg declaration in
        * symbols_list.h matches the actual function definition, return the
@@ -124,24 +121,24 @@ mangle_name(cl_object output, unsigned char *source, int l)
 #endif
       @(return found output minarg maxarg);
     }
-  } else if (!Null(symbol)) {
+  } else if (!Null(symbol) && ECL_FBOUNDP(symbol)) {
     cl_object fun = ECL_SYM_FUN(symbol);
-    cl_type t = (!ECL_FBOUNDP(symbol))? t_other : ecl_t_of(fun);
-    if ((t == t_cfun || t == t_cfunfixed) && fun->cfun.block == OBJNULL) {
-      for (l = 0; l <= cl_num_symbols_in_core; l++) {
-        cl_object s = (cl_object)(cl_symbols + l);
-        if (fun == ECL_SYM_FUN(s)) {
-          symbol = s;
-          found = ECL_T;
-          if (fun->cfun.narg >= 0) {
-            if (t == t_cfunfixed) {
-              minarg =
-                maxarg = ecl_make_fixnum(fun->cfunfixed.narg);
-            } else {
-              minarg = ecl_make_fixnum(fun->cfun.narg);
-            }
+    cl_type ftype = ecl_t_of(fun);
+    switch (ftype) {
+    case t_cfun:
+    case t_cfunfixed:
+      if(fun->cfun.block == OBJNULL) {
+        for (l = 0; l <= cl_num_symbols_in_core; l++) {
+          cl_object s = (cl_object)(cl_symbols + l);
+          if (fun == ECL_SYM_FUN(s)) {
+            symbol = s;
+            found = ECL_T;
+            cl_object nargs = ecl_make_fixnum(fun->cfun.narg);
+            (ftype == t_cfunfixed)
+              ? (minarg = maxarg = nargs)
+              : (minarg = nargs);
+            break;
           }
-          break;
         }
       }
     }
