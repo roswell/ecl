@@ -475,7 +475,6 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
     }
     symbol->symbol.binding = new_index;
   }
-  ecl_set_finalizer_unprotected(symbol, ECL_T);
   return new_index;
 }
 
