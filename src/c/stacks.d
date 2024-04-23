@@ -319,20 +319,6 @@ ecl_bds_unwind_n(cl_env_ptr env, int n)
 }
 
 static void
-bds_init(cl_env_ptr env)
-{
-  cl_index size, margin, limit_size;
-  margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
-  limit_size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE];
-  size = limit_size + 2 * margin;
-  env->bds_stack.org = (ecl_bds_ptr)ecl_malloc(size * sizeof(*env->bds_stack.org));
-  env->bds_stack.top = env->bds_stack.org-1;
-  env->bds_stack.limit = &env->bds_stack.org[limit_size];
-  env->bds_stack.size = size;
-  env->bds_stack.limit_size = limit_size;
-}
-
-static void
 bds_set_limit(cl_env_ptr env, cl_index new_lim_size)
 {
   cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
@@ -679,20 +665,6 @@ si_ihs_env(cl_object arg)
 /* ------------------------- FRAME STACK ------------------------------ */
 
 static void
-frs_init(cl_env_ptr env)
-{
-  cl_index size, margin, limit_size;
-  margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
-  limit_size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE];
-  size = limit_size + 2 * margin;
-  env->frs_stack.org = (ecl_frame_ptr)ecl_malloc(size * sizeof(*env->frs_stack.org));
-  env->frs_stack.top = env->frs_stack.org-1;
-  env->frs_stack.limit = &env->frs_stack.org[limit_size];
-  env->frs_stack.size = size;
-  env->frs_stack.limit_size = limit_size;
-}
-
-static void
 frs_set_limit(cl_env_ptr env, cl_index new_lim_size)
 {
   cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
@@ -903,8 +875,7 @@ si_get_limit(cl_object type)
 void
 init_stacks(cl_env_ptr env)
 {
-  frs_init(env);
-  bds_init(env);
+  init_early_stacks(env);
   ihs_init(env);
   vms_init(env);
 }

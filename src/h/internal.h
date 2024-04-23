@@ -22,6 +22,9 @@ extern "C" {
 
 #define unlikely_if(x) if (ecl_unlikely(x))
 
+/* cold boot */
+extern void init_early_stacks(cl_env_ptr);
+
 /* booting */
 extern void init_all_symbols(void);
 extern void init_alloc(int pass);
