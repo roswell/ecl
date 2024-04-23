@@ -140,11 +140,21 @@ CEerror(cl_object c, const char *err, int narg, ...)
  ***********************/
 
 void
-CEstack_overflow(cl_object type, cl_object size, cl_object resume)
+CEstack_overflow(cl_object type, cl_object limit, cl_object resume)
 {
-  if(resume==ECL_T)
-    resume = @"Extend stack size";
-  cl_cerror(6, resume, @'ext::stack-overflow', @':type', type, @':size', size);
+  cl_env_ptr the_env = ecl_process_env();
+  cl_index the_size;
+  if (!Null(resume)) resume = @"Extend stack size";
+  ECL_UNWIND_PROTECT_BEGIN(the_env) {
+    cl_cerror(6, resume, @'ext::stack-overflow', @':type', type, @':size', limit);
+  } ECL_UNWIND_PROTECT_EXIT {
+    /* reset the margin */
+    si_set_limit(type, limit);
+  } ECL_UNWIND_PROTECT_END;
+  /* resize the stack */
+  the_size = ecl_to_size(limit);
+  the_size = the_size + the_size/2;
+  si_set_limit(type, ecl_make_fixnum(the_size));
 }
 
 void
