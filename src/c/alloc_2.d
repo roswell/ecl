@@ -889,9 +889,10 @@ standard_finalizer(cl_object o)
     break;
   }
   case t_symbol: {
-    ecl_atomic_push(&cl_core.reused_indices,
-                    ecl_make_fixnum(o->symbol.binding));
-    o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
+    if (o->symbol.binding != ECL_MISSING_SPECIAL_BINDING) {
+      ecl_atomic_push(&cl_core.reused_indices, ecl_make_fixnum(o->symbol.binding));
+      o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
+    }
   }
 #endif /* ECL_THREADS */
   default:;

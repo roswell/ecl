@@ -112,6 +112,7 @@ cl_make_symbol(cl_object str)
   x->symbol.plist = ECL_NIL;
   x->symbol.hpack = ECL_NIL;
   x->symbol.stype = ecl_stp_ordinary;
+  ecl_set_finalizer_unprotected(x, ECL_T);
   @(return x);
 }
 
