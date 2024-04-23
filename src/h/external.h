@@ -210,6 +210,9 @@ struct cl_core_struct {
 extern ECL_API struct ecl_core_struct ecl_core;
 extern ECL_API struct cl_core_struct cl_core;
 
+/* variables */
+extern ECL_API cl_object ecl_vr_shandlers;
+
 /* memory.c */
 extern ECL_API void *ecl_malloc(cl_index n);
 extern ECL_API void *ecl_realloc(void *ptr, cl_index o, cl_index n);
