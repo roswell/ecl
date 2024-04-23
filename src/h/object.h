@@ -261,6 +261,8 @@ enum ecl_stype {                /*  symbol type  */
 };
 
 #define ECL_NIL                 ((cl_object)t_list)
+#define ECL_YES                 ecl_ct_dummy_tag /* can be used as != NIL */
+
 #define ECL_PROTECT_TAG         ecl_ct_protect_tag
 #define ECL_DUMMY_TAG           ecl_ct_dummy_tag
 #define ECL_SIGNAL_HANDLERS     ecl_vr_shandlers
