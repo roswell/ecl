@@ -452,6 +452,10 @@ cl_boot(int argc, char **argv)
   /* We need to enable GC because a lot of stuff is to be created */
   init_alloc(1);
 
+  /* Initialize the handler stack with the exception handler. */
+  cl_import2(ECL_SIGNAL_HANDLERS, cl_core.system_package);
+  cl_export2(ECL_SIGNAL_HANDLERS, cl_core.system_package);
+
   /*
    * Set *default-pathname-defaults* to a temporary fake value. We
    * will fix this when we have access to the condition system to
