@@ -373,7 +373,7 @@
 |#
 
 
-(defvar *handler-clusters* nil)
+(defvar *signal-handlers* nil)
 
 (defmacro handler-bind (bindings &body body)
   (with-gensyms (handler condition)
@@ -384,7 +384,7 @@
                           (error "Ill-formed handler bindings.")
                         collect `(,type (funcall ,func ,condition))))))
        (declare (dynamic-extent (function ,handler)))
-       (let ((*handler-clusters* (cons (function ,handler) *handler-clusters*)))
+       (let ((*signal-handlers* (cons (function ,handler) *signal-handlers*)))
          ,@body))))
 
 (defun bind-simple-handlers (tag names)
@@ -393,7 +393,7 @@
                  for type in (if (atom names) (list names) names)
                  when (typep condition type) do
                    (throw tag (values code condition)))))
-    (cons #'simple-handler *handler-clusters*)))
+    (cons #'simple-handler *signal-handlers*)))
 
 (defun signal (datum &rest arguments)
   (let ((condition (coerce-to-condition datum arguments 'SIMPLE-CONDITION 'SIGNAL)))
