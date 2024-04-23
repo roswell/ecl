@@ -456,7 +456,9 @@ cl_boot(int argc, char **argv)
   init_alloc(1);
 
   /* Initialize the handler stack with the exception handler. */
-  ECL_SET(ECL_HANDLER_CLUSTERS, ecl_list1(ECL_SYM_FUN(@'si::exception-handler')));
+  cl_import2(ECL_SIGNAL_HANDLERS, cl_core.system_package);
+  cl_export2(ECL_SIGNAL_HANDLERS, cl_core.system_package);
+  ECL_SET(ECL_SIGNAL_HANDLERS, ecl_list1(ECL_SYM_FUN(@'si::exception-handler')));
 
   /*
    * Set *default-pathname-defaults* to a temporary fake value. We

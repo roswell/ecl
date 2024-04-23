@@ -263,13 +263,13 @@ enum ecl_stype {                /*  symbol type  */
 #define ECL_NIL                 ((cl_object)t_list)
 #define ECL_PROTECT_TAG         ecl_ct_protect_tag
 #define ECL_DUMMY_TAG           ecl_ct_dummy_tag
+#define ECL_SIGNAL_HANDLERS     ecl_vr_shandlers
 
 #define ECL_NIL_SYMBOL          ((cl_object)cl_symbols)
 #define ECL_T                   ((cl_object)(cl_symbols+1))
 #define ECL_UNBOUND             ((cl_object)(cl_symbols+2))
 #define ECL_RESTART_CLUSTERS    ((cl_object)(cl_symbols+3))
-#define ECL_HANDLER_CLUSTERS    ((cl_object)(cl_symbols+4))
-#define ECL_INTERRUPTS_ENABLED  ((cl_object)(cl_symbols+5))
+#define ECL_INTERRUPTS_ENABLED  ((cl_object)(cl_symbols+4))
 #define ECL_NO_TL_BINDING       ((cl_object)(1 << ECL_TAG_BITS))
 
 struct ecl_symbol {

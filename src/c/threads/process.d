@@ -361,7 +361,6 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   env_aux->interrupt_struct->signal_queue = ECL_NIL;
   ecl_set_process_env(env_aux);
   ecl_init_env(env_aux);
-  ECL_SET(ECL_HANDLER_CLUSTERS, ecl_list1(ECL_SYM_FUN(@'si::exception-handler')));
 
   /* Allocate real environment, link it together with process */
   env = _ecl_alloc_env(0);

@@ -228,6 +228,9 @@ extern ECL_API const cl_object ecl_ct_minus_half;
 extern ECL_API const cl_object ecl_ct_protect_tag;
 extern ECL_API const cl_object ecl_ct_dummy_tag;
 
+/* variables */
+extern ECL_API cl_object ecl_vr_shandlers;
+
 /* memory.c */
 extern ECL_API void *ecl_malloc(cl_index n);
 extern ECL_API void *ecl_realloc(void *ptr, cl_index n);

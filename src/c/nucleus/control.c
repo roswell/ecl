@@ -72,7 +72,7 @@ cl_object
 ecl_signal(cl_object condition, cl_object returns, cl_object thread) {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object symbol, cluster, handler;
-  symbol = ECL_HANDLER_CLUSTERS;
+  symbol = ECL_SIGNAL_HANDLERS;
   cluster = ECL_SYM_VAL(the_env, symbol);
   ecl_bds_bind(the_env, symbol, cluster);
   while(!Null(cluster)) {
@@ -91,7 +91,7 @@ cl_object
 ecl_call_with_handler(cl_object handler, cl_object continuation)
 {
   cl_env_ptr the_env = ecl_process_env();
-  cl_object symbol = ECL_HANDLER_CLUSTERS;
+  cl_object symbol = ECL_SIGNAL_HANDLERS;
   cl_object cluster = ECL_SYM_VAL(the_env, symbol);
   cl_object result;
   /* Binding a handler conses a new list, but at this stage we don't assume the
@@ -130,7 +130,7 @@ ecl_raise(ecl_ex_type type, bool returns, cl_object arg1, cl_object arg2)
     { .t = t_exception, .ex_type = type, .arg1 = arg1, .arg2 = arg2 };
   cl_object symbol, cluster, handler;
   cl_object exception = ecl_cast_ptr(cl_object,&ex);
-  symbol = ECL_HANDLER_CLUSTERS;
+  symbol = ECL_SIGNAL_HANDLERS;
   cluster = ECL_SYM_VAL(the_env, symbol);
   ecl_bds_bind(the_env, symbol, cluster);
   while(!Null(cluster)) {

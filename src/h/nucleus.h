@@ -40,7 +40,7 @@ cl_object ecl_call_with_handler(cl_object handler, cl_object continuation);
 
 #define ECL_WITH_HANDLER_BEGIN(the_env, handler) do {                   \
   cl_object __ecl_hnd = ecl_cast_ptr(cl_object,&the_env->hnd_stack);    \
-  cl_object __ecl_sym = ECL_HANDLER_CLUSTERS;                           \
+  cl_object __ecl_sym = ECL_SIGNAL_HANDLERS;                            \
   cl_object __ecl_hnd = ECL_SYM_VAL(the_env, symbol);                   \
   struct ecl_cons __ecl_hnds = { .t = t_list,                           \
                                  .car = __ecl_hnd,                      \

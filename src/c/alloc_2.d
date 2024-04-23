@@ -1181,7 +1181,10 @@ stacks_scanner()
       GC_set_mark_bit((void *)dll);
     }
   } end_loop_for_on_unsafe(l);
+  /* ECL runtime */
   GC_push_all((void *)(&ecl_core), (void *)(&ecl_core + 1));
+  GC_push_all((void *)ecl_vr_shandlers, (void *)(ecl_vr_shandlers + 1));
+  /* Common Lisp */
   GC_push_all((void *)(&cl_core), (void *)(&cl_core + 1));
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
   ecl_mark_env(ecl_core.first_env);

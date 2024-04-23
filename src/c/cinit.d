@@ -77,7 +77,7 @@ si_bind_simple_handlers(cl_object tag, cl_object names)
   if (ECL_FBOUNDP(@'si::bind-simple-handlers'))
     return _ecl_funcall3(@'si::bind-simple-handlers', tag, names);
   else
-    return ECL_SYM_VAL(ecl_process_env(), @'si::*handler-clusters*');
+    return ECL_SYM_VAL(ecl_process_env(), ECL_SIGNAL_HANDLERS);
 }
 
 extern cl_object
