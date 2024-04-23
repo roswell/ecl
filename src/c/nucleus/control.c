@@ -28,6 +28,40 @@
 # include <DbgHelp.h>
 #endif
 
+cl_objectfn
+ecl_function_dispatch(cl_env_ptr env, cl_object x)
+{
+  cl_object fun = x;
+  if (ecl_unlikely(fun == ECL_NIL))
+    ecl_ferror(ECL_EX_F_UNDEF, fun, ECL_NIL);
+  switch (ecl_t_of(fun)) {
+  case t_cfunfixed:
+    env->function = fun;
+    return fun->cfunfixed.entry;
+  case t_cfun:
+    env->function = fun;
+    return fun->cfun.entry;
+  case t_cclosure:
+    env->function = fun;
+    return fun->cclosure.entry;
+  case t_instance:
+    env->function = fun;
+    return fun->instance.entry;
+  case t_symbol:
+    fun = ECL_SYM_FUN(fun);
+    env->function = fun;
+    return fun->cfun.entry;
+  case t_bytecodes:
+    env->function = fun;
+    return fun->bytecodes.entry;
+  case t_bclosure:
+    env->function = fun;
+    return fun->bclosure.entry;
+  default:
+    ecl_ferror(ECL_EX_F_INVAL, fun, ECL_NIL);
+  }
+  _ecl_unexpected_return();
+}
 
 /* -- Escapes --------------------------------------------------------------- **
 
