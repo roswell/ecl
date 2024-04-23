@@ -71,7 +71,7 @@ cl_object
 ecl_signal(cl_object condition, cl_object returns, cl_object thread) {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object symbol, cluster, handler;
-  symbol = ECL_HANDLER_CLUSTERS;
+  symbol = ECL_SIGNAL_HANDLERS;
   cluster = ECL_SYM_VAL(the_env, symbol);
   ecl_bds_bind(the_env, symbol, cluster);
   while(!Null(cluster)) {

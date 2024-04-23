@@ -129,6 +129,14 @@
 #define ecl_cast_ptr(type,n) ((type)(n))
 #endif
 
+#define ecl_def_variable(name, value, chars, len)                       \
+        ecl_def_ct_base_string (name ## _var_name, chars, len,static,const); \
+        ecl_def_ct_symbol(name, ecl_stp_special, name ## _var_name, value,,)
+
+#define ecl_def_constant(name, value, chars, len)                       \
+        ecl_def_ct_base_string (name ## _var_name, chars, len,static,const); \
+        ecl_def_ct_symbol(name, ecl_stp_constant, name ## _var_name, value,,const)
+
 #ifdef ECL_THREADS
 #define ecl_def_ct_symbol(name,stype,sname,value,static,const)          \
         static const struct ecl_symbol name ## _data = {                \

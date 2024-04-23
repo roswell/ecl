@@ -43,7 +43,7 @@ cl_object ecl_call_with_handler(cl_object handler, cl_object continuation);
    and we can allocate cons on the stack. */
 #define ECL_WITH_HANDLER_BEGIN(the_env, handler) do {                   \
   const cl_env_ptr __the_env = the_env;                                 \
-  cl_object __ecl_sym = ECL_HANDLER_CLUSTERS;                           \
+  cl_object __ecl_sym = ECL_SIGNAL_HANDLERS;                            \
   cl_object __ecl_hnd = ECL_SYM_VAL(__the_env, __ecl_sym);              \
   cl_object __ecl_hnds = ecl_cons_stack(handler, __ecl_hnd);            \
   ecl_bds_bind(__the_env, __ecl_sym, __ecl_hnds);

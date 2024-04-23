@@ -510,7 +510,7 @@ ecl_data_stack_set_index(cl_env_ptr env, cl_index ndx)
 #define ECL_HANDLER_CASE_BEGIN(the_env, names) do {                     \
         const cl_env_ptr __the_env = (the_env);                         \
         const cl_object __ecl_tag = ecl_list1(names);                   \
-        ecl_bds_bind(__the_env, ECL_HANDLER_CLUSTERS,                   \
+        ecl_bds_bind(__the_env, ECL_SIGNAL_HANDLERS,                    \
                      si_bind_simple_handlers(__ecl_tag, names));        \
         ecl_frs_push(__the_env,__ecl_tag);                              \
         if (__ecl_frs_push_result == 0) {
