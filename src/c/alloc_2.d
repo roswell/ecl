@@ -579,6 +579,7 @@ void init_type_info (void)
   type_info[t_symbol].descriptor =
     to_bitmap(&o, &(o.symbol.value)) |
     to_bitmap(&o, &(o.symbol.gfdef)) |
+    to_bitmap(&o, &(o.symbol.macfun)) |
     to_bitmap(&o, &(o.symbol.plist)) |
     to_bitmap(&o, &(o.symbol.name)) |
     to_bitmap(&o, &(o.symbol.hpack));
