@@ -196,8 +196,10 @@ mangle_name(cl_object output, unsigned char *source, int l)
   @(return found output minarg maxarg);
 @)
 
+/* FIXME we mark symbol's cl_object as volatile because some versions of gcc
+   miscompile writes to the cl_symbols union members. See #738. */
 static void
-make_this_symbol(int i, cl_object s, int code,
+make_this_symbol(int i, volatile cl_object s, int code,
                  const char *name, const char *cname,
                  cl_objectfn fun, int narg, cl_object value)
 {
