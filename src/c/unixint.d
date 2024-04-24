@@ -445,8 +445,7 @@ queue_signal(cl_env_ptr env, cl_object code, int allocate)
     ECL_RPLACA(record, code);
     ECL_RPLACD(record, ECL_NIL);
     env->interrupt_struct->pending_interrupt =
-      ecl_nconc(env->interrupt_struct->pending_interrupt,
-                record);
+      ecl_nconc(env->interrupt_struct->pending_interrupt, record);
   }
 
 #ifdef ECL_THREADS
