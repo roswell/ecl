@@ -10,51 +10,41 @@ extern "C" {
 
 #define _ECL_ARGS(x) x
 
-/* The BinDing Stack stores the bindings of special variables. */
 struct ecl_binding_stack {
-#ifdef ECL_THREADS
-        cl_index tl_bindings_size;
-        cl_object *tl_bindings;
-#endif
         cl_index size;
         cl_index limit_size;
         struct ecl_bds_frame *org;
         struct ecl_bds_frame *top;
         struct ecl_bds_frame *limit;
+#ifdef ECL_THREADS
+        cl_index tl_bindings_size;
+        cl_object *tl_bindings;
+#endif
 };
 
-/* The FRames Stack (FRS) is a list of frames or jump points, and it is used by
- * different high-level constructs (BLOCK, TAGBODY, CATCH...)  to set return
- * points. */
 struct ecl_frames_stack {
-        struct ecl_frame *nlj_fr;
-        cl_index frame_id;
-
         cl_index size;
         cl_index limit_size;
         struct ecl_frame *org;
         struct ecl_frame *top;
         struct ecl_frame *limit;
+        /* extra */
+        struct ecl_frame *nlj_fr;
+        cl_index frame_id;
 };
 
-/* The Invocation History Stack (IHS) keeps a list of the names of the functions
- * that are invoked, together with their lexical environments. */
 struct ecl_history_stack {
         struct ecl_ihs_frame *top;
 };
 
-/* The following pointers to the C Stack are used to ensure that a recursive
- * function does not enter an infinite loop and exhausts all memory. They will
- * eventually disappear, because most operating systems already take care of
- * this. */
 struct ecl_c_stack {
-        cl_index max_size;      /* maximum possible size */
-
         cl_index size;          /* current size */
         cl_index limit_size;    /* maximum size minus safety area */
         char *org;              /* origin address */
         char *max;              /* overflow address (real maximum address) */
         char *limit;            /* overflow address (spares recovery area) */
+        /* extra */
+        cl_index max_size;      /* maximum possible size */
 };
 
 
@@ -64,59 +54,68 @@ struct ecl_c_stack {
 
 typedef struct cl_env_struct *cl_env_ptr;
 struct cl_env_struct {
-        /* Flag for disabling interrupts while we call C library functions. */
-        volatile int disable_interrupts;
-
-        /* Array where values are returned by functions. */
+        /* -- ECL runtime ---------------------------------------------------- */
+        /* Array where values are returned. */
         cl_index nvalues;
         cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
-
-        /* Environment for calling closures, CLOS generic functions, etc */
-        cl_object function;
-
-        /* Current stack frame */
-        cl_object stack_frame;
-
-        /* The four stacks in ECL. */
-
         /* The Virtual MachineS stack is used mainly for keeping the arguments
          * of a function before it is invoked, and also by the compiler and by
          * the reader when they are building some data structure. */
         struct ecl_stack vms_stack;
+        /* The BinDing Stack stores the bindings of special variables. */
         struct ecl_binding_stack bds_stack;
+        /* The FRames Stack (FRS) is a list of frames or jump points, and it is
+         * used by different high-level constructs (BLOCK, TAGBODY, CATCH...)
+         * to set return points. */
         struct ecl_frames_stack frs_stack;
+        /* The Invocation History Stack (IHS) keeps a list of the names of the
+         * functions that are invoked with their lexical environments. */
         struct ecl_history_stack ihs_stack;
+        /* The following pointers to the C Stack are used to ensure that a
+         * recursive function does not enter an infinite loop and exhausts all
+         * memory. They will eventually disappear, because most operating
+         * systems already take care of this. */
         struct ecl_c_stack c_stack; /* shadow stack */
 
-        /* Private variables used by different parts of ECL: */
+        /* -- Invocation of closures, generic function, etc ------------------ */
+        cl_object function;
+        cl_object stack_frame;  /* Current stack frame */
+
+        /* -- System Processes (native threads) ------------------------------ */
+        cl_object own_process; /* Backpointer to the host process. */
+#ifdef ECL_THREADS
+        int cleanup;
+#endif
+
+        /* -- System Interrupts ---------------------------------------------- */
+        /* Flag for disabling interrupts while we call C library functions. */
+        volatile int disable_interrupts;
+        /* The objects in this struct need to be writeable from a different
+           thread, if environment is write-protected by mprotect. Hence they
+           have to be allocated seperately. */
+        struct ecl_interrupt_struct *interrupt_struct;
+        void *default_sigmask;
+        /* Floating point interrupts which are trapped */
+        int trap_fpe_bits;
+        /* Segmentation fault address */
+        void *fault_address;
+
+        /* -- Private variables used by different parts of ECL ---------------- */
         /* ... the reader and printer ... */
         cl_object string_pool;
-
         /* ... the compiler ... */
         struct cl_compiler_env *c_env;
-
         /* ... the formatter ... */
 #if !defined(ECL_CMU_FORMAT)
         cl_object fmt_aux_stream;
 #endif
-
         /* ... arithmetics ... */
         cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
-
-        cl_object own_process;
-        /* The objects in this struct need to be writeable from a
-           different thread, if environment is write-protected by
-           mprotect. Hence they have to be allocated seperately. */
-        struct ecl_interrupt_struct *interrupt_struct;
-        void *default_sigmask;
-
-        /* The following is a hash table for caching invocations of
-           generic functions. In a multithreaded environment we must
-           queue operations in which the hash is cleared from updated
-           generic functions. */
+        /* The following is a hash table for caching invocations of generic
+           functions. In a multithreaded environment we must queue operations in
+           which the hash is cleared from updated generic functions. */
         struct ecl_cache *method_cache;
         struct ecl_cache *slot_cache;
-
         /* foreign function interface */
 #ifdef HAVE_LIBFFI
         cl_index ffi_args_limit;
@@ -124,21 +123,10 @@ struct cl_env_struct {
         union ecl_ffi_values *ffi_values;
         union ecl_ffi_values **ffi_values_ptrs;
 #endif
-
-        /* Floating point interrupts which are trapped */
-        int trap_fpe_bits;
-
         /* List of packages interned when loading a FASL but which have
          * to be explicitely created by the compiled code itself. */
         cl_object packages_to_be_created;
         cl_object packages_to_be_created_p;
-
-        /* Segmentation fault address */
-        void *fault_address;
-
-#ifdef ECL_THREADS
-        int cleanup;
-#endif
 };
 
 struct ecl_interrupt_struct {
