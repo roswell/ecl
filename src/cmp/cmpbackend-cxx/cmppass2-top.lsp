@@ -398,10 +398,11 @@
            (wt-call (fun-cfun fun) args)
            (wt ";")
            (wt-nl-close-many-braces 0)))
-    (t3function-header fun
-                       (fun-variadic-entrypoint-cfun fun)
-                       t
-                       #+c-compatible-variadic-dispatch t)
+    (let ((*volatile* ""))
+      (t3function-header fun
+                         (fun-variadic-entrypoint-cfun fun)
+                         t
+                         #+c-compatible-variadic-dispatch t))
     (wt-nl-open-brace)
     (wt-maybe-check-num-arguments t
                                   (fun-minarg fun)
