@@ -130,12 +130,13 @@ cl_env_ptr
 ecl_adopt_cpu()
 {
   struct cl_env_struct env_aux[1];
+  struct ecl_interrupt_struct int_aux[1];
   cl_env_ptr the_env = ecl_process_env_unsafe();
   ecl_thread_t current;
   int registered;
   if (the_env != NULL)
     return the_env;
-  /* 1. Ensure that the thread is known to the GC. */
+  /* Ensure that the thread is known to the GC. */
   /* FIXME this should be executed with hooks. */
 #ifdef GBC_BOEHM
   {
@@ -161,7 +162,7 @@ ecl_adopt_cpu()
    * the gc there. */
   memset(env_aux, 0, sizeof(*env_aux));
   env_aux->disable_interrupts = 1;
-  env_aux->interrupt_struct = ecl_alloc_unprotected(sizeof(*env_aux->interrupt_struct));
+  env_aux->interrupt_struct = int_aux;
   env_aux->interrupt_struct->pending_interrupt = ECL_NIL;
   ecl_mutex_init(&env_aux->interrupt_struct->signal_queue_lock, FALSE);
   env_aux->interrupt_struct->signal_queue = ECL_NIL;
@@ -179,24 +180,140 @@ ecl_adopt_cpu()
   return the_env;
 }
 
+void
+ecl_disown_cpu()
+{
+  int registered;
+  cl_env_ptr the_env = ecl_process_env_unsafe();
+  if (the_env == NULL)
+    return;
+  registered = the_env->cleanup;
+  ecl_disable_interrupts_env(the_env);
+  /* FIXME this should be part of dealloc. */
+  ecl_clear_bignum_registers(the_env);
+#ifdef ECL_WINDOWS_THREADS
+  CloseHandle(the_env->thread);
+#endif
+  ecl_set_process_env(NULL);
+  del_env(the_env);
+  _ecl_dealloc_env(the_env);
+  /* FIXME thsi should be executed with hooks. */
+  if (registered) {
+    GC_unregister_my_thread();
+  }
+}
+
+#ifdef ECL_WINDOWS_THREADS
+static DWORD WINAPI
+#else
+static void *
+#endif
+thread_entry_point(void *ptr)
+{
+  cl_env_ptr the_env = ecl_cast_ptr(cl_env_ptr, ptr);
+  cl_object process = the_env->own_process;
+  /* Setup the environment for the execution of the thread. */
+  ecl_set_process_env(the_env);
+  ecl_cs_init(the_env);
+
+  process->process.entry(0);
+
+  /* This routine performs some cleanup before a thread is completely
+   * killed. For instance, it has to remove the associated process object from
+   * the list, an it has to dealloc some memory.
+   *
+   * NOTE: this cleanup does not provide enough "protection". In order to ensure
+   * that all UNWIND-PROTECT forms are properly executed, never use the function
+   * pthread_cancel() to kill a process, but rather use the lisp functions
+   * mp_interrupt_process() and mp_process_kill(). */
+
+  ecl_set_process_env(NULL);
+  the_env->own_process = ECL_NIL;
+  del_env(the_env);
+#ifdef ECL_WINDOWS_THREADS
+  CloseHandle(the_env->thread);
+#endif
+  _ecl_dealloc_env(the_env);
+
+#ifdef ECL_WINDOWS_THREADS
+  return 1;
+#else
+  return NULL;
+#endif
+}
+
 /* Run a process in a new system thread. */
 cl_env_ptr
-ecl_spawn_cpu()
+ecl_spawn_cpu(cl_object process)
 {
-  return NULL;
-}
+  cl_env_ptr the_env = ecl_process_env();
+  cl_env_ptr new_env = NULL;
+  int ok = 1;
+  /* Allocate and initialize the new cpu env. */
+  {
+    new_env = _ecl_alloc_env(the_env);
+    /* List the process such that its environment is marked by the GC when its
+       contents are allocated. */
+    add_env(new_env);
+    /* Now we can safely allocate memory for the environment ocntents and store
+       pointers to it in the environment. */
+    ecl_init_env(new_env);
+    /* Copy the parent env defaults. */
+    new_env->trap_fpe_bits = the_env->trap_fpe_bits;
+    new_env->own_process = process;
+    new_env->bds_stack.tl_bindings = process->process.initial_bindings;
+    new_env->bds_stack.tl_bindings_size = process->process.initial_bindings_size;
+    process->process.env = new_env;
+  }
+  /* Spawn the thread */
+  ecl_disable_interrupts_env(the_env);
+#ifdef ECL_WINDOWS_THREADS
+  {
+    HANDLE code;
+    DWORD threadId;
 
+    code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, new_env, 0, &threadId);
+    new_env->thread = code;
+    ok = code != NULL;
+  }
+#else /* ECL_WINDOWS_THREADS */
+  {
+    int code;
+    pthread_attr_t pthreadattr;
 
-void
-ecl_add_process(cl_object process)
-{
-  add_env(process->process.env);
-}
-
-void
-ecl_del_process(cl_object process)
-{
-  del_env(process->process.env);
+    pthread_attr_init(&pthreadattr);
+    pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
+    /*
+     * Block all asynchronous signals until the thread is completely
+     * set up. The synchronous signals SIGSEGV and SIGBUS are needed
+     * by the gc and thus can't be blocked.
+     */
+# ifdef HAVE_SIGPROCMASK
+    {
+      sigset_t new, previous;
+      sigfillset(&new);
+      sigdelset(&new, SIGSEGV);
+      sigdelset(&new, SIGBUS);
+      pthread_sigmask(SIG_BLOCK, &new, &previous);
+      code = pthread_create(&new_env->thread, &pthreadattr,
+                            thread_entry_point, new_env);
+      pthread_sigmask(SIG_SETMASK, &previous, NULL);
+    }
+# else
+    code = pthread_create(&new_env->thread, &pthreadattr,
+                          thread_entry_point, new_env);
+# endif
+    ok = (code == 0);
+  }
+#endif /* ECL_WINDOWS_THREADS */
+  /* Deal with the fallout of the thread creation. */
+  if (!ok) {
+    del_env(new_env);
+    process->process.env = NULL;
+    _ecl_dealloc_env(new_env);
+  }
+  ecl_enable_interrupts_env(the_env);
+  return ok ? new_env : NULL;
 }
 #endif
 
@@ -205,8 +322,11 @@ ecl_del_process(cl_object process)
 void
 init_process(void)
 {
-  cl_env_ptr env = ecl_core.first_env;
+  cl_env_ptr the_env = ecl_core.first_env;
 #ifdef ECL_THREADS
+  ecl_thread_t main_thread;
+  ecl_set_process_self(main_thread);
+  the_env->thread = main_thread;
   ecl_process_key_create(cl_env_key);
   ecl_mutex_init(&ecl_core.processes_lock, 1);
   ecl_mutex_init(&ecl_core.global_lock, 1);
@@ -214,10 +334,10 @@ init_process(void)
   ecl_rwlock_init(&ecl_core.global_env_lock);
   ecl_core.threads = ecl_malloc(ecl_core.sthreads * sizeof(cl_env_ptr));
 #endif
-  ecl_set_process_env(env);
-  env->default_sigmask = NULL;
-  env->method_cache = NULL;
-  env->slot_cache = NULL;
-  env->interrupt_struct = NULL;
-  env->disable_interrupts = 1;
+  ecl_set_process_env(the_env);
+  the_env->default_sigmask = NULL;
+  the_env->method_cache = NULL;
+  the_env->slot_cache = NULL;
+  the_env->interrupt_struct = NULL;
+  the_env->disable_interrupts = 1;
 }

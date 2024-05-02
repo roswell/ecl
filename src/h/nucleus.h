@@ -38,9 +38,7 @@ struct ecl_core_struct {
 /* process.c */
 cl_env_ptr ecl_adopt_cpu();
 cl_env_ptr ecl_spawn_cpu();
-
-void ecl_add_process(cl_object process);
-void ecl_del_process(cl_object process);
+void ecl_disown_cpu();
 
 /* control.c */
 cl_object ecl_escape(cl_object continuation) ecl_attr_noreturn;
