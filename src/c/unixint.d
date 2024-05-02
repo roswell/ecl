@@ -265,8 +265,8 @@ static void early_signal_error() ecl_attr_noreturn;
 static void
 early_signal_error()
 {
-  ecl_internal_error("Got signal before environment was installed"
-                     " on our thread");
+  ecl_internal_error
+    ("Got signal before environment was installed on our thread");
 }
 
 static void illegal_signal_code(cl_object code) ecl_attr_noreturn;
@@ -869,7 +869,7 @@ cl_object
 si_check_pending_interrupts(void)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  handle_all_queued(ecl_process_env());
+  handle_all_queued(the_env);
   ecl_return0(the_env);
 }
 
@@ -950,8 +950,7 @@ do_catch_signal(int code, cl_object action, cl_object process)
     }
     return ECL_T;
   } else {
-    FEerror("Unknown 2nd argument to EXT:CATCH-SIGNAL: ~A", 1,
-            action);
+    FEerror("Unknown 2nd argument to EXT:CATCH-SIGNAL: ~A", 1, action);
   }
 }
 
@@ -992,19 +991,16 @@ si_set_signal_handler(cl_object code, cl_object handler)
 # ifdef SIGSEGV
     unlikely_if ((code == ecl_make_fixnum(SIGSEGV)) &&
                  ecl_option_values[ECL_OPT_INCREMENTAL_GC])
-      FEerror("It is not allowed to change the behavior of SIGSEGV.",
-              0);
+      FEerror("It is not allowed to change the behavior of SIGSEGV.", 0);
 # endif
 # ifdef SIGBUS
     unlikely_if (code_int == SIGBUS)
-      FEerror("It is not allowed to change the behavior of SIGBUS.",
-              0);
+      FEerror("It is not allowed to change the behavior of SIGBUS.", 0);
 # endif
 #endif
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
     unlikely_if (code_int == ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]) {
-      FEerror("It is not allowed to change the behavior of signal ~D", 1,
-              code);
+      FEerror("It is not allowed to change the behavior of signal ~D", 1, code);
     }
 #endif
 #ifdef SIGFPE
@@ -1035,40 +1031,34 @@ wakeup_noop(ULONG_PTR foo)
 static bool
 do_interrupt_thread(cl_object process)
 {
+  cl_env_ptr process_env = process->process.env;
 # ifdef ECL_WINDOWS_THREADS
 #  ifndef ECL_USE_GUARD_PAGE
 #   error "Cannot implement ecl_interrupt_process without guard pages"
 #  endif
-  HANDLE thread = process->process.thread;
+  HANDLE thread = process_env->thread;
   CONTEXT context;
-  void *trap_address = process->process.env;
+  void *trap_address = ecl_cast_ptr(void*, process_env);;
   DWORD guard = PAGE_GUARD | PAGE_READWRITE;
   int ok = 1;
   if (SuspendThread(thread) == (DWORD)-1) {
-    FEwin32_error("Unable to suspend thread ~A", 1,
-                  process);
+    FEwin32_error("Unable to suspend thread ~A", 1, process);
     ok = 0;
     goto EXIT;
   }
-  process->process.interrupt = ECL_T;
-  if (!VirtualProtect(process->process.env,
-                      sizeof(struct cl_env_struct),
-                      guard,
-                      &guard))
+  process_env->interrupt_struct->inside_interrupt = true;
+  if (!VirtualProtect(process_env, sizeof(struct cl_env_struct), guard, &guard))
     {
-      FEwin32_error("Unable to protect memory from thread ~A",
-                    1, process);
+      FEwin32_error("Unable to protect memory from thread ~A", 1, process);
       ok = 0;
     }
  RESUME:
   if (!QueueUserAPC(wakeup_function, thread, 0)) {
-    FEwin32_error("Unable to queue APC call to thread ~A",
-                  1, process);
+    FEwin32_error("Unable to queue APC call to thread ~A", 1, process);
     ok = 0;
   }
   if (ResumeThread(thread) == (DWORD)-1)  {
-    FEwin32_error("Unable to resume thread ~A", 1,
-                  process);
+    FEwin32_error("Unable to resume thread ~A", 1, process);
     ok = 0;
     goto EXIT;
   }
@@ -1076,9 +1066,8 @@ do_interrupt_thread(cl_object process)
   return ok;
 # else
   int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
-  if (pthread_kill(process->process.thread, signal)) {
-    FElibc_error("Unable to interrupt process ~A", 1,
-                 process);
+  if (pthread_kill(process_env->thread, signal)) {
+    FElibc_error("Unable to interrupt process ~A", 1, process);
   }
   return 1;
 # endif
@@ -1119,10 +1108,10 @@ void
 ecl_wakeup_process(cl_object process)
 {
 # ifdef ECL_WINDOWS_THREADS
-  HANDLE thread = process->process.thread;
+  cl_env_ptr process_env = process->process.env;
+  HANDLE thread = process_env->thread;
   if (!QueueUserAPC(wakeup_noop, thread, 0)) {
-    FEwin32_error("Unable to queue APC call to thread ~A",
-                  1, process);
+    FEwin32_error("Unable to queue APC call to thread ~A", 1, process);
   }
 # else
   do_interrupt_thread(process);
@@ -1144,9 +1133,8 @@ _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
     {
       /* Access to guard page */
     case STATUS_GUARD_PAGE_VIOLATION: {
-      cl_object process = the_env->own_process;
-      if (!Null(process->process.interrupt)) {
-        process->process.interrupt = ECL_NIL;
+      if(the_env->interrupt_struct->inside_interrupt) {
+        the_env->interrupt_struct->inside_interrupt = false;
         handle_all_queued_interrupt_safe(the_env);
       }
       return EXCEPTION_CONTINUE_EXECUTION;
@@ -1206,8 +1194,7 @@ static cl_object
 W32_handle_in_new_thread(cl_object signal_code)
 {
   int outside_ecl = ecl_import_current_thread(@'si::handle-signal', ECL_NIL);
-  mp_process_run_function(3, @'si::handle-signal',
-                          @'si::handle-signal',
+  mp_process_run_function(3, @'si::handle-signal', @'si::handle-signal',
                           signal_code);
   if (outside_ecl) ecl_release_current_thread();
 }
@@ -1355,19 +1342,13 @@ install_signal_handling_thread()
   ecl_process_env()->default_sigmask = &main_thread_sigmask;
   if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {
     cl_object fun =
-      ecl_make_cfun((cl_objectfn_fixed)
-                    asynchronous_signal_servicing_thread,
-                    @'si::signal-servicing',
-                    ECL_NIL,
-                    0);
+      ecl_make_cfun((cl_objectfn_fixed) asynchronous_signal_servicing_thread,
+                    @'si::signal-servicing', ECL_NIL, 0);
     cl_object process =
       signal_thread_process =
-      mp_process_run_function_wait(2,
-                                   @'si::signal-servicing',
-                                   fun);
+      mp_process_run_function_wait(2, @'si::signal-servicing', fun);
     if (Null(process)) {
-      ecl_internal_error("Unable to create signal "
-                         "servicing thread");
+      ecl_internal_error("Unable to create signal servicing thread.");
     }
   }
 #endif
@@ -1415,8 +1396,7 @@ install_synchronous_signal_handlers()
     int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
     if (signal == 0) {
       signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
-      ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
-                     signal);
+      ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL, signal);
     }
     mysignal(signal, process_interrupt_handler);
 #ifdef HAVE_SIGPROCMASK
@@ -1478,8 +1458,7 @@ create_signal_code_constants()
   int i;
   for (i = 0; known_signals[i].code >= 0; i++) {
     add_one_signal(hash, known_signals[i].code,
-                   _ecl_intern(known_signals[i].name,
-                               cl_core.ext_package),
+                   _ecl_intern(known_signals[i].name, cl_core.ext_package),
                    known_signals[i].handler);
   }
 #ifdef SIGRTMIN

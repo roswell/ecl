@@ -980,20 +980,17 @@ enum {
 struct ecl_process {
         _ECL_HDR;
         cl_object name;
+        cl_object exit_values;
+        cl_objectfn entry;      /* entry address (matches ecl_cfun offset) */
         cl_object function;
         cl_object args;
-        struct cl_env_struct *env;
-        cl_object interrupt;
         cl_object *initial_bindings;
         cl_index initial_bindings_size;
-        cl_object parent;
-        cl_object exit_values;
         cl_object woken_up;
         ecl_mutex_t start_stop_lock; /* phase is updated only when we hold this lock */
         ecl_cond_var_t exit_barrier; /* process-join waits on this barrier */
         cl_index phase;
-        ecl_thread_t thread;
-        int trap_fpe_bits;
+        struct cl_env_struct *env;
 };
 
 enum {

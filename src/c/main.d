@@ -43,22 +43,15 @@ static int ARGC;
 static char **ARGV;
 
 static void
-init_env_mp(cl_env_ptr env)
-{
-#if defined(ECL_THREADS)
-  env->cleanup = 0;
-#else
-  env->own_process = ECL_NIL;
-#endif
-}
-
-static void
 init_env_int(cl_env_ptr env)
 {
   env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
   env->interrupt_struct->pending_interrupt = ECL_NIL;
 #ifdef ECL_THREADS
   ecl_mutex_init(&env->interrupt_struct->signal_queue_lock, FALSE);
+#endif
+#ifdef ECL_WINDOWS_THREADS
+  env->interrupt_struct->inside_interrupt = false;
 #endif
   {
     int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
@@ -122,7 +115,6 @@ ecl_init_first_env(cl_env_ptr env)
 void
 ecl_init_env(cl_env_ptr env)
 {
-  init_env_mp(env);
   init_env_int(env);
   init_env_aux(env);
   init_env_ffi(env);
@@ -183,6 +175,13 @@ _ecl_alloc_env(cl_env_ptr parent)
     ecl_internal_error("Unable to allocate environment structure.");
 # endif
 #endif
+  /* Initialize the structure with NULL data. */
+#if defined(ECL_THREADS)
+  output->bds_stack.tl_bindings_size = 0;
+  output->bds_stack.tl_bindings = NULL;
+  output->cleanup = 0;
+#endif
+  output->own_process = ECL_NIL;
   {
     size_t bytes = ecl_core.default_sigmask_bytes;
     if (bytes == 0) {

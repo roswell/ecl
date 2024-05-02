@@ -671,10 +671,7 @@ void init_type_info (void)
     to_bitmap(&o, &(o.process.function)) |
     to_bitmap(&o, &(o.process.args)) |
     to_bitmap(&o, &(o.process.env)) |
-    to_bitmap(&o, &(o.process.interrupt)) |
-    to_bitmap(&o, &(o.process.parent)) |
-    to_bitmap(&o, &(o.process.exit_values)) |
-    to_bitmap(&o, &(o.process.woken_up));
+    to_bitmap(&o, &(o.process.exit_values));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
     to_bitmap(&o, &(o.lock.owner));
@@ -1191,16 +1188,10 @@ stacks_scanner()
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
   ecl_mark_env(ecl_core.first_env);
 #ifdef ECL_THREADS
-  l = ecl_core.processes;
-  if (l != OBJNULL) {
-    cl_index i, size;
-    for (i = 0, size = l->vector.dim; i < size; i++) {
-      cl_object process = l->vector.self.t[i];
-      if (!Null(process)) {
-        cl_env_ptr env = process->process.env;
-        if (env && (env != ecl_core.first_env)) ecl_mark_env(env);
-      }
-    }
+  for(cl_index idx = 0; idx < ecl_core.nthreads; idx++) {
+    cl_env_ptr env = ecl_core.threads[idx];
+    if(env != ecl_core.first_env)
+      ecl_mark_env(env);
   }
 #endif
   if (old_GC_push_other_roots)

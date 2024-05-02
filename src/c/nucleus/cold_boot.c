@@ -140,7 +140,9 @@ struct ecl_core_struct ecl_core = {
   .first_env = &first_env,
   /* processes */
 #ifdef ECL_THREADS
-  .processes = ECL_NIL,
+  .nthreads = 0,
+  .sthreads = 16,
+  .threads = NULL,
   .last_var_index = 0,
   .reused_indices = ECL_NIL,
 #endif

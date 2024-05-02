@@ -9,7 +9,9 @@
 struct ecl_core_struct {
   cl_env_ptr first_env;
 #ifdef ECL_THREADS
-  cl_object processes;
+  cl_env_ptr *threads;
+  cl_index nthreads;
+  cl_index sthreads;
   ecl_mutex_t processes_lock;
   ecl_mutex_t global_lock;
   ecl_mutex_t error_lock;
@@ -32,6 +34,13 @@ struct ecl_core_struct {
   cl_object libraries;
   cl_object library_pathname;
 };
+
+/* process.c */
+cl_env_ptr ecl_adopt_cpu();
+cl_env_ptr ecl_spawn_cpu();
+
+void ecl_add_process(cl_object process);
+void ecl_del_process(cl_object process);
 
 /* control.c */
 cl_object ecl_escape(cl_object continuation) ecl_attr_noreturn;
