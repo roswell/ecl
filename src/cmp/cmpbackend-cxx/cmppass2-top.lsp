@@ -352,8 +352,23 @@
                        (fun-closure fun)
                        (fun-optional-type-check-forms fun)
                        (fun-keyword-type-check-forms fun)
-                       (fun-variadic-entrypoint fun))))
+                       (fun-c-compatible-variadic-signature fun))))
     string))
+
+(defun fun-c-compatible-variadic-signature (fun)
+  ;; Returns true if we need to generate a signature of the form
+  ;; `cl_object f(cl_narg narg, ...)`
+  #-c-compatible-variadic-dispatch
+  nil
+  #+c-compatible-variadic-dispatch
+  (and (fun-needs-narg fun)
+       ;; local functions or lexical closures are never called via a
+       ;; function pointer
+       (not (eq (fun-closure fun) 'LEXICAL))
+       (not (fun-no-entry fun))
+       ;; exported functions need to keep their signature to not break
+       ;; the external API
+       (not (fun-exported fun))))
 
 ;;; Variadic entrypoints
 ;;;
@@ -366,18 +381,6 @@
 ;;; entrypoint and thus optimize away the overhead that this method
 ;;; incurs over only generating a variadic entrypoint.
 ;;;
-;;; If we use C compatible variadic dispatch, we can likewise generate
-;;; an entrypoint with the signature expected by the caller, i.e. a
-;;; function with only the narg argument as a fixed parameter and all
-;;; other arguments as variadic parameters. This function then checks
-;;; the number of arguments and dispatches to the entrypoint where the
-;;; required arguments appear as fixed parameters. The advantage over
-;;; only generating a variadic entrypoint with generic signature is
-;;; again that callers using direct C calls can skip some work.
-;;; Typically, C compatible variadic dispatch is used when fixed
-;;; arguments can be passed in registers while variadic arguments must
-;;; be pushed onto the stack. Thus, direct C calls can skip pushing
-;;; the required arguments onto the stack.
 (defun fun-variadic-entrypoint (fun)
   (let ((result (fun-variadic-entrypoint-cfun fun)))
     (if (not (eq result :unknown))
@@ -385,8 +388,7 @@
         (setf (fun-variadic-entrypoint-cfun fun)
               (and (policy-inline-nargs-check)
                    (not (fun-no-entry fun))
-                   (or (not (fun-needs-narg fun))
-                       #+c-compatible-variadic-dispatch t)
+                   (not (fun-needs-narg fun))
                    ;; lexical closures will never be called via a
                    ;; variadic entrypoint, no need to create one
                    (not (eq (fun-closure fun) 'lexical))
@@ -413,29 +415,25 @@
     #+c-compatible-variadic-dispatch
     (let ((maxargs (min (fun-maxarg fun) (1+ si:c-arguments-limit))))
       (when (plusp maxargs)
-        ;; For C compatible variadic dispatch, we handle both functions
-        ;; with variadic and with fixed number of arguments
         (wt-nl "cl_object x[" maxargs "];")
         (wt-nl "va_list args; va_start(args,narg);")
-        (loop for i below (fun-minarg fun)
+        (loop for i below maxargs
               do (wt-nl "x[" i "] = ") (wt-coerce-loc :object 'VA-ARG) (wt ";"))
-        (unless (= (fun-minarg fun) (fun-maxarg fun))
-          (wt-nl "for (int i = " (fun-minarg fun) "; i < ")
-          (if (<= maxargs si:c-arguments-limit)
-              (wt "narg")
-              (wt "(narg < " maxargs " ? narg : " maxargs ")"))
-          (wt "; i++)")
-          (wt-open-brace)
-          (wt-nl "x[i] = ")
-          (wt-coerce-loc :object 'VA-ARG)
-          (wt ";")
-          (wt-nl-close-brace))
         (wt-nl "va_end(args);"))
       (let ((args (loop for i below maxargs
                         collect (concatenate 'string "x[" (write-to-string i) "]"))))
-        (when (fun-needs-narg fun)
-          (push "narg" args))
         (wt-return args)))))
+
+(defun fun-fixed-narg-main-entrypoint (fun)
+  "Number of fixed arguments for fun. If both variadic and ordinary
+entrypoints exist, return the number of fixed arguments for the
+variadic entrypoint. This may differ from the number of required
+parameters of the corresponding Lisp function if we are generating a C
+compatible variadic signature."
+  #+c-compatible-variadic-dispatch
+  (when (or (fun-variadic-entrypoint fun) (fun-c-compatible-variadic-signature fun))
+    (return-from fun-fixed-narg-main-entrypoint 0))
+  (min (fun-minarg fun) si:c-arguments-limit))
 
 (defun t3function-header (fun cfun needs-narg &optional omit-requireds)
   (let* ((comma "")
@@ -484,7 +482,8 @@
                    (cmp-env-optimization 'debug cmp-env)
                    (cmp-env-optimization 'space cmp-env)
                    (cmp-env-optimization 'safety cmp-env))
-    (t3function-header fun (fun-cfun fun) (fun-needs-narg fun)))
+    (t3function-header fun (fun-cfun fun) (fun-needs-narg fun)
+                       (fun-c-compatible-variadic-signature fun)))
   t)
 
 (defun fun-closure-variables (fun)
@@ -542,11 +541,7 @@
                 do (let* ((variadic-entrypoint (fun-variadic-entrypoint-cfun fun))
                           (cfun (or variadic-entrypoint (fun-cfun fun)))
                           (needs-narg (or variadic-entrypoint (fun-needs-narg fun)))
-                          (narg (if needs-narg
-                                    (if variadic-entrypoint
-                                        0
-                                        (min (fun-minarg fun) si:c-arguments-limit))
-                                    (fun-fixed-narg fun))))
+                          (narg (fun-fixed-narg-main-entrypoint fun)))
                      (format stream "~%{~A,0,~D,0,ecl_make_fixnum(~D),ecl_make_fixnum(~D),(cl_objectfn)~A,NULL,ECL_NIL,ecl_make_fixnum(~D)},"
                              (if needs-narg "t_cfun" "t_cfunfixed")
                              narg
