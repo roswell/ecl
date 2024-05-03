@@ -101,7 +101,6 @@ struct cl_env_struct {
 #ifdef ECL_THREADS
         cl_object own_process; /* Backpointer to the running process. */
         ecl_thread_t thread;
-        int cleanup;
 #endif
 
         /* -- System Interrupts ---------------------------------------------- */
