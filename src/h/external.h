@@ -521,7 +521,7 @@ extern ECL_API cl_object ecl_exception_handler(cl_object exception);
 
 extern ECL_API void ecl_internal_error(const char *s) ecl_attr_noreturn;
 #ifdef ECL_THREADS
-# define ecl_thread_internal_error(s) ecl_internal_error(s)
+extern ECL_API void ecl_thread_internal_error(const char *s) ecl_attr_noreturn;
 #endif
 extern ECL_API void ecl_unrecoverable_error(cl_env_ptr the_env, const char *message) ecl_attr_noreturn;
 extern ECL_API void ecl_miscompilation_error(void) ecl_attr_noreturn;

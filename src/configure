@@ -6050,12 +6050,12 @@ EOF
     as_fn_error $? "The program ECL is not installed in your system" "$LINENO" 5
   fi
   ECL_MIN_TO_RUN=`${ECL_TO_RUN} -norc -eval '(progn (print (truename "sys:ecl_min")) (si:quit))' \
-	| grep '\#\P' | sed 's,#P"\(.*\)",\1,'`
+        | grep '\#\P' | sed 's,#P"\(.*\)",\1,'`
   if test -z "${ECL_MIN_TO_RUN}" -o "${ECL_MIN_TO_RUN}" = "failed"  ; then
     as_fn_error $? "The program ECL-MIN is not installed in your system" "$LINENO" 5
   fi
   DPP_TO_RUN=`${ECL_TO_RUN} -norc -eval '(progn (print (truename "sys:dpp")) (si:quit))' \
-	| grep '\#\P' | sed 's,#P"\(.*\)",\1,'`
+        | grep '\#\P' | sed 's,#P"\(.*\)",\1,'`
   if test -z "${DPP_TO_RUN}" -o "${DPP_TO_RUN}" = "failed"  ; then
     as_fn_error $? "The program DPP is not installed in your system" "$LINENO" 5
   fi
@@ -6095,6 +6095,7 @@ PICFLAG='-fPIC'
 THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
+GC_CFLAGS='-DGC_NO_THREAD_REDIRECTS'
 INSTALL_TARGET='install'
 THREAD_OBJ="$THREAD_OBJ threads/process threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
@@ -6172,7 +6173,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED"                 clibs="${clibs}"
+                clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
@@ -6182,7 +6183,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED"                 clibs="${clibs}"
+                clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
@@ -6193,7 +6194,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED"                 clibs="-lpthread ${clibs}"
+                clibs="-lpthread ${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
@@ -6303,16 +6304,16 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
-	aix*)
-		PICFLAG='-DPIC'
-		thehost="aix"
-		THREAD_LIBS='-lpthread'
+        aix*)
+                PICFLAG='-DPIC'
+                thehost="aix"
+                THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-G -bsvr4 -brtl ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-G -bsvr4 -brtl ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,-R~A"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-bsvr4 -brtl"
-		;;
+                ;;
         *)
                 thehost="$host_os"
                 shared="no"
@@ -6372,8 +6373,8 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
 esac
 
 case "${host_cpu}" in
-	alpha*)
-		CFLAGS="${CFLAGS} -mieee";;
+        alpha*)
+                CFLAGS="${CFLAGS} -mieee";;
 esac
 ECL_CFLAGS="-D${thehost}"
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ld flags when building shared libraries" >&5
@@ -7469,10 +7470,10 @@ printf "%s\n" "$as_me: Configuring included libffi library:" >&6;}
  if mkdir libffi; then
    if (destdir=`${PWDCMD}`; cd libffi; \
        $srcdir/libffi/configure --disable-shared --prefix=${destdir} \
-	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	 --host=${host_alias} --disable-multi-os-directory --disable-docs \
+         --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
+         --host=${host_alias} --disable-multi-os-directory --disable-docs \
          CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
-	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS"); then
+         LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS"); then
      ECL_LIBFFI_HEADER='ecl/ffi.h'
      SUBDIRS="${SUBDIRS} libffi"
      CORE_LIBS="-leclffi ${CORE_LIBS}"
@@ -9367,20 +9368,20 @@ fi
 printf %s "checking for code to detect FP exceptions... " >&6; }
 case "${host_cpu}" in
    i686 | i586 | pentium* | athlon* )
-	ECL_FPE_CODE="arch/fpe_x86.c"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: x86" >&5
+        ECL_FPE_CODE="arch/fpe_x86.c"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: x86" >&5
 printf "%s\n" "x86" >&6; }
-	;;
+        ;;
    x86_64* )
-	ECL_FPE_CODE="arch/fpe_x86.c"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: x86_64" >&5
+        ECL_FPE_CODE="arch/fpe_x86.c"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: x86_64" >&5
 printf "%s\n" "x86_64" >&6; }
-	;;
+        ;;
    *)
         ECL_FPE_CODE="arch/fpe_none.c"
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not available" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not available" >&5
 printf "%s\n" "not available" >&6; }
-	;;
+        ;;
 esac
 
 
@@ -11199,20 +11200,20 @@ else case e in #(
 const int traps = FE_DIVBYZERO | FE_OVERFLOW;
 
 void fpe_handler(int code) {
-	if (code == SIGFPE)
-		exit(0);
+        if (code == SIGFPE)
+                exit(0);
 }
 
 double raises_fpe(double x) {
-	return x / 0.0;
+        return x / 0.0;
 }
 
 int main() {
-	signal(SIGFPE, fpe_handler);
-	feclearexcept(traps);
-	feenableexcept(traps);
-	raises_fpe(1.0);
-	return 1;
+        signal(SIGFPE, fpe_handler);
+        feclearexcept(traps);
+        feenableexcept(traps);
+        raises_fpe(1.0);
+        return 1;
 }
 
 _ACEOF

@@ -184,12 +184,12 @@ EOF
     AC_MSG_ERROR(The program ECL is not installed in your system)
   fi
   ECL_MIN_TO_RUN=`${ECL_TO_RUN} -norc -eval '(progn (print (truename "sys:ecl_min")) (si:quit))' \
-	| grep '\#\P' | sed 's,#P"\(.*\)",\1,'`
+        | grep '\#\P' | sed 's,#P"\(.*\)",\1,'`
   if test -z "${ECL_MIN_TO_RUN}" -o "${ECL_MIN_TO_RUN}" = "failed"  ; then
     AC_MSG_ERROR(The program ECL-MIN is not installed in your system)
   fi
   DPP_TO_RUN=`${ECL_TO_RUN} -norc -eval '(progn (print (truename "sys:dpp")) (si:quit))' \
-	| grep '\#\P' | sed 's,#P"\(.*\)",\1,'`
+        | grep '\#\P' | sed 's,#P"\(.*\)",\1,'`
   if test -z "${DPP_TO_RUN}" -o "${DPP_TO_RUN}" = "failed"  ; then
     AC_MSG_ERROR(The program DPP is not installed in your system)
   fi
@@ -266,6 +266,7 @@ PICFLAG='-fPIC'
 THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
+GC_CFLAGS='-DGC_NO_THREAD_REDIRECTS'
 INSTALL_TARGET='install'
 THREAD_OBJ="$THREAD_OBJ threads/process threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
@@ -341,7 +342,6 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -352,7 +352,6 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -364,7 +363,6 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
-		GC_CFLAGS="-DGC_PTHREAD_SIGMASK_NEEDED" dnl workaround for broken bdwgc v8.2.4
                 clibs="-lpthread ${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
@@ -476,16 +474,16 @@ case "${host_os}" in
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
                 ;;
-	aix*)
-		PICFLAG='-DPIC'
-		thehost="aix"
-		THREAD_LIBS='-lpthread'
+        aix*)
+                PICFLAG='-DPIC'
+                thehost="aix"
+                THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-G -bsvr4 -brtl ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-G -bsvr4 -brtl ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,-R~A"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-bsvr4 -brtl"
-		;;
+                ;;
         *)
                 thehost="$host_os"
                 shared="no"
@@ -542,8 +540,8 @@ case "${host}" in
 esac
 
 case "${host_cpu}" in
-	alpha*)
-		CFLAGS="${CFLAGS} -mieee";;
+        alpha*)
+                CFLAGS="${CFLAGS} -mieee";;
 esac
 ECL_CFLAGS="-D${thehost}"
 AC_MSG_CHECKING(for ld flags when building shared libraries)
@@ -594,8 +592,8 @@ fi
 ])
 
 dnl ---------------------------------------------------------------------
-dnl Check availability of standard sized integer types of a given width.  
-dnl On success, define the global variables ECL_INTx_T and ECL_UNITx_T to 
+dnl Check availability of standard sized integer types of a given width.
+dnl On success, define the global variables ECL_INTx_T and ECL_UNITx_T to
 dnl hold the names of the corresponding standard C integer types.
 AC_DEFUN(ECL_CHECK_SIZED_INTEGER_TYPE,[
 AC_TYPE_INT$1_T
@@ -898,17 +896,17 @@ AC_DEFUN([ECL_FPE_MODEL],
 [AC_MSG_CHECKING([for code to detect FP exceptions])
 case "${host_cpu}" in
    i686 | i586 | pentium* | athlon* )
-	ECL_FPE_CODE="arch/fpe_x86.c"
-	AC_MSG_RESULT([x86])
-	;;
+        ECL_FPE_CODE="arch/fpe_x86.c"
+        AC_MSG_RESULT([x86])
+        ;;
    x86_64* )
-	ECL_FPE_CODE="arch/fpe_x86.c"
-	AC_MSG_RESULT([x86_64])
-	;;
+        ECL_FPE_CODE="arch/fpe_x86.c"
+        AC_MSG_RESULT([x86_64])
+        ;;
    *)
         ECL_FPE_CODE="arch/fpe_none.c"
-	AC_MSG_RESULT([not available])
-	;;
+        AC_MSG_RESULT([not available])
+        ;;
 esac
 AC_SUBST(ECL_FPE_CODE)
 ])
@@ -998,20 +996,20 @@ AC_DEFUN(ECL_FLOATING_POINT_EXCEPTIONS,[
 const int traps = FE_DIVBYZERO | FE_OVERFLOW;
 
 void fpe_handler(int code) {
-	if (code == SIGFPE)
-		exit(0);
+        if (code == SIGFPE)
+                exit(0);
 }
 
 double raises_fpe(double x) {
-	return x / 0.0;
+        return x / 0.0;
 }
 
 int main() {
-	signal(SIGFPE, fpe_handler);
-	feclearexcept(traps);
-	feenableexcept(traps);
-	raises_fpe(1.0);
-	return 1;
+        signal(SIGFPE, fpe_handler);
+        feclearexcept(traps);
+        feenableexcept(traps);
+        raises_fpe(1.0);
+        return 1;
 }
 ]])],
   [AC_DEFINE([HAVE_FEENABLEEXCEPT], [], [feenableexcept works])
@@ -1222,10 +1220,10 @@ if test "${enable_libffi}" = "included"; then
  if mkdir libffi; then
    if (destdir=`${PWDCMD}`; cd libffi; \
        $srcdir/libffi/configure --disable-shared --prefix=${destdir} \
-	 --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
-	 --host=${host_alias} --disable-multi-os-directory --disable-docs \
+         --includedir=${destdir}/ecl/ --libdir=${destdir} --build=${build_alias} \
+         --host=${host_alias} --disable-multi-os-directory --disable-docs \
          CC="${CC} ${PICFLAG}" CFLAGS="$CFLAGS" \
-	 LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS"); then
+         LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS"); then
      ECL_LIBFFI_HEADER='ecl/ffi.h'
      SUBDIRS="${SUBDIRS} libffi"
      CORE_LIBS="-leclffi ${CORE_LIBS}"
@@ -1242,4 +1240,3 @@ else
   AC_DEFINE([HAVE_LIBFFI], [], [HAVE_LIBFFI])
 fi
 ])
-

@@ -125,6 +125,28 @@ del_env(cl_env_ptr the_env)
   ecl_mutex_unlock(&ecl_core.processes_lock);
 }
 
+static void
+register_gc_thread()
+{
+#ifdef GBC_BOEHM
+  if (GC_thread_is_registered() == 0) {
+    struct GC_stack_base stack;
+    GC_get_stack_base(&stack);
+    GC_register_my_thread(&stack);
+  }
+#endif
+}
+
+static void
+unregister_gc_thread()
+{
+#ifdef GBC_BOEHM
+  if (GC_thread_is_registered() == 1) {
+    GC_unregister_my_thread();
+  }
+#endif
+}
+
 /* Run a process in the current system thread. */
 cl_env_ptr
 ecl_adopt_cpu()
@@ -137,13 +159,7 @@ ecl_adopt_cpu()
     return the_env;
   /* Ensure that the thread is known to the GC. */
   /* FIXME this should be executed with hooks. */
-#ifdef GBC_BOEHM
-  if (GC_thread_is_registered() == 0) {
-    struct GC_stack_base stack;
-    GC_get_stack_base(&stack);
-    GC_register_my_thread(&stack);
-  }
-#endif
+  register_gc_thread();
   ecl_set_process_self(current);
   /* We need a fake env to allow for interrupts blocking and to set up frame
    * stacks or other stuff that is needed by ecl_init_env. Since the fake env is
@@ -183,12 +199,8 @@ ecl_disown_cpu()
   ecl_set_process_env(NULL);
   del_env(the_env);
   _ecl_dealloc_env(the_env);
-  /* FIXME thsi should be executed with hooks. */
-#ifdef GBC_BOEHM
-  if (GC_thread_is_registered() == 1) {
-    GC_unregister_my_thread();
-  }
-#endif
+  /* FIXME this should be executed with hooks. */
+  unregister_gc_thread();
 }
 
 #ifdef ECL_WINDOWS_THREADS
@@ -201,6 +213,7 @@ thread_entry_point(void *ptr)
   cl_env_ptr the_env = ecl_cast_ptr(cl_env_ptr, ptr);
   cl_object process = the_env->own_process;
   /* Setup the environment for the execution of the thread. */
+  register_gc_thread();
   ecl_set_process_env(the_env);
   ecl_cs_init(the_env);
 
@@ -222,7 +235,7 @@ thread_entry_point(void *ptr)
   CloseHandle(the_env->thread);
 #endif
   _ecl_dealloc_env(the_env);
-
+  unregister_gc_thread();
 #ifdef ECL_WINDOWS_THREADS
   return 1;
 #else
