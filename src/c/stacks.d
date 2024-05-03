@@ -71,40 +71,16 @@ si_stack_top(cl_object self)
 /* ------------------------- C STACK ---------------------------------- */
 
 static void
-cs_set_size(cl_env_ptr env, cl_index new_size);
-
-void
-ecl_cs_init(cl_env_ptr env)
-{
-#ifdef GBC_BOEHM
-  struct GC_stack_base base;
-  if (GC_get_stack_base(&base) == GC_SUCCESS)
-    env->c_stack.org = (char*)base.mem_base;
-  else
-#endif
-    {
-      /* Rough estimate. Not very safe. We assume that cl_boot()
-       * is invoked from the main() routine of the program. */
-      env->c_stack.org = (char*)(&env);
-    }
-  env->c_stack.max = env->c_stack.org;
-  env->c_stack.max_size = 0;
-  cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
-}
-
-static void
 cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
   if (new_size > env->c_stack.max_size)
     new_size = env->c_stack.max_size;
-#if defined(ECL_CAN_SET_STACK_SIZE)
+#ifdef ECL_CAN_SET_STACK_SIZE
   {
     struct rlimit rl;
-
     if (!getrlimit(RLIMIT_STACK, &rl)) {
-      env->c_stack.max_size = rl.rlim_max;
       if (new_size > rl.rlim_cur) {
         rl.rlim_cur = (new_size > rl.rlim_max) ? rl.rlim_max : new_size;
         if (setrlimit(RLIMIT_STACK, &rl))
@@ -114,37 +90,35 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
       rl.rlim_cur = new_size;
     }
     if (rl.rlim_cur == 0 || rl.rlim_cur == RLIM_INFINITY || rl.rlim_cur > (cl_index)(-1)) {
-      /* Either getrlimit failed or returned nonsense, either way we
-       * don't know the stack size. Use a default of 1 MB and hope for
-       * the best. */
+      /* Either getrlimit failed or returned nonsense, either way we don't know
+       * the stack size. Use a default of 1 MB and hope for the best. */
       new_size = 1048576;
     } else {
       new_size = rl.rlim_cur;
     }
-#ifdef ECL_DOWN_STACK
-    env->c_stack.max = env->c_stack.org - new_size;
-#else
-    env->c_stack.max = env->c_stack.org + new_size;
-#endif
   }
 #endif
-  env->c_stack.limit_size = new_size - (2*margin);
+  env->c_stack.limit_size = new_size - 2*margin;
+  env->c_stack.size = new_size;
 #ifdef ECL_DOWN_STACK
+  env->c_stack.max = env->c_stack.org - new_size;
   if (&foo > (env->c_stack.org - new_size) + 16) {
     env->c_stack.limit = (env->c_stack.org - new_size) + (2*margin);
     if (env->c_stack.limit < env->c_stack.max)
       env->c_stack.max = env->c_stack.limit;
+  } else {
+    ecl_internal_error("Can't set the size of the C stack: sanity check failed.");
   }
 #else
+  env->c_stack.max = env->c_stack.org + new_size;
   if (&foo < (env->c_stack.org + new_size) - 16) {
     env->c_stack.limit = (env->c_stack.org + new_size) - (2*margin);
     if (env->c_stack.limit > env->c_stack.max)
       env->c_stack.max = env->c_stack.limit;
+  } else {
+    ecl_internal_error("Can't set the size of the C stack: sanity check failed.");
   }
 #endif
-  else
-    ecl_internal_error("Can't set the size of the C stack: sanity check failed");
-  env->c_stack.size = new_size;
 }
 
 void
