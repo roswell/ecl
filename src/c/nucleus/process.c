@@ -133,26 +133,15 @@ ecl_adopt_cpu()
   struct ecl_interrupt_struct int_aux[1];
   cl_env_ptr the_env = ecl_process_env_unsafe();
   ecl_thread_t current;
-  int registered;
   if (the_env != NULL)
     return the_env;
   /* Ensure that the thread is known to the GC. */
   /* FIXME this should be executed with hooks. */
 #ifdef GBC_BOEHM
-  {
+  if (GC_thread_is_registered() == 0) {
     struct GC_stack_base stack;
     GC_get_stack_base(&stack);
-    switch (GC_register_my_thread(&stack)) {
-    case GC_SUCCESS:
-      registered = 1;
-      break;
-    case GC_DUPLICATE:
-      /* Thread was probably created using the GC hooks for thread creation. */
-      registered = 0;
-      break;
-    default:
-      ecl_internal_error("gc returned an impossible answer.");
-    }
+    GC_register_my_thread(&stack);
   }
 #endif
   ecl_set_process_self(current);
@@ -168,7 +157,6 @@ ecl_adopt_cpu()
   env_aux->interrupt_struct->signal_queue = ECL_NIL;
   ecl_set_process_env(env_aux);
   env_aux->thread = current;
-  env_aux->cleanup = registered;
   ecl_init_env(env_aux);
 
   /* Allocate, initialize and switch to the real environment. */
@@ -183,11 +171,9 @@ ecl_adopt_cpu()
 void
 ecl_disown_cpu()
 {
-  int registered;
   cl_env_ptr the_env = ecl_process_env_unsafe();
   if (the_env == NULL)
     return;
-  registered = the_env->cleanup;
   ecl_disable_interrupts_env(the_env);
   /* FIXME this should be part of dealloc. */
   ecl_clear_bignum_registers(the_env);
@@ -198,9 +184,11 @@ ecl_disown_cpu()
   del_env(the_env);
   _ecl_dealloc_env(the_env);
   /* FIXME thsi should be executed with hooks. */
-  if (registered) {
+#ifdef GBC_BOEHM
+  if (GC_thread_is_registered() == 1) {
     GC_unregister_my_thread();
   }
+#endif
 }
 
 #ifdef ECL_WINDOWS_THREADS

@@ -179,7 +179,6 @@ _ecl_alloc_env(cl_env_ptr parent)
 #if defined(ECL_THREADS)
   output->bds_stack.tl_bindings_size = 0;
   output->bds_stack.tl_bindings = NULL;
-  output->cleanup = 0;
 #endif
   output->own_process = ECL_NIL;
   {
