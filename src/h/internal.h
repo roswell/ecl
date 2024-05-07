@@ -44,6 +44,7 @@ extern void init_unixint(int pass);
 extern void init_unixtime(void);
 extern void init_compiler(void);
 extern void init_process(void);
+extern void init_modules(void);
 #ifdef ECL_THREADS
 extern void init_threads(void);
 #endif

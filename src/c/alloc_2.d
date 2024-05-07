@@ -553,6 +553,7 @@ void init_type_info (void)
   init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
   init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 0);
   init_tm(t_exception, "EXCEPTION", sizeof(struct ecl_exception), 3);
+  init_tm(t_module, "MODULE", sizeof(struct ecl_module), 2);
   init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
 #ifdef ECL_SSE2
   init_tm(t_sse_pack, "SSE-PACK", sizeof(struct ecl_sse_pack), 0);
@@ -715,6 +716,7 @@ void init_type_info (void)
     to_bitmap(&o, &(o.exception.arg1)) |
     to_bitmap(&o, &(o.exception.arg2)) |
     to_bitmap(&o, &(o.exception.arg3));
+  type_info[t_module].descriptor = 0;
   type_info[t_weak_pointer].descriptor = 0;
 #ifdef ECL_SSE2
   type_info[t_sse_pack].descriptor = 0;
