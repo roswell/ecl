@@ -158,6 +158,8 @@ struct ecl_core_struct ecl_core = {
   /* pathnames */
   .path_max = 0,
   .pathname_translations = ECL_NIL,
+  /* MODULES is a set of plugins that may be loaded on demand. */
+  .modules = ECL_NIL,
   /* LIBRARIES is a list of objects. It behaves as a sequence of weak pointers
      thanks to the magic in the garbage collector. */
   .libraries = ECL_NIL,
@@ -178,7 +180,7 @@ ecl_boot(void)
     }
     return 1;
   }
-
+  init_modules();
   init_process();
   /* init_unixint(); */
   /* init_garbage(); */

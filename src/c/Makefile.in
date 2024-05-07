@@ -50,8 +50,8 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h $(HDIR)/object.h      
 	$(HDIR)/impl/math_dispatch.h $(HDIR)/impl/math_fenv.h                   \
 	$(HDIR)/impl/math_fenv_msvc.h $(HDIR)/nucleus.h
 
-NUCL_OBJS = nucleus/cold_boot.o nucleus/process.o nucleus/control.o             \
-        nucleus/heap.o nucleus/stacks.o nucleus/atomic.o
+NUCL_OBJS = nucleus/cold_boot.o nucleus/module.o nucleus/process.o              \
+        nucleus/control.o nucleus/heap.o nucleus/stacks.o nucleus/atomic.o
 
 CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
 

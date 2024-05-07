@@ -383,6 +383,12 @@ write_exception(cl_object x, cl_object stream)
 }
 
 static void
+write_module(cl_object x, cl_object stream)
+{
+  _ecl_write_unreadable(x, "module", ECL_NIL, stream);
+}
+
+static void
 write_weak_pointer(cl_object x, cl_object stream)
 {
   _ecl_write_unreadable(x, "weak-pointer", ECL_NIL, stream);
@@ -494,6 +500,7 @@ static printer dispatch[FREE+1] = {
   write_stack,                  /* t_stack */
   write_frame,                  /* t_frame */
   write_exception,              /* t_exception */
+  write_module,                 /* t_module */
   write_weak_pointer,           /* t_weak_pointer */
 #ifdef ECL_SSE2
   _ecl_write_sse,               /* t_sse_pack */

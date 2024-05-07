@@ -78,6 +78,7 @@ static cl_index object_size[] = {
   ROUNDED_SIZE(ecl_stack), /* t_stack */
   ROUNDED_SIZE(ecl_frame), /* t_frame */
   ROUNDED_SIZE(ecl_exception), /* t_exception */
+  ROUNDED_SIZE(ecl_module), /* t_module */
   ROUNDED_SIZE(ecl_weak_pointer) /* t_weak_pointer */
 #ifdef ECL_SSE2
   , ROUNDED_SIZE(ecl_sse_pack) /* t_sse_pack */

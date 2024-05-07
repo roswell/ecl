@@ -231,6 +231,7 @@
             (si::stack)
             (si::frame)
             (si::exception)
+            (si::module)
             (si::weak-pointer)
             #+threads (mp::process)
             #+threads (mp::lock)

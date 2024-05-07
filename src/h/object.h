@@ -89,6 +89,7 @@ typedef enum {
         t_stack,
         t_frame,
         t_exception,
+        t_module,
         t_weak_pointer,
 #ifdef ECL_SSE2
         t_sse_pack,
@@ -927,6 +928,16 @@ struct ecl_exception {
         cl_object arg2;         /* usually additional arguments or the flag. */
 };
 
+struct ecl_module {
+        _ECL_HDR;
+        cl_objectfn_fixed create;
+        cl_objectfn_fixed delete;
+        cl_objectfn_fixed enter_thread;
+        cl_objectfn_fixed leave_thread;
+        cl_objectfn_fixed start_module;
+        cl_objectfn_fixed close_module;
+};
+
 struct ecl_weak_pointer {       /*  weak pointer to value  */
         _ECL_HDR;
         cl_object value;
@@ -1152,6 +1163,7 @@ union cl_lispunion {
         struct ecl_dummy        d;              /*  dummy  */
         struct ecl_instance     instance;       /*  clos instance */
         struct ecl_exception    exception;      /*  exception */
+        struct ecl_module       module;         /*  core module */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
         struct ecl_lock         lock;           /*  lock  */
