@@ -103,7 +103,9 @@ the environment variable TMPDIR to a different value." template))
 #+msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
-                  (ld-flags (split-program-options *ld-flags*))
+                  (ld-flags (split-program-options (if (eq type :program)
+                                                       *ld-program-flags*
+                                                       *ld-flags*)))
                   (ld-libs (split-program-options *ld-libs*)))
   (safe-run-program
    *ld*
@@ -126,7 +128,9 @@ the environment variable TMPDIR to a different value." template))
 #-msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
-                  (ld-flags (split-program-options *ld-flags*))
+                  (ld-flags (split-program-options (if (eq type :program)
+                                                       *ld-program-flags*
+                                                       *ld-flags*)))
                   (ld-libs (split-program-options *ld-libs*)))
   (declare (ignore type))
   (safe-run-program

@@ -8,7 +8,7 @@ dnl  AUTOCONF configuration for ECL
 dnl  Giuseppe Attardi 25.1.1994
 dnl
 
-AC_INIT([ecl],[23.9.9],[])
+AC_INIT([ecl],[24.5.10],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
@@ -317,6 +317,7 @@ AC_SUBST(CORE_LIBS, [])         dnl Locally compiled libs to link into
                                 dnl ecl/ecl_min/libecl.so and nowhere else.
 AC_SUBST(SHARED_LDFLAGS)        dnl Flags for shared libraries linker
 AC_SUBST(BUNDLE_LDFLAGS)        dnl Flags for FASL files linker
+AC_SUBST(PROGRAM_LDFLAGS)       dnl Flags for executable program linker
 AC_SUBST(EXTRA_OBJS)            dnl Extra *.o files to be compiled into libecl.a
 AC_SUBST(TARGETS, ['bin/ecl$(EXE)'])dnl Versions of ECL to be built 
 AC_SUBST(SUBDIRS, ['c doc'])        dnl Subdirectories that make should process

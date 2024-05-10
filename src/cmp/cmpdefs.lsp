@@ -4,12 +4,7 @@
 ;;;;
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See file 'LICENSE' for the copyright details.
 
 ;;;; CMPDEF -- Definitions created at compile / configuration time
 
@@ -62,6 +57,7 @@ coprocessor).")
 (defvar *ld-shared-flags* "@SHARED_LDFLAGS@ @LDFLAGS@")
 #+dlopen
 (defvar *ld-bundle-flags* "@BUNDLE_LDFLAGS@ @LDFLAGS@")
+(defvar *ld-program-flags* "@PROGRAM_LDFLAGS@ @LDFLAGS@")
 
 (defvar +shared-library-prefix+ "@SHAREDPREFIX@")
 (defvar +shared-library-extension+ "@SHAREDEXT@")

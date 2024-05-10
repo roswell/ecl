@@ -10,8 +10,8 @@ srcdir	= ..\src
 
 SHORT_SITE_NAME   =
 LONG_SITE_NAME    =
-ECL_VERSION       = 23.9.9
-ECL_VERSION_NUMBER= 230909
+ECL_VERSION       = 24.5.10
+ECL_VERSION_NUMBER= 240510
 ARCHITECTURE      = PENTIUM4
 SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
@@ -274,6 +274,7 @@ compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
+	    "@PROGRAM_LDFLAGS@" "" \
 	    "@CLIBS@" "$(CLIBS)" \
 	    "@STATICLIBS@" "$(STATICLIBS)" \
 	    "@LIBS@" "$(LIBS)" \
@@ -316,6 +317,7 @@ cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	    "@LDFLAGS@" "$(LDFLAGS)" \
 	    "@SHARED_LDFLAGS@" "$(SHARED_LDFLAGS)" \
 	    "@BUNDLE_LDFLAGS@" "$(SHARED_LDFLAGS)" \
+	    "@PROGRAM_LDFLAGS@" "" \
 	    "@CLIBS@" "$(CLIBS)" \
 	    "@STATICLIBS@" "$(STATICLIBS)" \
 	    "@OBJEXT@" "obj" \

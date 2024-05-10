@@ -507,7 +507,57 @@
 ;;; (LOOP (fu) nil (bar)) which is not acceptable. To verify
 ;;; that this is not happening we make sure we are not getting
 ;;; (BLOCK NIL NIL) since this is easier to test for.
-(test mixed.0027.format-no-nil-form
+(test mix.0027.format-no-nil-form
   (is (equal (third (second (macroexpand-1 '(formatter "~
 "))))
       '(block nil))))
+
+;;; Created: 2023-12-04 Gray stream proposal is a bit ambiguous about
+;;; the return value of STREAM-READ-LINE. The return from this
+;;; generic function is described as "A string is returned as the
+;;; first value. The second value is true if the string was terminated
+;;; by end-of-file instead of the end of a line." A literal reading of
+;;; this indicates that an EOF with no newline should be returned as
+;;; (VALUES "" T) which is what the default method in the proposal
+;;; does. The following tests ensure that the default Gray method's
+;;; returns are understood by CL:READ-LINE.
+(require :gray-streams)
+
+(defclass character-input-stream
+    (gray:fundamental-character-input-stream)
+  ((value :reader value
+          :initarg :value)
+   (index :accessor index
+          :initform 0)))
+
+(defmethod gray:stream-read-char ((stream character-input-stream))
+  (with-accessors ((value value)
+                   (index index))
+      stream
+    (if (< index (length value))
+        (prog1 (char value index)
+          (incf index))
+        :eof)))
+
+(defmethod gray:stream-unread-char ((stream character-input-stream) character)
+  (with-accessors ((value value)
+                   (index index))
+      stream
+    (when (zerop index)
+      (error "Stream is at beginning, cannot unread character"))
+    (when (char/= character (char value (decf index)))
+      (error "Cannot unread a character that does not match."))
+    nil))
+
+(test mix.0028.read-line-eof
+  (signals end-of-file
+           (read-line (make-instance 'character-input-stream :value ""))))
+
+(test mix.0029.read-line-eof
+  (is (equal (multiple-value-list (read-line (make-instance 'character-input-stream :value "") nil :wibble))
+             '(:wibble t))))
+
+(test mix.0029.read-line-eof
+  (is (equal (multiple-value-list (read-line (make-instance 'character-input-stream :value "a
+")))
+             '("a" nil))))

@@ -460,6 +460,9 @@ file_truename(cl_object pathname, cl_object filename, int flags)
 cl_object
 cl_truename(cl_object orig_pathname)
 {
+  if (!Null(cl_streamp(orig_pathname)))
+    @(return ecl_stream_truename(orig_pathname));
+
   cl_object pathname = make_absolute_pathname(orig_pathname);
   cl_object base_dir = make_base_pathname(pathname);
   cl_object dir;
@@ -749,10 +752,10 @@ ecl_homedir_pathname(cl_object user)
 #ifdef HAVE_PWD_H
     pwent = getpwnam(p);
     if (pwent == NULL)
-      FEerror("Unknown user ~S.", 1, p);
+      FEerror("Unknown user ~S.", 1, user);
     namestring = ecl_make_simple_filename(pwent->pw_dir,-1);
 #endif
-    FEerror("Unknown user ~S.", 1, p);
+    FEerror("Unknown user ~S.", 1, user);
   } else if ((h = ecl_getenv(ecl_fstr("HOME")))) {
     namestring = ecl_make_simple_filename(h,-1);
 #if defined(ECL_MS_WINDOWS_HOST)
@@ -1012,7 +1015,7 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
      * for the file part.
      */
     if (Null(base_dir))
-      return ECL_NIL;
+      return output;
     directory = ECL_CONS_CDR(directory);
     goto AGAIN;
   }

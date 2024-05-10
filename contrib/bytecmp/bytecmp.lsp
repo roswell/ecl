@@ -122,8 +122,8 @@
                  (write binary :stream sout :circle t :escape t :readably t :pretty nil))
              (terpri sout)))))
   (when load
-    (load output-file :verbose *compile-verbose*))
-  (values output-file nil nil))
+    (si::load-bytecodes output-file *compile-verbose* *load-print* :default))
+  (values (truename output-file) nil nil))
 
 (defun install-bytecodes-compiler ()
   (ext::package-lock (find-package :cl) nil)

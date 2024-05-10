@@ -1,21 +1,16 @@
-/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
-/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+/* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
-    unixint.d -- Unix interrupt interface.
-*/
-/*
-    Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-    Copyright (c) 1990, Giuseppe Attardi.
-    Copyright (c) 2001, Juan Jose Garcia Ripoll.
-    Copyright (c) 2016, Daniel Kochmański.
-
-    ECL is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../Copyright' for full details.
+ * unixint.d -- Unix interrupt interface.
+ *
+ * Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
+ * Copyright (c) 1990, Giuseppe Attardi.
+ * Copyright (c) 2001, Juan Jose Garcia Ripoll.
+ * Copyright (c) 2016, Daniel Kochmański.
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
 */
 
 /**********************************************************************
@@ -92,112 +87,113 @@
 # endif
 # include <sys/mman.h>
 #endif
+
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/impl/math_fenv.h>
 
 static struct {
-        int code;
-        char *name;
-        cl_object handler;
+  int code;
+  char *name;
+  cl_object handler;
 } known_signals[] = {
 #ifdef SIGHUP
-        { SIGHUP, "+SIGHUP+", ECL_NIL},
+  { SIGHUP, "+SIGHUP+", ECL_NIL},
 #endif
 #ifdef SIGINT
-        { SIGINT, "+SIGINT+", @'si::terminal-interrupt'},
+  { SIGINT, "+SIGINT+", @'si::terminal-interrupt'},
 #endif
 #ifdef SIGQUIT
-        { SIGQUIT, "+SIGQUIT+", ECL_NIL},
+  { SIGQUIT, "+SIGQUIT+", ECL_NIL},
 #endif
 #ifdef SIGILL
-        { SIGILL, "+SIGILL+", @'ext::illegal-instruction'},
+  { SIGILL, "+SIGILL+", @'ext::illegal-instruction'},
 #endif
 #ifdef SIGTRAP
-        { SIGTRAP, "+SIGTRAP+", ECL_NIL},
+  { SIGTRAP, "+SIGTRAP+", ECL_NIL},
 #endif
 #ifdef SIGABRT
-        { SIGABRT, "+SIGABRT+", ECL_NIL},
+  { SIGABRT, "+SIGABRT+", ECL_NIL},
 #endif
 #ifdef SIGEMT
-        { SIGEMT, "+SIGEMT+", ECL_NIL},
+  { SIGEMT, "+SIGEMT+", ECL_NIL},
 #endif
 #ifdef SIGFPE
-        { SIGFPE, "+SIGFPE+", ECL_NIL},
+  { SIGFPE, "+SIGFPE+", ECL_NIL},
 #endif
 #ifdef SIGKILL
-        { SIGKILL, "+SIGKILL+", ECL_NIL},
+  { SIGKILL, "+SIGKILL+", ECL_NIL},
 #endif
 #ifdef SIGBUS
-        { SIGBUS, "+SIGBUS+", @'ext::segmentation-violation'},
+  { SIGBUS, "+SIGBUS+", @'ext::segmentation-violation'},
 #endif
 #ifdef SIGSEGV
-        { SIGSEGV, "+SIGSEGV+", @'ext::segmentation-violation'},
+  { SIGSEGV, "+SIGSEGV+", @'ext::segmentation-violation'},
 #endif
 #ifdef SIGSYS
-        { SIGSYS, "+SIGSYS+", ECL_NIL},
+  { SIGSYS, "+SIGSYS+", ECL_NIL},
 #endif
 #ifdef SIGPIPE
-        { SIGPIPE, "+SIGPIPE+", ECL_NIL},
+  { SIGPIPE, "+SIGPIPE+", ECL_NIL},
 #endif
 #ifdef SIGALRM
-        { SIGALRM, "+SIGALRM+", ECL_NIL},
+  { SIGALRM, "+SIGALRM+", ECL_NIL},
 #endif
 #ifdef SIGTERM
-        { SIGTERM, "+SIGTERM+", ECL_NIL},
+  { SIGTERM, "+SIGTERM+", ECL_NIL},
 #endif
 #ifdef SIGURG
-        { SIGURG, "+SIGURG+", ECL_NIL},
+  { SIGURG, "+SIGURG+", ECL_NIL},
 #endif
 #ifdef SIGSTOP
-        { SIGSTOP, "+SIGSTOP+", ECL_NIL},
+  { SIGSTOP, "+SIGSTOP+", ECL_NIL},
 #endif
 #ifdef SIGTSTP
-        { SIGTSTP, "+SIGTSTP+", ECL_NIL},
+  { SIGTSTP, "+SIGTSTP+", ECL_NIL},
 #endif
 #ifdef SIGCONT
-        { SIGCONT, "+SIGCONT+", ECL_NIL},
+  { SIGCONT, "+SIGCONT+", ECL_NIL},
 #endif
 #ifdef SIGCHLD
-        { SIGCHLD, "+SIGCHLD+", ECL_NIL},
+  { SIGCHLD, "+SIGCHLD+", ECL_NIL},
 #endif
 #ifdef SIGTTIN
-        { SIGTTIN, "+SIGTTIN+", ECL_NIL},
+  { SIGTTIN, "+SIGTTIN+", ECL_NIL},
 #endif
 #ifdef SIGTTOU
-        { SIGTTOU, "+SIGTTOU+", ECL_NIL},
+  { SIGTTOU, "+SIGTTOU+", ECL_NIL},
 #endif
 #ifdef SIGIO
-        { SIGIO, "+SIGIO+", ECL_NIL},
+  { SIGIO, "+SIGIO+", ECL_NIL},
 #endif
 #ifdef SIGXCPU
-        { SIGXCPU, "+SIGXCPU+", ECL_NIL},
+  { SIGXCPU, "+SIGXCPU+", ECL_NIL},
 #endif
 #ifdef SIGXFSZ
-        { SIGXFSZ, "+SIGXFSZ+", ECL_NIL},
+  { SIGXFSZ, "+SIGXFSZ+", ECL_NIL},
 #endif
 #ifdef SIGVTALRM
-        { SIGVTALRM, "+SIGVTALRM+", ECL_NIL},
+  { SIGVTALRM, "+SIGVTALRM+", ECL_NIL},
 #endif
 #ifdef SIGPROF
-        { SIGPROF, "+SIGPROF+", ECL_NIL},
+  { SIGPROF, "+SIGPROF+", ECL_NIL},
 #endif
 #ifdef SIGWINCH
-        { SIGWINCH, "+SIGWINCH+", ECL_NIL},
+  { SIGWINCH, "+SIGWINCH+", ECL_NIL},
 #endif
 #ifdef SIGINFO
-        { SIGINFO, "+SIGINFO+", ECL_NIL},
+  { SIGINFO, "+SIGINFO+", ECL_NIL},
 #endif
 #ifdef SIGUSR1
-        { SIGUSR1, "+SIGUSR1+", ECL_NIL},
+  { SIGUSR1, "+SIGUSR1+", ECL_NIL},
 #endif
 #ifdef SIGUSR2
-        { SIGUSR2, "+SIGUSR2+", ECL_NIL},
+  { SIGUSR2, "+SIGUSR2+", ECL_NIL},
 #endif
 #ifdef SIGTHR
-        { SIGTHR, "+SIGTHR+", ECL_NIL},
+  { SIGTHR, "+SIGTHR+", ECL_NIL},
 #endif
-        { -1, "", ECL_NIL }
+  { -1, "", ECL_NIL }
 };
 
 #ifdef HAVE_SIGPROCMASK
@@ -209,23 +205,23 @@ static sigset_t main_thread_sigmask;
 static void
 mysignal(int code, void *handler)
 {
-        struct sigaction action;
-        sigaction(code, NULL, &action);
-        if (handler == SIG_IGN || handler == SIG_DFL) {
-                action.sa_handler = handler;
-        } else {
+  struct sigaction action;
+  sigaction(code, NULL, &action);
+  if (handler == SIG_IGN || handler == SIG_DFL) {
+    action.sa_handler = handler;
+  } else {
 #ifdef SA_SIGINFO
-                /* void (*handler)(int, siginfo_t *, void*) */
-                action.sa_sigaction = handler;
-                action.sa_flags = SA_SIGINFO;
+    /* void (*handler)(int, siginfo_t *, void*) */
+    action.sa_sigaction = handler;
+    action.sa_flags = SA_SIGINFO;
 #else
-                /* void (*handler)(int) */
-                action.sa_handler = handler;
-                action.sa_flags = 0;
+    /* void (*handler)(int) */
+    action.sa_handler = handler;
+    action.sa_flags = 0;
 #endif
-                sigfillset(&action.sa_mask);
-        }
-        sigaction(code, &action, NULL);
+    sigfillset(&action.sa_mask);
+  }
+  sigaction(code, &action, NULL);
 }
 #else /* HAVE_SIGPROCMASK */
 # define handler_fn_prototype(name, sig, info, aux) name(sig)
@@ -239,29 +235,29 @@ static bool
 zombie_process(cl_env_ptr the_env)
 {
 #ifdef ECL_THREADS
-        if (the_env == NULL) {
-                return 1;
-        } else {
-                /* When we are exiting a thread, we simply ignore all signals. */
-                cl_object process = the_env->own_process;
-                return (process->process.phase == ECL_PROCESS_INACTIVE);
-        }
+  if (the_env == NULL) {
+    return 1;
+  } else {
+    /* When we are exiting a thread, we simply ignore all signals. */
+    cl_object process = the_env->own_process;
+    return (process->process.phase == ECL_PROCESS_INACTIVE);
+  }
 #else
-        return !the_env;
+  return !the_env;
 #endif
 }
 
 static ECL_INLINE bool
 interrupts_disabled_by_C(cl_env_ptr the_env)
 {
-        return the_env->disable_interrupts;
+  return the_env->disable_interrupts;
 }
 
 static ECL_INLINE bool
 interrupts_disabled_by_lisp(cl_env_ptr the_env)
 {
-        return !ecl_option_values[ECL_OPT_BOOTED] ||
-                Null(ECL_SYM_VAL(the_env, @'ext::*interrupts-enabled*'));
+  return !ecl_option_values[ECL_OPT_BOOTED] ||
+    Null(ECL_SYM_VAL(the_env, @'ext::*interrupts-enabled*'));
 }
 
 static void early_signal_error() ecl_attr_noreturn;
@@ -269,8 +265,8 @@ static void early_signal_error() ecl_attr_noreturn;
 static void
 early_signal_error()
 {
-        ecl_internal_error("Got signal before environment was installed"
-                           " on our thread");
+  ecl_internal_error("Got signal before environment was installed"
+                     " on our thread");
 }
 
 static void illegal_signal_code(cl_object code) ecl_attr_noreturn;
@@ -278,7 +274,7 @@ static void illegal_signal_code(cl_object code) ecl_attr_noreturn;
 static void
 illegal_signal_code(cl_object code)
 {
-        FEerror("Unknown signal code: ~D", 1, code);
+  FEerror("Unknown signal code: ~D", 1, code);
 }
 
 /* On platforms in which mprotect() works, we block all write access
@@ -289,13 +285,13 @@ static ECL_INLINE void
 set_guard_page(cl_env_ptr the_env)
 {
 #if defined(ECL_USE_MPROTECT)
-        if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0) {
-                ecl_internal_error("Unable to mprotect environment.");
-        }
+  if (mprotect(the_env, sizeof(*the_env), PROT_READ) < 0) {
+    ecl_internal_error("Unable to mprotect environment.");
+  }
 #elif defined(ECL_USE_GUARD_PAGE)
-        if (!VirtualProtect(the_env, sizeof(*the_env), PAGE_GUARD, NULL)) {
-                ecl_internal_error("Unable to mprotect environment.");
-        }
+  if (!VirtualProtect(the_env, sizeof(*the_env), PAGE_GUARD, NULL)) {
+    ecl_internal_error("Unable to mprotect environment.");
+  }
 #endif
 }
 
@@ -307,14 +303,14 @@ static cl_object pop_signal(cl_env_ptr env);
 static void
 unblock_signal(cl_env_ptr the_env, int signal)
 {
-        /*
-         * We do not really "unblock" the signal, but rather restore
-         * ECL's default sigmask.
-         */
+  /*
+   * We do not really "unblock" the signal, but rather restore
+   * ECL's default sigmask.
+   */
 # ifdef ECL_THREADS
-        pthread_sigmask(SIG_SETMASK, the_env->default_sigmask, NULL);
+  pthread_sigmask(SIG_SETMASK, the_env->default_sigmask, NULL);
 # else
-        sigprocmask(SIG_SETMASK, the_env->default_sigmask, NULL);
+  sigprocmask(SIG_SETMASK, the_env->default_sigmask, NULL);
 # endif
 }
 #endif
@@ -324,248 +320,249 @@ ecl_def_ct_base_string(str_ignore_signal,"Ignore signal",13,static,const);
 static void
 handle_signal_now(cl_object signal_code)
 {
-        switch (ecl_t_of(signal_code)) {
-        case t_fixnum:
-                cl_cerror(4, str_ignore_signal, @'ext::unix-signal-received',
-                          @':code', signal_code);
-                break;
-        case t_symbol:
-                /*
-                 * When we bind a handler to a signal, it may either
-                 * be a function, a symbol denoting a function or
-                 * a symbol denoting a condition.
-                 */
-                if (cl_find_class(2, signal_code, ECL_NIL) != ECL_NIL) {
-                        cl_cerror(2, str_ignore_signal, signal_code);
-                        break;
-                }
-                /* fallthrough */
-        case t_cfun:
-        case t_cfunfixed:
-        case t_cclosure:
-        case t_bytecodes:
-        case t_bclosure:
-                _ecl_funcall1(signal_code);
-        default:
-                break;
-        }
+  switch (ecl_t_of(signal_code)) {
+  case t_fixnum:
+    cl_cerror(4, str_ignore_signal, @'ext::unix-signal-received',
+              @':code', signal_code);
+    break;
+  case t_symbol:
+    /*
+     * When we bind a handler to a signal, it may either
+     * be a function, a symbol denoting a function or
+     * a symbol denoting a condition.
+     */
+    if (cl_find_class(2, signal_code, ECL_NIL) != ECL_NIL) {
+      cl_cerror(2, str_ignore_signal, signal_code);
+      break;
+    }
+    /* fallthrough */
+  case t_cfun:
+  case t_cfunfixed:
+  case t_cclosure:
+  case t_bytecodes:
+  case t_bclosure:
+    _ecl_funcall1(signal_code);
+  default:
+    break;
+  }
 }
 
 cl_object
 si_handle_signal(cl_object signal_code)
 {
-        handle_signal_now(signal_code);
-        @(return)
+  const cl_env_ptr the_env = ecl_process_env();
+  handle_signal_now(signal_code);
+  ecl_return0(the_env);
 }
 
 static void
 handle_all_queued(cl_env_ptr env)
 {
-        while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
-                handle_signal_now(pop_signal(env));
-        }
+  while (env->interrupt_struct->pending_interrupt != ECL_NIL) {
+    handle_signal_now(pop_signal(env));
+  }
 }
 
 static void
 handle_all_queued_interrupt_safe(cl_env_ptr env)
 {
-        /* We have to save and later restore thread-local variables to
-         * ensure that they don't get overwritten by the interrupting
-         * code */
-        /* INV: - IHS stack manipulations are interrupt safe
-         *      - The rest of the thread local variables are
-         *        guaranteed to be used in an interrupt safe way. This
-         *        is not true for the compiler environment and ffi
-         *        data, but it is unclear whether the DFFI or compiler
-         *        are thread safe anyway. */
-        cl_object fun = env->function;
-        cl_index nvalues = env->nvalues;
-        cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
-        memcpy(values, env->values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
-        cl_object stack_frame = env->stack_frame;
-        cl_object packages_to_be_created = env->packages_to_be_created;
-        cl_object packages_to_be_created_p = env->packages_to_be_created_p;
-        /* bignum registers need some special handling, because their
-         * contents are allocated as uncollectable memory. If we did
-         * not init and clear them before calling the interrupting
-         * code we would risk memory leaks. */
-        cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
-        memcpy(big_register, env->big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
-        ecl_init_bignum_registers(env);
-        /* We might have been interrupted while we push/pop in the
-         * stack. Increasing env->stack_top ensures that we don't
-         * overwrite the topmost stack value. */
-        env->stack_top++;
-        /* We also need to save and restore the (top+1)'th frame and
-         * binding stack value to prevent overwriting it.
-         * INV: Due to the stack safety areas we don't need to check
-         * for env->frs/bds_limit */
-        struct ecl_frame top_frame;
-        memcpy(&top_frame, env->frs_top+1, sizeof(struct ecl_frame));
-        struct ecl_bds_frame top_binding;
-        memcpy(&top_binding, env->bds_top+1, sizeof(struct ecl_bds_frame));
-        /* Finally we can handle the queued signals ... */
-        handle_all_queued(env);
-        /* ... and restore everything again */
-        memcpy(env->bds_top+1, &top_binding, sizeof(struct ecl_bds_frame));
-        memcpy(env->frs_top+1, &top_frame, sizeof(struct ecl_frame));
-        env->stack_top--;
-        ecl_clear_bignum_registers(env);
-        memcpy(env->big_register, big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
-        env->packages_to_be_created_p = packages_to_be_created_p;
-        env->packages_to_be_created = packages_to_be_created;
-        env->stack_frame = stack_frame;
-        memcpy(env->values, values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
-        env->nvalues = nvalues;
-        env->function = fun;
+  /* We have to save and later restore thread-local variables to
+   * ensure that they don't get overwritten by the interrupting
+   * code */
+  /* INV: - IHS stack manipulations are interrupt safe
+   *      - The rest of the thread local variables are
+   *        guaranteed to be used in an interrupt safe way. This
+   *        is not true for the compiler environment and ffi
+   *        data, but it is unclear whether the DFFI or compiler
+   *        are thread safe anyway. */
+  cl_object fun = env->function;
+  cl_index nvalues = env->nvalues;
+  cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
+  memcpy(values, env->values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+  cl_object stack_frame = env->stack_frame;
+  cl_object packages_to_be_created = env->packages_to_be_created;
+  cl_object packages_to_be_created_p = env->packages_to_be_created_p;
+  /* bignum registers need some special handling, because their
+   * contents are allocated as uncollectable memory. If we did
+   * not init and clear them before calling the interrupting
+   * code we would risk memory leaks. */
+  cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
+  memcpy(big_register, env->big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
+  ecl_init_bignum_registers(env);
+  /* We might have been interrupted while we push/pop in the
+   * stack. Increasing env->stack_top ensures that we don't
+   * overwrite the topmost stack value. */
+  env->stack_top++;
+  /* We also need to save and restore the (top+1)'th frame and
+   * binding stack value to prevent overwriting it.
+   * INV: Due to the stack safety areas we don't need to check
+   * for env->frs/bds_limit */
+  struct ecl_frame top_frame;
+  memcpy(&top_frame, env->frs_top+1, sizeof(struct ecl_frame));
+  struct ecl_bds_frame top_binding;
+  memcpy(&top_binding, env->bds_top+1, sizeof(struct ecl_bds_frame));
+  /* Finally we can handle the queued signals ... */
+  handle_all_queued(env);
+  /* ... and restore everything again */
+  memcpy(env->bds_top+1, &top_binding, sizeof(struct ecl_bds_frame));
+  memcpy(env->frs_top+1, &top_frame, sizeof(struct ecl_frame));
+  env->stack_top--;
+  ecl_clear_bignum_registers(env);
+  memcpy(env->big_register, big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
+  env->packages_to_be_created_p = packages_to_be_created_p;
+  env->packages_to_be_created = packages_to_be_created;
+  env->stack_frame = stack_frame;
+  memcpy(env->values, values, ECL_MULTIPLE_VALUES_LIMIT*sizeof(cl_object));
+  env->nvalues = nvalues;
+  env->function = fun;
 }
 
 static void
 queue_signal(cl_env_ptr env, cl_object code, int allocate)
 {
-        /* Note: We don't use ECL_WITH_NATIVE_LOCK_BEGIN/END here
-         * since it checks for pending interrupts after unlocking the
-         * mutex. This would lead to the interrupt being handled
-         * immediately when queueing an interrupt for the current
-         * thread, even when interrupts are disabled. */
+  /* Note: We don't use ECL_WITH_NATIVE_LOCK_BEGIN/END here
+   * since it checks for pending interrupts after unlocking the
+   * mutex. This would lead to the interrupt being handled
+   * immediately when queueing an interrupt for the current
+   * thread, even when interrupts are disabled. */
 
-        /* INV: interrupts are disabled, therefore the lock will
-         * always be released */
+  /* INV: interrupts are disabled, therefore the lock will
+   * always be released */
 #ifdef ECL_THREADS
-        ecl_mutex_lock(&env->interrupt_struct->signal_queue_lock);
+  ecl_mutex_lock(&env->interrupt_struct->signal_queue_lock);
 #endif
 
-        cl_object record;
-        if (allocate) {
-                record = ecl_list1(ECL_NIL);
-        } else {
-                record = env->interrupt_struct->signal_queue;
-                if (record != ECL_NIL) {
-                        env->interrupt_struct->signal_queue = ECL_CONS_CDR(record);
-                }
-        }
-        if (record != ECL_NIL) {
-                ECL_RPLACA(record, code);
-                ECL_RPLACD(record, ECL_NIL);
-                env->interrupt_struct->pending_interrupt =
-                        ecl_nconc(env->interrupt_struct->pending_interrupt,
-                                  record);
-        }
+  cl_object record;
+  if (allocate) {
+    record = ecl_list1(ECL_NIL);
+  } else {
+    record = env->interrupt_struct->signal_queue;
+    if (record != ECL_NIL) {
+      env->interrupt_struct->signal_queue = ECL_CONS_CDR(record);
+    }
+  }
+  if (record != ECL_NIL) {
+    ECL_RPLACA(record, code);
+    ECL_RPLACD(record, ECL_NIL);
+    env->interrupt_struct->pending_interrupt =
+      ecl_nconc(env->interrupt_struct->pending_interrupt,
+                record);
+  }
 
 #ifdef ECL_THREADS
-        ecl_mutex_unlock(&env->interrupt_struct->signal_queue_lock);
+  ecl_mutex_unlock(&env->interrupt_struct->signal_queue_lock);
 #endif
 }
 
 static cl_object
 pop_signal(cl_env_ptr env)
 {
-        cl_object record, value;
-        /* Note: We don't use ECL_WITH_NATIVE_LOCK_BEGIN/END here
-         * since it checks for pending interrupts after unlocking the
-         * mutex. This would lead to handle_all_queued and pop_signal
-         * being called again and the interrupts being handled in the
-         * wrong order. */
+  cl_object record, value;
+  /* Note: We don't use ECL_WITH_NATIVE_LOCK_BEGIN/END here
+   * since it checks for pending interrupts after unlocking the
+   * mutex. This would lead to handle_all_queued and pop_signal
+   * being called again and the interrupts being handled in the
+   * wrong order. */
 
-        ecl_disable_interrupts_env(env);
+  ecl_disable_interrupts_env(env);
 #ifdef ECL_THREADS
-        ecl_mutex_lock(&env->interrupt_struct->signal_queue_lock);
+  ecl_mutex_lock(&env->interrupt_struct->signal_queue_lock);
 #endif
 
-        if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
-                value = ECL_NIL;
-        } else {
-                record = env->interrupt_struct->pending_interrupt;
-                value = ECL_CONS_CAR(record);
-                env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
-                /* Save some conses for future use, to avoid allocating */
-                if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
-                        ECL_RPLACD(record, env->interrupt_struct->signal_queue);
-                        env->interrupt_struct->signal_queue = record;
-                }
-        }
+  if (env->interrupt_struct->pending_interrupt == ECL_NIL) {
+    value = ECL_NIL;
+  } else {
+    record = env->interrupt_struct->pending_interrupt;
+    value = ECL_CONS_CAR(record);
+    env->interrupt_struct->pending_interrupt = ECL_CONS_CDR(record);
+    /* Save some conses for future use, to avoid allocating */
+    if (ECL_SYMBOLP(value) || ECL_FIXNUMP(value)) {
+      ECL_RPLACD(record, env->interrupt_struct->signal_queue);
+      env->interrupt_struct->signal_queue = record;
+    }
+  }
 
 #ifdef ECL_THREADS
-        ecl_mutex_unlock(&env->interrupt_struct->signal_queue_lock);
+  ecl_mutex_unlock(&env->interrupt_struct->signal_queue_lock);
 #endif
-        ecl_enable_interrupts_env(env);
-        return value;
+  ecl_enable_interrupts_env(env);
+  return value;
 }
 
 static void
 handle_or_queue(cl_env_ptr the_env, cl_object signal_code, int code)
 {
-        if (Null(signal_code) || signal_code == NULL)
-                return;
-        /*
-         * If interrupts are disabled by lisp we are not so eager on
-         * detecting when the interrupts become enabled again. We
-         * queue the signal and are done with that.
-         */
-        if (interrupts_disabled_by_lisp(the_env)) {
-                queue_signal(the_env, signal_code, 0);
-        }
-        /*
-         * If interrupts are disabled by C, and we have not pushed a
-         * pending signal, save this signal and return.
-         */
-        else if (interrupts_disabled_by_C(the_env)) {
-                the_env->disable_interrupts = 3;
-                queue_signal(the_env, signal_code, 0);
-                set_guard_page(the_env);
-        }
-        /*
-         * If interrupts are enabled, that means we are in a safe area
-         * and may execute arbitrary lisp code. We can thus call the
-         * appropriate handlers.
-         */
-        else {
-                if (code) unblock_signal(the_env, code);
-                si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
-                handle_signal_now(signal_code);
-        }
+  if (Null(signal_code) || signal_code == NULL)
+    return;
+  /*
+   * If interrupts are disabled by lisp we are not so eager on
+   * detecting when the interrupts become enabled again. We
+   * queue the signal and are done with that.
+   */
+  if (interrupts_disabled_by_lisp(the_env)) {
+    queue_signal(the_env, signal_code, 0);
+  }
+  /*
+   * If interrupts are disabled by C, and we have not pushed a
+   * pending signal, save this signal and return.
+   */
+  else if (interrupts_disabled_by_C(the_env)) {
+    the_env->disable_interrupts = 3;
+    queue_signal(the_env, signal_code, 0);
+    set_guard_page(the_env);
+  }
+  /*
+   * If interrupts are enabled, that means we are in a safe area
+   * and may execute arbitrary lisp code. We can thus call the
+   * appropriate handlers.
+   */
+  else {
+    if (code) unblock_signal(the_env, code);
+    si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
+    handle_signal_now(signal_code);
+  }
 }
 
 static void
 handler_fn_prototype(non_evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
 {
-        int old_errno = errno;
-        cl_env_ptr the_env;
-        cl_object signal_object;
-        reinstall_signal(sig, non_evil_signal_handler);
-        /* The lisp environment might not be installed. */
-        the_env = ecl_process_env();
-        unlikely_if (zombie_process(the_env))
-                return;
-        signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
-                                         cl_core.known_signals,
-                                         ECL_NIL);
-        handle_or_queue(the_env, signal_object, sig);
-        errno = old_errno;
+  int old_errno = errno;
+  cl_env_ptr the_env;
+  cl_object signal_object;
+  reinstall_signal(sig, non_evil_signal_handler);
+  /* The lisp environment might not be installed. */
+  the_env = ecl_process_env();
+  unlikely_if (zombie_process(the_env))
+    return;
+  signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
+                                   cl_core.known_signals,
+                                   ECL_NIL);
+  handle_or_queue(the_env, signal_object, sig);
+  errno = old_errno;
 }
 
 static void
 handler_fn_prototype(evil_signal_handler, int sig, siginfo_t *siginfo, void *data)
 {
-        int old_errno = errno;
-        cl_env_ptr the_env;
-        cl_object signal_object;
-        reinstall_signal(sig, evil_signal_handler);
-        /* The lisp environment might not be installed. */
-        the_env = ecl_process_env();
-        unlikely_if (zombie_process(the_env))
-                return;
-        signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
-                                         cl_core.known_signals,
-                                         ECL_NIL);
-        handle_signal_now(signal_object);
-        errno = old_errno;
+  int old_errno = errno;
+  cl_env_ptr the_env;
+  cl_object signal_object;
+  reinstall_signal(sig, evil_signal_handler);
+  /* The lisp environment might not be installed. */
+  the_env = ecl_process_env();
+  unlikely_if (zombie_process(the_env))
+    return;
+  signal_object = ecl_gethash_safe(ecl_make_fixnum(sig),
+                                   cl_core.known_signals,
+                                   ECL_NIL);
+  handle_signal_now(signal_object);
+  errno = old_errno;
 }
 
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
 typedef struct {
-        cl_object process;
-        int signo;
+  cl_object process;
+  int signo;
 } signal_thread_message;
 static cl_object signal_thread_process = ECL_NIL;
 static signal_thread_message signal_thread_msg;
@@ -575,97 +572,97 @@ static int signal_thread_pipe[2] = {-1,-1};
 static void
 handler_fn_prototype(deferred_signal_handler, int sig, siginfo_t *siginfo, void *data)
 {
-        int old_errno = errno;
-        cl_env_ptr the_env;
-        signal_thread_message msg;
-        reinstall_signal(sig, deferred_signal_handler);
-        /* The lisp environment might not be installed. */
-        the_env = ecl_process_env();
-        unlikely_if (zombie_process(the_env))
-                return;
-        msg.signo = sig;
-        msg.process = the_env->own_process;
-        if (msg.process == signal_thread_process) {
-                /* The signal handling thread may also receive signals. In
-                 * this case we do not use the pipe, but just copy the message
-                 * Note that read() will abort the thread will get notified. */
-                signal_thread_msg = msg;
-        } else if (signal_thread_pipe[1] > 0) {
-                ecl_mutex_lock(&signal_thread_lock);
-                write(signal_thread_pipe[1], &msg, sizeof(msg));
-                ecl_mutex_unlock(&signal_thread_lock);
-        } else {
-                /* Nothing to do. There is no way to handle this signal because
-                 * the responsible thread is not running */
-        }
-        errno = old_errno;
+  int old_errno = errno;
+  cl_env_ptr the_env;
+  signal_thread_message msg;
+  reinstall_signal(sig, deferred_signal_handler);
+  /* The lisp environment might not be installed. */
+  the_env = ecl_process_env();
+  unlikely_if (zombie_process(the_env))
+    return;
+  msg.signo = sig;
+  msg.process = the_env->own_process;
+  if (msg.process == signal_thread_process) {
+    /* The signal handling thread may also receive signals. In
+     * this case we do not use the pipe, but just copy the message
+     * Note that read() will abort the thread will get notified. */
+    signal_thread_msg = msg;
+  } else if (signal_thread_pipe[1] > 0) {
+    ecl_mutex_lock(&signal_thread_lock);
+    write(signal_thread_pipe[1], &msg, sizeof(msg));
+    ecl_mutex_unlock(&signal_thread_lock);
+  } else {
+    /* Nothing to do. There is no way to handle this signal because
+     * the responsible thread is not running */
+  }
+  errno = old_errno;
 }
 
 static cl_object
 asynchronous_signal_servicing_thread()
 {
-        const cl_env_ptr the_env = ecl_process_env();
-        int interrupt_signal = -1;
-        /*
-         * We block all signals except the usual interrupt thread and
-         * GC signals (including SIGSEGV and SIGSEGV which are needed
-         * when the GC runs in incremental mode).
-         */
-        {
-                sigset_t handled_set;
-                sigfillset(&handled_set);
-                if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
-                        interrupt_signal =
-                                ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
-                        sigdelset(&handled_set, interrupt_signal);
-                        sigdelset(&handled_set, GC_get_suspend_signal());
-                        sigdelset(&handled_set, GC_get_thr_restart_signal());
-                        sigdelset(&handled_set, SIGSEGV);
-                        sigdelset(&handled_set, SIGBUS);
-                }
-                pthread_sigmask(SIG_BLOCK, &handled_set, NULL);
-        }
-        /*
-         * We create the object for communication. We need a lock to prevent other
-         * threads from writing before the pipe is created.
-         */
-        ecl_mutex_lock(&signal_thread_lock);
-        pipe(signal_thread_pipe);
-        ecl_mutex_unlock(&signal_thread_lock);
-        signal_thread_msg.process = ECL_NIL;
-        for (;;) {
-                cl_object signal_code;
-                signal_thread_msg.process = ECL_NIL;
-                if (read(signal_thread_pipe[0], &signal_thread_msg,
-                         sizeof(signal_thread_msg)) < 0)
-                {
-                        /* Either the pipe errs or we have received an interrupt
-                         * from a different thread */
-                        if (errno != EINTR ||
-                            signal_thread_msg.process != the_env->own_process)
-                                break;
-                }
-                /* We have queued ourselves an interrupt event */
-                if (signal_thread_msg.signo == interrupt_signal &&
-                    signal_thread_msg.process == the_env->own_process) {
-                        break;
-                }
-                signal_code = ecl_gethash_safe(ecl_make_fixnum(signal_thread_msg.signo),
-                                               cl_core.known_signals,
-                                               ECL_NIL);
-                if (!Null(signal_code)) {
-                        mp_process_run_function(3, @'si::handle-signal',
-                                                @'si::handle-signal',
-                                                signal_code);
-                }
-        }
+  const cl_env_ptr the_env = ecl_process_env();
+  int interrupt_signal = -1;
+  /*
+   * We block all signals except the usual interrupt thread and
+   * GC signals (including SIGSEGV and SIGSEGV which are needed
+   * when the GC runs in incremental mode).
+   */
+  {
+    sigset_t handled_set;
+    sigfillset(&handled_set);
+    if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
+      interrupt_signal =
+        ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
+      sigdelset(&handled_set, interrupt_signal);
+      sigdelset(&handled_set, GC_get_suspend_signal());
+      sigdelset(&handled_set, GC_get_thr_restart_signal());
+      sigdelset(&handled_set, SIGSEGV);
+      sigdelset(&handled_set, SIGBUS);
+    }
+    pthread_sigmask(SIG_BLOCK, &handled_set, NULL);
+  }
+  /*
+   * We create the object for communication. We need a lock to prevent other
+   * threads from writing before the pipe is created.
+   */
+  ecl_mutex_lock(&signal_thread_lock);
+  pipe(signal_thread_pipe);
+  ecl_mutex_unlock(&signal_thread_lock);
+  signal_thread_msg.process = ECL_NIL;
+  for (;;) {
+    cl_object signal_code;
+    signal_thread_msg.process = ECL_NIL;
+    if (read(signal_thread_pipe[0], &signal_thread_msg,
+             sizeof(signal_thread_msg)) < 0)
+      {
+        /* Either the pipe errs or we have received an interrupt
+         * from a different thread */
+        if (errno != EINTR ||
+            signal_thread_msg.process != the_env->own_process)
+          break;
+      }
+    /* We have queued ourselves an interrupt event */
+    if (signal_thread_msg.signo == interrupt_signal &&
+        signal_thread_msg.process == the_env->own_process) {
+      break;
+    }
+    signal_code = ecl_gethash_safe(ecl_make_fixnum(signal_thread_msg.signo),
+                                   cl_core.known_signals,
+                                   ECL_NIL);
+    if (!Null(signal_code)) {
+      mp_process_run_function(3, @'si::handle-signal',
+                              @'si::handle-signal',
+                              signal_code);
+    }
+  }
 # if defined(ECL_USE_MPROTECT)
-        /* We might have protected our own environment */
-        mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
+  /* We might have protected our own environment */
+  mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
 # endif /* ECL_USE_MPROTECT */
-        close(signal_thread_pipe[0]);
-        close(signal_thread_pipe[1]);
-        ecl_return0(the_env);
+  close(signal_thread_pipe[0]);
+  close(signal_thread_pipe[1]);
+  ecl_return0(the_env);
 }
 #endif /* ECL_THREADS && !ECL_MS_WINDOWS_HOST */
 
@@ -673,347 +670,351 @@ asynchronous_signal_servicing_thread()
 static void
 handler_fn_prototype(process_interrupt_handler, int sig, siginfo_t *siginfo, void *data)
 {
-        int old_errno = errno;
-        cl_env_ptr the_env;
-        reinstall_signal(sig, process_interrupt_handler);
-        /* The lisp environment might not be installed. */
-        the_env = ecl_process_env();
-        if (zombie_process(the_env))
-                return;
-        if (!Null(the_env->interrupt_struct->pending_interrupt)) {
-                if (interrupts_disabled_by_C(the_env)) {
-                        set_guard_page(the_env);
-                } else if (!interrupts_disabled_by_lisp(the_env)) {
-                        unblock_signal(the_env, sig);
-                        handle_all_queued_interrupt_safe(the_env);
-                }
-        }
-        errno = old_errno;
+  int old_errno = errno;
+  cl_env_ptr the_env;
+  reinstall_signal(sig, process_interrupt_handler);
+  /* The lisp environment might not be installed. */
+  the_env = ecl_process_env();
+  if (zombie_process(the_env))
+    return;
+  if (!Null(the_env->interrupt_struct->pending_interrupt)) {
+    if (interrupts_disabled_by_C(the_env)) {
+      set_guard_page(the_env);
+    } else if (!interrupts_disabled_by_lisp(the_env)) {
+      unblock_signal(the_env, sig);
+      handle_all_queued_interrupt_safe(the_env);
+    }
+  }
+  errno = old_errno;
 }
 #endif /* ECL_THREADS && !ECL_MS_WINDOWS_HOST */
 
 static void
 handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
 {
-        int code;
-        cl_object condition;
-        cl_env_ptr the_env;
-        reinstall_signal(sig, fpe_signal_handler);
-        /* The lisp environment might not be installed. */
-        unlikely_if (!ecl_option_values[ECL_OPT_BOOTED]) {
-                early_signal_error();
-        }
-        the_env = ecl_process_env();
-        unlikely_if (zombie_process(the_env))
-                return;
-        condition = @'arithmetic-error';
-        code = 0;
+  int code;
+  cl_object condition;
+  cl_env_ptr the_env;
+  reinstall_signal(sig, fpe_signal_handler);
+  /* The lisp environment might not be installed. */
+  unlikely_if (!ecl_option_values[ECL_OPT_BOOTED]) {
+    early_signal_error();
+  }
+  the_env = ecl_process_env();
+  unlikely_if (zombie_process(the_env))
+    return;
+  condition = @'arithmetic-error';
+  code = 0;
 #ifdef _MSC_VER
-        switch (_fpecode) {
-        case _FPE_INVALID:
-                condition = @'floating-point-invalid-operation';
-                code = FE_INVALID;
-                break;
-        case _FPE_OVERFLOW:
-                condition = @'floating-point-overflow';
-                code = FE_OVERFLOW;
-                break;
-        case _FPE_UNDERFLOW:
-                condition = @'floating-point-underflow';
-                code = FE_UNDERFLOW;
-                break;
-        case _FPE_ZERODIVIDE:
-                condition = @'division-by-zero';
-                code = FE_DIVBYZERO;
-                break;
-        }
+  switch (_fpecode) {
+  case _FPE_INVALID:
+    condition = @'floating-point-invalid-operation';
+    code = FE_INVALID;
+    break;
+  case _FPE_OVERFLOW:
+    condition = @'floating-point-overflow';
+    code = FE_OVERFLOW;
+    break;
+  case _FPE_UNDERFLOW:
+    condition = @'floating-point-underflow';
+    code = FE_UNDERFLOW;
+    break;
+  case _FPE_ZERODIVIDE:
+    condition = @'division-by-zero';
+    code = FE_DIVBYZERO;
+    break;
+  }
 #else /* !_MSC_VER */
 # if defined(HAVE_FENV_H) & !defined(ECL_AVOID_FENV_H)
-        code = fetestexcept(FE_ALL_EXCEPT);
-        if (code & FE_DIVBYZERO) {
-                condition = @'division-by-zero';
-                code = FE_DIVBYZERO;
-        } else if (code & FE_INVALID) {
-                condition = @'floating-point-invalid-operation';
-                code = FE_INVALID;
-        } else if (code & FE_OVERFLOW) {
-                condition = @'floating-point-overflow';
-                code = FE_OVERFLOW;
-        } else if (code & FE_UNDERFLOW) {
-                condition = @'floating-point-underflow';
-                code = FE_UNDERFLOW;
-        } else if (code & FE_INEXACT) {
-                condition = @'floating-point-inexact';
-                code = FE_INEXACT;
-        }
-        feclearexcept(FE_ALL_EXCEPT);
+  code = fetestexcept(FE_ALL_EXCEPT);
+  if (code & FE_DIVBYZERO) {
+    condition = @'division-by-zero';
+    code = FE_DIVBYZERO;
+  } else if (code & FE_INVALID) {
+    condition = @'floating-point-invalid-operation';
+    code = FE_INVALID;
+  } else if (code & FE_OVERFLOW) {
+    condition = @'floating-point-overflow';
+    code = FE_OVERFLOW;
+  } else if (code & FE_UNDERFLOW) {
+    condition = @'floating-point-underflow';
+    code = FE_UNDERFLOW;
+  } else if (code & FE_INEXACT) {
+    condition = @'floating-point-inexact';
+    code = FE_INEXACT;
+  }
+  feclearexcept(FE_ALL_EXCEPT);
 # endif
 #endif /* !_MSC_VER */
 #if defined(SA_SIGINFO) && !defined(NACL)
-        if (info) {
-                if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV) {
-                        condition = @'division-by-zero';
-                        code = FE_DIVBYZERO;
-                } else if (info->si_code == FPE_FLTOVF) {
-                        condition = @'floating-point-overflow';
-                        code = FE_OVERFLOW;
-                } else if (info->si_code == FPE_FLTUND) {
-                        condition = @'floating-point-underflow';
-                        code = FE_UNDERFLOW;
-                } else if (info->si_code == FPE_FLTRES) {
-                        condition = @'floating-point-inexact';
-                        code = FE_INEXACT;
-                } else if (info->si_code == FPE_FLTINV) {
-                        condition = @'floating-point-invalid-operation';
-                        code = FE_INVALID;
-                }
-        }
+  if (info) {
+    if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV) {
+      condition = @'division-by-zero';
+      code = FE_DIVBYZERO;
+    } else if (info->si_code == FPE_FLTOVF) {
+      condition = @'floating-point-overflow';
+      code = FE_OVERFLOW;
+    } else if (info->si_code == FPE_FLTUND) {
+      condition = @'floating-point-underflow';
+      code = FE_UNDERFLOW;
+    } else if (info->si_code == FPE_FLTRES) {
+      condition = @'floating-point-inexact';
+      code = FE_INEXACT;
+    } else if (info->si_code == FPE_FLTINV) {
+      condition = @'floating-point-invalid-operation';
+      code = FE_INVALID;
+    }
+  }
 #endif /* SA_SIGINFO */
-        /*
-          if (code && !(code & the_env->trap_fpe_bits))
-          condition = ECL_NIL;
-        */
-        si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
-        unblock_signal(the_env, code);
-        handle_signal_now(condition);
-        /* We will not reach past this point. */
+  /*
+    if (code && !(code & the_env->trap_fpe_bits))
+    condition = ECL_NIL;
+  */
+  si_trap_fpe(@'last', ECL_T); /* Clear FPE exception flag */
+  unblock_signal(the_env, code);
+  handle_signal_now(condition);
+  /* We will not reach past this point. */
 }
 
 static void
 handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 {
-        int old_errno = errno;
-        static const char *stack_overflow_msg =
-                "\n;;;\n;;; Stack overflow.\n"
-                ";;; Jumping to the outermost toplevel prompt\n"
-                ";;;\n\n";
-        static const char *segv_msg =
-                "\n;;;\n"
-                ";;; Detected access to protected memory, "
-                "also known as 'bus or segmentation fault'.\n"
-                ";;; Jumping to the outermost toplevel prompt\n"
-                ";;;\n\n";
-        static const char *interrupt_msg =
-                "\n;;;\n;;; Internal error:\n"
-                ";;; Detected write access to the environment while "
-                "interrupts were disabled. Usually this is caused by "
-                "a missing call to ecl_enable_interrupts.\n"
-                ";;;\n\n";
-        cl_env_ptr the_env;
-        reinstall_signal(sig, sigsegv_handler);
-        /* The lisp environment might not be installed. */
-        unlikely_if (!ecl_option_values[ECL_OPT_BOOTED]) {
-                early_signal_error();
-        }
-        the_env = ecl_process_env();
-        unlikely_if (zombie_process(the_env))
-                return;
+  int old_errno = errno;
+  static const char *stack_overflow_msg =
+    "\n;;;\n;;; Stack overflow.\n"
+    ";;; Jumping to the outermost toplevel prompt\n"
+    ";;;\n\n";
+  static const char *segv_msg =
+    "\n;;;\n"
+    ";;; Detected access to protected memory, "
+    "also known as 'bus or segmentation fault'.\n"
+    ";;; Jumping to the outermost toplevel prompt\n"
+    ";;;\n\n";
+  static const char *interrupt_msg =
+    "\n;;;\n;;; Internal error:\n"
+    ";;; Detected write access to the environment while "
+    "interrupts were disabled. Usually this is caused by "
+    "a missing call to ecl_enable_interrupts.\n"
+    ";;;\n\n";
+  cl_env_ptr the_env;
+  reinstall_signal(sig, sigsegv_handler);
+  /* The lisp environment might not be installed. */
+  unlikely_if (!ecl_option_values[ECL_OPT_BOOTED]) {
+    early_signal_error();
+  }
+  the_env = ecl_process_env();
+  unlikely_if (zombie_process(the_env))
+    return;
 #if defined(SA_SIGINFO) && !defined(NACL)
 # if defined(ECL_USE_MPROTECT)
-        /* We access disable_interrupts when the environment was
-         * protected. That means there was a pending signal. */
-        if (((char*)&the_env->disable_interrupts <= (char*)info->si_addr) &&
-            ((char*)info->si_addr < (char*)(&the_env->disable_interrupts+1)))
-        {
-                unblock_signal(the_env, sig);
-                mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
-                the_env->disable_interrupts = 0;
-                handle_all_queued_interrupt_safe(the_env);
-                return;
-        } else if (the_env->disable_interrupts &&
-                   ((char*)(&the_env->disable_interrupts+1) <= (char*)info->si_addr) &&
-                   ((char*)info->si_addr < (char*)(the_env+1))) {
-                unblock_signal(the_env, sig);
-                mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
-                the_env->disable_interrupts = 0;
-                ecl_unrecoverable_error(the_env, interrupt_msg);
-                return;
-        }
+  /* We access disable_interrupts when the environment was
+   * protected. That means there was a pending signal. */
+  if (((char*)&the_env->disable_interrupts <= (char*)info->si_addr) &&
+      ((char*)info->si_addr < (char*)(&the_env->disable_interrupts+1)))
+    {
+      unblock_signal(the_env, sig);
+      mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
+      the_env->disable_interrupts = 0;
+      handle_all_queued_interrupt_safe(the_env);
+      return;
+    } else if (the_env->disable_interrupts &&
+               ((char*)(&the_env->disable_interrupts+1) <= (char*)info->si_addr) &&
+               ((char*)info->si_addr < (char*)(the_env+1))) {
+    unblock_signal(the_env, sig);
+    mprotect(the_env, sizeof(*the_env), PROT_READ | PROT_WRITE);
+    the_env->disable_interrupts = 0;
+    ecl_unrecoverable_error(the_env, interrupt_msg);
+    return;
+  }
 # endif /* ECL_USE_MPROTECT */
 # ifdef ECL_DOWN_STACK
-        if (sig == SIGSEGV &&
-            (char*)info->si_addr > the_env->cs_barrier &&
-            (char*)info->si_addr <= the_env->cs_org) {
-                unblock_signal(the_env, sig);
-                ecl_unrecoverable_error(the_env, stack_overflow_msg);
-                return;
-        }
+  if (sig == SIGSEGV &&
+      (char*)info->si_addr > the_env->cs_barrier &&
+      (char*)info->si_addr <= the_env->cs_org) {
+    unblock_signal(the_env, sig);
+    ecl_unrecoverable_error(the_env, stack_overflow_msg);
+    return;
+  }
 # else
-        if (sig == SIGSEGV &&
-            (char*)info->si_addr < the_env->cs_barrier &&
-            (char*)info->si_addr >= the_env->cs_org) {
-                unblock_signal(the_env, sig);
-                ecl_unrecoverable_error(the_env, stack_overflow_msg);
-                return;
-        }
+  if (sig == SIGSEGV &&
+      (char*)info->si_addr < the_env->cs_barrier &&
+      (char*)info->si_addr >= the_env->cs_org) {
+    unblock_signal(the_env, sig);
+    ecl_unrecoverable_error(the_env, stack_overflow_msg);
+    return;
+  }
 # endif /* ECL_DOWN_STACK */
         /* Do not attempt an error handler if we nest two serious 
          * errors in the same thread */
-        if (the_env->fault_address == info->si_addr) {
-                the_env->fault_address = info->si_addr;
-                unblock_signal(the_env, sig);
-                ecl_unrecoverable_error(the_env, segv_msg);
-        } else {
-                the_env->fault_address = info->si_addr;
-                handle_or_queue(the_env, @'ext::segmentation-violation', sig);
-        }
+  if (the_env->fault_address == info->si_addr) {
+    the_env->fault_address = info->si_addr;
+    unblock_signal(the_env, sig);
+    ecl_unrecoverable_error(the_env, segv_msg);
+  } else {
+    the_env->fault_address = info->si_addr;
+    handle_or_queue(the_env, @'ext::segmentation-violation', sig);
+  }
 #else
-        /*
-         * We cannot distinguish between a stack overflow and a simple
-         * access violation. Thus we assume the worst case and jump to
-         * the outermost handler.
-         */
-        unblock_signal(the_env, sig);
-        ecl_unrecoverable_error(the_env, segv_msg);
+  /*
+   * We cannot distinguish between a stack overflow and a simple
+   * access violation. Thus we assume the worst case and jump to
+   * the outermost handler.
+   */
+  unblock_signal(the_env, sig);
+  ecl_unrecoverable_error(the_env, segv_msg);
 #endif /* SA_SIGINFO */
-        errno = old_errno;
+  errno = old_errno;
 }
 
 cl_object
 si_check_pending_interrupts(void)
 {
-        handle_all_queued(ecl_process_env());
-        @(return)
+  const cl_env_ptr the_env = ecl_process_env();
+  handle_all_queued(ecl_process_env());
+  ecl_return0(the_env);
 }
 
 void
 ecl_check_pending_interrupts(cl_env_ptr env)
 {
-        if (env->interrupt_struct->pending_interrupt != ECL_NIL)
-                handle_all_queued_interrupt_safe(env);
+  if (env->interrupt_struct->pending_interrupt != ECL_NIL)
+    handle_all_queued_interrupt_safe(env);
 }
 
 static cl_object
 do_catch_signal(int code, cl_object action, cl_object process)
 {
-        if (action == ECL_NIL || action == @':ignore') {
-                mysignal(code, SIG_IGN);
-                return ECL_T;
-        } else if (action == @':default') {
-                mysignal(code, SIG_DFL);
-                return ECL_T;
-        } else if (action == @':mask' || action == @':unmask') {
+  if (action == ECL_NIL || action == @':ignore') {
+    mysignal(code, SIG_IGN);
+    return ECL_T;
+  } else if (action == @':default') {
+    mysignal(code, SIG_DFL);
+    return ECL_T;
+  } else if (action == @':mask' || action == @':unmask') {
 #ifdef HAVE_SIGPROCMASK
 # ifdef ECL_THREADS
-                /* When a process object is supplied, the changes take care
-                 * on the process structure and will only take effect when
-                 * the process is enabled. */
-                if (ecl_t_of(process) == t_process) {
-                        cl_env_ptr env = process->process.env;
-                        sigset_t *handled_set = (sigset_t *)env->default_sigmask;
-                        if (action == @':mask') {
-                                sigaddset(handled_set, code);
-                        } else {
-                                sigdelset(handled_set, code);
-                        }
-                        return ECL_T;
-                } else {
-                        sigset_t handled_set;
-                        pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
-                        if (action == @':mask') {
-                                sigaddset(&handled_set, code);
-                        } else {
-                                sigdelset(&handled_set, code);
-                        }
-                        pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
-                        return ECL_T;
-                }
+    /* When a process object is supplied, the changes take care
+     * on the process structure and will only take effect when
+     * the process is enabled. */
+    if (ecl_t_of(process) == t_process) {
+      cl_env_ptr env = process->process.env;
+      sigset_t *handled_set = (sigset_t *)env->default_sigmask;
+      if (action == @':mask') {
+        sigaddset(handled_set, code);
+      } else {
+        sigdelset(handled_set, code);
+      }
+      return ECL_T;
+    } else {
+      sigset_t handled_set;
+      pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
+      if (action == @':mask') {
+        sigaddset(&handled_set, code);
+      } else {
+        sigdelset(&handled_set, code);
+      }
+      pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
+      return ECL_T;
+    }
 # else
-                {
-                        sigset_t handled_set;
-                        sigprocmask(SIG_SETMASK, NULL, &handled_set);
-                        if (action == @':mask') {
-                                sigaddset(&handled_set, code);
-                        } else {
-                                sigdelset(&handled_set, code);
-                        }
-                        sigprocmask(SIG_SETMASK, &handled_set, NULL);
-                        return ECL_T;
-                }
+    {
+      sigset_t handled_set;
+      sigprocmask(SIG_SETMASK, NULL, &handled_set);
+      if (action == @':mask') {
+        sigaddset(&handled_set, code);
+      } else {
+        sigdelset(&handled_set, code);
+      }
+      sigprocmask(SIG_SETMASK, &handled_set, NULL);
+      return ECL_T;
+    }
 # endif /* !ECL_THREADS */
 #else /* !HAVE_SIGPROCMASK */
-                return ECL_NIL;
+    return ECL_NIL;
 #endif /* !HAVE_SIGPROCMASK */
-        } else if (action == ECL_T || action == @':catch') {
-                if (code == SIGSEGV) {
-                        mysignal(code, sigsegv_handler);
-                }
+  } else if (action == ECL_T || action == @':catch') {
+    if (code == SIGSEGV) {
+      mysignal(code, sigsegv_handler);
+    }
 #ifdef SIGBUS
-                else if (code == SIGBUS) {
-                        mysignal(code, sigsegv_handler);
-                }
+    else if (code == SIGBUS) {
+      mysignal(code, sigsegv_handler);
+    }
 #endif
 #ifdef SIGILL
-                else if (code == SIGILL) {
-                        mysignal(SIGILL, evil_signal_handler);
-                }
+    else if (code == SIGILL) {
+      mysignal(SIGILL, evil_signal_handler);
+    }
 #endif
-                else {
-                        mysignal(code, non_evil_signal_handler);
-                }
-                return ECL_T;
-        } else {
-                FEerror("Unknown 2nd argument to EXT:CATCH-SIGNAL: ~A", 1,
-                        action);
-        }
+    else {
+      mysignal(code, non_evil_signal_handler);
+    }
+    return ECL_T;
+  } else {
+    FEerror("Unknown 2nd argument to EXT:CATCH-SIGNAL: ~A", 1,
+            action);
+  }
 }
 
 cl_object
 si_get_signal_handler(cl_object code)
 {
-        cl_object handler = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
-        unlikely_if (handler == OBJNULL) {
-                illegal_signal_code(code);
-        }
-        @(return handler)
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object handler = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
+  unlikely_if (handler == OBJNULL) {
+    illegal_signal_code(code);
+  }
+  ecl_return0(the_env);
 }
 
 cl_object
 si_set_signal_handler(cl_object code, cl_object handler)
 {
-        cl_object action = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
-        unlikely_if (action == OBJNULL) {
-                illegal_signal_code(code);
-        }
-        ecl_sethash(code, cl_core.known_signals, handler);
-        si_catch_signal(2, code, ECL_T);
-        @(return handler)
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object action = ecl_gethash_safe(code, cl_core.known_signals, OBJNULL);
+  unlikely_if (action == OBJNULL) {
+    illegal_signal_code(code);
+  }
+  ecl_sethash(code, cl_core.known_signals, handler);
+  si_catch_signal(2, code, ECL_T);
+  ecl_return0(the_env);
 }
 
 @(defun ext::catch-signal (code flag &key process)
-@
-{
-        int code_int;
-        unlikely_if (ecl_gethash_safe(code, cl_core.known_signals, OBJNULL) == OBJNULL) {
-                illegal_signal_code(code);
-        }
-        code_int = ecl_fixnum(code);
+  @
+  {
+    const cl_env_ptr the_env = ecl_process_env();
+    int code_int;
+    unlikely_if (ecl_gethash_safe(code, cl_core.known_signals, OBJNULL) == OBJNULL) {
+      illegal_signal_code(code);
+    }
+    code_int = ecl_fixnum(code);
 #ifdef GBC_BOEHM
 # ifdef SIGSEGV
-        unlikely_if ((code == ecl_make_fixnum(SIGSEGV)) &&
-                     ecl_option_values[ECL_OPT_INCREMENTAL_GC])
-                FEerror("It is not allowed to change the behavior of SIGSEGV.",
-                        0);
+    unlikely_if ((code == ecl_make_fixnum(SIGSEGV)) &&
+                 ecl_option_values[ECL_OPT_INCREMENTAL_GC])
+      FEerror("It is not allowed to change the behavior of SIGSEGV.",
+              0);
 # endif
 # ifdef SIGBUS
-        unlikely_if (code_int == SIGBUS)
-                FEerror("It is not allowed to change the behavior of SIGBUS.",
-                        0);
+    unlikely_if (code_int == SIGBUS)
+      FEerror("It is not allowed to change the behavior of SIGBUS.",
+              0);
 # endif
 #endif
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-        unlikely_if (code_int == ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]) {
-                FEerror("It is not allowed to change the behavior of signal ~D", 1,
-                        code);
-        }
+    unlikely_if (code_int == ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]) {
+      FEerror("It is not allowed to change the behavior of signal ~D", 1,
+              code);
+    }
 #endif
 #ifdef SIGFPE
-        unlikely_if (code_int == SIGFPE) {
-                FEerror("The signal handler for SIGPFE cannot be uninstalled. Use SI:TRAP-FPE instead.", 0);
-        }
+    unlikely_if (code_int == SIGFPE) {
+      FEerror("The signal handler for SIGPFE cannot be uninstalled. Use SI:TRAP-FPE instead.", 0);
+    }
 #endif
-        @(return do_catch_signal(code_int, flag, process));
-}
+    ecl_return1(the_env, do_catch_signal(code_int, flag, process));
+  }
 @)
 
 #ifdef ECL_THREADS
@@ -1021,9 +1022,9 @@ si_set_signal_handler(cl_object code, cl_object handler)
 static VOID CALLBACK
 wakeup_function(ULONG_PTR foo)
 {
-        cl_env_ptr env = ecl_process_env();
-        volatile i = env->nvalues;
-        env->nvalues = i;
+  cl_env_ptr env = ecl_process_env();
+  volatile i = env->nvalues;
+  env->nvalues = i;
 }
 
 static VOID CALLBACK
@@ -1039,93 +1040,93 @@ do_interrupt_thread(cl_object process)
 #  ifndef ECL_USE_GUARD_PAGE
 #   error "Cannot implement ecl_interrupt_process without guard pages"
 #  endif
-        HANDLE thread = process->process.thread;
-        CONTEXT context;
-        void *trap_address = process->process.env;
-        DWORD guard = PAGE_GUARD | PAGE_READWRITE;
-        int ok = 1;
-        if (SuspendThread(thread) == (DWORD)-1) {
-                FEwin32_error("Unable to suspend thread ~A", 1,
-                              process);
-                ok = 0;
-                goto EXIT;
-        }
-        process->process.interrupt = ECL_T;
-        if (!VirtualProtect(process->process.env,
-                            sizeof(struct cl_env_struct),
-                            guard,
-                            &guard))
-        {
-                FEwin32_error("Unable to protect memory from thread ~A",
-                              1, process);
-                ok = 0;
-        }
+  HANDLE thread = process->process.thread;
+  CONTEXT context;
+  void *trap_address = process->process.env;
+  DWORD guard = PAGE_GUARD | PAGE_READWRITE;
+  int ok = 1;
+  if (SuspendThread(thread) == (DWORD)-1) {
+    FEwin32_error("Unable to suspend thread ~A", 1,
+                  process);
+    ok = 0;
+    goto EXIT;
+  }
+  process->process.interrupt = ECL_T;
+  if (!VirtualProtect(process->process.env,
+                      sizeof(struct cl_env_struct),
+                      guard,
+                      &guard))
+    {
+      FEwin32_error("Unable to protect memory from thread ~A",
+                    1, process);
+      ok = 0;
+    }
  RESUME:
-        if (!QueueUserAPC(wakeup_function, thread, 0)) {
-                FEwin32_error("Unable to queue APC call to thread ~A",
-                              1, process);
-                ok = 0;
-        }
-        if (ResumeThread(thread) == (DWORD)-1)  {
-                FEwin32_error("Unable to resume thread ~A", 1,
-                              process);
-                ok = 0;
-                goto EXIT;
-        }
+  if (!QueueUserAPC(wakeup_function, thread, 0)) {
+    FEwin32_error("Unable to queue APC call to thread ~A",
+                  1, process);
+    ok = 0;
+  }
+  if (ResumeThread(thread) == (DWORD)-1)  {
+    FEwin32_error("Unable to resume thread ~A", 1,
+                  process);
+    ok = 0;
+    goto EXIT;
+  }
  EXIT:
-        return ok;
+  return ok;
 # else
-        int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
-        if (pthread_kill(process->process.thread, signal)) {
-                FElibc_error("Unable to interrupt process ~A", 1,
-                             process);
-        }
-        return 1;
+  int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
+  if (pthread_kill(process->process.thread, signal)) {
+    FElibc_error("Unable to interrupt process ~A", 1,
+                 process);
+  }
+  return 1;
 # endif
 }
 
 void
 ecl_interrupt_process(cl_object process, cl_object function)
 {
-        /*
-         * We first ensure that the process is active and running
-         * and past the initialization phase, where it has set up
-         * the environment. Then:
-         * - In Windows it sets up a trap in the stack, so that the
-         *   uncaught exception handler can catch it and process it.
-         * - In POSIX systems it sends a user level interrupt to
-         *   the thread, which then decides how to act.
-         *
-         * If FUNCTION is NIL, we just intend to wake up the process
-         * from some call to ecl_musleep() Queue the interrupt for any
-         * process stage that can potentially receive a signal  */
-        if (!Null(function) &&
-            (process->process.phase >= ECL_PROCESS_BOOTING))
-        {
-                cl_env_ptr the_env = ecl_process_env();
-                function = si_coerce_to_function(function);
-                /* queue_signal must be called with disabled
-                 * interrupts for the current process */
-                ecl_disable_interrupts_env(the_env);
-                queue_signal(process->process.env, function, 1);
-                ecl_enable_interrupts_env(the_env);
-        }
-        /* ... but only deliver if the process is still alive */
-        if (process->process.phase == ECL_PROCESS_ACTIVE)
-                do_interrupt_thread(process);
+  /*
+   * We first ensure that the process is active and running
+   * and past the initialization phase, where it has set up
+   * the environment. Then:
+   * - In Windows it sets up a trap in the stack, so that the
+   *   uncaught exception handler can catch it and process it.
+   * - In POSIX systems it sends a user level interrupt to
+   *   the thread, which then decides how to act.
+   *
+   * If FUNCTION is NIL, we just intend to wake up the process
+   * from some call to ecl_musleep() Queue the interrupt for any
+   * process stage that can potentially receive a signal  */
+  if (!Null(function) &&
+      (process->process.phase >= ECL_PROCESS_BOOTING))
+    {
+      cl_env_ptr the_env = ecl_process_env();
+      function = si_coerce_to_function(function);
+      /* queue_signal must be called with disabled
+       * interrupts for the current process */
+      ecl_disable_interrupts_env(the_env);
+      queue_signal(process->process.env, function, 1);
+      ecl_enable_interrupts_env(the_env);
+    }
+  /* ... but only deliver if the process is still alive */
+  if (process->process.phase == ECL_PROCESS_ACTIVE)
+    do_interrupt_thread(process);
 }
 
 void
 ecl_wakeup_process(cl_object process)
 {
 # ifdef ECL_WINDOWS_THREADS
-        HANDLE thread = process->process.thread;
-        if (!QueueUserAPC(wakeup_noop, thread, 0)) {
-                FEwin32_error("Unable to queue APC call to thread ~A",
-                              1, process);
-        }
+  HANDLE thread = process->process.thread;
+  if (!QueueUserAPC(wakeup_noop, thread, 0)) {
+    FEwin32_error("Unable to queue APC call to thread ~A",
+                  1, process);
+  }
 # else
-        do_interrupt_thread(process);
+  do_interrupt_thread(process);
 # endif
 }
 #endif /* ECL_THREADS */
@@ -1136,154 +1137,154 @@ static LPTOP_LEVEL_EXCEPTION_FILTER old_W32_exception_filter = NULL;
 LONG WINAPI
 _ecl_w32_exception_filter(struct _EXCEPTION_POINTERS* ep)
 {
-        LONG excpt_result;
-        cl_env_ptr the_env = ecl_process_env();
+  LONG excpt_result;
+  cl_env_ptr the_env = ecl_process_env();
 
-        excpt_result = EXCEPTION_CONTINUE_EXECUTION;
-        switch (ep->ExceptionRecord->ExceptionCode)
-        {
-                /* Access to guard page */
-                case STATUS_GUARD_PAGE_VIOLATION: {
-                        cl_object process = the_env->own_process;
-                        if (!Null(process->process.interrupt)) {
-                                process->process.interrupt = ECL_NIL;
-                                handle_all_queued_interrupt_safe(the_env);
-                        }
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                }
-                /* Catch all arithmetic exceptions */
-                case EXCEPTION_INT_DIVIDE_BY_ZERO:
-                        feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'division-by-zero');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                case EXCEPTION_INT_OVERFLOW:
-                        feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'arithmetic-error');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-                        feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-overflow');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                case EXCEPTION_FLT_OVERFLOW:
-                        feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-overflow');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                case EXCEPTION_FLT_UNDERFLOW:
-                        feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-underflow');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                case EXCEPTION_FLT_INEXACT_RESULT:
-                        feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-inexact');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                case EXCEPTION_FLT_DENORMAL_OPERAND:
-                case EXCEPTION_FLT_INVALID_OPERATION:
-                        feclearexcept(FE_ALL_EXCEPT);
-                        handle_signal_now(@'floating-point-invalid-operation');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                case EXCEPTION_FLT_STACK_CHECK:
-                        handle_signal_now(@'arithmetic-error');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                /* Catch segmentation fault */
-                case EXCEPTION_ACCESS_VIOLATION:
-                        handle_signal_now(@'ext::segmentation-violation');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                /* Catch illegal instruction */
-                case EXCEPTION_ILLEGAL_INSTRUCTION:
-                        handle_signal_now(@'ext::illegal-instruction');
-                        return EXCEPTION_CONTINUE_EXECUTION;
-                /* Do not catch anything else */
-                default:
-                        excpt_result = EXCEPTION_CONTINUE_SEARCH;
-                        break;
-        }
-        if (old_W32_exception_filter)
-                return old_W32_exception_filter(ep);
-        return excpt_result;
+  excpt_result = EXCEPTION_CONTINUE_EXECUTION;
+  switch (ep->ExceptionRecord->ExceptionCode)
+    {
+      /* Access to guard page */
+    case STATUS_GUARD_PAGE_VIOLATION: {
+      cl_object process = the_env->own_process;
+      if (!Null(process->process.interrupt)) {
+        process->process.interrupt = ECL_NIL;
+        handle_all_queued_interrupt_safe(the_env);
+      }
+      return EXCEPTION_CONTINUE_EXECUTION;
+    }
+      /* Catch all arithmetic exceptions */
+    case EXCEPTION_INT_DIVIDE_BY_ZERO:
+      feclearexcept(FE_ALL_EXCEPT);
+      handle_signal_now(@'division-by-zero');
+      return EXCEPTION_CONTINUE_EXECUTION;
+    case EXCEPTION_INT_OVERFLOW:
+      feclearexcept(FE_ALL_EXCEPT);
+      handle_signal_now(@'arithmetic-error');
+      return EXCEPTION_CONTINUE_EXECUTION;
+    case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+      feclearexcept(FE_ALL_EXCEPT);
+      handle_signal_now(@'floating-point-overflow');
+      return EXCEPTION_CONTINUE_EXECUTION;
+    case EXCEPTION_FLT_OVERFLOW:
+      feclearexcept(FE_ALL_EXCEPT);
+      handle_signal_now(@'floating-point-overflow');
+      return EXCEPTION_CONTINUE_EXECUTION;
+    case EXCEPTION_FLT_UNDERFLOW:
+      feclearexcept(FE_ALL_EXCEPT);
+      handle_signal_now(@'floating-point-underflow');
+      return EXCEPTION_CONTINUE_EXECUTION;
+    case EXCEPTION_FLT_INEXACT_RESULT:
+      feclearexcept(FE_ALL_EXCEPT);
+      handle_signal_now(@'floating-point-inexact');
+      return EXCEPTION_CONTINUE_EXECUTION;
+    case EXCEPTION_FLT_DENORMAL_OPERAND:
+    case EXCEPTION_FLT_INVALID_OPERATION:
+      feclearexcept(FE_ALL_EXCEPT);
+      handle_signal_now(@'floating-point-invalid-operation');
+      return EXCEPTION_CONTINUE_EXECUTION;
+    case EXCEPTION_FLT_STACK_CHECK:
+      handle_signal_now(@'arithmetic-error');
+      return EXCEPTION_CONTINUE_EXECUTION;
+      /* Catch segmentation fault */
+    case EXCEPTION_ACCESS_VIOLATION:
+      handle_signal_now(@'ext::segmentation-violation');
+      return EXCEPTION_CONTINUE_EXECUTION;
+      /* Catch illegal instruction */
+    case EXCEPTION_ILLEGAL_INSTRUCTION:
+      handle_signal_now(@'ext::illegal-instruction');
+      return EXCEPTION_CONTINUE_EXECUTION;
+      /* Do not catch anything else */
+    default:
+      excpt_result = EXCEPTION_CONTINUE_SEARCH;
+      break;
+    }
+  if (old_W32_exception_filter)
+    return old_W32_exception_filter(ep);
+  return excpt_result;
 }
 
 static cl_object
 W32_handle_in_new_thread(cl_object signal_code)
 {
-        int outside_ecl = ecl_import_current_thread(@'si::handle-signal', ECL_NIL);
-        mp_process_run_function(3, @'si::handle-signal',
-                                @'si::handle-signal',
-                                signal_code);
-        if (outside_ecl) ecl_release_current_thread();
+  int outside_ecl = ecl_import_current_thread(@'si::handle-signal', ECL_NIL);
+  mp_process_run_function(3, @'si::handle-signal',
+                          @'si::handle-signal',
+                          signal_code);
+  if (outside_ecl) ecl_release_current_thread();
 }
 
 BOOL WINAPI W32_console_ctrl_handler(DWORD type)
 {
-        switch (type) {
-        case CTRL_C_EVENT:
-        case CTRL_BREAK_EVENT: {
-                cl_object function =
-                        ECL_SYM_FUN(@'si::terminal-interrupt');
-                if (function)
-                        W32_handle_in_new_thread(function);
-                return TRUE;
-        }
-        case CTRL_CLOSE_EVENT:
-        case CTRL_LOGOFF_EVENT:
-        case CTRL_SHUTDOWN_EVENT: {
-                cl_object function =
-	                     ECL_SYM_FUN(@'ext::quit');
-                if (function)
-	                     W32_handle_in_new_thread(function);
-                return TRUE;
-        }
-        default:
-                return FALSE;
-        }
+  switch (type) {
+  case CTRL_C_EVENT:
+  case CTRL_BREAK_EVENT: {
+    cl_object function =
+      ECL_SYM_FUN(@'si::terminal-interrupt');
+    if (function)
+      W32_handle_in_new_thread(function);
+    return TRUE;
+  }
+  case CTRL_CLOSE_EVENT:
+  case CTRL_LOGOFF_EVENT:
+  case CTRL_SHUTDOWN_EVENT: {
+    cl_object function =
+      ECL_SYM_FUN(@'ext::quit');
+    if (function)
+      W32_handle_in_new_thread(function);
+    return TRUE;
+  }
+  default:
+    return FALSE;
+  }
 }
 #endif /* ECL_WINDOWS_THREADS */
 
 cl_object
 si_trap_fpe(cl_object condition, cl_object flag)
 {
-        cl_env_ptr the_env = ecl_process_env();
-        const int all = FE_ALL_EXCEPT;
-        int bits = 0;
-        if (condition == @'last') {
-                bits = the_env->trap_fpe_bits;
-        } else {
-                if (condition == ECL_T)
-                        bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
-                else if (condition == @'division-by-zero')
-                        bits = FE_DIVBYZERO;
-                else if (condition == @'floating-point-overflow')
-                        bits = FE_OVERFLOW;
-                else if (condition == @'floating-point-underflow')
-                        bits = FE_UNDERFLOW;
-                else if (condition == @'floating-point-invalid-operation')
-                        bits = FE_INVALID;
-                else if (condition == @'floating-point-inexact')
-                        bits = FE_INEXACT;
-                else if (ECL_FIXNUMP(condition))
-                        bits = ecl_fixnum(condition) & all;
-                else
-                        FEerror("Unknown condition to EXT:TRAP-FPE: ~s", 1, condition);
+  cl_env_ptr the_env = ecl_process_env();
+  const int all = FE_ALL_EXCEPT;
+  int bits = 0;
+  if (condition == @'last') {
+    bits = the_env->trap_fpe_bits;
+  } else {
+    if (condition == ECL_T)
+      bits = FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW | FE_INVALID;
+    else if (condition == @'division-by-zero')
+      bits = FE_DIVBYZERO;
+    else if (condition == @'floating-point-overflow')
+      bits = FE_OVERFLOW;
+    else if (condition == @'floating-point-underflow')
+      bits = FE_UNDERFLOW;
+    else if (condition == @'floating-point-invalid-operation')
+      bits = FE_INVALID;
+    else if (condition == @'floating-point-inexact')
+      bits = FE_INEXACT;
+    else if (ECL_FIXNUMP(condition))
+      bits = ecl_fixnum(condition) & all;
+    else
+      FEerror("Unknown condition to EXT:TRAP-FPE: ~s", 1, condition);
 
-                if (flag == ECL_NIL) {
-                        bits = the_env->trap_fpe_bits & ~bits;
-                } else {
-                        bits = the_env->trap_fpe_bits | bits;
-                }
-        }
+    if (flag == ECL_NIL) {
+      bits = the_env->trap_fpe_bits & ~bits;
+    } else {
+      bits = the_env->trap_fpe_bits | bits;
+    }
+  }
 #if !defined(ECL_AVOID_FPE_H)
 # ifdef HAVE_FENV_H
-        feclearexcept(all);
+  feclearexcept(all);
 # endif
 # if defined(ECL_MS_WINDOWS_HOST)
-        _fpreset();
+  _fpreset();
 # endif
 # ifdef HAVE_FEENABLEEXCEPT
-        fedisableexcept(all & ~bits);
-        feenableexcept(all & bits);
+  fedisableexcept(all & ~bits);
+  feenableexcept(all & bits);
 # endif
 #endif
-        the_env->trap_fpe_bits = bits;
-        @(return ecl_make_fixnum(bits))
+  the_env->trap_fpe_bits = bits;
+  ecl_return1(the_env, ecl_make_fixnum(bits));
 }
 
 /*
@@ -1299,47 +1300,47 @@ install_asynchronous_signal_handlers()
 # define async_handler(signal,handler,mask)
 #else
 # if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
-#  define async_handler(signal,handler,mask)  {                         \
-                if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) { \
-                        mysignal(signal, deferred_signal_handler);      \
-                } else {                                                \
-                        mysignal(signal,handler);                       \
-                }}
+#  define async_handler(signal,handler,mask)  {                 \
+    if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {    \
+      mysignal(signal, deferred_signal_handler);                \
+    } else {                                                    \
+      mysignal(signal,handler);                                 \
+    }}
 # else
 #  define async_handler(signal,handler,mask)    \
-        mysignal(signal,handler)
+  mysignal(signal,handler)
 # endif
 #endif
 #ifdef HAVE_SIGPROCMASK
-        sigset_t *sigmask = cl_core.default_sigmask = &main_thread_sigmask;
-        cl_core.default_sigmask_bytes = sizeof(sigset_t);
+  sigset_t *sigmask = cl_core.default_sigmask = &main_thread_sigmask;
+  cl_core.default_sigmask_bytes = sizeof(sigset_t);
 # ifdef ECL_THREADS
-        pthread_sigmask(SIG_SETMASK, NULL, sigmask);
+  pthread_sigmask(SIG_SETMASK, NULL, sigmask);
 # else
-        sigprocmask(SIG_SETMASK, NULL, sigmask);
+  sigprocmask(SIG_SETMASK, NULL, sigmask);
 # endif
 #endif
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
-        ecl_mutex_init(&signal_thread_lock, TRUE);
+  ecl_mutex_init(&signal_thread_lock, TRUE);
 #endif
 #ifdef SIGINT
-        if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
-                async_handler(SIGINT, non_evil_signal_handler, sigmask);
-        }
+  if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
+    async_handler(SIGINT, non_evil_signal_handler, sigmask);
+  }
 #endif
 #ifdef HAVE_SIGPROCMASK
 # if defined(ECL_THREADS)
-        pthread_sigmask(SIG_SETMASK, sigmask, NULL);
+  pthread_sigmask(SIG_SETMASK, sigmask, NULL);
 # else
-        sigprocmask(SIG_SETMASK, sigmask, NULL);
+  sigprocmask(SIG_SETMASK, sigmask, NULL);
 # endif
 #endif
 #ifdef ECL_WINDOWS_THREADS
-        old_W32_exception_filter =
-                SetUnhandledExceptionFilter(_ecl_w32_exception_filter);
-        if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
-                SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
-        }
+  old_W32_exception_filter =
+    SetUnhandledExceptionFilter(_ecl_w32_exception_filter);
+  if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
+    SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
+  }
 #endif
 #undef async_handler
 }
@@ -1352,24 +1353,24 @@ static void
 install_signal_handling_thread()
 {
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
-        ecl_process_env()->default_sigmask = &main_thread_sigmask;
-        if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {
-                cl_object fun =
-                        ecl_make_cfun((cl_objectfn_fixed)
-                                      asynchronous_signal_servicing_thread,
-                                      @'si::signal-servicing',
-                                      ECL_NIL,
-                                      0);
-                cl_object process =
-                        signal_thread_process =
-                        mp_process_run_function_wait(2,
-                                                     @'si::signal-servicing',
-                                                     fun);
-                if (Null(process)) {
-                        ecl_internal_error("Unable to create signal "
-                                           "servicing thread");
-                }
-        }
+  ecl_process_env()->default_sigmask = &main_thread_sigmask;
+  if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {
+    cl_object fun =
+      ecl_make_cfun((cl_objectfn_fixed)
+                    asynchronous_signal_servicing_thread,
+                    @'si::signal-servicing',
+                    ECL_NIL,
+                    0);
+    cl_object process =
+      signal_thread_process =
+      mp_process_run_function_wait(2,
+                                   @'si::signal-servicing',
+                                   fun);
+    if (Null(process)) {
+      ecl_internal_error("Unable to create signal "
+                         "servicing thread");
+    }
+  }
 #endif
 }
 
@@ -1382,48 +1383,48 @@ static void
 install_synchronous_signal_handlers()
 {
 #ifdef SIGBUS
-        if (ecl_option_values[ECL_OPT_TRAP_SIGBUS]) {
-                do_catch_signal(SIGBUS, ECL_T, ECL_NIL);
-        }
+  if (ecl_option_values[ECL_OPT_TRAP_SIGBUS]) {
+    do_catch_signal(SIGBUS, ECL_T, ECL_NIL);
+  }
 #endif
 #ifdef SIGSEGV
-        if (ecl_option_values[ECL_OPT_TRAP_SIGSEGV]) {
-                do_catch_signal(SIGSEGV, ECL_T, ECL_NIL);
-        }
+  if (ecl_option_values[ECL_OPT_TRAP_SIGSEGV]) {
+    do_catch_signal(SIGSEGV, ECL_T, ECL_NIL);
+  }
 #endif
 #ifdef SIGPIPE
-        if (ecl_option_values[ECL_OPT_TRAP_SIGPIPE]) {
-                do_catch_signal(SIGPIPE, ECL_T, ECL_NIL);
-        }
+  if (ecl_option_values[ECL_OPT_TRAP_SIGPIPE]) {
+    do_catch_signal(SIGPIPE, ECL_T, ECL_NIL);
+  }
 #endif
 #ifdef SIGILL
-        if (ecl_option_values[ECL_OPT_TRAP_SIGILL]) {
-                do_catch_signal(SIGILL, ECL_T, ECL_NIL);
-        }
+  if (ecl_option_values[ECL_OPT_TRAP_SIGILL]) {
+    do_catch_signal(SIGILL, ECL_T, ECL_NIL);
+  }
 #endif
-        /* In order to implement MP:INTERRUPT-PROCESS, MP:PROCESS-KILL
-         * and the like, we use signals. This sets up a synchronous
-         * signal handler for that particular signal.
-         */
+  /* In order to implement MP:INTERRUPT-PROCESS, MP:PROCESS-KILL
+   * and the like, we use signals. This sets up a synchronous
+   * signal handler for that particular signal.
+   */
 #ifdef SIGRTMIN
 # define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGRTMIN + 2
 #else
 # define DEFAULT_THREAD_INTERRUPT_SIGNAL SIGUSR1
 #endif
 #if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
-        if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
-                int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
-                if (signal == 0) {
-                        signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
-                        ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
-                                       signal);
-                }
-                mysignal(signal, process_interrupt_handler);
+  if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
+    int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
+    if (signal == 0) {
+      signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
+      ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL,
+                     signal);
+    }
+    mysignal(signal, process_interrupt_handler);
 #ifdef HAVE_SIGPROCMASK
-                sigdelset(&main_thread_sigmask, signal);
-                pthread_sigmask(SIG_SETMASK, &main_thread_sigmask, NULL);
+    sigdelset(&main_thread_sigmask, signal);
+    pthread_sigmask(SIG_SETMASK, &main_thread_sigmask, NULL);
 #endif
-        }
+  }
 #endif
 }
 
@@ -1436,21 +1437,21 @@ static void
 install_fpe_signal_handlers()
 {
 #ifdef SIGFPE
-        if (ecl_option_values[ECL_OPT_TRAP_SIGFPE]) {
-                mysignal(SIGFPE, fpe_signal_handler);
-                si_trap_fpe(ECL_T, ECL_T);
+  if (ecl_option_values[ECL_OPT_TRAP_SIGFPE]) {
+    mysignal(SIGFPE, fpe_signal_handler);
+    si_trap_fpe(ECL_T, ECL_T);
 
-                /* Don't trap underflows */
-                si_trap_fpe(@'floating-point-underflow', ECL_NIL);
+    /* Don't trap underflows */
+    si_trap_fpe(@'floating-point-underflow', ECL_NIL);
 
-/* # if defined(ECL_IEEE_FP) */
-/*                 /\* By default deactivate errors and accept denormals */
-/*                  * in floating point computations. *\/ */
-/*                 si_trap_fpe(@'floating-point-invalid-operation', ECL_NIL); */
-/*                 si_trap_fpe(@'division-by-zero', ECL_NIL); */
-/*                 si_trap_fpe(@'floating-point-overflow', ECL_NIL); */
-/* # endif */
-        }
+# if 0 && defined(ECL_IEEE_FP)
+    /* By default deactivate errors and accept denormals
+     * in floating point computations. */
+    si_trap_fpe(@'floating-point-invalid-operation', ECL_NIL);
+    si_trap_fpe(@'division-by-zero', ECL_NIL);
+    si_trap_fpe(@'floating-point-overflow', ECL_NIL);
+# endif
+  }
 #endif
 }
 
@@ -1461,58 +1462,58 @@ install_fpe_signal_handlers()
 static void
 add_one_signal(cl_object hash_table, int signal, cl_object name, cl_object handler)
 {
-        cl_object code = ecl_make_fixnum(signal);
-        cl_export2(name, cl_core.ext_package);
-        si_Xmake_constant(name, code);
-        ecl_sethash(code, hash_table, handler);
+  cl_object code = ecl_make_fixnum(signal);
+  cl_export2(name, cl_core.ext_package);
+  si_Xmake_constant(name, code);
+  ecl_sethash(code, hash_table, handler);
 }
 
 static void
 create_signal_code_constants()
 {
-        cl_object hash =
-                cl_core.known_signals =
-                cl__make_hash_table(@'eql', ecl_make_fixnum(128),
-                                    cl_core.rehash_size,
-                                    cl_core.rehash_threshold);
-        int i;
-        for (i = 0; known_signals[i].code >= 0; i++) {
-                add_one_signal(hash, known_signals[i].code,
-                               _ecl_intern(known_signals[i].name,
-                                           cl_core.ext_package),
-                               known_signals[i].handler);
-        }
+  cl_object hash =
+    cl_core.known_signals =
+    cl__make_hash_table(@'eql', ecl_make_fixnum(128),
+                        cl_core.rehash_size,
+                        cl_core.rehash_threshold);
+  int i;
+  for (i = 0; known_signals[i].code >= 0; i++) {
+    add_one_signal(hash, known_signals[i].code,
+                   _ecl_intern(known_signals[i].name,
+                               cl_core.ext_package),
+                   known_signals[i].handler);
+  }
 #ifdef SIGRTMIN
-        for (i = SIGRTMIN; i <= SIGRTMAX; i++) {
-                int intern_flag[1];
-                char buffer[64];
-                cl_object name;
-                sprintf(buffer, "+SIGRT%d+", i-SIGRTMIN);
-                name = ecl_intern(ecl_make_simple_base_string(buffer,-1),
-                                  cl_core.ext_package,
-                                  intern_flag);
-                add_one_signal(hash, i, name, ECL_NIL);
-        }
-        add_one_signal(hash, SIGRTMIN,
-                       _ecl_intern("+SIGRTMIN+", cl_core.ext_package),
-                       ECL_NIL);
-        add_one_signal(hash, SIGRTMAX,
-                       _ecl_intern("+SIGRTMAX+", cl_core.ext_package),
-                       ECL_NIL);
+  for (i = SIGRTMIN; i <= SIGRTMAX; i++) {
+    int intern_flag[1];
+    char buffer[64];
+    cl_object name;
+    sprintf(buffer, "+SIGRT%d+", i-SIGRTMIN);
+    name = ecl_intern(ecl_make_simple_base_string(buffer,-1),
+                      cl_core.ext_package,
+                      intern_flag);
+    add_one_signal(hash, i, name, ECL_NIL);
+  }
+  add_one_signal(hash, SIGRTMIN,
+                 _ecl_intern("+SIGRTMIN+", cl_core.ext_package),
+                 ECL_NIL);
+  add_one_signal(hash, SIGRTMAX,
+                 _ecl_intern("+SIGRTMAX+", cl_core.ext_package),
+                 ECL_NIL);
 #endif
 }
 
 void
 init_unixint(int pass)
 {
-        if (pass == 0) {
-                install_asynchronous_signal_handlers();
-                install_synchronous_signal_handlers();
-        } else {
-                create_signal_code_constants();
-                install_fpe_signal_handlers();
-                install_signal_handling_thread();
-                ECL_SET(@'ext::*interrupts-enabled*', ECL_T);
-                ecl_process_env()->disable_interrupts = 0;
-        }
+  if (pass == 0) {
+    install_asynchronous_signal_handlers();
+    install_synchronous_signal_handlers();
+  } else {
+    create_signal_code_constants();
+    install_fpe_signal_handlers();
+    install_signal_handling_thread();
+    ECL_SET(@'ext::*interrupts-enabled*', ECL_T);
+    ecl_process_env()->disable_interrupts = 0;
+  }
 }

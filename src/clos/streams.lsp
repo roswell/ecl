@@ -4,13 +4,7 @@
 ;;;;
 ;;;;  Copyright (c) 2004, Juan Jose Garcia-Ripoll
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
-;;;;
-;;;;    See file '../Copyright' for full details.
-;;;;        The CLOS IO library.
+;;;;    See file 'LICENSE' for the copyright details.
 
 (in-package "GRAY")
 
@@ -94,6 +88,11 @@
   of PPRINT and the FORMAT ~T directive. For every character output
   stream class that is defined, a method must be defined for this
   function, although it is permissible for it to always return NIL."))
+
+;; Extension from CLASP, CMUCL, SBCL, Mezzano and SICL
+
+(defgeneric stream-line-length (stream)
+  (:documentation "Return the stream line length or NIL."))
 
 (defgeneric stream-listen (stream)
   #+sb-doc
@@ -203,6 +202,14 @@
   (:documentation
    "This is like CL:FILE-POSITION, but for Gray streams."))
 
+(defgeneric stream-file-length (stream)
+  (:documentation
+   "This is like CL:FILE-LENGTH, but for Gray streams."))
+
+(defgeneric stream-file-string-length (stream string)
+  (:documentation
+   "This is like CL:FILE-STRING-LENGTH, but for Gray streams."))
+
 (defgeneric stream-file-descriptor (stream &optional direction)
   (:documentation
    "Return the file-descriptor underlaying STREAM, or NIL if not
@@ -217,6 +224,14 @@
    In case STREAM-FILE-DESCRIPTOR is not implemented for STREAM, an
    error is signaled. That is, users must add methods to explicitly
    decline by returning NIL."))
+
+(defgeneric pathname (pathspec)
+  (:documentation
+   "Returns the pathname denoted by pathspec."))
+
+(defgeneric truename (pathspec)
+  (:documentation
+   "truename tries to find the file indicated by filespec and returns its truename."))
 
 
 ;;;
@@ -407,6 +422,16 @@
   (declare (ignore stream))
   nil)
 
+;; LINE-LENGTH
+
+(defmethod stream-line-length ((stream fundamental-character-output-stream))
+  nil)
+
+(defmethod stream-line-length ((stream ansi-stream))
+  nil)
+
+(defmethod stream-line-length ((stream t))
+  (bug-or-error stream 'stream-line-length))
 
 ;; LISTEN
 
@@ -513,9 +538,7 @@
     (loop
      (let ((ch (stream-read-char stream)))
        (cond ((eq ch :eof)
-              (return (values (if (zerop index)
-                                  nil
-                                  (si::shrink-vector res index))
+              (return (values (si::shrink-vector res index)
                               t)))
              (t
               (when (char= ch #\newline)
@@ -591,6 +614,22 @@
 
 (defmethod stream-file-position ((stream t) &optional position)
   (declare (ignore stream position))
+  nil)
+
+;; FILE-LENGTH
+
+(defmethod stream-file-length ((stream ansi-stream))
+  (file-length stream))
+
+(defmethod stream-file-length ((stream t))
+  (error 'type-error :datum stream :expected-type 'file-stream))
+
+;; FILE-STRING-LENGTH
+
+(defmethod stream-file-string-length ((stream ansi-stream) string)
+  (file-string-length stream string))
+
+(defmethod stream-file-string-length ((stream fundamental-character-output-stream) string)
   nil)
 
 ;; STREAM-P
@@ -691,7 +730,8 @@
 ;; TERPRI
 
 (defmethod stream-terpri ((stream fundamental-character-output-stream))
-  (stream-write-char stream #\Newline))
+  (stream-write-char stream #\Newline)
+  nil)
 
 (defmethod stream-terpri ((stream ansi-stream))
   (cl:terpri stream))
@@ -741,12 +781,45 @@
   (si:file-stream-fd stream))
 
 
+;;; PATHNAME
+
+(defmethod pathname ((pathspec string))
+  (cl:pathname pathspec))
+
+(defmethod pathname ((pathspec cl:pathname))
+  pathspec)
+
+(defmethod pathname ((pathspec ansi-stream))
+  (cl:pathname pathspec))
+
+(defmethod pathname (pathspec)
+  (error 'type-error :datum pathspec
+                     :expected-type '(or string cl:pathname file-stream)))
+
+
+;;; TRUENAME
+
+(defmethod truename ((filespec string))
+  (cl:truename filespec))
+
+(defmethod truename ((filespec cl:pathname))
+  (cl:truename filespec))
+
+(defmethod truename ((filespec ansi-stream))
+  (cl:truename filespec))
+
+(defmethod truename (filespec)
+  (error 'type-error :datum filespec
+                     :expected-type '(or string cl:pathname file-stream)))
+
+
 ;;; Setup
 
 (eval-when (:compile-toplevel :execute)
   (defconstant +conflicting-symbols+
     '(cl:close cl:stream-element-type cl:input-stream-p
-      cl:open-stream-p cl:output-stream-p cl:streamp)))
+      cl:open-stream-p cl:output-stream-p cl:streamp
+      cl:pathname cl:truename)))
 
 (let ((p (find-package "GRAY")))
   (export '(nil) p)
@@ -821,7 +894,19 @@ them so."
     (%redefine-cl-functions 'cl:file-position
                             'gray:stream-file-position
                             gray-package)
+    (%redefine-cl-functions 'cl:file-length
+                            'gray:stream-file-length
+                            gray-package)
     (si::package-lock "COMMON-LISP" x)
+    (provide '#:gray-streams)
     nil))
+
+(pushnew :gray-streams-module *features*)
+
+(pushnew #'(lambda (module)
+             (when (string-equal module '#:gray-streams)
+               (redefine-cl-functions)
+               t))
+         sys:*module-provider-functions*)
 
 (setf clos::*clos-booted* t)

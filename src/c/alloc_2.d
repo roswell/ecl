@@ -760,10 +760,15 @@ init_alloc(void)
    *    the begining or to the first byte.
    * 3) Out of the incremental garbage collector, we only use the
    *    generational component.
+   * 4) GC should handle fork() which is used to run subprocess on
+   *    some platforms.
    */
   GC_set_no_dls(1);
   GC_set_all_interior_pointers(0);
   GC_set_time_limit(GC_TIME_UNLIMITED);
+#ifndef ECL_MS_WINDOWS_HOST
+  GC_set_handle_fork(1);
+#endif
   GC_init();
 #ifdef ECL_THREADS
 # if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1

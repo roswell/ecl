@@ -83,7 +83,11 @@ cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1] = {
   1,              /* ECL_OPT_TRAP_SIGBUS */
   1,              /* ECL_OPT_TRAP_SIGPIPE */
   1,              /* ECL_OPT_TRAP_INTERRUPT_SIGNAL */
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
   1,              /* ECL_OPT_SIGNAL_HANDLING_THREAD */
+#else
+  0,              /* ECL_OPT_SIGNAL_HANDLING_THREAD */
+#endif
   16,             /* ECL_OPT_SIGNAL_QUEUE_SIZE */
   0,              /* ECL_OPT_BOOTED */
   8192,           /* ECL_OPT_BIND_STACK_SIZE */
@@ -838,83 +842,6 @@ si_argv(cl_object index)
     }
   }
   FEerror("Illegal argument index: ~S.", 1, index);
-}
-
-cl_object
-si_getenv(cl_object var)
-{
-  const char *value;
-
-  /* Strings have to be null terminated base strings */
-  var = si_copy_to_simple_base_string(var);
-  value = getenv((char*)var->base_string.self);
-  @(return ((value == NULL)? ECL_NIL : ecl_make_simple_base_string(value,-1)));
-}
-
-#if defined(HAVE_SETENV) || defined(HAVE_PUTENV)
-cl_object
-si_setenv(cl_object var, cl_object value)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_fixnum ret_val;
-
-  /* Strings have to be null terminated base strings */
-  var = si_copy_to_simple_base_string(var);
-  if (value == ECL_NIL) {
-#ifdef HAVE_SETENV
-    /* Remove the variable when setting to nil, so that
-     * (si:setenv "foo" nil), then (si:getenv "foo) returns
-     * the right thing. */
-    unsetenv((char*)var->base_string.self);
-#else
-#if defined(ECL_MS_WINDOWS_HOST)
-    si_setenv(var, cl_core.null_string);
-#else
-    putenv((char*)var->base_string.self);
-#endif
-#endif
-    ret_val = 0;
-  } else {
-#ifdef HAVE_SETENV
-    value = si_copy_to_simple_base_string(value);
-    ret_val = setenv((char*)var->base_string.self,
-                     (char*)value->base_string.self, 1);
-#else
-    value = cl_format(4, ECL_NIL, @"~A=~A", var,
-                      value);
-    value = si_copy_to_simple_base_string(value);
-    putenv((char*)value->base_string.self);
-#endif
-  }
-  if (ret_val == -1)
-    CEerror(ECL_T, "SI:SETENV failed: insufficient space in environment.",
-            1, ECL_NIL);
-  ecl_return1(the_env, value);
-}
-#endif
-
-cl_object
-si_environ(void)
-{
-  cl_object output = ECL_NIL;
-#ifdef HAVE_ENVIRON
-  char **p;
-  extern char **environ;
-  for (p = environ; *p; p++) {
-    output = CONS(ecl_make_constant_base_string(*p,-1), output);
-  }
-  output = cl_nreverse(output);
-#else
-# if defined(ECL_MS_WINDOWS_HOST)
-  LPTCH p;
-  for (p = GetEnvironmentStrings(); *p; ) {
-    output = CONS(ecl_make_constant_base_string(p,-1), output);
-    do { (void)0; } while (*(p++));
-  }
-  output = cl_nreverse(output);
-# endif
-#endif /* HAVE_ENVIRON */
-  @(return output);
 }
 
 cl_object

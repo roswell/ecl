@@ -2,20 +2,15 @@
 /* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
 
 /*
-    object.h  -- Data structure definitions.
-*/
-/*
-    Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
-    Copyright (c) 1990, Giuseppe Attardi.
-    Copyright (c) 2001, Juan Jose Garcia Ripoll.
+ * Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
+ * Copyright (c) 1990, Giuseppe Attardi.
+ * Copyright (c) 2001, Juan Jose Garcia Ripoll.
+ *
+ * See file 'LICENSE' for the copyright details.
+ *
+ */
 
-    ECL is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    See file '../Copyright' for full details.
-*/
+/* object.h  -- Data structure definitions. */
 
 #ifdef __cplusplus
 extern "C" {
@@ -602,7 +597,11 @@ struct ecl_file_ops {
         cl_object (*length)(cl_object strm);
         cl_object (*get_position)(cl_object strm);
         cl_object (*set_position)(cl_object strm, cl_object pos);
+        cl_object (*string_length)(cl_object strm, cl_object string);
         int (*column)(cl_object strm);
+
+        cl_object (*pathname)(cl_object strm);
+        cl_object (*truename)(cl_object strm);
 
         cl_object (*close)(cl_object strm);
 };

@@ -2,17 +2,27 @@
 # vim: set filetype=makefile tabstop=8 shiftwidth=4 expandtab:
 
 ECL=@prefix@/@bindir@/ecl@EXEEXT@
+SHELL=/bin/bash -o pipefail
 
-.PHONY: all
+.PHONY: all check ansi-test
 
 all: check
 
 check: config.lsp
-	$(ECL) -norc \
-                -load config.lsp \
-                -eval "(ecl-tests::run-tests '($(TESTS)))" \
-                -eval "(ext:quit)" \
-                2>&1 | tee check.log
+	$(ECL) --norc \
+               --load config.lsp \
+               --eval "(ecl-tests::run-tests '($(TESTS)))" \
+               --eval "(ext:quit)" \
+               2>&1 | tee test.log
 
 clean:
 	rm -rf regressions.log cache
+
+ansi-test/doit.lsp:
+	git clone https://gitlab.common-lisp.net/ansi-test/ansi-test.git
+
+ansi-test: ansi-test/doit.lsp
+	$(ECL) --norc \
+               --load config.lsp \
+               --eval "(ext:quit (if (ecl-tests::run-ansi-test) 0 2))" \
+               2>&1 | tee ansi-test.log
