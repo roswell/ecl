@@ -57,10 +57,10 @@
 #endif
 
 /* Maximum number of bytes required to encode a character.
- * This currently corresponds to (4 + 2) for the ISO-2022-JP-* encodings
- * with 4 being the charset prefix, 2 for the character.
+ * This currently corresponds to (4 + 4) for the UCS-4 encoding
+ * with 4 being the byte-order mark, 4 for the character.
  */
-#define ENCODING_BUFFER_MAX_SIZE 6
+#define ENCODING_BUFFER_MAX_SIZE 8
 /* Size of the encoding buffer for vectors */
 #define VECTOR_ENCODING_BUFFER_SIZE 2048
 
