@@ -45,6 +45,8 @@
 - Reduced function call overhead
 - The cross-compilation instructions for iOS and emscripten have changed
   slightly
+- Fix buffer overrun in stream encoding for UCS-4. This only occurred
+  when the first character was written with a BOM.
     
 * 23.9.9 changes since 21.2.1
 ** Announcement
