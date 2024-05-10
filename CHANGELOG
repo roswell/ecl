@@ -27,11 +27,11 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 24.x.x
+* Pending changes since 24.5.10
 
 - Many internal improvements and bug fixes for the native compiler
 
-* 24.x.x changes since 23.9.9
+* 24.5.10 changes since 23.9.9
 ** Announcement
 Dear Community,
 
@@ -55,7 +55,7 @@ Dmitry Solomennikov, Kevin Zheng.
 This release is available for download in a form of a source code archive
 (we do not ship prebuilt binaries):
 
-- [ECL 24.x.x tarball archive](https://common-lisp.net/project/ecl/static/files/release/ecl-24.x.x.tgz)
+- [ECL 24.5.10 tarball archive](https://common-lisp.net/project/ecl/static/files/release/ecl-24.5.10.tgz)
 - [The ECL Manual](https://common-lisp.net/project/ecl/static/manual/)
 
 Happy Hacking,
