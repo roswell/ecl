@@ -561,3 +561,19 @@
   (is (equal (multiple-value-list (read-line (make-instance 'character-input-stream :value "a
 ")))
              '("a" nil))))
+
+;;;; Author:   Tarn W. Burton
+;;;; Created:  2024-05-19
+;;;; Description:
+;;;;     Test to ensure that write-char returns the correct value. An
+;;;;     incorrect value or stack smashing indicated a buffer overrun
+;;;;     caused by an encoding buffer that is too small.
+
+(test mix.0030.write-char-encode-buffer
+  (is (equal (with-open-file (s "/tmp/whatever.txt"
+                                :if-does-not-exist :create
+                                :if-exists :supersede
+                                :external-format :ucs-4
+                                :direction :output)
+               (write-char #\a s))
+             #\a)))
