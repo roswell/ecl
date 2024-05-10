@@ -563,7 +563,7 @@
              '("a" nil))))
 
 ;;;; Author:   Tarn W. Burton
-;;;; Created:  2024-05-19
+;;;; Created:  2024-05-10
 ;;;; Description:
 ;;;;     Test to ensure that write-char returns the correct value. An
 ;;;;     incorrect value or stack smashing indicated a buffer overrun

@@ -27,8 +27,46 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 23.9.9
+* Pending changes since 24.5.10
 
+- Many internal improvements and bug fixes for the native compiler
+- Reduced function call overhead
+- The cross-compilation instructions for iOS and emscripten have changed
+  slightly
+- Fix buffer overrun in stream encoding for UCS-4. This only occurred
+  when the first character was written with a BOM.
+
+* 24.5.10 changes since 23.9.9
+** Announcement
+Dear Community,
+
+We are announcing a new stable ECL release. The release mainly includes a
+number of bug fixes, including changes that prevent rare crashes in the
+garbage collector on Mac OS X, some bug fixes for gray streams and for
+pathname related functionality. Moreover, the release features new
+extensions for gray streams (gray:stream-line-length,
+gray:stream-file-length, gray:stream-file-string-length and generic
+versions of cl:pathname and cl:truename) as well as improved emscripten
+support (allowing shared library builds) and small improvements to the
+manual.
+
+We'd like to thank all people who contributed to ECL with code, testing,
+issue reports and otherwise.
+
+People listed here contributed code in this iteration: Daniel Kochmański,
+Kirill A. Korinsky, Marius Gerbershagen, Tarn W. Burton, Mark Shroyer,
+Dmitry Solomennikov, Kevin Zheng.
+
+This release is available for download in a form of a source code archive
+(we do not ship prebuilt binaries):
+
+- [ECL 24.5.10 tarball archive](https://common-lisp.net/project/ecl/static/files/release/ecl-24.5.10.tgz)
+- [The ECL Manual](https://common-lisp.net/project/ecl/static/manual/)
+
+Happy Hacking,
+The ECL Developers
+
+** Enhancements
 - Add gray-streams module. This makes it possible to load Gray stream
   support via ~(require '#:gray-streams)~ versus calling the internal
   function ~gray::redefine-cl-functions~.
@@ -41,12 +79,13 @@
   3) ~gray:stream-file-string-length~ which allows Gray streams to
      implement ~cl:file-string-length~.
   4) Generic versions of ~cl:pathname~ and ~cl:truename~.
+- The emscripten target now supports shared libraries.
+
+** Bugs fixed
 - Various bug fixes for Gray streams.
-- Reduced function call overhead
-- The cross-compilation instructions for iOS and emscripten have changed
-  slightly
-- Fix buffer overrun in stream encoding for UCS-4. This only occurred
-  when the first character was written with a BOM.
+- The garbarge collector is set up to automatically handle fork calls on
+  Unix systems, preventing rare crashes on Mac OS X (where bdwgc does not
+  enable this option by default).
     
 * 23.9.9 changes since 21.2.1
 ** Announcement
