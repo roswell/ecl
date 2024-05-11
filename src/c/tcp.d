@@ -395,7 +395,7 @@ si_lookup_host_entry(cl_object host_or_address)
       address[1] = (l >> 8) & 0xFF;
       address[2] = (l >> 16) & 0xFF;
       address[3] = (l >> 24) & 0xFF;
-      he = gethostbyaddr(&address, 4, AF_INET);
+      he = gethostbyaddr((char*)&address, 4, AF_INET);
       break;
     default:
       FEerror("LOOKUP-HOST-ENTRY: Number or string expected, got ~S",

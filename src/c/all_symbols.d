@@ -141,6 +141,8 @@ mangle_name(cl_object output, unsigned char *source, int l)
           }
         }
       }
+    default:
+      break;
     }
   }
   if (!ECL_FBOUNDP(symbol) && !Null(symbol->symbol.cname)) {

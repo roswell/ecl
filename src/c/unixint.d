@@ -1022,8 +1022,9 @@ si_set_signal_handler(cl_object code, cl_object handler)
 static VOID CALLBACK
 wakeup_function(ULONG_PTR foo)
 {
+  /* Write into the process environment to trigger an exception */
   cl_env_ptr env = ecl_process_env();
-  volatile i = env->nvalues;
+  volatile cl_index i = env->nvalues;
   env->nvalues = i;
 }
 
