@@ -541,6 +541,14 @@ case "${host}" in
                 ;;
 esac
 
+if test "${INSTALL_TARGET}" = "flatinstall"; then
+exec_prefix=""
+bindir="${exec_prefix}"
+libdir="${prefix}"
+includedir="${prefix}"
+ecldir="${prefix}"
+fi
+
 case "${host_cpu}" in
 	alpha*)
 		CFLAGS="${CFLAGS} -mieee";;
