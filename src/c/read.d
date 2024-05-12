@@ -496,16 +496,18 @@ cl_object backquote_reader(cl_object in, cl_object c)
 }
 
 /*
-  read_constituent(in) reads a sequence of constituent characters from
-  stream in and places it in token.  As a help, it returns TRUE
-  or FALSE depending on the value of *READ-SUPPRESS*.
+  read_constituent(in, 0) reads a sequence of constituent characters from stream
+  in and places it in token.  As a help, it returns TRUE or FALSE depending on
+  the value of *READ-SUPPRESS*.
+
+  The flag not_first is used by some reader macros to signify, that it is not a
+  standalone token. For example #x123 calls read_constituent(in, 1) for "123".
 */
 static cl_object
-read_constituent(cl_object in)
+read_constituent(cl_object in, bool not_first)
 {
   int store = !read_suppress;
   cl_object rtbl = ecl_current_readtable();
-  bool not_first = 0;
   cl_object token = si_get_buffer_string();
   do {
     int c = ecl_read_char(in);
@@ -907,7 +909,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
   enum ecl_chattrib a;
 
   if (read_suppress) {
-    read_constituent(in);
+    read_constituent(in, 1);
     @(return ECL_NIL);
   }
   for (dimcount = 0 ;; dimcount++) {
@@ -1037,7 +1039,9 @@ read_number(cl_object in, int radix, cl_object macro_char)
 {
   cl_index i;
   cl_object x;
-  cl_object token = read_constituent(in);
+  /* read_constituent is called with not_first=true, because we are called by
+     reader macros for composite tokens, like #x123. -- jd 2024-05-12 */
+  cl_object token = read_constituent(in, 1);
   if (token == ECL_NIL) {
     x = ECL_NIL;
   } else {
