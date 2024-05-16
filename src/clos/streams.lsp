@@ -409,6 +409,10 @@
 
 ;; INTERACTIVE-STREAM-P
 
+(defmethod stream-interactive-p ((stream fundamental-stream))
+  (declare (ignore stream))
+  nil)
+
 (defmethod stream-interactive-p ((stream ansi-stream))
   (cl:interactive-stream-p stream))
 
