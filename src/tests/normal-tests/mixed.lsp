@@ -577,3 +577,20 @@
                                 :direction :output)
                (write-char #\a s))
              #\a)))
+
+;;;; Reported by: Charles Zhang
+;;;; Fixed: Daniel Kochmański
+;;;; Created: 2024-05-12
+;;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/742
+;;;; Description:
+;;;;     Test to ensure that defining a no-op non-terminating macro on a digit
+;;;;     does not break readers for composite tokens like #x123. See #742.
+(test mix.0031.redefine-digit
+  (let ((standard-readtable (copy-readtable nil))
+        (*readtable* (copy-readtable nil)))
+    (set-macro-character #\1 (lambda (stream char)
+                               (unread-char char stream)
+                               (let ((*readtable* standard-readtable))
+                                 (read stream t nil t)))
+                         t)
+    (finishes (read-from-string "#x123"))))
