@@ -193,5 +193,5 @@ ECL, so when you build a program that is linked against libecl.so, then it is
 imoprtant to specify a different size. For example:
 
 #+begin_src shell-script
-  emcc program.c -sSTACK_SIZE=1048576 libecl.so -I./ -o program.o
+  emcc program.c -sSTACK_SIZE=1048576 -sMAIN_MODULE -sERROR_ON_UNDEFINED_SYMBOLS=0 libecl.so -I./ -o program.o
 #+end_src
