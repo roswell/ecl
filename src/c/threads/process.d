@@ -724,9 +724,8 @@ mp_process_run_function_wait(cl_narg narg, ...)
   process = cl_apply(2, @'mp::process-run-function',
                      cl_grab_rest_args(args));
   if (!Null(process)) {
-    ecl_def_ct_single_float(wait, 0.001, static, const);
     while (process->process.phase < ECL_PROCESS_ACTIVE) {
-      cl_sleep(wait);
+      ecl_musleep(0.001);
     }
   }
   ecl_va_end(args);
