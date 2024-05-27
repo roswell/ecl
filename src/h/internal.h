@@ -351,12 +351,15 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 /* file.d */
 
 /* Windows does not have this flag (POSIX thing) */
-#ifndef O_CLOEXEC
-#define O_CLOEXEC 0
+#ifndef __COSMOPOLITAN__
+# ifndef O_CLOEXEC
+#  define O_CLOEXEC 0
+# endif
+# ifndef O_NONBLOCK
+#  define O_NONBLOCK 0
+# endif
 #endif
-#ifndef O_NONBLOCK
-#define O_NONBLOCK 0
-#endif
+
 /* Windows needs to be told explicitely to open files in binary mode */
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -691,11 +694,10 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 
 /* Some old BSD systems don't have WCONTINUED / WIFCONTINUED */
 
-#ifndef ECL_MS_WINDOWS_HOST
+#if !defined(ECL_MS_WINDOWS_HOST) && !defined(__COSMOPOLITAN__)
 # ifndef WCONTINUED
 #  define WCONTINUED 0
 # endif
-
 # ifndef WIFCONTINUED
 #  define WIFCONTINUED(x) 0
 # endif

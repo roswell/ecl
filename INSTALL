@@ -195,3 +195,60 @@ imoprtant to specify a different size. For example:
 #+begin_src shell-script
   emcc program.c -sSTACK_SIZE=1048576 -sMAIN_MODULE -sERROR_ON_UNDEFINED_SYMBOLS=0 libecl.so -I./ -o program.o
 #+end_src
+
+* Build using Cosmopolitan toolchain (experimental)
+
+Binaries built with cosmopolitan toolchain can be executed on numerous platforms
+without changes. An inititial ECL port has been completed.
+
+1. Download cosmopolitan toolchain and activate it
+
+#+begin_src sh
+  mkdir cosmocc
+  pushd cosmocc
+  curl -o https://justine.lol/cosmopolitan/cosmocc-3.3.9.zip
+  unzip *zip
+  bin/make --version # sanity test
+  export PATH="`pwd`/bin:${PATH}"
+  export CC=x86_64-unknown-cosmo-cc
+  export CXX=x86_64-unknown-cosmo-c++
+  popd
+#+end_src
+
+2. Build ECL
+
+#+begin_src sh
+  ./configure --disable-shared --prefix=/tmp/cosmo-cl
+  make -j15
+  make install
+  # make check
+#+end_src
+
+- The platform is reported in *FEATURES* as :COSMO and as :LINUX
+- make check will fail because libc segfaults when using fenv.h
+
+This platform is not upstreamed yet in libgc, so it may be necessary to add the
+following code to the file gcconfig.h:
+
+#+begin_src c
+# if defined(__COSMOPOLITAN__)
+#   if defined(__x86_64__)
+#     define mach_type_known
+#     define X86_64
+#     define LINUX // optional?
+#   elif defined(__aarch64__)
+#     define mach_type_known
+#     define AARCH64
+#     define LINUX // optional?
+#   endif
+# endif
+#+end_src
+
+For details see: https://github.com/jart/cosmopolitan/issues/939.
+
+Cosmopolitan condition variables can't be used with mutexes that are not
+initialized as PTHREAD_MUTEX_NORMAL. That means that recursive locks and
+deterministic deadlock detection are not supported on this platform.
+
+Moreover floating point exception handling is not working and it is libc issue
+that manifests itself with segfaults.

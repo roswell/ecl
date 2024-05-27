@@ -62,6 +62,9 @@ ecl_def_string_array(feature_names,static,const) = {
 #if defined(ECL_MS_WINDOWS_HOST)
   ecl_def_string_array_elt("WINDOWS"),
 #endif
+#if defined(__COSMOPOLITAN__)
+  ecl_def_string_array_elt("COSMO"),
+#endif
 #ifdef ECL_CMU_FORMAT
   ecl_def_string_array_elt("CMU-FORMAT"),
 #endif
