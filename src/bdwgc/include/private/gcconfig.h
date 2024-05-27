@@ -712,6 +712,18 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 
+# if defined(__COSMOPOLITAN__)
+#   if defined(__x86_64__)
+#     define mach_type_known
+#     define X86_64
+#     define LINUX // optional?
+#   elif defined(__aarch64__)
+#     define mach_type_known
+#     define AARCH64
+#     define LINUX // optional?
+#   endif
+# endif
+
 /* Feel free to add more clauses here */
 
 /* Or manually define the machine type here.  A machine type is         */
