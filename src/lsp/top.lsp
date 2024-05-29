@@ -572,15 +572,16 @@ Use special code 0 to cancel this operation.")
     (set-break-env)
     (set-current-ihs)
     (flet ((rep ()
-             ;; We let warnings pass by this way "warn" does the
-             ;; work.  It is conventional not to trap anything
-             ;; that is not a SERIOUS-CONDITION. Otherwise we
-             ;; would be interferring the behavior of code that relies
-             ;; on conditions for communication (for instance our compiler)
-             ;; and which expect nothing to happen by default.
+             ;; We let warnings pass by this way "warn" does the work.  It is
+             ;; conventional not to trap anything that is not a
+             ;; SERIOUS-CONDITION. Otherwise we would be interferring the
+             ;; behavior of code that relies on conditions for communication
+             ;; (for instance our compiler) and which expect nothing to happen
+             ;; by default.
              (handler-bind 
                  ((serious-condition
                     (lambda (condition)
+                      (clear-input *query-io*)
                       (cond
                         ;; Toplevel should enter the debugger on any condition.
                         ((< break-level 1))
@@ -591,7 +592,6 @@ Use special code 0 to cancel this operation.")
                          (tpl-format "~&Debugger received error of type: ~A~%~A~%"
                                      (type-of condition) condition)
                          (tpl-format "Error flushed.~%")
-                         (clear-input *query-io*)
                          (return-from rep t))))))
                (with-grabbed-console
                    (unless quiet
