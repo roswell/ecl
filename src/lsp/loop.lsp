@@ -1932,8 +1932,11 @@ Note that this is not a valid ANSI code."))
 
 (defun loop-standard-expansion (keywords-and-forms environment universe)
   (declare (si::c-local))
-  (if (and keywords-and-forms (symbolp (car keywords-and-forms)))
-      (loop-translate keywords-and-forms environment universe)
+  (if (some #'atom keywords-and-forms)
+      (if (symbolp (car keywords-and-forms))
+          (loop-translate keywords-and-forms environment universe)
+          (error "LOOP: The first form ~S is not an extended loop keyword."
+                 (car keywords-and-forms)))
       (let ((tag (gensym)))
         `(block nil (tagbody ,tag (progn ,@keywords-and-forms) (go ,tag))))))
 
