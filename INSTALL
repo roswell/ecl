@@ -115,10 +115,12 @@ Hint provided by Pascal J. Bourguignon.
 
 Emscripten target is a little fickle so keep in mind that:
 
-- disable-shared is needed, because emcc does not recognize libecl.so (?)
+- shared libraries are supported but come with some drawbacks (e.g.
+  increased code size if used together with -sASYNCIFY), therefore the
+  build instructions default to disable-shared
 
-- disable-tcp is needed, because accept can't be found (related to
-  disable-shared? lack of -lsockets or something in this spirit?)
+- disable-tcp is needed, because accept can't be found (lack of
+  -lsockets or something in this spirit?)
 
 - select for interactive streams does not work, because reading operations are
   blocking (as they should be!), so there is no EOF returned -- clear-input will
@@ -126,6 +128,9 @@ Emscripten target is a little fickle so keep in mind that:
 
 - to build emscripten you need to use their SDK that provides the toolchain, and
   set the environment variable EMSDK_PATH
+
+- the optimization level -O0 is forced because otherwsise binaryen miscompiles
+  ECL
 
 1. Build the host ECL
 
@@ -163,6 +168,7 @@ After that activate the toolchain and configure build flags:
               --build=x86_64-pc-linux-gnu \
               --with-cross-config=`pwd`/src/util/wasm32-unknown-emscripten.cross_config \
               --prefix=`pwd`/ecl-emscripten \
+              --disable-shared \
               --with-tcp=no \
               --with-cmp=no
 
@@ -186,12 +192,12 @@ After that activate the toolchain and configure build flags:
 If the output does not show on the webpage then open the javascript console.
 This is a default html website produced by emscripten.
 
-5. Build an external program linked against libecl.so
+5. Build an external program linked against libecl.a
 
 The default stack size proposed by emscripten is 64KB. This is too little for
-ECL, so when you build a program that is linked against libecl.so, then it is
+ECL, so when you build a program that is linked against libecl.a, then it is
 imoprtant to specify a different size. For example:
 
 #+begin_src shell-script
-  emcc program.c -sSTACK_SIZE=1048576 -sMAIN_MODULE -sERROR_ON_UNDEFINED_SYMBOLS=0 libecl.so -I./ -o program.o
+  emcc program.c -sSTACK_SIZE=1048576 lib/*.a -I./include -o program.o
 #+end_src
