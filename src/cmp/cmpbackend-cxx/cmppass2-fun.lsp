@@ -84,7 +84,7 @@
 (defun c2lambda-expr
     (lambda-list body cfun fname description use-narg required-lcls closure-type
      optional-type-check-forms keyword-type-check-forms
-     variadic-entrypoint
+     c-compatible-variadic-signature
      &aux (requireds (first lambda-list))
        (optionals (second lambda-list))
        (rest (third lambda-list)) rest-loc
@@ -94,7 +94,8 @@
        (nreq (length requireds))
        (nopt (/ (length optionals) 3))
        (nkey (/ (length keywords) 4))
-       (varargs (or optionals rest key-flag allow-other-keys))
+       (varargs (or optionals rest key-flag allow-other-keys
+                    (and c-compatible-variadic-signature requireds)))
        (fname-in-ihs-p (or (policy-debug-variable-bindings)
                            (and (policy-debug-ihs-frame)
                                 (or description fname))))
@@ -119,11 +120,7 @@
 
   ;; check number of arguments
   (wt-maybe-check-num-arguments use-narg
-                                (if variadic-entrypoint
-                                    nil ; minimum number of arguments
-                                        ; already checked in the
-                                        ; varargs entrypoint
-                                    nreq)
+                                nreq
                                 (if (or rest key-flag allow-other-keys)
                                     nil
                                     (+ nreq nopt))
@@ -155,13 +152,13 @@
                (setf (var-loc var) (wt-decl var)))))
     ;; Declare unboxed required arguments
     (loop for var in requireds
-       when (unboxed-var-p var)
-       do (setf (var-loc var) (wt-decl var)))
+          when (or (unboxed-var-p var) c-compatible-variadic-signature)
+            do (do-decl var))
     ;; dont create rest or varargs if not used
     (when (and rest (< (var-ref rest) 1)
                (not (eq (var-kind rest) 'SPECIAL)))
       (setq rest nil
-            varargs (or optionals key-flag allow-other-keys)))
+            varargs (or varargs optionals key-flag allow-other-keys)))
     ;; Declare &optional variables
     (do ((opt optionals (cdddr opt)))
         ((endp opt))
@@ -178,7 +175,7 @@
   ;; Declare and assign the variable arguments pointer
   (when varargs
     (flet ((last-variable ()
-             (cond (required-lcls
+             (cond ((and required-lcls (not c-compatible-variadic-signature))
                     (first (last required-lcls)))
                    ((eq closure-type 'LEXICAL)
                     (format nil "lex~D" (1- *level*)))
@@ -189,10 +186,18 @@
                  (last-variable)
                  ");")
           (wt-nl "ecl_va_list args; ecl_va_start(args,"
-                 (last-variable) ",narg," nreq ");"))))
+                 (last-variable) ",narg,"
+                 (if c-compatible-variadic-signature
+                     0
+                     nreq)
+                 ");"))
+      (when c-compatible-variadic-signature
+        (setf required-lcls
+              (loop repeat nreq
+                    collect (if simple-varargs 'VA-ARG 'CL-VA-ARG))))))
 
-  ;; Bind required argumens. Produces C statements for unboxed variables,
-  ;; which is why it is done after all declarations.
+  ;; Bind required arguments. Produces C statements for unboxed
+  ;; variables, which is why it is done after all declarations.
   (mapc #'bind required-lcls requireds)
 
   (when fname-in-ihs-p
@@ -308,11 +313,11 @@
             (if fname
                 (wt " FEwrong_num_arguments(" (get-object fname :test #'equal) ");")
                 (wt " FEwrong_num_arguments_anonym();"))))
-     (if (and minarg maxarg (= minarg maxarg))
+     (if (and maxarg (= minarg maxarg))
          (progn (wt-nl "if (ecl_unlikely(narg!=" minarg "))")
                 (wrong-num-arguments))
          (progn
-           (when (and minarg (plusp minarg))
+           (when (plusp minarg)
              (wt-nl "if (ecl_unlikely(narg<" minarg "))")
              (wrong-num-arguments))
            (when maxarg

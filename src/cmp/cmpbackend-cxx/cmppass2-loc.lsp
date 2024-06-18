@@ -186,9 +186,7 @@
          (variadic-entrypoint (fun-variadic-entrypoint fun))
          (cfun (fun-cfun fun))
          (entrypoint (or variadic-entrypoint cfun))
-         (narg-fixed (if variadic-entrypoint
-                         0
-                         (min (fun-minarg fun) si:c-arguments-limit))))
+         (narg-fixed (fun-fixed-narg-main-entrypoint fun)))
     (cond ((eq closure 'CLOSURE)
            (wt "ecl_make_cclosure_va((cl_objectfn)" entrypoint "," (environment-accessor fun) ",Cblock," narg-fixed ")"))
           ((eq closure 'LEXICAL)
