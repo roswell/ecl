@@ -1611,8 +1611,8 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
     }
     if (!ECL_SYMBOLP(var))
       FEillegal_variable_name(var);
-    if (ecl_symbol_type(var) & ecl_stp_constant)
-      FEbinding_a_constant(var);
+    if (ecl_symbol_unbindable_p(var))
+      FEbinding_impossible(var);
     if (op == OP_PBIND) {
       compile_form(env, value, FLAG_PUSH);
       if (ecl_member_eq(var, vars))
@@ -1748,8 +1748,8 @@ c_multiple_value_bind(cl_env_ptr env, cl_object args, int flags)
       cl_object var = pop(&vars);
       if (!ECL_SYMBOLP(var))
         FEillegal_variable_name(var);
-      if (ecl_symbol_type(var) & ecl_stp_constant)
-        FEbinding_a_constant(var);
+      if (ecl_symbol_unbindable_p(var))
+        FEbinding_impossible(var);
       c_vbind(env, var, n, specials);
     }
     c_declare_specials(env, specials);
@@ -2910,10 +2910,10 @@ cl_object
 si_process_lambda_list(cl_object org_lambda_list, cl_object context)
 {
 #define push(v,l) { cl_object c = *l = CONS(v, *l); l = &ECL_CONS_CDR(c); }
-#define assert_var_name(v)                              \
+#define assert_var_name(var)                              \
   if (context == @'function') {                         \
-    unlikely_if (ecl_symbol_type(v) & ecl_stp_constant) \
-      FEillegal_variable_name(v); }
+    unlikely_if (ecl_symbol_unbindable_p(var))           \
+      FEillegal_variable_name(var); }
   cl_object lists[4] = {ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL};
   cl_object *reqs = lists, *opts = lists+1, *keys = lists+2, *auxs = lists+3;
   cl_object v, rest = ECL_NIL, lambda_list = org_lambda_list;

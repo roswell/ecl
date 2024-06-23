@@ -447,9 +447,9 @@ FEassignment_to_constant(cl_object v)
 }
 
 void
-FEbinding_a_constant(cl_object v)
+FEbinding_impossible(cl_object v)
 {
-  FEprogram_error("The constant ~S is being bound.", 1, v);
+  FEprogram_error("The variable ~S can't be bound.", 1, v);
 }
 
 void

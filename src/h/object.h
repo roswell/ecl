@@ -254,8 +254,9 @@ enum ecl_stype {                /*  symbol type  */
         ecl_stp_ordinary = 0,
         ecl_stp_constant = 1,
         ecl_stp_special = 2,
-        ecl_stp_macro = 4,
-        ecl_stp_special_form = 8
+        ecl_stp_global = 4,
+        ecl_stp_macro = 8,
+        ecl_stp_special_form = 16
 };
 
 #define ECL_NIL                 ((cl_object)t_list)
