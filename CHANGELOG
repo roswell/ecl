@@ -35,6 +35,9 @@
   slightly
 - Fix buffer overrun in stream encoding for UCS-4. This only occurred
   when the first character was written with a BOM.
+- All REPL I/O is performed through ~*QUERY-IO*~ and all debugger I/O is
+  performed through ~*DEBUG-IO*~, while ~*STANDARD-OUTPUT*,
+  ~*STANDARD-INPUT*~ and ~*ERROR-OUTPUT*~ are left for the user
 
 * 24.5.10 changes since 23.9.9
 ** Announcement
