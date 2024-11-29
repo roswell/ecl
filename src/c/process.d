@@ -209,8 +209,6 @@ ecl_disown_cpu()
   if (the_env == NULL)
     return;
   ecl_disable_interrupts_env(the_env);
-  /* FIXME this should be part of dealloc. */
-  ecl_clear_bignum_registers(the_env);
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(the_env->thread);
 #endif
