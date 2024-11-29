@@ -174,6 +174,7 @@ _ecl_alloc_env(cl_env_ptr parent)
   output->bds_stack.tl_bindings = NULL;
 #endif
   output->own_process = ECL_NIL;
+  output->c_stack.org = NULL;
   {
     size_t bytes = ecl_core.default_sigmask_bytes;
     if (bytes == 0) {
@@ -327,9 +328,9 @@ cl_boot(int argc, char **argv)
   ARGV = argv;
   ecl_self = argv[0];
 
-  init_unixint(0);
-  init_alloc(0);
+  ecl_add_module(ecl_module_gc);
 
+  init_unixint(0);
   init_big();
 
   /*
@@ -340,6 +341,9 @@ cl_boot(int argc, char **argv)
 
   env = ecl_core.first_env;
   ecl_init_first_env(env);
+
+  /* We need to enable GC because a lot of stuff is to be created */
+  ecl_module_gc->module.enable();
 
   /*
    * 1) Initialize symbols and packages
@@ -445,9 +449,6 @@ cl_boot(int argc, char **argv)
 
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
-
-  /* We need to enable GC because a lot of stuff is to be created */
-  init_alloc(1);
 
   /* Initialize the handler stack with the exception handler. */
   cl_import2(ECL_SIGNAL_HANDLERS, cl_core.system_package);

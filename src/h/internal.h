@@ -24,16 +24,13 @@ extern "C" {
 
 /* booting */
 extern void init_all_symbols(void);
-extern void init_alloc(int pass);
 extern void init_backq(void);
 extern void init_big();
 extern void init_clos(void);
 extern void init_error(void);
 extern void init_eval(void);
 extern void init_file(void);
-#ifndef GBC_BOEHM
-extern void init_GC(void);
-#endif
+extern void init_gc(void);
 extern void init_macros(void);
 extern void init_read(void);
 
@@ -54,7 +51,7 @@ extern void init_lib_LSP(cl_object);
 extern cl_env_ptr _ecl_alloc_env(cl_env_ptr parent);
 extern void _ecl_dealloc_env(cl_env_ptr);
 
-/* alloc.d/alloc_2.d */
+/* mem_gc.d */
 
 #ifdef GBC_BOEHM
 #define ECL_COMPACT_OBJECT_EXTRA(x) ((void*)((x)->array.displaced))
@@ -63,6 +60,10 @@ extern void _ecl_set_max_heap_size(size_t new_size);
 extern cl_object ecl_alloc_bytecodes(cl_index data_size, cl_index code_size);
 extern cl_index ecl_object_byte_size(cl_type t);
 extern cl_index ecl_next_stamp();
+
+/* modules.c */
+extern ECL_API cl_object ecl_module_dummy;
+extern ECL_API cl_object ecl_module_gc;
 
 /* array.d */
 

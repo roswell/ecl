@@ -33,17 +33,11 @@ ecl_cs_init(cl_env_ptr env)
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
   cl_index new_size = ecl_option_values[ECL_OPT_C_STACK_SIZE];
   cl_index max_size = new_size;
-#ifdef GBC_BOEHM
-  struct GC_stack_base base;
-  if (GC_get_stack_base(&base) == GC_SUCCESS)
-    env->c_stack.org = (char*)base.mem_base;
-  else
+  if (env->c_stack.org == NULL) {
+    /* Rough estimate. Not very safe. We assume that cl_boot() is invoked from
+     * the main() routine of the program. */
     env->c_stack.org = (char*)(&env);
-#else
-  /* Rough estimate. Not very safe. We assume that cl_boot() is invoked from the
-   * main() routine of the program. */
-  env->c_stack.org = (char*)(&env);
-#endif
+  }
 #ifdef ECL_CAN_SET_STACK_SIZE
   {
     struct rlimit rl;

@@ -600,8 +600,6 @@ dnl ----------------------------------------------------------------------
 dnl		Boehm-Weiser garbage collector
 if test ${enable_boehm} = "no" ; then
   AC_MSG_ERROR([Boehm GC library is currently needed to build ECL]);
-  EXTRA_OBJS="${EXTRA_OBJS} alloc.${OBJEXT} gbc.${OBJEXT}"
-  enable_smallcons="no"
 else
   ECL_BOEHM_GC
 fi
