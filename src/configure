@@ -7277,8 +7277,6 @@ fi
 
 if test ${enable_boehm} = "no" ; then
   as_fn_error $? "Boehm GC library is currently needed to build ECL" "$LINENO" 5;
-  EXTRA_OBJS="${EXTRA_OBJS} alloc.${OBJEXT} gbc.${OBJEXT}"
-  enable_smallcons="no"
 else
 
 
@@ -7531,7 +7529,6 @@ printf "%s\n" "${system_boehm} " >&6; }
    fi
  else
    FASL_LIBS="${FASL_LIBS} -lgc"
-   EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
 
 printf "%s\n" "#define GBC_BOEHM 1" >>confdefs.h
 
@@ -7561,7 +7558,6 @@ printf "%s\n" "$as_me: Configuring included Boehm GC library:" >&6;}
      ECL_BOEHM_GC_HEADER='ecl/gc/gc.h'
      SUBDIRS="${SUBDIRS} gc"
      CORE_LIBS="-leclgc ${CORE_LIBS}"
-     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
      if test "${enable_shared}" = "no"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgc.${LIBEXT}"
      fi
@@ -7605,6 +7601,7 @@ LSP_FEATURES="${LSP_FEATURES} :boehm-gc"
 
 LSP_FEATURES="${LSP_FEATURES} :ecl-weak-hash"
 
+  EXTRA_OBJS="${EXTRA_OBJS} mem_bdwgc.${OBJEXT}"
 fi
 if test ${enable_smallcons} = "yes" ; then
 
@@ -7718,7 +7715,6 @@ printf "%s\n" "$as_me: Configuring included libffi library:" >&6;}
      ECL_LIBFFI_HEADER='ecl/ffi.h'
      SUBDIRS="${SUBDIRS} libffi"
      CORE_LIBS="-leclffi ${CORE_LIBS}"
-     EXTRA_OBJS="${EXTRA_OBJS} alloc_2.${OBJEXT}"
      if test "${enable_shared}" = "no"; then
        LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclffi.${LIBEXT}"
      fi

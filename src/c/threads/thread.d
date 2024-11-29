@@ -164,7 +164,9 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   cl_env_ptr the_env;
   if (ecl_process_env_unsafe() != NULL)
     return 0;
+  ecl_module_gc->module.disable();
   the_env = ecl_adopt_cpu();
+  ecl_module_gc->module.enable();
   ecl_enable_interrupts_env(the_env);
 
   process = alloc_process(name, ECL_NIL);
@@ -482,7 +484,6 @@ init_threads()
   cl_object process, _env = ecl_cast_ptr(cl_object,the_env);
   /* We have to set the environment before any allocation takes place,
    * so that the interrupt handling code works. */
-  ecl_cs_init(the_env);
   process = ecl_alloc_object(t_process);
   process->process.phase = ECL_PROCESS_ACTIVE;
   process->process.name = @'si::top-level';

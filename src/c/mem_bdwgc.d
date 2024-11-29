@@ -1,17 +1,16 @@
 /* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
-/*
- * alloc_2.c - memory allocation based on the Boehm GC
- *
- * Copyright (c) 2001 Juan Jose Garcia Ripoll
- *
- * See file 'LICENSE' for the copyright details.
- *
- */
+/* mem_bdwgc.d - memory allocator and garbage collector based on bdwgc  */
+
+/* -- imports ---------------------------------------------------------------- */
+#include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
+#include <ecl/external.h>
 
 #include <stdio.h>
-#include <ecl/ecl.h>
+
 #ifdef ECL_THREADS
 # ifdef ECL_WINDOWS_THREADS
 #  include <windows.h>
@@ -19,21 +18,24 @@
 #  include <pthread.h>
 # endif
 #endif
+
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/page.h>
+
 #ifdef ECL_WSOCK
-#include <winsock.h>
+# include <winsock.h>
 #endif
 
 #ifdef GBC_BOEHM
-#include <gc/gc_mark.h>
+# include <gc/gc_mark.h>
+#endif
 
 static void (*GC_old_start_callback)(void) = NULL;
 static void gather_statistics(void);
 static void update_bytes_consed(void);
 static void ecl_mark_env(struct cl_env_struct *env);
- 
+
 #ifdef GBC_BOEHM_PRECISE
 # if GBC_BOEHM
 #  undef GBC_BOEHM_PRECISE
@@ -45,9 +47,7 @@ static void **cl_object_free_list;
 # endif
 #endif
 
-/**********************************************************
- *              OBJECT ALLOCATION                         *
- **********************************************************/
+/* -- object allocation ------------------------------------------------------ */
 
 void
 _ecl_set_max_heap_size(size_t new_size)
@@ -145,8 +145,7 @@ out_of_memory(size_t requested_bytes)
   switch (method) {
   case 0: cl_error(1, @'ext::storage-exhausted');
     break;
-  case 1: cl_cerror(2, @"Extend heap size",
-                    @'ext::storage-exhausted');
+  case 1: cl_cerror(2, @"Extend heap size", @'ext::storage-exhausted');
     break;
   case 2:
     return output;
@@ -474,6 +473,56 @@ ecl_dealloc(void *ptr)
   ecl_enable_interrupts_env(the_env);
 }
 
+/* -- weak pointers ---------------------------------------------------------- */
+
+cl_object
+ecl_alloc_weak_pointer(cl_object o)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  struct ecl_weak_pointer *obj;
+  ecl_disable_interrupts_env(the_env);
+  obj = GC_MALLOC_ATOMIC(sizeof(struct ecl_weak_pointer));
+  ecl_enable_interrupts_env(the_env);
+  obj->t = t_weak_pointer;
+  obj->value = o;
+  if (!ECL_IMMEDIATE(o)) {
+    GC_GENERAL_REGISTER_DISAPPEARING_LINK((void**)&(obj->value), (void*)o);
+    si_set_finalizer((cl_object)obj, ECL_T);
+  }
+  return (cl_object)obj;
+}
+
+static cl_object
+ecl_weak_pointer_value(cl_object o)
+{
+  return ecl_weak_pointer(o);
+}
+
+cl_object
+si_make_weak_pointer(cl_object o)
+{
+  cl_object pointer = ecl_alloc_weak_pointer(o);
+  @(return pointer);
+}
+
+cl_object
+si_weak_pointer_value(cl_object o)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object value;
+  if (ecl_unlikely(ecl_t_of(o) != t_weak_pointer))
+    FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
+                          @[ext::weak-pointer]);
+  value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
+  if (value) {
+    ecl_return2(the_env, value, ECL_T);
+  } else {
+    ecl_return2(the_env, ECL_NIL, ECL_NIL);
+  }
+}
+
+/* -- graph traversal -------------------------------------------------------- */
+
 #ifdef GBC_BOEHM_PRECISE
 static cl_index
 to_bitmap(void *x, void *y)
@@ -753,78 +802,7 @@ extern void (*GC_push_other_roots)();
 static void (*old_GC_push_other_roots)();
 static void stacks_scanner();
 
-void
-init_alloc(int pass)
-{
-  if (pass == 1) {
-    GC_enable();
-    return;
-  }
-  /*
-   * Garbage collector restrictions: we set up the garbage collector
-   * library to work as follows
-   *
-   * 1) The garbage collector shall not scan shared libraries
-   *    explicitely.
-   * 2) We only detect objects that are referenced by a pointer to
-   *    the begining or to the first byte.
-   * 3) Out of the incremental garbage collector, we only use the
-   *    generational component.
-   * 4) GC should handle fork() which is used to run subprocess on
-   *    some platforms.
-   */
-  GC_set_no_dls(1);
-  GC_set_all_interior_pointers(0);
-  GC_set_time_limit(GC_TIME_UNLIMITED);
-#ifndef ECL_MS_WINDOWS_HOST
-  GC_set_handle_fork(1);
-#endif
-  GC_init();
-#ifdef ECL_THREADS
-# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
-  GC_allow_register_threads();
-# endif
-#endif
-  if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
-    GC_enable_incremental();
-  }
-  GC_register_displacement(1);
-  GC_clear_roots();
-  GC_disable();
-
-#ifdef GBC_BOEHM_PRECISE
-# ifdef GBC_BOEHM_OWN_MARKER
-  cl_object_free_list = (void **)GC_new_free_list_inner();
-  cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
-  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
-                                     GC_MAKE_PROC(cl_object_mark_proc_index, 0),
-                                     FALSE, TRUE);
-# endif
-#endif /* !GBC_BOEHM_PRECISE */
-  ecl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE];
-  GC_set_max_heap_size(ecl_core.max_heap_size);
-  /* Save some memory for the case we get tight. */
-  if (ecl_core.max_heap_size == 0) {
-    cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-    ecl_core.safety_region = ecl_alloc_atomic_unprotected(size);
-  } else if (ecl_core.safety_region) {
-    ecl_core.safety_region = 0;
-  }
-
-  init_type_info();
-
-  old_GC_push_other_roots = GC_push_other_roots;
-  GC_push_other_roots = stacks_scanner;
-  GC_old_start_callback = GC_get_start_callback();
-  GC_set_start_callback(gather_statistics);
-  GC_set_java_finalization(1);
-  GC_set_oom_fn(out_of_memory);
-  GC_set_warn_proc(no_warnings);
-}
-
-/**********************************************************
- *              FINALIZATION                              *
- **********************************************************/
+/* -- finalization ----------------------------------------------------------- */
 
 static void
 standard_finalizer(cl_object o)
@@ -1061,6 +1039,8 @@ si_set_finalizer(cl_object o, cl_object finalizer)
   @(return);
 }
 
+/* -- GC stats --------------------------------------------------------------- */
+
 /* If we do not build our own version of the library, we do not have
  * control over the existence of this variable. */
 #if GBC_BOEHM == 0
@@ -1154,9 +1134,7 @@ update_bytes_consed () {
 #endif
 }
 
-/**********************************************************
- *              GARBAGE COLLECTOR                         *
- **********************************************************/
+/* -- garbage collection ----------------------------------------------------- */
 
 static void
 ecl_mark_env(struct cl_env_struct *env)
@@ -1171,7 +1149,8 @@ ecl_mark_env(struct cl_env_struct *env)
 #ifdef ECL_THREADS
   if (env->bds_stack.tl_bindings)
     GC_push_all((void *)env->bds_stack.tl_bindings,
-                (void *)(env->bds_stack.tl_bindings + env->bds_stack.tl_bindings_size));
+                (void *)(env->bds_stack.tl_bindings
+                         + env->bds_stack.tl_bindings_size));
 #endif
   GC_push_all((void *)env, (void *)(env + 1));
 }
@@ -1205,10 +1184,6 @@ stacks_scanner()
     (*old_GC_push_other_roots)();
 }
 
-/**********************************************************
- *              GARBAGE COLLECTION                        *
- **********************************************************/
-
 void
 ecl_register_root(cl_object *p)
 {
@@ -1238,54 +1213,113 @@ si_gc_dump()
   @(return);
 }
 
-/**********************************************************************
- * WEAK POINTERS
- */
+/* -- module definition ------------------------------------------------------ */
 
-cl_object
-ecl_alloc_weak_pointer(cl_object o)
+static cl_object
+create_gc()
 {
-  const cl_env_ptr the_env = ecl_process_env();
-  struct ecl_weak_pointer *obj;
-  ecl_disable_interrupts_env(the_env);
-  obj = GC_MALLOC_ATOMIC(sizeof(struct ecl_weak_pointer));
-  ecl_enable_interrupts_env(the_env);
-  obj->t = t_weak_pointer;
-  obj->value = o;
-  if (!ECL_IMMEDIATE(o)) {
-    GC_GENERAL_REGISTER_DISAPPEARING_LINK((void**)&(obj->value), (void*)o);
-    si_set_finalizer((cl_object)obj, ECL_T);
+  /*
+   * Garbage collector restrictions: we set up the garbage collector
+   * library to work as follows
+   *
+   * 1) The garbage collector shall not scan shared libraries
+   *    explicitely.
+   * 2) We only detect objects that are referenced by a pointer to
+   *    the begining or to the first byte.
+   * 3) Out of the incremental garbage collector, we only use the
+   *    generational component.
+   * 4) GC should handle fork() which is used to run subprocess on
+   *    some platforms.
+   */
+  GC_set_no_dls(1);
+  GC_set_all_interior_pointers(0);
+  GC_set_time_limit(GC_TIME_UNLIMITED);
+#ifndef ECL_MS_WINDOWS_HOST
+  GC_set_handle_fork(1);
+#endif
+  GC_init();
+#ifdef ECL_THREADS
+# if GC_VERSION_MAJOR > 7 || GC_VERSION_MINOR > 1
+  GC_allow_register_threads();
+# endif
+#endif
+  if (ecl_option_values[ECL_OPT_INCREMENTAL_GC]) {
+    GC_enable_incremental();
   }
-  return (cl_object)obj;
+  GC_register_displacement(1);
+  GC_clear_roots();
+  GC_disable();
+
+#ifdef GBC_BOEHM_PRECISE
+# ifdef GBC_BOEHM_OWN_MARKER
+  cl_object_free_list = (void **)GC_new_free_list_inner();
+  cl_object_mark_proc_index = GC_new_proc((GC_mark_proc)cl_object_mark_proc);
+  cl_object_kind = GC_new_kind_inner(cl_object_free_list,
+                                     GC_MAKE_PROC(cl_object_mark_proc_index, 0),
+                                     FALSE, TRUE);
+# endif
+#endif /* !GBC_BOEHM_PRECISE */
+  ecl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE];
+  GC_set_max_heap_size(ecl_core.max_heap_size);
+  /* Save some memory for the case we get tight. */
+  if (ecl_core.max_heap_size == 0) {
+    cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
+    ecl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+  } else if (ecl_core.safety_region) {
+    ecl_core.safety_region = 0;
+  }
+
+  init_type_info();
+
+  old_GC_push_other_roots = GC_push_other_roots;
+  GC_push_other_roots = stacks_scanner;
+  GC_old_start_callback = GC_get_start_callback();
+  GC_set_start_callback(gather_statistics);
+  GC_set_java_finalization(1);
+  GC_set_oom_fn(out_of_memory);
+  GC_set_warn_proc(no_warnings);
+
+  return ECL_NIL;
 }
 
 static cl_object
-ecl_weak_pointer_value(cl_object o)
+enable_gc ()
 {
-  return ecl_weak_pointer(o);
+  GC_enable();
+  return ECL_NIL;
 }
 
-cl_object
-si_make_weak_pointer(cl_object o)
+static cl_object
+disable_gc ()
 {
-  cl_object pointer = ecl_alloc_weak_pointer(o);
-  @(return pointer);
+  GC_disable();
+  return ECL_NIL;
 }
 
-cl_object
-si_weak_pointer_value(cl_object o)
+static cl_object
+init_cpu(cl_env_ptr the_env)
 {
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object value;
-  if (ecl_unlikely(ecl_t_of(o) != t_weak_pointer))
-    FEwrong_type_only_arg(@[ext::weak-pointer-value], o,
-                          @[ext::weak-pointer]);
-  value = (cl_object)GC_call_with_alloc_lock((GC_fn_type)ecl_weak_pointer_value, o);
-  if (value) {
-    ecl_return2(the_env, value, ECL_T);
-  } else {
-    ecl_return2(the_env, ECL_NIL, ECL_NIL);
-  }
+#ifdef GBC_BOEHM
+  struct GC_stack_base stack;
+  GC_get_stack_base(&stack);
+  the_env->c_stack.org = (char*)stack.mem_base;
+#endif
+  return ECL_NIL;
 }
 
-#endif /* GBC_BOEHM */
+ecl_def_ct_base_string(str_gc, "BDW-GC", 6, static, const);
+
+static struct ecl_module module_gc = {
+  .t = t_module,
+  .name = str_gc,
+  .create = create_gc,
+  .enable = enable_gc,
+  .init_env = ecl_module_no_op_env,
+  .init_cpu = init_cpu,
+  .free_cpu = ecl_module_no_op_cpu,
+  .free_env = ecl_module_no_op_env,
+  .disable = disable_gc,
+  .destroy = ecl_module_no_op
+};
+
+cl_object ecl_module_gc = (cl_object)&module_gc;
