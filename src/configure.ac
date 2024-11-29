@@ -605,12 +605,11 @@ dnl ----------------------------------------------------------------------
 dnl		Boehm-Weiser garbage collector
 if test ${enable_boehm} = "no" ; then
   AC_MSG_ERROR([Boehm GC library is currently needed to build ECL]);
-  EXTRA_OBJS="${EXTRA_OBJS} alloc.${OBJEXT} gbc.${OBJEXT}"
-  enable_smallcons="no"
 else
   ECL_BOEHM_GC
   ECL_ADD_FEATURE(boehm-gc)
   ECL_ADD_FEATURE(ecl-weak-hash)
+  EXTRA_OBJS="${EXTRA_OBJS} mem_bdwgc.${OBJEXT}"
 fi
 if test ${enable_smallcons} = "yes" ; then
    AC_DEFINE([ECL_SMALL_CONS], [], [ECL_SMALL_CONS])

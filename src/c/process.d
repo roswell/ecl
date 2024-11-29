@@ -169,35 +169,18 @@ unregister_gc_thread()
 cl_env_ptr
 ecl_adopt_cpu()
 {
-  struct cl_env_struct env_aux[1];
-  struct ecl_interrupt_struct int_aux[1];
   cl_env_ptr the_env = ecl_process_env_unsafe();
   ecl_thread_t current;
   if (the_env != NULL)
     return the_env;
-  /* Ensure that the thread is known to the GC. */
   register_gc_thread();
   ecl_set_process_self(current);
-  /* We need a fake env to allow for interrupts blocking and to set up frame
-   * stacks or other stuff that is needed by ecl_init_env. Since the fake env is
-   * allocated on the stack, we can safely store pointers to memory allocated by
-   * the gc there. */
-  memset(env_aux, 0, sizeof(*env_aux));
-  env_aux->disable_interrupts = 1;
-  env_aux->interrupt_struct = int_aux;
-  env_aux->interrupt_struct->pending_interrupt = ECL_NIL;
-  ecl_mutex_init(&env_aux->interrupt_struct->signal_queue_lock, FALSE);
-  env_aux->interrupt_struct->signal_queue = ECL_NIL;
-  ecl_set_process_env(env_aux);
-  env_aux->thread = current;
-  ecl_init_env(env_aux);
-
-  /* Allocate, initialize and switch to the real environment. */
   the_env = _ecl_alloc_env(0);
-  memcpy(the_env, env_aux, sizeof(*the_env));
+  the_env->thread = current;
+  ecl_set_process_env(the_env);
+  ecl_init_env(the_env);
   add_env(the_env);
   init_tl_bindings(ECL_NIL, the_env);
-  ecl_set_process_env(the_env);
   ecl_modules_init_cpu(the_env);
 
   return the_env;
@@ -254,7 +237,6 @@ thread_entry_point(void *ptr)
   CloseHandle(the_env->thread);
 #endif
   _ecl_dealloc_env(the_env);
-
 #ifdef ECL_WINDOWS_THREADS
   return 1;
 #else
@@ -354,6 +336,7 @@ init_process(void)
   ecl_core.threads = ecl_make_stack(16);
 #endif
   ecl_set_process_env(the_env);
+  the_env->c_stack.org = NULL;
   the_env->default_sigmask = NULL;
   the_env->method_cache = NULL;
   the_env->slot_cache = NULL;
