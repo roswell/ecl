@@ -134,6 +134,7 @@ _ecl_dealloc_env(cl_env_ptr env)
   if (!VirtualFree(env, 0, MEM_RELEASE))
     ecl_internal_error("Unable to deallocate environment structure.");
 #else
+  ecl_clear_bignum_registers(env);
   ecl_free_unsafe(env);
 #endif
 }
