@@ -1482,17 +1482,108 @@ create_signal_code_constants()
 #endif
 }
 
-void
-init_unixint(int pass)
+/* -- module definition ------------------------------------------------------ */
+
+static cl_object
+create_unixint()
 {
-  if (pass == 0) {
-    install_asynchronous_signal_handlers();
-    install_synchronous_signal_handlers();
-  } else {
-    create_signal_code_constants();
-    install_fpe_signal_handlers();
-    install_signal_handling_thread();
-    ECL_SET(@'ext::*interrupts-enabled*', ECL_T);
-    ecl_process_env()->disable_interrupts = 0;
-  }
+  cl_env_ptr the_env = ecl_core.first_env;
+  the_env->default_sigmask = NULL;
+  the_env->interrupt_struct = NULL;
+  ecl_disable_interrupts_env(the_env);
+  /* Install handlers */
+  install_asynchronous_signal_handlers();
+  install_synchronous_signal_handlers();
+  return ECL_NIL;
 }
+
+static cl_object
+enable_unixint()
+{
+  create_signal_code_constants();
+  install_fpe_signal_handlers();
+  install_signal_handling_thread();
+  ECL_SET(@'ext::*interrupts-enabled*', ECL_T);
+  ecl_process_env()->disable_interrupts = 0;
+  return ECL_NIL;
+}
+
+static cl_object
+init_env_unixint(cl_env_ptr the_env)
+{
+  cl_env_ptr parent_env = ecl_process_env_unsafe();
+  size_t bytes = ecl_core.default_sigmask_bytes;
+  if (bytes == 0) {
+    the_env->default_sigmask = 0;
+  } else if (parent_env) {
+    the_env->default_sigmask = ecl_alloc_atomic(bytes);
+    memcpy(the_env->default_sigmask, parent_env->default_sigmask, bytes);
+  } else {
+    the_env->default_sigmask = ecl_core.first_env->default_sigmask;
+  }
+  the_env->interrupt_struct = ecl_alloc(sizeof(*the_env->interrupt_struct));
+  the_env->interrupt_struct->pending_interrupt = ECL_NIL;
+#ifdef ECL_THREADS
+  ecl_mutex_init(&the_env->interrupt_struct->signal_queue_lock, FALSE);
+#endif
+#ifdef ECL_WINDOWS_THREADS
+  the_env->interrupt_struct->inside_interrupt = false;
+#endif
+  {
+    int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
+    the_env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
+  }
+  the_env->fault_address = the_env;
+  the_env->trap_fpe_bits = 0;
+  /* An fresh environment _always_ disables interrupts. They are activated later
+   * on by the thread entry point or ecl_module_unixint. */
+  ecl_disable_interrupts_env(the_env);
+  return ECL_NIL;
+}
+
+static cl_object
+init_cpu_unixint(cl_env_ptr the_env)
+{
+  return ECL_NIL;
+}
+
+static cl_object
+free_cpu_unixint(cl_env_ptr the_env)
+{
+  ecl_disable_interrupts_env(the_env);
+  return ECL_NIL;
+}
+
+static cl_object
+free_env_unixint(cl_env_ptr the_env)
+{
+#ifdef ECL_THREADS
+  ecl_mutex_destroy(&the_env->interrupt_struct->signal_queue_lock);
+#endif
+  return ECL_NIL;
+}
+
+/* KLUDGE UNIXINT and MEM_GC are interwened - GC expects stop_world to work and
+   unixint relies on the GC to allocate its internal structures.
+
+   When we start add MEM_GC module before UNIXINT and enable GC after both are
+   created. That is enough to get GC going. Finally we enable UNIXINT.
+
+   When we adopt a new cpu we first disable MEM_GC, then initialize UNIXINT
+   (allocator works fine despite GC collector being disabled), then initialize
+   GC to register the current thread and enable the GC. -- jd 2024-12-05 */
+
+ecl_def_ct_base_string(str_unixint, "UNIXINT", 7, static, const);
+static struct ecl_module module_unixint = {
+  .name = str_unixint,
+  .create = create_unixint,
+  .enable = enable_unixint,
+  .init_env = init_env_unixint,
+  .init_cpu = init_cpu_unixint,
+  .free_cpu = free_cpu_unixint,
+  .free_env = free_env_unixint,
+  .disable = ecl_module_no_op,
+  .destroy = ecl_module_no_op
+};
+
+cl_object ecl_module_unixint = (cl_object)&module_unixint;
