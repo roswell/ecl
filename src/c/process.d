@@ -196,7 +196,6 @@ ecl_disown_cpu()
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(the_env->thread);
 #endif
-  ecl_set_process_env(NULL);
   del_env(the_env);
   _ecl_dealloc_env(the_env);
   unregister_gc_thread();
@@ -212,7 +211,6 @@ thread_entry_point(void *ptr)
   cl_env_ptr the_env = ecl_cast_ptr(cl_env_ptr, ptr);
   cl_object process = the_env->own_process;
   /* Setup the environment for the execution of the thread. */
-  ecl_set_process_env(the_env);
   ecl_modules_init_cpu(the_env);
   ecl_cs_init(the_env);
 
@@ -228,8 +226,6 @@ thread_entry_point(void *ptr)
    * mp_interrupt_process() and mp_process_kill(). */
 
   ecl_disable_interrupts_env(the_env);
-  ecl_set_process_env(NULL);
-  the_env->own_process = ECL_NIL;
   ecl_modules_free_cpu(the_env);
   del_env(the_env);
 #ifdef ECL_WINDOWS_THREADS
@@ -317,16 +313,11 @@ ecl_spawn_cpu(cl_object process)
 }
 #endif
 
-/* -- Initialiation --------------------------------------------------------- */
-
-void
-init_process(void)
+/* -- Module definition (so meta!) ------------------------------------------ */
+static cl_object
+create_process()
 {
-  cl_env_ptr the_env = ecl_core.first_env;
 #ifdef ECL_THREADS
-  ecl_thread_t main_thread;
-  ecl_set_process_self(main_thread);
-  the_env->thread = main_thread;
   ecl_process_key_create(cl_env_key);
   ecl_mutex_init(&ecl_core.processes_lock, 1);
   ecl_mutex_init(&ecl_core.global_lock, 1);
@@ -334,8 +325,53 @@ init_process(void)
   ecl_rwlock_init(&ecl_core.global_env_lock);
   ecl_core.threads = ecl_make_stack(16);
 #endif
-  ecl_set_process_env(the_env);
-  the_env->c_stack.org = NULL;
-  the_env->method_cache = NULL;
-  the_env->slot_cache = NULL;
+  return ECL_NIL;
 }
+
+static cl_object
+init_env_process(cl_env_ptr the_env)
+{
+#ifdef ECL_THREAD
+  the_env->own_process = ECL_NIL;
+#endif
+  return ECL_NIL;
+}
+
+static cl_object
+init_cpu_process(cl_env_ptr the_env)
+{
+  ecl_set_process_env(the_env);
+  return ECL_NIL;
+}
+
+static cl_object
+free_cpu_process(cl_env_ptr the_env)
+{
+  ecl_set_process_env(NULL);
+  return ECL_NIL;
+}
+
+static cl_object
+free_env_process(cl_env_ptr the_env)
+{
+#ifdef ECL_THREAD
+  the_env->own_process = ECL_NIL;
+#endif
+  return ECL_NIL;
+}
+
+ecl_def_ct_base_string(str_process, "PROCESS", 7, static, const);
+
+static struct ecl_module module_process = {
+  .name = str_process,
+  .create = create_process,
+  .enable = ecl_module_no_op,
+  .init_env = init_env_process,
+  .init_cpu = init_cpu_process,
+  .free_cpu = free_cpu_process,
+  .free_env = free_env_process,
+  .disable = ecl_module_no_op,
+  .destroy = ecl_module_no_op
+};
+
+cl_object ecl_module_process = (cl_object)&module_process;
