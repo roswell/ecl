@@ -28,6 +28,9 @@ extern ECL_API cl_object ecl_module_stacks;
 extern ECL_API cl_object ecl_module_dummy;
 extern ECL_API cl_object ecl_module_gc;
 extern ECL_API cl_object ecl_module_unixint;
+#ifdef ECL_THREADS
+extern ECL_API cl_object ecl_module_thread;
+#endif
 extern ECL_API cl_object ecl_module_bignum;
 extern ECL_API cl_object ecl_module_ffi;
 extern ECL_API cl_object ecl_module_aux;
@@ -46,9 +49,6 @@ extern void init_unixtime(void);
 extern void init_compiler(void);
 extern void init_process(void);
 extern void init_modules(void);
-#ifdef ECL_THREADS
-extern void init_threads(void);
-#endif
 extern void ecl_init_env(cl_env_ptr);
 extern void init_lib_LSP(cl_object);
 

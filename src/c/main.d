@@ -43,14 +43,6 @@ static int ARGC;
 static char **ARGV;
 
 void
-ecl_init_first_env(cl_env_ptr the_env)
-{
-#ifdef ECL_THREADS
-  init_threads();
-#endif
-}
-
-void
 ecl_init_env(cl_env_ptr env)
 {
   ecl_modules_init_env(env);
@@ -241,6 +233,9 @@ cl_boot(int argc, char **argv)
   ecl_add_module(ecl_module_stacks);
   ecl_add_module(ecl_module_gc);
   ecl_add_module(ecl_module_unixint);
+#ifdef ECL_THREADS
+  ecl_add_module(ecl_module_thread);
+#endif
   ecl_add_module(ecl_module_bignum);
   ecl_add_module(ecl_module_ffi);
   ecl_add_module(ecl_module_aux);
@@ -252,7 +247,6 @@ cl_boot(int argc, char **argv)
    */
 
   env = ecl_core.first_env;
-  ecl_init_first_env(env);
 
   /* We need to enable GC because a lot of stuff is to be created */
   ecl_module_gc->module.enable();

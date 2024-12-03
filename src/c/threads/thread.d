@@ -474,12 +474,17 @@ mp_restore_signals(cl_object sigmask)
 #endif
 }
 
-/* -- Initialization ------------------------------------------------ */
+/* -- Module definition --------------------------------------------- */
 
 void
 init_threads()
 {
-  cl_env_ptr the_env = ecl_process_env();
+}
+
+static cl_object
+create_thread()
+{
+  cl_env_ptr the_env = ecl_core.first_env;
   cl_object process, _env = ecl_cast_ptr(cl_object,the_env);
   /* We have to set the environment before any allocation takes place,
    * so that the interrupt handling code works. */
@@ -493,4 +498,51 @@ init_threads()
   ecl_cond_var_init(&process->process.exit_barrier);
   the_env->own_process = process;
   ecl_stack_push(ecl_core.threads, _env);
+  return ECL_NIL;
 }
+
+static cl_object
+enable_thread()
+{
+  return ECL_NIL;
+}
+
+static cl_object
+init_env_thread(cl_env_ptr the_env)
+{
+  return ECL_NIL;
+}
+
+static cl_object
+init_cpu_thread(cl_env_ptr the_env)
+{
+  return ECL_NIL;
+}
+
+static cl_object
+free_cpu_thread(cl_env_ptr the_env)
+{
+  return ECL_NIL;
+}
+
+static cl_object
+free_env_thread(cl_env_ptr the_env)
+{
+  return ECL_NIL;
+}
+
+ecl_def_ct_base_string(str_thread, "THREAD", 6, static, const);
+
+static struct ecl_module module_thread = {
+  .name = str_thread,
+  .create = create_thread,
+  .enable = enable_thread,
+  .init_env = init_env_thread,
+  .init_cpu = init_cpu_thread,
+  .free_cpu = free_cpu_thread,
+  .free_env = free_env_thread,
+  .disable = ecl_module_no_op,
+  .destroy = ecl_module_no_op
+};
+
+cl_object ecl_module_thread = (cl_object)&module_thread;
