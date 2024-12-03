@@ -42,25 +42,6 @@ const char *ecl_self;
 static int ARGC;
 static char **ARGV;
 
-static void
-init_env_aux(cl_env_ptr env)
-{
-  /* Reader */
-  env->string_pool = ECL_NIL;
-  env->token_pool = ECL_NIL;
-  env->packages_to_be_created = ECL_NIL;
-  env->packages_to_be_created_p = ECL_NIL;
-  /* Format (written in C) */
-#if !defined(ECL_CMU_FORMAT)
-  env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
-#endif
-  /* Bytecodes compiler environment */
-  env->c_env = NULL;
-  /* CLOS caches */
-  env->method_cache = ecl_make_cache(64, 4096);
-  env->slot_cache = ecl_make_cache(3, 4096);
-}
-
 void
 ecl_init_first_env(cl_env_ptr the_env)
 {
@@ -69,7 +50,6 @@ ecl_init_first_env(cl_env_ptr the_env)
   init_threads();
 #endif
   ecl_cs_init(the_env);
-  init_env_aux(the_env);
   init_stacks(the_env);
 }
 
@@ -77,7 +57,6 @@ void
 ecl_init_env(cl_env_ptr env)
 {
   ecl_modules_init_env(env);
-  init_env_aux(env);
   init_stacks(env);
 }
 
@@ -135,7 +114,6 @@ _ecl_alloc_env(cl_env_ptr parent)
   output->bds_stack.tl_bindings = NULL;
 #endif
   output->c_stack.org = NULL;
-  output->method_cache = output->slot_cache = NULL;
   return output;
 }
 
@@ -273,6 +251,7 @@ cl_boot(int argc, char **argv)
   ecl_add_module(ecl_module_unixint);
   ecl_add_module(ecl_module_bignum);
   ecl_add_module(ecl_module_ffi);
+  ecl_add_module(ecl_module_aux);
 
   /*
    * Initialize the per-thread data.
@@ -547,6 +526,52 @@ cl_boot(int argc, char **argv)
   ecl_module_unixint->module.enable();
   return 1;
 }
+
+/* -- Module definition (auxiliary structures) ------------------------------- */
+static cl_object
+create_aux()
+{
+  cl_env_ptr the_env = ecl_core.first_env;
+  the_env->method_cache = NULL;
+  the_env->slot_cache = NULL;
+  return ECL_NIL;
+}
+
+static cl_object
+init_env_aux(cl_env_ptr the_env)
+{
+  /* Reader */
+  the_env->string_pool = ECL_NIL;
+  the_env->token_pool = ECL_NIL;
+  the_env->packages_to_be_created = ECL_NIL;
+  the_env->packages_to_be_created_p = ECL_NIL;
+  /* Format (written in C) */
+#if !defined(ECL_CMU_FORMAT)
+  the_env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
+#endif
+  /* Bytecodes compiler environment */
+  the_env->c_env = NULL;
+  /* CLOS caches */
+  the_env->method_cache = ecl_make_cache(64, 4096);
+  the_env->slot_cache = ecl_make_cache(3, 4096);
+  return ECL_NIL;
+}
+
+ecl_def_ct_base_string(str_aux, "AUX", 3, static, const);
+
+static struct ecl_module module_aux = {
+  .t = t_module,
+  .name = str_aux,
+  .create = create_aux,
+  .enable = ecl_module_no_op,
+  .init_env = init_env_aux,
+  .init_cpu = ecl_module_no_op_env,
+  .free_cpu = ecl_module_no_op_cpu,
+  .free_env = ecl_module_no_op_env,
+  .disable = ecl_module_no_op,
+  .destroy = ecl_module_no_op
+};
+cl_object ecl_module_aux = (cl_object)&module_aux;
 
 /************************* ENVIRONMENT ROUTINES ***********************/
 
