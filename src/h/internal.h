@@ -28,6 +28,7 @@ extern ECL_API cl_object ecl_module_dummy;
 extern ECL_API cl_object ecl_module_gc;
 extern ECL_API cl_object ecl_module_unixint;
 extern ECL_API cl_object ecl_module_bignum;
+extern ECL_API cl_object ecl_module_ffi;
 
 extern void init_all_symbols(void);
 extern void init_backq(void);
