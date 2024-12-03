@@ -43,25 +43,6 @@ static int ARGC;
 static char **ARGV;
 
 static void
-init_env_int(cl_env_ptr env)
-{
-  env->interrupt_struct = ecl_alloc(sizeof(*env->interrupt_struct));
-  env->interrupt_struct->pending_interrupt = ECL_NIL;
-#ifdef ECL_THREADS
-  ecl_mutex_init(&env->interrupt_struct->signal_queue_lock, FALSE);
-#endif
-#ifdef ECL_WINDOWS_THREADS
-  env->interrupt_struct->inside_interrupt = false;
-#endif
-  {
-    int size = ecl_option_values[ECL_OPT_SIGNAL_QUEUE_SIZE];
-    env->interrupt_struct->signal_queue = cl_make_list(1, ecl_make_fixnum(size));
-  }
-  env->fault_address = env;
-  env->trap_fpe_bits = 0;
-}
-
-static void
 init_env_ffi(cl_env_ptr env)
 {
 #ifdef HAVE_LIBFFI
@@ -101,7 +82,6 @@ ecl_init_first_env(cl_env_ptr the_env)
   init_threads();
 #endif
   ecl_cs_init(the_env);
-  init_env_int(the_env);
   init_env_aux(the_env);
   init_env_ffi(the_env);
   init_stacks(the_env);
@@ -111,7 +91,6 @@ void
 ecl_init_env(cl_env_ptr env)
 {
   ecl_modules_init_env(env);
-  init_env_int(env);
   init_env_aux(env);
   init_env_ffi(env);
   init_stacks(env);
@@ -123,9 +102,6 @@ _ecl_dealloc_env(cl_env_ptr env)
   env->own_process = ECL_NIL;
   ecl_modules_free_env(env);
   free_stacks(env);
-#ifdef ECL_THREADS
-  ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
-#endif
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
@@ -177,27 +153,10 @@ _ecl_alloc_env(cl_env_ptr parent)
 #endif
   output->own_process = ECL_NIL;
   output->c_stack.org = NULL;
-  {
-    size_t bytes = ecl_core.default_sigmask_bytes;
-    if (bytes == 0) {
-      output->default_sigmask = 0;
-    } else if (parent) {
-      output->default_sigmask = ecl_alloc_atomic(bytes);
-      memcpy(output->default_sigmask, parent->default_sigmask, bytes);
-    } else {
-      output->default_sigmask = ecl_core.first_env->default_sigmask;
-    }
-  }
   for (cl_index i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
     output->big_register[i] = ECL_NIL;
   }
   output->method_cache = output->slot_cache = NULL;
-  output->interrupt_struct = NULL;
-  /*
-   * An uninitialized environment _always_ disables interrupts. They
-   * are activated later on by the thread entry point or init_unixint().
-   */
-  output->disable_interrupts = 1;
   return output;
 }
 
@@ -331,8 +290,8 @@ cl_boot(int argc, char **argv)
   ecl_self = argv[0];
 
   ecl_add_module(ecl_module_gc);
+  ecl_add_module(ecl_module_unixint);
 
-  init_unixint(0);
   init_big();
 
   /*
@@ -605,7 +564,7 @@ cl_boot(int argc, char **argv)
 
   /* Jump to top level */
   ECL_SET(@'*package*', cl_core.user_package);
-  init_unixint(1);
+  ecl_module_unixint->module.enable();
   return 1;
 }
 

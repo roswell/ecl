@@ -192,7 +192,6 @@ ecl_disown_cpu()
   cl_env_ptr the_env = ecl_process_env_unsafe();
   if (the_env == NULL)
     return;
-  ecl_disable_interrupts_env(the_env);
   ecl_modules_free_cpu(the_env);
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(the_env->thread);
@@ -337,9 +336,6 @@ init_process(void)
 #endif
   ecl_set_process_env(the_env);
   the_env->c_stack.org = NULL;
-  the_env->default_sigmask = NULL;
   the_env->method_cache = NULL;
   the_env->slot_cache = NULL;
-  the_env->interrupt_struct = NULL;
-  the_env->disable_interrupts = 1;
 }
