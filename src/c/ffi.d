@@ -13,6 +13,7 @@
 #include <string.h>
 #define ECL_INCLUDE_FFI_H
 #include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 
 static const cl_object ecl_aet_to_ffi_table[ecl_aet_bc+1] = {
@@ -1019,3 +1020,33 @@ si_free_ffi_closure(cl_object closure)
     @(return closure_object);
 } @)
 #endif /* HAVE_LIBFFI */
+
+/* -- Module definition ------------------------------------------------------ */
+static cl_object
+init_env_ffi(cl_env_ptr the_env)
+{
+#ifdef HAVE_LIBFFI
+  the_env->ffi_args_limit = 0;
+  the_env->ffi_types = 0;
+  the_env->ffi_values = 0;
+  the_env->ffi_values_ptrs = 0;
+#endif
+  return ECL_NIL;
+}
+
+ecl_def_ct_base_string(str_ffi, "FFI", 3, static, const);
+
+static struct ecl_module module_ffi = {
+  .t = t_module,
+  .name = str_ffi,
+  .create = ecl_module_no_op,
+  .enable = ecl_module_no_op,
+  .init_env = init_env_ffi,
+  .init_cpu = ecl_module_no_op_cpu,
+  .free_cpu = ecl_module_no_op_cpu,
+  .free_env = ecl_module_no_op_env,
+  .disable = ecl_module_no_op,
+  .destroy = ecl_module_no_op
+};
+
+cl_object ecl_module_ffi = (cl_object)&module_ffi;

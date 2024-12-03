@@ -43,17 +43,6 @@ static int ARGC;
 static char **ARGV;
 
 static void
-init_env_ffi(cl_env_ptr env)
-{
-#ifdef HAVE_LIBFFI
-  env->ffi_args_limit = 0;
-  env->ffi_types = 0;
-  env->ffi_values = 0;
-  env->ffi_values_ptrs = 0;
-#endif
-}
-
-static void
 init_env_aux(cl_env_ptr env)
 {
   /* Reader */
@@ -81,7 +70,6 @@ ecl_init_first_env(cl_env_ptr the_env)
 #endif
   ecl_cs_init(the_env);
   init_env_aux(the_env);
-  init_env_ffi(the_env);
   init_stacks(the_env);
 }
 
@@ -90,7 +78,6 @@ ecl_init_env(cl_env_ptr env)
 {
   ecl_modules_init_env(env);
   init_env_aux(env);
-  init_env_ffi(env);
   init_stacks(env);
 }
 
@@ -285,6 +272,7 @@ cl_boot(int argc, char **argv)
   ecl_add_module(ecl_module_gc);
   ecl_add_module(ecl_module_unixint);
   ecl_add_module(ecl_module_bignum);
+  ecl_add_module(ecl_module_ffi);
 
   /*
    * Initialize the per-thread data.
