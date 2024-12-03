@@ -23,6 +23,10 @@ extern "C" {
 #define unlikely_if(x) if (ecl_unlikely(x))
 
 /* booting */
+extern ECL_API cl_object ecl_module_dummy;
+extern ECL_API cl_object ecl_module_gc;
+extern ECL_API cl_object ecl_module_unixint;
+
 extern void init_all_symbols(void);
 extern void init_backq(void);
 extern void init_big();
@@ -37,7 +41,6 @@ extern void init_read(void);
 extern cl_object init_stacks(cl_env_ptr);
 extern cl_object free_stacks(cl_env_ptr);
 
-extern void init_unixint(int pass);
 extern void init_unixtime(void);
 extern void init_compiler(void);
 extern void init_process(void);
@@ -62,10 +65,6 @@ extern void _ecl_set_max_heap_size(size_t new_size);
 extern cl_object ecl_alloc_bytecodes(cl_index data_size, cl_index code_size);
 extern cl_index ecl_object_byte_size(cl_type t);
 extern cl_index ecl_next_stamp();
-
-/* modules.c */
-extern ECL_API cl_object ecl_module_dummy;
-extern ECL_API cl_object ecl_module_gc;
 
 /* array.d */
 
