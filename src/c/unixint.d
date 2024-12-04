@@ -366,15 +366,14 @@ handle_all_queued(cl_env_ptr env)
 static void
 handle_all_queued_interrupt_safe(cl_env_ptr env)
 {
-  /* We have to save and later restore thread-local variables to
-   * ensure that they don't get overwritten by the interrupting
-   * code */
-  /* INV: - IHS stack manipulations are interrupt safe
-   *      - The rest of the thread local variables are
-   *        guaranteed to be used in an interrupt safe way. This
-   *        is not true for the compiler environment and ffi
-   *        data, but it is unclear whether the DFFI or compiler
-   *        are thread safe anyway. */
+  /* We have to save and later restore thread-local variables to ensure that
+   * they don't get overwritten by the interrupting code. */
+  /* FIXME introduce save/load procedure in modules. */
+  /* INV IHS stack manipulations are interrupt safe; the rest of the thread
+   * local variables are guaranteed to be used in an interrupt safe way[1].
+   *
+   * [1] This is not true for the compiler environment and ffi data, but it is
+   * unclear whether the DFFI or the compiler are thread safe anyway. */
   cl_object fun = env->function;
   cl_index nvalues = env->nvalues;
   cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
@@ -387,7 +386,8 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
    * not init and clear them before calling the interrupting
    * code we would risk memory leaks. */
   cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
-  memcpy(big_register, env->big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
+  cl_index big_register_size = ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object);
+  ecl_copy(big_register, env->big_register, big_register_size);
   ecl_init_bignum_registers(env);
   /* We might have been interrupted while we push/pop in the stack. Increasing
    * env->run_stack.top ensures that we don't overwrite the topmost stack
@@ -407,8 +407,8 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
   memcpy(env->bds_stack.top+1, &top_binding, sizeof(struct ecl_bds_frame));
   memcpy(env->frs_stack.top+1, &top_frame, sizeof(struct ecl_frame));
   env->run_stack.top--;
-  ecl_clear_bignum_registers(env);
-  memcpy(env->big_register, big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
+  ecl_free_bignum_registers(env);
+  ecl_copy(env->big_register, big_register, big_register_size);
   env->packages_to_be_created_p = packages_to_be_created_p;
   env->packages_to_be_created = packages_to_be_created;
   env->stack_frame = stack_frame;
