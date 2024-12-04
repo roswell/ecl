@@ -64,8 +64,6 @@ init_env_aux(cl_env_ptr env)
 #if !defined(ECL_CMU_FORMAT)
   env->fmt_aux_stream = ecl_make_string_output_stream(64, 1);
 #endif
-  /* Bignum arithmetic */
-  ecl_init_bignum_registers(env);
   /* Bytecodes compiler environment */
   env->c_env = NULL;
   /* CLOS caches */
@@ -106,7 +104,6 @@ _ecl_dealloc_env(cl_env_ptr env)
   if (!VirtualFree(env, 0, MEM_RELEASE))
     ecl_internal_error("Unable to deallocate environment structure.");
 #else
-  ecl_clear_bignum_registers(env);
   ecl_free_unsafe(env);
 #endif
 }
@@ -149,9 +146,6 @@ _ecl_alloc_env(cl_env_ptr parent)
   output->bds_stack.tl_bindings = NULL;
 #endif
   output->c_stack.org = NULL;
-  for (cl_index i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
-    output->big_register[i] = ECL_NIL;
-  }
   output->method_cache = output->slot_cache = NULL;
   return output;
 }
@@ -288,8 +282,7 @@ cl_boot(int argc, char **argv)
   ecl_add_module(ecl_module_process);
   ecl_add_module(ecl_module_gc);
   ecl_add_module(ecl_module_unixint);
-
-  init_big();
+  ecl_add_module(ecl_module_bignum);
 
   /*
    * Initialize the per-thread data.
