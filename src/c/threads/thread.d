@@ -115,7 +115,6 @@ run_process(cl_narg narg, ...)
   } ECL_CATCH_ALL_END;
 
   ecl_disable_interrupts_env(the_env);
-  ecl_clear_bignum_registers(the_env);
 
   ecl_mutex_lock(&process->process.start_stop_lock);
   process->process.phase = ECL_PROCESS_EXITING;
