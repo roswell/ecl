@@ -14,10 +14,13 @@
  */
 
 #define ECL_INCLUDE_MATH_H
+#include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
+#include <ecl/external.h>
+
 #include <limits.h>
 #include <string.h>
-#include <ecl/ecl.h>
-#include <ecl/internal.h>
 
 /*************************************************************
  * MEMORY MANAGEMENT WITH GMP
@@ -326,22 +329,20 @@ _ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
 static void *
 mp_alloc(size_t size)
 {
-  return ecl_alloc_uncollectable(size);
+  return ecl_malloc(size);
 }
 
 static void
 mp_free(void *ptr, size_t size)
 {
-  ecl_free_uncollectable(ptr);
+  ecl_free(ptr);
 }
 
 static void *
 mp_realloc(void *ptr, size_t osize, size_t nsize)
 {
-  mp_limb_t *p = mp_alloc(nsize);
-  memcpy(p, ptr, (osize < nsize)? osize : nsize);
-  mp_free(ptr, osize);
-  return p;
+  ptr = ecl_realloc(ptr, osize, nsize);
+  return ptr;
 }
 
 #ifdef ECL_GMP_FIXNUM_TO_LIMBS
@@ -607,29 +608,53 @@ _ecl_big_boole_operator(int op)
   return bignum_operations[op];
 }
 
-void
+/* -- module definition ------------------------------------------------------ */
+
+static cl_object
+create_bignum ()
+{
+  if (ecl_option_values[ECL_OPT_SET_GMP_MEMORY_FUNCTIONS])
+    mp_set_memory_functions(mp_alloc, mp_realloc, mp_free);
+  return ECL_NIL;
+}
+
+cl_object
 ecl_init_bignum_registers(cl_env_ptr env)
 {
   int i;
   for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    /* INV this implies the standard allocator already initialized. */
     cl_object x = ecl_alloc_object(t_bignum);
     _ecl_big_init2(x, ECL_BIG_REGISTER_SIZE);
     env->big_register[i] = x;
   }
+  return ECL_NIL;
 }
 
-void
-ecl_clear_bignum_registers(cl_env_ptr env)
+cl_object
+ecl_free_bignum_registers(cl_env_ptr env)
 {
   int i;
   for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
     _ecl_big_clear(env->big_register[i]);
+    env->big_register[i] = ECL_NIL;
   }
+  return ECL_NIL;
 }
 
-void
-init_big()
-{
-  if (ecl_option_values[ECL_OPT_SET_GMP_MEMORY_FUNCTIONS])
-    mp_set_memory_functions(mp_alloc, mp_realloc, mp_free);
-}
+ecl_def_ct_base_string(str_bignum, "BIGNUM", 6, static, const);
+
+static struct ecl_module module_bignum = {
+  .t = t_module,
+  .name = str_bignum,
+  .create = create_bignum,
+  .enable = ecl_module_no_op,
+  .init_env = ecl_module_no_op_env,
+  .init_cpu = ecl_init_bignum_registers,
+  .free_cpu = ecl_free_bignum_registers,
+  .free_env = ecl_module_no_op_cpu,
+  .disable = ecl_module_no_op,
+  .destroy = ecl_module_no_op
+};
+
+cl_object ecl_module_bignum = (cl_object)&module_bignum;

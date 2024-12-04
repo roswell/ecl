@@ -27,6 +27,7 @@ extern ECL_API cl_object ecl_module_process;
 extern ECL_API cl_object ecl_module_dummy;
 extern ECL_API cl_object ecl_module_gc;
 extern ECL_API cl_object ecl_module_unixint;
+extern ECL_API cl_object ecl_module_bignum;
 
 extern void init_all_symbols(void);
 extern void init_backq(void);
@@ -627,8 +628,8 @@ extern cl_object _ecl_long_double_to_integer(long double d);
 
 extern cl_fixnum ecl_option_values[ECL_OPT_LIMIT+1];
 
-extern void ecl_init_bignum_registers(cl_env_ptr env);
-extern void ecl_clear_bignum_registers(cl_env_ptr env);
+extern cl_object ecl_init_bignum_registers(cl_env_ptr env);
+extern cl_object ecl_free_bignum_registers(cl_env_ptr env);
 
 /* threads/mutex.d */
 
