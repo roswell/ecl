@@ -41,7 +41,7 @@
  * sections of code which are interruptible, and in which it is safe
  * for the handler to run arbitrary code, protect anything else. In
  * principle this "marking" can be done using POSIX functions such as
- * pthread_sigmask() or sigprocmask().
+ * pthread_sigmask() or sigprocmask() abstracted with ecl_sigmask().
  *
  * However in practice this is slow, as it involves at least a
  * function call, resolving thread-local variables, etc, etc, and it
@@ -307,11 +307,7 @@ unblock_signal(cl_env_ptr the_env, int signal)
    * We do not really "unblock" the signal, but rather restore
    * ECL's default sigmask.
    */
-# ifdef ECL_THREADS
-  pthread_sigmask(SIG_SETMASK, the_env->default_sigmask, NULL);
-# else
-  sigprocmask(SIG_SETMASK, the_env->default_sigmask, NULL);
-# endif
+  ecl_sigmask(SIG_SETMASK, the_env->default_sigmask, NULL);
 }
 #endif
 
@@ -619,7 +615,7 @@ asynchronous_signal_servicing_thread()
       sigdelset(&handled_set, SIGSEGV);
       sigdelset(&handled_set, SIGBUS);
     }
-    pthread_sigmask(SIG_BLOCK, &handled_set, NULL);
+    ecl_sigmask(SIG_BLOCK, &handled_set, NULL);
   }
   /*
    * We create the object for communication. We need a lock to prevent other
@@ -909,25 +905,25 @@ do_catch_signal(int code, cl_object action, cl_object process)
       return ECL_T;
     } else {
       sigset_t handled_set;
-      pthread_sigmask(SIG_SETMASK, NULL, &handled_set);
+      ecl_sigmask(SIG_SETMASK, NULL, &handled_set);
       if (action == @':mask') {
         sigaddset(&handled_set, code);
       } else {
         sigdelset(&handled_set, code);
       }
-      pthread_sigmask(SIG_SETMASK, &handled_set, NULL);
+      ecl_sigmask(SIG_SETMASK, &handled_set, NULL);
       return ECL_T;
     }
 # else
     {
       sigset_t handled_set;
-      sigprocmask(SIG_SETMASK, NULL, &handled_set);
+      ecl_sigmask(SIG_SETMASK, NULL, &handled_set);
       if (action == @':mask') {
         sigaddset(&handled_set, code);
       } else {
         sigdelset(&handled_set, code);
       }
-      sigprocmask(SIG_SETMASK, &handled_set, NULL);
+      ecl_sigmask(SIG_SETMASK, &handled_set, NULL);
       return ECL_T;
     }
 # endif /* !ECL_THREADS */
@@ -1304,11 +1300,7 @@ install_asynchronous_signal_handlers()
 #ifdef HAVE_SIGPROCMASK
   sigset_t *sigmask = ecl_core.first_env->default_sigmask = &main_thread_sigmask;
   ecl_core.default_sigmask_bytes = sizeof(sigset_t);
-# ifdef ECL_THREADS
-  pthread_sigmask(SIG_SETMASK, NULL, sigmask);
-# else
-  sigprocmask(SIG_SETMASK, NULL, sigmask);
-# endif
+  ecl_sigmask(SIG_SETMASK, NULL, sigmask);
 #endif
 #if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
   ecl_mutex_init(&signal_thread_lock, TRUE);
@@ -1319,11 +1311,7 @@ install_asynchronous_signal_handlers()
   }
 #endif
 #ifdef HAVE_SIGPROCMASK
-# if defined(ECL_THREADS)
-  pthread_sigmask(SIG_SETMASK, sigmask, NULL);
-# else
-  sigprocmask(SIG_SETMASK, sigmask, NULL);
-# endif
+  ecl_sigmask(SIG_SETMASK, sigmask, NULL);
 #endif
 #ifdef ECL_WINDOWS_THREADS
   old_W32_exception_filter =
@@ -1417,7 +1405,7 @@ install_synchronous_signal_handlers()
     mysignal(signal, process_interrupt_handler);
 #ifdef HAVE_SIGPROCMASK
     sigdelset(&main_thread_sigmask, signal);
-    pthread_sigmask(SIG_SETMASK, &main_thread_sigmask, NULL);
+    ecl_sigmask(SIG_SETMASK, &main_thread_sigmask, NULL);
 #endif
   }
 #endif
