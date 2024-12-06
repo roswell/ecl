@@ -221,7 +221,7 @@ ecl_spawn_cpu(cl_object process)
 {
   cl_env_ptr the_env = ecl_process_env();
   cl_env_ptr new_env = NULL;
-  int ok = 1;
+  int code = 0;
   /* Allocate and initialize the new cpu env. */
   {
     new_env = _ecl_alloc_env(the_env);
@@ -234,53 +234,30 @@ ecl_spawn_cpu(cl_object process)
   }
   /* Spawn the thread */
   ecl_disable_interrupts_env(the_env);
-#ifdef ECL_WINDOWS_THREADS
+#if !defined(ECL_WINDOWS_THREADS) && defined(HAVE_SIGPROCMASK)
   {
-    HANDLE code;
-    DWORD threadId;
-
-    code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, new_env, 0, &threadId);
-    new_env->thread = code;
-    ok = code != NULL;
+    /* Block all asynchronous signals until the thread is completely set up. The
+     * synchronous signals SIGSEGV and SIGBUS are needed by the gc and and can't
+     * be blocked. */
+    sigset_t new, previous;
+    sigfillset(&new);
+    sigdelset(&new, SIGSEGV);
+    sigdelset(&new, SIGBUS);
+    ecl_sigmask(SIG_BLOCK, &new, &previous);
+    code = ecl_thread_create(new_env, thread_entry_point);
+    ecl_sigmask(SIG_SETMASK, &previous, NULL);
   }
-#else /* ECL_WINDOWS_THREADS */
-  {
-    int code;
-    pthread_attr_t pthreadattr;
-
-    pthread_attr_init(&pthreadattr);
-    pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
-    /*
-     * Block all asynchronous signals until the thread is completely
-     * set up. The synchronous signals SIGSEGV and SIGBUS are needed
-     * by the gc and thus can't be blocked.
-     */
-# ifdef HAVE_SIGPROCMASK
-    {
-      sigset_t new, previous;
-      sigfillset(&new);
-      sigdelset(&new, SIGSEGV);
-      sigdelset(&new, SIGBUS);
-      pthread_sigmask(SIG_BLOCK, &new, &previous);
-      code = pthread_create(&new_env->thread, &pthreadattr,
-                            thread_entry_point, new_env);
-      pthread_sigmask(SIG_SETMASK, &previous, NULL);
-    }
-# else
-    code = pthread_create(&new_env->thread, &pthreadattr,
-                          thread_entry_point, new_env);
-# endif
-    ok = (code == 0);
-  }
-#endif /* ECL_WINDOWS_THREADS */
+#else
+  code = ecl_thread_create(new_env, thread_entry_point);
+#endif
   /* Deal with the fallout of the thread creation. */
-  if (!ok) {
+  if (code != 0) {
     process->process.env = NULL;
     ecl_modules_free_env(new_env);
     _ecl_dealloc_env(new_env);
   }
   ecl_enable_interrupts_env(the_env);
-  return ok ? new_env : NULL;
+  return code ? NULL : new_env;
 }
 #endif
 
