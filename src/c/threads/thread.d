@@ -90,7 +90,7 @@ run_process(cl_narg narg, ...)
 #ifdef HAVE_SIGPROCMASK
     {
       sigset_t *new = (sigset_t*)the_env->default_sigmask;
-      pthread_sigmask(SIG_SETMASK, new, NULL);
+      ecl_sigmask(SIG_SETMASK, new, NULL);
     }
 #endif
     process->process.phase = ECL_PROCESS_ACTIVE;
@@ -124,7 +124,7 @@ run_process(cl_narg narg, ...)
     sigset_t new[1];
     sigemptyset(new);
     sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
-    pthread_sigmask(SIG_BLOCK, new, NULL);
+    ecl_sigmask(SIG_BLOCK, new, NULL);
   }
 #endif
   process->process.env = NULL;
@@ -196,7 +196,7 @@ ecl_release_current_thread(void)
     sigset_t new[1];
     sigemptyset(new);
     sigaddset(new, ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL]);
-    pthread_sigmask(SIG_BLOCK, new, NULL);
+    ecl_sigmask(SIG_BLOCK, new, NULL);
   }
 #endif
   process->process.phase = ECL_PROCESS_INACTIVE;
@@ -424,8 +424,8 @@ mp_get_sigmask(void)
   sigset_t *mask_ptr = (sigset_t*)data->vector.self.b8;
   sigset_t no_signals;
   sigemptyset(&no_signals);
-  if (pthread_sigmask(SIG_BLOCK, &no_signals, mask_ptr))
-    FElibc_error("MP:GET-SIGMASK failed in a call to pthread_sigmask", 0);
+  if (ecl_sigmask(SIG_BLOCK, &no_signals, mask_ptr))
+    FElibc_error("MP:GET-SIGMASK failed in a call to ecl_sigmask", 0);
   @(return data);
 }
 
@@ -433,8 +433,8 @@ static cl_object
 mp_set_sigmask(cl_object data)
 {
   sigset_t *mask_ptr = (sigset_t*)data->vector.self.b8;
-  if (pthread_sigmask(SIG_SETMASK, mask_ptr, NULL))
-    FElibc_error("MP:SET-SIGMASK failed in a call to pthread_sigmask", 0);
+  if (ecl_sigmask(SIG_SETMASK, mask_ptr, NULL))
+    FElibc_error("MP:SET-SIGMASK failed in a call to ecl_sigmask", 0);
   @(return data);
 }
 #endif
@@ -455,8 +455,8 @@ mp_block_signals(void)
    * can thus never be blocked */
   sigdelset(&all_signals, SIGSEGV);
   sigdelset(&all_signals, SIGBUS);
-  if (pthread_sigmask(SIG_SETMASK, &all_signals, NULL))
-    FElibc_error("MP:BLOCK-SIGNALS failed in a call to pthread_sigmask",0);
+  if (ecl_sigmask(SIG_SETMASK, &all_signals, NULL))
+    FElibc_error("MP:BLOCK-SIGNALS failed in a call to ecl_sigmask",0);
   @(return previous);
 #endif
 }
