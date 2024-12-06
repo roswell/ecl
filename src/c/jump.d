@@ -189,6 +189,7 @@ ecl_thread_internal_error(const char *s)
                   "Exitting thread.\n");
   fflush(stderr);
   ecl_thread_exit();
+  _ecl_unexpected_return();
 }
 #endif
 

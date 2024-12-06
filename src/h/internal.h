@@ -578,13 +578,6 @@ extern void ecl_cs_set_size(cl_env_ptr env, cl_index n);
 #ifdef ECL_THREADS
 extern ECL_API cl_object mp_suspend_loop();
 extern ECL_API cl_object mp_break_suspend_loop();
-
-# ifdef ECL_WINDOWS_THREADS
-#  define ecl_thread_exit() ExitThread(0);
-# else
-#  define ecl_thread_exit() pthread_exit(NULL);
-# endif  /* ECL_WINDOWS_THREADS */
-
 #endif
 
 /* time.d */
@@ -753,6 +746,27 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 /* global locks */
 
 #include <ecl/threads.h>
+
+/* sigmask */
+
+#ifdef HAVE_SIGPROCMASK
+# include <signal.h>
+# ifdef ECL_THREADS
+static inline int
+ecl_sigmask(int how, const sigset_t *set, sigset_t *oldset)
+{
+  return pthread_sigmask(how, set, oldset);
+}
+# else
+static inline int
+ecl_sigmask(int how, const sigset_t *set, sigset_t *oldset)
+{
+  return sigprocmask(how, set, oldset);
+}
+# endif
+#endif
+
+/* global locks */
 
 #ifdef ECL_THREADS
 # define ECL_WITH_GLOBAL_LOCK_BEGIN(the_env)                            \

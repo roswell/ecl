@@ -14,11 +14,10 @@
 #ifndef ECL_STACK_RESIZE_H
 #define ECL_STACK_RESIZE_H
 
-/* We can't block interrupts with ecl_disable_interrupts() and write
- * in the thread local environment if we use fast interrupt dispatch
- * via mprotect(), so we have to use sigprocmask instead. No
- * performance problems, since this is only used for stack
- * resizing. */
+/* We can't block interrupts with ecl_disable_interrupts() and write in the
+ * thread local environment if we use fast interrupt dispatch via mprotect(), so
+ * we have to use sigprocmask instead. No performance problems, since this is
+ * only used for stack resizing. */
 #if defined(ECL_THREADS) && defined(ECL_USE_MPROTECT)
 # ifdef HAVE_SIGPROCMASK
 #  include <signal.h>

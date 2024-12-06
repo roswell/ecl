@@ -22,8 +22,8 @@
 # endif
 #endif
 
-#ifndef ECL_MUTEX_H
-#define ECL_MUTEX_H
+#ifndef ECL_THREADS_H
+#define ECL_THREADS_H
 
 #include <errno.h>
 #ifdef ECL_WINDOWS_THREADS
@@ -37,6 +37,45 @@
 # include <sys/time.h>
 #endif
 #include <math.h>
+
+#ifdef ECL_WINDOWS_THREADS
+/* Windows can't into typedefs in parameter lists. */
+/* typedef DWORD WINAPI (*ecl_thread_entry)(void *ptr); */
+static inline int
+ecl_thread_create(cl_env_ptr the_env, /* ecl_thread_entry */ void* fun)
+{
+  HANDLE code;
+  DWORD threadId;
+  code = (HANDLE)CreateThread(NULL, 0, fun, the_env, 0, &threadId);
+  the_env->thread = code;
+  /* NULL handle is a failure. */
+  return (code != NULL) ? 0 : 1;
+}
+
+static inline void
+ecl_thread_exit()
+{
+  ExitThread(0);
+}
+#else /* ECL_WINDOWS_THREADS */
+typedef void* (*ecl_thread_entry)(void *ptr);
+
+static inline int
+ecl_thread_create(cl_env_ptr the_env, ecl_thread_entry fun)
+{
+  pthread_attr_t pthreadattr;
+  pthread_attr_init(&pthreadattr);
+  pthread_attr_setdetachstate(&pthreadattr, PTHREAD_CREATE_DETACHED);
+  return pthread_create(&the_env->thread, &pthreadattr, fun, the_env);
+}
+
+static inline void
+ecl_thread_exit()
+{
+  pthread_exit(NULL);
+}
+#endif /* ECL_WINDOWS_THREADS */
+
 
 #if !defined(ECL_WINDOWS_THREADS)
 
@@ -734,6 +773,6 @@ ecl_rwlock_lock_write(ecl_rwlock_t *rwlock)
 
 #endif /* ECL_WINDOWS_THREADS */
 
-#endif /* ECL_MUTEX_H */
+#endif /* ECL_THREADS_H */
 
 #endif /* ECL_THREADS */
