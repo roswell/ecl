@@ -220,6 +220,7 @@ extern ECL_API void *ecl_malloc(cl_index n);
 extern ECL_API void *ecl_realloc(void *ptr, cl_index o, cl_index n);
 extern ECL_API void ecl_free(void *ptr);
 extern ECL_API void ecl_copy(void *dst, void *src, cl_index ndx);
+extern ECL_API void ecl_mset(void *dst, byte val, cl_index ndx);
 #define ecl_free_unsafe(x) ecl_free(x);
 
 /* boot.c */

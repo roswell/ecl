@@ -35,6 +35,7 @@ extern ECL_API cl_object ecl_module_bignum;
 extern ECL_API cl_object ecl_module_ffi;
 extern ECL_API cl_object ecl_module_aux;
 
+extern void init_memory(void);
 extern void init_all_symbols(void);
 extern void init_backq(void);
 extern void init_big();

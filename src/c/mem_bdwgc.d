@@ -267,8 +267,8 @@ allocate_object_marked(struct ecl_type_information *type_info)
 }
 #endif
 
-cl_object
-ecl_alloc_object(cl_type t)
+static cl_object
+alloc_object(cl_type t)
 {
 #ifdef GBC_BOEHM_PRECISE
   struct ecl_type_information *ti;
@@ -1217,6 +1217,26 @@ si_gc_dump()
 
 /* -- module definition ------------------------------------------------------ */
 
+static void *
+alloc_memory(cl_index size)
+{
+  return GC_MALLOC(size);
+}
+
+static void
+free_object(cl_object o)
+{
+  standard_finalizer(o);
+  ecl_dealloc(o);
+}
+
+struct ecl_allocator_ops gc_ops = {
+  .allocate_memory = alloc_memory,
+  .allocate_object = alloc_object,
+  .free_memory = ecl_dealloc,
+  .free_object = free_object
+};
+
 static cl_object
 create_gc()
 {
@@ -1280,6 +1300,8 @@ create_gc()
   GC_set_java_finalization(1);
   GC_set_oom_fn(out_of_memory);
   GC_set_warn_proc(no_warnings);
+
+  ecl_core.allocator = &gc_ops;
 
   return ECL_NIL;
 }
