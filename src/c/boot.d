@@ -194,7 +194,7 @@ _ecl_alloc_env(cl_env_ptr parent)
 # endif
 #endif
   /* Initialize the structure with NULL data. */
-  memset(output, 0, sizeof(*output));
+  ecl_mset(output, 0, sizeof(*output));
 #ifdef ECL_THREADS
   add_env(output);
 #endif
@@ -235,6 +235,7 @@ struct ecl_core_struct ecl_core = {
   .default_sigmask_bytes = 0,
   .known_signals = ECL_NIL,
   /* allocation */
+  .allocator = NULL,
   .max_heap_size = 0,
   .bytes_consed = ECL_NIL,
   .gc_counter = ECL_NIL,
@@ -265,6 +266,7 @@ ecl_boot(void)
     }
     return 1;
   }
+  init_memory();
   init_modules();
   ecl_core.path_max = MAXPATHLEN;
   return 0;
