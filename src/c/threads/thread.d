@@ -111,6 +111,11 @@ run_process(cl_narg narg, ...)
       /* ABORT restart. */
       process->process.exit_values = args;
     } ECL_RESTART_CASE_END;
+    /* This routine performs some cleanup before a thread is finished. Note that
+       it does not provide enough protection -- in order to ensure that all
+       UNWIND-PROTECT forms are properly executed, enver use the function
+       pthread_cancel() to kill a process, but rather use the lisp functions
+       mp_interrupt_process() and mp_process_kill(). */
     ecl_bds_unwind1(the_env);
   } ECL_CATCH_ALL_END;
 
