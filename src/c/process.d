@@ -123,28 +123,6 @@ init_tl_bindings(cl_object process, cl_env_ptr env)
 
 #ifdef ECL_THREADS
 
-static void
-register_gc_thread()
-{
-#ifdef GBC_BOEHM
-  if (GC_thread_is_registered() == 0) {
-    struct GC_stack_base stack;
-    GC_get_stack_base(&stack);
-    GC_register_my_thread(&stack);
-  }
-#endif
-}
-
-static void
-unregister_gc_thread()
-{
-#ifdef GBC_BOEHM
-  if (GC_thread_is_registered() == 1) {
-    GC_unregister_my_thread();
-  }
-#endif
-}
-
 /* Run a process in the current system thread. */
 cl_env_ptr
 ecl_adopt_cpu()
@@ -153,7 +131,6 @@ ecl_adopt_cpu()
   ecl_thread_t current;
   if (the_env != NULL)
     return the_env;
-  register_gc_thread();
   ecl_set_process_self(current);
   the_env = _ecl_alloc_env(0);
   the_env->thread = current;
@@ -177,7 +154,6 @@ ecl_disown_cpu()
 #endif
   ecl_modules_free_env(the_env);
   _ecl_dealloc_env(the_env);
-  unregister_gc_thread();
 }
 
 #ifdef ECL_WINDOWS_THREADS
