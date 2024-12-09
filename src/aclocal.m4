@@ -263,9 +263,10 @@ SHAREDPREFIX='lib'
 LIBPREFIX='lib'
 LIBEXT='a'
 PICFLAG='-fPIC'
-THREAD_CFLAGS=''
+THREAD_CFLAGS='-DGC_NO_THREAD_REDIRECTS'
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
+CFLAGS=''
 INSTALL_TARGET='install'
 THREAD_OBJ="$THREAD_OBJ threads/thread threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
@@ -274,7 +275,7 @@ SONAME_LDFLAGS=''
 case "${host_os}" in
         linux-android*)
                 thehost='android'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
 #               THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -290,7 +291,7 @@ case "${host_os}" in
         # libdir may have a dollar expression inside
         linux*)
                 thehost='linux'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -303,7 +304,7 @@ case "${host_os}" in
                 ;;
         gnu*)
                 thehost='gnu'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -315,7 +316,7 @@ case "${host_os}" in
                 ;;
         kfreebsd*-gnu)
                 thehost='kfreebsd'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -357,8 +358,6 @@ case "${host_os}" in
                 ;;
         openbsd*)
                 thehost='openbsd'
-                THREAD_CFLAGS=''
-                THREAD_LIBS=''
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
@@ -386,7 +385,7 @@ case "${host_os}" in
                 thehost='cygwin'
                 #enable_threads='no'
                 shared='yes'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -406,7 +405,7 @@ case "${host_os}" in
                 clibs=''
                 shared='yes'
                 enable_threads='yes'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_GC_FLAGS='--enable-threads=win32'
                 SHARED_LDFLAGS="-Wl,--stack,${ECL_DEFAULT_C_STACK_SIZE}"
                 BUNDLE_LDFLAGS="-Wl,--stack,${ECL_DEFAULT_C_STACK_SIZE}"
@@ -424,7 +423,7 @@ case "${host_os}" in
                 SHARED_LDFLAGS="-dynamiclib ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,-rpath,~A'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 # The GMP library has not yet been ported to Intel or Arm-OSX
                 case "`uname -m`" in
@@ -457,7 +456,7 @@ case "${host_os}" in
                 thehost='nonstop'
                 shared='yes'
                 PICFLAG='-call_shared'
-                THREAD_CFLAGS='-spthread'
+                THREAD_CFLAGS="-spthread ${THREAD_CFLAGS}"
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
@@ -465,7 +464,6 @@ case "${host_os}" in
                 ;;
         haiku*)
                 thehost='haiku'
-                THREAD_LIBS=''
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
@@ -492,7 +490,7 @@ esac
 case "${host}" in
         *-nacl)
                 thehost='linux'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -504,7 +502,7 @@ case "${host}" in
                 ;;
         *-pnacl)
                 thehost='linux'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 dnl SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 dnl BUNDLE_LDFLAGS="-shared ${LDFLAGS}"

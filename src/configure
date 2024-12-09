@@ -6092,9 +6092,10 @@ SHAREDPREFIX='lib'
 LIBPREFIX='lib'
 LIBEXT='a'
 PICFLAG='-fPIC'
-THREAD_CFLAGS=''
+THREAD_CFLAGS='-DGC_NO_THREAD_REDIRECTS'
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
+CFLAGS=''
 INSTALL_TARGET='install'
 THREAD_OBJ="$THREAD_OBJ threads/thread threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
@@ -6103,7 +6104,7 @@ SONAME_LDFLAGS=''
 case "${host_os}" in
         linux-android*)
                 thehost='android'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
 #               THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -6121,7 +6122,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
         # libdir may have a dollar expression inside
         linux*)
                 thehost='linux'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -6134,7 +6135,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 ;;
         gnu*)
                 thehost='gnu'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -6146,7 +6147,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 ;;
         kfreebsd*-gnu)
                 thehost='kfreebsd'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -6188,8 +6189,6 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 ;;
         openbsd*)
                 thehost='openbsd'
-                THREAD_CFLAGS=''
-                THREAD_LIBS=''
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
@@ -6217,7 +6216,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 thehost='cygwin'
                 #enable_threads='no'
                 shared='yes'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -6236,7 +6235,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 clibs=''
                 shared='yes'
                 enable_threads='yes'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_GC_FLAGS='--enable-threads=win32'
                 SHARED_LDFLAGS="-Wl,--stack,${ECL_DEFAULT_C_STACK_SIZE}"
                 BUNDLE_LDFLAGS="-Wl,--stack,${ECL_DEFAULT_C_STACK_SIZE}"
@@ -6254,7 +6253,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 SHARED_LDFLAGS="-dynamiclib ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-bundle ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,-rpath,~A'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 # The GMP library has not yet been ported to Intel or Arm-OSX
                 case "`uname -m`" in
@@ -6287,7 +6286,7 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 thehost='nonstop'
                 shared='yes'
                 PICFLAG='-call_shared'
-                THREAD_CFLAGS='-spthread'
+                THREAD_CFLAGS="-spthread ${THREAD_CFLAGS}"
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
@@ -6295,7 +6294,6 @@ LSP_FEATURES="(cons :android ${LSP_FEATURES})"
                 ;;
         haiku*)
                 thehost='haiku'
-                THREAD_LIBS=''
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH="-Wl,--rpath,~A"
@@ -6322,7 +6320,7 @@ esac
 case "${host}" in
         *-nacl)
                 thehost='linux'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
@@ -6336,7 +6334,7 @@ LSP_FEATURES="(cons :nacl ${LSP_FEATURES})"
                 ;;
         *-pnacl)
                 thehost='linux'
-                THREAD_CFLAGS='-D_THREAD_SAFE'
+                THREAD_CFLAGS="-D_THREAD_SAFE ${THREAD_CFLAGS}"
                 THREAD_LIBS='-lpthread'
                                                                 CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
 
@@ -7008,7 +7006,7 @@ if test "${enable_threads}" = "yes" ; then
     as_fn_error $? "Threads aren't supported on this system." "$LINENO" 5
   else
     LIBS="${THREAD_LIBS} ${LIBS}"
-    CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
+    CFLAGS="${CFLAGS} ${THREAD_CFLAGS} -DGC_NO_THREAD_REDIRECTS"
 
 ac_fn_c_check_func "$LINENO" "pthread_rwlock_init" "ac_cv_func_pthread_rwlock_init"
 if test "x$ac_cv_func_pthread_rwlock_init" = xyes
