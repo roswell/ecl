@@ -1303,6 +1303,24 @@ init_cpu(cl_env_ptr the_env)
   struct GC_stack_base stack;
   GC_get_stack_base(&stack);
   the_env->c_stack.org = (char*)stack.mem_base;
+# ifdef ECL_THREADS
+  if (GC_thread_is_registered() == 0) {
+    GC_register_my_thread(&stack);
+  }
+# endif
+#endif
+  return ECL_NIL;
+}
+
+static cl_object
+free_cpu(cl_env_ptr the_env)
+{
+#ifdef GBC_BOEHM
+# ifdef ECL_THREADS
+  if (GC_thread_is_registered() == 1) {
+    GC_unregister_my_thread();
+  }
+# endif
 #endif
   return ECL_NIL;
 }
@@ -1316,7 +1334,7 @@ static struct ecl_module module_gc = {
   .enable = enable_gc,
   .init_env = ecl_module_no_op_env,
   .init_cpu = init_cpu,
-  .free_cpu = ecl_module_no_op_cpu,
+  .free_cpu = free_cpu,
   .free_env = ecl_module_no_op_env,
   .disable = disable_gc,
   .destroy = ecl_module_no_op
