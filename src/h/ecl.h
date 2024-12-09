@@ -63,9 +63,6 @@
 # endif
 # ifdef ECL_THREADS
 #  undef ERROR
-#  ifdef GBC_BOEHM
-#   define CreateThread GC_CreateThread
-#  endif
 # else
 #  error "The Windows ports cannot be built without threads."
 # endif /* ECL_THREADS */
