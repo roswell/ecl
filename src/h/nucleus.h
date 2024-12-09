@@ -17,6 +17,7 @@ struct ecl_core_struct {
   cl_index last_var_index;
   cl_object reused_indices;
 #endif
+  struct ecl_allocator_ops *allocator;
   size_t max_heap_size;
   cl_object bytes_consed;
   cl_object gc_counter;
@@ -55,5 +56,11 @@ cl_object ecl_call_with_handler(cl_object handler, cl_object continuation);
   ecl_bds_bind(__the_env, __ecl_sym, __ecl_hnds);
 
 #define ECL_WITH_HANDLER_END ecl_bds_unwind1(__the_env); } while(0)
+
+/* memory.c */
+void *ecl_alloc_memory(cl_index n);
+cl_object ecl_alloc_object(cl_type t);
+void ecl_free_memory(void *ptr);
+void ecl_free_object(cl_object o);
 
 #endif  /* ECL_NUCLEUS_H */

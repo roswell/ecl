@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * memory.c - manual memory managament
+ * memory.c - memory managament
  *
  * Copyright (c) 2024 Daniel Kochmański
  *
@@ -32,13 +32,12 @@ out_of_memory()
        goto AGAIN;
 
      For now let's crash with an appropriate error. */
-  ecl_internal_error("*** manual memory allocator: out of memory\n");
+  ecl_internal_error("*** memory allocator: out of memory\n");
 }
 
 void *
 ecl_malloc(cl_index n)
 {
-  /* GC-free equivalent of ecl_alloc_atomic. */
   const cl_env_ptr the_env = ecl_process_env_unsafe();
   void *ptr;
   if (!the_env) {
@@ -68,14 +67,79 @@ ecl_free(void *ptr)
 void *
 ecl_realloc(void *ptr, cl_index osize, cl_index nsize)
 {
-  void *p = ecl_malloc(nsize);
-  ecl_copy(p, ptr, (osize < nsize) ? osize : nsize);
-  ecl_free(ptr);
-  return p;
+  const cl_env_ptr the_env = ecl_process_env_unsafe();
+  if (!the_env) {
+    ptr = realloc(ptr, nsize);
+  } else {
+    ecl_disable_interrupts_env(the_env);
+    ptr = realloc(ptr, nsize);
+    ecl_enable_interrupts_env(the_env);
+  }
+  if (ptr == NULL) out_of_memory();
+  return ptr;
 }
 
 void
 ecl_copy(void *dst, void *src, cl_index ndx)
 {
   memcpy(dst, src, ndx);
+}
+
+void
+ecl_mset(void *ptr, byte c, cl_index n)
+{
+  memset(ptr, c, n);
+}
+
+/* -- Constructors ---------------------------------------------------------- */
+
+cl_object
+ecl_alloc_object(cl_type t)
+{
+  return ecl_core.allocator->allocate_object(t);
+}
+
+void *
+ecl_alloc_memory(cl_index n)
+{
+  return ecl_core.allocator->allocate_memory(n);
+}
+
+void
+ecl_free_object(cl_object ptr)
+{
+  return ecl_core.allocator->free_object(ptr);
+}
+
+void
+ecl_free_memory(void *ptr)
+{
+  return ecl_core.allocator->free_memory(ptr);
+}
+
+/* -- Rudimentary manual memory allocator ----------------------------------- */
+
+static cl_object
+alloc_object(cl_type t)
+{
+  ecl_internal_error("*** memory: alloc_object not implemented.\n");
+}
+
+static void
+free_object(cl_object self)
+{
+  ecl_internal_error("*** memory: free_object not implemented.\n");
+}
+
+struct ecl_allocator_ops manual_allocator = {
+  .allocate_memory = ecl_malloc,
+  .allocate_object = alloc_object,
+  .free_memory = ecl_free,
+  .free_object = free_object
+};
+
+void
+init_memory ()
+{
+  ecl_core.allocator = &manual_allocator;
 }

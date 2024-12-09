@@ -238,9 +238,9 @@ _ecl_dump_c_backtrace()
 # endif
     }
     fflush(stderr);
-    free(pointers);
+    ecl_free(pointers);
 # if defined(ECL_UNIX_BACKTRACE)
-    free(names);
+    ecl_free(names);
 # elif defined(ECL_WINDOWS_BACKTRACE)
     SymCleanup(process);
 # endif
