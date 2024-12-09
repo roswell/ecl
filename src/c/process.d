@@ -93,11 +93,12 @@ ecl_set_process_env(cl_env_ptr env)
 cl_env_ptr cl_env_p = NULL;
 #endif  /* ECL_THREADS */
 
+#ifdef ECL_THREADS
 /* -- Thread local bindings */
 static void
 init_tl_bindings(cl_object process, cl_env_ptr env)
 {
-#ifdef ECL_THREADS
+
   cl_index bindings_size;
   cl_object *bindings;
   if (Null(process) || Null(process->process.inherit_bindings_p)) {
@@ -115,9 +116,9 @@ init_tl_bindings(cl_object process, cl_env_ptr env)
   }
   env->bds_stack.tl_bindings_size = bindings_size;
   env->bds_stack.tl_bindings = bindings;
-#endif
-}
 
+}
+#endif
 
 /* -- Managing the collection of processes ---------------------------------- */
 
@@ -128,14 +129,11 @@ cl_env_ptr
 ecl_adopt_cpu()
 {
   cl_env_ptr the_env = ecl_process_env_unsafe();
-  ecl_thread_t current;
   if (the_env != NULL)
     return the_env;
-  ecl_set_process_self(current);
   the_env = _ecl_alloc_env(0);
-  the_env->thread = current;
   ecl_set_process_env(the_env);
-  init_tl_bindings(ECL_NIL, the_env);
+  the_env->own_process = ECL_NIL;
   ecl_modules_init_env(the_env);
   ecl_modules_init_cpu(the_env);
 
@@ -149,9 +147,6 @@ ecl_disown_cpu()
   if (the_env == NULL)
     return;
   ecl_modules_free_cpu(the_env);
-#ifdef ECL_WINDOWS_THREADS
-  CloseHandle(the_env->thread);
-#endif
   ecl_modules_free_env(the_env);
   _ecl_dealloc_env(the_env);
 }
@@ -169,21 +164,8 @@ thread_entry_point(void *ptr)
   ecl_modules_init_cpu(the_env);
   /* Start the user routine */
   process->process.entry(0);
-  /* This routine performs some cleanup before a thread is completely killed.
-   * For instance, it has to remove the associated process object from * the
-   * list, an it has to dealloc some memory.
-   *
-   * NOTE: this cleanup does not provide enough "protection". In order to ensure
-   * that all UNWIND-PROTECT forms are properly executed, never use the function
-   * pthread_cancel() to kill a process, but rather use the lisp functions
-   * mp_interrupt_process() and mp_process_kill(). */
   ecl_disable_interrupts_env(the_env);
-  ecl_modules_free_cpu(the_env);
-#ifdef ECL_WINDOWS_THREADS
-  CloseHandle(the_env->thread);
-#endif
-  ecl_modules_free_env(the_env);
-  _ecl_dealloc_env(the_env);
+  ecl_disown_cpu();
 #ifdef ECL_WINDOWS_THREADS
   return 1;
 #else
@@ -201,12 +183,10 @@ ecl_spawn_cpu(cl_object process)
   /* Allocate and initialize the new cpu env. */
   {
     new_env = _ecl_alloc_env(the_env);
-    ecl_modules_init_env(new_env);
-    /* Copy the parent env defaults. */
     new_env->trap_fpe_bits = the_env->trap_fpe_bits;
     new_env->own_process = process;
-    init_tl_bindings(process, new_env);
     process->process.env = new_env;
+    ecl_modules_init_env(new_env);
   }
   /* Spawn the thread */
   ecl_disable_interrupts_env(the_env);
@@ -248,6 +228,7 @@ create_process(void)
   ecl_mutex_init(&ecl_core.error_lock, 1);
   ecl_rwlock_init(&ecl_core.global_env_lock);
   ecl_core.threads = ecl_make_stack(16);
+  ecl_core.first_env->own_process = ECL_NIL;
 #endif
   return ECL_NIL;
 }
@@ -256,7 +237,7 @@ static cl_object
 init_env_process(cl_env_ptr the_env)
 {
 #ifdef ECL_THREADS
-  the_env->own_process = ECL_NIL;
+  init_tl_bindings(the_env->own_process, the_env);
 #endif
   return ECL_NIL;
 }
@@ -264,6 +245,11 @@ init_env_process(cl_env_ptr the_env)
 static cl_object
 init_cpu_process(cl_env_ptr the_env)
 {
+#ifdef ECL_THREADS
+  ecl_thread_t main_thread;
+  ecl_set_process_self(main_thread);
+  the_env->thread = main_thread;
+#endif
   ecl_set_process_env(the_env);
   return ECL_NIL;
 }
@@ -271,6 +257,9 @@ init_cpu_process(cl_env_ptr the_env)
 static cl_object
 free_cpu_process(cl_env_ptr the_env)
 {
+#ifdef ECL_WINDOWS_THREADS
+  CloseHandle(the_env->thread);
+#endif
   ecl_set_process_env(NULL);
   return ECL_NIL;
 }
