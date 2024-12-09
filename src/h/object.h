@@ -96,7 +96,6 @@ typedef enum {
         FREE = 127              /*  free object  */
 } cl_type;
 
-
 /*
         Definition of the type of LISP objects.
 */
@@ -108,6 +107,14 @@ typedef cl_object (*cl_objectfn)(cl_narg narg, ...);
 typedef cl_object (*cl_objectfn_fixed)();
 typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 typedef cl_object (*cl_objectfn_envfn)(cl_env_ptr);
+
+/* Allocator interface */
+struct ecl_allocator_ops {
+  void *(*allocate_memory)(cl_index n);    /* low-level  alloc */
+  cl_object (*allocate_object)(cl_type t); /* high-level alloc */
+  void (*free_memory)(void*);              /* low-level  free */
+  void (*free_object)(cl_object);          /* high-level free */
+};
 
 /*
         OBJect NULL value.
