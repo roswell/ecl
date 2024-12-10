@@ -6,6 +6,8 @@
  ***  IN THE INTERPRETER AND COMPILER IN PARTICULAR, IT MAY HURT THE THREADED
  ***  INTERPRETER CODE.
  ----------------------------------------------------------------------------- */
+#ifndef ECL_BYTECODES_H
+#define ECL_BYTECODES_H
 
 /* See ecl/src/c/interpreter.d for a detailed explanation of all opcodes. */
 enum {
@@ -245,3 +247,5 @@ typedef int16_t cl_opcode;
   &&LBL_OP_STEPCALL - &&LBL_OP_NOP,\
   &&LBL_OP_STEPOUT - &&LBL_OP_NOP };
 #endif
+
+#endif /* ECL_BYTECODES_H */

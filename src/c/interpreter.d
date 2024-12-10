@@ -187,6 +187,12 @@ ecl_close_around(cl_object fun, cl_object lex) {
   return v;
 }
 
+static inline cl_object
+call_stepper(cl_env_ptr the_env, cl_object form, cl_object delta)
+{
+  return cl_funcall(3, the_env->stepper, form, delta);
+}
+
 #define SETUP_ENV(the_env) { ihs.lex_env = lex_env; }
 
 /*
@@ -197,12 +203,12 @@ ecl_close_around(cl_object fun, cl_object lex) {
  * lexical environment needs to be saved.
  */
 
-#define INTERPRET_FUNCALL(reg0, the_env, frame, narg, fun) {    \
-    cl_index __n = narg;                                        \
-    SETUP_ENV(the_env);                                         \
-    frame.stack = the_env->stack;                               \
-    frame.base = the_env->stack_top - (frame.size = __n);       \
-    reg0 = ecl_apply_from_stack_frame((cl_object)&frame, fun);  \
+#define INTERPRET_FUNCALL(reg0, the_env, frame, narg, fun) {        \
+    cl_index __n = narg;                                            \
+    SETUP_ENV(the_env);                                             \
+    frame.stack = the_env->stack;                                   \
+    frame.base = the_env->stack_top - (frame.size = __n);           \
+    reg0 = ecl_apply_from_stack_frame((cl_object)&frame, fun);      \
     the_env->stack_top -= __n; }
 
 /* -------------------- THE INTERPRETER -------------------- */
@@ -1158,28 +1164,12 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 
     CASE(OP_STEPIN); {
       cl_object form;
-      cl_object a = ECL_SYM_VAL(the_env, @'si::*step-action*');
       cl_index n;
       GET_DATA(form, vector, data);
       SETUP_ENV(the_env);
       the_env->values[0] = reg0;
       n = ecl_stack_push_values(the_env);
-      if (a == ECL_T) {
-        /* We are stepping in, but must first ask the user
-         * what to do. */
-        ECL_SETQ(the_env, @'si::*step-level*',
-                 cl_1P(ECL_SYM_VAL(the_env, @'si::*step-level*')));
-        ECL_STACK_PUSH(the_env, form);
-        INTERPRET_FUNCALL(form, the_env, frame_aux, 1, @'si::stepper');
-      } else if (a != ECL_NIL) {
-        /* The user told us to step over. *step-level* contains
-         * an integer number that, when it becomes 0, means
-         * that we have finished stepping over. */
-        ECL_SETQ(the_env, @'si::*step-action*', cl_1P(a));
-      } else {
-        /* We are not inside a STEP form. This should
-         * actually never happen. */
-      }
+      call_stepper(the_env, form, ecl_make_fixnum(1));
       ecl_stack_pop_values(the_env, n);
       reg0 = the_env->values[0];
       THREAD_NEXT;
@@ -1191,31 +1181,15 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       cl_fixnum n;
       GET_OPARG(n, vector);
       SETUP_ENV(the_env);
-      if (ECL_SYM_VAL(the_env, @'si::*step-action*') == ECL_T) {
-        ECL_STACK_PUSH(the_env, reg0);
-        INTERPRET_FUNCALL(reg0, the_env, frame_aux, 1, @'si::stepper');
-      }
+      reg0 = call_stepper(the_env, reg0, ecl_make_fixnum(0));
       INTERPRET_FUNCALL(reg0, the_env, frame_aux, n, reg0);
     }
     CASE(OP_STEPOUT); {
-      cl_object a = ECL_SYM_VAL(the_env, @'si::*step-action*');
       cl_index n;
       SETUP_ENV(the_env);
       the_env->values[0] = reg0;
       n = ecl_stack_push_values(the_env);
-      if (a == ECL_T) {
-        /* We exit one stepping level */
-        ECL_SETQ(the_env, @'si::*step-level*',
-                 cl_1M(ECL_SYM_VAL(the_env, @'si::*step-level*')));
-      } else if (a == ecl_make_fixnum(0)) {
-        /* We are back to the level in which the user
-         * selected to step over. */
-        ECL_SETQ(the_env, @'si::*step-action*', ECL_T);
-      } else if (a != ECL_NIL) {
-        ECL_SETQ(the_env, @'si::*step-action*', cl_1M(a));
-      } else {
-        /* Not stepping, nothing to be done. */
-      }
+      call_stepper(the_env, ECL_NIL, ecl_make_fixnum(-1));
       ecl_stack_pop_values(the_env, n);
       reg0 = the_env->values[0];
       THREAD_NEXT;

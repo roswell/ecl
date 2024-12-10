@@ -269,6 +269,37 @@ all functions."
        Finish evaluation without stepping.~%")
      ))
 
+(defun stepper-enter (form)
+  (etypecase *step-action*
+    ((eql t)
+     (incf *step-level*)
+     (stepper form))
+    ((integer 0)
+     (incf *step-action*))))
+
+(defun stepper-leave (form)
+  (declare (ignore form))
+  (typecase *step-action*
+    ((eql t)
+     (decf *step-level*))
+    ((integer 1)
+     (decf *step-action*))
+    ((integer 0 0)
+     (setf *step-action* t))))
+
+(defun stepper-call (form)
+  (if (eq *step-action* t)
+      (stepper form)
+      form))
+
+(defun stepper-hook (form delta)
+  (cond
+    ((= delta +1)
+     (stepper-enter form))
+    ((= delta -1)
+     (stepper-leave form))
+    ((stepper-call form))))
+
 (defmacro step (form)
 "Syntax: (step form)
 Evaluates FORM in the Stepper mode and returns all its values.  See ECL Report

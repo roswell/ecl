@@ -23,11 +23,10 @@ struct cl_env_struct {
         cl_index nvalues;
         cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
 
-        /* Environment for calling closures, CLOS generic functions, etc */
+        /* -- Invocation of closures, generic function, etc ------------------ */
         cl_object function;
-
-        /* Current stack frame */
-        cl_object stack_frame;
+        cl_object stepper;      /* Hook invoked by ByteVM */
+        cl_object stack_frame;  /* Current stack frame */
 
         /* The four stacks in ECL. */
 

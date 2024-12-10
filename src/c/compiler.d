@@ -676,7 +676,7 @@ c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_def
   if (ensure_defined) {
     l = ecl_cmp_symbol_value(env, @'ext::*action-on-undefined-variable*');
     if (l != ECL_NIL) {
-      funcall(3, l, undefined_variable, var);
+      cl_funcall(3, l, undefined_variable, var);
     }
   }
   if (function_boundary_crossed && output >= 0)
@@ -2349,12 +2349,10 @@ compile_form(cl_env_ptr env, cl_object stmt, int flags) {
     if (index != OBJNULL) {
       compiler_record *l = database + ecl_fixnum(index);
       c_env->lexical_level += l->lexical_increment;
-      if (c_env->stepping && function != @'function' &&
-          c_env->lexical_level)
+      if (c_env->stepping && function != @'function' && c_env->lexical_level)
         asm_op2c(env, OP_STEPIN, stmt);
       new_flags = (*(l->compiler))(env, ECL_CONS_CDR(stmt), flags);
-      if (c_env->stepping && function != @'function' &&
-          c_env->lexical_level)
+      if (c_env->stepping && function != @'function' && c_env->lexical_level)
         asm_op(env, OP_STEPOUT);
       c_env->lexical_level -= l->lexical_increment;
       goto OUTPUT;
@@ -3374,6 +3372,7 @@ si_bc_compile_from_stream(cl_object input)
     new_c_env.lex_env = ECL_NIL;
   }
   new_c_env.stepping = stepping != ECL_NIL;
+  the_env->stepper = @'si::stepper-hook';
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
     if (mode == @':execute') {
       eval_form(the_env, form);
