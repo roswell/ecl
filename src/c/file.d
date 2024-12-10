@@ -5807,7 +5807,7 @@ ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists,
   @(return strm);
 @)
 
-@(defun close (strm &key (abort @'nil'))
+@(defun close (strm &key (abort ECL_NIL))
 @
   @(return stream_dispatch_table(strm)->close(strm));
 @)

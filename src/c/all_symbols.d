@@ -290,8 +290,8 @@ init_all_symbols(void)
   cl_object s, value;
   cl_objectfn fun;
 
-  /* We skip NIL and T */
-  for (i = 2; cl_symbols[i].init.name != NULL; i++) {
+  /* We skip ECL_NIL_SYMBOL */
+  for (i = 1; cl_symbols[i].init.name != NULL; i++) {
     s = (cl_object)(cl_symbols + i);
     code = cl_symbols[i].init.type;
     name = cl_symbols[i].init.name;

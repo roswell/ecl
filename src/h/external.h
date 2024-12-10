@@ -211,6 +211,7 @@ extern ECL_API struct cl_core_struct cl_core;
 
 /* variables */
 extern ECL_API cl_object ecl_vr_shandlers;
+extern ECL_API cl_object ecl_vr_allow_other_keys;
 
 /* memory.c */
 extern ECL_API void *ecl_malloc(cl_index n);
@@ -286,6 +287,7 @@ typedef union {
 } cl_symbol_initializer;
 extern ECL_API cl_symbol_initializer cl_symbols[];
 extern ECL_API cl_index cl_num_symbols_in_core;
+extern ECL_API struct ecl_symbol ecl_symbols[];
 
 #define ECL_SYM(name,code) ((cl_object)(cl_symbols+(code)))
 

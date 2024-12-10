@@ -1718,7 +1718,7 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
       @(return ECL_CODE_CHAR(c));
     }
   } else if (f == ECL_LISTEN_NO_CHAR) {
-    @(return @'nil');
+    @(return ECL_NIL);
   }
   /* We reach here if there was an EOF */
  END_OF_FILE:

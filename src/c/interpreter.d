@@ -714,12 +714,12 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       if (count && Null(aok)) {
         cl_object *p = first;
         for (; p != last; ++p) {
-          if (*(p++) == @':allow-other-keys') {
+          if (*(p++) == ECL_ALLOW_OTHER_KEYS) {
             aok = *p;
             count -= 2;
             /* only the first :allow-other-keys argument is considered */
             for (++p; p != last; ++p) {
-              if (*(p++) != @':allow-other-keys')
+              if (*(p++) != ECL_ALLOW_OTHER_KEYS)
                 break;
               count -= 2;
             }

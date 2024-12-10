@@ -111,6 +111,28 @@
 #define ecl_cast_ptr(type,n) ((type)(n))
 #endif
 
+#define ecl_constexpr_string(name)                                      \
+  ((struct ecl_base_string)                                             \
+   { (int8_t)t_base_string, 0, ecl_aet_bc, 0, ECL_NIL,                  \
+     (cl_index)((sizeof(name)-1)), (cl_index)((sizeof(name)-1)),        \
+     (ecl_base_char*)(name) })
+
+#ifdef ECL_THREADS
+#define ecl_constexpr_symbol(type, name, value)                         \
+  ((struct ecl_symbol)                                                  \
+   { (int8_t)t_symbol, 0, type, 0,                                      \
+     value, ECL_NIL /*gfdef*/, NULL /*undefined_function_entry*/,       \
+     ECL_NIL, ECL_NIL, ECL_NIL, (cl_object)&ecl_constexpr_string(name), \
+     ECL_NIL, ECL_NIL, ECL_MISSING_SPECIAL_BINDING } )
+#else
+#define ecl_constexpr_symbol(type, name, value)                         \
+  ((struct ecl_symbol)                                                  \
+   { (int8_t)t_symbol, 0, type, 0,                                      \
+     value, ECL_NIL /*gfdef*/, NULL /*undefined_function_entry*/,       \
+     ECL_NIL, ECL_NIL, ECL_NIL, (cl_object)&ecl_constexpr_string(name), \
+     ECL_NIL, ECL_NIL } )
+#endif
+
 #define ecl_def_variable(name, value, chars, len)                       \
         ecl_def_ct_base_string (name ## _var_name, chars, len,static,const); \
         ecl_def_ct_token(name, ecl_stp_special, name ## _var_name, value,,)
@@ -135,6 +157,15 @@
                 ECL_NIL, ECL_NIL, ECL_NIL, sname, ECL_NIL, ECL_NIL };   \
         static const cl_object name = (cl_object)(& name ## _data)
 #endif
+
+#define ecl_def_function(name, cname, static, const)                    \
+        static const struct ecl_cfunfixed name ##_data = {              \
+                (int8_t)t_cfunfixed, 0, 0, 0,                           \
+                /*name*/ECL_NIL, /*block*/ECL_NIL,                      \
+                /*entry*/(cl_objectfn)cname,                            \
+                /*funfixed_entry*/(cl_objectfn_fixed)NULL,              \
+                ECL_NIL, ECL_NIL };                                     \
+        static const cl_object name = (cl_object)(& name ## _data)
 
 #define ecl_def_string_array(name,static,const)                         \
         static const union {                                            \
