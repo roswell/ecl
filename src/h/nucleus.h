@@ -40,7 +40,7 @@ cl_env_ptr ecl_spawn_cpu();
 void ecl_disown_cpu();
 
 /* control.c */
-cl_object ecl_escape(cl_object continuation) ecl_attr_noreturn;
+void ecl_escape(cl_object continuation) ecl_attr_noreturn;
 cl_object ecl_signal(cl_object condition, cl_object returns, cl_object thread);
 cl_object ecl_call_with_handler(cl_object handler, cl_object continuation);
 
