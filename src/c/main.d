@@ -413,7 +413,6 @@ struct cl_core_struct cl_core = {
   .Jan1st1970UT = ECL_NIL,
 
   .system_properties = ECL_NIL,
-  .setf_definitions = ECL_NIL,
 
 #ifdef ECL_THREADS
   .processes = ECL_NIL,
@@ -514,6 +513,7 @@ cl_boot(int argc, char **argv)
   ECL_NIL_SYMBOL->symbol.name = str_NIL;
   ECL_NIL_SYMBOL->symbol.cname = ECL_NIL;
   ECL_FMAKUNBOUND(ECL_NIL_SYMBOL);
+  ECL_NIL_SYMBOL->symbol.sfdef = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.plist = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.hpack = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.stype = ecl_stp_constant;
@@ -528,6 +528,7 @@ cl_boot(int argc, char **argv)
   ECL_T->symbol.name = str_T;
   ECL_T->symbol.cname = ECL_NIL;
   ECL_FMAKUNBOUND(ECL_T);
+  ECL_T->symbol.sfdef = ECL_NIL;
   ECL_T->symbol.plist = ECL_NIL;
   ECL_T->symbol.hpack = ECL_NIL;
   ECL_T->symbol.stype = ecl_stp_constant;
@@ -676,10 +677,6 @@ cl_boot(int argc, char **argv)
    */
   cl_core.system_properties =
     cl__make_hash_table(@'equal', ecl_make_fixnum(1024), /* size */
-                        cl_core.rehash_size,
-                        cl_core.rehash_threshold);
-  cl_core.setf_definitions =
-    cl__make_hash_table(@'eq', ecl_make_fixnum(256), /* size */
                         cl_core.rehash_size,
                         cl_core.rehash_threshold);
 

@@ -88,6 +88,18 @@ VEwrong_num_arguments(cl_object fname)
 }
 
 static void
+VEundefined_function(cl_object fun)
+{
+  FEundefined_function(fun);
+}
+
+static void
+VEinvalid_function(cl_object fun)
+{
+  FEinvalid_function(fun);
+}
+
+static void
 VEclose_around_arg_type()
 {
   FEerror("Internal error: ecl_close_around should be called on t_bytecodes or t_bclosure.", 0);
@@ -148,6 +160,37 @@ _ecl_bclosure_dispatch_vararg(cl_narg narg, ...)
     output = ecl_interpret(frame, fun->bclosure.lex, fun->bclosure.code);
   } ECL_STACK_FRAME_VARARGS_END(frame);
   return output;
+}
+
+/* Find the global function definition associated with a name. This function is
+   similar to ecl_fdefinition except thta it does not check for lambdas and
+   assumes that the name is either SYMBOL or (SETF SYMBOL). -- jd 2024-12-12 */
+static cl_object
+_ecl_global_function_definition(cl_object name)
+{
+  cl_object fun = ECL_NIL, sym, pair;
+  switch (ecl_t_of(name)) {
+  case t_symbol:
+    unlikely_if (!ECL_FBOUNDP(name)
+                 || name->symbol.stype & (ecl_stp_macro | ecl_stp_special_form))
+      VEundefined_function(name);
+    fun = ECL_SYM_FUN(name);
+    break;
+  case t_list:
+    unlikely_if (Null(name))
+      VEundefined_function(name);
+    /* (setf fname) */
+    sym = ECL_CONS_CAR(ECL_CONS_CDR(name));
+    pair = sym->symbol.sfdef;
+    unlikely_if (Null(pair) || Null(ECL_CONS_CDR(pair))) {
+      VEundefined_function(name);
+    }
+    fun = ECL_CONS_CAR(pair);
+    break;
+  default:
+    VEinvalid_function(name);
+  }
+  return fun;
 }
 
 cl_object
@@ -604,25 +647,27 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       }
       THREAD_NEXT;
     }
-    /* OP_LFUNCTION n{arg}, function-name{symbol}
-       Calls the local or global function with N arguments
-       which have been deposited in the stack.
+    /* OP_LFUNCTION index{fixnum}
+
+       Extracts a local function denoted by the index from the lexical
+       environment.
     */
-    CASE(OP_LFUNCTION); {       /* XXX: local function (fix comment) */
+    CASE(OP_LFUNCTION); {
       int lex_env_index;
       GET_OPARG(lex_env_index, vector);
       reg0 = ecl_lex_env_get_fun(lex_env, lex_env_index);
       THREAD_NEXT;
     }
 
-    /* OP_FUNCTION  name{symbol}
-       Extracts the function associated to a symbol. The function
-       may be defined in the global environment or in the local
-       environment. This last value takes precedence.
+    /* OP_FUNCTION  name{function-name}
+
+       Extracts a function associated with the name. The function is defined in
+       the global environment. Local function are handled by OP_LFUNCTION and
+       lambdas are handled by OP_QUOTE and OP_CLOSE.
     */
-    CASE(OP_FUNCTION); {        /* XXX: global function (fix comment) */
+    CASE(OP_FUNCTION); {
       GET_DATA(reg0, vector, data);
-      reg0 = ecl_fdefinition(reg0);
+      reg0 = _ecl_global_function_definition(reg0);
       THREAD_NEXT;
     }
 

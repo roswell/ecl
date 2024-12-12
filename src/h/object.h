@@ -280,6 +280,7 @@ struct ecl_symbol {
                                   *  of cfun.entry); see below for
                                   *  more explanation */
         cl_object macfun;        /*  macro expansion function  */
+        cl_object sfdef;         /*  global (setf f) definition */
         cl_object plist;         /*  property list  */
         cl_object name;          /*  print name  */
         cl_object cname;         /*  associated C name for function
