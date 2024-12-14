@@ -702,7 +702,6 @@ mantissa_and_exponent_from_ratio(cl_object num, cl_object den, int digits, cl_fi
   return quotient;
 }
 
-#if 0 /* Unused, we do not have ecl_to_float() */
 static float
 ratio_to_float(cl_object num, cl_object den)
 {
@@ -712,11 +711,12 @@ ratio_to_float(cl_object num, cl_object den)
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   double output = ecl_fixnum(mantissa);
 #else
-  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_double(mantissa);
+  double output = ECL_FIXNUMP(mantissa)
+    ? ecl_fixnum(mantissa)
+    : _ecl_big_to_double(mantissa);
 #endif
   return ldexpf(output, exponent);
 }
-#endif
 
 static double
 ratio_to_double(cl_object num, cl_object den)
@@ -727,7 +727,9 @@ ratio_to_double(cl_object num, cl_object den)
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   double output = ecl_fixnum(mantissa);
 #else
-  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_double(mantissa);
+  double output = ECL_FIXNUMP(mantissa)
+    ? ecl_fixnum(mantissa)
+    : _ecl_big_to_double(mantissa);
 #endif
   return ldexp(output, exponent);
 }
@@ -741,7 +743,9 @@ ratio_to_long_double(cl_object num, cl_object den)
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   long double output = ecl_fixnum(mantissa);
 #else
-  long double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_long_double(mantissa);
+  long double output = ECL_FIXNUMP(mantissa)
+    ? ecl_fixnum(mantissa)
+    : _ecl_big_to_long_double(mantissa);
 #endif
   return ldexpl(output, exponent);
 }
@@ -755,9 +759,9 @@ ecl_to_float(cl_object x)
   case t_fixnum:
     return (float)ecl_fixnum(x);
   case t_bignum:
-    return (float)ratio_to_double(x, ecl_make_fixnum(1));
+    return ratio_to_float(x, ecl_make_fixnum(1));
   case t_ratio:
-    return (float)ratio_to_double(x->ratio.num, x->ratio.den);
+    return ratio_to_float(x->ratio.num, x->ratio.den);
   case t_singlefloat:
     return ecl_single_float(x);
   case t_doublefloat:
