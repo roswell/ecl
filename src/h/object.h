@@ -212,6 +212,8 @@ struct ecl_long_float {
 #define ecl_long_float(o) ((o)->longfloat.value)
 
 typedef mpz_t big_num_t;
+typedef mp_limb_t ecl_limb_t;
+
 struct ecl_bignum {
         _ECL_HDR;
         big_num_t value;

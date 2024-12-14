@@ -100,17 +100,17 @@ generate_double(cl_object state)
   return (generate_int64(state) >> 11) * (1.0 / 9007199254740991.0);
 }
 
-static mp_limb_t
+static ecl_limb_t
 generate_limb(cl_object state)
 {
-#if GMP_LIMB_BITS <= 32
+#if ECL_BIGNUM_LIMB_BITS <= 32
   return generate_int64(state);
 #else
-# if GMP_LIMB_BITS <= 64
+# if ECL_BIGNUM_LIMB_BITS <= 64
   return generate_int64(state);
 # else
-#  if GMP_LIMB_BITS <= 128
-  mp_limb_t high = generate_int64(state);
+#  if ECL_BIGNUM_LIMB_BITS <= 128
+  ecl_limb_t high = generate_int64(state);
   return (high << 64) | generate_int64(state);
 #  endif
 # endif
@@ -180,21 +180,21 @@ generate_double(cl_object state)
   return generate_int32(state) * (1.0 / 4294967296.0);
 }
 
-static mp_limb_t
+static ecl_limb_t
 generate_limb(cl_object state)
 {
-#if GMP_LIMB_BITS <= 32
+#if ECL_BIGNUM_LIMB_BITS <= 32
   return generate_int32(state);
 #else
-# if GMP_LIMB_BITS <= 64
-  mp_limb_t high = generate_int32(state);
+# if ECL_BIGNUM_LIMB_BITS <= 64
+  ecl_limb_t high = generate_int32(state);
   return (high << 32) | generate_int32(state);
 # else
-#  if GMP_LIMB_BITS <= 128
-  mp_limb_t word0 = generate_int32(state);
-  mp_limb_t word1 = generate_int32(state);
-  mp_limb_t word2 = generate_int32(state);
-  mp_limb_t word3 = generate_int32(state);
+#  if ECL_BIGNUM_LIMB_BITS <= 128
+  ecl_limb_t word0 = generate_int32(state);
+  ecl_limb_t word1 = generate_int32(state);
+  ecl_limb_t word2 = generate_int32(state);
+  ecl_limb_t word3 = generate_int32(state);
   return (word3 << 96) | (word3 << 64) | (word1 << 32) || word0;
 #  endif
 # endif
@@ -233,8 +233,7 @@ random_integer(cl_object limit, cl_object state)
     bit_length = ECL_FIXNUM_BITS;
   buffer = ecl_ash(ecl_make_fixnum(1), bit_length);
   for (bit_length = mpz_size(ecl_bignum(buffer)); bit_length; ) {
-    ECL_BIGNUM_LIMBS(buffer)[--bit_length] =
-      generate_limb(state);
+    ECL_BIGNUM_LIMBS(buffer)[--bit_length] = generate_limb(state);
   }
   return cl_mod(buffer, limit);
 }

@@ -8,7 +8,7 @@
  *
  */
 
-/* number.h  -- GMP interface. */
+/* number.h  -- INTEGER interface. */
 #ifndef ECL_NUMBER_H
 #define ECL_NUMBER_H
 
@@ -27,9 +27,10 @@ extern "C" {
                                 name##aux.value->_mp_d = name##data,    \
                                 (cl_object)(&name##aux))
 
-#define ECL_BIGNUM_DIM(x)   (ecl_bignum(x)->_mp_alloc) /* number of allocated limbs */
-#define ECL_BIGNUM_SIZE(x)  (ecl_bignum(x)->_mp_size)  /* number of limbs in use times sign of the bignum */
-#define ECL_BIGNUM_LIMBS(x) (ecl_bignum(x)->_mp_d)     /* pointer to array of allocated limbs */
+#define ECL_BIGNUM_LIMB_BITS GMP_LIMB_BITS
+#define ECL_BIGNUM_DIM(x)    (ecl_bignum(x)->_mp_alloc) /* number of allocated limbs */
+#define ECL_BIGNUM_SIZE(x)   (ecl_bignum(x)->_mp_size)  /* number of limbs in use times sign of the bignum */
+#define ECL_BIGNUM_LIMBS(x)  (ecl_bignum(x)->_mp_d)     /* pointer to array of allocated limbs */
 
 typedef void (*_ecl_big_binary_op)(cl_object out, cl_object o1, cl_object o2);
 extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
