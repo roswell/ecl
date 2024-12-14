@@ -62,6 +62,15 @@
  *      skipped if particularly inconvenient).
  */
 
+#define ECL_BIG_REGISTER_SIZE     32
+
+#define _ecl_big_init2(x,size)    mpz_init2(ecl_bignum(x),(size)*GMP_LIMB_BITS)
+#define _ecl_big_realloc2(x,size) mpz_realloc2(ecl_bignum(x),(size)*GMP_LIMB_BITS)
+#define _ecl_big_clear(x)         mpz_clear(ecl_bignum(x))
+
+#define _ecl_big_add(z, x, y)     mpz_add(ecl_bignum(z),ecl_bignum(x),ecl_bignum(y))
+#define _ecl_big_mul_si(z, x, y)  mpz_mul_si(ecl_bignum(z),ecl_bignum(x),(y))
+
 void
 _ecl_big_register_free(cl_object x)
 {
@@ -335,37 +344,21 @@ mp_realloc(void *ptr, size_t osize, size_t nsize)
   return p;
 }
 
-#undef _ecl_big_set_fixnum
-#undef _ecl_big_set_index
-#if ECL_LONG_BITS >= ECL_FIXNUM_BITS
-cl_object
-_ecl_big_set_fixnum(cl_object x, cl_fixnum f)
+#ifdef ECL_GMP_FIXNUM_TO_LIMBS
+void
+_ecl_big_set_idx(cl_object x, cl_index f)
 {
-  mpz_set_si(ecl_bignum(x), (f));
+  if (f == 0) {
+    mpz_set_si(ecl_bignum(x), 0);
+  } else if (f > 0) {
+    ECL_BIGNUM_SIZE(x) = 1;
+    ECL_BIGNUM_LIMBS(x)[0] = f;
+  }
   return x;
 }
 
-cl_object
-_ecl_big_set_index(cl_object x, cl_index f)
-{
-  mpz_set_ui(ecl_bignum(x), (f));
-  return x;
-}
-
-cl_fixnum
-_ecl_big_get_fixnum(cl_object x)
-{
-  return mpz_get_si(ecl_bignum(x));
-}
-
-cl_index
-_ecl_big_get_index(cl_object x)
-{
-  return mpz_get_ui(ecl_bignum(x));
-}
-#elif GMP_LIMB_BITS >= ECL_FIXNUM_BITS
-cl_object
-_ecl_big_set_fixnum(cl_object x, cl_fixnum f)
+void
+_ecl_big_set_fix(cl_object x, cl_fixnum f)
 {
   if (f == 0) {
     mpz_set_si(ecl_bignum(x), 0);
@@ -379,36 +372,36 @@ _ecl_big_set_fixnum(cl_object x, cl_fixnum f)
   return x;
 }
 
-cl_object
-_ecl_big_set_index(cl_object x, cl_index f)
-{
-  if (f == 0) {
-    mpz_set_si(ecl_bignum(x), 0);
-  } else if (f > 0) {
-    ECL_BIGNUM_SIZE(x) = 1;
-    ECL_BIGNUM_LIMBS(x)[0] = f;
-  }
-  return x;
-}
-
-cl_fixnum
-_ecl_big_get_fixnum(cl_object x)
-{
-  /* INV: x is a bignum and thus size != 0 */
-  cl_fixnum output = ECL_BIGNUM_LIMBS(x)[0];
-  return (ECL_BIGNUM_SIZE(x) > 0) ? output : -output;
-}
-
 cl_index
-_ecl_big_get_index(cl_object x)
+_ecl_big_get_idx(cl_object x)
 {
   /* INV: x is a bignum and thus size != 0 */
   cl_index output = ECL_BIGNUM_LIMBS(x)[0];
   return (ECL_BIGNUM_SIZE(x) > 0)? output : ~(output - 1);
 }
-#else
-# error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
-#endif /* ECL_FIXNUM_BITS > GMP_LIMB_BITS, ECL_LONG_BITS */
+
+cl_fixnum
+_ecl_big_get_fix(cl_object x)
+{
+  /* INV: x is a bignum and thus size != 0 */
+  cl_fixnum output = ECL_BIGNUM_LIMBS(x)[0];
+  return (ECL_BIGNUM_SIZE(x) > 0) ? output : -output;
+}
+#endif /* ECL_GMP_FIXNUM_TO_LIMBS */
+
+long double
+_ecl_big_get_lf(cl_object o)
+{
+  long double output = 0;
+  int i, l = mpz_size(ecl_bignum(o)), exp = 0;
+  for (i = 0; i < l; i++) {
+    output += ldexpl(mpz_getlimbn(ecl_bignum(o), i), exp);
+    exp += GMP_LIMB_BITS;
+  }
+  return (mpz_sgn(ecl_bignum(o)) < 0)? -output : output;
+}
+
+
 
 #if ECL_FIXNUM_BITS == ECL_INT_BITS
 static inline bool
@@ -481,18 +474,6 @@ fixnnint(cl_object x)
   FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),
                                 ecl_make_fixnum(MOST_POSITIVE_FIXNUM)),
                         x);
-}
-
-long double
-_ecl_big_to_long_double(cl_object o)
-{
-  long double output = 0;
-  int i, l = mpz_size(ecl_bignum(o)), exp = 0;
-  for (i = 0; i < l; i++) {
-    output += ldexpl(mpz_getlimbn(ecl_bignum(o), i), exp);
-    exp += GMP_LIMB_BITS;
-  }
-  return (mpz_sgn(ecl_bignum(o)) < 0)? -output : output;
 }
 
 static void
