@@ -23,6 +23,15 @@ extern "C" {
 #define CONS(a,d)       ecl_cons((a),(d))
 #define ACONS(a,b,c)    ecl_cons(ecl_cons((a),(b)),(c))
 
+#ifdef ECL_SMALL_CONS
+#define ecl_cons_stack(carv,cdrv)                                       \
+        ECL_PTR_CONS(&((struct ecl_cons){.car = carv, .cdr = cdrv }))
+#else
+#define ecl_cons_stack(carv,cdrv)                                       \
+        ecl_cast_ptr(cl_object,                                         \
+                     &((struct ecl_cons){.t = t_list, .car = carv, .cdr = cdrv}))
+#endif
+
 /* BEGIN-GENERATED (gen-cons-h) */
 
 #if ECL_CAN_INLINE
