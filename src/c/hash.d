@@ -36,8 +36,7 @@ _hash_eql(cl_hashkey h, cl_object x)
   switch (ecl_t_of(x)) {
   case t_bignum:
     return hash_string(h, (unsigned char*)ECL_BIGNUM_LIMBS(x),
-                       labs(ECL_BIGNUM_SIZE(x)) *
-                       sizeof(ecl_limb_t));
+                       ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
   case t_ratio:
     h = _hash_eql(h, x->ratio.num);
     return _hash_eql(h, x->ratio.den);

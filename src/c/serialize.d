@@ -241,9 +241,9 @@ serialize_one(pool_t pool, cl_object what)
   case t_longfloat:
     break;
   case t_bignum: {
-    int8_t sign = mpz_sgn(ecl_bignum(buffer));
+    int8_t sign = _ecl_big_sign(ecl_bignum(buffer));
     serialize_bits(pool, &sign, 1);
-    cl_index bytes = (mpz_sizeinbase(ecl_bignum(buffer), 2) + 7) / 8;
+    cl_index bytes = (_ecl_big_bits(buffer) + 7) / 8;
     serialize_bits(pool, &bytes, sizeof(cl_index));
     cl_index index = alloc(pool, bytes);
     cl_index bytes_written;
@@ -462,7 +462,7 @@ reconstruct_one(uint8_t *data, cl_object *output)
     mpz_init(ecl_bignum(*output));
     mpz_import(ecl_bignum(*output), bytes, 1, 1, 1, 0, data);
     if (sign == -1) {
-      mpz_neg(ecl_bignum(*output), ecl_bignum(*output));
+      _ecl_big_neg(*output, *output);
     }
     data += ROUND_TO_WORD(bytes);
     break;
