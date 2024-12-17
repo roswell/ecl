@@ -175,45 +175,55 @@
 over macros in the compiler environment and enclose the definition of
 the closure in let/flet forms for variables/functions it closes over."
   (loop for record in lexenv
-        do (cond ((not (listp record))
-                  (multiple-value-bind (record-def record-lexenv)
-                      (function-lambda-expression record)
-                    (cond ((eql (car record-def) 'LAMBDA)
-                           (setf record-def (cdr record-def)))
-                          ((eql (car record-def) 'EXT:LAMBDA-BLOCK)
-                           (setf record-def (cddr record-def)))
-                          (t
-                           (error "~&;;; Error: Not a valid lambda expression: ~s." record-def)))
-                    ;; allow for closures which close over closures.
-                    ;; (first record-def) is the lambda list, (rest
-                    ;; record-def) the definition of the local function
-                    ;; in record
-                    (setf (rest record-def)
-                          (list (set-closure-env (if (= (length record-def) 2)
-                                                     (second record-def)
-                                                     `(progn ,@(rest record-def)))
-                                                 record-lexenv env)))
-                    (setf definition
-                          `(flet ((,(ext:compiled-function-name record)
-                                      ,@record-def))
-                             ,definition))))
-                 ((and (listp record) (symbolp (car record)))
-                  (cond ((eq (car record) 'si:macro)
-                         (cmp-env-register-macro (cddr record) (cadr record) env))
-                        ((eq (car record) 'si:symbol-macro)
-                         (cmp-env-register-symbol-macro-function (cddr record) (cadr record) env))
-                        (t
-                         (setf definition
-                               `(let ((,(car record) ',(cdr record)))
-                                  ,definition)))
-                        ))
-                 ;; ((and (integerp (cdr record)) (= (cdr record) 0))
-                 ;;  Tags: We have lost the information, which tag
-                 ;;  corresponds to the lex-env record. If we are
-                 ;;  compiling a closure over a tag, we will get an
-                 ;;  error later on.
-                 ;;  )
-                 ;; (t
-                 ;;  Blocks: Not yet implemented
-                 )
+        do (cond
+             ((not (listp record))
+              (multiple-value-bind (record-def record-lexenv)
+                  (function-lambda-expression record)
+                (let* ((self-ref (member record record-lexenv))
+                       (flet-env (remove record record-lexenv)))
+                  (case (car record-def)
+                    (CL:LAMBDA
+                     (setf record-def (cdr record-def)))
+                    (EXT:LAMBDA-BLOCK
+                     (setf record-def (cddr record-def)))
+                    (otherwise
+                     (error "~&;;; Error: Not a valid lambda expression: ~s."
+                            record-def)))
+                  ;; Allow for closures that close over other closures.
+                  ;; (first record-def) is the lambda list, (rest record-def)
+                  ;; the definition of the local function in the record.
+                  (setf (rest record-def)
+                        (list (set-closure-env (if (= (length record-def) 2)
+                                                   (second record-def)
+                                                   `(progn ,@(rest record-def)))
+                                               flet-env env)))
+                  (setf definition
+                        (if self-ref
+                            `(labels ((,(ext:compiled-function-name record)
+                                          ,@record-def))
+                               ,definition)
+                            `(flet ((,(ext:compiled-function-name record)
+                                        ,@record-def))
+                               ,definition))))))
+             ((and (listp record) (symbolp (car record)))
+              (cond ((eq (car record) 'si:macro)
+                     (cmp-env-register-macro (cddr record) (cadr record) env))
+                    ((eq (car record) 'si:symbol-macro)
+                     (cmp-env-register-symbol-macro-function (cddr record)
+                                                             (cadr record)
+                                                             env))
+                    (t
+                     (setf definition
+                           `(let ((,(car record) ',(cdr record)))
+                              ,definition)))
+                    ))
+             ;; ((and (integerp (cdr record)) (= (cdr record) 0))
+             ;;  Tags: We have lost the information, which tag
+             ;;  corresponds to the lex-env record. If we are
+             ;;  compiling a closure over a tag, we will get an
+             ;;  error later on.
+             ;;  )
+             ;; (t
+             ;;  Blocks: Not yet implemented
+             )
         finally (return definition)))
