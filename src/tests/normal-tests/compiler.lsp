@@ -2394,3 +2394,74 @@
   (signals type-error (funcall 'foo.0098b :y :bad-arg))
   (signals type-error (funcall 'foo.0098b :x nil :y :bad-arg))
   (signals type-error (funcall 'foo.0098b :x "" :y :bad-arg)))
+
+;;; Date 2024-12-17
+;;; Description
+;;;
+;;;     The bytecodes compiler does not enclose FLET/LABELS functions with their
+;;;     macroexpansion environment, leading to miscompilation in the C later.
+;;;
+(test cmp.0099.bytecodes-flet-labels-enclose-macrolet
+  (dolist (op '( flet labels))
+    (let* ((form `(lambda ()
+                    (macrolet ((plops () 42))
+                      (,op ((a () (plops))) #'a))))
+           (f1 (funcall (ext::bc-compile nil form)))
+           (f2 (compile nil f1)))
+      (is (nth-value 1 (function-lambda-expression f1)))
+      (is (eql (funcall f1) 42))
+      (finishes (is (eql (funcall f2) 42))))
+    (let* ((form `(lambda ()
+                    (symbol-macrolet ((klops 96))
+                      (,op ((a () klops)) #'a))))
+           (f1 (funcall (ext::bc-compile nil form)))
+           (f2 (compile nil f1)))
+      (is (nth-value 1 (function-lambda-expression f1)))
+      (is (eql (funcall f1) 96))
+      (finishes (is (eql (funcall f2) 96))))))
+
+;;; Date 2024-12-17
+;;; Description
+;;;
+;;;     While writing cmp.0099 and adding LABELS variant I've hit a stack
+;;;     overflow. This test encodes that particular failure. SET-CLOSURE-ENV
+;;;     recursively adds the reference to the function leading to the error. In
+;;;     this test we check whether this pitfall is avoided and whether compiled
+;;;     LABELS can still reference itself.
+;;;
+(test cmp.0100.bytecodes-labels-stack-overflow
+  (let ((fun (labels ((a (n)
+                        (if (zerop n)
+                            'banzai
+                            (a (1- n)))))
+               #'a)))
+    (multiple-value-bind (fun wrn err)
+        (compile nil fun)
+      (finishes (is (eql (funcall fun 4) 'banzai)))
+      (is (null wrn))
+      (is (null err)))))
+
+;;; Date 2024-12-18
+;;; Description
+;;;
+;;;     Test for an uncommited regression in the bytecodes compiler that was
+;;;     introduced while fixing cmp.0100 where we've made the single label share
+;;;     bindings among all function closures, or we've restored invalid lexenv,
+;;;     or that we've miscompiled closure by C compiler.
+;;;
+(deftest cmp.0101.bytecodes-labels-false-sharing ()
+  (flet ((make (start)
+           (macrolet ((start-result () 'start))
+             (labels ((fun (n)
+                        (if (zerop n)
+                            (start-result)
+                            (1+ (fun (1- n))))))
+               #'fun))))
+    (let ((f1 (make 3))
+          (f2 (make 2)))
+      (print (= (funcall f1 3) 6))
+      (print (= (funcall f2 3) 5))
+      (finishes (is (null (nth-value 2 (compile nil f1)))))
+      (finishes (is (null (nth-value 2 (compile nil f2)))))
+      (print (= (funcall f1 3) 6))
+      (print (= (funcall f2 3) 5)))))

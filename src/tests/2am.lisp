@@ -24,7 +24,7 @@
 #| to avoid conflict with the library name package 2am-ecl |#
 (defpackage #:2am-ecl
   (:use #:cl)
-  (:export #:test #:test-with-timeout #:is #:signals #:finishes
+  (:export #:deftest #:test #:test-with-timeout #:is #:signals #:finishes
            #:run #:suite))
 
 (in-package #:2am-ecl)
@@ -152,12 +152,15 @@
         (%run fn))
     (values)))
 
-(defmacro test (name &body body)
+(defmacro deftest (name () &body body)
   `(progn
      (defun ,name ()
        (call-test ',name (lambda () ,@body)))
      (pushnew ',name (gethash *tests* *suites*))
      ',name))
+
+(defmacro test (name &body body)
+  `(deftest ,name () ,@body))
 
 (defun kill-processes (process-list &optional original)
   "Kills a list of processes, which may be the difference between two lists."
