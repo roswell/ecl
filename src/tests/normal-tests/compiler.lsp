@@ -2465,3 +2465,15 @@
       (finishes (is (null (nth-value 2 (compile nil f2)))))
       (print (= (funcall f1 3) 6))
       (print (= (funcall f2 3) 5)))))
+
+;;; Date 2024-12-19
+;;; Description
+;;;
+;;;   Make sure that FLET and LABELS do not create a closure when the lexenv
+;;;   contains only objects that are not referenced. Similar to cmp.0066.
+;;;
+(test cmp.0102.bytecodes-flat-closure
+  (let ((fun (let ((b 3)) (flet ((a () 1)) #'a))))
+    (is (null (nth-value 1 (function-lambda-expression fun)))))
+  (let ((fun (let ((b 3)) (labels ((a () 1)) #'a))))
+    (is (null (nth-value 1 (function-lambda-expression fun))))))
