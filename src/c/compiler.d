@@ -2737,7 +2737,10 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
 cl_object
 si_need_to_make_load_form_p(cl_object object)
 {
-  cl_object load_form_cache = ECL_NIL;
+  cl_object load_form_cache = cl__make_hash_table(@'eq',
+                                                  ecl_make_fixnum(16),
+                                                  cl_core.rehash_size,
+                                                  cl_core.rehash_threshold);
   cl_object waiting_objects = ecl_list1(object);
   cl_type type = t_start;
 
@@ -2778,13 +2781,12 @@ si_need_to_make_load_form_p(cl_object object)
   default:
     ;
   }
-  /* For compound objects we set up a cache and run through the
-     objects content looking for components that might require
-     MAKE-LOAD-FORM to be externalized. The cache is used to solve the
-     problem of circularity and of EQ references. */
-  if (ecl_member_eq(object, load_form_cache))
+  /* For compound objects we set up a cache and run through the objects content
+     looking for components that require MAKE-LOAD-FORM to be externalized. The
+     cache is used to solve the problem of circularity and of EQ references. */
+  if(ecl_gethash(object, load_form_cache))
     goto loop;
-  push(object, &load_form_cache);
+  ecl_sethash(object, load_form_cache, ECL_T);
   switch (type) {
   case t_array:
   case t_vector:
@@ -2796,8 +2798,8 @@ si_need_to_make_load_form_p(cl_object object)
     }
     goto loop;
   case t_list:
-    push(ECL_CONS_CAR(object), &waiting_objects);
     push(ECL_CONS_CDR(object), &waiting_objects);
+    push(ECL_CONS_CAR(object), &waiting_objects);
     goto loop;
   case t_bclosure: {
     cl_object bc = object->bclosure.code;
