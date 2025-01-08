@@ -24,9 +24,11 @@ enum {
   OP_INT,
   OP_PINT,
   OP_VAR,
+  OP_VARC,
   OP_VARS,
   OP_PUSH,
   OP_PUSHV,
+  OP_PUSHVC,
   OP_PUSHVS,
   OP_PUSHQ,
   OP_CALLG1,
@@ -46,10 +48,13 @@ enum {
   OP_FLET,
   OP_LABELS,
   OP_LFUNCTION,
+  OP_CFUNCTION,
   OP_FUNCTION,
   OP_CLOSE,
   OP_GO,
+  OP_GO_CFB,
   OP_RETURN,
+  OP_RETURN_CFB,
   OP_THROW,
   OP_JMP,
   OP_JNIL,
@@ -65,10 +70,13 @@ enum {
   OP_PBINDS,
   OP_VBINDS,
   OP_SETQ,
+  OP_SETQC,
   OP_SETQS,
   OP_PSETQ,
+  OP_PSETQC,
   OP_PSETQS,
   OP_VSETQ,
+  OP_VSETQC,
   OP_VSETQS,
   OP_BLOCK,
   OP_DO,
@@ -179,9 +187,11 @@ typedef int16_t cl_opcode;
   &&LBL_OP_INT - &&LBL_OP_NOP,\
   &&LBL_OP_PINT - &&LBL_OP_NOP,\
   &&LBL_OP_VAR - &&LBL_OP_NOP,\
+  &&LBL_OP_VARC - &&LBL_OP_NOP,\
   &&LBL_OP_VARS - &&LBL_OP_NOP,\
   &&LBL_OP_PUSH - &&LBL_OP_NOP,\
   &&LBL_OP_PUSHV - &&LBL_OP_NOP,\
+  &&LBL_OP_PUSHVC - &&LBL_OP_NOP,\
   &&LBL_OP_PUSHVS - &&LBL_OP_NOP,\
   &&LBL_OP_PUSHQ - &&LBL_OP_NOP,\
   &&LBL_OP_CALLG1 - &&LBL_OP_NOP,\
@@ -201,10 +211,13 @@ typedef int16_t cl_opcode;
   &&LBL_OP_FLET - &&LBL_OP_NOP,\
   &&LBL_OP_LABELS - &&LBL_OP_NOP,\
   &&LBL_OP_LFUNCTION - &&LBL_OP_NOP,\
+  &&LBL_OP_CFUNCTION - &&LBL_OP_NOP,\
   &&LBL_OP_FUNCTION - &&LBL_OP_NOP,\
   &&LBL_OP_CLOSE - &&LBL_OP_NOP,\
   &&LBL_OP_GO - &&LBL_OP_NOP,\
+  &&LBL_OP_GO_CFB - &&LBL_OP_NOP,\
   &&LBL_OP_RETURN - &&LBL_OP_NOP,\
+  &&LBL_OP_RETURN_CFB - &&LBL_OP_NOP,\
   &&LBL_OP_THROW - &&LBL_OP_NOP,\
   &&LBL_OP_JMP - &&LBL_OP_NOP,\
   &&LBL_OP_JNIL - &&LBL_OP_NOP,\
@@ -220,10 +233,13 @@ typedef int16_t cl_opcode;
   &&LBL_OP_PBINDS - &&LBL_OP_NOP,\
   &&LBL_OP_VBINDS - &&LBL_OP_NOP,\
   &&LBL_OP_SETQ - &&LBL_OP_NOP,\
+  &&LBL_OP_SETQC - &&LBL_OP_NOP,\
   &&LBL_OP_SETQS - &&LBL_OP_NOP,\
   &&LBL_OP_PSETQ - &&LBL_OP_NOP,\
+  &&LBL_OP_PSETQC - &&LBL_OP_NOP,\
   &&LBL_OP_PSETQS - &&LBL_OP_NOP,\
   &&LBL_OP_VSETQ - &&LBL_OP_NOP,\
+  &&LBL_OP_VSETQC - &&LBL_OP_NOP,\
   &&LBL_OP_VSETQS - &&LBL_OP_NOP,\
   &&LBL_OP_BLOCK - &&LBL_OP_NOP,\
   &&LBL_OP_DO - &&LBL_OP_NOP,\

@@ -765,6 +765,10 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   x = ECL_CONS_CDR(x);
   rv->bytecodes.data = nth;
 
+  nth = ECL_CONS_CAR(x);
+  x = ECL_CONS_CDR(x);
+  rv->bytecodes.flex = nth;
+
   if (ECL_ATOM(x)) {
     nth = ECL_NIL;
   } else {
@@ -1252,6 +1256,7 @@ do_patch_sharp(cl_object x, cl_object table)
     x->bytecodes.name = do_patch_sharp(x->bytecodes.name, table);
     x->bytecodes.definition = do_patch_sharp(x->bytecodes.definition, table);
     x->bytecodes.data = do_patch_sharp(x->bytecodes.data, table);
+    x->bytecodes.flex = do_patch_sharp(x->bytecodes.flex, table);
     break;
   }
   default:;

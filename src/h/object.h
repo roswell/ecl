@@ -772,6 +772,7 @@ struct ecl_bytecodes {
         cl_index code_size;     /*  number of bytecodes  */
         char *code;             /*  the intermediate language  */
         cl_object data;         /*  non-inmediate constants used in the code  */
+        cl_object flex;         /*  indexes of captured objects (vector) */
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };
@@ -779,7 +780,7 @@ struct ecl_bytecodes {
 struct ecl_bclosure {
         _ECL_HDR;
         cl_object code;
-        cl_object lex;
+        cl_object lex;          /*  captured objects (flat vector) */
         cl_objectfn entry;      /*  entry address  */
 };
 

@@ -240,6 +240,7 @@ struct cl_compiler_env {
         cl_object variables;            /* the env: vars, tags, funs, etc */
         cl_object macros;               /* Macros and function bindings */
         cl_fixnum lexical_level;        /* =0 if toplevel form */
+        cl_object captured;             /* Captured objects from the parent */
         cl_object constants;            /* Constants for this form */
         cl_object load_time_forms;      /* Constants that have to be rebuilt */
         cl_object ltf_being_created;    /* Load time objects being compiled */
@@ -262,8 +263,13 @@ enum ecl_cmpref_tag {
         ECL_CMPREF_LOCAL,
         ECL_CMPREF_CLOSE,
         ECL_CMPREF_UNDEFINED,
-        ECL_CMPREF_SYM_MACRO,
-        ECL_CMPREF_SPECIAL_VAR,
+};
+
+enum ecl_cmpvar_tag {
+        ECL_CMPVAR_UNDEFINED,
+        ECL_CMPVAR_SYM_MACRO,
+        ECL_CMPVAR_SPECIAL,
+        ECL_CMPVAR_LEXICAL,
 };
 
 struct cl_compiler_ref {
@@ -355,7 +361,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
 
 extern cl_object _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...);
 extern cl_object _ecl_bclosure_dispatch_vararg(cl_narg narg, ...);
-extern cl_object ecl_close_around(cl_object fun, cl_object env);
+extern cl_object ecl_close_around(cl_object fun, cl_object env, cl_object *flex);
 
 /* ffi/backtrace.d */
 

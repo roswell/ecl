@@ -174,16 +174,16 @@
   "Set up an environment for compilation of closures: Register closed
 over macros in the compiler environment and enclose the definition of
 the closure in let/flet forms for variables/functions it closes over."
-  (loop for record in lexenv
-        do (cond
+  (flet ((handle-record (record)
+           (cond
              ((not (listp record))
               (multiple-value-bind (record-def record-lexenv)
                   (function-lambda-expression record)
-                (let* ((self-ref (member record record-lexenv))
+                (let* ((self-ref (position record record-lexenv))
                        (flet-env (remove record record-lexenv)))
                   (case (car record-def)
                     (CL:LAMBDA
-                     (setf record-def (cdr record-def)))
+                        (setf record-def (cdr record-def)))
                     (EXT:LAMBDA-BLOCK
                      (setf record-def (cddr record-def)))
                     (otherwise
@@ -225,5 +225,6 @@ the closure in let/flet forms for variables/functions it closes over."
              ;;  )
              ;; (t
              ;;  Blocks: Not yet implemented
-             )
-        finally (return definition)))
+             )))
+    (map nil #'handle-record lexenv)
+    definition))
