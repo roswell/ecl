@@ -107,18 +107,18 @@ VEclose_around_arg_type()
 
 /* ------------------------------ LEXICAL ENV. ------------------------------ */
 /*
- * A lexical environment is a list of pairs, each one containing
- * either a variable definition, a tagbody or block tag, or a local
- * function or macro definition.
+ * A lexical environment is a list of entries, each containing either a variable
+ * definition, a tagbody or block tag, or a local function or macro definition.
  *
  *      lex_env ---> ( { record }* )
- *      record = variable | function | block_tag | tagbody_tag | macro
+ *      record = variable | function | block | tagbody | macro | sym_macro
  *
- *      variable = ( var_name[symbol] . value )
- *      function = function[bytecodes]
- *      block_tag = ( tag[fixnum] . block_name[symbol] )
- *      tagbody_tag = ( tag[fixnum] . 0 )
- *      macro = ( { si::macro | si::symbol-macro } macro_function[bytecodes] . macro_name )
+ *      variable =  ( var_name[symbol] . value )
+ *      function =  function[bytecodes]
+ *      block =     ( tag[fixnum] . block_name[symbol] )
+ *      tagbody =   ( tag[fixnum] . 0 )
+ *      macro =     ( si::macro macro_function[bytecodes] . macro_name )
+ *      sym_macro = ( si::symbol-macro macro_function[bytecodes] . macro_name )
  */
 
 #define bind_var(env, var, val)   CONS(CONS(var, val), (env))
@@ -134,10 +134,11 @@ ecl_lex_env_get_record(cl_object env, int s)
   } while(1);
 }
 
+#define ecl_lex_env_get_fun(env,x) ecl_lex_env_get_record(env,x)
+#define ecl_lex_env_get_blk(env,x) ecl_lex_env_get_record(env,x)
+#define ecl_lex_env_get_tag(env,x) ECL_CONS_CAR(ecl_lex_env_get_record(env,x))
 #define ecl_lex_env_get_var(env,x) ECL_CONS_CDR(ecl_lex_env_get_record(env,x))
 #define ecl_lex_env_set_var(env,x,v) ECL_RPLACD(ecl_lex_env_get_record(env,x),(v))
-#define ecl_lex_env_get_fun(env,x) ecl_lex_env_get_record(env,x)
-#define ecl_lex_env_get_tag(env,x) ECL_CONS_CAR(ecl_lex_env_get_record(env,x))
 
 /* -------------------- AIDS TO THE INTERPRETER -------------------- */
 
@@ -193,57 +194,6 @@ _ecl_global_function_definition(cl_object name)
   return fun;
 }
 
-/* KLUDGE using ecl_append to create closures makes a shallow copy of LEXENV.
-   That means that LEXENV is _immutable_. This conflicts with the fixup in
-   OP_LABELS and use of ECL_RPLACA. -- jd 2024-12-18 */
-static cl_object
-close_around_self(cl_object fun, cl_object lex) {
-  cl_object v;
-  if (Null(lex)) return fun;
-  switch (ecl_t_of(fun)) {
-  case t_bytecodes:
-    v = ecl_alloc_object(t_bclosure);
-    v->bclosure.code = fun;
-    v->bclosure.lex = ECL_NIL;
-    v->bclosure.entry = _ecl_bclosure_dispatch_vararg;
-    break;
-  case t_bclosure:
-    v = ecl_alloc_object(t_bclosure);
-    v->bclosure.code = fun->bclosure.code;
-    v->bclosure.lex = fun->bclosure.lex;
-    v->bclosure.entry = fun->bclosure.entry;
-    break;
-  default:
-    VEclose_around_arg_type();
-  }
-  return v;
-}
-
-static void
-labels_fixup(cl_index nfun, cl_object lex_env)
-{
-  cl_object l = lex_env;
-  cl_index i = nfun;
-  /* Augment the environment with new closures. */
-  do {
-    ECL_RPLACA(l, close_around_self(ECL_CONS_CAR(l), lex_env));
-    l = ECL_CONS_CDR(l);
-  } while (--i);
-  /* Update newly created closures with the augmented environment. */
-  l = lex_env;
-  i = nfun;
-  do {
-    cl_object fun = ECL_CONS_CAR(l);
-    /* Put the predefined macros in fun->bclosure.lex at the end of the lexenv
-       so that lexenv indices are still valid. Creates a shallow env copy. */
-    if (Null(fun->bclosure.lex))
-      fun->bclosure.lex = lex_env;
-    else
-      fun->bclosure.lex = ecl_append(lex_env, fun->bclosure.lex);
-    l = ECL_CONS_CDR(l);
-  } while (--i);
-}
-
 cl_object
 ecl_close_around(cl_object fun, cl_object lex) {
   cl_object v;
@@ -254,14 +204,6 @@ ecl_close_around(cl_object fun, cl_object lex) {
     v->bclosure.code = fun;
     v->bclosure.lex = lex;
     v->bclosure.entry = _ecl_bclosure_dispatch_vararg;
-    break;
-  case t_bclosure:
-    v = ecl_alloc_object(t_bclosure);
-    v->bclosure.code = fun->bclosure.code;
-    /* Put the predefined macros in fun->bclosure.lex at the end of
-       the lexenv so that lexenv indices are still valid */
-    v->bclosure.lex = ecl_append(lex, fun->bclosure.lex);
-    v->bclosure.entry = fun->bclosure.entry;
     break;
   default:
     VEclose_around_arg_type();
@@ -689,7 +631,13 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         } while (--i);
       }
       /* Update the closures so that all functions can call each other */
-      labels_fixup(nfun, lex_env);
+      {
+        cl_object l = lex_env;
+        do {
+          ECL_RPLACA(l, ecl_close_around(ECL_CONS_CAR(l), lex_env));
+          l = ECL_CONS_CDR(l);
+        } while (--nfun);
+      }
       THREAD_NEXT;
     }
     /* OP_LFUNCTION index{fixnum}
@@ -748,7 +696,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       cl_object block_record;
       GET_OPARG(lex_env_index, vector);
       /* record = (id . name) */
-      block_record = ecl_lex_env_get_record(lex_env, lex_env_index);
+      block_record = ecl_lex_env_get_blk(lex_env, lex_env_index);
       the_env->values[0] = reg0;
       cl_return_from(ECL_CONS_CAR(block_record),
                      ECL_CONS_CDR(block_record));

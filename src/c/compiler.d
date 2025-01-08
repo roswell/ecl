@@ -128,7 +128,6 @@ static cl_object ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambd
 static void FEill_formed_input(void) ecl_attr_noreturn;
 
 static int asm_function(cl_env_ptr env, cl_object args, int flags);
-static cl_object create_macro_lexenv(cl_compiler_ptr c_env);
 
 /* -------------------- SAFE LIST HANDLING -------------------- */
 static cl_object
@@ -1469,7 +1468,6 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
   cl_object old_funs = c_env->macros;
   cl_object fnames = ECL_NIL;
   cl_object v, *f = &fnames;
-  cl_object macro_lexenv;
   cl_index nfun, lex_idx;
 
   if (def_list == ECL_NIL) {
@@ -1488,9 +1486,6 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
     push_back(v, f);
   }
 
-  /* Construct the macro lexenv so we can compile functions in the future. */
-  macro_lexenv = create_macro_lexenv(c_env);
-
   /* If compiling a LABELS form, add the function names to the lexical
      environment before compiling the functions */
   if (op == OP_LABELS)
@@ -1504,10 +1499,6 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
     cl_object definition = pop(&l);
     cl_object name = pop(&definition);
     cl_object lambda = ecl_make_lambda(env, name, definition);
-    if (!Null(macro_lexenv)) {
-      /* Add macros to the lexical environment. */
-      lambda = ecl_close_around(lambda, macro_lexenv);
-    }
     lex_idx = c_register_constant(env, lambda);
     asm_arg(env, lex_idx);
   }
@@ -1551,30 +1542,6 @@ c_function(cl_env_ptr env, cl_object args, int flags) {
   return asm_function(env, function, flags);
 }
 
-static cl_object
-create_macro_lexenv(cl_compiler_ptr c_env)
-{
-  /* Creates a new lexenv out of the macros in the current compiler
-   * environment */
-  cl_object lexenv = ECL_NIL;
-  cl_object records;
-  for (records = c_env->macros; !Null(records); records = ECL_CONS_CDR(records)) {
-    cl_object record = ECL_CONS_CAR(records);
-    if (ECL_ATOM(record))
-      continue;
-    if (CADR(record) == @'si::macro')
-      lexenv = CONS(CONS(@'si::macro', CONS(CADDR(record), CAR(record))), lexenv);
-  }
-  for (records = c_env->variables; !Null(records); records = ECL_CONS_CDR(records)) {
-    cl_object record = ECL_CONS_CAR(records);
-    if (ECL_ATOM(record))
-      continue;
-    if (CADR(record) == @'si::symbol-macro')
-      lexenv = CONS(CONS(@'si::symbol-macro', CONS(CADDR(record), CAR(record))), lexenv);
-  }
-  return lexenv;
-}
-
 static int                      /* XXX: here we look for function in cmpenv */
 asm_function(cl_env_ptr env, cl_object function, int flags) {
   if (!Null(si_valid_function_name_p(function))) {
@@ -1602,15 +1569,8 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
       goto ERROR;
     }
 
-    const cl_compiler_ptr c_env = env->c_env;
     cl_object lambda = ecl_make_lambda(env, name, body);
     cl_object cfb = ecl_nth_value(env, 1);
-    cl_object macro_lexenv = create_macro_lexenv(c_env);
-    if (!Null(macro_lexenv)) {
-      /* Close around macros to allow calling compile on the function
-       * in the future */
-      lambda = ecl_close_around(lambda, macro_lexenv);
-    }
     if (Null(cfb)) {
       /* No closure */
       asm_op2c(env, OP_QUOTE, lambda);
