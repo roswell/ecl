@@ -122,6 +122,8 @@ static int c_car(cl_env_ptr env, cl_object args, int push);
 static int c_cdr(cl_env_ptr env, cl_object args, int push);
 static int c_list(cl_env_ptr env, cl_object args, int push);
 static int c_listA(cl_env_ptr env, cl_object args, int push);
+static int c_cons_car(cl_env_ptr env, cl_object args, int push);
+static int c_cons_cdr(cl_env_ptr env, cl_object args, int push);
 
 static cl_object ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda);
 
@@ -296,9 +298,7 @@ static compiler_record database[] = {
   {@'si::while', c_while, 0},
   {@'ext::with-backend', c_with_backend, 0},
   {@'si::until', c_until, 0},
-
-  /* Extras */
-
+  /* Inlined functions */
   {@'cons', c_cons, 1},
   {@'car', c_car, 1},
   {@'cdr', c_cdr, 1},
@@ -307,8 +307,10 @@ static compiler_record database[] = {
   {@'list', c_list, 1},
   {@'list*', c_listA, 1},
   {@'endp', c_endp, 1},
-  {@'si::cons-car', c_car, 1},
-  {@'si::cons-cdr', c_cdr, 1},
+  /* Primops */
+  {@'si::cons-car', c_cons_car, 1},
+  {@'si::cons-cdr', c_cons_cdr, 1},
+
   {NULL, NULL, 1}
 };
 
@@ -2703,6 +2705,31 @@ c_listA(cl_env_ptr env, cl_object args, int flags)
   return c_list_listA(env, args, flags, OP_LISTA);
 }
 
+/* -- Primops --------------------------------------------------------------- */
+
+static int
+c_cons_car(cl_env_ptr env, cl_object args, int flags)
+{
+  cl_object list = pop(&args);
+  if (args != ECL_NIL) {
+    FEprogram_error("CAR: Too many arguments", 0);
+  }
+  compile_form(env, list, FLAG_REG0);
+  asm_op(env, OP_CONS_CAR);
+  return FLAG_REG0;
+}
+
+static int
+c_cons_cdr(cl_env_ptr env, cl_object args, int flags)
+{
+  cl_object list = pop(&args);
+  if (args != ECL_NIL) {
+    FEprogram_error("CDR: Too many arguments", 0);
+  }
+  compile_form(env, list, FLAG_REG0);
+  asm_op(env, OP_CONS_CDR);
+  return FLAG_REG0;
+}
 
 /* ----------------------------- PUBLIC INTERFACE ---------------------------- */
 

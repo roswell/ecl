@@ -19,6 +19,8 @@ enum {
   OP_CDR,
   OP_LIST,
   OP_LISTA,
+  OP_CONS_CAR,
+  OP_CONS_CDR,
   OP_INT,
   OP_PINT,
   OP_VAR,
@@ -172,6 +174,8 @@ typedef int16_t cl_opcode;
   &&LBL_OP_CDR - &&LBL_OP_NOP,\
   &&LBL_OP_LIST - &&LBL_OP_NOP,\
   &&LBL_OP_LISTA - &&LBL_OP_NOP,\
+  &&LBL_OP_CONS_CAR - &&LBL_OP_NOP,\
+  &&LBL_OP_CONS_CDR - &&LBL_OP_NOP,\
   &&LBL_OP_INT - &&LBL_OP_NOP,\
   &&LBL_OP_PINT - &&LBL_OP_NOP,\
   &&LBL_OP_VAR - &&LBL_OP_NOP,\

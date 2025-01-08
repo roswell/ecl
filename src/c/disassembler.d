@@ -582,6 +582,9 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
   case OP_LISTA:          string = "LIST*\t";
     GET_OPARG(n, vector);
     goto OPARG;
+  case OP_CONS_CAR:       string = "CONS-CAR\tREG0"; goto NOARG;
+  case OP_CONS_CDR:       string = "CONS-CDR\tREG0"; goto NOARG;
+
   case OP_CALLG1:         string = "CALLG1\t";
     GET_DATA(o, vector, data);
     goto ARG;

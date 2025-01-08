@@ -274,7 +274,6 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     /* OP_CONS, OP_CAR, OP_CDR, etc
        Inlined forms for some functions which act on reg0 and stack.
     */
-
     CASE(OP_CONS); {
       cl_object car = ECL_STACK_POP_UNSAFE(the_env);
       reg0 = CONS(car, reg0);
@@ -304,6 +303,19 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       while (--n) {
         reg0 = CONS(ECL_STACK_POP_UNSAFE(the_env), reg0);
       }
+      THREAD_NEXT;
+    }
+
+    /* OP_CONS_CAR and OP_CONS_CDR
+       (Unsafe) primops that act on reg0 and stack.
+    */
+    CASE(OP_CONS_CAR); {
+      reg0 = ECL_CONS_CAR(reg0);
+      THREAD_NEXT;
+    }
+
+    CASE(OP_CONS_CDR); {
+      reg0 = ECL_CONS_CDR(reg0);
       THREAD_NEXT;
     }
 
