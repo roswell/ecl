@@ -129,6 +129,9 @@ static cl_object ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambd
 
 static void FEill_formed_input(void) ecl_attr_noreturn;
 
+static int asm_function(cl_env_ptr env, cl_object args, int flags);
+static cl_object create_macro_lexenv(cl_compiler_ptr c_env);
+
 /* -------------------- SAFE LIST HANDLING -------------------- */
 static cl_object
 pop(cl_object *l) {
@@ -941,8 +944,6 @@ c_arguments(cl_env_ptr env, cl_object args) {
   return nargs;
 }
 
-static int asm_function(cl_env_ptr env, cl_object args, int flags);
-
 static int
 c_call(cl_env_ptr env, cl_object args, int flags) {
   cl_object name;
@@ -1354,12 +1355,14 @@ c_register_functions(cl_env_ptr env, cl_object l)
 static int
 c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
 #define push_back(v,l) { cl_object c = *l = CONS(v, *l); l = &ECL_CONS_CDR(c); }
+  const cl_compiler_ptr c_env = env->c_env;
   cl_object l, def_list = pop(&args);
-  cl_object old_vars = env->c_env->variables;
-  cl_object old_funs = env->c_env->macros;
+  cl_object old_vars = c_env->variables;
+  cl_object old_funs = c_env->macros;
   cl_object fnames = ECL_NIL;
   cl_object v, *f = &fnames;
-  cl_index nfun;
+  cl_object macro_lexenv;
+  cl_index nfun, lex_idx;
 
   if (def_list == ECL_NIL) {
     return c_locally(env, args, flags);
@@ -1377,6 +1380,9 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
     push_back(v, f);
   }
 
+  /* Construct the macro lexenv so we can compile functions in the future. */
+  macro_lexenv = create_macro_lexenv(c_env);
+
   /* If compiling a LABELS form, add the function names to the lexical
      environment before compiling the functions */
   if (op == OP_LABELS)
@@ -1390,8 +1396,12 @@ c_labels_flet(cl_env_ptr env, int op, cl_object args, int flags) {
     cl_object definition = pop(&l);
     cl_object name = pop(&definition);
     cl_object lambda = ecl_make_lambda(env, name, definition);
-    cl_index c = c_register_constant(env, lambda);
-    asm_arg(env, c);
+    if (!Null(macro_lexenv)) {
+      /* Add macros to the lexical environment. */
+      lambda = ecl_close_around(lambda, macro_lexenv);
+    }
+    lex_idx = c_register_constant(env, lambda);
+    asm_arg(env, lex_idx);
   }
 
   /* If compiling a FLET form, add the function names to the lexical

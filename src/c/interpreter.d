@@ -121,9 +121,9 @@ VEclose_around_arg_type()
  *      macro = ( { si::macro | si::symbol-macro } macro_function[bytecodes] . macro_name )
  */
 
-#define bind_var(env, var, val)         CONS(CONS(var, val), (env))
-#define bind_function(env, name, fun)   CONS(fun, (env))
-#define bind_frame(env, id, name)       CONS(CONS(id, name), (env))
+#define bind_var(env, var, val)   CONS(CONS(var, val), (env))
+#define bind_function(env, fun)   CONS(fun, (env))
+#define bind_frame(env, id, name) CONS(CONS(id, name), (env))
 
 static cl_object
 ecl_lex_env_get_record(cl_object env, int s)
@@ -191,6 +191,57 @@ _ecl_global_function_definition(cl_object name)
     VEinvalid_function(name);
   }
   return fun;
+}
+
+/* KLUDGE using ecl_append to create closures makes a shallow copy of LEXENV.
+   That means that LEXENV is _immutable_. This conflicts with the fixup in
+   OP_LABELS and use of ECL_RPLACA. -- jd 2024-12-18 */
+static cl_object
+close_around_self(cl_object fun, cl_object lex) {
+  cl_object v;
+  if (Null(lex)) return fun;
+  switch (ecl_t_of(fun)) {
+  case t_bytecodes:
+    v = ecl_alloc_object(t_bclosure);
+    v->bclosure.code = fun;
+    v->bclosure.lex = ECL_NIL;
+    v->bclosure.entry = _ecl_bclosure_dispatch_vararg;
+    break;
+  case t_bclosure:
+    v = ecl_alloc_object(t_bclosure);
+    v->bclosure.code = fun->bclosure.code;
+    v->bclosure.lex = fun->bclosure.lex;
+    v->bclosure.entry = fun->bclosure.entry;
+    break;
+  default:
+    VEclose_around_arg_type();
+  }
+  return v;
+}
+
+static void
+labels_fixup(cl_index nfun, cl_object lex_env)
+{
+  cl_object l = lex_env;
+  cl_index i = nfun;
+  /* Augment the environment with new closures. */
+  do {
+    ECL_RPLACA(l, close_around_self(ECL_CONS_CAR(l), lex_env));
+    l = ECL_CONS_CDR(l);
+  } while (--i);
+  /* Update newly created closures with the augmented environment. */
+  l = lex_env;
+  i = nfun;
+  do {
+    cl_object fun = ECL_CONS_CAR(l);
+    /* Put the predefined macros in fun->bclosure.lex at the end of the lexenv
+       so that lexenv indices are still valid. Creates a shallow env copy. */
+    if (Null(fun->bclosure.lex))
+      fun->bclosure.lex = lex_env;
+    else
+      fun->bclosure.lex = ecl_append(lex_env, fun->bclosure.lex);
+    l = ECL_CONS_CDR(l);
+  } while (--i);
 }
 
 cl_object
@@ -611,7 +662,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         cl_object f;
         GET_DATA(f, vector, data);
         f = ecl_close_around(f, old_lex);
-        lex_env = bind_function(lex_env, f->bytecodes.name, f);
+        lex_env = bind_function(lex_env, f);
       } while (--nfun);
       THREAD_NEXT;
     }
@@ -634,17 +685,11 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         do {
           cl_object f;
           GET_DATA(f, vector, data);
-          lex_env = bind_function(lex_env, f->bytecodes.name, f);
+          lex_env = bind_function(lex_env, f);
         } while (--i);
       }
       /* Update the closures so that all functions can call each other */
-      {
-        cl_object l = lex_env;
-        do {
-          ECL_RPLACA(l, ecl_close_around(ECL_CONS_CAR(l), lex_env));
-          l = ECL_CONS_CDR(l);
-        } while (--nfun);
-      }
+      labels_fixup(nfun, lex_env);
       THREAD_NEXT;
     }
     /* OP_LFUNCTION index{fixnum}
