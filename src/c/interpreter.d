@@ -88,18 +88,6 @@ VEwrong_num_arguments(cl_object fname)
 }
 
 static void
-VEundefined_function(cl_object fun)
-{
-  FEundefined_function(fun);
-}
-
-static void
-VEinvalid_function(cl_object fun)
-{
-  FEinvalid_function(fun);
-}
-
-static void
 VEclose_around_arg_type()
 {
   FEerror("Internal error: ecl_close_around should be called on t_bytecodes or t_bclosure.", 0);
@@ -190,7 +178,7 @@ ecl_close_around(cl_object fun, cl_object lex) {
 static inline cl_object
 call_stepper(cl_env_ptr the_env, cl_object form, cl_object delta)
 {
-  return cl_funcall(3, the_env->stepper, form, delta);
+  return _ecl_funcall3(the_env->stepper, form, delta);
 }
 
 #define SETUP_ENV(the_env) { ihs.lex_env = lex_env; }
@@ -403,7 +391,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     */
     CASE(OP_CALL); {
       GET_OPARG(narg, vector);
-      goto DO_CALL;
+      INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
+      THREAD_NEXT;
     }
 
     /* OP_CALLG     n{arg}, name{arg}
@@ -414,7 +403,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     CASE(OP_CALLG); {
       GET_OPARG(narg, vector);
       GET_DATA(reg0, vector, data);
-      goto DO_CALL;
+      INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
+      THREAD_NEXT;
     }
 
     /* OP_FCALL     n{arg}
@@ -425,7 +415,8 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     CASE(OP_FCALL); {
       GET_OPARG(narg, vector);
       reg0 = ECL_STACK_REF(the_env,-narg-1);
-      goto DO_CALL;
+      INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
+      THREAD_NEXT;
     }
 
     /* OP_MCALL
@@ -435,70 +426,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     CASE(OP_MCALL); {
       narg = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
       reg0 = ECL_STACK_REF(the_env,-narg-1);
-      goto DO_CALL;
-    }
-
-  DO_CALL: {
-      cl_object x = reg0;
-      cl_object frame = (cl_object)&frame_aux;
-      frame_aux.size = narg;
-      frame_aux.base = the_env->stack_top - narg;
-      the_env->stack_frame = frame;
-      SETUP_ENV(the_env);
-    AGAIN:
-      if (ecl_unlikely(reg0 == ECL_NIL))
-        VEundefined_function(x);
-      switch (ecl_t_of(reg0)) {
-      case t_cfunfixed:
-        if (ecl_unlikely(narg != (cl_index)reg0->cfunfixed.narg))
-          VEwrong_num_arguments(reg0);
-        reg0 = APPLY_fixed(narg, reg0->cfunfixed.entry_fixed,
-                           frame_aux.base);
-        break;
-      case t_cfun:
-#ifdef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
-        the_env->function = reg0;
-#endif
-        reg0 = APPLY(narg, reg0->cfun.entry, frame_aux.base);
-        break;
-      case t_cclosure:
-        the_env->function = reg0;
-        reg0 = APPLY(narg, reg0->cclosure.entry, frame_aux.base);
-        break;
-      case t_instance:
-        switch (reg0->instance.isgf) {
-        case ECL_STANDARD_DISPATCH:
-        case ECL_RESTRICTED_DISPATCH:
-          reg0 = _ecl_standard_dispatch(frame, reg0);
-          break;
-        case ECL_USER_DISPATCH:
-          reg0 = reg0->instance.slots[reg0->instance.length - 1];
-          goto AGAIN;
-        case ECL_READER_DISPATCH:
-        case ECL_WRITER_DISPATCH:
-          the_env->function = reg0;
-          reg0 = APPLY(narg, reg0->instance.entry, frame_aux.base);
-          break;
-        default:
-          VEinvalid_function(reg0);
-        }
-        break;
-      case t_symbol:
-        if (ecl_unlikely(!ECL_FBOUNDP(x)))
-          VEundefined_function(x);
-        reg0 = ECL_SYM_FUN(reg0);
-        goto AGAIN;
-      case t_bytecodes:
-        reg0 = ecl_interpret(frame, ECL_NIL, reg0);
-        break;
-      case t_bclosure:
-        reg0 = ecl_interpret(frame, reg0->bclosure.lex, reg0->bclosure.code);
-        break;
-      default:
-        VEinvalid_function(reg0);
-      }
-      ECL_STACK_POP_N_UNSAFE(the_env, narg);
-      the_env->stack_frame = NULL; /* for gc's sake */
+      INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
       THREAD_NEXT;
     }
 
