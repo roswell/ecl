@@ -19,6 +19,92 @@
 #include <ecl/internal.h>
 #include <ecl/stack-resize.h>
 
+/* -- Errors signaled by the interpreter. ----------------------------------- */
+
+static void
+VEbad_lambda_arg_excd(cl_object bytecodes, cl_object frame)
+{
+  FEprogram_error("Too many arguments passed to "
+                  "function ~A~&Argument list: ~S",
+                  2, bytecodes, cl_apply(2, @'list', frame));
+}
+
+static void
+VEbad_lambda_unk_keyw(cl_object bytecodes, cl_object frame)
+{
+  FEprogram_error("Unknown keyword argument passed to function ~S.~&"
+                  "Argument list: ~S", 2, bytecodes,
+                  cl_apply(2, @'list', frame));
+}
+
+static void
+VEbad_lambda_odd_keys(cl_object bytecodes, cl_object frame)
+{
+  FEprogram_error("Function ~A called with odd number "
+                  "of keyword arguments.",
+                  1, bytecodes);
+}
+
+static void
+VEwrong_arg_type_endp(cl_object reg0)
+{
+  FEwrong_type_only_arg(@[endp], reg0, @[list]);
+}
+
+static void
+VEwrong_arg_type_car(cl_object reg0)
+{
+  FEwrong_type_only_arg(@[car], reg0, @[cons]);
+}
+
+static void
+VEwrong_arg_type_cdr(cl_object reg0)
+{
+  FEwrong_type_only_arg(@[cdr], reg0, @[cons]);
+}
+
+static void
+VEwrong_arg_type_nth_val(cl_fixnum n)
+{
+  FEerror("Wrong index passed to NTH-VAL", 1, ecl_make_fixnum(n));
+}
+
+static void
+VEassignment_to_constant(cl_object var)
+{
+  FEassignment_to_constant(var);
+}
+
+static void
+VEunbound_variable(cl_object var)
+{
+  FEunbound_variable(var);
+}
+
+static void
+VEwrong_num_arguments(cl_object fname)
+{
+  FEwrong_num_arguments(fname);
+}
+
+static void
+VEundefined_function(cl_object fun)
+{
+  FEundefined_function(fun);
+}
+
+static void
+VEinvalid_function(cl_object fun)
+{
+  FEinvalid_function(fun);
+}
+
+static void
+VEclose_around_arg_type()
+{
+  FEerror("Internal error: ecl_close_around should be called on t_bytecodes or t_bclosure.", 0);
+}
+
 /* ------------------------------ LEXICAL ENV. ------------------------------ */
 /*
  * A lexical environment is a list of pairs, each one containing
@@ -96,7 +182,7 @@ ecl_close_around(cl_object fun, cl_object lex) {
     v->bclosure.entry = fun->bclosure.entry;
     break;
   default:
-    FEerror("Internal error: ecl_close_around should be called on t_bytecodes or t_bclosure.", 0);
+    VEclose_around_arg_type();
   }
   return v;
 }
@@ -118,34 +204,6 @@ ecl_close_around(cl_object fun, cl_object lex) {
     frame.base = the_env->stack_top - (frame.size = __n);       \
     reg0 = ecl_apply_from_stack_frame((cl_object)&frame, fun);  \
     the_env->stack_top -= __n; }
-
-static void too_many_arguments(cl_object bytecodes, cl_object frame) ecl_attr_noreturn;
-static void odd_number_of_keywords(cl_object bytecodes) ecl_attr_noreturn;
-static void unknown_keyword(cl_object bytecodes, cl_object frame) ecl_attr_noreturn;
-
-static void
-too_many_arguments(cl_object bytecodes, cl_object frame)
-{
-  FEprogram_error("Too many arguments passed to "
-                  "function ~A~&Argument list: ~S",
-                  2, bytecodes, cl_apply(2, @'list', frame));
-}
-
-static void
-odd_number_of_keywords(cl_object bytecodes)
-{
-  FEprogram_error("Function ~A called with odd number "
-                  "of keyword arguments.",
-                  1, bytecodes);
-}
-
-static void
-unknown_keyword(cl_object bytecodes, cl_object frame)
-{
-  FEprogram_error("Unknown keyword argument passed to function ~S.~&"
-                  "Argument list: ~S", 2, bytecodes,
-                  cl_apply(2, @'list', frame));
-}
 
 /* -------------------- THE INTERPRETER -------------------- */
 
@@ -203,7 +261,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_DATA(var_name, vector, data);
       reg0 = ECL_SYM_VAL(the_env, var_name);
       if (ecl_unlikely(reg0 == OBJNULL))
-        FEunbound_variable(var_name);
+        VEunbound_variable(var_name);
       THREAD_NEXT;
     }
 
@@ -219,14 +277,14 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 
     CASE(OP_CAR); {
       if (ecl_unlikely(!LISTP(reg0)))
-        FEwrong_type_only_arg(@[car], reg0, @[cons]);
+        VEwrong_arg_type_car(reg0);
       reg0 = CAR(reg0);
       THREAD_NEXT;
     }
 
     CASE(OP_CDR); {
       if (ecl_unlikely(!LISTP(reg0)))
-        FEwrong_type_only_arg(@[cdr], reg0, @[cons]);
+        VEwrong_arg_type_cdr(reg0);
       reg0 = CDR(reg0);
       THREAD_NEXT;
     }
@@ -283,7 +341,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_DATA(var_name, vector, data);
       value = ECL_SYM_VAL(the_env, var_name);
       if (ecl_unlikely(value == OBJNULL))
-        FEunbound_variable(var_name);
+        VEunbound_variable(var_name);
       ECL_STACK_PUSH(the_env, value);
       THREAD_NEXT;
     }
@@ -371,11 +429,11 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       SETUP_ENV(the_env);
     AGAIN:
       if (ecl_unlikely(reg0 == ECL_NIL))
-        FEundefined_function(x);
+        VEundefined_function(x);
       switch (ecl_t_of(reg0)) {
       case t_cfunfixed:
         if (ecl_unlikely(narg != (cl_index)reg0->cfunfixed.narg))
-          FEwrong_num_arguments(reg0);
+          VEwrong_num_arguments(reg0);
         reg0 = APPLY_fixed(narg, reg0->cfunfixed.entry_fixed,
                            frame_aux.base);
         break;
@@ -404,12 +462,12 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
           reg0 = APPLY(narg, reg0->instance.entry, frame_aux.base);
           break;
         default:
-          FEinvalid_function(reg0);
+          VEinvalid_function(reg0);
         }
         break;
       case t_symbol:
         if (ecl_unlikely(!ECL_FBOUNDP(x)))
-          FEundefined_function(x);
+          VEundefined_function(x);
         reg0 = ECL_SYM_FUN(reg0);
         goto AGAIN;
       case t_bytecodes:
@@ -419,7 +477,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
         reg0 = ecl_interpret(frame, reg0->bclosure.lex, reg0->bclosure.code);
         break;
       default:
-        FEinvalid_function(reg0);
+        VEinvalid_function(reg0);
       }
       ECL_STACK_POP_N_UNSAFE(the_env, narg);
       the_env->stack_frame = NULL; /* for gc's sake */
@@ -446,7 +504,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     */
     CASE(OP_POPREQ); {
       if (ecl_unlikely(frame_index >= frame->frame.size)) {
-        FEwrong_num_arguments(bytecodes->bytecodes.name);
+        VEwrong_num_arguments(frame->bytecodes.name);
       }
       reg0 = frame->frame.base[frame_index++];
       THREAD_NEXT;
@@ -470,7 +528,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     */
     CASE(OP_NOMORE); {
       if (ecl_unlikely(frame_index < frame->frame.size))
-        too_many_arguments(bytecodes, frame);
+        VEbad_lambda_arg_excd(bytecodes, frame);
       THREAD_NEXT;
     }
     /* OP_POPREST
@@ -495,7 +553,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       count = frame->frame.size - frame_index;
       last = first + count;
       if (ecl_unlikely(count & 1)) {
-        odd_number_of_keywords(bytecodes);
+        VEbad_lambda_odd_keys(bytecodes, frame);
       }
       aok = ECL_CONS_CAR(keys_list);
       for (; (keys_list = ECL_CONS_CDR(keys_list), !Null(keys_list)); ) {
@@ -531,7 +589,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
           }
         }
         if (ecl_likely(count && Null(aok))) {
-          unknown_keyword(bytecodes, frame);
+          VEbad_lambda_unk_keyw(bytecodes, frame);
         }
       }
       THREAD_NEXT;
@@ -718,7 +776,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
 
     CASE(OP_ENDP);
     if (ecl_unlikely(!LISTP(reg0)))
-      FEwrong_type_only_arg(@[endp], reg0, @[list]);
+      VEwrong_arg_type_endp(reg0);
     CASE(OP_NOT); {
       reg0 = (reg0 == ECL_NIL)? ECL_T : ECL_NIL;
       THREAD_NEXT;
@@ -818,7 +876,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
       GET_DATA(var, vector, data);
       /* INV: Not NIL, and of type t_symbol */
       if (ecl_unlikely(var->symbol.stype & ecl_stp_constant))
-        FEassignment_to_constant(var);
+        VEassignment_to_constant(var);
       ECL_SETQ(the_env, var, reg0);
       THREAD_NEXT;
     }
@@ -1017,7 +1075,7 @@ ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes)
     CASE(OP_NTHVAL); {
       cl_fixnum n = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
       if (ecl_unlikely(n < 0)) {
-        FEerror("Wrong index passed to NTH-VAL", 1, ecl_make_fixnum(n));
+        VEwrong_arg_type_nth_val(n);
       } else if ((cl_index)n >= the_env->nvalues) {
         reg0 = ECL_NIL;
       } else if (n) {
