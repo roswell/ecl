@@ -234,8 +234,10 @@ typedef cl_object (*cl_objectfn63)(cl_narg narg, cl_object, cl_object, cl_object
 
 /* compiler.d */
 
+typedef struct cl_compiler_env *cl_compiler_env_ptr;
+
 struct cl_compiler_env {
-        cl_object variables;            /* Variables, tags, functions, etc: the env. */
+        cl_object variables;            /* the env: vars, tags, funs, etc */
         cl_object macros;               /* Macros and function bindings */
         cl_fixnum lexical_level;        /* =0 if toplevel form */
         cl_object constants;            /* Constants for this form */
@@ -253,9 +255,24 @@ struct cl_compiler_env {
         int mode;
         bool stepping;
         bool function_boundary_crossed;
+        cl_compiler_env_ptr parent_env;
 };
 
-typedef struct cl_compiler_env *cl_compiler_env_ptr;
+enum ecl_cmpref_tag {
+        ECL_CMPREF_LOCAL,
+        ECL_CMPREF_CLOSE,
+        ECL_CMPREF_UNDEFINED,
+        ECL_CMPREF_SYM_MACRO,
+        ECL_CMPREF_SPECIAL_VAR,
+};
+
+struct cl_compiler_ref {
+        enum ecl_cmpref_tag place;
+        cl_object entry;        /* entry in c_env->variables (if any) */
+        cl_fixnum index;        /* index in the corresponding location */
+        cl_fixnum label;        /* index of a label (tagbody specific) */
+        cl_object location;     /* (cons env-depth env-size) */
+};
 
 /* character.d */
 

@@ -48,9 +48,6 @@
 #define FLAG_LOAD               32
 #define FLAG_COMPILE            64
 
-#define ECL_SPECIAL_VAR_REF     -2
-#define ECL_UNDEFINED_VAR_REF   -1
-
 /********************* PRIVATE ********************/
 
 typedef struct cl_compiler_env *cl_compiler_ptr;
@@ -66,7 +63,8 @@ static cl_object asm_end(cl_env_ptr env, cl_index handle, cl_object definition);
 static cl_index asm_jmp(cl_env_ptr env, int op);
 static void asm_complete(cl_env_ptr env, int op, cl_index original);
 
-static cl_fixnum c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_defined);
+static struct cl_compiler_ref
+c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def);
 
 static int c_block(cl_env_ptr env, cl_object args, int flags);
 static int c_case(cl_env_ptr env, cl_object args, int flags);
@@ -354,7 +352,7 @@ c_register_constant(cl_env_ptr env, cl_object c)
 }
 
 static void
-asm_c(cl_env_ptr env, cl_object o) {
+asm_arg_data(cl_env_ptr env, cl_object o) {
   asm_arg(env, c_register_constant(env, o));
 }
 
@@ -370,28 +368,30 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  * The compiler environment consists of two lists, one stored in
  * env->variables, the other one stored in env->macros.
  *
- * variable-record =    (:block block-name [used-p | block-object] location) |
- *                      (:tag ({tag-name}*) [NIL | tag-object] location) |
- *                      (:function function-name used-p [location]) |
- *                      (var-name {:special | nil} bound-p [location]) |
- *                      (symbol si::symbol-macro macro-function) |
- *                      (:declare type arguments) |
- *                      SI:FUNCTION-BOUNDARY |
- *                      SI:UNWIND-PROTECT-BOUNDARY
- *                      (:declare declaration-arguments*)
- * macro-record =       (function-name FUNCTION [| function-object]) |
- *                      (macro-name si::macro macro-function) |
- *                      (:declare name declaration) |
- *                      (compiler-macro-name si::compiler-macro macro-function) |
- *                      SI:FUNCTION-BOUNDARY |
- *                      SI:UNWIND-PROTECT-BOUNDARY
+ * variable-record =
+ *     (:block block-name [used-p | block-object] location) |
+ *     (:tag ({tag-name [. tag-id]}*) [used-p | tag-object] location) |
+ *     (:function function-name used-p [location]) |
+ *     (var-name {:special | nil} bound-p [location]) |
+ *     (symbol si::symbol-macro macro-function) |
+ *     (:declare type arguments) |
+ *     SI:FUNCTION-BOUNDARY |
+ *     SI:UNWIND-PROTECT-BOUNDARY
+ *     (:declare declaration-arguments*)
+ * macro-record =
+ *     (function-name FUNCTION [| function-object]) |
+ *     (macro-name si::macro macro-function) |
+ *     (:declare name declaration) |
+ *     (compiler-macro-name si::compiler-macro macro-function) |
+ *     SI:FUNCTION-BOUNDARY |
+ *     SI:UNWIND-PROTECT-BOUNDARY
  *
- * A *-NAME is a symbol. A TAG-ID is either a symbol or a number. A
- * MACRO-FUNCTION is a function that provides us with the expansion for that
- * local macro or symbol macro. BOUND-P is true when the variable has been bound
- * by an enclosing form, while it is NIL if the variable-record corresponds just
- * to a special declaration. SI:FUNCTION-BOUNDARY and SI:UNWIND-PROTECT-BOUNDARY
- * denote function and unwind-protect boundaries.
+ * A *-NAME is a symbol. A TAG-ID is a number. A MACRO-FUNCTION is a function
+ * that provides us with the expansion for that local macro or symbol
+ * macro. BOUND-P is true when the variable has been bound by an enclosing form,
+ * while it is NIL if the variable-record corresponds just to a special
+ * declaration. SI:FUNCTION-BOUNDARY and SI:UNWIND-PROTECT-BOUNDARY denote
+ * function and unwind-protect boundaries.
  *
  * The brackets [] denote differences between the bytecodes and C compiler
  * environments, with the first option belonging to the interpreter and the
@@ -411,77 +411,66 @@ asm_op2c(cl_env_ptr env, int code, cl_object o) {
  * declaration forms, as they do not completely match those of Common-Lisp.
  */
 
-#if 0
-#define new_location(env,x) ecl_make_fixnum(0)
-#else
 static cl_object
-new_location(const cl_compiler_ptr c_env)
+c_push_record(const cl_compiler_ptr c_env, cl_object type,
+              cl_object arg1, cl_object arg2)
 {
-  return CONS(ecl_make_fixnum(c_env->env_depth),
-              ecl_make_fixnum(c_env->env_size++));
+  cl_object depth = ecl_make_fixnum(c_env->env_depth);
+  cl_object index = ecl_make_fixnum(c_env->env_size++);
+  cl_object loc = CONS(depth, index);
+  return cl_list(4, type, arg1, arg2, loc);
 }
-#endif
 
-static cl_index
+static void
 c_register_block(cl_env_ptr env, cl_object name)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object loc = new_location(c_env);
-  c_env->variables = CONS(cl_list(4, @':block', name, ECL_NIL, loc),
-                          c_env->variables);
-  return ecl_fixnum(ECL_CONS_CDR(loc));
+  cl_object entry = c_push_record(c_env, @':block', name, ECL_NIL);
+  c_env->variables = CONS(entry, c_env->variables);
 }
 
-static cl_index
+static void
 c_register_tags(cl_env_ptr env, cl_object all_tags)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object loc = new_location(c_env);
-  c_env->variables = CONS(cl_list(4, @':tag', all_tags, ECL_NIL, loc),
-                          c_env->variables);
-  return ecl_fixnum(ECL_CONS_CDR(loc));
-}
-
-static void
-c_register_function(cl_env_ptr env, cl_object name)
-{
-  const cl_compiler_ptr c_env = env->c_env;
-  c_env->variables = CONS(cl_list(4, @':function', name, ECL_NIL,
-                                  new_location(c_env)),
-                          c_env->variables);
-  c_env->macros = CONS(cl_list(2, name, @'function'), c_env->macros);
-}
-
-static cl_object
-c_macro_expand1(cl_env_ptr env, cl_object stmt)
-{
-  const cl_compiler_ptr c_env = env->c_env;
-  return cl_macroexpand_1(2, stmt, CONS(c_env->variables, c_env->macros));
-}
-
-static void
-c_register_symbol_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
-{
-  const cl_compiler_ptr c_env = env->c_env;
-  c_env->variables = CONS(cl_list(3, name, @'si::symbol-macro', exp_fun), c_env->variables);
-}
-
-static void
-c_register_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
-{
-  const cl_compiler_ptr c_env = env->c_env;
-  c_env->macros = CONS(cl_list(3, name, @'si::macro', exp_fun), c_env->macros);
+  cl_object entry = c_push_record(c_env, @':tag', all_tags, ECL_NIL);
+  c_env->variables = CONS(entry, c_env->variables);
 }
 
 static void
 c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  c_env->variables = CONS(cl_list(4, var,
-                                  special? @'special' : ECL_NIL,
-                                  bound? ECL_T : ECL_NIL,
-                                  new_location(c_env)),
-                          c_env->variables);
+  cl_object boundp = bound? ECL_T : ECL_NIL;
+  cl_object specialp = special? ECL_T : ECL_NIL;
+  cl_object entry = c_push_record(c_env, var, specialp, boundp);
+  c_env->variables = CONS(entry, c_env->variables);
+}
+
+static void
+c_register_function(cl_env_ptr env, cl_object name)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  cl_object entry = c_push_record(c_env, @':function', name, ECL_NIL);
+  c_env->variables = CONS(entry, c_env->variables);
+  c_env->macros = CONS(cl_list(2, name, @'function'), c_env->macros);
+}
+
+static void
+c_register_symbol_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  cl_object entry = c_push_record(c_env, name, @'si::symbol-macro', exp_fun);
+  c_env->variables = CONS(entry, c_env->variables);
+}
+
+static void
+c_register_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  cl_object entry = c_push_record(c_env, name, @'si::macro', exp_fun);
+  c_env->variables = CONS(entry, c_env->variables);
+  c_env->macros = CONS(cl_list(3, name, @'si::macro', exp_fun), c_env->macros);
 }
 
 static void
@@ -490,6 +479,13 @@ c_register_boundary(cl_env_ptr env, cl_object type)
   const cl_compiler_ptr c_env = env->c_env;
   c_env->variables = CONS(type, c_env->variables);
   c_env->macros = CONS(type, c_env->macros);
+}
+
+static cl_object
+c_macro_expand1(cl_env_ptr env, cl_object stmt)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  return cl_macroexpand_1(2, stmt, CONS(c_env->variables, c_env->macros));
 }
 
 static void
@@ -539,6 +535,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
   the_env->c_env = new;
   if (old) {
     *new = *old;
+    new->parent_env = old;
     new->env_depth = old->env_depth + 1;
   } else {
     new->code_walker = ECL_SYM_VAL(the_env, @'si::*code-walker*');
@@ -554,6 +551,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->ltf_being_created = ECL_NIL;
     new->ltf_defer_init_until = ECL_T;
     new->ltf_locations = ECL_NIL;
+    new->parent_env = NULL;
     new->env_depth = 0;
     new->macros = CDR(env);
     new->variables = CAR(env);
@@ -587,50 +585,132 @@ c_restore_env(cl_env_ptr the_env, cl_compiler_env_ptr new_c_env, cl_compiler_env
   the_env->c_env = old_c_env;
 }
 
-static cl_object
-c_tag_ref(cl_env_ptr env, cl_object the_tag, cl_object the_type)
+static struct cl_compiler_ref
+c_tag_ref(cl_env_ptr env, cl_object the_tag)
 {
   cl_fixnum n = 0;
-  cl_object l, output = ECL_NIL;
-  bool function_boundary_crossed = 0;
+  cl_object l, reg;
+  int function_boundary_crossed = 0;
+  struct cl_compiler_ref output = { ECL_CMPREF_UNDEFINED };
+  const cl_compiler_ptr c_env = env->c_env;
+  for (l = c_env->variables; CONSP(l); l = ECL_CONS_CDR(l)) {
+    cl_object type, all_tags, record = ECL_CONS_CAR(l);
+    if (record == @'si::function-boundary')
+      function_boundary_crossed++;
+    if (ECL_ATOM(record))
+      continue;
+    reg = record;
+    type = pop(&reg);
+    all_tags = pop(&reg);
+    if (type == @':tag') {
+      cl_object label = ecl_assql(the_tag, all_tags);
+      if (!Null(label)) {
+        /* Mark as used */
+        ECL_RPLACA(reg, ECL_T);
+        if (function_boundary_crossed) {
+          c_env->function_boundary_crossed = 1;
+          output.place = ECL_CMPREF_CLOSE;
+        } else {
+          output.place = ECL_CMPREF_LOCAL;
+        }
+        output.entry = record;
+        output.index = n;
+        output.label = ecl_fixnum(ECL_CONS_CDR(label));
+        return output;
+      }
+      n++;
+    } else if (type == @':block' || type == @':function' || Null(all_tags)) {
+      /* INV Null(all_tags) implies lexical variable -- Null(specialp). */
+      n++;
+    } else {
+      /* We are counting only locals and ignore specials, declarations, etc. */
+    }
+  }
+  return output;
+}
+
+static struct cl_compiler_ref
+c_blk_ref(cl_env_ptr env, cl_object the_tag)
+{
+  cl_fixnum n = 0;
+  cl_object l, reg;
+  int function_boundary_crossed = 0;
+  struct cl_compiler_ref output = { ECL_CMPREF_UNDEFINED };
   const cl_compiler_ptr c_env = env->c_env;
   for (l = c_env->variables; CONSP(l); l = ECL_CONS_CDR(l)) {
     cl_object type, name, record = ECL_CONS_CAR(l);
     if (record == @'si::function-boundary')
-      function_boundary_crossed = 1;
+      function_boundary_crossed++;
     if (ECL_ATOM(record))
       continue;
-    type = ECL_CONS_CAR(record);
-    record = ECL_CONS_CDR(record);
-    name = ECL_CONS_CAR(record);
-    if (type == @':tag') {
-      if (type == the_type) {
-        cl_object label = ecl_assql(the_tag, name);
-        if (!Null(label)) {
-          output = CONS(ecl_make_fixnum(n), ECL_CONS_CDR(label));
-          break;
-        }
-      }
-      n++;
-    } else if (type == @':block' || type == @':function') {
-      /* We compare with EQUAL, because of (SETF fname) */
-      if (type == the_type && ecl_equal(name, the_tag)) {
+    reg = record;
+    type = pop(&reg);
+    name = pop(&reg);
+    if (type == @':block') {
+      if(ecl_eql(name, the_tag)) {
         /* Mark as used */
-        record = ECL_CONS_CDR(record);
-        ECL_RPLACA(record, ECL_T);
-        output = ecl_make_fixnum(n);
-        break;
+        ECL_RPLACA(reg, ECL_T);
+        if (function_boundary_crossed) {
+          c_env->function_boundary_crossed = 1;
+          output.place = ECL_CMPREF_CLOSE;
+        } else {
+          output.place = ECL_CMPREF_LOCAL;
+        }
+        output.entry = record;
+        output.index = n;
+        return output;
       }
       n++;
-    } else if (Null(name)) {
+    } else if (type == @':tag' || type == @':function' || Null(name)) {
+      /* INV Null(name) implies lexical variable -- Null(specialp). */
       n++;
     } else {
-      /* We are counting only locals and ignore specials
-       * and other declarations */
+      /* We are counting only locals and ignore specials, declarations, etc. */
     }
   }
-  if (function_boundary_crossed && !Null(output))
-    c_env->function_boundary_crossed = 1;
+  return output;
+}
+
+static struct cl_compiler_ref
+c_fun_ref(cl_env_ptr env, cl_object the_tag)
+{
+  cl_fixnum n = 0;
+  cl_object l, reg;
+  int function_boundary_crossed = 0;
+  struct cl_compiler_ref output = { ECL_CMPREF_UNDEFINED };
+  const cl_compiler_ptr c_env = env->c_env;
+  for (l = c_env->variables; CONSP(l); l = ECL_CONS_CDR(l)) {
+    cl_object type, name, record = ECL_CONS_CAR(l);
+    if (record == @'si::function-boundary')
+      function_boundary_crossed++;
+    if (ECL_ATOM(record))
+      continue;
+    reg = record;
+    type = pop(&reg);
+    name = pop(&reg);
+    if (type == @':function') {
+      /* We compare with EQUAL, because of (SETF fname) */
+      if(ecl_equal(name, the_tag)) {
+        /* Mark as used */
+        ECL_RPLACA(reg, ECL_T);
+        if (function_boundary_crossed) {
+          c_env->function_boundary_crossed = 1;
+          output.place = ECL_CMPREF_CLOSE;
+        } else {
+          output.place = ECL_CMPREF_LOCAL;
+        }
+        output.entry = record;
+        output.index = n;
+        return output;
+      }
+      n++;
+    } else if (type == @':tag' || type == @':block' || Null(name)) {
+      /* INV Null(name) implies lexical variable -- Null(specialp). */
+      n++;
+    } else {
+      /* We are counting only locals and ignore specials, declarations, etc. */
+    }
+  }
   return output;
 }
 
@@ -638,54 +718,62 @@ ecl_def_ct_base_string(undefined_variable,
                        "Undefined variable referenced in interpreted code"
                        ".~%Name: ~A", 60, static, const);                               
 
-static cl_fixnum
-c_var_ref(cl_env_ptr env, cl_object var, int allow_symbol_macro, bool ensure_defined)
+static struct cl_compiler_ref
+c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def)
 {
-  cl_fixnum n = 0, output = ECL_UNDEFINED_VAR_REF;
-  cl_object l, record, special, name;
-  bool function_boundary_crossed = 0;
+  cl_fixnum n = 0;
+  cl_object l, reg;
+  int function_boundary_crossed = 0;
+  struct cl_compiler_ref output = { ECL_CMPREF_UNDEFINED };
   const cl_compiler_ptr c_env = env->c_env;
   for (l = c_env->variables; CONSP(l); l = ECL_CONS_CDR(l)) {
-    record = ECL_CONS_CAR(l);
+    cl_object type, special, record = ECL_CONS_CAR(l);
     if (record == @'si::function-boundary')
-      function_boundary_crossed = 1;
+      function_boundary_crossed++;
     if (ECL_ATOM(record))
       continue;
-    name = ECL_CONS_CAR(record);
-    record = ECL_CONS_CDR(record);
-    special = ECL_CONS_CAR(record);
-    if (name == @':block' || name == @':tag' || name == @':function') {
+    reg = record;
+    type = pop(&reg);
+    special = pop(&reg);
+    if (type == @':block' || type == @':tag' || type == @':function') {
       n++;
-    } else if (name == @':declare') {
+    } else if (type == @':declare') {
       /* Ignored */
-    } else if (name != var) {
+    } else if (type != var) {
       /* Symbol not yet found. Only count locals. */
       if (Null(special)) n++;
     } else if (special == @'si::symbol-macro') {
-      /* We can only get here when we try to redefine a
-         symbol macro */
-      if (allow_symbol_macro) {
-        output = -1;
-        break;
+      /* We can only get here when we try to redefine a symbol macro. */
+      if (allow_sym_mac) {
+        output.place = ECL_CMPREF_SYM_MACRO;
+        output.entry = record;
+        output.index = n;
+        return output;
       }
-      FEprogram_error("Internal error: symbol macro ~S used as variable",
-                               1, var);
+      FEprogram_error("Internal error: symbol macro ~S used as variable", 1, var);
     } else if (Null(special)) {
-      output = n;
-      break;
+      if (function_boundary_crossed) {
+        c_env->function_boundary_crossed = 1;
+        output.place = ECL_CMPREF_CLOSE;
+      } else {
+        output.place = ECL_CMPREF_LOCAL;
+      }
+      output.entry = record;
+      output.index = n;
+      return output;
     } else {
-      output = ECL_SPECIAL_VAR_REF;
-      break;
+      output.place = ECL_CMPREF_SPECIAL_VAR;
+      output.entry = record;
+      output.index = n;
+      return output;
     }
   }
-  if (ensure_defined) {
+  if (ensure_def) {
     l = ecl_cmp_symbol_value(env, @'ext::*action-on-undefined-variable*');
     if (l != ECL_NIL) {
       cl_funcall(3, l, undefined_variable, var);
     }
   }
-  if (function_boundary_crossed && output >= 0)
-    c_env->function_boundary_crossed = 1;
   return output;
 }
 
@@ -699,11 +787,18 @@ static void
 c_declare_specials(cl_env_ptr env, cl_object specials)
 {
   while (!Null(specials)) {
-    int ndx;
     cl_object var = pop(&specials);
-    ndx = c_var_ref(env, var, 1, FALSE);
-    if (ndx >= 0 || ndx == ECL_UNDEFINED_VAR_REF)
+    struct cl_compiler_ref ref = c_var_ref(env, var, TRUE, FALSE);
+    switch(ref.place) {
+    case ECL_CMPREF_LOCAL:
+    case ECL_CMPREF_CLOSE:
+    case ECL_CMPREF_UNDEFINED:
+    case ECL_CMPREF_SYM_MACRO:
       c_register_var(env, var, TRUE, FALSE);
+      break;
+    default:
+      break;
+    }
   }
 }
 
@@ -788,22 +883,34 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
 static void
 compile_setq(cl_env_ptr env, int op, cl_object var)
 {
-  cl_fixnum ndx;
-
+  cl_index ndx;
+  struct cl_compiler_ref ref;
   if (!ECL_SYMBOLP(var))
     FEillegal_variable_name(var);
-  ndx = c_var_ref(env, var,0,TRUE);
-  if (ndx < 0) { /* Not a lexical variable */
+  ref = c_var_ref(env, var,FALSE,TRUE);
+  ndx = ref.index;
+  switch(ref.place) {
+  case ECL_CMPREF_SPECIAL_VAR:
+  case ECL_CMPREF_UNDEFINED:
     if (ecl_symbol_type(var) & ecl_stp_constant) {
       FEassignment_to_constant(var);
     }
     ndx = c_register_constant(env, var);
-    if (op == OP_SETQ)
+    switch(op) {
+    case OP_SETQ:
       op = OP_SETQS;
-    else if (op == OP_PSETQ)
+      break;
+    case OP_PSETQ:
       op = OP_PSETQS;
-    else if (op == OP_VSETQ)
+      break;
+    case OP_VSETQ:
       op = OP_VSETQS;
+      break;
+    default:
+      ecl_miscompilation_error();
+    }
+  default:
+    break;
   }
   asm_op2(env, op, ndx);
 }
@@ -978,10 +1085,11 @@ c_call(cl_env_ptr env, cl_object args, int flags) {
     asm_op2(env, OP_STEPCALL, nargs);
     flags = FLAG_VALUES;
   } else if (ECL_SYMBOLP(name) &&
-             ((flags & FLAG_GLOBAL) || Null(c_tag_ref(env, name, @':function'))))
+             ((flags & FLAG_GLOBAL) ||
+              c_fun_ref(env, name).place == ECL_CMPREF_UNDEFINED))
   {
     asm_op2(env, OP_CALLG, nargs);
-    asm_c(env, name);
+    asm_arg_data(env, name);
     flags = FLAG_VALUES;
   } else {
     /* Fixme!! We can optimize the case of global functions! */
@@ -1051,7 +1159,7 @@ perform_c_case(cl_env_ptr env, cl_object args, int flags) {
         cl_object v = pop(&test);
         asm_op(env, OP_JEQL);
         maybe_make_load_forms(env, v);
-        asm_c(env, v);
+        asm_arg_data(env, v);
         asm_arg(env, n * (OPCODE_SIZE + OPARG_SIZE * 2)
                 + OPARG_SIZE);
       }
@@ -1059,7 +1167,7 @@ perform_c_case(cl_env_ptr env, cl_object args, int flags) {
     }
     asm_op(env, OP_JNEQL);
     maybe_make_load_forms(env, test);
-    asm_c(env, test);
+    asm_arg_data(env, test);
     labeln = current_pc(env);
     asm_arg(env, 0);
     compile_body(env, clause, flags);
@@ -1470,14 +1578,14 @@ create_macro_lexenv(cl_compiler_ptr c_env)
 static int                      /* XXX: here we look for function in cmpenv */
 asm_function(cl_env_ptr env, cl_object function, int flags) {
   if (!Null(si_valid_function_name_p(function))) {
-    cl_object ndx = c_tag_ref(env, function, @':function');
-    if (Null(ndx)) {
+    struct cl_compiler_ref ref = c_fun_ref(env, function);
+    if (ref.place == ECL_CMPREF_UNDEFINED) {
       /* Globally defined function */
       asm_op2c(env, OP_FUNCTION, function);
       return FLAG_REG0;
     } else {
       /* Function from a FLET/LABELS form */
-      asm_op2(env, OP_LFUNCTION, ecl_fixnum(ndx));
+      asm_op2(env, OP_LFUNCTION, ref.index);
       return FLAG_REG0;
     }
   }
@@ -1517,23 +1625,22 @@ asm_function(cl_env_ptr env, cl_object function, int flags) {
   return FLAG_REG0;
 }
 
-
 static int
 c_go(cl_env_ptr env, cl_object args, int flags) {
   cl_object tag = pop(&args);
   if (Null(tag)) {
     tag = ECL_NIL_SYMBOL;
   }
-  cl_object info = c_tag_ref(env, tag, @':tag');
-  if (Null(info))
+  struct cl_compiler_ref ref = c_tag_ref(env, tag);
+  if (ref.place == ECL_CMPREF_UNDEFINED)
     FEprogram_error("GO: Unknown tag ~S.", 1, tag);
   if (!Null(args))
     FEprogram_error("GO: Too many arguments.",0);
-  asm_op2(env, OP_GO, ecl_fixnum(CAR(info)));
-  asm_arg(env, ecl_fixnum(CDR(info)));
+  asm_op(env, OP_GO);
+  asm_arg(env, ref.index);
+  asm_arg(env, ref.label);
   return flags;
 }
-
 
 /*
   (if a b) -> (cond (a b))
@@ -1734,7 +1841,7 @@ c_vbind(cl_env_ptr env, cl_object var, int n, cl_object specials)
       asm_op(env, OP_BIND);
     }
   }
-  asm_c(env, var);
+  asm_arg_data(env, var);
 }
 
 static int
@@ -2015,17 +2122,16 @@ c_psetq(cl_env_ptr env, cl_object old_args, int flags) {
   tag             ; object which names the block
 */
 static int
-c_return_aux(cl_env_ptr env, cl_object name, cl_object stmt, int flags)
+c_return_aux(cl_env_ptr env, cl_object name, cl_object args, int flags)
 {
-  cl_object ndx = c_tag_ref(env, name, @':block');
-  cl_object output = pop_maybe_nil(&stmt);
-
-  if (!ECL_SYMBOLP(name) || Null(ndx))
+  struct cl_compiler_ref ref = c_blk_ref(env, name);
+  cl_object output = pop_maybe_nil(&args);
+  if (ref.place == ECL_CMPREF_UNDEFINED)
     FEprogram_error("RETURN-FROM: Unknown block name ~S.", 1, name);
-  if (stmt != ECL_NIL)
+  if (!Null(args))
     FEprogram_error("RETURN-FROM: Too many arguments.", 0);
   compile_form(env, output, FLAG_VALUES);
-  asm_op2(env, OP_RETURN, ecl_fixnum(ndx));
+  asm_op2(env, OP_RETURN, ref.index);
   return FLAG_VALUES;
 }
 
@@ -2311,12 +2417,16 @@ compile_symbol(cl_env_ptr env, cl_object stmt, int flags)
   if (stmt1 != stmt) {
     return compile_form(env, stmt1, flags);
   } else {
-    cl_fixnum index = c_var_ref(env, stmt,0,FALSE);
+    struct cl_compiler_ref ref = c_var_ref(env, stmt, FALSE, FALSE);
     bool push = flags & FLAG_PUSH;
-    if (index >= 0) {
-      asm_op2(env, push? OP_PUSHV : OP_VAR, index);
-    } else {
+    switch (ref.place) {
+    case ECL_CMPREF_LOCAL:
+    case ECL_CMPREF_CLOSE:
+      asm_op2(env, push? OP_PUSHV : OP_VAR, ref.index);
+      break;
+    default:
       asm_op2c(env, push? OP_PUSHVS : OP_VARS, stmt);
+      break;
     }
     if (flags & FLAG_VALUES)
       return (flags & ~FLAG_VALUES) | FLAG_REG0;
@@ -2438,6 +2548,7 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
   new_c_env.ltf_being_created = ECL_NIL;
   new_c_env.ltf_defer_init_until = ECL_T;
   new_c_env.ltf_locations = ECL_NIL;
+  new_c_env.parent_env = NULL;
   new_c_env.env_depth = 0;
   new_c_env.env_size = 0;
   env->c_env = &new_c_env;
