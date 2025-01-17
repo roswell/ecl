@@ -66,6 +66,9 @@ static void asm_complete(cl_env_ptr env, int op, cl_index original);
 static struct cl_compiler_ref
 c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def);
 
+void c_sym_ref(cl_env_ptr env, cl_object name);
+void c_mac_ref(cl_env_ptr env, cl_object name);
+
 static int c_block(cl_env_ptr env, cl_object args, int flags);
 static int c_case(cl_env_ptr env, cl_object args, int flags);
 static int c_catch(cl_env_ptr env, cl_object args, int flags);
@@ -507,8 +510,6 @@ static void
 c_register_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object entry = c_push_record(c_env, name, @'si::macro', exp_fun);
-  c_env->variables = CONS(entry, c_env->variables);
   c_env->macros = CONS(cl_list(3, name, @'si::macro', exp_fun), c_env->macros);
 }
 
@@ -524,6 +525,14 @@ static cl_object
 c_macro_expand1(cl_env_ptr env, cl_object stmt)
 {
   const cl_compiler_ptr c_env = env->c_env;
+  if(ECL_ATOM(stmt)) {
+    if(!ECL_SYMBOLP(stmt)) return stmt;
+    c_sym_ref(env, stmt);
+  } else {
+    cl_object name = ECL_CONS_CAR(stmt);
+    if(!ECL_SYMBOLP(name)) return stmt;
+    c_mac_ref(env, name);
+  }
   return cl_macroexpand_1(2, stmt, CONS(c_env->variables, c_env->macros));
 }
 
@@ -628,6 +637,65 @@ c_restore_env(cl_env_ptr the_env, cl_compiler_env_ptr new_c_env, cl_compiler_env
     } end_loop_for_in;
   }
   the_env->c_env = old_c_env;
+}
+
+/* c_sym_ref and c_mac_ref ensure that symbol macros and macros that are
+   referenced across the function boundary are captured. We capture the entry
+   verbatim and we don't bind any objects at runtime -- these objects are
+   supplied to enable recompilation by CCMP and BCMP. */
+void
+c_sym_ref(cl_env_ptr env, cl_object name)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  int function_boundary_crossed = 0;
+  cl_object l = c_env->variables;
+  loop_for_on_unsafe(l) {
+    cl_object record = ECL_CONS_CAR(l), reg, type, other;
+    if (record == @'si::function-boundary')
+      function_boundary_crossed++;
+    if(ECL_ATOM(record))
+      continue;
+    reg = record;
+    type = pop(&reg);
+    other = pop(&reg);
+    if (type == name) {
+      if (other == @'si::symbol-macro' && function_boundary_crossed) {
+        c_env->function_boundary_crossed = 1;
+        c_register_captured(env, record);
+      }
+      return;
+    }
+  } end_loop_for_on_unsafe(l);
+}
+
+/* This looks in c_env->macros so it is unlike other c_*_ref functions. */
+void
+c_mac_ref(cl_env_ptr env, cl_object name)
+{
+  const cl_compiler_ptr c_env = env->c_env;
+  int function_boundary_crossed = 0;
+  cl_object l = c_env->macros;
+  loop_for_on_unsafe(l) {
+    cl_object record = ECL_CONS_CAR(l), reg, type, other;
+    if (record == @'si::function-boundary')
+      function_boundary_crossed++;
+    if(ECL_ATOM(record))
+      continue;
+    reg = record;
+    type = pop(&reg);
+    other = pop(&reg);
+    if (type == name) {
+      if(other == @':function')
+        return;
+      if(other == @'si::macro') {
+        if (function_boundary_crossed) {
+          c_env->function_boundary_crossed = 1;
+          c_register_captured(env, record);
+        }
+        return;
+      }
+    }
+  } end_loop_for_on_unsafe(l);
 }
 
 /* This function is called after we compile lambda in the parent's
@@ -1891,9 +1959,8 @@ c_locally(cl_env_ptr env, cl_object args, int flags) {
 /*
   MACROLET
 
-  The current lexical environment is saved. A new one is prepared with
-  the definitions of these macros, and this environment is used to
-  compile the body.
+  The current lexical environment is saved. A new one is prepared with the
+  definitions of these macros, and this environment is used to compile the body.
 */
 static int
 c_macrolet(cl_env_ptr the_env, cl_object args, int flags)
@@ -3386,6 +3453,17 @@ c_default(cl_env_ptr env, cl_object var, cl_object stmt, cl_object flag, cl_obje
   c_pbind(env, var, specials);
 }
 
+static cl_object
+fix_macro_to_lexenv(cl_object record) {
+  cl_object arg1 = pop(&record);
+  cl_object arg2 = pop(&record);
+  cl_object arg3 = pop(&record);
+  if (arg2 == @'si::macro' || arg2 == @'si::symbol-macro')
+    return CONS(arg2, CONS(arg3, arg1));
+  else
+    return ECL_NIL;
+}
+
 cl_object
 ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   cl_object reqs, opts, rest, key, keys, auxs, allow_other_keys;
@@ -3506,7 +3584,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
 
   /* Process closed over entries. */
   if (new_c_env->function_boundary_crossed) {
-    cl_object p = new_c_env->captured, entry, flex;
+    cl_object p = new_c_env->captured, flex, entry, macro_entry;
     struct cl_compiler_ref ref;
     int i, n, index;
     n = p->vector.fillp;
@@ -3516,6 +3594,11 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
     for (i = 0; i < n; i++) {
       entry = p->vector.self.t[i];
       p->vector.self.t[i] = ECL_NIL;
+      macro_entry = fix_macro_to_lexenv(entry);
+      if(!Null(macro_entry)) {
+        flex->vector.self.t[i] = macro_entry;
+        continue;
+      }
       ref = c_any_ref(env, entry);
       switch(ref.place) {
       case ECL_CMPREF_LOCAL:

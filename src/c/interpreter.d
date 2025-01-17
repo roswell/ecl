@@ -243,7 +243,7 @@ close_around_self(cl_object fun) {
 
 static void
 close_around_self_fixup(cl_object fun, cl_object lcl_env, cl_object *lex_env) {
-  cl_object new_lex, template;
+  cl_object new_lex, template, entry;
   cl_fixnum nlex, idx, ndx;
   switch(ecl_t_of(fun)) {
   case t_bytecodes:
@@ -254,6 +254,11 @@ close_around_self_fixup(cl_object fun, cl_object lcl_env, cl_object *lex_env) {
     nlex = template->vector.dim;
     new_lex = make_lex(nlex);
     for (idx = 0; idx<nlex; idx++) {
+      entry = template->vector.self.t[idx];
+      if(!ECL_FIXNUMP(entry)) {
+        push_lex(new_lex, entry);
+        continue;
+      }
       ndx = ecl_fixnum(template->vector.self.t[idx]);
       ndx < 0
         ? push_lex(new_lex, ecl_lcl_env_get_record(lcl_env, -ndx-1))
@@ -270,7 +275,7 @@ close_around_self_fixup(cl_object fun, cl_object lcl_env, cl_object *lex_env) {
 
 cl_object
 ecl_close_around(cl_object fun, cl_object lcl_env, cl_object *lex_env) {
-  cl_object v, new_lex, template;
+  cl_object v, new_lex, template, entry;
   cl_fixnum nlex, idx, ndx;
   if(ecl_t_of(fun) != t_bytecodes)
     VEclose_around_arg_type();
@@ -280,6 +285,11 @@ ecl_close_around(cl_object fun, cl_object lcl_env, cl_object *lex_env) {
   nlex = template->vector.dim;
   new_lex = make_lex(nlex);
   for (idx = 0; idx<nlex; idx++) {
+    entry = template->vector.self.t[idx];
+    if(!ECL_FIXNUMP(entry)) {
+      push_lex(new_lex, entry);
+      continue;
+    }
     ndx = ecl_fixnum(template->vector.self.t[idx]);
     ndx < 0
       ? push_lex(new_lex, ecl_lcl_env_get_record(lcl_env, -ndx-1))
