@@ -643,6 +643,24 @@ c_restore_env(cl_env_ptr the_env, cl_compiler_env_ptr new_c_env, cl_compiler_env
    referenced across the function boundary are captured. We capture the entry
    verbatim and we don't bind any objects at runtime -- these objects are
    supplied to enable recompilation by CCMP and BCMP. */
+
+static void
+close_around_macros(cl_env_ptr env, cl_object mfun)
+{
+  cl_object lex = mfun->bclosure.lex, record;
+  cl_object *lex_vec = lex->vector.self.t;
+  for (cl_index i = 0; i < lex->vector.dim; i++) {
+    cl_object reg = lex_vec[i]; /* INV see interpreter.d for lexenv structure */
+    cl_object type = CAR(reg);  /* lexenv tag */
+    cl_object name = CDDR(reg); /* macro name */
+    if (type == @'si::macro') {
+      c_mac_ref(env, name);
+    } else if (type == @'si::symbol_macro') {
+      c_sym_ref(env, name);
+    }
+  }
+}
+
 void
 c_sym_ref(cl_env_ptr env, cl_object name)
 {
@@ -659,9 +677,17 @@ c_sym_ref(cl_env_ptr env, cl_object name)
     type = pop(&reg);
     other = pop(&reg);
     if (type == name) {
-      if (other == @'si::symbol-macro' && function_boundary_crossed) {
-        c_env->function_boundary_crossed = 1;
-        c_register_captured(env, record);
+      if (other == @'si::symbol-macro') {
+        if (function_boundary_crossed) {
+          c_env->function_boundary_crossed = 1;
+          c_register_captured(env, record);
+        } else {
+          cl_object mfun = ECL_CONS_CAR(reg);
+          if (ecl_t_of(mfun) == t_bclosure) {
+            c_env->function_boundary_crossed = 1;
+            close_around_macros(env, mfun);
+          }
+        }
       }
       return;
     }
@@ -691,6 +717,12 @@ c_mac_ref(cl_env_ptr env, cl_object name)
         if (function_boundary_crossed) {
           c_env->function_boundary_crossed = 1;
           c_register_captured(env, record);
+        } else {
+          cl_object mfun = ECL_CONS_CAR(reg);
+          if (ecl_t_of(mfun) == t_bclosure) {
+            c_env->function_boundary_crossed = 1;
+            close_around_macros(env, mfun);
+          }
         }
         return;
       }
@@ -729,7 +761,7 @@ c_any_ref(cl_env_ptr env, cl_object entry)
       output.entry = record;
       return output;
     }
-    if (type == @':block' || type == @':function'||type == @':tag'
+    if (type == @':block' || type == @':function'|| type == @':tag'
         || Null(other)) {
       n++;
     }
@@ -3454,14 +3486,19 @@ c_default(cl_env_ptr env, cl_object var, cl_object stmt, cl_object flag, cl_obje
 }
 
 static cl_object
-fix_macro_to_lexenv(cl_object record) {
+fix_macro_to_lexenv(cl_env_ptr env, cl_object record) {
   cl_object arg1 = pop(&record);
   cl_object arg2 = pop(&record);
   cl_object arg3 = pop(&record);
-  if (arg2 == @'si::macro' || arg2 == @'si::symbol-macro')
+  if (arg2 == @'si::macro') {
+    c_mac_ref(env, arg1);
     return CONS(arg2, CONS(arg3, arg1));
-  else
+  } else if (arg2 == @'si::symbol-macro') {
+    c_sym_ref(env, arg1);
+    return CONS(arg2, CONS(arg3, arg1));
+  } else {
     return ECL_NIL;
+  }
 }
 
 cl_object
@@ -3594,7 +3631,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
     for (i = 0; i < n; i++) {
       entry = p->vector.self.t[i];
       p->vector.self.t[i] = ECL_NIL;
-      macro_entry = fix_macro_to_lexenv(entry);
+      macro_entry = fix_macro_to_lexenv(env, entry);
       if(!Null(macro_entry)) {
         flex->vector.self.t[i] = macro_entry;
         continue;
