@@ -36,8 +36,7 @@ _hash_eql(cl_hashkey h, cl_object x)
   switch (ecl_t_of(x)) {
   case t_bignum:
     return hash_string(h, (unsigned char*)ECL_BIGNUM_LIMBS(x),
-                       labs(ECL_BIGNUM_SIZE(x)) *
-                       sizeof(mp_limb_t));
+                       ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
   case t_ratio:
     h = _hash_eql(h, x->ratio.num);
     return _hash_eql(h, x->ratio.den);
@@ -244,7 +243,7 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
     /* FIXME! We should be more precise here! */
     return hash_string(h, (unsigned char*)ecl_bignum(x)->_mp_d,
                        abs(ecl_bignum(x)->_mp_size) *
-                       sizeof(mp_limb_t));
+                       sizeof(ecl_limb_t));
   case t_ratio:
     h = _hash_equalp(0, h, x->ratio.num);
     return _hash_equalp(0, h, x->ratio.den);

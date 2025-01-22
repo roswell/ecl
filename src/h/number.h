@@ -8,7 +8,7 @@
  *
  */
 
-/* number.h  -- GMP interface. */
+/* number.h  -- INTEGER interface. */
 #ifndef ECL_NUMBER_H
 #define ECL_NUMBER_H
 
@@ -16,62 +16,92 @@
 extern "C" {
 #endif
 
-#define ECL_BIG_REGISTER_SIZE   32
+/* Bignum internal protocol */
 
+/* Allocate a number on the stack. */
 #define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
         mp_limb_t name##data[n];                                        \
         volatile struct ecl_bignum name##aux;                           \
-        const cl_object name = (name##aux.value->_mp_alloc = n,       \
-                                name##aux.value->_mp_size = 0,        \
-                                name##aux.value->_mp_d = name##data,  \
+        const cl_object name = (name##aux.value->_mp_alloc = n,         \
+                                name##aux.value->_mp_size = 0,          \
+                                name##aux.value->_mp_d = name##data,    \
                                 (cl_object)(&name##aux))
 
-#define ECL_BIGNUM_DIM(x)       (ecl_bignum(x)->_mp_alloc) /* number of allocated limbs */
-#define ECL_BIGNUM_SIZE(x)      (ecl_bignum(x)->_mp_size)  /* number of limbs in use times sign of the bignum */
-#define ECL_BIGNUM_LIMBS(x)     (ecl_bignum(x)->_mp_d)     /* pointer to array of allocated limbs */
+#define ECL_BIGNUM_LIMB_BITS GMP_LIMB_BITS
+#define ECL_BIGNUM_DIM(x)    (ecl_bignum(x)->_mp_alloc) /* number of allocated limbs */
+#define ECL_BIGNUM_SIZE(x)   (ecl_bignum(x)->_mp_size)  /* number of limbs in use times sign of the bignum */
+#define ECL_BIGNUM_USIZE(x)  (mpz_size(ecl_bignum(x)))  /* number of limbs */
+#define ECL_BIGNUM_LIMBS(x)  (ecl_bignum(x)->_mp_d)     /* pointer to array of allocated limbs */
 
-/* Bignum internal protocol */
-extern ECL_API cl_object _ecl_big_set_fixnum(cl_object x, cl_fixnum f);
-extern ECL_API cl_object _ecl_big_set_index(cl_object x, cl_index f);
-extern ECL_API cl_fixnum _ecl_big_get_fixnum(cl_object x);
-extern ECL_API cl_index _ecl_big_get_index(cl_object x);
-extern ECL_API long double _ecl_big_to_long_double(cl_object x);
 typedef void (*_ecl_big_binary_op)(cl_object out, cl_object o1, cl_object o2);
 extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 
+/* Type conversion (setters mutate the bignum structure). */
 #if ECL_LONG_BITS >= ECL_FIXNUM_BITS
-#define _ecl_big_set_fixnum(x, f) mpz_set_si(ecl_bignum(x),(f))
-#define _ecl_big_set_index(x, f)  mpz_set_ui(ecl_bignum(x),(f))
+# define _ecl_big_set_index(x, f)  mpz_set_ui(ecl_bignum(x),(f))
+# define _ecl_big_set_fixnum(x, f) mpz_set_si(ecl_bignum(x),(f))
+# define _ecl_big_get_index(x)     mpz_get_ui(ecl_bignum(x))
+# define _ecl_big_get_fixnum(x)    mpz_get_si(ecl_bignum(x))
+#elif GMP_LIMB_BITS >= ECL_FIXNUM_BITS
+# define ECL_GMP_FIXNUM_TO_LIMBS
+extern ECL_API cl_index _ecl_big_get_idx(cl_object x);
+extern ECL_API cl_fixnum _ecl_big_get_fix(cl_object x);
+extern ECL_API void _ecl_big_set_idx(cl_object x, cl_index y);
+extern ECL_API void _ecl_big_set_fix(cl_object x, cl_fixnum y);
+# define _ecl_big_set_index(x, f)  _ecl_big_set_idx((x),(f))
+# define _ecl_big_get_index(x, f)  _ecl_big_get_idx((x))
+# define _ecl_big_set_fixnum(x, f) _ecl_big_set_fix((x),(f))
+# define _ecl_big_get_fixnum(x)    _ecl_big_get_fix((x))
+#else
+# error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
 #endif
-#define _ecl_big_init2(x,size)      mpz_init2(ecl_bignum(x),(size)*GMP_LIMB_BITS)
-#define _ecl_big_realloc2(x,size)   mpz_realloc2(ecl_bignum(x),(size)*GMP_LIMB_BITS)
-#define _ecl_big_clear(x)           mpz_clear(ecl_bignum(x))
-#define _ecl_big_set(x,y)           mpz_set(ecl_bignum(x),ecl_bignum(y))
-#define _ecl_big_odd_p(x)           ((mpz_get_ui(ecl_bignum(x)) & 1) != 0)
-#define _ecl_big_even_p(x)          ((mpz_get_ui(ecl_bignum(x)) & 1) == 0)
-#define _ecl_big_zerop(x)           (ECL_BIGNUM_SIZE(x) == 0)
-#define _ecl_big_sign(x)            ECL_BIGNUM_SIZE(x)
-#define _ecl_big_compare(x, y)      mpz_cmp(ecl_bignum(x),ecl_bignum(y))
-#define _ecl_big_complement(z, x)   mpz_neg(ecl_bignum(z),ecl_bignum(x))
-#define _ecl_big_add(z, x, y)       mpz_add(ecl_bignum(z),ecl_bignum(x),ecl_bignum(y))
-#define _ecl_big_sub(z, x, y)       mpz_sub(ecl_bignum(z),ecl_bignum(x),ecl_bignum(y))
-#define _ecl_big_mul(z, x, y)       mpz_mul(ecl_bignum(z),ecl_bignum(x),ecl_bignum(y))
-#define _ecl_big_add_ui(z, x, i)    mpz_add_ui(ecl_bignum(z),ecl_bignum(x),(i))
-#define _ecl_big_sub_ui(z, x, i)    mpz_sub_ui(ecl_bignum(z),ecl_bignum(x),(i))
-#define _ecl_big_mul_ui(z, x, y)    mpz_mul_ui(ecl_bignum(z),ecl_bignum(x),(y))
-#define _ecl_big_div_ui(z, x, y)    mpz_div_ui(ecl_bignum(z),ecl_bignum(x),(y))
-#define _ecl_big_mul_si(z, x, y)    mpz_mul_si(ecl_bignum(z),ecl_bignum(x),(y))
+
 #define _ecl_big_set_ui(x, i)       mpz_set_ui(ecl_bignum(x),(unsigned long int)i)
 #define _ecl_big_set_si(x, i)       mpz_set_si(ecl_bignum(x),(long int)i)
-#define _ecl_big_to_double(x)       mpz_get_d(ecl_bignum(x))
-#define _ecl_big_to_long(x)         mpz_get_si(ecl_bignum(x))
-#define _ecl_big_to_ulong(x)        mpz_get_ui(ecl_bignum(x))
-#define _ecl_big_cmp_si(x,y)        mpz_cmp_si(ecl_bignum(x),(y))
-#define _ecl_big_tdiv_q(q, x, y)    mpz_tdiv_q(ecl_bignum(q),ecl_bignum(x),ecl_bignum(y))
-#define _ecl_big_tdiv_q_ui(q, x, y) mpz_tdiv_q_ui(ecl_bignum(q),ecl_bignum(x), (y))
 #define _ecl_big_set_d(x, d)        mpz_set_d(ecl_bignum(x),(d))
 
+#define _ecl_big_get_ui(x)          mpz_get_ui(ecl_bignum(x))
+#define _ecl_big_get_si(x)          mpz_get_si(ecl_bignum(x))
+#define _ecl_big_get_d(x)           mpz_get_d(ecl_bignum(x))
+#define _ecl_big_get_str(buf,b,x)   mpz_get_str(buf,-b,ecl_bignum(x))
 
+#define _ecl_big_to_ulong(x)        _ecl_big_get_ui(x)
+#define _ecl_big_to_long(x)         _ecl_big_get_si(x)
+#define _ecl_big_to_double(x)       _ecl_big_get_d(x)
+
+extern ECL_API long double _ecl_big_get_lf(cl_object x);
+#define _ecl_big_to_long_double(x) _ecl_big_get_lf((x))
+
+/* Type conversion predicates */
+#define _ecl_big_fits_ui(x) mpz_fits_ulong_p(ecl_bignum(x))
+#define _ecl_big_fits_si(x) mpz_fits_slong_p(ecl_bignum(x))
+
+/* Predicates */
+#define _ecl_big_odd_p(x)           ((mpz_get_ui(ecl_bignum(x)) & 1) != 0)
+#define _ecl_big_even_p(x)          ((mpz_get_ui(ecl_bignum(x)) & 1) == 0)
+#define _ecl_big_sign(x)            mpz_sgn(ecl_bignum(x))
+#define _ecl_big_compare(x, y)      mpz_cmp(ecl_bignum(x),ecl_bignum(y))
+
+/* Bit fiddling */
+#define _ecl_big_popcount(x)        mpz_popcount(ecl_bignum(x))
+#define _ecl_big_1com(x,y)          mpz_com(ecl_bignum(x),ecl_bignum(y))
+#define _ecl_big_tstbit(x,n)        mpz_tstbit(ecl_bignum(x),n)
+#define _ecl_big_bits(x)            mpz_sizeinbase(ecl_bignum(x),2)
+#define _ecl_big_sizeinbase(x,n)    mpz_sizeinbase(ecl_bignum(x),n)
+
+#define _ecl_big_div_2exp(z,y,i)    mpz_div_2exp(ecl_bignum(z), ecl_bignum(y), i)
+#define _ecl_big_mul_2exp(z,y,i)    mpz_mul_2exp(ecl_bignum(z), ecl_bignum(y), i);
+#define _ecl_big_fdiv_q_2exp(z,x,i) mpz_fdiv_q_2exp(ecl_bignum(z), ecl_bignum(x), i);
+#define _ecl_big_fdiv_r_2exp(z,x,i) mpz_fdiv_r_2exp(ecl_bignum(z), ecl_bignum(x), i);
+
+/* Arithmetic operations that are used for parsing numbers (and in big.d) */
+#define _ecl_big_mul(z, x, y)       mpz_mul(ecl_bignum(z),ecl_bignum(x),ecl_bignum(y))
+#define _ecl_big_mul_ui(z, x, y)    mpz_mul_ui(ecl_bignum(z),ecl_bignum(x),(y))
+#define _ecl_big_add_ui(z, x, i)    mpz_add_ui(ecl_bignum(z),ecl_bignum(x),(i))
+#define _ecl_big_neg(z, x)          mpz_neg(ecl_bignum(z),ecl_bignum(x))
+#define _ecl_big_complement(z, x)   _ecl_big_neg(z,x)
+
+/* Other number operations (not bignum) */
 #if ECL_CAN_INLINE
 static ECL_INLINE cl_fixnum
 ecl_to_fix(cl_object f)

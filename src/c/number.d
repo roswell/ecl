@@ -236,15 +236,15 @@ ecl_to_uint64_t(cl_object x) {
       return (ecl_uint64_t)ecl_fixnum(x);
     } else if (!ECL_BIGNUMP(x)) {
       (void)0;
-    } else if (mpz_fits_ulong_p(ecl_bignum(x))) {
-      return (ecl_uint64_t)mpz_get_ui(ecl_bignum(x));
+    } else if (_ecl_big_fits_ui(x)) {
+      return (ecl_uint64_t)_ecl_big_get_ui(x);
     } else {
       cl_object copy = _ecl_big_register0();
-      mpz_fdiv_q_2exp(ecl_bignum(copy), ecl_bignum(x), 32);
-      if (mpz_fits_ulong_p(ecl_bignum(copy))) {
+      _ecl_big_fdiv_q_2exp(copy, x, 32);
+      if (_ecl_big_fits_ui(copy)) {
         ecl_uint64_t output;
-        output = (ecl_uint64_t)mpz_get_ui(ecl_bignum(copy));
-        output = (output << 32) + (ecl_uint64_t)mpz_get_ui(ecl_bignum(x));
+        output = (ecl_uint64_t)_ecl_big_get_ui(copy);
+        output = (output << 32) + (ecl_uint64_t)_ecl_big_get_ui(x);
         _ecl_big_register_free(copy);
         return output;
       }
@@ -262,16 +262,16 @@ ecl_to_int64_t(cl_object x) {
     return (ecl_int64_t)ecl_fixnum(x);
   } else if (!ECL_BIGNUMP(x)) {
     (void)0;
-  } else if (mpz_fits_slong_p(ecl_bignum(x))) {
-    return (ecl_int64_t)mpz_get_si(ecl_bignum(x));
+  } else if (_ecl_big_fits_si(x)) {
+    return (ecl_int64_t)_ecl_big_get_si(x);
   } else {
     cl_object copy = _ecl_big_register0();
-    mpz_fdiv_q_2exp(ecl_bignum(copy), ecl_bignum(x), 32);
-    if (mpz_fits_slong_p(ecl_bignum(copy))) {
+    _ecl_big_fdiv_q_2exp(copy, x, 32);
+    if (_ecl_big_fits_si(copy)) {
       ecl_int64_t output;
-      output = (ecl_int64_t)mpz_get_si(ecl_bignum(copy));
-      mpz_fdiv_r_2exp(ecl_bignum(copy), ecl_bignum(x), 32);
-      output = (output << 32) + mpz_get_ui(ecl_bignum(copy));
+      _ecl_big_fdiv_r_2exp(copy, x, 32);
+      output = (ecl_int64_t)_ecl_big_get_si(copy);
+      output = (output << 32) + _ecl_big_get_ui(copy);
       _ecl_big_register_free(copy);
       return output;
     }
@@ -354,19 +354,19 @@ ecl_to_ulong_long(cl_object x) {
       return (ecl_ulong_long_t)ecl_fixnum(x);
     } else if (!ECL_BIGNUMP(x)) {
       (void)0;
-    } else if (mpz_fits_ulong_p(ecl_bignum(x))) {
-      return (ecl_ulong_long_t)mpz_get_ui(ecl_bignum(x));
+    } else if (_ecl_big_fits_ui(x)) {
+      return (ecl_ulong_long_t)_ecl_big_get_ui(x);
     } else {
       cl_object copy = _ecl_big_register0();
       int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
-      mpz_fdiv_q_2exp(copy->bit.big_num, ecl_bignum(x), i);
-      if (mpz_fits_ulong_p(ecl_bignum(copy))) {
+      _ecl_big_fdiv_q_2exp(copy, x, i);
+      if (_ecl_big_fits_ui(copy)) {
         ecl_ulong_long_t output;
-        output = mpz_get_ui(ecl_bignum(copy));
+        output = _ecl_big_get_ui(copy);
         for (i -= ECL_FIXNUM_BITS; i;
              i-= ECL_FIXNUM_BITS) {
           output = (output << ECL_FIXNUM_BITS);
-          output += mpz_get_ui(ecl_bignum(x));
+          output += _ecl_big_get_ui(x);
         }
         _ecl_big_register_free(copy);
         return output;
@@ -387,18 +387,18 @@ ecl_to_long_long(cl_object x)
     return (ecl_long_long_t)ecl_fixnum(x);
   } else if (!ECL_BIGNUMP(x)) {
     (void)0;
-  } else if (mpz_fits_slong_p(ecl_bignum(x))) {
-    return (ecl_long_long_t)mpz_get_si(ecl_bignum(x));
+  } else if (_ecl_big_fits_si(x)) {
+    return (ecl_long_long_t)_ecl_big_get_si(x);
   } else {
     cl_object copy = _ecl_big_register0();
     int i = ECL_LONG_LONG_BITS - ECL_FIXNUM_BITS;
-    mpz_fdiv_q_2exp(copy->bit.big_num, ecl_bignum(x), i);
-    if (mpz_fits_ulong_p(ecl_bignum(copy))) {
+    _ecl_big_fdiv_q_2exp(copy, x, i);
+    if (_ecl_big_fits_ui(copy)) {
       ecl_long_long_t output;
-      output = mpz_get_si(ecl_bignum(copy));
+      output = _ecl_big_get_si(copy);
       for (i -= ECL_FIXNUM_BITS; i; i-= ECL_FIXNUM_BITS) {
         output = (output << ECL_FIXNUM_BITS);
-        output += mpz_get_ui(ecl_bignum(x));
+        output += _ecl_big_get_ui(x);
       }
       _ecl_big_register_free(copy);
       return output;
@@ -702,7 +702,6 @@ mantissa_and_exponent_from_ratio(cl_object num, cl_object den, int digits, cl_fi
   return quotient;
 }
 
-#if 0 /* Unused, we do not have ecl_to_float() */
 static float
 ratio_to_float(cl_object num, cl_object den)
 {
@@ -712,11 +711,12 @@ ratio_to_float(cl_object num, cl_object den)
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   double output = ecl_fixnum(mantissa);
 #else
-  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_double(mantissa);
+  double output = ECL_FIXNUMP(mantissa)
+    ? ecl_fixnum(mantissa)
+    : _ecl_big_to_double(mantissa);
 #endif
   return ldexpf(output, exponent);
 }
-#endif
 
 static double
 ratio_to_double(cl_object num, cl_object den)
@@ -727,7 +727,9 @@ ratio_to_double(cl_object num, cl_object den)
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   double output = ecl_fixnum(mantissa);
 #else
-  double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_double(mantissa);
+  double output = ECL_FIXNUMP(mantissa)
+    ? ecl_fixnum(mantissa)
+    : _ecl_big_to_double(mantissa);
 #endif
   return ldexp(output, exponent);
 }
@@ -741,7 +743,9 @@ ratio_to_long_double(cl_object num, cl_object den)
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   long double output = ecl_fixnum(mantissa);
 #else
-  long double output = ECL_FIXNUMP(mantissa)? ecl_fixnum(mantissa) : _ecl_big_to_long_double(mantissa);
+  long double output = ECL_FIXNUMP(mantissa)
+    ? ecl_fixnum(mantissa)
+    : _ecl_big_to_long_double(mantissa);
 #endif
   return ldexpl(output, exponent);
 }
@@ -755,9 +759,9 @@ ecl_to_float(cl_object x)
   case t_fixnum:
     return (float)ecl_fixnum(x);
   case t_bignum:
-    return (float)ratio_to_double(x, ecl_make_fixnum(1));
+    return ratio_to_float(x, ecl_make_fixnum(1));
   case t_ratio:
-    return (float)ratio_to_double(x->ratio.num, x->ratio.den);
+    return ratio_to_float(x->ratio.num, x->ratio.den);
   case t_singlefloat:
     return ecl_single_float(x);
   case t_doublefloat:

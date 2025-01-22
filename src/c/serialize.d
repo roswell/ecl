@@ -200,6 +200,19 @@ serialize_vector(pool_t pool, cl_object v)
 }
 
 static void
+serialize_bignum(pool_t pool, cl_object b)
+{
+  int8_t sign = _ecl_big_sign(ecl_bignum(buffer));
+  serialize_bits(pool, &sign, 1);
+  cl_index bytes = (_ecl_big_bits(buffer) + 7) / 8;
+  serialize_bits(pool, &bytes, sizeof(cl_index));
+  cl_index index = alloc(pool, bytes);
+  cl_index bytes_written;
+  mpz_export(pool->data->vector.self.b8 + index, &bytes_written,
+             1, 1, 1, 0, ecl_bignum(buffer));
+}
+
+static void
 serialize_hashtable(pool_t pool, cl_object h)
 {
   /* FIXME: Serializing all of h->hash.data is a big waste if the
@@ -241,13 +254,7 @@ serialize_one(pool_t pool, cl_object what)
   case t_longfloat:
     break;
   case t_bignum: {
-    int8_t sign = mpz_sgn(ecl_bignum(buffer));
-    serialize_bits(pool, &sign, 1);
-    cl_index bytes = (mpz_sizeinbase(ecl_bignum(buffer), 2) + 7) / 8;
-    serialize_bits(pool, &bytes, sizeof(cl_index));
-    cl_index index = alloc(pool, bytes);
-    cl_index bytes_written;
-    mpz_export(pool->data->vector.self.b8 + index, &bytes_written, 1, 1, 1, 0, ecl_bignum(buffer));
+    serialize_bignum(pool, buffer);
     break;
   }
   case t_ratio: {
@@ -417,6 +424,21 @@ reconstruct_array(cl_object a, uint8_t *data)
 }
 
 static uint8_t *
+reconstruct_bignum(cl_object a, uint8_t *data)
+{
+  int8_t sign = (int8_t) *data;
+  data += ROUND_TO_WORD(1);
+  cl_index bytes = (cl_index) *data;
+  data += ROUND_TO_WORD(sizeof(cl_index));
+  mpz_init(ecl_bignum(output));
+  mpz_import(ecl_bignum(output), bytes, 1, 1, 1, 0, data);
+  if (sign == -1) {
+    _ecl_big_neg(output, output);
+  }
+  data += ROUND_TO_WORD(bytes);
+}
+
+static uint8_t *
 reconstruct_hashtable(cl_object h, uint8_t *data)
 {
   cl_index bytes = ROUND_TO_WORD(h->hash.size * sizeof(struct ecl_hashtable_entry));
@@ -455,16 +477,7 @@ reconstruct_one(uint8_t *data, cl_object *output)
   }
   case t_bignum: {
     data = duplicate_object(data, output);
-    int8_t sign = (int8_t) *data;
-    data += ROUND_TO_WORD(1);
-    cl_index bytes = (cl_index) *data;
-    data += ROUND_TO_WORD(sizeof(cl_index));
-    mpz_init(ecl_bignum(*output));
-    mpz_import(ecl_bignum(*output), bytes, 1, 1, 1, 0, data);
-    if (sign == -1) {
-      mpz_neg(ecl_bignum(*output), ecl_bignum(*output));
-    }
-    data += ROUND_TO_WORD(bytes);
+    reconsturct_bignum(*output, data);
     break;
   }
   case t_hashtable:
