@@ -20,24 +20,16 @@
   ;(print symbol)
   (assert (listp args))
   (ext:annotate symbol ':lambda-list nil args)
-  (cond ((and doc (search "Syntax:" doc))
-         (setf args nil))
-        ((and doc (search "Args:" doc))
-         (setf args nil))
-        ((member kind '(macro special))
-         (setf args (format nil "Syntax: ~A" args)))
-        (t
-         (setf args (format nil "Args: ~A" args))))
   (si::set-documentation
    symbol 'function
-   (format nil "~A in ~A package:~@[~%~A~]~@[~%~A~]~%"
+   (format nil "~A in ~A package:~@[~%~A~]~%"
            (ecase kind
              (special "Special Form")
              (macro "Macro")
              (function "Function")
              (method "Generic function"))
            (package-name (symbol-package (si::function-block-name symbol)))
-           args doc)))
+           doc)))
 
 (defmacro docvar (symbol kind doc)
   (do-docvar symbol kind doc))
