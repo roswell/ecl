@@ -139,7 +139,7 @@
   (let ((extra-lisp-files '(@ECL_EXTRA_LISP_FILES@)))
     (when extra-lisp-files
       (setq lsp-objects (append lsp-objects
-                                (compile-if-old "build:ext;" extra-lisp-files
+                                (compile-if-old "build:user;" extra-lisp-files
                                                 :system-p t :c-file t :data-file t
                                                 :h-file t
                                                 ;;:shared-data-file "build:ecl.sdat"
