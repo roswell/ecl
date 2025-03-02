@@ -34,9 +34,10 @@
            (list dimensions))
           ((and (listp dimensions)
                 (let ((rank (list-length dimensions)))
-                  (or (numberp rank)
-                      (< -1 rank array-rank-limit)
-                      (every #'valid-array-index dimensions))))
+                  (and (numberp rank)
+                       (< -1 rank array-rank-limit)
+                       (every #'(lambda (x) (typep x 'ext:array-index)) dimensions)
+                       (< (apply '* dimensions) array-total-size-limit))))
            dimensions)
           (t
            (cmpwarn "The first argument to MAKE-ARRAY~%~A~%is not a valid set of dimensions" orig-dimensions)
