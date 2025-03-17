@@ -514,6 +514,7 @@ cl_boot(int argc, char **argv)
   ECL_NIL_SYMBOL->symbol.cname = ECL_NIL;
   ECL_FMAKUNBOUND(ECL_NIL_SYMBOL);
   ECL_NIL_SYMBOL->symbol.sfdef = ECL_NIL;
+  ECL_NIL_SYMBOL->symbol.macfun = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.plist = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.hpack = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.stype = ecl_stp_constant;
@@ -529,6 +530,7 @@ cl_boot(int argc, char **argv)
   ECL_T->symbol.cname = ECL_NIL;
   ECL_FMAKUNBOUND(ECL_T);
   ECL_T->symbol.sfdef = ECL_NIL;
+  ECL_T->symbol.macfun = ECL_NIL;
   ECL_T->symbol.plist = ECL_NIL;
   ECL_T->symbol.hpack = ECL_NIL;
   ECL_T->symbol.stype = ecl_stp_constant;
