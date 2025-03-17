@@ -1114,7 +1114,7 @@
 (proclamation ext:mkstemp (pathname-designator) (or null pathname))
 (proclamation ext:copy-file (pathname-designator pathname-designator) gen-bool)
 
-(proclamation si:mkdir (pathname-designator unsigned-byte) string)
+(proclamation si:mkdir (pathname-designator unsigned-byte) (or string null))
 (proclamation si:rmdir (pathname-designator) null)
 
 

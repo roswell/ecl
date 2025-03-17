@@ -1193,7 +1193,9 @@ si_mkdir(cl_object directory, cl_object mode)
 #endif
   ecl_enable_interrupts();
 
-  if (ecl_unlikely(ok < 0)) {
+  if (ok < 0 && errno == EEXIST) {
+    @(return ECL_NIL);
+  } else if (ecl_unlikely(ok < 0)) {
     cl_object c_error = _ecl_strerror(errno);
     const char *msg = "Could not create directory ~S"
       "~%C library error: ~S";
