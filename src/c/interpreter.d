@@ -22,7 +22,7 @@
 /* -- Errors signaled by the interpreter. ----------------------------------- */
 
 static void
-VEbad_lambda_arg_excd(cl_object bytecodes, cl_object frame)
+VEbad_lambda_too_many_args(cl_object bytecodes, cl_object frame)
 {
   FEprogram_error("Too many arguments passed to "
                   "function ~A~&Argument list: ~S",
@@ -30,7 +30,7 @@ VEbad_lambda_arg_excd(cl_object bytecodes, cl_object frame)
 }
 
 static void
-VEbad_lambda_unk_keyw(cl_object bytecodes, cl_object frame)
+VEbad_lambda_unknown_keyword(cl_object bytecodes, cl_object frame)
 {
   FEprogram_error("Unknown keyword argument passed to function ~S.~&"
                   "Argument list: ~S", 2, bytecodes,
@@ -608,7 +608,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_NOMORE); {
       if (ecl_unlikely(frame_index < frame->frame.size))
-        VEbad_lambda_arg_excd(bytecodes, frame);
+        VEbad_lambda_too_many_args(bytecodes, frame);
       THREAD_NEXT;
     }
     /* OP_POPREST
@@ -669,7 +669,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
           }
         }
         if (ecl_likely(count && Null(aok))) {
-          VEbad_lambda_unk_keyw(bytecodes, frame);
+          VEbad_lambda_unknown_keyword(bytecodes, frame);
         }
       }
       THREAD_NEXT;
