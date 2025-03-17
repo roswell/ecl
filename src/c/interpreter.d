@@ -981,9 +981,9 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        OP_VSETQC    n{lex}, nvalue{arg}
        OP_VSETQS    n{dat}, nvalue{arg}
 
-       Sets either the n-th variable to either the value in REG0 (OP_SETQ[S]) or
-       to the first value on the stack (OP_PSETQ[S]), or to a given value from
-       the multiple values array (OP_VSETQ[S]). Note that NVALUE > 0 strictly.
+       Sets either the n-th variable to either the value in REG0 (OP_SETQ[CS])
+       or to the first value on the stack (OP_PSETQ[CS]), or to a given value
+       from the multiple values array (OP_VSETQ[CS]). Note NVALUE > 0 strictly.
     */
     CASE(OP_SETQ); {
       int ndx;
