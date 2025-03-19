@@ -2528,3 +2528,12 @@
     (is (equal (funcall (funcall f0)) '((1 2 3) . 42)))
     (is (equal (funcall (funcall f1)) '((1 2 3) . 42)))
     (is (equal (funcall (funcall f2)) '((1 2 3) . 42)))))
+
+;;; When we compile a file it is sometimes not possible to store all definitions
+;;; readably. Make sure that the compiler does not error in such cases.
+(deftest cmp.0107.unreadable-definition ()
+  (finishes
+   (with-compiler ("unreadable-definition.lsp")
+     '(macrolet ((def-it (name)
+                  `(defun test () ,(find-package name))))
+       (def-it "COMMON-LISP")))))
