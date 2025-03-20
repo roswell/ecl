@@ -152,15 +152,14 @@ ecl_lcl_env_get_record(cl_object env, int s)
 static cl_object
 make_lex(cl_index n)
 {
-  return si_make_vector(ECL_T, ecl_make_fixnum(n),
-                        ECL_T, ecl_make_fixnum(0),
-                        ECL_NIL, ECL_NIL);
+  return si_make_vector(ECL_T, ecl_make_fixnum(n), ECL_NIL,
+                        ecl_make_fixnum(0), ECL_NIL, ECL_NIL);
 }
 
 static void
 push_lex(cl_object stack, cl_object new)
 {
-  cl_vector_push_extend(2, new, stack);
+  cl_vector_push(new, stack);
 }
 
 static cl_object *
