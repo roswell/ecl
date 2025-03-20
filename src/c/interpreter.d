@@ -134,20 +134,25 @@ ecl_lcl_env_get_record(cl_object env, int s)
   } while(1);
 }
 
+static cl_object
+ecl_lex_env_get_record(cl_object env, int s)
+{
+  return env->vector.self.t[s];
+}
+
 #define ecl_lcl_env_get_fun(env,x) ecl_lcl_env_get_record(env,x)
 #define ecl_lcl_env_get_blk(env,x) ecl_lcl_env_get_record(env,x)
 #define ecl_lcl_env_get_tag(env,x) ecl_lcl_env_get_record(env,x)
 #define ecl_lcl_env_get_var(env,x) ECL_CONS_CDR(ecl_lcl_env_get_record(env,x))
 #define ecl_lcl_env_set_var(env,x,v) ECL_RPLACD(ecl_lcl_env_get_record(env,x),(v))
 
-#define ecl_lex_env_get_record(env,x) env[x]
 #define ecl_lex_env_get_fun(env,x) ecl_lex_env_get_record(env,x)
 #define ecl_lex_env_get_blk(env,x) ecl_lex_env_get_record(env,x)
 #define ecl_lex_env_get_tag(env,x) ecl_lex_env_get_record(env,x)
 #define ecl_lex_env_get_var(env,x) ECL_CONS_CDR(ecl_lex_env_get_record(env,x))
 #define ecl_lex_env_set_var(env,x,v) ECL_RPLACD(ecl_lex_env_get_record(env,x),(v))
 
-/* -- Lexenv operators --------------------------------------------------- */
+/* -- Lexical and local env operators ------------------------------------------ */
 
 static cl_object
 make_lex(cl_index n)
@@ -160,12 +165,6 @@ static void
 push_lex(cl_object stack, cl_object new)
 {
   cl_vector_push(new, stack);
-}
-
-static cl_object *
-data_lex(cl_object stack)
-{
-  return stack->vector.self.t;
 }
 
 /* -------------------- AIDS TO THE INTERPRETER -------------------- */
@@ -241,7 +240,7 @@ close_around_self(cl_object fun) {
 }
 
 static void
-close_around_self_fixup(cl_object fun, cl_object lcl_env, cl_object *lex_env) {
+close_around_self_fixup(cl_object fun, cl_object lcl_env, cl_object lex_env) {
   cl_object new_lex, template, entry;
   cl_fixnum nlex, idx, ndx;
   switch(ecl_t_of(fun)) {
@@ -273,7 +272,7 @@ close_around_self_fixup(cl_object fun, cl_object lcl_env, cl_object *lex_env) {
 
 
 cl_object
-ecl_close_around(cl_object fun, cl_object lcl_env, cl_object *lex_env) {
+ecl_close_around(cl_object fun, cl_object lcl_env, cl_object lex_env) {
   cl_object v, new_lex, template, entry;
   cl_fixnum nlex, idx, ndx;
   if(ecl_t_of(fun) != t_bytecodes)
@@ -337,7 +336,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   volatile cl_index frame_index = 0;
   cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
   cl_object *data = bytecodes->bytecodes.data->vector.self.t;
-  cl_object *lex_env = Null(closure) ? NULL : data_lex(closure);
+  cl_object lex_env = closure;
   cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lcl_env = NULL;
   cl_index narg;
   struct ecl_stack_frame frame_aux;
