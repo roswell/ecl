@@ -398,11 +398,6 @@ c_register_captured(cl_env_ptr env, cl_object c)
   return (n < 0) ? asm_captured(env, c) : n;
 }
 
-static void
-asm_arg_flex(cl_env_ptr env, cl_object o) {
-  asm_arg(env, c_register_captured(env, o));
-}
-
 /*
  * Note: the following should match the definitions in cmp/cmpenv.lsp, as
  * well as CMP-ENV-REGISTER-MACROLET (lsp/defmacro.lsp)
