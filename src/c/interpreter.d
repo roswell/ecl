@@ -367,7 +367,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_VAR); {
       cl_fixnum ndx;
       GET_OPARG(ndx, vector);
-      reg0 = ecl_lex_env_get_var(lcl_env, -ndx-1);
+      reg0 = ecl_lex_env_get_var(lcl_env, ndx);
       THREAD_NEXT;
     }
     CASE(OP_VARC); {
@@ -462,7 +462,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PUSHV); {
       int ndx;
       GET_OPARG(ndx, vector);
-      ECL_STACK_PUSH(the_env, ecl_lex_env_get_var(lcl_env, -ndx-1));
+      ECL_STACK_PUSH(the_env, ecl_lex_env_get_var(lcl_env, ndx));
       THREAD_NEXT;
     }
     CASE(OP_PUSHVC); {
@@ -740,7 +740,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_LFUNCTION); {
       int ndx;
       GET_OPARG(ndx, vector);
-      reg0 = ecl_lex_env_get_fun(lcl_env, -ndx-1);
+      reg0 = ecl_lex_env_get_fun(lcl_env, ndx);
       THREAD_NEXT;
     }
     CASE(OP_CFUNCTION); {
@@ -787,7 +787,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       cl_object record;
       GET_OPARG(ndx, vector);
       GET_OPARG(tag_ndx, vector);
-      record = ecl_lex_env_get_tag(lcl_env, -ndx-1);
+      record = ecl_lex_env_get_tag(lcl_env, ndx);
       /* record = (id . ???) */
       cl_go(ECL_CONS_CAR(record), ecl_make_fixnum(tag_ndx));
       THREAD_NEXT;
@@ -813,7 +813,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       cl_object record;
       GET_OPARG(ndx, vector);
       /* record = (id . name) */
-      record = ecl_lex_env_get_blk(lcl_env, -ndx-1);
+      record = ecl_lex_env_get_blk(lcl_env, ndx);
       the_env->values[0] = reg0;
       cl_return_from(ECL_CONS_CAR(record), ECL_CONS_CDR(record));
       THREAD_NEXT;
@@ -982,7 +982,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_SETQ); {
       int ndx;
       GET_OPARG(ndx, vector);
-      ecl_lex_env_set_var(lcl_env, -ndx-1, reg0);
+      ecl_lex_env_set_var(lcl_env, ndx, reg0);
       THREAD_NEXT;
     }
     CASE(OP_SETQC); {
@@ -1003,7 +1003,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PSETQ); {
       int ndx;
       GET_OPARG(ndx, vector);
-      ecl_lex_env_set_var(lcl_env, -ndx-1, ECL_STACK_POP_UNSAFE(the_env));
+      ecl_lex_env_set_var(lcl_env, ndx, ECL_STACK_POP_UNSAFE(the_env));
       THREAD_NEXT;
     }
     CASE(OP_PSETQC); {
@@ -1028,7 +1028,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       value = (index >= the_env->nvalues)
         ? ECL_NIL
         : the_env->values[index];
-      ecl_lex_env_set_var(lcl_env, -ndx-1, value);
+      ecl_lex_env_set_var(lcl_env, ndx, value);
       THREAD_NEXT;
     }
     CASE(OP_VSETQC); {

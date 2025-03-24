@@ -751,7 +751,7 @@ c_any_ref(cl_env_ptr env, cl_object entry)
         output.index = c_register_captured(env, record);
       } else {
         output.place = ECL_CMPREF_LOCAL;
-        output.index = n;
+        output.index = -n-1;
       }
       output.entry = record;
       return output;
@@ -792,7 +792,7 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag)
           output.index = c_register_captured(env, record);
         } else {
           output.place = ECL_CMPREF_LOCAL;
-          output.index = n;
+          output.index = -n-1;
         }
         output.entry = record;
         output.label = ecl_fixnum(ECL_CONS_CDR(label));
@@ -836,7 +836,7 @@ c_blk_ref(cl_env_ptr env, cl_object the_tag)
           output.index = c_register_captured(env, record);
         } else {
           output.place = ECL_CMPREF_LOCAL;
-          output.index = n;
+          output.index = -n-1;
         }
         output.entry = record;
         return output;
@@ -880,7 +880,7 @@ c_fun_ref(cl_env_ptr env, cl_object the_tag)
           output.index = c_register_captured(env, record);
         } else {
           output.place = ECL_CMPREF_LOCAL;
-          output.index = n;
+          output.index = -n-1;
         }
         output.entry = record;
         return output;
@@ -933,7 +933,7 @@ c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def)
         output.index = c_register_captured(env, record);
       } else {
         output.place = ECL_CMPREF_LOCAL;
-        output.index = n;
+        output.index = -n-1;
       }
       output.entry = record;
       output.label = ECL_CMPVAR_LEXICAL;
@@ -3634,7 +3634,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
       ref = c_any_ref(env, entry);
       switch(ref.place) {
       case ECL_CMPREF_LOCAL:
-        flex->vector.self.t[i] = ecl_make_fixnum(-ref.index-1);
+        flex->vector.self.t[i] = ecl_make_fixnum(ref.index);
         break;
       case ECL_CMPREF_CLOSE:
         flex->vector.self.t[i] = ecl_make_fixnum(ref.index);
