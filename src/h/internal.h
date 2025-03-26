@@ -250,8 +250,9 @@ struct cl_compiler_env {
                                          * with make-load-form */
         cl_object lex_env;              /* Lexical env. for eval-when */
         cl_object code_walker;          /* Value of SI:*CODE-WALKER* */
-        cl_index env_depth;
-        cl_index env_size;
+        cl_index env_depth;             /* Environment nesting level */
+        cl_index env_width;             /* Environment maximal size */
+        cl_index env_size;              /* Environment current size */
         int mode;
         bool stepping;
         bool function_boundary_crossed;

@@ -647,6 +647,7 @@ void init_type_info (void)
     to_bitmap(&o, &(o.bytecodes.code)) |
     to_bitmap(&o, &(o.bytecodes.data)) |
     to_bitmap(&o, &(o.bytecodes.flex)) |
+    to_bitmap(&o, &(o.bytecodes.nlcl)) |
     to_bitmap(&o, &(o.bytecodes.file)) |
     to_bitmap(&o, &(o.bytecodes.file_position));
   type_info[t_bclosure].descriptor =

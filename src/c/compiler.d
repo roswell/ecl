@@ -164,6 +164,13 @@ push(cl_object v, cl_object *l) {
   return *l;
 }
 
+static void
+c_env_sync_width(cl_compiler_ptr c_env)
+{
+  if(c_env->env_size > c_env->env_width)
+    c_env->env_width = c_env->env_size;
+}
+
 /* ------------------------------ ASSEMBLER ------------------------------ */
 
 static cl_object
@@ -190,6 +197,8 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
   bytecodes->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
   bytecodes->bytecodes.data = c_env->constants;
   bytecodes->bytecodes.flex = ECL_NIL;
+  c_env_sync_width(c_env);
+  bytecodes->bytecodes.nlcl = ecl_make_fixnum(c_env->env_width);
   for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
     code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
   }
@@ -618,6 +627,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->mode = FLAG_EXECUTE;
     new->function_boundary_crossed = 0;
   }
+  new->env_width = 0;
   new->env_size = 0;
 }
 
@@ -1088,6 +1098,8 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
       }
     }
   c_env->variables = env;
+  c_env_sync_width(c_env);
+  c_env->env_size -= num_lexical;
   if (num_lexical) asm_op2(the_env, OP_UNBIND, num_lexical);
   if (num_special) asm_op2(the_env, OP_UNBINDS, num_special);
 }
@@ -2748,6 +2760,7 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
                                       ECL_NIL);
   new_c_env.parent_env = NULL;
   new_c_env.env_depth = 0;
+  new_c_env.env_width = 0;
   new_c_env.env_size = 0;
   env->c_env = &new_c_env;
   handle = asm_begin(env);
@@ -3608,6 +3621,10 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   output = asm_end(env, handle, lambda);
   output->bytecodes.name = name;
   output->bytecodes.flex = ECL_NIL;
+  /* Technically we could deal with a smaller vector because variables are
+     unbound, so there is a maximal number of locals bound simultaneously. */
+  c_env_sync_width(new_c_env);
+  output->bytecodes.nlcl = ecl_make_fixnum(new_c_env->env_width);
 
   old_c_env->load_time_forms = new_c_env->load_time_forms;
 

@@ -139,10 +139,11 @@ push_lex(cl_object stack, cl_object new)
   cl_index fillp = stack->vector.fillp;
   cl_index dim = stack->vector.dim;
   if (fillp == dim) {
-    cl_index new_dim = dim + dim/2 + 1;
-    cl_object new_stack = make_lex(new_dim);
-    ecl_copy_subarray(new_stack, 0, stack, 0, fillp);
-    stack->vector = new_stack->vector;
+    ecl_miscompilation_error();
+    /* cl_index new_dim = dim + dim/2 + 1; */
+    /* cl_object new_stack = make_lex(new_dim); */
+    /* ecl_copy_subarray(new_stack, 0, stack, 0, fillp); */
+    /* stack->vector = new_stack->vector; */
   }
   stack->vector.self.t[fillp++] = new;
   stack->vector.fillp = fillp;
@@ -350,9 +351,10 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     const cl_env_ptr the_env = frame->frame.env;
   volatile cl_index frame_index = 0;
   cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
+  cl_index nlcl = ecl_fixnum(bytecodes->bytecodes.nlcl);
   cl_object *data = bytecodes->bytecodes.data->vector.self.t;
   cl_object lex_env = closure;
-  cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lcl_env = make_lex(0);
+  cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lcl_env = make_lex(nlcl);
   cl_index narg;
   struct ecl_stack_frame frame_aux;
   volatile struct ecl_ihs_frame ihs;

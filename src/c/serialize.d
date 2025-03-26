@@ -328,6 +328,7 @@ serialize_one(pool_t pool, cl_object what)
     buffer->bytecodes.definition = enqueue(pool, buffer->bytecodes.definition);
     buffer->bytecodes.data = enqueue(pool, buffer->bytecodes.data);
     buffer->bytecodes.flex = enqueue(pool, buffer->bytecodes.flex);
+    buffer->bytecodes.nlcl = enqueue(pool, buffer->bytecodes.nlcl);
     buffer->bytecodes.file = enqueue(pool, buffer->bytecodes.file);
     buffer->bytecodes.file_position = enqueue(pool, buffer->bytecodes.file_position);
     buffer->bytecodes.code_size = serialize_bits(pool, buffer->bytecodes.code,
@@ -616,6 +617,7 @@ fixup(cl_object o, cl_object *o_list)
     o->bytecodes.definition = get_object(o->bytecodes.definition, o_list);
     o->bytecodes.data = get_object(o->bytecodes.data, o_list);
     o->bytecodes.flex = get_object(o->bytecodes.flex, o_list);
+    o->bytecodes.nlcl = get_object(o->bytecodes.nlcl, o_list);
     o->bytecodes.file = get_object(o->bytecodes.file, o_list);
     o->bytecodes.file_position = get_object(o->bytecodes.file_position, o_list);
     o->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;
