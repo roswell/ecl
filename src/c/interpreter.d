@@ -121,26 +121,26 @@ VEclose_around_arg_type()
  *      sym_macro = ( si::symbol-macro macro_function[bytecodes] . macro_name )
  */
 
-#define bind_var(env, var, val)   push_lcl(env, CONS(var, val))
-#define bind_function(env, fun)   push_lcl(env, fun)
-#define bind_frame(env, id, name) push_lcl(env, CONS(id, name))
+/* -- Lexical and local env operators ------------------------------------------ */
 
-#define unbind_lcl(env, n) drop_lcl(env, n)
+#define bind_var(env, var, val)   push_lex(env, CONS(var, val))
+#define bind_function(env, fun)   push_lex(env, fun)
+#define bind_frame(env, id, name) push_lex(env, CONS(id, name))
 
 static cl_object
-make_lcl(cl_index n)
+make_lex(cl_index n)
 {
   return ecl_make_stack(n);
 }
 
 static void
-push_lcl(cl_object stack, cl_object new)
+push_lex(cl_object stack, cl_object new)
 {
   cl_index fillp = stack->vector.fillp;
   cl_index dim = stack->vector.dim;
   if (fillp == dim) {
     cl_index new_dim = dim + dim/2 + 1;
-    cl_object new_stack = make_lcl(new_dim);
+    cl_object new_stack = make_lex(new_dim);
     ecl_copy_subarray(new_stack, 0, stack, 0, fillp);
     stack->vector = new_stack->vector;
   }
@@ -149,7 +149,7 @@ push_lcl(cl_object stack, cl_object new)
 }
 
 static void
-drop_lcl(cl_object stack, cl_fixnum n)
+drop_lex(cl_object stack, cl_fixnum n)
 {
   cl_index fillp = stack->vector.fillp;
   while (n--) stack->vector.self.t[--fillp] = ECL_NIL;
@@ -157,16 +157,16 @@ drop_lcl(cl_object stack, cl_fixnum n)
 }
 
 static cl_object
-tangle_lcl(cl_object stack)
+tangle_lex(cl_object stack)
 {
   return ecl_make_fixnum(stack->vector.fillp);
 }
 
 static void
-unwind_lcl(cl_object stack, cl_object where)
+unwind_lex(cl_object stack, cl_object where)
 {
   cl_fixnum nth = ecl_fixnum(where);
-  drop_lcl(stack, stack->vector.fillp - nth);
+  drop_lex(stack, stack->vector.fillp - nth);
 }
 
 static cl_object
@@ -181,21 +181,6 @@ ecl_lex_env_get_record(cl_object env, int s)
 #define ecl_lex_env_get_tag(env,x) ecl_lex_env_get_record(env,x)
 #define ecl_lex_env_get_var(env,x) ECL_CONS_CDR(ecl_lex_env_get_record(env,x))
 #define ecl_lex_env_set_var(env,x,v) ECL_RPLACD(ecl_lex_env_get_record(env,x),(v))
-
-/* -- Lexical and local env operators ------------------------------------------ */
-
-static cl_object
-make_lex(cl_index n)
-{
-  return si_make_vector(ECL_T, ecl_make_fixnum(n), ECL_NIL,
-                        ecl_make_fixnum(0), ECL_NIL, ECL_NIL);
-}
-
-static void
-push_lex(cl_object stack, cl_object new)
-{
-  cl_vector_push(new, stack);
-}
 
 /* -------------------- AIDS TO THE INTERPRETER -------------------- */
 
@@ -367,7 +352,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
   cl_object *data = bytecodes->bytecodes.data->vector.self.t;
   cl_object lex_env = closure;
-  cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lcl_env = make_lcl(0);
+  cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lcl_env = make_lex(0);
   cl_index narg;
   struct ecl_stack_frame frame_aux;
   volatile struct ecl_ihs_frame ihs;
@@ -723,7 +708,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       int idx, nfun;
       cl_object fun_env, fun;
       GET_OPARG(nfun, vector);
-      fun_env = make_lcl(nfun);
+      fun_env = make_lex(nfun);
       /* Create closures. */
       for(idx = 0; idx<nfun; idx++) {
         GET_DATA(fun, vector, data);
@@ -930,7 +915,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_UNBIND); {
       cl_oparg n;
       GET_OPARG(n, vector);
-      unbind_lcl(lcl_env, n);
+      drop_lex(lcl_env, n);
       THREAD_NEXT;
     }
     /* OP_UNBINDS   n{arg}
@@ -1114,7 +1099,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_FRAME); {
       cl_opcode *exit;
       GET_LABEL(exit, vector);
-      ECL_STACK_PUSH(the_env, tangle_lcl(lcl_env));
+      ECL_STACK_PUSH(the_env, tangle_lex(lcl_env));
       ECL_STACK_PUSH(the_env, (cl_object)exit);
       ecl_frs_push(the_env,reg1);
       if (__ecl_frs_push_result == 0) {
@@ -1122,7 +1107,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       } else {
         reg0 = the_env->values[0];
         vector = (cl_opcode *)ECL_STACK_REF(the_env,-1); /* FIXME! */
-        unwind_lcl(lcl_env, ECL_STACK_REF(the_env,-2));
+        unwind_lex(lcl_env, ECL_STACK_REF(the_env,-2));
         goto DO_EXIT_FRAME;
       }
     }
@@ -1142,7 +1127,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_TAGBODY); {
       int n;
       GET_OPARG(n, vector);
-      ECL_STACK_PUSH(the_env, tangle_lcl(lcl_env));
+      ECL_STACK_PUSH(the_env, tangle_lex(lcl_env));
       ECL_STACK_PUSH(the_env, (cl_object)vector); /* FIXME! */
       vector += n * OPARG_SIZE;
       ecl_frs_push(the_env,reg1);
@@ -1151,7 +1136,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
            ranges from 0 to ntags-1, depending on the tag. These numbers are
            indices into the jump table and are computed at compile time. */
         cl_opcode *table = (cl_opcode *)ECL_STACK_REF(the_env,-1);
-        unwind_lcl(lcl_env, ECL_STACK_REF(the_env,-2));
+        unwind_lex(lcl_env, ECL_STACK_REF(the_env,-2));
         table = table + ecl_fixnum(the_env->values[0]) * OPARG_SIZE;
         vector = table + *(cl_oparg *)table;
       }
@@ -1164,7 +1149,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     DO_EXIT_FRAME:
       ecl_frs_pop(the_env);
       ECL_STACK_POP_N_UNSAFE(the_env, 2);
-      unbind_lcl(lcl_env, 1);
+      drop_lex(lcl_env, 1);
       THREAD_NEXT;
     }
     CASE(OP_NIL); {
@@ -1268,13 +1253,13 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_PROTECT); {
       cl_opcode *exit;
       GET_LABEL(exit, vector);
-      ECL_STACK_PUSH(the_env, tangle_lcl(lcl_env));
+      ECL_STACK_PUSH(the_env, tangle_lex(lcl_env));
       ECL_STACK_PUSH(the_env, (cl_object)exit);
       ecl_frs_push(the_env,ECL_PROTECT_TAG);
       if (__ecl_frs_push_result != 0) {
         ecl_frs_pop(the_env);
         vector = (cl_opcode *)ECL_STACK_POP_UNSAFE(the_env);
-        unwind_lcl(lcl_env, ECL_STACK_POP_UNSAFE(the_env));
+        unwind_lex(lcl_env, ECL_STACK_POP_UNSAFE(the_env));
         reg0 = the_env->values[0];
         ECL_STACK_PUSH(the_env, ecl_make_fixnum(the_env->nlj_fr - the_env->frs_top));
         goto PUSH_VALUES;
@@ -1285,7 +1270,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       ecl_bds_unwind(the_env, the_env->frs_top->frs_bds_top_index);
       ecl_frs_pop(the_env);
       (void)ECL_STACK_POP_UNSAFE(the_env);
-      unwind_lcl(lcl_env, ECL_STACK_POP_UNSAFE(the_env));
+      unwind_lex(lcl_env, ECL_STACK_POP_UNSAFE(the_env));
       ECL_STACK_PUSH(the_env, ecl_make_fixnum(1));
       goto PUSH_VALUES;
     }
