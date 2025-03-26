@@ -121,41 +121,59 @@ VEclose_around_arg_type()
  *      sym_macro = ( si::symbol-macro macro_function[bytecodes] . macro_name )
  */
 
-#define bind_var(env, var, val)   push_lcl(&env, CONS(var, val))
-#define bind_function(env, fun)   push_lcl(&env, fun)
-#define bind_frame(env, id, name) push_lcl(&env, CONS(id, name))
+#define bind_var(env, var, val)   push_lcl(env, CONS(var, val))
+#define bind_function(env, fun)   push_lcl(env, fun)
+#define bind_frame(env, id, name) push_lcl(env, CONS(id, name))
 
-#define unbind_lcl(env, n) drop_lcl(&env, n)
-#define tangle_lcl(stack) stack
-#define unwind_lcl(stack, where) stack = where
+#define unbind_lcl(env, n) drop_lcl(env, n)
 
-static void
-push_lcl(cl_object *stack, cl_object new)
+static cl_object
+make_lcl(cl_index n)
 {
-  *stack = ecl_cons(new, *stack);
+  return ecl_make_stack(n);
 }
 
 static void
-drop_lcl(cl_object *stack, cl_fixnum n)
+push_lcl(cl_object stack, cl_object new)
 {
-  while (n--) *stack = ECL_CONS_CDR(*stack);
+  cl_index fillp = stack->vector.fillp;
+  cl_index dim = stack->vector.dim;
+  if (fillp == dim) {
+    cl_index new_dim = dim + dim/2 + 1;
+    cl_object new_stack = make_lcl(new_dim);
+    ecl_copy_subarray(new_stack, 0, stack, 0, fillp);
+    stack->vector = new_stack->vector;
+  }
+  stack->vector.self.t[fillp++] = new;
+  stack->vector.fillp = fillp;
+}
+
+static void
+drop_lcl(cl_object stack, cl_fixnum n)
+{
+  cl_index fillp = stack->vector.fillp;
+  while (n--) stack->vector.self.t[--fillp] = ECL_NIL;
+  stack->vector.fillp = fillp;
 }
 
 static cl_object
-ecl_lcl_env_get_record(cl_object env, int s)
+tangle_lcl(cl_object stack)
 {
-  do {
-    if (s-- == 0) return ECL_CONS_CAR(env);
-    env = ECL_CONS_CDR(env);
-  } while(1);
+  return ecl_make_fixnum(stack->vector.fillp);
+}
+
+static void
+unwind_lcl(cl_object stack, cl_object where)
+{
+  cl_fixnum nth = ecl_fixnum(where);
+  drop_lcl(stack, stack->vector.fillp - nth);
 }
 
 static cl_object
 ecl_lex_env_get_record(cl_object env, int s)
 {
-  return (s<0)
-    ? ecl_lcl_env_get_record(env, -s-1) /* access from top */
-    : env->vector.self.t[s];
+  cl_index idx = (s<0) ? (env->vector.fillp+s) : s;
+  return env->vector.self.t[idx];
 }
 
 #define ecl_lex_env_get_fun(env,x) ecl_lex_env_get_record(env,x)
@@ -349,7 +367,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
   cl_object *data = bytecodes->bytecodes.data->vector.self.t;
   cl_object lex_env = closure;
-  cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lcl_env = NULL;
+  cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lcl_env = make_lcl(0);
   cl_index narg;
   struct ecl_stack_frame frame_aux;
   volatile struct ecl_ihs_frame ihs;
@@ -703,8 +721,9 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_FLET); {
       int idx, nfun;
-      cl_object fun_env=ECL_NIL, fun;
+      cl_object fun_env, fun;
       GET_OPARG(nfun, vector);
+      fun_env = make_lcl(nfun);
       /* Create closures. */
       for(idx = 0; idx<nfun; idx++) {
         GET_DATA(fun, vector, data);
@@ -712,7 +731,10 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
         bind_function(fun_env, fun);
       }
       /* Update the environment with new functions. */
-      lcl_env = ecl_append(fun_env, lcl_env);
+      for(idx = 0; idx<nfun; idx++) {
+        fun = ecl_lex_env_get_fun(fun_env, idx);
+        bind_function(lcl_env, fun);
+      }
       THREAD_NEXT;
     }
     /* OP_LABELS    nfun{arg}
@@ -726,25 +748,19 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        the functions "fun1" ... "funn".
     */
     CASE(OP_LABELS); {
-      cl_index nfun;
+      cl_index idx, nfun;
+      cl_object fun;
       GET_OPARG(nfun, vector);
       /* Build up a new environment with all functions */
-      {
-        cl_index i = nfun;
-        do {
-          cl_object f;
-          GET_DATA(f, vector, data);
-          f = close_around_self(f);
-          bind_function(lcl_env, f);
-        } while (--i);
+      for(idx = 0; idx<nfun; idx++) {
+        GET_DATA(fun, vector, data);
+        fun = close_around_self(fun);
+        bind_function(lcl_env, fun);
       }
       /* Update the closures so that all functions can call each other */
-      {
-        cl_object l = lcl_env;
-        do {
-          close_around_self_fixup(ECL_CONS_CAR(l), lcl_env, lex_env);
-          l = ECL_CONS_CDR(l);
-        } while (--nfun);
+      for(idx = 0; idx<nfun; idx++) {
+        fun = ecl_lex_env_get_fun(lcl_env, -idx-1);
+        close_around_self_fixup(fun, lcl_env, lex_env);
       }
       THREAD_NEXT;
     }
