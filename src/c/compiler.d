@@ -653,6 +653,7 @@ static void
 close_around_macros(cl_env_ptr env, cl_object mfun)
 {
   cl_object lex = mfun->bclosure.lex, record;
+  if(Null(lex)) return;
   cl_object *lex_vec = lex->vector.self.t;
   for (cl_index i = 0; i < lex->vector.dim; i++) {
     cl_object reg = lex_vec[i]; /* INV see interpreter.d for lexenv structure */

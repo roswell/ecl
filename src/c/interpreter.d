@@ -130,12 +130,14 @@ VEclose_around_arg_type()
 static cl_object
 make_lex(cl_index n)
 {
+  if(!n) return ECL_NIL;
   return ecl_make_stack(n);
 }
 
 static void
 push_lex(cl_object stack, cl_object new)
 {
+  if(Null(stack)) ecl_miscompilation_error();
   cl_index fillp = stack->vector.fillp;
   cl_index dim = stack->vector.dim;
   if (fillp == dim) {
@@ -152,6 +154,7 @@ push_lex(cl_object stack, cl_object new)
 static void
 drop_lex(cl_object stack, cl_fixnum n)
 {
+  if(Null(stack)) ecl_miscompilation_error();
   cl_index fillp = stack->vector.fillp;
   while (n--) stack->vector.self.t[--fillp] = ECL_NIL;
   stack->vector.fillp = fillp;
@@ -160,12 +163,14 @@ drop_lex(cl_object stack, cl_fixnum n)
 static cl_object
 tangle_lex(cl_object stack)
 {
+  if(Null(stack)) return ECL_NIL;
   return ecl_make_fixnum(stack->vector.fillp);
 }
 
 static void
 unwind_lex(cl_object stack, cl_object where)
 {
+  if(Null(stack)) return;
   cl_fixnum nth = ecl_fixnum(where);
   drop_lex(stack, stack->vector.fillp - nth);
 }
@@ -173,6 +178,7 @@ unwind_lex(cl_object stack, cl_object where)
 static cl_object
 ecl_lex_env_get_record(cl_object env, int s)
 {
+  if(Null(env)) ecl_miscompilation_error();
   cl_index idx = (s<0) ? (env->vector.fillp+s) : s;
   return env->vector.self.t[idx];
 }
