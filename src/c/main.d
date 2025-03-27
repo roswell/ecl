@@ -190,6 +190,26 @@ init_env_aux(cl_env_ptr env)
 }
 
 void
+ecl_init_first_env(cl_env_ptr env)
+{
+#ifdef ECL_THREADS
+  init_threads();
+#endif
+#ifdef ECL_THREADS
+  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
+                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
+  env->thread_local_bindings_size = env->bindings_array->vector.dim;
+  env->thread_local_bindings = env->bindings_array->vector.self.t;
+#endif
+  init_env_mp(env);
+  init_env_int(env);
+  init_env_aux(env);
+  init_env_ffi(env);
+  init_stacks(env);
+}
+
+void
 ecl_init_env(cl_env_ptr env)
 {
   init_env_mp(env);
@@ -490,12 +510,18 @@ cl_boot(int argc, char **argv)
   ecl_self = argv[0];
 
   init_unixint(0);
-  init_alloc();
-  GC_disable();
+  init_alloc(0);
+  init_big();
+
+  /*
+   * Initialize the per-thread data.
+   * This cannot come later, because we need to be able to bind
+   * ext::*interrupts-enabled* while creating packages.
+   */
+
   env = cl_core.first_env;
-#ifdef ECL_THREADS
-  init_threads();
-#endif
+  ecl_init_first_env(env);
+  ecl_cs_set_org(env);
 
   /*
    * 1) Initialize symbols and packages
@@ -538,23 +564,6 @@ cl_boot(int argc, char **argv)
 #else
   cl_core.path_max = MAXPATHLEN;
 #endif
-
-#ifdef ECL_THREADS
-  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
-                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
-#endif
-
-  /*
-   * Initialize the per-thread data.
-   * This cannot come later, because we need to be able to bind
-   * ext::*interrupts-enabled* while creating packages.
-   */
-  init_big();
-  ecl_init_env(env);
-  ecl_cs_set_org(env);
 
   cl_core.lisp_package =
     ecl_make_package(str_common_lisp,
@@ -622,8 +631,8 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-  /* We need this because a lot of stuff is to be created */
-  GC_enable();
+  /* We need to enable GC because a lot of stuff is to be created */
+  init_alloc(1);
 
   /*
    * Set *default-pathname-defaults* to a temporary fake value. We

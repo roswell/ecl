@@ -24,7 +24,7 @@ extern "C" {
 
 /* booting */
 extern void init_all_symbols(void);
-extern void init_alloc(void);
+extern void init_alloc(int pass);
 extern void init_backq(void);
 extern void init_big();
 extern void init_clos(void);
