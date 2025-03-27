@@ -591,11 +591,10 @@ bound to this value during the execution of body."
                   0 (max 0 (1- (* nargs 3))))))
 
 ;;; FIXME! We should turn this into a closure generator that produces no code.
-#+DFFI
+#+dffi
 (defmacro def-lib-function (name args &key returning module (call :default))
   (multiple-value-bind (c-name lisp-name) (lisp-to-c-name name)
     (let* ((return-type (ffi::%convert-to-return-type returning))
-           (return-required (not (eq return-type :void)))
            (argtypes (mapcar #'(lambda (a) (ffi::%convert-to-arg-type (second a))) args)))
       `(let ((c-fun (si::find-foreign-symbol ',c-name ,module :pointer-void 0)))
         (defun ,lisp-name ,(mapcar #'first args)
