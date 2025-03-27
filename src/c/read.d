@@ -960,7 +960,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
     else
       x->vector.self.bit[i/CHAR_BIT] |= 0200 >> i%CHAR_BIT;
   }
-  ecl_vms_pop_n_unsafe(env, dimcount);
+  ecl_vms_drop(env, dimcount);
   @(return x);
 }
 

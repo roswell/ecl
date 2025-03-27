@@ -2813,7 +2813,7 @@ save_bytecodes(cl_env_ptr env, cl_index start, cl_index end)
   cl_object bytecodes = ecl_alloc_simple_vector(l, ecl_aet_index);
   cl_index *p;
   for (p = bytecodes->vector.self.index; end > start; end--, p++) {
-    *p = (cl_index)ecl_vms_pop_unsafe(env);
+    *p = (cl_index)ecl_vms_popu(env);
   }
   return bytecodes;
 }

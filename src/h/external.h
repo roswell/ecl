@@ -541,8 +541,7 @@ extern ECL_API cl_object ecl_stack_frame_pop_values(cl_object f);
 extern ECL_API void ecl_stack_frame_close(cl_object f);
 #define si_apply_from_stack_frame ecl_apply_from_stack_frame
 
-extern ECL_API void FEstack_underflow(void) ecl_attr_noreturn;
-extern ECL_API cl_object *ecl_vms_grow(cl_env_ptr env);
+extern ECL_API cl_object *ecl_vms_extend(cl_env_ptr env);
 extern ECL_API cl_object *ecl_vms_set_size(cl_env_ptr env, cl_index new_size);
 extern ECL_API cl_index ecl_vms_push_values(cl_env_ptr env);
 extern ECL_API void ecl_vms_pop_values(cl_env_ptr env, cl_index n);

@@ -888,7 +888,7 @@ nstring_case(cl_narg narg, cl_object fun, ecl_casefun casefun, ecl_va_list ARGS)
   /* Do actual copying by recovering those strings */
   output = ecl_alloc_simple_base_string(l);
   while (l) {
-    cl_object s = ecl_vms_pop_unsafe(the_env);
+    cl_object s = ecl_vms_popu(the_env);
     size_t bytes = s->base_string.fillp;
     l -= bytes;
     memcpy(output->base_string.self + l, s->base_string.self, bytes);

@@ -370,29 +370,29 @@ static inline void
 ecl_vms_push(cl_env_ptr env, cl_object o) {
   cl_object *new_top = env->run_stack.top;
   if (ecl_unlikely(new_top >= env->run_stack.limit)) {
-    new_top = ecl_vms_grow(env);
+    new_top = ecl_vms_extend(env);
   }
   env->run_stack.top = new_top+1;
   *new_top = (o);
 }
 
 static inline void
-ecl_vms_push_n(cl_env_ptr env, cl_index n) {
+ecl_vms_grow(cl_env_ptr env, cl_index n) {
   cl_object *new_top = env->run_stack.top;
   while (ecl_unlikely((env->run_stack.limit - new_top) <= n)) {
-    new_top = ecl_vms_grow(env);
+    new_top = ecl_vms_extend(env);
   }
   env->run_stack.top = new_top + n;
 }
 
 static inline cl_object
-ecl_vms_pop_unsafe(cl_env_ptr env)
+ecl_vms_popu(cl_env_ptr env)
 {
   return *(--((env)->run_stack.top));
 }
 
 static inline void
-ecl_vms_pop_n_unsafe(cl_env_ptr env, cl_index n)
+ecl_vms_drop(cl_env_ptr env, cl_index n)
 {
   env->run_stack.top -= n;
 }
