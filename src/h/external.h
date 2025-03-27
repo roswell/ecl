@@ -221,6 +221,7 @@ struct cl_core_struct {
 
         cl_object system_properties;
 
+        cl_env_ptr first_env;
 #ifdef ECL_THREADS
         cl_object processes;
         ecl_mutex_t processes_lock;
