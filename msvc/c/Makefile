@@ -108,7 +108,7 @@ OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	num_log.obj num_rand.obj array.obj vector_push.obj \
 	sequence.obj cmpaux.obj\
 	macros.obj backq.obj stacks.obj \
-	time.obj unixint.obj\
+	time.obj unixint.obj memory.obj \
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
 	structure.obj load.obj unixfsys.obj unixsys.obj \
 	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) serialize.obj \
