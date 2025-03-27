@@ -483,6 +483,7 @@ cl_boot(int argc, char **argv)
   setbuf(stdin,  stdin_buf);
   setbuf(stdout, stdout_buf);
 #endif
+  init_process();
 
   ARGC = argc;
   ARGV = argv;
@@ -492,7 +493,9 @@ cl_boot(int argc, char **argv)
   init_alloc();
   GC_disable();
   env = cl_core.first_env;
-  init_threads(env);
+#ifdef ECL_THREADS
+  init_threads();
+#endif
 
   /*
    * 1) Initialize symbols and packages

@@ -12,7 +12,7 @@ ECL_FPE_CODE=fpe_x86.c
 
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
-THREADS_OBJ= process.obj mutex.obj condition_variable.obj rwlock.obj \
+THREADS_OBJ= thread.obj mutex.obj condition_variable.obj rwlock.obj \
              semaphore.obj barrier.obj mailbox.obj atomic.obj
 !else
 ECL_THREADS_FLAG=0
@@ -111,7 +111,7 @@ OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	time.obj unixint.obj memory.obj \
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
 	structure.obj load.obj unixfsys.obj unixsys.obj \
-	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) serialize.obj \
+	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) process.obj serialize.obj \
 	$(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
