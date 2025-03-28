@@ -36,7 +36,10 @@ extern void init_GC(void);
 #endif
 extern void init_macros(void);
 extern void init_read(void);
-extern void init_stacks(cl_env_ptr);
+
+extern cl_object init_stacks(cl_env_ptr);
+extern cl_object free_stacks(cl_env_ptr);
+
 extern void init_unixint(int pass);
 extern void init_unixtime(void);
 extern void init_compiler(void);
@@ -555,6 +558,10 @@ extern cl_object ecl_deserialize(uint8_t *data);
         ecl_data_stack_pop_values(the_env,__i); }
 
 extern void ecl_cs_init(cl_env_ptr env);
+extern void ecl_frs_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_bds_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_data_stack_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_cs_set_size(cl_env_ptr env, cl_index n);
 
 #ifndef RLIM_SAVED_MAX
 # define RLIM_SAVED_MAX RLIM_INFINITY
