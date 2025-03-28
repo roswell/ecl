@@ -889,6 +889,90 @@ si_ihs_env(cl_object arg)
   ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lex_env);
 }
 
+/* -- General purpose stack implementation ----------------------------------- */
+
+/* Stacks are based on actually adjustable simple vectors. */
+cl_object
+ecl_make_stack(cl_index size)
+{
+  cl_object x = ecl_malloc(sizeof(struct ecl_vector));
+  x->vector.elttype = ecl_aet_object;
+  x->vector.self.t = NULL;
+  x->vector.displaced = ECL_NIL;
+  x->vector.dim = size;
+  x->vector.fillp = 0;
+  x->vector.flags = ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER;
+  x->vector.self.t = (cl_object *)ecl_malloc(size * sizeof(cl_object));
+  return x;
+}
+void
+ecl_free_stack(cl_object self)
+{
+  ecl_free(self->vector.self.t);
+}
+
+void
+ecl_stack_resize(cl_object self, cl_index nsize)
+{
+  cl_index osize = self->vector.dim;
+  self->vector.self.t = (cl_object *)ecl_realloc(self->vector.self.t,
+                                                 osize * sizeof(cl_object),
+                                                 nsize * sizeof(cl_object));
+  self->vector.dim = nsize;
+}
+
+void
+stack_ensure_size(cl_object self, cl_index nsize)
+{
+  if (nsize >= self->vector.dim) {
+    ecl_stack_resize(self, nsize);
+  }
+}
+
+cl_index
+ecl_stack_index(cl_object self) {
+  return self->vector.fillp;
+}
+
+cl_object
+ecl_stack_push(cl_object self, cl_object elt)
+{
+  cl_index fillp = self->vector.fillp;
+  cl_index dim = self->vector.dim;
+  if (ecl_unlikely(fillp == dim)) {
+    cl_index new_dim = dim+dim/2+1;
+    ecl_stack_resize(self, new_dim);
+  }
+  self->vector.self.t[self->vector.fillp++] = elt;
+  return self;
+}
+
+cl_object
+ecl_stack_del(cl_object self, cl_object elt)
+{
+  cl_index idx;
+  cl_index ndx = self->vector.fillp;
+  cl_object *v = self->vector.self.t;
+  for(idx = 0; idx < ndx; idx++) {
+    if (v[idx] == elt) {
+      do { v[idx] = v[idx+1]; } while (++idx <= ndx);
+      ecl_stack_popu(self);
+      break;
+    }
+  }
+  return self;
+}
+
+/* Unsafe operations */
+
+cl_object
+ecl_stack_popu(cl_object self)
+{
+  cl_object result = self->vector.self.t[--self->vector.fillp];
+  self->vector.self.t[self->vector.fillp] = ECL_NIL;
+  return result;
+}
+
 /* -- Lisp ops on stacks ---------------------------------------------------- */
 
 cl_object
