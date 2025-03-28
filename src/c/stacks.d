@@ -52,6 +52,8 @@ cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
   cl_index margin = ecl_option_values[ECL_OPT_C_STACK_SAFETY_AREA];
+  if (new_size > env->c_stack.max_size)
+    new_size = env->c_stack.max_size;
 #if defined(ECL_CAN_SET_STACK_SIZE)
   {
     struct rlimit rl;
@@ -118,26 +120,11 @@ ecl_cs_overflow(void)
     env->c_stack.limit += margin;
 #endif
   else
-    ecl_unrecoverable_error(env, stack_overflow_msg);
-  ECL_UNWIND_PROTECT_BEGIN(env) {
-    if (env->c_stack.max_size == (cl_index)0 || env->c_stack.size < env->c_stack.max_size)
-      cl_cerror(6, @"Extend stack size",
-                @'ext::stack-overflow',
-                @':size', ecl_make_fixnum(size),
-                @':type', @'ext::c-stack');
-    else
-      cl_error(5,
-               @'ext::stack-overflow',
-               @':size', ECL_NIL,
-               @':type', @'ext::c-stack');
-  } ECL_UNWIND_PROTECT_EXIT {
-    /* reset margin */
-    cs_set_size(env, size);
-  } ECL_UNWIND_PROTECT_END;
-  size += size/2;
-  if (size > env->c_stack.max_size)
-    size = env->c_stack.max_size;
-  cs_set_size(env, size);
+    ecl_internal_error(stack_overflow_msg);
+  if (env->c_stack.max_size == (cl_index)0 || env->c_stack.size < env->c_stack.max_size)
+    CEstack_overflow(@'ext::c-stack', ecl_make_fixnum(size), ECL_T);
+  else
+    CEstack_overflow(@'ext::c-stack', ecl_make_fixnum(size), ECL_NIL);
 }
 
 /* ------------------------- LISP STACK ------------------------------- */
@@ -340,18 +327,10 @@ ecl_bds_overflow(void)
   ecl_bds_ptr org = env->bds_stack.org;
   ecl_bds_ptr last = org + size;
   if (env->bds_stack.limit >= last) {
-    ecl_unrecoverable_error(env, stack_overflow_msg);
+    ecl_internal_error(stack_overflow_msg);
   }
   env->bds_stack.limit += margin;
-  ECL_UNWIND_PROTECT_BEGIN(env) {
-    cl_cerror(6, @"Extend stack size",
-              @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
-              @':type', @'ext::binding-stack');
-  } ECL_UNWIND_PROTECT_EXIT {
-    /* reset margin */
-    bds_set_limit(env, limit_size);
-  } ECL_UNWIND_PROTECT_END;
-  bds_set_limit(env, limit_size + (limit_size / 2));
+  CEstack_overflow(@'ext::binding-stack', ecl_make_fixnum(size), ECL_T);
   return env->bds_stack.top;
 }
 
@@ -700,7 +679,7 @@ frs_set_limit(cl_env_ptr env, cl_index new_lim_size)
 }
 
 static void
-frs_overflow(void)              /* used as condition in list.d */
+frs_overflow(void)
 {
   static const char *stack_overflow_msg =
     "\n;;;\n;;; Frame stack overflow.\n"
@@ -713,18 +692,10 @@ frs_overflow(void)              /* used as condition in list.d */
   ecl_frame_ptr org = env->frs_stack.org;
   ecl_frame_ptr last = org + size;
   if (env->frs_stack.limit >= last) {
-    ecl_unrecoverable_error(env, stack_overflow_msg);
+    ecl_internal_error(stack_overflow_msg);
   }
   env->frs_stack.limit += margin;
-  ECL_UNWIND_PROTECT_BEGIN(env) {
-    cl_cerror(6, @"Extend stack size",
-              @'ext::stack-overflow', @':size', ecl_make_fixnum(size),
-              @':type', @'ext::frame-stack');
-  } ECL_UNWIND_PROTECT_EXIT {
-    /* reset margin */
-    frs_set_limit(env, limit_size);
-  } ECL_UNWIND_PROTECT_END;
-  frs_set_limit(env, limit_size + limit_size / 2);
+  CEstack_overflow(@'ext::frame-stack', ecl_make_fixnum(size), ECL_T);
 }
 
 ecl_frame_ptr
