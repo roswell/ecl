@@ -320,6 +320,11 @@ extern ECL_API cl_index cl_num_symbols_in_core;
 extern ECL_API cl_object APPLY_fixed(cl_narg n, cl_object (*f)(), cl_object *x);
 extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn, cl_object *x);
 
+/* stack.c */
+extern ECL_API cl_object ecl_make_stack(cl_index dim);
+extern ECL_API cl_object ecl_stack_push(cl_object stack, cl_object elt);
+extern ECL_API cl_object ecl_stack_del(cl_object stack, cl_object elt);
+extern ECL_API cl_object ecl_stack_popu(cl_object stack);
 
 /* array.c */
 
