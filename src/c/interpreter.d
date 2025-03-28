@@ -131,7 +131,7 @@ static cl_object
 make_lex(cl_index n)
 {
   if(!n) return ECL_NIL;
-  return ecl_make_stack(n);
+  return ecl_make_vector(n);
 }
 
 static void
