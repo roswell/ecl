@@ -112,15 +112,12 @@ cl_object
 ecl_setf_definition(cl_object sym, cl_object createp)
 {
   cl_env_ptr the_env = ecl_process_env();
-  cl_object pair;
-  ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
-    pair = ecl_gethash_safe(sym, cl_core.setf_definitions, ECL_NIL);
-    if (Null(pair) && !Null(createp)) {
-      createp = make_setf_function_error(sym);
-      pair = ecl_cons(createp, ECL_NIL);
-      ecl_sethash(sym, cl_core.setf_definitions, pair);
-    }
-  } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
+  cl_object pair = sym->symbol.sfdef;
+  if (Null(pair) && !Null(createp)) {
+    createp = make_setf_function_error(sym);
+    pair = ecl_cons(createp, ECL_NIL);
+    sym->symbol.sfdef = pair;
+  }
   return pair;
 }
 
@@ -134,19 +131,11 @@ static void
 ecl_rem_setf_definition(cl_object sym)
 {
   cl_env_ptr the_env = ecl_process_env();
-  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
-    cl_object pair = ecl_gethash_safe(sym, cl_core.setf_definitions, ECL_NIL);
-    if (!Null(pair)) {
-      ECL_RPLACA(pair, make_setf_function_error(sym));
-      ECL_RPLACD(pair, ECL_NIL);
-      /*
-        FIXME: This leaks resources
-        We actually cannot remove it, because some compiled
-        code might be using it!
-        ecl_remhash(sym, cl_core.setf_definitions);
-      */
-    }
-  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
+  cl_object pair = sym->symbol.sfdef;
+  if (!Null(pair)) {
+    ECL_RPLACA(pair, make_setf_function_error(sym));
+    ECL_RPLACD(pair, ECL_NIL);
+  }
 }
 
 @(defun si::fset (fname def &optional macro pprint)

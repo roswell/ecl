@@ -21,20 +21,15 @@ _ecl_write_bytecodes_readably(cl_object x, cl_object stream, cl_object lex)
 {
   cl_index i;
   cl_object code_l = ECL_NIL;
-  /* INV: We don't write the definition of the closure, hence we don't
-   * need to write the macros it closes over either */
-  for (; !Null(lex); lex = ECL_CONS_CDR(lex)) {
-    cl_object record = ECL_CONS_CAR(lex);
-    if (!ECL_CONSP(record) || (ECL_CONS_CAR(record) != @'si::macro' &&
-                               ECL_CONS_CAR(record) != @'si::symbol-macro'))
-      break;
-  }
   for ( i=x->bytecodes.code_size-1 ; i<(cl_index)(-1l) ; i-- )
     code_l = ecl_cons(ecl_make_fixnum(((cl_opcode*)(x->bytecodes.code))[i]), code_l);
   writestr_stream("#Y", stream);
+  /* We don't write the definition because is not guaranteed to be readable. */
   si_write_ugly_object(cl_list(7, x->bytecodes.name, lex,
                                ECL_NIL /* x->bytecodes.definition */,
-                               code_l, x->bytecodes.data,
+                               code_l,
+                               x->bytecodes.data,
+                               x->bytecodes.flex,
                                x->bytecodes.file,
                                x->bytecodes.file_position),
                        stream);

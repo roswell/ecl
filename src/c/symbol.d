@@ -109,6 +109,7 @@ cl_make_symbol(cl_object str)
   ECL_SET(x,OBJNULL);
   ECL_FMAKUNBOUND(x);
   x->symbol.undef_entry = ecl_undefined_function_entry;
+  x->symbol.sfdef = ECL_NIL;
   x->symbol.plist = ECL_NIL;
   x->symbol.hpack = ECL_NIL;
   x->symbol.stype = ecl_stp_ordinary;
@@ -332,6 +333,7 @@ cl_symbol_name(cl_object x)
     x->symbol.value = sym->symbol.value;
     x->symbol.plist = cl_copy_list(sym->symbol.plist);
     x->symbol.undef_entry = sym->symbol.undef_entry;
+    x->symbol.sfdef = sym->symbol.sfdef;
     x->symbol.macfun = sym->symbol.macfun;
     if (ECL_FBOUNDP(sym)) {
       x->symbol.gfdef = sym->symbol.gfdef;

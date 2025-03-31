@@ -23,11 +23,10 @@ struct cl_env_struct {
         cl_index nvalues;
         cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
 
-        /* Environment for calling closures, CLOS generic functions, etc */
+        /* -- Invocation of closures, generic function, etc ------------------ */
         cl_object function;
-
-        /* Current stack frame */
-        cl_object stack_frame;
+        cl_object stepper;      /* Hook invoked by ByteVM */
+        cl_object stack_frame;  /* Current stack frame */
 
         /* The four stacks in ECL. */
 
@@ -221,7 +220,6 @@ struct cl_core_struct {
         cl_object Jan1st1970UT;
 
         cl_object system_properties;
-        cl_object setf_definitions;
 
 #ifdef ECL_THREADS
         cl_object processes;
@@ -313,6 +311,7 @@ extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn, cl_object *x);
 
 /* array.c */
 
+extern ECL_API cl_object ecl_make_stack(cl_index dim);
 extern ECL_API cl_object cl_row_major_aref(cl_object x, cl_object i);
 extern ECL_API cl_object si_row_major_aset(cl_object x, cl_object i, cl_object v);
 extern ECL_API cl_object si_make_vector(cl_object etype, cl_object dim, cl_object adj, cl_object fillp, cl_object displ, cl_object disploff);

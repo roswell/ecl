@@ -11,7 +11,8 @@
 
 (defun not-a-closure-p (fname)
   (declare (si::c-local))
-  (not (and (fboundp fname) (nth-value 1 (function-lambda-expression (fdefinition fname))))))
+  (not (and (fboundp fname)
+            (nth-value 1 (function-lambda-expression (fdefinition fname))))))
 
 (defun function-form-p (form)
   (declare (si::c-local))

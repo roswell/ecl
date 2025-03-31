@@ -236,6 +236,7 @@ make_this_symbol(int i, volatile cl_object s, int code,
   ECL_FMAKUNBOUND(s);
   s->symbol.undef_entry = ecl_undefined_function_entry;
   s->symbol.macfun = ECL_NIL;
+  s->symbol.sfdef = ECL_NIL;
   s->symbol.plist = ECL_NIL;
   s->symbol.hpack = ECL_NIL;
   s->symbol.stype = stp;
