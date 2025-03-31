@@ -484,7 +484,7 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
 
 /* Internal internal function for making simple actually adjustable vectors. */
 cl_object
-ecl_make_stack(cl_index dim)
+ecl_make_vector(cl_index dim)
 {
   cl_object x = ecl_alloc_object(t_vector);
   x->vector.elttype = ecl_aet_object;
