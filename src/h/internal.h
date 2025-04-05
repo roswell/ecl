@@ -24,7 +24,7 @@ extern "C" {
 
 /* booting */
 extern void init_all_symbols(void);
-extern void init_alloc(void);
+extern void init_alloc(int pass);
 extern void init_backq(void);
 extern void init_big();
 extern void init_clos(void);
@@ -40,10 +40,9 @@ extern void init_stacks(cl_env_ptr);
 extern void init_unixint(int pass);
 extern void init_unixtime(void);
 extern void init_compiler(void);
+extern void init_process(void);
 #ifdef ECL_THREADS
-extern void init_threads(cl_env_ptr);
-#else
-#define init_threads(env) cl_env_p = env
+extern void init_threads(void);
 #endif
 extern void ecl_init_env(cl_env_ptr);
 extern void init_lib_LSP(cl_object);

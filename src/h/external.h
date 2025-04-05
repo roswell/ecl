@@ -161,10 +161,12 @@ struct ecl_interrupt_struct {
 # define cl_env (*ecl_process_env())
   extern ECL_API cl_env_ptr ecl_process_env(void) __attribute__((const));
   extern ECL_API cl_env_ptr ecl_process_env_unsafe(void);
+  extern ECL_API void ecl_set_process_env(cl_env_ptr env);
 #else
 # define cl_env (*cl_env_p)
 # define ecl_process_env() cl_env_p
 # define ecl_process_env_unsafe() cl_env_p
+# define ecl_set_process_env(env) cl_env_p = env
   extern ECL_API cl_env_ptr cl_env_p;
 #endif
 
@@ -221,6 +223,7 @@ struct cl_core_struct {
 
         cl_object system_properties;
 
+        cl_env_ptr first_env;
 #ifdef ECL_THREADS
         cl_object processes;
         ecl_mutex_t processes_lock;
@@ -256,6 +259,13 @@ struct cl_core_struct {
 };
 
 extern ECL_API struct cl_core_struct cl_core;
+
+/* memory.c */
+extern ECL_API void *ecl_malloc(cl_index n);
+extern ECL_API void *ecl_realloc(void *ptr, cl_index o, cl_index n);
+extern ECL_API void ecl_free(void *ptr);
+extern ECL_API void ecl_copy(void *dst, void *src, cl_index ndx);
+#define ecl_free_unsafe(x) ecl_free(x);
 
 /* alloc.c / alloc_2.c */
 

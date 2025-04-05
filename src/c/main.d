@@ -48,10 +48,8 @@
 
 /******************************* EXPORTS ******************************/
 
-#if !defined(ECL_THREADS)
-cl_env_ptr cl_env_p = NULL;
-#endif
 const char *ecl_self;
+static struct cl_env_struct first_env;
 
 /************************ GLOBAL INITIALIZATION ***********************/
 
@@ -192,6 +190,26 @@ init_env_aux(cl_env_ptr env)
 }
 
 void
+ecl_init_first_env(cl_env_ptr env)
+{
+#ifdef ECL_THREADS
+  init_threads();
+#endif
+#ifdef ECL_THREADS
+  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
+                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
+  env->thread_local_bindings_size = env->bindings_array->vector.dim;
+  env->thread_local_bindings = env->bindings_array->vector.self.t;
+#endif
+  init_env_mp(env);
+  init_env_int(env);
+  init_env_aux(env);
+  init_env_ffi(env);
+  init_stacks(env);
+}
+
+void
 ecl_init_env(cl_env_ptr env)
 {
   init_env_mp(env);
@@ -204,24 +222,19 @@ ecl_init_env(cl_env_ptr env)
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
-  /*
-   * Environment cleanup. This is only required when the environment is
-   * allocated using mmap or some other method. We could do more, cleaning
-   * up stacks, etc, but we actually do not do it because that would need
-   * a lisp environment set up -- the allocator assumes one -- and we
-   * may have already cleaned up the value of ecl_process_env()
-   */
+  /* Environment cleanup. This is required becauyse the environment is allocated
+   * using mmap or some other method. We could do more cleaning here.*/
 #ifdef ECL_THREADS
   ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
 #endif
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
-#else
-# if defined(ECL_USE_GUARD_PAGE)
+#elif defined(ECL_USE_GUARD_PAGE)
   if (!VirtualFree(env, 0, MEM_RELEASE))
     ecl_internal_error("Unable to deallocate environment structure.");
-# endif
+#else
+  ecl_free_unsafe(env);
 #endif
 }
 
@@ -248,20 +261,13 @@ _ecl_alloc_env(cl_env_ptr parent)
     ecl_internal_error("Unable to allocate environment structure.");
 #else
 # if defined(ECL_USE_GUARD_PAGE)
-  output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT,
-                        PAGE_READWRITE);
+  output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT, PAGE_READWRITE);
   if (output == NULL)
     ecl_internal_error("Unable to allocate environment structure.");
 # else
-  static struct cl_env_struct first_env;
-  if (!ecl_option_values[ECL_OPT_BOOTED]) {
-    /* We have not set up any environment. Hence, we cannot call ecl_alloc()
-     * because it will need to stop interrupts and currently we rely on
-     * the environment for that */
-    output = ecl_alloc_unprotected(sizeof(*output));
-  } else {
-    output = ecl_alloc(sizeof(*output));
-  }
+  output = ecl_malloc(sizeof(*output));
+  if (output == NULL)
+    ecl_internal_error("Unable to allocate environment structure.");
 # endif
 #endif
   {
@@ -270,9 +276,7 @@ _ecl_alloc_env(cl_env_ptr parent)
       output->default_sigmask = 0;
     } else if (parent) {
       output->default_sigmask = ecl_alloc_atomic(bytes);
-      memcpy(output->default_sigmask,
-             parent->default_sigmask,
-             bytes);
+      memcpy(output->default_sigmask, parent->default_sigmask, bytes);
     } else {
       output->default_sigmask = cl_core.default_sigmask;
     }
@@ -414,6 +418,7 @@ struct cl_core_struct cl_core = {
 
   .system_properties = ECL_NIL,
 
+  .first_env = &first_env,
 #ifdef ECL_THREADS
   .processes = ECL_NIL,
 #endif
@@ -493,16 +498,25 @@ cl_boot(int argc, char **argv)
   setbuf(stdin,  stdin_buf);
   setbuf(stdout, stdout_buf);
 #endif
+  init_process();
 
   ARGC = argc;
   ARGV = argv;
   ecl_self = argv[0];
 
   init_unixint(0);
-  init_alloc();
-  GC_disable();
-  env = _ecl_alloc_env(0);
-  init_threads(env);
+  init_alloc(0);
+  init_big();
+
+  /*
+   * Initialize the per-thread data.
+   * This cannot come later, because we need to be able to bind
+   * ext::*interrupts-enabled* while creating packages.
+   */
+
+  env = cl_core.first_env;
+  ecl_init_first_env(env);
+  ecl_cs_set_org(env);
 
   /*
    * 1) Initialize symbols and packages
@@ -545,23 +559,6 @@ cl_boot(int argc, char **argv)
 #else
   cl_core.path_max = MAXPATHLEN;
 #endif
-
-#ifdef ECL_THREADS
-  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
-                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
-#endif
-
-  /*
-   * Initialize the per-thread data.
-   * This cannot come later, because we need to be able to bind
-   * ext::*interrupts-enabled* while creating packages.
-   */
-  init_big();
-  ecl_init_env(env);
-  ecl_cs_set_org(env);
 
   cl_core.lisp_package =
     ecl_make_package(str_common_lisp,
@@ -629,8 +626,8 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-  /* We need this because a lot of stuff is to be created */
-  GC_enable();
+  /* We need to enable GC because a lot of stuff is to be created */
+  init_alloc(1);
 
   /*
    * Set *default-pathname-defaults* to a temporary fake value. We

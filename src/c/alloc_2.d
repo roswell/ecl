@@ -746,13 +746,13 @@ extern void (*GC_push_other_roots)();
 static void (*old_GC_push_other_roots)();
 static void stacks_scanner();
 
-static int alloc_initialized = FALSE;
-
 void
-init_alloc(void)
+init_alloc(int pass)
 {
-  if (alloc_initialized) return;
-  alloc_initialized = TRUE;
+  if (pass == 1) {
+    GC_enable();
+    return;
+  }
   /*
    * Garbage collector restrictions: we set up the garbage collector
    * library to work as follows
@@ -813,7 +813,6 @@ init_alloc(void)
   GC_set_java_finalization(1);
   GC_set_oom_fn(out_of_memory);
   GC_set_warn_proc(no_warnings);
-  GC_enable();
 }
 
 /**********************************************************
@@ -1155,7 +1154,6 @@ update_bytes_consed () {
 static void
 ecl_mark_env(struct cl_env_struct *env)
 {
-#if 1
   if (env->stack) {
     GC_push_conditional((void *)env->stack, (void *)env->stack_top, 1);
     GC_set_mark_bit((void *)env->stack);
@@ -1168,37 +1166,24 @@ ecl_mark_env(struct cl_env_struct *env)
     GC_push_conditional((void *)env->bds_org, (void *)(env->bds_top+1), 1);
     GC_set_mark_bit((void *)env->bds_org);
   }
-#endif
-  /*memset(env->values[env->nvalues], 0, (64-env->nvalues)*sizeof(cl_object));*/
-#if defined(ECL_THREADS) && !defined(ECL_USE_MPROTECT) && !defined(ECL_USE_GUARD_PAGE)
-  /* When using threads, "env" is a pointer to memory allocated by ECL. */
-  GC_push_conditional((void *)env, (void *)(env + 1), 1);
-  GC_set_mark_bit((void *)env);
-#else
   /* When not using threads, "env" is mmaped or statically allocated. */
   GC_push_all((void *)env, (void *)(env + 1));
-#endif
 }
 
 static void
 stacks_scanner()
 {
-  cl_env_ptr the_env = ecl_process_env_unsafe();
-  cl_object l;
-  l = cl_core.libraries;
-  if (l) {
-    for (; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
-      cl_object dll = ECL_CONS_CAR(l);
-      if (dll->cblock.locked) {
-        GC_push_conditional((void *)dll, (void *)(&dll->cblock + 1), 1);
-        GC_set_mark_bit((void *)dll);
-      }
+  cl_object l = cl_core.libraries;
+  loop_for_on_unsafe(l) {
+    cl_object dll = ECL_CONS_CAR(l);
+    if (dll->cblock.locked) {
+      GC_push_conditional((void *)dll, (void *)(&dll->cblock + 1), 1);
+      GC_set_mark_bit((void *)dll);
     }
-  }
+  } end_loop_for_on_unsafe(l);
   GC_push_all((void *)(&cl_core), (void *)(&cl_core + 1));
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
-  if (the_env != NULL)
-    ecl_mark_env(the_env);
+  ecl_mark_env(cl_core.first_env);
 #ifdef ECL_THREADS
   l = cl_core.processes;
   if (l != OBJNULL) {
@@ -1207,7 +1192,7 @@ stacks_scanner()
       cl_object process = l->vector.self.t[i];
       if (!Null(process)) {
         cl_env_ptr env = process->process.env;
-        if (env && (env != the_env)) ecl_mark_env(env);
+        if (env && (env != cl_core.first_env)) ecl_mark_env(env);
       }
     }
   }

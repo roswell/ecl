@@ -6096,7 +6096,7 @@ THREAD_CFLAGS=''
 THREAD_LIBS=''
 THREAD_GC_FLAGS='--enable-threads=posix'
 INSTALL_TARGET='install'
-THREAD_OBJ="$THREAD_OBJ threads/process threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
+THREAD_OBJ="$THREAD_OBJ threads/thread threads/mutex threads/condition_variable threads/semaphore threads/barrier threads/mailbox threads/rwlock"
 clibs='-lm'
 SONAME=''
 SONAME_LDFLAGS=''
