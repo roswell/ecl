@@ -2537,3 +2537,19 @@
      '(macrolet ((def-it (name)
                   `(defun test () ,(find-package name))))
        (def-it "COMMON-LISP")))))
+
+;;; Date 2025-04-05
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/774
+;;; Description
+;;;
+;;;     Calls to local functions with more arguments than
+;;;     si::c-arguments-limit did not work.
+;;;
+(test cmp.0108.local-number-of-arguments
+  (let* ((data1 (append (loop repeat (1+ si::c-arguments-limit) collect 0)))
+         (data2 (funcall (compile nil `(lambda ()
+                                         (flet ((f (&rest data)
+                                                  (make-array (length data) :initial-contents data)))
+                                           (f ,@data1)))))))
+    (is (equalp (make-array (length data1) :initial-contents data1)
+                data2))))
