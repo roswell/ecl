@@ -199,7 +199,7 @@
           (t
            (ext:with-clean-symbols (%value)
              `(let* ((%value ,value))
-                ,(simple-type-assertion '%value (si::flatten-function-types type))
+                ,(simple-type-assertion '%value (si::flatten-function-types type env))
                 (ext:truly-the ,type %value)))))))
 
 (defmacro optional-type-check (value type)

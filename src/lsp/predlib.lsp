@@ -100,26 +100,19 @@ retrieved by (documentation 'NAME 'type)."
                    (T tree))))
     (setf lambda-list
           (maptree #'set-default lambda-list #'verify-tree)))
-  (multiple-value-bind (decls body documentation)
-      (si::find-declarations body)
-    (multiple-value-bind (ppn whole dl arg-check ignorables)
-        (destructure lambda-list 'deftype)
-      (declare (ignore ppn))
-      (let ((function `#'(lambda (,whole &aux ,@dl)
-                           (declare (ignorable ,@ignorables))
-                           ,@decls
-                           (block ,name
-                             ,@arg-check ,@body))))
-        (when (and (null lambda-list)
-                   (consp body)
-                   (null (rest body)))
-          (let ((form (first body)))
-            (when (constantp form env)
-              (setf function (ext:maybe-quote (ext:constant-form-value form env))))))
-        `(eval-when (:compile-toplevel :load-toplevel :execute)
-           ,@(si::expand-set-documentation name 'type documentation)
-           (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
-                       ,function))))))
+  (multiple-value-bind (function ppn documentation)
+      (expand-defmacro name lambda-list body 'deftype)
+    (declare (ignore ppn))
+    (when (and (null lambda-list)
+               (consp body)
+               (null (rest body)))
+      (let ((form (first body)))
+        (when (constantp form env)
+          (setf function (ext:maybe-quote (ext:constant-form-value form env))))))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       ,@(si::expand-set-documentation name 'type documentation)
+       (do-deftype ',name '(DEFTYPE ,name ,lambda-list ,@body)
+                   ,function))))
 
 ;;; Some DEFTYPE definitions.
 (deftype boolean ()
@@ -543,7 +536,6 @@ and is not adjustable."
 (defun typep (object type &optional env &aux tp i c)
   "Args: (object type)
 Returns T if X belongs to TYPE; NIL otherwise."
-  (declare (ignore env))
   (cond ((symbolp type)
          (let ((f (get-sysprop type 'TYPE-PREDICATE)))
            (if f
@@ -649,7 +641,7 @@ Returns T if X belongs to TYPE; NIL otherwise."
           (or (endp (cdr i)) (match-dimensions object (second i)))))
     (t
      (cond ((get-sysprop tp 'DEFTYPE-DEFINITION)
-            (typep object (funcall (get-sysprop tp 'DEFTYPE-DEFINITION) i)))
+            (typep object (funcall (get-sysprop tp 'DEFTYPE-DEFINITION) (cons tp i) env)))
            ((consp i)
             (error-type-specifier type))
            ((setq c (find-class type nil))
@@ -686,22 +678,23 @@ Returns T if X belongs to TYPE; NIL otherwise."
   (declare (ignore foo))
   nil)
 
-(defun flatten-function-types (type)
+(defun flatten-function-types (type env)
   "Replace all compound function types by the atomic function type.
 For example (flatten-function-types '(function (symbol) symbol)) ->
 'function."
   (cond ((and (consp type) (eq (first type) 'FUNCTION))
          'FUNCTION)
         ((and (consp type) (member (first type) '(NOT OR AND CONS)))
-         (list* (first type) (mapcar #'flatten-function-types (rest type))))
+         (list* (first type) (mapcar #'(lambda (tp) (flatten-function-types tp env))
+                                     (rest type))))
         (t
          (let ((type-name (if (consp type) (first type) type))
                (type-args (if (consp type) (rest type) nil)))
            (ext:if-let ((fd (get-sysprop type-name 'DEFTYPE-DEFINITION)))
              ;; In the case of custom types, we expand the type
              ;; definition only if necessary.
-             (let* ((type-alias (funcall fd type-args))
-                    (flattened-type (flatten-function-types type-alias)))
+             (let* ((type-alias (funcall fd (cons type-name type-args) env))
+                    (flattened-type (flatten-function-types type-alias env)))
                (if (eq flattened-type type-alias)
                    type
                    flattened-type))
@@ -714,24 +707,24 @@ For example (flatten-function-types '(function (symbol) symbol)) ->
 ;; The result is a pair of values
 ;;  VALUE-1 = normalized type name or object
 ;;  VALUE-2 = normalized type arguments or nil
-(defun normalize-type (type &aux tp i fd)
+(defun normalize-type (type env &aux tp i fd)
   ;; Loops until the car of type has no DEFTYPE definition.
   (cond ((symbolp type)
          (if (setq fd (get-sysprop type 'DEFTYPE-DEFINITION))
-           (normalize-type (funcall fd nil))
-           (values type nil)))
+             (normalize-type (funcall fd (list type) env) env)
+             (values type nil)))
         ((clos::classp type) (values type nil))
         ((atom type)
          (error-type-specifier type))
         ((progn
            (setq tp (car type) i (cdr type))
            (setq fd (get-sysprop tp 'DEFTYPE-DEFINITION)))
-         (normalize-type (funcall fd i)))
+         (normalize-type (funcall fd type env) env))
         ((and (eq tp 'INTEGER) (consp (cadr i)))
          (values tp (list (car i) (1- (caadr i)))))
         (t (values tp i))))
 
-(defun expand-deftype (type)
+(defun expand-deftype (type env)
   (let (base args)
     (if (atom type)
         (setf base type
@@ -740,7 +733,7 @@ For example (flatten-function-types '(function (symbol) symbol)) ->
               args (cdr type)))
     (let ((fn (get-sysprop base 'DEFTYPE-DEFINITION)))
       (if fn
-          (expand-deftype (funcall fn args))
+          (expand-deftype (funcall fn (cons base args) env) env)
           type))))
 
 ;;************************************************************
@@ -756,7 +749,7 @@ if not possible."
     (return-from coerce object))
   (flet ((fail ()
            (error "Cannot coerce ~S to type ~S." object type)))
-    (let ((type (expand-deftype type)))
+    (let ((type (expand-deftype type nil)))
       (cond ((atom type)
              (case type
                ((T) object)
@@ -1021,7 +1014,7 @@ if not possible."
 ;;----------------------------------------------------------------------
 ;; CLOS classes and structures.
 ;;
-(defun register-class (class)
+(defun register-class (class env)
   (declare (si::c-local)
            (notinline class-name))
   (or (find-registered-tag class)
@@ -1031,7 +1024,7 @@ if not possible."
         (and name
              (eq class (find-class name 'nil))
              (or (find-registered-tag name)
-                 (find-built-in-tag name))))
+                 (find-built-in-tag name env))))
       (and (not (clos::class-finalized-p class))
            (throw '+canonical-type-failure+ nil))
       (register-type class
@@ -1046,13 +1039,14 @@ if not possible."
 ;;----------------------------------------------------------------------
 ;; ARRAY types.
 ;;
-(defun register-array-type (type)
+(defun register-array-type (type env)
   (declare (si::c-local))
   (multiple-value-bind (array-class elt-type dimensions)
-      (parse-array-type type)
+      (parse-array-type type env)
     (cond ((eq elt-type '*)
            (canonical-type `(OR ,@(mapcar #'(lambda (type) `(,array-class ,type ,dimensions))
-                                          +upgraded-array-element-types+))))
+                                          +upgraded-array-element-types+))
+                           env))
           ((find-registered-tag (setq type (list array-class elt-type dimensions))))
           (t
            #+nil
@@ -1071,14 +1065,14 @@ if not possible."
 ;; fails. It is faster than UPGRADED-... because we use the tags of types
 ;; that have been already registered.
 ;;
-(defun fast-upgraded-array-element-type (type)
+(defun fast-upgraded-array-element-type (type env)
   (declare (si::c-local))
   (cond ((eql type '*) '*)
         ((member type +upgraded-array-element-types+ :test #'eq)
          type)
         (t
          (dolist (other-type +upgraded-array-element-types+ 'T)
-           (when (fast-subtypep type other-type)
+           (when (fast-subtypep type other-type env)
              (return other-type))))))
 
 ;;
@@ -1087,11 +1081,11 @@ if not possible."
 ;;
 ;; ELT-TYPE is the upgraded element type of the input.
 ;;
-(defun parse-array-type (input)
+(defun parse-array-type (input env)
   (declare (si::c-local))
   (let* ((type input)
          (name (pop type))
-         (elt-type (fast-upgraded-array-element-type (if type (pop type) '*)))
+         (elt-type (fast-upgraded-array-element-type (if type (pop type) '*) env))
          (dims (if type (pop type) '*)))
     (when type
       (error "Wrong array type designator ~S." input))
@@ -1261,18 +1255,18 @@ if not possible."
 ;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
 ;; are strictly supported.
 ;;
-(defun register-cons-type (&optional (car-type '*) (cdr-type '*))
+(defun register-cons-type (env &optional (car-type '*) (cdr-type '*))
   ;; The problem with the code below is that it does not suport infinite
   ;; recursion. Instead we just canonicalize everything to CONS, irrespective
   ;; of whether the arguments are valid types or not!
   #+(or)
-  (canonical-type 'CONS)
-  (let ((car-tag (if (eq car-type '*) -1 (canonical-type car-type)))
-        (cdr-tag (if (eq cdr-type '*) -1 (canonical-type cdr-type))))
+  (canonical-type 'CONS env)
+  (let ((car-tag (if (eq car-type '*) -1 (canonical-type car-type env)))
+        (cdr-tag (if (eq cdr-type '*) -1 (canonical-type cdr-type env))))
     (cond ((or (zerop car-tag) (zerop cdr-tag))
            0)
           ((and (= car-tag -1) (= cdr-tag -1))
-           (canonical-type 'CONS))
+           (canonical-type 'CONS env))
           (t
            (throw '+canonical-type-failure+ 'CONS)))))
 
@@ -1394,7 +1388,7 @@ if not possible."
      (make-hash-table :test 'eq :size 128)
      '#.+built-in-type-list+))
 
-(defun find-built-in-tag (name)
+(defun find-built-in-tag (name env)
   (declare (si::c-local))
   (let (record)
     (cond ((eq name T)
@@ -1406,9 +1400,9 @@ if not possible."
            (let* ((alias (pop record))
                   tag)
              (if alias
-                 (setq tag (canonical-type alias))
+                 (setq tag (canonical-type alias env))
                  (let* ((strict-supertype (or (first record) 'T))
-                        (strict-supertype-tag (canonical-type strict-supertype)))
+                        (strict-supertype-tag (canonical-type strict-supertype env)))
                    (setq tag (new-type-tag))
                    (unless (eq strict-supertype 't)
                      (extend-type-tag tag strict-supertype-tag))))
@@ -1430,14 +1424,14 @@ if not possible."
 ;; intervals, arrays and classes.
 ;;
 #+nil
-(defun canonicalize (type)
+(defun canonicalize (type env)
   (let ((*highest-type-tag* *highest-type-tag*)
         (*save-types-database* t)
         (*member-types* *member-types*)
         (*elementary-types* *elementary-types*))
-    (let ((tag (canonical-type type))
+    (let ((tag (canonical-type type env))
           (out))
-      (setq tag (canonical-type type))
+      (setq tag (canonical-type type env))
       ;;(print-types-database *elementary-types*)
       ;;(print-types-database *member-types*)
       (dolist (i *member-types*)
@@ -1459,7 +1453,7 @@ if not possible."
 ;; function has side effects: it destructively modifies the content of
 ;; *ELEMENTARY-TYPES* and *MEMBER-TYPES*.
 ;;
-(defun canonical-type (type)
+(defun canonical-type (type env)
   (declare (notinline clos::classp))
   (cond ((find-registered-tag type))
         ((eq type 'T) -1)
@@ -1467,17 +1461,17 @@ if not possible."
         ((symbolp type)
          (let ((expander (get-sysprop type 'DEFTYPE-DEFINITION)))
            (cond (expander
-                  (canonical-type (funcall expander nil)))
-                 ((find-built-in-tag type))
+                  (canonical-type (funcall expander (list type) env) env))
+                 ((find-built-in-tag type env))
                  (t (let ((class (find-class type nil)))
                       (if class
-                          (register-class class)
+                          (register-class class env)
                           (throw '+canonical-type-failure+ nil)))))))
         ((consp type)
          (case (first type)
-           (AND (apply #'logand (mapcar #'canonical-type (rest type))))
-           (OR (apply #'logior (mapcar #'canonical-type (rest type))))
-           (NOT (lognot (canonical-type (second type))))
+           (AND (apply #'logand (mapcar #'(lambda (tp) (canonical-type tp env)) (rest type))))
+           (OR (apply #'logior (mapcar #'(lambda (tp) (canonical-type tp env)) (rest type))))
+           (NOT (lognot (canonical-type (second type) env)))
            ((EQL MEMBER) (apply #'logior (mapcar #'register-member-type (rest type))))
            (SATISFIES (register-satisfies-type type))
            ((INTEGER #+short-float SHORT-FLOAT
@@ -1491,7 +1485,8 @@ if not possible."
                                  (SHORT-FLOAT ,@(rest type))
                                  (SINGLE-FLOAT ,@(rest type))
                                  (DOUBLE-FLOAT ,@(rest type))
-                                 (LONG-FLOAT ,@(rest type)))))
+                                 (LONG-FLOAT ,@(rest type)))
+                            env))
            ((REAL)
             (canonical-type `(OR (INTEGER ,@(rest type))
                                  (RATIO ,@(rest type))
@@ -1499,29 +1494,31 @@ if not possible."
                                  (SHORT-FLOAT ,@(rest type))
                                  (SINGLE-FLOAT ,@(rest type))
                                  (DOUBLE-FLOAT ,@(rest type))
-                                 (LONG-FLOAT ,@(rest type)))))
+                                 (LONG-FLOAT ,@(rest type)))
+                            env))
            ((RATIONAL)
             (canonical-type `(OR (INTEGER ,@(rest type))
-                                 (RATIO ,@(rest type)))))
+                                 (RATIO ,@(rest type)))
+                            env))
            (COMPLEX
-            (or (find-built-in-tag type)
+            (or (find-built-in-tag type env)
                 (canonical-complex-type (if (endp (rest type))
                                             'real
                                             (second type)))))
-           (CONS (apply #'register-cons-type (rest type)))
-           (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)))
-                          (register-array-type `(SIMPLE-ARRAY ,@(rest type)))))
-           ((COMPLEX-ARRAY SIMPLE-ARRAY) (register-array-type type))
+           (CONS (apply #'register-cons-type env (rest type)))
+           (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)) env)
+                          (register-array-type `(SIMPLE-ARRAY ,@(rest type)) env)))
+           ((COMPLEX-ARRAY SIMPLE-ARRAY) (register-array-type type env))
            ;;(FUNCTION (register-function-type type))
            ;;(VALUES (register-values-type type))
-           (FUNCTION (canonical-type 'FUNCTION))
+           (FUNCTION (canonical-type 'FUNCTION env))
            (t (let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
                 (if expander
-                    (canonical-type (funcall expander (rest type)))
+                    (canonical-type (funcall expander type env) env)
                     (unless (assoc (first type) *elementary-types*)
                       (throw '+canonical-type-failure+ nil)))))))
         ((clos::classp type)
-         (register-class type))
+         (register-class type env))
         ((and (fboundp 'function-type-p) (function-type-p type))
          (register-function-type type))
         ((and (fboundp 'values-type-p) (values-type-p type))
@@ -1529,21 +1526,21 @@ if not possible."
         (t
          (error-type-specifier type))))
 
-(defun safe-canonical-type (type)
+(defun safe-canonical-type (type env)
   (catch '+canonical-type-failure+
-    (canonical-type type)))
+    (canonical-type type env)))
 
-(defun fast-subtypep (t1 t2)
+(defun fast-subtypep (t1 t2 env)
   (declare (si::c-local))
   (when (eq t1 t2)
     (return-from fast-subtypep (values t t)))
-  (let* ((tag1 (safe-canonical-type t1))
-         (tag2 (safe-canonical-type t2)))
+  (let* ((tag1 (safe-canonical-type t1 env))
+         (tag2 (safe-canonical-type t2 env)))
     (when (and (numberp tag1) (numberp tag2))
       ;; We must call safe-canonical-type again because one of
       ;; the calls above could have called UPDATE-TYPES.
-      (setf tag1 (safe-canonical-type t1)
-            tag2 (safe-canonical-type t2)))
+      (setf tag1 (safe-canonical-type t1 env)
+            tag2 (safe-canonical-type t2 env)))
     (cond ((and (numberp tag1) (numberp tag2))
            (values (zerop (logandc2 tag1 tag2)) t))
           #+nil
@@ -1556,7 +1553,6 @@ if not possible."
            (values nil nil)))))
 
 (defun subtypep (t1 t2 &optional env)
-  (declare (ignore env))
   ;; One easy case: types are equal
   (when (eq t1 t2)
     (return-from subtypep (values t t)))
@@ -1576,25 +1572,25 @@ if not possible."
            (*member-types* *member-types*)
            (*elementary-types* *elementary-types*))
       (multiple-value-bind (test confident)
-          (fast-subtypep t1 t2)
+          (fast-subtypep t1 t2 env)
         (setf (aref cache hash) (cons (cons t1 t2) (cons test confident)))
         (values test confident)))))
 
-(defun fast-type= (t1 t2)
+(defun fast-type= (t1 t2 env)
   (declare (si::c-local))
   (when (eq t1 t2)
     (return-from fast-type= (values t t)))
-  (let ((tag1 (safe-canonical-type t1))
-        (tag2 (safe-canonical-type t2))
-        (tag3 (safe-canonical-type 'complex)))
+  (let ((tag1 (safe-canonical-type t1 env))
+        (tag2 (safe-canonical-type t2 env))
+        (tag3 (safe-canonical-type 'complex env)))
     ;; FAST-TYPE= can't rely on the CANONICAL-TYPE in case of complex
     ;; numbers which have an exceptional behavior define for TYPEP not
     ;; being consistent with SUBTYPEP. -- jd 2019-04-19
     (when (and (numberp tag1) (numberp tag2) (/= tag2 tag3))
       ;; We must call safe-canonical-type again because one of
       ;; the calls above could have called UPDATE-TYPES.
-      (setf tag1 (safe-canonical-type t1)
-            tag2 (safe-canonical-type t2)))
+      (setf tag1 (safe-canonical-type t1 env)
+            tag2 (safe-canonical-type t2 env)))
     (cond ((and (numberp tag1) (numberp tag2) (/= tag2 tag3))
            (values (= tag1 tag2) t))
           #+nil
@@ -1606,9 +1602,9 @@ if not possible."
           (t
            (values nil nil)))))
 
-(defun type= (t1 t2)
+(defun type= (t1 t2 &optional env)
   (let ((*highest-type-tag* *highest-type-tag*)
         (*save-types-database* t)
         (*member-types* *member-types*)
         (*elementary-types* *elementary-types*))
-    (fast-type= t1 t2)))
+    (fast-type= t1 t2 env)))

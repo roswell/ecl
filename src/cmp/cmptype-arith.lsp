@@ -90,11 +90,11 @@
          (si::*save-types-database* t)
          (si::*member-types* si::*member-types*)
          (si::*elementary-types* si::*elementary-types*)
-         (tag1 (si::safe-canonical-type t1))
-         (tag2 (si::safe-canonical-type t2)))
+         (tag1 (si::safe-canonical-type t1 *cmp-env*))
+         (tag2 (si::safe-canonical-type t2 *cmp-env*)))
     (cond ((and (numberp tag1) (numberp tag2))
-           (setf tag1 (si::safe-canonical-type t1)
-                 tag2 (si::safe-canonical-type t2))
+           (setf tag1 (si::safe-canonical-type t1 *cmp-env*)
+                 tag2 (si::safe-canonical-type t2 *cmp-env*))
            (cond ((zerop (logand tag1 tag2)) ; '(AND t1 t2) = NIL
                   NIL)
                  ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
@@ -288,11 +288,11 @@
          (si::*save-types-database* t)
          (si::*member-types* si::*member-types*)
          (si::*elementary-types* si::*elementary-types*)
-         (tag1 (si::safe-canonical-type t1))
-         (tag2 (si::safe-canonical-type t2)))
+         (tag1 (si::safe-canonical-type t1 *cmp-env*))
+         (tag2 (si::safe-canonical-type t2 *cmp-env*)))
     (cond ((and (numberp tag1) (numberp tag2))
-           (setf tag1 (si::safe-canonical-type t1)
-                 tag2 (si::safe-canonical-type t2))
+           (setf tag1 (si::safe-canonical-type t1 *cmp-env*)
+                 tag2 (si::safe-canonical-type t2 *cmp-env*))
            (cond ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
                   t2)
                  ((zerop (logandc2 tag2 tag1)) ; t2 <= t1

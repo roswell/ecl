@@ -83,8 +83,9 @@
                                               (first type))
                                           'SI::DEFTYPE-DEFINITION))
            (expand-typep form object `(quote ,(funcall function (if (atom type)
-                                                                    nil
-                                                                    (rest type))))
+                                                                    (list type)
+                                                                    type)
+                                                       env))
                          env))
           ;;
           ;; There exists a function which checks for this type?
@@ -94,7 +95,7 @@
           ;; Similar as before, but we assume the user did not give us
           ;; the right name, or gave us an equivalent type.
           ((loop for (a-type . function-name) in si::+known-typep-predicates+
-              when (si::type= type a-type)
+              when (si::type= type a-type env)
               do (return `(,function-name ,object))))
           ;;
           ;; No optimizations that take up too much space unless requested.
@@ -282,7 +283,7 @@
           ;; Derived types defined with DEFTYPE.
           ((and (atom type)
                 (setq first (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
-           (expand-coerce form value `',(funcall first nil) env))
+           (expand-coerce form value `',(funcall first (list type) env) env))
           ;;
           ;; CONS types are not coercible.
           ((and (consp type)
@@ -292,7 +293,7 @@
           ;; Search for a simple template above, but now assuming the user
           ;; provided a more complex form of the same value.
           ((loop for (a-type . template) in +coercion-table+
-              when (si::type= type a-type)
+              when (si::type= type a-type env)
               do (return (subst value 'x template))))
           ;;
           ;; SEQUENCE types
