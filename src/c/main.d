@@ -476,7 +476,6 @@ int
 cl_boot(int argc, char **argv)
 {
   cl_object aux;
-  cl_object features;
   int i;
   cl_env_ptr env;
 
@@ -750,14 +749,7 @@ cl_boot(int argc, char **argv)
           cl_list(8, @'&optional', @'&rest', @'&key', @'&allow-other-keys',
                   @'&aux', @'&whole', @'&environment', @'&body'));
 
-  for (i = 0, features = ECL_NIL; feature_names[i].elt.self; i++) {
-    int flag;
-    cl_object name = (cl_object)(feature_names + i);
-    cl_object key = ecl_intern(name, cl_core.keyword_package, &flag);
-    features = CONS(key, features);
-  }
-
-  ECL_SET(@'*features*', features);
+  ECL_SET(@'*features*', cl_read(1, cl_make_string_input_stream(1, feature_names)));
 
   ECL_SET(@'*package*', cl_core.lisp_package);
 

@@ -14,7 +14,14 @@
 
 (progn
   (setq *package* (find-package "SYSTEM"))
-  (setq *features* @LSP_FEATURES@))
+  (setq *host-features* *features*)
+  (setq *features* '(@LSP_FEATURES@ @COMPILATION_FEATURES@))
+  (when (member :ecl-min *host-features*)
+    (setq *features* (cons :ecl-min *features*)))
+  (when (member :uname *host-features*)
+    (setq *features* (cons :uname *features*)))
+  (when (member :cross *host-features*)
+    (setq *features* (cons :cross *features*))))
 
 ;;;
 ;;; * Ensure that we have the whole of Common-Lisp to compile

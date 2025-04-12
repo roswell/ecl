@@ -234,7 +234,7 @@ For example:
 2. Build ECL
 
 #+begin_src sh
-  ./configure --disable-shared --prefix=/tmp/cosmo-cl
+  LSP_FEATURES=":cosmo" ./configure --disable-shared --prefix=/tmp/cosmo-cl
   make -j15
   make install
   # make check
