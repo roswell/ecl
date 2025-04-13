@@ -49,7 +49,7 @@ extern ECL_API cl_fixnum _ecl_big_get_fix(cl_object x);
 extern ECL_API void _ecl_big_set_idx(cl_object x, cl_index y);
 extern ECL_API void _ecl_big_set_fix(cl_object x, cl_fixnum y);
 # define _ecl_big_set_index(x, f)  _ecl_big_set_idx((x),(f))
-# define _ecl_big_get_index(x, f)  _ecl_big_get_idx((x))
+# define _ecl_big_get_index(x)     _ecl_big_get_idx((x))
 # define _ecl_big_set_fixnum(x, f) _ecl_big_set_fix((x),(f))
 # define _ecl_big_get_fixnum(x)    _ecl_big_get_fix((x))
 #else

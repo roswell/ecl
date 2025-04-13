@@ -354,7 +354,6 @@ _ecl_big_set_idx(cl_object x, cl_index f)
     ECL_BIGNUM_SIZE(x) = 1;
     ECL_BIGNUM_LIMBS(x)[0] = f;
   }
-  return x;
 }
 
 void
@@ -369,7 +368,6 @@ _ecl_big_set_fix(cl_object x, cl_fixnum f)
     ECL_BIGNUM_SIZE(x) = -1;
     ECL_BIGNUM_LIMBS(x)[0] = -f;
   }
-  return x;
 }
 
 cl_index
