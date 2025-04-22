@@ -109,7 +109,7 @@
            (global-var-p loc)
            (policy-global-var-checking))))
   (case (first loc)
-    ((CALL CALL-NORMAL CALL-INDIRECT CALL-STACK) T)
+    ((CALL CALL-NORMAL CALL-INDIRECT CALL-GLOBAL-STACK CALL-LOCAL-STACK) T)
     (CL:THE (loc-with-side-effects-p (third loc)))
     (CL:FDEFINITION (policy-global-function-checking))
     ;; Uses VALUES or has side effects.
@@ -142,7 +142,8 @@
 ;;;     ( FRAME ndx )                   variable in local frame stack
 ;;;     ( CALL-NORMAL fun locs 1st-type ) similar as CALL, but number of arguments is fixed
 ;;;     ( CALL-INDIRECT fun narg args)  similar as CALL, but unknown function
-;;;     ( CALL-STACK fun)  similar as CALL-INDIRECT, but args are on the stack
+;;;     ( CALL-LOCAL-STACK fun)  similar as CALL-NORMAL, but args are on the stack
+;;;     ( CALL-GLOBAL-STACK fun)  similar as CALL-INDIRECT, but args are on the stack
 ;;;     ( FFI:C-INLINE output-type fun/string locs side-effects output-var )
 ;;;     ( COERCE-LOC host-type location)
 ;;;     ( FDEFINITION vv-index )
@@ -184,7 +185,7 @@
 
 (defun uses-values (loc)
   (and (consp loc)
-       (or (member (car loc) '(CALL-NORMAL CALL-INDIRECT CALL-STACK) :test #'eq)
+       (or (member (car loc) '(CALL-NORMAL CALL-INDIRECT CALL-GLOBAL-STACK CALL-LOCAL-STACK) :test #'eq)
            (and (eq (car loc) 'ffi:C-INLINE)
                 (eq (sixth loc) 'cl:VALUES)))))
 

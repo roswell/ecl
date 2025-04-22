@@ -27,7 +27,9 @@
 ;;;
 (defun c2fcall (c1form fun args fun-val call-type)
   (if (> (length args) si:c-arguments-limit)
-      (c2call-stack c1form fun args nil)
+      (ecase call-type
+        (:local (c2call-local-stack c1form fun-val args))
+        ((:global :unknown) (c2call-global-stack c1form fun args nil)))
       (with-inline-blocks ()
         (ecase call-type
           (:local (c2call-local c1form fun-val args))
@@ -36,16 +38,16 @@
 
 (defun c2mcall (c1form form args fun-val call-type)
   (declare (ignore fun-val call-type))
-  (c2call-stack c1form form args t))
+  (c2call-global-stack c1form form args t))
 
 ;;;
-;;; c2call-stack:
+;;; c2call-global-stack:
 ;;;
 ;;;   This is the most generic way of calling functions. First we push them on
 ;;;   the stack, and then we apply from the stack frame. Other variants call
 ;;;   inline-args and put results directly in the function call.
 ;;;
-(defun c2call-stack (c1form form args values-p)
+(defun c2call-global-stack (c1form form args values-p)
   (declare (ignore c1form))
   (with-stack-frame (frame)
     (let ((loc (emit-inline-form form args)))
@@ -55,7 +57,27 @@
           (if values-p
               (wt-nl "ecl_stack_frame_push_values(" frame ");")
               (wt-nl "ecl_stack_frame_push(" frame ",value0);"))))
-      (unwind-exit (call-stack-loc nil loc)))))
+      (unwind-exit (call-global-stack-loc nil loc)))))
+
+;;;
+;;; c2call-local-stack:
+;;;
+;;;   First push the arguments on the stack and then call the function
+;;;   directly. This is used for calls to local functions that take
+;;;   more arguments than C-ARGUMENTS-LIMIT.
+;;;
+(defun c2call-local-stack (c1form fun args)
+  (declare (type fun fun))
+  (with-stack-frame (frame)
+    (let ((evaluated-args (mapcar #'(lambda (arg)
+                                      (let ((*destination* (make-temp-var t)))
+                                        (c2expr* arg)
+                                        (wt-nl "ecl_stack_frame_push(" frame "," *destination* ");")
+                                        *destination*))
+                                  args)))
+      (unwind-exit (call-local-stack-loc fun
+                                         evaluated-args
+                                         (c1form-primary-type c1form))))))
 
 ;;;
 ;;; c2call-global:
@@ -139,13 +161,23 @@
 ;;;
 
 ;;;
-;;; call-stack-loc
+;;; call-global-stack-loc
 ;;;
 ;;;   FNAME: the name of the function or NIL
 ;;;   LOC: the location containing function
 ;;;
-(defun call-stack-loc (fname loc)
-  `(CALL-STACK ,loc ,fname))
+(defun call-global-stack-loc (fname loc)
+  `(CALL-GLOBAL-STACK ,loc ,fname))
+
+;;;
+;;; call-local-stack-loc
+;;;
+;;;   FUN: a function object
+;;;   ARGS: a list of INLINED-ARGs
+;;;   TYPE: the type to which the output is coerced
+;;;
+(defun call-local-stack-loc (fun args type)
+  `(CALL-LOCAL-STACK ,fun ,(coerce-args args) ,type))
 
 ;;;
 ;;; call-loc

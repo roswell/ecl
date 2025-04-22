@@ -164,7 +164,8 @@
 (defconstant +wt-loc-dispatch-alist+
   '((call-normal . wt-call-normal)
     (call-indirect . wt-call-indirect)
-    (call-stack . wt-call-stack)
+    (call-global-stack . wt-call-global-stack)
+    (call-local-stack . wt-call-local-stack)
     (ffi:c-inline . wt-c-inline-loc)
     (coerce-loc . wt-coerce-loc)
 

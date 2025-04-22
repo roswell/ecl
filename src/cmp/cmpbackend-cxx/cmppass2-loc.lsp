@@ -110,10 +110,18 @@
     (when fname
       (wt-comment fname))))
 
-(defun wt-call-stack (loc fname)
+(defun wt-call-global-stack (loc fname)
   (wt "ecl_apply_from_stack_frame(_ecl_inner_frame," loc ")")
   (when fname
     (wt-comment fname)))
+
+(defun wt-call-local-stack (fun args type)
+  (wt "(cl_env_copy->stack_frame=_ecl_inner_frame,")
+  (wt-call-normal fun
+                  (subseq args 0 (min (length args) si::c-arguments-limit))
+                  type
+                  (length args))
+  (wt ")"))
 
 (defun wt-call-normal (fun args type &optional (narg (length args)))
   (declare (ignore type))
