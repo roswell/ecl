@@ -137,7 +137,7 @@ special variable declarations, as these have been extracted before."
      (if (atom (rest decl))
          (cmpwarn "Syntax error in declaration ~a" decl)
          (multiple-value-bind (type-name args)
-             (si::normalize-type (second decl))
+             (si::normalize-type (second decl) env)
            (if (eq type-name 'FUNCTION)
                (dolist (v (cddr decl))
                  (setf env (add-function-declaration v args env)))

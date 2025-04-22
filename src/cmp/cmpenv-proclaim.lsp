@@ -53,7 +53,7 @@
      (if (atom (rest decl))
          (error "Syntax error in proclamation ~a" decl)
          (multiple-value-bind (type-name args)
-             (si::normalize-type (second decl))
+             (si::normalize-type (second decl) *cmp-env*)
            (if (eq type-name 'FUNCTION)
                (dolist (v (cddr decl))
                  (proclaim-function v args))
