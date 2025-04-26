@@ -188,7 +188,7 @@ main(int argc, char **args)
 #endif
   ECL_SET(@'*features*', features);
   top_level = _ecl_intern("TOP-LEVEL", cl_core.system_package);
-  ecl_def_c_function(top_level, si_simple_toplevel, 0);
+  ecl_def_c_function(top_level, (cl_objectfn_fixed)si_simple_toplevel, 0);
   _ecl_funcall1(top_level);
   return(0);
 }

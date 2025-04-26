@@ -744,7 +744,7 @@ extern ECL_API void ecl_force_output(cl_object strm);
 extern ECL_API void ecl_finish_output(cl_object strm);
 extern ECL_API void ecl_clear_input(cl_object strm);
 extern ECL_API void ecl_clear_output(cl_object strm);
-extern ECL_API bool ecl_listen_stream(cl_object strm);
+extern ECL_API int ecl_listen_stream(cl_object strm);
 extern ECL_API cl_object ecl_file_position(cl_object strm);
 extern ECL_API cl_object ecl_file_position_set(cl_object strm, cl_object disp);
 extern ECL_API cl_object ecl_file_length(cl_object strm);

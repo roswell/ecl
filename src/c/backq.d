@@ -259,5 +259,5 @@ quasiquote_macro(cl_object whole, cl_object env)
 void
 init_backq(void)
 {
-  ecl_def_c_macro(@'si::quasiquote', quasiquote_macro, 2);
+  ecl_def_c_macro(@'si::quasiquote', (cl_objectfn_fixed)quasiquote_macro, 2);
 }

@@ -179,7 +179,7 @@ void
 init_macros(void)
 {
   ECL_SET(@'*macroexpand-hook*', @'funcall');
-  ecl_def_c_macro(@'or', or_macro, 2);
-  ecl_def_c_macro(@'and', and_macro, 2);
-  ecl_def_c_macro(@'when', when_macro, 2);
+  ecl_def_c_macro(@'or', (cl_objectfn_fixed)or_macro, 2);
+  ecl_def_c_macro(@'and', (cl_objectfn_fixed)and_macro, 2);
+  ecl_def_c_macro(@'when', (cl_objectfn_fixed)when_macro, 2);
 }

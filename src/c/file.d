@@ -5166,7 +5166,7 @@ ecl_unread_char(ecl_character c, cl_object strm)
   stream_dispatch_table(strm)->unread_char(strm, c);
 }
 
-bool
+int
 ecl_listen_stream(cl_object strm)
 {
   return stream_dispatch_table(strm)->listen(strm);
