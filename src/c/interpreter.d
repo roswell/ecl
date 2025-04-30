@@ -151,12 +151,9 @@ drop_lcl(cl_object *stack, cl_fixnum n)
 }
 
 static cl_object
-ecl_lcl_env_get_record(cl_object env, int s)
+ecl_lcl_env_get_record(cl_object env, cl_fixnum n)
 {
-  do {
-    if (s-- == 0) return ECL_CONS_CAR(env);
-    env = ECL_CONS_CDR(env);
-  } while(1);
+  return ECL_CONS_CAR(ecl_last(env, n+1));
 }
 
 static cl_object

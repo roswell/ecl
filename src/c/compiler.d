@@ -751,8 +751,7 @@ c_lcl_idx(cl_env_ptr env, cl_object entry)
     }
   } end_loop_for_on_unsafe(l);
   if (i<0) ecl_miscompilation_error();
-  return i;
-  /* return n-i; */
+  return n-i;
 }
 
 /* This function is called after we compile lambda in the parent's
