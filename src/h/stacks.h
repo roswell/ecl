@@ -314,7 +314,7 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
  *******************
  * Here we define how we handle the incoming arguments for a
  * function. Our calling conventions specify that at most
- * ECL_C_ARGUMENTS_LIMIT ar pushed onto the C stack. If the function
+ * ECL_C_ARGUMENTS_LIMIT are pushed onto the C stack. If the function
  * receives more than this number of arguments it will keep a copy of
  * _all_ those arguments _plus_ the remaining ones in the lisp
  * stack. The caller is responsible for storing and removing such

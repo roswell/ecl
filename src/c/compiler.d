@@ -190,6 +190,7 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
   bytecodes->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
   bytecodes->bytecodes.data = c_env->constants;
   bytecodes->bytecodes.flex = ECL_NIL;
+  bytecodes->bytecodes.nlcl = ECL_NIL;
   for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
     code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
   }
@@ -642,7 +643,7 @@ c_restore_env(cl_env_ptr the_env, cl_compiler_env_ptr new_c_env, cl_compiler_env
 static void
 close_around_macros(cl_env_ptr env, cl_object mfun)
 {
-  cl_object lex = mfun->bclosure.lex, record;
+  cl_object lex = mfun->bclosure.lex;
   cl_object *lex_vec = lex->vector.self.t;
   for (cl_index i = 0; i < lex->vector.dim; i++) {
     cl_object reg = lex_vec[i]; /* INV see interpreter.d for lexenv structure */
@@ -3603,6 +3604,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   output = asm_end(env, handle, lambda);
   output->bytecodes.name = name;
   output->bytecodes.flex = ECL_NIL;
+  output->bytecodes.nlcl = ECL_NIL;
 
   old_c_env->load_time_forms = new_c_env->load_time_forms;
 

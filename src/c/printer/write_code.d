@@ -30,6 +30,7 @@ _ecl_write_bytecodes_readably(cl_object x, cl_object stream, cl_object lex)
                                code_l,
                                x->bytecodes.data,
                                x->bytecodes.flex,
+                               x->bytecodes.nlcl,
                                x->bytecodes.file,
                                x->bytecodes.file_position),
                        stream);

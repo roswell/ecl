@@ -770,6 +770,7 @@ struct ecl_bytecodes {
         char *code;             /*  the intermediate language  */
         cl_object data;         /*  non-inmediate constants used in the code  */
         cl_object flex;         /*  indexes of captured objects (vector) */
+        cl_object nlcl;         /*  number of slots for local values */
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };
