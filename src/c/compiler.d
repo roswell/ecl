@@ -1113,7 +1113,7 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
       record = ECL_CONS_CDR(record);
       special = ECL_CONS_CAR(record);
       if (name == @':block' || name == @':tag') {
-        (void)0;
+        if (!only_specials) num_lexical++;
       } else if (name == @':function' || Null(special)) {
         if (!only_specials) num_lexical++;
       } else if (name == @':declare') {
@@ -1264,7 +1264,6 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
     return compile_body(env, body, old_flags);
   } else {
     c_undo_bindings(env, old_env.variables, 0);
-    env->c_env->env_size--;
     asm_op(env, OP_EXIT_FRAME);
     asm_complete(env, 0, labelz);
     return flags;
@@ -1470,7 +1469,6 @@ c_catch(cl_env_ptr env, cl_object args, int flags) {
   compile_body(env, args, FLAG_VALUES);
 
   c_undo_bindings(env, old_env, 0);
-  env->c_env->env_size--;
   asm_op(env, OP_EXIT_FRAME);
   asm_complete(env, 0, labelz);
 
@@ -2487,7 +2485,6 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
   }
   asm_op(env, OP_EXIT_TAGBODY);
   c_undo_bindings(env, old_env, 0);
-  env->c_env->env_size--;
   return FLAG_REG0;
 }
 

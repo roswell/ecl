@@ -1110,7 +1110,9 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       if (__ecl_frs_push_result != 0) {
         reg0 = the_env->values[0];
         vector = (cl_opcode *)ECL_STACK_REF(the_env,-1); /* FIXME! */
+        /* Unbind locals including the frame, we are leaving the frame. */
         unwind_lcl(lcl_env, ECL_STACK_REF(the_env, -2));
+        unbind_lcl(lcl_env, 1); /* unbind the frame */
         goto DO_EXIT_FRAME;
       }
       THREAD_NEXT;
@@ -1140,6 +1142,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
            ranges from 0 to ntags-1, depending on the tag. These numbers are
            indices into the jump table and are computed at compile time. */
         cl_opcode *table = (cl_opcode *)ECL_STACK_REF(the_env,-1);
+        /* Unbind locals but leave the frame, we are still inside the frame. */
         unwind_lcl(lcl_env, ECL_STACK_REF(the_env,-2));
         table = table + ecl_fixnum(the_env->values[0]) * OPARG_SIZE;
         vector = table + *(cl_oparg *)table;
@@ -1153,7 +1156,6 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     DO_EXIT_FRAME:
       ecl_frs_pop(the_env);
       ECL_STACK_POP_N_UNSAFE(the_env, 2);
-      unbind_lcl(lcl_env, 1);
       THREAD_NEXT;
     }
     CASE(OP_NIL); {
