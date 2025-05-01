@@ -1107,14 +1107,13 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       ECL_STACK_PUSH(the_env, tangle_lcl(lcl_env));
       ECL_STACK_PUSH(the_env, (cl_object)exit);
       ecl_frs_push(the_env,reg1);
-      if (__ecl_frs_push_result == 0) {
-        THREAD_NEXT;
-      } else {
+      if (__ecl_frs_push_result != 0) {
         reg0 = the_env->values[0];
         vector = (cl_opcode *)ECL_STACK_REF(the_env,-1); /* FIXME! */
         unwind_lcl(lcl_env, ECL_STACK_REF(the_env, -2));
         goto DO_EXIT_FRAME;
       }
+      THREAD_NEXT;
     }
     /* OP_FRAMEID   0
        OP_TAGBODY   n{arg}
