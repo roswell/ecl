@@ -449,10 +449,45 @@ c_register_captured(cl_env_ptr env, cl_object c)
  * declaration forms, as they do not completely match those of Common-Lisp.
  */
 
+static cl_fixnum
+c_lcl_size(const cl_compiler_ptr c_env)
+{
+  cl_fixnum n = 0;
+  cl_object l = c_env->variables;
+  loop_for_on_unsafe(l) {
+    cl_object record = ECL_CONS_CAR(l), type;
+    if (record == @'si::function-boundary') {
+      break;
+    }
+    if(ECL_ATOM(record))
+      continue;
+    type = pop(&record);
+    if (type == @':block'
+        || type == @':function'
+        || type == @':tag'
+        /* type == @'variable' && Null(specialp) */
+        || Null(pop(&record))) {
+      n++;
+    }
+  } end_loop_for_on_unsafe(l);
+  return n;
+}
+
+static void
+c_assert_env_size(char *s, const cl_compiler_ptr c_env)
+{
+  if(c_lcl_size(c_env) != c_env->env_size) {
+    printf("c_assert_env_size fail: '%s' computed %i != cached %i\n",
+           s, c_lcl_size(c_env), c_env->env_size);
+    /* ecl_internal_error(s); */
+  }
+}
+
 static cl_object
 c_push_record(const cl_compiler_ptr c_env, cl_object type,
               cl_object arg1, cl_object arg2)
 {
+  c_assert_env_size("c_push_record", c_env);
   cl_object depth = ecl_make_fixnum(c_env->env_depth);
   cl_object index = ecl_make_fixnum(c_env->env_size++);
   cl_object loc = CONS(depth, index);
@@ -585,6 +620,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
   if (old) {
     *new = *old;
     new->parent_env = old;
+    new->env_size = 0;
     new->env_depth = old->env_depth + 1;
   } else {
     new->code_walker = ECL_SYM_VAL(the_env, @'si::*code-walker*');
@@ -602,6 +638,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->ltf_locations = ECL_NIL;
     new->captured = ECL_NIL;
     new->parent_env = NULL;
+    new->env_size = 0;
     new->env_depth = 0;
     new->macros = CDR(env);
     new->variables = CAR(env);
@@ -619,7 +656,6 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->mode = FLAG_EXECUTE;
     new->function_boundary_crossed = 0;
   }
-  new->env_size = 0;
 }
 
 static void
@@ -1058,10 +1094,10 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
   cl_index num_lexical = 0;
   cl_index num_special = 0;
   const cl_compiler_ptr c_env = the_env->c_env;
-
+  c_assert_env_size("c_undo_bindings (before)", c_env);
   for (env = c_env->variables; env != old_vars && !Null(env); env = ECL_CONS_CDR(env))
     {
-      cl_object record, name, special;
+      cl_object record, name, special, boundp;
       record = ECL_CONS_CAR(env);
       if (ECL_ATOM(record))
         continue;
@@ -1071,14 +1107,15 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
       if (name == @':block' || name == @':tag') {
         (void)0;
       } else if (name == @':function' || Null(special)) {
-        if (!only_specials) ++num_lexical;
+        if (!only_specials) num_lexical++;
       } else if (name == @':declare') {
         /* Ignored */
       } else if (special != @'si::symbol-macro') {
         /* If (third special) = NIL, the variable was declared
            special, but there is no binding! */
         record = ECL_CONS_CDR(record);
-        if (!Null(ECL_CONS_CAR(record))) {
+        boundp = ECL_CONS_CAR(record);
+        if (!Null(boundp)) {
           num_special++;
         }
       }
