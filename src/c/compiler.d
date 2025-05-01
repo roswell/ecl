@@ -169,7 +169,7 @@ push(cl_object v, cl_object *l) {
 static cl_object
 asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object bytecodes;
+  cl_object output;
   cl_index code_size, i;
   cl_opcode *code;
   cl_object file = ECL_SYM_VAL(env,@'ext::*source-location*'), position;
@@ -183,22 +183,22 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 
   /* Save bytecodes from this session in a new vector */
   code_size = current_pc(env) - beginning;
-  bytecodes = ecl_alloc_object(t_bytecodes);
-  bytecodes->bytecodes.name = @'si::bytecodes';
-  bytecodes->bytecodes.definition = definition;
-  bytecodes->bytecodes.code_size = code_size;
-  bytecodes->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
-  bytecodes->bytecodes.data = c_env->constants;
-  bytecodes->bytecodes.flex = ECL_NIL;
-  bytecodes->bytecodes.nlcl = ECL_NIL;
-  for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
+  output = ecl_alloc_object(t_bytecodes);
+  output->bytecodes.name = @'si::bytecodes';
+  output->bytecodes.definition = definition;
+  output->bytecodes.code_size = code_size;
+  output->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
+  output->bytecodes.data = c_env->constants;
+  output->bytecodes.flex = ECL_NIL;
+  output->bytecodes.nlcl = ecl_make_fixnum(c_env->env_width);
+  for (i = 0, code = (cl_opcode *)output->bytecodes.code; i < code_size; i++) {
     code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
   }
-  bytecodes->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
-  ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? ECL_NIL : file,
+  output->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
+  ecl_set_function_source_file_info(output, (file == OBJNULL)? ECL_NIL : file,
                                     (file == OBJNULL)? ECL_NIL : position);
   asm_clear(env, beginning);
-  return bytecodes;
+  return output;
 }
 
 #define asm_arg(env,n) asm_op(env,n)
@@ -456,6 +456,8 @@ c_push_record(const cl_compiler_ptr c_env, cl_object type,
   cl_object depth = ecl_make_fixnum(c_env->env_depth);
   cl_object index = ecl_make_fixnum(c_env->env_size++);
   cl_object loc = CONS(depth, index);
+  if (c_env->env_width < c_env->env_size)
+    c_env->env_width = c_env->env_size;
   return cl_list(4, type, arg1, arg2, loc);
 }
 
@@ -594,6 +596,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     *new = *old;
     new->parent_env = old;
     new->env_size = 0;
+    new->env_width = 0;
     new->env_depth = old->env_depth + 1;
   } else {
     new->code_walker = ECL_SYM_VAL(the_env, @'si::*code-walker*');
@@ -612,6 +615,7 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->captured = ECL_NIL;
     new->parent_env = NULL;
     new->env_size = 0;
+    new->env_width = 0;
     new->env_depth = 0;
     new->macros = CDR(env);
     new->variables = CAR(env);
@@ -2756,6 +2760,7 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
                                       ECL_NIL);
   new_c_env.parent_env = NULL;
   new_c_env.env_depth = 0;
+  new_c_env.env_width = 0;
   new_c_env.env_size = 0;
   env->c_env = &new_c_env;
   handle = asm_begin(env);
@@ -3616,7 +3621,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   output = asm_end(env, handle, lambda);
   output->bytecodes.name = name;
   output->bytecodes.flex = ECL_NIL;
-  output->bytecodes.nlcl = ECL_NIL;
+  output->bytecodes.nlcl = ecl_make_fixnum(new_c_env->env_width);
 
   old_c_env->load_time_forms = new_c_env->load_time_forms;
 
