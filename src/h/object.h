@@ -928,6 +928,7 @@ struct ecl_stack_frame {
         _ECL_HDR;
         cl_object *stack;       /*  Is this relative to the lisp stack?  */
         cl_object *base;        /*  Start of frame  */
+        cl_object *sp;          /*  Stack pointer  */
         cl_index size;          /*  Number of arguments  */
         struct cl_env_struct *env;
 };

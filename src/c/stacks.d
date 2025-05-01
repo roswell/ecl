@@ -227,6 +227,7 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
   f->frame.stack = env->stack;
   f->frame.base = base;
   f->frame.size = size;
+  f->frame.sp = base;
   f->frame.env = env;
   env->stack_top = (base + size);
   return f;

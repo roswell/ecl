@@ -121,39 +121,46 @@ VEclose_around_arg_type()
  *      sym_macro = ( si::symbol-macro macro_function[bytecodes] . macro_name )
  */
 
-#define bind_lcl(env, entry)   push_lcl(&env, entry)
-#define tack_lcl(env, entries) foot_lcl(&env, entries)
+#define bind_lcl(env, entry)      push_lcl(env, entry)
+#define tack_lcl(env, entries, n) foot_lcl(env, entries, n)
 
 #define bind_var(env, var, val)   bind_lcl(env, CONS(var, val))
 #define bind_function(env, fun)   bind_lcl(env, fun)
 #define bind_frame(env, id, name) bind_lcl(env, CONS(id, name))
 
-#define unbind_lcl(env, n) drop_lcl(&env, n)
-#define tangle_lcl(stack) (stack)
-#define unwind_lcl(stack, where) (stack = where)
+#define unbind_lcl(env, n) drop_lcl(env, n)
+#define tangle_lcl(stack) ecl_cast_ptr(cl_object,stack->frame.sp)
+#define unwind_lcl(stack, where) (stack->frame.sp = ecl_cast_ptr(cl_object*,where))
 
 static void
-push_lcl(cl_object *stack, cl_object new)
+push_lcl(cl_object stack, cl_object new)
 {
-  *stack = ecl_cons(new, *stack);
+  *(stack->frame.sp++) = new;
 }
 
 static void
-foot_lcl(cl_object *stack, cl_object list)
+foot_lcl(cl_object stack, cl_object list, cl_index n)
 {
-  *stack = ecl_append(list, *stack);
+  cl_object entry;
+  cl_index idx = n;
+  loop_for_on_unsafe(list) {
+    entry = ECL_CONS_CAR(list);
+    idx--;
+    *(stack->frame.sp+idx) = entry;
+  } end_loop_for_on_unsafe(list);
+  stack->frame.sp += n;
 }
 
 static void
-drop_lcl(cl_object *stack, cl_fixnum n)
+drop_lcl(cl_object stack, cl_fixnum n)
 {
-  while (n--) *stack = ECL_CONS_CDR(*stack);
+  stack->frame.sp -= n;
 }
 
 static cl_object
 ecl_lcl_env_get_record(cl_object env, cl_fixnum n)
 {
-  return ECL_CONS_CAR(ecl_last(env, n+1));
+  return ECL_STACK_FRAME_REF(env,n);
 }
 
 static cl_object
@@ -353,21 +360,24 @@ call_stepper(cl_env_ptr the_env, cl_object form, cl_object delta)
 cl_object
 ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
 {
-  ECL_OFFSET_TABLE
-    const cl_env_ptr the_env = frame->frame.env;
+  ECL_OFFSET_TABLE;
+  const cl_env_ptr the_env = frame->frame.env;
   volatile cl_index frame_index = 0;
   cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
   cl_object *data = bytecodes->bytecodes.data->vector.self.t;
-  cl_object lex_env = closure;
-  cl_object reg0 = ECL_NIL, reg1 = ECL_NIL, lcl_env = NULL;
-  cl_index narg;
+  cl_object lex_env = closure, lcl_env = ECL_NIL;
+  cl_object reg0 = ECL_NIL, reg1 = ECL_NIL;
+  cl_index narg = 0;
+  cl_index nlcl = ecl_fixnum(bytecodes->bytecodes.nlcl);
   struct ecl_stack_frame frame_aux;
+  struct ecl_stack_frame frame_lcl;
   volatile struct ecl_ihs_frame ihs;
 
   /* INV: bytecodes is of type t_bytecodes */
-
+  lcl_env = ecl_cast_ptr(cl_object, &frame_lcl);
   ecl_cs_check(the_env, ihs);
   ecl_ihs_push(the_env, &ihs, bytecodes, closure);
+  ecl_stack_frame_open(the_env, lcl_env, nlcl);
   frame_aux.t = t_frame;
   frame_aux.stack = frame_aux.base = 0;
   frame_aux.size = 0;
@@ -700,6 +710,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_EXIT); {
       ecl_ihs_pop(the_env);
+      ecl_stack_frame_close(lcl_env);
       return reg0;
     }
     /* OP_FLET      nfun{arg}, fun1{object}
@@ -722,7 +733,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
         fun_env = CONS(fun, fun_env);
       }
       /* Update the environment with new functions. */
-      tack_lcl(lcl_env, fun_env);
+      tack_lcl(lcl_env, fun_env, nfun);
       THREAD_NEXT;
     }
     /* OP_LABELS    nfun{arg}
@@ -746,7 +757,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
         fun_env = CONS(fun, fun_env);
       }
       /* Update the environment with new functions. */
-      tack_lcl(lcl_env, fun_env);
+      tack_lcl(lcl_env, fun_env, nfun);
       /* Update the closures so that all functions can call each other */
       loop_for_on_unsafe(fun_env) {
         fun = ECL_CONS_CAR(fun_env);
