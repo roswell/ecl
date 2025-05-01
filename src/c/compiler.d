@@ -494,6 +494,13 @@ c_push_record(const cl_compiler_ptr c_env, cl_object type,
   return cl_list(4, type, arg1, arg2, loc);
 }
 
+static cl_object
+c_make_record(const cl_compiler_ptr c_env, cl_object type,
+              cl_object arg1, cl_object arg2)
+{
+  return cl_list(3, type, arg1, arg2);
+}
+
 static void
 c_register_block(cl_env_ptr env, cl_object name)
 {
@@ -515,8 +522,9 @@ c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
 {
   const cl_compiler_ptr c_env = env->c_env;
   cl_object boundp = bound? ECL_T : ECL_NIL;
-  cl_object specialp = special? ECL_T : ECL_NIL;
-  cl_object entry = c_push_record(c_env, var, specialp, boundp);
+  cl_object entry = (special
+                     ? c_make_record(c_env, var, ECL_T, boundp)
+                     : c_push_record(c_env, var, ECL_NIL, boundp));
   c_env->variables = CONS(entry, c_env->variables);
 }
 
@@ -533,7 +541,7 @@ static void
 c_register_symbol_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object entry = c_push_record(c_env, name, @'si::symbol-macro', exp_fun);
+  cl_object entry = c_make_record(c_env, name, @'si::symbol-macro', exp_fun);
   c_env->variables = CONS(entry, c_env->variables);
 }
 
@@ -1121,7 +1129,10 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
       }
     }
   c_env->variables = env;
-  if (num_lexical) asm_op2(the_env, OP_UNBIND, num_lexical);
+  if (num_lexical) {
+    c_env->env_size -= num_lexical;
+    asm_op2(the_env, OP_UNBIND, num_lexical);
+  }
   if (num_special) asm_op2(the_env, OP_UNBINDS, num_special);
 }
 
@@ -1253,6 +1264,7 @@ c_block(cl_env_ptr env, cl_object body, int old_flags) {
     return compile_body(env, body, old_flags);
   } else {
     c_undo_bindings(env, old_env.variables, 0);
+    env->c_env->env_size--;
     asm_op(env, OP_EXIT_FRAME);
     asm_complete(env, 0, labelz);
     return flags;
@@ -1458,6 +1470,7 @@ c_catch(cl_env_ptr env, cl_object args, int flags) {
   compile_body(env, args, FLAG_VALUES);
 
   c_undo_bindings(env, old_env, 0);
+  env->c_env->env_size--;
   asm_op(env, OP_EXIT_FRAME);
   asm_complete(env, 0, labelz);
 
@@ -2474,6 +2487,7 @@ c_tagbody(cl_env_ptr env, cl_object args, int flags)
   }
   asm_op(env, OP_EXIT_TAGBODY);
   c_undo_bindings(env, old_env, 0);
+  env->c_env->env_size--;
   return FLAG_REG0;
 }
 
