@@ -449,45 +449,10 @@ c_register_captured(cl_env_ptr env, cl_object c)
  * declaration forms, as they do not completely match those of Common-Lisp.
  */
 
-static cl_fixnum
-c_lcl_size(const cl_compiler_ptr c_env)
-{
-  cl_fixnum n = 0;
-  cl_object l = c_env->variables;
-  loop_for_on_unsafe(l) {
-    cl_object record = ECL_CONS_CAR(l), type;
-    if (record == @'si::function-boundary') {
-      break;
-    }
-    if(ECL_ATOM(record))
-      continue;
-    type = pop(&record);
-    if (type == @':block'
-        || type == @':function'
-        || type == @':tag'
-        /* type == @'variable' && Null(specialp) */
-        || Null(pop(&record))) {
-      n++;
-    }
-  } end_loop_for_on_unsafe(l);
-  return n;
-}
-
-static void
-c_assert_env_size(char *s, const cl_compiler_ptr c_env)
-{
-  if(c_lcl_size(c_env) != c_env->env_size) {
-    printf("c_assert_env_size fail: '%s' computed %i != cached %i\n",
-           s, c_lcl_size(c_env), c_env->env_size);
-    /* ecl_internal_error(s); */
-  }
-}
-
 static cl_object
 c_push_record(const cl_compiler_ptr c_env, cl_object type,
               cl_object arg1, cl_object arg2)
 {
-  c_assert_env_size("c_push_record", c_env);
   cl_object depth = ecl_make_fixnum(c_env->env_depth);
   cl_object index = ecl_make_fixnum(c_env->env_size++);
   cl_object loc = CONS(depth, index);
@@ -1102,7 +1067,6 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
   cl_index num_lexical = 0;
   cl_index num_special = 0;
   const cl_compiler_ptr c_env = the_env->c_env;
-  c_assert_env_size("c_undo_bindings (before)", c_env);
   for (env = c_env->variables; env != old_vars && !Null(env); env = ECL_CONS_CDR(env))
     {
       cl_object record, name, special, boundp;
