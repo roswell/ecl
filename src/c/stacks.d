@@ -435,17 +435,6 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
   return new_index;
 }
 
-static cl_object
-ecl_extend_bindings_array(cl_object vector)
-{
-  cl_index new_size = cl_core.last_var_index * 1.25;
-  cl_object new_vector = si_make_vector(ECL_T, ecl_make_fixnum(new_size), ECL_NIL,
-                                        ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(new_vector, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  ecl_copy_subarray(new_vector, 0, vector, 0, vector->vector.dim);
-  return new_vector;
-}
-
 static cl_index
 invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
 {
@@ -454,10 +443,17 @@ invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
     index = ecl_new_binding_index(env, s);
   }
   if (index >= env->bds_stack.tl_bindings_size) {
-    cl_object vector = env->bds_stack.bindings_array;
-    env->bds_stack.bindings_array = vector = ecl_extend_bindings_array(vector);
-    env->bds_stack.tl_bindings_size = vector->vector.dim;
-    env->bds_stack.tl_bindings = vector->vector.self.t;
+    cl_index osize = env->bds_stack.tl_bindings_size;
+    cl_index nsize = cl_core.last_var_index * 1.25;
+    cl_object *old_vector = env->bds_stack.tl_bindings;
+    cl_object *new_vector = ecl_realloc(old_vector,
+                                        osize*sizeof(cl_object*),
+                                        nsize*sizeof(cl_object*));
+    while(osize < nsize) {
+      new_vector[osize++] = ECL_NO_TL_BINDING;
+    }
+    env->bds_stack.tl_bindings = new_vector;
+    env->bds_stack.tl_bindings_size = nsize;
   }
   return index;
 }

@@ -196,11 +196,15 @@ ecl_init_first_env(cl_env_ptr env)
   init_threads();
 #endif
 #ifdef ECL_THREADS
-  env->bds_stack.bindings_array
-    = si_make_vector(ECL_T, ecl_make_fixnum(1024), ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bds_stack.bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->bds_stack.tl_bindings_size = env->bds_stack.bindings_array->vector.dim;
-  env->bds_stack.tl_bindings = env->bds_stack.bindings_array->vector.self.t;
+  {
+    cl_index idx;
+    cl_object *vector = (cl_object *)ecl_malloc(1024*sizeof(cl_object*));
+    for(idx=0; idx<1024; idx++) {
+      vector[idx] = ECL_NO_TL_BINDING;
+    }
+    env->bds_stack.tl_bindings_size = 1024;
+    env->bds_stack.tl_bindings = vector;
+  }
 #endif
   init_env_mp(env);
   init_env_int(env);
@@ -225,6 +229,8 @@ _ecl_dealloc_env(cl_env_ptr env)
   /* Environment cleanup. This is required becauyse the environment is allocated
    * using mmap or some other method. We could do more cleaning here.*/
 #ifdef ECL_THREADS
+  ecl_free(env->bds_stack.tl_bindings);
+  env->bds_stack.tl_bindings_size = 0;
   ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
 #endif
 #if defined(ECL_USE_MPROTECT)

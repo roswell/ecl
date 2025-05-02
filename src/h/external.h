@@ -26,7 +26,6 @@ struct ecl_binding_stack {
 #ifdef ECL_THREADS
         cl_index tl_bindings_size;
         cl_object *tl_bindings;
-        cl_object bindings_array;
 #endif
         cl_index size;
         cl_index limit_size;

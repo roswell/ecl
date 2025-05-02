@@ -676,12 +676,12 @@ void init_type_info (void)
     to_bitmap(&o, &(o.process.name)) |
     to_bitmap(&o, &(o.process.function)) |
     to_bitmap(&o, &(o.process.args)) |
-    to_bitmap(&o, &(o.process.env)) |
     to_bitmap(&o, &(o.process.interrupt)) |
-    to_bitmap(&o, &(o.process.initial_bindings)) |
+    to_bitmap(&o, &(o.process.inherit_bindings_p)) |
     to_bitmap(&o, &(o.process.parent)) |
     to_bitmap(&o, &(o.process.exit_values)) |
-    to_bitmap(&o, &(o.process.woken_up));
+    to_bitmap(&o, &(o.process.woken_up)) |
+    to_bitmap(&o, &(o.process.env));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
     to_bitmap(&o, &(o.lock.owner));
@@ -1165,6 +1165,11 @@ ecl_mark_env(struct cl_env_struct *env)
     GC_set_mark_bit((void *)env->bds_stack.org);
   }
   /* When not using threads, "env" is mmaped or statically allocated. */
+#ifdef ECL_THREADS
+  if (env->bds_stack.tl_bindings)
+    GC_push_all((void *)env->bds_stack.tl_bindings,
+                (void *)(env->bds_stack.tl_bindings + env->bds_stack.tl_bindings_size));
+#endif
   GC_push_all((void *)env, (void *)(env + 1));
 }
 
