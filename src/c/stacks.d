@@ -25,6 +25,28 @@
 /* ------------------------- C STACK ---------------------------------- */
 
 static void
+cs_set_size(cl_env_ptr env, cl_index new_size);
+
+void
+ecl_cs_init(cl_env_ptr env)
+{
+#ifdef GBC_BOEHM
+  struct GC_stack_base base;
+  if (GC_get_stack_base(&base) == GC_SUCCESS)
+    env->c_stack.org = (char*)base.mem_base;
+  else
+#endif
+    {
+      /* Rough estimate. Not very safe. We assume that cl_boot()
+       * is invoked from the main() routine of the program. */
+      env->c_stack.org = (char*)(&env);
+    }
+  env->c_stack.max = env->c_stack.org;
+  env->c_stack.max_size = 0;
+  cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
+}
+
+static void
 cs_set_size(cl_env_ptr env, cl_index new_size)
 {
   volatile char foo = 0;
@@ -113,27 +135,25 @@ ecl_cs_overflow(void)
   cs_set_size(env, size);
 }
 
-void
-ecl_cs_set_org(cl_env_ptr env)
-{
-#ifdef GBC_BOEHM
-  struct GC_stack_base base;
-  if (GC_get_stack_base(&base) == GC_SUCCESS)
-    env->c_stack.org = (char*)base.mem_base;
-  else
-#endif
-    {
-      /* Rough estimate. Not very safe. We assume that cl_boot()
-       * is invoked from the main() routine of the program.
-       */
-      env->c_stack.org = (char*)(&env);
-    }
-  env->c_stack.max = env->c_stack.org;
-  env->c_stack.max_size = 0;
-  cs_set_size(env, ecl_option_values[ECL_OPT_C_STACK_SIZE]);
-}
-
 /* ------------------------- LISP STACK ------------------------------- */
+
+static void
+run_init(cl_env_ptr env)
+{
+  cl_index size, limit_size, margin;
+  margin = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
+  size = ecl_option_values[ECL_OPT_LISP_STACK_SIZE];
+  size = ((size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
+  limit_size = size - 2*margin;
+  env->run_stack.size = size;
+  env->run_stack.limit_size = limit_size;
+  env->run_stack.org = (cl_object *)ecl_malloc(size * sizeof(cl_object));
+  env->run_stack.top = env->run_stack.org;
+  env->run_stack.limit = &env->run_stack.org[limit_size];
+  /* A stack always has at least one element. This is assumed by cl__va_start
+     and friends, which take a sp=0 to have no arguments. */
+  *(env->run_stack.top++) = ecl_make_fixnum(0);
+}
 
 cl_object *
 ecl_data_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
@@ -141,25 +161,27 @@ ecl_data_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   cl_index top = env->run_stack.top - env->run_stack.org;
   cl_object *new_stack, *old_stack;
   cl_index safety_area = ecl_option_values[ECL_OPT_LISP_STACK_SAFETY_AREA];
-  cl_index new_size = tentative_new_size + 2*safety_area;
+  cl_index nsize = tentative_new_size + 2*safety_area;
+  cl_index osize = env->run_stack.size;
 
   /* Round to page size */
-  new_size = ((new_size + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
+  nsize = ((nsize + LISP_PAGESIZE - 1) / LISP_PAGESIZE) * LISP_PAGESIZE;
 
-  if (ecl_unlikely(top > new_size)) {
+  if (ecl_unlikely(top > nsize)) {
     FEerror("Internal error: cannot shrink stack below stack top.",0);
   }
 
   old_stack = env->run_stack.org;
-  new_stack = (cl_object *)ecl_alloc_atomic(new_size * sizeof(cl_object));
+  new_stack = (cl_object *)ecl_realloc(old_stack,
+                                       osize * sizeof(cl_object),
+                                       nsize * sizeof(cl_object));
 
   ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  memcpy(new_stack, old_stack, env->run_stack.size * sizeof(cl_object));
-  env->run_stack.size = new_size;
-  env->run_stack.limit_size = new_size - 2*safety_area;
+  env->run_stack.size = nsize;
+  env->run_stack.limit_size = nsize - 2*safety_area;
   env->run_stack.org = new_stack;
   env->run_stack.top = env->run_stack.org + top;
-  env->run_stack.limit = env->run_stack.org + (new_size - 2*safety_area);
+  env->run_stack.limit = env->run_stack.org + (nsize - 2*safety_area);
 
   /* A stack always has at least one element. This is assumed by cl__va_start
    * and friends, which take a sp=0 to have no arguments.
@@ -168,8 +190,6 @@ ecl_data_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
     *(env->run_stack.top++) = ecl_make_fixnum(0);
   }
   ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-
-  ecl_dealloc(old_stack);
   return env->run_stack.top;
 }
 
@@ -283,28 +303,40 @@ ecl_bds_unwind_n(cl_env_ptr env, int n)
 }
 
 static void
-ecl_bds_set_size(cl_env_ptr env, cl_index new_size)
+bds_init(cl_env_ptr env)
+{
+  cl_index size, margin;
+  margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
+  size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
+  env->bds_stack.size = size;
+  env->bds_stack.org = (ecl_bds_ptr)ecl_malloc(size * sizeof(*env->bds_stack.org));
+  env->bds_stack.top = env->bds_stack.org-1;
+  env->bds_stack.limit = &env->bds_stack.org[size - 2*margin];
+}
+
+static void
+ecl_bds_set_size(cl_env_ptr env, cl_index nsize)
 {
   ecl_bds_ptr old_org = env->bds_stack.org;
   cl_index limit = env->bds_stack.top - old_org;
-  if (new_size <= limit) {
+  cl_index osize = env->bds_stack.size;
+  if (nsize <= limit) {
     FEerror("Cannot shrink the binding stack below ~D.", 1,
             ecl_make_unsigned_integer(limit));
   } else {
-    cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
     ecl_bds_ptr org;
-    env->bds_stack.limit_size = new_size - 2*margin;
-    org = ecl_alloc_atomic(new_size * sizeof(*org));
-
+    cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
+    org = ecl_realloc(old_org,
+                      osize * sizeof(*org),
+                      nsize * sizeof(*org));
     ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
     memcpy(org, old_org, (limit + 1) * sizeof(*org));
     env->bds_stack.top = org + limit;
     env->bds_stack.org = org;
-    env->bds_stack.limit = org + (new_size - 2*margin);
-    env->bds_stack.size = new_size;
+    env->bds_stack.limit = org + (nsize - 2*margin);
+    env->bds_stack.size = nsize;
+    env->bds_stack.limit_size = nsize - 2*margin;
     ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-
-    ecl_dealloc(old_org);
   }
 }
 
@@ -571,6 +603,16 @@ ecl_bds_set(cl_env_ptr env, cl_object s, cl_object value)
 
 /* ------------------------- INVOCATION STACK ------------------------- */
 
+static void
+ihs_init(cl_env_ptr env)
+{
+  static struct ecl_ihs_frame ihs_org = { NULL, NULL, NULL, 0};
+  env->ihs_stack.top = &ihs_org;
+  ihs_org.function = ECL_NIL;
+  ihs_org.lex_env = ECL_NIL;
+  ihs_org.index = 0;
+}
+
 static ecl_ihs_ptr
 get_ihs_ptr(cl_index n)
 {
@@ -628,28 +670,39 @@ si_ihs_env(cl_object arg)
 /* ------------------------- FRAME STACK ------------------------------ */
 
 static void
-frs_set_size(cl_env_ptr env, cl_index new_size)
+frs_init(cl_env_ptr env)
+{
+  cl_index size, margin;
+  margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
+  size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE] + 2 * margin;
+  env->frs_stack.size = size;
+  env->frs_stack.org = (ecl_frame_ptr)ecl_malloc(size * sizeof(*env->frs_stack.org));
+  env->frs_stack.top = env->frs_stack.org-1;
+  env->frs_stack.limit = &env->frs_stack.org[size - 2*margin];
+}
+
+static void
+frs_set_size(cl_env_ptr env, cl_index nsize)
 {
   ecl_frame_ptr old_org = env->frs_stack.org;
   cl_index limit = env->frs_stack.top - old_org;
-  if (new_size <= limit) {
+  if (nsize <= limit) {
     FEerror("Cannot shrink frame stack below ~D.", 1,
             ecl_make_unsigned_integer(limit));
   } else {
-    cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
     ecl_frame_ptr org;
-    env->frs_stack.limit_size = new_size - 2*margin;
-    org = ecl_alloc_atomic(new_size * sizeof(*org));
-
+    cl_index margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
+    cl_index osize = env->frs_stack.size;
+    org = ecl_realloc(old_org,
+                      osize * sizeof(*org),
+                      nsize * sizeof(*org));
     ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-    memcpy(org, old_org, (limit + 1) * sizeof(*org));
     env->frs_stack.top = org + limit;
     env->frs_stack.org = org;
-    env->frs_stack.limit = org + (new_size - 2*margin);
-    env->frs_stack.size = new_size;
+    env->frs_stack.limit = org + (nsize - 2*margin);
+    env->frs_stack.size = nsize;
+    env->frs_stack.limit_size = nsize - 2*margin;
     ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
-
-    ecl_dealloc(old_org);
   }
 }
 
@@ -853,31 +906,8 @@ si_reset_margin(cl_object type)
 void
 init_stacks(cl_env_ptr env)
 {
-  static struct ecl_ihs_frame ihs_org = { NULL, NULL, NULL, 0};
-  cl_index size, margin;
-  /* frame stack */
-  margin = ecl_option_values[ECL_OPT_FRAME_STACK_SAFETY_AREA];
-  size = ecl_option_values[ECL_OPT_FRAME_STACK_SIZE] + 2 * margin;
-  env->frs_stack.size = size;
-  env->frs_stack.org = (ecl_frame_ptr)ecl_alloc_atomic(size * sizeof(*env->frs_stack.org));
-  env->frs_stack.top = env->frs_stack.org-1;
-  env->frs_stack.limit = &env->frs_stack.org[size - 2*margin];
-  /* bind stack */
-  margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
-  size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE] + 2 * margin;
-  env->bds_stack.size = size;
-  env->bds_stack.org = (ecl_bds_ptr)ecl_alloc_atomic(size * sizeof(*env->bds_stack.org));
-  env->bds_stack.top = env->bds_stack.org-1;
-  env->bds_stack.limit = &env->bds_stack.org[size - 2*margin];
-  /* ihs stack */
-  env->ihs_stack.top = &ihs_org;
-  ihs_org.function = ECL_NIL;
-  ihs_org.lex_env = ECL_NIL;
-  ihs_org.index = 0;
-  /* lisp stack */
-  env->run_stack.org = NULL;
-  env->run_stack.top = NULL;
-  env->run_stack.limit = NULL;
-  env->run_stack.size = 0;
-  ecl_data_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
+  frs_init(env);
+  bds_init(env);
+  ihs_init(env);
+  run_init(env);
 }
