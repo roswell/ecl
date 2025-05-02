@@ -1165,6 +1165,11 @@ ecl_mark_env(struct cl_env_struct *env)
     GC_set_mark_bit((void *)env->bds_stack.org);
   }
   /* When not using threads, "env" is mmaped or statically allocated. */
+#ifdef ECL_THREADS
+  if (env->bds_stack.tl_bindings)
+    GC_push_all((void *)env->bds_stack.tl_bindings,
+                (void *)(env->bds_stack.tl_bindings + env->bds_stack.tl_bindings_size));
+#endif
   GC_push_all((void *)env, (void *)(env + 1));
 }
 
