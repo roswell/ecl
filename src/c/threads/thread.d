@@ -274,7 +274,7 @@ thread_entry_point(void *arg)
 }
 
 static cl_object
-alloc_process(cl_object name, cl_object initial_bindings)
+alloc_process(cl_object name, cl_object initial_bindings_p)
 {
   cl_env_ptr env = ecl_process_env();
   cl_object process = ecl_alloc_object(t_process), array;
@@ -285,7 +285,7 @@ alloc_process(cl_object name, cl_object initial_bindings)
   process->process.interrupt = ECL_NIL;
   process->process.exit_values = ECL_NIL;
   process->process.env = NULL;
-  if (initial_bindings != ECL_NIL || env->bds_stack.bindings_array == OBJNULL) {
+  if (initial_bindings_p != ECL_NIL || env->bds_stack.bindings_array == OBJNULL) {
     array = si_make_vector(ECL_T, ecl_make_fixnum(256),
                            ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
     si_fill_array_with_elt(array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
@@ -359,8 +359,8 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   /* Copy initial bindings from process to the fake environment */
   env_aux->cleanup = registered;
   env_aux->bds_stack.bindings_array = process->process.initial_bindings;
-  env_aux->bds_stack.thread_local_bindings_size = env_aux->bds_stack.bindings_array->vector.dim;
-  env_aux->bds_stack.thread_local_bindings = env_aux->bds_stack.bindings_array->vector.self.t;
+  env_aux->bds_stack.tl_bindings_size = env_aux->bds_stack.bindings_array->vector.dim;
+  env_aux->bds_stack.tl_bindings = env_aux->bds_stack.bindings_array->vector.self.t;
 
   /* Switch over to the real environment */
   memcpy(env, env_aux, sizeof(*env));
@@ -390,10 +390,10 @@ ecl_release_current_thread(void)
 #endif
 }
 
-@(defun mp::make-process (&key name ((:initial-bindings initial_bindings) ECL_T))
+@(defun mp::make-process (&key name ((:initial-bindings initial_bindings_p) ECL_T))
   cl_object process;
   @
-  process = alloc_process(name, initial_bindings);
+  process = alloc_process(name, initial_bindings_p);
   @(return process);
   @)
 
@@ -516,9 +516,9 @@ mp_process_enable(cl_object process)
 
     process_env->trap_fpe_bits = process->process.trap_fpe_bits;
     process_env->bds_stack.bindings_array = process->process.initial_bindings;
-    process_env->bds_stack.thread_local_bindings_size = 
+    process_env->bds_stack.tl_bindings_size =
       process_env->bds_stack.bindings_array->vector.dim;
-    process_env->bds_stack.thread_local_bindings =
+    process_env->bds_stack.tl_bindings =
       process_env->bds_stack.bindings_array->vector.self.t;
 
     ecl_disable_interrupts_env(the_env);

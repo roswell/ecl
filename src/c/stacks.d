@@ -459,11 +459,11 @@ invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
   if (index == ECL_MISSING_SPECIAL_BINDING) {
     index = ecl_new_binding_index(env, s);
   }
-  if (index >= env->bds_stack.thread_local_bindings_size) {
+  if (index >= env->bds_stack.tl_bindings_size) {
     cl_object vector = env->bds_stack.bindings_array;
     env->bds_stack.bindings_array = vector = ecl_extend_bindings_array(vector);
-    env->bds_stack.thread_local_bindings_size = vector->vector.dim;
-    env->bds_stack.thread_local_bindings = vector->vector.self.t;
+    env->bds_stack.tl_bindings_size = vector->vector.dim;
+    env->bds_stack.tl_bindings = vector->vector.self.t;
   }
   return index;
 }
@@ -479,10 +479,10 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
   cl_object *location;
   ecl_bds_ptr slot;
   cl_index index = s->symbol.binding;
-  if (index >= env->bds_stack.thread_local_bindings_size) {
+  if (index >= env->bds_stack.tl_bindings_size) {
     index = invalid_or_too_large_binding_index(env,s);
   }
-  location = env->bds_stack.thread_local_bindings + index;
+  location = env->bds_stack.tl_bindings + index;
   slot = env->bds_stack.top+1;
   if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
   slot->symbol = ECL_DUMMY_TAG;
@@ -511,10 +511,10 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
   cl_object *location;
   ecl_bds_ptr slot;
   cl_index index = s->symbol.binding;
-  if (index >= env->bds_stack.thread_local_bindings_size) {
+  if (index >= env->bds_stack.tl_bindings_size) {
     index = invalid_or_too_large_binding_index(env,s);
   }
-  location = env->bds_stack.thread_local_bindings + index;
+  location = env->bds_stack.tl_bindings + index;
   slot = env->bds_stack.top+1;
   if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
   slot->symbol = ECL_DUMMY_TAG;
@@ -540,7 +540,7 @@ ecl_bds_unwind1(cl_env_ptr env)
 {
   cl_object s = env->bds_stack.top->symbol;
 #ifdef ECL_THREADS
-  cl_object *location = env->bds_stack.thread_local_bindings + s->symbol.binding;
+  cl_object *location = env->bds_stack.tl_bindings + s->symbol.binding;
   *location = env->bds_stack.top->value;
 #else
   s->symbol.value = env->bds_stack.top->value;
@@ -553,8 +553,8 @@ cl_object
 ecl_bds_read(cl_env_ptr env, cl_object s)
 {
   cl_index index = s->symbol.binding;
-  if (index < env->bds_stack.thread_local_bindings_size) {
-    cl_object x = env->bds_stack.thread_local_bindings[index];
+  if (index < env->bds_stack.tl_bindings_size) {
+    cl_object x = env->bds_stack.tl_bindings[index];
     if (x != ECL_NO_TL_BINDING) return x;
   }
   return s->symbol.value;
@@ -564,8 +564,8 @@ cl_object *
 ecl_bds_ref(cl_env_ptr env, cl_object s)
 {
   cl_index index = s->symbol.binding;
-  if (index < env->bds_stack.thread_local_bindings_size) {
-    cl_object *location = env->bds_stack.thread_local_bindings + index;
+  if (index < env->bds_stack.tl_bindings_size) {
+    cl_object *location = env->bds_stack.tl_bindings + index;
     if (*location != ECL_NO_TL_BINDING)
       return location;
   }

@@ -13,8 +13,8 @@ extern "C" {
 /* The BinDing Stack stores the bindings of special variables. */
 struct ecl_binding_stack {
 #ifdef ECL_THREADS
-        cl_index thread_local_bindings_size;
-        cl_object *thread_local_bindings;
+        cl_index tl_bindings_size;
+        cl_object *tl_bindings;
         cl_object bindings_array;
 #endif
         cl_index size;
