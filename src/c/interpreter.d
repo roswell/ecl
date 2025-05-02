@@ -122,7 +122,6 @@ VEclose_around_arg_type()
  */
 
 #define bind_lcl(env, entry)      push_lcl(env, entry)
-#define tack_lcl(env, entries, n) foot_lcl(env, entries, n)
 
 #define bind_var(env, var, val)   bind_lcl(env, CONS(var, val))
 #define bind_function(env, fun)   bind_lcl(env, fun)
@@ -136,19 +135,6 @@ static void
 push_lcl(cl_object stack, cl_object new)
 {
   *(stack->frame.sp++) = new;
-}
-
-static void
-foot_lcl(cl_object stack, cl_object list, cl_index n)
-{
-  cl_object entry;
-  cl_index idx = n;
-  loop_for_on_unsafe(list) {
-    entry = ECL_CONS_CAR(list);
-    idx--;
-    *(stack->frame.sp+idx) = entry;
-  } end_loop_for_on_unsafe(list);
-  stack->frame.sp += n;
 }
 
 static void
@@ -724,16 +710,14 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_FLET); {
       int idx, nfun;
-      cl_object fun_env=ECL_NIL, fun;
+      cl_object fun;
       GET_OPARG(nfun, vector);
       /* Create closures. */
       for(idx = 0; idx<nfun; idx++) {
         GET_DATA(fun, vector, data);
         fun = ecl_close_around(fun, lcl_env, lex_env);
-        fun_env = CONS(fun, fun_env);
+        push_lcl(lcl_env, fun);
       }
-      /* Update the environment with new functions. */
-      tack_lcl(lcl_env, fun_env, nfun);
       THREAD_NEXT;
     }
     /* OP_LABELS    nfun{arg}
@@ -748,21 +732,19 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_LABELS); {
       cl_index idx, nfun;
-      cl_object fun_env=ECL_NIL, fun;
+      cl_object fun;
+      cl_object *sp = lcl_env->frame.sp;
       GET_OPARG(nfun, vector);
       /* Create closures. */
       for(idx = 0; idx<nfun; idx++) {
         GET_DATA(fun, vector, data);
         fun = close_around_self(fun);
-        fun_env = CONS(fun, fun_env);
+        push_lcl(lcl_env, fun);
       }
-      /* Update the environment with new functions. */
-      tack_lcl(lcl_env, fun_env, nfun);
-      /* Update the closures so that all functions can call each other */
-      loop_for_on_unsafe(fun_env) {
-        fun = ECL_CONS_CAR(fun_env);
+      for(idx = 0; idx<nfun; idx++) {
+        fun = *sp++;
         close_around_self_fixup(fun, lcl_env, lex_env);
-      } end_loop_for_on_unsafe(fun_env);
+      }
       THREAD_NEXT;
     }
     /* OP_LFUNCTION index{fixnum} ; local
