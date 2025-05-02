@@ -226,8 +226,11 @@ ecl_init_env(cl_env_ptr env)
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
-  /* Environment cleanup. This is required becauyse the environment is allocated
-   * using mmap or some other method. We could do more cleaning here.*/
+  /* Environment cleanup. This is required because the environment is allocated
+   * using mmap or some other method. */
+  ecl_free(env->run_stack.org);
+  ecl_free(env->frs_stack.org);
+  ecl_free(env->bds_stack.org);
 #ifdef ECL_THREADS
   ecl_free(env->bds_stack.tl_bindings);
   env->bds_stack.tl_bindings_size = 0;
@@ -525,7 +528,6 @@ cl_boot(int argc, char **argv)
 
   env = cl_core.first_env;
   ecl_init_first_env(env);
-  ecl_cs_set_org(env);
 
   /*
    * 1) Initialize symbols and packages

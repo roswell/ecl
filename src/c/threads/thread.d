@@ -222,7 +222,7 @@ thread_entry_point(void *arg)
 #ifndef ECL_WINDOWS_THREADS
   pthread_cleanup_push(thread_cleanup, (void *)process);
 #endif
-  ecl_cs_set_org(env);
+  ecl_cs_init(env);
   ecl_mutex_lock(&process->process.start_stop_lock);
 
   /* 2) Execute the code. The CATCH_ALL point is the destination
@@ -761,6 +761,7 @@ init_threads()
   ecl_thread_t main_thread;
   /* We have to set the environment before any allocation takes place,
    * so that the interrupt handling code works. */
+  ecl_cs_init(the_env);
   ecl_set_process_self(main_thread);
   process = ecl_alloc_object(t_process);
   process->process.phase = ECL_PROCESS_ACTIVE;
