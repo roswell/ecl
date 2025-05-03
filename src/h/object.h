@@ -23,9 +23,6 @@ extern "C" {
 #define TRUE            1       /*  boolean true value  */
 #define FALSE           0       /*  boolean false value  */
 
-#if !defined(__cplusplus) && !defined(bool)
-typedef int bool;
-#endif
 typedef unsigned char byte;
 
 /*

@@ -2019,8 +2019,8 @@ extra_argument(int c, cl_object stream, cl_object d)
 }
 
 
-#define make_cf2(f)     ecl_make_cfun((f), ECL_NIL, NULL, 2)
-#define make_cf3(f)     ecl_make_cfun((f), ECL_NIL, NULL, 3)
+#define make_cf2(f)     ecl_make_cfun((cl_objectfn_fixed)(f), ECL_NIL, NULL, 2)
+#define make_cf3(f)     ecl_make_cfun((cl_objectfn_fixed)(f), ECL_NIL, NULL, 3)
 
 void
 init_read(void)

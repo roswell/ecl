@@ -468,7 +468,7 @@ extern void ecl_clear_bignum_registers(cl_env_ptr env);
 
 /* threads/mutex.d */
 
-extern cl_object si_mutex_timeout();
+extern cl_object si_mutex_timeout(cl_object process, cl_object lock, cl_object timeout);
 
 /* print.d */
 

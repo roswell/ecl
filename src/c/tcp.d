@@ -32,6 +32,7 @@ extern int errno;
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <stdlib.h>
 #endif
 #include <string.h>
 
@@ -86,10 +87,6 @@ int connect_to_server(char *host, int port)
   struct sockaddr *addr;        /* address to connect to */
   struct hostent *host_ptr;
   int addrlen;                  /* length of address */
-#if !defined(ECL_MS_WINDOWS_HOST)
-  extern char *getenv();
-  extern struct hostent *gethostbyname();
-#endif
   int fd;                       /* Network socket */
 
   INIT_TCP

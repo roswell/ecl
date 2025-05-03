@@ -22,6 +22,7 @@
 #include <stdarg.h>             /* va_list */
 #include <setjmp.h>             /* setjmp and buffers */
 #include <stdio.h>              /* FILE */
+#include <stdbool.h>
 /* Microsoft VC++ does not have va_copy() */
 #if ( defined(_MSC_VER) && (_MSC_VER < 1800) ) || !defined(va_copy)
 #define va_copy(dst, src) \
