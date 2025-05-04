@@ -73,8 +73,7 @@
 cl_object
 ecl_make_codeblock()
 {
-  cl_object block = ecl_alloc(t_codeblock);
-  block = ecl_alloc_object(t_codeblock);
+  cl_object block = ecl_alloc_object(t_codeblock);
   block->cblock.self_destruct = 0;
   block->cblock.locked = 0;
   block->cblock.handle = NULL;
