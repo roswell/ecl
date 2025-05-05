@@ -109,6 +109,7 @@ cl_make_symbol(cl_object str)
   ECL_SET(x,OBJNULL);
   ECL_FMAKUNBOUND(x);
   x->symbol.undef_entry = ecl_undefined_function_entry;
+  x->symbol.macfun = ECL_NIL;
   x->symbol.sfdef = ECL_NIL;
   x->symbol.plist = ECL_NIL;
   x->symbol.hpack = ECL_NIL;
