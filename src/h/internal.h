@@ -354,11 +354,9 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         struct ecl_stack_frame __ecl_frame;                             \
         const cl_object frame = (cl_object)&__ecl_frame;                \
         const cl_env_ptr env = ecl_process_env();                       \
-        frame->frame.t = t_frame;                                       \
-        frame->frame.env = env;                                         \
-        frame->frame.size = narg;                                       \
         if (narg <= ECL_C_ARGUMENTS_LIMIT) {                            \
-                cl_object *p = frame->frame.base = env->values;         \
+                ecl_stack_frame_open(env, frame, narg);                 \
+                cl_object *p = frame->frame.base;                       \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \
                 while (narg--) {                                        \
@@ -366,13 +364,14 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                         ++p;                                            \
                 }                                                       \
                 va_end(args);                                           \
-                frame->frame.stack = (cl_object*)0x1;                   \
         } else {                                                        \
+                frame->frame.t = t_frame;                               \
+                frame->frame.env = env;                                 \
+                frame->frame.size = narg;                               \
                 frame->frame.base = env->stack_top - narg;              \
                 frame->frame.stack = 0;                                 \
         }
-#define ECL_STACK_FRAME_VARARGS_END(frame)      \
-        /* No stack consumed, no need to close frame */
+#define ECL_STACK_FRAME_VARARGS_END(frame) ecl_stack_frame_close(frame)
 
 extern cl_object _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...);
 extern cl_object _ecl_bclosure_dispatch_vararg(cl_narg narg, ...);
