@@ -113,7 +113,7 @@ si_generic_function_p(cl_object x)
 static cl_object
 fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
 {
-  cl_object *args = frame->frame.base;
+  cl_object *args = ECL_STACK_FRAME_PTR(frame);
   cl_index narg = frame->frame.size;
   cl_object spec_how_list = GFUN_SPEC(gf);
   cl_object *argtype = vector->vector.self.t;
@@ -148,8 +148,8 @@ static cl_object
 frame_to_list(cl_object frame)
 {
   cl_object arglist, *p;
-  for (p = frame->frame.base + frame->frame.size, arglist = ECL_NIL;
-       p != frame->frame.base; ) {
+  cl_object *base = ECL_STACK_FRAME_PTR(frame);
+  for (p = base + frame->frame.size, arglist = ECL_NIL; p != base; ) {
     arglist = CONS(*(--p), arglist);
   }
   return arglist;
@@ -159,8 +159,8 @@ static cl_object
 frame_to_classes(cl_object frame)
 {
   cl_object arglist, *p;
-  for (p = frame->frame.base + frame->frame.size, arglist = ECL_NIL;
-       p != frame->frame.base; ) {
+  cl_object *base = ECL_STACK_FRAME_PTR(frame);
+  for (p = base + frame->frame.size, arglist = ECL_NIL; p != base; ) {
     arglist = CONS(cl_class_of(*(--p)), arglist);
   }
   return arglist;

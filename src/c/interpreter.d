@@ -128,13 +128,14 @@ VEclose_around_arg_type()
 #define bind_frame(env, id, name) bind_lcl(env, CONS(id, name))
 
 #define unbind_lcl(env, n) drop_lcl(env, n)
-#define tangle_lcl(stack) ecl_cast_ptr(cl_object,stack->frame.sp)
-#define unwind_lcl(stack, where) (stack->frame.sp = ecl_cast_ptr(cl_object*,where))
+#define tangle_lcl(stack) ecl_make_fixnum(stack->frame.sp)
+#define unwind_lcl(stack, where) (stack->frame.sp = ecl_fixnum(where))
 
 static void
 push_lcl(cl_object stack, cl_object new)
 {
-  *(stack->frame.sp++) = new;
+  *ECL_STACK_FRAME_TOP(stack) = new;
+  stack->frame.sp++;
 }
 
 static void
@@ -335,11 +336,14 @@ call_stepper(cl_env_ptr the_env, cl_object form, cl_object delta)
 
 #define INTERPRET_FUNCALL(reg0, the_env, frame, narg, fun) {        \
     cl_index __n = narg;                                            \
+    cl_index __b = ECL_STACK_INDEX(the_env) - __n;                  \
     SETUP_ENV(the_env);                                             \
-    frame.stack = the_env->stack;                                   \
-    frame.base = the_env->stack_top - (frame.size = __n);           \
+    frame.opened = 1;                                               \
+    frame.base = __b;                                               \
+    frame.size = __n;                                               \
+    frame.sp = __b;                                                 \
     reg0 = ecl_apply_from_stack_frame((cl_object)&frame, fun);      \
-    the_env->stack_top -= __n; }
+    ecl_stack_frame_close((cl_object)&frame); }
 
 /* -------------------- THE INTERPRETER -------------------- */
 
@@ -365,8 +369,10 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   ecl_ihs_push(the_env, &ihs, bytecodes, closure);
   ecl_stack_frame_open(the_env, lcl_env, nlcl);
   frame_aux.t = t_frame;
-  frame_aux.stack = frame_aux.base = 0;
+  frame_aux.opened = 0;
+  frame_aux.base = 0;
   frame_aux.size = 0;
+  frame_aux.sp = 0;
   frame_aux.env = the_env;
   BEGIN_SWITCH {
     CASE(OP_NOP); {
@@ -602,7 +608,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       if (ecl_unlikely(frame_index >= frame->frame.size)) {
         VEwrong_num_arguments(bytecodes->bytecodes.name);
       }
-      reg0 = frame->frame.base[frame_index++];
+      reg0 = ECL_STACK_FRAME_REF(frame, frame_index++);
       THREAD_NEXT;
     }
     /* OP_POPOPT
@@ -614,7 +620,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       if (frame_index >= frame->frame.size) {
         reg0 = ECL_NIL;
       } else {
-        ECL_STACK_PUSH(the_env,frame->frame.base[frame_index++]);
+        ECL_STACK_PUSH(the_env, ECL_STACK_FRAME_REF(frame, frame_index++));
         reg0 = ECL_T;
       }
       THREAD_NEXT;
@@ -631,8 +637,8 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        Makes a list out of the remaining arguments.
     */
     CASE(OP_POPREST); {
-      cl_object *first = frame->frame.base + frame_index;
-      cl_object *last = frame->frame.base + frame->frame.size;
+      cl_object *first = ECL_STACK_FRAME_PTR(frame) + frame_index;
+      cl_object *last = ECL_STACK_FRAME_PTR(frame) + frame->frame.size;
       for (reg0 = ECL_NIL; last > first; ) {
         reg0 = CONS(*(--last), reg0);
       }
@@ -645,7 +651,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       cl_object keys_list, aok, *first, *last;
       cl_index count;
       GET_DATA(keys_list, vector, data);
-      first = frame->frame.base + frame_index;
+      first = ECL_STACK_FRAME_PTR(frame) + frame_index;
       count = frame->frame.size - frame_index;
       last = first + count;
       if (ecl_unlikely(count & 1)) {
@@ -733,7 +739,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_LABELS); {
       cl_index idx, nfun;
       cl_object fun;
-      cl_object *sp = lcl_env->frame.sp;
+      cl_object *sp = ECL_STACK_FRAME_TOP(lcl_env);
       GET_OPARG(nfun, vector);
       /* Create closures. */
       for(idx = 0; idx<nfun; idx++) {

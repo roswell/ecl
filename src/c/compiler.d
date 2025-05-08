@@ -2737,8 +2737,10 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
   cl_object bytecodes;
   struct ecl_stack_frame frame;
   frame.t = t_frame;
-  frame.stack = frame.base = 0;
+  frame.opened = 0;
+  frame.base = 0;
   frame.size = 0;
+  frame.sp = 0;
   frame.env = env;
   env->nvalues = 0;
   env->values[0] = ECL_NIL;

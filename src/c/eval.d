@@ -19,7 +19,7 @@
 cl_object *
 _ecl_va_sp(cl_narg narg)
 {
-  return ecl_process_env()->stack_frame->frame.base + narg;
+  return ECL_STACK_FRAME_PTR(ecl_process_env()->stack_frame) + narg;
 }
 
 /* Calling conventions:
@@ -34,7 +34,7 @@ _ecl_va_sp(cl_narg narg)
 cl_object
 ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 {
-  cl_object *sp = frame->frame.base;
+  cl_object *sp = ECL_STACK_FRAME_PTR(frame);
   cl_index narg = frame->frame.size;
   cl_object fun = x;
   cl_object ret;
@@ -155,7 +155,7 @@ cl_funcall(cl_narg narg, cl_object function, ...)
       if (ecl_t_of(lastarg) == t_frame) {
         /* This could be replaced with a memcpy() */
         for (i = 0; i < lastarg->frame.size; i++) {
-          ecl_stack_frame_push(frame, lastarg->frame.base[i]);
+          ecl_stack_frame_push(frame, ECL_STACK_FRAME_REF(lastarg, i));
         }
       } else loop_for_in (lastarg) {
           if (ecl_unlikely(i >= ECL_CALL_ARGUMENTS_LIMIT)) {

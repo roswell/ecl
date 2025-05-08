@@ -343,10 +343,12 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
 
 #define ECL_STACK_FRAME_FROM_VA_LIST(e,f,va) do {                       \
                 const cl_object __frame = (f);                          \
+                cl_object *base;                                        \
                 cl_index i, __nargs = va[0].narg;                       \
                 ecl_stack_frame_open((e), __frame, __nargs);            \
+                base = ECL_STACK_FRAME_PTR(__frame);                    \
                 for (i = 0; i < __nargs; i++) {                         \
-                        __frame->frame.base[i] = ecl_va_arg(va);         \
+                        base[i] = ecl_va_arg(va);                       \
                 }                                                       \
         } while (0)
 
@@ -356,7 +358,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         const cl_env_ptr env = ecl_process_env();                       \
         if (narg <= ECL_C_ARGUMENTS_LIMIT) {                            \
                 ecl_stack_frame_open(env, frame, narg);                 \
-                cl_object *p = frame->frame.base;                       \
+                cl_object *p = ECL_STACK_FRAME_PTR(frame);              \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \
                 while (narg--) {                                        \
@@ -365,11 +367,13 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                 }                                                       \
                 va_end(args);                                           \
         } else {                                                        \
+                cl_index bindex = ECL_STACK_INDEX(env) - narg;          \
                 frame->frame.t = t_frame;                               \
-                frame->frame.env = env;                                 \
+                frame->frame.opened = 0;                                \
+                frame->frame.base = bindex;                             \
                 frame->frame.size = narg;                               \
-                frame->frame.base = env->stack_top - narg;              \
-                frame->frame.stack = 0;                                 \
+                frame->frame.sp = bindex;                               \
+                frame->frame.env = env;                                 \
         }
 #define ECL_STACK_FRAME_VARARGS_END(frame) ecl_stack_frame_close(frame)
 

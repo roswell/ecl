@@ -417,16 +417,21 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
                 }                                                       \
                 __env->stack_top = __new_top + __aux; } while (0)
 
-#define ECL_STACK_FRAME_COPY(dest,orig) do {                            \
-                cl_object __dest = (dest);                              \
-                cl_object __orig = (orig);                              \
-                cl_index __size = __orig->frame.size;                   \
-                ecl_stack_frame_open(__orig->frame.env, __dest, __size); \
-                memcpy(__dest->frame.base, __orig->frame.base, __size * sizeof(cl_object)); \
-        } while (0);
+#define ECL_STACK_FRAME_REF(f,ndx) ((f)->frame.env->stack[(f)->frame.base+(ndx)])
+#define ECL_STACK_FRAME_SET(f,ndx,o) do { ECL_STACK_FRAME_REF(f,ndx) = (o); } while(0)
 
-#define ECL_STACK_FRAME_SET(f,ndx,o) do { (f)->frame.base[(ndx)] = (o); } while(0)
-#define ECL_STACK_FRAME_REF(f,ndx) ((f)->frame.base[(ndx)])
+#define ECL_STACK_FRAME_PTR(f) ((f)->frame.env->stack+(f)->frame.base)
+#define ECL_STACK_FRAME_TOP(f) ((f)->frame.env->stack+(f)->frame.sp)
+
+#define ECL_STACK_FRAME_COPY(dest,orig) do {                            \
+                cl_object __dst = (dest);                               \
+                cl_object __src = (orig);                               \
+                cl_index __size = __src->frame.size;                    \
+                ecl_stack_frame_open(__src->frame.env, __dst, __size);  \
+                memcpy(ECL_STACK_FRAME_PTR(__dst),                      \
+                       ECL_STACK_FRAME_PTR(__src),                      \
+                       __size * sizeof(cl_object));                     \
+        } while (0);
 
 /*********************************
  * HIGH LEVEL CONTROL STRUCTURES *
