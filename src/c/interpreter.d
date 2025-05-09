@@ -582,7 +582,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_POPREQ); {
       if (ecl_unlikely(frame_index >= frame->frame.size)) {
-        VEwrong_num_arguments(frame->bytecodes.name);
+        VEwrong_num_arguments(bytecodes->bytecodes.name);
       }
       reg0 = frame->frame.base[frame_index++];
       THREAD_NEXT;
