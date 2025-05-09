@@ -169,6 +169,7 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   }
   ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 
+  ecl_dealloc(old_stack);
   return env->stack_top;
 }
 
