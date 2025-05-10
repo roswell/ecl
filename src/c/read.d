@@ -769,6 +769,10 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   x = ECL_CONS_CDR(x);
   rv->bytecodes.flex = nth;
 
+  nth = ECL_CONS_CAR(x);
+  x = ECL_CONS_CDR(x);
+  rv->bytecodes.nlcl = nth;
+
   if (ECL_ATOM(x)) {
     nth = ECL_NIL;
   } else {

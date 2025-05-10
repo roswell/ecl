@@ -594,3 +594,47 @@
                                  (read stream t nil t)))
                          t)
     (finishes (read-from-string "#x123"))))
+
+;;; Author: Daniel Kochmański
+;;; Created: 2025-05-09
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/merge_requests/346#note_2492489716
+;;; Description
+;;;
+;;;     Moving locals from heap to the stack revealed an issue where stack
+;;;     frames are invalidated after the lisp stack is resized. That causes
+;;;     a risk of local variables to be garbage collected.
+;;;
+;;; | Call DO-ENTRIES* | #x1000 [TRASH] | #x1000 [TRASH] |
+;;; | Resize the stack | #x1000 [TRASH] | #x2000 [TRASH] |
+;;; | Bind a local var | #x1000 [value] | #x2000 [TRASH] |
+;;; | Allocations-> GC | #x1000 [what?] | #x2000 [TRASH] |
+;;; | Load a local var | #x1000 [what?] | #x2000 [TRASH] |
+;;;
+;;; We bind the variable after the stack has been resized, so when we copy the
+;;; memory during the stack resize only [TRASH] is transferred.
+;;;
+;;; Since the lisp stack is allocated with ecl_alloc_atomic, referenced values must
+;;; be explicitly marked -- and it is done so in ecl_mark_env. This is very sane
+;;; thing to do, because if we had marked whole vector (even above top), then we'd
+;;; retain old references, and generally we'd mark 32K instead of say 200 addresses.
+;;;
+;;; But, when we grow the stack, the old vector is replaced, and ecl_mark_env does
+;;; not mark the old stack, effectively allowing to reuse up our [value] by GC.
+;;;
+;;; Note that usually stack frames are filled eagerly to complete argument list, so
+;;; this issue is irrelevant to them (because we don't change values after resize),
+;;; so this prolbem did not manifest itself until now.
+
+(deftest mix.0031.invalidate-stack-frames ()
+  (macrolet ((ntimes (n form)
+               `(progn ,@(make-list n :initial-element form))))
+    (labels ((resize-lisp-stack ()
+               (let* ((old-limit (ext:get-limit 'ext:lisp-stack))
+                      (new-limit (* old-limit 2)))
+                 (ext:set-limit 'ext:lisp-stack new-limit)))
+             (invoke-test-case ()
+               (resize-lisp-stack)
+               (let ((n 0))
+                 (ntimes 2048 (apply #'append (make-list 2048 :initial-element '(:foo))))
+                 (is (typep n 'number)))))
+      (invoke-test-case))))

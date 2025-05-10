@@ -169,7 +169,7 @@ push(cl_object v, cl_object *l) {
 static cl_object
 asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object bytecodes;
+  cl_object output;
   cl_index code_size, i;
   cl_opcode *code;
   cl_object file = ECL_SYM_VAL(env,@'ext::*source-location*'), position;
@@ -183,21 +183,22 @@ asm_end(cl_env_ptr env, cl_index beginning, cl_object definition) {
 
   /* Save bytecodes from this session in a new vector */
   code_size = current_pc(env) - beginning;
-  bytecodes = ecl_alloc_object(t_bytecodes);
-  bytecodes->bytecodes.name = @'si::bytecodes';
-  bytecodes->bytecodes.definition = definition;
-  bytecodes->bytecodes.code_size = code_size;
-  bytecodes->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
-  bytecodes->bytecodes.data = c_env->constants;
-  bytecodes->bytecodes.flex = ECL_NIL;
-  for (i = 0, code = (cl_opcode *)bytecodes->bytecodes.code; i < code_size; i++) {
+  output = ecl_alloc_object(t_bytecodes);
+  output->bytecodes.name = @'si::bytecodes';
+  output->bytecodes.definition = definition;
+  output->bytecodes.code_size = code_size;
+  output->bytecodes.code = ecl_alloc_atomic(code_size * sizeof(cl_opcode));
+  output->bytecodes.data = c_env->constants;
+  output->bytecodes.flex = ECL_NIL;
+  output->bytecodes.nlcl = ecl_make_fixnum(c_env->env_width);
+  for (i = 0, code = (cl_opcode *)output->bytecodes.code; i < code_size; i++) {
     code[i] = (cl_opcode)(cl_fixnum)(env->stack[beginning+i]);
   }
-  bytecodes->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
-  ecl_set_function_source_file_info(bytecodes, (file == OBJNULL)? ECL_NIL : file,
+  output->bytecodes.entry =  _ecl_bytecodes_dispatch_vararg;
+  ecl_set_function_source_file_info(output, (file == OBJNULL)? ECL_NIL : file,
                                     (file == OBJNULL)? ECL_NIL : position);
   asm_clear(env, beginning);
-  return bytecodes;
+  return output;
 }
 
 #define asm_arg(env,n) asm_op(env,n)
@@ -455,7 +456,16 @@ c_push_record(const cl_compiler_ptr c_env, cl_object type,
   cl_object depth = ecl_make_fixnum(c_env->env_depth);
   cl_object index = ecl_make_fixnum(c_env->env_size++);
   cl_object loc = CONS(depth, index);
+  if (c_env->env_width < c_env->env_size)
+    c_env->env_width = c_env->env_size;
   return cl_list(4, type, arg1, arg2, loc);
+}
+
+static cl_object
+c_make_record(const cl_compiler_ptr c_env, cl_object type,
+              cl_object arg1, cl_object arg2)
+{
+  return cl_list(3, type, arg1, arg2);
 }
 
 static void
@@ -479,8 +489,9 @@ c_register_var(cl_env_ptr env, cl_object var, bool special, bool bound)
 {
   const cl_compiler_ptr c_env = env->c_env;
   cl_object boundp = bound? ECL_T : ECL_NIL;
-  cl_object specialp = special? ECL_T : ECL_NIL;
-  cl_object entry = c_push_record(c_env, var, specialp, boundp);
+  cl_object entry = (special
+                     ? c_make_record(c_env, var, ECL_T, boundp)
+                     : c_push_record(c_env, var, ECL_NIL, boundp));
   c_env->variables = CONS(entry, c_env->variables);
 }
 
@@ -497,7 +508,7 @@ static void
 c_register_symbol_macro(cl_env_ptr env, cl_object name, cl_object exp_fun)
 {
   const cl_compiler_ptr c_env = env->c_env;
-  cl_object entry = c_push_record(c_env, name, @'si::symbol-macro', exp_fun);
+  cl_object entry = c_make_record(c_env, name, @'si::symbol-macro', exp_fun);
   c_env->variables = CONS(entry, c_env->variables);
 }
 
@@ -584,6 +595,8 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
   if (old) {
     *new = *old;
     new->parent_env = old;
+    new->env_size = 0;
+    new->env_width = 0;
     new->env_depth = old->env_depth + 1;
   } else {
     new->code_walker = ECL_SYM_VAL(the_env, @'si::*code-walker*');
@@ -601,6 +614,8 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->ltf_locations = ECL_NIL;
     new->captured = ECL_NIL;
     new->parent_env = NULL;
+    new->env_size = 0;
+    new->env_width = 0;
     new->env_depth = 0;
     new->macros = CDR(env);
     new->variables = CAR(env);
@@ -618,7 +633,6 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->mode = FLAG_EXECUTE;
     new->function_boundary_crossed = 0;
   }
-  new->env_size = 0;
 }
 
 static void
@@ -642,7 +656,7 @@ c_restore_env(cl_env_ptr the_env, cl_compiler_env_ptr new_c_env, cl_compiler_env
 static void
 close_around_macros(cl_env_ptr env, cl_object mfun)
 {
-  cl_object lex = mfun->bclosure.lex, record;
+  cl_object lex = mfun->bclosure.lex;
   cl_object *lex_vec = lex->vector.self.t;
   for (cl_index i = 0; i < lex->vector.dim; i++) {
     cl_object reg = lex_vec[i]; /* INV see interpreter.d for lexenv structure */
@@ -725,25 +739,50 @@ c_mac_ref(cl_env_ptr env, cl_object name)
   } end_loop_for_on_unsafe(l);
 }
 
+/* Computes the local index from the function boundary. */
+static cl_fixnum
+c_lcl_idx(cl_env_ptr env, cl_object entry)
+{
+  cl_fixnum n = 0, i = -1;
+  const cl_compiler_ptr c_env = env->c_env;
+  cl_object l = c_env->variables;
+  loop_for_on_unsafe(l) {
+    cl_object record = ECL_CONS_CAR(l), type;
+    if (record == @'si::function-boundary') {
+      break;
+    }
+    if(ECL_ATOM(record))
+      continue;
+    if(record == entry) {
+      i = n;
+      continue;
+    }
+    type = pop(&record);
+    if (type == @':block' || type == @':function' || type == @':tag'
+        /* type == @'variable' && Null(specialp) */
+        || Null(pop(&record))) {
+      n++;
+    }
+  } end_loop_for_on_unsafe(l);
+  if (i<0) ecl_miscompilation_error();
+  return n-i;
+}
+
 /* This function is called after we compile lambda in the parent's
    environment. Its responsibility is to propagate closures. */
 static struct cl_compiler_ref
 c_any_ref(cl_env_ptr env, cl_object entry)
 {
-  cl_fixnum n = 0;
   int function_boundary_crossed = 0;
   struct cl_compiler_ref output = { ECL_CMPREF_UNDEFINED };
   const cl_compiler_ptr c_env = env->c_env;
   cl_object l = c_env->variables;
   loop_for_on_unsafe(l) {
-    cl_object record = ECL_CONS_CAR(l), reg, type, other;
+    cl_object record = ECL_CONS_CAR(l);
     if (record == @'si::function-boundary')
       function_boundary_crossed++;
     if(ECL_ATOM(record))
       continue;
-    reg = record;
-    type = pop(&reg);
-    other = pop(&reg);
     if(record == entry) {
       if (function_boundary_crossed) {
         c_env->function_boundary_crossed = 1;
@@ -751,14 +790,10 @@ c_any_ref(cl_env_ptr env, cl_object entry)
         output.index = c_register_captured(env, record);
       } else {
         output.place = ECL_CMPREF_LOCAL;
-        output.index = n;
+        output.index = c_lcl_idx(env, record);
       }
       output.entry = record;
       return output;
-    }
-    if (type == @':block' || type == @':function'|| type == @':tag'
-        || Null(other)) {
-      n++;
     }
   } end_loop_for_on_unsafe(l);
   return output;
@@ -767,7 +802,6 @@ c_any_ref(cl_env_ptr env, cl_object entry)
 static struct cl_compiler_ref
 c_tag_ref(cl_env_ptr env, cl_object the_tag)
 {
-  cl_fixnum n = 0;
   cl_object l, reg;
   int function_boundary_crossed = 0;
   struct cl_compiler_ref output = { ECL_CMPREF_UNDEFINED };
@@ -792,18 +826,12 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag)
           output.index = c_register_captured(env, record);
         } else {
           output.place = ECL_CMPREF_LOCAL;
-          output.index = n;
+          output.index = c_lcl_idx(env, record);
         }
         output.entry = record;
         output.label = ecl_fixnum(ECL_CONS_CDR(label));
         return output;
       }
-      n++;
-    } else if (type == @':block' || type == @':function' || Null(all_tags)) {
-      /* INV Null(all_tags) implies lexical variable -- Null(specialp). */
-      n++;
-    } else {
-      /* We are counting only locals and ignore specials, declarations, etc. */
     }
   }
   return output;
@@ -812,7 +840,6 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag)
 static struct cl_compiler_ref
 c_blk_ref(cl_env_ptr env, cl_object the_tag)
 {
-  cl_fixnum n = 0;
   cl_object l, reg;
   int function_boundary_crossed = 0;
   struct cl_compiler_ref output = { ECL_CMPREF_UNDEFINED };
@@ -836,17 +863,11 @@ c_blk_ref(cl_env_ptr env, cl_object the_tag)
           output.index = c_register_captured(env, record);
         } else {
           output.place = ECL_CMPREF_LOCAL;
-          output.index = n;
+          output.index = c_lcl_idx(env, record);
         }
         output.entry = record;
         return output;
       }
-      n++;
-    } else if (type == @':tag' || type == @':function' || Null(name)) {
-      /* INV Null(name) implies lexical variable -- Null(specialp). */
-      n++;
-    } else {
-      /* We are counting only locals and ignore specials, declarations, etc. */
     }
   }
   return output;
@@ -855,7 +876,6 @@ c_blk_ref(cl_env_ptr env, cl_object the_tag)
 static struct cl_compiler_ref
 c_fun_ref(cl_env_ptr env, cl_object the_tag)
 {
-  cl_fixnum n = 0;
   cl_object l, reg;
   int function_boundary_crossed = 0;
   struct cl_compiler_ref output = { ECL_CMPREF_UNDEFINED };
@@ -880,17 +900,11 @@ c_fun_ref(cl_env_ptr env, cl_object the_tag)
           output.index = c_register_captured(env, record);
         } else {
           output.place = ECL_CMPREF_LOCAL;
-          output.index = n;
+          output.index = c_lcl_idx(env, record);
         }
         output.entry = record;
         return output;
       }
-      n++;
-    } else if (type == @':tag' || type == @':block' || Null(name)) {
-      /* INV Null(name) implies lexical variable -- Null(specialp). */
-      n++;
-    } else {
-      /* We are counting only locals and ignore specials, declarations, etc. */
     }
   }
   return output;
@@ -903,7 +917,6 @@ ecl_def_ct_base_string(undefined_variable,
 static struct cl_compiler_ref
 c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def)
 {
-  cl_fixnum n = 0;
   cl_object l, reg;
   int function_boundary_crossed = 0;
   struct cl_compiler_ref output;
@@ -919,13 +932,9 @@ c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def)
     reg = record;
     type = pop(&reg);
     special = pop(&reg);
-    if (type == @':block' || type == @':tag' || type == @':function') {
-      n++;
-    } else if (type == @':declare') {
-      /* Ignored */
-    } else if (type != var) {
-      /* Symbol not yet found. Only count locals. */
-      if (Null(special)) n++;
+    if (type == @':block' || type == @':tag' || type == @':function'
+        || type == @':declare' || type != var) {
+      continue;
     } else if (Null(special)) {
       if (function_boundary_crossed) {
         c_env->function_boundary_crossed = 1;
@@ -933,7 +942,7 @@ c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def)
         output.index = c_register_captured(env, record);
       } else {
         output.place = ECL_CMPREF_LOCAL;
-        output.index = n;
+        output.index = c_lcl_idx(env, record);
       }
       output.entry = record;
       output.label = ECL_CMPVAR_LEXICAL;
@@ -1062,10 +1071,9 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
   cl_index num_lexical = 0;
   cl_index num_special = 0;
   const cl_compiler_ptr c_env = the_env->c_env;
-
   for (env = c_env->variables; env != old_vars && !Null(env); env = ECL_CONS_CDR(env))
     {
-      cl_object record, name, special;
+      cl_object record, name, special, boundp;
       record = ECL_CONS_CAR(env);
       if (ECL_ATOM(record))
         continue;
@@ -1073,22 +1081,26 @@ c_undo_bindings(cl_env_ptr the_env, cl_object old_vars, int only_specials)
       record = ECL_CONS_CDR(record);
       special = ECL_CONS_CAR(record);
       if (name == @':block' || name == @':tag') {
-        (void)0;
+        if (!only_specials) num_lexical++;
       } else if (name == @':function' || Null(special)) {
-        if (!only_specials) ++num_lexical;
+        if (!only_specials) num_lexical++;
       } else if (name == @':declare') {
         /* Ignored */
       } else if (special != @'si::symbol-macro') {
         /* If (third special) = NIL, the variable was declared
            special, but there is no binding! */
         record = ECL_CONS_CDR(record);
-        if (!Null(ECL_CONS_CAR(record))) {
+        boundp = ECL_CONS_CAR(record);
+        if (!Null(boundp)) {
           num_special++;
         }
       }
     }
   c_env->variables = env;
-  if (num_lexical) asm_op2(the_env, OP_UNBIND, num_lexical);
+  if (num_lexical) {
+    c_env->env_size -= num_lexical;
+    asm_op2(the_env, OP_UNBIND, num_lexical);
+  }
   if (num_special) asm_op2(the_env, OP_UNBINDS, num_special);
 }
 
@@ -2725,8 +2737,10 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
   cl_object bytecodes;
   struct ecl_stack_frame frame;
   frame.t = t_frame;
-  frame.stack = frame.base = 0;
+  frame.opened = 0;
+  frame.base = 0;
   frame.size = 0;
+  frame.sp = 0;
   frame.env = env;
   env->nvalues = 0;
   env->values[0] = ECL_NIL;
@@ -2748,6 +2762,7 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
                                       ECL_NIL);
   new_c_env.parent_env = NULL;
   new_c_env.env_depth = 0;
+  new_c_env.env_width = 0;
   new_c_env.env_size = 0;
   env->c_env = &new_c_env;
   handle = asm_begin(env);
@@ -3608,6 +3623,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   output = asm_end(env, handle, lambda);
   output->bytecodes.name = name;
   output->bytecodes.flex = ECL_NIL;
+  output->bytecodes.nlcl = ecl_make_fixnum(new_c_env->env_width);
 
   old_c_env->load_time_forms = new_c_env->load_time_forms;
 
@@ -3618,7 +3634,7 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   if (new_c_env->function_boundary_crossed) {
     cl_object p = new_c_env->captured, flex, entry, macro_entry;
     struct cl_compiler_ref ref;
-    int i, n, index;
+    int i, n;
     n = p->vector.fillp;
     flex = si_make_vector(ECL_T, ecl_make_fixnum(n),
                           ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);

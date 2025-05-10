@@ -169,6 +169,7 @@ ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
   }
   ECL_STACK_RESIZE_ENABLE_INTERRUPTS(env);
 
+  ecl_dealloc(old_stack);
   return env->stack_top;
 }
 
@@ -218,15 +219,18 @@ cl_object
 ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
 {
   cl_object *base = env->stack_top;
+  cl_index bindex;
   if (size) {
     if ((env->stack_limit - base) < size) {
       base = ecl_stack_set_size(env, env->stack_size + size);
     }
   }
+  bindex = ECL_STACK_INDEX(env);
   f->frame.t = t_frame;
-  f->frame.stack = env->stack;
-  f->frame.base = base;
+  f->frame.opened = 1;
+  f->frame.base = bindex;
   f->frame.size = size;
+  f->frame.sp = bindex;
   f->frame.env = env;
   env->stack_top = (base + size);
   return f;
@@ -242,8 +246,7 @@ ecl_stack_frame_push(cl_object f, cl_object o)
   }
   env->stack_top = ++top;
   *(top-1) = o;
-  f->frame.base = top - (++(f->frame.size));
-  f->frame.stack = env->stack;
+  f->frame.size++;
 }
 
 void
@@ -251,8 +254,7 @@ ecl_stack_frame_push_values(cl_object f)
 {
   cl_env_ptr env = f->frame.env;
   ecl_stack_push_values(env);
-  f->frame.base = env->stack_top - (f->frame.size += env->nvalues);
-  f->frame.stack = env->stack;
+  f->frame.size += env->nvalues;
 }
 
 cl_object
@@ -264,7 +266,7 @@ ecl_stack_frame_pop_values(cl_object f)
   env->nvalues = n;
   env->values[0] = o = ECL_NIL;
   while (n--) {
-    env->values[n] = o = f->frame.base[n];
+    env->values[n] = o = ECL_STACK_FRAME_REF(f, n);
   }
   return o;
 }
@@ -272,8 +274,9 @@ ecl_stack_frame_pop_values(cl_object f)
 void
 ecl_stack_frame_close(cl_object f)
 {
-  if (f->frame.stack) {
-    ECL_STACK_SET_INDEX(f->frame.env, f->frame.base - f->frame.stack);
+  if (f->frame.opened) {
+    f->frame.opened = 0;
+    ECL_STACK_SET_INDEX(f->frame.env, f->frame.base);
   }
 }
 

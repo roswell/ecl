@@ -204,6 +204,7 @@
 ;;;     Check that run-program works correctly with different
 ;;;     encodings
 ;;;
+#-ecl-bytecmp
 (test run-program-encoding
   (let* ((skeleton "
 #include <stdio.h>

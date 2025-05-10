@@ -770,6 +770,7 @@ struct ecl_bytecodes {
         char *code;             /*  the intermediate language  */
         cl_object data;         /*  non-inmediate constants used in the code  */
         cl_object flex;         /*  indexes of captured objects (vector) */
+        cl_object nlcl;         /*  number of slots for local values */
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };
@@ -924,10 +925,10 @@ struct ecl_foreign {            /*  user defined datatype  */
 };
 
 struct ecl_stack_frame {
-        _ECL_HDR;
-        cl_object *stack;       /*  Is this relative to the lisp stack?  */
-        cl_object *base;        /*  Start of frame  */
+        _ECL_HDR1(opened);
+        cl_index base;          /*  Start of the stack frame */
         cl_index size;          /*  Number of arguments  */
+        cl_index sp;            /*  Stack pointer  */
         struct cl_env_struct *env;
 };
 

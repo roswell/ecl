@@ -113,7 +113,7 @@ si_generic_function_p(cl_object x)
 static cl_object
 fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
 {
-  cl_object *args = frame->frame.base;
+  cl_object *args = ECL_STACK_FRAME_PTR(frame);
   cl_index narg = frame->frame.size;
   cl_object spec_how_list = GFUN_SPEC(gf);
   cl_object *argtype = vector->vector.self.t;
@@ -148,8 +148,8 @@ static cl_object
 frame_to_list(cl_object frame)
 {
   cl_object arglist, *p;
-  for (p = frame->frame.base + frame->frame.size, arglist = ECL_NIL;
-       p != frame->frame.base; ) {
+  cl_object *base = ECL_STACK_FRAME_PTR(frame);
+  for (p = base + frame->frame.size, arglist = ECL_NIL; p != base; ) {
     arglist = CONS(*(--p), arglist);
   }
   return arglist;
@@ -159,8 +159,8 @@ static cl_object
 frame_to_classes(cl_object frame)
 {
   cl_object arglist, *p;
-  for (p = frame->frame.base + frame->frame.size, arglist = ECL_NIL;
-       p != frame->frame.base; ) {
+  cl_object *base = ECL_STACK_FRAME_PTR(frame);
+  for (p = base + frame->frame.size, arglist = ECL_NIL; p != base; ) {
     arglist = CONS(cl_class_of(*(--p)), arglist);
   }
   return arglist;
@@ -217,18 +217,6 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   const cl_env_ptr env = frame->frame.env;
   ecl_cache_ptr cache = env->method_cache;
   ecl_cache_record_ptr e;
-  /*
-   * We have to copy the frame because it might be stored in cl_env.values
-   * which will be wiped out by the next function call. However this only
-   * happens when we cannot reuse the values in the C stack.
-   */
-  struct ecl_stack_frame frame_aux;
-  if (frame->frame.stack == (void*)0x1) {
-    const cl_object new_frame = (cl_object)&frame_aux;
-    ECL_STACK_FRAME_COPY(new_frame, frame);
-    frame = new_frame;
-  }
-
   ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
     vector = fill_spec_vector(cache->keys, frame, gf);
     e = ecl_search_cache(cache);
@@ -255,10 +243,6 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   else {
     func = _ecl_funcall3(func, frame, ECL_NIL);
   }
-
-  /* Only need to close the copy */
-  if (frame == (cl_object)&frame_aux)
-    ecl_stack_frame_close(frame);
   return func;
 }
 
