@@ -13,6 +13,15 @@
 
 #ifdef ECL_THREADS
 
+#ifndef __sun__ /* See unixinit.d for this */
+# if _XOPEN_SOURCE < 600
+#  ifdef _XOPEN_SOURCE
+#    undef _XOPEN_SOURCE
+#  endif
+#  define _XOPEN_SOURCE 600       /* For pthread mutex attributes */
+# endif
+#endif
+
 #ifndef ECL_MUTEX_H
 #define ECL_MUTEX_H
 

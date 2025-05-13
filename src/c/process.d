@@ -16,9 +16,6 @@
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 
-#ifndef __sun__ /* See unixinit.d for this */
-#define _XOPEN_SOURCE 600       /* For pthread mutex attributes */
-#endif
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
