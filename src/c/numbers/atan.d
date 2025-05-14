@@ -15,10 +15,18 @@
 
 #define ECL_INCLUDE_MATH_H
 #include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/impl/math_fenv.h>
 
 #pragma STDC FENV_ACCESS ON
+
+ecl_def_ct_single_float(ecl_ct_flt_zero,0,static,const);
+ecl_def_ct_single_float(ecl_ct_flt_one,1,static,const);
+ecl_def_ct_single_float(ecl_ct_flt_one_neg,-1,static,const);
+
+ecl_def_ct_complex(ecl_ct_imag_unit,ecl_ct_flt_zero,ecl_ct_flt_one,static,const);
+ecl_def_ct_complex(ecl_ct_minus_imag_unit,ecl_ct_flt_zero,ecl_ct_flt_one_neg,static,const);
 
 cl_object
 ecl_atan2(cl_object y, cl_object x)
@@ -53,20 +61,20 @@ ecl_atan1(cl_object y)
 {
   if (ECL_COMPLEXP(y)) {
 #if 0 /* ANSI states it should be this first part */
-    cl_object z = ecl_times(cl_core.imag_unit, y);
+    cl_object z = ecl_times(ecl_ct_imag_unit, y);
     z = ecl_plus(ecl_log1(ecl_one_plus(z)),
                  ecl_log1(ecl_minus(ecl_make_fixnum(1), z)));
     z = ecl_divide(z, ecl_times(ecl_make_fixnum(2),
-                                cl_core.imag_unit));
+                                ecl_ct_imag_unit));
 #else
-    cl_object z1, z = ecl_times(cl_core.imag_unit, y);
+    cl_object z1, z = ecl_times(ecl_ct_imag_unit, y);
     z = ecl_one_plus(z);
     z1 = ecl_times(y, y);
     z1 = ecl_one_plus(z1);
     z1 = ecl_sqrt(z1);
     z = ecl_divide(z, z1);
     z = ecl_log1(z);
-    z = ecl_times(cl_core.minus_imag_unit, z);
+    z = ecl_times(ecl_ct_minus_imag_unit, z);
 #endif /* ANSI */
     return z;
   } else {
