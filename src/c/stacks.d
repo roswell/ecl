@@ -382,11 +382,11 @@ ecl_new_binding_index(cl_env_ptr env, cl_object symbol)
   cl_object pool;
   cl_index new_index = symbol->symbol.binding;
   if (new_index == ECL_MISSING_SPECIAL_BINDING) {
-    pool = ecl_atomic_pop(&cl_core.reused_indices);
+    pool = ecl_atomic_pop(&ecl_core.reused_indices);
     if (!Null(pool)) {
       new_index = ecl_fixnum(ECL_CONS_CAR(pool));
     } else {
-      new_index = ecl_atomic_index_incf(&cl_core.last_var_index);
+      new_index = ecl_atomic_index_incf(&ecl_core.last_var_index);
     }
     symbol->symbol.binding = new_index;
   }
@@ -402,7 +402,7 @@ invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
   }
   if (index >= env->bds_stack.tl_bindings_size) {
     cl_index osize = env->bds_stack.tl_bindings_size;
-    cl_index nsize = cl_core.last_var_index * 1.25;
+    cl_index nsize = ecl_core.last_var_index * 1.25;
     cl_object *old_vector = env->bds_stack.tl_bindings;
     cl_object *new_vector = ecl_realloc(old_vector,
                                         osize*sizeof(cl_object*),
@@ -660,7 +660,7 @@ cl_object
 init_stacks(cl_env_ptr the_env)
 {
 #ifdef ECL_THREADS
-  if (the_env == cl_core.first_env) {
+  if (the_env == ecl_core.first_env) {
     cl_index idx;
     cl_object *vector = (cl_object *)ecl_malloc(1024*sizeof(cl_object*));
     for(idx=0; idx<1024; idx++) {
@@ -1029,7 +1029,7 @@ si_get_limit(cl_object type)
     output = env->c_stack.limit_size;
   else if (type == @'ext::heap-size') {
     /* size_t can be larger than cl_index */
-    ecl_return1(env, ecl_make_unsigned_integer(cl_core.max_heap_size));
+    ecl_return1(env, ecl_make_unsigned_integer(ecl_core.max_heap_size));
   }
 
   ecl_return1(env, ecl_make_unsigned_integer(output));
