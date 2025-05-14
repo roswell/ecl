@@ -202,25 +202,10 @@ struct cl_core_struct {
         cl_object compiler_readtable;
 
         cl_object char_names;
-        cl_object null_string;
-
-        cl_object plus_half;
-        cl_object minus_half;
-        cl_object imag_unit;
-        cl_object minus_imag_unit;
-        cl_object imag_two;
-        cl_object singlefloat_zero;
-        cl_object doublefloat_zero;
-        cl_object singlefloat_minus_zero;
-        cl_object doublefloat_minus_zero;
-        cl_object longfloat_zero;
-        cl_object longfloat_minus_zero;
 
         cl_object gensym_prefix;
         cl_object gentemp_prefix;
         cl_object gentemp_counter;
-
-        cl_object Jan1st1970UT;
 
         cl_object system_properties;
 
@@ -253,9 +238,6 @@ struct cl_core_struct {
 
         cl_object compiler_dispatch;
 
-        cl_object rehash_size;
-        cl_object rehash_threshold;
-
         cl_object known_signals;
 };
 
@@ -267,6 +249,24 @@ extern ECL_API void *ecl_realloc(void *ptr, cl_index o, cl_index n);
 extern ECL_API void ecl_free(void *ptr);
 extern ECL_API void ecl_copy(void *dst, void *src, cl_index ndx);
 #define ecl_free_unsafe(x) ecl_free(x);
+
+/* cold_boot.c */
+extern ECL_API const cl_object ecl_ct_Jan1st1970UT;
+extern ECL_API const cl_object ecl_ct_null_string;
+
+extern ECL_API const cl_object ecl_ct_default_rehash_size;
+extern ECL_API const cl_object ecl_ct_default_rehash_threshold;
+
+extern ECL_API const cl_object ecl_ct_singlefloat_zero;
+extern ECL_API const cl_object ecl_ct_doublefloat_zero;
+extern ECL_API const cl_object ecl_ct_longfloat_zero;
+
+extern ECL_API const cl_object ecl_ct_singlefloat_minus_zero;
+extern ECL_API const cl_object ecl_ct_doublefloat_minus_zero;
+extern ECL_API const cl_object ecl_ct_longfloat_minus_zero;
+
+extern ECL_API const cl_object ecl_ct_plus_half;
+extern ECL_API const cl_object ecl_ct_minus_half;
 
 /* alloc.c / alloc_2.c */
 

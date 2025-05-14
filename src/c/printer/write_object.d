@@ -96,8 +96,8 @@ si_write_object_with_circle(cl_object x, cl_object stream, cl_object print_funct
         cl_object hash =
           cl__make_hash_table(@'eq',
                               ecl_make_fixnum(1024),
-                              cl_core.rehash_size,
-                              cl_core.rehash_threshold);
+                              ecl_ct_default_rehash_size,
+                              ecl_ct_default_rehash_threshold);
         ecl_bds_bind(env, @'si::*circle-counter*', ECL_T);
         ecl_bds_bind(env, @'si::*circle-stack*', hash);
         si_write_object_with_circle(x, cl_core.null_stream, print_function);
