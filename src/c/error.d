@@ -55,6 +55,87 @@ ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
   }
 }
 
+/* -- Integration with low-level exceptions */
+cl_object
+ecl_exception_handler(cl_object o)
+{
+  if (ECL_EXCEPTIONP(o)) {
+    cl_object arg1 = o->exception.arg1;
+    cl_object arg2 = o->exception.arg2;
+    cl_object hand = @'si::universal-error-handler';
+    switch (o->exception.ex_type) {
+    /* General conditions */
+    case ECL_EX_FERROR:
+      ecl_enable_interrupts();
+      return _ecl_funcall4(hand, ECL_NIL, arg1, arg2);
+    case ECL_EX_CERROR:
+      ecl_enable_interrupts();
+      return _ecl_funcall4(hand, ECL_T, arg1, arg2);
+    /* Stack conditions */
+    case ECL_EX_CS_OVR:
+      CEstack_overflow(@'ext::c-stack', arg1, arg2);
+      break;
+    case ECL_EX_FRS_OVR:
+      CEstack_overflow(@'ext::frame-stack', arg1, arg2);
+      break;
+    case ECL_EX_BDS_OVR:
+      CEstack_overflow(@'ext::binding-stack', arg1, arg2);
+      break;
+    /* KLUDGE ByteVM-specific conditions */
+    case ECL_EX_VM_BADARG_EXCD:
+      FEprogram_error("Too many arguments passed to function ~A~&"
+                      "Argument list: ~S",
+                      2, arg1, cl_apply(2, @'list', arg2));
+      break;
+    case ECL_EX_VM_BADARG_UNKK:
+      FEprogram_error("Unknown keyword argument passed to function ~A.~&"
+                      "Argument list: ~S",
+                      2, arg1, cl_apply(2, @'list', arg2));
+      break;
+    case ECL_EX_VM_BADARG_ODDK:
+      FEprogram_error("Odd number of keyword arguments passed to function ~A.~&"
+                      "Argument list: ~S",
+                      2, arg1, cl_apply(2, @'list', arg2));
+      break;
+    case ECL_EX_VM_BADARG_NTH_VAL:
+      FEerror("Wrong index passed to NTH-VAL", 0);
+      break;
+    case ECL_EX_VM_BADARG_ENDP:
+      FEwrong_type_only_arg(@[endp], arg1, @[list]);
+      break;
+    case ECL_EX_VM_BADARG_CAR:
+      FEwrong_type_only_arg(@[car], arg1, @[list]);
+      break;
+    case ECL_EX_VM_BADARG_CDR:
+      FEwrong_type_only_arg(@[cdr], arg1, @[list]);
+      break;
+    /* Variable conditions */
+    case ECL_EX_V_CSETQ:
+      FEassignment_to_constant(arg1);
+      break;
+    case ECL_EX_V_CBIND:
+      FEbinding_a_constant(arg1);
+      break;
+    case ECL_EX_V_UNBND:
+      FEunbound_variable(arg1);
+      break;
+    /* Function conditions */
+    case ECL_EX_F_NARGS:
+      FEwrong_num_arguments(arg1);
+      break;
+    case ECL_EX_F_UNDEF:
+      FEundefined_function(arg1);
+      break;
+    case ECL_EX_F_INVAL:
+      FEinvalid_function(arg1);
+      break;
+    default:
+      ecl_internal_error("Unknown exception type.");
+    }
+  }
+  return ECL_NIL;
+}
+
 /*****************************************************************************/
 /*              Support for Lisp Error Handler                               */
 /*****************************************************************************/
@@ -562,6 +643,5 @@ void
 init_error(void)
 {
   ecl_def_c_function(@'si::universal-error-handler',
-                     (cl_objectfn_fixed)universal_error_handler,
-                     3);
+                     (cl_objectfn_fixed)universal_error_handler, 3);
 }

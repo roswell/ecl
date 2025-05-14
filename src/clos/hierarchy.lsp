@@ -229,6 +229,7 @@
             (si::code-block)
             (si::foreign-data)
             (si::frame)
+            (si::exception)
             (si::weak-pointer)
             #+threads (mp::process)
             #+threads (mp::lock)

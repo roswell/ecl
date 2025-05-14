@@ -76,6 +76,7 @@ static cl_index object_size[] = {
   ROUNDED_SIZE(ecl_codeblock), /* t_codeblock */
   ROUNDED_SIZE(ecl_foreign), /* t_foreign */
   ROUNDED_SIZE(ecl_stack_frame), /* t_frame */
+  ROUNDED_SIZE(ecl_exception), /* t_exception */
   ROUNDED_SIZE(ecl_weak_pointer) /* t_weak_pointer */
 #ifdef ECL_SSE2
   , ROUNDED_SIZE(ecl_sse_pack) /* t_sse_pack */

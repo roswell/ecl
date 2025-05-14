@@ -181,6 +181,8 @@ ecl_type_to_symbol(cl_type t)
     return @'si::foreign-data';
   case t_frame:
     return @'si::frame';
+  case t_exception:
+    return @'si::exception';
   case t_weak_pointer:
     return @'ext::weak-pointer';
 #ifdef ECL_SSE2
