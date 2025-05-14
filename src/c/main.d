@@ -106,14 +106,6 @@ ecl_boot(void)
   return 0;
 }
 
-/* These two tags have a special meaning for the frame stack. */
-
-ecl_def_ct_base_string(ecl_ct_ptag_string,"PROTECT-TAG",11,static,const);
-ecl_def_ct_base_string(ecl_ct_dtag_string,"DUMMY-TAG",9,static,const);
-
-ecl_def_ct_token(ecl_ct_protect_tag,ecl_stp_constant,ecl_ct_ptag_string,ECL_NIL,,const);
-ecl_def_ct_token(ecl_ct_dummy_tag  ,ecl_stp_constant,ecl_ct_dtag_string,ECL_NIL,,const);
-
 /************************ GLOBAL INITIALIZATION ***********************/
 
 static int ARGC;
