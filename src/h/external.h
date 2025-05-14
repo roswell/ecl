@@ -103,6 +103,7 @@ struct cl_env_struct {
         /* -- System Processes (native threads) ------------------------------ */
         cl_object own_process; /* Backpointer to the host process. */
 #ifdef ECL_THREADS
+        ecl_thread_t thread;
         int cleanup;
 #endif
 
@@ -152,6 +153,9 @@ struct ecl_interrupt_struct {
         cl_object signal_queue;
 #ifdef ECL_THREADS
         ecl_mutex_t signal_queue_lock;
+#endif
+#ifdef ECL_WINDOWS_THREADS
+        bool inside_interrupt;
 #endif
 };
 
