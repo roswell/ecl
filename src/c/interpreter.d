@@ -24,85 +24,91 @@
 static void
 VEbad_lambda_too_many_args(cl_object bytecodes, cl_object frame)
 {
-  FEprogram_error("Too many arguments passed to "
-                  "function ~A~&Argument list: ~S",
-                  2, bytecodes, cl_apply(2, @'list', frame));
+  ecl_ferror(ECL_EX_VM_BADARG_EXCD, bytecodes, frame);
 }
 
 static void
 VEbad_lambda_unknown_keyword(cl_object bytecodes, cl_object frame)
 {
-  FEprogram_error("Unknown keyword argument passed to function ~S.~&"
-                  "Argument list: ~S", 2, bytecodes,
-                  cl_apply(2, @'list', frame));
+  ecl_ferror(ECL_EX_VM_BADARG_UNKK, bytecodes, frame);
 }
 
 static void
 VEbad_lambda_odd_keys(cl_object bytecodes, cl_object frame)
 {
-  FEprogram_error("Function ~A called with odd number "
-                  "of keyword arguments.",
-                  1, bytecodes);
+  ecl_ferror(ECL_EX_VM_BADARG_ODDK, bytecodes, frame);
 }
 
 static void
 VEwrong_arg_type_endp(cl_object reg0)
 {
-  FEwrong_type_only_arg(@[endp], reg0, @[list]);
+  ecl_ferror(ECL_EX_VM_BADARG_ENDP, ECL_NIL, reg0);
 }
 
 static void
 VEwrong_arg_type_car(cl_object reg0)
 {
-  FEwrong_type_only_arg(@[car], reg0, @[cons]);
+  ecl_ferror(ECL_EX_VM_BADARG_CAR, ECL_NIL, reg0);
 }
 
 static void
 VEwrong_arg_type_cdr(cl_object reg0)
 {
-  FEwrong_type_only_arg(@[cdr], reg0, @[cons]);
+  ecl_ferror(ECL_EX_VM_BADARG_CDR, ECL_NIL, reg0);
 }
 
 static void
-VEwrong_arg_type_nth_val(cl_fixnum n)
+VEwrong_arg_type_nth_val()
 {
-  FEerror("Wrong index passed to NTH-VAL", 1, ecl_make_fixnum(n));
+  ecl_ferror(ECL_EX_VM_BADARG_NTH_VAL, ECL_NIL, ECL_NIL);
+}
+
+static void
+VEwrong_args_progv(cl_object vars, cl_object vals)
+{
+  ecl_ferror(ECL_EX_VM_BADARG_PROGV, vars, vals);
 }
 
 static void
 VEassignment_to_constant(cl_object var)
 {
-  FEassignment_to_constant(var);
+  ecl_ferror(ECL_EX_V_CSETQ, var, ECL_NIL);
+}
+
+static void
+VEbinding_a_constant(cl_object var)
+{
+  ecl_ferror(ECL_EX_V_CBIND, var, ECL_NIL);
 }
 
 static void
 VEunbound_variable(cl_object var)
 {
-  FEunbound_variable(var);
+  ecl_ferror(ECL_EX_V_UNBND, var, ECL_NIL);
 }
 
 static void
-VEwrong_num_arguments(cl_object fname)
+VEillegal_variable_name(cl_object name)
 {
-  FEwrong_num_arguments(fname);
+  ecl_ferror(ECL_EX_V_BNAME, name, ECL_NIL);
+}
+
+static void
+VEwrong_num_arguments(cl_object fun)
+{
+  ecl_ferror(ECL_EX_F_NARGS, fun, ECL_NIL);
 }
 
 static void
 VEundefined_function(cl_object fun)
 {
-  FEundefined_function(fun);
+  ecl_ferror(ECL_EX_F_UNDEF, fun, ECL_NIL);
 }
 
 static void
 VEinvalid_function(cl_object fun)
 {
-  FEinvalid_function(fun);
-}
-
-static void
-VEclose_around_arg_type()
-{
-  FEerror("Internal error: ecl_close_around should be called on t_bytecodes or t_bclosure.", 0);
+  ecl_ferror(ECL_EX_F_INVAL, fun, ECL_NIL);
 }
 
 /* ------------------------------ LEXICAL ENV. ------------------------------ */
@@ -254,7 +260,7 @@ static cl_object
 close_around_self(cl_object fun) {
   cl_object v, template;
   if(ecl_t_of(fun) != t_bytecodes)
-    VEclose_around_arg_type();
+    VEinvalid_function(fun);
   template = fun->bytecodes.flex;
   if(Null(template)) return fun;
   /* Make a closure */
@@ -292,7 +298,7 @@ close_around_self_fixup(cl_object fun, cl_object lcl_env, cl_object lex_env) {
     fun->bclosure.lex = new_lex;
     break;
   default:
-    VEclose_around_arg_type();
+    VEinvalid_function(fun);
   }
 }
 
@@ -302,7 +308,7 @@ ecl_close_around(cl_object fun, cl_object lcl_env, cl_object lex_env) {
   cl_object v, new_lex, template, entry;
   cl_fixnum nlex, idx, ndx;
   if(ecl_t_of(fun) != t_bytecodes)
-    VEclose_around_arg_type();
+    VEinvalid_function(fun);
   template = fun->bytecodes.flex;
   if(Null(template)) return fun;
   /* Close around */
@@ -339,9 +345,9 @@ ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
     } else {
       cl_object var = ECL_CONS_CAR(vars);
       if (!ECL_SYMBOLP(var) || Null(var))
-        FEillegal_variable_name(var);
+        VEillegal_variable_name(var);
       if (var->symbol.stype & ecl_stp_constant)
-        FEbinding_a_constant(var);
+        VEbinding_a_constant(var);
       if (Null(values)) {
         ecl_bds_bind(env, var, OBJNULL);
       } else {
@@ -350,9 +356,8 @@ ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
       }
     }
   }
-  FEerror("Wrong arguments to special form PROGV. Either~%"
-          "~A~%or~%~A~%are not proper lists",
-          2, vars0, values0);
+  VEwrong_args_progv(vars0, values0);
+  _ecl_unexpected_return();
 }
 
 static inline cl_object
@@ -1282,7 +1287,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_NTHVAL); {
       cl_fixnum n = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
       if (ecl_unlikely(n < 0)) {
-        VEwrong_arg_type_nth_val(n);
+        VEwrong_arg_type_nth_val();
       } else if ((cl_index)n >= the_env->nvalues) {
         reg0 = ECL_NIL;
       } else if (n) {
