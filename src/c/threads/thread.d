@@ -53,81 +53,17 @@
 
 /* -- Core ---------------------------------------------------------- */
 
-static void
-extend_process_vector()
-{
-  cl_object v = ecl_core.processes;
-  cl_index new_size = v->vector.dim + v->vector.dim/2;
-  cl_env_ptr the_env = ecl_process_env();
-  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &ecl_core.processes_lock) {
-    cl_object other = ecl_core.processes;
-    if (new_size > other->vector.dim) {
-      cl_object new = si_make_vector(ECL_T,
-                                     ecl_make_fixnum(new_size),
-                                     ecl_make_fixnum(other->vector.fillp),
-                                     ECL_NIL, ECL_NIL, ECL_NIL);
-      ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
-      ecl_core.processes = new;
-    }
-  } ECL_WITH_NATIVE_LOCK_END;
-}
-
-static void
-ecl_list_process(cl_object process)
-{
-  cl_env_ptr the_env = ecl_process_env();
-  bool ok = 0;
-  do {
-    ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &ecl_core.processes_lock) {
-      cl_object vector = ecl_core.processes;
-      cl_index size = vector->vector.dim;
-      cl_index ndx = vector->vector.fillp;
-      if (ndx < size) {
-        vector->vector.self.t[ndx++] = process;
-        vector->vector.fillp = ndx;
-        ok = 1;
-      }
-    } ECL_WITH_NATIVE_LOCK_END;
-    if (ok) break;
-    extend_process_vector();
-  } while (1);
-}
-
-/* Must be called with disabled interrupts to prevent race conditions
- * in thread_cleanup */
-static void
-ecl_unlist_process(cl_object process)
-{
-  ecl_mutex_lock(&ecl_core.processes_lock);
-  cl_object vector = ecl_core.processes;
-  cl_index i;
-  for (i = 0; i < vector->vector.fillp; i++) {
-    if (vector->vector.self.t[i] == process) {
-      vector->vector.fillp--;
-      do {
-        vector->vector.self.t[i] =
-          vector->vector.self.t[i+1];
-      } while (++i < vector->vector.fillp);
-      break;
-    }
-  }
-  ecl_mutex_unlock(&ecl_core.processes_lock);
-}
-
 static cl_object
 ecl_process_list()
 {
   cl_env_ptr the_env = ecl_process_env();
   cl_object output = ECL_NIL;
   ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &ecl_core.processes_lock) {
-    cl_object vector = ecl_core.processes;
-    cl_object *data = vector->vector.self.t;
-    cl_index i;
-    for (i = 0; i < vector->vector.fillp; i++) {
-      cl_object p = data[i];
-      if (p != ECL_NIL)
-        output = ecl_cons(p, output);
-    }
+    loop_across_stack_fifo(_env, ecl_core.threads) {
+      cl_env_ptr env = ecl_cast_ptr(cl_env_ptr, _env);
+      cl_object p = env->own_process;
+      output = ecl_cons(p, output);
+    } end_loop_across_stack();
   } ECL_WITH_NATIVE_LOCK_END;
   return output;
 }
@@ -183,10 +119,10 @@ thread_cleanup(void *aux)
     pthread_sigmask(SIG_BLOCK, new, NULL);
   }
 #endif
+  ecl_del_process(process);
   process->process.env = NULL;
-  ecl_unlist_process(process);
 #ifdef ECL_WINDOWS_THREADS
-  CloseHandle(process->process.thread);
+  CloseHandle(env->thread);
 #endif
   ecl_set_process_env(NULL);
   if (env) _ecl_dealloc_env(env);
@@ -238,21 +174,12 @@ thread_entry_point(void *arg)
 #endif
     process->process.phase = ECL_PROCESS_ACTIVE;
     ecl_mutex_unlock(&process->process.start_stop_lock);
-    ecl_enable_interrupts_env(env);
     si_trap_fpe(@'last', ECL_T);
+    ecl_enable_interrupts_env(env);
     ecl_bds_bind(env, @'mp::*current-process*', process);
 
     ECL_RESTART_CASE_BEGIN(env, @'abort') {
-      env->values[0] = cl_apply(2, process->process.function,
-                                process->process.args);
-      {
-        cl_object output = ECL_NIL;
-        int i = env->nvalues;
-        while (i--) {
-          output = CONS(env->values[i], output);
-        }
-        process->process.exit_values = output;
-      }
+      process->process.entry(0);
     } ECL_RESTART_CASE(1,args) {
       /* ABORT restart. */
       process->process.exit_values = args;
@@ -296,21 +223,35 @@ init_tl_bindings(cl_object process, cl_env_ptr env)
 }
 
 static cl_object
+run_process(cl_narg narg, ...)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object process = the_env->own_process;
+  cl_object fun = process->process.function;
+  cl_object args = process->process.args;
+  cl_object output = ECL_NIL;
+  the_env->values[0] = cl_apply(2, fun, args);
+  int i = the_env->nvalues;
+  while (i--) {
+    output = CONS(the_env->values[i], output);
+  }
+  process->process.exit_values = output;
+  return the_env->values[0];
+}
+
+static cl_object
 alloc_process(cl_object name, cl_object initial_bindings_p)
 {
   cl_env_ptr env = ecl_process_env();
-  cl_object process = ecl_alloc_object(t_process), array;
-  cl_index bindings_size;
-  cl_object* bindings;
+  cl_object process = ecl_alloc_object(t_process);
   process->process.phase = ECL_PROCESS_INACTIVE;
+  process->process.exit_values = ECL_NIL;
+  process->process.entry = run_process;
   process->process.name = name;
   process->process.function = ECL_NIL;
   process->process.args = ECL_NIL;
-  process->process.interrupt = ECL_NIL;
-  process->process.inherit_bindings_p = Null(initial_bindings_p)? ECL_T : ECL_NIL;
-  process->process.exit_values = ECL_NIL;
-  process->process.env = NULL;
   process->process.woken_up = ECL_NIL;
+  process->process.inherit_bindings_p = Null(initial_bindings_p)? ECL_T : ECL_NIL;
   ecl_disable_interrupts_env(env);
   ecl_mutex_init(&process->process.start_stop_lock, TRUE);
   ecl_cond_var_init(&process->process.exit_barrier);
@@ -322,71 +263,23 @@ alloc_process(cl_object name, cl_object initial_bindings_p)
 bool
 ecl_import_current_thread(cl_object name, cl_object bindings)
 {
-  struct cl_env_struct env_aux[1];
   cl_object process;
-  ecl_thread_t current;
-  cl_env_ptr env;
-  int registered;
-  struct GC_stack_base stack;
-  ecl_set_process_self(current);
-#ifdef GBC_BOEHM
-  GC_get_stack_base(&stack);
-  switch (GC_register_my_thread(&stack)) {
-  case GC_SUCCESS:
-    registered = 1;
-    break;
-  case GC_DUPLICATE:
-    /* Thread was probably created using the GC hooks for thread creation. */
-    registered = 0;
-    break;
-  default:
+  cl_env_ptr the_env;
+  if (ecl_process_env_unsafe() != NULL)
     return 0;
-  }
-#endif
-  {
-    cl_object processes = ecl_core.processes;
-    cl_index i, size;
-    for (i = 0, size = processes->vector.fillp; i < size; i++) {
-      cl_object p = processes->vector.self.t[i];
-      if (!Null(p) && ecl_process_eq(p->process.thread, current)) {
-          return 0;
-      }
-    }
-  }
-  /* We need a fake env to allow for interrupts blocking and to set up
-   * frame stacks or other stuff which may be needed by alloc_process
-   * and ecl_list_process. Since the fake env is allocated on the stack,
-   * we can safely store pointers to memory allocated by the gc there. */
-  memset(env_aux, 0, sizeof(*env_aux));
-  env_aux->disable_interrupts = 1;
-  env_aux->interrupt_struct = ecl_alloc_unprotected(sizeof(*env_aux->interrupt_struct));
-  env_aux->interrupt_struct->pending_interrupt = ECL_NIL;
-  ecl_mutex_init(&env_aux->interrupt_struct->signal_queue_lock, FALSE);
-  env_aux->interrupt_struct->signal_queue = ECL_NIL;
-  ecl_set_process_env(env_aux);
-  ecl_init_env(env_aux);
+  the_env = ecl_adopt_cpu();
+  ecl_enable_interrupts_env(the_env);
 
-  /* Allocate real environment, link it together with process */
-  env = _ecl_alloc_env(0);
   process = alloc_process(name, ECL_NIL);
-  process->process.env = env;
+  process->process.env = the_env;
   process->process.phase = ECL_PROCESS_BOOTING;
-  process->process.thread = current;
 
-  /* Copy initial bindings from process to the fake environment */
-  env_aux->cleanup = registered;
-  init_tl_bindings(process, env_aux);
-
-  /* Switch over to the real environment */
-  memcpy(env, env_aux, sizeof(*env));
-  env->own_process = process;
-  ecl_set_process_env(env);
-  ecl_list_process(process);
-  ecl_enable_interrupts_env(env);
+  init_tl_bindings(process, the_env);
+  the_env->own_process = process;
 
   process->process.phase = ECL_PROCESS_ACTIVE;
 
-  ecl_bds_bind(env, @'mp::*current-process*', process);
+  ecl_bds_bind(the_env, @'mp::*current-process*', process);
   return 1;
 }
 
@@ -512,10 +405,6 @@ mp_process_enable(cl_object process)
     ok = 0;
     process->process.phase = ECL_PROCESS_BOOTING;
 
-    process->process.parent = mp_current_process();
-    process->process.trap_fpe_bits =
-      process->process.parent->process.env->trap_fpe_bits;
-
     /* Link environment and process together */
     process_env = _ecl_alloc_env(the_env);
     process_env->own_process = process;
@@ -523,13 +412,13 @@ mp_process_enable(cl_object process)
 
     /* Immediately list the process such that its environment is
      * marked by the gc when its contents are allocated */
-    ecl_list_process(process);
+    ecl_add_process(process);
 
     /* Now we can safely allocate memory for the environment contents
      * and store pointers to it in the environment */
     ecl_init_env(process_env);
 
-    process_env->trap_fpe_bits = process->process.trap_fpe_bits;
+    process_env->trap_fpe_bits = the_env->trap_fpe_bits;
     init_tl_bindings(process, process_env);
 
     ecl_disable_interrupts_env(the_env);
@@ -539,7 +428,7 @@ mp_process_enable(cl_object process)
       DWORD threadId;
 
       code = (HANDLE)CreateThread(NULL, 0, thread_entry_point, process, 0, &threadId);
-      ok = (process->process.thread = code) != NULL;
+      ok = (process_env->thread = code) != NULL;
     }
 #else
     {
@@ -560,12 +449,12 @@ mp_process_enable(cl_object process)
         sigdelset(&new, SIGSEGV);
         sigdelset(&new, SIGBUS);
         pthread_sigmask(SIG_BLOCK, &new, &previous);
-        code = pthread_create(&process->process.thread, &pthreadattr,
+        code = pthread_create(&process_env->thread, &pthreadattr,
                               thread_entry_point, process);
         pthread_sigmask(SIG_SETMASK, &previous, NULL);
       }
 #else
-      code = pthread_create(&process->process.thread, &pthreadattr,
+      code = pthread_create(&process_env->thread, &pthreadattr,
                             thread_entry_point, process);
 #endif
       ok = (code == 0);
@@ -576,7 +465,7 @@ mp_process_enable(cl_object process)
     if (!ok) {
       /* INV: interrupts are already disabled through thread safe
        * unwind-protect */
-      ecl_unlist_process(process);
+      ecl_del_process(process);
       process->process.phase = ECL_PROCESS_INACTIVE;
       /* Alert possible waiting processes. */
       ecl_cond_var_broadcast(&process->process.exit_barrier);
@@ -668,8 +557,7 @@ mp_process_run_function(cl_narg narg, cl_object name, cl_object function, ...)
   ecl_va_start(args, function, narg, 2);
   rest = cl_grab_rest_args(args);
   ecl_va_end(args);
-  cl_apply(4, @'mp::process-preset', process, function,
-           rest);
+  cl_apply(4, @'mp::process-preset', process, function, rest);
   return mp_process_enable(process);
 }
 
@@ -758,7 +646,7 @@ void
 init_threads()
 {
   cl_env_ptr the_env = ecl_process_env();
-  cl_object process;
+  cl_object process, _env = ecl_cast_ptr(cl_object,the_env);
   ecl_thread_t main_thread;
   /* We have to set the environment before any allocation takes place,
    * so that the interrupt handling code works. */
@@ -769,20 +657,10 @@ init_threads()
   process->process.name = @'si::top-level';
   process->process.function = ECL_NIL;
   process->process.args = ECL_NIL;
-  process->process.thread = main_thread;
   process->process.env = the_env;
-  process->process.woken_up = ECL_NIL;
   ecl_mutex_init(&process->process.start_stop_lock, TRUE);
   ecl_cond_var_init(&process->process.exit_barrier);
-
+  the_env->thread = main_thread;
   the_env->own_process = process;
-  {
-    cl_object v = si_make_vector(ECL_T, /* Element type */
-                                 ecl_make_fixnum(256), /* Size */
-                                 ecl_make_fixnum(0), /* fill pointer */
-                                 ECL_NIL, ECL_NIL, ECL_NIL);
-    v->vector.self.t[0] = process;
-    v->vector.fillp = 1;
-    ecl_core.processes = v;
-  }
+  ecl_stack_push(ecl_core.threads, _env);
 }

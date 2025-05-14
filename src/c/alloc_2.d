@@ -682,9 +682,7 @@ void init_type_info (void)
     to_bitmap(&o, &(o.process.name)) |
     to_bitmap(&o, &(o.process.function)) |
     to_bitmap(&o, &(o.process.args)) |
-    to_bitmap(&o, &(o.process.interrupt)) |
     to_bitmap(&o, &(o.process.inherit_bindings_p)) |
-    to_bitmap(&o, &(o.process.parent)) |
     to_bitmap(&o, &(o.process.exit_values)) |
     to_bitmap(&o, &(o.process.woken_up)) |
     to_bitmap(&o, &(o.process.env));
@@ -1195,17 +1193,11 @@ stacks_scanner()
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
   ecl_mark_env(ecl_core.first_env);
 #ifdef ECL_THREADS
-  l = ecl_core.processes;
-  if (l != OBJNULL) {
-    cl_index i, size;
-    for (i = 0, size = l->vector.dim; i < size; i++) {
-      cl_object process = l->vector.self.t[i];
-      if (!Null(process)) {
-        cl_env_ptr env = process->process.env;
-        if (env && (env != ecl_core.first_env)) ecl_mark_env(env);
-      }
-    }
-  }
+  loop_across_stack_fifo(_env, ecl_core.threads) {
+    cl_env_ptr env = ecl_cast_ptr(cl_env_ptr, _env);
+    if(env != ecl_core.first_env)
+      ecl_mark_env(env);
+  } end_loop_across_stack();
 #endif
   if (old_GC_push_other_roots)
     (*old_GC_push_other_roots)();
