@@ -192,7 +192,7 @@
 ;;; Fixed: 10/10/2006
 ;;; Description:
 ;;;
-;;;     Nested calls to queue_finalizer trashed the value of cl_core.to_be_finalized
+;;;     Nested calls to queue_finalizer trashed the value of ecl_core.to_be_finalized
 ;;;     The following code tests that at least three objects are finalized.
 ;;;
 ;;; Note: this test fails in multithreaded mode. GC takes too long!
