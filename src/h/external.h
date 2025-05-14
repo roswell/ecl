@@ -171,35 +171,6 @@ struct ecl_interrupt_struct {
   extern ECL_API cl_env_ptr cl_env_p;
 #endif
 
-/* Core environment. */
-
-struct ecl_core_struct {
-  cl_env_ptr first_env;
-#ifdef ECL_THREADS
-  cl_object processes;
-  ecl_mutex_t processes_lock;
-  ecl_mutex_t global_lock;
-  ecl_mutex_t error_lock;
-  ecl_rwlock_t global_env_lock;
-  cl_index last_var_index;
-  cl_object reused_indices;
-#endif
-  size_t max_heap_size;
-  cl_object bytes_consed;
-  cl_object gc_counter;
-  bool gc_stats;
-  char *safety_region;
-
-  cl_index default_sigmask_bytes;
-  cl_object known_signals;
-
-  int path_max;
-  cl_object pathname_translations;
-
-  cl_object libraries;
-  cl_object library_pathname;
-};
-
 /* Per-process data. Modify main.d accordingly. */
 
 struct cl_core_struct {
@@ -246,8 +217,9 @@ extern ECL_API void ecl_free(void *ptr);
 extern ECL_API void ecl_copy(void *dst, void *src, cl_index ndx);
 #define ecl_free_unsafe(x) ecl_free(x);
 
-/* cold_boot.c */
+/* boot.c */
 extern ECL_API int ecl_boot(void);
+extern ECL_API int ecl_halt(void);
 
 extern ECL_API const cl_object ecl_ct_Jan1st1970UT;
 extern ECL_API const cl_object ecl_ct_null_string;
