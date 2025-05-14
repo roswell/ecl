@@ -23,8 +23,8 @@
  * NOTE 1: we only need to use the package locks when reading/writing the hash
  * tables, or changing the fields of a package.  We do not need the locks to
  * read lists from the packages (i.e. list of shadowing symbols, used
- * packages, etc), or from the global environment (cl_core.packages_list) if
- * we do not destructively modify them (For instance, use ecl_remove_eq
+ * packages, etc), or from the global environment (cl_core.packages_list)
+ * if we do not destructively modify them (For instance, use ecl_remove_eq
  * instead of ecl_delete_eq).
  */
 /*
@@ -270,7 +270,7 @@ ecl_make_package(cl_object name, cl_object nicknames,
       nicknamed->pack.nicknamedby = CONS(x, nicknamed->pack.nicknamedby);
     } end_loop_for_in;
     /* Finally, add it to the list of packages */
-    cl_core.packages = CONS(x, cl_core.packages);
+    cl_core.packages = ecl_cons(x, cl_core.packages);
   OUTPUT:
     (void)0;
   } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
