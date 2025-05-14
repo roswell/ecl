@@ -24,69 +24,12 @@
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 
-static cl_object
-cl_symbol_or_object(cl_object x)
-{
-  if (ECL_FIXNUMP(x))
-    return (cl_object)(cl_symbols + ecl_fixnum(x));
-  return x;
-}
-
-void
-_ecl_unexpected_return()
-{
-  ecl_internal_error(
-                     "*** \n"
-                     "*** A call to ERROR returned without handling the error.\n"
-                     "*** This should have never happened and is usually a signal\n"
-                     "*** that the debugger or the universal error handler were\n"
-                     "*** improperly coded or altered. Please contact the maintainers\n"
-                     "***\n");
-}
-
-void
-ecl_internal_error(const char *s)
-{
-  int saved_errno = errno;
-  fprintf(stderr, "\nInternal or unrecoverable error in:\n%s\n", s);
-  if (saved_errno) {
-    fprintf(stderr, "  [%d: %s]\n", saved_errno, strerror(saved_errno));
-  }
-  fflush(stderr);
-  _ecl_dump_c_backtrace();
-#ifdef SIGIOT
-  signal(SIGIOT, SIG_DFL); /* avoid getting into a loop with abort */
-#endif
-  abort();
-}
-
-#ifdef ECL_THREADS
-void
-ecl_thread_internal_error(const char *s)
-{
-  int saved_errno = errno;
-  fprintf(stderr, "\nInternal thread error in:\n%s\n", s);
-  if (saved_errno) {
-    fprintf(stderr, "  [%d: %s]\n", saved_errno, strerror(saved_errno));
-  }
-  _ecl_dump_c_backtrace();
-  fprintf(stderr,
-          "\nDid you forget to call `ecl_import_current_thread'?\n"
-          "Exitting thread.\n");
-  fflush(stderr);
-  ecl_thread_exit();
-}
-#endif
-
 void
 ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
 {
-  /*
-   * Right now we have no means of specifying a jump point
-   * for really bad events. We just jump to the outermost
-   * frame, which is equivalent to quitting, and wait for
-   * someone to intercept this jump.
-   */
+  /* Right now we have no means of specifying a jump point for really bad
+   * events. We just jump to the outermost frame, which is equivalent to
+   * quitting, and wait for someone to intercept this jump. */
   ecl_frame_ptr destination;
   cl_object tag;
 
@@ -112,20 +55,17 @@ ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
   }
 }
 
-void
-ecl_miscompilation_error()
-{
-  ecl_internal_error(
-                     "***\n"
-                     "*** Encountered a code path that should have never been taken.\n"
-                     "*** This likely indicates a bug in the ECL compiler. Please contact\n"
-                     "*** the maintainers.\n"
-                     "***\n");
-}
-
 /*****************************************************************************/
 /*              Support for Lisp Error Handler                               */
 /*****************************************************************************/
+
+static cl_object
+cl_symbol_or_object(cl_object x)
+{
+  if (ECL_FIXNUMP(x))
+    return (cl_object)(cl_symbols + ecl_fixnum(x));
+  return x;
+}
 
 void
 FEerror(const char *s, int narg, ...)
