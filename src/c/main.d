@@ -105,11 +105,7 @@ ecl_init_first_env(cl_env_ptr env)
 #ifdef ECL_THREADS
   init_threads();
 #endif
-  init_env_mp(env);
-  init_env_int(env);
-  init_env_aux(env);
-  init_env_ffi(env);
-  init_stacks(env);
+  ecl_init_env(env);
 }
 
 void
@@ -447,6 +443,9 @@ cl_boot(int argc, char **argv)
 
   /* We need to enable GC because a lot of stuff is to be created */
   init_alloc(1);
+
+  /* Initialize the handler stack with the exception handler. */
+  ECL_SET(ECL_HANDLER_CLUSTERS, ecl_list1(ECL_SYM_FUN(@'si::exception-handler')));
 
   /*
    * Set *default-pathname-defaults* to a temporary fake value. We
