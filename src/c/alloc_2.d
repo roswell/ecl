@@ -1191,17 +1191,11 @@ stacks_scanner()
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
   ecl_mark_env(ecl_core.first_env);
 #ifdef ECL_THREADS
-  l = ecl_core.processes;
-  if (l != OBJNULL) {
-    cl_index i, size;
-    for (i = 0, size = l->vector.dim; i < size; i++) {
-      cl_object process = l->vector.self.t[i];
-      if (!Null(process)) {
-        cl_env_ptr env = process->process.env;
-        if (env && (env != ecl_core.first_env)) ecl_mark_env(env);
-      }
-    }
-  }
+  loop_across_stack_fifo(_env, ecl_core.threads) {
+    cl_env_ptr env = ecl_cast_ptr(cl_env_ptr, _env);
+    if(env != ecl_core.first_env)
+      ecl_mark_env(env);
+  } end_loop_across_stack();
 #endif
   if (old_GC_push_other_roots)
     (*old_GC_push_other_roots)();
