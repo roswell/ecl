@@ -31,7 +31,7 @@
 # include <sched.h>
 #endif
 
-/* -- Macros -------------------------------------------------------- */
+/* -- Macros ---------------------------------------------------------------- */
 
 #ifdef ECL_WINDOWS_THREADS
 # define ecl_process_eq(t1, t2) (GetThreadId(t1) == GetThreadId(t2))
@@ -56,18 +56,18 @@
 static void
 extend_process_vector()
 {
-  cl_object v = cl_core.processes;
+  cl_object v = ecl_core.processes;
   cl_index new_size = v->vector.dim + v->vector.dim/2;
   cl_env_ptr the_env = ecl_process_env();
-  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-    cl_object other = cl_core.processes;
+  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &ecl_core.processes_lock) {
+    cl_object other = ecl_core.processes;
     if (new_size > other->vector.dim) {
       cl_object new = si_make_vector(ECL_T,
                                      ecl_make_fixnum(new_size),
                                      ecl_make_fixnum(other->vector.fillp),
                                      ECL_NIL, ECL_NIL, ECL_NIL);
       ecl_copy_subarray(new, 0, other, 0, other->vector.dim);
-      cl_core.processes = new;
+      ecl_core.processes = new;
     }
   } ECL_WITH_NATIVE_LOCK_END;
 }
@@ -78,8 +78,8 @@ ecl_list_process(cl_object process)
   cl_env_ptr the_env = ecl_process_env();
   bool ok = 0;
   do {
-    ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-      cl_object vector = cl_core.processes;
+    ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &ecl_core.processes_lock) {
+      cl_object vector = ecl_core.processes;
       cl_index size = vector->vector.dim;
       cl_index ndx = vector->vector.fillp;
       if (ndx < size) {
@@ -98,8 +98,8 @@ ecl_list_process(cl_object process)
 static void
 ecl_unlist_process(cl_object process)
 {
-  ecl_mutex_lock(&cl_core.processes_lock);
-  cl_object vector = cl_core.processes;
+  ecl_mutex_lock(&ecl_core.processes_lock);
+  cl_object vector = ecl_core.processes;
   cl_index i;
   for (i = 0; i < vector->vector.fillp; i++) {
     if (vector->vector.self.t[i] == process) {
@@ -111,7 +111,7 @@ ecl_unlist_process(cl_object process)
       break;
     }
   }
-  ecl_mutex_unlock(&cl_core.processes_lock);
+  ecl_mutex_unlock(&ecl_core.processes_lock);
 }
 
 static cl_object
@@ -119,8 +119,8 @@ ecl_process_list()
 {
   cl_env_ptr the_env = ecl_process_env();
   cl_object output = ECL_NIL;
-  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &cl_core.processes_lock) {
-    cl_object vector = cl_core.processes;
+  ECL_WITH_NATIVE_LOCK_BEGIN(the_env, &ecl_core.processes_lock) {
+    cl_object vector = ecl_core.processes;
     cl_object *data = vector->vector.self.t;
     cl_index i;
     for (i = 0; i < vector->vector.fillp; i++) {
@@ -344,7 +344,7 @@ ecl_import_current_thread(cl_object name, cl_object bindings)
   }
 #endif
   {
-    cl_object processes = cl_core.processes;
+    cl_object processes = ecl_core.processes;
     cl_index i, size;
     for (i = 0, size = processes->vector.fillp; i < size; i++) {
       cl_object p = processes->vector.self.t[i];
@@ -783,6 +783,6 @@ init_threads()
                                  ECL_NIL, ECL_NIL, ECL_NIL);
     v->vector.self.t[0] = process;
     v->vector.fillp = 1;
-    cl_core.processes = v;
+    ecl_core.processes = v;
   }
 }
