@@ -15,20 +15,6 @@
 /******************************** IMPORTS *****************************/
 
 #include <ecl/ecl.h>
-#include <limits.h>
-#if defined(ECL_MS_WINDOWS_HOST)
-# include <windows.h>
-# include <shellapi.h>
-# define MAXPATHLEN 512
-#endif
-#ifndef MAXPATHLEN
-# ifdef PATH_MAX
-#   define MAXPATHLEN PATH_MAX
-# else
-#   define NO_PATH_MAX
-#   include <unistd.h>
-# endif
-#endif
 #ifdef ECL_USE_MPROTECT
 # include <sys/mman.h>
 # ifndef MAP_FAILED
@@ -50,56 +36,6 @@
 /******************************* EXPORTS ******************************/
 
 const char *ecl_self;
-
-struct ecl_core_struct ecl_core = {
-  .first_env = NULL,
-  /* processes */
-#ifdef ECL_THREADS
-  .processes = ECL_NIL,
-  .last_var_index = 0,
-  .reused_indices = ECL_NIL,
-#endif
-  /* signals */
-  .default_sigmask_bytes = 0,
-  .known_signals = ECL_NIL,
-  /* allocation */
-  .max_heap_size = 0,
-  .bytes_consed = ECL_NIL,
-  .gc_counter = ECL_NIL,
-  .gc_stats = 0,
-  .safety_region = NULL,
-  /* pathnames */
-  .path_max = 0,
-  .pathname_translations = ECL_NIL,
-  /* LIBRARIES is a list of objects. It behaves as a sequence of weak pointers
-     thanks to the magic in the garbage collector. */
-  .libraries = ECL_NIL,
-  .library_pathname = ECL_NIL
-};
-
-/* note that this function does not create any environment */
-int
-ecl_boot(void)
-{
-  int i;
-
-  i = ecl_option_values[ECL_OPT_BOOTED];
-  if (i) {
-    if (i < 0) {
-      /* We have called cl_shutdown and want to use ECL again. */
-      ecl_set_option(ECL_OPT_BOOTED, 1);
-    }
-    return 1;
-  }
-
-  /* The first environment must be available at all times. */
-  ecl_core.first_env = _ecl_alloc_env(NULL);
-  init_process();
-
-  ecl_core.path_max = MAXPATHLEN;
-
-  return 0;
-}
 
 /************************ GLOBAL INITIALIZATION ***********************/
 
@@ -285,7 +221,7 @@ cl_shutdown(void)
     ecl_tcp_close_all();
 #endif
   }
-  ecl_set_option(ECL_OPT_BOOTED, -1);
+  ecl_halt();
 }
 
 ecl_def_ct_base_string(str_common_lisp,"COMMON-LISP",11,static,const);
