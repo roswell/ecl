@@ -14,7 +14,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
 {
   cl_object fun = x;
   if (ecl_unlikely(fun == ECL_NIL))
-    FEundefined_function(x);
+    ecl_ferror(ECL_EX_F_UNDEF, fun, ECL_NIL);
   switch (ecl_t_of(fun)) {
   case t_cfunfixed:
     env->function = fun;
@@ -39,7 +39,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
     env->function = fun;
     return fun->bclosure.entry;
   default:
-    FEinvalid_function(x);
+    ecl_ferror(ECL_EX_F_INVAL, fun, ECL_NIL);
   }
   _ecl_unexpected_return();
 }
@@ -731,7 +731,7 @@ APPLY_fixed(cl_narg n, cl_object (*fn)(), cl_object *x)
                                                x[50],x[51],x[52],x[53],x[54],x[55],x[56],
                                                x[57],x[58],x[59],x[60],x[61],x[62]);
   default:
-    FEprogram_error("Too many arguments", 0);
+    ecl_ferror(ECL_EX_F_NARGS, ecl_make_fixnum(n), ECL_NIL);
   }
   _ecl_unexpected_return();
 }
