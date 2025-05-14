@@ -141,7 +141,11 @@ push_lcl(cl_object stack, cl_object new)
 static void
 drop_lcl(cl_object stack, cl_fixnum n)
 {
-  stack->frame.sp -= n;
+  cl_index i;
+  for(i=0; i<n; i++) {
+    stack->frame.sp--;
+    *ECL_STACK_FRAME_TOP(stack) = ECL_NIL;
+  }
 }
 
 static cl_object
