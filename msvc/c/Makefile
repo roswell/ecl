@@ -13,7 +13,7 @@ ECL_FPE_CODE=fpe_x86.c
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
 THREADS_OBJ= thread.obj mutex.obj condition_variable.obj rwlock.obj \
-             semaphore.obj barrier.obj mailbox.obj atomic.obj
+             semaphore.obj barrier.obj mailbox.obj
 !else
 ECL_THREADS_FLAG=0
 THREADS_OBJ=
@@ -47,7 +47,7 @@ ECL_USE_DBGHELP_FLAG=0
 # Programs used by "make":
 #
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I../ecl -I$(srcdir) -I$(srcdir)/unicode
+CFLAGS	= -c $(ECL_CFLAGS) /std:c11 -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I../ecl -I$(srcdir) -I$(srcdir)/unicode
 
 SHELL	= /bin/sh
 RM	= del
@@ -79,20 +79,13 @@ HFILES	= ..\ecl\config.h ..\ecl\config-internal.h ..\ecl\atomic_ops.h \
 	$(HDIR)\cache.h $(HDIR)\stack-resize.h \
 	$(HDIR)\ecl_atomics.h
 
-OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
-	apply.obj eval.obj \
-	interpreter.obj compiler.obj disassembler.obj \
-	instance.obj gfun.obj cache.obj accessor.obj \
-	reference.obj character.obj\
-	file.obj read.obj print.obj error.obj string.obj cfun.obj\
-	parse_integer.obj parse_number.obj \
-	float_to_digits.obj float_to_string.obj \
-	integer_to_string.obj write_ugly.obj \
-	write_object.obj write_symbol.obj \
-	write_array.obj write_list.obj write_code.obj \
-	write_sse.obj print_unreadable.obj \
-	libraries.obj backtrace.obj mmap.obj cdata.obj \
-	cos.obj sin.obj tan.obj atan.obj \
+NUCL_OBJS = boot.obj call.obj jump.obj atomic.obj process.obj memory.obj \
+	module.obj stacks.obj
+
+CLOS_OBJS = instance.obj gfun.obj cache.obj accessor.obj
+
+NUM_OBJS = number.obj num_pred.obj num_arith.obj num_co.obj \
+	num_log.obj num_rand.obj cos.obj sin.obj tan.obj atan.obj \
 	cosh.obj sinh.obj tanh.obj \
 	exp.obj expt.obj log.obj \
 	sqrt.obj abs.obj \
@@ -101,18 +94,34 @@ OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
 	one_plus.obj one_minus.obj \
 	plus.obj minus.obj times.obj divide.obj \
 	number_compare.obj number_equalp.obj minmax.obj \
-	floor.obj ceiling.obj round.obj truncate.obj \
-	typespec.obj assignment.obj \
-	predicate.obj big.obj number.obj\
-	num_pred.obj num_arith.obj num_co.obj\
-	num_log.obj num_rand.obj array.obj vector_push.obj \
+	floor.obj ceiling.obj round.obj truncate.obj
+
+WRITER_OBJS = print.obj float_to_digits.obj float_to_string.obj \
+	integer_to_string.obj write_ugly.obj \
+	write_object.obj write_symbol.obj \
+	write_array.obj write_list.obj write_code.obj \
+	write_sse.obj print_unreadable.obj
+
+READER_OBJS = read.obj parse_integer.obj parse_number.obj
+
+FFI_OBJS = ffi.obj libraries.obj backtrace.obj mmap.obj cdata.obj
+
+GC_OBJS = alloc.obj gbc.obj
+
+OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
+	eval.obj interpreter.obj compiler.obj disassembler.obj \
+	reference.obj character.obj file.obj error.obj \
+	string.obj cfun.obj typespec.obj assignment.obj \
+	predicate.obj big.obj array.obj vector_push.obj \
 	sequence.obj cmpaux.obj\
-	macros.obj backq.obj stacks.obj \
-	time.obj unixint.obj memory.obj \
+	macros.obj backq.obj stack2.obj \
+	time.obj unixint.obj \
 	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
-	structure.obj load.obj unixfsys.obj unixsys.obj \
-	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) process.obj serialize.obj \
-	$(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
+	structure.obj load.obj unixfsys.obj unixsys.obj serialize.obj \
+	mem_gc.obj tcp.obj \
+	$(NUCL_OBJS) $(CLOS_OBJS) $(NUM_OBJS) $(FFI_OBJS) \
+	$(WRITER_OBJS) $(READER_OBJS) $(THREADS_OBJ)  \
+	$(ECL_UCD_OBJ) $(ECL_SSE_OBJ) $(NUCL_OBJS)
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 
