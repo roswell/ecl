@@ -47,7 +47,7 @@ ECL_USE_DBGHELP_FLAG=0
 # Programs used by "make":
 #
 CC	= cl
-CFLAGS	= -c $(ECL_CFLAGS) -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I../ecl -I$(srcdir) -I$(srcdir)/unicode
+CFLAGS	= -c $(ECL_CFLAGS) /std:c11 -DECL_BUILD -DECL_API="__declspec(dllexport)" -I./ -I../ -I../ecl -I$(srcdir) -I$(srcdir)/unicode
 
 SHELL	= /bin/sh
 RM	= del
@@ -78,6 +78,9 @@ HFILES	= ..\ecl\config.h ..\ecl\config-internal.h ..\ecl\atomic_ops.h \
 	$(HDIR)\impl\math_fenv.h $(HDIR)\impl\math_fenv_msvc.h \
 	$(HDIR)\cache.h $(HDIR)\stack-resize.h \
 	$(HDIR)\ecl_atomics.h
+
+NUCL_OBJS = boot.obj call.obj jump.obj atomic.obj process.obj memory.obj \
+	module.obj stacks.obj
 
 CLOS_OBJS = cache.obj accessor.obj instance.obj gfun.obj
 
@@ -112,7 +115,7 @@ OBJS	= main.obj symbol.obj package.obj cons.obj list.obj apply.obj eval.obj \
 	backq.obj stacks.obj time.obj unixint.obj mapfun.obj multival.obj hash.obj \
 	format.obj pathname.obj structure.obj load.obj unixfsys.obj unixsys.obj \
 	serialize.obj atomic.obj process.obj  \
-	big.obj alloc_2.obj tcp.obj \
+	big.obj mem_gc.obj tcp.obj \
 	$(BOOT_OBJS) $(NUM_OBJS) $(WRITER_OBJS) $(READER_OBJS) $(STREAM_OBJS)   \
 	$(CLOS_OBJS) $(FFI_OBJS) $(THREADS_OBJ)	$(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
 
