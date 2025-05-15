@@ -379,7 +379,7 @@ bds_init(cl_env_ptr env)
   margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
   limit_size = ecl_option_values[ECL_OPT_BIND_STACK_SIZE];
   size = limit_size + 2 * margin;
-  env->bds_stack.org = (ecl_bds_ptr)ecl_malloc(size * sizeof(*env->bds_stack.org));
+  env->bds_stack.org = (ecl_bds_ptr)ecl_malloc(size * sizeof(cl_object*));
   env->bds_stack.top = env->bds_stack.org-1;
   env->bds_stack.limit = &env->bds_stack.org[limit_size];
   env->bds_stack.size = size;
@@ -717,45 +717,92 @@ frs_sch (cl_object frame_id)
   return(NULL);
 }
 
-/* -- Initialization -------------------------------------------------------- */
-cl_object
-init_stacks(cl_env_ptr the_env)
+/* -- Module definition ------------------------------------------------------ */
+
+static cl_object
+create_stacks(void)
 {
+  cl_env_ptr the_env = ecl_core.first_env;
 #ifdef ECL_THREADS
-  if (the_env == ecl_core.first_env) {
-    cl_index idx;
-    cl_object *vector = (cl_object *)ecl_malloc(1024*sizeof(cl_object*));
-    for(idx=0; idx<1024; idx++) {
-      vector[idx] = ECL_NO_TL_BINDING;
-    }
-    the_env->bds_stack.tl_bindings_size = 1024;
-    the_env->bds_stack.tl_bindings = vector;
+  cl_index idx;
+  cl_object *vector = (cl_object *)ecl_malloc(1024*sizeof(cl_object*));
+  for(idx=0; idx<1024; idx++) {
+    vector[idx] = ECL_NO_TL_BINDING;
   }
+  the_env->bds_stack.tl_bindings_size = 1024;
+  the_env->bds_stack.tl_bindings = vector;
 #endif
+  the_env->c_stack.org = NULL;
+  return ECL_NIL;
+}
+
+static cl_object
+enable_stacks(void)
+{
+  return ECL_NIL;
+}
+
+static cl_object
+init_env_stacks(cl_env_ptr the_env)
+{
   frs_init(the_env);
   bds_init(the_env);
   run_init(the_env);
   ihs_init(the_env);
-  /* FIXME ecl_cs_init must be called from the thread entry point at the
-     beginning to correctly determine the stack base. */
-#if 0
-  cs_init(the_env);
-#endif
+  the_env->c_stack.org = NULL;
   return ECL_NIL;
 }
 
-cl_object
-free_stacks(cl_env_ptr the_env)
+static cl_object
+init_cpu_stacks(cl_env_ptr the_env)
 {
-#ifdef ECL_THREADS
-  ecl_free(the_env->bds_stack.tl_bindings);
-  the_env->bds_stack.tl_bindings_size = 0;
-#endif
+  ecl_cs_init(the_env);
+  return ECL_NIL;
+}
+
+static cl_object
+free_cpu_stacks(cl_env_ptr the_env)
+{
+  return ECL_NIL;
+}
+
+static cl_object
+free_env_stacks(cl_env_ptr the_env)
+{
   ecl_free(the_env->run_stack.org);
   ecl_free(the_env->bds_stack.org);
   ecl_free(the_env->frs_stack.org);
   return ECL_NIL;
 }
+
+static cl_object
+destroy_stacks(void)
+{
+  cl_env_ptr the_env = ecl_core.first_env;
+#ifdef ECL_THREADS
+  ecl_free(the_env->bds_stack.tl_bindings);
+  the_env->bds_stack.tl_bindings_size = 0;
+  the_env->bds_stack.tl_bindings = NULL;
+#endif
+  return ECL_NIL;
+}
+
+ecl_def_ct_base_string(str_stacks, "STACKS", 6, static, const);
+
+static struct ecl_module module_stacks = {
+  .t = t_module,
+  .name = str_stacks,
+  .create = create_stacks,
+  .enable = enable_stacks,
+  .init_env = init_env_stacks,
+  .init_cpu = init_cpu_stacks,
+  .free_cpu = free_cpu_stacks,
+  .free_env = free_env_stacks,
+  .disable = ecl_module_no_op,
+  .destroy = destroy_stacks
+};
+
+cl_object ecl_module_stacks = (cl_object)&module_stacks;
 
 /* -- High level interface -------------------------------------------------- */
 
@@ -1113,3 +1160,4 @@ si_get_limit(cl_object type)
 
   ecl_return1(env, ecl_make_unsigned_integer(output));
 }
+
