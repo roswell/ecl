@@ -124,26 +124,6 @@ init_tl_bindings(cl_object process, cl_env_ptr env)
 #ifdef ECL_THREADS
 
 static void
-add_env(cl_env_ptr the_env)
-{
-  cl_object _env;
-  ecl_mutex_lock(&ecl_core.processes_lock);
-  _env = ecl_cast_ptr(cl_object,the_env);
-  ecl_stack_push(ecl_core.threads, _env);
-  ecl_mutex_unlock(&ecl_core.processes_lock);
-}
-
-static void
-del_env(cl_env_ptr the_env)
-{
-  cl_object _env;
-  ecl_mutex_lock(&ecl_core.processes_lock);
-  _env = ecl_cast_ptr(cl_object,the_env);
-  ecl_stack_del(ecl_core.threads, _env);
-  ecl_mutex_unlock(&ecl_core.processes_lock);
-}
-
-static void
 register_gc_thread()
 {
 #ifdef GBC_BOEHM
@@ -178,9 +158,8 @@ ecl_adopt_cpu()
   the_env = _ecl_alloc_env(0);
   the_env->thread = current;
   ecl_set_process_env(the_env);
-  ecl_init_env(the_env);
-  add_env(the_env);
   init_tl_bindings(ECL_NIL, the_env);
+  ecl_modules_init_env(the_env);
   ecl_modules_init_cpu(the_env);
 
   return the_env;
@@ -196,7 +175,7 @@ ecl_disown_cpu()
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(the_env->thread);
 #endif
-  del_env(the_env);
+  ecl_modules_free_env(the_env);
   _ecl_dealloc_env(the_env);
   unregister_gc_thread();
 }
@@ -214,9 +193,9 @@ thread_entry_point(void *ptr)
   ecl_modules_init_cpu(the_env);
   /* Start the user routine */
   process->process.entry(0);
-  /* This routine performs some cleanup before a thread is completely
-   * killed. For instance, it has to remove the associated process object from
-   * the list, an it has to dealloc some memory.
+  /* This routine performs some cleanup before a thread is completely killed.
+   * For instance, it has to remove the associated process object from * the
+   * list, an it has to dealloc some memory.
    *
    * NOTE: this cleanup does not provide enough "protection". In order to ensure
    * that all UNWIND-PROTECT forms are properly executed, never use the function
@@ -224,10 +203,10 @@ thread_entry_point(void *ptr)
    * mp_interrupt_process() and mp_process_kill(). */
   ecl_disable_interrupts_env(the_env);
   ecl_modules_free_cpu(the_env);
-  del_env(the_env);
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(the_env->thread);
 #endif
+  ecl_modules_free_env(the_env);
   _ecl_dealloc_env(the_env);
 #ifdef ECL_WINDOWS_THREADS
   return 1;
@@ -246,12 +225,7 @@ ecl_spawn_cpu(cl_object process)
   /* Allocate and initialize the new cpu env. */
   {
     new_env = _ecl_alloc_env(the_env);
-    /* List the process such that its environment is marked by the GC when its
-       contents are allocated. */
-    add_env(new_env);
-    /* Now we can safely allocate memory for the environment ocntents and store
-       pointers to it in the environment. */
-    ecl_init_env(new_env);
+    ecl_modules_init_env(new_env);
     /* Copy the parent env defaults. */
     new_env->trap_fpe_bits = the_env->trap_fpe_bits;
     new_env->own_process = process;
@@ -301,8 +275,8 @@ ecl_spawn_cpu(cl_object process)
 #endif /* ECL_WINDOWS_THREADS */
   /* Deal with the fallout of the thread creation. */
   if (!ok) {
-    del_env(new_env);
     process->process.env = NULL;
+    ecl_modules_free_env(new_env);
     _ecl_dealloc_env(new_env);
   }
   ecl_enable_interrupts_env(the_env);
