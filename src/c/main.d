@@ -12,15 +12,9 @@
  *
  */
 
-/******************************** IMPORTS *****************************/
+/* -- Imports ------------------------------------------------------- */
 
 #include <ecl/ecl.h>
-#ifdef ECL_USE_MPROTECT
-# include <sys/mman.h>
-# ifndef MAP_FAILED
-#  define MAP_FAILED -1
-# endif
-#endif
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,76 +23,14 @@
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 
-
 #include "ecl_features.h"
 #include "iso_latin_names.h"
 
-/******************************* EXPORTS ******************************/
+/* -- Global Initialization ----------------------------------------- */
 
 const char *ecl_self;
-
-/************************ GLOBAL INITIALIZATION ***********************/
-
 static int ARGC;
 static char **ARGV;
-
-void
-ecl_init_env(cl_env_ptr env)
-{
-  ecl_modules_init_env(env);
-}
-
-void
-_ecl_dealloc_env(cl_env_ptr env)
-{
-  ecl_modules_free_env(env);
-#if defined(ECL_USE_MPROTECT)
-  if (munmap(env, sizeof(*env)))
-    ecl_internal_error("Unable to deallocate environment structure.");
-#elif defined(ECL_USE_GUARD_PAGE)
-  if (!VirtualFree(env, 0, MEM_RELEASE))
-    ecl_internal_error("Unable to deallocate environment structure.");
-#else
-  ecl_free_unsafe(env);
-#endif
-}
-
-cl_env_ptr
-_ecl_alloc_env(cl_env_ptr parent)
-{
-  /*
-   * Allocates the lisp environment for a thread. Depending on which
-   * mechanism we use for detecting delayed signals, we may allocate
-   * the environment using mmap or the garbage collector.
-   *
-   * Note that at this point we are not allocating any other memory
-   * which is stored via a pointer in the environment. If we would do
-   * that, an unlucky interrupt by the gc before the allocated
-   * environment is registered in ecl_core.processes could lead to
-   * memory being freed because the gc is not aware of the pointer to
-   * the allocated memory in the environment.
-   */
-  cl_env_ptr output;
-#if defined(ECL_USE_MPROTECT)
-  output = (cl_env_ptr) mmap(0, sizeof(*output), PROT_READ | PROT_WRITE,
-                             MAP_ANON | MAP_PRIVATE, -1, 0);
-  if (output == MAP_FAILED)
-    ecl_internal_error("Unable to allocate environment structure.");
-#else
-# if defined(ECL_USE_GUARD_PAGE)
-  output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT, PAGE_READWRITE);
-  if (output == NULL)
-    ecl_internal_error("Unable to allocate environment structure.");
-# else
-  output = ecl_malloc(sizeof(*output));
-  if (output == NULL)
-    ecl_internal_error("Unable to allocate environment structure.");
-# endif
-#endif
-  /* Initialize the structure with NULL data. */
-  memset(output, 0, sizeof(*output));
-  return output;
-}
 
 void
 cl_shutdown(void)
@@ -513,7 +445,8 @@ cl_boot(int argc, char **argv)
   return 1;
 }
 
-/* -- Module definition (auxiliary structures) ------------------------------- */
+/* -- Module definition (auxiliary structures) ---------------------- */
+
 static cl_object
 create_aux()
 {
@@ -559,7 +492,7 @@ static struct ecl_module module_aux = {
 };
 cl_object ecl_module_aux = (cl_object)&module_aux;
 
-/************************* ENVIRONMENT ROUTINES ***********************/
+/* -- Operating system environment routines ------------------------- */
 
 @(defun ext::quit (&optional (code ecl_make_fixnum(0)) (kill_all_threads ECL_T))
 @ {

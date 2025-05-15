@@ -5,7 +5,21 @@
 
 /* -- imports --------------------------------------------------------------- */
 
+#include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
+#include <ecl/internal.h>
+#include <ecl/external.h>
+
+#ifdef ECL_USE_MPROTECT
+# include <sys/mman.h>
+# ifndef MAP_FAILED
+#  define MAP_FAILED -1
+# endif
+#endif
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #if defined(ECL_MS_WINDOWS_HOST)
 # include <windows.h>
 # include <shellapi.h>
@@ -19,11 +33,6 @@
 #   include <unistd.h>
 # endif
 #endif
-
-#include <ecl/ecl.h>
-#include <ecl/ecl-inl.h>
-#include <ecl/internal.h>
-#include <ecl/external.h>
 
 /* -- constants ----------------------------------------------------- */
 
@@ -129,6 +138,84 @@ ecl_set_option(int option, cl_fixnum value)
     ecl_option_values[option] = value;
   }
   return ecl_option_values[option];
+}
+
+/* -- environments ---------------------------------------------------------- */
+
+#ifdef ECL_THREADS
+static void
+add_env(cl_env_ptr the_env)
+{
+  cl_object _env;
+  ecl_mutex_lock(&ecl_core.processes_lock);
+  _env = ecl_cast_ptr(cl_object,the_env);
+  ecl_stack_push(ecl_core.threads, _env);
+  ecl_mutex_unlock(&ecl_core.processes_lock);
+}
+
+static void
+del_env(cl_env_ptr the_env)
+{
+  cl_object _env;
+  ecl_mutex_lock(&ecl_core.processes_lock);
+  _env = ecl_cast_ptr(cl_object,the_env);
+  ecl_stack_del(ecl_core.threads, _env);
+  ecl_mutex_unlock(&ecl_core.processes_lock);
+}
+#endif
+
+cl_env_ptr
+_ecl_alloc_env(cl_env_ptr parent)
+{
+  /* Allocates the lisp environment for a thread. Depending on which mechanism
+   * we use for detecting delayed signals, we may allocate the environment using
+   * mmap or with malloc.
+   *
+   * Note that at this point we are not allocating any other memory which is
+   * stored via a pointer in the environment. If we would do that, an unlucky
+   * interrupt by the gc before the allocated environment is registered in
+   * ecl_core.processes could lead to memory being freed because the gc is not
+   * aware of the pointer to the allocated memory in the environment. */
+  cl_env_ptr output;
+#if defined(ECL_USE_MPROTECT)
+  output = (cl_env_ptr) mmap(0, sizeof(*output), PROT_READ | PROT_WRITE,
+                             MAP_ANON | MAP_PRIVATE, -1, 0);
+  if (output == MAP_FAILED)
+    ecl_internal_error("Unable to allocate environment structure.");
+#else
+# if defined(ECL_USE_GUARD_PAGE)
+  output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT, PAGE_READWRITE);
+  if (output == NULL)
+    ecl_internal_error("Unable to allocate environment structure.");
+# else
+  output = ecl_malloc(sizeof(*output));
+  if (output == NULL)
+    ecl_internal_error("Unable to allocate environment structure.");
+# endif
+#endif
+  /* Initialize the structure with NULL data. */
+  memset(output, 0, sizeof(*output));
+#ifdef ECL_THREADS
+  add_env(output);
+#endif
+  return output;
+}
+
+void
+_ecl_dealloc_env(cl_env_ptr env)
+{
+#ifdef ECL_THREADS
+  del_env(env);
+#endif
+#if defined(ECL_USE_MPROTECT)
+  if (munmap(env, sizeof(*env)))
+    ecl_internal_error("Unable to deallocate environment structure.");
+#elif defined(ECL_USE_GUARD_PAGE)
+  if (!VirtualFree(env, 0, MEM_RELEASE))
+    ecl_internal_error("Unable to deallocate environment structure.");
+#else
+  ecl_free_unsafe(env);
+#endif
 }
 
 /* -- core runtime ---------------------------------------------------------- */
