@@ -48,22 +48,18 @@ ecl_init_first_env(cl_env_ptr the_env)
 #ifdef ECL_THREADS
   init_threads();
 #endif
-  ecl_cs_init(the_env);
-  init_stacks(the_env);
 }
 
 void
 ecl_init_env(cl_env_ptr env)
 {
   ecl_modules_init_env(env);
-  init_stacks(env);
 }
 
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
   ecl_modules_free_env(env);
-  free_stacks(env);
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
@@ -108,11 +104,7 @@ _ecl_alloc_env(cl_env_ptr parent)
 # endif
 #endif
   /* Initialize the structure with NULL data. */
-#if defined(ECL_THREADS)
-  output->bds_stack.tl_bindings_size = 0;
-  output->bds_stack.tl_bindings = NULL;
-#endif
-  output->c_stack.org = NULL;
+  memset(output, 0, sizeof(*output));
   return output;
 }
 
@@ -246,6 +238,7 @@ cl_boot(int argc, char **argv)
   ecl_self = argv[0];
 
   ecl_add_module(ecl_module_process);
+  ecl_add_module(ecl_module_stacks);
   ecl_add_module(ecl_module_gc);
   ecl_add_module(ecl_module_unixint);
   ecl_add_module(ecl_module_bignum);
