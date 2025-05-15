@@ -24,6 +24,7 @@ extern "C" {
 
 /* booting */
 extern ECL_API cl_object ecl_module_process;
+extern ECL_API cl_object ecl_module_stacks;
 extern ECL_API cl_object ecl_module_dummy;
 extern ECL_API cl_object ecl_module_gc;
 extern ECL_API cl_object ecl_module_unixint;
@@ -41,10 +42,6 @@ extern void init_file(void);
 extern void init_gc(void);
 extern void init_macros(void);
 extern void init_read(void);
-
-extern cl_object init_stacks(cl_env_ptr);
-extern cl_object free_stacks(cl_env_ptr);
-
 extern void init_unixtime(void);
 extern void init_compiler(void);
 extern void init_process(void);
