@@ -212,10 +212,8 @@ thread_entry_point(void *ptr)
   cl_object process = the_env->own_process;
   /* Setup the environment for the execution of the thread. */
   ecl_modules_init_cpu(the_env);
-  ecl_cs_init(the_env);
-
+  /* Start the user routine */
   process->process.entry(0);
-
   /* This routine performs some cleanup before a thread is completely
    * killed. For instance, it has to remove the associated process object from
    * the list, an it has to dealloc some memory.
@@ -224,7 +222,6 @@ thread_entry_point(void *ptr)
    * that all UNWIND-PROTECT forms are properly executed, never use the function
    * pthread_cancel() to kill a process, but rather use the lisp functions
    * mp_interrupt_process() and mp_process_kill(). */
-
   ecl_disable_interrupts_env(the_env);
   ecl_modules_free_cpu(the_env);
   del_env(the_env);
