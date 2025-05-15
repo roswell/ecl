@@ -64,15 +64,33 @@ VEwrong_arg_type_nth_val()
 }
 
 static void
+VEwrong_args_progv(cl_object vars, cl_object vals)
+{
+  ecl_ferror(ECL_EX_VM_BADARG_PROGV, vars, vals);
+}
+
+static void
 VEassignment_to_constant(cl_object var)
 {
   ecl_ferror(ECL_EX_V_CSETQ, var, ECL_NIL);
 }
 
 static void
+VEbinding_a_constant(cl_object var)
+{
+  ecl_ferror(ECL_EX_V_CBIND, var, ECL_NIL);
+}
+
+static void
 VEunbound_variable(cl_object var)
 {
   ecl_ferror(ECL_EX_V_UNBND, var, ECL_NIL);
+}
+
+static void
+VEillegal_variable_name(cl_object name)
+{
+  ecl_ferror(ECL_EX_V_BNAME, name, ECL_NIL);
 }
 
 static void
@@ -308,6 +326,32 @@ ecl_close_around(cl_object fun, cl_object lcl_env, cl_object lex_env) {
   v->bclosure.lex = new_lex;
   /* Profit */
   return v;
+}
+
+cl_index
+ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
+{
+  cl_object vars = vars0, values = values0;
+  cl_index n = env->bds_stack.top - env->bds_stack.org;
+  for (; LISTP(vars) && LISTP(values); vars = ECL_CONS_CDR(vars)) {
+    if (Null(vars)) {
+      return n;
+    } else {
+      cl_object var = ECL_CONS_CAR(vars);
+      if (!ECL_SYMBOLP(var) || Null(var))
+        VEillegal_variable_name(var);
+      if (var->symbol.stype & ecl_stp_constant)
+        VEbinding_a_constant(var);
+      if (Null(values)) {
+        ecl_bds_bind(env, var, OBJNULL);
+      } else {
+        ecl_bds_bind(env, var, ECL_CONS_CAR(values));
+        values = ECL_CONS_CDR(values);
+      }
+    }
+  }
+  VEwrong_args_progv(vars0, values0);
+  _ecl_unexpected_return();
 }
 
 static inline cl_object
