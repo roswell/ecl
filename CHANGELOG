@@ -29,7 +29,14 @@
 
 * Pending changes since 24.5.10
 
-- Many internal improvements and bug fixes for the native compiler.
+- Process initial bindings, when specified, are inherited when the process
+  is enabled (previously they were copied when the process was created)
+
+- Bytecodes VM stores locals on the stack (performance improvement)
+
+- Bytecodes closures capture now only closed over variables (not whole env)
+
+- MANY internal improvements and bug fixes for the native compiler.
 
 - Reduced function call overhead.
 
