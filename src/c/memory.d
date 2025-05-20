@@ -117,6 +117,38 @@ ecl_free_memory(void *ptr)
   return ecl_core.allocator->free_memory(ptr);
 }
 
+/* -- Helpers --------------------------------------------------------------- */
+
+cl_object
+ecl_cons(cl_object a, cl_object d)
+{
+  struct ecl_cons *obj = ecl_alloc_memory(sizeof(struct ecl_cons));
+#ifdef ECL_SMALL_CONS
+  obj->car = a;
+  obj->cdr = d;
+  return ECL_PTR_CONS(obj);
+#else
+  obj->t = t_list;
+  obj->car = a;
+  obj->cdr = d;
+  return (cl_object)obj;
+#endif
+}
+
+cl_object
+ecl_append_unsafe(cl_object x, cl_object y)
+{
+  cl_object head = ECL_NIL, cons;
+  cl_object *tail = &head;
+  loop_for_on_unsafe(x) {
+    cons = ecl_list1(ECL_CONS_CAR(x));
+    *tail = cons;
+    tail = &ECL_CONS_CDR(cons);
+  } end_loop_for_on_unsafe(x);
+  *tail = y;
+  return head;
+}
+
 /* -- Rudimentary manual memory allocator ----------------------------------- */
 
 static cl_object

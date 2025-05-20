@@ -283,10 +283,12 @@ alloc_object(cl_type t)
 
   /* GC_MALLOC already resets objects */
   switch (t) {
-  case t_fixnum:
-    return ecl_make_fixnum(0); /* Immediate fixnum */
+  case t_list:                  /* Small cons (no d.t) */
+    return ecl_cons(ECL_NIL, ECL_NIL);
   case t_character:
-    return ECL_CODE_CHAR(' '); /* Immediate character */
+    return ECL_CODE_CHAR(' ');  /* Immediate character */
+  case t_fixnum:
+    return ecl_make_fixnum(0);  /* Immediate fixnum */
 #ifdef ECL_SSE2
   case t_sse_pack:
 #endif
@@ -366,26 +368,6 @@ ecl_alloc_compact_object(cl_type t, cl_index extra_space)
   x->array.t = t;
   x->array.displaced = (void*)(((char*)x) + size);
   return x;
-}
-
-cl_object
-ecl_cons(cl_object a, cl_object d)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  struct ecl_cons *obj;
-  ecl_disable_interrupts_env(the_env);
-  obj = GC_MALLOC(sizeof(struct ecl_cons));
-  ecl_enable_interrupts_env(the_env);
-#ifdef ECL_SMALL_CONS
-  obj->car = a;
-  obj->cdr = d;
-  return ECL_PTR_CONS(obj);
-#else
-  obj->t = t_list;
-  obj->car = a;
-  obj->cdr = d;
-  return (cl_object)obj;
-#endif
 }
 
 cl_object
