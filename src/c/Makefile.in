@@ -50,7 +50,7 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h $(HDIR)/object.h      
 	$(HDIR)/impl/math_dispatch.h $(HDIR)/impl/math_fenv.h                   \
 	$(HDIR)/nucleus.h
 
-BOOT_OBJS = boot.o escape.o
+BOOT_OBJS = boot.o escape.o eql.o
 
 CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
 
