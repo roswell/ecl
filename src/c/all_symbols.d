@@ -206,7 +206,7 @@ make_this_symbol(int i, volatile cl_object s, int code,
                  cl_objectfn fun, int narg, cl_object value)
 {
   enum ecl_stype stp;
-  cl_object package;
+  cl_object package, sym_name, sym_cname;
   bool form = 0;
 
   switch (code & 3) {
@@ -228,6 +228,8 @@ make_this_symbol(int i, volatile cl_object s, int code,
   case FFI_PACKAGE: package = cl_core.ffi_package; break;
   default: printf("%d\n", code & ~(int)3); ecl_internal_error("Unknown package code in init_all_symbols()");
   }
+  sym_name = ecl_make_constant_base_string(name,-1);
+  sym_cname = ecl_cstring_to_base_string_or_nil(cname);
   s->symbol.t = t_symbol;
 #ifdef ECL_THREADS
   s->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
@@ -241,16 +243,17 @@ make_this_symbol(int i, volatile cl_object s, int code,
   s->symbol.hpack = ECL_NIL;
   s->symbol.stype = stp;
   s->symbol.hpack = package;
-  s->symbol.name = ecl_make_constant_base_string(name,-1);
-  s->symbol.cname = ecl_cstring_to_base_string_or_nil(cname);
+  s->symbol.name = sym_name;
+  s->symbol.cname = sym_cname;
+  /* Before this statement symbol pointers are not marked by GC. */
+  cl_num_symbols_in_core = i + 1;
   if (package == cl_core.keyword_package) {
-    package->pack.external =
-      _ecl_sethash(s->symbol.name, package->pack.external, s);
+    package->pack.external = _ecl_sethash(sym_name, package->pack.external, s);
     ECL_SET(s, s);
   } else {
     int intern_flag;
     ECL_SET(s, value);
-    if (ecl_find_symbol(s->symbol.name, package, &intern_flag) != ECL_NIL
+    if (ecl_find_symbol(sym_name, package, &intern_flag) != ECL_NIL
         && intern_flag == ECL_INHERITED) {
       ecl_shadowing_import(s, package);
     } else {
@@ -279,7 +282,6 @@ make_this_symbol(int i, volatile cl_object s, int code,
    * narg here. -- mg 2019-12-02 */
   si_set_symbol_plist(s, cl_list(2, @'call-arguments-limit', ecl_make_fixnum(narg)));
 #endif
-  cl_num_symbols_in_core = i + 1;
 }
 
 void
