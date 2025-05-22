@@ -16,6 +16,28 @@
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
 
+static cl_index stamp = 0;
+cl_index ecl_next_stamp() {
+#if ECL_THREADS
+  return AO_fetch_and_add((AO_t*)&stamp, 1) + 1;
+#else
+  return ++stamp;
+#endif
+}
+
+cl_object
+ecl_alloc_instance(cl_index slots)
+{
+  cl_object i;
+  i = ecl_alloc_object(t_instance);
+  i->instance.slots = (cl_object *)ecl_alloc(sizeof(cl_object) * slots);
+  i->instance.length = slots;
+  i->instance.isgf = ECL_NOT_FUNCALLABLE;
+  i->instance.entry = FEnot_funcallable_vararg;
+  i->instance.slotds = ECL_UNBOUND;
+  return i;
+}
+
 cl_object
 ecl_allocate_instance(cl_object clas, cl_index size)
 {

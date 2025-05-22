@@ -57,7 +57,7 @@ _ecl_set_max_heap_size(size_t new_size)
   GC_set_max_heap_size(ecl_core.max_heap_size = new_size);
   if (new_size == 0) {
     cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-    ecl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+    ecl_core.safety_region = GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(size);
   } else if (ecl_core.safety_region) {
     GC_FREE(ecl_core.safety_region);
     ecl_core.safety_region = 0;
@@ -180,38 +180,20 @@ allocate_object_error(struct bdw_type_information *bdw_type_info)
 static cl_object
 allocate_object_atomic(struct bdw_type_information *bdw_type_info)
 {
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object op;
-  ecl_disable_interrupts_env(the_env);
-  op = GC_MALLOC_ATOMIC(bdw_type_info->size);
-  op->d.t = bdw_type_info->t;
-  ecl_enable_interrupts_env(the_env);
-  return op;
+  return GC_MALLOC_ATOMIC(bdw_type_info->size);
 }
 
 static cl_object
 allocate_object_full(struct bdw_type_information *bdw_type_info)
 {
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object op;
-  ecl_disable_interrupts_env(the_env);
-  op = GC_MALLOC(bdw_type_info->size);
-  op->d.t = bdw_type_info->t;
-  ecl_enable_interrupts_env(the_env);
-  return op;
+  return GC_MALLOC(bdw_type_info->size);
 }
 
 #ifdef GBC_BOEHM_PRECISE
 static cl_object
 allocate_object_typed(struct bdw_type_information *bdw_type_info)
 {
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object op;
-  ecl_disable_interrupts_env(the_env);
-  op = GC_malloc_explicitly_typed(bdw_type_info->size, bdw_type_info->descriptor);
-  op->d.t = bdw_type_info->t;
-  ecl_enable_interrupts_env(the_env);
-  return op;
+  return GC_malloc_explicitly_typed(bdw_type_info->size, bdw_type_info->descriptor);
 }
 #endif
 
@@ -244,121 +226,9 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 static cl_object
 allocate_object_marked(struct bdw_type_information *bdw_type_info)
 {
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object op;
-  ecl_disable_interrupts_env(the_env);
-  op = GC_generic_malloc(bdw_type_info->size, cl_object_kind);
-  op->d.t = bdw_type_info->t;
-  ecl_enable_interrupts_env(the_env);
-  return op;
+  return GC_generic_malloc(bdw_type_info->size, cl_object_kind);
 }
 #endif
-
-static cl_object
-alloc_object(cl_type t)
-{
-  struct bdw_type_information *ti = bdw_type_info + t;
-  return ti->allocator(ti);
-}
-
-cl_object
-ecl_alloc_compact_object(cl_type t, cl_index extra_space)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_index size = bdw_type_info[t].size;
-  cl_object x;
-  ecl_disable_interrupts_env(the_env);
-  x = (cl_object)GC_MALLOC_ATOMIC(size + extra_space);
-  ecl_enable_interrupts_env(the_env);
-  x->array.t = t;
-  x->array.displaced = (void*)(((char*)x) + size);
-  return x;
-}
-
-cl_object
-ecl_alloc_instance(cl_index slots)
-{
-  cl_object i;
-  i = ecl_alloc_object(t_instance);
-  i->instance.slots = (cl_object *)ecl_alloc(sizeof(cl_object) * slots);
-  i->instance.length = slots;
-  i->instance.isgf = ECL_NOT_FUNCALLABLE;
-  i->instance.entry = FEnot_funcallable_vararg;
-  i->instance.slotds = ECL_UNBOUND;
-  return i;
-}
-
-static cl_index stamp = 0;
-cl_index ecl_next_stamp() {
-#if ECL_THREADS
-  return AO_fetch_and_add((AO_t*)&stamp, 1) + 1;
-#else
-  return ++stamp;
-#endif
-}
-
-void *
-ecl_alloc_uncollectable(size_t size)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  void *output;
-  ecl_disable_interrupts_env(the_env);
-  output = GC_MALLOC_UNCOLLECTABLE(size);
-  ecl_enable_interrupts_env(the_env);
-  return output;
-}
-
-void
-ecl_free_uncollectable(void *pointer)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  ecl_disable_interrupts_env(the_env);
-  GC_FREE(pointer);
-  ecl_enable_interrupts_env(the_env);
-}
-
-void *
-ecl_alloc_unprotected(cl_index n)
-{
-  return GC_MALLOC_IGNORE_OFF_PAGE(n);
-}
-
-void *
-ecl_alloc_atomic_unprotected(cl_index n)
-{
-  return GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(n);
-}
-
-void *
-ecl_alloc(cl_index n)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  void *output;
-  ecl_disable_interrupts_env(the_env);
-  output = ecl_alloc_unprotected(n);
-  ecl_enable_interrupts_env(the_env);
-  return output;
-}
-
-void *
-ecl_alloc_atomic(cl_index n)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  void *output;
-  ecl_disable_interrupts_env(the_env);
-  output = ecl_alloc_atomic_unprotected(n);
-  ecl_enable_interrupts_env(the_env);
-  return output;
-}
-
-void
-ecl_dealloc(void *ptr)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  ecl_disable_interrupts_env(the_env);
-  GC_FREE(ptr);
-  ecl_enable_interrupts_env(the_env);
-}
 
 /* -- weak pointers ---------------------------------------------------------- */
 
@@ -409,18 +279,6 @@ si_weak_pointer_value(cl_object o)
 }
 
 /* -- graph traversal -------------------------------------------------------- */
-
-#ifdef GBC_BOEHM_PRECISE
-static cl_index
-to_bitmap(void *x, void *y)
-{
-  cl_index n = (char*)y - (char*)x;
-  if (n % sizeof(void*))
-    ecl_internal_error("Misaligned pointer in ECL structure.");
-  n /= sizeof(void*);
-  return 1 << n;
-}
-#endif
 
 void init_bdw_type_info (void)
 {
@@ -878,23 +736,50 @@ si_gc_dump()
 
 /* -- module definition ------------------------------------------------------ */
 
+static cl_object
+alloc_object(cl_type t)
+{
+  struct bdw_type_information *ti = bdw_type_info + t;
+  return ti->allocator(ti);
+}
+
 static void *
 alloc_memory(cl_index size)
 {
   return GC_MALLOC(size);
 }
 
+static void *
+alloc_manual(cl_index size)
+{
+  return GC_MALLOC_UNCOLLECTABLE(size);
+}
+
+static void *
+alloc_atomic(cl_index size)
+{
+  return GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(size);
+}
+
+void
+free_memory(void *ptr)
+{
+  GC_FREE(ptr);
+}
+
 static void
 free_object(cl_object o)
 {
   standard_finalizer(o);
-  ecl_dealloc(o);
+  free_memory(o);
 }
 
 struct ecl_allocator_ops gc_ops = {
   .allocate_memory = alloc_memory,
+  .allocate_atomic = alloc_atomic,
+  .allocate_manual = alloc_manual,
   .allocate_object = alloc_object,
-  .free_memory = ecl_dealloc,
+  .free_memory = free_memory,
   .free_object = free_object
 };
 
@@ -947,7 +832,7 @@ create_gc()
   /* Save some memory for the case we get tight. */
   if (ecl_core.max_heap_size == 0) {
     cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-    ecl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+    ecl_core.safety_region = GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(size);
   } else if (ecl_core.safety_region) {
     ecl_core.safety_region = 0;
   }
