@@ -248,31 +248,26 @@ extern ECL_API const cl_object ecl_ct_minus_half;
 extern ECL_API const cl_object ecl_ct_protect_tag;
 extern ECL_API const cl_object ecl_ct_dummy_tag;
 
-/* alloc.c / alloc_2.c */
+/* memory */
 
 extern ECL_API cl_object ecl_alloc_object(cl_type t);
 extern ECL_API cl_object ecl_alloc_instance(cl_index slots);
 extern ECL_API cl_object ecl_alloc_weak_pointer(cl_object o);
 extern ECL_API cl_object ecl_alloc_compact_object(cl_type t, cl_index extra_space);
 extern ECL_API cl_object ecl_cons(cl_object a, cl_object d);
+extern ECL_API void ecl_free_object(cl_object o);
 #define ecl_list1(x) ecl_cons(x, ECL_NIL)
 
 extern ECL_API cl_object si_make_weak_pointer(cl_object o);
 extern ECL_API cl_object si_weak_pointer_value(cl_object o);
 
-#ifdef GBC_BOEHM
-extern ECL_API void *ecl_alloc_unprotected(cl_index n);
-extern ECL_API void *ecl_alloc_atomic_unprotected(cl_index n);
 extern ECL_API void *ecl_alloc(cl_index n);
+extern ECL_API void *ecl_alloc_manual(cl_index n);
 extern ECL_API void *ecl_alloc_atomic(cl_index n);
-extern ECL_API void *ecl_alloc_uncollectable(size_t size);
-extern ECL_API void ecl_free_uncollectable(void *);
 extern ECL_API void ecl_dealloc(void *);
+
 #define ecl_alloc_align(s,d) ecl_alloc(s)
 #define ecl_alloc_atomic_align(s,d) ecl_alloc_atomic(s)
-#else  /* Ideally the core would not depend on these. */
-# error "IMPLEMENT ME!"
-#endif /* GBC_BOEHM */
 
 /* all_symbols */
 

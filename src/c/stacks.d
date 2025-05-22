@@ -810,6 +810,7 @@ cl_object ecl_module_stacks = (cl_object)&module_stacks;
 cl_object
 ecl_make_stack(cl_index size)
 {
+  /* XXX ecl_alloc flags=manual */
   cl_object x = ecl_malloc(sizeof(struct ecl_vector));
   x->vector.t = t_vector;
   x->vector.elttype = ecl_aet_object;

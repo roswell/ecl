@@ -38,15 +38,7 @@ out_of_memory()
 void *
 ecl_malloc(cl_index n)
 {
-  const cl_env_ptr the_env = ecl_process_env_unsafe();
-  void *ptr;
-  if (!the_env) {
-    ptr = malloc(n);
-  } else {
-    ecl_disable_interrupts_env(the_env);
-    ptr = malloc(n);
-    ecl_enable_interrupts_env(the_env);
-  }
+  void *ptr = malloc(n);
   if (ptr == NULL) out_of_memory();
   return ptr;
 }
@@ -54,27 +46,13 @@ ecl_malloc(cl_index n)
 void
 ecl_free(void *ptr)
 {
-  const cl_env_ptr the_env = ecl_process_env_unsafe();
-  if (!the_env) {
-    free(ptr);
-  } else {
-    ecl_disable_interrupts_env(the_env);
-    free(ptr);
-    ecl_enable_interrupts_env(the_env);
-  }
+  free(ptr);
 }
 
 void *
 ecl_realloc(void *ptr, cl_index osize, cl_index nsize)
 {
-  const cl_env_ptr the_env = ecl_process_env_unsafe();
-  if (!the_env) {
-    ptr = realloc(ptr, nsize);
-  } else {
-    ecl_disable_interrupts_env(the_env);
-    ptr = realloc(ptr, nsize);
-    ecl_enable_interrupts_env(the_env);
-  }
+  ptr = realloc(ptr, nsize);
   if (ptr == NULL) out_of_memory();
   return ptr;
 }
@@ -322,34 +300,105 @@ ecl_alloc_object(cl_type t)
   case t_fixnum:
     return ecl_make_fixnum(0);  /* Immediate fixnum */
   default:
-    return ecl_core.allocator->allocate_object(t);
+    {
+      const cl_env_ptr the_env = ecl_process_env_unsafe();
+      cl_object o;
+      if(the_env) ecl_disable_interrupts_env(the_env);
+      o = ecl_core.allocator->allocate_object(t);
+      o->d.t = t;
+      if(the_env) ecl_enable_interrupts_env(the_env);
+      return o;
+    }
   }
 }
 
 void *
-ecl_alloc_memory(cl_index n)
+ecl_alloc(cl_index n)
 {
-  return ecl_core.allocator->allocate_memory(n);
+  const cl_env_ptr the_env = ecl_process_env_unsafe();
+  void *ptr = NULL;
+  if(!the_env) {
+    return ecl_core.allocator->allocate_memory(n);
+  } else {
+    ecl_disable_interrupts_env(the_env);
+    ptr = ecl_core.allocator->allocate_memory(n);
+    ecl_enable_interrupts_env(the_env);
+  }
+  return ptr;
+}
+
+void *
+ecl_alloc_atomic(cl_index n)
+{
+  const cl_env_ptr the_env = ecl_process_env_unsafe();
+  void *ptr = NULL;
+  if(!the_env) {
+    return ecl_core.allocator->allocate_atomic(n);
+  } else {
+    ecl_disable_interrupts_env(the_env);
+    ptr = ecl_core.allocator->allocate_atomic(n);
+    ecl_enable_interrupts_env(the_env);
+  }
+  return ptr;
+}
+
+void *
+ecl_alloc_manual(cl_index n)
+{
+  const cl_env_ptr the_env = ecl_process_env_unsafe();
+  void *ptr = NULL;
+  if(!the_env) {
+    return ecl_core.allocator->allocate_manual(n);
+  } else {
+    ecl_disable_interrupts_env(the_env);
+    ptr = ecl_core.allocator->allocate_manual(n);
+    ecl_enable_interrupts_env(the_env);
+  }
+  return ptr;
 }
 
 void
 ecl_free_object(cl_object ptr)
 {
-  return ecl_core.allocator->free_object(ptr);
+  const cl_env_ptr the_env = ecl_process_env_unsafe();
+  if(!the_env) {
+    ecl_core.allocator->free_object(ptr);
+  } else {
+    ecl_disable_interrupts_env(the_env);
+    ecl_core.allocator->free_object(ptr);
+    ecl_enable_interrupts_env(the_env);
+  }
 }
 
 void
-ecl_free_memory(void *ptr)
+ecl_dealloc(void *ptr)
 {
-  return ecl_core.allocator->free_memory(ptr);
+  const cl_env_ptr the_env = ecl_process_env_unsafe();
+  if(!the_env) {
+    ecl_core.allocator->free_memory(ptr);
+  } else {
+    ecl_disable_interrupts_env(the_env);
+    ecl_core.allocator->free_memory(ptr);
+    ecl_enable_interrupts_env(the_env);
+  }
 }
 
 /* -- Helpers --------------------------------------------------------------- */
 
+cl_object                       /* used by bignum.d */
+ecl_alloc_compact_object(cl_type t, cl_index extra_space)
+{
+  cl_index size = ecl_type_info[t].size;
+  cl_object x = ecl_alloc_atomic(size + extra_space);
+  x->array.t = t;
+  x->array.displaced = (void*)(((char*)x) + size);
+  return x;
+}
+
 cl_object
 ecl_cons(cl_object a, cl_object d)
 {
-  struct ecl_cons *obj = ecl_alloc_memory(sizeof(struct ecl_cons));
+  struct ecl_cons *obj = ecl_alloc(sizeof(struct ecl_cons));
 #ifdef ECL_SMALL_CONS
   obj->car = a;
   obj->cdr = d;
@@ -494,17 +543,21 @@ ecl_put_reader_token(cl_object token)
 static cl_object
 alloc_object(cl_type t)
 {
-  ecl_internal_error("*** memory: alloc_object not implemented.\n");
+  struct ecl_type_information *ti = ecl_type_info + t;
+  return ecl_malloc(ti->size);
 }
 
 static void
-free_object(cl_object self)
+free_object(cl_object o)
 {
-  ecl_internal_error("*** memory: free_object not implemented.\n");
+  /* FIXME this should invoke the finalizer! That is - reify finalizers here. */
+  ecl_free(o);
 }
 
 struct ecl_allocator_ops manual_allocator = {
   .allocate_memory = ecl_malloc,
+  .allocate_atomic = ecl_malloc,
+  .allocate_manual = ecl_malloc,
   .allocate_object = alloc_object,
   .free_memory = ecl_free,
   .free_object = free_object

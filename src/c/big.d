@@ -42,9 +42,7 @@
  *
  * The GMP library may also allocate temporary memory for its
  * computations. It is configurable at runtime whether we use malloc
- * and free or the corresponding equivalents from the garbage
- * collector (ecl_alloc_uncollectable and ecl_free_uncollectable) for
- * that.
+ * and free or the corresponding equivalents from the GC.
  */
 
 /*************************************************************
