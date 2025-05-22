@@ -313,7 +313,7 @@ si_allocate_foreign_data(cl_object tag, cl_object size)
   /* FIXME! Should be atomic uncollectable or malloc, but we do not export
    * that garbage collector interface and malloc may be overwritten
    * by the GC library */
-  output->foreign.data = bytes? ecl_alloc_uncollectable(bytes) : NULL;
+  output->foreign.data = bytes? ecl_alloc_manual(bytes) : NULL;
   @(return output);
 }
 
@@ -326,7 +326,7 @@ si_free_foreign_data(cl_object f)
   }
   if (f->foreign.size) {
     /* See si_allocate_foreign_data() */
-    ecl_free_uncollectable(f->foreign.data);
+    ecl_free(f->foreign.data);
   }
   f->foreign.size = 0;
   f->foreign.data = NULL;

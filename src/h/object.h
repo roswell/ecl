@@ -111,6 +111,8 @@ typedef cl_object (*cl_objectfn_envfn)(cl_env_ptr);
 /* Allocator interface */
 struct ecl_allocator_ops {
   void *(*allocate_memory)(cl_index n);    /* low-level  alloc */
+  void *(*allocate_manual)(cl_index n);    /* low-level  alloc */
+  void *(*allocate_atomic)(cl_index n);    /* low-level  alloc */
   cl_object (*allocate_object)(cl_type t); /* high-level alloc */
   void (*free_memory)(void*);              /* low-level  free */
   void (*free_object)(cl_object);          /* high-level free */
