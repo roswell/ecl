@@ -79,8 +79,7 @@ OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o interpreter.o     
 	string.o cfun.o typespec.o assignment.o memory.o predicate.o array.o    \
 	vector_push.o sequence.o cmpaux.o macros.o backq.o stacks.o time.o      \
 	unixint.o mapfun.o multival.o hash.o format.o pathname.o structure.o    \
-	load.o unixfsys.o unixsys.o serialize.o sse2.o threads/atomic.o         \
-        process.o                                                               \
+	load.o unixfsys.o unixsys.o serialize.o sse2.o atomic.o process.o       \
 	$(BOOT_OBJS) $(NUM_OBJS) $(WRITER_OBJS) $(READER_OBJS)                  \
 	$(CLOS_OBJS) $(FFI_OBJS) @EXTRA_OBJS@
 
