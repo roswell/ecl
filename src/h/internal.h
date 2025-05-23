@@ -388,7 +388,13 @@ extern void _ecl_dump_c_backtrace();
 
 extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
-/* file.d */
+/* stream.d */
+cl_object ecl_alloc_stream(void);
+struct ecl_file_ops *ecl_duplicate_dispatch_table(const struct ecl_file_ops *ops);
+const struct ecl_file_ops *ecl_stream_dispatch_table(cl_object strm);
+cl_index ecl_read_byte8(cl_object stream, unsigned char *c, cl_index n);
+cl_index ecl_write_byte8(cl_object stream, unsigned char *c, cl_index n);
+
 
 cl_object si_read_char(cl_object strm, cl_object eof_value);
 cl_object si_unread_char(cl_object strm, cl_object eof_value);
@@ -408,6 +414,8 @@ cl_object si_clear_output(cl_object strm);
 
 #define ecl_unread_error(s) FEerror("Error when using UNREAD-CHAR on stream ~D", 1, s)
 #define ecl_unread_twice(s) FEerror("Used UNREAD-CHAR twice on stream ~D", 1, s);
+
+/* file.d */
 
 /* Windows does not have this flag (POSIX thing) */
 #ifndef __COSMOPOLITAN__
