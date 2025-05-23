@@ -121,7 +121,7 @@ not_binary_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 }
 
 static void
-not_output_write_byte(cl_object c, cl_object strm)
+not_output_write_byte(cl_object strm, cl_object byte)
 {
   not_an_output_stream(strm);
 }
@@ -134,7 +134,7 @@ not_input_read_byte(cl_object strm)
 }
 
 static void
-not_binary_write_byte(cl_object c, cl_object strm)
+not_binary_write_byte(cl_object strm, cl_object byte)
 {
   not_a_binary_stream(strm);
 }
@@ -332,7 +332,7 @@ generic_read_byte_unsigned8(cl_object strm)
 }
 
 static void
-generic_write_byte_unsigned8(cl_object byte, cl_object strm)
+generic_write_byte_unsigned8(cl_object strm, cl_object byte)
 {
   unsigned char c = ecl_to_uint8_t(byte);
   strm->stream.ops->write_byte8(strm, &c, 1);
@@ -348,7 +348,7 @@ generic_read_byte_signed8(cl_object strm)
 }
 
 static void
-generic_write_byte_signed8(cl_object byte, cl_object strm)
+generic_write_byte_signed8(cl_object strm, cl_object byte)
 {
   signed char c = ecl_to_int8_t(byte);
   strm->stream.ops->write_byte8(strm, (unsigned char *)&c, 1);
@@ -377,18 +377,18 @@ generic_read_byte_le(cl_object strm)
 }
 
 static void
-generic_write_byte_le(cl_object c, cl_object strm)
+generic_write_byte_le(cl_object strm, cl_object byte)
 {
   cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
   cl_index bs;
   write_byte8 = strm->stream.ops->write_byte8;
   bs = strm->stream.byte_size;
   do {
-    cl_object b = cl_logand(2, c, ecl_make_fixnum(0xFF));
+    cl_object b = cl_logand(2, byte, ecl_make_fixnum(0xFF));
     unsigned char aux = (unsigned char)ecl_fixnum(b);
     if (write_byte8(strm, &aux, 1) < 1)
       break;
-    c = cl_ash(c, ecl_make_fixnum(-8));
+    byte = cl_ash(byte, ecl_make_fixnum(-8));
     bs -= 8;
   } while (bs);
 }
@@ -418,7 +418,7 @@ generic_read_byte(cl_object strm)
 }
 
 static void
-generic_write_byte(cl_object c, cl_object strm)
+generic_write_byte(cl_object strm, cl_object byte)
 {
   cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
   cl_index bs;
@@ -428,7 +428,8 @@ generic_write_byte(cl_object c, cl_object strm)
     unsigned char aux;
     cl_object b;
     bs -= 8;
-    b = cl_logand(2, ecl_make_fixnum(0xFF), bs? cl_ash(c, ecl_make_fixnum(-bs)) : c);
+    b = cl_logand(2, ecl_make_fixnum(0xFF),
+                  bs ? cl_ash(byte, ecl_make_fixnum(-bs)) : byte);
     aux = (unsigned char)ecl_fixnum(b);
     if (write_byte8(strm, &aux, 1) < 1)
       break;
@@ -525,7 +526,7 @@ generic_write_vector(cl_object strm, cl_object data, cl_index start, cl_index en
   } else {
     void (*write_byte)(cl_object, cl_object) = ops->write_byte;
     for (; start < end; start++) {
-      write_byte(ecl_elt(data, start), strm);
+      write_byte(strm, ecl_elt(data, start));
     }
   }
   return start;
@@ -1257,9 +1258,9 @@ clos_stream_read_byte(cl_object strm)
 }
 
 static void
-clos_stream_write_byte(cl_object c, cl_object strm)
+clos_stream_write_byte(cl_object strm, cl_object byte)
 {
-  _ecl_funcall3(@'gray::stream-write-byte', strm, c);
+  _ecl_funcall3(@'gray::stream-write-byte', strm, byte);
 }
 
 static ecl_character
@@ -1814,9 +1815,9 @@ two_way_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 }
 
 static void
-two_way_write_byte(cl_object byte, cl_object stream)
+two_way_write_byte(cl_object strm, cl_object byte)
 {
-  ecl_write_byte(byte, TWO_WAY_STREAM_OUTPUT(stream));
+  ecl_write_byte(byte, TWO_WAY_STREAM_OUTPUT(strm));
 }
 
 static cl_object
@@ -2021,11 +2022,11 @@ broadcast_write_char(cl_object strm, ecl_character c)
 }
 
 static void
-broadcast_write_byte(cl_object c, cl_object strm)
+broadcast_write_byte(cl_object strm, cl_object byte)
 {
   cl_object l;
   for (l = BROADCAST_STREAM_LIST(strm); !Null(l); l = ECL_CONS_CDR(l)) {
-    ecl_write_byte(c, ECL_CONS_CAR(l));
+    ecl_write_byte(byte, ECL_CONS_CAR(l));
   }
 }
 
@@ -2203,9 +2204,9 @@ echo_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 }
 
 static void
-echo_write_byte(cl_object c, cl_object strm)
+echo_write_byte(cl_object strm, cl_object byte)
 {
-  ecl_write_byte(c, ECHO_STREAM_OUTPUT(strm));
+  ecl_write_byte(byte, ECHO_STREAM_OUTPUT(strm));
 }
 
 static cl_object
@@ -2547,9 +2548,9 @@ synonym_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 }
 
 static void
-synonym_write_byte(cl_object c, cl_object strm)
+synonym_write_byte(cl_object strm, cl_object byte)
 {
-  ecl_write_byte(c, SYNONYM_STREAM_STREAM(strm));
+  ecl_write_byte(byte, SYNONYM_STREAM_STREAM(strm));
 }
 
 static cl_object
@@ -5149,9 +5150,9 @@ ecl_read_byte(cl_object strm)
 }
 
 void
-ecl_write_byte(cl_object c, cl_object strm)
+ecl_write_byte(cl_object byte, cl_object strm)
 {
-  stream_dispatch_table(strm)->write_byte(c, strm);
+  stream_dispatch_table(strm)->write_byte(strm, byte);
 }
 
 ecl_character
@@ -5346,7 +5347,7 @@ si_do_write_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
         if (ischar)
           ops->write_char(stream, ecl_char_code(elt));
         else
-          ops->write_byte(elt, stream);
+          ops->write_byte(stream, elt);
         start++;
       } else {
         goto OUTPUT;
