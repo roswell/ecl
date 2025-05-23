@@ -83,8 +83,6 @@ static void not_an_output_stream(cl_object fn) ecl_attr_noreturn;
 static void not_a_character_stream(cl_object s) ecl_attr_noreturn;
 static void not_a_binary_stream(cl_object s) ecl_attr_noreturn;
 static int restartable_io_error(cl_object strm, const char *s);
-static void unread_error(cl_object strm);
-static void unread_twice(cl_object strm);
 static void io_error(cl_object strm) ecl_attr_noreturn;
 #ifdef ECL_UNICODE
 static cl_index encoding_error(cl_object strm, unsigned char *buffer, ecl_character c);
@@ -567,7 +565,7 @@ static void
 eformat_unread_char(cl_object strm, ecl_character c)
 {
   unlikely_if (c != strm->stream.last_char) {
-    unread_twice(strm);
+    ecl_unread_twice(strm);
   }
   {
     unsigned char buffer[2*ENCODING_BUFFER_MAX_SIZE];
@@ -1665,7 +1663,7 @@ str_in_unread_char(cl_object strm, ecl_character c)
 {
   cl_fixnum curr_pos = STRING_INPUT_POSITION(strm);
   unlikely_if (c <= 0) {
-    unread_error(strm);
+    ecl_unread_error(strm);
   }
   STRING_INPUT_POSITION(strm) = curr_pos - 1;
 }
@@ -2242,7 +2240,7 @@ static void
 echo_unread_char(cl_object strm, ecl_character c)
 {
   unlikely_if (strm->stream.last_code[0] != EOF) {
-    unread_twice(strm);
+    ecl_unread_twice(strm);
   }
   strm->stream.last_code[0] = c;
   ecl_unread_char(c, ECHO_STREAM_INPUT(strm));
@@ -2431,8 +2429,9 @@ static void
 concatenated_unread_char(cl_object strm, ecl_character c)
 {
   cl_object l = CONCATENATED_STREAM_LIST(strm);
-  unlikely_if (Null(l))
-    unread_error(strm);
+  unlikely_if (Null(l)) {
+    ecl_unread_error(strm);
+  }
   ecl_unread_char(c, ECL_CONS_CAR(l));
 }
 
@@ -6155,18 +6154,6 @@ file_libc_error(cl_object error_type, cl_object stream,
                          cl_list(3, ecl_make_constant_base_string(msg,-1), rest,
                                  error));
   _ecl_unexpected_return();
-}
-
-static void
-unread_error(cl_object s)
-{
-  CEerror(ECL_T, "Error when using UNREAD-CHAR on stream ~D", 1, s);
-}
-
-static void
-unread_twice(cl_object s)
-{
-  CEerror(ECL_T, "Used UNREAD-CHAR twice on stream ~D", 1, s);
 }
 
 static void

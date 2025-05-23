@@ -390,6 +390,9 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
 /* file.d */
 
+#define ecl_unread_error(s) FEerror("Error when using UNREAD-CHAR on stream ~D", 1, s)
+#define ecl_unread_twice(s) FEerror("Used UNREAD-CHAR twice on stream ~D", 1, s);
+
 /* Windows does not have this flag (POSIX thing) */
 #ifndef __COSMOPOLITAN__
 # ifndef O_CLOEXEC
