@@ -164,14 +164,8 @@
 ;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/271
 ;;;
 (test mix.0010.file-stream-fd
-  ;; We check the second one only if first test passes. Second test
-  ;; caused internal error of ECL and crashed the process preventing
-  ;; further tests, so we perform it only on versions after the fix.
-  (if (signals simple-type-error (ext:file-stream-fd ""))
-      (signals simple-type-error (ext:file-stream-fd
-                                  (make-string-output-stream)))
-      (fail (ext:file-stream-fd (make-string-output-stream))
-            "Not-file stream would cause internal error on this ECL (skipped)")))
+  (signals type-error (ext:file-stream-fd ""))
+  (signals type-error (ext:file-stream-fd (make-string-output-stream))))
 
 
 ;;; Date: 2016-12-20

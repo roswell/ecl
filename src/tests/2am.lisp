@@ -25,7 +25,7 @@
 (defpackage #:2am-ecl
   (:use #:cl)
   (:export #:deftest #:test #:test-with-timeout #:is #:signals #:finishes
-           #:run #:suite))
+           #:run #:suite #:*test-name* #:failed #:test-failure))
 
 (in-package #:2am-ecl)
 
