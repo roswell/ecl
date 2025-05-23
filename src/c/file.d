@@ -5422,6 +5422,113 @@ si_do_read_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
  */
 
 cl_object
+si_read_char(cl_object strm, cl_object eof_value)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_character c = ecl_read_char(strm);
+  ecl_return1(the_env, (c==EOF) ? eof_value : ECL_CODE_CHAR(c));
+}
+
+cl_object
+si_unread_char(cl_object strm, cl_object c)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_unread_char(ecl_char_code(c), strm);
+  ecl_return1(the_env, ECL_NIL);
+}
+
+cl_object
+si_peek_char(cl_object strm, cl_object eof_value)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_character c = ecl_peek_char(strm);
+  ecl_return1(the_env, (c==EOF)? eof_value : ECL_CODE_CHAR(c));
+}
+
+cl_object
+si_write_char(cl_object strm, cl_object c)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_write_char(ecl_char_code(c), strm);
+  ecl_return1(the_env, c);
+}
+
+cl_object
+si_read_byte(cl_object strm, cl_object eof_value)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object c = ecl_read_byte(strm);
+  ecl_return1(the_env, Null(c) ? eof_value : c);
+}
+
+/* These two interfaces are clearly missing in the ANSI standard. */
+#if 0
+cl_object
+si_unread_byte(cl_object strm, cl_object byte)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_unread_byte(byte, strm);
+  ecl_return1(the_env, ECL_NIL);
+}
+
+cl_object
+si_peek_byte(cl_object strm, cl_object eof_value)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object byte = ecl_peek_byte(strm);
+  ecl_return1(the_env, Null(c) ? eof_value : byte);
+}
+#endif
+
+cl_object
+si_write_byte(cl_object strm, cl_object byte)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_write_byte(byte, strm);
+  ecl_return1(the_env, byte);
+}
+
+cl_object
+si_listen(cl_object strm)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ((ecl_listen_stream(strm) == ECL_LISTEN_AVAILABLE)
+                        ? ECL_T : ECL_NIL));
+}
+
+cl_object
+si_clear_input(cl_object strm)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_clear_input(strm);
+  ecl_return1(the_env, ECL_NIL);
+}
+
+cl_object
+si_finish_output(cl_object strm)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_finish_output(strm);
+  ecl_return1(the_env, ECL_NIL);
+}
+
+cl_object
+si_force_output(cl_object strm)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_force_output(strm);
+  ecl_return1(the_env, ECL_NIL);
+}
+
+cl_object
+si_clear_output(cl_object strm)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_clear_output(strm);
+  ecl_return1(the_env, ECL_NIL);
+}
+
+cl_object
 si_file_column(cl_object strm)
 {
   int column = ecl_file_column(strm);

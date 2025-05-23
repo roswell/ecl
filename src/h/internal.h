@@ -390,6 +390,22 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
 /* file.d */
 
+cl_object si_read_char(cl_object strm, cl_object eof_value);
+cl_object si_unread_char(cl_object strm, cl_object eof_value);
+cl_object si_peek_char(cl_object strm, cl_object eof_value);
+cl_object si_write_char(cl_object strm, cl_object c);
+
+cl_object si_read_byte(cl_object strm, cl_object eof_value);
+cl_object si_unread_byte(cl_object strm, cl_object eof_value);
+cl_object si_peek_byte(cl_object strm, cl_object eof_value);
+cl_object si_write_byte(cl_object strm, cl_object c);
+
+cl_object si_listen(cl_object strm);
+cl_object si_clear_input(cl_object strm);
+cl_object si_finish_output(cl_object strm);
+cl_object si_force_output(cl_object strm);
+cl_object si_clear_output(cl_object strm);
+
 #define ecl_unread_error(s) FEerror("Error when using UNREAD-CHAR on stream ~D", 1, s)
 #define ecl_unread_twice(s) FEerror("Used UNREAD-CHAR twice on stream ~D", 1, s);
 
