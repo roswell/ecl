@@ -395,7 +395,6 @@ const struct ecl_file_ops *ecl_stream_dispatch_table(cl_object strm);
 cl_index ecl_read_byte8(cl_object stream, unsigned char *c, cl_index n);
 cl_index ecl_write_byte8(cl_object stream, unsigned char *c, cl_index n);
 
-
 cl_object si_read_char(cl_object strm, cl_object eof_value);
 cl_object si_unread_char(cl_object strm, cl_object eof_value);
 cl_object si_peek_char(cl_object strm, cl_object eof_value);
@@ -414,6 +413,76 @@ cl_object si_clear_output(cl_object strm);
 
 #define ecl_unread_error(s) FEerror("Error when using UNREAD-CHAR on stream ~D", 1, s)
 #define ecl_unread_twice(s) FEerror("Used UNREAD-CHAR twice on stream ~D", 1, s);
+
+/* streams/strm_common.d */
+cl_object ecl_not_a_file_stream(cl_object strm);
+void ecl_not_an_input_stream(cl_object strm);
+void ecl_not_an_output_stream(cl_object strm);
+cl_index ecl_not_output_write_byte8(cl_object strm, unsigned char *c, cl_index n);
+cl_index ecl_not_input_read_byte8(cl_object strm, unsigned char *c, cl_index n);
+cl_index ecl_not_binary_read_byte8(cl_object strm, unsigned char *c, cl_index n);
+void ecl_not_output_write_byte(cl_object strm, cl_object byte);
+cl_object ecl_not_input_read_byte(cl_object strm);
+void ecl_not_binary_write_byte(cl_object strm, cl_object byte);
+cl_object ecl_not_binary_read_byte(cl_object strm);
+ecl_character ecl_not_input_read_char(cl_object strm);
+ecl_character ecl_not_output_write_char(cl_object strm, ecl_character c);
+void ecl_not_input_unread_char(cl_object strm, ecl_character c);
+int ecl_not_input_listen(cl_object strm);
+ecl_character ecl_not_character_read_char(cl_object strm);
+ecl_character ecl_not_character_write_char(cl_object strm, ecl_character c);
+ecl_character ecl_not_character_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end);
+int ecl_not_character_encoder(cl_object stream, unsigned char *buffer, ecl_character c);
+void ecl_not_input_clear_input(cl_object strm);
+void ecl_not_output_clear_output(cl_object strm);
+void ecl_not_output_force_output(cl_object strm);
+void ecl_not_output_finish_output(cl_object strm);
+cl_object ecl_not_output_string_length(cl_object strm, cl_object string);
+cl_object ecl_not_file_string_length(cl_object strm, cl_object string);
+int ecl_unknown_column(cl_object strm);
+
+cl_object ecl_generic_read_byte_unsigned8(cl_object strm);
+void ecl_generic_write_byte_unsigned8(cl_object byte, cl_object strm);
+cl_object ecl_generic_read_byte_signed8(cl_object strm);
+void ecl_generic_write_byte_signed8(cl_object byte, cl_object strm);
+cl_object ecl_generic_read_byte_le(cl_object strm);
+void ecl_generic_write_byte_le(cl_object c, cl_object strm);
+cl_object ecl_generic_read_byte(cl_object strm);
+void ecl_generic_write_byte(cl_object c, cl_object strm);
+ecl_character ecl_generic_peek_char(cl_object strm);
+void ecl_generic_void(cl_object strm);
+int ecl_generic_always_true(cl_object strm);
+int ecl_generic_always_false(cl_object strm);
+cl_object ecl_generic_always_nil(cl_object strm);
+int ecl_generic_column(cl_object strm);
+cl_object ecl_generic_set_position(cl_object strm, cl_object pos);
+cl_object ecl_generic_close(cl_object strm);
+cl_index ecl_generic_write_vector(cl_object strm, cl_object data, cl_index start, cl_index end);
+cl_index ecl_generic_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end);
+
+/* streams/strm_eformat.d */
+ecl_character ecl_eformat_read_char(cl_object strm);
+void ecl_eformat_unread_char(cl_object strm, ecl_character c);
+ecl_character ecl_eformat_write_char(cl_object strm, ecl_character c);
+void ecl_set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
+                             cl_object external_format);
+cl_object ecl_eformat_file_string_length(cl_object stream, cl_object string);
+
+static inline void
+write_char_increment_column(cl_object strm, ecl_character c)
+{
+  if (c == '\n')
+    strm->stream.column = 0;
+  else if (c == '\t')
+    strm->stream.column = (strm->stream.column & ~((cl_index)07)) + 8;
+  else
+    strm->stream.column++;
+}
+
+/* Maximum number of bytes required to encode a character.  This currently
+ * corresponds to (4 + 4) for the UCS-4 encoding with 4 being the byte-order
+ * mark, 4 for the character. */
+#define ENCODING_BUFFER_MAX_SIZE 8
 
 /* file.d */
 

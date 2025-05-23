@@ -464,3 +464,29 @@ si_copy_stream(cl_object in, cl_object out, cl_object wait)
   ecl_force_output(out);
   @(return ((c==EOF) ? ECL_T : ECL_NIL));
 }
+
+cl_object
+si_file_stream_fd(cl_object s)
+{
+  cl_object ret;
+
+  unlikely_if (!ECL_FILE_STREAM_P(s)) {
+    ecl_not_a_file_stream(s);
+  }
+
+  switch ((enum ecl_smmode)s->stream.mode) {
+  case ecl_smm_input:
+  case ecl_smm_output:
+  case ecl_smm_io:
+    ret = ecl_make_fixnum(fileno(IO_STREAM_FILE(s)));
+    break;
+  case ecl_smm_input_file:
+  case ecl_smm_output_file:
+  case ecl_smm_io_file:
+    ret = ecl_make_fixnum(IO_FILE_DESCRIPTOR(s));
+    break;
+  default:
+    ecl_internal_error("not a file stream");
+  }
+  @(return ret);
+}

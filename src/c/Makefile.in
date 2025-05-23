@@ -72,7 +72,9 @@ WRITER_OBJS = print.o printer/float_to_digits.o printer/float_to_string.o       
 
 READER_OBJS = read.o reader/parse_integer.o reader/parse_number.o
 
-STREAM_OBJS = stream.o file.o
+STREAM_OBJS = stream.o file.o streams/strm_os.o                                 \
+        streams/strm_clos.o streams/strm_string.o streams/strm_composite.o      \
+        streams/strm_common.o streams/strm_sequence.o streams/strm_eformat.o
 
 FFI_OBJS = ffi.o ffi/libraries.o ffi/backtrace.o ffi/mmap.o ffi/cdata.o
 
