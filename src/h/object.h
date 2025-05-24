@@ -601,6 +601,7 @@ enum ecl_smmode {               /*  stream mode  */
         ecl_smm_string_input,   /*  string input  */
         ecl_smm_string_output,  /*  string output  */
         ecl_smm_probe,          /*  probe (only used in open_stream())  */
+        ecl_smm_other,          /*  custom stream implementation */
 #if defined(ECL_WSOCK)
         ecl_smm_input_wsock,    /*  input socket (Win32) */
         ecl_smm_output_wsock,   /*  output socket (Win32) */
@@ -1001,6 +1002,16 @@ typedef enum {
         ECL_EX_CS_OVR,          /* stack overflow */
         ECL_EX_FRS_OVR,         /* stack overflow */
         ECL_EX_BDS_OVR,         /* stack overflow */
+        ECL_EX_BADARG,          /* wrong type of argument */
+        ECL_EX_BADARG_ONLY,     /* wrong type of the only argument */
+        ECL_EX_BADARG_NTH,      /* wrong type of the nth argument */
+        ECL_EX_UNSATISFIED,     /* wrong type of argument (predicate) */
+        ECL_EX_EOF,             /* end of file */
+        ECL_EX_NIY,             /* not implemented yet */
+        ECL_EX_NAO,             /* not applicable operation */
+        ECL_EX_STRM_BADELT,     /* invalid stream element type */
+        ECL_EX_STRM_CLOSED,     /* the stream is closed */
+        ECL_EX_STRM_UNREAD,     /* error while unreading into the stream */
         /* Kludges for the bytecodes VM */
         ECL_EX_VM_BADARG_EXCD,
         ECL_EX_VM_BADARG_UNKK,
