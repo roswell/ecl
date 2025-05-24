@@ -151,3 +151,45 @@ ecl_normalize_stream_element_type(cl_object element_type)
 @
   @(return ecl_stream_dispatch_table(strm)->close(strm));
 @)
+
+cl_object
+si_file_stream_fd(cl_object s)
+{
+  cl_object ret;
+
+  unlikely_if (!ECL_FILE_STREAM_P(s)) {
+    ecl_not_a_file_stream(s);
+  }
+
+  switch ((enum ecl_smmode)s->stream.mode) {
+  case ecl_smm_input:
+  case ecl_smm_output:
+  case ecl_smm_io:
+    ret = ecl_make_fixnum(fileno(IO_STREAM_FILE(s)));
+    break;
+  case ecl_smm_input_file:
+  case ecl_smm_output_file:
+  case ecl_smm_io_file:
+    ret = ecl_make_fixnum(IO_FILE_DESCRIPTOR(s));
+    break;
+  default:
+    ecl_internal_error("not a file stream");
+  }
+  @(return ret);
+}
+
+@(defun file-position (file_stream &o position)
+  cl_object output;
+@
+  if (Null(position)) {
+    output = ecl_file_position(file_stream);
+  } else {
+    if (position == @':start') {
+      position = ecl_make_fixnum(0);
+    } else if (position == @':end') {
+      position = ECL_NIL;
+    }
+    output = ecl_file_position_set(file_stream, position);
+  }
+  @(return output);
+@)

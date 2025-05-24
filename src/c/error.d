@@ -62,6 +62,8 @@ ecl_exception_handler(cl_object o)
   if (ECL_EXCEPTIONP(o)) {
     cl_object arg1 = o->exception.arg1;
     cl_object arg2 = o->exception.arg2;
+    cl_object arg3 = o->exception.arg3;
+    void *arg4 = o->exception.arg4;
     cl_object hand = @'si::universal-error-handler';
     switch (o->exception.ex_type) {
     /* General conditions */
@@ -71,6 +73,37 @@ ecl_exception_handler(cl_object o)
     case ECL_EX_CERROR:
       ecl_enable_interrupts();
       return _ecl_funcall4(hand, ECL_T, arg1, arg2);
+      /* Specific conditions */
+    case ECL_EX_BADARG:
+      FEwrong_type_argument(arg1, arg2);
+      break;
+    case ECL_EX_BADARG_ONLY:
+      FEwrong_type_only_arg(arg1, arg2, arg3);
+      break;
+    case ECL_EX_BADARG_NTH:
+      FEwrong_type_nth_arg(arg1, (cl_narg)arg4, arg2, arg3);
+      break;
+    case ECL_EX_UNSATISFIED:
+      FEwrong_type_pred_arg(arg1, arg2);
+      break;
+    case ECL_EX_STRM_BADELT:
+      FEwrong_type_strm_elt(arg1, arg2);
+      break;
+    case ECL_EX_STRM_CLOSED:
+      FEclosed_stream(arg1);
+      break;
+    case ECL_EX_STRM_UNREAD:
+      FEunread_stream(arg1, arg2);
+      break;
+    case ECL_EX_EOF:
+      FEend_of_file(arg1);
+      break;
+    case ECL_EX_NIY:
+      FEerror("The operation is not implemented yet.", 0);
+      break;
+    case ECL_EX_NAO:
+      FEerror("The operation is not applicable to ~A.", 1, arg1);
+      break;
     /* Stack conditions */
     case ECL_EX_CS_OVR:
       CEstack_overflow(@'ext::c-stack', arg1, arg2);
@@ -276,7 +309,7 @@ FEreader_error(const char *s, cl_object stream, int narg, ...)
   } else {
     /* Actual reader error */
     cl_object prefix = @"Reader error in file ~S, position ~D:~%";
-    cl_object position = cl_file_position(1, stream);
+    cl_object position = ecl_file_position(stream);
     message = si_base_string_concatenate(2, prefix, message);
     args_list = cl_listX(3, stream, position, args_list);
     si_signal_simple_error(6,
@@ -316,6 +349,16 @@ FEclosed_stream(cl_object strm)
   cl_error(3, @'stream-error', @':stream', strm);
 }
 
+void
+FEunread_stream(cl_object strm, cl_object twice)
+{
+  if(Null(twice)) {
+    FEerror("Error when using UNREAD-CHAR on stream ~D", 1, strm);
+  } else {
+    FEerror("Used UNREAD-CHAR twice on stream ~D", 1, strm);
+  }
+}
+
 cl_object
 si_signal_type_error(cl_object value, cl_object type)
 {
@@ -327,6 +370,25 @@ void
 FEwrong_type_argument(cl_object type, cl_object value)
 {
   si_signal_type_error(value, cl_symbol_or_object(type));
+}
+
+void
+FEwrong_type_pred_arg(cl_object type, cl_object value)
+{
+  cl_object predicate = cl_symbol_or_object(type);
+  cl_object expected = cl_list(2, @'satisfies', predicate);
+  si_signal_type_error(value, expected);
+}
+
+void
+FEwrong_type_strm_elt(cl_object type, cl_object value)
+{
+  cl_object expected = cl_symbol_or_object(type);
+  cl_error(9, @'simple-type-error', @':format-control',
+           @"~A stream element type is not ~S.",
+           @':format-arguments', cl_list(2, value, expected),
+           @':expected-type', expected,
+           @':datum', cl_stream_element_type(value));
 }
 
 void
@@ -464,8 +526,12 @@ FEtimeout()
 void
 FEwrong_num_arguments(cl_object fun)
 {
-  fun = cl_symbol_or_object(fun);
-  FEprogram_error("Wrong number of arguments passed to function ~S.", 1, fun);
+  if (Null(fun)) {
+    FEprogram_error("Wrong number of arguments passed to an anonymous function", 0);
+  } else {
+    fun = cl_symbol_or_object(fun);
+    FEprogram_error("Wrong number of arguments passed to function ~S.", 1, fun);
+  }
 }
 
 void

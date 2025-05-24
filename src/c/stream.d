@@ -18,6 +18,21 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
+/* FIXME for now we break the dependency chain for NUCL, but later we want to
+   bring proto-clos into the early runtime and pull clos streams with it. */
+#ifdef ECL_NUCL
+# undef ECL_CLOS_STREAMS
+#endif
+
+static ecl_character
+_ecl_char_code(cl_object c)
+{
+  if (ecl_unlikely(!ECL_CHARACTERP(c))) {
+    ecl_ferror(ECL_EX_BADARG, @[character], c);
+  }
+  return ECL_CHAR_CODE(c);
+}
+
 #ifdef ECL_CLOS_STREAMS
 extern const struct ecl_file_ops clos_stream_ops;
 #endif
@@ -66,7 +81,7 @@ ecl_stream_dispatch_table(cl_object strm)
   }
 #endif
   if (!ECL_ANSI_STREAM_P(strm))
-    FEwrong_type_argument(@[stream], strm);
+    ecl_ferror(ECL_EX_BADARG, @[stream], strm);
   return (const struct ecl_file_ops *)strm->stream.ops;
 }
 
@@ -117,7 +132,7 @@ ecl_read_char_noeof(cl_object strm)
 {
   ecl_character c = ecl_read_char(strm);
   if (c == EOF)
-    FEend_of_file(strm);
+    ecl_ferror(ECL_EX_EOF, strm, ECL_NIL);
   return c;
 }
 
@@ -249,7 +264,7 @@ cl_object
 si_unread_char(cl_object strm, cl_object c)
 {
   cl_env_ptr the_env = ecl_process_env();
-  ecl_unread_char(ecl_char_code(c), strm);
+  ecl_unread_char(_ecl_char_code(c), strm);
   ecl_return1(the_env, ECL_NIL);
 }
 
@@ -265,7 +280,7 @@ cl_object
 si_write_char(cl_object strm, cl_object c)
 {
   cl_env_ptr the_env = ecl_process_env();
-  ecl_write_char(ecl_char_code(c), strm);
+  ecl_write_char(_ecl_char_code(c), strm);
   ecl_return1(the_env, c);
 }
 
@@ -354,26 +369,23 @@ cl_file_length(cl_object strm)
   @(return ecl_file_length(strm));
 }
 
-@(defun file-position (file_stream &o position)
-  cl_object output;
-@
-  if (Null(position)) {
-    output = ecl_file_position(file_stream);
-  } else {
-    if (position == @':start') {
-      position = ecl_make_fixnum(0);
-    } else if (position == @':end') {
-      position = ECL_NIL;
-    }
-    output = ecl_file_position_set(file_stream, position);
-  }
-  @(return output);
-@)
-
 cl_object
 cl_file_string_length(cl_object stream, cl_object string)
 {
   @(return ecl_file_string_length(stream, string));
+}
+
+cl_object
+si_file_position_get(cl_object strm)
+{
+  @(return ecl_file_position(strm));
+
+}
+
+cl_object
+si_file_position_set(cl_object strm, cl_object position)
+{
+  @(return ecl_file_position_set(strm, position));
 }
 
 cl_object
@@ -406,7 +418,7 @@ cl_open_stream_p(cl_object strm)
   }
 #endif
   unlikely_if (!ECL_ANSI_STREAM_P(strm))
-    FEwrong_type_only_arg(@'open-stream-p', strm, @'stream');
+    ecl_ferror4(ECL_EX_BADARG_ONLY, @[output-stream-p], strm, @[stream]);
   @(return (strm->stream.closed ? ECL_NIL : ECL_T));
 }
 
@@ -429,11 +441,14 @@ cl_stream_external_format(cl_object strm)
   else
 #endif
     unlikely_if (t != t_stream)
-      FEwrong_type_only_arg(@[stream-external-format], strm, @[stream]);
+      ecl_ferror4(ECL_EX_BADARG_ONLY, @[stream-external-format], strm, @[stream]);
   if (strm->stream.mode == ecl_smm_synonym) {
-    strm = SYNONYM_STREAM_STREAM(strm);
-    goto AGAIN;
-  }
+    cl_env_ptr the_env = ecl_process_env();
+    cl_object sym = SYNONYM_STREAM_SYMBOL(strm);
+    strm = Null(sym) ? sym : ECL_SYM_VAL(the_env, sym);
+    if(strm==OBJNULL)
+      ecl_ferror2(ECL_EX_V_UNBND, sym);
+    goto AGAIN;  }
   output = strm->stream.format;
   @(return output);
 }
@@ -466,30 +481,4 @@ si_copy_stream(cl_object in, cl_object out, cl_object wait)
   }
   ecl_force_output(out);
   @(return ((c==EOF) ? ECL_T : ECL_NIL));
-}
-
-cl_object
-si_file_stream_fd(cl_object s)
-{
-  cl_object ret;
-
-  unlikely_if (!ECL_FILE_STREAM_P(s)) {
-    ecl_not_a_file_stream(s);
-  }
-
-  switch ((enum ecl_smmode)s->stream.mode) {
-  case ecl_smm_input:
-  case ecl_smm_output:
-  case ecl_smm_io:
-    ret = ecl_make_fixnum(fileno(IO_STREAM_FILE(s)));
-    break;
-  case ecl_smm_input_file:
-  case ecl_smm_output_file:
-  case ecl_smm_io_file:
-    ret = ecl_make_fixnum(IO_FILE_DESCRIPTOR(s));
-    break;
-  default:
-    ecl_internal_error("not a file stream");
-  }
-  @(return ret);
 }
