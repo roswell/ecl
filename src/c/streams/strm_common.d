@@ -23,52 +23,31 @@
 cl_object
 ecl_not_a_file_stream(cl_object strm)
 {
-  cl_error(9, @'simple-type-error', @':format-control',
-           @"~A is not an file stream",
-           @':format-arguments', cl_list(1, strm),
-           @':expected-type', @'file-stream',
-           @':datum', strm);
+  ecl_ferror(ECL_EX_BADARG, @[file-stream], strm);
 }
 
 void
 ecl_not_an_input_stream(cl_object strm)
 {
-  cl_error(9, @'simple-type-error', @':format-control',
-           @"~A is not an input stream",
-           @':format-arguments', cl_list(1, strm),
-           @':expected-type',
-           cl_list(2, @'satisfies', @'input-stream-p'),
-           @':datum', strm);
+  ecl_ferror(ECL_EX_UNSATISFIED, @[input-stream-p], strm);
 }
 
 void
 ecl_not_an_output_stream(cl_object strm)
 {
-  cl_error(9, @'simple-type-error', @':format-control',
-           @"~A is not an output stream",
-           @':format-arguments', cl_list(1, strm),
-           @':expected-type', cl_list(2, @'satisfies', @'output-stream-p'),
-           @':datum', strm);
+  ecl_ferror(ECL_EX_UNSATISFIED, @[output-stream-p], strm);
 }
 
 static void
-not_a_character_stream(cl_object s)
+not_a_character_stream(cl_object strm)
 {
-  cl_error(9, @'simple-type-error', @':format-control',
-           @"~A is not a character stream",
-           @':format-arguments', cl_list(1, s),
-           @':expected-type', @'character',
-           @':datum', cl_stream_element_type(s));
+  ecl_ferror(ECL_EX_STRM_BADELT, @[character], strm);
 }
 
 static void
-not_a_binary_stream(cl_object s)
+not_a_binary_stream(cl_object strm)
 {
-  cl_error(9, @'simple-type-error', @':format-control',
-           @"~A is not a binary stream",
-           @':format-arguments', cl_list(1, s),
-           @':expected-type', @'integer',
-           @':datum', cl_stream_element_type(s));
+  ecl_ferror(ECL_EX_STRM_BADELT, @[integer], strm);
 }
 
 /**********************************************************************
@@ -235,14 +214,14 @@ ecl_unknown_column(cl_object strm)
 static cl_index
 closed_stream_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
   return 0;
 }
 
 static cl_index
 closed_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
   return 0;
 }
 
@@ -268,34 +247,34 @@ closed_stream_unread_byte(cl_object strm, cl_object byte)
 static ecl_character
 closed_stream_read_char(cl_object strm)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
   return 0;
 }
 
 static ecl_character
 closed_stream_write_char(cl_object strm, ecl_character c)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
   return c;
 }
 
 static void
 closed_stream_unread_char(cl_object strm, ecl_character c)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
 }
 
 static int
 closed_stream_listen(cl_object strm)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
   return 0;
 }
 
 static void
 closed_stream_clear_input(cl_object strm)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
 }
 
 #define closed_stream_clear_output closed_stream_clear_input
@@ -305,7 +284,7 @@ closed_stream_clear_input(cl_object strm)
 static cl_object
 closed_stream_length(cl_object strm)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
 }
 
 #define closed_stream_get_position closed_stream_length
@@ -313,7 +292,7 @@ closed_stream_length(cl_object strm)
 static cl_object
 closed_stream_set_position(cl_object strm, cl_object position)
 {
-  FEclosed_stream(strm);
+  ecl_ferror(ECL_EX_STRM_CLOSED, strm, ECL_NIL);
 }
 
 /**********************************************************************
@@ -459,4 +438,3 @@ ecl_generic_read_vector(cl_object strm, cl_object data, cl_index start, cl_index
   }
   return start;
 }
-

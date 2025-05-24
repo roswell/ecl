@@ -194,7 +194,6 @@ const struct ecl_file_ops two_way_ops = {
   two_way_close
 };
 
-
 cl_object
 cl_make_two_way_stream(cl_object istrm, cl_object ostrm)
 {

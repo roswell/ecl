@@ -414,8 +414,8 @@ cl_object si_finish_output(cl_object strm);
 cl_object si_force_output(cl_object strm);
 cl_object si_clear_output(cl_object strm);
 
-#define ecl_unread_error(s) FEerror("Error when unreading to stream ~D", 1, s)
-#define ecl_unread_twice(s) FEerror("Unread twice twice to stream ~D", 1, s)
+#define ecl_unread_error(s) ecl_ferror(ECL_EX_STRM_UNREAD, strm, ECL_NIL);
+#define ecl_unread_twice(s) ecl_ferror(ECL_EX_STRM_UNREAD, strm, ECL_T);
 
 /* streams/strm_common.d */
 cl_object ecl_not_a_file_stream(cl_object strm);

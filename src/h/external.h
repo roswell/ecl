@@ -575,7 +575,10 @@ extern ECL_API void FEerror(const char *s, int narg, ...) ecl_attr_noreturn;
 extern ECL_API void FEcannot_open(cl_object fn) ecl_attr_noreturn;
 extern ECL_API void FEend_of_file(cl_object strm) ecl_attr_noreturn;
 extern ECL_API void FEclosed_stream(cl_object strm) ecl_attr_noreturn;
+extern ECL_API void FEunread_stream(cl_object strm, cl_object twice) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_argument(cl_object type, cl_object value) ecl_attr_noreturn;
+extern ECL_API void FEwrong_type_pred_arg(cl_object type, cl_object value) ecl_attr_noreturn;
+extern ECL_API void FEwrong_type_strm_elt(cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_only_arg(cl_object function, cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_object type) ecl_attr_noreturn;
 extern ECL_API void FEwrong_type_key_arg(cl_object function, cl_object keyo, cl_object type, cl_object value) ecl_attr_noreturn;
@@ -680,8 +683,20 @@ extern ECL_API cl_object ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag type
 extern ECL_API void ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag type, cl_object value);
 
 /* stream.c */
-cl_object si_unread_byte(cl_object strm, cl_object byte);
-cl_object si_peek_byte(cl_object strm, cl_object eof_value);
+extern ECL_API cl_object si_write_char(cl_object strm, cl_object c);
+extern ECL_API cl_object si_write_byte(cl_object strm, cl_object c);
+extern ECL_API cl_object si_read_char(cl_object strm, cl_object eof_value);
+extern ECL_API cl_object si_read_byte(cl_object strm, cl_object eof_value);
+extern ECL_API cl_object si_peek_char(cl_object strm, cl_object eof_value);
+extern ECL_API cl_object si_peek_byte(cl_object strm, cl_object eof_value);
+extern ECL_API cl_object si_unread_char(cl_object strm, cl_object c);
+extern ECL_API cl_object si_unread_byte(cl_object strm, cl_object byte);
+
+extern ECL_API cl_object si_listen(cl_object strm);
+extern ECL_API cl_object si_clear_input(cl_object strm);
+extern ECL_API cl_object si_finish_output(cl_object strm);
+extern ECL_API cl_object si_force_output(cl_object strm);
+extern ECL_API cl_object si_clear_output(cl_object strm);
 
 /* file.c */
 
@@ -724,6 +739,8 @@ extern ECL_API cl_object cl_file_string_length(cl_object stream, cl_object strin
 extern ECL_API cl_object si_do_write_sequence(cl_object string, cl_object stream, cl_object start, cl_object end);
 extern ECL_API cl_object si_do_read_sequence(cl_object string, cl_object stream, cl_object start, cl_object end);
 extern ECL_API cl_object si_file_column(cl_object strm);
+extern ECL_API cl_object si_file_position_get(cl_object strm);
+extern ECL_API cl_object si_file_position_set(cl_object strm, cl_object position);
 extern ECL_API cl_object cl_interactive_stream_p(cl_object strm);
 #if defined(ECL_MS_WINDOWS_HOST)
 extern ECL_API cl_object si_windows_codepage_encoding();
@@ -738,6 +755,8 @@ extern ECL_API bool ecl_interactive_stream_p(cl_object strm);
 extern ECL_API cl_object ecl_open_stream(cl_object fn, enum ecl_smmode smm, cl_object if_exists, cl_object if_does_not_exist, cl_fixnum byte_size, int flags, cl_object external_format);
 extern ECL_API cl_object ecl_make_string_input_stream(cl_object strng, cl_index istart, cl_index iend);
 extern ECL_API cl_object ecl_make_string_output_stream(cl_index line_length, int extended);
+extern ECL_API cl_index ecl_read_byte8(cl_object strm, unsigned char *c, cl_index n);
+extern ECL_API cl_index ecl_write_byte8(cl_object strm, unsigned char *c, cl_index n);
 extern ECL_API cl_object ecl_read_byte(cl_object strm);
 extern ECL_API void ecl_write_byte(cl_object byte, cl_object strm);
 extern ECL_API void ecl_unread_byte(cl_object byte, cl_object strm);
