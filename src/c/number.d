@@ -269,8 +269,8 @@ ecl_to_int64_t(cl_object x) {
     _ecl_big_fdiv_q_2exp(copy, x, 32);
     if (_ecl_big_fits_si(copy)) {
       ecl_int64_t output;
-      _ecl_big_fdiv_r_2exp(copy, x, 32);
       output = (ecl_int64_t)_ecl_big_get_si(copy);
+      _ecl_big_fdiv_r_2exp(copy, x, 32);
       output = (output << 32) + _ecl_big_get_ui(copy);
       _ecl_big_register_free(copy);
       return output;
