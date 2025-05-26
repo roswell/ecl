@@ -120,7 +120,10 @@
   (when *compile-verbose*
     (apply #'format t args)))
 
+(defvar *xxx* nil)
 (defun cmp-eval (form &optional (env *cmp-env*))
+  (when *xxx*
+    (format t "~&;;; CMP-EVAL ~S with ~S.~%" form env))
   (handler-case (si:eval-with-env form env nil t :execute)
     (serious-condition (c)
       (when *compiler-break-enable*

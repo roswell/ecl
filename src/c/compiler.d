@@ -543,9 +543,9 @@ c_macro_expand1(cl_env_ptr env, cl_object stmt)
 }
 
 static void
-guess_compiler_environment(cl_env_ptr env, cl_object interpreter_env)
+import_lexenv(cl_env_ptr env, cl_object lexenv)
 {
-  if (!ECL_VECTORP(interpreter_env))
+  if (!ECL_VECTORP(lexenv))
     return;
   /*
    * Given the environment of an interpreted function, we guess a
@@ -553,8 +553,8 @@ guess_compiler_environment(cl_env_ptr env, cl_object interpreter_env)
    * variables and local functions of this interpreted code.
    */
   cl_object record;
-  cl_object *lex = interpreter_env->vector.self.t;
-  cl_index index = interpreter_env->vector.dim;
+  cl_object *lex = lexenv->vector.self.t;
+  cl_index index = lexenv->vector.dim;
   while(index>0) {
     index--;
     record = lex[index];
@@ -581,7 +581,82 @@ guess_compiler_environment(cl_env_ptr env, cl_object interpreter_env)
       }
     }
   }
-  /* INV we register a function boundary so that objets are not looked for in
+  /* INV we register a function boundary so that objects are not looked for in
+     the parent locals. Top environment must have env->captured bound because
+     ecl_make_lambda will call c_any_ref on the parent env. -- jd 2025-01-13*/
+  c_register_boundary(env, @'si::function-boundary');
+}
+
+/* Environments in bytecodes compiler and in c compiler are roughly compatible,
+   but we still need to add them to determine record positions and env depth.
+   It is important to maintain boundaries and to add elements from the last. */
+static void
+import_cmpenv(cl_env_ptr env, cl_object cmpenv)
+{
+  if (!ECL_CONSP(cmpenv))
+    return;
+  cl_object variables = ECL_CONS_CAR(cmpenv);
+  cl_object functions = ECL_CONS_CDR(cmpenv);;
+  cl_object records = ECL_NIL;
+  cl_object reg_v, reg_f;
+
+  loop_for_on_unsafe(variables) {
+    reg_v = ECL_CONS_CAR(variables);
+    /* Add vars up to the boundary. */
+    if (ECL_ATOM(reg_v)) {
+      loop_for_on_unsafe(functions) {
+        reg_f = ECL_CONS_CAR(functions);
+        /* Add funs up to the boundary. */
+        if (ECL_ATOM(reg_f)) break;
+        /* We register only macros, because functions are added to both CAR and
+           CDR of the cmpenv and declarations are ignored by the interpreter. */
+
+        if (ECL_CONS_CADR(reg_f)  == 'si::macro')
+          push(reg_f, &records);
+      } /* xxx */
+      push(reg_v);
+    } else {
+      record0 = pop(&reg_v);
+      record1 = pop(&reg_v);
+    }
+  }
+  
+
+  /*
+   * Given the environment of an interpreted function, we guess a
+   * suitable compiler enviroment to compile forms that access the
+   * variables and local functions of this interpreted code.
+   */
+  cl_object record;
+  cl_object *lex = lexenv->vector.self.t;
+  cl_index index = lexenv->vector.dim;
+  while(index>0) {
+    index--;
+    record = lex[index];
+    if (!LISTP(record)) {
+      if (ecl_t_of(record) == t_bclosure)
+        record = record->bclosure.code;
+      c_register_function(env, record->bytecodes.name);
+    } else {
+      cl_object record0 = ECL_CONS_CAR(record);
+      cl_object record1 = ECL_CONS_CDR(record);
+      if (ECL_SYMBOLP(record0)) {
+        if (record0 == @'si::macro')
+          c_register_macro(env, ECL_CONS_CDR(record1), ECL_CONS_CAR(record1));
+        else if (record0 == @'si::symbol-macro')
+          c_register_symbol_macro(env, ECL_CONS_CDR(record1), ECL_CONS_CAR(record1));
+        else
+          c_register_var(env, record0, FALSE, TRUE);
+      } else if (record1 == ecl_make_fixnum(0)) {
+        /* We have lost the information, which tag corresponds to
+           the lex-env record. If we are compiling a closure over a
+           tag, we will get an error later on. */
+      } else {
+        c_register_block(env, record1);
+      }
+    }
+  }
+  /* INV we register a function boundary so that objects are not looked for in
      the parent locals. Top environment must have env->captured bound because
      ecl_make_lambda will call c_any_ref on the parent env. -- jd 2025-01-13*/
   c_register_boundary(env, @'si::function-boundary');
