@@ -136,7 +136,7 @@ ecl_cs_set_org(cl_env_ptr env)
 /* ------------------------- LISP STACK ------------------------------- */
 
 cl_object *
-ecl_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
+ecl_data_stack_set_size(cl_env_ptr env, cl_index tentative_new_size)
 {
   cl_index top = env->run_stack.top - env->run_stack.org;
   cl_object *new_stack, *old_stack;
@@ -179,25 +179,19 @@ FEstack_underflow(void)
   FEerror("Internal error: stack underflow.",0);
 }
 
-void
-FEstack_advance(void)
-{
-  FEerror("Internal error: stack advance beyond current point.",0);
-}
-
 cl_object *
-ecl_stack_grow(cl_env_ptr env)
+ecl_data_stack_grow(cl_env_ptr env)
 {
-  return ecl_stack_set_size(env, env->run_stack.size + env->run_stack.size / 2);
+  return ecl_data_stack_set_size(env, env->run_stack.size + env->run_stack.size / 2);
 }
 
 cl_index
-ecl_stack_push_values(cl_env_ptr env) {
+ecl_data_stack_push_values(cl_env_ptr env) {
   cl_index i = env->nvalues;
   cl_object *b = env->run_stack.top;
   cl_object *p = b + i;
   if (p >= env->run_stack.limit) {
-    b = ecl_stack_grow(env);
+    b = ecl_data_stack_grow(env);
     p = b + i;
   }
   env->run_stack.top = p;
@@ -206,7 +200,7 @@ ecl_stack_push_values(cl_env_ptr env) {
 }
 
 void
-ecl_stack_pop_values(cl_env_ptr env, cl_index n) {
+ecl_data_stack_pop_values(cl_env_ptr env, cl_index n) {
   cl_object *p = env->run_stack.top - n;
   if (ecl_unlikely(p < env->run_stack.org))
     FEstack_underflow();
@@ -222,7 +216,7 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
   cl_index bindex;
   if (size) {
     if ((env->run_stack.limit - base) < size) {
-      base = ecl_stack_set_size(env, env->run_stack.size + size);
+      base = ecl_data_stack_set_size(env, env->run_stack.size + size);
     }
   }
   bindex = ECL_STACK_INDEX(env);
@@ -242,7 +236,7 @@ ecl_stack_frame_push(cl_object f, cl_object o)
   cl_env_ptr env = f->frame.env;
   cl_object *top = env->run_stack.top;
   if (top >= env->run_stack.limit) {
-    top = ecl_stack_grow(env);
+    top = ecl_data_stack_grow(env);
   }
   env->run_stack.top = ++top;
   *(top-1) = o;
@@ -253,7 +247,7 @@ void
 ecl_stack_frame_push_values(cl_object f)
 {
   cl_env_ptr env = f->frame.env;
-  ecl_stack_push_values(env);
+  ecl_data_stack_push_values(env);
   f->frame.size += env->nvalues;
 }
 
@@ -810,7 +804,7 @@ si_set_limit(cl_object type, cl_object limit)
     cs_set_size(env, the_size + 2*margin);
   } else if (type == @'ext::lisp-stack') {
     cl_index the_size = ecl_to_size(limit);
-    ecl_stack_set_size(env, the_size);
+    ecl_data_stack_set_size(env, the_size);
   } else if (type == @'ext::heap-size') {
     /*
      * size_t can be larger than cl_index, and ecl_to_size()
@@ -889,5 +883,5 @@ init_stacks(cl_env_ptr env)
   env->run_stack.top = NULL;
   env->run_stack.limit = NULL;
   env->run_stack.size = 0;
-  ecl_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
+  ecl_data_stack_set_size(env, ecl_option_values[ECL_OPT_LISP_STACK_SIZE]);
 }

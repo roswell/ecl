@@ -364,51 +364,65 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
  * LISP STACK
  *************/
 
-#define ECL_STACK_INDEX(env) ((env)->run_stack.top - (env)->run_stack.org)
+static inline void
+ecl_data_stack_push(cl_env_ptr env, cl_object o) {
+  cl_object *new_top = env->run_stack.top;
+  if (ecl_unlikely(new_top >= env->run_stack.limit)) {
+    new_top = ecl_data_stack_grow(env);
+  }
+  env->run_stack.top = new_top+1;
+  *new_top = (o);
+}
 
-#define ECL_STACK_PUSH(the_env,o) do {                                  \
-                const cl_env_ptr __env = (the_env);                     \
-                cl_object *__new_top = __env->run_stack.top;                \
-                if (ecl_unlikely(__new_top >= __env->run_stack.limit)) {    \
-                        __new_top = ecl_stack_grow(__env);              \
-                }                                                       \
-                __env->run_stack.top = __new_top+1;                         \
-                *__new_top = (o); } while (0)
+static inline void
+ecl_data_stack_push_n(cl_env_ptr env, cl_index n) {
+  cl_object *new_top = env->run_stack.top;
+  while (ecl_unlikely((env->run_stack.limit - new_top) <= n)) {
+    new_top = ecl_data_stack_grow(env);
+  }
+  env->run_stack.top = new_top + n;
+}
 
-#define ECL_STACK_POP_UNSAFE(env) *(--((env)->run_stack.top))
+static inline cl_object
+ecl_data_stack_pop_unsafe(cl_env_ptr env)
+{
+  return *(--((env)->run_stack.top));
+}
 
-#define ECL_STACK_REF(env,n) ((env)->run_stack.top[n])
+static inline void
+ecl_data_stack_pop_n_unsafe(cl_env_ptr env, cl_index n)
+{
+  env->run_stack.top -= n;
+}
 
-#define ECL_STACK_SET_INDEX(the_env,ndx) do {                   \
-                const cl_env_ptr __env = (the_env);             \
-                cl_object *__new_top = __env->run_stack.org + (ndx);    \
-                if (ecl_unlikely(__new_top > __env->run_stack.top)) \
-                        FEstack_advance();                      \
-                __env->run_stack.top = __new_top; } while (0)
+static inline cl_index
+ecl_data_stack_index(cl_env_ptr env) {
+  return (env)->run_stack.top - (env)->run_stack.org;
+}
 
-#define ECL_STACK_POP_N(the_env,n) do {                         \
-                const cl_env_ptr __env = (the_env);             \
-                cl_object *__new_top = __env->run_stack.top - (n);  \
-                if (ecl_unlikely(__new_top < __env->run_stack.org))     \
-                        FEstack_underflow();                    \
-                __env->run_stack.top = __new_top; } while (0)
+static inline void
+ecl_data_stack_set_index(cl_env_ptr env, cl_index ndx)
+{
+  env->run_stack.top = env->run_stack.org + (ndx);
+}
 
-#define ECL_STACK_POP_N_UNSAFE(the_env,n) ((the_env)->run_stack.top -= (n))
+#define ECL_STACK_REF(env,n)          ((env)->run_stack.top[n])
+#define ECL_STACK_INDEX(env)          ecl_data_stack_index(env)
+#define ECL_STACK_SET_INDEX(env,ndx)  ecl_data_stack_set_index(env,ndx)
+#define ECL_STACK_PUSH(env,o)         ecl_data_stack_push(env,o)
+#define ECL_STACK_PUSH_N(env,n)       ecl_data_stack_push_n(env,n)
+#define ECL_STACK_POP_UNSAFE(env)     ecl_data_stack_pop_unsafe(env)
+#define ECL_STACK_POP_N_UNSAFE(env,o) ecl_data_stack_pop_n_unsafe(env,o)
 
-#define ECL_STACK_PUSH_N(the_env,n) do {                                \
-                const cl_env_ptr __env = (the_env) ;                    \
-                cl_index __aux = (n);                                   \
-                cl_object *__new_top = __env->run_stack.top;                \
-                while (ecl_unlikely((__env->run_stack.limit - __new_top) <= __aux)) { \
-                        __new_top = ecl_stack_grow(__env);              \
-                }                                                       \
-                __env->run_stack.top = __new_top + __aux; } while (0)
+#define ECL_STACK_FRAME_REF(f,ndx)                              \
+        ((f)->frame.env->run_stack.org[(f)->frame.base+(ndx)])
+#define ECL_STACK_FRAME_SET(f,ndx,o)                            \
+        do { ECL_STACK_FRAME_REF(f,ndx) = (o); } while(0)
 
-#define ECL_STACK_FRAME_REF(f,ndx) ((f)->frame.env->stack[(f)->frame.base+(ndx)])
-#define ECL_STACK_FRAME_SET(f,ndx,o) do { ECL_STACK_FRAME_REF(f,ndx) = (o); } while(0)
-
-#define ECL_STACK_FRAME_PTR(f) ((f)->frame.env->stack+(f)->frame.base)
-#define ECL_STACK_FRAME_TOP(f) ((f)->frame.env->stack+(f)->frame.sp)
+#define ECL_STACK_FRAME_PTR(f)                          \
+        ((f)->frame.env->run_stack.org+(f)->frame.base)
+#define ECL_STACK_FRAME_TOP(f)                          \
+        ((f)->frame.env->run_stack.org+(f)->frame.sp)
 
 #define ECL_STACK_FRAME_COPY(dest,orig) do {                            \
                 cl_object __dst = (dest);                               \
@@ -436,10 +450,10 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
 #define ECL_UNWIND_PROTECT_EXIT \
         __unwinding=0; } \
         ecl_frs_pop(__the_env); \
-        __nr = ecl_stack_push_values(__the_env);
+        __nr = ecl_data_stack_push_values(__the_env);
 
 #define ECL_UNWIND_PROTECT_END \
-        ecl_stack_pop_values(__the_env,__nr);   \
+        ecl_data_stack_pop_values(__the_env,__nr);   \
         if (__unwinding) ecl_unwind(__the_env,__next_fr); } while(0)
 
 /* unwind-protect variant which disables interrupts during cleanup */
@@ -447,10 +461,10 @@ extern ECL_API ecl_frame_ptr _ecl_frs_push(cl_env_ptr);
         __unwinding=0; } \
         ecl_bds_bind(__the_env,ECL_INTERRUPTS_ENABLED,ECL_NIL); \
         ecl_frs_pop(__the_env); \
-        __nr = ecl_stack_push_values(__the_env);
+        __nr = ecl_data_stack_push_values(__the_env);
 
 #define ECL_UNWIND_PROTECT_THREAD_SAFE_END      \
-        ecl_stack_pop_values(__the_env,__nr);   \
+        ecl_data_stack_pop_values(__the_env,__nr);   \
         ecl_bds_unwind1(__the_env); \
         ecl_check_pending_interrupts(__the_env); \
         if (__unwinding) ecl_unwind(__the_env,__next_fr); } while(0)

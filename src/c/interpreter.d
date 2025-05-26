@@ -1325,9 +1325,9 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       GET_DATA(form, vector, data);
       SETUP_ENV(the_env);
       the_env->values[0] = reg0;
-      n = ecl_stack_push_values(the_env);
+      n = ecl_data_stack_push_values(the_env);
       call_stepper(the_env, form, ecl_make_fixnum(1));
-      ecl_stack_pop_values(the_env, n);
+      ecl_data_stack_pop_values(the_env, n);
       reg0 = the_env->values[0];
       THREAD_NEXT;
     }
@@ -1345,9 +1345,9 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       cl_index n;
       SETUP_ENV(the_env);
       the_env->values[0] = reg0;
-      n = ecl_stack_push_values(the_env);
+      n = ecl_data_stack_push_values(the_env);
       call_stepper(the_env, ECL_NIL, ecl_make_fixnum(-1));
-      ecl_stack_pop_values(the_env, n);
+      ecl_data_stack_pop_values(the_env, n);
       reg0 = the_env->values[0];
       THREAD_NEXT;
     }
