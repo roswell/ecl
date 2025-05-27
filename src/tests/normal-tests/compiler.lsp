@@ -2553,3 +2553,21 @@
                                            (f ,@data1)))))))
     (is (equalp (make-array (length data1) :initial-contents data1)
                 data2))))
+
+;;; Date 2025-05-27
+;;; Description
+;;;
+;;;     Passing environments between CCMP and BCMP in CMP-EVAL regressed after
+;;;     we've moved to a flat closure representation that requires storing the
+;;;     record position in the compiler env (in bytecmp). One of operators that
+;;;     call CMP-EVAL is LOAD-TIME-VALUE. Note that only compile-time objects
+;;;     like macros are available in the compiler environment.
+;;;
+(deftest cmp.0109.eval-with-env-from-ccmp ()
+  (finishes (funcall (compile nil
+                              '(lambda ()
+                                (macrolet ((woosh (&rest args)
+                                             `(return-from ,@args)))
+                                  (symbol-macrolet ((value -27))
+                                    (load-time-value
+                                     (block b4 (woosh b4 value))))))))))
