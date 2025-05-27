@@ -557,9 +557,10 @@ import_lexenv(cl_env_ptr env, cl_object lexenv)
    * suitable compiler enviroment to compile forms that access the
    * variables and local functions of this interpreted code.
    */
-  cl_object record;
   cl_object *lex = lexenv->vector.self.t;
   cl_index index = lexenv->vector.dim;
+  cl_compiler_env_ptr c_env = env->c_env;
+  cl_object record;
   while(index>0) {
     index--;
     record = lex[index];
@@ -587,10 +588,9 @@ import_lexenv(cl_env_ptr env, cl_object lexenv)
     }
   }
   /* INV we register a function boundary so that objects are not looked for in
-     the parent locals. Top environment must have env->captured bound because
-     ecl_make_lambda will call c_any_ref on the parent env. -- jd 2025-01-13*/
+     the parent locals. -- jd 2025-01-13*/
   c_register_boundary(env, @'si::function-boundary');
-  env->c_env->lex_env = lexenv;
+  c_env->lex_env = lexenv;
 }
 
 static void
@@ -601,10 +601,10 @@ import_cmpenv(cl_env_ptr env, cl_object cmpenv)
   cl_object variables = ECL_CONS_CAR(cmpenv);
   cl_object functions = ECL_CONS_CDR(cmpenv);
   cl_compiler_env_ptr c_env = env->c_env;
+  cl_object record, reg0, reg1;
   c_env->variables = variables;
   c_env->macros = functions;
   loop_for_on_unsafe(variables) {
-    cl_object record, reg0, reg1;
     record = ECL_CONS_CAR(variables);
     if (ECL_ATOM(record))
       continue;
@@ -617,6 +617,9 @@ import_cmpenv(cl_env_ptr env, cl_object cmpenv)
       break;
     }
   } end_loop_for_on_unsafe();
+  /* INV we register a function boundary so that objects are not looked for in
+     the parent locals. -- jd 2025-01-13*/
+  c_register_boundary(env, @'si::function-boundary');
 }
 
 static void
