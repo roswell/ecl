@@ -605,7 +605,7 @@ import_cmpenv(cl_env_ptr env, cl_object cmpenv)
       continue;
     reg0 = pop(&record);
     reg1 = pop(&record);
-    if (ECL_SYMBOLP(reg0) && reg1 != @'si::symbol-macro') {
+    if (reg0 == @':declare' || reg1 == @'si::symbol-macro') {
       continue;
     } else {
       c_env->lexical_level = 1;
