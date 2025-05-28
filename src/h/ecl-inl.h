@@ -103,6 +103,24 @@
 #define end_loop_across_stack() }}
 
 /*
+ * Loops over a stack frame.
+ */
+
+#define loop_across_frame_fifo(var, obj) {                              \
+  cl_object *__ecl_ptr = ECL_STACK_FRAME_PTR(obj);                      \
+  cl_object *__ecl_top = ECL_STACK_FRAME_TOP(obj);                      \
+  while(__ecl_ptr++ < __ecl_top) {                                      \
+    cl_object var = *(__ecl_ptr-1);                                     \
+
+#define loop_across_frame_filo(var, obj) {                              \
+  cl_object *__ecl_ptr = ECL_STACK_FRAME_PTR(obj);                      \
+  cl_object *__ecl_top = ECL_STACK_FRAME_TOP(obj);                      \
+  while(__ecl_ptr < __ecl_top--) {                                      \
+    cl_object var = *__ecl_top;
+
+#define end_loop_across_frame() }}
+
+/*
  * Static constant definition.
  */
 #ifdef __cplusplus
