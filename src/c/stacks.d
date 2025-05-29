@@ -222,7 +222,7 @@ ecl_data_stack_push_values(cl_env_ptr env) {
   cl_index i = env->nvalues;
   cl_object *b = env->run_stack.top;
   cl_object *p = b + i;
-  if (p >= env->run_stack.limit) {
+  while (p >= env->run_stack.limit) {
     b = ecl_data_stack_grow(env);
     p = b + i;
   }
@@ -266,35 +266,71 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
 void
 ecl_stack_frame_push(cl_object f, cl_object o)
 {
-  cl_env_ptr env = f->frame.env;
-  cl_object *top = env->run_stack.top;
-  if (top >= env->run_stack.limit) {
-    top = ecl_data_stack_grow(env);
+  cl_object *frame_top = ECL_STACK_FRAME_TOP(f);
+  cl_index limit_index = f->frame.base + f->frame.size;
+  if (f->frame.sp < limit_index) {
+    *frame_top = o;
+    f->frame.sp++;
+  } else {
+    /* XXX we allow here for a frame overflow. -- jd 2025-05-29 */
+    /* assert(frame_top == env->run_stack.top, "frame overflow"); */
+    cl_env_ptr env = f->frame.env;
+    ECL_STACK_PUSH(env, o);
+    f->frame.sp++;
+    f->frame.size++;
   }
-  env->run_stack.top = ++top;
-  *(top-1) = o;
-  f->frame.size++;
+}
+
+cl_object
+ecl_stack_frame_pop(cl_object f)
+{
+  if (f->frame.sp <= f->frame.base) {
+    ecl_internal_error("ecl_stack_frame_pop: frame underflow.");
+  }
+  f->frame.sp--;
+  return *ECL_STACK_FRAME_TOP(f);
 }
 
 void
 ecl_stack_frame_push_values(cl_object f)
 {
   cl_env_ptr env = f->frame.env;
-  ecl_data_stack_push_values(env);
-  f->frame.size += env->nvalues;
+  cl_index limit_index = f->frame.base + f->frame.size;
+  cl_index vals_length = env->nvalues;
+  cl_index value_index = f->frame.sp + vals_length;
+  cl_object *top = ECL_STACK_FRAME_TOP(f);
+  if (value_index < limit_index) {
+    ecl_copy(top, env->values, vals_length * sizeof(cl_object));
+    f->frame.sp = value_index;
+  } else {
+    /* XXX we allow here for a frame overflow. -- jd 2025-05-29 */
+    /* assert(frame_top == env->run_stack.top, "frame overflow"); */
+    cl_object *ptr = top + vals_length;
+    while (ptr >= env->run_stack.limit) {
+      ecl_data_stack_grow(env);
+      top = ECL_STACK_FRAME_TOP(f);
+      ptr = top + vals_length;
+      env->run_stack.top = ptr;
+    }
+    ecl_copy(top, env->values, vals_length * sizeof(cl_object));
+    f->frame.sp = value_index;
+    f->frame.size = value_index - f->frame.base;
+  }
 }
 
 cl_object
 ecl_stack_frame_pop_values(cl_object f)
 {
   cl_env_ptr env = f->frame.env;
-  cl_index n = f->frame.size % ECL_MULTIPLE_VALUES_LIMIT;
+  cl_index top_size = f->frame.sp - f->frame.base;
+  cl_index n = top_size % ECL_MULTIPLE_VALUES_LIMIT;
   cl_object o;
   env->nvalues = n;
   env->values[0] = o = ECL_NIL;
   while (n--) {
     env->values[n] = o = ECL_STACK_FRAME_REF(f, n);
   }
+  f->frame.sp -= n;
   return o;
 }
 

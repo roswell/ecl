@@ -539,6 +539,7 @@ extern ECL_API cl_object si_eval_with_env _ECL_ARGS((cl_narg narg, cl_object for
 extern ECL_API cl_object si_interpreter_stack();
 extern ECL_API cl_object ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size);
 extern ECL_API void ecl_stack_frame_push(cl_object f, cl_object o);
+extern ECL_API cl_object ecl_stack_frame_pop(cl_object f);
 extern ECL_API void ecl_stack_frame_push_values(cl_object f);
 extern ECL_API cl_object ecl_stack_frame_pop_values(cl_object f);
 extern ECL_API void ecl_stack_frame_close(cl_object f);
