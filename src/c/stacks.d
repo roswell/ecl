@@ -241,6 +241,22 @@ ecl_data_stack_pop_values(cl_env_ptr env, cl_index n) {
   ecl_copy(env->values, p, n * sizeof(cl_object));
 }
 
+/* A stack frame denotes a slice of the lisp stack [BASE,BASE+SIZE]. Between
+   these two values we maintain a stack pointer SP that shows where we push and
+   pop values when we use the frame. There are two nuances to keep in mind:
+
+   1. When we try to push-extend to the frame, it is possible only if the stack
+   top is aligned with the stack frame end: TOP_INDEX = SP = BASE+SIZE. This is
+   to avoid a situation where we override a newer frame.
+
+   2. When the stack top is aligned with the stack frame end, then push and pop
+   modifies the lisp stack TOP and the frame's SP and SIZE. This ensures that we
+   can use the topmost stack frame as if it were the stack, but also that we can
+   use some inner frames without corrupting it.
+
+   Note that direct stack operations do not update existing frames, so it is
+   still possible to corrupt a stack frame if not carful. -- jd 2025-05-29 */
+
 cl_object
 ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
 {
@@ -266,72 +282,79 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
 void
 ecl_stack_frame_push(cl_object f, cl_object o)
 {
+  cl_env_ptr the_env = f->frame.env;
   cl_object *frame_top = ECL_STACK_FRAME_TOP(f);
   cl_index limit_index = f->frame.base + f->frame.size;
   if (f->frame.sp < limit_index) {
     *frame_top = o;
     f->frame.sp++;
-  } else {
-    /* XXX we allow here for a frame overflow. -- jd 2025-05-29 */
-    /* assert(frame_top == env->run_stack.top, "frame overflow"); */
-    cl_env_ptr env = f->frame.env;
-    ECL_STACK_PUSH(env, o);
+  } else if (frame_top == the_env->run_stack.top) {
     f->frame.sp++;
     f->frame.size++;
+    ECL_STACK_PUSH(the_env, o);
+  } else {
+    ecl_internal_error("ecl_stack_frame_pop: frame overflow.");
   }
 }
 
 cl_object
 ecl_stack_frame_pop(cl_object f)
 {
+  cl_env_ptr the_env = f->frame.env;
+  cl_object *frame_top = ECL_STACK_FRAME_TOP(f);
   if (f->frame.sp <= f->frame.base) {
     ecl_internal_error("ecl_stack_frame_pop: frame underflow.");
+  } else if (frame_top == the_env->run_stack.top) {
+    f->frame.sp--;
+    f->frame.size--;
+    return ECL_STACK_POP_UNSAFE(the_env);
+  } else {
+    f->frame.sp--;
+    return *ECL_STACK_FRAME_TOP(f);
   }
-  f->frame.sp--;
-  return *ECL_STACK_FRAME_TOP(f);
 }
 
 void
 ecl_stack_frame_push_values(cl_object f)
 {
-  cl_env_ptr env = f->frame.env;
+  cl_env_ptr the_env = f->frame.env;
   cl_index limit_index = f->frame.base + f->frame.size;
-  cl_index vals_length = env->nvalues;
+  cl_index vals_length = the_env->nvalues;
   cl_index value_index = f->frame.sp + vals_length;
-  cl_object *top = ECL_STACK_FRAME_TOP(f);
-  if (value_index < limit_index) {
-    ecl_copy(top, env->values, vals_length * sizeof(cl_object));
+  cl_object *frame_top = ECL_STACK_FRAME_TOP(f);
+  if (value_index <= limit_index) {
+    ecl_copy(frame_top, the_env->values, vals_length * sizeof(cl_object));
     f->frame.sp = value_index;
-  } else {
-    /* XXX we allow here for a frame overflow. -- jd 2025-05-29 */
-    /* assert(frame_top == env->run_stack.top, "frame overflow"); */
-    cl_object *ptr = top + vals_length;
-    while (ptr >= env->run_stack.limit) {
-      ecl_data_stack_grow(env);
-      top = ECL_STACK_FRAME_TOP(f);
-      ptr = top + vals_length;
-      env->run_stack.top = ptr;
-    }
-    ecl_copy(top, env->values, vals_length * sizeof(cl_object));
+  } else if (frame_top == the_env->run_stack.top) {
     f->frame.sp = value_index;
     f->frame.size = value_index - f->frame.base;
+    ecl_data_stack_push_values(the_env);
+  } else {
+    ecl_internal_error("ecl_stack_frame_pop: frame overflow.");
   }
 }
 
 cl_object
 ecl_stack_frame_pop_values(cl_object f)
 {
-  cl_env_ptr env = f->frame.env;
+  cl_env_ptr the_env = f->frame.env;
   cl_index top_size = f->frame.sp - f->frame.base;
   cl_index n = top_size % ECL_MULTIPLE_VALUES_LIMIT;
-  cl_object o;
-  env->nvalues = n;
-  env->values[0] = o = ECL_NIL;
-  while (n--) {
-    env->values[n] = o = ECL_STACK_FRAME_REF(f, n);
+  cl_object *frame_top = ECL_STACK_FRAME_TOP(f), result;
+  if (frame_top == the_env->run_stack.top) {
+    ecl_data_stack_pop_values(the_env, n);
+    f->frame.sp -= n;
+    f->frame.size -= n;
+    return the_env->values[0];
+  } else {
+    the_env->nvalues = n;
+    the_env->values[0] = result = ECL_NIL;
+    while (n--) {
+      the_env->values[n] = result = ECL_STACK_FRAME_REF(f, n);
+    }
+    f->frame.sp -= n;
+    return result;
   }
-  f->frame.sp -= n;
-  return o;
 }
 
 void
