@@ -382,7 +382,12 @@ c_search_captured(cl_env_ptr env, cl_object c)
   cl_object p = c_env->captured;
   int n;
   if(Null(p)) {
-    ecl_miscompilation_error();
+    p = si_make_vector(ECL_T, ecl_make_fixnum(16),
+                       ECL_T, /* Adjustable */
+                       ecl_make_fixnum(0), /* Fillp */
+                       ECL_NIL, /* displacement */
+                       ECL_NIL);
+    c_env->captured = p;
   }
   for (n = 0; n < p->vector.fillp; n++) {
     if (ecl_eql(p->vector.self.t[n], c)) {
@@ -543,18 +548,19 @@ c_macro_expand1(cl_env_ptr env, cl_object stmt)
 }
 
 static void
-guess_compiler_environment(cl_env_ptr env, cl_object interpreter_env)
+import_lexenv(cl_env_ptr env, cl_object lexenv)
 {
-  if (!ECL_VECTORP(interpreter_env))
+  if (!ECL_VECTORP(lexenv))
     return;
   /*
    * Given the environment of an interpreted function, we guess a
    * suitable compiler enviroment to compile forms that access the
    * variables and local functions of this interpreted code.
    */
+  cl_object *lex = lexenv->vector.self.t;
+  cl_index index = lexenv->vector.dim;
+  cl_compiler_env_ptr c_env = env->c_env;
   cl_object record;
-  cl_object *lex = interpreter_env->vector.self.t;
-  cl_index index = interpreter_env->vector.dim;
   while(index>0) {
     index--;
     record = lex[index];
@@ -581,19 +587,48 @@ guess_compiler_environment(cl_env_ptr env, cl_object interpreter_env)
       }
     }
   }
-  /* INV we register a function boundary so that objets are not looked for in
-     the parent locals. Top environment must have env->captured bound because
-     ecl_make_lambda will call c_any_ref on the parent env. -- jd 2025-01-13*/
+  /* INV we register a function boundary so that objects are not looked for in
+     the parent locals. -- jd 2025-01-13*/
+  c_register_boundary(env, @'si::function-boundary');
+  c_env->lex_env = lexenv;
+}
+
+static void
+import_cmpenv(cl_env_ptr env, cl_object cmpenv)
+{
+  if (!ECL_CONSP(cmpenv))
+    return;
+  cl_object variables = ECL_CONS_CAR(cmpenv);
+  cl_object functions = ECL_CONS_CDR(cmpenv);
+  cl_compiler_env_ptr c_env = env->c_env;
+  cl_object record, reg0, reg1;
+  c_env->variables = variables;
+  c_env->macros = functions;
+  loop_for_on_unsafe(variables) {
+    record = ECL_CONS_CAR(variables);
+    if (ECL_ATOM(record))
+      continue;
+    reg0 = pop(&record);
+    reg1 = pop(&record);
+    if (reg0 == @':declare' || reg1 == @'si::symbol-macro') {
+      continue;
+    } else {
+      c_env->lexical_level = 1;
+      break;
+    }
+  } end_loop_for_on_unsafe();
+  /* INV we register a function boundary so that objects are not looked for in
+     the parent locals. -- jd 2025-01-13*/
   c_register_boundary(env, @'si::function-boundary');
 }
 
 static void
-c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
-          cl_compiler_env_ptr old)
+c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_compiler_env_ptr old)
 {
   the_env->c_env = new;
   if (old) {
     *new = *old;
+    new->captured = ECL_NIL;
     new->parent_env = old;
     new->env_size = 0;
     new->env_width = 0;
@@ -617,21 +652,9 @@ c_new_env(cl_env_ptr the_env, cl_compiler_env_ptr new, cl_object env,
     new->env_size = 0;
     new->env_width = 0;
     new->env_depth = 0;
-    new->macros = CDR(env);
-    new->variables = CAR(env);
-    for (env = new->variables; !Null(env); env = CDR(env)) {
-      cl_object record = CAR(env);
-      if (ECL_ATOM(record))
-        continue;
-      if (ECL_SYMBOLP(CAR(record)) && CADR(record) != @'si::symbol-macro') {
-        continue;
-      } else {
-        new->lexical_level = 1;
-        break;
-      }
-    }
+    new->macros = ECL_NIL;
+    new->variables = ECL_NIL;
     new->mode = FLAG_EXECUTE;
-    new->function_boundary_crossed = 0;
   }
 }
 
@@ -688,12 +711,10 @@ c_sym_ref(cl_env_ptr env, cl_object name)
     if (type == name) {
       if (other == @'si::symbol-macro') {
         if (function_boundary_crossed) {
-          c_env->function_boundary_crossed = 1;
           c_register_captured(env, record);
         } else {
           cl_object mfun = ECL_CONS_CAR(reg);
           if (ecl_t_of(mfun) == t_bclosure) {
-            c_env->function_boundary_crossed = 1;
             close_around_macros(env, mfun);
           }
         }
@@ -724,12 +745,10 @@ c_mac_ref(cl_env_ptr env, cl_object name)
         return;
       if(other == @'si::macro') {
         if (function_boundary_crossed) {
-          c_env->function_boundary_crossed = 1;
           c_register_captured(env, record);
         } else {
           cl_object mfun = ECL_CONS_CAR(reg);
           if (ecl_t_of(mfun) == t_bclosure) {
-            c_env->function_boundary_crossed = 1;
             close_around_macros(env, mfun);
           }
         }
@@ -785,7 +804,6 @@ c_any_ref(cl_env_ptr env, cl_object entry)
       continue;
     if(record == entry) {
       if (function_boundary_crossed) {
-        c_env->function_boundary_crossed = 1;
         output.place = ECL_CMPREF_CLOSE;
         output.index = c_register_captured(env, record);
       } else {
@@ -821,7 +839,6 @@ c_tag_ref(cl_env_ptr env, cl_object the_tag)
         /* Mark as used */
         ECL_RPLACA(reg, ECL_T);
         if (function_boundary_crossed) {
-          c_env->function_boundary_crossed = 1;
           output.place = ECL_CMPREF_CLOSE;
           output.index = c_register_captured(env, record);
         } else {
@@ -858,7 +875,6 @@ c_blk_ref(cl_env_ptr env, cl_object the_tag)
         /* Mark as used */
         ECL_RPLACA(reg, ECL_T);
         if (function_boundary_crossed) {
-          c_env->function_boundary_crossed = 1;
           output.place = ECL_CMPREF_CLOSE;
           output.index = c_register_captured(env, record);
         } else {
@@ -895,7 +911,6 @@ c_fun_ref(cl_env_ptr env, cl_object the_tag)
         /* Mark as used */
         ECL_RPLACA(reg, ECL_T);
         if (function_boundary_crossed) {
-          c_env->function_boundary_crossed = 1;
           output.place = ECL_CMPREF_CLOSE;
           output.index = c_register_captured(env, record);
         } else {
@@ -937,7 +952,6 @@ c_var_ref(cl_env_ptr env, cl_object var, bool allow_sym_mac, bool ensure_def)
       continue;
     } else if (Null(special)) {
       if (function_boundary_crossed) {
-        c_env->function_boundary_crossed = 1;
         output.place = ECL_CMPREF_CLOSE;
         output.index = c_register_captured(env, record);
       } else {
@@ -2753,13 +2767,7 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
   new_c_env.ltf_being_created = ECL_NIL;
   new_c_env.ltf_defer_init_until = ECL_T;
   new_c_env.ltf_locations = ECL_NIL;
-  /* INV ecl_make_lambda calls c_any_ref with this environment, so we need to
-     have the vector for captured variables bound. -- jd 2025-01-13 */
-  new_c_env.captured = si_make_vector(ECL_T, ecl_make_fixnum(16),
-                                      ECL_T, /* Adjustable */
-                                      ecl_make_fixnum(0), /* Fillp */
-                                      ECL_NIL, /* displacement */
-                                      ECL_NIL);
+  new_c_env.captured = ECL_NIL;
   new_c_env.parent_env = NULL;
   new_c_env.env_depth = 0;
   new_c_env.env_width = 0;
@@ -3515,7 +3523,7 @@ cl_object
 ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   cl_object reqs, opts, rest, key, keys, auxs, allow_other_keys;
   cl_object specials, decl, body, output;
-  cl_object cfb = ECL_NIL;
+  cl_object cfb = ECL_NIL, captured;
   cl_index handle;
   struct cl_compiler_env *old_c_env, new_c_env[1];
 
@@ -3523,14 +3531,8 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
                @list*(3, @'ext::lambda-block', name, lambda));
 
   old_c_env = env->c_env;
-  c_new_env(env, new_c_env, ECL_NIL, old_c_env);
+  c_new_env(env, new_c_env, old_c_env);
   new_c_env->lexical_level++;
-  new_c_env->function_boundary_crossed = 0;
-  new_c_env->captured = si_make_vector(ECL_T, ecl_make_fixnum(16),
-                                       ECL_T, /* Adjustable */
-                                       ecl_make_fixnum(0), /* Fillp */
-                                       ECL_NIL, /* displacement */
-                                       ECL_NIL);
   reqs = si_process_lambda(lambda);
   opts = env->values[1];
   rest = env->values[2];
@@ -3631,17 +3633,18 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
   ecl_bds_unwind1(env);         /* @'si::*current-form*', */
 
   /* Process closed over entries. */
-  if (new_c_env->function_boundary_crossed) {
-    cl_object p = new_c_env->captured, flex, entry, macro_entry;
+  captured = new_c_env->captured;
+  if (!Null(captured)) {
+    cl_object flex, entry, macro_entry;
     struct cl_compiler_ref ref;
     int i, n;
-    n = p->vector.fillp;
+    n = captured->vector.fillp;
     flex = si_make_vector(ECL_T, ecl_make_fixnum(n),
                           ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
     output->bytecodes.flex = flex;
     for (i = 0; i < n; i++) {
-      entry = p->vector.self.t[i];
-      p->vector.self.t[i] = ECL_NIL;
+      entry = captured->vector.self.t[i];
+      captured->vector.self.t[i] = ECL_NIL;
       macro_entry = fix_macro_to_lexenv(env, entry);
       if(!Null(macro_entry)) {
         flex->vector.self.t[i] = macro_entry;
@@ -3659,11 +3662,8 @@ ecl_make_lambda(cl_env_ptr env, cl_object name, cl_object lambda) {
         ecl_miscompilation_error();
       }
     }
-
-    old_c_env->function_boundary_crossed = 1;
     cfb = ECL_T;
   }
-
   ecl_return2(env, output, cfb);
 }
 
@@ -3707,7 +3707,7 @@ si_make_lambda(cl_object name, cl_object rest)
   cl_compiler_env_ptr old_c_env = the_env->c_env;
   struct cl_compiler_env new_c_env;
 
-  c_new_env(the_env, &new_c_env, ECL_NIL, 0);
+  c_new_env(the_env, &new_c_env, NULL);
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
     lambda = ecl_make_lambda(the_env, name, rest);
   } ECL_UNWIND_PROTECT_EXIT {
@@ -3725,7 +3725,7 @@ si_bc_compile_from_stream(cl_object input)
   struct cl_compiler_env new_c_env;
   cl_object bytecodes = ECL_NIL;
   old_c_env = the_env->c_env;
-  c_new_env(the_env, &new_c_env, ECL_NIL, 0);
+  c_new_env(the_env, &new_c_env, NULL);
   new_c_env.mode = FLAG_LOAD;
 
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
@@ -3756,7 +3756,6 @@ si_bc_compile_from_stream(cl_object input)
                            (compiler_env_p ECL_NIL) (mode @':execute'))
   cl_compiler_env_ptr old_c_env;
   struct cl_compiler_env new_c_env;
-  cl_object interpreter_env, compiler_env;
 @
   /*
    * Compile to bytecodes.
@@ -3771,21 +3770,11 @@ si_bc_compile_from_stream(cl_object input)
   if (!(mode == @':execute' || mode == @':load-toplevel' || mode == @':compile-toplevel')) {
     FEerror("Invalid mode in SI:EVAL-WITH-ENV", 0);
   }
-  if (compiler_env_p == ECL_NIL) {
-    interpreter_env = env;
-    compiler_env = ECL_NIL;
-  } else {
-    interpreter_env = ECL_NIL;
-    compiler_env = env;
-  }
   old_c_env = the_env->c_env;
-  c_new_env(the_env, &new_c_env, compiler_env, 0);
-  guess_compiler_environment(the_env, interpreter_env);
-  if (compiler_env_p == ECL_NIL) {
-    new_c_env.lex_env = env;
-  } else {
-    new_c_env.lex_env = ECL_NIL;
-  }
+  c_new_env(the_env, &new_c_env, NULL);
+  (Null(compiler_env_p)
+   ? import_lexenv(the_env, env)
+   : import_cmpenv(the_env, env));
   new_c_env.stepping = stepping != ECL_NIL;
   the_env->stepper = @'si::stepper-hook';
   ECL_UNWIND_PROTECT_BEGIN(the_env) {

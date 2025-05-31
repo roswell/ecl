@@ -258,7 +258,6 @@ struct cl_compiler_env {
         cl_index env_size;              /* The current size of locals environment */
         int mode;
         bool stepping;
-        bool function_boundary_crossed;
         cl_compiler_env_ptr parent_env;
 };
 
