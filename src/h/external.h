@@ -10,6 +10,56 @@ extern "C" {
 
 #define _ECL_ARGS(x) x
 
+/* The runtime stack, which is used mainly for keeping the arguments of a
+ * function before it is invoked, and also by the compiler and by the reader
+ * when they are building some data structure. */
+struct ecl_runtime_stack {
+        cl_index size;
+        cl_index limit_size;
+        cl_object *org;
+        cl_object *top;
+        cl_object *limit;
+};
+
+/* The BinDing Stack stores the bindings of special variables. */
+struct ecl_binding_stack {
+        cl_index size;
+        cl_index limit_size;
+        struct ecl_bds_frame *org;
+        struct ecl_bds_frame *top;
+        struct ecl_bds_frame *limit;
+#ifdef ECL_THREADS
+        cl_index tl_bindings_size;
+        cl_object *tl_bindings;
+#endif
+};
+
+struct ecl_frames_stack {
+        cl_index size;
+        cl_index limit_size;
+        struct ecl_frame *org;
+        struct ecl_frame *top;
+        struct ecl_frame *limit;
+        /* extra */
+        struct ecl_frame *nlj_fr;
+        cl_index frame_id;
+};
+
+struct ecl_history_stack {
+        struct ecl_ihs_frame *top;
+};
+
+struct ecl_c_stack {
+        cl_index size;          /* current size */
+        cl_index limit_size;    /* maximum size minus safety area */
+        char *org;              /* origin address */
+        char *max;              /* overflow address (real maximum address) */
+        char *limit;            /* overflow address (spares recovery area) */
+        /* extra */
+        cl_index max_size;      /* maximum possible size */
+};
+
+
 /*
  * Per-thread data.
  */
@@ -19,109 +69,70 @@ struct cl_env_struct {
         /* Flag for disabling interrupts while we call C library functions. */
         volatile int disable_interrupts;
 
-        /* Array where values are returned by functions. */
+        /* -- ECL runtime ---------------------------------------------------- */
+        /* Array where values are returned. */
         cl_index nvalues;
         cl_object values[ECL_MULTIPLE_VALUES_LIMIT];
+
+        /* ECL stacks. */
+
+        /* The Runtime Stack is used mainly for keeping the arguments of a
+         * function before it is invoked, and also by the compiler and by the
+         * reader when they are building some data structure. */
+        struct ecl_runtime_stack run_stack;
+        /* The BinDing Stack stores the bindings of special variables. */
+        struct ecl_binding_stack bds_stack;
+        /* The FRames Stack (FRS) is a list of frames or jump points, and it is
+         * used by different high-level constructs (BLOCK, TAGBODY, CATCH...)
+         * to set return points. */
+        struct ecl_frames_stack frs_stack;
+        /* The Invocation History Stack (IHS) keeps a list of the names of the
+         * functions that are invoked with their lexical environments. */
+        struct ecl_history_stack ihs_stack;
+        /* The following pointers to the C Stack are used to ensure that a
+         * recursive function does not enter an infinite loop and exhausts all
+         * memory. They will eventually disappear, because most operating
+         * systems already take care of this. */
+        struct ecl_c_stack c_stack; /* shadow stack */
 
         /* -- Invocation of closures, generic function, etc ------------------ */
         cl_object function;
         cl_object stepper;      /* Hook invoked by ByteVM */
         cl_object stack_frame;  /* Current stack frame */
 
-        /* The four stacks in ECL. */
-
-        /*
-         * The lisp stack, which is used mainly for keeping the arguments of a
-         * function before it is invoked, and also by the compiler and by the
-         * reader when they are building some data structure.
-         */
-        cl_index stack_size;
-        cl_index stack_limit_size;
-        cl_object *stack;
-        cl_object *stack_top;
-        cl_object *stack_limit;
-
-        /*
-         * The BinDing Stack stores the bindings of special variables.
-         */
+        /* -- System Processes (native threads) ------------------------------ */
 #ifdef ECL_THREADS
-        cl_index thread_local_bindings_size;
-        cl_object *thread_local_bindings;
-        cl_object bindings_array;
+        cl_object own_process; /* Backpointer to the host process. */
+        int cleanup;
 #endif
-        cl_index bds_size;
-        cl_index bds_limit_size;
-        struct ecl_bds_frame *bds_org;
-        struct ecl_bds_frame *bds_top;
-        struct ecl_bds_frame *bds_limit;
 
-        /*
-         * The Invocation History Stack (IHS) keeps a list of the names of the
-         * functions that are invoked, together with their lexical
-         * environments.
-         */
-        struct ecl_ihs_frame *ihs_top;
+        /* -- System Interrupts ---------------------------------------------- */
+        /* The objects in this struct need to be writeable from a different
+           thread, if environment is write-protected by mprotect. Hence they
+           have to be allocated seperately. */
+        struct ecl_interrupt_struct *interrupt_struct;
+        void *default_sigmask;
+        /* Floating point interrupts which are trapped */
+        int trap_fpe_bits;
+        /* Segmentation fault address */
+        void *fault_address;
 
-        /*
-         * The FRames Stack (FRS) is a list of frames or jump points, and it
-         * is used by different high-level constructs (BLOCK, TAGBODY, CATCH...)
-         * to set return points.
-         */
-        cl_index frs_size;
-        cl_index frs_limit_size;
-        struct ecl_frame *frs_org;
-        struct ecl_frame *frs_top;
-        struct ecl_frame *frs_limit;
-        struct ecl_frame *nlj_fr;
-        cl_index frame_id;
-
-        /*
-         * The following pointers to the C Stack are used to ensure that a
-         * recursive function does not enter an infinite loop and exhausts all
-         * memory. They will eventually disappear, because most operating
-         * systems already take care of this.
-         */
-        cl_index cs_size;       /* current size */
-        cl_index cs_limit_size; /* current size minus safety area */
-        cl_index cs_max_size;   /* maximum possible size */
-        char *cs_org;           /* origin address */
-        char *cs_limit;         /* limit address; if the stack pointer
-                                   goes beyond this value, a stack
-                                   overflow will be signaled ... */
-        char *cs_barrier;       /* ... but the area up to cs_barrier
-                                   is still available to allow
-                                   programs to recover from the
-                                   stack overflow */
-
-        /* Private variables used by different parts of ECL: */
+        /* -- Private variables used by different parts of ECL ---------------- */
         /* ... the reader and printer ... */
         cl_object string_pool;
-
         /* ... the compiler ... */
         struct cl_compiler_env *c_env;
-
         /* ... the formatter ... */
 #if !defined(ECL_CMU_FORMAT)
         cl_object fmt_aux_stream;
 #endif
-
         /* ... arithmetics ... */
         cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
-
-        cl_object own_process;
-        /* The objects in this struct need to be writeable from a
-           different thread, if environment is write-protected by
-           mprotect. Hence they have to be allocated seperately. */
-        struct ecl_interrupt_struct *interrupt_struct;
-        void *default_sigmask;
-
-        /* The following is a hash table for caching invocations of
-           generic functions. In a multithreaded environment we must
-           queue operations in which the hash is cleared from updated
-           generic functions. */
+        /* The following is a hash table for caching invocations of generic
+           functions. In a multithreaded environment we must queue operations in
+           which the hash is cleared from updated generic functions. */
         struct ecl_cache *method_cache;
         struct ecl_cache *slot_cache;
-
         /* foreign function interface */
 #ifdef HAVE_LIBFFI
         cl_index ffi_args_limit;
@@ -129,21 +140,10 @@ struct cl_env_struct {
         union ecl_ffi_values *ffi_values;
         union ecl_ffi_values **ffi_values_ptrs;
 #endif
-
-        /* Floating point interrupts which are trapped */
-        int trap_fpe_bits;
-
         /* List of packages interned when loading a FASL but which have
          * to be explicitely created by the compiled code itself. */
         cl_object packages_to_be_created;
         cl_object packages_to_be_created_p;
-
-        /* Segmentation fault address */
-        void *fault_address;
-
-#ifdef ECL_THREADS
-        int cleanup;
-#endif
 };
 
 struct ecl_interrupt_struct {
@@ -318,6 +318,11 @@ extern ECL_API cl_index cl_num_symbols_in_core;
 extern ECL_API cl_object APPLY_fixed(cl_narg n, cl_object (*f)(), cl_object *x);
 extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn, cl_object *x);
 
+/* stack.c */
+extern ECL_API cl_object ecl_make_stack(cl_index dim);
+extern ECL_API cl_object ecl_stack_push(cl_object stack, cl_object elt);
+extern ECL_API cl_object ecl_stack_del(cl_object stack, cl_object elt);
+extern ECL_API cl_object ecl_stack_popu(cl_object stack);
 
 /* array.c */
 
@@ -534,17 +539,16 @@ extern ECL_API cl_object si_eval_with_env _ECL_ARGS((cl_narg narg, cl_object for
 extern ECL_API cl_object si_interpreter_stack();
 extern ECL_API cl_object ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size);
 extern ECL_API void ecl_stack_frame_push(cl_object f, cl_object o);
+extern ECL_API cl_object ecl_stack_frame_pop(cl_object f);
 extern ECL_API void ecl_stack_frame_push_values(cl_object f);
 extern ECL_API cl_object ecl_stack_frame_pop_values(cl_object f);
 extern ECL_API void ecl_stack_frame_close(cl_object f);
 #define si_apply_from_stack_frame ecl_apply_from_stack_frame
 
-extern ECL_API void FEstack_underflow(void) ecl_attr_noreturn;
-extern ECL_API void FEstack_advance(void) ecl_attr_noreturn;
-extern ECL_API cl_object *ecl_stack_grow(cl_env_ptr env);
-extern ECL_API cl_object *ecl_stack_set_size(cl_env_ptr env, cl_index new_size);
-extern ECL_API cl_index ecl_stack_push_values(cl_env_ptr env);
-extern ECL_API void ecl_stack_pop_values(cl_env_ptr env, cl_index n);
+extern ECL_API cl_object *ecl_data_stack_grow(cl_env_ptr env);
+extern ECL_API cl_object *ecl_data_stack_set_size(cl_env_ptr env, cl_index new_size);
+extern ECL_API cl_index ecl_data_stack_push_values(cl_env_ptr env);
+extern ECL_API void ecl_data_stack_pop_values(cl_env_ptr env, cl_index n);
 extern ECL_API cl_object ecl_interpret(cl_object frame, cl_object env, cl_object bytecodes);
 extern ECL_API cl_object _ecl_bytecodes_dispatch(cl_narg narg, ...);
 extern ECL_API cl_object _ecl_bclosure_dispatch(cl_narg narg, ...);
@@ -596,6 +600,7 @@ extern ECL_API void FEtimeout() ecl_attr_noreturn;
 extern ECL_API void FEerror_not_owned(cl_object lock) ecl_attr_noreturn;
 extern ECL_API void FEunknown_lock_error(cl_object lock) ecl_attr_noreturn;
 extern ECL_API cl_object CEerror(cl_object c, const char *err_str, int narg, ...);
+extern ECL_API void CEstack_overflow(cl_object type, cl_object limit, cl_object resume);
 extern ECL_API void FElibc_error(const char *msg, int narg, ...) ecl_attr_noreturn;
 #if defined(ECL_MS_WINDOWS_HOST) || defined(cygwin)
 extern ECL_API void FEwin32_error(const char *msg, int narg, ...) ecl_attr_noreturn;
@@ -1642,12 +1647,11 @@ extern ECL_API cl_object si_bds_var(cl_object arg);
 extern ECL_API cl_object si_bds_val(cl_object arg);
 extern ECL_API cl_object si_sch_frs_base(cl_object fr, cl_object ihs);
 extern ECL_API cl_object si_reset_stack_limits(void);
-extern ECL_API cl_object si_reset_margin(cl_object type);
 extern ECL_API cl_object si_set_limit(cl_object type, cl_object size);
 extern ECL_API cl_object si_get_limit(cl_object type);
 
 extern ECL_API cl_index ecl_progv(cl_env_ptr env, cl_object vars, cl_object values);
-extern ECL_API void ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_top_index);
+extern ECL_API void ecl_bds_unwind(cl_env_ptr env, cl_index new_bds_ndx);
 extern ECL_API void ecl_unwind(cl_env_ptr env, struct ecl_frame *fr) ecl_attr_noreturn;
 extern ECL_API struct ecl_frame *frs_sch(cl_object frame_id);
 

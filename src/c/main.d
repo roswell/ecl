@@ -195,13 +195,6 @@ ecl_init_first_env(cl_env_ptr env)
 #ifdef ECL_THREADS
   init_threads();
 #endif
-#ifdef ECL_THREADS
-  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
-                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
-#endif
   init_env_mp(env);
   init_env_int(env);
   init_env_aux(env);
@@ -222,8 +215,9 @@ ecl_init_env(cl_env_ptr env)
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
-  /* Environment cleanup. This is required becauyse the environment is allocated
-   * using mmap or some other method. We could do more cleaning here.*/
+  /* Environment cleanup. This is required because the environment is allocated
+   * using mmap or some other method. */
+  free_stacks(env);
 #ifdef ECL_THREADS
   ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
 #endif
@@ -280,6 +274,9 @@ _ecl_alloc_env(cl_env_ptr parent)
     } else {
       output->default_sigmask = cl_core.default_sigmask;
     }
+  }
+  for (cl_index i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    output->big_register[i] = ECL_NIL;
   }
   output->method_cache = output->slot_cache = NULL;
   output->interrupt_struct = NULL;
@@ -516,7 +513,6 @@ cl_boot(int argc, char **argv)
 
   env = cl_core.first_env;
   ecl_init_first_env(env);
-  ecl_cs_set_org(env);
 
   /*
    * 1) Initialize symbols and packages
@@ -814,8 +810,8 @@ cl_boot(int argc, char **argv)
     }
 #endif
     ECL_SET(@'ext::*program-exit-code*', code);
-    if (the_env->frs_org <= the_env->frs_top)
-      ecl_unwind(the_env, the_env->frs_org);
+    if (the_env->frs_stack.org <= the_env->frs_stack.top)
+      ecl_unwind(the_env, the_env->frs_stack.org);
     si_exit(1, code);
   }
 @)

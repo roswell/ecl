@@ -676,12 +676,12 @@ void init_type_info (void)
     to_bitmap(&o, &(o.process.name)) |
     to_bitmap(&o, &(o.process.function)) |
     to_bitmap(&o, &(o.process.args)) |
-    to_bitmap(&o, &(o.process.env)) |
     to_bitmap(&o, &(o.process.interrupt)) |
-    to_bitmap(&o, &(o.process.initial_bindings)) |
+    to_bitmap(&o, &(o.process.inherit_bindings_p)) |
     to_bitmap(&o, &(o.process.parent)) |
     to_bitmap(&o, &(o.process.exit_values)) |
-    to_bitmap(&o, &(o.process.woken_up));
+    to_bitmap(&o, &(o.process.woken_up)) |
+    to_bitmap(&o, &(o.process.env));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
     to_bitmap(&o, &(o.lock.owner));
@@ -1152,19 +1152,18 @@ update_bytes_consed () {
 static void
 ecl_mark_env(struct cl_env_struct *env)
 {
-  if (env->stack) {
-    GC_push_conditional((void *)env->stack, (void *)env->stack_top, 1);
-    GC_set_mark_bit((void *)env->stack);
-  }
-  if (env->frs_top) {
-    GC_push_conditional((void *)env->frs_org, (void *)(env->frs_top+1), 1);
-    GC_set_mark_bit((void *)env->frs_org);
-  }
-  if (env->bds_top) {
-    GC_push_conditional((void *)env->bds_org, (void *)(env->bds_top+1), 1);
-    GC_set_mark_bit((void *)env->bds_org);
-  }
-  /* When not using threads, "env" is mmaped or statically allocated. */
+  /* Environments and stacks are allocated without GC */
+  if (env->run_stack.org)
+    GC_push_all((void *)env->run_stack.org, (void *)env->run_stack.top);
+  if (env->frs_stack.org)
+    GC_push_all((void *)env->frs_stack.org, (void *)(env->frs_stack.top+1));
+  if (env->bds_stack.org)
+    GC_push_all((void *)env->bds_stack.org, (void *)(env->bds_stack.top+1));
+#ifdef ECL_THREADS
+  if (env->bds_stack.tl_bindings)
+    GC_push_all((void *)env->bds_stack.tl_bindings,
+                (void *)(env->bds_stack.tl_bindings + env->bds_stack.tl_bindings_size));
+#endif
   GC_push_all((void *)env, (void *)(env + 1));
 }
 

@@ -96,8 +96,8 @@ set to @var{name} and no function to run. See also
 
 If @var{initial-bindings} is false, the new process inherits local
 bindings to special variables (i.e. binding a special variable with
-@code{let} or @code{let*}) from the current thread, otherwise the new
-thread possesses no local bindings.
+@code{let} or @code{let*}) from the thread that enables it, otherwise
+the new thread initially possesses no local bindings.
 @end defun
 
 

@@ -36,7 +36,10 @@ extern void init_GC(void);
 #endif
 extern void init_macros(void);
 extern void init_read(void);
-extern void init_stacks(cl_env_ptr);
+
+extern cl_object init_stacks(cl_env_ptr);
+extern cl_object free_stacks(cl_env_ptr);
+
 extern void init_unixint(int pass);
 extern void init_unixtime(void);
 extern void init_compiler(void);
@@ -298,9 +301,6 @@ struct cl_compiler_ref {
 
 extern void _ecl_unexpected_return() ecl_attr_noreturn;
 extern cl_object _ecl_strerror(int code);
-extern ECL_API cl_object si_serror _ECL_ARGS
-((cl_narg narg, cl_object cformat, cl_object eformat, ...));
-
 
 /* eval.d */
 
@@ -552,12 +552,16 @@ extern cl_object ecl_deserialize(uint8_t *data);
 /* stacks.d */
 #define CL_NEWENV_BEGIN {\
         const cl_env_ptr the_env = ecl_process_env(); \
-        cl_index __i = ecl_stack_push_values(the_env); \
+        cl_index __i = ecl_data_stack_push_values(the_env); \
 
 #define CL_NEWENV_END \
-        ecl_stack_pop_values(the_env,__i); }
+        ecl_data_stack_pop_values(the_env,__i); }
 
-extern void ecl_cs_set_org(cl_env_ptr env);
+extern void ecl_cs_init(cl_env_ptr env);
+extern void ecl_frs_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_bds_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_data_stack_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_cs_set_size(cl_env_ptr env, cl_index n);
 
 #ifndef RLIM_SAVED_MAX
 # define RLIM_SAVED_MAX RLIM_INFINITY
