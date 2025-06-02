@@ -358,8 +358,9 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   const cl_env_ptr the_env = frame->frame.env;
   volatile cl_index frame_index = 0;
   cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
-  cl_object *data = bytecodes->bytecodes.data->vector.self.t;
   cl_object lex_env = closure, lcl_env = ECL_NIL;
+  cl_object dat_env = bytecodes->bytecodes.data;
+  cl_object *data = Null(dat_env) ? NULL : dat_env->vector.self.t;
   cl_object reg0 = ECL_NIL, reg1 = ECL_NIL;
   cl_index narg = 0;
   cl_index nlcl = ecl_fixnum(bytecodes->bytecodes.nlcl);
