@@ -330,7 +330,7 @@ ecl_stack_frame_push_values(cl_object f)
     f->frame.size = value_index - f->frame.base;
     ecl_data_stack_push_values(the_env);
   } else {
-    ecl_internal_error("ecl_stack_frame_pop: frame overflow.");
+    ecl_internal_error("ecl_stack_frame_push: frame overflow.");
   }
 }
 
