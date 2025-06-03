@@ -372,7 +372,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   lcl_env = ecl_cast_ptr(cl_object, &frame_lcl);
   ecl_cs_check(the_env, ihs);
   ecl_ihs_push(the_env, &ihs, bytecodes, closure, lcl_env);
-  ecl_stack_frame_open(the_env, lcl_env, nlcl);
+  if(nlcl) ecl_stack_frame_open(the_env, lcl_env, nlcl);
   frame_aux.t = t_frame;
   frame_aux.opened = 0;
   frame_aux.base = 0;
@@ -385,11 +385,19 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       the_env->nvalues = 0;
       THREAD_NEXT;
     }
-    /* OP_QUOTE
+    /* OP_QUOTE     n{dat}
        Sets REG0 to an immediate value.
     */
     CASE(OP_QUOTE); {
       GET_DATA(reg0, vector, data);
+      THREAD_NEXT;
+    }
+    /* OP_CALLW     n{dat}
+       Calls the immediate value and sets REG0 to the result.
+    */
+    CASE(OP_CALLW); {
+      GET_DATA(reg0, vector, data);
+      ecl_apply_from_stack_frame(frame, reg0);
       THREAD_NEXT;
     }
     /* OP_VAR       n{lcl}
@@ -709,7 +717,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_EXIT); {
       ecl_ihs_pop(the_env);
-      ecl_stack_frame_close(lcl_env);
+      if(nlcl) ecl_stack_frame_close(lcl_env);
       return reg0;
     }
     /* OP_FLET      nfun{arg}, fun1{object}
