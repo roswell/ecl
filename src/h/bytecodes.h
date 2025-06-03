@@ -13,6 +13,7 @@
 enum {
   OP_NOP,
   OP_QUOTE,
+  OP_CALLW,
   OP_ENDP,
   OP_CONS,
   OP_CAR,
@@ -176,6 +177,7 @@ typedef int16_t cl_opcode;
         static const int offsets[] = {\
   &&LBL_OP_NOP - &&LBL_OP_NOP,\
   &&LBL_OP_QUOTE - &&LBL_OP_NOP,\
+  &&LBL_OP_CALLW - &&LBL_OP_NOP,\
   &&LBL_OP_ENDP - &&LBL_OP_NOP,\
   &&LBL_OP_CONS - &&LBL_OP_NOP,\
   &&LBL_OP_CAR - &&LBL_OP_NOP,\
