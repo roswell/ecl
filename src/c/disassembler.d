@@ -204,9 +204,16 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
     goto OPARG;
 
     /* OP_QUOTE
-       Sets VALUES(0) to an immediate value.
+       Sets REG0 to an immediate value.
     */
   case OP_QUOTE:          string = "QUOTE\t";
+    GET_DATA(o, vector, data);
+    goto ARG;
+
+    /* OP_CALLW
+       Sets REG0 to a result of calling an immediate value.
+    */
+  case OP_CALLW:          string = "CALLW\t";
     GET_DATA(o, vector, data);
     goto ARG;
 
