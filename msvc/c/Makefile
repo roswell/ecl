@@ -13,7 +13,7 @@ ECL_FPE_CODE=fpe_x86.c
 !if "$(ECL_THREADS)" != ""
 ECL_THREADS_FLAG=1
 THREADS_OBJ= thread.obj mutex.obj condition_variable.obj rwlock.obj \
-             semaphore.obj barrier.obj mailbox.obj atomic.obj
+             semaphore.obj barrier.obj mailbox.obj
 !else
 ECL_THREADS_FLAG=0
 THREADS_OBJ=
@@ -79,40 +79,42 @@ HFILES	= ..\ecl\config.h ..\ecl\config-internal.h ..\ecl\atomic_ops.h \
 	$(HDIR)\cache.h $(HDIR)\stack-resize.h \
 	$(HDIR)\ecl_atomics.h
 
-OBJS	= main.obj symbol.obj package.obj cons.obj list.obj\
-	apply.obj eval.obj \
-	interpreter.obj compiler.obj disassembler.obj \
-	instance.obj gfun.obj cache.obj accessor.obj \
-	reference.obj character.obj\
-	file.obj read.obj print.obj error.obj string.obj cfun.obj\
-	parse_integer.obj parse_number.obj \
-	float_to_digits.obj float_to_string.obj \
-	integer_to_string.obj write_ugly.obj \
-	write_object.obj write_symbol.obj \
-	write_array.obj write_list.obj write_code.obj \
-	write_sse.obj print_unreadable.obj \
-	libraries.obj backtrace.obj mmap.obj cdata.obj \
-	cos.obj sin.obj tan.obj atan.obj \
-	cosh.obj sinh.obj tanh.obj \
-	exp.obj expt.obj log.obj \
-	sqrt.obj abs.obj \
-	zerop.obj plusp.obj minusp.obj \
-	negate.obj conjugate.obj \
-	one_plus.obj one_minus.obj \
+CLOS_OBJS = cache.obj accessor.obj instance.obj gfun.obj
+
+NUM_OBJS = number.obj num_pred.obj num_arith.obj num_co.obj num_log.obj num_rand.obj \
+	cos.obj sin.obj tan.obj atan.obj   \
+	cosh.obj sinh.obj tanh.obj exp.obj \
+	expt.obj log.obj sqrt.obj abs.obj \
+	zerop.obj plusp.obj minusp.obj negate.obj \
+	conjugate.obj one_plus.obj one_minus.obj \
 	plus.obj minus.obj times.obj divide.obj \
 	number_compare.obj number_equalp.obj minmax.obj \
-	floor.obj ceiling.obj round.obj truncate.obj \
-	typespec.obj assignment.obj \
-	predicate.obj big.obj number.obj\
-	num_pred.obj num_arith.obj num_co.obj\
-	num_log.obj num_rand.obj array.obj vector_push.obj \
-	sequence.obj cmpaux.obj\
-	macros.obj backq.obj stacks.obj \
-	time.obj unixint.obj memory.obj \
-	mapfun.obj multival.obj hash.obj format.obj pathname.obj\
-	structure.obj load.obj unixfsys.obj unixsys.obj \
-	ffi.obj alloc_2.obj tcp.obj $(THREADS_OBJ) process.obj serialize.obj \
-	$(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
+	floor.obj ceiling.obj round.obj truncate.obj
+
+WRITER_OBJS = print.obj float_to_digits.obj float_to_string.obj \
+	integer_to_string.obj write_ugly.obj \
+	write_object.obj write_symbol.obj write_array.obj  \
+	write_list.obj write_code.obj write_sse.obj \
+	print_unreadable.obj
+
+READER_OBJS = read.obj parse_integer.obj parse_number.obj
+
+STREAM_OBJS = stream.obj file.obj strm_os.obj \
+        strm_clos.obj strm_string.obj strm_composite.obj \
+        strm_common.obj strm_sequence.obj strm_eformat.obj
+
+FFI_OBJS = ffi.obj libraries.obj backtrace.obj mmap.obj cdata.obj
+
+OBJS	= main.obj symbol.obj package.obj cons.obj list.obj apply.obj eval.obj \
+	interpreter.obj compiler.obj disassembler.obj reference.obj character.obj \
+	error.obj string.obj cfun.obj typespec.obj assignment.obj memory.obj \
+	predicate.obj array.obj vector_push.obj sequence.obj cmpaux.obj macros.obj \
+	backq.obj stacks.obj time.obj unixint.obj mapfun.obj multival.obj hash.obj \
+	format.obj pathname.obj structure.obj load.obj unixfsys.obj unixsys.obj \
+	serialize.obj atomic.obj process.obj  \
+	big.obj alloc_2.obj tcp.obj \
+	$(BOOT_OBJS) $(NUM_OBJS) $(WRITER_OBJS) $(READER_OBJS) $(STREAM_OBJS)   \
+	$(CLOS_OBJS) $(FFI_OBJS) $(THREADS_OBJ)	$(ECL_UCD_OBJ) $(ECL_SSE_OBJ)
 
 all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 
@@ -125,6 +127,8 @@ all:	$(DPP) ..\eclmin.lib ..\cinit.obj
 {$(srcdir:\=/)/clos/}.d{}.c:
 	$(DPP) $< $@
 {$(srcdir:\=/)/reader}.d{}.c:
+	$(DPP) $< $@
+{$(srcdir:\=/)/streams}.d{}.c:
 	$(DPP) $< $@
 {$(srcdir:\=/)/printer}.d{}.c:
 	$(DPP) $< $@
