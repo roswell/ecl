@@ -85,6 +85,7 @@ typedef enum {
         t_foreign,
         t_frame,
         t_token,
+        t_module,
         t_weak_pointer,
 #ifdef ECL_SSE2
         t_sse_pack,
@@ -100,11 +101,13 @@ typedef enum {
         Definition of the type of LISP objects.
 */
 typedef union cl_lispunion *cl_object;
+typedef struct cl_env_struct *cl_env_ptr;
 typedef cl_object cl_return;
 typedef cl_fixnum cl_narg;
 typedef cl_object (*cl_objectfn)(cl_narg narg, ...);
 typedef cl_object (*cl_objectfn_fixed)();
 typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
+typedef cl_object (*cl_objectfn_envfn)(cl_env_ptr);
 
 /*
         OBJect NULL value.
@@ -958,6 +961,19 @@ struct ecl_token {
         cl_object escape;       /* ranges of escaped characters */
 };
 
+struct ecl_module {
+        _ECL_HDR;
+        cl_object name;
+        cl_objectfn_fixed create;
+        cl_objectfn_fixed enable;
+        cl_objectfn_envfn init_env;
+        cl_objectfn_envfn init_cpu;
+        cl_objectfn_envfn free_cpu;
+        cl_objectfn_envfn free_env;
+        cl_objectfn_fixed disable;
+        cl_objectfn_fixed destroy;
+};
+
 struct ecl_weak_pointer {       /*  weak pointer to value  */
         _ECL_HDR;
         cl_object value;
@@ -1184,6 +1200,7 @@ union cl_lispunion {
         struct ecl_dummy        d;              /*  dummy  */
         struct ecl_instance     instance;       /*  clos instance */
         struct ecl_token        token;          /*  token */
+        struct ecl_module       module;         /*  core module */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
         struct ecl_lock         lock;           /*  lock  */

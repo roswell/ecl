@@ -50,8 +50,6 @@ ecl_process_list()
 
 /* -- Environment --------------------------------------------------- */
 
-extern void ecl_init_env(struct cl_env_struct *env);
-
 cl_object
 mp_current_process(void)
 {

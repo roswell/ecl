@@ -94,24 +94,23 @@ init_env_aux(cl_env_ptr env)
 }
 
 void
-ecl_init_first_env(cl_env_ptr env)
+ecl_init_first_env(cl_env_ptr the_env)
 {
-  env->default_sigmask = ecl_core.first_env->default_sigmask;
+  the_env->default_sigmask = ecl_core.first_env->default_sigmask;
 #ifdef ECL_THREADS
   init_threads();
-#else
-  ecl_cs_init(env);
 #endif
-  init_env_mp(env);
-  init_env_int(env);
-  init_env_aux(env);
-  init_env_ffi(env);
-  init_stacks(env);
+  ecl_cs_init(the_env);
+  init_env_int(the_env);
+  init_env_aux(the_env);
+  init_env_ffi(the_env);
+  init_stacks(the_env);
 }
 
 void
 ecl_init_env(cl_env_ptr env)
 {
+  ecl_modules_init_env(env);
   init_env_int(env);
   init_env_aux(env);
   init_env_ffi(env);
@@ -121,8 +120,8 @@ ecl_init_env(cl_env_ptr env)
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
-  /* Environment cleanup. This is required because the environment is allocated
-   * using mmap or some other method. */
+  env->own_process = ECL_NIL;
+  ecl_modules_free_env(env);
   free_stacks(env);
 #ifdef ECL_THREADS
   ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
@@ -332,6 +331,7 @@ cl_boot(int argc, char **argv)
 
   init_unixint(0);
   init_alloc(0);
+
   init_big();
 
   /*
