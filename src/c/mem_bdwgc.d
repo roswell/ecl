@@ -340,6 +340,13 @@ standard_finalizer(cl_object o)
   case t_weak_pointer:
     GC_unregister_disappearing_link((void**)&(o->weak.value));
     break;
+#if 0
+  case t_bclosure: {
+    ecl_free_stack(o->bclosure.lex);
+    o->bclosure.lex = ECL_NIL;
+    break;
+  }
+#endif
 #ifdef ECL_THREADS
   case t_lock: {
     const cl_env_ptr the_env = ecl_process_env();
@@ -400,6 +407,7 @@ standard_finalizer(cl_object o)
       ecl_atomic_push(&ecl_core.reused_indices, ecl_make_fixnum(o->symbol.binding));
       o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
     }
+    break;
   }
 #endif /* ECL_THREADS */
   default:;
