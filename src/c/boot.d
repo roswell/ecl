@@ -178,11 +178,7 @@ ecl_boot(void)
     }
     return 1;
   }
-  init_process();
   init_modules();
-  /* init_unixint(); */
-  /* init_garbage(); */
-
   ecl_core.path_max = MAXPATHLEN;
 
   return 0;
