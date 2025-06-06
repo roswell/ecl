@@ -1280,20 +1280,20 @@ si_trap_fpe(cl_object condition, cl_object flag)
  * detect and process them.
  */
 static void
-install_asynchronous_signal_handlers()
+install_asynchronous_signal_handlers(void)
 {
 #if defined(ECL_MS_WINDOWS_HOST)
-# define async_handler(signal,handler,mask)
+# define async_handler(signal,handler)
 #else
 # if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
-#  define async_handler(signal,handler,mask)  {                 \
+#  define async_handler(signal,handler)  {                      \
     if (ecl_option_values[ECL_OPT_SIGNAL_HANDLING_THREAD]) {    \
       mysignal(signal, deferred_signal_handler);                \
     } else {                                                    \
       mysignal(signal,handler);                                 \
     }}
 # else
-#  define async_handler(signal,handler,mask)    \
+#  define async_handler(signal,handler)         \
   mysignal(signal,handler)
 # endif
 #endif
@@ -1307,7 +1307,7 @@ install_asynchronous_signal_handlers()
 #endif
 #ifdef SIGINT
   if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
-    async_handler(SIGINT, non_evil_signal_handler, sigmask);
+    async_handler(SIGINT, non_evil_signal_handler);
   }
 #endif
 #ifdef HAVE_SIGPROCMASK
@@ -1318,6 +1318,34 @@ install_asynchronous_signal_handlers()
     SetUnhandledExceptionFilter(_ecl_w32_exception_filter);
   if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
     SetConsoleCtrlHandler(W32_console_ctrl_handler, TRUE);
+  }
+#endif
+#undef async_handler
+}
+
+static void
+uninstall_asynchronous_signal_handlers(void)
+{
+#ifdef HAVE_SIGPROCMASK
+  sigset_t *sigmask = ecl_core.first_env->default_sigmask = &main_thread_sigmask;
+  ecl_core.default_sigmask_bytes = sizeof(sigset_t);
+  ecl_sigmask(SIG_SETMASK, NULL, sigmask);
+#endif
+#if defined(ECL_THREADS) && defined(HAVE_SIGPROCMASK)
+  ecl_mutex_init(&signal_thread_lock, TRUE);
+#endif
+#ifdef SIGINT
+  if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
+    mysignal(SIGINT, SIG_IGN);
+  }
+#endif
+#ifdef HAVE_SIGPROCMASK
+  ecl_sigmask(SIG_SETMASK, sigmask, NULL);
+#endif
+#ifdef ECL_WINDOWS_THREADS
+  SetUnhandledExceptionFilter(NULL);
+  if (ecl_option_values[ECL_OPT_TRAP_SIGINT]) {
+    SetConsoleCtrlHandler(W32_console_ctrl_handler, FALSE);
   }
 #endif
 #undef async_handler
@@ -1364,7 +1392,7 @@ uninstall_signal_handling_thread(void)
  * init_GC().
  */
 static void
-install_synchronous_signal_handlers()
+install_synchronous_signal_handlers(void)
 {
 #ifdef SIGBUS
   if (ecl_option_values[ECL_OPT_TRAP_SIGBUS]) {
@@ -1403,6 +1431,49 @@ install_synchronous_signal_handlers()
       ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL, signal);
     }
     mysignal(signal, process_interrupt_handler);
+#ifdef HAVE_SIGPROCMASK
+    sigdelset(&main_thread_sigmask, signal);
+    ecl_sigmask(SIG_SETMASK, &main_thread_sigmask, NULL);
+#endif
+  }
+#endif
+}
+
+static void
+uninstall_synchronous_signal_handlers(void)
+{
+#ifdef SIGBUS
+  if (ecl_option_values[ECL_OPT_TRAP_SIGBUS]) {
+    do_catch_signal(SIGBUS, ECL_NIL, ECL_NIL);
+  }
+#endif
+#ifdef SIGSEGV
+  if (ecl_option_values[ECL_OPT_TRAP_SIGSEGV]) {
+    do_catch_signal(SIGSEGV, ECL_NIL, ECL_NIL);
+  }
+#endif
+#ifdef SIGPIPE
+  if (ecl_option_values[ECL_OPT_TRAP_SIGPIPE]) {
+    do_catch_signal(SIGPIPE, ECL_NIL, ECL_NIL);
+  }
+#endif
+#ifdef SIGILL
+  if (ecl_option_values[ECL_OPT_TRAP_SIGILL]) {
+    do_catch_signal(SIGILL, ECL_NIL, ECL_NIL);
+  }
+#endif
+  /* In order to implement MP:INTERRUPT-PROCESS, MP:PROCESS-KILL
+   * and the like, we use signals. This sets up a synchronous
+   * signal handler for that particular signal.
+   */
+#if defined(ECL_THREADS) && !defined(ECL_MS_WINDOWS_HOST)
+  if (ecl_option_values[ECL_OPT_TRAP_INTERRUPT_SIGNAL]) {
+    int signal = ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
+    if (signal == 0) {
+      signal = DEFAULT_THREAD_INTERRUPT_SIGNAL;
+      ecl_set_option(ECL_OPT_THREAD_INTERRUPT_SIGNAL, signal);
+    }
+    mysignal(signal, SIG_IGN);
 #ifdef HAVE_SIGPROCMASK
     sigdelset(&main_thread_sigmask, signal);
     ecl_sigmask(SIG_SETMASK, &main_thread_sigmask, NULL);
@@ -1581,6 +1652,8 @@ static cl_object
 destroy_unixint(void)
 {
   uninstall_signal_handling_thread();
+  uninstall_synchronous_signal_handlers();
+  uninstall_asynchronous_signal_handlers();
   /* FIXME this is messy. */
   /* remove_signal_code_constants(); */
   return ECL_NIL;
