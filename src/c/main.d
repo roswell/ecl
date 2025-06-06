@@ -99,7 +99,6 @@ ecl_init_env(cl_env_ptr env)
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
-  env->own_process = ECL_NIL;
   ecl_modules_free_env(env);
   free_stacks(env);
 #if defined(ECL_USE_MPROTECT)
@@ -151,7 +150,6 @@ _ecl_alloc_env(cl_env_ptr parent)
   output->bds_stack.tl_bindings_size = 0;
   output->bds_stack.tl_bindings = NULL;
 #endif
-  output->own_process = ECL_NIL;
   output->c_stack.org = NULL;
   for (cl_index i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
     output->big_register[i] = ECL_NIL;
@@ -289,6 +287,7 @@ cl_boot(int argc, char **argv)
   ARGV = argv;
   ecl_self = argv[0];
 
+  ecl_add_module(ecl_module_process);
   ecl_add_module(ecl_module_gc);
   ecl_add_module(ecl_module_unixint);
 

@@ -23,6 +23,7 @@ extern "C" {
 #define unlikely_if(x) if (ecl_unlikely(x))
 
 /* booting */
+extern ECL_API cl_object ecl_module_process;
 extern ECL_API cl_object ecl_module_dummy;
 extern ECL_API cl_object ecl_module_gc;
 extern ECL_API cl_object ecl_module_unixint;
