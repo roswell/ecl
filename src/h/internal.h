@@ -44,11 +44,14 @@ extern void init_unixint(int pass);
 extern void init_unixtime(void);
 extern void init_compiler(void);
 extern void init_process(void);
+extern void init_modules(void);
 #ifdef ECL_THREADS
 extern void init_threads(void);
 #endif
 extern void ecl_init_env(cl_env_ptr);
 extern void init_lib_LSP(cl_object);
+
+extern void free_modules(void);
 
 extern cl_env_ptr _ecl_alloc_env(cl_env_ptr parent);
 extern void _ecl_dealloc_env(cl_env_ptr);

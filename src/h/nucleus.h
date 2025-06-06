@@ -29,6 +29,7 @@ struct ecl_core_struct {
   int path_max;
   cl_object pathname_translations;
 
+  cl_object modules;
   cl_object libraries;
   cl_object library_pathname;
 };
