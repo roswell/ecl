@@ -175,16 +175,22 @@ ecl_lex_env_get_record(cl_object env, int s)
 /* -- Lexical and local env operators ------------------------------------------ */
 
 static cl_object
-make_lex(cl_index n)
+make_lex(cl_index size)
 {
-  return si_make_vector(ECL_T, ecl_make_fixnum(n), ECL_NIL,
-                        ecl_make_fixnum(0), ECL_NIL, ECL_NIL);
+  cl_object x = ecl_alloc_object(t_vector);
+  x->vector.elttype = ecl_aet_object;
+  x->vector.displaced = ECL_NIL;
+  x->vector.dim = size;
+  x->vector.fillp = 0;
+  x->vector.flags = ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER;
+  x->vector.self.t = (cl_object *)ecl_alloc(size * sizeof(cl_object));
+  return x;
 }
 
 static void
 push_lex(cl_object stack, cl_object new)
 {
-  cl_vector_push(new, stack);
+  ecl_stack_pshu(stack, new);
 }
 
 /* -------------------- AIDS TO THE INTERPRETER -------------------- */
