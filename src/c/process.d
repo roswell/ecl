@@ -195,9 +195,10 @@ ecl_adopt_cpu()
   /* Allocate, initialize and switch to the real environment. */
   the_env = _ecl_alloc_env(0);
   memcpy(the_env, env_aux, sizeof(*the_env));
-  ecl_set_process_env(the_env);
   add_env(the_env);
   init_tl_bindings(ECL_NIL, the_env);
+  ecl_set_process_env(the_env);
+  ecl_modules_init_cpu(the_env);
 
   return the_env;
 }
@@ -209,6 +210,7 @@ ecl_disown_cpu()
   if (the_env == NULL)
     return;
   ecl_disable_interrupts_env(the_env);
+  ecl_modules_free_cpu(the_env);
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(the_env->thread);
 #endif
@@ -229,6 +231,7 @@ thread_entry_point(void *ptr)
   cl_object process = the_env->own_process;
   /* Setup the environment for the execution of the thread. */
   ecl_set_process_env(the_env);
+  ecl_modules_init_cpu(the_env);
   ecl_cs_init(the_env);
 
   process->process.entry(0);
@@ -242,8 +245,10 @@ thread_entry_point(void *ptr)
    * pthread_cancel() to kill a process, but rather use the lisp functions
    * mp_interrupt_process() and mp_process_kill(). */
 
+  ecl_disable_interrupts_env(the_env);
   ecl_set_process_env(NULL);
   the_env->own_process = ECL_NIL;
+  ecl_modules_free_cpu(the_env);
   del_env(the_env);
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(the_env->thread);

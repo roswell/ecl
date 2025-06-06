@@ -64,7 +64,6 @@ struct ecl_c_stack {
  * Per-thread data.
  */
 
-typedef struct cl_env_struct *cl_env_ptr;
 struct cl_env_struct {
         /* Flag for disabling interrupts while we call C library functions. */
         volatile int disable_interrupts;
@@ -1876,6 +1875,19 @@ extern ECL_API cl_object mp_giveup_rwlock_write(cl_object lock);
 extern ECL_API cl_object ecl_make_rwlock(cl_object lock);
 
 #endif /* ECL_THREADS */
+
+/* nucleus/module.c */
+
+extern ECL_API cl_object ecl_add_module(cl_object self);
+extern ECL_API cl_object ecl_del_module(cl_object self);
+extern ECL_API cl_object ecl_modules_init_env(cl_env_ptr the_env);
+extern ECL_API cl_object ecl_modules_free_env(cl_env_ptr the_env);
+extern ECL_API cl_object ecl_modules_init_cpu(cl_env_ptr the_env);
+extern ECL_API cl_object ecl_modules_free_cpu(cl_env_ptr the_env);
+
+extern ECL_API cl_object ecl_module_no_op_env(cl_env_ptr the_env);
+extern ECL_API cl_object ecl_module_no_op_cpu(cl_env_ptr the_env);
+extern ECL_API cl_object ecl_module_no_op();
 
 /* time.c */
 
