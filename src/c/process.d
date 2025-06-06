@@ -260,7 +260,12 @@ free_cpu_process(cl_env_ptr the_env)
 #ifdef ECL_WINDOWS_THREADS
   CloseHandle(the_env->thread);
 #endif
+#if 0
+  /* KLUDGE when we destroy the module in destroy_process, the stack is freed
+     and threads are dereferenced. It might be that GC will try to pick them up
+     to run finalizers -- in that case we will still require a process env. */
   ecl_set_process_env(NULL);
+#endif
   return ECL_NIL;
 }
 
@@ -276,6 +281,10 @@ free_env_process(cl_env_ptr the_env)
 static cl_object
 destroy_process(void)
 {
+#ifdef ECL_THREADS
+  ecl_free_stack(ecl_core.threads);
+  ecl_core.threads = ECL_NIL;
+#endif
   return ECL_NIL;
 }
 

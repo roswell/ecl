@@ -184,4 +184,6 @@ free_modules(void)
   loop_across_stack_filo(var, ecl_core.modules) {
     ecl_del_module(var);
   } end_loop_across_stack();
+  ecl_free_stack(ecl_core.modules);
+  ecl_core.modules = ECL_NIL;
 }
