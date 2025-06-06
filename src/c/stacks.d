@@ -955,6 +955,7 @@ cl_object
 ecl_make_stack(cl_index size)
 {
   cl_object x = ecl_malloc(sizeof(struct ecl_vector));
+  x->vector.t = t_vector;
   x->vector.elttype = ecl_aet_object;
   x->vector.self.t = NULL;
   x->vector.displaced = ECL_NIL;
@@ -968,6 +969,7 @@ void
 ecl_free_stack(cl_object self)
 {
   ecl_free(self->vector.self.t);
+  ecl_free(self);
 }
 
 void
