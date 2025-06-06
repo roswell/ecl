@@ -1060,6 +1060,14 @@ ecl_stack_index(cl_object self) {
   return self->vector.fillp;
 }
 
+void
+ecl_wipe_stack(cl_object self) {
+  int i, fp=self->vector.fillp;
+  self->vector.fillp = 0;
+  for (i=0; i<fp; i++)
+    self->vector.self.t[i] = ECL_NIL;
+}
+
 cl_object
 ecl_stack_push(cl_object self, cl_object elt)
 {
