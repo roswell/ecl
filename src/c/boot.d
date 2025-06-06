@@ -260,20 +260,22 @@ ecl_boot(void)
   i = ecl_option_values[ECL_OPT_BOOTED];
   if (i) {
     if (i < 0) {
-      /* We have called cl_shutdown and want to use ECL again. */
+      /* The runtime has been only suspended. Resume it.*/
       ecl_set_option(ECL_OPT_BOOTED, 1);
     }
     return 1;
   }
   init_modules();
   ecl_core.path_max = MAXPATHLEN;
-
   return 0;
 }
 
 int
 ecl_halt(void)
 {
-  ecl_set_option(ECL_OPT_BOOTED, -1);
+  int i = ecl_option_values[ECL_OPT_BOOTED];
+  if (i > 0)
+    free_modules();
+  ecl_set_option(ECL_OPT_BOOTED, 0);
   return 0;
 }
