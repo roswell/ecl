@@ -282,14 +282,12 @@ SONAME=''
 SONAME_LDFLAGS=''
 case "${host_os}" in
         linux-android*)
-                thehost='android'
+                thehost='ANDROID'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
-#               THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,--rpath,~A'
                 clibs="-ldl ${clibs}"
-                # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
                 CFLAGS="-D_GNU_SOURCE -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"

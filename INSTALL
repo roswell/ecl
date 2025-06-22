@@ -23,51 +23,30 @@ If you do not have access to the online version, follow the following recipies.
 6. Move that directory wherever you need.
 
 * Cross-compile for the android platform (from the UNIX machine)
-1. Build the host ECL
-   #+BEGIN_SRC shell-script
-     # C99 complex numbers are not fully supported on Android
-     ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2"\
-                 --prefix=`pwd`/ecl-android-host --disable-c99complex
-     make -j9
-     make install
-     rm -r build
-     export ECL_TO_RUN=`pwd`/ecl-android-host/bin/ecl
-   #+END_SRC
-2. Configure the toolchain (requires android-ndk version 15 or higher, known to work with version 17c)
+1. Configure the toolchain (requires android-ndk version 22 or higher, known to work with version 28b)
    and export the necessary paths:
    #+BEGIN_SRC shell-script
      export NDK_PATH=/opt/android-ndk
      export ANDROID_API=23
-     export TOOLCHAIN_PATH=`pwd`/android-toolchain
-     ${NDK_PATH}/build/tools/make_standalone_toolchain.py --arch arm --install-dir ${TOOLCHAIN_PATH} --api ${ANDROID_API}
-     export SYSROOT=${TOOLCHAIN_PATH}/sysroot
-     export PATH=${TOOLCHAIN_PATH}/bin:$PATH
+     export TOOLCHAIN_PATH=${NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64 # use darwin instead of linux if compiling on Mac OS host
+	  export TARGET=armv7a-linux-androideabi
   #+END_SRC
-3. Build and install the target library
+2. Build and install the target library
    #+BEGIN_SRC shell-script
-     # boehm GC is not compatible with ld.gold linker, force use of ld.bfd
-     export LDFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -fuse-ld=bfd"
-     export CPPFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -isystem ${SYSROOT}/usr/include/arm-linux-androideabi"
-     export CC=arm-linux-androideabi-clang
-     ./configure --host=arm-linux-androideabi \
+	  export CC="${TOOLCHAIN_PATH}/bin/clang --target=${TARGET}${ANDROID_API}"
+	  export LD=${TOOLCHAIN_PATH}/bin/ld
+	  export AR=${TOOLCHAIN_PATH}/bin/llvm-ar
+	  export RANLIB=${TOOLCHAIN_PATH}/bin/llvm-ranlib
+     export ECL_TO_RUN=/usr/local/bin/ecl
+    ./configure --host=${TARGET} \
                  --prefix=`pwd`/ecl-android \
                  --disable-c99complex \
                  --with-cross-config=`pwd`/src/util/android-arm.cross_config
      make -j9
      make install
    #+END_SRC
-4. Library and assets in the ecl-android directory are ready to run on
+3. Library and assets in the ecl-android directory are ready to run on
    the Android system.
-
-** Building ecl-android on Darwin (OSX)
-If your host platform is darwin, then the host compiler should be
-built with the Apple's GCC (not the GCC from Macports). Using the
-MacPort command:
-#+BEGIN_SRC shell-script
-  sudo port select --set gcc none
-#+END_SRC
-
-Hint provided by Pascal J. Bourguignon.
 
 
 * Cross-compile for the iOS platform (needs Xcode 11 or higher)

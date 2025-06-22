@@ -108,47 +108,40 @@ install NSIS and run nmake windows-nsi.
 
 @subsubsection Android
 
-Cross compiling ECL for Android requires first building the host ECL
-program. At present this host ECL needs to have the same word size and
-same optional capabilities (e.g. threads, C99 complex floats) as
-the target system. Therefore, to build the host ECL for a 32 bit ARM
-system, use the following commands:
-
-@example
-# C99 complex numbers are not fully supported on Android
-./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2"\
-            --prefix=`pwd`/ecl-android-host \
-            --disable-c99complex
-make -j9
-make install
-rm -r build
-export ECL_TO_RUN=`pwd`/ecl-android-host/bin/ecl
-@end example
-
-The next step is to configure the cross compilation toolchain. This
-requires the Android NDK version 15 or higher.
+Cross compiling ECL for Android requires first configuring the cross
+compilation toolchain. This requires the Android NDK version 22 or
+higher.
 
 @example
 @verbatim
 export NDK_PATH=/opt/android-ndk
 export ANDROID_API=23
-export TOOLCHAIN_PATH=`pwd`/android-toolchain
-${NDK_PATH}/build/tools/make_standalone_toolchain.py --arch arm --install-dir ${TOOLCHAIN_PATH} --api ${ANDROID_API}
-export SYSROOT=${TOOLCHAIN_PATH}/sysroot
-export PATH=${TOOLCHAIN_PATH}/bin:$PATH
+export TOOLCHAIN_PATH=${NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64 # use darwin instead of linux if compiling on Mac OS host
+export TARGET=armv7a-linux-androideabi
 @end verbatim
 @end example
 
 Here, @code{ANDROID_API} is the minimum Android API version ECL will
-run on. Finally, we can build and install the target ECL:
+run on. Moreover, an existing installation ECL is required. This installation
+has to be the same version as the one you are attempting to build.
+Assuming you have installed in "/usr/local":
 
 @example
 @verbatim
-# boehm GC is not compatible with ld.gold linker, force use of ld.bfd
-export LDFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -fuse-ld=bfd"
-export CPPFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -isystem ${SYSROOT}/usr/include/arm-linux-androideabi"
-export CC=arm-linux-androideabi-clang
-./configure --host=arm-linux-androideabi \
+export ECL_TO_RUN=/usr/local/bin/ecl
+@end verbatim
+@end example
+
+Finally, we can build and install the target ECL:
+
+@example
+@verbatim
+export CC="${TOOLCHAIN_PATH}/bin/clang --target=${TARGET}${ANDROID_API}"
+export LD=${TOOLCHAIN_PATH}/bin/ld
+export AR=${TOOLCHAIN_PATH}/bin/llvm-ar
+export RANLIB=${TOOLCHAIN_PATH}/bin/llvm-ranlib
+export ECL_TO_RUN=/usr/local/bin/ecl
+./configure --host=${TARGET} \
             --prefix=`pwd`/ecl-android \
             --disable-c99complex \
             --with-cross-config=`pwd`/src/util/android-arm.cross_config
