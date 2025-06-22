@@ -335,12 +335,12 @@ cl_symbol_name(cl_object x)
     x->symbol.plist = cl_copy_list(sym->symbol.plist);
     x->symbol.undef_entry = sym->symbol.undef_entry;
     x->symbol.sfdef = sym->symbol.sfdef;
-    x->symbol.macfun = sym->symbol.macfun;
     if (ECL_FBOUNDP(sym)) {
       x->symbol.gfdef = sym->symbol.gfdef;
     } else {
       ECL_FMAKUNBOUND(x);
     }
+    x->symbol.macfun = sym->symbol.macfun;
 #ifdef ECL_THREADS
     x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
