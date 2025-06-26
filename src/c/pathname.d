@@ -1565,28 +1565,46 @@ coerce_to_from_pathname(cl_object x, cl_object host)
   @(return set);
 @)
 
+/* This function matches a single component SOURCE against a single component
+   MATCH. The result is expected to be a list that contains all matches. It is a
+   list accomodate partial wildcards inside the MATCH component. For example:
+
+       ("foo" "bar") -> :error
+       ("foo" "foo") -> ()
+       ("f*o" "fo") ->  ("")
+       ("f*o" "foo") ->  ("o")
+       ("f*b*q*" "foobarqux") -> ("oo" "ar" "ux")
+       ("whatev" :wild) -> ("whatev")
+
+   At least that seems to be the purpose from careful reading. -- jd 2025-06-26
+*/
 static cl_object
-find_wilds(cl_object l, cl_object source, cl_object match)
+find_wilds(cl_object source, cl_object match)
 {
+  cl_object result = ECL_NIL;
   cl_index i, j, k, ls, lm;
 
   if (match == @':wild')
     return ecl_list1(source);
   if (!ecl_stringp(match) || !ecl_stringp(source)) {
+    /* i.e :ABSOLUTE vs :ABSOLUTE */
     if (match != source)
       return @':error';
-    return l;
+    return ECL_NIL;
   }
   ls = ecl_length(source);
   lm = ecl_length(match);
   for(i = j = 0; i < ls && j < lm; ) {
     cl_index pattern_char = ecl_char(match,j);
     if (pattern_char == '*') {
-      for (j++, k = i;
+      /* Find the shortest match to the next character. */
+      pattern_char = ecl_char(match,++j);
+      /* k = (position pattern_char source :start i) */
+      for (k = i;
            k < ls && ecl_char(source,k) != pattern_char;
            k++)
         ;
-      l = CONS(make_one(source, i, k), l);
+      result = CONS(make_one(source, i, k), result);
       i = k;
       continue;
     }
@@ -1596,7 +1614,7 @@ find_wilds(cl_object l, cl_object source, cl_object match)
   }
   if (i < ls || j < lm)
     return @':error';
-  return l;
+  return result;
 }
 
 static cl_object
@@ -1622,8 +1640,8 @@ find_list_wilds(cl_object a, cl_object mask)
       if (item_mask != @':absolute' && item_mask != @':relative')
         return @':error';
     } else {
-      l2 = find_wilds(l, CAR(a), item_mask);
-      if (l == @':error')
+      l2 = find_wilds(CAR(a), item_mask);
+      if (l2 == @':error')
         return @':error';
       if (!Null(l2))
         l = CONS(l2, l);
@@ -1754,7 +1772,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
   directory = d;
 
   /* Match name */
-  wilds = find_wilds(ECL_NIL, source->pathname.name, from->pathname.name);
+  wilds = find_wilds(source->pathname.name, from->pathname.name);
   if (wilds == @':error') goto error2;
   if (Null(to->pathname.name)) {
     d = translate_component_case(source->pathname.name, fromcase, tocase);
@@ -1767,7 +1785,7 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
   name = d;
 
   /* Match type */
-  wilds = find_wilds(ECL_NIL, source->pathname.type, from->pathname.type);
+  wilds = find_wilds(source->pathname.type, from->pathname.type);
   if (wilds == @':error') goto error2;
   if (Null(to->pathname.type)) {
     d = translate_component_case(source->pathname.type, fromcase, tocase);
