@@ -29,6 +29,9 @@
 
 * Pending changes since 24.5.10
 
+- Logical pathnames with multiple wild directories are now correctly
+  translated. Previously using them resulted in an infinite recursion
+
 - Process initial bindings, when specified, are inherited when the process
   is enabled (previously they were copied when the process was created)
 
