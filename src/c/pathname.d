@@ -1662,9 +1662,16 @@ copy_wildcards(cl_object *wilds_list, cl_object pattern)
     if (ecl_endp(wilds))
       return @':error';
     pattern = CAR(wilds);
+    if(CONSP(pattern)) {
+      /* find_wilds constructs a list with one element */
+      if(!Null(CDR(pattern)))
+        return @':error';
+      pattern = CAR(pattern);
+    }
     *wilds_list = CDR(wilds);
     return pattern;
   }
+
   if (pattern == @':wild-inferiors')
     return @':error';
   if (!ecl_stringp(pattern))
@@ -1702,8 +1709,7 @@ copy_wildcards(cl_object *wilds_list, cl_object pattern)
 static cl_object
 copy_list_wildcards(cl_object *wilds, cl_object to)
 {
-  cl_object l = ECL_NIL;
-
+  cl_object result = ECL_NIL;
   while (!ecl_endp(to)) {
     cl_object d, mask = CAR(to);
     if (mask == @':wild-inferiors') {
@@ -1713,22 +1719,22 @@ copy_list_wildcards(cl_object *wilds, cl_object to)
       else {
         cl_object dirlist = CAR(list);
         if (CONSP(dirlist))
-          l = ecl_append(CAR(list), l);
-        else if (!Null(CAR(list)))
+          result = ecl_append(dirlist, result);
+        else if (!Null(dirlist))
           return @':error';
       }
       *wilds = CDR(list);
     } else {
-      d = copy_wildcards(wilds, CAR(to));
+      d = copy_wildcards(wilds, mask);
       if (d == @':error')
         return d;
-      l = CONS(d, l);
+      result = CONS(d, result);
     }
     to = CDR(to);
   }
-  if (CONSP(l))
-    l = @nreverse(l);
-  return l;
+  if (CONSP(result))
+    result = @nreverse(result);
+  return result;
 }
 
 @(defun translate-pathname (source from to &key)
