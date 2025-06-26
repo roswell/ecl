@@ -632,3 +632,26 @@
                  (ntimes 2048 (apply #'append (make-list 2048 :initial-element '(:foo))))
                  (is (typep n 'number)))))
       (invoke-test-case))))
+
+;;; Reported by: Artyom Bologov
+;;; Created: 2025-06-26
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/784
+;;; Description
+;;;
+;;;     When working with multiple wild components in the directory we've
+;;;     entered an infinite recursion becaue find_list_wildcards created a
+;;;     circular list due to invalid interfacing with find_wildcards.
+;;;
+;;;     Moreover, for a similar cause, we didn't translate correctly such
+;;;     pathnames even after fixing the issue. copy_wildcards did not anticipate
+;;;     that for a :WILD component the result could a list from find_wildcards.
+(deftest mix.0032.logical-pathname-with-multiple-wildcards ()
+  (setf (logical-pathname-translations "x")
+        `(("X:a;*;b;*;*.*" "/hello/*/hi/*/what/*.*")))
+  ;; We don't use #P"x:a;bonjour;b;barev;greetings.me" because then the reader
+  ;; constructs the pathname before the logical pathname translation is defined
+  ;; - in that case it is not recognized as logical and won't be translated.
+  (let* ((pathname (parse-namestring "x:a;bonjour;b;barev;greetings.me"))
+         (result (translate-logical-pathname pathname))
+         (expect #P"/hello/bonjour/hi/barev/what/greetings.me"))
+    (is (equalp result expect))))
