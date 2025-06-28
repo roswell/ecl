@@ -195,7 +195,7 @@
                        nil nil)))
     (signals simple-error (run-env-program :environ :bam) nil nil)
     #-cygwin ;; Cygwin always injects `WINDIR=C:\\Windows' variable.
-    (is (null (slurp (run-env-program :environ nil))))))
+    (is (null (slurp (run-env-program :output :stream :environ nil))))))
 
 ;;; Date: 2022-10-22
 ;;; From: Marius Gerbershagen
