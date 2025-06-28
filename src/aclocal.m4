@@ -73,6 +73,7 @@ else
   AC_DEFINE([ecl_long_long_t], [long long], [compiler understands long long])
   AC_DEFINE([ecl_ulong_long_t], [unsigned long long], [compiler understands long long])
   AC_DEFINE_UNQUOTED([ECL_LONG_LONG_BITS],[$ECL_LONG_LONG_BITS], [ECL_LONG_LONG_BITS])
+  AC_SUBST(ECL_LONG_LONG_BITS)
 fi
 ])
 
@@ -131,6 +132,7 @@ CL_FIXNUM_TYPE=int
 CL_FIXNUM_BITS=32
 CL_FIXNUM_MAX=536870911L
 CL_FIXNUM_MIN=-536870912L
+CL_SHORT_BITS=32
 CL_INT_BITS=32
 CL_LONG_BITS=32
 
@@ -603,7 +605,7 @@ fi
 
 dnl ---------------------------------------------------------------------
 dnl Check availability of standard sized integer types of a given width.  
-dnl On success, define the global variables ECL_INTx_T and ECL_UNITx_T to 
+dnl On success, define the global variables ECL_INTx_T and ECL_UINTx_T to
 dnl hold the names of the corresponding standard C integer types.
 AC_DEFUN(ECL_CHECK_SIZED_INTEGER_TYPE,[
 AC_TYPE_INT$1_T
@@ -731,6 +733,7 @@ AC_SUBST(CL_FIXNUM_TYPE)
 AC_SUBST(CL_FIXNUM_BITS)
 AC_SUBST(CL_FIXNUM_MAX)
 AC_SUBST(CL_FIXNUM_MIN)
+AC_SUBST(CL_SHORT_BITS)
 AC_SUBST(CL_INT_BITS)
 AC_SUBST(CL_LONG_BITS)
 AC_MSG_CHECKING(appropriate type for fixnums)
@@ -792,6 +795,13 @@ int main() {
   }
   fprintf(f,"CL_FIXNUM_TYPE='%s';",int_type);
   fprintf(f,"CL_FIXNUM_BITS='%d';",bits);
+  {
+    unsigned short x = 1;
+    for (bits = 0; x; bits++) {
+      x <<= 1;
+    }
+    fprintf(f,"CL_SHORT_BITS='%d';",bits);
+  }
   {
     unsigned int x = 1;
     for (bits = 0; x; bits++) {
