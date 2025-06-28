@@ -101,8 +101,8 @@ struct cl_env_struct {
         cl_object stack_frame;  /* Current stack frame */
 
         /* -- System Processes (native threads) ------------------------------ */
-#ifdef ECL_THREADS
         cl_object own_process; /* Backpointer to the host process. */
+#ifdef ECL_THREADS
         int cleanup;
 #endif
 
