@@ -195,6 +195,8 @@ ecl_init_first_env(cl_env_ptr env)
   env->default_sigmask = cl_core.default_sigmask;
 #ifdef ECL_THREADS
   init_threads();
+#else
+  ecl_cs_init(env);
 #endif
   init_env_mp(env);
   init_env_int(env);
