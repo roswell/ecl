@@ -358,10 +358,8 @@
 (defun fun-c-compatible-variadic-signature (fun)
   ;; Returns true if we need to generate a signature of the form
   ;; `cl_object f(cl_narg narg, ...)`
-  #-c-compatible-variadic-dispatch
-  nil
-  #+c-compatible-variadic-dispatch
-  (and (fun-needs-narg fun)
+  (and *c-compatible-variadic-dispatch*
+       (fun-needs-narg fun)
        ;; local functions or lexical closures are never called via a
        ;; function pointer
        (not (eq (fun-closure fun) 'LEXICAL))
@@ -404,25 +402,24 @@
       (t3function-header fun
                          (fun-variadic-entrypoint-cfun fun)
                          t
-                         #+c-compatible-variadic-dispatch t))
+                         *c-compatible-variadic-dispatch*))
     (wt-nl-open-brace)
     (wt-maybe-check-num-arguments t
                                   (fun-minarg fun)
                                   (fun-maxarg fun)
                                   (fun-name fun))
-    #-c-compatible-variadic-dispatch
-    (wt-return (fun-required-lcls fun))
-    #+c-compatible-variadic-dispatch
-    (let ((maxargs (min (fun-maxarg fun) (1+ si:c-arguments-limit))))
-      (when (plusp maxargs)
-        (wt-nl "cl_object x[" maxargs "];")
-        (wt-nl "va_list args; va_start(args,narg);")
-        (loop for i below maxargs
-              do (wt-nl "x[" i "] = ") (wt-coerce-loc :object 'VA-ARG) (wt ";"))
-        (wt-nl "va_end(args);"))
-      (let ((args (loop for i below maxargs
-                        collect (concatenate 'string "x[" (write-to-string i) "]"))))
-        (wt-return args)))))
+    (if (not *c-compatible-variadic-dispatch*)
+        (wt-return (fun-required-lcls fun))
+        (let ((maxargs (min (fun-maxarg fun) (1+ si:c-arguments-limit))))
+          (when (plusp maxargs)
+            (wt-nl "cl_object x[" maxargs "];")
+            (wt-nl "va_list args; va_start(args,narg);")
+            (loop for i below maxargs
+                  do (wt-nl "x[" i "] = ") (wt-coerce-loc :object 'VA-ARG) (wt ";"))
+            (wt-nl "va_end(args);"))
+          (let ((args (loop for i below maxargs
+                            collect (concatenate 'string "x[" (write-to-string i) "]"))))
+            (wt-return args))))))
 
 (defun fun-fixed-narg-main-entrypoint (fun)
   "Number of fixed arguments for fun. If both variadic and ordinary
@@ -430,8 +427,8 @@ entrypoints exist, return the number of fixed arguments for the
 variadic entrypoint. This may differ from the number of required
 parameters of the corresponding Lisp function if we are generating a C
 compatible variadic signature."
-  #+c-compatible-variadic-dispatch
-  (when (or (fun-variadic-entrypoint fun) (fun-c-compatible-variadic-signature fun))
+  (when (and *c-compatible-variadic-dispatch*
+             (or (fun-variadic-entrypoint fun) (fun-c-compatible-variadic-signature fun)))
     (return-from fun-fixed-narg-main-entrypoint 0))
   (min (fun-minarg fun) si:c-arguments-limit))
 
