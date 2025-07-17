@@ -2325,6 +2325,8 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
     cl_index bds_ndx;
     cl_object progv_list;
 
+    ecl_bds_bind(env, @'*package*', ecl_cmp_symbol_value(env, @'*package*'));
+    ecl_bds_bind(env, @'*readtable*', ecl_cmp_symbol_value(env, @'*readtable*'));
     ecl_bds_bind(env, @'si::*cblock*', block);
     env->packages_to_be_created_p = ECL_T;
 
@@ -2450,7 +2452,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
       block->cblock.temp_data_size = 0;
       ecl_dealloc(VVtemp);
     }
-    ecl_bds_unwind1(env);
+    ecl_bds_unwind_n(env, 3);
   } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     if (in != OBJNULL)
       cl_close(1,in);

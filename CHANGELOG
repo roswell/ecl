@@ -29,6 +29,9 @@
 
 * Pending changes since 24.5.10
 
+- *readtable* and *package* are local to an initialized module preventing
+  an issue where file-locality of them did not propagate to executables
+
 - Logical pathnames with multiple wild directories are now correctly
   translated. Previously using them resulted in an infinite recursion
 
