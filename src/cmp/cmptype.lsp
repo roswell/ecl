@@ -42,7 +42,7 @@
                                  (long-float   . 0.0L1)
                                  (double-float . 0.0D1)
                                  (single-float . 0.0F1)
-                                 ,@(when (member :complex-float *features*)
+                                 ,@(when *complex-float*
                                      '((si:complex-single-float . #c(0.0f0 0.0f0))
                                        (si:complex-double-float . #c(0.0d0 0.0d0))
                                        (si:complex-long-float . #c(0.0l0 0.0l0)))))

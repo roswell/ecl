@@ -355,8 +355,7 @@ from the C language code.  NIL means \"do not create the file\"."
       (error "Cannot cross compile as the target ECL version ~a does not match the host ECL version ~a"
              *target-lisp-implementation-version* (lisp-implementation-version)))
     (let* ((features-to-match '(#-unicode :unicode #-clos :clos
-                                #-threads :threads #-dlopen :dlopen
-                                #-complex-float :complex-float))
+                                #-threads :threads #-dlopen :dlopen))
            (missing-features (intersection features-to-match *features*)))
       (unless (null missing-features)
         (warn "Cross compiling to a target with ~{~#[~;~(~a~)~;~(~a~) and ~(~a~)~:;~@{~(~a~)~#[~; and ~:;, ~]~}~]~} support from a host ECL which doesn't include these features is unsupported. Please use a host with matching feature set."

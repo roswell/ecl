@@ -97,6 +97,7 @@
 ;;;;
 ;;;;  CMPCBK --  Callbacks: lisp functions that can be called from the C world
 
+
 (defconstant +foreign-elt-type-codes+
   '(                (:char               . "ECL_FFI_CHAR")
                     (:unsigned-char      . "ECL_FFI_UNSIGNED_CHAR")
@@ -122,9 +123,9 @@
                     (:float              . "ECL_FFI_FLOAT")
                     (:double             . "ECL_FFI_DOUBLE")
                     (:long-double        . "ECL_FFI_LONG_DOUBLE")
-    #+complex-float (:csfloat            . "ECL_FFI_CSFLOAT")
-    #+complex-float (:cdfloat            . "ECL_FFI_CDFLOAT")
-    #+complex-float (:clfloat            . "ECL_FFI_CLFLOAT")
+                    (:csfloat            . "ECL_FFI_CSFLOAT")
+                    (:cdfloat            . "ECL_FFI_CDFLOAT")
+                    (:clfloat            . "ECL_FFI_CLFLOAT")
                     (:void               . "ECL_FFI_VOID")))
 
 (defun foreign-elt-type-code (type)

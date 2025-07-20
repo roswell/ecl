@@ -227,21 +227,6 @@
     (single-float . (float x 0.0f0))
     (double-float . (float x 0.0d0))
     (long-float . (float x 0.0l0))
-    #+complex-float
-    (si:complex-single-float . (let ((y x))
-                                 (declare (:read-only y))
-                                 (complex (float (realpart y) 0.0f0)
-                                          (float (imagpart y) 0.0f0))))
-    #+complex-float
-    (si:complex-double-float . (let ((y x))
-                                 (declare (:read-only y))
-                                 (complex (float (realpart y) 0.0d0)
-                                          (float (imagpart y) 0.0d0))))
-    #+complex-float
-    (si:complex-long-float . (let ((y x))
-                               (declare (:read-only y))
-                               (complex (float (realpart y) 0.0l0)
-                                        (float (imagpart y) 0.0l0))))
     (complex . (let ((y x))
                  (declare (:read-only y))
                  (complex (realpart y) (imagpart y))))
@@ -274,6 +259,17 @@
           ;; No optimizations that take up too much space unless requested.
           ((not (policy-inline-type-checks))
            form)
+          ;;
+          ;; Complex floats
+          ((and *complex-float* (member type '(si:complex-single-float si:complex-double-float si:complex-long-float)))
+           (let ((prototype (case type
+                              (si:complex-single-float 0.0f0)
+                              (si:complex-double-float 0.0d0)
+                              (si:complex-long-float 0.0l0))))
+            `(let ((y ,value))
+               (declare (:read-only y))
+               (complex (float (realpart y) ,prototype)
+                        (float (imagpart y) ,prototype)))))
           ;;
           ;; Search for a simple template above, replacing X by the value.
           ((loop for (a-type . template) in +coercion-table+

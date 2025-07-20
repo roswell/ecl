@@ -282,7 +282,7 @@
            ((eq loc-host-type :object)
             ;; We relax the check a bit, because it is valid in C to coerce
             ;; between COMPLEX floats of different types.
-            (ensure-valid-object-type 'SI:COMPLEX-FLOAT)
+            (ensure-valid-object-type '(COMPLEX FLOAT))
             (wt-from-object-conversion dest-type loc-type dest-host-type loc))
            (t
             (coercion-error))))
