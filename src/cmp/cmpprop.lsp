@@ -138,9 +138,9 @@
 (defun p1if (c1form fmla true-branch false-branch)
   (declare (ignore c1form))
   (let ((t0 (values-type-primary-type (p1propagate fmla))))
-    (cond ((type-true-p t0)
+    (cond ((type-true-p t0 *cmp-env*)
            (p1propagate true-branch))
-          ((type-false-p t0)
+          ((type-false-p t0 *cmp-env*)
            (p1propagate false-branch))
           (t (let ((t1 (p1propagate true-branch))
                    (t2 (p1propagate false-branch)))
@@ -149,9 +149,9 @@
 (defun p1fmla-not (c1form form)
   (declare (ignore c1form))
   (let ((t0 (values-type-primary-type (p1propagate form))))
-    (cond ((type-true-p t0)
+    (cond ((type-true-p t0 *cmp-env*)
            '(eql nil))
-          ((type-false-p t0)
+          ((type-false-p t0 *cmp-env*)
            '(eql t))
           (t
            '(member t nil)))))
@@ -162,15 +162,15 @@
         for form in butlast
         for type = (p1propagate form)
         for primary-type = (values-type-primary-type type)
-        do (when (type-false-p primary-type)
+        do (when (type-false-p primary-type *cmp-env*)
              (return-from p1fmla-and primary-type))
-           (unless (type-true-p primary-type)
+           (unless (type-true-p primary-type *cmp-env*)
              (setf all-true nil))
         finally
            (setf type (p1propagate last)
                  primary-type (values-type-primary-type type))
-           (return (if (or (type-false-p primary-type)
-                           (and (type-true-p primary-type) all-true))
+           (return (if (or (type-false-p primary-type *cmp-env*)
+                           (and (type-true-p primary-type *cmp-env*) all-true))
                        type
                        (values-type-or 'null type)))))
 
@@ -180,13 +180,13 @@
         for type = (p1propagate form)
         for primary-type = (values-type-primary-type type)
         for output-type = primary-type then (type-or primary-type output-type)
-        do (when (type-true-p primary-type)
+        do (when (type-true-p primary-type *cmp-env*)
              (return-from p1fmla-or (type-and output-type '(not null))))
         finally
            (setf type (p1propagate last)
                  primary-type (values-type-primary-type type)
                  output-type (values-type-or type output-type))
-           (return (if (type-true-p primary-type)
+           (return (if (type-true-p primary-type *cmp-env*)
                        (values-type-and output-type '(not null))
                        output-type))))
 
@@ -245,7 +245,7 @@
           for (a-type c1form) in expressions
           for c1form-type = (p1propagate c1form)
           when (or (member a-type '(t otherwise))
-                   (subtypep var-type a-type))
+                   (subtypep var-type a-type *cmp-env*))
             do (setf output-type c1form-type)
           finally (return output-type))))
 
@@ -254,7 +254,7 @@
   (let ((value-type (p1propagate value))
          ;;(alt-type (p1propagate let-form))
         )
-    (if (subtypep value-type type)
+    (if (subtypep value-type type *cmp-env*)
         value-type
         type)))
 

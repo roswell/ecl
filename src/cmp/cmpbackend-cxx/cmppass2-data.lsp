@@ -243,7 +243,7 @@
               si:*compiler-constants*
               (and (not *use-static-constants-p*)
                    #+sse2
-                   (not (typep object 'ext:sse-pack)))
+                   (not (typep object 'ext:sse-pack *cmp-env*)))
               (not (listp *static-constants*)))
     (ext:if-let ((record (find object *static-constants* :key #'first :test #'equal)))
       (second record)
@@ -263,7 +263,7 @@
 
 (defun try-value-c-inliner (value)
   (ext:when-let ((x (assoc value *optimizable-constants*)))
-    (when (typep value '(or float (complex float)))
+    (when (typep value '(or float (complex float)) *cmp-env*)
       (pushnew "#include <float.h>" *clines-string-list*)
       (pushnew "#include <complex.h>" *clines-string-list*))
     (cdr x)))
@@ -285,13 +285,13 @@
 (defun try-immediate-value (value)
   ;; FIXME we could inline here also (COMPLEX FLOAT). That requires adding an
   ;; emmiter of C complex floats in the function WT1.
-  (typecase value
-    ((or fixnum character float #|#+complex-float (complex float)|#)
+  (cond
+    ((typep value '(or fixnum character float #|#+complex-float (complex float)|#) *cmp-env*)
      (make-vv :value value
               :location nil
               :host-type (lisp-type->host-type (type-of value))))
     #+sse2
-    (ext:sse-pack
+    ((typep value 'ext:sse-pack *cmp-env*)
      (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
             (elt-type (ext:sse-pack-element-type value)))
        (multiple-value-bind (wrapper rtype)
@@ -303,7 +303,7 @@
                   :location (format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
                                     wrapper (coerce bytes 'list))
                   :host-type rtype))))
-    (otherwise
+    (t
      nil)))
 
 
@@ -394,13 +394,14 @@
          (wt "VVtemp[" index "]"))))
 
 (defun wt-vv-value (vv value)
-  (etypecase value
-    ((eql CL:T)      (wt "ECL_T"))
-    ((eql CL:NIL)    (wt "ECL_NIL"))
-    (fixnum          (wt-fixnum value vv))
-    (character       (wt-character value vv))
-    (float           (wt-number value vv))
-    ((complex float) (wt-number value vv))))
+  (cond
+    ((eql value CL:T)                      (wt "ECL_T"))
+    ((eql value CL:NIL)                    (wt "ECL_NIL"))
+    ((typep value 'fixnum *cmp-env*)          (wt-fixnum value vv))
+    ((typep value 'character *cmp-env*)       (wt-character value vv))
+    ((typep value 'float *cmp-env*)           (wt-number value vv))
+    ((typep value '(complex float) *cmp-env*) (wt-number value vv))
+    (t (baboon "wt-vv-value: ~s is not an immediate value, but has no VV index~%" value))))
 
 (defun wt-vv (vv-loc)
   (setf (vv-used-p vv-loc) t)

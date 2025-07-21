@@ -48,8 +48,8 @@
   ;; overflow if we use a smaller integer type (overflows in long long
   ;; computations are taken care of by the compiler before we get to
   ;; this point).
-  #+msvc (princ (cond ((typep value (host-type->lisp-type :long-long)) "LL")
-                      ((typep value (host-type->lisp-type :unsigned-long-long)) "ULL")
+  #+msvc (princ (cond ((typep value (host-type->lisp-type :long-long) *cmp-env*) "LL")
+                      ((typep value (host-type->lisp-type :unsigned-long-long) *cmp-env*) "ULL")
                       (t (baboon :format-control
                                  "wt-fixnum: The number ~A doesn't fit any integer type."
                                  value)))
@@ -225,7 +225,7 @@
     (unless coercer
       (cmperr "Cannot coerce lisp object to C type ~A" host-type))
     (wt (if (or (policy-assume-no-errors)
-                (subtypep loc-type dest-type))
+                (subtypep loc-type dest-type *cmp-env*))
             (host-type-from-lisp-unsafe record)
             coercer)
         "(" loc ")")))
@@ -249,7 +249,7 @@
                  ;; the latter case.
                  (wt "(ecl_miscompilation_error(),0)")))
              (ensure-valid-object-type (a-lisp-type)
-               (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL)
+               (when (subtypep `(AND ,loc-type ,a-lisp-type) NIL *cmp-env*)
                  (coercion-error nil))))
       (when (eq dest-host-type loc-host-type)
         (wt loc)

@@ -43,6 +43,30 @@
 (setq si::+commit-id+ "UNKNOWN")
 
 ;;;
+;;; * Setup cross compilation
+;;;
+
+(when (member "CROSS" *features* :test #'string-equal)
+  (sys:*make-constant 'most-negative-fixnum (parse-integer "@CL_FIXNUM_MIN@" :junk-allowed t))
+  (sys:*make-constant 'most-positive-fixnum (parse-integer "@CL_FIXNUM_MAX@" :junk-allowed t))
+  (sys:*make-constant 'cl-fixnum-bits @CL_FIXNUM_BITS@)
+  (sys:*make-constant 'array-dimension-limit most-positive-fixnum)
+  (sys:*make-constant 'array-total-size-limit most-positive-fixnum)
+  (sys:*make-constant 'ffi:c-short-min (- (ash 1 (1- @CL_SHORT_BITS@))))
+  (sys:*make-constant 'ffi:c-short-max (1- (ash 1 (1- @CL_SHORT_BITS@))))
+  (sys:*make-constant 'ffi:c-ushort-max (1- (ash 1 @CL_SHORT_BITS@)))
+  (sys:*make-constant 'ffi:c-int-min (- (ash 1 (1- @CL_INT_BITS@))))
+  (sys:*make-constant 'ffi:c-int-max (1- (ash 1 (1- @CL_INT_BITS@))))
+  (sys:*make-constant 'ffi:c-uint-max (1- (ash 1 @CL_INT_BITS@)))
+  (sys:*make-constant 'ffi:c-long-min (- (ash 1 (1- @CL_LONG_BITS@))))
+  (sys:*make-constant 'ffi:c-long-max (1- (ash 1 (1- @CL_LONG_BITS@))))
+  (sys:*make-constant 'ffi:c-ulong-max (1- (ash 1 @CL_LONG_BITS@)))
+  (when (member "LONG-LONG" *features* :test #'string-equal)
+    (sys:*make-constant 'ffi:c-long-long-min (- (ash 1 (1- @ECL_LONG_LONG_BITS@))))
+    (sys:*make-constant 'ffi:c-long-long-max (1- (ash 1 (1- @ECL_LONG_LONG_BITS@))))
+    (sys:*make-constant 'ffi:c-ulong-long-max (1- (ash 1 @ECL_LONG_LONG_BITS@)))))
+
+;;;
 ;;; * Load Common-Lisp base library
 ;;;
 (princ "

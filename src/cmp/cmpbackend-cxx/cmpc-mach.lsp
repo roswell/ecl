@@ -30,7 +30,7 @@
   (from-lisp-unsafe nil))
 
 (defun lisp-type-p (type)
-  (subtypep type 'T))
+  (subtypep type 'T *cmp-env*))
 
 (defun host-type-record-unsafe (host-type)
   (gethash host-type (machine-host-type-hash *machine*)))
@@ -57,7 +57,7 @@
     (t
      ;; Find the most specific type that fits
      (dolist (record (machine-sorted-types *machine*) :object)
-       (when (subtypep type (host-type-lisp-type record))
+       (when (subtypep type (host-type-lisp-type record) *cmp-env*)
          (return-from lisp-type->host-type (host-type-name record)))))))
 
 (defun c-number-host-type-p (host-type)
@@ -191,8 +191,8 @@
        :name name
        :lisp-type lisp-type
        :bits bits
-       :numberp (subtypep lisp-type 'number)
-       :integerp (subtypep lisp-type 'integer)
+       :numberp (subtypep lisp-type 'number *cmp-env*)
+       :integerp (subtypep lisp-type 'integer *cmp-env*)
        :c-name c-name
        :to-lisp to-lisp
        :from-lisp from-lisp
@@ -218,7 +218,7 @@
        with fixnum-lisp-type = (host-type-lisp-type fixnum-host-type)
        for (name . rest) in +host-types+
        for r = (gethash name table)
-       when (and r (subtypep (host-type-lisp-type r) fixnum-lisp-type))
+       when (and r (subtypep (host-type-lisp-type r) fixnum-lisp-type *cmp-env*))
        do (setf (host-type-from-lisp-unsafe r) "ecl_fixnum"))
     ;; Create machine object
     (make-machine :c-types all-c-types
@@ -227,8 +227,5 @@
 
 (defun machine-c-type-p (name)
   (gethash name (machine-host-type-hash *machine*)))
-
-(defun machine-fixnump (number)
-  (typep number (host-type-lisp-type (gethash :fixnum number))))
 
 (defvar *default-machine* (setf *machine* (default-machine)))

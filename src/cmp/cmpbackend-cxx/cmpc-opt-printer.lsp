@@ -22,7 +22,7 @@
        (produce-inline-loc (list expression stream)
                            '(:wchar :object) '(:wchar)
                            "ecl_princ_char(#0,#1)" t t))
-      ((and foundp (typep value 'base-string) (< (length value) 80))
+      ((and foundp (typep value 'base-string *cmp-env*) (< (length value) 80))
        (produce-inline-loc (list expression stream)
                            '(:object :object) '(:object)
                            (concatenate 'string "(ecl_princ_str("

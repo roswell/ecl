@@ -17,7 +17,7 @@
 (defun guess-array-element-type (element-type)
   (if (and (setf element-type (extract-constant-value element-type))
            (known-type-p element-type))
-      (upgraded-array-element-type element-type)
+      (upgraded-array-element-type element-type *cmp-env*)
       '*))
 
 (defun guess-array-dimensions-type (orig-dimensions &aux dimensions)
@@ -30,13 +30,13 @@
   (let ((dimensions (extract-constant-value orig-dimensions :failed)))
     (cond ((eq dimensions ':failed)
            '*)
-          ((typep dimensions 'ext:array-index)
+          ((typep dimensions 'ext:array-index *cmp-env*)
            (list dimensions))
           ((and (listp dimensions)
                 (let ((rank (list-length dimensions)))
                   (and (numberp rank)
                        (< -1 rank array-rank-limit)
-                       (every #'(lambda (x) (typep x 'ext:array-index)) dimensions)
+                       (every #'(lambda (x) (typep x 'ext:array-index *cmp-env*)) dimensions)
                        (< (apply '* dimensions) array-total-size-limit))))
            dimensions)
           (t
@@ -255,7 +255,7 @@
     `(ffi:c-inline (,array) ,@(aref tails n))))
 
 (defmacro array-dimension-fast (array n)
-  (if (typep n '(integer 0 #.(1- array-rank-limit)))
+  (if (typep n '(integer 0 #.(1- array-rank-limit)) *cmp-env*)
       (array-dimension-accessor array n)
       (error "In macro ARRAY-DIMENSION-FAST, the index is not a constant integer: ~A"
              n)))

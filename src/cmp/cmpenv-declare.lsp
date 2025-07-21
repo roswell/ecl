@@ -22,7 +22,8 @@
            (every test x))))
 
 (defun type-name-p (name)
-  (or (si:get-sysprop name 'SI::DEFTYPE-DEFINITION)
+  (or (cmp-env-search-type name *cmp-env* nil)
+      (si:get-sysprop name 'SI::DEFTYPE-DEFINITION)
       (find-class name nil)
       (si:get-sysprop name 'SI::STRUCTURE-TYPE)))
 
@@ -114,7 +115,7 @@ and a possible documentation string (only accepted when DOC-P is true)."
                          (valid-type-specifier decl-name))
                    (if (null ok)
                        (cmpwarn "Unknown declaration specifier ~s." decl-name)
-                       (setf types (collect-declared type decl-args types)))                   ))))
+                       (setf types (collect-declared type decl-args types)))))))
        finally (return (values body specials types ignored
                                (nreverse others) doc all-declarations)))))
 

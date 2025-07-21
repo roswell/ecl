@@ -94,6 +94,16 @@ that are susceptible to be changed by PROCLAIM."
         (cmp-env-functions *cmp-env-root*))
   (values))
 
+(defun cmp-env-register-type (name definition &optional (env *cmp-env*))
+  (push (list :type name definition)
+        (cmp-env-variables env))
+  env)
+
+(defun cmp-env-register-types (definitions &optional (env *cmp-env*))
+  (dolist (def definitions)
+    (setf env (cmp-env-register-type (car def) (cdr def) env)))
+  env)
+
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
   (let ((cfb nil)
         (unw nil)
@@ -202,4 +212,12 @@ that are susceptible to be changed by PROCLAIM."
                (eq (second i) kind))
      return (cddr i)
      finally (return default)))
+
+(defun cmp-env-search-type (name &optional (env *cmp-env*) (default name))
+  (loop for i in (car env)
+        when (and (consp i)
+                  (eq (first i) :type)
+                  (eq (second i) name))
+          return (third i)
+        finally (return default)))
 

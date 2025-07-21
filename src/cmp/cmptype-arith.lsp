@@ -39,7 +39,7 @@
 (deftype any () 't)
 
 (defun member-type (type disjoint-supertypes)
-  (member type disjoint-supertypes :test #'subtypep))
+  (member type disjoint-supertypes :test #'(lambda (t1 t2) (subtypep t1 t2 *cmp-env*))))
 
 ;;; Canonicalize the object type to a type recognized by the compiler.
 ;;; Depends on the implementation of TYPECASE.
@@ -68,17 +68,17 @@
 
 (defun valid-type-specifier (type)
   (handler-case
-      (if (subtypep type 'T)
+      (if (subtypep type 'T *cmp-env*)
           (values t type)
           (values nil nil))
     (error ()
       (values nil nil))))
 
 (defun known-type-p (type)
-  (subtypep type T))
+  (subtypep type T *cmp-env*))
 
 (defun trivial-type-p (type)
-  (subtypep T type))
+  (subtypep T type *cmp-env*))
 
 (defun-cached type-and (t1 t2) type-specifier=
   ;; FIXME! Should we allow "*" as type name???
@@ -314,8 +314,8 @@
            (cmpnote "Unknown type ~S" t2)
            T))))
 
-(defun type>= (type1 type2)
-  (subtypep type2 type1))
+(defun type>= (type1 type2 &optional env)
+  (subtypep type2 type1 env))
 
-(defun type-false-p (type) (subtypep type 'null))
-(defun type-true-p (type) (subtypep type '(not null)))
+(defun type-false-p (type &optional env) (subtypep type 'null env))
+(defun type-true-p (type &optional env) (subtypep type '(not null) env))

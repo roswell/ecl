@@ -16,7 +16,7 @@
         (constant-value-p form *cmp-env*)
       (when constantp
         (loop for (type . forms) in (rest args)
-           when (typep value type)
+           when (typep value type *cmp-env*)
            do (return-from c1compiler-typecase (c1progn forms))
            finally (baboon :format-control "COMPILER-TYPECASE form missing a T statement")))))
   (let* ((var-name (pop args))
@@ -25,7 +25,7 @@
     ;; If the first type, which is supposedly the most specific
     ;; already includes the form, we keep it. This optimizes
     ;; most cases of CHECKED-VALUE.
-    (if (subtypep (var-type var) (car first-case))
+    (if (subtypep (var-type var) (car first-case) *cmp-env*)
         (c1progn (cdr first-case))
         (let* ((types '())
                (expressions (loop for (type . forms) in args
@@ -42,7 +42,7 @@
   (loop with var-type = (var-type var)
      for (type form) in expressions
      when (or (member type '(t otherwise))
-              (subtypep var-type type))
+              (subtypep var-type type *cmp-env*))
      return (c2expr form)))
 
 (defconstant +simple-type-assertions+
@@ -97,7 +97,8 @@
                                   value)))
           ((and (policy-evaluate-forms) (constantp value *cmp-env*))
            (if (typep (ext:constant-form-value value *cmp-env*)
-                      (si::flatten-function-types type *cmp-env*))
+                      (si::flatten-function-types type *cmp-env*)
+                      *cmp-env*)
                value
                (progn
                  ;; warn and generate error.
@@ -135,7 +136,7 @@
 
 (defun c2checked-value (c1form type value let-form)
   (declare (ignore c1form))
-  (c2expr (if (subtypep (c1form-primary-type value) type)
+  (c2expr (if (subtypep (c1form-primary-type value) type *cmp-env*)
               value
               let-form)))
 

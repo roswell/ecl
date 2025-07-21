@@ -46,13 +46,13 @@
 
 (defun c2if (c1form fmla form1 form2)
   ;; FIXME! Optimize when FORM1 or FORM2 are constants
-  (cond ((type-true-p (c1form-primary-type fmla))
+  (cond ((type-true-p (c1form-primary-type fmla) *cmp-env*)
          ;; The true branch is always taken
          (warn-dead-code form2 c1form "the test ~S always evaluates to true" fmla)
          (let ((*destination* 'TRASH))
            (c2expr* fmla))
          (c2expr form1))
-        ((type-false-p (c1form-primary-type fmla))
+        ((type-false-p (c1form-primary-type fmla) *cmp-env*)
          ;; The false branch is always taken
          (warn-dead-code form1 c1form "the test ~S always evaluates to false" fmla)
          (let ((*destination* 'TRASH))
@@ -90,11 +90,11 @@
 (defun c2fmla-not (c1form arg)
   (declare (ignore c1form))
   (let ((dest *destination*))
-    (cond ((type-true-p (c1form-primary-type arg))
+    (cond ((type-true-p (c1form-primary-type arg) *cmp-env*)
            (let ((*destination* 'TRASH))
              (c2expr* arg))
            (c2expr (c1nil)))
-          ((type-false-p (c1form-primary-type arg))
+          ((type-false-p (c1form-primary-type arg) *cmp-env*)
            (let ((*destination* 'TRASH))
              (c2expr* arg))
            (c2expr (c1t)))
@@ -114,13 +114,13 @@
                  for expr in butlast
                  for remaining-exprs on butlast
                  for type = (c1form-primary-type expr)
-                 do (cond ((type-false-p type)
+                 do (cond ((type-false-p type *cmp-env*)
                            (warn-dead-code (append (rest remaining-exprs) (list last)) c1form
                                            "the test ~S always evaluates to false" expr)
                            (let ((*destination* exit-dest))
                              (c2expr* expr))
                            (return-from c2expr-and-arguments))
-                          ((type-true-p type)
+                          ((type-true-p type *cmp-env*)
                            (let ((*destination* 'TRASH))
                              (c2expr* expr)))
                           (t
@@ -141,13 +141,13 @@
                  for expr in butlast
                  for remaining-exprs on butlast
                  for type = (c1form-primary-type expr)
-                 do (cond ((type-true-p type)
+                 do (cond ((type-true-p type *cmp-env*)
                            (warn-dead-code (append (rest remaining-exprs) (list last)) c1form
                                            "the test ~S always evaluates to true" expr)
                            (let ((*destination* 'VALUE0))
                              (c2expr* expr))
                            (return-from c2expr-or-arguments))
-                          ((type-false-p type)
+                          ((type-false-p type *cmp-env*)
                            (let ((*destination* 'TRASH))
                              (c2expr* expr)))
                           (t

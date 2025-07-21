@@ -458,7 +458,6 @@ and is not adjustable."
              '(t)))
 
 (defun upgraded-array-element-type (element-type &optional env)
-  (declare (ignore env))
   (let* ((hash (logand 127 (si:hash-eql element-type)))
          (record (aref *upgraded-array-element-type-cache* hash)))
     (declare (type (integer 0 127) hash))
@@ -468,14 +467,13 @@ and is not adjustable."
                                   :test #'eq)
                           element-type
                           (dolist (v +upgraded-array-element-types+ 'T)
-                            (when (subtypep element-type v)
+                            (when (subtypep element-type v env)
                               (return v))))))
           (setf (aref *upgraded-array-element-type-cache* hash)
                 (cons element-type answer))
           answer))))
 
 (defun upgraded-complex-part-type (real-type &optional env)
-  (declare (ignore env))
   ;; ECL does not have specialized complex types. If we had them, the
   ;; code would look as follows
   ;;   (dolist (v '(INTEGER RATIO RATIONAL SINGLE-FLOAT DOUBLE-FLOAT FLOAT REAL)
@@ -483,17 +481,17 @@ and is not adjustable."
   ;;     (when (subtypep real-type v)
   ;;       (return v))))
   #+complex-float
-  (cond ((subtypep real-type 'null)         nil)
-        ((subtypep real-type 'rational)     'rational)
-        ((subtypep real-type 'single-float) 'single-float)
-        ((subtypep real-type 'double-float) 'double-float)
-        ((subtypep real-type 'long-float)   'long-float)
-        ((subtypep real-type 'float)        'float)
-        ((subtypep real-type 'real)         'real)
+  (cond ((subtypep real-type 'null env)         nil)
+        ((subtypep real-type 'rational env)     'rational)
+        ((subtypep real-type 'single-float env) 'single-float)
+        ((subtypep real-type 'double-float env) 'double-float)
+        ((subtypep real-type 'long-float env)   'long-float)
+        ((subtypep real-type 'float env)        'float)
+        ((subtypep real-type 'real env)         'real)
         (t (error "~S is not a valid part type for a complex." real-type)))
   #-complex-float
-  (cond ((subtypep real-type 'null) nil)
-        ((subtypep real-type 'real) 'real)
+  (cond ((subtypep real-type 'null env) nil)
+        ((subtypep real-type 'real env) 'real)
         (t (error "~S is not a valid part type for a complex." real-type))))
 
 (defun in-interval-p (x interval)
@@ -536,6 +534,8 @@ and is not adjustable."
 (defun typep (object type &optional env &aux tp i c)
   "Args: (object type)
 Returns T if X belongs to TYPE; NIL otherwise."
+  (when env
+    (setf type (search-type-in-env type env)))
   (cond ((symbolp type)
          (let ((f (get-sysprop type 'TYPE-PREDICATE)))
            (if f
@@ -549,11 +549,11 @@ Returns T if X belongs to TYPE; NIL otherwise."
          (error-type-specifier type)))
   (case tp
     ((EQL MEMBER) (and (member object i) t))
-    (NOT (not (typep object (car i))))
+    (NOT (not (typep object (car i) env)))
     (OR (dolist (e i)
-          (when (typep object e) (return t))))
+          (when (typep object e env) (return t))))
     (AND (dolist (e i t)
-           (unless (typep object e) (return nil))))
+           (unless (typep object e env) (return nil))))
     (SATISFIES (funcall (car i) object))
     ((T *) t)
     ((NIL) nil)
@@ -584,17 +584,17 @@ Returns T if X belongs to TYPE; NIL otherwise."
               ;; type specifier may be i.e (complex integer) so we
               ;; should check both real and imag part (disregarding
               ;; the fact that both have the same upgraded type).
-              (and (typep (realpart object) (car i))
-                   (typep (imagpart object) (car i))))
+              (and (typep (realpart object) (car i) env)
+                   (typep (imagpart object) (car i) env)))
            ))
     (SEQUENCE (or (listp object) (vectorp object)))
     (CONS (and (consp object)
                (or (endp i)
                    (let ((car-type (first i)))
-                     (or (eq car-type '*) (typep (car object) car-type))))
+                     (or (eq car-type '*) (typep (car object) car-type env))))
                (or (endp (cdr i))
                    (let ((cdr-type (second i)))
-                     (or (eq cdr-type '*) (typep (cdr object) cdr-type))))))
+                     (or (eq cdr-type '*) (typep (cdr object) cdr-type env))))))
     (BASE-STRING
      (and (base-string-p object)
           (or (null i) (match-dimensions object i))))
@@ -1446,7 +1446,7 @@ if not possible."
         (values tag `(OR ,@out)))))
 
 ;;----------------------------------------------------------------------
-;; (CANONICAL-TYPE TYPE)
+;; (CANONICAL-TYPE TYPE ENV)
 ;;
 ;; This function registers all types mentioned in the given expression,
 ;; and outputs a code corresponding to the represented type. This
@@ -1455,6 +1455,8 @@ if not possible."
 ;;
 (defun canonical-type (type env)
   (declare (notinline clos::classp))
+  (when env
+    (setf type (search-type-in-env type env)))
   (cond ((find-registered-tag type))
         ((eq type 'T) -1)
         ((eq type 'NIL) 0)
@@ -1608,3 +1610,19 @@ if not possible."
         (*member-types* *member-types*)
         (*elementary-types* *elementary-types*))
     (fast-type= t1 t2 env)))
+
+(defun search-type-in-env (type env)
+  (let ((type-name type)
+        (type-args nil))
+    (when (consp type)
+      (setf type-name (first type)
+            type-args (rest type)))
+    (dolist (record (car env))
+      (when (and (consp record)
+                 (eq (first record) :type)
+                 (eq (second record) type-name))
+        (return-from search-type-in-env
+          (if (typep (third record) 'function)
+              (funcall (third record) type-args)
+              (third record))))))
+  type)

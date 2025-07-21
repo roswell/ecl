@@ -38,7 +38,7 @@
         (unless (and (consp slot-description)
                      (setf structure-type (car slot-description)
                            slot-index (cdr slot-description))
-                     (typep slot-index 'fixnum))
+                     (typep slot-index 'fixnum *cmp-env*))
           (cmpwarn "Unable to inline access to structure slot ~A because index is corrupt: ~A"
                    fname slot-index)
           (return-from maybe-optimize-structure-access nil))

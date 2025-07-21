@@ -24,6 +24,7 @@ AC_DEFUN([ECL_COMPLEX_C99],[
   fi
   if test "$enable_c99complex" != "no" ; then
     AC_DEFINE([ECL_COMPLEX_FLOAT], [], [ECL_COMPLEX_FLOAT])
+    ECL_ADD_FEATURE(complex-float)
     AC_MSG_RESULT("C99 Complex Float support is available")
   else
     AC_MSG_RESULT("C99 Complex Float support is not available")
@@ -73,13 +74,20 @@ else
   AC_DEFINE([ecl_long_long_t], [long long], [compiler understands long long])
   AC_DEFINE([ecl_ulong_long_t], [unsigned long long], [compiler understands long long])
   AC_DEFINE_UNQUOTED([ECL_LONG_LONG_BITS],[$ECL_LONG_LONG_BITS], [ECL_LONG_LONG_BITS])
+  AC_SUBST(ECL_LONG_LONG_BITS)
+  ECL_ADD_FEATURE(long-long)
 fi
 ])
 
 dnl --------------------------------------------------------------
-dnl Add *feature* for conditional compilation.
+dnl Add *feature* for the target executable.
 AC_DEFUN([ECL_ADD_FEATURE], [
-LSP_FEATURES="(cons :$1 ${LSP_FEATURES})"
+LSP_FEATURES="${LSP_FEATURES} :$1"
+])
+dnl --------------------------------------------------------------
+dnl Add *feature* for conditional compilation.
+AC_DEFUN([ECL_ADD_COMPILATION_FEATURE], [
+COMPILATION_FEATURES=":$1 ${COMPILATION_FEATURES}"
 ])
 
 dnl --------------------------------------------------------------
@@ -88,14 +96,14 @@ dnl compile module into Lisp library if we don't support shared
 dnl libraries.
 dnl
 AC_DEFUN([ECL_ADD_LISP_MODULE], [
-  ECL_ADD_FEATURE([wants-$1])
+  ECL_ADD_COMPILATION_FEATURE([wants-$1])
 ])
 
 dnl --------------------------------------------------------------
 dnl Add lisp module and build it into the compiler.
 dnl
 AC_DEFUN([ECL_ADD_BUILTIN_MODULE], [
-  ECL_ADD_FEATURE([builtin-$1])
+  ECL_ADD_COMPILATION_FEATURE([builtin-$1])
 ])
 
 dnl --------------------------------------------------------------
@@ -131,6 +139,7 @@ CL_FIXNUM_TYPE=int
 CL_FIXNUM_BITS=32
 CL_FIXNUM_MAX=536870911L
 CL_FIXNUM_MIN=-536870912L
+CL_SHORT_BITS=32
 CL_INT_BITS=32
 CL_LONG_BITS=32
 
@@ -197,7 +206,7 @@ EOF
   (echo '#!/bin/sh'; echo exec ${ECL_MIN_TO_RUN} '$''*') > CROSS-COMPILER
   (echo '#!/bin/sh'; echo exec ${DPP_TO_RUN} '$''*') > CROSS-DPP
   chmod +x CROSS-COMPILER CROSS-DPP
-  ECL_ADD_FEATURE([cross])
+  ECL_ADD_COMPILATION_FEATURE([cross])
 fi
 ])
 
@@ -273,18 +282,17 @@ SONAME=''
 SONAME_LDFLAGS=''
 case "${host_os}" in
         linux-android*)
-                thehost='android'
+                thehost='ANDROID'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
-#               THREAD_LIBS='-lpthread'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
                 ECL_LDRPATH='-Wl,--rpath,~A'
                 clibs="-ldl ${clibs}"
-                # Maybe CFLAGS="-D_ISOC99_SOURCE ${CFLAGS}" ???
                 CFLAGS="-D_GNU_SOURCE -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING ${CFLAGS}"
-                ECL_ADD_FEATURE([android])
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([android])
+                ECL_ADD_FEATURE([unix])
                 ;;
 
         # libdir may have a dollar expression inside
@@ -300,6 +308,7 @@ case "${host_os}" in
                 CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 ${CFLAGS}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([unix])
                 ;;
         gnu*)
                 thehost='gnu'
@@ -312,6 +321,7 @@ case "${host_os}" in
                 CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([unix])
                 ;;
         kfreebsd*-gnu)
                 thehost='kfreebsd'
@@ -324,6 +334,8 @@ case "${host_os}" in
                 CFLAGS="-D_GNU_SOURCE ${CFLAGS}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([unix])
+                ECL_ADD_FEATURE([bsd])
                 ;;
         dragonfly*)
                 thehost='dragonfly'
@@ -334,6 +346,8 @@ case "${host_os}" in
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([unix])
+                ECL_ADD_FEATURE([bsd])
                 ;;
         freebsd*)
                 thehost='freebsd'
@@ -344,6 +358,8 @@ case "${host_os}" in
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([unix])
+                ECL_ADD_FEATURE([bsd])
                 ;;
         netbsd*)
                 thehost='netbsd'
@@ -354,6 +370,8 @@ case "${host_os}" in
                 clibs="${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([unix])
+                ECL_ADD_FEATURE([bsd])
                 ;;
         openbsd*)
                 thehost='openbsd'
@@ -365,6 +383,8 @@ case "${host_os}" in
                 clibs="-lpthread ${clibs}"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE([unix])
+                ECL_ADD_FEATURE([bsd])
                 ;;
         solaris*)
                 thehost='sun4sol2'
@@ -381,6 +401,7 @@ case "${host_os}" in
                   SHARED_LDFLAGS="-shared $SHARED_LDFLAGS"
                   BUNDLE_LDFLAGS="-shared $BUNDLE_LDFLAGS"
                 fi
+                ECL_ADD_FEATURE([unix])
                 ;;
         cygwin*)
                 thehost='cygwin'
@@ -398,6 +419,8 @@ case "${host_os}" in
                    # Windows64 calling conventions.
                    with_c_gmp=yes
                 fi
+                ECL_ADD_FEATURE([cygwin])
+                ECL_ADD_FEATURE([unix])
                 ;;
         mingw*)
                 thehost='mingw32'
@@ -415,6 +438,15 @@ case "${host_os}" in
                 PICFLAG=''
                 INSTALL_TARGET='flatinstall'
                 TCPLIBS='-lws2_32'
+                if test "${with_tcp}" = "yes"; then
+                  ECL_ADD_FEATURE(wsock)
+                fi
+                ECL_ADD_FEATURE([mingw32])
+                ECL_ADD_FEATURE([win32])
+                ECL_ADD_FEATURE([windows])
+                if test "x$host_cpu" = "xx86_64" ; then
+		   ECL_ADD_FEATURE([win64])
+                fi
                 ;;
         darwin*)
                 thehost='darwin'
@@ -451,6 +483,11 @@ case "${host_os}" in
                 fi
                 SONAME="${SHAREDPREFIX}ecl.SOVERSION.${SHAREDEXT}"
                 SONAME_LDFLAGS="-Wl,-install_name,@rpath/SONAME -Wl,-compatibility_version,${PACKAGE_VERSION}"
+                if test "`uname -m`" = arm64; then
+                  AC_DEFINE([ECL_C_COMPATIBLE_VARIADIC_DISPATCH], [], [Do the fixed and optional arguments of a variadic function use a different calling convention?])
+                  ECL_ADD_FEATURE(c-compatible-variadic-dispatch)
+                fi
+                ECL_ADD_FEATURE(unix)
                 ;;
         nsk*)
                 # HP Non-Stop platform
@@ -472,6 +509,7 @@ case "${host_os}" in
                 clibs="-lnetwork"
                 SONAME="${SHAREDPREFIX}ecl.${SHAREDEXT}.SOVERSION"
                 SONAME_LDFLAGS="-Wl,-soname,SONAME"
+                ECL_ADD_FEATURE(haiku)
                 ;;
 	aix*)
 		PICFLAG='-DPIC'
@@ -486,6 +524,7 @@ case "${host_os}" in
         *)
                 thehost="$host_os"
                 shared="no"
+                ECL_ADD_FEATURE(unix)
                 ;;
 esac
 
@@ -519,6 +558,7 @@ case "${host}" in
                 THREAD_LIBS=''
                 CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -DANDROID -DPLATFORM_ANDROID -DUSE_GET_STACKBASE_FOR_MAIN -DIGNORE_DYNAMIC_LOADING -DNO_GETCONTEXT -DHAVE_GETTIMEOFDAY -DHAVE_SIGPROCMASK ${CFLAGS}"
                 ECL_ADD_FEATURE([android])
+                ECL_ADD_FEATURE(unix)
                 ;;
         wasm32-unknown-emscripten)
                 # Non-zero optimization levels seem to be slower in
@@ -538,6 +578,9 @@ case "${host}" in
                 BUNDLE_LDFLAGS="-shared -sSIDE_MODULE ${LDFLAGS}"
                 PROGRAM_LDFLAGS="-sMAIN_MODULE -sERROR_ON_UNDEFINED_SYMBOLS=0 ${LDFLAGS}"
                 INSTALL_TARGET='flatinstall'
+                AC_DEFINE([ECL_C_COMPATIBLE_VARIADIC_DISPATCH], [], [Do the fixed and optional arguments of a variadic function use a different calling convention?])
+                ECL_ADD_FEATURE(c-compatible-variadic-dispatch)
+                ECL_ADD_FEATURE(emscripten)
                 ;;
 esac
 
@@ -603,7 +646,7 @@ fi
 
 dnl ---------------------------------------------------------------------
 dnl Check availability of standard sized integer types of a given width.  
-dnl On success, define the global variables ECL_INTx_T and ECL_UNITx_T to 
+dnl On success, define the global variables ECL_INTx_T and ECL_UINTx_T to
 dnl hold the names of the corresponding standard C integer types.
 AC_DEFUN(ECL_CHECK_SIZED_INTEGER_TYPE,[
 AC_TYPE_INT$1_T
@@ -613,6 +656,7 @@ if test "x$ac_cv_c_int$1_t" = xyes; then
   eval ECL_UINT$1_T="uint$1_t"
   AC_DEFINE_UNQUOTED([ecl_int$1_t], [int$1_t], [ecl_int$1_t])
   AC_DEFINE_UNQUOTED([ecl_uint$1_t], [uint$1_t], [ecl_uint$1_t])
+  ECL_ADD_FEATURE(uint$1-t)
 fi])
 
 dnl
@@ -731,6 +775,7 @@ AC_SUBST(CL_FIXNUM_TYPE)
 AC_SUBST(CL_FIXNUM_BITS)
 AC_SUBST(CL_FIXNUM_MAX)
 AC_SUBST(CL_FIXNUM_MIN)
+AC_SUBST(CL_SHORT_BITS)
 AC_SUBST(CL_INT_BITS)
 AC_SUBST(CL_LONG_BITS)
 AC_MSG_CHECKING(appropriate type for fixnums)
@@ -792,6 +837,13 @@ int main() {
   }
   fprintf(f,"CL_FIXNUM_TYPE='%s';",int_type);
   fprintf(f,"CL_FIXNUM_BITS='%d';",bits);
+  {
+    unsigned short x = 1;
+    for (bits = 0; x; bits++) {
+      x <<= 1;
+    }
+    fprintf(f,"CL_SHORT_BITS='%d';",bits);
+  }
   {
     unsigned int x = 1;
     for (bits = 0; x; bits++) {
@@ -947,6 +999,7 @@ _mm_getcsr();]])],[sse_included=yes],[sse_included=no])
  fi
  if test "x$with_sse" = xyes; then
   AC_DEFINE([ECL_SSE2], [], [ECL_SSE2])
+  ECL_ADD_FEATURE(sse2)
   AC_MSG_RESULT([yes])
  else
   AC_MSG_RESULT([no])
@@ -1184,6 +1237,7 @@ else
 fi
 if test "${enable_serialization}" != "no" ; then
   AC_DEFINE([ECL_EXTERNALIZABLE], [], [Use the serialization framework])
+  ECL_ADD_FEATURE(externalizable)
 fi
 ])
 
@@ -1248,6 +1302,7 @@ if test -z "${ECL_LIBFFI_HEADER}"; then
   AC_MSG_WARN([Unable to configure or find libffi library; disabling dynamic FFI])
 else
   AC_DEFINE([HAVE_LIBFFI], [], [HAVE_LIBFFI])
+  ECL_ADD_FEATURE(dffi)  
 fi
 ])
 

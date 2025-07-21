@@ -23,63 +23,34 @@ If you do not have access to the online version, follow the following recipies.
 6. Move that directory wherever you need.
 
 * Cross-compile for the android platform (from the UNIX machine)
-1. Build the host ECL
-   #+BEGIN_SRC shell-script
-     # C99 complex numbers are not fully supported on Android
-     ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2"\
-                 --prefix=`pwd`/ecl-android-host --disable-c99complex
-     make -j9
-     make install
-     rm -r build
-     export ECL_TO_RUN=`pwd`/ecl-android-host/bin/ecl
-   #+END_SRC
-2. Configure the toolchain (requires android-ndk version 15 or higher, known to work with version 17c)
+1. Configure the toolchain (requires android-ndk version 22 or higher, known to work with version 28b)
    and export the necessary paths:
    #+BEGIN_SRC shell-script
      export NDK_PATH=/opt/android-ndk
      export ANDROID_API=23
-     export TOOLCHAIN_PATH=`pwd`/android-toolchain
-     ${NDK_PATH}/build/tools/make_standalone_toolchain.py --arch arm --install-dir ${TOOLCHAIN_PATH} --api ${ANDROID_API}
-     export SYSROOT=${TOOLCHAIN_PATH}/sysroot
-     export PATH=${TOOLCHAIN_PATH}/bin:$PATH
+     export TOOLCHAIN_PATH=${NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64 # use darwin instead of linux if compiling on Mac OS host
+	  export TARGET=armv7a-linux-androideabi
   #+END_SRC
-3. Build and install the target library
+2. Build and install the target library
    #+BEGIN_SRC shell-script
-     # boehm GC is not compatible with ld.gold linker, force use of ld.bfd
-     export LDFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -fuse-ld=bfd"
-     export CPPFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -isystem ${SYSROOT}/usr/include/arm-linux-androideabi"
-     export CC=arm-linux-androideabi-clang
-     ./configure --host=arm-linux-androideabi \
+	  export CC="${TOOLCHAIN_PATH}/bin/clang --target=${TARGET}${ANDROID_API}"
+	  export LD=${TOOLCHAIN_PATH}/bin/ld
+	  export AR=${TOOLCHAIN_PATH}/bin/llvm-ar
+	  export RANLIB=${TOOLCHAIN_PATH}/bin/llvm-ranlib
+     export ECL_TO_RUN=/usr/local/bin/ecl
+    ./configure --host=${TARGET} \
                  --prefix=`pwd`/ecl-android \
                  --disable-c99complex \
                  --with-cross-config=`pwd`/src/util/android-arm.cross_config
      make -j9
      make install
    #+END_SRC
-4. Library and assets in the ecl-android directory are ready to run on
+3. Library and assets in the ecl-android directory are ready to run on
    the Android system.
-
-** Building ecl-android on Darwin (OSX)
-If your host platform is darwin, then the host compiler should be
-built with the Apple's GCC (not the GCC from Macports). Using the
-MacPort command:
-#+BEGIN_SRC shell-script
-  sudo port select --set gcc none
-#+END_SRC
-
-Hint provided by Pascal J. Bourguignon.
 
 
 * Cross-compile for the iOS platform (needs Xcode 11 or higher)
-1. Build the host ECL
-   #+BEGIN_SRC shell-script
-     ./configure CFLAGS="-DECL_C_COMPATIBLE_VARIADIC_DISPATCH" --prefix=`pwd`/ecl-iOS-host --disable-c99complex
-     make -j9
-     make install
-     rm -r build
-     export ECL_TO_RUN=`pwd`/ecl-iOS-host/bin/ecl
-   #+END_SRC
-2. Configure the toolchain
+1. Configure the toolchain
    #+BEGIN_SRC shell-script
      export IOS_VERSION_MIN="8.0"
      export IOS_SDK_DIR="`xcode-select --print-path`/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/"
@@ -96,10 +67,11 @@ Hint provided by Pascal J. Bourguignon.
      export LDFLAGS="-arch arm64 -pipe -std=c99 -gdwarf-2 -isysroot ${IOS_SDK_DIR}"
      export LIBS="-framework Foundation"
    #+END_SRC
-3. Build and install the target library
+2. Build and install the target library
    #+BEGIN_SRC shell-script
      export CFLAGS="$CFLAGS -DGC_DISABLE_INCREMENTAL -DECL_RWLOCK"
      export CXXFLAGS="$CFLAGS"
+     export ECL_TO_RUN=/usr/local/bin/ecl
      ./configure --host=aarch64-apple-darwin \
                  --prefix=`pwd`/ecl-iOS \
                  --disable-c99complex \
@@ -108,7 +80,7 @@ Hint provided by Pascal J. Bourguignon.
      make -j9
      make install
    #+END_SRC
-4. Library and assets in the ecl-iOS directory are ready to run on
+3. Library and assets in the ecl-iOS directory are ready to run on
    the iOS system.
 
 * Cross-compile for the WASM platform (via emscripten)
@@ -139,17 +111,7 @@ Emscripten target is a little fickle so keep in mind that:
   garbage collector to work correctly and tend slow down the program
   (might be worth experimenting with the optimization options)
 
-1. Build the host ECL
-
-#+begin_src shell-script
-  ./configure ABI=32 CFLAGS="-m32 -g -O2 -DECL_C_COMPATIBLE_VARIADIC_DISPATCH" LDFLAGS="-m32 -g -O2" \
-              --prefix=`pwd`/ecl-emscripten-host --disable-threads
-
-  make -j16 && make install
-  rm -rf build/
-#+end_src
-
-2. Configure the toolchain
+1. Configure the toolchain
 
 Install the Emscripten SDK using the official instructions:
 
@@ -162,14 +124,14 @@ After that activate the toolchain and configure build flags:
 
 #+begin_src shell-script
   source ${EMSDK_PATH}/emsdk_env.sh
-  export ECL_TO_RUN=`pwd`/ecl-emscripten-host/bin/ecl
   # You may customize various emscripten flags here, i.e:
   # export LDFLAGS="-sASYNCIFY=1"
 #+end_src
 
-3. Build the core environment and install it
+2. Build the core environment and install it
 
 #+begin_src shell-script
+  export ECL_TO_RUN=/usr/local/bin/ecl
   emconfigure ./configure \
               --host=wasm32-unknown-emscripten \
               --build=x86_64-pc-linux-gnu \
@@ -185,7 +147,7 @@ After that activate the toolchain and configure build flags:
   cp build/bin/ecl.js build/bin/ecl.wasm ecl-emscripten/
 #+end_src
 
-4. ECL may be hosted on a web page. Assuming that you have quicklisp installed:
+3. ECL may be hosted on a web page. Assuming that you have quicklisp installed:
 
 #+begin_src shell-script
   export WEBSERVER=`pwd`/src/util/webserver.lisp
@@ -199,7 +161,7 @@ After that activate the toolchain and configure build flags:
 If the output does not show on the webpage then open the javascript console.
 This is a default html website produced by emscripten.
 
-5. Build an external program linked against libecl.a
+4. Build an external program linked against libecl.a
 
 The default stack size proposed by emscripten is 64KB. This is too little for
 ECL, so when you build a program that is linked against libecl.a, then it is
@@ -234,7 +196,7 @@ For example:
 2. Build ECL
 
 #+begin_src sh
-  ./configure --disable-shared --prefix=/tmp/cosmo-cl
+  LSP_FEATURES=":cosmo" ./configure --disable-shared --prefix=/tmp/cosmo-cl
   make -j15
   make install
   # make check
