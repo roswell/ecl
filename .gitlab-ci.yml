@@ -4,15 +4,28 @@ build:
   # install the necessary build tools when needed
   # before_script: 
   #   - apt update && apt -y install make autoconf 
+  artifacts:
+    paths:
+    - target-dir
   script: 
-    - ./configure
+    - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
     - make
     - make install
   
-# run tests using the binary built before
-test:
+# run self-tests using the binary built before
+test-self:
   stage: test
+  dependencies:
+    - build
   script:
-    - ./configure
-    - cd ./build/tests/
-    - make
+    - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
+    - make check
+
+# run ansi-tests using the binary built before
+test-ansi:
+  stage: test
+  dependencies:
+    - build
+  script:
+    - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
+    - make ansi-test
