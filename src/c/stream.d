@@ -258,8 +258,8 @@ cl_object
 si_read_byte(cl_object strm, cl_object eof_value)
 {
   cl_env_ptr the_env = ecl_process_env();
-  cl_object c = ecl_read_byte(strm);
-  ecl_return1(the_env, Null(c) ? eof_value : c);
+  cl_object byte = ecl_read_byte(strm);
+  ecl_return1(the_env, (byte == OBJNULL) ? eof_value : byte);
 }
 
 /* These two interfaces are clearly missing in the ANSI standard. */
@@ -277,7 +277,7 @@ si_peek_byte(cl_object strm, cl_object eof_value)
 {
   cl_env_ptr the_env = ecl_process_env();
   cl_object byte = ecl_peek_byte(strm);
-  ecl_return1(the_env, Null(c) ? eof_value : byte);
+  ecl_return1(the_env, (byte == OBJNULL) ? eof_value : byte);
 }
 #endif
 

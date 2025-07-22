@@ -423,18 +423,19 @@ echo_write_byte8(cl_object strm, unsigned char *c, cl_index n)
   return ecl_write_byte8(ECHO_STREAM_OUTPUT(strm), c, n);
 }
 
+static cl_object
+echo_read_byte(cl_object strm)
+{
+  cl_object byte = ecl_read_byte(ECHO_STREAM_INPUT(strm));
+  if (byte != OBJNULL)
+    ecl_write_byte(byte, ECHO_STREAM_OUTPUT(strm));
+  return byte;
+}
+
 static void
 echo_write_byte(cl_object strm, cl_object byte)
 {
   ecl_write_byte(byte, ECHO_STREAM_OUTPUT(strm));
-}
-
-static cl_object
-echo_read_byte(cl_object strm)
-{
-  cl_object out = ecl_read_byte(ECHO_STREAM_INPUT(strm));
-  if (!Null(out)) ecl_write_byte(out, ECHO_STREAM_OUTPUT(strm));
-  return out;
 }
 
 static ecl_character
@@ -625,10 +626,10 @@ static cl_object
 concatenated_read_byte(cl_object strm)
 {
   cl_object l = CONCATENATED_STREAM_LIST(strm);
-  cl_object c = ECL_NIL;
+  cl_object c = OBJNULL;
   while (!Null(l)) {
     c = ecl_read_byte(ECL_CONS_CAR(l));
-    if (c != ECL_NIL) break;
+    if (c != OBJNULL) break;
     CONCATENATED_STREAM_LIST(strm) = l = ECL_CONS_CDR(l);
   }
   return c;

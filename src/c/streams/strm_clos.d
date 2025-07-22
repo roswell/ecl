@@ -46,15 +46,15 @@ clos_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 static cl_object
 clos_stream_read_byte(cl_object strm)
 {
-  cl_object b = _ecl_funcall2(@'gray::stream-read-byte', strm);
-  if (b == @':eof') b = ECL_NIL;
-  return b;
+  cl_object out = _ecl_funcall2(@'gray::stream-read-byte', strm);
+  if (out == @':eof') out = OBJNULL;
+  return out;
 }
 
 static void
-clos_stream_write_byte(cl_object strm, cl_object c)
+clos_stream_write_byte(cl_object strm, cl_object byte)
 {
-  _ecl_funcall3(@'gray::stream-write-byte', strm, c);
+  _ecl_funcall3(@'gray::stream-write-byte', strm, byte);
 }
 
 static ecl_character

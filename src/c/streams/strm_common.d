@@ -304,7 +304,7 @@ ecl_generic_read_byte_unsigned8(cl_object strm)
 {
   unsigned char c;
   if (strm->stream.ops->read_byte8(strm, &c, 1) < 1) {
-    return ECL_NIL;
+    return OBJNULL;
   }
   return ecl_make_fixnum(c);
 }
@@ -321,7 +321,7 @@ ecl_generic_read_byte_signed8(cl_object strm)
 {
   signed char c;
   if (strm->stream.ops->read_byte8(strm, (unsigned char *)&c, 1) < 1)
-    return ECL_NIL;
+    return OBJNULL;
   return ecl_make_fixnum(c);
 }
 
@@ -344,7 +344,7 @@ ecl_generic_read_byte_le(cl_object strm)
   for (nb = 0; bs >= 8; bs -= 8, nb += 8) {
     cl_object aux;
     if (read_byte8(strm, &c, 1) < 1)
-      return ECL_NIL;
+      return OBJNULL;
     if (bs <= 8 && (strm->stream.flags & ECL_STREAM_SIGNED_BYTES))
       aux = ecl_make_fixnum((signed char)c);
     else
@@ -376,13 +376,13 @@ ecl_generic_read_byte(cl_object strm)
 {
   cl_index (*read_byte8)(cl_object, unsigned char *, cl_index);
   unsigned char c;
-  cl_object output = NULL;
+  cl_object output = OBJNULL;
   cl_index bs;
   read_byte8 = strm->stream.ops->read_byte8;
   bs = strm->stream.byte_size;
   for (; bs >= 8; bs -= 8) {
     if (read_byte8(strm, &c, 1) < 1)
-      return ECL_NIL;
+      return OBJNULL;
     if (output) {
       output = cl_logior(2, ecl_make_fixnum(c),
                          cl_ash(output, ecl_make_fixnum(8)));
@@ -530,7 +530,7 @@ ecl_generic_read_vector(cl_object strm, cl_object data, cl_index start, cl_index
     cl_object (*read_byte)(cl_object) = ops->read_byte;
     for (; start < end; start++) {
       cl_object x = read_byte(strm);
-      if (Null(x)) break;
+      if (x == OBJNULL) break;
       ecl_elt_set(data, start, x);
     }
   }

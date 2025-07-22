@@ -580,7 +580,7 @@ si_do_read_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
           c = ECL_CODE_CHAR(i);
         } else {
           c = ops->read_byte(stream);
-          if (c == ECL_NIL) goto OUTPUT;
+          if (c == OBJNULL) goto OUTPUT;
         }
         ECL_RPLACA(seq, c);
         start++;

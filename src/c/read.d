@@ -1741,12 +1741,12 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
   cl_object c;
   @
   c = ecl_read_byte(binary_input_stream);
-  if (c == ECL_NIL) {
+  if (c == OBJNULL) {
     if (Null(eof_errorp)) {
       @(return eof_value);
     }
     else
-        FEend_of_file(binary_input_stream);
+      FEend_of_file(binary_input_stream);
   }
   @(return c);
   @)
