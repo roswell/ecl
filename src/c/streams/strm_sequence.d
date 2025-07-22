@@ -46,6 +46,15 @@ seq_in_unread_char(cl_object strm, ecl_character c)
   strm->stream.byte_stack = ECL_NIL;
 }
 
+static void
+seq_in_unread_byte(cl_object strm, cl_object byte)
+{
+  unlikely_if(SEQ_INPUT_POSITION(strm) <= 0) {
+    ecl_unread_error(strm);
+  }
+  SEQ_INPUT_POSITION(strm) -= 1;
+}
+
 #ifdef ecl_uint16_t
 static ecl_character
 seq_in_ucs2_read_char(cl_object strm)
@@ -160,6 +169,8 @@ const struct ecl_file_ops seq_in_ops = {
 
   ecl_generic_read_byte,
   ecl_not_output_write_byte,
+  seq_in_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -370,6 +381,8 @@ const struct ecl_file_ops seq_out_ops = {
 
   ecl_not_input_read_byte,
   ecl_generic_write_byte,
+  ecl_not_input_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,

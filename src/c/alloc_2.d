@@ -623,6 +623,7 @@ void init_type_info (void)
     to_bitmap(&o, &(o.stream.ops)) |
     to_bitmap(&o, &(o.stream.object0)) |
     to_bitmap(&o, &(o.stream.object1)) |
+    to_bitmap(&o, &(o.stream.last_byte)) |
     to_bitmap(&o, &(o.stream.byte_stack)) |
     to_bitmap(&o, &(o.stream.buffer)) |
     to_bitmap(&o, &(o.stream.format)) |

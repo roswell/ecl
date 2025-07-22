@@ -36,6 +36,7 @@ ecl_alloc_stream(void)
   x->stream.format = ECL_NIL;
   x->stream.flags = 0;
   x->stream.byte_size = 8;
+  x->stream.last_byte = OBJNULL;
   x->stream.buffer = NULL;
   x->stream.encoder = NULL;
   x->stream.decoder = NULL;
@@ -89,6 +90,18 @@ void
 ecl_write_byte(cl_object byte, cl_object strm)
 {
   ecl_stream_dispatch_table(strm)->write_byte(strm, byte);
+}
+
+void
+ecl_unread_byte(cl_object byte, cl_object strm)
+{
+  ecl_stream_dispatch_table(strm)->unread_byte(strm, byte);
+}
+
+cl_object
+ecl_peek_byte(cl_object strm)
+{
+  return ecl_stream_dispatch_table(strm)->peek_byte(strm);
 }
 
 ecl_character
@@ -262,8 +275,6 @@ si_read_byte(cl_object strm, cl_object eof_value)
   ecl_return1(the_env, (byte == OBJNULL) ? eof_value : byte);
 }
 
-/* These two interfaces are clearly missing in the ANSI standard. */
-#if 0
 cl_object
 si_unread_byte(cl_object strm, cl_object byte)
 {
@@ -279,7 +290,6 @@ si_peek_byte(cl_object strm, cl_object eof_value)
   cl_object byte = ecl_peek_byte(strm);
   ecl_return1(the_env, (byte == OBJNULL) ? eof_value : byte);
 }
-#endif
 
 cl_object
 si_write_byte(cl_object strm, cl_object byte)

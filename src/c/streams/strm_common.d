@@ -122,6 +122,12 @@ ecl_not_binary_read_byte(cl_object strm)
   return OBJNULL;
 }
 
+void
+ecl_not_input_unread_byte(cl_object strm, cl_object byte)
+{
+  ecl_not_an_input_stream(strm);
+}
+
 ecl_character
 ecl_not_input_read_char(cl_object strm)
 {
@@ -238,6 +244,25 @@ closed_stream_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
   FEclosed_stream(strm);
   return 0;
+}
+
+static cl_object
+closed_stream_read_byte(cl_object strm)
+{
+  FEclosed_stream(strm);
+  return ECL_NIL;
+}
+
+static void
+closed_stream_write_byte(cl_object strm, cl_object byte)
+{
+  FEclosed_stream(strm);
+}
+
+static void
+closed_stream_unread_byte(cl_object strm, cl_object byte)
+{
+  FEclosed_stream(strm);
 }
 
 static ecl_character
@@ -376,8 +401,13 @@ ecl_generic_read_byte(cl_object strm)
 {
   cl_index (*read_byte8)(cl_object, unsigned char *, cl_index);
   unsigned char c;
-  cl_object output = OBJNULL;
+  cl_object output = OBJNULL, byte;
   cl_index bs;
+  byte = strm->stream.last_byte;
+  unlikely_if (byte != OBJNULL) {
+    strm->stream.last_byte = OBJNULL;
+    return byte;
+  }
   read_byte8 = strm->stream.ops->read_byte8;
   bs = strm->stream.byte_size;
   for (; bs >= 8; bs -= 8) {
@@ -412,6 +442,20 @@ ecl_generic_write_byte(cl_object strm, cl_object byte)
     if (write_byte8(strm, &aux, 1) < 1)
       break;
   } while (bs);
+}
+
+void
+ecl_generic_unread_byte(cl_object strm, cl_object byte)
+{
+  strm->stream.last_byte = byte;
+}
+
+cl_object
+ecl_generic_peek_byte(cl_object strm)
+{
+  cl_object out = ecl_read_byte(strm);
+  if (out != OBJNULL) ecl_unread_byte(out, strm);
+  return out;
 }
 
 ecl_character
@@ -463,13 +507,18 @@ ecl_generic_close(cl_object strm)
   struct ecl_file_ops *ops = strm->stream.ops;
   if (ecl_input_stream_p(strm)) {
     ops->read_byte8 = closed_stream_read_byte8;
+    ops->read_byte = closed_stream_read_byte;
+    ops->peek_byte = closed_stream_read_byte;
+    ops->unread_byte = closed_stream_unread_byte;
     ops->read_char = closed_stream_read_char;
+    ops->peek_char = closed_stream_read_char;
     ops->unread_char = closed_stream_unread_char;
     ops->listen = closed_stream_listen;
     ops->clear_input = closed_stream_clear_input;
   }
   if (ecl_output_stream_p(strm)) {
     ops->write_byte8 = closed_stream_write_byte8;
+    ops->write_byte = closed_stream_write_byte;
     ops->write_char = closed_stream_write_char;
     ops->clear_output = closed_stream_clear_output;
     ops->force_output = closed_stream_force_output;
@@ -479,6 +528,7 @@ ecl_generic_close(cl_object strm)
   ops->set_position = closed_stream_set_position;
   ops->length = closed_stream_length;
   ops->close = ecl_generic_close;
+  strm->stream.last_byte = OBJNULL;
   strm->stream.closed = 1;
   return ECL_T;
 }

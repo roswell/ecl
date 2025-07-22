@@ -563,6 +563,8 @@ const struct ecl_file_ops io_file_ops = {
 
   ecl_generic_read_byte,
   ecl_generic_write_byte,
+  ecl_generic_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
@@ -601,6 +603,8 @@ const struct ecl_file_ops output_file_ops = {
 
   ecl_not_input_read_byte,
   ecl_generic_write_byte,
+  ecl_not_input_unread_byte,
+  ecl_not_input_read_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,
@@ -639,6 +643,8 @@ const struct ecl_file_ops input_file_ops = {
 
   ecl_generic_read_byte,
   ecl_not_output_write_byte,
+  ecl_generic_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -945,6 +951,8 @@ const struct ecl_file_ops io_stream_ops = {
 
   ecl_generic_read_byte,
   ecl_generic_write_byte,
+  ecl_generic_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
@@ -983,6 +991,8 @@ const struct ecl_file_ops output_stream_ops = {
 
   ecl_not_input_read_byte,
   ecl_generic_write_byte,
+  ecl_not_input_unread_byte,
+  ecl_not_input_read_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,
@@ -1021,6 +1031,8 @@ const struct ecl_file_ops input_stream_ops = {
 
   ecl_generic_read_byte,
   ecl_not_output_write_byte,
+  ecl_generic_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -1170,6 +1182,8 @@ const struct ecl_file_ops winsock_stream_io_ops = {
 
   ecl_generic_read_byte,
   ecl_generic_write_byte,
+  ecl_generic_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
@@ -1208,6 +1222,8 @@ const struct ecl_file_ops winsock_stream_output_ops = {
 
   ecl_not_input_read_byte,
   ecl_generic_write_byte,
+  ecl_not_input_unread_byte,
+  ecl_not_input_read_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,
@@ -1246,6 +1262,8 @@ const struct ecl_file_ops winsock_stream_input_ops = {
 
   ecl_generic_read_byte,
   ecl_not_output_write_byte,
+  ecl_generic_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -1355,6 +1373,8 @@ const struct ecl_file_ops wcon_stream_io_ops = {
 
   ecl_generic_read_byte,
   ecl_generic_write_byte,
+  ecl_generic_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,

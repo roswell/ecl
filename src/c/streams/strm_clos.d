@@ -57,6 +57,20 @@ clos_stream_write_byte(cl_object strm, cl_object byte)
   _ecl_funcall3(@'gray::stream-write-byte', strm, byte);
 }
 
+static void
+clos_stream_unread_byte(cl_object strm, cl_object byte)
+{
+  _ecl_funcall3(@'gray::stream-unread-byte', strm, byte);
+}
+
+static cl_object
+clos_stream_peek_byte(cl_object strm)
+{
+  cl_object out = _ecl_funcall2(@'gray::stream-peek-byte', strm);
+  if (out == @':eof') return OBJNULL;
+  return out;
+}
+
 static ecl_character
 clos_stream_read_char(cl_object strm)
 {
@@ -222,6 +236,8 @@ const struct ecl_file_ops clos_stream_ops = {
 
   clos_stream_read_byte,
   clos_stream_write_byte,
+  clos_stream_unread_byte,
+  clos_stream_peek_byte,
 
   clos_stream_read_char,
   clos_stream_write_char,

@@ -110,6 +110,13 @@
 (defgeneric output-stream-p (stream)
   (:documentation "Can STREAM perform output operations?"))
 
+;;; Extension
+(defgeneric stream-peek-byte (stream)
+  (:documentation
+   "This is used to implement EXT:PEEK-BYTE; this corresponds to PEEK-TYPE of NIL.
+  It returns either a byte or :EOF. The default method calls STREAM-READ-BYTE
+  and STREAM-UNREAD-BYTE."))
+
 (defgeneric stream-peek-char (stream)
   (:documentation
    "This is used to implement PEEK-CHAR; this corresponds to PEEK-TYPE of NIL.
@@ -167,6 +174,13 @@
   (:documentation
    "Writes an end of line, as for TERPRI. Returns NIL. The default
   method does (STREAM-WRITE-CHAR stream #\NEWLINE)."))
+
+;;; Extension
+(defgeneric stream-unread-byte (stream byte)
+  (:documentation
+   "Un-do the last call to STREAM-READ-BYTE, as in EXT:UNREAD-BYTE.
+  Return NIL. Every subclass of FUNDAMENTAL-BINARY-INPUT-STREAM
+  must define a method for this function."))
 
 (defgeneric stream-unread-char (stream character)
   (:documentation
@@ -476,6 +490,19 @@
 (defmethod output-stream-p ((stream t))
   (bug-or-error stream 'output-stream-p))
 
+;; PEEK-BYTE
+
+(defmethod stream-peek-byte ((stream fundamental-binary-input-stream))
+  (let ((byte (stream-read-byte stream)))
+    (unless (eq byte :eof)
+      (stream-unread-byte stream byte))
+    byte))
+
+(defmethod stream-peek-byte ((stream ansi-stream))
+  (ext:peek-byte stream :eof))
+
+(defmethod stream-peek-byte ((stream t))
+  (bug-or-error stream 'stream-peek-byte))
 
 ;; PEEK-CHAR
 
@@ -509,6 +536,14 @@
 (defmethod stream-read-char ((stream t))
   (bug-or-error stream 'stream-read-char))
 
+;; UNREAD-BYTE
+
+(defmethod stream-unread-byte ((stream ansi-stream) byte)
+  (ext:unread-byte stream byte))
+
+(defmethod stream-unread-byte ((stream t) byte)
+  (declare (ignore byte))
+  (bug-or-error stream 'stream-unread-byte))
 
 ;; UNREAD-CHAR
 

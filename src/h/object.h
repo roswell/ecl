@@ -592,6 +592,8 @@ struct ecl_file_ops {
 
         cl_object (*read_byte)(cl_object strm);
         void (*write_byte)(cl_object strm, cl_object byte);
+        void (*unread_byte)(cl_object strm, cl_object byte);
+        cl_object (*peek_byte)(cl_object strm);
 
         ecl_character (*read_char)(cl_object strm);
         ecl_character (*write_char)(cl_object strm, ecl_character c);
@@ -678,6 +680,7 @@ struct ecl_stream {
         } file;
         cl_object object0;      /*  some object  */
         cl_object object1;      /*  some object */
+        cl_object last_byte;    /*  last byte read  */
         cl_object byte_stack;   /*  buffer for unread bytes  */
         cl_index column;        /*  file column  */
         cl_fixnum last_char;    /*  last character read  */

@@ -401,7 +401,7 @@ cl_object si_peek_char(cl_object strm, cl_object eof_value);
 cl_object si_write_char(cl_object strm, cl_object c);
 
 cl_object si_read_byte(cl_object strm, cl_object eof_value);
-cl_object si_unread_byte(cl_object strm, cl_object eof_value);
+cl_object si_unread_byte(cl_object strm, cl_object byte);
 cl_object si_peek_byte(cl_object strm, cl_object eof_value);
 cl_object si_write_byte(cl_object strm, cl_object c);
 
@@ -411,8 +411,8 @@ cl_object si_finish_output(cl_object strm);
 cl_object si_force_output(cl_object strm);
 cl_object si_clear_output(cl_object strm);
 
-#define ecl_unread_error(s) FEerror("Error when using UNREAD-CHAR on stream ~D", 1, s)
-#define ecl_unread_twice(s) FEerror("Used UNREAD-CHAR twice on stream ~D", 1, s);
+#define ecl_unread_error(s) FEerror("Error when unreading to stream ~D", 1, s)
+#define ecl_unread_twice(s) FEerror("Unread twice twice to stream ~D", 1, s)
 
 /* streams/strm_common.d */
 cl_object ecl_not_a_file_stream(cl_object strm);
@@ -425,6 +425,7 @@ void ecl_not_output_write_byte(cl_object strm, cl_object byte);
 cl_object ecl_not_input_read_byte(cl_object strm);
 void ecl_not_binary_write_byte(cl_object strm, cl_object byte);
 cl_object ecl_not_binary_read_byte(cl_object strm);
+void ecl_not_input_unread_byte(cl_object strm, cl_object byte);
 ecl_character ecl_not_input_read_char(cl_object strm);
 ecl_character ecl_not_output_write_char(cl_object strm, ecl_character c);
 void ecl_not_input_unread_char(cl_object strm, ecl_character c);
@@ -449,6 +450,8 @@ cl_object ecl_generic_read_byte_le(cl_object strm);
 void ecl_generic_write_byte_le(cl_object c, cl_object strm);
 cl_object ecl_generic_read_byte(cl_object strm);
 void ecl_generic_write_byte(cl_object c, cl_object strm);
+void ecl_generic_unread_byte(cl_object strm, cl_object byte);
+cl_object ecl_generic_peek_byte(cl_object strm);
 ecl_character ecl_generic_peek_char(cl_object strm);
 void ecl_generic_void(cl_object strm);
 int ecl_generic_always_true(cl_object strm);
