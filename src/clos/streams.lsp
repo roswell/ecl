@@ -113,7 +113,7 @@
 ;;; Extension
 (defgeneric stream-peek-byte (stream)
   (:documentation
-   "This is used to implement EXT:PEEK-BYTE; this corresponds to PEEK-TYPE of NIL.
+   "This is used to implement EXT:PEEK-BYTE.
   It returns either a byte or :EOF. The default method calls STREAM-READ-BYTE
   and STREAM-UNREAD-BYTE."))
 
