@@ -95,7 +95,6 @@
   (:documentation "Return the stream line length or NIL."))
 
 (defgeneric stream-listen (stream)
-  #+sb-doc
   (:documentation
    "This is used by LISTEN. It returns true or false. The default method uses
   STREAM-READ-CHAR-NO-HANG and STREAM-UNREAD-CHAR. Most streams should
@@ -516,7 +515,7 @@
 (defmethod stream-unread-char ((stream ansi-stream) character)
   (cl:unread-char character stream))
 
-(defmethod stream-unread-char ((stream ansi-stream) character)
+(defmethod stream-unread-char ((stream t) character)
   (declare (ignore character))
   (bug-or-error stream 'stream-unread-char))
 

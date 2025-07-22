@@ -587,16 +587,16 @@ enum ecl_smmode {               /*  stream mode  */
 };
 
 struct ecl_file_ops {
-        cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
         cl_index (*read_byte8)(cl_object strm, unsigned char *c, cl_index n);
+        cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
 
-        void (*write_byte)(cl_object strm, cl_object byte);
         cl_object (*read_byte)(cl_object strm);
+        void (*write_byte)(cl_object strm, cl_object byte);
 
-        int (*read_char)(cl_object strm);
-        int (*write_char)(cl_object strm, int c);
-        void (*unread_char)(cl_object strm, int c);
-        int (*peek_char)(cl_object strm);
+        ecl_character (*read_char)(cl_object strm);
+        ecl_character (*write_char)(cl_object strm, ecl_character c);
+        void (*unread_char)(cl_object strm, ecl_character c);
+        ecl_character (*peek_char)(cl_object strm);
 
         cl_index (*read_vector)(cl_object strm, cl_object data, cl_index start, cl_index end);
         cl_index (*write_vector)(cl_object strm, cl_object data, cl_index start, cl_index end);

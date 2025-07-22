@@ -558,11 +558,11 @@ io_file_truename(cl_object strm)
 }
 
 const struct ecl_file_ops io_file_ops = {
-  io_file_write_byte8,
   io_file_read_byte8,
+  io_file_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_generic_read_byte,
+  ecl_generic_write_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
@@ -596,11 +596,11 @@ const struct ecl_file_ops io_file_ops = {
 };
 
 const struct ecl_file_ops output_file_ops = {
-  output_file_write_byte8,
   ecl_not_input_read_byte8,
+  output_file_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_not_input_read_byte,
+  ecl_generic_write_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,
@@ -634,11 +634,11 @@ const struct ecl_file_ops output_file_ops = {
 };
 
 const struct ecl_file_ops input_file_ops = {
-  ecl_not_output_write_byte8,
   io_file_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_output_write_byte,
   ecl_generic_read_byte,
+  ecl_not_output_write_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -940,11 +940,11 @@ io_stream_close(cl_object strm)
 #define io_stream_write_vector io_file_write_vector
 
 const struct ecl_file_ops io_stream_ops = {
-  io_stream_write_byte8,
   io_stream_read_byte8,
+  io_stream_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_generic_read_byte,
+  ecl_generic_write_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
@@ -978,11 +978,11 @@ const struct ecl_file_ops io_stream_ops = {
 };
 
 const struct ecl_file_ops output_stream_ops = {
-  output_stream_write_byte8,
   ecl_not_input_read_byte8,
+  output_stream_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_not_input_read_byte,
+  ecl_generic_write_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,
@@ -1016,11 +1016,11 @@ const struct ecl_file_ops output_stream_ops = {
 };
 
 const struct ecl_file_ops input_stream_ops = {
-  ecl_not_output_write_byte8,
   input_stream_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_output_write_byte,
   ecl_generic_read_byte,
+  ecl_not_output_write_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -1165,11 +1165,11 @@ winsock_stream_close(cl_object strm)
 }
 
 const struct ecl_file_ops winsock_stream_io_ops = {
-  winsock_stream_write_byte8,
   winsock_stream_read_byte8,
+  winsock_stream_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_generic_read_byte,
+  ecl_generic_write_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
@@ -1203,16 +1203,16 @@ const struct ecl_file_ops winsock_stream_io_ops = {
 };
 
 const struct ecl_file_ops winsock_stream_output_ops = {
-  winsock_stream_write_byte8,
   ecl_not_input_read_byte8,
+  winsock_stream_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_not_input_read_byte,
+  ecl_generic_write_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,
   ecl_not_input_unread_char,
-  ecl_generic_peek_char,
+  ecl_not_input_read_char,
 
   ecl_generic_read_vector,
   ecl_generic_write_vector,
@@ -1241,11 +1241,11 @@ const struct ecl_file_ops winsock_stream_output_ops = {
 };
 
 const struct ecl_file_ops winsock_stream_input_ops = {
-  ecl_not_output_write_byte8,
   winsock_stream_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_output_write_byte,
   ecl_generic_read_byte,
+  ecl_not_output_write_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -1350,11 +1350,11 @@ wcon_stream_force_output(cl_object strm)
 }
 
 const struct ecl_file_ops wcon_stream_io_ops = {
-  wcon_stream_write_byte8,
   wcon_stream_read_byte8,
+  wcon_stream_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_generic_read_byte,
+  ecl_generic_write_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,

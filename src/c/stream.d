@@ -79,6 +79,18 @@ ecl_write_byte8(cl_object strm, unsigned char *c, cl_index n)
   return ecl_stream_dispatch_table(strm)->write_byte8(strm, c, n);
 }
 
+cl_object
+ecl_read_byte(cl_object strm)
+{
+  return ecl_stream_dispatch_table(strm)->read_byte(strm);
+}
+
+void
+ecl_write_byte(cl_object byte, cl_object strm)
+{
+  ecl_stream_dispatch_table(strm)->write_byte(strm, byte);
+}
+
 ecl_character
 ecl_read_char(cl_object strm)
 {
@@ -94,18 +106,6 @@ ecl_read_char_noeof(cl_object strm)
   return c;
 }
 
-cl_object
-ecl_read_byte(cl_object strm)
-{
-  return ecl_stream_dispatch_table(strm)->read_byte(strm);
-}
-
-void
-ecl_write_byte(cl_object byte, cl_object strm)
-{
-  ecl_stream_dispatch_table(strm)->write_byte(strm, byte);
-}
-
 ecl_character
 ecl_write_char(ecl_character c, cl_object strm)
 {
@@ -116,6 +116,12 @@ void
 ecl_unread_char(ecl_character c, cl_object strm)
 {
   ecl_stream_dispatch_table(strm)->unread_char(strm, c);
+}
+
+ecl_character
+ecl_peek_char(cl_object strm)
+{
+  return ecl_stream_dispatch_table(strm)->peek_char(strm);
 }
 
 int
@@ -212,21 +218,6 @@ cl_object
 ecl_stream_truename(cl_object strm)
 {
   return ecl_stream_dispatch_table(strm)->truename(strm);
-}
-
-/*
- * ecl_read_char(s) tries to read a character from the stream S. It outputs
- * either the code of the character read, or EOF. Whe compiled with
- * CLOS-STREAMS and S is an instance object, STREAM-READ-CHAR is invoked
- * to retrieve the character. Then STREAM-READ-CHAR should either
- * output the character, or NIL, indicating EOF.
- *
- * INV: ecl_read_char(strm) checks the type of STRM.
- */
-ecl_character
-ecl_peek_char(cl_object strm)
-{
-  return ecl_stream_dispatch_table(strm)->peek_char(strm);
 }
 
 /* -- Lisp interface -------------------------------------------------------- */

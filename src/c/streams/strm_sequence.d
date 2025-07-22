@@ -155,11 +155,11 @@ seq_file_element_type(cl_object strm)
 }
 
 const struct ecl_file_ops seq_in_ops = {
-  ecl_not_output_write_byte8,
   seq_in_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_output_write_byte,
   ecl_generic_read_byte,
+  ecl_not_output_write_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -365,11 +365,11 @@ seq_out_set_position(cl_object strm, cl_object pos)
 }
 
 const struct ecl_file_ops seq_out_ops = {
-  seq_out_write_byte8,
   ecl_not_input_read_byte8,
+  seq_out_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_not_input_read_byte,
+  ecl_generic_write_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,

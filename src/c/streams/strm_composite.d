@@ -143,11 +143,11 @@ two_way_close(cl_object strm)
 }
 
 const struct ecl_file_ops two_way_ops = {
-  two_way_write_byte8,
   two_way_read_byte8,
+  two_way_write_byte8,
 
-  two_way_write_byte,
   two_way_read_byte,
+  two_way_write_byte,
 
   two_way_read_char,
   two_way_write_char,
@@ -341,11 +341,11 @@ broadcast_close(cl_object strm)
 }
 
 const struct ecl_file_ops broadcast_ops = {
-  broadcast_write_byte8,
   ecl_not_input_read_byte8,
+  broadcast_write_byte8,
 
-  broadcast_write_byte,
   ecl_not_input_read_byte,
+  broadcast_write_byte,
 
   ecl_not_input_read_char,
   broadcast_write_char,
@@ -531,11 +531,11 @@ echo_close(cl_object strm)
 }
 
 const struct ecl_file_ops echo_ops = {
-  echo_write_byte8,
   echo_read_byte8,
+  echo_write_byte8,
 
-  echo_write_byte,
   echo_read_byte,
+  echo_write_byte,
 
   echo_read_char,
   echo_write_char,
@@ -683,11 +683,11 @@ concatenated_close(cl_object strm)
 }
 
 const struct ecl_file_ops concatenated_ops = {
-  ecl_not_output_write_byte8,
   concatenated_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_output_write_byte,
   concatenated_read_byte,
+  ecl_not_output_write_byte,
 
   concatenated_read_char,
   ecl_not_output_write_char,
@@ -915,11 +915,11 @@ synonym_truename(cl_object strm)
 }
 
 const struct ecl_file_ops synonym_ops = {
-  synonym_write_byte8,
   synonym_read_byte8,
+  synonym_write_byte8,
 
-  synonym_write_byte,
   synonym_read_byte,
+  synonym_write_byte,
 
   synonym_read_char,
   synonym_write_char,

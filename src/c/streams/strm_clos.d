@@ -88,7 +88,7 @@ clos_stream_unread_char(cl_object strm, ecl_character c)
   _ecl_funcall3(@'gray::stream-unread-char', strm, ECL_CODE_CHAR(c));
 }
 
-static int
+static ecl_character
 clos_stream_peek_char(cl_object strm)
 {
   cl_object out = _ecl_funcall2(@'gray::stream-peek-char', strm);
@@ -217,11 +217,11 @@ clos_stream_close(cl_object strm)
 }
 
 const struct ecl_file_ops clos_stream_ops = {
-  clos_stream_write_byte8,
   clos_stream_read_byte8,
+  clos_stream_write_byte8,
 
-  clos_stream_write_byte,
   clos_stream_read_byte,
+  clos_stream_write_byte,
 
   clos_stream_read_char,
   clos_stream_write_char,

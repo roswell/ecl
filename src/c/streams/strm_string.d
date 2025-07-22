@@ -84,11 +84,11 @@ str_out_set_position(cl_object strm, cl_object pos)
 }
 
 const struct ecl_file_ops str_out_ops = {
-  ecl_not_output_write_byte8,
   ecl_not_binary_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_binary_write_byte,
   ecl_not_input_read_byte,
+  ecl_not_binary_write_byte,
 
   ecl_not_input_read_char,
   str_out_write_char,
@@ -277,11 +277,11 @@ str_in_set_position(cl_object strm, cl_object pos)
 }
 
 const struct ecl_file_ops str_in_ops = {
-  ecl_not_output_write_byte8,
   ecl_not_binary_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_output_write_byte,
   ecl_not_binary_read_byte,
+  ecl_not_output_write_byte,
 
   str_in_read_char,
   ecl_not_output_write_char,
