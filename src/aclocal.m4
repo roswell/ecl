@@ -153,9 +153,10 @@ ECL_NEWLINE=LF
 ### 1.5) Can we guess how many characters are available for reading from
 ###      the FILE structure?
 ###          0 = no
-###          1 = (f)->_IO_read_end - (f)->_IO_read_ptr
-###          2 = (f)->_r
-###          3 = (f)->_cnt
+###          1 = __freadahead((f))
+###          2 = (f)->_IO_read_end - (f)->_IO_read_ptr
+###          3 = (f)->_r
+###          4 = (f)->_cnt
 ECL_FILE_CNT=0
 
 ###
@@ -626,21 +627,29 @@ AC_DEFUN(ECL_FILE_STRUCTURE,[
 AC_SUBST(ECL_FILE_CNT)
 if test -z "${ECL_FILE_CNT}"; then
 ECL_FILE_CNT=0
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+  #include <stdio.h>
+  #include <stdio_ext.h>
+]], [[
   FILE *f = fopen("conftestval","w");
-  if ((f)->_IO_read_end - (f)->_IO_read_ptr)
+  if (__freadahead((f)))
     return 1;
 ]])],[ECL_FILE_CNT=1],[])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
   FILE *f = fopen("conftestval","w");
-  if ((f)->_r)
+  if ((f)->_IO_read_end - (f)->_IO_read_ptr)
     return 1;
 ]])],[ECL_FILE_CNT=2],[])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
   FILE *f = fopen("conftestval","w");
-  if ((f)->_cnt)
+  if ((f)->_r)
     return 1;
 ]])],[ECL_FILE_CNT=3],[])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
+  FILE *f = fopen("conftestval","w");
+  if ((f)->_cnt)
+    return 1;
+]])],[ECL_FILE_CNT=4],[])
 fi
 ])
 
