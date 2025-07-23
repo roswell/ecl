@@ -219,7 +219,7 @@ static void
 str_in_unread_char(cl_object strm, ecl_character c)
 {
   cl_fixnum curr_pos = STRING_INPUT_POSITION(strm);
-  unlikely_if (c <= 0) {
+  unlikely_if (curr_pos <= 0) {
     ecl_unread_error(strm);
   }
   STRING_INPUT_POSITION(strm) = curr_pos - 1;
