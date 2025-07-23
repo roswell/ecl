@@ -19,6 +19,60 @@
 #include <ecl/internal.h>
 
 /**********************************************************************
+ * Direct vector operations (no conversion, arbitrary element type).
+ */
+
+static cl_object
+seq_read_object(cl_object strm)
+{
+  cl_object vec = SEQ_STREAM_VECTOR(strm);
+  cl_fixnum pos = SEQ_STREAM_POSITION(strm);
+  if (pos < SEQ_INPUT_LIMIT(strm)) {
+    SEQ_STREAM_POSITION(strm)++;
+    return ecl_aref_unsafe(vec, pos);
+  }
+  return OBJNULL;
+}
+
+static cl_object
+seq_peek_object(cl_object strm)
+{
+  cl_object vec = SEQ_STREAM_VECTOR(strm);
+  cl_fixnum pos = SEQ_STREAM_POSITION(strm);
+  if (pos < SEQ_INPUT_LIMIT(strm)) {
+    return ecl_aref_unsafe(vec, pos);
+  }
+  return OBJNULL;
+}
+
+static void
+seq_write_object(cl_object strm, cl_object object)
+{
+  cl_object vec = SEQ_STREAM_VECTOR(strm);
+  cl_fixnum pos = SEQ_STREAM_POSITION(strm);
+  cl_fixnum dim = vec->vector.dim;
+ AGAIN:
+  if (pos >= dim) {
+    cl_object size = ecl_ash(ecl_make_fixnum(dim), 1);
+    SEQ_STREAM_VECTOR(strm) = vec = si_adjust_vector(vec, size);
+    goto AGAIN;
+  }
+  ecl_aset(vec, pos++, object);
+  if (vec->vector.fillp < pos)
+    vec->vector.fillp = pos;
+  SEQ_STREAM_POSITION(strm) = pos;
+}
+
+static void
+seq_unread_object(cl_object strm, cl_object object)
+{
+  unlikely_if (SEQ_STREAM_POSITION(strm) <= 0) {
+    ecl_unread_error(strm);
+  }
+  SEQ_STREAM_POSITION(strm)--;
+}
+
+/**********************************************************************
  * SEQUENCE INPUT STREAMS
  */
 
@@ -249,6 +303,13 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
     strm->stream.ops->unread_char = seq_in_ucs4_unread_char;
   }
 #endif
+  else if(Null(external_format)) {
+    /* ecl_normalize_stream_element_type errors on illegal element type. */
+    ecl_set_stream_elt_type(strm, byte_size, flags, external_format);
+    strm->stream.ops->read_byte = seq_read_object;
+    strm->stream.ops->peek_byte = seq_peek_object;
+    strm->stream.ops->unread_byte = seq_unread_object;
+  }
   else {
     FEerror("Illegal combination of external-format ~A and input vector ~A for MAKE-SEQUENCE-INPUT-STREAM.~%", 2, external_format, vector);
   }
@@ -438,6 +499,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
     external_format = @':default';
   }
   if (ecl_aet_size[type] == 1) {
+    /* If elements of the stream are byte8, then we can convert them on fly. */
     ecl_set_stream_elt_type(strm, byte_size, flags, external_format);
     /* Override byte size */
     if (byte_size) strm->stream.byte_size = 8;
@@ -458,6 +520,11 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
     strm->stream.ops->write_char = seq_out_ucs4_write_char;
   }
 #endif
+  else if(Null(external_format)) {
+    /* ecl_normalize_stream_element_type errors on illegal element type. */
+    ecl_set_stream_elt_type(strm, byte_size, flags, external_format);
+    strm->stream.ops->write_byte = seq_write_object;
+  }
   else {
     FEerror("Illegal combination of external-format ~A and output vector ~A for MAKE-SEQUENCE-OUTPUT-STREAM.~%", 2, external_format, vector);
   }
