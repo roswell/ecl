@@ -506,28 +506,33 @@ write_char_increment_column(cl_object strm, ecl_character c)
 
 #define ECL_FILE_STREAM_P(strm) \
         (ECL_ANSI_STREAM_P(strm) && (strm)->stream.mode < ecl_smm_synonym)
+
 #define STRING_OUTPUT_STRING(strm) (strm)->stream.object0
 #define STRING_INPUT_STRING(strm) (strm)->stream.object0
 #define STRING_INPUT_POSITION(strm) (strm)->stream.int0
 #define STRING_INPUT_LIMIT(strm) (strm)->stream.int1
+
 #define TWO_WAY_STREAM_INPUT(strm) (strm)->stream.object0
 #define TWO_WAY_STREAM_OUTPUT(strm) (strm)->stream.object1
+
 #define SYNONYM_STREAM_SYMBOL(strm) (strm)->stream.object0
 #define SYNONYM_STREAM_STREAM(strm) ecl_symbol_value((strm)->stream.object0)
 #define BROADCAST_STREAM_LIST(strm) (strm)->stream.object0
 #define ECHO_STREAM_INPUT(strm) (strm)->stream.object0
 #define ECHO_STREAM_OUTPUT(strm) (strm)->stream.object1
 #define CONCATENATED_STREAM_LIST(strm) (strm)->stream.object0
+
 #define IO_STREAM_FILE(strm) ((strm)->stream.file.stream)
 #define IO_STREAM_ELT_TYPE(strm) (strm)->stream.object0
 #define IO_STREAM_FILENAME(strm) (strm)->stream.object1
+
 #define IO_FILE_DESCRIPTOR(strm) (strm)->stream.file.descriptor
 #define IO_FILE_ELT_TYPE(strm) (strm)->stream.object0
 #define IO_FILE_FILENAME(strm) (strm)->stream.object1
-#define SEQ_OUTPUT_VECTOR(strm) (strm)->stream.object1
-#define SEQ_OUTPUT_POSITION(strm) (strm)->stream.int0
-#define SEQ_INPUT_VECTOR(strm) (strm)->stream.object1
-#define SEQ_INPUT_POSITION(strm) (strm)->stream.int0
+
+#define SEQ_STREAM_ELT_TYPE(strm) (strm)->stream.object0
+#define SEQ_STREAM_VECTOR(strm) (strm)->stream.object1
+#define SEQ_STREAM_POSITION(strm) (strm)->stream.int0
 #define SEQ_INPUT_LIMIT(strm) (strm)->stream.int1
 
 #ifndef HAVE_FSEEKO
