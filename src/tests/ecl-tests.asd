@@ -28,6 +28,7 @@
                          (:file "external-formats" :if-feature :unicode)
                          (:file "unicode" :if-feature :unicode)
                          (:file "complex")
+                         (:file "stream")
                          (:file "wscl")))
                (:module stress-tests
                         :default-component-class asdf:cl-source-file.lsp
