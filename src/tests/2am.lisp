@@ -273,13 +273,13 @@
 
 (defmacro finishes (form &rest args)
   (if args
-      `(handler-case (progn ,form (passed))
+      `(handler-case (multiple-value-prog1 ,form (passed))
          (serious-condition (c)
            (failed (make-condition 'test-failure
                                    :name *test-name*
                                    :format-control ,(car args)
                                    :format-arguments (list ,@(cdr args))))))
-      `(handler-case (progn ,form (passed))
+      `(handler-case (multiple-value-prog1 ,form (passed))
          (serious-condition (c)
            (failed (make-condition 'test-failure
                                    :name *test-name*
