@@ -16,5 +16,98 @@
     (is (char= #\d (read-char stream)))
     (finishes (unread-char #\d stream))
     (is (char= #\d (read-char stream)))
-    (is (eql (read-char stream) :eof))))
+    (is (eql (read-char stream nil :eof) :eof)))
+  (let* ((vector (make-array 2 :element-type 'ext:byte8 :initial-contents '(1 2)))
+         (stream (ext:make-sequence-input-stream vector)))
+    (signals error (ext:unread-byte stream 0))
+    (is (= 1 (read-byte stream)))
+    (is (= 2 (read-byte stream)))
+    (finishes (ext:unread-byte stream 2))
+    (is (= 2 (read-byte stream)))
+    (is (eql (read-byte stream nil :eof) :eof))))
+
+(defun make-input-stream-tester (key read peek back)
+  ;; (READ STREAM EOF-VALUE)
+  ;; (PEEK STREAM EOF-VALUE)
+  ;; (BACK STREAM ELT-VALUE)
+  (lambda (stream vector)
+    (labels ((call (name fun elt &optional (exp elt))
+               (let ((out (funcall fun stream elt)))
+                 (is (eql out exp) "~a: ~a not eql to ~a" name out exp)))
+             (test (elt)
+               (call :peek peek (funcall key elt))
+               (call :read read (funcall key elt))
+               (call :back back (funcall key elt) nil)
+               (call :peek peek (funcall key elt))
+               (call :read read (funcall key elt))))
+      (loop for i across vector
+            do (test i)
+            finally (call :read-eof read :eof)
+                    (call :peek-eof peek :eof)))))
+
+(setf (fdefinition 'test-byte-input-stream)
+      (make-input-stream-tester
+       #'identity
+       (lambda (s i) (cl:read-byte s nil i))
+       (lambda (s i) (ext:peek-byte s i))
+       (lambda (s i) (ext:unread-byte s i))))
+
+(setf (fdefinition 'test-char-input-stream)
+      (make-input-stream-tester
+       #'code-char
+       (lambda (s i) (cl:read-char s nil i))
+       (lambda (s i) (cl:peek-char nil s nil i))
+       (lambda (s i) (cl:unread-char i s))))
+
+(setf (fdefinition 'test-bivalent-input-stream)
+      (make-input-stream-tester
+       #'identity
+       (lambda (s i)
+         (if (zerop (random 2))
+             (cl:read-byte s nil i)
+             (let ((out (cl:read-char s nil i)))
+               (if (characterp out)
+                   (char-code out)
+                   out))))
+       (lambda (s i)
+         (if (zerop (random 2))
+             (ext:peek-byte s i)
+             (let ((out (cl:peek-char nil s nil i)))
+               (if (characterp out)
+                   (char-code out)
+                   out))))
+       (lambda (s i)
+         (if (zerop (random 2))
+             (ext:unread-byte s i)
+             (cl:unread-char (code-char i) s)))))
+
+(defun make-sequence-io-stream (vector &optional format)
+  (make-two-way-stream
+   (ext:make-sequence-input-stream vector :external-format format)
+   (ext:make-sequence-output-stream vector :external-format format)))
+
+;;; Smoke test for extensions EXT:PEEK-BYTE and EXT:UNREAD-BYTE.
+(deftest stream.smoke-read-byte ()
+  (let* ((values (loop repeat 16 collect (random 255)))
+         (vector (make-array 16 :element-type '(unsigned-byte 8)
+                                :initial-contents values
+                                :fill-pointer 8))
+         (stream (make-sequence-io-stream vector)))
+    (test-byte-input-stream stream vector)))
+
+(deftest stream.smoke-read-char ()
+  (let* ((values (map 'vector #'char-code "ABCDEFGHIJKLMNOP"))
+         (vector (make-array 16 :element-type '(unsigned-byte 8)
+                                :initial-contents values
+                                :fill-pointer 8))
+         (stream (make-sequence-io-stream vector :ascii)))
+    (test-char-input-stream stream vector)))
+
+(deftest stream.smoke-bivalent ()
+  (let* ((values (map 'vector #'char-code "ABCDEFGHIJKLMNOP"))
+         (vector (make-array 16 :element-type '(unsigned-byte 8)
+                                :initial-contents values
+                                :fill-pointer 8))
+         (stream (make-sequence-io-stream vector :ascii)))
+    (test-bivalent-input-stream stream vector)))
 
