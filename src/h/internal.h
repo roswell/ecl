@@ -533,7 +533,13 @@ write_char_increment_column(cl_object strm, ecl_character c)
 #define SEQ_STREAM_ELT_TYPE(strm) (strm)->stream.object0
 #define SEQ_STREAM_VECTOR(strm) (strm)->stream.object1
 #define SEQ_STREAM_POSITION(strm) (strm)->stream.int0
-#define SEQ_INPUT_LIMIT(strm) (strm)->stream.int1
+
+#define SEQ_INPUT_VECTOR_END(strm) (strm)->stream.int1
+#define SEQ_INPUT_LIMIT(strm)                                           \
+        ((strm)->stream.flags & ECL_STREAM_USE_VECTOR_FILLP             \
+         ? SEQ_STREAM_VECTOR(strm)->vector.fillp                        \
+         : SEQ_INPUT_VECTOR_END(strm))
+
 
 #ifndef HAVE_FSEEKO
 #define ecl_off_t int

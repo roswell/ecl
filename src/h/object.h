@@ -645,15 +645,19 @@ enum {
         ECL_STREAM_USER_FORMAT = 8,
         ECL_STREAM_US_ASCII = 10,
 #endif
+        /* External Format */
         ECL_STREAM_CR = 16,
         ECL_STREAM_LF = 32,
         ECL_STREAM_SIGNED_BYTES = 64,
         ECL_STREAM_LITTLE_ENDIAN = 128,
+        /* OS Streams */
         ECL_STREAM_C_STREAM = 256,
         ECL_STREAM_MIGHT_SEEK = 512,
-        ECL_STREAM_CLOSE_COMPONENTS = 1024,
-        ECL_STREAM_CLOSE_ON_EXEC = 2048,
-        ECL_STREAM_NONBLOCK = 4096
+        ECL_STREAM_CLOSE_ON_EXEC = 1024,
+        ECL_STREAM_NONBLOCK = 2048,
+        /* Lisp Streams */
+        ECL_STREAM_CLOSE_COMPONENTS = 4096,
+        ECL_STREAM_USE_VECTOR_FILLP = 8192
 };
 
 /* buffer points to an array of bytes ending at buffer_end. Decode one

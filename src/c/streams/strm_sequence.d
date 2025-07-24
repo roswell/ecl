@@ -315,7 +315,7 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
   }
   SEQ_STREAM_VECTOR(strm) = vector;
   SEQ_STREAM_POSITION(strm) = istart;
-  SEQ_INPUT_LIMIT(strm) = iend;
+  SEQ_INPUT_VECTOR_END(strm) = iend;
   return strm;
 }
 
@@ -324,11 +324,15 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
                                          (end ECL_NIL)
                                          (external_format ECL_NIL))
   cl_index_pair p;
+  cl_object strm;
   @
   p = ecl_vector_start_end(@[ext::make-sequence-input-stream],
                            vector, start, end);
-  @(return make_sequence_input_stream(vector, p.start, p.end,
-                                      external_format))
+  strm = make_sequence_input_stream(vector, p.start, p.end,
+                                    external_format);
+  if (Null(end))
+    strm->stream.flags |= ECL_STREAM_USE_VECTOR_FILLP;
+  @(return strm)
   @)
 
 /**********************************************************************
