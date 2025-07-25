@@ -221,7 +221,7 @@ const struct ecl_file_ops seq_in_ops = {
   seq_in_read_byte8,
   ecl_not_output_write_byte8,
 
-  ecl_generic_read_byte,
+  ecl_binary_read_byte,
   ecl_not_output_write_byte,
   seq_in_unread_byte,
   ecl_generic_peek_byte,
@@ -445,7 +445,7 @@ const struct ecl_file_ops seq_out_ops = {
   seq_out_write_byte8,
 
   ecl_not_input_read_byte,
-  ecl_generic_write_byte,
+  ecl_binary_write_byte,
   ecl_not_input_unread_byte,
   ecl_generic_peek_byte,
 

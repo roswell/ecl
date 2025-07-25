@@ -561,8 +561,8 @@ const struct ecl_file_ops io_file_ops = {
   io_file_read_byte8,
   io_file_write_byte8,
 
-  ecl_generic_read_byte,
-  ecl_generic_write_byte,
+  ecl_binary_read_byte,
+  ecl_binary_write_byte,
   ecl_generic_unread_byte,
   ecl_generic_peek_byte,
 
@@ -602,7 +602,7 @@ const struct ecl_file_ops output_file_ops = {
   output_file_write_byte8,
 
   ecl_not_input_read_byte,
-  ecl_generic_write_byte,
+  ecl_binary_write_byte,
   ecl_not_input_unread_byte,
   ecl_not_input_read_byte,
 
@@ -641,7 +641,7 @@ const struct ecl_file_ops input_file_ops = {
   io_file_read_byte8,
   ecl_not_output_write_byte8,
 
-  ecl_generic_read_byte,
+  ecl_binary_read_byte,
   ecl_not_output_write_byte,
   ecl_generic_unread_byte,
   ecl_generic_peek_byte,
@@ -949,8 +949,8 @@ const struct ecl_file_ops io_stream_ops = {
   io_stream_read_byte8,
   io_stream_write_byte8,
 
-  ecl_generic_read_byte,
-  ecl_generic_write_byte,
+  ecl_binary_read_byte,
+  ecl_binary_write_byte,
   ecl_generic_unread_byte,
   ecl_generic_peek_byte,
 
@@ -990,7 +990,7 @@ const struct ecl_file_ops output_stream_ops = {
   output_stream_write_byte8,
 
   ecl_not_input_read_byte,
-  ecl_generic_write_byte,
+  ecl_binary_write_byte,
   ecl_not_input_unread_byte,
   ecl_not_input_read_byte,
 
@@ -1029,7 +1029,7 @@ const struct ecl_file_ops input_stream_ops = {
   input_stream_read_byte8,
   ecl_not_output_write_byte8,
 
-  ecl_generic_read_byte,
+  ecl_binary_read_byte,
   ecl_not_output_write_byte,
   ecl_generic_unread_byte,
   ecl_generic_peek_byte,
@@ -1180,8 +1180,8 @@ const struct ecl_file_ops winsock_stream_io_ops = {
   winsock_stream_read_byte8,
   winsock_stream_write_byte8,
 
-  ecl_generic_read_byte,
-  ecl_generic_write_byte,
+  ecl_binary_read_byte,
+  ecl_binary_write_byte,
   ecl_generic_unread_byte,
   ecl_generic_peek_byte,
 
@@ -1221,7 +1221,7 @@ const struct ecl_file_ops winsock_stream_output_ops = {
   winsock_stream_write_byte8,
 
   ecl_not_input_read_byte,
-  ecl_generic_write_byte,
+  ecl_binary_write_byte,
   ecl_not_input_unread_byte,
   ecl_not_input_read_byte,
 
@@ -1260,7 +1260,7 @@ const struct ecl_file_ops winsock_stream_input_ops = {
   winsock_stream_read_byte8,
   ecl_not_output_write_byte8,
 
-  ecl_generic_read_byte,
+  ecl_binary_read_byte,
   ecl_not_output_write_byte,
   ecl_generic_unread_byte,
   ecl_generic_peek_byte,
@@ -1371,8 +1371,8 @@ const struct ecl_file_ops wcon_stream_io_ops = {
   wcon_stream_read_byte8,
   wcon_stream_write_byte8,
 
-  ecl_generic_read_byte,
-  ecl_generic_write_byte,
+  ecl_binary_read_byte,
+  ecl_binary_write_byte,
   ecl_generic_unread_byte,
   ecl_generic_peek_byte,
 

@@ -442,14 +442,6 @@ cl_object ecl_not_output_string_length(cl_object strm, cl_object string);
 cl_object ecl_not_file_string_length(cl_object strm, cl_object string);
 int ecl_unknown_column(cl_object strm);
 
-cl_object ecl_generic_read_byte_unsigned8(cl_object strm);
-void ecl_generic_write_byte_unsigned8(cl_object byte, cl_object strm);
-cl_object ecl_generic_read_byte_signed8(cl_object strm);
-void ecl_generic_write_byte_signed8(cl_object byte, cl_object strm);
-cl_object ecl_generic_read_byte_le(cl_object strm);
-void ecl_generic_write_byte_le(cl_object c, cl_object strm);
-cl_object ecl_generic_read_byte(cl_object strm);
-void ecl_generic_write_byte(cl_object c, cl_object strm);
 void ecl_generic_unread_byte(cl_object strm, cl_object byte);
 cl_object ecl_generic_peek_byte(cl_object strm);
 ecl_character ecl_generic_peek_char(cl_object strm);

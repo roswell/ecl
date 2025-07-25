@@ -882,29 +882,27 @@ ecl_set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
   }
   stream->stream.format = cl_list(2, stream->stream.format, t);
   {
-    cl_object (*read_byte)(cl_object);
-    void (*write_byte)(cl_object,cl_object);
     byte_size = (byte_size+7)&(~(cl_fixnum)7);
     if (byte_size == 8) {
       if (flags & ECL_STREAM_SIGNED_BYTES) {
-        read_byte = ecl_generic_read_byte_signed8;
-        write_byte = ecl_generic_write_byte_signed8;
+        stream->stream.byte_decoder = ecl_binary_s8_decoder;
+        stream->stream.byte_encoder = ecl_binary_s8_encoder;
       } else {
-        read_byte = ecl_generic_read_byte_unsigned8;
-        write_byte = ecl_generic_write_byte_unsigned8;
+        stream->stream.byte_decoder = ecl_binary_u8_decoder;
+        stream->stream.byte_encoder = ecl_binary_u8_encoder;
       }
     } else if (flags & ECL_STREAM_LITTLE_ENDIAN) {
-      read_byte = ecl_generic_read_byte_le;
-      write_byte = ecl_generic_write_byte_le;
+      stream->stream.byte_decoder = ecl_binary_le_decoder;
+      stream->stream.byte_encoder = ecl_binary_le_encoder;
     } else {
-      read_byte = ecl_generic_read_byte;
-      write_byte = ecl_generic_write_byte;
+      stream->stream.byte_decoder = ecl_binary_be_decoder;
+      stream->stream.byte_encoder = ecl_binary_be_encoder;
     }
     if (ecl_input_stream_p(stream)) {
-      stream->stream.ops->read_byte = read_byte;
+      stream->stream.ops->read_byte = ecl_binary_read_byte;
     }
     if (ecl_output_stream_p(stream)) {
-      stream->stream.ops->write_byte = write_byte;
+      stream->stream.ops->write_byte = ecl_binary_write_byte;
     }
   }
   stream->stream.flags = flags;
