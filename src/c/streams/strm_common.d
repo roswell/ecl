@@ -529,6 +529,7 @@ ecl_generic_close(cl_object strm)
   ops->length = closed_stream_length;
   ops->close = ecl_generic_close;
   strm->stream.last_byte = OBJNULL;
+  strm->stream.byte_buffer = NULL;
   strm->stream.closed = 1;
   return ECL_T;
 }

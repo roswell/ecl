@@ -699,6 +699,7 @@ struct ecl_stream {
         cl_index byte_size;     /*  size of byte in binary streams  */
         cl_fixnum last_op;      /*  0: unknown, 1: reading, -1: writing */
         char *buffer;           /*  buffer for FILE  */
+        unsigned char *byte_buffer; /*  buffer for encoding and decoding */
         cl_object format;       /*  external format  */
         cl_eformat_encoder encoder;
         cl_eformat_decoder decoder;

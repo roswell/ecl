@@ -22,7 +22,7 @@ cl_object
 ecl_binary_read_byte(cl_object strm)
 {
   cl_index (*read_byte8)(cl_object, unsigned char *, cl_index);
-  unsigned char buf[ENCODING_BUFFER_MAX_SIZE];
+  unsigned char *buf = strm->stream.byte_buffer;
   cl_object byte;
   cl_index nbytes;
   byte = strm->stream.last_byte;
@@ -42,7 +42,7 @@ ecl_binary_write_byte(cl_object strm, cl_object byte)
 {
   cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
   cl_index nbytes = strm->stream.byte_size/8;
-  unsigned char buf[ENCODING_BUFFER_MAX_SIZE];
+  unsigned char *buf = strm->stream.byte_buffer;
   write_byte8 = strm->stream.ops->write_byte8;
   strm->stream.byte_encoder(strm, buf, byte);
   write_byte8(strm, buf, nbytes);

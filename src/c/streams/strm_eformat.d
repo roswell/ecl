@@ -61,7 +61,7 @@ decoding_error(cl_object stream, unsigned char **buffer, int char_length, unsign
 ecl_character
 ecl_eformat_read_char(cl_object strm)
 {
-  unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
+  unsigned char *buffer = strm->stream.byte_buffer;
   ecl_character c;
   unsigned char *buffer_pos = buffer;
   unsigned char *buffer_end = buffer;
@@ -91,19 +91,24 @@ ecl_eformat_unread_char(cl_object strm, ecl_character c)
     ecl_unread_twice(strm);
   }
   {
-    unsigned char buffer[2*ENCODING_BUFFER_MAX_SIZE];
+    unsigned char *buffer = strm->stream.byte_buffer;
     int ndx = 0;
     cl_object l = strm->stream.byte_stack;
-    cl_fixnum i = strm->stream.last_code[0];
-    if (i != EOF) {
-      ndx += strm->stream.encoder(strm, buffer, i);
-    }
+    cl_fixnum i;
+    /* Byte stack lands in a reverse order. */
     i = strm->stream.last_code[1];
     if (i != EOF) {
-      ndx += strm->stream.encoder(strm, buffer+ndx, i);
+      ndx = strm->stream.encoder(strm, buffer, i);
+      while (ndx != 0) {
+        l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+      }
     }
-    while (ndx != 0) {
-      l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+    i = strm->stream.last_code[0];
+    if (i != EOF) {
+      ndx = strm->stream.encoder(strm, buffer, i);
+      while (ndx != 0) {
+        l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+      }
     }
     strm->stream.byte_stack = l;
     strm->stream.last_char = EOF;
@@ -113,7 +118,7 @@ ecl_eformat_unread_char(cl_object strm, ecl_character c)
 ecl_character
 ecl_eformat_write_char(cl_object strm, ecl_character c)
 {
-  unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
+  unsigned char *buffer = strm->stream.byte_buffer;
   ecl_character nbytes;
   nbytes = strm->stream.encoder(strm, buffer, c);
   strm->stream.ops->write_byte8(strm, buffer, nbytes);
@@ -904,6 +909,12 @@ ecl_set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
   }
   stream->stream.flags = flags;
   stream->stream.byte_size = byte_size;
+  {
+    cl_fixnum buffer_size = byte_size/8;
+    if (buffer_size < ENCODING_BUFFER_MAX_SIZE)
+      buffer_size = ENCODING_BUFFER_MAX_SIZE;
+    stream->stream.byte_buffer = ecl_alloc_atomic(buffer_size);
+  }
 }
 
 cl_object
