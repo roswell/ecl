@@ -443,13 +443,13 @@ static cl_object
 echo_read_byte(cl_object strm)
 {
   cl_object byte = strm->stream.last_byte;
-  if (byte == OBJNULL) {
+  if (byte != OBJNULL) {
+    strm->stream.last_byte = OBJNULL;
+    byte = ecl_read_byte(ECHO_STREAM_INPUT(strm));
+  } else {
     byte = ecl_read_byte(ECHO_STREAM_INPUT(strm));
     if (byte != OBJNULL)
       ecl_write_byte(byte, ECHO_STREAM_OUTPUT(strm));
-  } else {
-    strm->stream.last_byte = OBJNULL;
-    byte = ecl_read_byte(ECHO_STREAM_INPUT(strm));
   }
   return byte;
 }
@@ -466,31 +466,28 @@ echo_unread_byte(cl_object strm, cl_object byte)
   unlikely_if (strm->stream.last_byte != OBJNULL) {
     ecl_unread_twice(strm);
   }
-  strm->stream.last_byte = byte;
+  strm->stream.last_byte = ECL_T;
   ecl_unread_byte(byte, ECHO_STREAM_INPUT(strm));
 }
 
 static cl_object
 echo_peek_byte(cl_object strm)
 {
-  cl_object byte = strm->stream.last_byte;
-  if (byte == OBJNULL) {
-    byte = ecl_peek_byte(ECHO_STREAM_INPUT(strm));
-  }
-  return byte;
+  return ecl_peek_byte(ECHO_STREAM_INPUT(strm));
 }
 
 static ecl_character
 echo_read_char(cl_object strm)
 {
-  ecl_character c = strm->stream.last_code[0];
-  if (c == EOF) {
+  cl_object byte = strm->stream.last_byte;
+  ecl_character c;
+  if (byte != OBJNULL) {
+    strm->stream.last_byte = OBJNULL;
+    c = ecl_read_char(ECHO_STREAM_INPUT(strm));
+  } else {
     c = ecl_read_char(ECHO_STREAM_INPUT(strm));
     if (c != EOF)
       ecl_write_char(c, ECHO_STREAM_OUTPUT(strm));
-  } else {
-    strm->stream.last_code[0] = EOF;
-    ecl_read_char(ECHO_STREAM_INPUT(strm));
   }
   return c;
 }
@@ -504,21 +501,17 @@ echo_write_char(cl_object strm, ecl_character c)
 static void
 echo_unread_char(cl_object strm, ecl_character c)
 {
-  unlikely_if (strm->stream.last_code[0] != EOF) {
+  unlikely_if (strm->stream.last_byte != OBJNULL) {
     ecl_unread_twice(strm);
   }
-  strm->stream.last_code[0] = c;
+  strm->stream.last_byte = ECL_T;;
   ecl_unread_char(c, ECHO_STREAM_INPUT(strm));
 }
 
 static ecl_character
 echo_peek_char(cl_object strm)
 {
-  ecl_character c = strm->stream.last_code[0];
-  if (c == EOF) {
-    c = ecl_peek_char(ECHO_STREAM_INPUT(strm));
-  }
-  return c;
+  return ecl_peek_char(ECHO_STREAM_INPUT(strm));
 }
 
 static int
