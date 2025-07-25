@@ -322,12 +322,6 @@ closed_stream_set_position(cl_object strm, cl_object position)
  * Versions of the methods which are defined in terms of others
  */
 
-void
-ecl_generic_unread_byte(cl_object strm, cl_object byte)
-{
-  strm->stream.last_byte = byte;
-}
-
 cl_object
 ecl_generic_peek_byte(cl_object strm)
 {

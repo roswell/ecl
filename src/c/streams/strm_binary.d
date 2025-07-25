@@ -48,6 +48,18 @@ ecl_binary_write_byte(cl_object strm, cl_object byte)
   write_byte8(strm, buf, nbytes);
 }
 
+/* FIXME this function should spill octets into the buffer like eformat does, so
+   that when we read-char next, or change the element type and re-read byte, it
+   will be possible to reinterpret these octets. */
+void
+ecl_binary_unread_byte(cl_object strm, cl_object byte)
+{
+  unlikely_if (strm->stream.last_byte != OBJNULL) {
+    ecl_unread_twice(strm);
+  }
+  strm->stream.last_byte = byte;
+}
+
 /*
  * 8-bit unsigned
  */

@@ -442,7 +442,6 @@ cl_object ecl_not_output_string_length(cl_object strm, cl_object string);
 cl_object ecl_not_file_string_length(cl_object strm, cl_object string);
 int ecl_unknown_column(cl_object strm);
 
-void ecl_generic_unread_byte(cl_object strm, cl_object byte);
 cl_object ecl_generic_peek_byte(cl_object strm);
 ecl_character ecl_generic_peek_char(cl_object strm);
 void ecl_generic_void(cl_object strm);
@@ -458,6 +457,7 @@ cl_index ecl_generic_read_vector(cl_object strm, cl_object data, cl_index start,
 /* streams/strm_binary.d */
 cl_object ecl_binary_read_byte(cl_object strm);
 void ecl_binary_write_byte(cl_object c, cl_object strm);
+void ecl_binary_unread_byte(cl_object strm, cl_object byte);
 
 cl_object ecl_binary_u8_decoder(cl_object strm, unsigned char *buf);
 void ecl_binary_u8_encoder(cl_object strm, unsigned char *buf, cl_object byte);
