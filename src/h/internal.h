@@ -463,6 +463,19 @@ cl_object ecl_generic_close(cl_object strm);
 cl_index ecl_generic_write_vector(cl_object strm, cl_object data, cl_index start, cl_index end);
 cl_index ecl_generic_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end);
 
+/* streams/strm_binary.d */
+cl_object ecl_binary_read_byte(cl_object strm);
+void ecl_binary_write_byte(cl_object c, cl_object strm);
+
+cl_object ecl_binary_u8_decoder(cl_object strm, unsigned char *buf);
+void ecl_binary_u8_encoder(cl_object strm, unsigned char *buf, cl_object byte);
+cl_object ecl_binary_s8_decoder(cl_object strm, unsigned char *buf);
+void ecl_binary_s8_encoder(cl_object strm, unsigned char *buf, cl_object byte);
+cl_object ecl_binary_be_decoder(cl_object strm, unsigned char *buf);
+void ecl_binary_be_encoder(cl_object strm, unsigned char *buf, cl_object byte);
+cl_object ecl_binary_le_decoder(cl_object strm, unsigned char *buf);
+void ecl_binary_le_encoder(cl_object strm, unsigned char *buf, cl_object byte);
+
 /* streams/strm_eformat.d */
 ecl_character ecl_eformat_read_char(cl_object strm);
 void ecl_eformat_unread_char(cl_object strm, ecl_character c);
@@ -482,9 +495,10 @@ write_char_increment_column(cl_object strm, ecl_character c)
     strm->stream.column++;
 }
 
-/* Maximum number of bytes required to encode a character.  This currently
- * corresponds to (4 + 4) for the UCS-4 encoding with 4 being the byte-order
- * mark, 4 for the character. */
+/* Maximum number of octets required to encode a char or a byte. This currently
+ * corresponds to:
+ * - (4 + 4) for the UCS-4 with 4 being the byte-order mark, 4 for the char
+ * - (64/ 8) for the EXT:BYTE64 which is the biggest array integer type */
 #define ENCODING_BUFFER_MAX_SIZE 8
 
 /* file.d */

@@ -40,6 +40,8 @@ ecl_alloc_stream(void)
   x->stream.buffer = NULL;
   x->stream.encoder = NULL;
   x->stream.decoder = NULL;
+  x->stream.byte_encoder = NULL;
+  x->stream.byte_decoder = NULL;
   x->stream.last_char = EOF;
   x->stream.byte_stack = ECL_NIL;
   x->stream.last_code[0] = x->stream.last_code[1] = EOF;

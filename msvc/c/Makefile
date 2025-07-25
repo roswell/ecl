@@ -99,9 +99,9 @@ WRITER_OBJS = print.obj float_to_digits.obj float_to_string.obj \
 
 READER_OBJS = read.obj parse_integer.obj parse_number.obj
 
-STREAM_OBJS = stream.obj file.obj strm_os.obj \
-        strm_clos.obj strm_string.obj strm_composite.obj \
-        strm_common.obj strm_sequence.obj strm_eformat.obj
+STREAM_OBJS = stream.obj file.obj strm_os.obj strm_clos.obj \
+        strm_string.obj strm_composite.obj strm_common.obj \
+        strm_sequence.obj strm_eformat.obj strm_binary.obj
 
 FFI_OBJS = ffi.obj libraries.obj backtrace.obj mmap.obj cdata.obj
 

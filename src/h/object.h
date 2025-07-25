@@ -669,6 +669,11 @@ typedef ecl_character (*cl_eformat_decoder)(cl_object stream, unsigned char **bu
    number of bytes used */
 typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, ecl_character c);
 
+/* Buffer is assumed to be big enough to store whole byte. The byte size is
+   stream->strm.byte_size. Decoder returns an object, encoder fills a buffer. */
+typedef cl_object (*cl_binary_decoder)(cl_object stream, unsigned char *buf);
+typedef void (*cl_binary_encoder)(cl_object stream, unsigned char *buf, cl_object byte);
+
 #define ECL_ANSI_STREAM_P(o) \
         (ECL_IMMEDIATE(o) == 0 && ((o)->d.t == t_stream))
 #define ECL_ANSI_STREAM_TYPE_P(o,m) \
@@ -697,6 +702,8 @@ struct ecl_stream {
         cl_object format;       /*  external format  */
         cl_eformat_encoder encoder;
         cl_eformat_decoder decoder;
+        cl_binary_encoder byte_encoder;
+        cl_binary_decoder byte_decoder;
         cl_object format_table;
         int flags;              /*  character table, flags, etc  */
         ecl_character eof_char;
