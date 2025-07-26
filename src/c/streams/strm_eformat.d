@@ -78,8 +78,6 @@ ecl_eformat_read_char(cl_object strm)
     return EOF;
   if (c != EOF) {
     strm->stream.last_char = c;
-    strm->stream.last_code[0] = c;
-    strm->stream.last_code[1] = EOF;
   }
   return c;
 }
@@ -90,26 +88,31 @@ ecl_eformat_unread_char(cl_object strm, ecl_character c)
   unlikely_if (c != strm->stream.last_char) {
     ecl_unread_twice(strm);
   }
-  {
+  if (c == ECL_CHAR_CODE_NEWLINE) {
     unsigned char *buffer = strm->stream.byte_buffer;
     int ndx = 0;
     cl_object l = strm->stream.byte_stack;
-    cl_fixnum i;
-    /* Byte stack lands in a reverse order. */
-    i = strm->stream.last_code[1];
-    if (i != EOF) {
-      ndx = strm->stream.encoder(strm, buffer, i);
-      while (ndx != 0) {
-        l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+    int flags = strm->stream.flags;
+    if (flags & ECL_STREAM_CR) {
+      if (flags & ECL_STREAM_LF) {
+        /* Byte stack lands in a reverse order. */
+        ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_LINEFEED);
+        while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
       }
+      ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_RETURN);
+      while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+    } else {
+      ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_NEWLINE);
+      while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
     }
-    i = strm->stream.last_code[0];
-    if (i != EOF) {
-      ndx = strm->stream.encoder(strm, buffer, i);
-      while (ndx != 0) {
-        l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
-      }
-    }
+    strm->stream.byte_stack = l;
+    strm->stream.last_char = EOF;
+  } else {
+    unsigned char *buffer = strm->stream.byte_buffer;
+    int ndx = 0;
+    cl_object l = strm->stream.byte_stack;
+    ndx = strm->stream.encoder(strm, buffer, c);
+    while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
     strm->stream.byte_stack = l;
     strm->stream.last_char = EOF;
   }
@@ -155,14 +158,10 @@ eformat_read_char_crlf(cl_object strm)
   if (c == ECL_CHAR_CODE_RETURN) {
     c = ecl_eformat_read_char(strm);
     if (c == ECL_CHAR_CODE_LINEFEED) {
-      strm->stream.last_code[0] = ECL_CHAR_CODE_RETURN;
-      strm->stream.last_code[1] = c;
       c = ECL_CHAR_CODE_NEWLINE;
     } else {
       ecl_eformat_unread_char(strm, c);
       c = ECL_CHAR_CODE_RETURN;
-      strm->stream.last_code[0] = c;
-      strm->stream.last_code[1] = EOF;
     }
     strm->stream.last_char = c;
   }

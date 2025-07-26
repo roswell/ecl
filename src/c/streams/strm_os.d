@@ -372,7 +372,6 @@ static ecl_character io_file_decode_char_from_buffer(cl_object strm, unsigned ch
     /* Ugly handling of line breaks */
     if (crlf) {
       if (c == ECL_CHAR_CODE_LINEFEED) {
-        strm->stream.last_code[1] = c;
         c = ECL_CHAR_CODE_NEWLINE;
       }
       else {
@@ -381,16 +380,11 @@ static ecl_character io_file_decode_char_from_buffer(cl_object strm, unsigned ch
       }
     } else if (strm->stream.flags & ECL_STREAM_CR && c == ECL_CHAR_CODE_RETURN) {
       if (strm->stream.flags & ECL_STREAM_LF) {
-        strm->stream.last_code[0] = c;
         crlf = 1;
         goto AGAIN;
       }
       else
         c = ECL_CHAR_CODE_NEWLINE;
-    }
-    if (!crlf) {
-      strm->stream.last_code[0] = c;
-      strm->stream.last_code[1] = EOF;
     }
     strm->stream.last_char = c;
     return c;

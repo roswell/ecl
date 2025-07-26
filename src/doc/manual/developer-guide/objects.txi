@@ -711,8 +711,6 @@ Buffer for unread bytes.
 File column.
 @item cl_fixnum last_char
 Last character read.
-@item cl_fixnum last_code[2]
-Actual composition of the last character.
 @item cl_fixnum int0 int1
 Some integers (may be used for a specific implementation purposes).
 @item cl_index byte_size
