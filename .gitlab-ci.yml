@@ -11,6 +11,9 @@ build:
     - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
     - make
     - make install
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   
 # run self-tests using the binary built before
 test-self:
