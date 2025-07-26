@@ -23,6 +23,10 @@ test-self:
   script:
     - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
     - make check
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
 
 # run ansi-tests using the binary built before
 test-ansi:
@@ -32,3 +36,6 @@ test-ansi:
   script:
     - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
     - make ansi-test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
