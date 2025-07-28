@@ -67,6 +67,7 @@ ecl_eformat_read_char(cl_object strm)
   unsigned char *buffer_end = buffer;
   cl_index byte_size = (strm->stream.byte_size / 8);
   strm->stream.last_char = EOF;
+  strm->stream.last_byte = OBJNULL;
   do {
     if (ecl_read_byte8(strm, buffer_end, byte_size) < byte_size) {
       c = EOF;
@@ -83,7 +84,8 @@ ecl_eformat_read_char(cl_object strm)
 void
 ecl_eformat_unread_char(cl_object strm, ecl_character c)
 {
-  unlikely_if (strm->stream.last_char != EOF) {
+  unlikely_if (strm->stream.last_char != EOF
+               || strm->stream.last_byte != OBJNULL) {
     ecl_unread_twice(strm);
   }
   strm->stream.last_char = c;

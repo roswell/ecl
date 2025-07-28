@@ -25,11 +25,8 @@ ecl_binary_read_byte(cl_object strm)
   unsigned char *buf = strm->stream.byte_buffer;
   cl_object byte;
   cl_index nbytes;
-  byte = strm->stream.last_byte;
-  unlikely_if (byte != OBJNULL) {
-    strm->stream.last_byte = OBJNULL;
-    return byte;
-  }
+  strm->stream.last_char = EOF;
+  strm->stream.last_byte = OBJNULL;
   read_byte8 = strm->stream.ops->read_byte8;
   nbytes = strm->stream.byte_size/8;
   if (read_byte8(strm, buf, nbytes) < nbytes)
@@ -48,13 +45,11 @@ ecl_binary_write_byte(cl_object strm, cl_object byte)
   write_byte8(strm, buf, nbytes);
 }
 
-/* FIXME this function should spill octets into the buffer like eformat does, so
-   that when we read-char next, or change the element type and re-read byte, it
-   will be possible to reinterpret these octets. */
 void
 ecl_binary_unread_byte(cl_object strm, cl_object byte)
 {
-  unlikely_if (strm->stream.last_byte != OBJNULL) {
+  unlikely_if (strm->stream.last_char != EOF
+               || strm->stream.last_byte != OBJNULL) {
     ecl_unread_twice(strm);
   }
   strm->stream.last_byte = byte;
