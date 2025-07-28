@@ -87,32 +87,6 @@ ecl_eformat_unread_char(cl_object strm, ecl_character c)
     ecl_unread_twice(strm);
   }
   strm->stream.last_char = c;
-  if (c == ECL_CHAR_CODE_NEWLINE) {
-    unsigned char *buffer = strm->stream.byte_buffer;
-    int ndx = 0;
-    cl_object l = strm->stream.byte_stack;
-    int flags = strm->stream.flags;
-    if (flags & ECL_STREAM_CR) {
-      if (flags & ECL_STREAM_LF) {
-        /* Byte stack lands in a reverse order. */
-        ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_LINEFEED);
-        while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
-      }
-      ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_RETURN);
-      while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
-    } else {
-      ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_NEWLINE);
-      while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
-    }
-    strm->stream.byte_stack = l;
-  } else {
-    unsigned char *buffer = strm->stream.byte_buffer;
-    int ndx = 0;
-    cl_object l = strm->stream.byte_stack;
-    ndx = strm->stream.encoder(strm, buffer, c);
-    while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
-    strm->stream.byte_stack = l;
-  }
 }
 
 ecl_character

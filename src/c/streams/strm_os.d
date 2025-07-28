@@ -132,10 +132,7 @@ safe_fclose(FILE *stream)
   return output;
 }
 
-/**********************************************************************
- * POSIX FILE STREAM
- */
-
+/* -- Byte stack --------------------------------------------------- */
 static cl_index
 consume_byte_stack(cl_object strm, unsigned char *c, cl_index n)
 {
@@ -151,6 +148,54 @@ consume_byte_stack(cl_object strm, unsigned char *c, cl_index n)
   }
   return out;
 }
+
+static void
+io_file_unread_char(cl_object strm, ecl_character c)
+{
+  ecl_eformat_unread_char(strm, c);
+  if (c == ECL_CHAR_CODE_NEWLINE) {
+    unsigned char *buffer = strm->stream.byte_buffer;
+    int ndx = 0;
+    cl_object l = strm->stream.byte_stack;
+    int flags = strm->stream.flags;
+    if (flags & ECL_STREAM_CR) {
+      if (flags & ECL_STREAM_LF) {
+        /* Byte stack lands in a reverse order. */
+        ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_LINEFEED);
+        while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+      }
+      ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_RETURN);
+      while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+    } else {
+      ndx = strm->stream.encoder(strm, buffer, ECL_CHAR_CODE_NEWLINE);
+      while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+    }
+    strm->stream.byte_stack = l;
+  } else {
+    unsigned char *buffer = strm->stream.byte_buffer;
+    int ndx = 0;
+    cl_object l = strm->stream.byte_stack;
+    ndx = strm->stream.encoder(strm, buffer, c);
+    while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+    strm->stream.byte_stack = l;
+  }
+}
+
+static void
+io_file_unread_byte(cl_object strm, cl_object byte)
+{
+  int ndx = strm->stream.byte_size/8;
+  cl_object l = strm->stream.byte_stack;
+  unsigned char *buffer = strm->stream.byte_buffer;
+  ecl_binary_unread_byte(strm, byte);
+  strm->stream.byte_encoder(strm, buffer, byte);
+  while (ndx != 0) l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
+  strm->stream.byte_stack = l;
+}
+
+/**********************************************************************
+ * POSIX FILE STREAM
+ */
 
 static cl_index
 io_file_read_byte8(cl_object strm, unsigned char *c, cl_index n)
@@ -556,12 +601,12 @@ const struct ecl_file_ops io_file_ops = {
 
   ecl_binary_read_byte,
   ecl_binary_write_byte,
-  ecl_binary_unread_byte,
+  io_file_unread_byte,
   ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
-  ecl_eformat_unread_char,
+  io_file_unread_char,
   ecl_generic_peek_char,
 
   io_file_read_vector,
@@ -636,12 +681,12 @@ const struct ecl_file_ops input_file_ops = {
 
   ecl_binary_read_byte,
   ecl_not_output_write_byte,
-  ecl_binary_unread_byte,
+  io_file_unread_byte,
   ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
-  ecl_eformat_unread_char,
+  io_file_unread_char,
   ecl_generic_peek_char,
 
   io_file_read_vector,
@@ -944,12 +989,12 @@ const struct ecl_file_ops io_stream_ops = {
 
   ecl_binary_read_byte,
   ecl_binary_write_byte,
-  ecl_binary_unread_byte,
+  io_file_unread_byte,
   ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
-  ecl_eformat_unread_char,
+  io_file_unread_char,
   ecl_generic_peek_char,
 
   io_file_read_vector,
@@ -1024,12 +1069,12 @@ const struct ecl_file_ops input_stream_ops = {
 
   ecl_binary_read_byte,
   ecl_not_output_write_byte,
-  ecl_binary_unread_byte,
+  io_file_unread_byte,
   ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
-  ecl_eformat_unread_char,
+  io_file_unread_char,
   ecl_generic_peek_char,
 
   io_file_read_vector,
@@ -1175,12 +1220,12 @@ const struct ecl_file_ops winsock_stream_io_ops = {
 
   ecl_binary_read_byte,
   ecl_binary_write_byte,
-  ecl_binary_unread_byte,
+  io_file_unread_byte,
   ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
-  ecl_eformat_unread_char,
+  io_file_unread_char,
   ecl_generic_peek_char,
 
   ecl_generic_read_vector,
@@ -1255,12 +1300,12 @@ const struct ecl_file_ops winsock_stream_input_ops = {
 
   ecl_binary_read_byte,
   ecl_not_output_write_byte,
-  ecl_binary_unread_byte,
+  io_file_unread_byte,
   ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
-  ecl_eformat_unread_char,
+  io_file_unread_char,
   ecl_generic_peek_char,
 
   ecl_generic_read_vector,
@@ -1366,12 +1411,12 @@ const struct ecl_file_ops wcon_stream_io_ops = {
 
   ecl_binary_read_byte,
   ecl_binary_write_byte,
-  ecl_binary_unread_byte,
+  io_file_unread_byte,
   ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_eformat_write_char,
-  ecl_eformat_unread_char,
+  io_file_unread_char,
   ecl_generic_peek_char,
 
   ecl_generic_read_vector,

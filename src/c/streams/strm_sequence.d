@@ -95,9 +95,14 @@ seq_in_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 static void
 seq_in_unread_char(cl_object strm, ecl_character c)
 {
+  int flags = strm->stream.flags;
   ecl_eformat_unread_char(strm, c);
-  SEQ_STREAM_POSITION(strm) -= ecl_length(strm->stream.byte_stack);
-  strm->stream.byte_stack = ECL_NIL;
+  if (c == ECL_CHAR_CODE_NEWLINE
+      && (flags & ECL_STREAM_CR)
+      && (flags & ECL_STREAM_LF))
+    SEQ_STREAM_POSITION(strm) -= 2;
+  else
+    SEQ_STREAM_POSITION(strm) -= 1;
 }
 
 static void
