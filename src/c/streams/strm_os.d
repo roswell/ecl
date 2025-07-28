@@ -386,7 +386,6 @@ static ecl_character io_file_decode_char_from_buffer(cl_object strm, unsigned ch
       else
         c = ECL_CHAR_CODE_NEWLINE;
     }
-    strm->stream.last_char = c;
     return c;
   } else {
     /* We need more bytes. First copy unconsumed bytes at the
