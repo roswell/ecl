@@ -318,6 +318,14 @@ extern ECL_API cl_index cl_num_symbols_in_core;
 extern ECL_API cl_object APPLY_fixed(cl_narg n, cl_object (*f)(), cl_object *x);
 extern ECL_API cl_object APPLY(cl_narg n, cl_objectfn, cl_object *x);
 
+/* atomic.d */
+
+extern ECL_API cl_object ecl_atomic_get(cl_object *slot);
+extern ECL_API cl_object ecl_atomic_psh(cl_object *slot, cl_object cons);
+extern ECL_API cl_object ecl_atomic_pop(cl_object *slot);
+extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
+#define ecl_atomic_push(slot, obj) ecl_atomic_psh(slot, ecl_list1(obj));
+
 /* stack.c */
 extern ECL_API cl_object ecl_make_stack(cl_index dim);
 extern ECL_API cl_object ecl_stack_push(cl_object stack, cl_object elt);
@@ -1840,13 +1848,6 @@ extern ECL_API cl_object mp_mailbox_read(cl_object mailbox);
 extern ECL_API cl_object mp_mailbox_try_read(cl_object mailbox);
 extern ECL_API cl_object mp_mailbox_send(cl_object mailbox, cl_object msg);
 extern ECL_API cl_object mp_mailbox_try_send(cl_object mailbox, cl_object msg);
-
-/* threads/atomic.c */
-
-extern ECL_API cl_object ecl_atomic_get(cl_object *slot);
-extern ECL_API void ecl_atomic_push(cl_object *slot, cl_object o);
-extern ECL_API cl_object ecl_atomic_pop(cl_object *slot);
-extern ECL_API cl_index ecl_atomic_index_incf(cl_index *slot);
 
 /* threads/mutex.c */
 

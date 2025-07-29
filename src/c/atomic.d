@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * atomic.d - atomic operations
+ * atomic.c - atomic operations
  *
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
@@ -27,14 +27,15 @@ ecl_atomic_get(cl_object *slot)
   return old;
 }
 
-void
-ecl_atomic_push(cl_object *slot, cl_object c)
+cl_object
+ecl_atomic_psh(cl_object *slot, cl_object cons)
 {
-  cl_object cons = ecl_list1(c), car;
+  cl_object cdr;
   do {
-    car = (cl_object)AO_load((AO_t*)slot);
-    ECL_RPLACD(cons, car);
-  } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)car, (AO_t)cons));
+    cdr = (cl_object)AO_load((AO_t*)slot);
+    ECL_RPLACD(cons, cdr);
+  } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)cdr, (AO_t)cons));
+  return cdr;
 }
 
 cl_object
