@@ -157,7 +157,9 @@ char_byte(cl_object byte)
   unlikely_if (byte != OBJNULL && Null(cl_integerp(byte))) {
     FEwrong_type_argument(@[byte], byte);
   }
-  return byte == OBJNULL ? EOF : ECL_CHAR_CODE(cl_code_char(byte));
+  /* INV cl_code_char can return NIL for bytes outside of the char range.
+     ecl_char_code will signal a condition then. */
+  return byte == OBJNULL ? EOF : ecl_char_code(cl_code_char(byte));
 }
 
 static ecl_character
