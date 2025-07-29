@@ -176,12 +176,16 @@
 
 #undef FILE_CNT
 #if @ECL_FILE_CNT@ == 1
-#  define FILE_CNT(fp)  ((fp)->_IO_read_end - (fp)->_IO_read_ptr)
+#  include <stdio_ext.h>
+#  define FILE_CNT(fp)  (__freadahead((fp)))
 #endif
 #if @ECL_FILE_CNT@ == 2
-#  define FILE_CNT(fp)  ((fp)->_r)
+#  define FILE_CNT(fp)  ((fp)->_IO_read_end - (fp)->_IO_read_ptr)
 #endif
 #if @ECL_FILE_CNT@ == 3
+#  define FILE_CNT(fp)  ((fp)->_r)
+#endif
+#if @ECL_FILE_CNT@ == 4
 #  define FILE_CNT(fp)  ((fp)->_cnt)
 #endif
 
