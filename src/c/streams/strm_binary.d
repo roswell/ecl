@@ -23,7 +23,6 @@ ecl_binary_read_byte(cl_object strm)
 {
   cl_index (*read_byte8)(cl_object, unsigned char *, cl_index);
   unsigned char *buf = strm->stream.byte_buffer;
-  cl_object byte;
   cl_index nbytes;
   strm->stream.last_char = EOF;
   strm->stream.last_byte = OBJNULL;

@@ -180,6 +180,9 @@ seq_byte_unread_char(cl_object strm, ecl_character c)
  * SEQUENCE INPUT STREAMS
  */
 
+/* Keep in mind that this function assumes that the element type is the octet
+   (we'd need to factor the byte size to the change position and test limit),
+   and that for :ucs-2 and :ucs-4 .byte_buffer is NULL. -- jd 2025-07-29 */
 static cl_index
 seq_in_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
@@ -400,8 +403,13 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
     SEQ_STREAM_ELT_TYPE(strm) = @'character';
     strm->stream.format = @':ucs-2';
     strm->stream.byte_size = 2*8;
+    /* decoding */
     strm->stream.ops->read_char = seq_in_ucs2_read_char;
     strm->stream.ops->unread_char = seq_in_ucs2_unread_char;
+    /* identity */
+    strm->stream.ops->read_byte = seq_byte_read_byte;
+    strm->stream.ops->peek_byte = seq_byte_peek_byte;
+    strm->stream.ops->unread_byte = seq_byte_unread_byte;
   }
 #endif
 #ifdef ecl_uint32_t
@@ -409,8 +417,13 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
     SEQ_STREAM_ELT_TYPE(strm) = @'character';
     strm->stream.format = @':ucs-4';
     strm->stream.byte_size = 4*8;
+    /* decoding */
     strm->stream.ops->read_char = seq_in_ucs4_read_char;
     strm->stream.ops->unread_char = seq_in_ucs4_unread_char;
+    /* identity */
+    strm->stream.ops->read_byte = seq_byte_read_byte;
+    strm->stream.ops->peek_byte = seq_byte_peek_byte;
+    strm->stream.ops->unread_byte = seq_byte_unread_byte;
   }
 #endif
   else if(!byte_size && external_format == @':default') {
@@ -475,6 +488,9 @@ seq_out_enlarge_vector(cl_object strm)
   SEQ_STREAM_VECTOR(strm) = vector;
 }
 
+/* Keep in mind that this function assumes that the element type is the octet
+   (we'd need to factor the byte size to the change position and test limit),
+   and that for :ucs-2 and :ucs-4 .byte_buffer is NULL. -- jd 2025-07-29 */
 static cl_index
 seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
@@ -643,6 +659,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
     strm->stream.format = @':ucs-2';
     strm->stream.byte_size = 2*8;
     strm->stream.ops->write_char = seq_out_ucs2_write_char;
+    strm->stream.ops->write_byte = seq_byte_write_byte;
   }
 #endif
 #ifdef ecl_uint32_t
@@ -651,6 +668,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
     strm->stream.format = @':ucs-4';
     strm->stream.byte_size = 4*8;
     strm->stream.ops->write_char = seq_out_ucs4_write_char;
+    strm->stream.ops->write_byte = seq_byte_write_byte;
   }
 #endif
   else if(!byte_size && external_format == @':default') {
