@@ -107,7 +107,8 @@
                                 :initial-contents values
                                 :fill-pointer 8))
          (stream (make-sequence-io-stream vector)))
-    (test-byte-input-stream stream vector)))
+    (test-byte-input-stream stream vector)
+    (test-byte-output-stream stream 8)))
 
 (deftest stream.smoke-read-char ()
   (let* ((values (map 'vector #'char-code "ABCDEFGHIJKLMNOP"))
@@ -115,7 +116,8 @@
                                 :initial-contents values
                                 :fill-pointer 8))
          (stream (make-sequence-io-stream vector :ascii)))
-    (test-char-input-stream stream vector)))
+    (test-char-input-stream stream vector)
+    (test-char-output-stream stream 8)))
 
 (deftest stream.smoke-bivalent ()
   (let* ((values (map 'vector #'char-code "ABCDEFGHIJKLMNOP"))
@@ -123,7 +125,21 @@
                                 :initial-contents values
                                 :fill-pointer 8))
          (stream (make-sequence-io-stream vector :ascii)))
-    (test-bivalent-input-stream stream vector)))
+    (test-bivalent-input-stream stream vector)
+    (test-bivalent-output-stream stream 8)))
+
+;;; Ensure that we make a "clean" error (i.e not a segfault) when bivalent
+;;; stream has bytes that can't be casted to characters.
+(deftest stream.error-bivalent ()
+  (let* ((values (loop repeat 16 collect char-code-limit))
+         (vector (make-array 16 :element-type '(unsigned-byte 64)
+                                :initial-contents values
+                                :fill-pointer 8))
+         (stream (make-sequence-io-stream vector nil)))
+    (signals error (test-char-input-stream stream vector))
+    (finishes (test-byte-input-stream stream vector))
+    (finishes (test-char-output-stream stream 8))
+    (finishes (test-char-input-stream stream (subseq vector 8 16)))))
 
 ;;; Ensure that MAKE-SEQUENCE-INPUT-STREAM and MAKE-SEQUENCE-OUTPUT-STREAM can
 ;;; take bytes that are larger than any character.
