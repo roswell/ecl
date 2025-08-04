@@ -117,7 +117,7 @@ Install the Emscripten SDK using the official instructions:
 
         https://emscripten.org/docs/getting_started/downloads.html
 
-These build instructions were tested against ~emsdk 3.1.41~. If things doesn't
+These build instructions were tested against ~emsdk 4.0.12~. If things doesn't
 work try that version instead of ~latest~.
 
 After that activate the toolchain and configure build flags:
