@@ -75,7 +75,7 @@
 ;;;
 ;;; RUNNING TESTS
 ;;;
-(defun run-tests (suites
+(defun run-tests (suites &optional cross-compile
                   &aux (suites (cond
                                  ((null suites) "make-check")
                                  ((null (cdr suites)) (car suites))
@@ -99,6 +99,11 @@
                       (merge-pathnames
                        "tests/doit.lsp" *ecl-sources*))
             "-eval" "(in-package cl-test)"
+            ,@(when cross-compile
+                `("-eval"
+                  ,(format nil "(cl-test-cross-compile:setup ~s '(progn (load ~s) (in-package #:cl-test)))"
+                           (namestring (truename "SYS:target-info.lsp"))
+                           (namestring (truename (merge-pathnames "tests/doit.lsp" *ecl-sources*))))))
             "-eval" ,(format nil "(2am-ecl:run '~a)" suites)
             "-eval" "(ext:exit)")
           :input nil
@@ -113,7 +118,13 @@
 ;;;
 ;;; RUNNING ANSI-TEST
 ;;;
-(defun run-ansi-test (&optional (suite (ext:getenv "ANSI_TEST_SUITE")))
+(defun run-ansi-test (&optional
+                        (suite (ext:getenv "ANSI_TEST_SUITE"))
+                        cross-compile
+                        (expected-failures
+                         (or (ext:getenv "EXPECTED_FAILURES")
+                             (merge-pathnames #P"tests/ansi-test-expected-failures.sexp"
+                                              *ecl-sources*))))
   (ext:setenv "TEST_IMAGE" *test-image*)
   (zerop
    (nth-value
@@ -129,16 +140,19 @@
        ,@(cond (suite
                 `("-eval" ,(format nil "(setf *default-pathname-defaults* ~s)"
                                    (truename #P"ansi-test/"))
-                          "-load" "gclload1.lsp"
-                          "-load" ,(namestring (make-pathname
-                                                :directory (list :relative suite)
-                                                :name "load"
-                                                :type "lsp"))))
+                  "-load" "gclload1.lsp"
+                  "-load" ,(namestring (make-pathname
+                                        :directory (list :relative suite)
+                                        :name "load"
+                                        :type "lsp"))))
                (t
                 `("-load" "ansi-test/init.lsp")))
-       "-eval" ,(format nil "(rt:do-tests :exit t :expected-failures ~s)"
-                        (merge-pathnames #P"tests/ansi-test-expected-failures.sexp"
-                                         *ecl-sources*)))
+       ,@(when cross-compile
+           `("-load" ,(namestring (truename (merge-pathnames "tests/cross-compile.lisp" *ecl-sources*)))
+             "-eval" ,(format nil "(cl-test-cross-compile:setup ~s '(progn (in-package #:cl-user) (load ~s)))"
+                              (namestring (truename "SYS:target-info.lsp"))
+                              (namestring (truename "ansi-test/init.lsp")))))
+       "-eval" ,(format nil "(rt:do-tests :exit t :expected-failures ~s)" expected-failures))
      :input nil
      :output t
      :error :output))))

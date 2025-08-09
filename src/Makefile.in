@@ -276,8 +276,14 @@ test_changes:
 check:
 	cd tests && $(MAKE) clean && $(MAKE) check TESTS="$(TESTS)"
 
+cross-check:
+	cd tests && $(MAKE) clean && $(MAKE) cross-check TESTS="$(TESTS)"
+
 ansi-test:
 	cd tests && $(MAKE) clean && $(MAKE) ansi-test
+
+cross-ansi-test:
+	cd tests && $(MAKE) clean && $(MAKE) cross-ansi-test
 
 #
 # Rebuild ECL using its own image and compare. Does not work

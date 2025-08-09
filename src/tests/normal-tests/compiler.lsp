@@ -1937,10 +1937,10 @@
 ;;; MULTIPLE-VALUE-SETQ would wrongly assign NIL to special variables
 ;;; due to not saving env->nvalues before calling SET
 (ext:with-clean-symbols (*a* *b* foo)
-  (defvar *a* :wrong-a)
-  (defvar *b* :wrong-b)
-  (defun foo () (values :right-a :right-b))
   (test cmp.0081.m-v-setq-special
+    (defvar *a* :wrong-a)
+    (defvar *b* :wrong-b)
+    (defun foo () (values :right-a :right-b))
     (is (funcall (compile
                   nil
                   '(lambda ()
@@ -2142,20 +2142,19 @@
 ;;;     inline the new definition (e.g. because it is a closure).
 ;;;
 (test cmp.0092.inline-redefinition
-  (setf (compiler-macro-function 'foo) nil)
   (finishes (with-compiler ("inline-redefinition-1.lsp" :load t)
-              '(declaim (inline foo))
-              '(defun foo () 1)
-              '(defun bar () (foo))))
-  (is (eql (bar) 1))
+              '(declaim (inline foo.0092))
+              '(defun foo.0092 () 1)
+              '(defun bar.0092 () (foo.0092))))
+  (is (eql (bar.0092) 1))
   (finishes (with-compiler ("inline-redefinition-2.lsp" :load t)
               '(let ((a 2))
                 (defun ensure-compiler-cannot-optimize-away-the-let-statement (x)
                   (setf a x))
-                (defun foo ()
+                (defun foo.0092 ()
                   a))
-              '(defun bar () (foo))))
-  (is (eql (bar) 2)))
+              '(defun bar.0092 () (foo.0092))))
+  (is (eql (bar.0092) 2)))
 
 ;;; Date 2023-06-18
 ;;; Description
