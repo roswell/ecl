@@ -19,20 +19,183 @@
 #include <ecl/internal.h>
 
 /**********************************************************************
+ * Direct vector operations (no conversion, arbitrary element type).
+ */
+
+static cl_object
+seq_read_object(cl_object strm)
+{
+  cl_object vec = SEQ_STREAM_VECTOR(strm);
+  cl_fixnum pos = SEQ_STREAM_POSITION(strm);
+  if (pos < SEQ_INPUT_LIMIT(strm)) {
+    SEQ_STREAM_POSITION(strm)++;
+    return ecl_aref_unsafe(vec, pos);
+  }
+  return OBJNULL;
+}
+
+static cl_object
+seq_peek_object(cl_object strm)
+{
+  cl_object vec = SEQ_STREAM_VECTOR(strm);
+  cl_fixnum pos = SEQ_STREAM_POSITION(strm);
+  if (pos < SEQ_INPUT_LIMIT(strm)) {
+    return ecl_aref_unsafe(vec, pos);
+  }
+  return OBJNULL;
+}
+
+static void
+seq_write_object(cl_object strm, cl_object object)
+{
+  cl_object vec = SEQ_STREAM_VECTOR(strm);
+  cl_fixnum pos = SEQ_STREAM_POSITION(strm);
+  cl_fixnum dim = vec->vector.dim;
+ AGAIN:
+  if (pos >= dim) {
+    cl_object size = ecl_ash(ecl_make_fixnum(dim), 1);
+    SEQ_STREAM_VECTOR(strm) = vec = si_adjust_vector(vec, size);
+    goto AGAIN;
+  }
+  ecl_aset(vec, pos++, object);
+  if (vec->vector.fillp < pos)
+    vec->vector.fillp = pos;
+  SEQ_STREAM_POSITION(strm) = pos;
+}
+
+static void
+seq_unread_object(cl_object strm, cl_object object)
+{
+  unlikely_if (SEQ_STREAM_POSITION(strm) <= 0) {
+    ecl_unread_error(strm);
+  }
+  SEQ_STREAM_POSITION(strm)--;
+}
+
+/* -- Direct byte <- byte ------------------------------------------- */
+static cl_object
+byte_byte(cl_object byte)
+{
+  unlikely_if (byte != OBJNULL && Null(cl_integerp(byte))) {
+    FEwrong_type_argument(@[byte], byte);
+  }
+  return byte;
+}
+
+static cl_object
+seq_byte_read_byte(cl_object strm)
+{ return byte_byte(seq_read_object(strm)); }
+
+static cl_object
+seq_byte_peek_byte(cl_object strm)
+{ return byte_byte(seq_peek_object(strm)); }
+
+static void
+seq_byte_write_byte(cl_object strm, cl_object byte)
+{ seq_write_object(strm, byte_byte(byte)); }
+
+static void
+seq_byte_unread_byte(cl_object strm, cl_object byte)
+{ seq_unread_object(strm, byte_byte(byte)); }
+
+/* -- Direct char <- char ------------------------------------------- */
+static ecl_character
+char_char(cl_object byte)
+{
+  unlikely_if (byte != OBJNULL && !ECL_CHARACTERP(byte)) {
+    FEwrong_type_argument(@[char], byte);
+  }
+  return byte == OBJNULL ? EOF : ECL_CHAR_CODE(byte);
+}
+
+static ecl_character
+seq_char_read_char(cl_object strm)
+{ return char_char(seq_read_object(strm)); }
+
+static ecl_character
+seq_char_peek_char(cl_object strm)
+{ return char_char(seq_peek_object(strm)); }
+
+static ecl_character
+seq_char_write_char(cl_object strm, ecl_character c)
+{ seq_write_object(strm, ECL_CODE_CHAR(c)); return c; }
+
+static void
+seq_char_unread_char(cl_object strm, ecl_character c)
+{ seq_unread_object(strm, ECL_CODE_CHAR(c)); }
+
+/* -- Direct byte <- char ------------------------------------------- */
+static cl_object
+byte_char(cl_object byte)
+{
+  unlikely_if (byte != OBJNULL && !ECL_CHARACTERP(byte)) {
+    FEwrong_type_argument(@[char], byte);
+  }
+  return byte == OBJNULL ? OBJNULL : cl_char_code(byte);
+}
+
+static cl_object
+seq_char_read_byte(cl_object strm)
+{ return byte_char(seq_read_object(strm)); }
+
+static cl_object
+seq_char_peek_byte(cl_object strm)
+{ return byte_char(seq_peek_object(strm)); }
+
+static void
+seq_char_write_byte(cl_object strm, cl_object byte)
+{ seq_write_object(strm, cl_code_char(byte)); }
+
+static void
+seq_char_unread_byte(cl_object strm, cl_object byte)
+{ seq_unread_object(strm, cl_code_char(byte)); }
+
+/* -- Direct char <- byte ------------------------------------------- */
+static ecl_character
+char_byte(cl_object byte)
+{
+  unlikely_if (byte != OBJNULL && Null(cl_integerp(byte))) {
+    FEwrong_type_argument(@[byte], byte);
+  }
+  /* INV cl_code_char can return NIL for bytes outside of the char range.
+     ecl_char_code will signal a condition then. */
+  return byte == OBJNULL ? EOF : ecl_char_code(cl_code_char(byte));
+}
+
+static ecl_character
+seq_byte_read_char(cl_object strm)
+{ return char_byte(seq_read_object(strm)); }
+
+static ecl_character
+seq_byte_peek_char(cl_object strm)
+{ return char_byte(seq_peek_object(strm)); }
+
+static ecl_character
+seq_byte_write_char(cl_object strm, ecl_character c)
+{ seq_write_object(strm, cl_char_code(ECL_CODE_CHAR(c))); return c; }
+
+static void
+seq_byte_unread_char(cl_object strm, ecl_character c)
+{ seq_unread_object(strm, cl_char_code(ECL_CODE_CHAR(c))); }
+
+/**********************************************************************
  * SEQUENCE INPUT STREAMS
  */
 
+/* Keep in mind that this function assumes that the element type is the octet
+   (we'd need to factor the byte size to the change position and test limit),
+   and that for :ucs-2 and :ucs-4 .byte_buffer is NULL. -- jd 2025-07-29 */
 static cl_index
 seq_in_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
-  cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
+  cl_fixnum curr_pos = SEQ_STREAM_POSITION(strm);
   cl_fixnum last = SEQ_INPUT_LIMIT(strm);
   cl_fixnum delta = last - curr_pos;
   if (delta > 0) {
-    cl_object vector = SEQ_INPUT_VECTOR(strm);
+    cl_object vector = SEQ_STREAM_VECTOR(strm);
     if (delta > n) delta = n;
     ecl_copy(c, vector->vector.self.bc + curr_pos, delta);
-    SEQ_INPUT_POSITION(strm) += delta;
+    SEQ_STREAM_POSITION(strm) += delta;
     return delta;
   }
   return 0;
@@ -41,21 +204,35 @@ seq_in_read_byte8(cl_object strm, unsigned char *c, cl_index n)
 static void
 seq_in_unread_char(cl_object strm, ecl_character c)
 {
+  int flags = strm->stream.flags;
   ecl_eformat_unread_char(strm, c);
-  SEQ_INPUT_POSITION(strm) -= ecl_length(strm->stream.byte_stack);
-  strm->stream.byte_stack = ECL_NIL;
+  if (c == ECL_CHAR_CODE_NEWLINE
+      && (flags & ECL_STREAM_CR)
+      && (flags & ECL_STREAM_LF))
+    SEQ_STREAM_POSITION(strm) -= 2;
+  else
+    SEQ_STREAM_POSITION(strm) -= 1;
+}
+
+static void
+seq_in_unread_byte(cl_object strm, cl_object byte)
+{
+  unlikely_if(SEQ_STREAM_POSITION(strm) <= 0) {
+    ecl_unread_error(strm);
+  }
+  SEQ_STREAM_POSITION(strm) -= 1;
 }
 
 #ifdef ecl_uint16_t
 static ecl_character
 seq_in_ucs2_read_char(cl_object strm)
 {
-  cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
+  cl_fixnum curr_pos = SEQ_STREAM_POSITION(strm);
   cl_fixnum last = SEQ_INPUT_LIMIT(strm);
   if (curr_pos >= last) {
     return EOF;
   }
-  cl_object vector = SEQ_INPUT_VECTOR(strm);
+  cl_object vector = SEQ_STREAM_VECTOR(strm);
   ecl_character c = vector->vector.self.b16[curr_pos++];
   cl_object err;
   if (c >= 0xD800 && c <= 0xDBFF) {
@@ -70,7 +247,7 @@ seq_in_ucs2_read_char(cl_object strm)
     }
     c = ((c & 0x3FF) << 10) + (aux & 0x3FF) + 0x10000;
   }
-  SEQ_INPUT_POSITION(strm) = curr_pos;
+  SEQ_STREAM_POSITION(strm) = curr_pos;
   return c;
   cl_object code;
  DECODING_ERROR:
@@ -90,9 +267,9 @@ static void
 seq_in_ucs2_unread_char(cl_object strm, ecl_character c)
 {
   if (c >= 0x10000) {
-    SEQ_INPUT_POSITION(strm) -= 2;
+    SEQ_STREAM_POSITION(strm) -= 2;
   } else {
-    SEQ_INPUT_POSITION(strm) -= 1;
+    SEQ_STREAM_POSITION(strm) -= 1;
   }
 }
 #endif
@@ -101,26 +278,26 @@ seq_in_ucs2_unread_char(cl_object strm, ecl_character c)
 static ecl_character
 seq_in_ucs4_read_char(cl_object strm)
 {
-  cl_fixnum curr_pos = SEQ_INPUT_POSITION(strm);
+  cl_fixnum curr_pos = SEQ_STREAM_POSITION(strm);
   if (curr_pos >= SEQ_INPUT_LIMIT(strm)) {
     return EOF;
   }
-  cl_object vector = SEQ_INPUT_VECTOR(strm);
-  SEQ_INPUT_POSITION(strm) += 1;
+  cl_object vector = SEQ_STREAM_VECTOR(strm);
+  SEQ_STREAM_POSITION(strm) += 1;
   return vector->vector.self.b32[curr_pos];
 }
 
 static void
 seq_in_ucs4_unread_char(cl_object strm, ecl_character c)
 {
-  SEQ_INPUT_POSITION(strm) -= 1;
+  SEQ_STREAM_POSITION(strm) -= 1;
 }
 #endif
 
 static int
 seq_in_listen(cl_object strm)
 {
-  if (SEQ_INPUT_POSITION(strm) < SEQ_INPUT_LIMIT(strm))
+  if (SEQ_STREAM_POSITION(strm) < SEQ_INPUT_LIMIT(strm))
     return ECL_LISTEN_AVAILABLE;
   else
     return ECL_LISTEN_EOF;
@@ -129,7 +306,7 @@ seq_in_listen(cl_object strm)
 static cl_object
 seq_in_get_position(cl_object strm)
 {
-  return ecl_make_unsigned_integer(SEQ_INPUT_POSITION(strm));
+  return ecl_make_unsigned_integer(SEQ_STREAM_POSITION(strm));
 }
 
 static cl_object
@@ -144,7 +321,7 @@ seq_in_set_position(cl_object strm, cl_object pos)
       disp = SEQ_INPUT_LIMIT(strm);
     }
   }
-  SEQ_INPUT_POSITION(strm) = disp;
+  SEQ_STREAM_POSITION(strm) = disp;
   return ECL_T;
 }
 
@@ -155,11 +332,13 @@ seq_file_element_type(cl_object strm)
 }
 
 const struct ecl_file_ops seq_in_ops = {
-  ecl_not_output_write_byte8,
   seq_in_read_byte8,
+  ecl_not_output_write_byte8,
 
+  ecl_binary_read_byte,
   ecl_not_output_write_byte,
-  ecl_generic_read_byte,
+  seq_in_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_eformat_read_char,
   ecl_not_output_write_char,
@@ -206,6 +385,7 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
   }
   type = ecl_array_elttype(vector);
   type_name = ecl_elttype_to_symbol(type);
+  /* ecl_normalize_stream_element_type errors on illegal element type. */
   byte_size = ecl_normalize_stream_element_type(type_name);
   /* Character streams always get some external format. For binary
    * sequences it has to be explicitly mentioned. */
@@ -215,35 +395,70 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
   if (!byte_size && Null(external_format)) {
     external_format = @':default';
   }
-  if (ecl_aet_size[type] == 1) {
+  if (ecl_aet_size[type] == 1 && !Null(external_format)) {
     ecl_set_stream_elt_type(strm, byte_size, flags, external_format);
     /* Override byte size */
     if (byte_size) strm->stream.byte_size = 8;
   }
 #ifdef ecl_uint16_t
   else if (ecl_aet_size[type] == 2 && external_format == @':ucs-2') {
-    IO_STREAM_ELT_TYPE(strm) = @'character';
+    SEQ_STREAM_ELT_TYPE(strm) = @'character';
     strm->stream.format = @':ucs-2';
     strm->stream.byte_size = 2*8;
+    /* decoding */
     strm->stream.ops->read_char = seq_in_ucs2_read_char;
     strm->stream.ops->unread_char = seq_in_ucs2_unread_char;
+    /* identity */
+    strm->stream.ops->read_byte = seq_byte_read_byte;
+    strm->stream.ops->peek_byte = seq_byte_peek_byte;
+    strm->stream.ops->unread_byte = seq_byte_unread_byte;
   }
 #endif
 #ifdef ecl_uint32_t
   else if (ecl_aet_size[type] == 4 && external_format == @':ucs-4') {
-    IO_STREAM_ELT_TYPE(strm) = @'character';
+    SEQ_STREAM_ELT_TYPE(strm) = @'character';
     strm->stream.format = @':ucs-4';
     strm->stream.byte_size = 4*8;
+    /* decoding */
     strm->stream.ops->read_char = seq_in_ucs4_read_char;
     strm->stream.ops->unread_char = seq_in_ucs4_unread_char;
+    /* identity */
+    strm->stream.ops->read_byte = seq_byte_read_byte;
+    strm->stream.ops->peek_byte = seq_byte_peek_byte;
+    strm->stream.ops->unread_byte = seq_byte_unread_byte;
   }
 #endif
-  else {
-    FEerror("Illegal combination of external-format ~A and input vector ~A for MAKE-SEQUENCE-INPUT-STREAM.~%", 2, external_format, vector);
+  else if(!byte_size && external_format == @':default') {
+    /* char vector -> native bivalent stream */
+    SEQ_STREAM_ELT_TYPE(strm) = @'character';
+    /* identity */
+    strm->stream.ops->read_char = seq_char_read_char;
+    strm->stream.ops->peek_char = seq_char_peek_char;
+    strm->stream.ops->unread_char = seq_char_unread_char;
+    /* char-code */
+    strm->stream.ops->read_byte = seq_char_read_byte;
+    strm->stream.ops->peek_byte = seq_char_peek_byte;
+    strm->stream.ops->unread_byte = seq_char_unread_byte;
   }
-  SEQ_INPUT_VECTOR(strm) = vector;
-  SEQ_INPUT_POSITION(strm) = istart;
-  SEQ_INPUT_LIMIT(strm) = iend;
+  else if(Null(external_format)) {
+    /* byte vector -> native bivalent stream */
+    ecl_set_stream_elt_type(strm, byte_size, flags, external_format);
+    /* code-char */
+    strm->stream.ops->read_char = seq_byte_read_char;
+    strm->stream.ops->peek_char = seq_byte_peek_char;
+    strm->stream.ops->unread_char = seq_byte_unread_char;
+    /* identity */
+    strm->stream.ops->read_byte = seq_byte_read_byte;
+    strm->stream.ops->peek_byte = seq_byte_peek_byte;
+    strm->stream.ops->unread_byte = seq_byte_unread_byte;
+  }
+  else {
+    FEerror("Illegal combination of external-format ~A and input vector ~A "
+            "for MAKE-SEQUENCE-INPUT-STREAM.~%", 2, external_format, vector);
+  }
+  SEQ_STREAM_VECTOR(strm) = vector;
+  SEQ_STREAM_POSITION(strm) = istart;
+  SEQ_INPUT_VECTOR_END(strm) = iend;
   return strm;
 }
 
@@ -252,11 +467,15 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
                                          (end ECL_NIL)
                                          (external_format ECL_NIL))
   cl_index_pair p;
+  cl_object strm;
   @
   p = ecl_vector_start_end(@[ext::make-sequence-input-stream],
                            vector, start, end);
-  @(return make_sequence_input_stream(vector, p.start, p.end,
-                                      external_format))
+  strm = make_sequence_input_stream(vector, p.start, p.end,
+                                    external_format);
+  if (Null(end))
+    strm->stream.flags |= ECL_STREAM_USE_VECTOR_FILLP;
+  @(return strm)
   @)
 
 /**********************************************************************
@@ -266,18 +485,21 @@ make_sequence_input_stream(cl_object vector, cl_index istart, cl_index iend,
 static void
 seq_out_enlarge_vector(cl_object strm)
 {
-  cl_object vector = SEQ_OUTPUT_VECTOR(strm);
+  cl_object vector = SEQ_STREAM_VECTOR(strm);
   si_adjust_vector(vector, ecl_ash(ecl_make_fixnum(vector->vector.dim), 1));
-  SEQ_OUTPUT_VECTOR(strm) = vector;
+  SEQ_STREAM_VECTOR(strm) = vector;
 }
 
+/* Keep in mind that this function assumes that the element type is the octet
+   (we'd need to factor the byte size to the change position and test limit),
+   and that for :ucs-2 and :ucs-4 .byte_buffer is NULL. -- jd 2025-07-29 */
 static cl_index
 seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
 {
  AGAIN:
   {
-    cl_object vector = SEQ_OUTPUT_VECTOR(strm);
-    cl_fixnum curr_pos = SEQ_OUTPUT_POSITION(strm);
+    cl_object vector = SEQ_STREAM_VECTOR(strm);
+    cl_fixnum curr_pos = SEQ_STREAM_POSITION(strm);
     cl_fixnum last = vector->vector.dim;
     cl_fixnum delta = last - curr_pos;
     if (delta < n) {
@@ -285,7 +507,7 @@ seq_out_write_byte8(cl_object strm, unsigned char *c, cl_index n)
       goto AGAIN;
     }
     ecl_copy(vector->vector.self.bc + curr_pos, c, n);
-    SEQ_OUTPUT_POSITION(strm) = curr_pos += n;
+    SEQ_STREAM_POSITION(strm) = curr_pos += n;
     if (vector->vector.fillp < curr_pos)
       vector->vector.fillp = curr_pos;
   }
@@ -298,8 +520,8 @@ seq_out_ucs2_write_char(cl_object strm, ecl_character c)
 {
  AGAIN:
   {
-    cl_object vector = SEQ_OUTPUT_VECTOR(strm);
-    cl_fixnum curr_pos = SEQ_OUTPUT_POSITION(strm);
+    cl_object vector = SEQ_STREAM_VECTOR(strm);
+    cl_fixnum curr_pos = SEQ_STREAM_POSITION(strm);
     cl_fixnum n = (c >= 0x10000) ? 2 : 1;
     if (vector->vector.dim - curr_pos < n) {
       seq_out_enlarge_vector(strm);
@@ -312,7 +534,7 @@ seq_out_ucs2_write_char(cl_object strm, ecl_character c)
     } else {
       vector->vector.self.b16[curr_pos++] = c;
     }
-    SEQ_OUTPUT_POSITION(strm) = curr_pos;
+    SEQ_STREAM_POSITION(strm) = curr_pos;
     if (vector->vector.fillp < curr_pos)
       vector->vector.fillp = curr_pos;
   }
@@ -326,14 +548,14 @@ seq_out_ucs4_write_char(cl_object strm, ecl_character c)
 {
  AGAIN:
   {
-    cl_object vector = SEQ_OUTPUT_VECTOR(strm);
-    cl_fixnum curr_pos = SEQ_OUTPUT_POSITION(strm);
+    cl_object vector = SEQ_STREAM_VECTOR(strm);
+    cl_fixnum curr_pos = SEQ_STREAM_POSITION(strm);
     if (vector->vector.dim - curr_pos < 1) {
       seq_out_enlarge_vector(strm);
       goto AGAIN;
     }
     vector->vector.self.b32[curr_pos++] = c;
-    SEQ_OUTPUT_POSITION(strm) = curr_pos;
+    SEQ_STREAM_POSITION(strm) = curr_pos;
     if (vector->vector.fillp < curr_pos)
       vector->vector.fillp = curr_pos;
   }
@@ -344,13 +566,13 @@ seq_out_ucs4_write_char(cl_object strm, ecl_character c)
 static cl_object
 seq_out_get_position(cl_object strm)
 {
-  return ecl_make_unsigned_integer(SEQ_OUTPUT_POSITION(strm));
+  return ecl_make_unsigned_integer(SEQ_STREAM_POSITION(strm));
 }
 
 static cl_object
 seq_out_set_position(cl_object strm, cl_object pos)
 {
-  cl_object vector = SEQ_OUTPUT_VECTOR(strm);
+  cl_object vector = SEQ_STREAM_VECTOR(strm);
   cl_fixnum disp;
   if (Null(pos)) {
     disp = vector->vector.fillp;
@@ -360,16 +582,18 @@ seq_out_set_position(cl_object strm, cl_object pos)
       disp = vector->vector.fillp;
     }
   }
-  SEQ_OUTPUT_POSITION(strm) = disp;
+  SEQ_STREAM_POSITION(strm) = disp;
   return ECL_T;
 }
 
 const struct ecl_file_ops seq_out_ops = {
-  seq_out_write_byte8,
   ecl_not_input_read_byte8,
+  seq_out_write_byte8,
 
-  ecl_generic_write_byte,
   ecl_not_input_read_byte,
+  ecl_binary_write_byte,
+  ecl_not_input_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_not_input_read_char,
   ecl_eformat_write_char,
@@ -415,6 +639,7 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
   }
   type = ecl_array_elttype(vector);
   type_name = ecl_elttype_to_symbol(type);
+  /* ecl_normalize_stream_element_type errors on illegal element type. */
   byte_size = ecl_normalize_stream_element_type(type_name);
   /* Character streams always get some external format. For binary
    * sequences it has to be explicitly mentioned. */
@@ -424,32 +649,48 @@ make_sequence_output_stream(cl_object vector, cl_object external_format)
   if (!byte_size && Null(external_format)) {
     external_format = @':default';
   }
-  if (ecl_aet_size[type] == 1) {
+  if (ecl_aet_size[type] == 1 && !Null(external_format)) {
+    /* If elements of the stream are byte8, then we can convert them on fly. */
     ecl_set_stream_elt_type(strm, byte_size, flags, external_format);
     /* Override byte size */
     if (byte_size) strm->stream.byte_size = 8;
   }
 #ifdef ecl_uint16_t
   else if (ecl_aet_size[type] == 2 && external_format == @':ucs-2') {
-    IO_STREAM_ELT_TYPE(strm) = @'character';
+    SEQ_STREAM_ELT_TYPE(strm) = @'character';
     strm->stream.format = @':ucs-2';
     strm->stream.byte_size = 2*8;
     strm->stream.ops->write_char = seq_out_ucs2_write_char;
+    strm->stream.ops->write_byte = seq_byte_write_byte;
   }
 #endif
 #ifdef ecl_uint32_t
   else if (ecl_aet_size[type] == 4 && external_format == @':ucs-4') {
-    IO_STREAM_ELT_TYPE(strm) = @'character';
+    SEQ_STREAM_ELT_TYPE(strm) = @'character';
     strm->stream.format = @':ucs-4';
     strm->stream.byte_size = 4*8;
     strm->stream.ops->write_char = seq_out_ucs4_write_char;
+    strm->stream.ops->write_byte = seq_byte_write_byte;
   }
 #endif
-  else {
-    FEerror("Illegal combination of external-format ~A and output vector ~A for MAKE-SEQUENCE-OUTPUT-STREAM.~%", 2, external_format, vector);
+  else if(!byte_size && external_format == @':default') {
+    /* char vector -> native bivalent stream */
+    SEQ_STREAM_ELT_TYPE(strm) = @'character';
+    strm->stream.ops->write_char = seq_char_write_char;
+    strm->stream.ops->write_byte = seq_char_write_byte;
   }
-  SEQ_OUTPUT_VECTOR(strm) = vector;
-  SEQ_OUTPUT_POSITION(strm) = vector->vector.fillp;
+  else if(Null(external_format)) {
+    /* byte vector -> native bivalent stream */
+    ecl_set_stream_elt_type(strm, byte_size, flags, external_format);
+    strm->stream.ops->write_char = seq_byte_write_char;
+    strm->stream.ops->write_byte = seq_byte_write_byte;
+  }
+  else {
+    FEerror("Illegal combination of external-format ~A and output vector ~A "
+            "for MAKE-SEQUENCE-OUTPUT-STREAM.~%", 2, external_format, vector);
+  }
+  SEQ_STREAM_VECTOR(strm) = vector;
+  SEQ_STREAM_POSITION(strm) = vector->vector.fillp;
   return strm;
 }
 
@@ -580,7 +821,7 @@ si_do_read_sequence(cl_object seq, cl_object stream, cl_object s, cl_object e)
           c = ECL_CODE_CHAR(i);
         } else {
           c = ops->read_byte(stream);
-          if (c == ECL_NIL) goto OUTPUT;
+          if (c == OBJNULL) goto OUTPUT;
         }
         ECL_RPLACA(seq, c);
         start++;

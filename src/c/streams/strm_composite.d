@@ -46,6 +46,18 @@ two_way_read_byte(cl_object stream)
   return ecl_read_byte(TWO_WAY_STREAM_INPUT(stream));
 }
 
+static void
+two_way_unread_byte(cl_object strm, cl_object byte)
+{
+  ecl_unread_byte(byte, TWO_WAY_STREAM_INPUT(strm));
+}
+
+static cl_object
+two_way_peek_byte(cl_object strm)
+{
+  return ecl_peek_byte(TWO_WAY_STREAM_INPUT(strm));
+}
+
 static ecl_character
 two_way_read_char(cl_object strm)
 {
@@ -143,11 +155,13 @@ two_way_close(cl_object strm)
 }
 
 const struct ecl_file_ops two_way_ops = {
-  two_way_write_byte8,
   two_way_read_byte8,
+  two_way_write_byte8,
 
-  two_way_write_byte,
   two_way_read_byte,
+  two_way_write_byte,
+  two_way_unread_byte,
+  two_way_peek_byte,
 
   two_way_read_char,
   two_way_write_char,
@@ -341,11 +355,13 @@ broadcast_close(cl_object strm)
 }
 
 const struct ecl_file_ops broadcast_ops = {
-  broadcast_write_byte8,
   ecl_not_input_read_byte8,
+  broadcast_write_byte8,
 
-  broadcast_write_byte,
   ecl_not_input_read_byte,
+  broadcast_write_byte,
+  ecl_not_input_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_not_input_read_char,
   broadcast_write_char,
@@ -423,31 +439,55 @@ echo_write_byte8(cl_object strm, unsigned char *c, cl_index n)
   return ecl_write_byte8(ECHO_STREAM_OUTPUT(strm), c, n);
 }
 
+static cl_object
+echo_read_byte(cl_object strm)
+{
+  cl_object byte = strm->stream.last_byte;
+  if (byte != OBJNULL) {
+    strm->stream.last_byte = OBJNULL;
+    byte = ecl_read_byte(ECHO_STREAM_INPUT(strm));
+  } else {
+    byte = ecl_read_byte(ECHO_STREAM_INPUT(strm));
+    if (byte != OBJNULL)
+      ecl_write_byte(byte, ECHO_STREAM_OUTPUT(strm));
+  }
+  return byte;
+}
+
 static void
 echo_write_byte(cl_object strm, cl_object byte)
 {
   ecl_write_byte(byte, ECHO_STREAM_OUTPUT(strm));
 }
 
-static cl_object
-echo_read_byte(cl_object strm)
+static void
+echo_unread_byte(cl_object strm, cl_object byte)
 {
-  cl_object out = ecl_read_byte(ECHO_STREAM_INPUT(strm));
-  if (!Null(out)) ecl_write_byte(out, ECHO_STREAM_OUTPUT(strm));
-  return out;
+  unlikely_if (strm->stream.last_byte != OBJNULL) {
+    ecl_unread_twice(strm);
+  }
+  strm->stream.last_byte = ECL_T;
+  ecl_unread_byte(byte, ECHO_STREAM_INPUT(strm));
+}
+
+static cl_object
+echo_peek_byte(cl_object strm)
+{
+  return ecl_peek_byte(ECHO_STREAM_INPUT(strm));
 }
 
 static ecl_character
 echo_read_char(cl_object strm)
 {
-  ecl_character c = strm->stream.last_code[0];
-  if (c == EOF) {
+  cl_object byte = strm->stream.last_byte;
+  ecl_character c;
+  if (byte != OBJNULL) {
+    strm->stream.last_byte = OBJNULL;
+    c = ecl_read_char(ECHO_STREAM_INPUT(strm));
+  } else {
     c = ecl_read_char(ECHO_STREAM_INPUT(strm));
     if (c != EOF)
       ecl_write_char(c, ECHO_STREAM_OUTPUT(strm));
-  } else {
-    strm->stream.last_code[0] = EOF;
-    ecl_read_char(ECHO_STREAM_INPUT(strm));
   }
   return c;
 }
@@ -461,21 +501,17 @@ echo_write_char(cl_object strm, ecl_character c)
 static void
 echo_unread_char(cl_object strm, ecl_character c)
 {
-  unlikely_if (strm->stream.last_code[0] != EOF) {
+  unlikely_if (strm->stream.last_byte != OBJNULL) {
     ecl_unread_twice(strm);
   }
-  strm->stream.last_code[0] = c;
+  strm->stream.last_byte = ECL_T;;
   ecl_unread_char(c, ECHO_STREAM_INPUT(strm));
 }
 
 static ecl_character
 echo_peek_char(cl_object strm)
 {
-  ecl_character c = strm->stream.last_code[0];
-  if (c == EOF) {
-    c = ecl_peek_char(ECHO_STREAM_INPUT(strm));
-  }
-  return c;
+  return ecl_peek_char(ECHO_STREAM_INPUT(strm));
 }
 
 static int
@@ -531,11 +567,13 @@ echo_close(cl_object strm)
 }
 
 const struct ecl_file_ops echo_ops = {
-  echo_write_byte8,
   echo_read_byte8,
+  echo_write_byte8,
 
-  echo_write_byte,
   echo_read_byte,
+  echo_write_byte,
+  echo_unread_byte,
+  echo_peek_byte,
 
   echo_read_char,
   echo_write_char,
@@ -625,13 +663,23 @@ static cl_object
 concatenated_read_byte(cl_object strm)
 {
   cl_object l = CONCATENATED_STREAM_LIST(strm);
-  cl_object c = ECL_NIL;
+  cl_object c = OBJNULL;
   while (!Null(l)) {
     c = ecl_read_byte(ECL_CONS_CAR(l));
-    if (c != ECL_NIL) break;
+    if (c != OBJNULL) break;
     CONCATENATED_STREAM_LIST(strm) = l = ECL_CONS_CDR(l);
   }
   return c;
+}
+
+static void
+concatenated_unread_byte(cl_object strm, cl_object byte)
+{
+  cl_object l = CONCATENATED_STREAM_LIST(strm);
+  unlikely_if (Null(l)) {
+    ecl_unread_error(strm);
+  }
+  ecl_unread_byte(byte, ECL_CONS_CAR(l));
 }
 
 static ecl_character
@@ -683,11 +731,13 @@ concatenated_close(cl_object strm)
 }
 
 const struct ecl_file_ops concatenated_ops = {
-  ecl_not_output_write_byte8,
   concatenated_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_output_write_byte,
   concatenated_read_byte,
+  ecl_not_output_write_byte,
+  concatenated_unread_byte,
+  ecl_generic_peek_byte,
 
   concatenated_read_char,
   ecl_not_output_write_char,
@@ -778,6 +828,18 @@ static cl_object
 synonym_read_byte(cl_object strm)
 {
   return ecl_read_byte(SYNONYM_STREAM_STREAM(strm));
+}
+
+static void
+synonym_unread_byte(cl_object strm, cl_object byte)
+{
+  ecl_unread_byte(SYNONYM_STREAM_STREAM(strm), byte);
+}
+
+static cl_object
+synonym_peek_byte(cl_object strm)
+{
+  return ecl_peek_byte(SYNONYM_STREAM_STREAM(strm));
 }
 
 static ecl_character
@@ -915,11 +977,13 @@ synonym_truename(cl_object strm)
 }
 
 const struct ecl_file_ops synonym_ops = {
-  synonym_write_byte8,
   synonym_read_byte8,
+  synonym_write_byte8,
 
-  synonym_write_byte,
   synonym_read_byte,
+  synonym_write_byte,
+  synonym_unread_byte,
+  synonym_peek_byte,
 
   synonym_read_char,
   synonym_write_char,

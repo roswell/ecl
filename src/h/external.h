@@ -690,6 +690,10 @@ extern ECL_API cl_object ecl_null_terminated_base_string(cl_object s);
 extern ECL_API cl_object ecl_foreign_data_ref_elt(void *p, enum ecl_ffi_tag type);
 extern ECL_API void ecl_foreign_data_set_elt(void *p, enum ecl_ffi_tag type, cl_object value);
 
+/* stream.c */
+cl_object si_unread_byte(cl_object strm, cl_object byte);
+cl_object si_peek_byte(cl_object strm, cl_object eof_value);
+
 /* file.c */
 
 #define ECL_LISTEN_NO_CHAR      0
@@ -747,6 +751,8 @@ extern ECL_API cl_object ecl_make_string_input_stream(cl_object strng, cl_index 
 extern ECL_API cl_object ecl_make_string_output_stream(cl_index line_length, int extended);
 extern ECL_API cl_object ecl_read_byte(cl_object strm);
 extern ECL_API void ecl_write_byte(cl_object byte, cl_object strm);
+extern ECL_API void ecl_unread_byte(cl_object byte, cl_object strm);
+extern ECL_API cl_object ecl_peek_byte(cl_object strm);
 extern ECL_API ecl_character ecl_read_char_noeof(cl_object strm);
 extern ECL_API ecl_character ecl_read_char(cl_object strm);
 extern ECL_API void ecl_unread_char(ecl_character c, cl_object strm);

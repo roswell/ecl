@@ -29,7 +29,23 @@
 
 * Pending changes since 24.5.10
 
-- *readtable* and *package* are local to an initialized module preventing
+- Byte operations on binary sequence streams and char operations on
+  character sequence streams do not require a roundtrip for encoding and
+  decoding elements (direct reading and writing to vector)
+
+- When a sequence stream is created with :END NIL, then updating the vector
+  fill pointer affects the stream maximum position before EOF
+
+- Sequence streams are now bivalent and allow for the underlying vector
+  upgraded array element type to be either a character or any byte
+
+- Fix a bug in UNREAD-CHAR called on STRING-INPUT-STREAM that moved the
+  position to negative values
+
+- New operators for binary and bivalent streams: EXT:PEEK-BYTE,
+  EXT:UNREAD-BYTE, GRAY:STREAM-PEEK-BYTE and GRAY:STREAM-UNREAD-BYTE.
+
+- *READTABLE* and *PACKAGE* are local to an initialized module preventing
   an issue where file-locality of them did not propagate to executables
 
 - Logical pathnames with multiple wild directories are now correctly

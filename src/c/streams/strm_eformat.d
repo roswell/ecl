@@ -61,11 +61,13 @@ decoding_error(cl_object stream, unsigned char **buffer, int char_length, unsign
 ecl_character
 ecl_eformat_read_char(cl_object strm)
 {
-  unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
+  unsigned char *buffer = strm->stream.byte_buffer;
   ecl_character c;
   unsigned char *buffer_pos = buffer;
   unsigned char *buffer_end = buffer;
   cl_index byte_size = (strm->stream.byte_size / 8);
+  strm->stream.last_char = EOF;
+  strm->stream.last_byte = OBJNULL;
   do {
     if (ecl_read_byte8(strm, buffer_end, byte_size) < byte_size) {
       c = EOF;
@@ -76,44 +78,23 @@ ecl_eformat_read_char(cl_object strm)
   } while(c == EOF && (buffer_end - buffer) < ENCODING_BUFFER_MAX_SIZE);
   unlikely_if (c == strm->stream.eof_char)
     return EOF;
-  if (c != EOF) {
-    strm->stream.last_char = c;
-    strm->stream.last_code[0] = c;
-    strm->stream.last_code[1] = EOF;
-  }
   return c;
 }
 
 void
 ecl_eformat_unread_char(cl_object strm, ecl_character c)
 {
-  unlikely_if (c != strm->stream.last_char) {
+  unlikely_if (strm->stream.last_char != EOF
+               || strm->stream.last_byte != OBJNULL) {
     ecl_unread_twice(strm);
   }
-  {
-    unsigned char buffer[2*ENCODING_BUFFER_MAX_SIZE];
-    int ndx = 0;
-    cl_object l = strm->stream.byte_stack;
-    cl_fixnum i = strm->stream.last_code[0];
-    if (i != EOF) {
-      ndx += strm->stream.encoder(strm, buffer, i);
-    }
-    i = strm->stream.last_code[1];
-    if (i != EOF) {
-      ndx += strm->stream.encoder(strm, buffer+ndx, i);
-    }
-    while (ndx != 0) {
-      l = CONS(ecl_make_fixnum(buffer[--ndx]), l);
-    }
-    strm->stream.byte_stack = l;
-    strm->stream.last_char = EOF;
-  }
+  strm->stream.last_char = c;
 }
 
 ecl_character
 ecl_eformat_write_char(cl_object strm, ecl_character c)
 {
-  unsigned char buffer[ENCODING_BUFFER_MAX_SIZE];
+  unsigned char *buffer = strm->stream.byte_buffer;
   ecl_character nbytes;
   nbytes = strm->stream.encoder(strm, buffer, c);
   strm->stream.ops->write_byte8(strm, buffer, nbytes);
@@ -127,7 +108,6 @@ eformat_read_char_cr(cl_object strm)
   ecl_character c = ecl_eformat_read_char(strm);
   if (c == ECL_CHAR_CODE_RETURN) {
     c = ECL_CHAR_CODE_NEWLINE;
-    strm->stream.last_char = c;
   }
   return c;
 }
@@ -150,16 +130,11 @@ eformat_read_char_crlf(cl_object strm)
   if (c == ECL_CHAR_CODE_RETURN) {
     c = ecl_eformat_read_char(strm);
     if (c == ECL_CHAR_CODE_LINEFEED) {
-      strm->stream.last_code[0] = ECL_CHAR_CODE_RETURN;
-      strm->stream.last_code[1] = c;
       c = ECL_CHAR_CODE_NEWLINE;
     } else {
       ecl_eformat_unread_char(strm, c);
       c = ECL_CHAR_CODE_RETURN;
-      strm->stream.last_code[0] = c;
-      strm->stream.last_code[1] = EOF;
     }
-    strm->stream.last_char = c;
   }
   return c;
 }
@@ -877,33 +852,37 @@ ecl_set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
   }
   stream->stream.format = cl_list(2, stream->stream.format, t);
   {
-    cl_object (*read_byte)(cl_object);
-    void (*write_byte)(cl_object,cl_object);
     byte_size = (byte_size+7)&(~(cl_fixnum)7);
     if (byte_size == 8) {
       if (flags & ECL_STREAM_SIGNED_BYTES) {
-        read_byte = ecl_generic_read_byte_signed8;
-        write_byte = ecl_generic_write_byte_signed8;
+        stream->stream.byte_decoder = ecl_binary_s8_decoder;
+        stream->stream.byte_encoder = ecl_binary_s8_encoder;
       } else {
-        read_byte = ecl_generic_read_byte_unsigned8;
-        write_byte = ecl_generic_write_byte_unsigned8;
+        stream->stream.byte_decoder = ecl_binary_u8_decoder;
+        stream->stream.byte_encoder = ecl_binary_u8_encoder;
       }
     } else if (flags & ECL_STREAM_LITTLE_ENDIAN) {
-      read_byte = ecl_generic_read_byte_le;
-      write_byte = ecl_generic_write_byte_le;
+      stream->stream.byte_decoder = ecl_binary_le_decoder;
+      stream->stream.byte_encoder = ecl_binary_le_encoder;
     } else {
-      read_byte = ecl_generic_read_byte;
-      write_byte = ecl_generic_write_byte;
+      stream->stream.byte_decoder = ecl_binary_be_decoder;
+      stream->stream.byte_encoder = ecl_binary_be_encoder;
     }
     if (ecl_input_stream_p(stream)) {
-      stream->stream.ops->read_byte = read_byte;
+      stream->stream.ops->read_byte = ecl_binary_read_byte;
     }
     if (ecl_output_stream_p(stream)) {
-      stream->stream.ops->write_byte = write_byte;
+      stream->stream.ops->write_byte = ecl_binary_write_byte;
     }
   }
   stream->stream.flags = flags;
   stream->stream.byte_size = byte_size;
+  {
+    cl_fixnum buffer_size = byte_size/8;
+    if (buffer_size < ENCODING_BUFFER_MAX_SIZE)
+      buffer_size = ENCODING_BUFFER_MAX_SIZE;
+    stream->stream.byte_buffer = ecl_alloc_atomic(buffer_size);
+  }
 }
 
 cl_object

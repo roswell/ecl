@@ -84,11 +84,13 @@ str_out_set_position(cl_object strm, cl_object pos)
 }
 
 const struct ecl_file_ops str_out_ops = {
-  ecl_not_output_write_byte8,
   ecl_not_binary_read_byte8,
+  ecl_not_output_write_byte8,
 
-  ecl_not_binary_write_byte,
   ecl_not_input_read_byte,
+  ecl_not_binary_write_byte,
+  ecl_not_input_unread_byte,
+  ecl_generic_peek_byte,
 
   ecl_not_input_read_char,
   str_out_write_char,
@@ -219,7 +221,7 @@ static void
 str_in_unread_char(cl_object strm, ecl_character c)
 {
   cl_fixnum curr_pos = STRING_INPUT_POSITION(strm);
-  unlikely_if (c <= 0) {
+  unlikely_if (curr_pos <= 0) {
     ecl_unread_error(strm);
   }
   STRING_INPUT_POSITION(strm) = curr_pos - 1;
@@ -277,10 +279,12 @@ str_in_set_position(cl_object strm, cl_object pos)
 }
 
 const struct ecl_file_ops str_in_ops = {
-  ecl_not_output_write_byte8,
   ecl_not_binary_read_byte8,
+  ecl_not_output_write_byte8,
 
+  ecl_not_binary_read_byte,
   ecl_not_output_write_byte,
+  ecl_not_binary_write_byte,
   ecl_not_binary_read_byte,
 
   str_in_read_char,

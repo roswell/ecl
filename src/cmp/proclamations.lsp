@@ -1130,6 +1130,8 @@
 (proclamation streamp (t) gen-bool :pure)
 (proclamation read-byte (stream &optional gen-bool t) t)
 (proclamation write-byte (integer stream) integer)
+(proclamation ext:unread-byte (stream integer) null)
+(proclamation ext:peek-byte (stream t) t)
 (proclamation peek-char (&optional (or character boolean)
                                    stream-designator
                                    gen-bool

@@ -587,16 +587,18 @@ enum ecl_smmode {               /*  stream mode  */
 };
 
 struct ecl_file_ops {
-        cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
         cl_index (*read_byte8)(cl_object strm, unsigned char *c, cl_index n);
+        cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
 
-        void (*write_byte)(cl_object strm, cl_object byte);
         cl_object (*read_byte)(cl_object strm);
+        void (*write_byte)(cl_object strm, cl_object byte);
+        void (*unread_byte)(cl_object strm, cl_object byte);
+        cl_object (*peek_byte)(cl_object strm);
 
-        int (*read_char)(cl_object strm);
-        int (*write_char)(cl_object strm, int c);
-        void (*unread_char)(cl_object strm, int c);
-        int (*peek_char)(cl_object strm);
+        ecl_character (*read_char)(cl_object strm);
+        ecl_character (*write_char)(cl_object strm, ecl_character c);
+        void (*unread_char)(cl_object strm, ecl_character c);
+        ecl_character (*peek_char)(cl_object strm);
 
         cl_index (*read_vector)(cl_object strm, cl_object data, cl_index start, cl_index end);
         cl_index (*write_vector)(cl_object strm, cl_object data, cl_index start, cl_index end);
@@ -643,15 +645,19 @@ enum {
         ECL_STREAM_USER_FORMAT = 8,
         ECL_STREAM_US_ASCII = 10,
 #endif
+        /* External Format */
         ECL_STREAM_CR = 16,
         ECL_STREAM_LF = 32,
         ECL_STREAM_SIGNED_BYTES = 64,
         ECL_STREAM_LITTLE_ENDIAN = 128,
+        /* OS Streams */
         ECL_STREAM_C_STREAM = 256,
         ECL_STREAM_MIGHT_SEEK = 512,
-        ECL_STREAM_CLOSE_COMPONENTS = 1024,
-        ECL_STREAM_CLOSE_ON_EXEC = 2048,
-        ECL_STREAM_NONBLOCK = 4096
+        ECL_STREAM_CLOSE_ON_EXEC = 1024,
+        ECL_STREAM_NONBLOCK = 2048,
+        /* Lisp Streams */
+        ECL_STREAM_CLOSE_COMPONENTS = 4096,
+        ECL_STREAM_USE_VECTOR_FILLP = 8192
 };
 
 /* buffer points to an array of bytes ending at buffer_end. Decode one
@@ -662,6 +668,11 @@ typedef ecl_character (*cl_eformat_decoder)(cl_object stream, unsigned char **bu
 /* Encode the character c and store the result in buffer. Return the
    number of bytes used */
 typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, ecl_character c);
+
+/* Buffer is assumed to be big enough to store whole byte. The byte size is
+   stream->strm.byte_size. Decoder returns an object, encoder fills a buffer. */
+typedef cl_object (*cl_binary_decoder)(cl_object stream, unsigned char *buf);
+typedef void (*cl_binary_encoder)(cl_object stream, unsigned char *buf, cl_object byte);
 
 #define ECL_ANSI_STREAM_P(o) \
         (ECL_IMMEDIATE(o) == 0 && ((o)->d.t == t_stream))
@@ -678,18 +689,21 @@ struct ecl_stream {
         } file;
         cl_object object0;      /*  some object  */
         cl_object object1;      /*  some object */
+        cl_object last_byte;    /*  last byte read  */
+        cl_fixnum last_char;    /*  last character read  */
         cl_object byte_stack;   /*  buffer for unread bytes  */
         cl_index column;        /*  file column  */
-        cl_fixnum last_char;    /*  last character read  */
-        cl_fixnum last_code[2]; /*  actual composition of last character  */
         cl_fixnum int0;         /*  some int  */
         cl_fixnum int1;         /*  some int  */
         cl_index byte_size;     /*  size of byte in binary streams  */
         cl_fixnum last_op;      /*  0: unknown, 1: reading, -1: writing */
         char *buffer;           /*  buffer for FILE  */
+        unsigned char *byte_buffer; /*  buffer for encoding and decoding */
         cl_object format;       /*  external format  */
         cl_eformat_encoder encoder;
         cl_eformat_decoder decoder;
+        cl_binary_encoder byte_encoder;
+        cl_binary_decoder byte_decoder;
         cl_object format_table;
         int flags;              /*  character table, flags, etc  */
         ecl_character eof_char;
