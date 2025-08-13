@@ -283,7 +283,7 @@ ecl_print_circle(void)
     return _ecl_funcall2(@'gray::stream-finish-output', strm);
   }
 #endif
-  ecl_force_output(strm);
+  ecl_finish_output(strm);
   @(return ECL_NIL);
   @)
 
