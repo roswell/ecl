@@ -1018,7 +1018,7 @@ if not possible."
   (let* ((base-type (if (integerp object) 'INTEGER (type-of object)))
          (type (list base-type object object)))
     (or (find-registered-tag type)
-        (register-interval-type type))))
+        (canonical-interval-type type))))
 
 (defun push-type (type tag)
   (declare (si::c-local)
@@ -1182,13 +1182,7 @@ if not possible."
   (and (eq (first i1) (first i2))
        (bounds-<= (second i2) (second i1))))
 
-(defun register-elementary-interval (type b)
-  (declare (si::c-local))
-  (setq type (list type b))
-  (or (find-registered-tag type #'equalp)
-      (make-registered-tag type #'numeric-range-p #'numeric-range-<=)))
-
-(defun register-interval-type (interval)
+(defun canonical-interval-type (interval)
   (declare (si::c-local))
   (destructuring-bind (type &optional (low '*) (high '*)) interval
     (let ((tag-high
@@ -1198,22 +1192,28 @@ if not possible."
                    (setq high (if (consp high)
                                   (ceiling (first high))
                                   (floor (1+ high))))
-                   (register-elementary-interval type high))
+                   (register-interval-type type high))
                   ((consp high)
-                   (register-elementary-interval type (first high)))
+                   (register-interval-type type (first high)))
                   (t
-                   (register-elementary-interval type (list high)))))
+                   (register-interval-type type (list high)))))
           (tag-low
             (cond ((eq low '*)
-                   (register-elementary-interval type low))
+                   (register-interval-type type low))
                   ((eq type 'INTEGER)
                    (setq low (if (consp low)
                                  (floor (1+ (first low)))
                                  (ceiling low)))
-                   (register-elementary-interval type low))
+                   (register-interval-type type low))
                   (t
-                   (register-elementary-interval type low)))))
+                   (register-interval-type type low)))))
       (logandc2 tag-low tag-high))))
+
+(defun register-interval-type (type b)
+  (declare (si::c-local))
+  (setq type (list type b))
+  (or (find-registered-tag type #'equalp)
+      (make-registered-tag type #'numeric-range-p #'numeric-range-<=)))
 
 ;;; All comparisons between intervals operations may be defined in terms of
 ;;;
@@ -1243,30 +1243,33 @@ if not possible."
 ;; return true when: T1 is a subtype of T2 or when the upgraded type
 ;; specifiers refer to the same sets of objects. TYPEP has a different
 ;; specification and TYPECASE should use it. -- jd 2019-04-19
-(defun canonical-complex-type (real-type)
+(defun canonical-complex-type (complex-type)
   (declare (si::c-local))
-  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not
-  ;; a subtype of REAL.
-  (when (eq real-type '*)
-    (setq real-type 'real))
-  (let* ((ucpt (upgraded-complex-part-type real-type))
-         (type `(complex ,ucpt)))
-    (or (find-registered-tag type)
-        #+complex-float
-        (case ucpt
-          (real
-           (logior (canonical-complex-type 'float)
-                   (canonical-complex-type 'rational)))
-          (float
-           (logior (canonical-complex-type 'single-float)
-                   (canonical-complex-type 'double-float)
-                   (canonical-complex-type 'long-float)))
-          (otherwise
-           (let ((tag (new-type-tag)))
-             (push-type type tag))))
-        #-complex-float
-        (let ((tag (new-type-tag)))
-          (push-type type tag)))))
+  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not a
+  ;; subtype of REAL.
+  (destructuring-bind (&optional (real-type 'real)) (rest complex-type)
+    (when (eq real-type '*)
+      (setq real-type 'real))
+    (let* ((upgraded-real (upgraded-complex-part-type real-type))
+           (upgraded-type `(complex ,upgraded-real)))
+      (or (find-registered-tag upgraded-type)
+          #+complex-float
+          (case upgraded-real
+            (real
+             (logior (canonical-complex-type '(complex single-float))
+                     (canonical-complex-type '(complex double-float))
+                     (canonical-complex-type '(complex long-float))
+                     (canonical-complex-type '(complex rational))))
+            (float
+             (logior (canonical-complex-type '(complex single-float))
+                     (canonical-complex-type '(complex double-float))
+                     (canonical-complex-type '(complex long-float)))))
+          (register-complex-type upgraded-type)))))
+
+(defun register-complex-type (upgraded-type)
+  (declare (si::c-local))
+  (let ((tag (new-type-tag)))
+    (push-type upgraded-type tag)))
 
 ;;----------------------------------------------------------------------
 ;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
@@ -1493,7 +1496,7 @@ if not possible."
                      DOUBLE-FLOAT
                      RATIO
                      LONG-FLOAT)
-            (register-interval-type type))
+            (canonical-interval-type type))
            ((FLOAT)
             (canonical-type `(OR #+short-float
                                  (SHORT-FLOAT ,@(rest type))
@@ -1515,9 +1518,7 @@ if not possible."
                                  (RATIO ,@(rest type)))
                             env))
            (COMPLEX
-            (canonical-complex-type (if (endp (rest type))
-                                        'real
-                                        (second type))))
+            (canonical-complex-type type))
            (CONS (apply #'register-cons-type env (rest type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)) env)
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)) env)))
