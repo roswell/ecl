@@ -860,6 +860,15 @@ if not possible."
   #-ecl-min
   '#.*elementary-types*)
 
+;;; INV The function MAYBE-SAVE-TYPES ensures that we operate on fresh conses
+;;; instead of modifying *MEMBER-TYPES* and *ELEMENTARY-TYPES*.
+(defmacro with-type-database (() &body body)
+  `(let ((*highest-type-tag* *highest-type-tag*)
+         (*save-types-database* t)
+         (*member-types* *member-types*)
+         (*elementary-types* *elementary-types*))
+     ,@body))
+
 (defun new-type-tag ()
   (declare (si::c-local))
   (prog1 *highest-type-tag*
@@ -1436,10 +1445,7 @@ if not possible."
 ;;
 #+ (or)
 (defun canonicalize (type env)
-  (let ((*highest-type-tag* *highest-type-tag*)
-        (*save-types-database* t)
-        (*member-types* *member-types*)
-        (*elementary-types* *elementary-types*))
+  (with-type-database ()
     (let ((tag (canonical-type type env))
           (out))
       (setq tag (canonical-type type env))
@@ -1579,10 +1585,7 @@ if not possible."
     (when (and elt (eq (caar elt) t1) (eq (cdar elt) t2))
       (setf elt (cdr elt))
       (return-from subtypep (values (car elt) (cdr elt))))
-    (let* ((*highest-type-tag* *highest-type-tag*)
-           (*save-types-database* t)
-           (*member-types* *member-types*)
-           (*elementary-types* *elementary-types*))
+    (with-type-database ()
       (multiple-value-bind (test confident)
           (fast-subtypep t1 t2 env)
         (setf (aref cache hash) (cons (cons t1 t2) (cons test confident)))
@@ -1615,10 +1618,7 @@ if not possible."
            (values nil nil)))))
 
 (defun type= (t1 t2 &optional env)
-  (let ((*highest-type-tag* *highest-type-tag*)
-        (*save-types-database* t)
-        (*member-types* *member-types*)
-        (*elementary-types* *elementary-types*))
+  (with-type-database ()
     (fast-type= t1 t2 env)))
 
 (defun search-type-in-env (type env)
