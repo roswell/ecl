@@ -882,9 +882,9 @@ if not possible."
     (and pos (cdr pos))))
 
 ;;; Make and register a new tag for a certain type.
-(defun make-registered-tag (type same-kingdom-p type-<= minimize-super)
+(defun make-registered-tag (type same-kingdom-p type-<=)
   (multiple-value-bind (tag-super tag-sub)
-      (find-type-bounds type same-kingdom-p type-<= minimize-super)
+      (find-type-bounds type same-kingdom-p type-<=)
     (if (null tag-super)
         (push-type type tag-sub)
         (let ((tag (new-type-tag)))
@@ -928,42 +928,16 @@ if not possible."
 ;;; If the function finds an equivalent type with a different name, then it
 ;;; returns (VALUES NIL EQUIVALENT-TYPE-TAG). This is a clue that there is no
 ;;; need to extend the type's bit-vector.
-;;; ----------------------------------------------------------------------------
-;;; When MINIMIZE-SUPER is true, then TAG-SUPER is the "closest" supertype
-;;; within the family. This is to account for intervals. Consider the follwoing:
 ;;;
-;;;     (I 10 20) (I 15)
-;;;
-;;; That produces five canonical types:
-;;;
-;;;     (I 10 20) -> (I 10), (I (20)), (I 20)
-;;;     (I 15)    -> (I 15), (I (15))
-;;;
-;;; And two derived types (ranges):
-;;;
-;;;     (I 10 20) === (AND (I 10) (NOT (I (20))))
-;;;     (I 15)    === (AND (I 15) (NOT (I (15))))
-;;;
-;;; Canonical types have a strict total order, but ranges do not. The crux is
-;;; that both are within the same family, so we can't return a union. This is
-;;; salvaged by the following observations:
-;;;
-;;; 1. FIND-TYPE-BOUNDS is always called with a canonical type (left-bound)
-;;; 2. Ranges are never supertypes of canonical types
-;;; 3. The supertype relation is transitive between canonical types
-;;;
-;;; That implies, that if we compute the minimized super type then:
-;;;
-;;; - for every range type: ( = 0 (logand tag-super-min tag-range))
-;;; - for every super type: (/= 0 (logand tag-super-min tag-canon))
-;;;
-(defun find-type-bounds (type in-our-family-p type-<= minimize-super)
+;;; All types in the family must be disjoint (sub-family wise) or have a total
+;;; order to avoid aliasing problem in the binary vector.
+(defun find-type-bounds (type in-our-family-p type-<=)
   (declare (si::c-local)
            (optimize (safety 0))
            (function in-our-family-p type-<=)) 
   (let ((subtype-tag +built-in-tag-nil+)
         (disjoint-tag +built-in-tag-nil+)
-        (supertype-tag (if minimize-super +built-in-tag-t+ +built-in-tag-nil+)))
+        (supertype-tag +built-in-tag-nil+))
     (dolist (i *elementary-types*)
       (declare (cons i))
       (let ((other-type (car i))
@@ -975,17 +949,12 @@ if not possible."
                    (return-from find-type-bounds
                      (values nil other-tag)))
                   (other-sup-p
-                   (if minimize-super
-                       (when (zerop (logandc2 other-tag supertype-tag))
-                         (setq supertype-tag other-tag))
-                       (setq supertype-tag (logior other-tag supertype-tag))))
+                   (setq supertype-tag (logior other-tag supertype-tag)))
                   (other-sub-p
                    (setq subtype-tag (logior other-tag subtype-tag)))
                   (t
                    (setq disjoint-tag (logior disjoint-tag other-tag))))))))
-    (values (if (= supertype-tag +built-in-tag-t+)
-                +built-in-tag-nil+
-                (logandc2 supertype-tag (logior disjoint-tag subtype-tag)))
+    (values (logandc2 supertype-tag (logior disjoint-tag subtype-tag))
             subtype-tag)))
 
 ;; A new type is to be registered, which is not simply a composition of
@@ -1001,7 +970,7 @@ if not possible."
            (optimize (safety 0))
            (function in-our-family-p type-<=))
   (or (find-registered-tag type)
-      (make-registered-tag type in-our-family-p type-<= nil)))
+      (make-registered-tag type in-our-family-p type-<=)))
 
 ;;----------------------------------------------------------------------
 ;; MEMBER types. We register this object in a separate list, *MEMBER-TYPES*,
@@ -1217,7 +1186,7 @@ if not possible."
   (declare (si::c-local))
   (setq type (list type b))
   (or (find-registered-tag type #'equalp)
-      (make-registered-tag type #'numeric-range-p #'numeric-range-<= t)))
+      (make-registered-tag type #'numeric-range-p #'numeric-range-<=)))
 
 (defun register-interval-type (interval)
   (declare (si::c-local))
@@ -1242,15 +1211,8 @@ if not possible."
                           ((consp low)
                            (floor (1+ (first low))))
                           (t
-                           (ceiling low)))))
-         (tag (logandc2 tag-low tag-high)))
-    ;; Here we do a rather peculiar thing - we register an interval that is
-    ;; right-bound. We could do without registering it, and then juggling with
-    ;; MINIMIZE-SUPERTYPE in FIND-TYPE-BOUNDS would not be necessary because all
-    ;; types in the kingdom would have a strict total order. -- jd 2023-07-18
-    (unless (eq high '*)
-      (push-type interval tag))
-    tag))
+                           (ceiling low))))))
+    (logandc2 tag-low tag-high)))
 
 ;;; All comparisons between intervals operations may be defined in terms of
 ;;;
@@ -1452,7 +1414,7 @@ if not possible."
        (when (null foundp)
          (return-from find-built-in-tag))
        (ext:if-let ((alias (pop record)))
-         (push-type name (canonical-type alias env))
+         (canonical-type alias env)
          (let* ((strict-supertype (or (first record) 'T))
                 (strict-supertype-tag (canonical-type strict-supertype env))
                 (new-type-tag (new-type-tag)))
