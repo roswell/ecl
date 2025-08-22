@@ -1518,10 +1518,9 @@ if not possible."
                                  (RATIO ,@(rest type)))
                             env))
            (COMPLEX
-            (or (find-built-in-tag type env)
-                (canonical-complex-type (if (endp (rest type))
-                                            'real
-                                            (second type)))))
+            (canonical-complex-type (if (endp (rest type))
+                                        'real
+                                        (second type))))
            (CONS (apply #'register-cons-type env (rest type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)) env)
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)) env)))
