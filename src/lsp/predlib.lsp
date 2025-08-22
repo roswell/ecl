@@ -881,6 +881,15 @@ if not possible."
   (let* ((pos (assoc type *elementary-types* :test test)))
     (and pos (cdr pos))))
 
+;;; Make and register a new tag for a certain type.
+(defun make-registered-tag (type same-kingdom-p type-<= minimize-super)
+  (multiple-value-bind (tag-super tag-sub)
+      (find-type-bounds type same-kingdom-p type-<= minimize-super)
+    (let ((tag (new-type-tag)))
+      (update-types tag-super tag)
+      (setf tag (logior tag tag-sub))
+      (push-type type tag))))
+
 ;; We are going to make changes in the types database. Save a copy if this
 ;; will cause trouble.
 ;;
@@ -955,12 +964,7 @@ if not possible."
            (optimize (safety 0))
            (function in-our-family-p type-<=))
   (or (find-registered-tag type)
-      (multiple-value-bind (tag-super tag-sub)
-          (find-type-bounds type in-our-family-p type-<= nil)
-        (let ((tag (new-type-tag)))
-          (update-types (logandc2 tag-super tag-sub) tag)
-          (setf tag (logior tag tag-sub))
-          (push-type type tag)))))
+      (make-registered-tag type in-our-family-p type-<= nil)))
 
 ;;----------------------------------------------------------------------
 ;; MEMBER types. We register this object in a separate list, *MEMBER-TYPES*,
@@ -1158,23 +1162,25 @@ if not possible."
 ;;  (INTEGER 0 2) = (AND (INTEGER 0 *) (NOT (INTEGER (2) *)))
 ;;  (SHORT-FLOAT (0.2) (2)) = (AND (SHORT-FLOAT (0.2) *) (NOT (SHORT-FLOAT 2 *)))
 
+(defun numeric-range-p (type)
+  (and (consp type)
+       (member (car type)
+               '(integer ratio short-float single-float double-float long-float))
+       (or (null (cddr type))
+           (error "NUMERIC-RANGE-P: ~s is not in the canonical form (TYPE B)." type))))
+
+;;; Numeric ranges are decided separately depending on the type actual type.
+;;; When ranges belong to different sub-families, then they are disjoint and
+;;; can't be ordered.
+(defun numeric-range-<= (i1 i2)
+  (and (eq (first i1) (first i2))
+       (bounds-<= (second i2) (second i1))))
+
 (defun register-elementary-interval (type b)
   (declare (si::c-local))
   (setq type (list type b))
   (or (find-registered-tag type #'equalp)
-      (multiple-value-bind (tag-super tag-sub)
-          (find-type-bounds type
-                            #'(lambda (other-type)
-                                (and (consp other-type)
-                                     (null (cddr other-type))))
-                            #'(lambda (i1 i2)
-                                (and (eq (first i1) (first i2))
-                                     (bounds-<= (second i2) (second i1))))
-                            t)
-        (let ((tag (new-type-tag)))
-          (update-types (logandc2 tag-super tag-sub) tag)
-          (setq tag (logior tag tag-sub))
-          (push-type type tag)))))
+      (make-registered-tag type #'numeric-range-p #'numeric-range-<= t)))
 
 (defun register-interval-type (interval)
   (declare (si::c-local))
@@ -1201,18 +1207,19 @@ if not possible."
                           (t
                            (ceiling low)))))
          (tag (logandc2 tag-low tag-high)))
+    ;; Here we do a rather peculiar thing - we register an interval that is
+    ;; right-bound. We could do without registering it, and then juggling with
+    ;; MINIMIZE-SUPERTYPE in FIND-TYPE-BOUNDS would not be necessary because all
+    ;; types in the kingdom would have a strict total order. -- jd 2023-07-18
     (unless (eq high '*)
       (push-type interval tag))
     tag))
 
-;; All comparisons between intervals operations may be defined in terms of
-;;
-;;      (BOUNDS-<= b1 b2)       and     (BOUNDS-< b1 b2)
-;;
-;; The first one checks whether (REAL b2 *) is contained in (REAL b1 *). The
-;; second one checks whether (REAL b2 *) is strictly contained in (REAL b1 *)
-;; (i.e., (AND (REAL b1 *) (NOT (REAL b2 *))) is not empty).
-;;
+;;; All comparisons between intervals operations may be defined in terms of
+;;;
+;;;      (BOUNDS-<= b1 b2)
+;;;
+;;; that checks whether (REAL b2 *) is contained in (REAL b1 *).
 (defun bounds-<= (b1 b2)
   (cond ((eq b1 '*) t)
         ((eq b2 '*) nil)
@@ -1224,18 +1231,6 @@ if not possible."
          (<= b1 (first b2)))
         (t
          (<= b1 b2))))
-
-(defun bounds-< (b1 b2)
-  (cond ((eq b1 '*) (not (eq b2 '*)))
-        ((eq b2 '*) nil)
-        ((consp b1)
-         (if (consp b2)
-             (< (first b1) (first b2))
-             (< (first b1) b2)))
-        ((consp b2)
-         (<= b1 (first b2)))
-        (t
-         (< b1 b2))))
 
 ;;----------------------------------------------------------------------
 ;; COMPLEX types. We do not need to register anything, because all
