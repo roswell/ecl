@@ -7,8 +7,8 @@ If you do not have access to the online version, follow the following recipies.
    ./configure --help
    to get a list of the flags with which ECL can be configured.
 2. Enter
-   ./configure ...
-   where "..." is the set of flags you have chosen.
+   ./configure <flags>
+   where <flags> is the set of flags you have chosen.
 3. Use "make" followed by "make install" to build and install ECL.
 
 * Windows with Visual Studio C++ 2008
@@ -17,8 +17,8 @@ If you do not have access to the online version, follow the following recipies.
 3. Read the file Makefile to find the configuration options. They
    typically have the form ECL_UNICODE=1, ECL_THREADS=1, etc
 4. Enter
-   nmake ...
-   followed by zero or more of those options
+   nmake <options>
+   where <options> is a set of zero or more of those options
 5. Use "nmake install" to create a directory called "package" with ECL in it.
 6. Move that directory wherever you need.
 
