@@ -956,6 +956,8 @@ if not possible."
                    (setq subtype-tag (logior other-tag subtype-tag)))
                   (t
                    (setq disjoint-tag (logior disjoint-tag other-tag))))))))
+    (unless (logand disjoint-tag subtype-tag)
+      (error "Some types in the family does not have a strict total order."))
     (values (logandc2 supertype-tag (logior disjoint-tag subtype-tag))
             subtype-tag)))
 
