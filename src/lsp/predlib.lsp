@@ -865,16 +865,22 @@ if not possible."
 #+ (or)
 (defstruct (elementary-type (:type list))
   (spec (error "Argument :SPEC is required.") :read-only t)
-  (tag  (error "Argument :TAG is required.") :type integer))
+  (tag  (error "Argument :TAG is required.") :type integer)
+  (dome (error "Argument :DOME is required.")))
 
 (defun make-elementary-type (&key spec tag)
   (declare (si::c-local))
-  (list spec tag))
+  (list spec tag nil))
 
 (setf (fdefinition 'elementary-type-spec) #'first)
+
 (setf (fdefinition 'elementary-type-tag) #'second)
 (defsetf elementary-type-tag (etype) (new-tag)
   `(rplaca (cdr ,etype) ,new-tag))
+
+(setf (fdefinition 'elementary-type-dome) #'third)
+(defsetf elementary-type-dome (etype) (new-dome)
+  `(rplaca (cddr ,etype) ,new-dome))
 
 ;;; INV The function MAYBE-SAVE-TYPES ensures that we operate on fresh conses
 ;;; instead of modifying *MEMBER-TYPES* and *ELEMENTARY-TYPES*.
@@ -902,10 +908,13 @@ if not possible."
 
 ;; Find out the tag for a certain type, if it has been already registered.
 ;;
+(defun find-registered-type (spec test)
+  (declare (si::c-local))
+  (find spec *elementary-types* :key #'elementary-type-spec :test test))
+
 (defun find-registered-tag (type &optional (test #'equal))
   (declare (si::c-local))
-  (when-let ((etype (find type *elementary-types*
-                          :key #'elementary-type-spec :test test)))
+  (when-let ((etype (find-registered-type type test)))
     (elementary-type-tag etype)))
 
 ;;; Make and register a new tag for a certain type.
@@ -1302,24 +1311,72 @@ if not possible."
   (let ((tag (new-type-tag)))
     (push-new-type upgraded-type tag)))
 
-;;----------------------------------------------------------------------
-;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
-;; are strictly supported.
-;;
-(defun register-cons-type (env &optional (car-type '*) (cdr-type '*))
-  ;; The problem with the code below is that it does not suport infinite
-  ;; recursion. Instead we just canonicalize everything to CONS, irrespective
-  ;; of whether the arguments are valid types or not!
-  #+(or)
-  (canonical-type 'CONS env)
-  (let ((car-tag (if (eq car-type '*) +built-in-tag-t+ (canonical-type car-type env)))
-        (cdr-tag (if (eq cdr-type '*) +built-in-tag-t+ (canonical-type cdr-type env))))
-    (cond ((or (= car-tag +built-in-tag-nil+) (= cdr-tag +built-in-tag-nil+))
-           +built-in-tag-nil+)
-          ((and (= car-tag +built-in-tag-t+) (= cdr-tag +built-in-tag-t+))
-           (canonical-type 'CONS env))
-          (t
-           (throw '+canonical-type-failure+ 'CONS)))))
+;;; ----------------------------------------------------------------------------
+;;; CONS types.
+;;;
+;;; (CONS T1 T2) may contain arbitrary type specifiers including recursive
+;;; definitions. To ensure that boolean algebra holds we convert the type to its
+;;; canonical form:
+;;;
+;;; (CONS T1 T2) --> (OR (CONS-CAR T1) (CONS-CDR T2))
+;;;
+;;; Each part defines its own dukedom, that is a separate namespace for types.
+;;; This means that the same TYPE in *ELEMENTARY-TYPES* and a dukedom will have
+;;; separate tags. For example (CONS (CONS A B) (CONS C D)) would require 6
+;;; dukedoms (and the top-level namespace):
+;;;
+;;; T
+;;;  CONS-CAR
+;;;   (CONS-CAR CONS-CAR)
+;;;   (CONS-CAR CONS-CDR)
+;;;  CONS-CDR
+;;;   (CONS-CDR CONS-CAR)
+;;;   (CONS-CDR CONS-CDR)
+;;;
+;;; This may seem like an uncontrolled exponential explosion in space, but in
+;;; practice nested cons type specifiers rarely exceed two levels, and we always
+;;; add only referenced types. Note that the bitvector space is shared by all
+;;; dukedoms - it is only about the type namespace.
+
+(defun cons-car-p (type)
+  (and (consp type)
+       (eq (first type) 'CONS)
+       (null (third type))
+       (second type)))
+
+(defun cons-cdr-p (type)
+  (and (consp type)
+       (eq (first type) 'CONS)
+       (null (second type))
+       (third type)))
+
+(defun cons-type-<= (i1 i2)
+  (declare (ignore i1 i2))
+  (error "There can't be two elements of the same CONS compound."))
+
+(defun register-cons-type (type env)
+  (destructuring-bind (&optional (car-type '*) (cdr-type '*)) (rest type)
+    (when (or (subtypep car-type nil)
+              (subtypep cdr-type nil))
+      (return-from register-cons-type
+        +built-in-tag-nil+))
+    (logior (register-cons-compound '(cons t nil) car-type #'cons-car-p env)
+            (register-cons-compound '(cons nil t) cdr-type #'cons-cdr-p env))))
+
+(defun register-cons-compound (dome-type component-type same-kingdom-p env)
+  (let ((dome-tag (register-type dome-type same-kingdom-p #'cons-type-<=)))
+    (case component-type
+      ((* t) (return-from register-cons-compound dome-tag))
+      ((nil) (return-from register-cons-compound +built-in-tag-nil+)))
+    (let* ((etype (find-registered-type dome-type #'equal))
+           (*elementary-types* (elementary-type-dome etype)))
+      (prog1 (canonical-type component-type env)
+        ;; Propagate new tags to the component superclass.
+        (dolist (i *elementary-types*)
+          (setf dome-tag (logior dome-tag (elementary-type-tag i))))
+        ;; Save the updated dukedom and the new tag.
+        (setf (elementary-type-dome etype) *elementary-types*)
+        (setf (elementary-type-tag etype) dome-tag)))))
 
 ;;; ----------------------------------------------------------------------------
 ;;; FIND-BUILT-IN-TAG
@@ -1385,9 +1442,9 @@ if not possible."
                (BASE-CHAR NIL CHARACTER)
                (STANDARD-CHAR NIL BASE-CHAR)
 
-               (CONS)
+               (CONS (CONS * *))
                (NULL (MEMBER NIL))
-               (LIST (OR CONS (MEMBER NIL)))
+               (LIST (OR (CONS * *) (MEMBER NIL)))
 
                (ARRAY (ARRAY * *))
                (SIMPLE-ARRAY (SIMPLE-ARRAY * *))
@@ -1401,7 +1458,7 @@ if not possible."
                #+unicode (SIMPLE-BASE-STRING (SIMPLE-ARRAY BASE-CHAR (*)))
                (BIT-VECTOR (ARRAY BIT (*)))
 
-               (SEQUENCE (OR CONS (MEMBER NIL) (ARRAY * (*))))
+               (SEQUENCE (OR (CONS * *) (MEMBER NIL) (ARRAY * (*))))
 
                (HASH-TABLE)
                (PATHNAME)
@@ -1554,7 +1611,8 @@ if not possible."
                             env))
            (COMPLEX
             (canonical-complex-type type))
-           (CONS (apply #'register-cons-type env (rest type)))
+           (CONS
+            (register-cons-type type env))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)) env)
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)) env)))
            ((COMPLEX-ARRAY SIMPLE-ARRAY) (register-array-type type env))
