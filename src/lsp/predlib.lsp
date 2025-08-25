@@ -849,18 +849,55 @@ if not possible."
 ;;; Built-in tags for the top and the bottom types.
 (defconstant +built-in-tag-t+ -1)
 (defconstant +built-in-tag-nil+ 0)
+(defparameter *intervals-mask* #B1)
 
 (defparameter *member-types*
   #+ecl-min NIL
   #-ecl-min '#.*member-types*)
-
-(defparameter *intervals-mask* #B1)
 
 (defparameter *elementary-types*
   #+ecl-min
   '()
   #-ecl-min
   '#.*elementary-types*)
+
+;;; The definition is commented out because DEFSTRUCT is not available yet
+;;; during the bootstrap procedure, so we open-code the definition below.
+#+ (or)
+(defstruct (member-type (:type list))
+  (object (error "Argument :OBJECT is required.") :read-only t)
+  (tag (error "Argument :TAG is required.") :type integer))
+
+(defun make-member-type (&key object tag)
+  (list object tag))
+
+(defun find-member-type (object)
+  (assoc object *member-types*))
+
+(setf (fdefinition 'member-type-object) #'first)
+(setf (fdefinition 'member-type-tag) #'second)
+(defsetf member-type-tag (mtype) (new-tag)
+  `(rplaca (cdr ,mtype) ,new-tag))
+
+;;; The definition is commented out because DEFSTRUCT is not available yet
+;;; during the bootstrap procedure, so we open-code the definition below.
+#+ (or)
+(defstruct (elementary-type (:type list))
+  (spec (error "Argument :SPEC is required.") :read-only t)
+  (tag  (error "Argument :TAG is required.") :type integer))
+
+(defun make-elementary-type (&key spec tag)
+  (declare (si::c-local))
+  (list spec tag))
+
+(defun find-elementary-type (spec test)
+  (declare (si::c-local))
+  (find spec *elementary-types* :key #'elementary-type-spec :test test))
+
+(setf (fdefinition 'elementary-type-spec) #'first)
+(setf (fdefinition 'elementary-type-tag) #'second)
+(defsetf elementary-type-tag (etype) (new-tag)
+  `(rplaca (cdr ,etype) ,new-tag))
 
 ;;; INV The function MAYBE-SAVE-TYPES ensures that we operate on fresh conses
 ;;; instead of modifying *MEMBER-TYPES* and *ELEMENTARY-TYPES*.
@@ -876,23 +913,33 @@ if not possible."
   (prog1 *highest-type-tag*
     (setq *highest-type-tag* (ash *highest-type-tag* 1))))
 
+(defun push-new-type (type tag)
+  (declare (si::c-local)
+           (ext:assume-no-errors))
+  (dolist (i *member-types*)
+    (declare (cons i))
+    (when (typep (member-type-object i) type)
+      (setq tag (logior tag (member-type-tag i)))))
+  (push (make-elementary-type :spec type :tag tag) *elementary-types*)
+  tag)
+
 ;; Find out the tag for a certain type, if it has been already registered.
 ;;
 (defun find-registered-tag (type &optional (test #'equal))
   (declare (si::c-local))
-  (let ((pos (assoc type *elementary-types* :test test)))
-    (and pos (cdr pos))))
+  (when-let ((etype (find-elementary-type type test)))
+    (elementary-type-tag etype)))
 
 ;;; Make and register a new tag for a certain type.
 (defun make-registered-tag (type same-kingdom-p type-<=)
   (multiple-value-bind (tag-super tag-sub)
       (find-type-bounds type same-kingdom-p type-<=)
     (if (null tag-super)
-        (push-type type tag-sub)
+        (push-new-type type tag-sub)
         (let ((tag (new-type-tag)))
           (update-types tag-super tag)
           (setf tag (logior tag tag-sub))
-          (push-type type tag)))))
+          (push-new-type type tag)))))
 
 ;; We are going to make changes in the types database. Save a copy if this
 ;; will cause trouble.
@@ -913,8 +960,9 @@ if not possible."
   (declare (ext:assume-no-errors))
   (maybe-save-types)
   (dolist (i *elementary-types*)
-    (unless (zerop (logand (cdr i) type-mask))
-      (setf (cdr i) (logior new-tag (cdr i))))))
+    (unless (zerop (logand (elementary-type-tag i) type-mask))
+      (setf (elementary-type-tag i)
+            (logior new-tag (elementary-type-tag i))))))
 
 ;;; FIND-TYPE-BOUNDS => (VALUES TAG-SUPER TAG-SUB)
 ;;;
@@ -942,8 +990,8 @@ if not possible."
         (supertype-tag +built-in-tag-nil+))
     (dolist (i *elementary-types*)
       (declare (cons i))
-      (let ((other-type (car i))
-            (other-tag (cdr i)))
+      (let ((other-type (elementary-type-spec i))
+            (other-tag (elementary-type-tag i)))
         (when (funcall in-our-family-p other-type)
           (let ((other-sup-p (funcall type-<= type other-type))
                 (other-sub-p (funcall type-<= other-type type)))
@@ -994,8 +1042,9 @@ if not possible."
 ;;;
 (defun register-member-type (object)
   ;(declare (si::c-local))
-  (let ((pos (assoc object *member-types*)))
-    (cond ((and pos (cdr pos)))
+  (let ((mtype (find-member-type object)))
+    (cond (mtype
+           (member-type-tag mtype))
           ((not (realp object))
            (simple-member-type object))
           ((and (floatp object) (zerop object))
@@ -1013,11 +1062,12 @@ if not possible."
            (ext:assume-no-errors))
   (let ((tag (new-type-tag)))
     (maybe-save-types)
-    (setq *member-types* (acons object tag *member-types*))
+    (push (make-member-type :object object :tag tag) *member-types*)
     (dolist (i *elementary-types*)
-      (let ((type (car i)))
+      (let ((type (elementary-type-spec i)))
         (when (typep object type)
-          (setf (cdr i) (logior tag (cdr i))))))
+          (setf (elementary-type-tag i)
+                (logior tag (elementary-type-tag i))))))
     tag))
 
 ;;; We convert number into intervals, so that (AND INTEGER (NOT (EQL 10))) is
@@ -1027,16 +1077,6 @@ if not possible."
          (type (list base-type object object)))
     (or (find-registered-tag type)
         (canonical-interval-type type))))
-
-(defun push-type (type tag)
-  (declare (si::c-local)
-           (ext:assume-no-errors))
-  (dolist (i *member-types*)
-    (declare (cons i))
-    (when (typep (car i) type)
-      (setq tag (logior tag (cdr i)))))
-  (push (cons type tag) *elementary-types*)
-  tag)
 
 ;;; ----------------------------------------------------------------------------
 ;;; SATISFIES types. Here we should signal some error which is caught somewhere
@@ -1283,7 +1323,7 @@ if not possible."
 (defun register-complex-type (upgraded-type)
   (declare (si::c-local))
   (let ((tag (new-type-tag)))
-    (push-type upgraded-type tag)))
+    (push-new-type upgraded-type tag)))
 
 ;;----------------------------------------------------------------------
 ;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
@@ -1444,15 +1484,16 @@ if not possible."
                 (new-type-tag (new-type-tag)))
            (unless (eq strict-supertype 't)
              (extend-type-tag new-type-tag strict-supertype-tag))
-           (push-type name new-type-tag)))))))
+           (push-new-type name new-type-tag)))))))
 
 (defun extend-type-tag (tag minimal-supertype-tag)
   (declare (si::c-local)
            (ext:assume-no-errors))
   (dolist (type *elementary-types*)
-    (let ((other-tag (cdr type)))
+    (let ((other-tag (elementary-type-tag type)))
       (when (zerop (logandc2 minimal-supertype-tag other-tag))
-        (setf (cdr type) (logior tag other-tag))))))
+        (setf (elementary-type-tag type)
+              (logior tag other-tag))))))
 
 ;;; ----------------------------------------------------------------------------
 ;;; CANONICALIZE (removed)
@@ -1470,14 +1511,14 @@ if not possible."
       ;;(print-types-database *elementary-types*)
       ;;(print-types-database *member-types*)
       (dolist (i *member-types*)
-        (unless (zerop (logand (cdr i) tag))
-          (push (car i) out)))
+        (unless (zerop (logand (member-type-tag i) tag))
+          (push (member-type-object i) out)))
       (when out
         (setq out `((MEMBER ,@out))))
       (dolist (i *elementary-types*)
-        (unless (zerop (logand (cdr i) tag))
-          ;;(print (list tag (cdr i) (logand tag (cdr i))))
-          (push (car i) out)))
+        (unless (zerop (logand (elementary-type-tag i) tag))
+          ;;(print (list tag (elementary-type-tag i) (logand tag (elementary-type-tag i))))
+          (push (elementary-type-spec i) out)))
         (values tag `(OR ,@out)))))
 
 ;;; ----------------------------------------------------------------------------
@@ -1543,10 +1584,11 @@ if not possible."
            ;;(FUNCTION (register-function-type type))
            ;;(VALUES (register-values-type type))
            (FUNCTION (canonical-type 'FUNCTION env))
-           (t (ext:if-let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
-                (canonical-type (funcall expander type env) env)
-                (unless (assoc (first type) *elementary-types*)
-                  (throw '+canonical-type-failure+ nil))))))
+           (t
+            (ext:if-let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
+              (canonical-type (funcall expander type env) env)
+              (unless (find-registered-tag (first type) #'eql)
+                (throw '+canonical-type-failure+ nil))))))
         ((clos::classp type)
          (register-class type env))
         ((and (fboundp 'function-type-p) (function-type-p type))
