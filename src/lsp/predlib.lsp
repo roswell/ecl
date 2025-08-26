@@ -866,11 +866,11 @@ if not possible."
 (defstruct (elementary-type (:type list))
   (spec (error "Argument :SPEC is required.") :read-only t)
   (tag  (error "Argument :TAG is required.") :type integer)
-  (dome (error "Argument :DOME is required.")))
+  (dome (error "Argument :DOME is required."))
+  (eqls (error "Argument :EQLS is required.")))
 
-(defun make-elementary-type (&key spec tag)
-  (declare (si::c-local))
-  (list spec tag nil))
+(defun make-elementary-type (&key spec tag dome eqls)
+  (list spec tag dome eqls))
 
 (setf (fdefinition 'elementary-type-spec) #'first)
 
@@ -881,6 +881,10 @@ if not possible."
 (setf (fdefinition 'elementary-type-dome) #'third)
 (defsetf elementary-type-dome (etype) (new-dome)
   `(rplaca (cddr ,etype) ,new-dome))
+
+(setf (fdefinition 'elementary-type-eqls) #'fourth)
+(defsetf elementary-type-eqls (etype) (new-eqls)
+  `(rplaca (cdddr ,etype) ,new-eqls))
 
 ;;; INV The function MAYBE-SAVE-TYPES ensures that we operate on fresh conses
 ;;; instead of modifying *MEMBER-TYPES* and *ELEMENTARY-TYPES*.
@@ -1015,33 +1019,52 @@ if not possible."
 ;;; MEMBER types.
 ;;;
 ;;; We register this object in a separate list, *MEMBER-TYPES*, and tag all
-;;; types to which it belongs. We need to treat three cases separately:
+;;; types to which it belongs. We need to treat these cases separately:
 ;;;
-;;; 1. Ordinary types, via simple-member-type, check the objects against all
+;;; 1. Recursive types, via CONS-MEMBER-TYPE, register CAR and CDR of the object
+;;;    in the appropriate dukedom.
+;;;
+;;; 2. Ordinary types, via SIMPLE-MEMBER-TYPE, check the objects against all
 ;;;    pre-registered types, adding their tags.
 ;;;
-;;; 2. Ordinary numbers, are translated into intervals.
+;;; 3. Numeric types (bar signed zeros), are translated into intervals.
 ;;;
-;;; 3. Floating point zeros, have to be treated separately. This
+;;; 4. Floating point zeros, have to be treated separately. This
 ;;;    is done by assigning a special tag to -0.0 and translating
 ;;;
 ;;;        (MEMBER 0.0) = (AND (float-type 0.0 0.0) (NOT (MEMBER -0.0)))
 ;;;
-(defun register-member-type (object)
-  ;(declare (si::c-local))
+(defun canonical-member-type (type env)
+  (let ((tag 0))
+    (dolist (object (rest type) tag)
+      (setf tag (logior tag (register-member-type object env))))))
+
+(defun register-member-type (object env)
+  (declare (si::c-local)
+           (ext:assume-no-errors))
   (let ((pos (assoc object *member-types*)))
     (cond ((and pos (cdr pos)))
+          ((consp object)
+           (cons-member-type object env))
           ((not (realp object))
            (simple-member-type object))
           ((and (floatp object) (zerop object))
            #.(if (eql (- 0.0) 0.0)
                  '(number-member-type object)
                  '(if (minusp (float-sign object))
-                      (simple-member-type object)
-                      (logandc2 (number-member-type object)
-                                (register-member-type (- object))))))
+                   (simple-member-type object)
+                   (logandc2 (number-member-type object)
+                    (register-member-type (- object) env)))))
           (t
            (number-member-type object)))))
+
+;;; To register a member that is CONS we add its parts recursively to CONS type.
+(defun cons-member-type (object env)
+  (declare (si::c-local)
+           (ext:assume-no-errors))
+  (destructuring-bind (object-car . object-cdr) object
+    (logior (register-cons-car-compound `(eql ,object-car) env)
+            (register-cons-cdr-compound `(eql ,object-cdr) env))))
 
 (defun simple-member-type (object)
   (declare (si::c-local)
@@ -1360,8 +1383,14 @@ if not possible."
               (subtypep cdr-type nil))
       (return-from register-cons-type
         +built-in-tag-nil+))
-    (logior (register-cons-compound '(cons t nil) car-type #'cons-car-p env)
-            (register-cons-compound '(cons nil t) cdr-type #'cons-cdr-p env))))
+    (logior (register-cons-car-compound car-type env)
+            (register-cons-cdr-compound cdr-type env))))
+
+(defun register-cons-car-compound (type env)
+  (register-cons-compound '(cons t nil) type #'cons-car-p env))
+
+(defun register-cons-cdr-compound (type env)
+  (register-cons-compound '(cons nil t) type #'cons-cdr-p env))
 
 (defun register-cons-compound (dome-type component-type same-kingdom-p env)
   (let ((dome-tag (register-type dome-type same-kingdom-p #'cons-type-<=)))
@@ -1369,14 +1398,18 @@ if not possible."
       ((* t) (return-from register-cons-compound dome-tag))
       ((nil) (return-from register-cons-compound +built-in-tag-nil+)))
     (let* ((etype (find-registered-type dome-type #'equal))
-           (*elementary-types* (elementary-type-dome etype)))
+           (*elementary-types* (elementary-type-dome etype))
+           (*member-types* (elementary-type-eqls etype)))
       (prog1 (canonical-type component-type env)
         ;; Propagate new tags to the component superclass.
         (dolist (i *elementary-types*)
           (setf dome-tag (logior dome-tag (elementary-type-tag i))))
+        (dolist (i *member-types*)
+          (setf dome-tag (logior dome-tag (cdr i))))
         ;; Save the updated dukedom and the new tag.
-        (setf (elementary-type-dome etype) *elementary-types*)
-        (setf (elementary-type-tag etype) dome-tag)))))
+        (setf (elementary-type-tag etype) dome-tag
+              (elementary-type-dome etype) *elementary-types*
+              (elementary-type-eqls etype) *member-types*)))))
 
 ;;; ----------------------------------------------------------------------------
 ;;; FIND-BUILT-IN-TAG
@@ -1584,7 +1617,7 @@ if not possible."
            (AND (apply #'logand (mapcar #'(lambda (tp) (canonical-type tp env)) (rest type))))
            (OR (apply #'logior (mapcar #'(lambda (tp) (canonical-type tp env)) (rest type))))
            (NOT (lognot (canonical-type (second type) env)))
-           ((EQL MEMBER) (apply #'logior (mapcar #'register-member-type (rest type))))
+           ((EQL MEMBER) (canonical-member-type type env))
            (SATISFIES (register-satisfies-type type))
            ((INTEGER RATIO
              #+short-float SHORT-FLOAT SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT)
