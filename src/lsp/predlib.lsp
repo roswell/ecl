@@ -849,18 +849,34 @@ if not possible."
 ;;; Built-in tags for the top and the bottom types.
 (defconstant +built-in-tag-t+ -1)
 (defconstant +built-in-tag-nil+ 0)
+(defparameter *intervals-mask* #B1)
 
 (defparameter *member-types*
   #+ecl-min NIL
   #-ecl-min '#.*member-types*)
-
-(defparameter *intervals-mask* #B1)
 
 (defparameter *elementary-types*
   #+ecl-min
   '()
   #-ecl-min
   '#.*elementary-types*)
+
+#+ (or)
+(defstruct (member-type (:type list))
+  (object (error "Argument :OBJECT is required.") :read-only t)
+  (tag (error "Argument :TAG is required.") :type integer))
+
+(defun make-member-type (&key object tag)
+  (list object tag))
+
+(defun find-member-type (object)
+  (assoc object *member-types*))
+
+(setf (fdefinition 'member-type-object) #'first)
+
+(setf (fdefinition 'member-type-tag) #'second)
+(defsetf member-type-tag (mtype) (new-tag)
+  `(rplaca (cdr ,mtype) ,new-tag))
 
 #+ (or)
 (defstruct (elementary-type (:type list))
@@ -871,6 +887,10 @@ if not possible."
 
 (defun make-elementary-type (&key spec tag dome eqls)
   (list spec tag dome eqls))
+
+(defun find-elementary-type (spec test)
+  (declare (si::c-local))
+  (find spec *elementary-types* :key #'elementary-type-spec :test test))
 
 (setf (fdefinition 'elementary-type-spec) #'first)
 
@@ -905,20 +925,16 @@ if not possible."
            (ext:assume-no-errors))
   (dolist (i *member-types*)
     (declare (cons i))
-    (when (typep (car i) type)
-      (setq tag (logior tag (cdr i)))))
+    (when (typep (member-type-object i) type)
+      (setq tag (logior tag (member-type-tag i)))))
   (push (make-elementary-type :spec type :tag tag) *elementary-types*)
   tag)
 
 ;; Find out the tag for a certain type, if it has been already registered.
 ;;
-(defun find-registered-type (spec test)
-  (declare (si::c-local))
-  (find spec *elementary-types* :key #'elementary-type-spec :test test))
-
 (defun find-registered-tag (type &optional (test #'equal))
   (declare (si::c-local))
-  (when-let ((etype (find-registered-type type test)))
+  (when-let ((etype (find-elementary-type type test)))
     (elementary-type-tag etype)))
 
 ;;; Make and register a new tag for a certain type.
@@ -1042,8 +1058,9 @@ if not possible."
 (defun register-member-type (object env)
   (declare (si::c-local)
            (ext:assume-no-errors))
-  (let ((pos (assoc object *member-types*)))
-    (cond ((and pos (cdr pos)))
+  (let ((mtype (find-member-type object)))
+    (cond (mtype
+           (member-type-tag mtype))
           ((consp object)
            (cons-member-type object env))
           ((not (realp object))
@@ -1052,9 +1069,9 @@ if not possible."
            #.(if (eql (- 0.0) 0.0)
                  '(number-member-type object)
                  '(if (minusp (float-sign object))
-                   (simple-member-type object)
-                   (logandc2 (number-member-type object)
-                    (register-member-type (- object) env)))))
+                      (simple-member-type object)
+                      (logandc2 (number-member-type object)
+                                (register-member-type (- object) env)))))
           (t
            (number-member-type object)))))
 
@@ -1077,7 +1094,7 @@ if not possible."
            (ext:assume-no-errors))
   (let ((tag (new-type-tag)))
     (maybe-save-types)
-    (setq *member-types* (acons object tag *member-types*))
+    (push (make-member-type :object object :tag tag) *member-types*)
     (dolist (i *elementary-types*)
       (let ((type (elementary-type-spec i)))
         (when (typep object type)
@@ -1403,7 +1420,7 @@ if not possible."
     (case component-type
       ((* t) (return-from register-cons-compound dome-tag))
       ((nil) (return-from register-cons-compound +built-in-tag-nil+)))
-    (let* ((etype (find-registered-type dome-type #'equal))
+    (let* ((etype (find-elementary-type dome-type #'equal))
            (*elementary-types* (elementary-type-dome etype))
            (*member-types* (elementary-type-eqls etype)))
       (prog1 (canonical-type component-type env)
@@ -1411,7 +1428,7 @@ if not possible."
         (dolist (i *elementary-types*)
           (setf dome-tag (logior dome-tag (elementary-type-tag i))))
         (dolist (i *member-types*)
-          (setf dome-tag (logior dome-tag (cdr i))))
+          (setf dome-tag (logior dome-tag (member-type-tag i))))
         ;; Save the updated dukedom and the new tag.
         (setf (elementary-type-tag etype) dome-tag
               (elementary-type-dome etype) *elementary-types*
@@ -1584,8 +1601,8 @@ if not possible."
       ;;(print-types-database *elementary-types*)
       ;;(print-types-database *member-types*)
       (dolist (i *member-types*)
-        (unless (zerop (logand (cdr i) tag))
-          (push (car i) out)))
+        (unless (zerop (logand (member-type-tag i) tag))
+          (push (member-type-object i) out)))
       (when out
         (setq out `((MEMBER ,@out))))
       (dolist (i *elementary-types*)
