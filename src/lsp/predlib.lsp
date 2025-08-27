@@ -1587,8 +1587,8 @@ if not possible."
            (t
             (ext:if-let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
               (canonical-type (funcall expander type env) env)
-              (unless (find-registered-tag (first type) #'eql)
-                (throw '+canonical-type-failure+ nil))))))
+              (or (find-registered-tag (first type) #'eql)
+                  (throw '+canonical-type-failure+ nil))))))
         ((clos::classp type)
          (register-class type env))
         ((and (fboundp 'function-type-p) (function-type-p type))
