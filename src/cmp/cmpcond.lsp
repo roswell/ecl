@@ -219,6 +219,11 @@
     :explanation explanation
     :explanation-args explanation-args))
 
+(defun warn-deep-cons (type)
+  (let ((*print-circle* t))
+    (cmpwarn "EQL CONS type ~S is too deeply nested. ~
+              Replacing it with (CONS * *)." type)))
+
 (defun baboon (&key (format-control "A bug was found in the compiler")
                format-arguments)
   (signal 'compiler-internal-error

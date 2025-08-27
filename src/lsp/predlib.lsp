@@ -1059,12 +1059,18 @@ if not possible."
            (number-member-type object)))))
 
 ;;; To register a member that is CONS we add its parts recursively to CONS type.
+;;; We need to be wary of circular lists. We define a maximal recursion now, but
+;;; extending the procedure with infinitely recursive types would be cool(!).
+(defvar *cons-member-type-max-depth* 128)
 (defun cons-member-type (object env)
   (declare (si::c-local)
            (ext:assume-no-errors))
-  (destructuring-bind (object-car . object-cdr) object
-    (logior (register-cons-car-compound `(eql ,object-car) env)
-            (register-cons-cdr-compound `(eql ,object-cdr) env))))
+  (if (zerop *cons-member-type-max-depth*)
+      (throw '+canonical-type-failure+ 'CONS)
+      (let ((*cons-member-type-max-depth* (1- *cons-member-type-max-depth*)))
+        (destructuring-bind (object-car . object-cdr) object
+          (logior (register-cons-car-compound `(eql ,object-car) env)
+                  (register-cons-cdr-compound `(eql ,object-cdr) env))))))
 
 (defun simple-member-type (object)
   (declare (si::c-local)
