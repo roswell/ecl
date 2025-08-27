@@ -1400,12 +1400,16 @@ if not possible."
   (declare (ignore i1 i2))
   (error "There can't be two elements of the same CONS compound."))
 
-(defun register-cons-type (type env)
+(defun canonical-cons-type (type env)
   (destructuring-bind (&optional (car-type '*) (cdr-type '*)) (rest type)
     (when (or (subtypep car-type nil)
               (subtypep cdr-type nil))
-      (return-from register-cons-type
+      (return-from canonical-cons-type
         +built-in-tag-nil+))
+    (register-cons-type type env)))
+
+(defun register-cons-type (type env)
+  (destructuring-bind (&optional (car-type '*) (cdr-type '*)) (rest type)
     (logior (register-cons-car-compound car-type env)
             (register-cons-cdr-compound cdr-type env))))
 
@@ -1668,7 +1672,7 @@ if not possible."
            (COMPLEX
             (canonical-complex-type type))
            (CONS
-            (register-cons-type type env))
+            (canonical-cons-type type env))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)) env)
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)) env)))
            ((COMPLEX-ARRAY SIMPLE-ARRAY) (register-array-type type env))
