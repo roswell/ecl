@@ -392,7 +392,6 @@ ecl_bds_overflow(void)
   cl_env_ptr env = ecl_process_env();
   cl_index margin = ecl_option_values[ECL_OPT_BIND_STACK_SAFETY_AREA];
   cl_index size = env->bds_stack.size;
-  cl_index limit_size = env->bds_stack.limit_size;
   ecl_bds_ptr org = env->bds_stack.org;
   ecl_bds_ptr last = org + size;
   if (env->bds_stack.limit >= last) {

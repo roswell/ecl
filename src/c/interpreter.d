@@ -653,12 +653,10 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
        Checks the stack frame for keyword arguments.
     */
     CASE(OP_PUSHKEYS); {
-      cl_object keys_list, aok, *first, *last;
-      cl_index count;
+      cl_object keys_list, aok, *ptr, *end;
+      cl_index count, limit;
       GET_DATA(keys_list, vector, data);
-      first = ECL_STACK_FRAME_PTR(frame) + frame_index;
-      count = frame->frame.size - frame_index;
-      last = first + count;
+      limit = count = frame->frame.size - frame_index;
       if (ecl_unlikely(count & 1)) {
         VEbad_lambda_odd_keys(bytecodes, frame);
       }
@@ -667,28 +665,32 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
         cl_object name = ECL_CONS_CAR(keys_list);
         cl_object flag = ECL_NIL;
         cl_object value = ECL_NIL;
-        cl_object *p = first;
-        for (; p != last; ++p) {
-          if (*(p++) == name) {
+        ptr = ECL_STACK_FRAME_PTR(frame) + frame_index;
+        end = ptr + limit;
+        for (; ptr != end; ptr++) {
+          if (*(ptr++) == name) {
             count -= 2;
             if (flag == ECL_NIL) {
               flag = ECL_T;
-              value = *p;
+              value = *ptr;
             }
           }
         }
+        /* Pushing to the stack may resize it, so be careful to reinitialize
+           pointers using the new value of ECL_STACK_FRAME_PTR. */
         if (flag != ECL_NIL) ECL_STACK_PUSH(the_env, value);
         ECL_STACK_PUSH(the_env, flag);
       }
       if (count && Null(aok)) {
-        cl_object *p = first;
-        for (; p != last; ++p) {
-          if (*(p++) == @':allow-other-keys') {
-            aok = *p;
+        ptr = ECL_STACK_FRAME_PTR(frame) + frame_index;
+        end = ptr + limit;
+        for (; ptr != end; ptr++) {
+          if (*(ptr++) == @':allow-other-keys') {
+            aok = *ptr;
             count -= 2;
             /* only the first :allow-other-keys argument is considered */
-            for (++p; p != last; ++p) {
-              if (*(p++) != @':allow-other-keys')
+            for (ptr++; ptr != end; ptr++) {
+              if (*(ptr++) != @':allow-other-keys')
                 break;
               count -= 2;
             }

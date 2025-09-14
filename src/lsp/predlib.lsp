@@ -8,7 +8,7 @@
 ;;;;
 ;;;;    See file 'LICENSE' for the copyright details.
 
-;;;;                              predicate routines
+;;;; Predicate routines.
 
 (in-package "SYSTEM")
 
@@ -129,16 +129,16 @@ MOST-POSITIVE-FIXNUM inclusive.  Other integers are bignums."
 (deftype bignum ()
   '(OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
 
-(deftype ext::byte8 () '(INTEGER 0 255))
-(deftype ext::integer8 () '(INTEGER -128 127))
-(deftype ext::byte16 () '(INTEGER 0 #xFFFF))
-(deftype ext::integer16 () '(INTEGER #x-8000 #x7FFF))
-(deftype ext::byte32 () '(INTEGER 0 #xFFFFFFFF))
-(deftype ext::integer32 () '(INTEGER #x-80000000 #x7FFFFFFF))
-(deftype ext::byte64 () '(INTEGER 0 #xFFFFFFFFFFFFFFFF))
-(deftype ext::integer64 () '(INTEGER #x-8000000000000000 #x7FFFFFFFFFFFFFFF))
-(deftype ext::cl-fixnum () '(SIGNED-BYTE #.CL-FIXNUM-BITS))
-(deftype ext::cl-index () '(UNSIGNED-BYTE #.CL-FIXNUM-BITS))
+(deftype ext:byte8 () '(INTEGER 0 255))
+(deftype ext:integer8 () '(INTEGER -128 127))
+(deftype ext:byte16 () '(INTEGER 0 #xFFFF))
+(deftype ext:integer16 () '(INTEGER #x-8000 #x7FFF))
+(deftype ext:byte32 () '(INTEGER 0 #xFFFFFFFF))
+(deftype ext:integer32 () '(INTEGER #x-80000000 #x7FFFFFFF))
+(deftype ext:byte64 () '(INTEGER 0 #xFFFFFFFFFFFFFFFF))
+(deftype ext:integer64 () '(INTEGER #x-8000000000000000 #x7FFFFFFFFFFFFFFF))
+(deftype ext:cl-fixnum () '(SIGNED-BYTE #.CL-FIXNUM-BITS))
+(deftype ext:cl-index () '(UNSIGNED-BYTE #.CL-FIXNUM-BITS))
 
 (deftype real (&optional (start '* start-p) (end '*))
   (if start-p
@@ -311,9 +311,9 @@ and is not adjustable."
   '(or string-stream
     #+clos-streams gray:fundamental-stream))
 
-;;************************************************************
-;;                      TYPEP
-;;************************************************************
+;;; ----------------------------------------------------------------------------
+;;; TYPEP
+;;; ----------------------------------------------------------------------------
 
 (defun simple-array-p (x)
   (and (arrayp x)
@@ -448,9 +448,11 @@ and is not adjustable."
   '#.(append '(NIL BASE-CHAR #+unicode CHARACTER BIT EXT:BYTE8 EXT:INTEGER8)
              #+:uint16-t '(EXT:BYTE16 EXT:INTEGER16)
              #+:uint32-t '(EXT:BYTE32 EXT:INTEGER32)
-             (when (< 32 cl-fixnum-bits 64) '(EXT::CL-INDEX FIXNUM))
+             (when (< 32 cl-fixnum-bits 64)
+               '(EXT::CL-INDEX FIXNUM))
              #+:uint64-t '(EXT:BYTE64 EXT:INTEGER64)
-             (when (< 64 cl-fixnum-bits) '(EXT::CL-INDEX FIXNUM))
+             (when (< 64 cl-fixnum-bits)
+               '(EXT::CL-INDEX FIXNUM))
              '(SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT)
              #+complex-float '(si:complex-single-float
                                si:complex-double-float
@@ -700,13 +702,13 @@ For example (flatten-function-types '(function (symbol) symbol)) ->
                    flattened-type))
              type)))))
 
-;;************************************************************
-;;                      NORMALIZE-TYPE
-;;************************************************************
-;; NORMALIZE-TYPE normalizes the type using the DEFTYPE definitions.
-;; The result is a pair of values
-;;  VALUE-1 = normalized type name or object
-;;  VALUE-2 = normalized type arguments or nil
+;;; ----------------------------------------------------------------------------
+;;; NORMALIZE-TYPE
+;;; ----------------------------------------------------------------------------
+;;; NORMALIZE-TYPE normalizes the type using the DEFTYPE definitions.
+;;; The result is a pair of values
+;;;  VALUE-1 = normalized type name or object
+;;;  VALUE-2 = normalized type arguments or nil
 (defun normalize-type (type env &aux tp i fd)
   ;; Loops until the car of type has no DEFTYPE definition.
   (cond ((symbolp type)
@@ -736,9 +738,9 @@ For example (flatten-function-types '(function (symbol) symbol)) ->
           (expand-deftype (funcall fn (cons base args) env) env)
           type))))
 
-;;************************************************************
-;;                      COERCE
-;;************************************************************
+;;; ----------------------------------------------------------------------------
+;;; COERCE
+;;; ----------------------------------------------------------------------------
 
 (defun coerce (object type &aux aux)
   "Args: (x type)
@@ -805,34 +807,38 @@ if not possible."
             (t
              (fail))))))
 
-;;************************************************************
-;;                      SUBTYPEP
-;;************************************************************
-;;
-;; TYPES LATTICE (Following Henry Baker's paper)
-;;
-;; The algorithm works as follows. Types are identified with sets. Some sets
-;; are elementary, in the sense that other types may be expressed as
-;; combination of them. We partition these sets into FAMILIES
-;;
-;;      Built-in objects --- Hash tables, etc
-;;      Intervals --- (INTEGER a b), (REAL a b), etc
-;;      Arrays --- (ARRAY * (2)), etc
-;;      Classes
-;;
-;; When passed a type specifier, ECL canonicalizes it: it decomposes the
-;; type into the most elementary sets, assigns a unique bit pattern (TAG) to
-;; each of these sets, and builds a composite tag for the type by LOGIOR.
-;; Operations between these sets reduce to logical operations between these
-;; bit patterns. Given types T1, T2 and a function which produces tags f(T)
-;;
-;;      f((AND T1 T2)) = (LOGIAND f(T1) f(T2))
-;;      f((OR T1 T2)) = (LOGIOR f(T1) f(T2))
-;;      f((NOT T1)) = (LOGNOT f(T2))
-;;
-;; However, tags are not permanent: whenever a new type is registered, the
-;; tag associated to a type may be changed (for instance, because new
-;; elementary sets are discovered, which also belong to existing types).
+;;; ----------------------------------------------------------------------------
+;;; SUBTYPEP
+;;; ----------------------------------------------------------------------------
+;;;
+;;; TYPES LATTICE
+;;;
+;;; Following the paper written by Henry G. Baker: "A Decision Procedure for
+;;; Common Lisp's SUBTYPEP Predicate".
+;;;
+;;; The algorithm works as follows. Types are identified with sets. Some sets
+;;; are elementary, in the sense that other types may be expressed as
+;;; combination of them. We partition these sets into FAMILIES (kingdoms):
+;;;
+;;;     Built-in objects --- Hash tables, etc
+;;;     Intervals        --- (INTEGER a b), (REAL a b), etc
+;;;     Arrays           --- (ARRAY * (2)), etc
+;;;     Classes
+;;;
+;;; When passed a type specifier, ECL canonicalizes it: it decomposes the type
+;;; into the most elementary sets, assigns a unique bit pattern (TAG) to each
+;;; of these sets, and builds a composite tag for the type by LOGIOR.
+;;; Operations between these sets reduce to logical operations between these
+;;; bit patterns. Given types T1, T2 and a function which produces tags f(T)
+;;;
+;;;     f((AND T1 T2)) = (LOGIAND f(T1) f(T2))
+;;;     f((OR T1 T2))  = (LOGIOR  f(T1) f(T2))
+;;;     f((NOT T1))    = (LOGNOT  f(T1))
+;;;
+;;; However, tags are not permanent: whenever a new type is registered, the
+;;; tag associated to a type may be changed (for instance, because new
+;;; elementary sets are discovered, which also belong to existing types).
+;;; ----------------------------------------------------------------------------
 
 (defparameter *save-types-database* nil)
 
@@ -840,11 +846,14 @@ if not possible."
   #+ecl-min #B1
   #-ecl-min '#.*highest-type-tag*)
 
+;;; Built-in tags for the top and the bottom types.
+(defconstant +built-in-tag-t+ -1)
+(defconstant +built-in-tag-nil+ 0)
+(defparameter *intervals-mask* #B1)
+
 (defparameter *member-types*
   #+ecl-min NIL
   #-ecl-min '#.*member-types*)
-
-(defparameter *intervals-mask* #B1)
 
 (defparameter *elementary-types*
   #+ecl-min
@@ -852,17 +861,85 @@ if not possible."
   #-ecl-min
   '#.*elementary-types*)
 
+;;; The definition is commented out because DEFSTRUCT is not available yet
+;;; during the bootstrap procedure, so we open-code the definition below.
+#+ (or)
+(defstruct (member-type (:type list))
+  (object (error "Argument :OBJECT is required.") :read-only t)
+  (tag (error "Argument :TAG is required.") :type integer))
+
+(defun make-member-type (&key object tag)
+  (list object tag))
+
+(defun find-member-type (object)
+  (assoc object *member-types*))
+
+(setf (fdefinition 'member-type-object) #'first)
+(setf (fdefinition 'member-type-tag) #'second)
+(defsetf member-type-tag (mtype) (new-tag)
+  `(rplaca (cdr ,mtype) ,new-tag))
+
+;;; The definition is commented out because DEFSTRUCT is not available yet
+;;; during the bootstrap procedure, so we open-code the definition below.
+#+ (or)
+(defstruct (elementary-type (:type list))
+  (spec (error "Argument :SPEC is required.") :read-only t)
+  (tag  (error "Argument :TAG is required.") :type integer))
+
+(defun make-elementary-type (&key spec tag)
+  (declare (si::c-local))
+  (list spec tag))
+
+(defun find-elementary-type (spec test)
+  (declare (si::c-local))
+  (find spec *elementary-types* :key #'elementary-type-spec :test test))
+
+(setf (fdefinition 'elementary-type-spec) #'first)
+(setf (fdefinition 'elementary-type-tag) #'second)
+(defsetf elementary-type-tag (etype) (new-tag)
+  `(rplaca (cdr ,etype) ,new-tag))
+
+;;; INV The function MAYBE-SAVE-TYPES ensures that we operate on fresh conses
+;;; instead of modifying *MEMBER-TYPES* and *ELEMENTARY-TYPES*.
+(defmacro with-type-database (() &body body)
+  `(let ((*highest-type-tag* *highest-type-tag*)
+         (*save-types-database* t)
+         (*member-types* *member-types*)
+         (*elementary-types* *elementary-types*))
+     ,@body))
+
 (defun new-type-tag ()
   (declare (si::c-local))
   (prog1 *highest-type-tag*
     (setq *highest-type-tag* (ash *highest-type-tag* 1))))
 
+(defun push-new-type (type tag)
+  (declare (si::c-local)
+           (ext:assume-no-errors))
+  (dolist (i *member-types*)
+    (declare (cons i))
+    (when (typep (member-type-object i) type)
+      (setq tag (logior tag (member-type-tag i)))))
+  (push (make-elementary-type :spec type :tag tag) *elementary-types*)
+  tag)
+
 ;; Find out the tag for a certain type, if it has been already registered.
 ;;
 (defun find-registered-tag (type &optional (test #'equal))
   (declare (si::c-local))
-  (let* ((pos (assoc type *elementary-types* :test test)))
-    (and pos (cdr pos))))
+  (when-let ((etype (find-elementary-type type test)))
+    (elementary-type-tag etype)))
+
+;;; Make and register a new tag for a certain type.
+(defun make-registered-tag (type same-kingdom-p type-<=)
+  (multiple-value-bind (tag-super tag-sub)
+      (find-type-bounds type same-kingdom-p type-<=)
+    (if (null tag-super)
+        (push-new-type type tag-sub)
+        (let ((tag (new-type-tag)))
+          (update-types tag-super tag)
+          (setf tag (logior tag tag-sub))
+          (push-new-type type tag)))))
 
 ;; We are going to make changes in the types database. Save a copy if this
 ;; will cause trouble.
@@ -883,82 +960,91 @@ if not possible."
   (declare (ext:assume-no-errors))
   (maybe-save-types)
   (dolist (i *elementary-types*)
-    (unless (zerop (logand (cdr i) type-mask))
-      (setf (cdr i) (logior new-tag (cdr i))))))
+    (unless (zerop (logand (elementary-type-tag i) type-mask))
+      (setf (elementary-type-tag i)
+            (logior new-tag (elementary-type-tag i))))))
 
-;; FIND-TYPE-BOUNDS => (VALUES TAG-SUPER TAG-SUB)
-;;
-;; This function outputs two values: TAG-SUB, the tag for the union-type of all
-;; types which are subtypes of the supplied one; and TAG-SUPER, which is either
-;; the tag for the union-type of all types which a supertype of the supplied
-;; one (MINIMIZE-SUPER = NIL) or the tag for the smallest type which is a
-;; supertype of the given one (MINIMIZE-SUPER = TRUE). The search process is
-;; restricted to types in the same family class.
-;;
-;; A value of MINIMIZE-SUPER = TRUE only makes sense for some families (such
-;; as semi-infinite intervals), for which (SUBTYPEP T1 T2) = T and (SUBTYPEP T1
-;; T3) = T implies either (SUBTYPEP T2 T3) = T or (SUBTYPEP T3 T2) = T.
-;;
-(defun find-type-bounds (type in-our-family-p type-<= minimize-super)
+;;; FIND-TYPE-BOUNDS => (VALUES TAG-SUPER TAG-SUB)
+;;;
+;;; This function computes two tags:
+;;;
+;;; TAG-SUPER is the union-type which is a supertype of the supplied one within
+;;; its own kingdom. To achieve that we compute the union of all supertypes and
+;;; then remove from it unions of all subtypes and all disjoint types.
+;;;
+;;; TAG-SUB is the union-type which is a subtype of the supplied one within its
+;;; own kingdom.
+;;;
+;;; If the function finds an equivalent type with a different name, then it
+;;; returns (VALUES NIL EQUIVALENT-TYPE-TAG). This is a clue that there is no
+;;; need to extend the type's bit-vector.
+;;;
+;;; All types in the family must be disjoint (sub-family wise) or have a total
+;;; order to avoid aliasing problem in the binary vector.
+(defun find-type-bounds (type in-our-family-p type-<=)
   (declare (si::c-local)
            (optimize (safety 0))
            (function in-our-family-p type-<=)) 
-  (let* ((subtype-tag 0)
-         (disjoint-tag 0)
-         (supertype-tag (if minimize-super -1 0)))
+  (let ((subtype-tag +built-in-tag-nil+)
+        (disjoint-tag +built-in-tag-nil+)
+        (supertype-tag +built-in-tag-nil+))
     (dolist (i *elementary-types*)
       (declare (cons i))
-      (let ((other-type (car i))
-            (other-tag (cdr i)))
+      (let ((other-type (elementary-type-spec i))
+            (other-tag (elementary-type-tag i)))
         (when (funcall in-our-family-p other-type)
-          (cond ((funcall type-<= type other-type)
-                 (if minimize-super
-                     (when (zerop (logandc2 other-tag supertype-tag))
-                       (setq supertype-tag other-tag))
-                     (setq supertype-tag (logior other-tag supertype-tag))))
-                ((funcall type-<= other-type type)
-                 (setq subtype-tag (logior other-tag subtype-tag)))
-                (t
-                 (setq disjoint-tag (logior disjoint-tag other-tag)))))))
-    (values (if (= supertype-tag -1) 0
-                (logandc2 supertype-tag (logior disjoint-tag subtype-tag)))
+          (let ((other-sup-p (funcall type-<= type other-type))
+                (other-sub-p (funcall type-<= other-type type)))
+            (cond ((and other-sup-p other-sub-p)
+                   (return-from find-type-bounds
+                     (values nil other-tag)))
+                  (other-sup-p
+                   (setq supertype-tag (logior other-tag supertype-tag)))
+                  (other-sub-p
+                   (setq subtype-tag (logior other-tag subtype-tag)))
+                  (t
+                   (setq disjoint-tag (logior disjoint-tag other-tag))))))))
+    (unless (logand disjoint-tag subtype-tag)
+      (error "Some types in the family does not have a strict total order."))
+    (values (logandc2 supertype-tag (logior disjoint-tag subtype-tag))
             subtype-tag)))
 
-;; A new type is to be registered, which is not simply a composition of
-;; previous types. A new tag has to be created, and all supertypes are to be
-;; tagged. Here we have to distinguish two possibilities: first, a supertype
-;; may belong to the same family (intervals, arrays, etc); second, some
-;; supertypes may be basic types (NUMBER is a supertype for (INTEGER 0 2),
-;; for instance). The first possibility is detected with the comparison
-;; procedure, TYPE-<=; the second possibility is detected by means of tags.
-;;
+;;; A new type is to be registered, which is not simply a composition of
+;;; previous types. A new tag has to be created, and all supertypes are to be
+;;; tagged. Here we have to distinguish two possibilities: first, a supertype
+;;; may belong to the same family (intervals, arrays, etc); second, some
+;;; supertypes may be basic types (NUMBER is a supertype for (INTEGER 0 2),
+;;; for instance). The first possibility is detected with the comparison
+;;; procedure, TYPE-<=; the second possibility is detected by means of tags.
+;;;
 (defun register-type (type in-our-family-p type-<=)
   (declare (si::c-local)
            (optimize (safety 0))
            (function in-our-family-p type-<=))
   (or (find-registered-tag type)
-      (multiple-value-bind (tag-super tag-sub)
-          (find-type-bounds type in-our-family-p type-<= nil)
-        (let ((tag (new-type-tag)))
-          (update-types (logandc2 tag-super tag-sub) tag)
-          (setf tag (logior tag tag-sub))
-          (push-type type tag)))))
+      (make-registered-tag type in-our-family-p type-<=)))
 
-;;----------------------------------------------------------------------
-;; MEMBER types. We register this object in a separate list, *MEMBER-TYPES*,
-;; and tag all types to which it belongs. We need to treat three cases
-;; separately
-;;      - Ordinary types, via simple-member-type, check the objects
-;;        against all pre-registered types, adding their tags.
-;;      - Ordinary numbers, are translated into intervals.
-;;      - Floating point zeros, have to be treated separately. This
-;;        is done by assigning a special tag to -0.0 and translating
-;;        (MEMBER 0.0) = (AND (float-type 0.0 0.0) (NOT (MEMBER -0.0)))
-;;
+;;; ----------------------------------------------------------------------------
+;;; MEMBER types.
+;;;
+;;; We register this object in a separate list, *MEMBER-TYPES*, and tag all
+;;; types to which it belongs. We need to treat three cases separately:
+;;;
+;;; 1. Ordinary types, via simple-member-type, check the objects against all
+;;;    pre-registered types, adding their tags.
+;;;
+;;; 2. Ordinary numbers, are translated into intervals.
+;;;
+;;; 3. Floating point zeros, have to be treated separately. This
+;;;    is done by assigning a special tag to -0.0 and translating
+;;;
+;;;        (MEMBER 0.0) = (AND (float-type 0.0 0.0) (NOT (MEMBER -0.0)))
+;;;
 (defun register-member-type (object)
   ;(declare (si::c-local))
-  (let ((pos (assoc object *member-types*)))
-    (cond ((and pos (cdr pos)))
+  (let ((mtype (find-member-type object)))
+    (cond (mtype
+           (member-type-tag mtype))
           ((not (realp object))
            (simple-member-type object))
           ((and (floatp object) (zerop object))
@@ -974,53 +1060,43 @@ if not possible."
 (defun simple-member-type (object)
   (declare (si::c-local)
            (ext:assume-no-errors))
-  (let* ((tag (new-type-tag)))
+  (let ((tag (new-type-tag)))
     (maybe-save-types)
-    (setq *member-types* (acons object tag *member-types*))
+    (push (make-member-type :object object :tag tag) *member-types*)
     (dolist (i *elementary-types*)
-      (let ((type (car i)))
+      (let ((type (elementary-type-spec i)))
         (when (typep object type)
-          (setf (cdr i) (logior tag (cdr i))))))
+          (setf (elementary-type-tag i)
+                (logior tag (elementary-type-tag i))))))
     tag))
 
-;; We convert number into intervals, so that (AND INTEGER (NOT (EQL
-;; 10))) is detected as a subtype of (OR (INTEGER * 9) (INTEGER 11
-;; *)).
+;;; We convert number into intervals, so that (AND INTEGER (NOT (EQL 10))) is
+;;; detected as a subtype of (OR (INTEGER * 9) (INTEGER 11 *)).
 (defun number-member-type (object)
   (let* ((base-type (if (integerp object) 'INTEGER (type-of object)))
          (type (list base-type object object)))
     (or (find-registered-tag type)
-        (register-interval-type type))))
+        (canonical-interval-type type))))
 
-(defun push-type (type tag)
-  (declare (si::c-local)
-           (ext:assume-no-errors))
-  (dolist (i *member-types*)
-    (declare (cons i))
-    (when (typep (car i) type)
-      (setq tag (logior tag (cdr i)))))
-  (push (cons type tag) *elementary-types*)
-  tag)
-
-;;----------------------------------------------------------------------
-;; SATISFIES types. Here we should signal some error which is caught
-;; somewhere up, to denote failure of the decision procedure.
-;;
+;;; ----------------------------------------------------------------------------
+;;; SATISFIES types. Here we should signal some error which is caught somewhere
+;;; up, to denote failure of the decision procedure.
+;;;
 (defun register-satisfies-type (type)
   (declare (si::c-local)
            (ignore type))
   (throw '+canonical-type-failure+ 'satisfies))
 
-;;----------------------------------------------------------------------
-;; CLOS classes and structures.
-;;
+;;; ----------------------------------------------------------------------------
+;;; CLOS classes and structures.
+;;;
 (defun register-class (class env)
   (declare (si::c-local)
            (notinline class-name))
   (or (find-registered-tag class)
       ;; We do not need to register classes which belong to the core type
       ;; system of LISP (ARRAY, NUMBER, etc).
-      (let* ((name (class-name class)))
+      (let ((name (class-name class)))
         (and name
              (eq class (find-class name 'nil))
              (or (find-registered-tag name)
@@ -1028,7 +1104,9 @@ if not possible."
       (and (not (clos::class-finalized-p class))
            (throw '+canonical-type-failure+ nil))
       (register-type class
-                     #'(lambda (c) (or (si::instancep c) (symbolp c)))
+                     #'(lambda (c)
+                         (or (si::instancep c)
+                             (symbolp c)))
                      #'(lambda (c1 c2)
                          (when (symbolp c1)
                            (setq c1 (find-class c1 nil)))
@@ -1036,20 +1114,21 @@ if not possible."
                            (setq c2 (find-class c2 nil)))
                          (and c1 c2 (si::subclassp c1 c2))))))
 
-;;----------------------------------------------------------------------
-;; ARRAY types.
-;;
+;;; ----------------------------------------------------------------------------
+;;; ARRAY types.
+;;;
 (defun register-array-type (type env)
   (declare (si::c-local))
   (multiple-value-bind (array-class elt-type dimensions)
       (parse-array-type type env)
     (cond ((eq elt-type '*)
-           (canonical-type `(OR ,@(mapcar #'(lambda (type) `(,array-class ,type ,dimensions))
+           (canonical-type `(OR ,@(mapcar #'(lambda (type)
+                                              `(,array-class ,type ,dimensions))
                                           +upgraded-array-element-types+))
                            env))
           ((find-registered-tag (setq type (list array-class elt-type dimensions))))
           (t
-           #+nil
+           #+ (or)
            (when (and (consp dimensions) (> (count-if #'numberp dimensions) 1))
              (dotimes (i (length dimensions))
                (when (numberp (elt dimensions i))
@@ -1059,12 +1138,12 @@ if not possible."
                                   #'array-type-p #'array-type-<=)))))
            (register-type type #'array-type-p #'array-type-<=)))))
 
-;;
-;; We look for the most specialized type which is capable of containing
-;; this object. LIST always contains 'T, so that this procedure never
-;; fails. It is faster than UPGRADED-... because we use the tags of types
-;; that have been already registered.
-;;
+;;;
+;;; We look for the most specialized type which is capable of containing this
+;;; object. LIST always contains 'T, so that this procedure never fails. It is
+;;; faster than UPGRADED-... because we use the tags of types that have been
+;;; already registered.
+;;;
 (defun fast-upgraded-array-element-type (type env)
   (declare (si::c-local))
   (cond ((eql type '*) '*)
@@ -1075,12 +1154,13 @@ if not possible."
            (when (fast-subtypep type other-type env)
              (return other-type))))))
 
-;;
-;; This canonicalizes the array type into the form
-;;      ({COMPLEX-ARRAY | SIMPLE-ARRAY} {elt-type | '*} {'* | (['*]*)})
-;;
-;; ELT-TYPE is the upgraded element type of the input.
-;;
+;;;
+;;; This canonicalizes the array type into the form
+;;;
+;;;      ({COMPLEX-ARRAY | SIMPLE-ARRAY} {elt-type | '*} {'* | (['*]*)})
+;;;
+;;; ELT-TYPE is the upgraded element type of the input.
+;;;
 (defun parse-array-type (input env)
   (declare (si::c-local))
   (let* ((type input)
@@ -1101,10 +1181,10 @@ if not possible."
                (error "Wrong dimension size in array type ~S." input)))))
     (values name elt-type dims)))
 
-;;
-;; This function checks whether the array type T1 is a subtype of the array
-;; type T2.
-;;
+;;;
+;;; This function checks whether the array type T1 is a subtype of the array
+;;; type T2.
+;;;
 (defun array-type-<= (t1 t2)
   (unless (and (eq (first t1) (first t2))
                (eq (second t1) (second t2)))
@@ -1126,71 +1206,71 @@ if not possible."
   (and (consp type)
        (member (first type) '(COMPLEX-ARRAY SIMPLE-ARRAY))))
 
-;;----------------------------------------------------------------------
-;; INTERVALS:
-;;
-;; Arbitrary intervals may be defined as the union or intersection of
-;; semi-infinite intervals, of the form (number-type b *), where B is
-;; either a real number, a list with one real number or *.
-;; Any other interval, may be defined using these. For instance
-;;  (INTEGER 0 2) = (AND (INTEGER 0 *) (NOT (INTEGER (2) *)))
-;;  (SHORT-FLOAT (0.2) (2)) = (AND (SHORT-FLOAT (0.2) *) (NOT (SHORT-FLOAT 2 *)))
+;;; ----------------------------------------------------------------------------
+;;; INTERVALS:
+;;;
+;;; Arbitrary intervals may be defined as the union or intersection of intervals
+;;; that are semi-infinite, of the form (NUMBER-TYPE B *), where B is either a
+;;; real number, a list with one real number or a symbol *.
+;;;
+;;; Any other interval, may be defined using these. For instance:
+;;;
+;;;  (INTEGER 0 2) = (AND (INTEGER 0 *) (NOT (INTEGER (2) *)))
+;;;  (SHORT-FLOAT (0.2) (2)) = (AND (SHORT-FLOAT (0.2) *) (NOT (SHORT-FLOAT 2 *)))
+;;;
 
-(defun register-elementary-interval (type b)
+(defun numeric-range-p (type)
+  (and (consp type)
+       (member (car type)
+               '(integer ratio short-float single-float double-float long-float))
+       (or (null (cddr type))
+           (error "NUMERIC-RANGE-P: ~s is not in the canonical form (TYPE B)." type))))
+
+;;; Numeric ranges are decided separately depending on the type actual type.
+;;; When ranges belong to different sub-families, then they are disjoint and
+;;; can't be ordered.
+(defun numeric-range-<= (i1 i2)
+  (and (eq (first i1) (first i2))
+       (bounds-<= (second i2) (second i1))))
+
+(defun canonical-interval-type (interval)
+  (declare (si::c-local))
+  (destructuring-bind (type &optional (low '*) (high '*)) interval
+    (let ((tag-high
+            (cond ((eq high '*)
+                   +built-in-tag-nil+)
+                  ((eq type 'INTEGER)
+                   (setq high (if (consp high)
+                                  (ceiling (first high))
+                                  (floor (1+ high))))
+                   (register-interval-type type high))
+                  ((consp high)
+                   (register-interval-type type (first high)))
+                  (t
+                   (register-interval-type type (list high)))))
+          (tag-low
+            (cond ((eq low '*)
+                   (register-interval-type type low))
+                  ((eq type 'INTEGER)
+                   (setq low (if (consp low)
+                                 (floor (1+ (first low)))
+                                 (ceiling low)))
+                   (register-interval-type type low))
+                  (t
+                   (register-interval-type type low)))))
+      (logandc2 tag-low tag-high))))
+
+(defun register-interval-type (type b)
   (declare (si::c-local))
   (setq type (list type b))
   (or (find-registered-tag type #'equalp)
-      (multiple-value-bind (tag-super tag-sub)
-          (find-type-bounds type
-                            #'(lambda (other-type)
-                                (and (consp other-type)
-                                     (null (cddr other-type))))
-                            #'(lambda (i1 i2)
-                                (and (eq (first i1) (first i2))
-                                     (bounds-<= (second i2) (second i1))))
-                            t)
-        (let ((tag (new-type-tag)))
-          (update-types (logandc2 tag-super tag-sub) tag)
-          (setq tag (logior tag tag-sub))
-          (push-type type tag)))))
+      (make-registered-tag type #'numeric-range-p #'numeric-range-<=)))
 
-(defun register-interval-type (interval)
-  (declare (si::c-local))
-  (let* ((i interval)
-         (type (pop i))
-         (low (if i (pop i) '*))
-         (high (if i (pop i) '*))
-         (tag-high (cond ((eq high '*)
-                          0)
-                         ((eq type 'INTEGER)
-                          (setq high (if (consp high)
-                                         (ceiling (first high))
-                                         (floor (1+ high))))
-                          (register-elementary-interval type high))
-                         ((consp high)
-                          (register-elementary-interval type (first high)))
-                         (t
-                          (register-elementary-interval type (list high)))))
-         (tag-low (register-elementary-interval type
-                    (cond ((or (eq '* low) (not (eq type 'INTEGER)) (integerp low))
-                           low)
-                          ((consp low)
-                           (floor (1+ (first low))))
-                          (t
-                           (ceiling low)))))
-         (tag (logandc2 tag-low tag-high)))
-    (unless (eq high '*)
-      (push-type interval tag))
-    tag))
-
-;; All comparisons between intervals operations may be defined in terms of
-;;
-;;      (BOUNDS-<= b1 b2)       and     (BOUNDS-< b1 b2)
-;;
-;; The first one checks whether (REAL b2 *) is contained in (REAL b1 *). The
-;; second one checks whether (REAL b2 *) is strictly contained in (REAL b1 *)
-;; (i.e., (AND (REAL b1 *) (NOT (REAL b2 *))) is not empty).
-;;
+;;; All comparisons between intervals operations may be defined in terms of
+;;;
+;;;      (BOUNDS-<= b1 b2)
+;;;
+;;; that checks whether (REAL b2 *) is contained in (REAL b1 *).
 (defun bounds-<= (b1 b2)
   (cond ((eq b1 '*) t)
         ((eq b2 '*) nil)
@@ -1203,53 +1283,47 @@ if not possible."
         (t
          (<= b1 b2))))
 
-(defun bounds-< (b1 b2)
-  (cond ((eq b1 '*) (not (eq b2 '*)))
-        ((eq b2 '*) nil)
-        ((consp b1)
-         (if (consp b2)
-             (< (first b1) (first b2))
-             (< (first b1) b2)))
-        ((consp b2)
-         (<= b1 (first b2)))
-        (t
-         (< b1 b2))))
-
-;;----------------------------------------------------------------------
-;; COMPLEX types. We do not need to register anything, because all
-;; possibilities have been covered by the definitions above. We only have to
-;; bring the type to canonical form, which is a union of all specialized
-;; complex types that can store an element of the corresponding type.
-;;
-;; Don't be tempted to do "better" than that. CANONICAL-COMPLEX-TYPE
-;; yields results for use of SUBTYPEP which has clearly specified to
-;; return true when: T1 is a subtype of T2 or when the upgraded type
-;; specifiers refer to the same sets of objects. TYPEP has a different
-;; specification and TYPECASE should use it. -- jd 2019-04-19
-(defun canonical-complex-type (real-type)
+;;; ----------------------------------------------------------------------------
+;;; COMPLEX types.
+;;;
+;;; We do not need to register anything, because all possibilities have been
+;;; covered by the definitions above. We only have to bring the type to
+;;; canonical form, which is a union of all specialized complex types that can
+;;; store an element of the corresponding type.
+;;;
+;;; Don't be tempted to do "better" than that. CANONICAL-COMPLEX-TYPE yields
+;;; results for use of SUBTYPEP which has clearly specified to return true when:
+;;; T1 is a subtype of T2 or when the upgraded type specifiers refer to the same
+;;; sets of objects. TYPEP has a different specification and TYPECASE should use
+;;; it. -- jd 2019-04-19
+;;;
+(defun canonical-complex-type (complex-type)
   (declare (si::c-local))
-  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not
-  ;; a subtype of REAL.
-  (when (eq real-type '*)
-    (setq real-type 'real))
-  (let* ((ucpt (upgraded-complex-part-type real-type))
-         (type `(complex ,ucpt)))
-    (or (find-registered-tag type)
-        #+complex-float
-        (case ucpt
-          (real
-           (logior (canonical-complex-type 'float)
-                   (canonical-complex-type 'rational)))
-          (float
-           (logior (canonical-complex-type 'single-float)
-                   (canonical-complex-type 'double-float)
-                   (canonical-complex-type 'long-float)))
-          (otherwise
-           (let ((tag (new-type-tag)))
-             (push-type type tag))))
-        #-complex-float
-        (let ((tag (new-type-tag)))
-          (push-type type tag)))))
+  ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not a
+  ;; subtype of REAL.
+  (destructuring-bind (&optional (real-type 'real)) (rest complex-type)
+    (when (eq real-type '*)
+      (setq real-type 'real))
+    (let* ((upgraded-real (upgraded-complex-part-type real-type))
+           (upgraded-type `(complex ,upgraded-real)))
+      (or (find-registered-tag upgraded-type)
+          #+complex-float
+          (case upgraded-real
+            (real
+             (logior (canonical-complex-type '(complex single-float))
+                     (canonical-complex-type '(complex double-float))
+                     (canonical-complex-type '(complex long-float))
+                     (canonical-complex-type '(complex rational))))
+            (float
+             (logior (canonical-complex-type '(complex single-float))
+                     (canonical-complex-type '(complex double-float))
+                     (canonical-complex-type '(complex long-float)))))
+          (register-complex-type upgraded-type)))))
+
+(defun register-complex-type (upgraded-type)
+  (declare (si::c-local))
+  (let ((tag (new-type-tag)))
+    (push-new-type upgraded-type tag)))
 
 ;;----------------------------------------------------------------------
 ;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
@@ -1261,31 +1335,38 @@ if not possible."
   ;; of whether the arguments are valid types or not!
   #+(or)
   (canonical-type 'CONS env)
-  (let ((car-tag (if (eq car-type '*) -1 (canonical-type car-type env)))
-        (cdr-tag (if (eq cdr-type '*) -1 (canonical-type cdr-type env))))
-    (cond ((or (zerop car-tag) (zerop cdr-tag))
-           0)
-          ((and (= car-tag -1) (= cdr-tag -1))
+  (let ((car-tag (if (eq car-type '*) +built-in-tag-t+ (canonical-type car-type env)))
+        (cdr-tag (if (eq cdr-type '*) +built-in-tag-t+ (canonical-type cdr-type env))))
+    (cond ((or (= car-tag +built-in-tag-nil+) (= cdr-tag +built-in-tag-nil+))
+           +built-in-tag-nil+)
+          ((and (= car-tag +built-in-tag-t+) (= cdr-tag +built-in-tag-t+))
            (canonical-type 'CONS env))
           (t
            (throw '+canonical-type-failure+ 'CONS)))))
 
-;;----------------------------------------------------------------------
-;; FIND-BUILT-IN-TAG
-;;
-;; This function computes the tags for all builtin types. We used to
-;; do this computation and save it. However, for most cases it seems
-;; faster if we just repeat it every time we need it, because the list of
-;; *elementary-types* is kept smaller and *highest-type-tag* may be just
-;; a fixnum.
-;;
-;; Note 1: There is some redundancy between this and the built-in
-;; classes definitions. REGISTER-CLASS knows this and calls
-;; FIND-BUILT-IN-TAG, which has priority. This is because some built-in
-;; classes are also interpreted as intervals, arrays, etc.
-;;
-;; Note 2: All built in types listed here have to be symbols.
-;;
+;;; ----------------------------------------------------------------------------
+;;; FIND-BUILT-IN-TAG
+;;;
+;;; This function computes the tags for all builtin types. We used to do this
+;;; computation and save it. However, for most cases it seems faster if we just
+;;; repeat it every time we need it, because the list of *elementary-types* is
+;;; kept smaller and *highest-type-tag* may be just a fixnum.
+;;;
+;;; Note 1: There is some redundancy between this and the built-in classes
+;;; definitions. REGISTER-CLASS knows this and calls FIND-BUILT-IN-TAG, which
+;;; has priority. This is because some built-in classes are also interpreted as
+;;; intervals, arrays, etc.
+;;;
+;;; Note 2: All built in types listed here have to be symbols.
+;;;
+;;; Note 3: Each element of +BUILT-IN-TYPE-LIST+ is:
+;;;
+;;;     (TYPE-NAME &optional ALIAS-TO SUPERTYPE)
+;;;
+;;; Note 4: The function FIND-BUILT-IN-TAG is always called _after_ the function
+;;; FIND-REGISTERED-TAG. This invariant implies that FIND-BUILT-IN-TAG won't add
+;;; the same TYPE twice to *ELEMENTARY-TYPES*.
+;;;
 #+ecl-min
 (defconstant +built-in-type-list+
              '((SYMBOL)
@@ -1336,12 +1417,11 @@ if not possible."
                (SIMPLE-VECTOR (SIMPLE-ARRAY T (*)))
                (SIMPLE-BIT-VECTOR (SIMPLE-ARRAY BIT (*)))
                (VECTOR (ARRAY * (*)))
-               (STRING (ARRAY CHARACTER (*)))
-               #+unicode
-               (BASE-STRING (ARRAY BASE-CHAR (*)))
+               #-unicode (STRING (ARRAY CHARACTER (*)))
+               #+unicode (STRING (OR (ARRAY CHARACTER (*)) (ARRAY BASE-CHAR (*))))
+               #+unicode (BASE-STRING (ARRAY BASE-CHAR (*)))
                (SIMPLE-STRING (SIMPLE-ARRAY CHARACTER (*)))
-               #+unicode
-               (SIMPLE-BASE-STRING (SIMPLE-ARRAY BASE-CHAR (*)))
+               #+unicode (SIMPLE-BASE-STRING (SIMPLE-ARRAY BASE-CHAR (*)))
                (BIT-VECTOR (ARRAY BIT (*)))
 
                (SEQUENCE (OR CONS (MEMBER NIL) (ARRAY * (*))))
@@ -1361,8 +1441,7 @@ if not possible."
                (EXT:ANSI-STREAM (OR BROADCAST-STREAM CONCATENATED-STREAM ECHO-STREAM
                                  FILE-STREAM STRING-STREAM SYNONYM-STREAM TWO-WAY-STREAM
                                  EXT:SEQUENCE-STREAM))
-               (STREAM (OR EXT:ANSI-STREAM
-                        #+clos-streams GRAY:FUNDAMENTAL-STREAM))
+               (STREAM (OR EXT:ANSI-STREAM #+clos-streams GRAY:FUNDAMENTAL-STREAM))
                (EXT:VIRTUAL-STREAM (OR STRING-STREAM #+clos-streams GRAY:FUNDAMENTAL-STREAM))
 
                (READTABLE)
@@ -1390,76 +1469,73 @@ if not possible."
 
 (defun find-built-in-tag (name env)
   (declare (si::c-local))
-  (let (record)
-    (cond ((eq name T)
-           -1)
-          ((eq (setf record (gethash name +built-in-types+ name))
-               name)
-           nil)
-          (t
-           (let* ((alias (pop record))
-                  tag)
-             (if alias
-                 (setq tag (canonical-type alias env))
-                 (let* ((strict-supertype (or (first record) 'T))
-                        (strict-supertype-tag (canonical-type strict-supertype env)))
-                   (setq tag (new-type-tag))
-                   (unless (eq strict-supertype 't)
-                     (extend-type-tag tag strict-supertype-tag))))
-             (push-type name tag))))))
+  ;(assert (null (find-registered-tag name)))
+  (cond
+    ((eq name 'T) +built-in-tag-t+)
+    ((eq name 'NIL) +built-in-tag-nil+)
+    ((multiple-value-bind (record foundp)
+         (gethash name +built-in-types+)
+       (when (null foundp)
+         (return-from find-built-in-tag))
+       (ext:if-let ((alias (pop record)))
+         (canonical-type alias env)
+         (let* ((strict-supertype (or (first record) 'T))
+                (strict-supertype-tag (canonical-type strict-supertype env))
+                (new-type-tag (new-type-tag)))
+           (unless (eq strict-supertype 't)
+             (extend-type-tag new-type-tag strict-supertype-tag))
+           (push-new-type name new-type-tag)))))))
 
 (defun extend-type-tag (tag minimal-supertype-tag)
   (declare (si::c-local)
            (ext:assume-no-errors))
   (dolist (type *elementary-types*)
-    (let ((other-tag (cdr type)))
+    (let ((other-tag (elementary-type-tag type)))
       (when (zerop (logandc2 minimal-supertype-tag other-tag))
-        (setf (cdr type) (logior tag other-tag))))))
+        (setf (elementary-type-tag type)
+              (logior tag other-tag))))))
 
-;;----------------------------------------------------------------------
-;; CANONICALIZE (removed)
-;;
-;; This function takes a type tag and produces a more or less human
-;; readable representation of the type in terms of elementary types,
-;; intervals, arrays and classes.
-;;
-#+nil
+;;; ----------------------------------------------------------------------------
+;;; CANONICALIZE (removed)
+;;;
+;;; This function takes a type tag and produces a more or less human
+;;; readable representation of the type in terms of elementary types,
+;;; intervals, arrays and classes.
+;;;
+#+ (or)
 (defun canonicalize (type env)
-  (let ((*highest-type-tag* *highest-type-tag*)
-        (*save-types-database* t)
-        (*member-types* *member-types*)
-        (*elementary-types* *elementary-types*))
+  (with-type-database ()
     (let ((tag (canonical-type type env))
           (out))
       (setq tag (canonical-type type env))
       ;;(print-types-database *elementary-types*)
       ;;(print-types-database *member-types*)
       (dolist (i *member-types*)
-        (unless (zerop (logand (cdr i) tag))
-          (push (car i) out)))
+        (unless (zerop (logand (member-type-tag i) tag))
+          (push (member-type-object i) out)))
       (when out
         (setq out `((MEMBER ,@out))))
       (dolist (i *elementary-types*)
-        (unless (zerop (logand (cdr i) tag))
-          ;;(print (list tag (cdr i) (logand tag (cdr i))))
-          (push (car i) out)))
+        (unless (zerop (logand (elementary-type-tag i) tag))
+          ;;(print (list tag (elementary-type-tag i) (logand tag (elementary-type-tag i))))
+          (push (elementary-type-spec i) out)))
         (values tag `(OR ,@out)))))
 
-;;----------------------------------------------------------------------
-;; (CANONICAL-TYPE TYPE ENV)
-;;
-;; This function registers all types mentioned in the given expression,
-;; and outputs a code corresponding to the represented type. This
-;; function has side effects: it destructively modifies the content of
-;; *ELEMENTARY-TYPES* and *MEMBER-TYPES*.
-;;
+;;; ----------------------------------------------------------------------------
+;;; (CANONICAL-TYPE TYPE)
+;;;
+;;; This function registers all types mentioned in the given expression, and
+;;; outputs a code corresponding to the represented type. This function has side
+;;; effects: it destructively modifies the content of *ELEMENTARY-TYPES* and
+;;; *MEMBER-TYPES*.
+;;;
 (defun canonical-type (type env)
   (declare (notinline clos::classp))
   (when env
     (setf type (search-type-in-env type env)))
   (cond ((find-registered-tag type))
-        ((eq type 'T) -1)
-        ((eq type 'NIL) 0)
+        ((eq type 'T) +built-in-tag-t+)
+        ((eq type 'NIL) +built-in-tag-nil+)
         ((symbolp type)
          (let ((expander (get-sysprop type 'DEFTYPE-DEFINITION)))
            (cond (expander
@@ -1476,12 +1552,9 @@ if not possible."
            (NOT (lognot (canonical-type (second type) env)))
            ((EQL MEMBER) (apply #'logior (mapcar #'register-member-type (rest type))))
            (SATISFIES (register-satisfies-type type))
-           ((INTEGER #+short-float SHORT-FLOAT
-                     SINGLE-FLOAT
-                     DOUBLE-FLOAT
-                     RATIO
-                     LONG-FLOAT)
-            (register-interval-type type))
+           ((INTEGER RATIO
+             #+short-float SHORT-FLOAT SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT)
+            (canonical-interval-type type))
            ((FLOAT)
             (canonical-type `(OR #+short-float
                                  (SHORT-FLOAT ,@(rest type))
@@ -1503,10 +1576,7 @@ if not possible."
                                  (RATIO ,@(rest type)))
                             env))
            (COMPLEX
-            (or (find-built-in-tag type env)
-                (canonical-complex-type (if (endp (rest type))
-                                            'real
-                                            (second type)))))
+            (canonical-complex-type type))
            (CONS (apply #'register-cons-type env (rest type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)) env)
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)) env)))
@@ -1514,11 +1584,11 @@ if not possible."
            ;;(FUNCTION (register-function-type type))
            ;;(VALUES (register-values-type type))
            (FUNCTION (canonical-type 'FUNCTION env))
-           (t (let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
-                (if expander
-                    (canonical-type (funcall expander type env) env)
-                    (unless (assoc (first type) *elementary-types*)
-                      (throw '+canonical-type-failure+ nil)))))))
+           (t
+            (ext:if-let ((expander (get-sysprop (first type) 'DEFTYPE-DEFINITION)))
+              (canonical-type (funcall expander type env) env)
+              (or (find-registered-tag (first type) #'eql)
+                  (throw '+canonical-type-failure+ nil))))))
         ((clos::classp type)
          (register-class type env))
         ((and (fboundp 'function-type-p) (function-type-p type))
@@ -1569,10 +1639,7 @@ if not possible."
     (when (and elt (eq (caar elt) t1) (eq (cdar elt) t2))
       (setf elt (cdr elt))
       (return-from subtypep (values (car elt) (cdr elt))))
-    (let* ((*highest-type-tag* *highest-type-tag*)
-           (*save-types-database* t)
-           (*member-types* *member-types*)
-           (*elementary-types* *elementary-types*))
+    (with-type-database ()
       (multiple-value-bind (test confident)
           (fast-subtypep t1 t2 env)
         (setf (aref cache hash) (cons (cons t1 t2) (cons test confident)))
@@ -1605,10 +1672,7 @@ if not possible."
            (values nil nil)))))
 
 (defun type= (t1 t2 &optional env)
-  (let ((*highest-type-tag* *highest-type-tag*)
-        (*save-types-database* t)
-        (*member-types* *member-types*)
-        (*elementary-types* *elementary-types*))
+  (with-type-database ()
     (fast-type= t1 t2 env)))
 
 (defun search-type-in-env (type env)
