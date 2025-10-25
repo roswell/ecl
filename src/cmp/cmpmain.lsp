@@ -214,7 +214,7 @@ after compilation."
          (*cmp-env-root* *cmp-env-root*))
 
     (with-compiler-env (compiler-conditions)
-      (setf form (set-closure-env form lexenv *cmp-env-root*))
+      (setf form (set-closure-env form lexenv *cmp-env*))
       (compiler-pass1 form)
       (compiler-pass/propagate-types)
       (let (#+(or mingw32 msvc cygwin)(*self-destructing-fasl* t))
@@ -297,7 +297,7 @@ from the C language code.  NIL means \"do not create the file\"."
          (*cmp-env-root* *cmp-env-root*))
     (with-compiler-env (compiler-conditions)
       (with-cxx-env ()
-        (setf disassembled-form (set-closure-env disassembled-form lexenv *cmp-env-root*))
+        (setf disassembled-form (set-closure-env disassembled-form lexenv *cmp-env*))
         (unwind-protect
              (progn
                (setf (symbol-function 'T3FUNCTION)

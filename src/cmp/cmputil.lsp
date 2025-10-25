@@ -53,7 +53,7 @@
                         (compiler-error #'handle-compiler-error)
                         (serious-condition #'handle-compiler-internal-error))
            (mp:with-lock (mp:+load-compile-lock+)
-             (let ,+init-env-form+
+             (let* ,+init-env-form+
                (with-compilation-unit ()
                  ,@body))))
        (abort ()))
