@@ -399,7 +399,8 @@
     ((typep value 'character *cmp-env*)       (wt-character value vv))
     ((typep value 'float *cmp-env*)           (wt-number value vv))
     ((typep value '(complex float) *cmp-env*) (wt-number value vv))
-    (t (baboon "wt-vv-value: ~s is not an immediate value, but has no VV index~%" value))))
+    (t (baboon :format-control "wt-vv-value: ~s is not an immediate value, but has no VV index~%"
+               :format-arguments (list value)))))
 
 (defun wt-vv (vv-loc)
   (setf (vv-used-p vv-loc) t)
