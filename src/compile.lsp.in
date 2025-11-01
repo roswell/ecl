@@ -82,6 +82,10 @@
 #+cross
 (let ((*features* '(:cross @LSP_FEATURES@)))
   (setf c::*cmp-env-root* (c::register-all-known-types c::*cmp-env-root*))
+  (setf c::*cmp-env-root* (c::cmp-env-add-declaration :feature
+                                                      (cons :complex-float
+                                                            (member :complex-float *features*))
+                                                      c::*cmp-env-root*))
   (c::write-target-info #P"build:target-info.lsp"))
 
 ;;;
