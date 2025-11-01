@@ -44,24 +44,64 @@
 
 (in-package "C")
 
+(defun put-property (symbol property value collection)
+  (if collection
+      (setf (getf (gethash symbol collection) property) value)
+      (si:put-sysprop symbol property value)))
+
+(defun rem-property (symbol property collection)
+  (if collection
+      (remf (gethash symbol collection) property)
+      (si:rem-sysprop symbol property)))
+
+(let ((not-found (cons nil nil)))
+  (defun get-property (symbol property collection)
+    (if collection
+        (let ((value
+                (getf (gethash symbol collection) property not-found)))
+          (if (eq value not-found)
+              (values nil nil)
+              (values value t)))
+        (si:get-sysprop symbol property)))
+
+  (defun get-global-property (symbol property)
+    (let ((value (getf (gethash symbol *static-proclamations*)
+                       property not-found)))
+      (if (eq value not-found)
+          (si:get-sysprop symbol property)
+          (values value t)))))
+
+(defun function-is-pure (fname)
+  (get-property fname 'pure *static-proclamations*))
+
+(defun function-may-have-side-effects (fname)
+  (not (get-property fname 'no-side-effects *static-proclamations*)))
+
+(defun function-may-change-sp (fname)
+  (not (or (get-property fname 'no-side-effects *static-proclamations*)
+           (get-property fname 'no-sp-change *static-proclamations*))))
+
+(defun function-no-sp-change (fname)
+  (get-property fname 'no-sp-change *static-proclamations*))
+
 (defun parse-function-proclamation
     (name arg-types return-type &rest properties)
-  (when (si:get-sysprop name 'proclaimed-arg-types)
+  (when (get-property name 'proclaimed-arg-types *static-proclamations*)
     (warn "Duplicate proclamation for ~A" name))
-  (proclaim-function
-   name (list arg-types return-type))
+  (proclaim-function name (list arg-types return-type) *static-proclamations*)
   (loop for p in properties
-     do (case p
-          (:no-sp-change
-           (si:put-sysprop name 'no-sp-change t))
-          ((:predicate :pure)
-           (si:put-sysprop name 'pure t)
-           (si:put-sysprop name 'no-side-effects t))
-          ((:no-side-effects :reader)
-           (si:put-sysprop name 'no-side-effects t))
-          (otherwise
-           (error "Unknown property ~S in function proclamation for ~S"
-                  p name)))))
+        do (case p
+             (:no-sp-change
+              (put-property name 'no-sp-change t *static-proclamations*))
+             ((:predicate :pure)
+              (put-property name 'pure t *static-proclamations*)
+              (put-property name 'no-side-effects t *static-proclamations*))
+             ((:no-side-effects :reader)
+              (put-property name 'no-side-effects t *static-proclamations*))
+             (otherwise
+              (error "Unknown property ~S in function proclamation for ~S"
+                     p name)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUXILIARY TYPES
@@ -1582,9 +1622,17 @@
 (proclamation ext:non-negative-long-float-p (t) gen-bool :pure) 
 (proclamation ext:non-positive-long-float-p (t) gen-bool :pure) 
 (proclamation ext:positive-long-float-p (t) gen-bool :pure) 
+))
 
-))) ; eval-when
+(defun collect-proclamations ()
+  (let ((*static-proclamations* (make-hash-table :test 'equal :size 1024)))
+    (declare (special *static-proclamations*))
+    (loop for i in (mapcar #'rest +proclamations+)
+          do (apply #'parse-function-proclamation i))
+    *static-proclamations*))
+) ; eval-when
 
-(loop for i in '#.(mapcar #'rest +proclamations+)
-   do (apply #'parse-function-proclamation i))
-
+;;; The declarations from proclamations.lsp are collected in
+;;; *STATIC-PROCLAMATIONS* instead of the main system properties to
+;;; allow for switching them out for cross compilation.
+(defconfig *static-proclamations* #.(collect-proclamations))

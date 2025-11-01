@@ -17,7 +17,7 @@
       (and (consp form)
            (let ((head (car form)))
              (or (member head '(IF OR AND NULL NOT PROGN))
-                 (and (si:get-sysprop head 'pure)
+                 (and (function-is-pure head)
                       (inline-possible head))))
            (loop for c in (rest form)
               always (constant-expression-p c env)))))

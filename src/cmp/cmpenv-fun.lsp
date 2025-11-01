@@ -24,7 +24,7 @@
 ;;; The valid return type declaration is:
 ;;;     (( VALUES {type}* )) or ( {type}* ).
 
-(defun proclaim-function (fname decl)
+(defun proclaim-function (fname decl &optional destination)
   (if (si:valid-function-name-p fname)
       (let* ((arg-types '*)
              (return-types '*)
@@ -43,12 +43,12 @@
         (when (eq arg-types '())
           (setf arg-types '(&optional)))
         (if (eq arg-types '*)
-            (si:rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
-            (si:put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
+            (rem-property fname 'PROCLAIMED-ARG-TYPES destination)
+            (put-property fname 'PROCLAIMED-ARG-TYPES arg-types destination))
         (if (member return-types '(* (VALUES &rest t))
                     :test #'equalp)
-            (si:rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
-            (si:put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
+            (rem-property fname 'PROCLAIMED-RETURN-TYPE destination)
+            (put-property fname 'PROCLAIMED-RETURN-TYPE return-types destination)))
       (warn "The function proclamation ~s ~s is not valid." fname decl)))
 
 (defun add-function-declaration (fname ftype &optional (env *cmp-env*))
@@ -68,7 +68,7 @@
     (when may-be-global
       (let ((fun (cmp-env-search-function fname env)))
         (when (or (null fun) (and (fun-p fun) (fun-global fun)))
-          (si:get-sysprop fname 'PROCLAIMED-ARG-TYPES))))))
+          (get-global-property fname 'PROCLAIMED-ARG-TYPES))))))
 
 (defun get-return-type (fname &optional (env *cmp-env*))
   (ext:if-let ((x (cmp-env-search-ftype fname env)))
@@ -77,7 +77,7 @@
         (values return-types t)))
     (let ((fun (cmp-env-search-function fname env)))
       (when (or (null fun) (and (fun-p fun) (fun-global fun)))
-        (si:get-sysprop fname 'PROCLAIMED-RETURN-TYPE)))))
+        (get-global-property fname 'PROCLAIMED-RETURN-TYPE)))))
 
 (defun get-local-arg-types (fun &optional (env *cmp-env*))
   (ext:if-let ((x (cmp-env-search-ftype (fun-name fun) env)))
