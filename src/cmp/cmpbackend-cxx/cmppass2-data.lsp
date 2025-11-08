@@ -59,19 +59,18 @@
 (defun data-c-dump (filename)
   (labels ((produce-strings ()
              ;; Only Windows has a size limit in the strings it creates.
-             #-windows
-             (let ((s (data-dump-array)))
-               (when (plusp (length s))
-                 (list s)))
-             #+windows
-             (loop with string = (data-dump-array)
-                   with max-string-size = 65530
-                   with l = (length string)
-                   for i from 0 below l by max-string-size
-                   for this-l = (min (- l i) max-string-size)
-                   collect (make-array this-l :displaced-to string
-                                              :element-type (array-element-type string)
-                                              :displaced-index-offset i)))
+             (if (member :windows *features*)
+                 (loop with string = (data-dump-array)
+                       with max-string-size = 65530
+                       with l = (length string)
+                       for i from 0 below l by max-string-size
+                       for this-l = (min (- l i) max-string-size)
+                       collect (make-array this-l :displaced-to string
+                                           :element-type (array-element-type string)
+                                           :displaced-index-offset i))
+                 (let ((s (data-dump-array)))
+                   (when (plusp (length s))
+                     (list s)))))
            (output-one-c-string (name string stream)
              (let* ((*wt-string-size* 0)
                     (*wt-data-column* 80)

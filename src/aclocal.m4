@@ -447,8 +447,10 @@ case "${host_os}" in
                 ECL_ADD_FEATURE([win32])
                 ECL_ADD_FEATURE([windows])
                 if test "x$host_cpu" = "xx86_64" ; then
-		   ECL_ADD_FEATURE([win64])
+                  ECL_ADD_FEATURE([win64])
                 fi
+                AC_CHECK_TOOL([WINDRES],[windres]) # set variable WINDRES to appropriate `windres' program
+                AC_SUBST(WINDRES)
                 ;;
         darwin*)
                 thehost='darwin'

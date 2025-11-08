@@ -375,8 +375,8 @@ filesystem or in the database of ASDF modules."
                     (list (concatenate 'string "/LIBPATH:"
                                        (ecl-library-directory))
                           (concatenate 'string "/IMPLIB:" implib)))))
-    #+mingw32
-    (setf ld-flags (list* "-shared" ld-flags))
+    (when (member :mingw32 *features*)
+      (setf ld-flags (list* "-shared" ld-flags)))
     (linker-cc o-pathname object-files :type :dll
                :ld-flags ld-flags :ld-libs ld-libs)))
 
@@ -399,8 +399,8 @@ filesystem or in the database of ASDF modules."
                      (concatenate 'string "/LIBPATH:"
                                   (ecl-library-directory))
                      (concatenate 'string "/IMPLIB:" implib)))))
-    #+mingw32
-    (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags))
+    (when (member :mingw32 *features*)
+      (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags)))
     (linker-cc o-pathname object-files :type :fasl
                                        :ld-flags ld-flags :ld-libs ld-libs)))
 
@@ -508,7 +508,6 @@ extern int
 }
 ")
 
-#+:win32
 (defconstant +lisp-program-winmain+ "
 #include <windows.h>
 int
@@ -570,7 +569,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                   (main-name nil)
                   (prologue-code "")
                   (epilogue-code (when (eq target :program) '(SI::TOP-LEVEL T)))
-                  #+:win32 (system :console)
+                  (system :console)
                   &aux
                     (*suppress-compiler-messages* (or *suppress-compiler-messages*
                                                       (not *compile-verbose*)))
@@ -678,10 +677,9 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          ;; we don't need wrapper in the program, we have main for that
                                         ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (format c-file
-                 #+:win32 (ecase system
-                            (:console +lisp-program-main+)
-                            (:windows +lisp-program-winmain+))
-                 #-:win32 +lisp-program-main+
+                 (ecase system
+                   (:console +lisp-program-main+)
+                   (:windows +lisp-program-winmain+))
                  prologue-code init-name epilogue-code)
          (close c-file)
          (compiler-cc c-name o-name)
