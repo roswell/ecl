@@ -67,13 +67,15 @@ that are susceptible to be changed by PROCLAIM."
         (cmp-env-functions env))
   env)
 
-(defun cmp-env-register-symbol-macro (name form &optional (env *cmp-env*))
+(defun cmp-env-register-symbol-macro (name form &optional (env *cmp-env*) force)
   (cmp-env-register-symbol-macro-function name
                                           #'(lambda (whole env) (declare (ignore env whole)) form)
-                                          env))
+                                          env
+                                          force))
 
-(defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*))
-  (when (or (constant-variable-p name) (special-variable-p name))
+(defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*) force)
+  (when (and (not force)
+             (or (constant-variable-p name) (special-variable-p name)))
     (cmperr "Cannot bind the special or constant variable ~A with symbol-macrolet." name))
   (push (list name 'si:symbol-macro function)
         (cmp-env-variables env))

@@ -2590,3 +2590,15 @@
                                       (go :package))
                                   :symbol
                                     (return 42)))))))))
+
+;;; Date 2025-11-15
+;;; Description
+;;;
+;;;     Target dependent constants were folded incorrectly during
+;;;     cross compilation
+;;;
+(deftest cmp.0111.cross-compilation-constant-fold ()
+  (= (funcall (compile nil
+                       '(lambda ()
+                         (- most-positive-fixnum 3))))
+     (- most-positive-fixnum 3)))

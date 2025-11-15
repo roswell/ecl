@@ -88,6 +88,12 @@
                                                       (cons :complex-float
                                                             (member :complex-float *features*))
                                                       c::*cmp-env-root*))
+  (dolist (s '(most-negative-fixnum most-positive-fixnum cl-fixnum-bits array-dimension-limit
+               array-total-size-limit ffi:c-short-min ffi:c-short-max ffi:c-ushort-max
+               ffi:c-int-min ffi:c-int-max ffi:c-uint-max ffi:c-long-min ffi:c-long-max
+               ffi:c-ulong-max #+long-long ffi:c-long-long-min #+long-long ffi:c-long-long-max
+               #+long-long ffi:c-ulong-long-max))
+    (c::cmp-env-register-symbol-macro s (symbol-value s) c::*cmp-env-root* t))
   (c::write-target-info #P"build:target-info.lsp"))
 
 ;;;
