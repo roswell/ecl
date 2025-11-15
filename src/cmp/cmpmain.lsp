@@ -182,6 +182,14 @@ after compilation."
   (unless (si:valid-function-name-p name)
     (error "~s is not a valid function name." name))
 
+  (when *cross-compiling*
+    (return-from compile
+      (compile-with-target-info
+       (lambda ()
+         (let ((*cross-compiling* nil))
+           (compile name def)))
+       *host-info*)))
+
   (cond ((and supplied-p def)
          (when (functionp def)
            (unless (function-lambda-expression def)
@@ -350,22 +358,23 @@ from the C language code.  NIL means \"do not create the file\"."
   (check-type target-info (or list pathname-designator))
   (when (typep target-info 'pathname-designator)
     (setf target-info (read-target-info target-info)))
-  (progv (mapcar #'car target-info) (mapcar #'cdr target-info)
-    (unless (string= *target-lisp-implementation-version* (lisp-implementation-version))
-      (error "Cannot cross compile as the target ECL version ~a does not match the host ECL version ~a"
-             *target-lisp-implementation-version* (lisp-implementation-version)))
-    (let* ((features-to-match '(#-unicode :unicode #-clos :clos
-                                #-dlopen :dlopen))
-           (missing-features (intersection features-to-match *features*)))
-      (unless (null missing-features)
-        (warn "Cross compiling to a target with ~{~#[~;~(~a~)~;~(~a~) and ~(~a~)~:;~@{~(~a~)~#[~; and ~:;, ~]~}~]~} support from a host ECL which doesn't include these features is unsupported. Please use a host with matching feature set."
-              (substitute "shared library" :dlopen missing-features))))
-    (multiple-value-prog1 (let ((*cross-compiling* t))
-                            (funcall closure))
-      (let ((features (find '*features* target-info :key #'car)))
-        ;; Remember newly added keywords in *features* for future
-        ;; compilations
-        (setf (cdr features) *features*)))))
+  (let ((*host-info* (or *host-info* (get-target-info))))
+    (progv (mapcar #'car target-info) (mapcar #'cdr target-info)
+      (unless (string= *target-lisp-implementation-version* (lisp-implementation-version))
+        (error "Cannot cross compile as the target ECL version ~a does not match the host ECL version ~a"
+               *target-lisp-implementation-version* (lisp-implementation-version)))
+      (let* ((features-to-match '(#-unicode :unicode #-clos :clos
+                                  #-dlopen :dlopen))
+             (missing-features (intersection features-to-match *features*)))
+        (unless (null missing-features)
+          (warn "Cross compiling to a target with ~{~#[~;~(~a~)~;~(~a~) and ~(~a~)~:;~@{~(~a~)~#[~; and ~:;, ~]~}~]~} support from a host ECL which doesn't include these features is unsupported. Please use a host with matching feature set."
+                (substitute "shared library" :dlopen missing-features))))
+      (multiple-value-prog1 (let ((*cross-compiling* t))
+                              (funcall closure))
+        (let ((features (find '*features* target-info :key #'car)))
+          ;; Remember newly added keywords in *features* for future
+          ;; compilations
+          (setf (cdr features) *features*))))))
 
 ;;; This function is located in the si package because the bytecodes
 ;;; compiler will override it when calling

@@ -487,6 +487,10 @@ comparing circular objects."
     (with-standard-io-syntax
       (read s))))
 
+(defun get-target-info ()
+  (mapcar #'(lambda (option) (cons option (symbol-value option)))
+          c::*config-options*))
+
 (defun write-target-info (filename)
   (with-open-file (s filename
                      :direction :output
@@ -494,6 +498,4 @@ comparing circular objects."
                      :if-does-not-exist :create)
     (with-standard-io-syntax
       (let ((*print-circle* t))
-        (format s "~S~%"
-                (mapcar #'(lambda (option) (cons option (symbol-value option)))
-                        c::*config-options*))))))
+        (format s "~S~%" (get-target-info))))))

@@ -155,6 +155,8 @@ slashes before special characters.")
 
 (defvar *cross-compiling* nil
   "Are we cross compiling?")
+(defvar *host-info* nil
+  "Information on the host configuration for cross compilation.")
 
 ;;;
 ;;; Compiler program and flags.
