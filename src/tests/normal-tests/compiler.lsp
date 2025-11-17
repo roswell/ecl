@@ -2571,3 +2571,23 @@
                                   (symbol-macrolet ((value -27))
                                     (load-time-value
                                      (block b4 (woosh b4 value))))))))))
+
+;;; Date 2025-11-16
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/802
+;;; Regression commit: 521e815158dc92e6b8af18d007808349764b5623
+;;; Reported by: Jan Moringen
+;;; Description
+;;;
+;;;     Regression in TAGBODY handling by the C compiler.
+;;;
+(deftest cmp.0110.tagbody-regression ()
+  (is (eql 42
+           (funcall (compile nil
+                             '(lambda (&aux (always-nil nil))
+                               (block nil
+                                 (tagbody
+                                  :package
+                                    (when always-nil
+                                      (go :package))
+                                  :symbol
+                                    (return 42)))))))))
