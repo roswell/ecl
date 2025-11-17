@@ -26,7 +26,8 @@
 (defparameter *quit-tag* (cons nil nil))
 (defparameter *quit-tags* nil)
 (defparameter *break-level* 0)          ; nesting level of error loops
-(defparameter *break-env* nil)
+(defparameter *break-lexenv* nil)
+(defparameter *break-locals* nil)
 (defparameter *ihs-base* 0)
 (defparameter *ihs-top* (ihs-top))
 (defparameter *ihs-current* 0)
@@ -601,7 +602,7 @@ Use special code 0 to cancel this operation.")
                            (tpl-prompt)
                            (tpl-read))
                        values (multiple-value-list
-                               (eval-with-env - *break-env*))
+                               (eval-with-env - *break-lexenv*))
                        /// // // / / values *** ** ** * * (car /))
                  (tpl-format "~&~{~s~^~%~}~%" values)))))
       (loop
@@ -904,20 +905,28 @@ Use special code 0 to cancel this operation.")
         @(return) = CONS(name,output);
 " :one-liner nil))
 
-(defun decode-ihs-env (*break-env*)
-  (let ((env *break-env*))
-    (if (vectorp env)
-      #+ecl-min
-      nil
-      #-ecl-min
-      (let* ((next (decode-ihs-env
+(defun decode-ihs-env (*break-locals*)
+  #+ecl_min nil
+  #-ecl_min
+  (let ((env *break-locals*))
+    (etypecase env
+      (vector
+       (let ((next (decode-ihs-env
                     (ffi:c-inline (env) (:object) :object
                                   "(#0)->vector.self.t[0]" :one-liner t))))
-        (nreconc (loop with l = (- (length env) 2)
-                       for i from 0 below l
-                       do (push (decode-env-elt env i) next))
-                   next))
-      env)))
+         (nreconc (loop with l = (- (length env) 2)
+                        for i from 0 below l
+                        do (push (decode-env-elt env i) next))
+                  next)))
+      (si:frame
+       (let* ((lcls '())
+              (next (ffi:c-inline (env lcls) (:object :object) :void
+                                  "loop_across_frame_fifo(elt, (#0)) {
+                                     (#1)=ecl_cons(elt, (#1));
+                                   } end_loop_across_frame();")))
+         lcls))
+      (null
+       nil))))
 
 (defun ihs-environment (ihs-index)
   (labels ((newly-bound-special-variables (bds-min bds-max)
@@ -958,7 +967,7 @@ Use special code 0 to cancel this operation.")
            (special-variables '())
            (restarts '())
            record0 record1)
-      (dolist (record (decode-ihs-env (ihs-env ihs-index)))
+      (dolist (record (decode-ihs-env (ihs-lcl ihs-index)))
         (cond ((atom record)
                (push (compiled-function-name record) functions))
               ((progn
@@ -1017,7 +1026,7 @@ Use special code 0 to cancel this operation.")
 (defun tpl-inspect-command (var-name)
   (when (symbolp var-name)
     (setq var-name (symbol-name var-name)))
-  (let ((val-pair (assoc var-name (decode-ihs-env *break-env*)
+  (let ((val-pair (assoc var-name (decode-ihs-env *break-locals*)
                          :test #'(lambda (s1 s2)
                                    (when (symbolp s2) (setq s2 (symbol-name s2)))
                                    (if (stringp s2)
@@ -1204,7 +1213,8 @@ Use special code 0 to cancel this operation.")
   (set-break-env))
 
 (defun set-break-env ()
-  (setq *break-env* (ihs-env *ihs-current*)))
+  (setq *break-lexenv* (ihs-env *ihs-current*))
+  (setq *break-locals* (ihs-lcl *ihs-current*)))
 
 (defun ihs-search (string unrestricted &optional (start (si::ihs-top)))
   (do ((ihs start (si::ihs-prev ihs)))
@@ -1413,7 +1423,8 @@ package."
            (*break-condition* condition)
            (*break-level* (1+ *break-level*))
            (break-level *break-level*)
-           (*break-env* nil))
+           (*break-locals* nil)
+           (*break-lexenv* nil))
       (check-default-debugger-runaway)
       #+threads
       ;; We give our process priority for grabbing the console.
