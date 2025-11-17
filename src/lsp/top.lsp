@@ -1213,7 +1213,7 @@ Use special code 0 to cancel this operation.")
   (set-break-env))
 
 (defun set-break-env ()
-  (setq *break-lexenv* (ihs-env *ihs-current*))
+  (setq *break-lexenv* (ihs-lex *ihs-current*))
   (setq *break-locals* (ihs-lcl *ihs-current*)))
 
 (defun ihs-search (string unrestricted &optional (start (si::ihs-top)))
@@ -1310,7 +1310,8 @@ Use the following functions to directly access ECL stacks.
 Invocation History Stack:
 (SYS:IHS-TOP)   Returns the index of the TOP of the IHS.
 (SYS:IHS-FUN i) Returns the function of the i-th entity in IHS.
-(SYS:IHS-ENV i)
+(SYS:IHS-LEX i) Returns the lexical environment of the i-th entry in IHS.
+(SYS:IHS-LCL i) Returns the local environment of the i-th entry in IHS.
 (SYS:IHS-PREV i)
 (SYS:IHS-NEXT i)
 
