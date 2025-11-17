@@ -298,7 +298,7 @@
 
 (proclamation si:ihs-top () si::index)
 (proclamation si:ihs-fun (si::index) (or null function-designator))
-(proclamation si:ihs-env (si::index) environment)
+(proclamation si:ihs-env (si::index) (or null vector))
 (proclamation si:frs-top () si::index)
 (proclamation si:frs-bds (si::index) si::index)
 (proclamation si:frs-tag (si::index) t)
