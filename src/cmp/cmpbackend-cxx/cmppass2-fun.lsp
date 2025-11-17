@@ -207,7 +207,7 @@
       (push 'IHS *unwind-exit*)
       (when (policy-debug-variable-bindings)
         (build-debug-lexical-env (reverse requireds) t))
-      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname ",_ecl_debug_env);")))
+      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname ",ECL_NIL,_ecl_debug_env);")))
 
   ;; Bind optional parameters as long as there remain arguments.
   (when optionals

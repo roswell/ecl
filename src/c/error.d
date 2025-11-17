@@ -306,7 +306,7 @@ FEwrong_type_only_arg(cl_object function, cl_object value, cl_object type)
   function = cl_symbol_or_object(function);
   type = cl_symbol_or_object(type);
   if (!Null(function) && env->ihs_stack.top && env->ihs_stack.top->function != function) {
-    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL);
+    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL,ECL_NIL);
   }        
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
@@ -330,7 +330,7 @@ FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_objec
   function = cl_symbol_or_object(function);
   type = cl_symbol_or_object(type);
   if (!Null(function) && env->ihs_stack.top && env->ihs_stack.top->function != function) {
-    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL);
+    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL,ECL_NIL);
   }        
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
@@ -356,7 +356,7 @@ FEwrong_type_key_arg(cl_object function, cl_object key, cl_object value, cl_obje
   type = cl_symbol_or_object(type);
   key = cl_symbol_or_object(key);
   if (!Null(function) && env->ihs_stack.top && env->ihs_stack.top->function != function) {
-    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL);
+    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL,ECL_NIL);
   }        
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
@@ -387,7 +387,7 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
   struct ecl_ihs_frame tmp_ihs;
   function = cl_symbol_or_object(function);
   if (!Null(function) && env->ihs_stack.top && env->ihs_stack.top->function != function) {
-    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL);
+    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL,ECL_NIL);
   }        
   cl_error(9,
            @'simple-type-error', /* condition name */

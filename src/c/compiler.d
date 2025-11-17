@@ -551,7 +551,7 @@ c_macro_expand1(cl_env_ptr env, cl_object stmt)
 static void
 import_lexenv(cl_env_ptr env, cl_object lexenv)
 {
-  if (!ECL_VECTORP(lexenv))
+  if (Null(lexenv))
     return;
   /*
    * Given the environment of an interpreted function, we guess a

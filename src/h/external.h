@@ -1649,6 +1649,7 @@ extern ECL_API __m128d ecl_unbox_double_sse_pack(cl_object value);
 extern ECL_API cl_object si_ihs_top(void);
 extern ECL_API cl_object si_ihs_fun(cl_object arg);
 extern ECL_API cl_object si_ihs_env(cl_object arg);
+extern ECL_API cl_object si_ihs_lcl(cl_object arg);
 extern ECL_API cl_object si_ihs_bds(cl_object arg);
 extern ECL_API cl_object si_ihs_next(cl_object arg);
 extern ECL_API cl_object si_ihs_prev(cl_object arg);

@@ -947,6 +947,13 @@ si_ihs_env(cl_object arg)
   ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lex_env);
 }
 
+cl_object
+si_ihs_lcl(cl_object arg)
+{
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lcl_env);
+}
+
 /* -- General purpose stack implementation ----------------------------------- */
 
 /* Stacks are based on actually adjustable simple vectors. */
