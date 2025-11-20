@@ -1261,11 +1261,13 @@ si_mkstemp(cl_object template)
 # ifdef HAVE_MKSTEMP
   fd = mkstemp(ecl_filename_self(output));
 # else
+#  if 0
   if (mktemp(ecl_filename_self(output))) {
     fd = ecl_open(ecl_filename_self(output), O_CREAT|O_TRUNC, 0666);
   } else {
     fd = -1;
   }
+#  endif
 # endif
   ecl_enable_interrupts();
 

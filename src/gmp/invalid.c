@@ -39,7 +39,7 @@ MA 02110-1301, USA. */
 /* Incidentally, kill is not available on mingw, but that's ok, it has raise
    and we'll be using that.  */
 #if ! HAVE_RAISE
-#define raise(sig)   kill (getpid(), sig)
+#define raise(sig)   /* kill (getpid(), sig) */
 #endif
 
 

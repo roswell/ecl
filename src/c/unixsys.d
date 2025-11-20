@@ -136,7 +136,7 @@ si_environ(void)
 cl_object
 si_getpid(void)
 {
-#if defined(NACL)
+#if defined(NACL) || defined(__wasi__)
   FElibc_error("si_getpid not implemented",1);
   @(return ECL_NIL);
 #else
@@ -149,6 +149,8 @@ si_getuid(void)
 {
 #if defined(ECL_MS_WINDOWS_HOST)
   @(return ecl_make_fixnum(0));
+#elif defined(__wasi__)
+  FElibc_error("si_getuid not implemented",1);
 #else
   @(return ecl_make_integer(getuid()));
 #endif
@@ -160,7 +162,7 @@ ecl_def_ct_base_string(fake_out_name, "PIPE-WRITE-ENDPOINT", 19, static, const);
 cl_object
 si_make_pipe()
 {
-#if defined(NACL)
+#if defined(NACL) || defined(__wasi__)
   FElibc_error("si_make_pipe not implemented",1);
   @(return ECL_NIL);
 #else
@@ -216,7 +218,7 @@ cl_object
 si_waitpid(cl_object pid, cl_object wait)
 {
   cl_object status, code;
-#if defined(NACL)
+#if defined(NACL) || defined(__wasi__)
   FElibc_error("si_waitpid not implemented",1);
   @(return ECL_NIL);
 #elif defined(ECL_MS_WINDOWS_HOST)
@@ -286,8 +288,13 @@ si_waitpid(cl_object pid, cl_object wait)
 #if !defined(ECL_MS_WINDOWS_HOST)
 cl_object
 si_killpid(cl_object pid, cl_object signal) {
+#if defined(__wasi__)
+  FElibc_error("si_killpid not implemented",1);
+  return ECL_NIL;
+#else
   int ret = kill(ecl_fixnum(pid), ecl_fixnum(signal));
   return ecl_make_fixnum(ret);
+#endif
 }
 #endif
 
@@ -386,6 +393,12 @@ create_descriptor(cl_object stream, cl_object direction,
     FEerror("Invalid ~S argument to EXT:RUN-PROGRAM.", 1, stream);
   }
 }
+#elif defined(__wasi__)
+static void
+create_descriptor(cl_object stream, cl_object direction,
+                  int *child, int *parent) {
+  FElibc_error("si_getuid not implemented",1);
+}
 #else
 static void
 create_descriptor(cl_object stream, cl_object direction,
@@ -464,6 +477,14 @@ si_run_program_inner(cl_object command, cl_object argv, cl_object my_environ, cl
   @(return stream_read exit_status pid)
 }
 
+#if defined(__wasi__)
+cl_object
+si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
+                    cl_object input, cl_object output, cl_object error) {
+  FElibc_error("si_spawn_subprocess not implemented",1);
+  return ECL_NIL;
+}
+#else
 cl_object
 si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
                     cl_object input, cl_object output, cl_object error) {
@@ -634,3 +655,4 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
     ecl_make_fixnum(parent_read)
     ecl_make_fixnum(parent_error))
 }
+#endif

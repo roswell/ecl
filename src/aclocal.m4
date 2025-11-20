@@ -583,6 +583,28 @@ case "${host}" in
                 ECL_ADD_FEATURE(c-compatible-variadic-dispatch)
                 ECL_ADD_FEATURE(emscripten)
                 ;;
+        wasm32-unknown-wasi)
+                # Non-zero optimization levels seem to be slower in
+                # combination with the binaryen spill-pointers pass.
+                CFLAGS="${CFLAGS} -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -DECL_C_COMPATIBLE_VARIADIC_DISPATCH -O0  -mllvm -wasm-enable-sjlj"
+                clibs="-lwasi-emulated-signal -lwasi-emulated-process-clocks -lsetjmp ${clibs}"
+                # The default stack size is 64KB, that's too little
+                # for ECL. The spill-pointers pass is needed for the
+                # gc to find pointers on the stack.
+                #LDFLAGS="${LDFLAGS} -sSTACK_SIZE=1048576 -sBINARYEN_EXTRA_PASSES=--spill-pointers"
+                enable_threads='no'
+                enable_libffi='no'
+                enable_gmp='portable'
+                with_c_gmp=yes
+                with_tcp=no
+                shared="no"
+                dnl SHARED_LDFLAGS="-shared ${LDFLAGS}"
+                dnl BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
+                INSTALL_TARGET='flatinstall'
+                AC_DEFINE([ECL_C_COMPATIBLE_VARIADIC_DISPATCH], [], [Do the fixed and optional arguments of a variadic function use a different calling convention?])
+                ECL_ADD_FEATURE(c-compatible-variadic-dispatch)
+                ECL_ADD_FEATURE(wasi)
+                ;;
 esac
 
 if test "${INSTALL_TARGET}" = "flatinstall"; then

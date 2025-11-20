@@ -714,6 +714,14 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 
+# if defined(__wasi__) || defined(WASI)
+#   ifndef WASI
+#     define WASI
+#   endif
+#   define I386
+#  define mach_type_known
+# endif
+
 /* Feel free to add more clauses here */
 
 /* Or manually define the machine type here.  A machine type is         */
@@ -1432,6 +1440,20 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef EMSCRIPTEN
 #     define OS_TYPE "EMSCRIPTEN"
+#     define DATASTART (ptr_t)ALIGNMENT
+#     define DATAEND (ptr_t)ALIGNMENT
+      /* Emscripten does emulate mmap and munmap, but those should  */
+      /* not be used in the collector, since WebAssembly lacks the  */
+      /* native support of memory mapping.  Use sbrk() instead.     */
+#     undef USE_MMAP
+#     undef USE_MUNMAP
+#     define STACK_GROWS_DOWN
+#     if defined(GC_THREADS) && !defined(CPPCHECK)
+#       error No threads support yet
+#     endif
+#   endif
+#   ifdef WASI
+#     define OS_TYPE "WASI"
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
       /* Emscripten does emulate mmap and munmap, but those should  */

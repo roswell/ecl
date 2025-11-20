@@ -29,16 +29,16 @@ If you do not have access to the online version, follow the following recipies.
      export NDK_PATH=/opt/android-ndk
      export ANDROID_API=23
      export TOOLCHAIN_PATH=${NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64 # use darwin instead of linux if compiling on Mac OS host
-	  export TARGET=armv7a-linux-androideabi
+     export TARGET=armv7a-linux-androideabi
   #+END_SRC
 2. Build and install the target library
    #+BEGIN_SRC shell-script
-	  export CC="${TOOLCHAIN_PATH}/bin/clang --target=${TARGET}${ANDROID_API}"
-	  export LD=${TOOLCHAIN_PATH}/bin/ld
-	  export AR=${TOOLCHAIN_PATH}/bin/llvm-ar
-	  export RANLIB=${TOOLCHAIN_PATH}/bin/llvm-ranlib
+     export CC="${TOOLCHAIN_PATH}/bin/clang --target=${TARGET}${ANDROID_API}"
+     export LD=${TOOLCHAIN_PATH}/bin/ld
+     export AR=${TOOLCHAIN_PATH}/bin/llvm-ar
+     export RANLIB=${TOOLCHAIN_PATH}/bin/llvm-ranlib
      export ECL_TO_RUN=/usr/local/bin/ecl
-    ./configure --host=${TARGET} \
+     ./configure --host=${TARGET} \
                  --prefix=`pwd`/ecl-android \
                  --disable-c99complex \
                  --with-cross-config=`pwd`/src/util/android-arm.cross_config
@@ -83,7 +83,7 @@ If you do not have access to the online version, follow the following recipies.
 3. Library and assets in the ecl-iOS directory are ready to run on
    the iOS system.
 
-* Cross-compile for the WASM platform (via emscripten)
+* Cross-compile for the WASM/Emscripten platform
 
 Emscripten target is a little fickle so keep in mind that:
 
@@ -170,6 +170,34 @@ imoprtant to specify a different size. For example:
 #+begin_src shell-script
   emcc program.c -sSTACK_SIZE=1048576 lib/*.a -I./include -o program.o
 #+end_src
+
+* Cross-compile for the WASM/WASI platform
+
+1. Configure the toolchain (see https://github.com/WebAssembly/wasi-sdk)
+   and export the necessary paths:
+   #+BEGIN_SRC sh
+     export WASI_SDK_PATH=/opt/wasi-sdk
+     export TARGET=wasm32-unknown-wasi
+  #+END_SRC
+2. Build and install the target library
+   #+BEGIN_SRC sh
+     export CC="${WASI_SDK_PATH}/bin/clang --sysroot=${WASI_SDK_PATH}/share/wasi-sysroot"
+     export LD=${WASI_SDK_PATH}/bin/ld
+     export AR=${WASI_SDK_PATH}/bin/llvm-ar
+     export RANLIB=${WASI_SDK_PATH}/bin/llvm-ranlib
+     export ECL_TO_RUN=/usr/local/bin/ecl
+     ./configure --host=${TARGET} \
+                 --prefix=`pwd`/ecl-wasi \
+                 --disable-c99complex \
+                 --disable-shared \
+                 --with-tcp=no \
+                 --with-cmp=no \
+                 --with-cross-config=`pwd`/src/util/wasm32-unknown-wasi.cross_config
+     make -j9
+     make install
+   #+END_SRC
+3. Library and assets in the ecl-android directory are ready to run on
+   the Android system.
 
 * Build using Cosmopolitan toolchain (experimental)
 
