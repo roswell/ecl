@@ -87,8 +87,7 @@ compiled successfully, returns the pathname of the compiled file."
     (return-from compile-file
       (compile-with-target-info #'(lambda () (apply #'compile-file input-pathname args))
                                 target)))
-  #-dlopen
-  (unless system-p
+  (unless (or (member :dlopen *features*) system-p)
     (format t "~%;;;~
 ~%;;; This system does not support loading dynamically linked libraries.~
 ~%;;; Therefore, COMPILE-FILE without :SYSTEM-P T is unsupported.~
@@ -363,12 +362,11 @@ from the C language code.  NIL means \"do not create the file\"."
       (unless (string= *target-lisp-implementation-version* (lisp-implementation-version))
         (error "Cannot cross compile as the target ECL version ~a does not match the host ECL version ~a"
                *target-lisp-implementation-version* (lisp-implementation-version)))
-      (let* ((features-to-match '(#-unicode :unicode #-clos :clos
-                                  #-dlopen :dlopen))
+      (let* ((features-to-match '(#-unicode :unicode #-clos :clos))
              (missing-features (intersection features-to-match *features*)))
         (unless (null missing-features)
           (warn "Cross compiling to a target with ~{~#[~;~(~a~)~;~(~a~) and ~(~a~)~:;~@{~(~a~)~#[~; and ~:;, ~]~}~]~} support from a host ECL which doesn't include these features is unsupported. Please use a host with matching feature set."
-                (substitute "shared library" :dlopen missing-features))))
+                missing-features)))
       (multiple-value-prog1 (let ((*cross-compiling* t))
                               (funcall closure))
         (let ((features (find '*features* target-info :key #'car)))

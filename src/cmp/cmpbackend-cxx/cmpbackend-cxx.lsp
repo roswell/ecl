@@ -103,7 +103,8 @@ the environment variable TMPDIR to a different value." template))
 #+msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
-                  (ld-flags (split-program-options (if #-dlopen nil #+dlopen (eq type :program)
+                  (ld-flags (split-program-options (if (and (member :dlopen *features*)
+                                                            (eq type :program))
                                                        *ld-program-flags*
                                                        *ld-flags*)))
                   (ld-libs (split-program-options *ld-libs*)))
@@ -128,7 +129,8 @@ the environment variable TMPDIR to a different value." template))
 #-msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
-                  (ld-flags (split-program-options (if #-dlopen nil #+dlopen (eq type :program)
+                  (ld-flags (split-program-options (if (and (member :dlopen *features*)
+                                                            (eq type :program))
                                                        *ld-program-flags*
                                                        *ld-flags*)))
                   (ld-libs (split-program-options *ld-libs*)))
@@ -279,9 +281,10 @@ the environment variable TMPDIR to a different value." template))
 (defun ecl-library-directory ()
   "Finds the directory in which the ECL core library was installed."
   (cond ((and *ecl-library-directory*
-              (probe-file (merge-pathnames (compile-file-pathname "ecl" :type
-                                            #+dlopen :shared-library
-                                            #-dlopen :static-library)
+              (probe-file (merge-pathnames (compile-file-pathname
+                                            "ecl" :type (if (member :dlopen *features*)
+                                                            :shared-library
+                                                            :static-library))
                                            *ecl-library-directory*)))
          *ecl-library-directory*)
         ((probe-file "SYS:BUILD-STAMP")
@@ -360,7 +363,6 @@ filesystem or in the database of ASDF modules."
 
 ;;; Target-specific invocations.
 
-#+dlopen
 (defun shared-cc (o-pathname object-files)
   (let ((ld-flags (split-program-options *ld-shared-flags*))
         (ld-libs (split-program-options *ld-libs*)))
@@ -380,7 +382,6 @@ filesystem or in the database of ASDF modules."
     (linker-cc o-pathname object-files :type :dll
                :ld-flags ld-flags :ld-libs ld-libs)))
 
-#+dlopen
 (defun bundle-cc (o-pathname init-name object-files)
   (declare (ignore init-name))
   (let ((ld-flags (split-program-options *ld-bundle-flags*))
@@ -696,7 +697,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (compiler-cc c-name o-name)
          (when (probe-file output-name) (delete-file output-name))
          (linker-ar output-name o-name ld-libs))
-        #+dlopen
         (:shared-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
@@ -708,7 +708,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (compiler-cc c-name o-name)
          (shared-cc output-name (append ld-flags (list o-name)
                                         ld-libs)))
-        #+dlopen
         (:fasl
          (format c-file +lisp-program-init+ init-name init-tag prologue-code
                  submodules epilogue-code)
@@ -733,7 +732,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
   (apply #'builder :static-library args))
 
 (defun build-shared-library (&rest args)
-  #-dlopen
-  (error "Dynamically loadable libraries not supported in this system.")
-  #+dlopen
-  (apply #'builder :shared-library args))
+  (if (member :dlopen *features*)
+      (apply #'builder :shared-library args)
+      (error "Dynamically loadable libraries not supported in this system.")))

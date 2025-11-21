@@ -64,10 +64,8 @@ coprocessor).")
 #+dlopen
 (defconfig *ld-libs* #-msvc "-lecl @FASL_LIBS@ @LIBS@"
            #+msvc "ecl.lib @CLIBS@")
-#+dlopen
-(defconfig *ld-shared-flags* "@SHARED_LDFLAGS@ @LDFLAGS@")
-#+dlopen
-(defconfig *ld-bundle-flags* "@BUNDLE_LDFLAGS@ @LDFLAGS@")
+(defconfig *ld-shared-flags* #+dlopen "@SHARED_LDFLAGS@ @LDFLAGS@")
+(defconfig *ld-bundle-flags* #+dlopen "@BUNDLE_LDFLAGS@ @LDFLAGS@")
 (defconfig *ld-program-flags* "@PROGRAM_LDFLAGS@ @LDFLAGS@")
 
 (defconfig +shared-library-prefix+ "@SHAREDPREFIX@")
