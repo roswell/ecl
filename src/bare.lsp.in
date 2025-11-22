@@ -47,6 +47,8 @@
 ;;;
 
 (when (member "CROSS" *features* :test #'string-equal)
+  ;; List of target dependent constants. Must be kept in sync with the
+  ;; cross compilation setup in compile.lsp.in
   (sys:*make-constant 'most-negative-fixnum (parse-integer "@CL_FIXNUM_MIN@" :junk-allowed t))
   (sys:*make-constant 'most-positive-fixnum (parse-integer "@CL_FIXNUM_MAX@" :junk-allowed t))
   (sys:*make-constant 'cl-fixnum-bits @CL_FIXNUM_BITS@)

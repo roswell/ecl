@@ -59,19 +59,18 @@
 (defun data-c-dump (filename)
   (labels ((produce-strings ()
              ;; Only Windows has a size limit in the strings it creates.
-             #-windows
-             (let ((s (data-dump-array)))
-               (when (plusp (length s))
-                 (list s)))
-             #+windows
-             (loop with string = (data-dump-array)
-                   with max-string-size = 65530
-                   with l = (length string)
-                   for i from 0 below l by max-string-size
-                   for this-l = (min (- l i) max-string-size)
-                   collect (make-array this-l :displaced-to string
-                                              :element-type (array-element-type string)
-                                              :displaced-index-offset i)))
+             (if (member :windows *features*)
+                 (loop with string = (data-dump-array)
+                       with max-string-size = 65530
+                       with l = (length string)
+                       for i from 0 below l by max-string-size
+                       for this-l = (min (- l i) max-string-size)
+                       collect (make-array this-l :displaced-to string
+                                           :element-type (array-element-type string)
+                                           :displaced-index-offset i))
+                 (let ((s (data-dump-array)))
+                   (when (plusp (length s))
+                     (list s)))))
            (output-one-c-string (name string stream)
              (let* ((*wt-string-size* 0)
                     (*wt-data-column* 80)
@@ -176,21 +175,18 @@
             "ecl_def_ct_complex(~A,&~A_data,&~A_data,static,const);"
             name name-real name-imag)))
 
-#+complex-float
 (defun static-csfloat-builder (name value stream)
   (let* ((*read-default-float-format* 'single-float)
          (*print-readably* t))
     (format stream "ecl_def_ct_csfloat(~A,(~S + I*~S),static,const);"
             name (realpart value) (imagpart value) stream)))
 
-#+complex-float
 (defun static-cdfloat-builder (name value stream)
   (let* ((*read-default-float-format* 'double-float)
          (*print-readably* t))
     (format stream "ecl_def_ct_cdfloat(~A,(~S + I*~S),static,const);"
             name (realpart value) (imagpart value) stream)))
 
-#+complex-float
 (defun static-clfloat-builder (name value stream)
   (let* ((*read-default-float-format* 'long-float)
          (*print-readably* t))
@@ -220,15 +216,16 @@
     (long-float (and (not (ext:float-nan-p object))
                      (not (ext:float-infinity-p object))
                      #'static-long-float-builder))
-    #+complex-float
-    (si:complex-single-float #'static-csfloat-builder)
-    #+complex-float
-    (si:complex-double-float #'static-cdfloat-builder)
-    #+complex-float
-    (si:complex-long-float #'static-clfloat-builder)
-    (complex (and (static-constant-expression (realpart object))
-                  (static-constant-expression (imagpart object))
-                  #'static-complex-builder))
+    (complex
+     (when (and (static-constant-expression (realpart object))
+                (static-constant-expression (imagpart object)))
+       (if *complex-float*
+           (typecase (realpart object)
+             (single-float #'static-csfloat-builder)
+             (double-float #'static-cdfloat-builder)
+             (long-float #'static-clfloat-builder)
+             (t #'static-complex-builder))
+           #'static-complex-builder)))
     #+sse2
     (ext:sse-pack #'static-sse-pack-builder)
     (t nil)))
@@ -401,7 +398,8 @@
     ((typep value 'character *cmp-env*)       (wt-character value vv))
     ((typep value 'float *cmp-env*)           (wt-number value vv))
     ((typep value '(complex float) *cmp-env*) (wt-number value vv))
-    (t (baboon "wt-vv-value: ~s is not an immediate value, but has no VV index~%" value))))
+    (t (baboon :format-control "wt-vv-value: ~s is not an immediate value, but has no VV index~%"
+               :format-arguments (list value)))))
 
 (defun wt-vv (vv-loc)
   (setf (vv-used-p vv-loc) t)

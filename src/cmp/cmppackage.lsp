@@ -48,7 +48,10 @@
    "COMPILER-MESSAGE-FORM"
    ;; Other operators.
    "INSTALL-C-COMPILER"
-   "UPDATE-COMPILER-FEATURES"))
+   "UPDATE-COMPILER-FEATURES"
+   ;; Target information for cross compilation.
+   "READ-TARGET-INFO"
+   "WRITE-TARGET-INFO"))
 
 
 

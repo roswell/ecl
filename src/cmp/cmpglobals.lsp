@@ -66,7 +66,7 @@ running the compiler. It may be updated by running ")
 (defvar *functions* nil)
 
 ;;; --cmpc-machine.lsp, cmpffi.lsp ---
-(defvar *machine* nil)
+(defconfig *machine* nil)
 
 ;;; --cmpcall.lsp--
 (defvar *compiler-declared-globals*)
@@ -112,8 +112,8 @@ by the C compiler and they denote function and unwind-protect boundaries. Note
 that compared with the bytecodes compiler, these records contain an additional
 variable, block, tag or function object at the end.")
 
-(defvar *cmp-env-root*
-  (cons nil (list (list '#:no-macro 'si:macro (constantly nil))))
+(defconfig *cmp-env-root*
+  (cons nil (list (list '#:no-macro 'si:macro 'si::constantly-nil)))
 "This is the common environment shared by all toplevel forms. It can
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
@@ -152,6 +152,11 @@ slashes before special characters.")
 "This variable controls whether the C compiler uses precompiled header files.")
 (defvar *precompiled-header-flags* nil)
 (defvar *precompiled-header-cc-config* nil)
+
+(defvar *cross-compiling* nil
+  "Are we cross compiling?")
+(defvar *host-info* nil
+  "Information on the host configuration for cross compilation.")
 
 ;;;
 ;;; Compiler program and flags.
@@ -228,7 +233,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*callbacks* nil)
     (*functions* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
-    (*cmp-env* nil)
+    (*cmp-env* *cmp-env-root*)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
     (*make-forms* nil)
     (*referenced-objects* (make-array 256 :adjustable t :fill-pointer 0))

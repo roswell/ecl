@@ -12,6 +12,14 @@
 (defvar *emitted-functions* nil)
 (defvar *inline-information* nil)
 
+(defconfig *c-compatible-variadic-dispatch*
+    #+c-compatible-variadic-dispatch t
+    #-c-compatible-variadic-dispatch nil)
+
+(defconfig *complex-float*
+    #+complex-float t
+    #-complex-float nil)
+
 ;;; Compiled code uses the following kinds of variables:
 ;;; 1. Vi, declared explicitely, either unboxed or not (*lcl*, next-lcl)
 ;;; 2. Ti, declared collectively, of type object, may be reused (*temp*, next-temp)

@@ -33,9 +33,12 @@ Gives a global declaration.  See DECLARE for possible DECL-SPECs."
   (when (eq (car d) 'SPECIAL) (mapc #'sys::*make-special (cdr d))))
 )
 
-(defmacro with-compilation-unit (options &rest body)
+(defun si::do-compilation-unit (closure &rest options)
   (declare (ignore options))
-  `(progn ,@body))
+  (funcall closure))
+
+(defmacro with-compilation-unit (options &rest body)
+  `(si::do-compilation-unit #'(lambda () ,@body) ,@options))
 
 ;;; Editor.
 

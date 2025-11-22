@@ -88,7 +88,7 @@
                              :arg-types arg-types
                              :exact-return-type exact-return-type
                              :multiple-values multiple-values
-                             ;; :side-effects (not (si:get-sysprop name 'no-side-effects))
+                             ;; :side-effects (function-may-have-side-effects name)
                              :one-liner one-liner
                              :expansion expansion)))
     (push inline-info (gethash (list name safety) *inline-information*))))

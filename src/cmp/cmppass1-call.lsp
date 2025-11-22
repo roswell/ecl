@@ -251,7 +251,7 @@
                   :args (c1expr `(function ,fname)) forms fname :global)))
 
 (defun c1call-constant-fold (fname forms)
-  (when (and (si:get-sysprop fname 'pure)
+  (when (and (function-is-pure fname)
              (policy-evaluate-forms)
              (inline-possible fname))
     (handler-case

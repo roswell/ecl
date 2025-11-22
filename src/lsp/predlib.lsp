@@ -476,25 +476,18 @@ and is not adjustable."
           answer))))
 
 (defun upgraded-complex-part-type (real-type &optional env)
-  ;; ECL does not have specialized complex types. If we had them, the
-  ;; code would look as follows
-  ;;   (dolist (v '(INTEGER RATIO RATIONAL SINGLE-FLOAT DOUBLE-FLOAT FLOAT REAL)
-  ;;       (error "~S is not a valid part type for a complex." real-type))
-  ;;     (when (subtypep real-type v)
-  ;;       (return v))))
-  #+complex-float
-  (cond ((subtypep real-type 'null env)         nil)
-        ((subtypep real-type 'rational env)     'rational)
-        ((subtypep real-type 'single-float env) 'single-float)
-        ((subtypep real-type 'double-float env) 'double-float)
-        ((subtypep real-type 'long-float env)   'long-float)
-        ((subtypep real-type 'float env)        'float)
-        ((subtypep real-type 'real env)         'real)
-        (t (error "~S is not a valid part type for a complex." real-type)))
-  #-complex-float
-  (cond ((subtypep real-type 'null env) nil)
-        ((subtypep real-type 'real env) 'real)
-        (t (error "~S is not a valid part type for a complex." real-type))))
+  (if (complex-float-feature env)
+      (cond ((subtypep real-type 'null env)         nil)
+            ((subtypep real-type 'rational env)     'rational)
+            ((subtypep real-type 'single-float env) 'single-float)
+            ((subtypep real-type 'double-float env) 'double-float)
+            ((subtypep real-type 'long-float env)   'long-float)
+            ((subtypep real-type 'float env)        'float)
+            ((subtypep real-type 'real env)         'real)
+            (t (error "~S is not a valid part type for a complex." real-type)))
+      (cond ((subtypep real-type 'null env) nil)
+            ((subtypep real-type 'real env) 'real)
+            (t (error "~S is not a valid part type for a complex." real-type)))))
 
 (defun in-interval-p (x interval)
   (declare (si::c-local))
@@ -1297,33 +1290,44 @@ if not possible."
 ;;; sets of objects. TYPEP has a different specification and TYPECASE should use
 ;;; it. -- jd 2019-04-19
 ;;;
-(defun canonical-complex-type (complex-type)
+(defun canonical-complex-type (complex-type env)
   (declare (si::c-local))
   ;; UPGRADE-COMPLEX-PART-TYPE signals condition when REAL-TYPE is not a
   ;; subtype of REAL.
   (destructuring-bind (&optional (real-type 'real)) (rest complex-type)
     (when (eq real-type '*)
       (setq real-type 'real))
-    (let* ((upgraded-real (upgraded-complex-part-type real-type))
+    (let* ((upgraded-real (upgraded-complex-part-type real-type env))
            (upgraded-type `(complex ,upgraded-real)))
       (or (find-registered-tag upgraded-type)
-          #+complex-float
-          (case upgraded-real
-            (real
-             (logior (canonical-complex-type '(complex single-float))
-                     (canonical-complex-type '(complex double-float))
-                     (canonical-complex-type '(complex long-float))
-                     (canonical-complex-type '(complex rational))))
-            (float
-             (logior (canonical-complex-type '(complex single-float))
-                     (canonical-complex-type '(complex double-float))
-                     (canonical-complex-type '(complex long-float)))))
+          (and (complex-float-feature env)
+               (case upgraded-real
+                 (real
+                  (logior (canonical-complex-type '(complex single-float) env)
+                          (canonical-complex-type '(complex double-float) env)
+                          (canonical-complex-type '(complex long-float) env)
+                          (canonical-complex-type '(complex rational) env)))
+                 (float
+                  (logior (canonical-complex-type '(complex single-float) env)
+                          (canonical-complex-type '(complex double-float) env)
+                          (canonical-complex-type '(complex long-float) env)))))
           (register-complex-type upgraded-type)))))
 
 (defun register-complex-type (upgraded-type)
   (declare (si::c-local))
   (let ((tag (new-type-tag)))
     (push-new-type upgraded-type tag)))
+
+(defun complex-float-feature (env)
+  (declare (si::c-local))
+  (dolist (record (car env))
+    (when (and (consp record)
+               (eq (first record) :declare)
+               (eq (second record) :feature)
+               (eq (third record) :complex-float))
+      (return-from complex-float-feature (fourth record))))
+  #+complex-float t
+  #-complex-float nil)
 
 ;;----------------------------------------------------------------------
 ;; CONS types. Only (CONS T T) and variants, as well as (CONS NIL *), etc
@@ -1576,7 +1580,7 @@ if not possible."
                                  (RATIO ,@(rest type)))
                             env))
            (COMPLEX
-            (canonical-complex-type type))
+            (canonical-complex-type type env))
            (CONS (apply #'register-cons-type env (rest type)))
            (ARRAY (logior (register-array-type `(COMPLEX-ARRAY ,@(rest type)) env)
                           (register-array-type `(SIMPLE-ARRAY ,@(rest type)) env)))
@@ -1687,6 +1691,6 @@ if not possible."
                  (eq (second record) type-name))
         (return-from search-type-in-env
           (if (typep (third record) 'function)
-              (funcall (third record) type-args)
+              (funcall (third record) (cons type-name type-args) env)
               (third record))))))
   type)

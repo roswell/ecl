@@ -15,6 +15,13 @@ check: config.lsp
                --eval "(ext:quit)" \
                2>&1 | tee test.log
 
+cross-check: config.lsp
+	$(ECL) --norc \
+               --load config.lsp \
+               --eval "(ecl-tests::run-tests '($(TESTS)) t)" \
+               --eval "(ext:quit)" \
+               2>&1 | tee test.log
+
 clean:
 	rm -rf regressions.log cache
 
@@ -25,4 +32,10 @@ ansi-test: ansi-test/doit.lsp
 	$(ECL) --norc \
                --load config.lsp \
                --eval "(ext:quit (if (ecl-tests::run-ansi-test) 0 2))" \
+               2>&1 | tee ansi-test.log
+
+cross-ansi-test: ansi-test/doit.lsp
+	$(ECL) --norc \
+               --load config.lsp \
+               --eval "(ext:quit (if (ecl-tests::run-ansi-test nil t) 0 2))" \
                2>&1 | tee ansi-test.log

@@ -252,6 +252,7 @@ AC_SUBST(ARCHITECTURE)dnl Type of processor for which this is compiled
 AC_SUBST(SOFTWARE_TYPE)dnl Type of operating system
 AC_SUBST(SOFTWARE_VERSION)dnl	 Version number of operating system
 AC_SUBST(MACHINE_VERSION)dnl	 Version of the machine
+AC_SUBST(TARGET_IDENTIFIER)dnl Target identifier for cross compilation
 
 AC_SUBST(ECL_LDRPATH)dnl Sometimes the path for finding DLLs must be hardcoded.
 AC_SUBST(LIBPREFIX)dnl	Name components of a statically linked library
@@ -446,8 +447,10 @@ case "${host_os}" in
                 ECL_ADD_FEATURE([win32])
                 ECL_ADD_FEATURE([windows])
                 if test "x$host_cpu" = "xx86_64" ; then
-		   ECL_ADD_FEATURE([win64])
+                  ECL_ADD_FEATURE([win64])
                 fi
+                AC_CHECK_TOOL([WINDRES],[windres]) # set variable WINDRES to appropriate `windres' program
+                AC_SUBST(WINDRES)
                 ;;
         darwin*)
                 thehost='darwin'
@@ -611,6 +614,7 @@ AC_MSG_CHECKING(for required libraries)
 AC_MSG_RESULT([${clibs}])
 AC_MSG_CHECKING(for architecture)
 ARCHITECTURE=`echo "${host_cpu}" | tr a-z A-Z` # i386 -> I386
+TARGET_IDENTIFIER="${host}"
 AC_MSG_RESULT([${ARCHITECTURE}])
 AC_MSG_CHECKING(for software type)
 SOFTWARE_TYPE="$thehost"

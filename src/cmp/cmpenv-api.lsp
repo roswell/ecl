@@ -67,13 +67,15 @@ that are susceptible to be changed by PROCLAIM."
         (cmp-env-functions env))
   env)
 
-(defun cmp-env-register-symbol-macro (name form &optional (env *cmp-env*))
+(defun cmp-env-register-symbol-macro (name form &optional (env *cmp-env*) force)
   (cmp-env-register-symbol-macro-function name
                                           #'(lambda (whole env) (declare (ignore env whole)) form)
-                                          env))
+                                          env
+                                          force))
 
-(defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*))
-  (when (or (constant-variable-p name) (special-variable-p name))
+(defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*) force)
+  (when (and (not force)
+             (or (constant-variable-p name) (special-variable-p name)))
     (cmperr "Cannot bind the special or constant variable ~A with symbol-macrolet." name))
   (push (list name 'si:symbol-macro function)
         (cmp-env-variables env))
@@ -102,6 +104,18 @@ that are susceptible to be changed by PROCLAIM."
 (defun cmp-env-register-types (definitions &optional (env *cmp-env*))
   (dolist (def definitions)
     (setf env (cmp-env-register-type (car def) (cdr def) env)))
+  env)
+
+(defun register-all-known-types (&optional (env *cmp-env*))
+  ;; Used during cross-compilation in compile.lsp.in to populate the
+  ;; lexical environment with type definitions
+  (do-all-symbols (type)
+    (ext:when-let ((deftype-form (si:get-sysprop type 'SI::DEFTYPE-FORM)))
+      (unless (cmp-env-search-type type env)
+        (let ((type-definition (eval (destructuring-bind (name lambda-list &rest body)
+                                         (rest deftype-form)
+                                       (si::expand-defmacro name lambda-list body 'DEFTYPE)))))
+          (setf env (cmp-env-register-type type type-definition env))))))
   env)
 
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
@@ -213,11 +227,11 @@ that are susceptible to be changed by PROCLAIM."
      return (cddr i)
      finally (return default)))
 
-(defun cmp-env-search-type (name &optional (env *cmp-env*) (default name))
+(defun cmp-env-search-type (name &optional (env *cmp-env*))
   (loop for i in (car env)
         when (and (consp i)
                   (eq (first i) :type)
                   (eq (second i) name))
           return (third i)
-        finally (return default)))
+        finally (return nil)))
 

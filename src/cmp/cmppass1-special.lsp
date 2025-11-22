@@ -67,7 +67,7 @@
              (make-c1form* 'FUNCTION
                            :type 'FUNCTION
                            :sp-change (not (and (symbolp fun)
-                                                (si:get-sysprop fun 'NO-SP-CHANGE)))
+                                                (function-no-sp-change fun)))
                            :args fun)))
           ((and (consp fun) (member (car fun) '(LAMBDA EXT:LAMBDA-BLOCK)))
            (cmpck (endp (cdr fun))
