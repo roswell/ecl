@@ -481,7 +481,7 @@ comparing circular objects."
            (path2 (merge-pathnames "*/*/target-info.lsp" filename)) ; file in lib/ecl-x.x.x/
            (files-found (nconc (directory path1) (directory path2))))
       (when (null files-found)
-        (cmperror "Can't find the target information for cross compilation at ~s or ~s." path1 path2))
+        (cmperr "Can't find the target information for cross compilation at ~s or ~s." path1 path2))
       (setf filename (first files-found))))
   (with-open-file (s filename)
     (with-standard-io-syntax

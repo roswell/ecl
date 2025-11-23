@@ -254,7 +254,7 @@
           ;;
           ;; Detect inconsistencies in the type form.
           ((subtypep type 'nil *cmp-env*)
-           (cmperror "Cannot COERCE an expression to an empty type."))
+           (cmperr "Cannot COERCE an expression to an empty type."))
           ;;
           ;; No optimizations that take up too much space unless requested.
           ((not (policy-inline-type-checks))
