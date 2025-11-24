@@ -101,7 +101,7 @@ compiled successfully, returns the pathname of the compiled file."
           (setq *compile-file-pathname* (make-pathname :type ext :defaults input-pathname))
           (when (probe-file *compile-file-pathname*)
             (return)))))
-  (when (and system-p load)
+  (when (and system-p load (not *cross-compiling*))
     (error "Cannot load system files."))
   (cmpprogress "~&;;;~%;;; Compiling ~a~:[~; for target ~a~]."
                (namestring input-pathname)
