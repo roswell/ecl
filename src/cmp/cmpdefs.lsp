@@ -52,20 +52,19 @@ coprocessor).")
            #+msvc "~A -Fe~S~* ~{~S ~} ~@[~S~]~{ '~A'~} ~A")
 
 (defconfig *cc-format* (cond ((member :msvc *features*)
-			                     "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")
-			                    ((member :nacl *features*) ;; pnacl-clang doesn't support -w
-			                     "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -c \"~A\" -o \"~A\"~{ '~A'~}")
-			                    (t
-			                     "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")))
+			      "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")
+			     ((member :nacl *features*) ;; pnacl-clang doesn't support -w
+			      "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -c \"~A\" -o \"~A\"~{ '~A'~}")
+			     (t
+			      "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")))
 
 (defconfig *ld-flags* "@LDFLAGS@")
 #-dlopen
 (defconfig *ld-libs* "-lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
 #+dlopen
-(defconfig *ld-libs* #-msvc "-lecl @FASL_LIBS@ @LIBS@"
-           #+msvc "ecl.lib @CLIBS@")
-(defconfig *ld-shared-flags* #+dlopen "@SHARED_LDFLAGS@ @LDFLAGS@")
-(defconfig *ld-bundle-flags* #+dlopen "@BUNDLE_LDFLAGS@ @LDFLAGS@")
+(defconfig *ld-libs* #-msvc "-lecl @FASL_LIBS@ @LIBS@" #+msvc "ecl.lib @CLIBS@")
+(defconfig *ld-shared-flags* #+dlopen "@SHARED_LDFLAGS@ @LDFLAGS@" #-dlopen "")
+(defconfig *ld-bundle-flags* #+dlopen "@BUNDLE_LDFLAGS@ @LDFLAGS@" #-dlopen "")
 (defconfig *ld-program-flags* "@PROGRAM_LDFLAGS@ @LDFLAGS@")
 
 (defconfig +shared-library-prefix+ "@SHAREDPREFIX@")
