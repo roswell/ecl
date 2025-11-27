@@ -23,4 +23,4 @@ html/index.html: $(FILES)
 
 clean:
 	-rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info,info-1,info-2,info.gz,html} html \
-	       manual.[ceflvpa]* manual.toc manual.tp
+	       manual.[ceflvpa]* manual.toc manual.tp manual.tps
