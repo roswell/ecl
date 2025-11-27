@@ -132,7 +132,7 @@
 @inlinefmtifelse{html, @code{@ref{\code\}}, @code{\code\}}
 @end macro
 
-@macro seealso{node}
+@macro noseealso{node}
 @paragraph{See also}
 @coderef{\node\}
 @end macro
