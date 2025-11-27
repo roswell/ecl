@@ -9,7 +9,7 @@ info: ecl.info.gz
 html: html/index.html
 
 manual.pdf: $(FILES)
-	texi2pdf manual.txi
+	PDFTEX=z-texi2pdfetex-fix-aux texi2pdf manual.txi
 
 ecl.info.gz: $(FILES)
 	$(MAKEINFO) --no-split manual.txi
@@ -22,4 +22,5 @@ html/index.html: $(FILES)
 	cp -r figures html
 
 clean:
-	rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info,info-1,info-2,info.gz,html} html
+	-rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info,info-1,info-2,info.gz,html} html \
+	       manual.[ceflvpa]* manual.toc manual.tp
