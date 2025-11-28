@@ -17,5 +17,3 @@ for f in x *.aux ; do
 		mv temp $f
 	fi
 done
-
-echo 'Called '$0 >&2

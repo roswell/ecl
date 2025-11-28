@@ -9,7 +9,7 @@ info: ecl.info.gz
 html: html/index.html
 
 manual.pdf: $(FILES)
-	PDFTEX=z-texi2pdfetex-fix-aux texi2pdf manual.txi
+	./x-texi2pdf manual.txi
 
 ecl.info.gz: $(FILES)
 	$(MAKEINFO) --no-split manual.txi
