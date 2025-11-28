@@ -1,5 +1,7 @@
 FILES= *.txi */*.txi figures/*
 
+CWD=$(shell pwd)
+
 .PHONY: all pdf info html
 
 all: pdf info html
@@ -9,7 +11,7 @@ info: ecl.info.gz
 html: html/index.html
 
 manual.pdf: $(FILES)
-	./x-texi2pdf manual.txi
+	PDFTEX=$(CWD)/z-texi2pdfetex-fix-aux texi2pdf manual.txi
 
 ecl.info.gz: $(FILES)
 	$(MAKEINFO) --no-split manual.txi
