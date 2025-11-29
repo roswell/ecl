@@ -75,11 +75,11 @@
              (+ 2 (length filtered-locations))
              ",,);")
       (unless first
-        (wt-nl "ihs.lex_env = _ecl_debug_env;")))
+        (wt-nl "ihs.lcl_env = _ecl_debug_env;")))
     filtered-codes))
 
 (defun pop-debug-lexical-env ()
-  (wt-nl "ihs.lex_env = _ecl_debug_env;"))
+  (wt-nl "ihs.lcl_env = _ecl_debug_env;"))
 
 (defun c2let* (c1form vars forms body
                &aux
