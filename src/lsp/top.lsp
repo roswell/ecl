@@ -26,7 +26,8 @@
 (defparameter *quit-tag* (cons nil nil))
 (defparameter *quit-tags* nil)
 (defparameter *break-level* 0)          ; nesting level of error loops
-(defparameter *break-env* nil)
+(defparameter *break-lexenv* nil)
+(defparameter *break-locals* nil)
 (defparameter *ihs-base* 0)
 (defparameter *ihs-top* (ihs-top))
 (defparameter *ihs-current* 0)
@@ -601,7 +602,7 @@ Use special code 0 to cancel this operation.")
                            (tpl-prompt)
                            (tpl-read))
                        values (multiple-value-list
-                               (eval-with-env - *break-env*))
+                               (eval-with-env - *break-lexenv*))
                        /// // // / / values *** ** ** * * (car /))
                  (tpl-format "~&~{~s~^~%~}~%" values)))))
       (loop
@@ -904,76 +905,106 @@ Use special code 0 to cancel this operation.")
         @(return) = CONS(name,output);
 " :one-liner nil))
 
-(defun decode-ihs-env (*break-env*)
-  (let ((env *break-env*))
-    (if (vectorp env)
-      #+ecl-min
-      nil
-      #-ecl-min
-      (let* ((next (decode-ihs-env
-                    (ffi:c-inline (env) (:object) :object
-                                  "(#0)->vector.self.t[0]" :one-liner t))))
-        (nreconc (loop with l = (- (length env) 2)
-                       for i from 0 below l
-                       do (push (decode-env-elt env i) next))
-                   next))
-      env)))
+;;; This function is here for backward compatibility. We also extend it to
+;;; "simply work" with ihs indexes - then it decodes both locals and lexenv.
+(defun decode-ihs-env (env)
+  (etypecase env
+    ((or vector si:frame)
+     (decode-ihs-locals env))
+    (integer
+     (append (decode-ihs-locals (ihs-lcl env))
+             (decode-ihs-lexenv (ihs-lex env))))
+    (null
+     nil)))
+
+(defun decode-ihs-locals (env)
+  #+ecl-min nil
+  #-ecl-min
+  (etypecase env
+    (vector
+     (let ((next (decode-ihs-locals
+                  (ffi:c-inline (env) (:object) :object
+                                "(#0)->vector.self.t[0]" :one-liner t))))
+       (nreconc (loop with l = (- (length env) 2)
+                      for i from 0 below l
+                      do (push (decode-env-elt env i) next))
+                next)))
+    (si:frame
+     (let* ((lcls '()))
+       (ffi:c-inline (env lcls) (:object :object) :void
+                     "loop_across_frame_fifo(elt, (#0)) {
+                        (#1)=ecl_cons(elt, (#1));
+                      } end_loop_across_frame();")
+       lcls))
+    (null
+     nil)))
+
+(defun decode-ihs-lexenv (env)
+  #+ecl-min nil
+  #-ecl-min
+  (etypecase env
+    (vector
+     (loop for elt across env collect elt))
+    (null
+     nil)))
 
 (defun ihs-environment (ihs-index)
-  (labels ((newly-bound-special-variables (bds-min bds-max)
-             (loop for i from bds-min to bds-max
-                for variable = (bds-var i)
-                unless (member variable output :test #'eq)
-                collect variable into output
-                finally (return output)))
-           (special-variables-alist (ihs-index)
-             (let ((top (ihs-top)))
-               (unless (> ihs-index top)
-                 (let* ((bds-min (1+ (ihs-bds ihs-index)))
-                        (bds-top (bds-top))
-                        (bds-max (if (= ihs-index top)
-                                     bds-top
-                                     (ihs-bds (1+ ihs-index))))
-                        (variables (newly-bound-special-variables bds-min bds-max)))
-                   (loop with output = '()
-                      for i from (1+ bds-max) to bds-top
-                      for var = (bds-var i)
-                      when (member var variables :test #'eq)
-                      do (setf variables (delete var variables)
-                               output (acons var (bds-val i) output))
-                      finally (return
-                                (append (loop for v in variables
-                                           collect (cons v (symbol-value v)))
-                                        output)))))))
-           (extract-restarts (variables-alist)
-             (let ((record (assoc '*restart-clusters* variables-alist)))
-               (if record
-                   (let* ((bindings (cdr record))
-                          (new-bindings (first bindings)))
-                     (values (delete record variables-alist) new-bindings))
-                   (values variables-alist nil)))))
-    (let* ((functions '())
-           (blocks '())
-           (local-variables '())
-           (special-variables '())
-           (restarts '())
-           record0 record1)
-      (dolist (record (decode-ihs-env (ihs-env ihs-index)))
-        (cond ((atom record)
-               (push (compiled-function-name record) functions))
-              ((progn
-                 (setf record0 (car record) record1 (cdr record))
-                 (when (stringp record0)
-                   (setf record0
-                         (let ((*package* (find-package "KEYWORD")))
-                           (with-standard-io-syntax
-                             (read-from-string record0)))))
-                 (or (symbolp record0) (stringp record0)))
-               (setq local-variables (acons record0 record1 local-variables)))
-              ((symbolp record1)
-               (push record1 blocks))
-              (t
-               )))
+  (let ((functions '())
+        (blocks '())
+        (local-variables '())
+        (special-variables '())
+        (restarts '())
+        record0 record1)
+    (labels ((newly-bound-special-variables (bds-min bds-max)
+               (loop for i from bds-min to bds-max
+                     for variable = (bds-var i)
+                     unless (member variable output :test #'eq)
+                       collect variable into output
+                     finally (return output)))
+             (special-variables-alist (ihs-index)
+               (let ((top (ihs-top)))
+                 (unless (> ihs-index top)
+                   (let* ((bds-min (1+ (ihs-bds ihs-index)))
+                          (bds-top (bds-top))
+                          (bds-max (if (= ihs-index top)
+                                       bds-top
+                                       (ihs-bds (1+ ihs-index))))
+                          (variables (newly-bound-special-variables bds-min bds-max)))
+                     (loop with output = '()
+                           for i from (1+ bds-max) to bds-top
+                           for var = (bds-var i)
+                           when (member var variables :test #'eq)
+                             do (setf variables (delete var variables)
+                                      output (acons var (bds-val i) output))
+                           finally (return
+                                     (append (loop for v in variables
+                                                   collect (cons v (symbol-value v)))
+                                             output)))))))
+             (extract-restarts (variables-alist)
+               (let ((record (assoc '*restart-clusters* variables-alist)))
+                 (if record
+                     (let* ((bindings (cdr record))
+                            (new-bindings (first bindings)))
+                       (values (delete record variables-alist) new-bindings))
+                     (values variables-alist nil))))
+             (process-env-record (record)
+               (cond ((atom record)
+                      (push (compiled-function-name record) functions))
+                     ((progn
+                        (setf record0 (car record) record1 (cdr record))
+                        (when (stringp record0)
+                          (setf record0
+                                (let ((*package* (find-package "KEYWORD")))
+                                  (with-standard-io-syntax
+                                    (read-from-string record0)))))
+                        (or (symbolp record0) (stringp record0)))
+                      (setq local-variables (acons record0 record1 local-variables)))
+                     ((symbolp record1)
+                      (push record1 blocks))
+                     (t
+                      ))))
+      (map nil #'process-env-record (decode-ihs-locals (ihs-lcl ihs-index)))
+      (map nil #'process-env-record (decode-ihs-lexenv (ihs-lex ihs-index)))
       (multiple-value-bind (special-variables restarts)
           (extract-restarts (special-variables-alist ihs-index))
         (values (nreverse local-variables)
@@ -1017,7 +1048,7 @@ Use special code 0 to cancel this operation.")
 (defun tpl-inspect-command (var-name)
   (when (symbolp var-name)
     (setq var-name (symbol-name var-name)))
-  (let ((val-pair (assoc var-name (decode-ihs-env *break-env*)
+  (let ((val-pair (assoc var-name (decode-ihs-locals *break-locals*)
                          :test #'(lambda (s1 s2)
                                    (when (symbolp s2) (setq s2 (symbol-name s2)))
                                    (if (stringp s2)
@@ -1204,7 +1235,8 @@ Use special code 0 to cancel this operation.")
   (set-break-env))
 
 (defun set-break-env ()
-  (setq *break-env* (ihs-env *ihs-current*)))
+  (setq *break-lexenv* (ihs-lex *ihs-current*))
+  (setq *break-locals* (ihs-lcl *ihs-current*)))
 
 (defun ihs-search (string unrestricted &optional (start (si::ihs-top)))
   (do ((ihs start (si::ihs-prev ihs)))
@@ -1300,7 +1332,8 @@ Use the following functions to directly access ECL stacks.
 Invocation History Stack:
 (SYS:IHS-TOP)   Returns the index of the TOP of the IHS.
 (SYS:IHS-FUN i) Returns the function of the i-th entity in IHS.
-(SYS:IHS-ENV i)
+(SYS:IHS-LEX i) Returns the lexical environment of the i-th entry in IHS.
+(SYS:IHS-LCL i) Returns the local environment of the i-th entry in IHS.
 (SYS:IHS-PREV i)
 (SYS:IHS-NEXT i)
 
@@ -1413,7 +1446,8 @@ package."
            (*break-condition* condition)
            (*break-level* (1+ *break-level*))
            (break-level *break-level*)
-           (*break-env* nil))
+           (*break-locals* nil)
+           (*break-lexenv* nil))
       (check-default-debugger-runaway)
       #+threads
       ;; We give our process priority for grabbing the console.

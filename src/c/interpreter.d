@@ -371,7 +371,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   /* INV: bytecodes is of type t_bytecodes */
   lcl_env = ecl_cast_ptr(cl_object, &frame_lcl);
   ecl_cs_check(the_env, ihs);
-  ecl_ihs_push(the_env, &ihs, bytecodes, closure);
+  ecl_ihs_push(the_env, &ihs, bytecodes, closure, lcl_env);
   ecl_stack_frame_open(the_env, lcl_env, nlcl);
   frame_aux.t = t_frame;
   frame_aux.opened = 0;

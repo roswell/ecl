@@ -941,10 +941,25 @@ si_ihs_fun(cl_object arg)
 }
 
 cl_object
-si_ihs_env(cl_object arg)
+si_ihs_lex(cl_object arg)
 {
   cl_env_ptr env = ecl_process_env();
   ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lex_env);
+}
+
+cl_object
+si_ihs_lcl(cl_object arg)
+{
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lcl_env);
+}
+
+/* DEPRECATED backward compatibility with SWANK/SLYNK. --jd 2025-11-17 */
+cl_object
+si_ihs_env(cl_object arg)
+{
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lcl_env);
 }
 
 /* -- General purpose stack implementation ----------------------------------- */
