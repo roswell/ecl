@@ -26,9 +26,9 @@
 
 @noindent
 Copyright @copyright{} 2015, Daniel Kochmański
-@noindent
+@c @noindent	@c noindent here causes warnings
 Copyright @copyright{} 2000, Juan Jose Garcia-Ripoll
-@noindent
+@c @noindent	@c noindent here causes warnings
 Copyright @copyright{} 1990, Giuseppe Attardi
 @end ifinfo
 
