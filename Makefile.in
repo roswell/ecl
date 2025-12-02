@@ -101,7 +101,7 @@ clean:
 #        `make distclean' should leave only the files that were in the
 #        distribution.
 
-distclean: clean
+distclean:
 	rm -rf build Makefile
 
 #   `realclean'
