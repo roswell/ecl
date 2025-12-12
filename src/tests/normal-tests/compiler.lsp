@@ -2602,3 +2602,56 @@
                        '(lambda ()
                          (- most-positive-fixnum 3))))
      (- most-positive-fixnum 3)))
+
+;;; Date 2025-12-12
+;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/804
+;;; Description
+;;;
+;;;     Incorrect type propagation and inline expansions for the EXPT
+;;;     function
+;;;
+(deftest cmp.0112.type-propagation-expt ()
+  (flet ((supertypes (tp)
+           (let ((types '(fixnum integer ratio rational
+                          single-float double-float long-float float real
+                          (complex integer) (complex ratio) (complex rational)
+                          (complex single-float) (complex double-float) (complex long-float)
+                          (complex float) number
+                          (integer (0) *) (single-float (0) *) (double-float (0) *)
+                          (long-float (0) *) (float (0) *) (real (0) *))))
+             (cons tp
+                   (loop for supertype in types
+                         if (subtypep tp supertype)
+                           collect supertype)))))
+    (let* ((numbers '(-2 -1 0 1 2
+                      -1/2 1/3
+                      -1.3 0.0 0.75 1.0
+                      -0.8d0 0.0d0 1.0d0 1.3d0
+                      -1.6l0 0.0l0 1.0l0 0.9l0
+                      #C(1 2) #C(1/2 3/2)
+                      #C(1.0 3.0) #C(1.0d0 0.5d0) #C(1.0l0 2.3l0)))
+           (numbers-and-types
+             (loop for base in numbers
+                   nconc (loop for exponent in numbers
+                               nconc (loop for base-type in (supertypes (type-of base))
+                                           nconc (loop for exponent-type in (supertypes (type-of exponent))
+                                                       collect (cons (cons base exponent) (cons base-type exponent-type)))))))
+           (functions-and-types
+             (funcall (compile nil
+                               `(lambda ()
+                                  (declare (optimize (safety 0)))
+                                  (list ,@(loop for (base-type . exponent-type) in (delete-duplicates
+                                                                                    (mapcar #'cdr numbers-and-types)
+                                                                                    :test #'equal)
+                                                collect `(cons (lambda (x y)
+                                                                 (declare (type ,base-type x)
+                                                                          (type ,exponent-type y))
+                                                                 (expt x y))
+                                                               (cons ',base-type ',exponent-type))))))))
+           (miscompiled-cases (loop for ((base . exponent) . types) in numbers-and-types
+                                    for f in (car (find types functions-and-types :test #'equal :key #'cdr))
+                                    unless (handler-case
+                                               (eql (expt base exponent) (funcall f base exponent))
+                                             (arithmetic-error () t))
+                                      collect (list (cons base exponent) types (expt base exponent) (funcall f base exponent)))))
+      (is (null miscompiled-cases)))))

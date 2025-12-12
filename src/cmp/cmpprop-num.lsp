@@ -131,17 +131,28 @@
   ;;    (expt number-type integer) -> number-type
   ;;    (expt number-type1 number-type2) -> (max-float number-type1 number-type2)
   ;;
-  (let ((exponent (ensure-real-type exponent)))
-    (values (list base exponent)
-            (cond ((eql exponent 'integer)
-                   (if (subtypep base 'fixnum *cmp-env*)
-                       'integer
-                       base))
-                  ((type>= '(real 0 *) base *cmp-env*)
-                   (let* ((exponent (ensure-nonrational-type exponent)))
-                     (maximum-number-type exponent base)))
-                  (t
-                   'number)))))
+  (values (list base exponent)
+          (cond ((type>= '(real 0 0) base *cmp-env*)
+                 (maximum-number-type base exponent))
+                ((type>= '(real (0) *) base *cmp-env*)
+                 (cond ((type>= '(integer 0 *) exponent *cmp-env*)
+                        (maximum-number-type base 'integer :integer-result 'integer))
+                       ((type-and exponent 'integer)
+                        ;; This becomes quite complex here, simplify
+                        ;; our life by just returning 'number. We
+                        ;; could do better, but the compiler won't be
+                        ;; able to optimize much with the complicated
+                        ;; type combinations we would be returning
+                        ;; here.
+                        'number)
+                       (t
+                        (maximum-number-type (ensure-nonrational-type exponent)
+                                             base))))
+                ((or (type>= '(complex float) base *cmp-env*)
+                     (type>= '(complex float) exponent *cmp-env*))
+                 (maximum-number-type exponent base))
+                (t
+                 'number))))
 
 (def-type-propagator abs (fname arg)
   (multiple-value-bind (output arg)
