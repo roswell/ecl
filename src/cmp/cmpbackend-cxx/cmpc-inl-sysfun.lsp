@@ -525,7 +525,7 @@
     (def-inline cl:evenp :always (t) :bool "ecl_evenp(#0)")
     (def-inline cl:evenp :always (fixnum fixnum) :bool "~(#0) & 1")
 
-    (def-inline cl:abs :always (t t) t "ecl_abs(#0,#1)")
+    (def-inline cl:abs :always (t) t "ecl_abs(#0)")
     (def-inline cl:exp :always (t) t "ecl_exp(#0)")
 
     (def-inline cl:expt :always (t t) t "ecl_expt(#0,#1)")
