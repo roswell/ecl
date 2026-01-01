@@ -146,9 +146,9 @@
 
 #-ecl-min
 (progn
-  #+(and dlopen (not windows))
+  #+(and dlopen (not windows) wants-cmp)
   (sys::autoload "SYS:cmp" 'compile-file 'compile 'compile-file-pathname 'disassemble)
-  #-(and dlopen (not windows))
+  #-(and dlopen (not windows) wants-cmp)
   (install-bytecodes-compiler))
 
 (provide '#:BYTECMP)
