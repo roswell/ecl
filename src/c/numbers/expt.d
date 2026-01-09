@@ -80,8 +80,14 @@ expt_zero(cl_object x, cl_object y)
     return ecl_make_complex(z, ecl_make_fixnum(0));
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:
+    if (tx == t_longfloat || ty == t_longfloat)
+      return clfloat_one;
+    if (tx == t_doublefloat || ty == t_doublefloat)
+      return cdfloat_one;
     return csfloat_one;
   case t_cdfloat:
+    if (tx == t_longfloat || ty == t_longfloat)
+      return clfloat_one;
     return cdfloat_one;
   case t_clfloat:
     return clfloat_one;
@@ -149,21 +155,17 @@ ecl_expt_complex_float(cl_object x, cl_object y) {
   cl_object ret;
 
   ECL_MATHERR_CLEAR;
-  switch ((ty > tx)? ty : tx) {
-  case t_clfloat:
-  case t_longfloat:
+  if (tx == t_clfloat || tx == t_longfloat ||
+      ty == t_clfloat || ty == t_longfloat) {
     ret = ecl_make_clfloat
       (cpowl(ecl_to_clfloat(x), ecl_to_clfloat(y)));
-    break;
-  case t_cdfloat:
-  case t_doublefloat:
+  } else if (tx == t_cdfloat || tx == t_doublefloat ||
+             ty == t_cdfloat || ty == t_doublefloat) {
     ret = ecl_make_cdfloat
       (cpow (ecl_to_cdfloat(x), ecl_to_cdfloat(y)));
-    break;
-  default:
+  } else {
     ret = ecl_make_csfloat
       (cpowf(ecl_to_csfloat(x), ecl_to_csfloat(y)));
-    break;
   }
   ECL_MATHERR_TEST;
   return ret;

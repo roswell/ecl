@@ -525,7 +525,7 @@
     (def-inline cl:evenp :always (t) :bool "ecl_evenp(#0)")
     (def-inline cl:evenp :always (fixnum fixnum) :bool "~(#0) & 1")
 
-    (def-inline cl:abs :always (t t) t "ecl_abs(#0,#1)")
+    (def-inline cl:abs :always (t) t "ecl_abs(#0)")
     (def-inline cl:exp :always (t) t "ecl_exp(#0)")
 
     (def-inline cl:expt :always (t t) t "ecl_expt(#0,#1)")
@@ -533,8 +533,17 @@
     ;; Note that the following two inlines are conflicting. CHOOSE-INLINE-INFO
     ;; assumes the one that has more specific types.
     (def-inline cl:expt :always ((integer 0 0) (integer 0 0)) :fixnum "1")
-    (def-inline cl:expt :always ((integer 0 0) t) :fixnum "0")
-    (def-inline cl:expt :always ((integer 1 1) t) :fixnum "1")
+    (def-inline cl:expt :always ((real 0 0) (real 0 0)) :float "1.0f" :exact-return-type t)
+    (def-inline cl:expt :always ((real 0 0) (real 0 0)) :double "1.0" :exact-return-type t)
+    (def-inline cl:expt :always ((real 0 0) (real 0 0)) :long-double "1.0l" :exact-return-type t)
+    (def-inline cl:expt :always ((integer 0 0) integer) :fixnum "(((#1) == 0) ? 1 : 0)")
+    (def-inline cl:expt :always ((real 0 0) real) :float "(ecl_zerop(#1) ? 1.0f : 0.0f)" :exact-return-type t)
+    (def-inline cl:expt :always ((real 0 0) real) :double "(ecl_zerop(#1) ? 1.0 : 0.0)" :exact-return-type t)
+    (def-inline cl:expt :always ((real 0 0) real) :long-double "(ecl_zerop(#1) ? 1.0l : 0.0l)" :exact-return-type t)
+    (def-inline cl:expt :always ((integer 1 1) integer) :fixnum "1")
+    (def-inline cl:expt :always ((real 1 1) real) :float "1.0f" :exact-return-type t)
+    (def-inline cl:expt :always ((real 1 1) real) :double "1.0" :exact-return-type t)
+    (def-inline cl:expt :always ((real 1 1) real) :long-double "1.0l" :exact-return-type t)
     (def-inline cl:expt :always ((long-float 0.0l0 *) long-float) :long-double "powl((long double)#0,(long double)#1)")
     (def-inline cl:expt :always ((double-float 0.0d0 *) double-float) :double "pow((double)#0,(double)#1)")
     (def-inline cl:expt :always ((single-float 0.0f0 *) single-float) :float "powf((float)#0,(float)#1)")
