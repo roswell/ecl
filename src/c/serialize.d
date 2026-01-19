@@ -200,9 +200,9 @@ serialize_vector(pool_t pool, cl_object v)
 }
 
 static void
-serialize_bignum(pool_t pool, cl_object b)
+serialize_bignum(pool_t pool, cl_object buffer)
 {
-  int8_t sign = _ecl_big_sign(ecl_bignum(buffer));
+  int8_t sign = _ecl_big_sign(buffer);
   serialize_bits(pool, &sign, 1);
   cl_index bytes = (_ecl_big_bits(buffer) + 7) / 8;
   serialize_bits(pool, &bytes, sizeof(cl_index));
@@ -425,7 +425,7 @@ reconstruct_array(cl_object a, uint8_t *data)
 }
 
 static uint8_t *
-reconstruct_bignum(cl_object a, uint8_t *data)
+reconstruct_bignum(cl_object output, uint8_t *data)
 {
   int8_t sign = (int8_t) *data;
   data += ROUND_TO_WORD(1);
@@ -437,6 +437,7 @@ reconstruct_bignum(cl_object a, uint8_t *data)
     _ecl_big_neg(output, output);
   }
   data += ROUND_TO_WORD(bytes);
+  return data;
 }
 
 static uint8_t *
@@ -478,7 +479,7 @@ reconstruct_one(uint8_t *data, cl_object *output)
   }
   case t_bignum: {
     data = duplicate_object(data, output);
-    reconsturct_bignum(*output, data);
+    data = reconstruct_bignum(*output, data);
     break;
   }
   case t_hashtable:
