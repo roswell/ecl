@@ -18,13 +18,15 @@
 ;;; We cannot use the functions CREATE-STANDARD-CLASS and others because SLOTS,
 ;;; DIRECT-SLOTS, etc are empty and therefore SLOT-VALUE does not work.
 
-(defun make-empty-standard-class (name &key (metaclass 'standard-class)
-                                  direct-superclasses direct-slots index)
+(defun make-empty-standard-class
+    (name &key (metaclass 'standard-class)
+               direct-superclasses direct-slots index
+               (size #.(length +standard-class-slots+)))
   (declare (optimize speed (safety 0)))
-  (let* ((the-metaclass (and metaclass (gethash metaclass si::*class-name-hash-table*)))
+  (let* ((the-metaclass
+           (and metaclass (gethash metaclass si::*class-name-hash-table*)))
          (class (or (gethash name si::*class-name-hash-table*)
-                    (si:allocate-raw-instance nil the-metaclass
-                                              #.(length +standard-class-slots+)))))
+                    (si:allocate-raw-instance nil the-metaclass size))))
     (with-early-accessors (+standard-class-slots+)
       (when (eq name 'standard-class)
         (defconstant +the-standard-class+ class)
