@@ -16,7 +16,7 @@
         (constant-value-p form *cmp-env*)
       (when constantp
         (loop for (type . forms) in (rest args)
-           when (typep value type *cmp-env*)
+           when (cmp-typep value type)
            do (return-from c1compiler-typecase (c1progn forms))
            finally (baboon :format-control "COMPILER-TYPECASE form missing a T statement")))))
   (let* ((var-name (pop args))
@@ -96,9 +96,8 @@
            (c1checked-value (list (values-type-primary-type type)
                                   value)))
           ((and (policy-evaluate-forms) (constantp value *cmp-env*))
-           (if (typep (ext:constant-form-value value *cmp-env*)
-                      (si::flatten-function-types type *cmp-env*)
-                      *cmp-env*)
+           (if (cmp-typep (ext:constant-form-value value *cmp-env*)
+                          type)
                value
                (progn
                  ;; warn and generate error.

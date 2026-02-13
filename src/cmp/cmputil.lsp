@@ -475,6 +475,12 @@ comparing circular objects."
     (vector (zerop (length item)))
     (hash-table (zerop (hash-table-count item)))))
 
+(defun cmp-typep (obj type)
+  "Utility function to check if an object is of a specific type at
+compile time. Takes care of target specific types and deals with
+compound function types."
+  (typep obj (si::flatten-function-types type *cmp-env*) *cmp-env*))
+
 (defun read-target-info (filename)
   (unless (pathname-name filename)
     (let* ((path1 (merge-pathnames "target-info.lsp" filename)) ; flat install
