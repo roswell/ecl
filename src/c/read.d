@@ -547,8 +547,8 @@ double_quote_reader(cl_object in, cl_object c)
     ecl_string_push_extend(token, c);
   }
 
-  /* Must be kept a (SIMPLE-ARRAY CHARACTERS (*)), see
-   * http://sourceforge.net/p/ecls/mailman/message/32272388/ */
+  /* Must be kept a SIMPLE-STRING, meaning a (SIMPLE-ARRAY CHARACTERS
+   * (*)), see CLHS 2.4.5. We thus can't coerce to a BASE-STRING. */
   output = cl_copy_seq(token);
   si_put_buffer_string(token);
   @(return output);
