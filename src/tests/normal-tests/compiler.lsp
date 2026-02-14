@@ -2655,3 +2655,27 @@
                                              (arithmetic-error () t))
                                       collect (list (cons base exponent) types (expt base exponent) (funcall f base exponent)))))
       (is (null miscompiled-cases)))))
+
+;;; Date 2026-02-14
+;;; Description
+;;;
+;;;     Incorrect coercion of base strings to extended strings when
+;;;     encountered as literal objects in compiled files.
+;;;
+(test cmp.0113.literal-base-string-coercion
+  (let ((ofile
+          (with-compiler ("base-string-0113.lsp" :load t)
+            "(defconstant +c.0113.1+ '#.(make-array 2 :element-type 'base-char :initial-element #\\a))
+             (defconstant +c.0113.2+ '#.(make-array 2 :element-type 'character :initial-element #\\b))
+             (defconstant +c.0113.3+ '#.(list (make-array 2 :element-type 'base-char :initial-element #\\a)))
+             (defconstant +c.0113.4+ '#.(list (make-array 2 :element-type 'character :initial-element #\\b)))")))
+    (delete-file "base-string-0113.lsp")
+    (delete-file ofile)
+    (is (string= +c.0113.1+ "aa"))
+    (is (typep +c.0113.1+ 'base-string))
+    (is (string= +c.0113.2+ "bb"))
+    (is (and (typep +c.0113.2+ 'string) (not (typep +c.0113.2+ 'base-string))))
+    (is (string= (first +c.0113.3+) "aa"))
+    (is (typep (first +c.0113.3+) 'base-string))
+    (is (string= (first +c.0113.4+) "bb"))
+    (is (and (typep (first +c.0113.4+) 'string) (not (typep (first +c.0113.4+) 'base-string))))))
