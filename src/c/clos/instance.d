@@ -14,6 +14,7 @@
 #include <string.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+#include <ecl/ecl-inl.h>
 
 cl_object
 ecl_allocate_instance(cl_object clas, cl_index size)
@@ -300,13 +301,26 @@ si_copy_instance(cl_object x)
 }
 
 @(defun find-class (name &optional (errorp ECL_T) env)
-  cl_object class, hash;
+  cl_object class = ECL_NIL, hash;
 @
-  hash = ECL_SYM_VAL(the_env, @'si::*class-name-hash-table*');
-  class = ecl_gethash_safe(name, hash, ECL_NIL);
+  if (ECL_CONSP(env)) {
+    env = ecl_car(env);
+    loop_for_in(env) {
+      if (ECL_CONSP(env)) {
+        cl_object record = ECL_CONS_CAR(env);
+        if (ecl_car(record) == @':type' && ecl_cadr(record) == name && ECL_INSTANCEP(ecl_caddr(record))) {
+          class = ecl_caddr(record);
+          break;
+        }
+      }
+    } end_loop_for_in;
+  }
   if (class == ECL_NIL) {
-    if (!Null(errorp))
-      FEerror("No class named ~S.", 1, name);
+    hash = ECL_SYM_VAL(the_env, @'si::*class-name-hash-table*');
+    class = ecl_gethash_safe(name, hash, ECL_NIL);
+  }
+  if (class == ECL_NIL && errorp != ECL_NIL) {
+    FEerror("No class named ~S.", 1, name);
   }
   @(return class);
 @)
