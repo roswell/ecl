@@ -22,6 +22,60 @@ If you do not have access to the online version, follow the following recipies.
 5. Use "nmake install" to create a directory called "package" with ECL in it.
 6. Move that directory wherever you need.
 
+* Cross-compile for Windows64 using MinGW
+1. Install MinGW64 toolchain, for example:
+   #+begin_src shell-scrip
+     sudo zypper install mingw64-cross-gcc
+   #+end_src
+   If GMP does not build, see whether the repository has a prepackaged version.
+2. Build and install ECL
+   #+begin_src shell-lsscript
+     ./configure --host=x86_64-w64-mingw32 --prefix=`pwd`/ecl-win64 --with-cross-config=`pwd`/src/util/x86_64-w64-mingw32.cross_config
+     make && make install
+   #+end_src
+   Note that ~mingw32~ is an arbitrary suffix and not a typo, we are still
+   bulding for 64-bit Windows.
+3. Run application using Wine
+   #+begin_src shell-script
+     pushd ecl-win64
+     wine ecl.exe
+   #+end_src
+   It may happen that wine is not configured to know where are libraries
+   provided by MinGW. In that case they need to be linked or copied here.
+   #+begin_src shell-script
+     pushd ecl-win64
+     ln -s /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libgcc_s_seh-1.dll .
+     ln -s /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libgmp-10.dll .
+     ln -s /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll .
+     wine ecl.exe
+   #+end_src
+
+* Cross-compile for Windows32 using MinGW
+1. Install MinGW64 toolchain, for example:
+   #+begin_src shell-scrip
+     sudo zypper install mingw32-cross-gcc
+   #+end_src
+   If GMP does not build, see whether the repository has a prepackaged version.
+2. Build and install ECL
+   #+begin_src shell-script
+     ./configure --host=i686-w64-mingw32 --prefix=`pwd`/ecl-win32 --with-cross-config=`pwd`/src/util/i686-w64-mingw32.cross_config
+     make && make install
+   #+end_src
+3. Run application using Wine
+   #+begin_src shell-script
+     pushd ecl-win32
+     wine ecl.exe
+   #+end_src
+   It may happen that wine is not configured to know where are libraries
+   provided by MinGW. In that case they need to be linked or copied here.
+   #+begin_src shell-script
+     pushd ecl-win32
+     ln -s /usr/i686-w64-mingw32/sys-root/mingw/bin/libgcc_s_seh-1.dll .
+     ln -s /usr/i686-w64-mingw32/sys-root/mingw/bin/libgmp-10.dll .
+     ln -s /usr/i686-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll .
+     wine ecl.exe
+   #+end_src
+
 * Cross-compile for the android platform (from the UNIX machine)
 1. Configure the toolchain (requires android-ndk version 22 or higher, known to work with version 28b)
    and export the necessary paths:
@@ -29,7 +83,7 @@ If you do not have access to the online version, follow the following recipies.
      export NDK_PATH=/opt/android-ndk
      export ANDROID_API=23
      export TOOLCHAIN_PATH=${NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64 # use darwin instead of linux if compiling on Mac OS host
-	  export TARGET=armv7a-linux-androideabi
+     export TARGET=armv7a-linux-androideabi
   #+END_SRC
 2. Build and install the target library
    #+BEGIN_SRC shell-script
