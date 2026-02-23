@@ -531,24 +531,29 @@ read_constituent(cl_object in, bool not_first)
   return (read_suppress)? ECL_NIL : token;
 }
 
-static cl_object
-double_quote_reader(cl_object in, cl_object c)
+static void
+read_string_into_buffer(cl_object in, cl_object c, cl_object buffer)
 {
   int delim = ECL_CHAR_CODE(c);
   cl_object rtbl = ecl_current_readtable();
-  cl_object token = si_get_buffer_string();
-  cl_object output;
   for (;;) {
     int c = ecl_read_char_noeof(in);
     if (c == delim)
       break;
     else if (ecl_readtable_get(rtbl, c, NULL) == cat_single_escape)
       c = ecl_read_char_noeof(in);
-    ecl_string_push_extend(token, c);
+    ecl_string_push_extend(buffer, c);
   }
+}
 
-  /* Must be kept a (SIMPLE-ARRAY CHARACTERS (*)), see
-   * http://sourceforge.net/p/ecls/mailman/message/32272388/ */
+static cl_object
+double_quote_reader(cl_object in, cl_object c)
+{
+  cl_object output;
+  cl_object token = si_get_buffer_string();
+  read_string_into_buffer(in, c, token);
+  /* Must be kept a SIMPLE-STRING, meaning a (SIMPLE-ARRAY CHARACTERS
+   * (*)), see CLHS 2.4.5. We thus can't coerce to a BASE-STRING. */
   output = cl_copy_seq(token);
   si_put_buffer_string(token);
   @(return output);
@@ -798,6 +803,25 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
     rv = x;
   }
   @(return rv);
+}
+
+static cl_object
+sharp_double_quote_reader(cl_object in, cl_object c, cl_object d)
+{
+  /* Base string reader. Used for data in compiled files. */
+  cl_object s, token;
+
+  if (d != ECL_NIL && !read_suppress)
+    extra_argument('"', in, d);
+
+  token = si_get_buffer_string();
+  read_string_into_buffer(in, c, token);
+  s = si_copy_to_simple_base_string(token);
+  si_put_buffer_string(token);
+
+  if (read_suppress)
+    @(return ECL_NIL);
+  @(return s);
 }
 
 #define QUOTE   1
@@ -2030,7 +2054,7 @@ void
 init_read(void)
 {
   struct ecl_readtable_entry *rtab;
-  cl_object r;
+  cl_object r, r_cmp;
   int i;
 
   cl_core.standard_readtable = r = ecl_alloc_object(t_readtable);
@@ -2149,6 +2173,12 @@ init_read(void)
    * to keep it unchanged */
   r->readtable.locked = 1;
 
+  r_cmp = ecl_copy_readtable(cl_core.standard_readtable, ECL_NIL);
+  /*  This is specific to this implementation: syntax for base strings  */
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('"'),
+                                  make_cf3(sharp_double_quote_reader), r_cmp);
+  cl_core.compiler_readtable = r_cmp;
+
   init_backq();
 
   ECL_SET(@'*readtable*',
@@ -2187,7 +2217,7 @@ init_read(void)
                   @'si::*circle-counter*');
     val = cl_list(25,
                   /**pprint-dispatch-table**/ ECL_NIL,
-                  /**print-array**/ ECL_T,
+                  /**print-array**/ @'base-string', /* base string syntax */
                   /**print-base**/ ecl_make_fixnum(10),
                   /**print-case**/ @':downcase',
                   /**print-circle**/ ECL_T,
@@ -2205,7 +2235,7 @@ init_read(void)
                   /**read-default-float-format**/ @'single-float',
                   /**read-eval**/ ECL_T,
                   /**read-suppress**/ ECL_NIL,
-                  /**readtable**/ cl_core.standard_readtable,
+                  /**readtable**/ cl_core.compiler_readtable,
                   /**package**/ cl_core.lisp_package,
                   /*si::*print-package**/ cl_core.lisp_package,
                   /*si::*print-structure**/ ECL_T,
