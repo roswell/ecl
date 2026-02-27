@@ -610,8 +610,10 @@ asynchronous_signal_servicing_thread()
       interrupt_signal =
         ecl_option_values[ECL_OPT_THREAD_INTERRUPT_SIGNAL];
       sigdelset(&handled_set, interrupt_signal);
+#ifdef GBC_BOEHM
       sigdelset(&handled_set, GC_get_suspend_signal());
       sigdelset(&handled_set, GC_get_thr_restart_signal());
+#endif /* GBC_BOEHM */
       sigdelset(&handled_set, SIGSEGV);
       sigdelset(&handled_set, SIGBUS);
     }
