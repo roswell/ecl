@@ -7217,7 +7217,7 @@ if test "${enable_threads}" = "yes" ; then
     as_fn_error $? "Threads aren't supported on this system." "$LINENO" 5
   else
     LIBS="${THREAD_LIBS} ${LIBS}"
-    CFLAGS="${CFLAGS} ${THREAD_CFLAGS} -DGC_NO_THREAD_REDIRECTS"
+    CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
 
 ac_fn_c_check_func "$LINENO" "pthread_rwlock_init" "ac_cv_func_pthread_rwlock_init"
 if test "x$ac_cv_func_pthread_rwlock_init" = xyes
@@ -7274,7 +7274,12 @@ else
 fi
 
 if test ${enable_boehm} = "no" ; then
-  as_fn_error $? "Boehm GC library is currently needed to build ECL" "$LINENO" 5;
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Building ECL without Boehm GC library" >&5
+printf "%s\n" "$as_me: WARNING: Building ECL without Boehm GC library" >&2;};
+
+LSP_FEATURES="${LSP_FEATURES} :dummy-gc"
+
+  EXTRA_OBJS="${EXTRA_OBJS} mem_nogc.${OBJEXT}"
 else
 
 

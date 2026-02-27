@@ -604,7 +604,9 @@ fi
 dnl ----------------------------------------------------------------------
 dnl		Boehm-Weiser garbage collector
 if test ${enable_boehm} = "no" ; then
-  AC_MSG_ERROR([Boehm GC library is currently needed to build ECL]);
+  AC_MSG_WARN([Building ECL without Boehm GC library]);
+  ECL_ADD_FEATURE(dummy-gc)
+  EXTRA_OBJS="${EXTRA_OBJS} mem_nogc.${OBJEXT}"
 else
   ECL_BOEHM_GC
   ECL_ADD_FEATURE(boehm-gc)
