@@ -111,14 +111,6 @@
 (defun ctop-write (init-name h-pathname data-pathname &aux top-output-string)
   (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
 
-  ;; VV might be needed by functions in CLINES.
-  (wt-nl-h "#ifdef ECL_DYNAMIC_VV")
-  (wt-nl-h "static cl_object *VV;")
-  (wt-nl-h "#else")
-  (wt-nl-h "static cl_object VV[VM];")
-  (wt-nl-h "#endif")
-  (output-clines *compiler-output2*)
-
   (wt-nl-h "#ifdef __cplusplus")
   (wt-nl-h "extern \"C\" {")
   (wt-nl-h "#endif")
@@ -141,7 +133,13 @@
         (progn
           (wt-nl-h "#define VM " (data-permanent-storage-size))
           (wt-nl-h "#define VMtemp "  (data-temporary-storage-size)))))
-
+  ;; VV might be needed by functions in CLINES.
+  (wt-nl-h "# ifdef ECL_DYNAMIC_VV")
+  (wt-nl-h "static cl_object *VV;")
+  (wt-nl-h "# else")
+  (wt-nl-h "static cl_object VV[VM];")
+  (wt-nl-h "# endif")
+  ;;
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
   (loop for (name setf-vv name-vv) in *setf-definitions*
         do (wt-h #\\ #\Newline setf-vv "=ecl_setf_definition(" name-vv ",ECL_T);"))
@@ -159,6 +157,7 @@
           do (funcall builder (vv-location vv) value *compiler-output2*)))
 
   (output-cfuns *compiler-output2*)
+  (output-clines *compiler-output2*)
 
   (setq *compiler-phase* 't3)
 
