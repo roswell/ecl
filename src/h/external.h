@@ -774,14 +774,12 @@ extern ECL_API cl_object cl_format _ECL_ARGS((cl_narg narg, cl_object stream, cl
 #define GC_enabled() !GC_is_disabled()
 #define GC_enable() GC_enable()
 #define GC_disable() GC_disable()
-extern ECL_API void ecl_register_root(cl_object *p);
-extern ECL_API cl_object si_gc(cl_narg narg, ...);
 extern ECL_API cl_object si_gc_dump(void);
 extern ECL_API cl_object si_gc_stats(cl_object enable);
-#else
-# error "IMPLEMENT ME!"
 #endif /* GBC_BOEHM */
 
+extern ECL_API void ecl_register_root(cl_object *p);
+extern ECL_API cl_object si_gc(cl_narg narg, ...);
 
 /* gfun.c */
 
