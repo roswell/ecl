@@ -46,15 +46,22 @@
     ;; * The class name may appear in subsequent type declarations.
     ;; * The class name can be used as a specializer in subsequent
     ;;   DEFMETHOD forms.
+    ;; * A class object is installed in the compiler environment so
+    ;;   that FIND-CLASS can find it.
     ;; Doing more at compile time leads to problems with the mop as
     ;; for example validate-superclass methods might not be installed
     ;; at compile time.
-    (si:create-type-name name)
-    (ext:register-with-pde
-     form
-     `(load-defclass ',name ',superclasses
-                     ,(compress-slot-forms slots)
-                     ,(process-class-options options)))))
+    `(progn
+       (eval-when (:compile-toplevel)
+         (si:proclaim-class ',name
+                            (make-instance
+                             (coerce-to-class 'forward-referenced-class)
+                             :name ',name)))
+       ,(ext:register-with-pde
+         form
+         `(load-defclass ',name ',superclasses
+                         ,(compress-slot-forms slots)
+                         ,(process-class-options options))))))
 
 (defun compress-slot-forms (slot-definitions)
   (declare (si::c-local))
