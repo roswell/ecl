@@ -564,7 +564,7 @@
 ;;;;     caused by an encoding buffer that is too small.
 
 (test mix.0030.write-char-encode-buffer
-  (is (equal (with-open-file (s "/tmp/whatever.txt"
+  (is (equal (with-open-file (s "whatever.txt"
                                 :if-does-not-exist :create
                                 :if-exists :supersede
                                 :external-format :ucs-4
