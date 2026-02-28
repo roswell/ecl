@@ -1571,7 +1571,12 @@ extern ECL_API cl_object si_make_backq_vector(cl_object dim, cl_object data, cl_
 
 extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro);
 extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro_or_table);
+extern ECL_API cl_object ecl_read_constituent(cl_object in, bool not_first);
+extern ECL_API cl_object ecl_read_delimited_list(int d, cl_object strm, bool proper);
+extern ECL_API cl_object ecl_dispatch_reader_fun(cl_object in, cl_object dc);
+extern ECL_API cl_object ecl_read_eval(cl_object in);
 extern ECL_API cl_object ecl_read_object_non_recursive(cl_object in);
+extern ECL_API cl_object ecl_read_object_with_delimiter(cl_object in, int del, int flags, enum ecl_chattrib a);
 extern ECL_API cl_object ecl_read_object(cl_object in);
 extern ECL_API cl_object ecl_parse_number(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
 extern ECL_API cl_object ecl_parse_integer(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
