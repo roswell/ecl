@@ -115,11 +115,10 @@ ecl_dispatch_reader_fun(cl_object in, cl_object dc)
 }
 
 cl_object
-ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
-                               enum ecl_chattrib a)
+ecl_read_token(cl_object in, int flags, int c, enum ecl_chattrib a)
 {
   cl_object x, token;
-  int c, base;
+  int base;
   cl_object p;
   cl_index length, i;
   int colon, intern_flag;
@@ -131,50 +130,10 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
   cl_fixnum upcase; /* # uppercase characters - # downcase characters */
   cl_fixnum count; /* number of unescaped characters */
   bool suppress = read_suppress;
-  if (a != cat_constituent) {
-    c = 0;
-    goto LOOP;
-  }
- BEGIN:
-  do {
-    c = ecl_read_char(in);
-    if (c == delimiter) {
-      the_env->nvalues = 0;
-      return OBJNULL;
-    }
-    if (c == EOF)
-      FEend_of_file(in);
-    a = ecl_readtable_get(rtbl, c, &x);
-  } while (a == cat_whitespace);
-  if ((a == cat_terminating || a == cat_non_terminating) &&
-      (flags != ECL_READ_ONLY_TOKEN)) {
-    cl_object o;
-    if (ECL_HASH_TABLE_P(x)) {
-      if (suppress) {
-        o = dispatch_macro_character(x, in, c, FALSE);
-        if (o == OBJNULL)
-          goto BEGIN;
-      } else {
-        o = dispatch_macro_character(x, in, c, TRUE);
-      }
-    } else {
-      o = _ecl_funcall3(x, in, ECL_CODE_CHAR(c));
-    }
-    if (the_env->nvalues == 0) {
-      if (flags == ECL_READ_RETURN_IGNORABLE)
-        return ECL_NIL;
-      goto BEGIN;
-    }
-    unlikely_if (the_env->nvalues > 1) {
-      FEerror("The readmacro ~S returned ~D values.",
-              2, x, ecl_make_fixnum(the_env->nvalues));
-    }
-    return o;
-  }
- LOOP:
+  
   p = escape_list = ECL_NIL;
-  upcase = count = length = 0;
-  external_symbol = colon = 0;
+  colon = upcase = count = length = 0;
+  external_symbol = 0;
   token = si_get_buffer_string();
   for (;;) {
     if (c == ':' && (flags != ECL_READ_ONLY_TOKEN) &&
@@ -357,4 +316,52 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags,
   si_put_buffer_string(token);
   the_env->nvalues = 1;
   return x;
+}
+
+cl_object
+ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
+{
+  cl_object x;
+  int c;
+  enum ecl_chattrib a;
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object rtbl = ecl_current_readtable();
+  bool suppress = read_suppress;
+ BEGIN:
+  do {
+    c = ecl_read_char(in);
+    if (c == delimiter) {
+      the_env->nvalues = 0;
+      return OBJNULL;
+    }
+    if (c == EOF)
+      FEend_of_file(in);
+    a = ecl_readtable_get(rtbl, c, &x);
+  } while (a == cat_whitespace);
+  if ((a == cat_terminating || a == cat_non_terminating) &&
+      (flags != ECL_READ_ONLY_TOKEN)) {
+    cl_object o;
+    if (ECL_HASH_TABLE_P(x)) {
+      if (suppress) {
+        o = dispatch_macro_character(x, in, c, FALSE);
+        if (o == OBJNULL)
+          goto BEGIN;
+      } else {
+        o = dispatch_macro_character(x, in, c, TRUE);
+      }
+    } else {
+      o = _ecl_funcall3(x, in, ECL_CODE_CHAR(c));
+    }
+    if (the_env->nvalues == 0) {
+      if (flags == ECL_READ_RETURN_IGNORABLE)
+        return ECL_NIL;
+      goto BEGIN;
+    }
+    unlikely_if (the_env->nvalues > 1) {
+      FEerror("The readmacro ~S returned ~D values.",
+              2, x, ecl_make_fixnum(the_env->nvalues));
+    }
+    return o;
+  }
+  return ecl_read_token(in, flags, c, a);
 }

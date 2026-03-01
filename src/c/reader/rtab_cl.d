@@ -219,8 +219,7 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
       FEreader_error("~S is an illegal CHAR-FONT.", in, 1, d);
     }
   }
-  token = ecl_read_object_with_delimiter(in, EOF, ECL_READ_ONLY_TOKEN,
-                                         cat_single_escape);
+  token = ecl_read_token(in, ECL_READ_ONLY_TOKEN, 0, cat_single_escape);
   if (token == ECL_NIL) {
     c = ECL_NIL;
   } else if (TOKEN_STRING_FILLP(token) == 1) {
@@ -420,8 +419,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
     cl_index dim = ecl_fixnum(d), i;
     v = ecl_alloc_simple_vector(dim, ecl_aet_object);
     for (i = 0, last = ECL_NIL;; i++) {
-      cl_object aux = ecl_read_object_with_delimiter(in, ')', 0,
-                                                     cat_constituent);
+      cl_object aux = ecl_read_object_with_delimiter(in, ')', 0);
       if (aux == OBJNULL)
         break;
       unlikely_if (i >= dim) {

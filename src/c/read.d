@@ -122,7 +122,7 @@ ecl_read_object_non_recursive(cl_object in)
 cl_object
 ecl_read_object(cl_object in)
 {
-  return ecl_read_object_with_delimiter(in, EOF, 0, cat_constituent);
+  return ecl_read_object_with_delimiter(in, EOF, 0);
 }
 
 cl_object
@@ -133,8 +133,7 @@ si_read_object_or_ignore(cl_object in, cl_object eof)
 
   ecl_bds_bind(env, @'si::*sharp-eq-context*', ECL_NIL);
   ecl_bds_bind(env, @'si::*backq-level*', ecl_make_fixnum(0));
-  x = ecl_read_object_with_delimiter(in, EOF, ECL_READ_RETURN_IGNORABLE, 
-                                     cat_constituent);
+  x = ecl_read_object_with_delimiter(in, EOF, ECL_READ_RETURN_IGNORABLE);
   if (x == OBJNULL) {
     env->nvalues = 1;
     x = eof;
@@ -417,8 +416,7 @@ ecl_read_delimited_list(int d, cl_object in, bool proper_list)
   cl_object x, y = ECL_NIL;
   cl_object *p = &y;
   do {
-    x = ecl_read_object_with_delimiter(in, d, ECL_READ_LIST_DOT,
-                                       cat_constituent);
+    x = ecl_read_object_with_delimiter(in, d, ECL_READ_LIST_DOT);
     if (x == OBJNULL) {
       /* End of the list. */
       unlikely_if (after_dot == 1) {
