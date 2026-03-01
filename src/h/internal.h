@@ -560,6 +560,26 @@ write_char_increment_column(cl_object strm, ecl_character c)
 extern cl_object ecl_off_t_to_integer(ecl_off_t offset);
 extern ecl_off_t ecl_integer_to_off_t(cl_object offset);
 
+/* read.d */
+
+#ifdef ECL_UNICODE
+# define TOKEN_STRING_DIM(s) ((s)->string.dim)
+# define TOKEN_STRING_FILLP(s) ((s)->string.fillp)
+# define TOKEN_STRING_CHAR(s,n) ((s)->string.self[n])
+# define TOKEN_STRING_CHAR_SET(s,n,c) (s)->string.self[n]=(c)
+# define TOKEN_STRING_CHAR_CMP(s,n,c) ((s)->string.self[n]==(c))
+#else
+# define TOKEN_STRING_DIM(s) ((s)->base_string.dim)
+# define TOKEN_STRING_FILLP(s) ((s)->base_string.fillp)
+# define TOKEN_STRING_CHAR(s,n) ((s)->base_string.self[n])
+# define TOKEN_STRING_CHAR_SET(s,n,c) ((s)->base_string.self[n]=(c))
+# define TOKEN_STRING_CHAR_CMP(s,n,c) ((s)->base_string.self[n]==(c))
+#endif
+
+#define ECL_READ_ONLY_TOKEN 1
+#define ECL_READ_RETURN_IGNORABLE 3
+#define ECL_READ_LIST_DOT 4
+
 /* format.d */
 
 #ifndef ECL_CMU_FORMAT
