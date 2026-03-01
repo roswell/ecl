@@ -115,14 +115,15 @@ ecl_dispatch_reader_fun(cl_object in, cl_object dc)
 }
 
 cl_object
-ecl_read_token(cl_object in, int flags, int c, enum ecl_chattrib a)
+ecl_read_token(cl_object in, int flags, bool escape_first_p)
 {
   cl_object x, token;
-  int base;
+  int c, base;
   cl_object p;
   cl_index length, i;
   int colon, intern_flag;
   bool external_symbol;
+  enum ecl_chattrib a;
   cl_env_ptr the_env = ecl_process_env();
   cl_object rtbl = ecl_current_readtable();
   enum ecl_readtable_case read_case = rtbl->readtable.read_case;
@@ -135,6 +136,15 @@ ecl_read_token(cl_object in, int flags, int c, enum ecl_chattrib a)
   colon = upcase = count = length = 0;
   external_symbol = 0;
   token = si_get_buffer_string();
+
+  if (escape_first_p) {
+    c = 0;
+    a = cat_single_escape;
+  } else {
+    c = ecl_read_char_noeof(in);
+    a = ecl_readtable_get(rtbl, c, NULL);
+  }
+
   for (;;) {
     if (c == ':' && (flags != ECL_READ_ONLY_TOKEN) &&
         a == cat_constituent) {
@@ -363,5 +373,6 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
     }
     return o;
   }
-  return ecl_read_token(in, flags, c, a);
+  ecl_unread_char(c, in);
+  return ecl_read_token(in, flags, 0);
 }
