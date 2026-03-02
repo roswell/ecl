@@ -27,6 +27,17 @@
 
 #define read_suppress (ecl_symbol_value(@'*read-suppress*') != ECL_NIL)
 
+#define loop_across_eints(l, h, obj) {                                  \
+  cl_index __ecl_ndx = obj->vector.fillp;                               \
+  cl_object *__ecl_v = obj->vector.self.t;                              \
+  cl_index __ecl_idx;                                                   \
+  cl_fixnum l, h;                                                       \
+  for(__ecl_idx = 0; __ecl_idx < __ecl_ndx; __ecl_idx+=2) {             \
+    l = ecl_fixnum(__ecl_v[__ecl_idx]);                                 \
+    h = ecl_fixnum(__ecl_v[__ecl_idx+1]);
+
+#define end_loop_across_eints() }}
+
 /*
  * This routine inverts the case of the characters in the buffer which were not
  * escaped. ESCAPE_INTERVALS is a vector of intevals of characters that were
@@ -35,13 +46,10 @@
 static void
 invert_buffer_case(cl_object x, cl_object escape_intervals, int sign)
 {
-  cl_fixnum high_limit, low_limit;
   cl_fixnum str_i = 0;
   int c;
   /* see whether we have a bug with reversed beginning/end */
-  loop_across_stack_fifo(eint, escape_intervals) {
-    low_limit = ecl_fixnum(CAR(eint));
-    high_limit = ecl_fixnum(CDR(eint));
+  loop_across_eints(low_limit, high_limit, escape_intervals) {
     for(; str_i<low_limit; str_i++) {
       c = TOKEN_STRING_CHAR(x,str_i);
       if (ecl_upper_case_p(c) && (sign < 0)) {
@@ -52,16 +60,7 @@ invert_buffer_case(cl_object x, cl_object escape_intervals, int sign)
       TOKEN_STRING_CHAR_SET(x,str_i,c);
     }
     str_i=high_limit;
-  } end_loop_across_stack();
-  for (; str_i < ecl_length(x); str_i++) {
-    c = TOKEN_STRING_CHAR(x,str_i);
-    if (ecl_upper_case_p(c) && (sign < 0)) {
-      c = ecl_char_downcase(c);
-    } else if (ecl_lower_case_p(c) && (sign > 0)) {
-      c = ecl_char_upcase(c);
-    }
-    TOKEN_STRING_CHAR_SET(x,str_i,c);
-  }
+  } end_loop_across_eints();
 }
 
 /*
@@ -130,7 +129,8 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
 
   upcase = count = length = 0;
   token = si_get_buffer_string();
-  escape_intervals = ecl_make_stack(0);
+  /* To keep looping code simple, we insert an empty interval at the end. */
+  escape_intervals = ecl_make_stack(2);
 
   if (escape_first_p) {
     c = 0;
@@ -144,8 +144,8 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
     if (a == cat_single_escape) {
       c = ecl_read_char_noeof(in);
       a = cat_constituent;
-      ecl_stack_push(escape_intervals, CONS(ecl_make_fixnum(length-1),
-                                            ecl_make_fixnum(length)));
+      ecl_stack_push(escape_intervals, ecl_make_fixnum(length-1));
+      ecl_stack_push(escape_intervals, ecl_make_fixnum(length));
       ecl_string_push_extend(token, c);
       length++;
       goto NEXT;
@@ -163,8 +163,8 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
         ecl_string_push_extend(token, c);
         length++;
       }
-      ecl_stack_push(escape_intervals, CONS(ecl_make_fixnum(begin),
-                                            ecl_make_fixnum(length-1)));
+      ecl_stack_push(escape_intervals, ecl_make_fixnum(begin));
+      ecl_stack_push(escape_intervals, ecl_make_fixnum(length-1));
       goto NEXT;
     }
     if (a == cat_whitespace || a == cat_terminating) {
@@ -195,6 +195,8 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
       break;
     a = ecl_readtable_get(rtbl, c, NULL);
   }
+  ecl_stack_push(escape_intervals, ecl_make_fixnum(length));
+  ecl_stack_push(escape_intervals, ecl_make_fixnum(length));
 
   /*TOKEN_STRING_CHAR_SET(token,length,'\0');*/
   /* If the readtable case was :INVERT and all non-escaped characters
@@ -236,9 +238,7 @@ ecl_read_token(cl_object in, int flags)
     goto OUTPUT;
   }
 
-  loop_across_stack_fifo(eint, escape_intervals) {
-    low_limit = ecl_fixnum(CAR(eint));
-    high_limit = ecl_fixnum(CDR(eint));
+  loop_across_eints(low_limit, high_limit, escape_intervals) {
     for(; str_i<low_limit; str_i++) {
       c = ecl_char(token, str_i);
       if (c == ':') {
@@ -253,6 +253,7 @@ ecl_read_token(cl_object in, int flags)
         external_symbol = (colon == 1);
         if (pack_end == 0) {
           package = cl_core.keyword_package;
+          external_symbol = 0;
         } else {
           package_name = ecl_subseq(token, 0, pack_end);
           package = ecl_find_package_nolock(package_name);
@@ -273,44 +274,11 @@ ecl_read_token(cl_object in, int flags)
       }
     }
     str_i=high_limit;
-  } end_loop_across_stack();
-  for(; str_i<length; str_i++) {
-    c = ecl_char(token, str_i);
-    if (c == ':') {
-      if(!Null(package))
-        FEreader_error("Unexpected colon character.", in, 0);
-      if (colon > 1) FEreader_error("Too many colons.", in, 0);
-      if (colon < 1) pack_end = str_i;
-      colon++;
-      sym_start = str_i+1;
-      continue;
-    } else if (colon) {
-      external_symbol = (colon == 1);
-      if (pack_end == 0) {
-        package = cl_core.keyword_package;
-        external_symbol = 0;
-      } else {
-        package_name = ecl_subseq(token, 0, pack_end);
-        package = ecl_find_package_nolock(package_name);
-      }
-      if (Null(package)) {
-        /* When loading binary files, we sometimes must create
-           symbols whose package has not yet been maked. We
-           allow it, but later on in ecl_init_module we make sure that
-           all referenced packages have been properly built.
-        */
-        unlikely_if (Null(the_env->packages_to_be_created_p)) {
-          ecl_free_stack(escape_intervals);
-          si_put_buffer_string(token);
-          FEerror("There is no package with the name ~A.", 1, package_name);
-        }
-        package = _ecl_package_to_be_created(the_env, package_name);
-      }
-    }
-  }
+  } end_loop_across_eints();
 
-  /* If there are some escaped characters, it must be a symbol */
-  if (package != ECL_NIL || ecl_length(escape_intervals) != 0 || length == 0)
+  /* If there are some escaped characters, it must be a symbol.
+     escape_intervals always has an empty interval pair at the end. */
+  if (package != ECL_NIL || ecl_length(escape_intervals) > 2 || length == 0)
     goto SYMBOL;
 
   /* The case in which the buffer is full of dots has to be especial cased */
