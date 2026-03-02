@@ -28,11 +28,11 @@
 #define read_suppress (ecl_symbol_value(@'*read-suppress*') != ECL_NIL)
 
 /*
- * This routine inverts the case of the characters in the buffer which
- * were not escaped. ESCAPE_LIST is a list of intevals of characters
- * that were escaped, as in ({(low-limit . high-limit)}*). The list
- * goes from the last interval to the first one, in reverse order,
- * and thus we run the buffer from the end to the beginning.
+ * This routine inverts the case of the characters in the buffer which were not
+ * escaped. ESCAPE_LIST is a list of intevals of characters that were escaped,
+ * as in ({(low-limit . high-limit)}*). The list goes from the last interval to
+ * the first one, in reverse order, and thus we run the buffer from the end to
+ * the beginning.
  */
 static void
 invert_buffer_case(cl_object x, cl_object escape_list, int sign)
@@ -193,13 +193,9 @@ ecl_read_token(cl_object in, int flags, bool escape_first_p)
     if (a == cat_single_escape) {
       c = ecl_read_char_noeof(in);
       a = cat_constituent;
-      if (read_case == ecl_case_invert) {
-        escape_list = CONS(CONS(ecl_make_fixnum(length),
-                                ecl_make_fixnum(length-1)),
-                           escape_list);
-      } else {
-        escape_list = ECL_T;
-      }
+      escape_list = CONS(CONS(ecl_make_fixnum(length),
+                              ecl_make_fixnum(length-1)),
+                         escape_list);
       ecl_string_push_extend(token, c);
       length++;
       goto NEXT;
@@ -217,13 +213,9 @@ ecl_read_token(cl_object in, int flags, bool escape_first_p)
         ecl_string_push_extend(token, c);
         length++;
       }
-      if (read_case == ecl_case_invert) {
-        escape_list = CONS(CONS(ecl_make_fixnum(begin),
-                                ecl_make_fixnum(length-1)),
-                           escape_list);
-      } else {
-        escape_list = ECL_T;
-      }
+      escape_list = CONS(CONS(ecl_make_fixnum(begin),
+                              ecl_make_fixnum(length-1)),
+                         escape_list);
       goto NEXT;
     }
     if (a == cat_whitespace || a == cat_terminating) {
