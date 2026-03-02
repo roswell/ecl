@@ -36,7 +36,7 @@ static void
 invert_buffer_case(cl_object x, cl_object escape_intervals, int sign)
 {
   cl_fixnum high_limit, low_limit;
-  cl_fixnum str_i = 0, esc_index = 0;
+  cl_fixnum str_i = 0;
   int c;
   /* see whether we have a bug with reversed beginning/end */
   loop_across_stack_fifo(eint, escape_intervals) {
@@ -114,7 +114,104 @@ ecl_dispatch_reader_fun(cl_object in, cl_object dc)
 }
 
 cl_object
-ecl_read_token(cl_object in, int flags, bool escape_first_p)
+ecl_read_only_token(cl_object in, bool escape_first_p)
+{
+  int c;
+  cl_object token;
+  cl_index length;
+  enum ecl_chattrib a;
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object rtbl = ecl_current_readtable();
+  enum ecl_readtable_case read_case = rtbl->readtable.read_case;
+  cl_object escape_intervals; /* intervals of escaped characters */
+  cl_fixnum upcase; /* # uppercase characters - # downcase characters */
+  cl_fixnum count; /* number of unescaped characters */
+  bool suppress = read_suppress;
+
+  upcase = count = length = 0;
+  token = si_get_buffer_string();
+  escape_intervals = ecl_make_stack(0);
+
+  if (escape_first_p) {
+    c = 0;
+    a = cat_single_escape;
+  } else {
+    c = ecl_read_char_noeof(in);
+    a = ecl_readtable_get(rtbl, c, NULL);
+  }
+
+  for (;;) {
+    if (a == cat_single_escape) {
+      c = ecl_read_char_noeof(in);
+      a = cat_constituent;
+      ecl_stack_push(escape_intervals, CONS(ecl_make_fixnum(length-1),
+                                            ecl_make_fixnum(length)));
+      ecl_string_push_extend(token, c);
+      length++;
+      goto NEXT;
+    }
+    if (a == cat_multiple_escape) {
+      cl_index begin = length;
+      for (;;) {
+        c = ecl_read_char_noeof(in);
+        a = ecl_readtable_get(rtbl, c, NULL);
+        if (a == cat_single_escape) {
+          c = ecl_read_char_noeof(in);
+          a = cat_constituent;
+        } else if (a == cat_multiple_escape)
+          break;
+        ecl_string_push_extend(token, c);
+        length++;
+      }
+      ecl_stack_push(escape_intervals, CONS(ecl_make_fixnum(begin),
+                                            ecl_make_fixnum(length-1)));
+      goto NEXT;
+    }
+    if (a == cat_whitespace || a == cat_terminating) {
+      ecl_unread_char(c, in);
+      break;
+    }
+    unlikely_if (ecl_invalid_character_p(c) && !suppress) {
+      FEreader_error("Found invalid character ~:C", in, 1, ECL_CODE_CHAR(c));
+    }
+    if (read_case != ecl_case_preserve) {
+      if (ecl_upper_case_p(c)) {
+        upcase++;
+        count++;
+        if (read_case == ecl_case_downcase)
+          c = ecl_char_downcase(c);
+      } else if (ecl_lower_case_p(c)) {
+        upcase--;
+        count++;
+        if (read_case == ecl_case_upcase)
+          c = ecl_char_upcase(c);
+      }
+    }
+    ecl_string_push_extend(token, c);
+    length++;
+  NEXT:
+    c = ecl_read_char(in);
+    if (c == EOF)
+      break;
+    a = ecl_readtable_get(rtbl, c, NULL);
+  }
+
+  /*TOKEN_STRING_CHAR_SET(token,length,'\0');*/
+  /* If the readtable case was :INVERT and all non-escaped characters
+   * had the same case, we revert their case. */
+  if (read_case == ecl_case_invert && count != 0) {
+    if (upcase == count) {
+      invert_buffer_case(token, escape_intervals, -1);
+    } else if (upcase == -count) {
+      invert_buffer_case(token, escape_intervals, +1);
+    }
+  }
+
+  ecl_return2(the_env, token, escape_intervals);
+}
+
+cl_object
+ecl_read_token(cl_object in, int flags)
 {
   cl_object x, token;
   int c, base;
@@ -137,19 +234,11 @@ ecl_read_token(cl_object in, int flags, bool escape_first_p)
   token = si_get_buffer_string();
   escape_intervals = ecl_make_stack(0);
 
-  if (escape_first_p) {
-    c = 0;
-    a = cat_single_escape;
-  } else {
-    c = ecl_read_char_noeof(in);
+  for (c=ecl_read_char(in); c!=EOF; c=ecl_read_char(in)) {
     a = ecl_readtable_get(rtbl, c, NULL);
-  }
-
-  for (;;) {
-    if (c == ':' && (flags != ECL_READ_ONLY_TOKEN) &&
-        a == cat_constituent) {
+    if (c == ':' && a == cat_constituent) {
       colon++;
-      goto NEXT;
+      continue;
     }
     if (colon > 2) {
       while (colon--) {
@@ -199,7 +288,7 @@ ecl_read_token(cl_object in, int flags, bool escape_first_p)
                                             ecl_make_fixnum(length)));
       ecl_string_push_extend(token, c);
       length++;
-      goto NEXT;
+      continue;
     }
     if (a == cat_multiple_escape) {
       cl_index begin = length;
@@ -216,7 +305,7 @@ ecl_read_token(cl_object in, int flags, bool escape_first_p)
       }
       ecl_stack_push(escape_intervals, CONS(ecl_make_fixnum(begin),
                                             ecl_make_fixnum(length-1)));
-      goto NEXT;
+      continue;
     }
     if (a == cat_whitespace || a == cat_terminating) {
       ecl_unread_char(c, in);
@@ -242,11 +331,6 @@ ecl_read_token(cl_object in, int flags, bool escape_first_p)
     }
     ecl_string_push_extend(token, c);
     length++;
-  NEXT:
-    c = ecl_read_char(in);
-    if (c == EOF)
-      break;
-    a = ecl_readtable_get(rtbl, c, NULL);
   }
 
   if (suppress) {
@@ -255,8 +339,7 @@ ecl_read_token(cl_object in, int flags, bool escape_first_p)
   }
 
   /* If there are some escaped characters, it must be a symbol */
-  if ((flags == ECL_READ_ONLY_TOKEN) || p != ECL_NIL ||
-      ecl_length(escape_intervals) != 0 || length == 0)
+  if (p != ECL_NIL || ecl_length(escape_intervals) != 0 || length == 0)
     goto SYMBOL;
 
   /* The case in which the buffer is full of dots has to be especial cased */
@@ -295,11 +378,6 @@ ecl_read_token(cl_object in, int flags, bool escape_first_p)
   if (x != OBJNULL && length == i)
     goto OUTPUT;
  SYMBOL:
-  if (flags == ECL_READ_ONLY_TOKEN) {
-    ecl_free_stack(escape_intervals);
-    ecl_return1(the_env, token);
-  }
-
   /*TOKEN_STRING_CHAR_SET(token,length,'\0');*/
   /* If the readtable case was :INVERT and all non-escaped characters
    * had the same case, we revert their case. */
@@ -351,8 +429,7 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
       FEend_of_file(in);
     a = ecl_readtable_get(rtbl, c, &x);
   } while (a == cat_whitespace);
-  if ((a == cat_terminating || a == cat_non_terminating) &&
-      (flags != ECL_READ_ONLY_TOKEN)) {
+  if ((a == cat_terminating || a == cat_non_terminating)) {
     cl_object o;
     if (ECL_HASH_TABLE_P(x)) {
       if (suppress) {
@@ -377,5 +454,5 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
     return o;
   }
   ecl_unread_char(c, in);
-  return ecl_read_token(in, flags, 0);
+  return ecl_read_token(in, flags);
 }
