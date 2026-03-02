@@ -219,7 +219,7 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
       FEreader_error("~S is an illegal CHAR-FONT.", in, 1, d);
     }
   }
-  token = ecl_read_only_token(in, 1);
+  token = ecl_read_token(in, 1);
   string = token->token.string;
   escape = token->token.escape;
   if (TOKEN_STRING_FILLP(string) == 1) {
