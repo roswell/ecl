@@ -213,133 +213,104 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
 cl_object
 ecl_read_token(cl_object in, int flags)
 {
+  cl_fixnum high_limit, low_limit, str_i;
   cl_object x, token;
   int c, base;
-  cl_object p;
-  cl_index length, i;
+  cl_object package, package_name, symbol_name;
+  cl_index length, i, sym_start, pack_end;
   int colon, intern_flag;
   bool external_symbol;
-  enum ecl_chattrib a;
   cl_env_ptr the_env = ecl_process_env();
-  cl_object rtbl = ecl_current_readtable();
-  enum ecl_readtable_case read_case = rtbl->readtable.read_case;
   cl_object escape_intervals; /* intervals of escaped characters */
-  cl_fixnum upcase; /* # uppercase characters - # downcase characters */
-  cl_fixnum count; /* number of unescaped characters */
   bool suppress = read_suppress;
-  
-  p = ECL_NIL;
-  colon = upcase = count = length = 0;
-  external_symbol = 0;
-  token = si_get_buffer_string();
-  escape_intervals = ecl_make_stack(0);
+  token = ecl_read_only_token(in, 0);
+  escape_intervals = ecl_nth_value(the_env,1);
 
-  for (c=ecl_read_char(in); c!=EOF; c=ecl_read_char(in)) {
-    a = ecl_readtable_get(rtbl, c, NULL);
-    if (c == ':' && a == cat_constituent) {
-      colon++;
-      continue;
-    }
-    if (colon > 2) {
-      while (colon--) {
-        ecl_string_push_extend(token, ':');
-        length++;
-      }
-    } else if (colon) {
-      external_symbol = (colon == 1);
-      TOKEN_STRING_CHAR_SET(token,length,'\0');
-      /* If the readtable case was :INVERT and all non-escaped characters
-       * had the same case, we revert their case. */
-      if (read_case == ecl_case_invert && count != 0) {
-        if (upcase == count) {
-          invert_buffer_case(token, escape_intervals, -1);
-        } else if (upcase == -count) {
-          invert_buffer_case(token, escape_intervals, +1);
-        }
-      }
-      if (length == 0) {
-        p = cl_core.keyword_package;
-        external_symbol = 0;
-      } else {
-        p = ecl_find_package_nolock(token);
-      }
-      if (Null(p) && !suppress) {
-        /* When loading binary files, we sometimes must create
-           symbols whose package has not yet been maked. We
-           allow it, but later on in ecl_init_module we make sure that
-           all referenced packages have been properly built.
-        */
-        cl_object name = cl_copy_seq(token);
-        unlikely_if (Null(the_env->packages_to_be_created_p)) {
-          ecl_free_stack(escape_intervals);
-          si_put_buffer_string(token);
-          FEerror("There is no package with the name ~A.", 1, name);
-        }
-        p = _ecl_package_to_be_created(the_env, name);
-      }
-      TOKEN_STRING_FILLP(token) = length = 0;
-      upcase = count = colon = 0;
-      ecl_wipe_stack(escape_intervals);
-    }
-    if (a == cat_single_escape) {
-      c = ecl_read_char_noeof(in);
-      a = cat_constituent;
-      ecl_stack_push(escape_intervals, CONS(ecl_make_fixnum(length-1),
-                                            ecl_make_fixnum(length)));
-      ecl_string_push_extend(token, c);
-      length++;
-      continue;
-    }
-    if (a == cat_multiple_escape) {
-      cl_index begin = length;
-      for (;;) {
-        c = ecl_read_char_noeof(in);
-        a = ecl_readtable_get(rtbl, c, NULL);
-        if (a == cat_single_escape) {
-          c = ecl_read_char_noeof(in);
-          a = cat_constituent;
-        } else if (a == cat_multiple_escape)
-          break;
-        ecl_string_push_extend(token, c);
-        length++;
-      }
-      ecl_stack_push(escape_intervals, CONS(ecl_make_fixnum(begin),
-                                            ecl_make_fixnum(length-1)));
-      continue;
-    }
-    if (a == cat_whitespace || a == cat_terminating) {
-      ecl_unread_char(c, in);
-      break;
-    }
-    unlikely_if (ecl_invalid_character_p(c) && !suppress) {
-      ecl_free_stack(escape_intervals);
-      si_put_buffer_string(token);
-      FEreader_error("Found invalid character ~:C", in, 1, ECL_CODE_CHAR(c));
-    }
-    if (read_case != ecl_case_preserve) {
-      if (ecl_upper_case_p(c)) {
-        upcase++;
-        count++;
-        if (read_case == ecl_case_downcase)
-          c = ecl_char_downcase(c);
-      } else if (ecl_lower_case_p(c)) {
-        upcase--;
-        count++;
-        if (read_case == ecl_case_upcase)
-          c = ecl_char_upcase(c);
-      }
-    }
-    ecl_string_push_extend(token, c);
-    length++;
-  }
+  package = package_name = ECL_NIL;
+  str_i = sym_start = pack_end = colon = 0;
+  length = ecl_length(token);
+  external_symbol = 0;
 
   if (suppress) {
     x = ECL_NIL;
     goto OUTPUT;
   }
 
+  loop_across_stack_fifo(eint, escape_intervals) {
+    low_limit = ecl_fixnum(CAR(eint));
+    high_limit = ecl_fixnum(CDR(eint));
+    for(; str_i<low_limit; str_i++) {
+      c = ecl_char(token, str_i);
+      if (c == ':') {
+        if(!Null(package))
+          FEreader_error("Unexpected colon character.", in, 0);
+        if (colon > 1) FEreader_error("Too many colons.", in, 0);
+        if (colon < 1) pack_end = str_i;
+        colon++;
+        sym_start = str_i+1;
+        continue;
+      } else if (colon) {
+        external_symbol = (colon == 1);
+        if (pack_end == 0) {
+          package = cl_core.keyword_package;
+        } else {
+          package_name = ecl_subseq(token, 0, pack_end);
+          package = ecl_find_package_nolock(package_name);
+        }
+        if (Null(package)) {
+          /* When loading binary files, we sometimes must create
+             symbols whose package has not yet been maked. We
+             allow it, but later on in ecl_init_module we make sure that
+             all referenced packages have been properly built.
+          */
+          unlikely_if (Null(the_env->packages_to_be_created_p)) {
+            ecl_free_stack(escape_intervals);
+            si_put_buffer_string(token);
+            FEerror("There is no package with the name ~A.", 1, package_name);
+          }
+          package = _ecl_package_to_be_created(the_env, package_name);
+        }
+      }
+    }
+    str_i=high_limit;
+  } end_loop_across_stack();
+  for(; str_i<length; str_i++) {
+    c = ecl_char(token, str_i);
+    if (c == ':') {
+      if(!Null(package))
+        FEreader_error("Unexpected colon character.", in, 0);
+      if (colon > 1) FEreader_error("Too many colons.", in, 0);
+      if (colon < 1) pack_end = str_i;
+      colon++;
+      sym_start = str_i+1;
+      continue;
+    } else if (colon) {
+      external_symbol = (colon == 1);
+      if (pack_end == 0) {
+        package = cl_core.keyword_package;
+        external_symbol = 0;
+      } else {
+        package_name = ecl_subseq(token, 0, pack_end);
+        package = ecl_find_package_nolock(package_name);
+      }
+      if (Null(package)) {
+        /* When loading binary files, we sometimes must create
+           symbols whose package has not yet been maked. We
+           allow it, but later on in ecl_init_module we make sure that
+           all referenced packages have been properly built.
+        */
+        unlikely_if (Null(the_env->packages_to_be_created_p)) {
+          ecl_free_stack(escape_intervals);
+          si_put_buffer_string(token);
+          FEerror("There is no package with the name ~A.", 1, package_name);
+        }
+        package = _ecl_package_to_be_created(the_env, package_name);
+      }
+    }
+  }
+
   /* If there are some escaped characters, it must be a symbol */
-  if (p != ECL_NIL || ecl_length(escape_intervals) != 0 || length == 0)
+  if (package != ECL_NIL || ecl_length(escape_intervals) != 0 || length == 0)
     goto SYMBOL;
 
   /* The case in which the buffer is full of dots has to be especial cased */
@@ -378,30 +349,21 @@ ecl_read_token(cl_object in, int flags)
   if (x != OBJNULL && length == i)
     goto OUTPUT;
  SYMBOL:
-  /*TOKEN_STRING_CHAR_SET(token,length,'\0');*/
-  /* If the readtable case was :INVERT and all non-escaped characters
-   * had the same case, we revert their case. */
-  if (read_case == ecl_case_invert && count != 0) {
-    if (upcase == count) {
-      invert_buffer_case(token, escape_intervals, -1);
-    } else if (upcase == -count) {
-      invert_buffer_case(token, escape_intervals, +1);
-    }
-  }
+  symbol_name = ecl_subseq(token, sym_start, length);
   if (external_symbol) {
-    x = ecl_find_symbol(token, p, &intern_flag);
+    x = ecl_find_symbol(symbol_name, package, &intern_flag);
     unlikely_if (intern_flag != ECL_EXTERNAL) {
       ecl_free_stack(escape_intervals);
       si_put_buffer_string(token);
       FEreader_error("Cannot find the external symbol ~A in ~S.", in,
-                     2, cl_copy_seq(token), p);
+                     2, symbol_name, package);
     }
   } else {
-    if (p == ECL_NIL) {
-      p = ecl_current_package();
+    if (package == ECL_NIL) {
+      package = ecl_current_package();
     }
     /* INV: cl_make_symbol() copies the string */
-    x = ecl_intern(token, p, &intern_flag);
+    x = ecl_intern(symbol_name, package, &intern_flag);
   }
  OUTPUT:
   ecl_free_stack(escape_intervals);
