@@ -655,3 +655,17 @@
          (result (translate-logical-pathname pathname))
          (expect #P"/hello/bonjour/hi/barev/what/greetings.me"))
     (is (equalp result expect))))
+
+;;; Reported by: Daniel Kochmański
+;;; Created: 2026-03-02
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/813
+;;; Description
+;;;
+;;;     Reader does not handle correctly escaped characters when the
+;;;     READTABLE-CASE is :INVERT.
+(deftest mix.0033.preserve-escaped-characters ()
+  (let ((*readtable* (copy-readtable)))
+    (setf (readtable-case *readtable*) :invert)
+    (is (string=
+         (symbol-name (read-from-string "DANIEL|--xXx--|MANSKI"))
+         "daniel--xXx--manski"))))
