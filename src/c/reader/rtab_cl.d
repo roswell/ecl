@@ -213,13 +213,15 @@ static cl_object
 sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  cl_object token;
+  cl_object token, eints;
   if (d != ECL_NIL && !read_suppress) {
     unlikely_if (!ECL_FIXNUMP(d) || d != ecl_make_fixnum(0)) {
       FEreader_error("~S is an illegal CHAR-FONT.", in, 1, d);
     }
   }
-  token = ecl_read_token(in, ECL_READ_ONLY_TOKEN, 1);
+  token = ecl_read_only_token(in, 1);
+  eints = ecl_nth_value(the_env,1);
+  ecl_free_stack(eints);
   if (token == ECL_NIL) {
     c = ECL_NIL;
   } else if (TOKEN_STRING_FILLP(token) == 1) {
