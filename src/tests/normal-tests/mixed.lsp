@@ -669,3 +669,13 @@
     (is (string=
          (symbol-name (read-from-string "DANIEL|--xXx--|MANSKI"))
          "daniel--xXx--manski"))))
+
+;;; Reported by: Daniel Kochmański
+;;; Created: 2026-03-02
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/814
+;;; Description
+;;;
+;;;     Reader allows for multiple package prefixes and uses only the last one.
+;;;     For example FOO::BAR::QUX is equivalent to BAR:QUX (FOO must exist).
+(deftest mix.0034.dont-allow-invalid-package-prefixes ()
+  (signals reader-error (read-from-string "CL-USER::CL::LIST")))
