@@ -84,6 +84,7 @@ typedef enum {
         t_codeblock,
         t_foreign,
         t_frame,
+        t_token,
         t_weak_pointer,
 #ifdef ECL_SSE2
         t_sse_pack,
@@ -947,6 +948,13 @@ struct ecl_stack_frame {
         struct cl_env_struct *env;
 };
 
+/* Token is constructed by the reader from constituents and then parsed. */
+struct ecl_token {
+        _ECL_HDR1(escaped);
+        cl_object string;       /* the token string */
+        cl_object escape;       /* ranges of escaped characters */
+};
+
 struct ecl_weak_pointer {       /*  weak pointer to value  */
         _ECL_HDR;
         cl_object value;
@@ -1175,6 +1183,7 @@ union cl_lispunion {
         struct ecl_cclosure     cclosure;       /*  compiled closure  */
         struct ecl_dummy        d;              /*  dummy  */
         struct ecl_instance     instance;       /*  clos instance */
+        struct ecl_token        token;          /*  token */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
         struct ecl_lock         lock;           /*  lock  */

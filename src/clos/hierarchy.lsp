@@ -228,6 +228,7 @@
             (si::code-block)
             (si::foreign-data)
             (si::frame)
+            (si::token)
             (si::weak-pointer)
             (:threads mp::process)
             (:threads mp::lock)
