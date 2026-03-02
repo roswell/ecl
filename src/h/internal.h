@@ -665,6 +665,17 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 #define RTABSIZE        ECL_CHAR_CODE_LIMIT     /*  read table size  */
 #endif
 
+#define loop_across_eints(l, h, obj) {                                  \
+  cl_index __ecl_ndx = obj->vector.fillp;                               \
+  cl_object *__ecl_v = obj->vector.self.t;                              \
+  cl_index __ecl_idx;                                                   \
+  cl_fixnum l, h;                                                       \
+  for(__ecl_idx = 0; __ecl_idx < __ecl_ndx; __ecl_idx+=2) {             \
+    l = ecl_fixnum(__ecl_v[__ecl_idx]);                                 \
+    h = ecl_fixnum(__ecl_v[__ecl_idx+1]);
+
+#define end_loop_across_eints() }}
+
 /* package.d */
 
 extern cl_object _ecl_package_to_be_created(const cl_env_ptr env, cl_object name);

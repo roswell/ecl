@@ -7,6 +7,7 @@
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll
+ * Copyright (c) 2016 Daniel Kochmański
  *
  * See file 'LICENSE' for the copyright details.
  *
@@ -26,17 +27,6 @@
 #include <ecl/bytecodes.h>
 
 #define read_suppress (ecl_symbol_value(@'*read-suppress*') != ECL_NIL)
-
-#define loop_across_eints(l, h, obj) {                                  \
-  cl_index __ecl_ndx = obj->vector.fillp;                               \
-  cl_object *__ecl_v = obj->vector.self.t;                              \
-  cl_index __ecl_idx;                                                   \
-  cl_fixnum l, h;                                                       \
-  for(__ecl_idx = 0; __ecl_idx < __ecl_ndx; __ecl_idx+=2) {             \
-    l = ecl_fixnum(__ecl_v[__ecl_idx]);                                 \
-    h = ecl_fixnum(__ecl_v[__ecl_idx+1]);
-
-#define end_loop_across_eints() }}
 
 static cl_object
 ecl_make_token()
@@ -151,7 +141,7 @@ ecl_dispatch_reader_fun(cl_object in, cl_object dc)
 }
 
 cl_object
-ecl_read_only_token(cl_object in, bool escape_first_p)
+ecl_read_token(cl_object in, bool escape_first_p)
 {
   int c;
   cl_object token, string, escape;
@@ -251,130 +241,9 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
 }
 
 cl_object
-ecl_read_token(cl_object in, int flags)
-{
-  cl_fixnum str_i;
-  cl_object x, token, string, escape;
-  int c, base;
-  cl_object package, package_name, symbol_name;
-  cl_index length, i, sym_start, pack_end;
-  int colon, intern_flag;
-  bool external_symbol;
-  cl_env_ptr the_env = ecl_process_env();
-  bool suppress = read_suppress;
-  token = ecl_read_only_token(in, 0);
-  string = token->token.string;
-  escape = token->token.escape;
-
-  package = package_name = ECL_NIL;
-  str_i = sym_start = pack_end = colon = 0;
-  length = ecl_length(string);
-  external_symbol = 0;
-
-  if (suppress) {
-    x = ECL_NIL;
-    goto OUTPUT;
-  }
-
-  loop_across_eints(low_limit, high_limit, escape) {
-    for(; str_i<low_limit; str_i++) {
-      c = ecl_char(string, str_i);
-      if (c == ':') {
-        if(!Null(package))
-          FEreader_error("Unexpected colon character.", in, 0);
-        if (colon > 1) FEreader_error("Too many colons.", in, 0);
-        if (colon < 1) pack_end = str_i;
-        colon++;
-        sym_start = str_i+1;
-        continue;
-      } else if (colon) {
-        external_symbol = (colon == 1);
-        if (pack_end == 0) {
-          package = cl_core.keyword_package;
-          external_symbol = 0;
-        } else {
-          package_name = ecl_subseq(string, 0, pack_end);
-          package = ecl_find_package_nolock(package_name);
-        }
-        if (Null(package)) {
-          /* When loading binary files, we sometimes must create
-             symbols whose package has not yet been maked. We
-             allow it, but later on in ecl_init_module we make sure that
-             all referenced packages have been properly built.
-          */
-          unlikely_if (Null(the_env->packages_to_be_created_p)) {
-            ecl_put_reader_token(token);
-            FEerror("There is no package with the name ~A.", 1, package_name);
-          }
-          package = _ecl_package_to_be_created(the_env, package_name);
-        }
-      }
-    }
-    str_i=high_limit;
-  } end_loop_across_eints();
-
-  /* If there are some escaped characters, it must be a symbol.
-     escape_intervals always has an empty interval pair at the end. */
-  if (package != ECL_NIL || ecl_length(escape) > 2 || length == 0)
-    goto SYMBOL;
-
-  /* The case in which the buffer is full of dots has to be especial cased */
-  if (length == 1 && TOKEN_STRING_CHAR_CMP(string, 0, '.')) {
-    if (flags == ECL_READ_LIST_DOT) {
-      x = @'si::.';
-      goto OUTPUT;
-    } else {
-      ecl_put_reader_token(token);
-      FEreader_error("Dots appeared illegally.", in, 0);
-    }
-  } else {
-    int i;
-    for (i = 0;  i < length;  i++) {
-      if (!TOKEN_STRING_CHAR_CMP(string,i,'.'))
-        goto MAYBE_NUMBER;
-    }
-    ecl_put_reader_token(token);
-    FEreader_error("Dots appeared illegally.", in, 0);
-  }
-
- MAYBE_NUMBER:
-  /* Here we try to parse a number from the content of the buffer */
-  base = ecl_current_read_base();
-  if ((base <= 10) && ecl_alpha_char_p(TOKEN_STRING_CHAR(string, 0)))
-    goto SYMBOL;
-  x = ecl_parse_number(string, 0, TOKEN_STRING_FILLP(string), &i, base);
-  unlikely_if (x == ECL_NIL) {
-    ecl_put_reader_token(token);
-    FEreader_error("Syntax error when reading number.~%Offending string: ~S.",
-                   in, 1, string);
-  }
-  if (x != OBJNULL && length == i)
-    goto OUTPUT;
- SYMBOL:
-  symbol_name = ecl_subseq(string, sym_start, length);
-  if (external_symbol) {
-    x = ecl_find_symbol(symbol_name, package, &intern_flag);
-    unlikely_if (intern_flag != ECL_EXTERNAL) {
-      ecl_put_reader_token(token);
-      FEreader_error("Cannot find the external symbol ~A in ~S.", in,
-                     2, symbol_name, package);
-    }
-  } else {
-    if (package == ECL_NIL) {
-      package = ecl_current_package();
-    }
-    /* INV: cl_make_symbol() copies the string */
-    x = ecl_intern(symbol_name, package, &intern_flag);
-  }
- OUTPUT:
-  ecl_put_reader_token(token);
-  ecl_return1(the_env, x);
-}
-
-cl_object
 ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
 {
-  cl_object x;
+  cl_object x, token;
   int c;
   enum ecl_chattrib a;
   cl_env_ptr the_env = ecl_process_env();
@@ -416,5 +285,12 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
     return o;
   }
   ecl_unread_char(c, in);
-  return ecl_read_token(in, flags);
+  token = ecl_read_token(in, 0);
+  if (suppress) {
+    x = ECL_NIL;
+  } else {
+    x = ecl_parse_token(token, in, flags);
+  }
+  ecl_put_reader_token(token);
+  return x;
 }
