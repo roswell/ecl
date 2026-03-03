@@ -38,12 +38,19 @@ ecl_parse_token(cl_object token, cl_object in, int flags)
       if (c == ':') {
         if(!Null(package))
           FEreader_error("Unexpected colon character.", in, 0);
-        if (colon > 1) FEreader_error("Too many colons.", in, 0);
-        if (colon < 1) pack_end = str_i;
-        colon++;
-        sym_start = str_i+1;
-        continue;
-      } else if (colon) {
+        pack_end = str_i;
+        /* Eat all ':' and advance the pointer after them. */
+        while(c == ':') {
+          colon++;
+          if (colon > 2)
+            FEreader_error("Too many colons.", in, 0);
+          str_i++;
+          if (str_i == low_limit) {
+            break;
+          }
+          c = ecl_char(string, str_i);
+        }
+        sym_start = str_i;
         external_symbol = (colon == 1);
         if (pack_end == 0) {
           package = cl_core.keyword_package;
@@ -53,11 +60,10 @@ ecl_parse_token(cl_object token, cl_object in, int flags)
           package = ecl_find_package_nolock(package_name);
         }
         if (Null(package)) {
-          /* When loading binary files, we sometimes must create
-             symbols whose package has not yet been maked. We
-             allow it, but later on in ecl_init_module we make sure that
-             all referenced packages have been properly built.
-          */
+          /* When loading binary files, we sometimes must create symbols whose
+             package has not yet been maked. We allow it, but later on in
+             ecl_init_module we make sure that all referenced packages have been
+             properly built. */
           unlikely_if (Null(the_env->packages_to_be_created_p)) {
             ecl_put_reader_token(token);
             FEerror("There is no package with the name ~A.", 1, package_name);
@@ -74,7 +80,7 @@ ecl_parse_token(cl_object token, cl_object in, int flags)
   if (package != ECL_NIL || ecl_length(escape) > 2 || length == 0)
     goto SYMBOL;
 
-  /* The case in which the buffer is full of dots has to be especial cased */
+  /* The case in which the buffer is full of dots has to be especial cased. */
   if (length == 1 && TOKEN_STRING_CHAR_CMP(string, 0, '.')) {
     if (flags == ECL_READ_LIST_DOT) {
       x = @'si::.';
@@ -124,4 +130,12 @@ ecl_parse_token(cl_object token, cl_object in, int flags)
   }
  OUTPUT:
   return x;
+}
+
+cl_object
+si_parse_token(cl_object token)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object object = ecl_parse_token(token, ECL_NIL, 42);
+  ecl_return1(the_env, object);
 }

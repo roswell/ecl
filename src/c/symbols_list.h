@@ -1998,9 +1998,15 @@ cl_symbols[] = {
 {SYS_ "LONG-FLOAT-BITS" ECL_FUN(NULL, NULL, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "BITS-LONG-FLOAT" ECL_FUN(NULL, NULL, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 
+{SYS_ "PARSE-TOKEN" ECL_FUN("si_parse_token", si_parse_token, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 {SYS_ "READ-OBJECT-OR-IGNORE" ECL_FUN("si_read_object_or_ignore", si_read_object_or_ignore, 2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
+{SYS_ "READ-OBJECT" ECL_FUN("si_read_object", si_read_object, 2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
+{SYS_ "READ-TOKEN" ECL_FUN("si_read_token", si_read_token, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 
 {EXT_ "READTABLE-LOCK" ECL_FUN("si_readtable_lock", si_readtable_lock, -2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
+
+{SYS_ "TOKEN-STRING" ECL_FUN("si_read_token", si_token_string, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
+{SYS_ "TOKEN-ESCAPE" ECL_FUN("si_read_token", si_token_escape, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 
 {SYS_ "+IO-SYNTAX-PROGV-LIST+" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_CONSTANT, OBJNULL)},
 {SYS_ "+ECL-SYNTAX-PROGV-LIST+" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_CONSTANT, OBJNULL)},

@@ -39,6 +39,23 @@ ecl_make_token()
   return o;
 }
 
+cl_object
+si_token_string(cl_object token)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object object = token->token.string;
+  ecl_return1(the_env, object);
+}
+
+cl_object
+si_token_escape(cl_object token)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object object = token->token.escape;
+  ecl_return1(the_env, object);
+}
+
+
 /* FIXME pools should be resizeable stacks. */
 cl_object
 ecl_get_reader_token(void)
@@ -172,10 +189,10 @@ ecl_read_token(cl_object in, bool escape_first_p)
     if (a == cat_single_escape) {
       c = ecl_read_char_noeof(in);
       a = cat_constituent;
-      ecl_stack_push(escape, ecl_make_fixnum(length-1));
-      ecl_stack_push(escape, ecl_make_fixnum(length));
       ecl_string_push_extend(string, c);
       length++;
+      ecl_stack_push(escape, ecl_make_fixnum(length-1));
+      ecl_stack_push(escape, ecl_make_fixnum(length));
       goto NEXT;
     }
     if (a == cat_multiple_escape) {
@@ -192,7 +209,7 @@ ecl_read_token(cl_object in, bool escape_first_p)
         length++;
       }
       ecl_stack_push(escape, ecl_make_fixnum(begin));
-      ecl_stack_push(escape, ecl_make_fixnum(length-1));
+      ecl_stack_push(escape, ecl_make_fixnum(length));
       goto NEXT;
     }
     if (a == cat_whitespace || a == cat_terminating) {
@@ -293,4 +310,21 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
   }
   ecl_put_reader_token(token);
   return x;
+}
+
+cl_object
+si_read_object(cl_object strm, cl_object delimiter)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  int ch = Null(delimiter) ? 0 : ecl_char_code(delimiter);
+  cl_object object = ecl_read_object_with_delimiter(strm, ch, 0);
+  ecl_return1(the_env, object);
+}
+
+cl_object
+si_read_token(cl_object strm)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object object = ecl_read_token(strm, 0);
+  ecl_return1(the_env, object);
 }
