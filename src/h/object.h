@@ -1016,6 +1016,7 @@ typedef enum {
         ECL_EX_V_UNBND,         /* unbound variable */
         ECL_EX_V_BNAME,         /* illegal variable name */
         ECL_EX_F_NARGS,         /* wrong number of arguments */
+        ECL_EX_F_EARGS,         /* too many arguments */
         ECL_EX_F_UNDEF,         /* undefined function */
         ECL_EX_F_INVAL,         /* non-function passed as function */
         ECL_EX_S_FMISS          /* missing unwind frame (ecl_escape) */

@@ -581,6 +581,7 @@ extern ECL_API void FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_ob
 extern ECL_API void FEwrong_type_key_arg(cl_object function, cl_object keyo, cl_object type, cl_object value) ecl_attr_noreturn;
 extern ECL_API void FEwrong_num_arguments(cl_object fun) ecl_attr_noreturn;
 extern ECL_API void FEwrong_num_arguments_anonym(void) ecl_attr_noreturn;
+extern ECL_API void FEwrong_num_arguments_exceed(cl_object n) ecl_attr_noreturn;
 extern ECL_API void FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx, cl_index nonincl_limit) ecl_attr_noreturn;
 extern ECL_API void FEunbound_variable(cl_object sym) ecl_attr_noreturn;
 extern ECL_API void FEinvalid_macro_call(cl_object obj) ecl_attr_noreturn;
