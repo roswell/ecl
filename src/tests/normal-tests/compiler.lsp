@@ -1748,60 +1748,59 @@
     (is (eq x b) "~a is not eq to ~a" x b)
     (is (eq a b) "~a is not eq to ~a" a b)))
 
-(ext:with-clean-symbols (class)
-  (test cmp.0077.make-load-form.circular-dep
-    (macrolet ((make-template (&body extra)
-                 `(with-compiler ("make-circle.lsp")
-                    '(progn
-                      (in-package #:cl-test)
-                      (eval-when (:compile-toplevel :load-toplevel :execute)
-                        (defclass class ()
-                          ((peer  :initform nil :initarg :peer  :accessor peer)
-                           (peer* :initform nil :initarg :peer* :accessor peer*)))
-                        (defmethod make-load-form ((x class) &optional env)
-                          (declare (ignore env))
-                          (values `(make-instance 'class :peer ',(peer x))
-                                  `(setf (peer* ',x) ',(peer* x)))))
-                      (eval-when (:compile-toplevel)
-                        (defparameter var1 (make-instance 'class))
-                        (defparameter var2 (make-instance 'class :peer var1))
-                        ,@extra))
-                    "(defun foo () (values '#.var1 '#.var2))")))
-      ;; Ordinary case (reference).
-      (multiple-value-bind (file output)
-          (make-template)
-        (load file)
-        (delete-file "make-circle.lsp")
-        (delete-file file)
-        (multiple-value-bind (v1 v2) (foo)
-          (is (eq (peer v2) v1))))
-      ;; Circularity between make forms (should signal an error).
-      (signals error
-        (unwind-protect (multiple-value-bind (file output)
-                            (make-template (setf (peer var1) var2))
-                          (when file (delete-file file)))
-          (delete-file "make-circle.lsp"))
-        "Successfully compiled a file with a circular dependency.")
-      ;; Circularity between make and init forms (is not an error!).
-      (multiple-value-bind (file output)
-          (make-template (setf (peer* var1) var2))
-        (load file)
-        (delete-file "make-circle.lsp")
-        (delete-file file)
-        (multiple-value-bind (v1 v2) (foo)
-          (is (eq (peer v2) v1))
-          (is (eq (peer* v1) v2))))
-      ;; Circularity between init forms (is not an error!).
-      (multiple-value-bind (file output)
-          (make-template (setf (peer* var1) var2)
-                         (setf (peer* var2) var1))
-        (load file)
-        (delete-file "make-circle.lsp")
-        (delete-file file)
-        (multiple-value-bind (v1 v2) (foo)
-          (is (eq (peer v2) v1))
-          (is (eq (peer* v1) v2))
-          (is (eq (peer* v2) v1)))))))
+(test cmp.0077.make-load-form.circular-dep
+  (macrolet ((make-template (&body extra)
+               `(with-compiler ("make-circle.lsp")
+                  '(progn
+                    (in-package #:cl-test)
+                    (eval-when (:compile-toplevel :load-toplevel :execute)
+                      (defclass class.0077 ()
+                        ((peer  :initform nil :initarg :peer  :accessor peer)
+                         (peer* :initform nil :initarg :peer* :accessor peer*)))
+                      (defmethod make-load-form ((x class.0077) &optional env)
+                        (declare (ignore env))
+                        (values `(make-instance 'class.0077 :peer ',(peer x))
+                                `(setf (peer* ',x) ',(peer* x)))))
+                    (eval-when (:compile-toplevel)
+                      (defparameter var1 (make-instance 'class.0077))
+                      (defparameter var2 (make-instance 'class.0077 :peer var1))
+                      ,@extra))
+                  "(defun foo () (values '#.var1 '#.var2))")))
+    ;; Ordinary case (reference).
+    (multiple-value-bind (file output)
+        (make-template)
+      (load file)
+      (delete-file "make-circle.lsp")
+      (delete-file file)
+      (multiple-value-bind (v1 v2) (foo)
+        (is (eq (peer v2) v1))))
+    ;; Circularity between make forms (should signal an error).
+    (signals error
+             (unwind-protect (multiple-value-bind (file output)
+                                 (make-template (setf (peer var1) var2))
+                               (when file (delete-file file)))
+               (delete-file "make-circle.lsp"))
+             "Successfully compiled a file with a circular dependency.")
+    ;; Circularity between make and init forms (is not an error!).
+    (multiple-value-bind (file output)
+        (make-template (setf (peer* var1) var2))
+      (load file)
+      (delete-file "make-circle.lsp")
+      (delete-file file)
+      (multiple-value-bind (v1 v2) (foo)
+        (is (eq (peer v2) v1))
+        (is (eq (peer* v1) v2))))
+    ;; Circularity between init forms (is not an error!).
+    (multiple-value-bind (file output)
+        (make-template (setf (peer* var1) var2)
+                       (setf (peer* var2) var1))
+      (load file)
+      (delete-file "make-circle.lsp")
+      (delete-file file)
+      (multiple-value-bind (v1 v2) (foo)
+        (is (eq (peer v2) v1))
+        (is (eq (peer* v1) v2))
+        (is (eq (peer* v2) v1))))))
 
 ;;; Date 2020-03-13
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/571
@@ -1811,9 +1810,9 @@
 ;;;     compilation time.
 (test cmp.0078.defmethod-not-eager
   (finishes (with-compiler ("aux-compiler.0078.lsp")
-              `(defclass class () ())
+              `(defclass test-class.0078 () ())
               `(defmethod method ()
-                 (load-time-value (find-class class))))))
+                 (load-time-value (find-class test-class.0078))))))
 
 ;;; Date 2020-05-01
 ;;; URL: https://gitlab.com/embeddable-common-lisp/ecl/issues/577
