@@ -131,6 +131,9 @@ ecl_exception_handler(cl_object o)
     case ECL_EX_F_NARGS:
       FEwrong_num_arguments(arg1);
       break;
+    case ECL_EX_F_EARGS:
+      FEwrong_num_arguments_exceed(arg1);
+      break;
     case ECL_EX_F_UNDEF:
       FEundefined_function(arg1);
       break;
@@ -462,8 +465,13 @@ void
 FEwrong_num_arguments(cl_object fun)
 {
   fun = cl_symbol_or_object(fun);
-  FEprogram_error("Wrong number of arguments passed to function ~S.",
-                  1, fun);
+  FEprogram_error("Wrong number of arguments passed to function ~S.", 1, fun);
+}
+
+void
+FEwrong_num_arguments_exceed(cl_object n)
+{
+  FEprogram_error("Too many arguments: ~S.", 1, n);
 }
 
 void

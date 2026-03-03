@@ -22,7 +22,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
 {
   cl_object fun = x;
   if (ecl_unlikely(fun == ECL_NIL))
-    FEundefined_function(x);
+    ecl_ferror(ECL_EX_F_UNDEF, fun, ECL_NIL);
   switch (ecl_t_of(fun)) {
   case t_cfunfixed:
     env->function = fun;
@@ -47,7 +47,7 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
     env->function = fun;
     return fun->bclosure.entry;
   default:
-    FEinvalid_function(x);
+    ecl_ferror(ECL_EX_F_INVAL, fun, ECL_NIL);
   }
   _ecl_unexpected_return();
 }
@@ -75,13 +75,15 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
  AGAIN:
   frame->frame.env->function = fun;
   if (ecl_unlikely(fun == ECL_NIL))
-    FEundefined_function(x);
+    ecl_ferror(ECL_EX_F_UNDEF, x, ECL_NIL);
   switch (ecl_t_of(fun)) {
   case t_cfunfixed:
-    if (ecl_unlikely(narg != (cl_index)fun->cfun.narg))
-      FEwrong_num_arguments(fun);
-    ret = APPLY_fixed(narg, fun->cfunfixed.entry_fixed, sp);
-    break;
+    if (fun->cfunfixed.entry_fixed != NULL) {
+      if (ecl_unlikely(narg != (cl_index)fun->cfun.narg))
+        ecl_ferror(ECL_EX_F_NARGS, fun, ECL_NIL);
+      ret = APPLY_fixed(narg, fun->cfunfixed.entry_fixed, sp);
+      break;
+    }
   case t_cfun:
     ret = APPLY(narg, fun->cfun.entry, sp);
     break;
@@ -102,12 +104,12 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
       ret = APPLY(narg, fun->instance.entry, sp);
       break;
     default:
-      FEinvalid_function(fun);
+      ecl_ferror(ECL_EX_F_INVAL, fun, ECL_NIL);
     }
     break;
   case t_symbol:
     if (ecl_unlikely(!ECL_FBOUNDP(fun)))
-      FEundefined_function(fun);
+      ecl_ferror(ECL_EX_F_UNDEF, fun, ECL_NIL);
     fun = ECL_SYM_FUN(fun);
     goto AGAIN;
   case t_bytecodes:
@@ -117,7 +119,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
     ret = ecl_interpret(frame, fun->bclosure.lex, fun->bclosure.code);
     break;
   default:
-    FEinvalid_function(x);
+    ecl_ferror(ECL_EX_F_INVAL, x, ECL_NIL);
   }
   frame->frame.env->stack_frame = NULL; /* for gc's sake */
   return ret;
@@ -784,7 +786,7 @@ APPLY_fixed(cl_narg n, cl_object (*fn)(), cl_object *x)
                                                x[50],x[51],x[52],x[53],x[54],x[55],x[56],
                                                x[57],x[58],x[59],x[60],x[61],x[62]);
   default:
-    FEprogram_error("Too many arguments", 0);
+    ecl_ferror(ECL_EX_F_EARGS, ecl_make_fixnum(n), ECL_NIL);
   }
   _ecl_unexpected_return();
 }
