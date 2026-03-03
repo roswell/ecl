@@ -2678,3 +2678,26 @@
     (is (typep (first +c.0113.3+) 'base-string))
     (is (string= (first +c.0113.4+) "bb"))
     (is (and (typep (first +c.0113.4+) 'string) (not (typep (first +c.0113.4+) 'base-string))))))
+
+;;; Date 2026-03-05
+;;; Description
+;;;
+;;;     Wrong order of evaluation for nested eval-when forms in the
+;;;     bytecompiler.
+;;;
+(test cmp.0114.nested-eval-when
+  (eval '(defparameter *nested-eval-when-0114* ""))
+  (let* ((part-1 "So the last will be first, ")
+         (part-2 "and the first will be last.")
+         (ofile
+          (with-compiler ("nested-eval-when-0114.lsp")
+            `(eval-when (:load-toplevel :compile-toplevel :execute)
+               (eval-when (:compile-toplevel)
+                 (setf *nested-eval-when-0114*
+                       (concatenate 'string *nested-eval-when-0114* ,part-1)))
+               (setf *nested-eval-when-0114*
+                     (concatenate 'string *nested-eval-when-0114* ,part-2))))))
+    (delete-file "nested-eval-when-0114.lsp")
+    (delete-file ofile)
+    (is (equal (concatenate 'string part-1 part-2)
+               *nested-eval-when-0114*))))

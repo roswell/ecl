@@ -1649,10 +1649,12 @@ c_eval_when(cl_env_ptr env, cl_object args, int flags) {
       args = ECL_NIL;
   } else if (when_load_p(situation)) {
     if (when_compile_p(situation)) {
+      int result = compile_toplevel_body(env, args, flags);
       int current_mode = c_env->mode;
       c_env->mode = FLAG_EXECUTE;
       execute_each_form(env, args);
       c_env->mode = current_mode;
+      return result;
     }
   } else if (when_compile_p(situation)) {
     int current_mode = c_env->mode;
