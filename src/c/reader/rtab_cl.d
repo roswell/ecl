@@ -213,7 +213,7 @@ static cl_object
 sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  cl_object token, string, escape;
+  cl_object token, string;
   if (d != ECL_NIL && !read_suppress) {
     unlikely_if (!ECL_FIXNUMP(d) || d != ecl_make_fixnum(0)) {
       FEreader_error("~S is an illegal CHAR-FONT.", in, 1, d);
@@ -221,7 +221,6 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
   }
   token = ecl_read_token(in, 1);
   string = token->token.string;
-  escape = token->token.escape;
   if (TOKEN_STRING_FILLP(string) == 1) {
     c = ECL_CODE_CHAR(TOKEN_STRING_CHAR(string,0));
   } else if (TOKEN_STRING_FILLP(string) == 2 && TOKEN_STRING_CHAR_CMP(string,0,'^')) {
