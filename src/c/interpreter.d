@@ -42,19 +42,19 @@ VEbad_lambda_odd_keys(cl_object bytecodes, cl_object frame)
 static void
 VEwrong_arg_type_endp(cl_object reg0)
 {
-  ecl_ferror(ECL_EX_VM_BADARG_ENDP, ECL_NIL, reg0);
+  ecl_ferror(ECL_EX_VM_BADARG_ENDP, reg0, ECL_NIL);
 }
 
 static void
 VEwrong_arg_type_car(cl_object reg0)
 {
-  ecl_ferror(ECL_EX_VM_BADARG_CAR, ECL_NIL, reg0);
+  ecl_ferror(ECL_EX_VM_BADARG_CAR, reg0, ECL_NIL);
 }
 
 static void
 VEwrong_arg_type_cdr(cl_object reg0)
 {
-  ecl_ferror(ECL_EX_VM_BADARG_CDR, ECL_NIL, reg0);
+  ecl_ferror(ECL_EX_VM_BADARG_CDR, reg0, ECL_NIL);
 }
 
 static void
