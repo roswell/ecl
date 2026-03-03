@@ -1592,6 +1592,12 @@ extern ECL_API char ecl_current_read_default_float_format(void);
 #define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,ecl_make_constant_base_string(s,-1),(v))
 extern ECL_API cl_object ecl_init_module(cl_object block, void (*entry)(cl_object));
 
+extern ECL_API cl_object si_parse_token(cl_object token);
+extern ECL_API cl_object si_read_object(cl_object, cl_object);
+extern ECL_API cl_object si_read_token(cl_object);
+extern ECL_API cl_object si_token_string(cl_object);
+extern ECL_API cl_object si_token_escape(cl_object);
+
 /* reference.c */
 
 extern ECL_API cl_object cl_fboundp(cl_object sym);
