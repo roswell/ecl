@@ -679,3 +679,7 @@
 ;;;     For example FOO::BAR::QUX is equivalent to BAR:QUX (FOO must exist).
 (deftest mix.0034.dont-allow-invalid-package-prefixes ()
   (signals reader-error (read-from-string "CL-USER::CL::LIST")))
+
+(deftest mix.0035.bignum-eql-sanity ()
+  (is (eql (1- most-negative-fixnum) (1- most-negative-fixnum)))
+  (is (eql (1+ most-positive-fixnum) (1+ most-positive-fixnum))))
