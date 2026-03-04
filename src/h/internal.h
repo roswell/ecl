@@ -576,6 +576,8 @@ extern ecl_off_t ecl_integer_to_off_t(cl_object offset);
 # define TOKEN_STRING_CHAR_CMP(s,n,c) ((s)->base_string.self[n]==(c))
 #endif
 
+# define TOKEN_ESCAPE_FILLP(s) ((s)->vector.fillp)
+
 #define ECL_READ_RETURN_IGNORABLE 3
 #define ECL_READ_LIST_DOT 4
 
@@ -665,16 +667,24 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 #define RTABSIZE        ECL_CHAR_CODE_LIMIT     /*  read table size  */
 #endif
 
-#define loop_across_eints(l, h, obj) {                                  \
-  cl_index __ecl_ndx = obj->vector.fillp;                               \
-  cl_object *__ecl_v = obj->vector.self.t;                              \
+#define loop_across_token(index, limit, string, object) {               \
+  cl_object string = object->token.string;                              \
+  cl_object __ecl_lims = object->token.escape;                          \
+  cl_object *__ecl_v = __ecl_lims->vector.self.t;                       \
+  cl_index __ecl_ndx = __ecl_lims->vector.fillp;                        \
   cl_index __ecl_idx;                                                   \
-  cl_fixnum l, h;                                                       \
-  for(__ecl_idx = 0; __ecl_idx < __ecl_ndx; __ecl_idx+=2) {             \
-    l = ecl_fixnum(__ecl_v[__ecl_idx]);                                 \
-    h = ecl_fixnum(__ecl_v[__ecl_idx+1]);
+  cl_fixnum index = 0;                                                  \
+  cl_fixnum limit, __ecl_high;                                          \
+  for(__ecl_idx = 0; __ecl_idx <= __ecl_ndx; __ecl_idx+=2) {            \
+    if (__ecl_idx == __ecl_ndx) {                                       \
+      limit = __ecl_high = ecl_length(string);                          \
+    } else {                                                            \
+      limit = ecl_fixnum(__ecl_v[__ecl_idx]);                           \
+      __ecl_high = ecl_fixnum(__ecl_v[__ecl_idx+1]);                    \
+    }                                                                   \
+    for(; index<limit; index++) {
 
-#define end_loop_across_eints() }}
+#define end_loop_across_token() } index=__ecl_high; }}
 
 /* package.d */
 
