@@ -396,14 +396,10 @@
     (cons #'simple-handler *handler-clusters*)))
 
 (defun signal (datum &rest arguments)
-  (let* ((condition
-           (coerce-to-condition datum arguments 'SIMPLE-CONDITION 'SIGNAL))
-         (*handler-clusters* *handler-clusters*))
+  (let ((condition (coerce-to-condition datum arguments 'SIMPLE-CONDITION 'SIGNAL)))
     (when (typep condition *break-on-signals*)
       (break "~A~%Break entered because of *BREAK-ON-SIGNALS*." condition))
-    (loop (unless *handler-clusters* (return))
-          (let ((handler (pop *handler-clusters*)))
-            (funcall handler condition)))
+    (%signal condition t nil)
     nil))
 
 
