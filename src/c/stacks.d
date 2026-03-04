@@ -279,6 +279,11 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
   return f;
 }
 
+/* clang 19 miscompiles the following function on x86_64. Temporarily
+ * turn off optimizations here. */
+#if defined(__clang__) && __clang_major__ == 19 && defined(__x86_64__)
+[[clang::optnone]]
+#endif
 void
 ecl_stack_frame_push(cl_object f, cl_object o)
 {
@@ -334,6 +339,11 @@ ecl_stack_frame_push_values(cl_object f)
   }
 }
 
+/* clang 19 miscompiles the following function on x86_64. Temporarily
+ * turn off optimizations here. */
+#if defined(__clang__) && __clang_major__ == 19 && defined(__x86_64__)
+[[clang::optnone]]
+#endif
 cl_object
 ecl_stack_frame_pop_values(cl_object f)
 {
@@ -941,10 +951,25 @@ si_ihs_fun(cl_object arg)
 }
 
 cl_object
-si_ihs_env(cl_object arg)
+si_ihs_lex(cl_object arg)
 {
   cl_env_ptr env = ecl_process_env();
   ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lex_env);
+}
+
+cl_object
+si_ihs_lcl(cl_object arg)
+{
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lcl_env);
+}
+
+/* DEPRECATED backward compatibility with SWANK/SLYNK. --jd 2025-11-17 */
+cl_object
+si_ihs_env(cl_object arg)
+{
+  cl_env_ptr env = ecl_process_env();
+  ecl_return1(env, get_ihs_ptr(ecl_to_size(arg))->lcl_env);
 }
 
 /* -- General purpose stack implementation ----------------------------------- */

@@ -668,8 +668,10 @@ extern cl_object ecl_deserialize(uint8_t *data);
 #define CL_NEWENV_BEGIN {\
         const cl_env_ptr the_env = ecl_process_env(); \
         cl_index __i = ecl_data_stack_push_values(the_env); \
+        cl_object __f = the_env->function;
 
 #define CL_NEWENV_END \
+        the_env->function = __f; \
         ecl_data_stack_pop_values(the_env,__i); }
 
 extern void ecl_cs_init(cl_env_ptr env);

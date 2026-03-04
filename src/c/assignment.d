@@ -111,7 +111,6 @@ make_setf_function_error(cl_object name)
 cl_object
 ecl_setf_definition(cl_object sym, cl_object createp)
 {
-  cl_env_ptr the_env = ecl_process_env();
   cl_object pair = sym->symbol.sfdef;
   if (Null(pair) && !Null(createp)) {
     createp = make_setf_function_error(sym);
@@ -130,7 +129,6 @@ si_setf_definition(cl_object sym, cl_object value)
 static void
 ecl_rem_setf_definition(cl_object sym)
 {
-  cl_env_ptr the_env = ecl_process_env();
   cl_object pair = sym->symbol.sfdef;
   if (!Null(pair)) {
     ECL_RPLACA(pair, make_setf_function_error(sym));

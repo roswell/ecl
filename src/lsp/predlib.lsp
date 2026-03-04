@@ -36,6 +36,14 @@ Builds a new function which accepts any number of arguments but always outputs N
   (ext:fill-array-with-elt *subtypep-cache* nil 0 nil)
   (ext:fill-array-with-elt *upgraded-array-element-type-cache* nil 0 nil))
 
+(defun proclaim-class (name class &optional env)
+  "Add a class definition to the global compiler environment."
+  (declare (ignore env))
+  ;; Default implementation for the bytecodes compiler which doesn't
+  ;; have a separate file-local compiler environment.
+  (si:create-type-name name)
+  (setf (find-class name) class))
+
 (defun create-type-name (name)
   (when (member name *alien-declarations*)
     (error "Symbol ~s is a declaration specifier and cannot be used to name a new type" name)))

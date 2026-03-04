@@ -564,7 +564,7 @@
 ;;;;     caused by an encoding buffer that is too small.
 
 (test mix.0030.write-char-encode-buffer
-  (is (equal (with-open-file (s "/tmp/whatever.txt"
+  (is (equal (with-open-file (s "whatever.txt"
                                 :if-does-not-exist :create
                                 :if-exists :supersede
                                 :external-format :ucs-4
@@ -655,3 +655,31 @@
          (result (translate-logical-pathname pathname))
          (expect #P"/hello/bonjour/hi/barev/what/greetings.me"))
     (is (equalp result expect))))
+
+;;; Reported by: Daniel Kochmański
+;;; Created: 2026-03-02
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/813
+;;; Description
+;;;
+;;;     Reader does not handle correctly escaped characters when the
+;;;     READTABLE-CASE is :INVERT.
+(deftest mix.0033.preserve-escaped-characters ()
+  (let ((*readtable* (copy-readtable)))
+    (setf (readtable-case *readtable*) :invert)
+    (is (string=
+         (symbol-name (read-from-string "DANIEL|--xXx--|MANSKI"))
+         "daniel--xXx--manski"))))
+
+;;; Reported by: Daniel Kochmański
+;;; Created: 2026-03-02
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/814
+;;; Description
+;;;
+;;;     Reader allows for multiple package prefixes and uses only the last one.
+;;;     For example FOO::BAR::QUX is equivalent to BAR:QUX (FOO must exist).
+(deftest mix.0034.dont-allow-invalid-package-prefixes ()
+  (signals reader-error (read-from-string "CL-USER::CL::LIST")))
+
+(deftest mix.0035.bignum-eql-sanity ()
+  (is (eql (1- most-negative-fixnum) (1- most-negative-fixnum)))
+  (is (eql (1+ most-positive-fixnum) (1+ most-positive-fixnum))))

@@ -199,6 +199,7 @@ struct cl_core_struct {
         cl_object error_output;
         cl_object standard_readtable;
         cl_object dispatch_reader;
+        cl_object compiler_readtable;
 
         cl_object char_names;
         cl_object null_string;
@@ -1649,6 +1650,8 @@ extern ECL_API __m128d ecl_unbox_double_sse_pack(cl_object value);
 extern ECL_API cl_object si_ihs_top(void);
 extern ECL_API cl_object si_ihs_fun(cl_object arg);
 extern ECL_API cl_object si_ihs_env(cl_object arg);
+extern ECL_API cl_object si_ihs_lex(cl_object arg);
+extern ECL_API cl_object si_ihs_lcl(cl_object arg);
 extern ECL_API cl_object si_ihs_bds(cl_object arg);
 extern ECL_API cl_object si_ihs_next(cl_object arg);
 extern ECL_API cl_object si_ihs_prev(cl_object arg);

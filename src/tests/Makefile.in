@@ -2,7 +2,7 @@
 # vim: set filetype=makefile tabstop=8 shiftwidth=4 expandtab:
 
 ECL=@prefix@/@bindir@/ecl@EXEEXT@
-SHELL=/bin/bash -o pipefail
+SHELL=/usr/bin/env bash -o pipefail
 
 .PHONY: all check ansi-test
 

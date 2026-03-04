@@ -233,16 +233,18 @@ typedef struct ecl_ihs_frame {
         struct ecl_ihs_frame *next;
         cl_object function;
         cl_object lex_env;
+        cl_object lcl_env;
         cl_index index;
         cl_index bds;
 } *ecl_ihs_ptr;
 
-#define ecl_ihs_push(env,rec,fun,lisp_env) do { \
+#define ecl_ihs_push(env,rec,fun,lex,lcl) do { \
         const cl_env_ptr __the_env = (env);     \
         ecl_ihs_ptr const r = (ecl_ihs_ptr const)(rec); \
         r->next=__the_env->ihs_stack.top;             \
         r->function=(fun);                            \
-        r->lex_env=(lisp_env);                        \
+        r->lex_env=(lex);                             \
+        r->lcl_env=(lcl);                             \
         r->index=__the_env->ihs_stack.top->index+1;   \
         r->bds=__the_env->bds_stack.top - __the_env->bds_stack.org; \
         __the_env->ihs_stack.top = r;                               \

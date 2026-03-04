@@ -199,7 +199,7 @@
       (wt-nl "ecl_bds_unwind_n(cl_env_copy," bds-bind ");"))
   (case ihs-p
     (IHS     (wt-nl "ecl_ihs_pop(cl_env_copy);"))
-    (IHS-ENV (wt-nl "ihs.lex_env = _ecl_debug_env;"))))
+    (IHS-ENV (wt-nl "ihs.lcl_env = _ecl_debug_env;"))))
 
 (defun %unwind (into from)
   (declare (si::c-local))

@@ -173,6 +173,10 @@ _ecl_write_base_string(cl_object x, cl_object stream)
   if (!ecl_print_escape() && !ecl_print_readably()) {
     si_do_write_sequence(x, stream, ecl_make_fixnum(0), ECL_NIL);
   } else {
+    if (ecl_symbol_value(@'*print-array*') == @'base-string') {
+      /* Base string syntax used for data in compiled files. */
+      ecl_write_char('#', stream);
+    }
     cl_index ndx, ndx_start;
     ecl_write_char('"', stream);
     for (ndx = ndx_start = 0;  ndx < x->base_string.fillp;  ndx++) {

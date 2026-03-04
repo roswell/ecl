@@ -67,10 +67,6 @@ static void cannot_close(cl_object stream) ecl_attr_noreturn;
 static void file_libc_error(cl_object error_type, cl_object stream, const char *msg, int narg, ...) ecl_attr_noreturn;
 static int restartable_io_error(cl_object strm, const char *s);
 static void io_error(cl_object strm) ecl_attr_noreturn;
-#ifdef ECL_UNICODE
-static cl_index encoding_error(cl_object strm, unsigned char *buffer, ecl_character c);
-static ecl_character decoding_error(cl_object strm, unsigned char **buffer, int char_length, unsigned char *buffer_end);
-#endif
 static void wrong_file_handler(cl_object strm) ecl_attr_noreturn;
 #if defined(ECL_WSOCK)
 static void wsock_error( const char *err_msg, cl_object strm ) ecl_attr_noreturn;

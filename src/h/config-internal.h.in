@@ -253,3 +253,7 @@
 #else
 #define ECL_DEFAULT_C_STACK_SIZE @ECL_DEFAULT_C_STACK_SIZE@
 #endif
+
+/* Do the fixed and optional arguments of a variadic function use a
+ * different calling convention? */
+#undef ECL_C_COMPATIBLE_VARIADIC_DISPATCH

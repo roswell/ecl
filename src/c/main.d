@@ -394,6 +394,7 @@ struct cl_core_struct cl_core = {
   .error_output = ECL_NIL,
   .standard_readtable = ECL_NIL,
   .dispatch_reader = ECL_NIL,
+  .compiler_readtable = ECL_NIL,
 
   .char_names = ECL_NIL,
   .null_string = (cl_object)&str_empty_data,

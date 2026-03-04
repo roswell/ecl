@@ -104,7 +104,7 @@
                               "Circular references in creation form for ~S."
                               (compiler-message-form c)))))
 
-(define-condition dead-code (compiler-note style-warning)
+(define-condition dead-code (compiler-note)
   ((dead-forms :initarg :dead-forms :initform nil)
    (context :initarg :context :initform nil)
    (explanation :initarg :explanation :initform "")
