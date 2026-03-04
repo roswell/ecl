@@ -19,65 +19,58 @@
 cl_object
 ecl_parse_token(cl_object token, cl_object in, int flags)
 {
-  cl_fixnum str_i;
-  cl_index length, i, sym_start, pack_end;
-  int colon, intern_flag, c, base;
-  bool external_symbol;
-  cl_object package, package_name, symbol_name, string, escape, x;
+  cl_fixnum length, sym_start, pack_end;
+  cl_index i;
+  int intern_flag, base;
+  bool external_symbol, escaped;
+  cl_object package, package_name, symbol_name, string, x;
   cl_env_ptr the_env = ecl_process_env();
   string = token->token.string;
-  escape = token->token.escape;
+  escaped = token->token.escaped;
   package = package_name = symbol_name = x = ECL_NIL;
-  str_i = sym_start = pack_end = colon = 0;
+  sym_start = pack_end = 0;
   length = ecl_length(string);
   external_symbol = 0;
-
-  loop_across_eints(low_limit, high_limit, escape) {
-    for(; str_i<low_limit; str_i++) {
-      c = ecl_char(string, str_i);
-      if (c == ':') {
-        if(!Null(package))
-          FEreader_error("Unexpected colon character.", in, 0);
-        pack_end = str_i;
-        /* Eat all ':' and advance the pointer after them. */
-        while(c == ':') {
-          colon++;
-          if (colon > 2)
-            FEreader_error("Too many colons.", in, 0);
-          str_i++;
-          if (str_i == low_limit) {
-            break;
-          }
-          c = ecl_char(string, str_i);
-        }
-        sym_start = str_i;
-        external_symbol = (colon == 1);
-        if (pack_end == 0) {
-          package = cl_core.keyword_package;
-          external_symbol = 0;
-        } else {
-          package_name = ecl_subseq(string, 0, pack_end);
-          package = ecl_find_package_nolock(package_name);
-        }
-        if (Null(package)) {
-          /* When loading binary files, we sometimes must create symbols whose
-             package has not yet been maked. We allow it, but later on in
-             ecl_init_module we make sure that all referenced packages have been
-             properly built. */
-          unlikely_if (Null(the_env->packages_to_be_created_p)) {
-            ecl_put_reader_token(token);
-            FEerror("There is no package with the name ~A.", 1, package_name);
-          }
-          package = _ecl_package_to_be_created(the_env, package_name);
-        }
+  /* Parse the string to find possible package separator. */
+  loop_across_token(index, limit, string, token) {
+    if (ecl_char(string, index) == ':') {
+      if(sym_start)
+        FEreader_error("Unexpected colon character.", in, 0);
+      pack_end = index++;
+      if(index < limit && ecl_char(string, index) == ':') {
+        sym_start=index+1;
+        external_symbol = 0;
+      } else {
+        sym_start=index;
+        external_symbol = 1;
       }
+  }} end_loop_across_token();
+
+  /* When the separator was found, then ensure the package. */
+  if(sym_start) {
+    if (pack_end == 0) {
+      package = cl_core.keyword_package;
+      external_symbol = 0;
+    } else {
+      package_name = ecl_subseq(string, 0, pack_end);
+      package = ecl_find_package_nolock(package_name);
     }
-    str_i=high_limit;
-  } end_loop_across_eints();
+    if (Null(package)) {
+      /* When loading binary files, we sometimes must create symbols whose
+         package has not yet been maked. We allow it, but later on in
+         ecl_init_module we make sure that all referenced packages have been
+         properly built. */
+      unlikely_if (Null(the_env->packages_to_be_created_p)) {
+        ecl_put_reader_token(token);
+        FEerror("There is no package with the name ~A.", 1, package_name);
+      }
+      package = _ecl_package_to_be_created(the_env, package_name);
+    }
+  }
 
   /* If there are some escaped characters, it must be a symbol.
      escape_intervals always has an empty interval pair at the end. */
-  if (package != ECL_NIL || ecl_length(escape) > 2 || length == 0)
+  if (package != ECL_NIL || escaped || length == 0)
     goto SYMBOL;
 
   /* The case in which the buffer is full of dots has to be especial cased. */
@@ -87,7 +80,7 @@ ecl_parse_token(cl_object token, cl_object in, int flags)
       goto OUTPUT;
     } else {
       ecl_put_reader_token(token);
-      FEreader_error("Dots appeared illegally.", in, 0);
+      FEreader_error("Dot appeared illegally.", in, 0);
     }
   } else {
     int i;

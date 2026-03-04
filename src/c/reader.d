@@ -34,8 +34,7 @@ ecl_make_token()
   cl_object o = ecl_alloc_object(t_token);
   o->token.escaped = 0;
   o->token.string = si_get_buffer_string();
-  /* To keep looping code simple, we insert an empty interval at the end. */
-  o->token.escape = ecl_make_stack(2);
+  o->token.escape = ecl_make_stack(0);
   return o;
 }
 
@@ -76,36 +75,30 @@ ecl_put_reader_token(cl_object token)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object pool = the_env->token_pool;
-  ecl_wipe_stack(token->token.escape);
   TOKEN_STRING_FILLP(token->token.string) = 0;
+  TOKEN_ESCAPE_FILLP(token->token.escape) = 0;
+  token->token.escaped = 0;
   the_env->token_pool = CONS(token, pool);
 }
 
 /*
  * This routine inverts the case of the characters in the buffer which were not
- * escaped. ESCAPE_INTERVALS is a vector of intevals of characters that were
- * escaped, as in ({(low-limit . high-limit)}*).
+ * escaped.
  */
 static void
 invert_buffer_case(cl_object o, int sign)
 {
-  cl_object string = o->token.string;
-  cl_object escape = o->token.escape;
-  cl_fixnum str_i = 0;
   int c;
-  /* see whether we have a bug with reversed beginning/end */
-  loop_across_eints(low_limit, high_limit, escape) {
-    for(; str_i<low_limit; str_i++) {
-      c = TOKEN_STRING_CHAR(string, str_i);
-      if (ecl_upper_case_p(c) && (sign < 0)) {
-        c = ecl_char_downcase(c);
-      } else if (ecl_lower_case_p(c) && (sign > 0)) {
-        c = ecl_char_upcase(c);
-      }
-      TOKEN_STRING_CHAR_SET(string, str_i, c);
+  cl_fixnum i;
+  loop_across_token(index, limit, string, o) {
+    c = TOKEN_STRING_CHAR(string, index);
+    if (ecl_upper_case_p(c) && (sign < 0)) {
+      c = ecl_char_downcase(c);
+    } else if (ecl_lower_case_p(c) && (sign > 0)) {
+      c = ecl_char_upcase(c);
     }
-    str_i=high_limit;
-  } end_loop_across_eints();
+    TOKEN_STRING_CHAR_SET(string, index, c);
+  } end_loop_across_token();
 }
 
 /*
@@ -240,8 +233,7 @@ ecl_read_token(cl_object in, bool escape_first_p)
       break;
     a = ecl_readtable_get(rtbl, c, NULL);
   }
-  ecl_stack_push(escape, ecl_make_fixnum(length));
-  ecl_stack_push(escape, ecl_make_fixnum(length));
+  token->token.escaped = (TOKEN_ESCAPE_FILLP(escape) > 0);
 
   /*TOKEN_STRING_CHAR_SET(string,length,'\0');*/
   /* If the readtable case was :INVERT and all non-escaped characters
