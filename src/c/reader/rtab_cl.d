@@ -214,6 +214,7 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object token, string;
+  cl_object rtbl = ecl_current_readtable();
   bool suppress = read_suppress;
   if (d != ECL_NIL && !suppress) {
     unlikely_if (!ECL_FIXNUMP(d) || d != ecl_make_fixnum(0)) {
@@ -221,10 +222,10 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
     }
   }
   if(suppress) {
-    ecl_read_token(in, 1);
+    ecl_read_token(rtbl, in, 1);
     return ECL_NIL;
   }
-  token = ecl_read_token(in, 1);
+  token = ecl_read_token(rtbl, in, 1);
   string = token->token.string;
   if (TOKEN_STRING_FILLP(string) == 1) {
     c = ECL_CODE_CHAR(TOKEN_STRING_CHAR(string,0));
@@ -389,6 +390,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
   extern int _cl_backq_car(cl_object *);
   const cl_env_ptr the_env = ecl_process_env();
   cl_object v;
+  cl_object rtbl = ecl_current_readtable();
   unlikely_if (!Null(d) &&
                (!ECL_FIXNUMP(d) || ecl_fixnum_minusp(d) ||
                 ecl_fixnum_greater(d, ecl_make_fixnum(ECL_ARRAY_DIMENSION_LIMIT))))
@@ -423,7 +425,7 @@ sharp_left_parenthesis_reader(cl_object in, cl_object c, cl_object d)
     cl_index dim = ecl_fixnum(d), i;
     v = ecl_alloc_simple_vector(dim, ecl_aet_object);
     for (i = 0, last = ECL_NIL;; i++) {
-      cl_object aux = ecl_read_object_with_delimiter(in, ')', 0);
+      cl_object aux = ecl_read_object_with_delimiter(rtbl, in, ')', 0);
       if (aux == OBJNULL)
         break;
       unlikely_if (i >= dim) {
