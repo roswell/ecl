@@ -727,7 +727,8 @@ enum ecl_chattrib {             /*  character attribute  */
 
 struct ecl_readtable_entry {            /*  read table entry  */
         enum ecl_chattrib syntax_type;  /*  character attribute  */
-        cl_object dispatch;             /*  a macro, a hash or NIL  */
+        cl_object macro;                /*  character  macro  */
+        cl_object table;                /*  dispatch table or NIL*/
 };
 
 enum ecl_readtable_case {

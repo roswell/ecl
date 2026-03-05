@@ -98,50 +98,6 @@ invert_buffer_case(cl_object o, int sign)
   } end_loop_across_token();
 }
 
-/*
-  Returns OBJNULL if no dispatch function is defined and signal_error is false.
- */
-static cl_object
-dispatch_macro_character(cl_object table, cl_object in, int c, bool signal_error)
-{
-  cl_object arg;
-  int d;
-  c = ecl_read_char_noeof(in);
-  d = ecl_digitp(c, 10);
-  if (d >= 0) {
-    cl_fixnum i = 0;
-    do {
-      i = 10*i + d;
-      c = ecl_read_char_noeof(in);
-      d = ecl_digitp(c, 10);
-    } while (d >= 0);
-    arg = ecl_make_fixnum(i);
-  } else {
-    arg = ECL_NIL;
-  }
-  {
-    cl_object dc = ECL_CODE_CHAR(c);
-    cl_object fun = ecl_gethash_safe(dc, table, ECL_NIL);
-    unlikely_if (Null(fun)) {
-      if (!signal_error) return OBJNULL;
-      FEreader_error("No dispatch function defined for character ~S", in, 1, dc);
-    }
-    return _ecl_funcall4(fun, in, dc, arg);
-  }
-}
-
-cl_object
-ecl_dispatch_reader_fun(cl_object in, cl_object dc)
-{
-  cl_object readtable = ecl_current_readtable();
-  cl_object dispatch_table;
-  int c = ecl_char_code(dc);
-  ecl_readtable_get(readtable, c, &dispatch_table);
-  unlikely_if (!ECL_HASH_TABLE_P(dispatch_table))
-    FEreader_error("~C is not a dispatching macro character", in, 1, dc);
-  return dispatch_macro_character(dispatch_table, in, c, TRUE);
-}
-
 cl_object
 ecl_read_token(cl_object rtbl, cl_object in, int flags)
 {
@@ -167,7 +123,7 @@ ecl_read_token(cl_object rtbl, cl_object in, int flags)
     a = cat_single_escape;
   } else {
     c = ecl_read_char_noeof(in);
-    a = ecl_readtable_get(rtbl, c, NULL);
+    a = ecl_readtable_get(rtbl, c, NULL, NULL);
   }
 
   for (;;) {
@@ -184,7 +140,7 @@ ecl_read_token(cl_object rtbl, cl_object in, int flags)
       cl_index begin = length;
       for (;;) {
         c = ecl_read_char_noeof(in);
-        a = ecl_readtable_get(rtbl, c, NULL);
+        a = ecl_readtable_get(rtbl, c, NULL, NULL);
         if (a == cat_single_escape) {
           c = ecl_read_char_noeof(in);
           a = cat_constituent;
@@ -223,7 +179,7 @@ ecl_read_token(cl_object rtbl, cl_object in, int flags)
     c = ecl_read_char(in);
     if (c == EOF)
       break;
-    a = ecl_readtable_get(rtbl, c, NULL);
+    a = ecl_readtable_get(rtbl, c, NULL, NULL);
   }
   token->token.escaped = (TOKEN_ESCAPE_FILLP(escape) > 0);
 
@@ -258,21 +214,10 @@ ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int delimiter, int 
     }
     if (c == EOF)
       FEend_of_file(in);
-    a = ecl_readtable_get(rtbl, c, &x);
+    a = ecl_readtable_get(rtbl, c, &x, NULL);
   } while (a == cat_whitespace);
   if ((a == cat_terminating || a == cat_non_terminating)) {
-    cl_object o;
-    if (ECL_HASH_TABLE_P(x)) {
-      if (suppress) {
-        o = dispatch_macro_character(x, in, c, FALSE);
-        if (o == OBJNULL)
-          goto BEGIN;
-      } else {
-        o = dispatch_macro_character(x, in, c, TRUE);
-      }
-    } else {
-      o = _ecl_funcall3(x, in, ECL_CODE_CHAR(c));
-    }
+    cl_object o = _ecl_funcall3(x, in, ECL_CODE_CHAR(c));
     if (the_env->nvalues == 0) {
       if (flags & ECL_READ_RETURN_IGNORABLE)
         return ECL_NIL;
