@@ -123,13 +123,8 @@ dispatch_macro_character(cl_object table, cl_object in, int c, bool signal_error
     cl_object dc = ECL_CODE_CHAR(c);
     cl_object fun = ecl_gethash_safe(dc, table, ECL_NIL);
     unlikely_if (Null(fun)) {
-      if (signal_error) {
-        FEreader_error("No dispatch function defined "
-                       "for character ~S",
-                       in, 1, dc);
-      } else {
-        return OBJNULL;
-      }
+      if (!signal_error) return OBJNULL;
+      FEreader_error("No dispatch function defined for character ~S", in, 1, dc);
     }
     return _ecl_funcall4(fun, in, dc, arg);
   }
