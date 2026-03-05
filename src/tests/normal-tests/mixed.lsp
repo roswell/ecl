@@ -683,3 +683,39 @@
 (deftest mix.0035.bignum-eql-sanity ()
   (is (eql (1- most-negative-fixnum) (1- most-negative-fixnum)))
   (is (eql (1+ most-positive-fixnum) (1+ most-positive-fixnum))))
+
+;;; Reported by: Daniel Kochmański
+;;; Created: 2026-03-05
+;;; Description
+;;;
+;;;     Instead of copying dispatch character sub-tables we assign them.
+(deftest mix.0036.reader.false-sharing ()
+  (flet ((set-macro-char (disp sub value table)
+           (set-dispatch-macro-character
+            disp sub #'(lambda (stream sub-char argument)
+                         (declare (ignore stream sub-char argument))
+                         value)
+            table)))
+    (let ((t1 (copy-readtable)))
+      (make-dispatch-macro-character #\! nil t1)
+      (set-macro-char #\! #\a :one t1)
+      (let ((t2 (copy-readtable t1)))
+        (set-macro-char #\! #\b :two t1)
+        (set-syntax-from-char #\? #\! t2 t1)
+        (set-macro-char #\? #\b :tri t2)
+        (set-macro-char #\! #\c :fou t1)
+        (let ((*readtable* t1))
+          (is (eql :one (read-from-string "!a")))
+          (is (eql :two (read-from-string "!b"))
+              "reads to ~s" (read-from-string "!b"))
+          (is (eql :fou (read-from-string "!c")))
+          (is (eql '?a  (read-from-string "?a")))
+          (is (eql '?b  (read-from-string "?b")))
+          (is (eql '?c  (read-from-string "?c"))))
+        (let ((*readtable* t2))
+          (is (eql :one  (read-from-string "!a")))
+          (signals error (read-from-string "!b"))
+          (signals error (read-from-string "!c"))
+          (is (eql :one  (read-from-string "?a")))
+          (is (eql :tri  (read-from-string "?b")))
+          (signals error (read-from-string "?c")))))))

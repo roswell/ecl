@@ -260,8 +260,9 @@
                  (t #|ignore non-serious unexpected conditions|#))))
     (handler-bind ((condition #'handler))
       (funcall fn)))
-  (let ((fmt-ctrl (if args (car args) "Expected to signal ~s, but got nothing"))
-        (fmt-args (if args (cdr args) `(,expected))))
+  (let ((fmt-ctrl (format nil "Expected to signal ~s, but got nothing~@[~%~A~]"
+                          expected (car args)))
+        (fmt-args (cdr args)))
    (failed (make-condition 'test-failure
                            :name *test-name*
                            :format-control fmt-ctrl
