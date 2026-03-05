@@ -1577,9 +1577,9 @@ extern ECL_API cl_object ecl_read_delimited_list(int d, cl_object strm, bool pro
 extern ECL_API cl_object ecl_dispatch_reader_fun(cl_object in, cl_object dc);
 extern ECL_API cl_object ecl_read_eval(cl_object in);
 extern ECL_API cl_object ecl_read_object_non_recursive(cl_object in);
-extern ECL_API cl_object ecl_read_object_with_delimiter(cl_object in, int del, int flags);
+extern ECL_API cl_object ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int del, int flags);
 extern ECL_API cl_object ecl_read_object(cl_object in);
-extern ECL_API cl_object ecl_read_token(cl_object in, bool esc);
+extern ECL_API cl_object ecl_read_token(cl_object rtbl, cl_object in, bool esc);
 extern ECL_API cl_object ecl_parse_token(cl_object token, cl_object in, int flags);
 extern ECL_API cl_object ecl_parse_number(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
 extern ECL_API cl_object ecl_parse_integer(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
