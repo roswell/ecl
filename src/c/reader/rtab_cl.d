@@ -91,7 +91,7 @@ read_string_into_buffer(cl_object in, cl_object c, cl_object buffer)
     int c = ecl_read_char_noeof(in);
     if (c == delim)
       break;
-    else if (ecl_readtable_get(rtbl, c, NULL) == cat_single_escape)
+    else if (ecl_readtable_get(rtbl, c, NULL, NULL) == cat_single_escape)
       c = ecl_read_char_noeof(in);
     ecl_string_push_extend(buffer, c);
   }
@@ -462,7 +462,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
     int x = ecl_read_char(in);
     if (x == EOF)
       break;
-    a = ecl_readtable_get(rtbl, x, NULL);
+    a = ecl_readtable_get(rtbl, x, NULL, NULL);
     if (a == cat_terminating || a == cat_whitespace) {
       ecl_unread_char(x, in);
       break;
@@ -513,7 +513,7 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
   if (d != ECL_NIL && !read_suppress)
     extra_argument(':', in, d);
   c = ecl_read_char_noeof(in);
-  a = ecl_readtable_get(rtbl, c, NULL);
+  a = ecl_readtable_get(rtbl, c, NULL, NULL);
   token = si_get_buffer_string();
   goto L;
   for (;;) {
@@ -522,7 +522,7 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
     c = ecl_read_char(in);
     if (c == EOF)
       goto M;
-    a = ecl_readtable_get(rtbl, c, NULL);
+    a = ecl_readtable_get(rtbl, c, NULL, NULL);
   L:
     if (a == cat_single_escape) {
       c = ecl_read_char_noeof(in);
@@ -530,7 +530,7 @@ sharp_colon_reader(cl_object in, cl_object ch, cl_object d)
     } else if (a == cat_multiple_escape) {
       for (;;) {
         c = ecl_read_char_noeof(in);
-        a = ecl_readtable_get(rtbl, c, NULL);
+        a = ecl_readtable_get(rtbl, c, NULL, NULL);
         if (a == cat_single_escape) {
           c = ecl_read_char_noeof(in);
           a = cat_constituent;
@@ -750,6 +750,52 @@ sharp_dollar_reader(cl_object in, cl_object c, cl_object d)
   @(return rs);
 }
 
+/* Dispatch macro character funciton. */
+
+static cl_object
+dispatch_macro_character(cl_object table, cl_object in, int c)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object arg;
+  int d;
+  c = ecl_read_char_noeof(in);
+  d = ecl_digitp(c, 10);
+  if (d >= 0) {
+    cl_fixnum i = 0;
+    do {
+      i = 10*i + d;
+      c = ecl_read_char_noeof(in);
+      d = ecl_digitp(c, 10);
+    } while (d >= 0);
+    arg = ecl_make_fixnum(i);
+  } else {
+    arg = ECL_NIL;
+  }
+  {
+    cl_object dc = ECL_CODE_CHAR(c);
+    cl_object fun = ecl_gethash_safe(dc, table, ECL_NIL);
+    unlikely_if (Null(fun)) {
+      if(read_suppress)
+        ecl_return0(the_env);
+      FEreader_error("No dispatch function defined for character ~S",
+                     in, 1, ECL_CODE_CHAR(c));
+    }
+    return _ecl_funcall4(fun, in, dc, arg);
+  }
+}
+
+cl_object
+ecl_dispatch_reader_fun(cl_object in, cl_object dc)
+{
+  cl_object readtable = ecl_current_readtable();
+  cl_object dispatch_table;
+  int c = ecl_char_code(dc);
+  ecl_readtable_get(readtable, c, NULL, &dispatch_table);
+  unlikely_if (!ECL_HASH_TABLE_P(dispatch_table))
+    FEreader_error("~C is not a dispatching macro character", in, 1, dc);
+  return dispatch_macro_character(dispatch_table, in, c);
+}
+
 #define make_cf2(f)     ecl_make_cfun((cl_objectfn_fixed)(f), ECL_NIL, NULL, 2)
 #define make_cf3(f)     ecl_make_cfun((cl_objectfn_fixed)(f), ECL_NIL, NULL, 3)
 
@@ -768,7 +814,8 @@ init_read(void)
     ecl_alloc(RTABSIZE * sizeof(struct ecl_readtable_entry));
   for (i = 0;  i < RTABSIZE;  i++) {
     rtab[i].syntax_type = cat_constituent;
-    rtab[i].dispatch = ECL_NIL;
+    rtab[i].macro = ECL_NIL;
+    rtab[i].table = ECL_NIL;
   }
 #ifdef ECL_UNICODE
   r->readtable.hash = ECL_NIL;
@@ -777,9 +824,10 @@ init_read(void)
   cl_core.dispatch_reader = make_cf2(ecl_dispatch_reader_fun);
   sharp_generic_error_fn = make_cf3(sharp_generic_error);
 
-#define def_ch1_spc(ch) ecl_readtable_set(r, ch, cat_whitespace, ECL_NIL)
-#define def_ch1_esc(ch,attr) ecl_readtable_set(r, ch, attr, ECL_NIL)
-#define def_ch1_trm(ch,f) ecl_readtable_set(r, ch, cat_terminating, make_cf2(f))
+#define def_ch1_spc(ch) ecl_readtable_set(r, ch, cat_whitespace, ECL_NIL, ECL_NIL)
+#define def_ch1_esc(ch,attr) ecl_readtable_set(r, ch, attr, ECL_NIL, ECL_NIL)
+#define def_ch1_trm(ch,f) ecl_readtable_set \
+    (r, ch, cat_terminating, make_cf2(f), ECL_NIL)
 
   def_ch1_spc('\t');
   def_ch1_spc('\n');
