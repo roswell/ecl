@@ -151,14 +151,13 @@ ecl_dispatch_reader_fun(cl_object in, cl_object dc)
 }
 
 cl_object
-ecl_read_token(cl_object in, bool escape_first_p)
+ecl_read_token(cl_object rtbl, cl_object in, bool escape_first_p)
 {
   int c;
   cl_object token, string, escape;
   cl_index length;
   enum ecl_chattrib a;
   cl_env_ptr the_env = ecl_process_env();
-  cl_object rtbl = ecl_current_readtable();
   enum ecl_readtable_case read_case = rtbl->readtable.read_case;
   cl_fixnum upcase; /* # uppercase characters - # downcase characters */
   cl_fixnum count; /* number of unescaped characters */
@@ -250,13 +249,12 @@ ecl_read_token(cl_object in, bool escape_first_p)
 }
 
 cl_object
-ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
+ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int delimiter, int flags)
 {
   cl_object x, token;
   int c;
   enum ecl_chattrib a;
   cl_env_ptr the_env = ecl_process_env();
-  cl_object rtbl = ecl_current_readtable();
   bool suppress = read_suppress;
  BEGIN:
   do {
@@ -294,7 +292,7 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
     return o;
   }
   ecl_unread_char(c, in);
-  token = ecl_read_token(in, 0);
+  token = ecl_read_token(rtbl, in, 0);
   if (suppress) {
     x = ECL_NIL;
   } else {
@@ -302,21 +300,4 @@ ecl_read_object_with_delimiter(cl_object in, int delimiter, int flags)
   }
   ecl_put_reader_token(token);
   return x;
-}
-
-cl_object
-si_read_object(cl_object strm, cl_object delimiter)
-{
-  cl_env_ptr the_env = ecl_process_env();
-  int ch = Null(delimiter) ? 0 : ecl_char_code(delimiter);
-  cl_object object = ecl_read_object_with_delimiter(strm, ch, 0);
-  ecl_return1(the_env, object);
-}
-
-cl_object
-si_read_token(cl_object strm)
-{
-  cl_env_ptr the_env = ecl_process_env();
-  cl_object object = ecl_read_token(strm, 0);
-  ecl_return1(the_env, object);
 }
