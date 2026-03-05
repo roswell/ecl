@@ -1570,8 +1570,8 @@ extern ECL_API cl_object si_read_object_or_ignore(cl_object stream, cl_object eo
 extern ECL_API cl_object si_readtable_lock _ECL_ARGS((cl_narg narg, cl_object readtable, ...));
 extern ECL_API cl_object si_make_backq_vector(cl_object dim, cl_object data, cl_object stream);
 
-extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro);
-extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro_or_table);
+extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro, cl_object *table);
+extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro, cl_object table);
 extern ECL_API cl_object ecl_read_constituent(cl_object in, bool not_first);
 extern ECL_API cl_object ecl_read_delimited_list(int d, cl_object strm, bool proper);
 extern ECL_API cl_object ecl_dispatch_reader_fun(cl_object in, cl_object dc);

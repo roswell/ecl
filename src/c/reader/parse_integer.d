@@ -81,7 +81,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
       e = p.end;
     }
     while (s < e &&
-           ecl_readtable_get(rtbl, ecl_char(strng, s), NULL) == cat_whitespace) {
+           ecl_readtable_get(rtbl, ecl_char(strng, s), NULL, NULL) == cat_whitespace) {
       s++;
     }
     if (s >= e) {
@@ -104,7 +104,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
       @(return x ecl_make_fixnum(ep));
     }
     for (s = ep; s < e; s++) {
-      unlikely_if (ecl_readtable_get(rtbl, ecl_char(strng, s), NULL)
+      unlikely_if (ecl_readtable_get(rtbl, ecl_char(strng, s), NULL, NULL)
                    != cat_whitespace) 
         {
         CANNOT_PARSE:           FEparse_error("Cannot parse an integer in the string ~S.",

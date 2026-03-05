@@ -54,11 +54,11 @@ ecl_copy_readtable(cl_object from, cl_object to)
   from_rtab = from->readtable.table;
   memcpy(to_rtab, from_rtab, total_bytes);
   for (i = 0;  i < RTABSIZE;  i++) {
-    cl_object d = from_rtab[i].dispatch;
+    cl_object d = from_rtab[i].table;
     if (ECL_HASH_TABLE_P(d)) {
       d = si_copy_hash_table(d);
     }
-    to_rtab[i].dispatch = d;
+    to_rtab[i].table = d;
   }
   output->readtable.read_case = from->readtable.read_case;
 #ifdef ECL_UNICODE
@@ -150,9 +150,9 @@ cl_readtablep(cl_object readtable)
 }
 
 int
-ecl_readtable_get(cl_object readtable, int c, cl_object *macro_or_table)
+ecl_readtable_get(cl_object readtable, int c, cl_object *macro, cl_object *table)
 {
-  cl_object m;
+  cl_object m, t;
   enum ecl_chattrib cat;
 #ifdef ECL_UNICODE
   if (c >= RTABSIZE) {
@@ -163,22 +163,27 @@ ecl_readtable_get(cl_object readtable, int c, cl_object *macro_or_table)
       cl_object pair = ecl_gethash_safe(ECL_CODE_CHAR(c), hash, ECL_NIL);
       if (!Null(pair)) {
         cat = ecl_fixnum(ECL_CONS_CAR(pair));
-        m = ECL_CONS_CDR(pair);
+        pair = ECL_CONS_CDR(pair);
+        m = ECL_CONS_CAR(pair);
+        pair = ECL_CONS_CDR(pair);
+        t = ECL_CONS_CAR(pair);
       }
     }
   } else
 #endif
     {
-      m = readtable->readtable.table[c].dispatch;
+      m = readtable->readtable.table[c].macro;
+      t = readtable->readtable.table[c].table;
       cat = readtable->readtable.table[c].syntax_type;
     }
-  if (macro_or_table) *macro_or_table = m;
+  if (macro) *macro = m;
+  if (table) *table = t;
   return cat;
 }
 
 void
 ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
-                  cl_object macro_or_table)
+                  cl_object macro, cl_object table)
 {
   if (readtable->readtable.locked) {
     error_locked_readtable(readtable);
@@ -193,11 +198,14 @@ ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
       readtable->readtable.hash = hash;
     }
     _ecl_sethash(ECL_CODE_CHAR(c), hash,
-                 CONS(ecl_make_fixnum(cat), macro_or_table));
+                 CONS(ecl_make_fixnum(cat),
+                      CONS(macro,
+                           CONS(table, ECL_NIL))));
   } else
 #endif
     {
-      readtable->readtable.table[c].dispatch = macro_or_table;
+      readtable->readtable.table[c].macro = macro;
+      readtable->readtable.table[c].table = table;
       readtable->readtable.table[c].syntax_type = cat;
     }
 }
@@ -214,7 +222,7 @@ ecl_invalid_character_p(int c)
                               &o (tordtbl ecl_current_readtable())
                               fromrdtbl)
   enum ecl_chattrib cat;
-  cl_object dispatch;
+  cl_object macro, table;
   cl_fixnum fc, tc;
   @
   if (tordtbl->readtable.locked) {
@@ -227,11 +235,11 @@ ecl_invalid_character_p(int c)
   fc = ecl_char_code(fromchr);
   tc = ecl_char_code(tochr);
 
-  cat = ecl_readtable_get(fromrdtbl, fc, &dispatch);
-  if (ECL_HASH_TABLE_P(dispatch)) {
-    dispatch = si_copy_hash_table(dispatch);
+  cat = ecl_readtable_get(fromrdtbl, fc, &macro, &table);
+  if (ECL_HASH_TABLE_P(table)) {
+    table = si_copy_hash_table(table);
   }
-  ecl_readtable_set(tordtbl, tc, cat, dispatch);
+  ecl_readtable_set(tordtbl, tc, cat, macro, table);
   @(return ECL_T);
   @)
 
@@ -242,20 +250,19 @@ ecl_invalid_character_p(int c)
                     Null(non_terminating_p)?
                     cat_terminating :
                     cat_non_terminating,
-                    function);
+                    function,
+                    ECL_NIL);
   @(return ECL_T);
   @)
 
 @(defun get_macro_character (c &optional (readtable ecl_current_readtable()))
   enum ecl_chattrib cat;
-  cl_object dispatch;
+  cl_object macro;
   @
   if (Null(readtable))
   readtable = cl_core.standard_readtable;
-  cat = ecl_readtable_get(readtable, ecl_char_code(c), &dispatch);
-  if (ECL_HASH_TABLE_P(dispatch))
-    dispatch = cl_core.dispatch_reader;
-  @(return dispatch ((cat == cat_non_terminating)? ECL_T : ECL_NIL));
+  cat = ecl_readtable_get(readtable, ecl_char_code(c), &macro, NULL);
+  @(return macro ((cat == cat_non_terminating)? ECL_T : ECL_NIL));
   @)
 
 @(defun make_dispatch_macro_character (chr
@@ -270,7 +277,7 @@ ecl_invalid_character_p(int c)
   table = cl__make_hash_table(@'eql', ecl_make_fixnum(128),
                               ecl_ct_default_rehash_size,
                               ecl_ct_default_rehash_threshold);
-  ecl_readtable_set(readtable, c, cat, table);
+  ecl_readtable_set(readtable, c, cat, cl_core.dispatch_reader, table);
   @(return ECL_T);
   @)
 
@@ -280,7 +287,7 @@ ecl_invalid_character_p(int c)
   cl_fixnum subcode;
   @
   assert_type_readtable(@[set-dispatch-macro-character], 4, readtable);
-  ecl_readtable_get(readtable, ecl_char_code(dspchr), &table);
+  ecl_readtable_get(readtable, ecl_char_code(dspchr), NULL, &table);
   unlikely_if (readtable->readtable.locked) {
     error_locked_readtable(readtable);
   }
@@ -316,7 +323,7 @@ ecl_invalid_character_p(int c)
   }
   assert_type_readtable(@[get-dispatch-macro-character], 3, readtable);
   c = ecl_char_code(dspchr);
-  ecl_readtable_get(readtable, c, &table);
+  ecl_readtable_get(readtable, c, NULL, &table);
   unlikely_if (!ECL_HASH_TABLE_P(table)) {
     FEerror("~S is not a dispatch character.", 1, dspchr);
   }

@@ -168,7 +168,7 @@ ecl_read_constituent(cl_object in, bool not_first)
     if (c == EOF) {
       break;
     }
-    c_cat = ecl_readtable_get(rtbl, c, NULL);
+    c_cat = ecl_readtable_get(rtbl, c, NULL, NULL);
     if (c_cat == cat_constituent ||
         ((c_cat == cat_non_terminating) && not_first))
       {
@@ -384,7 +384,7 @@ stream_or_default_input(cl_object stream)
   if (Null(recursivep)) {
     cl_object rtbl = ecl_current_readtable();
     int c = ecl_read_char(strm);
-    if (c != EOF && (ecl_readtable_get(rtbl, c, NULL) != cat_whitespace)) {
+    if (c != EOF && (ecl_readtable_get(rtbl, c, NULL, NULL) != cat_whitespace)) {
       ecl_unread_char(c, strm);
     }
   }
@@ -556,7 +556,7 @@ ecl_read_delimited_list(int d, cl_object in, bool proper_list)
     if (peek_type == ECL_T) {
       do {
         /* If the character is not a whitespace, output */
-        if (ecl_readtable_get(rtbl, c, NULL) != cat_whitespace)
+        if (ecl_readtable_get(rtbl, c, NULL, NULL) != cat_whitespace)
           break;
         /* Otherwise, read the whitespace and peek the
          * next character */
