@@ -75,7 +75,7 @@ ecl_parse_token(cl_object token, cl_object in, int flags)
 
   /* The case in which the buffer is full of dots has to be especial cased. */
   if (length == 1 && TOKEN_STRING_CHAR_CMP(string, 0, '.')) {
-    if (flags == ECL_READ_LIST_DOT) {
+    if (flags & ECL_READ_LIST_DOT) {
       x = @'si::.';
       goto OUTPUT;
     } else {
