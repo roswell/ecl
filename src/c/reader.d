@@ -26,8 +26,6 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/bytecodes.h>
 
-#define read_suppress (ecl_symbol_value(@'*read-suppress*') != ECL_NIL)
-
 static cl_object
 ecl_make_token()
 {
@@ -89,7 +87,6 @@ static void
 invert_buffer_case(cl_object o, int sign)
 {
   int c;
-  cl_fixnum i;
   loop_across_token(index, limit, string, o) {
     c = TOKEN_STRING_CHAR(string, index);
     if (ecl_upper_case_p(c) && (sign < 0)) {
@@ -151,7 +148,7 @@ ecl_dispatch_reader_fun(cl_object in, cl_object dc)
 }
 
 cl_object
-ecl_read_token(cl_object rtbl, cl_object in, bool escape_first_p)
+ecl_read_token(cl_object rtbl, cl_object in, int flags)
 {
   int c;
   cl_object token, string, escape;
@@ -161,7 +158,8 @@ ecl_read_token(cl_object rtbl, cl_object in, bool escape_first_p)
   enum ecl_readtable_case read_case = rtbl->readtable.read_case;
   cl_fixnum upcase; /* # uppercase characters - # downcase characters */
   cl_fixnum count; /* number of unescaped characters */
-  bool suppress = read_suppress;
+  bool suppress = flags & ECL_READ_SUPPRESS;
+  bool escape_first_p = flags & ECL_READ_ESCAPE_FIRST;
 
   upcase = count = length = 0;
 
@@ -255,7 +253,7 @@ ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int delimiter, int 
   int c;
   enum ecl_chattrib a;
   cl_env_ptr the_env = ecl_process_env();
-  bool suppress = read_suppress;
+  bool suppress = flags & ECL_READ_SUPPRESS;
  BEGIN:
   do {
     c = ecl_read_char(in);
@@ -281,7 +279,7 @@ ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int delimiter, int 
       o = _ecl_funcall3(x, in, ECL_CODE_CHAR(c));
     }
     if (the_env->nvalues == 0) {
-      if (flags == ECL_READ_RETURN_IGNORABLE)
+      if (flags & ECL_READ_RETURN_IGNORABLE)
         return ECL_NIL;
       goto BEGIN;
     }
@@ -292,7 +290,7 @@ ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int delimiter, int 
     return o;
   }
   ecl_unread_char(c, in);
-  token = ecl_read_token(rtbl, in, 0);
+  token = ecl_read_token(rtbl, in, flags);
   if (suppress) {
     x = ECL_NIL;
   } else {

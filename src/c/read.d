@@ -123,7 +123,8 @@ cl_object
 ecl_read_object(cl_object in)
 {
   cl_object rtbl = ecl_current_readtable();
-  return ecl_read_object_with_delimiter(rtbl, in, EOF, 0);
+  int flags = read_suppress ? ECL_READ_SUPPRESS : 0;
+  return ecl_read_object_with_delimiter(rtbl, in, EOF, flags);
 }
 
 cl_object
@@ -132,9 +133,11 @@ si_read_object_or_ignore(cl_object in, cl_object eof)
   cl_object x;
   const cl_env_ptr env = ecl_process_env();
   cl_object rtbl = ecl_current_readtable();
+  int flags = ECL_READ_RETURN_IGNORABLE;
+  if (read_suppress) flags |= ECL_READ_SUPPRESS;
   ecl_bds_bind(env, @'si::*sharp-eq-context*', ECL_NIL);
   ecl_bds_bind(env, @'si::*backq-level*', ecl_make_fixnum(0));
-  x = ecl_read_object_with_delimiter(rtbl, in, EOF, ECL_READ_RETURN_IGNORABLE);
+  x = ecl_read_object_with_delimiter(rtbl, in, EOF, flags);
   if (x == OBJNULL) {
     env->nvalues = 1;
     x = eof;
@@ -414,11 +417,13 @@ ecl_read_delimited_list(int d, cl_object in, bool proper_list)
 {
   int after_dot = 0;
   bool suppress = read_suppress;
+  int flags = ECL_READ_LIST_DOT;
+  if (suppress) flags |= ECL_READ_SUPPRESS;
   cl_object x, y = ECL_NIL;
   cl_object *p = &y;
   cl_object rtbl = ecl_current_readtable();
   do {
-    x = ecl_read_object_with_delimiter(rtbl, in, d, ECL_READ_LIST_DOT);
+    x = ecl_read_object_with_delimiter(rtbl, in, d, flags);
     if (x == OBJNULL) {
       /* End of the list. */
       unlikely_if (after_dot == 1) {
@@ -653,8 +658,9 @@ si_read_object(cl_object strm, cl_object delimiter)
 {
   cl_env_ptr the_env = ecl_process_env();
   int ch = Null(delimiter) ? 0 : ecl_char_code(delimiter);
+  int flags = read_suppress ? ECL_READ_SUPPRESS : 0;
   cl_object rtbl = ecl_current_readtable();
-  cl_object object = ecl_read_object_with_delimiter(rtbl, strm, ch, 0);
+  cl_object object = ecl_read_object_with_delimiter(rtbl, strm, ch, flags);
   ecl_return1(the_env, object);
 }
 
@@ -663,7 +669,8 @@ si_read_token(cl_object strm)
 {
   cl_env_ptr the_env = ecl_process_env();
   cl_object rtbl = ecl_current_readtable();
-  cl_object object = ecl_read_token(rtbl, strm, 0);
+  int flags = read_suppress ? ECL_READ_SUPPRESS : 0;
+  cl_object object = ecl_read_token(rtbl, strm, flags);
   ecl_return1(the_env, object);
 }
 

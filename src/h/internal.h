@@ -578,8 +578,10 @@ extern ecl_off_t ecl_integer_to_off_t(cl_object offset);
 
 # define TOKEN_ESCAPE_FILLP(s) ((s)->vector.fillp)
 
-#define ECL_READ_RETURN_IGNORABLE 3
-#define ECL_READ_LIST_DOT 4
+#define ECL_READ_RETURN_IGNORABLE 1
+#define ECL_READ_LIST_DOT 2
+#define ECL_READ_SUPPRESS 4
+#define ECL_READ_ESCAPE_FIRST 8
 
 extern cl_object ecl_get_reader_token(void);
 extern void ecl_put_reader_token(cl_object token);

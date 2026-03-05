@@ -216,16 +216,18 @@ sharp_backslash_reader(cl_object in, cl_object c, cl_object d)
   cl_object token, string;
   cl_object rtbl = ecl_current_readtable();
   bool suppress = read_suppress;
+  int flags = ECL_READ_ESCAPE_FIRST;
   if (d != ECL_NIL && !suppress) {
     unlikely_if (!ECL_FIXNUMP(d) || d != ecl_make_fixnum(0)) {
       FEreader_error("~S is an illegal CHAR-FONT.", in, 1, d);
     }
   }
   if(suppress) {
-    ecl_read_token(rtbl, in, 1);
+    flags |= ECL_READ_SUPPRESS;
+    ecl_read_token(rtbl, in, flags);
     return ECL_NIL;
   }
-  token = ecl_read_token(rtbl, in, 1);
+  token = ecl_read_token(rtbl, in, flags);
   string = token->token.string;
   if (TOKEN_STRING_FILLP(string) == 1) {
     c = ECL_CODE_CHAR(TOKEN_STRING_CHAR(string,0));
