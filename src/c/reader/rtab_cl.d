@@ -757,7 +757,7 @@ void
 init_read(void)
 {
   struct ecl_readtable_entry *rtab;
-  cl_object r, r_cmp;
+  cl_object r, r_cmp, sharp_generic_error_fn;
   int i;
 
   cl_core.standard_readtable = r = ecl_alloc_object(t_readtable);
@@ -775,105 +775,90 @@ init_read(void)
 #endif
 
   cl_core.dispatch_reader = make_cf2(ecl_dispatch_reader_fun);
+  sharp_generic_error_fn = make_cf3(sharp_generic_error);
 
-  ecl_readtable_set(r, '\t', cat_whitespace, ECL_NIL);
-  ecl_readtable_set(r, '\n', cat_whitespace, ECL_NIL);
-  ecl_readtable_set(r, '\f', cat_whitespace, ECL_NIL);
-  ecl_readtable_set(r, '\r', cat_whitespace, ECL_NIL);
-  ecl_readtable_set(r, ' ', cat_whitespace, ECL_NIL);
+#define def_ch1_spc(ch) ecl_readtable_set(r, ch, cat_whitespace, ECL_NIL)
+#define def_ch1_esc(ch,attr) ecl_readtable_set(r, ch, attr, ECL_NIL)
+#define def_ch1_trm(ch,f) ecl_readtable_set(r, ch, cat_terminating, make_cf2(f))
 
-  ecl_readtable_set(r, '"', cat_terminating,
-                    make_cf2(double_quote_reader));
-
-  ecl_readtable_set(r, '\'', cat_terminating,
-                    make_cf2(single_quote_reader));
-  ecl_readtable_set(r, '(', cat_terminating,
-                    make_cf2(left_parenthesis_reader));
-  ecl_readtable_set(r, ')', cat_terminating,
-                    make_cf2(right_parenthesis_reader));
-  ecl_readtable_set(r, ',', cat_terminating,
-                    make_cf2(comma_reader));
-  ecl_readtable_set(r, ';', cat_terminating,
-                    make_cf2(semicolon_reader));
-  ecl_readtable_set(r, '\\', cat_single_escape, ECL_NIL);
-  ecl_readtable_set(r, '`', cat_terminating,
-                    make_cf2(backquote_reader));
-  ecl_readtable_set(r, '|', cat_multiple_escape, ECL_NIL);
-
-  cl_make_dispatch_macro_character(3, ECL_CODE_CHAR('#'),
-                                   ECL_T /* non terminating */, r);
-
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('C'),
-                                  make_cf3(sharp_C_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\\'),
-                                  make_cf3(sharp_backslash_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\''),
-                                  make_cf3(sharp_single_quote_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('('),
-                                  make_cf3(sharp_left_parenthesis_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('*'),
-                                  make_cf3(sharp_asterisk_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(':'),
-                                  make_cf3(sharp_colon_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('.'),
-                                  make_cf3(sharp_dot_reader), r);
-  /*  Used for fasload only. */
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('B'),
-                                  make_cf3(sharp_B_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('O'),
-                                  make_cf3(sharp_O_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('X'),
-                                  make_cf3(sharp_X_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('R'),
-                                  make_cf3(sharp_R_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('A'),
-                                  @'si::sharp-a-reader', r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('S'),
-                                  @'si::sharp-s-reader', r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('P'),
-                                  make_cf3(sharp_P_reader), r);
-
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('='),
-                                  make_cf3(sharp_eq_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('#'),
-                                  make_cf3(sharp_sharp_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('+'),
-                                  make_cf3(sharp_plus_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('-'),
-                                  make_cf3(sharp_minus_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('|'),
-                                  make_cf3(sharp_vertical_bar_reader), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\b'),
-                                  make_cf3(sharp_generic_error), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\t'),
-                                  make_cf3(sharp_generic_error), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_NEWLINE),
-                                  make_cf3(sharp_generic_error), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_LINEFEED),
-                                  make_cf3(sharp_generic_error), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('\f'),
-                                  make_cf3(sharp_generic_error), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ECL_CHAR_CODE_RETURN),
-                                  make_cf3(sharp_generic_error), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(' '),
-                                  make_cf3(sharp_generic_error), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(')'),
-                                  make_cf3(sharp_generic_error), r);
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('<'),
-                                  make_cf3(sharp_generic_error), r);
-  /*  This is specific to this implementation  */
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('$'),
-                                  make_cf3(sharp_dollar_reader), r);
-  /*  This is specific to this implementation  */
-  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('Y'),
-                                  make_cf3(sharp_Y_reader), r);
+  def_ch1_spc('\t');
+  def_ch1_spc('\n');
+  def_ch1_spc('\f');
+  def_ch1_spc('\r');
+  def_ch1_spc(' ');
   /*  This is specific to this implementation: ignore BOM  */
 #ifdef ECL_UNICODE
-  ecl_readtable_set(r, 0xfeff, cat_whitespace, ECL_NIL);
+  def_ch1_spc(0xfeff);
 #endif
 
-  /* Lock the standard read table so that we do not have to make copies
-   * to keep it unchanged */
+  def_ch1_esc('\\', cat_single_escape);
+  def_ch1_esc('|',  cat_multiple_escape);
+
+  def_ch1_trm('"',  double_quote_reader);
+  def_ch1_trm('\'', single_quote_reader);
+  def_ch1_trm('(',  left_parenthesis_reader);
+  def_ch1_trm(')',  right_parenthesis_reader);
+  def_ch1_trm(',',  comma_reader);
+  def_ch1_trm(';',  semicolon_reader);
+  def_ch1_trm('`',  backquote_reader);
+
+
+#define def_ch2_ldf(ch2, f) cl_set_dispatch_macro_character \
+    (4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR(ch2), f, r);
+#define def_ch2_cdf(ch2, f) def_ch2_ldf(ch2, make_cf3(f))
+#define def_ch2_err(ch2) def_ch2_ldf(ch2, sharp_generic_error_fn);
+
+  /* non terminating */
+  cl_make_dispatch_macro_character(3, ECL_CODE_CHAR('#'), ECL_T, r);
+
+  /* Errors */
+  def_ch2_err(' ');
+  def_ch2_err(')');
+  def_ch2_err('<');
+  def_ch2_err('\b');
+  def_ch2_err('\t');
+  def_ch2_err('\f');
+  def_ch2_err(ECL_CHAR_CODE_NEWLINE);
+  def_ch2_err(ECL_CHAR_CODE_LINEFEED);
+  def_ch2_err(ECL_CHAR_CODE_RETURN);
+
+  def_ch2_ldf('A', @'si::sharp-a-reader');
+  def_ch2_ldf('S', @'si::sharp-s-reader');
+
+  def_ch2_cdf('C',  sharp_C_reader);
+  def_ch2_cdf('\\', sharp_backslash_reader);
+  def_ch2_cdf('\'',  sharp_single_quote_reader);
+  def_ch2_cdf('(',  sharp_left_parenthesis_reader);
+  def_ch2_cdf('*',  sharp_asterisk_reader);
+  def_ch2_cdf(':',  sharp_colon_reader);
+  def_ch2_cdf('.',  sharp_dot_reader);
+
+  /*  Used for fasload only. */
+  def_ch2_cdf('B', sharp_B_reader);
+  def_ch2_cdf('O', sharp_O_reader);
+  def_ch2_cdf('X', sharp_X_reader);
+  def_ch2_cdf('R', sharp_R_reader);
+  def_ch2_cdf('P', sharp_P_reader);
+
+  def_ch2_cdf('=', sharp_eq_reader);
+  def_ch2_cdf('#', sharp_sharp_reader);
+  def_ch2_cdf('+', sharp_plus_reader);
+  def_ch2_cdf('-', sharp_minus_reader);
+  def_ch2_cdf('|', sharp_vertical_bar_reader);
+
+  /*  This is specific to this implementation  */
+  def_ch2_cdf('$', sharp_dollar_reader);
+  def_ch2_cdf('Y', sharp_Y_reader);
+
+#undef def_ch1_spc
+#undef def_ch1_esc
+#undef def_ch1_trm
+#undef def_ch2_ldf
+#undef def_ch2_cdf
+#undef def_ch2_err
+
+  /* Lock the standard read table so that we do not have to make copies to keep
+   * it unchanged */
   r->readtable.locked = 1;
 
   r_cmp = ecl_copy_readtable(cl_core.standard_readtable, ECL_NIL);
