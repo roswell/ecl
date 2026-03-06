@@ -26,6 +26,74 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/bytecodes.h>
 
+int
+ecl_readtable_get(cl_object readtable, int c, cl_object *macro, cl_object *table)
+{
+  cl_object m, t;
+  enum ecl_chattrib cat;
+#ifdef ECL_UNICODE
+  if (c >= RTABSIZE) {
+    cl_object hash = readtable->readtable.hash;
+    cat = cat_constituent;
+    m = ECL_NIL;
+    if (!Null(hash)) {
+      cl_object pair = ecl_gethash_safe(ECL_CODE_CHAR(c), hash, ECL_NIL);
+      if (!Null(pair)) {
+        cat = ecl_fixnum(ECL_CONS_CAR(pair));
+        pair = ECL_CONS_CDR(pair);
+        m = ECL_CONS_CAR(pair);
+        pair = ECL_CONS_CDR(pair);
+        t = ECL_CONS_CAR(pair);
+      }
+    }
+  } else
+#endif
+    {
+      m = readtable->readtable.table[c].macro;
+      t = readtable->readtable.table[c].table;
+      cat = readtable->readtable.table[c].syntax_type;
+    }
+  if (macro) *macro = m;
+  if (table) *table = t;
+  return cat;
+}
+
+void
+ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
+                  cl_object macro, cl_object table)
+{
+#ifdef ECL_UNICODE
+  if (c >= RTABSIZE) {
+    cl_object hash = readtable->readtable.hash;
+    if (Null(hash)) {
+      hash = cl__make_hash_table(@'eql', ecl_make_fixnum(128),
+                                 ecl_ct_default_rehash_size,
+                                 ecl_ct_default_rehash_threshold);
+      readtable->readtable.hash = hash;
+    }
+    _ecl_sethash(ECL_CODE_CHAR(c), hash,
+                 CONS(ecl_make_fixnum(cat),
+                      CONS(macro,
+                           CONS(table, ECL_NIL))));
+  } else
+#endif
+    {
+      readtable->readtable.table[c].macro = macro;
+      readtable->readtable.table[c].table = table;
+      readtable->readtable.table[c].syntax_type = cat;
+    }
+}
+
+/* FIXME unicode defines a range of "safe" characters, so that there are no
+   misleading pseudo-spaces in symbols and such. Investigate that. */
+bool
+ecl_invalid_character_p(int c)
+{
+  return (c <= 32) || (c == 127);
+}
+
+/* -- tokens ---------------------------------------------------------------- */
+
 static cl_object
 ecl_make_token()
 {
@@ -52,6 +120,45 @@ si_token_escape(cl_object token)
   ecl_return1(the_env, object);
 }
 
+cl_object
+si_get_buffer_string()
+{
+  const cl_env_ptr env = ecl_process_env();
+  cl_object pool = env->string_pool;
+  cl_object output;
+  if (pool == ECL_NIL) {
+#ifdef ECL_UNICODE
+    output = ecl_alloc_adjustable_extended_string(ECL_BUFFER_STRING_SIZE);
+#else
+    output = ecl_alloc_adjustable_base_string(ECL_BUFFER_STRING_SIZE);
+#endif
+  } else {
+    output = CAR(pool);
+    env->string_pool = CDR(pool);
+  }
+  TOKEN_STRING_FILLP(output) = 0;
+  @(return output);
+}
+
+/* FIXME pools should be resizeable stacks. */
+cl_object
+si_put_buffer_string(cl_object string)
+{
+  if (string != ECL_NIL) {
+    const cl_env_ptr env = ecl_process_env();
+    cl_object pool = env->string_pool;
+    cl_index l = 0;
+    if (pool != ECL_NIL) {
+      /* We store the size of the pool in the string index */
+      l = TOKEN_STRING_FILLP(ECL_CONS_CAR(pool));
+    }
+    if (l < ECL_MAX_STRING_POOL_SIZE) {
+      TOKEN_STRING_FILLP(string) = l+1;
+      env->string_pool = CONS(string, pool);
+    }
+  }
+  @(return);
+}
 
 /* FIXME pools should be resizeable stacks. */
 cl_object
