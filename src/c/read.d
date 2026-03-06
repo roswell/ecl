@@ -1921,7 +1921,7 @@ ecl_invalid_character_p(int c)
   tc = ecl_char_code(tochr);
 
   cat = ecl_readtable_get(fromrdtbl, fc, &dispatch);
-  if (ECL_READTABLEP(dispatch)) {
+  if (ECL_HASH_TABLE_P(dispatch)) {
     dispatch = si_copy_hash_table(dispatch);
   }
   ecl_readtable_set(tordtbl, tc, cat, dispatch);
