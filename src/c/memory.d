@@ -149,6 +149,41 @@ ecl_append_unsafe(cl_object x, cl_object y)
   return head;
 }
 
+/*
+  Make a string of a certain size, with some leading zeros to keep C happy. The
+  string must be adjustable, to allow further growth. (See unixfsys.c for its
+  use).
+*/
+cl_object
+ecl_alloc_adjustable_base_string(cl_index l)
+{
+  cl_object output = ecl_alloc_object(t_base_string);
+  output->base_string.self       = (ecl_base_char *)ecl_alloc_atomic(l+1);
+  output->base_string.self[l]    = 0;
+  output->base_string.flags      = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
+  output->base_string.elttype    = ecl_aet_bc;
+  output->base_string.displaced  = ECL_NIL;
+  output->base_string.dim        = l;
+  output->base_string.fillp      = 0;
+  return output;
+}
+
+#ifdef ECL_UNICODE
+cl_object
+ecl_alloc_adjustable_extended_string(cl_index l)
+{
+  cl_index bytes = sizeof(ecl_character) * l;
+  cl_object output = ecl_alloc_object(t_string);
+  output->string.self       = (ecl_character *)ecl_alloc_atomic(bytes);
+  output->string.flags      = ECL_FLAG_HAS_FILL_POINTER | ECL_FLAG_ADJUSTABLE;
+  output->string.elttype    = ecl_aet_ch;
+  output->string.displaced  = ECL_NIL;
+  output->string.dim        = l;
+  output->string.fillp      = 0;
+  return output;
+}
+#endif
+
 /* -- Rudimentary manual memory allocator ----------------------------------- */
 
 static cl_object
