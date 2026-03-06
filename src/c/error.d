@@ -95,6 +95,12 @@ ecl_exception_handler(cl_object o)
     case ECL_EX_STRM_UNREAD:
       FEunread_stream(arg1, arg2);
       break;
+    case ECL_EX_READ_BADELT:
+      FEreader_error("Found invalid character ~:C", arg1, 1, arg2);
+     break;
+    case ECL_EX_READ_VALUES:
+      FEerror("The readmacro ~S returned ~D values.", 2, arg1, arg2);
+      break;
     case ECL_EX_EOF:
       FEend_of_file(arg1);
       break;
