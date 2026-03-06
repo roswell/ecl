@@ -1012,6 +1012,8 @@ typedef enum {
         ECL_EX_STRM_BADELT,     /* invalid stream element type */
         ECL_EX_STRM_CLOSED,     /* the stream is closed */
         ECL_EX_STRM_UNREAD,     /* error while unreading into the stream */
+        ECL_EX_READ_BADELT,     /* invalid character when reading a token */
+        ECL_EX_READ_VALUES,     /* character macro returned too many values */
         /* Kludges for the bytecodes VM */
         ECL_EX_VM_BADARG_EXCD,
         ECL_EX_VM_BADARG_UNKK,

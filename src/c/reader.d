@@ -26,6 +26,24 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/bytecodes.h>
 
+static void
+_FEreader_invalid_character(cl_object in, cl_object ch)
+{
+  ecl_ferror3(ECL_EX_READ_BADELT, in, ch);
+}
+
+static void
+_FEreader_too_many_values(cl_object x, cl_object n)
+{
+  ecl_ferror3(ECL_EX_READ_VALUES, x, n);
+}
+
+static void
+_FEend_of_file(cl_object in)
+{
+  ecl_ferror2(ECL_EX_EOF, in);
+}
+
 int
 ecl_readtable_get(cl_object readtable, int c, cl_object *macro, cl_object *table)
 {
@@ -236,7 +254,7 @@ ecl_read_token(cl_object rtbl, cl_object in, int flags)
       break;
     }
     unlikely_if (ecl_invalid_character_p(c) && !suppress) {
-      FEreader_error("Found invalid character ~:C", in, 1, ECL_CODE_CHAR(c));
+      _FEreader_invalid_character(in, ECL_CODE_CHAR(c));
     }
     if (read_case != ecl_case_preserve) {
       if (ecl_upper_case_p(c)) {
@@ -291,7 +309,7 @@ ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int delimiter, int 
       return OBJNULL;
     }
     if (c == EOF)
-      FEend_of_file(in);
+      _FEend_of_file(in);
     a = ecl_readtable_get(rtbl, c, &x, NULL);
   } while (a == cat_whitespace);
   if ((a == cat_terminating || a == cat_non_terminating)) {
@@ -302,8 +320,7 @@ ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int delimiter, int 
       goto BEGIN;
     }
     unlikely_if (the_env->nvalues > 1) {
-      FEerror("The readmacro ~S returned ~D values.",
-              2, x, ecl_make_fixnum(the_env->nvalues));
+      _FEreader_too_many_values(x, ecl_make_fixnum(the_env->nvalues));
     }
     return o;
   }
