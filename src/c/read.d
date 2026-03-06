@@ -727,6 +727,7 @@ ecl_copy_readtable(cl_object from, cl_object to)
    */
   output = ecl_alloc_object(t_readtable);
   output->readtable.locked = 0;
+  output->readtable.parse_token = from->readtable.parse_token;
   output->readtable.table = to_rtab = (struct ecl_readtable_entry *)
     ecl_alloc_align(total_bytes, entry_bytes);
   from_rtab = from->readtable.table;
