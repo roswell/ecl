@@ -130,10 +130,15 @@ retrieved by (documentation 'NAME 'type)."
 (deftype index ()
   '(INTEGER 0 #.array-dimension-limit))
 
+(deftype radix ()
+  "A RADIX is an integer between 2 and 36, that is supported integer base."
+  '(INTEGER 2 36))
+
 (deftype fixnum ()
   "A FIXNUM is an integer between MOST-NEGATIVE-FIXNUM and
 MOST-POSITIVE-FIXNUM inclusive.  Other integers are bignums."
   '(INTEGER #.most-negative-fixnum #.most-positive-fixnum))
+
 (deftype bignum ()
   '(OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
 
