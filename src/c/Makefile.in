@@ -70,8 +70,8 @@ WRITER_OBJS = print.o printer/float_to_digits.o printer/float_to_string.o       
 	printer/write_list.o printer/write_code.o printer/write_sse.o           \
 	printer/print_unreadable.o
 
-READER_OBJS = reader.o read.o reader/rtab_cl.o                                  \
-        reader/parse_token.o reader/parse_integer.o reader/parse_number.o
+READER_OBJS = reader.o read.o reader/rtab_cl.o reader/parse_token.o             \
+        reader/parse_fixnum.o reader/parse_integer.o reader/parse_number.o
 
 STREAM_OBJS = stream.o file.o streams/strm_os.o streams/strm_clos.o             \
         streams/strm_string.o streams/strm_composite.o streams/strm_common.o    \

@@ -1562,6 +1562,7 @@ extern ECL_API cl_object ecl_read_object(cl_object in);
 extern ECL_API cl_object ecl_read_token(cl_object rtbl, cl_object in, int flags);
 extern ECL_API cl_object ecl_parse_token(cl_object token, cl_object in, int flags);
 extern ECL_API cl_object ecl_parse_number(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
+extern ECL_API cl_object ecl_parse_fixnum(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
 extern ECL_API cl_object ecl_parse_integer(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
 extern ECL_API bool ecl_invalid_character_p(int c);
 extern ECL_API cl_object ecl_copy_readtable(cl_object from, cl_object to);
