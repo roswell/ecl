@@ -104,6 +104,7 @@ typedef cl_object cl_return;
 typedef cl_fixnum cl_narg;
 typedef cl_object (*cl_objectfn)(cl_narg narg, ...);
 typedef cl_object (*cl_objectfn_fixed)();
+typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 
 /*
         OBJect NULL value.
@@ -742,6 +743,7 @@ struct ecl_readtable {          /*  read table  */
         _ECL_HDR1(locked);
         enum ecl_readtable_case read_case; /*  readtable-case  */
         struct ecl_readtable_entry *table; /*  read table itself  */
+        cl_objectfn_parse parse_token;     /*  token parser */
 #ifdef ECL_UNICODE
         cl_object hash;         /* hash for values outside base-char range */
 #endif

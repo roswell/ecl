@@ -808,6 +808,7 @@ init_read(void)
 
   cl_core.standard_readtable = r = ecl_alloc_object(t_readtable);
   r->readtable.locked = 0;
+  r->readtable.parse_token = ecl_parse_token;
   r->readtable.read_case = ecl_case_upcase;
   r->readtable.table = rtab
     = (struct ecl_readtable_entry *)

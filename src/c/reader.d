@@ -341,7 +341,7 @@ ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int delimiter, int 
   if (suppress) {
     x = ECL_NIL;
   } else {
-    x = ecl_parse_token(token, in, flags);
+    x = rtbl->readtable.parse_token(token, in, flags);
   }
   ecl_put_reader_token(token);
   return x;
