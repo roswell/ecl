@@ -679,7 +679,7 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
   cl_fixnum limit, __ecl_high;                                          \
   for(__ecl_idx = 0; __ecl_idx <= __ecl_ndx; __ecl_idx+=2) {            \
     if (__ecl_idx == __ecl_ndx) {                                       \
-      limit = __ecl_high = ecl_length(string);                          \
+      limit = __ecl_high = TOKEN_STRING_FILLP(string);                  \
     } else {                                                            \
       limit = ecl_fixnum(__ecl_v[__ecl_idx]);                           \
       __ecl_high = ecl_fixnum(__ecl_v[__ecl_idx+1]);                    \
