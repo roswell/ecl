@@ -14,8 +14,19 @@
 
 #include <stdio.h>
 #include <ecl/ecl.h>
+#include <ecl/internal.h>
 
 #include "char_ctype.d"
+
+static void
+assert_type_radix(cl_object fun, cl_narg narg, cl_object radix)
+{
+  unlikely_if (!ECL_FIXNUMP(radix)
+               || ecl_fixnum(radix) < 2
+               || ecl_fixnum(radix) > 36) {
+    FEwrong_type_nth_arg(fun, narg, radix, @[si::radix]);
+  }
+}
 
 ecl_character
 ecl_char_code(cl_object c)
@@ -96,48 +107,10 @@ cl_both_case_p(cl_object c)
   @(return (ecl_both_case_p(ecl_char_code(c))? ECL_T : ECL_NIL));
 }
 
-int
-ecl_string_case(cl_object s)
-{
-  /* Returns 1 if string is all uppercase, -1 if all lowercase, and 0 if mixed case */
-  int upcase;
-  cl_index i;
-        
-  switch (ecl_t_of(s)) {
-#ifdef ECL_UNICODE
-  case t_string:
-#endif
-  case t_base_string:
-    for (i = 0, upcase = 0; i < s->base_string.dim; i++) {
-      ecl_character c = ecl_char(s, i);
-
-      if (ecl_upper_case_p(c)) {
-        if (upcase < 0)
-          return 0;
-        upcase = +1;
-      } else if (ecl_lower_case_p(c)) {
-        if (upcase > 0)
-          return 0;
-        upcase = -1;
-      }
-    }
-    break;
-  default:
-    FEwrong_type_argument(@[string], s);
-  }
-  return upcase;
-}
-
 @(defun digit_char_p (c &optional (radix ecl_make_fixnum(10)))
 @ {
     cl_fixnum basis, value;
-    if (ecl_unlikely(!ECL_FIXNUMP(radix) ||
-                     ecl_fixnum_lower(radix, ecl_make_fixnum(2)) ||
-                     ecl_fixnum_greater(radix, ecl_make_fixnum(36)))) {
-      FEwrong_type_nth_arg(@[digit-char-p], 2, radix,
-                           ecl_make_integer_type(ecl_make_fixnum(2),
-                                                 ecl_make_fixnum(36)));
-    }
+    assert_type_radix(@[digit-char-p], 2, radix);
     basis = ecl_fixnum(radix);
     value = ecl_digitp(ecl_char_code(c), basis);
     @(return ((value < 0)? ECL_NIL: ecl_make_fixnum(value)));
@@ -373,11 +346,11 @@ cl_character(cl_object x)
       x = ECL_CODE_CHAR(x->base_string.self[0]);
       break;
     }
-  default: ERROR:
-    FEwrong_type_nth_arg
-      (@[character],
-       1, x,
-       ecl_read_from_cstring("(OR CHARACTER SYMBOL (ARRAY CHARACTER (1)) (ARRAY BASE-CHAR (1)))"));
+  default:
+#ifdef ECL_UNICODE
+  ERROR:
+#endif
+    FEwrong_type_only_arg(@[character], x, @[character]);
   }
   @(return x);
 }
@@ -430,13 +403,7 @@ cl_char_downcase(cl_object c)
 @ {
     cl_fixnum basis;
     cl_object output = ECL_NIL;
-    if (ecl_unlikely(!ECL_FIXNUMP(radix) ||
-                     ecl_fixnum_lower(radix, ecl_make_fixnum(2)) ||
-                     ecl_fixnum_greater(radix, ecl_make_fixnum(36)))) {
-      FEwrong_type_nth_arg(@[digit-char], 2, radix,
-                           ecl_make_integer_type(ecl_make_fixnum(2),
-                                                 ecl_make_fixnum(36)));
-    }
+    assert_type_radix(@[digit-char], 2, radix);
     basis = ecl_fixnum(radix);
     switch (ecl_t_of(weight)) {
     case t_fixnum: {
@@ -476,78 +443,3 @@ cl_char_int(cl_object c)
   ecl_return1(the_env, ecl_make_fixnum(ecl_char_code(c)));
 }
 
-/* here we give every character an implicit name of the form 'u#' where # is a hexadecimal number,
-   corresponding to a unicode code point.
-   #\u14ea should work, for example
-*/
-
-cl_object
-cl_char_name(cl_object c)
-{
-  ecl_character code = ecl_char_code(c);
-  cl_object output;
-  if (code <= 127) {
-    output = ecl_gethash_safe(ecl_make_fixnum(code), cl_core.char_names, ECL_NIL);
-#ifdef ECL_UNICODE
-  } else if (!Null(output = _ecl_ucd_code_to_name(code))) {
-    (void)0;
-#endif
-  } else {
-    ecl_base_char name[8];
-    ecl_base_char *start;
-    name[7] = 0;
-    name[6] = ecl_digit_char(code & 0xF, 16); code >>= 4;
-    name[5] = ecl_digit_char(code & 0xF, 16); code >>= 4;
-    name[4] = ecl_digit_char(code & 0xF, 16); code >>= 4;
-    name[3] = ecl_digit_char(code & 0xF, 16); code >>= 4;
-    if (code == 0) {
-      start = name + 2;
-    } else {
-      name[2] = ecl_digit_char(code & 0xF, 16); code >>= 4;
-      name[1] = ecl_digit_char(code & 0xF, 16);
-      start = name;
-    }
-    start[0] = 'U';
-    output = ecl_make_simple_base_string((const char*)start,-1);
-  }
-  @(return output);
-}
-
-cl_object
-cl_name_char(cl_object name)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object c;
-  cl_index l;
-  name = cl_string(name);
-  c = ecl_gethash_safe(name, cl_core.char_names, ECL_NIL);
-  if (c != ECL_NIL) {
-    ecl_return1(the_env, ECL_CODE_CHAR(ecl_fixnum(c)));
-  }
-#ifdef ECL_UNICODE
-  c = _ecl_ucd_name_to_code(name);
-  if (c != ECL_NIL) {
-    ecl_return1(the_env, cl_code_char(c));
-  }
-#endif
-  if (ecl_stringp(name) && (l = ecl_length(name))) {
-    c = cl_char(name, ecl_make_fixnum(0));
-    if (l == 1) {
-      (void)0;
-    } else if (c != ECL_CODE_CHAR('u') && c != ECL_CODE_CHAR('U')) {
-      c = ECL_NIL;
-    } else {
-      cl_index used_l;
-      cl_index end = name->base_string.fillp;
-      cl_index real_end = end;
-      c = ecl_parse_integer(name, 1, end, &real_end, 16);
-      used_l = real_end;
-      if (!ECL_FIXNUMP(c) || (used_l == (l - 1))) {
-        c = ECL_NIL;
-      } else {
-        c = ECL_CODE_CHAR(ecl_fixnum(c));
-      }
-    }
-  }
-  ecl_return1(the_env, c);
-}
