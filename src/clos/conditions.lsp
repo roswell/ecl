@@ -378,21 +378,26 @@
 (defmacro handler-bind (bindings &body body)
   (with-gensyms (handler condition)
     `(flet ((,handler (,condition)
-              ,@(loop for (type func . rest) in bindings
-                      when rest do
-                        (error "Ill-formed handler bindings.")
-                      collect `(when (typep ,condition ',type)
-                                 (funcall ,func ,condition)))))
+              ;; We don't want to handle exceptions here, if it is expanded from
+              ;; HANDLER-CASE and the type qualifier is T, then we end up with
+              ;; invalid pointer, because the stack is unwound. -- jd 2026-03-04
+              (when (typep ,condition 'condition)
+                ,@(loop for (type func . rest) in bindings
+                        when rest do
+                          (error "Ill-formed handler bindings.")
+                        collect `(when (typep ,condition ',type)
+                                   (funcall ,func ,condition))))))
        (declare (dynamic-extent (function ,handler)))
        (let ((*handler-clusters* (cons (function ,handler) *handler-clusters*)))
          ,@body))))
 
 (defun bind-simple-handlers (tag names)
   (flet ((simple-handler (condition)
-           (loop for code from 1
-                 for type in (if (atom names) (list names) names)
-                 when (typep condition type) do
-                   (throw tag (values code condition)))))
+           (when (typep condition 'condition)
+             (loop for code from 1
+                   for type in (if (atom names) (list names) names)
+                   when (typep condition type) do
+                     (throw tag (values code condition))))))
     (cons #'simple-handler *handler-clusters*)))
 
 (defun signal (datum &rest arguments)
