@@ -19,12 +19,27 @@
 #include "char_ctype.d"
 
 static void
+_FEwrong_type_only_arg(cl_object fun, cl_object o, cl_object t) {
+  ecl_ferror4(ECL_EX_BADARG_ONLY, fun, o, t);
+}
+
+static void
+_FEwrong_type_nth_arg(cl_object fun, cl_narg narg, cl_object o, cl_object t) {
+  ecl_ferror5(ECL_EX_BADARG_NTH, fun, o, t, (void*)narg);
+}
+
+static void
+_FEwrong_num_arguments(cl_object fun) {
+  ecl_ferror2(ECL_EX_F_NARGS, fun);
+}
+
+static void
 assert_type_radix(cl_object fun, cl_narg narg, cl_object radix)
 {
   unlikely_if (!ECL_FIXNUMP(radix)
                || ecl_fixnum(radix) < 2
                || ecl_fixnum(radix) > 36) {
-    FEwrong_type_nth_arg(fun, narg, radix, @[si::radix]);
+    _FEwrong_type_nth_arg(fun, narg, radix, @[si::radix]);
   }
 }
 
@@ -32,7 +47,7 @@ ecl_character
 ecl_char_code(cl_object c)
 {
   if (ecl_unlikely(!ECL_CHARACTERP(c)))
-    FEwrong_type_only_arg(@[char-code], c, @[character]);
+    _FEwrong_type_only_arg(@[char-code], c, @[character]);
   return ECL_CHAR_CODE(c);
 }
 
@@ -46,7 +61,7 @@ ecl_base_char_code(cl_object c)
       return (int)code;
     }
   }
-  FEwrong_type_only_arg(@[char-code], c, @[base-char]);
+  _FEwrong_type_only_arg(@[char-code], c, @[base-char]);
 #else
   return ecl_char_code(c);
 #endif
@@ -171,7 +186,7 @@ ecl_char_eq(cl_object x, cl_object y)
 @ {
   /* INV: ecl_char_eq() checks types of its arguments */
   if (narg == 0)
-    FEwrong_num_arguments(@[char/=]);
+    _FEwrong_num_arguments(@[char/=]);
   c = ecl_va_arg(cs);
   for (i = 2; i<=narg; i++) {
     ecl_va_list ds;
@@ -191,9 +206,8 @@ static cl_object
 Lchar_cmp(cl_env_ptr env, cl_narg narg, int s, int t, ecl_va_list args)
 {
   cl_object c, d;
-
   if (narg == 0)
-    FEwrong_num_arguments_anonym();
+    _FEwrong_num_arguments(ECL_NIL);
   c = ecl_va_arg(args);
   for (; --narg; c = d) {
     d = ecl_va_arg(args);
@@ -258,7 +272,7 @@ ecl_char_equal(cl_object x, cl_object y)
 @ {
   /* INV: ecl_char_equal() checks the type of its arguments */
   if (narg == 0)
-  FEwrong_num_arguments(@[char-not-equal]);
+  _FEwrong_num_arguments(@[char-not-equal]);
   c = ecl_va_arg(cs);
   for (i = 2;  i<=narg;  i++) {
     ecl_va_list ds;
@@ -280,7 +294,7 @@ Lchar_compare(cl_env_ptr env, cl_narg narg, int s, int t, ecl_va_list args)
 
   /* INV: ecl_char_compare() checks the types of its arguments */
   if (narg == 0)
-    FEwrong_num_arguments_anonym();
+    _FEwrong_num_arguments(ECL_NIL);
   c = ecl_va_arg(args);
   for (; --narg; c = d) {
     d = ecl_va_arg(args);
@@ -350,7 +364,7 @@ cl_character(cl_object x)
 #ifdef ECL_UNICODE
   ERROR:
 #endif
-    FEwrong_type_only_arg(@[character], x, @[character]);
+    _FEwrong_type_only_arg(@[character], x, @[character]);
   }
   @(return x);
 }
@@ -378,7 +392,7 @@ cl_code_char(cl_object c)
     c = ECL_NIL;
     break;
   default:
-    FEwrong_type_only_arg(@[code-char], c, @[integer]);
+    _FEwrong_type_only_arg(@[code-char], c, @[integer]);
   }
   @(return c);
 }
@@ -419,7 +433,7 @@ cl_char_downcase(cl_object c)
     case t_bignum:
       break;
     default:
-      FEwrong_type_nth_arg(@[digit-char],1,weight,@[integer]);
+      _FEwrong_type_nth_arg(@[digit-char],1,weight,@[integer]);
     }
     @(return output);
 } @)
