@@ -40,19 +40,6 @@ typedef struct format_stack_struct {
   int           nparam;
 } *format_stack;
 
-#if MOST_POSITIVE_FIXNUM_VAL < INT_MAX
-# define FMT_VALUE_UPPER_LIMIT MOST_POSITIVE_FIXNUM
-#else
-# define FMT_VALUE_UPPER_LIMIT INT_MAX
-#endif
-
-#if MOST_NEGATIVE_FIXNUM_VAL > INT_MIN
-# define FMT_VALUE_LOWER_LIMIT MOST_NEGATIVE_FIXNUM
-#else
-# define FMT_VALUE_LOWER_LIMIT INT_MIN
-#endif
-
-
 /******************* COMMON ***************************/
 
 #define NONE    0
@@ -2000,25 +1987,11 @@ format(format_stack fmt, cl_index start, cl_index end)
       do {
         c = ctl_advance(fmt);
       } while (ecl_digitp(c,10) != -1);
-      x = ecl_parse_integer(fmt->ctl_str, i, fmt->ctl_index, &i, 10);
+      x = ecl_parse_fixnum(fmt->ctl_str, i, fmt->ctl_index, &i, 10);
     INTEGER:
-      /* FIXME! A hack to solve the problem of bignums in arguments */
       if (x == OBJNULL || !ecl_numberp(x))
-        fmt_error(fmt, "integer expected");
-      if (ecl_number_compare(x, ecl_make_fixnum(FMT_VALUE_UPPER_LIMIT)) > 0) {
-        fmt->param[n] = ecl_make_fixnum(FMT_VALUE_UPPER_LIMIT);
-      } else if (ecl_number_compare(x, ecl_make_fixnum(FMT_VALUE_LOWER_LIMIT)) < 0) {
-        fmt->param[n] = ecl_make_fixnum(FMT_VALUE_LOWER_LIMIT);
-      } else {
-        fmt->param[n] = x;
-      }
-      if (ECL_FIXNUMP(x)) {
-        fmt->param[n] = x;
-      } else if (ecl_plusp(x)) {
-        fmt->param[n] = ecl_make_fixnum(MOST_POSITIVE_FIXNUM);
-      } else {
-        fmt->param[n] = ecl_make_fixnum(MOST_NEGATIVE_FIXNUM);
-      }
+        fmt_error(fmt, "fixnum expected");
+      fmt->param[n] = x;
       break;
 
     case '\'':
