@@ -1238,6 +1238,7 @@ cl_symbols[] = {
 {SYS_ "MKDIR" ECL_FUN("si_mkdir", si_mkdir, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {EXT_ "MKSTEMP" ECL_FUN("si_mkstemp", si_mkstemp, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 {SYS_ "NEED-TO-MAKE-LOAD-FORM-P" ECL_FUN("si_need_to_make_load_form_p", si_need_to_make_load_form_p, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "RADIX" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "RMDIR" ECL_FUN("si_rmdir", si_rmdir, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {EXT_ "MAKE-PIPE" ECL_FUN("si_make_pipe", si_make_pipe, 0) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 /* package extensions */
