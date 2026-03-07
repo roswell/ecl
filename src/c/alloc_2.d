@@ -92,6 +92,7 @@ out_of_memory(size_t requested_bytes)
   ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
   /* Free the input / output buffers */
   the_env->string_pool = ECL_NIL;
+  the_env->token_pool = ECL_NIL;
 
   /* The out of memory condition may happen in more than one thread */
   /* But then we have to ensure the error has not been solved */
@@ -119,6 +120,7 @@ out_of_memory(size_t requested_bytes)
         /* We can free some memory and try handling the error */
         GC_FREE(ecl_core.safety_region);
         the_env->string_pool = ECL_NIL;
+        the_env->token_pool = ECL_NIL;
         ecl_core.safety_region = 0;
         method = 0;
       } else {

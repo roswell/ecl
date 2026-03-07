@@ -579,6 +579,9 @@ extern ecl_off_t ecl_integer_to_off_t(cl_object offset);
 #define ECL_READ_RETURN_IGNORABLE 3
 #define ECL_READ_LIST_DOT 4
 
+extern cl_object ecl_get_reader_token(void);
+extern void ecl_put_reader_token(cl_object token);
+
 /* format.d */
 
 #ifndef ECL_CMU_FORMAT
