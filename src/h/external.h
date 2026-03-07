@@ -120,6 +120,7 @@ struct cl_env_struct {
         /* -- Private variables used by different parts of ECL ---------------- */
         /* ... the reader and printer ... */
         cl_object string_pool;
+        cl_object token_pool;
         /* ... the compiler ... */
         struct cl_compiler_env *c_env;
         /* ... the formatter ... */

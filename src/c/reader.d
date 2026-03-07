@@ -38,26 +38,64 @@
 
 #define end_loop_across_eints() }}
 
+static cl_object
+ecl_make_token()
+{
+  cl_object o = ecl_alloc_object(t_token);
+  o->token.escaped = 0;
+  o->token.string = si_get_buffer_string();
+  /* To keep looping code simple, we insert an empty interval at the end. */
+  o->token.escape = ecl_make_stack(2);
+  return o;
+}
+
+/* FIXME pools should be resizeable stacks. */
+cl_object
+ecl_get_reader_token(void)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object pool = the_env->token_pool;
+  cl_object aux;
+  if (pool != ECL_NIL) {
+    aux = CAR(pool);
+    the_env->token_pool = CDR(pool);
+    return aux;
+  }
+  return ecl_make_token();
+}
+
+void
+ecl_put_reader_token(cl_object token)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object pool = the_env->token_pool;
+  ecl_wipe_stack(token->token.escape);
+  TOKEN_STRING_FILLP(token->token.string) = 0;
+  the_env->token_pool = CONS(token, pool);
+}
+
 /*
  * This routine inverts the case of the characters in the buffer which were not
  * escaped. ESCAPE_INTERVALS is a vector of intevals of characters that were
  * escaped, as in ({(low-limit . high-limit)}*).
  */
 static void
-invert_buffer_case(cl_object x, cl_object escape_intervals, int sign)
+invert_buffer_case(cl_object o, int sign)
 {
+  cl_object string = o->token.string;
+  cl_object escape = o->token.escape;
   cl_fixnum str_i = 0;
   int c;
   /* see whether we have a bug with reversed beginning/end */
-  loop_across_eints(low_limit, high_limit, escape_intervals) {
+  loop_across_eints(low_limit, high_limit, escape) {
     for(; str_i<low_limit; str_i++) {
-      c = TOKEN_STRING_CHAR(x,str_i);
+      c = TOKEN_STRING_CHAR(string, str_i);
       if (ecl_upper_case_p(c) && (sign < 0)) {
         c = ecl_char_downcase(c);
       } else if (ecl_lower_case_p(c) && (sign > 0)) {
         c = ecl_char_upcase(c);
       }
-      TOKEN_STRING_CHAR_SET(x,str_i,c);
+      TOKEN_STRING_CHAR_SET(string, str_i, c);
     }
     str_i=high_limit;
   } end_loop_across_eints();
@@ -116,21 +154,21 @@ cl_object
 ecl_read_only_token(cl_object in, bool escape_first_p)
 {
   int c;
-  cl_object token;
+  cl_object token, string, escape;
   cl_index length;
   enum ecl_chattrib a;
   cl_env_ptr the_env = ecl_process_env();
   cl_object rtbl = ecl_current_readtable();
   enum ecl_readtable_case read_case = rtbl->readtable.read_case;
-  cl_object escape_intervals; /* intervals of escaped characters */
   cl_fixnum upcase; /* # uppercase characters - # downcase characters */
   cl_fixnum count; /* number of unescaped characters */
   bool suppress = read_suppress;
 
   upcase = count = length = 0;
-  token = si_get_buffer_string();
-  /* To keep looping code simple, we insert an empty interval at the end. */
-  escape_intervals = ecl_make_stack(2);
+
+  token = ecl_get_reader_token();
+  string = token->token.string;
+  escape = token->token.escape;
 
   if (escape_first_p) {
     c = 0;
@@ -144,9 +182,9 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
     if (a == cat_single_escape) {
       c = ecl_read_char_noeof(in);
       a = cat_constituent;
-      ecl_stack_push(escape_intervals, ecl_make_fixnum(length-1));
-      ecl_stack_push(escape_intervals, ecl_make_fixnum(length));
-      ecl_string_push_extend(token, c);
+      ecl_stack_push(escape, ecl_make_fixnum(length-1));
+      ecl_stack_push(escape, ecl_make_fixnum(length));
+      ecl_string_push_extend(string, c);
       length++;
       goto NEXT;
     }
@@ -160,11 +198,11 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
           a = cat_constituent;
         } else if (a == cat_multiple_escape)
           break;
-        ecl_string_push_extend(token, c);
+        ecl_string_push_extend(string, c);
         length++;
       }
-      ecl_stack_push(escape_intervals, ecl_make_fixnum(begin));
-      ecl_stack_push(escape_intervals, ecl_make_fixnum(length-1));
+      ecl_stack_push(escape, ecl_make_fixnum(begin));
+      ecl_stack_push(escape, ecl_make_fixnum(length-1));
       goto NEXT;
     }
     if (a == cat_whitespace || a == cat_terminating) {
@@ -187,7 +225,7 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
           c = ecl_char_upcase(c);
       }
     }
-    ecl_string_push_extend(token, c);
+    ecl_string_push_extend(string, c);
     length++;
   NEXT:
     c = ecl_read_char(in);
@@ -195,42 +233,42 @@ ecl_read_only_token(cl_object in, bool escape_first_p)
       break;
     a = ecl_readtable_get(rtbl, c, NULL);
   }
-  ecl_stack_push(escape_intervals, ecl_make_fixnum(length));
-  ecl_stack_push(escape_intervals, ecl_make_fixnum(length));
+  ecl_stack_push(escape, ecl_make_fixnum(length));
+  ecl_stack_push(escape, ecl_make_fixnum(length));
 
-  /*TOKEN_STRING_CHAR_SET(token,length,'\0');*/
+  /*TOKEN_STRING_CHAR_SET(string,length,'\0');*/
   /* If the readtable case was :INVERT and all non-escaped characters
    * had the same case, we revert their case. */
   if (read_case == ecl_case_invert && count != 0) {
     if (upcase == count) {
-      invert_buffer_case(token, escape_intervals, -1);
+      invert_buffer_case(token, -1);
     } else if (upcase == -count) {
-      invert_buffer_case(token, escape_intervals, +1);
+      invert_buffer_case(token, +1);
     }
   }
 
-  ecl_return2(the_env, token, escape_intervals);
+  ecl_return1(the_env, token);
 }
 
 cl_object
 ecl_read_token(cl_object in, int flags)
 {
-  cl_fixnum high_limit, low_limit, str_i;
-  cl_object x, token;
+  cl_fixnum str_i;
+  cl_object x, token, string, escape;
   int c, base;
   cl_object package, package_name, symbol_name;
   cl_index length, i, sym_start, pack_end;
   int colon, intern_flag;
   bool external_symbol;
   cl_env_ptr the_env = ecl_process_env();
-  cl_object escape_intervals; /* intervals of escaped characters */
   bool suppress = read_suppress;
   token = ecl_read_only_token(in, 0);
-  escape_intervals = ecl_nth_value(the_env,1);
+  string = token->token.string;
+  escape = token->token.escape;
 
   package = package_name = ECL_NIL;
   str_i = sym_start = pack_end = colon = 0;
-  length = ecl_length(token);
+  length = ecl_length(string);
   external_symbol = 0;
 
   if (suppress) {
@@ -238,9 +276,9 @@ ecl_read_token(cl_object in, int flags)
     goto OUTPUT;
   }
 
-  loop_across_eints(low_limit, high_limit, escape_intervals) {
+  loop_across_eints(low_limit, high_limit, escape) {
     for(; str_i<low_limit; str_i++) {
-      c = ecl_char(token, str_i);
+      c = ecl_char(string, str_i);
       if (c == ':') {
         if(!Null(package))
           FEreader_error("Unexpected colon character.", in, 0);
@@ -255,7 +293,7 @@ ecl_read_token(cl_object in, int flags)
           package = cl_core.keyword_package;
           external_symbol = 0;
         } else {
-          package_name = ecl_subseq(token, 0, pack_end);
+          package_name = ecl_subseq(string, 0, pack_end);
           package = ecl_find_package_nolock(package_name);
         }
         if (Null(package)) {
@@ -265,8 +303,7 @@ ecl_read_token(cl_object in, int flags)
              all referenced packages have been properly built.
           */
           unlikely_if (Null(the_env->packages_to_be_created_p)) {
-            ecl_free_stack(escape_intervals);
-            si_put_buffer_string(token);
+            ecl_put_reader_token(token);
             FEerror("There is no package with the name ~A.", 1, package_name);
           }
           package = _ecl_package_to_be_created(the_env, package_name);
@@ -278,51 +315,47 @@ ecl_read_token(cl_object in, int flags)
 
   /* If there are some escaped characters, it must be a symbol.
      escape_intervals always has an empty interval pair at the end. */
-  if (package != ECL_NIL || ecl_length(escape_intervals) > 2 || length == 0)
+  if (package != ECL_NIL || ecl_length(escape) > 2 || length == 0)
     goto SYMBOL;
 
   /* The case in which the buffer is full of dots has to be especial cased */
-  if (length == 1 && TOKEN_STRING_CHAR_CMP(token,0,'.')) {
+  if (length == 1 && TOKEN_STRING_CHAR_CMP(string, 0, '.')) {
     if (flags == ECL_READ_LIST_DOT) {
       x = @'si::.';
       goto OUTPUT;
     } else {
-      ecl_free_stack(escape_intervals);
-      si_put_buffer_string(token);
+      ecl_put_reader_token(token);
       FEreader_error("Dots appeared illegally.", in, 0);
     }
   } else {
     int i;
     for (i = 0;  i < length;  i++) {
-      if (!TOKEN_STRING_CHAR_CMP(token,i,'.'))
+      if (!TOKEN_STRING_CHAR_CMP(string,i,'.'))
         goto MAYBE_NUMBER;
     }
-    ecl_free_stack(escape_intervals);
-    si_put_buffer_string(token);
+    ecl_put_reader_token(token);
     FEreader_error("Dots appeared illegally.", in, 0);
   }
 
  MAYBE_NUMBER:
   /* Here we try to parse a number from the content of the buffer */
   base = ecl_current_read_base();
-  if ((base <= 10) && ecl_alpha_char_p(TOKEN_STRING_CHAR(token,0)))
+  if ((base <= 10) && ecl_alpha_char_p(TOKEN_STRING_CHAR(string, 0)))
     goto SYMBOL;
-  x = ecl_parse_number(token, 0, TOKEN_STRING_FILLP(token), &i, base);
+  x = ecl_parse_number(string, 0, TOKEN_STRING_FILLP(string), &i, base);
   unlikely_if (x == ECL_NIL) {
-    ecl_free_stack(escape_intervals);
-    si_put_buffer_string(token);
+    ecl_put_reader_token(token);
     FEreader_error("Syntax error when reading number.~%Offending string: ~S.",
-                   in, 1, token);
+                   in, 1, string);
   }
   if (x != OBJNULL && length == i)
     goto OUTPUT;
  SYMBOL:
-  symbol_name = ecl_subseq(token, sym_start, length);
+  symbol_name = ecl_subseq(string, sym_start, length);
   if (external_symbol) {
     x = ecl_find_symbol(symbol_name, package, &intern_flag);
     unlikely_if (intern_flag != ECL_EXTERNAL) {
-      ecl_free_stack(escape_intervals);
-      si_put_buffer_string(token);
+      ecl_put_reader_token(token);
       FEreader_error("Cannot find the external symbol ~A in ~S.", in,
                      2, symbol_name, package);
     }
@@ -334,8 +367,7 @@ ecl_read_token(cl_object in, int flags)
     x = ecl_intern(symbol_name, package, &intern_flag);
   }
  OUTPUT:
-  ecl_free_stack(escape_intervals);
-  si_put_buffer_string(token);
+  ecl_put_reader_token(token);
   ecl_return1(the_env, x);
 }
 
