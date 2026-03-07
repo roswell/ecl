@@ -285,6 +285,9 @@ SONAME_LDFLAGS=''
 case "${host_os}" in
         linux-android*)
                 thehost='ANDROID'
+                dnl disable floating point exceptions because they
+                dnl lead to segfaults with the android libc
+                with_fpe='no'
                 THREAD_CFLAGS='-D_THREAD_SAFE'
                 SHARED_LDFLAGS="-shared ${LDFLAGS}"
                 BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
