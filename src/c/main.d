@@ -257,6 +257,7 @@ init_env_aux(cl_env_ptr env)
 {
   /* Reader */
   env->string_pool = ECL_NIL;
+  env->token_pool = ECL_NIL;
   env->packages_to_be_created = ECL_NIL;
   env->packages_to_be_created_p = ECL_NIL;
   /* Format (written in C) */
