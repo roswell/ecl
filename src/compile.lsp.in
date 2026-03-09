@@ -297,8 +297,7 @@
 
 #+WANTS-SOCKETS
 (build-module "sockets"
-              '("ext:sockets;package.lisp"
-                "ext:sockets;sockets.lisp")
+              '("ext:sockets;sockets.lisp")
               :dir "build:ext;"
               :prefix "EXT"
               :builtin
