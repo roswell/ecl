@@ -411,6 +411,84 @@ ecl_alloc_adjustable_extended_string(cl_index l)
 }
 #endif
 
+static cl_object
+ecl_alloc_token()
+{
+  cl_object o = ecl_alloc_object(t_token);
+  o->token.escaped = 0;
+  o->token.string = si_get_buffer_string();
+  o->token.escape = ecl_make_stack(0);
+  return o;
+}
+
+/* -- Resource manager ------------------------------------------------------ */
+
+cl_object
+si_get_buffer_string()
+{
+  const cl_env_ptr env = ecl_process_env();
+  cl_object pool = env->string_pool;
+  cl_object output;
+  if (pool == ECL_NIL) {
+#ifdef ECL_UNICODE
+    output = ecl_alloc_adjustable_extended_string(ECL_BUFFER_STRING_SIZE);
+#else
+    output = ecl_alloc_adjustable_base_string(ECL_BUFFER_STRING_SIZE);
+#endif
+  } else {
+    output = CAR(pool);
+    env->string_pool = CDR(pool);
+  }
+  TOKEN_STRING_FILLP(output) = 0;
+  @(return output);
+}
+
+/* FIXME pools should be resizeable stacks. */
+cl_object
+si_put_buffer_string(cl_object string)
+{
+  if (string != ECL_NIL) {
+    const cl_env_ptr env = ecl_process_env();
+    cl_object pool = env->string_pool;
+    cl_index l = 0;
+    if (pool != ECL_NIL) {
+      /* We store the size of the pool in the string index */
+      l = TOKEN_STRING_FILLP(ECL_CONS_CAR(pool));
+    }
+    if (l < ECL_MAX_STRING_POOL_SIZE) {
+      TOKEN_STRING_FILLP(string) = l+1;
+      env->string_pool = CONS(string, pool);
+    }
+  }
+  @(return);
+}
+
+/* FIXME pools should be resizeable stacks. */
+cl_object
+ecl_get_reader_token(void)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object pool = the_env->token_pool;
+  cl_object aux;
+  if (pool != ECL_NIL) {
+    aux = CAR(pool);
+    the_env->token_pool = CDR(pool);
+    return aux;
+  }
+  return ecl_alloc_token();
+}
+
+void
+ecl_put_reader_token(cl_object token)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object pool = the_env->token_pool;
+  TOKEN_STRING_FILLP(token->token.string) = 0;
+  TOKEN_ESCAPE_FILLP(token->token.escape) = 0;
+  token->token.escaped = 0;
+  the_env->token_pool = CONS(token, pool);
+}
+
 /* -- Rudimentary manual memory allocator ----------------------------------- */
 
 static cl_object
