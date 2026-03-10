@@ -48,16 +48,6 @@ coprocessor).")
 (defconfig *cc-optimize* #-msvc "-O2"
            #+msvc "@CFLAGS_OPTIMIZE@")
 
-(defconfig *ld-format* #-msvc "~A -o ~S -L~S ~{~S ~} ~@[~S~]~{ '~A'~} ~A"
-           #+msvc "~A -Fe~S~* ~{~S ~} ~@[~S~]~{ '~A'~} ~A")
-
-(defconfig *cc-format* (cond ((member :msvc *features*)
-			      "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")
-			     ((member :nacl *features*) ;; pnacl-clang doesn't support -w
-			      "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -c \"~A\" -o \"~A\"~{ '~A'~}")
-			     (t
-			      "~A -I. \"-I~A\" ~A ~:[~*~;~A~] -w -c \"~A\" -o \"~A\"~{ '~A'~}")))
-
 (defconfig *ld-flags* "@LDFLAGS@")
 #-dlopen
 (defconfig *ld-libs* "-lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
