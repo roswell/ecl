@@ -318,6 +318,8 @@ AC_SUBST(CORE_LIBS, [])         dnl Locally compiled libs to link into
 AC_SUBST(SHARED_LDFLAGS)        dnl Flags for shared libraries linker
 AC_SUBST(BUNDLE_LDFLAGS)        dnl Flags for FASL files linker
 AC_SUBST(PROGRAM_LDFLAGS)       dnl Flags for executable program linker
+AC_SUBST(UNICODE_OBJS)          dnl Unicode *.o files to be compiled into libecl.a
+AC_SUBST(THREAD_OBJS)           dnl Threads *.o files to be compiled into libecl.a
 AC_SUBST(EXTRA_OBJS)            dnl Extra *.o files to be compiled into libecl.a
 AC_SUBST(TARGETS, ['bin/ecl$(EXE)'])dnl Versions of ECL to be built 
 AC_SUBST(SUBDIRS, ['c doc'])        dnl Subdirectories that make should process
@@ -588,7 +590,7 @@ if test "${enable_threads}" = "yes" ; then
     CFLAGS="${CFLAGS} ${THREAD_CFLAGS}"
     ECL_PTHREAD_EXTENSIONS
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
-    for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
+    for k in $THREAD_OBJ; do THREAD_OBJS="$THREAD_OBJS ${k}.${OBJEXT}"; done
     AC_MSG_CHECKING([for thread object files])
     AC_MSG_RESULT([${THREAD_OBJ}])
     AC_DEFINE( [ECL_THREADS], [1], [Userland threads?])
@@ -913,16 +915,16 @@ if test "x${enable_unicode}" != "xno"; then
       AC_DEFINE([ECL_UNICODE], [16], [Support for Unicode])
       CHAR_CODE_LIMIT=65536
       ECL_CHARACTER=$ECL_INT16_T
-      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd16.o unicode/ucd16-0000.o unicode/ucd16-0016.o unicode/ucd16-0032.o unicode/ucd16-0048.o unicode/ucd16-0064.o"
+      UNICODE_OBJS="unicode/ucd16.o unicode/ucd16-0000.o unicode/ucd16-0016.o unicode/ucd16-0032.o unicode/ucd16-0048.o unicode/ucd16-0064.o"
    else
       AC_DEFINE([ECL_UNICODE], [21], [Support for Unicode])
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
-      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o unicode/ucd-0112.o unicode/ucd-0128.o unicode/ucd-0144.o"
+      UNICODE_OBJS="unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o unicode/ucd-0112.o unicode/ucd-0128.o unicode/ucd-0144.o"
    fi
    AC_DEFINE([ECL_UNICODE_NAMES], [1], [Link in the database of Unicode names])
-   EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
-	AC_CHECK_HEADERS([wchar.h])
+   UNICODE_OBJS="$UNICODE_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
+   AC_CHECK_HEADERS([wchar.h])
    ECL_ADD_FEATURE(unicode)
 else
    CHAR_CODE_LIMIT=256
