@@ -324,7 +324,7 @@ a word of memory and which is between the values
 @code{bignum} is any integer which is not a @code{fixnum} and it is only
 constrained by the amount of memory available to represent it.
 
-ECL code{@integer} subtypes @code{fixnum} and @code{bignum} are defined
+ECL @code{integer} subtypes @code{fixnum} and @code{bignum} are defined
 as built-in classes, so it is possible to specialize to them generic
 functions.
 
