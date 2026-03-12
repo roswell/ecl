@@ -1,0 +1,182 @@
+
+* Runtime
+
+When we initialize ECL we need to take care of a few things. First we need to
+recognize the distinction between different environments:
+
+- ecl_core and cl-core structures are global and shared by all processes
+- cl_env_struct is local to each process/thread
+
+Note that currently we don't put a hard distinction between processes and
+threads, but in the near future I plan to separate them in N-to-M scheme.
+That's why I'm going to treat them as distinct in this overview.
+
+In other words:
+- current :: ~[core] 1-n [process] 1-1 [environment]~.
+- planned :: ~[core] 1-n [process] 1-n [environment]~.
+
+Sometimes I'll use the word ~cpu~ in place of ~process~ and ~env~ in place of
+~environment~.
+
+First, when the program starts, we need to initialize the global state, adopt
+the current process and associate the first environment with it. That creates a
+single computation context that will be used for further initialization.
+
+To allow loose coupling of components we introduce the concept of modules. Each
+module implements a certain aspect of the system and is initialized separately
+in each context: core, process and thread. When we leave the context (i.e the
+thread exits, or we disown the cpu) a matching "release" procedure is called.
+
+#+begin_src lisp
+  (defstruct module
+    create destroy
+    enable disable
+    init_cpu free_cpu
+    init_env init_env)
+#+end_src
+
+Not all options make sense for each module -- in that case a no-op function is
+used. To avoid the situation where we need to retroactively initialize a module
+for pre-existing processes and environments, all modules must be added before we
+start using the first process.
+
+- create :: initialize global structure
+- enable :: start the module
+- delete :: stop the module and release all resources
+
+- init_env :: initialization for the current environment
+- free_env :: clean up before we destroy the environment
+
+- init_cpu :: initialization for the current process
+- free_cpu :: clean up before we destroy the process
+
+It is important to note that the environment is usually initialized on a
+different cpu than the one that it runs on. This is to avoid race conditions.
+
+** The core
+
+The core encapsulates the following:
+
+- user defined global options
+- a set of modules that need to be initialized
+- a set of processes (adopted and spawned)
+
+The initialization requires us to parse user options and initialize modules.
+Process manager may be treated as a special module, thus:
+
+#+begin_src lisp
+  (defun initialize-core ()
+    (parse-user-options)
+    (initialize-modules)
+    (enable :process-module))
+
+  (defun initialize-modules ()
+    (add-module :process-module)
+    (add-module :c-stack-module)
+    (add-module :big-num-module)
+    ;; ... (depends on the runtime)
+    (seal-modules))
+
+  (defun add-module (module)
+    ;; Initialize for the first cpu and environment.
+    (create module)
+    (init-cpu module +first-env+)
+    (init-env module +first-env+))
+
+  (defun del-module (module)
+    (disable module)
+    (free-env module +first-env+)
+    (free-cpu module +first-env+)
+    (delete module))
+#+end_src
+
+** Processes
+
+#+begin_src lisp
+  (define-module :process-module
+      :create #'init-process
+      :enable #'enable-process)
+
+  (defun init-process ()
+    (initialize-locks :core)
+    (initialize-self main_thread)
+    (initialize-tls cl_env_key)
+    (initialize-env :first-env))
+
+  (defun enable-process ()
+    (dolist (module *modules*)
+      (init-cpu module)))
+#+end_src
+
+** Threads
+
+#+begin_src lisp
+  (define-module :thread-module
+      :create #'init-thread
+      :enable #'enable-thread)
+
+  (defun init-thread ()
+    (error "not implemented yet")
+    (init-bindings))
+
+  (defun enable-thread ()
+    (dolist (module *modules*)
+      (init-env module)))
+#+end_src
+
+* Early Languages
+
+** F42
+
+f42 is a forth dialect that compiles directly to the bytecodes vm. It is
+available very early before a full environment is estabilished. It consists of:
+
+- readtable that reads symbols (case sensitive), strings, fixnums and lists
+- character stream using C stream interface (we bind stdin/stdout)
+- dictionary with a set of core words and raw bytevm opcodes
+- command reader that defines and executes lines of words (commands)
+- one pass compiler that takes a line of words and produces bytecodes
+
+Lazy as I am I've added an additional opcode to the bytevm besides OP_QUOTE.
+That word is OP_CALLW and it is responsible for calling an immediate word.
+Thanks to that bytecodes size will always match the length of the command.
+
+The repl works in two modes: execution mode and compilation mode. Conventionally
+the compilation mode is entered by typing the word ~:~ and it is left when after
+we type ~;~, for examlpe ~: new-word 42 13 + ;~.
+
+It is important to note that there are no guard rails. If the line contains an
+opcode leading segfaults (i.e popping from an empty stack), then it is on you.
+
+| :        | start definition   |           |
+| ;        | end definition     |           |
+| .        | pop from the stack | safe      |
+| .S       | print the stack    |           |
+| .D       | print a dictionary |           |
+| [opcode] | insert an opcode   | i.e ~NOP~ |
+| [word]   | invoke a word      | i.e ~foo~ |
+
+This poor dictionary will be extended when deemed necessary. Note that special
+operators are catered to by a virtue of embedding opcodes. A dictionary entries
+are symbols and a definition is stored as a symbol value.
+
+** UCL
+
+Operator ~defm~ is for defining macros and ~defc~ for defining typed functions
+that can be transpiled to C99. ~defl~ as defined below could be used as an
+operator that defines functions that may be used with Lisp runtime (value-wise).
+
+#+begin_src scheme
+  (defm (twice form)
+    `(progn ,form ,form))
+
+  (defn ((hello :void) (name :string) (n :index))
+    "Prints 'Hello {STRING}' n times."
+    (do ((i 0) (1+ i))
+        ((>= i times))
+      (out "Hello " name "\n")))
+
+  (defm ((defl . args) . body)
+    `(defn ,(mapcar (lambda (a) (list a :object)))
+       ,@body))
+#+end_src

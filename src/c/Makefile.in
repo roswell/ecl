@@ -7,6 +7,7 @@
 top_srcdir= @top_srcdir@
 srcdir	= @srcdir@
 VPATH	= @srcdir@
+builddir= @true_builddir@
 
 # Programs used by "make":
 #
@@ -154,3 +155,25 @@ all_symbols2.o: all_symbols.c
 cinit.c: $(DPP)
 ../cinit.o: cinit.c $(HFILES)
 	$(CC) $(CFLAGS) -I./ cinit.c -o $@
+
+#
+# Experimental runtimes
+#
+NUCL_CFLG = -DECL_NUCL -DECL_BUILD -DGC_NO_THREAD_REDIRECTS \
+         -I$(builddir) -I$(srcdir) -g3 -rdynamic
+
+PUCL_SRCS = boot.c escape.c module.c stacks.c eql.c \
+         memory.c atomic.c process.c apply.c interpreter.c
+
+NUCL_SRCS = boot.c escape.c module.c stacks.c eql.c \
+         memory.c atomic.c process.c apply.c interpreter.c stream.c \
+         streams/strm_nucl.c
+
+pucl: $(PUCL_SRCS) pucl.c
+	$(CC) $(NUCL_CFLG) -o $@ $^
+
+nucl: $(NUCL_SRCS) nucl.c
+	$(CC) $(NUCL_CFLG) -o $@ $^
+
+r2rs: $(NUCL_SRCS) $(UNICODE_OBJS) character.c reader.c reader/parse_fixnum.c r2rs.c
+	$(CC) $(NUCL_CFLG) -o $@ $^
