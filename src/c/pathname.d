@@ -562,7 +562,7 @@ ecl_parse_namestring(cl_object s, cl_index start, cl_index end, cl_index *ep,
   bool logical;
 
   if (start == end) {
-    host = device = path = name = type = aux = version = @'nil';
+    host = device = path = name = type = aux = version = ECL_NIL;
     logical = 0;
     *ep = end;
     goto make_it;

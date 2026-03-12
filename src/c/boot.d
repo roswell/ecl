@@ -58,9 +58,21 @@ ecl_def_ct_ratio(ecl_ct_minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),,const
 ecl_def_constant(ecl_ct_protect_tag, ECL_NIL, "PROTECT-TAG", 11);
 ecl_def_constant(ecl_ct_dummy_tag, ECL_NIL, "DUMMY-TAG", 9);
 
-/* This variable is a stack with functions that are called for raised exceptions
-   and signaled conditions. */
-ecl_def_variable(ecl_vr_shandlers, ECL_NIL, "*SIGNAL-HANDLERS*", 17);
+struct ecl_symbol
+ecl_symbols[] = {
+  /* This variable contains handlers for signals and exceptions. */
+  ecl_constexpr_symbol(ecl_stp_special, "*SIGNAL-HANDLERS*", ECL_NIL),
+  /* Restart clusters allow us to estabilish selectable correction actions. */
+  ecl_constexpr_symbol(ecl_stp_special, "*RESTART-CLUSTERS*", ECL_NIL),
+  /* This variable allows for interrupting sygnals from Lisp.. */
+  ecl_constexpr_symbol(ecl_stp_special, "*INTERRUPTS-ENABLED*", ECL_T),
+  /* OP_PUSHKEYS handles specially :ALLOW-OTHER-KEYS (per CL semantics). */
+  ecl_constexpr_symbol(ecl_stp_constant, "ALLOW-OTHER-KEYS", ECL_ALLOW_OTHER_KEYS),
+  /* The universal truth, the supertype of all, the class above classes. */
+  ecl_constexpr_symbol(ecl_stp_constant, "T", ECL_T),
+  /* The marker for unbound slots. This is more a tag than a symbol. */
+  ecl_constexpr_symbol(ecl_stp_constant, "UNBOUND", ECL_UNBOUND),
+};
 
 /* -- implementation ------------------------------------------------ */
 

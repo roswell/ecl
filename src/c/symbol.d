@@ -159,7 +159,7 @@ ecl_cmp_symbol_value(cl_env_ptr the_env, cl_object s)
 #ifndef ECL_FINAL
   /* Symbols are not initialized yet. This test is issued only during ECL
      compilation to ensure, that we have no early references in the core. */
-  if(cl_num_symbols_in_core < 3) {
+  if(cl_num_symbols_in_core < 2) {
     ecl_internal_error("SYMBOL-VALUE: symbols are not initialized yet.");
   }
 #endif

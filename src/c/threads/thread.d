@@ -449,8 +449,8 @@ mp_block_signals(void)
 {
 #ifdef ECL_WINDOWS_THREADS
   cl_env_ptr the_env = ecl_process_env();
-  cl_object previous = ecl_cmp_symbol_value(the_env, @'ext::*interrupts-enabled*');
-  ECL_SETQ(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
+  cl_object previous = ecl_cmp_symbol_value(the_env, ECL_INTERRUPTS_ENABLED);
+  ECL_SETQ(the_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);
   @(return previous);
 #else
   cl_object previous = mp_get_sigmask();
@@ -471,7 +471,7 @@ mp_restore_signals(cl_object sigmask)
 {
 #ifdef ECL_WINDOWS_THREADS
   cl_env_ptr the_env = ecl_process_env();
-  ECL_SETQ(the_env, @'ext::*interrupts-enabled*', sigmask);
+  ECL_SETQ(the_env, ECL_INTERRUPTS_ENABLED, sigmask);
   ecl_check_pending_interrupts(the_env);
   @(return sigmask);
 #else
