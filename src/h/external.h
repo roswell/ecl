@@ -1811,6 +1811,9 @@ extern ECL_API cl_object si_lookup_host_entry(cl_object host_or_address);
 extern ECL_API void ecl_tcp_close_all(void);
 #endif
 
+/* lwp.c */
+extern ECL_API cl_object si_make_thread(cl_object fun);
+extern ECL_API cl_object si_make_continuation(cl_object thread);
 
 /* threads.c */
 

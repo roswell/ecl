@@ -225,6 +225,8 @@
             (hash-table)
             (random-state)
             (readtable)
+            (si::continuation)
+            (si::thread)
             (si::code-block)
             (si::foreign-data)
             (si::frame)

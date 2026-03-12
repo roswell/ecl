@@ -336,6 +336,18 @@ write_cfun(cl_object x, cl_object stream)
 }
 
 static void
+write_cont(cl_object x, cl_object stream)
+{
+  _ecl_write_unreadable(x, "continuation", ECL_NIL, stream);
+}
+
+static void
+write_thread(cl_object x, cl_object stream)
+{
+  _ecl_write_unreadable(x, "thread", ECL_NIL, stream);
+}
+
+static void
 write_codeblock(cl_object x, cl_object stream)
 {
   _ecl_write_unreadable(x, "codeblock", x->cblock.name, stream);
@@ -495,6 +507,8 @@ static printer dispatch[FREE+1] = {
   write_barrier,                /* t_barrier */
   write_mailbox,                /* t_mailbox */
 #endif
+  write_cont,                   /* t_cont */
+  write_thread,                 /* t_thread */
   write_codeblock,              /* t_codeblock */
   write_foreign,                /* t_foreign */
   write_frame,                  /* t_frame */

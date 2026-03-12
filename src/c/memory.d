@@ -262,6 +262,13 @@ init_type_info_database(void)
           to_bitmap(&o, &(o.mailbox.name)) |
           to_bitmap(&o, &(o.mailbox.data)));
 #endif
+  init_tm(t_cont, "CONTINUATION", ecl_cont,
+          to_bitmap(&o, &(o.cont.thread)) |
+          to_bitmap(&o, &(o.cont.stack)) |
+          to_bitmap(&o, &(o.cont.env)));
+  init_tm(t_thread, "THREAD", ecl_thread,
+          to_bitmap(&o, &(o.thread.fun)) |
+          to_bitmap(&o, &(o.thread.cont)));
   init_tm(t_codeblock, "CODEBLOCK", ecl_codeblock,
           to_bitmap(&o, &(o.cblock.data)) |
           to_bitmap(&o, &(o.cblock.temp_data)) |

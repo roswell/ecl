@@ -175,6 +175,10 @@ ecl_type_to_symbol(cl_type t)
   case t_mailbox:
     return @'mp::mailbox';
 #endif
+  case t_cont:
+    return @'si::continuation';
+  case t_thread:
+    return @'si::thread';
   case t_codeblock:
     return @'si::code-block';
   case t_foreign:

@@ -413,6 +413,8 @@ enum ecl_built_in_classes {
   ECL_BUILTIN_HASH_TABLE,
   ECL_BUILTIN_RANDOM_STATE,
   ECL_BUILTIN_READTABLE,
+  ECL_BUILTIN_CONTINUATION,
+  ECL_BUILTIN_THREAD,
   ECL_BUILTIN_CODE_BLOCK,
   ECL_BUILTIN_FOREIGN_DATA,
   ECL_BUILTIN_FRAME,
@@ -530,6 +532,10 @@ cl_class_of(cl_object x)
   case t_mailbox:
     index = ECL_BUILTIN_MAILBOX; break;
 #endif
+  case t_cont:
+    index = ECL_BUILTIN_CONTINUATION; break;
+  case t_thread:
+    index = ECL_BUILTIN_THREAD; break;
   case t_codeblock:
     index = ECL_BUILTIN_CODE_BLOCK; break;
   case t_foreign:

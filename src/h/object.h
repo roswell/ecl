@@ -81,6 +81,8 @@ typedef enum {
         t_barrier,
         t_mailbox,
 #endif
+        t_cont,
+        t_thread,
         t_codeblock,
         t_foreign,
         t_frame,
@@ -1059,6 +1061,26 @@ struct ecl_dummy {
         _ECL_HDR;
 };
 
+/*
+        coroutines
+ */
+
+struct ecl_cont {
+                                /* already resumed */
+                                /* timed out */
+        _ECL_HDR2(resumed, timed_out);
+        cl_object thread;       /* its thread */
+        ucontext_t uc;
+        char stack[16*1024];
+        cl_env_ptr env;
+};
+
+struct ecl_thread {
+        _ECL_HDR;
+        cl_object fun;          /* initial function */
+        cl_object cont;         /* its continuation */
+};
+
 #ifdef ECL_THREADS
 
 #ifdef ECL_WINDOWS_THREADS
@@ -1283,6 +1305,8 @@ union cl_lispunion {
         struct ecl_barrier      barrier;        /*  barrier  */
         struct ecl_mailbox      mailbox;        /*  mailbox  */
 #endif
+        struct ecl_cont         cont;           /*  continuation */
+        struct ecl_thread       thread;         /*  green thread */
         struct ecl_codeblock    cblock;         /*  codeblock  */
         struct ecl_foreign      foreign;        /*  user defined data type */
         struct ecl_stack_frame  frame;          /*  stack frame  */

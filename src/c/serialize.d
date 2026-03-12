@@ -73,6 +73,8 @@ static cl_index object_size[] = {
   ROUNDED_SIZE(ecl_barrier), /* t_barrier */
   ROUNDED_SIZE(ecl_mailbox), /* t_mailbox */
 #endif
+  ROUNDED_SIZE(ecl_cont), /* t_cont */
+  ROUNDED_SIZE(ecl_thread), /* t_thread */
   ROUNDED_SIZE(ecl_codeblock), /* t_codeblock */
   ROUNDED_SIZE(ecl_foreign), /* t_foreign */
   ROUNDED_SIZE(ecl_stack_frame), /* t_frame */
