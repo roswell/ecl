@@ -161,68 +161,55 @@ out_of_memory(size_t requested_bytes)
   return GC_MALLOC(requested_bytes);
 }
 
-static struct ecl_type_information {
+static struct bdw_type_information {
   size_t size;
 #ifdef GBC_BOEHM_PRECISE
   GC_word descriptor;
 #endif
-  cl_object (*allocator)(struct ecl_type_information *);
+  cl_object (*allocator)(struct bdw_type_information *);
   size_t t;
-} type_info[t_end];
+} bdw_type_info[t_end];
 
-#ifdef GBC_BOEHM_PRECISE
-static void
-error_wrong_tag(cl_type t)
+static cl_object
+allocate_object_error(struct bdw_type_information *bdw_type_info)
 {
-  ecl_internal_error("Collector called with invalid tag number.");
-}
-#endif
-
-cl_index
-ecl_object_byte_size(cl_type t)
-{
-  if (t == t_fixnum || t == t_character)
-    FEerror("ecl_object_byte_size invoked with an immediate type ~D",
-            1, ecl_make_fixnum(1));
-  if (t >= t_end)
-    FEerror("ecl_object_byte_size invoked with an unknown type ~D",
-            1, ecl_make_fixnum(1));
-  return type_info[t].size;
+  printf("\ttype = %zx\n", bdw_type_info->t);
+  ecl_internal_error("allocate_object_error: alloc botch.");
 }
 
 static cl_object
-allocate_object_atomic(struct ecl_type_information *type_info)
+allocate_object_atomic(struct bdw_type_information *bdw_type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
   ecl_disable_interrupts_env(the_env);
-  op = GC_MALLOC_ATOMIC(type_info->size);
-  op->d.t = type_info->t;
+  op = GC_MALLOC_ATOMIC(bdw_type_info->size);
+  op->d.t = bdw_type_info->t;
   ecl_enable_interrupts_env(the_env);
   return op;
 }
 
 static cl_object
-allocate_object_full(struct ecl_type_information *type_info)
+allocate_object_full(struct bdw_type_information *bdw_type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
   ecl_disable_interrupts_env(the_env);
-  op = GC_MALLOC(type_info->size);
-  op->d.t = type_info->t;
+  op = GC_MALLOC(bdw_type_info->size);
+  op->d.t = bdw_type_info->t;
   ecl_enable_interrupts_env(the_env);
   return op;
 }
 
 #ifdef GBC_BOEHM_PRECISE
 static cl_object
-allocate_object_typed(struct ecl_type_information *type_info)
+allocate_object_typed(struct bdw_type_information *bdw_type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
   ecl_disable_interrupts_env(the_env);
-  op = GC_malloc_explicitly_typed(type_info->size, type_info->descriptor);
-  op->d.t = type_info->t;
+  op = GC_malloc_explicitly_typed(bdw_type_info->size, bdw_type_info->descriptor);
+  op->d.t = bdw_type_info->t;
   ecl_enable_interrupts_env(the_env);
   return op;
 }
@@ -236,7 +223,7 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 {
   cl_type t = ((cl_object)addr)->d.t;
   if (ecl_likely(t > t_start && t < t_end)) {
-    struct ecl_type_information *info = type_info + t;
+    struct bdw_type_information *info = bdw_type_info + t;
     GC_word d = info->descriptor;
     GC_word *p;
     for (p = addr; d; p++, d<<=1) {
@@ -255,13 +242,13 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
 }
 
 static cl_object
-allocate_object_marked(struct ecl_type_information *type_info)
+allocate_object_marked(struct bdw_type_information *bdw_type_info)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object op;
   ecl_disable_interrupts_env(the_env);
-  op = GC_generic_malloc(type_info->size, cl_object_kind);
-  op->d.t = type_info->t;
+  op = GC_generic_malloc(bdw_type_info->size, cl_object_kind);
+  op->d.t = bdw_type_info->t;
   ecl_enable_interrupts_env(the_env);
   return op;
 }
@@ -270,97 +257,15 @@ allocate_object_marked(struct ecl_type_information *type_info)
 static cl_object
 alloc_object(cl_type t)
 {
-#ifdef GBC_BOEHM_PRECISE
-  struct ecl_type_information *ti;
-  if (ecl_likely(t > t_start && t < t_end)) {
-    ti = type_info + t;
-    return ti->allocator(ti);
-  }
-  error_wrong_tag(t);
-  return OBJNULL;
-#else
-  const cl_env_ptr the_env = ecl_process_env();
-
-  /* GC_MALLOC already resets objects */
-  switch (t) {
-  case t_list:                  /* Small cons (no d.t) */
-    return ecl_cons(ECL_NIL, ECL_NIL);
-  case t_character:
-    return ECL_CODE_CHAR(' ');  /* Immediate character */
-  case t_fixnum:
-    return ecl_make_fixnum(0);  /* Immediate fixnum */
-#ifdef ECL_SSE2
-  case t_sse_pack:
-#endif
-  case t_longfloat:
-#ifdef ECL_COMPLEX_FLOAT
-  case t_csfloat:
-  case t_cdfloat:
-  case t_clfloat:
-#endif
-  case t_singlefloat:
-  case t_doublefloat: {
-    cl_object obj;
-    ecl_disable_interrupts_env(the_env);
-    obj = (cl_object)GC_MALLOC_ATOMIC(type_info[t].size);
-    ecl_enable_interrupts_env(the_env);
-    obj->d.t = t;
-    return obj;
-  }
-  case t_bignum:
-  case t_ratio:
-  case t_complex:
-  case t_symbol:
-  case t_package:
-  case t_hashtable:
-  case t_array:
-  case t_vector:
-  case t_base_string:
-#ifdef ECL_UNICODE
-  case t_string:
-#endif
-  case t_bitvector:
-  case t_stream:
-  case t_random:
-  case t_readtable:
-  case t_pathname:
-  case t_bytecodes:
-  case t_bclosure:
-  case t_cfun:
-  case t_cfunfixed:
-  case t_cclosure:
-  case t_instance:
-#ifdef ECL_THREADS
-  case t_process:
-  case t_lock:
-  case t_rwlock:
-  case t_condition_variable:
-  case t_semaphore:
-  case t_barrier:
-  case t_mailbox:
-#endif
-  case t_foreign:
-  case t_token:
-  case t_codeblock: {
-    cl_object obj;
-    ecl_disable_interrupts_env(the_env);
-    obj = (cl_object)GC_MALLOC(type_info[t].size);
-    ecl_enable_interrupts_env(the_env);
-    obj->d.t = t;
-    return obj;
-  }
-  default:
-    printf("\ttype = %d\n", t);
-    ecl_internal_error("alloc botch.");
-  }
-#endif
+  struct bdw_type_information *ti = bdw_type_info + t;
+  return ti->allocator(ti);
 }
 
 cl_object
 ecl_alloc_compact_object(cl_type t, cl_index extra_space)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  cl_index size = type_info[t].size;
+  cl_index size = bdw_type_info[t].size;
   cl_object x;
   ecl_disable_interrupts_env(the_env);
   x = (cl_object)GC_MALLOC_ATOMIC(size + extra_space);
@@ -517,267 +422,43 @@ to_bitmap(void *x, void *y)
 }
 #endif
 
-void init_type_info (void)
+void init_bdw_type_info (void)
 {
-#ifdef GBC_BOEHM_PRECISE
-  union cl_lispunion o;
-  struct ecl_cons c;
-#endif
   int i;
-#define init_tm(/* cl_type  */ type,                            \
-                /* char*    */ name,                            \
-                /* cl_index */ object_size,                     \
-                /* cl_index */ maxpage) {                       \
-    type_info[type].size = (object_size);                       \
-    if ((maxpage) == 0) {                                       \
-      type_info[type].allocator = allocate_object_atomic;       \
-    }                                                           \
-  }
   for (i = 0; i < t_end; i++) {
-    type_info[i].t = i;
-    type_info[i].size = 0;
-    type_info[i].allocator = allocate_object_full;
+    uintmax_t desc = ecl_type_info[i].descriptor;
+    bdw_type_info[i].t = i;
+    bdw_type_info[i].size = ecl_type_info[i].size;
+    bdw_type_info[i].allocator =
+      (desc==0) ? allocate_object_atomic : allocate_object_full;
+#ifdef GC_BOEHM_PRECISE
+    bdw_type_info[t_list].descriptor = desc;
+#endif
   }
-  init_tm(t_list, "CONS", sizeof(struct ecl_cons), 2);
-  init_tm(t_bignum, "BIGNUM", sizeof(struct ecl_bignum), 2);
-  init_tm(t_ratio, "RATIO", sizeof(struct ecl_ratio), 2);
-  init_tm(t_singlefloat, "SINGLE-FLOAT", sizeof(struct ecl_singlefloat), 0);
-  init_tm(t_doublefloat, "DOUBLE-FLOAT", sizeof(struct ecl_doublefloat), 0);
-  init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float), 0);
-  init_tm(t_complex, "COMPLEX", sizeof(struct ecl_complex), 2);
-#ifdef ECL_COMPLEX_FLOAT
-  init_tm(t_csfloat, "COMPLEX-SINGLE-FLOAT", sizeof(struct ecl_csfloat), 0);
-  init_tm(t_cdfloat, "COMPLEX-DOUBLE-FLOAT", sizeof(struct ecl_cdfloat), 0);
-  init_tm(t_clfloat, "COMPLEX-LONG-FLOAT", sizeof(struct ecl_clfloat), 0);
-#endif
-  init_tm(t_symbol, "SYMBOL", sizeof(struct ecl_symbol), 5);
-  init_tm(t_package, "PACKAGE", sizeof(struct ecl_package), -1); /* 36 */
-#ifdef ECL_THREADS
-  init_tm(t_hashtable, "HASH-TABLE", sizeof(struct ecl_hashtable), 3);
-#else
-  init_tm(t_hashtable, "HASH-TABLE", sizeof(struct ecl_hashtable), 4);
-#endif
-  init_tm(t_array, "ARRAY", sizeof(struct ecl_array), 3);
-  init_tm(t_vector, "VECTOR", sizeof(struct ecl_vector), 2);
-#ifdef ECL_UNICODE
-  init_tm(t_string, "STRING", sizeof(struct ecl_string), 2);
-#endif
-  init_tm(t_base_string, "BASE-STRING", sizeof(struct ecl_base_string), 2);
-  init_tm(t_bitvector, "BIT-VECTOR", sizeof(struct ecl_vector), 2);
-  init_tm(t_stream, "STREAM", sizeof(struct ecl_stream), 6);
-  init_tm(t_random, "RANDOM-STATE", sizeof(struct ecl_random), -1);
-  init_tm(t_readtable, "READTABLE", sizeof(struct ecl_readtable), 2);
-  init_tm(t_pathname, "PATHNAME", sizeof(struct ecl_pathname), -1);
-  init_tm(t_bytecodes, "BYTECODES", sizeof(struct ecl_bytecodes), -1);
-  init_tm(t_bclosure, "BCLOSURE", sizeof(struct ecl_bclosure), 3);
-  init_tm(t_cfun, "CFUN", sizeof(struct ecl_cfun), -1);
-  init_tm(t_cfunfixed, "CFUNFIXED", sizeof(struct ecl_cfunfixed), -1);
-  init_tm(t_cclosure, "CCLOSURE", sizeof(struct ecl_cclosure), -1);
-  init_tm(t_instance, "INSTANCE", sizeof(struct ecl_instance), 4);
-#ifdef ECL_THREADS
-  init_tm(t_process, "PROCESS", sizeof(struct ecl_process), 8);
-  init_tm(t_lock, "LOCK", sizeof(struct ecl_lock), 2);
-  init_tm(t_rwlock, "RWLOCK", sizeof(struct ecl_rwlock), 0);
-  init_tm(t_condition_variable, "CONDITION-VARIABLE",
-          sizeof(struct ecl_condition_variable), 0);
-  init_tm(t_semaphore, "SEMAPHORES", sizeof(struct ecl_semaphore), 0);
-  init_tm(t_barrier, "BARRIER", sizeof(struct ecl_barrier), 0);
-  init_tm(t_mailbox, "MAILBOX", sizeof(struct ecl_mailbox), 0);
-#endif
-  init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
-  init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
-  init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 0);
-  init_tm(t_token, "TOKEN", sizeof(struct ecl_token), 2);
-  init_tm(t_module, "MODULE", sizeof(struct ecl_module), 2);
-  init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
-#ifdef ECL_SSE2
-  init_tm(t_sse_pack, "SSE-PACK", sizeof(struct ecl_sse_pack), 0);
-#endif
-#ifdef GBC_BOEHM_PRECISE
-  type_info[t_list].descriptor =
-    to_bitmap(&c, &(c.car)) |
-    to_bitmap(&c, &(c.cdr));
-  type_info[t_bignum].descriptor =
-    to_bitmap(&o, &(ECL_BIGNUM_LIMBS(&o)));
-  type_info[t_ratio].descriptor =
-    to_bitmap(&o, &(o.ratio.num)) |
-    to_bitmap(&o, &(o.ratio.den));
-  type_info[t_singlefloat].descriptor = 0;
-  type_info[t_doublefloat].descriptor = 0;
-  type_info[t_longfloat].descriptor = 0;
-  type_info[t_complex].descriptor =
-    to_bitmap(&o, &(o.gencomplex.real)) |
-    to_bitmap(&o, &(o.gencomplex.imag));
-#ifdef ECL_COMPLEX_FLOAT
-  type_info[t_csfloat].descriptor = 0;
-  type_info[t_cdfloat].descriptor = 0;
-  type_info[t_clfloat].descriptor = 0;
-#endif
-  type_info[t_symbol].descriptor =
-    to_bitmap(&o, &(o.symbol.value)) |
-    to_bitmap(&o, &(o.symbol.gfdef)) |
-    to_bitmap(&o, &(o.symbol.macfun)) |
-    to_bitmap(&o, &(o.symbol.sfdef)) |
-    to_bitmap(&o, &(o.symbol.plist)) |
-    to_bitmap(&o, &(o.symbol.name)) |
-    to_bitmap(&o, &(o.symbol.hpack));
-  type_info[t_package].descriptor =
-    to_bitmap(&o, &(o.pack.name)) |
-    to_bitmap(&o, &(o.pack.nicknames)) |
-    to_bitmap(&o, &(o.pack.local_nicknames)) |
-    to_bitmap(&o, &(o.pack.nicknamedby)) |
-    to_bitmap(&o, &(o.pack.shadowings)) |
-    to_bitmap(&o, &(o.pack.uses)) |
-    to_bitmap(&o, &(o.pack.usedby)) |
-    to_bitmap(&o, &(o.pack.internal)) |
-    to_bitmap(&o, &(o.pack.external));
-  type_info[t_hashtable].descriptor =
-    to_bitmap(&o, &(o.hash.data)) |
-    to_bitmap(&o, &(o.hash.sync_lock)) |
-    to_bitmap(&o, &(o.hash.generic_test)) |
-    to_bitmap(&o, &(o.hash.generic_hash)) |
-    to_bitmap(&o, &(o.hash.rehash_size)) |
-    to_bitmap(&o, &(o.hash.threshold));
-  type_info[t_array].descriptor =
-    to_bitmap(&o, &(o.array.dims)) |
-    to_bitmap(&o, &(o.array.self.t)) |
-    to_bitmap(&o, &(o.array.displaced));
-  type_info[t_vector].descriptor =
-    to_bitmap(&o, &(o.vector.self.t)) |
-    to_bitmap(&o, &(o.vector.displaced));
-# ifdef ECL_UNICODE
-  type_info[t_string].descriptor =
-    to_bitmap(&o, &(o.string.self)) |
-    to_bitmap(&o, &(o.string.displaced));
-# endif
-  type_info[t_base_string].descriptor =
-    to_bitmap(&o, &(o.base_string.self)) |
-    to_bitmap(&o, &(o.base_string.displaced));
-  type_info[t_bitvector].descriptor =
-    to_bitmap(&o, &(o.vector.self.t)) |
-    to_bitmap(&o, &(o.vector.displaced));
-  type_info[t_stream].descriptor =
-    to_bitmap(&o, &(o.stream.ops)) |
-    to_bitmap(&o, &(o.stream.object0)) |
-    to_bitmap(&o, &(o.stream.object1)) |
-    to_bitmap(&o, &(o.stream.last_byte)) |
-    to_bitmap(&o, &(o.stream.byte_stack)) |
-    to_bitmap(&o, &(o.stream.buffer)) |
-    to_bitmap(&o, &(o.stream.format)) |
-    to_bitmap(&o, &(o.stream.format_table));
-  type_info[t_random].descriptor =
-    to_bitmap(&o, &(o.random.value));
-  type_info[t_readtable].descriptor =
-# ifdef ECL_UNICODE
-    to_bitmap(&o, &(o.readtable.hash)) |
-# endif
-    to_bitmap(&o, &(o.readtable.table));
-  type_info[t_pathname].descriptor =
-    to_bitmap(&o, &(o.pathname.version)) |
-    to_bitmap(&o, &(o.pathname.type)) |
-    to_bitmap(&o, &(o.pathname.name)) |
-    to_bitmap(&o, &(o.pathname.directory)) |
-    to_bitmap(&o, &(o.pathname.device)) |
-    to_bitmap(&o, &(o.pathname.host));
-  type_info[t_bytecodes].descriptor =
-    to_bitmap(&o, &(o.bytecodes.name)) |
-    to_bitmap(&o, &(o.bytecodes.definition)) |
-    to_bitmap(&o, &(o.bytecodes.code)) |
-    to_bitmap(&o, &(o.bytecodes.data)) |
-    to_bitmap(&o, &(o.bytecodes.flex)) |
-    to_bitmap(&o, &(o.bytecodes.file)) |
-    to_bitmap(&o, &(o.bytecodes.file_position));
-  type_info[t_bclosure].descriptor =
-    to_bitmap(&o, &(o.bclosure.code)) |
-    to_bitmap(&o, &(o.bclosure.lex));
-  type_info[t_cfun].descriptor =
-    to_bitmap(&o, &(o.cfun.name)) |
-    to_bitmap(&o, &(o.cfun.block)) |
-    to_bitmap(&o, &(o.cfun.file)) |
-    to_bitmap(&o, &(o.cfun.file_position));
-  type_info[t_cfunfixed].descriptor =
-    to_bitmap(&o, &(o.cfunfixed.name)) |
-    to_bitmap(&o, &(o.cfunfixed.block)) |
-    to_bitmap(&o, &(o.cfunfixed.file)) |
-    to_bitmap(&o, &(o.cfunfixed.file_position));
-  type_info[t_cclosure].descriptor =
-    to_bitmap(&o, &(o.cclosure.env)) |
-    to_bitmap(&o, &(o.cclosure.block)) |
-    to_bitmap(&o, &(o.cclosure.file)) |
-    to_bitmap(&o, &(o.cclosure.file_position));
-  type_info[t_instance].descriptor =
-    to_bitmap(&o, &(o.instance.clas)) |
-    to_bitmap(&o, &(o.instance.slotds)) |
-    to_bitmap(&o, &(o.instance.slots));
-# ifdef ECL_THREADS
-  type_info[t_process].descriptor =
-    to_bitmap(&o, &(o.process.name)) |
-    to_bitmap(&o, &(o.process.function)) |
-    to_bitmap(&o, &(o.process.args)) |
-    to_bitmap(&o, &(o.process.inherit_bindings_p)) |
-    to_bitmap(&o, &(o.process.exit_values)) |
-    to_bitmap(&o, &(o.process.woken_up)) |
-    to_bitmap(&o, &(o.process.env));
-  type_info[t_lock].descriptor =
-    to_bitmap(&o, &(o.lock.name)) |
-    to_bitmap(&o, &(o.lock.owner));
-  type_info[t_rwlock].descriptor =
-    to_bitmap(&o, &(o.rwlock.name));
-  type_info[t_condition_variable].descriptor = 0;
-  type_info[t_semaphore].descriptor = 
-    to_bitmap(&o, &(o.semaphore.name));
-  type_info[t_barrier].descriptor = 
-    to_bitmap(&o, &(o.barrier.name));
-  type_info[t_mailbox].descriptor = 
-    to_bitmap(&o, &(o.mailbox.name)) |
-    to_bitmap(&o, &(o.mailbox.data));
-# endif
-  type_info[t_codeblock].descriptor =
-    to_bitmap(&o, &(o.cblock.data)) |
-    to_bitmap(&o, &(o.cblock.temp_data)) |
-    to_bitmap(&o, &(o.cblock.next)) |
-    to_bitmap(&o, &(o.cblock.name)) |
-    to_bitmap(&o, &(o.cblock.links)) |
-    to_bitmap(&o, &(o.cblock.source)) |
-    to_bitmap(&o, &(o.cblock.refs)) |
-    to_bitmap(&o, &(o.cblock.error));
-  type_info[t_foreign].descriptor =
-    to_bitmap(&o, &(o.foreign.data)) |
-    to_bitmap(&o, &(o.foreign.tag));
-  type_info[t_frame].descriptor =
-    to_bitmap(&o, &(o.frame.env));
-  type_info[t_token].descriptor =
-    to_bitmap(&o, &(o.token.string)) |
-    to_bitmap(&o, &(o.token.escape)));
-  type_info[t_module].descriptor = 0;
-  type_info[t_weak_pointer].descriptor = 0;
-#ifdef ECL_SSE2
-  type_info[t_sse_pack].descriptor = 0;
-#endif
+#ifdef GC_BOEHM_PRECISE
   for (i = 0; i < t_end; i++) {
-    GC_word descriptor = type_info[i].descriptor;
-    int bits = type_info[i].size / sizeof(GC_word);
+    GC_word descriptor = bdw_type_info[i].descriptor;
+    int bits = bdw_type_info[i].size / sizeof(GC_word);
     if (descriptor) {
 #ifdef GBC_BOEHM_OWN_MARKER
-      type_info[i].allocator = allocate_object_marked;
+      bdw_type_info[i].allocator = allocate_object_marked;
       descriptor = GC_make_descriptor(&descriptor, bits);
       descriptor &= ~GC_DS_TAGS;
 #else
       GC_word mask = (1 << (bits-1)) - 1;
       mask ^= (descriptor >> 1);
-      if (mask == 0)
-        type_info[i].allocator = allocate_object_full;
-      else
-        type_info[i].allocator = allocate_object_typed;
+      bdw_type_info[i].allocator =
+        (mask == 0) ? allocate_object_full : allocate_object_typed;
       descriptor = GC_make_descriptor(&descriptor, bits);
 #endif
-    } else {
-      type_info[i].allocator = allocate_object_atomic;
-      descriptor = 0;
+      bdw_type_info[i].descriptor = descriptor;
     }
-    type_info[i].descriptor = descriptor;
   }
 #endif /* GBC_BOEHM_PRECISE */
+  /* INV these cases are handled inline in ecl_alloc_object. */
+  bdw_type_info[t_list].allocator = allocate_object_error;
+  bdw_type_info[t_character].allocator = allocate_object_error;
+  bdw_type_info[t_fixnum].allocator = allocate_object_error;
 }
 
 extern void (*GC_push_other_roots)();
@@ -1271,7 +952,7 @@ create_gc()
     ecl_core.safety_region = 0;
   }
 
-  init_type_info();
+  init_bdw_type_info();
 
   old_GC_push_other_roots = GC_push_other_roots;
   GC_push_other_roots = stacks_scanner;
