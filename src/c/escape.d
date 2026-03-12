@@ -45,6 +45,23 @@ ecl_escape(cl_object continuation)
 }
 
 void
+ecl_unwind(cl_env_ptr env, ecl_frame_ptr fr)
+{
+  env->frs_stack.nlj_fr = fr;
+  ecl_frame_ptr top = env->frs_stack.top;
+  while (top != fr && top->frs_val != ECL_PROTECT_TAG){
+    top->frs_val = ECL_DUMMY_TAG;
+    --top;
+  }
+  env->ihs_stack.top = top->frs_ihs;
+  ecl_bds_unwind(env, top->frs_bds_ndx);
+  ECL_STACK_UNWIND(env, top->frs_run_ndx);
+  env->frs_stack.top = top;
+  ecl_longjmp(env->frs_stack.top->frs_jmpbuf, 1);
+  /* never reached */
+}
+
+void
 cl_throw(cl_object tag)
 {
   ecl_escape(tag);
