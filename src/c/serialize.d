@@ -349,7 +349,7 @@ init_pool(pool_t pool, cl_object root)
                               ecl_make_fixnum(2 * sizeof(cl_index)),
                               ECL_NIL,
                               ecl_make_fixnum(0));
-  pool->hash = cl__make_hash_table(@'eql', ecl_make_fixnum(256),
+  pool->hash = ecl_make_hash_table(@'eql', ecl_make_fixnum(256),
                                    ecl_ct_default_rehash_size,
                                    ecl_ct_default_rehash_threshold);
   ecl_sethash(root, pool->hash, ecl_make_fixnum(0));
