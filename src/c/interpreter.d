@@ -332,9 +332,9 @@ ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
       return n;
     } else {
       cl_object var = ECL_CONS_CAR(vars);
-      if (!ECL_SYMBOLP(var))
+      if (!ECL_SYMBOLP(var) || Null(var))
         FEillegal_variable_name(var);
-      if (ecl_symbol_type(var) & ecl_stp_constant)
+      if (var->symbol.stype & ecl_stp_constant)
         FEbinding_a_constant(var);
       if (Null(values)) {
         ecl_bds_bind(env, var, OBJNULL);
