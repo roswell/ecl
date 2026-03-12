@@ -339,7 +339,7 @@ mp_free(void *ptr, size_t size)
 static void *
 mp_realloc(void *ptr, size_t osize, size_t nsize)
 {
-  ptr = ecl_realloc(ptr, osize, nsize);
+  ptr = ecl_resize(ptr, osize, nsize);
   return ptr;
 }
 

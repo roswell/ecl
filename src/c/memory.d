@@ -50,7 +50,7 @@ ecl_free(void *ptr)
 }
 
 void *
-ecl_realloc(void *ptr, cl_index osize, cl_index nsize)
+ecl_resize(void *ptr, cl_index osize, cl_index nsize)
 {
   ptr = realloc(ptr, nsize);
   if (ptr == NULL) out_of_memory();

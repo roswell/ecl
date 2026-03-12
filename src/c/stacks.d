@@ -192,9 +192,9 @@ ecl_data_stack_set_limit(cl_env_ptr env, cl_index new_lim_size)
   if (current_size > new_lim_size)
     ecl_internal_error("Cannot shrink frame stack below its minimal element");
   ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  new_org = ecl_realloc(old_org,
-                        osize * sizeof(*old_org),
-                        nsize * sizeof(*old_org));
+  new_org = ecl_resize(old_org,
+                       osize * sizeof(*old_org),
+                       nsize * sizeof(*old_org));
   env->run_stack.org = new_org;
   env->run_stack.top = new_org + current_size;
   env->run_stack.limit = new_org + new_lim_size;
@@ -466,9 +466,9 @@ invalid_or_too_large_binding_index(cl_env_ptr env, cl_object s)
     cl_index osize = env->bds_stack.tl_bindings_size;
     cl_index nsize = ecl_core.last_var_index * 1.25;
     cl_object *old_vector = env->bds_stack.tl_bindings;
-    cl_object *new_vector = ecl_realloc(old_vector,
-                                        osize*sizeof(cl_object*),
-                                        nsize*sizeof(cl_object*));
+    cl_object *new_vector = ecl_resize(old_vector,
+                                       osize*sizeof(cl_object*),
+                                       nsize*sizeof(cl_object*));
     while(osize < nsize) {
       new_vector[osize++] = ECL_NO_TL_BINDING;
     }
@@ -601,9 +601,9 @@ ecl_bds_set_limit(cl_env_ptr env, cl_index new_lim_size)
   if (current_size > new_lim_size)
     ecl_internal_error("Cannot shrink frame stack below its minimal element");
   ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  new_org = ecl_realloc(old_org,
-                        osize * sizeof(*old_org),
-                        nsize * sizeof(*old_org));
+  new_org = ecl_resize(old_org,
+                       osize * sizeof(*old_org),
+                       nsize * sizeof(*old_org));
   env->bds_stack.org = new_org;
   env->bds_stack.top = new_org + current_size;
   env->bds_stack.limit = new_org + new_lim_size;
@@ -652,9 +652,9 @@ ecl_frs_set_limit(cl_env_ptr env, cl_index new_lim_size)
   if (current_size > new_lim_size)
     ecl_internal_error("Cannot shrink frame stack below its minimal element");
   ECL_STACK_RESIZE_DISABLE_INTERRUPTS(env);
-  new_org = ecl_realloc(old_org,
-                        osize * sizeof(*old_org),
-                        nsize * sizeof(*old_org));
+  new_org = ecl_resize(old_org,
+                       osize * sizeof(*old_org),
+                       nsize * sizeof(*old_org));
   env->frs_stack.org = new_org;
   env->frs_stack.top = new_org + current_size;
   env->frs_stack.limit = new_org + new_lim_size;
@@ -833,9 +833,9 @@ void
 ecl_stack_resize(cl_object self, cl_index nsize)
 {
   cl_index osize = self->vector.dim;
-  self->vector.self.t = (cl_object *)ecl_realloc(self->vector.self.t,
-                                                 osize * sizeof(cl_object),
-                                                 nsize * sizeof(cl_object));
+  self->vector.self.t = (cl_object *)ecl_resize(self->vector.self.t,
+                                                osize * sizeof(cl_object),
+                                                nsize * sizeof(cl_object));
   self->vector.dim = nsize;
 }
 
