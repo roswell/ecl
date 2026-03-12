@@ -308,7 +308,8 @@ si_copy_instance(cl_object x)
     loop_for_in(env) {
       if (ECL_CONSP(env)) {
         cl_object record = ECL_CONS_CAR(env);
-        if (ecl_car(record) == @':type' && ecl_cadr(record) == name && ECL_INSTANCEP(ecl_caddr(record))) {
+        if (ECL_CONSP(record) && ecl_car(record) == @':type'
+            && ecl_cadr(record) == name && ECL_INSTANCEP(ecl_caddr(record))) {
           class = ecl_caddr(record);
           break;
         }
