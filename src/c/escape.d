@@ -35,13 +35,35 @@ continuation is the exit point estabilished by an equivalent of CATCH.
 
 ** -------------------------------------------------------------------------- */
 
-cl_object
+void
 ecl_escape(cl_object continuation)
 {
   ecl_frame_ptr fr = frs_sch(continuation);
   if (!fr) ecl_internal_error("si_fear_handler: continuation not found!");
   ecl_unwind(ecl_process_env(), fr);
   _ecl_unexpected_return();
+}
+
+void
+cl_throw(cl_object tag)
+{
+  ecl_escape(tag);
+}
+
+void
+cl_return_from(cl_object block_id, cl_object block_name)
+{
+  ecl_escape(block_id);
+}
+
+void
+cl_go(cl_object tag_id, cl_object label)
+{
+
+  const cl_env_ptr the_env = ecl_process_env();
+  the_env->values[0] = label;
+  the_env->nvalues = 1;
+  ecl_escape(tag_id);
 }
 
 /* -- Signaling conditions -------------------------------------------------- **
