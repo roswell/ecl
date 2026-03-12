@@ -874,6 +874,43 @@ ecl_stack_push(cl_object self, cl_object elt)
 }
 
 cl_object
+ecl_stack_pop(cl_object self)
+{
+  cl_index fillp = self->vector.fillp;
+  cl_object elt = ECL_NIL;
+  if (ecl_unlikely(fillp == 0)) {
+    ecl_internal_error("ecl_stack_pop: stack underflow");
+  }
+  elt = self->vector.self.t[fillp-1];
+  self->vector.self.t[fillp-1] = ECL_NIL;
+  self->vector.fillp--;
+  return elt;
+}
+
+cl_object
+ecl_stack_psh(cl_object self, cl_object elt)
+{
+  cl_index fillp = self->vector.fillp;
+  cl_index dim = self->vector.dim;
+  if (ecl_unlikely(fillp == dim)) {
+    ecl_internal_error("ecl_stack_psh: stack overflow");
+  }
+  self->vector.self.t[self->vector.fillp++] = elt;
+  return self;
+}
+
+cl_object
+ecl_stack_dup(cl_object self)
+{
+  cl_index fillp = self->vector.fillp;
+  if (ecl_unlikely(fillp == 0)) {
+    ecl_internal_error("ecl_stack_dup: empty stack");
+  }
+  ecl_stack_push(self, self->vector.self.t[fillp-1]);
+  return self;
+}
+
+cl_object
 ecl_stack_del(cl_object self, cl_object elt)
 {
   cl_index idx;
@@ -897,4 +934,23 @@ ecl_stack_popu(cl_object self)
   cl_object result = self->vector.self.t[--self->vector.fillp];
   self->vector.self.t[self->vector.fillp] = ECL_NIL;
   return result;
+}
+
+cl_object
+ecl_stack_pshu(cl_object self, cl_object elt)
+{
+  self->vector.self.t[self->vector.fillp++] = elt;
+  return elt;
+}
+
+void
+ecl_stack_grow(cl_object self, cl_index n)
+{
+  self->vector.fillp += n;
+}
+
+void
+ecl_stack_drop(cl_object self, cl_index n)
+{
+  self->vector.fillp -= n;
 }
