@@ -322,6 +322,33 @@ ecl_close_around(cl_object fun, cl_object lcl_env, cl_object lex_env) {
   return v;
 }
 
+cl_index
+ecl_progv(cl_env_ptr env, cl_object vars0, cl_object values0)
+{
+  cl_object vars = vars0, values = values0;
+  cl_index n = env->bds_stack.top - env->bds_stack.org;
+  for (; LISTP(vars) && LISTP(values); vars = ECL_CONS_CDR(vars)) {
+    if (Null(vars)) {
+      return n;
+    } else {
+      cl_object var = ECL_CONS_CAR(vars);
+      if (!ECL_SYMBOLP(var))
+        FEillegal_variable_name(var);
+      if (ecl_symbol_type(var) & ecl_stp_constant)
+        FEbinding_a_constant(var);
+      if (Null(values)) {
+        ecl_bds_bind(env, var, OBJNULL);
+      } else {
+        ecl_bds_bind(env, var, ECL_CONS_CAR(values));
+        values = ECL_CONS_CDR(values);
+      }
+    }
+  }
+  FEerror("Wrong arguments to special form PROGV. Either~%"
+          "~A~%or~%~A~%are not proper lists",
+          2, vars0, values0);
+}
+
 static inline cl_object
 call_stepper(cl_env_ptr the_env, cl_object form, cl_object delta)
 {
