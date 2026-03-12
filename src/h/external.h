@@ -209,6 +209,7 @@ struct cl_core_struct {
         cl_object compiler_dispatch;
 };
 
+extern ECL_API struct ecl_type_information ecl_type_info[t_end];
 extern ECL_API struct ecl_core_struct ecl_core;
 extern ECL_API struct cl_core_struct cl_core;
 
