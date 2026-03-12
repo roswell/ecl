@@ -68,7 +68,7 @@ si_bind_simple_restarts(cl_object tag, cl_object names)
   if (ECL_FBOUNDP(@'si::bind-simple-restarts'))
     return _ecl_funcall3(@'si::bind-simple-restarts', tag, names);
   else
-    return ECL_SYM_VAL(ecl_process_env(), @'si::*restart-clusters*');
+    return ECL_SYM_VAL(ecl_process_env(), ECL_RESTART_CLUSTERS);
 }
 
 extern cl_object

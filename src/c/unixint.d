@@ -257,7 +257,7 @@ static ECL_INLINE bool
 interrupts_disabled_by_lisp(cl_env_ptr the_env)
 {
   return !ecl_option_values[ECL_OPT_BOOTED] ||
-    Null(ECL_SYM_VAL(the_env, @'ext::*interrupts-enabled*'));
+    Null(ECL_SYM_VAL(the_env, ECL_INTERRUPTS_ENABLED));
 }
 
 static void early_signal_error() ecl_attr_noreturn;
@@ -1579,7 +1579,7 @@ enable_unixint(void)
   create_signal_code_constants();
   install_fpe_signal_handlers();
   install_signal_handling_thread();
-  ECL_SET(@'ext::*interrupts-enabled*', ECL_T);
+  ECL_SET(ECL_INTERRUPTS_ENABLED, ECL_T);
   ecl_process_env()->disable_interrupts = 0;
   return ECL_NIL;
 }
