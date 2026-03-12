@@ -180,7 +180,7 @@ cl_parse_key(
       }
     }
     /* the key is a new one */
-    if (keyword == @':allow-other-keys') {
+    if (keyword == ECL_ALLOW_OTHER_KEYS) {
       if (supplied_allow_other_keys == OBJNULL)
         supplied_allow_other_keys = value;
     } else if (unknown_keyword == OBJNULL)
@@ -193,7 +193,8 @@ cl_parse_key(
                    (supplied_allow_other_keys == ECL_NIL ||
                     supplied_allow_other_keys == OBJNULL))) {
     for (i = 0; i < nkey; i++) {
-      if (keys[i] == @':allow-other-keys' && vars[nkey+i] == ECL_T && !Null(vars[i])) {
+      if (keys[i] == ECL_ALLOW_OTHER_KEYS && vars[nkey+i] == ECL_T
+          && !Null(vars[i])) {
         return;
       }
     }

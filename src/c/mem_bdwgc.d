@@ -85,11 +85,11 @@ out_of_memory(size_t requested_bytes)
   int interrupts = the_env->disable_interrupts;
   int method = 0;
   void *output;
-  /* Disable interrupts only with the ext::*interrupts-enabled*
-   * mechanism to allow for writes in the thread local environment */
+  /* Disable interrupts only with the ECL_INTERRUPTS_ENABLED mechanism to allow
+   * for writes in the thread local environment */
   if (interrupts)
     ecl_enable_interrupts_env(the_env);
-  ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
+  ecl_bds_bind(the_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);
   /* Free the input / output buffers */
   the_env->string_pool = ECL_NIL;
   the_env->token_pool = ECL_NIL;
@@ -689,7 +689,8 @@ stacks_scanner()
   } end_loop_for_on_unsafe(l);
   /* ECL runtime */
   GC_push_all((void *)(&ecl_core), (void *)(&ecl_core + 1));
-  GC_push_all((void *)ecl_vr_shandlers, (void *)(ecl_vr_shandlers + 1));
+  GC_push_all((void *)(ECL_SIGNAL_HANDLERS),
+              (void *)(ECL_SIGNAL_HANDLERS + 1));
   /* Common Lisp */
   GC_push_all((void *)(&cl_core), (void *)(&cl_core + 1));
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
