@@ -136,7 +136,7 @@ $(ECL_MIN): $(LIBRARIES) .gdbinit libeclmin.a
 	if [ -f CROSS-COMPILER ]; then \
 		touch $@; \
 	else \
-		$(CC) $(LDFLAGS) -o $@ \
+		$(CC) $(LDFLAGS) -rdynamic -o $@ \
 		cinit.o c/all_symbols.o \
 		-L./ libeclmin.a \
 		$(CORE_LIBS) $(FASL_LIBS) $(LIBS);\
