@@ -39,7 +39,9 @@ void
 ecl_escape(cl_object continuation)
 {
   ecl_frame_ptr fr = frs_sch(continuation);
-  if (!fr) ecl_internal_error("si_fear_handler: continuation not found!");
+  if (!fr) {
+    ecl_ferror(ECL_EX_S_FMISS, continuation, ECL_NIL);
+  }
   ecl_unwind(ecl_process_env(), fr);
   _ecl_unexpected_return();
 }
