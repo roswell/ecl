@@ -230,6 +230,7 @@
             (si::frame)
             (si::token)
             (si::module)
+            (si::exception)
             (si::weak-pointer)
             (:threads mp::process)
             (:threads mp::lock)

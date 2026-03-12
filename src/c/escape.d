@@ -136,6 +136,48 @@ ecl_call_with_handler(cl_object handler, cl_object continuation)
   return result;
 }
 
+/* -- Exceptions ------------------------------------------------------------ **
+
+Conditions in Common Lisp are instances of STANDARD-CLASS. While eventually I'd
+like to include classes to the early environment, that would be too much work at
+one go. This is also the reason why ecl_signal accepts all kinds of objects.
+
+In order to signal conditions in the early environment we use a trick: we pass
+to ecl_signal objects of type ecl_exception that are recognized by a Common Lisp
+handler, and that handler resignals proper conditions. Exceptions are allocated
+on the stack and capturing them is prohibited.
+
+ecl_raise is very similar to ecl_signal with an exception that it does not pop
+the current handler from the stack. This is to ensure, that the condition
+handler is invoked despite being "above" the exception handler on the stack. To
+avoid infinite recursion it is prohibited to resignal the exception itself.
+
+** ---------------------------------------------------------------------------*/
+
+cl_object
+ecl_raise(ecl_ex_type type, bool returns,
+          cl_object arg1, cl_object arg2, cl_object arg3, void *arg4)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  struct ecl_exception ex =
+    { .t = t_exception, .ex_type = type,
+      .arg1 = arg1, .arg2 = arg2, .arg3 = arg3, .arg4 = arg4 };
+  cl_object symbol, cluster, handler;
+  cl_object exception = ecl_cast_ptr(cl_object,&ex);
+  symbol = ECL_SIGNAL_HANDLERS;
+  cluster = ECL_SYM_VAL(the_env, symbol);
+  ecl_bds_bind(the_env, symbol, cluster);
+  while(!Null(cluster)) {
+    handler = ECL_CONS_CAR(cluster);
+    cluster = ECL_CONS_CDR(cluster);
+    _ecl_funcall2(handler, exception);
+  }
+  if (!returns)
+    _ecl_unexpected_return();
+  ecl_bds_unwind1(the_env);
+  return ECL_NIL;
+}
+
 /* -- Fatal errors ---------------------------------------------------------- **
 
 Fatal errors that can't be recovered from and result in the program abortion.

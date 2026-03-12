@@ -63,4 +63,22 @@ cl_object ecl_alloc_object(cl_type t);
 void ecl_free_memory(void *ptr);
 void ecl_free_object(cl_object o);
 
+/* escape.c */
+cl_object ecl_raise(ecl_ex_type t, bool ret,
+                    cl_object a1, cl_object a2, cl_object a3, void *a4);
+
+#define ecl_ferror ecl_ferror3
+#define ecl_ferror1(extype) ecl_raise(extype, 0, ECL_NIL, ECL_NIL, ECL_NIL, NULL)
+#define ecl_ferror2(extype,a1) ecl_raise(extype, 0, a1, ECL_NIL, ECL_NIL, NULL)
+#define ecl_ferror3(extype,a1,a2) ecl_raise(extype, 0, a1, a2, ECL_NIL, NULL)
+#define ecl_ferror4(extype,a1,a2,a3) ecl_raise(extype, 0, a1, a2, a3, NULL)
+#define ecl_ferror5(extype,a1,a2,a3,p4) ecl_raise(extype, 0, a1, a2, a3, p4)
+
+#define ecl_cerror ecl_cerror3
+#define ecl_cerror1(extype) ecl_raise(extype, 1, ECL_NIL, ECL_NIL, ECL_NIL, NULL)
+#define ecl_cerror2(extype,a1) ecl_raise(extype, 1, a1, ECL_NIL, ECL_NIL, NULL)
+#define ecl_cerror3(extype,a1,a2) ecl_raise(extype, 1, a1, a2, ECL_NIL, NULL)
+#define ecl_cerror4(extype,a1,a2,a3) ecl_raise(extype, 1, a1, a2, a3, NULL)
+#define ecl_cerror5(extype,a1,a2,a3,p4) ecl_raise(extype, 1, a1, a2, a3, p4)
+
 #endif  /* ECL_NUCLEUS_H */

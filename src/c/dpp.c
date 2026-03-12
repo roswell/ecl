@@ -753,7 +753,7 @@ put_declaration(void)
   if (nopt == 0 && !rest_flag && !key_flag) {
     put_lineno();
     fprintf(out, "\tif (ecl_unlikely(narg!=%d))", nreq);
-    fprintf(out, "\t   FEwrong_num_arguments(ecl_make_fixnum(%d));\n",
+    fprintf(out, "\t   ecl_ferror2(ECL_EX_F_NARGS, ecl_make_fixnum(%d));\n",
             function_code);
   } else {
     simple_varargs = !rest_flag && !key_flag && ((nreq + nopt) < 32);
@@ -782,7 +782,7 @@ put_declaration(void)
     if (nopt > 0 && !rest_flag && !key_flag) {
       fprintf(out, "|| narg > %d", nreq + nopt);
     }
-    fprintf(out, ")) FEwrong_num_arguments(ecl_make_fixnum(%d));\n", function_code);
+    fprintf(out, ")) ecl_ferror2(ECL_EX_F_NARGS, ecl_make_fixnum(%d));\n", function_code);
     for (i = 0;  i < nopt;  i++) {
       put_lineno();
       fprintf(out, "\tif (narg > %d) {\n", nreq+i);
