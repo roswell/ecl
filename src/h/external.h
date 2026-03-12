@@ -1814,6 +1814,7 @@ extern ECL_API void ecl_tcp_close_all(void);
 /* lwp.c */
 extern ECL_API cl_object si_make_thread(cl_object fun);
 extern ECL_API cl_object si_make_continuation(cl_object thread);
+extern ECL_API cl_object si_pass(cl_object continuation);
 
 /* threads.c */
 
