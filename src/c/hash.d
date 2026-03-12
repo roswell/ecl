@@ -1188,12 +1188,14 @@ ecl_reconstruct_serialized_hashtable(cl_object h) {
 cl_object
 cl_hash_table_p(cl_object ht)
 {
-  @(return (ECL_HASH_TABLE_P(ht) ? ECL_T : ECL_NIL));
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, (ECL_HASH_TABLE_P(ht) ? ECL_T : ECL_NIL));
 }
 
 cl_object
 si_hash_table_weakness(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_object output = ECL_NIL;
 #ifdef ECL_WEAK_HASH
   switch (ht->hash.weak) {
@@ -1204,17 +1206,14 @@ si_hash_table_weakness(cl_object ht)
   case ecl_htt_not_weak: default: output = ECL_NIL; break;
   }
 #endif
-  @(return output);
+  ecl_return1(the_env, output);
 }
 
 cl_object
 si_hash_table_synchronized_p(cl_object ht)
 {
-
-  if (!Null(ht->hash.sync_lock)) {
-    return ECL_T;
-  }
-  return ECL_NIL;
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, (!Null(ht->hash.sync_lock) ? ECL_T : ECL_NIL));
 }
 
 @(defun gethash (key ht &optional (no_value ECL_NIL))
@@ -1235,9 +1234,10 @@ si_hash_table_synchronized_p(cl_object ht)
 cl_object
 si_hash_set(cl_object key, cl_object ht, cl_object val)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   /* INV: ecl_sethash() checks the type of hashtable */
   ecl_sethash(key, ht, val);
-  @(return val);
+  ecl_return1(the_env, val);
 }
 
 bool
@@ -1250,23 +1250,26 @@ ecl_remhash(cl_object key, cl_object hashtable)
 cl_object
 cl_remhash(cl_object key, cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   /* INV: _ecl_remhash() checks the type of hashtable */
-  @(return (ecl_remhash(key, ht)? ECL_T : ECL_NIL));
+  ecl_return1(the_env, (ecl_remhash(key, ht)? ECL_T : ECL_NIL));
 }
 
 cl_object
 cl_clrhash(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[clrhash], 1, ht);
   if (ht->hash.entries) {
     do_clrhash(ht);
   }
-  @(return ht);
+  ecl_return1(the_env, ht);
 }
 
 cl_object
 cl_hash_table_test(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_object output;
   assert_type_hash_table(@[hash-table-test], 1, ht);
   switch(ht->hash.test) {
@@ -1278,14 +1281,15 @@ cl_hash_table_test(cl_object ht)
   case ecl_htt_generic: output = ht->hash.generic_test; break;
   default: FEerror("hash-table-test: unknown test.", 0);
   }
-  @(return output);
+  ecl_return1(the_env, output);
 }
 
 cl_object
 cl_hash_table_size(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[hash-table-size], 1, ht);
-  @(return ecl_make_fixnum(ht->hash.size));
+  ecl_return1(the_env, ecl_make_fixnum(ht->hash.size));
 }
 
 cl_index
@@ -1312,8 +1316,9 @@ ecl_hash_table_count(cl_object ht)
 cl_object
 cl_hash_table_count(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[hash-table-count], 1, ht);
-  @(return (ecl_make_fixnum(ecl_hash_table_count(ht))));
+  ecl_return1(the_env, ecl_make_fixnum(ecl_hash_table_count(ht)));
 }
 
 
@@ -1360,50 +1365,55 @@ si_hash_table_iterate(cl_narg narg, ...)
       if (e.key != OBJNULL) {
         cl_object ndx = ecl_make_fixnum(j);
         ECL_RPLACA(env, ndx);
-        @(return ndx e.key e.value);
+        ecl_return3(the_env, ndx, e.key, e.value);
       }
     } while (j != i);
     ECL_RPLACA(env, ECL_NIL);
   }
-  @(return ECL_NIL);
+  ecl_return1(the_env, ECL_NIL);
 }
 
 cl_object
 si_hash_table_iterator(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_fixnum i;
   assert_type_hash_table(@[si::hash-table-iterator], 1, ht);
   /* Make sure we don't start in the middle of a group of consecutive
    * filled buckets. */
   for (i = ht->hash.size-1; ht->hash.data[i].key != OBJNULL; i--);
-  @(return ecl_make_cclosure_va(si_hash_table_iterate,
-                                cl_list(3, ecl_make_fixnum(i),
-                                        ecl_make_fixnum(i),
-                                        ht),
-                                @'si::hash-table-iterator',
-                                0));
+  ecl_return1(the_env,
+              ecl_make_cclosure_va(si_hash_table_iterate,
+                                   cl_list(3, ecl_make_fixnum(i),
+                                           ecl_make_fixnum(i),
+                                           ht),
+                                   @'si::hash-table-iterator',
+                                   0));
 }
 
 cl_object
 cl_hash_table_rehash_size(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[hash-table-rehash-size], 1, ht);
-  @(return ht->hash.rehash_size);
+  ecl_return1(the_env, ht->hash.rehash_size);
 }
 
 cl_object
 cl_hash_table_rehash_threshold(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[hash-table-rehash-threshold], 1, ht);
-  @(return ht->hash.threshold);
+  ecl_return1(the_env, ht->hash.threshold);
 }
 
 cl_object
 cl_sxhash(cl_object key)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_index output = _hash_equal(3, 0, key);
   const cl_index mask = ((cl_index)1 << (ECL_FIXNUM_BITS - 3)) - 1;
-  @(return ecl_make_fixnum(output & mask));
+  ecl_return1(the_env, ecl_make_fixnum(output & mask));
 }
 
 @(defun si::hash-eql (&rest args)
@@ -1439,11 +1449,12 @@ cl_sxhash(cl_object key)
 cl_object
 cl_maphash(cl_object fun, cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_index i, j, hsize;
 
   assert_type_hash_table(@[maphash], 2, ht);
   if (ht->hash.entries == 0) {
-    @(return ECL_NIL);
+    ecl_return1(the_env, ECL_NIL);
   }
   hsize = ht->hash.size;
   /* Make sure we don't start in the middle of a group of consecutive
@@ -1459,12 +1470,13 @@ cl_maphash(cl_object fun, cl_object ht)
       funcall(3, fun, key, val);
     }
   } while (j != i);
-  @(return ECL_NIL);
+  ecl_return1(the_env, ECL_NIL);
 }
 
 cl_object
 si_hash_table_content(cl_object ht)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_index i;
   cl_object output = ECL_NIL;
   assert_type_hash_table(@[ext::hash-table-content], 2, ht);
@@ -1473,12 +1485,13 @@ si_hash_table_content(cl_object ht)
     if (e.key != OBJNULL)
       output = ecl_cons(ecl_cons(e.key, e.value), output);
   }
-  @(return output);
+  ecl_return1(the_env, output);
 }
 
 cl_object
 si_hash_table_fill(cl_object ht, cl_object values)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[ext::hash-table-fill], 2, ht);
   while (!Null(values)) {
     cl_object pair = ecl_car(values);
@@ -1487,12 +1500,13 @@ si_hash_table_fill(cl_object ht, cl_object values)
     values = ECL_CONS_CDR(values);
     ecl_sethash(key, ht, value);
   }
-  @(return ht);
+  ecl_return1(the_env, ht);
 }
 
 cl_object
 si_copy_hash_table(cl_object orig)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_object hash;
   hash = cl__make_hash_table(cl_hash_table_test(orig),
                              cl_hash_table_size(orig),
@@ -1502,5 +1516,5 @@ si_copy_hash_table(cl_object orig)
   memcpy(hash->hash.data, orig->hash.data,
          orig->hash.size * sizeof(*orig->hash.data));
   hash->hash.entries = orig->hash.entries;
-  @(return hash);
+  ecl_return1(the_env, hash);
 }
