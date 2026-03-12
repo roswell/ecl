@@ -137,6 +137,9 @@ ecl_exception_handler(cl_object o)
     case ECL_EX_F_INVAL:
       FEinvalid_function(arg1);
       break;
+    case ECL_EX_S_FMISS:
+      FEcontrol_error("UNWIND: frame ~s not found.", 1, arg1);
+      break;
     default:
       ecl_internal_error("Unknown exception type.");
     }
