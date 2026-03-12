@@ -129,37 +129,6 @@ ecl_aset_bv(cl_object x, cl_index index, int value)
   return value;
 }
 
-void
-cl_throw(cl_object tag)
-{
-  ecl_frame_ptr fr = frs_sch(tag);
-  if (fr == NULL)
-    FEcontrol_error("THROW: The catch ~S is undefined.", 1, tag);
-  ecl_unwind(ecl_process_env(), fr);
-}
-
-void
-cl_return_from(cl_object block_id, cl_object block_name)
-{
-  ecl_frame_ptr fr = frs_sch(block_id);
-  if (fr == NULL)
-    FEcontrol_error("RETURN-FROM: The block ~S with id ~S is missing.",
-                    2, block_name, block_id);
-  ecl_unwind(ecl_process_env(), fr);
-}
-
-void
-cl_go(cl_object tag_id, cl_object label)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  ecl_frame_ptr fr = frs_sch(tag_id);
-  if (fr == NULL)
-    FEcontrol_error("GO: The tagbody ~S is missing.", 1, tag_id);
-  the_env->values[0] = label;
-  the_env->nvalues = 1;
-  ecl_unwind(the_env, fr);
-}
-
 cl_object
 cl_grab_rest_args(ecl_va_list args)
 {
