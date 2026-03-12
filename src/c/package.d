@@ -112,7 +112,7 @@ symbol_add_package(cl_object s, cl_object p)
 static cl_object
 make_package_hashtable()
 {
-  return cl__make_hash_table(@'package', /* package hash table */
+  return ecl_make_hash_table(@'package', /* package hash table */
                              ecl_make_fixnum(128), /* initial size */
                              ecl_ct_default_rehash_size,
                              ecl_ct_default_rehash_threshold);

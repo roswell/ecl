@@ -59,6 +59,7 @@
 #define cl_alloc_simple_extended_string ecl_alloc_simple_extended_string
 
 #define ecl_search_hash _ecl_gethash
+#define cl__make_hash_table ecl_make_hash_table
 
 #define read_VV ecl_init_module
 

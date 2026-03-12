@@ -816,7 +816,7 @@ extern ECL_API cl_object _ecl_standard_dispatch(cl_object frame, cl_object fun);
 
 /* hash.c */
 
-extern ECL_API cl_object cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size, cl_object rehash_threshold);
+extern ECL_API cl_object ecl_make_hash_table(cl_object test, cl_object size, cl_object rehash_size, cl_object rehash_threshold);
 extern ECL_API cl_object cl_hash_table_p(cl_object ht);
 extern ECL_API cl_object si_hash_set(cl_object key, cl_object ht, cl_object val);
 extern ECL_API cl_object cl_remhash(cl_object key, cl_object ht);
