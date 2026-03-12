@@ -418,6 +418,7 @@ enum ecl_built_in_classes {
   ECL_BUILTIN_FRAME,
   ECL_BUILTIN_TOKEN,
   ECL_BUILTIN_MODULE,
+  ECL_BUILTIN_EXCEPTION,
   ECL_BUILTIN_WEAK_POINTER,
   ECL_BUILTIN_PROCESS,
   ECL_BUILTIN_LOCK,
@@ -539,6 +540,8 @@ cl_class_of(cl_object x)
     index = ECL_BUILTIN_TOKEN; break;
   case t_module:
     index = ECL_BUILTIN_MODULE; break;
+  case t_exception:
+    index = ECL_BUILTIN_EXCEPTION; break;
   case t_weak_pointer:
     index = ECL_BUILTIN_WEAK_POINTER; break;
 #ifdef ECL_SSE2
