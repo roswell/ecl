@@ -251,7 +251,7 @@ patch_sharp(const cl_env_ptr the_env, cl_object x)
     return x;
   } else {
     cl_object table = 
-      cl__make_hash_table(@'eq', ecl_make_fixnum(20), /* size */
+      ecl_make_hash_table(@'eq', ecl_make_fixnum(20), /* size */
                           ecl_ct_default_rehash_size,
                           ecl_ct_default_rehash_threshold);
     do {
@@ -828,7 +828,7 @@ ecl_copy_readtable(cl_object from, cl_object to)
   assert_type_readtable(@[make-dispatch-macro-character], 3, readtable);
   c = ecl_char_code(chr);
   cat = Null(non_terminating_p)? cat_terminating : cat_non_terminating;
-  table = cl__make_hash_table(@'eql', ecl_make_fixnum(128),
+  table = ecl_make_hash_table(@'eql', ecl_make_fixnum(128),
                               ecl_ct_default_rehash_size,
                               ecl_ct_default_rehash_threshold);
   ecl_readtable_set(readtable, c, cat, cl_core.dispatch_reader, table);
