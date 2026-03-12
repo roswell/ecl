@@ -720,12 +720,12 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
         ptr = ECL_STACK_FRAME_PTR(frame) + frame_index;
         end = ptr + limit;
         for (; ptr != end; ptr++) {
-          if (*(ptr++) == @':allow-other-keys') {
+          if (*(ptr++) == ECL_ALLOW_OTHER_KEYS) {
             aok = *ptr;
             count -= 2;
             /* only the first :allow-other-keys argument is considered */
             for (ptr++; ptr != end; ptr++) {
-              if (*(ptr++) != @':allow-other-keys')
+              if (*(ptr++) != ECL_ALLOW_OTHER_KEYS)
                 break;
               count -= 2;
             }

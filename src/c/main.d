@@ -147,6 +147,42 @@ maybe_fix_console_stream(cl_object stream)
 }
 #endif
 
+static void
+init_early_symbol(cl_object symbol, cl_object package) {
+  symbol->symbol.undef_entry = ecl_undefined_function_entry;
+  ECL_FMAKUNBOUND(symbol);
+  cl_import2(symbol, package);
+  cl_export2(symbol, package);
+}
+
+static void
+init_ecl_symbols()
+{
+  init_early_symbol(ECL_SIGNAL_HANDLERS, cl_core.system_package);
+  init_early_symbol(ECL_RESTART_CLUSTERS, cl_core.system_package);
+  init_early_symbol(ECL_INTERRUPTS_ENABLED, cl_core.system_package);
+  init_early_symbol(ECL_T, cl_core.lisp_package);
+  init_early_symbol(ECL_UNBOUND, cl_core.system_package);
+
+  /* SYSTEM:UNBOUND has an associated function si_unbound that returns it. */
+  ECL_SYM_FUN(ECL_UNBOUND)
+    = ecl_make_cfun((cl_objectfn_fixed)si_unbound, ECL_UNBOUND, NULL, 0);
+
+  /* Initialize the :ALLOW-OTHER-KEYS symbol (it is not part of cl_symbols). */
+  {
+    cl_object p = cl_core.keyword_package;
+    cl_object s = ECL_ALLOW_OTHER_KEYS;
+    cl_object n = s->symbol.name;
+    ECL_SET(s, OBJNULL);
+    ECL_FMAKUNBOUND(s);
+    s->symbol.hpack = p;
+    s->symbol.undef_entry = ecl_undefined_function_entry;
+    ecl_symbol_type_set(s, ecl_symbol_type(s) | ecl_stp_constant);
+    ECL_SET(s, s);
+    p->pack.external = _ecl_sethash(n, p->pack.external, s);
+  }
+}
+
 int
 cl_boot(int argc, char **argv)
 {
@@ -175,7 +211,7 @@ cl_boot(int argc, char **argv)
   /*
    * Initialize the per-thread data.
    * This cannot come later, because we need to be able to bind
-   * ext::*interrupts-enabled* while creating packages.
+   * ECL_INTERRUPTS_ENABLED while creating packages.
    */
 
   env = ecl_core.first_env;
@@ -202,22 +238,6 @@ cl_boot(int argc, char **argv)
   ECL_NIL_SYMBOL->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
   cl_num_symbols_in_core=1;
-
-  ECL_T->symbol.t = (short)t_symbol;
-  ECL_T->symbol.value = ECL_T;
-  ECL_T->symbol.name = str_T;
-  ECL_T->symbol.cname = ECL_NIL;
-  ECL_FMAKUNBOUND(ECL_T);
-  ECL_T->symbol.sfdef = ECL_NIL;
-  ECL_T->symbol.macfun = ECL_NIL;
-  ECL_T->symbol.plist = ECL_NIL;
-  ECL_T->symbol.hpack = ECL_NIL;
-  ECL_T->symbol.stype = ecl_stp_constant;
-  ECL_T->symbol.undef_entry = ecl_undefined_function_entry;
-#ifdef ECL_THREADS
-  ECL_T->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
-#endif
-  cl_num_symbols_in_core=2;
 
   cl_core.gensym_prefix = (cl_object)&str_G_data;
   cl_core.gentemp_prefix = (cl_object)&str_T_data;
@@ -278,14 +298,11 @@ cl_boot(int argc, char **argv)
   cl_import2(ECL_NIL, cl_core.lisp_package);
   cl_export2(ECL_NIL, cl_core.lisp_package);
 
-  ECL_T->symbol.hpack = cl_core.lisp_package;
-  cl_import2(ECL_T, cl_core.lisp_package);
-  cl_export2(ECL_T, cl_core.lisp_package);
-
   /* At exit, clean up */
   atexit(cl_shutdown);
 
-  /* These must come _after_ the packages and NIL/T have been created */
+  /* These must come _after_ the packages have been created */
+  init_ecl_symbols();
   init_all_symbols();
 
   /* Initialize the handler stack with the exception handler. */
