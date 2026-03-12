@@ -280,6 +280,10 @@ init_type_info_database(void)
           to_bitmap(&o, &(o.token.string)) |
           to_bitmap(&o, &(o.token.escape)));
   init_tm(t_module, "MODULE", ecl_module, 0);
+  init_tm(t_exception, "EXCEPTION", ecl_exception,
+          to_bitmap(&o, &(o.exception.arg1)) |
+          to_bitmap(&o, &(o.exception.arg2)) |
+          to_bitmap(&o, &(o.exception.arg3)));
   init_tm(t_weak_pointer, "WEAK-POINTER", ecl_weak_pointer, 0);
 #ifdef ECL_SSE2
   init_tm(t_sse_pack, "SSE-PACK", ecl_sse_pack, 0);
