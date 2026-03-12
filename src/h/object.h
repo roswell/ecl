@@ -116,6 +116,13 @@ struct ecl_allocator_ops {
   void (*free_object)(cl_object);          /* high-level free */
 };
 
+struct ecl_type_information {
+  cl_type t;
+  const char * name;
+  size_t size;
+  uintmax_t descriptor;
+};
+
 /*
         OBJect NULL value.
         It should not coincide with any legal object value.
