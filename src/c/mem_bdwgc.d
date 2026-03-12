@@ -736,13 +736,6 @@ si_gc_dump()
 
 /* -- module definition ------------------------------------------------------ */
 
-static cl_object
-alloc_object(cl_type t)
-{
-  struct bdw_type_information *ti = bdw_type_info + t;
-  return ti->allocator(ti);
-}
-
 static void *
 alloc_memory(cl_index size)
 {
@@ -761,25 +754,39 @@ alloc_atomic(cl_index size)
   return GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(size);
 }
 
-void
-free_memory(void *ptr)
+static void *
+realloc_memory(void *ptr, cl_index o, cl_index n)
+{
+  return GC_realloc(ptr, n);
+}
+
+static void
+dealloc_memory(void *ptr)
 {
   GC_FREE(ptr);
+}
+
+static cl_object
+make_object(cl_type t)
+{
+  struct bdw_type_information *ti = bdw_type_info + t;
+  return ti->allocator(ti);
 }
 
 static void
 free_object(cl_object o)
 {
   standard_finalizer(o);
-  free_memory(o);
+  dealloc_memory(o);
 }
 
 struct ecl_allocator_ops gc_ops = {
   .allocate_memory = alloc_memory,
   .allocate_atomic = alloc_atomic,
   .allocate_manual = alloc_manual,
-  .allocate_object = alloc_object,
-  .free_memory = free_memory,
+  .realloc_memory = realloc_memory,
+  .dealloc_memory = dealloc_memory,
+  .make_object = make_object,
   .free_object = free_object
 };
 

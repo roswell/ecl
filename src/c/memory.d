@@ -288,30 +288,6 @@ init_type_info_database(void)
 
 /* -- Constructors ---------------------------------------------------------- */
 
-cl_object
-ecl_alloc_object(cl_type t)
-{
-  assert_type_tag(t);
-  switch(t) {
-  case t_list:                  /* Small cons (no d.t) */
-    return ecl_cons(ECL_NIL, ECL_NIL);
-  case t_character:
-    return ECL_CODE_CHAR(' ');  /* Immediate character */
-  case t_fixnum:
-    return ecl_make_fixnum(0);  /* Immediate fixnum */
-  default:
-    {
-      const cl_env_ptr the_env = ecl_process_env_unsafe();
-      cl_object o;
-      if(the_env) ecl_disable_interrupts_env(the_env);
-      o = ecl_core.allocator->allocate_object(t);
-      o->d.t = t;
-      if(the_env) ecl_enable_interrupts_env(the_env);
-      return o;
-    }
-  }
-}
-
 void *
 ecl_alloc(cl_index n)
 {
@@ -357,15 +333,15 @@ ecl_alloc_manual(cl_index n)
   return ptr;
 }
 
-void
-ecl_free_object(cl_object ptr)
+void *
+ecl_realloc(void *ptr, cl_index o, cl_index n)
 {
   const cl_env_ptr the_env = ecl_process_env_unsafe();
   if(!the_env) {
-    ecl_core.allocator->free_object(ptr);
+    ecl_core.allocator->realloc_memory(ptr, o, n);
   } else {
     ecl_disable_interrupts_env(the_env);
-    ecl_core.allocator->free_object(ptr);
+    ecl_core.allocator->realloc_memory(ptr, o, n);
     ecl_enable_interrupts_env(the_env);
   }
 }
@@ -375,10 +351,47 @@ ecl_dealloc(void *ptr)
 {
   const cl_env_ptr the_env = ecl_process_env_unsafe();
   if(!the_env) {
-    ecl_core.allocator->free_memory(ptr);
+    ecl_core.allocator->dealloc_memory(ptr);
   } else {
     ecl_disable_interrupts_env(the_env);
-    ecl_core.allocator->free_memory(ptr);
+    ecl_core.allocator->dealloc_memory(ptr);
+    ecl_enable_interrupts_env(the_env);
+  }
+}
+
+cl_object
+ecl_alloc_object(cl_type t)
+{
+  assert_type_tag(t);
+  switch(t) {
+  case t_list:                  /* Small cons (no d.t) */
+    return ecl_cons(ECL_NIL, ECL_NIL);
+  case t_character:
+    return ECL_CODE_CHAR(' ');  /* Immediate character */
+  case t_fixnum:
+    return ecl_make_fixnum(0);  /* Immediate fixnum */
+  default:
+    {
+      const cl_env_ptr the_env = ecl_process_env_unsafe();
+      cl_object o;
+      if(the_env) ecl_disable_interrupts_env(the_env);
+      o = ecl_core.allocator->make_object(t);
+      o->d.t = t;
+      if(the_env) ecl_enable_interrupts_env(the_env);
+      return o;
+    }
+  }
+}
+
+void
+ecl_free_object(cl_object ptr)
+{
+  const cl_env_ptr the_env = ecl_process_env_unsafe();
+  if(!the_env) {
+    ecl_core.allocator->free_object(ptr);
+  } else {
+    ecl_disable_interrupts_env(the_env);
+    ecl_core.allocator->free_object(ptr);
     ecl_enable_interrupts_env(the_env);
   }
 }
@@ -541,7 +554,7 @@ ecl_put_reader_token(cl_object token)
 /* -- Rudimentary manual memory allocator ----------------------------------- */
 
 static cl_object
-alloc_object(cl_type t)
+make_object(cl_type t)
 {
   struct ecl_type_information *ti = ecl_type_info + t;
   return ecl_malloc(ti->size);
@@ -558,8 +571,9 @@ struct ecl_allocator_ops manual_allocator = {
   .allocate_memory = ecl_malloc,
   .allocate_atomic = ecl_malloc,
   .allocate_manual = ecl_malloc,
-  .allocate_object = alloc_object,
-  .free_memory = ecl_free,
+  .realloc_memory = ecl_resize,
+  .dealloc_memory = ecl_free,
+  .make_object = make_object,
   .free_object = free_object
 };
 

@@ -264,6 +264,7 @@ extern ECL_API cl_object si_weak_pointer_value(cl_object o);
 extern ECL_API void *ecl_alloc(cl_index n);
 extern ECL_API void *ecl_alloc_manual(cl_index n);
 extern ECL_API void *ecl_alloc_atomic(cl_index n);
+extern ECL_API void *ecl_realloc(void *,cl_index, cl_index);
 extern ECL_API void ecl_dealloc(void *);
 
 #define ecl_alloc_align(s,d) ecl_alloc(s)
