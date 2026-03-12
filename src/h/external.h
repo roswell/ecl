@@ -311,7 +311,10 @@ extern ECL_API void ecl_free_stack(cl_object o);
 extern ECL_API void ecl_wipe_stack(cl_object o);
 extern ECL_API cl_object ecl_stack_push(cl_object stack, cl_object elt);
 extern ECL_API cl_object ecl_stack_del(cl_object stack, cl_object elt);
+extern ECL_API cl_object ecl_stack_pop(cl_object stack);
+extern ECL_API cl_object ecl_stack_psh(cl_object stack, cl_object elt);
 extern ECL_API cl_object ecl_stack_popu(cl_object stack);
+extern ECL_API cl_object ecl_stack_pshu(cl_object stack, cl_object elt);
 
 /* array.c */
 
