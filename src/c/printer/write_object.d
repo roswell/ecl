@@ -94,7 +94,7 @@ si_write_object_with_circle(cl_object x, cl_object stream, cl_object print_funct
       circle_counter = ecl_cmp_symbol_value(env, @'si::*circle-counter*');
       if (circle_counter == ECL_NIL) {
         cl_object hash =
-          cl__make_hash_table(@'eq',
+          ecl_make_hash_table(@'eq',
                               ecl_make_fixnum(1024),
                               ecl_ct_default_rehash_size,
                               ecl_ct_default_rehash_threshold);

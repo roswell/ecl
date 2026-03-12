@@ -946,9 +946,9 @@ ecl_extend_hashtable(cl_object hashtable)
                          (rehash_size ecl_ct_default_rehash_size)
                          (rehash_threshold ecl_ct_default_rehash_threshold))
 @ {
-    cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
+    cl_object hash = ecl_make_hash_table(test, size, rehash_size, rehash_threshold);
     if (hash->hash.test == ecl_htt_generic) {
-      /* Normally we would make hash_function an argument to cl__make_hash_table
+      /* Normally we would make hash_function an argument to ecl_make_hash_table
          and put this test in there and void unnecessary object allocation, but
          we do not want to compromise the API. -- jd 2019-05-23 */
       if (hash_function == ECL_NIL) {
@@ -1019,7 +1019,7 @@ do_clrhash(cl_object ht)
 ecl_def_ct_single_float(min_threshold, 0.1, static, const);
 
 cl_object
-cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
+ecl_make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
                     cl_object rehash_threshold)
 {
   int htt;
@@ -1508,7 +1508,7 @@ si_copy_hash_table(cl_object orig)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object hash;
-  hash = cl__make_hash_table(cl_hash_table_test(orig),
+  hash = ecl_make_hash_table(cl_hash_table_test(orig),
                              cl_hash_table_size(orig),
                              cl_hash_table_rehash_size(orig),
                              cl_hash_table_rehash_threshold(orig));

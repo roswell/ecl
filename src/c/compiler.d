@@ -3108,7 +3108,7 @@ cl_object
 si_need_to_make_load_form_p(cl_object object)
 {
   cl_object load_form_cache =
-    cl__make_hash_table(@'eq',
+    ecl_make_hash_table(@'eq',
                         ecl_make_fixnum(16),
                         ecl_ct_default_rehash_size,
                         ecl_ct_default_rehash_threshold);
@@ -3803,7 +3803,7 @@ init_compiler()
 {
   cl_object dispatch_table =
     cl_core.compiler_dispatch =
-    cl__make_hash_table(@'eq', ecl_make_fixnum(128), /* size */
+    ecl_make_hash_table(@'eq', ecl_make_fixnum(128), /* size */
                         ecl_ct_default_rehash_size,
                         ecl_ct_default_rehash_threshold);
   int i;

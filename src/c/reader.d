@@ -66,7 +66,7 @@ ecl_readtable_set(cl_object readtable, int c, enum ecl_chattrib cat,
   if (c >= RTABSIZE) {
     cl_object hash = readtable->readtable.hash;
     if (Null(hash)) {
-      hash = cl__make_hash_table(@'eql', ecl_make_fixnum(128),
+      hash = ecl_make_hash_table(@'eql', ecl_make_fixnum(128),
                                  ecl_ct_default_rehash_size,
                                  ecl_ct_default_rehash_threshold);
       readtable->readtable.hash = hash;

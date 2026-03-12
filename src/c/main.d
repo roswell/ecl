@@ -644,7 +644,7 @@ cl_boot(int argc, char **argv)
    * need EQUALP because it has to be case insensitive.
    */
   cl_core.char_names = aux =
-    cl__make_hash_table(@'equalp', ecl_make_fixnum(128), /* size */
+    ecl_make_hash_table(@'equalp', ecl_make_fixnum(128), /* size */
                         ecl_ct_default_rehash_size,
                         ecl_ct_default_rehash_threshold);
   for (i = 0; char_names[i].elt.self; i++) {
@@ -671,7 +671,7 @@ cl_boot(int argc, char **argv)
    * Initialize constants (strings, numbers and time).
    */
   cl_core.system_properties =
-    cl__make_hash_table(@'equal', ecl_make_fixnum(1024), /* size */
+    ecl_make_hash_table(@'equal', ecl_make_fixnum(1024), /* size */
                         ecl_ct_default_rehash_size,
                         ecl_ct_default_rehash_threshold);
 
@@ -738,7 +738,7 @@ cl_boot(int argc, char **argv)
    * Set up infrastructure for CLOS.
    */
   ECL_SET(@'si::*class-name-hash-table*',
-          cl__make_hash_table(@'eq', ecl_make_fixnum(1024), /* size */
+          ecl_make_hash_table(@'eq', ecl_make_fixnum(1024), /* size */
                               ecl_ct_default_rehash_size,
                               ecl_ct_default_rehash_threshold));
 
