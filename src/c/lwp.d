@@ -35,19 +35,33 @@
  *
  * -------------------------------------------------------------------------- */
 
-ucontext_t ret;
-
 static void
 _lwp_entry(void)
 {
-  ucontext_t *top, *own;
-  top = &ret;
-  own = top->uc_link;
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object process = the_env->own_process;
+  cl_object thread = process->process.function; /* kludge */
+  cl_object cont = thread->thread.cont;
+  cl_object cc = si_make_continuation(ECL_NIL);
+
+  ucontext_t *top = &cc->cont.uc;
+  ucontext_t *sub = &cont->cont.uc;
+
+  /* top = &ret; */
+  /* own = top->uc_link; */
   printf("YYY this is an entry!\n");
+  ecl_print(@"ZZZ Hello!", ECL_T);
   printf("YYY yield\n");
-  swapcontext(own, top);
+  thread->thread.cont = cc;
+  cc->cont.thread = thread;
+  ecl_set_process_env(cont->cont.env);
+  swapcontext(top, sub);
   printf("YYY continue brrt!\n");
+  ecl_print(@"ZZZ Bonjur!!", ECL_T);
   printf("YYY return\n");
+  ecl_set_process_env(cont->cont.env);
+  setcontext(&cont->cont.uc);
+  _ecl_unexpected_return();
 }
 
 cl_object
@@ -65,7 +79,27 @@ si_make_continuation(cl_object thread)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object o = ecl_alloc_object(t_cont);
+  ucontext_t *uc = &o->cont.uc;
   o->cont.thread = thread;
+  if(Null(thread)) {
+    o->cont.env = the_env;
+  } else {
+    const cl_env_ptr new_env = _ecl_alloc_env(the_env);
+    cl_object cpu = the_env->own_process;
+    char *stack = o->cont.stack;
+    /* Configure the environment. */
+    cpu->process.function = thread; /* kludge */
+    new_env->trap_fpe_bits = the_env->trap_fpe_bits;
+    new_env->own_process = cpu;
+    ecl_modules_init_env(new_env);
+    o->cont.env = new_env;
+    /* Create the context. */
+    getcontext(uc);
+    uc->uc_stack.ss_sp = stack;
+    uc->uc_stack.ss_size = 16*1024;
+    uc->uc_link = NULL;
+    makecontext(uc, (void(*)(void))_lwp_entry, 0);
+  }
   ecl_return1(the_env, o);
 }
 
@@ -73,28 +107,23 @@ cl_object
 si_pass(cl_object cont)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  ucontext_t *uc = &cont->cont.uc;
-  char *stack = cont->cont.stack;
-  getcontext(uc);
+  cl_object cc = si_make_continuation(ECL_NIL);;
+  cl_object thread = cont->cont.thread;
+  ucontext_t *top, *sub;
 
-  printf("XXX setup!\n");
-  uc->uc_stack.ss_sp = stack;
-  uc->uc_stack.ss_size = sizeof(stack);
-  uc->uc_link = &ret;
-  ret.uc_link = uc;
+  top = &cc->cont.uc;
+  sub = &cont->cont.uc;
+
+  thread->thread.cont = cc;
   ecl_module_gc->module.disable();
-
-  makecontext(uc, (void(*)(void))_lwp_entry, 0);
   printf("XXX dispatch!\n");
-
-  swapcontext(&ret, uc);
+  ecl_set_process_env(cont->cont.env);
+  swapcontext(top, sub);
   printf("XXX returned!\n");
-
-  swapcontext(&ret, uc);
+  ecl_module_gc->module.enable();
   printf("XXX finished!\n");
 
-  ecl_module_gc->module.enable();
-  ecl_return1(the_env, ECL_T);
+  ecl_return1(the_env, thread->thread.cont);
 }
 
 /* (si:pass (si:make-continuation (si:make-thread nil))) */
