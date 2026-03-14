@@ -108,6 +108,21 @@
        (let ((var-form (make-c1form 'VARIABLE form var nil)))
          (emit-inlined-temp-var var-form lisp-type (var-host-type var)))))))
 
+(defun emit-inlined-fcall (form)
+  (let ((args (c1form-arg 1 form))
+        (fname (c1form-arg 2 form))
+        (call-type (c1form-arg 3 form)))
+    (if (not (and (eq call-type :global)
+                  (<= (length args) si:c-arguments-limit)))
+        (emit-inlined-temp-var form t :object)
+        (let* ((return-type (c1form-primary-type form))
+               (fun (find fname *global-funs* :key #'fun-name :test #'same-fname-p))
+               (loc (call-global-loc fname fun (inline-args args) return-type))
+               (type (type-and return-type (loc-lisp-type loc)))
+               (temp (make-inlined-temp-var type (loc-host-type loc))))
+          (set-loc temp loc)
+          (precise-loc-lisp-type temp type)))))
+
 (defun emit-inlined-progn (form rest-forms)
   (let ((args (c1form-arg 0 form)))
     (loop with *destination* = 'TRASH
@@ -137,9 +152,10 @@
   (with-c1form-env (form form)
     (precise-loc-lisp-type
      (case (c1form-name form)
-       (LOCATION (c1form-arg 0 form) )
+       (LOCATION (c1form-arg 0 form))
        (VARIABLE (emit-inlined-variable form forms))
        (SETQ     (emit-inlined-setq form forms))
+       (FCALL    (emit-inlined-fcall form))
        (PROGN    (emit-inlined-progn form forms))
        (VALUES   (emit-inlined-values form forms))
        (t        (emit-inlined-temp-var form t :object)))
