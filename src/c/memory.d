@@ -244,6 +244,7 @@ init_type_info_database(void)
           to_bitmap(&o, &(o.process.name)) |
           to_bitmap(&o, &(o.process.function)) |
           to_bitmap(&o, &(o.process.args)) |
+          to_bitmap(&o, &(o.process.cont)) |
           to_bitmap(&o, &(o.process.inherit_bindings_p)) |
           to_bitmap(&o, &(o.process.exit_values)) |
           to_bitmap(&o, &(o.process.woken_up)) |

@@ -151,6 +151,7 @@ alloc_process(cl_object name, cl_object initial_bindings_p)
   process->process.name = name;
   process->process.function = ECL_NIL;
   process->process.args = ECL_NIL;
+  process->process.cont = ECL_NIL;
   process->process.woken_up = ECL_NIL;
   process->process.inherit_bindings_p = Null(initial_bindings_p)? ECL_T : ECL_NIL;
   ecl_disable_interrupts_env(env);
@@ -498,6 +499,7 @@ create_thread()
   process->process.name = @'si::top-level';
   process->process.function = ECL_NIL;
   process->process.args = ECL_NIL;
+  process->process.cont = ECL_NIL;
   process->process.env = the_env;
   ecl_mutex_init(&process->process.start_stop_lock, TRUE);
   ecl_cond_var_init(&process->process.exit_barrier);

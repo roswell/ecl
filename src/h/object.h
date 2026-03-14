@@ -1124,6 +1124,7 @@ struct ecl_process {
         cl_object function;
         cl_objectfn entry;      /* entry address (matches ecl_cfun offset) */
         cl_object args;
+        cl_object cont;
         cl_object inherit_bindings_p;
         cl_object exit_values;
         cl_object woken_up;
