@@ -15,6 +15,8 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
+# include <sys/mman.h>
+# include <unistd.h>
 #include <ucontext.h>
 
 /* -- implementation notes -----------------------------------------------------
@@ -45,6 +47,24 @@ ensure_cc(cl_env_ptr the_env)
     cc->cont.thread = si_make_thread(ECL_NIL);
   }
   return cc;
+}
+
+
+#define LWP_STACK_SIZE 8*1024
+
+/* FIXME munmap in the finalizer. */
+static void*
+make_stack(size_t size)
+{
+  size_t page_size = sysconf(_SC_PAGESIZE);
+  void *mem = mmap(NULL, size+page_size,
+                   PROT_READ | PROT_WRITE,
+                   MAP_ANON | MAP_PRIVATE, -1, 0);
+  /* catch overflows. Note that we don't need it normally in ECL, because we do
+     our own overflow checks, but this helps to illustrate and catch early when
+     GC goes off rails because it doesn't work well with multiple stakck. */
+  mprotect(mem, page_size, PROT_NONE);
+  return mem+page_size;
 }
 
 static void
@@ -89,8 +109,8 @@ si_make_continuation(cl_object thread)
     o->cont.env = new_env;
     /* Create the context. */
     getcontext(uc);
-    uc->uc_stack.ss_sp = stack;
-    uc->uc_stack.ss_size = 16*1024;
+    uc->uc_stack.ss_sp = make_stack(LWP_STACK_SIZE);
+    uc->uc_stack.ss_size = LWP_STACK_SIZE;
     uc->uc_link = NULL;
     makecontext(uc, (void(*)(void))_lwp_entry, 0);
   }

@@ -1071,7 +1071,7 @@ struct ecl_cont {
         _ECL_HDR2(resumed, timed_out);
         cl_object thread;       /* its thread */
         ucontext_t uc;
-        char stack[16*1024];
+        void *stack;
         cl_env_ptr env;
 };
 
