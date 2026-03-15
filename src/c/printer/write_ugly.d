@@ -459,10 +459,16 @@ write_illegal(cl_object x, cl_object stream)
   _ecl_write_unreadable(x, "illegal pointer", ECL_NIL, stream);
 }
 
+static void
+write_corrupted(cl_object x, cl_object stream)
+{
+  _ecl_write_unreadable(x, "corrupted", ECL_NIL, stream);
+}
+
 typedef void (*printer)(cl_object x, cl_object stream);
 
 static printer dispatch[FREE+1] = {
-  0                         /* t_start = 0 */,
+  write_corrupted,              /* t_start = 0 */
   _ecl_write_list,              /* t_list = 1 */
   write_character,              /* t_character = 2 */
   write_integer,                /* t_fixnum = 3 */
