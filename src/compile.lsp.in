@@ -195,7 +195,7 @@
                              #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@")
        (c::*ld-libs* #-msvc "@CORE_LIBS@ @FASL_LIBS@ @LIBS@"
                      #+msvc "@STATICLIBS@ @CLIBS@")
-       (c::*cc-flags* (concatenate 'string "-DECL_API -I@true_builddir@/c " c::*cc-flags*))
+       (c::*cc-flags* (concatenate 'string "-DECL_API -I@true_builddir@/c  -g3 -rdynamic" c::*cc-flags*))
        (extra-args nil))
   #+(or mingw32 cygwin)
   (progn
