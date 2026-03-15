@@ -55,11 +55,7 @@ _lwp_entry(void)
   cl_object cc = process->process.cont;
   cl_object thread = cc->cont.thread;
 
-  ecl_print(@"ZZZ Hello!", ECL_T);
-  si_pass(thread->thread.cont);
-  ecl_print(@"ZZZ Bonjur!", ECL_T);
-  si_pass(thread->thread.cont);
-  ecl_print(@"ZZZ Salut!!", ECL_T);
+  cl_funcall(2, thread->thread.fun, thread);
   _ecl_unexpected_return();
 }
 
@@ -110,19 +106,15 @@ si_pass(cl_object cont)
   cl_object process = new_env->own_process;
   cl_object thread = cont->cont.thread;
   cl_object cc_thread = cc->cont.thread;
-  ucontext_t *top, *sub;
-
-  top = &cc->cont.uc;
-  sub = &cont->cont.uc;
-
-  ecl_module_gc->module.disable();
+  ucontext_t *here, *next;
+  ecl_cs_check(the_env, cc_thread);
+  here = &cc->cont.uc;
+  next = &cont->cont.uc;
 
   ecl_set_process_env(new_env);
   process->process.cont = cont;
   thread->thread.cont = cc;
-  swapcontext(top, sub);
-
-  ecl_module_gc->module.enable();
+  swapcontext(here, next);
 
   ecl_return1(the_env, cc_thread->thread.cont);
 }
