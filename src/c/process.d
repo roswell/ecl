@@ -369,6 +369,7 @@ destroy_process(void)
 ecl_def_ct_base_string(str_process, "PROCESS", 7, static, const);
 
 static struct ecl_module module_process = {
+  .t = t_module,
   .name = str_process,
   .create = create_process,
   .enable = ecl_module_no_op,
