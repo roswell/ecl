@@ -14,6 +14,30 @@
 
 (in-package "SYSTEM")
 
+;;; system modules
+(defun list-modules ()
+  (ffi:c-inline () ()
+                :object "ecl_core.modules"
+                :side-effects nil :one-liner t))
+
+(defun module-name (module)
+  (check-type module module)
+  (ffi:c-inline (module) (:object)
+                :object "#0->module.name"
+                :side-effects nil :one-liner t))
+
+(defun module-enable (module)
+  (check-type module module)
+  (ffi:c-inline (module) (:object)
+                :object "#0->module.enable()"
+                :side-effects t :one-liner t))
+
+(defun module-disable (module)
+  (check-type module module)
+  (ffi:c-inline (module) (:object)
+                :object "#0->module.disable()"
+                :side-effects t :one-liner t))
+
 ;;;; exported specials
 
 (defparameter *modules* ()
