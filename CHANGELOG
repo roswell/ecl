@@ -27,7 +27,9 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 24.5.10
+* Pending changes since 26.3.26
+
+* 26.3.26 changes since 24.5.10
 
 - Vendored libffi has been updated to the version 3.5.2
 
