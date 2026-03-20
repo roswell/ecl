@@ -280,10 +280,8 @@
         (make-vv :value object :location cname)))))
 
 (defun try-immediate-value (value)
-  ;; FIXME we could inline here also (COMPLEX FLOAT). That requires adding an
-  ;; emmiter of C complex floats in the function WT1.
   (cond
-    ((typep value '(or fixnum character float #|#+complex-float (complex float)|#) *cmp-env*)
+    ((typep value '(or fixnum character) *cmp-env*)
      (make-vv :value value
               :location nil
               :host-type (lisp-type->host-type (type-of value))))
