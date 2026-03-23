@@ -9,9 +9,9 @@ build:
     - target-dir
   script: 
     - pwd && ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
+    - pwd && make doc && cd build/doc/ ; ls -R ; cat Makefile ; make manual ; ls ; cd manual ; make ecl-manual.pdf ; ls -l ecl-manual.pdf
+    - pwd && cd src/doc/ ; ls -R ; cat Makefile
     - pwd && make
-    - pwd && cd build/doc/ && make  && cd manual && make ecl-manual.pdf && ls -l ecl-manual.pdf
-    - pwd && cd src/doc/manual && make ecl-manual.pdf && ls -l ecl-manual.pdf
     - pwd && make install
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
