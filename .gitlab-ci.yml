@@ -1,18 +1,32 @@
-build:
-  stage: build
+pdf-manual:
+  stage: doc
   # instead of calling g++ directly you can also use some build toolkit like make
   # install the necessary build tools when needed
-  before_script: 
+  before_script:
     - apt update && apt -y install texinfo texlive-base texlive-plain-generic
   artifacts:
     paths:
     - target-dir
-  script: 
+  script:
     - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
-    - mkdir -p ${CI_PROJECT_DIR}/target-dir/ && make doc && cd build/doc/ ; make manual ; cd manual ; make ecl-manual.pdf ; ls -l ecl-manual.pdf && cp -p ecl-manual.pdf ${CI_PROJECT_DIR}/target-dir/
-  #   - pwd && cd src/doc/ ; ls -R ; cat Makefile
-  #   - pwd && make
-  #   - pwd && make install
+    - mkdir -p ${CI_PROJECT_DIR}/target-dir/ ; make doc ; cd build/doc/ ; make manual ; cd manual ; make ecl-manual.pdf ; cp -p ecl-manual.pdf ${CI_PROJECT_DIR}/target-dir/
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+build:
+  stage: build
+  # instead of calling g++ directly you can also use some build toolkit like make
+  # install the necessary build tools when needed
+  # before_script:
+  #   - apt update && apt -y install texinfo texlive-base texlive-plain-generic
+  artifacts:
+    paths:
+    - target-dir
+  script:
+    - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
+    - make
+    - make install
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
