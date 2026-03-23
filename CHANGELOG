@@ -27,7 +27,16 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 24.5.10
+* Pending changes since 26.3.26
+
+* 26.3.26 changes since 24.5.10
+
+- Vendored libffi has been updated to the version 3.5.2
+
+- It is now possible to cross-compile source code from hosts with a
+  different environment than the target
+
+- Compilation with -std=c23 (default for gcc-15) works now
 
 - Byte operations on binary sequence streams and char operations on
   character sequence streams do not require a roundtrip for encoding and

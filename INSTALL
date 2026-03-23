@@ -13,11 +13,11 @@ If you do not have access to the online version, follow the following recipies.
 
 * MacOS/arm64 (Apple M)
 
-The process is similar to a typical UNIX, but ~make~ must be preceeded with the
-architecture specification:
+The process is similar to a typical UNIX, but ~configure~ and ~make~ must be
+preceeded with the architecture specification:
 
 #+begin_src sh
-  ./configure
+  arch -arm64 ./configure
   arch -arm64 make
   make install
 #+end_src
