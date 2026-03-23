@@ -8,10 +8,11 @@ build:
     paths:
     - target-dir
   script: 
-    - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
-    - make
-    - cd build/doc/manual && make ecl-manual.pdf && ls -l ecl-manual.pdf
-    - make install
+    - pwd && ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
+    - pwd && make
+    - pwd && cd build/doc/ && make  && cd manual && make ecl-manual.pdf && ls -l ecl-manual.pdf
+    - pwd && cd src/doc/manual && make ecl-manual.pdf && ls -l ecl-manual.pdf
+    - pwd && make install
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
