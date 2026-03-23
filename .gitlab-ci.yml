@@ -1,3 +1,19 @@
+build-manual-pdf:
+  stage: build
+  # instead of calling g++ directly you can also use some build toolkit like make
+  # install the necessary build tools when needed
+  # before_script: 
+  #   - apt update && apt -y install make autoconf 
+  artifacts:
+    paths:
+    - target-dir
+  script: 
+    - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
+    - cd build/doc/manual && make
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
 build:
   stage: build
   # instead of calling g++ directly you can also use some build toolkit like make
@@ -14,7 +30,7 @@ build:
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  
+
 # run self-tests using the binary built before
 test-self:
   stage: test
