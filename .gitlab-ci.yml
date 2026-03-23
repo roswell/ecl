@@ -3,16 +3,16 @@ build:
   # instead of calling g++ directly you can also use some build toolkit like make
   # install the necessary build tools when needed
   before_script: 
-    - apt update && apt -y install texinfo texlive-latex-base texlive-base
+    - apt update && apt -y install texinfo texlive-latex-base texlive-base texlive-plain-generic
   artifacts:
     paths:
     - target-dir
   script: 
     - pwd && ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
-    - pwd && make doc && cd build/doc/ ; ls -R ; cat Makefile ; make manual ; ls ; cd manual ; make ecl-manual.pdf ; ls -l ecl-manual.pdf
-    - pwd && cd src/doc/ ; ls -R ; cat Makefile
-    - pwd && make
-    - pwd && make install
+    - pwd && make doc && cd build/doc/ ; ls ; make manual ; ls ; cd manual ; make ecl-manual.pdf ; ls -l ecl-manual.pdf && cp -p ecl-manual.pdf ${CI_PROJECT_DIR}/target-dir/
+  #   - pwd && cd src/doc/ ; ls -R ; cat Makefile
+  #   - pwd && make
+  #   - pwd && make install
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
