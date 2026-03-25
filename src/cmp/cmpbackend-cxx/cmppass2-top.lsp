@@ -132,13 +132,13 @@
           (wt-nl-h "#define VV NULL"))
         (progn
           (wt-nl-h "#define VM " (data-permanent-storage-size))
-          (wt-nl-h "#define VMtemp "  (data-temporary-storage-size)))))
-  ;; VV might be needed by functions in CLINES.
-  (wt-nl-h "# ifdef ECL_DYNAMIC_VV")
-  (wt-nl-h "static cl_object *VV;")
-  (wt-nl-h "# else")
-  (wt-nl-h "static cl_object VV[VM];")
-  (wt-nl-h "# endif")
+          (wt-nl-h "#define VMtemp "  (data-temporary-storage-size))
+          ;; VV might be needed by functions in CLINES.
+          (wt-nl-h "# ifdef ECL_DYNAMIC_VV")
+          (wt-nl-h "static cl_object *VV;")
+          (wt-nl-h "# else")
+          (wt-nl-h "static cl_object VV[VM];")
+          (wt-nl-h "# endif"))))
   ;;
   (wt-nl-h "#define ECL_DEFINE_SETF_FUNCTIONS ")
   (loop for (name setf-vv name-vv) in *setf-definitions*

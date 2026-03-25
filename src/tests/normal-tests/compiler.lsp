@@ -2701,3 +2701,14 @@
     (delete-file ofile)
     (is (equal (concatenate 'string part-1 part-2)
                *nested-eval-when-0114*))))
+
+;;; Date 2026-03-24
+;;; Description
+;;;
+;;;     Check that we can compile an empty file
+;;;
+(test cmp.0115.empty-file
+  (let* ((ofile
+          (with-compiler ("empty-file-0115.lsp" :load t))))
+    (delete-file "empty-file-0115.lsp")
+    (delete-file ofile)))
