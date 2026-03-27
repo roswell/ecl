@@ -377,6 +377,7 @@
        :direct-slots #.+structure-class-slots+)
       (structure-object
        :metaclass structure-class
-       :direct-superclasses (t))
+       :direct-superclasses (t)
+       :size #.(length +structure-class-slots+))
       )))
 
