@@ -24,6 +24,10 @@
 /* Do we use C or C++ compiler to compile ecl? */
 #undef ECL_CXX_CORE
 
+/* Do the fixed and optional arguments of a variadic function use a different
+   calling convention? */
+#undef ECL_C_COMPATIBLE_VARIADIC_DISPATCH
+
 /* Stack grows downwards */
 #undef ECL_DOWN_STACK
 

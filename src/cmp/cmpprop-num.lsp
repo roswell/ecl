@@ -20,7 +20,7 @@
           (if args
               (dolist (int-type '((UNSIGNED-BYTE 8) FIXNUM) 'integer)
                 (when (loop for value in args
-                         always (subtypep value int-type))
+                         always (subtypep value int-type *cmp-env*))
                   (return int-type)))
               'fixnum)))
 
@@ -51,11 +51,11 @@
     (when (and only-real (or complex-t1 complex-t2))
       (return-from maximum-number-type (values default default default)))
     (loop for i across number-types
-          do (when (and (null t1-eq) (type>= i t1))
+          do (when (and (null t1-eq) (type>= i t1 *cmp-env*))
                (when (equalp t1 t2)
                  (setf t2-eq i))
                (setf t1-eq i output i))
-             (when (and (null t2-eq) (type>= i t2))
+             (when (and (null t2-eq) (type>= i t2 *cmp-env*))
                (setf t2-eq i output i)))
     (unless (and t1-eq t2-eq output)
       (setf output default))
@@ -131,24 +131,35 @@
   ;;    (expt number-type integer) -> number-type
   ;;    (expt number-type1 number-type2) -> (max-float number-type1 number-type2)
   ;;
-  (let ((exponent (ensure-real-type exponent)))
-    (values (list base exponent)
-            (cond ((eql exponent 'integer)
-                   (if (subtypep base 'fixnum)
-                       'integer
-                       base))
-                  ((type>= '(real 0 *) base)
-                   (let* ((exponent (ensure-nonrational-type exponent)))
-                     (maximum-number-type exponent base)))
-                  (t
-                   'number)))))
+  (values (list base exponent)
+          (cond ((type>= '(real 0 0) base *cmp-env*)
+                 (maximum-number-type base exponent))
+                ((type>= '(real (0) *) base *cmp-env*)
+                 (cond ((type>= '(integer 0 *) exponent *cmp-env*)
+                        (maximum-number-type base 'integer :integer-result 'integer))
+                       ((type-and exponent 'integer)
+                        ;; This becomes quite complex here, simplify
+                        ;; our life by just returning 'number. We
+                        ;; could do better, but the compiler won't be
+                        ;; able to optimize much with the complicated
+                        ;; type combinations we would be returning
+                        ;; here.
+                        'number)
+                       (t
+                        (maximum-number-type (ensure-nonrational-type exponent)
+                                             base))))
+                ((or (type>= '(complex float) base *cmp-env*)
+                     (type>= '(complex float) exponent *cmp-env*))
+                 (maximum-number-type exponent base))
+                (t
+                 'number))))
 
 (def-type-propagator abs (fname arg)
   (multiple-value-bind (output arg)
       (ensure-number-type arg)
     (values (list arg)
             (or (cdr (assoc output
-                            '((FIXNUM . (INTEGER 0 #.MOST-POSITIVE-FIXNUM))
+                            '((FIXNUM . (AND FIXNUM (INTEGER 0 *)))
                               (INTEGER . (INTEGER 0 *))
                               (RATIONAL . (RATIONAL 0 *))
                               (SHORT-FLOAT . (SHORT-FLOAT 0 *))
@@ -163,10 +174,10 @@
   (multiple-value-bind (output arg)
       (ensure-nonrational-type arg)
     (values (list arg)
-            (if (type>= '(REAL 0 *) arg) output 'NUMBER))))
+            (if (type>= '(REAL 0 *) arg *cmp-env*) output 'NUMBER))))
 
 (def-type-propagator isqrt (fname arg)
-  (if (type>= '(integer 0 #.MOST-POSITIVE-FIXNUM) arg)
-      (values '((integer 0 #.MOST-POSITIVE-FIXNUM))
-              '(integer 0 #.MOST-POSITIVE-FIXNUM))
+  (if (type>= 'ext:non-negative-fixnum arg *cmp-env*)
+      (values '(ext:non-negative-fixnum)
+              'ext:non-negative-fixnum)
       (values '((integer 0 *)) '(integer 0 *))))

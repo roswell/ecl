@@ -104,8 +104,8 @@ ecl_unrecoverable_error(cl_env_ptr the_env, const char *message)
       ecl_unwind(the_env, destination);
     }
   }
-  if (the_env->frs_org <= the_env->frs_top) {
-    destination = ecl_process_env()->frs_org;
+  if (the_env->frs_stack.org <= the_env->frs_stack.top) {
+    destination = ecl_process_env()->frs_stack.org;
     ecl_unwind(the_env, destination);
   } else {
     ecl_internal_error("\n;;;\n;;; No frame to jump to\n;;; Aborting ECL\n;;;");
@@ -161,6 +161,24 @@ CEerror(cl_object c, const char *err, int narg, ...)
 /***********************
  * Conditions signaler *
  ***********************/
+
+void
+CEstack_overflow(cl_object type, cl_object limit, cl_object resume)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_index the_size;
+  if (!Null(resume)) resume = @"Extend stack size";
+  ECL_UNWIND_PROTECT_BEGIN(the_env) {
+    cl_cerror(6, resume, @'ext::stack-overflow', @':type', type, @':size', limit);
+  } ECL_UNWIND_PROTECT_EXIT {
+    /* reset the margin */
+    si_set_limit(type, limit);
+  } ECL_UNWIND_PROTECT_END;
+  /* resize the stack */
+  the_size = ecl_to_size(limit);
+  the_size = the_size + the_size/2;
+  si_set_limit(type, ecl_make_fixnum(the_size));
+}
 
 void
 FEprogram_error(const char *s, int narg, ...)
@@ -287,8 +305,8 @@ FEwrong_type_only_arg(cl_object function, cl_object value, cl_object type)
   struct ecl_ihs_frame tmp_ihs;
   function = cl_symbol_or_object(function);
   type = cl_symbol_or_object(type);
-  if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
-    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL);
+  if (!Null(function) && env->ihs_stack.top && env->ihs_stack.top->function != function) {
+    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL,ECL_NIL);
   }        
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
@@ -311,8 +329,8 @@ FEwrong_type_nth_arg(cl_object function, cl_narg narg, cl_object value, cl_objec
   struct ecl_ihs_frame tmp_ihs;
   function = cl_symbol_or_object(function);
   type = cl_symbol_or_object(type);
-  if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
-    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL);
+  if (!Null(function) && env->ihs_stack.top && env->ihs_stack.top->function != function) {
+    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL,ECL_NIL);
   }        
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
@@ -337,8 +355,8 @@ FEwrong_type_key_arg(cl_object function, cl_object key, cl_object value, cl_obje
   function = cl_symbol_or_object(function);
   type = cl_symbol_or_object(type);
   key = cl_symbol_or_object(key);
-  if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
-    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL);
+  if (!Null(function) && env->ihs_stack.top && env->ihs_stack.top->function != function) {
+    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL,ECL_NIL);
   }        
   si_signal_simple_error(8,
                          @'type-error', /* condition name */
@@ -368,8 +386,8 @@ FEwrong_index(cl_object function, cl_object a, int which, cl_object ndx,
   cl_env_ptr env = ecl_process_env();
   struct ecl_ihs_frame tmp_ihs;
   function = cl_symbol_or_object(function);
-  if (!Null(function) && env->ihs_top && env->ihs_top->function != function) {
-    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL);
+  if (!Null(function) && env->ihs_stack.top && env->ihs_stack.top->function != function) {
+    ecl_ihs_push(env,&tmp_ihs,function,ECL_NIL,ECL_NIL);
   }        
   cl_error(9,
            @'simple-type-error', /* condition name */
@@ -502,12 +520,11 @@ universal_error_handler(cl_object continue_string, cl_object datum,
   stream = cl_core.error_output;
   if (!Null(stream)) {
     ecl_bds_bind(the_env, @'*print-readably*', ECL_NIL);
-    ecl_bds_bind(the_env, @'*print-level*', ecl_make_fixnum(3));
-    ecl_bds_bind(the_env, @'*print-length*', ecl_make_fixnum(3));
+    ecl_bds_bind(the_env, @'*print-level*', ecl_make_fixnum(4));
+    ecl_bds_bind(the_env, @'*print-length*', ecl_make_fixnum(8));
     ecl_bds_bind(the_env, @'*print-circle*', ECL_NIL);
     ecl_bds_bind(the_env, @'*print-base*', ecl_make_fixnum(10));
-    writestr_stream("\n;;; Unhandled lisp initialization error",
-                    stream);
+    writestr_stream("\n;;; Unhandled lisp initialization error", stream);
     writestr_stream("\n;;; Message:\n", stream);
     si_write_ugly_object(datum, stream);
     writestr_stream("\n;;; Arguments:\n", stream);
@@ -598,13 +615,6 @@ FEwin32_error(const char *msg, int narg, ...)
 @ {
   ecl_enable_interrupts();
   @(return funcall(4, @'si::universal-error-handler', cformat, eformat,
-                   cl_grab_rest_args(args)));
-} @)
-
-@(defun si::serror (cformat eformat &rest args)
-@ {
-  ecl_enable_interrupts();
-  @(return funcall(4, @'si::stack-error-handler', cformat, eformat,
                    cl_grab_rest_args(args)));
 } @)
 

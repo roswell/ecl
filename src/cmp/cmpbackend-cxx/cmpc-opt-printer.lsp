@@ -12,38 +12,17 @@
 
 (in-package "COMPILER")
 
-;;; TODO move mundane inliners to the sysfun database.
-
-(define-c-inliner terpri (return-type &optional stream)
-  (produce-inline-loc (list stream)
-                      '(:object) '(:object)
-                      "ecl_terpri(#0)" t t))
-
-(define-c-inliner print (return-type value &optional stream)
-  (produce-inline-loc (list value stream)
-                      '(:object :object) '(:object)
-                      "ecl_print(#0,#1)" t t))
-
-(define-c-inliner prin1 (return-type value &optional stream)
-  (produce-inline-loc (list value stream)
-                      '(:object :object) '(:object)
-                      "ecl_prin1(#0,#1)" t t))
-
-#+ (or)
-(define-c-inliner princ (return-type expression &optional stream)
-  (produce-inline-loc (list expression stream)
-                      '(:object :object) '(:object)
-                      "ecl_princ(#0,#1)" t t))
-
-(define-c-inliner princ (return-type expression &optional stream)
+(define-c-inliner cl:princ (return-type expression &optional stream)
+  (unless stream
+    (setf stream (emit-inline-form (c1nil) nil)))
   (multiple-value-bind (foundp value)
-      (loc-immediate-value-p (inlined-arg-loc expression))
+      (loc-immediate-value-p expression)
     (cond
       ((and foundp (characterp value))
        (produce-inline-loc (list expression stream)
                            '(:wchar :object) '(:wchar)
                            "ecl_princ_char(#0,#1)" t t))
-      ((and foundp (typep value 'base-string) (< (length value) 80))
+      ((and foundp (typep value 'base-string *cmp-env*) (< (length value) 80))
        (produce-inline-loc (list expression stream)
                            '(:object :object) '(:object)
                            (concatenate 'string "(ecl_princ_str("

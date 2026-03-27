@@ -75,7 +75,7 @@ static cl_index object_size[] = {
 #endif
   ROUNDED_SIZE(ecl_codeblock), /* t_codeblock */
   ROUNDED_SIZE(ecl_foreign), /* t_foreign */
-  ROUNDED_SIZE(ecl_frame), /* t_frame */
+  ROUNDED_SIZE(ecl_stack_frame), /* t_frame */
   ROUNDED_SIZE(ecl_weak_pointer) /* t_weak_pointer */
 #ifdef ECL_SSE2
   , ROUNDED_SIZE(ecl_sse_pack) /* t_sse_pack */
@@ -200,6 +200,19 @@ serialize_vector(pool_t pool, cl_object v)
 }
 
 static void
+serialize_bignum(pool_t pool, cl_object buffer)
+{
+  int8_t sign = _ecl_big_sign(buffer);
+  serialize_bits(pool, &sign, 1);
+  cl_index bytes = (_ecl_big_bits(buffer) + 7) / 8;
+  serialize_bits(pool, &bytes, sizeof(cl_index));
+  cl_index index = alloc(pool, bytes);
+  cl_index bytes_written;
+  mpz_export(pool->data->vector.self.b8 + index, &bytes_written,
+             1, 1, 1, 0, ecl_bignum(buffer));
+}
+
+static void
 serialize_hashtable(pool_t pool, cl_object h)
 {
   /* FIXME: Serializing all of h->hash.data is a big waste if the
@@ -241,13 +254,7 @@ serialize_one(pool_t pool, cl_object what)
   case t_longfloat:
     break;
   case t_bignum: {
-    int8_t sign = mpz_sgn(ecl_bignum(buffer));
-    serialize_bits(pool, &sign, 1);
-    cl_index bytes = (mpz_sizeinbase(ecl_bignum(buffer), 2) + 7) / 8;
-    serialize_bits(pool, &bytes, sizeof(cl_index));
-    cl_index index = alloc(pool, bytes);
-    cl_index bytes_written;
-    mpz_export(pool->data->vector.self.b8 + index, &bytes_written, 1, 1, 1, 0, ecl_bignum(buffer));
+    serialize_bignum(pool, buffer);
     break;
   }
   case t_ratio: {
@@ -320,6 +327,7 @@ serialize_one(pool_t pool, cl_object what)
     buffer->bytecodes.name = enqueue(pool, buffer->bytecodes.name);
     buffer->bytecodes.definition = enqueue(pool, buffer->bytecodes.definition);
     buffer->bytecodes.data = enqueue(pool, buffer->bytecodes.data);
+    buffer->bytecodes.flex = enqueue(pool, buffer->bytecodes.flex);
     buffer->bytecodes.file = enqueue(pool, buffer->bytecodes.file);
     buffer->bytecodes.file_position = enqueue(pool, buffer->bytecodes.file_position);
     buffer->bytecodes.code_size = serialize_bits(pool, buffer->bytecodes.code,
@@ -417,6 +425,22 @@ reconstruct_array(cl_object a, uint8_t *data)
 }
 
 static uint8_t *
+reconstruct_bignum(cl_object output, uint8_t *data)
+{
+  int8_t sign = (int8_t) *data;
+  data += ROUND_TO_WORD(1);
+  cl_index bytes = (cl_index) *data;
+  data += ROUND_TO_WORD(sizeof(cl_index));
+  mpz_init(ecl_bignum(output));
+  mpz_import(ecl_bignum(output), bytes, 1, 1, 1, 0, data);
+  if (sign == -1) {
+    _ecl_big_neg(output, output);
+  }
+  data += ROUND_TO_WORD(bytes);
+  return data;
+}
+
+static uint8_t *
 reconstruct_hashtable(cl_object h, uint8_t *data)
 {
   cl_index bytes = ROUND_TO_WORD(h->hash.size * sizeof(struct ecl_hashtable_entry));
@@ -455,16 +479,7 @@ reconstruct_one(uint8_t *data, cl_object *output)
   }
   case t_bignum: {
     data = duplicate_object(data, output);
-    int8_t sign = (int8_t) *data;
-    data += ROUND_TO_WORD(1);
-    cl_index bytes = (cl_index) *data;
-    data += ROUND_TO_WORD(sizeof(cl_index));
-    mpz_init(ecl_bignum(*output));
-    mpz_import(ecl_bignum(*output), bytes, 1, 1, 1, 0, data);
-    if (sign == -1) {
-      mpz_neg(ecl_bignum(*output), ecl_bignum(*output));
-    }
-    data += ROUND_TO_WORD(bytes);
+    data = reconstruct_bignum(*output, data);
     break;
   }
   case t_hashtable:
@@ -601,6 +616,7 @@ fixup(cl_object o, cl_object *o_list)
     o->bytecodes.name = get_object(o->bytecodes.name, o_list);
     o->bytecodes.definition = get_object(o->bytecodes.definition, o_list);
     o->bytecodes.data = get_object(o->bytecodes.data, o_list);
+    o->bytecodes.flex = get_object(o->bytecodes.flex, o_list);
     o->bytecodes.file = get_object(o->bytecodes.file, o_list);
     o->bytecodes.file_position = get_object(o->bytecodes.file_position, o_list);
     o->bytecodes.entry = _ecl_bytecodes_dispatch_vararg;

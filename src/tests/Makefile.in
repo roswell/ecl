@@ -2,7 +2,7 @@
 # vim: set filetype=makefile tabstop=8 shiftwidth=4 expandtab:
 
 ECL=@prefix@/@bindir@/ecl@EXEEXT@
-SHELL=/bin/bash -o pipefail
+SHELL=/usr/bin/env bash -o pipefail
 
 .PHONY: all check ansi-test
 
@@ -12,6 +12,13 @@ check: config.lsp
 	$(ECL) --norc \
                --load config.lsp \
                --eval "(ecl-tests::run-tests '($(TESTS)))" \
+               --eval "(ext:quit)" \
+               2>&1 | tee test.log
+
+cross-check: config.lsp
+	$(ECL) --norc \
+               --load config.lsp \
+               --eval "(ecl-tests::run-tests '($(TESTS)) t)" \
                --eval "(ext:quit)" \
                2>&1 | tee test.log
 
@@ -25,4 +32,10 @@ ansi-test: ansi-test/doit.lsp
 	$(ECL) --norc \
                --load config.lsp \
                --eval "(ext:quit (if (ecl-tests::run-ansi-test) 0 2))" \
+               2>&1 | tee ansi-test.log
+
+cross-ansi-test: ansi-test/doit.lsp
+	$(ECL) --norc \
+               --load config.lsp \
+               --eval "(ext:quit (if (ecl-tests::run-ansi-test nil t) 0 2))" \
                2>&1 | tee ansi-test.log

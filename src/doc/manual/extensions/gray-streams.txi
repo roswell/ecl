@@ -59,3 +59,17 @@ modification. The default method calls @code{stream-write-char} or
 @code{stream-element-type}. Element access to the sequence is done via
 @code{elt}.
 @end defun
+
+@subsection Gray Stream Extensions
+
+@defun {stream-unread-byte} stream byte
+Un-do the last call to @code{stream-read-byte}, as in @code{ext:unread-byte}.
+Return @code{nil}. Every subclass of @code{fundamental-binary-input-stream}
+should define a method for this function. A default method signals an error.
+@end defun
+
+@defun {stream-peek-byte} stream
+This is used to implement @code{ext:peek-byte}. It returns either a byte
+or @code{:eof}. A default method calls @code{stream-read-byte} and
+@code{stream-unread-byte}.
+@end defun

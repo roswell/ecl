@@ -292,12 +292,13 @@ where CREATED is true only if we succeeded on creating all directories."
       (dolist (item (pathname-directory full-pathname))
         (setf d (nconc d (list item)))
         (let* ((p (make-pathname :directory d :defaults *default-pathname-defaults*)))
-          (unless (or (symbolp item) (si::file-kind p nil))
-            (setf created t)
-            (let ((ps (namestring p)))
-              (when verbose
-                (format t "~%;;; Making directory ~A" ps))
-              (si::mkdir ps mode)))))
+          (unless (symbolp item)
+            (let* ((ps (namestring p))
+                   (newly-created (si::mkdir ps mode)))
+              (when newly-created
+                (setf created t)
+                (when verbose
+                  (format t "~%;;; Making directory ~A" ps)))))))
       (values pathname created))))
 
 (defmacro with-hash-table-iterator ((iterator package) &body body)

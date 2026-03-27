@@ -149,9 +149,9 @@ mp_barrier_wait(cl_object barrier) {
   barrier->barrier.arrivers_count++;
   ECL_UNWIND_PROTECT_BEGIN(the_env) {
     do {
-      ecl_setq(the_env, ECL_INTERRUPTS_ENABLED, ECL_T);
+      ECL_SETQ(the_env, ECL_INTERRUPTS_ENABLED, ECL_T);
       ecl_cond_var_wait(&barrier->barrier.cv, &barrier->barrier.mutex);
-      ecl_setq(the_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);
+      ECL_SETQ(the_env, ECL_INTERRUPTS_ENABLED, ECL_NIL);
     } while(!barrier->barrier.wakeup);
     wakeup = barrier->barrier.wakeup;
     if (barrier->barrier.arrivers_count - 1 == 0) {

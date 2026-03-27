@@ -90,8 +90,6 @@
                                  @':cstream', ECL_T);
       if (Null(length))
         length = ecl_file_length(stream);
-      else
-        length = ecl_to_unsigned_integer(length);
       output = si_make_vector(element_type, length, ECL_NIL,
                               ECL_NIL, ECL_NIL, ECL_NIL);
       cl_read_sequence(2, output, stream);

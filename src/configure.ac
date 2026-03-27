@@ -8,7 +8,7 @@ dnl  AUTOCONF configuration for ECL
 dnl  Giuseppe Attardi 25.1.1994
 dnl
 
-AC_INIT([ecl],[24.5.10],[])
+AC_INIT([ecl],[26.3.27],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
@@ -323,7 +323,8 @@ AC_SUBST(TARGETS, ['bin/ecl$(EXE)'])dnl Versions of ECL to be built
 AC_SUBST(SUBDIRS, ['c doc'])        dnl Subdirectories that make should process
 AC_SUBST(LIBRARIES, [])         dnl GMP, Boehm's GC, etc
 AC_SUBST(LSP_LIBRARIES)         dnl Libraries produced by lisp translator
-AC_SUBST(LSP_FEATURES, ['*features*']) dnl Symbols to add to *FEATURES* for conditional compilation
+AC_SUBST(COMPILATION_FEATURES, ['']) dnl Symbols to add to *FEATURES* for conditional compilation
+AC_SUBST(LSP_FEATURES, ["${LSP_FEATURES} :ecl :common :common-lisp :ansi-cl :ffi :prefixed-api :cdr-14 :package-local-nicknames :clos :ecl-pde :long-float"]) dnl Symbols to add to *FEATURES* in the final executable
 
 
 dnl -----------------------------------------------------------------------
@@ -592,6 +593,8 @@ if test "${enable_threads}" = "yes" ; then
     AC_MSG_RESULT([${THREAD_OBJ}])
     AC_DEFINE( [ECL_THREADS], [1], [Userland threads?])
   fi
+  ECL_ADD_FEATURE(threads)
+  ECL_ADD_FEATURE(ecl-read-write-lock)
 else
   boehm_configure_flags="${boehm_configure_flags} --disable-threads"
 fi
@@ -604,6 +607,8 @@ if test ${enable_boehm} = "no" ; then
   enable_smallcons="no"
 else
   ECL_BOEHM_GC
+  ECL_ADD_FEATURE(boehm-gc)
+  ECL_ADD_FEATURE(ecl-weak-hash)
 fi
 if test ${enable_smallcons} = "yes" ; then
    AC_DEFINE([ECL_SMALL_CONS], [], [ECL_SMALL_CONS])
@@ -652,12 +657,16 @@ dnl Deactivate floating point exceptions if asked to
 if test "${with_ieee_fp}" = yes; then
    with_signed_zero="yes"
    AC_DEFINE([ECL_IEEE_FP], [], [ECL_IEEE_FP])
+   ECL_ADD_FEATURE(ieee-floating-point)
 fi
 if test "${with_fpe}" != yes; then
    AC_DEFINE([ECL_AVOID_FPE_H], [], [ECL_AVOID_FPE_H])
 fi
 if test "${with_signed_zero}" = yes; then
    AC_DEFINE([ECL_SIGNED_ZERO], [], [ECL_SIGNED_ZERO])
+fi
+if test "${with_ieee_fp}" != yes -o "${with_fpe}" = yes; then
+   ECL_ADD_FEATURE(floating-point-exceptions)
 fi
 
 dnl =====================================================================
@@ -706,7 +715,7 @@ dnl AC_TYPE_OFF_T	   # DEFS off_t
 dnl AC_C_CHAR_UNSIGNED     # DEFS __CHAR_UNSIGNED__ if char is unsigned
 dnl !!! end dnled
 
-AC_C_BIGENDIAN([], [],
+AC_C_BIGENDIAN([ECL_ADD_FEATURE(big-endian)], [ECL_ADD_FEATURE(little-endian)],
   [AC_DEFINE(WORDS_BIGENDIAN, [/* EDIT! - Undefine if small endian */])])
 
 dnl ----------------------------------------------------------------------
@@ -791,6 +800,7 @@ else
   AC_DEFINE([ECL_CXX_CORE], [1],
             [Do we use C or C++ compiler to compile ecl?])
   boehm_configure_flags="${boehm_configure_flags} --enable-cplusplus"
+  ECL_ADD_FEATURE(cxx-core)
 fi
 
 ECL_LIBATOMIC_OPS
@@ -801,6 +811,7 @@ if test ${enable_shared} = "yes"; then
   AC_DEFINE(ENABLE_DLOPEN, [1], [Allow loading dynamically linked code])
   LSP_LIBRARIES="${SHAREDPREFIX}ecl.${SHAREDEXT}"
   ECL_ADD_LISP_MODULE([dlopen])
+  ECL_ADD_FEATURE(dlopen)
 else
   enable_soname=no
   LSP_LIBRARIES="${LIBPREFIX}ecl.${LIBEXT}"
@@ -814,11 +825,13 @@ fi
 if test "${with_cmuformat}" = "yes"; then
   with_clos_streams="yes"
   AC_DEFINE([ECL_CMU_FORMAT], [1], [Use CMU Common-Lisp's FORMAT routine])
+  ECL_ADD_FEATURE(cmu-format)
 fi
 
 if test "${with_clos_streams}" = "yes"; then
   AC_DEFINE( ECL_CLOS_STREAMS, [1],
              [Allow STREAM operations to work on arbitrary objects])
+  ECL_ADD_FEATURE(clos-streams)
 fi
 
 if test "${with_cmp}" = "builtin"; then
@@ -910,6 +923,7 @@ if test "x${enable_unicode}" != "xno"; then
    AC_DEFINE([ECL_UNICODE_NAMES], [1], [Link in the database of Unicode names])
    EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
 	AC_CHECK_HEADERS([wchar.h])
+   ECL_ADD_FEATURE(unicode)
 else
    CHAR_CODE_LIMIT=256
    ECL_CHARACTER="int"
@@ -930,6 +944,8 @@ else
   ECL_INIT_FORM="${with_init_form}"
 fi
 
+ECL_ADD_FEATURE(${ARCHITECTURE})
+
 AC_CONFIG_FILES([
   bare.lsp
   lsp/load.lsp
@@ -949,6 +965,7 @@ AC_CONFIG_FILES([
   cmp/cmpdefs.pre:cmp/cmpdefs.lsp
   tests/config.lsp
   tests/Makefile
+  c/ecl_features.h
  ])
 
 AC_CONFIG_HEADERS([ecl/config.h:ecl/configpre.h])

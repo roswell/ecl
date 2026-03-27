@@ -22,7 +22,8 @@
            (every test x))))
 
 (defun type-name-p (name)
-  (or (si:get-sysprop name 'SI::DEFTYPE-DEFINITION)
+  (or (cmp-env-search-type name *cmp-env*)
+      (si:get-sysprop name 'SI::DEFTYPE-DEFINITION)
       (find-class name nil)
       (si:get-sysprop name 'SI::STRUCTURE-TYPE)))
 
@@ -36,7 +37,7 @@
 
 (defun alien-declaration-p (name &optional (env *cmp-env*))
   (and (symbolp name)
-       (member name (cmp-env-search-declaration 'alien env si::*alien-declarations*)
+       (member name (cmp-env-search-declaration 'alien env si:*alien-declarations*)
                :test 'eq)))
 
 (defun policy-declaration-p (name)
@@ -114,7 +115,7 @@ and a possible documentation string (only accepted when DOC-P is true)."
                          (valid-type-specifier decl-name))
                    (if (null ok)
                        (cmpwarn "Unknown declaration specifier ~s." decl-name)
-                       (setf types (collect-declared type decl-args types)))                   ))))
+                       (setf types (collect-declared type decl-args types)))))))
        finally (return (values body specials types ignored
                                (nreverse others) doc all-declarations)))))
 
@@ -137,7 +138,7 @@ special variable declarations, as these have been extracted before."
      (if (atom (rest decl))
          (cmpwarn "Syntax error in declaration ~a" decl)
          (multiple-value-bind (type-name args)
-             (si::normalize-type (second decl))
+             (si::normalize-type (second decl) env)
            (if (eq type-name 'FUNCTION)
                (dolist (v (cddr decl))
                  (setf env (add-function-declaration v args env)))
@@ -152,7 +153,7 @@ special variable declarations, as these have been extracted before."
       env)
     (cl:DECLARATION
      (validate-alien-declaration (rest decl) #'cmperr)
-     (cmp-env-extend-declaration 'alien (rest decl) env si::*alien-declarations*))
+     (cmp-env-extend-declaration 'alien (rest decl) env si:*alien-declarations*))
     ((SI::C-LOCAL SI::C-GLOBAL SI::NO-CHECK-TYPE :READ-ONLY)
      env)
     ((cl:DYNAMIC-EXTENT cl:IGNORABLE SI:FUNCTION-BLOCK-NAME)

@@ -15,11 +15,6 @@
 ;;; ---------------------------------------------------------------------
 ;;; Fixup
 
-;;; Early version of the stack handler.
-(defun sys::stack-error-handler (continue-string datum args)
-  (declare (ignore continue-string))
-  (apply #'error datum args))
-
 (defun register-method-with-specializers (method)
   (declare (si::c-local))
   (with-early-accessors (+standard-method-slots+ +specializer-slots+)
@@ -70,8 +65,13 @@
         ((member name '(CLASS BUILT-IN-CLASS) :test #'eq)
          (error "The kernel CLOS class ~S cannot be changed." name))
         ((classp new-value)
-         (setf (gethash name si:*class-name-hash-table*) new-value))
-        ((null new-value) (remhash name si:*class-name-hash-table*))
+         (if env
+             (si:proclaim-class name new-value env)
+             (setf (gethash name si:*class-name-hash-table*) new-value)))
+        ((null new-value)
+         (if env
+             (si:proclaim-class name nil env)
+             (remhash name si:*class-name-hash-table*)))
         (t (error "~A is not a class." new-value))))
     new-value))
 

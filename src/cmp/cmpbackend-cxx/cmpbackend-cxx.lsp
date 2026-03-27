@@ -103,7 +103,8 @@ the environment variable TMPDIR to a different value." template))
 #+msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
-                  (ld-flags (split-program-options (if (eq type :program)
+                  (ld-flags (split-program-options (if (and (member :dlopen *features*)
+                                                            (eq type :program))
                                                        *ld-program-flags*
                                                        *ld-flags*)))
                   (ld-libs (split-program-options *ld-libs*)))
@@ -128,7 +129,8 @@ the environment variable TMPDIR to a different value." template))
 #-msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
-                  (ld-flags (split-program-options (if (eq type :program)
+                  (ld-flags (split-program-options (if (and (member :dlopen *features*)
+                                                            (eq type :program))
                                                        *ld-program-flags*
                                                        *ld-flags*)))
                   (ld-libs (split-program-options *ld-libs*)))
@@ -279,9 +281,10 @@ the environment variable TMPDIR to a different value." template))
 (defun ecl-library-directory ()
   "Finds the directory in which the ECL core library was installed."
   (cond ((and *ecl-library-directory*
-              (probe-file (merge-pathnames (compile-file-pathname "ecl" :type
-                                            #+dlopen :shared-library
-                                            #-dlopen :static-library)
+              (probe-file (merge-pathnames (compile-file-pathname
+                                            "ecl" :type (if (member :dlopen *features*)
+                                                            :shared-library
+                                                            :static-library))
                                            *ecl-library-directory*)))
          *ecl-library-directory*)
         ((probe-file "SYS:BUILD-STAMP")
@@ -360,7 +363,6 @@ filesystem or in the database of ASDF modules."
 
 ;;; Target-specific invocations.
 
-#+dlopen
 (defun shared-cc (o-pathname object-files)
   (let ((ld-flags (split-program-options *ld-shared-flags*))
         (ld-libs (split-program-options *ld-libs*)))
@@ -375,12 +377,11 @@ filesystem or in the database of ASDF modules."
                     (list (concatenate 'string "/LIBPATH:"
                                        (ecl-library-directory))
                           (concatenate 'string "/IMPLIB:" implib)))))
-    #+mingw32
-    (setf ld-flags (list* "-shared" ld-flags))
+    (when (member :mingw32 *features*)
+      (setf ld-flags (list* "-shared" ld-flags)))
     (linker-cc o-pathname object-files :type :dll
                :ld-flags ld-flags :ld-libs ld-libs)))
 
-#+dlopen
 (defun bundle-cc (o-pathname init-name object-files)
   (declare (ignore init-name))
   (let ((ld-flags (split-program-options *ld-bundle-flags*))
@@ -399,8 +400,8 @@ filesystem or in the database of ASDF modules."
                      (concatenate 'string "/LIBPATH:"
                                   (ecl-library-directory))
                      (concatenate 'string "/IMPLIB:" implib)))))
-    #+mingw32
-    (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags))
+    (when (member :mingw32 *features*)
+      (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags)))
     (linker-cc o-pathname object-files :type :fasl
                                        :ld-flags ld-flags :ld-libs ld-libs)))
 
@@ -508,7 +509,6 @@ extern int
 }
 ")
 
-#+:win32
 (defconstant +lisp-program-winmain+ "
 #include <windows.h>
 int
@@ -532,30 +532,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 ")
 
 
-;;; Code generation
-
-(defun compiler-pass/generate-cxx (c-pathname h-pathname data-pathname init-name source)
-  (with-cxx-env ()
-    (setq *compiler-phase* 't2)
-    (with-open-file (*compiler-output1* c-pathname :direction :output
-                                                   :if-does-not-exist :create
-                                                   :if-exists :supersede)
-      (wt-comment-nl "Compiler: ~A ~A" (lisp-implementation-type) (lisp-implementation-version))
-      #-ecl-min
-      (multiple-value-bind (second minute hour day month year)
-          (get-decoded-time)
-        (declare (ignore second))
-        (wt-comment-nl "Date: ~D/~D/~D ~2,'0D:~2,'0D (yyyy/mm/dd)" year month day hour minute)
-        (wt-comment-nl "Machine: ~A ~A ~A" (software-type) (software-version) (machine-type)))
-      (wt-comment-nl "Source: ~A" source)
-      (with-open-file (*compiler-output2* h-pathname :direction :output
-                                                     :if-does-not-exist :create
-                                                     :if-exists :supersede)
-        (wt-nl1 "#include " *cmpinclude*)
-        (ctop-write init-name h-pathname data-pathname)
-        (terpri *compiler-output1*)
-        (terpri *compiler-output2*)))
-    (data-c-dump data-pathname)))
+;;; Code assembly
 
 (defun compiler-pass/assemble-cxx (input-file output-file
                                    &key
@@ -593,7 +570,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                   (main-name nil)
                   (prologue-code "")
                   (epilogue-code (when (eq target :program) '(SI::TOP-LEVEL T)))
-                  #+:win32 (system :console)
+                  (system :console)
                   &aux
                     (*suppress-compiler-messages* (or *suppress-compiler-messages*
                                                       (not *compile-verbose*)))
@@ -701,10 +678,9 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          ;; we don't need wrapper in the program, we have main for that
                                         ;(format c-file +lisp-init-wrapper+ wrap-name init-name)
          (format c-file
-                 #+:win32 (ecase system
-                            (:console +lisp-program-main+)
-                            (:windows +lisp-program-winmain+))
-                 #-:win32 +lisp-program-main+
+                 (ecase system
+                   (:console +lisp-program-main+)
+                   (:windows +lisp-program-winmain+))
                  prologue-code init-name epilogue-code)
          (close c-file)
          (compiler-cc c-name o-name)
@@ -721,7 +697,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (compiler-cc c-name o-name)
          (when (probe-file output-name) (delete-file output-name))
          (linker-ar output-name o-name ld-libs))
-        #+dlopen
         (:shared-library
          (format c-file +lisp-program-init+
                  init-name init-tag prologue-code submodules epilogue-code)
@@ -733,7 +708,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
          (compiler-cc c-name o-name)
          (shared-cc output-name (append ld-flags (list o-name)
                                         ld-libs)))
-        #+dlopen
         (:fasl
          (format c-file +lisp-program-init+ init-name init-tag prologue-code
                  submodules epilogue-code)
@@ -758,7 +732,6 @@ output = si_safe_eval(2, ecl_read_from_cstring(lisp_code), ECL_NIL);
   (apply #'builder :static-library args))
 
 (defun build-shared-library (&rest args)
-  #-dlopen
-  (error "Dynamically loadable libraries not supported in this system.")
-  #+dlopen
-  (apply #'builder :shared-library args))
+  (if (member :dlopen *features*)
+      (apply #'builder :shared-library args)
+      (error "Dynamically loadable libraries not supported in this system.")))

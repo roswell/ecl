@@ -39,78 +39,81 @@
 (deftype any () 't)
 
 (defun member-type (type disjoint-supertypes)
-  (member type disjoint-supertypes :test #'subtypep))
+  (member type disjoint-supertypes :test #'(lambda (t1 t2) (subtypep t1 t2 *cmp-env*))))
 
-;;; Check if THING is an object of the type TYPE.
-;;; Depends on the implementation of TYPE-OF.
-;;; (only used for saving constants?)
+;;; Canonicalize the object type to a type recognized by the compiler.
+;;; Depends on the implementation of TYPECASE.
 (defun object-type (thing)
-  (let ((type (type-of thing)))
-    (case type
-      ((FIXNUM SHORT-FLOAT SINGLE-FLOAT DOUBLE-FLOAT LONG-FLOAT SYMBOL NULL) type)
-      ((BASE-CHAR STANDARD-CHAR CHARACTER EXTENDED-CHAR) 'CHARACTER)
-      ((STRING BASE-STRING BIT-VECTOR) type)
-      (VECTOR (list 'VECTOR (array-element-type thing)))
-      (ARRAY (list 'ARRAY (array-element-type thing)))
-      #+clos
-      (STANDARD-OBJECT 'STANDARD-OBJECT)
-      #+clos
-      (STRUCTURE-OBJECT 'STRUCTURE-OBJECT)
-      #+sse2
-      ((EXT:SSE-PACK EXT:INT-SSE-PACK EXT:FLOAT-SSE-PACK EXT:DOUBLE-SSE-PACK) type)
-      (t t))))
+  (typecase thing
+    (FIXNUM 'FIXNUM)
+    (SHORT-FLOAT 'SHORT-FLOAT)
+    (SINGLE-FLOAT 'SINGLE-FLOAT)
+    (DOUBLE-FLOAT 'DOUBLE-FLOAT)
+    (LONG-FLOAT 'LONG-FLOAT)
+    (NULL 'NULL)
+    (SYMBOL 'SYMBOL)
+    ((OR BASE-CHAR STANDARD-CHAR CHARACTER EXTENDED-CHAR) 'CHARACTER)
+    (BASE-STRING 'BASE-STRING)
+    (STRING 'STRING)
+    (BIT-VECTOR 'BIT-VECTOR)
+    (VECTOR (list 'VECTOR (array-element-type thing)))
+    (ARRAY (list 'ARRAY (array-element-type thing)))
+    #+clos (STANDARD-OBJECT 'STANDARD-OBJECT)
+    #+clos (STRUCTURE-OBJECT 'STRUCTURE-OBJECT)
+    #+sse2 (EXT:SSE-PACK 'EXT:SSE-PACK)
+    #+sse2 (EXT:INT-SSE-PACK 'EXT:INT-SSE-PACK)
+    #+sse2 (EXT:FLOAT-SSE-PACK 'EXT:FLOAT-SSE-PACK)
+    #+sse2 (EXT:DOUBLE-SSE-PACK 'EXT:DOUBLE-SSE-PACK)
+    (t t)))
 
 (defun valid-type-specifier (type)
   (handler-case
-      (if (subtypep type 'T)
+      (if (subtypep type 'T *cmp-env*)
           (values t type)
           (values nil nil))
     (error ()
       (values nil nil))))
 
 (defun known-type-p (type)
-  (subtypep type T))
+  (subtypep type T *cmp-env*))
 
 (defun trivial-type-p (type)
-  (subtypep T type))
+  (subtypep T type *cmp-env*))
 
-(defun-equal-cached type-and (t1 t2)
+(defun-cached type-and (t1 t2) type-specifier=
   ;; FIXME! Should we allow "*" as type name???
   (when (or (eq t1 t2) (eq t2 '*))
     (return-from type-and t1))
   (when (eq t1 '*)
     (return-from type-and t2))
-  (let* ((si::*highest-type-tag* si::*highest-type-tag*)
-         (si::*save-types-database* t)
-         (si::*member-types* si::*member-types*)
-         (si::*elementary-types* si::*elementary-types*)
-         (tag1 (si::safe-canonical-type t1))
-         (tag2 (si::safe-canonical-type t2)))
-    (cond ((and (numberp tag1) (numberp tag2))
-           (setf tag1 (si::safe-canonical-type t1)
-                 tag2 (si::safe-canonical-type t2))
-           (cond ((zerop (logand tag1 tag2)) ; '(AND t1 t2) = NIL
-                  NIL)
-                 ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
-                  t1)
-                 ((zerop (logandc2 tag2 tag1)) ; t2 <= t1
-                  t2)
-                 (t
-                  `(AND ,t1 ,t2))))
-          ((eq tag1 'CONS)
-           (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t1)
-           t2)
-          ((eq tag2 'CONS)
-           (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
-           t1)
-          ((null tag1)
-           ;(setf c::*compiler-break-enable* t) (break)
-           (cmpnote "Unknown type ~S. Assuming it is T." t1)
-           t2)
-          (t
-           ;(setf c::*compiler-break-enable* t) (break)
-           (cmpnote "Unknown type ~S. Assuming it is T." t2)
-           t1))))
+  (si::with-type-database ()
+    (let ((tag1 (si::safe-canonical-type t1 *cmp-env*))
+          (tag2 (si::safe-canonical-type t2 *cmp-env*)))
+      (cond ((and (numberp tag1) (numberp tag2))
+             (setf tag1 (si::safe-canonical-type t1 *cmp-env*)
+                   tag2 (si::safe-canonical-type t2 *cmp-env*))
+             (cond ((zerop (logand tag1 tag2)) ; '(AND t1 t2) = NIL
+                    NIL)
+                   ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
+                    t1)
+                   ((zerop (logandc2 tag2 tag1)) ; t2 <= t1
+                    t2)
+                   (t
+                    `(AND ,t1 ,t2))))
+            ((eq tag1 'CONS)
+             (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t1)
+             t2)
+            ((eq tag2 'CONS)
+             (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
+             t1)
+            ((null tag1)
+                                        ;(setf c::*compiler-break-enable* t) (break)
+             (cmpnote "Unknown type ~S. Assuming it is T." t1)
+             t2)
+            (t
+                                        ;(setf c::*compiler-break-enable* t) (break)
+             (cmpnote "Unknown type ~S. Assuming it is T." t2)
+             t1)))))
 
 (defun values-number-from-type (type)
   (cond ((or (eq type 'T) (eq type '*))
@@ -123,7 +126,7 @@
          (let ((l (1- (length type))))
            (values l l)))))
 
-(defun-equal-cached values-type-primary-type (type)
+(defun-cached values-type-primary-type (type) type-specifier=
   ;; Extract the type of the first value returned by this form. We are
   ;; pragmatic and thus (VALUES) => NULL  [CHECKME!]
   (let (aux)
@@ -139,7 +142,7 @@
           (t
            aux))))
 
-(defun-equal-cached values-type-to-n-types (type length)
+(defun-cached values-type-to-n-types (type length) type-specifier=
   (when (plusp length)
     (do-values-type-to-n-types type length)))
 
@@ -190,7 +193,7 @@
           (return (values (nreverse required) (nreverse optional)
                           rest a-o-k)))))
 
-(defun-equal-cached values-type-or (t1 t2)
+(defun-cached values-type-or (t1 t2) type-specifier=
   (when (or (eq t2 'T) (equalp t2 '(VALUES &REST T)))
     (return-from values-type-or t2))
   (when (or (eq t1 'T) (equalp t1 '(VALUES &REST T)))
@@ -236,7 +239,7 @@
                  ,@(and opt (cons '&optional (nreverse opt)))
                  ,@(and rest (cons '&optional rest)))))))
 
-(defun-equal-cached values-type-and (t1 t2)
+(defun-cached values-type-and (t1 t2) type-specifier=
   (when (or (eq t2 'T) (equalp t2 '(VALUES &REST T)))
     (return-from values-type-and t1))
   (when (or (eq t1 'T) (equalp t1 '(VALUES &REST T)))
@@ -272,42 +275,41 @@
                  ,@(and opt (cons '&optional (nreverse opt)))
                  ,@(and rest (cons '&optional rest)))))))
 
-(defun-equal-cached type-or (t1 t2)
+(defun-cached type-or (t1 t2) type-specifier=
   ;; FIXME! Should we allow "*" as type name???
   (when (or (eq t1 t2) (eq t2 '*))
     (return-from type-or t1))
   (when (eq t1 '*)
     (return-from type-or t2))
-  (let* ((si::*highest-type-tag* si::*highest-type-tag*)
-         (si::*save-types-database* t)
-         (si::*member-types* si::*member-types*)
-         (si::*elementary-types* si::*elementary-types*)
-         (tag1 (si::safe-canonical-type t1))
-         (tag2 (si::safe-canonical-type t2)))
-    (cond ((and (numberp tag1) (numberp tag2))
-           (setf tag1 (si::safe-canonical-type t1)
-                 tag2 (si::safe-canonical-type t2))
-           (cond ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
-                  t2)
-                 ((zerop (logandc2 tag2 tag1)) ; t2 <= t1
-                  t1)
-                 (t
-                  `(OR ,t1 ,t2))))
-          ((eq tag1 'CONS)
-           (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t1)
-           T)
-          ((eq tag2 'CONS)
-           (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
-           T)
-          ((null tag1)
-           ;(break)
-           (cmpnote "Unknown type ~S" t1)
-           T)
-          (t
-           ;(break)
-           (cmpnote "Unknown type ~S" t2)
-           T))))
+  (si::with-type-database ()
+    (let ((tag1 (si::safe-canonical-type t1 *cmp-env*))
+          (tag2 (si::safe-canonical-type t2 *cmp-env*)))
+      (cond ((and (numberp tag1) (numberp tag2))
+             (setf tag1 (si::safe-canonical-type t1 *cmp-env*)
+                   tag2 (si::safe-canonical-type t2 *cmp-env*))
+             (cond ((zerop (logandc2 tag1 tag2)) ; t1 <= t2
+                    t2)
+                   ((zerop (logandc2 tag2 tag1)) ; t2 <= t1
+                    t1)
+                   (t
+                    `(OR ,t1 ,t2))))
+            ((eq tag1 'CONS)
+             (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t1)
+             T)
+            ((eq tag2 'CONS)
+             (cmpwarn "Unsupported CONS type ~S. Replacing it with T." t2)
+             T)
+            ((null tag1)
+                                        ;(break)
+             (cmpnote "Unknown type ~S" t1)
+             T)
+            (t
+                                        ;(break)
+             (cmpnote "Unknown type ~S" t2)
+             T)))))
 
-(defun type>= (type1 type2)
-  (subtypep type2 type1))
+(defun type>= (type1 type2 &optional env)
+  (subtypep type2 type1 env))
 
+(defun type-false-p (type &optional env) (subtypep type 'null env))
+(defun type-true-p (type &optional env) (subtypep type '(not null) env))

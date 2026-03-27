@@ -9,6 +9,9 @@
 
 (in-package #:compiler)
 
+(defun register-function (fun)
+  (push fun *functions*))
+
 (defun child-function-p (presumed-parent fun)
   (declare (optimize speed))
   (loop for real-parent = (fun-parent fun)
@@ -81,7 +84,6 @@
             (setf (var-ref-clb var) nil
                   (var-ref-ccb var) t
                   (var-kind var) 'CLOSURE
-                  (var-loc var) 'OBJECT
                   to-be-updated
                   (prepend-new (var-functions-reading var)
                                (prepend-new (var-functions-setting var)
@@ -129,7 +131,7 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
   (let (narg)
     (and (not (eq (fun-closure fun) 'CLOSURE))
          (= (fun-minarg fun) (setf narg (fun-maxarg fun)))
-         (<= narg si::c-arguments-limit)
+         (<= narg si:c-arguments-limit)
          narg)))
 
 (defun add-to-fun-referenced-vars (fun var-list)
@@ -161,20 +163,15 @@ The function thus belongs to the type of functions that ecl_make_cfun accepts."
 ;;; searches for a (FUNCTION-BLOCK-NAME ...) declaration
 (defun function-block-name-declaration (declarations)
   (loop for i in declarations
-        if (and (consp i) (eql (car i) 'si::function-block-name)
-                (consp (cdr i)))
-          return (cadr i)
-        finally (return nil)))
+        do (when (and (consp i) (eql (car i) 'si:function-block-name))
+             (let ((name (second i))
+                   (rest (cddr i)))
+               (unless (and (symbolp name) (null rest))
+                 (cmperr "Invalid ~s declaration:~%~s" 'si:function-block-name i))
+               (return name)))))
 
 (defun exported-fname (name)
   (let (cname)
     (if (and (symbolp name) (setf cname (si:get-sysprop name 'Lfun)))
         (values cname t)
         (values (next-cfun "L~D~A" name) nil))))
-
-(defun function-may-have-side-effects (fname)
-  (not (si:get-sysprop fname 'no-side-effects)))
-
-(defun function-may-change-sp (fname)
-  (not (or (si:get-sysprop fname 'no-side-effects)
-           (si:get-sysprop fname 'no-sp-change))))

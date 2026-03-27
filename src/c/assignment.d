@@ -34,10 +34,31 @@ cl_set(cl_object var, cl_object value)
   unlikely_if (ecl_t_of(var) != t_symbol) {
     FEwrong_type_nth_arg(@[set], 1, var, @[symbol]);
   }
+  ecl_return1(env, ecl_cmp_setq(env, var, value));
+}
+
+cl_object
+ecl_setq(cl_env_ptr env, cl_object var, cl_object value)
+{
+  unlikely_if (Null(var)) {
+    FEconstant_assignment(var);
+  }
+  unlikely_if (ecl_t_of(var) != t_symbol) {
+    FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
+  }
+  return ecl_cmp_setq(env, var, value);
+}
+
+/* ecl_cmp_setq does the minimal amount of checking necessary to
+ * implement SETQ for objects that have been checked to be non-null
+ * symbols by the compiler. */
+cl_object
+ecl_cmp_setq(cl_env_ptr env, cl_object var, cl_object value)
+{
   unlikely_if (var->symbol.stype & ecl_stp_constant) {
     FEconstant_assignment(var);
   }
-  ecl_return1(env, ECL_SETQ(env, var, value));
+  return ECL_SETQ(env, var, value);
 }
 
 #ifdef ECL_THREADS
@@ -72,18 +93,6 @@ mp_atomic_incf_symbol_value(cl_object var, cl_object increment)
 }
 #endif /* ECL_THREADS */
 
-cl_object
-ecl_setq(cl_env_ptr env, cl_object var, cl_object value)
-{
-  unlikely_if (Null(var)) {
-    FEconstant_assignment(var);
-  }
-  unlikely_if (ecl_t_of(var) != t_symbol) {
-    FEwrong_type_nth_arg(@[setq], 1, var, @[symbol]);
-  }
-  return ECL_SETQ(env, var, value);
-}
-
 static cl_object
 unbound_setf_function_error(cl_narg narg, ...)
 {
@@ -102,16 +111,12 @@ make_setf_function_error(cl_object name)
 cl_object
 ecl_setf_definition(cl_object sym, cl_object createp)
 {
-  cl_env_ptr the_env = ecl_process_env();
-  cl_object pair;
-  ECL_WITH_GLOBAL_ENV_RDLOCK_BEGIN(the_env) {
-    pair = ecl_gethash_safe(sym, cl_core.setf_definitions, ECL_NIL);
-    if (Null(pair) && !Null(createp)) {
-      createp = make_setf_function_error(sym);
-      pair = ecl_cons(createp, ECL_NIL);
-      ecl_sethash(sym, cl_core.setf_definitions, pair);
-    }
-  } ECL_WITH_GLOBAL_ENV_RDLOCK_END;
+  cl_object pair = sym->symbol.sfdef;
+  if (Null(pair) && !Null(createp)) {
+    createp = make_setf_function_error(sym);
+    pair = ecl_cons(createp, ECL_NIL);
+    sym->symbol.sfdef = pair;
+  }
   return pair;
 }
 
@@ -124,20 +129,11 @@ si_setf_definition(cl_object sym, cl_object value)
 static void
 ecl_rem_setf_definition(cl_object sym)
 {
-  cl_env_ptr the_env = ecl_process_env();
-  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
-    cl_object pair = ecl_gethash_safe(sym, cl_core.setf_definitions, ECL_NIL);
-    if (!Null(pair)) {
-      ECL_RPLACA(pair, make_setf_function_error(sym));
-      ECL_RPLACD(pair, ECL_NIL);
-      /*
-        FIXME: This leaks resources
-        We actually cannot remove it, because some compiled
-        code might be using it!
-        ecl_remhash(sym, cl_core.setf_definitions);
-      */
-    }
-  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
+  cl_object pair = sym->symbol.sfdef;
+  if (!Null(pair)) {
+    ECL_RPLACA(pair, make_setf_function_error(sym));
+    ECL_RPLACD(pair, ECL_NIL);
+  }
 }
 
 @(defun si::fset (fname def &optional macro pprint)
@@ -165,11 +161,13 @@ ecl_rem_setf_definition(cl_object sym)
   if (ECL_SYMBOLP(fname)) {
     if (mflag) {
       type |= ecl_stp_macro;
+      sym->symbol.macfun = def;
+      ECL_FMAKUNBOUND(sym);
     } else {
       type &= ~ecl_stp_macro;
+      ECL_SYM_FUN(sym) = def;
     }
     ecl_symbol_type_set(sym, type);
-    ECL_SYM_FUN(sym) = def;
     ecl_clear_compiler_properties(sym);
 #ifndef ECL_CMU_FORMAT
     if (pprint == ECL_NIL)
@@ -192,9 +190,7 @@ cl_makunbound(cl_object sym)
 {
   if (ecl_symbol_type(sym) & ecl_stp_constant)
     FEinvalid_variable("Cannot unbind the constant ~S.", sym);
-  /* FIXME! The semantics of MAKUNBOUND is not very clear with local
-     bindings ... */
-  ECL_SET(sym, OBJNULL);
+  ECL_SETQ(ecl_process_env(), sym, OBJNULL);
   @(return sym);
 }
 
@@ -212,7 +208,8 @@ cl_fmakunbound(cl_object fname)
   }
   if (ECL_SYMBOLP(fname)) {
     ecl_clear_compiler_properties(sym);
-    ECL_SYM_FUN(sym) = ECL_NIL;
+    ECL_FMAKUNBOUND(sym);
+    sym->symbol.macfun = ECL_NIL;
     ecl_symbol_type_set(sym, ecl_symbol_type(sym) & ~ecl_stp_macro);
   } else {
     ecl_rem_setf_definition(sym);
@@ -260,9 +257,25 @@ si_rem_sysprop(cl_object sym, cl_object prop)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object plist, found;
-  plist = ecl_gethash_safe(sym, cl_core.system_properties, ECL_NIL);
-  plist = si_rem_f(plist, prop);
-  found = ecl_nth_value(the_env, 1);
-  ecl_sethash(sym, cl_core.system_properties, plist);
+  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
+    plist = ecl_gethash_safe(sym, cl_core.system_properties, ECL_NIL);
+    plist = si_rem_f(plist, prop);
+    found = ecl_nth_value(the_env, 1);
+    ecl_sethash(sym, cl_core.system_properties, plist);
+  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
   ecl_return1(the_env, found);
+}
+
+cl_object
+si_copy_sysprop(cl_object sym_old, cl_object sym_new)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object plist = ECL_NIL;
+  ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(the_env) {
+    plist = ecl_gethash_safe(sym_old, cl_core.system_properties, ECL_NIL);
+    if (!Null(plist)) {
+      ecl_sethash(sym_new, cl_core.system_properties, plist);
+    }
+  } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
+  @(return plist);
 }

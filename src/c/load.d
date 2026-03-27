@@ -45,7 +45,7 @@ si_load_binary(cl_object filename, cl_object verbose,
     goto GO_ON;
 
   /* Next try to call "init_FILE()" where FILE is the file name */
-  prefix = ecl_symbol_value(@'si::*init-function-prefix*');
+  prefix = ecl_cmp_symbol_value(the_env, @'si::*init-function-prefix*');
   init_prefix = _ecl_library_init_prefix();
   if (Null(prefix)) {
     prefix = init_prefix;
@@ -118,7 +118,7 @@ si_load_source(cl_object source, cl_object verbose, cl_object print, cl_object e
        try to close the stream, and then jump to next catch
        point */
     if (strm != source)
-      cl_close(3, strm, @':abort', @'t');
+      cl_close(3, strm, @':abort', ECL_T);
   } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   @(return ECL_NIL);
 }
@@ -193,18 +193,18 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
        try to close the stream, and then jump to next catch
        point */
     if (strm != source) {
-      cl_close(3, strm, @':abort', @'t');
+      cl_close(3, strm, @':abort', ECL_T);
     }
   } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
   @(return ECL_NIL);
 }
 
 @(defun load (source
-              &key (verbose ecl_symbol_value(@'*load-verbose*'))
-              (print ecl_symbol_value(@'*load-print*'))
+              &key (verbose ecl_cmp_symbol_value(the_env, @'*load-verbose*'))
+              (print ecl_cmp_symbol_value(the_env, @'*load-print*'))
               (if_does_not_exist @':error')
               (external_format @':default')
-              (search_list ecl_symbol_value(@'si::*load-search-list*'))
+              (search_list ecl_cmp_symbol_value(the_env, @'si::*load-search-list*'))
               &aux pathname pntype hooks filename function ok file_kind)
   bool not_a_filename = 0;
 @
@@ -222,7 +222,7 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
   pntype   = pathname->pathname.type;
 
   filename = ECL_NIL;
-  hooks = ecl_symbol_value(@'ext::*load-hooks*');
+  hooks = ecl_cmp_symbol_value(the_env, @'ext::*load-hooks*');
   if (Null(pathname->pathname.directory) &&
       Null(pathname->pathname.host) &&
       Null(pathname->pathname.device) &&
@@ -284,8 +284,8 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
     cl_format(3, ECL_T, @"~&;;; Loading ~s~%",
               filename);
   }
-  ecl_bds_bind(the_env, @'*package*', ecl_symbol_value(@'*package*'));
-  ecl_bds_bind(the_env, @'*readtable*', ecl_symbol_value(@'*readtable*'));
+  ecl_bds_bind(the_env, @'*package*', ecl_cmp_symbol_value(the_env, @'*package*'));
+  ecl_bds_bind(the_env, @'*readtable*', ecl_cmp_symbol_value(the_env, @'*readtable*'));
   ecl_bds_bind(the_env, @'*load-pathname*', not_a_filename? ECL_NIL : source);
   ecl_bds_bind(the_env, @'*load-truename*',
                not_a_filename? ECL_NIL : (filename = cl_truename(filename)));

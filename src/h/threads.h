@@ -13,6 +13,15 @@
 
 #ifdef ECL_THREADS
 
+#ifndef __sun__ /* See unixinit.d for this */
+# if _XOPEN_SOURCE < 600
+#  ifdef _XOPEN_SOURCE
+#    undef _XOPEN_SOURCE
+#  endif
+#  define _XOPEN_SOURCE 600       /* For pthread mutex attributes */
+# endif
+#endif
+
 #ifndef ECL_MUTEX_H
 #define ECL_MUTEX_H
 
@@ -54,11 +63,15 @@ ecl_mutex_init(ecl_mutex_t *mutex, bool recursive)
 {
   pthread_mutexattr_t mutexattr[1];
   pthread_mutexattr_init(mutexattr);
+#ifdef __COSMOPOLITAN__
+  pthread_mutexattr_settype(mutexattr, PTHREAD_MUTEX_NORMAL);
+#else
   if (recursive) {
     pthread_mutexattr_settype(mutexattr, PTHREAD_MUTEX_RECURSIVE);
   } else {
     pthread_mutexattr_settype(mutexattr, PTHREAD_MUTEX_ERRORCHECK);
   }
+#endif
   pthread_mutex_init(mutex, mutexattr);
 }
 

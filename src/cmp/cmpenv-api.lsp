@@ -67,13 +67,15 @@ that are susceptible to be changed by PROCLAIM."
         (cmp-env-functions env))
   env)
 
-(defun cmp-env-register-symbol-macro (name form &optional (env *cmp-env*))
+(defun cmp-env-register-symbol-macro (name form &optional (env *cmp-env*) force)
   (cmp-env-register-symbol-macro-function name
                                           #'(lambda (whole env) (declare (ignore env whole)) form)
-                                          env))
+                                          env
+                                          force))
 
-(defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*))
-  (when (or (constant-variable-p name) (special-variable-p name))
+(defun cmp-env-register-symbol-macro-function (name function &optional (env *cmp-env*) force)
+  (when (and (not force)
+             (or (constant-variable-p name) (special-variable-p name)))
     (cmperr "Cannot bind the special or constant variable ~A with symbol-macrolet." name))
   (push (list name 'si:symbol-macro function)
         (cmp-env-variables env))
@@ -89,6 +91,33 @@ that are susceptible to be changed by PROCLAIM."
         (cmp-env-variables env))
   env)
 
+(defun cmp-env-register-compiler-macro (name macro-function)
+  (push (list name 'si::compiler-macro macro-function)
+        (cmp-env-functions *cmp-env-root*))
+  (values))
+
+(defun cmp-env-register-type (name definition &optional (env *cmp-env*))
+  (push (list :type name definition)
+        (cmp-env-variables env))
+  env)
+
+(defun cmp-env-register-types (definitions &optional (env *cmp-env*))
+  (dolist (def definitions)
+    (setf env (cmp-env-register-type (car def) (cdr def) env)))
+  env)
+
+(defun register-all-known-types (&optional (env *cmp-env*))
+  ;; Used during cross-compilation in compile.lsp.in to populate the
+  ;; lexical environment with type definitions
+  (do-all-symbols (type)
+    (ext:when-let ((deftype-form (si:get-sysprop type 'SI::DEFTYPE-FORM)))
+      (unless (cmp-env-search-type type env)
+        (let ((type-definition (eval (destructuring-bind (name lambda-list &rest body)
+                                         (rest deftype-form)
+                                       (si::expand-defmacro name lambda-list body 'DEFTYPE)))))
+          (setf env (cmp-env-register-type type type-definition env))))))
+  env)
+
 (defun cmp-env-search-function (name &optional (env *cmp-env*))
   (let ((cfb nil)
         (unw nil)
@@ -102,7 +131,7 @@ that are susceptible to be changed by PROCLAIM."
              (baboon :format-control "Unknown record found in environment~%~S"
                      :format-arguments (list record)))
             ;; We have to use EQUAL because the name can be a list (SETF whatever)
-            ((equal (first record) name)
+            ((and (equal (first record) name) (not (eq (second record) 'si::compiler-macro)))
              (setf found (first (last record)))
              (return))))
     (values found cfb unw)))
@@ -162,6 +191,17 @@ that are susceptible to be changed by PROCLAIM."
   (or (cmp-env-search-macro name)
       (macro-function name)))
 
+(defun cmp-env-search-compiler-macro (name &optional (env *cmp-env*))
+  (dolist (record (cmp-env-functions env))
+    (when (and (consp record)
+               (equal (first record) name)
+               (eq (second record) 'si::compiler-macro))
+      (return-from cmp-env-search-compiler-macro (third record)))))
+
+(defun cmp-compiler-macro-function (name)
+  (or (cmp-env-search-compiler-macro name)
+      (compiler-macro-function name)))
+
 (defun cmp-env-search-ftype (name &optional (env *cmp-env*))
   (dolist (i env nil)
     (when (and (consp i)
@@ -186,4 +226,12 @@ that are susceptible to be changed by PROCLAIM."
                (eq (second i) kind))
      return (cddr i)
      finally (return default)))
+
+(defun cmp-env-search-type (name &optional (env *cmp-env*))
+  (loop for i in (car env)
+        when (and (consp i)
+                  (eq (first i) :type)
+                  (eq (second i) name))
+          return (third i)
+        finally (return nil)))
 

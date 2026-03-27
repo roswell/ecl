@@ -250,6 +250,41 @@ file_kind(ecl_filename_char *filename, bool follow_links) {
   else
     output = @':file';
   ecl_enable_interrupts();
+#elif defined(EMSCRIPTEN) && defined(HAVE_DIRENT_H)
+  /* We don't want to call stat unless we have to on emscripten
+   * because getting the size of a file may involve a network call for
+   * lazy loading files. Since we don't care about the size but only
+   * the kind of file we have, we can use other functions to get
+   * the information. */
+  ecl_stat_struct buf;
+  DIR *dir;
+  if (!follow_links) {
+    char buffer;
+    if (readlink(filename, &buffer, 1) >= 0)
+      return @':link';
+    else if (errno == ENOENT)
+      return ECL_NIL;
+  }
+  dir = opendir(filename);
+  if (dir != NULL) {
+    closedir(dir);
+    output = @':directory';
+  } else if (errno == ENOENT)
+    output = ECL_NIL;
+  else if (errno == ENOTDIR)
+    output = @':file';
+  else if (safe_stat(filename, &buf) < 0)
+    output = ECL_NIL;
+  else if (S_ISDIR(buf.st_mode))
+    output = @':directory';
+  else if (S_ISREG(buf.st_mode))
+    output = @':file';
+# ifdef S_ISFIFO
+  else if (S_ISFIFO(buf.st_mode))
+    output = @':fifo';
+# endif
+  else
+    output = @':special';
 #else
   ecl_stat_struct buf;
 # ifdef HAVE_LSTAT
@@ -296,6 +331,9 @@ si_readlink(cl_object filename) {
     ecl_disable_interrupts();
     written = readlink(ecl_filename_self(filename), output, size);
     ecl_enable_interrupts();
+    if (written == -1) {
+      return ECL_NIL;
+    }
     size += 256;
   } while (written == size-256);
   output[written] = '\0';
@@ -1155,7 +1193,9 @@ si_mkdir(cl_object directory, cl_object mode)
 #endif
   ecl_enable_interrupts();
 
-  if (ecl_unlikely(ok < 0)) {
+  if (ok < 0 && errno == EEXIST) {
+    @(return ECL_NIL);
+  } else if (ecl_unlikely(ok < 0)) {
     cl_object c_error = _ecl_strerror(errno);
     const char *msg = "Could not create directory ~S"
       "~%C library error: ~S";

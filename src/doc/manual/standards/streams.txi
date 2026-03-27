@@ -150,6 +150,20 @@ happen.
 Return the POSIX file descriptor of @var{file-stream} as an integer
 @end defun
 
+@subsubsection Binary Stream Extensions
+
+@lspdef ext:unread-byte
+@defun ext:unread-byte stream byte
+Similar to @code{unread-char} but for unreading the last element to the
+input binary stream. See also @code{gray:stream-unread-byte}.
+@end defun
+
+@lspdef ext:peek-byte
+@defun ext:peek-byte stream eof-value
+Similar to @code{peek-char} but for peeking the next element from the
+output binary stream. See also @code{gray:stream-peek-byte}.
+@end defun
+
 @subsubsection External Format Extensions
 
 @lspdef ext:*default-external-format*
@@ -304,6 +318,9 @@ bytes comprising the character in the given external format.
 @defun ext:make-sequence-input-stream vector &key (start 0) (end nil) (external-format nil)
 Create a sequence input stream with the subsequence bounded by
 @var{start} and @var{end} of the given vector.
+
+When @var{end} is @code{nil}, then the end bound is the vector's length.
+When the vector is adjusted the end bound is updated as well.
 @end defun
 @lspdef ext:make-sequence-output-stream
 @defun ext:make-sequence-output-stream vector &key (external-format nil)

@@ -106,13 +106,17 @@
 ;;; LABELS AND JUMPS
 ;;;
 
+(defun wt-nl-go (label)
+  (wt-nl-indent)
+  (wt-go label))
+
 (defun wt-go (label)
-  (setf (cdr label) t
-        label (car label))
-  (wt "goto L" label ";"))
+  (setf (label-used-p label) t)
+  (wt "goto L" (label-id label) ";"))
 
 (defun wt-label (label)
-  (when (cdr label) (wt-nl1 "L" (car label) ":;")))
+  (when (label-used-p label)
+    (wt-nl1 "L" (label-id label) ":;")))
 
 ;;;
 ;;; C/C++ COMMENTS
@@ -123,7 +127,7 @@
   (if single-line
       (progn
         (fresh-line stream)
-        (princ "/*      " stream))
+        (princ "/* " stream))
       (format stream "~50T/*  "))
   (let* ((l (1- (length text))))
     (declare (fixnum l))
@@ -140,8 +144,7 @@
           (t
            (princ c stream)))))
     (princ (schar text l) stream))
-  (format stream "~70T*/")
-  )
+  (format stream "~78T*/"))
 
 (defun do-wt-comment (message-or-format args single-line-p)
   (unless (and (symbolp message-or-format) (not (symbol-package message-or-format)))
@@ -206,3 +209,13 @@
 (defun c-filtered-string (string &rest args)
   (with-output-to-string (aux-stream)
     (apply #'wt-filtered-data string aux-stream :one-liner t args)))
+
+(defun c-inline-safe-string (constant-string)
+  ;; Produce a text representation of a string that can be used in a C-INLINE
+  ;; form, without triggering the @ or # escape characters
+  (c-filtered-string
+   (concatenate 'string
+                (loop for c across constant-string
+                      when (member c '(#\# #\@))
+                        collect c
+                      collect c))))

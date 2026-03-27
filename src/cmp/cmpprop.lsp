@@ -4,12 +4,9 @@
 ;;;;
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
 ;;;;
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Library General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later version.
 ;;;;
-;;;;    See file '../Copyright' for full details.
+;;;;    See the file 'LICENSE' for the copyright details.
+;;;;
 
 ;;;; CMPPROP Type propagation.
 
@@ -54,11 +51,12 @@
   (declare (ignore rest))
   (c1form-type form))
 
-(defun p1var (form var)
-  (let* (;; Use the type of C1FORM because it might have been
-         ;; coerced by a THE form.
-         (var-type (var-type var))
-         (type (type-and var-type (c1form-primary-type form))))
+(defun p1var (form var loc)
+  ;; Use the type of C1FORM because it might have been coerced by a THE form.
+  (let* ((loc-type (if loc (loc-lisp-type loc) t))
+         (var-type (loc-lisp-type var))
+         (type (type-and (type-and loc-type var-type)
+                         (c1form-primary-type form))))
     (prop-message "~&;;; Querying variable ~A gives ~A" (var-name var) type)
     type))
 
@@ -93,21 +91,37 @@
                              values-type))
     values-type))
 
-(defun p1call-global (c1form fname args)
-  (declare (ignore c1form))
-  (loop for v in args
-        do (p1propagate v)
-        finally (let ((type (propagate-types fname args)))
-                  (prop-message "~&;;; Computing output of function ~A with args~&;;;  ~{ ~A~}~&;;; gives ~A, while before ~A"
-                                fname (mapcar #'c1form-primary-type args)
-                                type (c1form-type c1form))
-                  (return type))))
+(defun p1fcall (c1form fun args fun-val call-type)
+  (p1propagate fun)
+  (p1propagate-list args)
+  (ecase call-type
+    (:global
+     (propagate-types fun-val args))
+    (:local
+     (flet ((and-form-type (type form)
+              (and-form-type type form (c1form-form form)
+                             :safe "In a call to ~a" (fun-name fun-val))))
+       (loop with local-arg-types = (get-local-arg-types fun-val)
+             for arg-form in args
+             for arg-type = (pop local-arg-types)
+             when arg-type
+               do (and-form-type arg-type arg-form)
+             do (p1propagate arg-form))
+       (let ((dcl-return (or (get-local-return-type fun-val) '(VALUES &REST T)))
+             (fun-return (fun-return-type fun-val)))
+         (and-call-type dcl-return c1form)
+         (and-call-type fun-return c1form)
+         (p1trivial c1form))))
+    (:unknown
+     (p1trivial c1form))))
 
-(defun p1call-local (c1form fun args)
-  (declare (ignore c1form))
-  (loop for v in args
-        do (p1propagate v)
-        finally (return (fun-return-type fun))))
+(defun p1mcall (c1form fun args fun-val call-type)
+  (p1propagate fun)
+  (p1propagate-list args)
+  (ecase call-type
+    (:global (or (get-return-type fun-val) '(VALUES &REST T)))
+    (:local (or (get-local-return-type fun-val) '(VALUES &REST T)))
+    (:unknown (p1trivial c1form))))
 
 (defun p1catch (c1form tag body)
   (declare (ignore c1form))
@@ -123,32 +137,58 @@
 
 (defun p1if (c1form fmla true-branch false-branch)
   (declare (ignore c1form))
-  (p1propagate fmla)
-  (let ((t1 (p1propagate true-branch))
-        (t2 (p1propagate false-branch)))
-    (values-type-or t1 t2)))
+  (let ((t0 (values-type-primary-type (p1propagate fmla))))
+    (cond ((type-true-p t0 *cmp-env*)
+           (p1propagate true-branch))
+          ((type-false-p t0 *cmp-env*)
+           (p1propagate false-branch))
+          (t (let ((t1 (p1propagate true-branch))
+                   (t2 (p1propagate false-branch)))
+               (values-type-or t1 t2))))))
 
 (defun p1fmla-not (c1form form)
   (declare (ignore c1form))
-  (p1propagate form)
-  '(member t nil))
+  (let ((t0 (values-type-primary-type (p1propagate form))))
+    (cond ((type-true-p t0 *cmp-env*)
+           '(eql nil))
+          ((type-false-p t0 *cmp-env*)
+           '(eql t))
+          (t
+           '(member t nil)))))
 
 (defun p1fmla-and (c1form butlast last)
   (declare (ignore c1form))
-  (loop with type = t
-        for form in (append butlast (list last))
-        do (setf type (p1propagate form))
-        finally (return (type-or 'null (values-type-primary-type type)))))
+  (loop with all-true = t
+        for form in butlast
+        for type = (p1propagate form)
+        for primary-type = (values-type-primary-type type)
+        do (when (type-false-p primary-type *cmp-env*)
+             (return-from p1fmla-and primary-type))
+           (unless (type-true-p primary-type *cmp-env*)
+             (setf all-true nil))
+        finally
+           (setf type (p1propagate last)
+                 primary-type (values-type-primary-type type))
+           (return (if (or (type-false-p primary-type *cmp-env*)
+                           (and (type-true-p primary-type *cmp-env*) all-true))
+                       type
+                       (values-type-or 'null type)))))
 
 (defun p1fmla-or (c1form butlast last)
   (declare (ignore c1form))
-  (loop with type
-        with output-type = t
-        for form in (append butlast (list last))
-        do (setf type (p1propagate form)
-                 output-type (type-or (values-type-primary-type type)
-                                      output-type))
-        finally (return output-type)))
+  (loop for form in butlast
+        for type = (p1propagate form)
+        for primary-type = (values-type-primary-type type)
+        for output-type = primary-type then (type-or primary-type output-type)
+        do (when (type-true-p primary-type *cmp-env*)
+             (return-from p1fmla-or (type-and output-type '(not null))))
+        finally
+           (setf type (p1propagate last)
+                 primary-type (values-type-primary-type type)
+                 output-type (values-type-or type output-type))
+           (return (if (type-true-p primary-type *cmp-env*)
+                       (values-type-and output-type '(not null))
+                       output-type))))
 
 (defun p1lambda (c1form lambda-list doc body &rest not-used)
   (declare (ignore c1form lambda-list doc not-used))
@@ -205,7 +245,7 @@
           for (a-type c1form) in expressions
           for c1form-type = (p1propagate c1form)
           when (or (member a-type '(t otherwise))
-                   (subtypep var-type a-type))
+                   (subtypep var-type a-type *cmp-env*))
             do (setf output-type c1form-type)
           finally (return output-type))))
 
@@ -214,7 +254,7 @@
   (let ((value-type (p1propagate value))
          ;;(alt-type (p1propagate let-form))
         )
-    (if (subtypep value-type type)
+    (if (subtypep value-type type *cmp-env*)
         value-type
         type)))
 
@@ -235,14 +275,10 @@
         do (p1propagate form))
   'null)
 
-(defun p1with-stack (c1form body)
+(defun p1mv-prog1 (c1form form body)
   (declare (ignore c1form))
-  (p1propagate body))
-
-(defun p1stack-push-values (c1form form inline)
-  (declare (ignore c1form inline))
-  (p1propagate form)
-  nil)
+  (prog1 (p1propagate form)
+    (p1propagate-list body)))
 
 (defvar *tagbody-depth* -1
   "If n > 0, limit the number of passes to converge tagbody forms. If
@@ -267,64 +303,3 @@ as 2^*tagbody-limit* in the worst cases.")
   (let ((output-type (p1propagate form)))
     (p1propagate body)
     output-type))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun type-from-array-elt (array &aux name)
-  "Input is a lisp type representing a valid subtype of ARRAY. Output is
-either the array element type or NIL, denoting that we are not able to
-compute it. This version only handles the simplest cases."
-  (values (cond ((eq array 'string)
-                 'character)
-                ((eq array 'base-string)
-                 'base-char)
-                ((member (setf array (si::expand-deftype array))
-                         '(array vector simple-array))
-                 t)
-                ((atom array)
-                 (setf array 'array)
-                 t)
-                ((eq (setf name (first array)) 'OR)
-                 `(OR ,@(mapcar #'type-from-array-elt (rest array))))
-                ((eq (setf name (first array)) 'AND)
-                 `(AND ,@(mapcar #'type-from-array-elt (rest array))))
-                ((not (member (first array) 
-                              '(array vector simple-array)))
-                 (setf array 'array)
-                 t)
-                ((null (rest array))
-                 t)
-                (t
-                 (let ((x (second array)))
-                   (if (eq x '*) t x))))
-          array))
-
-(def-type-propagator si::aset (fname array-type &rest indices-and-object)
-  (multiple-value-bind (elt-type array-type)
-      (type-from-array-elt array-type)
-    (values (cons array-type
-                  (nconc (make-list (1- (length indices-and-object))
-                                    :initial-element 'si::index)
-                         (list elt-type)))
-            elt-type)))
-
-(def-type-propagator aref (fname array-type &rest indices)
-  (multiple-value-bind (elt-type array-type)
-      (type-from-array-elt array-type)
-    (values (list* array-type (make-list (length indices)
-                                         :initial-element 'si::index))
-            elt-type)))
-
-(def-type-propagator si::row-major-aset (fname array-type index obj)
-  (declare (ignore index obj))
-  (multiple-value-bind (elt-type array-type)
-      (type-from-array-elt array-type)
-    (values (list array-type 'si::index elt-type)
-            elt-type)))
-
-(def-type-propagator row-major-aref (fname array-type index)
-  (declare (ignore index))
-  (multiple-value-bind (elt-type array-type)
-      (type-from-array-elt array-type)
-    (values (list array-type 'si::index) elt-type)))
-

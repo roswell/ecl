@@ -17,7 +17,7 @@
 (defun maybe-optimize-generic-function (fname args)
   (when (fboundp fname)
     (let ((gf (fdefinition fname)))
-      (when (typep gf 'standard-generic-function)
+      (when (typep gf 'standard-generic-function *cmp-env*)
         ;;(check-generic-function-args gf args)
         (when (policy-inline-slot-access)
           (maybe-optimize-slot-accessor fname gf args))))))
@@ -36,9 +36,11 @@
            (loop for specializer in (clos:method-specializers m)
               for arg in c-args
               always (let ((arg-type (c1form-type arg)))
-                       (subtypep arg-type (if (consp specializer)
-                                              `(member ,(second specializer))
-                                              specializer))))))
+                       (subtypep arg-type
+                                 (if (consp specializer)
+                                     `(member ,(second specializer))
+                                     specializer)
+                                 *cmp-env*)))))
     (delete-if-not #'applicable-method-p methods)))
 
 ;;;
@@ -93,10 +95,10 @@
     ;(format t "~%;;; Found ~D really applicable reader" (length readers))
     (when (= (length readers) 1)
       (let ((reader (first readers)))
-        (when (typep reader 'clos:standard-reader-method)
+        (when (typep reader 'clos:standard-reader-method *cmp-env*)
           (let* ((slotd (clos:accessor-method-slot-definition reader))
                  (index (clos::safe-slot-definition-location slotd)))
-            (when (si::fixnump index)
+            (when (typep index 'fixnum *cmp-env*)
               `(clos::safe-instance-ref ,object ,index))))))))
 
 (defun try-optimize-slot-writer (orig-writers args)
@@ -105,10 +107,10 @@
     ;(format t "~%;;; Found ~D really applicable writer" (length writers))
     (when (= (length writers) 1)
       (let ((writer (first writers)))
-        (when (typep writer 'clos:standard-writer-method)
+        (when (typep writer 'clos:standard-writer-method *cmp-env*)
           (let* ((slotd (clos:accessor-method-slot-definition writer))
                  (index (clos::safe-slot-definition-location slotd)))
-            (when (si::fixnump index)
+            (when (typep index 'fixnum *cmp-env*)
               `(si::instance-set ,(second args) ,index ,(first args)))))))))
 
 #+(or)

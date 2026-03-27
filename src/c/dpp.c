@@ -85,10 +85,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
-
-#if defined(_MSC_VER) && (_MSC_VER >= 1800)
 #include <stdbool.h> 
-#endif
 
 #define DPP
 #include <ecl/config.h>
@@ -105,13 +102,6 @@
 
 #define TRUE            1
 #define FALSE           0
-
-#ifndef __cplusplus
-#if ! ( defined(__bool_true_false_are_defined) \
-        &&__bool_true_false_are_defined )
-typedef int bool;
-#endif
-#endif
 
 FILE *in, *out;
 

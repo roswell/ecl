@@ -154,6 +154,7 @@ ecl_def_string_array(extra_char_names,static,const) = {
         ecl_def_string_array_elt("Linefeed"), /* 10 */
         ecl_def_string_array_elt("Lf"), /* 10 */
         ecl_def_string_array_elt("Escape"), /* 27 */
+        ecl_def_string_array_elt("Formfeed"), /* 12 */
         ecl_def_string_array_elt("Ff"), /* 12 */
         ecl_def_string_array_elt("Cr"), /* 13 */
         ecl_def_string_array_elt("Sp"), /* 32 */
@@ -162,8 +163,8 @@ ecl_def_string_array(extra_char_names,static,const) = {
 };
 
 static const unsigned char extra_char_codes[] = {
-        0, 7, 8, 9, 10, 10, 27, 12, 13, 32, 127, 127
+  0, 7, 8, 9, 10, 10, 27, 12, 12, 13, 32, 127, 127
 };
 
-#define extra_char_names_size 12
+#define extra_char_names_size 13
 

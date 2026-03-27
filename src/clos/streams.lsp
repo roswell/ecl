@@ -95,7 +95,6 @@
   (:documentation "Return the stream line length or NIL."))
 
 (defgeneric stream-listen (stream)
-  #+sb-doc
   (:documentation
    "This is used by LISTEN. It returns true or false. The default method uses
   STREAM-READ-CHAR-NO-HANG and STREAM-UNREAD-CHAR. Most streams should
@@ -110,6 +109,13 @@
 
 (defgeneric output-stream-p (stream)
   (:documentation "Can STREAM perform output operations?"))
+
+;;; Extension
+(defgeneric stream-peek-byte (stream)
+  (:documentation
+   "This is used to implement EXT:PEEK-BYTE.
+  It returns either a byte or :EOF. The default method calls STREAM-READ-BYTE
+  and STREAM-UNREAD-BYTE."))
 
 (defgeneric stream-peek-char (stream)
   (:documentation
@@ -168,6 +174,13 @@
   (:documentation
    "Writes an end of line, as for TERPRI. Returns NIL. The default
   method does (STREAM-WRITE-CHAR stream #\NEWLINE)."))
+
+;;; Extension
+(defgeneric stream-unread-byte (stream byte)
+  (:documentation
+   "Un-do the last call to STREAM-READ-BYTE, as in EXT:UNREAD-BYTE.
+  Return NIL. Every subclass of FUNDAMENTAL-BINARY-INPUT-STREAM
+  must define a method for this function."))
 
 (defgeneric stream-unread-char (stream character)
   (:documentation
@@ -409,6 +422,10 @@
 
 ;; INTERACTIVE-STREAM-P
 
+(defmethod stream-interactive-p ((stream fundamental-stream))
+  (declare (ignore stream))
+  nil)
+
 (defmethod stream-interactive-p ((stream ansi-stream))
   (cl:interactive-stream-p stream))
 
@@ -473,6 +490,19 @@
 (defmethod output-stream-p ((stream t))
   (bug-or-error stream 'output-stream-p))
 
+;; PEEK-BYTE
+
+(defmethod stream-peek-byte ((stream fundamental-binary-input-stream))
+  (let ((byte (stream-read-byte stream)))
+    (unless (eq byte :eof)
+      (stream-unread-byte stream byte))
+    byte))
+
+(defmethod stream-peek-byte ((stream ansi-stream))
+  (ext:peek-byte stream :eof))
+
+(defmethod stream-peek-byte ((stream t))
+  (bug-or-error stream 'stream-peek-byte))
 
 ;; PEEK-CHAR
 
@@ -506,13 +536,21 @@
 (defmethod stream-read-char ((stream t))
   (bug-or-error stream 'stream-read-char))
 
+;; UNREAD-BYTE
+
+(defmethod stream-unread-byte ((stream ansi-stream) byte)
+  (ext:unread-byte stream byte))
+
+(defmethod stream-unread-byte ((stream t) byte)
+  (declare (ignore byte))
+  (bug-or-error stream 'stream-unread-byte))
 
 ;; UNREAD-CHAR
 
 (defmethod stream-unread-char ((stream ansi-stream) character)
   (cl:unread-char character stream))
 
-(defmethod stream-unread-char ((stream ansi-stream) character)
+(defmethod stream-unread-char ((stream t) character)
   (declare (ignore character))
   (bug-or-error stream 'stream-unread-char))
 

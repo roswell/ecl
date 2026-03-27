@@ -1,5 +1,5 @@
 ;;; -*- mode: Lisp; Base: 10 ; Syntax: ANSI-Common-Lisp ; buffer-read-only: t; -*-
-;;; This is ASDF 3.1.8.8: Another System Definition Facility.
+;;; This is ASDF 3.1.8.11: Another System Definition Facility.
 ;;;
 ;;; Feedback, bug reports, and patches are all welcome:
 ;;; please mail to <asdf-devel@common-lisp.net>.
@@ -1732,7 +1732,7 @@ keywords explicitly."
 
   (defun os-unix-p ()
     "Is the underlying operating system some Unix variant?"
-    (or (featurep '(:or :unix :cygwin)) (os-macosx-p)))
+    (or (featurep '(:or :unix :cygwin :haiku :linux)) (os-macosx-p)))
 
   (defun os-windows-p ()
     "Is the underlying operating system Microsoft Windows?"
@@ -1760,7 +1760,6 @@ except on ABCL where it might change between FASL compilation and runtime."
                                          (:haiku . os-haiku-p))
            :when (and (or (not o) (eq feature :os-macosx)) (funcall detect))
            :do (setf o feature) (pushnew feature *features*)
-           :else :do (setf *features* (remove feature *features*))
            :finally
            (return (or o (error "Congratulations for trying ASDF on an operating system~%~
 that is neither Unix, nor Windows, nor Genera, nor even old MacOS.~%Now you port it.")))))
@@ -7274,7 +7273,7 @@ previously-loaded version of ASDF."
          ;; "3.4.5.67" would be a development version in the official branch, on top of 3.4.5.
          ;; "3.4.5.0.8" would be your eighth local modification of official release 3.4.5
          ;; "3.4.5.67.8" would be your eighth local modification of development version 3.4.5.67
-         (asdf-version "3.1.8.8")
+         (asdf-version "3.1.8.11")
          (existing-version (asdf-version)))
     (setf *asdf-version* asdf-version)
     (when (and existing-version (not (equal asdf-version existing-version)))
@@ -12530,7 +12529,7 @@ Please use UIOP:RUN-PROGRAM instead."
    #:clear-source-registry
    #:ensure-source-registry
    #:process-source-registry
-   #:system-registered-p #:registered-systems #:already-loaded-systems
+   #:system-registered-p #:registered-system #:registered-systems #:already-loaded-systems
    #:resolve-location
    #:asdf-message
    #:*user-cache*

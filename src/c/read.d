@@ -496,16 +496,18 @@ cl_object backquote_reader(cl_object in, cl_object c)
 }
 
 /*
-  read_constituent(in) reads a sequence of constituent characters from
-  stream in and places it in token.  As a help, it returns TRUE
-  or FALSE depending on the value of *READ-SUPPRESS*.
+  read_constituent(in, 0) reads a sequence of constituent characters from stream
+  in and places it in token.  As a help, it returns TRUE or FALSE depending on
+  the value of *READ-SUPPRESS*.
+
+  The flag not_first is used by some reader macros to signify, that it is not a
+  standalone token. For example #x123 calls read_constituent(in, 1) for "123".
 */
 static cl_object
-read_constituent(cl_object in)
+read_constituent(cl_object in, bool not_first)
 {
   int store = !read_suppress;
   cl_object rtbl = ecl_current_readtable();
-  bool not_first = 0;
   cl_object token = si_get_buffer_string();
   do {
     int c = ecl_read_char(in);
@@ -529,24 +531,29 @@ read_constituent(cl_object in)
   return (read_suppress)? ECL_NIL : token;
 }
 
-static cl_object
-double_quote_reader(cl_object in, cl_object c)
+static void
+read_string_into_buffer(cl_object in, cl_object c, cl_object buffer)
 {
   int delim = ECL_CHAR_CODE(c);
   cl_object rtbl = ecl_current_readtable();
-  cl_object token = si_get_buffer_string();
-  cl_object output;
   for (;;) {
     int c = ecl_read_char_noeof(in);
     if (c == delim)
       break;
     else if (ecl_readtable_get(rtbl, c, NULL) == cat_single_escape)
       c = ecl_read_char_noeof(in);
-    ecl_string_push_extend(token, c);
+    ecl_string_push_extend(buffer, c);
   }
+}
 
-  /* Must be kept a (SIMPLE-ARRAY CHARACTERS (*)), see
-   * http://sourceforge.net/p/ecls/mailman/message/32272388/ */
+static cl_object
+double_quote_reader(cl_object in, cl_object c)
+{
+  cl_object output;
+  cl_object token = si_get_buffer_string();
+  read_string_into_buffer(in, c, token);
+  /* Must be kept a SIMPLE-STRING, meaning a (SIMPLE-ARRAY CHARACTERS
+   * (*)), see CLHS 2.4.5. We thus can't coerce to a BASE-STRING. */
   output = cl_copy_seq(token);
   si_put_buffer_string(token);
   @(return output);
@@ -763,6 +770,14 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
   x = ECL_CONS_CDR(x);
   rv->bytecodes.data = nth;
 
+  nth = ECL_CONS_CAR(x);
+  x = ECL_CONS_CDR(x);
+  rv->bytecodes.flex = nth;
+
+  nth = ECL_CONS_CAR(x);
+  x = ECL_CONS_CDR(x);
+  rv->bytecodes.nlcl = nth;
+
   if (ECL_ATOM(x)) {
     nth = ECL_NIL;
   } else {
@@ -788,6 +803,25 @@ sharp_Y_reader(cl_object in, cl_object c, cl_object d)
     rv = x;
   }
   @(return rv);
+}
+
+static cl_object
+sharp_double_quote_reader(cl_object in, cl_object c, cl_object d)
+{
+  /* Base string reader. Used for data in compiled files. */
+  cl_object s, token;
+
+  if (d != ECL_NIL && !read_suppress)
+    extra_argument('"', in, d);
+
+  token = si_get_buffer_string();
+  read_string_into_buffer(in, c, token);
+  s = si_copy_to_simple_base_string(token);
+  si_put_buffer_string(token);
+
+  if (read_suppress)
+    @(return ECL_NIL);
+  @(return s);
 }
 
 #define QUOTE   1
@@ -907,7 +941,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
   enum ecl_chattrib a;
 
   if (read_suppress) {
-    read_constituent(in);
+    read_constituent(in, 1);
     @(return ECL_NIL);
   }
   for (dimcount = 0 ;; dimcount++) {
@@ -944,7 +978,7 @@ sharp_asterisk_reader(cl_object in, cl_object c, cl_object d)
   last = ECL_STACK_REF(env,-1);
   x = ecl_alloc_simple_vector(dim, ecl_aet_bit);
   for (i = 0; i < dim; i++) {
-    elt = (i < dimcount) ? env->stack[sp+i] : last;
+    elt = (i < dimcount) ? env->run_stack.org[sp+i] : last;
     if (elt == ecl_make_fixnum(0))
       x->vector.self.bit[i/CHAR_BIT] &= ~(0200 >> i%CHAR_BIT);
     else
@@ -1023,7 +1057,7 @@ sharp_dot_reader(cl_object in, cl_object c, cl_object d)
   if (read_suppress) {
     @(return ECL_NIL);
   }
-  unlikely_if (ecl_symbol_value(@'*read-eval*') == ECL_NIL)
+  unlikely_if (ecl_cmp_symbol_value(env, @'*read-eval*') == ECL_NIL)
     FEreader_error("Cannot evaluate the form #.~A", in, 1, c);
   /* FIXME! We should do something here to ensure that the #.
    * only uses the #n# that have been defined */
@@ -1037,7 +1071,9 @@ read_number(cl_object in, int radix, cl_object macro_char)
 {
   cl_index i;
   cl_object x;
-  cl_object token = read_constituent(in);
+  /* read_constituent is called with not_first=true, because we are called by
+     reader macros for composite tokens, like #x123. -- jd 2024-05-12 */
+  cl_object token = read_constituent(in, 1);
   if (token == ECL_NIL) {
     x = ECL_NIL;
   } else {
@@ -1248,6 +1284,7 @@ do_patch_sharp(cl_object x, cl_object table)
     x->bytecodes.name = do_patch_sharp(x->bytecodes.name, table);
     x->bytecodes.definition = do_patch_sharp(x->bytecodes.definition, table);
     x->bytecodes.data = do_patch_sharp(x->bytecodes.data, table);
+    x->bytecodes.flex = do_patch_sharp(x->bytecodes.flex, table);
     break;
   }
   default:;
@@ -1728,12 +1765,12 @@ do_read_delimited_list(int d, cl_object in, bool proper_list)
   cl_object c;
   @
   c = ecl_read_byte(binary_input_stream);
-  if (c == ECL_NIL) {
+  if (c == OBJNULL) {
     if (Null(eof_errorp)) {
       @(return eof_value);
     }
     else
-        FEend_of_file(binary_input_stream);
+      FEend_of_file(binary_input_stream);
   }
   @(return c);
   @)
@@ -2010,14 +2047,14 @@ extra_argument(int c, cl_object stream, cl_object d)
 }
 
 
-#define make_cf2(f)     ecl_make_cfun((f), ECL_NIL, NULL, 2)
-#define make_cf3(f)     ecl_make_cfun((f), ECL_NIL, NULL, 3)
+#define make_cf2(f)     ecl_make_cfun((cl_objectfn_fixed)(f), ECL_NIL, NULL, 2)
+#define make_cf3(f)     ecl_make_cfun((cl_objectfn_fixed)(f), ECL_NIL, NULL, 3)
 
 void
 init_read(void)
 {
   struct ecl_readtable_entry *rtab;
-  cl_object r;
+  cl_object r, r_cmp;
   int i;
 
   cl_core.standard_readtable = r = ecl_alloc_object(t_readtable);
@@ -2136,6 +2173,12 @@ init_read(void)
    * to keep it unchanged */
   r->readtable.locked = 1;
 
+  r_cmp = ecl_copy_readtable(cl_core.standard_readtable, ECL_NIL);
+  /*  This is specific to this implementation: syntax for base strings  */
+  cl_set_dispatch_macro_character(4, ECL_CODE_CHAR('#'), ECL_CODE_CHAR('"'),
+                                  make_cf3(sharp_double_quote_reader), r_cmp);
+  cl_core.compiler_readtable = r_cmp;
+
   init_backq();
 
   ECL_SET(@'*readtable*',
@@ -2174,7 +2217,7 @@ init_read(void)
                   @'si::*circle-counter*');
     val = cl_list(25,
                   /**pprint-dispatch-table**/ ECL_NIL,
-                  /**print-array**/ ECL_T,
+                  /**print-array**/ @'base-string', /* base string syntax */
                   /**print-base**/ ecl_make_fixnum(10),
                   /**print-case**/ @':downcase',
                   /**print-circle**/ ECL_T,
@@ -2192,7 +2235,7 @@ init_read(void)
                   /**read-default-float-format**/ @'single-float',
                   /**read-eval**/ ECL_T,
                   /**read-suppress**/ ECL_NIL,
-                  /**readtable**/ cl_core.standard_readtable,
+                  /**readtable**/ cl_core.compiler_readtable,
                   /**package**/ cl_core.lisp_package,
                   /*si::*print-package**/ cl_core.lisp_package,
                   /*si::*print-structure**/ ECL_T,
@@ -2312,6 +2355,8 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
     cl_index bds_ndx;
     cl_object progv_list;
 
+    ecl_bds_bind(env, @'*package*', ecl_cmp_symbol_value(env, @'*package*'));
+    ecl_bds_bind(env, @'*readtable*', ecl_cmp_symbol_value(env, @'*readtable*'));
     ecl_bds_bind(env, @'si::*cblock*', block);
     env->packages_to_be_created_p = ECL_T;
 
@@ -2405,11 +2450,13 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
       cl_index location = ecl_fixnum(prototype->name);
       cl_object position = prototype->file_position;
       int narg = prototype->narg;
-      VV[location] = narg<0?
-        ecl_make_cfun_va((cl_objectfn)prototype->entry,
-                         fname, block, -narg - 1) :
-        ecl_make_cfun((cl_objectfn_fixed)prototype->entry,
-                      fname, block, narg);
+      if (prototype->t == t_cfunfixed) {
+        VV[location] = ecl_make_cfun((cl_objectfn_fixed)prototype->entry,
+                                     fname, block, narg);
+      } else {
+        VV[location] = ecl_make_cfun_va((cl_objectfn)prototype->entry,
+                                        fname, block, narg);
+      }
       /* Add source file info */
       if (position != ecl_make_fixnum(-1)) {
         ecl_set_function_source_file_info(VV[location],
@@ -2435,7 +2482,7 @@ ecl_init_module(cl_object block, void (*entry_point)(cl_object))
       block->cblock.temp_data_size = 0;
       ecl_dealloc(VVtemp);
     }
-    ecl_bds_unwind1(env);
+    ecl_bds_unwind_n(env, 3);
   } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
     if (in != OBJNULL)
       cl_close(1,in);

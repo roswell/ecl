@@ -43,33 +43,17 @@
                  (setf output f)))
        finally (return output))))
 
-(defun do-compilation-unit (closure &key override)
-  (cond (override
-         (let* ((*active-protection* nil))
-           (do-compilation-unit closure)))
-        ((null *active-protection*)
-         (let* ((*active-protection* t)
-                (*pending-actions* nil))
-           (unwind-protect (do-compilation-unit closure)
-             (loop for action in *pending-actions*
-                do (funcall action)))))
-        (t
-         (funcall closure))))
-
-(defmacro with-compilation-unit ((&rest options) &body body)
- `(do-compilation-unit #'(lambda () ,@body) ,@options))
-
 (defmacro with-compiler-env ((compiler-conditions) &body body)
   `(let ((*compiler-conditions* nil))
      (declare (special *compiler-conditions*))
      (restart-case
          (handler-bind ((compiler-note #'handle-compiler-note)
                         (warning #'handle-compiler-warning)
-                        (compiler-error #'handle-compiler-error)
                         (compiler-internal-error #'handle-compiler-internal-error)
+                        (compiler-error #'handle-compiler-error)
                         (serious-condition #'handle-compiler-internal-error))
            (mp:with-lock (mp:+load-compile-lock+)
-             (let ,+init-env-form+
+             (let* ,+init-env-form+
                (with-compilation-unit ()
                  ,@body))))
        (abort ()))
@@ -121,7 +105,7 @@
     (apply #'format t args)))
 
 (defun cmp-eval (form &optional (env *cmp-env*))
-  (handler-case (si::eval-with-env form env nil t :execute)
+  (handler-case (si:eval-with-env form env nil t :execute)
     (serious-condition (c)
       (when *compiler-break-enable*
         (invoke-debugger c))
@@ -431,6 +415,25 @@ comparing circular objects."
                          (equal-recursive (cdr x) (cdr y) x0 y0 t (ash path-spec 1) (the fixnum (1+ n))))))))
     (equal-recursive x y nil nil t 0 -1)))
 
+(defun type-specifier= (x y)
+  "Compares two type specifiers for syntactic equality."
+  ;; This function only checks if the arguments have the same name
+  ;; (and arguments in case of compound type specifiers) but not if
+  ;; they are aliases of each other. For example (OR REAL COMPLEX) and
+  ;; NUMBER are considered different by this function but are of
+  ;; course semantically equivalent.
+  ;;
+  ;; Note that type specifiers cannot be compared with EQUAL since in
+  ;; eql and member types the arguments have to compared using EQL.
+  (if (and (consp x) (consp y))
+      (if (and (member (first x) '(eql member))
+               (member (first y) '(eql member)))
+          (and (= (length x) (length y))
+               (every #'eql x y))
+          (and (type-specifier= (car x) (car y))
+               (type-specifier= (cdr x) (cdr y))))
+      (eql x y)))
+
 ;; ----------------------------------------------------------------------
 ;; CACHED FUNCTIONS
 ;;
@@ -442,7 +445,7 @@ comparing circular objects."
          (hash-function (case test
                           (EQ 'SI::HASH-EQ)
                           (EQL 'SI::HASH-EQL)
-                          ((EQUAL EQUAL-WITH-CIRCULARITY) 'SI::HASH-EQUAL)
+                          ((EQUAL EQUAL-WITH-CIRCULARITY TYPE-SPECIFIER=) 'SI::HASH-EQUAL)
                           (t (setf test 'EQUALP) 'SI::HASH-EQUALP))))
     `(progn
        (defvar ,cache-name
@@ -464,8 +467,42 @@ comparing circular objects."
                    (setf (aref ,cache-name hash) (list ,@lambda-list output))
                    output))))))))
 
-(defmacro defun-equal-cached (name lambda-list &body body)
-  `(defun-cached ,name ,lambda-list equal-with-circularity ,@body))
-
 (defun same-fname-p (name1 name2)
   (equal name1 name2))
+
+(defun emptyp (item)
+  (etypecase item
+    (list (null item))
+    (vector (zerop (length item)))
+    (hash-table (zerop (hash-table-count item)))))
+
+(defun cmp-typep (obj type)
+  "Utility function to check if an object is of a specific type at
+compile time. Takes care of target specific types and deals with
+compound function types."
+  (typep obj (si::flatten-function-types type *cmp-env*) *cmp-env*))
+
+(defun read-target-info (filename)
+  (unless (pathname-name filename)
+    (let* ((path1 (merge-pathnames "target-info.lsp" filename)) ; flat install
+           (path2 (merge-pathnames "*/*/target-info.lsp" filename)) ; file in lib/ecl-x.x.x/
+           (files-found (nconc (directory path1) (directory path2))))
+      (when (null files-found)
+        (cmperr "Can't find the target information for cross compilation at ~s or ~s." path1 path2))
+      (setf filename (first files-found))))
+  (with-open-file (s filename)
+    (with-standard-io-syntax
+      (read s))))
+
+(defun get-target-info ()
+  (mapcar #'(lambda (option) (cons option (symbol-value option)))
+          c::*config-options*))
+
+(defun write-target-info (filename)
+  (with-open-file (s filename
+                     :direction :output
+                     :if-exists :supersede
+                     :if-does-not-exist :create)
+    (with-standard-io-syntax
+      (let ((*print-circle* t))
+        (format s "~S~%" (get-target-info))))))

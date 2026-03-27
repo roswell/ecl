@@ -71,13 +71,12 @@
       (dependents :initform nil :accessor class-dependents)
       (valid-initargs :accessor class-valid-initargs)
       (slot-table :accessor slot-table)
-      (location-table :initform nil :accessor class-location-table)
-      ))
-
-  (defconstant +class-name-ndx+
-    (position 'name +class-slots+ :key #'first))
-  (defconstant +class-precedence-list-ndx+
-    (position 'precedence-list +class-slots+ :key #'first)))
+      (location-table :initform nil :accessor class-location-table)))
+  ;; INV these assertions validate constants hardcoded in symbols_list.h.
+  (assert (= +class-name-ndx+
+             (position 'name +class-slots+ :key #'first)))
+  (assert (= +class-precedence-list-ndx+
+             (position 'precedence-list +class-slots+ :key #'first))))
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-CLASS
@@ -187,8 +186,7 @@
             (array)
               (vector array sequence)
                 (string vector)
-                #+unicode
-                (base-string string vector)
+                (:unicode base-string string vector)
                 (bit-vector vector)
             (stream)
               (ext:ansi-stream stream)
@@ -213,10 +211,10 @@
                   (double-float float)
                   (long-float float)
             (complex number)
-              #+complex-float (si:complex-float complex)
-              #+complex-float (si:complex-single-float si:complex-float)
-              #+complex-float (si:complex-double-float si:complex-float)
-              #+complex-float (si:complex-long-float   si:complex-float)
+              (:complex-float si:complex-float complex)
+              (:complex-float si:complex-single-float si:complex-float)
+              (:complex-float si:complex-double-float si:complex-float)
+              (:complex-float si:complex-long-float   si:complex-float)
            (symbol)
               (null symbol list)
               (keyword symbol)
@@ -231,14 +229,14 @@
             (si::foreign-data)
             (si::frame)
             (si::weak-pointer)
-            #+threads (mp::process)
-            #+threads (mp::lock)
-            #+threads (mp::rwlock)
-            #+threads (mp::condition-variable)
-            #+threads (mp::semaphore)
-            #+threads (mp::barrier)
-            #+threads (mp::mailbox)
-            #+sse2 (ext::sse-pack))))
+            (:threads mp::process)
+            (:threads mp::lock)
+            (:threads mp::rwlock)
+            (:threads mp::condition-variable)
+            (:threads mp::semaphore)
+            (:threads mp::barrier)
+            (:threads mp::mailbox)
+            (:sse2 ext::sse-pack))))
 
 ;;; FROM AMOP:
 ;;;
@@ -336,9 +334,14 @@
        :direct-slots #1#)
       ,@(loop for (name . rest) in +builtin-classes-list+
            for index from 1
-           collect (list name :metaclass 'built-in-class
-                         :index index
-                         :direct-superclasses (or rest '(t))))
+           for feature-flag = (if (keywordp name)
+                                  (prog1 name
+                                    (setf name (first rest) rest (rest rest)))
+                                  nil)
+           when (or (not feature-flag) (member feature-flag *features*))
+              collect (list name :metaclass 'built-in-class
+                            :index index
+                            :direct-superclasses (or rest '(t))))
       (funcallable-standard-object
        :metaclass funcallable-standard-class
        :direct-superclasses (standard-object function))

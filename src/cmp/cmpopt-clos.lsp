@@ -14,7 +14,7 @@
   (when (and (si::valid-function-name-p fname)
              (fboundp fname))
     (let ((function (fdefinition fname)))
-      (when (typep function 'generic-function)
+      (when (typep function 'generic-function *cmp-env*)
         (generic-function-macro-expand function (list* fname args))))))
 
 (defmethod generic-function-macro-expand ((g standard-generic-function) whole)
@@ -24,7 +24,7 @@
 
 (defun optimizable-slot-reader (method whole)
   (declare (si::c-local))
-  (when (typep method 'clos:standard-reader-method)
+  (when (typep method 'clos:standard-reader-method *cmp-env*)
     (let ((class (first (clos:method-specializers method))))
       (when (clos::class-sealedp class)
         (let* ((slotd (clos:accessor-method-slot-definition method))
@@ -47,7 +47,7 @@
 
 (defun optimizable-slot-writer (method whole)
   (declare (si::c-local))
-  (when (typep method 'clos:standard-writer-method)
+  (when (typep method 'clos:standard-writer-method *cmp-env*)
     (let ((class (second (clos:method-specializers method))))
       (when (clos::class-sealedp class)
         (let* ((slotd (clos:accessor-method-slot-definition method))

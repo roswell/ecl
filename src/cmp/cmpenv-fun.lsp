@@ -24,7 +24,7 @@
 ;;; The valid return type declaration is:
 ;;;     (( VALUES {type}* )) or ( {type}* ).
 
-(defun proclaim-function (fname decl)
+(defun proclaim-function (fname decl &optional destination)
   (if (si:valid-function-name-p fname)
       (let* ((arg-types '*)
              (return-types '*)
@@ -43,12 +43,12 @@
         (when (eq arg-types '())
           (setf arg-types '(&optional)))
         (if (eq arg-types '*)
-            (si:rem-sysprop fname 'PROCLAIMED-ARG-TYPES)
-            (si:put-sysprop fname 'PROCLAIMED-ARG-TYPES arg-types))
+            (rem-property fname 'PROCLAIMED-ARG-TYPES destination)
+            (put-property fname 'PROCLAIMED-ARG-TYPES arg-types destination))
         (if (member return-types '(* (VALUES &rest t))
                     :test #'equalp)
-            (si:rem-sysprop fname 'PROCLAIMED-RETURN-TYPE)
-            (si:put-sysprop fname 'PROCLAIMED-RETURN-TYPE return-types)))
+            (rem-property fname 'PROCLAIMED-RETURN-TYPE destination)
+            (put-property fname 'PROCLAIMED-RETURN-TYPE return-types destination)))
       (warn "The function proclamation ~s ~s is not valid." fname decl)))
 
 (defun add-function-declaration (fname ftype &optional (env *cmp-env*))
@@ -68,7 +68,7 @@
     (when may-be-global
       (let ((fun (cmp-env-search-function fname env)))
         (when (or (null fun) (and (fun-p fun) (fun-global fun)))
-          (si:get-sysprop fname 'PROCLAIMED-ARG-TYPES))))))
+          (get-global-property fname 'PROCLAIMED-ARG-TYPES))))))
 
 (defun get-return-type (fname &optional (env *cmp-env*))
   (ext:if-let ((x (cmp-env-search-ftype fname env)))
@@ -77,7 +77,7 @@
         (values return-types t)))
     (let ((fun (cmp-env-search-function fname env)))
       (when (or (null fun) (and (fun-p fun) (fun-global fun)))
-        (si:get-sysprop fname 'PROCLAIMED-RETURN-TYPE)))))
+        (get-global-property fname 'PROCLAIMED-RETURN-TYPE)))))
 
 (defun get-local-arg-types (fun &optional (env *cmp-env*))
   (ext:if-let ((x (cmp-env-search-ftype (fun-name fun) env)))
@@ -174,46 +174,57 @@
   "Set up an environment for compilation of closures: Register closed
 over macros in the compiler environment and enclose the definition of
 the closure in let/flet forms for variables/functions it closes over."
-  (loop for record in lexenv
-        do (cond ((not (listp record))
-                  (multiple-value-bind (record-def record-lexenv)
-                      (function-lambda-expression record)
-                    (cond ((eql (car record-def) 'LAMBDA)
-                           (setf record-def (cdr record-def)))
-                          ((eql (car record-def) 'EXT:LAMBDA-BLOCK)
-                           (setf record-def (cddr record-def)))
-                          (t
-                           (error "~&;;; Error: Not a valid lambda expression: ~s." record-def)))
-                    ;; allow for closures which close over closures.
-                    ;; (first record-def) is the lambda list, (rest
-                    ;; record-def) the definition of the local function
-                    ;; in record
-                    (setf (rest record-def)
-                          (list (set-closure-env (if (= (length record-def) 2)
-                                                     (second record-def)
-                                                     `(progn ,@(rest record-def)))
-                                                 record-lexenv env)))
-                    (setf definition
-                          `(flet ((,(ext:compiled-function-name record)
-                                      ,@record-def))
-                             ,definition))))
-                 ((and (listp record) (symbolp (car record)))
-                  (cond ((eq (car record) 'si:macro)
-                         (cmp-env-register-macro (cddr record) (cadr record) env))
-                        ((eq (car record) 'si:symbol-macro)
-                         (cmp-env-register-symbol-macro-function (cddr record) (cadr record) env))
-                        (t
-                         (setf definition
-                               `(let ((,(car record) ',(cdr record)))
-                                  ,definition)))
-                        ))
-                 ;; ((and (integerp (cdr record)) (= (cdr record) 0))
-                 ;;  Tags: We have lost the information, which tag
-                 ;;  corresponds to the lex-env record. If we are
-                 ;;  compiling a closure over a tag, we will get an
-                 ;;  error later on.
-                 ;;  )
-                 ;; (t
-                 ;;  Blocks: Not yet implemented
-                 )
-        finally (return definition)))
+  (flet ((handle-record (record)
+           (cond
+             ((not (listp record))
+              (multiple-value-bind (record-def record-lexenv)
+                  (function-lambda-expression record)
+                (let* ((self-ref (position record record-lexenv))
+                       (flet-env (remove record record-lexenv)))
+                  (case (car record-def)
+                    (CL:LAMBDA
+                        (setf record-def (cdr record-def)))
+                    (EXT:LAMBDA-BLOCK
+                     (setf record-def (cddr record-def)))
+                    (otherwise
+                     (error "~&;;; Error: Not a valid lambda expression: ~s."
+                            record-def)))
+                  ;; Allow for closures that close over other closures.
+                  ;; (first record-def) is the lambda list, (rest record-def)
+                  ;; the definition of the local function in the record.
+                  (setf (rest record-def)
+                        (list (set-closure-env (if (= (length record-def) 2)
+                                                   (second record-def)
+                                                   `(progn ,@(rest record-def)))
+                                               flet-env env)))
+                  (setf definition
+                        (if self-ref
+                            `(labels ((,(ext:compiled-function-name record)
+                                          ,@record-def))
+                               ,definition)
+                            `(flet ((,(ext:compiled-function-name record)
+                                        ,@record-def))
+                               ,definition))))))
+             ((and (listp record) (symbolp (car record)))
+              (cond ((eq (car record) 'si:macro)
+                     (cmp-env-register-macro (cddr record) (cadr record) env))
+                    ((eq (car record) 'si:symbol-macro)
+                     (cmp-env-register-symbol-macro-function (cddr record)
+                                                             (cadr record)
+                                                             env))
+                    (t
+                     (setf definition
+                           `(let ((,(car record) ',(cdr record)))
+                              ,definition)))
+                    ))
+             ;; ((and (integerp (cdr record)) (= (cdr record) 0))
+             ;;  Tags: We have lost the information, which tag
+             ;;  corresponds to the lex-env record. If we are
+             ;;  compiling a closure over a tag, we will get an
+             ;;  error later on.
+             ;;  )
+             ;; (t
+             ;;  Blocks: Not yet implemented
+             )))
+    (map nil #'handle-record lexenv)
+    definition))

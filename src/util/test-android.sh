@@ -10,6 +10,8 @@
 # on the phone.
 #
 
+adb start-server
+
 export TMPDIR=/data/local/tmp/
 
 adb push ecl-android/ ${TMPDIR}

@@ -482,6 +482,21 @@ si_make_pure_array(cl_object etype, cl_object dims, cl_object adj,
   @(return x);
 }
 
+/* Internal internal function for making simple actually adjustable vectors. */
+cl_object
+ecl_make_vector(cl_index dim)
+{
+  cl_object x = ecl_alloc_object(t_vector);
+  x->vector.elttype = ecl_aet_object;
+  x->vector.self.t = NULL;
+  x->vector.displaced = ECL_NIL;
+  x->vector.dim = dim;
+  x->vector.fillp = 0;
+  x->vector.flags = ECL_FLAG_ADJUSTABLE | ECL_FLAG_HAS_FILL_POINTER;
+  ecl_array_allocself(x);
+  return x;
+}
+
 /*
   Internal function for making vectors:
 
@@ -712,7 +727,7 @@ ecl_symbol_to_elttype(cl_object x)
   else if (x == @'ext::integer64')
     return(ecl_aet_i64);
 #endif
-  else if (x == @'t')
+  else if (x == ECL_T)
     return(ecl_aet_object);
   else if (x == ECL_NIL) {
     FEerror("ECL does not support arrays with element type NIL", 0);

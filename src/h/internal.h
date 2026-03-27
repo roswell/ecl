@@ -24,7 +24,7 @@ extern "C" {
 
 /* booting */
 extern void init_all_symbols(void);
-extern void init_alloc(void);
+extern void init_alloc(int pass);
 extern void init_backq(void);
 extern void init_big();
 extern void init_clos(void);
@@ -36,14 +36,16 @@ extern void init_GC(void);
 #endif
 extern void init_macros(void);
 extern void init_read(void);
-extern void init_stacks(cl_env_ptr);
+
+extern cl_object init_stacks(cl_env_ptr);
+extern cl_object free_stacks(cl_env_ptr);
+
 extern void init_unixint(int pass);
 extern void init_unixtime(void);
 extern void init_compiler(void);
+extern void init_process(void);
 #ifdef ECL_THREADS
-extern void init_threads(cl_env_ptr);
-#else
-#define init_threads(env) cl_env_p = env
+extern void init_threads(void);
 #endif
 extern void ecl_init_env(cl_env_ptr);
 extern void init_lib_LSP(cl_object);
@@ -101,12 +103,146 @@ static const cl_index ecl_aet_size[] = {
 
 extern void ecl_displace(cl_object from, cl_object to, cl_object offset);
 
+/* cfun_dispatch.d */
+
+typedef cl_object (*cl_objectfn_fixed0)(void);
+typedef cl_object (*cl_objectfn_fixed1)(cl_object);
+typedef cl_object (*cl_objectfn_fixed2)(cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed3)(cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed4)(cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed5)(cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed6)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed7)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed8)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed9)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed10)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed11)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed12)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed13)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed14)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed15)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed16)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed17)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed18)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed19)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed20)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed21)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed22)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed23)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed24)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed25)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed26)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed27)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed28)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed29)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed30)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed31)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed32)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed33)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed34)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed35)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed36)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed37)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed38)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed39)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed40)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed41)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed42)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed43)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed44)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed45)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed46)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed47)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed48)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed49)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed50)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed51)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed52)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed53)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed54)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed55)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed56)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed57)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed58)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed59)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed60)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed61)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed62)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+typedef cl_object (*cl_objectfn_fixed63)(cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object);
+
+typedef cl_object (*cl_objectfn1)(cl_narg narg, cl_object, ...);
+typedef cl_object (*cl_objectfn2)(cl_narg narg, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn3)(cl_narg narg, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn4)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn5)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn6)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn7)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn8)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn9)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn10)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn11)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn12)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn13)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn14)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn15)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn16)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn17)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn18)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn19)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn20)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn21)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn22)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn23)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn24)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn25)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn26)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn27)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn28)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn29)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn30)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn31)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn32)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn33)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn34)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn35)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn36)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn37)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn38)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn39)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn40)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn41)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn42)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn43)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn44)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn45)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn46)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn47)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn48)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn49)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn50)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn51)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn52)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn53)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn54)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn55)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn56)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn57)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn58)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn59)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn60)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn61)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn62)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+typedef cl_object (*cl_objectfn63)(cl_narg narg, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, cl_object, ...);
+
 /* compiler.d */
 
+typedef struct cl_compiler_env *cl_compiler_env_ptr;
+
 struct cl_compiler_env {
-        cl_object variables;            /* Variables, tags, functions, etc: the env. */
+        cl_object variables;            /* the env: vars, tags, funs, etc */
         cl_object macros;               /* Macros and function bindings */
         cl_fixnum lexical_level;        /* =0 if toplevel form */
+        cl_object captured;             /* Captured objects from the parent */
         cl_object constants;            /* Constants for this form */
         cl_object load_time_forms;      /* Constants that have to be rebuilt */
         cl_object ltf_being_created;    /* Load time objects being compiled */
@@ -117,14 +253,34 @@ struct cl_compiler_env {
                                          * with make-load-form */
         cl_object lex_env;              /* Lexical env. for eval-when */
         cl_object code_walker;          /* Value of SI:*CODE-WALKER* */
-        cl_index env_depth;
-        cl_index env_size;
+        cl_index env_depth;             /* How many environments is above us */
+        cl_index env_width;             /* The maximum size of locals environment */
+        cl_index env_size;              /* The current size of locals environment */
         int mode;
         bool stepping;
-        bool function_boundary_crossed;
+        cl_compiler_env_ptr parent_env;
 };
 
-typedef struct cl_compiler_env *cl_compiler_env_ptr;
+enum ecl_cmpref_tag {
+        ECL_CMPREF_LOCAL,
+        ECL_CMPREF_CLOSE,
+        ECL_CMPREF_UNDEFINED,
+};
+
+enum ecl_cmpvar_tag {
+        ECL_CMPVAR_UNDEFINED,
+        ECL_CMPVAR_SYM_MACRO,
+        ECL_CMPVAR_SPECIAL,
+        ECL_CMPVAR_LEXICAL,
+};
+
+struct cl_compiler_ref {
+        enum ecl_cmpref_tag place;
+        cl_object entry;        /* entry in c_env->variables (if any) */
+        cl_fixnum index;        /* index in the corresponding location */
+        cl_fixnum label;        /* index of a label (tagbody specific) */
+        cl_object location;     /* (cons env-depth env-size) */
+};
 
 /* character.d */
 
@@ -144,9 +300,6 @@ typedef struct cl_compiler_env *cl_compiler_env_ptr;
 
 extern void _ecl_unexpected_return() ecl_attr_noreturn;
 extern cl_object _ecl_strerror(int code);
-extern ECL_API cl_object si_serror _ECL_ARGS
-((cl_narg narg, cl_object cformat, cl_object eformat, ...));
-
 
 /* eval.d */
 
@@ -161,10 +314,27 @@ extern ECL_API cl_object si_serror _ECL_ARGS
 #define _ecl_funcall1(fun) \
         ecl_function_dispatch(ecl_process_env(), (fun))(0)
 
+extern cl_object ecl_undefined_function_entry _ECL_ARGS((cl_narg narg, ...));
+
 extern cl_object si_constantp_inner _ECL_ARGS((cl_narg narg, cl_object form, ...));
 extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form, ...));
 
 /* interpreter.d */
+
+#if __GNUC__>=12
+/* GCC starting from 12.0 (still present in GCC 14.2.1) issues a warning for
+   conforming code. The warning is based on a dead code generated by its IR:
+
+   warning: array subscript ‘union cl_lispunion[0]’ is partly outside array
+   bounds of ‘struct ecl_stack_frame[1]’ [-Warray-bounds=]
+
+   Numerous issues reported in GCC tracker, i.e:
+   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=106274
+   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105523
+
+   -- jd 2025-05-02 */
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 
 #define ECL_BUILD_STACK_FRAME(env,name,frame)   \
         struct ecl_stack_frame frame;\
@@ -172,10 +342,12 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
 
 #define ECL_STACK_FRAME_FROM_VA_LIST(e,f,va) do {                       \
                 const cl_object __frame = (f);                          \
+                cl_object *base;                                        \
                 cl_index i, __nargs = va[0].narg;                       \
                 ecl_stack_frame_open((e), __frame, __nargs);            \
+                base = ECL_STACK_FRAME_PTR(__frame);                    \
                 for (i = 0; i < __nargs; i++) {                         \
-                        __frame->frame.base[i] = ecl_va_arg(va);         \
+                        base[i] = ecl_va_arg(va);                       \
                 }                                                       \
         } while (0)
 
@@ -183,11 +355,9 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         struct ecl_stack_frame __ecl_frame;                             \
         const cl_object frame = (cl_object)&__ecl_frame;                \
         const cl_env_ptr env = ecl_process_env();                       \
-        frame->frame.t = t_frame;                                       \
-        frame->frame.env = env;                                         \
-        frame->frame.size = narg;                                       \
         if (narg <= ECL_C_ARGUMENTS_LIMIT) {                            \
-                cl_object *p = frame->frame.base = env->values;         \
+                ecl_stack_frame_open(env, frame, narg);                 \
+                cl_object *p = ECL_STACK_FRAME_PTR(frame);              \
                 va_list args;                                           \
                 va_start(args, lastarg);                                \
                 while (narg--) {                                        \
@@ -195,17 +365,20 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
                         ++p;                                            \
                 }                                                       \
                 va_end(args);                                           \
-                frame->frame.stack = (cl_object*)0x1;                   \
         } else {                                                        \
-                frame->frame.base = env->stack_top - narg;              \
-                frame->frame.stack = 0;                                 \
+                cl_index bindex = ECL_STACK_INDEX(env) - narg;          \
+                frame->frame.t = t_frame;                               \
+                frame->frame.opened = 0;                                \
+                frame->frame.base = bindex;                             \
+                frame->frame.size = narg;                               \
+                frame->frame.sp = bindex;                               \
+                frame->frame.env = env;                                 \
         }
-#define ECL_STACK_FRAME_VARARGS_END(frame)      \
-        /* No stack consumed, no need to close frame */
+#define ECL_STACK_FRAME_VARARGS_END(frame) ecl_stack_frame_close(frame)
 
 extern cl_object _ecl_bytecodes_dispatch_vararg(cl_narg narg, ...);
 extern cl_object _ecl_bclosure_dispatch_vararg(cl_narg narg, ...);
-extern cl_object ecl_close_around(cl_object fun, cl_object env);
+extern cl_object ecl_close_around(cl_object fun, cl_object env, cl_object flex);
 
 /* ffi/backtrace.d */
 
@@ -215,15 +388,123 @@ extern void _ecl_dump_c_backtrace();
 
 extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
+/* stream.d */
+cl_object ecl_alloc_stream(void);
+struct ecl_file_ops *ecl_duplicate_dispatch_table(const struct ecl_file_ops *ops);
+const struct ecl_file_ops *ecl_stream_dispatch_table(cl_object strm);
+cl_index ecl_read_byte8(cl_object stream, unsigned char *c, cl_index n);
+cl_index ecl_write_byte8(cl_object stream, unsigned char *c, cl_index n);
+
+cl_object si_read_char(cl_object strm, cl_object eof_value);
+cl_object si_unread_char(cl_object strm, cl_object eof_value);
+cl_object si_peek_char(cl_object strm, cl_object eof_value);
+cl_object si_write_char(cl_object strm, cl_object c);
+
+cl_object si_read_byte(cl_object strm, cl_object eof_value);
+cl_object si_unread_byte(cl_object strm, cl_object byte);
+cl_object si_peek_byte(cl_object strm, cl_object eof_value);
+cl_object si_write_byte(cl_object strm, cl_object c);
+
+cl_object si_listen(cl_object strm);
+cl_object si_clear_input(cl_object strm);
+cl_object si_finish_output(cl_object strm);
+cl_object si_force_output(cl_object strm);
+cl_object si_clear_output(cl_object strm);
+
+#define ecl_unread_error(s) FEerror("Error when unreading to stream ~D", 1, s)
+#define ecl_unread_twice(s) FEerror("Unread twice twice to stream ~D", 1, s)
+
+/* streams/strm_common.d */
+cl_object ecl_not_a_file_stream(cl_object strm);
+void ecl_not_an_input_stream(cl_object strm);
+void ecl_not_an_output_stream(cl_object strm);
+cl_index ecl_not_output_write_byte8(cl_object strm, unsigned char *c, cl_index n);
+cl_index ecl_not_input_read_byte8(cl_object strm, unsigned char *c, cl_index n);
+cl_index ecl_not_binary_read_byte8(cl_object strm, unsigned char *c, cl_index n);
+void ecl_not_output_write_byte(cl_object strm, cl_object byte);
+cl_object ecl_not_input_read_byte(cl_object strm);
+void ecl_not_binary_write_byte(cl_object strm, cl_object byte);
+cl_object ecl_not_binary_read_byte(cl_object strm);
+void ecl_not_input_unread_byte(cl_object strm, cl_object byte);
+ecl_character ecl_not_input_read_char(cl_object strm);
+ecl_character ecl_not_output_write_char(cl_object strm, ecl_character c);
+void ecl_not_input_unread_char(cl_object strm, ecl_character c);
+int ecl_not_input_listen(cl_object strm);
+ecl_character ecl_not_character_read_char(cl_object strm);
+ecl_character ecl_not_character_write_char(cl_object strm, ecl_character c);
+ecl_character ecl_not_character_decoder(cl_object stream, unsigned char **buffer, unsigned char *buffer_end);
+int ecl_not_character_encoder(cl_object stream, unsigned char *buffer, ecl_character c);
+void ecl_not_input_clear_input(cl_object strm);
+void ecl_not_output_clear_output(cl_object strm);
+void ecl_not_output_force_output(cl_object strm);
+void ecl_not_output_finish_output(cl_object strm);
+cl_object ecl_not_output_string_length(cl_object strm, cl_object string);
+cl_object ecl_not_file_string_length(cl_object strm, cl_object string);
+int ecl_unknown_column(cl_object strm);
+
+cl_object ecl_generic_peek_byte(cl_object strm);
+ecl_character ecl_generic_peek_char(cl_object strm);
+void ecl_generic_void(cl_object strm);
+int ecl_generic_always_true(cl_object strm);
+int ecl_generic_always_false(cl_object strm);
+cl_object ecl_generic_always_nil(cl_object strm);
+int ecl_generic_column(cl_object strm);
+cl_object ecl_generic_set_position(cl_object strm, cl_object pos);
+cl_object ecl_generic_close(cl_object strm);
+cl_index ecl_generic_write_vector(cl_object strm, cl_object data, cl_index start, cl_index end);
+cl_index ecl_generic_read_vector(cl_object strm, cl_object data, cl_index start, cl_index end);
+
+/* streams/strm_binary.d */
+cl_object ecl_binary_read_byte(cl_object strm);
+void ecl_binary_write_byte(cl_object c, cl_object strm);
+void ecl_binary_unread_byte(cl_object strm, cl_object byte);
+
+cl_object ecl_binary_u8_decoder(cl_object strm, unsigned char *buf);
+void ecl_binary_u8_encoder(cl_object strm, unsigned char *buf, cl_object byte);
+cl_object ecl_binary_s8_decoder(cl_object strm, unsigned char *buf);
+void ecl_binary_s8_encoder(cl_object strm, unsigned char *buf, cl_object byte);
+cl_object ecl_binary_be_decoder(cl_object strm, unsigned char *buf);
+void ecl_binary_be_encoder(cl_object strm, unsigned char *buf, cl_object byte);
+cl_object ecl_binary_le_decoder(cl_object strm, unsigned char *buf);
+void ecl_binary_le_encoder(cl_object strm, unsigned char *buf, cl_object byte);
+
+/* streams/strm_eformat.d */
+ecl_character ecl_eformat_read_char(cl_object strm);
+void ecl_eformat_unread_char(cl_object strm, ecl_character c);
+ecl_character ecl_eformat_write_char(cl_object strm, ecl_character c);
+void ecl_set_stream_elt_type(cl_object stream, cl_fixnum byte_size, int flags,
+                             cl_object external_format);
+cl_object ecl_eformat_file_string_length(cl_object stream, cl_object string);
+
+static inline void
+write_char_increment_column(cl_object strm, ecl_character c)
+{
+  if (c == '\n')
+    strm->stream.column = 0;
+  else if (c == '\t')
+    strm->stream.column = (strm->stream.column & ~((cl_index)07)) + 8;
+  else
+    strm->stream.column++;
+}
+
+/* Maximum number of octets required to encode a char or a byte. This currently
+ * corresponds to:
+ * - (4 + 4) for the UCS-4 with 4 being the byte-order mark, 4 for the char
+ * - (64/ 8) for the EXT:BYTE64 which is the biggest array integer type */
+#define ENCODING_BUFFER_MAX_SIZE 8
+
 /* file.d */
 
 /* Windows does not have this flag (POSIX thing) */
-#ifndef O_CLOEXEC
-#define O_CLOEXEC 0
+#ifndef __COSMOPOLITAN__
+# ifndef O_CLOEXEC
+#  define O_CLOEXEC 0
+# endif
+# ifndef O_NONBLOCK
+#  define O_NONBLOCK 0
+# endif
 #endif
-#ifndef O_NONBLOCK
-#define O_NONBLOCK 0
-#endif
+
 /* Windows needs to be told explicitely to open files in binary mode */
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -231,29 +512,40 @@ extern enum ecl_ffi_tag ecl_foreign_type_code(cl_object type);
 
 #define ECL_FILE_STREAM_P(strm) \
         (ECL_ANSI_STREAM_P(strm) && (strm)->stream.mode < ecl_smm_synonym)
+
 #define STRING_OUTPUT_STRING(strm) (strm)->stream.object0
 #define STRING_INPUT_STRING(strm) (strm)->stream.object0
 #define STRING_INPUT_POSITION(strm) (strm)->stream.int0
 #define STRING_INPUT_LIMIT(strm) (strm)->stream.int1
+
 #define TWO_WAY_STREAM_INPUT(strm) (strm)->stream.object0
 #define TWO_WAY_STREAM_OUTPUT(strm) (strm)->stream.object1
+
 #define SYNONYM_STREAM_SYMBOL(strm) (strm)->stream.object0
 #define SYNONYM_STREAM_STREAM(strm) ecl_symbol_value((strm)->stream.object0)
 #define BROADCAST_STREAM_LIST(strm) (strm)->stream.object0
 #define ECHO_STREAM_INPUT(strm) (strm)->stream.object0
 #define ECHO_STREAM_OUTPUT(strm) (strm)->stream.object1
 #define CONCATENATED_STREAM_LIST(strm) (strm)->stream.object0
+
 #define IO_STREAM_FILE(strm) ((strm)->stream.file.stream)
 #define IO_STREAM_ELT_TYPE(strm) (strm)->stream.object0
 #define IO_STREAM_FILENAME(strm) (strm)->stream.object1
+
 #define IO_FILE_DESCRIPTOR(strm) (strm)->stream.file.descriptor
 #define IO_FILE_ELT_TYPE(strm) (strm)->stream.object0
 #define IO_FILE_FILENAME(strm) (strm)->stream.object1
-#define SEQ_OUTPUT_VECTOR(strm) (strm)->stream.object1
-#define SEQ_OUTPUT_POSITION(strm) (strm)->stream.int0
-#define SEQ_INPUT_VECTOR(strm) (strm)->stream.object1
-#define SEQ_INPUT_POSITION(strm) (strm)->stream.int0
-#define SEQ_INPUT_LIMIT(strm) (strm)->stream.int1
+
+#define SEQ_STREAM_ELT_TYPE(strm) (strm)->stream.object0
+#define SEQ_STREAM_VECTOR(strm) (strm)->stream.object1
+#define SEQ_STREAM_POSITION(strm) (strm)->stream.int0
+
+#define SEQ_INPUT_VECTOR_END(strm) (strm)->stream.int1
+#define SEQ_INPUT_LIMIT(strm)                                           \
+        ((strm)->stream.flags & ECL_STREAM_USE_VECTOR_FILLP             \
+         ? SEQ_STREAM_VECTOR(strm)->vector.fillp                        \
+         : SEQ_INPUT_VECTOR_END(strm))
+
 
 #ifndef HAVE_FSEEKO
 #define ecl_off_t int
@@ -310,7 +602,7 @@ extern void ecl_clear_bignum_registers(cl_env_ptr env);
 
 /* threads/mutex.d */
 
-extern cl_object si_mutex_timeout();
+extern cl_object si_mutex_timeout(cl_object process, cl_object lock, cl_object timeout);
 
 /* print.d */
 
@@ -375,12 +667,18 @@ extern cl_object ecl_deserialize(uint8_t *data);
 /* stacks.d */
 #define CL_NEWENV_BEGIN {\
         const cl_env_ptr the_env = ecl_process_env(); \
-        cl_index __i = ecl_stack_push_values(the_env); \
+        cl_index __i = ecl_data_stack_push_values(the_env); \
+        cl_object __f = the_env->function;
 
 #define CL_NEWENV_END \
-        ecl_stack_pop_values(the_env,__i); }
+        the_env->function = __f; \
+        ecl_data_stack_pop_values(the_env,__i); }
 
-extern void ecl_cs_set_org(cl_env_ptr env);
+extern void ecl_cs_init(cl_env_ptr env);
+extern void ecl_frs_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_bds_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_data_stack_set_limit(cl_env_ptr env, cl_index n);
+extern void ecl_cs_set_size(cl_env_ptr env, cl_index n);
 
 #ifndef RLIM_SAVED_MAX
 # define RLIM_SAVED_MAX RLIM_INFINITY
@@ -558,11 +856,10 @@ extern void ecl_interrupt_process(cl_object process, cl_object function);
 
 /* Some old BSD systems don't have WCONTINUED / WIFCONTINUED */
 
-#ifndef ECL_MS_WINDOWS_HOST
+#if !defined(ECL_MS_WINDOWS_HOST) && !defined(__COSMOPOLITAN__)
 # ifndef WCONTINUED
 #  define WCONTINUED 0
 # endif
-
 # ifndef WIFCONTINUED
 #  define WIFCONTINUED(x) 0
 # endif
