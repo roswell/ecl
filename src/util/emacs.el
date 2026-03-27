@@ -229,7 +229,6 @@
 "h/impl/math_dispatch.h"
 "h/impl/math_dispatch2.h"
 "h/impl/math_fenv.h"
-"h/impl/math_fenv_msvc.h"
 "h/internal.h"
 "h/legacy.h"
 "h/number.h"
@@ -367,7 +366,6 @@
 "cmp/load.lsp.in"
 "cmp/proclamations.lsp"
 "cmp/sysfun.lsp"
-"../msvc/ecl/config.h.msvc6"
                 )))
 
 (mapcar 'find-file ecl-files)

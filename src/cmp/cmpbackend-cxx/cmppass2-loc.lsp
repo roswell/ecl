@@ -39,21 +39,7 @@
 
 (defun wt-fixnum (value &optional vv)
   (declare (ignore vv))
-  (princ value *compiler-output1*)
-  ;; Specify explicit type suffix as a workaround for MSVC. C99
-  ;; standard compliant compilers don't need type suffixes and choose
-  ;; the correct type themselves. Note that we cannot savely use
-  ;; anything smaller than a long long here, because we might perform
-  ;; some other computation on the integer constant which could
-  ;; overflow if we use a smaller integer type (overflows in long long
-  ;; computations are taken care of by the compiler before we get to
-  ;; this point).
-  #+msvc (princ (cond ((typep value (host-type->lisp-type :long-long) *cmp-env*) "LL")
-                      ((typep value (host-type->lisp-type :unsigned-long-long) *cmp-env*) "ULL")
-                      (t (baboon :format-control
-                                 "wt-fixnum: The number ~A doesn't fit any integer type."
-                                 value)))
-                *compiler-output1*))
+  (princ value *compiler-output1*))
 
 (defun wt-number (value &optional vv)
   (declare (ignore vv))

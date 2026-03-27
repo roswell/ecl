@@ -14,10 +14,6 @@
   (handler-case
       (let ((output-stream (si:run-program-inner command args :default t))
             lines)
-        #+msvc
-        (si::stream-external-format-set
-         output-stream
-         (list (si::windows-codepage-encoding) :crlf))
         (setf lines (collect-lines output-stream))
         (cond ((null file)
                lines)
@@ -80,10 +76,6 @@ we are currently using with ECL."
     (loop with list = (mapcar #'list (mapcar #'first macros))
        with lines = (run-and-collect c::*cc*
                                      (append (c::split-program-options c::*cc-flags*)
-                                             #+msvc
-                                             (list "-P" (namestring fc)
-                                                   "-Fi" (namestring fs))
-                                             #-msvc
                                              (list "-E" (namestring fc)
                                                    "-o" (namestring fs)))
                                      fs)
