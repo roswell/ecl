@@ -117,8 +117,14 @@ realclean: distclean
 check:
 	cd build && $(MAKE) check TESTS="$(TESTS)"
 
+cross-check:
+	cd build && $(MAKE) cross-check TESTS="$(TESTS)"
+
 ansi-test:
 	cd build && $(MAKE) ansi-test
+
+cross-ansi-test:
+	cd build && $(MAKE) cross-ansi-test
 
 # ==================== Various means of distribution ====================
 

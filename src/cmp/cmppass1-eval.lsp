@@ -19,10 +19,11 @@
                ((eq form t) (c1t))
                ((keywordp form)
                 (make-c1form* 'LOCATION :type (object-type form)
-                              :args (add-symbol form)))
-               ((and (constantp form *cmp-env*)
-                     (c1constant-value (symbol-value form))))
-               (t (c1var form))))
+                                        :args (add-symbol form)))
+               ((constantp form *cmp-env*)
+                (c1variable form (c1constant-symbol-value form (symbol-value form))))
+               (t
+                (c1variable form nil))))
         ((consp form)
          (cmpck (not (si:proper-list-p form))
                 "Improper list found in lisp form~%~A" form)
@@ -35,7 +36,7 @@
                  ((and (consp fun) (eq (car fun) 'LAMBDA))
                   (c1funcall form))
                  (t (cmperr "~s is not a legal function name." fun)))))
-        (t (c1constant-value form :always t))))
+        (t (c1constant-value form))))
 
 (defun c1expr (form)
   (let ((*current-form* form))
@@ -44,10 +45,18 @@
        (when (c1form-p form)
          (return form)))))
 
-(defvar *c1nil* (make-c1form* 'LOCATION :type (object-type nil) :args nil))
-(defun c1nil () *c1nil*)
-(defvar *c1t* (make-c1form* 'LOCATION :type (object-type t) :args t))
-(defun c1t () *c1t*)
+(defvar *vv-nil*
+  (make-vv :value CL:NIL))
+
+(defvar *vv-t*
+  (make-vv :value CL:T))
+
+(defun c1nil ()
+  (let ((*current-form* nil))
+    (make-c1form* 'LOCATION :type 'null :args *vv-nil*)))
+(defun c1t ()
+  (let ((*current-form* t))
+    (make-c1form* 'LOCATION :type '(eql t) :args *vv-t*)))
 
 (defun c1with-backend (forms)
   (c1progn (loop for tag = (pop forms)
@@ -111,53 +120,19 @@
        (return form))
      (setf form new-form))))
 
-(defun c1constant-value (val &key always)
+(defun c1constant-value (val)
   (cond
-    ;; FIXME includes in c1 pass.
-    ((ext:when-let ((x (assoc val *optimizable-constants*)))
-       (pushnew "#include <float.h>" *clines-string-list*)
-       (pushnew "#include <complex.h>" *clines-string-list*)
-       (setf x (cdr x))
-       (if (listp x)
-           (c1expr x)
-           x)))
     ((eq val nil) (c1nil))
     ((eq val t) (c1t))
-    ((ext:fixnump val)
-     (make-c1form* 'LOCATION :type 'FIXNUM :args (list 'FIXNUM-VALUE val)))
-    ((characterp val)
-     (make-c1form* 'LOCATION :type 'CHARACTER
-                             :args (list 'CHARACTER-VALUE (char-code val))))
-    ((typep val 'DOUBLE-FLOAT)
-     (make-c1form* 'LOCATION :type 'DOUBLE-FLOAT
-                             :args (list 'DOUBLE-FLOAT-VALUE val (add-object val))))
-    ((typep val 'SINGLE-FLOAT)
-     (make-c1form* 'LOCATION :type 'SINGLE-FLOAT
-                             :args (list 'SINGLE-FLOAT-VALUE val (add-object val))))
-    ((typep val 'LONG-FLOAT)
-     (make-c1form* 'LOCATION :type 'LONG-FLOAT
-                             :args (list 'LONG-FLOAT-VALUE val (add-object val))))
-    #+sse2
-    ((typep val 'EXT:SSE-PACK)
-     (c1constant-value/sse val))
-    (always
-     (make-c1form* 'LOCATION :type `(eql ,val)
-                             :args (add-object val)))
-    (t nil)))
+    ((make-c1form* 'LOCATION :type `(eql ,val)
+                             :args (add-object val)))))
 
-#+sse2
-(defun c1constant-value/sse (value)
-  (let* ((bytes (ext:sse-pack-to-vector value '(unsigned-byte 8)))
-         (elt-type (ext:sse-pack-element-type value)))
-    (multiple-value-bind (wrapper rtype)
-        (case elt-type
-          (cl:single-float (values "_mm_castsi128_ps" :float-sse-pack))
-          (cl:double-float (values "_mm_castsi128_pd" :double-sse-pack))
-          (otherwise       (values ""                 :int-sse-pack)))
-      `(ffi:c-inline () () ,rtype
-                     ,(format nil "~A(_mm_setr_epi8(~{~A~^,~}))"
-                              wrapper (coerce bytes 'list))
-                     :one-liner t :side-effects nil))))
+;;; To inline a constant it must be possible to externalize its value or copies
+;;; of the value must be EQL to each other.
+(defun c1constant-symbol-value (name val)
+  (declare (ignore name))
+  (unless (si:need-to-make-load-form-p val)
+    (add-object val)))
 
 (defun c1if (args)
   (check-args-number 'IF args 2 3)
@@ -221,11 +196,8 @@
 
 (defun c1multiple-value-prog1 (args)
   (check-args-number 'MULTIPLE-VALUE-PROG1 args 1)
-  (let ((frame (gensym)))
-    `(with-stack ,frame
-       (stack-push-values ,frame ,(first args))
-       ,@(rest args)
-       (stack-pop ,frame))))
+  (destructuring-bind (form . body) args
+    (make-c1form* 'MV-PROG1 :args (c1expr form) (c1args* body))))
 
 ;;; Beppe:
 ;;; this is the WRONG way to handle 1 value problem.
@@ -234,4 +206,4 @@
 ;;; if this occurred in a proclaimed fun.
 
 (defun c1values (args)
-  (make-c1form* 'VALUES :args (c1args* args)))
+  (make-c1form* 'CL:VALUES :args (c1args* args)))

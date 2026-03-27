@@ -551,7 +551,7 @@ void init_type_info (void)
 #endif
   init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
   init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
-  init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 2);
+  init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 0);
   init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
 #ifdef ECL_SSE2
   init_tm(t_sse_pack, "SSE-PACK", sizeof(struct ecl_sse_pack), 0);
@@ -579,6 +579,8 @@ void init_type_info (void)
   type_info[t_symbol].descriptor =
     to_bitmap(&o, &(o.symbol.value)) |
     to_bitmap(&o, &(o.symbol.gfdef)) |
+    to_bitmap(&o, &(o.symbol.macfun)) |
+    to_bitmap(&o, &(o.symbol.sfdef)) |
     to_bitmap(&o, &(o.symbol.plist)) |
     to_bitmap(&o, &(o.symbol.name)) |
     to_bitmap(&o, &(o.symbol.hpack));
@@ -621,6 +623,7 @@ void init_type_info (void)
     to_bitmap(&o, &(o.stream.ops)) |
     to_bitmap(&o, &(o.stream.object0)) |
     to_bitmap(&o, &(o.stream.object1)) |
+    to_bitmap(&o, &(o.stream.last_byte)) |
     to_bitmap(&o, &(o.stream.byte_stack)) |
     to_bitmap(&o, &(o.stream.buffer)) |
     to_bitmap(&o, &(o.stream.format)) |
@@ -644,6 +647,7 @@ void init_type_info (void)
     to_bitmap(&o, &(o.bytecodes.definition)) |
     to_bitmap(&o, &(o.bytecodes.code)) |
     to_bitmap(&o, &(o.bytecodes.data)) |
+    to_bitmap(&o, &(o.bytecodes.flex)) |
     to_bitmap(&o, &(o.bytecodes.file)) |
     to_bitmap(&o, &(o.bytecodes.file_position));
   type_info[t_bclosure].descriptor =
@@ -673,12 +677,12 @@ void init_type_info (void)
     to_bitmap(&o, &(o.process.name)) |
     to_bitmap(&o, &(o.process.function)) |
     to_bitmap(&o, &(o.process.args)) |
-    to_bitmap(&o, &(o.process.env)) |
     to_bitmap(&o, &(o.process.interrupt)) |
-    to_bitmap(&o, &(o.process.initial_bindings)) |
+    to_bitmap(&o, &(o.process.inherit_bindings_p)) |
     to_bitmap(&o, &(o.process.parent)) |
     to_bitmap(&o, &(o.process.exit_values)) |
-    to_bitmap(&o, &(o.process.woken_up));
+    to_bitmap(&o, &(o.process.woken_up)) |
+    to_bitmap(&o, &(o.process.env));
   type_info[t_lock].descriptor =
     to_bitmap(&o, &(o.lock.name)) |
     to_bitmap(&o, &(o.lock.owner));
@@ -706,8 +710,6 @@ void init_type_info (void)
     to_bitmap(&o, &(o.foreign.data)) |
     to_bitmap(&o, &(o.foreign.tag));
   type_info[t_frame].descriptor =
-    to_bitmap(&o, &(o.frame.stack)) |
-    to_bitmap(&o, &(o.frame.base)) |
     to_bitmap(&o, &(o.frame.env));
   type_info[t_weak_pointer].descriptor = 0;
 #ifdef ECL_SSE2
@@ -743,13 +745,13 @@ extern void (*GC_push_other_roots)();
 static void (*old_GC_push_other_roots)();
 static void stacks_scanner();
 
-static int alloc_initialized = FALSE;
-
 void
-init_alloc(void)
+init_alloc(int pass)
 {
-  if (alloc_initialized) return;
-  alloc_initialized = TRUE;
+  if (pass == 1) {
+    GC_enable();
+    return;
+  }
   /*
    * Garbage collector restrictions: we set up the garbage collector
    * library to work as follows
@@ -810,7 +812,6 @@ init_alloc(void)
   GC_set_java_finalization(1);
   GC_set_oom_fn(out_of_memory);
   GC_set_warn_proc(no_warnings);
-  GC_enable();
 }
 
 /**********************************************************
@@ -888,9 +889,10 @@ standard_finalizer(cl_object o)
     break;
   }
   case t_symbol: {
-    ecl_atomic_push(&cl_core.reused_indices,
-                    ecl_make_fixnum(o->symbol.binding));
-    o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
+    if (o->symbol.binding != ECL_MISSING_SPECIAL_BINDING) {
+      ecl_atomic_push(&cl_core.reused_indices, ecl_make_fixnum(o->symbol.binding));
+      o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
+    }
   }
 #endif /* ECL_THREADS */
   default:;
@@ -1151,50 +1153,35 @@ update_bytes_consed () {
 static void
 ecl_mark_env(struct cl_env_struct *env)
 {
-#if 1
-  if (env->stack) {
-    GC_push_conditional((void *)env->stack, (void *)env->stack_top, 1);
-    GC_set_mark_bit((void *)env->stack);
-  }
-  if (env->frs_top) {
-    GC_push_conditional((void *)env->frs_org, (void *)(env->frs_top+1), 1);
-    GC_set_mark_bit((void *)env->frs_org);
-  }
-  if (env->bds_top) {
-    GC_push_conditional((void *)env->bds_org, (void *)(env->bds_top+1), 1);
-    GC_set_mark_bit((void *)env->bds_org);
-  }
+  /* Environments and stacks are allocated without GC */
+  if (env->run_stack.org)
+    GC_push_all((void *)env->run_stack.org, (void *)env->run_stack.top);
+  if (env->frs_stack.org)
+    GC_push_all((void *)env->frs_stack.org, (void *)(env->frs_stack.top+1));
+  if (env->bds_stack.org)
+    GC_push_all((void *)env->bds_stack.org, (void *)(env->bds_stack.top+1));
+#ifdef ECL_THREADS
+  if (env->bds_stack.tl_bindings)
+    GC_push_all((void *)env->bds_stack.tl_bindings,
+                (void *)(env->bds_stack.tl_bindings + env->bds_stack.tl_bindings_size));
 #endif
-  /*memset(env->values[env->nvalues], 0, (64-env->nvalues)*sizeof(cl_object));*/
-#if defined(ECL_THREADS) && !defined(ECL_USE_MPROTECT) && !defined(ECL_USE_GUARD_PAGE)
-  /* When using threads, "env" is a pointer to memory allocated by ECL. */
-  GC_push_conditional((void *)env, (void *)(env + 1), 1);
-  GC_set_mark_bit((void *)env);
-#else
-  /* When not using threads, "env" is mmaped or statically allocated. */
   GC_push_all((void *)env, (void *)(env + 1));
-#endif
 }
 
 static void
 stacks_scanner()
 {
-  cl_env_ptr the_env = ecl_process_env_unsafe();
-  cl_object l;
-  l = cl_core.libraries;
-  if (l) {
-    for (; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
-      cl_object dll = ECL_CONS_CAR(l);
-      if (dll->cblock.locked) {
-        GC_push_conditional((void *)dll, (void *)(&dll->cblock + 1), 1);
-        GC_set_mark_bit((void *)dll);
-      }
+  cl_object l = cl_core.libraries;
+  loop_for_on_unsafe(l) {
+    cl_object dll = ECL_CONS_CAR(l);
+    if (dll->cblock.locked) {
+      GC_push_conditional((void *)dll, (void *)(&dll->cblock + 1), 1);
+      GC_set_mark_bit((void *)dll);
     }
-  }
+  } end_loop_for_on_unsafe(l);
   GC_push_all((void *)(&cl_core), (void *)(&cl_core + 1));
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
-  if (the_env != NULL)
-    ecl_mark_env(the_env);
+  ecl_mark_env(cl_core.first_env);
 #ifdef ECL_THREADS
   l = cl_core.processes;
   if (l != OBJNULL) {
@@ -1203,7 +1190,7 @@ stacks_scanner()
       cl_object process = l->vector.self.t[i];
       if (!Null(process)) {
         cl_env_ptr env = process->process.env;
-        if (env && (env != the_env)) ecl_mark_env(env);
+        if (env && (env != cl_core.first_env)) ecl_mark_env(env);
       }
     }
   }

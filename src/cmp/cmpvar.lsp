@@ -13,7 +13,7 @@
 ;; exactly one occurrence of var is present in forms
 (defun replaceable (var form)
   (labels ((abort-on-side-effects (form)
-             (if (eq (c1form-name form) 'VAR)
+             (if (eq (c1form-name form) 'VARIABLE)
                  (when (eq var (first (c1form-args form)))
                    (return-from replaceable t))
                  (when (c1form-side-effects form)
@@ -22,44 +22,18 @@
     (baboon :format-control "In REPLACEABLE, variable ~A not found. Form:~%~A"
             :format-arguments (list (var-name var) *current-form*))))
 
-#+not-used
-(defun discarded (var form body &aux last)
-  (labels ((last-form (x &aux (args (c1form-args x)))
-             (case (c1form-name x)
-               (PROGN
-                 (last-form (car (last (first args)))))
-               ((LET LET* FLET LABELS BLOCK CATCH)
-                (last-form (car (last args))))
-               (VAR (c1form-arg 0 x))
-               (t x))))
-    (and (not (c1form-side-effects form))
-         (or (< (var-ref var) 1)
-             (and (= (var-ref var) 1)
-                  (eq var (last-form body))
-                  (eq 'TRASH *destination*))))))
-
 (defun nsubst-var (var form)
   (when (var-set-nodes var)
     (baboon :format-control "Cannot replace a variable that is to be changed"))
   (when (var-functions-reading var)
     (baboon :format-control "Cannot replace a variable that forms part of a closure"))
   (dolist (where (var-read-forms var))
-    (unless (and (eql (c1form-name where) 'VAR)
+    (unless (and (eql (c1form-name where) 'VARIABLE)
                  (eql (c1form-arg 0 where) var))
       (baboon :format-control "VAR-READ-NODES are only C1FORMS of type VAR"))
     (delete-from-read-nodes var where)
     (c1form-replace-with where form))
   (setf (var-ignorable var) 0))
-
-#+not-used
-(defun member-var (var list)
-  (let ((kind (var-kind var)))
-    (if (member kind '(SPECIAL GLOBAL))
-        (member var list :test
-                #'(lambda (v1 v2)
-                    (and (member (var-kind v2) '(SPECIAL GLOBAL))
-                         (eql (var-name v1) (var-name v2)))))
-        (member var list))))
 
 ;;;
 
@@ -70,12 +44,12 @@
         (push var (fun-local-vars *current-function*))))
     var))
 
-(defun make-lcl-var (&key rep-type (type 'T))
-  (unless rep-type
-    (setq rep-type (if type (lisp-type->rep-type type) :object)))
+(defun make-lcl-var (&key host-type (type 'T))
+  (unless host-type
+    (setq host-type (if type (lisp-type->host-type type) :object)))
   (unless type
     (setq type 'T))
-  (make-var :kind rep-type :type type :loc (next-lcl)))
+  (make-var :kind host-type :type type :loc (next-lcl)))
 
 (defun make-global-var (name &key
                                (type (or (si:get-sysprop name 'CMP-TYPE) t))
@@ -135,7 +109,7 @@
                  (var-type var)
                  orig-type)
         (loop for form in (var-read-forms var)
-           when (and (eq (c1form-name form) 'VAR)
+           when (and (eq (c1form-name form) 'VARIABLE)
                      (eq var (c1form-arg 0 form)))
            do (setf (c1form-type form) (type-and type (c1form-primary-type form)))
            finally (setf (var-type var) type)))))
@@ -191,7 +165,7 @@
     (add-to-set-nodes v form))
   form)
 
-(defun var-rep-type (var)
+(defun var-host-type (var)
   (case (var-kind var)
     ((LEXICAL CLOSURE SPECIAL GLOBAL) :object)
     (t (var-kind var))))
@@ -205,13 +179,13 @@
       ;; if the variable can be stored locally, set it var-kind to its type
       (setf (var-kind var)
             (if (plusp (var-ref var))
-                (lisp-type->rep-type (var-type var))
+                (lisp-type->host-type (var-type var))
                 :OBJECT)))))
 
-(defun unboxed (var)
-  (not (eq (var-rep-type var) :object)))
+(defun unboxed-var-p (var)
+  (not (eq (var-host-type var) :object)))
 
-(defun local (var)
+(defun local-var-p (var)
   (and (not (member (var-kind var) '(LEXICAL CLOSURE SPECIAL GLOBAL)))
        (var-kind var)))
 

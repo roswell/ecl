@@ -1,6 +1,58 @@
 @node System construction
 @section System construction
 
+@node System construction - Dictionary
+@subsection Dictionary
+
+@subsubsection Extensions
+
+See also @ref{System building}.
+
+@lspdef compile-file
+@defun compile-file input-file &key output-file verbose print external-format target system-p load c-file h-file data-file
+Additional options for @clhs{f_cmp_fi.htm,compile-file} include:
+@table @code
+@item :system-p
+Create an object file (.o)
+@item :target
+Cross compilation target, see @ref{Cross compilation}. Can be either the
+target information obtained by calling @code{c:read-target-info} or a
+pathname pointing to the installation directory of the target ECL for
+which to compile.
+@item :load
+Load the output file after compilation. If a @code{:target} argument is
+given alongside @code{:load}, load the source file in the target
+environment.
+@item :c-file, :h-file, :data-file
+Boolean flags controlling whether to keep temporary files created by the compiler
+@end table
+@end defun
+
+@lspdef compile-file-pathname
+@defun compile-file-pathname input-file &key output-file type system-p
+Additional options for @clhs{f_cmp__1.htm,compile-file-pathname} include:
+@table @code
+@item :type
+Specify the type of output file. One of @code{:fasl} (default, alias @code{:fas}), @code{:c}, @code{:h}, @code{:data}, @code{:object}, @code{:program}, @code{:shared-library} (alias @code{:dll}), @code{:static-library} (alias @code{:library}, @code{:lib}), @code{:precompiled-header} or @code{:import-library} (MSVC only)
+@item :system-p
+If no type is supplied, default to @code{:object} type instead of @code{:fasl}
+@end table
+@end defun
+
+@lspdef with-compilation-unit
+@deffn {Macro} with-compilation-unit (&key override target) &body body
+Additional options for @clhs{m_w_comp.htm,with-compilation-unit} include:
+@table @code
+@item :target
+Cross compilation target, see @ref{Cross compilation}. Any compilation
+operation produces outputs for the specified target system. This
+includes @clhs{f_cmp_fi.htm,compile-file},
+@clhs{f_disass.htm,disassemble} and all ECL specific functions described
+in the section on @ref{Compiling with ECL}. The only exception is
+@clhs{f_cmp.htm,compile} which continues to work as usual.
+@end table
+@end deffn
+
 @subsection C Reference
 
 @subsubsection ANSI Dictionary

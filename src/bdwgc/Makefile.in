@@ -1050,7 +1050,7 @@ top_srcdir = @top_srcdir@
 # Info (current:revision:age) for the Libtool versioning system.
 # These numbers should be updated at most once just before the release,
 # and, optionally, at most once during the development (after the release).
-LIBGC_VER_INFO = 6:2:5
+LIBGC_VER_INFO = 6:4:5
 LIBGCCPP_VER_INFO = 6:0:5
 
 # We currently use the source files directly from libatomic_ops, if we
@@ -1187,7 +1187,7 @@ AM_CXXFLAGS = @GC_CFLAGS@
 # Info (current:revision:age) for the Libtool versioning system.
 # These numbers should be updated at most once just before the release,
 # and, optionally, at most once during the development (after the release).
-LIBCORD_VER_INFO = 6:0:5
+LIBCORD_VER_INFO = 6:1:5
 libcord_la_LIBADD = libgc.la
 libcord_la_LDFLAGS = -version-info $(LIBCORD_VER_INFO) -no-undefined
 libcord_la_CPPFLAGS = $(AM_CPPFLAGS)

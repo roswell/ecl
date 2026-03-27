@@ -125,13 +125,18 @@
     (si::load-bytecodes output-file *compile-verbose* *load-print* :default))
   (values (truename output-file) nil nil))
 
+(defun bc-do-compilation-unit (closure &key override)
+  (declare (ignore override))
+  (funcall closure))
+
 (defun install-bytecodes-compiler ()
   (ext::package-lock (find-package :cl) nil)
   (pushnew :ecl-bytecmp *features*)
   (setf (fdefinition 'disassemble) #'bc-disassemble
         (fdefinition 'compile) #'bc-compile
         (fdefinition 'compile-file) #'bc-compile-file
-        (fdefinition 'compile-file-pathname) #'bc-compile-file-pathname)
+        (fdefinition 'compile-file-pathname) #'bc-compile-file-pathname
+        (fdefinition 'si::do-compilation-unit) #'bc-do-compilation-unit)
   (ext::package-lock (find-package :cl) t))
 
 (defun install-c-compiler ()
@@ -141,9 +146,9 @@
 
 #-ecl-min
 (progn
-  #+(and dlopen (not windows))
+  #+(and dlopen (not windows) wants-cmp)
   (sys::autoload "SYS:cmp" 'compile-file 'compile 'compile-file-pathname 'disassemble)
-  #-(and dlopen (not windows))
+  #-(and dlopen (not windows) wants-cmp)
   (install-bytecodes-compiler))
 
 (provide '#:BYTECMP)

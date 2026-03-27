@@ -125,29 +125,75 @@
 ;;; because we want also to check, if lock is not hogged by errors
 ;;; inside our function (we pass string for that purpose).
 (test hash-tables.custom
-      (flet ((not-so-fancy-equals (x y)
-               (if (zerop x)
-                   (= x y)
-                   (eql (evenp x) (evenp y))))
-             (not-so-fancy-hash (x)
-               (cond ((zerop x) 0)
-                     ((evenp x) 1)
-                     (T 2))))
-        (signals error (make-hash-table :test #'not-so-fancy-equals))
-        (let ((ht (make-hash-table :test #'not-so-fancy-equals
-                                   :hash-function #'not-so-fancy-hash
-                                   :synchronized t)))
-          (finishes
-           (setf (gethash 13 ht) 42
-                 (gethash 12 ht) 33
-                 (gethash 10 ht) 55))
-          (is (= (gethash 12 ht) 55))
-          (is (= (gethash 1  ht) 42))
-          (is (null (gethash 0 ht)))
-          (signals error (gethash "foobar" ht))
-          (signals error (setf (gethash "foobar" ht) 15))
-          (finishes (remhash 3 ht))
-          (finishes (hash-table-test ht))
-          (is (null (gethash 1 ht)))
-          (finishes (setf (gethash 55 ht) 0))
-          (is (= (gethash 13 ht) 0)))))
+  (flet ((not-so-fancy-equals (x y)
+           (if (zerop x)
+               (= x y)
+               (eql (evenp x) (evenp y))))
+         (not-so-fancy-hash (x)
+           (cond ((zerop x) 0)
+                 ((evenp x) 1)
+                 (T 2))))
+    (signals error (make-hash-table :test #'not-so-fancy-equals))
+    (let ((ht (make-hash-table :test #'not-so-fancy-equals
+                               :hash-function #'not-so-fancy-hash
+                               :synchronized t)))
+      (finishes
+        (setf (gethash 13 ht) 42
+              (gethash 12 ht) 33
+              (gethash 10 ht) 55))
+      (is (= (gethash 12 ht) 55))
+      (is (= (gethash 1  ht) 42))
+      (is (null (gethash 0 ht)))
+      (signals error (gethash "foobar" ht))
+      (signals error (setf (gethash "foobar" ht) 15))
+      (finishes (remhash 3 ht))
+      (finishes (hash-table-test ht))
+      (is (null (gethash 1 ht)))
+      (finishes (setf (gethash 55 ht) 0))
+      (is (= (gethash 13 ht) 0)))))
+
+
+;;; More weak hash table tests. See #761.
+
+;;; Weak hash tables autonormalized GC-ed entries creating holes, which (unlike
+;;; remhash) were not filled. That leads to invalid results for GETHASH.
+(test hash-tables.weak-collision
+  (let ((ht (make-hash-table :weakness :key :size 2 :test #'eq)))
+    (loop repeat 15 do (setf (gethash (gensym) ht) 42))
+    (setf (gethash :sm ht) t)
+    (ext:gc t)
+    (is (not (null (gethash :sm ht))))))
+
+;;; MAPHASH mapped also garbage-collected entries leading to dud calls to the
+;;; continuation.
+(test hash-tables.weak-maphash
+  (let ((ht (make-hash-table :weakness :key :size 2 :test #'eq)))
+    (loop repeat 4 do (setf (gethash (gensym) ht) 42))
+    (setf (gethash :sm ht) t)
+    (ext:gc t)
+    (maphash (lambda (k v)
+               (is (not (null k)))
+               (is (not (null v))))
+             ht)))
+
+;;;
+;;; This test leads to a segfault while running tests, hence it is disabled.
+;;; So what's going on?
+;;;
+;;; 1. si_gc disables interrupts for the env for the time GC_collect is running.
+;;; 2. GC_collect calls GC_finalize > GC_make_disappearing_links_disappear
+;;; 3. Finally GC_is_marked calls mark_bit_from_hdr that marks env
+;;;
+;;; Note that this failure happens sometimes with two tests above, but it is
+;;; much rarer -- the test below more or less deterministically crashes ECL.
+;;;
+#+ (or)
+(test hash-tables.gc-shakedown
+  (dolist (sk '(nil :key :value :key-or-value :key-and-value))
+    (let ((ht (make-hash-table :weakness sk :size 2 :test #'eq)))
+      (progn
+        (progn
+          (loop repeat 4 do (setf (gethash (gensym) ht) 42))
+          (setf (gethash :sm ht) t)
+          (ext:gc t))
+        "Crashed on ~a." sk))))

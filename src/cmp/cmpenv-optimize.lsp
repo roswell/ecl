@@ -155,6 +155,10 @@
   "Inline functions such as MAP, MEMBER, FIND, etc."
   (:off space 2))
 
+(define-policy ext:inline-nargs-check
+  "Inline checks for correct number of arguments for functions with fixed number of arguments."
+  (:off space 2))
+
 ;;
 ;; DEBUG POLICY
 ;;

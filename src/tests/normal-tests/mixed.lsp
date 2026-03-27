@@ -164,14 +164,8 @@
 ;;; Bug: https://gitlab.com/embeddable-common-lisp/ecl/issues/271
 ;;;
 (test mix.0010.file-stream-fd
-  ;; We check the second one only if first test passes. Second test
-  ;; caused internal error of ECL and crashed the process preventing
-  ;; further tests, so we perform it only on versions after the fix.
-  (if (signals simple-type-error (ext:file-stream-fd ""))
-      (signals simple-type-error (ext:file-stream-fd
-                                  (make-string-output-stream)))
-      (fail (ext:file-stream-fd (make-string-output-stream))
-            "Not-file stream would cause internal error on this ECL (skipped)")))
+  (signals type-error (ext:file-stream-fd ""))
+  (signals type-error (ext:file-stream-fd (make-string-output-stream))))
 
 
 ;;; Date: 2016-12-20
@@ -561,3 +555,167 @@
   (is (equal (multiple-value-list (read-line (make-instance 'character-input-stream :value "a
 ")))
              '("a" nil))))
+
+;;;; Author:   Tarn W. Burton
+;;;; Created:  2024-05-10
+;;;; Description:
+;;;;     Test to ensure that write-char returns the correct value. An
+;;;;     incorrect value or stack smashing indicated a buffer overrun
+;;;;     caused by an encoding buffer that is too small.
+
+(test mix.0030.write-char-encode-buffer
+  (is (equal (with-open-file (s "whatever.txt"
+                                :if-does-not-exist :create
+                                :if-exists :supersede
+                                :external-format :ucs-4
+                                :direction :output)
+               (write-char #\a s))
+             #\a)))
+
+;;;; Reported by: Charles Zhang
+;;;; Fixed: Daniel Kochmański
+;;;; Created: 2024-05-12
+;;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/742
+;;;; Description:
+;;;;     Test to ensure that defining a no-op non-terminating macro on a digit
+;;;;     does not break readers for composite tokens like #x123. See #742.
+(test mix.0031.redefine-digit
+  (let ((standard-readtable (copy-readtable nil))
+        (*readtable* (copy-readtable nil)))
+    (set-macro-character #\1 (lambda (stream char)
+                               (unread-char char stream)
+                               (let ((*readtable* standard-readtable))
+                                 (read stream t nil t)))
+                         t)
+    (finishes (read-from-string "#x123"))))
+
+;;; Author: Daniel Kochmański
+;;; Created: 2025-05-09
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/merge_requests/346#note_2492489716
+;;; Description
+;;;
+;;;     Moving locals from heap to the stack revealed an issue where stack
+;;;     frames are invalidated after the lisp stack is resized. That causes
+;;;     a risk of local variables to be garbage collected.
+;;;
+;;; | Call DO-ENTRIES* | #x1000 [TRASH] | #x1000 [TRASH] |
+;;; | Resize the stack | #x1000 [TRASH] | #x2000 [TRASH] |
+;;; | Bind a local var | #x1000 [value] | #x2000 [TRASH] |
+;;; | Allocations-> GC | #x1000 [what?] | #x2000 [TRASH] |
+;;; | Load a local var | #x1000 [what?] | #x2000 [TRASH] |
+;;;
+;;; We bind the variable after the stack has been resized, so when we copy the
+;;; memory during the stack resize only [TRASH] is transferred.
+;;;
+;;; Since the lisp stack is allocated with ecl_alloc_atomic, referenced values must
+;;; be explicitly marked -- and it is done so in ecl_mark_env. This is very sane
+;;; thing to do, because if we had marked whole vector (even above top), then we'd
+;;; retain old references, and generally we'd mark 32K instead of say 200 addresses.
+;;;
+;;; But, when we grow the stack, the old vector is replaced, and ecl_mark_env does
+;;; not mark the old stack, effectively allowing to reuse up our [value] by GC.
+;;;
+;;; Note that usually stack frames are filled eagerly to complete argument list, so
+;;; this issue is irrelevant to them (because we don't change values after resize),
+;;; so this prolbem did not manifest itself until now.
+
+(deftest mix.0031.invalidate-stack-frames ()
+  (macrolet ((ntimes (n form)
+               `(progn ,@(make-list n :initial-element form))))
+    (labels ((resize-lisp-stack ()
+               (let* ((old-limit (ext:get-limit 'ext:lisp-stack))
+                      (new-limit (* old-limit 2)))
+                 (ext:set-limit 'ext:lisp-stack new-limit)))
+             (invoke-test-case ()
+               (resize-lisp-stack)
+               (let ((n 0))
+                 (ntimes 2048 (apply #'append (make-list 2048 :initial-element '(:foo))))
+                 (is (typep n 'number)))))
+      (invoke-test-case))))
+
+;;; Reported by: Artyom Bologov
+;;; Created: 2025-06-26
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/784
+;;; Description
+;;;
+;;;     When working with multiple wild components in the directory we've
+;;;     entered an infinite recursion becaue find_list_wildcards created a
+;;;     circular list due to invalid interfacing with find_wildcards.
+;;;
+;;;     Moreover, for a similar cause, we didn't translate correctly such
+;;;     pathnames even after fixing the issue. copy_wildcards did not anticipate
+;;;     that for a :WILD component the result could a list from find_wildcards.
+(deftest mix.0032.logical-pathname-with-multiple-wildcards ()
+  (setf (logical-pathname-translations "x")
+        `(("X:a;*;b;*;*.*" "/hello/*/hi/*/what/*.*")))
+  ;; We don't use #P"x:a;bonjour;b;barev;greetings.me" because then the reader
+  ;; constructs the pathname before the logical pathname translation is defined
+  ;; - in that case it is not recognized as logical and won't be translated.
+  (let* ((pathname (parse-namestring "x:a;bonjour;b;barev;greetings.me"))
+         (result (translate-logical-pathname pathname))
+         (expect #P"/hello/bonjour/hi/barev/what/greetings.me"))
+    (is (equalp result expect))))
+
+;;; Reported by: Daniel Kochmański
+;;; Created: 2026-03-02
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/813
+;;; Description
+;;;
+;;;     Reader does not handle correctly escaped characters when the
+;;;     READTABLE-CASE is :INVERT.
+(deftest mix.0033.preserve-escaped-characters ()
+  (let ((*readtable* (copy-readtable)))
+    (setf (readtable-case *readtable*) :invert)
+    (is (string=
+         (symbol-name (read-from-string "DANIEL|--xXx--|MANSKI"))
+         "daniel--xXx--manski"))))
+
+;;; Reported by: Daniel Kochmański
+;;; Created: 2026-03-02
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/issues/814
+;;; Description
+;;;
+;;;     Reader allows for multiple package prefixes and uses only the last one.
+;;;     For example FOO::BAR::QUX is equivalent to BAR:QUX (FOO must exist).
+(deftest mix.0034.dont-allow-invalid-package-prefixes ()
+  (signals reader-error (read-from-string "CL-USER::CL::LIST")))
+
+(deftest mix.0035.bignum-eql-sanity ()
+  (is (eql (1- most-negative-fixnum) (1- most-negative-fixnum)))
+  (is (eql (1+ most-positive-fixnum) (1+ most-positive-fixnum))))
+
+;;; Reported by: Daniel Kochmański
+;;; Created: 2026-03-05
+;;; Description
+;;;
+;;;     Instead of copying dispatch character sub-tables we assign them.
+(deftest mix.0036.reader.false-sharing ()
+  (flet ((set-macro-char (disp sub value table)
+           (set-dispatch-macro-character
+            disp sub #'(lambda (stream sub-char argument)
+                         (declare (ignore stream sub-char argument))
+                         value)
+            table)))
+    (let ((t1 (copy-readtable)))
+      (make-dispatch-macro-character #\! nil t1)
+      (set-macro-char #\! #\a :one t1)
+      (let ((t2 (copy-readtable t1)))
+        (set-macro-char #\! #\b :two t1)
+        (set-syntax-from-char #\? #\! t2 t1)
+        (set-macro-char #\? #\b :tri t2)
+        (set-macro-char #\! #\c :fou t1)
+        (let ((*readtable* t1))
+          (is (eql :one (read-from-string "!a")))
+          (is (eql :two (read-from-string "!b"))
+              "reads to ~s" (read-from-string "!b"))
+          (is (eql :fou (read-from-string "!c")))
+          (is (eql '?a  (read-from-string "?a")))
+          (is (eql '?b  (read-from-string "?b")))
+          (is (eql '?c  (read-from-string "?c"))))
+        (let ((*readtable* t2))
+          (is (eql :one  (read-from-string "!a")))
+          (signals error (read-from-string "!b"))
+          (signals error (read-from-string "!c"))
+          (is (eql :one  (read-from-string "?a")))
+          (is (eql :tri  (read-from-string "?b")))
+          (signals error (read-from-string "?c")))))))

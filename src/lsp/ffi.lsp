@@ -71,14 +71,15 @@ does not include any Lisp storage overhead."
           ((atom type)
            (error "~A is not a valid foreign type identifier" name))
           ((eq (setf name (first type)) :struct)
-           (setf size (slot-position type nil)
-                 align (apply #'max (mapcar #'(lambda (field)
-                                                (multiple-value-bind (field-size field-align)
-                                                    (size-of-foreign-type (second field))
-                                                  (declare (ignore field-size))
-                                                  field-align))
-                                            (rest type))))
-           (%align-data size align))
+           (setf size (slot-position type nil))
+           (when (rest type)
+             (setf align (apply #'max (mapcar #'(lambda (field)
+                                                  (multiple-value-bind (field-size field-align)
+                                                      (size-of-foreign-type (second field))
+                                                    (declare (ignore field-size))
+                                                    field-align))
+                                              (rest type))))
+             (%align-data size align)))
           ((eq name :array)
            (unless (and (setf size (third type)) (realp size))
              (error "Incomplete foreign type: ~S" type))
@@ -472,12 +473,13 @@ translate ASCII and binary strings."
 
 Converts a Lisp string to a foreign string. Memory should be freed
 with free-foreign-object."
-  (let ((lisp-string (string string-designator)))
-    (c-inline (lisp-string) (t) t
+  (let ((cstring (convert-to-cstring (string string-designator)))
+        (foreign-type '(* :char)))
+    (c-inline (cstring foreign-type) (t t) t
        "{
         cl_object lisp_string = #0;
         cl_index size = lisp_string->base_string.fillp;
-        cl_object output = ecl_allocate_foreign_data(@(* :char), size+1);
+        cl_object output = ecl_allocate_foreign_data(#1, size+1);
         memcpy(output->foreign.data, lisp_string->base_string.self, size);
         output->foreign.data[size] = '\\0';
         @(return) = output;
@@ -589,11 +591,10 @@ bound to this value during the execution of body."
                   0 (max 0 (1- (* nargs 3))))))
 
 ;;; FIXME! We should turn this into a closure generator that produces no code.
-#+DFFI
+#+dffi
 (defmacro def-lib-function (name args &key returning module (call :default))
   (multiple-value-bind (c-name lisp-name) (lisp-to-c-name name)
     (let* ((return-type (ffi::%convert-to-return-type returning))
-           (return-required (not (eq return-type :void)))
            (argtypes (mapcar #'(lambda (a) (ffi::%convert-to-arg-type (second a))) args)))
       `(let ((c-fun (si::find-foreign-symbol ',c-name ,module :pointer-void 0)))
         (defun ,lisp-name ,(mapcar #'first args)

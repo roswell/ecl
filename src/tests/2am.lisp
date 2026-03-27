@@ -24,8 +24,8 @@
 #| to avoid conflict with the library name package 2am-ecl |#
 (defpackage #:2am-ecl
   (:use #:cl)
-  (:export #:test #:test-with-timeout #:is #:signals #:finishes
-           #:run #:suite))
+  (:export #:deftest #:test #:test-with-timeout #:is #:signals #:finishes
+           #:run #:suite #:*test-name* #:failed #:test-failure))
 
 (in-package #:2am-ecl)
 
@@ -152,12 +152,15 @@
         (%run fn))
     (values)))
 
-(defmacro test (name &body body)
+(defmacro deftest (name () &body body)
   `(progn
      (defun ,name ()
        (call-test ',name (lambda () ,@body)))
      (pushnew ',name (gethash *tests* *suites*))
      ',name))
+
+(defmacro test (name &body body)
+  `(deftest ,name () ,@body))
 
 (defun kill-processes (process-list &optional original)
   "Kills a list of processes, which may be the difference between two lists."
@@ -257,8 +260,9 @@
                  (t #|ignore non-serious unexpected conditions|#))))
     (handler-bind ((condition #'handler))
       (funcall fn)))
-  (let ((fmt-ctrl (if args (car args) "Expected to signal ~s, but got nothing"))
-        (fmt-args (if args (cdr args) `(,expected))))
+  (let ((fmt-ctrl (format nil "Expected to signal ~s, but got nothing~@[~%~A~]"
+                          expected (car args)))
+        (fmt-args (cdr args)))
    (failed (make-condition 'test-failure
                            :name *test-name*
                            :format-control fmt-ctrl
@@ -270,13 +274,13 @@
 
 (defmacro finishes (form &rest args)
   (if args
-      `(handler-case (progn ,form (passed))
+      `(handler-case (multiple-value-prog1 ,form (passed))
          (serious-condition (c)
            (failed (make-condition 'test-failure
                                    :name *test-name*
                                    :format-control ,(car args)
                                    :format-arguments (list ,@(cdr args))))))
-      `(handler-case (progn ,form (passed))
+      `(handler-case (multiple-value-prog1 ,form (passed))
          (serious-condition (c)
            (failed (make-condition 'test-failure
                                    :name *test-name*

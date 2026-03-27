@@ -20,7 +20,7 @@
   (destructuring-bind (arguments arg-types output-type c-expression
                                  &rest rest
                                  &key (side-effects t) one-liner
-                                 &aux output-rep-type)
+                                 &aux output-host-type)
       args
     (unless (= (length arguments) (length arg-types))
       (cmperr "In a C-INLINE form the number of declare arguments and the number of supplied ones do not match:~%~S"
@@ -44,21 +44,21 @@
     ;;  output-type = lisp-type | c-type | (values {lisp-type | c-type}*)
     (flet ((produce-type-pair (type)
              (if (lisp-type-p type)
-                 (cons type (lisp-type->rep-type type))
-                 (cons (rep-type->lisp-type type) type))))
+                 (cons type (lisp-type->host-type type))
+                 (cons (host-type->lisp-type type) type))))
       (cond ((eq output-type ':void)
-             (setf output-rep-type '()
+             (setf output-host-type '()
                    output-type 'NIL))
             ((equal output-type '(VALUES &REST t))
-             (setf output-rep-type '((VALUES &REST t))))
+             (setf output-host-type '((VALUES &REST t))))
             ((and (consp output-type) (eql (first output-type) 'VALUES))
              (let ((x (mapcar #'produce-type-pair (rest output-type))))
-               (setf output-rep-type (mapcar #'cdr x)
+               (setf output-host-type (mapcar #'cdr x)
                      output-type `(VALUES ,@(mapcar #'car x)))))
             (t
              (let ((x (produce-type-pair output-type)))
                (setf output-type (car x)
-                     output-rep-type (list (cdr x)))))))
+                     output-host-type (list (cdr x)))))))
     (unless (and (listp arguments)
                  (listp arg-types)
                  (stringp c-expression))
@@ -72,12 +72,12 @@
            (form (make-c1form* 'ffi:c-inline :type output-type
                                :side-effects side-effects
                                :args arguments arg-types
-                               output-rep-type
+                               output-host-type
                                c-expression
                                side-effects
                                one-liner)))
       (loop for form in arguments
-         when (eq (c1form-name form) 'VAR)
+         when (eq (c1form-name form) 'VARIABLE)
          do (let ((var (c1form-arg 0 form)))
               (add-to-set-nodes var form)))
       form)))
@@ -96,6 +96,7 @@
 
 ;;;;
 ;;;;  CMPCBK --  Callbacks: lisp functions that can be called from the C world
+
 
 (defconstant +foreign-elt-type-codes+
   '(                (:char               . "ECL_FFI_CHAR")
@@ -122,9 +123,9 @@
                     (:float              . "ECL_FFI_FLOAT")
                     (:double             . "ECL_FFI_DOUBLE")
                     (:long-double        . "ECL_FFI_LONG_DOUBLE")
-    #+complex-float (:csfloat            . "ECL_FFI_CSFLOAT")
-    #+complex-float (:cdfloat            . "ECL_FFI_CDFLOAT")
-    #+complex-float (:clfloat            . "ECL_FFI_CLFLOAT")
+                    (:csfloat            . "ECL_FFI_CSFLOAT")
+                    (:cdfloat            . "ECL_FFI_CDFLOAT")
+                    (:clfloat            . "ECL_FFI_CLFLOAT")
                     (:void               . "ECL_FFI_VOID")))
 
 (defun foreign-elt-type-code (type)
@@ -170,6 +171,6 @@
        `(progn
           (defun ,name ,(reverse arg-variables) ,@body)
           (si:put-sysprop ',name :callback
-                          (ffi:c-inline () () :object
-                                        ,(format nil "ecl_make_foreign_data(@':pointer-void,0,(void*)~a)" c-name)
+                          (ffi:c-inline (:pointer-void) (:object) :object
+                                        ,(format nil "ecl_make_foreign_data(#0,0,(void*)~a)" c-name)
                                         :one-liner t)))))))

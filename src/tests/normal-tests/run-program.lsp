@@ -91,7 +91,8 @@
               (finishes (ext:terminate-process process))
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
-              #+windows(is-eql :exited (ext:external-process-wait process nil))))
+              #+windows(is-eql :exited (ext:external-process-wait process nil))
+              t))
   (is-equal #-windows `(t :signaled ,ext:+sigkill+)
 	    #+windows `(t :exited -1)
             (with-run-program (terminate nil)
@@ -100,7 +101,8 @@
               (sleep 1)
               #-windows(is-eql :signaled (ext:external-process-wait process nil))
               #+windows(is-eql :exited (ext:external-process-wait process nil))
-              (finishes (ext:external-process-status process)))))
+              (finishes (ext:external-process-status process))
+              t)))
 
 ;;; We may want to craft it into an interface. Suspend/Resume *is* possible on Windows:
 ;;; http://stackoverflow.com/questions/11010165/how-to-suspend-resume-a-process-in-windows
@@ -116,7 +118,8 @@
                 (si:killpid pid ext:+sigcont+)
                 (sleep 2)
                 (is-eql :resumed (ext:external-process-wait process nil))
-                (finishes (ext:terminate-process process t))))))
+                (finishes (ext:terminate-process process t))
+                t))))
 
 ;;; Cygwin programs seems not to react to signals. We use a stub to
 ;;; avoid infintie wait for process termination.
@@ -195,7 +198,7 @@
                        nil nil)))
     (signals simple-error (run-env-program :environ :bam) nil nil)
     #-cygwin ;; Cygwin always injects `WINDIR=C:\\Windows' variable.
-    (is (null (slurp (run-env-program :environ nil))))))
+    (is (null (slurp (run-env-program :output :stream :environ nil))))))
 
 ;;; Date: 2022-10-22
 ;;; From: Marius Gerbershagen
@@ -204,6 +207,7 @@
 ;;;     Check that run-program works correctly with different
 ;;;     encodings
 ;;;
+#-ecl-bytecmp
 (test run-program-encoding
   (let* ((skeleton "
 #include <stdio.h>

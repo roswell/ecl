@@ -16,7 +16,7 @@
         (constant-value-p form *cmp-env*)
       (when constantp
         (loop for (type . forms) in (rest args)
-           when (typep value type)
+           when (cmp-typep value type)
            do (return-from c1compiler-typecase (c1progn forms))
            finally (baboon :format-control "COMPILER-TYPECASE form missing a T statement")))))
   (let* ((var-name (pop args))
@@ -25,7 +25,7 @@
     ;; If the first type, which is supposedly the most specific
     ;; already includes the form, we keep it. This optimizes
     ;; most cases of CHECKED-VALUE.
-    (if (subtypep (var-type var) (car first-case))
+    (if (subtypep (var-type var) (car first-case) *cmp-env*)
         (c1progn (cdr first-case))
         (let* ((types '())
                (expressions (loop for (type . forms) in args
@@ -42,7 +42,7 @@
   (loop with var-type = (var-type var)
      for (type form) in expressions
      when (or (member type '(t otherwise))
-              (subtypep var-type type))
+              (subtypep var-type type *cmp-env*))
      return (c2expr form)))
 
 (defconstant +simple-type-assertions+
@@ -59,7 +59,7 @@
         `(ffi:c-inline (,value) (:object) :void ,simple-form
                        :one-liner nil)
         `(ffi:c-inline
-          ((typep ,value ',(si::flatten-function-types type)) ',type ,value)
+          ((typep ,value ',(si::flatten-function-types type *cmp-env*)) ',type ,value)
           (:bool :object :object) :void
           "if (ecl_unlikely(!(#0)))
          FEwrong_type_argument(#1,#2);" :one-liner nil))))
@@ -96,8 +96,8 @@
            (c1checked-value (list (values-type-primary-type type)
                                   value)))
           ((and (policy-evaluate-forms) (constantp value *cmp-env*))
-           (if (typep (ext:constant-form-value value *cmp-env*)
-                      (si::flatten-function-types type))
+           (if (cmp-typep (ext:constant-form-value value *cmp-env*)
+                          type)
                value
                (progn
                  ;; warn and generate error.
@@ -135,7 +135,7 @@
 
 (defun c2checked-value (c1form type value let-form)
   (declare (ignore c1form))
-  (c2expr (if (subtypep (c1form-primary-type value) type)
+  (c2expr (if (subtypep (c1form-primary-type value) type *cmp-env*)
               value
               let-form)))
 

@@ -13,8 +13,7 @@
 
 ;;;
 ;;; and-form-type
-;;;   returns a copy of form whose type is the type-and of type and the form's
-;;;   type
+;;;   updates the FORM type to its intersection with TYPE
 ;;;
 (defun and-form-type (type form original-form &optional (mode :safe)
                       (format-string "") &rest format-args)
@@ -28,21 +27,27 @@
                  format-args original-form type2 type))
     form))
 
+;;;
+;;; and-call-type
+;;;   updates the FORM type to its many-values intersection with TYPE
+;;; 
+(defun and-call-type (type form)
+  (setf (c1form-type form) (values-type-and type (c1form-type form))))
+
 (defun default-init (var &optional warn)
   (declare (ignore warn))
   (let ((new-value (cdr (assoc (var-type var)
-                               '((fixnum . 0)
+                               `((fixnum . 0)
                                  (character . #\space)
                                  (long-float   . 0.0L1)
                                  (double-float . 0.0D1)
                                  (single-float . 0.0F1)
-                                 #+complex-float
-                                 (si:complex-single-float . #c(0.0f0 0.0f0))
-                                 #+complex-float
-                                 (si:complex-double-float . #c(0.0d0 0.0d0))
-                                 #+complex-float
-                                 (si:complex-single-float . #c(0.0l0 0.0l0)))
-                               :test #'subtypep))))
+                                 ,@(when *complex-float*
+                                     '((si:complex-single-float . #c(0.0f0 0.0f0))
+                                       (si:complex-double-float . #c(0.0d0 0.0d0))
+                                       (si:complex-long-float . #c(0.0l0 0.0l0)))))
+                               :test #'(lambda (t1 t2)
+                                         (subtypep t1 t2 *cmp-env*))))))
     (if new-value
         (c1constant-value new-value)
         (c1nil))))
@@ -52,37 +57,70 @@
 ;; TYPE CHECKING
 ;;
 
+(defun lambda-type-check-init-forms (optionals keywords opt-types key-types)
+  (flet ((maybe-fix-type (var init type type-iterator)
+           (multiple-value-bind (constantp value)
+               (c1form-constant-p init)
+             (when (and constantp (not (cmp-typep value type)))
+               (cmpwarn-style "The init-form of the argument ~A of ~:[an anonymous function~;the function ~:*~A~] is not of the declared type ~A."
+                              (var-name var)
+                              (fun-name *current-function*)
+                              type)
+               ;; As a matter of policy, we allow init-forms whose
+               ;; type does not match the proclaimed type of the
+               ;; corresponding argument. In that case, we extend the
+               ;; type to also allow the initial value to be passed as
+               ;; an argument to the function.
+               (setf (first type-iterator) (type-or type `(eql ,value))
+                     (var-type var) (type-or (var-type var) `(eql ,value)))))))
+    (loop for var in optionals by #'cdddr
+          for init in (rest optionals) by #'cdddr
+          for type-iterator on (rest opt-types) by #'cdddr
+          for type = (first type-iterator)
+          do (maybe-fix-type var init type type-iterator))
+    (loop for key-list on keywords by #'cddddr
+          for keyword = (first key-list)
+          for var = (second key-list)
+          for init = (third key-list)
+          for type-iterator = (loop for key-list on (rest key-types) by #'cddr
+                                    when (eq keyword (first key-list))
+                                      return (rest key-list)
+                                    finally (return '(t)))
+          for type = (first type-iterator)
+          do (maybe-fix-type var init type type-iterator))))
+
 (defun lambda-type-check-associate (fname requireds optionals keywords global-fun-p)
   (multiple-value-bind (arg-types found)
       (and global-fun-p (get-arg-types fname *cmp-env* global-fun-p))
     (if found
         (multiple-value-bind (req-types opt-types rest-flag key-flag
-                                        key-types allow-other-keys)
-            (si::process-lambda-list arg-types 'ftype)
+                              key-types allow-other-keys)
+            (si:process-lambda-list arg-types 'ftype)
           (declare (ignore rest-flag key-flag allow-other-keys))
+          (lambda-type-check-init-forms optionals keywords opt-types key-types)
           (list
            (loop for var in requireds
-              for type in (rest req-types)
-              collect (cons var type))
+                 for type in (rest req-types)
+                 collect (cons var type))
            (loop for optional in optionals by #'cdddr
-              for type in (rest opt-types) by #'cdddr
-              collect (cons optional type))
+                 for type in (rest opt-types) by #'cdddr
+                 collect (cons optional type))
            (loop for key-list on keywords by #'cddddr
-              for keyword = (first key-list)
-              for key-var = (second key-list)
-              for type = (loop for key-list on (rest key-types) by #'cddr
-                            when (eq keyword (first key-list))
-                            return (second key-list)
-                            finally (return t))
-              collect (cons key-var type))))
+                 for keyword = (first key-list)
+                 for key-var = (second key-list)
+                 for type = (loop for key-list on (rest key-types) by #'cddr
+                                  when (eq keyword (first key-list))
+                                    return (second key-list)
+                                  finally (return t))
+                 collect (cons key-var type))))
         (list
          (loop for var in requireds
-            collect (cons var t))
+               collect (cons var t))
          (loop for optional in optionals by #'cdddr
-            collect (cons optional t))
+               collect (cons optional t))
          (loop for key-list on keywords by #'cddddr
-            for key-var = (second key-list)
-            collect (cons key-var t))))))
+               for key-var = (second key-list)
+               collect (cons key-var t))))))
 
 (defun lambda-type-check-precise (assoc-list ts)
   (loop for record in assoc-list
@@ -154,15 +192,15 @@
 (defmacro assert-type-if-known (value type &environment env)
   "Generates a type check on an expression, ensuring that it is satisfied."
   (multiple-value-bind (trivial valid)
-      (subtypep 't type)
+      (subtypep 't type *cmp-env*)
     (cond ((and trivial valid)
            value)
           ((multiple-value-setq (valid value) (constant-value-p value env))
-           (si::maybe-quote value))
+           (si:maybe-quote value))
           (t
            (ext:with-clean-symbols (%value)
              `(let* ((%value ,value))
-                ,(simple-type-assertion '%value (si::flatten-function-types type))
+                ,(simple-type-assertion '%value (si::flatten-function-types type env))
                 (ext:truly-the ,type %value)))))))
 
 (defmacro optional-type-check (value type)

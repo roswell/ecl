@@ -146,7 +146,7 @@
         (setf boa-list (nconc boa-list other-slots)))
       (values boa-list assertions))))
 
-(defun make-constructor (name constructor type named slot-descriptions)
+(defun make-constructor (name constructor type named slot-descriptions env)
   (declare (ignore named)
            (si::c-local))
   ;; CONSTRUCTOR := constructor-name | (constructor-name boa-lambda-list)
@@ -180,7 +180,7 @@
                 ;; case of BOA lists we remove some of these checks for
                 ;; uninitialized slots.
                 (unless (eq 'T slot-type)
-                  (push `(unless (typep ,var-name ',(flatten-function-types slot-type))
+                  (push `(unless (typep ,var-name ',(flatten-function-types slot-type env))
                            (structure-type-error ,var-name ',slot-type ',name ',slot-name))
                         assertions))
                 var-name)))
@@ -408,7 +408,7 @@
 
 ;;; The DEFSTRUCT macro.
 
-(defmacro defstruct (&whole whole name&opts &rest slots)
+(defmacro defstruct (&whole whole name&opts &rest slots &environment env)
   "Syntax: (defstruct
          {name | (name {:conc-name | (:conc-name prefix-string) |
                         :constructor | (:constructor symbol [lambda-list]) |
@@ -586,7 +586,7 @@ as a STRUCTURE doc and can be retrieved by (documentation 'NAME 'structure)."
                                    ',documentation ',predicate))
           (constructors (mapcar #'(lambda (constructor)
                                     (make-constructor name constructor type named
-                                                      slot-descriptions))
+                                                      slot-descriptions env))
                                 constructors)))
       `(progn
          (eval-when (:compile-toplevel :load-toplevel)

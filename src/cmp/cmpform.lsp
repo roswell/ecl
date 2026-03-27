@@ -60,22 +60,22 @@
 
 (defun c1form-add-info-loop (form dependents)
   (loop with subform
-     while (consp dependents)
-     when (c1form-p (setf subform (pop dependents)))
-     do (progn
-          (when (c1form-sp-change subform)
-            (setf (c1form-sp-change form) t
-                  (c1form-side-effects form) t))
-          (when (c1form-side-effects subform)
-            (setf (c1form-side-effects form) t))
-          (unless (eq (c1form-name subform) 'LOCATION)
-            (when (rest (c1form-parents subform))
-              (error "Running twice through same form"))
-            (setf (c1form-parents subform)
-                  (nconc (c1form-parents subform)
-                         (c1form-parents form)))))
-     when (consp subform)
-     do (c1form-add-info-loop form subform)))
+        while (consp dependents)
+        when (c1form-p (setf subform (pop dependents)))
+          do (progn
+               (when (c1form-sp-change subform)
+                 (setf (c1form-sp-change form) t
+                       (c1form-side-effects form) t))
+               (when (c1form-side-effects subform)
+                 (setf (c1form-side-effects form) t))
+               (unless (eq (c1form-name subform) 'LOCATION)
+                 (when (rest (c1form-parents subform))
+                   (error "Running twice through same form"))
+                 (setf (c1form-parents subform)
+                       (nconc (c1form-parents subform)
+                              (c1form-parents form)))))
+        when (consp subform)
+          do (c1form-add-info-loop form subform)))
 
 (defun c1form-add-info (form dependents)
   (let ((record (gethash (c1form-name form) +c1-form-hash+)))
@@ -137,29 +137,28 @@
             do (traverse-c1form-tree f function))
          (funcall function tree))))
 
+(defun c1form-pure-p (form)
+  (third (gethash (c1form-name form) +c1-form-hash+)))
+
 (defun c1form-movable-p (form)
   (flet ((abort-on-not-pure (form)
            (let ((name (c1form-name form)))
-             (cond ((eq name 'VAR)
+             (cond ((eq name 'VARIABLE)
                     (let ((var (c1form-arg 0 form)))
                       (when (or (global-var-p var)
                                 (var-set-nodes var))
                         (return-from c1form-movable-p nil))))
                    ((or (c1form-side-effects form)
-                        (not (third (gethash name +c1-form-hash+))))
+                        (not (c1form-pure-p form)))
                     (return-from c1form-movable-p nil))))))
     (abort-on-not-pure form)))
-
-(defun c1form-pure-p (form)
-  (third (gethash (c1form-name form) +c1-form-hash+)))
 
 (defun c1form-unmodified-p (form rest-form)
   (flet ((abort-on-not-pure (form)
            (let ((name (c1form-name form)))
-             (cond ((eq name 'VAR)
+             (cond ((eq name 'VARIABLE)
                     (let ((var (c1form-arg 0 form)))
-                      (when (or (global-var-p var)
-                                (var-changed-in-form-list var rest-form))
+                      (when (var-changed-in-form-list var rest-form)
                         (return-from c1form-unmodified-p nil))))
                    ((or (c1form-side-effects form)
                         (not (c1form-pure-p form)))
@@ -178,6 +177,7 @@
 
 (defmacro with-c1form-env ((form value) &rest body)
   `(let* ((,form ,value)
+          (*current-c1form* ,form)
           (*compile-file-truename* (c1form-file ,form))
           (*compile-file-position* (c1form-file-position ,form))
           (*current-toplevel-form* (c1form-toplevel-form ,form))
@@ -199,7 +199,7 @@
   (when (c1form-side-effects new-fields)
     (baboon :format-control "Attempted to move a form with side-effects"))
   ;; The following protocol is only valid for VAR references.
-  (unless (eq (c1form-name dest) 'VAR)
+  (unless (eq (c1form-name dest) 'VARIABLE)
     (baboon :format-control "Cannot replace forms other than VARs:~%~4I~A"
             :format-arguments (list dest)))
   ;; We have to relocate the children nodes of NEW-FIELDS in
@@ -208,7 +208,7 @@
   ;; exceptions are forms that can be fully replaced
   (case (c1form-name new-fields)
     (LOCATION)
-    (VAR
+    (VARIABLE
      (let ((var (c1form-arg 0 new-fields)))
        ;; If this is the first time we replace a reference with this one
        ;; then we have to remove it from the read nodes of the variable
@@ -238,12 +238,15 @@
 ;; exactly one occurrence of var is present in forms
 (defun delete-c1forms (form)
   (flet ((eliminate-references (form)
-           (when (eq (c1form-name form) 'VAR)
+           (when (eq (c1form-name form) 'VARIABLE)
              (let ((var (c1form-arg 0 form)))
                (when var
                  (delete-from-read-nodes var form))))))
     (traverse-c1form-tree form #'eliminate-references)))
 
 (defun c1form-constant-p (form)
-  (when (eq (c1form-name form) 'LOCATION)
-    (loc-immediate-value-p (c1form-arg 0 form))))
+  (cond ((and (eq (c1form-name form) 'VARIABLE)
+              (c1form-arg 1 form))
+         (loc-immediate-value-p (c1form-arg 1 form)))
+        ((eq (c1form-name form) 'LOCATION)
+         (loc-immediate-value-p (c1form-arg 0 form)))))

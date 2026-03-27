@@ -12,6 +12,7 @@ break FEundefined_function
 break FEwrong_type_argument
 break FEinvalid_function
 set confirm off
+set print thread-events off
 handle SIGBUS nostop
 handle SIGPWR nostop pass noprint
 handle SIGXCPU nostop pass noprint

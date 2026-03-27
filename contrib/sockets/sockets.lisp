@@ -10,6 +10,20 @@
 ;; Trivial stuff is copied from SBCL's SB-BSD-SOCKETS, which is also
 ;; in the public domain.
 
+(defpackage "SB-BSD-SOCKETS"
+  (:use "CL" "FFI" "SI")
+  (:export "GET-HOST-BY-NAME" "GET-HOST-BY-ADDRESS"
+           "SOCKET-BIND" "SOCKET-ACCEPT" "SOCKET-CONNECT"
+           "SOCKET-PEERNAME" "SOCKET-NAME" "SOCKET-LISTEN"
+           "SOCKET-RECEIVE" "SOCKET-CLOSE" "SOCKET-MAKE-STREAM"
+           "GET-PROTOCOL-BY-NAME" "MAKE-INET-ADDRESS" "LOCAL-SOCKET"
+           "UNKNOWN-PROTOCOL" "UNKNOWN-PROTOCOL-NAME"
+           "SOCKET" "INET-SOCKET" "SOCKET-FILE-DESCRIPTOR" #+:win32 "NAMED-PIPE-SOCKET"
+           "SOCKET-FAMILY" "SOCKET-PROTOCOL" "SOCKET-TYPE"
+           "SOCKET-ERROR" "NAME-SERVICE-ERROR" "NON-BLOCKING-MODE"
+           "HOST-ENT-NAME" "HOST-ENT-ALIASES" "HOST-ENT-ADDRESS-TYPE"
+           "HOST-ENT-ADDRESSES" "HOST-ENT" "HOST-ENT-ADDRESS" "SOCKET-SEND"))
+
 (in-package "SB-BSD-SOCKETS")
 
 ;; Obviously this requires the one or other form of BSD compatible
@@ -210,7 +224,7 @@ containing the whole rest of the given `string', if any."
 HOST-NAME may also be an IP address in dotted quad notation or some
 other weird stuff - see getaddrinfo(3) for details."
   (multiple-value-bind (errno canonical-name addresses aliases)
-      (c-inline (host-name) (:cstring)
+      (c-inline (host-name :test #'equalp) (:cstring :object :object)
                 (values :int :object :object :object)
                 "
 {
@@ -247,7 +261,7 @@ other weird stuff - see getaddrinfo(3) for details."
             ecl_aset(vector,1, ecl_make_fixnum( (ip>>16) & 0xFF));
             ecl_aset(vector,2, ecl_make_fixnum( (ip>>8) & 0xFF));
             ecl_aset(vector,3, ecl_make_fixnum( ip & 0xFF ));
-            addresses = cl_adjoin(4, vector, addresses, @':test, @'equalp);
+            addresses = cl_adjoin(4, vector, addresses, #1, #2);
             if ( rp->ai_canonname != 0 ) {
                 cl_object alias = ecl_make_simple_base_string( rp->ai_canonname, -1 );
                 aliases = CONS(alias, aliases);

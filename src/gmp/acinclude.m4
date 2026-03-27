@@ -518,6 +518,9 @@ GMP_PROG_CC_WORKS_PART([$1], [gnupro alpha ev6 char spilling],
    values being spilled into floating point registers.  The problem doesn't
    show up all the time, but has occurred enough in GMP for us to reject
    this compiler+flags.  */
+
+#include <string.h>
+
 struct try_t
 {
  char dst[2];
@@ -592,26 +595,13 @@ GMP_PROG_CC_WORKS_PART([$1], [long long reliability test 1],
    Extracted from tests/mpn/t-iord_u.c.  Causes Apple's gcc 3.3 build 1640 and
    1666 to segfault with e.g., -O2 -mpowerpc64.  */
 
-#ifdef __GNUC__
+#ifdef __GNUC_
+h(){}g(){}
 typedef unsigned long long t1;typedef t1*t2;
 __inline__ t1 e(t2 rp,t2 up,int n,t1 v0)
 {t1 c,x,r;int i;if(v0){c=1;for(i=1;i<n;i++){x=up[i];r=x+1;rp[i]=r;}}return c;}
 f(){static const struct{t1 n;t1 src[9];t1 want[9];}d[]={{1,{0},{1}},};t1 got[9];int i;
 for(i=0;i<1;i++){if(e(got,got,9,d[i].n)==0)h();g(i,d[i].src,d[i].n,got,d[i].want,9);if(d[i].n)h();}}
-h(){}g(){}
-#else
-int dummy;
-#endif
-])
-
-GMP_PROG_CC_WORKS_PART([$1], [long long reliability test 2],
-[/* The following provokes an internal compiler error on powerpc-apple-darwin.
-   Extracted from mpz/cfdiv_q_2exp.c.  Causes Apple's gcc 3.3 build 1640 and
-   1666 to get an ICE with -O1 -mpowerpc64.  */
-
-#ifdef __GNUC__
-f(int u){int i;long long x;x=u?~0:0;if(x)for(i=0;i<9;i++);x&=g();if(x)g();}
-g(){}
 #else
 int dummy;
 #endif

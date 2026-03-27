@@ -14,7 +14,15 @@
 
 (progn
   (setq *package* (find-package "SYSTEM"))
-  (setq *features* @LSP_FEATURES@))
+  (setq *host-features* *features*)
+  (setq *features* '(@LSP_FEATURES@ @COMPILATION_FEATURES@))
+  (when (member :ecl-min *host-features*)
+    (setq *features* (cons :ecl-min *features*)))
+  (when (and (member :uname *host-features*)
+             (not (member :windows *features*)))
+    (setq *features* (cons :uname *features*)))
+  (when (member :cross *host-features*)
+    (setq *features* (cons :cross *features*))))
 
 ;;;
 ;;; * Ensure that we have the whole of Common-Lisp to compile
@@ -34,8 +42,9 @@
 (progn
   (c::update-compiler-features
    :executable
-   #+(or windows cygwin mingw32) "build:ecl_min.exe"
-   #-(or windows cygwin mingw32) "build:@ECL_MIN@")
+   (if (intersection '(:windows :cygwin :mingw32) *host-features*)
+       "build:ecl_min.exe"
+       "build:@ECL_MIN@"))
   (format t "~&;;; System features: ~A~%" c::*compiler-features*))
 
 ;;;
@@ -68,6 +77,24 @@
   (load "ext:ecl-cdb;ecl-help")
   (load "@true_srcdir@/doc/help.lsp")
   (si::dump-documentation "@true_builddir@/help.doc"))
+
+;;;
+;;; * Dump compiler configuration (for cross compilation)
+;;;
+#+cross
+(let ((*features* '(:cross @LSP_FEATURES@)))
+  (setf c::*cmp-env-root* (c::register-all-known-types c::*cmp-env-root*))
+  (setf c::*cmp-env-root* (c::cmp-env-add-declaration :feature
+                                                      (cons :complex-float
+                                                            (member :complex-float *features*))
+                                                      c::*cmp-env-root*))
+  (dolist (s '(most-negative-fixnum most-positive-fixnum cl-fixnum-bits array-dimension-limit
+               array-total-size-limit ffi:c-short-min ffi:c-short-max ffi:c-ushort-max
+               ffi:c-int-min ffi:c-int-max ffi:c-uint-max ffi:c-long-min ffi:c-long-max
+               ffi:c-ulong-max #+long-long ffi:c-long-long-min #+long-long ffi:c-long-long-max
+               #+long-long ffi:c-ulong-long-max))
+    (c::cmp-env-register-symbol-macro s (symbol-value s) c::*cmp-env-root* t))
+  (c::write-target-info #P"build:target-info.lsp"))
 
 ;;;
 ;;; * Trick to make names shorter in C files
@@ -127,8 +154,8 @@
                                     :system-p t :c-file t :data-file t :h-file t
                                     ;;:shared-data-file "build:ecl.sdat"
                                     )))
-  #+CLOS
-  (let* ((c::*compile-to-linking-call* nil))
+  #+clos
+  (progn
     (mapc #'proclaim +ecl-optimization-settings+)
     (setq lsp-objects (append lsp-objects
                               (compile-if-old "build:clos;" +clos-module-files+
@@ -139,7 +166,7 @@
   (let ((extra-lisp-files '(@ECL_EXTRA_LISP_FILES@)))
     (when extra-lisp-files
       (setq lsp-objects (append lsp-objects
-                                (compile-if-old "build:ext;" extra-lisp-files
+                                (compile-if-old "build:user;" extra-lisp-files
                                                 :system-p t :c-file t :data-file t
                                                 :h-file t
                                                 ;;:shared-data-file "build:ecl.sdat"
@@ -270,8 +297,7 @@
 
 #+WANTS-SOCKETS
 (build-module "sockets"
-              '("ext:sockets;package.lisp"
-                "ext:sockets;sockets.lisp")
+              '("ext:sockets;sockets.lisp")
               :dir "build:ext;"
               :prefix "EXT"
               :builtin
@@ -356,7 +382,7 @@
   (write-line "id ICON \"ecl.ico\"" s))
  (ext:copy-file #p"src:util;ecl.ico" "ecl.ico")
  #+msvc (ext:system "rc /nologo /r ecl.rc")
- #-msvc (ext:system "windres ecl.rc -O coff ecl.res"))
+ #-msvc (ext:system "@WINDRES@ ecl.rc -O coff ecl.res"))
 
 (si::pathname-translations "SYS" '(("**;*.*.*" "@true_builddir@/**/*.*")))
 

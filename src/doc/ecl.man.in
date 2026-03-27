@@ -93,16 +93,16 @@ Load configuration files at startup (default).
 Do not load configuration files at startup.
 .TP 3
 .B \-\-c\-stack\~\fIsize\fP
-Set C stack \fIsize\fP in kilobytes for C compiler.
+Set C stack \fIsize\fP in bytes for C compiler.
 .TP 3
 .B \-\-lisp\-stack\~\fIsize\fP
-Set stack \fIsize\fP in kilobytes for bytecodes interpreter.
+Set stack \fIsize\fP in bytes for bytecodes interpreter.
 .TP 3
 .B \-\-heap\-stack\~\fIsize\fP
-Set heap \fIsize\fP in kilobytes.
+Set heap \fIsize\fP in bytes.
 .TP 3
 .B \-\-frame\-stack\~\fIsize\fP
-Set frame \fIsize\fP in kilobytes for runtime control structures.
+Set frame stack \fIsize\fP in bytes for runtime control structures.
 .TP 3
 .B \-o\~\fIfile\fP
 Provide the output target \fIfile\fP for compilation.

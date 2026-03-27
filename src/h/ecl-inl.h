@@ -83,6 +83,44 @@
 #define end_loop_for_on(list) } while (list = ECL_CONS_CDR(list), ECL_CONSP(list))
 
 /*
+ * Loops over a vector.
+ */
+#define loop_across_stack_fifo(var, obj) {                              \
+  cl_index __ecl_idx;                                                   \
+  cl_index __ecl_ndx = obj->vector.fillp;                               \
+  cl_object *__ecl_v = obj->vector.self.t;                              \
+  for(__ecl_idx = 0; __ecl_idx < __ecl_ndx; __ecl_idx++) {              \
+    cl_object var = __ecl_v[__ecl_idx];
+
+
+#define loop_across_stack_filo(var, obj) {                              \
+  cl_index __ecl_idx;                                                   \
+  cl_index __ecl_ndx = obj->vector.fillp;                               \
+  cl_object *__ecl_v = obj->vector.self.t;                              \
+  for(__ecl_idx = __ecl_ndx; __ecl_idx > 0; __ecl_idx--) {              \
+    cl_object var = __ecl_v[__ecl_idx-1];
+
+#define end_loop_across_stack() }}
+
+/*
+ * Loops over a stack frame.
+ */
+
+#define loop_across_frame_fifo(var, obj) {                              \
+  cl_object *__ecl_ptr = ECL_STACK_FRAME_PTR(obj);                      \
+  cl_object *__ecl_top = ECL_STACK_FRAME_TOP(obj);                      \
+  while(__ecl_ptr++ < __ecl_top) {                                      \
+    cl_object var = *(__ecl_ptr-1);                                     \
+
+#define loop_across_frame_filo(var, obj) {                              \
+  cl_object *__ecl_ptr = ECL_STACK_FRAME_PTR(obj);                      \
+  cl_object *__ecl_top = ECL_STACK_FRAME_TOP(obj);                      \
+  while(__ecl_ptr < __ecl_top--) {                                      \
+    cl_object var = *__ecl_top;
+
+#define end_loop_across_frame() }}
+
+/*
  * Static constant definition.
  */
 #ifdef __cplusplus

@@ -18,17 +18,19 @@
 
 (defvar *inline-max-depth* 3
   "Depth at which inlining of functions stops.")
-(defvar *inline-information* nil)
 
 ;;; --cmputil.lsp--
 ;;;
 ;;; Variables and constants for error handling
 ;;;
 (defvar *current-form* '|compiler preprocess|)
+(defvar *current-c1form*)
 (defvar *current-toplevel-form* '|compiler preprocess|)
 (defvar *compile-file-position* -1)
 (defvar *active-protection* nil)
 (defvar *pending-actions* nil)
+(defvar *empty-loc* (gensym))
+(defvar *inline-loc* (gensym))
 
 (defvar *compiler-conditions* '()
   "This variable determines whether conditions are printed or just accumulated.")
@@ -61,15 +63,12 @@ running the compiler. It may be updated by running ")
 ;;; List of callbacks to be generated
 ;;;
 (defvar *callbacks* nil)
+(defvar *functions* nil)
 
 ;;; --cmpc-machine.lsp, cmpffi.lsp ---
-(defvar *machine* nil)
+(defconfig *machine* nil)
 
 ;;; --cmpcall.lsp--
-;;;
-;;; Whether to use linking calls.
-;;;
-(defvar *compile-to-linking-call* t)
 (defvar *compiler-declared-globals*)
 
 ;;; --cmpenv.lsp--
@@ -113,18 +112,11 @@ by the C compiler and they denote function and unwind-protect boundaries. Note
 that compared with the bytecodes compiler, these records contain an additional
 variable, block, tag or function object at the end.")
 
-(defvar *cmp-env-root*
-  (cons nil (list (list '#:no-macro 'si:macro (constantly nil))))
+(defconfig *cmp-env-root*
+  (cons nil (list (list '#:no-macro 'si:macro 'si::constantly-nil)))
 "This is the common environment shared by all toplevel forms. It can
 only be altered by DECLAIM forms and it is used to initialize the
 value of *CMP-ENV*.")
-
-;;; --cmplog.lsp--
-;;;
-;;; Destination of output of different forms. See cmploc.lsp for types
-;;; of destinations.
-;;;
-(defvar *destination*)
 
 ;;; --cmpmain.lsp--
 ;;;
@@ -161,6 +153,11 @@ slashes before special characters.")
 (defvar *precompiled-header-flags* nil)
 (defvar *precompiled-header-cc-config* nil)
 
+(defvar *cross-compiling* nil
+  "Are we cross compiling?")
+(defvar *host-info* nil
+  "Information on the host configuration for cross compilation.")
+
 ;;;
 ;;; Compiler program and flags.
 ;;;
@@ -186,31 +183,21 @@ lines are inserted, but the order is preserved")
 (defvar *compile-time-too* nil)
 (defvar *not-compile-time* nil)
 
-(defvar *permanent-data* nil)           ; detemines whether we use *permanent-objects*
-                                        ; or *temporary-objects*
-(defvar *permanent-objects* nil)        ; holds { vv-record }*
-(defvar *temporary-objects* nil)        ; holds { vv-record }*
+;;; Determines whether the object may be released after the initialization
+(defvar *permanent-data* nil)
+(defvar *referenced-objects* nil)       ; holds { vv-record }*
+
 (defvar *load-objects* nil)             ; hash with association object -> vv-location
 (defvar *load-time-values* nil)         ; holds { ( vv-index form ) }*,
 ;;;  where each vv-index should be given an object before
 ;;;  defining the current function during loading process.
-(defvar *setf-definitions* nil)         ; C forms to find out (SETF fname) locations
 
-(defvar *optimizable-constants* nil)    ; (value . c1form) pairs for inlining constants
-
-(defvar *use-static-constants-p*    ; T/NIL flag to determine whether one may
-  #+ecl-min t #-ecl-min nil)            ; generate lisp constant values as C structs
-(defvar *static-constants* nil)         ; constants that can be built as C values
-                                        ; holds { ( object c-variable constant ) }*
-
-(defvar si:*compiler-constants* nil)    ; a vector with all constants
-                                        ; only used in COMPILE
+(defvar si:*compiler-constants* nil)    ; a vector with all constants only used
+                                        ; in COMPILE
 
 (defvar *global-vars* nil)              ; variables declared special
 (defvar *global-funs* nil)              ; holds { fun }*
 (defvar *use-c-global* nil)             ; honor si::c-global declaration
-(defvar *global-cfuns-array* nil)       ; holds { fun }*
-(defvar *local-funs* nil)               ; holds { fun }*
 (defvar *top-level-forms* nil)          ; holds { top-level-form }*
 (defvar *make-forms* nil)               ; holds { top-level-form }*
 
@@ -244,27 +231,18 @@ be deleted if they have been opened with LoadLibrary.")
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
     (*callbacks* nil)
+    (*functions* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
-    (*cmp-env* nil)
+    (*cmp-env* *cmp-env-root*)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
-    (*setf-definitions* nil)
     (*make-forms* nil)
-    (*static-constants* nil)
-    (*permanent-objects* nil)
-    (*temporary-objects* nil)
-    (*local-funs* nil)
+    (*referenced-objects* (make-array 256 :adjustable t :fill-pointer 0))
     (*global-vars* nil)
     (*global-funs* nil)
-    (*global-cfuns-array* nil)
     (*undefined-vars* nil)
     (*top-level-forms* nil)
     (*compile-time-too* nil)
     (*clines-string-list* '())
     (si::*defun-inline-hook* 'maybe-install-inline-function)
-    (*machine* (or *machine* *default-machine*))
-    (*optimizable-constants* (make-optimizable-constants *machine*))
-    (*inline-information*
-     (ext:if-let ((r (machine-inline-information *machine*)))
-       (si:copy-hash-table r)
-       (make-inline-information *machine*)))))
+    (*machine* (or *machine* *default-machine*))))
 

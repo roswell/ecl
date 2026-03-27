@@ -19,7 +19,7 @@
 cl_object *
 _ecl_va_sp(cl_narg narg)
 {
-  return ecl_process_env()->stack_frame->frame.base + narg;
+  return ECL_STACK_FRAME_PTR(ecl_process_env()->stack_frame) + narg;
 }
 
 /* Calling conventions:
@@ -34,14 +34,14 @@ _ecl_va_sp(cl_narg narg)
 cl_object
 ecl_apply_from_stack_frame(cl_object frame, cl_object x)
 {
-  cl_object *sp = frame->frame.base;
+  cl_object *sp = ECL_STACK_FRAME_PTR(frame);
   cl_index narg = frame->frame.size;
   cl_object fun = x;
   cl_object ret;
   frame->frame.env->stack_frame = frame;
  AGAIN:
   frame->frame.env->function = fun;
-  if (ecl_unlikely(fun == OBJNULL || fun == ECL_NIL))
+  if (ecl_unlikely(fun == ECL_NIL))
     FEundefined_function(x);
   switch (ecl_t_of(fun)) {
   case t_cfunfixed:
@@ -73,8 +73,8 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
     }
     break;
   case t_symbol:
-    if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
-      FEundefined_function(x);
+    if (ecl_unlikely(!ECL_FBOUNDP(fun)))
+      FEundefined_function(fun);
     fun = ECL_SYM_FUN(fun);
     goto AGAIN;
   case t_bytecodes:
@@ -94,8 +94,7 @@ cl_objectfn
 ecl_function_dispatch(cl_env_ptr env, cl_object x)
 {
   cl_object fun = x;
- AGAIN:
-  if (ecl_unlikely(fun == OBJNULL || fun == ECL_NIL))
+  if (ecl_unlikely(fun == ECL_NIL))
     FEundefined_function(x);
   switch (ecl_t_of(fun)) {
   case t_cfunfixed:
@@ -111,10 +110,9 @@ ecl_function_dispatch(cl_env_ptr env, cl_object x)
     env->function = fun;
     return fun->instance.entry;
   case t_symbol:
-    if (ecl_unlikely(fun->symbol.stype & ecl_stp_macro))
-      FEundefined_function(x);
     fun = ECL_SYM_FUN(fun);
-    goto AGAIN;
+    env->function = fun;
+    return fun->cfun.entry;
   case t_bytecodes:
     env->function = fun;
     return fun->bytecodes.entry;
@@ -151,13 +149,13 @@ cl_funcall(cl_narg narg, cl_object function, ...)
                                                    (cl_object)&frame_aux,
                                                    narg -= 2);
       for (i = 0; i < narg; i++) {
-        ECL_STACK_FRAME_SET(frame, i, lastarg);
+        ecl_stack_frame_push(frame, lastarg);
         lastarg = ecl_va_arg(args);
       }
       if (ecl_t_of(lastarg) == t_frame) {
         /* This could be replaced with a memcpy() */
         for (i = 0; i < lastarg->frame.size; i++) {
-          ecl_stack_frame_push(frame, lastarg->frame.base[i]);
+          ecl_stack_frame_push(frame, ECL_STACK_FRAME_REF(lastarg, i));
         }
       } else loop_for_in (lastarg) {
           if (ecl_unlikely(i >= ECL_CALL_ARGUMENTS_LIMIT)) {
@@ -252,3 +250,10 @@ cl_eval(cl_object form)
   }
   @(return value);
 } @)
+
+
+cl_object
+ecl_undefined_function_entry(cl_narg narg, ...)
+{
+  FEundefined_function(ecl_process_env()->function); /* see object.h */
+}

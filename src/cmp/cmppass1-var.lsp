@@ -20,25 +20,32 @@
            (c1let/let* 'let* bindings args))
           (t
            (loop :with temp
-              :for b :in bindings
-                :if (atom b)
-                  :collect b :into real-bindings :and
-                  :collect b :into names
-                :else
-                  :collect (setf temp (gensym "LET")) :into temp-names    :and
-                  :collect (cons temp (cdr b))        :into temp-bindings :and
-                  :collect (list (car b) temp)        :into real-bindings :and
-                  :collect (car b)                    :into names
-                :do
-                  (cmpck (member (car names) (cdr names) :test #'eq)
-                         "LET: The variable ~s occurs more than once in the LET."
-                         (car names))
-              :finally
-                (return (c1let/let* 'let*
-                                    (nconc temp-bindings real-bindings)
-                                    `((declare (ignorable ,@temp-names)
-                                               (:read-only ,@temp-names))
-                                      ,@args)))))
+                 :with type-decls = (nth-value 2 (c1body args nil))
+                 :with temp-type-decls = '()
+                 :for b :in bindings
+                 :if (atom b)
+                   :collect b :into real-bindings :and
+                   :collect b :into names
+                 :else
+                   :collect (setf temp (gensym "LET")) :into temp-names    :and
+                   :collect (cons temp (cdr b))        :into temp-bindings :and
+                   :collect (list (car b) temp)        :into real-bindings :and
+                   :collect (car b)                    :into names         :and
+                   :do
+                      (ext:when-let ((type-decl (find (car b) type-decls :key #'car :test #'eq)))
+                        (push `(type ,(cdr type-decl) ,temp)
+                              temp-type-decls))
+                 :do
+                    (cmpck (member (car names) (cdr names) :test #'eq)
+                           "LET: The variable ~s occurs more than once in the LET."
+                           (car names))
+                 :finally
+                    (return (c1let/let* 'let*
+                                        (nconc temp-bindings real-bindings)
+                                        `((declare (ignorable ,@temp-names)
+                                                   (:read-only ,@temp-names)
+                                                   ,@temp-type-decls)
+                                          ,@args)))))
           (t
            (c1let/let* 'let bindings args)))))
 
@@ -97,7 +104,9 @@
             (if (global-var-p var)
                 (cmpwarn "Found :READ-ONLY declaration for global var ~A"
                          name)
-                (setf (var-type var) (c1form-primary-type init)))
+                (setf (var-type var) (type-and
+                                      type
+                                      (c1form-primary-type init))))
             (multiple-value-bind (constantp value)
                 (c1form-constant-p init)
               (when constantp
@@ -130,8 +139,7 @@
                 :args vars forms body))
 
 (defun c1let-optimize-read-only-vars (all-vars all-forms body)
-  (loop with base = (list body)
-     for vars on all-vars
+  (loop for vars on all-vars
      for forms on (nconc all-forms (list body))
      for var = (first vars)
      for form = (first forms)
@@ -186,7 +194,7 @@
   ;;  (let ((v1 e1) (v2 e2) (v3 e3)) (expr e4 v2 e5))
   ;;  - v2 is a read only variable
   ;;  - the value of e2 is not modified in e3 nor in following expressions
-  (when (eq (c1form-name form) 'VAR)
+  (when (eq (c1form-name form) 'VARIABLE)
     (let ((other-var (c1form-arg 0 form)))
       (unless (or (global-var-p other-var)
                   (member other-var rest-vars)
@@ -224,7 +232,7 @@
            (setq type 'T))
           ((machine-c-type-p (setq type (cdr type)))
            (setf kind type
-                 type (rep-type->lisp-type type))))
+                 type (host-type->lisp-type type))))
     (cond ((or (member name specials) (special-variable-p name))
            (unless (eq kind 'LEXICAL)
              (cmperr "Special variable ~A cannot be declared to have C type ~A"
@@ -237,11 +245,12 @@
                      :kind kind :ignorable ignorable
                      :ref 0)))))
 
-(defun c1var (name)
+;;; When LOC is not NIL then we deal with a constant.
+(defun c1variable (name loc)
   (let* ((var (c1vref name))
-         (output (make-c1form* 'VAR
+         (output (make-c1form* 'VARIABLE
                                :type (var-type var)
-                               :args var)))
+                               :args var loc)))
       (add-to-read-nodes var output)
       output))
 
@@ -265,8 +274,7 @@
              ((CLOSURE))
              ((LEXICAL)
               (when cfb
-                (setf (var-ref-clb var) t
-                      (var-loc var) 'OBJECT)))
+                (setf (var-ref-clb var) t)))
              (t
               (when cfb
                 (cmperr "Variable ~A declared of C type cannot be referenced across function boundaries."

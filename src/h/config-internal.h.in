@@ -28,9 +28,6 @@
 /* Allow loading dynamically linked code                                */
 #undef ENABLE_DLOPEN
 
-/* Undefine this if you do not want ECL to check for circular lists     */
-#define ECL_SAFE
-
 /* Activate Boehm-Weiser incremental garbage collector                  */
 #undef GBC_BOEHM_GENGC
 
@@ -179,12 +176,16 @@
 
 #undef FILE_CNT
 #if @ECL_FILE_CNT@ == 1
-#  define FILE_CNT(fp)  ((fp)->_IO_read_end - (fp)->_IO_read_ptr)
+#  include <stdio_ext.h>
+#  define FILE_CNT(fp)  (__freadahead((fp)))
 #endif
 #if @ECL_FILE_CNT@ == 2
-#  define FILE_CNT(fp)  ((fp)->_r)
+#  define FILE_CNT(fp)  ((fp)->_IO_read_end - (fp)->_IO_read_ptr)
 #endif
 #if @ECL_FILE_CNT@ == 3
+#  define FILE_CNT(fp)  ((fp)->_r)
+#endif
+#if @ECL_FILE_CNT@ == 4
 #  define FILE_CNT(fp)  ((fp)->_cnt)
 #endif
 
@@ -254,10 +255,5 @@
 #endif
 
 /* Do the fixed and optional arguments of a variadic function use a
- * different calling convention?
- * Hardcoded since there's no easy way to determine this from a
- * configure check and currently ARM64 apple is the only platform
- * known to do this. */
-#if defined(__APPLE__) && (defined(__arm64__) || defined(__aarch64__))
-#define ECL_C_COMPATIBLE_VARIADIC_DISPATCH
-#endif
+ * different calling convention? */
+#undef ECL_C_COMPATIBLE_VARIADIC_DISPATCH

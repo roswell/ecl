@@ -36,6 +36,7 @@
 #define MP_CONSTANT     MP_PACKAGE | CONSTANT_SYMBOL
 #define CLOS_ORDINARY   CLOS_PACKAGE | ORDINARY_SYMBOL
 #define CLOS_SPECIAL    CLOS_PACKAGE | SPECIAL_SYMBOL
+#define CLOS_CONSTANT   CLOS_PACKAGE | CONSTANT_SYMBOL
 #define KEYWORD         KEYWORD_PACKAGE | CONSTANT_SYMBOL
 #define GRAY_ORDINARY   GRAY_PACKAGE | ORDINARY_SYMBOL
 #define FFI_ORDINARY    FFI_PACKAGE | ORDINARY_SYMBOL
@@ -83,15 +84,13 @@ mangle_name(cl_object output, unsigned char *source, int l)
 @(defun si::mangle-name (symbol &optional as_function)
   cl_index l;
   unsigned char c, *source, *dest;
-  cl_object output;
+  cl_object output = ECL_NIL;
   cl_object package;
   cl_object found = ECL_NIL;
   cl_object maxarg = ecl_make_fixnum(ECL_CALL_ARGUMENTS_LIMIT);
   cl_object minarg = ecl_make_fixnum(0);
   bool is_symbol;
-  cl_object name;
 @
-  name = ecl_symbol_name(symbol);
   is_symbol = Null(as_function);
   if (is_symbol) {
     cl_fixnum p;
@@ -105,55 +104,48 @@ mangle_name(cl_object output, unsigned char *source, int l)
     p  = (cl_symbol_initializer*)symbol - cl_symbols;
     if (p >= 0 && p <= cl_num_symbols_in_core) {
       found = ECL_T;
-      output = cl_format(4, ECL_NIL,
-                         @"ECL_SYM(~S,~D)",
-                         name, ecl_make_fixnum(p));
+      output = cl_format(4, ECL_NIL, @"ECL_SYM(~S,~D)",
+                         ecl_symbol_name(symbol), ecl_make_fixnum(p));
 #ifndef ECL_FINAL
-      /* XXX to allow the Lisp compiler to check that the narg
-       * declaration in symbols_list.h matches the actual function
-       * definition, return the previously saved narg here. -- mg
-       * 2019-12-02 */
+      /* XXX to allow the Lisp compiler to check that the narg declaration in
+       * symbols_list.h matches the actual function definition, return the
+       * previously saved narg here. -- mg 2019-12-02 */
       cl_object plist = cl_symbol_plist(symbol);
-      for ( ; ECL_CONSP(plist); plist = ECL_CONS_CDR(plist)) {
-        if (ECL_CONS_CAR(plist) == @'call-arguments-limit') {
-          plist = ECL_CONS_CDR(plist);
-          if (ECL_CONSP(plist) && ECL_FIXNUMP(ECL_CONS_CAR(plist))) {
-            cl_fixnum narg = ecl_fixnum(ECL_CONS_CAR(plist));
-            if (narg >= 0) {
-              minarg = maxarg = ecl_make_fixnum(narg);
-            } else {
-              minarg = ecl_make_fixnum(-narg-1);
-            }
-          }
-          break;
-        }
+      cl_object nargs = ecl_getf(plist, @'call-arguments-limit', ECL_NIL);
+      if (!(Null(nargs))) {
+        cl_fixnum narg = ecl_fixnum(nargs);
+        (narg >= 0)
+          ? (minarg = maxarg = nargs)
+          : (minarg = ecl_make_fixnum(-narg-1));
       }
 #endif
       @(return found output minarg maxarg);
     }
-  } else if (!Null(symbol)) {
-    cl_object fun = symbol->symbol.gfdef;
-    cl_type t = (fun == OBJNULL)? t_other : ecl_t_of(fun);
-    if ((t == t_cfun || t == t_cfunfixed) && fun->cfun.block == OBJNULL) {
-      for (l = 0; l <= cl_num_symbols_in_core; l++) {
-        cl_object s = (cl_object)(cl_symbols + l);
-        if (fun == ECL_SYM_FUN(s)) {
-          symbol = s;
-          found = ECL_T;
-          if (fun->cfun.narg >= 0) {
-            if (t == t_cfunfixed) {
-              minarg =
-                maxarg = ecl_make_fixnum(fun->cfunfixed.narg);
-            } else {
-              minarg = ecl_make_fixnum(fun->cfun.narg);
-            }
+  } else if (!Null(symbol) && ECL_FBOUNDP(symbol)) {
+    cl_object fun = ECL_SYM_FUN(symbol);
+    cl_type ftype = ecl_t_of(fun);
+    switch (ftype) {
+    case t_cfun:
+    case t_cfunfixed:
+      if(fun->cfun.block == OBJNULL) {
+        for (l = 0; l <= cl_num_symbols_in_core; l++) {
+          cl_object s = (cl_object)(cl_symbols + l);
+          if (fun == ECL_SYM_FUN(s)) {
+            symbol = s;
+            found = ECL_T;
+            cl_object nargs = ecl_make_fixnum(fun->cfun.narg);
+            (ftype == t_cfunfixed)
+              ? (minarg = maxarg = nargs)
+              : (minarg = nargs);
+            break;
           }
-          break;
         }
       }
+    default:
+      break;
     }
   }
-  if (!Null(symbol->symbol.cname)) {
+  if (!ECL_FBOUNDP(symbol) && !Null(symbol->symbol.cname)) {
     @(return found symbol->symbol.cname minarg maxarg);
   }
   package = ecl_symbol_package(symbol);
@@ -206,13 +198,15 @@ mangle_name(cl_object output, unsigned char *source, int l)
   @(return found output minarg maxarg);
 @)
 
+/* FIXME we mark symbol's cl_object as volatile because some versions of gcc
+   miscompile writes to the cl_symbols union members. See #738. */
 static void
-make_this_symbol(int i, cl_object s, int code,
+make_this_symbol(int i, volatile cl_object s, int code,
                  const char *name, const char *cname,
                  cl_objectfn fun, int narg, cl_object value)
 {
   enum ecl_stype stp;
-  cl_object package;
+  cl_object package, sym_name, sym_cname;
   bool form = 0;
 
   switch (code & 3) {
@@ -234,26 +228,32 @@ make_this_symbol(int i, cl_object s, int code,
   case FFI_PACKAGE: package = cl_core.ffi_package; break;
   default: printf("%d\n", code & ~(int)3); ecl_internal_error("Unknown package code in init_all_symbols()");
   }
+  sym_name = ecl_make_constant_base_string(name,-1);
+  sym_cname = ecl_cstring_to_base_string_or_nil(cname);
   s->symbol.t = t_symbol;
 #ifdef ECL_THREADS
   s->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
   ECL_SET(s, OBJNULL);
-  ECL_SYM_FUN(s) = ECL_NIL;
+  ECL_FMAKUNBOUND(s);
+  s->symbol.undef_entry = ecl_undefined_function_entry;
+  s->symbol.macfun = ECL_NIL;
+  s->symbol.sfdef = ECL_NIL;
   s->symbol.plist = ECL_NIL;
   s->symbol.hpack = ECL_NIL;
   s->symbol.stype = stp;
   s->symbol.hpack = package;
-  s->symbol.name = ecl_make_constant_base_string(name,-1);
-  s->symbol.cname = ecl_cstring_to_base_string_or_nil(cname);
+  s->symbol.name = sym_name;
+  s->symbol.cname = sym_cname;
+  /* Before this statement symbol pointers are not marked by GC. */
+  cl_num_symbols_in_core = i + 1;
   if (package == cl_core.keyword_package) {
-    package->pack.external =
-      _ecl_sethash(s->symbol.name, package->pack.external, s);
+    package->pack.external = _ecl_sethash(sym_name, package->pack.external, s);
     ECL_SET(s, s);
   } else {
     int intern_flag;
     ECL_SET(s, value);
-    if (ecl_find_symbol(s->symbol.name, package, &intern_flag) != ECL_NIL
+    if (ecl_find_symbol(sym_name, package, &intern_flag) != ECL_NIL
         && intern_flag == ECL_INHERITED) {
       ecl_shadowing_import(s, package);
     } else {
@@ -282,7 +282,6 @@ make_this_symbol(int i, cl_object s, int code,
    * narg here. -- mg 2019-12-02 */
   si_set_symbol_plist(s, cl_list(2, @'call-arguments-limit', ecl_make_fixnum(narg)));
 #endif
-  cl_num_symbols_in_core = i + 1;
 }
 
 void

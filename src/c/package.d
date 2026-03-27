@@ -378,9 +378,9 @@ si_coerce_to_package(cl_object p)
 cl_object
 ecl_current_package(void)
 {
-  cl_object x = ecl_symbol_value(@'*package*');
+  const cl_env_ptr env = ecl_process_env();
+  cl_object x = ecl_cmp_symbol_value(env, @'*package*');
   unlikely_if (!ECL_PACKAGEP(x)) {
-    const cl_env_ptr env = ecl_process_env();
     ECL_SETQ(env, @'*package*', cl_core.user_package);
     FEerror("The value of *PACKAGE*, ~S, was not a package",
             1, x);

@@ -192,7 +192,8 @@ constructed.
 
 (defun make-loop-minimax (answer-variable type)
   (declare (si::c-local))
-  (let ((infinity-data (cdr (assoc type *loop-minimax-type-infinities-alist* :test #'subtypep))))
+  (let ((infinity-data (cdr (assoc type *loop-minimax-type-infinities-alist*
+                                   :test #'(lambda (t1 t2) (subtypep t1 t2 *loop-macro-environment*))))))
     (make-loop-minimax-internal
       :answer-variable answer-variable
       :type type
@@ -563,7 +564,7 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
     (when (setq constantp (constantp new-form))
       (setq constant-value (eval new-form)))
     (when (and constantp expected-type)
-      (unless (typep constant-value expected-type)
+      (unless (typep constant-value expected-type *loop-macro-environment*)
         (loop-warn "The form ~S evaluated to ~S, which was not of the anticipated type ~S."
                    form constant-value expected-type)
         (setq constantp nil constant-value nil)))
@@ -636,7 +637,7 @@ a LET-like macro, and a SETQ-like macro, which perform LOOP-style destructuring.
   (declare (si::c-local))
   (if (null specified-type)
       default-type
-      (multiple-value-bind (a b) (subtypep specified-type required-type)
+      (multiple-value-bind (a b) (subtypep specified-type required-type *loop-macro-environment*)
         (cond ((not b)
                (loop-warn "LOOP couldn't verify that ~S is a subtype of the required type ~S."
                           specified-type required-type))
@@ -975,7 +976,7 @@ collected result will be returned as the value of the LOOP."
          (unless (or (eq dtype t) (member (truly-the symbol name) *loop-nodeclare*))
            (when (and initialization-p (constantp initialization))
              (let ((init-type (type-of initialization)))
-               (unless (subtypep init-type dtype)
+               (unless (subtypep init-type dtype *loop-macro-environment*)
                  (setf dtype `(or ,dtype ,init-type)))))
            ;; Allow redeclaration of a variable. This can be used by
            ;; the loop constructors to make the type more and more
@@ -1325,7 +1326,7 @@ Note that this is not a valid ANSI code."))
 (defun loop-do-repeat ()
   (loop-disallow-conditional :repeat)
   (let* ((form (loop-get-form))
-         (type (if (fixnump form) 'fixnum 'real))
+         (type (if (typep form 'fixnum *loop-macro-environment*) 'fixnum 'real))
          (var (loop-make-variable (gensym) form type))
          (form `(loop-unsafe (when (minusp (decf ,var)) (go end-loop)))))
       (push form *loop-before-loop*)
@@ -1705,10 +1706,10 @@ Note that this is not a valid ANSI code."))
          ;; We can make the number type more precise when we know the
          ;; start, end and step values.
          (let ((new-type (typecase (+ start-value stepby)
-                           (integer (if (and (fixnump start-value)
+                           (integer (if (and (typep start-value 'fixnum *loop-macro-environment*)
                                              limit-constantp
-                                             (< limit-value most-positive-fixnum)
-                                             (> limit-value most-negative-fixnum))
+                                             (typep (1+ limit-value) 'fixnum *loop-macro-environment*)
+                                             (typep (1- limit-value) 'fixnum *loop-macro-environment*))
                                         'fixnum
                                         'integer))
                            (single-float 'single-float)
@@ -1716,12 +1717,12 @@ Note that this is not a valid ANSI code."))
                            (long-float 'long-float)
                            (short-float 'short-float)
                            (t indexv-type))))
-           (unless (subtypep (type-of start-value) new-type)
+           (unless (subtypep (type-of start-value) new-type *loop-macro-environment*)
              ;; The start type may not be a subtype of the type during
              ;; iteration. Happens e.g. when stepping a fixnum start
              ;; value by a float.
              (setf new-type `(or ,(type-of start-value) ,new-type)))
-           (unless (subtypep indexv-type new-type)
+           (unless (subtypep indexv-type new-type *loop-macro-environment*)
              (loop-declare-variable indexv new-type)))
          (when (and limit-constantp
                     (setq first-test (funcall (symbol-function testfn)
@@ -1932,8 +1933,11 @@ Note that this is not a valid ANSI code."))
 
 (defun loop-standard-expansion (keywords-and-forms environment universe)
   (declare (si::c-local))
-  (if (and keywords-and-forms (symbolp (car keywords-and-forms)))
-      (loop-translate keywords-and-forms environment universe)
+  (if (some #'atom keywords-and-forms)
+      (if (symbolp (car keywords-and-forms))
+          (loop-translate keywords-and-forms environment universe)
+          (error "LOOP: The first form ~S is not an extended loop keyword."
+                 (car keywords-and-forms)))
       (let ((tag (gensym)))
         `(block nil (tagbody ,tag (progn ,@keywords-and-forms) (go ,tag))))))
 

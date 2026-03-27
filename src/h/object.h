@@ -23,9 +23,6 @@ extern "C" {
 #define TRUE            1       /*  boolean true value  */
 #define FALSE           0       /*  boolean false value  */
 
-#if !defined(__cplusplus) && !defined(bool)
-typedef int bool;
-#endif
 typedef unsigned char byte;
 
 /*
@@ -212,6 +209,8 @@ struct ecl_long_float {
 #define ecl_long_float(o) ((o)->longfloat.value)
 
 typedef mpz_t big_num_t;
+typedef mp_limb_t ecl_limb_t;
+
 struct ecl_bignum {
         _ECL_HDR;
         big_num_t value;
@@ -270,25 +269,44 @@ enum ecl_stype {                /*  symbol type  */
 #define ECL_NO_TL_BINDING       ((cl_object)(1 << ECL_TAG_BITS))
 
 struct ecl_symbol {
-        _ECL_HDR1(stype);       /*  symbol type */
-        cl_object value;        /*  global value of the symbol  */
-                                /*  Coincides with cons.car  */
-        cl_object gfdef;        /*  global function definition  */
-                                /*  For a macro,  */
-                                /*  its expansion function  */
-                                /*  is to be stored.  */
-                                /*  Coincides with cons.cdr  */
-        cl_object plist;        /*  property list  */
-                                /*  This field coincides with cons.car  */
-        cl_object name;         /*  print name  */
-        cl_object cname;        /*  associated C name (or NIL)  */
-        cl_object hpack;        /*  home package  */
-                                /*  ECL_NIL for uninterned symbols  */
+        _ECL_HDR1(stype);        /*  symbol type */
+        cl_object value;         /*  global value of the symbol  */
+        cl_object gfdef;         /*  global function definition  */
+        cl_objectfn undef_entry; /*  entry point for not fboundp
+                                  *  symbols (must match the position
+                                  *  of cfun.entry); see below for
+                                  *  more explanation */
+        cl_object macfun;        /*  macro expansion function  */
+        cl_object sfdef;         /*  global (setf f) definition */
+        cl_object plist;         /*  property list  */
+        cl_object name;          /*  print name  */
+        cl_object cname;         /*  associated C name for function
+                                  *  with exported C interface */
+        cl_object hpack;         /*  home package  */
+                                 /*  ECL_NIL for uninterned symbols  */
 #ifdef ECL_THREADS
-        cl_index binding;       /*  index into the bindings array  */
+        cl_index binding;        /*  index into the bindings array  */
 #endif
 };
+/*
+ * Undefined functions are implemented as follows.
+ *
+ * For a symbols s with a global function binding: s->symbol.gfdef
+ * points to a cfun object, f->symbol.undef_entry is unused.
+ *
+ * For a symbol without a global function binding: s->symbol.gfdef
+ * points back to s itself, s->symbol.undef_entry is set. When an
+ * attempt is made to funcall s, the entry point in
+ * s->symbol.undef_entry is called which signals an undefined-function
+ * condition. Since the_env->function is set to s->symbol.gfdef which
+ * in this case is just s itself, we know which symbol caused the
+ * error and can signal accordingly. This construction enables us to
+ * skip the check for whether a function is bound or not when
+ * funcalling.
+ */
 #define ECL_SYM_FUN(sym)        ((sym)->symbol.gfdef)
+#define ECL_FBOUNDP(sym)        ((sym)->symbol.gfdef != (sym))
+#define ECL_FMAKUNBOUND(sym)    ((sym)->symbol.gfdef = (sym))
 
 struct ecl_package {
         _ECL_HDR1(locked);
@@ -569,16 +587,18 @@ enum ecl_smmode {               /*  stream mode  */
 };
 
 struct ecl_file_ops {
-        cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
         cl_index (*read_byte8)(cl_object strm, unsigned char *c, cl_index n);
+        cl_index (*write_byte8)(cl_object strm, unsigned char *c, cl_index n);
 
-        void (*write_byte)(cl_object c, cl_object strm);
         cl_object (*read_byte)(cl_object strm);
+        void (*write_byte)(cl_object strm, cl_object byte);
+        void (*unread_byte)(cl_object strm, cl_object byte);
+        cl_object (*peek_byte)(cl_object strm);
 
-        int (*read_char)(cl_object strm);
-        int (*write_char)(cl_object strm, int c);
-        void (*unread_char)(cl_object strm, int c);
-        int (*peek_char)(cl_object strm);
+        ecl_character (*read_char)(cl_object strm);
+        ecl_character (*write_char)(cl_object strm, ecl_character c);
+        void (*unread_char)(cl_object strm, ecl_character c);
+        ecl_character (*peek_char)(cl_object strm);
 
         cl_index (*read_vector)(cl_object strm, cl_object data, cl_index start, cl_index end);
         cl_index (*write_vector)(cl_object strm, cl_object data, cl_index start, cl_index end);
@@ -625,15 +645,19 @@ enum {
         ECL_STREAM_USER_FORMAT = 8,
         ECL_STREAM_US_ASCII = 10,
 #endif
+        /* External Format */
         ECL_STREAM_CR = 16,
         ECL_STREAM_LF = 32,
         ECL_STREAM_SIGNED_BYTES = 64,
         ECL_STREAM_LITTLE_ENDIAN = 128,
+        /* OS Streams */
         ECL_STREAM_C_STREAM = 256,
         ECL_STREAM_MIGHT_SEEK = 512,
-        ECL_STREAM_CLOSE_COMPONENTS = 1024,
-        ECL_STREAM_CLOSE_ON_EXEC = 2048,
-        ECL_STREAM_NONBLOCK = 4096
+        ECL_STREAM_CLOSE_ON_EXEC = 1024,
+        ECL_STREAM_NONBLOCK = 2048,
+        /* Lisp Streams */
+        ECL_STREAM_CLOSE_COMPONENTS = 4096,
+        ECL_STREAM_USE_VECTOR_FILLP = 8192
 };
 
 /* buffer points to an array of bytes ending at buffer_end. Decode one
@@ -644,6 +668,11 @@ typedef ecl_character (*cl_eformat_decoder)(cl_object stream, unsigned char **bu
 /* Encode the character c and store the result in buffer. Return the
    number of bytes used */
 typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, ecl_character c);
+
+/* Buffer is assumed to be big enough to store whole byte. The byte size is
+   stream->strm.byte_size. Decoder returns an object, encoder fills a buffer. */
+typedef cl_object (*cl_binary_decoder)(cl_object stream, unsigned char *buf);
+typedef void (*cl_binary_encoder)(cl_object stream, unsigned char *buf, cl_object byte);
 
 #define ECL_ANSI_STREAM_P(o) \
         (ECL_IMMEDIATE(o) == 0 && ((o)->d.t == t_stream))
@@ -660,18 +689,21 @@ struct ecl_stream {
         } file;
         cl_object object0;      /*  some object  */
         cl_object object1;      /*  some object */
+        cl_object last_byte;    /*  last byte read  */
+        cl_fixnum last_char;    /*  last character read  */
         cl_object byte_stack;   /*  buffer for unread bytes  */
         cl_index column;        /*  file column  */
-        cl_fixnum last_char;    /*  last character read  */
-        cl_fixnum last_code[2]; /*  actual composition of last character  */
         cl_fixnum int0;         /*  some int  */
         cl_fixnum int1;         /*  some int  */
         cl_index byte_size;     /*  size of byte in binary streams  */
         cl_fixnum last_op;      /*  0: unknown, 1: reading, -1: writing */
         char *buffer;           /*  buffer for FILE  */
+        unsigned char *byte_buffer; /*  buffer for encoding and decoding */
         cl_object format;       /*  external format  */
         cl_eformat_encoder encoder;
         cl_eformat_decoder decoder;
+        cl_binary_encoder byte_encoder;
+        cl_binary_decoder byte_decoder;
         cl_object format_table;
         int flags;              /*  character table, flags, etc  */
         ecl_character eof_char;
@@ -751,6 +783,8 @@ struct ecl_bytecodes {
         cl_index code_size;     /*  number of bytecodes  */
         char *code;             /*  the intermediate language  */
         cl_object data;         /*  non-inmediate constants used in the code  */
+        cl_object flex;         /*  indexes of captured objects (vector) */
+        cl_object nlcl;         /*  number of slots for local values */
         cl_object file;         /*  file where it was defined...  */
         cl_object file_position;/*  and where it was created  */
 };
@@ -758,7 +792,7 @@ struct ecl_bytecodes {
 struct ecl_bclosure {
         _ECL_HDR;
         cl_object code;
-        cl_object lex;
+        cl_object lex;          /*  captured objects (flat vector) */
         cl_objectfn entry;      /*  entry address  */
 };
 
@@ -905,10 +939,10 @@ struct ecl_foreign {            /*  user defined datatype  */
 };
 
 struct ecl_stack_frame {
-        _ECL_HDR;
-        cl_object *stack;       /*  Is this relative to the lisp stack?  */
-        cl_object *base;        /*  Start of frame  */
+        _ECL_HDR1(opened);
+        cl_index base;          /*  Start of the stack frame */
         cl_index size;          /*  Number of arguments  */
+        cl_index sp;            /*  Stack pointer  */
         struct cl_env_struct *env;
 };
 
@@ -969,7 +1003,7 @@ struct ecl_process {
         cl_object args;
         struct cl_env_struct *env;
         cl_object interrupt;
-        cl_object initial_bindings;
+        cl_object inherit_bindings_p;
         cl_object parent;
         cl_object exit_values;
         cl_object woken_up;

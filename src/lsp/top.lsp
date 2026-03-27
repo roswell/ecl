@@ -26,7 +26,8 @@
 (defparameter *quit-tag* (cons nil nil))
 (defparameter *quit-tags* nil)
 (defparameter *break-level* 0)          ; nesting level of error loops
-(defparameter *break-env* nil)
+(defparameter *break-lexenv* nil)
+(defparameter *break-locals* nil)
 (defparameter *ihs-base* 0)
 (defparameter *ihs-top* (ihs-top))
 (defparameter *ihs-current* 0)
@@ -392,6 +393,9 @@
 
 (defparameter *lisp-initialized* nil)
 
+(defun tpl-format (format-string &rest args)
+  (apply #'format *query-io* format-string args))
+
 (defun top-level (&optional (process-command-line nil))
   "Args: ()
 ECL specific.
@@ -404,17 +408,17 @@ The top-level loop of ECL. It is called by default when ECL is invoked."
 
       (unless (or *lisp-initialized* (null process-command-line))
         (process-command-args)
-        (format t "ECL (Embeddable Common-Lisp) ~A (git:~D)"
-                (lisp-implementation-version)
-                (ext:lisp-implementation-vcs-id))
-        (format t "~%Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya~@
+        (tpl-format "ECL (Embeddable Common-Lisp) ~A (git:~D)"
+                    (lisp-implementation-version)
+                    (ext:lisp-implementation-vcs-id))
+        (tpl-format "~%Copyright (C) 1984 Taiichi Yuasa and Masami Hagiya~@
 Copyright (C) 1993 Giuseppe Attardi~@
 Copyright (C) 2013 Juan J. Garcia-Ripoll~@
 Copyright (C) 2018 Daniel Kochmanski~@
-Copyright (C) 2023 Daniel Kochmanski and Marius Gerbershagen~@
+Copyright (C) 2024 Daniel Kochmanski and Marius Gerbershagen~@
 ECL is free software, and you are welcome to redistribute it~@
-under certain conditions; see file 'Copyright' for details.")
-        (format *standard-output* "~%Type :h for Help.  "))
+under certain conditions; see file 'Copyright' for details.~%")
+        (tpl-format "~&Type :h for Help."))
       (setq *lisp-initialized* t)
 
       (let ((*tpl-level* -1))
@@ -483,14 +487,14 @@ under certain conditions; see file 'Copyright' for details.")
   (loop with current = mp:*current-process*
         for rank from 1
         for process in process-list
-        do (format t (if (eq process current)
-                         "~%  >~D: ~s"
-                       "~%   ~D: ~s")
-                   rank process)))
+        do (tpl-format (if (eq process current)
+                           "~%  >~D: ~s"
+                           "~%   ~D: ~s")
+                       rank process)))
 
 #+threads
 (defun query-process (&optional (process-list (mp:all-processes)))
-  (format t "~&Choose the integer code of process to interrupt.
+  (tpl-format "~&Choose the integer code of process to interrupt.
 Use special code 0 to cancel this operation.")
   (loop for code = (progn
                      (show-process-list process-list)
@@ -501,7 +505,7 @@ Use special code 0 to cancel this operation.")
                  ((and (fixnump code) (<= 1 code (length process-list)))
                   (return (list (elt process-list (1- code)))))
                  (t
-                  (format t "~&Not a valid process number")))))
+                  (tpl-format "~&Not a valid process number")))))
 
 (defparameter *interrupt-lonely-threads-p* t)
 
@@ -527,7 +531,7 @@ Use special code 0 to cancel this operation.")
                              #'single-threaded-terminal-interrupt)
        (return-from terminal-interrupt))
      (loop for i in all-processes
-           do (progn (format t "~%;;; Suspending process ~A" i)
+           do (progn (tpl-format "~%;;; Suspending process ~A" i)
                      (push i suspended)
                      (mp:process-suspend i)))
      (flet ((do-query-process ()
@@ -538,7 +542,8 @@ Use special code 0 to cancel this operation.")
           (continue () (setf break-process nil))
           (mp:interrupt-process (process)
             :interactive do-query-process
-            :report (lambda (stream) (princ "Interrupt a certain process." stream))
+            :report (lambda (stream)
+                      (princ "Interrupt a certain process." stream))
             (setf break-process process)))))
      (loop for process in suspended
         unless (eq process break-process)
@@ -568,31 +573,27 @@ Use special code 0 to cancel this operation.")
     (set-break-env)
     (set-current-ihs)
     (flet ((rep ()
-             ;; We let warnings pass by this way "warn" does the
-             ;; work.  It is conventional not to trap anything
-             ;; that is not a SERIOUS-CONDITION. Otherwise we
-             ;; would be interferring the behavior of code that relies
-             ;; on conditions for communication (for instance our compiler)
-             ;; and which expect nothing to happen by default.
+             ;; We let warnings pass by this way "warn" does the work.  It is
+             ;; conventional not to trap anything that is not a
+             ;; SERIOUS-CONDITION. Otherwise we would be interferring the
+             ;; behavior of code that relies on conditions for communication
+             ;; (for instance our compiler) and which expect nothing to happen
+             ;; by default.
              (handler-bind 
                  ((serious-condition
-                   (lambda (condition)
-                     (cond ((< break-level 1)
-                            ;; Toplevel should enter the debugger on any condition.
-                            )
-                           (*allow-recursive-debug*
-                            ;; We are told to let the debugger handle this.
-                            )
-                           (t
-                            (format t "~&Debugger received error of type: ~A~%~A~%~
-                                         Error flushed.~%"
-                                    (type-of condition) condition)
-                            (clear-input)
-                            (return-from rep t) ;; go back into the debugger loop.
-                            )
-                           )
-                     )))
-
+                    (lambda (condition)
+                      (clear-input *query-io*)
+                      (cond
+                        ;; Toplevel should enter the debugger on any condition.
+                        ((< break-level 1))
+                        ;; We are told to let the debugger handle this.
+                        (*allow-recursive-debug*)
+                        ;; go back into the debugger loop.
+                        (t
+                         (tpl-format "~&Debugger received error of type: ~A~%~A~%"
+                                     (type-of condition) condition)
+                         (tpl-format "Error flushed.~%")
+                         (return-from rep t))))))
                (with-grabbed-console
                    (unless quiet
                      (break-where)
@@ -601,88 +602,79 @@ Use special code 0 to cancel this operation.")
                            (tpl-prompt)
                            (tpl-read))
                        values (multiple-value-list
-                               (eval-with-env - *break-env*))
+                               (eval-with-env - *break-lexenv*))
                        /// // // / / values *** ** ** * * (car /))
-                 (tpl-print values)))))
-          (loop
-           (setq +++ ++ ++ + + -)
-           (when
-               (catch *quit-tag*
-                 (if (zerop break-level)
-                   (with-simple-restart 
-                    (restart-toplevel "Go back to Top-Level REPL.")
-                    (rep))
-                   (with-simple-restart
-                    (restart-debugger "Go back to debugger level ~D." break-level)
-                    (rep)))
-                 nil)
-             (setf quiet nil))))))
+                 (tpl-format "~&~{~s~^~%~}~%" values)))))
+      (loop
+       (setq +++ ++ ++ + + -)
+       (when
+           (catch *quit-tag*
+             (if (zerop break-level)
+                 (with-simple-restart 
+                     (restart-toplevel "Go back to Top-Level REPL.")
+                   (rep))
+                 (with-simple-restart
+                     (restart-debugger "Go back to debugger level ~D." break-level)
+                   (rep)))
+             nil)
+         (setf quiet nil))))))
+
+(defun tpl-read ()
+  (let ((*read-suppress* nil))
+    (finish-output *query-io*)
+    (loop
+     (case (peek-char nil *query-io* nil :EOF)
+       ((#\))
+        (warn "Ignoring an unmatched right parenthesis.")
+        (read-char *query-io*))
+       ((#\space #\tab)
+        (read-char *query-io*))
+       ((#\newline #\return)
+        (read-char *query-io*)
+        ;; avoid repeating prompt on successive empty lines:
+        (let ((command (tpl-make-command :newline "")))
+          (when command (return command))))
+       (:EOF
+        (terpri *query-io*)
+        (return (tpl-make-command :EOF "")))
+       (#\:
+        (return (tpl-make-command (read-preserving-whitespace *query-io*)
+                                  (read-line *query-io*))))
+       (#\?
+        (read-char *query-io*)
+        (case (peek-char nil *query-io* nil :EOF)
+          ((#\space #\tab #\newline #\return :EOF)
+           (return (tpl-make-command :HELP (read-line *query-io*))))
+          (t
+           (unread-char #\? *query-io*)
+           (return (read-preserving-whitespace *query-io*)))))
+       ;; We use READ-PRESERVING-WHITESPACE because with READ, if an
+       ;; error happens within the reader, and we perform a ":C" or
+       ;; (CONTINUE), the reader will wait for an inexistent #\Newline.
+       (t
+        (return (read *query-io*)))))))
 
 (defun tpl-prompt ()
   (typecase *tpl-prompt-hook*
-    (string (format t *tpl-prompt-hook*))
     (function (funcall *tpl-prompt-hook*))
-    (t (fresh-line)
-       (format t "~A~V,,,'>A "
-               (if (eq *package* (find-package 'cl-user))
-                   ""
-                 (package-name *package*))
-               (- *tpl-level* *step-level* -1)
-               ""))))
-
-(defun tpl-read (&aux (*read-suppress* nil))
-  (finish-output)
-  (loop
-    (case (peek-char nil *standard-input* nil :EOF)
-      ((#\))
-       (warn "Ignoring an unmatched right parenthesis.")
-       (read-char))
-      ((#\space #\tab)
-       (read-char))
-      ((#\newline #\return)
-       (read-char)
-       ;; avoid repeating prompt on successive empty lines:
-       (let ((command (tpl-make-command :newline "")))
-         (when command (return command))))
-      (:EOF
-       (terpri)
-       (return (tpl-make-command :EOF "")))
-      (#\:
-       (return (tpl-make-command (read-preserving-whitespace)
-                                 (read-line))))
-      (#\?
-       (read-char)
-       (case (peek-char nil *standard-input* nil :EOF)
-         ((#\space #\tab #\newline #\return :EOF)
-          (return (tpl-make-command :HELP (read-line))))
-         (t
-          (unread-char #\?)
-          (return (read-preserving-whitespace)))))
-      ;; We use READ-PRESERVING-WHITESPACE because with READ, if an
-      ;; error happens within the reader, and we perform a ":C" or
-      ;; (CONTINUE), the reader will wait for an inexistent #\Newline.
-      (t
-       (return (read))))))
+    (string (tpl-format *tpl-prompt-hook*))
+    (t (tpl-format "~&~A~V,,,'>A "
+                   (if (eq *package* (find-package 'cl-user))
+                       ""
+                       (package-name *package*))
+                   (- *tpl-level* *step-level* -1)
+                   ""))))
 
 (defparameter *debug-tpl-commands* nil)
 
 (defun harden-command (cmd-form)
-  `(block 
-    tpl-command
-    (handler-bind 
-     ((error (lambda (condition)
-               (unless *debug-tpl-commands*
-                 (format t "~&Command aborted.~%Received condition of type: ~A~%~A"
-                         (type-of condition) condition)
-                 (clear-input)
-                 (return-from tpl-command nil)
-                 )
-               )
-             ))
-     ,cmd-form
-     )
-    )
-  )
+  `(if *debug-tpl-commands*
+       ,cmd-form
+       (handler-case ,cmd-form
+         (error (condition)
+           (tpl-format "~&Command aborted.~%Received condition of type: ~A~%~A"
+                       (type-of condition) condition)
+           (clear-input *query-io*)))))
 
 (defun tpl-make-command (name line &aux (c nil))
   (dolist (commands *tpl-commands*)
@@ -731,14 +723,8 @@ Use special code 0 to cancel this operation.")
            (setq end (or (position-if space-p line :START start) length))
            (push (subseq line start end) list)))))
 
-(defun tpl-print (values)
-  (fresh-line)
-  (dolist (v values)
-    (prin1 v)
-    (terpri)))
-
 (defun tpl-unknown-command (command)
-  (format t "Unknown top level command: ~s~%" command)
+  (tpl-format "Unknown top level command: ~s~%" command)
   (values))
 
 (defun tpl-pop-command (&rest any)
@@ -777,8 +763,7 @@ Use special code 0 to cancel this operation.")
 
 (defun tpl-print-message ()
   (when *break-message*
-    (princ *break-message*)
-    (terpri))
+    (tpl-format "~a~%" *break-message*))
   (values))
 
 (defun tpl-disassemble-command ()
@@ -790,7 +775,7 @@ Use special code 0 to cancel this operation.")
         (functions) (blocks) (variables))
     (unless (si::bc-disassemble (ihs-fun *ihs-current*))
       (tpl-print-current)
-      (format t " Function cannot be disassembled.~%"))
+      (tpl-format " Function cannot be disassembled.~%"))
     (values)))
 
 (defun tpl-lambda-expression-command ()
@@ -801,8 +786,8 @@ Use special code 0 to cancel this operation.")
         (function (ihs-fun *ihs-current*))
         (le (function-lambda-expression function)))
     (if le
-        (pprint le)
-        (format t " No source code available for this function.~%"))
+        (pprint le *query-io*)
+        (tpl-format " No source code available for this function.~%"))
     (values)))
 
 (defun lambda-list-from-annotations (name)
@@ -839,7 +824,7 @@ Use special code 0 to cancel this operation.")
 
 #-ecl-min
 (defun decode-env-elt (env ndx)
-  (ffi:c-inline (env ndx) (:object :fixnum) :object
+  (ffi:c-inline (env ndx :utf-8) (:object :fixnum :object) :object
                 "
         cl_object v = #0;
         cl_index ndx = #1;
@@ -847,7 +832,7 @@ Use special code 0 to cancel this operation.")
         pinfo d = (pinfo)(v->vector.self.t[1]) + ndx;
         cl_object name;
 #ifdef ECL_UNICODE
-        name = ecl_decode_from_cstring(d->name,-1,@:utf-8);
+        name = ecl_decode_from_cstring(d->name,-1,#2);
         if (!name)
 #endif
                 name = ecl_make_constant_base_string(d->name,-1);
@@ -920,76 +905,106 @@ Use special code 0 to cancel this operation.")
         @(return) = CONS(name,output);
 " :one-liner nil))
 
-(defun decode-ihs-env (*break-env*)
-  (let ((env *break-env*))
-    (if (vectorp env)
-      #+ecl-min
-      nil
-      #-ecl-min
-      (let* ((next (decode-ihs-env
-                    (ffi:c-inline (env) (:object) :object
-                                  "(#0)->vector.self.t[0]" :one-liner t))))
-        (nreconc (loop with l = (- (length env) 2)
-                       for i from 0 below l
-                       do (push (decode-env-elt env i) next))
-                   next))
-      env)))
+;;; This function is here for backward compatibility. We also extend it to
+;;; "simply work" with ihs indexes - then it decodes both locals and lexenv.
+(defun decode-ihs-env (env)
+  (etypecase env
+    ((or vector si:frame)
+     (decode-ihs-locals env))
+    (integer
+     (append (decode-ihs-locals (ihs-lcl env))
+             (decode-ihs-lexenv (ihs-lex env))))
+    (null
+     nil)))
+
+(defun decode-ihs-locals (env)
+  #+ecl-min nil
+  #-ecl-min
+  (etypecase env
+    (vector
+     (let ((next (decode-ihs-locals
+                  (ffi:c-inline (env) (:object) :object
+                                "(#0)->vector.self.t[0]" :one-liner t))))
+       (nreconc (loop with l = (- (length env) 2)
+                      for i from 0 below l
+                      do (push (decode-env-elt env i) next))
+                next)))
+    (si:frame
+     (let* ((lcls '()))
+       (ffi:c-inline (env lcls) (:object :object) :void
+                     "loop_across_frame_fifo(elt, (#0)) {
+                        (#1)=ecl_cons(elt, (#1));
+                      } end_loop_across_frame();")
+       lcls))
+    (null
+     nil)))
+
+(defun decode-ihs-lexenv (env)
+  #+ecl-min nil
+  #-ecl-min
+  (etypecase env
+    (vector
+     (loop for elt across env collect elt))
+    (null
+     nil)))
 
 (defun ihs-environment (ihs-index)
-  (labels ((newly-bound-special-variables (bds-min bds-max)
-             (loop for i from bds-min to bds-max
-                for variable = (bds-var i)
-                unless (member variable output :test #'eq)
-                collect variable into output
-                finally (return output)))
-           (special-variables-alist (ihs-index)
-             (let ((top (ihs-top)))
-               (unless (> ihs-index top)
-                 (let* ((bds-min (1+ (ihs-bds ihs-index)))
-                        (bds-top (bds-top))
-                        (bds-max (if (= ihs-index top)
-                                     bds-top
-                                     (ihs-bds (1+ ihs-index))))
-                        (variables (newly-bound-special-variables bds-min bds-max)))
-                   (loop with output = '()
-                      for i from (1+ bds-max) to bds-top
-                      for var = (bds-var i)
-                      when (member var variables :test #'eq)
-                      do (setf variables (delete var variables)
-                               output (acons var (bds-val i) output))
-                      finally (return
-                                (append (loop for v in variables
-                                           collect (cons v (symbol-value v)))
-                                        output)))))))
-           (extract-restarts (variables-alist)
-             (let ((record (assoc '*restart-clusters* variables-alist)))
-               (if record
-                   (let* ((bindings (cdr record))
-                          (new-bindings (first bindings)))
-                     (values (delete record variables-alist) new-bindings))
-                   (values variables-alist nil)))))
-    (let* ((functions '())
-           (blocks '())
-           (local-variables '())
-           (special-variables '())
-           (restarts '())
-           record0 record1)
-      (dolist (record (decode-ihs-env (ihs-env ihs-index)))
-        (cond ((atom record)
-               (push (compiled-function-name record) functions))
-              ((progn
-                 (setf record0 (car record) record1 (cdr record))
-                 (when (stringp record0)
-                   (setf record0
-                         (let ((*package* (find-package "KEYWORD")))
-                           (with-standard-io-syntax
-                             (read-from-string record0)))))
-                 (or (symbolp record0) (stringp record0)))
-               (setq local-variables (acons record0 record1 local-variables)))
-              ((symbolp record1)
-               (push record1 blocks))
-              (t
-               )))
+  (let ((functions '())
+        (blocks '())
+        (local-variables '())
+        (special-variables '())
+        (restarts '())
+        record0 record1)
+    (labels ((newly-bound-special-variables (bds-min bds-max)
+               (loop for i from bds-min to bds-max
+                     for variable = (bds-var i)
+                     unless (member variable output :test #'eq)
+                       collect variable into output
+                     finally (return output)))
+             (special-variables-alist (ihs-index)
+               (let ((top (ihs-top)))
+                 (unless (> ihs-index top)
+                   (let* ((bds-min (1+ (ihs-bds ihs-index)))
+                          (bds-top (bds-top))
+                          (bds-max (if (= ihs-index top)
+                                       bds-top
+                                       (ihs-bds (1+ ihs-index))))
+                          (variables (newly-bound-special-variables bds-min bds-max)))
+                     (loop with output = '()
+                           for i from (1+ bds-max) to bds-top
+                           for var = (bds-var i)
+                           when (member var variables :test #'eq)
+                             do (setf variables (delete var variables)
+                                      output (acons var (bds-val i) output))
+                           finally (return
+                                     (append (loop for v in variables
+                                                   collect (cons v (symbol-value v)))
+                                             output)))))))
+             (extract-restarts (variables-alist)
+               (let ((record (assoc '*restart-clusters* variables-alist)))
+                 (if record
+                     (let* ((bindings (cdr record))
+                            (new-bindings (first bindings)))
+                       (values (delete record variables-alist) new-bindings))
+                     (values variables-alist nil))))
+             (process-env-record (record)
+               (cond ((atom record)
+                      (push (compiled-function-name record) functions))
+                     ((progn
+                        (setf record0 (car record) record1 (cdr record))
+                        (when (stringp record0)
+                          (setf record0
+                                (let ((*package* (find-package "KEYWORD")))
+                                  (with-standard-io-syntax
+                                    (read-from-string record0)))))
+                        (or (symbolp record0) (stringp record0)))
+                      (setq local-variables (acons record0 record1 local-variables)))
+                     ((symbolp record1)
+                      (push record1 blocks))
+                     (t
+                      ))))
+      (map nil #'process-env-record (decode-ihs-locals (ihs-lcl ihs-index)))
+      (map nil #'process-env-record (decode-ihs-lexenv (ihs-lex ihs-index)))
       (multiple-value-bind (special-variables restarts)
           (extract-restarts (special-variables-alist ihs-index))
         (values (nreverse local-variables)
@@ -1000,16 +1015,16 @@ Use special code 0 to cancel this operation.")
   ;; This format is what was in the orignal code.
   ;; It simply does not work when no-values is t.
   ;; If you care to debug this kind of conundrum then have fun!
-  ;;(format t "Local variables: ~:[~:[none~;~:*~{~a~1*~:@{, ~a~1*~}~}~]~;~
-  ;;                            ~:[none~;~:*~{~%  ~a: ~s~}~]~]~%"
-  ;;          (not no-values) variables)
-  (format t prefix)
+  ;;(tpl-format "Local variables: ~:[~:[none~;~:*~{~a~1*~:@{, ~a~1*~}~}~]~;~
+  ;;                              ~:[none~;~:*~{~%  ~a: ~s~}~]~]~%"
+  ;;            (not no-values) variables)
+  (tpl-format prefix)
   (if variables
       (loop for (var . value) in variables
          do (if no-values
-                (format t "~% ~S" var)
-                (format t "~% ~S: ~S" var value)))
-      (format t "none")))
+                (tpl-format "~% ~S" var)
+                (tpl-format "~% ~S: ~S" var value)))
+      (tpl-format "(none)")))
 
 (defun tpl-variables-command (&optional no-values)
   (let*((*print-level* 2)
@@ -1019,29 +1034,28 @@ Use special code 0 to cancel this operation.")
         (*print-readably* nil))
     (multiple-value-bind (local-variables special-variables functions blocks restarts)
         (ihs-environment *ihs-current*)
-      (format t "~:[~;Local functions: ~:*~{~s~^, ~}.~%~]" functions)
-      (format t "~:[~;Block names: ~:*~{~s~^, ~}.~%~]" blocks)
+      (tpl-format "~:[~;Local functions: ~:*~{~s~^, ~}.~%~]" functions)
+      (tpl-format "~:[~;Block names: ~:*~{~s~^, ~}.~%~]" blocks)
       (when restarts
-        (format t "New restarts:")
+        (tpl-format "New restarts:")
         (loop for r in restarts
-           do (format t "~% ~A: ~A" (restart-name r) r)))
+              do (tpl-format "~% ~A: ~A" (restart-name r) r)))
       (tpl-print-variables "~%Local variables: " local-variables no-values)
-      (tpl-print-variables "~%Special variables: "
-                           special-variables no-values))
-    (terpri)
+      (tpl-print-variables "~%Special variables: " special-variables no-values))
+    (terpri *query-io*)
     (values)))
 
 (defun tpl-inspect-command (var-name)
   (when (symbolp var-name)
     (setq var-name (symbol-name var-name)))
-  (let ((val-pair (assoc var-name (decode-ihs-env *break-env*)
+  (let ((val-pair (assoc var-name (decode-ihs-locals *break-locals*)
                          :test #'(lambda (s1 s2)
                                    (when (symbolp s2) (setq s2 (symbol-name s2)))
                                    (if (stringp s2)
                                        (string-equal s1 s2)
                                      nil)))))
     (when val-pair
-      ;;(format t "~&In tpl-inspect-command: val-pair = ~S~%" val-pair)
+      ;;(tpl-format "~&In tpl-inspect-command: val-pair = ~S~%" val-pair)
       (let ((val (cdr val-pair)))
         (inspect val)))))
 
@@ -1050,7 +1064,7 @@ Use special code 0 to cancel this operation.")
     (do ((bi (1+ (frs-bds (max 0 (1- *frs-base*)))) (1+ bi))
          (last (frs-bds (1+ *frs-top*))))
         ((> bi last)
-         (format t "Variable not found.~%")
+         (tpl-format "Variable not found.~%")
          (values))
       (when (eq (bds-var bi) var)
         (return (let ((val (bds-val bi)))
@@ -1066,7 +1080,7 @@ Use special code 0 to cancel this operation.")
           ((or (> fi *frs-top*) (>= (frs-bds fi) bi)))
         (print-frs fi)
         (incf fi))
-      (format t "BDS[~d]: ~s = ~s~%"
+      (tpl-format "BDS[~d]: ~s = ~s~%"
               bi (bds-var bi)
               (let ((val (bds-val bi)))
                 (if (eq val si::unbound) "<unbound value>" val))))))
@@ -1075,7 +1089,7 @@ Use special code 0 to cancel this operation.")
   (let ((*print-pretty* nil)     ;; because CLOS allows (setf foo) as function names
         (base *ihs-base*)
         (top *ihs-top*))
-    (format t "~&Backtrace:~%")
+    (tpl-format "~&Backtrace:~%")
     (if (null n)
         (do ((i top (si::ihs-prev i))
              ;;(b nil t)
@@ -1085,86 +1099,82 @@ Use special code 0 to cancel this operation.")
               (let ((*print-case* (if (= i *ihs-current*) :UPCASE :DOWNCASE))
                     (*print-readably* nil)
                     (func-name (ihs-fname i)))
-                ;;(format t "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
-                (format t "  > ~S" func-name)
+                ;;(tpl-format "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
+                (tpl-format "  > ~S" func-name)
                 (when (eq func-name 'si::bytecodes)
-                  (format t " [Evaluation of: ~S]"
-                          (function-lambda-expression (ihs-fun i))))
-                (terpri)
-                )))
+                  (tpl-format " [Evaluation of: ~S]"
+                              (function-lambda-expression (ihs-fun i))))
+                (terpri *query-io*))))
       (progn
         (if (eq t n)
             (setq base 0)
-          (progn
-            (unless (integerp n)
-              (error "Argument to command :backtrace must be an integer or t."))
-            (setq top *ihs-current*)
-            )
-          )
+            (progn
+              (unless (integerp n)
+                (error "Argument to command :backtrace must be an integer or t."))
+              (setq top *ihs-current*)))
         (do ((i top (si::ihs-prev i))
              ;;(b nil t)
              (j 0 (1+ j))
              (max (if (eq t n) *ihs-top* n))
              )
             ((or (< i base) (>= j max))
-             (when (zerop i) (format t "  > ---end-of-stack---~%"))
-             )
+             (when (zerop i)
+               (tpl-format "  > ---end-of-stack---~%")))
             (when (or (ihs-visible i) (eq t n))
               (let ((*print-case* (if (= i *ihs-current*) :UPCASE :DOWNCASE))
                     (*print-readably* nil)
                     (func-name (ihs-fname i)))
-                ;;(format t "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
-                (format t "  > ~S" (ihs-fname i))
+                ;;(tpl-format "~:[~; >~] ~S" b (ihs-fname i)) ;; JCB
+                (tpl-format "  > ~S" (ihs-fname i))
                 (when (eq func-name 'si::bytecodes)
-                  (format t " [Evaluation of: ~S]"
-                          (function-lambda-expression (ihs-fun i))))
-                (terpri)
-                ))))
-      )
-    (terpri))
+                  (tpl-format " [Evaluation of: ~S]"
+                              (function-lambda-expression (ihs-fun i))))
+                (terpri *query-io*))))))
+    (terpri *query-io*))
   (values))
 
 (defun tpl-frs-command (&optional n)
-  (unless n (setq n *ihs-top*))
+  (unless n
+    (setq n *ihs-top*))
   (unless (integerp n)
     (error "Argument to command :frs must be an integer."))
   (do ((i *ihs-top* (si::ihs-prev i))
        (k n (1- k)))
       ((= k 0) (values))
-      (let*((j (or (sch-frs-base *frs-base* i) (1+ *frs-top*)))
-            (*print-level* 2)
-            (*print-length* 16)
-            (*print-pretty* t))
-        (do () ((or (> j *frs-top*) (> (frs-ihs j) i)))
-            (print-frs j)
-            (incf j)))))
+    (let*((j (or (sch-frs-base *frs-base* i) (1+ *frs-top*)))
+          (*print-level* 2)
+          (*print-length* 16)
+          (*print-pretty* t))
+      (do () ((or (> j *frs-top*) (> (frs-ihs j) i)))
+        (print-frs j)
+        (incf j)))))
 
 (defun print-frs (i)
-  (format *debug-io* "    FRS[~d]: ---> IHS[~d],BDS[~d]~%"
-          i (frs-ihs i) (frs-bds i)))
+  (tpl-format "    FRS[~d]: ---> IHS[~d],BDS[~d]~%"
+              i (frs-ihs i) (frs-bds i)))
 
 (defun break-where ()
   (if (<= *tpl-level* 0)
-      #-threads (format t "~&Top level.~%")
-      #+threads (format t "~&Top level in: ~A.~%" mp:*current-process*)
-    (tpl-print-current)))
+      #-threads (tpl-format "~&Top level.~%")
+      #+threads (tpl-format "~&Top level in: ~A.~%" mp:*current-process*)
+      (tpl-print-current)))
 
 (defun tpl-print-current ()
   (let ((*print-readably* nil)
         (name (ihs-fname *ihs-current*)))
-    (format t "~&Broken at ~:@(~S~)." name)
+    (tpl-format "~&Broken at ~:@(~S~)." name)
     (when (eq name 'si::bytecodes)
-      (format t " [Evaluation of: ~S]"
-              (function-lambda-expression (ihs-fun *ihs-current*)))))
-  #-threads (terpri)
-  #+threads (format t " In: ~A.~%" mp:*current-process*)
+      (tpl-format " [Evaluation of: ~S]"
+                  (function-lambda-expression (ihs-fun *ihs-current*)))))
+  #-threads (terpri *query-io*)
+  #+threads (tpl-format " In: ~A.~%" mp:*current-process*)
   (let ((fun (ihs-fun *ihs-current*)))
     (when (and (symbolp fun) (fboundp fun))
       (setf fun (fdefinition fun)))
     (multiple-value-bind (file position)
         (ext:compiled-function-file fun)
       (when file
-        (format t " File: ~S (Position #~D)~%" file position))))
+        (tpl-format " File: ~S (Position #~D)~%" file position))))
   (values))
 
 (defun tpl-hide (fname)
@@ -1225,7 +1235,8 @@ Use special code 0 to cancel this operation.")
   (set-break-env))
 
 (defun set-break-env ()
-  (setq *break-env* (ihs-env *ihs-current*)))
+  (setq *break-lexenv* (ihs-lex *ihs-current*))
+  (setq *break-locals* (ihs-lcl *ihs-current*)))
 
 (defun ihs-search (string unrestricted &optional (start (si::ihs-top)))
   (do ((ihs start (si::ihs-prev ihs)))
@@ -1243,13 +1254,13 @@ Use special code 0 to cancel this operation.")
            (set-current-ihs)
            (tpl-print-current))
           (t
-           (format *debug-io* "Search for ~a failed.~%" string)))
+           (tpl-format "Search for ~a failed.~%" string)))
     (values)))
 
 (defun tpl-forward-search (string)
   (do ((ihs (si::ihs-next *ihs-current*) (si::ihs-next ihs)))
       ((> ihs *ihs-top*)
-       (format *debug-io* "Search for ~a failed.~%" string))
+       (tpl-format "Search for ~a failed.~%" string))
     (when (and (ihs-visible ihs)
                (search string (symbol-name (ihs-fname ihs))
                        :test #'char-equal))
@@ -1293,10 +1304,10 @@ Use special code 0 to cancel this operation.")
 (defun tpl-help-command (&optional topic)
   (cond ((null topic)
          (dolist (commands *tpl-commands*)
-           (format t "~%~A:~%" (car commands))
+           (tpl-format "~%~A:~%" (car commands))
            (dolist (c (cdr commands))
              (when (fourth c)
-               (format t "~A.~%" (fourth c))))))
+               (tpl-format "~A.~%" (fourth c))))))
         ((or (stringp topic) (symbolp topic))
          (let (c)
            (setq topic (intern (string topic) (find-package 'keyword)))
@@ -1304,24 +1315,25 @@ Use special code 0 to cancel this operation.")
              (when (setq c (assoc topic (cdr commands) :test #'member))
                (return)))
            (cond ((null (fifth c))
-                  (format t "No such help topic: ~s~%"
-                          (string topic)))
+                  (tpl-format "No such help topic: ~s~%"
+                              (string topic)))
                  (t
-                  (terpri)
-                  (format t (fifth c))
-                  (terpri)))))
+                  (terpri *query-io*)
+                  (tpl-format (fifth c))
+                  (terpri *query-io*)))))
         (t
-         (format t "Not a valid help topic: ~s~%" topic)))
+         (tpl-format "Not a valid help topic: ~s~%" topic)))
   (values))
 
 (defun tpl-help-stack-command ()
-  (format t "
+  (tpl-format "
 Use the following functions to directly access ECL stacks.
 
 Invocation History Stack:
 (SYS:IHS-TOP)   Returns the index of the TOP of the IHS.
 (SYS:IHS-FUN i) Returns the function of the i-th entity in IHS.
-(SYS:IHS-ENV i)
+(SYS:IHS-LEX i) Returns the lexical environment of the i-th entry in IHS.
+(SYS:IHS-LCL i) Returns the local environment of the i-th entry in IHS.
 (SYS:IHS-PREV i)
 (SYS:IHS-NEXT i)
 
@@ -1361,14 +1373,14 @@ package."
                   restart-commands)
             (when display
               (format display "~D. ~A ~A~%" i name restart))))
-    (when display (terpri display))
+    (when display
+      (terpri display))
     (nreverse restart-commands)))
 
 (defun update-debug-commands (restart-commands)
   (let ((commands (copy-list *tpl-commands*)))
     (unless (member break-commands commands)
-      (setq commands (nconc commands (list break-commands)))
-      )
+      (setq commands (nconc commands (list break-commands))))
     (delete-if
      #'(lambda (x) (string= "Restart commands" (car x)))
      commands)
@@ -1380,19 +1392,19 @@ package."
   (when (< *default-debugger-maximum-depth* *break-level*)
     #+threads 
     (progn
-      (format *error-output*
-              "~&Excessive debugger depth! Probable infinite recursion!~%~
-             Quitting process: ~A.~%" mp:*current-process*)
+      (tpl-format
+       "~&Excessive debugger depth! Probable infinite recursion!~%~
+        Quitting process: ~A.~%" mp:*current-process*)
       (when (< (+ *default-debugger-maximum-depth* 3) *break-level*)
         ;; we tried to be polite but it does not seem to work.
         (quit -1))
       (exit-process))
     #-threads 
     (progn
-      (format *error-output*
-            "~&Excessive debugger depth! Probable infinite recursion!~%~
-             Quitting.~%")
-        (quit -1))))
+      (tpl-format
+       "~&Excessive debugger depth! Probable infinite recursion!~%~
+        Quitting.~%")
+      (quit -1))))
 
 #+threads
 (defun tpl-switch-command (&optional rank)
@@ -1410,20 +1422,19 @@ package."
 
 #+threads
 (defun tpl-waiting-command ()
-  (format t "~&~%Debugger's waiting list:~2%")
+  (tpl-format "~&~%Debugger's waiting list:~2%")
   (loop for process in *console-waiting-list*
      for rank from 1
-     do (format t (if (eq process mp:*current-process*)
-                      "   >~D: ~A~%" 
-                      "    ~D: ~A~%")
-                rank process))
-  (terpri)
+     do (tpl-format (if (eq process mp:*current-process*)
+                        "   >~D: ~A~%" 
+                        "    ~D: ~A~%")
+                    rank process))
+  (terpri *query-io*)
   (values))
 
 (defun default-debugger (condition)
   (with-standard-io-syntax
-    (let* ((*standard-input* *debug-io*)
-           (*standard-output* *debug-io*)
+    (let* ((*query-io* *debug-io*)
            ;;(*tpl-prompt-hook* "[dbg] ")
            (*print-readably* nil)
            (*print-pretty* nil)
@@ -1435,7 +1446,8 @@ package."
            (*break-condition* condition)
            (*break-level* (1+ *break-level*))
            (break-level *break-level*)
-           (*break-env* nil))
+           (*break-locals* nil)
+           (*break-lexenv* nil))
       (check-default-debugger-runaway)
       #+threads
       ;; We give our process priority for grabbing the console.
@@ -1443,27 +1455,23 @@ package."
       ;; As of ECL 9.4.1 making a normal function return from the debugger
       ;; seems to be a very bad idea! Basically, it dumps core...
       (ignore-errors
-        (when (listen *debug-io*)
-          (clear-input *debug-io*)))
-      ;; Like in SBCL, the error message is output through *error-output*
-      ;; The rest of the interaction is performed through *debug-io*
-      (ignore-errors (finish-output))
-      ;; We wrap the following in `ignore-errors' because error may be
-      ;; caused by writing to the `*error-output*', what leads to
-      ;; infinite recursion!
-      (ignore-errors
-        (fresh-line *error-output*)
-        (terpri *error-output*)
-        (princ *break-message* *error-output*))
+        (when (listen *query-io*)
+          (clear-input *query-io*)))
+      ;; All I/O in the debugger (including errors and tpl interactions) are
+      ;; performed through *QUERY-IO* (that is bound to *DEBUG-IO*).
+      (ignore-errors (finish-output *query-io*))
+      ;; We wrap the following in `ignore-errors' because error may be caused by
+      ;; writing to the `*query-io*', what leads to infinite recursion!
+      (ignore-errors (tpl-format "~&~%~a" *break-message*))
       (loop
          ;; Here we show a list of restarts and invoke the toplevel with
          ;; an extended set of commands which includes invoking the associated
          ;; restarts.
-         (let* ((restart-commands (compute-restart-commands condition :display t))
+         (let* ((restart-commands
+                  (compute-restart-commands condition :display *query-io*))
                 (debug-commands 
                  ;;(adjoin restart-commands (adjoin break-commands *tpl-commands*))
-                 (update-debug-commands restart-commands)
-                  ))
+                 (update-debug-commands restart-commands)))
            (tpl :commands debug-commands))))))
 
 (defun invoke-debugger (condition)
@@ -1493,7 +1501,7 @@ package."
                (*tpl-commands* *tpl-commands*)
                + ++ +++ - * ** *** / // ///)
           (default-debugger condition))))
-  (finish-output))
+  (finish-output *query-io*))
 
 (defun safe-eval (form env &optional (err-value nil err-value-p))
   "Args: (FORM ENV &optional ERR-VALUE)

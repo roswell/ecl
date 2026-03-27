@@ -102,14 +102,19 @@ cl_make_symbol(cl_object str)
   }
   x = ecl_alloc_object(t_symbol);
   x->symbol.name = str;
+  x->symbol.cname = ECL_NIL;
 #ifdef ECL_THREADS
   x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
-#endif  /*  */
+#endif
   ECL_SET(x,OBJNULL);
-  ECL_SYM_FUN(x) = ECL_NIL;
+  ECL_FMAKUNBOUND(x);
+  x->symbol.undef_entry = ecl_undefined_function_entry;
+  x->symbol.macfun = ECL_NIL;
+  x->symbol.sfdef = ECL_NIL;
   x->symbol.plist = ECL_NIL;
   x->symbol.hpack = ECL_NIL;
   x->symbol.stype = ecl_stp_ordinary;
+  ecl_set_finalizer_unprotected(x, ECL_T);
   @(return x);
 }
 
@@ -136,6 +141,21 @@ ecl_make_symbol(const char *s, const char *p)
 cl_object
 ecl_symbol_value(cl_object s)
 {
+  if (ecl_unlikely(Null(s))) {
+    return s;
+  }
+  if (ecl_unlikely(ecl_t_of(s) != t_symbol)) {
+    FEwrong_type_nth_arg(@[symbol-value], 1, s, @[symbol]);
+  }
+  return ecl_cmp_symbol_value(ecl_process_env(), s);
+}
+
+/* ecl_cmp_symbol_value does the minimal amount of checking necessary
+ * to implement SYMBOL-VALUE for objects that have been checked to be
+ * non-null symbols by the compiler. */
+cl_object
+ecl_cmp_symbol_value(cl_env_ptr the_env, cl_object s)
+{
 #ifndef ECL_FINAL
   /* Symbols are not initialized yet. This test is issued only during ECL
      compilation to ensure, that we have no early references in the core. */
@@ -143,16 +163,12 @@ ecl_symbol_value(cl_object s)
     ecl_internal_error("SYMBOL-VALUE: symbols are not initialized yet.");
   }
 #endif
-  if (Null(s)) {
-    return s;
-  } else {
-    /* FIXME: Should we check symbol type? */
-    const cl_env_ptr the_env = ecl_process_env();
-    cl_object value = ECL_SYM_VAL(the_env, s);
-    unlikely_if (value == OBJNULL)
-      FEunbound_variable(s);
-    return value;
+  /* FIXME: Should we check symbol type? */
+  cl_object value = ECL_SYM_VAL(the_env, s);
+  if (ecl_unlikely(value == OBJNULL)) {
+    FEunbound_variable(s);
   }
+  return value;
 }
 
 static void
@@ -170,9 +186,6 @@ ecl_getf(cl_object place, cl_object indicator, cl_object deflt)
 {
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   for (l = place; CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
     if (!CONSP(cdr_l))
@@ -202,9 +215,6 @@ si_put_f(cl_object place, cl_object value, cl_object indicator)
 {
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   /* This loop guarantees finishing for circular lists */
   for (l = place; CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
@@ -294,9 +304,6 @@ cl_get_properties(cl_object place, cl_object indicator_list)
   const cl_env_ptr the_env = ecl_process_env();
   cl_object l;
 
-#ifdef ECL_SAFE
-  assert_type_proper_list(place);
-#endif
   for (l = place;  CONSP(l); ) {
     cl_object cdr_l = ECL_CONS_CDR(l);
     if (!CONSP(cdr_l))
@@ -318,18 +325,26 @@ cl_symbol_name(cl_object x)
 
 @(defun copy_symbol (sym &optional cp &aux x)
   @
-  if (Null(sym))
-  sym = ECL_NIL_SYMBOL;
+  if (Null(sym)) {
+    sym = ECL_NIL_SYMBOL;
+  }
   x = cl_make_symbol(ecl_symbol_name(sym));
   if (!Null(cp)) {
     x->symbol.stype = sym->symbol.stype;
     x->symbol.value = sym->symbol.value;
-    x->symbol.gfdef = sym->symbol.gfdef;
     x->symbol.plist = cl_copy_list(sym->symbol.plist);
+    x->symbol.undef_entry = sym->symbol.undef_entry;
+    x->symbol.sfdef = sym->symbol.sfdef;
+    if (ECL_FBOUNDP(sym)) {
+      x->symbol.gfdef = sym->symbol.gfdef;
+    } else {
+      ECL_FMAKUNBOUND(x);
+    }
+    x->symbol.macfun = sym->symbol.macfun;
 #ifdef ECL_THREADS
     x->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
-    /* FIXME!!! We should also copy the system property list */
+    si_copy_sysprop(sym, x);
   }
   @(return x);
   @)

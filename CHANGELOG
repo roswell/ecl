@@ -27,9 +27,69 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 24.5.10
+* Pending changes since 26.3.27
 
-- Many internal improvements and bug fixes for the native compiler
+* 26.3.27 changes since 24.5.10
+
+- Vendored libffi has been updated to the version 3.5.2
+
+- It is now possible to cross-compile source code from hosts with a
+  different environment than the target
+
+- Compilation with -std=c23 (default for gcc-15) works now
+
+- Byte operations on binary sequence streams and char operations on
+  character sequence streams do not require a roundtrip for encoding and
+  decoding elements (direct reading and writing to vector)
+
+- When a sequence stream is created with :END NIL, then updating the vector
+  fill pointer affects the stream maximum position before EOF
+
+- Sequence streams are now bivalent and allow for the underlying vector
+  upgraded array element type to be either a character or any byte
+
+- Fix a bug in UNREAD-CHAR called on STRING-INPUT-STREAM that moved the
+  position to negative values
+
+- New operators for binary and bivalent streams: EXT:PEEK-BYTE,
+  EXT:UNREAD-BYTE, GRAY:STREAM-PEEK-BYTE and GRAY:STREAM-UNREAD-BYTE.
+
+- *READTABLE* and *PACKAGE* are local to an initialized module preventing
+  an issue where file-locality of them did not propagate to executables
+
+- Logical pathnames with multiple wild directories are now correctly
+  translated. Previously using them resulted in an infinite recursion
+
+- Process initial bindings, when specified, are inherited when the process
+  is enabled (previously they were copied when the process was created)
+
+- Bytecodes VM stores locals on the stack (performance improvement)
+
+- Bytecodes closures capture now only closed over variables (not whole env)
+
+- MANY internal improvements and bug fixes for the native compiler.
+
+- Reduced function call overhead.
+
+- The cross-compilation instructions for iOS and emscripten have changed
+  slightly.
+
+- Fix buffer overrun in stream encoding for UCS-4. This only occurred
+  when the first character was written with a BOM.
+
+- ~MAKUNBOUND~ makes unbound the current variable binding instead of a
+  global value.
+
+- Fix potential deadlock in synchronized hash tables during rehashing.
+
+- All REPL I/O is performed through ~*QUERY-IO*~ and all debugger I/O is
+  performed through ~*DEBUG-IO*~, while ~*STANDARD-OUTPUT*,
+  ~*STANDARD-INPUT*~ and ~*ERROR-OUTPUT*~ are left for the user.
+
+- Fix numerous issues in weak hash table implementation, most notably
+  resolve invalid handling of collissions.
+
+- Update bundled libgc-8.2.4 to libgc-8.2.8.
 
 * 24.5.10 changes since 23.9.9
 ** Announcement

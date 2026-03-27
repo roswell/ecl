@@ -3,6 +3,7 @@
 
 ;;;;
 ;;;;  Copyright (c) 2010, Juan Jose Garcia-Ripoll
+;;;;  Copyright (c) 2023, Daniel Kochmański
 ;;;;
 ;;;;    See the file 'LICENSE' for the copyright details.
 ;;;;
@@ -17,59 +18,52 @@
     (ORDINARY           c1form :pure)
     (MAKE-FORM          vv-loc value-c1form :side-effects)
     (INIT-FORM          vv-loc value-c1form :side-effects)
-    ;; both-level forms (different semantics)
-    (EXT:COMPILER-LET   symbols values body)
+    ;; Forms that have different semantics when they are top-level
+    (CL:PROGN           body :pure)
     (SI:FSET            function-object vv-loc macro-p pprint-p lambda-form :side-effects)
     (CL:LOAD-TIME-VALUE dest-loc value-c1form :pure :single-valued)
-    (CL:PROGN           body :pure)
-    ;; sub-level forms
+    (EXT:COMPILER-LET   symbols values body)
+    ;; Places, assignment and binding
     (LOCATION           loc :pure :single-valued)
-    (VAR                var :single-valued)
+    (VARIABLE           var value :single-valued)
     (CL:SETQ            var value-c1form :side-effects)
     (CL:PSETQ           var-list value-c1form-list :side-effects)
-    (CL:BLOCK           blk-var progn-c1form :pure)
-
     (CL:PROGV           symbols values form :side-effects)
-    (CL:TAGBODY         tag-var tag-body :pure)
-    (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
-    (CL:FUNCALL         fun-value (arg-value*) :side-effects)
-    (CALL-LOCAL         obj-fun (arg-value*) :side-effects)
-    (CALL-GLOBAL        fun-name (arg-value*))
-    (CL:CATCH           catch-value body :side-effects)
-    (CL:UNWIND-PROTECT  protected-c1form body :side-effects)
-    (CL:THROW           catch-value output-value :side-effects)
-    (CL:GO              tag-var nonlocal :side-effects)
-
-    (FFI:C-INLINE       (arg-c1form*)
-                        (arg-type-symbol*)
-                        output-rep-type
-                        c-expression-string
-                        side-effects-p
-                        one-liner-p)
-    (FFI:C-PROGN        variables forms)
-
+    (CL:LET*            vars-list var-init-c1form-list decl-body-c1form :pure)
+    (CL:MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
+    (CL:MULTIPLE-VALUE-BIND vars-list init-c1form body :pure)
+    ;; Function namespace (should include also FSET)
+    (CL:FUNCTION        fname :single-valued)
     (LOCALS             local-fun-list body labels-p :pure)
+    ;; Control structures
+    (CL:BLOCK           blk-var progn-c1form :pure)
+    (CL:RETURN-FROM     blk-var nonlocal value :side-effects)
+    (CL:TAGBODY         tag-var tag-body :pure)
+    (CL:GO              tag-var nonlocal :side-effects)
+    (CL:CATCH           catch-value body :side-effects)
+    (CL:THROW           catch-value output-value :side-effects)
+    (CL:UNWIND-PROTECT  protected-c1form body :side-effects)
+    ;;
     (CL:IF              fmla-c1form true-c1form false-c1form :pure)
     (FMLA-NOT           fmla-c1form :pure)
     (FMLA-AND           * :pure)
     (FMLA-OR            * :pure)
+    ;; Both nodes FCALL and MCALL are function call variants that implement
+    ;; semantics of Common Lisp operators FUNCALL and MULTIPLE-VALUE-CALL.
+    (FCALL              fun-form (arg-value*) fun-val call-type :side-effects)
+    (MCALL              fun-form (arg-value*) fun-val call-type :side-effects)
+    ;; Other operators
     (CL:LAMBDA          lambda-list doc body-c1form)
-    (CL:LET*            vars-list var-init-c1form-list decl-body-c1form :pure)
     (CL:VALUES          values-c1form-list :pure)
-    (CL:MULTIPLE-VALUE-SETQ vars-list values-c1form-list :side-effects)
-    (CL:MULTIPLE-VALUE-BIND vars-list init-c1form body :pure)
-
-    (CL:FUNCTION        (GLOBAL/CLOSURE) lambda-form fun-object :single-valued)
-    (CL:RPLACD          (dest-c1form value-c1form) :side-effects)
-
-    (SI:STRUCTURE-REF   struct-c1form type-name slot-index (:UNSAFE/NIL) :pure)
-    (SI:STRUCTURE-SET   struct-c1form type-name slot-index value-c1form :side-effects)
-
-    (WITH-STACK         body :side-effects)
-    (STACK-PUSH-VALUES  value-c1form push-statement-c1form :side-effects)
-
+    (MV-PROG1           form body :side-effects)
+    ;; Extensions
     (ext:COMPILER-TYPECASE var expressions)
-    (ext:CHECKED-VALUE  type value-c1form let-form))))
+    (ext:CHECKED-VALUE  type value-c1form let-form)
+    ;; Backend-specific operators
+    (FFI:C-INLINE (arg-c1form*) (arg-type-symbol*) output-host-type
+                  c-expression-string
+                  side-effects-p one-liner-p)
+    (FFI:C-PROGN  variables forms))))
 
 (defconstant +c1-form-hash+
   #.(loop with hash = (make-hash-table :size 128 :test #'eq)
@@ -131,13 +125,6 @@
     (cl:declare . c1declare) ; c1special
     (ext:compiler-let . c1compiler-let) ; c1special
 
-    (with-stack . c1with-stack) ; c1
-    (innermost-stack-frame . c1innermost-stack-frame) ; c1
-    (stack-push . c1stack-push) ; c1
-    (stack-push-values . c1stack-push-values) ; c1
-    (stack-pop . c1stack-pop) ; c1
-    (si:apply-from-stack-frame . c1apply-from-stack-frame) ; c1
-
     (cl:tagbody . c1tagbody) ; c1special
     (cl:go . c1go) ; c1special
 
@@ -164,35 +151,26 @@
     ))
 
 (defconstant +set-loc-dispatch-alist+
-  '((bind . bind)
-    (jump-true . set-jump-true)
-    (jump-false . set-jump-false)
-
-    (cl:values . set-values-loc)
-    (value0 . set-value0-loc)
-    (cl:return . set-return-loc)
-    (trash . set-trash-loc)
-
+  '((bind   . bind)
     (cl:the . set-the-loc)
-    ))
+    (valuez . set-valuez-loc)
+    (value0 . set-value0-loc)
+    (leave  . set-leave-loc)
+    (trash  . set-trash-loc)
+    (jump-true  . set-trash-loc)
+    (jump-false . set-trash-loc)
+    (ffi-data-ref . wt-ffi-data-set)))
 
 (defconstant +wt-loc-dispatch-alist+
   '((call-normal . wt-call-normal)
     (call-indirect . wt-call-indirect)
+    (call-global-stack . wt-call-global-stack)
+    (call-local-stack . wt-call-local-stack)
     (ffi:c-inline . wt-c-inline-loc)
     (coerce-loc . wt-coerce-loc)
 
     (temp . wt-temp)
     (lcl . wt-lcl-loc)
-    (fixnum-value . wt-fixnum)
-    (long-float-value . wt-number)
-    (double-float-value . wt-number)
-    (single-float-value . wt-number)
-    (short-float-value . wt-number)
-    (csfloat-value . wt-number)
-    (cdfloat-value . wt-number)
-    (clfloat-value . wt-number)
-    (character-value . wt-character)
     (value . wt-value)
     (keyvars . wt-keyvars)
     (cl:the . wt-the)
@@ -200,22 +178,21 @@
     (cl:fdefinition . wt-fdefinition)
     (make-cclosure . wt-make-closure)
 
-    (si:structure-ref . wt-structure-ref)
+    (ffi-data-ref . wt-ffi-data-ref)
 
-    (cl:nil . "ECL_NIL")
-    (cl:t . "ECL_T")
-    (cl:return . "value0")
-    (cl:values . "cl_env_copy->values[0]")
+    (frame++ . "ECL_NEW_FRAME_ID(cl_env_copy)")
+    (leave . "value0")
     (va-arg . "va_arg(args,cl_object)")
     (cl-va-arg . "ecl_va_arg(args)")
-    (value0 . "value0")
-    ))
+    (valuez . "cl_env_copy->values[0]")
+    (value0 . "value0")))
 
 (defconstant +c2-dispatch-alist+
   '((cl:block . c2block)
     (cl:return-from . c2return-from)
-    (cl:funcall . c2funcall)
-    (call-global . c2call-global)
+    (fcall . c2fcall)
+    (mcall . c2mcall)
+
     (cl:catch . c2catch)
     (cl:unwind-protect . c2unwind-protect)
     (cl:throw . c2throw)
@@ -223,7 +200,6 @@
     (ffi:c-inline . c2c-inline)
     (ffi:c-progn . c2c-progn)
     (locals . c2locals)
-    (call-local . c2call-local)
 
     (cl:if . c2if)
     (fmla-not . c2fmla-not)
@@ -239,14 +215,13 @@
     (cl:function . c2function)
     (ext:compiler-let . c2compiler-let)
 
-    (with-stack . c2with-stack)
-    (stack-push-values . c2stack-push-values)
+    (mv-prog1 . c2mv-prog1)
 
     (cl:tagbody . c2tagbody)
     (cl:go . c2go)
 
-    (var . c2var/location)
-    (location . c2var/location)
+    (variable . c2variable)
+    (location . c2location)
     (cl:setq . c2setq)
     (cl:progv . c2progv)
     (cl:psetq . c2psetq)
@@ -270,8 +245,8 @@
 (defconstant +p1-dispatch-alist+
   '((cl:block . p1block)
     (cl:return-from . p1return-from)
-    (call-global . p1call-global)
-    (call-local . p1call-local)
+    (fcall . p1fcall)
+    (mcall . p1mcall)
     (cl:catch . p1catch)
     (cl:throw . p1throw)
     (cl:if . p1if)
@@ -292,18 +267,17 @@
     (cl:unwind-protect . p1unwind-protect)
     (ordinary . p1ordinary)
     (si:fset . p1fset)
-    (var . p1var)
+    (variable . p1var)
     (cl:values . p1values)
     (location . p1trivial) ;; Some of these can be improved
     (ffi:c-inline . p1trivial)
     (ffi:c-progn . p1trivial)
     (cl:function . p1trivial)
-    (cl:funcall . p1trivial)
     (cl:load-time-value . p1trivial)
     (make-form . p1trivial)
     (init-form . p1trivial)
-    (c::with-stack . p1with-stack)
-    (c::stack-push-values . p1stack-push-values)
+    (mv-prog1 . p1mv-prog1)
+
     (ext:compiler-typecase . p1compiler-typecase)
     (ext:checked-value . p1checked-value)
     ))

@@ -53,7 +53,7 @@
      (if (atom (rest decl))
          (error "Syntax error in proclamation ~a" decl)
          (multiple-value-bind (type-name args)
-             (si::normalize-type (second decl))
+             (si::normalize-type (second decl) *cmp-env*)
            (if (eq type-name 'FUNCTION)
                (dolist (v (cddr decl))
                  (proclaim-function v args))
@@ -121,3 +121,9 @@
           (si:put-sysprop var 'CMP-TYPE type1))
         (warn "The variable name ~s is not a symbol." var))))
 
+(defun si:proclaim-class (name class &optional (env c::*cmp-env-root*))
+  "Add a class definition to the global compiler environment."
+  (si:create-type-name name)
+  (ext:with-backend
+    :c/c++ (cmp-env-register-type name class c::*cmp-env-root*)
+    #-ecl-min :bytecodes #-ecl-min (setf (find-class name) class)))

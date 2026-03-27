@@ -10,7 +10,7 @@
 (in-package "CLOS")
 
 (defconstant +builtin-classes-pre-array+
-  (make-array (1+ #.(length +builtin-classes-list+))))
+  #.(make-array (1+ (length +builtin-classes-list+))))
 
 ;;; ----------------------------------------------------------------------
 ;;; Building the classes T, CLASS, STANDARD-OBJECT and STANDARD-CLASS.

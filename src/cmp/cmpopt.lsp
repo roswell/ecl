@@ -53,7 +53,7 @@
          first rest function)
     ;; Type must be constant to optimize
     (if (constantp type env)
-        (setf type (ext:constant-form-value type env))
+        (setf type (si::search-type-in-env (ext:constant-form-value type env) env))
         (return-from expand-typep form))
     (cond ;; compound function type specifier: signals an error
           ((contains-compound-function-type type)
@@ -62,15 +62,15 @@
           ;; Variable declared with a given type
           ((and (symbolp object)
                 (setf aux (cmp-env-search-var object env))
-                (subtypep (var-type aux) type))
+                (subtypep (var-type aux) type *cmp-env*))
            t)
           ;; Simple ones
-          ((subtypep 'T type) T)
+          ((subtypep 'T type *cmp-env*) T)
           ((eq type 'NIL) NIL)
           ;;
           ;; Detect inconsistencies in the provided type. If we run at low
           ;; safety, we will simply assume the user knows what she's doing.
-          ((subtypep type NIL)
+          ((subtypep type NIL *cmp-env*)
            (cmpwarn "TYPEP form contains an empty type ~S and cannot be optimized" type)
            form)
           ;;
@@ -82,9 +82,10 @@
                                               type
                                               (first type))
                                           'SI::DEFTYPE-DEFINITION))
-           (expand-typep form object `',(funcall function (if (atom type)
-                                                              nil
-                                                              (rest type)))
+           (expand-typep form object `(quote ,(funcall function (if (atom type)
+                                                                    (list type)
+                                                                    type)
+                                                       env))
                          env))
           ;;
           ;; There exists a function which checks for this type?
@@ -94,7 +95,7 @@
           ;; Similar as before, but we assume the user did not give us
           ;; the right name, or gave us an equivalent type.
           ((loop for (a-type . function-name) in si::+known-typep-predicates+
-              when (si::type= type a-type)
+              when (si::type= type a-type *cmp-env*)
               do (return `(,function-name ,object))))
           ;;
           ;; No optimizations that take up too much space unless requested.
@@ -143,7 +144,7 @@
              ;; Small optimization: it is easier to check for fixnum
              ;; than for integer. Use it when possible.
              (when (and (eq first 'integer)
-                        (subtypep type 'fixnum))
+                        (subtypep type 'fixnum *cmp-env*))
                (setf first 'fixnum))
              `(LET ((,var1 ,object)
                     (,var2 ,(coerce 0 first)))
@@ -157,7 +158,8 @@
           ;; Compound COMPLEX types.
           ((and (eq first 'COMPLEX)
                 (= (list-length type) 2))
-           `(and (typep (realpart ,object) ',(second type))
+           `(and (complexp ,object)
+                 (typep (realpart ,object) ',(second type))
                  (typep (imagpart ,object) ',(second type))))
           ;;
           ;; (SATISFIES predicate)
@@ -225,21 +227,6 @@
     (single-float . (float x 0.0f0))
     (double-float . (float x 0.0d0))
     (long-float . (float x 0.0l0))
-    #+complex-float
-    (si:complex-single-float . (let ((y x))
-                                 (declare (:read-only y))
-                                 (complex (float (realpart y) 0.0f0)
-                                          (float (imagpart y) 0.0f0))))
-    #+complex-float
-    (si:complex-double-float . (let ((y x))
-                                 (declare (:read-only y))
-                                 (complex (float (realpart y) 0.0d0)
-                                          (float (imagpart y) 0.0d0))))
-    #+complex-float
-    (si:complex-long-float . (let ((y x))
-                               (declare (:read-only y))
-                               (complex (float (realpart y) 0.0l0)
-                                        (float (imagpart y) 0.0l0))))
     (complex . (let ((y x))
                  (declare (:read-only y))
                  (complex (realpart y) (imagpart y))))
@@ -259,19 +246,30 @@
          first rest)
     ;; Type must be constant to optimize
     (if (constantp type env)
-        (setf type (ext:constant-form-value type env))
+        (setf type (si::search-type-in-env (ext:constant-form-value type env) env))
         (return-from expand-coerce form))
     (cond ;; Trivial case
-          ((subtypep 't type)
+          ((subtypep 't type *cmp-env*)
            value)
           ;;
           ;; Detect inconsistencies in the type form.
-          ((subtypep type 'nil)
-           (cmperror "Cannot COERCE an expression to an empty type."))
+          ((subtypep type 'nil *cmp-env*)
+           (cmperr "Cannot COERCE an expression to an empty type."))
           ;;
           ;; No optimizations that take up too much space unless requested.
           ((not (policy-inline-type-checks))
            form)
+          ;;
+          ;; Complex floats
+          ((and *complex-float* (member type '(si:complex-single-float si:complex-double-float si:complex-long-float)))
+           (let ((prototype (case type
+                              (si:complex-single-float 0.0f0)
+                              (si:complex-double-float 0.0d0)
+                              (si:complex-long-float 0.0l0))))
+            `(let ((y ,value))
+               (declare (:read-only y))
+               (complex (float (realpart y) ,prototype)
+                        (float (imagpart y) ,prototype)))))
           ;;
           ;; Search for a simple template above, replacing X by the value.
           ((loop for (a-type . template) in +coercion-table+
@@ -281,7 +279,7 @@
           ;; Derived types defined with DEFTYPE.
           ((and (atom type)
                 (setq first (si:get-sysprop type 'SI::DEFTYPE-DEFINITION)))
-           (expand-coerce form value `',(funcall first nil) env))
+           (expand-coerce form value `',(funcall first (list type) env) env))
           ;;
           ;; CONS types are not coercible.
           ((and (consp type)
@@ -291,18 +289,18 @@
           ;; Search for a simple template above, but now assuming the user
           ;; provided a more complex form of the same value.
           ((loop for (a-type . template) in +coercion-table+
-              when (si::type= type a-type)
+              when (si::type= type a-type *cmp-env*)
               do (return (subst value 'x template))))
           ;;
           ;; SEQUENCE types
-          ((subtypep type 'sequence)
+          ((subtypep type 'sequence *cmp-env*)
            (multiple-value-bind (elt-type length)
                (si::closest-sequence-type type)
              (if (or (eq length '*) (policy-assume-right-type))
                  (if (eq elt-type 'list)
                      `(si::coerce-to-list ,value)
                      `(si::coerce-to-vector ,value ',elt-type ',length
-                                            ,(and (subtypep type 'simple-array) t)))
+                                            ,(and (subtypep type 'simple-array *cmp-env*) t)))
                  form)))
           ;;
           ;; There are no other atomic types to optimize

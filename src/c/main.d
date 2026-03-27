@@ -48,10 +48,8 @@
 
 /******************************* EXPORTS ******************************/
 
-#if !defined(ECL_THREADS)
-cl_env_ptr cl_env_p = NULL;
-#endif
 const char *ecl_self;
+static struct cl_env_struct first_env;
 
 /************************ GLOBAL INITIALIZATION ***********************/
 
@@ -192,6 +190,22 @@ init_env_aux(cl_env_ptr env)
 }
 
 void
+ecl_init_first_env(cl_env_ptr env)
+{
+  env->default_sigmask = cl_core.default_sigmask;
+#ifdef ECL_THREADS
+  init_threads();
+#else
+  ecl_cs_init(env);
+#endif
+  init_env_mp(env);
+  init_env_int(env);
+  init_env_aux(env);
+  init_env_ffi(env);
+  init_stacks(env);
+}
+
+void
 ecl_init_env(cl_env_ptr env)
 {
   init_env_mp(env);
@@ -204,24 +218,20 @@ ecl_init_env(cl_env_ptr env)
 void
 _ecl_dealloc_env(cl_env_ptr env)
 {
-  /*
-   * Environment cleanup. This is only required when the environment is
-   * allocated using mmap or some other method. We could do more, cleaning
-   * up stacks, etc, but we actually do not do it because that would need
-   * a lisp environment set up -- the allocator assumes one -- and we
-   * may have already cleaned up the value of ecl_process_env()
-   */
+  /* Environment cleanup. This is required because the environment is allocated
+   * using mmap or some other method. */
+  free_stacks(env);
 #ifdef ECL_THREADS
   ecl_mutex_destroy(&env->interrupt_struct->signal_queue_lock);
 #endif
 #if defined(ECL_USE_MPROTECT)
   if (munmap(env, sizeof(*env)))
     ecl_internal_error("Unable to deallocate environment structure.");
-#else
-# if defined(ECL_USE_GUARD_PAGE)
+#elif defined(ECL_USE_GUARD_PAGE)
   if (!VirtualFree(env, 0, MEM_RELEASE))
     ecl_internal_error("Unable to deallocate environment structure.");
-# endif
+#else
+  ecl_free_unsafe(env);
 #endif
 }
 
@@ -248,20 +258,13 @@ _ecl_alloc_env(cl_env_ptr parent)
     ecl_internal_error("Unable to allocate environment structure.");
 #else
 # if defined(ECL_USE_GUARD_PAGE)
-  output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT,
-                        PAGE_READWRITE);
+  output = VirtualAlloc(0, sizeof(*output), MEM_COMMIT, PAGE_READWRITE);
   if (output == NULL)
     ecl_internal_error("Unable to allocate environment structure.");
 # else
-  static struct cl_env_struct first_env;
-  if (!ecl_option_values[ECL_OPT_BOOTED]) {
-    /* We have not set up any environment. Hence, we cannot call ecl_alloc()
-     * because it will need to stop interrupts and currently we rely on
-     * the environment for that */
-    output = ecl_alloc_unprotected(sizeof(*output));
-  } else {
-    output = ecl_alloc(sizeof(*output));
-  }
+  output = ecl_malloc(sizeof(*output));
+  if (output == NULL)
+    ecl_internal_error("Unable to allocate environment structure.");
 # endif
 #endif
   {
@@ -270,12 +273,13 @@ _ecl_alloc_env(cl_env_ptr parent)
       output->default_sigmask = 0;
     } else if (parent) {
       output->default_sigmask = ecl_alloc_atomic(bytes);
-      memcpy(output->default_sigmask,
-             parent->default_sigmask,
-             bytes);
+      memcpy(output->default_sigmask, parent->default_sigmask, bytes);
     } else {
       output->default_sigmask = cl_core.default_sigmask;
     }
+  }
+  for (cl_index i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    output->big_register[i] = ECL_NIL;
   }
   output->method_cache = output->slot_cache = NULL;
   output->interrupt_struct = NULL;
@@ -390,6 +394,7 @@ struct cl_core_struct cl_core = {
   .error_output = ECL_NIL,
   .standard_readtable = ECL_NIL,
   .dispatch_reader = ECL_NIL,
+  .compiler_readtable = ECL_NIL,
 
   .char_names = ECL_NIL,
   .null_string = (cl_object)&str_empty_data,
@@ -413,8 +418,8 @@ struct cl_core_struct cl_core = {
   .Jan1st1970UT = ECL_NIL,
 
   .system_properties = ECL_NIL,
-  .setf_definitions = ECL_NIL,
 
+  .first_env = &first_env,
 #ifdef ECL_THREADS
   .processes = ECL_NIL,
 #endif
@@ -475,7 +480,6 @@ int
 cl_boot(int argc, char **argv)
 {
   cl_object aux;
-  cl_object features;
   int i;
   cl_env_ptr env;
 
@@ -494,16 +498,24 @@ cl_boot(int argc, char **argv)
   setbuf(stdin,  stdin_buf);
   setbuf(stdout, stdout_buf);
 #endif
+  init_process();
 
   ARGC = argc;
   ARGV = argv;
   ecl_self = argv[0];
 
   init_unixint(0);
-  init_alloc();
-  GC_disable();
-  env = _ecl_alloc_env(0);
-  init_threads(env);
+  init_alloc(0);
+  init_big();
+
+  /*
+   * Initialize the per-thread data.
+   * This cannot come later, because we need to be able to bind
+   * ext::*interrupts-enabled* while creating packages.
+   */
+
+  env = cl_core.first_env;
+  ecl_init_first_env(env);
 
   /*
    * 1) Initialize symbols and packages
@@ -512,10 +524,14 @@ cl_boot(int argc, char **argv)
   ECL_NIL_SYMBOL->symbol.t = t_symbol;
   ECL_NIL_SYMBOL->symbol.value = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.name = str_NIL;
-  ECL_NIL_SYMBOL->symbol.gfdef = ECL_NIL;
+  ECL_NIL_SYMBOL->symbol.cname = ECL_NIL;
+  ECL_FMAKUNBOUND(ECL_NIL_SYMBOL);
+  ECL_NIL_SYMBOL->symbol.sfdef = ECL_NIL;
+  ECL_NIL_SYMBOL->symbol.macfun = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.plist = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.hpack = ECL_NIL;
   ECL_NIL_SYMBOL->symbol.stype = ecl_stp_constant;
+  ECL_NIL_SYMBOL->symbol.undef_entry = ecl_undefined_function_entry;
 #ifdef ECL_THREADS
   ECL_NIL_SYMBOL->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
@@ -524,10 +540,14 @@ cl_boot(int argc, char **argv)
   ECL_T->symbol.t = (short)t_symbol;
   ECL_T->symbol.value = ECL_T;
   ECL_T->symbol.name = str_T;
-  ECL_T->symbol.gfdef = ECL_NIL;
+  ECL_T->symbol.cname = ECL_NIL;
+  ECL_FMAKUNBOUND(ECL_T);
+  ECL_T->symbol.sfdef = ECL_NIL;
+  ECL_T->symbol.macfun = ECL_NIL;
   ECL_T->symbol.plist = ECL_NIL;
   ECL_T->symbol.hpack = ECL_NIL;
   ECL_T->symbol.stype = ecl_stp_constant;
+  ECL_T->symbol.undef_entry = ecl_undefined_function_entry;
 #ifdef ECL_THREADS
   ECL_T->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
 #endif
@@ -538,23 +558,6 @@ cl_boot(int argc, char **argv)
 #else
   cl_core.path_max = MAXPATHLEN;
 #endif
-
-#ifdef ECL_THREADS
-  env->bindings_array = si_make_vector(ECL_T, ecl_make_fixnum(1024),
-                                       ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
-  si_fill_array_with_elt(env->bindings_array, ECL_NO_TL_BINDING, ecl_make_fixnum(0), ECL_NIL);
-  env->thread_local_bindings_size = env->bindings_array->vector.dim;
-  env->thread_local_bindings = env->bindings_array->vector.self.t;
-#endif
-
-  /*
-   * Initialize the per-thread data.
-   * This cannot come later, because we need to be able to bind
-   * ext::*interrupts-enabled* while creating packages.
-   */
-  init_big();
-  ecl_init_env(env);
-  ecl_cs_set_org(env);
 
   cl_core.lisp_package =
     ecl_make_package(str_common_lisp,
@@ -622,8 +625,8 @@ cl_boot(int argc, char **argv)
   /* These must come _after_ the packages and NIL/T have been created */
   init_all_symbols();
 
-  /* We need this because a lot of stuff is to be created */
-  GC_enable();
+  /* We need to enable GC because a lot of stuff is to be created */
+  init_alloc(1);
 
   /*
    * Set *default-pathname-defaults* to a temporary fake value. We
@@ -674,10 +677,6 @@ cl_boot(int argc, char **argv)
     cl__make_hash_table(@'equal', ecl_make_fixnum(1024), /* size */
                         cl_core.rehash_size,
                         cl_core.rehash_threshold);
-  cl_core.setf_definitions =
-    cl__make_hash_table(@'eq', ecl_make_fixnum(256), /* size */
-                        cl_core.rehash_size,
-                        cl_core.rehash_threshold);
 
   ECL_SET(@'*random-state*', ecl_make_random_state(ECL_T));
 
@@ -688,6 +687,7 @@ cl_boot(int argc, char **argv)
   ECL_SET(@'ffi::c-uint-max', ecl_make_unsigned_integer(UINT_MAX));
   ECL_SET(@'ffi::c-ulong-max', ecl_make_unsigned_integer(ULONG_MAX));
 #ifdef ecl_long_long_t
+  ECL_SET(@'ffi::c-long-long-min', ecl_make_long_long(LLONG_MIN));
   ECL_SET(@'ffi::c-long-long-max', ecl_make_long_long(LLONG_MAX));
   ECL_SET(@'ffi::c-ulong-long-max', ecl_make_ulong_long(ULLONG_MAX));
 #endif
@@ -753,14 +753,7 @@ cl_boot(int argc, char **argv)
           cl_list(8, @'&optional', @'&rest', @'&key', @'&allow-other-keys',
                   @'&aux', @'&whole', @'&environment', @'&body'));
 
-  for (i = 0, features = ECL_NIL; feature_names[i].elt.self; i++) {
-    int flag;
-    cl_object name = (cl_object)(feature_names + i);
-    cl_object key = ecl_intern(name, cl_core.keyword_package, &flag);
-    features = CONS(key, features);
-  }
-
-  ECL_SET(@'*features*', features);
+  ECL_SET(@'*features*', cl_read(1, cl_make_string_input_stream(1, feature_names)));
 
   ECL_SET(@'*package*', cl_core.lisp_package);
 
@@ -814,8 +807,8 @@ cl_boot(int argc, char **argv)
     }
 #endif
     ECL_SET(@'ext::*program-exit-code*', code);
-    if (the_env->frs_org <= the_env->frs_top)
-      ecl_unwind(the_env, the_env->frs_org);
+    if (the_env->frs_stack.org <= the_env->frs_stack.top)
+      ecl_unwind(the_env, the_env->frs_stack.org);
     si_exit(1, code);
   }
 @)

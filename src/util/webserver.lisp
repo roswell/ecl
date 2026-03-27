@@ -10,6 +10,6 @@
 (defvar *acceptor*
   (make-instance 'hunchentoot:easy-acceptor :port 8888))
 
-(print `(serving ,(ext:getcwd)))
+(print `(serving ,(uiop/os:getcwd)))
 (push (create-folder-dispatcher-and-handler "/" (uiop/os:getcwd)) *dispatch-table*)
 (start *acceptor*)

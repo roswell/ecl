@@ -389,24 +389,24 @@ handle_all_queued_interrupt_safe(cl_env_ptr env)
   cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
   memcpy(big_register, env->big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
   ecl_init_bignum_registers(env);
-  /* We might have been interrupted while we push/pop in the
-   * stack. Increasing env->stack_top ensures that we don't
-   * overwrite the topmost stack value. */
-  env->stack_top++;
+  /* We might have been interrupted while we push/pop in the stack. Increasing
+   * env->run_stack.top ensures that we don't overwrite the topmost stack
+   * value. */
+  env->run_stack.top++;
   /* We also need to save and restore the (top+1)'th frame and
    * binding stack value to prevent overwriting it.
    * INV: Due to the stack safety areas we don't need to check
    * for env->frs/bds_limit */
   struct ecl_frame top_frame;
-  memcpy(&top_frame, env->frs_top+1, sizeof(struct ecl_frame));
+  memcpy(&top_frame, env->frs_stack.top+1, sizeof(struct ecl_frame));
   struct ecl_bds_frame top_binding;
-  memcpy(&top_binding, env->bds_top+1, sizeof(struct ecl_bds_frame));
+  memcpy(&top_binding, env->bds_stack.top+1, sizeof(struct ecl_bds_frame));
   /* Finally we can handle the queued signals ... */
   handle_all_queued(env);
   /* ... and restore everything again */
-  memcpy(env->bds_top+1, &top_binding, sizeof(struct ecl_bds_frame));
-  memcpy(env->frs_top+1, &top_frame, sizeof(struct ecl_frame));
-  env->stack_top--;
+  memcpy(env->bds_stack.top+1, &top_binding, sizeof(struct ecl_bds_frame));
+  memcpy(env->frs_stack.top+1, &top_frame, sizeof(struct ecl_frame));
+  env->run_stack.top--;
   ecl_clear_bignum_registers(env);
   memcpy(env->big_register, big_register, ECL_BIGNUM_REGISTER_NUMBER*sizeof(cl_object));
   env->packages_to_be_created_p = packages_to_be_created_p;
@@ -445,8 +445,7 @@ queue_signal(cl_env_ptr env, cl_object code, int allocate)
     ECL_RPLACA(record, code);
     ECL_RPLACD(record, ECL_NIL);
     env->interrupt_struct->pending_interrupt =
-      ecl_nconc(env->interrupt_struct->pending_interrupt,
-                record);
+      ecl_nconc(env->interrupt_struct->pending_interrupt, record);
   }
 
 #ifdef ECL_THREADS
@@ -829,16 +828,16 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
 # endif /* ECL_USE_MPROTECT */
 # ifdef ECL_DOWN_STACK
   if (sig == SIGSEGV &&
-      (char*)info->si_addr > the_env->cs_barrier &&
-      (char*)info->si_addr <= the_env->cs_org) {
+      (char*)info->si_addr > the_env->c_stack.max &&
+      (char*)info->si_addr <= the_env->c_stack.org) {
     unblock_signal(the_env, sig);
     ecl_unrecoverable_error(the_env, stack_overflow_msg);
     return;
   }
 # else
   if (sig == SIGSEGV &&
-      (char*)info->si_addr < the_env->cs_barrier &&
-      (char*)info->si_addr >= the_env->cs_org) {
+      (char*)info->si_addr < the_env->c_stack.max &&
+      (char*)info->si_addr >= the_env->c_stack.org) {
     unblock_signal(the_env, sig);
     ecl_unrecoverable_error(the_env, stack_overflow_msg);
     return;
@@ -1022,8 +1021,9 @@ si_set_signal_handler(cl_object code, cl_object handler)
 static VOID CALLBACK
 wakeup_function(ULONG_PTR foo)
 {
+  /* Write into the process environment to trigger an exception */
   cl_env_ptr env = ecl_process_env();
-  volatile i = env->nvalues;
+  volatile cl_index i = env->nvalues;
   env->nvalues = i;
 }
 

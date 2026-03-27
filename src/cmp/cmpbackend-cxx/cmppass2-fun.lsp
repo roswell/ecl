@@ -11,44 +11,60 @@
 
 (defun c2locals (c1form funs body labels ;; labels is T when deriving from labels
                  &aux
-                 (*env* *env*)
-                 (*inline-blocks* 0)
-                 (*env-lvl* *env-lvl*))
+                   (*env* *env*)
+                   (*inline-blocks* 0)
+                   (*env-lvl* *env-lvl*))
   (declare (ignore c1form labels))
-  ;; create location for each function which is returned,
-  ;; either in lexical:
+  ;; create location for each function which is returned, either in lexical:
   (loop with env-grows = nil
-     with closed-vars = '()
-     for fun in funs
-     for var = (fun-var fun)
-     when (plusp (var-ref var))
-     do (case (var-kind var)
-          ((lexical closure)
-           (push var closed-vars)
-           (unless env-grows
-             (setq env-grows (var-ref-ccb var))))
-          (otherwise
-           (maybe-open-inline-block)
-           (bind (next-lcl) var)
-           (wt-nl "cl_object " *volatile* var ";")))
-     finally
-     ;; if we have closed variables
-       (when (env-grows env-grows)
-         (maybe-open-inline-block)
-         (let ((env-lvl *env-lvl*))
-           (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
-     ;; bind closed locations because of possible circularities
-       (loop for var in closed-vars
-          do (bind nil var)))
+        with closed-vars = '()
+        for fun in funs
+        for var = (fun-var fun)
+        when (plusp (var-ref var))
+          do (case (var-kind var)
+               ((lexical closure)
+                (push var closed-vars)
+                (unless env-grows
+                  (setq env-grows (var-ref-ccb var))))
+               (otherwise
+                (maybe-open-inline-block)
+                (bind (next-lcl) var)
+                (wt-nl "cl_object " *volatile* var ";")))
+        finally
+           ;; if we have closed variables
+           (when (env-grows env-grows)
+             (maybe-open-inline-block)
+             (let ((env-lvl *env-lvl*))
+               (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
+           ;; bind closed locations because of possible circularities
+           (loop for var in closed-vars
+                 do (bind *vv-nil* var)))
   ;; create the functions:
-  (mapc #'new-local funs)
+  (map nil #'update-function-env funs)
   ;; - then assign to it
   (loop for fun in funs
-     for var = (fun-var fun)
-     when (plusp (var-ref var))
-     do (set-var (list 'MAKE-CCLOSURE fun) var))
+        for var = (fun-var fun)
+        when (plusp (var-ref var))
+          do (set-var (list 'MAKE-CCLOSURE fun) var))
   (c2expr body)
   (close-inline-blocks))
+
+(defun update-function-env (fun)
+  (declare (type fun fun))
+  (case (fun-closure fun)
+    (CLOSURE
+     (setf (fun-level fun) 0
+           (fun-env fun) *env*))
+    (LEXICAL
+     ;; Only increase the lexical level if there have been some
+     ;; new variables created. This way, the same lexical environment
+     ;; can be propagated through nested FLET/LABELS.
+     (setf (fun-level fun) (if (plusp *lex*) (1+ *level*) *level*)
+           (fun-env fun) 0))
+    (otherwise
+     (setf (fun-level fun) 0
+           (fun-env fun) 0)))
+  (register-function fun))
 
 #| Steps:
  1. defun creates declarations for requireds + va_alist
@@ -67,26 +83,28 @@
 
 (defun c2lambda-expr
     (lambda-list body cfun fname description use-narg required-lcls closure-type
-                 optional-type-check-forms keyword-type-check-forms
-                 &aux (requireds (first lambda-list))
-                 (optionals (second lambda-list))
-                 (rest (third lambda-list)) rest-loc
-                 (key-flag (fourth lambda-list))
-                 (keywords (fifth lambda-list))
-                 (allow-other-keys (sixth lambda-list))
-                 (nreq (length requireds))
-                 (nopt (/ (length optionals) 3))
-                 (nkey (/ (length keywords) 4))
-                 (varargs (or optionals rest key-flag allow-other-keys))
-                 (fname-in-ihs-p (or (policy-debug-variable-bindings)
-                                     (and (policy-debug-ihs-frame)
-                                          (or description fname))))
-                 simple-varargs
-                 (*permanent-data* t)
-                 (*unwind-exit* *unwind-exit*)
-                 (*env* *env*)
-                 (*inline-blocks* 0)
-                 (last-arg))
+     optional-type-check-forms keyword-type-check-forms
+     c-compatible-variadic-signature
+     &aux (requireds (first lambda-list))
+       (optionals (second lambda-list))
+       (rest (third lambda-list)) rest-loc
+       (key-flag (fourth lambda-list))
+       (keywords (fifth lambda-list))
+       (allow-other-keys (sixth lambda-list))
+       (nreq (length requireds))
+       (nopt (/ (length optionals) 3))
+       (nkey (/ (length keywords) 4))
+       (varargs (or optionals rest key-flag allow-other-keys
+                    (and c-compatible-variadic-signature requireds)))
+       (fname-in-ihs-p (or (policy-debug-variable-bindings)
+                           (and (policy-debug-ihs-frame)
+                                (or description fname))))
+       simple-varargs
+       (*permanent-data* t)
+       (*unwind-exit* *unwind-exit*)
+       (*env* *env*)
+       (*inline-blocks* 0)
+       (last-arg))
   (declare (fixnum nreq nkey))
 
   (if (and fname ;; named function
@@ -100,16 +118,13 @@
     (setf *tail-recursion-info* (cons *tail-recursion-info* requireds))
     (setf *tail-recursion-info* nil))
 
-  ;; check arguments
-  (when (policy-check-nargs)
-    (if (and use-narg (not varargs))
-        (wt-nl "if (ecl_unlikely(narg!=" nreq ")) FEwrong_num_arguments_anonym();")
-        (when varargs
-          (when requireds
-            (wt-nl "if (ecl_unlikely(narg<" nreq ")) FEwrong_num_arguments_anonym();"))
-          (unless (or rest key-flag allow-other-keys)
-            (wt-nl "if (ecl_unlikely(narg>" (+ nreq nopt) ")) FEwrong_num_arguments_anonym();"))))
-    (open-inline-block))
+  ;; check number of arguments
+  (wt-maybe-check-num-arguments use-narg
+                                nreq
+                                (if (or rest key-flag allow-other-keys)
+                                    nil
+                                    (+ nreq nopt))
+                                fname)
 
   ;; If the number of required arguments exceeds the number of variables we
   ;; want to pass on the C stack, we pass some of the arguments to the list
@@ -118,7 +133,7 @@
     (setf nopt (+ nopt (- nreq si::c-arguments-limit))
           nreq si::c-arguments-limit)
     (setf optionals (nconc (loop for var in (subseq requireds si::c-arguments-limit)
-                              nconc (list var *c1nil* NIL))
+                                 nconc (list var (c1nil) NIL))
                            optionals)
           requireds (subseq requireds 0 si::c-arguments-limit)
           varargs t))
@@ -130,20 +145,20 @@
   (labels ((wt-decl (var)
              (let ((lcl (next-lcl (var-name var))))
                (wt-nl)
-               (wt (rep-type->c-name (var-rep-type var)) " " *volatile* lcl ";")
+               (wt (host-type->c-name (var-host-type var)) " " *volatile* lcl ";")
                lcl))
            (do-decl (var)
-             (when (local var) ; no LCL needed for SPECIAL or LEX
+             (when (local-var-p var) ; no LCL needed for SPECIAL or LEX
                (setf (var-loc var) (wt-decl var)))))
     ;; Declare unboxed required arguments
     (loop for var in requireds
-       when (unboxed var)
-       do (setf (var-loc var) (wt-decl var)))
+          when (or (unboxed-var-p var) c-compatible-variadic-signature)
+            do (do-decl var))
     ;; dont create rest or varargs if not used
     (when (and rest (< (var-ref rest) 1)
                (not (eq (var-kind rest) 'SPECIAL)))
       (setq rest nil
-            varargs (or optionals key-flag allow-other-keys)))
+            varargs (or varargs optionals key-flag allow-other-keys)))
     ;; Declare &optional variables
     (do ((opt optionals (cdddr opt)))
         ((endp opt))
@@ -160,7 +175,7 @@
   ;; Declare and assign the variable arguments pointer
   (when varargs
     (flet ((last-variable ()
-             (cond (required-lcls
+             (cond ((and required-lcls (not c-compatible-variadic-signature))
                     (first (last required-lcls)))
                    ((eq closure-type 'LEXICAL)
                     (format nil "lex~D" (1- *level*)))
@@ -171,20 +186,28 @@
                  (last-variable)
                  ");")
           (wt-nl "ecl_va_list args; ecl_va_start(args,"
-                 (last-variable) ",narg," nreq ");"))))
+                 (last-variable) ",narg,"
+                 (if c-compatible-variadic-signature
+                     0
+                     nreq)
+                 ");"))
+      (when c-compatible-variadic-signature
+        (setf required-lcls
+              (loop repeat nreq
+                    collect (if simple-varargs 'VA-ARG 'CL-VA-ARG))))))
 
-  ;; Bind required argumens. Produces C statements for unboxed variables,
-  ;; which is why it is done after all declarations.
+  ;; Bind required arguments. Produces C statements for unboxed
+  ;; variables, which is why it is done after all declarations.
   (mapc #'bind required-lcls requireds)
 
   (when fname-in-ihs-p
-    (open-inline-block)
-    (setf *ihs-used-p* t)
-    (push 'IHS *unwind-exit*)
-    (when (policy-debug-variable-bindings)
-      (build-debug-lexical-env (reverse requireds) t))
-    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," (add-symbol (or description fname))
-           ",_ecl_debug_env);"))
+    (let ((fname (get-object (or description fname) :test #'equal)))
+      (open-inline-block)
+      (setf *ihs-used-p* t)
+      (push 'IHS *unwind-exit*)
+      (when (policy-debug-variable-bindings)
+        (build-debug-lexical-env (reverse requireds) t))
+      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname ",ECL_NIL,_ecl_debug_env);")))
 
   ;; Bind optional parameters as long as there remain arguments.
   (when optionals
@@ -194,25 +217,26 @@
     ;; which is what we do here.
     (let ((va-arg-loc (if simple-varargs 'VA-ARG 'CL-VA-ARG)))
       ;; counter for optionals
-      (wt-nl-open-brace)
-      (wt-nl "int i = " nreq ";")
-      (do ((opt optionals (cdddr opt))
-           (type-check optional-type-check-forms (cdr type-check)))
-          ((endp opt))
-        (wt-nl "if (i >= narg) {")
-        (let ((*opened-c-braces* (1+ *opened-c-braces*)))
-          (bind-init (second opt) (first opt))
-          (when (third opt) (bind nil (third opt))))
-        (wt-nl "} else {")
-        (let ((*opened-c-braces* (1+ *opened-c-braces*))
-              (*unwind-exit* *unwind-exit*))
-          (wt-nl "i++;")
-          (bind va-arg-loc (first opt))
-          (if (car type-check)
-              (c2expr* (car type-check)))
-          (when (third opt) (bind t (third opt))))
-        (wt-nl "}"))
-      (wt-nl-close-brace)))
+      (with-lexical-scope ()
+        (wt-nl "int i = " nreq ";")
+        (do ((opt optionals (cdddr opt))
+             (type-check optional-type-check-forms (cdr type-check)))
+            ((endp opt))
+          (wt-nl "if (i >= narg) {")
+          (let ((*opened-c-braces* (1+ *opened-c-braces*)))
+            (bind-init (second opt) (first opt))
+            (when (third opt)
+              (bind *vv-nil* (third opt))))
+          (wt-nl "} else {")
+          (let ((*opened-c-braces* (1+ *opened-c-braces*))
+                (*unwind-exit* *unwind-exit*))
+            (wt-nl "i++;")
+            (bind va-arg-loc (first opt))
+            (if (car type-check)
+                (c2expr* (car type-check)))
+            (when (third opt)
+              (bind *vv-t* (third opt))))
+          (wt-nl "}")))))
 
   (when (or rest key-flag allow-other-keys)
     (cond ((not (or key-flag allow-other-keys))
@@ -228,7 +252,8 @@
            ;; declaration on some variables.
            (if rest (wt ",(cl_object*)&" rest-loc) (wt ",NULL"))
            (wt (if allow-other-keys ",TRUE);" ",FALSE);"))))
-    (when rest (bind rest-loc rest)))
+    (when rest
+      (bind rest-loc rest)))
 
   (when varargs
     (wt-nl (if simple-varargs "va_end(args);" "ecl_va_end(args);")))
@@ -250,11 +275,13 @@
           (init (third kwd))
           (flag (fourth kwd)))
       (cond ((and (eq (c1form-name init) 'LOCATION)
-                  (null (c1form-arg 0 init)))
+                  (eq (c1form-arg 0 init) *vv-nil*))
              ;; no initform
              ;; ECL_NIL has been set in keyvars if keyword parameter is not supplied.
              (setf (second KEYVARS[i]) i)
-             (bind KEYVARS[i] var))
+             (bind KEYVARS[i] var)
+             (when (car type-check)
+               (c2expr* (car type-check))))
             (t
              ;; with initform
              (setf (second KEYVARS[i]) (+ nkey i))
@@ -266,18 +293,34 @@
              (let ((*opened-c-braces* (1+ *opened-c-braces*)))
                (setf (second KEYVARS[i]) i)
                (bind KEYVARS[i] var)
-               (if (car type-check)
-                   (c2expr* (car type-check))))
+               (when (car type-check)
+                 (c2expr* (car type-check))))
              (wt-nl "}")))
       (when flag
         (setf (second KEYVARS[i]) (+ nkey i))
         (bind KEYVARS[i] flag))))
-
   (when *tail-recursion-info*
-    (push 'TAIL-RECURSION-MARK *unwind-exit*)
-    (wt-nl1 "TTL:"))
-
+    (setf *tail-recursion-mark* (next-label t))
+    (push *tail-recursion-mark* *unwind-exit*)
+    (wt-label *tail-recursion-mark*))
   ;;; Now the parameters are ready, after all!
   (c2expr body)
-
   (close-inline-blocks))
+
+(defun wt-maybe-check-num-arguments (use-narg minarg maxarg fname)
+ (when (and (policy-check-nargs) use-narg)
+   (flet ((wrong-num-arguments ()
+            (if fname
+                (wt " FEwrong_num_arguments(" (get-object fname :test #'equal) ");")
+                (wt " FEwrong_num_arguments_anonym();"))))
+     (if (and maxarg (= minarg maxarg))
+         (progn (wt-nl "if (ecl_unlikely(narg!=" minarg "))")
+                (wrong-num-arguments))
+         (progn
+           (when (plusp minarg)
+             (wt-nl "if (ecl_unlikely(narg<" minarg "))")
+             (wrong-num-arguments))
+           (when maxarg
+             (wt-nl "if (ecl_unlikely(narg>" maxarg "))")
+             (wrong-num-arguments)))))
+   (open-inline-block)))

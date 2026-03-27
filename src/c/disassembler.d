@@ -218,14 +218,21 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
     goto OPARG;
 
     /* OP_VAR       n{arg}
-       Sets NVALUES=1 and VALUES(0) to the value of the n-th local.
+       Sets reg0 to the value of the n-th local.
     */
   case OP_VAR:            string = "VAR\t";
     GET_OPARG(n, vector);
     goto OPARG;
 
+    /* OP_VARC      n{arg}
+       Sets reg0 to the value of the n-th lexical.
+    */
+  case OP_VARC:           string = "VARC\t";
+    GET_OPARG(n, vector);
+    goto OPARG;
+
     /* OP_VARS      var{symbol}
-       Sets NVALUES=1 and VALUES(0) to the value of the symbol VAR.
+       Sets reg0 to the value of the symbol VAR.
        VAR should be either a special variable or a constant.
     */
   case OP_VARS:           string = "VARS\t";
@@ -245,6 +252,13 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
        Pushes the value of the n-th local onto the stack.
     */
   case OP_PUSHV:          string = "PUSHV\t";
+    GET_OPARG(n, vector);
+    goto OPARG;
+
+    /* OP_PUSHV     n{arg}
+       Pushes the value of the n-th lexical onto the stack.
+    */
+  case OP_PUSHVC:         string = "PUSHVC\t";
     GET_OPARG(n, vector);
     goto OPARG;
 
@@ -384,19 +398,23 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
   case OP_LABELS:         vector = disassemble_labels(bytecodes, vector);
     break;
 
-    /* OP_LFUNCTION name{symbol}
-       Extracts the function associated to a symbol. The function
-       may be defined in the global environment or in the local
-       environment. This last value takes precedence.
+    /* OP_LFUNCTION index{fixnum}
+       Extracts nth function defined in the local environment.
     */
   case OP_LFUNCTION:      string = "LOCFUNC\t";
     GET_OPARG(n, vector);
     goto OPARG;
 
+    /* OP_CFUNCTION index{fixnum}
+       Extracts nth function defined in the lexical environment.
+    */
+  case OP_CFUNCTION:      string = "LEXFUNC\t";
+    GET_OPARG(n, vector);
+    goto OPARG;
+
     /* OP_FUNCTION  name{symbol}
        Extracts the function associated to a symbol. The function
-       may be defined in the global environment or in the local
-       environment. This last value takes precedence.
+       is defined in the global environment.
     */
   case OP_FUNCTION:       string = "SYMFUNC\t";
     GET_DATA(o, vector, data);
@@ -412,10 +430,11 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
     goto ARG;
 
     /* OP_GO        n{arg}, tag-ndx{arg}
-       OP_QUOTE     tag-name{symbol}
-       Jumps to the tag which is defined at the n-th position in
-       the lexical environment. TAG-NAME is kept for debugging
-       purposes.
+       OP_GO_CFB    n{lex}, tag-ndx{arg}
+
+       Jumps to the tag which is defined for the tagbody
+       frame registered at the n-th position in the lexical
+       environment. TAG-NDX is the number of tag in the list.
     */
   case OP_GO:             string = "GO\t";
     GET_OPARG(n, vector);
@@ -423,11 +442,23 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
     o = ecl_make_fixnum(m);
     goto OPARG_ARG;
 
-    /* OP_RETURN    n{arg}
+  case OP_GO_CFB:         string = "GO_CFB\t";
+    GET_OPARG(n, vector);
+    GET_OPARG(m, vector);
+    o = ecl_make_fixnum(m);
+    goto OPARG_ARG;
+
+    /* OP_RETURN        n{arg}
+       OP_RETURN_CFB    n{lex}
+
        Returns from the block whose record in the lexical environment
        occuppies the n-th position.
-    */
+   */
   case OP_RETURN:         string = "RETFROM\t";
+    GET_OPARG(n, vector);
+    goto OPARG;
+
+  case OP_RETURN_CFB:         string = "RETFROM_CFB\t";
     GET_OPARG(n, vector);
     goto OPARG;
 
@@ -508,30 +539,51 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
     GET_DATA(o, vector, data);
     goto OPARG_ARG;
     /* OP_SETQ      n{arg}
+       OP_SETQC     n{arg}
+       OP_SETQS     n{arg}
+
        OP_PSETQ     n{arg}
-       OP_SETQS     var-name{symbol}
-       OP_PSETQS    var-name{symbol}
-       Sets either the n-th local or a special variable VAR-NAME,
-       to either the value in VALUES(0) (OP_SETQ[S]) or to the 
-       first value on the stack (OP_PSETQ[S]).
+       OP_PSETQC    n{arg}
+       OP_PSETQS    n{arg}
+
+       OP_VSETQ     n{arg}, nvalue{arg}
+       OP_VSETQC    n{arg}, nvalue{arg}
+       OP_VSETQS    n{arg}, nvalue{arg}
+
+       Sets either the n-th variable to either the value in REG0 (OP_SETQ[CS])
+       or to the first value on the stack (OP_PSETQ[CS]), or to a given value
+       from the multiple values array (OP_VSETQ[CS]). Note NVALUE > 0 strictly.
     */
   case OP_SETQ:           string = "SETQ\t";
     GET_OPARG(n, vector);
     goto OPARG;
+  case OP_SETQC:          string = "SETQC\t";
+    GET_OPARG(n, vector);
+    goto OPARG;
+  case OP_SETQS:          string = "SETQS\t";
+    GET_DATA(o, vector, data);
+    goto ARG;
+
   case OP_PSETQ:          string = "PSETQ\t";
     GET_OPARG(n, vector);
     goto OPARG;
-  case OP_VSETQ:          string = "VSETQ\t";
-    GET_OPARG(m, vector);
-    o = ecl_make_fixnum(m);
-    GET_OPARG(n, vector);
-    goto OPARG_ARG;
-  case OP_SETQS:          string = "SETQS\t";
+  case OP_PSETQC:         string = "PSETQC\t";
     GET_DATA(o, vector, data);
     goto ARG;
   case OP_PSETQS:         string = "PSETQS\t";
     GET_DATA(o, vector, data);
     goto ARG;
+
+  case OP_VSETQ:          string = "VSETQ\t";
+    GET_OPARG(m, vector);
+    o = ecl_make_fixnum(m);
+    GET_OPARG(n, vector);
+    goto OPARG_ARG;
+  case OP_VSETQC:         string = "VSETQC\t";
+    GET_OPARG(m, vector);
+    o = ecl_make_fixnum(m);
+    GET_OPARG(n, vector);
+    goto OPARG_ARG;
   case OP_VSETQS:         string = "VSETQS\t";
     GET_DATA(o, vector, data);
     GET_OPARG(n, vector);
@@ -582,6 +634,9 @@ disassemble(cl_object bytecodes, cl_opcode *vector) {
   case OP_LISTA:          string = "LIST*\t";
     GET_OPARG(n, vector);
     goto OPARG;
+  case OP_CONS_CAR:       string = "CONS-CAR\tREG0"; goto NOARG;
+  case OP_CONS_CDR:       string = "CONS-CDR\tREG0"; goto NOARG;
+
   case OP_CALLG1:         string = "CALLG1\t";
     GET_DATA(o, vector, data);
     goto ARG;

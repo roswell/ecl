@@ -28,8 +28,8 @@
     (warn "Ignoring class definition for ~S" class)))
 
 (defun setf-find-class (new-value name &optional errorp env)
-  (declare (ignore errorp env))
-  (let ((old-class (find-class name nil)))
+  (declare (ignore errorp))
+  (let ((old-class (find-class name nil env)))
     (cond
       ((and old-class
             (or (typep old-class 'built-in-class)
@@ -38,8 +38,13 @@
          (error "The class associated to the CL specifier ~S cannot be changed."
                 name)))
       ((classp new-value)
-       (setf (gethash name si:*class-name-hash-table*) new-value))
-      ((null new-value) (remhash name si:*class-name-hash-table*))
+       (if env
+           (si:proclaim-class name new-value env)
+           (setf (gethash name si:*class-name-hash-table*) new-value)))
+      ((null new-value)
+       (if env
+           (si:proclaim-class name nil env)
+           (remhash name si:*class-name-hash-table*)))
       (t (error "~A is not a class." new-value))))
   new-value)
 

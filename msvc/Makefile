@@ -17,6 +17,9 @@ SOFTWARE_TYPE     = NT
 SOFTWARE_VERSION  = 5.0
 THEHOST           = win32
 
+# Symbols to add to *FEATURES* in the final executable
+LSP_FEATURES = :ecl :common :common-lisp :ansi-cl :ffi :prefixed-api :cdr-14 :package-local-nicknames :clos :ecl-pde :long-float :ieee-floating-point :floating-point-exceptions :boehm-gc :dlopen :msvc :windows :win32 :cmu-format :clos-streams :uint8-t :uint16-t :uint32-t :uint64-t :long-long :little-endian :ecl-weak-hash
+
 # Size of the C stack in bytes
 ECL_DEFAULT_C_STACK_SIZE = 1048576
 
@@ -180,43 +183,62 @@ LIBRARIES     =
 TARGETS       = ecl2$(EXE)
 DEF           = ecl.def
 
+# Set features
+#
+LSP_FEATURES = :$(ARCHITECTURE) $(LSP_FEATURES)
+!if "$(ECL_WIN64)" != ""
+LSP_FEATURES = :win64 $(LSP_FEATURES)
+!endif
+!if "$(ECL_THREADS)" != ""
+LSP_FEATURES = :threads :ecl-read-write-lock $(LSP_FEATURES)
+!endif
+!if "$(ECL_UNICODE)" != ""
+LSP_FEATURES = :unicode $(LSP_FEATURES)
+!endif
+!if "$(ECL_SSE)" != ""
+LSP_FEATURES = :sse2 $(LSP_FEATURES)
+!endif
+!ifdef ECL_SOCKETS
+LSP_FEATURES = :wsock $(LSP_FEATURES)
+!endif
+
 # Additional modules
 # 
 ECL_MODULES  =
-ECL_FEATURES = (cons :wants-dlopen *features*)
+COMPILATION_FEATURES = :wants-dlopen
 !ifdef ECL_CMP
 ECL_MODULES  = $(ECL_MODULES) cmp
-ECL_FEATURES = (cons :wants-cmp $(ECL_FEATURES))
+COMPILATION_FEATURES = :wants-cmp $(COMPILATION_FEATURES)
 !endif
 !ifdef ECL_ASDF
 ECL_MODULES  = $(ECL_MODULES) asdf
-ECL_FEATURES = (cons :wants-asdf $(ECL_FEATURES))
+COMPILATION_FEATURES = :wants-asdf $(COMPILATION_FEATURES)
 !endif
 !ifdef ECL_SOCKETS
 ECL_MODULES  = $(ECL_MODULES) sockets
-ECL_FEATURES = (cons :wants-sockets $(ECL_FEATURES))
+COMPILATION_FEATURES = :wants-sockets $(COMPILATION_FEATURES)
 !endif
 !ifdef ECL_RT
 ECL_MODULES  = $(ECL_MODULES) rt
-ECL_FEATURES = (cons :wants-rt $(ECL_FEATURES))
+COMPILATION_FEATURES = :wants-rt $(COMPILATION_FEATURES)
 !endif
 !ifdef ECL_DEFSYS
 ECL_MODULES  = $(ECL_MODULES) defsystem
-ECL_FEATURES = (cons :wants-defsystem $(ECL_FEATURES))
+COMPILATION_FEATURES = :wants-defsystem $(COMPILATION_FEATURES)
 !endif
 !ifdef ECL_PROFILE
 ECL_MODULES  = $(ECL_MODULES) profile
-ECL_FEATURES = (cons :wants-profile $(ECL_FEATURES))
+COMPILATION_FEATURES = :wants-profile $(COMPILATION_FEATURES)
 !endif
 ECL_MODULES  = $(ECL_MODULES) bytecmp
-ECL_FEATURES = (list* :builtin-bytecmp :wants-bytecmp $(ECL_FEATURES))
+COMPILATION_FEATURES = :builtin-bytecmp :wants-bytecmp $(COMPILATION_FEATURES)
 ECL_MODULES  = $(ECL_MODULES) ecl-curl
-ECL_FEATURES = (cons :wants-ecl-curl $(ECL_FEATURES))
+COMPILATION_FEATURES = :wants-ecl-curl $(COMPILATION_FEATURES)
 ECL_MODULES  = $(ECL_MODULES) deflate
-ECL_FEATURES = (cons :wants-deflate $(ECL_FEATURES))
+COMPILATION_FEATURES = :wants-deflate $(COMPILATION_FEATURES)
 
 !MESSAGE ECL Modules: $(ECL_MODULES)
-!MESSAGE ECL Features: $(ECL_FEATURES)
+!MESSAGE ECL Features: $(COMPILATION_FEATURES)
 
 # Build rules
 # 
@@ -289,7 +311,8 @@ compile.lsp: bare.lsp $(srcdir)/compile.lsp.in Makefile
 	    "@LDINSTALLNAME@" "" \
 	    "@DEF@" "$(DEF)" \
             "@RANLIB@" "ranlib" \
-	    "@LSP_FEATURES@" "$(ECL_FEATURES)" \
+	    "@LSP_FEATURES@" "$(LSP_FEATURES)" \
+	    "@COMPILATION_FEATURES@" "$(COMPILATION_FEATURES)" \
 	    "@ECL_CMPDIR@" "cmp" \
 	    "@ECL_EXTRA_LISP_FILES@" "" \
 	    "@ECL_INIT_FORM@" "(si::top-level t)" \
@@ -329,6 +352,9 @@ cmp/cmpdefs.lsp: $(srcdir)/cmp/cmpdefs.lsp Makefile
 	    "@ecldir\@" "NIL" \
 	    "@libdir\@" "NIL" \
 	    "@includedir\@" "NIL" \
+	    "@ARCHITECTURE@" "$(ARCHITECTURE)"\
+	    "@SOFTWARE_TYPE@" "$(SOFTWARE_TYPE)"\
+	    "@PACKAGE_VERSION@" "$(PACKAGE_VERSION)"\
 	    < $(srcdir)\cmp\cmpdefs.lsp > cmp\cmpdefs.lsp
 ecl-config.bat: util\ecl-config.bat Makefile
 	c\cut "~A" "$(libdir:\=/)"\
@@ -346,9 +372,12 @@ ecl-cc.bat: util\ecl-cc.bat Makefile
 	      "@libdir@" "$(prefix:\=/)" \
 	      "@includedir@" "$(prefix:\=/)/ecl" \
 	      < util\ecl-cc.bat > ecl-cc.bat
+c/ecl_features.h: $(srcdir)/c/ecl_features.h.in Makefile
+	c\cut "@LSP_FEATURES@" "$(LSP_FEATURES)" \
+	      < $(srcdir)\c\ecl_features.h.in > c\ecl_features.h
 
 
-eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp
+eclmin.lib: eclgmp.lib eclgc.lib lsp/config.lsp c/ecl_features.h
 	cd c
 	$(MAKE) /nologo ECL_VERSION_NUMBER=$(ECL_VERSION_NUMBER) \
                 ECL_DEFAULT_C_STACK_SIZE=$(ECL_DEFAULT_C_STACK_SIZE) \

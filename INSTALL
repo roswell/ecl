@@ -7,9 +7,20 @@ If you do not have access to the online version, follow the following recipies.
    ./configure --help
    to get a list of the flags with which ECL can be configured.
 2. Enter
-   ./configure ...
-   where "..." is the set of flags you have chosen.
+   ./configure <flags>
+   where <flags> is the set of flags you have chosen.
 3. Use "make" followed by "make install" to build and install ECL.
+
+* MacOS/arm64 (Apple M)
+
+The process is similar to a typical UNIX, but ~configure~ and ~make~ must be
+preceeded with the architecture specification:
+
+#+begin_src sh
+  arch -arm64 ./configure
+  arch -arm64 make
+  make install
+#+end_src
 
 * Windows with Visual Studio C++ 2008
 1. Open the Visual Studio x86 or x64 native tools command prompt
@@ -17,69 +28,94 @@ If you do not have access to the online version, follow the following recipies.
 3. Read the file Makefile to find the configuration options. They
    typically have the form ECL_UNICODE=1, ECL_THREADS=1, etc
 4. Enter
-   nmake ...
-   followed by zero or more of those options
+   nmake <options>
+   where <options> is a set of zero or more of those options
 5. Use "nmake install" to create a directory called "package" with ECL in it.
 6. Move that directory wherever you need.
 
+* Cross-compile for Windows64 using MinGW
+1. Install MinGW64 toolchain, for example:
+   #+begin_src shell-scrip
+     sudo zypper install mingw64-cross-gcc
+   #+end_src
+   If GMP does not build, see whether the repository has a prepackaged version.
+2. Build and install ECL
+   #+begin_src shell-lsscript
+     ./configure --host=x86_64-w64-mingw32 --prefix=`pwd`/ecl-win64 --with-cross-config=`pwd`/src/util/x86_64-w64-mingw32.cross_config
+     make && make install
+   #+end_src
+   Note that ~mingw32~ is an arbitrary suffix and not a typo, we are still
+   bulding for 64-bit Windows.
+3. Run application using Wine
+   #+begin_src shell-script
+     pushd ecl-win64
+     wine ecl.exe
+   #+end_src
+   It may happen that wine is not configured to know where are libraries
+   provided by MinGW. In that case they need to be linked or copied here.
+   #+begin_src shell-script
+     pushd ecl-win64
+     ln -s /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libgcc_s_seh-1.dll .
+     ln -s /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libgmp-10.dll .
+     ln -s /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll .
+     wine ecl.exe
+   #+end_src
+
+* Cross-compile for Windows32 using MinGW
+1. Install MinGW64 toolchain, for example:
+   #+begin_src shell-scrip
+     sudo zypper install mingw32-cross-gcc
+   #+end_src
+   If GMP does not build, see whether the repository has a prepackaged version.
+2. Build and install ECL
+   #+begin_src shell-script
+     ./configure --host=i686-w64-mingw32 --prefix=`pwd`/ecl-win32 --with-cross-config=`pwd`/src/util/i686-w64-mingw32.cross_config
+     make && make install
+   #+end_src
+3. Run application using Wine
+   #+begin_src shell-script
+     pushd ecl-win32
+     wine ecl.exe
+   #+end_src
+   It may happen that wine is not configured to know where are libraries
+   provided by MinGW. In that case they need to be linked or copied here.
+   #+begin_src shell-script
+     pushd ecl-win32
+     ln -s /usr/i686-w64-mingw32/sys-root/mingw/bin/libgcc_s_seh-1.dll .
+     ln -s /usr/i686-w64-mingw32/sys-root/mingw/bin/libgmp-10.dll .
+     ln -s /usr/i686-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll .
+     wine ecl.exe
+   #+end_src
+
 * Cross-compile for the android platform (from the UNIX machine)
-1. Build the host ECL
-   #+BEGIN_SRC shell-script
-     # C99 complex numbers are not fully supported on Android
-     ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2"\
-                 --prefix=`pwd`/ecl-android-host --disable-c99complex
-     make -j9
-     make install
-     rm -r build
-     export ECL_TO_RUN=`pwd`/ecl-android-host/bin/ecl
-   #+END_SRC
-2. Configure the toolchain (requires android-ndk version 15 or higher, known to work with version 17c)
+1. Configure the toolchain (requires android-ndk version 22 or higher, known to work with version 28b)
    and export the necessary paths:
    #+BEGIN_SRC shell-script
      export NDK_PATH=/opt/android-ndk
      export ANDROID_API=23
-     export TOOLCHAIN_PATH=`pwd`/android-toolchain
-     ${NDK_PATH}/build/tools/make_standalone_toolchain.py --arch arm --install-dir ${TOOLCHAIN_PATH} --api ${ANDROID_API}
-     export SYSROOT=${TOOLCHAIN_PATH}/sysroot
-     export PATH=${TOOLCHAIN_PATH}/bin:$PATH
+     export TOOLCHAIN_PATH=${NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64 # use darwin instead of linux if compiling on Mac OS host
+     export TARGET=armv7a-linux-androideabi
   #+END_SRC
-3. Build and install the target library
+2. Build and install the target library
    #+BEGIN_SRC shell-script
-     # boehm GC is not compatible with ld.gold linker, force use of ld.bfd
-     export LDFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -fuse-ld=bfd"
-     export CPPFLAGS="--sysroot=${SYSROOT} -D__ANDROID_API__=${ANDROID_API} -isystem ${SYSROOT}/usr/include/arm-linux-androideabi"
-     export CC=arm-linux-androideabi-clang
-     ./configure --host=arm-linux-androideabi \
+	  export CC="${TOOLCHAIN_PATH}/bin/clang --target=${TARGET}${ANDROID_API}"
+	  export LD=${TOOLCHAIN_PATH}/bin/ld
+	  export AR=${TOOLCHAIN_PATH}/bin/llvm-ar
+	  export RANLIB=${TOOLCHAIN_PATH}/bin/llvm-ranlib
+     export ECL_TO_RUN=/usr/local/bin/ecl
+    ./configure --host=${TARGET} \
                  --prefix=`pwd`/ecl-android \
                  --disable-c99complex \
                  --with-cross-config=`pwd`/src/util/android-arm.cross_config
      make -j9
      make install
    #+END_SRC
-4. Library and assets in the ecl-android directory are ready to run on
+3. Library and assets in the ecl-android directory are ready to run on
    the Android system.
-
-** Building ecl-android on Darwin (OSX)
-If your host platform is darwin, then the host compiler should be
-built with the Apple's GCC (not the GCC from Macports). Using the
-MacPort command:
-#+BEGIN_SRC shell-script
-  sudo port select --set gcc none
-#+END_SRC
-
-Hint provided by Pascal J. Bourguignon.
 
 
 * Cross-compile for the iOS platform (needs Xcode 11 or higher)
-1. Build the host ECL
-   #+BEGIN_SRC shell-script
-     ./configure --prefix=`pwd`/ecl-iOS-host --disable-c99complex
-     make -j9
-     make install
-     rm -r build
-     export ECL_TO_RUN=`pwd`/ecl-iOS-host/bin/ecl
-   #+END_SRC
-2. Configure the toolchain
+1. Configure the toolchain
    #+BEGIN_SRC shell-script
      export IOS_VERSION_MIN="8.0"
      export IOS_SDK_DIR="`xcode-select --print-path`/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/"
@@ -96,10 +132,11 @@ Hint provided by Pascal J. Bourguignon.
      export LDFLAGS="-arch arm64 -pipe -std=c99 -gdwarf-2 -isysroot ${IOS_SDK_DIR}"
      export LIBS="-framework Foundation"
    #+END_SRC
-3. Build and install the target library
+2. Build and install the target library
    #+BEGIN_SRC shell-script
      export CFLAGS="$CFLAGS -DGC_DISABLE_INCREMENTAL -DECL_RWLOCK"
      export CXXFLAGS="$CFLAGS"
+     export ECL_TO_RUN=/usr/local/bin/ecl
      ./configure --host=aarch64-apple-darwin \
                  --prefix=`pwd`/ecl-iOS \
                  --disable-c99complex \
@@ -108,17 +145,19 @@ Hint provided by Pascal J. Bourguignon.
      make -j9
      make install
    #+END_SRC
-4. Library and assets in the ecl-iOS directory are ready to run on
+3. Library and assets in the ecl-iOS directory are ready to run on
    the iOS system.
 
 * Cross-compile for the WASM platform (via emscripten)
 
 Emscripten target is a little fickle so keep in mind that:
 
-- disable-shared is needed, because emcc does not recognize libecl.so (?)
+- shared libraries are supported but come with some drawbacks (e.g.
+  increased code size if used together with -sASYNCIFY), therefore the
+  build instructions default to disable-shared
 
-- disable-tcp is needed, because accept can't be found (related to
-  disable-shared? lack of -lsockets or something in this spirit?)
+- disable-tcp is needed, because accept can't be found (lack of
+  -lsockets or something in this spirit?)
 
 - select for interactive streams does not work, because reading operations are
   blocking (as they should be!), so there is no EOF returned -- clear-input will
@@ -127,42 +166,43 @@ Emscripten target is a little fickle so keep in mind that:
 - to build emscripten you need to use their SDK that provides the toolchain, and
   set the environment variable EMSDK_PATH
 
-1. Build the host ECL
+- for the garbage collector to be able to identify roots on the stack,
+  you need to pass the -sBINARYEN_EXTRA_PASSES=--spill-pointers option
+  to the linker for all of your code that might store pointer on the
+  stack (for instance when embedding ECL)
 
-#+begin_src shell-script
-  ./configure ABI=32 CFLAGS="-m32 -g -O2" LDFLAGS="-m32 -g -O2" \
-              --prefix=`pwd`/ecl-emscripten-host --disable-threads
+- the optimization level -O0 is used because higher optimization
+  levels seem to interfere with the binaryen options needed to get the
+  garbage collector to work correctly and tend slow down the program
+  (might be worth experimenting with the optimization options)
 
-  make -j16 && make install
-  rm -rf build/
-#+end_src
-
-2. Configure the toolchain
+1. Configure the toolchain
 
 Install the Emscripten SDK using the official instructions:
 
         https://emscripten.org/docs/getting_started/downloads.html
 
-These build instructions were tested against ~emsdk 3.1.41~. If things doesn't
+These build instructions were tested against ~emsdk 4.0.12~. If things doesn't
 work try that version instead of ~latest~.
 
 After that activate the toolchain and configure build flags:
 
 #+begin_src shell-script
   source ${EMSDK_PATH}/emsdk_env.sh
-  export ECL_TO_RUN=`pwd`/ecl-emscripten-host/bin/ecl
   # You may customize various emscripten flags here, i.e:
   # export LDFLAGS="-sASYNCIFY=1"
 #+end_src
 
-3. Build the core environment and install it
+2. Build the core environment and install it
 
 #+begin_src shell-script
+  export ECL_TO_RUN=/usr/local/bin/ecl
   emconfigure ./configure \
               --host=wasm32-unknown-emscripten \
               --build=x86_64-pc-linux-gnu \
               --with-cross-config=`pwd`/src/util/wasm32-unknown-emscripten.cross_config \
               --prefix=`pwd`/ecl-emscripten \
+              --disable-shared \
               --with-tcp=no \
               --with-cmp=no
 
@@ -172,7 +212,7 @@ After that activate the toolchain and configure build flags:
   cp build/bin/ecl.js build/bin/ecl.wasm ecl-emscripten/
 #+end_src
 
-4. ECL may be hosted on a web page. Assuming that you have quicklisp installed:
+3. ECL may be hosted on a web page. Assuming that you have quicklisp installed:
 
 #+begin_src shell-script
   export WEBSERVER=`pwd`/src/util/webserver.lisp
@@ -186,12 +226,72 @@ After that activate the toolchain and configure build flags:
 If the output does not show on the webpage then open the javascript console.
 This is a default html website produced by emscripten.
 
-5. Build an external program linked against libecl.so
+4. Build an external program linked against libecl.a
 
 The default stack size proposed by emscripten is 64KB. This is too little for
-ECL, so when you build a program that is linked against libecl.so, then it is
+ECL, so when you build a program that is linked against libecl.a, then it is
 imoprtant to specify a different size. For example:
 
 #+begin_src shell-script
-  emcc program.c -sSTACK_SIZE=1048576 libecl.so -I./ -o program.o
+  emcc program.c -sSTACK_SIZE=1048576 lib/*.a -I./include -o program.o
 #+end_src
+
+* Build using Cosmopolitan toolchain (experimental)
+
+Binaries built with cosmopolitan toolchain can be executed on numerous platforms
+without changes. An inititial ECL port has been completed.
+
+1. Download cosmopolitan toolchain and activate it
+
+Instructions for downloading the toolchain are available in its [[https://github.com/jart/cosmopolitan/blob/master/README.md ][repository]].
+For example:
+
+#+begin_src sh
+  mkdir cosmocc
+  pushd cosmocc
+  curl -o https://cosmo.zip/pub/cosmocc/cosmocc.zip
+  unzip *zip
+  bin/make --version # sanity test
+  export PATH="`pwd`/bin:${PATH}"
+  export CC=x86_64-unknown-cosmo-cc
+  export CXX=x86_64-unknown-cosmo-c++
+  popd
+#+end_src
+
+2. Build ECL
+
+#+begin_src sh
+  LSP_FEATURES=":cosmo" ./configure --disable-shared --prefix=/tmp/cosmo-cl
+  make -j15
+  make install
+  # make check
+#+end_src
+
+- The platform is reported in *FEATURES* as :COSMO and as :LINUX
+- make check will fail because libc segfaults when using fenv.h
+
+This platform is not upstreamed yet in libgc, so it may be necessary to add the
+following code to the file gcconfig.h:
+
+#+begin_src c
+# if defined(__COSMOPOLITAN__)
+#   if defined(__x86_64__)
+#     define mach_type_known
+#     define X86_64
+#     define LINUX // optional?
+#   elif defined(__aarch64__)
+#     define mach_type_known
+#     define AARCH64
+#     define LINUX // optional?
+#   endif
+# endif
+#+end_src
+
+For details see: https://github.com/jart/cosmopolitan/issues/939.
+
+Cosmopolitan condition variables can't be used with mutexes that are not
+initialized as PTHREAD_MUTEX_NORMAL. That means that recursive locks and
+deterministic deadlock detection are not supported on this platform.
+
+Moreover floating point exception handling is not working and it is libc issue
+that manifests itself with segfaults.

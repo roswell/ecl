@@ -304,3 +304,9 @@
   ;;
   (test csfloat.0010.issue-547
    (finishes (expt #c(1.0 0.0) 2))))
+
+(test complex.0011.expt-float-contagion
+      (is (typep (expt -1.4d0 #C(1 2)) '(complex double-float)))
+      (is (typep (expt -1.4l0 #C(1 2)) '(complex long-float)))
+      (is (typep (expt #C(1.0 3.0) 0.0d0) '(complex double-float)))
+      (is (typep (expt #C(1.0 3.0) 0.0l0) '(complex long-float))))

@@ -2194,7 +2194,7 @@ format(format_stack fmt, cl_index start, cl_index end)
 #endif
     null_strm = 1;
   } else if (strm == ECL_T) {
-    strm = ecl_symbol_value(@'*standard-output*');
+    strm = ecl_cmp_symbol_value(the_env, @'*standard-output*');
   }
   if (ecl_stringp(strm)) {
     output = strm;
