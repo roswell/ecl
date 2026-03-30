@@ -833,7 +833,8 @@ ecl_shadow(cl_object s, cl_object p)
       p->pack.internal = _ecl_sethash(s, p->pack.internal, x);
       x->symbol.hpack = p;
     }
-    p->pack.shadowings = CONS(x, p->pack.shadowings);
+    if (!ecl_member_eq(x, p->pack.shadowings))
+      p->pack.shadowings = CONS(x, p->pack.shadowings);
   } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
 }
 
