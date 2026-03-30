@@ -10,8 +10,11 @@ build:
     - target-dir
   script:
     - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
+    - echo Building ECL
     - make
-    - mkdir -p ${CI_PROJECT_DIR}/target-dir/ ; make doc ; cd build/doc/ ; make manual ; cd manual ; make ecl-manual.pdf ; cp -p ecl-manual.pdf ${CI_PROJECT_DIR}/target-dir/
+    - echo Building the PDF of the ECL manual
+    - mkdir -p ${CI_PROJECT_DIR}/target-dir/ ; make doc && ( cd build/doc/ ; make manual && cd manual ; make ecl-manual.pdf && cp -p ecl-manual.pdf ${CI_PROJECT_DIR}/target-dir/ )
+    - echo Installing ECL
     - make install
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
