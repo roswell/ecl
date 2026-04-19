@@ -84,13 +84,13 @@ cl_env_ptr cl_env_p = NULL;
 void
 init_process(void)
 {
-  cl_env_ptr env = cl_core.first_env;
+  cl_env_ptr env = ecl_core.first_env;
 #ifdef ECL_THREADS
   ecl_process_key_create(cl_env_key);
-  ecl_mutex_init(&cl_core.processes_lock, 1);
-  ecl_mutex_init(&cl_core.global_lock, 1);
-  ecl_mutex_init(&cl_core.error_lock, 1);
-  ecl_rwlock_init(&cl_core.global_env_lock);
+  ecl_mutex_init(&ecl_core.processes_lock, 1);
+  ecl_mutex_init(&ecl_core.global_lock, 1);
+  ecl_mutex_init(&ecl_core.error_lock, 1);
+  ecl_rwlock_init(&ecl_core.global_env_lock);
 #endif
   ecl_set_process_env(env);
   env->default_sigmask = NULL;

@@ -35,6 +35,7 @@
 #  define MAP_FAILED -1
 # endif
 #endif
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +50,89 @@
 /******************************* EXPORTS ******************************/
 
 const char *ecl_self;
+
+/* -- core runtime ---------------------------------------------------------- */
+
+/* The root environment is a default execution context. */
 static struct cl_env_struct first_env;
+
+struct ecl_core_struct ecl_core = {
+  .first_env = &first_env,
+  /* processes */
+#ifdef ECL_THREADS
+  .processes = ECL_NIL,
+  .last_var_index = 0,
+  .reused_indices = ECL_NIL,
+#endif
+  /* signals */
+  .default_sigmask_bytes = 0,
+  .known_signals = ECL_NIL,
+  /* allocation */
+  .max_heap_size = 0,
+  .bytes_consed = ECL_NIL,
+  .gc_counter = ECL_NIL,
+  .gc_stats = 0,
+  .safety_region = NULL,
+  /* pathnames */
+  .path_max = 0,
+  .pathname_translations = ECL_NIL,
+  /* LIBRARIES is a list of objects. It behaves as a sequence of weak pointers
+     thanks to the magic in the garbage collector. */
+  .libraries = ECL_NIL,
+  .library_pathname = ECL_NIL
+};
+
+/* note that this function does not create any environment */
+int
+ecl_boot(void)
+{
+  int i;
+
+  i = ecl_option_values[ECL_OPT_BOOTED];
+  if (i) {
+    if (i < 0) {
+      /* We have called cl_shutdown and want to use ECL again. */
+      ecl_set_option(ECL_OPT_BOOTED, 1);
+    }
+    return 1;
+  }
+
+  init_process();
+  /* init_unixint(); */
+  /* init_garbage(); */
+
+  ecl_core.path_max = MAXPATHLEN;
+
+  return 0;
+}
+
+/* -- constants ----------------------------------------------------- */
+
+const cl_object ecl_ct_Jan1st1970UT = ecl_make_fixnum(39052800);
+
+ecl_def_ct_base_string(ecl_ct_null_string,"",0,,const);
+
+ecl_def_ct_single_float(ecl_ct_default_rehash_size,1.5f,,const);
+ecl_def_ct_single_float(ecl_ct_default_rehash_threshold,0.75f,,const);
+
+ecl_def_ct_single_float(ecl_ct_singlefloat_zero,0,,const);
+ecl_def_ct_double_float(ecl_ct_doublefloat_zero,0,,const);
+ecl_def_ct_long_float(ecl_ct_longfloat_zero,0,,const);
+
+ecl_def_ct_single_float(ecl_ct_singlefloat_minus_zero,-0.0,,const);
+ecl_def_ct_double_float(ecl_ct_doublefloat_minus_zero,-0.0,,const);
+ecl_def_ct_long_float(ecl_ct_longfloat_minus_zero,-0.0l,,const);
+
+ecl_def_ct_ratio(ecl_ct_plus_half,ecl_make_fixnum(1),ecl_make_fixnum(2),,const);
+ecl_def_ct_ratio(ecl_ct_minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),,const);
+
+/* These two tags have a special meaning for the frame stack. */
+
+ecl_def_ct_base_string(ecl_ct_ptag_string,"PROTECT-TAG",11,static,const);
+ecl_def_ct_base_string(ecl_ct_dtag_string,"DUMMY-TAG",9,static,const);
+
+ecl_def_ct_symbol(ecl_ct_protect_tag,ecl_stp_constant,ecl_ct_ptag_string,ECL_NIL,,const);
+ecl_def_ct_symbol(ecl_ct_dummy_tag  ,ecl_stp_constant,ecl_ct_dtag_string,ECL_NIL,,const);
 
 /************************ GLOBAL INITIALIZATION ***********************/
 
@@ -192,7 +275,7 @@ init_env_aux(cl_env_ptr env)
 void
 ecl_init_first_env(cl_env_ptr env)
 {
-  env->default_sigmask = cl_core.default_sigmask;
+  env->default_sigmask = ecl_core.first_env->default_sigmask;
 #ifdef ECL_THREADS
   init_threads();
 #else
@@ -246,7 +329,7 @@ _ecl_alloc_env(cl_env_ptr parent)
    * Note that at this point we are not allocating any other memory
    * which is stored via a pointer in the environment. If we would do
    * that, an unlucky interrupt by the gc before the allocated
-   * environment is registered in cl_core.processes could lead to
+   * environment is registered in ecl_core.processes could lead to
    * memory being freed because the gc is not aware of the pointer to
    * the allocated memory in the environment.
    */
@@ -268,14 +351,14 @@ _ecl_alloc_env(cl_env_ptr parent)
 # endif
 #endif
   {
-    size_t bytes = cl_core.default_sigmask_bytes;
+    size_t bytes = ecl_core.default_sigmask_bytes;
     if (bytes == 0) {
       output->default_sigmask = 0;
     } else if (parent) {
       output->default_sigmask = ecl_alloc_atomic(bytes);
       memcpy(output->default_sigmask, parent->default_sigmask, bytes);
     } else {
-      output->default_sigmask = cl_core.default_sigmask;
+      output->default_sigmask = ecl_core.first_env->default_sigmask;
     }
   }
   for (cl_index i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
@@ -313,8 +396,6 @@ cl_shutdown(void)
   ecl_set_option(ECL_OPT_BOOTED, -1);
 }
 
-ecl_def_ct_single_float(default_rehash_size,1.5f,static,const);
-ecl_def_ct_single_float(default_rehash_threshold,0.75f,static,const);
 ecl_def_ct_base_string(str_common_lisp,"COMMON-LISP",11,static,const);
 ecl_def_ct_base_string(str_common_lisp_user,"COMMON-LISP-USER",16,static,const);
 ecl_def_ct_base_string(str_cl,"CL",2,static,const);
@@ -337,7 +418,6 @@ ecl_def_ct_base_string(str_gray,"GRAY",4,static,const);
 #endif
 ecl_def_ct_base_string(str_star_dot_star,"*.*",3,static,const);
 ecl_def_ct_base_string(str_rel_star_dot_star,"./*.*",5,static,const);
-ecl_def_ct_base_string(str_empty,"",0,static,const);
 ecl_def_ct_base_string(str_G,"G",1,static,const);
 ecl_def_ct_base_string(str_T,"T",1,static,const);
 #ifdef ENABLE_DLOPEN
@@ -352,22 +432,6 @@ ecl_def_ct_base_string(str_lsp,"lsp",3,static,const);
 ecl_def_ct_base_string(str_LSP,"LSP",3,static,const);
 ecl_def_ct_base_string(str_lisp,"lisp",4,static,const);
 ecl_def_ct_base_string(str_NIL,"NIL",3,static,const);
-ecl_def_ct_base_string(str_slash,"/",1,static,const);
-
-ecl_def_ct_single_float(flt_zero,0,static,const);
-ecl_def_ct_single_float(flt_zero_neg,-0.0,static,const);
-ecl_def_ct_double_float(dbl_zero,0,static,const);
-ecl_def_ct_double_float(dbl_zero_neg,-0.0,static,const);
-ecl_def_ct_long_float(ldbl_zero,0,static,const);
-ecl_def_ct_long_float(ldbl_zero_neg,-0.0l,static,const);
-ecl_def_ct_ratio(plus_half,ecl_make_fixnum(1),ecl_make_fixnum(2),static,const);
-ecl_def_ct_ratio(minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),static,const);
-ecl_def_ct_single_float(flt_one,1,static,const);
-ecl_def_ct_single_float(flt_one_neg,-1,static,const);
-ecl_def_ct_single_float(flt_two,2,static,const);
-ecl_def_ct_complex(flt_imag_unit,&flt_zero_data,&flt_one_data,static,const);
-ecl_def_ct_complex(flt_imag_unit_neg,&flt_zero_data,&flt_one_neg_data,static,const);
-ecl_def_ct_complex(flt_imag_two,&flt_zero_data,&flt_two_data,static,const);
 
 struct cl_core_struct cl_core = {
   .packages = ECL_NIL,
@@ -384,9 +448,6 @@ struct cl_core_struct cl_core = {
   .c_package = ECL_NIL,
   .ffi_package = ECL_NIL,
 
-  .pathname_translations = ECL_NIL,
-  .library_pathname = ECL_NIL,
-
   .terminal_io = ECL_NIL,
   .null_stream = ECL_NIL,
   .standard_input = ECL_NIL,
@@ -397,61 +458,13 @@ struct cl_core_struct cl_core = {
   .compiler_readtable = ECL_NIL,
 
   .char_names = ECL_NIL,
-  .null_string = (cl_object)&str_empty_data,
 
-  .plus_half = (cl_object)&plus_half_data,
-  .minus_half = (cl_object)&minus_half_data,
-  .imag_unit = (cl_object)&flt_imag_unit_data,
-  .minus_imag_unit = (cl_object)&flt_imag_unit_neg_data,
-  .imag_two = (cl_object)&flt_imag_two_data,
-  .singlefloat_zero = (cl_object)&flt_zero_data,
-  .doublefloat_zero = (cl_object)&dbl_zero_data,
-  .singlefloat_minus_zero = (cl_object)&flt_zero_neg_data,
-  .doublefloat_minus_zero = (cl_object)&dbl_zero_neg_data,
-  .longfloat_zero = (cl_object)&ldbl_zero_data,
-  .longfloat_minus_zero = (cl_object)&ldbl_zero_neg_data,
-
-  .gensym_prefix = (cl_object)&str_G_data,
-  .gentemp_prefix = (cl_object)&str_T_data,
+  .gensym_prefix = ECL_NIL,
+  .gentemp_prefix = ECL_NIL,
   .gentemp_counter = ecl_make_fixnum(0),
 
-  .Jan1st1970UT = ECL_NIL,
-
   .system_properties = ECL_NIL,
-
-  .first_env = &first_env,
-#ifdef ECL_THREADS
-  .processes = ECL_NIL,
-#endif
-  /* LIBRARIES is an adjustable vector of objects. It behaves as
-     a vector of weak pointers thanks to the magic in
-     gbc.d/alloc_2.d */
-  .libraries = ECL_NIL,
-
-  .max_heap_size = 0,
-  .bytes_consed = ECL_NIL,
-  .gc_counter = ECL_NIL,
-  .gc_stats = 0,
-  .path_max = 0,
-#ifdef GBC_BOEHM
-  .safety_region = NULL,
-#endif
-
-  .default_sigmask = NULL,
-  .default_sigmask_bytes = 0,
-
-#ifdef ECL_THREADS
-  .last_var_index = 0,
-  .reused_indices = ECL_NIL,
-#endif
-  .slash = (cl_object)&str_slash_data,
-
   .compiler_dispatch = ECL_NIL,
-
-  .rehash_size = (cl_object)&default_rehash_size_data,
-  .rehash_threshold = (cl_object)&default_rehash_threshold_data,
-
-  .known_signals = ECL_NIL
 };
 
 #if !defined(ECL_MS_WINDOWS_HOST)
@@ -483,22 +496,8 @@ cl_boot(int argc, char **argv)
   int i;
   cl_env_ptr env;
 
-  i = ecl_option_values[ECL_OPT_BOOTED];
-  if (i) {
-    if (i < 0) {
-      /* We have called cl_shutdown and want to use ECL again. */
-      ecl_set_option(ECL_OPT_BOOTED, 1);
-    }
-    return 1;
-  }
-
-  /*ecl_set_option(ECL_OPT_SIGNAL_HANDLING_THREAD, 0);*/
-
-#if !defined(GBC_BOEHM)
-  setbuf(stdin,  stdin_buf);
-  setbuf(stdout, stdout_buf);
-#endif
-  init_process();
+  i = ecl_boot();
+  if (i==1) return 1;
 
   ARGC = argc;
   ARGV = argv;
@@ -514,7 +513,7 @@ cl_boot(int argc, char **argv)
    * ext::*interrupts-enabled* while creating packages.
    */
 
-  env = cl_core.first_env;
+  env = ecl_core.first_env;
   ecl_init_first_env(env);
 
   /*
@@ -553,11 +552,8 @@ cl_boot(int argc, char **argv)
 #endif
   cl_num_symbols_in_core=2;
 
-#ifdef NO_PATH_MAX
-  cl_core.path_max = sysconf(_PC_PATH_MAX);
-#else
-  cl_core.path_max = MAXPATHLEN;
-#endif
+  cl_core.gensym_prefix = (cl_object)&str_G_data;
+  cl_core.gentemp_prefix = (cl_object)&str_T_data;
 
   cl_core.lisp_package =
     ecl_make_package(str_common_lisp,
@@ -648,8 +644,8 @@ cl_boot(int argc, char **argv)
    */
   cl_core.char_names = aux =
     cl__make_hash_table(@'equalp', ecl_make_fixnum(128), /* size */
-                        cl_core.rehash_size,
-                        cl_core.rehash_threshold);
+                        ecl_ct_default_rehash_size,
+                        ecl_ct_default_rehash_threshold);
   for (i = 0; char_names[i].elt.self; i++) {
     cl_object name = (cl_object)(char_names + i);
     cl_object code = ecl_make_fixnum(i);
@@ -675,8 +671,8 @@ cl_boot(int argc, char **argv)
    */
   cl_core.system_properties =
     cl__make_hash_table(@'equal', ecl_make_fixnum(1024), /* size */
-                        cl_core.rehash_size,
-                        cl_core.rehash_threshold);
+                        ecl_ct_default_rehash_size,
+                        ecl_ct_default_rehash_threshold);
 
   ECL_SET(@'*random-state*', ecl_make_random_state(ECL_T));
 
@@ -742,8 +738,8 @@ cl_boot(int argc, char **argv)
    */
   ECL_SET(@'si::*class-name-hash-table*',
           cl__make_hash_table(@'eq', ecl_make_fixnum(1024), /* size */
-                              cl_core.rehash_size,
-                              cl_core.rehash_threshold));
+                              ecl_ct_default_rehash_size,
+                              ecl_ct_default_rehash_threshold));
 
   /*
    * Features.

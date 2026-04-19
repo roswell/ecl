@@ -54,13 +54,13 @@ _ecl_set_max_heap_size(size_t new_size)
 {
   const cl_env_ptr the_env = ecl_process_env();
   ecl_disable_interrupts_env(the_env);
-  GC_set_max_heap_size(cl_core.max_heap_size = new_size);
+  GC_set_max_heap_size(ecl_core.max_heap_size = new_size);
   if (new_size == 0) {
     cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-    cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
-  } else if (cl_core.safety_region) {
-    GC_FREE(cl_core.safety_region);
-    cl_core.safety_region = 0;
+    ecl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+  } else if (ecl_core.safety_region) {
+    GC_FREE(ecl_core.safety_region);
+    ecl_core.safety_region = 0;
   }
   ecl_enable_interrupts_env(the_env);
 }
@@ -96,7 +96,7 @@ out_of_memory(size_t requested_bytes)
   /* The out of memory condition may happen in more than one thread */
   /* But then we have to ensure the error has not been solved */
 #ifdef ECL_THREADS
-  ecl_mutex_lock(&cl_core.error_lock);
+  ecl_mutex_lock(&ecl_core.error_lock);
   ECL_UNWIND_PROTECT_BEGIN(the_env)
 #endif
   {
@@ -111,23 +111,23 @@ out_of_memory(size_t requested_bytes)
         goto OUTPUT;
       }
     }
-    if (cl_core.max_heap_size == 0) {
+    if (ecl_core.max_heap_size == 0) {
       /* We did not set any limit in the amount of memory,
        * yet we failed, or we had some limits but we have
        * not reached them. */
-      if (cl_core.safety_region) {
+      if (ecl_core.safety_region) {
         /* We can free some memory and try handling the error */
-        GC_FREE(cl_core.safety_region);
+        GC_FREE(ecl_core.safety_region);
         the_env->string_pool = ECL_NIL;
-        cl_core.safety_region = 0;
+        ecl_core.safety_region = 0;
         method = 0;
       } else {
         /* No possibility of continuing */
         method = 2;
       }
     } else {
-      cl_core.max_heap_size += ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-      GC_set_max_heap_size(cl_core.max_heap_size);
+      ecl_core.max_heap_size += ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
+      GC_set_max_heap_size(ecl_core.max_heap_size);
       method = 1;
     }
   OUTPUT:
@@ -135,7 +135,7 @@ out_of_memory(size_t requested_bytes)
   }
 #ifdef ECL_THREADS
   ECL_UNWIND_PROTECT_EXIT {
-    ecl_mutex_unlock(&cl_core.error_lock);
+    ecl_mutex_unlock(&ecl_core.error_lock);
   } ECL_UNWIND_PROTECT_END;
 #endif
   ecl_bds_unwind1(the_env);
@@ -154,8 +154,8 @@ out_of_memory(size_t requested_bytes)
   }
   if (!interrupts)
     ecl_disable_interrupts_env(the_env);
-  GC_set_max_heap_size(cl_core.max_heap_size +=
-                       cl_core.max_heap_size / 2);
+  ecl_core.max_heap_size += (ecl_core.max_heap_size / 2);
+  GC_set_max_heap_size(ecl_core.max_heap_size);
   /* Default allocation. Note that we do not allocate atomic. */
   return GC_MALLOC(requested_bytes);
 }
@@ -393,6 +393,7 @@ ecl_alloc_instance(cl_index slots)
   i = ecl_alloc_object(t_instance);
   i->instance.slots = (cl_object *)ecl_alloc(sizeof(cl_object) * slots);
   i->instance.length = slots;
+  i->instance.isgf = ECL_NOT_FUNCALLABLE;
   i->instance.entry = FEnot_funcallable_vararg;
   i->instance.slotds = ECL_UNBOUND;
   return i;
@@ -793,14 +794,14 @@ init_alloc(int pass)
                                      FALSE, TRUE);
 # endif
 #endif /* !GBC_BOEHM_PRECISE */
-
-  GC_set_max_heap_size(cl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE]);
+  ecl_core.max_heap_size = ecl_option_values[ECL_OPT_HEAP_SIZE];
+  GC_set_max_heap_size(ecl_core.max_heap_size);
   /* Save some memory for the case we get tight. */
-  if (cl_core.max_heap_size == 0) {
+  if (ecl_core.max_heap_size == 0) {
     cl_index size = ecl_option_values[ECL_OPT_HEAP_SAFETY_AREA];
-    cl_core.safety_region = ecl_alloc_atomic_unprotected(size);
-  } else if (cl_core.safety_region) {
-    cl_core.safety_region = 0;
+    ecl_core.safety_region = ecl_alloc_atomic_unprotected(size);
+  } else if (ecl_core.safety_region) {
+    ecl_core.safety_region = 0;
   }
 
   init_type_info();
@@ -890,7 +891,7 @@ standard_finalizer(cl_object o)
   }
   case t_symbol: {
     if (o->symbol.binding != ECL_MISSING_SPECIAL_BINDING) {
-      ecl_atomic_push(&cl_core.reused_indices, ecl_make_fixnum(o->symbol.binding));
+      ecl_atomic_push(&ecl_core.reused_indices, ecl_make_fixnum(o->symbol.binding));
       o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
     }
   }
@@ -1067,33 +1068,33 @@ si_gc_stats(cl_object enable)
   cl_object old_status;
   cl_object size1;
   cl_object size2;
-  if (cl_core.gc_stats == 0) {
+  if (ecl_core.gc_stats == 0) {
     old_status = ECL_NIL;
   } else if (GC_print_stats) {
     old_status = @':full';
   } else {
     old_status = ECL_T;
   }
-  if (cl_core.bytes_consed == ECL_NIL) {
-    cl_core.bytes_consed = ecl_alloc_object(t_bignum);
-    mpz_init2(ecl_bignum(cl_core.bytes_consed), 128);
-    cl_core.gc_counter = ecl_alloc_object(t_bignum);
-    mpz_init2(ecl_bignum(cl_core.gc_counter), 128);
+  if (ecl_core.bytes_consed == ECL_NIL) {
+    ecl_core.bytes_consed = ecl_alloc_object(t_bignum);
+    mpz_init2(ecl_bignum(ecl_core.bytes_consed), 128);
+    ecl_core.gc_counter = ecl_alloc_object(t_bignum);
+    mpz_init2(ecl_bignum(ecl_core.gc_counter), 128);
   }
 
   update_bytes_consed();
   /* We need fresh copies of the bignums */
-  size1 = _ecl_big_register_copy(cl_core.bytes_consed);
-  size2 = _ecl_big_register_copy(cl_core.gc_counter);
+  size1 = _ecl_big_register_copy(ecl_core.bytes_consed);
+  size2 = _ecl_big_register_copy(ecl_core.gc_counter);
 
   if (enable == ECL_NIL) {
     GC_print_stats = 0;
-    cl_core.gc_stats = 0;
+    ecl_core.gc_stats = 0;
   } else if (enable == ecl_make_fixnum(0)) {
-    mpz_set_ui(ecl_bignum(cl_core.bytes_consed), 0);
-    mpz_set_ui(ecl_bignum(cl_core.gc_counter), 0);
+    mpz_set_ui(ecl_bignum(ecl_core.bytes_consed), 0);
+    mpz_set_ui(ecl_bignum(ecl_core.gc_counter), 0);
   } else {
-    cl_core.gc_stats = 1;
+    ecl_core.gc_stats = 1;
     GC_print_stats = (enable == @':full');
   }
   @(return size1 size2 old_status);
@@ -1106,10 +1107,10 @@ static void
 gather_statistics()
 {
   /* GC stats rely on bignums */
-  if (cl_core.gc_stats) {
+  if (ecl_core.gc_stats) {
     update_bytes_consed();
-    mpz_add_ui(ecl_bignum(cl_core.gc_counter),
-               ecl_bignum(cl_core.gc_counter),
+    mpz_add_ui(ecl_bignum(ecl_core.gc_counter),
+               ecl_bignum(ecl_core.gc_counter),
                1);
   }
   if (GC_old_start_callback)
@@ -1119,8 +1120,8 @@ gather_statistics()
 static void
 update_bytes_consed () {
 #if GBC_BOEHM == 0
-  mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
-             ecl_bignum(cl_core.bytes_consed),
+  mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
+             ecl_bignum(ecl_core.bytes_consed),
              GC_get_bytes_since_gc());
 #else
   /* This is not accurate and may wrap around. We try to detect this
@@ -1131,15 +1132,15 @@ update_bytes_consed () {
   if (bytes > new_bytes) {
     cl_index wrapped;
     wrapped = ~((cl_index)0) - bytes;
-    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
-               ecl_bignum(cl_core.bytes_consed),
+    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
+               ecl_bignum(ecl_core.bytes_consed),
                wrapped);
-    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
-               ecl_bignum(cl_core.bytes_consed),
+    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
+               ecl_bignum(ecl_core.bytes_consed),
                new_bytes);
   } else {
-    mpz_add_ui(ecl_bignum(cl_core.bytes_consed),
-               ecl_bignum(cl_core.bytes_consed),
+    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
+               ecl_bignum(ecl_core.bytes_consed),
                new_bytes - bytes);
   }
   bytes = new_bytes;
@@ -1171,7 +1172,7 @@ ecl_mark_env(struct cl_env_struct *env)
 static void
 stacks_scanner()
 {
-  cl_object l = cl_core.libraries;
+  cl_object l = ecl_core.libraries;
   loop_for_on_unsafe(l) {
     cl_object dll = ECL_CONS_CAR(l);
     if (dll->cblock.locked) {
@@ -1179,18 +1180,19 @@ stacks_scanner()
       GC_set_mark_bit((void *)dll);
     }
   } end_loop_for_on_unsafe(l);
+  GC_push_all((void *)(&ecl_core), (void *)(&ecl_core + 1));
   GC_push_all((void *)(&cl_core), (void *)(&cl_core + 1));
   GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
-  ecl_mark_env(cl_core.first_env);
+  ecl_mark_env(ecl_core.first_env);
 #ifdef ECL_THREADS
-  l = cl_core.processes;
+  l = ecl_core.processes;
   if (l != OBJNULL) {
     cl_index i, size;
     for (i = 0, size = l->vector.dim; i < size; i++) {
       cl_object process = l->vector.self.t[i];
       if (!Null(process)) {
         cl_env_ptr env = process->process.env;
-        if (env && (env != cl_core.first_env)) ecl_mark_env(env);
+        if (env && (env != ecl_core.first_env)) ecl_mark_env(env);
       }
     }
   }
