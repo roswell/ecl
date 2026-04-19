@@ -41,7 +41,6 @@
                 ((special global closure lexical) . NIL)))))
 
 (defun build-debug-lexical-env (var-locations &optional first)
-  #-:msvc ;; FIXME! Problem with initialization of statically defined vectors
   (let* ((filtered-locations '())
          (filtered-codes '()))
     ;; Filter out variables that we know how to store in the debug information

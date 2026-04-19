@@ -22,17 +22,6 @@ preceeded with the architecture specification:
   make install
 #+end_src
 
-* Windows with Visual Studio C++ 2008
-1. Open the Visual Studio x86 or x64 native tools command prompt
-2. Enter the msvc directory
-3. Read the file Makefile to find the configuration options. They
-   typically have the form ECL_UNICODE=1, ECL_THREADS=1, etc
-4. Enter
-   nmake <options>
-   where <options> is a set of zero or more of those options
-5. Use "nmake install" to create a directory called "package" with ECL in it.
-6. Move that directory wherever you need.
-
 * Cross-compile for Windows64 using MinGW
 1. Install MinGW64 toolchain, for example:
    #+begin_src shell-scrip

@@ -42,9 +42,6 @@
 #ifdef HAVE_FENV_H
 # include <fenv.h>
 #endif
-#if defined(ECL_MS_WINDOWS_HOST)
-# include <ecl/impl/math_fenv_msvc.h>
-#endif
 
 #if defined(HAVE_FENV_H) && !defined(__COSMOPOLITAN__)
 # define ECL_WITHOUT_FPE_BEGIN do { fenv_t env; feholdexcept(&env);
