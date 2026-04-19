@@ -681,11 +681,7 @@ locations. Returns the path of the first found file."
     (setq types (list types)))
   (unless (listp drive-letters)
     (setq drive-letters (list drive-letters)))
-  #-msvc
   (setq drive-letters '(nil))
-  #+msvc
-  (unless drive-letters
-    (setq drive-letters '(nil)))
   (dolist (d drive-letters)
     (dolist (p directories)
       (dolist (n names)
@@ -708,7 +704,7 @@ locations. Returns the path of the first found file."
 (defun do-load-foreign-library (tmp &optional system-library)
   (let* ((path (cond ((pathnamep tmp) tmp)
                      ((probe-file (setf tmp (string tmp))) tmp)
-                     (t (compile-file-pathname tmp :type #+msvc :lib #-msvc :dll))))
+                     (t (compile-file-pathname tmp :type :dll))))
          (filename (namestring path))
          (pack (find-package "COMPILER"))
          (flag (if system-library

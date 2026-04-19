@@ -393,10 +393,6 @@ about each individual comparison if VERBOSE is true."
 ;;;     Test external formats by transcoding random sequences of characters using
 ;;;     ECL and iconv.
 ;;;
-#-msvc
-;; In Windows SYSTEM does not fail with a nonzero code when it
-;; fails to execute a command. Hence in that case we assume
-;; we simply can not run these tests
 (when (zerop (si::system "iconv -l >/dev/null 2>&1"))
   (test external-format.simple-iconv-check
     (is-false
