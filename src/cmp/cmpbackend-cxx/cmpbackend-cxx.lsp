@@ -42,35 +42,6 @@ the environment variable TMPDIR to a different value." template))
                  (setf base nil))))
     base))
 
-#+msvc
-(defun delete-msvc-generated-files (output-pathname)
-  (loop for i in '("implib" "exp" "ilk" )
-        for full = (make-pathname :type i :defaults output-pathname)
-        for truename = (probe-file full)
-        when truename
-        do (cmp-delete-file truename)))
-
-#+msvc
-(defun embed-manifest-file (o-file &optional (type :dll))
-  (let* ((real-file (probe-file o-file)))
-    (when real-file
-      (let* ((manifest-namestring (concatenate 'string (namestring o-file)
-                                               ".manifest"))
-             (resource-code (ecase type
-                              ((:dll :shared-library :fasl :fas) 2)
-                              ((:program) 1)))
-             (resource-option (format nil "-outputresource:~A;~D"
-                                      (namestring real-file)
-                                      resource-code))
-             (manifest (probe-file manifest-namestring)))
-        (when manifest
-          (safe-run-program "mt"
-                            (list "-nologo"
-                                  "-manifest"
-                                  manifest-namestring
-                                  resource-option))
-          (delete-file manifest))))))
-
 (defun cmp-delete-file (file)
   (cond ((null *delete-files*))
         ((ext:getenv "ECL_PRESERVE_FILES"))
@@ -100,33 +71,6 @@ the environment variable TMPDIR to a different value." template))
               '*user-ld-flags* '*user-linker-flags* '*user-linker-libs*))
     flags))
 
-#+msvc
-(defun linker-cc (o-pathname object-files &key
-                  (type :program)
-                  (ld-flags (split-program-options (if (and (member :dlopen *features*)
-                                                            (eq type :program))
-                                                       *ld-program-flags*
-                                                       *ld-flags*)))
-                  (ld-libs (split-program-options *ld-libs*)))
-  (safe-run-program
-   *ld*
-   `(,(concatenate 'string "-Fe" (brief-namestring o-pathname))
-     ,@(split-program-options *ld-rpath*)
-     ,@(split-program-options *user-linker-flags*)
-     ,@object-files
-     ,@ld-flags
-     ,@(split-program-options *user-linker-libs*)
-     ,@(get-deprecated-user-ld-flags)
-     ,@ld-libs
-     ,(if (eq type :program)
-          (concatenate 'string "/IMPLIB:prog" (file-namestring o-pathname) ".lib")
-          "")
-     ,(concatenate 'string "/LIBPATH:"
-                   (ecl-library-directory))))
-  (embed-manifest-file o-pathname type)
-  (delete-msvc-generated-files o-pathname))
-
-#-msvc
 (defun linker-cc (o-pathname object-files &key
                   (type :program)
                   (ld-flags (split-program-options (if (and (member :dlopen *features*)
@@ -148,19 +92,8 @@ the environment variable TMPDIR to a different value." template))
      ,@ld-libs)))
 
 (defun linker-ar (output-name o-name ld-libs)
-  #-msvc
   (static-lib-ar (namestring output-name)
-                 (list* (brief-namestring o-name) ld-libs))
-  #+msvc
-  (unwind-protect
-       (progn
-         (with-open-file (f "static_lib.tmp" :direction :output
-                            :if-does-not-exist :create :if-exists :supersede)
-           (format f "/OUT:~A ~A ~{~&\"~A\"~}"
-                   output-name o-name ld-libs))
-         (safe-run-program "link" '("-lib" "-nologo" "@static_lib.tmp")))
-    (when (probe-file "static_lib.tmp")
-      (cmp-delete-file "static_lib.tmp"))))
+                 (list* (brief-namestring o-name) ld-libs)))
 
 (defun static-lib-ar (lib object-files)
   (let ((lib (brief-namestring lib)))
@@ -180,10 +113,7 @@ the environment variable TMPDIR to a different value." template))
             (split-program-options *cc-optimize*))
      "-c"
      ,(brief-namestring c-pathname)
-     #-msvc
      ,@(list "-o" (brief-namestring o-pathname))
-     #+msvc
-     ,(concatenate 'string "-Fo" (brief-namestring o-pathname))
      ,@(split-program-options *user-cc-flags*))))
 ;;; Since the SUN4 assembler loops with big files, you might want to use this:
 ;;;   (format nil "~A ~@[~*-O1~] -S -I. -I~A -w ~A ; as -o ~A ~A"
@@ -220,21 +150,6 @@ the environment variable TMPDIR to a different value." template))
           (cmpnote "Disabling precompiled header files due to error:~%  ~A" err))))
     *precompiled-header-flags*))
 
-#+msvc
-(defun dump-precompiled-header ()
-  ;; The way precompiled headers work on msvc is not compatible with
-  ;; what we want to use them for. The msvc compiler creates a
-  ;; precompiled header file out of ordinary source files by
-  ;; processing them up to a certain point at which all needed headers
-  ;; are included. This creates both a precompiled header and a object
-  ;; file. The object file created by this compilation must be
-  ;; included in all binaries which are linked together from other
-  ;; source files compiled using the precompiled header. Thus, we
-  ;; would need to include the first object file created in a session
-  ;; in all further object files if we wanted to support that.
-  (error "Precompiled headers are not supported for msvc."))
-
-#-msvc
 (defun dump-precompiled-header ()
   (let* ((input-file (make-pathname
                       :directory (append (pathname-directory (ecl-include-directory))
@@ -366,17 +281,6 @@ filesystem or in the database of ASDF modules."
 (defun shared-cc (o-pathname object-files)
   (let ((ld-flags (split-program-options *ld-shared-flags*))
         (ld-libs (split-program-options *ld-libs*)))
-    #+msvc
-    (setf ld-flags
-          (let ((implib (brief-namestring
-                         (compile-file-pathname o-pathname :type :lib))))
-            ;; MSVC linker options are added at the end, after the
-            ;; /link flag, because they are not processed by the
-            ;; compiler, but by the linker
-            (append ld-flags
-                    (list (concatenate 'string "/LIBPATH:"
-                                       (ecl-library-directory))
-                          (concatenate 'string "/IMPLIB:" implib)))))
     (when (member :mingw32 *features*)
       (setf ld-flags (list* "-shared" ld-flags)))
     (linker-cc o-pathname object-files :type :dll
@@ -386,20 +290,6 @@ filesystem or in the database of ASDF modules."
   (declare (ignore init-name))
   (let ((ld-flags (split-program-options *ld-bundle-flags*))
         (ld-libs (split-program-options *ld-libs*)))
-    #+msvc
-    (setf ld-flags
-          (let ((implib (brief-namestring
-                         (compile-file-pathname o-pathname :type :import-library))))
-            ;; MSVC linker options are added at the end, after the
-            ;; /link flag, because they are not processed by the
-            ;; compiler, but by the linker
-            (append ld-flags
-                    (list
-                     ;; Not needed because we use ECL_DLLEXPORT
-                     ;; (concatenate 'string "/EXPORT:" init-name)
-                     (concatenate 'string "/LIBPATH:"
-                                  (ecl-library-directory))
-                     (concatenate 'string "/IMPLIB:" implib)))))
     (when (member :mingw32 *features*)
       (setf ld-flags (list* "-shared" "-Wl,--export-all-symbols" ld-flags)))
     (linker-cc o-pathname object-files :type :fasl

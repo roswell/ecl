@@ -231,13 +231,8 @@
     (t nil)))
 
 (defun add-static-constant (object)
-  ;; FIXME! The MSVC compiler does not allow static initialization of bit
-  ;; fields. SSE uses always unboxed static constants. No reference is kept to
-  ;; them -- it is thus safe to use them even on code that might be unloaded.
-  ;;
   ;; NOTE *use-static-constants-p* is T only when :ecl-min is a feature.
-  (unless (or #+msvc t
-              si:*compiler-constants*
+  (unless (or si:*compiler-constants*
               (and (not *use-static-constants-p*)
                    #+sse2
                    (not (typep object 'ext:sse-pack *cmp-env*)))

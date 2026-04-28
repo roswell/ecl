@@ -30,8 +30,7 @@
 (load "bare.lsp" :verbose nil)
 
 ;;;
-;;; * External formats. These come at the very beginning since msvc needs
-;;;   them to compile correctly.
+;;; * External formats.
 ;;;
 #+UNICODE
 (load "ext:encodings;generate.lisp")
@@ -108,9 +107,7 @@
 ;;;   libecl.so/ecl.dll instead of using -lecl. This is to avoid interference
 ;;;   with an already installed copy of ECL.
 ;;;
-(setq c::*cc-flags*
-      #-msvc "@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -I\"@true_srcdir@/c\""
-      #+msvc "@CFLAGS@ @ECL_CFLAGS@"
+(setq c::*cc-flags* "@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@ -I\"@true_srcdir@/c\""
       c::*ecl-include-directory* "@true_builddir@/"
       c::*ecl-library-directory* "@true_builddir@/")
 (setf c::*ld-flags* "@LDFLAGS@")
@@ -191,10 +188,8 @@
 ;;;
 ;;; We do not need the -rpath flag for the library, nor -lecl.
 ;;;
-(let* ((c::*ld-shared-flags* #-msvc "@SHARED_LDFLAGS@ @LDFLAGS@ @SONAME_LDFLAGS@"
-                             #+msvc "@SHARED_LDFLAGS@ @LDFLAGS@")
-       (c::*ld-libs* #-msvc "@CORE_LIBS@ @FASL_LIBS@ @LIBS@"
-                     #+msvc "@STATICLIBS@ @CLIBS@")
+(let* ((c::*ld-shared-flags* "@SHARED_LDFLAGS@ @LDFLAGS@ @SONAME_LDFLAGS@")
+       (c::*ld-libs* "@CORE_LIBS@ @FASL_LIBS@ @LIBS@")
        (c::*cc-flags* (concatenate 'string "-DECL_API -I@true_builddir@/c " c::*cc-flags*))
        (extra-args nil))
   #+(or mingw32 cygwin)
@@ -381,19 +376,17 @@
                   :if-does-not-exist :create)
   (write-line "id ICON \"ecl.ico\"" s))
  (ext:copy-file #p"src:util;ecl.ico" "ecl.ico")
- #+msvc (ext:system "rc /nologo /r ecl.rc")
- #-msvc (ext:system "@WINDRES@ ecl.rc -O coff ecl.res"))
+ (ext:system "@WINDRES@ ecl.rc -O coff ecl.res"))
 
 (si::pathname-translations "SYS" '(("**;*.*.*" "@true_builddir@/**/*.*")))
 
 (compiler::build-program
- #+:msvc "ecl2"
- #+(and (or cross stage1) (not msvc)) "bin/ecl"
- #-(or cross stage1 msvc) "ecl2"
+ #+(or cross stage1) "bin/ecl"
+ #-(or cross stage1) "ecl2"
  :epilogue-code '@ECL_INIT_FORM@
  :lisp-files *module-symbols*
  :ld-flags
- (concatenate 'list #-msvc '("-L./") #+windows '("ecl.res" #+msvc "/F 10485760")))
+ (concatenate 'list '("-L./") #+windows '("ecl.res")))
 
 (with-open-file (modules-list #P"build:MODULES" :direction :output
                               :if-exists :supersede

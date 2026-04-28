@@ -45,14 +45,13 @@ coprocessor).")
 
 (defconfig *cc-flags* "@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@")
 
-(defconfig *cc-optimize* #-msvc "-O2"
-           #+msvc "@CFLAGS_OPTIMIZE@")
+(defconfig *cc-optimize* "-O2")
 
 (defconfig *ld-flags* "@LDFLAGS@")
 #-dlopen
 (defconfig *ld-libs* "-lecl @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
 #+dlopen
-(defconfig *ld-libs* #-msvc "-lecl @FASL_LIBS@ @LIBS@" #+msvc "ecl.lib @CLIBS@")
+(defconfig *ld-libs* "-lecl @FASL_LIBS@ @LIBS@")
 (defconfig *ld-shared-flags* #+dlopen "@SHARED_LDFLAGS@ @LDFLAGS@" #-dlopen "")
 (defconfig *ld-bundle-flags* #+dlopen "@BUNDLE_LDFLAGS@ @LDFLAGS@" #-dlopen "")
 (defconfig *ld-program-flags* "@PROGRAM_LDFLAGS@ @LDFLAGS@")

@@ -29,6 +29,14 @@
 
 * Pending changes since 26.3.27
 
+- bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of
+  the package local nicknames, breaking package literals in bytecmp (#839)
+
+- build: support for Microsoft Visual Studio Compiler has been dropped
+
+- bugfix: the first environment is now always page-aligned by using the
+  same allocation mechanism as all subsequent envs (#828)
+
 * 26.3.27 changes since 24.5.10
 
 - Vendored libffi has been updated to the version 3.5.2
