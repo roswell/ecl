@@ -157,21 +157,22 @@ si_load_bytecodes(cl_object source, cl_object verbose, cl_object print, cl_objec
       cl_index bds_ndx = ecl_progv(env, ECL_CONS_CAR(progv_list),
                                    ECL_CONS_CDR(progv_list));
       forms = read_forms(strm, ECL_T);
-      ecl_bds_unwind(env, bds_ndx);
-    }
-    while (!Null(forms)) {
-      if (ECL_LISTP(forms)) {
-        cl_object x = ECL_CONS_CAR(forms);
-        forms = ECL_CONS_CDR(forms);
-        if (ecl_t_of(x) == t_bytecodes) {
-          _ecl_funcall1(x);
-          if (Null(forms)) {
-            forms = read_forms(strm, ECL_NIL);
+
+      while (!Null(forms)) {
+        if (ECL_LISTP(forms)) {
+          cl_object x = ECL_CONS_CAR(forms);
+          forms = ECL_CONS_CDR(forms);
+          if (ecl_t_of(x) == t_bytecodes) {
+            _ecl_funcall1(x);
+            if (Null(forms)) {
+              forms = read_forms(strm, ECL_NIL);
+            }
+            continue;
           }
-          continue;
         }
+        FEerror("Corrupt bytecodes file ~S", 1, source);
       }
-      FEerror("Corrupt bytecodes file ~S", 1, source);
+      ecl_bds_unwind(env, bds_ndx);
     }
     {
       cl_object x;
