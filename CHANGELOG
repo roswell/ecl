@@ -37,6 +37,8 @@
 - bugfix: the first environment is now always page-aligned by using the
   same allocation mechanism as all subsequent envs (#828)
 
+- bugfix: allow loading concatenated fasc files (#842)
+
 * 26.3.27 changes since 24.5.10
 
 - Vendored libffi has been updated to the version 3.5.2
