@@ -27,7 +27,9 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 26.3.27
+* Pending changes since 26.5.5
+
+* 26.5.5 changes since 26.3.27
 
 - bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of
   the package local nicknames, breaking package literals in bytecmp (#839)

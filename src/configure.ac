@@ -8,7 +8,7 @@ dnl  AUTOCONF configuration for ECL
 dnl  Giuseppe Attardi 25.1.1994
 dnl
 
-AC_INIT([ecl],[26.3.27],[])
+AC_INIT([ecl],[26.5.5],[])
 AC_REVISION([$Revision$])
 AC_CONFIG_SRCDIR([bare.lsp.in])
 AC_CONFIG_AUX_DIR([gmp])
