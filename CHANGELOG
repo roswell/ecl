@@ -39,6 +39,9 @@
 
 - bugfix: allow loading concatenated fasc files (#842)
 
+- bugfix: defclass does not redefine existing classes at compile time with
+  forward-referenced classes (#843)
+
 * 26.3.27 changes since 24.5.10
 
 - Vendored libffi has been updated to the version 3.5.2
