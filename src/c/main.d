@@ -49,7 +49,6 @@
 /******************************* EXPORTS ******************************/
 
 const char *ecl_self;
-static struct cl_env_struct first_env;
 
 /************************ GLOBAL INITIALIZATION ***********************/
 
@@ -419,7 +418,7 @@ struct cl_core_struct cl_core = {
 
   .system_properties = ECL_NIL,
 
-  .first_env = &first_env,
+  .first_env = NULL,
 #ifdef ECL_THREADS
   .processes = ECL_NIL,
 #endif
@@ -498,6 +497,9 @@ cl_boot(int argc, char **argv)
   setbuf(stdin,  stdin_buf);
   setbuf(stdout, stdout_buf);
 #endif
+
+  /* The first environment must be available at all times. */
+  cl_core.first_env = _ecl_alloc_env(NULL);
   init_process();
 
   ARGC = argc;

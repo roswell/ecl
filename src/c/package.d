@@ -203,10 +203,10 @@ process_package_list(cl_object packages)
 }
 
 static cl_object
-process_local_nicknames_list(cl_object local_nicknames)
+process_local_nicknames_tree(cl_object local_nicknames)
 {
   cl_object l, nl;
-  local_nicknames = cl_copy_list(local_nicknames);
+  local_nicknames = cl_copy_tree(local_nicknames);
   for (l = local_nicknames; l != ECL_NIL; l = ECL_CONS_CDR(l)) {
     nl = ECL_CONS_CAR(l);
     ECL_RPLACA(nl, cl_string(ECL_CONS_CAR(nl)));
@@ -227,7 +227,7 @@ ecl_make_package(cl_object name, cl_object nicknames,
   name = cl_string(name);
   nicknames = process_nicknames(nicknames);
   use_list = process_package_list(use_list);
-  local_nicknames = process_local_nicknames_list(local_nicknames);
+  local_nicknames = process_local_nicknames_tree(local_nicknames);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(env) {
     if (ecl_option_values[ECL_OPT_BOOTED]) {
@@ -833,7 +833,8 @@ ecl_shadow(cl_object s, cl_object p)
       p->pack.internal = _ecl_sethash(s, p->pack.internal, x);
       x->symbol.hpack = p;
     }
-    p->pack.shadowings = CONS(x, p->pack.shadowings);
+    if (!ecl_member_eq(x, p->pack.shadowings))
+      p->pack.shadowings = CONS(x, p->pack.shadowings);
   } ECL_WITH_GLOBAL_ENV_WRLOCK_END;
 }
 

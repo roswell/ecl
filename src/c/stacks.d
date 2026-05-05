@@ -281,7 +281,7 @@ ecl_stack_frame_open(cl_env_ptr env, cl_object f, cl_index size)
 
 /* Some clang versions miscompile the following function on x86_64.
  * Temporarily turn off optimizations here. */
-#if defined(__clang__) && __clang_major__ >= 17 && __clang_major__ <= 19 && defined(__x86_64__)
+#if defined(__clang__) && __clang_major__ >= 17 && __clang_major__ <= 22 && defined(__x86_64__)
 [[clang::optnone]]
 #endif
 void
@@ -341,7 +341,7 @@ ecl_stack_frame_push_values(cl_object f)
 
 /* Some clang versions miscompile the following function on x86_64.
  * Temporarily turn off optimizations here. */
-#if defined(__clang__) && __clang_major__ >= 17 && __clang_major__ <= 19 && defined(__x86_64__)
+#if defined(__clang__) && __clang_major__ >= 17 && __clang_major__ <= 22 && defined(__x86_64__)
 [[clang::optnone]]
 #endif
 cl_object
