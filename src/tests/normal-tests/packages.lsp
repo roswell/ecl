@@ -3,12 +3,13 @@
 
 ;;;; Author: Daniel Kochmański
 ;;;; Created: 2016-11-09
-;;;; Contains: PACKAGE extension tests
-;;;; Easter: Trump won the election today, we're doomed...
+;;;; Contains: PACKAGE tests
+;;;; Easter: Trump won the election today, we're screwed...
+;;;;         ([2026-03-30] told you so :-)
 
 (in-package :cl-test)
 
-(suite 'package-ext)
+(suite 'packages)
 
 (defmacro with-fresh-package (name &body body)
   `(progn
@@ -198,3 +199,20 @@
   (ignore-errors (delete-package :eu.turtleware.pack2))
   (ignore-errors (delete-package :eu.turtle.pack1))
   (ignore-errors (delete-package :eu.turtle.pack2)))
+
+;;; Reported by: Gábor Melis 
+;;; Created: 2026-03-30
+;;; Description
+;;;
+;;;     :shadow option may lead to duplicates in package-shadowing-symbols
+(deftest packages.0001.shadow-duplicates ()
+  (dotimes (x 3)
+    (defpackage "PACKAGES.0001.TTT"
+      (:shadow "CONS")
+      (:shadowing-import-from "EXT" "GC")
+      (:use "CL")))
+  (let ((shadowed-symbols (package-shadowing-symbols "PACKAGES.0001.TTT"))
+        (expected-symbols (list 'ext::gc
+                                (find-symbol "CONS" "PACKAGES.0001.TTT"))))
+    (is (= 2 (length shadowed-symbols)))
+    (is (null (set-difference shadowed-symbols expected-symbols)))))

@@ -2712,3 +2712,15 @@
           (with-compiler ("empty-file-0115.lsp" :load t))))
     (delete-file "empty-file-0115.lsp")
     (delete-file ofile)))
+
+;;; Date 2026-04-16
+;;; Description
+;;;
+;;;     Bytecodes compiler has problems with storing local packages nicknames.
+;;;     Error: "Cannot print object #<EXT package> readably."
+;;;
+(deftest cmp.0116.local-nicknames ()
+  (with-compiler ("local-nicknames-0116.lsp")
+    `(defpackage "ZET"
+       (:use)
+       (:local-nicknames ("E" "EXT")))))

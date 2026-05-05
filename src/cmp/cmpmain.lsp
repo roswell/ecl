@@ -206,7 +206,7 @@ after compilation."
         ((typep (setf def (fdefinition name)) 'standard-generic-function)
          (warn "COMPILE can not compile generic functions yet")
          (return-from compile (values def t nil)))
-        ((null (setq form (function-lambda-expression def)))
+        ((null (multiple-value-setq (form lexenv) (function-lambda-expression def)))
          (warn "We have lost the original function definition for ~s. Compilation to C failed"
                name)
          (return-from compile (values def t nil)))
