@@ -760,3 +760,26 @@ the metaclass")
 ;;;     STANDARD-METHOD is removed.
 (test mop.0029.standard-method-metastability
   (finishes (clos:finalize-inheritance (find-class 'standard-method))))
+
+;;; Date 2026-05-07
+;;; Description
+;;;
+;;;     Funcallable instances are normal instances recognized as funcallables
+;;;     with a header flag .isgf; before MOP:SET-FUNCALLABLE-INSTANCE-FUNCTION
+;;;     was called, or if it was called with NIL, object->instance.isgf was
+;;;     assigned NULL value, thus (functionp object) returned incorrectly nil.
+(deftest mop.0030 ()
+  (let* ((funclass (find-class 'mop:funcallable-standard-object))
+         (instance (allocate-instance funclass)))
+    (is (typep instance 'function))
+    (is (functionp instance))
+    (mop:set-funcallable-instance-function instance (lambda ()))
+    (is (typep instance 'function))
+    (is (functionp instance))
+    (mop:set-funcallable-instance-function instance nil)
+    (is (typep instance 'function))
+    (is (functionp instance))))
+
+;;; Ensure that funcallable object is subclass of function.
+(deftest mop.0031 ()
+  (subtypep 'mop:funcallable-standard-object 'function))
