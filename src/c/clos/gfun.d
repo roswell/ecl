@@ -46,26 +46,11 @@ user_function_dispatch(cl_narg narg, ...)
   for (i = 0; i < narg; i++) {
     ECL_STACK_FRAME_SET(frame, i, ecl_va_arg(args));
   }
-  fun = fun->instance.slots[fun->instance.length - 1];
+  fun = fun->instance.gfdef;
   output = ecl_apply_from_stack_frame(frame, fun);
   ecl_stack_frame_close(frame);
   ecl_va_end(args);
   return output;
-}
-
-static void
-reshape_instance(cl_object x, int delta)
-{
-  cl_fixnum size = x->instance.length + delta;
-  cl_object aux = ecl_allocate_instance(ECL_CLASS_OF(x), size);
-  /* Except for the different size, this must match si_copy_instance */
-  aux->instance.slotds = x->instance.slotds;
-  aux->instance.stamp = x->instance.stamp;
-  aux->instance.class_stamp = x->instance.class_stamp;
-  memcpy(aux->instance.slots, x->instance.slots,
-         (delta < 0 ? aux->instance.length : x->instance.length) *
-         sizeof(cl_object));
-  x->instance = aux->instance;
 }
 
 cl_object
@@ -74,10 +59,7 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
   if (ecl_unlikely(!ECL_INSTANCEP(x)))
     FEwrong_type_nth_arg(@[clos::set-funcallable-instance-function],
                          1, x, @[ext::instance]);
-  if (x->instance.isgf == ECL_USER_DISPATCH) {
-    reshape_instance(x, -1);
-    x->instance.isgf = ECL_NOT_FUNCALLABLE;
-  }
+  x->instance.gfdef = function_or_t;
   if (function_or_t == ECL_T) {
     x->instance.isgf = ECL_STANDARD_DISPATCH;
     x->instance.entry = generic_function_dispatch_vararg;
@@ -96,8 +78,6 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
   } else if (Null(cl_functionp(function_or_t))) {
     FEwrong_type_argument(@'function', function_or_t);
   } else {
-    reshape_instance(x, +1);
-    x->instance.slots[x->instance.length - 1] = function_or_t;
     x->instance.isgf = ECL_USER_DISPATCH;
     x->instance.entry = user_function_dispatch;
   }
