@@ -67,7 +67,7 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
     x->instance.isgf = ECL_RESTRICTED_DISPATCH;
     x->instance.entry = generic_function_dispatch_vararg;
   } else if (function_or_t == ECL_NIL) {
-    x->instance.isgf = ECL_NOT_FUNCALLABLE;
+    x->instance.isgf = ECL_NULL_DISPATCH;
     x->instance.entry = FEnot_funcallable_vararg;
   } else if (function_or_t == @'clos::standard-optimized-reader-method') {
     x->instance.isgf = ECL_READER_DISPATCH;

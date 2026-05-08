@@ -80,8 +80,7 @@
     (when (symbolp slots)
       (setf slots (symbol-value slots)))
     `(let* ((%class ,class)
-            (,object (si::allocate-raw-instance nil %class
-                                                ,(length slots))))
+            (,object (si:allocate-raw-instance nil %class ,(length slots))))
        (declare (type standard-object ,object))
        ,@(flet ((initializerp (name list)
                   (not (eq (getf list name 'wrong) 'wrong))))
