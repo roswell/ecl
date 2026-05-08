@@ -394,6 +394,7 @@ ecl_alloc_instance(cl_index slots)
   i->instance.slots = (cl_object *)ecl_alloc(sizeof(cl_object) * slots);
   i->instance.length = slots;
   i->instance.isgf = ECL_NOT_FUNCALLABLE;
+  i->instance.gfdef = ECL_NIL;
   i->instance.entry = FEnot_funcallable_vararg;
   i->instance.slotds = ECL_UNBOUND;
   return i;

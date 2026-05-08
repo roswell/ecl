@@ -1076,7 +1076,10 @@ struct ecl_condition_variable {
 };
 #endif /* ECL_THREADS */
 
+#define ECL_INSTANCEP(x)        ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
+#define ECL_FUNCALLABLE_P(x)    (ECL_INSTANCEP(x) && (x)->instance.isgf)
 #define ECL_CLASS_OF(x)         (x)->instance.clas
+
 #define ECL_SPEC_FLAG(x)        (x)->instance.slots[0]
 #define ECL_SPEC_OBJECT(x)      (x)->instance.slots[3]
 #define ECL_CLASS_NAME(x)       (x)->instance.slots[3+0]
@@ -1084,7 +1087,7 @@ struct ecl_condition_variable {
 #define ECL_CLASS_INFERIORS(x)  (x)->instance.slots[3+2]
 #define ECL_CLASS_SLOTS(x)      (x)->instance.slots[3+3]
 #define ECL_CLASS_CPL(x)        (x)->instance.slots[3+4]
-#define ECL_INSTANCEP(x)        ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
+
 #define ECL_NOT_FUNCALLABLE     0
 #define ECL_STANDARD_DISPATCH   1
 #define ECL_RESTRICTED_DISPATCH 2
@@ -1094,9 +1097,10 @@ struct ecl_condition_variable {
 
 struct ecl_instance {            /* -- instance header -- */
         _ECL_HDR1(isgf);         /*  gf type              */
-        cl_index length;         /*  instance length      */
         cl_object clas;          /*  instance class       */
-        cl_objectfn entry;       /*  entry address        */
+        cl_object gfdef;         /*  generic function definition */
+        cl_objectfn entry;       /*  entry address (matches cfun.entry) */
+        cl_index length;         /*  instance length      */
         cl_object slotds;        /*  slot definitions     */
         cl_object *slots;        /*  instance slots       */
         cl_index stamp;          /*  instance stamp       */
