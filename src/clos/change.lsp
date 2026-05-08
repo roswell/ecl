@@ -133,7 +133,7 @@
   ;; errors when loading twice the following
   ;;   (defclass metaclas ...)
   ;;   (defclass x () ... (:metaclas metaclas))
-  ;;   (defclass y (y) ...)
+  ;;   (defclass y (x) ...)
   ;; because X might be redefined with Y not being up-to-date on the second
   ;; pass.
   (prog1 (call-next-method)
