@@ -85,9 +85,10 @@ clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 }
 
 cl_object
-si_generic_function_p(cl_object x)
+si_funcallable_object_p(cl_object x)
 {
-  @(return ((ECL_INSTANCEP(x) && (x->instance.isgf))? ECL_T : ECL_NIL));
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, (ECL_FUNCALLABLE_P(x) ? ECL_T : ECL_NIL));
 }
 
 static cl_object
