@@ -782,4 +782,4 @@ the metaclass")
 
 ;;; Ensure that funcallable object is subclass of function.
 (deftest mop.0031 ()
-  (subtypep 'mop:funcallable-standard-object 'function))
+  (is (subtypep 'mop:funcallable-standard-object 'function)))
