@@ -99,6 +99,9 @@
   (assert (class-finalized-p class))
   (let ((x (si::allocate-raw-instance nil class (class-size class))))
     (si::instance-sig-set x)
+    (when (subtypep class 'funcallable-standard-class)
+      ;; INV this will initialize (x)->instance.isgf.
+      (set-funcallable-instance-function x nil))
     x))
 
 (defmethod make-instance ((class class) &rest initargs)

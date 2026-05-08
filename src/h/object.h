@@ -1094,6 +1094,7 @@ struct ecl_condition_variable {
 #define ECL_READER_DISPATCH     3
 #define ECL_WRITER_DISPATCH     4
 #define ECL_USER_DISPATCH       5
+#define ECL_NULL_DISPATCH       6 /* funcallable, but gfdef is null */
 
 struct ecl_instance {            /* -- instance header -- */
         _ECL_HDR1(isgf);         /*  gf type              */
