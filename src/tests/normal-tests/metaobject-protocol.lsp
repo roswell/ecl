@@ -784,7 +784,6 @@ the metaclass")
 (deftest mop.0031 ()
   (is (subtypep 'mop:funcallable-standard-object 'function)))
 
-
 ;;; Date 2026-06-03
 ;;; Description
 ;;;
@@ -828,3 +827,14 @@ the metaclass")
    (defclass mop.0033.class-5 (mop.0033.class-1 mop.0033.class-3) ()))
   (finishes                             ; can agree A with non-sealed
    (defclass mop.0033.class-5 (mop.0033.class-1 mop.0033.class-4) ())))
+
+;;; Ensure that we can't call SET-FUNCALLABLE-INSTANCE-FUNCTION on objects that
+;;; are not funcallables (particularily on the standard object).
+(deftest mop.0034 ()
+  (let* ((objclass (find-class 'standard-object))
+         (instance (allocate-instance objclass)))
+    (is (not (typep instance 'function)))
+    (is (not (functionp instance)))
+    (signals error (mop:set-funcallable-instance-function instance (lambda ())))
+    (is (not (typep instance 'function)))
+    (is (not (functionp instance)))))
