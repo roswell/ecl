@@ -56,9 +56,10 @@ user_function_dispatch(cl_narg narg, ...)
 cl_object
 clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t)
 {
-  if (ecl_unlikely(!ECL_INSTANCEP(x)))
+  if (ecl_unlikely(!ECL_FUNCALLABLE_P(x))) {
     FEwrong_type_nth_arg(@[clos::set-funcallable-instance-function],
-                         1, x, @[ext::instance]);
+                         1, x, @[clos::funcallable-standard-object]);
+  }
   x->instance.gfdef = function_or_t;
   if (function_or_t == ECL_T) {
     x->instance.isgf = ECL_STANDARD_DISPATCH;

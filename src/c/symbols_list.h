@@ -1320,6 +1320,7 @@ cl_symbols[] = {
 {SYS_ "INSTANCE-NEW-STAMP" ECL_FUN("si_instance_new_stamp", si_instance_new_stamp, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-GET-STAMP" ECL_FUN("si_instance_get_stamp", si_instance_get_stamp, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-SLOTDS" ECL_FUN("si_instance_slotds", si_instance_slotds, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "INSTANCE-FUN-SET" ECL_FUN("si_instance_fun_set", si_instance_fun_set, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-SIG-SET" ECL_FUN("si_instance_sig_set", si_instance_sig_set, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-CLASS" ECL_FUN("si_instance_class", si_instance_class, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-CLASS-SET" ECL_FUN("si_instance_class_set", si_instance_class_set, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},

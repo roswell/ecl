@@ -391,6 +391,7 @@ ecl_alloc_instance(cl_index slots)
 {
   cl_object i;
   i = ecl_alloc_object(t_instance);
+  i->instance.isgf = ECL_NOT_FUNCALLABLE;
   i->instance.slots = (cl_object *)ecl_alloc(sizeof(cl_object) * slots);
   i->instance.length = slots;
   i->instance.isgf = ECL_NOT_FUNCALLABLE;
