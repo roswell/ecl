@@ -838,3 +838,16 @@ the metaclass")
     (signals error (mop:set-funcallable-instance-function instance (lambda ())))
     (is (not (typep instance 'function)))
     (is (not (functionp instance)))))
+
+;;; Ensure that we changing classes between STANDARD-OBJECT and
+;;; FUNCALLABLE-STANDARD-OBJECT updates the function flag.
+;;;
+;;; Alternative version of this test is to signal an error, and that's arguably
+;;; what we should do(!).
+(deftest mop.0033 ()
+  (let* ((objclass (find-class 'standard-object))
+         (instance (allocate-instance objclass)))
+    (finishes (change-class instance 'mop:funcallable-standard-object))
+    (is (functionp instance))
+    (finishes (change-class instance 'standard-object))
+    (is (not (functionp instance)))))
