@@ -70,6 +70,15 @@ si_instance_slotds(cl_object x)
 }
 
 cl_object
+si_instance_fun_set(cl_object x, cl_object isgf)
+{
+  x->instance.isgf = (Null(isgf)
+                      ? ECL_NOT_FUNCALLABLE
+                      : ECL_NULL_DISPATCH);
+  @(return x);
+}
+
+cl_object
 si_instance_sig_set(cl_object x)
 {
   x->instance.stamp = ECL_CLASS_OF(x)->instance.class_stamp;
