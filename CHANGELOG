@@ -32,6 +32,10 @@
 - build: support for Microsoft Visual Studio Compiler has been dropped
 - clos: ensure that the instance is not obsolete in optimized writer (#851)
 
+- bugfix: FUNCALLABLE-STANDARD-OBJECT instances are always treated as
+  functions and STANDARD-OBJECT instances can't be assigned the function
+  with SET_FUNCALLABLE_INSTANCE_FUNCTION (see tests MOP.0030-MOP.0034)
+
 * 26.5.5 changes since 26.3.27
 
 - bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of
