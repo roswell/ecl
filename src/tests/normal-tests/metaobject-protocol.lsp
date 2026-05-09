@@ -851,3 +851,20 @@ the metaclass")
     (is (functionp instance))
     (finishes (change-class instance 'standard-object))
     (is (not (functionp instance)))))
+
+;;; This test is addmittedly a bit cursed. It is here to ensure, that the
+;;; implementation doesn't segfault or anything when function changes class.
+(ext:with-clean-symbols (foo)
+  (deftest mop.0034 ()
+    (defgeneric foo ()
+      (:method () 42))
+    (is (= (foo) 42))
+    (change-class #'foo 'standard-object)
+    (signals error (foo))
+    (change-class #'foo 'standard-generic-function :name 'foo)
+    ;; No applicable method. If this test fails, that means that the method
+    ;; cache has not been cleared, and if it crashes, then the cache is was not
+    ;; recreated after changing the class.
+    (signals error (foo))
+    (defmethod foo () 33)
+    (is (= (foo) 33))))
