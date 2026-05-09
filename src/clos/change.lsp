@@ -47,10 +47,13 @@
 
 (defmethod change-class ((instance standard-object) (new-class std-class)
                          &rest initargs)
-  (let* ((old-instance (si::copy-instance instance))
+  (let* ((old-instance (si:copy-instance instance))
          (new-size (class-size new-class))
-         (instance (si::allocate-raw-instance instance new-class new-size)))
-    (si::instance-sig-set instance)
+         (instance (si:allocate-raw-instance instance new-class new-size)))
+    (si:instance-sig-set instance)
+    (if (typep instance 'funcallable-standard-object)
+        (si:instance-fun-set instance t)
+        (si:instance-fun-set instance nil))
     ;; "The values of local slots specified by both the class Cto and
     ;; Cfrom are retained.  If such a local slot was unbound, it remains
     ;; unbound."
