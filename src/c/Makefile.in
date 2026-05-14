@@ -78,6 +78,10 @@ STREAM_OBJS = stream.o file.o streams/strm_os.o streams/strm_clos.o             
 
 FFI_OBJS = ffi.o ffi/libraries.o ffi/backtrace.o ffi/mmap.o ffi/cdata.o
 
+THREAD_OBJS = @THREAD_OBJS@
+
+UNICODE_OBJS = @UNICODE_OBJS@
+
 OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o interpreter.o     \
 	compiler.o disassembler.o reference.o character.o error.o               \
 	string.o cfun.o typespec.o assignment.o memory.o predicate.o array.o    \
@@ -85,7 +89,7 @@ OBJS = main.o symbol.o package.o cons.o list.o apply.o eval.o interpreter.o     
 	unixint.o mapfun.o multival.o hash.o format.o pathname.o structure.o    \
 	load.o unixfsys.o unixsys.o serialize.o sse2.o atomic.o process.o       \
 	$(BOOT_OBJS) $(NUM_OBJS) $(WRITER_OBJS) $(READER_OBJS) $(STREAM_OBJS)   \
-	$(CLOS_OBJS) $(FFI_OBJS) @EXTRA_OBJS@
+	$(CLOS_OBJS) $(FFI_OBJS) $(THREAD_OBJS) $(UNICODE_OBJS) @EXTRA_OBJS@
 
 .PHONY: all
 
