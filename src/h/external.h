@@ -199,7 +199,7 @@ struct ecl_core_struct {
   cl_object library_pathname;
 };
 
-/* Per-process data. Modify main.d accordingly. */
+/* Common Lisp global environment. Modify main.d accordingly. */
 
 struct cl_core_struct {
         cl_object packages;
