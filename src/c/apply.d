@@ -12,7 +12,135 @@
  */
 
 #include <ecl/ecl.h>
+#include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <ecl/external.h>
+#include <ecl/nucleus.h>
+
+cl_objectfn
+ecl_function_dispatch(cl_env_ptr env, cl_object x)
+{
+  cl_object fun = x;
+  if (ecl_unlikely(fun == ECL_NIL))
+    FEundefined_function(x);
+  switch (ecl_t_of(fun)) {
+  case t_cfunfixed:
+    env->function = fun;
+    return fun->cfunfixed.entry;
+  case t_cfun:
+    env->function = fun;
+    return fun->cfun.entry;
+  case t_cclosure:
+    env->function = fun;
+    return fun->cclosure.entry;
+  case t_instance:
+    env->function = fun;
+    return fun->instance.entry;
+  case t_symbol:
+    fun = ECL_SYM_FUN(fun);
+    env->function = fun;
+    return fun->cfun.entry;
+  case t_bytecodes:
+    env->function = fun;
+    return fun->bytecodes.entry;
+  case t_bclosure:
+    env->function = fun;
+    return fun->bclosure.entry;
+  default:
+    FEinvalid_function(x);
+  }
+  _ecl_unexpected_return();
+}
+
+/* Calling conventions:
+ * Compiled C code calls lisp function supplying #args, and args.
+ *
+ * Linking function performs check_args, gets jmp_buf with _setjmp, then
+ *
+ * if cfun then stores C code address into function link location and transfers
+ * to jmp_buf at cf_self
+
+ * if cclosure then replaces #args with cc_env and calls cc_self otherwise, it
+ * emulates funcall.
+ */
+
+cl_object
+ecl_apply_from_stack_frame(cl_object frame, cl_object x)
+{
+  cl_object *sp = ECL_STACK_FRAME_PTR(frame);
+  cl_index narg = frame->frame.size;
+  cl_object fun = x;
+  cl_object ret;
+  frame->frame.env->stack_frame = frame;
+ AGAIN:
+  frame->frame.env->function = fun;
+  if (ecl_unlikely(fun == ECL_NIL))
+    FEundefined_function(x);
+  switch (ecl_t_of(fun)) {
+  case t_cfunfixed:
+    if (ecl_unlikely(narg != (cl_index)fun->cfun.narg))
+      FEwrong_num_arguments(fun);
+    ret = APPLY_fixed(narg, fun->cfunfixed.entry_fixed, sp);
+    break;
+  case t_cfun:
+    ret = APPLY(narg, fun->cfun.entry, sp);
+    break;
+  case t_cclosure:
+    ret = APPLY(narg, fun->cclosure.entry, sp);
+    break;
+  case t_instance:
+    switch (fun->instance.isgf) {
+    case ECL_STANDARD_DISPATCH:
+    case ECL_RESTRICTED_DISPATCH:
+      ret = _ecl_standard_dispatch(frame, fun);
+      break;
+    case ECL_USER_DISPATCH:
+      fun = fun->instance.slots[fun->instance.length - 1];
+      goto AGAIN;
+    case ECL_READER_DISPATCH:
+    case ECL_WRITER_DISPATCH:
+      ret = APPLY(narg, fun->instance.entry, sp);
+      break;
+    default:
+      FEinvalid_function(fun);
+    }
+    break;
+  case t_symbol:
+    if (ecl_unlikely(!ECL_FBOUNDP(fun)))
+      FEundefined_function(fun);
+    fun = ECL_SYM_FUN(fun);
+    goto AGAIN;
+  case t_bytecodes:
+    ret = ecl_interpret(frame, ECL_NIL, fun);
+    break;
+  case t_bclosure:
+    ret = ecl_interpret(frame, fun->bclosure.lex, fun->bclosure.code);
+    break;
+  default:
+    FEinvalid_function(x);
+  }
+  frame->frame.env->stack_frame = NULL; /* for gc's sake */
+  return ret;
+}
+
+cl_object
+cl_funcall(cl_narg narg, cl_object function, ...)
+{
+  cl_object output;
+  --narg;
+  {
+    ECL_STACK_FRAME_VARARGS_BEGIN(narg, function, frame);
+    output = ecl_apply_from_stack_frame(frame, function);
+    ECL_STACK_FRAME_VARARGS_END(frame);
+  }
+  return output;
+}
+
+cl_object *
+_ecl_va_sp(cl_narg narg)
+{
+  return ECL_STACK_FRAME_PTR(ecl_process_env()->stack_frame) + narg;
+}
 
 #if !(ECL_C_ARGUMENTS_LIMIT == 63)
 #error "Please adjust code to the constant!"
@@ -658,4 +786,5 @@ APPLY_fixed(cl_narg n, cl_object (*fn)(), cl_object *x)
   default:
     FEprogram_error("Too many arguments", 0);
   }
+  _ecl_unexpected_return();
 }

@@ -737,6 +737,8 @@ LIBRARIES
 SUBDIRS
 TARGETS
 EXTRA_OBJS
+THREAD_OBJS
+UNICODE_OBJS
 PROGRAM_LDFLAGS
 BUNDLE_LDFLAGS
 SHARED_LDFLAGS
@@ -7254,7 +7256,7 @@ fi
 
 
     boehm_configure_flags="${boehm_configure_flags} ${THREAD_GC_FLAGS}"
-    for k in $THREAD_OBJ; do EXTRA_OBJS="$EXTRA_OBJS ${k}.${OBJEXT}"; done
+    for k in $THREAD_OBJ; do THREAD_OBJS="$THREAD_OBJS ${k}.${OBJEXT}"; done
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for thread object files" >&5
 printf %s "checking for thread object files... " >&6; }
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${THREAD_OBJ}" >&5
@@ -11829,20 +11831,20 @@ printf "%s\n" "#define ECL_UNICODE 16" >>confdefs.h
 
       CHAR_CODE_LIMIT=65536
       ECL_CHARACTER=$ECL_INT16_T
-      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd16.o unicode/ucd16-0000.o unicode/ucd16-0016.o unicode/ucd16-0032.o unicode/ucd16-0048.o unicode/ucd16-0064.o"
+      UNICODE_OBJS="unicode/ucd16.o unicode/ucd16-0000.o unicode/ucd16-0016.o unicode/ucd16-0032.o unicode/ucd16-0048.o unicode/ucd16-0064.o"
    else
 
 printf "%s\n" "#define ECL_UNICODE 21" >>confdefs.h
 
       CHAR_CODE_LIMIT=1114112
       ECL_CHARACTER=$ECL_INT32_T
-      EXTRA_OBJS="$EXTRA_OBJS unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o unicode/ucd-0112.o unicode/ucd-0128.o unicode/ucd-0144.o"
+      UNICODE_OBJS="unicode/ucd.o unicode/ucd-0000.o unicode/ucd-0016.o unicode/ucd-0032.o unicode/ucd-0048.o unicode/ucd-0064.o unicode/ucd-0080.o unicode/ucd-0096.o unicode/ucd-0112.o unicode/ucd-0128.o unicode/ucd-0144.o"
    fi
 
 printf "%s\n" "#define ECL_UNICODE_NAMES 1" >>confdefs.h
 
-   EXTRA_OBJS="$EXTRA_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
-	ac_fn_c_check_header_compile "$LINENO" "wchar.h" "ac_cv_header_wchar_h" "$ac_includes_default"
+   UNICODE_OBJS="$UNICODE_OBJS unicode/ucd_names_char.o unicode/ucd_names_codes.o unicode/ucd_names_pair.o unicode/ucd_names_str.o"
+   ac_fn_c_check_header_compile "$LINENO" "wchar.h" "ac_cv_header_wchar_h" "$ac_includes_default"
 if test "x$ac_cv_header_wchar_h" = xyes
 then :
   printf "%s\n" "#define HAVE_WCHAR_H 1" >>confdefs.h
