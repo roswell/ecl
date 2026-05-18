@@ -31,6 +31,7 @@
 
 - build: support for Microsoft Visual Studio Compiler has been dropped
 - clos: ensure that the instance is not obsolete in optimized writer (#851)
+- reader: refactor reader and improve token parsing (escaping and packages)
 
 - bugfix: FUNCALLABLE-STANDARD-OBJECT instances are always treated as
   functions and STANDARD-OBJECT instances can't be assigned the function
