@@ -40,6 +40,8 @@
 - bugfix: FFI:MAKE-POINTER now accepts a pointer-sized address also on
   WIN64 - on this platform `unsigned long' is too small to hold pointers
 
+- core: ecl_core and cl_core structures are now separate (low-level)
+
 * 26.5.5 changes since 26.3.27
 
 - bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of
