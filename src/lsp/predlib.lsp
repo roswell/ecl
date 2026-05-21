@@ -36,13 +36,16 @@ Builds a new function which accepts any number of arguments but always outputs N
   (ext:fill-array-with-elt *subtypep-cache* nil 0 nil)
   (ext:fill-array-with-elt *upgraded-array-element-type-cache* nil 0 nil))
 
+;;; FIXME implement file-local global compiler environment for BCMP compiler and
+;;; unify compiler environment functions with CCMP.
 (defun proclaim-class (name class &optional env)
   "Add a class definition to the global compiler environment."
   (declare (ignore env))
-  ;; Default implementation for the bytecodes compiler which doesn't
-  ;; have a separate file-local compiler environment.
+  ;; Default implementation for the bytecodes compiler which doesn't have a
+  ;; separate file-local compiler environment.
   (si:create-type-name name)
-  (setf (find-class name) class))
+  (or (find-class name nil)
+      (setf (find-class name) class)))
 
 (defun create-type-name (name)
   (when (member name *alien-declarations*)
@@ -130,10 +133,15 @@ retrieved by (documentation 'NAME 'type)."
 (deftype index ()
   '(INTEGER 0 #.array-dimension-limit))
 
+(deftype radix ()
+  "A RADIX is an integer between 2 and 36, that is supported integer base."
+  '(INTEGER 2 36))
+
 (deftype fixnum ()
   "A FIXNUM is an integer between MOST-NEGATIVE-FIXNUM and
 MOST-POSITIVE-FIXNUM inclusive.  Other integers are bignums."
   '(INTEGER #.most-negative-fixnum #.most-positive-fixnum))
+
 (deftype bignum ()
   '(OR (INTEGER * (#.most-negative-fixnum)) (INTEGER (#.most-positive-fixnum) *)))
 

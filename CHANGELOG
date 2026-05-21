@@ -27,15 +27,22 @@
     install ECL on the preferred destination (specified with "--prefix"
     parameter given to configure script).
 
-* Pending changes since 26.3.27
+* Pending changes since 26.5.5
+
+- build: support for Microsoft Visual Studio Compiler has been dropped
+
+* 26.5.5 changes since 26.3.27
 
 - bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of
   the package local nicknames, breaking package literals in bytecmp (#839)
 
-- build: support for Microsoft Visual Studio Compiler has been dropped
-
 - bugfix: the first environment is now always page-aligned by using the
   same allocation mechanism as all subsequent envs (#828)
+
+- bugfix: allow loading concatenated fasc files (#842)
+
+- bugfix: defclass does not redefine existing classes at compile time with
+  forward-referenced classes (#843)
 
 * 26.3.27 changes since 24.5.10
 

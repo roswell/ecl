@@ -121,9 +121,12 @@
           (si:put-sysprop var 'CMP-TYPE type1))
         (warn "The variable name ~s is not a symbol." var))))
 
+;;; FIXME implement file-local global compiler environment for BCMP compiler and
+;;; unify compiler environment functions with CCMP.
 (defun si:proclaim-class (name class &optional (env c::*cmp-env-root*))
   "Add a class definition to the global compiler environment."
   (si:create-type-name name)
-  (ext:with-backend
-    :c/c++ (cmp-env-register-type name class c::*cmp-env-root*)
-    #-ecl-min :bytecodes #-ecl-min (setf (find-class name) class)))
+  (if *compiler-in-use*
+      (cmp-env-register-type name class c::*cmp-env-root*)
+      (or (find-class name nil)
+          (setf (find-class name) class))))
