@@ -44,23 +44,44 @@ si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size)
 cl_object
 si_instance_obsolete_p(cl_object x)
 {
-  return (x->instance.stamp != ECL_CLASS_OF(x)->instance.class_stamp)
-    ? ECL_T : ECL_NIL;
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env,
+              (x->instance.stamp != ECL_CLASS_OF(x)->instance.class_stamp)
+              ? ECL_T : ECL_NIL);
 }
 
 cl_object
 si_instance_new_stamp(cl_object x)
 {
+  cl_env_ptr the_env = ecl_process_env();
   x->instance.class_stamp = ecl_next_stamp();
-  return ecl_make_fixnum(x->instance.class_stamp);
+  ecl_return1(the_env, ecl_make_integer(x->instance.class_stamp));
 }
 
 cl_object
 si_instance_get_stamp(cl_object x)
 {
-  cl_object a = ecl_make_fixnum(x->instance.stamp);
-  cl_object b = ecl_make_fixnum(ECL_CLASS_OF(x)->instance.class_stamp);
-  @(return a b);
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_make_integer(x->instance.class_stamp));
+}
+
+cl_object
+si_instance_sig_set(cl_object x)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  cl_index stamp = ECL_CLASS_OF(x)->instance.class_stamp;
+  x->instance.stamp = stamp;
+  x->instance.slotds = ECL_CLASS_SLOTS(ECL_CLASS_OF(x));
+  ecl_return1(the_env, ecl_make_integer(stamp));
+}
+
+cl_object
+si_instance_sig_get(cl_object x)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, (ECL_INSTANCEP(x)
+                        ? ecl_make_integer(x->instance.stamp)
+                        : ecl_make_integer((cl_class_of(x))->instance.class_stamp)));
 }
 
 cl_object
@@ -76,13 +97,6 @@ si_instance_fun_set(cl_object x, cl_object isgf)
                       ? ECL_NOT_FUNCALLABLE
                       : ECL_NULL_DISPATCH);
   @(return x);
-}
-
-cl_object
-si_instance_sig_set(cl_object x)
-{
-  x->instance.stamp = ECL_CLASS_OF(x)->instance.class_stamp;
-  @(return (x->instance.slotds = ECL_CLASS_SLOTS(ECL_CLASS_OF(x))));
 }
 
 cl_object
