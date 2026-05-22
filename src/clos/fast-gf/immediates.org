@@ -1,0 +1,37 @@
+
+We currently have this immediate tagging scheme for both 32bit and 64bit:
+
+xx01 - t_list
+xx10 - t_character
+xx11 - t_fixnum
+
+I think that we would benefit from extending it:
+
+- 32bit
+
+xx01 - t_list [pointer]
+xx10 - t_loc  [locativ]
+xx11 - t_data [fix/chr]
+x011   - t_fixnum (29b)
+x111   - t_other (char)
+
+- 64bit
+
+x001 - t_list
+x010 - t_locativ
+xx11 - t_fixnum (62b)
+x100 - t_data (char, single float)
+x110 - t_instance
+x101 - funcallable
+
+For 32bit we lose one bit for fixnums, but in return we can represent locatives
+(pointers).
+
+For 64bit we retain full fixnum capacity as it is now, and we additionally tag
+instances and funcallable objects (both are "normal" objects):
+- instances so we can get_stamp without first dereferencing d.t
+- funcallables so we can call entry_point() without first checking the type
+
+Note that locatives may point to instances and funcallables (because they are
+normal objects) at the cost of additional dereferencing, but they can't point to
+t_list, fixnum and t_data, because we lose the tag for type recognition.

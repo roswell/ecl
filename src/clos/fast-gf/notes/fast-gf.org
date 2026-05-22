@@ -1,0 +1,164 @@
+#+author: Daniel Kochmański
+#+date: [2021-11-22 Mon]
+#+date: [2026-05-08 Fri]
+
+* Plan for update
+
+
+
+* Stamps and obsolete instances
+
+Instances and structures are allocated with ~ecl_allocate_instance~ and
+~si_make_structure~. Each instance has the following slots that have a relation
+to its class:
+
+- slotds       :: slot definitions of the instance (unbound for the struct)
+- stamp        :: the identifier of the class of the instance
+- clas         :: the class of the instance (intenionally mispelled)
+
+- class_slotds :: current slot definitions for class instances
+- class_stamp  :: unique identifier of the class (0 for non-classes)
+
+In PCL[fn:1] whether the instance is obsolete is determined by comparing slot
+definitions of the class and the instance: ~(eq slotds class-slotds)~.
+  
+In FGD[fn:2] this is achieved by comparing stamps of the class and the instance:
+~(eq stamp class-stamp)~.
+
+When the instance is not a standard object (like a number) then its stamp is
+considered to be always the same as its ~class-stamp~ and is never obsolete.
+
+Instance functions:
+
+- instance-obsolete-p :: compares stamps and returns a boolean
+- instance-sig-set :: updates the instance signature (stamp) to class's
+- instance-get-stamp :: returns two (values stamp class-stamp)
+- instance-new-stamp :: invalidates class instances (sets new class_stamp)
+
+Even when there are no slots, the class must have a class stamp. Why is that you
+ask? Well, you know, the dispatch.
+
+* Main actors
+
+** compute-discriminating-function generic-function
+
+This generic function is called to determine the discriminating function for a
+generic function. When a generic function is called, the installed
+discriminating function is called with the full set of arguments received by the
+generic function, and must implement the behavior of calling the generic
+function: determining the ordered set of applicable methods, determining the
+effective method, and running the effective method.
+
+To determine the ordered set of applicable methods, the discriminating function
+first calls ~compute-applicable-methods-using-classes~. If
+~compute-applicable-methods-using-classes~ returns a second value of false, the
+discriminating function then calls ~compute-applicable-methods~.
+
+When ~compute-applicable-methods-using-classes~ returns a second value of true,
+then the discriminating function is permitted to memoize the first returned
+value. The discriminating function may reuse the list of applicable methods
+without calling ~compute-applicable-methods-using-classes~ again provided that:
+
+1. the generic function is being called again with required arguments
+   which are instances of the same classes,
+2. the generic function has not been reinitialized,
+3. no method has been added to or removed from the generic function,
+4. for all the specializers of all the generic function's methods which
+   are classes, their class precedence lists have not changed and
+5. for any such memoized value, the class precedence list of the class of
+   each of the required arguments has not changed.
+
+By calling ~compute-effective-method~ the effective method is determined. When
+the effective method is run, each method's function is called with arguments:
+
+1. a list of the arguments to the generic function, and
+2. whatever other arguments are specified in the call-method form indicating
+   that the method should be called.
+
+See ~make-method-lambda~ for more information about how method functions are
+called.
+
+The generic function ~compute-discriminating-function~ is called, and its result
+is installed by ~add-method~, ~remove-method~, ~initialize-instance~, and
+~reinitialize-instance~.
+
+ECL capitalizes on the fact that the programmer is not allowed to redefine
+methods specialized on the ~standard-generic-function~, so functions
+
+- compute-applicable-methods-using-classes
+- compute-applicable-methods
+- compute-effective-method
+
+may be optimized without executing "full" CLOS protocol for the computation. PCL
+memoizes results while GFD compiles as a discriminating function a binary tree
+search based on stamps, reducing effectively number of memory accesses.
+
+** PCL discriminating function (for standard generic functions)
+
+The standard dispatch of the generic function is implemented in
+src/c/clos/gfun.d. To see lisp implementation s
+
+** GFD discriminating function (for standard generic functions)
+
+* object.h
+
+#+BEGIN_SRC c
+  #define ECL_CLASS_OF(x)         (x)->instance.clas
+  #define ECL_SPEC_FLAG(x)        (x)->instance.slots[0]
+  #define ECL_SPEC_OBJECT(x)      (x)->instance.slots[3]
+  #define ECL_CLASS_NAME(x)       (x)->instance.slots[3+0]
+  #define ECL_CLASS_SUPERIORS(x)  (x)->instance.slots[3+1]
+  #define ECL_CLASS_INFERIORS(x)  (x)->instance.slots[3+2]
+  #define ECL_CLASS_SLOTS(x)      (x)->instance.slots[3+3]
+  #define ECL_CLASS_CPL(x)        (x)->instance.slots[3+4]
+  #define ECL_INSTANCEP(x)        ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
+  #define ECL_NOT_FUNCALLABLE     0
+  #define ECL_STANDARD_DISPATCH   1
+  #define ECL_RESTRICTED_DISPATCH 2
+  #define ECL_READER_DISPATCH     3
+  #define ECL_WRITER_DISPATCH     4
+  #define ECL_USER_DISPATCH       5
+
+  struct ecl_instance {            /* -- instance header -- */
+          _ECL_HDR1(isgf);         /*  gf type              */
+          cl_index length;         /*  instance length      */
+          cl_object clas;          /*  instance class       */
+          cl_objectfn entry;       /*  entry address        */
+          cl_object slotds;        /*  slot definitions     */
+          cl_object *slots;        /*  instance slots       */
+          /* fixme uint64_t (?) */
+          cl_index stamp;          /*  instance stamp       */
+          cl_index class_stamp;    /*  class stamp          */
+  };
+#+END_SRC
+
+* set-generic-function-dispatch
+
+A helper function that _determines_ what should be set as the generic function
+dispatch function and then sets it for the object.
+
+set-generic-function-dispatch is called by:
+- add-method
+- remove-method
+- add-method (early version in method.lisp used during bootstrap)
+- shared-initialize specialized on ~generic-function~
+
+#+BEGIN_SRC lisp
+  (defun set-generic-function-dispatch (gfun)
+    (multiple-value-bind (default-function optimizable)
+        (compute-discriminating-function gfun)
+      (set-funcallable-instance-function gfun
+        (if (null optimizable)
+            default-function
+            (maybe-optimize default-function)))))
+#+END_SRC
+
+When the user supplies the discriminating function then we are obligated to call
+it. When the generic function has more than 64 arguments, then it can't be
+memoized in the cache and the default-function (slow mechanism) is used.
+
+* Footnotes
+
+[fn:2] Fast Generic Dispatch
+
+[fn:1] Portable CommonLoops

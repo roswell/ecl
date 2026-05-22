@@ -1,0 +1,258 @@
+
+* Trick 1: lazily compile the discriminator
+
+When COMPUTE-DISCRIMINATING-FUNCTION is called, we install an invalidated
+generic function (instead of compiling it immediately), that will compile the
+function on first call.
+
+Thanks to this we avoid repeated unnecessary recompilations when we add new
+methods or when the function is never actually called. This greatly boosts
+performance of benchmarks CLOS/defclass and CLOS/defmethod.
+
+This, in effects, makes loading much faster (even compared to baseline) and the
+system feels much more responsive.
+
+* always recompile (before Trick 1)
+CL-USER> (fgf::print-fast-gfs)
+  Function name                          [miss /call ] (comp/hist)
+** --------------------------------------------------------------------
+#<(SETF GET-ATTRIBUTE-10-5)              [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-10-5                     [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-10-4)              [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-10-4                     [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-10-3)              [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-10-3                     [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-10-2)              [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-10-2                     [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-10-1)              [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-10-1                     [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-10-0)              [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-10-0                     [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-9-5)               [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-9-5                      [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-9-4)               [5 /50005   ] (8   /5   )>
+#<GET-ATTRIBUTE-9-4                      [5 /350020  ] (8   /5   )>
+#<(SETF GET-ATTRIBUTE-9-3)               [4 /40004   ] (7   /4   )>
+#<GET-ATTRIBUTE-9-3                      [4 /280016  ] (7   /4   )>
+#<(SETF GET-ATTRIBUTE-9-2)               [3 /30003   ] (6   /3   )>
+#<GET-ATTRIBUTE-9-2                      [3 /210012  ] (6   /3   )>
+#<(SETF GET-ATTRIBUTE-9-1)               [2 /20002   ] (5   /2   )>
+#<GET-ATTRIBUTE-9-1                      [2 /140008  ] (5   /2   )>
+#<(SETF GET-ATTRIBUTE-9-0)               [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-9-0                      [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-8-5)               [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-8-5                      [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-8-4)               [5 /50005   ] (8   /5   )>
+#<GET-ATTRIBUTE-8-4                      [5 /350020  ] (8   /5   )>
+#<(SETF GET-ATTRIBUTE-8-3)               [4 /40004   ] (7   /4   )>
+#<GET-ATTRIBUTE-8-3                      [4 /280016  ] (7   /4   )>
+#<(SETF GET-ATTRIBUTE-8-2)               [3 /30003   ] (6   /3   )>
+#<GET-ATTRIBUTE-8-2                      [3 /210012  ] (6   /3   )>
+#<(SETF GET-ATTRIBUTE-8-1)               [2 /20002   ] (5   /2   )>
+#<GET-ATTRIBUTE-8-1                      [2 /140008  ] (5   /2   )>
+#<(SETF GET-ATTRIBUTE-8-0)               [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-8-0                      [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-7-5)               [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-7-5                      [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-7-4)               [5 /50005   ] (8   /5   )>
+#<GET-ATTRIBUTE-7-4                      [5 /350020  ] (8   /5   )>
+#<(SETF GET-ATTRIBUTE-7-3)               [4 /40004   ] (7   /4   )>
+#<GET-ATTRIBUTE-7-3                      [4 /280016  ] (7   /4   )>
+#<(SETF GET-ATTRIBUTE-7-2)               [3 /30003   ] (6   /3   )>
+#<GET-ATTRIBUTE-7-2                      [3 /210012  ] (6   /3   )>
+#<(SETF GET-ATTRIBUTE-7-1)               [2 /20002   ] (5   /2   )>
+#<GET-ATTRIBUTE-7-1                      [2 /140008  ] (5   /2   )>
+#<(SETF GET-ATTRIBUTE-7-0)               [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-7-0                      [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-6-5)               [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-6-5                      [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-6-4)               [5 /50005   ] (8   /5   )>
+#<GET-ATTRIBUTE-6-4                      [5 /350020  ] (8   /5   )>
+#<(SETF GET-ATTRIBUTE-6-3)               [4 /40004   ] (7   /4   )>
+#<GET-ATTRIBUTE-6-3                      [4 /280016  ] (7   /4   )>
+#<(SETF GET-ATTRIBUTE-6-2)               [3 /30003   ] (6   /3   )>
+#<GET-ATTRIBUTE-6-2                      [3 /210012  ] (6   /3   )>
+#<(SETF GET-ATTRIBUTE-6-1)               [2 /20002   ] (5   /2   )>
+#<GET-ATTRIBUTE-6-1                      [2 /140008  ] (5   /2   )>
+#<(SETF GET-ATTRIBUTE-6-0)               [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-6-0                      [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-5-5)               [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-5-5                      [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-5-4)               [5 /50005   ] (8   /5   )>
+#<GET-ATTRIBUTE-5-4                      [5 /350020  ] (8   /5   )>
+#<(SETF GET-ATTRIBUTE-5-3)               [4 /40004   ] (7   /4   )>
+#<GET-ATTRIBUTE-5-3                      [4 /280016  ] (7   /4   )>
+#<(SETF GET-ATTRIBUTE-5-2)               [3 /30003   ] (6   /3   )>
+#<GET-ATTRIBUTE-5-2                      [3 /210012  ] (6   /3   )>
+#<(SETF GET-ATTRIBUTE-5-1)               [2 /20002   ] (5   /2   )>
+#<GET-ATTRIBUTE-5-1                      [2 /140008  ] (5   /2   )>
+#<(SETF GET-ATTRIBUTE-5-0)               [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-5-0                      [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-4-5)               [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-4-5                      [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-4-4)               [5 /50005   ] (8   /5   )>
+#<GET-ATTRIBUTE-4-4                      [5 /350020  ] (8   /5   )>
+#<(SETF GET-ATTRIBUTE-4-3)               [4 /40004   ] (7   /4   )>
+#<GET-ATTRIBUTE-4-3                      [4 /280016  ] (7   /4   )>
+#<(SETF GET-ATTRIBUTE-4-2)               [3 /30003   ] (6   /3   )>
+#<GET-ATTRIBUTE-4-2                      [3 /210012  ] (6   /3   )>
+#<(SETF GET-ATTRIBUTE-4-1)               [2 /20002   ] (5   /2   )>
+#<GET-ATTRIBUTE-4-1                      [2 /140008  ] (5   /2   )>
+#<(SETF GET-ATTRIBUTE-4-0)               [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-4-0                      [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-3-5)               [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-3-5                      [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-3-4)               [5 /50005   ] (8   /5   )>
+#<GET-ATTRIBUTE-3-4                      [5 /350020  ] (8   /5   )>
+#<(SETF GET-ATTRIBUTE-3-3)               [4 /40004   ] (7   /4   )>
+#<GET-ATTRIBUTE-3-3                      [4 /280016  ] (7   /4   )>
+#<(SETF GET-ATTRIBUTE-3-2)               [3 /30003   ] (6   /3   )>
+#<GET-ATTRIBUTE-3-2                      [3 /210012  ] (6   /3   )>
+#<(SETF GET-ATTRIBUTE-3-1)               [2 /20002   ] (5   /2   )>
+#<GET-ATTRIBUTE-3-1                      [2 /140008  ] (5   /2   )>
+#<(SETF GET-ATTRIBUTE-3-0)               [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-3-0                      [1 /70004   ] (4   /1   )>
+#<(SETF GET-ATTRIBUTE-2-5)               [0 /0       ] (3   /0   )>
+#<GET-ATTRIBUTE-2-5                      [0 /0       ] (3   /0   )>
+#<(SETF GET-ATTRIBUTE-2-4)               [5 /50005   ] (8   /5   )>
+#<GET-ATTRIBUTE-2-4                      [5 /350020  ] (8   /5   )>
+#<(SETF GET-ATTRIBUTE-2-3)               [4 /40004   ] (7   /4   )>
+#<GET-ATTRIBUTE-2-3                      [4 /280016  ] (7   /4   )>
+#<(SETF GET-ATTRIBUTE-2-2)               [3 /30003   ] (6   /3   )>
+#<GET-ATTRIBUTE-2-2                      [3 /210012  ] (6   /3   )>
+#<(SETF GET-ATTRIBUTE-2-1)               [2 /20002   ] (5   /2   )>
+#<GET-ATTRIBUTE-2-1                      [2 /140008  ] (5   /2   )>
+#<(SETF GET-ATTRIBUTE-2-0)               [1 /10001   ] (4   /1   )>
+#<GET-ATTRIBUTE-2-0                      [1 /70004   ] (4   /1   )>
+#<EQL-FIB                                [1 /5385079 ] (8   /1   )>
+#<(SETF ATTRIBUTE-TWO)                   [0 /0       ] (3   /0   )>
+#<ATTRIBUTE-TWO                          [0 /0       ] (3   /0   )>
+#<(SETF ATTRIBUTE-ONE)                   [0 /0       ] (3   /0   )>
+#<ATTRIBUTE-ONE                          [0 /0       ] (3   /0   )>
+#<COMPLEX-METHOD                         [5 /125005  ] (116 /5   )>
+#<SIMPLE-METHOD                          [5 /175010  ] (224 /5   )>
+#<(SETF BENCHMARK-FUNCTION)              [0 /0       ] (3   /0   )>
+#<BENCHMARK-FUNCTION                     [0 /0       ] (3   /0   )>
+#<(SETF BENCHMARK-DISABLED-FOR)          [0 /0       ] (3   /0   )>
+#<BENCHMARK-DISABLED-FOR                 [1 /8       ] (4   /1   )>
+#<(SETF BENCHMARK-RUNS)                  [0 /0       ] (3   /0   )>
+#<BENCHMARK-RUNS                         [1 /8       ] (4   /1   )>
+#<(SETF BENCHMARK-GROUP)                 [0 /0       ] (3   /0   )>
+#<BENCHMARK-GROUP                        [1 /65      ] (4   /1   )>
+#<(SETF BENCHMARK-LONG)                  [0 /0       ] (3   /0   )>
+#<BENCHMARK-LONG                         [0 /0       ] (3   /0   )>
+#<(SETF BENCHMARK-SHORT)                 [1 /57      ] (4   /1   )>
+#<BENCHMARK-SHORT                        [1 /8       ] (4   /1   )>
+#<(SETF BENCHMARK-NAME)                  [0 /0       ] (3   /0   )>
+#<BENCHMARK-NAME                         [1 /57      ] (4   /1   )>
+#<PERFORM                                [8 /43      ] (10  /8   )>
+** --------------------------------------------------------------------
+  Totals, 30/130 never called            [  0.00175 %] (992 /30  )
+
+* lazy recompile (after Trick 1)
+
+CL-USER> (fgf::print-fast-gfs)
+  Function name                          [miss /call ] (comp/hist)
+** --------------------------------------------------------------------
+#<EQL-FIB                                [1 /5385079 ] (2   /1   )>
+#<COMPLEX-METHOD                         [5 /125005  ] (6   /5   )>
+#<SIMPLE-METHOD                          [5 /175010  ] (7   /5   )>
+#<(SETF GET-ATTRIBUTE-10-4)              [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-10-4                     [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-10-3)              [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-10-3                     [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-10-2)              [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-10-2                     [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-10-1)              [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-10-1                     [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-10-0)              [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-10-0                     [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-9-0)               [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-9-0                      [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-8-0)               [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-8-0                      [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-7-0)               [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-7-0                      [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-6-0)               [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-6-0                      [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-5-0)               [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-5-0                      [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-4-0)               [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-4-0                      [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-3-0)               [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-3-0                      [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-2-0)               [1 /10001   ] (2   /1   )>
+#<GET-ATTRIBUTE-2-0                      [1 /70004   ] (2   /1   )>
+#<(SETF GET-ATTRIBUTE-9-1)               [2 /20002   ] (3   /2   )>
+#<GET-ATTRIBUTE-9-1                      [2 /140008  ] (3   /2   )>
+#<(SETF GET-ATTRIBUTE-8-1)               [2 /20002   ] (3   /2   )>
+#<GET-ATTRIBUTE-8-1                      [2 /140008  ] (3   /2   )>
+#<(SETF GET-ATTRIBUTE-7-1)               [2 /20002   ] (3   /2   )>
+#<GET-ATTRIBUTE-7-1                      [2 /140008  ] (3   /2   )>
+#<(SETF GET-ATTRIBUTE-6-1)               [2 /20002   ] (3   /2   )>
+#<GET-ATTRIBUTE-6-1                      [2 /140008  ] (3   /2   )>
+#<(SETF GET-ATTRIBUTE-5-1)               [2 /20002   ] (3   /2   )>
+#<GET-ATTRIBUTE-5-1                      [2 /140008  ] (3   /2   )>
+#<(SETF GET-ATTRIBUTE-4-1)               [2 /20002   ] (3   /2   )>
+#<GET-ATTRIBUTE-4-1                      [2 /140008  ] (3   /2   )>
+#<(SETF GET-ATTRIBUTE-3-1)               [2 /20002   ] (3   /2   )>
+#<GET-ATTRIBUTE-3-1                      [2 /140008  ] (3   /2   )>
+#<(SETF GET-ATTRIBUTE-2-1)               [2 /20002   ] (3   /2   )>
+#<GET-ATTRIBUTE-2-1                      [2 /140008  ] (3   /2   )>
+#<(SETF GET-ATTRIBUTE-9-2)               [3 /30003   ] (4   /3   )>
+#<GET-ATTRIBUTE-9-2                      [3 /210012  ] (4   /3   )>
+#<(SETF GET-ATTRIBUTE-8-2)               [3 /30003   ] (4   /3   )>
+#<GET-ATTRIBUTE-8-2                      [3 /210012  ] (4   /3   )>
+#<(SETF GET-ATTRIBUTE-7-2)               [3 /30003   ] (4   /3   )>
+#<GET-ATTRIBUTE-7-2                      [3 /210012  ] (4   /3   )>
+#<(SETF GET-ATTRIBUTE-6-2)               [3 /30003   ] (4   /3   )>
+#<GET-ATTRIBUTE-6-2                      [3 /210012  ] (4   /3   )>
+#<(SETF GET-ATTRIBUTE-5-2)               [3 /30003   ] (4   /3   )>
+#<GET-ATTRIBUTE-5-2                      [3 /210012  ] (4   /3   )>
+#<(SETF GET-ATTRIBUTE-4-2)               [3 /30003   ] (4   /3   )>
+#<GET-ATTRIBUTE-4-2                      [3 /210012  ] (4   /3   )>
+#<(SETF GET-ATTRIBUTE-3-2)               [3 /30003   ] (4   /3   )>
+#<GET-ATTRIBUTE-3-2                      [3 /210012  ] (4   /3   )>
+#<(SETF GET-ATTRIBUTE-2-2)               [3 /30003   ] (4   /3   )>
+#<GET-ATTRIBUTE-2-2                      [3 /210012  ] (4   /3   )>
+#<(SETF GET-ATTRIBUTE-9-3)               [4 /40004   ] (5   /4   )>
+#<GET-ATTRIBUTE-9-3                      [4 /280016  ] (5   /4   )>
+#<(SETF GET-ATTRIBUTE-8-3)               [4 /40004   ] (5   /4   )>
+#<GET-ATTRIBUTE-8-3                      [4 /280016  ] (5   /4   )>
+#<(SETF GET-ATTRIBUTE-7-3)               [4 /40004   ] (5   /4   )>
+#<GET-ATTRIBUTE-7-3                      [4 /280016  ] (5   /4   )>
+#<(SETF GET-ATTRIBUTE-6-3)               [4 /40004   ] (5   /4   )>
+#<GET-ATTRIBUTE-6-3                      [4 /280016  ] (5   /4   )>
+#<(SETF GET-ATTRIBUTE-5-3)               [4 /40004   ] (5   /4   )>
+#<GET-ATTRIBUTE-5-3                      [4 /280016  ] (5   /4   )>
+#<(SETF GET-ATTRIBUTE-4-3)               [4 /40004   ] (5   /4   )>
+#<GET-ATTRIBUTE-4-3                      [4 /280016  ] (5   /4   )>
+#<(SETF GET-ATTRIBUTE-3-3)               [4 /40004   ] (5   /4   )>
+#<GET-ATTRIBUTE-3-3                      [4 /280016  ] (5   /4   )>
+#<(SETF GET-ATTRIBUTE-2-3)               [4 /40004   ] (5   /4   )>
+#<GET-ATTRIBUTE-2-3                      [4 /280016  ] (5   /4   )>
+#<(SETF GET-ATTRIBUTE-9-4)               [5 /50005   ] (6   /5   )>
+#<GET-ATTRIBUTE-9-4                      [5 /350020  ] (6   /5   )>
+#<(SETF GET-ATTRIBUTE-8-4)               [5 /50005   ] (6   /5   )>
+#<GET-ATTRIBUTE-8-4                      [5 /350020  ] (6   /5   )>
+#<(SETF GET-ATTRIBUTE-7-4)               [5 /50005   ] (6   /5   )>
+#<GET-ATTRIBUTE-7-4                      [5 /350020  ] (6   /5   )>
+#<(SETF GET-ATTRIBUTE-6-4)               [5 /50005   ] (6   /5   )>
+#<GET-ATTRIBUTE-6-4                      [5 /350020  ] (6   /5   )>
+#<(SETF GET-ATTRIBUTE-5-4)               [5 /50005   ] (6   /5   )>
+#<GET-ATTRIBUTE-5-4                      [5 /350020  ] (6   /5   )>
+#<(SETF GET-ATTRIBUTE-4-4)               [5 /50005   ] (6   /5   )>
+#<GET-ATTRIBUTE-4-4                      [5 /350020  ] (6   /5   )>
+#<(SETF GET-ATTRIBUTE-3-4)               [5 /50005   ] (6   /5   )>
+#<GET-ATTRIBUTE-3-4                      [5 /350020  ] (6   /5   )>
+#<(SETF GET-ATTRIBUTE-2-4)               [5 /50005   ] (6   /5   )>
+#<GET-ATTRIBUTE-2-4                      [5 /350020  ] (6   /5   )>
+#<BENCHMARK-RUNS                         [1 /8       ] (2   /1   )>
+#<BENCHMARK-SHORT                        [1 /8       ] (2   /1   )>
+#<BENCHMARK-DISABLED-FOR                 [1 /8       ] (2   /1   )>
+#<BENCHMARK-GROUP                        [1 /65      ] (2   /1   )>
+#<(SETF BENCHMARK-SHORT)                 [1 /57      ] (2   /1   )>
+#<BENCHMARK-NAME                         [1 /57      ] (2   /1   )>
+#<PERFORM                                [8 /43      ] (9   /8   )>
+** --------------------------------------------------------------------
+  Totals, 0/100 never called             [  0.00175 %] (376 /0   )

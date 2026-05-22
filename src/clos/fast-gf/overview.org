@@ -1,0 +1,65 @@
+#+title: ECL implementation of Fast Generic Function Dispatch
+
+* Generating dispatch tree
+
+  The dispatch tree is generated in two passes:
+
+  1. build the initial tree
+  2. merge adjacent leaf nodes with the same outcome
+
+  Building the initial tree works based on the algorithm used for the macro
+  STRING-CASE[fn:1]. The generic function maintains the call history that is
+  used as the reference for the dispatch tree. When the function is compiled
+  then the call history is used as the reference for building the tree.
+
+  #+BEGIN_SRC lisp
+  (dispatch-case args
+    (history-entry-1 effective-method-1)
+    (history-entry-2 effective-method-2)
+    ;; ...
+    (otherwise :cache-miss))
+  #+END_SRC
+
+  Thanks to class stamps we operate on numbers so for each tree node the
+  decision in the expanded code looks like this[fn:2]:
+
+  #+BEGIN_SRC lisp
+    (if (and (= (stamp #:arg-x) #:class-x-stamp)
+             (= (stamp #:arg-y) #:class-y-stamp))
+        (if (<= (stamp #:arg-z) #:class-z-stamp)
+            ,(expand-dispatch #:child-l)
+            ,(expand-dispatch #:child-r))
+        :cache-miss)
+  #+END_SRC
+
+  The first test for equality is the initial selector for arguments that all
+  have a common value for the whole subtree. The second test less-equal is to
+  select either left or right branch bisecting the tree[fn:3].
+
+  After the initial tree is built we examine adjacent leaf nodes and if they
+  share the same outcome, and both are adjacent - all arguments have the same
+  stamps or constitue a continuous range of integers then we merge branches.
+  Instead of individual tests we have something like:
+
+  #+BEGIN_SRC lisp
+    (if (and (= (stamp #:arg-x) #:class-x-stamp)
+             (<= #:class-a-stamp (stamp #:arg-y) #:class-b-stamp)
+             (<= #:class-c-stamp (stamp #:arg-z) #:class-d-stamp))
+        #:outcome
+        :cache-miss)
+  #+END_SRC
+
+* Footnotes
+
+[fn:1] http://pvk.ca/Blog/Lisp/string_case_bis.html
+
+[fn:2] CLASP dispatches first on the first argument, then on the second etc.
+We on the other hand look for the best argument and stamp at each step.
+
+[fn:3] Bisecting the tree is not always an optimal strategy. Numerous branches
+may share the outcome and splits that initially more tests, after merging may
+"beat" the bisecting split. Best strategy could be brute-forced but perhpas we
+could come up with something better - i.e batching nodes based on the outcome,
+breaking ties to favor similar outcomes etc. Careful benchmarking is required
+to decide whether this indeed behaves as it should.
+
