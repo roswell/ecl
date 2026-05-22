@@ -132,7 +132,11 @@
        :initarg :declarations
        :initform nil
        :accessor generic-function-declarations)
-      (dependents :initform nil :accessor generic-function-dependents))))
+      (dependents :initform nil :accessor generic-function-dependents)
+      (call-history :initform nil :accessor generic-function-call-history)
+      (cache-fail :initform 0 :accessor generic-function-cache-fail)
+      (cache-pass :initform 0 :accessor generic-function-cache-pass)
+      (recompiled :initform 0 :accessor generic-function-recompiled))))
 
 ;;; ----------------------------------------------------------------------
 ;;; STANDARD-METHOD
