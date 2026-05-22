@@ -108,13 +108,29 @@ si_string_to_object(cl_narg narg, cl_object string, ...)
 extern cl_object
 si_signal_simple_error(cl_narg narg, cl_object condition, cl_object continuable, cl_object format, cl_object format_args, ...)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   ecl_va_list args;
   cl_object rest;
+  cl_object stream = cl_core.error_output;
+
   ecl_va_start(args, format_args, narg, 4);
   rest = cl_grab_rest_args(args);
   ecl_va_end(args);
-  return cl_apply(6, @'si::signal-simple-error', condition, continuable,
-                  format, format_args, rest);
+
+  ecl_bds_bind(the_env, @'*print-readably*', ECL_NIL);
+  ecl_bds_bind(the_env, @'*print-level*', ecl_make_fixnum(4));
+  ecl_bds_bind(the_env, @'*print-length*', ecl_make_fixnum(8));
+  ecl_bds_bind(the_env, @'*print-circle*', ECL_NIL);
+  ecl_bds_bind(the_env, @'*print-base*', ecl_make_fixnum(10));
+  writestr_stream("\n;;; Unhandled lisp initialization error", stream);
+  writestr_stream("\n;;; Message:\n", stream);
+  si_write_ugly_object(format, stream);
+  writestr_stream("\n;;; Arguments:\n", stream);
+  si_write_ugly_object(rest, stream);
+  ecl_bds_unwind_n(the_env, 5);
+
+  ecl_internal_error("\nLisp initialization error.\n");
+  return ECL_NIL;
 }
 
 extern cl_object
