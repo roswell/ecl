@@ -119,8 +119,8 @@
       (reinitialize-instance gf :name new-name)
       (setf (slot-value gf 'name) new-name)))
 
-(defun std-compute-discriminating-function (generic-function)
-  (values (unoptimized-discriminator generic-function) t))
+;; (defun std-compute-discriminating-function (generic-function)
+;;   (values (unoptimized-discriminator generic-function) t))
 
 (defun compute-discriminating-function (gf)
   (declare (notinline std-compute-discriminating-function))
