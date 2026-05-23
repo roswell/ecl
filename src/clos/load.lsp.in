@@ -23,6 +23,7 @@
   "src:clos;stdmethod.lsp"
   "src:clos;generic.lsp"
   "src:clos;fixup.lsp"
+  "src:clos;yolo.lsp"
   "src:clos;conditions.lsp"
   "src:clos;print.lsp"
   #+clos-streams

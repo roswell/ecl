@@ -178,7 +178,7 @@
                         for a in args
                         collect (class-of a))))
     (unless (find-call-history-entry classes (clos::generic-function-call-history gf))
-      (dbg "Updating history with ~a~%" classes)
+      (dbg* "Updating history with ~a~%" classes)
       (push (cons classes outcome) (clos::generic-function-call-history gf)))))
 
 
@@ -539,12 +539,6 @@
            ,(expand-cache-miss tree))
       (expand-check-split tree))))
 
-
-
-;;; This function computes the discriminating function. This is the heart of the
-;;; Fast Generic Function Dispatch.
-(defvar *dirty-gfs* '())
-
 (defun expand-fastgf-discriminator (gf)
   (let* ((tree (compute-dispatch-tree gf))
          (code (expand-branch tree))
@@ -568,11 +562,21 @@
                 (return (apply #'no-applicable-method ,gf args))
                 (progn
                   (apply #'pseudocall ,gf func args)
-                  (clos::set-generic-function-dispatch ,gf)
+                  (revalidate-fastgf-discriminator ,gf)
+                  ;; (clos::set-generic-function-dispatch ,gf)
                   (return (funcall func args nil)))))))))
 
+
+;;; This function computes the discriminating function. This is the heart of the
+;;; Fast Generic Function Dispatch.
+(defvar *dirty-gfs* '())
+(defvar *known-gfs* '())
+(defvar *unoptimized-functions-p* t)
+(defvar *compiled-discriminators* '())
+
 (defun compile-fastgf-discriminator (gf)
-  (let ((body (expand-fastgf-discriminator gf)))
+  (let ((body (expand-fastgf-discriminator gf))
+        (*compiled-discriminators* (list* gf *compiled-discriminators*)))
     (values (compile nil body) nil)))
 
 ;;; FIXME assuming warm cache, this discriminator compiled with CCMP this works
@@ -582,45 +586,67 @@
 ;;; 
 ;;; NOTE benchmarks show, that updating gf stats slots does not break
 ;;; performance (recompiled/cache-pass/cache-miss).
-(defun compute-fastgf-discriminator (gf)
-  (dbg* "[fast] Recomputing function for ~a (~a / ~a)~%"
+(defvar *depth* 0)
+(defun compute-fastgf-discriminator (gf &aux (*depth* (1+ *depth*)))
+  (dbg* "[fast] [~a] Recomputing function for ~a (~a / ~a)~%"
+        *depth*
         (clos:generic-function-name gf)
         (clos::generic-function-recompiled gf)
         (length (generic-function-call-history gf)))
-  (pushnew gf *dirty-gfs*)
   (incf (clos::generic-function-recompiled gf))
   ;; When lambda list changes incompatibly, we should update the call history.
   ;; Perhaps we could truncate/update missing specs with T specializer?
-  (prog1 (compile-fastgf-discriminator gf)
-    (dbg* "[fast] DONE Recomputing function for ~a~%"
-          (clos:generic-function-name gf))))
+  (compile-fastgf-discriminator gf))
 
 
-(defvar *compiled-discriminators* '())
-(defun invalidated-fastgf-discriminator (gf)
+(defun make-invalidated-fastgf-discriminator (gf)
+  (pushnew gf *dirty-gfs*)
+  (pushnew gf *known-gfs*)
   (lambda (&rest args)
-    (if (member gf *compiled-discriminators*)
-        ;; FIXME should use the function with static cache.
+    (if (or *unoptimized-functions-p*
+            (null (clos::generic-function-call-history gf))
+            (member gf *compiled-discriminators*)            )
+        ;; FIXME we should use the function with static cache.
         (let ((fun (clos::unoptimized-discriminator gf)))
           (apply fun args))
-        (let* ((*compiled-discriminators* (list* gf *compiled-discriminators*))
-               (fun #+speed (compile-fastgf-discriminator gf)
-                    #-speed (compute-fastgf-discriminator gf)))
-          (clos:set-funcallable-instance-function gf fun)
+        (let ((fun (revalidate-fastgf-discriminator gf)))
           (apply fun args)))))
 
 (defun invalidate-fastgf-discriminator (gf)
-  (clos:set-funcallable-instance-function
-   gf (invalidated-fastgf-discriminator gf)))
+  (let ((discriminator (make-invalidated-fastgf-discriminator gf)))
+    (clos:set-funcallable-instance-function gf discriminator)
+    discriminator))
+
+(defun revalidate-fastgf-discriminator (gf)
+  (let ((discriminator #+speed (compile-fastgf-discriminator gf)
+                       #-speed (compute-fastgf-discriminator gf)))
+    (clos:set-funcallable-instance-function gf discriminator)
+    discriminator))
 
 (defun clos::std-compute-discriminating-function (gf)
-  (values (invalidated-fastgf-discriminator gf) nil))
+  (values (make-invalidated-fastgf-discriminator gf) nil))
 
 ;; (defun clos::std-compute-discriminating-function (gf)
 ;;   (clos::unoptimized-discriminator gf))
 
 ;; (defun clos::std-compute-discriminating-function (gf)
 ;;   (clos::soft-legacy-discriminator gf))
+
+(defun enable-fgf ()
+  (let ((start (get-universal-time)))
+    (dbg* "--- Enabling FastGF dispatch, please wait...~%")
+    (let ((count (length *dirty-gfs*))
+          (names (mapcar #'clos:generic-function-name *dirty-gfs*)))
+      (setf *unoptimized-functions-p* nil)
+      (loop for name in names
+            for i from 1
+            for gf in *dirty-gfs*
+            do (dbg* "[~4a/~4a] ~a ... ~%" i count name)
+               (invalidate-fastgf-discriminator gf)
+               (dbg* "... ~a~%" `(OK))))
+    (setf *dirty-gfs* '())
+    (dbg* "--- Enabling FastGF dispatch completed in ~As!~%"
+          (- (get-universal-time) start))))
 
 (defun print-gf (gf &optional (stream *standard-output*))
   (print-unreadable-object (gf stream :type nil)
