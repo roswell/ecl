@@ -36,6 +36,50 @@
         (restricted-compute-applicable-method gf args)
         (generic-compute-applicable-method gf args))))
 
+(defun gfun-name (gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (clos::generic-function-name gf)))
+
+(defun gfun-spec (gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (clos::generic-function-spec-list gf)))
+
+(defun gfun-comb (gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (clos::generic-function-method-combination gf)))
+
+(defun gfun-hist (gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (clos::generic-function-call-history gf)))
+
+(defun (setf gfun-hist) (val gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (setf (clos::generic-function-call-history gf) val)))
+
+(defun gfun-pass (gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (clos::generic-function-cache-pass gf)))
+
+(defun (setf gfun-pass) (val gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (setf (clos::generic-function-cache-pass gf) val)))
+
+(defun gfun-fail (gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (clos::generic-function-cache-fail gf)))
+
+(defun (setf gfun-fail) (val gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (setf (clos::generic-function-cache-fail gf) val)))
+
+(defun gfun-rcmp (gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (clos::generic-function-recompiled gf)))
+
+(defun (setf gfun-rcmp) (val gf)
+  (with-early-accessors (+standard-generic-function-slots+)
+    (setf (clos::generic-function-recompiled gf) val)))
+
 ;;; This is an unoptimized discriminator function that doesn't cache results.
 (defun unoptimized-discriminator (gf)
   (lambda (&rest args)
