@@ -29,15 +29,13 @@
 
 (defpackage "EU.TURTLEWARE.FASTGF"
   (:use "CL")
-  (:nicknames "FGF")
-  (:import-from "CLOS" "GENERIC-FUNCTION-CALL-HISTORY"))
+  (:nicknames "FGF"))
 (in-package "EU.TURTLEWARE.FASTGF")
 
 #+ (or)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pushnew :speed *features*)
   (declaim (optimize (speed 3) (safety 0) (debug 0))))
-
 
 ;;; The fast gf implementation
 
@@ -172,17 +170,6 @@
           (map-combinations
            (lambda (args)
              ())))))))
-
-;;; This function populates the generic function call history with argument
-;;; classes and their effective methods without calling the them.
-(defun pseudocall (gf outcome &rest args)
-  (let* ((spec-list (clos::generic-function-spec-list gf))
-         (classes (loop for i in spec-list ;spec-list arity is for req-args
-                        for a in args
-                        collect (class-of a))))
-    (unless (find-call-history-entry classes (clos::generic-function-call-history gf))
-      (dbg* "Updating history with ~a~%" classes)
-      (push (cons classes outcome) (clos::generic-function-call-history gf)))))
 
 
 ;;; Here we compute the dispatch tree that tries to minimize the number of
@@ -412,11 +399,11 @@
           outcome-left))))
 
 (defun compute-dispatch-tree (gf)
-  (ext:when-let ((history (clos::generic-function-call-history gf)))
+  (ext:when-let ((history (clos::gfun-hist gf)))
     (flet ((indexes ()
              (loop for argument-index from 0
                    for (class-specialized-p . eql-specializers)
-                     in (clos::generic-function-spec-list gf)
+                     in (clos::gfun-spec gf)
                    when class-specialized-p
                      collect argument-index)))
       (let ((tree (generate-branch history (indexes))))
@@ -441,7 +428,7 @@
                   (pop args*)))))
     (loop with skip = 0
           for i from 0
-          for (class . eqls) in (clos::generic-function-spec-list gf)
+          for (class . eqls) in (clos::gfun-spec gf)
           for name = (get-stamp i)
           if (or class eqls)
             collect `(,name (si:instance-sig-get ,(pops skip)))
@@ -546,9 +533,13 @@
   (let* ((tree (compute-dispatch-tree gf))
          (code (expand-branch tree))
          (lets (expand-stamp-bindings gf)))
-    `(lambda (&rest args)
+    `(lambda (&rest args &aux (*depth* (1+ *depth*)))
        #+speed (declare (optimize (speed 3) (safety 0) (debug 0)))
-       #-speed (incf (clos::generic-function-cache-pass ,gf))
+       #-speed (incf (clos::gfun-pass ,gf))
+       (dbg* "fast discriminator [~a] ~a~%" *depth* (clos::gfun-name ,gf))
+       (when (> *depth* 32)
+         ;;(error "yoo, too deep")
+         (si:exit -1))
        (prog* ((args* args)
                ,@lets)
           (declare (ignorable ,@(mapcar #'car lets))
@@ -585,10 +576,10 @@
 (defun compute-fastgf-discriminator (gf &aux (*depth* (1+ *depth*)))
   (dbg* "[fast] [~a] Recomputing function for ~a (~a / ~a)~%"
         *depth*
-        (clos:generic-function-name gf)
-        (clos::generic-function-recompiled gf)
-        (length (generic-function-call-history gf)))
-  (incf (clos::generic-function-recompiled gf))
+        (clos::gfun-name gf)
+        (clos::gfun-rcmp gf)
+        (length (clos::gfun-hist gf)))
+  (incf (clos::gfun-rcmp gf))
   ;; When lambda list changes incompatibly, we should update the call history.
   ;; Perhaps we could truncate/update missing specs with T specializer?
   (compile-fastgf-discriminator gf))
@@ -606,44 +597,47 @@
 
 (defun unoptimized-dispatch-p (gf)
   (or *unoptimized-functions-p*
-      (member gf *compiled-discriminators*)
-      ;; XXX badaid(s), but above should suffice!
-      (member gf (list #'generic-function-call-history))
-      ;; vvvvv can't be, because then we never recompile new functions
-      (null (clos::generic-function-call-history gf))
-      *compiled-discriminators* ;; slow path on recompile!
-      ))
+      (member gf *compiled-discriminators*)))
 
+;;; This function populates the generic function call history with argument
+;;; classes and their effective methods without calling the outcome.
+(defun pseudocall (gf args outcome)
+  (let* ((spec-list (clos::gfun-spec gf))
+         (classes (loop for i in spec-list ;spec-list arity is for req-args
+                        for a in args
+                        collect (class-of a))))
+    (unless (find-call-history-entry classes (clos::gfun-hist gf))
+      (dbg* "Updating history~%")
+      (push (cons classes outcome) (clos::gfun-hist gf)))))
+
+;;; INV FASTGF-HANDLE-CACHE-MISS can't eagerly revalidate the descriminator,
+;;; because cache misses are handled inside the fastgf discriminator so we are
+;;; already invoking the function and that function may be needed to recompute
+;;; the discriminator itself, so we can trigger here a metastability issue.
 (defun fastgf-handle-cache-miss (gf &rest args)
-  (when (unoptimized-dispatch-p gf)
-    (let ((*compiled-discriminators* (list* gf *compiled-discriminators*)))
-      (dbg* "[fast discriminator] unoptimize ~a~%" (clos:generic-function-name gf))
-      (return-from fastgf-handle-cache-miss
-        (apply (clos::unoptimized-discriminator gf) args))))
   (let ((*compiled-discriminators* (list* gf *compiled-discriminators*)))
     #-speed
-    (let ((name (clos:generic-function-name gf)))
-      (incf (clos::generic-function-cache-fail gf))
+    (let ((name (clos::gfun-name gf)))
+      (incf (clos::gfun-fail gf))
       (dbg* "[fastgf] cache miss for ~a~%" name))
     (ext:if-let ((func (compute-effective-outcome gf args)))
       (progn
-        (apply #'pseudocall gf func args)
-        (revalidate-fastgf-discriminator gf)
+        (pseudocall gf args func)
+        (invalidate-fastgf-discriminator gf)
         (funcall func args nil))
       (apply #'no-applicable-method gf args))))
 
 (defun make-invalidated-fastgf-discriminator (gf)
   (pushnew gf *dirty-gfs*)
   (pushnew gf *known-gfs*)
-  (lambda (&rest args)
+  (lambda (&rest args &aux (*depth* (1+ *depth*)))
+    ;; (dbg* "slow discriminator [~a] ~a~%" *depth* (clos::gfun-name gf))
     (if (unoptimized-dispatch-p gf)
         ;; FIXME we should use the function with static cache.
         (apply (clos::unoptimized-discriminator gf) args)
         (progn
-          (dbg* "[inva discriminator] cache miss")
+          (dbg* "[inva discriminator] handle cache miss")
           (apply #'fastgf-handle-cache-miss gf args)))))
-
-
 
 (defun clos::std-compute-discriminating-function (gf)
   (values (make-invalidated-fastgf-discriminator gf) nil))
@@ -655,10 +649,11 @@
 ;;   (clos::soft-legacy-discriminator gf))
 
 (defun enable-fgf ()
+  (ext:install-bytecodes-compiler)
   (let ((start (get-universal-time)))
     (dbg* "--- Enabling FastGF dispatch, please wait...~%")
     (let ((count (length *dirty-gfs*))
-          (names (mapcar #'clos:generic-function-name *dirty-gfs*)))
+          (names (mapcar #'clos::gfun-name *dirty-gfs*)))
       (setf *unoptimized-functions-p* nil)
       (loop for name in names
             for i from 1
@@ -673,11 +668,11 @@
 (defun print-gf (gf &optional (stream *standard-output*))
   (print-unreadable-object (gf stream :type nil)
     (format stream "~38a [~2a/~8a] (~4a/~4a)"
-            (clos:generic-function-name gf)
-            (clos::generic-function-cache-fail gf)
-            (clos::generic-function-cache-pass gf)
-            (clos::generic-function-recompiled gf)
-            (length (clos::generic-function-call-history gf))))
+            (clos::gfun-name gf)
+            (clos::gfun-fail gf)
+            (clos::gfun-pass gf)
+            (clos::gfun-rcmp gf)
+            (length (clos::gfun-hist gf))))
   gf)
 
 (defun print-fast-gfs ()
@@ -689,10 +684,10 @@
            "Function name" "miss" "call" "comp" "hist"
            "--------------------------------------------------------------------")
    (dolist (gf *dirty-gfs*)
-     (incf total-call (clos::generic-function-cache-pass gf))
-     (incf total-fail (clos::generic-function-cache-fail gf))
-     (incf total-comp (clos::generic-function-recompiled gf))
-     (when (zerop (length (clos::generic-function-call-history gf)))
+     (incf total-call (clos::gfun-pass gf))
+     (incf total-fail (clos::gfun-fail gf))
+     (incf total-comp (clos::gfun-rcmp gf))
+     (when (zerop (length (clos::gfun-hist gf)))
        (incf total-zero))
      (print-gf gf)
      (terpri))
