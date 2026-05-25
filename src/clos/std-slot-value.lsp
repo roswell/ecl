@@ -63,9 +63,16 @@
                                                slots)
                      for index from 0
                      for accessor = (getf slotd :accessor)
-                     when (and accessor (not (member accessor functions :key #'first)))
-                       do (push `(,accessor (object) (si::instance-ref object ,index)) functions)
-                          (push `((setf ,accessor) (value object) (si::instance-set object ,index value)) functions)))
+                     for reader = (getf slotd :reader)
+                     for writer = (getf slotd :writer)
+                     do (cond
+                          ((and accessor (not (member accessor functions :key #'first)))
+                           (push `(,accessor (object) (si::instance-ref object ,index)) functions)
+                           (push `((setf ,accessor) (value object) (si::instance-set object ,index value)) functions))
+                          ((and reader (not (member reader functions :key #'first :test #'equal)))
+                           (push `(,reader (object) (si::instance-ref object ,index)) functions))
+                          ((and writer (not (member writer functions :key #'first :test #'equal)))
+                           (push `(,writer (value object) (si::instance-set object ,index)) functions)))))
       `(flet ,functions
          (declare (inline ,@(mapcar #'first functions)))
          ,@body))))
