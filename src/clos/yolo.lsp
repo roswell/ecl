@@ -39,15 +39,30 @@
 
 ;;; The fast gf implementation
 
+(defvar *unoptimized-functions-p* t
+  "Disables recompiling of invalidated discriminators (dynamic scope).")
+
+(defvar *compiled-discriminators* '()
+  "Inhibits reentrant recompilation of invalidated discriminators.")
+
+(defvar *debug-fast-gf* nil
+  "Runtime flag enabling verbose DBG. Does not affect DBG*.")
+
+(defun unoptimized-dispatch-p (gf)
+  (or *unoptimized-functions-p*
+      (member gf *compiled-discriminators*)))
+
 ;; (declaim (notinline dbg dbg*))
 (defun dbg (fmt &rest args)
   (declare (ignorable fmt args))
-  ;(apply #'format *debug-io* fmt args)
-  )
+  (when *debug-fast-gf*
+    (let ((*unoptimized-functions-p* t))
+      (apply #'format *debug-io* fmt args))))
 
 (defun dbg* (fmt &rest args)
   (declare (ignorable fmt args))
-  (apply #'format *debug-io* fmt args))
+  (let ((*unoptimized-functions-p* t))
+    (apply #'format *debug-io* fmt args)))
 
 ;;; CALL-HISTORY representation:
 ;;; 
@@ -536,7 +551,6 @@
     `(lambda (&rest args &aux (*depth* (1+ *depth*)))
        #+speed (declare (optimize (speed 3) (safety 0) (debug 0)))
        #-speed (incf (clos::gfun-pass ,gf))
-       (dbg* "fast discriminator [~a] ~a~%" *depth* (clos::gfun-name ,gf))
        (when (> *depth* 32)
          ;;(error "yoo, too deep")
          (si:exit -1))
@@ -546,7 +560,6 @@
                    (fixnum ,@(mapcar #'car lets)))
           (return ,code)
         :cache-miss
-          (dbg* "[fast discriminator] cache miss~%")
           (return (apply #'fastgf-handle-cache-miss ,gf args))))))
 
 
@@ -556,14 +569,13 @@
 
 (defvar *dirty-gfs* '())
 (defvar *known-gfs* '())
-(defvar *unoptimized-functions-p* t)
-(defvar *compiled-discriminators* '())
 
 ;;; This function computes the discriminating function. This is the heart of the
 ;;; Fast Generic Function Dispatch.
 (defun compile-fastgf-discriminator (gf)
-  (let ((body (expand-fastgf-discriminator gf)))
-    (values (compile nil body) nil)))
+  (let* ((*unoptimized-functions-p* t)
+         (body (expand-fastgf-discriminator gf)))
+    (values (compile body) nil)))
 
 ;;; FIXME assuming warm cache, this discriminator compiled with CCMP this works
 ;;; comparably to our baseline method, but with BCMP it is much slower; so even
@@ -585,19 +597,17 @@
   (compile-fastgf-discriminator gf))
 
 (defun invalidate-fastgf-discriminator (gf)
+  (dbg* "[invalidate gf] ~a~%" (clos::gfun-name gf))
   (let ((discriminator (make-invalidated-fastgf-discriminator gf)))
     (clos:set-funcallable-instance-function gf discriminator)
     discriminator))
 
 (defun revalidate-fastgf-discriminator (gf)
+  (dbg* "[revalidate gf] ~a~%" (clos::gfun-name gf))
   (let ((discriminator #+speed (compile-fastgf-discriminator gf)
                        #-speed (compute-fastgf-discriminator gf)))
     (clos:set-funcallable-instance-function gf discriminator)
     discriminator))
-
-(defun unoptimized-dispatch-p (gf)
-  (or *unoptimized-functions-p*
-      (member gf *compiled-discriminators*)))
 
 ;;; This function populates the generic function call history with argument
 ;;; classes and their effective methods without calling the outcome.
@@ -607,7 +617,7 @@
                         for a in args
                         collect (class-of a))))
     (unless (find-call-history-entry classes (clos::gfun-hist gf))
-      (dbg* "Updating history~%")
+      (dbg* "[fastgf update history] ~a ~a~%" *depth* (clos::gfun-name gf))
       (push (cons classes outcome) (clos::gfun-hist gf)))))
 
 ;;; INV FASTGF-HANDLE-CACHE-MISS can't eagerly revalidate the descriminator,
@@ -616,10 +626,8 @@
 ;;; the discriminator itself, so we can trigger here a metastability issue.
 (defun fastgf-handle-cache-miss (gf &rest args)
   (let ((*compiled-discriminators* (list* gf *compiled-discriminators*)))
-    #-speed
-    (let ((name (clos::gfun-name gf)))
-      (incf (clos::gfun-fail gf))
-      (dbg* "[fastgf] cache miss for ~a~%" name))
+    #-speed (incf (clos::gfun-fail gf))
+    (dbg* "[fastgf cache miss] ~a ~a~%" *depth* (clos::gfun-name gf))
     (ext:if-let ((func (compute-effective-outcome gf args)))
       (progn
         (pseudocall gf args func)
@@ -630,14 +638,10 @@
 (defun make-invalidated-fastgf-discriminator (gf)
   (pushnew gf *dirty-gfs*)
   (pushnew gf *known-gfs*)
-  (lambda (&rest args &aux (*depth* (1+ *depth*)))
-    ;; (dbg* "slow discriminator [~a] ~a~%" *depth* (clos::gfun-name gf))
+  (lambda (&rest args)
     (if (unoptimized-dispatch-p gf)
-        ;; FIXME we should use the function with static cache.
         (apply (clos::unoptimized-discriminator gf) args)
-        (progn
-          (dbg* "[inva discriminator] handle cache miss")
-          (apply #'fastgf-handle-cache-miss gf args)))))
+        (apply (revalidate-fastgf-discriminator gf) args))))
 
 (defun clos::std-compute-discriminating-function (gf)
   (values (make-invalidated-fastgf-discriminator gf) nil))
@@ -659,7 +663,7 @@
             for i from 1
             for gf in *dirty-gfs*
             do (dbg* "[~4a/~4a] ~a ... ~%" i count name)
-               (invalidate-fastgf-discriminator gf)
+               (revalidate-fastgf-discriminator gf)
                (dbg* "... ~a~%" `(OK))))
     (setf *dirty-gfs* '())
     (dbg* "--- Enabling FastGF dispatch completed in ~As!~%"
