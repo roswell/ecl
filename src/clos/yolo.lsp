@@ -555,31 +555,23 @@
                    (fixnum ,@(mapcar #'car lets)))
           (return ,code)
         :cache-miss
-          #-speed (incf (clos::generic-function-cache-fail ,gf))
-          (let ((func (compute-effective-outcome ,gf args)))
-            #-speed
-            (dbg* "[fastgf] cache miss for ~a/ ~a~%"
-                  (quote ,(clos:generic-function-name gf))
-                  func)
-            (if (null func)
-                (return (apply #'no-applicable-method ,gf args))
-                (progn
-                  (apply #'pseudocall ,gf func args)
-                  (revalidate-fastgf-discriminator ,gf)
-                  ;; (clos::set-generic-function-dispatch ,gf)
-                  (return (funcall func args nil)))))))))
+          (dbg* "[fast discriminator] cache miss~%")
+          (return (apply #'fastgf-handle-cache-miss ,gf args))))))
 
 
-;;; This function computes the discriminating function. This is the heart of the
-;;; Fast Generic Function Dispatch.
+;;; NOTE metastability issues are resolved by usning unoptimized dispatch when
+;;; we enter a path that needs recomputation. See UNOPTIMIZED-DISPATCH-P and its
+;;; callers.
+
 (defvar *dirty-gfs* '())
 (defvar *known-gfs* '())
 (defvar *unoptimized-functions-p* t)
 (defvar *compiled-discriminators* '())
 
+;;; This function computes the discriminating function. This is the heart of the
+;;; Fast Generic Function Dispatch.
 (defun compile-fastgf-discriminator (gf)
-  (let ((body (expand-fastgf-discriminator gf))
-        (*compiled-discriminators* (list* gf *compiled-discriminators*)))
+  (let ((body (expand-fastgf-discriminator gf)))
     (values (compile nil body) nil)))
 
 ;;; FIXME assuming warm cache, this discriminator compiled with CCMP this works
@@ -601,20 +593,6 @@
   ;; Perhaps we could truncate/update missing specs with T specializer?
   (compile-fastgf-discriminator gf))
 
-
-(defun make-invalidated-fastgf-discriminator (gf)
-  (pushnew gf *dirty-gfs*)
-  (pushnew gf *known-gfs*)
-  (lambda (&rest args)
-    (if (or *unoptimized-functions-p*
-            (null (clos::generic-function-call-history gf))
-            (member gf *compiled-discriminators*)            )
-        ;; FIXME we should use the function with static cache.
-        (let ((fun (clos::unoptimized-discriminator gf)))
-          (apply fun args))
-        (let ((fun (revalidate-fastgf-discriminator gf)))
-          (apply fun args)))))
-
 (defun invalidate-fastgf-discriminator (gf)
   (let ((discriminator (make-invalidated-fastgf-discriminator gf)))
     (clos:set-funcallable-instance-function gf discriminator)
@@ -625,6 +603,47 @@
                        #-speed (compute-fastgf-discriminator gf)))
     (clos:set-funcallable-instance-function gf discriminator)
     discriminator))
+
+(defun unoptimized-dispatch-p (gf)
+  (or *unoptimized-functions-p*
+      (member gf *compiled-discriminators*)
+      ;; XXX badaid(s), but above should suffice!
+      (member gf (list #'generic-function-call-history))
+      ;; vvvvv can't be, because then we never recompile new functions
+      (null (clos::generic-function-call-history gf))
+      *compiled-discriminators* ;; slow path on recompile!
+      ))
+
+(defun fastgf-handle-cache-miss (gf &rest args)
+  (when (unoptimized-dispatch-p gf)
+    (let ((*compiled-discriminators* (list* gf *compiled-discriminators*)))
+      (dbg* "[fast discriminator] unoptimize ~a~%" (clos:generic-function-name gf))
+      (return-from fastgf-handle-cache-miss
+        (apply (clos::unoptimized-discriminator gf) args))))
+  (let ((*compiled-discriminators* (list* gf *compiled-discriminators*)))
+    #-speed
+    (let ((name (clos:generic-function-name gf)))
+      (incf (clos::generic-function-cache-fail gf))
+      (dbg* "[fastgf] cache miss for ~a~%" name))
+    (ext:if-let ((func (compute-effective-outcome gf args)))
+      (progn
+        (apply #'pseudocall gf func args)
+        (revalidate-fastgf-discriminator gf)
+        (funcall func args nil))
+      (apply #'no-applicable-method gf args))))
+
+(defun make-invalidated-fastgf-discriminator (gf)
+  (pushnew gf *dirty-gfs*)
+  (pushnew gf *known-gfs*)
+  (lambda (&rest args)
+    (if (unoptimized-dispatch-p gf)
+        ;; FIXME we should use the function with static cache.
+        (apply (clos::unoptimized-discriminator gf) args)
+        (progn
+          (dbg* "[inva discriminator] cache miss")
+          (apply #'fastgf-handle-cache-miss gf args)))))
+
+
 
 (defun clos::std-compute-discriminating-function (gf)
   (values (make-invalidated-fastgf-discriminator gf) nil))
