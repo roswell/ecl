@@ -86,7 +86,10 @@
   (find classes history :key #'car :test #'equal))
 
 
+(defun compute-effective-outcome (gf args)
+  (clos::compute-applicable-method gf args))
 
+#+ (or)
 ;;; This function is similar to COMPUTE-EFFECTIVE-FUNCTION but with a twist --
 ;;; when there are EQL specializers, then the computed function does TYPECASE on
 ;;; all of them. This way the dispatch procedure always operates on class
