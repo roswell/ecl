@@ -105,20 +105,19 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
   cl_index narg = frame->frame.size;
   cl_object spec_how_list = GFUN_SPEC(gf);
   cl_object *argtype = vector->vector.self.t;
-  int spec_no = 1;
-  argtype[0] = gf;
+  int spec_no = 0;
   loop_for_on_unsafe(spec_how_list) {
     cl_object spec_how = ECL_CONS_CAR(spec_how_list);
     cl_object spec_eql = ECL_CONS_CDR(spec_how);
     cl_object eql_spec;
     cl_object this_arg;
-    unlikely_if (spec_no > narg)
+    unlikely_if (spec_no >= narg)
       FEwrong_num_arguments(gf);
     unlikely_if (spec_no >= vector->vector.dim)
       ecl_internal_error("Too many arguments to fill_spec_vector().");
     unlikely_if (!ECL_LISTP(spec_eql))
       ecl_internal_error("Invalid GF specialization profile.");
-    this_arg = args[spec_no-1];
+    this_arg = args[spec_no];
     /* Need to differentiate between EQL specializers and class specializers,
        because the EQL value can be a class, and may clash with a class
        specializer.  Store the cons cell containing the EQL value. */
@@ -253,7 +252,7 @@ si_clear_gfun_hash(cl_object gf)
    */
   cl_env_ptr the_env = ecl_process_env();
   ecl_cache_ptr cache = gf_method_cache(gf);
-  ecl_cache_remove_one(cache, gf);
+  ecl_cache_invalidate(cache);
   ecl_return0(the_env);
 }
 
