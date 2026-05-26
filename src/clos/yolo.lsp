@@ -39,13 +39,13 @@
 
 ;;; The fast gf implementation
 
-(defvar *unoptimized-functions-p* t
+(defvar *unoptimized-functions-p* nil
   "Disables recompiling of invalidated discriminators (dynamic scope).")
 
 (defvar *compiled-discriminators* '()
   "Inhibits reentrant recompilation of invalidated discriminators.")
 
-(defvar *debug-fast-gf* nil
+(defvar *debug-fast-gf* 0
   "Runtime flag enabling verbose DBG. Does not affect DBG*.")
 
 (defun unoptimized-dispatch-p (gf)
@@ -55,14 +55,15 @@
 ;; (declaim (notinline dbg dbg*))
 (defun dbg (fmt &rest args)
   (declare (ignorable fmt args))
-  (when *debug-fast-gf*
+  (when (> *debug-fast-gf* 1)
     (let ((*unoptimized-functions-p* t))
       (apply #'format *debug-io* fmt args))))
 
 (defun dbg* (fmt &rest args)
   (declare (ignorable fmt args))
-  (let ((*unoptimized-functions-p* t))
-    (apply #'format *debug-io* fmt args)))
+  (when (> *debug-fast-gf* 0)
+    (let ((*unoptimized-functions-p* t))
+      (apply #'format *debug-io* fmt args))))
 
 ;;; CALL-HISTORY representation:
 ;;; 
@@ -548,12 +549,9 @@
   (let* ((tree (compute-dispatch-tree gf))
          (code (expand-branch tree))
          (lets (expand-stamp-bindings gf)))
-    `(lambda (&rest args &aux (*depth* (1+ *depth*)))
+    `(lambda (&rest args)
        #+speed (declare (optimize (speed 3) (safety 0) (debug 0)))
        #-speed (incf (clos::gfun-pass ,gf))
-       (when (> *depth* 32)
-         ;;(error "yoo, too deep")
-         (si:exit -1))
        (prog* ((args* args)
                ,@lets)
           (declare (ignorable ,@(mapcar #'car lets))
@@ -572,10 +570,21 @@
 
 ;;; This function computes the discriminating function. This is the heart of the
 ;;; Fast Generic Function Dispatch.
+;;;
+;;; FIXME ECL compiler is currently not reentrant, so if we call COMPILE from
+;;; inside COMPILE-FILE we get pure garbage and compilation errors. Let's focus
+;;; for now on figuring out kinks of dispatch and use EVAL in the meantime.
 (defun compile-fastgf-discriminator (gf)
   (let* ((*unoptimized-functions-p* t)
          (body (expand-fastgf-discriminator gf)))
-    (values (compile body) nil)))
+    ;; EVAL invokes in reality the bytecodes compiler (minimal compilation).
+    ;; During bootstrap COMPILE may not be bound, and even if it is, it libecl
+    ;; is not installed yet so it won't work.
+    #+(or ecl-min ecl) (values (eval        body) nil)
+    #-(or ecl-min ecl) (values (if (fboundp 'compile)
+                                   (compile nil body)
+                                   (eval        body))
+                               nil)))
 
 ;;; FIXME assuming warm cache, this discriminator compiled with CCMP this works
 ;;; comparably to our baseline method, but with BCMP it is much slower; so even
