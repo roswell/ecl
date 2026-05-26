@@ -16,6 +16,12 @@
 #include <ecl/internal.h>
 #include <ecl/cache.h>
 
+static ecl_cache_ptr
+gf_method_cache(cl_object gfun)
+{
+  return ecl_cast_ptr(ecl_cache_ptr,GFUN_HIST(gfun)->foreign.data);
+}
+
 static cl_object generic_function_dispatch_vararg(cl_narg, ...);
 
 cl_object
@@ -197,7 +203,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 {
   cl_object func, vector;
   const cl_env_ptr env = frame->frame.env;
-  ecl_cache_ptr cache = env->method_cache;
+  ecl_cache_ptr cache = gf_method_cache(gf);
   ecl_cache_record_ptr e;
   ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
     vector = fill_spec_vector(cache->keys, frame, gf);
@@ -240,30 +246,23 @@ generic_function_dispatch_vararg(cl_narg narg, ...)
 
 
 cl_object
-si_clear_gfun_hash(cl_object what)
+si_clear_gfun_hash(cl_object gf)
 {
   /*
    * This function clears the generic function call hashes selectively.
-   *      what = ECL_T means clear the hash completely
-   *      what = generic function, means cleans only these entries
-   * If we work on a multithreaded environment, we simply enqueue these
-   * operations and wait for the destination thread to update its own hash.
    */
   cl_env_ptr the_env = ecl_process_env();
-#ifdef ECL_THREADS
-  cl_object list;
-  for (list = mp_all_processes(); !Null(list); list = ECL_CONS_CDR(list)) {
-    cl_object process = ECL_CONS_CAR(list);
-    struct cl_env_struct *env = process->process.env;
-    if (the_env != env && env) {
-      if (env->method_cache)
-        ecl_cache_remove_one(env->method_cache, what);
-      if (env->slot_cache)
-        ecl_cache_remove_one(env->slot_cache, what);
-    }
-  }
-#endif
-  ecl_cache_remove_one(the_env->method_cache, what);
-  ecl_cache_remove_one(the_env->slot_cache, what);
+  ecl_cache_ptr cache = gf_method_cache(gf);
+  ecl_cache_remove_one(cache, gf);
   ecl_return0(the_env);
+}
+
+
+cl_object
+si_make_cache(cl_object key_size, cl_object cache_size)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_cache_ptr cache = ecl_make_cache(ecl_fixnum(key_size), ecl_fixnum(cache_size));
+  cl_object lsp_cache = ecl_make_foreign_data(ECL_NIL, 0, cache);
+  ecl_return1(the_env, lsp_cache);
 }

@@ -16,6 +16,12 @@
 #include <ecl/internal.h>
 #include <ecl/cache.h>
 
+static ecl_cache_ptr
+gf_method_cache(cl_object gfun)
+{
+  return ecl_cast_ptr(ecl_cache_ptr,GFUN_HIST(gfun)->foreign.data);
+}
+
 static void
 no_applicable_method(cl_env_ptr env, cl_object gfun, cl_object args)
 {
@@ -70,7 +76,7 @@ slot_method_index(cl_object gfun, cl_object instance, cl_object args)
 static ecl_cache_record_ptr
 search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
 {
-  ecl_cache_ptr cache = env->slot_cache;
+  ecl_cache_ptr cache = gf_method_cache(gfun);
   ecl_cache_record_ptr ret;
   ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
     fill_spec_vector(cache->keys, gfun, instance);
@@ -92,7 +98,7 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
   }
   {
     ecl_cache_record_ptr e;
-    ecl_cache_ptr cache = env->slot_cache;
+    ecl_cache_ptr cache = gf_method_cache(gfun);
     ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
       fill_spec_vector(cache->keys, gfun, instance);
       e = ecl_search_cache(cache);
