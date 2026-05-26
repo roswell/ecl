@@ -128,11 +128,6 @@ struct cl_env_struct {
 #endif
         /* ... arithmetics ... */
         cl_object big_register[ECL_BIGNUM_REGISTER_NUMBER];
-        /* The following is a hash table for caching invocations of generic
-           functions. In a multithreaded environment we must queue operations in
-           which the hash is cleared from updated generic functions. */
-        struct ecl_cache *method_cache;
-        struct ecl_cache *slot_cache;
         /* foreign function interface */
 #ifdef HAVE_LIBFFI
         cl_index ffi_args_limit;
@@ -811,6 +806,9 @@ extern ECL_API cl_object clos_set_funcallable_instance_function(cl_object x, cl_
 extern ECL_API cl_object si_funcallable_object_p(cl_object instance);
 
 extern ECL_API cl_object _ecl_standard_dispatch(cl_object frame, cl_object fun);
+
+extern ECL_API cl_object si_make_cache(cl_object key_size, cl_object cache_size);
+extern ECL_API cl_object si_method_cache(cl_object gfun);
 
 
 /* hash.c */
