@@ -577,6 +577,7 @@ extern void ecl_reconstruct_serialized_hashtable(cl_object h);
 #define GFUN_NAME(x) ((x)->instance.slots[0])
 #define GFUN_SPEC(x) ((x)->instance.slots[1])
 #define GFUN_COMB(x) ((x)->instance.slots[2])
+#define GFUN_HIST(x) ((x)->instance.slots[3])
 
 extern cl_object FEnot_funcallable_vararg(cl_narg narg, ...);
 extern cl_object ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */);

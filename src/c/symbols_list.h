@@ -1312,6 +1312,8 @@ cl_symbols[] = {
 {SYS_ "WRITE-OBJECT" ECL_FUN("si_write_object", si_write_object, 2) ECL_VAR(SI_SPECIAL, OBJNULL)},
 {SYS_ "WRITE-UGLY-OBJECT" ECL_FUN("si_write_ugly_object", si_write_ugly_object, 2) ECL_VAR(SI_SPECIAL, OBJNULL)},
 
+{SYS_ "MAKE-CACHE" ECL_FUN("si_make_cache", si_make_cache, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
+
 {SYS_ "COPY-INSTANCE" ECL_FUN("si_copy_instance", si_copy_instance, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "FUNCALLABLE-OBJECT-P" ECL_FUN("si_funcallable_object_p", si_funcallable_object_p, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-REF" ECL_FUN("si_instance_ref", si_instance_ref, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},

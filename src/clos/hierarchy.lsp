@@ -114,6 +114,9 @@
       (method-combination 
        :initarg :method-combination :initform (find-method-combination (class-prototype (find-class 'standard-generic-function)) 'standard nil)
        :accessor generic-function-method-combination)
+      (method-cache
+       :initform (si:make-cache 64 128)
+       :accessor generic-function-method-cache)
       (lambda-list :initarg :lambda-list :accessor generic-function-lambda-list)
       (argument-precedence-order 
        :initarg :argument-precedence-order
