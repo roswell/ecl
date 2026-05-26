@@ -32,9 +32,8 @@ static cl_object
 fill_spec_vector(cl_object vector, cl_object gfun, cl_object instance)
 {
   cl_object *argtype = vector->vector.self.t;
-  argtype[0] = gfun;
-  argtype[1] = ECL_CLASS_OF(instance);
-  vector->vector.fillp = 2;
+  argtype[0] = ECL_CLASS_OF(instance);
+  vector->vector.fillp = 1;
   return vector;
 }
 
