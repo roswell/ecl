@@ -21,9 +21,6 @@ typedef struct ecl_cache {
         cl_object keys;
         cl_object table;
         cl_index generation;
-#ifdef ECL_THREADS
-        cl_object clear_list;
-#endif
 } *ecl_cache_ptr;
 
 typedef struct ecl_cache_record {
@@ -34,7 +31,7 @@ typedef struct ecl_cache_record {
 
 extern ecl_cache_ptr ecl_make_cache(cl_index key_size, cl_index cache_size);
 extern ecl_cache_record_ptr ecl_search_cache(ecl_cache_ptr cache);
-extern void ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key);
+extern void ecl_cache_invalidate(ecl_cache_ptr cache);
 
 #ifdef __cplusplus
 }
