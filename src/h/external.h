@@ -807,9 +807,6 @@ extern ECL_API cl_object si_funcallable_object_p(cl_object instance);
 
 extern ECL_API cl_object _ecl_standard_dispatch(cl_object frame, cl_object fun);
 
-extern ECL_API cl_object si_make_cache(cl_object key_size, cl_object cache_size);
-extern ECL_API cl_object si_method_cache(cl_object gfun);
-
 
 /* hash.c */
 

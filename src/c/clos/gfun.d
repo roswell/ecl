@@ -251,17 +251,9 @@ si_clear_gfun_hash(cl_object gf)
    * This function clears the generic function call hashes selectively.
    */
   cl_env_ptr the_env = ecl_process_env();
-  ecl_cache_ptr cache = gf_method_cache(gf);
-  ecl_cache_invalidate(cache);
+  ecl_cache_ptr cache;
+  cl_index spec_args = ecl_length(GFUN_SPEC(gf));
+  cache = ecl_make_cache(spec_args, 4096);
+  GFUN_HIST(gf) = ecl_make_foreign_data(ECL_NIL, 0, cache);
   ecl_return0(the_env);
-}
-
-
-cl_object
-si_make_cache(cl_object key_size, cl_object cache_size)
-{
-  cl_env_ptr the_env = ecl_process_env();
-  ecl_cache_ptr cache = ecl_make_cache(ecl_fixnum(key_size), ecl_fixnum(cache_size));
-  cl_object lsp_cache = ecl_make_foreign_data(ECL_NIL, 0, cache);
-  ecl_return1(the_env, lsp_cache);
 }
