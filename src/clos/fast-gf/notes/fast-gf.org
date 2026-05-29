@@ -4,7 +4,12 @@
 
 * Plan for update
 
+** postponed
 
+- [ ] structure access is way slower than instance access - investigate!
+- [ ] search_slot_index, add_new_index and _ecl-standard_dispatch disable
+  interrupts for their body, according to commit messages because of
+  thread-local cache, but now cache is not thread-local (history)
 
 * Stamps and obsolete instances
 
