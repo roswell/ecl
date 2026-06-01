@@ -78,7 +78,6 @@ the environment variable TMPDIR to a different value." template))
                                                        *ld-program-flags*
                                                        *ld-flags*)))
                   (ld-libs (split-program-options *ld-libs*)))
-  (declare (ignore type))
   (safe-run-program
    *ld*
    `("-o" ,(brief-namestring o-pathname)
