@@ -435,20 +435,28 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
          (hpath (compile-file-pathname output-file :output-file h-file :type :h))
          (dpath (compile-file-pathname output-file :output-file data-file :type :data))
          (opath (compile-file-pathname output-file :type :object))
-         (to-delete (nconc (unless c-file (list cpath))
-                           (unless h-file (list hpath))
-                           (unless data-file (list dpath))
-                           (unless system-p (list opath))))
          (init-name (compute-init-name output-file :kind (if system-p :object :fasl))))
-    (compiler-pass/generate-cxx cpath hpath dpath init-name input-file)
+    (with-open-file (cstrm cpath :direction :output
+                                 :if-does-not-exist :create
+                                 :if-exists :supersede)
+      (with-open-file (hstrm hpath :direction :output
+                                   :if-does-not-exist :create
+                                   :if-exists :supersede)
+        (with-open-file (dstrm dpath :direction :output
+                                     :if-does-not-exist :create
+                                     :if-exists :supersede)
+          (compiler-pass/generate-cxx cstrm hstrm dstrm init-name input-file))))
     (if system-p
         (compiler-cc cpath opath)
         (progn
           (compiler-cc cpath opath)
           (bundle-cc (brief-namestring output-file)
                      init-name
-                     (list (brief-namestring opath)))))
-    (mapc 'cmp-delete-file to-delete)))
+                     (list (brief-namestring opath)))
+          (cmp-delete-file opath)))
+    (unless c-file (cmp-delete-file cpath))
+    (unless h-file (cmp-delete-file hpath))
+    (unless data-file (cmp-delete-file dpath))))
 
 
 ;;; The builder.

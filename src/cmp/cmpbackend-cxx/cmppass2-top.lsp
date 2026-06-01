@@ -12,24 +12,20 @@
     (wt-comment-nl "Machine: ~A ~A ~A" (software-type) (software-version) (machine-type)))
   (wt-comment-nl "Source: ~A" source))
 
-(defun compiler-pass/generate-cxx (c-pathname h-pathname data-pathname init-name source)
-  (with-cxx-env ()
-    ;; After this step we still can add new objects, but objects that are
-    ;; already stored in VV or VVtemp must not change the location.
-    (optimize-cxx-data *referenced-objects*)
-    (setq *compiler-phase* 't2)
-    (with-open-file (*compiler-output1* c-pathname :direction :output
-                                                   :if-does-not-exist :create
-                                                   :if-exists :supersede)
-      (with-open-file (*compiler-output2* h-pathname :direction :output
-                                                     :if-does-not-exist :create
-                                                     :if-exists :supersede)
-        (wt-print-header source)
-        (wt-nl1 "#include " *cmpinclude*)
-        (ctop-write init-name h-pathname data-pathname)
-        (terpri *compiler-output1*)
-        (terpri *compiler-output2*)))
-    (data-c-dump data-pathname)))
+(defun compiler-pass/generate-cxx (c-stream h-stream data-stream init-name source)
+  (let ((*compiler-output1* c-stream)
+        (*compiler-output2* h-stream))
+    (with-cxx-env ()
+      ;; After this step we still can add new objects, but objects that are
+      ;; already stored in VV or VVtemp must not change the location.
+      (optimize-cxx-data *referenced-objects*)
+      (setq *compiler-phase* 't2)
+      (wt-print-header source)
+      (wt-nl1 "#include " *cmpinclude*)
+      (ctop-write init-name (pathname h-stream) (pathname data-stream))
+      (terpri *compiler-output1*)
+      (terpri *compiler-output2*)
+      (data-c-dump data-stream))))
 
 ;;;;  CMPTOP  --  Compiler top-level.
 
