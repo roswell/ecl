@@ -18,9 +18,9 @@ extern "C" {
 #endif
 
 typedef struct ecl_cache {
-        cl_object keys;
         cl_object table;
         cl_index generation;
+        cl_index key_length;
 } *ecl_cache_ptr;
 
 typedef struct ecl_cache_record {
@@ -30,7 +30,8 @@ typedef struct ecl_cache_record {
 } *ecl_cache_record_ptr;
 
 extern ecl_cache_ptr ecl_make_cache(cl_index key_size, cl_index cache_size);
-extern ecl_cache_record_ptr ecl_search_cache(ecl_cache_ptr cache);
+extern cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_object *keys);
+extern ecl_cache_record_ptr ecl_search_cache(ecl_cache_ptr cache, cl_object *keys, cl_index argno);
 extern void ecl_cache_invalidate(ecl_cache_ptr cache);
 
 #ifdef __cplusplus

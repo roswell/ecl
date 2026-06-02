@@ -24,13 +24,7 @@ ecl_cache_ptr
 ecl_make_cache(cl_index key_size, cl_index cache_size)
 {
   ecl_cache_ptr cache = ecl_alloc(sizeof(struct ecl_cache));
-  cache->keys =
-    si_make_vector(ECL_T, /* element type */
-                   ecl_make_fixnum(key_size), /* Maximum size */
-                   ECL_T, /* adjustable */
-                   ecl_make_fixnum(0), /* fill pointer */
-                   ECL_NIL, /* displaced */
-                   ECL_NIL);
+  cache->key_length = key_size;
   cache->table =
     si_make_vector(ECL_T, /* element type */
                    ecl_make_fixnum(3*cache_size), /* Maximum size */
@@ -40,6 +34,21 @@ ecl_make_cache(cl_index key_size, cl_index cache_size)
                    ECL_NIL);
   ecl_cache_invalidate(cache);
   return cache;
+}
+
+cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_object *keys)
+{
+  cl_index idx, key_length = cache->key_length;
+  cl_object key = si_make_vector(ECL_T,
+                                 ecl_make_integer(key_length),
+                                 ECL_NIL, /* adjustable */
+                                 ECL_NIL, /* fill pointer */
+                                 ECL_NIL, /* displaced */
+                                 ECL_NIL);
+  for(idx=0; idx<key_length; idx++) {
+    key->vector.self.t[idx] = keys[idx];
+  }
+  return key;
 }
 
 void
@@ -56,19 +65,19 @@ ecl_cache_invalidate(ecl_cache_ptr cache)
 }
 
 static cl_index
-vector_hash_key(cl_object keys)
+vector_hash_key(cl_object *keys, cl_index size)
 {
-  cl_index c, n, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
-  for (c = 0, n = keys->vector.fillp; n >= 3; ) {
-    c += keys->vector.self.index[--n];
-    b += keys->vector.self.index[--n];
-    a += keys->vector.self.index[--n];
+  cl_index c, n = size, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
+  for (c = 0; n >= 3; ) {
+    c += (cl_index)keys[--n];
+    b += (cl_index)keys[--n];
+    a += (cl_index)keys[--n];
     mix(a, b, c);
   }
   switch (n) {
-  case 2: b += keys->vector.self.index[--n];
-  case 1: a += keys->vector.self.index[--n];
-    c += keys->vector.dim;
+  case 2: b += (cl_index)keys[--n];
+  case 1: a += (cl_index)keys[--n];
+    c += size;
     mix(a,b,c);
   }
   return c;
@@ -82,22 +91,20 @@ vector_hash_key(cl_object keys)
  */
 
 ecl_cache_record_ptr
-ecl_search_cache(ecl_cache_ptr cache)
+ecl_search_cache(ecl_cache_ptr cache, cl_object *keys, cl_index argno)
 {
   cl_object table = cache->table;
-  cl_object keys = cache->keys;
-  cl_index argno = keys->vector.fillp;
-  cl_index i = vector_hash_key(keys);
+  cl_index idx = vector_hash_key(keys, argno);
   cl_index total_size = table->vector.dim;
   cl_fixnum min_gen, gen;
   cl_object *min_e;
   int k;
-  i = i % total_size;
-  i = i - (i % 3);
+  idx = idx % total_size;
+  idx = idx - (idx % 3);
   min_gen = cache->generation;
   min_e = 0;
   for (k = 20; k--; ) {
-    cl_object *e = table->vector.self.t + i;
+    cl_object *e = table->vector.self.t + idx;
     cl_object hkey = RECORD_KEY(e);
     if (hkey == OBJNULL) {
       min_gen = -1;
@@ -109,16 +116,16 @@ ecl_search_cache(ecl_cache_ptr cache)
       }
       /* Else we only know that the record has been
        * delete, but we might find our data ahead. */
-    } else if (argno == hkey->vector.fillp) {
+    } else {
       cl_index n;
       for (n = 0; n < argno; n++) {
-        if (keys->vector.self.t[n] !=
-            hkey->vector.self.t[n])
+        if (keys[n] != hkey->vector.self.t[n]) {
           goto NO_MATCH;
+        }
       }
       min_e = e;
       goto FOUND;
-    } else if (min_gen >= 0) {
+    }
     NO_MATCH:
       /* Unless we have found a deleted record, keep
        * looking for the oldest record that we can
@@ -128,9 +135,8 @@ ecl_search_cache(ecl_cache_ptr cache)
         min_gen = gen;
         min_e = e;
       }
-    }
-    i += 3;
-    if (i >= total_size) i = 0;
+    idx += 3;
+    if (idx >= total_size) idx = 0;
   }
   if (min_e == 0) {
     ecl_internal_error("search_method_hash");
@@ -150,7 +156,7 @@ ecl_search_cache(ecl_cache_ptr cache)
     cl_object *e = table->vector.self.t;
     gen = 0.5*gen;
     cache->generation -= gen;
-    for (i = table->vector.dim; i; i-= 3, e += 3) {
+    for (idx = table->vector.dim; idx; idx -= 3, e += 3) {
       cl_fixnum g = RECORD_GEN(e) - gen;
       if (g <= 0) {
         RECORD_KEY(e) = OBJNULL;
