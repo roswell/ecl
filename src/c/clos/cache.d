@@ -64,26 +64,6 @@ ecl_cache_invalidate(ecl_cache_ptr cache)
   }
 }
 
-static cl_index
-vector_hash_key(cl_object *keys, cl_index size)
-{
-  cl_index c, n = size, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
-  for (c = 0; n >= 3; ) {
-    c += (cl_index)keys[--n];
-    b += (cl_index)keys[--n];
-    a += (cl_index)keys[--n];
-    mix(a, b, c);
-  }
-  switch (n) {
-  case 2: b += (cl_index)keys[--n];
-  case 1: a += (cl_index)keys[--n];
-    c += size;
-    mix(a,b,c);
-  }
-  return c;
-}
-
-
 /*
  * variation of ecl_gethash from hash.d, which takes an array of objects as key
  * It also assumes that entries are never removed except by clrhash.
@@ -91,10 +71,10 @@ vector_hash_key(cl_object *keys, cl_index size)
  */
 
 ecl_cache_record_ptr
-ecl_search_cache(ecl_cache_ptr cache, cl_object *keys, cl_index argno)
+ecl_search_cache(ecl_cache_ptr cache, cl_index hash, cl_object *keys, cl_index argno)
 {
   cl_object table = cache->table;
-  cl_index idx = vector_hash_key(keys, argno);
+  cl_index idx = hash;
   cl_index total_size = table->vector.dim;
   cl_fixnum min_gen, gen;
   cl_object *min_e;

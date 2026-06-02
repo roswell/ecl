@@ -15,6 +15,7 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/cache.h>
+#include "newhash.h"
 
 static ecl_cache_ptr
 gf_method_cache(cl_object gfun)
@@ -98,7 +99,26 @@ si_funcallable_object_p(cl_object x)
   ecl_return1(the_env, (ECL_FUNCALLABLE_P(x) ? ECL_T : ECL_NIL));
 }
 
-static void
+static cl_index
+vector_hash_key(cl_object *keys, cl_index size)
+{
+  cl_index c, n = size, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
+  for (c = 0; n >= 3; ) {
+    c += (cl_index)keys[--n];
+    b += (cl_index)keys[--n];
+    a += (cl_index)keys[--n];
+    mix(a, b, c);
+  }
+  switch (n) {
+  case 2: b += (cl_index)keys[--n];
+  case 1: a += (cl_index)keys[--n];
+    c += size;
+    mix(a,b,c);
+  }
+  return c;
+}
+
+static cl_index
 fill_spec_vector(cl_object *keys, cl_index len, cl_object frame, cl_object gf)
 {
   cl_object *args = ECL_STACK_FRAME_PTR(frame);
@@ -126,6 +146,7 @@ fill_spec_vector(cl_object *keys, cl_index len, cl_object frame, cl_object gf)
       keys[spec_no++] = cl_class_of(this_arg);
     }
   } end_loop_for_on_unsafe(spec_how_list);
+  return vector_hash_key(keys, spec_no);
 }
 
 static cl_object
@@ -200,11 +221,11 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   const cl_env_ptr env = frame->frame.env;
   ecl_cache_ptr cache = gf_method_cache(gf);
   ecl_cache_record_ptr e;
-  cl_index key_length = cache->key_length;
+  cl_index key_length = cache->key_length, hash;
   cl_object func, keys[key_length];
   ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-    fill_spec_vector(keys, key_length, frame, gf);
-    e = ecl_search_cache(cache, keys, key_length);
+    hash = fill_spec_vector(keys, key_length, frame, gf);
+    e = ecl_search_cache(cache, hash, keys, key_length);
     if (e->key != OBJNULL) {
       func = e->value;
     } else {
@@ -215,7 +236,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
       func = compute_applicable_method(env, frame, gf);
       if (env->values[1] != ECL_NIL) {
         if (e->key != OBJNULL) {
-          e = ecl_search_cache(cache, keys, key_length);
+          e = ecl_search_cache(cache, hash, keys, key_length);
         }
         e->key = ecl_cache_make_key(cache, keys);
         e->value = func;
