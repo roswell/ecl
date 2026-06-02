@@ -15,6 +15,7 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/cache.h>
+#include "newhash.h"
 
 static ecl_cache_ptr
 gf_method_cache(cl_object gfun)
@@ -28,10 +29,12 @@ no_applicable_method(cl_env_ptr env, cl_object gfun, cl_object args)
   env->values[0] = cl_apply(3, @'no-applicable-method', gfun, args);
 }
 
-static void
+static cl_index
 fill_spec_vector(cl_object *keys, cl_object gfun, cl_object instance)
 {
-  keys[0] = ECL_CLASS_OF(instance);
+  cl_object spec = ECL_CLASS_OF(instance);
+  keys[0] = spec;
+  return (cl_index)spec;
 }
 
 static cl_object
@@ -75,9 +78,10 @@ search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
   ecl_cache_ptr cache = gf_method_cache(gfun);
   ecl_cache_record_ptr ret;
   cl_object keys[1];
+  cl_index hash;
   ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-    fill_spec_vector(keys, gfun, instance);
-    ret = ecl_search_cache(cache, keys, 1);
+    hash = fill_spec_vector(keys, gfun, instance);
+    ret = ecl_search_cache(cache, hash, keys, 1);
   } ECL_WITHOUT_INTERRUPTS_END;
   return ret;
 }
@@ -97,9 +101,10 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
     ecl_cache_record_ptr e;
     ecl_cache_ptr cache = gf_method_cache(gfun);
     cl_object keys[1];
+    cl_index hash;
     ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-      fill_spec_vector(keys, gfun, instance);
-      e = ecl_search_cache(cache, keys, 1);
+      hash = fill_spec_vector(keys, gfun, instance);
+      e = ecl_search_cache(cache, hash, keys, 1);
       e->key = ecl_cache_make_key(cache, keys);
       e->value = index;
     } ECL_WITHOUT_INTERRUPTS_END;
