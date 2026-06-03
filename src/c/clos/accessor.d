@@ -79,10 +79,8 @@ search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
   ecl_cache_record_ptr ret;
   cl_object keys[1];
   cl_index hash;
-  ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-    hash = fill_spec_vector(keys, gfun, instance);
-    ret = ecl_search_cache(cache, hash, keys, 1);
-  } ECL_WITHOUT_INTERRUPTS_END;
+  hash = fill_spec_vector(keys, gfun, instance);
+  ret = ecl_search_cache(cache, hash, keys, 1);
   return ret;
 }
 
@@ -102,12 +100,10 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
     ecl_cache_ptr cache = gf_method_cache(gfun);
     cl_object keys[1];
     cl_index hash;
-    ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-      hash = fill_spec_vector(keys, gfun, instance);
-      e = ecl_search_cache(cache, hash, keys, 1);
-      e->key = ecl_cache_make_key(cache, keys);
-      e->value = index;
-    } ECL_WITHOUT_INTERRUPTS_END;
+    hash = fill_spec_vector(keys, gfun, instance);
+    e = ecl_search_cache(cache, hash, keys, 1);
+    e->key = ecl_cache_make_key(cache, keys);
+    e->value = index;
     return e;
   }
 }
