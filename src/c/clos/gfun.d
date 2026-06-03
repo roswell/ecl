@@ -121,31 +121,24 @@ static cl_index
 fill_spec_vector(cl_object *keys, cl_index len, cl_object frame, cl_object gf)
 {
   cl_object *args = ECL_STACK_FRAME_PTR(frame);
-  cl_index narg = frame->frame.size;
+  cl_index narg = frame->frame.size, spec_no;
   cl_object spec_how_list = GFUN_SPEC(gf);
-  int spec_no = 0;
-  loop_for_on_unsafe(spec_how_list) {
-    cl_object spec_how = ECL_CONS_CAR(spec_how_list);
+  cl_index spec_length = ecl_length(spec_how_list);
+  cl_object *spec_args = spec_how_list->vector.self.t;
+  unlikely_if (spec_length > narg)
+    FEwrong_num_arguments(gf);
+  for (spec_no=0; spec_no<spec_length; spec_no++) {
+    cl_object this_arg = args[spec_no];
+    cl_object spec_how = spec_args[spec_no];
     cl_object spec_eql = ECL_CONS_CDR(spec_how);
     cl_object eql_spec;
-    cl_object this_arg;
-    unlikely_if (spec_no >= narg)
-      FEwrong_num_arguments(gf);
-    unlikely_if (spec_no >= len)
-      ecl_internal_error("Too many arguments to fill_spec_vector().");
-    unlikely_if (!ECL_LISTP(spec_eql))
-      ecl_internal_error("Invalid GF specialization profile.");
-    this_arg = args[spec_no];
-    /* Need to differentiate between EQL specializers and class specializers,
-       because the EQL value can be a class, and may clash with a class
-       specializer.  Store the cons cell containing the EQL value. */
     if (!Null(eql_spec = ecl_memql(this_arg, spec_eql))) {
-      keys[spec_no++] = eql_spec;
+      keys[spec_no] = eql_spec;
     } else {
-      keys[spec_no++] = cl_class_of(this_arg);
+      keys[spec_no] = cl_class_of(this_arg);
     }
-  } end_loop_for_on_unsafe(spec_how_list);
-  return vector_hash_key(keys, spec_no);
+  }
+  return vector_hash_key(keys, spec_length);
 }
 
 static cl_object
