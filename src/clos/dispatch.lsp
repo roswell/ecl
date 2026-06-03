@@ -42,7 +42,7 @@
 
 (defun gfun-spec (gf)
   (with-early-accessors (+standard-generic-function-slots+)
-    (clos::generic-function-spec-list gf)))
+    (clos::generic-function-spec-profile gf)))
 
 (defun gfun-comb (gf)
   (with-early-accessors (+standard-generic-function-slots+)
@@ -101,7 +101,7 @@
                 ;; GENERIC-FUNCTION-SPEC-LIST is maintained by the function
                 ;; COMPUTE-G-F-SPEC-LIST called on discriminator invalidation.
                 (loop for arg in args
-                      for (spec-class . spec-eql) in (generic-function-spec-list gf)
+                      for (spec-class . spec-eql) across (generic-function-spec-profile gf)
                       if (member arg spec-eql)
                         collect `(eql ,arg) into hash-key
                       else
