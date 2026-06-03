@@ -97,7 +97,7 @@
       (with-early-make-instance +standard-generic-function-slots+
         (gfun (find-class 'standard-generic-function)
               :name name
-              :spec-list nil
+              :spec-profile nil
               :method-combination (find-method-combination nil 'standard nil)
               :lambda-list lambda-list
               :argument-precedence-order
@@ -148,11 +148,6 @@
   (declare (notinline compute-discriminating-function))
   (multiple-value-bind (computed-discriminator optimizable)
       (compute-discriminating-function gf)
-    (unless (not (> (length (slot-value gf 'spec-list)) 63))
-      ;; Code in C caches effective methods; the cache key length is 64 and
-      ;; can't handle functions with more specializable arguments. The first
-      ;; argument is the generic function itself.
-      (setf optimizable nil))
     (let ((methods  (slot-value gf 'methods))
           (standard-generic-function-p
             (eq (slot-value (class-of gf) 'name) 'standard-generic-function)))
@@ -344,7 +339,7 @@
 ;;; specializer for any class other than the builtin-class T.
 ;;;
 ;;; EQL-SPECIALIZERS is a list of all EQL-SPECIALIZER-OBJECTs
-(defun compute-g-f-spec-list (gf)
+(defun compute-gf-spec-profile (gf)
   (with-early-accessors (+standard-generic-function-slots+
                          +eql-specializer-slots+
                          +standard-method-slots+)
@@ -365,9 +360,11 @@
                                          (not (eq spec (find-class t))))
                                 (setf (car arg-profile) t)))
                        finally (return spec-how-list)))))
-      (setf (generic-function-spec-list gf)
-            (reduce #'nupdate-profile (generic-function-methods gf)
-                    :key #'method-specializers :initial-value nil))
+      (setf (generic-function-spec-profile gf)
+            (coerce
+             (reduce #'nupdate-profile (generic-function-methods gf)
+                     :key #'method-specializers :initial-value nil)
+             'vector))
       (let ((function nil)
             (a-p-o (generic-function-argument-precedence-order gf))
             (gf-ll (generic-function-lambda-list gf)))
