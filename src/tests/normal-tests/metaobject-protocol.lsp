@@ -783,3 +783,20 @@ the metaclass")
 ;;; Ensure that funcallable object is subclass of function.
 (deftest mop.0031 ()
   (is (subtypep 'mop:funcallable-standard-object 'function)))
+
+
+;;; Date 2026-06-03
+;;; Description
+;;;
+;;;     Optimized slot writer did not update obsolete instances before writing
+;;;     to the slot. See #851.
+(deftest mop.0032 ()
+  (defclass mop.0032.class ()
+    ((a :initform 42 :accessor a)
+     (b :initform 13 :accessor b)))
+  (let ((object (make-instance 'mop.0032.class)))
+    (eval '(defclass mop.0032.class ()
+            ((b :initform 13 :accessor b)
+             (a :initform 42 :accessor a))))
+    (setf (a object) 1337)
+    (is (= (a object) 1337))))
