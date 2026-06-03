@@ -123,12 +123,11 @@ fill_spec_vector(cl_object *keys, cl_index len, cl_object frame, cl_object gf)
 {
   cl_object *args = ECL_STACK_FRAME_PTR(frame);
   cl_index narg = frame->frame.size, spec_no;
-  cl_object spec_how_list = GFUN_SPEC(gf);
-  cl_index spec_length = ecl_length(spec_how_list);
-  cl_object *spec_args = spec_how_list->vector.self.t;
-  unlikely_if (spec_length > narg)
+  cl_object spec_profile = GFUN_SPEC(gf);
+  cl_object *spec_args = spec_profile->vector.self.t;
+  unlikely_if (len > narg)
     FEwrong_num_arguments(gf);
-  for (spec_no=0; spec_no<spec_length; spec_no++) {
+  for (spec_no=0; spec_no<len; spec_no++) {
     cl_object this_arg = args[spec_no];
     cl_object spec_how = spec_args[spec_no];
     cl_object spec_eql = ECL_CONS_CDR(spec_how);
@@ -136,10 +135,10 @@ fill_spec_vector(cl_object *keys, cl_index len, cl_object frame, cl_object gf)
     if (!Null(eql_spec = ecl_memql(this_arg, spec_eql))) {
       keys[spec_no] = eql_spec;
     } else {
-      keys[spec_no] = cl_class_of(this_arg);
+      keys[spec_no] = (cl_object)ecl_stamp_of(this_arg);
     }
   }
-  return vector_hash_key(keys, spec_length);
+  return vector_hash_key(keys, len);
 }
 
 static cl_object

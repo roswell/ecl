@@ -32,7 +32,7 @@ no_applicable_method(cl_env_ptr env, cl_object gfun, cl_object args)
 static cl_index
 fill_spec_vector(cl_object *keys, cl_object gfun, cl_object instance)
 {
-  cl_object spec = ECL_CLASS_OF(instance);
+  cl_object spec = (cl_object)ecl_stamp_of(instance);
   keys[0] = spec;
   return (cl_index)spec;
 }
