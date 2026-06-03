@@ -222,26 +222,24 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   ecl_cache_record_ptr e;
   cl_index key_length = cache->key_length, hash;
   cl_object func, keys[key_length];
-  ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-    hash = fill_spec_vector(keys, key_length, frame, gf);
-    e = ecl_search_cache(cache, hash, keys, key_length);
-    if (e->key != OBJNULL) {
-      func = e->value;
-    } else {
-      /* The keys and the cache may change while we
-       * compute the applicable methods. We must save
-       * the keys and recompute the cache location if
-       * it was filled. */
-      func = compute_applicable_method(env, frame, gf);
-      if (env->values[1] != ECL_NIL) {
-        if (e->key != OBJNULL) {
-          e = ecl_search_cache(cache, hash, keys, key_length);
-        }
-        e->key = ecl_cache_make_key(cache, keys);
-        e->value = func;
+  hash = fill_spec_vector(keys, key_length, frame, gf);
+  e = ecl_search_cache(cache, hash, keys, key_length);
+  if (e->key != OBJNULL) {
+    func = e->value;
+  } else {
+    /* The keys and the cache may change while we
+     * compute the applicable methods. We must save
+     * the keys and recompute the cache location if
+     * it was filled. */
+    func = compute_applicable_method(env, frame, gf);
+    if (env->values[1] != ECL_NIL) {
+      if (e->key != OBJNULL) {
+        e = ecl_search_cache(cache, hash, keys, key_length);
       }
+      e->key = ecl_cache_make_key(cache, keys);
+      e->value = func;
     }
-  } ECL_WITHOUT_INTERRUPTS_END;
+  }
   if (func == ECL_NIL)
     func = cl_apply(3, @'no-applicable-method', gf, frame);
   else {
