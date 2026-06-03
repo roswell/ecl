@@ -187,6 +187,7 @@ ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instanc
     no_applicable_method(env, gfun, cl_list(2, value, instance));
     return env->values[0];
   }
+
   e = search_slot_index(env, gfun, instance);
   unlikely_if (e->key == OBJNULL) {
     cl_object args = cl_list(2, value, instance);
@@ -196,6 +197,7 @@ ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instanc
       return env->values[0];
     }
   }
+  ensure_up_to_date_instance(instance);
   index = e->value;
   if (ECL_FIXNUMP(index)) {
     instance->instance.slots[ecl_fixnum(index)] = value;

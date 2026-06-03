@@ -30,6 +30,7 @@
 * Pending changes since 26.5.5
 
 - build: support for Microsoft Visual Studio Compiler has been dropped
+- clos: ensure that the instance is not obsolete in optimized writer (#851)
 
 * 26.5.5 changes since 26.3.27
 
