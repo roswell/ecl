@@ -30,12 +30,10 @@
   (values #'(lambda (self)
               (declare (optimize (safety 0) (speed 3) (debug 0))
                        (standard-object self))
-              (ensure-up-to-date-instance self)
               (safe-instance-ref self index))
           #'(lambda (value self)
               (declare (optimize (safety 0) (speed 3) (debug 0))
                        (standard-object self))
-              (ensure-up-to-date-instance self)
               (si:instance-set self index value))))
 
 (defun std-class-accessors (slot-name)
