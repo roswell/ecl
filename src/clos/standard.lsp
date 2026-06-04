@@ -542,7 +542,7 @@ because it contains a reference to the undefined class~%  ~A"
             (when (aref aux loc)
               (error 'simple-error
                      :format-control "Slots ~A and ~A are said to have the same location in class ~A."
-                     :format-ars (list (aref aux loc) i class)))
+                     :format-args (list (aref aux loc) i class)))
             (setf (aref aux loc) i)))
     (loop for i in other-slots
        with index = 0

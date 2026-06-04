@@ -800,3 +800,31 @@ the metaclass")
              (a :initform 42 :accessor a))))
     (setf (a object) 1337)
     (is (= (a object) 1337))))
+
+;;; Date 2026-06-04
+;;; Description
+;;;
+;;;     This is a smoke test that ensures ECL signaling an error when two
+;;;     incompatible sealed classes appear as superclasses.
+(deftest mop.0033 ()
+  (defclass mop.0033.class-1 ()
+    ((a :initform 42)
+     (b :initform 42))
+    (:sealedp t))
+  (defclass mop.0033.class-2 ()
+    ((c :initform 42)
+     (d :initform 42))
+    (:sealedp t))
+  (defclass mop.0033.class-3 ()
+    ((a :initform 42))
+    (:sealedp t))
+  (defclass mop.0033.class-4 ()
+    ((u :initform 42)
+     (a :initform 42)
+     (b :initform 42)))
+  (signals error                        ; can't agree A vs C
+   (defclass mop.0033.class-5 (mop.0033.class-1 mop.0033.class-2) ()))
+  (finishes                             ; can agree A with compatible
+   (defclass mop.0033.class-5 (mop.0033.class-1 mop.0033.class-3) ()))
+  (finishes                             ; can agree A with non-sealed
+   (defclass mop.0033.class-5 (mop.0033.class-1 mop.0033.class-4) ())))
