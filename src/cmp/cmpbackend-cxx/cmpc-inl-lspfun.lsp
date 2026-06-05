@@ -111,6 +111,7 @@
           clos::ensure-class
           clos:load-defclass
           ;; kernel.lsp
+          clos:std-compute-applicable-methods-using-classes
           clos:std-compute-applicable-methods
           ;; method.lsp
           clos:extract-lambda-list

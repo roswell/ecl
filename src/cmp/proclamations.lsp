@@ -347,6 +347,8 @@
 #+clos
 (proclamation clos::standard-instance-set (ext:instance t t) t)
 #+clos
+(proclamation clos:std-compute-applicable-methods-using-classes (generic-function list) list)
+#+clos
 (proclamation clos:std-compute-applicable-methods (generic-function list) list)
 #+clos
 (proclamation clos:std-compute-effective-method (generic-function method-combination list) function)
