@@ -102,8 +102,8 @@ si_funcallable_object_p(cl_object x)
 static cl_index
 vector_hash_key(cl_object *keys, cl_index size)
 {
-  cl_index c, n = size, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
-  for (c = 0; n >= 3; ) {
+  cl_index c = size, n = size, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
+  for (; n >= 3; ) {
     c += (cl_index)keys[--n];
     b += (cl_index)keys[--n];
     a += (cl_index)keys[--n];
@@ -112,7 +112,6 @@ vector_hash_key(cl_object *keys, cl_index size)
   switch (n) {
   case 2: b += (cl_index)keys[--n];
   case 1: a += (cl_index)keys[--n];
-    c += size;
     mix(a,b,c);
   }
   return c;
