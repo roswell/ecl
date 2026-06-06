@@ -113,19 +113,23 @@
     (when (or (eq restart name) (eq (restart-name restart) name))
       (return-from find-restart restart))))
 
-(defun find-restart-never-fail (restart &optional condition)
+(defun ensure-active-restart (restart &optional condition)
   (declare (si::c-local))
-  (or (find-restart restart condition)
-      (signal-simple-error 'control-error nil
-             "Restart ~S is not active."
-             (list restart))))
+  (if (restart-p restart)
+      (dolist (restart-cluster *restart-clusters*)
+        (when (member restart restart-cluster)
+          (return-from ensure-active-restart restart)))
+      (let ((restart (find-restart restart condition)))
+        (when restart
+          (return-from ensure-active-restart restart))))
+  (signal-simple-error 'control-error nil "Restart ~S is not active." (list restart)))
 
 (defun invoke-restart (restart &rest values)
-  (let ((real-restart (find-restart-never-fail restart)))
+  (let ((real-restart (ensure-active-restart restart)))
     (apply (restart-function real-restart) values)))
 
 (defun invoke-restart-interactively (restart)
-  (let ((real-restart (find-restart-never-fail restart)))
+  (let ((real-restart (ensure-active-restart restart)))
     (apply (restart-function real-restart)
            (let ((interactive-function
                    (restart-interactive-function real-restart)))
@@ -775,7 +779,7 @@ memory limits before executing the program again."))
      (error (condition) (values nil condition))))
 
 (defun abort (&optional c)
-  (invoke-restart (find-restart-never-fail 'ABORT c))
+  (invoke-restart (ensure-active-restart 'ABORT c))
   (error 'ABORT-FAILURE))
 
 (defun continue (&optional c)
@@ -783,7 +787,7 @@ memory limits before executing the program again."))
     (and restart (invoke-restart restart))))
 
 (defun muffle-warning (&optional c)
-  (invoke-restart (find-restart-never-fail 'MUFFLE-WARNING c)))
+  (invoke-restart (ensure-active-restart 'MUFFLE-WARNING c)))
 
 (defun store-value (value &optional c)
   (let ((restart (find-restart 'STORE-VALUE c)))
