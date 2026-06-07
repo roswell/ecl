@@ -31,7 +31,19 @@ static const uint32_t PRIME32_3 = 0xC2B2AE3DU;
 static const uint32_t PRIME32_4 = 0x27D4EB2FU;
 static const uint32_t PRIME32_5 = 0x165667B1U;
 
-#define ROL32(x,s) ((x << s) | (x >> (32 - s)))
+#define xxh32_rol(x,s) ((x << s) | (x >> (32 - s)))
+
+#define xxh32_cvg(acc1,acc2,acc3,acc4) \
+  (xxh32_rol(acc1,1) + xxh32_rol(acc2,7) + xxh32_rol(acc3,12) + xxh32_rol(acc4,18))
+
+
+static uint32_t
+xxh32_round(uint32_t accN, uint32_t laneN)
+{
+  accN = accN + (laneN * PRIME32_2);
+  accN = xxh32_rol(accN, 13);
+  return accN * PRIME32_1;
+}
 
 static uint32_t
 xxh32(uint32_t *vector, uint32_t length, uint32_t seed)
@@ -44,24 +56,13 @@ xxh32(uint32_t *vector, uint32_t length, uint32_t seed)
   uint32_t acc4 = seed + PRIME32_1;
   /* Step 2. Process stripes */
   for(rem=length, idx=0; rem>=4; rem-=4, idx+=4) {
-    acc1 = acc1 + vector[idx+0] * PRIME32_2;
-    acc1 = ROL32(acc1, 13);
-    acc1 = acc1 * PRIME32_1;
-
-    acc2 = acc2 + vector[idx+1] * PRIME32_2;
-    acc2 = ROL32(acc2,13);
-    acc2 = acc2 * PRIME32_1;
-
-    acc3 = acc3 + vector[idx+2] * PRIME32_2;
-    acc3 = ROL32(acc3,13);
-    acc3 = acc3 * PRIME32_1;
-
-    acc4 = acc4 + vector[idx+3] * PRIME32_2;
-    acc4 = ROL32(acc4,13);
-    acc4 = acc4 * PRIME32_1;
+    acc1 = xxh32_round(acc1, vector[idx+0]);
+    acc2 = xxh32_round(acc2, vector[idx+1]);
+    acc3 = xxh32_round(acc3, vector[idx+2]);
+    acc4 = xxh32_round(acc4, vector[idx+3]);
   }
   /* Step 3. Accumulator convergence */
-  acc = ROL32(acc1,1) + ROL32(acc2,7) + ROL32(acc3,12) + ROL32(acc4,18);
+  acc = xxh32_cvg(acc1, acc2, acc3, acc4);
   /* Step 4. Add input length */
   acc = acc + length;
   /* Step 5. Consume remaining input */
@@ -69,7 +70,7 @@ xxh32(uint32_t *vector, uint32_t length, uint32_t seed)
   for(; rem>=1; rem--, idx++) {
     lane = vector[idx];
     acc = acc + lane * PRIME32_5;
-    acc = ROL32(acc, 11) * PRIME32_1;
+    acc = xxh32_rol(acc, 11) * PRIME32_1;
   }
   /* Step 6. Final mix (avalanche) */
   acc = acc ^ (acc >> 15);
@@ -77,6 +78,78 @@ xxh32(uint32_t *vector, uint32_t length, uint32_t seed)
   acc = acc ^ (acc >> 13);
   acc = acc * PRIME32_3;
   acc = acc ^ (acc >> 16);
+
+  /* Step 7. Output */
+  return acc;
+}
+
+
+/* XXH64 */
+
+static const uint64_t PRIME64_1 = 0x9E3779B185EBCA87ULL;
+static const uint64_t PRIME64_2 = 0xC2B2AE3D27D4EB4FULL;
+static const uint64_t PRIME64_3 = 0x165667B19E3779F9ULL;
+static const uint64_t PRIME64_4 = 0x85EBCA77C2B2AE63ULL;
+static const uint64_t PRIME64_5 = 0x27D4EB2F165667C5ULL;
+
+#define xxh64_rol(x,s) ((x << s) | (x >> (64 - s)))
+
+#define xxh64_cvg(acc1,acc2,acc3,acc4) \
+  (xxh64_rol(acc1,1) + xxh64_rol(acc2,7) + xxh64_rol(acc3,12) + xxh64_rol(acc4,18))
+
+static uint64_t
+xxh64_round(uint64_t accN, uint64_t laneN)
+{
+  accN = accN + (laneN * PRIME64_2);
+  accN = xxh64_rol(accN, 31);
+  return accN * PRIME64_1;
+}
+
+static uint64_t
+xxh64_merge(uint64_t acc, uint64_t accN)
+{
+  acc = acc ^ xxh64_round(0, accN);
+  acc = acc * PRIME64_1;
+  return acc + PRIME64_4;
+}
+
+static uint64_t
+xxh64(uint64_t *vector, uint64_t length, uint64_t seed)
+{
+  uint64_t acc, rem, idx, lane;
+  /* Step 1. Initialize internal accumulators */
+  uint64_t acc1 = seed + PRIME64_1 + PRIME64_2;
+  uint64_t acc2 = seed + PRIME64_2;
+  uint64_t acc3 = seed + 0;
+  uint64_t acc4 = seed + PRIME64_1;
+  /* Step 2. Process stripes */
+  for(rem=length, idx=0; rem>=4; rem-=4, idx+=4) {
+    acc1 = xxh64_round(acc1, vector[idx+0]);
+    acc2 = xxh64_round(acc2, vector[idx+1]);
+    acc3 = xxh64_round(acc3, vector[idx+2]);
+    acc4 = xxh64_round(acc4, vector[idx+3]);
+  }
+  /* Step 3. Accumulator convergence */
+  acc = xxh64_cvg(acc1,acc2,acc3,acc4);
+  acc = xxh64_merge(acc, acc1);
+  acc = xxh64_merge(acc, acc2);
+  acc = xxh64_merge(acc, acc3);
+  acc = xxh64_merge(acc, acc4);
+  /* Step 4. Add input length */
+  acc = acc + length;
+  /* Step 5. Consume remaining input */
+  /* There may be 0, 4, 8 or 12 remaining bytes. */
+  for(; rem>=1; rem--, idx++) {
+    lane = vector[idx];
+    acc = acc + xxh64_round(0, lane);
+    acc = xxh64_rol(acc, 27) * PRIME64_1;
+  }
+  /* Step 6. Final mix (avalanche) */
+  acc = acc ^ (acc >> 33);
+  acc = acc * PRIME64_2;
+  acc = acc ^ (acc >> 29);
+  acc = acc * PRIME64_3;
+  acc = acc ^ (acc >> 32);
 
   /* Step 7. Output */
   return acc;
