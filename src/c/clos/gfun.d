@@ -167,34 +167,68 @@ static cl_object
 generic_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
 {
   /* method not cached */
+  cl_object arglist, classes = frame_to_classes(frame);
+  cl_object memoize = ECL_T;
   cl_object methods = _ecl_funcall3(@'clos::compute-applicable-methods-using-classes',
-                                    gf, frame_to_classes(frame));
+                                    gf, classes);
   unlikely_if (Null(env->values[1])) {
-    cl_object arglist = frame_to_list(frame);
-    methods = _ecl_funcall3(@'compute-applicable-methods',
-                            gf, arglist);
+    memoize = ECL_NIL;
+    arglist = frame_to_list(frame);
+    methods = _ecl_funcall3(@'compute-applicable-methods', gf, arglist);
     unlikely_if (methods == ECL_NIL) {
       env->values[1] = ECL_NIL;
       return methods;
     }
   }
   methods = clos_compute_effective_method_function(gf, GFUN_COMB(gf), methods);
-  env->values[1] = ECL_T;
+  env->values[1] = memoize;
   return methods;
 }
+
+/*
+  restricted_compute_applicable_method memoized all results and treated the list
+  of EQL specializers as the key when there wre EQL keys in the gf profile.
+  This was possible because the user can't specialize COMPUTE-APPLICABLE-METHOD*
+  to STANDARD-GENERIC-FUNCTION, so we know that we can memoize EQL results too.
+
+  The problem is that cache key is based on class stamps. We can add stamps to
+  EQL specializers, but the roundtrip to query them is costly enough that it is
+  not worth caching them. This is why effective methods with EQL specializers
+  are now not cached.
+
+  TODO optimization for the happy path in restricted dispatch could be always
+  dispatching on classes, and have effective method function dispatch further
+  when there are applicable EQL specializers. Something like:
+
+      (case arg1
+        (eql-obj-1 (emf-1))
+        (eql-obj-2 (case arg2
+                     (eql-obj-3 (emf-2))
+                     (otherwise (no-applicable-method))))
+        (otherwise (class-emf)))
+
+  that would allow us to memoize effective methods with EQL specializers based
+  solely on class stamps.
+ */
 
 static cl_object
 restricted_compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
 {
   /* method not cached */
-  cl_object arglist = frame_to_list(frame);
-  cl_object methods = clos_std_compute_applicable_methods(gf, arglist);
-  unlikely_if (methods == ECL_NIL) {
-    env->values[1] = ECL_NIL;
-    return methods;
+  cl_object arglist, classes = frame_to_classes(frame);
+  cl_object memoize = ECL_T;
+  cl_object methods = clos_std_compute_applicable_methods_using_classes(gf, classes);
+  unlikely_if (Null(env->values[1])) {
+    memoize = ECL_NIL;
+    arglist = frame_to_list(frame);
+    methods = clos_std_compute_applicable_methods(gf, arglist);
+    unlikely_if (methods == ECL_NIL) {
+      env->values[1] = ECL_NIL;
+      return methods;
+    }
   }
   methods = clos_std_compute_effective_method(gf, GFUN_COMB(gf), methods);
-  env->values[1] = ECL_T;
+  env->values[1] = memoize;
   return methods;
 }
 
