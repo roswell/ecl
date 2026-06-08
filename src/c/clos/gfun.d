@@ -160,7 +160,7 @@ fill_spec_vector(cl_object *keys, cl_object *args, cl_index len)
   cl_index spec_no;
   for (spec_no=0; spec_no<len; spec_no++) {
     cl_object this_arg = args[spec_no];
-    keys[spec_no] = cl_class_of(this_arg);
+    keys[spec_no] = (cl_object)ecl_stamp_of(this_arg);
   }
   return vector_hash_key(keys, len);
 }
