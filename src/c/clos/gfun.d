@@ -155,25 +155,12 @@ vector_hash_key(cl_object *keys, cl_index size)
  */
 
 static cl_index
-fill_spec_vector(cl_object *keys, cl_index len, cl_object frame, cl_object gf)
+fill_spec_vector(cl_object *keys, cl_object *args, cl_index len)
 {
-  cl_object *args = ECL_STACK_FRAME_PTR(frame);
-  cl_index narg = frame->frame.size, spec_no;
-  cl_object spec_profile = GFUN_SPEC(gf);
-  cl_object *spec_args = spec_profile->vector.self.t;
-  unlikely_if (len > narg)
-    FEwrong_num_arguments(gf);
+  cl_index spec_no;
   for (spec_no=0; spec_no<len; spec_no++) {
     cl_object this_arg = args[spec_no];
-    cl_object spec_how = spec_args[spec_no];
-    cl_object spec_eql = ECL_CONS_CDR(spec_how);
-    cl_object eql_spec;
-    if (!Null(eql_spec = ecl_memql(this_arg, spec_eql))) {
-      eql_spec = _ecl_funcall2(@'clos::intern-eql-specializer', ECL_CONS_CAR(eql_spec));
-      keys[spec_no] = (cl_object)ecl_to_size(EQL_STAMP(eql_spec));
-    } else {
-      keys[spec_no] = (cl_object)ecl_stamp_of(this_arg);
-    }
+    keys[spec_no] = cl_class_of(this_arg);
   }
   return vector_hash_key(keys, len);
 }
@@ -286,7 +273,11 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   ecl_cache_record_ptr e;
   cl_index key_length = cache->key_length, hash;
   cl_object func, keys[key_length];
-  hash = fill_spec_vector(keys, key_length, frame, gf);
+  cl_object *args = ECL_STACK_FRAME_PTR(frame);
+  cl_index narg = frame->frame.size;
+  unlikely_if (key_length > narg)
+    FEwrong_num_arguments(gf);
+  hash = fill_spec_vector(keys, args, key_length);
   e = ecl_search_cache(cache, hash, keys, key_length);
   if (e->key != OBJNULL) {
     func = e->value;
