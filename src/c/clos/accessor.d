@@ -141,14 +141,18 @@ ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */)
 
   e = search_slot_index(env, gfun, instance);
   unlikely_if (e->key == OBJNULL) {
-    cl_object args = ecl_list1(instance);
-    e = add_new_index(env, gfun, instance, args);
-    /* no_applicable_method() was called */
-    unlikely_if (e == 0) {
-      return env->values[0];
+    ensure_up_to_date_instance(instance);
+    e = search_slot_index(env, gfun, instance);
+    if (e->key == OBJNULL) {
+      cl_object args = ecl_list1(instance);
+      e = add_new_index(env, gfun, instance, args);
+      /* no_applicable_method() was called */
+      unlikely_if (e == 0) {
+        return env->values[0];
+      }
     }
   }
-  ensure_up_to_date_instance(instance);
+
   index = e->value;
   if (ECL_FIXNUMP(index)) {
     value = instance->instance.slots[ecl_fixnum(index)];
@@ -195,14 +199,17 @@ ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instanc
 
   e = search_slot_index(env, gfun, instance);
   unlikely_if (e->key == OBJNULL) {
-    cl_object args = cl_list(2, value, instance);
-    e = add_new_index(env, gfun, instance, args);
-    /* no_applicable_method() was called */
-    unlikely_if (e == 0) {
-      return env->values[0];
+    ensure_up_to_date_instance(instance);
+    e = search_slot_index(env, gfun, instance);
+    if (e->key == OBJNULL) {
+      cl_object args = cl_list(2, value, instance);
+      e = add_new_index(env, gfun, instance, args);
+      /* no_applicable_method() was called */
+      unlikely_if (e == 0) {
+        return env->values[0];
+      }
     }
   }
-  ensure_up_to_date_instance(instance);
   index = e->value;
   if (ECL_FIXNUMP(index)) {
     instance->instance.slots[ecl_fixnum(index)] = value;
