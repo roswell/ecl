@@ -34,7 +34,7 @@
       (slot-padding :initform nil)))
 
   (defparameter +eql-specializer-slots+
-    '((flag :initform t :accessor eql-specializer-flag)
+    '((flag :initform (si:compute-next-stamp) :accessor eql-specializer-flag)
       (holder :initform (cons nil nil) :accessor specializer-method-holder)
       (object :initarg :object :accessor eql-specializer-object))))
 

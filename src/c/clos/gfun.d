@@ -117,28 +117,65 @@ vector_hash_key(cl_object *keys, cl_index size)
   return c;
 }
 
+/*
+  restricted_compute_applicable_method always memoizes its result and treats the
+  list of EQL specializers as the key when there are EQL keys in the gf profile.
+  This is possible because the user can't specialize COMPUTE-APPLICABLE-METHOD*
+  to STANDARD-GENERIC-FUNCTION, so we know that we can memoize EQL results too.
+
+  generic_compute_applicable_method memoizes its results only when it is allowed
+  by the second value returned by COMPUTE-APPLICABLE-METHOD-USING-CLASSES. Most
+  notably the method list can't contain eql-specializers, otherwise it refuses
+  to cache the effective method.
+
+  Cache key is based on class stamps. But what to do with EQL specializers?
+
+  Previously we had keyed objects by the address of the class or the address of
+  a list (MEMBER OBJECT EQL-SPECS) that uniquely identifies the specializer with
+  no possibility of collissions. Now that we use class stamps, it is possible in
+  a long running system to have STAMP = address (extremely unlikely!). To avoid
+  this scenario EQL-SPECIALIZER-FLAG of EQL-spec is initialized with a stamp.
+
+  TODO optimization for the happy path in restricted dispatch could be always
+  dispatching on classes, and have effective method function dispatch further
+  when there are applicable EQL specializers. Something like:
+
+      (case arg1
+        (eql-obj-1 (emf-1))
+        (eql-obj-2 (case arg2
+                     (eql-obj-3 (emf-2))
+                     (otherwise (no-applicable-method))))
+        (otherwise (class-emf)))
+
+  That would allow us to skip consulting the generic function spec profile and
+  use only stamps in arguments. Alternatively we may not memoize results when
+  eql-specializers occur (just like in generic_compute_applicable_method), in
+  that case even without twiddling with effective method function dispatch we
+  could speed up happy path.
+ */
+
 static cl_index
 fill_spec_vector(cl_object *keys, cl_index len, cl_object frame, cl_object gf)
 {
   cl_object *args = ECL_STACK_FRAME_PTR(frame);
   cl_index narg = frame->frame.size, spec_no;
-  cl_object spec_how_list = GFUN_SPEC(gf);
-  cl_index spec_length = ecl_length(spec_how_list);
-  cl_object *spec_args = spec_how_list->vector.self.t;
-  unlikely_if (spec_length > narg)
+  cl_object spec_profile = GFUN_SPEC(gf);
+  cl_object *spec_args = spec_profile->vector.self.t;
+  unlikely_if (len > narg)
     FEwrong_num_arguments(gf);
-  for (spec_no=0; spec_no<spec_length; spec_no++) {
+  for (spec_no=0; spec_no<len; spec_no++) {
     cl_object this_arg = args[spec_no];
     cl_object spec_how = spec_args[spec_no];
     cl_object spec_eql = ECL_CONS_CDR(spec_how);
     cl_object eql_spec;
     if (!Null(eql_spec = ecl_memql(this_arg, spec_eql))) {
-      keys[spec_no] = eql_spec;
+      eql_spec = _ecl_funcall2(@'clos::intern-eql-specializer', ECL_CONS_CAR(eql_spec));
+      keys[spec_no] = (cl_object)ecl_to_size(EQL_STAMP(eql_spec));
     } else {
-      keys[spec_no] = cl_class_of(this_arg);
+      keys[spec_no] = (cl_object)ecl_stamp_of(this_arg);
     }
   }
-  return vector_hash_key(keys, spec_length);
+  return vector_hash_key(keys, len);
 }
 
 static cl_object

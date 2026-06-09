@@ -1211,6 +1211,26 @@ static inline cl_type ecl_t_of(cl_object o) {
         ((cl_type)(ECL_IMMEDIATE(o) ? ECL_IMMEDIATE(o) : ((o)->d.t)))
 #endif
 
+/* Stamp_of
+
+   FIXME agree builtin class hierarchy with type tags, so we can reuse the
+   latter as stamps! -- jd 2026-06-03 */
+#if defined(__cplusplus) || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
+extern cl_object cl_class_of(cl_object x);
+static inline cl_index ecl_stamp_of(cl_object o) {
+        return (ECL_INSTANCEP(o)
+                ? o->instance.stamp
+                : (cl_class_of(o))->instance.class_stamp);
+}
+#else
+extern cl_object cl_class_of(cl_object x);
+#define ecl_stamp_of(o)                                                \
+                (ECL_INSTANCEP(o)                                      \
+                 ? (o)->instance.stamp                                 \
+                 : (cl_class_of(o))->instance.class_stamp)
+#endif
+
+
 /*
         This is used to retrieve optional arguments
 */

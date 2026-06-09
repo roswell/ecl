@@ -843,6 +843,7 @@ extern ECL_API cl_index ecl_hash_table_count(cl_object hash);
 
 /* instance.c */
 
+extern ECL_API cl_object si_compute_next_stamp(void);
 extern ECL_API cl_object si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size);
 extern ECL_API cl_object si_instance_class(cl_object x);
 extern ECL_API cl_object si_instance_class_set(cl_object x, cl_object y);

@@ -42,6 +42,13 @@ si_allocate_raw_instance(cl_object orig, cl_object clas, cl_object size)
 }
 
 cl_object
+si_compute_next_stamp(void)
+{
+  cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_make_integer(ecl_next_stamp()));
+}
+
+cl_object
 si_instance_obsolete_p(cl_object x)
 {
   cl_env_ptr the_env = ecl_process_env();
