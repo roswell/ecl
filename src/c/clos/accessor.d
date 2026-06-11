@@ -102,8 +102,7 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
     cl_index hash;
     hash = fill_spec_vector(keys, gfun, instance);
     e = ecl_search_cache(cache, hash, keys, 1);
-    e->key = ecl_cache_make_key(cache, keys);
-    e->value = index;
+    ecl_cache_update_record(cache, e, keys, index);
     return e;
   }
 }

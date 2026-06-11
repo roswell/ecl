@@ -30,9 +30,9 @@ typedef struct ecl_cache_record {
 } *ecl_cache_record_ptr;
 
 extern ecl_cache_ptr ecl_make_cache(cl_index key_size, cl_index cache_size);
-extern cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_object *keys);
+extern void ecl_cache_update_record(ecl_cache_ptr cache, ecl_cache_record_ptr record,
+                                    cl_object *keys, cl_object value);
 extern ecl_cache_record_ptr ecl_search_cache(ecl_cache_ptr cache, cl_index hash, cl_object *keys, cl_index argno);
-extern void ecl_cache_invalidate(ecl_cache_ptr cache);
 
 #ifdef __cplusplus
 }

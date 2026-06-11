@@ -24,19 +24,27 @@ ecl_cache_ptr
 ecl_make_cache(cl_index key_size, cl_index cache_size)
 {
   ecl_cache_ptr cache = ecl_alloc(sizeof(struct ecl_cache));
+  cl_index i, total_size = 3*cache_size;
+  cl_object table = si_make_vector(ECL_T, /* element type */
+                                   ecl_make_fixnum(total_size), /* Maximum size */
+                                   ECL_NIL, /* adjustable */
+                                   ECL_NIL, /* fill pointer */
+                                   ECL_NIL, /* displaced */
+                                   ECL_NIL);
   cache->key_length = key_size;
-  cache->table =
-    si_make_vector(ECL_T, /* element type */
-                   ecl_make_fixnum(3*cache_size), /* Maximum size */
-                   ECL_NIL, /* adjustable */
-                   ECL_NIL, /* fill pointer */
-                   ECL_NIL, /* displaced */
-                   ECL_NIL);
-  ecl_cache_invalidate(cache);
+  cache->table = table;
+  cache->generation = 0;
+  for (i = 0; i < total_size; i+=3) {
+    table->vector.self.t[i] = OBJNULL;
+    table->vector.self.t[i+1] = OBJNULL;
+    table->vector.self.fix[i+2] = 0;
+  }
   return cache;
 }
 
-cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_object *keys)
+void
+ecl_cache_update_record(ecl_cache_ptr cache, ecl_cache_record_ptr record,
+                        cl_object *keys, cl_object value)
 {
   cl_index idx, key_length = cache->key_length;
   cl_object key = si_make_vector(ECL_T,
@@ -48,20 +56,8 @@ cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_object *keys)
   for(idx=0; idx<key_length; idx++) {
     key->vector.self.t[idx] = keys[idx];
   }
-  return key;
-}
-
-void
-ecl_cache_invalidate(ecl_cache_ptr cache)
-{
-  cl_object table = cache->table;
-  cl_index i, total_size = table->vector.dim;
-  cache->generation = 0;
-  for (i = 0; i < total_size; i+=3) {
-    table->vector.self.t[i] = OBJNULL;
-    table->vector.self.t[i+1] = OBJNULL;
-    table->vector.self.fix[i+2] = 0;
-  }
+  record->key = key;
+  record->value = value;
 }
 
 /*

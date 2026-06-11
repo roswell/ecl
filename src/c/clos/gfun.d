@@ -229,8 +229,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
       if (e->key != OBJNULL) {
         e = ecl_search_cache(cache, hash, keys, key_length);
       }
-      e->key = ecl_cache_make_key(cache, keys);
-      e->value = func;
+      ecl_cache_update_record(cache, e, keys, func);
     }
   }
   if (func == ECL_NIL)
