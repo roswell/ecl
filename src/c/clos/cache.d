@@ -60,6 +60,13 @@ ecl_cache_update_record(ecl_cache_ptr cache, ecl_cache_record_ptr record,
   record->value = value;
 }
 
+void
+ecl_update_cache(ecl_cache_ptr cache, cl_index hash,
+                 cl_object *keys, cl_index argno, cl_object value)
+{
+  
+}
+
 /*
  * variation of ecl_gethash from hash.d, which takes an array of objects as key
  * It also assumes that entries are never removed except by clrhash.

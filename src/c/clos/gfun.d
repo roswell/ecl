@@ -212,32 +212,22 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 {
   const cl_env_ptr env = frame->frame.env;
   ecl_cache_ptr cache = gf_method_cache(gf);
-  ecl_cache_record_ptr e;
   cl_index key_length = cache->key_length, hash;
   cl_object func, keys[key_length];
   hash = fill_spec_vector(keys, key_length, frame, gf);
-  e = ecl_search_cache(cache, hash, keys, key_length);
-  if (e->key != OBJNULL) {
-    func = e->value;
-  } else {
-    /* The keys and the cache may change while we
-     * compute the applicable methods. We must save
-     * the keys and recompute the cache location if
-     * it was filled. */
+  func = ecl_search_cache(cache, hash, keys, key_length);
+  if (func == OBJNULL) {        /* cache miss */
+    /* The keys and the cache may change while we compute applicable methods.
+       We must save the keys and recompute the cache location if it was
+       filled. */
     func = compute_applicable_method(env, frame, gf);
     if (env->values[1] != ECL_NIL) {
-      if (e->key != OBJNULL) {
-        e = ecl_search_cache(cache, hash, keys, key_length);
-      }
-      ecl_cache_update_record(cache, e, keys, func);
+      ecl_update_cache(cache, hash, keys, key_length, func);
     }
   }
-  if (func == ECL_NIL)
-    func = cl_apply(3, @'no-applicable-method', gf, frame);
-  else {
-    func = _ecl_funcall3(func, frame, ECL_NIL);
-  }
-  return func;
+  return (Null(func))
+    ? cl_apply(3, @'no-applicable-method', gf, frame)
+    : _ecl_funcall3(func, frame, ECL_NIL);
 }
 
 static cl_object
