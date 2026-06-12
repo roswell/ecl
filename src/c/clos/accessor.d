@@ -20,7 +20,7 @@
 static ecl_cache_ptr
 gf_method_cache(cl_object gfun)
 {
-  return ecl_cast_ptr(ecl_cache_ptr,GFUN_HIST(gfun)->foreign.data);
+  return ecl_cast_ptr(ecl_cache_ptr,GFUN_MTAB(gfun)->foreign.data);
 }
 
 static void

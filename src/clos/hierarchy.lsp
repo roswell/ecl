@@ -114,6 +114,9 @@
       (method-combination 
        :initarg :method-combination :initform (find-method-combination (class-prototype (find-class 'standard-generic-function)) 'standard nil)
        :accessor generic-function-method-combination)
+      (call-history
+       :initform nil
+       :accessor generic-function-call-history)
       (method-cache
        :initform nil
        :accessor generic-function-method-cache)

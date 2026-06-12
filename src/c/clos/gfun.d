@@ -20,7 +20,7 @@
 static ecl_cache_ptr
 gf_method_cache(cl_object gfun)
 {
-  return ecl_cast_ptr(ecl_cache_ptr,GFUN_HIST(gfun)->foreign.data);
+  return ecl_cast_ptr(ecl_cache_ptr,GFUN_MTAB(gfun)->foreign.data);
 }
 
 static cl_object generic_function_dispatch_vararg(cl_narg, ...);
@@ -262,6 +262,6 @@ si_clear_gfun_hash(cl_object gf)
   ecl_cache_ptr cache;
   cl_index spec_args = ecl_length(GFUN_SPEC(gf));
   cache = ecl_make_cache(spec_args, 4096);
-  GFUN_HIST(gf) = ecl_make_foreign_data(ECL_NIL, 0, cache);
+  GFUN_MTAB(gf) = ecl_make_foreign_data(ECL_NIL, 0, cache);
   ecl_return0(the_env);
 }
