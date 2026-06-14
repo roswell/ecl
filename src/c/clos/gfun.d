@@ -92,15 +92,14 @@ si_funcallable_object_p(cl_object x)
   ecl_return1(the_env, (ECL_FUNCALLABLE_P(x) ? ECL_T : ECL_NIL));
 }
 
-static cl_object
-fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
+static cl_index
+fill_spec_vector(cl_object *keys, cl_object gf, cl_object frame)
 {
   cl_object *args = ECL_STACK_FRAME_PTR(frame);
   cl_index narg = frame->frame.size;
   cl_object spec_how_list = GFUN_SPEC(gf);
-  cl_object *argtype = vector->vector.self.t;
   int spec_no = 1;
-  argtype[0] = gf;
+  keys[0] = gf;
   loop_for_on_unsafe(spec_how_list) {
     cl_object spec_how = ECL_CONS_CAR(spec_how_list);
     cl_object spec_eql = ECL_CONS_CDR(spec_how);
@@ -108,7 +107,7 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
     cl_object this_arg;
     unlikely_if (spec_no > narg)
       FEwrong_num_arguments(gf);
-    unlikely_if (spec_no >= vector->vector.dim)
+    unlikely_if (spec_no >= 64)
       ecl_internal_error("Too many arguments to fill_spec_vector().");
     unlikely_if (!ECL_LISTP(spec_eql))
       ecl_internal_error("Invalid GF specialization profile.");
@@ -117,13 +116,12 @@ fill_spec_vector(cl_object vector, cl_object frame, cl_object gf)
        because the EQL value can be a class, and may clash with a class
        specializer.  Store the cons cell containing the EQL value. */
     if (!Null(eql_spec = ecl_memql(this_arg, spec_eql))) {
-      argtype[spec_no++] = eql_spec;
+      keys[spec_no++] = eql_spec;
     } else {
-      argtype[spec_no++] = cl_class_of(this_arg);
+      keys[spec_no++] = cl_class_of(this_arg);
     }
   } end_loop_for_on_unsafe(spec_how_list);
-  vector->vector.fillp = spec_no;
-  return vector;
+  return spec_no;
 }
 
 static cl_object
@@ -195,27 +193,23 @@ compute_applicable_method(cl_env_ptr env, cl_object frame, cl_object gf)
 cl_object
 _ecl_standard_dispatch(cl_object frame, cl_object gf)
 {
-  cl_object func, vector;
   const cl_env_ptr env = frame->frame.env;
+  cl_object func, vector, keys[64];
   ecl_cache_ptr cache = env->method_cache;
   ecl_cache_record_ptr e;
+  cl_index key_length;
   ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-    vector = fill_spec_vector(cache->keys, frame, gf);
-    e = ecl_search_cache(cache);
+    key_length = fill_spec_vector(keys, gf, frame);
+    e = ecl_search_cache(cache, key_length, keys);
     if (e->key != OBJNULL) {
       func = e->value;
     } else {
-      /* The keys and the cache may change while we
-       * compute the applicable methods. We must save
-       * the keys and recompute the cache location if
-       * it was filled. */
-      cl_object keys = cl_copy_seq(vector);
       func = compute_applicable_method(env, frame, gf);
       if (env->values[1] != ECL_NIL) {
         if (e->key != OBJNULL) {
-          e = ecl_search_cache(cache);
+          e = ecl_search_cache(cache, key_length, keys);
         }
-        e->key = keys;
+        e->key = ecl_cache_make_key(cache, key_length, keys);
         e->value = func;
       }
     }

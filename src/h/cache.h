@@ -18,7 +18,6 @@ extern "C" {
 #endif
 
 typedef struct ecl_cache {
-        cl_object keys;
         cl_object table;
         cl_index generation;
 #ifdef ECL_THREADS
@@ -33,7 +32,8 @@ typedef struct ecl_cache_record {
 } *ecl_cache_record_ptr;
 
 extern ecl_cache_ptr ecl_make_cache(cl_index key_size, cl_index cache_size);
-extern ecl_cache_record_ptr ecl_search_cache(ecl_cache_ptr cache);
+extern cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_index len, cl_object *keys);
+extern ecl_cache_record_ptr ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys);
 extern void ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key);
 
 #ifdef __cplusplus

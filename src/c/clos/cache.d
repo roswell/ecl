@@ -75,13 +75,6 @@ ecl_cache_ptr
 ecl_make_cache(cl_index key_size, cl_index cache_size)
 {
   ecl_cache_ptr cache = ecl_alloc(sizeof(struct ecl_cache));
-  cache->keys =
-    si_make_vector(ECL_T, /* element type */
-                   ecl_make_fixnum(key_size), /* Maximum size */
-                   ECL_T, /* adjustable */
-                   ecl_make_fixnum(0), /* fill pointer */
-                   ECL_NIL, /* displaced */
-                   ECL_NIL);
   cache->table =
     si_make_vector(ECL_T, /* element type */
                    ecl_make_fixnum(3*cache_size), /* Maximum size */
@@ -92,6 +85,22 @@ ecl_make_cache(cl_index key_size, cl_index cache_size)
   empty_cache(cache);
   return cache;
 }
+
+cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_index len, cl_object *keys)
+{
+  cl_index idx;
+  cl_object key = si_make_vector(ECL_T,
+                                 ecl_make_integer(len),
+                                 ECL_NIL, /* adjustable */
+                                 ECL_NIL, /* fill pointer */
+                                 ECL_NIL, /* displaced */
+                                 ECL_NIL);
+  for(idx=0; idx<len; idx++) {
+    key->vector.self.t[idx] = keys[idx];
+  }
+  return key;
+}
+
 
 void
 ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key)
@@ -104,12 +113,12 @@ ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key)
 }
 
 static cl_index
-vector_hash_key(cl_object keys)
+vector_hash_key(cl_index n, cl_object *keys)
 {
 #if ECL_FIXNUM_BITS > 32
-  return ecl_xxh64_lanes((uint64_t *)keys->vector.self.index, keys->vector.fillp, 0);
+  return ecl_xxh64_lanes((uint64_t *)keys, n, 0);
 #else
-  return ecl_xxh32_lanes((uint32_t *)keys->vector.self.index, keys->vector.fillp, 0);
+  return ecl_xxh32_lanes((uint32_t *)keys, n, 0);
 #endif
 }
 
@@ -120,7 +129,7 @@ vector_hash_key(cl_object keys)
  */
 
 ecl_cache_record_ptr
-ecl_search_cache(ecl_cache_ptr cache)
+ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
 {
 #ifdef ECL_THREADS
   if (!Null(cache->clear_list)) {
@@ -129,19 +138,17 @@ ecl_search_cache(ecl_cache_ptr cache)
 #endif
   {
     cl_object table = cache->table;
-    cl_object keys = cache->keys;
-    cl_index argno = keys->vector.fillp;
-    cl_index i = vector_hash_key(keys);
+    cl_index idx = vector_hash_key(argno, keys);
     cl_index total_size = table->vector.dim;
     cl_fixnum min_gen, gen;
     cl_object *min_e;
     int k;
-    i = i % total_size;
-    i = i - (i % 3);
+    idx = idx % total_size;
+    idx = idx - (idx % 3);
     min_gen = cache->generation;
     min_e = 0;
     for (k = 20; k--; ) {
-      cl_object *e = table->vector.self.t + i;
+      cl_object *e = table->vector.self.t + idx;
       cl_object hkey = RECORD_KEY(e);
       if (hkey == OBJNULL) {
         min_gen = -1;
@@ -156,8 +163,7 @@ ecl_search_cache(ecl_cache_ptr cache)
       } else if (argno == hkey->vector.fillp) {
         cl_index n;
         for (n = 0; n < argno; n++) {
-          if (keys->vector.self.t[n] !=
-              hkey->vector.self.t[n])
+          if (keys[n] != hkey->vector.self.t[n])
             goto NO_MATCH;
         }
         min_e = e;
@@ -173,8 +179,8 @@ ecl_search_cache(ecl_cache_ptr cache)
           min_e = e;
         }
       }
-      i += 3;
-      if (i >= total_size) i = 0;
+      idx += 3;
+      if (idx >= total_size) idx = 0;
     }
     if (min_e == 0) {
       ecl_internal_error("search_method_hash");
@@ -194,7 +200,7 @@ ecl_search_cache(ecl_cache_ptr cache)
       cl_object *e = table->vector.self.t;
       gen = 0.5*gen;
       cache->generation -= gen;
-      for (i = table->vector.dim; i; i-= 3, e += 3) {
+      for (idx = table->vector.dim; idx; idx-= 3, e += 3) {
         cl_fixnum g = RECORD_GEN(e) - gen;
         if (g <= 0) {
           RECORD_KEY(e) = OBJNULL;
