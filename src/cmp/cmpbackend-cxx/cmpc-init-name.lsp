@@ -116,7 +116,6 @@ machine."
 
 (defun find-init-name (file kind)
   "Search for the initialization function in an object file."
-  #-pnacl
   (if *nm*
       (flet ((maybe-init-function (line)
                (ext:when-let ((start (search (kind->prefix kind) line)))
@@ -140,21 +139,7 @@ machine."
       (with-open-file (stream file :direction :input :element-type '(unsigned-byte 8))
         (when (search-tag stream (kind->tag kind))
           (let ((name (read-name stream)))
-            name))))
-  #+pnacl
-  (let* ((pnacl-dis
-          (or (ext:getenv "PNACL_DIS")
-              (error "Please set the PNACL_DIS environment variable to your ~
-                      toolchain's pnacl-dis location")))
-         (stream (ext:run-program
-                  pnacl-dis
-                  (list (namestring (translate-logical-pathname file)))
-                  :wait nil :input nil :output :stream :error :output)))
-    (unless stream
-      (error "Unable to disasemble file ~a" file))
-    (when (search-tag stream (kind->tag kind))
-      (let ((name (read-name stream)))
-        name))))
+            name)))))
 
 (defun guess-init-name (pathname kind)
   (case kind
