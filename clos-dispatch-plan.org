@@ -1,0 +1,554 @@
+
+* Motivation
+
+Profiling indicates, that ECL already does a very well job with optimizing
+dispatch. The thing is that other implementations do a better job :-). Even
+optimizing away a single memory dereference gives a significant improvement.
+
+[insert here a screenshot after the first commit making keys stack-allocated]
+
+In this work I plan to do my utmost to up ECL game when it comes to table-based
+dispatch. This is a preliminary work before integrating fast generic dispatch as
+described by Robert Strandh. While FGD promises near-optimal performance, we can
+exercise it only on hosts that have a native compiler - in bytecodes FGD is
+simply slower than the current dispatch.
+
+* ECL behavior
+
+ECL currently has two types of caches tailored for slot accessors and for all
+other generic function types. Both caches are thread-local (referenced from the
+process environment variable) with keys being [gf class1 class2 ...] and values
+[index] in the case of accessors and [effective method function] otherwise.
+
+Each cache is an open-access fixed-size hash table with LRU eviction. That means
+in particular, that we need to track generation of each entry. Dispatch works as
+follows (simplified):
+
+#+begin_src common-lisp
+  (defun dispatch-gfun (gf frame)
+    (let* ((env   (frame.env frame))
+           (cache (method-cache env))
+           (keys  (spec-vector cache))
+           (func  nil))
+      (without-interrupts (env)
+        (fill-spec-vector keys gf frame)
+        (if-let ((entry (search-cache cache)))
+          (setf func (entry.value entry))
+          (handle-cache-miss entry)))
+      (if (null func)
+          (apply #'no-applicable-method gf frame)
+          (funcall func frame nil))))
+#+end_src
+
+and for optimizable accessors:
+
+#+begin_src common-lisp
+  (defun dispatch-slot (gf frame)
+    (let* ((env   (frame.env frame))
+           (self  (only-arg frame))
+           (cache (slot-cache env))
+           (keys  (spec-vector cache))
+           (index nil))
+      (without-interrupts (env)
+        (fill-spec-vector keys gf frame)
+        (if-let ((entry (search-cache cache)))
+          (setf index (entry.value entry))
+          (setf index (handle-cache-miss entry))))
+      (ensure-up-to-date-instance self)
+      (svref (%slots self) index)))
+#+end_src
+
+while the function ~search-cache~ works as follows (also simplified):
+
+#+begin_src common-lisp
+  (defstruct cache table key-spec generation clear-list)
+  (defstruct cache-entry key val gen) ; table contains [k v g k v g ...]
+
+  ;; specializers are pointers (for hashing purposes -- 64bit indexes)
+  (deftype cache-key (deftype cache-key () `(vector byte64)))
+
+  (defun search-cache (cache)
+    (handle-clear-list)
+    (let* ((table (table cache))
+           (total (length table))
+           (keys (key-spec cache))
+           (argn (length keys))
+           (hash (compute-hash keys))
+           (entry nil))
+      (loop repeat 20
+            for idx = (align (mod hash total) 3)
+              then (mod (+ idx 3) total)
+            for entry = (svref table idx) ; pseudocode
+            do (setf entry (probe-entry entry)))
+      (when (>= gen (/ total 2))
+        (perform-lru))
+      entry))
+#+end_src
+
+What is important to note is that comparing keys always requires dereferencing
+the key pointer, a chain in the hash table may be long and that we return a
+wrapped reference (the entry pointer). Another thing worth noting is that we
+always compare keys in a loop, and we probe subsequent elements until we find an
+empty record or our record. Probing is relatively fast thanks to linear access.
+
+* Profiling and current results
+
+Profiling with perf shows that this works indeed fast with little to optimize.
+The code is well tuned and it approached performance levels that require
+counting memory accesses and cache alignment.
+
+Currently my methodology is rather crude. I'm running cl-bench to compare
+between ECL versions and other implementations and I'm running flamegraph on a
+microbenchmark also defined for ECL.
+
+- reader :: this tests dispatch of optimized accessors (readers in microbench)
+- method :: this tests dispatch of other generic funcs (2 args, empty body)
+
+Both tests are designed so that, if the cache is big enough, should have a hit,
+so we are testing here a happy path. We achieve that by prewarming the cache.
+
+This table shows progress by validating optimization steps improvements:
+
+|            | reader | method |                                             |
+| ECL (base) |   1.00 |   1.00 | this is a baseline for comparisons          |
+| ECL (ver1) |   0.90 |   0.98 | this only moves keys to the stack           |
+| ECL (ver2) |   0.75 |   0.94 | optimize hot path, remove lru, resize       |
+| ECL (ver3) |   0.80 |   0.94 | make cache local to each generic function   |
+| ECL (ver4) |   0.55 |   0.94 | capitalize on opportunities created by ver3 |
+| CCL (base) |   0.60 |   0.30 | this is CCL, the closest competitor         |
+
+
+
+** ECL (ver1)
+
+Optimizes only memory access to the specialization vector (keys).  Noticeable
+improvement of 5% shows that we are memory bound.
+
+** ECL (ver2)
+
+Optimizes a few things things -- removes disabling interrupts from the search
+path and replaces generation managament by a single "used" tag. Also when the
+cache pressure is too big, we resize it.
+
+We may observe, that readers benefit much more from these optimizations than
+ordinary methods. This may be explained by a call overhead to the effective
+method function (optimized reader does only a single memory access).
+
+At this point flamegraph indications:
+- reader :: hashing 20% / search 50% / rest 30%
+- method :: hashing 15% / search 20% / rest 65%
+
+Method flamegraph is less readable, but it seems that binding (empty) next
+methods and invoking the closure dominates hashing and search time and is a
+separate angle for optimizing ECL generic function invocations. I'm going to
+include results for method, but I don't expect drastic improvements.
+
+At this point it is worth considering, whether I'm optimizing the right thing. I
+believe that I do -- accessors are very prominent class of methods and improving
+them will benefit most programs.
+
+**backlog optimizations**
+- optimize for no auxilliary methods (similar to sbcl's "fast method")
+- make next-methods a lexical binding (no dynamic binding overhead)
+- inline effective method in the discriminator (FGD)
+
+It is worth noting, that in unmodified ~cl-bench~ clos benchmark the difference
+is more substantial, because all test methods have bodies that invoke accessors.
+Another noteworthy thing is that FGD, without inlining effective methods, will
+likely hit a similar bottleneck.
+
+** ECL (ver3)
+
+This change moves from per-thread global cache for all GFs to a per-thread
+per-GF functions. The initial cache size is smaller (128 vs 4096 entries).
+
+As expected, additional pointer chase drops the performance compared to the
+previous version for both ~reader~ and ~method~ (5%-7%). This change supports
+further improvements: fewer keys and smaller records (look forward to ver4).
+
+As unexpected, ~cl-bench~ tests show ~30% speedup for cl-bench constructor tests
+(CLOS/SIMPLE-INSTATIATE and CLOS/INSTATIATE).  The most likely cause is that the
+cache has many fewer entries, so we have effectively fewer collisions. Since
+constructors span multiple generic functions, that compounds because there is no
+cross-gf eviction. Less entries also mean shorter probe chain. This seems to
+indicate, that reducing cache misses is substantial.
+
+** ECL (ver4)
+
+In this iteration we incorporation numerous ticks to reduce memory pressure and
+evade computations (mostly for readers, but some benefit also normal methods):
+
+1. capitalize on ver3 changes (no gf spec, no clearlist, spec is a vector)
+
+   Thanks to moving cache to be local to a generic function, we don't need to
+   maintain a thread-safe clearlist (because gf invalidation empties whole cache
+   now), and we can reduce number of keys by 1 (gf is no longer a specializer).
+   We also don't cons keys of arguments that are not specialized.
+
+   Moreover, while not directly related, we change the specialization profile to
+   be a vector (not a list), to reduce pointer chase. This will benefit more
+   functions with many arguments, because we skip one pointer chase per argument
+   while filling the spec vector.
+
+2. insert the first key directly in the hash table entry (-1 ptr chase/probe)
+
+   This change is a win, because thanks to inserting the first key directly in
+   the entry, we remove one pointer-chase per _each_ probe, so depending on the
+   length of the query chain, it is N dereferences per single dispatch.
+
+3. various microoptimizations and prepare for better hash function
+
+   This change has minor yet noticeable impact on performance (~3% for readers).
+   The speedup comes from inling a call that checks instances being up-to-date.
+   As a preparatory step we also duplicate the path for hashing 1 vs many keys.
+   After this change readers tied with CCL performance-wise.
+
+4. use a better hash function from the xxhash family
+
+   Even for a single key this provides a noticeable speed improvement by 5%.
+   This change is presented as a separate step for measurement.
+
+Version 4 is composed of multiple optimizations that reduce the memory pressure
+and speed up caching. None of these changes benefited ~method~ benchmark in a
+significant manner. Here is a summary of them.
+
+| ECL (ver4.1) |   0.70 |   0.95 | smaller keys, no removal, vector profile  |
+| ECL (ver4.2) |   0.65 |   0.93 | inline the first key (cheaper probing)    |
+| ECL (ver4.3) |   0.60 |   0.91 | inline the check for instance up-to-date  |
+| ECL (ver4.4) |   0.55 |   0.92 | replace the hash with xxh64               |
+
+At this point flamegraph indications:
+- reader :: hashing 10% / search 55% / rest 35%
+- method :: hashing 13% / search 17% / rest 70%
+
+Our improvements clearly show in both profiles: hash time and search take less
+time compared to the rest of computation.
+
+The flamegraph also reaffirms our previous conclusions, that there is still a
+lot to win when it comes to accessors, while other methods won't benefit much
+from improving dispatch much. For example, speeding up search 5x will improve
+the reader performance by 11%, while method call performance by 3%. Not much.
+
+All these comounded to faster optimized accessors than CCL. What is left:
+- precomputing the class hash so that 1-ary keys may evade recomputing it [hash]
+- moving ensure-up-to-date-instance to the cache miss path                [rest]
+- caching a direct memory address of the slot value (not its index)       [rest]
+- flatten the hash table and reduce number of probes                    [search]
+
+* Discarded ideas
+
+*** TODO Perfect Hash Tables (elaborate on the method (it is clever and fast!))
+
+Then I came with an idea, that we could eliminate probing by using a perfect
+hash function and have no collisions. I've actually implemented them, but the
+solution proved to be slower than what we have now - most notably because we had
+to compute the hash twice: one to select a bucket, then to select the element in
+it (without collisions). That idea was a dead end.
+
+That said work on PHF was not lost, because that nudged me towards thinking
+about buckets larger than one and embedding metadata in headers.
+
+*** Large record optimization
+
+I've thought about large records taht can embed up to 7 keys. But generic
+functions with the number of specializers being greater than 3 is limited so
+that would be a wasted effort. Generally the idea was to have one entry occupy
+one cache line, and the bucket header to encode 63 (initially 7) entries.
+
+[H1 H2 H3 H4 H5 H6 H7 H8] ; 0
+[K1 K2 K2 K3 K4 K5 K6 K7] ; 1
+[K1 K2 K2 K3 K4 K5 K6 K7] ; 2
+[K1 K2 K2 K3 K4 K5 K6 K7] ; 3
+...
+[K1 K2 K2 K3 K4 K5 K6 K7] ; 63
+
+It was mainly attractive when I've been considering maintaining a global gf
+cache -- in that case we have one less key at our disposal. In any case, due to
+memory inefficiency and because we'd need to maintain two types of records, this
+idea is dropped.
+
+* Optimizations (speculative)
+
+** The plan
+
+1. [X] Allocate keys on the stack (should validate memory pressure assumption)
+2. [X] Remove LRU managament and with-inptuerrupts, grow cache
+3. [X] Make cache thread-local and local to the generic function
+4. [ ] Redesign cache entry structure to inline keys for low-arity functions
+5. [ ] Redesign cache table to be L1 cache friendly and introduce buckets
+6. [ ] Introduce PIC structure to the table that allows probing last entries
+
+Each part of the plan will be benchmarked against the current develop branch,
+the last optimized version and against CCL which is the implementation with
+closest characteristics of dispatch time with ECL.
+
+** Reducing memory accesses
+
+Next I've started to think along the line of memory access and that has led me
+to the current proposal:
+
+*** DONE rework LRU eviction in favor of resizing the hash table
+
+Caches are rather small (4096), especially because they are shared between all
+generic functions. We should make the cache bigger when it crosses a threshold.
+Moreover, our generation managament means additional pointer dereferencing. On
+resize we remove entries that were not used in the last generation (a single
+"touched" bit). When we reach the cap of resizing, we only entries that were not
+used since the last overflow.
+
+*** DONE we should remove ~without-interrupts~ from the reader hot path
+
+We disable interrupts when we search for an entry, because from the inside of
+the interrupt cache entries may be updated. Disabling interrupts requires more
+memory accesses (it binds a special variable).
+
+We can avoid that if we make a strict separation between searching and updating
+entries and rebuilding the table when there is no space (stale request searches
+the old cache, so there are no races).
+
+~without-interrupts~ is used to prevent a situation, when during lookup we are
+interrupted and the interrupt handler dispatches another generic function,
+trashing our looked up entry.
+
+The idea is for a search function to return only the value (not a full record)
+in happy path.
+
+Lookup function:
+
+  [occupied]  <- check
+  [tombstone] <- skip
+  [modified]  <- skip
+  [empty]     <- terminate
+
+Update function:
+
+  [occupied]  <- skip
+  [modified]  <- skip
+  [empty, tombstone] <- update
+
+  (without-interrupts () ;insert
+    (setf state modified)
+    (update record)
+    (setf state occupied))
+
+  (setf state tombstone) ; remove
+  
+*** TODO insert the cache table directly with the cache structure
+
+This is to avoid dereference pointer->table->vector.self.
+
+*** TODO improve hashing time
+
+I've implemented xxhash32/64 in a branch and it indeed performs better than the
+golden-ratio version. This is yet to be integrated with ECL. I plan to make an
+overhaul of hash table as well, given all that hard-won knowledge I've gained.
+
+*** TODO don't put specializers in an array when there are only a few arguments
+
+For optimized accessors we have only one specializer, but we still wrap it in
+key[2] (generic function and instance class). If we pass them as arguments to a
+specialized search function we save on dereferencing the array later.
+
+** Making caches local to generic functions
+
+This will cost us extra pointer chasing to find the cache:
+
+index = gf->tls_index;
+tls   = env->bindings;
+cache = tls[index] || tls[index]=make_cache()
+
+Compared to:
+cache = env->binding
+
+In exchange, we have one additional slot to maintain keys, we have one less
+specializer to hash and we have better locality of searches. The latter will be
+further exploited in polymorphic dispatch optimization.
+
+** Improving L1-cache locality
+
+While working on that, I've started to think along cache lines. How could we
+reduce the number of touched L1 cache lines to improve performance. The PHF idea
+bounces back in a form of improved hash table layout. Moreover we will tightly
+pack pairs of entries when there is only one specializer. The record shape is
+always [s1 s2 s3 s4] and different interpretation of meanings depending on the
+dispatch variant. **In most cases we inline keys and avoid dereference**.
+
+| function type                     | interpretation        |
+|-----------------------------------+-----------------------|
+| accessor                          | [self slot self slot] |
+| generic functions with arity 1    | [spec mfun spec mfun] |
+| generic functions  with arity 2-3 | [spec spec spec mfun] |
+| generic functions with arity >=4  | [spec spec keys mfun] |
+| (setf slot-value-using-class)     | [nval clas self slot] |
+
+- When we pack two entries in a single record, then after finding the record we
+  compare:
+
+  (case arg
+    (self1 slot1)
+    (self2 slot2))
+
+  Since whole entry is in the cache lines, and we'd need to comapre keys anyway
+  on hash collisions, that's a win
+
+- Generic functions with arity 2 have padding to not change the entry structure.
+  I wonder what we could put in there that would be useful? Probably nothing.
+
+- Generic functions with arity >= 4 have embedded two first so taht we don't
+  need to dereference the pointer on collision in most cases. Keys are allocated
+  on the heap
+
+- The function SLOT-VALUE-USING-CLASS is treated specially, because it may have
+  four specializers - we don't want to allocate a separate vector for them it.
+
+** Improving memory accesses
+
+Initially I've thought about embedding entry status in GF object as tags in the
+last two bits (n.b immediate types like fixnum use this technique). That said
+this scheme (ha!) still requires chaining. While thinking about how to improve
+over this my thoughts looped back to perfect hash tables; most notably where
+buckets had separate metadata to acquire the bucket seed and offset.
+
+Usually a bucket in hash tables has size n=1, and in open-access tables, on a
+collision, we simply stick the next element immediately after[fn:1]. If
+keys/hash don't match, then we move to the next element, until k reaches either
+some preset value (in case of the current ECL dispatch k=20), or until empty
+value is found. This is called "linear probing" and has good cache locality, but
+touches multiple cache lines for densely populated hash tables.
+
+To mitigate that, I've thought that we could make the bucket size bigger, and
+embed information about its entries in a header fitting in a cache line:
+
+For small records:
+[H1 H2 H3 MS] [K1 K2 E1 E2]
+[K1 K2 E1 E2] [K1 K2 E1 E2]
+
+Small record bucket contains three entries. When we dereference it, we pull at
+the same time the first entry in the cache line, so there is a high chance that
+reading the entry won't require additional access. Metadata about each record is
+stored in MS slot (i.e which records are empty, which are tombstones etc).
+
+We may check whether we have a hit in the bucket by comparing the full hash with
+embedded hashes. On miss we immediately return, and on hit we have the record in
+the same cache line, or we need to pull the second line. That gives 1-2 memory
+accesses.
+
+Obviously, I've tried to find whether such hash table design already exists. And
+it seems that it does, with even improved characteristics. Hash table with a
+similar scheme is called "Swiss Table". There is an additional tweak that makes
+the design better. Instead of storing full hashes they store hash fingerprints,
+so more entries fit in a bucket, and it is faster to find potential collision
+candidates. Swiss Tables are general purpose and they don't seem to be optimized
+for alignment with cache lines, but we can use the improved header idea.
+
+Now we need to decide how to hash fingerprints and their length. For simplicity
+let's assume that each bucket entry is represented by a byte. We have 8 bits at
+our disposal to fit [fingerprint;state]. Preferably we'll use 7 bits for hash.
+
+[H1 H2 H3 H4] [K1 K2 E1 E2] ;1
+[K1 K2 E1 E2] [K1 K2 E1 E2] ;2,3
+...
+[K1 K2 E1 E2] [K1 K2 E1 E2] ;30,31
+
+** Improving slot access (optimized accessors)
+
+With class stamps, our cache will fail after the class is invalidated, so we can
+store directly the pointer to the desired element (because it will be valid!).
+Instead of:
+
+#+begin_src c
+  value = (ECL_FIXNUMP(index))
+    ? instance->instance.slots[ecl_fixnum(index)]
+    : ECL_CONS_CAR(index);
+#+end_src
+
+We can now store the pointer to the value directly in the index, then:
+
+#+begin_src c
+  value = *index;
+#+end_src
+
+** Adding monomorphic and polymorphic caches
+
+At the beginning of the cache I want to stick the table header and 7 entries.
+Currently (after improving table layout) we have:
+
+bucket = bucket-header + 31 records (consuming 16 lines of cache)
+
+I want to add a micro-bucket that contains a quick lookup to the last entry for
+calls hitting the same specialization (monomorphic profile) and then check
+remaining 6 entries (polymorphic profile). This quick check should cover many
+workloads without even touching the table. 
+
+#+begin_src lisp
+  typedef struct ecl_cache_record {
+          cl_object slot1;
+          cl_object slot2;
+          cl_object slot3;
+          cl_object slot4;
+  } ecl_cache_record;
+
+  typedef struct ecl_cache_bucket {
+          uint8_t metadata[32];
+          ecl_cache_record[31];
+  } ecl_cache_bucket;
+
+  typedef struct ecl_cache_header {
+          cl_index size;          /*  */
+          cl_index epoch;         /* generation/count */
+          cl_object clear_list;   /* invalidation */
+          uint8_t metadata[8]
+          ecl_cache_record pic[7]
+  } ecl_cache_header;
+
+   /* The cache is represented by a flag table with a structure as this:
+
+      [header][record]
+      [record][record]
+      [record][record]
+      [record][record]
+
+      [bucket][record]
+      [record][record]
+      ...
+
+      [bucket][record]
+      [record][record]
+      ...
+
+      Note that the header is a small bucket. It is optimized for quick check
+      whether we are hitting a constant set of "hot" functions. The first record
+      in the bucket fits in he same cache line as the header.
+
+      Metadata (in both the header and a bucket) contain fingerprints for each
+      record in the block and its occupancy status.
+    ,*/
+
+  /* in other words I need to revise per-thread per-gf cache. It will provide much
+     better locality for pic */
+
+  /* also, update protocol, so we don't get swamped in unnecessary tables. Cache
+     on first access is created as:
+
+     [header][record] (64B) empty record
+     
+     first update (cache miss)
+     [header][record] (64B)
+
+     second update (cache miss)
+
+     [header][record]
+     [record][record]
+     [record][record]
+     [record][record]
+
+     and only after all polycache entries are filled, and we still miss, then we
+     create the first bucket. */
+#+end_src
+
+- important :: this idea should be implemented as the very last improvement to
+not dominate in benchmarks other optimizations
+
+* Footnotes
+
+[fn:1] there are variants where these are inserted somewhere else
