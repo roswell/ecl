@@ -264,7 +264,7 @@ init_env_aux(cl_env_ptr env)
   env->c_env = NULL;
   /* CLOS caches */
   env->method_cache = ecl_make_cache(64, 4096);
-  env->slot_cache = ecl_make_cache(3, 4096);
+  env->slot_cache = ecl_make_cache(2, 4096);
 }
 
 void
