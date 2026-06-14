@@ -43,11 +43,11 @@
 # endif
 # ifdef HAVE_DLFCN_H
 #  include <dlfcn.h>
-#  define INIT_PREFIX "init_fas_"
+#  define INIT_PREFIX "__ecl_init_fas_"
 # endif
 # ifdef HAVE_MACH_O_DYLD_H
 #  include <mach-o/dyld.h>
-#  define INIT_PREFIX "_init_fas_"
+#  define INIT_PREFIX "__ecl_init_fas_"
 # endif
 # ifdef HAVE_LINK_H
 #  include <link.h>
@@ -57,7 +57,7 @@
 #  include <windef.h>
 #  include <winbase.h>
 #  include <tlhelp32.h>
-#  define INIT_PREFIX "init_fas_"
+#  define INIT_PREFIX "__ecl_init_fas_"
 # else
 #  include <unistd.h>
 # endif

@@ -6,12 +6,32 @@
 ;;;;
 ;;;;    See file 'LICENSE' for the copyright details.
 
-;;;; CMPNAME Unambiguous init names for object files
+;;;; CMPC-INIT-NAME Unambiguous init names for object files
 ;;;;
 ;;;; Every object file in a lisp library or combined FASL (such as the
 ;;;; compiler), needs a function that creates its data and installs the
 ;;;; functions. This initialization function has a C name which needs
 ;;;; to be unique. This file has functions to create such names.
+;;;;
+;;;; Moreover, we need a way to extract the name of the init function
+;;;; from an object file. We have two ways of doing this.
+;;;;
+;;;; If we have `nm' available, we use that to search through the
+;;;; symbols in the object file, using the first function with the
+;;;; appropriate format.
+;;;;
+;;;; As a fallback if don't have `nm' available, we store the init
+;;;; function name in a string in the object file. This string is
+;;;; recognized by the tag it has at the beginning. We then search
+;;;; through the binary representation of the object file for the tag
+;;;; and retrieve the function name it precedes.
+;;;;
+;;;; Both methods are in principle vulnerable to name collision or
+;;;; multiple tags occuring in the object file. Choice of an
+;;;; approriate init function name format or tag minimizes the chances
+;;;; of that happening. Avoiding name collions alltogether would only
+;;;; work if we gave up on treating the object files the same as any
+;;;; other object file created by the C compiler.
 
 (in-package "COMPILER")
 
@@ -29,7 +49,7 @@
            (multiple-value-setq (number digit) (floor number base))
            (push (char code digit) output)))))
 
-(defun unique-init-name (file)
+(defun unique-init-name (file kind)
   "Create a unique name for this initialization function. The current algorithm
 relies only on the name of the source file and the time at which it is built. This
 should be enough to prevent name collisions for object files built in the same
@@ -44,28 +64,39 @@ machine."
                             internal-time-units-per-second)
                      1000)))
          (tag (concatenate 'base-string
-                           "_ecl"
+                           (kind->prefix kind)
                            (encode-number-in-name path-hash)
                            "_"
                            (encode-number-in-name ms))))
     tag))
 
+(defun kind->prefix (kind)
+  (case kind
+    ((:object :c)           "__ecl_init")
+    ((:fasl :fas)           "__ecl_init_fas")
+    ((:static-library :lib) "__ecl_init_lib")
+    ((:shared-library :dll) "__ecl_init_dll")
+    ((:program)             "__ecl_init_exe")
+    (otherwise (error "C::BUILDER cannot accept files of kind ~s" kind))))
+
 (defun kind->tag (kind)
   (case kind
-    ((:object :c)           "@EcLtAg")
-    ((:fasl :fas)           "@EcLtAg_fas")
-    ((:static-library :lib) "@EcLtAg_lib")
-    ((:shared-library :dll) "@EcLtAg_dll")
-    ((:program)             "@EcLtAg_exe")
+    ((:object :c)           "@EcLtAg:")
+    ((:fasl :fas)           "@EcLtAg_fas:")
+    ((:static-library :lib) "@EcLtAg_lib:")
+    ((:shared-library :dll) "@EcLtAg_dll:")
+    ((:program)             "@EcLtAg_exe:")
     (otherwise (error "C::BUILDER cannot accept files of kind ~s" kind))))
 
 (defun init-name-tag (init-name &key (kind :object))
-  (concatenate 'base-string (kind->tag kind) ":" init-name "@"))
+  (if *nm*
+      "" ; We don't need a tag
+      (concatenate 'base-string (kind->tag kind) init-name "@")))
 
 (defun search-tag (stream tag)
   (declare (si::c-local))
   (do* ((eof nil)
-        (key (concatenate 'list tag ":"))
+        (key (coerce tag 'list))
         (string key))
        (nil)
     (let ((c (read-byte stream nil nil)))
@@ -83,17 +114,33 @@ machine."
                             (= c #.(char-code #\@)))
                   collect (code-char c))))
 
-(defun find-init-name (file &key (tag "@EcLtAg"))
-  "Search for the initialization function in an object file. Since the
-initialization function in object files have more or less unpredictable
-names, we store them in a string in the object file. This string is recognized
-by the TAG it has at the beginning This function searches that tag and retrieves
-the function name it precedes."
+(defun find-init-name (file kind)
+  "Search for the initialization function in an object file."
   #-pnacl
-  (with-open-file (stream file :direction :input :element-type '(unsigned-byte 8))
-    (when (search-tag stream tag)
-      (let ((name (read-name stream)))
-        name)))
+  (if *nm*
+      (flet ((maybe-init-function (line)
+               (ext:when-let ((start (search (kind->prefix kind) line)))
+                 (let ((end (position-if-not #'(lambda (c)
+                                                 (or (alphanumericp c)
+                                                     (char= c #\_)))
+                                             line :start start)))
+                   (subseq line start end)))))
+        (multiple-value-bind (result output)
+            (safe-run-program *nm* (list (namestring (translate-logical-pathname file))))
+          (declare (ignore result))
+          (let ((candidates
+                  (loop for line in output
+                        for name = (maybe-init-function line)
+                        if name collect name)))
+            (when (> (length candidates) 1)
+              (cmperr "Found multiple candidates ~S for init function names of file ~S. Please make sure you are not using any functions whose names start with __ecl_init."))
+            (when (null candidates)
+              (cmperr "Found no init function name for file ~S of kind ~S" file kind))
+            (first candidates))))
+      (with-open-file (stream file :direction :input :element-type '(unsigned-byte 8))
+        (when (search-tag stream (kind->tag kind))
+          (let ((name (read-name stream)))
+            name))))
   #+pnacl
   (let* ((pnacl-dis
           (or (ext:getenv "PNACL_DIS")
@@ -105,7 +152,7 @@ the function name it precedes."
                   :wait nil :input nil :output :stream :error :output)))
     (unless stream
       (error "Unable to disasemble file ~a" file))
-    (when (search-tag stream tag)
+    (when (search-tag stream (kind->tag kind))
       (let ((name (read-name stream)))
         name))))
 
@@ -113,7 +160,7 @@ the function name it precedes."
   (case kind
     ((:object :c :static-library :lib :shared-library :dll)
      (or (and (probe-file pathname)
-              (find-init-name pathname :tag (kind->tag kind)))
+              (find-init-name pathname kind))
          (cmpnote "Cannot find out entry point for binary file ~A" pathname)))
     (otherwise (compute-init-name pathname :kind kind))))
 
@@ -122,7 +169,7 @@ the function name it precedes."
                             (kind (guess-kind pathname))
                             (prefix nil)
                           &aux
-                            (unique-name (unique-init-name pathname)))
+                            (unique-name (unique-init-name pathname kind)))
   "Computes initialization function name. Libraries, FASLS and
 programs init function names can't be randomized to allow
 initialization from the C code which wants to use it."
@@ -167,6 +214,6 @@ initialization from the C code which wants to use it."
                                kind)))))
     (setq s (map 'string #'translate-char (string s)))
     (concatenate 'string
-                 (or prefix "init_")
+                 (or prefix "__ecl_init_")
                  (disambiguation kind)
                  (map 'string #'translate-char (string s)))))
