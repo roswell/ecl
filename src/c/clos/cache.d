@@ -132,13 +132,10 @@ vector_hash_key(cl_index n, cl_object *keys)
 }
 
 
-/*
- * variation of ecl_gethash from hash.d, which takes an array of objects as key
- * It also assumes that entries are never removed except by clrhash.  This
- * method must be called with interrupts disabled!
- */
+/* Variation of ecl_gethash from hash.d, which takes an array of objects as key
+ * It also assumes that entries are never removed except by clrhash. */
 
-ecl_cache_record_ptr
+cl_object
 ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
 {
 #ifdef ECL_THREADS
@@ -148,25 +145,20 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
 #endif
   {
     cl_object table = cache->table;
+    cl_fixnum gen = cache->generation;
     cl_index idx = vector_hash_key(argno, keys);
     cl_index total_size = table->vector.dim;
-    cl_fixnum min_gen, gen;
-    cl_object *min_e;
     int k;
     idx = idx % total_size;
     idx = idx - (idx % 3);
-    min_gen = cache->generation;
-    min_e = 0;
     for (k = 20; k--; ) {
       cl_object *e = table->vector.self.t + idx;
       cl_object hkey = RECORD_KEY(e);
       if (hkey == OBJNULL) {
-        min_gen = -1;
-        min_e = e;
         if (RECORD_VALUE(e) == OBJNULL) {
           /* This record is not only deleted but empty
            * Hence we cannot find our method ahead */
-          break;
+          return ECL_NIL;
         }
         /* Else we only know that the record has been
          * delete, but we might find our data ahead. */
@@ -176,51 +168,14 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
           if (keys[n] != hkey->vector.self.t[n])
             goto NO_MATCH;
         }
-        min_e = e;
-        goto FOUND;
-      } else if (min_gen >= 0) {
-      NO_MATCH:
-        /* Unless we have found a deleted record, keep
-         * looking for the oldest record that we can
-         * overwrite with the new data. */
-        gen = RECORD_GEN(e);
-        if (gen < min_gen) {
-          min_gen = gen;
-          min_e = e;
-        }
+        RECORD_GEN_SET(e, gen);
+        return RECORD_VALUE(e);
       }
+    NO_MATCH:
       idx += 3;
       if (idx >= total_size) idx = 0;
     }
-    if (min_e == 0) {
-      ecl_internal_error("search_method_hash");
-    }
-    RECORD_KEY(min_e) = OBJNULL;
-    cache->generation++;
-  FOUND:
-    /*
-     * Once we have reached here, we set the new generation of
-     * this record and perform a global shift so that the total
-     * generation number does not become too large and we can
-     * expire some elements.
-     */
-    gen = cache->generation;
-    RECORD_GEN_SET(min_e, gen);
-    if (gen >= total_size/2) {
-      cl_object *e = table->vector.self.t;
-      gen = 0.5*gen;
-      cache->generation -= gen;
-      for (idx = table->vector.dim; idx; idx-= 3, e += 3) {
-        cl_fixnum g = RECORD_GEN(e) - gen;
-        if (g <= 0) {
-          RECORD_KEY(e) = OBJNULL;
-          RECORD_VALUE(e) = ECL_NIL;
-          g = 0;
-        }
-        RECORD_GEN_SET(e, g);
-      }
-    }
-    return (ecl_cache_record_ptr)min_e;
+    return ECL_NIL;
   }
 }
 

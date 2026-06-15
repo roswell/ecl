@@ -194,16 +194,13 @@ cl_object
 _ecl_standard_dispatch(cl_object frame, cl_object gf)
 {
   const cl_env_ptr env = frame->frame.env;
-  cl_object func, vector, keys[64];
+  cl_object func, keys[64];
   ecl_cache_ptr cache = env->method_cache;
-  ecl_cache_record_ptr e;
   cl_index key_length;
   ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
     key_length = fill_spec_vector(keys, gf, frame);
-    e = ecl_search_cache(cache, key_length, keys);
-    if (e->key != OBJNULL) {
-      func = e->value;
-    } else {
+    func = ecl_search_cache(cache, key_length, keys);
+    if (func == ECL_NIL) {
       func = compute_applicable_method(env, frame, gf);
       if (env->values[1] != ECL_NIL) {
         ecl_update_cache(cache, key_length, keys, func);
