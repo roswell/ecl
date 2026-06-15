@@ -57,6 +57,7 @@ clear_one_from_cache(ecl_cache_ptr cache, cl_object target)
 static void
 clear_list_from_cache(ecl_cache_ptr cache)
 {
+  ecl_disable_interrupts();
   cl_object list = ecl_atomic_get(&cache->clear_list);
   cl_object table = cache->table;
   cl_index i, total_size = table->vector.dim;
@@ -69,6 +70,7 @@ clear_list_from_cache(ecl_cache_ptr cache)
       }
     }
   }
+  ecl_enable_interrupts();
 }
 #endif
 
@@ -174,6 +176,7 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
 void
 ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object value)
 {
+  ecl_disable_interrupts();
   cl_object table = cache->table;
   cl_index idx = vector_hash_key(argno, keys);
   cl_index total_size = table->vector.dim;
@@ -201,7 +204,6 @@ ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object
     idx += 3;
     if (idx >= total_size) idx = 0;
   }
-
   RECORD_KEY(min_e) = ecl_cache_make_key(cache, argno, keys);
   RECORD_VALUE(min_e) = value;
   cache->generation++;
@@ -224,5 +226,6 @@ ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object
       RECORD_GEN_SET(e, g);
     }
   }
+  ecl_enable_interrupts();
 }
 

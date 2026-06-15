@@ -68,12 +68,9 @@ static cl_object
 search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
 {
   ecl_cache_ptr cache = env->slot_cache;
-  cl_object keys[2], index;
-  ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-    fill_spec_vector(keys, gfun, instance);
-    index = ecl_search_cache(cache, 2, keys);
-  } ECL_WITHOUT_INTERRUPTS_END;
-  return index;
+  cl_object keys[2];
+  fill_spec_vector(keys, gfun, instance);
+  return ecl_search_cache(cache, 2, keys);
 }
 
 static cl_object
@@ -90,10 +87,8 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
   {
     ecl_cache_ptr cache = env->slot_cache;
     cl_object keys[2];
-    ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-      fill_spec_vector(keys, gfun, instance);
-      ecl_update_cache(cache, 2, keys, index);
-    } ECL_WITHOUT_INTERRUPTS_END;
+    fill_spec_vector(keys, gfun, instance);
+    ecl_update_cache(cache, 2, keys, index);
     return index;
   }
 }

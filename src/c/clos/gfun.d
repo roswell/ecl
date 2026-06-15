@@ -197,22 +197,19 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   cl_object func, keys[64];
   ecl_cache_ptr cache = env->method_cache;
   cl_index key_length;
-  ECL_WITHOUT_INTERRUPTS_BEGIN(env) {
-    key_length = fill_spec_vector(keys, gf, frame);
-    func = ecl_search_cache(cache, key_length, keys);
-    if (func == ECL_NIL) {
-      func = compute_applicable_method(env, frame, gf);
-      if (env->values[1] != ECL_NIL) {
-        ecl_update_cache(cache, key_length, keys, func);
-      }
-    }
-  } ECL_WITHOUT_INTERRUPTS_END;
-  if (func == ECL_NIL)
-    func = cl_apply(3, @'no-applicable-method', gf, frame);
-  else {
-    func = _ecl_funcall3(func, frame, ECL_NIL);
+  key_length = fill_spec_vector(keys, gf, frame);
+  func = ecl_search_cache(cache, key_length, keys);
+  if (func != ECL_NIL) {
+    /* cache hit! */
+    return _ecl_funcall3(func, frame, ECL_NIL);
   }
-  return func;
+  func = compute_applicable_method(env, frame, gf);
+  if (env->values[1] != ECL_NIL) {
+    ecl_update_cache(cache, key_length, keys, func);
+  }
+  return (func == ECL_NIL)
+    ? cl_apply(3, @'no-applicable-method', gf, frame)
+    :_ecl_funcall3(func, frame, ECL_NIL);
 }
 
 static cl_object
