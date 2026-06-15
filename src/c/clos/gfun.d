@@ -206,11 +206,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
     } else {
       func = compute_applicable_method(env, frame, gf);
       if (env->values[1] != ECL_NIL) {
-        if (e->key != OBJNULL) {
-          e = ecl_search_cache(cache, key_length, keys);
-        }
-        e->key = ecl_cache_make_key(cache, key_length, keys);
-        e->value = func;
+        ecl_update_cache(cache, key_length, keys, func);
       }
     }
   } ECL_WITHOUT_INTERRUPTS_END;
