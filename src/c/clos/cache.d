@@ -2,9 +2,10 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * cache.d - thread-local cache for a variety of operations
+ * cache.d - thread-local cache for generic function dispatch
  *
  * Copyright (c) 2011 Juan Jose Garcia Ripoll
+ * Copyright (c) 2026 Daniel Kochmański
  *
  * See file 'LICENSE' for the copyright details.
  *
@@ -133,8 +134,8 @@ vector_hash_key(cl_index n, cl_object *keys)
 
 /*
  * variation of ecl_gethash from hash.d, which takes an array of objects as key
- * It also assumes that entries are never removed except by clrhash.
- * This method must be called with interrupts disabled!
+ * It also assumes that entries are never removed except by clrhash.  This
+ * method must be called with interrupts disabled!
  */
 
 ecl_cache_record_ptr
@@ -220,6 +221,61 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
       }
     }
     return (ecl_cache_record_ptr)min_e;
+  }
+}
+
+void
+ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object value)
+{
+  cl_object table = cache->table;
+  cl_index idx = vector_hash_key(argno, keys);
+  cl_index total_size = table->vector.dim;
+  cl_fixnum min_gen, gen;
+  cl_object *min_e;
+  int k;
+  idx = idx % total_size;
+  idx = idx - (idx % 3);
+  min_gen = cache->generation;
+  min_e = NULL;
+  /* We look for the fist empty or deleted entry and fill it. */
+  for (k = 20; k--; ) {
+    cl_object *e = table->vector.self.t + idx;
+    cl_object hkey = RECORD_KEY(e);
+    if (hkey == OBJNULL) {
+      RECORD_KEY(e) = ecl_cache_make_key(cache, argno, keys);
+      RECORD_VALUE(e) = value;
+      return;
+    }
+    gen = RECORD_GEN(e);
+    if (gen < min_gen) {
+      min_gen = gen;
+      min_e = e;
+    }
+    idx += 3;
+    if (idx >= total_size) idx = 0;
+  }
+
+  RECORD_KEY(min_e) = ecl_cache_make_key(cache, argno, keys);
+  RECORD_VALUE(min_e) = value;
+  cache->generation++;
+  gen = cache->generation;
+  RECORD_GEN_SET(min_e, gen);
+  /* Once we have reached here perform a global shift so that the total
+   * generation number does not become too large and we can expire some
+   * elements. */
+  if (gen >= total_size/2) {
+    cl_object *e = table->vector.self.t;
+    gen = 0.5*gen;
+    cache->generation -= gen;
+    for (idx = table->vector.dim; idx; idx-= 3, e += 3) {
+      cl_fixnum g = RECORD_GEN(e) - gen;
+      if (g <= 0) {
+        RECORD_KEY(e) = OBJNULL;
+        RECORD_VALUE(e) = ECL_NIL;
+        g = 0;
+      }
+      RECORD_GEN_SET(e, g);
+    }
   }
 }
 
