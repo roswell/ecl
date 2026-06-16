@@ -18,7 +18,7 @@
 
 #define RECORD_SIZE 3
 #define RECORD_KEY(e) ((e)[0])
-#define RECORD_VALUE(e) ((e)[1])
+#define RECORD_VAL(e) ((e)[1])
 #define RECORD_GEN(e) ecl_fixnum((e+2)[0])
 #define RECORD_GEN_SET(e,v) ((e+2)[0]=ecl_make_fixnum(v))
 
@@ -27,7 +27,6 @@ empty_cache(ecl_cache_ptr cache)
 {
   cl_object table = cache->table;
   cl_index i, total_size = table->vector.dim;
-  cache->generation = 0;
   for (i = 0; i < total_size; i+=RECORD_SIZE) {
     table->vector.self.t[i] = OBJNULL;
     table->vector.self.t[i+1] = OBJNULL;
@@ -148,17 +147,16 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
 #endif
   {
     cl_object table = cache->table;
-    cl_fixnum gen = cache->generation;
     cl_index idx = vector_hash_key(argno, keys);
     cl_index total_size = table->vector.dim;
     int k;
     idx = idx % total_size;
     idx = idx - (idx % RECORD_SIZE);
-    for (k = 20; k--; ) {
+    for (k = 16; k--; ) {
       cl_object *e = table->vector.self.t + idx;
       cl_object hkey = RECORD_KEY(e);
       if (hkey == OBJNULL) {
-        if (RECORD_VALUE(e) == OBJNULL) {
+        if (RECORD_VAL(e) == OBJNULL) {
           /* This record is not only deleted but empty
            * Hence we cannot find our method ahead */
           return ECL_NIL;
@@ -171,8 +169,8 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
           if (keys[n] != hkey->vector.self.t[n])
             goto NO_MATCH;
         }
-        RECORD_GEN_SET(e, gen);
-        return RECORD_VALUE(e);
+        RECORD_GEN_SET(e, 1);   /* used */
+        return RECORD_VAL(e);
       }
     NO_MATCH:
       idx += RECORD_SIZE;
@@ -182,59 +180,104 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
   }
 }
 
+
+/* This function is responsible for resizing the cache when we have too many
+   entries. When the cache is resized to its maximal size, we evict unused
+   entries. Currently LRU, later clocked pseudo-lru. */
+#define MAX_CACHE_SIZE 256*4096*RECORD_SIZE
+static void
+_ecl_resize_cache(ecl_cache_ptr cache)
+{
+  cl_object table = cache->table;
+  cl_index total_size = table->vector.dim;
+  cl_index new_size = 1.5*total_size;
+  cl_object new_table, key;
+  cl_index idx, hash, new_idx, chain_counter;
+  cl_object *e1, *e2;
+  new_size = new_size - (new_size % RECORD_SIZE);
+  if (new_size > MAX_CACHE_SIZE) {
+    /* Prune cache by removing turning unused entries into tombtones. */
+    for (idx=0; idx<total_size; idx+=RECORD_SIZE) {
+      e1 = table->vector.self.t+idx;
+      if(!RECORD_GEN(e1)) {
+        RECORD_KEY(e1) = OBJNULL;
+        RECORD_VAL(e1) = ECL_NIL; /* tombstone */
+      } else {
+        RECORD_GEN_SET(e1, 0);   /* reset clock */
+      }
+    }
+    return;
+  }
+  new_table = si_make_vector(ecl_elttype_to_symbol(ecl_array_elttype(table)),
+                             ecl_make_integer(new_size),
+                             ECL_NIL, ECL_NIL, ECL_NIL, ECL_NIL);
+  for (idx = 0; idx < new_size; idx+=RECORD_SIZE) {
+    new_table->vector.self.t[idx] = OBJNULL;
+    new_table->vector.self.t[idx+1] = OBJNULL;
+    new_table->vector.self.fix[idx+2] = 0;
+  }
+  for (idx = 0; idx<total_size; idx+=3) {
+    e1 = table->vector.self.t + idx;
+    key = RECORD_KEY(e1);
+    if (key == OBJNULL) continue;
+    hash = vector_hash_key(key->vector.dim, key->vector.self.t);
+    new_idx = hash % new_size;
+    new_idx = new_idx - (new_idx % RECORD_SIZE);
+    chain_counter=20;
+    while (chain_counter--) {
+      e2 = new_table->vector.self.t + new_idx;
+      if (e2[0] != OBJNULL) {
+        new_idx += RECORD_SIZE;
+        continue;
+      }
+      e2[0] = key;
+      e2[1] = e1[1];
+      e2[2] = e1[2];
+      break;
+    }
+  }
+  cache->table = new_table;
+}
+
 void
 ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object value)
 {
   ecl_disable_interrupts();
+ AGAIN:
   cl_object table = cache->table;
   cl_index idx = vector_hash_key(argno, keys);
   cl_index total_size = table->vector.dim;
-  cl_fixnum min_gen, gen;
-  cl_object *min_e;
   int k;
+  cl_object *e, *min_e = NULL;
   idx = idx % total_size;
   idx = idx - (idx % RECORD_SIZE);
-  min_gen = cache->generation;
-  min_e = NULL;
   /* We look for the fist empty or deleted entry and fill it. */
-  for (k = 20; k--; ) {
-    cl_object *e = table->vector.self.t + idx;
+  for (k = 16; k--; ) {
+    e = table->vector.self.t + idx;
     cl_object hkey = RECORD_KEY(e);
     if (hkey == OBJNULL) {
       RECORD_KEY(e) = ecl_cache_make_key(cache, argno, keys);
-      RECORD_VALUE(e) = value;
-      return;
-    }
-    gen = RECORD_GEN(e);
-    if (gen < min_gen) {
-      min_gen = gen;
+      RECORD_VAL(e) = value;
+      RECORD_GEN_SET(e, 1);     /* used! */
+      goto FINISH;
+    } else if (!min_e && !RECORD_GEN(e)) {
+      /* Opportunistically we fallback to evicting unused entry when there are
+         no empty ones. */
       min_e = e;
     }
     idx += RECORD_SIZE;
     if (idx >= total_size) idx = 0;
   }
-  RECORD_KEY(min_e) = ecl_cache_make_key(cache, argno, keys);
-  RECORD_VALUE(min_e) = value;
-  cache->generation++;
-  gen = cache->generation;
-  RECORD_GEN_SET(min_e, gen);
-  /* Once we have reached here perform a global shift so that the total
-   * generation number does not become too large and we can expire some
-   * elements. */
-  if (gen >= total_size/2) {
-    cl_object *e = table->vector.self.t;
-    gen = 0.5*gen;
-    cache->generation -= gen;
-    for (idx = table->vector.dim; idx; idx-= RECORD_SIZE, e += RECORD_SIZE) {
-      cl_fixnum g = RECORD_GEN(e) - gen;
-      if (g <= 0) {
-        RECORD_KEY(e) = OBJNULL;
-        RECORD_VALUE(e) = ECL_NIL;
-        g = 0;
-      }
-      RECORD_GEN_SET(e, g);
-    }
+  if (!min_e) {
+    /* Once we have reached here we know that the chain is either too long and
+       we need to resize the table. We pick up max chain length=8. */
+    _ecl_resize_cache(cache);
+    goto AGAIN;
   }
+  RECORD_KEY(min_e) = ecl_cache_make_key(cache, argno, keys);
+  RECORD_VAL(min_e) = value;
+  RECORD_GEN_SET(min_e, 1);     /* used! */
+ FINISH:
   ecl_enable_interrupts();
 }
 

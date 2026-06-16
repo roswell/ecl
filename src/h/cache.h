@@ -19,7 +19,6 @@ extern "C" {
 
 typedef struct ecl_cache {
         cl_object table;
-        cl_index generation;
 #ifdef ECL_THREADS
         cl_object clear_list;
 #endif
