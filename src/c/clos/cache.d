@@ -16,6 +16,7 @@
 #include <ecl/internal.h>
 #include "newhash.h"
 
+#define RECORD_SIZE 3
 #define RECORD_KEY(e) ((e)[0])
 #define RECORD_VALUE(e) ((e)[1])
 #define RECORD_GEN(e) ecl_fixnum((e+2)[0])
@@ -27,7 +28,7 @@ empty_cache(ecl_cache_ptr cache)
   cl_object table = cache->table;
   cl_index i, total_size = table->vector.dim;
   cache->generation = 0;
-  for (i = 0; i < total_size; i+=3) {
+  for (i = 0; i < total_size; i+=RECORD_SIZE) {
     table->vector.self.t[i] = OBJNULL;
     table->vector.self.t[i+1] = OBJNULL;
     table->vector.self.fix[i+2] = 0;
@@ -43,7 +44,7 @@ clear_one_from_cache(ecl_cache_ptr cache, cl_object target)
 {
   cl_object table = cache->table;
   cl_index i, total_size = table->vector.dim;
-  for (i = 0; i < total_size; i+=3) {
+  for (i = 0; i < total_size; i+=RECORD_SIZE) {
     cl_object key = table->vector.self.t[i];
     if (key != OBJNULL) {
       if (target == key->vector.self.t[0]) {
@@ -61,7 +62,7 @@ clear_list_from_cache(ecl_cache_ptr cache)
   cl_object list = ecl_atomic_get(&cache->clear_list);
   cl_object table = cache->table;
   cl_index i, total_size = table->vector.dim;
-  for (i = 0; i < total_size; i+=3) {
+  for (i = 0; i < total_size; i+=RECORD_SIZE) {
     cl_object key = table->vector.self.t[i];
     if (key != OBJNULL) {
       if (ecl_member_eq(key->vector.self.t[0], list)) {
@@ -80,7 +81,7 @@ ecl_make_cache(cl_index key_size, cl_index cache_size)
   ecl_cache_ptr cache = ecl_alloc(sizeof(struct ecl_cache));
   cache->table =
     si_make_vector(ECL_T, /* element type */
-                   ecl_make_fixnum(3*cache_size), /* Maximum size */
+                   ecl_make_fixnum(RECORD_SIZE*cache_size), /* Maximum size */
                    ECL_NIL, /* adjustable */
                    ECL_NIL, /* fill pointer */
                    ECL_NIL, /* displaced */
@@ -152,7 +153,7 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
     cl_index total_size = table->vector.dim;
     int k;
     idx = idx % total_size;
-    idx = idx - (idx % 3);
+    idx = idx - (idx % RECORD_SIZE);
     for (k = 20; k--; ) {
       cl_object *e = table->vector.self.t + idx;
       cl_object hkey = RECORD_KEY(e);
@@ -174,7 +175,7 @@ ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
         return RECORD_VALUE(e);
       }
     NO_MATCH:
-      idx += 3;
+      idx += RECORD_SIZE;
       if (idx >= total_size) idx = 0;
     }
     return ECL_NIL;
@@ -192,7 +193,7 @@ ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object
   cl_object *min_e;
   int k;
   idx = idx % total_size;
-  idx = idx - (idx % 3);
+  idx = idx - (idx % RECORD_SIZE);
   min_gen = cache->generation;
   min_e = NULL;
   /* We look for the fist empty or deleted entry and fill it. */
@@ -209,7 +210,7 @@ ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object
       min_gen = gen;
       min_e = e;
     }
-    idx += 3;
+    idx += RECORD_SIZE;
     if (idx >= total_size) idx = 0;
   }
   RECORD_KEY(min_e) = ecl_cache_make_key(cache, argno, keys);
@@ -224,7 +225,7 @@ ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object
     cl_object *e = table->vector.self.t;
     gen = 0.5*gen;
     cache->generation -= gen;
-    for (idx = table->vector.dim; idx; idx-= 3, e += 3) {
+    for (idx = table->vector.dim; idx; idx-= RECORD_SIZE, e += RECORD_SIZE) {
       cl_fixnum g = RECORD_GEN(e) - gen;
       if (g <= 0) {
         RECORD_KEY(e) = OBJNULL;
