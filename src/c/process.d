@@ -94,8 +94,6 @@ init_process(void)
 #endif
   ecl_set_process_env(env);
   env->default_sigmask = NULL;
-  env->method_cache = NULL;
-  env->slot_cache = NULL;
   env->interrupt_struct = NULL;
   env->disable_interrupts = 1;
 }

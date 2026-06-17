@@ -1137,6 +1137,11 @@ struct ecl_instance {            /* -- instance header -- */
         cl_object *slots;        /*  instance slots       */
         cl_index stamp;          /*  instance stamp       */
         cl_index class_stamp;    /*  class stamp          */
+#ifdef ECL_THREADS
+        cl_index binding;        /*  index into the bindings array */
+#else
+        void *method_cache;
+#endif
 };
 
 #ifdef ECL_SSE2
