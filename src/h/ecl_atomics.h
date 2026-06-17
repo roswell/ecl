@@ -17,7 +17,9 @@
 
 # define AO_REQUIRE_CAS
 # define AO_ASSUME_WINDOWS98
-# ifdef ECL_LIBATOMIC_OPS_H
+# ifdef ECL_USE_STD_ATOMIC
+#  include <ecl/impl/stdatomic.h>
+# elif defined(ECL_LIBATOMIC_OPS_H)
 #  include <ecl/atomic_ops.h>
 # else
 #  include <atomic_ops.h>

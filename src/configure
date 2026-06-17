@@ -1493,7 +1493,7 @@ Optional Features:
   --enable-boehm          use the Boehm-Weiser garbage collector
                           (no|included|system|auto, default=auto)
   --enable-libatomic      version of the libatomic-ops library
-                          (auto|included|system, default=auto)
+                          (no|included|system|auto, default=auto)
   --enable-soname         link and install the library using version numbers
                           (no|yes, default=yes)
   --enable-gmp            version of the GMP library
@@ -3042,8 +3042,8 @@ ac_cxx_conftest_cxx11_main='
 }
 {
   // Unicode literals
-  char const *utf8 = u8"UTF-8 string \u2500";
-  char16_t const *utf16 = u"UTF-8 string \u2500";
+  auto const *utf8 = u8"UTF-8 string \u2500";
+  char16_t const *utf16 = u"UTF-16 string \u2500";
   char32_t const *utf32 = U"UTF-32 string \u2500";
 }
 '
@@ -11557,11 +11557,21 @@ fi
 
 
 case "${enable_libatomic}" in
-  auto|system|included) ;;
+  no|auto|system|included) ;;
   *) as_fn_error $? "Invalid value of --enable-libatomic: ${enable_libatomic} " "$LINENO" 5;;
 esac
 if test "x${enable_threads}" != "xno"; then
-  ac_fn_c_check_header_compile "$LINENO" "atomic_ops.h" "ac_cv_header_atomic_ops_h" "$ac_includes_default"
+  ac_fn_c_check_header_compile "$LINENO" "stdatomic.h" "ac_cv_header_stdatomic_h" "$ac_includes_default"
+if test "x$ac_cv_header_stdatomic_h" = xyes
+then :
+  use_stdatomic=yes; system_libatomic=no
+else case e in #(
+  e) use_stdatomic=no ;;
+esac
+fi
+
+  if test "x${use_stdatomic}" = "xno" -o "x${enable_libatomic}" = "xsystem"; then
+    ac_fn_c_check_header_compile "$LINENO" "atomic_ops.h" "ac_cv_header_atomic_ops_h" "$ac_includes_default"
 if test "x$ac_cv_header_atomic_ops_h" = xyes
 then :
   system_libatomic=yes
@@ -11570,6 +11580,7 @@ else case e in #(
 esac
 fi
 
+  fi
   if test "${system_libatomic}" = yes; then
                 OLD_LIBS="${LIBS}"
     LIBS="${LIBS} -latomic_ops"
@@ -11598,7 +11609,9 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking libatomic-ops version " >&5
 printf %s "checking libatomic-ops version ... " >&6; }
   if test "${enable_libatomic}" = auto; then
-    if test "${system_libatomic}" = yes; then
+    if test "${use_stdatomic}" = yes; then
+      enable_libatomic=no
+    elif test "${system_libatomic}" = yes; then
       enable_libatomic=system
     else
       enable_libatomic=included
@@ -11629,8 +11642,12 @@ printf "%s\n" "${enable_libatomic} " >&6; }
 printf "%s\n" "#define ECL_LIBATOMIC_OPS_H /**/" >>confdefs.h
 
     CORE_LIBS="-leclatomic ${CORE_LIBS}"
-  else
+  elif test "${enable_libatomic}" = system; then
     CORE_LIBS="-latomic_ops ${CORE_LIBS}"
+  elif test "${enable_libatomic}" = no; then
+
+printf "%s\n" "#define ECL_USE_STD_ATOMIC /**/" >>confdefs.h
+
   fi
 fi
 

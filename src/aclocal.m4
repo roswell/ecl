@@ -1080,13 +1080,16 @@ int main() {
 dnl ----------------------------------------------------------------------
 dnl Configure libatomic-ops
 dnl
-AC_DEFUN([ECL_LIBATOMIC_OPS],[
+AC_DEFUN([ECL_ATOMICS],[
 case "${enable_libatomic}" in
-  auto|system|included) ;;
+  no|auto|system|included) ;;
   *) AC_MSG_ERROR( [Invalid value of --enable-libatomic: ${enable_libatomic}] );;
 esac
 if test "x${enable_threads}" != "xno"; then
-  AC_CHECK_HEADER([atomic_ops.h],[system_libatomic=yes],[system_libatomic=no],[])
+  AC_CHECK_HEADER([stdatomic.h],[use_stdatomic=yes; system_libatomic=no],[use_stdatomic=no],[])
+  if test "x${use_stdatomic}" = "xno" -o "x${enable_libatomic}" = "xsystem"; then
+    AC_CHECK_HEADER([atomic_ops.h],[system_libatomic=yes],[system_libatomic=no],[])
+  fi
   if test "${system_libatomic}" = yes; then
     dnl checking that we can link against libatomic_ops requires a
     dnl manual AC_LINK_IFELSE call, since all functionality could be
@@ -1101,7 +1104,9 @@ if test "x${enable_threads}" != "xno"; then
   fi
   AC_MSG_CHECKING( [libatomic-ops version] )
   if test "${enable_libatomic}" = auto; then
-    if test "${system_libatomic}" = yes; then
+    if test "${use_stdatomic}" = yes; then
+      enable_libatomic=no
+    elif test "${system_libatomic}" = yes; then
       enable_libatomic=system
     else
       enable_libatomic=included
@@ -1129,8 +1134,10 @@ if test "x${enable_threads}" != "xno"; then
     fi
     AC_DEFINE([ECL_LIBATOMIC_OPS_H], [], [ECL_LIBATOMIC_OPS_H])
     CORE_LIBS="-leclatomic ${CORE_LIBS}"
-  else
+  elif test "${enable_libatomic}" = system; then
     CORE_LIBS="-latomic_ops ${CORE_LIBS}"
+  elif test "${enable_libatomic}" = no; then
+    AC_DEFINE([ECL_USE_STD_ATOMIC], [], [ECL_USE_STD_ATOMIC])
   fi
 fi
 ])
