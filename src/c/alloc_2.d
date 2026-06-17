@@ -386,6 +386,7 @@ ecl_cons(cl_object a, cl_object d)
 #endif
 }
 
+/* INV SI::MAKE-STRUCTURE has a separate path that allocates an instance. */
 cl_object
 ecl_alloc_instance(cl_index slots)
 {
@@ -398,6 +399,11 @@ ecl_alloc_instance(cl_index slots)
   i->instance.gfdef = ECL_NIL;
   i->instance.entry = FEnot_funcallable_vararg;
   i->instance.slotds = ECL_UNBOUND;
+#ifdef ECL_THREADS
+  i->instance.binding = ECL_MISSING_SPECIAL_BINDING;
+#else
+  i->instance.method_cache = ecl_make_cache(128);
+#endif
   return i;
 }
 
@@ -892,10 +898,27 @@ standard_finalizer(cl_object o)
     break;
   }
   case t_symbol: {
-    if (o->symbol.binding != ECL_MISSING_SPECIAL_BINDING) {
-      ecl_atomic_push(&ecl_core.reused_indices, ecl_make_fixnum(o->symbol.binding));
+    cl_index index = o->symbol.binding;
+    if (index != ECL_MISSING_SPECIAL_BINDING) {
       o->symbol.binding = ECL_MISSING_SPECIAL_BINDING;
+      ecl_atomic_push(&ecl_core.reused_indices, ecl_make_fixnum(index));
     }
+    break;
+  }
+  case t_instance: {
+    cl_index index = o->instance.binding;
+    if (index != ECL_MISSING_SPECIAL_BINDING) {
+      cl_object list;
+      for (list = mp_all_processes(); !Null(list); list = ECL_CONS_CDR(list)) {
+        cl_object process = ECL_CONS_CAR(list);
+        struct cl_env_struct *env = process->process.env;
+        if (index < env->bds_stack.tl_bindings_size)
+          env->bds_stack.tl_bindings[index] = ECL_NO_TL_BINDING;
+      }
+      o->instance.binding = ECL_MISSING_SPECIAL_BINDING;
+      ecl_atomic_push(&ecl_core.reused_indices, ecl_make_fixnum(index));
+    }
+    break;
   }
 #endif /* ECL_THREADS */
   default:;
@@ -948,6 +971,7 @@ register_finalizer(cl_object o, void *finalized_object,
   case t_weak_pointer:
 #if defined(ECL_THREADS)
   case t_symbol:
+  case t_instance:
 #endif
     /* Don't delete the standard finalizer. */
     if (fn == NULL) {

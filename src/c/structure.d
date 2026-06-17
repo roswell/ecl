@@ -51,6 +51,11 @@ si_structure_subtype_p(cl_object x, cl_object y)
   ECL_STRUCT_SLOTS(x) = (cl_object *)ecl_alloc_align(sizeof(cl_object)*narg, sizeof(cl_object));
   x->instance.slotds = ECL_UNBOUND;
   x->instance.stamp = ECL_CLASS_OF(x)->instance.class_stamp;
+#ifdef ECL_THREADS
+  x->instance.binding = ECL_MISSING_SPECIAL_BINDING;
+#else
+  x->instance.method_cache = NULL;
+#endif
   if (narg >= ECL_SLOTS_LIMIT)
     FEerror("Limit on structure size exceeded: ~S slots requested.",
             1, ecl_make_fixnum(narg));

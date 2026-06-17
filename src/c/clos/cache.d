@@ -75,7 +75,7 @@ clear_list_from_cache(ecl_cache_ptr cache)
 #endif
 
 ecl_cache_ptr
-ecl_make_cache(cl_index key_size, cl_index cache_size)
+ecl_make_cache(cl_index cache_size)
 {
   ecl_cache_ptr cache = ecl_alloc(sizeof(struct ecl_cache));
   cache->table =

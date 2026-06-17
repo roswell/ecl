@@ -262,9 +262,6 @@ init_env_aux(cl_env_ptr env)
   ecl_init_bignum_registers(env);
   /* Bytecodes compiler environment */
   env->c_env = NULL;
-  /* CLOS caches */
-  env->method_cache = ecl_make_cache(64, 4096);
-  env->slot_cache = ecl_make_cache(2, 4096);
 }
 
 void
@@ -359,7 +356,6 @@ _ecl_alloc_env(cl_env_ptr parent)
   for (cl_index i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
     output->big_register[i] = ECL_NIL;
   }
-  output->method_cache = output->slot_cache = NULL;
   output->interrupt_struct = NULL;
   /*
    * An uninitialized environment _always_ disables interrupts. They

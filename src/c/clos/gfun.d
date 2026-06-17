@@ -195,7 +195,7 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
 {
   const cl_env_ptr env = frame->frame.env;
   cl_object func, keys[64];
-  ecl_cache_ptr cache = env->method_cache;
+  ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gf);
   cl_index key_length;
   key_length = fill_spec_vector(keys, gf, frame);
   func = ecl_search_cache(cache, key_length, keys);
@@ -224,30 +224,23 @@ generic_function_dispatch_vararg(cl_narg narg, ...)
 
 
 cl_object
-si_clear_gfun_hash(cl_object what)
+si_clear_gfun_hash(cl_object gf)
 {
-  /*
-   * This function clears the generic function call hashes selectively.
-   *      what = ECL_T means clear the hash completely
-   *      what = generic function, means cleans only these entries
-   * If we work on a multithreaded environment, we simply enqueue these
-   * operations and wait for the destination thread to update its own hash.
-   */
+  /* This function clears the generic function caches. */
   cl_env_ptr the_env = ecl_process_env();
 #ifdef ECL_THREADS
   cl_object list;
+  /* In a multithreaded environment we must queue operations in which the hash
+     is cleared from updated generic functions. */
   for (list = mp_all_processes(); !Null(list); list = ECL_CONS_CDR(list)) {
     cl_object process = ECL_CONS_CAR(list);
     struct cl_env_struct *env = process->process.env;
     if (the_env != env && env) {
-      if (env->method_cache)
-        ecl_cache_remove_one(env->method_cache, what);
-      if (env->slot_cache)
-        ecl_cache_remove_one(env->slot_cache, what);
+      ecl_cache_ptr gfun_cache = ECL_GFUN_CACHE(env, gf);
+      if (gfun_cache) ecl_cache_remove_one(gfun_cache, gf);
     }
   }
 #endif
-  ecl_cache_remove_one(the_env->method_cache, what);
-  ecl_cache_remove_one(the_env->slot_cache, what);
+  ecl_cache_remove_one(ECL_GFUN_CACHE(the_env, gf), gf);
   ecl_return0(the_env);
 }
