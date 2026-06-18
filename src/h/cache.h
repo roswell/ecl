@@ -22,9 +22,10 @@ typedef struct ecl_cache {
 } *ecl_cache_ptr;
 
 typedef struct ecl_cache_record {
-        cl_object key; /* vector[ndx] */
-        cl_object value; /* vector[ndx+1] */
-        cl_object gen; /* vector[ndx+2] */
+        cl_object key1;
+        cl_object keys;
+        cl_object value; /* vector[ndx+2] */
+        cl_object gen;   /* vector[ndx+3] */
 } *ecl_cache_record_ptr;
 
 extern ecl_cache_ptr ecl_make_cache(cl_index cache_size);
