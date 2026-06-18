@@ -172,7 +172,7 @@ their lambda lists ~A and ~A are not congruent."
   ;;  iii) Computing a new discriminating function... Well, since the core ECL
   ;;  does not need the discriminating function because we always use the same
   ;;  one, we just update the spec-how list of the generic function..
-  (compute-g-f-spec-list gf)
+  (compute-gf-spec-profile gf)
   (set-generic-function-dispatch gf)
   ;;  iv) Update dependents.
   (update-dependents gf (list 'add-method method))
@@ -185,7 +185,7 @@ their lambda lists ~A and ~A are not congruent."
   (si:clear-gfun-hash gf)
   (loop for spec in (method-specializers method)
      do (remove-direct-method spec method))
-  (compute-g-f-spec-list gf)
+  (compute-gf-spec-profile gf)
   (set-generic-function-dispatch gf)
   (update-dependents gf (list 'remove-method method))
   gf)

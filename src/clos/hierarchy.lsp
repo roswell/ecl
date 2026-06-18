@@ -110,7 +110,7 @@
     ;; INV: some of these slots are expected to have fixed positions. See
     ;; src/h/internal.h:GFUN_NAME etc.
     '((name :initarg :name :initform nil :reader generic-function-name)
-      (spec-list :initform nil :accessor generic-function-spec-list)
+      (spec-profile :initarg :spec-profile :initform nil :accessor generic-function-spec-profile)
       (method-combination 
        :initarg :method-combination :initform (find-method-combination (class-prototype (find-class 'standard-generic-function)) 'standard nil)
        :accessor generic-function-method-combination)

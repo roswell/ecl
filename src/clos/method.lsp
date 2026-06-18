@@ -402,7 +402,7 @@ have disappeared."
             (implicit-generic-lambda (method-lambda-list method)))
       (setf (generic-function-argument-precedence-order gf)
             (rest (si::process-lambda-list (method-lambda-list method) t))))
-    (compute-g-f-spec-list gf)
+    (compute-gf-spec-profile gf)
     (set-generic-function-dispatch gf)
     method))
 

@@ -25,8 +25,7 @@ no_applicable_method(cl_env_ptr env, cl_object gfun, cl_object args)
 static void
 fill_spec_vector(cl_object *keys, cl_object gfun, cl_object instance)
 {
-  keys[0] = gfun;
-  keys[1] = ECL_CLASS_OF(instance);
+  keys[0] = ECL_CLASS_OF(instance);
 }
 
 static cl_object
@@ -68,9 +67,9 @@ static cl_object
 search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
 {
   ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
-  cl_object keys[2];
+  cl_object keys[1];
   fill_spec_vector(keys, gfun, instance);
-  return ecl_search_cache(cache, 2, keys);
+  return ecl_search_cache(cache, 1, keys);
 }
 
 static cl_object
@@ -86,9 +85,9 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
   }
   {
     ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
-    cl_object keys[2];
+    cl_object keys[1];
     fill_spec_vector(keys, gfun, instance);
-    ecl_update_cache(cache, 2, keys, index);
+    ecl_update_cache(cache, 1, keys, index);
     return index;
   }
 }

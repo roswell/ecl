@@ -19,9 +19,6 @@ extern "C" {
 
 typedef struct ecl_cache {
         cl_object table;
-#ifdef ECL_THREADS
-        cl_object clear_list;
-#endif
 } *ecl_cache_ptr;
 
 typedef struct ecl_cache_record {
@@ -36,6 +33,7 @@ extern cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_index len, cl_object
 extern cl_object ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys);
 extern void ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object value);
 extern void ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key);
+extern void ecl_cache_invalidate(ecl_cache_ptr cache);
 
 
 #ifdef ECL_THREADS
