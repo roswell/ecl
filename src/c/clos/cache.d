@@ -32,47 +32,7 @@ empty_cache(ecl_cache_ptr cache)
     table->vector.self.t[i+1] = OBJNULL;
     table->vector.self.fix[i+2] = 0;
   }
-#ifdef ECL_THREADS
-  cache->clear_list = ECL_NIL;
-#endif
 }
-
-#ifndef ECL_THREADS
-static void
-clear_one_from_cache(ecl_cache_ptr cache, cl_object target)
-{
-  cl_object table = cache->table;
-  cl_index i, total_size = table->vector.dim;
-  for (i = 0; i < total_size; i+=RECORD_SIZE) {
-    cl_object key = table->vector.self.t[i];
-    if (key != OBJNULL) {
-      if (target == key->vector.self.t[0]) {
-        table->vector.self.t[i] = OBJNULL;
-        table->vector.self.fix[i+2] = 0;
-      }
-    }
-  }
-}
-#else
-static void
-clear_list_from_cache(ecl_cache_ptr cache)
-{
-  ecl_disable_interrupts();
-  cl_object list = ecl_atomic_get(&cache->clear_list);
-  cl_object table = cache->table;
-  cl_index i, total_size = table->vector.dim;
-  for (i = 0; i < total_size; i+=RECORD_SIZE) {
-    cl_object key = table->vector.self.t[i];
-    if (key != OBJNULL) {
-      if (ecl_member_eq(key->vector.self.t[0], list)) {
-        table->vector.self.t[i] = OBJNULL;
-        table->vector.self.fix[i+2] = 0;
-      }
-    }
-  }
-  ecl_enable_interrupts();
-}
-#endif
 
 ecl_cache_ptr
 ecl_make_cache(cl_index cache_size)
@@ -104,15 +64,16 @@ cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_index len, cl_object *keys)
   return key;
 }
 
+void
+ecl_cache_remove_one(ecl_cache_ptr cache, cl_object any_key)
+{
+  ecl_internal_error("not implemented");
+}
 
 void
-ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key)
+ecl_cache_invalidate(ecl_cache_ptr cache)
 {
-#ifdef ECL_THREADS
-  ecl_atomic_push(&cache->clear_list, first_key);
-#else
-  clear_one_from_cache(cache, first_key);
-#endif
+  empty_cache(cache);
 }
 
 static cl_index
@@ -140,44 +101,37 @@ vector_hash_key(cl_index n, cl_object *keys)
 cl_object
 ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
 {
-#ifdef ECL_THREADS
-  if (!Null(cache->clear_list)) {
-    clear_list_from_cache(cache);
-  }
-#endif
-  {
-    cl_object table = cache->table;
-    cl_index idx = vector_hash_key(argno, keys);
-    cl_index total_size = table->vector.dim;
-    int k;
-    idx = idx % total_size;
-    idx = idx - (idx % RECORD_SIZE);
-    for (k = 16; k--; ) {
-      cl_object *e = table->vector.self.t + idx;
-      cl_object hkey = RECORD_KEY(e);
-      if (hkey == OBJNULL) {
-        if (RECORD_VAL(e) == OBJNULL) {
-          /* This record is not only deleted but empty
-           * Hence we cannot find our method ahead */
-          return ECL_NIL;
-        }
-        /* Else we only know that the record has been
-         * delete, but we might find our data ahead. */
-      } else if (argno == hkey->vector.fillp) {
-        cl_index n;
-        for (n = 0; n < argno; n++) {
-          if (keys[n] != hkey->vector.self.t[n])
-            goto NO_MATCH;
-        }
-        RECORD_GEN_SET(e, 1);   /* used */
-        return RECORD_VAL(e);
+  cl_object table = cache->table;
+  cl_index idx = vector_hash_key(argno, keys);
+  cl_index total_size = table->vector.dim;
+  int k;
+  idx = idx % total_size;
+  idx = idx - (idx % RECORD_SIZE);
+  for (k = 16; k--; ) {
+    cl_object *e = table->vector.self.t + idx;
+    cl_object hkey = RECORD_KEY(e);
+    if (hkey == OBJNULL) {
+      if (RECORD_VAL(e) == OBJNULL) {
+        /* This record is not only deleted but empty
+         * Hence we cannot find our method ahead */
+        return ECL_NIL;
       }
-    NO_MATCH:
-      idx += RECORD_SIZE;
-      if (idx >= total_size) idx = 0;
+      /* Else we only know that the record has been
+       * delete, but we might find our data ahead. */
+    } else if (argno == hkey->vector.fillp) {
+      cl_index n;
+      for (n = 0; n < argno; n++) {
+        if (keys[n] != hkey->vector.self.t[n])
+          goto NO_MATCH;
+      }
+      RECORD_GEN_SET(e, 1);   /* used */
+      return RECORD_VAL(e);
     }
-    return ECL_NIL;
+  NO_MATCH:
+    idx += RECORD_SIZE;
+    if (idx >= total_size) idx = 0;
   }
+  return ECL_NIL;
 }
 
 

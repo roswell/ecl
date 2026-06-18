@@ -96,31 +96,29 @@ static cl_index
 fill_spec_vector(cl_object *keys, cl_object gf, cl_object frame)
 {
   cl_object *args = ECL_STACK_FRAME_PTR(frame);
-  cl_index narg = frame->frame.size;
+  cl_index narg = frame->frame.size, spec_no, arg_no;
   cl_object spec_how_list = GFUN_SPEC(gf);
-  int spec_no = 1;
-  keys[0] = gf;
-  loop_for_on_unsafe(spec_how_list) {
-    cl_object spec_how = ECL_CONS_CAR(spec_how_list);
+  cl_index spec_length = ecl_length(spec_how_list);
+  cl_object *spec_args = spec_how_list->vector.self.t;
+  unlikely_if (spec_length > narg)
+    FEwrong_num_arguments(gf);
+  unlikely_if (spec_length >= 64)
+    ecl_internal_error("Too many arguments to fill_spec_vector().");
+  for (spec_no=0, arg_no=0; arg_no<spec_length; arg_no++) {
+    cl_object this_arg = args[arg_no];
+    cl_object spec_how = spec_args[arg_no];
+    cl_object spec_cls = ECL_CONS_CAR(spec_how);
     cl_object spec_eql = ECL_CONS_CDR(spec_how);
     cl_object eql_spec;
-    cl_object this_arg;
-    unlikely_if (spec_no > narg)
-      FEwrong_num_arguments(gf);
-    unlikely_if (spec_no >= 64)
-      ecl_internal_error("Too many arguments to fill_spec_vector().");
-    unlikely_if (!ECL_LISTP(spec_eql))
-      ecl_internal_error("Invalid GF specialization profile.");
-    this_arg = args[spec_no-1];
     /* Need to differentiate between EQL specializers and class specializers,
        because the EQL value can be a class, and may clash with a class
        specializer.  Store the cons cell containing the EQL value. */
     if (!Null(eql_spec = ecl_memql(this_arg, spec_eql))) {
       keys[spec_no++] = eql_spec;
-    } else {
+    } else if (!Null(spec_cls)) {
       keys[spec_no++] = cl_class_of(this_arg);
     }
-  } end_loop_for_on_unsafe(spec_how_list);
+  }
   return spec_no;
 }
 
@@ -237,10 +235,10 @@ si_clear_gfun_hash(cl_object gf)
     struct cl_env_struct *env = process->process.env;
     if (the_env != env && env) {
       ecl_cache_ptr gfun_cache = ECL_GFUN_CACHE(env, gf);
-      if (gfun_cache) ecl_cache_remove_one(gfun_cache, gf);
+      if (gfun_cache) ecl_cache_invalidate(gfun_cache);
     }
   }
 #endif
-  ecl_cache_remove_one(ECL_GFUN_CACHE(the_env, gf), gf);
+  ecl_cache_invalidate(ECL_GFUN_CACHE(the_env, gf));
   ecl_return0(the_env);
 }

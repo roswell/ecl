@@ -179,7 +179,7 @@
                               &rest initargs)
   (declare (ignore slot-names))
   (call-next-method)
-  (compute-g-f-spec-list gfun)
+  (compute-gf-spec-profile gfun)
   (update-dependents gfun initargs)
   gfun)
 
