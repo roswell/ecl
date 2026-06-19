@@ -36,32 +36,18 @@ extern void ecl_update_cache(ecl_cache_ptr cache, cl_index hash, cl_index argno,
 extern void ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key);
 extern void ecl_cache_invalidate(ecl_cache_ptr cache);
 
-#include "newhash.h"
+#include "xxhash.h"
 
 static cl_index
 vector_hash_keys(cl_index n, cl_object *keys)
 {
-  cl_index c = n, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
-  for (; n >= 3; ) {
-    c += (cl_index)keys[--n];
-    b += (cl_index)keys[--n];
-    a += (cl_index)keys[--n];
-    mix(a, b, c);
-  }
-  switch (n) {
-  case 2: b += (cl_index)keys[--n];
-  case 1: a += (cl_index)keys[--n];
-    mix(a,b,c);
-  }
-  return c;
+  return xxh64((uint64_t *)keys, n, 0);
 }
 
 static cl_index
 vector_hash_key1(cl_object *keys)
 {
-  cl_index c = 1, a = GOLDEN_RATIO + (cl_index)keys[0], b = GOLDEN_RATIO;
-  mix(a,b,c);
-  return c;
+  return xxh64_small((uint64_t *)keys, 1, 0);
 }
 
 #ifdef ECL_THREADS
