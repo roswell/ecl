@@ -14,7 +14,6 @@
 #include <ecl/ecl.h>
 #include <ecl/cache.h>
 #include <ecl/internal.h>
-#include "newhash.h"
 
 #define RECORD_SIZE 4
 
@@ -81,36 +80,16 @@ ecl_cache_invalidate(ecl_cache_ptr cache)
   empty_cache(cache);
 }
 
-static cl_index
-vector_hash_key(cl_index n, cl_object *keys)
-{
-  cl_index c = n, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
-  for (; n >= 3; ) {
-    c += (cl_index)keys[--n];
-    b += (cl_index)keys[--n];
-    a += (cl_index)keys[--n];
-    mix(a, b, c);
-  }
-  switch (n) {
-  case 2: b += (cl_index)keys[--n];
-  case 1: a += (cl_index)keys[--n];
-    mix(a,b,c);
-  }
-  return c;
-}
-
-
 /* Variation of ecl_gethash from hash.d, which takes an array of objects as key
  * It also assumes that entries are never removed except by clrhash. */
 
 cl_object
-ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys)
+ecl_search_cache(ecl_cache_ptr cache, cl_index hash, cl_index argno, cl_object *keys)
 {
   cl_object table = cache->table;
-  cl_index idx = vector_hash_key(argno, keys);
   cl_index total_size = table->vector.dim;
-  int k;
-  idx = idx % total_size;
+  cl_index idx = hash % total_size;
+  cl_index k;
   idx = idx - (idx % RECORD_SIZE);
   for (k = 16; k--; ) {
     cl_object *e = table->vector.self.t + idx;
@@ -189,7 +168,7 @@ _ecl_resize_cache(ecl_cache_ptr cache)
     arg = RECORD_ARG(e1);
     key = RECORD_KEY(e1);
     if (key == OBJNULL) continue;
-    hash = vector_hash_key(key->vector.dim, key->vector.self.t);
+    hash = vector_hash_keys(key->vector.dim, key->vector.self.t);
     new_idx = hash % new_size;
     new_idx = new_idx - (new_idx % RECORD_SIZE);
     chain_counter=20;
@@ -210,16 +189,15 @@ _ecl_resize_cache(ecl_cache_ptr cache)
 }
 
 void
-ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object value)
+ecl_update_cache(ecl_cache_ptr cache, cl_index hash, cl_index argno, cl_object *keys, cl_object value)
 {
   ecl_disable_interrupts();
  AGAIN:
   cl_object table = cache->table;
-  cl_index idx = vector_hash_key(argno, keys);
   cl_index total_size = table->vector.dim;
-  int k;
   cl_object *e, *min_e = NULL;
-  idx = idx % total_size;
+  cl_index idx = hash % total_size;
+  cl_index k;
   idx = idx - (idx % RECORD_SIZE);
   /* We look for the fist empty or deleted entry and fill it. */
   for (k = 16; k--; ) {

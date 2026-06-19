@@ -31,11 +31,38 @@ typedef struct ecl_cache_record {
 extern ecl_cache_ptr ecl_make_cache(cl_index cache_size);
 extern cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_index len, cl_object *keys);
 
-extern cl_object ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys);
-extern void ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object value);
+extern cl_object ecl_search_cache(ecl_cache_ptr cache, cl_index hash, cl_index argno, cl_object *keys);
+extern void ecl_update_cache(ecl_cache_ptr cache, cl_index hash, cl_index argno, cl_object *keys, cl_object value);
 extern void ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key);
 extern void ecl_cache_invalidate(ecl_cache_ptr cache);
 
+#include "newhash.h"
+
+static cl_index
+vector_hash_keys(cl_index n, cl_object *keys)
+{
+  cl_index c = n, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
+  for (; n >= 3; ) {
+    c += (cl_index)keys[--n];
+    b += (cl_index)keys[--n];
+    a += (cl_index)keys[--n];
+    mix(a, b, c);
+  }
+  switch (n) {
+  case 2: b += (cl_index)keys[--n];
+  case 1: a += (cl_index)keys[--n];
+    mix(a,b,c);
+  }
+  return c;
+}
+
+static cl_index
+vector_hash_key1(cl_object *keys)
+{
+  cl_index c = 1, a = GOLDEN_RATIO + (cl_index)keys[0], b = GOLDEN_RATIO;
+  mix(a,b,c);
+  return c;
+}
 
 #ifdef ECL_THREADS
 static inline cl_object

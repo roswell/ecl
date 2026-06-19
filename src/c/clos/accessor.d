@@ -68,8 +68,10 @@ search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
 {
   ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
   cl_object keys[1];
+  cl_index hash;
   fill_spec_vector(keys, gfun, instance);
-  return ecl_search_cache(cache, 1, keys);
+  hash = vector_hash_key1(keys);
+  return ecl_search_cache(cache, hash, 1, keys);
 }
 
 static cl_object
@@ -86,17 +88,19 @@ add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_objec
   {
     ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
     cl_object keys[1];
+    cl_index hash;
     fill_spec_vector(keys, gfun, instance);
-    ecl_update_cache(cache, 1, keys, index);
+    hash = vector_hash_key1(keys);
+    ecl_update_cache(cache, hash, 1, keys, index);
     return index;
   }
 }
 
 static void
-ensure_up_to_date_instance(cl_object instance)
+ensure_up_to_date_instance(cl_object x)
 {
-  if (si_instance_obsolete_p(instance) == ECL_T) {
-    _ecl_funcall2(@'clos::update-instance', instance);
+  if (x->instance.stamp != ECL_CLASS_OF(x)->instance.class_stamp) {
+    _ecl_funcall2(@'clos::update-instance', x);
   }
 }
 
