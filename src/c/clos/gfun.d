@@ -194,16 +194,17 @@ _ecl_standard_dispatch(cl_object frame, cl_object gf)
   const cl_env_ptr env = frame->frame.env;
   cl_object func, keys[64];
   ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gf);
-  cl_index key_length;
+  cl_index key_length, hash;
   key_length = fill_spec_vector(keys, gf, frame);
-  func = ecl_search_cache(cache, key_length, keys);
+  hash = vector_hash_keys(key_length, keys);
+  func = ecl_search_cache(cache, hash, key_length, keys);
   if (func != ECL_NIL) {
     /* cache hit! */
     return _ecl_funcall3(func, frame, ECL_NIL);
   }
   func = compute_applicable_method(env, frame, gf);
   if (env->values[1] != ECL_NIL) {
-    ecl_update_cache(cache, key_length, keys, func);
+    ecl_update_cache(cache, hash, key_length, keys, func);
   }
   return (func == ECL_NIL)
     ? cl_apply(3, @'no-applicable-method', gf, frame)

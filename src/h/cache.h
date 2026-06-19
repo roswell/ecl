@@ -13,29 +13,31 @@
 #ifndef ECL_CACHE_H
 #define ECL_CACHE_H
 
+#include <ecl/xxhash.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct ecl_cache {
-        cl_object table;
-} *ecl_cache_ptr;
+static cl_index
+vector_hash_keys(cl_index n, cl_object *keys)
+{
+#if ECL_FIXNUM_BITS > 32
+  return ecl_xxh64_lanes((uint64_t *)keys, n, 0);
+#else
+  return ecl_xxh32_lanes((uint32_t *)keys, n, 0);
+#endif
+}
 
-typedef struct ecl_cache_record {
-        cl_object key1;
-        cl_object keys;
-        cl_object value; /* vector[ndx+2] */
-        cl_object gen;   /* vector[ndx+3] */
-} *ecl_cache_record_ptr;
-
-extern ecl_cache_ptr ecl_make_cache(cl_index cache_size);
-extern cl_object ecl_cache_make_key(ecl_cache_ptr cache, cl_index len, cl_object *keys);
-
-extern cl_object ecl_search_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys);
-extern void ecl_update_cache(ecl_cache_ptr cache, cl_index argno, cl_object *keys, cl_object value);
-extern void ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key);
-extern void ecl_cache_invalidate(ecl_cache_ptr cache);
-
+static cl_index
+vector_hash_key1(cl_object *keys)
+{
+#if ECL_FIXNUM_BITS > 32
+  return ecl_xxh64_avalanche((uint64_t)keys[0]);
+#else
+  return ecl_xxh32_avalanche((uint32_t)keys[0]);
+#endif
+}
 
 #ifdef ECL_THREADS
 static inline cl_object
