@@ -96,7 +96,7 @@
     (:unsigned-int       integer                  "unsigned int"         "ecl_make_uint"                     "ecl_to_uint"               "ecl_to_uint")
     (:long               integer                  "long"                 "ecl_make_long"                     "ecl_to_long"               "ecl_to_long")
     (:unsigned-long      integer                  "unsigned long"        "ecl_make_ulong"                    "ecl_to_ulong"              "ecl_to_ulong")
-    (:cl-index           integer                  "cl_index"             "ecl_make_unsigned_integer"         "ecl_to_cl_index"           "ecl_fixnum")
+    (:cl-index           integer                  "cl_index"             "ecl_make_unsigned_integer"         "ecl_to_index"              "ecl_fixnum")
     (:long-long          integer                  "ecl_long_long_t"      "ecl_make_long_long"                "ecl_to_long_long"          "ecl_to_long_long")
     (:unsigned-long-long integer                  "ecl_ulong_long_t"     "ecl_make_ulong_long"               "ecl_to_ulong_long"         "ecl_to_ulong_long")
     (:float              single-float             "float"                "ecl_make_single_float"             "ecl_to_float"              "ecl_single_float")
