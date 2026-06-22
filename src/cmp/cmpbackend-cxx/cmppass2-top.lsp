@@ -232,7 +232,7 @@
     (wt-nl "VV = Cblock->cblock.data;")
     (wt-nl "#endif")
     ;; With this we ensure creating a constant with the tag
-    ;; and the initialization file
+    ;; and the initialization function
     (wt-nl "Cblock->cblock.data_text = (const cl_object *)\"" (init-name-tag name) "\";")
     (wt-nl "VVtemp = Cblock->cblock.temp_data;")
     (wt-nl "ECL_DEFINE_SETF_FUNCTIONS")

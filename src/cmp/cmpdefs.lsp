@@ -43,6 +43,9 @@ coprocessor).")
 (defconfig *ar* "@AR@"
   "Name of the `AR' program on the hosting platform.")
 
+(defconfig *nm* #.(if (string= "@NM@" "") nil "@NM@")
+  "Name of the `NM' program on the hosting platform.")
+
 (defconfig *cc-flags* "@CPPFLAGS@ @CFLAGS@ @ECL_CFLAGS@")
 
 (defconfig *cc-optimize* "-O2")

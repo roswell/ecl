@@ -136,12 +136,7 @@ si_environ(void)
 cl_object
 si_getpid(void)
 {
-#if defined(NACL)
-  FElibc_error("si_getpid not implemented",1);
-  @(return ECL_NIL);
-#else
   @(return ecl_make_fixnum(getpid()));
-#endif
 }
 
 cl_object
@@ -160,10 +155,6 @@ ecl_def_ct_base_string(fake_out_name, "PIPE-WRITE-ENDPOINT", 19, static, const);
 cl_object
 si_make_pipe()
 {
-#if defined(NACL)
-  FElibc_error("si_make_pipe not implemented",1);
-  @(return ECL_NIL);
-#else
   cl_object output;
   int fds[2], ret;
 #if defined(ECL_MS_WINDOWS_HOST)
@@ -182,7 +173,6 @@ si_make_pipe()
     output = cl_make_two_way_stream(in, out);
   }
   @(return output);
-#endif
 }
 
 static cl_object
@@ -216,10 +206,7 @@ cl_object
 si_waitpid(cl_object pid, cl_object wait)
 {
   cl_object status, code;
-#if defined(NACL)
-  FElibc_error("si_waitpid not implemented",1);
-  @(return ECL_NIL);
-#elif defined(ECL_MS_WINDOWS_HOST)
+#if defined(ECL_MS_WINDOWS_HOST)
   cl_env_ptr the_env = ecl_process_env();
   HANDLE *hProcess = ecl_foreign_data_pointer_safe(pid);
   DWORD exitcode;
@@ -552,7 +539,7 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
       FEwin32_error("Could not spawn subprocess to run ~S.", 1, command);
     }
   }
-#elif !defined(NACL) /* All POSIX but NaCL/pNaCL */
+#else
   {
     cl_object command_encoded = si_string_to_octets(3, command, @':null-terminate', ECL_T);
     int child_pid;
@@ -621,11 +608,6 @@ si_spawn_subprocess(cl_object command, cl_object argv, cl_object my_environ,
       errno = saved_errno;
       FElibc_error("Could not spawn subprocess to run ~S.", 1, command);
     }
-  }
-#else  /* NACL */
-  {
-    FEerror("ext:run-program not implemented", 0);
-    @(return ECL_NIL);
   }
 #endif
 
