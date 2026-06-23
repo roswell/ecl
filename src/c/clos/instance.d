@@ -15,6 +15,7 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 #include <ecl/ecl-inl.h>
+#include <ecl/cache.h>
 
 cl_object
 ecl_allocate_instance(cl_object clas, cl_index size)
@@ -51,8 +52,12 @@ si_instance_obsolete_p(cl_object x)
 cl_object
 si_instance_new_stamp(cl_object x)
 {
-  x->instance.class_stamp = ecl_next_stamp();
-  return ecl_make_fixnum(x->instance.class_stamp);
+  cl_object keys[] = {x};
+  cl_index stamp = ecl_next_stamp();
+  cl_index hash = vector_hash_key1(keys);
+  x->instance.class_stamp = stamp;
+  x->instance.class_hash = hash;
+  return ecl_make_fixnum(stamp);
 }
 
 cl_object
@@ -81,8 +86,10 @@ si_instance_fun_set(cl_object x, cl_object isgf)
 cl_object
 si_instance_sig_set(cl_object x)
 {
-  x->instance.stamp = ECL_CLASS_OF(x)->instance.class_stamp;
-  @(return (x->instance.slotds = ECL_CLASS_SLOTS(ECL_CLASS_OF(x))));
+  cl_object clas = ECL_CLASS_OF(x);
+  x->instance.hash = clas->instance.class_hash;
+  x->instance.stamp = clas->instance.class_stamp;
+  @(return (x->instance.slotds = ECL_CLASS_SLOTS(clas)));
 }
 
 cl_object
@@ -302,6 +309,8 @@ si_copy_instance(cl_object x)
   }
   y = ecl_allocate_instance(x->instance.clas, x->instance.length);
   y->instance.slotds = x->instance.slotds;
+  y->instance.hash = x->instance.hash;
+  y->instance.class_hash = x->instance.class_hash;
   y->instance.stamp = x->instance.stamp;
   y->instance.class_stamp = x->instance.class_stamp;
   memcpy(y->instance.slots, x->instance.slots,

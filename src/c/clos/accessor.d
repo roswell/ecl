@@ -78,7 +78,7 @@ ensure_slot_reader_index(const cl_env_ptr env, cl_object gfun, cl_object instanc
   cl_object keys[1], index;
   cl_index hash;
   fill_spec_vector(keys, gfun, instance);
-  hash = vector_hash_key1(keys);
+  hash = instance->instance.hash;
   index = ecl_search_cache(cache, hash, 1, keys);
   unlikely_if (index == ECL_NIL) {
     cl_object args = ecl_list1(instance);
@@ -147,7 +147,7 @@ ensure_slot_writer_index(const cl_env_ptr env, cl_object gfun,
   cl_object keys[1], index;
   cl_index hash;
   fill_spec_vector(keys, gfun, instance);
-  hash = vector_hash_key1(keys);
+  hash = instance->instance.hash;
   index = ecl_search_cache(cache, hash, 1, keys);
   unlikely_if (index == ECL_NIL) {
     cl_object args = cl_list(2, value, instance);

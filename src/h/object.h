@@ -1106,6 +1106,8 @@ struct ecl_instance {            /* -- instance header -- */
         cl_object *slots;        /*  instance slots       */
         cl_index stamp;          /*  instance stamp       */
         cl_index class_stamp;    /*  class stamp          */
+        cl_index hash;           /*  instance stamp       */
+        cl_index class_hash;     /*  class stamp          */
 #ifdef ECL_THREADS
         cl_index binding;        /*  index into the bindings array */
 #else
