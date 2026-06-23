@@ -63,45 +63,32 @@ slot_method_index(cl_object gfun, cl_object instance, cl_object args)
   }
 }
 
-static cl_object
-search_slot_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
-{
-  ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
-  cl_object keys[1];
-  cl_index hash;
-  fill_spec_vector(keys, gfun, instance);
-  hash = vector_hash_key1(keys);
-  return ecl_search_cache(cache, hash, 1, keys);
-}
-
-static cl_object
-add_new_index(const cl_env_ptr env, cl_object gfun, cl_object instance, cl_object args)
-{
-  /* The keys and the cache may change while we compute the
-   * applicable methods. We must save the keys and recompute the
-   * cache location if it was filled. */
-  cl_object index = slot_method_index(gfun, instance, args);
-  unlikely_if (index == OBJNULL) {
-    no_applicable_method(env, gfun, args);
-    return ECL_NIL;
-  }
-  {
-    ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
-    cl_object keys[1];
-    cl_index hash;
-    fill_spec_vector(keys, gfun, instance);
-    hash = vector_hash_key1(keys);
-    ecl_update_cache(cache, hash, 1, keys, index);
-    return index;
-  }
-}
-
 static void
 ensure_up_to_date_instance(cl_object x)
 {
   if (x->instance.stamp != ECL_CLASS_OF(x)->instance.class_stamp) {
     _ecl_funcall2(@'clos::update-instance', x);
   }
+}
+
+static cl_object
+ensure_slot_reader_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
+{
+  ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
+  cl_object keys[1], index;
+  cl_index hash;
+  fill_spec_vector(keys, gfun, instance);
+  hash = vector_hash_key1(keys);
+  index = ecl_search_cache(cache, hash, 1, keys);
+  unlikely_if (index == ECL_NIL) {
+    cl_object args = ecl_list1(instance);
+    index = slot_method_index(gfun, instance, args);
+    unlikely_if (index == OBJNULL) {
+      return index;
+    }
+    ecl_update_cache(cache, hash, 1, keys, index);
+  }
+  return index;
 }
 
 cl_object
@@ -126,15 +113,12 @@ ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */)
     return env->values[0];
   }
 
-  index = search_slot_index(env, gfun, instance);
-  unlikely_if (index == ECL_NIL) {
-    cl_object args = ecl_list1(instance);
-    index = add_new_index(env, gfun, instance, args);
-    /* no_applicable_method() was called */
-    unlikely_if (index == ECL_NIL) {
-      return env->values[0];
-    }
+  index = ensure_slot_reader_index(env, gfun, instance);
+  unlikely_if (index == OBJNULL) {
+    no_applicable_method(env, gfun, ecl_list1(instance));
+    return env->values[0];
   }
+
   ensure_up_to_date_instance(instance);
   if (ECL_FIXNUMP(index)) {
     value = instance->instance.slots[ecl_fixnum(index)];
@@ -153,6 +137,27 @@ ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */)
                           slot_name);
   }
   @(return value);
+}
+
+static cl_object
+ensure_slot_writer_index(const cl_env_ptr env, cl_object gfun,
+                         cl_object value, cl_object instance)
+{
+  ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
+  cl_object keys[1], index;
+  cl_index hash;
+  fill_spec_vector(keys, gfun, instance);
+  hash = vector_hash_key1(keys);
+  index = ecl_search_cache(cache, hash, 1, keys);
+  unlikely_if (index == ECL_NIL) {
+    cl_object args = cl_list(2, value, instance);
+    index = slot_method_index(gfun, instance, args);
+    unlikely_if (index == OBJNULL) {
+      return index;
+    }
+    ecl_update_cache(cache, hash, 1, keys, index);
+  }
+  return index;
 }
 
 cl_object
@@ -178,15 +183,12 @@ ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instanc
     return env->values[0];
   }
 
-  index = search_slot_index(env, gfun, instance);
-  unlikely_if (index == ECL_NIL) {
-    cl_object args = cl_list(2, value, instance);
-    index = add_new_index(env, gfun, instance, args);
-    /* no_applicable_method() was called */
-    unlikely_if (index == 0) {
-      return env->values[0];
-    }
+  index = ensure_slot_writer_index(env, gfun, value, instance);
+  unlikely_if (index == OBJNULL) {
+    no_applicable_method(env, gfun, cl_list(2, value, instance));
+    return env->values[0];
   }
+
   ensure_up_to_date_instance(instance);
   if (ECL_FIXNUMP(index)) {
     instance->instance.slots[ecl_fixnum(index)] = value;
