@@ -66,45 +66,45 @@ ensure_up_to_date_instance(cl_object instance, cl_object clas)
 }
 
 static inline cl_object
-ensure_slot_reader_index(const cl_env_ptr env, cl_object gfun, cl_object instance)
+ensure_slot_reader_index(const cl_env_ptr env, cl_object gf, cl_object instance)
 {
-  ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
+  ecl_cache_ptr cache = ECL_GET_GFUN_CACHE(env, gf);
   cl_object keys[1], index, clas;
   cl_index hash;
   clas = ECL_CLASS_OF(instance);
   keys[0] = clas;
   hash = instance->instance.hash;
   index = ecl_search_cache(cache, hash, 1, keys);
-  unlikely_if (index == ECL_NIL) {
+  unlikely_if (index == OBJNULL) {
     cl_object args = ecl_list1(instance);
-    index = slot_method_index(gfun, instance, args);
+    index = slot_method_index(gf, instance, args);
     unlikely_if (index == OBJNULL) {
       return index;
     }
-    ecl_update_cache(cache, hash, 1, keys, index);
+    ecl_update_cache(env, gf, cache, hash, 1, keys, index);
   }
   ensure_up_to_date_instance(instance, clas);
   return index;
 }
 
 static inline cl_object
-ensure_slot_writer_index(const cl_env_ptr env, cl_object gfun,
+ensure_slot_writer_index(const cl_env_ptr env, cl_object gf,
                          cl_object value, cl_object instance)
 {
-  ecl_cache_ptr cache = ECL_GFUN_CACHE(env, gfun);
+  ecl_cache_ptr cache = ECL_GET_GFUN_CACHE(env, gf);
   cl_object keys[1], index, clas;
   cl_index hash;
   clas = ECL_CLASS_OF(instance);
   keys[0] = clas;
   hash = instance->instance.hash;
   index = ecl_search_cache(cache, hash, 1, keys);
-  unlikely_if (index == ECL_NIL) {
+  unlikely_if (index == OBJNULL) {
     cl_object args = cl_list(2, value, instance);
-    index = slot_method_index(gfun, instance, args);
+    index = slot_method_index(gf, instance, args);
     unlikely_if (index == OBJNULL) {
       return index;
     }
-    ecl_update_cache(cache, hash, 1, keys, index);
+    ecl_update_cache(env, gf, cache, hash, 1, keys, index);
   }
   ensure_up_to_date_instance(instance, clas);
   return index;

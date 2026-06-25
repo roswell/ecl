@@ -20,6 +20,7 @@ extern "C" {
  *      FUNCTIONS, VARIABLES AND TYPES NOT FOR GENERAL USE              *
  * -------------------------------------------------------------------- */
 
+#define likely_if(x) if (ecl_likely(x))
 #define unlikely_if(x) if (ecl_unlikely(x))
 
 /* booting */
