@@ -98,7 +98,9 @@
   ;; the class. -- jd 2021-12-10
   (assert (class-finalized-p class))
   (let ((x (si::allocate-raw-instance nil class (class-size class))))
-    (si::instance-sig-set x)
+    (si:instance-sig-set x)
+    (when (typep x 'funcallable-standard-object)
+      (si:instance-fun-set x t))
     x))
 
 (defmethod make-instance ((class class) &rest initargs)

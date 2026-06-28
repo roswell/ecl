@@ -784,7 +784,6 @@ the metaclass")
 (deftest mop.0031 ()
   (is (subtypep 'mop:funcallable-standard-object 'function)))
 
-
 ;;; Date 2026-06-03
 ;;; Description
 ;;;
@@ -828,3 +827,44 @@ the metaclass")
    (defclass mop.0033.class-5 (mop.0033.class-1 mop.0033.class-3) ()))
   (finishes                             ; can agree A with non-sealed
    (defclass mop.0033.class-5 (mop.0033.class-1 mop.0033.class-4) ())))
+
+;;; Ensure that we can't call SET-FUNCALLABLE-INSTANCE-FUNCTION on objects that
+;;; are not funcallables (particularily on the standard object).
+(deftest mop.0034 ()
+  (let* ((objclass (find-class 'standard-object))
+         (instance (allocate-instance objclass)))
+    (is (not (typep instance 'function)))
+    (is (not (functionp instance)))
+    (signals error (mop:set-funcallable-instance-function instance (lambda ())))
+    (is (not (typep instance 'function)))
+    (is (not (functionp instance)))))
+
+;;; Ensure that we changing classes between STANDARD-OBJECT and
+;;; FUNCALLABLE-STANDARD-OBJECT updates the function flag.
+;;;
+;;; Alternative version of this test is to signal an error, and that's arguably
+;;; what we should do(!).
+(deftest mop.0033 ()
+  (let* ((objclass (find-class 'standard-object))
+         (instance (allocate-instance objclass)))
+    (finishes (change-class instance 'mop:funcallable-standard-object))
+    (is (functionp instance))
+    (finishes (change-class instance 'standard-object))
+    (is (not (functionp instance)))))
+
+;;; This test is addmittedly a bit cursed. It is here to ensure, that the
+;;; implementation doesn't segfault or anything when function changes class.
+(ext:with-clean-symbols (foo)
+  (deftest mop.0034 ()
+    (defgeneric foo ()
+      (:method () 42))
+    (is (= (foo) 42))
+    (change-class #'foo 'standard-object)
+    (signals error (foo))
+    (change-class #'foo 'standard-generic-function :name 'foo)
+    ;; No applicable method. If this test fails, that means that the method
+    ;; cache has not been cleared, and if it crashes, then the cache is was not
+    ;; recreated after changing the class.
+    (signals error (foo))
+    (defmethod foo () 33)
+    (is (= (foo) 33))))

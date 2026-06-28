@@ -808,7 +808,7 @@ extern ECL_API cl_object si_gc_stats(cl_object enable);
 extern ECL_API void _ecl_set_method_hash_size(cl_env_ptr env, cl_index size);
 extern ECL_API cl_object si_clear_gfun_hash(cl_object what);
 extern ECL_API cl_object clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t);
-extern ECL_API cl_object si_generic_function_p(cl_object instance);
+extern ECL_API cl_object si_funcallable_object_p(cl_object instance);
 
 extern ECL_API cl_object _ecl_standard_dispatch(cl_object frame, cl_object fun);
 
@@ -862,6 +862,7 @@ extern ECL_API cl_object si_instance_obsolete_p(cl_object x);
 extern ECL_API cl_object si_instance_new_stamp(cl_object x);
 extern ECL_API cl_object si_instance_get_stamp(cl_object x);
 extern ECL_API cl_object si_instance_slotds(cl_object x);
+extern ECL_API cl_object si_instance_fun_set(cl_object x, cl_object isgf);
 extern ECL_API cl_object si_instance_sig_set(cl_object x);
 
 extern ECL_API cl_object ecl_allocate_instance(cl_object clas, cl_index size);
