@@ -52,7 +52,7 @@ HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h $(HDIR)/object.h      
 
 BOOT_OBJS =
 
-CLOS_OBJS = clos/cache.o clos/accessor.o clos/instance.o clos/gfun.o
+CLOS_OBJS = clos/accessor.o clos/instance.o clos/gfun.o
 
 NUM_OBJS = number.o num_pred.o num_arith.o num_co.o num_log.o num_rand.o        \
 	numbers/cos.o numbers/sin.o numbers/tan.o numbers/atan.o                \
